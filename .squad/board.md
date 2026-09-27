@@ -55,10 +55,12 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0400 | Terraform: Supabase staging + prod projects, auth config | infra | T-0203 | todo (needs H-02) | wl-build-infra |
+| T-0400 | Terraform: import prod Supabase project (D-0011), create staging, codify auth config | infra | T-0203 | todo (needs H-02) | wl-build-infra |
 | T-0401 | Terraform: Cloudflare Pages projects, custom domains, DNS (D-0010) | infra | T-0309 | todo (needs H-03) | wl-build-infra |
 | T-0402 | Deploy pipelines: branch previews → staging, `main` → prod | infra | T-0400, T-0401 | todo | wl-build-infra |
-| T-0403 | Release check: security review, e2e happy path, go/no-go | qa | T-0301…T-0309, T-0402 | todo (needs H-06) | wl-release |
+| T-0404 | Custom SMTP: Resend as Supabase auth mailer, DNS records for `workout.vestgote.com`, branded magic-link template (D-0012) | infra | T-0401 | todo | wl-build-infra |
+| T-0405 | Cost guard: Supabase spend cap verified on, usage alerts at 80 % of quotas, `docs/infra-costs.md` updated from real usage monthly | infra | T-0400 | todo | wl-build-infra |
+| T-0403 | Release check: security review, e2e happy path, go/no-go | qa | T-0301…T-0309, T-0402, T-0404 | todo (needs H-06) | wl-release |
 | T-0406 | Privacy requirements NFR-PRIV-* in docs/security (EU region, minimisation, export, deletion, notice, no PII in logs) | security | T-0001 | todo | security-reviewer (sub-agent) |
 
 ## Phase 5 — Iterate
