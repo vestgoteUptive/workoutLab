@@ -13,7 +13,7 @@ Hard sets per body area (chest, back, shoulders, arms, core, glutes, quads, hams
 over a rolling 14-day window, compared with per-area targets. Suggestions (UF-08.2) fill the
 biggest gaps within the user's time budget.
 
-> Gap to fix: UF-06.1 currently shows *weekly* sets per muscle. Align it with the rolling 14-day model.
+> Rolling 14 days everywhere, including UF-06.1 (D-0002). The window is the current local day plus the 13 before it (D-0013). Prototype numbers are only illustrative; screens show what the engine returns.
 
 ## Design principles
 
@@ -27,7 +27,7 @@ biggest gaps within the user's time budget.
 
 | Flow | Screens | Purpose | Influences |
 |---|---|---|---|
-| UF-01 Onboarding | .1 Welcome · .2 Goal · .3 Level & equipment · .4 Schedule & plan | Personal plan in < 60 s | Fitbod, Hevy |
+| UF-01 Onboarding | .1 Welcome · .2 Goal · .3 Level & equipment · .4 Schedule & plan · .5 Account | Personal plan in < 60 s | Fitbod, Hevy |
 | UF-02 Today | .1 Today · .2 Workout preview | Daily entry point | Strong, Hevy |
 | UF-03 List view | .1 Active (set table) · .2 Rest · .3 Summary | Classic logging, reached from Pause | Strong, Hevy |
 | UF-04 Exercise library | .1 Browse · .2 Exercise detail · .3 Compare variants | Explain every exercise and variant | JEFIT, wger |
@@ -36,6 +36,14 @@ biggest gaps within the user's time budget.
 | UF-07 Routine builder | .1 Edit routine | Exercises, sets, progression rule | Liftosaur, Hevy |
 | UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
 | UF-09 Focus mode | .1–.9 (below) | One step at a time | Apple Fitness, NTC |
+| UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
+| UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan | Adaptive targets; edit goal, rhythm, priorities | Apple Fitness, Freeletics |
+
+Shared components: C-01 Body map, C-02 Tab bar.
+
+## UF-01.5 Account
+
+Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Returning users reach it from "I have an account" on UF-01.1. The UF-01.4 plan is computed on the device and saved after sign-in. There is no guest mode, and the < 60 s is measured from UF-01.1 to UF-01.4.
 
 ## UF-08 Session setup
 
@@ -79,10 +87,30 @@ Every screen: pause button, thin progress bar (warm-up + one segment per exercis
 
 **Loop per set:** 09.3 → 09.4 → 09.5 → 09.3. **Between exercises:** 09.8 (if behind) → 09.6 → 09.3. **Finish:** UF-03.3 summary.
 
+## UF-10 Balance
+
+Full spec and ACs: `docs/specs/uf-10-balance.md` (D-0013). **Entry:** the body map on UF-02.1, the Balance card on UF-06.1, "See balance" on UF-03.3. Never reachable from UF-08 or UF-09.
+
+- **UF-10.1 All areas**
+  - Header "Last 14 days · date range", C-01 body map, and nine rows: `load / target`, a coverage bar (`coverage-0..4`), a `warn` outline when the area needs attention, and a "Recovering" tag.
+  - Order: attention first, then deficit descending, then the fixed area order.
+  - Zero history: every area `0 / target`, with "Start workout". Offline: "Offline · last synced HH:MM", recomputed on the device including queued sets.
+- **UF-10.2 Area detail**
+  - `load / target`, deficit %, target source, "Last trained N days ago", a 14-day strip (sets per day) and the contributing exercises.
+
+## UF-11 Plan check-in
+
+Full spec and ACs: `docs/specs/uf-11-plan-checkin.md` (D-0012). Principle: targets adapt, and never silently.
+
+- **UF-11.1 Check-in**: a card on UF-02.1 and UF-11.2 when two 14-day periods in a row were under (< 70 % of the planned minimum) or over (> 110 % of the planned maximum). It proposes rhythm −1 or +1 per week and previews the new targets. Accept / Keep current. Never shown on UF-03, UF-08 or UF-09. Offline: the actions are disabled.
+- **UF-11.2 Plan**: goal, rhythm, priority areas, per-area targets with source, next check-in date, the last 3 check-ins.
+- **UF-11.3 Edit plan**: goal, rhythm (1–7 per week), up to 3 priority areas. Save re-derives the targets and resets the check-in streak.
+
 ## Open questions
 
-- Guest mode before account; import history (Apple Health, Strava).
-- Hard-stop clock time as an alternative to minutes (UF-08.1).
-- Watch companion, lock-screen live activity, voice cues (UF-09).
-- Carry weights over between variants when swapping (UF-05, UF-08.3).
-- Known prototype inconsistencies: plank on UF-09.7 is not in the 45-min plan; set counts differ slightly between screens.
+Answered by default (revisit in Phase 5):
+- Guest mode: no; the account step comes after the plan preview (D-0014). Importing history (Apple Health, Strava): out of scope v1 (owner product-owner, `docs/gaps.md` §D, Phase 5 `wl-idea`).
+- Hard-stop clock time on UF-08.1: both; a finish time converts to minutes at start (owner product-owner, T-0303).
+- Watch companion, lock-screen live activity, voice cues: out of scope v1 except the 3-2-1 cue in UF-08.4 (owner product-owner, Phase 5 `wl-idea`).
+- Carry weights between variants on a swap (UF-05, UF-08.3): yes when the variant shares a primary area and equipment type (owner product-owner, T-0306).
+- Prototype inconsistencies (the plank on UF-09.7, set counts): the engine output is the truth (D-0002).
