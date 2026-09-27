@@ -4,6 +4,7 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import eslintConfigPrettier from "eslint-config-prettier";
+import workoutlab from "./packages/design-tokens/eslint-plugin/index.js";
 
 export default tseslint.config(
   {
@@ -26,5 +27,11 @@ export default tseslint.config(
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
     },
+  },
+  {
+    // Colours come only from @workoutlab/design-tokens (D-0019). That package turns this
+    // off in its own eslint.config.mjs, because patterns resolve per loaded config.
+    plugins: { workoutlab },
+    rules: { "workoutlab/no-raw-colour": "error" },
   },
 );
