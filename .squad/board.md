@@ -9,7 +9,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 |---|---|---|---|---|---|
 | T-0001 | PRD on v2 IDs; UF-10 Balance and UF-11 Plan check-in specs; non-functional requirements (gaps A1, B7) | product | — | done | wl-spec |
 | T-0002 | Monorepo scaffold: pnpm + turbo, TS strict, ESLint/Prettier, Vitest, remove `apps/api`, CI workflow | infra | — | done | wl-build-infra |
-| T-0003 | `packages/design-tokens` from the design system + coverage ramp (D-0003); lint rule: no hex values outside tokens | design | T-0002 | doing | wl-design |
+| T-0003 | `packages/design-tokens` from the design system + coverage ramp (D-0003); lint rule: no hex values outside tokens | design | T-0002 | done | wl-design |
 | T-0004 | CI checks: docs check (UF IDs exist in v2 flows, no v1 labels), duplicate D-NNNN id check, placeholder-test check | infra | T-0002 | ready | wl-build-infra |
 | T-0005 | Spec touch-ups per D-0015: NFR-SYNC-2 wording (edited_at/deleted_at), UF-11.1 clamped proposal copy, UF-10.2 "Recovering" = ≥ 6 weighted hard sets in 48 h | product | T-0001 | done | wl-spec |
 
@@ -25,6 +25,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0102 (from T-0101): sessionInput, Workout/reason codes, swap reason enum + rankSwaps, timeCheck, balance() incl. targetSource/targetUpdatedAt, evaluateCheckin; fix the v1 'UF-04' in the /suggest summary → UF-08.1.
 - T-0300 (from T-0003 groom): PWA manifest/favicon colours generated from tokens; C-01 legend from coverageLegend/attentionLegend with numeric labels (NFR-A11Y-3).
 - Design follow-up: self-hosted woff2 fonts via design-tokens (no CDN).
+- T-0100b (from T-0100a review): `profiles_priority_areas_valid` must reject multi-dimensional arrays (array_ndims = 1). UF-03.3 effort scale assumed 1–5 (D-0030), product to confirm.
+- T-0004 (from T-0100a): CI check that regenerates the AC1 pgTAP column block from docs/data-model.md and fails on drift.
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |

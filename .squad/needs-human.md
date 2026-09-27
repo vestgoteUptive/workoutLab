@@ -10,4 +10,4 @@ Items here block only themselves. Tick the box and add a note when done; the orc
 - [x] **H-09 Resend (email for magic links).** Create a free account at resend.com and an API key with "sending access" only. Put it in `.env.local` as `RESEND_API_KEY`. Blocks: T-0404. D-0012.
 - [ ] **H-05 Apple sign-in** (needs an Apple developer account). Optional for v1.
 - [ ] **H-06 First production deploy approval** (gate 3), when T-0403 reaches review.
-- [ ] **H-07 Review `revisit` decisions** when convenient: D-0003 coverage colour, D-0005 exercise content licence.
+- [ ] **H-07 Review `revisit` decisions** when convenient: D-0003 coverage colour, D-0005 exercise content licence. Added 2026-09-27 by the squad (all defaults, none blocking): D-0013 balance window, D-0014 account placement, D-0015 set sync, D-0017 NFRs, D-0018 check-in rules, D-0019 token shape, D-0020/D-0021 data rules, D-0022 library format, D-0023 repo checks, D-0024–D-0027 engine rules, D-0029 exercise columns, D-0030 data defaults, D-0031 colour guard.
