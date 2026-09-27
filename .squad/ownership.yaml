@@ -29,7 +29,7 @@ lanes:
     paths: [data/exercises/**]
   web-shell:          # app shell, routing, auth, offline, shared components
     agent: frontend-dev
-    paths: [apps/web/src/app/**, apps/web/src/components/**, apps/web/src/lib/**, apps/web/*.*, apps/web/public/**]
+    paths: [apps/web/src/app/**, apps/web/src/components/**, apps/web/src/lib/**, apps/web/src/main.tsx, apps/web/*.*, apps/web/public/**]
   web-feature:        # one sub-lane per flow; tickets name the flow, e.g. web-feature:UF-09
     agent: frontend-dev
     paths: ["apps/web/src/features/<flow>/**"]
@@ -41,7 +41,7 @@ lanes:
     paths: [tests/e2e/**]
   infra:
     agent: devops
-    paths: [infra/**, .github/**, package.json, pnpm-workspace.yaml, turbo.json, tsconfig.base.json]
+    paths: [infra/**, .github/**, docs/infra-costs.md, package.json, pnpm-workspace.yaml, pnpm-lock.yaml, turbo.json, tsconfig.base.json, eslint.config.mjs, .prettierrc.json, .prettierignore, .gitignore]
   security:
     agent: security-reviewer
     paths: [docs/security/**]
