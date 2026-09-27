@@ -1,7 +1,7 @@
 ---
-id: D-0011
+id: D-0015
 title: T-0002 bootstraps minimal package scaffolding outside infra's normal paths
-status: revisit
+status: decided
 date: 2026-09-27
 by: devops
 area: infra

@@ -3,7 +3,7 @@ id: T-0002
 title: Monorepo scaffold — pnpm + turbo, TS strict, ESLint/Prettier, Vitest, remove apps/api, CI
 lane: infra
 screens: []
-decisions: [D-0001, D-0006, D-0007, D-0011]
+decisions: [D-0001, D-0006, D-0007, D-0015]
 deps: []
 status: ready   # rework after accept pass 1 (2026-09-27); see "Accept log"
 ---
@@ -21,7 +21,7 @@ criteria and add the items from review round 1.
   flat config and Prettier; Vitest in every package; delete `apps/api` (D-0001); GitHub
   Actions CI. The CI jobs for supabase, e2e and deploy may no-op until their owning tickets
   land.
-- In (bootstrap, per D-0011): a minimal placeholder scaffold in `apps/web`, `apps/landing`,
+- In (bootstrap, per D-0015): a minimal placeholder scaffold in `apps/web`, `apps/landing`,
   `packages/engine` and `packages/shared`. Each gets a `package.json`, a `tsconfig.json`,
   an `eslint.config.mjs`, one source file and one test. The owning lanes replace these
   placeholders later.
