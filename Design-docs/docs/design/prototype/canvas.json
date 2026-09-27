@@ -1,0 +1,432 @@
+{
+ "v": 3,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-09-27T09:00:00Z"
+ },
+ "title": "Workout App – User Flows",
+ "launch": {
+  "view": "canvas"
+ },
+ "pages": [],
+ "boards": {
+  "Main.dc.html": {
+   "x": 0,
+   "y": -156,
+   "w": 960,
+   "h": 1000,
+   "title": "Flow map",
+   "is_interactive": true
+  },
+  "UF01-1-Welcome.dc.html": {
+   "x": 0,
+   "y": 1224,
+   "w": 390,
+   "h": 844,
+   "title": "UF-01.1 Welcome",
+   "is_interactive": true
+  },
+  "UF01-2-Goal.dc.html": {
+   "x": 470,
+   "y": 1224,
+   "w": 390,
+   "h": 844,
+   "title": "UF-01.2 Goal",
+   "is_interactive": true
+  },
+  "UF01-3-Experience.dc.html": {
+   "x": 940,
+   "y": 1224,
+   "w": 390,
+   "h": 844,
+   "title": "UF-01.3 Level & equipment",
+   "is_interactive": true
+  },
+  "UF01-4-Schedule.dc.html": {
+   "x": 1410,
+   "y": 1224,
+   "w": 390,
+   "h": 844,
+   "title": "UF-01.4 Schedule & plan",
+   "is_interactive": true
+  },
+  "UF02-1-Today.dc.html": {
+   "x": 0,
+   "y": 2448,
+   "w": 390,
+   "h": 844,
+   "title": "UF-02.1 Today",
+   "is_interactive": true
+  },
+  "UF02-2-Preview.dc.html": {
+   "x": 470,
+   "y": 2448,
+   "w": 390,
+   "h": 844,
+   "title": "UF-02.2 Workout preview",
+   "is_interactive": true
+  },
+  "UF03-1-Active.dc.html": {
+   "x": 0,
+   "y": 3672,
+   "w": 390,
+   "h": 844,
+   "title": "UF-03.1 Active session",
+   "is_interactive": true
+  },
+  "UF03-2-Rest.dc.html": {
+   "x": 470,
+   "y": 3672,
+   "w": 390,
+   "h": 844,
+   "title": "UF-03.2 Rest timer",
+   "is_interactive": true
+  },
+  "UF03-3-Summary.dc.html": {
+   "x": 940,
+   "y": 3672,
+   "w": 390,
+   "h": 844,
+   "title": "UF-03.3 Summary",
+   "is_interactive": true
+  },
+  "UF04-1-Library.dc.html": {
+   "x": 0,
+   "y": 4896,
+   "w": 390,
+   "h": 844,
+   "title": "UF-04.1 Browse exercises",
+   "is_interactive": true
+  },
+  "UF04-2-Detail.dc.html": {
+   "x": 470,
+   "y": 4896,
+   "w": 390,
+   "h": 1480,
+   "title": "UF-04.2 Back Squat detail (scroll)",
+   "is_interactive": true
+  },
+  "UF04-3-Compare.dc.html": {
+   "x": 940,
+   "y": 4896,
+   "w": 390,
+   "h": 1320,
+   "title": "UF-04.3 Squat vs Sumo (scroll)",
+   "is_interactive": true
+  },
+  "UF05-1-Swap.dc.html": {
+   "x": 0,
+   "y": 6756,
+   "w": 390,
+   "h": 844,
+   "title": "UF-05.1 Swap sheet",
+   "is_interactive": true
+  },
+  "UF06-1-Progress.dc.html": {
+   "x": 0,
+   "y": 7980,
+   "w": 390,
+   "h": 844,
+   "title": "UF-06.1 Progress overview",
+   "is_interactive": true
+  },
+  "UF06-2-History.dc.html": {
+   "x": 470,
+   "y": 7980,
+   "w": 390,
+   "h": 844,
+   "title": "UF-06.2 Exercise history",
+   "is_interactive": true
+  },
+  "UF07-1-Routine.dc.html": {
+   "x": 0,
+   "y": 9204,
+   "w": 390,
+   "h": 844,
+   "title": "UF-07.1 Edit routine",
+   "is_interactive": true
+  },
+  "UF08-1-Time.dc.html": {
+   "x": 0,
+   "y": 10428,
+   "w": 390,
+   "h": 844,
+   "title": "UF-08.1 Time & energy",
+   "is_interactive": true
+  },
+  "UF08-2-Suggest.dc.html": {
+   "x": 470,
+   "y": 10428,
+   "w": 390,
+   "h": 1000,
+   "title": "UF-08.2 Suggested workout",
+   "is_interactive": true
+  },
+  "UF08-3-Swap.dc.html": {
+   "x": 940,
+   "y": 10428,
+   "w": 390,
+   "h": 844,
+   "title": "UF-08.3 Swap before starting",
+   "is_interactive": true
+  },
+  "UF08-4-Ready.dc.html": {
+   "x": 1410,
+   "y": 10428,
+   "w": 390,
+   "h": 844,
+   "title": "UF-08.4 Ready to start",
+   "is_interactive": true
+  },
+  "UF09-1-GetReady.dc.html": {
+   "x": 0,
+   "y": 11808,
+   "w": 390,
+   "h": 844,
+   "title": "UF-09.1 Get ready 5-4-3-2-1",
+   "is_interactive": true
+  },
+  "UF09-2-Warmup.dc.html": {
+   "x": 470,
+   "y": 11808,
+   "w": 390,
+   "h": 844,
+   "title": "UF-09.2 Warm-up (timed)",
+   "is_interactive": true
+  },
+  "UF09-3-Set.dc.html": {
+   "x": 940,
+   "y": 11808,
+   "w": 390,
+   "h": 844,
+   "title": "UF-09.3 Current set",
+   "is_interactive": true
+  },
+  "UF09-4-Log.dc.html": {
+   "x": 1410,
+   "y": 11808,
+   "w": 390,
+   "h": 844,
+   "title": "UF-09.4 Confirm set",
+   "is_interactive": true
+  },
+  "UF09-5-Rest.dc.html": {
+   "x": 1880,
+   "y": 11808,
+   "w": 390,
+   "h": 844,
+   "title": "UF-09.5 Rest countdown",
+   "is_interactive": true
+  },
+  "UF09-6-Next.dc.html": {
+   "x": 2350,
+   "y": 11808,
+   "w": 390,
+   "h": 844,
+   "title": "UF-09.6 Next exercise",
+   "is_interactive": true
+  },
+  "UF09-7-Timed.dc.html": {
+   "x": 2820,
+   "y": 11808,
+   "w": 390,
+   "h": 844,
+   "title": "UF-09.7 Timed set",
+   "is_interactive": true
+  },
+  "UF09-8-TimeCheck.dc.html": {
+   "x": 3290,
+   "y": 11808,
+   "w": 390,
+   "h": 844,
+   "title": "UF-09.8 Time check",
+   "is_interactive": true
+  },
+  "UF09-9-Pause.dc.html": {
+   "x": 3760,
+   "y": 11808,
+   "w": 390,
+   "h": 844,
+   "title": "UF-09.9 Paused",
+   "is_interactive": true
+  }
+ },
+ "order": [
+  "Main.dc.html",
+  "UF01-1-Welcome.dc.html",
+  "UF01-2-Goal.dc.html",
+  "UF01-3-Experience.dc.html",
+  "UF01-4-Schedule.dc.html",
+  "UF02-1-Today.dc.html",
+  "UF02-2-Preview.dc.html",
+  "UF03-1-Active.dc.html",
+  "UF03-2-Rest.dc.html",
+  "UF03-3-Summary.dc.html",
+  "UF04-1-Library.dc.html",
+  "UF04-2-Detail.dc.html",
+  "UF04-3-Compare.dc.html",
+  "UF05-1-Swap.dc.html",
+  "UF06-1-Progress.dc.html",
+  "UF06-2-History.dc.html",
+  "UF07-1-Routine.dc.html",
+  "UF08-1-Time.dc.html",
+  "UF08-2-Suggest.dc.html",
+  "UF08-3-Swap.dc.html",
+  "UF08-4-Ready.dc.html",
+  "UF09-1-GetReady.dc.html",
+  "UF09-2-Warmup.dc.html",
+  "UF09-3-Set.dc.html",
+  "UF09-4-Log.dc.html",
+  "UF09-5-Rest.dc.html",
+  "UF09-6-Next.dc.html",
+  "UF09-7-Timed.dc.html",
+  "UF09-8-TimeCheck.dc.html",
+  "UF09-9-Pause.dc.html"
+ ],
+ "notes": {
+  "n-main": {
+   "x": 1040,
+   "y": 0,
+   "w": 360,
+   "maxH": 420,
+   "fill": "orange",
+   "text": "How to iterate\n\nRefer to screens by ID: UF-03.1, UF-04.3 etc.\n\nSuggest a change like: \"UF-02.1: put the week strip under the workout card\".\n\nNew screens get the next step number (UF-03.4). New flows get the next flow number (UF-08)."
+  },
+  "t-01": {
+   "x": 0,
+   "y": 984,
+   "text": "UF-01 · Onboarding",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "s-01": {
+   "x": 1880,
+   "y": 1224,
+   "w": 340,
+   "maxH": 460,
+   "fill": "blue",
+   "text": "Goal: get a personalised plan in under a minute.\n\nSteps: Welcome → Goal → Level & equipment → Days & length → plan preview → Today.\n\nInfluence: Fitbod (goal + gear drive the plan), Hevy (short, skippable).\n\nOpen: account creation before or after the plan? Health data import?"
+  },
+  "t-02": {
+   "x": 0,
+   "y": 2208,
+   "text": "UF-02 · Today & start workout",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "s-02": {
+   "x": 940,
+   "y": 2448,
+   "w": 340,
+   "maxH": 420,
+   "fill": "blue",
+   "text": "Goal: one tap from opening the app to training.\n\nSteps: Today → (optional) preview → Start → UF-08 session setup.\n\nInfluence: Strong and Hevy home screens, week strip for consistency.\n\nOpen: rest-day content? Quick-workout generator?"
+  },
+  "t-03": {
+   "x": 0,
+   "y": 3432,
+   "text": "UF-03 · Log a workout",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "s-03": {
+   "x": 1410,
+   "y": 3672,
+   "w": 340,
+   "maxH": 440,
+   "fill": "blue",
+   "text": "Classic list view. Now reached from Pause (UF-09.9) as \"Show full list view\".\n\nGoal: log a set with one tap, no typing when you repeat last time.\n\nSteps: Active session (tap check) → auto rest timer → next set … → Finish → Summary + PRs.\n\nInfluence: Strong's set table with Previous column; Hevy's PR celebration.\n\nOpen: Apple Watch / lock-screen timer; plate calculator."
+  },
+  "t-04": {
+   "x": 0,
+   "y": 4656,
+   "text": "UF-04 · Exercise library & variations",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "s-04": {
+   "x": 1410,
+   "y": 4896,
+   "w": 340,
+   "maxH": 460,
+   "fill": "blue",
+   "text": "Goal: explain every exercise, including how variants differ (squat vs sumo).\n\nSteps: Browse/search → Detail (muscles, how-to, research) → Compare variant → Add to routine or swap.\n\nInfluence: JEFIT and wger exercise pages; data from free-exercise-db.\n\nOpen: video vs illustration; body muscle map."
+  },
+  "t-05": {
+   "x": 0,
+   "y": 6516,
+   "text": "UF-05 · Swap an exercise",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "s-05": {
+   "x": 470,
+   "y": 6756,
+   "w": 340,
+   "maxH": 420,
+   "fill": "blue",
+   "text": "Goal: replace an exercise mid-workout without breaking the plan.\n\nSteps: Swap icon (UF-03.1) → pick variation / same muscles / busy-gym option → back to session.\n\nInfluence: Fitbod's replace sheet.\n\nOpen: carry weights over between variants?"
+  },
+  "t-06": {
+   "x": 0,
+   "y": 7740,
+   "text": "UF-06 · Progress",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "s-06": {
+   "x": 940,
+   "y": 7980,
+   "w": 340,
+   "maxH": 420,
+   "fill": "blue",
+   "text": "Goal: show consistency, weekly volume vs target and strength trends.\n\nSteps: Overview (calendar, sets per muscle, PRs) → exercise history chart.\n\nInfluence: Hevy stats, Strong charts.\n\nOpen: body weight & measurements; share cards."
+  },
+  "t-07": {
+   "x": 0,
+   "y": 8964,
+   "text": "UF-07 · Routine builder",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "s-07": {
+   "x": 470,
+   "y": 9204,
+   "w": 340,
+   "maxH": 420,
+   "fill": "blue",
+   "text": "Goal: edit exercises, sets and the progression rule.\n\nSteps: Edit → reorder / remove → Add exercise (UF-04.1) → Save.\n\nInfluence: Hevy routines; Liftosaur's progression rules, in plain language.\n\nOpen: advanced rule editor for power users."
+  },
+  "t-08": {
+   "x": 0,
+   "y": 10188,
+   "text": "UF-08 · Set up a session (time-boxed)",
+   "kind": "title1",
+   "maxW": 1800
+  },
+  "s-08": {
+   "x": 1880,
+   "y": 10428,
+   "w": 340,
+   "maxH": 520,
+   "fill": "blue",
+   "text": "Goal: from \"I have 45 minutes\" to a workout that fits, in three taps.\n\nSteps: Start (UF-02) → .1 time, energy, warm-up → .2 suggestion with time-budget bar, why-chips, swap/remove per exercise, shuffle; switch 30/45/60 to see it adapt → .3 swap sheet asks why, ranks alternatives by match and time → .4 how focus mode works, sound settings, Start.\n\nInfluence: Fitbod (auto-generated, swap), Future (time-boxed), Nike Training Club.\n\nOpen: hard-stop clock time instead of minutes? Gym crowd level?"
+  },
+  "t-09": {
+   "x": 0,
+   "y": 11568,
+   "text": "UF-09 · Focus mode: one step at a time",
+   "kind": "title1",
+   "maxW": 3800
+  },
+  "s-09": {
+   "x": 4270,
+   "y": 11808,
+   "w": 360,
+   "maxH": 560,
+   "fill": "blue",
+   "text": "Goal: during the workout show only what the next few seconds need.\n\nLoop per set: .3 Set (weight × reps, plate loading, one cue, big Done) → .4 Confirm (pre-filled, auto-saves in 5 s) → .5 Rest countdown (runs by itself, orange in last 10 s) → back to .3.\nBetween exercises: .6 Next exercise with set-up countdown; .8 Time check only if behind budget.\nAlso: .1 5-second get ready, .2 timed warm-up, .7 timed holds, .9 pause holds everything else (swap, skip, list view, end).\n\nTimers run live in Play.\n\nOpen: watch companion, voice cues, lock-screen live activity."
+  }
+ },
+ "designSystems": []
+}

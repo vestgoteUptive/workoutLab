@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-09.9 Paused</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#0B0B0A}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 12px 'DM Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#A8A398}
+.go{display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;border-radius:18px;background:#D4F25A;color:#121210;font:800 24px 'Big Shoulders Display',Impact,sans-serif;text-transform:uppercase;text-decoration:none;letter-spacing:.04em}
+.go:hover{color:#121210;background:#E6FA95}
+.it{display:flex;align-items:center;gap:14px;min-height:56px;padding:0 16px;border-radius:14px;background:#151513;border:1px solid #2E2C28;color:#F2EFE8;text-decoration:none;font-size:16px}
+.it:hover{color:#F2EFE8;border-color:#3A3833}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 80px 20px 40px; display: flex; flex-direction: column; gap: 14px; background: #0B0B0A; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div class="tag">Workout paused · timers stopped</div>
+<h1 class="d" style="margin: 0; font-size: 60px; font-weight: 800; text-transform: uppercase; line-height: 1">Paused</h1>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 6px 0 10px">
+<div><div class="tag">Elapsed</div><div class="d" style="font-size: 30px; font-weight: 800">23:10</div></div>
+<div><div class="tag">Left</div><div class="d" style="font-size: 30px; font-weight: 800">22 min</div></div>
+<div><div class="tag">Sets</div><div class="d" style="font-size: 30px; font-weight: 800">6 / 16</div></div>
+</div>
+<a class="go" href="UF09-3-Set.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"></path></svg>Resume</a>
+<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px">
+<a class="it" href="UF05-1-Swap.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14l-3-3M20 16H6l3 3"></path></svg>Swap this exercise</a>
+<a class="it" href="UF09-6-Next.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l8 7-8 7M17 5v14"></path></svg>Skip to next exercise</a>
+<a class="it" href="UF04-2-Detail.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v6M12 7h.01"></path></svg>How to do Back Squat</a>
+<a class="it" href="UF03-1-Active.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>Show full list view</a>
+</div>
+<a href="UF03-3-Summary.dc.html" style="margin-top: auto; display: flex; align-items: center; justify-content: center; min-height: 52px; border-radius: 14px; border: 1px solid #6B3F1C; color: #FF8A3D; font-weight: 700; text-decoration: none">End workout</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

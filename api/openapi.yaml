@@ -1,0 +1,32 @@
+openapi: 3.1.0
+info:
+  title: workoutLab API
+  version: 0.1.0
+paths:
+  /profile:
+    get: { summary: Get current user's profile, responses: { "200": { description: OK } } }
+    put: { summary: Update profile (onboarding, UF-02 / UF-09), responses: { "200": { description: OK } } }
+  /balance:
+    get: { summary: Rolling 14-day load vs target per area (UF-03, UF-08), responses: { "200": { description: OK } } }
+  /exercises:
+    get: { summary: List exercises (filters equipment, area, level), responses: { "200": { description: OK } } }
+  /exercises/{id}:
+    get:
+      summary: Exercise guide (UF-05)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: OK } }
+  /workouts/suggest:
+    post: { summary: Suggest a workout from time budget, energy and location (UF-04), responses: { "200": { description: OK } } }
+  /sessions:
+    post: { summary: Start a session, responses: { "201": { description: Created } } }
+  /sessions/{id}/sets:
+    post:
+      summary: Log a set (UF-06)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "201": { description: Created } }
+  /sessions/{id}/finish:
+    post:
+      summary: Finish session and return summary (UF-07)
+      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
+      responses: { "200": { description: OK } }
+# Schemas to be filled in by data-modeler + backend-dev, approved by the orchestrator.

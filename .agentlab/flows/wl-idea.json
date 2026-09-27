@@ -1,0 +1,120 @@
+{
+  "id": "wl-idea",
+  "name": "WL · Idea to backlog",
+  "description": "Product owner turns an idea into a spec; design, data and engine assess impact in parallel; triage resolves conflicts; product owner writes the tickets.",
+  "tags": [
+    "workoutlab",
+    "product"
+  ],
+  "nodes": [
+    {
+      "id": "idea",
+      "agentId": "wl-product-owner-idea",
+      "label": "idea",
+      "dependsOn": [],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task"
+      },
+      "position": {
+        "x": 80,
+        "y": 80
+      }
+    },
+    {
+      "id": "design",
+      "agentId": "wl-designer-impact",
+      "label": "design",
+      "dependsOn": [
+        "idea"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "idea": "idea"
+      },
+      "position": {
+        "x": 340,
+        "y": 220
+      }
+    },
+    {
+      "id": "data",
+      "agentId": "wl-data-modeler-impact",
+      "label": "data",
+      "dependsOn": [
+        "idea"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "idea": "idea"
+      },
+      "position": {
+        "x": 340,
+        "y": 360
+      }
+    },
+    {
+      "id": "engine",
+      "agentId": "wl-engine-dev-impact",
+      "label": "engine",
+      "dependsOn": [
+        "idea"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "idea": "idea"
+      },
+      "position": {
+        "x": 340,
+        "y": 500
+      }
+    },
+    {
+      "id": "check",
+      "agentId": "wl-triage-check",
+      "label": "check",
+      "dependsOn": [
+        "design",
+        "data",
+        "engine"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "design": "design",
+        "data": "data",
+        "engine": "engine"
+      },
+      "position": {
+        "x": 600,
+        "y": 640
+      }
+    },
+    {
+      "id": "tickets",
+      "agentId": "wl-product-owner-groom",
+      "label": "tickets",
+      "dependsOn": [
+        "check"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "check": "check"
+      },
+      "position": {
+        "x": 860,
+        "y": 780
+      }
+    }
+  ]
+}

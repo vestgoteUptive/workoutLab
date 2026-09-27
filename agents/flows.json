@@ -1,0 +1,74 @@
+{
+  "$comment": "Source for the AgentLab flows. scripts/sync-agents.mjs expands this into .agentlab/flows/*.json. A node's agent is '<role>' or '<role>#<mode>'; a mode becomes its own AgentLab agent, with the mode text appended to the role's instructions. Every node receives ticket, task and repoPath from the flow input, plus the outputs of its dependencies.",
+  "modes": {
+    "product-owner#spec": "Mode for this step: spec.",
+    "product-owner#accept": "Mode for this step: accept. The inputs include the build result and the QA and review verdicts.",
+    "product-owner#idea": "Mode for this step: idea. `task` holds the idea.",
+    "product-owner#groom": "Mode for this step: groom. Turn the idea spec and the impact notes from the inputs into tickets on .squad/board.md.",
+    "triage#check": "Check the spec produced upstream against the contracts and decided decisions. If there is a conflict, raise and resolve it in this step (TR + D files). If there is none, return done with the summary 'no conflicts'.",
+    "designer#impact": "Read-only step. Assess what the upstream spec means for design: tokens, screens, landing. Change no files; list the work as followUps.",
+    "data-modeler#impact": "Read-only step. Assess what the upstream spec means for the schema and API. Change no files; list the work as followUps.",
+    "engine-dev#impact": "Read-only step. Assess what the upstream spec means for engine rules. Change no files; list the work as followUps.",
+    "qa-tester#release": "Release check: run the full suite and every e2e spec against local Supabase, and exercise the PWA install and offline logging.",
+    "code-reviewer#release": "Release check: review everything merged since the last release tag (or the whole repo if there is none) for principle and contract violations."
+  },
+  "flows": [
+    {
+      "id": "wl-spec",
+      "name": "WL · Spec a ticket",
+      "description": "Product owner writes the ticket with testable acceptance criteria, then triage checks it against contracts and decisions.",
+      "tags": ["workoutlab", "product"],
+      "nodes": [
+        { "id": "spec", "agent": "product-owner#spec", "dependsOn": [] },
+        { "id": "check", "agent": "triage#check", "dependsOn": ["spec"] }
+      ]
+    },
+    { "template": "build", "lane": "web", "agent": "frontend-dev" },
+    { "template": "build", "lane": "engine", "agent": "engine-dev" },
+    { "template": "build", "lane": "backend", "agent": "backend-dev" },
+    { "template": "build", "lane": "data", "agent": "data-modeler" },
+    { "template": "build", "lane": "content", "agent": "content-curator" },
+    { "template": "build", "lane": "infra", "agent": "devops" },
+    {
+      "id": "wl-design",
+      "template": "build",
+      "lane": "design",
+      "agent": "designer",
+      "name": "WL · Design iteration",
+      "description": "Designer changes tokens or screen specs, QA checks contrast/tests, review checks lanes and contracts, product owner accepts."
+    },
+    {
+      "id": "wl-idea",
+      "name": "WL · Idea to backlog",
+      "description": "Product owner turns an idea into a spec; design, data and engine assess impact in parallel; triage resolves conflicts; product owner writes the tickets.",
+      "tags": ["workoutlab", "product"],
+      "nodes": [
+        { "id": "idea", "agent": "product-owner#idea", "dependsOn": [] },
+        { "id": "design", "agent": "designer#impact", "dependsOn": ["idea"] },
+        { "id": "data", "agent": "data-modeler#impact", "dependsOn": ["idea"] },
+        { "id": "engine", "agent": "engine-dev#impact", "dependsOn": ["idea"] },
+        { "id": "check", "agent": "triage#check", "dependsOn": ["design", "data", "engine"] },
+        { "id": "tickets", "agent": "product-owner#groom", "dependsOn": ["check"] }
+      ]
+    },
+    {
+      "id": "wl-triage",
+      "name": "WL · Triage",
+      "description": "Resolve one open triage item (or the oldest) into a decision and follow-ups.",
+      "tags": ["workoutlab", "process"],
+      "nodes": [{ "id": "triage", "agent": "triage", "dependsOn": [] }]
+    },
+    {
+      "id": "wl-release",
+      "name": "WL · Release check",
+      "description": "Security review, full QA and a release code review in parallel; the product owner gives go or no-go.",
+      "tags": ["workoutlab", "release"],
+      "nodes": [
+        { "id": "security", "agent": "security-reviewer", "dependsOn": [] },
+        { "id": "qa", "agent": "qa-tester#release", "dependsOn": [] },
+        { "id": "review", "agent": "code-reviewer#release", "dependsOn": [] },
+        { "id": "accept", "agent": "product-owner#accept", "dependsOn": ["security", "qa", "review"] }
+      ]
+    }
+  ]
+}

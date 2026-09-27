@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-08.2 Suggested workout</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#121210}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 11px 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8A398}
+.btn{display:flex;align-items:center;justify-content:center;min-height:56px;border-radius:14px;background:#D4F25A;color:#121210;font:700 17px 'DM Sans',sans-serif;text-decoration:none;flex-grow:1}
+.btn:hover{color:#121210;background:#E6FA95}
+.ghost{display:flex;align-items:center;justify-content:center;gap:6px;min-height:56px;padding:0 16px;border-radius:14px;border:1px solid #3A3833;background:transparent;color:#F2EFE8;font:500 15px 'DM Sans',sans-serif;cursor:pointer}
+.chip{flex:1;min-height:40px;border-radius:10px;border:1px solid #3A3833;background:transparent;color:#F2EFE8;font:500 14px 'DM Sans',sans-serif;cursor:pointer}
+.chip.on{background:#F2EFE8;color:#121210;border-color:#F2EFE8;font-weight:700}
+.ex{display:flex;align-items:center;gap:10px;padding:10px 4px 10px 12px;border-radius:14px;background:#1D1C19;border:1px solid #2E2C28}
+.ib{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:10px;background:transparent;color:#A8A398;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib:hover{background:#2A2925;color:#F2EFE8}
+.why{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:8px;background:#262A17;color:#E6FA95;font-size:12px;font-weight:500}
+</style>
+</helmet>
+<div style="width: 390px; height: 1000px; box-sizing: border-box; padding: 52px 16px 28px; display: flex; flex-direction: column; gap: 14px; background: #121210; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<a href="UF08-1-Time.dc.html" aria-label="Back" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: #F2EFE8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<span class="tag">Step 2 of 3 · Your workout</span>
+<span style="width: 44px"></span>
+</div>
+<div style="padding: 0 4px">
+<h1 class="d" style="margin: 0; font-size: 36px; font-weight: 800; text-transform: uppercase; line-height: 1">Lower A · {{total}} min</h1>
+<div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px">
+<span class="why">Legs last trained 3 days ago</span>
+<span class="why">Glutes 10/12 sets this week</span>
+</div>
+</div>
+<div style="display: flex; gap: 6px"><sc-for list="{{times}}" as="t" hint-placeholder-count="3"><button class="{{t.cls}}" onClick="{{t.pick}}">{{t.t}}</button></sc-for></div>
+<div style="display: flex; flex-direction: column; gap: 6px; padding: 0 4px">
+<div style="display: flex; height: 12px; gap: 2px; border-radius: 6px; overflow: hidden">
+<sc-for list="{{items}}" as="b" hint-placeholder-count="6"><div style="{{b.bar}}"></div></sc-for>
+<sc-if value="{{hasSpare}}" hint-placeholder-val="{{ false }}"><div style="{{spareBar}}"></div></sc-if>
+</div>
+<div style="display: flex; justify-content: space-between; font-size: 12px"><span class="m">Warm-up + {{count}} exercises</span><span style="color: {{fitColor}}; font-weight: 700">{{fitText}}</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<sc-for list="{{items}}" as="e" hint-placeholder-count="6">
+<div class="ex">
+<span class="d" style="width: 22px; font-size: 20px; font-weight: 800; color: {{e.numColor}}">{{e.n}}</span>
+<span style="flex-grow: 1; min-width: 0">
+<span style="display: block; font-weight: 700; font-size: 15px">{{e.t}}</span>
+<span class="m" style="display: block; font-size: 13px">{{e.s}} · {{e.min}} min</span>
+<span style="display: block; font-size: 12px; color: #E6FA95; margin-top: 2px">{{e.why}}</span>
+</span>
+<sc-if value="{{e.canEdit}}" hint-placeholder-val="{{ true }}">
+<a class="ib" href="UF08-3-Swap.dc.html" aria-label="{{e.swapLabel}}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h14l-3-3M20 16H6l3 3"></path></svg></a>
+<button class="ib" onClick="{{e.remove}}" aria-label="{{e.rmLabel}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+</sc-if>
+</div>
+</sc-for>
+</div>
+<div style="margin-top: auto; display: flex; gap: 8px">
+<button class="ghost" onClick="{{shuffle}}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>Shuffle</button>
+<a class="btn" href="UF08-4-Ready.dc.html">Looks good</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { t: 45, gone: {}, alt: false }; }
+renderVals() {
+const W = { id: 'w', t: 'Warm-up', s: '3 moves, timed', min: 5, why: 'Bodyweight squats, leg swings, hip openers', fixed: true };
+const SQ = (sets) => ({ id: 'sq', t: 'Back Squat', s: sets + ' × 6–8 · 100 kg', min: sets * 3.5, why: 'Main lift · +2.5 kg if every set hits 8', fixed: true });
+const RDL = { id: 'rdl', t: this.state.alt ? 'Hip Thrust' : 'Romanian Deadlift', s: this.state.alt ? '3 × 8–10 · 90 kg' : '3 × 8–10 · 80 kg', min: 9, why: this.state.alt ? 'Glutes · swapped by shuffle' : 'Hamstrings · pairs with the squat' };
+const SU = (sets) => ({ id: 'su', t: 'Dumbbell Sumo Squat', s: sets + ' × 10–12 · 32 kg', min: sets * 2.5, why: 'Glutes & adductors, below weekly target' });
+const LC = { id: 'lc', t: 'Seated Leg Curl', s: '3 × 10–12 · 45 kg', min: 6, why: 'Hamstrings, knee-flexion work' };
+const CA = { id: 'ca', t: 'Standing Calf Raise', s: '3 × 12–15 · 60 kg', min: 4, why: 'Calves · supersets with leg curl' };
+const LU = { id: 'lu', t: 'Walking Lunge', s: '3 × 10 each leg · 2 × 16 kg', min: 7, why: 'Extra glute work, you have time' };
+const PL = { id: 'pl', t: 'Plank', s: '3 × 45 s', min: 4, why: 'Core finisher, timed' };
+const plans = { 30: [W, SQ(3), RDL, SU(2)], 45: [W, SQ(4), RDL, SU(3), LC, CA], 60: [W, SQ(4), RDL, SU(3), LC, CA, LU, PL] };
+const list = plans[this.state.t].filter((e) => !this.state.gone[e.id]);
+const total = Math.round(list.reduce((a, e) => a + e.min, 0));
+const budget = this.state.t;
+const shades = ['#D4F25A', '#A9C443'];
+let k = 0;
+const items = list.map((e) => {
+const isW = e.id === 'w';
+const n = isW ? 'W' : String(++k);
+return { ...e, n, min: String(Math.round(e.min)), numColor: isW ? '#FF8A3D' : '#F2EFE8', canEdit: !e.fixed || e.id === 'sq',
+bar: 'flex-grow: ' + e.min + '; background: ' + (isW ? '#FF8A3D' : shades[k % 2]),
+swapLabel: 'Swap ' + e.t, rmLabel: 'Remove ' + e.t,
+remove: () => this.setState({ gone: { ...this.state.gone, [e.id]: true } }) };
+});
+const spare = budget - total;
+return {
+total: String(budget), count: String(k), items,
+hasSpare: spare > 0, spareBar: 'flex-grow: ' + Math.max(spare, 0) + '; background: #2A2925',
+fitText: spare >= 0 ? 'About ' + total + ' of ' + budget + ' min' : total + ' min, ' + (-spare) + ' over',
+fitColor: spare >= 0 ? '#D4F25A' : '#FF8A3D',
+times: [30, 45, 60].map((n) => ({ t: n + ' min', cls: this.state.t === n ? 'chip on' : 'chip', pick: () => this.setState({ t: n, gone: {} }) })),
+shuffle: () => this.setState({ alt: !this.state.alt })
+};
+}
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-01.3 Experience and equipment</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#121210}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 11px 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8A398}
+.btn{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:14px;background:#D4F25A;color:#121210;font:700 16px 'DM Sans',sans-serif;text-decoration:none}
+.btn:hover{color:#121210;background:#E6FA95}
+.seg{flex:1;min-height:48px;border:0;border-radius:10px;background:transparent;color:#F2EFE8;font:500 15px 'DM Sans',sans-serif;cursor:pointer}
+.seg.on{background:#D4F25A;color:#121210;font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 16px;border-radius:999px;border:1px solid #3A3833;background:transparent;color:#F2EFE8;font:500 15px 'DM Sans',sans-serif;cursor:pointer}
+.chip.on{background:#D4F25A;color:#121210;border-color:#D4F25A;font-weight:700}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 56px 24px 40px; display: flex; flex-direction: column; gap: 22px; background: #121210; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div style="display: flex; align-items: center; gap: 12px">
+<a href="UF01-2-Goal.dc.html" aria-label="Back" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: #F2EFE8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<div style="flex-grow: 1; display: flex; gap: 6px"><div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #D4F25A"></div><div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #D4F25A"></div><div style="flex-grow: 1; height: 4px; border-radius: 2px; background: #2E2C28"></div></div>
+<span class="m" style="font-size: 13px">2/3</span>
+</div>
+<h1 class="d" style="margin: 0; font-size: 40px; line-height: 1; font-weight: 800; text-transform: uppercase">Your level &amp; equipment</h1>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div class="tag">Training experience</div>
+<div style="display: flex; gap: 4px; padding: 4px; border-radius: 14px; background: #1D1C19; border: 1px solid #2E2C28">
+<sc-for list="{{levels}}" as="l" hint-placeholder-count="3"><button class="{{l.cls}}" onClick="{{l.pick}}">{{l.t}}</button></sc-for>
+</div>
+<p class="m" style="margin: 0; font-size: 14px">{{levelHint}}</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div class="tag">Where do you train? Pick all that apply</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px">
+<sc-for list="{{gear}}" as="g" hint-placeholder-count="6"><button class="{{g.cls}}" onClick="{{g.pick}}">{{g.t}}</button></sc-for>
+</div>
+<p class="m" style="margin: 0; font-size: 14px">We only suggest exercises you can do with this equipment. Swaps (UF-05) respect it too.</p>
+</div>
+<div style="margin-top: auto"><a class="btn" href="UF01-4-Schedule.dc.html">Continue</a></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { level: 'mid', gear: { gym: true, db: true } }; }
+renderVals() {
+const hints = { new: 'Under 6 months. We start with form-first variations like the goblet squat.', mid: '6 months to 2 years. Barbell basics plus targeted accessories.', pro: '2+ years. Higher volume and advanced progression schemes.' };
+const levels = [{ id: 'new', t: 'Beginner' }, { id: 'mid', t: 'Intermediate' }, { id: 'pro', t: 'Advanced' }];
+const gear = [{ id: 'gym', t: 'Full gym' }, { id: 'bb', t: 'Barbell' }, { id: 'db', t: 'Dumbbells' }, { id: 'kb', t: 'Kettlebell' }, { id: 'band', t: 'Bands' }, { id: 'bw', t: 'Bodyweight only' }];
+return {
+levelHint: hints[this.state.level],
+levels: levels.map((l) => ({ ...l, cls: this.state.level === l.id ? 'seg on' : 'seg', pick: () => this.setState({ level: l.id }) })),
+gear: gear.map((g) => ({ ...g, cls: this.state.gear[g.id] ? 'chip on' : 'chip', pick: () => this.setState({ gear: { ...this.state.gear, [g.id]: !this.state.gear[g.id] } }) }))
+};
+}
+}
+</script>
+</body>
+</html>

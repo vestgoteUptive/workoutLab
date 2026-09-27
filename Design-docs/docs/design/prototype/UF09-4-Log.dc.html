@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-09.4 Confirm set</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#0B0B0A}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 12px 'DM Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#A8A398}
+.st{width:64px;height:64px;border-radius:18px;border:1px solid #3A3833;background:#1D1C19;color:#F2EFE8;font:700 30px 'DM Sans',sans-serif;cursor:pointer}
+.ef{flex:1;min-height:56px;border-radius:14px;border:1px solid #3A3833;background:transparent;color:#F2EFE8;font:500 15px 'DM Sans',sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.ef.on{border:2px solid #D4F25A;font-weight:700}
+.go{display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;border-radius:18px;background:#D4F25A;color:#121210;font:800 24px 'Big Shoulders Display',Impact,sans-serif;text-transform:uppercase;text-decoration:none;letter-spacing:.04em}
+.go:hover{color:#121210;background:#E6FA95}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 72px 20px 40px; display: flex; flex-direction: column; gap: 22px; background: #0B0B0A; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div style="text-align: center">
+<div class="tag">Back Squat · set 2 of 4</div>
+<div class="d" style="font-size: 40px; font-weight: 800; text-transform: uppercase; line-height: 1; margin-top: 6px">{{title}}</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; align-items: center">
+<div class="tag">Reps</div>
+<div style="display: flex; align-items: center; gap: 24px">
+<button class="st" onClick="{{repsDown}}" aria-label="One rep less">−</button>
+<div class="d" style="font-size: 110px; font-weight: 800; line-height: .9; width: 120px; text-align: center; color: {{repsColor}}">{{reps}}</div>
+<button class="st" onClick="{{repsUp}}" aria-label="One rep more">+</button>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; align-items: center">
+<div class="tag">Weight · kg</div>
+<div style="display: flex; align-items: center; gap: 24px">
+<button class="st" onClick="{{kgDown}}" aria-label="2.5 kg less">−</button>
+<div class="d" style="font-size: 64px; font-weight: 800; line-height: 1; width: 120px; text-align: center">{{kg}}</div>
+<button class="st" onClick="{{kgUp}}" aria-label="2.5 kg more">+</button>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div class="tag" style="text-align: center">Reps left in the tank?</div>
+<div style="display: flex; gap: 8px"><sc-for list="{{effort}}" as="e" hint-placeholder-count="3"><button class="{{e.cls}}" onClick="{{e.pick}}"><span>{{e.t}}</span><span class="m" style="font-size: 12px; font-weight: 500">{{e.s}}</span></button></sc-for></div>
+</div>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px">
+<a class="go" href="UF09-5-Rest.dc.html">Save · start rest</a>
+<div class="m" style="font-size: 14px; text-align: center" aria-live="polite">{{auto}}</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { reps: 8, kg: 100, eff: 'two', auto: 5, touched: false }; }
+componentDidMount() { this.t = setInterval(() => { if (!this.state.touched && this.state.auto > 0) this.setState({ auto: this.state.auto - 1 }); }, 1000); }
+componentWillUnmount() { clearInterval(this.t); }
+renderVals() {
+const s = this.state;
+const touch = (patch) => this.setState({ ...patch, touched: true });
+const hit = s.reps >= 8;
+return {
+title: hit ? 'Target hit' : 'Short by ' + (8 - s.reps),
+reps: String(s.reps), kg: String(s.kg), repsColor: hit ? '#D4F25A' : '#FF8A3D',
+repsDown: () => touch({ reps: Math.max(0, s.reps - 1) }), repsUp: () => touch({ reps: s.reps + 1 }),
+kgDown: () => touch({ kg: Math.max(0, s.kg - 2.5) }), kgUp: () => touch({ kg: s.kg + 2.5 }),
+effort: [{ id: 'zero', t: 'None', s: 'max effort' }, { id: 'two', t: '1–2', s: 'hard' }, { id: 'more', t: '3+', s: 'easy' }].map((e) => ({ ...e, cls: s.eff === e.id ? 'ef on' : 'ef', pick: () => touch({ eff: e.id }) })),
+auto: s.touched ? 'Tap save when ready.' : s.auto > 0 ? 'Saving as planned in ' + s.auto + ' s… tap anything to edit' : 'Saved. Rest has started.'
+};
+}
+}
+</script>
+</body>
+</html>

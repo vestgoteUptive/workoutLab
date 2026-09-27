@@ -1,0 +1,85 @@
+{
+  "id": "wl-design",
+  "name": "WL · Design iteration",
+  "description": "Designer changes tokens or screen specs, QA checks contrast/tests, review checks lanes and contracts, product owner accepts.",
+  "tags": [
+    "workoutlab",
+    "build",
+    "design"
+  ],
+  "nodes": [
+    {
+      "id": "build",
+      "agentId": "wl-designer",
+      "label": "build",
+      "dependsOn": [],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task"
+      },
+      "position": {
+        "x": 80,
+        "y": 80
+      }
+    },
+    {
+      "id": "qa",
+      "agentId": "wl-qa-tester",
+      "label": "qa",
+      "dependsOn": [
+        "build"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "build": "build"
+      },
+      "position": {
+        "x": 340,
+        "y": 220
+      }
+    },
+    {
+      "id": "review",
+      "agentId": "wl-code-reviewer",
+      "label": "review",
+      "dependsOn": [
+        "build"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "build": "build"
+      },
+      "position": {
+        "x": 340,
+        "y": 360
+      }
+    },
+    {
+      "id": "accept",
+      "agentId": "wl-product-owner-accept",
+      "label": "accept",
+      "dependsOn": [
+        "build",
+        "qa",
+        "review"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "build": "build",
+        "qa": "qa",
+        "review": "review"
+      },
+      "position": {
+        "x": 600,
+        "y": 500
+      }
+    }
+  ]
+}

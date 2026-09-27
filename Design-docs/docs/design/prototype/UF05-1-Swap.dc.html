@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-05.1 Swap exercise</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#121210}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 11px 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8A398}
+.btn{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:14px;background:#D4F25A;color:#121210;font:700 16px 'DM Sans',sans-serif;text-decoration:none;flex-grow:1}
+.btn:hover{color:#121210;background:#E6FA95}
+.ghost{display:flex;align-items:center;justify-content:center;min-height:54px;padding:0 18px;border-radius:14px;border:1px solid #3A3833;color:#F2EFE8;font:500 16px 'DM Sans',sans-serif;text-decoration:none}
+.seg{flex:1;min-height:40px;border:0;border-radius:9px;background:transparent;color:#F2EFE8;font:500 13px 'DM Sans',sans-serif;cursor:pointer}
+.seg.on{background:#F2EFE8;color:#121210;font-weight:700}
+.opt{display:flex;align-items:center;gap:12px;width:100%;padding:12px;border-radius:14px;border:1px solid #2E2C28;background:#1D1C19;color:#F2EFE8;text-align:left;font-family:'DM Sans',sans-serif;cursor:pointer}
+.opt.on{border:2px solid #D4F25A;padding:11px}
+.rad{width:22px;height:22px;border-radius:11px;border:2px solid #3A3833;flex-shrink:0;box-sizing:border-box}
+.rad.on{border:7px solid #D4F25A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #0B0B0A; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif; position: relative">
+<div style="padding: 60px 20px; opacity: .35; display: flex; flex-direction: column; gap: 10px">
+<div class="d" style="font-size: 26px; font-weight: 800; text-transform: uppercase">Back Squat</div>
+<div style="height: 48px; border-radius: 10px; background: #262A17"></div>
+<div style="height: 48px; border-radius: 10px; background: #262A17"></div>
+</div>
+<div style="position: absolute; left: 0; right: 0; bottom: 0; height: 680px; box-sizing: border-box; padding: 12px 20px 32px; border-radius: 24px 24px 0 0; background: #171613; border-top: 1px solid #2E2C28; display: flex; flex-direction: column; gap: 14px">
+<div style="width: 40px; height: 5px; border-radius: 3px; background: #3A3833; align-self: center"></div>
+<div>
+<div class="tag">Swap for today</div>
+<h2 class="d" style="margin: 2px 0 0; font-size: 34px; font-weight: 800; text-transform: uppercase; line-height: 1">Replace Back Squat</h2>
+<div class="m" style="font-size: 14px; margin-top: 4px">Same squat pattern, filtered to your equipment.</div>
+</div>
+<div style="display: flex; gap: 4px; padding: 4px; border-radius: 12px; background: #1D1C19">
+<sc-for list="{{tabs}}" as="t" hint-placeholder-count="3"><button class="{{t.cls}}" onClick="{{t.pick}}">{{t.t}}</button></sc-for>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{opts}}" as="o" hint-placeholder-count="4">
+<button class="{{o.cls}}" onClick="{{o.pick}}">
+<span class="{{o.rad}}"></span>
+<span style="flex-grow: 1"><span style="display: block; font-weight: 700; font-size: 15px">{{o.t}}</span><span class="m" style="font-size: 13px">{{o.s}}</span></span>
+<span style="font-size: 12px; color: #A8A398">{{o.eq}}</span>
+</button>
+</sc-for>
+</div>
+<div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px">
+<label style="display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #D4F25A">Also replace it in my Lower A routine</label>
+<div style="display: flex; gap: 10px">
+<a class="ghost" href="UF03-1-Active.dc.html">Cancel</a>
+<a class="btn" href="UF03-1-Active.dc.html">Swap exercise</a>
+</div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { tab: 'var', pick: 'sumo' }; }
+renderVals() {
+const sets = {
+var: [
+{ id: 'sumo', t: 'Sumo Squat', s: 'Wider stance, more adductors', eq: 'Barbell' },
+{ id: 'front', t: 'Front Squat', s: 'More upright torso, quad focus', eq: 'Barbell' },
+{ id: 'goblet', t: 'Goblet Squat', s: 'Easier on the back, good to learn', eq: 'Dumbbell' },
+{ id: 'box', t: 'Box Squat', s: 'Controls depth, pause at the bottom', eq: 'Barbell' }
+],
+mus: [
+{ id: 'hack', t: 'Hack Squat', s: 'Quads and glutes, fixed path', eq: 'Machine' },
+{ id: 'press', t: 'Leg Press', s: 'Quads and glutes, no spinal load', eq: 'Machine' },
+{ id: 'bss', t: 'Bulgarian Split Squat', s: 'One leg at a time', eq: 'Dumbbells' }
+],
+busy: [
+{ id: 'dbsumo', t: 'Dumbbell Sumo Squat', s: 'Needs one dumbbell', eq: 'Dumbbell' },
+{ id: 'goblet2', t: 'Goblet Squat', s: 'Needs one dumbbell', eq: 'Dumbbell' },
+{ id: 'bw', t: 'Tempo Bodyweight Squat', s: 'No equipment, slow 3-second lowering', eq: 'None' }
+]
+};
+const tabs = [{ id: 'var', t: 'Variations' }, { id: 'mus', t: 'Same muscles' }, { id: 'busy', t: 'Gym is busy' }];
+return {
+tabs: tabs.map((x) => ({ ...x, cls: this.state.tab === x.id ? 'seg on' : 'seg', pick: () => this.setState({ tab: x.id, pick: sets[x.id][0].id }) })),
+opts: sets[this.state.tab].map((o) => { const on = this.state.pick === o.id; return { ...o, cls: on ? 'opt on' : 'opt', rad: on ? 'rad on' : 'rad', pick: () => this.setState({ pick: o.id }) }; })
+};
+}
+}
+</script>
+</body>
+</html>

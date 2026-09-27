@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Flow map</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#121210}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.card{background:#1D1C19;border:1px solid #2E2C28;border-radius:16px}
+.tag{font:700 11px 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8A398}
+.lnk{display:inline-flex;align-items:center;min-height:32px;padding:0 10px;border-radius:8px;border:1px solid #3A3833;color:#F2EFE8;text-decoration:none;font-size:13px}
+.lnk:hover{border-color:#D4F25A;color:#D4F25A}
+</style>
+</helmet>
+<div style="width: 960px; height: 1000px; box-sizing: border-box; padding: 48px; display: flex; flex-direction: column; gap: 28px; background: #121210; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div class="tag">Prototype · v0.1</div>
+<h1 class="d" style="margin: 0; font-size: 64px; line-height: 1; font-weight: 800; text-transform: uppercase">Flow map</h1>
+<p class="m" style="margin: 0; font-size: 16px; max-width: 640px">Each flow has an ID (UF-xx) and each screen a step (UF-xx.n). Reference them in feedback, e.g. "UF-03.1: move rest timer to the top". Open Play to click through.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px">
+<div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 26px; font-weight: 800">UF-01 Onboarding</span><span class="tag">Fitbod · Hevy</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><a class="lnk" href="UF01-1-Welcome.dc.html">.1 Welcome</a><a class="lnk" href="UF01-2-Goal.dc.html">.2 Goal</a><a class="lnk" href="UF01-3-Experience.dc.html">.3 Level &amp; gear</a><a class="lnk" href="UF01-4-Schedule.dc.html">.4 Schedule</a></div>
+</div>
+<div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 26px; font-weight: 800">UF-02 Today &amp; start</span><span class="tag">Strong · Hevy</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><a class="lnk" href="UF02-1-Today.dc.html">.1 Today</a><a class="lnk" href="UF02-2-Preview.dc.html">.2 Workout preview</a></div>
+</div>
+<div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 26px; font-weight: 800">UF-03 Log workout</span><span class="tag">Strong · Hevy</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><a class="lnk" href="UF03-1-Active.dc.html">.1 Active session</a><a class="lnk" href="UF03-2-Rest.dc.html">.2 Rest timer</a><a class="lnk" href="UF03-3-Summary.dc.html">.3 Summary</a></div>
+</div>
+<div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 26px; font-weight: 800">UF-04 Exercise library</span><span class="tag">JEFIT · wger</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><a class="lnk" href="UF04-1-Library.dc.html">.1 Browse</a><a class="lnk" href="UF04-2-Detail.dc.html">.2 Back Squat</a><a class="lnk" href="UF04-3-Compare.dc.html">.3 Squat vs Sumo</a></div>
+</div>
+<div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 26px; font-weight: 800">UF-05 Swap exercise</span><span class="tag">Fitbod</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><a class="lnk" href="UF05-1-Swap.dc.html">.1 Swap sheet</a></div>
+</div>
+<div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 26px; font-weight: 800">UF-06 Progress</span><span class="tag">Hevy · Strong</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><a class="lnk" href="UF06-1-Progress.dc.html">.1 Overview</a><a class="lnk" href="UF06-2-History.dc.html">.2 Exercise history</a></div>
+</div>
+<div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 26px; font-weight: 800">UF-07 Routine builder</span><span class="tag">Liftosaur · Hevy</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><a class="lnk" href="UF07-1-Routine.dc.html">.1 Edit routine</a></div>
+</div>
+<div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px; border-color: #4A5520">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 26px; font-weight: 800">UF-08 Set up session</span><span class="tag">Fitbod · Future</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><a class="lnk" href="UF08-1-Time.dc.html">.1 Time &amp; energy</a><a class="lnk" href="UF08-2-Suggest.dc.html">.2 Suggested</a><a class="lnk" href="UF08-3-Swap.dc.html">.3 Swap</a><a class="lnk" href="UF08-4-Ready.dc.html">.4 Ready</a></div>
+</div>
+<div class="card" style="padding: 18px; display: flex; flex-direction: column; gap: 10px; border-color: #4A5520">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 26px; font-weight: 800">UF-09 Focus mode</span><span class="tag">Apple Fitness · NTC</span></div>
+<div style="display: flex; flex-wrap: wrap; gap: 6px"><a class="lnk" href="UF09-1-GetReady.dc.html">.1 Get ready</a><a class="lnk" href="UF09-2-Warmup.dc.html">.2 Warm-up</a><a class="lnk" href="UF09-3-Set.dc.html">.3 Set</a><a class="lnk" href="UF09-4-Log.dc.html">.4 Log</a><a class="lnk" href="UF09-5-Rest.dc.html">.5 Rest</a><a class="lnk" href="UF09-6-Next.dc.html">.6 Next exercise</a><a class="lnk" href="UF09-7-Timed.dc.html">.7 Timed set</a><a class="lnk" href="UF09-8-TimeCheck.dc.html">.8 Time check</a><a class="lnk" href="UF09-9-Pause.dc.html">.9 Pause</a></div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":960,"height":1000}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

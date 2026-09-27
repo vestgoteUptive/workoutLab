@@ -1,0 +1,50 @@
+# Lanes and the paths they own. A ticket's lane decides which agent runs it and which paths it may change.
+# Two tickets run in parallel only when their `paths` do not overlap.
+# `contract: true` paths change only with a decision (D-NNNN) that names the change.
+
+lanes:
+  orchestrator:
+    agent: main session
+    paths: [CLAUDE.md, .squad/state.md, .squad/board.md, .squad/ownership.yaml, .squad/journal/**]
+  product:
+    agent: product-owner
+    paths: [docs/PRD.md, docs/specs/**, docs/tickets/**, Design-docs/docs/product/**]
+  design:
+    agent: designer
+    paths: [packages/design-tokens/**, Design-docs/docs/design/**, apps/landing/src/content/**]
+    contract: [packages/design-tokens/src/tokens.json]
+  engine:
+    agent: engine-dev
+    paths: [packages/engine/**]
+    contract: [docs/engine-rules.md]
+  data:
+    agent: data-modeler
+    paths: [docs/data-model.md, api/openapi.yaml, supabase/migrations/**, packages/shared/**]
+    contract: [docs/data-model.md, api/openapi.yaml]
+  backend:
+    agent: backend-dev
+    paths: [supabase/functions/**, supabase/seed.sql, supabase/tests/**, supabase/config.toml]
+  content:
+    agent: content-curator
+    paths: [data/exercises/**]
+  web-shell:          # app shell, routing, auth, offline, shared components
+    agent: frontend-dev
+    paths: [apps/web/src/app/**, apps/web/src/components/**, apps/web/src/lib/**, apps/web/*.*, apps/web/public/**]
+  web-feature:        # one sub-lane per flow; tickets name the flow, e.g. web-feature:UF-09
+    agent: frontend-dev
+    paths: ["apps/web/src/features/<flow>/**"]
+  landing:
+    agent: frontend-dev
+    paths: [apps/landing/**]
+  qa:
+    agent: qa-tester
+    paths: [tests/e2e/**]
+  infra:
+    agent: devops
+    paths: [infra/**, .github/**, package.json, pnpm-workspace.yaml, turbo.json, tsconfig.base.json]
+  security:
+    agent: security-reviewer
+    paths: [docs/security/**]
+  process:
+    agent: triage
+    paths: [.squad/decisions/**, .squad/triage/**, docs/decisions/**]

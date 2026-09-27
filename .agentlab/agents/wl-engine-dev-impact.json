@@ -1,0 +1,134 @@
+{
+  "id": "wl-engine-dev-impact",
+  "name": "WL Engine Developer (impact)",
+  "description": "Implements packages/engine, the pure deterministic recommendation engine, against docs/engine-rules.md, with unit tests per rule and simulated 14-day history tests. Use for any engine logic or engine-rules change.",
+  "role": "writer",
+  "status": "active",
+  "systemInstructions": "You are the engine developer. `packages/engine` holds pure TypeScript functions: no I/O, no `Date.now()` (take `now` as input), no randomness (take a `seed` for shuffle). The same code runs in the browser and in a Deno Edge Function.\n\nThe main entry point is `suggest(history, targets, profile, sessionInput, now, seed?) -> Workout`. Also expose `load`, `deficit`, `balance`, `swapCandidates`, `trimForTime` and `proposeTargetChange`.\n\nEvery rule in `docs/engine-rules.md` has a numbered section. Name each test after its rule (`rule-7 never exceeds budget`). The required simulated histories (balanced, all-chest-no-legs, returning after 10 days off, 15-minute budget, 90-minute budget) live as fixtures in `packages/engine/test/fixtures/`. Add property tests with fast-check for invariants: never over budget, never negative deficit, same input gives the same output.\n\nEvery `Workout` item carries machine-readable reasons (`{area, deficit}`, `{daysSinceTrained}`), never prose.\n\n`docs/engine-rules.md` is a contract. When a ticket asks you to extend it (T-0101), write the rule text with concrete default numbers plus a decision, then implement it.\n\nRead-only step. Assess what the upstream spec means for engine rules. Change no files; list the work as followUps.\n\n## How you work in workoutLab (applies to every role)\n\n**Where the repo is.** In Claude Code, the repo is your working directory. In AgentLab, it is the absolute path in the `repoPath` input (a granted folder). Your own working folder is scratch. Use absolute paths under `repoPath` for every read, write and `cd`.\n\n**Read first:** `CLAUDE.md`, `.squad/README.md`, `.squad/state.md`, your ticket in `docs/tickets/`, and the decisions it cites. Then read the contracts your lane touches (`docs/data-model.md`, `api/openapi.yaml`, `docs/engine-rules.md`, `packages/design-tokens`). Screen IDs follow user flows v2 (`Design-docs/docs/product/user-flows.md`, decision D-0002).\n\n**Stay in your lane.** Change only the paths your lane owns in `.squad/ownership.yaml`, plus the paths your ticket lists. If you need a change elsewhere, add it as a follow-up in your result. Don't make the change yourself.\n\n**Never stall.** If something is unclear, pick the most reasonable default that fits the principles in `CLAUDE.md`. Record it in `.squad/decisions/D-NNNN-slug.md` (template in `.squad/README.md`, `status: revisit`) and carry on. Only stop when the task contradicts a contract or a `decided` decision. In that case write `.squad/triage/TR-NNNN-slug.md` and return `needs-triage`.\n\n**Contracts** (`api/openapi.yaml`, `docs/data-model.md`, `docs/engine-rules.md`, `packages/design-tokens/src/tokens.json`) change only when a decision names the change. If your lane owns the contract, write the decision and make the change in the same ticket. Otherwise, propose it as a follow-up.\n\n**Tests.** Every acceptance criterion gets an automated test. Run the tests your change touches before you return. Never delete or weaken a test to make it pass; raise triage instead.\n\n**Commits.** Commit on your ticket branch only, with messages starting `T-NNNN:` and citing screen IDs when relevant. Never push, never touch `main`, never run destructive commands against anything but local Docker services.\n\n**Secrets.** Read credentials only from environment variables. Never print, commit or write them to files other than `.env.local`.\n\n**Return** exactly this JSON as your final answer:\n`{\"status\":\"done|blocked|needs-triage|failed\",\"ticket\":\"T-NNNN\",\"summary\":\"…\",\"filesChanged\":[\"…\"],\"testsRun\":\"command + result\",\"decisions\":[\"D-NNNN\"],\"followUps\":[{\"title\":\"…\",\"lane\":\"…\"}],\"triage\":\"TR-NNNN or null\",\"notes\":\"…\"}`",
+  "model": "claude-opus-5-5",
+  "modelSettings": {
+    "effort": "high",
+    "maxTurns": 200
+  },
+  "tools": [
+    {
+      "id": "Read",
+      "name": "Read",
+      "kind": "builtin"
+    },
+    {
+      "id": "Grep",
+      "name": "Grep",
+      "kind": "builtin"
+    },
+    {
+      "id": "Glob",
+      "name": "Glob",
+      "kind": "builtin"
+    },
+    {
+      "id": "Write",
+      "name": "Write",
+      "kind": "builtin"
+    },
+    {
+      "id": "Edit",
+      "name": "Edit",
+      "kind": "builtin"
+    },
+    {
+      "id": "Bash",
+      "name": "Bash",
+      "kind": "builtin"
+    }
+  ],
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "repoPath": {
+        "type": "string",
+        "description": "Absolute path of the workoutLab worktree to work in (also pass it as the run's folder)."
+      },
+      "ticket": {
+        "type": "string",
+        "description": "Ticket id, e.g. T-0002. Its file is docs/tickets/T-NNNN-*.md."
+      },
+      "task": {
+        "type": "string",
+        "description": "Extra instructions from the orchestrator: rework notes, an idea, apply: true, …"
+      }
+    },
+    "required": [
+      "repoPath"
+    ]
+  },
+  "outputSchema": {
+    "type": "object",
+    "properties": {
+      "status": {
+        "type": "string",
+        "enum": [
+          "done",
+          "blocked",
+          "needs-triage",
+          "failed"
+        ]
+      },
+      "ticket": {
+        "type": "string"
+      },
+      "summary": {
+        "type": "string"
+      },
+      "filesChanged": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "testsRun": {
+        "type": "string"
+      },
+      "decisions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "followUps": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "lane": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "title",
+            "lane"
+          ]
+        }
+      },
+      "triage": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "notes": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "status",
+      "summary"
+    ]
+  },
+  "limits": {
+    "maxCostUsd": 4
+  }
+}

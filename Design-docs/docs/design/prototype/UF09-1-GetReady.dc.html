@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-09.1 Get ready</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#0B0B0A}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 12px 'DM Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#A8A398}
+.go{display:flex;align-items:center;justify-content:center;min-height:64px;border-radius:18px;background:#D4F25A;color:#121210;font:800 26px 'Big Shoulders Display',Impact,sans-serif;text-transform:uppercase;text-decoration:none;letter-spacing:.04em}
+.go:hover{color:#121210;background:#E6FA95}
+.ghost{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:14px;color:#F2EFE8;font:500 16px 'DM Sans',sans-serif;text-decoration:none}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 64px 24px 36px; display: flex; flex-direction: column; align-items: center; gap: 20px; background: #0B0B0A; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div class="tag">Get ready</div>
+<div style="position: relative; width: 300px; height: 300px; margin-top: 40px">
+<svg width="300" height="300" viewBox="0 0 300 300" aria-hidden="true">
+<circle cx="150" cy="150" r="130" fill="none" stroke="#1D1C19" stroke-width="14"></circle>
+<circle cx="150" cy="150" r="130" fill="none" stroke="#D4F25A" stroke-width="14" stroke-linecap="round" stroke-dasharray="817" stroke-dashoffset="{{offset}}" transform="rotate(-90 150 150)"></circle>
+</svg>
+<div class="d" style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 180px; font-weight: 800; line-height: 1" aria-live="assertive">{{big}}</div>
+</div>
+<div style="text-align: center; display: flex; flex-direction: column; gap: 6px">
+<div class="tag">First up</div>
+<div class="d" style="font-size: 40px; font-weight: 800; text-transform: uppercase; line-height: 1">Warm-up</div>
+<div class="m" style="font-size: 16px">3 moves · 40 s each</div>
+</div>
+<div style="margin-top: auto; width: 100%; display: flex; flex-direction: column; gap: 6px">
+<a class="go" href="UF09-2-Warmup.dc.html">{{cta}}</a>
+<a class="ghost" href="UF09-3-Set.dc.html">Skip warm-up</a>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { n: 5 }; }
+componentDidMount() { this.t = setInterval(() => { if (this.state.n > 0) this.setState({ n: this.state.n - 1 }); }, 1000); }
+componentWillUnmount() { clearInterval(this.t); }
+renderVals() {
+const n = this.state.n;
+return { big: n > 0 ? String(n) : 'GO', offset: String(817 * (1 - n / 5)), cta: n > 0 ? 'Start now' : 'Go' };
+}
+}
+</script>
+</body>
+</html>

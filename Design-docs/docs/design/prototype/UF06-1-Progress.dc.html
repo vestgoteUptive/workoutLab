@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-06.1 Progress overview</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#121210}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 11px 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8A398}
+.card{background:#1D1C19;border:1px solid #2E2C28;border-radius:16px}
+.cell{height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.vol{display:grid;grid-template-columns:78px minmax(0,1fr) 44px;gap:10px;align-items:center;font-size:13px}
+.bar{height:8px;border-radius:4px;background:#2A2925}
+.pr{display:flex;justify-content:space-between;align-items:center;min-height:48px;border-bottom:1px solid #2E2C28;text-decoration:none;color:#F2EFE8;font-size:15px}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:64px;min-height:48px;text-decoration:none;color:#A8A398;font:700 11px 'DM Sans',sans-serif}
+.tab.on{color:#D4F25A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #121210; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div style="padding: 56px 20px 0; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; overflow: hidden">
+<h1 class="d" style="margin: 0; font-size: 40px; font-weight: 800; text-transform: uppercase; line-height: 1">Progress</h1>
+<div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-weight: 700">September 2026</span><span class="m" style="font-size: 13px">12 workouts · 3-week streak</span></div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px">
+<sc-for list="{{wd}}" as="w" hint-placeholder-count="7"><span class="m" style="font-size: 11px; text-align: center">{{w}}</span></sc-for>
+<sc-for list="{{days}}" as="c" hint-placeholder-count="35"><span class="cell" style="{{c.style}}">{{c.n}}</span></sc-for>
+</div>
+</div>
+<div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; justify-content: space-between"><span class="tag">Weekly sets per muscle</span><span class="m" style="font-size: 12px">done / target</span></div>
+<div class="vol"><span>Quads</span><div class="bar"><div class="bar" style="width: 100%; background: #D4F25A"></div></div><span class="m" style="text-align: right">12/12</span></div>
+<div class="vol"><span>Glutes</span><div class="bar"><div class="bar" style="width: 83%; background: #D4F25A"></div></div><span class="m" style="text-align: right">10/12</span></div>
+<div class="vol"><span>Back</span><div class="bar"><div class="bar" style="width: 71%; background: #D4F25A"></div></div><span class="m" style="text-align: right">10/14</span></div>
+<div class="vol"><span>Chest</span><div class="bar"><div class="bar" style="width: 50%; background: #FF8A3D"></div></div><span class="m" style="text-align: right">6/12</span></div>
+</div>
+<div style="display: flex; flex-direction: column">
+<div class="tag" style="margin-bottom: 2px">Recent records</div>
+<a class="pr" href="UF06-2-History.dc.html"><span>Back Squat</span><span style="display: flex; align-items: center; gap: 8px"><span style="color: #FF8A3D; font-weight: 700">100 kg × 8</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A8A398" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></span></a>
+<a class="pr" href="UF06-2-History.dc.html"><span>Romanian Deadlift</span><span style="display: flex; align-items: center; gap: 8px"><span style="font-weight: 700">80 kg × 10</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A8A398" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"></path></svg></span></a>
+</div>
+</div>
+<nav style="display: flex; justify-content: space-around; padding: 8px 8px 24px; border-top: 1px solid #2E2C28; background: #171613">
+<a class="tab" href="UF02-1-Today.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+<a class="tab" href="UF04-1-Library.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"></path></svg>Exercises</a>
+<a class="tab on" href="UF06-1-Progress.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19v-8M11 19V5M17 19v-6M3 21h18"></path></svg>Progress</a>
+<a class="tab" href="UF07-1-Routine.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>Plan</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+const done = [1, 3, 5, 7, 8, 10, 14, 15, 17, 21, 22, 24];
+const cells = [{ n: '', style: '' }];
+for (let d = 1; d <= 30; d++) {
+let style = 'color: #A8A398';
+if (done.includes(d)) style = 'background: #D4F25A; color: #121210; font-weight: 700';
+if (d === 27) style = 'border: 2px solid #D4F25A; color: #F2EFE8; font-weight: 700; box-sizing: border-box';
+cells.push({ n: String(d), style });
+}
+return { wd: ['M', 'T', 'W', 'T', 'F', 'S', 'S'], days: cells };
+}
+}
+</script>
+</body>
+</html>

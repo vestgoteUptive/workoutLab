@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-04.1 Exercise library</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#121210}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 11px 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8A398}
+.chip{display:inline-flex;align-items:center;flex-shrink:0;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #3A3833;background:transparent;color:#F2EFE8;font:500 14px 'DM Sans',sans-serif;cursor:pointer}
+.chip.on{background:#D4F25A;color:#121210;border-color:#D4F25A;font-weight:700}
+.ex{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #2E2C28;text-decoration:none;color:#F2EFE8}
+.th{width:52px;height:52px;border-radius:12px;background:#1D1C19;border:1px solid #2E2C28;flex-shrink:0}
+.tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:64px;min-height:48px;text-decoration:none;color:#A8A398;font:700 11px 'DM Sans',sans-serif}
+.tab.on{color:#D4F25A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; background: #121210; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div style="padding: 56px 20px 0; display: flex; flex-direction: column; gap: 14px; flex-grow: 1; overflow: hidden">
+<h1 class="d" style="margin: 0; font-size: 40px; font-weight: 800; text-transform: uppercase; line-height: 1">Exercises</h1>
+<label style="display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 14px; border-radius: 12px; background: #1D1C19; border: 1px solid #2E2C28">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A8A398" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+<span style="position: absolute; left: -9999px">Search exercises</span>
+<input value="squat" style="flex-grow: 1; border: 0; background: transparent; color: #F2EFE8; font: 500 16px 'DM Sans', sans-serif; outline: none">
+</label>
+<div style="display: flex; gap: 8px; overflow: hidden">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="5"><button class="{{f.cls}}" onClick="{{f.pick}}">{{f.t}}</button></sc-for>
+</div>
+<div class="tag">6 results · squat pattern</div>
+<div style="display: flex; flex-direction: column">
+<a class="ex" href="UF04-2-Detail.dc.html">
+<svg class="th" viewBox="0 0 52 52" fill="none"><ellipse cx="19" cy="27" rx="4" ry="9" fill="#F2EFE8" transform="rotate(-8 19 27)"></ellipse><ellipse cx="33" cy="27" rx="4" ry="9" fill="#F2EFE8" transform="rotate(8 33 27)"></ellipse></svg>
+<span style="flex-grow: 1"><span style="display: block; font-weight: 700">Back Squat</span><span class="m" style="font-size: 13px">Quads · Glutes · Adductors · Barbell</span></span>
+<span style="font-size: 12px; padding: 4px 8px; border-radius: 6px; background: #2A2925">In plan</span>
+</a>
+<a class="ex" href="UF04-3-Compare.dc.html">
+<svg class="th" viewBox="0 0 52 52" fill="none"><ellipse cx="12" cy="27" rx="4" ry="9" fill="#D4F25A" transform="rotate(-38 12 27)"></ellipse><ellipse cx="40" cy="27" rx="4" ry="9" fill="#D4F25A" transform="rotate(38 40 27)"></ellipse></svg>
+<span style="flex-grow: 1"><span style="display: block; font-weight: 700">Sumo Squat</span><span class="m" style="font-size: 13px">Adductors · Glutes · Quads · Barbell, DB</span></span>
+<span style="font-size: 12px; padding: 4px 8px; border-radius: 6px; background: #2A2925">Variant</span>
+</a>
+<a class="ex" href="UF04-2-Detail.dc.html">
+<svg class="th" viewBox="0 0 52 52" fill="none"><ellipse cx="20" cy="27" rx="4" ry="9" fill="#F2EFE8" transform="rotate(-10 20 27)"></ellipse><ellipse cx="32" cy="27" rx="4" ry="9" fill="#F2EFE8" transform="rotate(10 32 27)"></ellipse><rect x="12" y="10" width="28" height="4" rx="2" fill="#A8A398"></rect></svg>
+<span style="flex-grow: 1"><span style="display: block; font-weight: 700">Front Squat</span><span class="m" style="font-size: 13px">Quads · Glutes · Upper back · Barbell</span></span>
+</a>
+<a class="ex" href="UF04-2-Detail.dc.html">
+<svg class="th" viewBox="0 0 52 52" fill="none"><ellipse cx="19" cy="29" rx="4" ry="9" fill="#F2EFE8" transform="rotate(-12 19 29)"></ellipse><ellipse cx="33" cy="29" rx="4" ry="9" fill="#F2EFE8" transform="rotate(12 33 29)"></ellipse><circle cx="26" cy="13" r="5" stroke="#A8A398" stroke-width="3"></circle></svg>
+<span style="flex-grow: 1"><span style="display: block; font-weight: 700">Goblet Squat</span><span class="m" style="font-size: 13px">Quads · Glutes · Dumbbell, Kettlebell</span></span>
+<span style="font-size: 12px; padding: 4px 8px; border-radius: 6px; background: #2A2925">Beginner</span>
+</a>
+<a class="ex" href="UF04-2-Detail.dc.html">
+<svg class="th" viewBox="0 0 52 52" fill="none"><ellipse cx="22" cy="16" rx="4" ry="8" fill="#F2EFE8"></ellipse><ellipse cx="30" cy="38" rx="4" ry="8" fill="#A8A398"></ellipse></svg>
+<span style="flex-grow: 1"><span style="display: block; font-weight: 700">Bulgarian Split Squat</span><span class="m" style="font-size: 13px">Quads · Glutes · Dumbbells</span></span>
+</a>
+<a class="ex" href="UF04-2-Detail.dc.html">
+<svg class="th" viewBox="0 0 52 52" fill="none"><rect x="12" y="14" width="28" height="24" rx="4" stroke="#A8A398" stroke-width="2"></rect><ellipse cx="21" cy="26" rx="3" ry="7" fill="#F2EFE8"></ellipse><ellipse cx="31" cy="26" rx="3" ry="7" fill="#F2EFE8"></ellipse></svg>
+<span style="flex-grow: 1"><span style="display: block; font-weight: 700">Hack Squat</span><span class="m" style="font-size: 13px">Quads · Glutes · Machine</span></span>
+</a>
+</div>
+</div>
+<nav style="display: flex; justify-content: space-around; padding: 8px 8px 24px; border-top: 1px solid #2E2C28; background: #171613">
+<a class="tab" href="UF02-1-Today.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Today</a>
+<a class="tab on" href="UF04-1-Library.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"></path></svg>Exercises</a>
+<a class="tab" href="UF06-1-Progress.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 19v-8M11 19V5M17 19v-6M3 21h18"></path></svg>Progress</a>
+<a class="tab" href="UF07-1-Routine.dc.html"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"></path></svg>Plan</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { f: 'legs' }; }
+renderVals() {
+const o = [{ id: 'all', t: 'All' }, { id: 'legs', t: 'Legs' }, { id: 'glutes', t: 'Glutes' }, { id: 'back', t: 'Back' }, { id: 'eq', t: 'My equipment' }];
+return { filters: o.map((x) => ({ ...x, cls: this.state.f === x.id ? 'chip on' : 'chip', pick: () => this.setState({ f: x.id }) })) };
+}
+}
+</script>
+</body>
+</html>

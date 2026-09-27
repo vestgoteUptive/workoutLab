@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-08.4 Ready to start</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#121210}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 11px 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8A398}
+.card{background:#1D1C19;border:1px solid #2E2C28;border-radius:16px}
+.go{display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;border-radius:18px;background:#D4F25A;color:#121210;font:800 26px 'Big Shoulders Display',Impact,sans-serif;text-transform:uppercase;text-decoration:none;letter-spacing:.04em}
+.go:hover{color:#121210;background:#E6FA95}
+.how{display:flex;gap:12px;align-items:center}
+.ico{width:48px;height:48px;border-radius:14px;background:#2A2925;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.tg{display:flex;align-items:center;justify-content:space-between;min-height:44px;font-size:15px}
+.sw{width:22px;height:22px;accent-color:#D4F25A}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 52px 20px 32px; display: flex; flex-direction: column; gap: 18px; background: #121210; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<a href="UF08-2-Suggest.dc.html" aria-label="Back" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: #F2EFE8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<span class="tag">Step 3 of 3 · Ready</span>
+<span style="width: 44px"></span>
+</div>
+<div>
+<h1 class="d" style="margin: 0; font-size: 48px; font-weight: 800; text-transform: uppercase; line-height: 1">Lower A</h1>
+<div class="m" style="font-size: 15px; margin-top: 6px">45 min · warm-up + 5 exercises · 16 sets · done by 18:15</div>
+</div>
+<div class="card" style="padding: 16px; display: flex; flex-direction: column; gap: 14px">
+<div class="tag" style="color: #D4F25A">How focus mode works</div>
+<div class="how"><span class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F2EFE8" stroke-width="2" stroke-linecap="round"><rect x="6" y="3" width="12" height="18" rx="3"></rect><path d="M10 8h4"></path></svg></span><div><div style="font-weight: 700">One thing on screen</div><div class="m" style="font-size: 13px">The current set, its weight and reps. Nothing else.</div></div></div>
+<div class="how"><span class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#D4F25A" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M8 12l3 3 5-6"></path></svg></span><div><div style="font-weight: 700">Tap Done after each set</div><div class="m" style="font-size: 13px">Reps are pre-filled. Only change them if you missed.</div></div></div>
+<div class="how"><span class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#F2EFE8" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4M10 2h4"></path></svg></span><div><div style="font-weight: 700">Rest counts down by itself</div><div class="m" style="font-size: 13px">Sound and vibration at 10 s and at zero.</div></div></div>
+<div class="how"><span class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="#F2EFE8"><rect x="6" y="5" width="4" height="14" rx="1"></rect><rect x="14" y="5" width="4" height="14" rx="1"></rect></svg></span><div><div style="font-weight: 700">Everything else is behind pause</div><div class="m" style="font-size: 13px">Swap, skip, list view or end workout.</div></div></div>
+</div>
+<div style="display: flex; flex-direction: column">
+<label class="tg">Sound cues<input class="sw" type="checkbox" checked></label>
+<label class="tg">Voice countdown 3-2-1<input class="sw" type="checkbox" checked></label>
+<label class="tg">Keep screen awake<input class="sw" type="checkbox" checked></label>
+</div>
+<a class="go" href="UF09-1-GetReady.dc.html" style="margin-top: auto"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4v16l13-8z"></path></svg>Start</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

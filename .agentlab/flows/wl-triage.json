@@ -1,0 +1,26 @@
+{
+  "id": "wl-triage",
+  "name": "WL · Triage",
+  "description": "Resolve one open triage item (or the oldest) into a decision and follow-ups.",
+  "tags": [
+    "workoutlab",
+    "process"
+  ],
+  "nodes": [
+    {
+      "id": "triage",
+      "agentId": "wl-triage",
+      "label": "triage",
+      "dependsOn": [],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task"
+      },
+      "position": {
+        "x": 80,
+        "y": 80
+      }
+    }
+  ]
+}

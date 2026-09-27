@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-06.2 Back Squat history</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#121210}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 11px 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8A398}
+.card{background:#1D1C19;border:1px solid #2E2C28;border-radius:16px}
+.chip{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid #3A3833;background:transparent;color:#F2EFE8;font:500 14px 'DM Sans',sans-serif;cursor:pointer}
+.chip.on{background:#D4F25A;color:#121210;border-color:#D4F25A;font-weight:700}
+.h{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #2E2C28;font-size:14px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 52px 20px 32px; display: flex; flex-direction: column; gap: 16px; background: #121210; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<a href="UF06-1-Progress.dc.html" aria-label="Back" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: #F2EFE8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></a>
+<a href="UF04-2-Detail.dc.html" style="font-size: 15px; font-weight: 700; text-decoration: none; padding: 12px 4px">How to</a>
+</div>
+<div>
+<div class="tag">Exercise history</div>
+<h1 class="d" style="margin: 4px 0 0; font-size: 44px; font-weight: 800; text-transform: uppercase; line-height: 1">Back Squat</h1>
+</div>
+<div style="display: flex; gap: 8px"><sc-for list="{{metrics}}" as="x" hint-placeholder-count="3"><button class="{{x.cls}}" onClick="{{x.pick}}">{{x.t}}</button></sc-for></div>
+<div class="card" style="padding: 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; justify-content: space-between; align-items: baseline"><span class="d" style="font-size: 36px; font-weight: 800">{{big}}</span><span style="color: #D4F25A; font-size: 14px; font-weight: 700">{{delta}}</span></div>
+<svg width="320" height="170" viewBox="0 0 344 170" fill="none" role="img" aria-label="Trend over the last 12 weeks, rising">
+<line x1="0" y1="32" x2="344" y2="32" stroke="#2A2925"></line>
+<line x1="0" y1="85" x2="344" y2="85" stroke="#2A2925"></line>
+<line x1="0" y1="138" x2="344" y2="138" stroke="#2A2925"></line>
+<polyline points="12,133 41,123 70,117 99,107 128,112 157,96 186,85 215,80 244,69 273,59 302,48 331,32" stroke="#D4F25A" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"></polyline>
+<circle cx="331" cy="32" r="6" fill="#FF8A3D"></circle>
+<text x="0" y="164" fill="#A8A398" font-size="11" font-family="DM Sans, sans-serif">Jul 6</text>
+<text x="304" y="164" fill="#A8A398" font-size="11" font-family="DM Sans, sans-serif">Sep 24</text>
+</svg>
+<div class="m" style="font-size: 12px">{{note}}</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div class="card" style="padding: 10px"><div class="tag">Best set</div><div style="font-weight: 700">100 × 8</div></div>
+<div class="card" style="padding: 10px"><div class="tag">Heaviest</div><div style="font-weight: 700">105 kg</div></div>
+<div class="card" style="padding: 10px"><div class="tag">Sessions</div><div style="font-weight: 700">24</div></div>
+</div>
+<div style="display: flex; flex-direction: column">
+<div class="h"><span><span style="display: block; font-weight: 700">Thu, Sep 24</span><span class="m">Lower A</span></span><span style="text-align: right">100 × 8, 8, 8, 7<br><span style="color: #FF8A3D; font-weight: 700">PR</span></span></div>
+<div class="h"><span><span style="display: block; font-weight: 700">Mon, Sep 21</span><span class="m">Lower B</span></span><span style="text-align: right">105 × 5, 5, 4</span></div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { m: 'e1rm' }; }
+renderVals() {
+const info = {
+e1rm: ['124 kg', '+19 kg in 12 weeks', 'Estimated 1-rep max from your best set each session (Brzycki).'],
+best: ['100 × 8', '+2 reps at 100 kg', 'Heaviest weight × reps per session.'],
+vol: ['3 180 kg', '+22% vs July', 'Total weight × reps per session.']
+};
+const o = [{ id: 'e1rm', t: 'Est. 1RM' }, { id: 'best', t: 'Best set' }, { id: 'vol', t: 'Volume' }];
+const i = info[this.state.m];
+return { big: i[0], delta: i[1], note: i[2], metrics: o.map((x) => ({ ...x, cls: this.state.m === x.id ? 'chip on' : 'chip', pick: () => this.setState({ m: x.id }) })) };
+}
+}
+</script>
+</body>
+</html>

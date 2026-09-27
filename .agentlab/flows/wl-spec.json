@@ -1,0 +1,44 @@
+{
+  "id": "wl-spec",
+  "name": "WL · Spec a ticket",
+  "description": "Product owner writes the ticket with testable acceptance criteria, then triage checks it against contracts and decisions.",
+  "tags": [
+    "workoutlab",
+    "product"
+  ],
+  "nodes": [
+    {
+      "id": "spec",
+      "agentId": "wl-product-owner-spec",
+      "label": "spec",
+      "dependsOn": [],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task"
+      },
+      "position": {
+        "x": 80,
+        "y": 80
+      }
+    },
+    {
+      "id": "check",
+      "agentId": "wl-triage-check",
+      "label": "check",
+      "dependsOn": [
+        "spec"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "spec": "spec"
+      },
+      "position": {
+        "x": 340,
+        "y": 220
+      }
+    }
+  ]
+}

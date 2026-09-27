@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-03.3 Workout summary</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#121210}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 11px 'DM Sans',sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#A8A398}
+.card{background:#1D1C19;border:1px solid #2E2C28;border-radius:16px}
+.btn{display:flex;align-items:center;justify-content:center;min-height:54px;border-radius:14px;background:#D4F25A;color:#121210;font:700 16px 'DM Sans',sans-serif;text-decoration:none}
+.btn:hover{color:#121210;background:#E6FA95}
+.chip{flex:1;min-height:44px;border-radius:12px;border:1px solid #3A3833;background:transparent;color:#F2EFE8;font:500 14px 'DM Sans',sans-serif;cursor:pointer}
+.chip.on{background:#D4F25A;color:#121210;border-color:#D4F25A;font-weight:700}
+.li{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #2E2C28;font-size:15px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 60px 20px 36px; display: flex; flex-direction: column; gap: 18px; background: #121210; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<div>
+<div class="tag" style="color: #D4F25A">Workout complete</div>
+<h1 class="d" style="margin: 4px 0 0; font-size: 52px; font-weight: 800; text-transform: uppercase; line-height: 1">Lower A done</h1>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div class="card" style="padding: 12px"><div class="tag">Time</div><div class="d" style="font-size: 28px; font-weight: 800">52 min</div></div>
+<div class="card" style="padding: 12px"><div class="tag">Volume</div><div class="d" style="font-size: 28px; font-weight: 800">8 420 kg</div></div>
+<div class="card" style="padding: 12px"><div class="tag">Sets</div><div class="d" style="font-size: 28px; font-weight: 800">16</div></div>
+</div>
+<a href="UF06-2-History.dc.html" style="display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 16px; background: #2B1F14; border: 1px solid #6B3F1C; text-decoration: none; color: #F2EFE8">
+<svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#FF8A3D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0zM17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"></path></svg>
+<div><div class="tag" style="color: #FF8A3D">New personal record</div><div style="font-weight: 700; font-size: 17px">Back Squat · 100 kg × 8</div><div class="m" style="font-size: 13px">Est. 1RM about 124 kg, up 3 kg</div></div>
+</a>
+<div style="display: flex; flex-direction: column">
+<div class="li"><span>Back Squat</span><span class="m">4 sets · best 100 × 8</span></div>
+<div class="li"><span>Romanian Deadlift</span><span class="m">3 sets · best 80 × 10</span></div>
+<div class="li"><span>Dumbbell Sumo Squat</span><span class="m">3 sets · best 32 × 12</span></div>
+<div class="li"><span>Seated Leg Curl</span><span class="m">3 sets · best 45 × 12</span></div>
+<div class="li"><span>Standing Calf Raise</span><span class="m">3 sets · best 60 × 15</span></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div class="tag">How hard did that feel?</div>
+<div style="display: flex; gap: 8px"><sc-for list="{{rpe}}" as="r" hint-placeholder-count="3"><button class="{{r.cls}}" onClick="{{r.pick}}">{{r.t}}</button></sc-for></div>
+<div class="m" style="font-size: 13px">Used to tune next week's weights.</div>
+</div>
+<a class="btn" href="UF06-1-Progress.dc.html" style="margin-top: auto">Save workout</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { rpe: 'right' }; }
+renderVals() {
+const o = [{ id: 'easy', t: 'Too easy' }, { id: 'right', t: 'About right' }, { id: 'hard', t: 'Too hard' }];
+return { rpe: o.map((x) => ({ ...x, cls: this.state.rpe === x.id ? 'chip on' : 'chip', pick: () => this.setState({ rpe: x.id }) })) };
+}
+}
+</script>
+</body>
+</html>

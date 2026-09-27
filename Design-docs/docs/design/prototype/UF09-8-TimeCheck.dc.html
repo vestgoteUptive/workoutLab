@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>UF-09.8 Time check</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&amp;family=DM+Sans:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0;background:#0B0B0A}
+a{color:#D4F25A}a:hover{color:#E6FA95}
+.d{font-family:'Big Shoulders Display',Impact,'Arial Narrow',sans-serif}
+.m{color:#A8A398}
+.tag{font:700 12px 'DM Sans',sans-serif;letter-spacing:.1em;text-transform:uppercase;color:#A8A398}
+.opt{display:flex;align-items:center;gap:12px;width:100%;padding:14px;border-radius:16px;border:1px solid #2E2C28;background:#151513;color:#F2EFE8;text-align:left;font-family:'DM Sans',sans-serif;cursor:pointer}
+.opt.on{border:2px solid #D4F25A;padding:13px}
+.rad{width:22px;height:22px;border-radius:11px;border:2px solid #3A3833;flex-shrink:0;box-sizing:border-box}
+.rad.on{border:7px solid #D4F25A}
+.go{display:flex;align-items:center;justify-content:center;min-height:64px;border-radius:18px;background:#D4F25A;color:#121210;font:800 24px 'Big Shoulders Display',Impact,sans-serif;text-transform:uppercase;text-decoration:none;letter-spacing:.04em}
+.go:hover{color:#121210;background:#E6FA95}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 80px 20px 40px; display: flex; flex-direction: column; gap: 18px; background: #0B0B0A; color: #F2EFE8; font-family: 'DM Sans', system-ui, sans-serif">
+<svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#FF8A3D" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2.5 1.5M10 2h4"></path></svg>
+<div>
+<div class="tag" style="color: #FF8A3D">Time check · between exercises</div>
+<h1 class="d" style="margin: 6px 0 0; font-size: 44px; font-weight: 800; text-transform: uppercase; line-height: 1">6 min behind</h1>
+<div class="m" style="font-size: 16px; margin-top: 8px">You planned to finish by 18:15. At this pace you'll finish at 18:21.</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<sc-for list="{{opts}}" as="o" hint-placeholder-count="3">
+<button class="{{o.cls}}" onClick="{{o.pick}}">
+<span class="{{o.rad}}"></span>
+<span style="flex-grow: 1"><span style="display: block; font-weight: 700; font-size: 16px">{{o.t}}</span><span class="m" style="font-size: 13px">{{o.s}}</span></span>
+<span style="font-weight: 700; color: {{o.c}}; font-size: 14px">{{o.save}}</span>
+</button>
+</sc-for>
+</div>
+<div class="m" style="font-size: 14px; text-align: center">{{result}}</div>
+<a class="go" href="UF09-6-Next.dc.html" style="margin-top: auto">Continue</a>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+constructor(p) { super(p); this.state = { pick: 'drop' }; }
+renderVals() {
+const o = [
+{ id: 'drop', t: 'Drop Calf Raises', s: 'Least important today. Moves to next Lower day.', save: '−4 min', end: '18:17', c: '#D4F25A' },
+{ id: 'cut', t: 'One set fewer each', s: 'Keeps every exercise, cuts 3 sets in total.', save: '−6 min', end: '18:15', c: '#D4F25A' },
+{ id: 'keep', t: 'Keep everything', s: "I've got the time.", save: '+6 min', end: '18:21', c: '#FF8A3D' }
+];
+const p = o.find((x) => x.id === this.state.pick);
+return { opts: o.map((x) => ({ ...x, cls: x.id === p.id ? 'opt on' : 'opt', rad: x.id === p.id ? 'rad on' : 'rad', pick: () => this.setState({ pick: x.id }) })), result: 'New finish time: ' + p.end };
+}
+}
+</script>
+</body>
+</html>

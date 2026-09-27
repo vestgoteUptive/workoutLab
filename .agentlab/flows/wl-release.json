@@ -1,0 +1,78 @@
+{
+  "id": "wl-release",
+  "name": "WL · Release check",
+  "description": "Security review, full QA and a release code review in parallel; the product owner gives go or no-go.",
+  "tags": [
+    "workoutlab",
+    "release"
+  ],
+  "nodes": [
+    {
+      "id": "security",
+      "agentId": "wl-security-reviewer",
+      "label": "security",
+      "dependsOn": [],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task"
+      },
+      "position": {
+        "x": 80,
+        "y": 80
+      }
+    },
+    {
+      "id": "qa",
+      "agentId": "wl-qa-tester-release",
+      "label": "qa",
+      "dependsOn": [],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task"
+      },
+      "position": {
+        "x": 80,
+        "y": 220
+      }
+    },
+    {
+      "id": "review",
+      "agentId": "wl-code-reviewer-release",
+      "label": "review",
+      "dependsOn": [],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task"
+      },
+      "position": {
+        "x": 80,
+        "y": 360
+      }
+    },
+    {
+      "id": "accept",
+      "agentId": "wl-product-owner-accept",
+      "label": "accept",
+      "dependsOn": [
+        "security",
+        "qa",
+        "review"
+      ],
+      "inputMapping": {
+        "repoPath": "$input.repoPath",
+        "ticket": "$input.ticket",
+        "task": "$input.task",
+        "security": "security",
+        "qa": "qa",
+        "review": "review"
+      },
+      "position": {
+        "x": 340,
+        "y": 500
+      }
+    }
+  ]
+}
