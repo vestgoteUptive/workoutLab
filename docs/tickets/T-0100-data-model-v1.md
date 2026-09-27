@@ -263,3 +263,16 @@ metrics schema, and 31 ACs (about 35 pgTAP files or blocks). Proposed split (the
   the `analytics` schema), and every AC tagged **[b]**, including the [b] parts of AC4, AC22 and
   AC24. It unblocks T-0308. T-0102 needs only the `plan_checkins` shape, which is already fixed
   in D-0021.
+
+## Accept log
+- **2026-09-28, T-0100a, product-owner: done.** Every [a] AC (AC1–AC25 [a] parts) plus AC30,
+  AC31 and the D-0029 `exercises` columns (TR-0003) maps to pgTAP assertions in
+  `supabase/tests/database/001–007`. The real-stack CI `supabase db tests` job (AC25) is green on
+  PR #1 after 45be5f6 (schema-qualified regclass in 007). Spot-checked AC9–AC13, AC30 and AC31
+  (these use the exact supabase-js upsert statement and the exact AC fixtures) and AC22 (the
+  cascade covers the tombstone, plus a structural check that every `user_id` FK cascades). D-0030
+  (revisit) defaults don't weaken any AC. Part [b] stays pending in the doc until T-0100b.
+  Principles: offline-first sync (replay, set before session, 10 days off) and adaptive-target
+  inputs (`onboarded_at` write-once, `plan_changed_at` server-set) hold. Follow-ups: reject
+  multi-dimensional `priority_areas` (review, data lane); T-0203 enables Google via env
+  (D-0011).
