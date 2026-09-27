@@ -1,15 +1,16 @@
 # State
 
-- **Phase:** 0 — Foundation
-- **Updated:** 2026-09-27 20:45 by orchestrator (tick)
-- **Done:** T-0001 (PRD on v2 IDs, UF-10/UF-11 specs, NFRs) and T-0002 (monorepo scaffold, CI). Main is green: `pnpm -w typecheck lint test` passes 12/12.
-- **In flight:** none.
-- **Next tick:** groom. Nothing is `ready`. These are unblocked and need ticket files: T-0003 (design), T-0100 (data), T-0103 (content), T-0101 (engine spec), T-0004 (infra), T-0005 (product). The folded-in follow-ups under the Phase 0 table on the board must go into the ticket files. Then pick up to 3 non-overlapping tickets. T-0003, T-0100 and T-0103 can run in parallel.
-- **Waiting on humans:** see `needs-human.md`. H-05, H-06 and H-07 are open; nothing in phases 0–3 is blocked. H-07 should also list the new `revisit` decisions: D-0013, D-0014, D-0015, D-0017, D-0018.
-- **Executor:** AgentLab. The `wl-*` flows are live on the bridge. `get_run` hits a 300 s client idle timeout, so poll with `waitSeconds: 280`.
-- **Tooling:** pnpm is not on the orchestrator's PATH. Run it as `npx -y pnpm@10.28.2 …`. Agents have it.
+- **Phase:** 0 → 1 (Foundation nearly done; contracts in progress)
+- **Updated:** 2026-09-27 21:40 by orchestrator (tick)
+- **Done:** T-0001, T-0002, T-0003, T-0005, T-0101. Main is green: `turbo run typecheck lint test` passes 16/16.
+- **In flight:** T-0100a (data), worktree `../workoutLab-worktrees/T-0100a`, draft PR vestgoteUptive/workoutLab#1. Build and review passed. The real-stack CI job failed once in `007_account_deletion.test.sql` (fixed in 45be5f6). CI re-run pending. Once green: run QA + product-owner accept (the AgentLab run was cancelled before those steps), then merge locally with `--no-ff` and close the PR.
+- **Ready:** T-0004 (infra; don't run in parallel with anything touching turbo.json or the root ESLint config), T-0103a (content; touches pnpm-workspace.yaml and pnpm-lock.yaml; content-curator has no shell, so the orchestrator runs pnpm install and tests).
+- **Next to groom:** T-0200 (engine rules 1–6 + balance, deps T-0101 done). This is the critical path. Then T-0102 once T-0100a lands.
+- **Waiting on humans:** H-05, H-06, H-07 (the list now includes every new `revisit` decision). Nothing is blocked.
+- **Executor:** AgentLab. Poll `get_run` with `waitSeconds: 280` (300 s client timeout). The Claude usage limit was hit once at 20:46; retries worked a few minutes later. Structured-output crashes in a step: rerun that step as a sub-agent.
+- **Tooling:** run pnpm as `npx -y pnpm@10.28.2 …`. Docker on this host can't pull images, so Supabase stack tests only run in GitHub CI (it runs on PRs, so open a draft PR per data or backend ticket).
 
 ## Notes for the next orchestrator
-- **Decision ids:** assign D-numbers up front in each parallel ticket's `task` input (next free: D-0019), and check `ls .squad/decisions` first. Parallel runs collided twice in this tick.
-- **Concurrent session:** another session is editing main without committing. That includes D-0011 supabase-prod-project, D-0012 infra-budget, `docs/infra-costs.md`, the gates, needs-human, devops role files, and board rows T-0400/T-0404/T-0405. Stage only your own hunks; don't commit its files for it.
-- Spec-only roles (product-owner, triage) have no shell. Commit their output on the ticket branch yourself.
+- **Decision ids:** assign them up front per run. Next free: D-0032, TR-0010. (D-0028 is reserved but unused.)
+- Spec-only roles have no shell. Commit their output yourself.
+- Agents sometimes write into the main checkout instead of their worktree. Check `git status` on main after each run.
