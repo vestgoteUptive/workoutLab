@@ -1,6 +1,6 @@
 # Non-functional requirements v1
 
-- **Closes:** gap B7. **Decision:** D-0017 (revisit). **Co-owner:** security-reviewer (privacy details go in `docs/security/`).
+- **Closes:** gap B7. **Decisions:** D-0017 (revisit); D-0015 (revisit) for set sync, NFR-SYNC-1/2 (TR-0001). **Co-owner:** security-reviewer (privacy details go in `docs/security/`).
 - Every `NFR-*` has a number or a pass/fail check. The ticket that owns the named area adds the test.
 
 ## Offline
@@ -16,8 +16,8 @@
 ## Sync conflicts
 | ID | Requirement | Check | Owner ticket |
 |---|---|---|---|
-| NFR-SYNC-1 | Sets are append-only. Each carries a client-generated UUID (`client_id`), and the server ignores duplicates (unique `user_id, client_id`). | pgTAP: inserting the same `client_id` twice gives 1 row. | T-0100 |
-| NFR-SYNC-2 | Editing a set means a new version keyed by the same `client_id`, and the newest `completed_at` wins. Deleting is a soft delete. | Unit + pgTAP. | T-0100, T-0300 |
+| NFR-SYNC-1 | Sets are append-only: sync never loses or hard-deletes a set (D-0015). Each set carries a client-generated UUID (`client_id`, created at "Done set") and is exactly one row, unique on `user_id, client_id`. Replaying the same write never creates a second row. | pgTAP: inserting the same `client_id` twice gives 1 row. | T-0100 |
+| NFR-SYNC-2 | Set edits and deletes use one idempotent upsert on `(user_id, client_id)` (D-0015). **`completed_at` is written once, at "Done set", and never changes.** It is the only date that places a set in the 14-day window (D-0013, engine rule 3), so an edit never moves a set to another day. Every create, edit or delete sets a client `edited_at`. The server applies a write only when its `edited_at` is newer than the stored one: the newest `edited_at` wins, and an equal or older write is a no-op. A delete is a `deleted_at` tombstone sent through the same upsert with a newer `edited_at`. Sync never hard-deletes a set; only account deletion does (NFR-PRIV-5). Engine load, `balance()`, the 14-day view and the metric queries exclude rows where `deleted_at` is set. | pgTAP: (a) replaying the same version is a no-op; (b) an older `edited_at` is ignored; (c) a newer `edited_at` is applied; (d) `completed_at` is unchanged after an edit; (e) a tombstoned set is excluded from the 14-day load. Unit (queue): an edit bumps only `edited_at`, and a delete enqueues a tombstone. Engine unit: a set with `deleted_at` set adds 0 load. | T-0100, T-0300, T-0200 |
 | NFR-SYNC-3 | All other rows (profile, targets, routines, check-ins) use server-wins with last write by server timestamp. The client refetches after it flushes. | Two-device test: the later server write wins, the other client shows it after refetch. | T-0300 |
 | NFR-SYNC-4 | A session started offline on two devices produces two sessions and no merge. | e2e. | T-0304 |
 

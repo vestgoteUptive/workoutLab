@@ -27,7 +27,7 @@ Show how each of the nine body areas is doing against its target over the rollin
 - "Last trained N days ago": today, yesterday, or N days. Before any session: "Not trained yet".
 - 14-day strip: one cell per local day, D−13…D, showing the weighted hard sets that day (blank when 0).
 - Contributing exercises in the window: name, weighted sets contributed, date last done. Sorted by contribution descending, then by name.
-- The "Recovering" tag, with the rule-6 explanation: "≥ 6 hard sets in the last 48 h".
+- The "Recovering" tag (only when the engine returns `recovering = true`), with the rule-6 explanation: "≥ 6 weighted hard sets in the last 48 h". "Weighted" matches rule 6 and the `load` on this screen: a set counts by its area weight (e.g. 6 hard sets of back squat are 3 weighted sets for hamstrings, which is not recovering).
 
 ## Data the screens need from the engine
 Per area: `area, load, target, deficit, coverageStep (0–4), needsAttention, recovering, lastTrainedDate | null, days[14], contributors[{exerciseId, weightedSets, lastDate}]`, plus `windowStart`, `windowEnd` and `computedAt`. The UI shows these values and computes none of them (principle 3). The shape is proposed to T-0101/T-0102.
@@ -52,7 +52,7 @@ Fixtures: timezone Europe/Stockholm, today D = 2026-09-27, default targets (rule
 - **AC8 (offline, queued sets count)** Given the last server sync was at 08:10 and the device is offline with 3 queued hard sets of Romanian deadlift completed at 09:00, When UF-10.1 opens, Then hamstrings includes +3 and glutes +1.5 compared with the 08:10 values, the header reads "Offline · last synced 08:10", and no error state is shown.
 - **AC9 (area detail contributors)** Given 4 hard sets of Romanian deadlift on 2026-09-20 and 4 hard sets of back squat on 2026-09-25, When UF-10.2 for hamstrings opens, Then it shows `6 / 16`, deficit `63 %`, "Last trained 2 days ago", contributors "Romanian deadlift 4 · 20 Sep" then "Back squat 2 · 25 Sep", and strip cells 20 Sep = 4 and 25 Sep = 2.
 - **AC10 (target source)** Given the hamstrings target has `source = adapted` and `updated_at = 2026-09-20`, When UF-10.2 opens, Then it shows "Adapted 20 Sep". Given `source = default`, Then it shows "From your plan".
-- **AC11 (recovering)** Given the engine flags quads `recovering = true`, When UF-10.1 renders, Then the quads row shows "Recovering". Given `recovering = false`, Then no tag is shown.
+- **AC11 (recovering)** Given the engine flags quads `recovering = true`, When UF-10.1 renders, Then the quads row shows "Recovering". When UF-10.2 for quads opens, Then it shows "Recovering" with the text "≥ 6 weighted hard sets in the last 48 h". Given `recovering = false`, Then neither screen shows the tag or the text.
 - **AC12 (not reachable in a workout)** Given an active session on UF-09.9 Paused, When its actions are listed, Then none of them navigates to UF-10.*.
 - **AC13 (UI computes nothing)** Given a stubbed engine that returns quads `load 3, target 20, coverageStep 4` (deliberately inconsistent), When UF-10.1 renders, Then it shows `3 / 20` with `coverage-4`. This proves the UI renders the engine output and never recomputes it.
 - **AC14 (accessibility)** Given hamstrings at 6 of 16 with `needsAttention = true`, When the row is read by a screen reader, Then its accessible name is "Hamstrings, 6 of 16 hard sets, needs attention", and the row's hit area is at least 44×44 CSS px (NFR-A11Y-2).
