@@ -10,7 +10,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0001 | PRD on v2 IDs; UF-10 Balance and UF-11 Plan check-in specs; non-functional requirements (gaps A1, B7) | product | — | done | wl-spec |
 | T-0002 | Monorepo scaffold: pnpm + turbo, TS strict, ESLint/Prettier, Vitest, remove `apps/api`, CI workflow | infra | — | done | wl-build-infra |
 | T-0003 | `packages/design-tokens` from the design system + coverage ramp (D-0003); lint rule: no hex values outside tokens | design | T-0002 | done | wl-design |
-| T-0004 | CI checks: docs check (UF IDs exist in v2 flows, no v1 labels), duplicate D-NNNN id check, placeholder-test check | infra | T-0002 | ready | wl-build-infra |
+| T-0004 | CI checks: docs check (UF IDs exist in v2 flows, no v1 labels), duplicate D-NNNN id check, placeholder-test check | infra | T-0002 | doing | wl-build-infra |
 | T-0005 | Spec touch-ups per D-0015: NFR-SYNC-2 wording (edited_at/deleted_at), UF-11.1 clamped proposal copy, UF-10.2 "Recovering" = ≥ 6 weighted hard sets in 48 h | product | T-0001 | done | wl-spec |
 
 **Follow-ups folded into existing tickets (from T-0001/T-0002, 2026-09-27)** — the groomer copies these into the ticket files:
@@ -27,21 +27,26 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - Design follow-up: self-hosted woff2 fonts via design-tokens (no CDN).
 - T-0100b (from T-0100a review): `profiles_priority_areas_valid` must reject multi-dimensional arrays (array_ndims = 1). UF-03.3 effort scale assumed 1–5 (D-0030), product to confirm.
 - T-0004 (from T-0100a): CI check that regenerates the AC1 pgTAP column block from docs/data-model.md and fails on drift.
+- T-0100b (from T-0200 groom, D-0034): CHECK (sets_per_14d > 0) on area_targets.
+- T-0102 (from T-0200 groom): mirror engine types from D-0034 §1 (history set with clientId/editedAt/deletedAt/pending, library exercise, area target, balance result); ISO-8601 instants, YYYY-MM-DD local dates.
+- T-0201 (from T-0200 groom): eligible-exercise rule + R0-E1 determinism test against suggest (D-0034 §7); reconcile equipment names pullup-bar/'—' (engine L1) vs pull-up-bar/none (D-0022); reuse test/fixtures/histories.ts (also T-0202).
+- T-0300 (from T-0200 groom): pass queued offline sets to the engine with pending: true after server rows, covering ≥ 56 local days (D-0034 §3).
+- T-0203 (from T-0100a): enable Google in supabase/config.toml via env(); seed exercises 1:1 onto D-0029 columns.
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0100a | Data model v1 part a: contract doc, config.toml, migration 1 (library, profiles, targets, sessions, sets, triggers, RLS), ACs tagged [a] incl. D-0029 exercises columns | data | T-0002 | doing | wl-build-data |
-| T-0100b | Data model v1 part b: migration 2 (routines, routine_items, plan_checkins, analytics schema), ACs tagged [b] | data | T-0100a | todo | wl-build-data |
+| T-0100a | Data model v1 part a: contract doc, config.toml, migration 1 (library, profiles, targets, sessions, sets, triggers, RLS), ACs tagged [a] incl. D-0029 exercises columns | data | T-0002 | done | wl-build-data |
+| T-0100b | Data model v1 part b: migration 2 (routines, routine_items, plan_checkins, analytics schema), ACs tagged [b] | data | T-0100a | doing | wl-build-data |
 | T-0101 | Engine rules v1 (gap B4): warm-up, energy, swap ranking, progression/pre-fill, shuffle, main lift, "planned session" | engine | T-0001 | done | wl-spec |
 | T-0102 | OpenAPI for Edge Functions with full schemas, auth and errors; generate `packages/shared` types | data | T-0100a, T-0101 | todo | wl-build-data |
-| T-0103a | Exercise library part a: @workoutlab/exercises package, schema + tests, bodyweight exercises (D-0022) | content | T-0002 | ready | wl-build-content |
+| T-0103a | Exercise library part a: @workoutlab/exercises package, schema + tests, bodyweight exercises (D-0022) | content | T-0002 | doing | wl-build-content |
 | T-0103b | Exercise library part b: dumbbell + full-gym exercises to 72–96 total (AC10–13 for all options) | content | T-0103a | todo | wl-build-content |
 
 ## Phase 2 — Core
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0200 | Engine: rules 1–6 (mapping, hard sets, window, targets, deficit, recovery) + balance | engine | T-0101 | todo | wl-build-engine |
+| T-0200 | Engine: rules 1–6 (mapping, hard sets, window, targets, deficit, recovery) + balance | engine | T-0101, T-0004 | ready | wl-build-engine |
 | T-0201 | Engine: time-budget selection, warm-up, energy, time check (rules 7, 8, 10) | engine | T-0200 | todo | wl-build-engine |
 | T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | todo | wl-build-engine |
 | T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201 | todo | wl-build-backend |
