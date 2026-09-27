@@ -3,7 +3,7 @@ id: T-0002
 title: Monorepo scaffold — pnpm + turbo, TS strict, ESLint/Prettier, Vitest, remove apps/api, CI
 lane: infra
 screens: []
-decisions: [D-0001, D-0006, D-0007, D-0015]
+decisions: [D-0001, D-0006, D-0007, D-0016]
 deps: []
 status: ready   # rework after accept pass 1 (2026-09-27); see "Accept log"
 ---
@@ -21,7 +21,7 @@ criteria and add the items from review round 1.
   flat config and Prettier; Vitest in every package; delete `apps/api` (D-0001); GitHub
   Actions CI. The CI jobs for supabase, e2e and deploy may no-op until their owning tickets
   land.
-- In (bootstrap, per D-0015): a minimal placeholder scaffold in `apps/web`, `apps/landing`,
+- In (bootstrap, per D-0016): a minimal placeholder scaffold in `apps/web`, `apps/landing`,
   `packages/engine` and `packages/shared`. Each gets a `package.json`, a `tsconfig.json`,
   an `eslint.config.mjs`, one source file and one test. The owning lanes replace these
   placeholders later.
@@ -72,3 +72,10 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
   into the design lane) and AC7 (engine tsconfig allows DOM and Node types) are not met.
   This file now lists the scope that review blocker #1 said was missing, so the bootstrap
   scaffolds are allowed.
+- 2026-09-27 pass 2: **failed**, because of a decision id collision. The ACs are not the
+  problem. AC1–AC7 are met: build, QA and review each confirmed them with `--force`, the
+  AC5 dry-run, and the AC7 probe file. The blocker is that main already has
+  `.squad/decisions/D-0016-set-sync-upsert.md`, which T-0001 merged. This branch adds a
+  second D-0016. Fix: rename the bootstrap decision to **D-0016** (the filename and `id:`),
+  then update `decisions:` in the frontmatter and the "per D-0016" line in Scope. No other
+  change is needed. Before renaming, check the highest D-number on main.
