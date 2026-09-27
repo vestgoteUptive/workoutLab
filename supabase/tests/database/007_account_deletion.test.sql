@@ -49,7 +49,7 @@ select is(
       and exists (select 1 from information_schema.tables t
                    where t.table_schema = 'public' and t.table_name = c.table_name and t.table_type = 'BASE TABLE')
       and (select count(*) from pg_constraint k
-            where k.conrelid = format('public.%I', c.table_name)::regclass and k.contype = 'f'
+            where k.conrelid = format('%I.%I', c.table_schema, c.table_name)::regclass and k.contype = 'f'
               and k.confrelid = 'auth.users'::regclass and k.confdeltype = 'c') = 0),
   0, 'every public table with user_id cascades from auth.users');
 select results_eq($$select
