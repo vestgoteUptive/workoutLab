@@ -59,6 +59,7 @@ Each criterion becomes at least one automated test in `packages/design-tokens/te
   - `dist/tokens.css` has one `:root` block with `--wl-color-<name>: <hex>;` for each of the 17 colours (values equal to `tokens.json`), plus `--wl-font-display` and `--wl-font-body`.
   - A second run produces byte-identical output.
   - The file contains no `url(`, `@import` or `http`.
+  - `package.json` `exports` maps `"./tokens.css"` to `./dist/tokens.css`, so T-0300 and T-0309 can import `@workoutlab/design-tokens/tokens.css`.
 - **AC10 (fonts)** Given `tokens.json` `font`, Then:
   - `display.family` starts with `"Big Shoulders Display"` and `body.family` starts with `"DM Sans"`, and both end with the generic `sans-serif`.
   - `display.weights` = `[700, 800]` and `body.weights` = `[400, 500, 700]`.
@@ -91,6 +92,12 @@ Each criterion becomes at least one automated test in `packages/design-tokens/te
   - `f.scss`: `$c: hsl(0 0% 0%);`
 
   Given a fixture with only `var(--wl-…)` CSS, an SVG using `currentColor`, and a hex value inside `node_modules/`, `dist/`, `.astro/` or `coverage/`, Then it exits 0.
+
+  Given a fixture with only these fragment and ID-selector look-alikes, Then it exits 0 (D-0019: `href`, `xlink:href`, `id` and `for` values and CSS ID selectors are not colours):
+  - `g.astro`: `<a href="#add">Add</a>`
+  - `h.html`: `<a href="#decade">`
+  - `i.svg`: `<use href="#add"/>` and `<use xlink:href="#face"/>`
+  - `j.css`: `#cafe { color: var(--wl-color-text); }`
 - **AC14 (scanner is wired, D-0019)** Given `apps/web/package.json` and `apps/landing/package.json`, Then each declares `"@workoutlab/design-tokens": "workspace:*"`, and its `lint` script runs `eslint .` and then `wl-check-colours .`. Test: a scanner test runs the CLI against both package roots on the current tree and expects exit 0. The plugin (`eslint-plugin/`) and CLI (`bin/`) are plain ESM JavaScript with no build step, because turbo `lint` doesn't depend on `^build`. Test: with `packages/design-tokens/dist` deleted, `pnpm --filter @workoutlab/web lint` and `pnpm --filter @workoutlab/landing lint` each exit 0.
 - **AC15 (cache honesty, as T-0002 AC5)** Given `turbo.json`, Then `globalDependencies` includes `packages/design-tokens/eslint-plugin/**` and `packages/design-tokens/bin/**`, and `turbo run lint --dry=json` lists the plugin and CLI files in `globalCacheInputs.files`.
 - **AC16 (C-01 legend spec)** Given `Design-docs/docs/design/components/c-01-body-map.md`, When a test reads it, Then it contains:

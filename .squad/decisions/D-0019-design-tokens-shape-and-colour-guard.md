@@ -26,7 +26,7 @@ T-0003 creates `packages/design-tokens`, a contract that CLAUDE.md makes the onl
   - It allows `var(--wl-…)` and `color-mix()` over `var()`.
   - Named colours are out of scope.
   - `packages/design-tokens/**` is exempt.
-- **Guard, part 2:** a CLI `wl-check-colours` in the same package checks the same patterns in `.css`, `.scss`, `.html`, `.astro`, `.svg` and `.webmanifest` files. It skips `node_modules`, `dist`, `.astro` and `coverage`. `public/` is **not** exempt. The web and landing `lint` scripts run it over their package root.
+- **Guard, part 2:** a CLI `wl-check-colours` in the same package checks the same patterns in `.css`, `.scss`, `.html`, `.astro`, `.svg` and `.webmanifest` files. It skips `node_modules`, `dist`, `.astro` and `coverage`. `public/` is **not** exempt. Like the ESLint rule, it ignores the values of `href`, `xlink:href`, `id` and `for` attributes, and it ignores CSS ID selectors (for example `#cafe {`), so fragment links such as `#add` aren't read as colours. The web and landing `lint` scripts run it over their package root.
 - **No build for the guard:** the plugin and CLI are plain ESM JavaScript that runs from source, because turbo `lint` doesn't depend on `^build`. The `packages/design-tokens/**` exemption is set in that package's own `eslint.config.mjs`, since package configs extend the root config and patterns resolve per package.
 - **Cache honesty:** `turbo.json` `globalDependencies` gains `packages/design-tokens/eslint-plugin/**` and `packages/design-tokens/bin/**`.
 - **Fonts:** T-0003 defines only the family stacks (each ends in a generic family) and the weights. Self-hosted woff2 files are a follow-up: no third-party font CDN, for offline use and privacy.
