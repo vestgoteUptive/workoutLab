@@ -8,6 +8,8 @@ import { findRawColours } from "../eslint-plugin/colour-patterns.js";
 
 const EXTENSIONS = new Set([".css", ".scss", ".html", ".astro", ".svg", ".webmanifest"]);
 // `public/` is deliberately not skipped: manifest and favicon colours must come from tokens.
+// Tag-based files: attribute exemptions apply and `>` closes a tag (D-0031).
+const MARKUP_EXTENSIONS = new Set([".html", ".astro", ".svg"]);
 const SKIP_DIRS = new Set(["node_modules", "dist", ".astro", "coverage", ".git"]);
 
 function* walk(dir) {
@@ -40,9 +42,10 @@ for (const root of roots) {
     process.exit(2);
   }
   for (const file of walk(root)) {
+    const markup = MARKUP_EXTENSIONS.has(extname(file).toLowerCase());
     const lines = readFileSync(file, "utf8").split(/\r?\n/);
     lines.forEach((line, i) => {
-      for (const { index, value } of findRawColours(line, { markup: true })) {
+      for (const { index, value } of findRawColours(line, { markup })) {
         findings += 1;
         console.log(
           `${file}:${i + 1}:${index + 1}  raw colour ${value}: use var(--wl-color-…) from @workoutlab/design-tokens`,

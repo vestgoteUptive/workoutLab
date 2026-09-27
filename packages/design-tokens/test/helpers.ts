@@ -26,7 +26,3 @@ export function contrast(a: string, b: string): number {
 export function runCli(args: string[], cwd = repoRoot): SpawnSyncReturns<string> {
   return spawnSync(process.execPath, [cliPath, ...args], { cwd, encoding: "utf8" });
 }
-
-export function pnpm(args: string[], cwd = repoRoot): SpawnSyncReturns<string> {
-  return spawnSync("pnpm", args, { cwd, encoding: "utf8", env: process.env, timeout: 120_000 });
-}
