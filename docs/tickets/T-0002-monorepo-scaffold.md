@@ -75,7 +75,8 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 - 2026-09-27 pass 2: **failed**, because of a decision id collision. The ACs are not the
   problem. AC1–AC7 are met: build, QA and review each confirmed them with `--force`, the
   AC5 dry-run, and the AC7 probe file. The blocker is that main already has
-  `.squad/decisions/D-0016-set-sync-upsert.md`, which T-0001 merged. This branch adds a
-  second D-0016. Fix: rename the bootstrap decision to **D-0016** (the filename and `id:`),
+  `.squad/decisions/D-0015-set-sync-upsert.md`, which T-0001 merged. This branch adds a
+  second D-0015. Fix: rename the bootstrap decision to **D-0016** (the filename and `id:`),
   then update `decisions:` in the frontmatter and the "per D-0016" line in Scope. No other
   change is needed. Before renaming, check the highest D-number on main.
+- 2026-09-27 orchestrator: renamed to D-0016 as specified (no rebuild needed); merged after re-verifying typecheck/lint/test.
