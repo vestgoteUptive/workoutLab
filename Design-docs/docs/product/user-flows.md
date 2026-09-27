@@ -97,12 +97,13 @@ Full spec and ACs: `docs/specs/uf-10-balance.md` (D-0013). **Entry:** the body m
   - Zero history: every area `0 / target`, with "Start workout". Offline: "Offline · last synced HH:MM", recomputed on the device including queued sets.
 - **UF-10.2 Area detail**
   - `load / target`, deficit %, target source, "Last trained N days ago", a 14-day strip (sets per day) and the contributing exercises.
+  - When the engine flags rule 6: a "Recovering" tag explained as "≥ 6 weighted hard sets in the last 48 h".
 
 ## UF-11 Plan check-in
 
 Full spec and ACs: `docs/specs/uf-11-plan-checkin.md` (D-0018). Principle: targets adapt, and never silently.
 
-- **UF-11.1 Check-in**: a card on UF-02.1 and UF-11.2 when two 14-day periods in a row were under (< 70 % of the planned minimum) or over (> 110 % of the planned maximum). It proposes rhythm −1 or +1 per week and previews the new targets. Accept / Keep current. Never shown on UF-03, UF-08 or UF-09. Offline: the actions are disabled.
+- **UF-11.1 Check-in**: a card on UF-02.1 and UF-11.2 when two 14-day periods in a row were under (< 70 % of the planned minimum) or over (> 110 % of the planned maximum). It proposes rhythm −1 or +1 per week on both bounds, clamped to 1–7, and shows the clamped values (1–2 → "Switch to 1–1 per week?", never "0–1"; 6–7 → "Step up to 7–7 per week?"). No card when the clamped rhythm equals the current one (1–1 under, 7–7 over). It previews the new targets. Accept / Keep current. Never shown on UF-03, UF-08 or UF-09. Offline: the actions are disabled.
 - **UF-11.2 Plan**: goal, rhythm, priority areas, per-area targets with source, next check-in date, the last 3 check-ins.
 - **UF-11.3 Edit plan**: goal, rhythm (1–7 per week), up to 3 priority areas. Save re-derives the targets and resets the check-in streak.
 
