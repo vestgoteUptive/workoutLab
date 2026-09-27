@@ -34,4 +34,12 @@ export default tseslint.config(
     plugins: { workoutlab },
     rules: { "workoutlab/no-raw-colour": "error" },
   },
+  {
+    // The repo-hygiene checks (T-0004, D-0023) are plain Node scripts, run outside any
+    // package's own eslint.config.mjs.
+    files: [".github/scripts/**/*.mjs"],
+    languageOptions: {
+      globals: { process: "readonly", console: "readonly" },
+    },
+  },
 );
