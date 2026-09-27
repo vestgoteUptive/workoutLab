@@ -1,0 +1,21 @@
+{
+  "name": "@workoutlab/landing",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro check && astro build",
+    "typecheck": "astro check",
+    "lint": "eslint .",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "astro": "^5.1.1"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.4",
+    "typescript": "^5.7.2",
+    "vitest": "^5.0.2"
+  }
+}

@@ -1,6 +1,10 @@
 node_modules/
 dist/
 .turbo/
+.astro/
+.output/
+.vite/
+*.tsbuildinfo
 .DS_Store
 .env
 .env.local
