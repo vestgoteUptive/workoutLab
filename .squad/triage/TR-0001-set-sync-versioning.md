@@ -7,7 +7,7 @@ date: 2026-09-27
 ## Conflict
 - `docs/specs/non-functional.md` **NFR-SYNC-2** says that editing a set "means a new version keyed by the same `client_id`, and the newest `completed_at` wins".
 - **D-0013** (`.squad/decisions/D-0013-balance-window-coverage.md`) says a set is in the 14-day window when "the local date of its `completed_at`" falls in it. The UF-10 ACs (AC6, AC7, AC9) and the UF-10.2 day strip rely on this.
-- **NFR-SYNC-1 / D-0011** say sets are append-only, keyed by `client_id`, and that the server ignores duplicates (unique `user_id, client_id`).
+- **NFR-SYNC-1 / D-0017** say sets are append-only, keyed by `client_id`, and that the server ignores duplicates (unique `user_id, client_id`).
 
 These cannot all hold:
 1. If an edit bumps `completed_at` so that it wins, editing an old set moves it into today's window. Its load moves to a different day, and it never drops out as D-0013 requires.
@@ -33,6 +33,6 @@ Why, in the README order:
 - *Lanes:* option 1 changes one table (data) and one queue (web-shell). Option 2 also forces chain resolution into the engine's load and every metric query.
 - *Reversibility:* option 1 is two nullable columns plus an upsert rule, which is cheap to change. It is marked `revisit`.
 
-D-0011 stays in force. D-0015 only narrows its "Conflicts" bullet ("append-only" now means that sync never hard-deletes or loses a set), so D-0011 is not superseded. NFR-SYNC-2 must be reworded by the product lane to match D-0015.
+D-0017 stays in force. D-0015 only narrows its "Conflicts" bullet ("append-only" now means that sync never hard-deletes or loses a set), so D-0017 is not superseded. NFR-SYNC-2 must be reworded by the product lane to match D-0015.
 
 Follow-ups: product (reword NFR-SYNC-2), data (T-0100 columns, upsert and pgTAP), web-shell (T-0300 queue), engine (T-0101/T-0200 exclude tombstones).

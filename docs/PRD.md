@@ -13,7 +13,7 @@ Hard sets per body area (chest, back, shoulders, arms, core, glutes, quads, hams
 1. **One task on screen during a workout.** UF-09 Focus mode shows only the current step. Everything else is behind UF-09.9 Paused.
 2. **Time budget is a first-class input.** Every workout start asks how long the user has (UF-08.1). The warm-up counts by default (D-0004).
 3. **Deterministic engine.** Rules pick the exercises. An LLM may only phrase the explanations.
-4. **Targets are not static.** They adapt to what the user actually does, through UF-11 Plan check-in (D-0012). Always ask, never change silently.
+4. **Targets are not static.** They adapt to what the user actually does, through UF-11 Plan check-in (D-0018). Always ask, never change silently.
 5. **Onboarding under 60 seconds** to a first plan (UF-01.1 → UF-01.4, D-0014).
 
 ## Scope v1
@@ -34,7 +34,7 @@ Hard sets per body area (chest, back, shoulders, arms, core, glutes, quads, hams
 Shared components: C-01 Body map, C-02 Tab bar (T-0300).
 
 ## Non-functional requirements
-`docs/specs/non-functional.md` (D-0011): offline-first logging, sync conflicts, performance budget, WCAG 2.2 AA, English only, no third-party analytics, EU data with export and deletion, wall-clock timers.
+`docs/specs/non-functional.md` (D-0017): offline-first logging, sync conflicts, performance budget, WCAG 2.2 AA, English only, no third-party analytics, EU data with export and deletion, wall-clock timers.
 
 ## Out of scope v1
 Each item is answered by a default in `docs/gaps.md` §D, revisited in Phase 5 through `wl-idea`.
@@ -64,7 +64,7 @@ Each item is answered by a default in `docs/gaps.md` §D, revisited in Phase 5 t
 | Swap ranking by reason, energy modifiers, weight progression and pre-fill, shuffle, main-lift concept (gap B4). | engine-dev + product-owner | T-0101 |
 | Can the CC-BY-SA exercise text ship, or do we write our own before launch? | human (H-07) | D-0005 |
 | Is the coverage ramp legible on a real device? | designer / human (H-07) | D-0003, D-0013 |
-| Check-in thresholds and period length after real use. | product-owner | D-0012 |
+| Check-in thresholds and period length after real use. | product-owner | D-0018 |
 
 ## Success metrics
 All metrics are computed with SQL on our own tables (NFR-AN-2). There is no third-party analytics.

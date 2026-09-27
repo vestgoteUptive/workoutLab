@@ -3,7 +3,7 @@
 - **Flow:** UF-11 Plan check-in (new in v2, D-0002; was v1 UF-09)
 - **Screens:** UF-11.1 Check-in · UF-11.2 Plan · UF-11.3 Edit plan
 - **Built in:** T-0308 (web-feature:UF-07). Rules in T-0202 (engine rule 9), encoded in `docs/engine-rules.md` by T-0101.
-- **Decisions:** D-0002, D-0012 (periods, planned, proposals), D-0011 (NFR)
+- **Decisions:** D-0002, D-0018 (periods, planned, proposals), D-0017 (NFR)
 - **Principle:** 4, targets are not static. They adapt to what the user actually does, and never silently.
 
 ## UF-11.1 Check-in (card)
@@ -24,7 +24,7 @@
 - Save re-derives the targets (rule 4, `source = default`) and resets the check-in streak, so the next proposal needs two consecutive periods on the new rhythm. Any pending proposal is withdrawn.
 - Changing level and equipment happens in settings, not here (out of scope for this spec).
 
-## Evaluation rules (D-0012, summary)
+## Evaluation rules (D-0018, summary)
 - Period k covers local days [onboarding + 14k, onboarding + 14k + 13]. A completed session is a session with ≥ 1 hard set, dated by its local `started_at`.
 - Under: completed < 0.7 × 2·min. Over: completed > 1.1 × 2·max.
 - Two consecutive under periods propose −1/−1. Two consecutive over periods propose +1/+1. Bounds are clamped to 1–7, and there is no proposal if the clamped rhythm equals the current one.

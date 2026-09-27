@@ -7,7 +7,7 @@ by: triage (TR-0001, on T-0001)
 area: data
 ---
 ## Context
-TR-0001 found three rules that cannot all hold. NFR-SYNC-2 orders set edits by "newest `completed_at`". D-0013 dates a set in the 14-day window by `completed_at`. NFR-SYNC-1 / D-0011 dedupe on a unique `(user_id, client_id)` and ignore duplicates, so an edit sent under the same key would be dropped. This decision narrows the "Conflicts" bullet of D-0011 and replaces NFR-SYNC-2. The rest of D-0011 stands.
+TR-0001 found three rules that cannot all hold. NFR-SYNC-2 orders set edits by "newest `completed_at`". D-0013 dates a set in the 14-day window by `completed_at`. NFR-SYNC-1 / D-0017 dedupe on a unique `(user_id, client_id)` and ignore duplicates, so an edit sent under the same key would be dropped. This decision narrows the "Conflicts" bullet of D-0017 and replaces NFR-SYNC-2. The rest of D-0017 stands.
 
 ## Decision
 - **Identity:** each set is exactly one row in `session_sets`, unique on `(user_id, client_id)`. `client_id` is a UUID generated on the client at "Done set". NFR-SYNC-1 still holds: inserting the same `client_id` twice gives 1 row.
@@ -15,7 +15,7 @@ TR-0001 found three rules that cannot all hold. NFR-SYNC-2 orders set edits by "
 - **Edit clock:** a new column `edited_at timestamptz not null`, set by the client on every create, edit or delete. The server writes with `insert … on conflict (user_id, client_id) do update … where excluded.edited_at > session_sets.edited_at`. The newer edit wins, and an equal or older one is a no-op, so replays are idempotent.
 - **Delete:** a new column `deleted_at timestamptz null` (the tombstone). A delete goes through the same upsert with a newer `edited_at`. Sync never hard-deletes a set. Hard deletes happen only through account deletion (NFR-PRIV-5 cascade).
 - **Reads:** engine load, `balance()`, the 14-day view and the metric queries exclude rows where `deleted_at is not null`.
-- **Meaning of "append-only" in D-0011:** sync never loses or hard-deletes a set. It does not mean one row per edit.
+- **Meaning of "append-only" in D-0017:** sync never loses or hard-deletes a set. It does not mean one row per edit.
 - Every other row keeps the NFR-SYNC-3 rule: server wins, with the last write decided by server timestamp.
 
 ## Consequences

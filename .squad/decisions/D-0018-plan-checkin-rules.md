@@ -1,5 +1,5 @@
 ---
-id: D-0012
+id: D-0018
 title: Plan check-in (UF-11) — 14-day periods from onboarding, planned = rhythm range × 2, two periods in a row both ways
 status: revisit
 date: 2026-09-27

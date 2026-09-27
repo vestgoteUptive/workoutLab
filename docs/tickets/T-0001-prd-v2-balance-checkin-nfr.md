@@ -3,7 +3,7 @@ id: T-0001
 title: PRD on v2 IDs; UF-10 Balance and UF-11 Plan check-in specs; non-functional requirements (gaps A1, A3, B7)
 lane: product
 screens: [UF-01.5, UF-06.1, UF-10.1, UF-10.2, UF-11.1, UF-11.2, UF-11.3]
-decisions: [D-0002, D-0003, D-0004, D-0011, D-0012, D-0013, D-0014]
+decisions: [D-0002, D-0003, D-0004, D-0017, D-0018, D-0013, D-0014]
 deps: []
 status: ready
 ---
@@ -18,9 +18,9 @@ The PRD still uses v1 screen IDs, so the same ID points to different screens in 
   - `docs/specs/uf-11-plan-checkin.md`: UF-11.1 Check-in, UF-11.2 Plan, UF-11.3 Edit plan, with testable ACs for T-0308 and T-0202.
   - `docs/specs/non-functional.md`: offline, sync conflicts, performance budget, accessibility, i18n, analytics, privacy/GDPR, timers.
   - Edge cases written into each spec: offline, time running out, zero history, returning after 10 days off.
-  - Defaults recorded as decisions with `status: revisit`: D-0011 (NFR), D-0012 (check-in rules), D-0013 (balance window and coverage steps), D-0014 (UF-01.5 placement and how the 60 s is measured).
+  - Defaults recorded as decisions with `status: revisit`: D-0017 (NFR), D-0018 (check-in rules), D-0013 (balance window and coverage steps), D-0014 (UF-01.5 placement and how the 60 s is measured).
 - Out:
-  - Changing contracts. `docs/engine-rules.md` and `docs/data-model.md` get follow-ups (engine and data lanes) that point at D-0012/D-0013.
+  - Changing contracts. `docs/engine-rules.md` and `docs/data-model.md` get follow-ups (engine and data lanes) that point at D-0018/D-0013.
   - Specs for UF-01…UF-09 beyond what v2 already says (their build tickets carry the detail).
   - Manual per-area target overrides (`area_targets.source = manual`). Cut from v1 to keep UF-11 small.
 
@@ -35,14 +35,14 @@ This is a docs ticket. Each AC is a mechanical check (a file-exists check or a r
 - AC6 Given `docs/specs/uf-11-plan-checkin.md`, When its ACs are read, Then there are at least 8 in Given/When/Then form, and at least one AC each covers: under-rhythm proposal after two periods in a row, no proposal after one low period (10 days off), over-rhythm proposal, targets unchanged until Accept, offline, zero history, and never shown during a workout (UF-08, UF-09).
 - AC7 Given `docs/specs/non-functional.md`, When its sections are read, Then it has sections for Offline, Sync conflicts, Performance, Accessibility, i18n, Analytics, Privacy/GDPR and Timers, and each section has at least one requirement with a number or a pass/fail check (ID `NFR-*`).
 - AC8 Given the "Open questions" sections of `docs/PRD.md` and `user-flows.md`, When each item is read, Then each one either links a `D-NNNN` or names an owner and a ticket (or, for items out of scope in v1, an owner and "Phase 5 `wl-idea`").
-- AC9 Given the decisions this ticket cites, When `.squad/decisions/` is listed, Then D-0011…D-0014 exist with `status: revisit` and a "Revisit when" section.
+- AC9 Given the decisions this ticket cites, When `.squad/decisions/` is listed, Then D-0013, D-0014, D-0017, D-0018 exist with `status: revisit` and a "Revisit when" section.
 - AC10 Given `docs/PRD.md`, When the success metrics are read, Then each metric has a definition (start and stop events, or a formula) and a numeric target.
 
 ## Paths you may change
-`docs/PRD.md`, `docs/specs/**`, `docs/tickets/**`, `Design-docs/docs/product/**`. Extra paths: `.squad/decisions/D-0011…D-0014` only. Under `.squad/README.md` rule 1, any agent may record a default decision.
+`docs/PRD.md`, `docs/specs/**`, `docs/tickets/**`, `Design-docs/docs/product/**`. Extra paths: `.squad/decisions/D-0013, D-0014, D-0017, D-0018` only. Under `.squad/README.md` rule 1, any agent may record a default decision.
 
 ## Contract impact
-none. D-0012 and D-0013 describe product intent that `docs/engine-rules.md` has to encode in T-0101 (engine lane). D-0011 names the data fields that T-0100 needs (client-generated set IDs). Both are follow-ups, not edits in this ticket.
+none. D-0018 and D-0013 describe product intent that `docs/engine-rules.md` has to encode in T-0101 (engine lane). D-0017 names the data fields that T-0100 needs (client-generated set IDs). Both are follow-ups, not edits in this ticket.
 
 ## Definition of done
 All AC checks pass · no contract edits · commit messages start with `T-0001` and cite screen IDs · follow-ups filed for the engine, data, infra, security and orchestrator lanes.

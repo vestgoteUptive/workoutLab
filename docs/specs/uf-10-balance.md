@@ -3,7 +3,7 @@
 - **Flow:** UF-10 Balance (new in v2, D-0002; was v1 UF-08)
 - **Screens:** UF-10.1 All areas · UF-10.2 Area detail
 - **Built in:** T-0307 (web-feature:UF-06). Engine data comes from T-0200 (`balance()`).
-- **Decisions:** D-0002, D-0003 (coverage colour), D-0011 (NFR), D-0013 (window, steps, order)
+- **Decisions:** D-0002, D-0003 (coverage colour), D-0017 (NFR), D-0013 (window, steps, order)
 
 ## Purpose
 Show how each of the nine body areas is doing against its target over the rolling 14 days, and why. Balance is the rolling-window view behind the C-01 body map on Today.

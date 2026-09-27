@@ -100,7 +100,7 @@ Full spec and ACs: `docs/specs/uf-10-balance.md` (D-0013). **Entry:** the body m
 
 ## UF-11 Plan check-in
 
-Full spec and ACs: `docs/specs/uf-11-plan-checkin.md` (D-0012). Principle: targets adapt, and never silently.
+Full spec and ACs: `docs/specs/uf-11-plan-checkin.md` (D-0018). Principle: targets adapt, and never silently.
 
 - **UF-11.1 Check-in**: a card on UF-02.1 and UF-11.2 when two 14-day periods in a row were under (< 70 % of the planned minimum) or over (> 110 % of the planned maximum). It proposes rhythm −1 or +1 per week and previews the new targets. Accept / Keep current. Never shown on UF-03, UF-08 or UF-09. Offline: the actions are disabled.
 - **UF-11.2 Plan**: goal, rhythm, priority areas, per-area targets with source, next check-in date, the last 3 check-ins.

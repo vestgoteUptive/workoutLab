@@ -1,6 +1,6 @@
 # Non-functional requirements v1
 
-- **Closes:** gap B7. **Decision:** D-0011 (revisit). **Co-owner:** security-reviewer (privacy details go in `docs/security/`).
+- **Closes:** gap B7. **Decision:** D-0017 (revisit). **Co-owner:** security-reviewer (privacy details go in `docs/security/`).
 - Every `NFR-*` has a number or a pass/fail check. The ticket that owns the named area adds the test.
 
 ## Offline
@@ -45,7 +45,7 @@ Reference device: a mid-range Android (Moto G Power class), Chrome, "Fast 4G" th
 | ID | Requirement | Check | Owner ticket |
 |---|---|---|---|
 | NFR-I18N-1 | English only in v1, with every user-facing string in one catalogue (`apps/web/src/lib/i18n`). | Lint: no string literals in JSX outside the catalogue (allowlist for symbols). | T-0300 |
-| NFR-I18N-2 | Dates, times and numbers are formatted with `Intl`, using the device locale and timezone. The window and periods use local days (D-0012, D-0013). | Unit tests with `Europe/Stockholm` and `America/New_York`. | T-0300 |
+| NFR-I18N-2 | Dates, times and numbers are formatted with `Intl`, using the device locale and timezone. The window and periods use local days (D-0018, D-0013). | Unit tests with `Europe/Stockholm` and `America/New_York`. | T-0300 |
 | NFR-I18N-3 | Weights are in kg only in v1, stored as `weight_kg`. | — (lb display is a Phase 5 idea). | — |
 
 ## Analytics
