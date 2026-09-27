@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+
+jobs:
+  checks:
+    name: typecheck / lint / unit test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -w typecheck
+      - run: pnpm -w lint
+      - run: pnpm format:check
+      - run: pnpm -w test
+
+  supabase:
+    name: supabase db tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: has-supabase
+        run: |
+          if [ -f supabase/config.toml ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: pnpm/action-setup@v4
+        if: steps.has-supabase.outputs.present == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.has-supabase.outputs.present == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - uses: supabase/setup-cli@v1
+        if: steps.has-supabase.outputs.present == 'true'
+        with:
+          version: latest
+      # `supabase/config.toml` lands with T-0100/T-0203; until then this job is a no-op so
+      # CI stays green from T-0002 onward without a fake DB step to delete later.
+      - run: supabase start
+        if: steps.has-supabase.outputs.present == 'true'
+      - run: supabase test db
+        if: steps.has-supabase.outputs.present == 'true'
+
+  e2e:
+    name: playwright e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: has-e2e
+        run: |
+          if [ -f playwright.config.ts ] || [ -f tests/e2e/playwright.config.ts ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: pnpm/action-setup@v4
+        if: steps.has-e2e.outputs.present == 'true'
+      - uses: actions/setup-node@v4
+        if: steps.has-e2e.outputs.present == 'true'
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: steps.has-e2e.outputs.present == 'true'
+      # A real Playwright config lands with T-0403/qa; until then this job is a no-op.
+      - run: pnpm exec playwright install --with-deps
+        if: steps.has-e2e.outputs.present == 'true'
+      - run: pnpm exec playwright test
+        if: steps.has-e2e.outputs.present == 'true'
+
+  # Deploy jobs run only on `main`, and only once T-0403's release gate (H-06, first
+  # production deploy approval) is recorded done in .squad/needs-human.md. Until T-0400–
+  # T-0402 exist, there is nothing to deploy; the jobs are added alongside those tickets.
+  deploy:
+    name: deploy (staging/prod)
+    if: github.ref == 'refs/heads/main'
+    needs: [checks, supabase, e2e]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Deploy pipeline lands with T-0402, gated on H-06."
