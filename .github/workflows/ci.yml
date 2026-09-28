@@ -69,6 +69,11 @@ jobs:
       # D-0053 §2: the committed seed.sql must match data/exercises/library exactly.
       - run: node supabase/scripts/gen-seed.mjs --check
         if: steps.has-supabase.outputs.present == 'true'
+      # D-0053 §1: the committed supabase/functions/_shared/vendor copy must match
+      # packages/engine and packages/shared exactly, so the server engine can't drift from the
+      # device engine.
+      - run: node supabase/scripts/vendor.mjs --check
+        if: steps.has-supabase.outputs.present == 'true'
       - uses: supabase/setup-cli@v1
         if: steps.has-supabase.outputs.present == 'true'
         with:

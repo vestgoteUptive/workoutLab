@@ -14,6 +14,10 @@ playwright-report/
 test-results/
 supabase/.temp/
 supabase/.branches/
+# Regenerated on every `deno check`/`deno test` run; not pinned (D-0053 §1 pins ajv and
+# @supabase/supabase-js in deno.json itself).
+supabase/functions/deno.lock
+supabase/tests/functions/deno.lock
 infra/terraform/.terraform/
 infra/terraform/*.tfstate*
 infra/terraform/plans/
