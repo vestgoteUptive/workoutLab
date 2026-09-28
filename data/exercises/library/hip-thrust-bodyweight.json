@@ -1,0 +1,21 @@
+{
+  "id": "hip-thrust-bodyweight",
+  "name": "Bodyweight hip thrust",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "glutes": 1, "hamstrings": 0.5 },
+  "instructions": [
+    "Sit with your upper back against a raised surface, knees bent.",
+    "Push through your heels and lift your hips until your body is straight.",
+    "Squeeze your glutes at the top, then lower with control."
+  ],
+  "cue": "Push through the heels, squeeze at the top",
+  "mistakes": ["Overextending the lower back.", "Pushing through the toes instead of the heels."],
+  "variants": ["glute-bridge", "fire-hydrant"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

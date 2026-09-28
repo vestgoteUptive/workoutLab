@@ -92,6 +92,24 @@ importers:
         specifier: ^5.0.2
         version: 5.0.2(@types/node@22.20.4)(jsdom@25.0.1)(vite@6.4.3(@types/node@22.20.4)(yaml@2.9.1))
 
+  data/exercises:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.4
+      ajv:
+        specifier: ^8.17.1
+        version: 8.20.0
+      eslint:
+        specifier: ^9.15.0
+        version: 9.39.5
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^5.0.2
+        version: 5.0.2(@types/node@22.20.4)(jsdom@25.0.1)(vite@6.4.3(@types/node@22.20.4)(yaml@2.9.1))
+
   packages/design-tokens:
     devDependencies:
       '@types/culori':

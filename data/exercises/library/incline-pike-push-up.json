@@ -1,0 +1,21 @@
+{
+  "id": "incline-pike-push-up",
+  "name": "Incline pike push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "shoulders": 1, "arms": 0.5 },
+  "instructions": [
+    "Place your hands on a raised surface and walk your feet back into a pike shape.",
+    "Bend your elbows and lower the top of your head toward your hands.",
+    "Push back up to the start."
+  ],
+  "cue": "Pike shape, head to your hands",
+  "mistakes": ["Rounding the lower back.", "Rushing the descent."],
+  "variants": ["pike-push-up", "wall-handstand-hold"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -1,0 +1,22 @@
+{
+  "id": "wall-sit",
+  "name": "Wall sit",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "quads": 1 },
+  "instructions": [
+    "Lean your back against a wall and walk your feet out.",
+    "Slide down until your thighs are about parallel to the floor.",
+    "Hold, keeping your knees over your ankles."
+  ],
+  "cue": "Thighs parallel, knees over ankles",
+  "mistakes": ["Letting the knees drift past the toes.", "Resting hands on the thighs."],
+  "variants": ["bodyweight-squat", "split-squat"],
+  "timed": true,
+  "default_duration_s": 30,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

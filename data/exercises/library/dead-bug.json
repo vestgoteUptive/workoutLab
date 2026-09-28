@@ -1,0 +1,21 @@
+{
+  "id": "dead-bug",
+  "name": "Dead bug",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "core": 1 },
+  "instructions": [
+    "Lie on your back with arms up and knees bent at 90 degrees.",
+    "Lower one arm and the opposite leg toward the floor, keeping your back flat.",
+    "Return to the start and switch sides."
+  ],
+  "cue": "Flat back, opposite arm and leg",
+  "mistakes": ["Letting the lower back arch off the floor.", "Moving too fast to keep control."],
+  "variants": ["plank", "side-plank"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

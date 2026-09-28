@@ -1,0 +1,22 @@
+{
+  "id": "side-plank",
+  "name": "Side plank",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "core": 1, "glutes": 0.5 },
+  "instructions": [
+    "Lie on your side, propped up on one forearm, elbow under your shoulder.",
+    "Stack your feet and lift your hips off the floor.",
+    "Hold a straight line from head to feet, then switch sides."
+  ],
+  "cue": "Stack hips, lift and hold",
+  "mistakes": ["Letting the hips drop toward the floor.", "Rolling the top shoulder forward."],
+  "variants": ["plank", "dead-bug"],
+  "timed": true,
+  "default_duration_s": 20,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

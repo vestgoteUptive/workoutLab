@@ -1,0 +1,22 @@
+{
+  "id": "reverse-plank-hold",
+  "name": "Reverse plank hold",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "back": 1, "core": 0.5, "glutes": 0.5 },
+  "instructions": [
+    "Sit with legs straight, hands on the floor behind your hips.",
+    "Push through your hands and lift your hips up.",
+    "Hold a straight line from shoulders to heels."
+  ],
+  "cue": "Push the hips up, straight line",
+  "mistakes": ["Letting the hips drop.", "Shrugging the shoulders up."],
+  "variants": ["superman", "bird-dog", "prone-swimmers"],
+  "timed": true,
+  "default_duration_s": 30,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

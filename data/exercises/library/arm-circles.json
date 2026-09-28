@@ -1,0 +1,22 @@
+{
+  "id": "arm-circles",
+  "name": "Arm circles",
+  "kind": "warmup",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": {},
+  "instructions": [
+    "Stand tall and stretch your arms out to the sides.",
+    "Make small circles with your arms, then gradually make them bigger.",
+    "After half the time, reverse the direction of the circles."
+  ],
+  "cue": "Small circles growing bigger, then reverse",
+  "mistakes": ["Shrugging the shoulders up.", "Circling so fast that form breaks down."],
+  "variants": [],
+  "timed": true,
+  "default_duration_s": 40,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

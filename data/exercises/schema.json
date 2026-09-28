@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workoutlab.dev/schemas/exercise.json",
+  "title": "Exercise or warm-up move (D-0022, D-0033)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "name",
+    "kind",
+    "type",
+    "level",
+    "equipment",
+    "bodyweight",
+    "areas",
+    "instructions",
+    "cue",
+    "mistakes",
+    "variants",
+    "timed",
+    "source",
+    "license"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 40
+    },
+    "kind": {
+      "enum": ["exercise", "warmup"]
+    },
+    "type": {
+      "enum": ["compound", "isolation"]
+    },
+    "level": {
+      "enum": ["beginner", "intermediate", "advanced"]
+    },
+    "equipment": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "none",
+          "dumbbell",
+          "bench",
+          "barbell",
+          "rack",
+          "cable",
+          "machine",
+          "pullup-bar",
+          "kettlebell",
+          "band"
+        ]
+      }
+    },
+    "bodyweight": {
+      "type": "boolean"
+    },
+    "areas": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "chest": { "enum": [1, 0.5] },
+        "back": { "enum": [1, 0.5] },
+        "shoulders": { "enum": [1, 0.5] },
+        "arms": { "enum": [1, 0.5] },
+        "core": { "enum": [1, 0.5] },
+        "glutes": { "enum": [1, 0.5] },
+        "quads": { "enum": [1, 0.5] },
+        "hamstrings": { "enum": [1, 0.5] },
+        "calves": { "enum": [1, 0.5] }
+      }
+    },
+    "instructions": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+    },
+    "cue": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 60
+    },
+    "mistakes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 3,
+      "items": { "type": "string", "minLength": 1, "maxLength": 120 }
+    },
+    "variants": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" }
+    },
+    "timed": {
+      "type": "boolean"
+    },
+    "increment_kg": {
+      "type": "number",
+      "exclusiveMinimum": 0
+    },
+    "default_duration_s": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 120
+    },
+    "source": {
+      "enum": ["wger", "workoutlab"]
+    },
+    "license": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string",
+      "pattern": "^https://wger\\.de/"
+    },
+    "attribution": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "source": { "const": "wger" } } },
+      "then": {
+        "required": ["source_url", "attribution"],
+        "properties": {
+          "source_url": {},
+          "license": { "const": "CC-BY-SA-4.0" },
+          "attribution": { "type": "string", "pattern": "[wW][gG][eE][rR]" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "source": { "const": "workoutlab" } } },
+      "then": {
+        "not": {
+          "required": ["source_url"],
+          "properties": { "source_url": {} }
+        },
+        "properties": {
+          "license": { "const": "LicenseRef-workoutLab" }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "timed": { "const": true } } },
+      "then": {
+        "required": ["default_duration_s"],
+        "properties": { "default_duration_s": {} }
+      }
+    },
+    {
+      "if": { "properties": { "timed": { "const": false } } },
+      "then": {
+        "not": {
+          "required": ["default_duration_s"],
+          "properties": { "default_duration_s": {} }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "equipment": { "type": "array", "contains": { "const": "none" } }
+        },
+        "required": ["equipment"]
+      },
+      "then": { "properties": { "equipment": { "const": ["none"] } } }
+    },
+    {
+      "if": { "properties": { "bodyweight": { "const": true } } },
+      "then": {
+        "not": {
+          "required": ["increment_kg"],
+          "properties": { "increment_kg": {} }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "bodyweight": { "const": false } } },
+      "then": {
+        "required": ["increment_kg"],
+        "properties": { "increment_kg": {} }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "exercise" } } },
+      "then": {
+        "properties": {
+          "areas": { "type": "object", "minProperties": 1 },
+          "variants": { "type": "array", "minItems": 1 }
+        }
+      }
+    },
+    {
+      "if": { "properties": { "kind": { "const": "warmup" } } },
+      "then": {
+        "properties": {
+          "equipment": { "const": ["none"] },
+          "bodyweight": { "const": true },
+          "timed": { "const": true }
+        }
+      }
+    }
+  ]
+}

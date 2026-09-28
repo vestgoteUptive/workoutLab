@@ -1,0 +1,22 @@
+{
+  "id": "jumping-jacks",
+  "name": "Jumping jacks",
+  "kind": "warmup",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": {},
+  "instructions": [
+    "Stand tall with your feet together and arms by your sides.",
+    "Jump your feet out wide while raising your arms overhead.",
+    "Jump back to the start and repeat at a steady pace."
+  ],
+  "cue": "Feet out, arms up, steady pace",
+  "mistakes": ["Landing stiff-legged.", "Losing the steady rhythm."],
+  "variants": [],
+  "timed": true,
+  "default_duration_s": 40,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

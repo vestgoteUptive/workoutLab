@@ -1,0 +1,22 @@
+{
+  "id": "calf-raise-hold",
+  "name": "Calf raise hold",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "calves": 1 },
+  "instructions": [
+    "Stand tall and rise up onto the balls of your feet.",
+    "Hold at the top, keeping your legs straight.",
+    "Lower back down with control when you are done."
+  ],
+  "cue": "Rise up, hold at the top",
+  "mistakes": ["Letting the heels drift down during the hold.", "Losing balance and holding a wall too hard."],
+  "variants": ["calf-raise", "single-leg-calf-raise"],
+  "timed": true,
+  "default_duration_s": 20,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

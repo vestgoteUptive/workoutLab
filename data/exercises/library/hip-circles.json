@@ -1,0 +1,22 @@
+{
+  "id": "hip-circles",
+  "name": "Hip circles",
+  "kind": "warmup",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "glutes": 0.5, "quads": 0.5 },
+  "instructions": [
+    "Stand tall with your hands on your hips.",
+    "Make slow circles with your hips, keeping your knees soft.",
+    "After half the time, reverse the direction of the circles."
+  ],
+  "cue": "Slow hip circles, both directions",
+  "mistakes": ["Circling so fast that the movement gets sloppy.", "Locking the knees straight."],
+  "variants": [],
+  "timed": true,
+  "default_duration_s": 40,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

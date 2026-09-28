@@ -1,0 +1,21 @@
+{
+  "id": "prone-swimmers",
+  "name": "Prone swimmers",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "back": 1, "shoulders": 0.5 },
+  "instructions": [
+    "Lie face down with arms stretched out in front of you.",
+    "Lift your chest slightly and alternate small arm kicks.",
+    "Keep your neck long and your gaze at the floor."
+  ],
+  "cue": "Small alternating kicks, chest stays lifted",
+  "mistakes": ["Kicking too high and too fast.", "Craning the neck up."],
+  "variants": ["superman", "bird-dog", "reverse-plank-hold"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

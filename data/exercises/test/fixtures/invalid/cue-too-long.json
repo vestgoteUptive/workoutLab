@@ -1,0 +1,19 @@
+{
+  "id": "fixture-cue-too-long",
+  "name": "Fixture cue too long",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "chest": 1 },
+  "instructions": ["Do the thing."],
+  "cue": "This cue is exactly sixty one characters long which is one too many chars",
+  "mistakes": ["Rushing the rep."],
+  "variants": ["fixture-other"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/fixture",
+  "attribution": "Adapted from wger.de (CC BY-SA 4.0)."
+}

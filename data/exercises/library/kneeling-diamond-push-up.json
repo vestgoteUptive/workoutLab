@@ -1,0 +1,22 @@
+{
+  "id": "kneeling-diamond-push-up",
+  "name": "Kneeling diamond push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "arms": 1, "chest": 0.5 },
+  "instructions": [
+    "Kneel down and place your hands under your chest, forming a diamond shape.",
+    "Keep a straight line from your head to your knees.",
+    "Bend your elbows and lower your chest toward your hands.",
+    "Push back up to the start."
+  ],
+  "cue": "Diamond hands, knees down",
+  "mistakes": ["Letting the hips sag.", "Flaring the elbows out wide."],
+  "variants": ["diamond-push-up", "plank-up-down"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

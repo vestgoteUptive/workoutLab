@@ -1,0 +1,22 @@
+{
+  "id": "single-leg-deadlift",
+  "name": "Single-leg deadlift",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "hamstrings": 1, "glutes": 0.5 },
+  "instructions": [
+    "Stand on one leg with a soft bend in the knee.",
+    "Hinge at the hips, reaching your hands toward the floor as your other leg lifts back.",
+    "Keep your back flat, then return to standing.",
+    "Finish all reps, then switch legs."
+  ],
+  "cue": "Hinge at the hips, back leg lifts",
+  "mistakes": ["Rounding the lower back.", "Rotating the hips open."],
+  "variants": ["good-morning-bodyweight", "hamstring-walkout"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

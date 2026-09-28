@@ -1,0 +1,21 @@
+{
+  "id": "glute-bridge",
+  "name": "Glute bridge",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "glutes": 1 },
+  "instructions": [
+    "Lie on your back with knees bent and feet flat on the floor.",
+    "Push through your heels and lift your hips toward the ceiling.",
+    "Squeeze your glutes at the top, then lower with control."
+  ],
+  "cue": "Push heels down, lift the hips",
+  "mistakes": ["Arching the lower back at the top.", "Letting the knees fall inward."],
+  "variants": ["hip-thrust-bodyweight", "fire-hydrant"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

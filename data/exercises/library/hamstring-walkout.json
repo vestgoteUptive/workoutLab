@@ -1,0 +1,21 @@
+{
+  "id": "hamstring-walkout",
+  "name": "Hamstring walkout",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "hamstrings": 1, "core": 0.5 },
+  "instructions": [
+    "Stand tall, then hinge over and place your hands on the floor.",
+    "Walk your hands out to a plank, keeping your legs as straight as you can.",
+    "Walk your hands back and stand up to finish one rep."
+  ],
+  "cue": "Walk out, legs long, walk back",
+  "mistakes": ["Letting the hips pike up too high.", "Bending the knees a lot to escape the stretch."],
+  "variants": ["single-leg-deadlift", "good-morning-bodyweight"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

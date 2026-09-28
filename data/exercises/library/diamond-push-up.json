@@ -1,0 +1,22 @@
+{
+  "id": "diamond-push-up",
+  "name": "Diamond push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "arms": 1, "chest": 0.5 },
+  "instructions": [
+    "Place your hands under your chest, thumbs and index fingers touching.",
+    "Keep your body in a straight line from head to heels.",
+    "Bend your elbows and lower your chest toward your hands.",
+    "Push back up to the start."
+  ],
+  "cue": "Diamond hands, elbows stay close",
+  "mistakes": ["Letting the elbows flare out wide.", "Sagging the hips."],
+  "variants": ["kneeling-diamond-push-up", "plank-up-down"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}
