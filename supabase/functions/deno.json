@@ -1,0 +1,10 @@
+{
+  "nodeModulesDir": "none",
+  "lock": false,
+  "imports": {
+    "@workoutlab/engine": "./_shared/vendor/engine/index.js",
+    "@workoutlab/shared": "./_shared/vendor/shared/index.js",
+    "ajv/dist/2020.js": "npm:ajv@8.20.0/dist/2020.js",
+    "@supabase/supabase-js": "npm:@supabase/supabase-js@2.58.0"
+  }
+}

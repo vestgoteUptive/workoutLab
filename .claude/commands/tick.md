@@ -10,7 +10,7 @@ You are the **orchestrator** of the workoutLab squad. Run exactly one iteration,
 - Check the executor: run ToolSearch for `agentlab`. If the `mcp__agentlab__*` tools load and `list_flows` returns the `wl-*` flows, the executor is **AgentLab**. Otherwise it is **sub-agents**, and you note why in the journal.
 
 ## Concurrency cap (applies to every step)
-- At most **2 runs in flight at once**. That counts AgentLab flows (build, spec/groom, triage) and background sub-agents together. Start a new run only when one finishes.
+- At most **5 runs in flight at once** (raised from 2 by human decision, 2026-09-28). That counts AgentLab flows (build, spec/groom, triage) and background sub-agents together. Start a new run only when one finishes.
 - If any run fails with "usage limit reached": start nothing new this tick. Note the dead runs in the journal and in `state.md` (worktree, and whether it holds partial work), then end the tick. Under `/loop`, schedule the next wakeup ≥ 30 minutes out. On the next tick, retry the dead runs one or two at a time, telling each to resume from the partial work in its worktree.
 
 ## 1. Triage first
@@ -34,7 +34,7 @@ For each open `TR-*` (oldest first, at most 2 per tick), run the `wl-triage` flo
 If fewer than 3 tickets are `ready`, run the product-owner in **groom** mode: `/plan-phase` logic for the current phase. When every ticket in the phase is `done`, advance `Phase` in `state.md` and groom the next one. When phase 4 is done, switch to phase 5: take the `revisit` decisions and QA follow-ups through `wl-idea`.
 
 ## 3. Pick
-Choose up to **2** `ready` tickets (fewer if grooms or triage are already using the cap) whose deps are `done` and whose lane paths (`.squad/ownership.yaml`) don't overlap each other or anything `doing`. Prefer the critical path, in this order: engine → data → shell → flows. Skip tickets marked `blocked:*`.
+Choose up to **5** `ready` tickets (fewer if grooms or triage are already using the cap) whose deps are `done` and whose lane paths (`.squad/ownership.yaml`) don't overlap each other or anything `doing`. Prefer the critical path, in this order: engine → data → shell → flows. Skip tickets marked `blocked:*`.
 
 For each ticket, create a worktree:
 `git worktree add ../workoutLab-worktrees/T-NNNN -b t/T-NNNN-<slug> main`
