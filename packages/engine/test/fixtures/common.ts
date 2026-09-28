@@ -4,10 +4,13 @@ import type {
   Area,
   AreaTarget,
   AreaWeights,
+  EngineProfile,
   ExerciseType,
   HistorySet,
   LibraryExercise,
   Level,
+  SessionInput,
+  Workout,
 } from "../../src/index.js";
 
 export const TZ = "Europe/Stockholm";
@@ -47,14 +50,28 @@ export function nameFromId(id: string): string {
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
 }
 
+/** `inc` is the L1 "inc" column in kg, or "bw" for bodyweight (D-0040 §3). */
 function ex(
   id: string,
   type: ExerciseType,
   equipment: string[],
   areas: AreaWeights,
-  level: Level = "beginner",
+  inc: number | "bw",
+  opts: { level?: Level; timedS?: number } = {},
 ): LibraryExercise {
-  return { id, name: nameFromId(id), kind: "exercise", type, level, equipment, areas };
+  return {
+    id,
+    name: nameFromId(id),
+    kind: "exercise",
+    type,
+    level: opts.level ?? "beginner",
+    equipment,
+    areas,
+    timed: opts.timedS !== undefined,
+    defaultDurationS: opts.timedS ?? null,
+    incrementKg: inc === "bw" ? null : inc,
+    externalLoad: inc !== "bw",
+  };
 }
 
 function wu(id: string, areas: AreaWeights): LibraryExercise {
@@ -66,38 +83,56 @@ function wu(id: string, areas: AreaWeights): LibraryExercise {
     level: "beginner",
     equipment: [],
     areas,
+    timed: true,
+    defaultDurationS: 40,
+    incrementKg: null,
+    externalLoad: false,
   };
 }
 
-// Equipment is copied from the L1 table ("—" = []); T-0201 reconciles it with D-0022.
+// Equipment is copied from the L1 table ("—" = []; D-0040 §1 makes it ≡ ["none"]).
 export const L1: LibraryExercise[] = [
-  ex("back-squat", "compound", ["barbell", "rack"], {
-    quads: 1,
-    glutes: 1,
-    hamstrings: 0.5,
-    core: 0.5,
+  ex(
+    "back-squat",
+    "compound",
+    ["barbell", "rack"],
+    {
+      quads: 1,
+      glutes: 1,
+      hamstrings: 0.5,
+      core: 0.5,
+    },
+    2.5,
+  ),
+  ex("romanian-deadlift", "compound", ["barbell"], { hamstrings: 1, glutes: 0.5 }, 2.5),
+  ex("hip-thrust", "compound", ["barbell", "bench"], { glutes: 1, hamstrings: 0.5 }, 2.5),
+  ex("leg-extension", "isolation", ["machine"], { quads: 1 }, 5),
+  ex("leg-curl", "isolation", ["machine"], { hamstrings: 1 }, 5),
+  ex("calf-raise", "isolation", ["machine"], { calves: 1 }, 5),
+  ex("bench-press", "compound", ["barbell", "bench"], { chest: 1, shoulders: 0.5, arms: 0.5 }, 2.5),
+  ex(
+    "db-bench-press",
+    "compound",
+    ["dumbbell", "bench"],
+    { chest: 1, shoulders: 0.5, arms: 0.5 },
+    2,
+  ),
+  ex("push-up", "compound", [], { chest: 1, arms: 0.5, core: 0.5 }, "bw"),
+  ex("overhead-press", "compound", ["barbell"], { shoulders: 1, arms: 0.5, core: 0.5 }, 2.5),
+  ex("lateral-raise", "isolation", ["dumbbell"], { shoulders: 1 }, 2),
+  ex("barbell-row", "compound", ["barbell"], { back: 1, arms: 0.5 }, 2.5),
+  ex("db-row", "compound", ["dumbbell", "bench"], { back: 1, arms: 0.5 }, 2),
+  ex("inverted-row", "compound", ["rack"], { back: 1, arms: 0.5, core: 0.5 }, "bw"),
+  ex("lat-pulldown", "compound", ["cable"], { back: 1, arms: 0.5 }, 5),
+  ex("seated-cable-row", "compound", ["cable"], { back: 1, arms: 0.5 }, 5),
+  ex("straight-arm-pulldown", "isolation", ["cable"], { back: 1 }, 5),
+  ex("pull-up", "compound", ["pullup-bar"], { back: 1, arms: 0.5 }, "bw", {
+    level: "intermediate",
   }),
-  ex("romanian-deadlift", "compound", ["barbell"], { hamstrings: 1, glutes: 0.5 }),
-  ex("hip-thrust", "compound", ["barbell", "bench"], { glutes: 1, hamstrings: 0.5 }),
-  ex("leg-extension", "isolation", ["machine"], { quads: 1 }),
-  ex("leg-curl", "isolation", ["machine"], { hamstrings: 1 }),
-  ex("calf-raise", "isolation", ["machine"], { calves: 1 }),
-  ex("bench-press", "compound", ["barbell", "bench"], { chest: 1, shoulders: 0.5, arms: 0.5 }),
-  ex("db-bench-press", "compound", ["dumbbell", "bench"], { chest: 1, shoulders: 0.5, arms: 0.5 }),
-  ex("push-up", "compound", [], { chest: 1, arms: 0.5, core: 0.5 }),
-  ex("overhead-press", "compound", ["barbell"], { shoulders: 1, arms: 0.5, core: 0.5 }),
-  ex("lateral-raise", "isolation", ["dumbbell"], { shoulders: 1 }),
-  ex("barbell-row", "compound", ["barbell"], { back: 1, arms: 0.5 }),
-  ex("db-row", "compound", ["dumbbell", "bench"], { back: 1, arms: 0.5 }),
-  ex("inverted-row", "compound", ["rack"], { back: 1, arms: 0.5, core: 0.5 }),
-  ex("lat-pulldown", "compound", ["cable"], { back: 1, arms: 0.5 }),
-  ex("seated-cable-row", "compound", ["cable"], { back: 1, arms: 0.5 }),
-  ex("straight-arm-pulldown", "isolation", ["cable"], { back: 1 }),
-  ex("pull-up", "compound", ["pullup-bar"], { back: 1, arms: 0.5 }, "intermediate"),
-  ex("biceps-curl", "isolation", ["dumbbell"], { arms: 1 }),
-  ex("plank", "isolation", [], { core: 1 }),
-  ex("dead-bug", "isolation", [], { core: 1 }),
-  ex("hanging-knee-raise", "isolation", ["pullup-bar"], { core: 1 }),
+  ex("biceps-curl", "isolation", ["dumbbell"], { arms: 1 }, 2),
+  ex("plank", "isolation", [], { core: 1 }, "bw", { timedS: 45 }),
+  ex("dead-bug", "isolation", [], { core: 1 }, "bw"),
+  ex("hanging-knee-raise", "isolation", ["pullup-bar"], { core: 1 }, "bw"),
 ];
 
 export const WARMUPS: LibraryExercise[] = [
@@ -174,3 +209,55 @@ export function shift(instant: string, ms: number): string {
 }
 
 export const HOUR = 3_600_000;
+
+// ---- Session building fixtures (T-0201a): F-profile and F-input ----
+
+export const FULL_EQUIPMENT = [
+  "barbell",
+  "rack",
+  "bench",
+  "dumbbell",
+  "cable",
+  "machine",
+  "pullup-bar",
+];
+
+/** F-profile: beginner, equipment `full`, rhythm 3–4, no priorities. */
+export const F_PROFILE: EngineProfile = {
+  goal: "build_muscle",
+  level: "beginner",
+  equipment: FULL_EQUIPMENT,
+  rhythmMin: 3,
+  rhythmMax: 4,
+  priorityAreas: [],
+  onboardedAt: "2026-08-02T10:00:00Z",
+  planUpdatedAt: "2026-08-02T10:00:00Z",
+};
+
+/** F-input: budget 30, warm-up in budget, normal energy, no main/pinned/excluded ids. */
+export const F_INPUT: SessionInput = {
+  budgetMin: 30,
+  warmupInBudget: true,
+  energy: "normal",
+  shuffle: 0,
+  mainLiftId: null,
+  pinnedIds: [],
+  excludeIds: [],
+};
+
+export function input(overrides: Partial<SessionInput> = {}): SessionInput {
+  return { ...F_INPUT, ...overrides };
+}
+
+export function profile(overrides: Partial<EngineProfile> = {}): EngineProfile {
+  return { ...F_PROFILE, ...overrides };
+}
+
+/** `[exerciseId, sets]` per item, for "X × n" assertions. */
+export function itemsOf(w: Workout): Array<[string, number]> {
+  return w.plan.items.map((i) => [i.exerciseId, i.sets]);
+}
+
+export function warmupOf(w: Workout): string[] {
+  return w.plan.warmup.map((m) => m.exerciseId);
+}
