@@ -12,6 +12,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0003 | `packages/design-tokens` from the design system + coverage ramp (D-0003); lint rule: no hex values outside tokens | design | T-0002 | done | wl-design |
 | T-0004 | CI checks: docs check (UF IDs exist in v2 flows, no v1 labels), duplicate D-NNNN id check, placeholder-test check | infra | T-0002 | done | wl-build-infra |
 | T-0005 | Spec touch-ups per D-0015: NFR-SYNC-2 wording (edited_at/deleted_at), UF-11.1 clamped proposal copy, UF-10.2 "Recovering" = ≥ 6 weighted hard sets in 48 h | product | T-0001 | done | wl-spec |
+| T-0006 | CI hygiene follow-ups: pgTAP column-drift check vs docs/data-model.md; root ESLint over .github/scripts in CI; v1-label regex word boundary; resolveBranch honours root; flag D-NNNN.md without slug; fix D-0032 context + D-0023 pointer | infra | T-0004 | todo | wl-build-infra |
 
 **Follow-ups folded into existing tickets (from T-0001/T-0002, 2026-09-27)** — the groomer copies these into the ticket files:
 - T-0003: C-01 legend + coverage tokens on the D-0013 steps (0 / <0.33 / <0.66 / <1 / ≥1).
@@ -32,12 +33,15 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0201 (from T-0200 groom): eligible-exercise rule + R0-E1 determinism test against suggest (D-0034 §7); reconcile equipment names pullup-bar/'—' (engine L1) vs pull-up-bar/none (D-0022); reuse test/fixtures/histories.ts (also T-0202).
 - T-0300 (from T-0200 groom): pass queued offline sets to the engine with pending: true after server rows, covering ≥ 56 local days (D-0034 §3).
 - T-0203 (from T-0100a): enable Google in supabase/config.toml via env(); seed exercises 1:1 onto D-0029 columns.
+- Data follow-up (from T-0100b review, new ticket when T-0102 is groomed): `profiles_priority_areas_valid` also requires array_lower = 1 (bypass with '[2:3]={back,back}'); consider requiring default_duration_s when timed.
+- T-0102 (from T-0100b): mirror D-0035 columns (exercises.kind/increment_kg/default_duration_s/external_load, sessions.warmup_in_budget/plan, session_sets.backoff) and routines/routine_items/plan_checkins; define SessionPlan JSON (items + startDeficits).
+- Engine (T-0200/T-0202): engine-rules.md rule 9 / F-profile: plan_updated_at → plan_changed_at (D-0035). bodyweight = external_load false.
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0100a | Data model v1 part a: contract doc, config.toml, migration 1 (library, profiles, targets, sessions, sets, triggers, RLS), ACs tagged [a] incl. D-0029 exercises columns | data | T-0002 | done | wl-build-data |
-| T-0100b | Data model v1 part b: migration 2 (routines, routine_items, plan_checkins, analytics schema), ACs tagged [b] | data | T-0100a | doing | wl-build-data |
+| T-0100b | Data model v1 part b: migration 2 (routines, routine_items, plan_checkins, analytics schema), ACs tagged [b] | data | T-0100a | done | wl-build-data |
 | T-0101 | Engine rules v1 (gap B4): warm-up, energy, swap ranking, progression/pre-fill, shuffle, main lift, "planned session" | engine | T-0001 | done | wl-spec |
 | T-0102 | OpenAPI for Edge Functions with full schemas, auth and errors; generate `packages/shared` types | data | T-0100a, T-0101 | todo | wl-build-data |
 | T-0103a | Exercise library part a: @workoutlab/exercises package, schema + tests, bodyweight exercises (D-0022) | content | T-0002 | doing | wl-build-content |
@@ -46,7 +50,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 2 — Core
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0200 | Engine: rules 1–6 (mapping, hard sets, window, targets, deficit, recovery) + balance | engine | T-0101, T-0004 | ready | wl-build-engine |
+| T-0200 | Engine: rules 1–6 (mapping, hard sets, window, targets, deficit, recovery) + balance | engine | T-0101, T-0004 | doing | wl-build-engine |
 | T-0201 | Engine: time-budget selection, warm-up, energy, time check (rules 7, 8, 10) | engine | T-0200 | todo | wl-build-engine |
 | T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | todo | wl-build-engine |
 | T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201 | todo | wl-build-backend |
