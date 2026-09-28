@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import {
   invalidFixtureNames,
+  pkgRoot,
   readInvalidFixture,
   readLibraryRaw,
   validator,
@@ -52,5 +55,30 @@ describe("AC1 schema is valid and strict", () => {
     expect(ok).toBe(false);
     const keywords = (validate.errors ?? []).map((e) => e.keyword);
     expect(keywords).toContain("required");
+  });
+
+  it("missing-license.json's required error names license", () => {
+    const ok = validate(readInvalidFixture("missing-license.json"));
+    expect(ok).toBe(false);
+    const requiredErrors = (validate.errors ?? []).filter((e) => e.keyword === "required");
+    const missing = requiredErrors.map(
+      (e) => (e.params as { missingProperty?: string }).missingProperty,
+    );
+    expect(missing).toContain("license");
+  });
+});
+
+// D-0033 §8: a `source: "wger"` row is only valid once it carries a real-form source_url
+// (`https://wger.de/en/exercise/<numeric-id>/view/<slug>`), not the placeholder
+// `.../basic-info/...` shape used by the invalid fixtures above. This fixture proves the schema
+// accepts that shape; it lives only under test/fixtures/valid, never in the library.
+describe("positive fixture: a valid source: wger row with a real-form source_url", () => {
+  it("validates with 0 errors", () => {
+    const validate = validator();
+    const data = JSON.parse(
+      readFileSync(resolve(pkgRoot, "test/fixtures/valid/wger-real-form.json"), "utf8"),
+    ) as unknown;
+    const ok = validate(data);
+    expect(ok, JSON.stringify(validate.errors)).toBe(true);
   });
 });

@@ -1,0 +1,23 @@
+{
+  "id": "glute-bridge-dumbbell",
+  "name": "Glute bridge (dumbbell)",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "glutes": 1, "hamstrings": 0.5 },
+  "instructions": [
+    "Lie on your back with your knees bent, feet flat.",
+    "Rest a dumbbell across your hips.",
+    "Drive your hips up until your body is a straight line.",
+    "Lower back down with control."
+  ],
+  "cue": "Drive the hips up, squeeze at the top",
+  "mistakes": ["Letting the dumbbell roll off centre.", "Pushing through the toes instead of the heels."],
+  "variants": ["hip-thrust-barbell"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

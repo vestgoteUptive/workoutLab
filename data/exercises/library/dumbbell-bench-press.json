@@ -1,0 +1,23 @@
+{
+  "id": "dumbbell-bench-press",
+  "name": "Dumbbell bench press",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["dumbbell", "bench"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "chest": 1, "shoulders": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Lie back on the bench with a dumbbell in each hand.",
+    "Start with the dumbbells over your chest, palms forward.",
+    "Lower the dumbbells to the sides of your chest.",
+    "Press them back up until your arms are straight."
+  ],
+  "cue": "Lower to the chest, press up and in",
+  "mistakes": ["Letting the dumbbells drift out to the sides.", "Arching the lower back off the bench."],
+  "variants": ["barbell-bench-press", "band-chest-press"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -1,0 +1,23 @@
+{
+  "id": "machine-chest-press",
+  "name": "Machine chest press",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "chest": 1, "shoulders": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Sit in the machine with the handles at chest height.",
+    "Press the handles forward until your arms are extended.",
+    "Return slowly, keeping your shoulders down.",
+    "Repeat without locking your elbows hard."
+  ],
+  "cue": "Press forward, return slowly",
+  "mistakes": ["Shrugging the shoulders up during the press.", "Using momentum instead of a steady push."],
+  "variants": ["incline-dumbbell-press"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

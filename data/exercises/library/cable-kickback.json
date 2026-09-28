@@ -1,0 +1,23 @@
+{
+  "id": "cable-kickback",
+  "name": "Cable kickback",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "glutes": 1 },
+  "instructions": [
+    "Attach the cuff to your ankle and face the machine.",
+    "Hold the frame for balance, torso leaning slightly forward.",
+    "Kick your leg back and up, squeezing your glute.",
+    "Return with control and repeat."
+  ],
+  "cue": "Kick back, squeeze the glute",
+  "mistakes": ["Arching the lower back to lift the leg higher.", "Swinging the leg instead of a controlled kick."],
+  "variants": ["banded-glute-kickback"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

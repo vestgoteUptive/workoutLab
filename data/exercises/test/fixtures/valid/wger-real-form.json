@@ -1,0 +1,19 @@
+{
+  "id": "fixture-wger-real-form",
+  "name": "Fixture wger real form",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "chest": 1 },
+  "instructions": ["Do the thing."],
+  "cue": "Do the thing",
+  "mistakes": ["Rushing the rep."],
+  "variants": ["fixture-other"],
+  "timed": false,
+  "source": "wger",
+  "source_url": "https://wger.de/en/exercise/345/view/push-up",
+  "attribution": "Adapted from wger.de (CC BY-SA 4.0).",
+  "license": "CC-BY-SA-4.0"
+}

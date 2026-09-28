@@ -1,0 +1,22 @@
+{
+  "id": "hanging-leg-raise",
+  "name": "Hanging leg raise",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "advanced",
+  "equipment": ["pullup-bar"],
+  "bodyweight": true,
+  "areas": { "core": 1, "arms": 0.5 },
+  "instructions": [
+    "Hang from the bar with your legs straight.",
+    "Raise your legs up toward your chest.",
+    "Pause briefly at the top.",
+    "Lower back down with control."
+  ],
+  "cue": "Raise the legs, lower slowly",
+  "mistakes": ["Swinging the body to throw the legs up.", "Letting the legs drop fast on the way down."],
+  "variants": ["cable-woodchop", "weighted-russian-twist"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

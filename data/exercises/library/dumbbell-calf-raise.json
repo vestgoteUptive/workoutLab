@@ -1,0 +1,23 @@
+{
+  "id": "dumbbell-calf-raise",
+  "name": "Dumbbell calf raise",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "calves": 1 },
+  "instructions": [
+    "Stand tall holding a dumbbell in each hand at your sides.",
+    "Rise up onto your toes as high as you can.",
+    "Pause briefly at the top.",
+    "Lower back down with control."
+  ],
+  "cue": "Rise up on the toes, lower fully",
+  "mistakes": ["Bouncing at the bottom instead of pausing.", "Rushing the lowering phase."],
+  "variants": ["standing-calf-raise-machine", "seated-calf-raise-machine"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

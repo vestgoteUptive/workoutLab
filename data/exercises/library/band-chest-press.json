@@ -1,0 +1,22 @@
+{
+  "id": "band-chest-press",
+  "name": "Band chest press",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["band"],
+  "bodyweight": true,
+  "areas": { "chest": 1, "shoulders": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Anchor the band behind you at chest height.",
+    "Hold a handle in each hand and step forward to add tension.",
+    "Press both hands forward until your arms are straight.",
+    "Return with control back to the start."
+  ],
+  "cue": "Press forward, control the return",
+  "mistakes": ["Letting the shoulders round forward.", "Snapping the arms back instead of controlling them."],
+  "variants": ["barbell-bench-press", "dumbbell-bench-press"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

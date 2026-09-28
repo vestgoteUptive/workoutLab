@@ -1,0 +1,23 @@
+{
+  "id": "lat-pulldown",
+  "name": "Lat pulldown",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "back": 1, "arms": 0.5 },
+  "instructions": [
+    "Sit down and grip the bar wider than shoulder width.",
+    "Lean back slightly and pull the bar down to your upper chest.",
+    "Squeeze your shoulder blades together at the bottom.",
+    "Let the bar rise back up with control."
+  ],
+  "cue": "Bar to the upper chest, squeeze",
+  "mistakes": ["Leaning back too far and turning it into a row.", "Letting the bar bounce back up."],
+  "variants": ["seated-cable-row"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

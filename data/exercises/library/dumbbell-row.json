@@ -1,0 +1,23 @@
+{
+  "id": "dumbbell-row",
+  "name": "Dumbbell row",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["dumbbell", "bench"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "back": 1, "arms": 0.5 },
+  "instructions": [
+    "Rest one knee and one hand on the bench, back flat.",
+    "Hold a dumbbell in the other hand, arm hanging straight down.",
+    "Pull the dumbbell up to your hip.",
+    "Lower it back down with control."
+  ],
+  "cue": "Pull the elbow past your hip",
+  "mistakes": ["Twisting the torso to pull the weight up.", "Letting the shoulder shrug instead of the elbow driving back."],
+  "variants": ["barbell-row"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

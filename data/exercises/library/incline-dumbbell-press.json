@@ -1,0 +1,23 @@
+{
+  "id": "incline-dumbbell-press",
+  "name": "Incline dumbbell press",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["dumbbell", "bench"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "chest": 1, "shoulders": 0.5 },
+  "instructions": [
+    "Set the bench to a low incline and lie back with a dumbbell in each hand.",
+    "Start with the dumbbells above your upper chest.",
+    "Lower them slowly until you feel a stretch across your chest.",
+    "Press back up to the start."
+  ],
+  "cue": "Upper chest to overhead, under control",
+  "mistakes": ["Setting the incline too steep, turning it into a shoulder press.", "Rushing the lowering phase."],
+  "variants": ["machine-chest-press"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

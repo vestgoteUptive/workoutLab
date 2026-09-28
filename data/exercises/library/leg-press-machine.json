@@ -1,0 +1,23 @@
+{
+  "id": "leg-press-machine",
+  "name": "Leg press",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "quads": 1, "glutes": 0.5 },
+  "instructions": [
+    "Sit in the machine with your feet shoulder width on the platform.",
+    "Release the safety and let your knees bend toward your chest.",
+    "Lower until your knees reach about 90 degrees.",
+    "Press back up without locking your knees hard."
+  ],
+  "cue": "Lower to 90 degrees, press up",
+  "mistakes": ["Letting the lower back round off the seat.", "Locking the knees out hard at the top."],
+  "variants": ["barbell-back-squat", "goblet-squat-dumbbell", "barbell-front-squat", "leg-extension-machine"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

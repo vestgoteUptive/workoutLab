@@ -1,0 +1,23 @@
+{
+  "id": "weighted-russian-twist",
+  "name": "Weighted Russian twist",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "core": 1 },
+  "instructions": [
+    "Sit with your knees bent and lean back slightly.",
+    "Hold a dumbbell with both hands in front of your chest.",
+    "Rotate your torso to tap the dumbbell on the floor beside you.",
+    "Rotate to the other side and repeat."
+  ],
+  "cue": "Rotate side to side, chest tall",
+  "mistakes": ["Rounding the back to reach the floor.", "Moving the arms instead of rotating the torso."],
+  "variants": ["cable-woodchop", "hanging-leg-raise"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

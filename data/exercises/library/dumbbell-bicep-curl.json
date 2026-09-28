@@ -1,0 +1,23 @@
+{
+  "id": "dumbbell-bicep-curl",
+  "name": "Dumbbell bicep curl",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "arms": 1 },
+  "instructions": [
+    "Stand tall with a dumbbell in each hand, arms hanging down.",
+    "Curl both dumbbells up toward your shoulders.",
+    "Squeeze at the top.",
+    "Lower back down with control."
+  ],
+  "cue": "Curl up, squeeze, lower slowly",
+  "mistakes": ["Swinging the body to help the curl.", "Only lowering halfway before curling again."],
+  "variants": ["barbell-bicep-curl", "hammer-curl-dumbbell"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

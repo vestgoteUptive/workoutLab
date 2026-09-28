@@ -1,0 +1,23 @@
+{
+  "id": "barbell-row",
+  "name": "Barbell row",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["barbell"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "back": 1, "arms": 0.5 },
+  "instructions": [
+    "Hinge at the hips and grip the bar just wider than shoulder width.",
+    "Keep your back flat and your knees soft.",
+    "Pull the bar up to your lower ribs.",
+    "Lower it back down with control."
+  ],
+  "cue": "Flat back, pull to the ribs",
+  "mistakes": ["Rounding the lower back.", "Standing up as you pull the bar."],
+  "variants": ["dumbbell-row"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

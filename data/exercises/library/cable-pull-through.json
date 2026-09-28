@@ -1,0 +1,23 @@
+{
+  "id": "cable-pull-through",
+  "name": "Cable pull-through",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "hamstrings": 1, "glutes": 0.5 },
+  "instructions": [
+    "Face away from the low pulley with the rope between your legs.",
+    "Push your hips back to lower into a hinge.",
+    "Drive your hips forward to standing.",
+    "Squeeze your glutes at the top."
+  ],
+  "cue": "Hinge back, drive hips forward",
+  "mistakes": ["Squatting down instead of hinging at the hips.", "Rounding the lower back at the bottom."],
+  "variants": ["romanian-deadlift-barbell", "romanian-deadlift-dumbbell", "leg-curl-machine", "kettlebell-swing"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -1,0 +1,23 @@
+{
+  "id": "lateral-raise-dumbbell",
+  "name": "Lateral raise (dumbbell)",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "shoulders": 1 },
+  "instructions": [
+    "Stand tall with a dumbbell in each hand at your sides.",
+    "Raise both arms out to the sides to shoulder height.",
+    "Pause briefly at the top.",
+    "Lower back down with control."
+  ],
+  "cue": "Raise to shoulder height, no higher",
+  "mistakes": ["Swinging the body to lift the weight.", "Raising the arms above shoulder height."],
+  "variants": ["cable-lateral-raise", "rear-delt-fly-dumbbell"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

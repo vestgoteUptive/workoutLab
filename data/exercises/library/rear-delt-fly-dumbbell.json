@@ -1,0 +1,23 @@
+{
+  "id": "rear-delt-fly-dumbbell",
+  "name": "Rear delt fly (dumbbell)",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "shoulders": 1 },
+  "instructions": [
+    "Hinge forward at the hips with a dumbbell in each hand.",
+    "Let your arms hang straight down under your shoulders.",
+    "Raise both arms out to the sides, squeezing your shoulder blades.",
+    "Lower back down with control."
+  ],
+  "cue": "Hinge forward, raise arms wide",
+  "mistakes": ["Standing too upright, which shifts the work to the shoulders' front.", "Using momentum instead of a slow raise."],
+  "variants": ["lateral-raise-dumbbell", "cable-lateral-raise"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}
