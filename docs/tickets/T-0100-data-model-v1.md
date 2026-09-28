@@ -276,3 +276,17 @@ metrics schema, and 31 ACs (about 35 pgTAP files or blocks). Proposed split (the
   inputs (`onboarded_at` write-once, `plan_changed_at` server-set) hold. Follow-ups: reject
   multi-dimensional `priority_areas` (review, data lane); T-0203 enables Google via env
   (D-0011).
+- **2026-09-28, T-0100b, product-owner: failed (only the real-stack run is missing).** Every [b]
+  AC maps to a pgTAP assertion that passes against real pgTAP 1.3.3 on a Postgres 16 stand-in
+  (QA, 499/499): AC4 [b] (002), AC22 [b] (007), AC24 [b] (001), AC26 (008), AC27 (009), AC28 and
+  AC29 (010), the extended AC1 block (001), plus the folded-in items: one-dimensional
+  `priority_areas`, `sets_per_14d` 0 and −3, and the D-0024/D-0026/D-0027 engine columns (011).
+  I spot-checked AC28: the fixtures match the ticket, and the views are real aggregations with
+  `nullif` for zero history and the budget + 120 s boundary included. The one gap is the DoD
+  item "tests pass under `supabase test db`". Migration 2 hasn't run on the real Supabase stack,
+  and T-0100a showed that a stand-in pass can still fail there. AC29 in particular depends on
+  Supabase's own default grants. No rebuild is needed: re-run accept with the green CI
+  `supabase db tests` run from the draft PR. D-0035 (revisit) maps D-0027's `plan_updated_at` to
+  `plan_changed_at`. An equipment-only Save doesn't reset the rule 9 streak, and that is
+  consistent with principle 4. Follow-ups: `array_lower(priority_areas, 1) = 1` (data lane);
+  rename in engine-rules.md rule 9 (engine lane).

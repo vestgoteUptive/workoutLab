@@ -1,8 +1,8 @@
 -- T-0100a RLS tests (NFR-PRIV-3): AC4 [a] owner isolation, AC5 anon sees nothing owned,
--- AC7 no cross-user attach (D-0020).
+-- AC7 no cross-user attach (D-0020). T-0100b: AC4 [b] for routines, routine_items, plan_checkins.
 -- User A = ...0a, user B = ...0b. A owns 1 row per table, B owns none.
 begin;
-select plan(34);
+select plan(53);
 
 -- Fixture (as postgres) -------------------------------------------------------------------------
 insert into auth.users (id, aud, role, email) values
@@ -20,6 +20,13 @@ insert into public.sessions (id, user_id, started_at, time_budget_min) values
 insert into public.session_sets (user_id, client_id, session_id, exercise_id, set_index, reps, completed_at, edited_at)
 values ('00000000-0000-0000-0000-00000000000a', 'c0000000-0000-0000-0000-000000000001',
         '10000000-0000-0000-0000-00000000000a', 'back-squat', 0, 8, '2026-09-20T10:00Z', '2026-09-20T10:00Z');
+insert into public.routines (id, user_id, name) values
+  ('20000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000a', 'Lower A');
+insert into public.routine_items (routine_id, user_id, position, exercise_id, sets, reps_min, reps_max) values
+  ('20000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000a', 0, 'back-squat', 3, 6, 8);
+insert into public.plan_checkins (user_id, period_index, completed_prev, completed_last,
+    rhythm_min_before, rhythm_max_before, proposed_min, proposed_max, proposed_at) values
+  ('00000000-0000-0000-0000-00000000000a', 3, 4, 3, 3, 4, 2, 3, '2026-09-27T07:00Z');
 -- sessions has 2 rows for A; S_A2 has no sets (AC7).
 
 -- AC4: B sees, changes and deletes nothing of A's ------------------------------------------------
@@ -30,6 +37,9 @@ select is((select count(*)::int from public.profiles), 0, 'B selects 0 profiles'
 select is((select count(*)::int from public.area_targets), 0, 'B selects 0 area_targets');
 select is((select count(*)::int from public.sessions), 0, 'B selects 0 sessions');
 select is((select count(*)::int from public.session_sets), 0, 'B selects 0 session_sets');
+select is((select count(*)::int from public.routines), 0, 'B selects 0 routines');
+select is((select count(*)::int from public.routine_items), 0, 'B selects 0 routine_items');
+select is((select count(*)::int from public.plan_checkins), 0, 'B selects 0 plan_checkins');
 
 select results_eq($$with u as (update public.profiles set rhythm_max = 7
   where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from u$$,
@@ -71,6 +81,34 @@ select throws_ok($$insert into public.session_sets (user_id, client_id, session_
           '10000000-0000-0000-0000-00000000000a', 'back-squat', 1, 5, '2026-09-20T10:05Z', '2026-09-20T10:05Z')$$,
   '42501', null, 'B cannot insert a set for A');
 
+select results_eq($$with u as (update public.routines set name = 'Hacked'
+  where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from u$$,
+  $$values (0)$$, 'B updates 0 of A''s routines');
+select results_eq($$with d as (delete from public.routines
+  where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from d$$,
+  $$values (0)$$, 'B deletes 0 of A''s routines');
+select results_eq($$with u as (update public.routine_items set sets = 9
+  where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from u$$,
+  $$values (0)$$, 'B updates 0 of A''s routine_items');
+select results_eq($$with d as (delete from public.routine_items
+  where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from d$$,
+  $$values (0)$$, 'B deletes 0 of A''s routine_items');
+select results_eq($$with u as (update public.plan_checkins set answer = 'kept', answered_at = '2026-09-27T08:00Z'
+  where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from u$$,
+  $$values (0)$$, 'B updates 0 of A''s plan_checkins');
+select results_eq($$with d as (delete from public.plan_checkins
+  where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from d$$,
+  $$values (0)$$, 'B deletes 0 of A''s plan_checkins');
+select throws_ok($$insert into public.routines (user_id, name) values ('00000000-0000-0000-0000-00000000000a', 'Mine now')$$,
+  '42501', null, 'B cannot insert a routine for A');
+select throws_ok($$insert into public.routine_items (routine_id, user_id, position, exercise_id, sets)
+  values ('20000000-0000-0000-0000-00000000000a', '00000000-0000-0000-0000-00000000000a', 5, 'back-squat', 3)$$,
+  '42501', null, 'B cannot insert a routine_item for A');
+select throws_ok($$insert into public.plan_checkins (user_id, period_index, completed_prev, completed_last,
+    rhythm_min_before, rhythm_max_before, proposed_min, proposed_max, proposed_at)
+  values ('00000000-0000-0000-0000-00000000000a', 4, 0, 0, 3, 4, 2, 3, '2026-10-11T07:00Z')$$,
+  '42501', null, 'B cannot insert a plan_checkin for A');
+
 -- AC7: B cannot attach its own set to A's session (composite FK, D-0020).
 select throws_ok($$insert into public.session_sets (user_id, client_id, session_id, exercise_id, set_index, reps, completed_at, edited_at)
   values ('00000000-0000-0000-0000-00000000000b', 'c0000000-0000-0000-0000-0000000000b7',
@@ -86,6 +124,11 @@ select is((select sets_per_14d from public.area_targets where user_id = '0000000
   20::smallint, 'A''s area_target is unchanged');
 select is((select reps from public.session_sets where user_id = '00000000-0000-0000-0000-00000000000a'),
   8::smallint, 'A''s set is unchanged');
+select results_eq($$select r.name, i.sets, c.answer from public.routines r
+    join public.routine_items i on i.routine_id = r.id
+    cross join public.plan_checkins c
+  where r.user_id = '00000000-0000-0000-0000-00000000000a'$$,
+  $$values ('Lower A'::text, 3::smallint, null::text)$$, 'A''s routine, item and check-in are unchanged');
 
 -- AC4: A sees exactly its own rows -------------------------------------------------------------
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}';
@@ -94,6 +137,9 @@ select is((select count(*)::int from public.profiles), 1, 'A selects 1 profile')
 select is((select count(*)::int from public.area_targets), 1, 'A selects 1 area_target');
 select is((select count(*)::int from public.sessions where id = '10000000-0000-0000-0000-00000000000a'), 1, 'A selects its session');
 select is((select count(*)::int from public.session_sets), 1, 'A selects 1 session_set');
+select is((select count(*)::int from public.routines), 1, 'A selects 1 routine');
+select is((select count(*)::int from public.routine_items), 1, 'A selects 1 routine_item');
+select is((select count(*)::int from public.plan_checkins), 1, 'A selects 1 plan_checkin');
 reset role;
 
 -- AC5: anon has no access to user-owned tables -------------------------------------------------
@@ -104,6 +150,9 @@ select throws_ok('select count(*) from public.area_targets', '42501', null, 'ano
 select throws_ok('select count(*) from public.sessions', '42501', null, 'anon cannot select sessions');
 select throws_ok('select count(*) from public.session_sets', '42501', null, 'anon cannot select session_sets');
 select throws_ok('select count(*) from public.session_sets_live', '42501', null, 'anon cannot select session_sets_live');
+select throws_ok('select count(*) from public.routines', '42501', null, 'anon cannot select routines');
+select throws_ok('select count(*) from public.routine_items', '42501', null, 'anon cannot select routine_items');
+select throws_ok('select count(*) from public.plan_checkins', '42501', null, 'anon cannot select plan_checkins');
 select throws_ok($$insert into public.profiles (user_id, goal, level, rhythm_min, rhythm_max)
   values ('00000000-0000-0000-0000-00000000000b', 'get_stronger', 'advanced', 5, 6)$$,
   '42501', null, 'anon cannot insert a profile');

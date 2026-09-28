@@ -1,13 +1,15 @@
 -- T-0100a AC22 [a] account deletion cascades (NFR-PRIV-5). A owns a profile, 9 area_targets,
--- 2 sessions and 6 session_sets (1 tombstoned); B owns 1 row in each table.
+-- 2 sessions and 6 session_sets (1 tombstoned); [b] 1 routine with 2 items and 1 plan_checkins row
+-- (T-0100b). B owns 1 row in each table.
 begin;
-select plan(8);
+select plan(11);
 
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
   ('00000000-0000-0000-0000-00000000000b', 'authenticated', 'authenticated', 'b@test.local');
 insert into public.exercises (id, name, type, level, instructions, source, license) values
-  ('back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0');
+  ('back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
+  ('plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0');
 
 insert into public.profiles (user_id, goal, level, rhythm_min, rhythm_max) values
   ('00000000-0000-0000-0000-00000000000a', 'build_muscle', 'beginner', 3, 4),
@@ -30,6 +32,23 @@ insert into public.session_sets (user_id, client_id, session_id, exercise_id, se
   values ('00000000-0000-0000-0000-00000000000b', gen_random_uuid(), '10000000-0000-0000-0000-0000000000b1',
           'back-squat', 0, 8, '2026-09-22T10:00Z', '2026-09-22T10:00Z');
 
+insert into public.routines (id, user_id, name) values
+  ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'Lower A'),
+  ('20000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', 'Upper B');
+insert into public.routine_items (routine_id, user_id, position, exercise_id, sets, reps_min, reps_max, duration_s) values
+  ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 0, 'back-squat', 3, 6, 8, null),
+  ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 1, 'plank', 3, null, null, 45),
+  ('20000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', 0, 'plank', 3, null, null, 45);
+insert into public.plan_checkins (user_id, period_index, completed_prev, completed_last,
+    rhythm_min_before, rhythm_max_before, proposed_min, proposed_max, proposed_at) values
+  ('00000000-0000-0000-0000-00000000000a', 3, 4, 3, 3, 4, 2, 3, '2026-09-27T07:00Z'),
+  ('00000000-0000-0000-0000-00000000000b', 2, 1, 1, 3, 4, 2, 3, '2026-09-27T07:00Z');
+
+select results_eq($$select
+    (select count(*)::int from public.routines where user_id = '00000000-0000-0000-0000-00000000000a'),
+    (select count(*)::int from public.routine_items where user_id = '00000000-0000-0000-0000-00000000000a'),
+    (select count(*)::int from public.plan_checkins where user_id = '00000000-0000-0000-0000-00000000000a')$$,
+  $$values (1, 2, 1)$$, 'A''s [b] fixture is in place');
 select results_eq($$select
     (select count(*)::int from public.profiles where user_id = '00000000-0000-0000-0000-00000000000a'),
     (select count(*)::int from public.area_targets where user_id = '00000000-0000-0000-0000-00000000000a'),
@@ -43,6 +62,16 @@ select is((select count(*)::int from public.profiles where user_id = '00000000-0
 select is((select count(*)::int from public.area_targets where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 area_targets');
 select is((select count(*)::int from public.sessions where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 sessions');
 select is((select count(*)::int from public.session_sets where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 session_sets (incl. the tombstone)');
+select results_eq($$select
+    (select count(*)::int from public.routines where user_id = '00000000-0000-0000-0000-00000000000a'),
+    (select count(*)::int from public.routine_items where user_id = '00000000-0000-0000-0000-00000000000a'),
+    (select count(*)::int from public.plan_checkins where user_id = '00000000-0000-0000-0000-00000000000a')$$,
+  $$values (0, 0, 0)$$, 'A has 0 routines, routine_items and plan_checkins');
+select results_eq($$select
+    (select count(*)::int from public.routines where user_id = '00000000-0000-0000-0000-00000000000b'),
+    (select count(*)::int from public.routine_items where user_id = '00000000-0000-0000-0000-00000000000b'),
+    (select count(*)::int from public.plan_checkins where user_id = '00000000-0000-0000-0000-00000000000b')$$,
+  $$values (1, 1, 1)$$, 'B''s [b] counts are unchanged');
 select is(
   (select count(*)::int from information_schema.columns c
     where c.table_schema = 'public' and c.column_name = 'user_id'
