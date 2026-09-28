@@ -31,6 +31,7 @@ test("AC10: the supabase job runs its steps in the required order", () => {
     "pnpm install --frozen-lockfile",
     'node --test "supabase/tests/scripts/*.test.mjs"',
     "node supabase/scripts/gen-seed.mjs --check",
+    "node supabase/scripts/vendor.mjs --check",
     "supabase start",
     "supabase status -o env",
     "supabase test db",

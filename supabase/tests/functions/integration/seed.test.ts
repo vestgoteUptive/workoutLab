@@ -6,7 +6,7 @@
 // Env (set by the CI `supabase` job from `supabase status -o env`, D-0053):
 //   API_URL   e.g. http://127.0.0.1:54321
 //   ANON_KEY  the local anon JWT
-import { createClient } from "npm:@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import { fileURLToPath } from "node:url";
 import { join, dirname } from "node:path";
