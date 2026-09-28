@@ -1,8 +1,8 @@
 # Data model (v1)
 
-**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`) is fixed in shape by D-0021 and is migrated by T-0100b. Until then it is listed under [Part b](#part-b--pending-migration-t-0100b) and is **not** in the database (D-0030).
+**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`, the engine v1 columns) is migrated in `supabase/migrations/20260928090000_data_model_v1b.sql` (T-0100b, D-0035). Every table below is in the database.
 
-Decisions: D-0001 (Supabase), D-0015 (set sync), D-0017 (offline, client ids), D-0018 (check-ins), D-0020 (write rules), D-0021 (shape), D-0029 (`exercises` columns), D-0030 (v1a defaults).
+Decisions: D-0001 (Supabase), D-0015 (set sync), D-0017 (offline, client ids), D-0018 (check-ins), D-0020 (write rules), D-0021 (shape), D-0024 (session building), D-0026 (progression), D-0027 (check-in reset), D-0029 (`exercises` columns), D-0030 (v1a defaults), D-0034 (engine inputs), D-0035 (v1b defaults).
 
 ## Conventions
 - **Users** are `auth.users` (D-0021). There is no `public.users`. Email lives only in `auth.users` (NFR-PRIV-2).
@@ -13,7 +13,7 @@ Decisions: D-0001 (Supabase), D-0015 (set sync), D-0017 (offline, client ids), D
 - **Server-set columns (D-0020, NFR-SYNC-3)** are overwritten by triggers, whatever the client sends.
 - **Trigger functions** live in schema `private`, which is not exposed through PostgREST and has no grants to `anon` or `authenticated` (D-0030).
 - **Types:** `timestamptz` = `timestamp with time zone`. Every timestamp is UTC in the database. Local dates come from the device (D-0013).
-- **No server-side 14-day load view** (D-0021). The engine computes load from `session_sets_live` on the device and in Edge Functions.
+- **No server-side 14-day load view** (D-0021). The engine computes load from `session_sets_live` on the device and in Edge Functions. The only SQL load is the aggregate metric `analytics.areas_on_target_day28`, which uses UTC dates and is not shown in any product UI (D-0021).
 
 Column tables use `null` = `yes` (nullable) or `no` (not null).
 
@@ -30,7 +30,7 @@ The 9 rows are inserted by the migration: chest 1, back 2, shoulders 3, arms 4, 
 - Indexes: PK `(id)`, unique `(sort_order)`.
 - RLS: `areas_select` (select, `anon, authenticated`, `true`).
 
-### exercises (D-0021, D-0029)
+### exercises (D-0021, D-0024, D-0026, D-0029, D-0035)
 Maps 1:1 from `data/exercises` (D-0022). No `image_url` in v1 (D-0029, D-0005). The values of `source`, `license`, `attribution`, `source_url` and `equipment` are validated in `@workoutlab/exercises`, not by DB checks.
 
 | column | type | null | default | notes |
@@ -48,6 +48,10 @@ Maps 1:1 from `data/exercises` (D-0022). No `image_url` in v1 (D-0029, D-0005). 
 | license | text | no | | |
 | attribution | text | yes | | D-0029. |
 | source_url | text | yes | | D-0029. |
+| kind | text | no | `'exercise'` | Check `in ('exercise','warmup')`. Warm-up moves (D-0024, D-0035). |
+| increment_kg | numeric(4,2) | no | `2.5` | Check `> 0`. Load step for pre-fill (D-0026). |
+| default_duration_s | integer | yes | | Check `> 0`. First timed target (D-0026). |
+| external_load | boolean | no | `true` | `false` = bodyweight, pre-filled weight 0 (D-0026, D-0035). |
 
 - Indexes: PK `(id)`.
 - RLS: `exercises_select` (select, `anon, authenticated`, `true`).
@@ -92,24 +96,24 @@ One row per user, written after UF-01.5 Account with the plan computed on the de
 | priority_areas | text[] | no | `'{}'` | At most 3 distinct area ids (UF-11.3). |
 | onboarded_at | timestamptz | no | `now()` | Period 0 anchor (D-0018). Write-once (D-0020). |
 | onboarding_timing_ms | integer | yes | | Check `>= 0`, no upper bound. Null for returning users. Write-once once non-null (D-0020, NFR-AN-2). |
-| plan_changed_at | timestamptz | no | `now()` | Server-set (D-0020). The rule 9 streak reset input. |
+| plan_changed_at | timestamptz | no | `now()` | Server-set (D-0020). The rule 9 streak reset input. This is the `plan_updated_at` of D-0027 (D-0035). |
 | created_at | timestamptz | no | `now()` | Server-set. |
 | updated_at | timestamptz | no | `now()` | Server-set (D-0020). |
 
-- Checks: `profiles_rhythm_range`: `rhythm_min` and `rhythm_max` between 1 and 7, `rhythm_min <= rhythm_max`. `profiles_priority_areas_valid`: `cardinality <= 3`, every element is one of the 9 area ids, no duplicates.
+- Checks: `profiles_rhythm_range`: `rhythm_min` and `rhythm_max` between 1 and 7, `rhythm_min <= rhythm_max`. `profiles_priority_areas_valid`: one-dimensional (`array_ndims` is null or 1, T-0100b), `cardinality <= 3`, every element is one of the 9 area ids, no duplicates.
 - Trigger `profiles_before_write` (before insert or update, `private.profiles_before_write`):
   - insert: `plan_changed_at`, `created_at` and `updated_at` := `now()`. The client's `onboarded_at` is kept (default `now()`).
   - update: `onboarded_at` keeps its old value. `onboarding_timing_ms` keeps its old value once non-null. `plan_changed_at` := `now()` when `goal`, `rhythm_min`, `rhythm_max` or `priority_areas` change, else the old value. `user_id` and `created_at` keep their old values. `updated_at` := `now()`. A client-supplied value is silently replaced, with no error, so a full-profile upsert from a second device never fails.
 - Indexes: PK `(user_id)`.
 - RLS: `profiles_select`, `profiles_insert`, `profiles_update`, `profiles_delete` (owner, `authenticated`).
 
-### area_targets (D-0020, D-0021)
+### area_targets (D-0020, D-0021, D-0034)
 
 | column | type | null | default | notes |
 |---|---|---|---|---|
 | user_id | uuid | no | `auth.uid()` | FK `auth.users(id)` on delete cascade. |
 | area_id | text | no | | FK `areas(id)`. |
-| sets_per_14d | smallint | no | | Check `> 0`. |
+| sets_per_14d | smallint | no | | Check `> 0` (D-0034 §6). |
 | source | text | no | `'default'` | Check `in ('default','adapted','manual')`. |
 | updated_at | timestamptz | no | `now()` | Server-set (D-0020, NFR-SYNC-3). |
 
@@ -117,7 +121,7 @@ One row per user, written after UF-01.5 Account with the plan computed on the de
 - Trigger `area_targets_set_updated_at` (before insert or update, `private.set_updated_at`): `updated_at := now()`.
 - RLS: `area_targets_select`, `area_targets_insert`, `area_targets_update`, `area_targets_delete` (owner, `authenticated`).
 
-### sessions (D-0017, D-0020, D-0030)
+### sessions (D-0017, D-0020, D-0024, D-0030, D-0035)
 `id` is generated on the device for offline sessions (D-0020). Upserts go through `on conflict (id)`; the last write wins (NFR-SYNC-3).
 
 | column | type | null | default | notes |
@@ -130,13 +134,15 @@ One row per user, written after UF-01.5 Account with the plan computed on the de
 | energy | text | no | `'normal'` | Check `in ('low','normal','high')` (UF-08.1). |
 | location | text | yes | | A label such as "gym". Check `char_length(location) <= 32` (NFR-PRIV-2). |
 | effort_rating | smallint | yes | | Check `between 1 and 5` (UF-03.3, D-0030). |
+| warmup_in_budget | boolean | no | `true` | UF-08.1 toggle (D-0004, D-0024). |
+| plan | jsonb | yes | | The plan built at session start, with the session-start deficits rule 8 trims by (D-0024). Check `sessions_plan_is_object`: null or a JSON object. Shape owned by T-0102 (D-0035). |
 | created_at | timestamptz | no | `now()` | |
 
 - Keys: PK `(id)`, unique `sessions_id_user_id_key (id, user_id)` (target of the child composite FK). Check `sessions_ended_after_started`: `ended_at is null or ended_at >= started_at`. No rule ties duration to budget (running over is valid, D-0020).
 - Indexes: `sessions_user_id_started_at_idx (user_id, started_at)`.
 - RLS: `sessions_select`, `sessions_insert`, `sessions_update`, `sessions_delete` (owner, `authenticated`).
 
-### session_sets (D-0015, D-0017, D-0020, D-0021)
+### session_sets (D-0015, D-0017, D-0020, D-0021, D-0024)
 One row per set, identified by `(user_id, client_id)` (D-0015). Clients write with `upsert(rows, { onConflict: 'user_id,client_id' })` after the session row has synced. A set whose session has not arrived fails the FK (`23503`) and stays queued (D-0020).
 
 | column | type | null | default | notes |
@@ -153,23 +159,108 @@ One row per set, identified by `(user_id, client_id)` (D-0015). Clients write wi
 | duration_s | integer | yes | | Check `> 0`. Required when `kind = 'timed'`. |
 | rir | smallint | yes | | Reps in reserve. Check `between 0 and 5` (UF-09.4, D-0021). |
 | is_warmup | boolean | no | `false` | A set is hard when not a warm-up (engine rules). |
+| backoff | boolean | no | `false` | High-energy back-off set on the main lift (D-0024). A hard set. |
 | completed_at | timestamptz | no | | Immutable (D-0015). The only date that places a set in the window. |
 | edited_at | timestamptz | no | | Client edit clock (D-0015). |
 | deleted_at | timestamptz | yes | | Tombstone (D-0015). |
 | created_at | timestamptz | no | `now()` | Kept on update. |
 
-- Keys: PK `(id)`, unique `session_sets_user_id_client_id_key (user_id, client_id)`, FK `session_sets_session_fk`. Check `session_sets_kind_shape`: `kind = 'reps'` requires `reps`, `kind = 'timed'` requires `duration_s`.
+- Keys: PK `(id)`, unique `session_sets_user_id_client_id_key (user_id, client_id)`, FK `session_sets_session_fk`. Check `session_sets_kind_shape`: `kind = 'reps'` requires `reps`, `kind = 'timed'` requires `duration_s`. Check `session_sets_backoff_not_warmup`: `not (backoff and is_warmup)`.
 - Indexes: `session_sets_user_id_completed_at_idx (user_id, completed_at)`, `session_sets_session_id_idx (session_id)`, `session_sets_exercise_id_idx (exercise_id)`.
 - Trigger `session_sets_before_update` (before update, `private.session_sets_before_update`), the D-0015 upsert guard (D-0020): returns `NULL` (skips the update) when `new.edited_at <= old.edited_at`, so a replay or an older edit is a no-op. Otherwise it keeps `id`, `completed_at` and `created_at` from the old row. A newer edit with `deleted_at` null un-deletes a tombstone.
 - RLS: `session_sets_select`, `session_sets_insert`, `session_sets_update`, `session_sets_delete` (owner, `authenticated`).
 
 ### session_sets_live (view, D-0015, D-0020)
-`select * from session_sets where deleted_at is null`, created `with (security_invoker = true)`, so the caller's RLS applies. Same columns as `session_sets`. `authenticated` may select; `anon` has no privileges. Engine load, balance and metric queries read from it.
+`select * from session_sets where deleted_at is null`, recreated by T-0100b so it carries `backoff`, created `with (security_invoker = true)`, so the caller's RLS applies. Same columns as `session_sets`. `authenticated` may select; `anon` has no privileges. Engine load, balance and metric queries read from it.
 
-## Part b — pending migration (T-0100b)
-Shapes fixed by D-0018, D-0020 and D-0021. **Not in the database yet.** T-0100b migrates them, adds the column types, indexes and policies below to the tables above this heading, and extends the schema tests.
+### routines (D-0020, D-0021, UF-07)
 
-- **routines** (D-0021, UF-07): `id uuid` PK default `gen_random_uuid()`, `user_id` (ownership column), `name text not null`, `created_at timestamptz not null default now()`, `updated_at timestamptz not null` (server-set, D-0020). Unique `(id, user_id)`. Owner RLS.
-- **routine_items** (D-0021, UF-07.1, UF-08.3): `id uuid` PK, `routine_id uuid not null`, `user_id` (ownership column), composite FK `(routine_id, user_id)` → `routines(id, user_id)` on delete cascade, `position smallint not null`, `exercise_id text not null` FK `exercises(id)`, `sets smallint not null`, `reps_min smallint null`, `reps_max smallint null`, `duration_s integer null`, `progression text not null default 'double_progression'` check `in ('none','double_progression','linear_load')`. Unique `(routine_id, position)`, check `reps_min <= reps_max`. Owner RLS.
-- **plan_checkins** (D-0018, D-0021, UF-11.1): `id uuid` PK, `user_id` (ownership column), `period_index int not null check (>= 1)`, `completed_prev int not null check (>= 0)`, `completed_last int not null check (>= 0)`, `rhythm_min_before`, `rhythm_max_before`, `proposed_min`, `proposed_max` (`smallint not null`, 1–7, min ≤ max), `proposed_at timestamptz not null`, `answer text null check in ('accepted','kept','withdrawn')`, `answered_at timestamptz null`, check `(answer is null) = (answered_at is null)`. Unique `(user_id, period_index)`. The client inserts a row when a proposal is first shown and updates it on Accept, Keep or withdrawal. Owner RLS.
-- **Schema `analytics`** (D-0021, NFR-AN-2): private (no `usage` for `anon` or `authenticated`, not exposed through PostgREST), UTC dates. Views `time_to_first_plan`, `finished_within_budget`, `checkins_answered`, `areas_on_target_day28` (definitions in T-0100 AC28).
+| column | type | null | default | notes |
+|---|---|---|---|---|
+| id | uuid | no | `gen_random_uuid()` | PK. |
+| user_id | uuid | no | `auth.uid()` | FK `auth.users(id)` on delete cascade. |
+| name | text | no | | |
+| created_at | timestamptz | no | `now()` | Server-set (D-0020). |
+| updated_at | timestamptz | no | `now()` | Server-set (D-0020, NFR-SYNC-3). |
+
+- Keys: PK `(id)`, unique `routines_id_user_id_key (id, user_id)` (target of the child composite FK).
+- Indexes: `routines_user_id_idx (user_id)`.
+- Trigger `routines_before_write` (before insert or update, `private.routines_before_write`): insert sets `created_at` and `updated_at` := `now()`; update keeps `user_id` and `created_at` and sets `updated_at` := `now()`.
+- RLS: `routines_select`, `routines_insert`, `routines_update`, `routines_delete` (owner, `authenticated`).
+
+### routine_items (D-0020, D-0021, UF-07.1, UF-08.3)
+
+| column | type | null | default | notes |
+|---|---|---|---|---|
+| id | uuid | no | `gen_random_uuid()` | PK. |
+| routine_id | uuid | no | | Composite FK `(routine_id, user_id)` → `routines(id, user_id)` on delete cascade (D-0020). |
+| user_id | uuid | no | `auth.uid()` | FK `auth.users(id)` on delete cascade. |
+| position | smallint | no | | Check `>= 0`. Order within the routine. |
+| exercise_id | text | no | | FK `exercises(id)`. |
+| sets | smallint | no | | Check `>= 1`. |
+| reps_min | smallint | yes | | Check `>= 1`. |
+| reps_max | smallint | yes | | Check `>= 1`. |
+| duration_s | integer | yes | | Check `> 0`. For timed exercises. |
+| progression | text | no | `'double_progression'` | Check `in ('none','double_progression','linear_load')` (D-0021). |
+
+- Keys: PK `(id)`, unique `routine_items_routine_id_position_key (routine_id, position)`, FK `routine_items_routine_fk`. Check `routine_items_reps_range`: `reps_min <= reps_max` when both are set.
+- Indexes: `routine_items_user_id_idx (user_id)`, `routine_items_exercise_id_idx (exercise_id)`.
+- RLS: `routine_items_select`, `routine_items_insert`, `routine_items_update`, `routine_items_delete` (owner, `authenticated`).
+
+### plan_checkins (D-0018, D-0021, UF-11.1)
+The client inserts a row when a proposal is **first shown** (`answer` null), and updates it on Accept, Keep or withdrawal (UF-11.3 Save). The unique `(user_id, period_index)` stops a second device from duplicating a proposal (`23505`); the client then reads the existing row.
+
+| column | type | null | default | notes |
+|---|---|---|---|---|
+| id | uuid | no | `gen_random_uuid()` | PK. |
+| user_id | uuid | no | `auth.uid()` | FK `auth.users(id)` on delete cascade. |
+| period_index | integer | no | | Check `>= 1`. The later of the two evaluated periods (D-0018). |
+| completed_prev | integer | no | | Check `>= 0`. Completed sessions in the earlier period. |
+| completed_last | integer | no | | Check `>= 0`. Completed sessions in the later period. |
+| rhythm_min_before | smallint | no | | |
+| rhythm_max_before | smallint | no | | |
+| proposed_min | smallint | no | | |
+| proposed_max | smallint | no | | |
+| proposed_at | timestamptz | no | | When the proposal was first shown. |
+| answer | text | yes | | Check `in ('accepted','kept','withdrawn')`. |
+| answered_at | timestamptz | yes | | The rule 9 reset input with `profiles.plan_changed_at` (D-0027). |
+
+- Keys: PK `(id)`, unique `plan_checkins_user_id_period_index_key (user_id, period_index)`. Checks: `plan_checkins_rhythm_before_range` and `plan_checkins_proposed_range` (each bound 1–7, min ≤ max); `plan_checkins_answer_pair`: `(answer is null) = (answered_at is null)`.
+- Indexes: the unique `(user_id, period_index)`.
+- RLS: `plan_checkins_select`, `plan_checkins_insert`, `plan_checkins_update`, `plan_checkins_delete` (owner, `authenticated`).
+
+## Schema analytics (D-0021, NFR-AN-2)
+Private: `usage` is revoked from `public`, `anon` and `authenticated` (select gives `42501`), and the schema is not in PostgREST's exposed schemas. The views run with the owner's rights (`security_invoker` off) so they aggregate over all users. Dates are **UTC**. Each view returns exactly one row. Ratios are `numeric` rounded to 3 dp and are `null` when the denominator is 0.
+
+### analytics.time_to_first_plan
+| column | type | notes |
+|---|---|---|
+| profiles_timed | integer | Profiles with non-null `onboarding_timing_ms`. |
+| p50 | double precision | `percentile_cont(0.5)` of `onboarding_timing_ms`, nulls excluded. |
+| p90 | double precision | `percentile_cont(0.9)`. |
+
+### analytics.finished_within_budget
+A session counts when `ended_at` is set and it has ≥ 1 live hard set (not warm-up, not tombstoned). It is within budget when `ended_at − started_at ≤ time_budget_min × 60 + 120 s` (boundary included).
+
+| column | type | notes |
+|---|---|---|
+| sessions_finished | integer | Counted sessions. |
+| sessions_within | integer | Of those, within budget. |
+| ratio | numeric | `sessions_within / sessions_finished`. |
+
+### analytics.checkins_answered
+Every `plan_checkins` row counts as shown. It is answered when `answer in ('accepted','kept')` and `answered_at ≤ proposed_at + 7 days`. `withdrawn` counts as shown, not answered.
+
+| column | type | notes |
+|---|---|---|
+| checkins_shown | integer | |
+| checkins_answered | integer | |
+| ratio | numeric | `checkins_answered / checkins_shown`. |
+
+### analytics.areas_on_target_day28
+`d0 = (onboarded_at at time zone 'UTC')::date`. A user is included when `d0 + 28 <= (now() at time zone 'UTC')::date` and they have ≥ 4 completed sessions (≥ 1 live hard set, D-0018) with UTC `started_at` dates in `d0 .. d0 + 28`. Load per area is `Σ exercise_areas.weight` over live hard sets with UTC `completed_at` dates in `d0 + 15 .. d0 + 28` (14 days, inclusive). An area is on target when load ≥ `area_targets.sets_per_14d`. A user's share is on-target areas / their `area_targets` rows.
+
+| column | type | notes |
+|---|---|---|
+| users_included | integer | |
+| mean_share | numeric | Mean of the users' shares. |
