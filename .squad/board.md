@@ -81,7 +81,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201a | split → T-0203a, T-0203b, T-0203c (D-0053) | wl-build-backend |
 | T-0203a | Supabase stack + generated seed from data/exercises (external_load = NOT bodyweight, D-0044) | backend | T-0100a, T-0100b, T-0103b | done | wl-build-backend |
 | T-0203b | Edge Function setup (vendored engine/shared, D-0053 §1) + suggest + balance | backend | T-0203a, T-0201a, T-0102b | done | wl-build-backend |
-| T-0203c | Edge Function finish (latest endedAt wins, D-0053 §7–8) | backend | T-0203b | doing | wl-build-backend |
+| T-0203c | Edge Function finish (latest endedAt wins, D-0053 §7–8) | backend | T-0203b | done | wl-build-backend |
 | T-0206 | Page the exercises/exercise_areas library reads through pageAll (or guard as the library nears PostgREST max_rows = 1000) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
 | T-0208 | Finish: make effort_rating follow the endedAt max per D-0058 (strict win writes effortRating ?? NULL) + AC28 twins must carry a rating on exactly one finish | backend | T-0203c | ready | wl-build-backend |
 | T-0209 | Close the non-atomic read-modify-write race on concurrent finishes (conditional update or trigger) — T-0203c review follow-up | backend | T-0203c | todo | wl-build-backend |
@@ -110,7 +110,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | todo | wl-build-web |
 | T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
-| T-0309b | Landing build: static Astro page, no JS, tokens, privacy + 404 pages, placeholder removed (AC8–24) | landing | T-0309a | doing | wl-build-web |
+| T-0309b | Landing build: static Astro page, no JS, tokens, privacy + 404 pages, placeholder removed (AC8–24) | landing | T-0309a | done | wl-build-web |
 | T-0310 | Account settings: JSON export (NFR-PRIV-4) and in-app account deletion (NFR-PRIV-5) | web-shell | T-0300 | todo | wl-build-web |
 
 ## Phase 4 — Ship
