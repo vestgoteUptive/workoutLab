@@ -7,6 +7,9 @@ import { describe, expect, it } from "vitest";
 // AC21: the T-0309 placeholder is gone (D-0023, D-0046 §2).
 const landingRoot = fileURLToPath(new URL("..", import.meta.url));
 const repoRoot = join(landingRoot, "..", "..");
+const thisFile = fileURLToPath(import.meta.url);
+// Built by concatenation, not a literal, so this check doesn't trip on its own source.
+const MARKER = ["@placeholder", "T-0309"].join(" ");
 
 function* walk(dir: string): Generator<string> {
   for (const entry of readdirSync(dir)) {
@@ -22,10 +25,11 @@ describe("AC21 placeholder replaced", () => {
     expect(existsSync(join(landingRoot, "test", "placeholder.test.ts"))).toBe(false);
   });
 
-  it("no file under apps/landing contains the @placeholder T-0309 marker", () => {
+  it("no file under apps/landing contains the placeholder marker", () => {
     const hits: string[] = [];
     for (const file of walk(landingRoot)) {
-      if (readFileSync(file, "utf8").includes("@placeholder T-0309")) hits.push(file);
+      if (file === thisFile) continue;
+      if (readFileSync(file, "utf8").includes(MARKER)) hits.push(file);
     }
     expect(hits).toEqual([]);
   });

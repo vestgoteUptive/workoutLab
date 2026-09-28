@@ -44,7 +44,8 @@ describe("AC12 tokens consumed", () => {
   it(
     "lint (ESLint + wl-check-colours) exits 0",
     () => {
-      const eslintBin = require.resolve("eslint/bin/eslint.js");
+      const eslintPkgJson = require.resolve("eslint/package.json");
+      const eslintBin = join(eslintPkgJson, "..", "bin", "eslint.js");
       const eslintRes = spawnSync(process.execPath, [eslintBin, "."], {
         cwd: landingRoot,
         encoding: "utf8",
