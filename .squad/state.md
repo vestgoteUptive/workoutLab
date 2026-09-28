@@ -6,7 +6,7 @@
 - **Concurrency cap: 2 runs in flight** (flows and sub-agents together); see `/tick`.
 - **In flight (2/2):** T-0300b auth (AgentLab fffcdd2f), T-0203 groom (d732854d).
 - **Next after those:** T-0300d (web-shell, after T-0300b), T-0309b (landing, after T-0300b's lockfile change), T-0300c (after T-0300b), T-0203 build (draft PR for real-stack CI), grooming for T-0204/T-0205. Also T-0103c and T-0006.
-- **AgentLab has a $3 per-step budget cap:** big UI builds hit it. Split UI tickets small, tell builders to commit WIP early, or run large reworks as Opus sub-agents.
+- **AgentLab has a $3 per-step budget cap:** big UI builds hit it. Split UI tickets small, tell builders to commit WIP early, or run large reworks as Opus sub-agents. Web-lane builds run as frontend-dev sub-agents by default (AgentLab stopped them 3 times).
 - **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy and privacy mailbox, gates the landing prod deploy only).
 - **Executor:** AgentLab. Poll `get_run` with `waitSeconds ≤ 280`. Docker here can't pull images, so Supabase stack tests run in GitHub CI on a draft PR.
 - **Tooling:** `npx -y pnpm@10.28.2 …`.
