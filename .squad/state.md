@@ -1,16 +1,19 @@
 # State
 
-- **Phase:** 0 → 1 (Foundation nearly done; contracts in progress)
-- **Updated:** 2026-09-27 21:40 by orchestrator (tick)
-- **Done:** T-0001, T-0002, T-0003, T-0005, T-0101. Main is green: `turbo run typecheck lint test` passes 16/16.
-- **In flight:** T-0100a (data), worktree `../workoutLab-worktrees/T-0100a`, draft PR vestgoteUptive/workoutLab#1. Build and review passed. The real-stack CI job failed once in `007_account_deletion.test.sql` (fixed in 45be5f6). CI re-run pending. Once green: run QA + product-owner accept (the AgentLab run was cancelled before those steps), then merge locally with `--no-ff` and close the PR.
-- **Ready:** T-0004 (infra; don't run in parallel with anything touching turbo.json or the root ESLint config), T-0103a (content; touches pnpm-workspace.yaml and pnpm-lock.yaml; content-curator has no shell, so the orchestrator runs pnpm install and tests).
-- **Next to groom:** T-0200 (engine rules 1–6 + balance, deps T-0101 done). This is the critical path. Then T-0102 once T-0100a lands.
-- **Waiting on humans:** H-05, H-06, H-07 (the list now includes every new `revisit` decision). Nothing is blocked.
-- **Executor:** AgentLab. Poll `get_run` with `waitSeconds: 280` (300 s client timeout). The Claude usage limit was hit once at 20:46; retries worked a few minutes later. Structured-output crashes in a step: rerun that step as a sub-agent.
-- **Tooling:** run pnpm as `npx -y pnpm@10.28.2 …`. Docker on this host can't pull images, so Supabase stack tests only run in GitHub CI (it runs on PRs, so open a draft PR per data or backend ticket).
+- **Phase:** 1–3 overlap (contracts nearly done; engine in progress; shell and landing groomed)
+- **Updated:** 2026-09-28 08:00 by orchestrator
+- **Done:** T-0001–T-0005, T-0100a/b, T-0101, T-0102a, T-0103a/b, T-0200, T-0201a. Main is green.
+- **Concurrency cap: 2 runs in flight** (flows and sub-agents together); see `/tick`.
+- **Paused on the usage limit (hit 07:57).** Resume one or two at a time:
+  1. T-0102b: build committed (6091c9f), draft PR #3 (CI verifies AC20). Needs QA + review, then accept. Run them as sub-agents or rerun wl-build-data with "build done, verify only".
+  2. T-0201b (engine): worktree clean, rerun from scratch.
+  3. T-0309a (design): worktree clean, rerun from scratch.
+- **Ready after that:** T-0202 (engine; after T-0201b, same lane), T-0300a (web-shell; it adds deps to pnpm-lock.yaml, so don't run it alongside another lockfile change).
+- **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy and privacy mailbox, gates the landing prod deploy only).
+- **Executor:** AgentLab. Poll `get_run` with `waitSeconds ≤ 280`. Docker here can't pull images, so Supabase stack tests run in GitHub CI on a draft PR.
+- **Tooling:** `npx -y pnpm@10.28.2 …`.
 
 ## Notes for the next orchestrator
-- **Decision ids:** assign them up front per run. Next free: D-0032, TR-0010. (D-0028 is reserved but unused.)
-- Spec-only roles have no shell. Commit their output yourself.
-- Agents sometimes write into the main checkout instead of their worktree. Check `git status` on main after each run.
+- Next free: D-0049, TR-0026. Reserved but unused: D-0028, D-0038, D-0047, D-0048 (free to reuse only by the ticket they were given to).
+- Spec-only and content roles have no shell. QA commits their output.
+- After each merge, run `pnpm test`, `-w typecheck lint`, `check:repo` and `format:check` on main.
