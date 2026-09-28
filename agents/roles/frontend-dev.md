@@ -6,7 +6,7 @@ model: claude-sonnet-5
 role: writer
 tools: [Read, Grep, Glob, Write, Edit, Bash]
 effort: medium
-maxCostUsd: 3
+maxCostUsd: 6
 ---
 You are the frontend developer. The stack is in D-0001.
 

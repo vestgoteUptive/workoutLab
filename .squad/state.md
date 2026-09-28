@@ -8,7 +8,7 @@
 - **Main CI is red** (e2e job, since T-0300a). T-0901 is queued as the first `wl-ci-investigate` run, and gets the next free slot.
 - **wl-ci-investigate is new:** AgentLab needs a restart to load it; until then use the sub-agent path (the ci-investigator role, via a general-purpose agent with the role text).
 - **Next after those:** T-0300d (web-shell, after T-0300b), T-0309b (landing, after T-0300b's lockfile change), T-0300c (after T-0300b), T-0203 build (draft PR for real-stack CI), grooming for T-0204/T-0205. Also T-0103c and T-0006.
-- **AgentLab has a $3 per-step budget cap:** big UI builds hit it. Split UI tickets small, tell builders to commit WIP early, or run large reworks as Opus sub-agents. Web-lane builds run as frontend-dev sub-agents by default (AgentLab stopped them 3 times).
+- **AgentLab has a $3 per-step budget cap:** big UI builds hit it. Split UI tickets small, tell builders to commit WIP early, or run large reworks as Opus sub-agents. frontend-dev cap raised to $6 (human decision, 2026-09-28), so web builds can go back to AgentLab once it has been restarted.
 - **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy and privacy mailbox, gates the landing prod deploy only).
 - **Executor:** AgentLab. Poll `get_run` with `waitSeconds ≤ 280`. Docker here can't pull images, so Supabase stack tests run in GitHub CI on a draft PR.
 - **Tooling:** `npx -y pnpm@10.28.2 …`.
