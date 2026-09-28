@@ -25,6 +25,6 @@
 - **"Tests pass" ≠ correct.** T-0300c had 122/122 green while carrying two data-corruption bugs (a finish silently cleared server-side; tombstoned sets resurrected). Brief reviewers to hunt for ACs with no test, not just red tests.
 
 ## Notes for the next orchestrator
-- Next free: D-0054, TR-0030. Unused: D-0028, D-0038 (reusable only by the ticket they were given to).
+- Next free: D-0058, TR-0030 (D-0056 and D-0057 were claimed by the T-0204/T-0205 groom; D-0055 already existed, so the old "next free: D-0054" note was stale). Unused: D-0028, D-0038, D-0054 (reusable only by the ticket they were given to).
 - Spec-only and content roles have no shell. QA commits their output.
 - After each merge: `pnpm test`, `-w typecheck lint`, `check:repo`, `format:check` on main — with `--force`.
