@@ -83,6 +83,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0203b | Edge Function setup (vendored engine/shared, D-0053 §1) + suggest + balance | backend | T-0203a, T-0201a, T-0102b | done | wl-build-backend |
 | T-0203c | Edge Function finish (latest endedAt wins, D-0053 §7–8) | backend | T-0203b | doing | wl-build-backend |
 | T-0206 | Page the exercises/exercise_areas library reads through pageAll (or guard as the library nears PostgREST max_rows = 1000) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
+| T-0208 | Finish: make effort_rating follow the endedAt max per D-0058 (strict win writes effortRating ?? NULL) + AC28 twins must carry a rating on exactly one finish | backend | T-0203c | ready | wl-build-backend |
+| T-0209 | Close the non-atomic read-modify-write race on concurrent finishes (conditional update or trigger) — T-0203c review follow-up | backend | T-0203c | todo | wl-build-backend |
+| T-0210 | Stale comment sessions/core.ts:1-4 (injected `now` no longer taken); document loadSessionSets' RLS dependency for sort-key uniqueness | backend | T-0203c | todo | wl-build-backend |
 | T-0207 | Attach x-request-id to OPTIONS preflight responses (D-0053 §5 says every response) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
 | T-0204 | Engine: swap ranking (rule 12 `rankSwaps`) + deterministic shuffle (rule 13) wired into `suggest`; R12-E1 muscleMatch correction (D-0056) | engine | T-0200 | ready | wl-build-engine |
 | T-0205 | Engine: progression + pre-fill (rule 14 `prefill`), replaces the T-0201 `first_time` seam (D-0057) | engine | T-0200 | ready | wl-build-engine |
@@ -126,7 +129,8 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | ready | wl-build-web |
+| T-0311 | Flaky T-0300c offline sync-trigger tests: AC-C9 'online' event + stop() listener fail intermittently in the full suite (reproduced on stock main, 3 of 5 runs; pass 6/6 isolated). Real timing bug in the merged offline-sync triggers, not machine noise | web-shell | T-0300c | ready | wl-build-web |
+| T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | done | wl-build-web |
 | T-0901 | CI e2e job: run Playwright with the tests/e2e config; webServer builds via turbo (^build) — diagnosis docs/ci/CI-T-0901-* | infra (+ tests/e2e/playwright.config.ts) | T-0300b | done | wl-build-infra (draft PR) |
 
 ## Phase 5 — Iterate

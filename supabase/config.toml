@@ -397,12 +397,14 @@ deno_version = 2
 
 # D-0053 §4: verify_jwt is off for the engine functions, so the gateway never answers with its
 # own non-ApiError 401. Each function checks the bearer token itself (supabase.auth.getUser) and
-# returns 401 `unauthorized` in the ApiError envelope. `sessions` (POST /sessions/{id}/finish)
-# lands with T-0203c.
+# returns 401 `unauthorized` in the ApiError envelope.
 [functions.workouts]
 verify_jwt = false
 
 [functions.balance]
+verify_jwt = false
+
+[functions.sessions]
 verify_jwt = false
 
 # [edge_runtime.secrets]
