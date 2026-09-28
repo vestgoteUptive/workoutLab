@@ -4,7 +4,7 @@ import react from "eslint-plugin-react";
 export default [
   ...base,
   {
-    // The build/CLI scripts (gen-icons, check-bundle-size) are plain Node, not browser code.
+    // The build/CLI scripts (check-bundle-size) are plain Node, not browser code.
     files: ["scripts/**/*.mjs"],
     languageOptions: {
       globals: { process: "readonly", console: "readonly", Buffer: "readonly" },

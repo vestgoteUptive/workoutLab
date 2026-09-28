@@ -3,6 +3,7 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import type { Plugin } from "vite";
+import { wlIconsPlugin } from "./scripts/gen-icons.mjs";
 
 // See scripts/gen-icons.mjs for why this is a `require()` of the raw JSON, not an
 // `import` of the @workoutlab/design-tokens package: Vite loads this config file
@@ -43,6 +44,8 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [
       react(),
+      // Emits icons/*.png and favicon.svg into dist/ (precached below) and serves them in dev.
+      wlIconsPlugin(),
       VitePWA({
         registerType: "autoUpdate",
         injectRegister: "auto",

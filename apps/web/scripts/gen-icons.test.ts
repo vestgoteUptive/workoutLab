@@ -1,41 +1,32 @@
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { tokens } from "@workoutlab/design-tokens";
-import { iconSvg, writeFaviconSvg, writePngIcons } from "./gen-icons.mjs";
+import { iconAssets, iconSvg } from "./gen-icons.mjs";
 
 /** Reads width/height straight out of the PNG IHDR chunk (bytes 16-23), no extra dependency. */
-function pngSize(buffer: Buffer): { width: number; height: number } {
-  return { width: buffer.readUInt32BE(16), height: buffer.readUInt32BE(20) };
+function pngSize(bytes: Uint8Array): { width: number; height: number } {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  return { width: view.getUint32(16), height: view.getUint32(20) };
 }
 
-let dir: string | undefined;
-
-afterEach(() => {
-  if (dir) rmSync(dir, { recursive: true, force: true });
-  dir = undefined;
-});
-
 describe("gen-icons (AC-A3)", () => {
-  it("writes 192x192, 512x512 and 512 maskable PNGs at the right pixel sizes", () => {
-    dir = mkdtempSync(join(tmpdir(), "wl-icons-"));
-    writePngIcons(dir);
+  it("renders 192x192, 512x512 and 512 maskable PNGs at the right pixel sizes", () => {
+    const byName = new Map(iconAssets().map((a) => [a.fileName, a]));
     for (const [file, size] of [
-      ["icon-192.png", 192],
-      ["icon-512.png", 512],
-      ["icon-512-maskable.png", 512],
+      ["icons/icon-192.png", 192],
+      ["icons/icon-512.png", 512],
+      ["icons/icon-512-maskable.png", 512],
     ] as const) {
-      const { width, height } = pngSize(readFileSync(join(dir, file)));
+      const asset = byName.get(file);
+      expect(asset?.contentType).toBe("image/png");
+      const { width, height } = pngSize(asset!.source as Uint8Array);
       expect(width).toBe(size);
       expect(height).toBe(size);
     }
   });
 
-  it("writes a favicon.svg whose fill/stroke values are only bg or accent", () => {
-    dir = mkdtempSync(join(tmpdir(), "wl-favicon-"));
-    writeFaviconSvg(dir);
-    const svg = readFileSync(join(dir, "favicon.svg"), "utf8");
+  it("renders a favicon.svg whose fill/stroke values are only bg or accent", () => {
+    const favicon = iconAssets().find((a) => a.fileName === "favicon.svg");
+    const svg = String(favicon?.source);
     const colours = [...svg.matchAll(/(?:fill|stroke)="([^"]+)"/g)].map((m) => m[1]);
     expect(colours.length).toBeGreaterThan(0);
     for (const colour of colours) {

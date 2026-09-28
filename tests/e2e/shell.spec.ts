@@ -3,7 +3,7 @@
 // T-0300b), so nothing needs `page.route` mocking here.
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import { VITE_SUPABASE_URL } from "./playwright.config.js";
+import { BASE_URL, VITE_SUPABASE_URL } from "./playwright.config.js";
 
 const TAB_ROUTES = ["/", "/library", "/progress", "/plan"] as const;
 const AXE_ROUTES = ["/welcome", "/", "/library", "/progress", "/balance", "/plan"] as const;
@@ -55,7 +55,6 @@ test.describe("AC-A10 CSP origins (e2e)", () => {
   test("every request while walking the tabs stays on preview or Supabase origin", async ({
     page,
   }) => {
-    const previewOrigin = new URL(page.url() || "http://localhost:4173").origin;
     const seen: string[] = [];
     page.on("request", (req) => seen.push(req.url()));
 
@@ -63,10 +62,10 @@ test.describe("AC-A10 CSP origins (e2e)", () => {
       await page.goto(route);
     }
 
-    const allowed = new Set([new URL("http://localhost:4173").origin, VITE_SUPABASE_URL]);
+    const allowed = new Set([new URL(BASE_URL).origin, VITE_SUPABASE_URL]);
     for (const url of seen) {
       const origin = new URL(url).origin;
-      expect(allowed.has(origin) || origin === previewOrigin).toBe(true);
+      expect(allowed.has(origin), url).toBe(true);
     }
   });
 });

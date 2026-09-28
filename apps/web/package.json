@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsx scripts/gen-icons.mjs --stage=pre && tsc -b && vite build && tsx scripts/gen-icons.mjs --stage=post",
+    "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint . && wl-check-colours .",
@@ -32,7 +32,6 @@
     "@vitejs/plugin-react": "^4.3.4",
     "eslint-plugin-react": "^7.37.5",
     "jsdom": "^25.0.1",
-    "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
     "vitest": "^5.0.2"
