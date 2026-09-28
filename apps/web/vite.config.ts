@@ -81,6 +81,13 @@ export default defineConfig(({ command }) => {
       environment: "jsdom",
       setupFiles: ["./vitest.setup.ts"],
       globals: false,
+      // A fixed, fake project so `lib/auth/client.ts` can construct a real supabase-js
+      // client in every test without a `.env` file (AC-B1); tests that need a specific
+      // value use `vi.stubEnv`.
+      env: {
+        VITE_SUPABASE_URL: "https://abc.supabase.co",
+        VITE_SUPABASE_ANON_KEY: "test-anon-key",
+      },
       exclude: ["**/node_modules/**", "**/dist/**", "**/__e2e__/**"],
     },
   };

@@ -1,10 +1,25 @@
 // App shell: router (D-0045 §2), C-02 tab bar (§3). Auth (T-0300b), offline queue (T-0300c)
 // and C-01 (T-0300d) land in their own tickets; this shell never imports their features.
-import { Suspense, lazy, useMemo } from "react";
+import { Suspense, lazy, useMemo, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router";
 import { TabBar } from "../components/tab-bar/TabBar.js";
-import { isArea, routes } from "./routes.js";
+import { AuthProvider } from "../lib/auth/auth-context.js";
+import { RedirectIfSignedIn, RequireAuth, RequireAuthOnceForSession } from "../lib/auth/guards.js";
+import { isArea, routes, type RouteConfig } from "./routes.js";
 import "../components/tab-bar/tab-bar.css";
+
+function applyGuard(guard: RouteConfig["guard"], element: ReactNode): ReactNode {
+  switch (guard) {
+    case "protected":
+      return <RequireAuth>{element}</RequireAuth>;
+    case "session":
+      return <RequireAuthOnceForSession>{element}</RequireAuthOnceForSession>;
+    case "guest-only":
+      return <RedirectIfSignedIn>{element}</RedirectIfSignedIn>;
+    case "public":
+      return element;
+  }
+}
 
 function BalanceDetailGuard({ children }: { children: React.ReactNode }) {
   const { area } = useParams();
@@ -27,7 +42,7 @@ export function Shell() {
         <Routes>
           {routes.map((route) => {
             const Component = lazyComponents.get(route.path)!;
-            const element =
+            const inner =
               route.path === "/balance/:area" ? (
                 <BalanceDetailGuard>
                   <Component />
@@ -35,6 +50,7 @@ export function Shell() {
               ) : (
                 <Component />
               );
+            const element = applyGuard(route.guard, inner);
             return <Route key={route.path} path={route.path} element={element} />;
           })}
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -59,8 +75,10 @@ function matchesShellRoute(pattern: string, pathname: string): boolean {
 
 export function App() {
   return (
-    <BrowserRouter>
-      <Shell />
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Shell />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

@@ -14,6 +14,7 @@
     "check:size": "node scripts/check-bundle-size.mjs dist"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.117.2",
     "@workoutlab/design-tokens": "workspace:*",
     "@workoutlab/shared": "workspace:*",
     "react": "^19.0.0",
