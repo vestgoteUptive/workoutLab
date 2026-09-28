@@ -6,7 +6,12 @@ import { Ajv2020 } from "npm:ajv@8.20.0/dist/2020.js";
 import { parse as parseYaml } from "npm:yaml@2";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { callFunction, createTestUser, seedFullProfile } from "./helpers.ts";
+import {
+  callFunction as callFunctionRaw,
+  createTestUser as createTestUserRaw,
+  seedFullProfile,
+} from "./helpers.ts";
+import { expiredAccessToken } from "../unit/fixtures/jwt.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(HERE, "..", "..", "..", "..");
@@ -45,10 +50,38 @@ async function assertValidatesAgainst(schemaName: string, body: unknown): Promis
   assert(ok, `body did not validate against ${schemaName}: ${JSON.stringify(validate.errors)}`);
 }
 
-function assertEnvelope(body: unknown, code: string): void {
+function assertEnvelope(body: unknown, code: string, namedField?: string): void {
   const err = (body as { error: { code: string; message: string; requestId: string } }).error;
   assertEquals(err.code, code);
   assertMatch(err.requestId, REQUEST_ID_RE);
+  if (namedField !== undefined) {
+    assert(
+      err.message.includes(namedField),
+      `expected the message to name "${namedField}": ${err.message}`,
+    );
+  }
+}
+
+// --- AC23 sweep bookkeeping --------------------------------------------------------------------
+// Every user id/email this file provisions, and every error response body this file produces, are
+// recorded here so the final AC23 sweep test (below) can assert none of the former ever appears
+// in any of the latter — across the whole suite, not just one hand-picked 400.
+const knownIdentities: string[] = [];
+const errorResponseBodies: string[] = [];
+
+async function createTestUser(): ReturnType<typeof createTestUserRaw> {
+  const user = await createTestUserRaw();
+  knownIdentities.push(user.userId);
+  return user;
+}
+
+async function callFunction(...args: Parameters<typeof callFunctionRaw>): Promise<Response> {
+  const res = await callFunctionRaw(...args);
+  if (res.status >= 400) {
+    const raw = await res.clone().text();
+    errorResponseBodies.push(raw);
+  }
+  return res;
 }
 
 // --- AC14: 401 for all three functions --------------------------------------------------------
@@ -88,6 +121,43 @@ Deno.test("AC14: GET /balance with Bearer garbage is 401 envelope", async () => 
   assertEnvelope(await res.json(), "unauthorized");
 });
 
+// An access token signed with the local stack's own JWT_SECRET (from `supabase status -o env`,
+// present in the CI job env), but with `exp` in the past — a real, correctly-signed, expired
+// token, as opposed to `Bearer garbage`. This is the case an `auth.getUser` round-trip alone would
+// still reject, but proves the platform's own 401 envelope (not the gateway's) covers it too.
+Deno.test(
+  "AC14: POST /workouts/suggest with an expired (but correctly signed) token is 401 envelope",
+  async () => {
+    const jwtSecret = Deno.env.get("JWT_SECRET");
+    if (!jwtSecret)
+      throw new Error("JWT_SECRET is not set (expected from `supabase status -o env`)");
+    const token = await expiredAccessToken(jwtSecret);
+    const res = await callFunction("/workouts/suggest", {
+      method: "POST",
+      accessToken: token,
+      body: JSON.stringify({ sessionInput: SESSION_INPUT_30, tz: "Europe/Stockholm" }),
+      headers: { "Content-Type": "application/json" },
+    });
+    assertEquals(res.status, 401);
+    assertEnvelope(await res.json(), "unauthorized");
+  },
+);
+
+Deno.test(
+  "AC14: GET /balance with an expired (but correctly signed) token is 401 envelope",
+  async () => {
+    const jwtSecret = Deno.env.get("JWT_SECRET");
+    if (!jwtSecret)
+      throw new Error("JWT_SECRET is not set (expected from `supabase status -o env`)");
+    const token = await expiredAccessToken(jwtSecret);
+    const res = await callFunction("/balance?tz=Europe/Stockholm", {
+      accessToken: token,
+    });
+    assertEquals(res.status, 401);
+    assertEnvelope(await res.json(), "unauthorized");
+  },
+);
+
 // --- AC17: one bad-request call per endpoint ----------------------------------------------------
 
 Deno.test("AC17: POST /workouts/suggest with budgetMin 0 is 400 invalid_request", async () => {
@@ -103,7 +173,7 @@ Deno.test("AC17: POST /workouts/suggest with budgetMin 0 is 400 invalid_request"
     headers: { "Content-Type": "application/json" },
   });
   assertEquals(res.status, 400);
-  assertEnvelope(await res.json(), "invalid_request");
+  assertEnvelope(await res.json(), "invalid_request", "budgetMin");
 });
 
 Deno.test("AC17: GET /balance with tz=Mars/Base is 400 invalid_request", async () => {
@@ -113,7 +183,7 @@ Deno.test("AC17: GET /balance with tz=Mars/Base is 400 invalid_request", async (
     accessToken: user.accessToken,
   });
   assertEquals(res.status, 400);
-  assertEnvelope(await res.json(), "invalid_request");
+  assertEnvelope(await res.json(), "invalid_request", "tz");
 });
 
 // --- AC18: profile missing ----------------------------------------------------------------------
@@ -176,6 +246,14 @@ Deno.test("AC19: zero-history suggest and balance are 200 and schema-valid", asy
   assertEquals(workout.plan.version, 1);
   assert(workout.plan.items.length >= 1);
   assert(workout.unusedS >= 0);
+  for (const reason of workout.sessionReasons ?? []) {
+    if (reason.code === "days_since") assertEquals(reason.days, null);
+  }
+  for (const item of workout.plan.items) {
+    for (const reason of item.reasons ?? []) {
+      if (reason.code === "days_since") assertEquals(reason.days, null);
+    }
+  }
 
   const balanceRes = await callFunction("/balance?tz=Europe/Stockholm", {
     accessToken: user.accessToken,
@@ -345,17 +423,40 @@ Deno.test("AC22: another user's 10 hard sets never change A's balance", async ()
 
 // --- AC23: no leak sweep -------------------------------------------------------------------------
 
-Deno.test("AC23: no ApiError message across this suite contains an email or user id", async () => {
-  // A light sweep: user ids and emails created in this file never appear in a 4xx/5xx message.
-  // The 401/400/422 bodies collected above already excluded them by construction (fixed strings);
-  // this test asserts the general shape holds for a fresh 400.
-  const user = await createTestUser();
-  await seedFullProfile(user.client);
-  const res = await callFunction("/balance?tz=Mars/Base", {
-    accessToken: user.accessToken,
-  });
-  const body = await res.json();
-  const raw = JSON.stringify(body);
-  assert(!raw.includes(user.userId));
-  assert(!raw.includes("@test.local"));
-});
+Deno.test(
+  "AC23: a fresh 400 error body contains neither the caller's user id nor their email",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const res = await callFunction("/balance?tz=Mars/Base", {
+      accessToken: user.accessToken,
+    });
+    const body = await res.json();
+    const raw = JSON.stringify(body);
+    assert(!raw.includes(user.userId));
+    assert(!raw.includes("@test.local"));
+  },
+);
+
+// Runs last (Deno test files execute in declaration order): every error response this whole file
+// produced (401/400/422/etc, tracked by the `callFunction` wrapper above) is checked against every
+// user id this file provisioned (tracked by the `createTestUser` wrapper above), plus the fixed
+// `@test.local` email domain every fixture user uses (NFR-PRIV-7). This is the full-suite sweep,
+// not just the one 400 above.
+Deno.test(
+  "AC23 sweep: no error response produced by this suite leaks any user id, email, or a stack trace",
+  () => {
+    assert(errorResponseBodies.length > 0, "expected this suite to have produced error responses");
+    assert(knownIdentities.length > 0, "expected this suite to have provisioned test users");
+    for (const raw of errorResponseBodies) {
+      for (const userId of knownIdentities) {
+        assert(!raw.includes(userId), `error body leaked a user id: ${raw}`);
+      }
+      assert(!raw.includes("@test.local"), `error body leaked a test email: ${raw}`);
+      assert(
+        !/at\s+\S+\s+\(.*:\d+:\d+\)/.test(raw),
+        `error body looks like it contains a stack trace: ${raw}`,
+      );
+    }
+  },
+);

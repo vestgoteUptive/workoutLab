@@ -1,5 +1,6 @@
 {
   "nodeModulesDir": "none",
+  "lock": false,
   "imports": {
     "@workoutlab/engine": "../../functions/_shared/vendor/engine/index.js",
     "@workoutlab/shared": "../../functions/_shared/vendor/shared/index.js",

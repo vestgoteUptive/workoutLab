@@ -47,14 +47,14 @@ function balanceSpy() {
 Deno.test("AC17: no tz is 400, engine never called", async () => {
   const { spy, calls } = balanceSpy();
   const deps = depsFixture({ balance: spy });
-  await assertRejectsWithStatus(() => getBalanceCore(FAKE_CTX, null, deps), 400);
+  await assertRejectsWithStatus(() => getBalanceCore(FAKE_CTX, null, deps), 400, "tz");
   assertEquals(calls(), 0);
 });
 
 Deno.test("AC17: tz=Mars/Base is 400, engine never called", async () => {
   const { spy, calls } = balanceSpy();
   const deps = depsFixture({ balance: spy });
-  await assertRejectsWithStatus(() => getBalanceCore(FAKE_CTX, "Mars/Base", deps), 400);
+  await assertRejectsWithStatus(() => getBalanceCore(FAKE_CTX, "Mars/Base", deps), 400, "tz");
   assertEquals(calls(), 0);
 });
 
@@ -69,6 +69,9 @@ Deno.test("AC18: profile missing (8 area_targets) is 422, engine never called", 
   await assertRejectsWithStatus(() => getBalanceCore(FAKE_CTX, TZ, deps), 422);
   assertEquals(calls(), 0);
 });
+
+// (AC17 message-naming coverage lives on the `assertRejectsWithStatus` calls above; 422
+// profile_missing doesn't name a request field, so no `namedField` assertion is made here.)
 
 Deno.test(
   "AC19: zero history returns 9 areas, each at 0 weighted sets and coverageStep 0",
@@ -131,13 +134,26 @@ Deno.test(
 
 // --- helpers ---------------------------------------------------------------------------------
 
-async function assertRejectsWithStatus(fn: () => Promise<unknown>, status: number): Promise<void> {
+async function assertRejectsWithStatus(
+  fn: () => Promise<unknown>,
+  status: number,
+  namedField?: string,
+): Promise<void> {
   let threw = false;
   try {
     await fn();
   } catch (err) {
     threw = true;
     assertEquals((err as { status?: number }).status, status);
+    if (status === 400) {
+      assertEquals((err as { code?: string }).code, "invalid_request");
+    }
+    if (namedField !== undefined) {
+      assert(
+        (err as Error).message.includes(namedField),
+        `expected the message to name "${namedField}": ${(err as Error).message}`,
+      );
+    }
   }
   assert(threw, `expected the call to throw with status ${status}`);
 }

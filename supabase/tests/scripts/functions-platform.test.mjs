@@ -31,7 +31,9 @@ function listFunctionSourceFiles() {
 test("AC12: no function source (outside _shared/vendor) imports packages/ or _shared/vendor by path", () => {
   for (const file of listFunctionSourceFiles()) {
     const contents = readFileSync(file, "utf8");
-    const importLines = contents.match(/^import[^\n]*from\s+["'][^"']+["'];?$/gm) ?? [];
+    // `[^]*?` (not `.*`) so a brace-spread import statement that wraps onto several lines is
+    // still captured as one match, not silently skipped by a single-line-only pattern.
+    const importLines = contents.match(/^import[^]*?from\s+["'][^"']+["'];?$/gm) ?? [];
     for (const line of importLines) {
       assert.doesNotMatch(
         line,

@@ -6,7 +6,11 @@ import type { EngineProfile } from "@workoutlab/shared";
 import type { AuthContext } from "../../../functions/_shared/auth.ts";
 import { profileMissing } from "../../../functions/_shared/errors.ts";
 import type { EngineInputs } from "../../../functions/_shared/repo.ts";
-import { suggestWorkoutCore, type SuggestDeps } from "../../../functions/workouts/core.ts";
+import {
+  readSuggestBody,
+  suggestWorkoutCore,
+  type SuggestDeps,
+} from "../../../functions/workouts/core.ts";
 import {
   historyFixture,
   libraryFixture,
@@ -86,7 +90,7 @@ Deno.test(
     const { spy, calls } = suggestSpy();
     const deps = depsFixture({ suggest: spy });
     const body = { sessionInput: { ...SESSION_INPUT_30, budgetMin: 0 }, tz: TZ };
-    await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps));
+    await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps), "budgetMin");
     assertEquals(calls(), 0);
   },
 );
@@ -95,7 +99,7 @@ Deno.test("AC17: invalid sessionInput.energy is 400 before the engine is called"
   const { spy, calls } = suggestSpy();
   const deps = depsFixture({ suggest: spy });
   const body = { sessionInput: { ...SESSION_INPUT_30, energy: "max" }, tz: TZ };
-  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps));
+  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps), "energy");
   assertEquals(calls(), 0);
 });
 
@@ -103,7 +107,7 @@ Deno.test("AC17: an extra key on sessionInput is 400", async () => {
   const { spy, calls } = suggestSpy();
   const deps = depsFixture({ suggest: spy });
   const body = { sessionInput: { ...SESSION_INPUT_30, foo: "bar" }, tz: TZ };
-  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps));
+  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps), "foo");
   assertEquals(calls(), 0);
 });
 
@@ -111,7 +115,7 @@ Deno.test("AC17: a missing tz is 400", async () => {
   const { spy, calls } = suggestSpy();
   const deps = depsFixture({ suggest: spy });
   const body = { sessionInput: SESSION_INPUT_30 };
-  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps));
+  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps), "tz");
   assertEquals(calls(), 0);
 });
 
@@ -119,8 +123,41 @@ Deno.test("AC17: tz: Mars/Base is 400", async () => {
   const { spy, calls } = suggestSpy();
   const deps = depsFixture({ suggest: spy });
   const body = { sessionInput: SESSION_INPUT_30, tz: "Mars/Base" };
-  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps));
+  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps), "tz");
   assertEquals(calls(), 0);
+});
+
+Deno.test("AC17: budgetMin 481 (over the 480 max) is 400 naming the field", async () => {
+  const { spy, calls } = suggestSpy();
+  const deps = depsFixture({ suggest: spy });
+  const body = { sessionInput: { ...SESSION_INPUT_30, budgetMin: 481 }, tz: TZ };
+  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps), "budgetMin");
+  assertEquals(calls(), 0);
+});
+
+Deno.test("AC17: budgetMin 30.5 (not an integer) is 400 naming the field", async () => {
+  const { spy, calls } = suggestSpy();
+  const deps = depsFixture({ suggest: spy });
+  const body = { sessionInput: { ...SESSION_INPUT_30, budgetMin: 30.5 }, tz: TZ };
+  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps), "budgetMin");
+  assertEquals(calls(), 0);
+});
+
+Deno.test("AC17: a top-level extra key on the request body is 400 naming the field", async () => {
+  const { spy, calls } = suggestSpy();
+  const deps = depsFixture({ suggest: spy });
+  const body = { sessionInput: SESSION_INPUT_30, tz: TZ, foo: "bar" };
+  await assertRejectsInvalid(() => suggestWorkoutCore(FAKE_CTX, body, deps), "foo");
+  assertEquals(calls(), 0);
+});
+
+Deno.test("AC17: a body that isn't JSON is 400 invalid_request (readSuggestBody)", async () => {
+  const req = new Request("http://localhost/workouts/suggest", {
+    method: "POST",
+    body: "{not json",
+    headers: { "Content-Type": "application/json" },
+  });
+  await assertRejectsWithStatus(() => readSuggestBody(req), 400);
 });
 
 Deno.test("AC18: profile missing (no profiles row) is 422, engine never called", async () => {
@@ -214,17 +251,35 @@ Deno.test(
 
 // --- helpers ---------------------------------------------------------------------------------
 
-async function assertRejectsInvalid(fn: () => Promise<unknown>): Promise<void> {
-  await assertRejectsWithStatus(fn, 400);
+/** Asserts `fn()` rejects with a 400 `invalid_request` ApiErrorResponse. When `namedField` is
+ * given, also asserts the message names that field (so a caller can tell which input was bad). */
+async function assertRejectsInvalid(
+  fn: () => Promise<unknown>,
+  namedField?: string,
+): Promise<void> {
+  await assertRejectsWithStatus(fn, 400, namedField);
 }
 
-async function assertRejectsWithStatus(fn: () => Promise<unknown>, status: number): Promise<void> {
+async function assertRejectsWithStatus(
+  fn: () => Promise<unknown>,
+  status: number,
+  namedField?: string,
+): Promise<void> {
   let threw = false;
   try {
     await fn();
   } catch (err) {
     threw = true;
     assertEquals((err as { status?: number }).status, status);
+    if (status === 400) {
+      assertEquals((err as { code?: string }).code, "invalid_request");
+    }
+    if (namedField !== undefined) {
+      assert(
+        (err as Error).message.includes(namedField),
+        `expected the message to name "${namedField}": ${(err as Error).message}`,
+      );
+    }
   }
   assert(threw, `expected the call to throw with status ${status}`);
 }

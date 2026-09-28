@@ -1,0 +1,89 @@
+// T-0203b row-cap fix: PostgREST's `max_rows` (supabase/config.toml, currently 1000) silently
+// truncates a single `select`, so `_shared/repo.ts` pages the 56-day `session_sets` history query
+// in chunks via `pageAll`. This test exercises `pageAll` directly against a fake `.range()`
+// query builder — no Docker, no live Supabase client — with more than 1000 fake rows so a single
+// unpaged fetch would visibly lose data.
+import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { HISTORY_PAGE_SIZE, pageAll, type RangeQuery } from "../../../functions/_shared/repo.ts";
+
+function fakeRangeQuery<Row>(allRows: Row[]): RangeQuery<Row> & { calls: number } {
+  const query = {
+    calls: 0,
+    range(from: number, to: number) {
+      query.calls++;
+      const page = allRows.slice(from, to + 1);
+      return Promise.resolve({ data: page, error: null });
+    },
+  };
+  return query;
+}
+
+Deno.test(
+  "pageAll: 2500 rows (more than one max_rows page) are all returned, none lost",
+  async () => {
+    const rows = Array.from({ length: 2500 }, (_, i) => ({ id: i }));
+    const query = fakeRangeQuery(rows);
+    const result = await pageAll(query, HISTORY_PAGE_SIZE);
+    assertEquals(result.length, 2500);
+    assertEquals(
+      result.map((r) => r.id),
+      rows.map((r) => r.id),
+    );
+  },
+);
+
+Deno.test(
+  "pageAll: exactly N * pageSize rows still terminates (one extra empty fetch confirms exhaustion)",
+  async () => {
+    const rows = Array.from({ length: 2000 }, (_, i) => ({ id: i }));
+    const query = fakeRangeQuery(rows);
+    const result = await pageAll(query, 1000);
+    assertEquals(result.length, 2000);
+    // 2 full pages (1000, 1000) + 1 empty page to confirm exhaustion = 3 range() calls.
+    assertEquals(query.calls, 3);
+  },
+);
+
+Deno.test("pageAll: fewer rows than one page makes exactly one range() call", async () => {
+  const rows = Array.from({ length: 42 }, (_, i) => ({ id: i }));
+  const query = fakeRangeQuery(rows);
+  const result = await pageAll(query, 1000);
+  assertEquals(result.length, 42);
+  assertEquals(query.calls, 1);
+});
+
+Deno.test("pageAll: zero rows returns an empty array with one range() call", async () => {
+  const query = fakeRangeQuery<{ id: number }>([]);
+  const result = await pageAll(query, 1000);
+  assertEquals(result.length, 0);
+  assertEquals(query.calls, 1);
+});
+
+Deno.test(
+  "pageAll: an error from a later page is mapped to internalError (500), not thrown raw",
+  async () => {
+    let calls = 0;
+    const query: RangeQuery<{ id: number }> = {
+      range(from: number, to: number) {
+        calls++;
+        if (calls === 1) {
+          return Promise.resolve({
+            data: Array.from({ length: 1000 }, (_, i) => ({ id: from + i })),
+            error: null,
+          });
+        }
+        return Promise.resolve({ data: null, error: { message: "db down: user@example.com" } });
+      },
+    };
+    let threw = false;
+    try {
+      await pageAll(query, 1000);
+    } catch (err) {
+      threw = true;
+      assertEquals((err as { status?: number }).status, 500);
+      assertEquals((err as { code?: string }).code, "internal");
+      assertEquals((err as Error).message, "Something went wrong");
+    }
+    assertEquals(threw, true);
+  },
+);

@@ -4,7 +4,7 @@
 //   ANON_KEY          the local anon JWT
 //   SERVICE_ROLE_KEY  admin key, used only from test code to provision fixture users/data —
 //                      never from function code (D-0053 §4).
-import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
+import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.58.0";
 
 export function requireEnv(name: string): string {
   const value = Deno.env.get(name);

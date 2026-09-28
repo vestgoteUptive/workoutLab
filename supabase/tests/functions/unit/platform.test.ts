@@ -123,6 +123,47 @@ Deno.test(
   },
 );
 
+Deno.test(
+  "AC23: exactly one JSON log line per request, shaped {requestId, fn, status, ms}, with no email or user id",
+  async () => {
+    const handler = createHandler("workouts", {
+      "POST /workouts/suggest": () => {
+        throw new Error("db down: user@example.com, user_id=11111111-1111-1111-1111-111111111111");
+      },
+    });
+
+    const originalLog = console.log;
+    const lines: string[] = [];
+    console.log = (...args: unknown[]) => {
+      lines.push(args.map((a) => String(a)).join(" "));
+    };
+    let res: Response;
+    try {
+      res = await handler(new Request("http://localhost/workouts/suggest", { method: "POST" }));
+      // Drain the body so the handler's work (including the log line) is fully settled.
+      await res.json();
+    } finally {
+      console.log = originalLog;
+    }
+
+    assertEquals(res!.status, 500);
+    assertEquals(
+      lines.length,
+      1,
+      `expected exactly one log line, got ${lines.length}: ${lines.join("\n")}`,
+    );
+
+    const entry = JSON.parse(lines[0]);
+    assertEquals(Object.keys(entry).sort(), ["fn", "ms", "requestId", "status"]);
+    assertMatch(entry.requestId, REQUEST_ID_RE);
+    assertEquals(entry.fn, "workouts");
+    assertEquals(entry.status, 500);
+    assertEquals(typeof entry.ms, "number");
+    assert(!lines[0].includes("user@example.com"));
+    assert(!lines[0].includes("11111111-1111-1111-1111-111111111111"));
+  },
+);
+
 Deno.test("AC23: internalError() never carries a message with an email", () => {
   const err = internalError();
   assertEquals(err.message, "Something went wrong");
