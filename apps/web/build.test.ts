@@ -14,6 +14,7 @@ import { tokens } from "@workoutlab/design-tokens";
 const webRoot = dirname(fileURLToPath(import.meta.url));
 const viteBin = resolve(webRoot, "node_modules/vite/bin/vite.js");
 const SUPABASE_URL = "https://abc.supabase.co";
+const SUPABASE_ANON_KEY = "test-anon-key";
 const BUILD_TIMEOUT = 60_000;
 
 interface ManifestChunk {
@@ -26,12 +27,18 @@ interface ManifestChunk {
   css?: string[];
 }
 
-function runViteBuild(outDir: string, supabaseUrl: string | undefined): SpawnSyncReturns<string> {
+function runViteBuild(
+  outDir: string,
+  supabaseUrl: string | undefined,
+  supabaseAnonKey: string | undefined = SUPABASE_ANON_KEY,
+): SpawnSyncReturns<string> {
   const env: NodeJS.ProcessEnv = { ...process.env };
   // Vitest sets NODE_ENV=test; a production build must not inherit it.
   delete env.NODE_ENV;
   delete env.VITE_SUPABASE_URL;
+  delete env.VITE_SUPABASE_ANON_KEY;
   if (supabaseUrl) env.VITE_SUPABASE_URL = supabaseUrl;
+  if (supabaseAnonKey) env.VITE_SUPABASE_ANON_KEY = supabaseAnonKey;
   return spawnSync(process.execPath, [viteBin, "build", "--outDir", outDir, "--emptyOutDir"], {
     cwd: webRoot,
     env,
@@ -174,6 +181,21 @@ describe("AC-A10 CSP", () => {
         const res = runViteBuild(failDir, undefined);
         expect(res.status).not.toBe(0);
         expect(`${res.stdout}\n${res.stderr}`).toContain("VITE_SUPABASE_URL");
+      } finally {
+        rmSync(failDir, { recursive: true, force: true });
+      }
+    },
+    BUILD_TIMEOUT,
+  );
+
+  it(
+    "a build with VITE_SUPABASE_ANON_KEY unset fails and names the variable",
+    () => {
+      const failDir = mkdtempSync(join(tmpdir(), "wl-web-build-noanonkey-"));
+      try {
+        const res = runViteBuild(failDir, SUPABASE_URL, "");
+        expect(res.status).not.toBe(0);
+        expect(`${res.stdout}\n${res.stderr}`).toContain("VITE_SUPABASE_ANON_KEY");
       } finally {
         rmSync(failDir, { recursive: true, force: true });
       }

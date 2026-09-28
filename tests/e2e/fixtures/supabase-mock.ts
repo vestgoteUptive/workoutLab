@@ -1,7 +1,8 @@
 // Shared `page.route` helper so no e2e spec needs a real Supabase project (D-0045 §10).
 // T-0300a's own specs don't call Supabase (auth lands in T-0300b), so this only stubs the
 // GoTrue endpoints enough that an unmocked request never leaves the browser silently; T-0300b
-// and T-0300c extend it with real payloads for their specs.
+// extends it with real email/OTP payloads for the auth spec, and T-0300c does the same for
+// `session_sets`/`sessions`/`session_sets_live`.
 import type { Page } from "@playwright/test";
 import { VITE_SUPABASE_URL } from "../playwright.config.js";
 
@@ -11,5 +12,124 @@ export { VITE_SUPABASE_URL };
 export async function mockSupabaseAuth(page: Page): Promise<void> {
   await page.route(`${VITE_SUPABASE_URL}/auth/v1/**`, (route) =>
     route.fulfill({ status: 501, body: "unmocked supabase auth call in e2e" }),
+  );
+}
+
+const STORAGE_KEY = "sb-abc-auth-token";
+const FAKE_USER = {
+  id: "11111111-1111-4111-8111-111111111111",
+  aud: "authenticated",
+  role: "authenticated",
+  email: "ada@example.com",
+  app_metadata: {},
+  user_metadata: {},
+  created_at: "2026-09-01T00:00:00.000Z",
+};
+
+/** The 6-digit code the mocked `/verify` endpoint accepts (AC-B3); any other 6 digits is a
+ *  mocked "invalid or expired" GoTrue error. */
+export const GOOD_CODE = "123456";
+
+/**
+ * Mocks the GoTrue endpoints `lib/auth/magic-link.ts` and `/auth/callback` call, with real
+ * email/OTP-shaped payloads (AC-B2, AC-B3, AC-B4). `signInWithOtp` (`POST /otp`) always
+ * succeeds; the PKCE code exchange (`POST /token?grant_type=pkce`) succeeds for `code=good`,
+ * and `verifyOtp` (`POST /verify`) succeeds for `token=GOOD_CODE`; both return a GoTrue-shaped
+ * error otherwise, so a spec can drive both the happy path and the expired/already-used path
+ * without a real Supabase project.
+ */
+export async function mockSupabaseEmailAuth(page: Page): Promise<void> {
+  // Registered first so it's the last-matched (Playwright runs the most-recently-registered
+  // handler first, falling back to earlier ones via `route.fallback()`): this 501 catch-all
+  // must be the final backstop for anything none of the specific handlers below claim, so an
+  // unmocked Supabase call (a non-PKCE `/token` grant, `/user`, `/logout`, ...) can never reach
+  // the network.
+  await mockSupabaseAuth(page);
+
+  // A trailing `*` because these requests carry a query string (`?redirect_to=…`) that a
+  // bare path pattern won't match.
+  await page.route(`${VITE_SUPABASE_URL}/auth/v1/otp*`, (route) =>
+    route.fulfill({ status: 200, json: {} }),
+  );
+
+  await page.route(`${VITE_SUPABASE_URL}/auth/v1/verify*`, async (route) => {
+    const body = route.request().postDataJSON() as { token?: string };
+    if (body.token === GOOD_CODE) {
+      return route.fulfill({ status: 200, json: sessionPayload() });
+    }
+    return route.fulfill({
+      status: 403,
+      json: { error_code: "otp_expired", msg: "Token has expired or is invalid" },
+    });
+  });
+
+  // `?` is a single-char wildcard in Playwright's glob matching, so the query string is
+  // checked inside the handler instead of in the route pattern.
+  await page.route(`${VITE_SUPABASE_URL}/auth/v1/token*`, async (route) => {
+    const url = new URL(route.request().url());
+    if (url.searchParams.get("grant_type") !== "pkce") return route.fallback();
+    const body = route.request().postDataJSON() as { auth_code?: string };
+    if (body.auth_code === "good") {
+      return route.fulfill({ status: 200, json: sessionPayload() });
+    }
+    return route.fulfill({
+      status: 403,
+      json: { error_code: "otp_expired", msg: "Token has expired or is invalid" },
+    });
+  });
+}
+
+function sessionPayload() {
+  return {
+    access_token: "fake-access-token",
+    refresh_token: "fake-refresh-token",
+    expires_in: 3600,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    token_type: "bearer",
+    user: FAKE_USER,
+  };
+}
+
+/**
+ * Reads the PKCE flow id supabase-js stashed in `localStorage` after `requestMagicLink()`
+ * (AC-B2), so a spec can build the callback URL `?code=good&sb_flow_id=<id>` the way the
+ * real magic link would, and the PKCE code exchange finds its verifier (AC-B4).
+ */
+export async function pendingPkceFlowId(page: Page): Promise<string> {
+  const flowId = await page.evaluate((key) => {
+    const prefix = `${key}-flow-`;
+    const suffix = "-code-verifier";
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && k.startsWith(prefix) && k.endsWith(suffix)) {
+        return k.slice(prefix.length, -suffix.length);
+      }
+    }
+    return null;
+  }, STORAGE_KEY);
+  if (!flowId) throw new Error("no pending PKCE flow id in localStorage");
+  return flowId;
+}
+
+/**
+ * Injects a signed-in session directly into `localStorage`, the way supabase-js itself
+ * persists one, so a spec can start "signed in" without driving the email/OTP round trip
+ * (AC-C20-style cold starts, and any auth spec step that only needs an existing session).
+ * Must run after a `page.goto` (a page, hence its `localStorage`, has to exist first).
+ */
+export async function injectSession(
+  page: Page,
+  overrides: { expiresInSeconds?: number } = {},
+): Promise<void> {
+  const expiresInSeconds = overrides.expiresInSeconds ?? 3600;
+  await page.evaluate(
+    ({ key, session }) => window.localStorage.setItem(key, JSON.stringify(session)),
+    {
+      key: STORAGE_KEY,
+      session: {
+        ...sessionPayload(),
+        expires_at: Math.floor(Date.now() / 1000) + expiresInSeconds,
+      },
+    },
   );
 }
