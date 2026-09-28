@@ -55,15 +55,49 @@ jobs:
       # Populates the pnpm store, so setup-node's post-step cache save has a path to save.
       - run: pnpm install --frozen-lockfile
         if: steps.has-supabase.outputs.present == 'true'
+      # D-0053 §2: the committed seed.sql must match data/exercises/library exactly.
+      - run: node supabase/scripts/gen-seed.mjs --check
+        if: steps.has-supabase.outputs.present == 'true'
       - uses: supabase/setup-cli@v1
         if: steps.has-supabase.outputs.present == 'true'
         with:
           version: 2.118.0
       # `supabase/config.toml` lands with T-0100/T-0203; until then this job is a no-op so
       # CI stays green from T-0002 onward without a fake DB step to delete later.
+      # D-0011: Google OAuth reads client_id/secret via env(); no real secret is configured in
+      # CI, so the CLI gets the non-secret placeholder literal (never printed, never a real key).
       - run: supabase start
         if: steps.has-supabase.outputs.present == 'true'
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ci-placeholder
+          GOOGLE_OAUTH_CLIENT_SECRET: ci-placeholder
+      # AC7: seed.sql is idempotent. Reapply it with psql and check the library row counts are
+      # unchanged. Keys come from `supabase status -o env`, appended to $GITHUB_ENV so no later
+      # step needs to print them.
+      - name: Load local Supabase keys
+        if: steps.has-supabase.outputs.present == 'true'
+        run: supabase status -o env >> "$GITHUB_ENV"
+      - name: Reapply seed.sql and check it is a no-op (AC7)
+        if: steps.has-supabase.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          count_sql="select (select count(*) from public.exercises) || ',' || (select count(*) from public.exercise_areas) || ',' || (select count(*) from public.exercise_variants);"
+          before="$(psql "$DB_URL" -tAc "$count_sql")"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
+          after="$(psql "$DB_URL" -tAc "$count_sql")"
+          if [ "$before" != "$after" ]; then
+            echo "seed.sql is not idempotent: exercises,exercise_areas,exercise_variants went from $before to $after"
+            exit 1
+          fi
       - run: supabase test db
+        if: steps.has-supabase.outputs.present == 'true'
+      - uses: denoland/setup-deno@v2
+        if: steps.has-supabase.outputs.present == 'true'
+        with:
+          deno-version: v2.x
+      # T-0203b/c add the function handlers under supabase/functions/; until then
+      # supabase/tests/functions/ holds only the seed and platform smoke tests (T-0203a).
+      - run: deno test --allow-net --allow-env --allow-read supabase/tests/functions/
         if: steps.has-supabase.outputs.present == 'true'
 
   e2e:
