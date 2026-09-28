@@ -135,3 +135,21 @@ none. D-0023 is a process decision and changes no contract.
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `pnpm check:repo` exits 0 on the
 branch · contracts unchanged · commit messages start with `T-0004`.
+
+## Accept log
+- 2026-09-28, product-owner, verdict **done** (build 8b72ead). All 23 ACs map to named `node:test`
+  cases in `.github/scripts/*.test.mjs`: screen IDs AC1–AC10, decision IDs AC11–AC13, placeholders
+  AC14–AC20, wiring/real repo AC21–AC23. QA ran 30/30 passing, and typecheck, lint, test,
+  `check:repo` and `format:check` were green on the branch and on a scratch merge with main.
+  Review approved. The four bootstrap tests got only their `@placeholder` line, and CI runs
+  `pnpm check:repo` after `pnpm format:check`. No contract changed.
+  Accepted deviations: (1) `test:repo-checks` uses the explicit glob
+  `".github/scripts/*.test.mjs"` instead of the directory form, so fixtures never run as tests.
+  AC22 now asserts this glob. (2) A fourth check (stale wording, D-0032) was added inside the infra
+  lane. It adds to the scope without weakening any AC or principle.
+  Follow-ups: tighten the v1-label regex with a trailing word boundary (`UF-08 Balanced` false
+  positive); make `resolveBranch` honour a custom root; flag `D-NNNN.md` files that have no slug;
+  fix D-0032's Context (wrong board line, "D-0023 rule 7" without a back-reference) and either
+  amend D-0023 or drop that claim; run root lint over `.github/scripts` in CI; pgTAP column-drift
+  check. Engine lane: T-0200 must remove `// @placeholder T-0200` from
+  `packages/engine/test/index.test.ts`, or its branch fails `placeholder-on-owning-branch`.

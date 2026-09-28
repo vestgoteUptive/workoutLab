@@ -27,6 +27,7 @@ jobs:
       - run: pnpm -w typecheck
       - run: pnpm -w lint
       - run: pnpm format:check
+      - run: pnpm check:repo
       - run: pnpm -w test
 
   supabase:
