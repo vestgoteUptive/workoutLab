@@ -1,0 +1,12 @@
+/* Base page styling. Colours come only from @workoutlab/design-tokens (D-0019, AC-A2). */
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  background: var(--wl-color-bg);
+  color: var(--wl-color-text);
+  font-family: var(--wl-font-body);
+}

@@ -5,23 +5,33 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsx scripts/gen-icons.mjs --stage=pre && tsc -b && vite build && tsx scripts/gen-icons.mjs --stage=post",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint . && wl-check-colours .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:e2e": "playwright test --config ../../tests/e2e/playwright.config.ts",
+    "check:size": "node scripts/check-bundle-size.mjs dist"
   },
   "dependencies": {
     "@workoutlab/design-tokens": "workspace:*",
+    "@workoutlab/shared": "workspace:*",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "react-router": "^8.4.0",
+    "vite-plugin-pwa": "^1.3.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
+    "eslint-plugin-react": "^7.37.5",
     "jsdom": "^25.0.1",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
     "vitest": "^5.0.2"
