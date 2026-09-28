@@ -35,7 +35,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0203 (from T-0100a): enable Google in supabase/config.toml via env(); seed exercises 1:1 onto D-0029 columns.
 - T-0102 (from T-0100b): mirror D-0035 columns (exercises.kind/increment_kg/default_duration_s/external_load, sessions.warmup_in_budget/plan, session_sets.backoff) and routines/routine_items/plan_checkins; define SessionPlan JSON (items + startDeficits).
 - Engine (T-0200/T-0202): engine-rules.md rule 9 / F-profile: plan_updated_at → plan_changed_at (D-0035). → absorbed by T-0202 (D-0041). bodyweight = external_load false.
-- T-0103b (from T-0102 groom, D-0037 §11): validator requires default_duration_s when timed = true.
+- T-0103b (from T-0102 groom, D-0037 §11): validator requires default_duration_s when timed = true. (T-0201a review: a timed row with null duration is costed 45 s — T-0103c must add the invalid fixture.)
 - T-0103b (from T-0103a accept/review): positive schema fixture for a valid source:wger row; schema.test missing-license asserts params.missingProperty; D-0033 §7 wording (AC11–14 exercise-only; AC10/15/16/17 whole library); align warm-up ids/weights with engine-rules §7 (wu-cat-cow core 1/back .5, wu-arm-circle shoulders) or amend via decision; remove the barbell-back-squat skip guard in areas.test.ts.
 - Engine (from T-0200): fast-check devDependency for invariant tests (D-0036 §5, lockfile → infra); purity lint also catches globalThis.Date/Math; engine types move to @workoutlab/shared after T-0102a.
 - T-0102b (from T-0201 groom, D-0040 §4): WorkoutItem.backoff.weightKg nullable (first-time main lift has no weight). Engine reads only PlanCheckin.answeredAt and a CheckinProfile subset (D-0041 §2).
@@ -65,8 +65,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 |---|---|---|---|---|---|
 | T-0200 | Engine: rules 1–6 (mapping, hard sets, window, targets, deficit, recovery) + balance | engine | T-0101, T-0004 | done | wl-build-engine |
 | T-0201 | Engine: time-budget selection, warm-up, energy, time check (rules 7, 8, 10) | engine | T-0200 | split → T-0201a, T-0201b (D-0040 §12) | wl-build-engine |
-| T-0201a | Engine: eligibility, selection + main lift, warm-up, reasons, output shape (rule 7.1–7.3, 10; AC1–24) | engine | T-0200 | doing | wl-build-engine |
-| T-0201b | Engine: energy Low/High + time check UF-09.8 (rules 7.4, 8; AC25–36) | engine | T-0201a | todo | wl-build-engine |
+| T-0201a | Engine: eligibility, selection + main lift, warm-up, reasons, output shape (rule 7.1–7.3, 10; AC1–24) | engine | T-0200 | done | wl-build-engine |
+| T-0201b | Engine: energy Low/High + time check UF-09.8 (rules 7.4, 8; AC25–36) | engine | T-0201a | doing | wl-build-engine |
 | T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | ready | wl-build-engine |
 | T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201a | todo | wl-build-backend |
 | T-0204 | Engine: swap ranking + deterministic shuffle (rules 12–13) | engine | T-0200 | todo | wl-build-engine |
