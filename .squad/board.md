@@ -57,9 +57,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0100a | Data model v1 part a: contract doc, config.toml, migration 1 (library, profiles, targets, sessions, sets, triggers, RLS), ACs tagged [a] incl. D-0029 exercises columns | data | T-0002 | done | wl-build-data |
 | T-0100b | Data model v1 part b: migration 2 (routines, routine_items, plan_checkins, analytics schema), ACs tagged [b] | data | T-0100a | done | wl-build-data |
 | T-0101 | Engine rules v1 (gap B4): warm-up, energy, swap ranking, progression/pre-fill, shuffle, main lift, "planned session" | engine | T-0001 | done | wl-spec |
-| T-0102 | OpenAPI for Edge Functions with full schemas, auth and errors; generate `packages/shared` types | data | T-0100a, T-0101 | split → T-0102a, T-0102b (TR-0015) | wl-build-data |
+| T-0102 | OpenAPI for Edge Functions with full schemas, auth and errors; generate `packages/shared` types | data | T-0100a, T-0101 | done | wl-build-data |
 | T-0102a | OpenAPI v1 (3 Edge Function paths) + API/engine types in packages/shared (D-0037, AC1–14) | data | T-0100a, T-0101 | done | wl-build-data |
-| T-0102b | DB types, parseSessionPlan, row mappers, migration 3 (priority_areas array_lower = 1) (AC15–20) | data | T-0102a, T-0100b | doing | wl-build-data |
+| T-0102b | DB types, parseSessionPlan, row mappers, migration 3 (priority_areas array_lower = 1) (AC15–20) | data | T-0102a, T-0100b | done | wl-build-data |
 | T-0103a | Exercise library part a: @workoutlab/exercises package, schema + tests, bodyweight exercises (D-0022) | content | T-0002 | done | wl-build-content |
 | T-0103b | Exercise library part b: dumbbell + full-gym exercises to 72–96 total (AC10–13 for all options) | content | T-0103a | done | wl-build-content |
 | T-0103c | Library test hardening: invalid fixture timed-without-duration → required/missingProperty default_duration_s; optional warm-up id rename to engine-rules §7 wu-* ids (D-0033 §9) | content | T-0103b | todo | wl-build-content |
@@ -80,7 +80,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0300 | PWA shell: routing, auth (magic link), offline set queue, C-01 body map, C-02 tab bar | web-shell | T-0002, T-0003, T-0100a | split → T-0300a, T-0300b, T-0300c, T-0300d (D-0045) | wl-build-web |
-| T-0300a | PWA shell: routes, tab bar C-02, tokens.css, manifest/icons from tokens, placeholder removed (AC-A*) | web-shell | T-0002, T-0003, T-0102a | ready | wl-build-web |
+| T-0300a | PWA shell: routes, tab bar C-02, tokens.css, manifest/icons from tokens, placeholder removed (AC-A*) | web-shell | T-0002, T-0003, T-0102a | doing | wl-build-web |
 | T-0300b | Auth: magic link + 6-digit code, guard (/welcome/* public, D-0014), callback (AC-B*) | web-shell | T-0300a | todo | wl-build-web |
 | T-0300c | Offline set queue (Dexie per D-0001/TR-0022), sync, engine input with pending rows (AC-C*) | web-shell | T-0300b, T-0102b | todo | wl-build-web |
 | T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | todo | wl-build-web |
