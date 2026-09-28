@@ -1,5 +1,5 @@
 // T-0201a UF-08.1: simulated histories through suggest(), R0-E1 on suggest and R7-E8.
-// AC14, AC18–AC20.
+// AC14, AC18–AC20. T-0201b UF-08.1 UF-09.8: the AC28 energy sweep and a timeCheck property.
 import { describe, expect, it } from "vitest";
 import {
   availableS,
@@ -8,6 +8,8 @@ import {
   primaryAreas,
   recoveringAreas,
   suggest,
+  timeCheck,
+  type Energy,
   type HistorySet,
   type LibraryExercise,
   type SessionInput,
@@ -135,6 +137,106 @@ describe("R7-E8 never over budget (property)", () => {
       });
       try {
         checkInvariants(history, si, run(history, si));
+      } catch (err) {
+        throw new Error(`seed ${seed}: ${(err as Error).message}`);
+      }
+    }
+  });
+});
+
+/** AC28: Low never changes the main item or adds items; High adds ≤ 1 back-off, main only. */
+function checkEnergy(history: readonly HistorySet[], si: SessionInput): void {
+  const normal = run(history, { ...si, energy: "normal" });
+  const w = run(history, si);
+  checkInvariants(history, si, w);
+  const items = w.plan.items;
+  const base = normal.plan.items;
+  expect(items.map((i) => i.exerciseId)).toEqual(base.map((i) => i.exerciseId));
+  expect(w.plan.mainLiftId).toBe(normal.plan.mainLiftId);
+  if (si.energy === "low") {
+    items.forEach((it, k) => {
+      const b = base[k];
+      if (it.isMain) expect(it).toEqual(b);
+      else expect(it.sets).toBe(b?.sets === 3 ? 2 : b?.sets);
+      expect(it.backoff).toBeNull();
+    });
+  } else {
+    const withBackoff = items.filter((i) => i.backoff !== null);
+    expect(withBackoff.length).toBeLessThanOrEqual(1);
+    for (const it of withBackoff) expect(it.isMain).toBe(true);
+    items.forEach((it, k) => {
+      if (it.backoff === null) expect(it).toEqual(base[k]);
+      else expect(it.sets).toBe(base[k]?.sets);
+    });
+  }
+}
+
+describe("rule 7.4 energy keeps the R7-E8 invariants (property)", () => {
+  for (const energy of ["low", "high"] as Energy[]) {
+    it(`rule-7 (AC28) energy ${energy}: budget sweep 15..120 over zero and the simulated histories`, () => {
+      for (const [name, history] of HISTORIES) {
+        for (let budgetMin = 15; budgetMin <= 120; budgetMin += 5) {
+          for (const warmupInBudget of [true, false]) {
+            try {
+              checkEnergy(history, input({ budgetMin, warmupInBudget, energy }));
+            } catch (err) {
+              throw new Error(
+                `${name} budget ${budgetMin} warm-up ${warmupInBudget}: ${(err as Error).message}`,
+              );
+            }
+          }
+        }
+      }
+    });
+
+    it(`rule-7 (AC28) energy ${energy}: 200 seeded histories with budgets 1–480 (a failure prints its seed)`, () => {
+      for (let seed = 1; seed <= 200; seed++) {
+        const rand = mulberry32(30_000 + seed);
+        const history = randomHistory(rand);
+        const si = input({
+          budgetMin: 1 + Math.floor(rand() * 480),
+          warmupInBudget: rand() < 0.5,
+          energy,
+        });
+        try {
+          checkEnergy(history, si);
+        } catch (err) {
+          throw new Error(`seed ${seed}: ${(err as Error).message}`);
+        }
+      }
+    });
+  }
+});
+
+describe("rule 8 timeCheck over suggested workouts (property)", () => {
+  it("rule-8 (AC35) Trim never cuts the main lift or started items and never projects past Continue", () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      const rand = mulberry32(40_000 + seed);
+      const history = randomHistory(rand);
+      const energies: Energy[] = ["low", "normal", "high"];
+      const si = input({
+        budgetMin: 15 + Math.floor(rand() * 106),
+        warmupInBudget: rand() < 0.5,
+        energy: energies[Math.floor(rand() * 3)] as Energy,
+      });
+      const w = run(history, si);
+      const n = w.plan.items.length;
+      const next = Math.floor(rand() * (n + 1));
+      const elapsedS = Math.floor(rand() * 2 * si.budgetMin * 60);
+      try {
+        const r = timeCheck(w, { elapsedS, nextItemIndex: next });
+        expect(Number.isInteger(r.behindS)).toBe(true);
+        expect(r.show).toBe(next < n && r.behindS >= 60);
+        expect(r.trim.items.slice(0, next)).toEqual(w.plan.items.slice(0, next));
+        const main = w.plan.items.find((i) => i.isMain);
+        if (main !== undefined) {
+          const idx = w.plan.items.indexOf(main);
+          if (idx >= next) expect(r.trim.items).toContainEqual(main);
+        }
+        expect(r.trim.projectedS).toBeLessThanOrEqual(r.projectedS);
+        for (const it of r.trim.items) expect(Number.isInteger(it.costS)).toBe(true);
+        expect(r.skipNext.items).toHaveLength(next < n ? n - 1 : n);
+        expect(timeCheck(w, { elapsedS, nextItemIndex: next })).toEqual(r);
       } catch (err) {
         throw new Error(`seed ${seed}: ${(err as Error).message}`);
       }

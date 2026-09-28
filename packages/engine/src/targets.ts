@@ -1,5 +1,11 @@
 // Rule 4: targets (D-0027).
-import { AREAS, type Area, type AreaNumbers, type TargetInput } from "./types.js";
+import {
+  AREAS,
+  type Area,
+  type AreaNumbers,
+  type PreviewTarget,
+  type TargetInput,
+} from "./types.js";
 
 /** Base sets per 14 days at rhythm 3–4 (S = 14) with no priority. */
 export const BASE_TARGETS: Readonly<AreaNumbers> = Object.freeze({
@@ -20,16 +26,21 @@ function assertRhythm(name: string, v: number): void {
   }
 }
 
+/** Throws `RangeError` unless 1 ≤ rhythmMin ≤ rhythmMax are integers (rules 4 and 9). */
+export function assertRhythmRange(rhythmMin: number, rhythmMax: number): void {
+  assertRhythm("rhythmMin", rhythmMin);
+  assertRhythm("rhythmMax", rhythmMax);
+  if (rhythmMin > rhythmMax) {
+    throw new RangeError(`rhythmMin ${rhythmMin} > rhythmMax ${rhythmMax}`);
+  }
+}
+
 /**
  * `target = roundHalfUp(base × S × P / 56)`, S = clamp(2 × (min + max), 7, 21),
  * P = 5 for a priority area, else 4. Integer arithmetic until the final rounding.
  */
 export function deriveTargets(input: TargetInput): AreaNumbers {
-  assertRhythm("rhythmMin", input.rhythmMin);
-  assertRhythm("rhythmMax", input.rhythmMax);
-  if (input.rhythmMin > input.rhythmMax) {
-    throw new RangeError(`rhythmMin ${input.rhythmMin} > rhythmMax ${input.rhythmMax}`);
-  }
+  assertRhythmRange(input.rhythmMin, input.rhythmMax);
   const s = Math.min(21, Math.max(7, 2 * (input.rhythmMin + input.rhythmMax)));
   const priority = new Set<Area>(input.priorityAreas);
   const out = {} as AreaNumbers;
@@ -40,4 +51,10 @@ export function deriveTargets(input: TargetInput): AreaNumbers {
     out[area] = Math.floor((2 * numerator + 56) / 112);
   }
   return out;
+}
+
+/** Rule 4 as the UF-11.1 preview list: the 9 areas in the fixed order (rule 9, D-0041 §6). */
+export function previewTargets(input: TargetInput): PreviewTarget[] {
+  const t = deriveTargets(input);
+  return AREAS.map((area) => ({ area, setsPer14d: t[area] }));
 }

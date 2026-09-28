@@ -5,7 +5,7 @@ Every rule has worked examples (`Rn-Em`). Each example is at least one unit test
 
 ## Fixtures (used by every example unless it says otherwise)
 - **F-tz:** `tz = Europe/Stockholm`, `now = 2026-09-27T12:00:00+02:00`, so today is D = 2026-09-27.
-- **F-profile:** level `beginner`; equipment `full` = [barbell, rack, bench, dumbbell, cable, machine, pullup-bar]; rhythm 3–4; no priority areas; onboarded and `plan_updated_at` 2026-08-02.
+- **F-profile:** level `beginner`; equipment `full` = [barbell, rack, bench, dumbbell, cable, machine, pullup-bar]; rhythm 3–4; no priority areas; onboarded and `plan_changed_at` 2026-08-02.
 - **F-targets:** rule 4 with F-profile: chest/back/glutes/quads 20, shoulders/hamstrings 16, arms/core/calves 12.
 - **F-input:** `budgetMin 30, warmupInBudget true, energy normal, shuffle 0`, with no main/pinned/excluded ids.
 - **F-history:** empty.
@@ -127,12 +127,12 @@ Fixture: budget 45 min, warm-up on. The plan is bench-press × 4 (main, chest 0.
 - **Period k** covers local days [onboarded + 14k, onboarded + 14k + 13]. It has ended when its last day < D.
 - **Completed session:** a session with ≥ 1 hard set (not warm-up, not tombstoned), dated by the local date of `started_at`. A **planned session** has no row: the plan is `2·rhythmMin – 2·rhythmMax` sessions per period. Suggested but unstarted workouts count for nothing.
 - **Under:** completed < 0.7 × 2·rhythmMin. **Over:** completed > 1.1 × 2·rhythmMax. Anything else is on plan.
-- **Reset:** `resetDate = max(local date of the last checkins.answered_at, local date of profile.plan_updated_at)`. A period is eligible if its end ≥ `resetDate`.
+- **Reset:** `resetDate = max(local date of the last checkins.answered_at, local date of `profiles.plan_changed_at` (engine field `planUpdatedAt`, D-0035, D-0041))`. A period is eligible if its end ≥ `resetDate`.
 - **Proposal:** look at the last two ended eligible periods. If both are under, propose (min − 1, max − 1). If both are over, propose (min + 1, max + 1). Clamp to 1–7, keeping min ≤ max. If the result equals the current rhythm, there is no proposal. With fewer than two eligible ended periods, there is no proposal.
 - **Output:** `{periods[{index, start, end, completed, status}], proposal: {direction, rhythmMin, rhythmMax, previewTargets} | null, nextCheckinDate}`. `previewTargets` is rule 4 with the proposed rhythm. `nextCheckinDate` is the day after the current period ends. The engine never changes targets. Only an Accept (UI → API) does.
 - **R9-E1…E11** are UF-11 spec AC1, AC2, AC3, AC4, AC5, AC7 (engine part), AC8, AC11, AC12, AC13 and AC14, with that spec's fixtures. AC6 and AC16 are covered by statelessness and R0-E1.
 - **R9-E12 (mid-period reset)** Given a Keep on 2026-09-30 and P4 = 3, P5 = 2, Then on 2026-10-25 the result proposes 2–3 (P4 ends 10-10 ≥ 09-30, so it is eligible).
-- **R9-E13 (edit plan resets)** Given P2 = 4 and P3 = 3 and `plan_updated_at` 2026-09-20, Then there is no proposal on 2026-09-27 (P2 is not eligible).
+- **R9-E13 (edit plan resets)** Given P2 = 4 and P3 = 3 and `plan_changed_at` 2026-09-20, Then there is no proposal on 2026-09-27 (P2 is not eligible).
 
 ## 10. Explanation
 Every item carries machine-readable reasons, and the UI or an optional LLM only turns them into words. The codes are: `main_lift`, `area_deficit {area, deficit}`, `days_since {area, days | null}`, `recovering_skipped {area}`, `energy_low_trim`, `energy_high_backoff`, `swap {reason}`, `prefill {kind: first_time|carry|reentry|hold_after_break|increase|deload|hold|add_rep}`. `sessionReasons` (≤ 3) starts with at most 2 `recovering_skipped {area}` entries for the recovering areas in the fixed order, then is filled with `area_deficit` entries for the items' distinct first primary areas, in session order, up to 3 in total (D-0040).

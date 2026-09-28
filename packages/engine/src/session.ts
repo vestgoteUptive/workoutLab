@@ -1,7 +1,14 @@
 // Session building: the eligible-exercise rule (rule 0, D-0034 §7), the time model (7.1),
-// main lift, pinned and greedy selection (7.2), reasons (rule 10) and `suggest()` for
-// UF-08.1 / UF-08.3 / UF-08.4 (D-0024, D-0037 §6–§7, D-0040, D-0042).
+// main lift, pinned and greedy selection (7.2), energy (7.4), reasons (rule 10) and
+// `suggest()` for UF-08.1 / UF-08.3 / UF-08.4 (D-0024, D-0037 §6–§7, D-0040, D-0042, D-0047).
 import { balance } from "./balance.js";
+import {
+  BACKOFF_FACTOR,
+  DEFAULT_INCREMENT_KG,
+  floorInc,
+  LOW_TRIM_FROM_SETS,
+  LOW_TRIM_TO_SETS,
+} from "./energy.js";
 import { indexLibrary, isHardSet, normalizeHistory, primaryAreas, weightsOf } from "./history.js";
 import { dayDiff, instantMs, localDate } from "./time.js";
 import {
@@ -9,6 +16,7 @@ import {
   type Area,
   type AreaNumbers,
   type AreaTarget,
+  type Backoff,
   type EngineProfile,
   type HistorySet,
   type Instant,
@@ -101,6 +109,10 @@ interface Picked {
   exercise: LibraryExercise;
   sets: number;
   isMain: boolean;
+  /** Rule 7.4 Low: trimmed from 3 to 2 sets. */
+  lowTrimmed?: boolean;
+  /** Rule 7.4 High: one back-off set on the main lift. */
+  backoff?: boolean;
 }
 
 interface State {
@@ -296,15 +308,26 @@ function prefillFor(ex: LibraryExercise, repsMin: number | null): PrefillResult 
   };
 }
 
+/** D-0040 §4: `floorInc(0.9 × prefill weight)` (null stays null) at the main `repsMin`. */
+function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): Backoff {
+  const w = prefill.weightKg;
+  const inc = ex.incrementKg ?? DEFAULT_INCREMENT_KG;
+  return { weightKg: w === null ? null : floorInc(BACKOFF_FACTOR * w, inc), reps };
+}
+
 function toItem(start: Start, p: Picked): WorkoutItem {
   const [repsMin, repsMax] = repRange(p.exercise, p.isMain);
   const prefill = prefillFor(p.exercise, repsMin);
   const area = primaryAreas(p.exercise)[0] as Area;
-  // Item reason order (D-0040 §6); energy reasons join in T-0201b.
+  const backoff =
+    p.backoff === true && repsMin !== null ? backoffOf(p.exercise, prefill, repsMin) : null;
+  // Item reason order (D-0040 §6).
   const reasons: Reason[] = [];
   if (p.isMain) reasons.push({ code: "main_lift" });
   reasons.push({ code: "area_deficit", area, deficit: start.deficits[area] });
   reasons.push({ code: "days_since", area, days: start.daysSince[area] });
+  if (p.lowTrimmed === true) reasons.push({ code: "energy_low_trim" });
+  if (backoff !== null) reasons.push({ code: "energy_high_backoff" });
   reasons.push({ code: "prefill", kind: prefill.kind });
   return {
     exerciseId: p.exercise.id,
@@ -313,11 +336,35 @@ function toItem(start: Start, p: Picked): WorkoutItem {
     repsMin,
     repsMax,
     durationS: p.exercise.timed ? p.exercise.defaultDurationS : null,
-    costS: itemCostS(p.exercise, p.sets),
-    backoff: null,
+    costS: itemCostS(p.exercise, p.sets) + (backoff === null ? 0 : setCostS(p.exercise)),
+    backoff,
     prefill,
     reasons,
   };
+}
+
+/**
+ * Rule 7.4, applied after selection. Low: every accessory at 3 sets goes to 2 and the freed
+ * time stays unused; the main lift is untouched. High: when the time left (`remainingS`, i.e.
+ * `unusedS`) covers one main-lift set, the main lift gets one back-off set. A timed main
+ * lift has no reps, so it gets no back-off (D-0047).
+ */
+function applyEnergy(s: State, energy: SessionInput["energy"]): void {
+  if (energy === "low") {
+    for (const p of s.picked) {
+      if (p.isMain || p.sets !== LOW_TRIM_FROM_SETS) continue;
+      s.remainingS += (p.sets - LOW_TRIM_TO_SETS) * setCostS(p.exercise);
+      p.sets = LOW_TRIM_TO_SETS;
+      p.lowTrimmed = true;
+    }
+  } else if (energy === "high") {
+    const main = s.picked.find((p) => p.isMain);
+    if (main === undefined || main.exercise.timed) return;
+    const cost = setCostS(main.exercise);
+    if (s.remainingS < cost) return;
+    main.backoff = true;
+    s.remainingS -= cost;
+  }
 }
 
 /** Rule 10 + D-0040 §6: ≤ 2 `recovering_skipped`, then first-primary `area_deficit`, ≤ 3. */
@@ -359,7 +406,7 @@ export function rankCandidates(
 /**
  * The next workout (UF-08.1, UF-08.4; rules 7, 10). Pure: the same inputs give a
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
- * `energy` and `shuffle` don't change the plan yet (T-0201b, T-0204; D-0040 §8).
+ * `energy` is applied after selection (rule 7.4); `shuffle` is ignored until T-0204 (D-0040 §8).
  */
 export function suggest(
   history: readonly HistorySet[],
@@ -378,6 +425,7 @@ export function suggest(
   selectMain(s, sessionInput.mainLiftId);
   selectPinned(s, sessionInput.pinnedIds);
   selectGreedy(s);
+  applyEnergy(s, sessionInput.energy);
 
   const items = s.picked.map((p) => toItem(start, p));
   const itemsTotalS = items.reduce((sum, i) => sum + i.costS, 0);
