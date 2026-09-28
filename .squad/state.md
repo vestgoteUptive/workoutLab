@@ -1,13 +1,12 @@
 # State
 
 - **Phase:** 1–3 overlap (contracts nearly done; engine in progress; shell and landing groomed)
-- **Updated:** 2026-09-28 19:25 by orchestrator
-- **Done:** T-0001–T-0005, T-0007, T-0100a/b, T-0101, T-0102, T-0103a/b, T-0200, T-0201, T-0202, T-0300a, T-0309a. Main is green.
+- **Updated:** 2026-09-28 20:10 by orchestrator
+- **Done:** T-0001–T-0005, T-0007, T-0100a/b, T-0101, T-0102, T-0103a/b, T-0200, T-0201, T-0202, T-0203a, T-0300a/b, T-0309a. Main unit/lint/typecheck green; the e2e CI job is red until T-0901.
 - **Concurrency cap: 2 runs in flight** (flows and sub-agents together); see `/tick`.
-- **In flight (2/2):** T-0203a rework (AgentLab a5fdd195; draft PR #5), T-0300b review (sub-agent). Then T-0300b QA + accept, then T-0901 (CI e2e fix, draft PR).
-- **Main CI is red** (e2e job, since T-0300a). T-0901 is queued as the first `wl-ci-investigate` run, and gets the next free slot.
+- **In flight (2/2):** T-0203b (backend-dev sub-agent; needs a draft PR for real-stack CI), T-0901 (AgentLab 4a3fe6c9; needs a draft PR, AC6).
 - **wl-ci-investigate is new:** AgentLab needs a restart to load it; until then use the sub-agent path (the ci-investigator role, via a general-purpose agent with the role text).
-- **Next after those:** T-0300d (web-shell, after T-0300b), T-0309b (landing, after T-0300b's lockfile change), T-0300c (after T-0300b), T-0203 build (draft PR for real-stack CI), grooming for T-0204/T-0205. Also T-0103c and T-0006.
+- **Next after those:** T-0300c (offline queue) and T-0300d (body map), both web-shell so one at a time; T-0309b (landing); T-0203c (after T-0203b); grooming for T-0204/T-0205, T-0301+.
 - **AgentLab has a $3 per-step budget cap:** big UI builds hit it. Split UI tickets small, tell builders to commit WIP early, or run large reworks as Opus sub-agents. frontend-dev cap raised to $6 (human decision, 2026-09-28), so web builds can go back to AgentLab once it has been restarted.
 - **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy and privacy mailbox, gates the landing prod deploy only).
 - **Executor:** AgentLab. Poll `get_run` with `waitSeconds ≤ 280`. Docker here can't pull images, so Supabase stack tests run in GitHub CI on a draft PR.
