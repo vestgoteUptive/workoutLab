@@ -36,7 +36,8 @@ export default defineConfig({
     // T-0901: build through turbo, not the package's own `build` script, so `^build` runs
     // first — `@workoutlab/design-tokens` needs it to produce `dist/tokens.css`, which
     // `apps/web/src/main.tsx` imports and which is gitignored (not committed).
-    command: "pnpm turbo run build --filter=@workoutlab/web && pnpm --filter @workoutlab/web preview",
+    command:
+      "pnpm turbo run build --filter=@workoutlab/web && pnpm --filter @workoutlab/web preview",
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
