@@ -102,7 +102,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | todo | wl-build-web |
 | T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
-| T-0309b | Landing build: static Astro page, no JS, tokens, privacy + 404 pages, placeholder removed (AC8–24) | landing | T-0309a | ready | wl-build-web |
+| T-0309b | Landing build: static Astro page, no JS, tokens, privacy + 404 pages, placeholder removed (AC8–24) | landing | T-0309a | doing | wl-build-web |
 | T-0310 | Account settings: JSON export (NFR-PRIV-4) and in-app account deletion (NFR-PRIV-5) | web-shell | T-0300 | todo | wl-build-web |
 
 ## Phase 4 — Ship
