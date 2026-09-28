@@ -26,7 +26,10 @@ const options = [
 
 describe("AC-A8 react/jsx-no-literals catalogue enforcement", () => {
   ruleTester.run("jsx-no-literals", react.rules["jsx-no-literals"], {
-    valid: [{ code: "const el = <span>·</span>", options }, { code: "const el = <span>×</span>", options }],
+    valid: [
+      { code: "const el = <span>·</span>", options },
+      { code: "const el = <span>×</span>", options },
+    ],
     invalid: [{ code: "const el = <p>Hello</p>", options, errors: 1 }],
   });
 });

@@ -12,7 +12,9 @@ function offsetMinutesAt(utcMillis: number, timeZone: string): number {
     minute: "2-digit",
     second: "2-digit",
   });
-  const parts = Object.fromEntries(dtf.formatToParts(new Date(utcMillis)).map((p) => [p.type, p.value]));
+  const parts = Object.fromEntries(
+    dtf.formatToParts(new Date(utcMillis)).map((p) => [p.type, p.value]),
+  );
   const asUtc = Date.UTC(
     Number(parts.year),
     Number(parts.month) - 1,
@@ -83,7 +85,9 @@ export function windowStartInstant(nowIso: string, timeZone: string, days: numbe
     month: "2-digit",
     day: "2-digit",
   });
-  const parts = Object.fromEntries(dtf.formatToParts(new Date(nowIso)).map((p) => [p.type, p.value]));
+  const parts = Object.fromEntries(
+    dtf.formatToParts(new Date(nowIso)).map((p) => [p.type, p.value]),
+  );
   const todayUtcMillis = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day));
   const startUtcMillis = todayUtcMillis - (days - 1) * 86_400_000;
   const start = new Date(startUtcMillis);

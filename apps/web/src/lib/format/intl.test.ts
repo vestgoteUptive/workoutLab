@@ -14,9 +14,9 @@ describe("localDate", () => {
 
 describe("formatTime", () => {
   it("formats en-GB as 24h", () => {
-    expect(formatTime("2026-09-28T12:05:00Z", { locale: "en-GB", timeZone: "Europe/Stockholm" })).toBe(
-      "14:05",
-    );
+    expect(
+      formatTime("2026-09-28T12:05:00Z", { locale: "en-GB", timeZone: "Europe/Stockholm" }),
+    ).toBe("14:05");
   });
 
   it("formats en-US as 12h with normalised whitespace", () => {

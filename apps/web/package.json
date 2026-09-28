@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsx scripts/gen-icons.mjs --stage=pre && tsc -b && vite build && tsx scripts/gen-icons.mjs --stage=post",
+    "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint . && wl-check-colours .",
     "test": "vitest run",

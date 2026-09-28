@@ -1,10 +1,13 @@
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 // AC-A12 (NFR-PERF-1). CI execution of Lighthouse itself is T-0402/infra.
 describe("lighthouserc.json budgets", () => {
-  const configPath = fileURLToPath(new URL("./lighthouserc.json", import.meta.url));
+  // `resolve` against the vitest project root (`apps/web`), not `import.meta.url`: vitest's
+  // module runner doesn't always give this a `file:` URL (e.g. under some watch/transform
+  // paths), which throws in `fileURLToPath`.
+  const configPath = resolve(process.cwd(), "lighthouserc.json");
   const config = JSON.parse(readFileSync(configPath, "utf8"));
   const assertions = config.ci.assert.assertions;
 
