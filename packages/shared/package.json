@@ -9,17 +9,22 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "gen:api": "node scripts/gen-api.ts",
+    "gen:api": "tsx scripts/gen-api.ts",
+    "gen:db": "supabase gen types typescript --local > src/database.gen.ts && prettier --write src/database.gen.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run"
   },
+  "dependencies": {
+    "ajv": "^8.20.0"
+  },
   "devDependencies": {
     "@redocly/openapi-core": "^2.54.3",
     "@types/node": "^22.10.2",
-    "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "openapi-typescript": "^7.13.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.7.2",
     "vitest": "^5.0.2",
     "yaml": "^2.9.1"
