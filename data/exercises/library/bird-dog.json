@@ -1,0 +1,23 @@
+{
+  "id": "bird-dog",
+  "name": "Bird dog",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "back": 1, "core": 0.5, "glutes": 0.5 },
+  "instructions": [
+    "Start on hands and knees, back flat.",
+    "Reach one arm forward and the opposite leg back.",
+    "Hold, then return and switch sides."
+  ],
+  "cue": "Opposite arm and leg, hips stay level",
+  "mistakes": ["Letting the hips twist.", "Rushing between sides."],
+  "variants": ["superman", "prone-swimmers", "reverse-plank-hold"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/bird-dog",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

@@ -1,0 +1,24 @@
+{
+  "id": "wall-handstand-hold",
+  "name": "Wall handstand hold",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "advanced",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "shoulders": 1 },
+  "instructions": [
+    "Kick up into a handstand with your heels resting on a wall.",
+    "Press through your hands and hold your body straight.",
+    "Lower down with control when you are done."
+  ],
+  "cue": "Press the floor away, stay straight",
+  "mistakes": ["Letting the back arch.", "Holding the breath."],
+  "variants": ["pike-push-up", "incline-pike-push-up"],
+  "timed": true,
+  "default_duration_s": 20,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/wall-handstand-hold",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

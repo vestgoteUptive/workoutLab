@@ -1,0 +1,24 @@
+{
+  "id": "push-up",
+  "name": "Push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "chest": 1, "shoulders": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Place your hands flat on the floor, wider than shoulder width.",
+    "Keep your body in a straight line from head to heels.",
+    "Bend your elbows and lower your chest to the floor.",
+    "Push back up to the start."
+  ],
+  "cue": "Straight line, chest to the floor",
+  "mistakes": ["Letting the hips sag.", "Only lowering halfway."],
+  "variants": ["incline-push-up", "wide-push-up", "decline-push-up"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/push-up",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

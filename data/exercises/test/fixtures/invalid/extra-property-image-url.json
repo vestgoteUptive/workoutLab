@@ -1,0 +1,20 @@
+{
+  "id": "fixture-extra-property",
+  "name": "Fixture extra property",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "chest": 1 },
+  "instructions": ["Do the thing."],
+  "cue": "Do the thing",
+  "mistakes": ["Rushing the rep."],
+  "variants": ["fixture-other"],
+  "timed": false,
+  "image_url": "https://example.com/pic.png",
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/fixture",
+  "attribution": "Adapted from wger.de (CC BY-SA 4.0)."
+}

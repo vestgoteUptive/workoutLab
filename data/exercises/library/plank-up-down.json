@@ -1,0 +1,23 @@
+{
+  "id": "plank-up-down",
+  "name": "Plank up-down",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "arms": 1, "core": 0.5 },
+  "instructions": [
+    "Start in a straight-arm plank, body in a straight line.",
+    "Lower one arm at a time down to your forearms.",
+    "Push back up one arm at a time to the straight-arm plank."
+  ],
+  "cue": "One arm at a time, hips stay still",
+  "mistakes": ["Letting the hips rock side to side.", "Rushing the arm changes."],
+  "variants": ["diamond-push-up", "kneeling-diamond-push-up"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/plank-up-down",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

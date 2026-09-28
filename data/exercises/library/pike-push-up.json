@@ -1,0 +1,23 @@
+{
+  "id": "pike-push-up",
+  "name": "Pike push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "shoulders": 1, "arms": 0.5 },
+  "instructions": [
+    "Start in a downward-dog position, hips high, hands on the floor.",
+    "Bend your elbows and lower the top of your head toward the floor.",
+    "Push back up through your hands to the start."
+  ],
+  "cue": "Hips high, head to the floor",
+  "mistakes": ["Letting the hips drop toward push-up form.", "Only bending halfway."],
+  "variants": ["incline-pike-push-up", "wall-handstand-hold"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/pike-push-up",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

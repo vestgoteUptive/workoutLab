@@ -1,0 +1,24 @@
+{
+  "id": "wide-push-up",
+  "name": "Wide push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "chest": 1, "shoulders": 0.5 },
+  "instructions": [
+    "Place your hands on the floor, well outside shoulder width.",
+    "Keep your body in a straight line from head to heels.",
+    "Bend your elbows and lower your chest to the floor.",
+    "Push back up to the start."
+  ],
+  "cue": "Hands wide, chest leads the way down",
+  "mistakes": ["Letting the elbows lock out hard at the top.", "Sagging the lower back."],
+  "variants": ["incline-push-up", "push-up", "decline-push-up"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/wide-push-up",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

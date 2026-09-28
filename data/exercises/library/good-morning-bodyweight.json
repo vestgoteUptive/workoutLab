@@ -1,0 +1,24 @@
+{
+  "id": "good-morning-bodyweight",
+  "name": "Bodyweight good morning",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "hamstrings": 1, "back": 0.5 },
+  "instructions": [
+    "Stand with feet hip width apart, hands behind your head.",
+    "Hinge at the hips, pushing them back as your chest lowers forward.",
+    "Keep a soft bend in the knees and your back flat.",
+    "Drive your hips forward to stand back up."
+  ],
+  "cue": "Hinge back, flat back, drive hips forward",
+  "mistakes": ["Rounding the back.", "Bending the knees too much and squatting instead."],
+  "variants": ["single-leg-deadlift", "hamstring-walkout"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/good-morning-bodyweight",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

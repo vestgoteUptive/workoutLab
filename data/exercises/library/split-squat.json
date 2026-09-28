@@ -1,0 +1,24 @@
+{
+  "id": "split-squat",
+  "name": "Split squat",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "quads": 1, "glutes": 0.5 },
+  "instructions": [
+    "Stand in a long stride, one foot well in front of the other.",
+    "Bend both knees to lower your back knee toward the floor.",
+    "Push through your front foot to stand back up.",
+    "Finish all reps, then switch legs."
+  ],
+  "cue": "Long stride, back knee toward the floor",
+  "mistakes": ["Letting the front knee cave inward.", "Taking too short a stride."],
+  "variants": ["bodyweight-squat", "wall-sit"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/split-squat",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

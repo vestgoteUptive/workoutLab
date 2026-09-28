@@ -1,0 +1,24 @@
+{
+  "id": "plank",
+  "name": "Plank",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "core": 1 },
+  "instructions": [
+    "Rest on your forearms and toes, elbows under your shoulders.",
+    "Keep your body in a straight line from head to heels.",
+    "Hold, breathing steadily, without letting your hips move."
+  ],
+  "cue": "Straight line, breathe steadily",
+  "mistakes": ["Letting the hips sag.", "Piking the hips up high."],
+  "variants": ["side-plank", "dead-bug"],
+  "timed": true,
+  "default_duration_s": 30,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/plank",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

@@ -1,0 +1,24 @@
+{
+  "id": "diamond-push-up",
+  "name": "Diamond push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "arms": 1, "chest": 0.5 },
+  "instructions": [
+    "Place your hands under your chest, thumbs and index fingers touching.",
+    "Keep your body in a straight line from head to heels.",
+    "Bend your elbows and lower your chest toward your hands.",
+    "Push back up to the start."
+  ],
+  "cue": "Diamond hands, elbows stay close",
+  "mistakes": ["Letting the elbows flare out wide.", "Sagging the hips."],
+  "variants": ["kneeling-diamond-push-up", "plank-up-down"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/diamond-push-up",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

@@ -1,0 +1,24 @@
+{
+  "id": "bodyweight-squat",
+  "name": "Bodyweight squat",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "quads": 1, "glutes": 0.5, "hamstrings": 0.5 },
+  "instructions": [
+    "Stand with feet shoulder width apart.",
+    "Bend your knees and hips to lower down, as if sitting into a chair.",
+    "Keep your chest up and go down until your thighs are about parallel.",
+    "Push through your feet to stand back up."
+  ],
+  "cue": "Sit back, chest up, drive through the feet",
+  "mistakes": ["Letting the knees cave inward.", "Rounding the lower back."],
+  "variants": ["split-squat", "wall-sit"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/bodyweight-squat",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

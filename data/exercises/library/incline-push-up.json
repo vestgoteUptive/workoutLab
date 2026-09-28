@@ -1,0 +1,24 @@
+{
+  "id": "incline-push-up",
+  "name": "Incline push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "chest": 1, "shoulders": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Place your hands on a raised surface, wider than shoulder width.",
+    "Walk your feet back until your body is a straight line.",
+    "Bend your elbows and lower your chest to the surface.",
+    "Push back up to the start."
+  ],
+  "cue": "Straight line, chest to the edge",
+  "mistakes": ["Letting the hips sag.", "Flaring the elbows out wide."],
+  "variants": ["push-up", "wide-push-up", "decline-push-up"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/incline-push-up",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

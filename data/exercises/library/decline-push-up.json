@@ -1,0 +1,24 @@
+{
+  "id": "decline-push-up",
+  "name": "Decline push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "advanced",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "chest": 1, "shoulders": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Rest your feet on a raised surface, hands on the floor.",
+    "Keep your body in a straight line from head to heels.",
+    "Bend your elbows and lower your chest to the floor.",
+    "Push back up to the start."
+  ],
+  "cue": "Feet up, chest to the floor",
+  "mistakes": ["Letting the hips pike up.", "Losing the straight body line."],
+  "variants": ["incline-push-up", "push-up", "wide-push-up"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/decline-push-up",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}

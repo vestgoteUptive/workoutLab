@@ -1,0 +1,23 @@
+{
+  "id": "fire-hydrant",
+  "name": "Fire hydrant",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "glutes": 1 },
+  "instructions": [
+    "Start on hands and knees, back flat.",
+    "Keeping your knee bent, lift one leg out to the side.",
+    "Lower with control and repeat, then switch sides."
+  ],
+  "cue": "Knee bent, lift out to the side",
+  "mistakes": ["Rotating the hips to lift higher.", "Rushing the lowering phase."],
+  "variants": ["hip-thrust-bodyweight", "glute-bridge"],
+  "timed": false,
+  "source": "wger",
+  "license": "CC-BY-SA-4.0",
+  "source_url": "https://wger.de/en/exercise/basic-info/fire-hydrant",
+  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+}
