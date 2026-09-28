@@ -130,7 +130,6 @@ export function AuthCallback() {
       navigate(consumeReturnTo(), { replace: true });
     });
     // Runs once for this landing: params don't change under this route.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (expired) {

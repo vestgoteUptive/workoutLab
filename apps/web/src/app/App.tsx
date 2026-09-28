@@ -52,7 +52,10 @@ export function Shell() {
           // The guard sits *outside* Suspense: a guard decided once at mount (`session`,
           // AC-B7) must not be re-run when Suspense unwinds and retries this subtree once
           // the lazy chunk resolves, which would reset its captured decision.
-          const element = applyGuard(route.guard, <Suspense fallback={null}>{lazyElement}</Suspense>);
+          const element = applyGuard(
+            route.guard,
+            <Suspense fallback={null}>{lazyElement}</Suspense>,
+          );
           return <Route key={route.path} path={route.path} element={element} />;
         })}
         <Route path="*" element={<Navigate to="/" replace />} />

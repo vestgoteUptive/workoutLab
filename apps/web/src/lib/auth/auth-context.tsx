@@ -2,14 +2,7 @@
 // initial status is computed synchronously from whatever supabase-js already persisted to
 // localStorage, so the first render never awaits a network promise. A network refresh, if any,
 // happens after that first render, in an effect.
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useLocation } from "react-router";
 import { supabase } from "./client.js";
 
@@ -98,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.subscription.unsubscribe();
     // Runs once: re-subscribing on every status change would double-fire the listener.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const value: AuthContextValue = {

@@ -22,18 +22,14 @@ describe("lib/auth/client (AC-B1)", () => {
 
   it("creates the client with the PKCE auth flags from env", async () => {
     await import("./client.js");
-    expect(createClient).toHaveBeenCalledWith(
-      "https://abc.supabase.co",
-      "test-anon-key-value",
-      {
-        auth: {
-          flowType: "pkce",
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: false,
-        },
+    expect(createClient).toHaveBeenCalledWith("https://abc.supabase.co", "test-anon-key-value", {
+      auth: {
+        flowType: "pkce",
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: false,
       },
-    );
+    });
   });
 
   it("never logs the anon key", async () => {
