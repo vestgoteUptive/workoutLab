@@ -38,6 +38,10 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0103b (from T-0102 groom, D-0037 §11): validator requires default_duration_s when timed = true.
 - T-0103b (from T-0103a accept/review): positive schema fixture for a valid source:wger row; schema.test missing-license asserts params.missingProperty; D-0033 §7 wording (AC11–14 exercise-only; AC10/15/16/17 whole library); align warm-up ids/weights with engine-rules §7 (wu-cat-cow core 1/back .5, wu-arm-circle shoulders) or amend via decision; remove the barbell-back-squat skip guard in areas.test.ts.
 - Engine (from T-0200): fast-check devDependency for invariant tests (D-0036 §5, lockfile → infra); purity lint also catches globalThis.Date/Math; engine types move to @workoutlab/shared after T-0102a.
+- T-0102b (from T-0201 groom, D-0040 §4): WorkoutItem.backoff.weightKg nullable (first-time main lift has no weight). Engine reads only PlanCheckin.answeredAt and a CheckinProfile subset (D-0041 §2).
+- T-0202 (from T-0201 groom): the all-chest history's main lift is inverted-row (rule 7.2, D-0040 §11). T-0205: replace T-0201's first-time pre-fill stand-in with rule 14.
+- UF-08/UF-09 web tickets (from T-0201 groom): timeCheck elapsedS excludes paused time and the warm-up when warmupInBudget is off; an empty items plan is valid on UF-08.1; show itemsTotalS vs budget.
+- T-0308 (from T-0202 groom): build CheckinSession[] with checkinSessions(sessions ∪ offline queue); 'First check-in on {nextCheckinDate}' when periods is empty.
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
@@ -55,9 +59,11 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0200 | Engine: rules 1–6 (mapping, hard sets, window, targets, deficit, recovery) + balance | engine | T-0101, T-0004 | done | wl-build-engine |
-| T-0201 | Engine: time-budget selection, warm-up, energy, time check (rules 7, 8, 10) | engine | T-0200 | todo | wl-build-engine |
+| T-0201 | Engine: time-budget selection, warm-up, energy, time check (rules 7, 8, 10) | engine | T-0200 | split → T-0201a, T-0201b (D-0040 §12) | wl-build-engine |
+| T-0201a | Engine: eligibility, selection + main lift, warm-up, reasons, output shape (rule 7.1–7.3, 10; AC1–24) | engine | T-0200 | doing | wl-build-engine |
+| T-0201b | Engine: energy Low/High + time check UF-09.8 (rules 7.4, 8; AC25–36) | engine | T-0201a | todo | wl-build-engine |
 | T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | ready | wl-build-engine |
-| T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201 | todo | wl-build-backend |
+| T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201a | todo | wl-build-backend |
 | T-0204 | Engine: swap ranking + deterministic shuffle (rules 12–13) | engine | T-0200 | todo | wl-build-engine |
 | T-0205 | Engine: progression + pre-fill (rule 14) | engine | T-0200 | todo | wl-build-engine |
 
@@ -65,7 +71,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0300 | PWA shell: routing, auth (magic link), offline set queue, C-01 body map, C-02 tab bar | web-shell | T-0002, T-0003, T-0100a | todo | wl-build-web |
-| T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201 | todo | wl-build-web |
+| T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201a | todo | wl-build-web |
 | T-0302 | UF-02 Today + workout preview | web-feature:UF-02 | T-0300, T-0203 | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203 | todo | wl-build-web |
 | T-0304 | UF-09 Focus mode: state machine, timers, auto-save, time check, pause | web-feature:UF-09 | T-0303, T-0205 | todo | wl-build-web |
