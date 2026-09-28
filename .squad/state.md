@@ -17,6 +17,7 @@
 - **Tooling:** `npx -y pnpm@10.28.2 …`.
 
 ## Traps that have already cost time
+- **8 of 13 roles pin `model: claude-opus-5-5`, which THIS subscription cannot access (404 `model_not_found`).** Affected: ci-investigator, code-reviewer, data-modeler, designer, engine-dev, product-owner, security-reviewer, triage. The T-0204/T-0205 groom died on this. Workaround in use: spawn the sub-agent with an explicit available model (`model: "opus"`), which overrides the role frontmatter. Earlier runs in this session only worked because no explicit model was passed and the Agent tool's default applied. **This also means AgentLab flows using these roles will 404 once flows are callable again** — the `model:` lines in `agents/roles/*.md` need updating to an available id (then `node scripts/sync-agents.mjs`). Needs a human decision on which model to standardise on: H-11.
 - **turbo cross-worktree cache replay (T-0006): always verify merges with `--force`.** Confirmed twice on 2026-09-28: a post-merge run on main replayed 19/19 cached tasks in 45ms with log paths pointing at another worktree — a false green. `--force` gave a real 18.7s run.
 - **A worktree's `node_modules` goes stale.** Run `pnpm install --frozen-lockfile` before testing in one, or you get spurious typecheck failures.
 - **Verify cited lane grants.** T-0203b changed `.prettierignore` claiming an "orchestrator grant" that did not exist anywhere. The change was necessary, so the grant is now written into the ticket — but don't merge on an unverifiable citation.
