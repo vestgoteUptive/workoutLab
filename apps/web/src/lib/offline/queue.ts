@@ -91,6 +91,7 @@ async function findExistingSet(
   | "backoff"
   | "completedAt"
   | "editedAt"
+  | "deletedAt"
 > | null> {
   const db = offlineDb();
   const key = setKey(userId, clientId);
@@ -112,6 +113,7 @@ async function findExistingSet(
       backoff: false,
       completedAt: cached.completedAt,
       editedAt: cached.editedAt,
+      deletedAt: cached.deletedAt,
     };
   }
   return null;
@@ -134,7 +136,11 @@ export type SetEdit = Partial<
 
 /** Edits a queued (or already-synced) set (AC-C2, AC-C4). Bumps only `edited_at`; `completed_at`
  *  never changes. The edit clock is monotonic (D-0045 §6): a device clock behind the set's own
- *  `edited_at` still produces a strictly newer one. */
+ *  `edited_at` still produces a strictly newer one.
+ *
+ *  A tombstoned set is rejected (D-0015): a delete is terminal. Writing `deletedAt: null` here
+ *  would resurrect the set with a newer `edited_at`, which beats the tombstone at the engine's
+ *  rule-0 tie-break, so the deleted set would silently count toward load again. */
 export async function editSet(
   clientId: string,
   patch: SetEdit,
@@ -143,6 +149,9 @@ export async function editSet(
   const userId = requireUserId();
   const existing = await findExistingSet(userId, clientId);
   if (!existing) throw new Error(`editSet: unknown set ${clientId}`);
+  if (existing.deletedAt !== null) {
+    throw new Error(`editSet: set ${clientId} is deleted`);
+  }
 
   const editedAt = monotonicEditedAt(options.now ?? new Date(), existing.editedAt);
   const entry = toQueuedSet({
@@ -200,8 +209,12 @@ export async function deleteSet(
 export type SessionInsert = SupabaseDatabase["public"]["Tables"]["sessions"]["Insert"];
 
 /** Queues a `sessions` upsert (`onConflict: 'id'`, D-0045 §6). Never replays `ended_at: null`
- *  after the session has already been queued finished once (D-0053 consequence): a later
- *  metadata-only edit to a finished session keeps `ended_at` from the finish. */
+ *  after the session has already been queued finished once (D-0053 §7): a later
+ *  metadata-only edit to a finished session keeps `ended_at` from the finish.
+ *
+ *  The `finished` marker survives a successful flush, because `flushSessions` keeps the row and
+ *  only clears `pending` (D-0053 §7). If the row were deleted on flush, this lookup would miss
+ *  and the re-queued row would send `ended_at: null`, clearing the finish server-side. */
 export async function upsertSession(row: SessionInsert): Promise<QueuedSession> {
   const userId = requireUserId();
   const db = offlineDb();
@@ -213,7 +226,13 @@ export async function upsertSession(row: SessionInsert): Promise<QueuedSession> 
     : row;
   const finished = alreadyFinished || row.ended_at != null;
 
-  const entry: QueuedSession = { id: row.id as string, userId, row: nextRow, finished };
+  const entry: QueuedSession = {
+    id: row.id as string,
+    userId,
+    row: nextRow,
+    finished,
+    pending: true,
+  };
   await db.sessions.put(entry);
 
   if (row.ended_at != null && !alreadyFinished) {
@@ -232,10 +251,12 @@ export async function syncStatus(): Promise<{
   const userId = currentUserId();
   if (!userId) return { queued: 0, rejected: 0, sessions: 0 };
   const db = offlineDb();
-  const [queued, rejected, sessions] = await Promise.all([
+  const [queued, rejected, sessionRows] = await Promise.all([
     db.sets.where({ userId, status: "queued" }).count(),
     db.sets.where({ userId, status: "rejected" }).count(),
-    db.sessions.where({ userId }).count(),
+    // Only rows still waiting to be sent: a flushed session keeps its row (for `finished`,
+    // D-0053 §7) with `pending: false` and must not be reported as queued.
+    db.sessions.where({ userId }).toArray(),
   ]);
-  return { queued, rejected, sessions };
+  return { queued, rejected, sessions: sessionRows.filter((s) => s.pending).length };
 }

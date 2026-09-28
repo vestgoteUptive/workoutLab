@@ -7,7 +7,7 @@ const spy = createSupabaseSpy();
 vi.mock("../../auth/client.js", () => ({ supabase: { from: spy.from } }));
 
 const { flush, clearAuthBlocked } = await import("../flush.js");
-const { upsertSession, editSet } = await import("../queue.js");
+const { upsertSession, editSet, syncStatus } = await import("../queue.js");
 const { offlineDb } = await import("../db.js");
 const { freshOfflineDb, signIn, signOut } = await import("./test-helpers.js");
 
@@ -41,6 +41,7 @@ beforeEach(() => {
   signIn(USER);
   spy.calls.length = 0;
   spy.from.mockClear();
+  spy.deleteSpy.mockClear();
   clearAuthBlocked(USER);
   spy.setHandler("sessions", () => ({ error: null }));
   spy.setHandler("session_sets", () => ({ error: null }));
@@ -121,6 +122,102 @@ describe("AC-C6 in-flight edit survives", () => {
     await flush(USER);
     const setCall = spy.calls.find((c) => c.table === "session_sets");
     expect(setCall).toBeDefined();
+  });
+});
+
+// Regression (rework): `flushSessions` used to `bulkDelete` the session rows on success, which
+// destroyed the only record that the session had ever been finished. A later metadata-only
+// `upsertSession({id, ended_at: null})` then re-queued with `finished: false` and the next flush
+// sent `ended_at: null`, clearing the finish server-side (D-0053 §7, silent data loss).
+describe("D-0053 §7: a finished session never replays ended_at: null after a flush", () => {
+  it("keeps the finished marker across a successful flush, so no flushed row has ended_at: null", async () => {
+    const db = offlineDb();
+    const sessionRows = () =>
+      spy.calls
+        .filter((c) => c.table === "sessions")
+        .flatMap((c) => c.rows as Array<{ id: string; ended_at?: string | null }>);
+
+    // 1. Start S1, then finish it.
+    await upsertSession({
+      id: "S1",
+      started_at: "2026-09-28T09:00:00.000Z",
+      time_budget_min: 45,
+    } as never);
+    await upsertSession({
+      id: "S1",
+      started_at: "2026-09-28T09:00:00.000Z",
+      ended_at: "2026-09-28T10:00:00.000Z",
+      time_budget_min: 45,
+    } as never);
+
+    // 2. The flush succeeds, so the queue entry is no longer pending.
+    await flush(USER);
+    expect(await db.sessions.where({ userId: USER }).count()).toBe(1);
+    const afterFlush = await db.sessions.get("S1");
+    expect(afterFlush?.finished).toBe(true);
+    expect(afterFlush?.pending).toBe(false);
+    // A flushed, non-pending session is not reported as still queued.
+    expect((await syncStatus()).sessions).toBe(0);
+
+    // 3. A later metadata-only edit that carries no ended_at must not clear the finish.
+    spy.calls.length = 0;
+    await upsertSession({
+      id: "S1",
+      started_at: "2026-09-28T09:00:00.000Z",
+      ended_at: null,
+      time_budget_min: 60,
+    } as never);
+    const requeued = await db.sessions.get("S1");
+    expect(requeued?.finished).toBe(true);
+    expect(requeued?.row.ended_at).toBe("2026-09-28T10:00:00.000Z");
+
+    await flush(USER);
+
+    // The core guarantee: no row ever sent for a finished session has ended_at null.
+    const sent = sessionRows();
+    expect(sent.length).toBeGreaterThan(0);
+    for (const row of sent) {
+      expect(row.ended_at).not.toBeNull();
+    }
+    expect(sent.at(-1)?.ended_at).toBe("2026-09-28T10:00:00.000Z");
+    // The metadata edit itself still went through.
+    expect((sent.at(-1) as { time_budget_min?: number }).time_budget_min).toBe(60);
+  });
+
+  it("does not re-send a session that is already synced and unchanged", async () => {
+    await upsertSession({
+      id: "S1",
+      started_at: "2026-09-28T09:00:00.000Z",
+      ended_at: "2026-09-28T10:00:00.000Z",
+      time_budget_min: 45,
+    } as never);
+    await flush(USER);
+
+    spy.calls.length = 0;
+    await flush(USER);
+    expect(spy.calls.filter((c) => c.table === "sessions")).toHaveLength(0);
+  });
+});
+
+describe("AC-C3 tombstones only: .delete() is never called on any table", () => {
+  it("flushes a tombstoned set through upsert and never calls .delete()", async () => {
+    const db = offlineDb();
+    await db.sets.put(
+      setRow({
+        deletedAt: "2026-09-28T10:04:00.000Z",
+        editedAt: "2026-09-28T10:04:00.000Z",
+      }),
+    );
+
+    await flush(USER);
+
+    const setCall = spy.calls.find((c) => c.table === "session_sets");
+    expect(setCall?.options).toEqual({ onConflict: "user_id,client_id" });
+    expect((setCall!.rows[0] as { deleted_at: string }).deleted_at).toBe(
+      "2026-09-28T10:04:00.000Z",
+    );
+    // The tombstone is the delete: no table-level .delete() anywhere in the flush path.
+    expect(spy.deleteSpy).not.toHaveBeenCalled();
   });
 });
 

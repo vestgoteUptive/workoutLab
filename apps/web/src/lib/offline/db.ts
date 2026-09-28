@@ -19,8 +19,17 @@ export interface QueuedSession {
   userId: string;
   row: SupabaseDatabase["public"]["Tables"]["sessions"]["Insert"];
   /** Set once, the first time this session is queued with a non-null `ended_at` (D-0053 §7,
-   *  D-0053 consequence): a later edit to the same session must never re-send `ended_at: null`. */
+   *  D-0053 consequence): a later edit to the same session must never re-send `ended_at: null`.
+   *
+   *  This marker has to OUTLIVE the queue entry, which is why a successful flush sets
+   *  `pending: false` and keeps the row instead of deleting it. Deleting it would destroy the
+   *  only record that the session was ever finished, so a later
+   *  `upsertSession({id, ended_at: null})` would re-queue with `finished: false` and clear the
+   *  finish server-side — silent data loss (D-0053 §7). */
   finished: boolean;
+  /** `true` while this row still has to be sent. A successful flush sets it to `false` and keeps
+   *  the row (for `finished`); only `pending: true` rows are ever sent. */
+  pending: boolean;
 }
 
 export type QueuedSetStatus = "queued" | "rejected";

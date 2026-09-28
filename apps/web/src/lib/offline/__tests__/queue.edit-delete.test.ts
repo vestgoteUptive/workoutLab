@@ -114,6 +114,72 @@ describe("deleteSet (AC-C3)", () => {
   });
 });
 
+// Regression (rework): `editSet` used to write `deletedAt: null` unconditionally, so editing a
+// deleted set revived it with a newer `edited_at`. That newer `edited_at` beats the tombstone at
+// the engine's rule-0 tie-break, so the deleted set silently counted toward load again. A delete
+// is a tombstone through the same upsert and is terminal (D-0015).
+describe("editSet on a tombstoned set (D-0015 regression)", () => {
+  beforeEach(() => {
+    freshOfflineDb();
+    signIn(USER);
+  });
+
+  afterEach(() => signOut());
+
+  it("rejects the edit and never clears deleted_at on a queued tombstone", async () => {
+    const c1 = await recordSet(
+      {
+        sessionId: "S1",
+        exerciseId: "back-squat",
+        setIndex: 0,
+        kind: "reps",
+        reps: 8,
+        weightKg: 60,
+        isWarmup: false,
+        backoff: false,
+      },
+      { now: new Date("2026-09-28T10:00:00.000Z") },
+    );
+    await deleteSet(c1.clientId, { now: new Date("2026-09-28T10:04:00.000Z") });
+
+    await expect(
+      editSet(c1.clientId, { reps: 7 }, { now: new Date("2026-09-28T10:05:00.000Z") }),
+    ).rejects.toThrow(/deleted/);
+
+    // The tombstone is untouched: still deleted, still at the delete's edited_at.
+    const stored = await offlineDb().sets.get(`${USER}:${c1.clientId}`);
+    expect(stored?.deletedAt).toBe("2026-09-28T10:04:00.000Z");
+    expect(stored?.editedAt).toBe("2026-09-28T10:04:00.000Z");
+    expect(stored?.reps).toBe(8);
+  });
+
+  it("rejects the edit on a set tombstoned server-side (history cache only)", async () => {
+    const db = offlineDb();
+    const clientId = "44444444-4444-4444-8444-444444444444";
+    await db.historyCache.put({
+      key: `${USER}:${clientId}`,
+      userId: USER,
+      clientId,
+      sessionId: "S1",
+      exerciseId: "back-squat",
+      isWarmup: false,
+      completedAt: "2026-09-27T09:00:00.000Z",
+      editedAt: "2026-09-27T09:30:00.000Z",
+      deletedAt: "2026-09-27T09:30:00.000Z",
+      reps: 8,
+      weightKg: 60,
+      durationS: null,
+    });
+
+    await expect(
+      editSet(clientId, { reps: 5 }, { now: new Date("2026-09-28T10:00:00.000Z") }),
+    ).rejects.toThrow(/deleted/);
+
+    // Nothing was enqueued, so no resurrecting row can ever reach the server or the engine.
+    expect(await db.sets.get(`${USER}:${clientId}`)).toBeUndefined();
+  });
+});
+
 describe("editSet monotonic clock (AC-C4)", () => {
   beforeEach(() => {
     freshOfflineDb();

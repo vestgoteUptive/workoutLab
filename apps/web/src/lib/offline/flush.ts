@@ -74,7 +74,10 @@ export function clearAuthBlocked(userId: string): void {
 
 async function flushSessions(userId: string): Promise<{ ok: boolean; sentAny: boolean }> {
   const db = offlineDb();
-  const queued = await db.sessions.where({ userId }).toArray();
+  // Only rows still waiting to be sent. Rows already sent stay in IDB with `pending: false`
+  // so their `finished` marker outlives the send (D-0053 §7, see `QueuedSession.finished`).
+  const all = await db.sessions.where({ userId }).toArray();
+  const queued = all.filter((q) => q.pending);
   if (queued.length === 0) return { ok: true, sentAny: false };
 
   const rows = queued.map((q) => q.row);
@@ -83,7 +86,10 @@ async function flushSessions(userId: string): Promise<{ ok: boolean; sentAny: bo
     if (isAuthError(error, status)) markAuthBlocked(userId);
     return { ok: false, sentAny: false };
   }
-  await db.sessions.bulkDelete(queued.map((q) => q.id));
+  // Never `bulkDelete` here: deleting the row would destroy the only record that the session was
+  // ever finished, and a later `upsertSession({id, ended_at: null})` would then clear the finish
+  // server-side (D-0053 §7, silent data loss).
+  await db.sessions.bulkPut(queued.map((q) => ({ ...q, pending: false })));
   return { ok: true, sentAny: true };
 }
 
