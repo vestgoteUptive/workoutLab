@@ -10,6 +10,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { useLocation } from "react-router";
 import { supabase } from "./client.js";
 
 export type AuthStatus = "signed-out" | "signed-in" | "stale";
@@ -63,6 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // the *next* route they visit sends them to `/account`, not onboarding, without interrupting
   // the session route itself.
   const interruptedInSession = useRef(false);
+  // The router's location, not `window.location` (a `MemoryRouter`, used in tests, never
+  // touches the real one), read through a ref so the async refresh callback below sees the
+  // pathname current when it *resolves*, not when it started.
+  const location = useLocation();
+  const pathnameRef = useRef(location.pathname);
+  useEffect(() => {
+    pathnameRef.current = location.pathname;
+  }, [location.pathname]);
 
   useEffect(() => {
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
@@ -77,11 +86,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (computeInitialStatus() === "stale" && navigator.onLine) {
       void supabase.auth.getSession().then(({ data, error }) => {
         if (error || !data.session) {
-          if (window.location.pathname.startsWith("/session/")) {
+          if (pathnameRef.current.startsWith("/session/")) {
             interruptedInSession.current = true;
-          } else {
-            setStatus("signed-out");
           }
+          setStatus("signed-out");
         } else {
           setStatus("signed-in");
         }

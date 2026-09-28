@@ -38,24 +38,25 @@ export function Shell() {
 
   return (
     <>
-      <Suspense fallback={null}>
-        <Routes>
-          {routes.map((route) => {
-            const Component = lazyComponents.get(route.path)!;
-            const inner =
-              route.path === "/balance/:area" ? (
-                <BalanceDetailGuard>
-                  <Component />
-                </BalanceDetailGuard>
-              ) : (
+      <Routes>
+        {routes.map((route) => {
+          const Component = lazyComponents.get(route.path)!;
+          const lazyElement =
+            route.path === "/balance/:area" ? (
+              <BalanceDetailGuard>
                 <Component />
-              );
-            const element = applyGuard(route.guard, inner);
-            return <Route key={route.path} path={route.path} element={element} />;
-          })}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+              </BalanceDetailGuard>
+            ) : (
+              <Component />
+            );
+          // The guard sits *outside* Suspense: a guard decided once at mount (`session`,
+          // AC-B7) must not be re-run when Suspense unwinds and retries this subtree once
+          // the lazy chunk resolves, which would reset its captured decision.
+          const element = applyGuard(route.guard, <Suspense fallback={null}>{lazyElement}</Suspense>);
+          return <Route key={route.path} path={route.path} element={element} />;
+        })}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
       {showTabBar ? <TabBar /> : null}
     </>
   );
@@ -75,10 +76,10 @@ function matchesShellRoute(pattern: string, pathname: string): boolean {
 
 export function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
         <Shell />
-      </BrowserRouter>
-    </AuthProvider>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
