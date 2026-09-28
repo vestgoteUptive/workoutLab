@@ -1,6 +1,5 @@
 // Housekeeping: placeholders, traceability, public API, contract sentence. AC34–AC36.
 // T-0202: the D-0041 §1 rename in engine-rules.md (AC26) and rule 9 traceability/API (AC27).
-import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -28,6 +27,7 @@ import {
   type EngineProfile,
 } from "@workoutlab/engine";
 import { F_PROFILE } from "./fixtures/common.js";
+import { RENAMED_LINES } from "./fixtures/rename-d0041.js";
 
 const ENGINE_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const REPO_DIR = path.resolve(ENGINE_DIR, "..", "..");
@@ -161,44 +161,6 @@ const RENAMES: Array<[string, string]> = [
   ["`plan_updated_at` 2026-09-20", "`plan_changed_at` 2026-09-20"],
 ];
 
-function git(...args: string[]): string {
-  return execFileSync("git", args, { cwd: REPO_DIR, encoding: "utf8" });
-}
-
-/**
- * The diff that made the rename. Before merge it is the branch diff against the merge base
- * with main (the ticket's `git diff main`); once the rename is on main, it is the commit that
- * removed `plan_updated_at`, so the check keeps working after merge.
- */
-function renameDiff(): string {
-  const base = git("merge-base", "HEAD", "main").trim();
-  if (git("show", `${base}:${RULES_PATH}`).includes("plan_updated_at")) {
-    return git("diff", "-U0", "--no-color", base, "--", RULES_PATH);
-  }
-  const commit = git(
-    "log",
-    "-1",
-    "--format=%H",
-    "-S",
-    "plan_updated_at",
-    "main",
-    "--",
-    RULES_PATH,
-  ).trim();
-  return git("diff", "-U0", "--no-color", `${commit}^`, commit, "--", RULES_PATH);
-}
-
-function changedLines(diff: string): { removed: string[]; added: string[] } {
-  const removed: string[] = [];
-  const added: string[] = [];
-  for (const line of diff.split("\n")) {
-    if (line.startsWith("--- a/") || line.startsWith("+++ b/")) continue;
-    if (line.startsWith("-")) removed.push(line.slice(1));
-    else if (line.startsWith("+")) added.push(line.slice(1));
-  }
-  return { removed, added };
-}
-
 const RULE9_IDS = Array.from({ length: 13 }, (_, i) => `R9-E${i + 1}`);
 const UF11_ACS = [1, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 16, 17].map((n) => `UF-11 AC${n}`);
 
@@ -226,14 +188,23 @@ describe("housekeeping T-0202 (rule 9)", () => {
   });
 
   it("rule-9 (AC26) the rename diff changes exactly those 3 lines", () => {
-    const { removed, added } = changedLines(renameDiff());
-    expect(removed).toHaveLength(3);
-    expect(added).toHaveLength(3);
+    // No git history needed: the committed fixture holds the 3 lines verbatim before and after.
+    const lines = readFileSync(path.join(REPO_DIR, RULES_PATH), "utf8").split("\n");
+    expect(RENAMED_LINES).toHaveLength(RENAMES.length);
     RENAMES.forEach(([before, after], i) => {
-      const old = removed[i] ?? "";
-      expect(old).toContain(before);
-      expect(added[i]).toBe(old.replace(before, after));
+      const pair = RENAMED_LINES[i];
+      expect(pair?.before).toContain(before);
+      // Only the named fragment changed on each line.
+      expect(pair?.after).toBe(pair?.before.replace(before, after));
+      // The post-rename line is in the doc exactly once; the pre-rename line is gone.
+      expect(lines.filter((l) => l === pair?.after)).toHaveLength(1);
+      expect(lines).not.toContain(pair?.before);
     });
+    // The rename touched exactly those 3 lines: no other line mentions either name.
+    expect(lines.filter((l) => l.includes("plan_updated_at"))).toEqual([]);
+    expect(lines.filter((l) => l.includes("plan_changed_at"))).toEqual(
+      RENAMED_LINES.map((p) => p.after),
+    );
   });
 
   it("rule-9 (AC27) every R9 id and UF-11 AC id appears in a test title; T-0200 ids still do", () => {
