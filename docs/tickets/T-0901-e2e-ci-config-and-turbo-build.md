@@ -57,3 +57,5 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green (includes `pnpm t
 - **A draft PR is required.** T-0300a merged without a `pull_request` CI run, which is how this defect reached `main`. This ticket cannot be accepted without a green `pull_request` run of `playwright e2e` (AC6). The dev opens the draft PR from the ticket branch, the orchestrator or a human handles the push per `.squad/gates.md`, and no merge happens until the job is green.
 - **Ordering with T-0300b:** T-0300b is `doing` and also edits `tests/e2e/playwright.config.ts`. This ticket starts after T-0300b merges and applies the `webServer.command` fix on top of its version.
 - Diagnosis and reproduction table: `docs/ci/CI-T-0901-e2e-no-config-and-unbuilt-tokens.md`.
+
+- 2026-09-28 orchestrator: accept conditions met. The AC7 path was fixed (repo-root playwright-report, if-no-files-found: warn, per D-0055), and draft PR #7 run 36463832294 is green on its first attempt (playwright e2e, supabase db tests and checks all pass), which proves AC6.
