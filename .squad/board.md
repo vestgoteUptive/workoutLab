@@ -40,7 +40,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0103b (from T-0103a accept/review): positive schema fixture for a valid source:wger row; schema.test missing-license asserts params.missingProperty; D-0033 §7 wording (AC11–14 exercise-only; AC10/15/16/17 whole library); align warm-up ids/weights with engine-rules §7 (wu-cat-cow core 1/back .5, wu-arm-circle shoulders) or amend via decision; remove the barbell-back-squat skip guard in areas.test.ts.
 - Engine (from T-0200): fast-check devDependency for invariant tests (D-0036 §5, lockfile → infra); purity lint also catches globalThis.Date/Math; engine types move to @workoutlab/shared after T-0102a.
 - T-0102b (from T-0201 groom, D-0040 §4): WorkoutItem.backoff.weightKg nullable (first-time main lift has no weight). Engine reads only PlanCheckin.answeredAt and a CheckinProfile subset (D-0041 §2).
-- T-0202 (from T-0201 groom): the all-chest history's main lift is inverted-row (rule 7.2, D-0040 §11). T-0205: replace T-0201's first-time pre-fill stand-in with rule 14.
+- T-0202 (from T-0201 groom): the all-chest history's main lift is inverted-row (rule 7.2, D-0040 §11). T-0205: replace T-0201's first-time pre-fill stand-in with rule 14. → **folded into `docs/tickets/T-0205-*.md` (AC16), 2026-09-28.**
 - UF-08/UF-09 web tickets (from T-0201 groom): timeCheck elapsedS excludes paused time and the warm-up when warmupInBudget is off; an empty items plan is valid on UF-08.1; show itemsTotalS vs budget.
 - T-0308 (from T-0202 groom): build CheckinSession[] with checkinSessions(sessions ∪ offline queue); 'First check-in on {nextCheckinDate}' when periods is empty.
 - T-0102b (from T-0102a review): gen:api must run on all Node 22 (--experimental-strip-types or tsx); declare prettier as a devDependency of packages/shared or record hoisting in D-0039 §6.
@@ -53,7 +53,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0300b (from T-0300a accept): use or remove the unused hidesTabBar() in apps/web/src/app/routes.ts. e2e: a real Supabase page.route mock + session-injection helper in tests/e2e/fixtures. CI: build apps/web before check:size, test:e2e and Lighthouse (→ T-0006).
 - web-shell hardening (from T-0300b accept): the AC-B7 test asserts wl-return-to === "/" and no role=dialog on /session/*; classify invalid_grant with isAuthApiError/isAuthRetryableFetchError instead of error.message; add has/ownKeys traps to the lazy supabase Proxy.
 - Data (from T-0202, D-0050 §1): api/openapi.yaml CheckinPeriod.index minimum 0 (period 0 starts at onboarding); regenerate api.gen.ts.
-- UF-09.8 web ticket (from T-0201b, D-0047): show minutesBehind only when show is true; save the Trim / Skip next items as the new plan. T-0205: reuse floorInc from packages/engine/src/energy.ts.
+- UF-09.8 web ticket (from T-0201b, D-0047): show minutesBehind only when show is true; save the Trim / Skip next items as the new plan. T-0205: reuse floorInc from packages/engine/src/energy.ts → **folded into `docs/tickets/T-0205-*.md` (Scope, AC24), 2026-09-28.**
+- T-0204/T-0205 groom follow-ups (2026-09-28): rule 0's `rankSwaps(current, reason, session, profile, library, history, tz, now)` argument order is inconsistent with every other engine function (`now, tz` last) — a one-line doc fix (engine, D-0056 §2); writing D-0057 §2/§4/§6 (bodyweight step 4, the `floorInc` floor, the timed edges) into rule 14's text (engine/product doc edit, D-0057 §10); `packages/shared/test/schemas.test.ts` still uses `muscleMatch 0.667` for all five R12-E1 entries — harmless (schema validity only) but worth aligning when the shared lane next touches it (data).
 - T-0203 groom follow-ups: openapi finishSession text 'last write wins' → 'the latest endedAt wins (D-0053 §7)' (data); the offline queue never replays a sessions upsert with ended_at null after a finish (T-0300c); a draft PR for each T-0203 part (real-stack CI).
 
 ## Phase 1 — Contracts
@@ -83,8 +84,10 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0203c | Edge Function finish (latest endedAt wins, D-0053 §7–8) | backend | T-0203b | doing | wl-build-backend |
 | T-0206 | Page the exercises/exercise_areas library reads through pageAll (or guard as the library nears PostgREST max_rows = 1000) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
 | T-0207 | Attach x-request-id to OPTIONS preflight responses (D-0053 §5 says every response) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
-| T-0204 | Engine: swap ranking + deterministic shuffle (rules 12–13) | engine | T-0200 | todo | wl-build-engine |
-| T-0205 | Engine: progression + pre-fill (rule 14) | engine | T-0200 | todo | wl-build-engine |
+| T-0204 | Engine: swap ranking (rule 12 `rankSwaps`) + deterministic shuffle (rule 13) wired into `suggest`; R12-E1 muscleMatch correction (D-0056) | engine | T-0200 | ready | wl-build-engine |
+| T-0205 | Engine: progression + pre-fill (rule 14 `prefill`), replaces the T-0201 `first_time` seam (D-0057) | engine | T-0200 | ready | wl-build-engine |
+
+**T-0204 and T-0205 must not run in parallel:** both change `packages/engine/src/session.ts`. One engine worktree at a time; whichever lands second rebases.
 
 ## Phase 3 — App
 | ID | Title | Lane | Deps | Status | Flow |
@@ -123,6 +126,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
+| T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | ready | wl-build-web |
 | T-0901 | CI e2e job: run Playwright with the tests/e2e config; webServer builds via turbo (^build) — diagnosis docs/ci/CI-T-0901-* | infra (+ tests/e2e/playwright.config.ts) | T-0300b | done | wl-build-infra (draft PR) |
 
 ## Phase 5 — Iterate
