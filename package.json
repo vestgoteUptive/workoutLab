@@ -24,10 +24,13 @@
     ]
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.15.0",
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.10.2",
     "eslint": "^9.15.0",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.5",
     "prettier": "^3.4.2",
     "turbo": "^2.11.4",
     "typescript": "^5.7.2",
