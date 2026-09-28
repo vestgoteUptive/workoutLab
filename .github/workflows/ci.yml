@@ -85,7 +85,7 @@ jobs:
       # to server on socket ... failed".
       - name: Load local Supabase keys
         if: steps.has-supabase.outputs.present == 'true'
-        run: supabase status -o env | sed -E 's/^([A-Z_]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
+        run: supabase status -o env | sed -E 's/^([A-Z0-9_]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
       - name: Check local Supabase keys are set
         if: steps.has-supabase.outputs.present == 'true'
         run: |

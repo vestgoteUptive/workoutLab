@@ -81,7 +81,7 @@ Deno.test("AC3: a generated fixture seed round-trips through psql unchanged", as
     await Deno.writeTextFile(scriptPath, script);
 
     const command = new Deno.Command("psql", {
-      args: [dbUrl, "-v", "ON_ERROR_STOP=1", "-f", scriptPath],
+      args: [dbUrl, "-X", "-q", "-v", "ON_ERROR_STOP=1", "-f", scriptPath],
       stdout: "piped",
       stderr: "piped",
     });
