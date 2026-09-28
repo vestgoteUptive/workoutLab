@@ -76,9 +76,7 @@ test.describe("AC-C20 offline cold start", () => {
       source: "default",
       updated_at: "2026-09-01T00:00:00.000Z",
     }));
-    const sets = Array.from({ length: 5 }, (_, i) =>
-      set(`c-${i}`, `2026-09-2${i}T10:00:00.000Z`),
-    );
+    const sets = Array.from({ length: 5 }, (_, i) => set(`c-${i}`, `2026-09-2${i}T10:00:00.000Z`));
 
     await mockSupabaseData(page, {
       sets,
@@ -95,15 +93,6 @@ test.describe("AC-C20 offline cold start", () => {
         onboarded_at: "2026-09-01T00:00:00.000Z",
         plan_changed_at: "2026-09-01T00:00:00.000Z",
       },
-    });
-
-    page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));
-    page.on("pageerror", (err) => console.log("PAGE ERROR:", err));
-    page.on("requestfailed", (req) => console.log("REQ FAILED:", req.url(), req.failure()?.errorText));
-    page.on("response", (res) => {
-      if (res.url().includes("session_sets_live")) {
-        console.log("RESPONSE:", res.url(), res.status());
-      }
     });
 
     await page.goto("/");

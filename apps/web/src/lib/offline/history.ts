@@ -30,8 +30,6 @@ export async function refreshHistory(now: Date, tz: string): Promise<void> {
       "client_id, session_id, exercise_id, is_warmup, completed_at, edited_at, deleted_at, reps, weight_kg, duration_s",
     )
     .gte("completed_at", windowStart);
-  // eslint-disable-next-line no-console
-  console.log("DEBUG refreshHistory", { error, dataLen: data?.length, data });
   if (error) throw error;
 
   const rows = (data ?? []) as Array<

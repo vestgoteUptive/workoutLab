@@ -11,7 +11,9 @@ import "../components/tab-bar/tab-bar.css";
 // `lib/offline` is loaded lazily and only once signed in (T-0300c, AC-C20), so `/welcome`'s
 // first render never imports it (principle 5, D-0045 §13): a signed-out user's static import
 // graph stops at this lazy() call, which React never invokes until `signedIn` below is true.
-const LazyAutoSync = lazy(() => import("../lib/offline/AutoSync.js").then((m) => ({ default: m.AutoSync })));
+const LazyAutoSync = lazy(() =>
+  import("../lib/offline/AutoSync.js").then((m) => ({ default: m.AutoSync })),
+);
 
 function AutoSyncGate() {
   const { status } = useAuth();
