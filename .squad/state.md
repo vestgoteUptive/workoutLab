@@ -1,10 +1,10 @@
 # State
 
 - **Phase:** 1–3 overlap (contracts nearly done; engine in progress; shell and landing groomed)
-- **Updated:** 2026-09-28 16:20 by orchestrator
+- **Updated:** 2026-09-28 19:25 by orchestrator
 - **Done:** T-0001–T-0005, T-0007, T-0100a/b, T-0101, T-0102, T-0103a/b, T-0200, T-0201, T-0202, T-0300a, T-0309a. Main is green.
 - **Concurrency cap: 2 runs in flight** (flows and sub-agents together); see `/tick`.
-- **In flight (2/2):** T-0300b auth (AgentLab fffcdd2f), T-0203 groom (d732854d).
+- **In flight (2/2):** T-0203a rework (AgentLab a5fdd195; draft PR #5), T-0300b review (sub-agent). Then T-0300b QA + accept, then T-0901 (CI e2e fix, draft PR).
 - **Main CI is red** (e2e job, since T-0300a). T-0901 is queued as the first `wl-ci-investigate` run, and gets the next free slot.
 - **wl-ci-investigate is new:** AgentLab needs a restart to load it; until then use the sub-agent path (the ci-investigator role, via a general-purpose agent with the role text).
 - **Next after those:** T-0300d (web-shell, after T-0300b), T-0309b (landing, after T-0300b's lockfile change), T-0300c (after T-0300b), T-0203 build (draft PR for real-stack CI), grooming for T-0204/T-0205. Also T-0103c and T-0006.
