@@ -37,7 +37,8 @@ vi.mock("../history.js", () => ({
 }));
 
 const { startSync } = await import("../sync.js");
-const { markAuthBlocked } = await import("../flush.js");
+type SyncHandle = import("../sync.js").SyncHandle;
+const { markAuthBlocked, clearAuthBlocked } = await import("../flush.js");
 const { offlineDb } = await import("../db.js");
 const { freshOfflineDb, signIn, signOut } = await import("./test-helpers.js");
 
@@ -65,10 +66,16 @@ function setRow(clientId: string, editedAt: string) {
   };
 }
 
-/** Lets the queued microtasks from a fire-and-forget event handler settle. */
-async function settle(): Promise<void> {
-  for (let i = 0; i < 20; i += 1) await Promise.resolve();
-  await new Promise((resolve) => setTimeout(resolve, 0));
+/** Waits for the work an event handler kicked off, by awaiting the handle's own in-flight
+ *  tracking rather than guessing at a number of ticks.
+ *
+ *  Draining microtasks (the previous approach) can never be correct here: IndexedDB requests
+ *  complete on the *macrotask* queue, so `await Promise.resolve()` in a loop returns before Dexie
+ *  has done anything at all, and the single trailing `setTimeout(0)` only happened to be enough
+ *  when the worker was idle. Under a full suite it wasn't, and the flush landed in the *next*
+ *  test — which is exactly the T-0311 flake. `settled()` is an actual completion signal. */
+async function settle(handle: SyncHandle): Promise<void> {
+  await handle.settled();
 }
 
 beforeEach(() => {
@@ -84,7 +91,13 @@ beforeEach(() => {
   signIn(USER);
 });
 
-afterEach(() => signOut());
+afterEach(() => {
+  signOut();
+  // `authBlocked` in flush.js is module-level state that outlives a test. Clearing it here, in
+  // teardown, means each test hands back a clean module rather than depending on what ran before
+  // it (clearing in `beforeEach` instead would leave the block set for whoever ran next).
+  clearAuthBlocked(USER);
+});
 
 describe("the online event listener (AC-C9, AC-C10)", () => {
   it("a real window 'online' event flushes the queue", async () => {
@@ -94,7 +107,7 @@ describe("the online event listener (AC-C9, AC-C10)", () => {
     const handle = startSync({ tz: "UTC" });
     try {
       window.dispatchEvent(new Event("online"));
-      await settle();
+      await settle(handle);
 
       expect(spy.calls.some((c) => c.table === "session_sets")).toBe(true);
       expect(await db.sets.count()).toBe(0);
@@ -116,7 +129,7 @@ describe("the online event listener (AC-C9, AC-C10)", () => {
     const handle = startSync({ tz: "UTC" });
     try {
       window.dispatchEvent(new Event("online"));
-      await settle();
+      await settle(handle);
 
       const sent = spy.calls
         .filter((c) => c.table === "session_sets")
@@ -136,11 +149,28 @@ describe("the online event listener (AC-C9, AC-C10)", () => {
     handle.stop();
 
     window.dispatchEvent(new Event("online"));
-    await settle();
+    // A stopped handle tracks nothing, so `settled()` resolves immediately and on its own would
+    // prove nothing (it would also pass if the event were simply slow). The positive control
+    // below is what gives this test teeth: a *live* handle on the same queue must flush the row.
+    await settle(handle);
 
     expect(spy.calls).toHaveLength(0);
     expect(await db.sets.count()).toBe(1);
     expect(unsubscribe).toHaveBeenCalled();
+
+    // Positive control: the row really is flushable and an `online` event really does reach a
+    // listener that is still registered. So the assertions above pin `stop()`'s teardown, not a
+    // queue that was empty or an event that never fired.
+    const live = startSync({ tz: "UTC" });
+    try {
+      window.dispatchEvent(new Event("online"));
+      await settle(live);
+
+      expect(spy.calls.some((c) => c.table === "session_sets")).toBe(true);
+      expect(await db.sets.count()).toBe(0);
+    } finally {
+      live.stop();
+    }
   });
 });
 
@@ -165,7 +195,7 @@ describe("the onAuthStateChange listener (AC-C8, 2nd half)", () => {
 
         // supabase-js emits the event: the real callback runs.
         authCallback!(event, { user: { id: USER } });
-        await settle();
+        await settle(handle);
 
         const sent = spy.calls
           .filter((c) => c.table === "session_sets")
@@ -186,7 +216,7 @@ describe("the onAuthStateChange listener (AC-C8, 2nd half)", () => {
     const handle = startSync({ tz: "UTC" });
     try {
       authCallback!("SIGNED_OUT", null);
-      await settle();
+      await settle(handle);
 
       expect(spy.calls).toHaveLength(0);
       expect(await db.sets.count()).toBe(1);
