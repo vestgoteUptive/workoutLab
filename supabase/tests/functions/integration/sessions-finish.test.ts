@@ -336,7 +336,40 @@ Deno.test(
       .single();
     if (error) throw error;
     assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
-    assertEquals(row.effort_rating, 4);
+    // D-0058 rule 1: the unrated 07:40 win owns the whole row and clears the 07:31 finish's
+    // rating; rule 3 then makes the older rated retry a complete no-op, so the column stays null.
+    assertEquals(row.effort_rating, null);
+  },
+);
+
+Deno.test(
+  "AC27 (D-0058 rule 2): an equal-endedAt retry adds a rating over the wire and an unrated retry never clears it",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const sessionId = await seedSessionS(user.client);
+
+    await finish(user.accessToken, sessionId, { endedAt: "2026-09-28T07:31:00Z", tz: TZ });
+    await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:31:00Z",
+      effortRating: 3,
+      tz: TZ,
+    });
+    // A duplicate delivery of the original unrated finish, arriving after the user rated it.
+    const lastRes = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:31:00Z",
+      tz: TZ,
+    });
+    assertEquals(lastRes.status, 200);
+
+    const { data: row, error } = await user.client
+      .from("sessions")
+      .select("ended_at, effort_rating")
+      .eq("id", sessionId)
+      .single();
+    if (error) throw error;
+    assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
+    assertEquals(row.effort_rating, 3, "rule 2: a retry may add a rating, never clear one");
   },
 );
 
@@ -351,25 +384,26 @@ Deno.test(
     // which is a fixture-isolation bug, not the commutativity this AC is testing (D-0053 §8 scopes
     // `SessionSummary.balance` to the caller's whole history, matching `GET /balance` — see
     // `buildSummary` in `supabase/functions/sessions/core.ts`).
+    // Exactly ONE of the two finishes carries a rating (D-0058): A = rated 07:31, B = unrated
+    // 07:40 — a rating given on one device, a later correction from another. A rating-free pair
+    // cannot detect an order-dependent `effort_rating`, which is why the original green AC28
+    // missed the defect.
+    const RATED_0731 = { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ } as const;
+    const UNRATED_0740 = { endedAt: "2026-09-28T07:40:00Z", tz: TZ } as const;
+
     const userA = await createTestUser();
     await seedFullProfile(userA.client);
     const sessionA = await seedSessionS(userA.client);
-    await finish(userA.accessToken, sessionA, { endedAt: "2026-09-28T07:40:00Z", tz: TZ });
-    const lastA = await finish(userA.accessToken, sessionA, {
-      endedAt: "2026-09-28T07:31:00Z",
-      tz: TZ,
-    });
+    await finish(userA.accessToken, sessionA, UNRATED_0740);
+    const lastA = await finish(userA.accessToken, sessionA, RATED_0731);
     assertEquals(lastA.status, 200);
     const lastABody = await lastA.json();
 
     const userB = await createTestUser();
     await seedFullProfile(userB.client);
     const sessionB = await seedSessionS(userB.client);
-    await finish(userB.accessToken, sessionB, { endedAt: "2026-09-28T07:31:00Z", tz: TZ });
-    const lastB = await finish(userB.accessToken, sessionB, {
-      endedAt: "2026-09-28T07:40:00Z",
-      tz: TZ,
-    });
+    await finish(userB.accessToken, sessionB, RATED_0731);
+    const lastB = await finish(userB.accessToken, sessionB, UNRATED_0740);
     assertEquals(lastB.status, 200);
     const lastBBody = await lastB.json();
 
@@ -395,14 +429,59 @@ Deno.test(
       { client: userA.client, id: sessionA },
       { client: userB.client, id: sessionB },
     ];
+    // The FULL row must converge, not just `ended_at`. Before D-0058, `ended_at` was 07:40 in
+    // both orders while `effort_rating` was 4 for one user and null for the other. The convergent
+    // value is null: the winning 07:40 finish carries no rating, so it clears the one the
+    // superseded 07:31 finish left behind (rule 1).
     for (const { client, id } of rows) {
       const { data: row, error } = await client
         .from("sessions")
-        .select("ended_at")
+        .select("ended_at, effort_rating")
         .eq("id", id)
         .single();
       if (error) throw error;
       assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
+      assertEquals(row.effort_rating, null);
+    }
+  },
+);
+
+Deno.test(
+  "AC28: the same two finishes converge in both orders with the rating on the LATER (winning) finish",
+  async () => {
+    // Mirror of the test above: the rating rides the winning 07:40 finish, so it survives in both
+    // orders. Together the two pin that the row follows the *winning* endedAt rather than
+    // "whichever rating arrived last" or "any rating ever seen" (D-0058's rejected alternative).
+    const UNRATED_0731 = { endedAt: "2026-09-28T07:31:00Z", tz: TZ } as const;
+    const RATED_0740 = { endedAt: "2026-09-28T07:40:00Z", effortRating: 5, tz: TZ } as const;
+
+    const userA = await createTestUser();
+    await seedFullProfile(userA.client);
+    const sessionA = await seedSessionS(userA.client);
+    await finish(userA.accessToken, sessionA, RATED_0740);
+    const lastA = await finish(userA.accessToken, sessionA, UNRATED_0731);
+    assertEquals(lastA.status, 200);
+
+    const userB = await createTestUser();
+    await seedFullProfile(userB.client);
+    const sessionB = await seedSessionS(userB.client);
+    await finish(userB.accessToken, sessionB, UNRATED_0731);
+    const lastB = await finish(userB.accessToken, sessionB, RATED_0740);
+    assertEquals(lastB.status, 200);
+
+    const rows: Array<{ client: SupabaseClient; id: string }> = [
+      { client: userA.client, id: sessionA },
+      { client: userB.client, id: sessionB },
+    ];
+    for (const { client, id } of rows) {
+      const { data: row, error } = await client
+        .from("sessions")
+        .select("ended_at, effort_rating")
+        .eq("id", id)
+        .single();
+      if (error) throw error;
+      assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
+      assertEquals(row.effort_rating, 5);
     }
   },
 );
