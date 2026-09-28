@@ -1,0 +1,23 @@
+{
+  "id": "dumbbell-fly",
+  "name": "Dumbbell fly",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["dumbbell", "bench"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "chest": 1 },
+  "instructions": [
+    "Lie on the bench with a dumbbell in each hand above your chest.",
+    "Keep a slight bend in your elbows.",
+    "Lower your arms out to the sides until you feel a stretch.",
+    "Bring the dumbbells back together above your chest."
+  ],
+  "cue": "Wide arc down, hug them back up",
+  "mistakes": ["Straightening the elbows fully, which strains the joint.", "Lowering too far past shoulder level."],
+  "variants": ["cable-fly"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

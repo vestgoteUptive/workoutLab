@@ -1,0 +1,23 @@
+{
+  "id": "barbell-back-squat",
+  "name": "Barbell back squat",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "advanced",
+  "equipment": ["barbell", "rack"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "quads": 1, "glutes": 1, "hamstrings": 0.5, "core": 0.5 },
+  "instructions": [
+    "Set the bar on your upper back and step out of the rack.",
+    "Stand with feet shoulder width, toes turned slightly out.",
+    "Bend your knees and hips to lower until your thighs pass parallel.",
+    "Drive back up through your heels to standing."
+  ],
+  "cue": "Sit back and down, drive up",
+  "mistakes": ["Letting the knees cave inward.", "Rounding the lower back at the bottom."],
+  "variants": ["goblet-squat-dumbbell", "leg-press-machine", "barbell-front-squat", "leg-extension-machine"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

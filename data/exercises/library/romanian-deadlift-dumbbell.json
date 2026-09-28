@@ -1,0 +1,23 @@
+{
+  "id": "romanian-deadlift-dumbbell",
+  "name": "Romanian deadlift (dumbbell)",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "hamstrings": 1, "glutes": 0.5 },
+  "instructions": [
+    "Hold a dumbbell in each hand in front of your thighs.",
+    "Push your hips back and lower the dumbbells down your shins.",
+    "Keep your back flat and knees only slightly bent.",
+    "Drive your hips forward to stand back up."
+  ],
+  "cue": "Push hips back, keep the back flat",
+  "mistakes": ["Rounding the lower back.", "Letting the dumbbells drift away from the legs."],
+  "variants": ["romanian-deadlift-barbell", "cable-pull-through", "leg-curl-machine", "kettlebell-swing"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

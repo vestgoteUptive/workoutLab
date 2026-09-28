@@ -1,0 +1,23 @@
+{
+  "id": "seated-cable-row",
+  "name": "Seated cable row",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "back": 1, "arms": 0.5 },
+  "instructions": [
+    "Sit with your feet braced and knees slightly bent.",
+    "Grip the handle with your arms extended.",
+    "Pull the handle to your stomach, elbows close to your body.",
+    "Return with control, letting your back stretch forward slightly."
+  ],
+  "cue": "Pull to the stomach, chest up",
+  "mistakes": ["Rounding the back to reach further.", "Yanking the weight with the arms only."],
+  "variants": ["lat-pulldown"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

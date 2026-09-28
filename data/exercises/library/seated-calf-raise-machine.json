@@ -1,0 +1,23 @@
+{
+  "id": "seated-calf-raise-machine",
+  "name": "Seated calf raise (machine)",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "calves": 1 },
+  "instructions": [
+    "Sit with your knees under the pads and your toes on the platform.",
+    "Let your heels drop below the platform edge.",
+    "Rise up onto your toes as high as you can.",
+    "Lower back down with control."
+  ],
+  "cue": "Rise up on the toes, lower fully",
+  "mistakes": ["Bouncing at the bottom instead of pausing.", "Only moving through half the range."],
+  "variants": ["standing-calf-raise-machine", "dumbbell-calf-raise"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -1,0 +1,23 @@
+{
+  "id": "romanian-deadlift-barbell",
+  "name": "Romanian deadlift (barbell)",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["barbell"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "hamstrings": 1, "glutes": 0.5, "back": 0.5 },
+  "instructions": [
+    "Hold the bar in front of your thighs, feet hip width.",
+    "Push your hips back and lower the bar down your shins.",
+    "Keep your back flat and knees only slightly bent.",
+    "Drive your hips forward to stand back up."
+  ],
+  "cue": "Push hips back, keep the back flat",
+  "mistakes": ["Rounding the lower back.", "Bending the knees too much, turning it into a squat."],
+  "variants": ["romanian-deadlift-dumbbell", "cable-pull-through", "leg-curl-machine", "kettlebell-swing"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

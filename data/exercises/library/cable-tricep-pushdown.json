@@ -1,0 +1,23 @@
+{
+  "id": "cable-tricep-pushdown",
+  "name": "Cable tricep pushdown",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "arms": 1 },
+  "instructions": [
+    "Stand facing the cable with the bar set high.",
+    "Keep your elbows tucked at your sides.",
+    "Push the bar down until your arms are straight.",
+    "Let it rise back up with control."
+  ],
+  "cue": "Elbows tucked, push straight down",
+  "mistakes": ["Letting the elbows drift away from the body.", "Leaning the whole body forward to push the weight."],
+  "variants": ["overhead-tricep-extension-dumbbell", "machine-tricep-extension"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

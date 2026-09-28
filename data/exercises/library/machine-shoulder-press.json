@@ -1,0 +1,23 @@
+{
+  "id": "machine-shoulder-press",
+  "name": "Machine shoulder press",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "shoulders": 1, "arms": 0.5 },
+  "instructions": [
+    "Sit with your back against the pad and grip the handles.",
+    "Press the handles up until your arms are extended.",
+    "Lower them back to shoulder height with control.",
+    "Repeat without locking the elbows hard."
+  ],
+  "cue": "Press up, lower under control",
+  "mistakes": ["Shrugging the shoulders up into the ears.", "Letting the handles drop quickly on the way down."],
+  "variants": ["overhead-press-barbell", "dumbbell-shoulder-press"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

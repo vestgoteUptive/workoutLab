@@ -1,0 +1,23 @@
+{
+  "id": "cable-woodchop",
+  "name": "Cable woodchop",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "core": 1 },
+  "instructions": [
+    "Set the pulley high and stand side-on to the machine.",
+    "Grip the handle with both hands.",
+    "Pull it down and across your body to the opposite hip.",
+    "Return with control and repeat."
+  ],
+  "cue": "Pull down and across the body",
+  "mistakes": ["Using the arms only instead of rotating the torso.", "Letting the hips swing instead of the core doing the work."],
+  "variants": ["weighted-russian-twist", "hanging-leg-raise"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

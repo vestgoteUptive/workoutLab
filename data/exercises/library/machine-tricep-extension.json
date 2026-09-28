@@ -1,0 +1,23 @@
+{
+  "id": "machine-tricep-extension",
+  "name": "Machine tricep extension",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "arms": 1 },
+  "instructions": [
+    "Sit with your elbows resting on the pad.",
+    "Grip the handles with your arms bent.",
+    "Push the handles down until your arms are straight.",
+    "Let them rise back up with control."
+  ],
+  "cue": "Elbows on the pad, push straight down",
+  "mistakes": ["Lifting the elbows off the pad.", "Letting the weight stack drop quickly on the way up."],
+  "variants": ["cable-tricep-pushdown", "overhead-tricep-extension-dumbbell"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -1,0 +1,23 @@
+{
+  "id": "barbell-bicep-curl",
+  "name": "Barbell bicep curl",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["barbell"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "arms": 1 },
+  "instructions": [
+    "Stand tall holding the bar with an underhand grip.",
+    "Keep your elbows close to your sides.",
+    "Curl the bar up toward your shoulders.",
+    "Lower it back down with control."
+  ],
+  "cue": "Elbows still, curl up and down",
+  "mistakes": ["Leaning back to swing the bar up.", "Letting the elbows drift forward."],
+  "variants": ["dumbbell-bicep-curl", "hammer-curl-dumbbell"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

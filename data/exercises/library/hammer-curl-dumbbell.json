@@ -1,0 +1,23 @@
+{
+  "id": "hammer-curl-dumbbell",
+  "name": "Hammer curl (dumbbell)",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "arms": 1 },
+  "instructions": [
+    "Stand tall with a dumbbell in each hand, palms facing your body.",
+    "Curl both dumbbells up, keeping your palms facing in.",
+    "Squeeze at the top.",
+    "Lower back down with control."
+  ],
+  "cue": "Palms in, curl straight up",
+  "mistakes": ["Rotating the wrists during the curl.", "Using the shoulders to heave the weight up."],
+  "variants": ["dumbbell-bicep-curl", "barbell-bicep-curl"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

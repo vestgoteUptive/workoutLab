@@ -1,0 +1,23 @@
+{
+  "id": "leg-extension-machine",
+  "name": "Leg extension",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "quads": 1 },
+  "instructions": [
+    "Sit with your shins behind the pad.",
+    "Grip the side handles for support.",
+    "Extend your legs until they are straight.",
+    "Lower back down with control."
+  ],
+  "cue": "Extend to straight, lower slowly",
+  "mistakes": ["Kicking the weight up quickly.", "Letting the weight stack drop on the way down."],
+  "variants": ["barbell-back-squat", "goblet-squat-dumbbell", "leg-press-machine", "barbell-front-squat"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

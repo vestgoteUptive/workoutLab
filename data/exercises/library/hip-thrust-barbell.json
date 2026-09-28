@@ -1,0 +1,23 @@
+{
+  "id": "hip-thrust-barbell",
+  "name": "Hip thrust (barbell)",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["barbell", "bench"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "glutes": 1, "hamstrings": 0.5 },
+  "instructions": [
+    "Sit on the floor with your upper back against the bench.",
+    "Roll the bar over your hips and hold it steady.",
+    "Drive your hips up until your body is a straight line.",
+    "Lower back down with control."
+  ],
+  "cue": "Drive the hips up, squeeze at the top",
+  "mistakes": ["Overextending the lower back at the top.", "Pushing through the toes instead of the heels."],
+  "variants": ["glute-bridge-dumbbell"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}
