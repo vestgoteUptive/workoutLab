@@ -50,6 +50,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0300 (from TR-0022): ticket text still says `idb` — D-0045 §13 wins: Dexie; AC-C1 'a new Dexie instance on the same database name'; AC-B5: signed out, /welcome/goal renders without redirect. T-0301: nest UF-01.2–01.4 under /welcome/*.
 - T-0300 groom follow-ups: CI job for apps/web test:e2e + check:size (→ T-0006); Lighthouse CI on UF-02.1 (→ T-0402); T-0404 magic-link email includes the 6-digit {{ .Token }}; T-0310 clears IndexedDB queue + caches on account deletion; C-02 tab bar spec (design); rejected-set review UX (Phase 5 idea).
 - T-0309 groom follow-ups: CI job for landing test:browser (→ T-0006/T-0402); UF-01.5 links to /privacy/; T-0406 reviews privacy.ts (security text wins).
+- T-0300b (from T-0300a accept): use or remove the unused hidesTabBar() in apps/web/src/app/routes.ts. e2e: a real Supabase page.route mock + session-injection helper in tests/e2e/fixtures. CI: build apps/web before check:size, test:e2e and Lighthouse (→ T-0006).
 - Data (from T-0202, D-0050 §1): api/openapi.yaml CheckinPeriod.index minimum 0 (period 0 starts at onboarding); regenerate api.gen.ts.
 - UF-09.8 web ticket (from T-0201b, D-0047): show minutesBehind only when show is true; save the Trim / Skip next items as the new plan. T-0205: reuse floorInc from packages/engine/src/energy.ts.
 
@@ -82,10 +83,10 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0300 | PWA shell: routing, auth (magic link), offline set queue, C-01 body map, C-02 tab bar | web-shell | T-0002, T-0003, T-0100a | split → T-0300a, T-0300b, T-0300c, T-0300d (D-0045) | wl-build-web |
-| T-0300a | PWA shell: routes, tab bar C-02, tokens.css, manifest/icons from tokens, placeholder removed (AC-A*) | web-shell | T-0002, T-0003, T-0102a | doing | wl-build-web |
-| T-0300b | Auth: magic link + 6-digit code, guard (/welcome/* public, D-0014), callback (AC-B*) | web-shell | T-0300a | todo | wl-build-web |
+| T-0300a | PWA shell: routes, tab bar C-02, tokens.css, manifest/icons from tokens, placeholder removed (AC-A*) | web-shell | T-0002, T-0003, T-0102a | done | wl-build-web |
+| T-0300b | Auth: magic link + 6-digit code, guard (/welcome/* public, D-0014), callback (AC-B*) | web-shell | T-0300a | doing | wl-build-web |
 | T-0300c | Offline set queue (Dexie per D-0001/TR-0022), sync, engine input with pending rows (AC-C*) | web-shell | T-0300b, T-0102b | todo | wl-build-web |
-| T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | todo | wl-build-web |
+| T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | ready | wl-build-web |
 | T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201a | todo | wl-build-web |
 | T-0302 | UF-02 Today + workout preview | web-feature:UF-02 | T-0300, T-0203 | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203 | todo | wl-build-web |
