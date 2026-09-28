@@ -8,6 +8,10 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 // Fixed so AC-A10's CSP `connect-src` assertion has a stable origin to check against.
 const VITE_SUPABASE_URL = "https://abc.supabase.co";
+// A fake anon key: `lib/auth/client.ts` (T-0300b) always constructs a real supabase-js
+// client, which throws synchronously without one, and every request it makes is mocked
+// through `page.route` (fixtures/supabase-mock.ts), never sent to a real project.
+const VITE_SUPABASE_ANON_KEY = "e2e-fake-anon-key";
 
 export default defineConfig({
   testDir: ".",
@@ -31,7 +35,7 @@ export default defineConfig({
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
-    env: { VITE_SUPABASE_URL },
+    env: { VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY },
   },
 });
 
