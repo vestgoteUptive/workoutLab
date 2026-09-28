@@ -124,6 +124,16 @@ describe("AC5 privacy notice (NFR-PRIV-6)", () => {
     expect(text).toMatch(/date of birth/i);
     expect(text).toMatch(/body weight/i);
     expect(text).toMatch(/heart rate/i);
+    // profiles.onboarding_timing_ms (NFR-AN-2) must not be left out.
+    expect(text).toMatch(/first setup took/i);
+    expect(text).not.toMatch(/three things/i);
+  });
+
+  it("states the first-party metric use honestly (NFR-AN-2)", () => {
+    const text = section("why");
+    expect(text).toMatch(/metric|usage|aggregate/i);
+    expect(text).toMatch(/no outside tools/i);
+    expect(text).not.toMatch(/anything else/i);
   });
 
   it("restates EU hosting, export/delete and no tracking", () => {

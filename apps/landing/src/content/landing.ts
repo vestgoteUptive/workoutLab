@@ -41,7 +41,7 @@ export const landing = {
     {
       id: "adaptive",
       title: "Targets that adapt",
-      body: "Suggestions come from clear, fixed rules, and your targets shift with what you actually train.",
+      body: "Suggestions come from clear, fixed rules, and your targets shift with what you actually train when you accept a check-in.",
     },
   ],
   privacy: {
