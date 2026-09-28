@@ -9,6 +9,7 @@ vi.mock("../../auth/client.js", () => ({ supabase: { from: spy.from } }));
 const { flush, clearAuthBlocked } = await import("../flush.js");
 const { upsertSession, editSet, syncStatus } = await import("../queue.js");
 const { offlineDb } = await import("../db.js");
+const { loadEngineHistory } = await import("../engine-feed.js");
 const { freshOfflineDb, signIn, signOut } = await import("./test-helpers.js");
 
 const USER = "11111111-1111-4111-8111-111111111111";
@@ -322,5 +323,16 @@ describe("AC-C11 rejected row kept", () => {
     await flush(USER);
     const setCalls = spy.calls.filter((c) => c.table === "session_sets");
     expect(setCalls).toHaveLength(0);
+
+    // syncStatus() reports it as rejected, not queued.
+    expect(await syncStatus()).toMatchObject({ queued: 0, rejected: 1 });
+
+    // A rejected row is never dropped: it still reaches the engine as pending, so the set the
+    // user logged keeps counting toward load even though the server refused it (D-0045 §6).
+    const feed = await loadEngineHistory();
+    const rejectedInFeed = feed.filter((s) => s.clientId === "r2");
+    expect(rejectedInFeed).toHaveLength(1);
+    expect(rejectedInFeed[0]!.pending).toBe(true);
+    expect(feed.map((s) => s.clientId)).not.toContain("r1");
   });
 });

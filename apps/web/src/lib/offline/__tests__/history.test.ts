@@ -33,6 +33,7 @@ const from = vi.fn((table: string) => ({
 vi.mock("../../auth/client.js", () => ({ supabase: { from } }));
 
 const {
+  refreshAll,
   refreshHistory,
   refreshLibrary,
   refreshTargets,
@@ -143,5 +144,70 @@ describe("refreshLibrary/refreshTargets/refreshProfile + loaders (AC-C16)", () =
     expect(targets).toHaveLength(1);
     expect(targets[0]!.area).toBe("quads");
     expect(profile?.goal).toBe("build_muscle");
+  });
+
+  // AC-C16 says "a start with `fetch` rejecting". Clearing the supabase spy only proves the
+  // loaders don't *call* the mocked client; it doesn't prove they survive a genuinely dead
+  // network. Here global fetch rejects the way it does offline, so any accidental network
+  // dependency (now or after a refactor) surfaces instead of passing silently.
+  it("returns the cached library, targets and profile with a rejecting fetch (a real offline start)", async () => {
+    tableData.set("exercises", [
+      {
+        id: "back-squat",
+        name: "Back squat",
+        type: "compound",
+        level: "beginner",
+        equipment: [],
+        kind: "exercise",
+        timed: false,
+        increment_kg: 2.5,
+        default_duration_s: null,
+        external_load: true,
+      },
+    ]);
+    tableData.set("exercise_areas", [{ exercise_id: "back-squat", area_id: "quads", weight: 1 }]);
+    tableData.set("area_targets", [
+      {
+        area_id: "quads",
+        sets_per_14d: 10,
+        source: "default",
+        updated_at: "2026-09-01T00:00:00.000Z",
+      },
+    ]);
+    tableData.set("profiles", [
+      {
+        goal: "build_muscle",
+        level: "beginner",
+        equipment: [],
+        rhythm_min: 3,
+        rhythm_max: 4,
+        priority_areas: [],
+        onboarded_at: "2026-09-01T00:00:00.000Z",
+        plan_changed_at: "2026-09-01T00:00:00.000Z",
+      },
+    ]);
+
+    // One online refreshAll() fills the cache (AC-C16: "after one online refreshAll()").
+    await refreshAll(new Date("2026-09-28T10:00:00.000Z"), "Europe/Stockholm");
+
+    // Now the device is offline: every fetch rejects, exactly like a dead network.
+    const fetchSpy = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = fetchSpy as unknown as typeof globalThis.fetch;
+    const onLine = Object.getOwnPropertyDescriptor(window.navigator, "onLine");
+    Object.defineProperty(window.navigator, "onLine", { configurable: true, value: false });
+
+    try {
+      await expect(loadLibrary()).resolves.toHaveLength(1);
+      await expect(loadTargets()).resolves.toHaveLength(1);
+      const cachedProfile = await loadProfile();
+      expect(cachedProfile?.goal).toBe("build_muscle");
+
+      // Nothing tried to reach the network, so the rejecting fetch was never even called.
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      globalThis.fetch = realFetch;
+      if (onLine) Object.defineProperty(window.navigator, "onLine", onLine);
+    }
   });
 });
