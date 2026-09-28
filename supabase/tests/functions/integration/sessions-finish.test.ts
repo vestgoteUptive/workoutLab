@@ -316,7 +316,7 @@ Deno.test(
     });
     assertEquals(at0740.status, 200);
     const at0740Body = await at0740.json();
-    assertEquals(at0740Body.endedAt, "2026-09-28T07:40:00Z");
+    assertInstantEquals(at0740Body.endedAt, "2026-09-28T07:40:00Z");
     assertEquals(at0740Body.durationS, 2400);
     assertEquals(at0740Body.withinBudget, false);
 
@@ -345,35 +345,58 @@ Deno.test(
 Deno.test(
   "AC28: replaying [07:40, 07:31] and [07:31, 07:40] on fresh copies both end at ended_at=07:40 with deep-equal last responses",
   async () => {
-    const user = await createTestUser();
-    await seedFullProfile(user.client);
-
-    const sessionA = await seedSessionS(user.client);
-    await finish(user.accessToken, sessionA, { endedAt: "2026-09-28T07:40:00Z", tz: TZ });
-    const lastA = await finish(user.accessToken, sessionA, {
+    // Two independent users, each with their own copy of fixture S: the "fresh copies" the AC
+    // calls for must not share one 14-day history. A single user with two sessions would leak
+    // session A's live hard sets into session B's `balance` (and vice versa, once both exist),
+    // which is a fixture-isolation bug, not the commutativity this AC is testing (D-0053 §8 scopes
+    // `SessionSummary.balance` to the caller's whole history, matching `GET /balance` — see
+    // `buildSummary` in `supabase/functions/sessions/core.ts`).
+    const userA = await createTestUser();
+    await seedFullProfile(userA.client);
+    const sessionA = await seedSessionS(userA.client);
+    await finish(userA.accessToken, sessionA, { endedAt: "2026-09-28T07:40:00Z", tz: TZ });
+    const lastA = await finish(userA.accessToken, sessionA, {
       endedAt: "2026-09-28T07:31:00Z",
       tz: TZ,
     });
     assertEquals(lastA.status, 200);
     const lastABody = await lastA.json();
 
-    const sessionB = await seedSessionS(user.client);
-    await finish(user.accessToken, sessionB, { endedAt: "2026-09-28T07:31:00Z", tz: TZ });
-    const lastB = await finish(user.accessToken, sessionB, {
+    const userB = await createTestUser();
+    await seedFullProfile(userB.client);
+    const sessionB = await seedSessionS(userB.client);
+    await finish(userB.accessToken, sessionB, { endedAt: "2026-09-28T07:31:00Z", tz: TZ });
+    const lastB = await finish(userB.accessToken, sessionB, {
       endedAt: "2026-09-28T07:40:00Z",
       tz: TZ,
     });
     assertEquals(lastB.status, 200);
     const lastBBody = await lastB.json();
 
-    const stripId = (b: Record<string, unknown>) => {
+    // Strip fields that are legitimately caller-specific or now-dependent rather than a function
+    // of the (identical) finish history: `sessionId` (each user's own session row) and each area's
+    // `targetUpdatedAt` (written at profile-seed time, which differs by milliseconds between
+    // userA and userB — same pattern as AC22's `computedAt` strip above). Every other field —
+    // area order, counts, deficits, endedAt, durationS, withinBudget — must still match exactly.
+    const strip = (b: Record<string, unknown>) => {
       const { sessionId: _sessionId, ...rest } = b;
-      return rest;
+      const balanceResult = rest.balance as { areas: Array<Record<string, unknown>> };
+      return {
+        ...rest,
+        balance: {
+          ...balanceResult,
+          areas: balanceResult.areas.map(({ targetUpdatedAt: _targetUpdatedAt, ...area }) => area),
+        },
+      };
     };
-    assertEquals(stripId(lastABody), stripId(lastBBody));
+    assertEquals(strip(lastABody), strip(lastBBody));
 
-    for (const id of [sessionA, sessionB]) {
-      const { data: row, error } = await user.client
+    const rows: Array<{ client: SupabaseClient; id: string }> = [
+      { client: userA.client, id: sessionA },
+      { client: userB.client, id: sessionB },
+    ];
+    for (const { client, id } of rows) {
+      const { data: row, error } = await client
         .from("sessions")
         .select("ended_at")
         .eq("id", id)
