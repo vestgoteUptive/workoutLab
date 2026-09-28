@@ -44,6 +44,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0308 (from T-0202 groom): build CheckinSession[] with checkinSessions(sessions ∪ offline queue); 'First check-in on {nextCheckinDate}' when periods is empty.
 - T-0102b (from T-0102a review): gen:api must run on all Node 22 (--experimental-strip-types or tsx); declare prettier as a devDependency of packages/shared or record hoisting in D-0039 §6.
 - Engine (from T-0102a): switch packages/engine/src/types.ts to @workoutlab/shared types (coverageStep number vs 0–4 literal; equipment string[]; D-0039).
+- T-0203 (TR-0016 → D-0044): seed exercises.external_load = !bodyweight on every row (never the column default); tests after db reset: every file's external_load = !bodyweight, push-up/plank false, barbell-back-squat true, all warm-ups false, count(false) = count(bodyweight:true).
+- T-0102b or a data follow-up (D-0044 §5): mapper case external_load:false → externalLoad:false (no inversion); note 'Seeded as NOT bodyweight (D-0044)' on the external_load row in docs/data-model.md.
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
