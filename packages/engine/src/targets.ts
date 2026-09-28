@@ -1,0 +1,43 @@
+// Rule 4: targets (D-0027).
+import { AREAS, type Area, type AreaNumbers, type TargetInput } from "./types.js";
+
+/** Base sets per 14 days at rhythm 3–4 (S = 14) with no priority. */
+export const BASE_TARGETS: Readonly<AreaNumbers> = Object.freeze({
+  chest: 20,
+  back: 20,
+  shoulders: 16,
+  arms: 12,
+  core: 12,
+  glutes: 20,
+  quads: 20,
+  hamstrings: 16,
+  calves: 12,
+});
+
+function assertRhythm(name: string, v: number): void {
+  if (!Number.isInteger(v) || v < 1) {
+    throw new RangeError(`${name} must be a positive integer, got ${v}`);
+  }
+}
+
+/**
+ * `target = roundHalfUp(base × S × P / 56)`, S = clamp(2 × (min + max), 7, 21),
+ * P = 5 for a priority area, else 4. Integer arithmetic until the final rounding.
+ */
+export function deriveTargets(input: TargetInput): AreaNumbers {
+  assertRhythm("rhythmMin", input.rhythmMin);
+  assertRhythm("rhythmMax", input.rhythmMax);
+  if (input.rhythmMin > input.rhythmMax) {
+    throw new RangeError(`rhythmMin ${input.rhythmMin} > rhythmMax ${input.rhythmMax}`);
+  }
+  const s = Math.min(21, Math.max(7, 2 * (input.rhythmMin + input.rhythmMax)));
+  const priority = new Set<Area>(input.priorityAreas);
+  const out = {} as AreaNumbers;
+  for (const area of AREAS) {
+    const p = priority.has(area) ? 5 : 4;
+    const numerator = BASE_TARGETS[area] * s * p; // exact integer
+    // roundHalfUp(n / 56) = floor((2n + 56) / 112), all integers.
+    out[area] = Math.floor((2 * numerator + 56) / 112);
+  }
+  return out;
+}
