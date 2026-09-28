@@ -50,6 +50,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0300 (from TR-0022): ticket text still says `idb` — D-0045 §13 wins: Dexie; AC-C1 'a new Dexie instance on the same database name'; AC-B5: signed out, /welcome/goal renders without redirect. T-0301: nest UF-01.2–01.4 under /welcome/*.
 - T-0300 groom follow-ups: CI job for apps/web test:e2e + check:size (→ T-0006); Lighthouse CI on UF-02.1 (→ T-0402); T-0404 magic-link email includes the 6-digit {{ .Token }}; T-0310 clears IndexedDB queue + caches on account deletion; C-02 tab bar spec (design); rejected-set review UX (Phase 5 idea).
 - T-0309 groom follow-ups: CI job for landing test:browser (→ T-0006/T-0402); UF-01.5 links to /privacy/; T-0406 reviews privacy.ts (security text wins).
+- UF-09.8 web ticket (from T-0201b, D-0047): show minutesBehind only when show is true; save the Trim / Skip next items as the new plan. T-0205: reuse floorInc from packages/engine/src/energy.ts.
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
@@ -68,10 +69,10 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0200 | Engine: rules 1–6 (mapping, hard sets, window, targets, deficit, recovery) + balance | engine | T-0101, T-0004 | done | wl-build-engine |
-| T-0201 | Engine: time-budget selection, warm-up, energy, time check (rules 7, 8, 10) | engine | T-0200 | split → T-0201a, T-0201b (D-0040 §12) | wl-build-engine |
+| T-0201 | Engine: time-budget selection, warm-up, energy, time check (rules 7, 8, 10) | engine | T-0200 | done | wl-build-engine |
 | T-0201a | Engine: eligibility, selection + main lift, warm-up, reasons, output shape (rule 7.1–7.3, 10; AC1–24) | engine | T-0200 | done | wl-build-engine |
-| T-0201b | Engine: energy Low/High + time check UF-09.8 (rules 7.4, 8; AC25–36) | engine | T-0201a | doing | wl-build-engine |
-| T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | ready | wl-build-engine |
+| T-0201b | Engine: energy Low/High + time check UF-09.8 (rules 7.4, 8; AC25–36) | engine | T-0201a | done | wl-build-engine |
+| T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | doing | wl-build-engine |
 | T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201a | todo | wl-build-backend |
 | T-0204 | Engine: swap ranking + deterministic shuffle (rules 12–13) | engine | T-0200 | todo | wl-build-engine |
 | T-0205 | Engine: progression + pre-fill (rule 14) | engine | T-0200 | todo | wl-build-engine |
