@@ -19,7 +19,7 @@ Both children use this file. Each child's branch implements only its own ACs.
 ## Scope
 - In (a): `packages/engine/src`: `LibraryExercise` gains `timed`, `defaultDurationS`, `incrementKg`, `externalLoad` (D-0040 §3), plus the types `EngineProfile`, `SessionInput`, `Workout`, `SessionPlan`, `WorkoutItem`, `PrefillResult` and `Reason` (D-0037 §6–§7 names). Also: `isEligible` (rule 0), the time model (7.1), main lift, pinned and greedy (7.2), the warm-up generator (7.3), reasons (rule 10), the first-time pre-fill seam (D-0040 §4) and `suggest()`. Fixture helpers in `test/fixtures/common.ts` gain the D-0040 §3 fields, and T-0200's tests stay green. Two sentence changes in `docs/engine-rules.md` (D-0040 §6, §11).
 - In (b): energy Low/High (7.4), `floorInc`, `timeCheck()` (rule 8) and `TimeCheckResult` (D-0037 §8).
-- Edge cases in scope: zero history (R7-E2, R7-E4); returning after 10 days off (AC20); offline-merged history with queued rows, replays and tombstones (AC21); time running out (rule 8, AC31–AC35, plus the after-last-item case); a budget too small for anything (AC13); no equipment (R7-E6); recovering areas (R7-E3); a stale or small warm-up library (AC16); `"none"` equipment and the `pullup-bar` spelling (AC1).
+- Edge cases in scope: zero history (R7-E2, R7-E4); returning after 10 days off (AC18); offline-merged history with queued rows, replays and tombstones (AC19); time running out (rule 8, AC31–AC35, plus the after-last-item case); a budget too small for anything (AC13); no equipment (R7-E6); recovering areas (R7-E3); a stale or small warm-up library (AC16); `"none"` equipment and the `pullup-bar` spelling (AC1).
 - Out: shuffle and swaps (rules 12–13, T-0204; `shuffle` is ignored, D-0040 §8); rule 14 pre-fill beyond `first_time` (T-0205); adaptive targets (T-0202); the Edge Function (T-0203); UI (T-03xx); switching to `@workoutlab/shared` types (follow-up after T-0102a).
 
 ## Acceptance criteria
@@ -91,3 +91,6 @@ Fixtures unless stated: F-tz, F-targets, F-profile (beginner, `equipment` = full
 
 ## Definition of done
 Tests for every AC of the child pass · `npx -y pnpm@10.28.2 -w typecheck lint test` green · the contract sentences are linked to D-0040 · commit messages start with `T-0201a`/`T-0201b` and cite UF-08.1/UF-08.4/UF-09.8 where relevant.
+
+## Accept log
+- 2026-09-28 T-0201a (commit 40ba07a) accepted. AC1–AC21, AC23 and AC24 each have a named test in `rule-7-session.test.ts`, `rule-7-histories.test.ts` or `rule-7-traceability.test.ts`. AC22 is covered by the T-0200 purity-lint and housekeeping tests plus a clean engine lint. The builder rechecked AC11, AC12, AC13, AC15, AC16 and AC18 and found no value to change. QA re-derived AC3, AC4, AC6, AC11 and AC13 independently, and the PO checked the AC12 totals (720 + 555 + 270 = 1545). Selection details are in D-0042 (`revisit`). T-0201b (AC25–AC36) is still open, so the parent `T-0201` stays open. Housekeeping: the Scope edge-case line now cites AC18/AC19 instead of AC20/AC21.

@@ -1,0 +1,22 @@
+{
+  "id": "banded-glute-kickback",
+  "name": "Banded glute kickback",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["band"],
+  "bodyweight": true,
+  "areas": { "glutes": 1 },
+  "instructions": [
+    "Loop the band around your ankles and get on all fours.",
+    "Keep your back flat and core braced.",
+    "Kick one leg back and up against the band.",
+    "Return with control and repeat."
+  ],
+  "cue": "Kick back against the band",
+  "mistakes": ["Arching the back to lift the leg higher.", "Letting the hips rotate open."],
+  "variants": ["cable-kickback"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

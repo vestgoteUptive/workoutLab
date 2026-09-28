@@ -135,7 +135,7 @@ Fixture: budget 45 min, warm-up on. The plan is bench-press × 4 (main, chest 0.
 - **R9-E13 (edit plan resets)** Given P2 = 4 and P3 = 3 and `plan_updated_at` 2026-09-20, Then there is no proposal on 2026-09-27 (P2 is not eligible).
 
 ## 10. Explanation
-Every item carries machine-readable reasons, and the UI or an optional LLM only turns them into words. The codes are: `main_lift`, `area_deficit {area, deficit}`, `days_since {area, days | null}`, `recovering_skipped {area}`, `energy_low_trim`, `energy_high_backoff`, `swap {reason}`, `prefill {kind: first_time|carry|reentry|hold_after_break|increase|deload|hold|add_rep}`. `sessionReasons` holds up to 3 `area_deficit` entries for the items' first primary areas, in session order.
+Every item carries machine-readable reasons, and the UI or an optional LLM only turns them into words. The codes are: `main_lift`, `area_deficit {area, deficit}`, `days_since {area, days | null}`, `recovering_skipped {area}`, `energy_low_trim`, `energy_high_backoff`, `swap {reason}`, `prefill {kind: first_time|carry|reentry|hold_after_break|increase|deload|hold|add_rep}`. `sessionReasons` (≤ 3) starts with at most 2 `recovering_skipped {area}` entries for the recovering areas in the fixed order, then is filled with `area_deficit` entries for the items' distinct first primary areas, in session order, up to 3 in total (D-0040).
 - **R10-E1** For R7-E4, bench-press has `main_lift` and `area_deficit {chest, 1}`, and `sessionReasons` covers chest, back and quads.
 
 ## 11. Balance output (UF-10, D-0013, D-0027)
@@ -192,7 +192,7 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 
 ## Required tests
 - Every `Rn-Em` above is a unit test. R7-E8 is a property test.
-- Simulated 14-day histories (T-0202), each run through `suggest`, `balance` and `evaluateCheckin`: balanced; all-chest-no-legs (legs get attention and the main lift is a leg compound); returning after 10 days off (R5-E1, R14-E3); 15-minute budget (R7-E2); 90-minute budget (R7-E8 caps). Plus offline-merged history (R0-E2, R11-E4).
+- Simulated 14-day histories (T-0202), each run through `suggest`, `balance` and `evaluateCheckin`: balanced; all-chest-no-legs (legs and back get attention, and the main lift is a compound for the first zero-load area (inverted-row), D-0040); returning after 10 days off (R5-E1, R14-E3); 15-minute budget (R7-E2); 90-minute budget (R7-E8 caps). Plus offline-merged history (R0-E2, R11-E4).
 
 ## Traceability
 | Rules / examples | Build ticket |

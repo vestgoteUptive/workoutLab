@@ -39,9 +39,9 @@ describe("AC3 area weights (engine rule 1)", () => {
     }
   });
 
-  it("barbell-back-squat matches engine rule 1's example, if present in this part of the library", () => {
+  it("barbell-back-squat matches engine rule 1's example", () => {
     const squat = lib.find((e) => e.id === "barbell-back-squat");
-    if (!squat) return; // ships with T-0103b (full-gym set)
-    expect(squat.areas).toEqual({ quads: 1, glutes: 1, hamstrings: 0.5, core: 0.5 });
+    expect(squat, "barbell-back-squat is missing from the library").toBeDefined();
+    expect(squat?.areas).toEqual({ quads: 1, glutes: 1, hamstrings: 0.5, core: 0.5 });
   });
 });

@@ -55,15 +55,27 @@ in the library" would.
 7. **Test-suite scoping, recorded as the one difference from a literal reading of the T-0103
    ticket text:** AC3 (area-weight rules: every exercise has ≥ 1 area at 1, isolation has
    exactly 1, compound has ≥ 2 keys), AC6 (every exercise has ≥ 1 variant, symmetric, sharing a
-   primary area) and AC11–17 (per-area/per-profile coverage counts) are read as scoped to
-   `kind: "exercise"` rows — the engine's greedy selection and the coverage tests both only ever
-   pick training options, never warm-up moves, so counting warm-ups toward "≥ 3 primary exercises
-   per area/profile" etc. would be double-counting rows that can never fill those slots.
-   `kind: "warmup"` rows are exempt from all of these, by point 6 above. Every other AC (1, 2, 4,
-   5, 7, 8, 9) applies to the whole library, warm-ups included.
-   **Amended 2026-09-28**: the original text named only AC3/AC6 here; AC11–17 were already tested
-   as `kind: "exercise"`-scoped in `test/coverage.test.ts` from the first draft, so this just
-   makes the decision text match the tests it was always meant to describe.
+   primary area) and AC11–14 (per-area/per-profile coverage counts, beginner options, compound
+   options) are read as scoped to `kind: "exercise"` rows — the engine's greedy selection and the
+   coverage tests both only ever pick training options, never warm-up moves, so counting warm-ups
+   toward "≥ 3 primary exercises per area/profile" etc. would be double-counting rows that can
+   never fill those slots. `kind: "warmup"` rows are exempt from all of these, by point 6 above.
+   AC10 (library size, 72–96 files), AC15 (offline gzip budget), AC16 (deterministic loader) and
+   AC17 (turbo wiring) read "library"/"the files" literally: the whole `data/exercises/library/`
+   tree, `kind: "warmup"` rows included — there is no reason to exclude warm-ups from a file
+   count, a byte budget or a loader determinism check, and the code (`test/size.test.ts`,
+   `test/offline-size.test.ts`, `test/loader.test.ts`, `test/turbo-tasks.test.ts`) has always
+   worked this way. Every other AC (1, 2, 4, 5, 7, 8, 9) applies to the whole library too, warm-ups
+   included.
+   **Amended 2026-09-28 (T-0103a):** the original text named only AC3/AC6 here; AC11–17 were
+   already tested as `kind: "exercise"`-scoped in `test/coverage.test.ts` from the first draft, so
+   that pass just made the decision text match the tests it was always meant to describe.
+   **Amended 2026-09-28 (T-0103b, review + accept):** that first amendment over-corrected — it
+   grouped AC15–17 in with AC11–14 as "exercise-scoped", but those three were never
+   exercise-filtered in the test code and don't make sense to be (a byte budget or a file count
+   has no reason to drop warm-ups). This second pass narrows the "exercise-only" list back to
+   AC11–14 and states AC10/15/16/17 explicitly as whole-library, matching what the test files have
+   always done.
 8. **Provenance default (amended 2026-09-28, rework 2, review + accept).** Point 2 above says
    warm-up rows are library rows "same shape" as exercises, but says nothing about where their
    *text* (or an exercise's) actually came from. On review, the `source: "wger"` rows this ticket
@@ -82,6 +94,34 @@ in the library" would.
    as a result; AC8's share-alike notice stays in the file (unconditionally, for when a future
    ticket does add a verified wger row) so AC8's "names the licence and its URL" /
    "carries the CC change notice" checks still pass against an empty id list.
+
+9. **Warm-up id/weight alignment with `docs/engine-rules.md` §7 (added 2026-09-28, T-0103b,
+   review + accept).** `engine-rules.md` §7 documents an "L1 library" table (a `back-squat`,
+   `db-bench-press`, `inverted-row`, … row set) and a matching warm-up list (`wu-scap-push-up`,
+   `wu-arm-circle`, `wu-band-pull-apart`, `wu-cat-cow`, `wu-bodyweight-squat`, `wu-leg-swing`,
+   `wu-jumping-jack`, `wu-march-in-place`) for its own worked examples (R7-E1…R7-E12). That table
+   is a **self-contained fixture set for `packages/engine`'s unit tests**, not a read of
+   `data/exercises/library` — its own main-lift rows already use different ids and shapes than
+   this library (`back-squat` vs. this ticket's `barbell-back-squat`, `biceps-curl` vs.
+   `dumbbell-bicep-curl`, `hanging-knee-raise` vs. `hanging-leg-raise`, a flat `equipment: dumbbell`
+   vs. this library's arrays, no `kind`/`bodyweight`/`level`-per-row-default distinction, etc.).
+   T-0201 (engine, not yet built) will construct `packages/engine`'s own in-memory fixtures from
+   that table; it does not load the real content library for its unit tests. This ticket's actual
+   warm-up rows therefore keep the ids and weights they already shipped in T-0103a
+   (`jumping-jacks`, `arm-circles`, `cat-cow`, `hip-circles`, all `kind: "warmup"`) rather than
+   being renamed to the `wu-*` ids above — renaming would only create the appearance of alignment
+   with a fixture table that was never meant to be read from this package, and the
+   content-curator's tool access in this pass has no file-delete/rename capability to safely retire
+   the old filenames alongside a rename in any case. `hip-circles` (glutes/quads, general-adjacent)
+   stands in for `engine-rules.md`'s `wu-bodyweight-squat`/`wu-leg-swing` pair; `jumping-jacks` and
+   `arm-circles` cover the "general" and "shoulder/chest" slots respectively; `cat-cow` covers
+   back/core. Content still meets `engine-rules.md` §7's *substance* (≥ 2 general moves, several
+   area-targeted moves spanning the primary areas the round-robin needs) — only the literal ids
+   differ from the L1 fixture table's illustrative names.
+   **Follow-up:** if T-0201 turns out to need the real content library's warm-up ids to match
+   `engine-rules.md`'s L1 table literally (rather than building its own fixtures), that is a
+   content-lane follow-up ticket, done by an agent with file rename/delete access, not a T-0103
+   in-place edit.
 
 ## Consequences
 - `schema.json` gains `kind`, `bodyweight`, `increment_kg`, `default_duration_s` and the

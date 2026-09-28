@@ -1,0 +1,23 @@
+{
+  "id": "overhead-press-barbell",
+  "name": "Overhead press (barbell)",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["barbell", "rack"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "shoulders": 1, "arms": 0.5 },
+  "instructions": [
+    "Hold the bar at shoulder height, hands just wider than shoulders.",
+    "Brace your core and press the bar straight overhead.",
+    "Lock your arms out at the top.",
+    "Lower the bar back to your shoulders with control."
+  ],
+  "cue": "Press straight up, lock out overhead",
+  "mistakes": ["Arching the lower back to press the bar up.", "Pressing the bar forward instead of straight up."],
+  "variants": ["dumbbell-shoulder-press", "machine-shoulder-press"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

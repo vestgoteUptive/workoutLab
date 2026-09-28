@@ -1,0 +1,23 @@
+{
+  "id": "leg-curl-machine",
+  "name": "Leg curl (machine)",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "hamstrings": 1 },
+  "instructions": [
+    "Lie face down with your ankles behind the pad.",
+    "Grip the side handles for support.",
+    "Curl your heels up toward your glutes.",
+    "Lower back down with control."
+  ],
+  "cue": "Curl the heels up, lower slowly",
+  "mistakes": ["Lifting the hips off the pad.", "Letting the weight drop quickly on the way down."],
+  "variants": ["romanian-deadlift-barbell", "romanian-deadlift-dumbbell", "cable-pull-through", "kettlebell-swing"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

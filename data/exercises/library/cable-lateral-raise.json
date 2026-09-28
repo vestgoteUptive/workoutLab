@@ -1,0 +1,23 @@
+{
+  "id": "cable-lateral-raise",
+  "name": "Cable lateral raise",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "shoulders": 1 },
+  "instructions": [
+    "Stand side-on to the low pulley and grip the handle.",
+    "Raise your arm out to the side to shoulder height.",
+    "Pause briefly at the top.",
+    "Lower back down with control."
+  ],
+  "cue": "Raise to shoulder height, control the return",
+  "mistakes": ["Turning the torso to help the lift.", "Letting the cable snap the arm back down."],
+  "variants": ["lateral-raise-dumbbell", "rear-delt-fly-dumbbell"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

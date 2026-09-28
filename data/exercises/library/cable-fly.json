@@ -1,0 +1,23 @@
+{
+  "id": "cable-fly",
+  "name": "Cable fly",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "chest": 1 },
+  "instructions": [
+    "Set both pulleys to chest height and grab a handle in each hand.",
+    "Step forward with a slight bend in your elbows.",
+    "Bring your hands together in front of your chest.",
+    "Return slowly until you feel a stretch."
+  ],
+  "cue": "Hands together, then open slowly",
+  "mistakes": ["Bending the elbows more as the set goes on.", "Letting the cables snap back on the return."],
+  "variants": ["dumbbell-fly"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

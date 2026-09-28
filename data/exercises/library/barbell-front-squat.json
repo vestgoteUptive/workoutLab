@@ -1,0 +1,23 @@
+{
+  "id": "barbell-front-squat",
+  "name": "Barbell front squat",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "advanced",
+  "equipment": ["barbell", "rack"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "quads": 1, "glutes": 0.5, "core": 0.5 },
+  "instructions": [
+    "Rest the bar across the front of your shoulders.",
+    "Keep your elbows lifted so the bar stays in place.",
+    "Bend your knees and hips to squat down.",
+    "Drive back up through your heels to standing."
+  ],
+  "cue": "Elbows up, sit down tall",
+  "mistakes": ["Letting the elbows drop, which drops the bar.", "Leaning forward at the bottom."],
+  "variants": ["barbell-back-squat", "goblet-squat-dumbbell", "leg-press-machine", "leg-extension-machine"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

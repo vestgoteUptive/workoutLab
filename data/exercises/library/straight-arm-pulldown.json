@@ -1,0 +1,23 @@
+{
+  "id": "straight-arm-pulldown",
+  "name": "Straight-arm pulldown",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "back": 1 },
+  "instructions": [
+    "Stand facing the cable with the bar set high.",
+    "Keep your arms straight and grip the bar wide.",
+    "Pull the bar down to your thighs.",
+    "Let it rise back up with control."
+  ],
+  "cue": "Straight arms, pull to the thighs",
+  "mistakes": ["Bending the elbows to push more weight.", "Leaning the whole body back to help the pull."],
+  "variants": ["pull-up"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -162,6 +162,10 @@ describe("rule-11 balance output", () => {
         level: "beginner",
         equipment: [],
         areas: { back: 1 },
+        timed: false,
+        defaultDurationS: null,
+        incrementKg: 5,
+        externalLoad: true,
       });
       const twinsHistory = [
         ...setsOn(2, "zz-row", "2026-09-25"),

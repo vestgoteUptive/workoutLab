@@ -1,0 +1,23 @@
+{
+  "id": "overhead-tricep-extension-dumbbell",
+  "name": "Overhead tricep extension",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["dumbbell", "bench"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "arms": 1 },
+  "instructions": [
+    "Sit tall and hold one dumbbell with both hands overhead.",
+    "Keep your elbows pointing forward, close to your head.",
+    "Lower the dumbbell behind your head.",
+    "Straighten your arms back up to the start."
+  ],
+  "cue": "Elbows still, lower behind the head",
+  "mistakes": ["Letting the elbows flare out to the sides.", "Arching the back to lower the weight further."],
+  "variants": ["cable-tricep-pushdown", "machine-tricep-extension"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

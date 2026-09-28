@@ -1,0 +1,23 @@
+{
+  "id": "kettlebell-swing",
+  "name": "Kettlebell swing",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["kettlebell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "hamstrings": 1, "glutes": 0.5, "core": 0.5 },
+  "instructions": [
+    "Stand with the kettlebell on the floor in front of you.",
+    "Hinge at the hips and grip the handle with both hands.",
+    "Drive your hips forward to swing the kettlebell to chest height.",
+    "Let it swing back between your legs and repeat."
+  ],
+  "cue": "Hinge, then snap the hips forward",
+  "mistakes": ["Squatting instead of hinging at the hips.", "Using the arms to lift instead of the hip drive."],
+  "variants": ["romanian-deadlift-barbell", "romanian-deadlift-dumbbell", "cable-pull-through", "leg-curl-machine"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

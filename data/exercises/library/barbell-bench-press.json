@@ -1,0 +1,23 @@
+{
+  "id": "barbell-bench-press",
+  "name": "Barbell bench press",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["barbell", "bench", "rack"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "chest": 1, "shoulders": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Lie on the bench with your eyes under the bar.",
+    "Grip the bar just wider than shoulder width.",
+    "Lower the bar to your mid-chest with control.",
+    "Press the bar back up to lockout."
+  ],
+  "cue": "Bar to chest, drive it back up",
+  "mistakes": ["Bouncing the bar off the chest.", "Flaring the elbows out to 90 degrees."],
+  "variants": ["dumbbell-bench-press", "band-chest-press"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

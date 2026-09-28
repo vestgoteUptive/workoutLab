@@ -1,0 +1,22 @@
+{
+  "id": "pull-up",
+  "name": "Pull-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "advanced",
+  "equipment": ["pullup-bar"],
+  "bodyweight": true,
+  "areas": { "back": 1, "arms": 0.5 },
+  "instructions": [
+    "Hang from the bar with hands just wider than shoulder width.",
+    "Pull your chin up over the bar.",
+    "Lower back down until your arms are straight.",
+    "Repeat without swinging."
+  ],
+  "cue": "Chin over the bar, lower fully",
+  "mistakes": ["Using momentum to swing up.", "Stopping short of full arm extension."],
+  "variants": ["straight-arm-pulldown"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

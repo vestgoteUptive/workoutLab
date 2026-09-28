@@ -12,7 +12,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0003 | `packages/design-tokens` from the design system + coverage ramp (D-0003); lint rule: no hex values outside tokens | design | T-0002 | done | wl-design |
 | T-0004 | CI checks: docs check (UF IDs exist in v2 flows, no v1 labels), duplicate D-NNNN id check, placeholder-test check | infra | T-0002 | done | wl-build-infra |
 | T-0005 | Spec touch-ups per D-0015: NFR-SYNC-2 wording (edited_at/deleted_at), UF-11.1 clamped proposal copy, UF-10.2 "Recovering" = ≥ 6 weighted hard sets in 48 h | product | T-0001 | done | wl-spec |
-| T-0006 | CI hygiene follow-ups: gen:api drift job (`pnpm --filter @workoutlab/shared gen:api` + git diff); regenerate packages/shared/src/database.gen.ts via supabase gen types in the supabase job and fail on drift (D-0037 §10); pgTAP column-drift check vs docs/data-model.md; root ESLint over .github/scripts in CI; v1-label regex word boundary; resolveBranch honours root; flag D-NNNN.md without slug; fix D-0032 context + D-0023 pointer | infra | T-0004 | todo | wl-build-infra |
+| T-0006 | CI hygiene follow-ups: check turbo hash inputs include untracked data/exercises files and no cross-worktree cache replay; gen:api drift job (`pnpm --filter @workoutlab/shared gen:api` + git diff); regenerate packages/shared/src/database.gen.ts via supabase gen types in the supabase job and fail on drift (D-0037 §10); pgTAP column-drift check vs docs/data-model.md; root ESLint over .github/scripts in CI; v1-label regex word boundary; resolveBranch honours root; flag D-NNNN.md without slug; fix D-0032 context + D-0023 pointer | infra | T-0004 | todo | wl-build-infra |
+| T-0007 | CI flakes: serial turbo unit tests in checks job; pnpm install in supabase job (PR #4, built by orchestrator) | infra | T-0004 | doing | orchestrator |
 
 **Follow-ups folded into existing tickets (from T-0001/T-0002, 2026-09-27)** — the groomer copies these into the ticket files:
 - T-0003: C-01 legend + coverage tokens on the D-0013 steps (0 / <0.33 / <0.66 / <1 / ≥1).
@@ -35,7 +36,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0203 (from T-0100a): enable Google in supabase/config.toml via env(); seed exercises 1:1 onto D-0029 columns.
 - T-0102 (from T-0100b): mirror D-0035 columns (exercises.kind/increment_kg/default_duration_s/external_load, sessions.warmup_in_budget/plan, session_sets.backoff) and routines/routine_items/plan_checkins; define SessionPlan JSON (items + startDeficits).
 - Engine (T-0200/T-0202): engine-rules.md rule 9 / F-profile: plan_updated_at → plan_changed_at (D-0035). → absorbed by T-0202 (D-0041). bodyweight = external_load false.
-- T-0103b (from T-0102 groom, D-0037 §11): validator requires default_duration_s when timed = true.
+- T-0103b (from T-0102 groom, D-0037 §11): validator requires default_duration_s when timed = true. (T-0201a review: a timed row with null duration is costed 45 s — T-0103c must add the invalid fixture.)
 - T-0103b (from T-0103a accept/review): positive schema fixture for a valid source:wger row; schema.test missing-license asserts params.missingProperty; D-0033 §7 wording (AC11–14 exercise-only; AC10/15/16/17 whole library); align warm-up ids/weights with engine-rules §7 (wu-cat-cow core 1/back .5, wu-arm-circle shoulders) or amend via decision; remove the barbell-back-squat skip guard in areas.test.ts.
 - Engine (from T-0200): fast-check devDependency for invariant tests (D-0036 §5, lockfile → infra); purity lint also catches globalThis.Date/Math; engine types move to @workoutlab/shared after T-0102a.
 - T-0102b (from T-0201 groom, D-0040 §4): WorkoutItem.backoff.weightKg nullable (first-time main lift has no weight). Engine reads only PlanCheckin.answeredAt and a CheckinProfile subset (D-0041 §2).
@@ -44,6 +45,11 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0308 (from T-0202 groom): build CheckinSession[] with checkinSessions(sessions ∪ offline queue); 'First check-in on {nextCheckinDate}' when periods is empty.
 - T-0102b (from T-0102a review): gen:api must run on all Node 22 (--experimental-strip-types or tsx); declare prettier as a devDependency of packages/shared or record hoisting in D-0039 §6.
 - Engine (from T-0102a): switch packages/engine/src/types.ts to @workoutlab/shared types (coverageStep number vs 0–4 literal; equipment string[]; D-0039).
+- T-0203 (TR-0016 → D-0044): seed exercises.external_load = !bodyweight on every row (never the column default); tests after db reset: every file's external_load = !bodyweight, push-up/plank false, barbell-back-squat true, all warm-ups false, count(false) = count(bodyweight:true).
+- T-0102b or a data follow-up (D-0044 §5): mapper case external_load:false → externalLoad:false (no inversion); note 'Seeded as NOT bodyweight (D-0044)' on the external_load row in docs/data-model.md.
+- T-0300 (from TR-0022): ticket text still says `idb` — D-0045 §13 wins: Dexie; AC-C1 'a new Dexie instance on the same database name'; AC-B5: signed out, /welcome/goal renders without redirect. T-0301: nest UF-01.2–01.4 under /welcome/*.
+- T-0300 groom follow-ups: CI job for apps/web test:e2e + check:size (→ T-0006); Lighthouse CI on UF-02.1 (→ T-0402); T-0404 magic-link email includes the 6-digit {{ .Token }}; T-0310 clears IndexedDB queue + caches on account deletion; C-02 tab bar spec (design); rejected-set review UX (Phase 5 idea).
+- T-0309 groom follow-ups: CI job for landing test:browser (→ T-0006/T-0402); UF-01.5 links to /privacy/; T-0406 reviews privacy.ts (security text wins).
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
@@ -55,15 +61,16 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0102a | OpenAPI v1 (3 Edge Function paths) + API/engine types in packages/shared (D-0037, AC1–14) | data | T-0100a, T-0101 | done | wl-build-data |
 | T-0102b | DB types, parseSessionPlan, row mappers, migration 3 (priority_areas array_lower = 1) (AC15–20) | data | T-0102a, T-0100b | doing | wl-build-data |
 | T-0103a | Exercise library part a: @workoutlab/exercises package, schema + tests, bodyweight exercises (D-0022) | content | T-0002 | done | wl-build-content |
-| T-0103b | Exercise library part b: dumbbell + full-gym exercises to 72–96 total (AC10–13 for all options) | content | T-0103a | doing | wl-build-content |
+| T-0103b | Exercise library part b: dumbbell + full-gym exercises to 72–96 total (AC10–13 for all options) | content | T-0103a | done | wl-build-content |
+| T-0103c | Library test hardening: invalid fixture timed-without-duration → required/missingProperty default_duration_s; optional warm-up id rename to engine-rules §7 wu-* ids (D-0033 §9) | content | T-0103b | todo | wl-build-content |
 
 ## Phase 2 — Core
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0200 | Engine: rules 1–6 (mapping, hard sets, window, targets, deficit, recovery) + balance | engine | T-0101, T-0004 | done | wl-build-engine |
 | T-0201 | Engine: time-budget selection, warm-up, energy, time check (rules 7, 8, 10) | engine | T-0200 | split → T-0201a, T-0201b (D-0040 §12) | wl-build-engine |
-| T-0201a | Engine: eligibility, selection + main lift, warm-up, reasons, output shape (rule 7.1–7.3, 10; AC1–24) | engine | T-0200 | doing | wl-build-engine |
-| T-0201b | Engine: energy Low/High + time check UF-09.8 (rules 7.4, 8; AC25–36) | engine | T-0201a | todo | wl-build-engine |
+| T-0201a | Engine: eligibility, selection + main lift, warm-up, reasons, output shape (rule 7.1–7.3, 10; AC1–24) | engine | T-0200 | done | wl-build-engine |
+| T-0201b | Engine: energy Low/High + time check UF-09.8 (rules 7.4, 8; AC25–36) | engine | T-0201a | doing | wl-build-engine |
 | T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | ready | wl-build-engine |
 | T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201a | todo | wl-build-backend |
 | T-0204 | Engine: swap ranking + deterministic shuffle (rules 12–13) | engine | T-0200 | todo | wl-build-engine |
@@ -72,7 +79,11 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 3 — App
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0300 | PWA shell: routing, auth (magic link), offline set queue, C-01 body map, C-02 tab bar | web-shell | T-0002, T-0003, T-0100a | todo | wl-build-web |
+| T-0300 | PWA shell: routing, auth (magic link), offline set queue, C-01 body map, C-02 tab bar | web-shell | T-0002, T-0003, T-0100a | split → T-0300a, T-0300b, T-0300c, T-0300d (D-0045) | wl-build-web |
+| T-0300a | PWA shell: routes, tab bar C-02, tokens.css, manifest/icons from tokens, placeholder removed (AC-A*) | web-shell | T-0002, T-0003, T-0102a | ready | wl-build-web |
+| T-0300b | Auth: magic link + 6-digit code, guard (/welcome/* public, D-0014), callback (AC-B*) | web-shell | T-0300a | todo | wl-build-web |
+| T-0300c | Offline set queue (Dexie per D-0001/TR-0022), sync, engine input with pending rows (AC-C*) | web-shell | T-0300b, T-0102b | todo | wl-build-web |
+| T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | todo | wl-build-web |
 | T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201a | todo | wl-build-web |
 | T-0302 | UF-02 Today + workout preview | web-feature:UF-02 | T-0300, T-0203 | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203 | todo | wl-build-web |
@@ -81,7 +92,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0306 | UF-04 Library + UF-05 in-workout swap | web-feature:UF-04 | T-0300, T-0203, T-0204 | todo | wl-build-web |
 | T-0307 | UF-06 Progress + UF-10 Balance | web-feature:UF-06 | T-0300, T-0203 | todo | wl-build-web |
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | todo | wl-build-web |
-| T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | todo | wl-design → wl-build-web |
+| T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
+| T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | doing | wl-design |
+| T-0309b | Landing build: static Astro page, no JS, tokens, privacy + 404 pages, placeholder removed (AC8–24) | landing | T-0309a | todo | wl-build-web |
 | T-0310 | Account settings: JSON export (NFR-PRIV-4) and in-app account deletion (NFR-PRIV-5) | web-shell | T-0300 | todo | wl-build-web |
 
 ## Phase 4 — Ship

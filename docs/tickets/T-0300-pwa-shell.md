@@ -1,0 +1,124 @@
+---
+id: T-0300
+title: PWA shell for apps/web — Vite PWA + tokens, routing, C-02 tab bar, magic-link auth, offline set queue + engine history feed, C-01 body map
+lane: web-shell
+screens: [UF-01.1, UF-01.5, UF-02.1, UF-04.1, UF-04.2, UF-06.1, UF-08.1, UF-09.*, UF-10.1, UF-10.2, UF-11.2]
+decisions: [D-0001, D-0002, D-0003, D-0011, D-0013, D-0014, D-0015, D-0017, D-0019, D-0020, D-0023, D-0031, D-0034, D-0037, D-0045]
+deps: [T-0002, T-0003, T-0100a, T-0102a]
+status: ready
+---
+<!-- Groomed 2026-09-28 by product-owner. Build flow: wl-build-web. Too big for one day: split into T-0300a–d (D-0045 §1). ACs are tagged [a]–[d]. -->
+
+## Why
+`apps/web` is a bootstrap stub that holds one `@placeholder T-0300` test (D-0016, D-0023). Every web-feature ticket (T-0301…T-0310) needs the same base: a PWA that opens with no network (NFR-OFF-1), routes by v2 screen ID (D-0002), sign-in by magic link (D-0014, D-0011), a set queue that never loses a set and follows the D-0015 upsert, one way to hand the engine history plus queued sets (D-0034 §3), and the shared components C-01 Body map and C-02 Tab bar (`Design-docs/docs/product/user-flows.md`). Colours and fonts come only from `@workoutlab/design-tokens` (D-0019). The shell has to protect principle 1 (no chrome in UF-08/UF-09) and principle 5 (nothing blocks the first render of UF-01.1).
+
+**Folded-in follow-ups (board, Phase 0):**
+- Queued sets carry `client_id` + `edited_at`, and deletes are tombstones through the same upsert (D-0015): AC-C1–C4.
+- Queued offline sets go to the engine with `pending: true` after the server rows, covering ≥ 56 local days (D-0034 §3): AC-C13–C15.
+- Import `@workoutlab/design-tokens/tokens.css`: AC-A2.
+- The PWA manifest theme/background colours and the favicon colours are generated from tokens at build time, and `wl-check-colours` scans `public/`: AC-A3, AC-A4.
+- C-01 legend from `coverageLegend`/`attentionLegend`, with numeric labels (NFR-A11Y-3), per `Design-docs/docs/design/components/c-01-body-map.md`: AC-D1–D9.
+- Replace the `@placeholder T-0300` test (D-0023): AC-A1.
+- Use the shared types from `@workoutlab/shared` (T-0102a: `HistorySet`, `AreaBalance`, `BalanceResult`, `Area`, `AREAS`). T-0300c also uses T-0102b's `toHistorySet`/`toLibraryExercise`/`toAreaTarget` and DB types.
+
+**NFRs owned here** (`docs/specs/non-functional.md`): OFF-1 (AC-A5, AC-C20), OFF-2 queue part (AC-C1), OFF-4 (AC-C8, C9, C12), OFF-5 (AC-C18), OFF-6 (AC-C19), SYNC-2 queue part (AC-C2–C4), SYNC-3 (AC-C17), PERF-1 budget file (AC-A12), PERF-2 (AC-A11), A11Y-1/2 for shell routes (AC-A13, AC-D6, AC-D10), A11Y-3 (AC-D3), I18N-1 (AC-A8), I18N-2 (AC-A9), AN-1 (AC-A10).
+
+## Split (D-0045 §1): the orchestrator edits the board
+Keep `T-0300` as the parent row with status `split → T-0300a, T-0300b, T-0300c, T-0300d`, the TR-0015 pattern. The marker stays `@placeholder T-0300`, which is valid while the parent isn't `done`. T-0300a deletes it (AC-A1). Mark the parent `done` once all four children are done.
+
+| Child | Scope | Deps | Status | ~Size |
+|---|---|---|---|---|
+| T-0300a | Shell: Vite PWA + SW, tokens.css, manifest/icons, routes + stubs, C-02, i18n + Intl helpers, CSP, size budget, Playwright wiring | T-0002, T-0003, T-0102a | **ready** | 1 day |
+| T-0300b | Auth: magic link + 6-digit code, callback, guard, stale session | T-0300a | todo | ½ day |
+| T-0300c | Offline store, set/session queue, sync, 56-day history cache, engine feed, offline status | T-0300b, T-0102b | todo | 1 day |
+| T-0300d | C-01 body map + legend | T-0300a | todo (can run parallel to b/c) | ½ day |
+
+## Scope
+- In:
+  - [a] `vite-plugin-pwa` (precache the shell, `navigateFallback: /index.html`), `react-router`, lazy routes per D-0045 §2, flow stubs, C-02 (D-0045 §3), `main.tsx` importing `@workoutlab/design-tokens/tokens.css`, manifest + icons from tokens (D-0045 §8), the i18n catalogue + lint rule (D-0045 §12), `lib/format` Intl helpers, a CSP meta tag, `check:size`, `lighthouserc.json`, Playwright + axe wiring in `tests/e2e`.
+  - [b] `lib/auth`: the supabase client from env, `requestMagicLink`, `verifyCode`, `/auth/callback`, `useAuth()` (`signed-out | signed-in | stale`), the route guard, `signOut`, and a bare `/account` form (email + code) that T-0301 replaces with the designed UF-01.5.
+  - [c] `lib/offline` (IndexedDB via `idb`): the queue (`recordSet`, `editSet`, `deleteSet`, `upsertSession`), `flush`, triggers, `refreshHistory`, `loadEngineHistory`, the library/targets/profile cache, `ensurePersistentStorage`, and `components/offline-status`.
+  - [d] `components/body-map` (C-01 `compact` + `full`, legend) and the import restriction (D-0045 §4).
+- Out: the designed UF-01.x screens and the Google button (T-0301); UF-02.1 content (T-0302); starting and finishing sessions and the NFR-OFF-2 e2e (T-0304); UF-10 rows (T-0307); account deletion and queue wipe (T-0310); self-hosted fonts (design follow-up, the stacks fall back); CI jobs for e2e/Lighthouse/size (infra follow-ups); any change to `docs/data-model.md`, `api/openapi.yaml`, `docs/engine-rules.md` or `tokens.json`.
+
+### Edge cases that are in scope
+- **Offline:** a cold start with no network renders the shell (AC-A5) and, when signed in, UF-02.1 with cached data (AC-C20). An expired token while offline keeps the user in the app (AC-B6). Sets queue durably (AC-C1), survive 10 days offline (AC-C9), and flush on `online`/sign-in (AC-C8). Offline status per NFR-OFF-6 (AC-C19). C-01 renders with bundled tokens (AC-D8).
+- **Time running out:** an expired or used magic link shows "This link has expired. Send a new one." with the email kept (AC-B4). A token that expires mid-workout never redirects or shows a banner during `/session/*` (AC-B7, principle 1).
+- **Zero history:** the feed returns `[]`, `balance()` gives 9 zero areas (AC-C15), and C-01 shows "0 / target" plus the legend (AC-D8).
+- **Returning after 10 days off:** sets queued 10 days ago still flush and still reach the engine (AC-C9). The 56-day fetch window is computed in local days across the DST change (AC-A9, AC-C13). A refresh token that fails after the break goes to `/welcome` → UF-01.5 without losing the queue (AC-B6, AC-C12).
+
+## Acceptance criteria
+Each AC gets at least one automated test: Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/**/*.test.ts(x)`, and Playwright (`tests/e2e/*.spec.ts`, `pnpm --filter @workoutlab/web test:e2e`) where tagged **e2e**. Supabase is always mocked (a supabase-js spy in unit tests, `page.route` in e2e).
+
+### T-0300a Shell
+- **AC-A1 (placeholder gone, D-0023)** Given the T-0300a branch, When `node .github/scripts/check-placeholder-tests.mjs` runs, Then it exits 0, no file under `apps/web` contains `@placeholder`, and `src/app/App.test.tsx` asserts AC-A6 behaviour instead of the "workout LAB" text.
+- **AC-A2 (tokens.css)** Given a clean `pnpm --filter @workoutlab/web build`, Then the emitted CSS in `dist/assets/*.css` defines `--wl-color-bg` and `--wl-color-coverage-4`. `src/main.tsx` imports `@workoutlab/design-tokens/tokens.css`, and `body` uses `background: var(--wl-color-bg); color: var(--wl-color-text)`.
+- **AC-A3 (manifest + icons from tokens)** Given the build, Then `dist/manifest.webmanifest` has `name` "workout LAB", `display` "standalone", `start_url` "/", and `theme_color` = `background_color` = `tokens.color.bg` (the test reads the value from `@workoutlab/design-tokens`, not a literal). `icons` include 192 × 192 and 512 × 512 PNGs plus a 512 `purpose: "maskable"` PNG, and every file exists with those pixel sizes. `dist/index.html` has `<meta name="theme-color" content="<tokens.color.bg>">`. Every `fill`/`stroke` value in `dist/favicon.svg` is in {`tokens.color.bg`, `tokens.color.accent`}.
+- **AC-A4 (no raw colours in source)** When `pnpm --filter @workoutlab/web lint` runs, Then it exits 0 (ESLint + `wl-check-colours .`, which scans `public/` and `index.html`). A test copies `public/` to a temp dir, adds `x.webmanifest` containing `"theme_color": "#121210"`, runs `wl-check-colours` on it, and gets exit 1.
+- **AC-A5 (offline shell, NFR-OFF-1 part, e2e)** Given `vite preview`, a signed-out user and one online visit to `/welcome`, When the context goes offline and reloads `/welcome`, Then `[data-screen-id="UF-01.1"]` is visible within 3 s. `dist/sw.js` precaches `index.html`, every entry JS/CSS asset, the manifest and the icons.
+- **AC-A6 (route table, D-0045 §2)** Given the router rendered at each path in a table test: `/`→UF-02.1, `/welcome`→UF-01.1, `/account`→UF-01.5, `/library`→UF-04.1, `/library/back-squat`→UF-04.2, `/progress`→UF-06.1, `/balance`→UF-10.1, `/balance/hamstrings`→UF-10.2, `/plan`→UF-11.2, `/session/setup`→UF-08.1, `/session/0b9e…`→UF-09 host. Then an element with that `data-screen-id` renders. `/nope` ends at `/`, and `/balance/neck` ends at `/balance`. Each route module is loaded lazily (a separate chunk in the build manifest).
+- **AC-A7 (C-02 tab bar, principle 1)** Given `/`, Then `nav[aria-label="Main"]` holds exactly 4 links in order with visible text Today, Library, Progress, Plan → `/`, `/library`, `/progress`, `/plan`. The link for the current route has `aria-current="page"`, and on `/balance/core` it's Progress. Given `/welcome`, `/account`, `/auth/callback`, `/session/setup` or `/session/<id>`, Then no `nav` landmark is in the DOM. **e2e** at a 360 × 640 viewport: every tab's bounding box is ≥ 44 × 44 px (NFR-A11Y-2), and Tab reaches the four links in order and Enter navigates.
+- **AC-A8 (i18n lint, NFR-I18N-1)** Given a fixture `.tsx` with `<p>Hello</p>`, When ESLint runs with `apps/web/eslint.config.mjs`, Then exactly one `react/jsx-no-literals` error is reported. `<span>·</span>` and `<span>×</span>` report none. Every user-facing string in `apps/web/src` comes from `src/lib/i18n/en.ts`, which also holds the C-01 and offline strings (D-0045 §12).
+- **AC-A9 (Intl helpers, NFR-I18N-2)** `localDate("2026-10-25T00:30:00Z", "Europe/Stockholm")` = `"2026-10-25"` and `(…, "America/New_York")` = `"2026-10-24"`. `localDate("2026-11-02T03:00:00Z", "America/New_York")` = `"2026-11-01"`. `formatTime("2026-09-28T12:05:00Z", {locale: "en-GB", timeZone: "Europe/Stockholm"})` = `"14:05"`, and `{locale: "en-US", timeZone: "America/New_York"}` = `"8:05 AM"` (whitespace normalised). `windowStartInstant("2026-10-26T08:00:00Z", "Europe/Stockholm", 56)` = `"2026-08-31T22:00:00.000Z"` (local 2026-09-01 00:00 CEST, across the 25 Oct DST end). Built only on `Intl`: `package.json` has no date library.
+- **AC-A10 (CSP, NFR-AN-1)** Given a build with `VITE_SUPABASE_URL=https://abc.supabase.co`, Then `dist/index.html` has a CSP meta tag with `default-src 'self'` and `connect-src 'self' https://abc.supabase.co`, and without `unsafe-eval`. A production build with `VITE_SUPABASE_URL` unset fails with a message that names the variable. **e2e**: while walking the four tabs, every request goes to the preview origin or the configured Supabase origin.
+- **AC-A11 (bundle budget, NFR-PERF-2)** `pnpm --filter @workoutlab/web check:size` passes on the build: the initial JS (entry + its static imports) is ≤ 200 KB gzip and each lazy route chunk is ≤ 100 KB gzip. Its unit test fails on a fixture dist with a 201 KB gzip entry and names the file.
+- **AC-A12 (Lighthouse budget file, NFR-PERF-1)** `apps/web/lighthouserc.json` asserts, on `/` with the mobile preset: `largest-contentful-paint` ≤ 2500, `cumulative-layout-shift` ≤ 0.1 and `total-blocking-time` ≤ 200. A unit test reads the file and checks those three values. CI execution is T-0402/infra.
+- **AC-A13 (axe, NFR-A11Y-1, e2e)** For `/welcome`, `/`, `/library`, `/progress`, `/balance` and `/plan` (stubs + C-02), `@axe-core/playwright` reports 0 violations with impact `serious` or `critical`.
+
+### T-0300b Auth
+- **AC-B1 (client config)** `lib/auth/client.ts` creates the client with `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY`, `auth: {flowType: "pkce", persistSession: true, autoRefreshToken: true, detectSessionInUrl: false}` (a spy on `createClient`). No test output or log line contains the key value.
+- **AC-B2 (magic link)** `requestMagicLink(" Ada@Example.com ")` calls `signInWithOtp({email: "ada@example.com", options: {emailRedirectTo: "<origin>/auth/callback", shouldCreateUser: true}})` and returns `{ok: true}`. `"ada@"` → `{ok: false, error: "invalid_email"}` with no call. With `navigator.onLine = false` → `{ok: false, error: "offline"}` with no call. A 429 → `{ok: false, error: "rate_limited"}`.
+- **AC-B3 (6-digit code, D-0045 §5)** `verifyCode("ada@example.com", "123456")` calls `verifyOtp({email, token: "123456", type: "email"})`. `"12345"` and `"12a456"` → `{ok: false, error: "invalid_code"}` with no call. The `/account` form offers both "Send link" and "Enter code".
+- **AC-B4 (callback)** `/auth/callback?code=abc` calls `exchangeCodeForSession("abc")` and then navigates to the path stored by `rememberReturnTo()`, or `/` when none is stored. `/auth/callback?error_code=otp_expired`, or an exchange that fails as already used, shows the catalogue text "This link has expired. Send a new one." and a button to `/account` with the last email pre-filled.
+- **AC-B5 (guard)** Signed out: `/`, `/library`, `/progress`, `/balance`, `/plan` and `/session/setup` redirect to `/welcome`, while `/welcome`, `/account` and `/auth/callback` render. Signed in: `/welcome` and `/account` redirect to `/`.
+- **AC-B6 (principle 5 + stale session)** Given no stored session and a `fetch` that never resolves, When the app starts at `/`, Then UF-01.1 is in the DOM on the first committed render after the redirect, with no network promise awaited before it. Given a stored session with an expired access token and `navigator.onLine = false`, Then `/` renders UF-02.1 and `useAuth().status` is `"stale"`. Given online and a refresh answered by `400 invalid_grant`, Then the status is `"signed-out"` and the app redirects to `/welcome`.
+- **AC-B7 (no auth interruption mid-workout)** Given `/session/<id>` and a refresh answered by `400 invalid_grant`, Then the location stays `/session/<id>` and no dialog, banner or `role="alert"` appears. When the user navigates to `/`, Then the app redirects to `/account` with the return-to path `/`.
+
+### T-0300c Offline queue, sync, engine feed
+- **AC-C1 (record set, D-0015, NFR-OFF-2 part)** With the clock at `2026-09-28T10:00:00.000Z` and user U, `recordSet({sessionId: "S1", exerciseId: "back-squat", setIndex: 0, kind: "reps", reps: 8, weightKg: 60, isWarmup: false, backoff: false})` resolves to an entry with a UUID v4 `client_id`, `completed_at` = `edited_at` = `"2026-09-28T10:00:00.000Z"`, `deleted_at: null` and `user_id: U`. The promise resolves only after the IDB transaction commits: a fresh `openDB` right after the resolve sees the row.
+- **AC-C2 (edit bumps only edited_at)** Given queued C1 from AC-C1, When `editSet(C1, {reps: 7})` runs at 10:03, Then the queue holds exactly one entry for C1, with `reps` 7, `completed_at` still 10:00 and `edited_at` 10:03. Given a set that has synced (only in the history cache), `editSet` enqueues the full row with the cached `completed_at` and a new `edited_at`.
+- **AC-C3 (delete = tombstone)** `deleteSet(C1)` at 10:04 → the entry has `deleted_at` = `edited_at` = 10:04 and every other field is unchanged. On flush it goes through `from("session_sets").upsert(rows, {onConflict: "user_id,client_id"})`. `.delete()` is never called on any table (spy).
+- **AC-C4 (monotonic edit clock)** Given C1 with `edited_at` `10:05:00.000Z` and the device clock at `10:04:00.000Z`, When `editSet` runs, Then `edited_at` = `"2026-09-28T10:05:00.001Z"`.
+- **AC-C5 (flush order + batching)** Given queued session S1 and sets for S1, When `flush()` runs online, Then `from("sessions").upsert([S1], {onConflict: "id"})` resolves before the first `session_sets` upsert. Sets are sent sorted by `edited_at` ascending. 250 queued sets → 3 calls of 100, 100 and 50 rows.
+- **AC-C6 (in-flight edit survives)** Given C1 sent at `edited_at` 10:03 and `editSet(C1)` at 10:04 before the response, When the upsert succeeds, Then C1 is still queued with `edited_at` 10:04, and the next flush sends it.
+- **AC-C7 (FK not yet there)** A `23503` on a set batch keeps every entry in that batch. The next flush sends sessions first again.
+- **AC-C8 (token expiry, NFR-OFF-4)** A `401`/`PGRST301` keeps the queue count unchanged, and no retry fires on the backoff timer. When `onAuthStateChange` emits `SIGNED_IN` or `TOKEN_REFRESHED`, Then a flush runs automatically, the queue is empty, and the server spy received every row.
+- **AC-C9 (10 days offline)** Given 40 sets queued with `completed_at` on 2026-09-18 and now 2026-09-28, Then all 40 are still in IDB (no TTL). When `window` fires `online`, Then all 40 are upserted and the queue is empty.
+- **AC-C10 (backoff)** A network `TypeError` schedules retries at 2, 4, 8, 16 … s, capped at 300 s (fake timers). A success resets the delay to 2 s. An `online` event flushes immediately.
+- **AC-C11 (rejected row kept)** Given a batch of 3 where the server answers `23514` for the batch and then, row by row, `23514` only for the second row, Then rows 1 and 3 are synced, row 2 is in IDB with `status: "rejected"`, it isn't sent by later flushes, `syncStatus().rejected` = 1, and it still appears in `loadEngineHistory()` with `pending: true`.
+- **AC-C12 (user isolation, sign-out)** Given 2 queued sets for user A, When A signs out and B signs in, Then B's flush sends none of A's rows, B's `loadEngineHistory()` contains none of them, and A's 2 rows are still in IDB. When A signs in again, Then they flush.
+- **AC-C13 (56-day history fetch, D-0034 §3)** With now `2026-10-26T08:00:00Z` and tz `Europe/Stockholm`, `refreshHistory()` queries `from("session_sets_live")…gte("completed_at", "2026-08-31T22:00:00.000Z")`, maps the rows with `toHistorySet`, stores them in the IDB cache and sets `lastSyncedAt` to now.
+- **AC-C14 (engine feed order)** Given cached server rows [C1 (edited 10:00, reps 8), C2] and a queue [C1′ (edited 10:05, reps 5), C3 tombstone], `loadEngineHistory()` returns `[C1, C2, C1′, C3]`. C1 and C2 have no `pending` or `pending: false`, C1′ and C3 have `pending: true`, and every element validates as `HistorySet`.
+- **AC-C15 (through the real engine)** With `@workoutlab/engine` `balance()` and a library containing `back-squat` (quads 1): (a) a server C1 plus a queued tombstone of C1 with a newer `edited_at` → quads load 0. (b) A server C1 plus a queued tombstone of C1 with the **same** `edited_at` → quads load 1 (the server row wins, D-0034 §3). (c) No server rows and an empty queue → the feed is `[]` and all 9 areas have load 0.
+- **AC-C16 (library/targets/profile cache)** After one online `refreshAll()`, a start with `fetch` rejecting returns the cached `loadLibrary()` (mapped `LibraryExercise[]`), `loadTargets()` (9 `AreaTarget`) and the profile, with no network call awaited.
+- **AC-C17 (refetch after flush, NFR-SYNC-3)** A flush that sent ≥ 1 row triggers exactly one refetch each of history, targets and profile. A flush with an empty queue triggers none.
+- **AC-C18 (persist, NFR-OFF-5)** The first `upsertSession` with a non-null `ended_at` calls `navigator.storage.persist()` once. A second finished session, even after a reload (a flag in IDB), doesn't call it again. If `navigator.storage` is undefined, nothing throws.
+- **AC-C19 (offline status, NFR-OFF-6)** `<OfflineStatus variant="text">` offline with `lastSyncedAt` `2026-09-28T12:05:00Z` in en-GB / Europe/Stockholm reads "Offline · last synced 14:05". When nothing has synced yet, it reads "Offline · not synced yet". Online, it renders nothing. `variant="icon"` renders only an element with `aria-label="Offline"`, with no text node and no `role="alert"`/`banner`.
+- **AC-C20 (offline cold start, NFR-OFF-1, e2e)** Given an injected signed-in session and one online load with mocked Supabase returning 12 exercises, 9 targets and 5 sets, When the context goes offline and reloads `/`, Then `[data-screen-id="UF-02.1"]` is visible within 3 s, and IndexedDB holds 5 history rows and 12 exercises.
+
+### T-0300d C-01 Body map
+- **AC-D1 (fill from coverageStep only, principle 3)** For each `coverageStep` 0–4, the area's fill is `var(--wl-color-coverage-N)`. Given hamstrings `{load: 19.9, target: 20, coverageStep: 1}`, the fill is `coverage-1`: it isn't derived from load/target.
+- **AC-D2 (attention outline)** `needsAttention: true` draws a 2 px `var(--wl-color-warn)` stroke and leaves the fill unchanged, on `coverage-0` and on `coverage-4`. `false` draws no warn stroke.
+- **AC-D3 (numeric labels, NFR-A11Y-3)** All 9 areas show visible text `load / target`: 7.5/20 → "7.5 / 20", 8/20 → "8 / 20", 0/16 → "0 / 16", 7.25/20 → "7.3 / 20". This holds in both variants.
+- **AC-D4 (accessible name, full)** Hamstrings `{load: 12, target: 16, coverageStep: 3, needsAttention: true}` → a button named "Hamstrings, 12 of 16 hard sets, under target, needs attention". Chest `{0, 16, 0, false}` → "Chest, 0 of 16 hard sets, no hard sets".
+- **AC-D5 (navigation, D-0045 §4)** `full`: click, Enter or Space on hamstrings calls `onSelectArea("hamstrings")`, and inside the router it lands on `/balance/hamstrings` (UF-10.2). `compact`: the whole map is one link to `/balance` (UF-10.1), and the areas aren't in the tab order.
+- **AC-D6 (hit area, NFR-A11Y-2)** Every area button in `full` has a computed `min-width` and `min-height` ≥ 44px. The focus style is a 2 px `var(--wl-color-accent)` outline with offset 2 px, which isn't `warn`.
+- **AC-D7 (legend from tokens)** `role="list"` named "Coverage legend" holds 6 `listitem`s whose visible text equals `coverageLegend.map(e => e.label)` followed by `attentionLegend.label`, and whose accessible text is the `srLabel`. Swatches are `aria-hidden`. The last swatch has a transparent fill and a 2 px `warn` outline. A source test finds none of the legend strings as literals in `components/body-map/**`.
+- **AC-D8 (zero history + offline)** Given 9 areas with load 0, Then all fills are `coverage-0`, the labels read "0 / <target>", and the legend is shown. It renders the same with no network (tokens bundled, no fetch).
+- **AC-D9 (loading)** `loading` → 9 areas filled `var(--wl-color-surface-2)`, no numeric labels, the legend visible. Under `prefers-reduced-motion: reduce` (matchMedia mock), no element has an animation.
+- **AC-D10 (a11y + lint)** `vitest-axe` on `full` and `compact` with the zero, mixed and attention fixtures finds 0 violations. `pnpm --filter @workoutlab/web lint` is green (no raw colours).
+- **AC-D11 (not in a workout, principle 1)** ESLint on fixture files in `src/features/UF-09/`, `UF-08/` and `UF-03/` that import `components/body-map` reports a `no-restricted-imports` error. The same import from `src/features/UF-02/` reports none.
+
+## Paths you may change
+- web-shell lane: `apps/web/src/app/**`, `apps/web/src/components/**`, `apps/web/src/lib/**`, `apps/web/src/main.tsx`, `apps/web/*.*` (package.json, vite.config.ts, index.html, eslint.config.mjs, lighthouserc.json, tsconfig.json, vitest.setup.ts), `apps/web/public/**`.
+- **Extras, listed explicitly:**
+  - `apps/web/scripts/**` ([a]: `gen-icons.mjs`, `check-bundle-size.mjs` + tests).
+  - `apps/web/src/features/<flow>/index.tsx` stubs only, [a] (UF-01, UF-02, UF-04, UF-06, UF-08, UF-09, UF-10, UF-11). The feature tickets own them after this ticket. [d] may add ESLint fixture files under `apps/web/test/fixtures/**` instead of `src/features`.
+  - `tests/e2e/**` (qa lane): `playwright.config.ts`, `fixtures/` (the Supabase `page.route` mock, the session injection), `shell.spec.ts` ([a]), `auth.spec.ts` ([b]), `offline.spec.ts` ([c]).
+  - `pnpm-lock.yaml`, only through `pnpm install` run by the orchestrator (the T-0103a precedent). New devDependencies/dependencies of `apps/web`: `react-router`, `vite-plugin-pwa`, `@supabase/supabase-js`, `idb`, `@workoutlab/shared`, `@workoutlab/engine` (workspace), `@resvg/resvg-js`, `fake-indexeddb`, `eslint-plugin-react`, `vitest-axe`, `@playwright/test` and `@axe-core/playwright`.
+
+## Contract impact
+none. The queue uses the D-0015/D-0020 upsert exactly as `docs/data-model.md` states, and it reads `session_sets_live`. The engine is called with the D-0034/D-0037 `HistorySet` shape. Tokens are only read. The new product/web defaults are in D-0045 (`revisit`).
+
+## Definition of done
+Tests for every AC in the child pass · `pnpm -w typecheck lint test` green · `pnpm --filter @workoutlab/web test:e2e` green locally for the child's e2e ACs · `check:size` green · contracts unchanged · commit messages start with the child id (`T-0300a:` …) and cite screen IDs (for example `T-0300a UF-02.1: route table + C-02`).

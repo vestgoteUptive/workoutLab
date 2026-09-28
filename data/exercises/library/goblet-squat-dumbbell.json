@@ -1,0 +1,23 @@
+{
+  "id": "goblet-squat-dumbbell",
+  "name": "Goblet squat",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "quads": 1, "glutes": 0.5 },
+  "instructions": [
+    "Hold a dumbbell close to your chest with both hands.",
+    "Stand with feet shoulder width apart.",
+    "Bend your knees and hips to squat down between your thighs.",
+    "Drive back up to standing."
+  ],
+  "cue": "Squat between the knees, drive up",
+  "mistakes": ["Letting the heels lift off the floor.", "Leaning far forward as you descend."],
+  "variants": ["barbell-back-squat", "leg-press-machine", "barbell-front-squat", "leg-extension-machine"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}
