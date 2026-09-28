@@ -224,3 +224,18 @@ Tests for every AC pass: node:test and Deno unit locally, and every **(CI)** AC 
 orchestrator's draft PR, with the run URL in the result notes. `pnpm -w typecheck lint test` is green. `vendor.mjs --check` and
 `gen-seed.mjs --check` are clean. Contracts are unchanged. Commit messages start with `T-0203a:` / `T-0203b:` /
 `T-0203c:` and cite UF-08.1, UF-10.1 and UF-03.3 where relevant. Nothing is deployed and no hosted project is touched (D-0011).
+
+## Accept log
+- **2026-09-28, T-0203a attempt 3: done.** Branch `t/T-0203a-stack-seed` (draft PR #5). Attempt 2
+  (bf2d750) failed only because the AC3 psql call had no `-q`. Fixed by 3172e68 (`-X -q`, and the env-unquote sed
+  widened to `[A-Z0-9_]+`) and 733c09e (`supabase/tests/functions/deno.json` with
+  `nodeModulesDir: "none"`, passed as `--config` to `deno test`; ci-order.test.mjs matches). Both
+  commits stay inside the `supabase` CI job and `supabase/tests/**`. Green `supabase db tests` job:
+  https://github.com/vestgoteUptive/workoutLab/actions/runs/36459692591. That run covers AC3, AC4 and AC5 (Deno),
+  AC6 (pgTAP 013), AC7 (reapply no-op), AC8 (`supabase start` with `ci-placeholder`) and AC10 (order and green).
+  `typecheck / lint / unit test` is green too. Locally, node:test over `supabase/tests/scripts` passed
+  18/18 (AC1, AC2, the AC3 `''` escaping, AC8 config and secret scan, AC9 prod guard, AC10 order).
+  `playwright e2e` failed, which is the known T-0901 defect on main and outside this ticket.
+  Note: the AC10 `deno test` command now also carries `--config supabase/tests/functions/deno.json`,
+  `--allow-run=psql` and `--allow-write`. These are extra flags the AC3 round-trip and the Deno npm
+  resolution need, not a change to the required step order.
