@@ -1,0 +1,8 @@
+jobs:
+  e2e:
+    name: playwright e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pnpm --filter @workoutlab/web test:e2e
+        if: steps.has-e2e.outputs.present == 'true'

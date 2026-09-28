@@ -3,7 +3,7 @@ id: T-0901
 title: CI e2e job green again — pass the tests/e2e config and build web through turbo (^build)
 lane: infra
 screens: []                 # CI plumbing only; no screen changes
-decisions: [D-0001, D-0045]
+decisions: [D-0001, D-0045, D-0055]
 deps: [T-0300b]
 status: ready
 ---
@@ -39,7 +39,7 @@ Each criterion becomes at least one automated test. The repo-check test suite is
 - **AC4: a test asserts that the webServer command runs ^build.** Given a fixture config whose `webServer.command` is `pnpm --filter @workoutlab/web build && pnpm --filter @workoutlab/web preview`, when `check-e2e-wiring` runs against it, then it exits non-zero with a message saying the build skips `^build`. Given the real `tests/e2e/playwright.config.ts`, the check passes. The check reads the config as text or AST. It does not execute the build.
 - **AC5: a fresh clone passes locally.** Given `git clone --depth 1 file://<repo>` of the ticket branch, `pnpm install --frozen-lockfile`, `CI=true`, `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` unset, no `dist/` and no turbo cache, when the exact command from the CI e2e step runs, then it exits 0. Every spec under `tests/e2e/` passes, including `auth.spec.ts` from T-0300b, and no Vitest or node:test file is collected. The dev records the command, pass count and duration in the result `testsRun`.
 - **AC6: CI is green on a draft PR.** Given a draft PR from `t/T-0901-e2e-ci-config-and-turbo-build` to `main`, when the `CI` workflow runs on `pull_request`, then the `playwright e2e` job concludes `success` on its first attempt with no re-runs. Its log shows the Playwright specs executing, not a skipped `has-e2e` gate. `checks` and `supabase` stay green. The run URL goes in the result notes.
-- **AC7 (optional): report artifact on failure.** Given the e2e step fails, when the job finishes, then `tests/e2e/playwright-report` is uploaded as an artifact, via `actions/upload-artifact` with `if: failure()`. If implemented, `check-e2e-wiring` asserts that the upload step exists with `if: failure()`.
+- **AC7 (optional): report artifact on failure.** Given the e2e step fails, when the job finishes, then `playwright-report` (repo root — see D-0055: the html reporter has no `outputFolder` set and `tests/e2e/` has no `package.json`, so Playwright's default resolves upward to the repo root, not `tests/e2e/playwright-report`) is uploaded as an artifact, via `actions/upload-artifact` with `if: failure()` and `if-no-files-found: warn` (not `ignore`, so a wrong path surfaces instead of silently uploading nothing). If implemented, `check-e2e-wiring` asserts that the upload step exists with `if: failure()`.
 - **AC8: no forbidden workarounds.** Given the ticket branch, when `check-e2e-wiring` inspects the `e2e` job and `tests/e2e/playwright.config.ts`, then it fails if any of the following is present: `continue-on-error: true` on the Playwright step, a `--retries` flag, a `retries` value greater than 0 in the config under `CI`, or an `if:` on the Playwright step other than the existing `steps.has-e2e.outputs.present == 'true'` gate. A test covers each case with a failing fixture.
 
 ## Paths you may change
@@ -57,3 +57,5 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green (includes `pnpm t
 - **A draft PR is required.** T-0300a merged without a `pull_request` CI run, which is how this defect reached `main`. This ticket cannot be accepted without a green `pull_request` run of `playwright e2e` (AC6). The dev opens the draft PR from the ticket branch, the orchestrator or a human handles the push per `.squad/gates.md`, and no merge happens until the job is green.
 - **Ordering with T-0300b:** T-0300b is `doing` and also edits `tests/e2e/playwright.config.ts`. This ticket starts after T-0300b merges and applies the `webServer.command` fix on top of its version.
 - Diagnosis and reproduction table: `docs/ci/CI-T-0901-e2e-no-config-and-unbuilt-tokens.md`.
+
+- 2026-09-28 orchestrator: accept conditions met. The AC7 path was fixed (repo-root playwright-report, if-no-files-found: warn, per D-0055), and draft PR #7 run 36463832294 is green on its first attempt (playwright e2e, supabase db tests and checks all pass), which proves AC6.
