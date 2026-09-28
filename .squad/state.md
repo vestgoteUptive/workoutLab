@@ -13,8 +13,27 @@
 - **Rule: after editing anything in `agents/`, run `node scripts/sync-agents.mjs`.** A restart alone never picks up a new flow. AgentLab must then reread its editor config (restart the app, or press Refresh in Agents).
 - **This session's MCP connection is bound to the AgentLab process that was live at session start** (PID 83651 on 127.0.0.1:4780), so newly registered flows are not callable from here even after the app rereads them — a *Claude session* restart is needed for that. Until then, builds run as **sub-agents**, which is working well.
 - **Web builds should stay on sub-agents regardless:** 4 AgentLab web runs died on budget/time, and all 4 passed as Opus sub-agents.
-- Poll `get_run` with `waitSeconds ≤ 280`. Docker here cannot pull images, so Supabase stack tests run in GitHub CI on a draft PR.
+- Poll `get_run` with `waitSeconds ≤ 280`.
 - **Tooling:** `npx -y pnpm@10.28.2 …`.
+
+## Local Supabase stack — USE IT (verified 2026-09-28 21:50)
+**The long-standing "Docker here cannot pull images" note is STALE. Docker pulls fine.** Backend work no longer needs a draft PR to get real-stack feedback; a full run is ~3 s locally instead of a ~3 min CI round trip.
+
+Start it (the `-x` flags matter — plain `supabase start` FAILS here because the analytics and vector containers never go healthy):
+```
+npx -y supabase@latest start -x vector,logflare
+```
+Then export the env the test suites expect — they read `API_URL`/`DB_URL`, **not** `SUPABASE_URL`, so exporting the wrong names gives 20 confusing failures:
+```
+eval "$(npx -y supabase@latest status -o env | sed 's/^/export /')"
+```
+Verified green locally against it:
+- `npx -y supabase@latest test db` → **524 pgTAP tests pass in 3 s**, 13 files.
+- `deno test --config supabase/tests/functions/deno.json --allow-net --allow-env --allow-read --allow-write supabase/tests/functions/` → **64/64 in 3 s**. `--allow-write` is required or AC3's seed round-trip fails on a tmp write (that is a missing flag, not a defect).
+
+Local URLs: API `http://127.0.0.1:54321`, Studio `http://127.0.0.1:54323`, **Mailpit `http://127.0.0.1:54324`** (magic-link emails land there — that is how you sign in locally). The anon key and other values come from `supabase status -o env`; they are Supabase's standard local demo values, identical on every install, not secrets.
+
+For the web app, `apps/web/.env.local` needs `VITE_SUPABASE_URL=http://127.0.0.1:54321` and `VITE_SUPABASE_ANON_KEY=<ANON_KEY from status>`. Without it the dev server crashes — see T-0902.
 
 ## Traps that have already cost time
 - **8 of 13 roles pin `model: claude-opus-5-5`, which THIS subscription cannot access (404 `model_not_found`).** Affected: ci-investigator, code-reviewer, data-modeler, designer, engine-dev, product-owner, security-reviewer, triage. The T-0204/T-0205 groom died on this. Workaround in use: spawn the sub-agent with an explicit available model (`model: "opus"`), which overrides the role frontmatter. Earlier runs in this session only worked because no explicit model was passed and the Agent tool's default applied. **This also means AgentLab flows using these roles will 404 once flows are callable again** — the `model:` lines in `agents/roles/*.md` need updating to an available id (then `node scripts/sync-agents.mjs`). Needs a human decision on which model to standardise on: H-11.
