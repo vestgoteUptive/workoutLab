@@ -1,0 +1,20 @@
+/* Offline status styling (AC-C19, NFR-OFF-6, D-0045 §9). Colours come only from
+   @workoutlab/design-tokens (D-0019): no hex literals, no new fonts.
+
+   The `icon` variant is an empty element carrying only `aria-label="Offline"` (AC-C19: no text
+   node), so it needs an explicit size here or it renders as a zero-size span and the user sees
+   nothing. It is a muted dot, never a banner or an alert, so it cannot interrupt UF-09
+   (principle 1). */
+.wl-offline-status__icon {
+  display: inline-block;
+  inline-size: 10px;
+  block-size: 10px;
+  border-radius: 50%;
+  background: var(--wl-color-text-muted);
+  border: 1px solid var(--wl-color-line-strong);
+  vertical-align: middle;
+}
+
+.wl-offline-status__text {
+  color: var(--wl-color-text-muted);
+}
