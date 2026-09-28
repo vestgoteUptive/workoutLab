@@ -15,6 +15,16 @@ export async function mockSupabaseAuth(page: Page): Promise<void> {
   );
 }
 
+/** Fails any Supabase PostgREST (`/rest/v1/**`) call a spec didn't expect (T-0300c, AC-C20).
+ *  Must be registered before `mockSupabaseData`'s specific routes: Playwright runs the
+ *  most-recently-registered handler first, falling back to earlier ones via `route.fallback()`,
+ *  so this catch-all has to be the *first* registered to end up as the last-matched backstop. */
+export async function mockSupabaseRest(page: Page): Promise<void> {
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/**`, (route) =>
+    route.fulfill({ status: 501, body: "unmocked supabase rest call in e2e" }),
+  );
+}
+
 const STORAGE_KEY = "sb-abc-auth-token";
 const FAKE_USER = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -131,5 +141,49 @@ export async function injectSession(
         expires_at: Math.floor(Date.now() / 1000) + expiresInSeconds,
       },
     },
+  );
+}
+
+/** The user id `injectSession`'s session carries (T-0300c offline e2e). */
+export const FAKE_USER_ID = FAKE_USER.id;
+
+export interface OfflineFixtures {
+  sets: unknown[];
+  exercises: unknown[];
+  exerciseAreas: unknown[];
+  areaTargets: unknown[];
+  profile: unknown;
+}
+
+/**
+ * Mocks the PostgREST endpoints `lib/offline/*` calls (AC-C20, D-0045 §7): `session_sets_live`,
+ * `exercises`, `exercise_areas`, `area_targets`, `profiles`, and the `sessions`/`session_sets`
+ * upsert targets (accepted no-ops, since this spec doesn't queue anything to flush). Registered
+ * after `mockSupabaseAuth`'s 501 catch-all in `beforeEach`, which — being registered first — is
+ * Playwright's last-matched fallback for anything none of these claim (see that function's
+ * comment): a request to an endpoint this spec doesn't expect still fails loudly instead of
+ * reaching the network.
+ */
+export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): Promise<void> {
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets_live*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.sets }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/exercises*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.exercises }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/exercise_areas*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.exerciseAreas }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/area_targets*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.areaTargets }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.profile }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/sessions*`, (route) =>
+    route.fulfill({ status: 200, json: [] }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets*`, (route) =>
+    route.fulfill({ status: 200, json: [] }),
   );
 }
