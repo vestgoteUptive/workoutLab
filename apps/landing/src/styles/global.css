@@ -1,0 +1,248 @@
+/* "Chalk & Iron" landing styles (D-0019). Every colour and font comes from
+   @workoutlab/design-tokens/tokens.css (imported separately by the layout, so
+   the built CSS carries no package specifier); no literal appears below
+   (D-0046 §6/§7, enforced by wl-check-colours, AC12). */
+
+:root {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--wl-color-bg);
+  color: var(--wl-color-text);
+  font-family: var(--wl-font-body);
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--wl-font-display);
+  font-weight: 800;
+  line-height: 1.1;
+  margin: 0 0 0.5em;
+}
+
+p {
+  margin: 0 0 1em;
+}
+
+a {
+  color: inherit;
+}
+
+/* Skip link: visually hidden until focused, so keyboard users reach the CTA
+   in at most two Tab presses (AC18) without a sighted-user layout change. */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  padding: 0.5em 1em;
+  background: var(--wl-color-surface);
+  color: var(--wl-color-text);
+  z-index: 10;
+}
+
+.skip-link:focus {
+  top: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.site-header {
+  padding: 24px 0 0;
+}
+
+.wordmark {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5em;
+  flex-wrap: wrap;
+}
+
+.wordmark .brand-name {
+  font-family: var(--wl-font-display);
+  font-weight: 800;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.wordmark .brand-byline {
+  font-family: var(--wl-font-body);
+  color: var(--wl-color-text-muted);
+  font-size: 1rem;
+}
+
+.hero {
+  padding: 48px 0 56px;
+}
+
+.hero h1 {
+  font-size: clamp(2rem, 6vw, 3.25rem);
+  max-width: 18ch;
+}
+
+.hero .sub {
+  color: var(--wl-color-text-muted);
+  max-width: 48ch;
+  font-size: 1.125rem;
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 28px;
+  margin-top: 8px;
+  border-radius: 8px;
+  background: var(--wl-color-accent);
+  color: var(--wl-color-on-accent);
+  font-family: var(--wl-font-body);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  text-decoration: none;
+  border: none;
+}
+
+.cta:hover {
+  background: var(--wl-color-accent-hover);
+}
+
+.cta-note {
+  margin: 10px 0 0;
+  color: var(--wl-color-text-muted);
+  font-size: 0.875rem;
+}
+
+.features {
+  padding: 40px 0 56px;
+  border-top: 1px solid var(--wl-color-line);
+}
+
+.features h2 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+@media (min-width: 960px) {
+  .feature-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.feature-card {
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.feature-card h3 {
+  font-size: 1.125rem;
+  margin-bottom: 0.4em;
+}
+
+.feature-card p {
+  color: var(--wl-color-text-muted);
+  margin: 0;
+}
+
+.privacy-summary {
+  padding: 40px 0 56px;
+  border-top: 1px solid var(--wl-color-line);
+}
+
+.privacy-summary h2 {
+  font-size: clamp(1.5rem, 4vw, 1.75rem);
+}
+
+.privacy-summary p {
+  color: var(--wl-color-text-muted);
+  max-width: 60ch;
+}
+
+.privacy-summary a {
+  color: var(--wl-color-accent);
+  text-decoration: underline;
+}
+
+.site-footer {
+  padding: 24px 0 40px;
+  border-top: 1px solid var(--wl-color-line);
+  color: var(--wl-color-text-muted);
+  font-size: 0.875rem;
+}
+
+.footer-links {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.footer-links a {
+  color: var(--wl-color-text-muted);
+  text-decoration: underline;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+.page-body {
+  padding: 48px 0 56px;
+}
+
+.page-body h1 {
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+}
+
+.page-body h2 {
+  font-size: 1.25rem;
+  margin-top: 2em;
+}
+
+.page-body .intro {
+  color: var(--wl-color-text-muted);
+}
+
+.page-body .home-link,
+.not-found .home-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--wl-color-accent);
+  text-decoration: underline;
+}
+
+.not-found {
+  padding: 64px 0;
+}
+
+.not-found .body {
+  color: var(--wl-color-text-muted);
+  max-width: 48ch;
+}

@@ -1,12 +1,55 @@
 ---
-// "workout LAB by Uptive" welcome page (T-0309). Design tokens land with T-0003.
+import Layout from "../layouts/Layout.astro";
+import { landing } from "../content/landing";
+import { appUrl } from "../lib/app-url";
+
+// D-0046 §5: PUBLIC_APP_URL is resolved once, at build time. An invalid value
+// throws here and fails the build (AC10).
+const ctaHref = appUrl(import.meta.env.PUBLIC_APP_URL);
 ---
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>workout LAB</title>
-  </head>
-  <body>
-    <h1>workout LAB</h1>
-  </body>
-</html>
+
+<Layout title={landing.meta.title} description={landing.meta.description} canonicalPath="/">
+  <header class="site-header">
+    <div class="wrap wordmark">
+      <span class="brand-name">{landing.brand.name}</span>
+      <span class="brand-byline">{landing.brand.byline}</span>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap">
+      <h1>{landing.hero.headline}</h1>
+      <p class="sub">{landing.hero.sub}</p>
+      <a class="cta" data-cta="primary" href={ctaHref}>{landing.hero.ctaLabel}</a>
+      <p class="cta-note">{landing.hero.ctaNote}</p>
+    </section>
+
+    <section class="features wrap">
+      <h2>{landing.featuresHeading}</h2>
+      <div class="feature-grid">
+        {
+          landing.features.map((feature) => (
+            <article class="feature-card">
+              <h3>{feature.title}</h3>
+              <p>{feature.body}</p>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="privacy-summary wrap">
+      <h2>{landing.privacy.heading}</h2>
+      <p>{landing.privacy.summary}</p>
+      <a href="/privacy/">{landing.privacy.linkLabel}</a>
+    </section>
+  </main>
+
+  <footer class="site-footer wrap">
+    <p>{landing.footer.legal}</p>
+    <nav class="footer-links">
+      <a href="/privacy/">{landing.privacy.linkLabel}</a>
+      <a href={ctaHref}>{landing.footer.appLinkLabel}</a>
+    </nav>
+  </footer>
+</Layout>

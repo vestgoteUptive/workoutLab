@@ -1,0 +1,32 @@
+---
+import "@workoutlab/design-tokens/tokens.css";
+import "../styles/global.css";
+import { tokens } from "@workoutlab/design-tokens";
+
+interface Props {
+  title: string;
+  description: string;
+  /** Path this page canonicalises to, e.g. "/" or "/privacy/". Omit for pages
+   * (like 404) that shouldn't advertise a canonical URL. */
+  canonicalPath?: string;
+}
+
+const { title, description, canonicalPath } = Astro.props;
+const canonicalUrl = canonicalPath ? new URL(canonicalPath, Astro.site) : undefined;
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content={tokens.color.bg} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl.toString()} />}
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <slot />
+  </body>
+</html>

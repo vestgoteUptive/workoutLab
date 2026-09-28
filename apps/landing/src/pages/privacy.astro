@@ -1,0 +1,32 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { privacy } from "../content/privacy";
+
+const title = "Privacy — workout LAB by Uptive";
+const description = privacy.intro;
+---
+
+<Layout title={title} description={description} canonicalPath="/privacy/">
+  <main id="main" class="page-body wrap">
+    <h1>{privacy.title}</h1>
+    <p class="intro">{privacy.intro}</p>
+
+    {
+      privacy.sections.map((section) => (
+        <section>
+          <h2>{section.heading}</h2>
+          {section.body.split("\n\n").map((paragraph) => (
+            <p>{paragraph}</p>
+          ))}
+          {section.id === "contact" && (
+            <p>
+              <a href={`mailto:${privacy.contactEmail}`}>{privacy.contactEmail}</a>
+            </p>
+          )}
+        </section>
+      ))
+    }
+
+    <p><a class="home-link" href="/">Back to the start page</a></p>
+  </main>
+</Layout>
