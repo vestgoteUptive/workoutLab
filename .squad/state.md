@@ -9,8 +9,10 @@
 - **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy and privacy mailbox — gates the landing *prod deploy* only; T-0309b can build and preview).
 
 ## Executor
-- **AgentLab** is reachable, 12 `wl-*` flows registered — but `wl-ci-investigate` is **still absent**, which proves AgentLab has **not been restarted** since it was added. Consequence: frontend-dev's `maxCostUsd 6` raise is also not live there.
-- **Web, landing and rework builds therefore run as sub-agents.** AgentLab stays the executor for backend/engine/data/infra once a human restarts it.
+- **The missing `wl-ci-investigate` was NOT a restart problem — it was never registered.** Previous sessions recorded "AgentLab needs a restart"; that was a misdiagnosis. The flow file existed at `.agentlab/flows/wl-ci-investigate.json`, but `scripts/sync-agents.mjs` had not been run since it was added, so AgentLab's `editor-config.json` listed 12 flows without it. **Fixed 2026-09-28 21:15:** ran `node scripts/sync-agents.mjs` → 13 flows registered, 24 agents installed, frontend-dev `maxCostUsd: 6` now live in the local-agents store. The repo stays clean (the script writes only to AgentLab's own stores).
+- **Rule: after editing anything in `agents/`, run `node scripts/sync-agents.mjs`.** A restart alone never picks up a new flow. AgentLab must then reread its editor config (restart the app, or press Refresh in Agents).
+- **This session's MCP connection is bound to the AgentLab process that was live at session start** (PID 83651 on 127.0.0.1:4780), so newly registered flows are not callable from here even after the app rereads them — a *Claude session* restart is needed for that. Until then, builds run as **sub-agents**, which is working well.
+- **Web builds should stay on sub-agents regardless:** 4 AgentLab web runs died on budget/time, and all 4 passed as Opus sub-agents.
 - Poll `get_run` with `waitSeconds ≤ 280`. Docker here cannot pull images, so Supabase stack tests run in GitHub CI on a draft PR.
 - **Tooling:** `npx -y pnpm@10.28.2 …`.
 
