@@ -73,7 +73,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0201 | Engine: time-budget selection, warm-up, energy, time check (rules 7, 8, 10) | engine | T-0200 | done | wl-build-engine |
 | T-0201a | Engine: eligibility, selection + main lift, warm-up, reasons, output shape (rule 7.1–7.3, 10; AC1–24) | engine | T-0200 | done | wl-build-engine |
 | T-0201b | Engine: energy Low/High + time check UF-09.8 (rules 7.4, 8; AC25–36) | engine | T-0201a | done | wl-build-engine |
-| T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | doing | wl-build-engine |
+| T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | done | wl-build-engine |
 | T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201a | todo | wl-build-backend |
 | T-0204 | Engine: swap ranking + deterministic shuffle (rules 12–13) | engine | T-0200 | todo | wl-build-engine |
 | T-0205 | Engine: progression + pre-fill (rule 14) | engine | T-0200 | todo | wl-build-engine |
