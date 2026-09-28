@@ -124,6 +124,33 @@ describe("AC18 toLibraryExercise", () => {
     expect(isValid("LibraryExercise", ex)).toBe(true);
   });
 
+  // D-0044 §2: DB → engine is a straight rename. The only inversion (NOT bodyweight) is in the
+  // seed; an inverted mapper would turn every bodyweight row into a loaded one.
+  const pushUpRow: Tables<"exercises"> = {
+    ...backSquatRow,
+    id: "push-up",
+    name: "Push-up",
+    equipment: [],
+    increment_kg: 2.5, // D-0044 §4: the seed leaves the column default on bodyweight rows
+    external_load: false,
+  };
+
+  it("maps external_load: false to externalLoad: false (D-0044, no inversion)", () => {
+    const bw = toLibraryExercise(pushUpRow, [{ area_id: "chest", weight: 1 }]);
+    expect(bw.externalLoad).toBe(false);
+    expect(bw).toMatchObject({ id: "push-up", externalLoad: false, incrementKg: 2.5 });
+    expect(isValid("LibraryExercise", bw)).toBe(true);
+  });
+
+  it("externalLoad equals external_load for every row polarity (D-0044)", () => {
+    for (const row of [backSquatRow, pushUpRow]) {
+      expect(toLibraryExercise(row, []).externalLoad).toBe(row.external_load);
+    }
+    expect(toLibraryExercise(backSquatRow, []).externalLoad).not.toBe(
+      toLibraryExercise(pushUpRow, []).externalLoad,
+    );
+  });
+
   it("rejects an unknown area or weight", () => {
     expect(() => toLibraryExercise(backSquatRow, [{ area_id: "neck", weight: 1 }])).toThrow(
       RangeError,

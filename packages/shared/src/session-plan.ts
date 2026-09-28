@@ -10,12 +10,20 @@ export type SessionPlanParseError = "unsupported_version" | "invalid";
 export type SessionPlanParseResult =
   { ok: true; plan: SessionPlan | null } | { ok: false; error: SessionPlanParseError };
 
-let validator: ValidateFunction | undefined;
+// `null` = the compile failed once; it is not retried on every call (the schema is static).
+let validator: ValidateFunction | null | undefined;
 
 function validate(value: unknown): boolean {
-  validator ??= new Ajv2020({ strict: true, allErrors: false, allowUnionTypes: true }).compile(
-    SESSION_PLAN_SCHEMA,
-  );
+  if (validator === undefined) {
+    try {
+      validator = new Ajv2020({ strict: true, allErrors: false, allowUnionTypes: true }).compile(
+        SESSION_PLAN_SCHEMA,
+      );
+    } catch {
+      validator = null;
+    }
+  }
+  if (validator === null) throw new Error("SessionPlan schema failed to compile");
   return validator(value);
 }
 
