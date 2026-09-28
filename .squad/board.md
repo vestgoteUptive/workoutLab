@@ -53,6 +53,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0300b (from T-0300a accept): use or remove the unused hidesTabBar() in apps/web/src/app/routes.ts. e2e: a real Supabase page.route mock + session-injection helper in tests/e2e/fixtures. CI: build apps/web before check:size, test:e2e and Lighthouse (→ T-0006).
 - Data (from T-0202, D-0050 §1): api/openapi.yaml CheckinPeriod.index minimum 0 (period 0 starts at onboarding); regenerate api.gen.ts.
 - UF-09.8 web ticket (from T-0201b, D-0047): show minutesBehind only when show is true; save the Trim / Skip next items as the new plan. T-0205: reuse floorInc from packages/engine/src/energy.ts.
+- T-0203 groom follow-ups: openapi finishSession text 'last write wins' → 'the latest endedAt wins (D-0053 §7)' (data); the offline queue never replays a sessions upsert with ended_at null after a finish (T-0300c); a draft PR for each T-0203 part (real-stack CI).
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
@@ -75,7 +76,10 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0201a | Engine: eligibility, selection + main lift, warm-up, reasons, output shape (rule 7.1–7.3, 10; AC1–24) | engine | T-0200 | done | wl-build-engine |
 | T-0201b | Engine: energy Low/High + time check UF-09.8 (rules 7.4, 8; AC25–36) | engine | T-0201a | done | wl-build-engine |
 | T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | done | wl-build-engine |
-| T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201a | todo | wl-build-backend |
+| T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201a | split → T-0203a, T-0203b, T-0203c (D-0053) | wl-build-backend |
+| T-0203a | Supabase stack + generated seed from data/exercises (external_load = NOT bodyweight, D-0044) | backend | T-0100a, T-0100b, T-0103b | doing | wl-build-backend |
+| T-0203b | Edge Function setup (vendored engine/shared, D-0053 §1) + suggest + balance | backend | T-0203a, T-0201a, T-0102b | todo | wl-build-backend |
+| T-0203c | Edge Function finish (latest endedAt wins, D-0053 §7–8) | backend | T-0203b | todo | wl-build-backend |
 | T-0204 | Engine: swap ranking + deterministic shuffle (rules 12–13) | engine | T-0200 | todo | wl-build-engine |
 | T-0205 | Engine: progression + pre-fill (rule 14) | engine | T-0200 | todo | wl-build-engine |
 
@@ -88,12 +92,12 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0300c | Offline set queue (Dexie per D-0001/TR-0022), sync, engine input with pending rows (AC-C*) | web-shell | T-0300b, T-0102b | todo | wl-build-web |
 | T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | ready | wl-build-web |
 | T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201a | todo | wl-build-web |
-| T-0302 | UF-02 Today + workout preview | web-feature:UF-02 | T-0300, T-0203 | todo | wl-build-web |
-| T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203 | todo | wl-build-web |
+| T-0302 | UF-02 Today + workout preview | web-feature:UF-02 | T-0300, T-0203b | todo | wl-build-web |
+| T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203b | todo | wl-build-web |
 | T-0304 | UF-09 Focus mode: state machine, timers, auto-save, time check, pause | web-feature:UF-09 | T-0303, T-0205 | todo | wl-build-web |
 | T-0305 | UF-03 List view + summary | web-feature:UF-03 | T-0304 | todo | wl-build-web |
-| T-0306 | UF-04 Library + UF-05 in-workout swap | web-feature:UF-04 | T-0300, T-0203, T-0204 | todo | wl-build-web |
-| T-0307 | UF-06 Progress + UF-10 Balance | web-feature:UF-06 | T-0300, T-0203 | todo | wl-build-web |
+| T-0306 | UF-04 Library + UF-05 in-workout swap | web-feature:UF-04 | T-0300, T-0203b, T-0204 | todo | wl-build-web |
+| T-0307 | UF-06 Progress + UF-10 Balance | web-feature:UF-06 | T-0300, T-0203b | todo | wl-build-web |
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | todo | wl-build-web |
 | T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
@@ -103,7 +107,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0400 | Terraform: import prod Supabase project (D-0011), create staging, codify auth config | infra | T-0203 | todo | wl-build-infra |
+| T-0400 | Terraform: import prod Supabase project (D-0011), create staging, codify auth config | infra | T-0203a | todo | wl-build-infra |
 | T-0401 | Terraform: Cloudflare Pages projects, custom domains, DNS (D-0010) | infra | T-0309 | todo | wl-build-infra |
 | T-0402 | Deploy pipelines: branch previews → staging, `main` → prod | infra | T-0400, T-0401 | todo | wl-build-infra |
 | T-0404 | Custom SMTP: Resend as Supabase auth mailer, DNS records for `workout.vestgote.com`, branded magic-link template (D-0012) | infra | T-0401 | todo | wl-build-infra |
