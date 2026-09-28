@@ -39,6 +39,11 @@ export default defineConfig(({ command }) => {
       "@workoutlab/web build requires VITE_SUPABASE_URL (AC-A10, NFR-AN-1): set it before building.",
     );
   }
+  if (command === "build" && !process.env.VITE_SUPABASE_ANON_KEY) {
+    throw new Error(
+      "@workoutlab/web build requires VITE_SUPABASE_ANON_KEY (AC-A10, NFR-AN-1): set it before building.",
+    );
+  }
   const connectSrc = supabaseUrl ? `'self' ${new URL(supabaseUrl).origin}` : "'self'";
 
   return {

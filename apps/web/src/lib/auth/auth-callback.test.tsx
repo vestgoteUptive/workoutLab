@@ -1,16 +1,21 @@
 // AC-B4: `/auth/callback` exchanges the code and returns to the remembered path, or shows the
-// expired-link message with a way back to `/account`.
-import { render, screen, waitFor } from "@testing-library/react";
+// expired-link message with a way back to `/account`, pre-filled with the last email used.
+//
+// Lives in `lib/auth/`, not `features/UF-01/`: `features/UF-01` is only a stub path for this
+// ticket (T-0301 replaces it with the designed screens), while this behaviour belongs to the
+// auth flow itself.
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthCallback } from "./index.js";
-import { rememberReturnTo } from "../../lib/auth/return-to.js";
+import { Account, AuthCallback } from "../../features/UF-01/index.js";
+import { rememberReturnTo } from "./return-to.js";
 
-const { exchangeCodeForSession } = vi.hoisted(() => ({
+const { exchangeCodeForSession, signInWithOtp } = vi.hoisted(() => ({
   exchangeCodeForSession: vi.fn(),
+  signInWithOtp: vi.fn(),
 }));
-vi.mock("../../lib/auth/client.js", () => ({
-  supabase: { auth: { exchangeCodeForSession } },
+vi.mock("./client.js", () => ({
+  supabase: { auth: { exchangeCodeForSession, signInWithOtp } },
 }));
 
 function renderAt(path: string) {
@@ -19,7 +24,7 @@ function renderAt(path: string) {
       <Routes>
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/library" element={<div>library</div>} />
-        <Route path="/account" element={<div>account</div>} />
+        <Route path="/account" element={<Account />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -27,7 +32,9 @@ function renderAt(path: string) {
 
 beforeEach(() => {
   exchangeCodeForSession.mockReset();
+  signInWithOtp.mockReset();
   window.sessionStorage.clear();
+  window.localStorage.clear();
 });
 
 it("exchanges the code and navigates to the remembered return-to path", async () => {
@@ -67,5 +74,25 @@ describe("expired or already-used link", () => {
     exchangeCodeForSession.mockResolvedValue({ error: { message: "invalid_grant" } });
     renderAt("/auth/callback?code=used");
     expect(await screen.findByText("This link has expired. Send a new one.")).toBeInTheDocument();
+  });
+
+  it("AC-B4: /account pre-fills the last email after following the expired-link button", async () => {
+    signInWithOtp.mockResolvedValue({ error: null });
+
+    // First, send a link from /account, which remembers the email (magic-link.ts).
+    const first = renderAt("/account");
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "ada@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send link" }));
+    await waitFor(() => expect(signInWithOtp).toHaveBeenCalled());
+    first.unmount();
+
+    // The link turns out to be expired; the user lands back on /account via "Send a new one".
+    const second = renderAt("/auth/callback?error_code=otp_expired");
+    fireEvent.click(await screen.findByRole("link", { name: "Send a new one" }));
+    second.unmount();
+
+    // A fresh mount of /account (simulating the real navigation) must pre-fill that email.
+    renderAt("/account");
+    expect(screen.getByLabelText("Email")).toHaveValue("ada@example.com");
   });
 });

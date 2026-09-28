@@ -6,11 +6,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Shell } from "./App.js";
 import { AuthProvider } from "../lib/auth/auth-context.js";
 
-const { onAuthStateChange, getSession, signOut } = vi.hoisted(() => ({
-  onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
-  getSession: vi.fn(),
-  signOut: vi.fn(),
-}));
+const { onAuthStateChange, getSession, signOut, authStateCallbacks } = vi.hoisted(() => {
+  const authStateCallbacks: Array<(event: string, session: unknown) => void> = [];
+  return {
+    authStateCallbacks,
+    onAuthStateChange: vi.fn((cb: (event: string, session: unknown) => void) => {
+      authStateCallbacks.push(cb);
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
+    }),
+    getSession: vi.fn(),
+    signOut: vi.fn(),
+  };
+});
 vi.mock("../lib/auth/client.js", () => ({
   supabase: { auth: { onAuthStateChange, getSession, signOut } },
 }));
@@ -45,9 +52,11 @@ function seedExpiredSession() {
 
 beforeEach(() => {
   window.localStorage.clear();
+  window.sessionStorage.clear();
   getSession.mockReset();
   getSession.mockResolvedValue({ data: { session: null }, error: null });
   navigateRef = undefined;
+  authStateCallbacks.length = 0;
 });
 
 afterEach(() => {
@@ -99,6 +108,19 @@ describe("AC-B5 route guard", () => {
       expect(document.querySelector('[data-screen-id="UF-02.1"]')).toBeInTheDocument();
     });
   });
+
+  it("signed in: /account consumes a stored return-to and lands there instead of /", async () => {
+    window.localStorage.setItem(
+      "sb-abc-auth-token",
+      JSON.stringify({ access_token: "tok", expires_at: Math.floor(Date.now() / 1000) + 3600 }),
+    );
+    window.sessionStorage.setItem("wl-return-to", "/library");
+    render(<Harness start="/account" />);
+    await waitFor(() => {
+      expect(document.querySelector('[data-screen-id="UF-04.1"]')).toBeInTheDocument();
+    });
+    expect(window.sessionStorage.getItem("wl-return-to")).toBeNull();
+  });
 });
 
 describe("AC-B6 principle 5 + stale session", () => {
@@ -132,6 +154,28 @@ describe("AC-B6 principle 5 + stale session", () => {
       expect(document.querySelector('[data-screen-id="UF-01.1"]')).toBeInTheDocument();
     });
   });
+
+  it("stale + online + network error stays signed in (stale), not bounced out", async () => {
+    seedExpiredSession();
+    vi.stubGlobal("navigator", { onLine: true });
+    getSession.mockRejectedValue(new TypeError("Failed to fetch"));
+    render(<Harness start="/" />);
+    await waitFor(() => expect(getSession).toHaveBeenCalled());
+    // Still on the protected route: a network hiccup must not sign the user out (AC-B6).
+    expect(document.querySelector('[data-screen-id="UF-02.1"]')).toBeInTheDocument();
+  });
+
+  it("stale + online + 500 from Supabase stays signed in (stale), not bounced out", async () => {
+    seedExpiredSession();
+    vi.stubGlobal("navigator", { onLine: true });
+    getSession.mockResolvedValue({
+      data: { session: null },
+      error: { status: 500, message: "internal_server_error" },
+    });
+    render(<Harness start="/" />);
+    await waitFor(() => expect(getSession).toHaveBeenCalled());
+    expect(document.querySelector('[data-screen-id="UF-02.1"]')).toBeInTheDocument();
+  });
 });
 
 describe("AC-B7 no auth interruption mid-workout", () => {
@@ -152,6 +196,32 @@ describe("AC-B7 no auth interruption mid-workout", () => {
     expect(document.querySelector('[data-screen-id="UF-09"]')).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+
+    act(() => navigateRef!("/"));
+
+    await waitFor(() => {
+      expect(document.querySelector('[data-screen-id="UF-01.5"]')).toBeInTheDocument();
+    });
+  });
+
+  it("a SIGNED_OUT event while on /session/<id> also lands on /account, not /welcome", async () => {
+    window.localStorage.setItem(
+      "sb-abc-auth-token",
+      JSON.stringify({ access_token: "tok", expires_at: Math.floor(Date.now() / 1000) + 3600 }),
+    );
+
+    render(<Harness start="/session/abc123" />);
+    await waitFor(() => {
+      expect(document.querySelector('[data-screen-id="UF-09"]')).toBeInTheDocument();
+    });
+    await waitFor(() => expect(authStateCallbacks.length).toBeGreaterThan(0));
+
+    act(() => {
+      for (const cb of authStateCallbacks) cb("SIGNED_OUT", null);
+    });
+
+    // Still on the session route: token expiry mid-workout must not interrupt it.
+    expect(document.querySelector('[data-screen-id="UF-09"]')).toBeInTheDocument();
 
     act(() => navigateRef!("/"));
 

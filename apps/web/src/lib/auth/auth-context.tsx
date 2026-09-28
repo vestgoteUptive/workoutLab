@@ -69,6 +69,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_OUT") {
+        if (pathnameRef.current.startsWith("/session/")) {
+          interruptedInSession.current = true;
+        }
         setStatus("signed-out");
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         interruptedInSession.current = false;
@@ -77,16 +80,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     if (computeInitialStatus() === "stale" && navigator.onLine) {
-      void supabase.auth.getSession().then(({ data, error }) => {
-        if (error || !data.session) {
+      void supabase.auth.getSession().then(
+        ({ data, error }) => {
+          if (data.session) {
+            setStatus("signed-in");
+            return;
+          }
+          // Only a non-retryable auth error (400 invalid_grant: the refresh token itself is
+          // dead) or a clean "no session, no error" response means the user is actually signed
+          // out. A network error or a 5xx from Supabase means we don't yet know, so the user
+          // stays "stale" and in the app (AC-B6) rather than getting bounced to onboarding.
+          const isNonRetryable =
+            !error || (error.status === 400 && error.message === "invalid_grant");
+          if (!isNonRetryable) return;
           if (pathnameRef.current.startsWith("/session/")) {
             interruptedInSession.current = true;
           }
           setStatus("signed-out");
-        } else {
-          setStatus("signed-in");
-        }
-      });
+        },
+        () => {
+          // A rejected promise (e.g. `fetch` itself throwing, offline mid-flight): treat the
+          // same as any other network error and stay "stale" (AC-B6).
+        },
+      );
     }
 
     return () => subscription.subscription.unsubscribe();

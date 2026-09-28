@@ -4,10 +4,17 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { BASE_URL, VITE_SUPABASE_URL } from "./playwright.config.js";
-import { injectSession } from "./fixtures/supabase-mock.js";
+import { injectSession, mockSupabaseAuth } from "./fixtures/supabase-mock.js";
 
 const TAB_ROUTES = ["/", "/library", "/progress", "/plan"] as const;
 const AXE_ROUTES = ["/welcome", "/", "/library", "/progress", "/balance", "/plan"] as const;
+
+test.beforeEach(async ({ page }) => {
+  // Registered first so it's the final backstop (see `mockSupabaseEmailAuth`'s comment):
+  // these routes don't drive email/OTP, but the shell still calls `getSession`/`onAuthStateChange`
+  // through the real SDK, so any unmocked Supabase call must fail loudly, not hit the network.
+  await mockSupabaseAuth(page);
+});
 
 test.describe("AC-A5 offline shell", () => {
   test("[data-screen-id=UF-01.1] renders offline within 3s after one online visit", async ({

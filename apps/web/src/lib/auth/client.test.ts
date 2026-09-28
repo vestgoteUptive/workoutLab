@@ -20,8 +20,12 @@ describe("lib/auth/client (AC-B1)", () => {
     logSpy.mockRestore();
   });
 
-  it("creates the client with the PKCE auth flags from env", async () => {
-    await import("./client.js");
+  it("creates the client with the PKCE auth flags from env, lazily on first use", async () => {
+    const { supabase } = await import("./client.js");
+    expect(createClient).not.toHaveBeenCalled();
+
+    void supabase.auth;
+
     expect(createClient).toHaveBeenCalledWith("https://abc.supabase.co", "test-anon-key-value", {
       auth: {
         flowType: "pkce",
@@ -33,9 +37,20 @@ describe("lib/auth/client (AC-B1)", () => {
   });
 
   it("never logs the anon key", async () => {
-    await import("./client.js");
+    const { supabase } = await import("./client.js");
+    void supabase.auth;
     for (const call of logSpy.mock.calls) {
       expect(call.join(" ")).not.toContain("test-anon-key-value");
     }
+  });
+
+  it("does not throw at import time when the anon key is empty (AC-A5)", async () => {
+    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "");
+    await expect(import("./client.js")).resolves.toBeDefined();
+  });
+
+  it("does not throw at import time when the URL is empty (AC-A5)", async () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "");
+    await expect(import("./client.js")).resolves.toBeDefined();
   });
 });

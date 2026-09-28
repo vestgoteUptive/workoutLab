@@ -39,6 +39,13 @@ export const GOOD_CODE = "123456";
  * without a real Supabase project.
  */
 export async function mockSupabaseEmailAuth(page: Page): Promise<void> {
+  // Registered first so it's the last-matched (Playwright runs the most-recently-registered
+  // handler first, falling back to earlier ones via `route.fallback()`): this 501 catch-all
+  // must be the final backstop for anything none of the specific handlers below claim, so an
+  // unmocked Supabase call (a non-PKCE `/token` grant, `/user`, `/logout`, ...) can never reach
+  // the network.
+  await mockSupabaseAuth(page);
+
   // A trailing `*` because these requests carry a query string (`?redirect_to=…`) that a
   // bare path pattern won't match.
   await page.route(`${VITE_SUPABASE_URL}/auth/v1/otp*`, (route) =>
