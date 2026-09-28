@@ -7,8 +7,8 @@ select plan(24);
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local');
 insert into public.exercises (id, name, type, level, instructions, source, license) values
-  ('back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
-  ('plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0');
+  ('fx-back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
+  ('fx-plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0');
 
 -- 10 days ago, fixed for this transaction (AC14).
 create temporary table t_s1 as select now() - interval '10 days' as started_at;
@@ -36,7 +36,7 @@ select results_eq($$select count(*)::int, max(ended_at - started_at) from public
     where id = '10000000-0000-0000-0000-000000000001'$$,
   $$values (1, interval '45 minutes')$$, 'exactly 1 S1 row with the last ended_at');
 select lives_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, reps, completed_at, edited_at)
-  select ('c0000000-0000-0000-0000-00000000000' || i)::uuid, '10000000-0000-0000-0000-000000000001', 'back-squat', i, 8,
+  select ('c0000000-0000-0000-0000-00000000000' || i)::uuid, '10000000-0000-0000-0000-000000000001', 'fx-back-squat', i, 8,
          started_at + i * interval '3 minutes', started_at + i * interval '3 minutes'
     from t_s1, generate_series(1, 3) as i
   on conflict (user_id, client_id) do update set reps = excluded.reps, edited_at = excluded.edited_at$$,
@@ -64,31 +64,31 @@ select throws_ok($$insert into public.sessions (started_at, time_budget_min, loc
 
 -- AC16: set shape --------------------------------------------------------------------------------
 select throws_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, kind, reps, completed_at, edited_at)
-  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'back-squat', 10, 'reps', null, now(), now())$$,
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'fx-back-squat', 10, 'reps', null, now(), now())$$,
   '23514', null, 'kind reps with reps null gives 23514');
 select lives_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, kind, duration_s, reps, completed_at, edited_at)
-  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'plank', 11, 'timed', 45, null, now(), now())$$,
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'fx-plank', 11, 'timed', 45, null, now(), now())$$,
   'kind timed with duration_s 45 and reps null succeeds (UF-09.7)');
 select throws_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, kind, duration_s, completed_at, edited_at)
-  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'plank', 12, 'timed', null, now(), now())$$,
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'fx-plank', 12, 'timed', null, now(), now())$$,
   '23514', null, 'kind timed with duration_s null gives 23514');
 select throws_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, reps, rir, completed_at, edited_at)
-  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'back-squat', 13, 8, 6, now(), now())$$,
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'fx-back-squat', 13, 8, 6, now(), now())$$,
   '23514', null, 'rir 6 gives 23514');
 select lives_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, reps, rir, completed_at, edited_at)
-  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'back-squat', 14, 8, 0, now(), now())$$,
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'fx-back-squat', 14, 8, 0, now(), now())$$,
   'rir 0 succeeds (UF-09.4)');
 select lives_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, reps, rir, completed_at, edited_at)
-  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'back-squat', 15, 8, 5, now(), now())$$,
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'fx-back-squat', 15, 8, 5, now(), now())$$,
   'rir 5 succeeds');
 select lives_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, reps, rir, completed_at, edited_at)
-  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'back-squat', 16, 8, null, now(), now())$$,
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'fx-back-squat', 16, 8, null, now(), now())$$,
   'rir null succeeds');
 select throws_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, reps, weight_kg, completed_at, edited_at)
-  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'back-squat', 17, 8, -1, now(), now())$$,
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'fx-back-squat', 17, 8, -1, now(), now())$$,
   '23514', null, 'weight_kg -1 gives 23514');
 select throws_ok($$insert into public.session_sets (client_id, session_id, exercise_id, set_index, kind, reps, completed_at, edited_at)
-  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'back-squat', 18, 'sprint', 8, now(), now())$$,
+  values (gen_random_uuid(), '10000000-0000-0000-0000-000000000001', 'fx-back-squat', 18, 'sprint', 8, now(), now())$$,
   '23514', null, 'kind sprint gives 23514');
 select is((select count(*)::int from public.session_sets where set_index between 10 and 18), 4,
   'exactly the 4 valid shaped sets were stored');

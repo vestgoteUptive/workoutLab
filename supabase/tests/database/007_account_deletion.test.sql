@@ -8,8 +8,8 @@ insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
   ('00000000-0000-0000-0000-00000000000b', 'authenticated', 'authenticated', 'b@test.local');
 insert into public.exercises (id, name, type, level, instructions, source, license) values
-  ('back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
-  ('plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0');
+  ('fx-back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
+  ('fx-plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0');
 
 insert into public.profiles (user_id, goal, level, rhythm_min, rhythm_max) values
   ('00000000-0000-0000-0000-00000000000a', 'build_muscle', 'beginner', 3, 4),
@@ -25,20 +25,20 @@ insert into public.sessions (id, user_id, started_at, time_budget_min) values
 insert into public.session_sets (user_id, client_id, session_id, exercise_id, set_index, reps, completed_at, edited_at, deleted_at)
   select '00000000-0000-0000-0000-00000000000a', gen_random_uuid(),
          case when i <= 3 then '10000000-0000-0000-0000-0000000000a1'::uuid else '10000000-0000-0000-0000-0000000000a2'::uuid end,
-         'back-squat', i, 8, '2026-09-20T10:00Z', '2026-09-20T10:00Z',
+         'fx-back-squat', i, 8, '2026-09-20T10:00Z', '2026-09-20T10:00Z',
          case when i = 6 then '2026-09-23T10:00Z'::timestamptz end
     from generate_series(1, 6) as i;
 insert into public.session_sets (user_id, client_id, session_id, exercise_id, set_index, reps, completed_at, edited_at)
   values ('00000000-0000-0000-0000-00000000000b', gen_random_uuid(), '10000000-0000-0000-0000-0000000000b1',
-          'back-squat', 0, 8, '2026-09-22T10:00Z', '2026-09-22T10:00Z');
+          'fx-back-squat', 0, 8, '2026-09-22T10:00Z', '2026-09-22T10:00Z');
 
 insert into public.routines (id, user_id, name) values
   ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 'Lower A'),
   ('20000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', 'Upper B');
 insert into public.routine_items (routine_id, user_id, position, exercise_id, sets, reps_min, reps_max, duration_s) values
-  ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 0, 'back-squat', 3, 6, 8, null),
-  ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 1, 'plank', 3, null, null, 45),
-  ('20000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', 0, 'plank', 3, null, null, 45);
+  ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 0, 'fx-back-squat', 3, 6, 8, null),
+  ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000a', 1, 'fx-plank', 3, null, null, 45),
+  ('20000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-00000000000b', 0, 'fx-plank', 3, null, null, 45);
 insert into public.plan_checkins (user_id, period_index, completed_prev, completed_last,
     rhythm_min_before, rhythm_max_before, proposed_min, proposed_max, proposed_at) values
   ('00000000-0000-0000-0000-00000000000a', 3, 4, 3, 3, 4, 2, 3, '2026-09-27T07:00Z'),

@@ -7,8 +7,8 @@ insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
   ('00000000-0000-0000-0000-00000000000b', 'authenticated', 'authenticated', 'b@test.local');
 insert into public.exercises (id, name, type, level, instructions, source, license, timed) values
-  ('back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0', false),
-  ('plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0', true);
+  ('fx-back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0', false),
+  ('fx-plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0', true);
 
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}';
 set local role authenticated;
@@ -16,21 +16,21 @@ set local role authenticated;
 select lives_ok($$insert into public.routines (id, name, updated_at)
   values ('20000000-0000-0000-0000-0000000000a1', 'Lower A', '2020-01-01Z')$$, 'A creates routine R "Lower A"');
 select lives_ok($$insert into public.routine_items (routine_id, position, exercise_id, sets, reps_min, reps_max, duration_s) values
-  ('20000000-0000-0000-0000-0000000000a1', 0, 'back-squat', 3, 6, 8, null),
-  ('20000000-0000-0000-0000-0000000000a1', 1, 'plank', 3, null, null, 45)$$, 'A adds back-squat 3x6-8 and plank 3x45 s');
+  ('20000000-0000-0000-0000-0000000000a1', 0, 'fx-back-squat', 3, 6, 8, null),
+  ('20000000-0000-0000-0000-0000000000a1', 1, 'fx-plank', 3, null, null, 45)$$, 'A adds back-squat 3x6-8 and plank 3x45 s');
 select is((select updated_at from public.routines), now(), 'routines.updated_at is server-set');
 select throws_ok($$insert into public.routine_items (routine_id, position, exercise_id, sets, reps_min, reps_max)
-  values ('20000000-0000-0000-0000-0000000000a1', 1, 'back-squat', 3, 8, 12)$$,
+  values ('20000000-0000-0000-0000-0000000000a1', 1, 'fx-back-squat', 3, 8, 12)$$,
   '23505', null, 'a second item at position 1 gives 23505');
 select throws_ok($$insert into public.routine_items (routine_id, position, exercise_id, sets, reps_min, reps_max)
-  values ('20000000-0000-0000-0000-0000000000a1', 2, 'back-squat', 3, 10, 8)$$,
+  values ('20000000-0000-0000-0000-0000000000a1', 2, 'fx-back-squat', 3, 10, 8)$$,
   '23514', null, 'reps_min 10 > reps_max 8 gives 23514');
 select is((select progression from public.routine_items where position = 0), 'double_progression',
   'progression defaults to double_progression');
 
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000000b","role":"authenticated"}';
 select throws_ok($$insert into public.routine_items (routine_id, user_id, position, exercise_id, sets, reps_min, reps_max)
-  values ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000b', 5, 'back-squat', 3, 6, 8)$$,
+  values ('20000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-00000000000b', 5, 'fx-back-squat', 3, 6, 8)$$,
   '23503', null, 'B inserting an item into A''s routine gives 23503');
 
 set local request.jwt.claims to '{"sub":"00000000-0000-0000-0000-00000000000a","role":"authenticated"}';

@@ -36,6 +36,13 @@ jobs:
   supabase:
     name: supabase db tests
     runs-on: ubuntu-latest
+    # D-0011: Google OAuth reads client_id/secret via env(); no real secret is configured in CI,
+    # so the whole job gets the non-secret placeholder literal (never printed, never a real key).
+    # Job-level so it covers the step that boots the local stack, and any later step that also
+    # shells out to the CLI.
+    env:
+      GOOGLE_OAUTH_CLIENT_ID: ci-placeholder
+      GOOGLE_OAUTH_CLIENT_SECRET: ci-placeholder
     steps:
       - uses: actions/checkout@v4
       - id: has-supabase
@@ -55,6 +62,13 @@ jobs:
       # Populates the pnpm store, so setup-node's post-step cache save has a path to save.
       - run: pnpm install --frozen-lockfile
         if: steps.has-supabase.outputs.present == 'true'
+      # node:test coverage for the scripts (gen-seed, config, prod-guard, ci-order) — no Docker
+      # needed, so it runs early and fails fast before the stack even starts.
+      - run: node --test "supabase/tests/scripts/*.test.mjs"
+        if: steps.has-supabase.outputs.present == 'true'
+      # D-0053 §2: the committed seed.sql must match data/exercises/library exactly.
+      - run: node supabase/scripts/gen-seed.mjs --check
+        if: steps.has-supabase.outputs.present == 'true'
       - uses: supabase/setup-cli@v1
         if: steps.has-supabase.outputs.present == 'true'
         with:
@@ -63,7 +77,45 @@ jobs:
       # CI stays green from T-0002 onward without a fake DB step to delete later.
       - run: supabase start
         if: steps.has-supabase.outputs.present == 'true'
+      # AC7: seed.sql is idempotent. Reapply it with psql and check the library row counts are
+      # unchanged. Keys come from `supabase status -o env`, appended to $GITHUB_ENV so no later
+      # step needs to print them. `-o env` quotes every value (`DB_URL="postgresql://..."`); the
+      # quotes must go, or `psql "$DB_URL"` sees the literal quote characters as part of the
+      # connection string, falls back to peer auth on a local socket, and dies with "connection
+      # to server on socket ... failed".
+      - name: Load local Supabase keys
+        if: steps.has-supabase.outputs.present == 'true'
+        run: supabase status -o env | sed -E 's/^([A-Z0-9_]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
+      - name: Check local Supabase keys are set
+        if: steps.has-supabase.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          : "${DB_URL:?DB_URL was not set by \`supabase status -o env\`}"
+          : "${API_URL:?API_URL was not set by \`supabase status -o env\`}"
+          : "${ANON_KEY:?ANON_KEY was not set by \`supabase status -o env\`}"
+      - name: Reapply seed.sql and check it is a no-op (AC7)
+        if: steps.has-supabase.outputs.present == 'true'
+        run: |
+          set -euo pipefail
+          count_sql="select (select count(*) from public.exercises) || ',' || (select count(*) from public.exercise_areas) || ',' || (select count(*) from public.exercise_variants);"
+          before="$(psql "$DB_URL" -tAc "$count_sql")"
+          psql "$DB_URL" -v ON_ERROR_STOP=1 -f supabase/seed.sql
+          after="$(psql "$DB_URL" -tAc "$count_sql")"
+          if [ "$before" != "$after" ]; then
+            echo "seed.sql is not idempotent: exercises,exercise_areas,exercise_variants went from $before to $after"
+            exit 1
+          fi
       - run: supabase test db
+        if: steps.has-supabase.outputs.present == 'true'
+      - uses: denoland/setup-deno@v2
+        if: steps.has-supabase.outputs.present == 'true'
+        with:
+          deno-version: v2.x
+      # T-0203b/c add the function handlers under supabase/functions/; until then
+      # supabase/tests/functions/ holds only the seed and platform smoke tests (T-0203a).
+      # --allow-run=psql and --allow-write are for the AC3 seed-roundtrip integration test, which
+      # shells out to `psql` against a scratch temp file and rolls its own transaction back.
+      - run: deno test --config supabase/tests/functions/deno.json --allow-net --allow-env --allow-read --allow-run=psql --allow-write supabase/tests/functions/
         if: steps.has-supabase.outputs.present == 'true'
 
   e2e:
