@@ -36,6 +36,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - Data follow-up (from T-0100b review, new ticket when T-0102 is groomed): `profiles_priority_areas_valid` also requires array_lower = 1 (bypass with '[2:3]={back,back}'); consider requiring default_duration_s when timed.
 - T-0102 (from T-0100b): mirror D-0035 columns (exercises.kind/increment_kg/default_duration_s/external_load, sessions.warmup_in_budget/plan, session_sets.backoff) and routines/routine_items/plan_checkins; define SessionPlan JSON (items + startDeficits).
 - Engine (T-0200/T-0202): engine-rules.md rule 9 / F-profile: plan_updated_at → plan_changed_at (D-0035). bodyweight = external_load false.
+- T-0103b (from T-0103a accept/review): positive schema fixture for a valid source:wger row; schema.test missing-license asserts params.missingProperty; D-0033 §7 wording (AC11–14 exercise-only; AC10/15/16/17 whole library); align warm-up ids/weights with engine-rules §7 (wu-cat-cow core 1/back .5, wu-arm-circle shoulders) or amend via decision; remove the barbell-back-squat skip guard in areas.test.ts.
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
@@ -44,8 +45,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0100b | Data model v1 part b: migration 2 (routines, routine_items, plan_checkins, analytics schema), ACs tagged [b] | data | T-0100a | done | wl-build-data |
 | T-0101 | Engine rules v1 (gap B4): warm-up, energy, swap ranking, progression/pre-fill, shuffle, main lift, "planned session" | engine | T-0001 | done | wl-spec |
 | T-0102 | OpenAPI for Edge Functions with full schemas, auth and errors; generate `packages/shared` types | data | T-0100a, T-0101 | todo | wl-build-data |
-| T-0103a | Exercise library part a: @workoutlab/exercises package, schema + tests, bodyweight exercises (D-0022) | content | T-0002 | doing | wl-build-content |
-| T-0103b | Exercise library part b: dumbbell + full-gym exercises to 72–96 total (AC10–13 for all options) | content | T-0103a | todo | wl-build-content |
+| T-0103a | Exercise library part a: @workoutlab/exercises package, schema + tests, bodyweight exercises (D-0022) | content | T-0002 | done | wl-build-content |
+| T-0103b | Exercise library part b: dumbbell + full-gym exercises to 72–96 total (AC10–13 for all options) | content | T-0103a | doing | wl-build-content |
 
 ## Phase 2 — Core
 | ID | Title | Lane | Deps | Status | Flow |
