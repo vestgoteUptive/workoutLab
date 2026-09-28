@@ -28,7 +28,10 @@ jobs:
       - run: pnpm -w lint
       - run: pnpm format:check
       - run: pnpm check:repo
-      - run: pnpm -w test
+      # One turbo task at a time: on the 2-vCPU runner, parallel vitest workers pushed the engine
+      # seeded-property and design-tokens eslint-wiring tests past vitest's 5 s timeout (PR #3).
+      - run: pnpm turbo run test --concurrency=1
+      - run: pnpm test:repo-checks
 
   supabase:
     name: supabase db tests
@@ -49,6 +52,9 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
+      # Populates the pnpm store, so setup-node's post-step cache save has a path to save.
+      - run: pnpm install --frozen-lockfile
+        if: steps.has-supabase.outputs.present == 'true'
       - uses: supabase/setup-cli@v1
         if: steps.has-supabase.outputs.present == 'true'
         with:
