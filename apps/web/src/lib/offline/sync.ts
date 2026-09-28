@@ -18,6 +18,14 @@ async function refetchAfterFlush(tz: string): Promise<void> {
 
 export interface SyncHandle {
   flushNow: () => Promise<void>;
+  /** Resolves once every flush this handle started has finished, including the fire-and-forget
+   *  ones kicked off by an `online` or `SIGNED_IN`/`TOKEN_REFRESHED` event.
+   *
+   *  A DOM listener and the supabase-js auth callback can't return a promise to their caller, so
+   *  without this the only handle on that in-flight work is a dropped promise (T-0311). Anything
+   *  that must not observe a half-finished flush awaits this: the trigger tests that fire a real
+   *  event, and any caller that needs the queue quiescent before it reads IDB. */
+  settled: () => Promise<void>;
   stop: () => void;
 }
 
@@ -32,19 +40,41 @@ export function startSync(options: { tz: string }): SyncHandle {
     });
   });
 
-  const onOnline = () => void scheduler.runNow();
+  // Every flush started by this handle, so `settled()` can await work that no caller holds a
+  // promise for. A rejection must never become an unhandled rejection or leak into the next
+  // `settled()`, so each entry is caught and dropped as soon as it finishes.
+  let inFlight: Promise<void> = Promise.resolve();
+  function track(work: Promise<void>): void {
+    const guarded = work.catch(() => undefined);
+    inFlight = inFlight.then(() => guarded);
+  }
+
+  const onOnline = () => track(scheduler.runNow());
   window.addEventListener("online", onOnline);
 
   const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
     if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
       const userId = session?.user.id;
       if (userId) clearAuthBlocked(userId);
-      void scheduler.runNow();
+      track(scheduler.runNow());
     }
   });
 
   return {
-    flushNow: () => scheduler.runNow(),
+    flushNow: () => {
+      const work = scheduler.runNow();
+      track(work);
+      return work;
+    },
+    // Re-read `inFlight` after awaiting: a flush can start another one (a refetch, a retry), and
+    // awaiting a stale reference would return before that follow-up work finished.
+    settled: async () => {
+      let previous: Promise<void> | null = null;
+      while (previous !== inFlight) {
+        previous = inFlight;
+        await inFlight;
+      }
+    },
     stop: () => {
       window.removeEventListener("online", onOnline);
       subscription.subscription.unsubscribe();
