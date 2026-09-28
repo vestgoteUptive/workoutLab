@@ -12,7 +12,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0003 | `packages/design-tokens` from the design system + coverage ramp (D-0003); lint rule: no hex values outside tokens | design | T-0002 | done | wl-design |
 | T-0004 | CI checks: docs check (UF IDs exist in v2 flows, no v1 labels), duplicate D-NNNN id check, placeholder-test check | infra | T-0002 | done | wl-build-infra |
 | T-0005 | Spec touch-ups per D-0015: NFR-SYNC-2 wording (edited_at/deleted_at), UF-11.1 clamped proposal copy, UF-10.2 "Recovering" = ≥ 6 weighted hard sets in 48 h | product | T-0001 | done | wl-spec |
-| T-0006 | CI hygiene follow-ups: gen:api drift job (`pnpm --filter @workoutlab/shared gen:api` + git diff); regenerate packages/shared/src/database.gen.ts via supabase gen types in the supabase job and fail on drift (D-0037 §10); pgTAP column-drift check vs docs/data-model.md; root ESLint over .github/scripts in CI; v1-label regex word boundary; resolveBranch honours root; flag D-NNNN.md without slug; fix D-0032 context + D-0023 pointer | infra | T-0004 | todo | wl-build-infra |
+| T-0006 | CI hygiene follow-ups: check turbo hash inputs include untracked data/exercises files and no cross-worktree cache replay; gen:api drift job (`pnpm --filter @workoutlab/shared gen:api` + git diff); regenerate packages/shared/src/database.gen.ts via supabase gen types in the supabase job and fail on drift (D-0037 §10); pgTAP column-drift check vs docs/data-model.md; root ESLint over .github/scripts in CI; v1-label regex word boundary; resolveBranch honours root; flag D-NNNN.md without slug; fix D-0032 context + D-0023 pointer | infra | T-0004 | todo | wl-build-infra |
 
 **Follow-ups folded into existing tickets (from T-0001/T-0002, 2026-09-27)** — the groomer copies these into the ticket files:
 - T-0003: C-01 legend + coverage tokens on the D-0013 steps (0 / <0.33 / <0.66 / <1 / ≥1).
@@ -55,7 +55,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0102a | OpenAPI v1 (3 Edge Function paths) + API/engine types in packages/shared (D-0037, AC1–14) | data | T-0100a, T-0101 | done | wl-build-data |
 | T-0102b | DB types, parseSessionPlan, row mappers, migration 3 (priority_areas array_lower = 1) (AC15–20) | data | T-0102a, T-0100b | doing | wl-build-data |
 | T-0103a | Exercise library part a: @workoutlab/exercises package, schema + tests, bodyweight exercises (D-0022) | content | T-0002 | done | wl-build-content |
-| T-0103b | Exercise library part b: dumbbell + full-gym exercises to 72–96 total (AC10–13 for all options) | content | T-0103a | doing | wl-build-content |
+| T-0103b | Exercise library part b: dumbbell + full-gym exercises to 72–96 total (AC10–13 for all options) | content | T-0103a | done | wl-build-content |
+| T-0103c | Library test hardening: invalid fixture timed-without-duration → required/missingProperty default_duration_s; optional warm-up id rename to engine-rules §7 wu-* ids (D-0033 §9) | content | T-0103b | todo | wl-build-content |
 
 ## Phase 2 — Core
 | ID | Title | Lane | Deps | Status | Flow |
