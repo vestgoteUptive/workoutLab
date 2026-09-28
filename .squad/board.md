@@ -78,7 +78,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0202 | Engine: adaptive targets (rule 9) + simulated 14-day history suite | engine | T-0200 | done | wl-build-engine |
 | T-0203 | Supabase local stack, seed from `data/exercises`, Edge Functions suggest/finish/balance | backend | T-0100a, T-0103b, T-0201a | split → T-0203a, T-0203b, T-0203c (D-0053) | wl-build-backend |
 | T-0203a | Supabase stack + generated seed from data/exercises (external_load = NOT bodyweight, D-0044) | backend | T-0100a, T-0100b, T-0103b | done | wl-build-backend |
-| T-0203b | Edge Function setup (vendored engine/shared, D-0053 §1) + suggest + balance | backend | T-0203a, T-0201a, T-0102b | ready | wl-build-backend |
+| T-0203b | Edge Function setup (vendored engine/shared, D-0053 §1) + suggest + balance | backend | T-0203a, T-0201a, T-0102b | doing | wl-build-backend |
 | T-0203c | Edge Function finish (latest endedAt wins, D-0053 §7–8) | backend | T-0203b | todo | wl-build-backend |
 | T-0204 | Engine: swap ranking + deterministic shuffle (rules 12–13) | engine | T-0200 | todo | wl-build-engine |
 | T-0205 | Engine: progression + pre-fill (rule 14) | engine | T-0200 | todo | wl-build-engine |
