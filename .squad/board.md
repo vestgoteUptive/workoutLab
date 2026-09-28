@@ -12,7 +12,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0003 | `packages/design-tokens` from the design system + coverage ramp (D-0003); lint rule: no hex values outside tokens | design | T-0002 | done | wl-design |
 | T-0004 | CI checks: docs check (UF IDs exist in v2 flows, no v1 labels), duplicate D-NNNN id check, placeholder-test check | infra | T-0002 | done | wl-build-infra |
 | T-0005 | Spec touch-ups per D-0015: NFR-SYNC-2 wording (edited_at/deleted_at), UF-11.1 clamped proposal copy, UF-10.2 "Recovering" = ≥ 6 weighted hard sets in 48 h | product | T-0001 | done | wl-spec |
-| T-0006 | CI hygiene follow-ups: regenerate packages/shared/src/database.gen.ts via supabase gen types in the supabase job and fail on drift (D-0037 §10); pgTAP column-drift check vs docs/data-model.md; root ESLint over .github/scripts in CI; v1-label regex word boundary; resolveBranch honours root; flag D-NNNN.md without slug; fix D-0032 context + D-0023 pointer | infra | T-0004 | todo | wl-build-infra |
+| T-0006 | CI hygiene follow-ups: gen:api drift job (`pnpm --filter @workoutlab/shared gen:api` + git diff); regenerate packages/shared/src/database.gen.ts via supabase gen types in the supabase job and fail on drift (D-0037 §10); pgTAP column-drift check vs docs/data-model.md; root ESLint over .github/scripts in CI; v1-label regex word boundary; resolveBranch honours root; flag D-NNNN.md without slug; fix D-0032 context + D-0023 pointer | infra | T-0004 | todo | wl-build-infra |
 
 **Follow-ups folded into existing tickets (from T-0001/T-0002, 2026-09-27)** — the groomer copies these into the ticket files:
 - T-0003: C-01 legend + coverage tokens on the D-0013 steps (0 / <0.33 / <0.66 / <1 / ≥1).
@@ -42,6 +42,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - T-0202 (from T-0201 groom): the all-chest history's main lift is inverted-row (rule 7.2, D-0040 §11). T-0205: replace T-0201's first-time pre-fill stand-in with rule 14.
 - UF-08/UF-09 web tickets (from T-0201 groom): timeCheck elapsedS excludes paused time and the warm-up when warmupInBudget is off; an empty items plan is valid on UF-08.1; show itemsTotalS vs budget.
 - T-0308 (from T-0202 groom): build CheckinSession[] with checkinSessions(sessions ∪ offline queue); 'First check-in on {nextCheckinDate}' when periods is empty.
+- T-0102b (from T-0102a review): gen:api must run on all Node 22 (--experimental-strip-types or tsx); declare prettier as a devDependency of packages/shared or record hoisting in D-0039 §6.
+- Engine (from T-0102a): switch packages/engine/src/types.ts to @workoutlab/shared types (coverageStep number vs 0–4 literal; equipment string[]; D-0039).
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
@@ -50,8 +52,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0100b | Data model v1 part b: migration 2 (routines, routine_items, plan_checkins, analytics schema), ACs tagged [b] | data | T-0100a | done | wl-build-data |
 | T-0101 | Engine rules v1 (gap B4): warm-up, energy, swap ranking, progression/pre-fill, shuffle, main lift, "planned session" | engine | T-0001 | done | wl-spec |
 | T-0102 | OpenAPI for Edge Functions with full schemas, auth and errors; generate `packages/shared` types | data | T-0100a, T-0101 | split → T-0102a, T-0102b (TR-0015) | wl-build-data |
-| T-0102a | OpenAPI v1 (3 Edge Function paths) + API/engine types in packages/shared (D-0037, AC1–14) | data | T-0100a, T-0101 | doing | wl-build-data |
-| T-0102b | DB types, parseSessionPlan, row mappers, migration 3 (priority_areas array_lower = 1) (AC15–20) | data | T-0102a, T-0100b | ready | wl-build-data |
+| T-0102a | OpenAPI v1 (3 Edge Function paths) + API/engine types in packages/shared (D-0037, AC1–14) | data | T-0100a, T-0101 | done | wl-build-data |
+| T-0102b | DB types, parseSessionPlan, row mappers, migration 3 (priority_areas array_lower = 1) (AC15–20) | data | T-0102a, T-0100b | doing | wl-build-data |
 | T-0103a | Exercise library part a: @workoutlab/exercises package, schema + tests, bodyweight exercises (D-0022) | content | T-0002 | done | wl-build-content |
 | T-0103b | Exercise library part b: dumbbell + full-gym exercises to 72–96 total (AC10–13 for all options) | content | T-0103a | doing | wl-build-content |
 
