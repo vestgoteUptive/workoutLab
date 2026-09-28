@@ -1,32 +1,909 @@
 openapi: 3.1.0
 info:
-  title: workoutLab API
-  version: 0.1.0
+  title: workoutLab Edge Functions
+  version: 1.0.0
+  description: >-
+    The three server-side functions of workoutLab (D-0001, D-0037). Plain CRUD (profile, exercises,
+    sessions, sets) goes through supabase-js + RLS and is typed by the generated DB types in
+    packages/shared. Engine-only shapes that the device computes offline (check-in, swaps, time
+    check, pre-fill and the engine inputs) are path-less components marked `x-engine-function`.
+    Instants are ISO-8601 with `Z` or an offset; local dates are `YYYY-MM-DD`; `tz` is an IANA
+    name. Every object is closed (`additionalProperties: false`) and camelCase.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: http://127.0.0.1:54321/functions/v1
+    description: Local Supabase stack (supabase start)
+security:
+  - bearerAuth: []
+tags:
+  - name: engine
+    description: Deterministic engine run server-side (docs/engine-rules.md).
 paths:
-  /profile:
-    get: { summary: Get current user's profile, responses: { "200": { description: OK } } }
-    put: { summary: Update profile (onboarding, UF-02 / UF-09), responses: { "200": { description: OK } } }
-  /balance:
-    get: { summary: Rolling 14-day load vs target per area (UF-03, UF-08), responses: { "200": { description: OK } } }
-  /exercises:
-    get: { summary: List exercises (filters equipment, area, level), responses: { "200": { description: OK } } }
-  /exercises/{id}:
-    get:
-      summary: Exercise guide (UF-05)
-      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
-      responses: { "200": { description: OK } }
   /workouts/suggest:
-    post: { summary: Suggest a workout from time budget, energy and location (UF-04), responses: { "200": { description: OK } } }
-  /sessions:
-    post: { summary: Start a session, responses: { "201": { description: Created } } }
-  /sessions/{id}/sets:
     post:
-      summary: Log a set (UF-06)
-      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
-      responses: { "201": { description: Created } }
+      operationId: suggestWorkout
+      tags: [engine]
+      summary: Suggest a workout that fits the time budget (UF-08.1, UF-08.2)
+      description: >-
+        Runs rule 7 `suggest` for the caller with the server clock as `now`. The client stores
+        `workout.plan` in `sessions.plan` at UF-08.4 Ready.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SuggestRequest" }
+      responses:
+        "200":
+          description: The suggested workout.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Workout" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/ProfileMissing" }
+        "500": { $ref: "#/components/responses/Internal" }
+  /balance:
+    get:
+      operationId: getBalance
+      tags: [engine]
+      summary: Rolling 14-day hard sets per area against target (UF-10.1, UF-10.2)
+      description: Runs rule 11 `balance` for the caller with the server clock as `now`.
+      parameters:
+        - name: tz
+          in: query
+          required: true
+          description: IANA time zone of the device. 400 when `Intl` rejects it.
+          schema: { type: string, minLength: 1, examples: [Europe/Stockholm] }
+      responses:
+        "200":
+          description: The balance for every area.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/BalanceResult" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "422": { $ref: "#/components/responses/ProfileMissing" }
+        "500": { $ref: "#/components/responses/Internal" }
   /sessions/{id}/finish:
     post:
-      summary: Finish session and return summary (UF-07)
-      parameters: [{ name: id, in: path, required: true, schema: { type: string } }]
-      responses: { "200": { description: OK } }
-# Schemas to be filled in by data-modeler + backend-dev, approved by the orchestrator.
+      operationId: finishSession
+      tags: [engine]
+      summary: Finish a session and return its summary (UF-03.3)
+      description: >-
+        Sets `ended_at` (and `effort_rating`) on the caller's session and returns the summary.
+        Idempotent: a repeat finish returns 200 with the summary for the stored `ended_at`, and a
+        later `endedAt` overwrites it (last write wins, NFR-SYNC-3). `withinBudget` is
+        `durationS ≤ timeBudgetMin × 60 + 120`, the same boundary as
+        `analytics.finished_within_budget`. Running over budget is a valid 200, not an error. 404
+        when the session is missing or not owned (RLS hides it).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The session id (`sessions.id`).
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FinishRequest" }
+      responses:
+        "200":
+          description: The session summary, also on a repeat finish.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionSummary" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/Internal" }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: The Supabase access token of the signed-in user.
+  responses:
+    BadRequest:
+      description: The request body or query failed validation.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+          example:
+            error: { code: invalid_request, message: "sessionInput.budgetMin must be an integer 1–480", requestId: req_01 }
+    Unauthorized:
+      description: Missing, expired or invalid bearer token.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+          example:
+            error: { code: unauthorized, message: Missing or invalid access token, requestId: req_01 }
+    NotFound:
+      description: The resource is missing or not owned by the caller.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+          example:
+            error: { code: not_found, message: Session not found, requestId: req_01 }
+    ProfileMissing:
+      description: No profile row, or fewer than 9 area targets (onboarding not finished).
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+          example:
+            error: { code: profile_missing, message: Finish onboarding first, requestId: req_01 }
+    Internal:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+          example:
+            error: { code: internal, message: Something went wrong, requestId: req_01 }
+  schemas:
+    # ---------- scalars and enums ----------
+    Instant:
+      description: ISO-8601 instant with `Z` or an offset (D-0034 §2).
+      type: string
+      format: date-time
+      pattern: "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})$"
+      examples: ["2026-09-27T12:00:00+02:00"]
+    LocalDate:
+      description: Local calendar date in the user's time zone.
+      type: string
+      format: date
+      pattern: "^\\d{4}-\\d{2}-\\d{2}$"
+      examples: ["2026-09-27"]
+    TimeZone:
+      description: IANA time zone name. The function returns 400 when `Intl` rejects it.
+      type: string
+      minLength: 1
+      examples: [Europe/Stockholm]
+    ExerciseId:
+      description: Library slug (`exercises.id`).
+      type: string
+      minLength: 1
+      examples: [bench-press]
+    Area:
+      description: The 9 body areas in the fixed order.
+      type: string
+      enum: [chest, back, shoulders, arms, core, glutes, quads, hamstrings, calves]
+      examples: [chest]
+    Goal:
+      type: string
+      enum: [build_muscle, get_stronger, general_fitness]
+      examples: [build_muscle]
+    Level:
+      type: string
+      enum: [beginner, intermediate, advanced]
+      examples: [beginner]
+    ExerciseType:
+      type: string
+      enum: [compound, isolation]
+      examples: [compound]
+    ExerciseKind:
+      type: string
+      enum: [exercise, warmup]
+      examples: [exercise]
+    Energy:
+      description: Energy picked at UF-08.1.
+      type: string
+      enum: [low, normal, high]
+      examples: [normal]
+    TargetSource:
+      type: string
+      enum: [default, adapted, manual]
+      examples: [default]
+    SwapReason:
+      description: Why the user swapped (UF-05.1, D-0025). `null` in a Reason means no reason given.
+      type: string
+      enum: [equipment_taken, discomfort, variety, short_on_time]
+      examples: [equipment_taken]
+    PrefillKind:
+      description: How the pre-fill was derived (rule 14, D-0026).
+      type: string
+      enum: [first_time, carry, reentry, hold_after_break, increase, deload, hold, add_rep]
+      examples: [first_time]
+    AreaDeficits:
+      description: Rule 5 deficit per area at session start, each in [0, 1].
+      type: object
+      additionalProperties: false
+      required: [chest, back, shoulders, arms, core, glutes, quads, hamstrings, calves]
+      properties:
+        chest: { type: number, minimum: 0, maximum: 1 }
+        back: { type: number, minimum: 0, maximum: 1 }
+        shoulders: { type: number, minimum: 0, maximum: 1 }
+        arms: { type: number, minimum: 0, maximum: 1 }
+        core: { type: number, minimum: 0, maximum: 1 }
+        glutes: { type: number, minimum: 0, maximum: 1 }
+        quads: { type: number, minimum: 0, maximum: 1 }
+        hamstrings: { type: number, minimum: 0, maximum: 1 }
+        calves: { type: number, minimum: 0, maximum: 1 }
+      examples:
+        - &allOne { chest: 1, back: 1, shoulders: 1, arms: 1, core: 1, glutes: 1, quads: 1, hamstrings: 1, calves: 1 }
+    AreaSetCounts:
+      description: Weighted hard sets per area (≥ 0), all 9 keys.
+      type: object
+      additionalProperties: false
+      required: [chest, back, shoulders, arms, core, glutes, quads, hamstrings, calves]
+      properties:
+        chest: { type: number, minimum: 0 }
+        back: { type: number, minimum: 0 }
+        shoulders: { type: number, minimum: 0 }
+        arms: { type: number, minimum: 0 }
+        core: { type: number, minimum: 0 }
+        glutes: { type: number, minimum: 0 }
+        quads: { type: number, minimum: 0 }
+        hamstrings: { type: number, minimum: 0 }
+        calves: { type: number, minimum: 0 }
+      examples:
+        - { chest: 4, back: 3, shoulders: 0, arms: 0, core: 0, glutes: 0, quads: 2, hamstrings: 0, calves: 0 }
+    AreaWeights:
+      description: Area → weight map of an exercise (D-0022). 1 = primary, 0.5 = secondary.
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        chest: { type: number, enum: [1, 0.5] }
+        back: { type: number, enum: [1, 0.5] }
+        shoulders: { type: number, enum: [1, 0.5] }
+        arms: { type: number, enum: [1, 0.5] }
+        core: { type: number, enum: [1, 0.5] }
+        glutes: { type: number, enum: [1, 0.5] }
+        quads: { type: number, enum: [1, 0.5] }
+        hamstrings: { type: number, enum: [1, 0.5] }
+        calves: { type: number, enum: [1, 0.5] }
+      examples:
+        - { quads: 1, hamstrings: 0.5 }
+
+    # ---------- errors ----------
+    ApiError:
+      description: >-
+        The one error envelope (D-0037 §4). Messages never contain an email or a user id
+        (NFR-PRIV-7). There is no 403: not owned is 404.
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+              enum: [invalid_request, unauthorized, not_found, profile_missing, internal]
+            message: { type: string }
+            requestId: { type: string, minLength: 1 }
+      examples:
+        - error: { code: not_found, message: Session not found, requestId: req_01 }
+
+    # ---------- requests ----------
+    SessionInput:
+      description: What the user picked at UF-08.1 (rule 7).
+      type: object
+      additionalProperties: false
+      required: [budgetMin, warmupInBudget, energy, shuffle, mainLiftId, pinnedIds, excludeIds]
+      properties:
+        budgetMin: { type: integer, minimum: 1, maximum: 480 }
+        warmupInBudget: { type: boolean }
+        energy: { $ref: "#/components/schemas/Energy" }
+        shuffle: { type: integer, minimum: 0 }
+        mainLiftId:
+          anyOf: [{ $ref: "#/components/schemas/ExerciseId" }, { type: "null" }]
+        pinnedIds:
+          type: array
+          items: { $ref: "#/components/schemas/ExerciseId" }
+        excludeIds:
+          type: array
+          items: { $ref: "#/components/schemas/ExerciseId" }
+      examples:
+        - &sessionInput30 { budgetMin: 30, warmupInBudget: true, energy: normal, shuffle: 0, mainLiftId: null, pinnedIds: [], excludeIds: [] }
+    SuggestRequest:
+      description: Body of POST /workouts/suggest. The server supplies `now` (D-0037 §9).
+      type: object
+      additionalProperties: false
+      required: [sessionInput, tz]
+      properties:
+        sessionInput: { $ref: "#/components/schemas/SessionInput" }
+        tz: { $ref: "#/components/schemas/TimeZone" }
+      examples:
+        - { sessionInput: *sessionInput30, tz: Europe/Stockholm }
+    FinishRequest:
+      description: Body of POST /sessions/{id}/finish (UF-03.3).
+      type: object
+      additionalProperties: false
+      required: [endedAt, tz]
+      properties:
+        endedAt: { $ref: "#/components/schemas/Instant" }
+        effortRating: { type: integer, minimum: 1, maximum: 5 }
+        tz: { $ref: "#/components/schemas/TimeZone" }
+      examples:
+        - { endedAt: "2026-09-27T11:35:00+02:00", effortRating: 4, tz: Europe/Stockholm }
+
+    # ---------- reasons (rule 10) ----------
+    Reason:
+      description: Why the engine picked something (rule 10). Discriminated by `code`.
+      oneOf:
+        - $ref: "#/components/schemas/ReasonMainLift"
+        - $ref: "#/components/schemas/ReasonAreaDeficit"
+        - $ref: "#/components/schemas/ReasonDaysSince"
+        - $ref: "#/components/schemas/ReasonRecoveringSkipped"
+        - $ref: "#/components/schemas/ReasonEnergyLowTrim"
+        - $ref: "#/components/schemas/ReasonEnergyHighBackoff"
+        - $ref: "#/components/schemas/ReasonSwap"
+        - $ref: "#/components/schemas/ReasonPrefill"
+      discriminator:
+        propertyName: code
+        mapping:
+          main_lift: "#/components/schemas/ReasonMainLift"
+          area_deficit: "#/components/schemas/ReasonAreaDeficit"
+          days_since: "#/components/schemas/ReasonDaysSince"
+          recovering_skipped: "#/components/schemas/ReasonRecoveringSkipped"
+          energy_low_trim: "#/components/schemas/ReasonEnergyLowTrim"
+          energy_high_backoff: "#/components/schemas/ReasonEnergyHighBackoff"
+          swap: "#/components/schemas/ReasonSwap"
+          prefill: "#/components/schemas/ReasonPrefill"
+      examples:
+        - { code: area_deficit, area: chest, deficit: 1 }
+    ReasonMainLift:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { type: string, const: main_lift }
+      examples: [{ code: main_lift }]
+    ReasonAreaDeficit:
+      type: object
+      additionalProperties: false
+      required: [code, area, deficit]
+      properties:
+        code: { type: string, const: area_deficit }
+        area: { $ref: "#/components/schemas/Area" }
+        deficit: { type: number, minimum: 0, maximum: 1 }
+      examples: [{ code: area_deficit, area: chest, deficit: 1 }]
+    ReasonDaysSince:
+      type: object
+      additionalProperties: false
+      required: [code, area, days]
+      properties:
+        code: { type: string, const: days_since }
+        area: { $ref: "#/components/schemas/Area" }
+        days:
+          description: Days since the area was last trained; null = never.
+          type: [integer, "null"]
+          minimum: 0
+      examples: [{ code: days_since, area: hamstrings, days: null }]
+    ReasonRecoveringSkipped:
+      type: object
+      additionalProperties: false
+      required: [code, area]
+      properties:
+        code: { type: string, const: recovering_skipped }
+        area: { $ref: "#/components/schemas/Area" }
+      examples: [{ code: recovering_skipped, area: quads }]
+    ReasonEnergyLowTrim:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { type: string, const: energy_low_trim }
+      examples: [{ code: energy_low_trim }]
+    ReasonEnergyHighBackoff:
+      type: object
+      additionalProperties: false
+      required: [code]
+      properties:
+        code: { type: string, const: energy_high_backoff }
+      examples: [{ code: energy_high_backoff }]
+    ReasonSwap:
+      type: object
+      additionalProperties: false
+      required: [code, reason]
+      properties:
+        code: { type: string, const: swap }
+        reason:
+          anyOf: [{ $ref: "#/components/schemas/SwapReason" }, { type: "null" }]
+      examples: [{ code: swap, reason: null }]
+    ReasonPrefill:
+      type: object
+      additionalProperties: false
+      required: [code, kind]
+      properties:
+        code: { type: string, const: prefill }
+        kind: { $ref: "#/components/schemas/PrefillKind" }
+      examples: [{ code: prefill, kind: first_time }]
+
+    # ---------- workout and session plan (rules 7, 13, 14; D-0024, D-0035) ----------
+    PrefillResult:
+      description: Pre-filled load for an item (rule 14, UF-09.3, UF-09.4).
+      x-engine-function: prefill
+      type: object
+      additionalProperties: false
+      required: [weightKg, reps, durationS, kind]
+      properties:
+        weightKg: { type: [number, "null"], minimum: 0 }
+        reps: { type: [integer, "null"], minimum: 1 }
+        durationS: { type: [integer, "null"], minimum: 1 }
+        kind: { $ref: "#/components/schemas/PrefillKind" }
+      examples:
+        - { weightKg: null, reps: 6, durationS: null, kind: first_time }
+    Backoff:
+      description: The High-energy back-off set (rule 13).
+      type: object
+      additionalProperties: false
+      required: [weightKg, reps]
+      properties:
+        weightKg: { type: [number, "null"], minimum: 0 }
+        reps: { type: integer, minimum: 1 }
+      examples: [{ weightKg: 50, reps: 8 }]
+    WorkoutItem:
+      type: object
+      additionalProperties: false
+      required: [exerciseId, isMain, sets, repsMin, repsMax, durationS, costS, backoff, prefill, reasons]
+      properties:
+        exerciseId: { $ref: "#/components/schemas/ExerciseId" }
+        isMain: { type: boolean }
+        sets: { type: integer, minimum: 1, maximum: 4 }
+        repsMin: { type: [integer, "null"], minimum: 1 }
+        repsMax: { type: [integer, "null"], minimum: 1 }
+        durationS: { type: [integer, "null"], minimum: 1 }
+        costS: { type: integer, minimum: 0 }
+        backoff:
+          anyOf: [{ $ref: "#/components/schemas/Backoff" }, { type: "null" }]
+        prefill: { $ref: "#/components/schemas/PrefillResult" }
+        reasons:
+          type: array
+          items: { $ref: "#/components/schemas/Reason" }
+      examples:
+        - &benchItem
+          exerciseId: bench-press
+          isMain: true
+          sets: 4
+          repsMin: 6
+          repsMax: 8
+          durationS: null
+          costS: 720
+          backoff: null
+          prefill: { weightKg: null, reps: 6, durationS: null, kind: first_time }
+          reasons: [{ code: main_lift }, { code: area_deficit, area: chest, deficit: 1 }]
+    WarmupMove:
+      type: object
+      additionalProperties: false
+      required: [exerciseId, durationS]
+      properties:
+        exerciseId: { $ref: "#/components/schemas/ExerciseId" }
+        durationS: { type: integer, minimum: 1 }
+      examples: [{ exerciseId: wu-scap-push-up, durationS: 40 }]
+    SessionPlan:
+      description: >-
+        The `sessions.plan` JSON, version 1 (D-0035, D-0037 §7). `startDeficits` is the rule 5
+        deficit per area at session start; rule 8 trims by it.
+      type: object
+      additionalProperties: false
+      required: [version, mainLiftId, warmup, items, startDeficits]
+      properties:
+        version: { type: integer, const: 1 }
+        mainLiftId:
+          anyOf: [{ $ref: "#/components/schemas/ExerciseId" }, { type: "null" }]
+        warmup:
+          type: array
+          maxItems: 4
+          items: { $ref: "#/components/schemas/WarmupMove" }
+        items:
+          type: array
+          maxItems: 8
+          items: { $ref: "#/components/schemas/WorkoutItem" }
+        startDeficits: { $ref: "#/components/schemas/AreaDeficits" }
+      examples:
+        - &r7e4plan
+          version: 1
+          mainLiftId: bench-press
+          warmup:
+            - { exerciseId: wu-scap-push-up, durationS: 40 }
+            - { exerciseId: wu-band-pull-apart, durationS: 40 }
+            - { exerciseId: wu-bodyweight-squat, durationS: 40 }
+            - { exerciseId: wu-arm-circle, durationS: 40 }
+          items:
+            - *benchItem
+            - exerciseId: inverted-row
+              isMain: false
+              sets: 3
+              repsMin: 8
+              repsMax: 12
+              durationS: null
+              costS: 555
+              backoff: null
+              prefill: { weightKg: 0, reps: 8, durationS: null, kind: first_time }
+              reasons: [{ code: area_deficit, area: back, deficit: 1 }]
+            - exerciseId: leg-extension
+              isMain: false
+              sets: 2
+              repsMin: 10
+              repsMax: 15
+              durationS: null
+              costS: 270
+              backoff: null
+              prefill: { weightKg: null, reps: 10, durationS: null, kind: first_time }
+              reasons: [{ code: area_deficit, area: quads, deficit: 1 }]
+          startDeficits: *allOne
+    Workout:
+      description: Rule 7 `suggest` output (UF-08.2). R7-E4 is the example.
+      x-engine-function: suggest
+      type: object
+      additionalProperties: false
+      required: [plan, budgetMin, warmupInBudget, energy, itemsTotalS, totalS, unusedS, sessionReasons]
+      properties:
+        plan: { $ref: "#/components/schemas/SessionPlan" }
+        budgetMin: { type: integer, minimum: 1, maximum: 480 }
+        warmupInBudget: { type: boolean }
+        energy: { $ref: "#/components/schemas/Energy" }
+        itemsTotalS: { type: integer, minimum: 0 }
+        totalS: { type: integer, minimum: 0 }
+        unusedS: { type: integer, minimum: 0 }
+        sessionReasons:
+          type: array
+          maxItems: 3
+          items: { $ref: "#/components/schemas/Reason" }
+      examples:
+        - plan: *r7e4plan
+          budgetMin: 30
+          warmupInBudget: true
+          energy: normal
+          itemsTotalS: 1545
+          totalS: 1725
+          unusedS: 75
+          sessionReasons:
+            - { code: area_deficit, area: chest, deficit: 1 }
+            - { code: area_deficit, area: back, deficit: 1 }
+            - { code: area_deficit, area: quads, deficit: 1 }
+
+    # ---------- balance (rule 11, UF-10) ----------
+    Contributor:
+      type: object
+      additionalProperties: false
+      required: [exerciseId, weightedSets, lastDate]
+      properties:
+        exerciseId: { $ref: "#/components/schemas/ExerciseId" }
+        weightedSets: { type: number, minimum: 0 }
+        lastDate: { $ref: "#/components/schemas/LocalDate" }
+      examples: [{ exerciseId: romanian-deadlift, weightedSets: 4, lastDate: "2026-09-20" }]
+    AreaBalance:
+      type: object
+      additionalProperties: false
+      required:
+        [area, load, target, targetSource, targetUpdatedAt, deficit, coverageStep, needsAttention, recovering, lastTrainedDate, days, contributors]
+      properties:
+        area: { $ref: "#/components/schemas/Area" }
+        load: { type: number, minimum: 0 }
+        target: { type: integer, minimum: 1 }
+        targetSource: { $ref: "#/components/schemas/TargetSource" }
+        targetUpdatedAt: { $ref: "#/components/schemas/Instant" }
+        deficit: { type: number, minimum: 0, maximum: 1 }
+        coverageStep: { type: integer, minimum: 0, maximum: 4 }
+        needsAttention: { type: boolean }
+        recovering: { type: boolean }
+        lastTrainedDate:
+          anyOf: [{ $ref: "#/components/schemas/LocalDate" }, { type: "null" }]
+        days:
+          description: Weighted hard sets per local day, oldest first (windowStart … windowEnd).
+          type: array
+          minItems: 14
+          maxItems: 14
+          items: { type: number, minimum: 0 }
+        contributors:
+          type: array
+          items: { $ref: "#/components/schemas/Contributor" }
+      examples:
+        - area: hamstrings
+          load: 6
+          target: 16
+          targetSource: default
+          targetUpdatedAt: "2026-08-02T09:00:00Z"
+          deficit: 0.625
+          coverageStep: 1
+          needsAttention: false
+          recovering: false
+          lastTrainedDate: "2026-09-25"
+          days: [0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 2, 0, 0]
+          contributors:
+            - { exerciseId: romanian-deadlift, weightedSets: 4, lastDate: "2026-09-20" }
+            - { exerciseId: back-squat, weightedSets: 2, lastDate: "2026-09-25" }
+    BalanceResult:
+      description: Rule 11 `balance` output (UF-10.1, UF-10.2). Zero history is the example.
+      x-engine-function: balance
+      type: object
+      additionalProperties: false
+      required: [windowStart, windowEnd, computedAt, areas]
+      properties:
+        windowStart: { $ref: "#/components/schemas/LocalDate" }
+        windowEnd: { $ref: "#/components/schemas/LocalDate" }
+        computedAt: { $ref: "#/components/schemas/Instant" }
+        areas:
+          type: array
+          minItems: 9
+          maxItems: 9
+          items: { $ref: "#/components/schemas/AreaBalance" }
+      examples:
+        - &zeroBalance
+          windowStart: "2026-09-14"
+          windowEnd: "2026-09-27"
+          computedAt: "2026-09-27T12:00:00+02:00"
+          areas:
+            - { area: chest, load: 0, target: 20, targetSource: default, targetUpdatedAt: "2026-08-02T09:00:00Z", deficit: 1, coverageStep: 0, needsAttention: false, recovering: false, lastTrainedDate: null, days: &zeroDays [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], contributors: [] }
+            - { area: back, load: 0, target: 20, targetSource: default, targetUpdatedAt: "2026-08-02T09:00:00Z", deficit: 1, coverageStep: 0, needsAttention: false, recovering: false, lastTrainedDate: null, days: *zeroDays, contributors: [] }
+            - { area: shoulders, load: 0, target: 16, targetSource: default, targetUpdatedAt: "2026-08-02T09:00:00Z", deficit: 1, coverageStep: 0, needsAttention: false, recovering: false, lastTrainedDate: null, days: *zeroDays, contributors: [] }
+            - { area: arms, load: 0, target: 12, targetSource: default, targetUpdatedAt: "2026-08-02T09:00:00Z", deficit: 1, coverageStep: 0, needsAttention: false, recovering: false, lastTrainedDate: null, days: *zeroDays, contributors: [] }
+            - { area: core, load: 0, target: 12, targetSource: default, targetUpdatedAt: "2026-08-02T09:00:00Z", deficit: 1, coverageStep: 0, needsAttention: false, recovering: false, lastTrainedDate: null, days: *zeroDays, contributors: [] }
+            - { area: glutes, load: 0, target: 20, targetSource: default, targetUpdatedAt: "2026-08-02T09:00:00Z", deficit: 1, coverageStep: 0, needsAttention: false, recovering: false, lastTrainedDate: null, days: *zeroDays, contributors: [] }
+            - { area: quads, load: 0, target: 20, targetSource: default, targetUpdatedAt: "2026-08-02T09:00:00Z", deficit: 1, coverageStep: 0, needsAttention: false, recovering: false, lastTrainedDate: null, days: *zeroDays, contributors: [] }
+            - { area: hamstrings, load: 0, target: 16, targetSource: default, targetUpdatedAt: "2026-08-02T09:00:00Z", deficit: 1, coverageStep: 0, needsAttention: false, recovering: false, lastTrainedDate: null, days: *zeroDays, contributors: [] }
+            - { area: calves, load: 0, target: 12, targetSource: default, targetUpdatedAt: "2026-08-02T09:00:00Z", deficit: 1, coverageStep: 0, needsAttention: false, recovering: false, lastTrainedDate: null, days: *zeroDays, contributors: [] }
+
+    # ---------- finish (UF-03.3) ----------
+    SessionSummary:
+      description: >-
+        Response of POST /sessions/{id}/finish. `withinBudget = durationS ≤ timeBudgetMin × 60 +
+        120`.
+      type: object
+      additionalProperties: false
+      required: [sessionId, startedAt, endedAt, durationS, timeBudgetMin, withinBudget, exerciseCount, hardSets, weightedSetsByArea, balance]
+      properties:
+        sessionId: { type: string, format: uuid }
+        startedAt: { $ref: "#/components/schemas/Instant" }
+        endedAt: { $ref: "#/components/schemas/Instant" }
+        durationS: { type: integer, minimum: 0 }
+        timeBudgetMin: { type: integer, minimum: 1, maximum: 480 }
+        withinBudget: { type: boolean }
+        exerciseCount: { type: integer, minimum: 0 }
+        hardSets: { type: integer, minimum: 0 }
+        weightedSetsByArea: { $ref: "#/components/schemas/AreaSetCounts" }
+        balance: { $ref: "#/components/schemas/BalanceResult" }
+      examples:
+        - sessionId: 0b9c4a52-6f1e-4d7a-9a51-2c3d4e5f6a7b
+          startedAt: "2026-09-27T10:00:00+02:00"
+          endedAt: "2026-09-27T11:35:00+02:00"
+          durationS: 5700
+          timeBudgetMin: 45
+          withinBudget: false
+          exerciseCount: 3
+          hardSets: 9
+          weightedSetsByArea: { chest: 4, back: 3, shoulders: 0, arms: 0, core: 0, glutes: 0, quads: 2, hamstrings: 0, calves: 0 }
+          balance: *zeroBalance
+
+    # ---------- engine inputs (D-0034 §1, D-0037 §6) ----------
+    HistorySet:
+      description: One logged set as the engine sees it (rule 0). `pending` marks a queued offline set.
+      x-engine-function: balance, suggest, prefill
+      type: object
+      additionalProperties: false
+      required: [clientId, sessionId, exerciseId, isWarmup, completedAt, editedAt, deletedAt, reps, weightKg, durationS]
+      properties:
+        clientId: { type: string, minLength: 1 }
+        sessionId: { type: string, minLength: 1 }
+        exerciseId: { $ref: "#/components/schemas/ExerciseId" }
+        isWarmup: { type: boolean }
+        completedAt: { $ref: "#/components/schemas/Instant" }
+        editedAt: { $ref: "#/components/schemas/Instant" }
+        deletedAt:
+          anyOf: [{ $ref: "#/components/schemas/Instant" }, { type: "null" }]
+        pending: { type: boolean }
+        reps: { type: [integer, "null"], minimum: 0 }
+        weightKg: { type: [number, "null"], minimum: 0 }
+        durationS: { type: [integer, "null"], minimum: 0 }
+      examples:
+        - { clientId: C1, sessionId: S1, exerciseId: back-squat, isWarmup: false, completedAt: "2026-09-20T10:00:00Z", editedAt: "2026-09-20T10:05:00Z", deletedAt: null, reps: 8, weightKg: 60, durationS: null }
+    LibraryExercise:
+      description: A library entry as the engine sees it (D-0034 §1 superset, D-0037 §6).
+      x-engine-function: balance, suggest, rankSwaps, prefill
+      type: object
+      additionalProperties: false
+      required: [id, name, kind, type, level, equipment, areas, timed, incrementKg, defaultDurationS, externalLoad]
+      properties:
+        id: { $ref: "#/components/schemas/ExerciseId" }
+        name: { type: string, minLength: 1 }
+        kind: { $ref: "#/components/schemas/ExerciseKind" }
+        type: { $ref: "#/components/schemas/ExerciseType" }
+        level: { $ref: "#/components/schemas/Level" }
+        equipment:
+          type: array
+          items: { type: string, minLength: 1 }
+        areas: { $ref: "#/components/schemas/AreaWeights" }
+        timed: { type: boolean }
+        incrementKg: { type: number, exclusiveMinimum: 0 }
+        defaultDurationS: { type: [integer, "null"], minimum: 1 }
+        externalLoad: { type: boolean }
+      examples:
+        - { id: back-squat, name: Back squat, kind: exercise, type: compound, level: beginner, equipment: [barbell, rack], areas: { quads: 1, hamstrings: 0.5 }, timed: false, incrementKg: 2.5, defaultDurationS: null, externalLoad: true }
+    AreaTarget:
+      x-engine-function: balance, suggest
+      type: object
+      additionalProperties: false
+      required: [area, setsPer14d, source, updatedAt]
+      properties:
+        area: { $ref: "#/components/schemas/Area" }
+        setsPer14d: { type: integer, minimum: 1 }
+        source: { $ref: "#/components/schemas/TargetSource" }
+        updatedAt: { $ref: "#/components/schemas/Instant" }
+      examples: [{ area: chest, setsPer14d: 20, source: default, updatedAt: "2026-08-02T09:00:00Z" }]
+    EngineProfile:
+      x-engine-function: suggest, evaluateCheckin
+      type: object
+      additionalProperties: false
+      required: [goal, level, equipment, rhythmMin, rhythmMax, priorityAreas, onboardedAt, planUpdatedAt]
+      properties:
+        goal: { $ref: "#/components/schemas/Goal" }
+        level: { $ref: "#/components/schemas/Level" }
+        equipment:
+          type: array
+          items: { type: string, minLength: 1 }
+        rhythmMin: { type: integer, minimum: 1, maximum: 7 }
+        rhythmMax: { type: integer, minimum: 1, maximum: 7 }
+        priorityAreas:
+          type: array
+          maxItems: 3
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/Area" }
+        onboardedAt: { $ref: "#/components/schemas/Instant" }
+        planUpdatedAt: { $ref: "#/components/schemas/Instant" }
+      examples:
+        - { goal: build_muscle, level: beginner, equipment: [barbell, rack, bench, dumbbell, cable, machine, pullup-bar], rhythmMin: 3, rhythmMax: 4, priorityAreas: [], onboardedAt: "2026-08-02T09:00:00Z", planUpdatedAt: "2026-08-02T09:00:00Z" }
+    CheckinSession:
+      description: A session as rule 9 counts it. Completed = `hardSetCount ≥ 1`.
+      x-engine-function: evaluateCheckin
+      type: object
+      additionalProperties: false
+      required: [id, startedAt, hardSetCount]
+      properties:
+        id: { type: string, minLength: 1 }
+        startedAt: { $ref: "#/components/schemas/Instant" }
+        hardSetCount: { type: integer, minimum: 0 }
+      examples: [{ id: S1, startedAt: "2026-09-20T10:00:00Z", hardSetCount: 9 }]
+    PlanCheckin:
+      description: A `plan_checkins` row as rule 9 reads it (D-0018, D-0027).
+      x-engine-function: evaluateCheckin
+      type: object
+      additionalProperties: false
+      required: [id, periodIndex, completedPrev, completedLast, rhythmMinBefore, rhythmMaxBefore, proposedMin, proposedMax, proposedAt, answer, answeredAt]
+      properties:
+        id: { type: string, minLength: 1 }
+        periodIndex: { type: integer, minimum: 1 }
+        completedPrev: { type: integer, minimum: 0 }
+        completedLast: { type: integer, minimum: 0 }
+        rhythmMinBefore: { type: integer, minimum: 1, maximum: 7 }
+        rhythmMaxBefore: { type: integer, minimum: 1, maximum: 7 }
+        proposedMin: { type: integer, minimum: 1, maximum: 7 }
+        proposedMax: { type: integer, minimum: 1, maximum: 7 }
+        proposedAt: { $ref: "#/components/schemas/Instant" }
+        answer:
+          anyOf: [{ type: string, enum: [accepted, kept, withdrawn] }, { type: "null" }]
+        answeredAt:
+          anyOf: [{ $ref: "#/components/schemas/Instant" }, { type: "null" }]
+      examples:
+        - { id: P1, periodIndex: 3, completedPrev: 4, completedLast: 3, rhythmMinBefore: 3, rhythmMaxBefore: 4, proposedMin: 2, proposedMax: 3, proposedAt: "2026-09-27T09:00:00Z", answer: null, answeredAt: null }
+
+    # ---------- check-in (rule 9, UF-11) ----------
+    CheckinPeriod:
+      type: object
+      additionalProperties: false
+      required: [index, start, end, completed, status]
+      properties:
+        index: { type: integer, minimum: 1 }
+        start: { $ref: "#/components/schemas/LocalDate" }
+        end: { $ref: "#/components/schemas/LocalDate" }
+        completed: { type: integer, minimum: 0 }
+        status: { type: string, enum: [under, on_plan, over] }
+      examples: [{ index: 2, start: "2026-08-30", end: "2026-09-12", completed: 4, status: under }]
+    PreviewTarget:
+      type: object
+      additionalProperties: false
+      required: [area, setsPer14d]
+      properties:
+        area: { $ref: "#/components/schemas/Area" }
+        setsPer14d: { type: integer, minimum: 1 }
+      examples: [{ area: chest, setsPer14d: 14 }]
+    CheckinProposal:
+      type: object
+      additionalProperties: false
+      required: [direction, rhythmMin, rhythmMax, previewTargets]
+      properties:
+        direction: { type: string, enum: [down, up] }
+        rhythmMin: { type: integer, minimum: 1, maximum: 7 }
+        rhythmMax: { type: integer, minimum: 1, maximum: 7 }
+        previewTargets:
+          type: array
+          minItems: 9
+          maxItems: 9
+          items: { $ref: "#/components/schemas/PreviewTarget" }
+      examples:
+        - direction: down
+          rhythmMin: 2
+          rhythmMax: 3
+          previewTargets:
+            - { area: chest, setsPer14d: 14 }
+            - { area: back, setsPer14d: 14 }
+            - { area: shoulders, setsPer14d: 11 }
+            - { area: arms, setsPer14d: 9 }
+            - { area: core, setsPer14d: 9 }
+            - { area: glutes, setsPer14d: 14 }
+            - { area: quads, setsPer14d: 14 }
+            - { area: hamstrings, setsPer14d: 11 }
+            - { area: calves, setsPer14d: 9 }
+    CheckinEvaluation:
+      description: Rule 9 `evaluateCheckin` output (UF-11.1). Computed on the device.
+      x-engine-function: evaluateCheckin
+      type: object
+      additionalProperties: false
+      required: [periods, proposal, nextCheckinDate]
+      properties:
+        periods:
+          type: array
+          items: { $ref: "#/components/schemas/CheckinPeriod" }
+        proposal:
+          anyOf: [{ $ref: "#/components/schemas/CheckinProposal" }, { type: "null" }]
+        nextCheckinDate: { $ref: "#/components/schemas/LocalDate" }
+      examples:
+        - { periods: [], proposal: null, nextCheckinDate: "2026-10-04" }
+
+    # ---------- swaps (rule 12, UF-08.3, UF-05.1) ----------
+    SwapCandidate:
+      x-engine-function: rankSwaps
+      type: object
+      additionalProperties: false
+      required: [exerciseId, muscleMatch, timeCostS, equipment, fitsBudget, bestMatch]
+      properties:
+        exerciseId: { $ref: "#/components/schemas/ExerciseId" }
+        muscleMatch: { type: number, minimum: 0, maximum: 1 }
+        timeCostS: { type: integer, minimum: 0 }
+        equipment:
+          type: array
+          items: { type: string, minLength: 1 }
+        fitsBudget: { type: boolean }
+        bestMatch: { type: boolean }
+      examples: [{ exerciseId: db-row, muscleMatch: 0.667, timeCostS: 555, equipment: [dumbbell, bench], fitsBudget: true, bestMatch: true }]
+    SwapCandidateList:
+      description: Rule 12 `rankSwaps` output, best first.
+      x-engine-function: rankSwaps
+      type: array
+      items: { $ref: "#/components/schemas/SwapCandidate" }
+      examples:
+        - - { exerciseId: db-row, muscleMatch: 0.667, timeCostS: 555, equipment: [dumbbell, bench], fitsBudget: true, bestMatch: true }
+          - { exerciseId: straight-arm-pulldown, muscleMatch: 0.667, timeCostS: 375, equipment: [cable], fitsBudget: true, bestMatch: false }
+
+    # ---------- time check (rule 8, UF-09.8) ----------
+    TimeCheckProgress:
+      x-engine-function: timeCheck
+      type: object
+      additionalProperties: false
+      required: [elapsedS, nextItemIndex]
+      properties:
+        elapsedS: { type: integer, minimum: 0 }
+        nextItemIndex: { type: integer, minimum: 0 }
+      examples: [{ elapsedS: 1500, nextItemIndex: 1 }]
+    TimeCheckOption:
+      type: object
+      additionalProperties: false
+      required: [items, projectedS]
+      properties:
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/WorkoutItem" }
+        projectedS: { type: integer, minimum: 0 }
+      examples: [{ items: [], projectedS: 2700 }]
+    TimeCheckResult:
+      description: Rule 8 `timeCheck` output. `minutesBehind` is null when `show` is false.
+      x-engine-function: timeCheck
+      type: object
+      additionalProperties: false
+      required: [behindS, show, minutesBehind, projectedS, trim, skipNext]
+      properties:
+        behindS: { type: integer }
+        show: { type: boolean }
+        minutesBehind: { type: [integer, "null"], minimum: 1 }
+        projectedS: { type: integer, minimum: 0 }
+        trim: { $ref: "#/components/schemas/TimeCheckOption" }
+        skipNext: { $ref: "#/components/schemas/TimeCheckOption" }
+      examples:
+        - { behindS: 59, show: false, minutesBehind: null, projectedS: 2759, trim: { items: [], projectedS: 2759 }, skipNext: { items: [], projectedS: 2204 } }

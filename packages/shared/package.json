@@ -9,13 +9,19 @@
     ".": "./src/index.ts"
   },
   "scripts": {
+    "gen:api": "node scripts/gen-api.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "test": "vitest run"
   },
   "devDependencies": {
+    "@redocly/openapi-core": "^2.54.3",
     "@types/node": "^22.10.2",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
+    "openapi-typescript": "^7.13.0",
     "typescript": "^5.7.2",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.2",
+    "yaml": "^2.9.1"
   }
 }
