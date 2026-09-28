@@ -115,7 +115,7 @@ jobs:
       # supabase/tests/functions/ holds only the seed and platform smoke tests (T-0203a).
       # --allow-run=psql and --allow-write are for the AC3 seed-roundtrip integration test, which
       # shells out to `psql` against a scratch temp file and rolls its own transaction back.
-      - run: deno test --allow-net --allow-env --allow-read --allow-run=psql --allow-write supabase/tests/functions/
+      - run: deno test --config supabase/tests/functions/deno.json --allow-net --allow-env --allow-read --allow-run=psql --allow-write supabase/tests/functions/
         if: steps.has-supabase.outputs.present == 'true'
 
   e2e:

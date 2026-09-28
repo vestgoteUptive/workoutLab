@@ -35,7 +35,7 @@ test("AC10: the supabase job runs its steps in the required order", () => {
     "supabase status -o env",
     "supabase test db",
     "denoland/setup-deno",
-    "deno test --allow-net --allow-env --allow-read --allow-run=psql --allow-write supabase/tests/functions/",
+    "deno test --config supabase/tests/functions/deno.json --allow-net --allow-env --allow-read --allow-run=psql --allow-write supabase/tests/functions/",
   ];
   let lastIndex = -1;
   for (const marker of markers) {
