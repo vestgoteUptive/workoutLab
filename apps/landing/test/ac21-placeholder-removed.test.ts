@@ -34,15 +34,11 @@ describe("AC21 placeholder replaced", () => {
     expect(hits).toEqual([]);
   });
 
-  it(
-    "node .github/scripts/check-all.mjs exits 0",
-    () => {
-      const res = spawnSync(process.execPath, [join(repoRoot, ".github/scripts/check-all.mjs")], {
-        cwd: repoRoot,
-        encoding: "utf8",
-      });
-      expect(res.status, `${res.stdout}\n${res.stderr}`).toBe(0);
-    },
-    30_000,
-  );
+  it("node .github/scripts/check-all.mjs exits 0", () => {
+    const res = spawnSync(process.execPath, [join(repoRoot, ".github/scripts/check-all.mjs")], {
+      cwd: repoRoot,
+      encoding: "utf8",
+    });
+    expect(res.status, `${res.stdout}\n${res.stderr}`).toBe(0);
+  }, 30_000);
 });

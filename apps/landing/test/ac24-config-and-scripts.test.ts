@@ -24,7 +24,9 @@ describe("AC24 config and scripts", () => {
   });
 
   it("vitest.config.ts excludes browser/**", async () => {
-    const mod = (await import("../vitest.config.ts")) as { default: { test?: { exclude?: string[] } } };
+    const mod = (await import("../vitest.config.ts")) as {
+      default: { test?: { exclude?: string[] } };
+    };
     expect(mod.default.test?.exclude).toContain("browser/**");
   });
 });

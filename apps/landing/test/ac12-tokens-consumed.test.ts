@@ -41,28 +41,24 @@ describe("AC12 tokens consumed", () => {
     expect(css).toMatch(/\bh1[^{]*\{[^}]*font-family:\s*var\(--wl-font-display\)/);
   });
 
-  it(
-    "lint (ESLint + wl-check-colours) exits 0",
-    () => {
-      const eslintPkgJson = require.resolve("eslint/package.json");
-      const eslintBin = join(eslintPkgJson, "..", "bin", "eslint.js");
-      const eslintRes = spawnSync(process.execPath, [eslintBin, "."], {
-        cwd: landingRoot,
-        encoding: "utf8",
-      });
-      expect(eslintRes.status, `${eslintRes.stdout}\n${eslintRes.stderr}`).toBe(0);
+  it("lint (ESLint + wl-check-colours) exits 0", () => {
+    const eslintPkgJson = require.resolve("eslint/package.json");
+    const eslintBin = join(eslintPkgJson, "..", "bin", "eslint.js");
+    const eslintRes = spawnSync(process.execPath, [eslintBin, "."], {
+      cwd: landingRoot,
+      encoding: "utf8",
+    });
+    expect(eslintRes.status, `${eslintRes.stdout}\n${eslintRes.stderr}`).toBe(0);
 
-      // "./package.json" isn't in the package's exports map, so resolve its
-      // main entry ("./src/index.ts") and walk up two directories to the
-      // package root instead.
-      const tokensEntry = require.resolve("@workoutlab/design-tokens", { paths: [landingRoot] });
-      const checkColoursBin = join(tokensEntry, "..", "..", "bin", "wl-check-colours.js");
-      const coloursRes = spawnSync(process.execPath, [checkColoursBin, "."], {
-        cwd: landingRoot,
-        encoding: "utf8",
-      });
-      expect(coloursRes.status, `${coloursRes.stdout}\n${coloursRes.stderr}`).toBe(0);
-    },
-    30_000,
-  );
+    // "./package.json" isn't in the package's exports map, so resolve its
+    // main entry ("./src/index.ts") and walk up two directories to the
+    // package root instead.
+    const tokensEntry = require.resolve("@workoutlab/design-tokens", { paths: [landingRoot] });
+    const checkColoursBin = join(tokensEntry, "..", "..", "bin", "wl-check-colours.js");
+    const coloursRes = spawnSync(process.execPath, [checkColoursBin, "."], {
+      cwd: landingRoot,
+      encoding: "utf8",
+    });
+    expect(coloursRes.status, `${coloursRes.stdout}\n${coloursRes.stderr}`).toBe(0);
+  }, 30_000);
 });

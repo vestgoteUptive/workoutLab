@@ -28,22 +28,18 @@ describe("AC10 CTA", () => {
     expect(cta?.attrs.href).toBe(`${PREVIEW_APP_URL}/`);
   });
 
-  it(
-    "rejects the build when PUBLIC_APP_URL is an invalid non-localhost http: URL",
-    async () => {
-      const outDir = mkdtempSync(join(tmpdir(), "wl-landing-dist-invalid-"));
-      const prevValue = process.env.PUBLIC_APP_URL;
-      process.env.PUBLIC_APP_URL = "http://example.com";
-      try {
-        await expect(build({ root: landingRoot, logLevel: "silent", outDir })).rejects.toThrow(
-          /PUBLIC_APP_URL/,
-        );
-      } finally {
-        if (prevValue === undefined) delete process.env.PUBLIC_APP_URL;
-        else process.env.PUBLIC_APP_URL = prevValue;
-        rmSync(outDir, { recursive: true, force: true });
-      }
-    },
-    30_000,
-  );
+  it("rejects the build when PUBLIC_APP_URL is an invalid non-localhost http: URL", async () => {
+    const outDir = mkdtempSync(join(tmpdir(), "wl-landing-dist-invalid-"));
+    const prevValue = process.env.PUBLIC_APP_URL;
+    process.env.PUBLIC_APP_URL = "http://example.com";
+    try {
+      await expect(build({ root: landingRoot, logLevel: "silent", outDir })).rejects.toThrow(
+        /PUBLIC_APP_URL/,
+      );
+    } finally {
+      if (prevValue === undefined) delete process.env.PUBLIC_APP_URL;
+      else process.env.PUBLIC_APP_URL = prevValue;
+      rmSync(outDir, { recursive: true, force: true });
+    }
+  }, 30_000);
 });
