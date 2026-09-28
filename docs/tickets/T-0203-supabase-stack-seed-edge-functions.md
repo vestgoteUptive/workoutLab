@@ -211,7 +211,11 @@ hard sets (2 × `barbell-back-squat`, 1 × `push-up`), 1 warm-up set and 1 tombs
 ## Paths you may change
 Backend lane: `supabase/functions/**`, `supabase/seed.sql`, `supabase/tests/**`, `supabase/config.toml`.
 Extras for this ticket: `supabase/scripts/**` (new: `gen-seed.mjs`, `vendor.mjs`,
-`tsconfig.vendor.json`), and **only the `supabase` job** in `.github/workflows/ci.yml` (AC8, AC10, AC11). No
+`tsconfig.vendor.json`), and **only the `supabase` job** in `.github/workflows/ci.yml` (AC8, AC10, AC11).
+Also granted for T-0203b (orchestrator, 2026-09-28): one additive line in `.prettierignore` for
+`supabase/functions/_shared/vendor/`. That is an infra-lane path; it is granted because D-0053 §1 requires
+the vendored tree to stay byte-for-byte `tsc` output, and Prettier reformatting it would permanently break
+`vendor.mjs --check`. Scope is that single glob plus its comment — no other infra path. No
 new npm dependency: the scripts use Node built-ins and the workspace TypeScript, and the Deno tests
 use `npm:` specifiers. If a lockfile change turns out to be needed, raise it as an infra follow-up.
 
