@@ -126,7 +126,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | ready | wl-build-web |
+| T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | doing | wl-build-web |
 | T-0901 | CI e2e job: run Playwright with the tests/e2e config; webServer builds via turbo (^build) — diagnosis docs/ci/CI-T-0901-* | infra (+ tests/e2e/playwright.config.ts) | T-0300b | done | wl-build-infra (draft PR) |
 
 ## Phase 5 — Iterate
