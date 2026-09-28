@@ -18,7 +18,9 @@ export default defineConfig({
   testMatch: "**/*.spec.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  // T-0901: no retries, in CI or locally — the job must pass on its merits
+  // (docs/ci/CI-T-0901-e2e-no-config-and-unbuilt-tokens.md).
+  retries: 0,
   reporter: [["html", { open: "never" }]],
   use: {
     baseURL: BASE_URL,
@@ -31,7 +33,10 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "pnpm --filter @workoutlab/web build && pnpm --filter @workoutlab/web preview",
+    // T-0901: build through turbo, not the package's own `build` script, so `^build` runs
+    // first — `@workoutlab/design-tokens` needs it to produce `dist/tokens.css`, which
+    // `apps/web/src/main.tsx` imports and which is gitignored (not committed).
+    command: "pnpm turbo run build --filter=@workoutlab/web && pnpm --filter @workoutlab/web preview",
     url: BASE_URL,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
