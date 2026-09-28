@@ -1,8 +1,8 @@
 # Data model (v1)
 
-**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`, the engine v1 columns) is migrated in `supabase/migrations/20260928090000_data_model_v1b.sql` (T-0100b, D-0035). Every table below is in the database.
+**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`, the engine v1 columns) is migrated in `supabase/migrations/20260928090000_data_model_v1b.sql` (T-0100b, D-0035). `supabase/migrations/20260928120000_priority_areas_lower_bound.sql` (T-0102b, D-0037) tightens `profiles_priority_areas_valid`. Every table below is in the database. The typed view of this schema is `packages/shared/src/database.gen.ts` (D-0037 §10, D-0043).
 
-Decisions: D-0001 (Supabase), D-0015 (set sync), D-0017 (offline, client ids), D-0018 (check-ins), D-0020 (write rules), D-0021 (shape), D-0024 (session building), D-0026 (progression), D-0027 (check-in reset), D-0029 (`exercises` columns), D-0030 (v1a defaults), D-0034 (engine inputs), D-0035 (v1b defaults).
+Decisions: D-0001 (Supabase), D-0015 (set sync), D-0017 (offline, client ids), D-0018 (check-ins), D-0020 (write rules), D-0021 (shape), D-0024 (session building), D-0026 (progression), D-0027 (check-in reset), D-0029 (`exercises` columns), D-0030 (v1a defaults), D-0034 (engine inputs), D-0035 (v1b defaults), D-0037 (`SessionPlan` v1, array lower bound), D-0044 (`external_load` = NOT `bodyweight`, seed only).
 
 ## Conventions
 - **Users** are `auth.users` (D-0021). There is no `public.users`. Email lives only in `auth.users` (NFR-PRIV-2).
@@ -51,7 +51,7 @@ Maps 1:1 from `data/exercises` (D-0022). No `image_url` in v1 (D-0029, D-0005). 
 | kind | text | no | `'exercise'` | Check `in ('exercise','warmup')`. Warm-up moves (D-0024, D-0035). |
 | increment_kg | numeric(4,2) | no | `2.5` | Check `> 0`. Load step for pre-fill (D-0026). |
 | default_duration_s | integer | yes | | Check `> 0`. First timed target (D-0026). |
-| external_load | boolean | no | `true` | `false` = bodyweight, pre-filled weight 0 (D-0026, D-0035). |
+| external_load | boolean | no | `true` | `false` = bodyweight, pre-filled weight 0 (D-0026, D-0035). Seeded as NOT bodyweight from data/exercises (D-0044). |
 
 - Indexes: PK `(id)`.
 - RLS: `exercises_select` (select, `anon, authenticated`, `true`).
@@ -100,7 +100,7 @@ One row per user, written after UF-01.5 Account with the plan computed on the de
 | created_at | timestamptz | no | `now()` | Server-set. |
 | updated_at | timestamptz | no | `now()` | Server-set (D-0020). |
 
-- Checks: `profiles_rhythm_range`: `rhythm_min` and `rhythm_max` between 1 and 7, `rhythm_min <= rhythm_max`. `profiles_priority_areas_valid`: one-dimensional (`array_ndims` is null or 1, T-0100b), `cardinality <= 3`, every element is one of the 9 area ids, no duplicates.
+- Checks: `profiles_rhythm_range`: `rhythm_min` and `rhythm_max` between 1 and 7, `rhythm_min <= rhythm_max`. `profiles_priority_areas_valid`: one-dimensional (`array_ndims` is null or 1, T-0100b), lower bound 1 (`array_lower(priority_areas, 1)` is null or 1, so `'[2:3]={back,back}'` and `'[0:1]={back,chest}'` give `23514`; D-0037, T-0102b), `cardinality <= 3`, every element is one of the 9 area ids, no duplicates.
 - Trigger `profiles_before_write` (before insert or update, `private.profiles_before_write`):
   - insert: `plan_changed_at`, `created_at` and `updated_at` := `now()`. The client's `onboarded_at` is kept (default `now()`).
   - update: `onboarded_at` keeps its old value. `onboarding_timing_ms` keeps its old value once non-null. `plan_changed_at` := `now()` when `goal`, `rhythm_min`, `rhythm_max` or `priority_areas` change, else the old value. `user_id` and `created_at` keep their old values. `updated_at` := `now()`. A client-supplied value is silently replaced, with no error, so a full-profile upsert from a second device never fails.
@@ -135,7 +135,7 @@ One row per user, written after UF-01.5 Account with the plan computed on the de
 | location | text | yes | | A label such as "gym". Check `char_length(location) <= 32` (NFR-PRIV-2). |
 | effort_rating | smallint | yes | | Check `between 1 and 5` (UF-03.3, D-0030). |
 | warmup_in_budget | boolean | no | `true` | UF-08.1 toggle (D-0004, D-0024). |
-| plan | jsonb | yes | | The plan built at session start, with the session-start deficits rule 8 trims by (D-0024). Check `sessions_plan_is_object`: null or a JSON object. Shape owned by T-0102 (D-0035). |
+| plan | jsonb | yes | | The plan built at session start, with the session-start deficits rule 8 trims by (D-0024). Check `sessions_plan_is_object`: null or a JSON object. Shape: the `SessionPlan` v1 component of `api/openapi.yaml` (`version: 1`, `mainLiftId`, `warmup`, `items`, `startDeficits`; D-0035, D-0037 §7). Typed `SessionPlan \| null` in `@workoutlab/shared`; read it with `parseSessionPlan()`, which never throws. |
 | created_at | timestamptz | no | `now()` | |
 
 - Keys: PK `(id)`, unique `sessions_id_user_id_key (id, user_id)` (target of the child composite FK). Check `sessions_ended_after_started`: `ended_at is null or ended_at >= started_at`. No rule ties duration to budget (running over is valid, D-0020).

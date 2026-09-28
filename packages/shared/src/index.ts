@@ -1,7 +1,9 @@
 // @workoutlab/shared: API and engine I/O types generated from api/openapi.yaml (D-0037 §10).
 // Edit the spec, then run `pnpm --filter @workoutlab/shared gen:api`. Never edit api.gen.ts.
-// DB types (database.gen.ts), parseSessionPlan() and the row→engine mappers land in T-0102b.
+// DB types come from database.gen.ts (`supabase gen types`, script `gen:db`, D-0043); `Database`
+// below overrides `sessions.plan` with SessionPlan (T-0102 AC16). Never edit the *.gen.ts files.
 import type { components, operations, paths } from "./api.gen.js";
+import type { Database as GeneratedDatabase, Json } from "./database.gen.js";
 
 export type { components, operations, paths };
 
@@ -82,3 +84,62 @@ export const AREAS = [
   "hamstrings",
   "calves",
 ] as const satisfies readonly Area[];
+
+// ---------------------------------------------------------------------------------------------
+// Database types (T-0102b, D-0037 §10, D-0043)
+// ---------------------------------------------------------------------------------------------
+export type { Json };
+export type { GeneratedDatabase };
+
+type GenPublic = GeneratedDatabase["public"];
+type GenSessions = GenPublic["Tables"]["sessions"];
+
+/** `sessions` with `plan` typed as SessionPlan v1 instead of Json (D-0035, D-0037 §7). */
+type SessionsTable = {
+  Row: Omit<GenSessions["Row"], "plan"> & { plan: SessionPlan | null };
+  Insert: Omit<GenSessions["Insert"], "plan"> & { plan?: SessionPlan | null };
+  Update: Omit<GenSessions["Update"], "plan"> & { plan?: SessionPlan | null };
+  Relationships: GenSessions["Relationships"];
+};
+
+/** The typed schema for `createClient<Database>()`: the generated one with the `sessions.plan` override. */
+export type Database = Omit<GeneratedDatabase, "public"> & {
+  public: Omit<GenPublic, "Tables"> & {
+    Tables: Omit<GenPublic["Tables"], "sessions"> & { sessions: SessionsTable };
+  };
+};
+
+type PublicSchema = Database["public"];
+type Flatten<T> = { [K in keyof T]: T[K] };
+
+/** Row type of a public table or view, e.g. `Tables<"sessions">`. */
+export type Tables<Name extends keyof PublicSchema["Tables"] | keyof PublicSchema["Views"]> =
+  Name extends keyof PublicSchema["Tables"]
+    ? Flatten<PublicSchema["Tables"][Name]["Row"]>
+    : Name extends keyof PublicSchema["Views"]
+      ? Flatten<PublicSchema["Views"][Name]["Row"]>
+      : never;
+
+/** Insert type of a public table. */
+export type TablesInsert<Name extends keyof PublicSchema["Tables"]> = Flatten<
+  PublicSchema["Tables"][Name]["Insert"]
+>;
+
+/** Update type of a public table. */
+export type TablesUpdate<Name extends keyof PublicSchema["Tables"]> = Flatten<
+  PublicSchema["Tables"][Name]["Update"]
+>;
+
+export {
+  parseSessionPlan,
+  type SessionPlanParseError,
+  type SessionPlanParseResult,
+} from "./session-plan.js";
+export {
+  toAreaTarget,
+  toAreaTargets,
+  toEngineProfile,
+  toHistorySet,
+  toLibraryExercise,
+  toPlanCheckin,
+} from "./mappers.js";
