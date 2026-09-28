@@ -43,6 +43,31 @@ async function assertValidatesAgainst(schemaName: string, body: unknown): Promis
   assert(ok, `body did not validate against ${schemaName}: ${JSON.stringify(validate.errors)}`);
 }
 
+/** Compares two ISO instants by their millisecond value, not their exact string form — Postgres
+ * returns `timestamptz` values as `...+00:00` while requests use `Z`, and both are the same
+ * instant. `expected: null` requires `actual` to literally be `null` (unset). */
+function assertInstantEquals(actual: string | null, expected: string | null): void {
+  if (expected === null) {
+    assertEquals(actual, null);
+    return;
+  }
+  assert(actual !== null, `expected ${expected}, got null`);
+  assertEquals(new Date(actual).getTime(), new Date(expected).getTime());
+}
+
+/** Asserts a session's `ended_at`/`effort_rating` are still the untouched defaults (null),
+ * used by every AC30 case to prove a validation failure never reaches the write (D-0053 §7). */
+async function assertSessionUnfinished(client: SupabaseClient, sessionId: string): Promise<void> {
+  const { data: row, error } = await client
+    .from("sessions")
+    .select("ended_at, effort_rating")
+    .eq("id", sessionId)
+    .single();
+  if (error) throw error;
+  assertInstantEquals(row.ended_at, null);
+  assertEquals(row.effort_rating, null);
+}
+
 function assertEnvelope(body: unknown, code: string, namedField?: string): void {
   const err = (body as { error: { code: string; message: string; requestId: string } }).error;
   assertEquals(err.code, code);
@@ -202,7 +227,7 @@ Deno.test(
       .eq("id", sessionId)
       .single();
     if (error) throw error;
-    assertEquals(row.ended_at, "2026-09-28T07:31:00+00:00");
+    assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
     assertEquals(row.effort_rating, 4);
   },
 );
@@ -267,7 +292,7 @@ Deno.test("AC26: repeating the identical finish returns a deep-equal body; the r
     .eq("id", sessionId)
     .single();
   if (error) throw error;
-  assertEquals(row.ended_at, "2026-09-28T07:31:00+00:00");
+  assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
   assertEquals(row.effort_rating, 4);
 });
 
@@ -310,7 +335,7 @@ Deno.test(
       .eq("id", sessionId)
       .single();
     if (error) throw error;
-    assertEquals(row.ended_at, "2026-09-28T07:40:00+00:00");
+    assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
     assertEquals(row.effort_rating, 4);
   },
 );
@@ -354,7 +379,7 @@ Deno.test(
         .eq("id", id)
         .single();
       if (error) throw error;
-      assertEquals(row.ended_at, "2026-09-28T07:40:00+00:00");
+      assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
     }
   },
 );
@@ -379,7 +404,7 @@ Deno.test("AC29: posting the same endedAt with a new rating updates effort_ratin
     .eq("id", sessionId)
     .single();
   if (error) throw error;
-  assertEquals(row.ended_at, "2026-09-28T07:31:00+00:00");
+  assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
   assertEquals(row.effort_rating, 5);
 });
 
@@ -395,13 +420,7 @@ Deno.test("AC30: endedAt before startedAt is 400 invalid_request, row unchanged"
   });
   assertEquals(res.status, 400);
   assertEnvelope(await res.json(), "invalid_request", "endedAt");
-  const { data: row, error } = await user.client
-    .from("sessions")
-    .select("ended_at")
-    .eq("id", sessionId)
-    .single();
-  if (error) throw error;
-  assertEquals(row.ended_at, null);
+  await assertSessionUnfinished(user.client, sessionId);
 });
 
 Deno.test("AC30: path id not-a-uuid is 400 invalid_request", async () => {
@@ -415,7 +434,7 @@ Deno.test("AC30: path id not-a-uuid is 400 invalid_request", async () => {
   assertEnvelope(await res.json(), "invalid_request");
 });
 
-Deno.test("AC30: effortRating 0, 6 and 3.5 are all 400 invalid_request", async () => {
+Deno.test("AC30: effortRating 0, 6 and 3.5 are all 400 invalid_request, row unchanged", async () => {
   const user = await createTestUser();
   await seedFullProfile(user.client);
   const sessionId = await seedSessionS(user.client);
@@ -428,9 +447,10 @@ Deno.test("AC30: effortRating 0, 6 and 3.5 are all 400 invalid_request", async (
     assertEquals(res.status, 400);
     assertEnvelope(await res.json(), "invalid_request", "effortRating");
   }
+  await assertSessionUnfinished(user.client, sessionId);
 });
 
-Deno.test("AC30: endedAt with no offset is 400 invalid_request", async () => {
+Deno.test("AC30: endedAt with no offset is 400 invalid_request, row unchanged", async () => {
   const user = await createTestUser();
   await seedFullProfile(user.client);
   const sessionId = await seedSessionS(user.client);
@@ -440,9 +460,10 @@ Deno.test("AC30: endedAt with no offset is 400 invalid_request", async () => {
   });
   assertEquals(res.status, 400);
   assertEnvelope(await res.json(), "invalid_request", "endedAt");
+  await assertSessionUnfinished(user.client, sessionId);
 });
 
-Deno.test("AC30: tz Mars/Base is 400 invalid_request", async () => {
+Deno.test("AC30: tz Mars/Base is 400 invalid_request, row unchanged", async () => {
   const user = await createTestUser();
   await seedFullProfile(user.client);
   const sessionId = await seedSessionS(user.client);
@@ -452,9 +473,10 @@ Deno.test("AC30: tz Mars/Base is 400 invalid_request", async () => {
   });
   assertEquals(res.status, 400);
   assertEnvelope(await res.json(), "invalid_request", "tz");
+  await assertSessionUnfinished(user.client, sessionId);
 });
 
-Deno.test("AC30: an extra body key is 400 invalid_request", async () => {
+Deno.test("AC30: an extra body key is 400 invalid_request, row unchanged", async () => {
   const user = await createTestUser();
   await seedFullProfile(user.client);
   const sessionId = await seedSessionS(user.client);
@@ -465,6 +487,7 @@ Deno.test("AC30: an extra body key is 400 invalid_request", async () => {
   });
   assertEquals(res.status, 400);
   assertEnvelope(await res.json(), "invalid_request");
+  await assertSessionUnfinished(user.client, sessionId);
 });
 
 // --- AC31: not found -------------------------------------------------------------------------
@@ -500,7 +523,7 @@ Deno.test("AC31: user D's session is 404 for A, and D's row is unchanged", async
     .eq("id", sessionD)
     .single();
   if (error) throw error;
-  assertEquals(row.ended_at, null);
+  assertInstantEquals(row.ended_at, null);
 });
 
 Deno.test("AC31: GET /sessions/{id}/finish is 404 not_found", async () => {
