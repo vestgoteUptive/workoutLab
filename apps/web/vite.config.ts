@@ -39,6 +39,11 @@ export default defineConfig(({ command }) => {
       "@workoutlab/web build requires VITE_SUPABASE_URL (AC-A10, NFR-AN-1): set it before building.",
     );
   }
+  if (command === "build" && !process.env.VITE_SUPABASE_ANON_KEY) {
+    throw new Error(
+      "@workoutlab/web build requires VITE_SUPABASE_ANON_KEY (AC-A10, NFR-AN-1): set it before building.",
+    );
+  }
   const connectSrc = supabaseUrl ? `'self' ${new URL(supabaseUrl).origin}` : "'self'";
 
   return {
@@ -81,6 +86,13 @@ export default defineConfig(({ command }) => {
       environment: "jsdom",
       setupFiles: ["./vitest.setup.ts"],
       globals: false,
+      // A fixed, fake project so `lib/auth/client.ts` can construct a real supabase-js
+      // client in every test without a `.env` file (AC-B1); tests that need a specific
+      // value use `vi.stubEnv`.
+      env: {
+        VITE_SUPABASE_URL: "https://abc.supabase.co",
+        VITE_SUPABASE_ANON_KEY: "test-anon-key",
+      },
       exclude: ["**/node_modules/**", "**/dist/**", "**/__e2e__/**"],
     },
   };

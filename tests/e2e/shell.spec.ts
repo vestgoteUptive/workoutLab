@@ -4,9 +4,17 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { BASE_URL, VITE_SUPABASE_URL } from "./playwright.config.js";
+import { injectSession, mockSupabaseAuth } from "./fixtures/supabase-mock.js";
 
 const TAB_ROUTES = ["/", "/library", "/progress", "/plan"] as const;
 const AXE_ROUTES = ["/welcome", "/", "/library", "/progress", "/balance", "/plan"] as const;
+
+test.beforeEach(async ({ page }) => {
+  // Registered first so it's the final backstop (see `mockSupabaseEmailAuth`'s comment):
+  // these routes don't drive email/OTP, but the shell still calls `getSession`/`onAuthStateChange`
+  // through the real SDK, so any unmocked Supabase call must fail loudly, not hit the network.
+  await mockSupabaseAuth(page);
+});
 
 test.describe("AC-A5 offline shell", () => {
   test("[data-screen-id=UF-01.1] renders offline within 3s after one online visit", async ({
@@ -26,7 +34,11 @@ test.describe("AC-A5 offline shell", () => {
 test.describe("AC-A7 tab bar (e2e, 360x640)", () => {
   test.use({ viewport: { width: 360, height: 640 } });
 
+  // `/` is a `protected` route (T-0300b, AC-B5): the tab bar only renders signed in, so
+  // these two specs inject a session first.
   test("every tab hit area is >= 44x44px", async ({ page }) => {
+    await page.goto("/");
+    await injectSession(page);
     await page.goto("/");
     const nav = page.getByRole("navigation", { name: "Main" });
     const links = await nav.getByRole("link").all();
@@ -40,6 +52,8 @@ test.describe("AC-A7 tab bar (e2e, 360x640)", () => {
   });
 
   test("Tab reaches the four links in order and Enter navigates", async ({ page }) => {
+    await page.goto("/");
+    await injectSession(page);
     await page.goto("/");
     const labels = ["Today", "Library", "Progress", "Plan"];
     for (const label of labels) {
@@ -55,6 +69,9 @@ test.describe("AC-A10 CSP origins (e2e)", () => {
   test("every request while walking the tabs stays on preview or Supabase origin", async ({
     page,
   }) => {
+    await page.goto("/");
+    await injectSession(page);
+
     const seen: string[] = [];
     page.on("request", (req) => seen.push(req.url()));
 
@@ -73,6 +90,10 @@ test.describe("AC-A10 CSP origins (e2e)", () => {
 test.describe("AC-A13 axe", () => {
   for (const route of AXE_ROUTES) {
     test(`${route} has 0 serious/critical violations`, async ({ page }) => {
+      if (route !== "/welcome") {
+        await page.goto("/");
+        await injectSession(page);
+      }
       await page.goto(route);
       const results = await new AxeBuilder({ page }).analyze();
       const serious = results.violations.filter(

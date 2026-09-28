@@ -145,10 +145,22 @@ jobs:
       - run: pnpm install --frozen-lockfile
         if: steps.has-e2e.outputs.present == 'true'
       # A real Playwright config lands with T-0403/qa; until then this job is a no-op.
-      - run: pnpm exec playwright install --with-deps
+      # chromium is the only project (tests/e2e/playwright.config.ts), so installing other
+      # browsers' deps would only slow the job down.
+      - run: pnpm exec playwright install --with-deps chromium
         if: steps.has-e2e.outputs.present == 'true'
-      - run: pnpm exec playwright test
+      # docs/ci/CI-T-0901-e2e-no-config-and-unbuilt-tokens.md: a bare `playwright test` has no
+      # config, runs from the repo root, and falls back to Playwright's default testMatch, which
+      # collects every Vitest *.test.ts(x) and .github/scripts/*.test.mjs in the monorepo.
+      - run: pnpm exec playwright test --config tests/e2e/playwright.config.ts
         if: steps.has-e2e.outputs.present == 'true'
+      - name: Upload playwright report
+        if: failure() && steps.has-e2e.outputs.present == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report
+          if-no-files-found: warn
 
   # Deploy jobs run only on `main`, and only once T-0403's release gate (H-06, first
   # production deploy approval) is recorded done in .squad/needs-human.md. Until T-0400–

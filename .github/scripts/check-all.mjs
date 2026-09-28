@@ -6,6 +6,7 @@ import { runCheck as runScreenIds } from "./check-screen-ids.mjs";
 import { runCheck as runDecisionIds } from "./check-decision-ids.mjs";
 import { runCheck as runPlaceholderTests } from "./check-placeholder-tests.mjs";
 import { runCheck as runStaleWording } from "./check-stale-wording.mjs";
+import { runCheck as runE2eWiring } from "./check-e2e-wiring.mjs";
 
 export async function runAll() {
   const screenIds = await runScreenIds();
@@ -21,6 +22,7 @@ export async function runAll() {
     ...(await runDecisionIds()),
     ...(await runPlaceholderTests()),
     ...(await runStaleWording()),
+    ...(await runE2eWiring()),
   ];
   return { ok: findings.length === 0, fatal: null, findings };
 }

@@ -1,0 +1,13 @@
+jobs:
+  e2e:
+    name: playwright e2e
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pnpm exec playwright test --config tests/e2e/playwright.config.ts
+        if: steps.has-e2e.outputs.present == 'true'
+      - name: Upload playwright report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e/playwright-report
