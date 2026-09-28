@@ -1,18 +1,40 @@
 # State
 
-- **Phase:** 1–3 overlap (contracts nearly done; engine in progress; shell and landing groomed)
-- **Updated:** 2026-09-28 20:10 by orchestrator
-- **Done:** T-0001–T-0005, T-0007, T-0100a/b, T-0101, T-0102, T-0103a/b, T-0200, T-0201, T-0202, T-0203a, T-0300a/b, T-0309a. Main unit/lint/typecheck green; the e2e CI job is red until T-0901.
-- **Concurrency cap: 2 runs in flight** (flows and sub-agents together); see `/tick`.
-- **In flight (2/2):** T-0203b (backend-dev sub-agent; needs a draft PR for real-stack CI), T-0901 (AgentLab 4a3fe6c9; needs a draft PR, AC6).
-- **wl-ci-investigate is new:** AgentLab needs a restart to load it; until then use the sub-agent path (the ci-investigator role, via a general-purpose agent with the role text).
-- **Next after those:** T-0300c (offline queue) and T-0300d (body map), both web-shell so one at a time; T-0309b (landing); T-0203c (after T-0203b); grooming for T-0204/T-0205, T-0301+.
-- **AgentLab has a $3 per-step budget cap:** big UI builds hit it. Split UI tickets small, tell builders to commit WIP early, or run large reworks as Opus sub-agents. frontend-dev cap raised to $6 (human decision, 2026-09-28), so web builds can go back to AgentLab once it has been restarted.
-- **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy and privacy mailbox, gates the landing prod deploy only).
-- **Executor:** AgentLab. Poll `get_run` with `waitSeconds ≤ 280`. Docker here can't pull images, so Supabase stack tests run in GitHub CI on a draft PR.
+- **Phase:** 1–3 overlap (contracts done; engine through T-0202; shell through T-0300c; backend suggest/balance done, finish in review)
+- **Updated:** 2026-09-28 22:45 by orchestrator (tick)
+- **Progress: 26 done · 29 left** (2 in review, 4 ready, 23 todo). The 23 todo are ~8 UI flow tickets (T-0301–T-0308, the bulk of the app), 6 infra/deploy (T-0400–T-0406), 9 smaller follow-ups.
+- **Done:** T-0001–T-0005, T-0007, T-0100a/b, T-0101, T-0102, T-0103a/b, T-0200, T-0201, T-0202, T-0203a/b, T-0300a/b/c, T-0309a, T-0901.
+- **Concurrency cap: 5** (human decision). **But lane ownership binds tighter than the cap** — see the no-parallel pairs below.
+- **In flight (4):** T-0902 build (web-shell, 2 commits, fixes the live dev-server crash), T-0203c review + QA (backend), T-0309b review (landing).
+- **Ready but path-blocked:** T-0300d (body map) waits for T-0902 to release the `web-shell` lane.
+- **Ready:** T-0204, T-0205 (engine; cannot run with each other).
+- **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy + privacy mailbox — gates the landing *prod deploy* only), **H-11 (model pins 404 — blocks AgentLab as executor)**.
+
+## Executor
+- **Sub-agents.** AgentLab's 13 flows are registered (the old "needs a restart" note was a misdiagnosis: `scripts/sync-agents.mjs` had never been run — a restart alone never registers a new flow). But **H-11 blocks flows in practice**: 8 of 13 roles pin `model: claude-opus-5-5`, which 404s on this subscription (ci-investigator, code-reviewer, data-modeler, designer, engine-dev, product-owner, security-reviewer, triage). Sub-agents work around it by passing an explicit `model: "opus"`; flows cannot.
+- This session's MCP connection is bound to the AgentLab process live at session start, so newly registered flows need a Claude session restart to be callable.
 - **Tooling:** `npx -y pnpm@10.28.2 …`.
 
+## Local Supabase stack — USE IT (the "Docker can't pull images" note is STALE)
+```
+npx -y supabase@latest start -x vector,logflare     # plain `start` FAILS: analytics/vector never go healthy
+eval "$(npx -y supabase@latest status -o env | sed 's/^/export /')"   # suites read API_URL/DB_URL, NOT SUPABASE_URL
+```
+- `npx -y supabase@latest test db` → **524 pgTAP in 3 s**. Edge Functions: `deno test --config supabase/tests/functions/deno.json --allow-net --allow-env --allow-read --allow-write supabase/tests/functions/` → **64/64 in 3 s** (`--allow-write` is required or AC3's seed round-trip fails on a tmp write).
+- **The stack serves the functions of whichever directory it was started from.** Started from main, every `sessions` test 404s because that function lives only in the T-0203c worktree. Curl the endpoint before believing a mass-404.
+- Web app: `apps/web/.env.local` needs `VITE_SUPABASE_URL=http://127.0.0.1:54321` + `VITE_SUPABASE_ANON_KEY=<ANON_KEY>`. Without it the dev server crashes (T-0902). Magic-link mail → Mailpit `http://127.0.0.1:54324`. Studio `http://127.0.0.1:54323`.
+
+## Traps that have already cost time
+- **Verification must be `--force --concurrency=1`.** Two independent illusions: turbo replays another worktree's cache (T-0006; a 45 ms "19/19 FULL TURBO" on main was a false green), and under parallel agent load the suite reports failures that vanish in isolation (6, then 1, then 0).
+- **After merging a branch that adds deps, run `pnpm install --frozen-lockfile` on main** before testing, or you get spurious failures (T-0300c's dexie/fake-indexeddb).
+- **Use `git diff main...HEAD` (three dots) for lane checks.** Two dots lists commits that landed on main after the fork — on T-0309b that looked like a 100+ file lane violation and was not.
+- **No-parallel pairs (path overlap beats the cap):** T-0300c/T-0300d and any two `web-shell` tickets (`apps/web/src/{app,components,lib}/**`); T-0204/T-0205 (both change `packages/engine/src/session.ts`).
+- **"Tests pass" ≠ correct.** T-0300c had 122/122 green while silently clearing a finished session's `ended_at` server-side and resurrecting deleted sets. Brief reviewers to hunt for ACs with no test.
+- **"Tests fail" ≠ broken.** T-0203c's 2 red D-0053 §7 tests were test bugs: strict `assertEquals` on an instant, where `api/openapi.yaml`'s `Instant` allows `Z` **or** an offset. Check the contract before blaming the product.
+- **Verify cited lane grants.** T-0203b changed `.prettierignore` claiming an "orchestrator grant" that existed nowhere. The change was needed, so it is now written into the ticket.
+- **Web builds die on budget/time, not correctness.** 4 AgentLab web runs died unfinished; all 4 passed as Opus sub-agents. Split UI tickets small; tell builders to commit WIP early.
+
 ## Notes for the next orchestrator
-- Next free: D-0054, TR-0030. D-0052/TR-0028 are reserved for T-0300b, D-0053/TR-0029 for T-0203. D-0049/TR-0026 are reserved for T-0300a, D-0050/TR-0027 for T-0202, D-0048/TR-0025 for T-0309a. Unused: D-0028, D-0038 (free to reuse only by the ticket they were given to).
+- Next free: D-0058, TR-0030. Unused: D-0028, D-0038, D-0054.
 - Spec-only and content roles have no shell. QA commits their output.
-- After each merge, run `pnpm test`, `-w typecheck lint`, `check:repo` and `format:check` on main.
+- After each merge: `pnpm -w typecheck lint test --force --concurrency=1` on main.

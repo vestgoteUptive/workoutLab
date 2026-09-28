@@ -16,7 +16,9 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2",
     "@workoutlab/design-tokens": "workspace:*",
+    "@workoutlab/engine": "workspace:*",
     "@workoutlab/shared": "workspace:*",
+    "dexie": "^4.4.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router": "^8.4.0",
@@ -32,6 +34,7 @@
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.3.4",
     "eslint-plugin-react": "^7.37.5",
+    "fake-indexeddb": "^6.2.5",
     "jsdom": "^25.0.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
