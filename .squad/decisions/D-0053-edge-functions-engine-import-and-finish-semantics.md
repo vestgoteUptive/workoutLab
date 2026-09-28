@@ -81,6 +81,11 @@ gateway or the function returns the 401.
    - In every case, return 200 with the summary for the row as stored after the call.
    The rule is a max, so it's commutative: any replay order of the same set of finishes ends in the
    same row. "Last write wins" in D-0037 §9 means "the latest `endedAt` wins", not "the last request to arrive".
+   > **AMENDED by D-0058 (2026-09-28).** The three bullets above do **not** actually deliver the
+   > row-level commutativity this paragraph claims: a rating written by a non-older request survives,
+   > while an older request's rating is discarded, so `effort_rating` depends on arrival order.
+   > D-0058 fixes bullet 1 — a strict win writes `effort_rating = request.effortRating ?? NULL`,
+   > so the winning finish decides the whole row. Implement D-0058, not these bullets.
    `endedAt < started_at` → 400 `invalid_request`, checked before the DB check can raise a 500.
    There's no upper bound against the server clock: a skewed device clock is stored as sent.
 8. **Finish summary is a pure function of the stored row.** `balance` in the summary is
