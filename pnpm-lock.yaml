@@ -54,6 +54,12 @@ importers:
       '@astrojs/check':
         specifier: ^0.9.4
         version: 0.9.10(@emnapi/runtime@1.11.3)(prettier@3.9.9)(typescript@5.9.3)
+      '@axe-core/playwright':
+        specifier: ^4.13.0
+        version: 4.13.0(playwright-core@1.63.0)
+      '@playwright/test':
+        specifier: ^1.63.0
+        version: 1.63.0
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
