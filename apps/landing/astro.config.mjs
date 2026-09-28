@@ -7,4 +7,10 @@ export default defineConfig({
   site: "https://workout.vestgote.com",
   output: "static",
   trailingSlash: "always",
+  build: {
+    // Always emit a real stylesheet file rather than inlining it into every
+    // page's <head> (AC11/AC12/AC22 check dist/**/*.css directly, and a
+    // shared file caches once across pages instead of shipping per-page).
+    inlineStylesheets: "never",
+  },
 });

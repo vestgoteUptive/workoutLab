@@ -8,7 +8,8 @@
     "build": "astro check && astro build",
     "typecheck": "astro check",
     "lint": "eslint . && wl-check-colours .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:browser": "astro build && playwright test --config browser/playwright.config.ts && npx -y @lhci/cli@0.15.0 autorun --config=lighthouserc.cjs"
   },
   "dependencies": {
     "@workoutlab/design-tokens": "workspace:*",
@@ -16,6 +17,8 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
     "typescript": "^5.7.2",
     "vitest": "^5.0.2"
   }
