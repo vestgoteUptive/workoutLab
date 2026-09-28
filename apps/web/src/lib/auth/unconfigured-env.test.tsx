@@ -133,3 +133,24 @@ describe("unconfigured Supabase env (T-0902 AC2, AC3)", () => {
     expect(isSupabaseConfigured()).toBe(false);
   });
 });
+
+// A second, narrower net for the same defect: even with env *present*, importing the auth
+// modules must not construct a client. This is the "does not touch the client eagerly"
+// half of AC3 — it fails if `auth-context.tsx` moves a `supabase.*` call out of its mount
+// effect and into module scope or a render body.
+describe("no eager client construction (T-0902 AC3)", () => {
+  it("importing auth-context and rendering nothing never calls createClient", async () => {
+    vi.stubEnv("VITE_SUPABASE_URL", "https://abc.supabase.co");
+    vi.stubEnv("VITE_SUPABASE_ANON_KEY", "anon-key");
+
+    const createClient = vi.fn(() => ({ auth: { onAuthStateChange: vi.fn() } }));
+    vi.doMock("@supabase/supabase-js", () => ({ createClient }));
+
+    await import("./auth-context.js");
+    await import("./magic-link.js");
+    await import("../../app/App.js");
+
+    expect(createClient).not.toHaveBeenCalled();
+    vi.doUnmock("@supabase/supabase-js");
+  });
+});
