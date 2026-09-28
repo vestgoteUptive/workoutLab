@@ -192,7 +192,14 @@ Deno.test("AC27: a later finish (07:40) overwrites 07:31, then an older retry (0
   assertEquals(at0740.endedAt, "2026-09-28T07:40:00Z");
   assertEquals(at0740.durationS, 2400);
   assertEquals(at0740.withinBudget, false);
-  assertEquals(store.get().effortRating, 4, "effortRating from the earlier call is preserved");
+  // D-0058 rule 1: the winning finish owns the *whole* row, so this unrated 07:40 win clears the
+  // rating the superseded 07:31 finish left behind. Preserving the 4 here is precisely what made
+  // the row order-dependent.
+  assertEquals(
+    store.get().effortRating,
+    null,
+    "an unrated winning finish clears the superseded finish's rating (D-0058 rule 1)",
+  );
 
   const retryOlder = await finishSessionCore(
     FAKE_CTX,
@@ -202,42 +209,102 @@ Deno.test("AC27: a later finish (07:40) overwrites 07:31, then an older retry (0
   );
   assertEquals(retryOlder, at0740, "an older endedAt with a new rating still returns the 07:40 summary");
   assertEquals(store.get().endedAt, "2026-09-28T07:40:00Z");
-  assertEquals(store.get().effortRating, 4, "the older retry's rating must not overwrite the row");
+  assertEquals(
+    store.get().effortRating,
+    null,
+    "D-0058 rule 3: a strictly older request writes nothing at all, not even its rating",
+  );
+});
+
+Deno.test("AC27 (D-0058 rule 2): an equal-endedAt retry adds a rating and a later unrated retry never clears it", async () => {
+  const store = makeFakeStore(sessionFixture());
+  await finishSessionCore(
+    FAKE_CTX,
+    SESSION_ID,
+    { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
+    store.deps(),
+  );
+  assertEquals(store.get().effortRating, null, "the first, unrated finish stores no rating");
+
+  // Rule 2: same endedAt, now carrying a rating — the retry *adds* it.
+  await finishSessionCore(
+    FAKE_CTX,
+    SESSION_ID,
+    { endedAt: "2026-09-28T07:31:00Z", effortRating: 3, tz: TZ },
+    store.deps(),
+  );
+  assertEquals(store.get().effortRating, 3, "an equal-endedAt retry may add a rating");
+
+  // Rule 2 again: same endedAt, no rating — must NOT clear the one just added. This is the
+  // boundary that keeps rule 1's `?? null` from leaking into retries (e.g. a duplicate delivery
+  // of the original unrated finish arriving after the user rated it).
+  await finishSessionCore(
+    FAKE_CTX,
+    SESSION_ID,
+    { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
+    store.deps(),
+  );
+  assertEquals(
+    store.get().effortRating,
+    3,
+    "an unrated equal-endedAt retry must never clear an existing rating (D-0058 rule 2)",
+  );
+  assertEquals(store.get().endedAt, "2026-09-28T07:31:00Z");
 });
 
 // --- AC28: offline replay order (commutativity) --------------------------------------------------
 
-Deno.test("AC28: replaying [07:40, 07:31] and [07:31, 07:40] converge on the same stored row and response", async () => {
+Deno.test("AC28: replaying [07:40, rated 07:31] and [rated 07:31, 07:40] converge on the same full row and response", async () => {
+  // D-0058's scenario: exactly ONE of the two finishes carries a rating — A = rated 07:31,
+  // B = unrated 07:40 (a rating given on one device, a later correction from another). A
+  // rating-free pair cannot detect an order-dependent `effort_rating`, which is why the original
+  // green AC28 missed the defect. The convergent row is the *winning* finish's row: ended_at
+  // 07:40 with NO rating, because the 07:40 finish carries none (rule 1).
+  const RATED_0731 = { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ } as const;
+  const UNRATED_0740 = { endedAt: "2026-09-28T07:40:00Z", tz: TZ } as const;
+
+  // Order [B, A]: the winner arrives first, then the older rated replay.
   const storeA = makeFakeStore(sessionFixture());
-  await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:40:00Z", tz: TZ },
-    storeA.deps(),
-  );
-  const lastA = await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
-    storeA.deps(),
-  );
+  await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0740, storeA.deps());
+  const lastA = await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0731, storeA.deps());
 
+  // Order [A, B]: the rated older finish lands first and is then superseded.
   const storeB = makeFakeStore(sessionFixture());
-  await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
-    storeB.deps(),
-  );
-  const lastB = await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:40:00Z", tz: TZ },
-    storeB.deps(),
-  );
+  await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0731, storeB.deps());
+  const lastB = await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0740, storeB.deps());
 
+  // The FULL row converges, not just ended_at. Before D-0058, ended_at matched in both orders
+  // while effort_rating was null here and 4 there.
   assertEquals(storeA.get().endedAt, "2026-09-28T07:40:00Z");
   assertEquals(storeB.get().endedAt, "2026-09-28T07:40:00Z");
+  assertEquals(storeA.get().effortRating, null);
+  assertEquals(storeB.get().effortRating, null);
+  assertEquals(
+    storeA.get(),
+    storeB.get(),
+    "the whole stored row must be independent of replay order (D-0058)",
+  );
+  assertEquals(lastA, lastB);
+});
+
+Deno.test("AC28: the same two finishes converge with the rating on the LATER finish instead", async () => {
+  // The mirror case: the rating rides the *winning* 07:40 finish, so it survives in both orders.
+  // Together with the test above this pins that convergence follows the winning endedAt rather
+  // than "whichever rating arrived last" or "any rating ever seen".
+  const UNRATED_0731 = { endedAt: "2026-09-28T07:31:00Z", tz: TZ } as const;
+  const RATED_0740 = { endedAt: "2026-09-28T07:40:00Z", effortRating: 5, tz: TZ } as const;
+
+  const storeA = makeFakeStore(sessionFixture());
+  await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0740, storeA.deps());
+  const lastA = await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0731, storeA.deps());
+
+  const storeB = makeFakeStore(sessionFixture());
+  await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0731, storeB.deps());
+  const lastB = await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0740, storeB.deps());
+
+  assertEquals(storeA.get().effortRating, 5);
+  assertEquals(storeB.get().effortRating, 5);
+  assertEquals(storeA.get(), storeB.get());
   assertEquals(lastA, lastB);
 });
 

@@ -179,11 +179,16 @@ export async function loadOwnedSession(ctx: AuthContext, sessionId: string): Pro
 
 /** Writes `ended_at` (and `effort_rating`, when present) on the caller's session. Returns the row
  * as stored after the write. RLS scopes the update to the caller, so this never touches another
- * user's row (defence in depth on top of the 404 from `loadOwnedSession`). */
+ * user's row (defence in depth on top of the 404 from `loadOwnedSession`).
+ *
+ * `effortRating` distinguishes absent from null (D-0058): `undefined` leaves the column alone,
+ * while an explicit `null` clears it — that is how a winning, unrated finish drops the rating of
+ * the earlier finish it supersedes. Both keys are therefore gated on `!== undefined`, never on
+ * truthiness or `!= null`. */
 export async function writeSessionFinish(
   ctx: AuthContext,
   sessionId: string,
-  patch: { endedAt?: Instant; effortRating?: number },
+  patch: { endedAt?: Instant; effortRating?: number | null },
 ): Promise<SessionRow> {
   const update: Record<string, unknown> = {};
   if (patch.endedAt !== undefined) update.ended_at = patch.endedAt;

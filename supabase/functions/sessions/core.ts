@@ -50,31 +50,41 @@ function instantMs(instant: Instant): number {
   return new Date(instant).getTime();
 }
 
-/** D-0053 §7: the latest `endedAt` wins. Returns the patch to write (possibly empty — a strict
- * "older than stored" replay writes nothing) and never mutates its inputs. Commutative: replaying
- * the same set of finishes in any order converges on the same stored row, because the rule is a
- * max over `endedAt`, with `effortRating` written whenever the request carries it and its
- * `endedAt` is the one that wins (or ties the stored one). */
+/** D-0053 §7 as amended by D-0058: the latest `endedAt` wins, and `effort_rating` is part of the
+ * same max — the winning finish decides the *whole* row. Returns the patch to write (possibly
+ * empty) and never mutates its inputs.
+ *
+ * With `stored` = `sessions.ended_at` and `req` = the request's `endedAt`:
+ *   1. `stored` is null, or `req > stored` — this finish wins: write `ended_at = req` **and**
+ *      `effort_rating = request.effortRating ?? null`, clearing the column when the winning finish
+ *      carries no rating. Without that clear, a rating's survival would depend on arrival order
+ *      (D-0058: `[rated 07:31, unrated 07:40]` kept the 4, `[unrated 07:40, rated 07:31]` did not).
+ *   2. `req = stored` — a retry of the winning finish: write `effortRating` only when the request
+ *      carries one. A retry may *add* a rating; it must never clear one.
+ *   3. `req < stored` — write nothing.
+ *
+ * The row is therefore a function of the winning `endedAt` plus the ratings seen at that
+ * `endedAt`, so any replay order of the same set of finishes converges on the same row. */
 function resolveFinishPatch(
   stored: SessionRow,
   request: FinishRequest,
-): { endedAt?: Instant; effortRating?: number } {
+): { endedAt?: Instant; effortRating?: number | null } {
   const requestMs = instantMs(request.endedAt);
   const storedMs = stored.endedAt === null ? null : instantMs(stored.endedAt);
 
   if (storedMs !== null && requestMs < storedMs) {
-    // Older than what's stored: write nothing (D-0053 §7).
+    // Rule 3 — older than what's stored: write nothing.
     return {};
   }
 
-  const patch: { endedAt?: Instant; effortRating?: number } = {};
   if (storedMs === null || requestMs > storedMs) {
-    patch.endedAt = request.endedAt;
+    // Rule 1 — this finish wins, so it owns both columns. `?? null` clears a rating left behind
+    // by a superseded, earlier finish.
+    return { endedAt: request.endedAt, effortRating: request.effortRating ?? null };
   }
-  if (request.effortRating !== undefined) {
-    patch.effortRating = request.effortRating;
-  }
-  return patch;
+
+  // Rule 2 — `requestMs === storedMs`: a retry may add a rating, never clear one.
+  return request.effortRating === undefined ? {} : { effortRating: request.effortRating };
 }
 
 /** Rule 2 hard sets among the session's live (non-tombstoned; already filtered by
