@@ -120,7 +120,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0901 | CI e2e job red on main since T-0300a: `playwright test` runs from repo root without the tests/e2e config and without building apps/web (runs 36434598815, 36435192622, 36438013896) | infra (expected) | — | doing | wl-ci-investigate → wl-build-infra |
+| T-0901 | CI e2e job: run Playwright with the tests/e2e config; webServer builds via turbo (^build) — diagnosis docs/ci/CI-T-0901-* | infra (+ tests/e2e/playwright.config.ts) | T-0300b | ready | wl-build-infra (draft PR) |
 
 ## Phase 5 — Iterate
 The product-owner adds tickets from `revisit` decisions, triage outcomes and QA findings, using the `wl-idea` flow.
