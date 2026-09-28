@@ -165,8 +165,15 @@ export interface OfflineFixtures {
  * reaching the network.
  */
 export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): Promise<void> {
-  await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets_live*`, (route) =>
-    route.fulfill({ status: 200, json: fixtures.sets }),
+  // `session_sets*` (below) also glob-matches `session_sets_live?...` — Playwright runs the
+  // most-recently-registered matching handler first, so the `session_sets_live*` route below
+  // must be registered *after* `session_sets*`, or the latter's `json: []` always wins and
+  // AC-C20's cached history count is silently 0.
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/sessions*`, (route) =>
+    route.fulfill({ status: 200, json: [] }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets*`, (route) =>
+    route.fulfill({ status: 200, json: [] }),
   );
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/exercises*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.exercises }),
@@ -180,10 +187,7 @@ export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): P
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.profile }),
   );
-  await page.route(`${VITE_SUPABASE_URL}/rest/v1/sessions*`, (route) =>
-    route.fulfill({ status: 200, json: [] }),
-  );
-  await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets*`, (route) =>
-    route.fulfill({ status: 200, json: [] }),
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets_live*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.sets }),
   );
 }
