@@ -16,6 +16,20 @@ You are the **orchestrator** of the workoutLab squad. Run exactly one iteration,
 ## 1. Triage first
 For each open `TR-*` (oldest first, at most 2 per tick), run the `wl-triage` flow, or the `triage` sub-agent, with `ticket` set to the TR id. Apply its follow-ups to the board.
 
+## 1b. CI watch
+- Run `gh run list --limit 20 --json databaseId,conclusion,headBranch,displayTitle` and `gh pr list --state open`. A failure is **actionable** if all three hold:
+  - It's on `main` or on an open `t/T-*` branch.
+  - No newer run of the same workflow on that branch passed.
+  - No `CI fixes` row on the board or open `TR-*` already covers it.
+- For at most one actionable failure per tick (it counts toward the concurrency cap):
+  1. Add a `CI fixes` row to the board with the next `T-09NN` id and status `doing`.
+  2. Run `wl-ci-investigate` (or the `ci-investigator` sub-agent, then `product-owner` in ci-spec mode, then `triage` in check mode) on `main`'s checkout. Pass `ticket: T-09NN` and `task` set to the run id or PR.
+  3. Commit the diagnosis (`docs/ci/**`) and the ticket file on `main`.
+  4. Set the row's Lane and Flow from the spec, and its status to `ready`.
+- If the result is "no actionable failures", delete the row. For an `environment` failure, rerun the job once with `gh run rerun <id> --failed` and note it in the journal.
+- A failure on a ticket branch that's still `doing` goes back to that ticket as rework notes instead.
+- A CI-fix ticket is built like any other (step 4) and always needs a green draft-PR run before merge (step 5).
+
 ## 2. Groom
 If fewer than 3 tickets are `ready`, run the product-owner in **groom** mode: `/plan-phase` logic for the current phase. When every ticket in the phase is `done`, advance `Phase` in `state.md` and groom the next one. When phase 4 is done, switch to phase 5: take the `revisit` decisions and QA follow-ups through `wl-idea`.
 
@@ -38,6 +52,7 @@ Take the flow from the board's Flow column. Input: `{ repoPath: <absolute worktr
 
 ## 5. Review and merge (your own judgement, Opus)
 For each finished ticket:
+- For tickets that touch `.github/**`, `supabase/**` or a CI-fix row, and for any ticket whose ACs need the real Supabase stack: push the branch and open a draft PR (`gh pr create --draft`). Merge only once all its checks are green.
 - If accept is `done`: in the worktree, run `pnpm -w typecheck lint test` (or the package-level equivalent before T-0002 exists). Check `git diff --stat main...` against the lane's paths and the contract rule. If it passes, `git merge --no-ff t/T-NNNN-*` on `main`, then run the tests on `main` again. If `main` breaks, `git merge --abort` or revert, and treat the ticket as failed. On success, set the board to `done` and remove the worktree.
 - If the status is `failed`: rerun the build with `task` set to the combined QA, review and accept notes. On the 2nd failure of a Sonnet role, rerun as a sub-agent with `model: "opus"`. On the 3rd failure, raise a `TR-*` and set the board to `triage:TR-NNNN`.
 - If the status is `needs-triage`: set the board to `triage:<id>`. It gets picked up next tick.

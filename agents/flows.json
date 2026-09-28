@@ -10,25 +10,63 @@
     "data-modeler#impact": "Read-only step. Assess what the upstream spec means for the schema and API. Change no files; list the work as followUps.",
     "engine-dev#impact": "Read-only step. Assess what the upstream spec means for engine rules. Change no files; list the work as followUps.",
     "qa-tester#release": "Release check: run the full suite and every e2e spec against local Supabase, and exercise the PWA install and offline logging.",
-    "code-reviewer#release": "Release check: review everything merged since the last release tag (or the whole repo if there is none) for principle and contract violations."
+    "code-reviewer#release": "Release check: review everything merged since the last release tag (or the whole repo if there is none) for principle and contract violations.",
+    "product-owner#ci-spec": "Mode for this step: ci-spec. The input `investigate` holds a CI diagnosis (docs/ci/CI-<ticket>-*.md). If it says 'no actionable failures', return done with that summary and write nothing. Otherwise write docs/tickets/<ticket>-<slug>.md from the template: lane = the diagnosis's owning lane; list only the paths the fix needs; Given/When/Then ACs that include (a) the regression test the diagnosis proposes, (b) the failing command passing under the CI conditions the diagnosis names (fresh install, --force, concurrency, depth-1 clone), and (c) the failing GitHub job green on a draft PR. Never accept 'rerun until green', a longer timeout alone, or a weakened test as the fix, unless the classification is environment. In the result's notes, name the build flow to use (wl-build-<lane> or wl-design) and whether a draft PR is required (always yes for ci-config and supabase-job failures)."
   },
   "flows": [
     {
       "id": "wl-spec",
       "name": "WL · Spec a ticket",
       "description": "Product owner writes the ticket with testable acceptance criteria, then triage checks it against contracts and decisions.",
-      "tags": ["workoutlab", "product"],
+      "tags": [
+        "workoutlab",
+        "product"
+      ],
       "nodes": [
-        { "id": "spec", "agent": "product-owner#spec", "dependsOn": [] },
-        { "id": "check", "agent": "triage#check", "dependsOn": ["spec"] }
+        {
+          "id": "spec",
+          "agent": "product-owner#spec",
+          "dependsOn": []
+        },
+        {
+          "id": "check",
+          "agent": "triage#check",
+          "dependsOn": [
+            "spec"
+          ]
+        }
       ]
     },
-    { "template": "build", "lane": "web", "agent": "frontend-dev" },
-    { "template": "build", "lane": "engine", "agent": "engine-dev" },
-    { "template": "build", "lane": "backend", "agent": "backend-dev" },
-    { "template": "build", "lane": "data", "agent": "data-modeler" },
-    { "template": "build", "lane": "content", "agent": "content-curator" },
-    { "template": "build", "lane": "infra", "agent": "devops" },
+    {
+      "template": "build",
+      "lane": "web",
+      "agent": "frontend-dev"
+    },
+    {
+      "template": "build",
+      "lane": "engine",
+      "agent": "engine-dev"
+    },
+    {
+      "template": "build",
+      "lane": "backend",
+      "agent": "backend-dev"
+    },
+    {
+      "template": "build",
+      "lane": "data",
+      "agent": "data-modeler"
+    },
+    {
+      "template": "build",
+      "lane": "content",
+      "agent": "content-curator"
+    },
+    {
+      "template": "build",
+      "lane": "infra",
+      "agent": "devops"
+    },
     {
       "id": "wl-design",
       "template": "build",
@@ -41,33 +79,134 @@
       "id": "wl-idea",
       "name": "WL · Idea to backlog",
       "description": "Product owner turns an idea into a spec; design, data and engine assess impact in parallel; triage resolves conflicts; product owner writes the tickets.",
-      "tags": ["workoutlab", "product"],
+      "tags": [
+        "workoutlab",
+        "product"
+      ],
       "nodes": [
-        { "id": "idea", "agent": "product-owner#idea", "dependsOn": [] },
-        { "id": "design", "agent": "designer#impact", "dependsOn": ["idea"] },
-        { "id": "data", "agent": "data-modeler#impact", "dependsOn": ["idea"] },
-        { "id": "engine", "agent": "engine-dev#impact", "dependsOn": ["idea"] },
-        { "id": "check", "agent": "triage#check", "dependsOn": ["design", "data", "engine"] },
-        { "id": "tickets", "agent": "product-owner#groom", "dependsOn": ["check"] }
+        {
+          "id": "idea",
+          "agent": "product-owner#idea",
+          "dependsOn": []
+        },
+        {
+          "id": "design",
+          "agent": "designer#impact",
+          "dependsOn": [
+            "idea"
+          ]
+        },
+        {
+          "id": "data",
+          "agent": "data-modeler#impact",
+          "dependsOn": [
+            "idea"
+          ]
+        },
+        {
+          "id": "engine",
+          "agent": "engine-dev#impact",
+          "dependsOn": [
+            "idea"
+          ]
+        },
+        {
+          "id": "check",
+          "agent": "triage#check",
+          "dependsOn": [
+            "design",
+            "data",
+            "engine"
+          ]
+        },
+        {
+          "id": "tickets",
+          "agent": "product-owner#groom",
+          "dependsOn": [
+            "check"
+          ]
+        }
       ]
     },
     {
       "id": "wl-triage",
       "name": "WL · Triage",
       "description": "Resolve one open triage item (or the oldest) into a decision and follow-ups.",
-      "tags": ["workoutlab", "process"],
-      "nodes": [{ "id": "triage", "agent": "triage", "dependsOn": [] }]
+      "tags": [
+        "workoutlab",
+        "process"
+      ],
+      "nodes": [
+        {
+          "id": "triage",
+          "agent": "triage",
+          "dependsOn": []
+        }
+      ]
     },
     {
       "id": "wl-release",
       "name": "WL · Release check",
       "description": "Security review, full QA and a release code review in parallel; the product owner gives go or no-go.",
-      "tags": ["workoutlab", "release"],
+      "tags": [
+        "workoutlab",
+        "release"
+      ],
       "nodes": [
-        { "id": "security", "agent": "security-reviewer", "dependsOn": [] },
-        { "id": "qa", "agent": "qa-tester#release", "dependsOn": [] },
-        { "id": "review", "agent": "code-reviewer#release", "dependsOn": [] },
-        { "id": "accept", "agent": "product-owner#accept", "dependsOn": ["security", "qa", "review"] }
+        {
+          "id": "security",
+          "agent": "security-reviewer",
+          "dependsOn": []
+        },
+        {
+          "id": "qa",
+          "agent": "qa-tester#release",
+          "dependsOn": []
+        },
+        {
+          "id": "review",
+          "agent": "code-reviewer#release",
+          "dependsOn": []
+        },
+        {
+          "id": "accept",
+          "agent": "product-owner#accept",
+          "dependsOn": [
+            "security",
+            "qa",
+            "review"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wl-ci-investigate",
+      "name": "WL · CI failure → fix ticket",
+      "description": "The CI investigator finds and diagnoses failing GitHub Actions runs, the product owner specs the fix ticket in the owning lane, and triage checks it. The fix is then built with that lane's build flow and merged after a green draft PR.",
+      "tags": [
+        "workoutlab",
+        "ci"
+      ],
+      "nodes": [
+        {
+          "id": "investigate",
+          "agent": "ci-investigator",
+          "dependsOn": []
+        },
+        {
+          "id": "spec",
+          "agent": "product-owner#ci-spec",
+          "dependsOn": [
+            "investigate"
+          ]
+        },
+        {
+          "id": "check",
+          "agent": "triage#check",
+          "dependsOn": [
+            "spec"
+          ]
+        }
       ]
     }
   ]

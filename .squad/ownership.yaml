@@ -45,6 +45,9 @@ lanes:
   security:
     agent: security-reviewer
     paths: [docs/security/**]
+  ci:
+    agent: ci-investigator
+    paths: [docs/ci/**]
   process:
     agent: triage
     paths: [.squad/decisions/**, .squad/triage/**, docs/decisions/**]

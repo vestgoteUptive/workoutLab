@@ -115,5 +115,11 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0403 | Release check: security review, e2e happy path, go/no-go | qa | T-0301…T-0309, T-0402, T-0404 | todo (needs H-06) | wl-release |
 | T-0406 | Privacy requirements NFR-PRIV-* in docs/security (EU region, minimisation, export, deletion, notice, no PII in logs) | security | T-0001 | todo | security-reviewer (sub-agent) |
 
+## CI fixes (any phase)
+Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `docs/ci/CI-T-09NN-*.md`. Built with the owning lane's flow; merged only after a green draft-PR run.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+
 ## Phase 5 — Iterate
 The product-owner adds tickets from `revisit` decisions, triage outcomes and QA findings, using the `wl-idea` flow.
