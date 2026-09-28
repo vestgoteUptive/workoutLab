@@ -62,10 +62,7 @@ Deno.test("AC3: a generated fixture seed round-trips through psql unchanged", as
 
   const dir = await Deno.makeTempDir({ prefix: "gen-seed-roundtrip-" });
   try {
-    await Deno.writeTextFile(
-      join(dir, `${FIXTURE.id}.json`),
-      JSON.stringify(FIXTURE, null, 2),
-    );
+    await Deno.writeTextFile(join(dir, `${FIXTURE.id}.json`), JSON.stringify(FIXTURE, null, 2));
 
     const { generateSql } = await import(`file://${GEN_SEED_PATH}`);
     const inserts = unwrapTransaction(generateSql(dir));
@@ -94,7 +91,10 @@ Deno.test("AC3: a generated fixture seed round-trips through psql unchanged", as
     if (code !== 0) {
       throw new Error(`psql exited ${code}: ${err}`);
     }
-    const lastLine = out.split("\n").filter((l) => l.length > 0).pop();
+    const lastLine = out
+      .split("\n")
+      .filter((l) => l.length > 0)
+      .pop();
     if (!lastLine) {
       throw new Error(`psql produced no row for id ${FIXTURE.id}: stdout was empty`);
     }
