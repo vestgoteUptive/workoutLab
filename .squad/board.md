@@ -129,7 +129,8 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | doing | wl-build-web |
+| T-0311 | Flaky T-0300c offline sync-trigger tests: AC-C9 'online' event + stop() listener fail intermittently in the full suite (reproduced on stock main, 3 of 5 runs; pass 6/6 isolated). Real timing bug in the merged offline-sync triggers, not machine noise | web-shell | T-0300c | ready | wl-build-web |
+| T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | done | wl-build-web |
 | T-0901 | CI e2e job: run Playwright with the tests/e2e config; webServer builds via turbo (^build) — diagnosis docs/ci/CI-T-0901-* | infra (+ tests/e2e/playwright.config.ts) | T-0300b | done | wl-build-infra (draft PR) |
 
 ## Phase 5 — Iterate
