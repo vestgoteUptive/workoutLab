@@ -46,6 +46,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 - Engine (from T-0102a): switch packages/engine/src/types.ts to @workoutlab/shared types (coverageStep number vs 0–4 literal; equipment string[]; D-0039).
 - T-0203 (TR-0016 → D-0044): seed exercises.external_load = !bodyweight on every row (never the column default); tests after db reset: every file's external_load = !bodyweight, push-up/plank false, barbell-back-squat true, all warm-ups false, count(false) = count(bodyweight:true).
 - T-0102b or a data follow-up (D-0044 §5): mapper case external_load:false → externalLoad:false (no inversion); note 'Seeded as NOT bodyweight (D-0044)' on the external_load row in docs/data-model.md.
+- T-0300 (from TR-0022): ticket text still says `idb` — D-0045 §13 wins: Dexie; AC-C1 'a new Dexie instance on the same database name'; AC-B5: signed out, /welcome/goal renders without redirect. T-0301: nest UF-01.2–01.4 under /welcome/*.
+- T-0300 groom follow-ups: CI job for apps/web test:e2e + check:size (→ T-0006); Lighthouse CI on UF-02.1 (→ T-0402); T-0404 magic-link email includes the 6-digit {{ .Token }}; T-0310 clears IndexedDB queue + caches on account deletion; C-02 tab bar spec (design); rejected-set review UX (Phase 5 idea).
+- T-0309 groom follow-ups: CI job for landing test:browser (→ T-0006/T-0402); UF-01.5 links to /privacy/; T-0406 reviews privacy.ts (security text wins).
 
 ## Phase 1 — Contracts
 | ID | Title | Lane | Deps | Status | Flow |
@@ -75,7 +78,11 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 3 — App
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0300 | PWA shell: routing, auth (magic link), offline set queue, C-01 body map, C-02 tab bar | web-shell | T-0002, T-0003, T-0100a | todo | wl-build-web |
+| T-0300 | PWA shell: routing, auth (magic link), offline set queue, C-01 body map, C-02 tab bar | web-shell | T-0002, T-0003, T-0100a | split → T-0300a, T-0300b, T-0300c, T-0300d (D-0045) | wl-build-web |
+| T-0300a | PWA shell: routes, tab bar C-02, tokens.css, manifest/icons from tokens, placeholder removed (AC-A*) | web-shell | T-0002, T-0003, T-0102a | ready | wl-build-web |
+| T-0300b | Auth: magic link + 6-digit code, guard (/welcome/* public, D-0014), callback (AC-B*) | web-shell | T-0300a | todo | wl-build-web |
+| T-0300c | Offline set queue (Dexie per D-0001/TR-0022), sync, engine input with pending rows (AC-C*) | web-shell | T-0300b, T-0102b | todo | wl-build-web |
+| T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | todo | wl-build-web |
 | T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201a | todo | wl-build-web |
 | T-0302 | UF-02 Today + workout preview | web-feature:UF-02 | T-0300, T-0203 | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203 | todo | wl-build-web |
@@ -84,7 +91,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0306 | UF-04 Library + UF-05 in-workout swap | web-feature:UF-04 | T-0300, T-0203, T-0204 | todo | wl-build-web |
 | T-0307 | UF-06 Progress + UF-10 Balance | web-feature:UF-06 | T-0300, T-0203 | todo | wl-build-web |
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | todo | wl-build-web |
-| T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | todo | wl-design → wl-build-web |
+| T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
+| T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | doing | wl-design |
+| T-0309b | Landing build: static Astro page, no JS, tokens, privacy + 404 pages, placeholder removed (AC8–24) | landing | T-0309a | todo | wl-build-web |
 | T-0310 | Account settings: JSON export (NFR-PRIV-4) and in-app account deletion (NFR-PRIV-5) | web-shell | T-0300 | todo | wl-build-web |
 
 ## Phase 4 — Ship
