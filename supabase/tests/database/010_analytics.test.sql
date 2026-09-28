@@ -8,15 +8,15 @@ insert into auth.users (id, aud, role, email)
   select ('00000000-0000-0000-0000-0000000000' || x)::uuid, 'authenticated', 'authenticated', x || '@test.local'
     from unnest(array['a1','a2','a3','a4','a5','a6','c1','c2','c3']) as x;
 insert into public.exercises (id, name, type, level, instructions, source, license) values
-  ('back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
-  ('bench-press', 'Bench press', 'compound', 'intermediate', '{Press}', 'own', 'CC0'),
-  ('barbell-row', 'Barbell row', 'compound', 'intermediate', '{Row}', 'own', 'CC0'),
-  ('plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0');
+  ('fx-back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
+  ('fx-bench-press', 'Bench press', 'compound', 'intermediate', '{Press}', 'own', 'CC0'),
+  ('fx-barbell-row', 'Barbell row', 'compound', 'intermediate', '{Row}', 'own', 'CC0'),
+  ('fx-plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0');
 insert into public.exercise_areas (exercise_id, area_id, weight) values
-  ('back-squat', 'quads', 1.0), ('back-squat', 'glutes', 1.0), ('back-squat', 'hamstrings', 0.5), ('back-squat', 'core', 0.5),
-  ('bench-press', 'chest', 1.0), ('bench-press', 'shoulders', 0.5), ('bench-press', 'arms', 0.5),
-  ('barbell-row', 'back', 1.0), ('barbell-row', 'arms', 0.5),
-  ('plank', 'core', 1.0);
+  ('fx-back-squat', 'quads', 1.0), ('fx-back-squat', 'glutes', 1.0), ('fx-back-squat', 'hamstrings', 0.5), ('fx-back-squat', 'core', 0.5),
+  ('fx-bench-press', 'chest', 1.0), ('fx-bench-press', 'shoulders', 0.5), ('fx-bench-press', 'arms', 0.5),
+  ('fx-barbell-row', 'back', 1.0), ('fx-barbell-row', 'arms', 0.5),
+  ('fx-plank', 'core', 1.0);
 
 -- Zero history: no rows yet, the ratios are null and nothing raises.
 select results_eq('select sessions_finished, ratio from analytics.finished_within_budget',
@@ -47,7 +47,7 @@ insert into public.sessions (id, user_id, started_at, ended_at, time_budget_min)
   ('30000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-0000000000a1', '2026-09-06T10:00Z', null, 30);
 insert into public.session_sets (user_id, client_id, session_id, exercise_id, set_index, reps, is_warmup, completed_at, edited_at, deleted_at)
   select '00000000-0000-0000-0000-0000000000a1', gen_random_uuid(), ('30000000-0000-0000-0000-00000000000' || s)::uuid,
-         'back-squat', i, 8, s = 3, '2026-09-01T10:10Z', '2026-09-01T10:10Z',
+         'fx-back-squat', i, 8, s = 3, '2026-09-01T10:10Z', '2026-09-01T10:10Z',
          case when s = 4 then '2026-09-04T11:00Z'::timestamptz end
     from generate_series(1, 6) as s, generate_series(0, 2) as i;
 select results_eq('select sessions_finished, sessions_within, ratio from analytics.finished_within_budget',
@@ -85,13 +85,13 @@ insert into public.session_sets (user_id, client_id, session_id, exercise_id, se
   select '00000000-0000-0000-0000-0000000000c1', gen_random_uuid(), x.sid::uuid, x.ex, i, 8, x.warm,
          x.day::timestamptz, x.day::timestamptz, x.del::timestamptz
     from (values
-      ('40000000-0000-0000-0000-000000000001', 'back-squat',  false, '2026-09-15T10:10Z', null),
-      ('40000000-0000-0000-0000-000000000002', 'back-squat',  false, '2026-09-18T10:10Z', null),
-      ('40000000-0000-0000-0000-000000000003', 'bench-press', false, '2026-09-21T10:10Z', null),
-      ('40000000-0000-0000-0000-000000000004', 'bench-press', false, '2026-09-24T10:10Z', null),
-      ('40000000-0000-0000-0000-000000000001', 'barbell-row', true,  '2026-09-15T10:20Z', null),
-      ('40000000-0000-0000-0000-000000000002', 'barbell-row', false, '2026-09-18T10:20Z', '2026-09-19T08:00Z'),
-      ('40000000-0000-0000-0000-000000000005', 'barbell-row', false, '2026-09-13T10:10Z', null)
+      ('40000000-0000-0000-0000-000000000001', 'fx-back-squat',  false, '2026-09-15T10:10Z', null),
+      ('40000000-0000-0000-0000-000000000002', 'fx-back-squat',  false, '2026-09-18T10:10Z', null),
+      ('40000000-0000-0000-0000-000000000003', 'fx-bench-press', false, '2026-09-21T10:10Z', null),
+      ('40000000-0000-0000-0000-000000000004', 'fx-bench-press', false, '2026-09-24T10:10Z', null),
+      ('40000000-0000-0000-0000-000000000001', 'fx-barbell-row', true,  '2026-09-15T10:20Z', null),
+      ('40000000-0000-0000-0000-000000000002', 'fx-barbell-row', false, '2026-09-18T10:20Z', '2026-09-19T08:00Z'),
+      ('40000000-0000-0000-0000-000000000005', 'fx-barbell-row', false, '2026-09-13T10:10Z', null)
     ) as x(sid, ex, warm, day, del),
     generate_series(0, 4) as i;
 -- The three barbell-row groups get 5 more sets each (10 per group; squat and bench have 2 x 5).
@@ -99,9 +99,9 @@ insert into public.session_sets (user_id, client_id, session_id, exercise_id, se
   select '00000000-0000-0000-0000-0000000000c1', gen_random_uuid(), x.sid::uuid, x.ex, i, 8, x.warm,
          x.day::timestamptz, x.day::timestamptz, x.del::timestamptz
     from (values
-      ('40000000-0000-0000-0000-000000000001', 'barbell-row', true,  '2026-09-15T10:20Z', null),
-      ('40000000-0000-0000-0000-000000000002', 'barbell-row', false, '2026-09-18T10:20Z', '2026-09-19T08:00Z'),
-      ('40000000-0000-0000-0000-000000000005', 'barbell-row', false, '2026-09-13T10:10Z', null)
+      ('40000000-0000-0000-0000-000000000001', 'fx-barbell-row', true,  '2026-09-15T10:20Z', null),
+      ('40000000-0000-0000-0000-000000000002', 'fx-barbell-row', false, '2026-09-18T10:20Z', '2026-09-19T08:00Z'),
+      ('40000000-0000-0000-0000-000000000005', 'fx-barbell-row', false, '2026-09-13T10:10Z', null)
     ) as x(sid, ex, warm, day, del),
     generate_series(5, 9) as i;
 -- U2: 3 completed sessions only. U3: 4 completed sessions but day 28 not reached.
@@ -112,14 +112,14 @@ insert into public.sessions (id, user_id, started_at, time_budget_min)
   select ('60000000-0000-0000-0000-00000000000' || n)::uuid, '00000000-0000-0000-0000-0000000000c3'::uuid, now() - interval '4 days' + n * interval '1 hour', 45
     from generate_series(1, 4) as n;
 insert into public.session_sets (user_id, client_id, session_id, exercise_id, set_index, reps, completed_at, edited_at)
-  select s.user_id, gen_random_uuid(), s.id, 'barbell-row', 0, 8, s.started_at, s.started_at
+  select s.user_id, gen_random_uuid(), s.id, 'fx-barbell-row', 0, 8, s.started_at, s.started_at
     from public.sessions s
    where s.user_id in ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-0000000000c3');
 
 select results_eq($$select
-    count(*) filter (where not is_warmup and deleted_at is null and exercise_id = 'back-squat')::int,
-    count(*) filter (where not is_warmup and deleted_at is null and exercise_id = 'bench-press')::int,
-    count(*) filter (where is_warmup and exercise_id = 'barbell-row')::int,
+    count(*) filter (where not is_warmup and deleted_at is null and exercise_id = 'fx-back-squat')::int,
+    count(*) filter (where not is_warmup and deleted_at is null and exercise_id = 'fx-bench-press')::int,
+    count(*) filter (where is_warmup and exercise_id = 'fx-barbell-row')::int,
     count(*) filter (where deleted_at is not null)::int,
     count(*) filter (where completed_at < '2026-09-14Z')::int
   from public.session_sets where user_id = '00000000-0000-0000-0000-0000000000c1'$$,

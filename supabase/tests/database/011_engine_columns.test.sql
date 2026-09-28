@@ -11,9 +11,9 @@ select col_default_is('public', 'exercises', 'kind', 'exercise', 'exercises.kind
 select col_default_is('public', 'exercises', 'increment_kg', '2.5', 'exercises.increment_kg defaults to 2.5');
 select col_default_is('public', 'exercises', 'external_load', 'true', 'exercises.external_load defaults to true');
 select lives_ok($$insert into public.exercises (id, name, type, level, instructions, source, license, kind)
-  values ('arm-circles', 'Arm circles', 'isolation', 'beginner', '{Circle}', 'own', 'CC0', 'warmup')$$, 'a warm-up move is stored');
+  values ('fx-arm-circles', 'Arm circles', 'isolation', 'beginner', '{Circle}', 'own', 'CC0', 'warmup')$$, 'a warm-up move is stored');
 select lives_ok($$insert into public.exercises (id, name, type, level, instructions, source, license, timed, default_duration_s, external_load)
-  values ('plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0', true, 30, false)$$, 'a timed bodyweight exercise is stored');
+  values ('fx-plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0', true, 30, false)$$, 'a timed bodyweight exercise is stored');
 select lives_ok($$insert into public.exercises (id, name, type, level, instructions, source, license, increment_kg)
   values ('back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0', 5)$$, 'increment_kg 5 is stored');
 select throws_ok($$insert into public.exercises (id, name, type, level, instructions, source, license, kind)
