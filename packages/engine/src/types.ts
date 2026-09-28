@@ -245,3 +245,67 @@ export interface TimeCheckResult {
   trim: TimeCheckOption;
   skipNext: TimeCheckOption;
 }
+
+// ---- Adaptive targets / plan check-in (rule 9, UF-11; D-0037 §6 and §8, D-0041) ----
+
+/** D-0037 §6. A session as rule 9 counts it: completed when `hardSetCount ≥ 1`. */
+export interface CheckinSession {
+  id: string;
+  startedAt: Instant;
+  /** Integer ≥ 0 (D-0041 §6). */
+  hardSetCount: number;
+}
+
+/** A `sessions` row as `checkinSessions` reads it (D-0041 §3). */
+export interface CheckinSessionRef {
+  id: string;
+  startedAt: Instant;
+}
+
+/** D-0041 §2: the `EngineProfile` subset rule 9 reads, so a full `EngineProfile` fits. */
+export interface CheckinProfile {
+  rhythmMin: number;
+  rhythmMax: number;
+  priorityAreas: readonly Area[];
+  onboardedAt: Instant;
+  /** Maps from `profiles.plan_changed_at` (D-0035, D-0037 §6, D-0041 §1). */
+  planUpdatedAt: Instant;
+}
+
+/** D-0041 §2: the `PlanCheckin` subset rule 9 reads. Null = shown but not answered. */
+export interface CheckinAnswer {
+  answeredAt: Instant | null;
+}
+
+export type CheckinStatus = "under" | "on_plan" | "over";
+export type CheckinDirection = "down" | "up";
+
+/** D-0037 §8. Period `index` counts from 0 at the onboarding date (rule 9). */
+export interface CheckinPeriod {
+  index: number;
+  start: LocalDate;
+  end: LocalDate;
+  completed: number;
+  status: CheckinStatus;
+}
+
+/** D-0037 §8 `previewTargets` entry. */
+export interface PreviewTarget {
+  area: Area;
+  setsPer14d: number;
+}
+
+/** D-0037 §8. `rhythmMin`/`rhythmMax` are 1–7; `previewTargets` lists 9 areas in the fixed order. */
+export interface CheckinProposal {
+  direction: CheckinDirection;
+  rhythmMin: number;
+  rhythmMax: number;
+  previewTargets: PreviewTarget[];
+}
+
+/** Rule 9 output (UF-11.1, UF-11.2), D-0037 §8. */
+export interface CheckinEvaluation {
+  periods: CheckinPeriod[];
+  proposal: CheckinProposal | null;
+  nextCheckinDate: LocalDate;
+}
