@@ -13,6 +13,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0004 | CI checks: docs check (UF IDs exist in v2 flows, no v1 labels), duplicate D-NNNN id check, placeholder-test check | infra | T-0002 | done | wl-build-infra |
 | T-0005 | Spec touch-ups per D-0015: NFR-SYNC-2 wording (edited_at/deleted_at), UF-11.1 clamped proposal copy, UF-10.2 "Recovering" = ≥ 6 weighted hard sets in 48 h | product | T-0001 | done | wl-spec |
 | T-0006 | CI hygiene follow-ups: check turbo hash inputs include untracked data/exercises files and no cross-worktree cache replay; gen:api drift job (`pnpm --filter @workoutlab/shared gen:api` + git diff); regenerate packages/shared/src/database.gen.ts via supabase gen types in the supabase job and fail on drift (D-0037 §10); pgTAP column-drift check vs docs/data-model.md; root ESLint over .github/scripts in CI; v1-label regex word boundary; resolveBranch honours root; flag D-NNNN.md without slug; fix D-0032 context + D-0023 pointer | infra | T-0004 | todo | wl-build-infra |
+| T-0007 | CI flakes: serial turbo unit tests in checks job; pnpm install in supabase job (PR #4, built by orchestrator) | infra | T-0004 | doing | orchestrator |
 
 **Follow-ups folded into existing tickets (from T-0001/T-0002, 2026-09-27)** — the groomer copies these into the ticket files:
 - T-0003: C-01 legend + coverage tokens on the D-0013 steps (0 / <0.33 / <0.66 / <1 / ≥1).
