@@ -219,3 +219,29 @@ export interface Workout {
   unusedS: number;
   sessionReasons: Reason[];
 }
+
+// ---- Running over time (rule 8, UF-09.8; D-0037 §8, D-0040 §10) ----
+
+/** D-0037 §2. `elapsedS` excludes paused time, and the warm-up when it is off-budget. */
+export interface TimeCheckProgress {
+  /** Integer seconds ≥ 0. */
+  elapsedS: number;
+  /** The first not-started item, 0 … items.length. */
+  nextItemIndex: number;
+}
+
+export interface TimeCheckOption {
+  items: WorkoutItem[];
+  projectedS: number;
+}
+
+/** D-0037 §8. */
+export interface TimeCheckResult {
+  behindS: number;
+  show: boolean;
+  /** `ceil(behindS / 60)` when `show`, otherwise null. */
+  minutesBehind: number | null;
+  projectedS: number;
+  trim: TimeCheckOption;
+  skipNext: TimeCheckOption;
+}
