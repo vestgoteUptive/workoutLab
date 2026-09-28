@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { formatTime } from "../../lib/format/intl.js";
 import { lastSyncedAt as loadLastSyncedAt } from "../../lib/offline/history.js";
+import "./offline-status.css";
 
 function useOnline(): boolean {
   const [online, setOnline] = useState(() => navigator.onLine);

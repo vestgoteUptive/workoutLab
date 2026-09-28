@@ -1,4 +1,5 @@
 // AC-C19: offline status text/icon variants.
+import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { OfflineStatus } from "../OfflineStatus.js";
@@ -45,5 +46,34 @@ describe("OfflineStatus (AC-C19)", () => {
     expect(icon.textContent).toBe("");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+  });
+});
+
+// The icon variant carries no text (AC-C19), so it is invisible unless the stylesheet gives it a
+// size. jsdom doesn't apply imported CSS, so assert against the stylesheet source instead.
+describe("offline-status.css backs the classes the component renders", () => {
+  const dir = "src/components/offline-status";
+  const css = readFileSync(`${dir}/offline-status.css`, "utf8");
+
+  it("is imported by the component, so the classes are not dead", () => {
+    const tsx = readFileSync(`${dir}/OfflineStatus.tsx`, "utf8");
+    expect(tsx).toContain('import "./offline-status.css"');
+  });
+
+  it("gives the icon variant a non-zero size, so it is actually visible", () => {
+    const iconRule = css.slice(css.indexOf(".wl-offline-status__icon"));
+    expect(iconRule).toMatch(/inline-size:\s*[1-9]/);
+    expect(iconRule).toMatch(/block-size:\s*[1-9]/);
+  });
+
+  it("defines every class the component uses", () => {
+    for (const cls of [".wl-offline-status__icon", ".wl-offline-status__text"]) {
+      expect(css).toContain(cls);
+    }
+  });
+
+  it("uses only design-token colours, no hex literals (D-0019)", () => {
+    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(css).toMatch(/var\(--wl-color-/);
   });
 });
