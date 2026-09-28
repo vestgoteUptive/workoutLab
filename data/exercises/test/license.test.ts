@@ -25,9 +25,11 @@ describe("AC7 per-file licence (D-0005, D-0022 §7)", () => {
     for (const e of lib) expect(["wger", "workoutlab"]).toContain(e.source);
   });
 
-  it("fixture: source wger with license MIT fails the schema", () => {
+  it("fixture: source wger with license MIT fails the schema at /license with const", () => {
     const validate = validator();
     const ok = validate(readInvalidFixture("wger-with-mit-license.json"));
     expect(ok).toBe(false);
+    const errors = validate.errors ?? [];
+    expect(errors.some((e) => e.instancePath === "/license" && e.keyword === "const")).toBe(true);
   });
 });

@@ -16,8 +16,6 @@
   "mistakes": ["Letting the hips rock side to side.", "Rushing the arm changes."],
   "variants": ["diamond-push-up", "kneeling-diamond-push-up"],
   "timed": false,
-  "source": "wger",
-  "license": "CC-BY-SA-4.0",
-  "source_url": "https://wger.de/en/exercise/basic-info/plank-up-down",
-  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
 }

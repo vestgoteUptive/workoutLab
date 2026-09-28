@@ -17,8 +17,6 @@
   "mistakes": ["Using the wall to push instead of balance.", "Rushing the lowering phase."],
   "variants": ["calf-raise", "calf-raise-hold"],
   "timed": false,
-  "source": "wger",
-  "license": "CC-BY-SA-4.0",
-  "source_url": "https://wger.de/en/exercise/basic-info/single-leg-calf-raise",
-  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
 }

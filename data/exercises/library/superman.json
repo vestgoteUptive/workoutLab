@@ -16,8 +16,6 @@
   "mistakes": ["Yanking the head back.", "Only lifting the arms."],
   "variants": ["bird-dog", "prone-swimmers", "reverse-plank-hold"],
   "timed": false,
-  "source": "wger",
-  "license": "CC-BY-SA-4.0",
-  "source_url": "https://wger.de/en/exercise/basic-info/superman",
-  "attribution": "Adapted from wger.de exercise instructions (CC BY-SA 4.0); text rewritten."
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
 }

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { libraryDir, libraryFileNames, loadLibrary } from "../src/index.js";
@@ -14,6 +14,11 @@ describe("AC16 deterministic loader", () => {
   it("both have the same length", () => {
     expect(a.length).toBe(b.length);
     expect(a.length).toBeGreaterThan(0);
+  });
+
+  it("length matches an independent directory listing of library/*.json", () => {
+    const independentCount = readdirSync(libraryDir).filter((f) => f.endsWith(".json")).length;
+    expect(a.length).toBe(independentCount);
   });
 
   it("both are sorted by id ascending (code-point order)", () => {

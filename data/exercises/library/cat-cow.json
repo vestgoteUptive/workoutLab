@@ -1,0 +1,23 @@
+{
+  "id": "cat-cow",
+  "name": "Cat-cow",
+  "kind": "warmup",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "back": 0.5, "core": 0.5 },
+  "instructions": [
+    "Get on your hands and knees, hands under shoulders.",
+    "Round your back up and tuck your chin to your chest.",
+    "Drop your belly and lift your chest and head, arching your back.",
+    "Move slowly between the two positions."
+  ],
+  "cue": "Round, then arch, nice and slow",
+  "mistakes": ["Moving too fast to feel the stretch.", "Letting the elbows lock out."],
+  "variants": [],
+  "timed": true,
+  "default_duration_s": 40,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

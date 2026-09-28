@@ -39,4 +39,18 @@ describe("AC1 schema is valid and strict", () => {
     const paths = (validate.errors ?? []).map((e) => e.instancePath);
     expect(paths).toContain(path);
   });
+
+  it("extra-property-image-url.json fails specifically on additionalProperties", () => {
+    const ok = validate(readInvalidFixture("extra-property-image-url.json"));
+    expect(ok).toBe(false);
+    const keywords = (validate.errors ?? []).map((e) => e.keyword);
+    expect(keywords).toContain("additionalProperties");
+  });
+
+  it("missing-license.json fails specifically on the required keyword", () => {
+    const ok = validate(readInvalidFixture("missing-license.json"));
+    expect(ok).toBe(false);
+    const keywords = (validate.errors ?? []).map((e) => e.keyword);
+    expect(keywords).toContain("required");
+  });
 });

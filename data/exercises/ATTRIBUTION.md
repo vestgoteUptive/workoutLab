@@ -1,45 +1,28 @@
 # Attribution
 
-Most of the text in this library is adapted from [wger.de](https://wger.de/), an open-source
-workout manager. The wger exercise database is licensed under
-[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+wger.de is an open-source workout manager whose exercise database is licensed under
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). D-0005 asks this library to
+base its text on wger and rewrite it in plain, short English, recording source and licence per
+file.
 
-Text has been modified from the original. Every instruction and cue below was rewritten in
-plain, short English (one action per step) and shortened to fit workoutLab's one-task screens.
-The share-alike terms of CC BY-SA 4.0 apply to the rows listed below: any reuse of this text
-must also be shared under CC BY-SA 4.0, with attribution to wger.de.
+Text has been modified from the original. When a row does carry `source: "wger"`, every
+instruction and cue on it is rewritten in plain, short English (one action per step) and
+shortened to fit workoutLab's one-task screens. The share-alike terms of CC BY-SA 4.0 apply to
+any such row: reuse of that row's text must also be shared under CC BY-SA 4.0, with attribution
+to wger.de.
 
-Rows with `source: "workoutlab"` (currently the warm-up moves) are original workoutLab text
-under `LicenseRef-workoutLab` and are not covered by CC BY-SA 4.0.
+For T-0103a (the bodyweight profile), the content-curator drafted every row's text from general
+exercise-form knowledge rather than transcribing a specific, verified wger page, so no row in
+this ticket can honestly claim `source: "wger"` (see D-0033 amendment, §8): a `source: "wger"`
+row must carry a real `source_url` of the form
+`https://wger.de/en/exercise/<numeric-id>/view/<slug>` that someone actually opened and checked
+against the file's text. Every row in this ticket instead carries `source: "workoutlab"` and
+`license: "LicenseRef-workoutLab"`, with no `source_url` and no `attribution` field (per AC7).
+This text is original workoutLab content and is not covered by CC BY-SA 4.0.
 
 ## wger-sourced exercise ids
 
-- `bird-dog`
-- `bodyweight-squat`
-- `calf-raise`
-- `calf-raise-hold`
-- `dead-bug`
-- `decline-push-up`
-- `diamond-push-up`
-- `fire-hydrant`
-- `glute-bridge`
-- `good-morning-bodyweight`
-- `hamstring-walkout`
-- `hip-thrust-bodyweight`
-- `incline-pike-push-up`
-- `incline-push-up`
-- `kneeling-diamond-push-up`
-- `pike-push-up`
-- `plank`
-- `plank-up-down`
-- `prone-swimmers`
-- `push-up`
-- `reverse-plank-hold`
-- `side-plank`
-- `single-leg-calf-raise`
-- `single-leg-deadlift`
-- `split-squat`
-- `superman`
-- `wall-handstand-hold`
-- `wall-sit`
-- `wide-push-up`
+None yet. When a future ticket adapts text from a specific, verified wger exercise page, add its
+id here, set `source: "wger"`, `license: "CC-BY-SA-4.0"`, a real `source_url`, and an
+`attribution` string, and note the share-alike terms then apply to that row: any reuse of that
+row's text must also be shared under CC BY-SA 4.0, with attribution to wger.de.
