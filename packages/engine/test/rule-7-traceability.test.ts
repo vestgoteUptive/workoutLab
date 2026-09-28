@@ -1,22 +1,28 @@
 // T-0201a: public API, the D-0040 contract sentences and example-id traceability. AC22–AC24.
+// T-0201b: the timeCheck / floorInc exports and R7-E11, R7-E12, R8-E1…R8-E3. AC36.
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   availableS,
+  floorInc,
   generateWarmup,
   isEligible,
   itemCostS,
   rankCandidates,
   suggest,
+  timeCheck,
   WARMUP_COST_S,
+  type TimeCheckProgress,
+  type TimeCheckResult,
 } from "@workoutlab/engine";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = path.resolve(TEST_DIR, "..", "..", "..");
 
 const T0201A_IDS = ["R0-E1", ...Array.from({ length: 10 }, (_, i) => `R7-E${i + 1}`), "R10-E1"];
+const T0201B_IDS = ["R7-E11", "R7-E12", "R8-E1", "R8-E2", "R8-E3"];
 
 function section(doc: string, startMarker: string, endMarker: string): string {
   const start = doc.indexOf(startMarker);
@@ -47,16 +53,31 @@ describe("T-0201a traceability", () => {
   });
 
   it("rule-7 (AC24) R0-E1, R7-E1…R7-E10 and R10-E1 each appear in a test title", () => {
-    const titleRe = /\b(?:it|test)(?:\.each\([\s\S]*?\))?\(\s*(["'`])((?:\\.|(?!\1).)*)\1/g;
-    const titles: string[] = [];
-    for (const f of readdirSync(TEST_DIR).filter((n) => n.endsWith(".test.ts"))) {
-      if (f === path.basename(fileURLToPath(import.meta.url))) continue;
-      const text = readFileSync(path.join(TEST_DIR, f), "utf8");
-      for (const m of text.matchAll(titleRe)) titles.push(m[2] ?? "");
-    }
-    const missing = T0201A_IDS.filter(
-      (id) => !titles.some((t) => new RegExp(`(^|[^\\w-])${id}(?![\\w])`).test(t)),
-    );
-    expect(missing).toEqual([]);
+    expect(missingIds(T0201A_IDS)).toEqual([]);
   });
 });
+
+describe("T-0201b traceability", () => {
+  it("rule-8 (AC36) timeCheck and floorInc are exported from @workoutlab/engine", () => {
+    expect(typeof timeCheck).toBe("function");
+    expect(typeof floorInc).toBe("function");
+    const progress: TimeCheckProgress = { elapsedS: 0, nextItemIndex: 0 };
+    const shape: Pick<TimeCheckResult, "show"> = { show: false };
+    expect(progress.elapsedS + Number(shape.show)).toBe(0);
+  });
+
+  it("rule-8 (AC36) R7-E11, R7-E12 and R8-E1…R8-E3 each appear in a test title", () => {
+    expect(missingIds(T0201B_IDS)).toEqual([]);
+  });
+});
+
+function missingIds(ids: readonly string[]): string[] {
+  const titleRe = /\b(?:it|test)(?:\.each\([\s\S]*?\))?\(\s*(["'`])((?:\\.|(?!\1).)*)\1/g;
+  const titles: string[] = [];
+  for (const f of readdirSync(TEST_DIR).filter((n) => n.endsWith(".test.ts"))) {
+    if (f === path.basename(fileURLToPath(import.meta.url))) continue;
+    const text = readFileSync(path.join(TEST_DIR, f), "utf8");
+    for (const m of text.matchAll(titleRe)) titles.push(m[2] ?? "");
+  }
+  return ids.filter((id) => !titles.some((t) => new RegExp(`(^|[^\\w-])${id}(?![\\w])`).test(t)));
+}
