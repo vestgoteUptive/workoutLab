@@ -41,9 +41,7 @@ export function createSelectSpy(): SelectSpy {
         return Promise.resolve(result);
       },
       maybeSingle: () =>
-        Promise.resolve(
-          failure ? result : { data: (rows[0] as unknown) ?? null, error: null },
-        ),
+        Promise.resolve(failure ? result : { data: (rows[0] as unknown) ?? null, error: null }),
       then: (resolve: (v: typeof result) => void) => resolve(result),
     };
   }

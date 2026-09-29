@@ -69,7 +69,10 @@ describe("AC-3 refreshSessions window", () => {
 
   it("caches only the rows the server returned (S1 and S2, not S3)", async () => {
     // The spy honours the filter the way PostgREST would: it returns what the server would send.
-    spy.setRows("sessions", [S1, S2, S3].filter((s) => s.started_at >= WINDOW_START));
+    spy.setRows(
+      "sessions",
+      [S1, S2, S3].filter((s) => s.started_at >= WINDOW_START),
+    );
     await refreshSessions(NOW, TZ);
 
     expect((await loadSessions()).map((s) => s.id)).toEqual(["S2", "S1"]);
@@ -172,21 +175,14 @@ describe("AC-3 queued rows win, and sorting", () => {
     ]);
     await refreshSessions(NOW, TZ);
 
-    expect((await loadSessions()).map((s) => s.id)).toEqual([
-      "S-early",
-      "S-a",
-      "S-b",
-      "S-late",
-    ]);
+    expect((await loadSessions()).map((s) => s.id)).toEqual(["S-early", "S-a", "S-b", "S-late"]);
   });
 
   it("never lets a queued metadata edit un-finish a cached session (D-0053 §7)", async () => {
     // `upsertSession` guards `ended_at` once a session has been queued finished. If a future
     // refactor ever queued a bare `ended_at: null` edit, the cached finish is the fallback, so
     // UF-03.3/UF-06 still show the session as finished.
-    spy.setRows("sessions", [
-      { ...S1, ended_at: "2026-09-17T10:05:00.000Z", effort_rating: 5 },
-    ]);
+    spy.setRows("sessions", [{ ...S1, ended_at: "2026-09-17T10:05:00.000Z", effort_rating: 5 }]);
     await refreshSessions(NOW, TZ);
 
     await offlineDb().sessions.put({

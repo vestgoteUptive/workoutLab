@@ -9,9 +9,8 @@ const spy = createSelectSpy();
 vi.mock("../../auth/client.js", () => ({ supabase: { from: spy.from } }));
 
 const { refreshLibrary, refreshCheckins, refreshRoutines } = await import("../history.js");
-const { loadExerciseDetail, loadVariants, loadCheckins, loadRoutines } = await import(
-  "../feature-loaders.js"
-);
+const { loadExerciseDetail, loadVariants, loadCheckins, loadRoutines } =
+  await import("../feature-loaders.js");
 const { freshOfflineDb, signIn, signOut } = await import("./test-helpers.js");
 
 const USER_A = "aaaaaaaa-1111-4111-8111-111111111111";
