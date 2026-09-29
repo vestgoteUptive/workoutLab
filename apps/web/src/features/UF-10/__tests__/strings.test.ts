@@ -67,8 +67,9 @@ describe("AC-A21 the strings live in this ticket's own flow file", () => {
 
   it("the feature does not duplicate a string that already exists elsewhere", () => {
     // Area names, `load / target` and the legend copy are reused, never re-declared (AC-A21).
-    const values = Object.values(uf10).filter((v): v is string => typeof v === "string");
-    const existing = [
+    const values: string[] = [];
+    for (const v of Object.values(uf10)) if (typeof v === "string") values.push(v);
+    const existing: string[] = [
       ...Object.values(en.bodyMap.areas),
       en.bodyMap.legendName,
       en.bodyMap.hardSets,
