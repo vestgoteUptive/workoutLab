@@ -182,6 +182,10 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0344 | Fix the `-- <filter>` passthrough in the web `test:e2e` script (`pnpm test:e2e -- name` runs every spec); a fresh `vite build` needs `VITE_SUPABASE_URL` — document or default it (T-0307a build) | web-shell | — | todo | wl-build-web |
 | T-0345 | Optional: a separate 'New routine' heading on /plan/routines/new needs row 35 of `app/__tests__/routes.phase3.render.test.tsx` changed first (T-0308a spec check) | web-shell | T-0308a | todo | wl-build-web |
 | T-0346 | UF-07.1: refresh routines on mount when online (as D-0071 §8 does elsewhere); today a stale cache after a deep link can overwrite another device's edit (last write wins) — T-0308a spec check | product | T-0308a | todo | wl-spec |
+| T-0347 | check-lane-paths: read `.squad/ownership.yaml` from the diff base too — a branch that widens its own lane in ownership.yaml gets a finding only on ownership.yaml while the newly covered paths pass silently (T-0320 final review) | infra | T-0320 | todo | wl-build-infra |
+| T-0348 | check-lane-paths: a heading nested under a negative `###` must inherit its denial (`### Not yours` → `#### Strings` → `- en.ts` grants today); fold into T-0340 if that lands first (T-0320 final review) | infra | T-0320 | todo | wl-build-infra |
+| T-0349 | lib/offline: an online refresh that returns empty data wipes the cache (T-0307a QA) — decide whether an empty server answer should replace a non-empty cache | web-shell | — | todo | wl-build-web |
+| T-0350 | UF-10: with no cache and no network the C-01 map stays in its loading skeleton indefinitely — show an offline/empty state (T-0307a QA, optional) | web-feature:UF-10 | T-0307a | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
