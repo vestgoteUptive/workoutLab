@@ -1,7 +1,8 @@
 // Deterministic workout-suggestion engine (docs/engine-rules.md). Pure functions only:
 // no I/O, no clock, no entropy source (rule 0, D-0024), so the same code runs in the browser
 // and in the Deno Edge Function. T-0200 covers rules 0–6 and 11; T-0201a adds rules 7.1–7.3 and 10;
-// T-0201b adds rules 7.4 and 8; T-0202 adds rule 9; T-0204 adds rules 12 and 13.
+// T-0201b adds rules 7.4 and 8; T-0202 adds rule 9; T-0204 adds rules 12 and 13;
+// T-0205 adds rule 14 (prefill).
 
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
@@ -38,6 +39,17 @@ export {
   LOW_TRIM_FROM_SETS,
   LOW_TRIM_TO_SETS,
 } from "./energy.js";
+export {
+  prefill,
+  floor5,
+  REENTRY_GAP_DAYS,
+  HOLD_GAP_DAYS,
+  TIMED_STEP_S,
+  TIMED_MAX_S,
+  TIMED_MIN_S,
+  type PrefillSlot,
+  type PrefillPrevious,
+} from "./prefill.js";
 export { timeCheck, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.js";
 export {
   evaluateCheckin,
