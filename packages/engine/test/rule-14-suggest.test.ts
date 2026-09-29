@@ -365,6 +365,27 @@ describe("rule 14 carry through a rule 13 shuffle (D-0056 §11)", () => {
     ]);
   });
 
+  it("rule-14 (AC18) the carry check reads the original exercise: db-row (pre-fill 22) → lat-pulldown shares no equipment, first_time", () => {
+    const eq = profile({ equipment: ["cable", "dumbbell", "bench"] });
+    const h = [
+      ...setsWithReps("2026-09-20", "db-row", [
+        [20, 12],
+        [20, 12],
+      ]),
+      ...setsWithReps("2026-09-24", "dead-bug", [
+        [0, 10],
+        [0, 10],
+      ]),
+    ];
+    const base = run(h, input(), { profile: eq });
+    expect(item(base, "db-row").prefill).toEqual(pr(22, 8, "increase"));
+    const w = run(h, input({ shuffle: 1 }), { profile: eq });
+    const row = item(w, "lat-pulldown");
+    expect(row.reasons).toContainEqual({ code: "swap", reason: null });
+    // dumbbell + bench vs cable: no shared equipment item, so 22 kg is not carried.
+    expect(row.prefill).toEqual(pr(null, 8, "first_time"));
+  });
+
   it("rule-14 (AC18) an unshuffled slot never gets carry, even when a previous would qualify", () => {
     const w = run(cableHistory, input({ shuffle: 0 }), { profile: cableOnly });
     for (const i of w.plan.items) {

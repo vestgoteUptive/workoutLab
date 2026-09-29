@@ -390,6 +390,15 @@ describe("rule 14 floorInc floor (D-0057 §4)", () => {
   });
 
   it("rule-14 (AC12) weights are rounded to 3 decimals (no float noise)", () => {
+    // 0.28 + 2.5 is 2.7800000000000002 in floating point.
+    expect(pf("back-squat", MAIN, S("2026-09-24", "back-squat", x(0.28, 8))).weightKg).toBe(2.78);
+    // A logged weight with more than 3 decimals is held at 3.
+    expect(pf("back-squat", MAIN, S("2026-09-15", "back-squat", x(20.1234, 8)))).toEqual(
+      r(20.123, 6, "hold_after_break"),
+    );
+    expect(
+      pf("seated-cable-row", COMPOUND, [], { exerciseId: "lat-pulldown", weightKg: 50.12345 }),
+    ).toEqual(r(50.123, 8, "carry"));
     const h = S("2026-09-24", "db-row", x(20.1, 12));
     expect(pf("db-row", COMPOUND, h).weightKg).toBe(22.1);
     const h2 = S("2026-09-24", "back-squat", x(0.1, 8));
@@ -707,6 +716,37 @@ describe("rule 14 carry scope (D-0057 §1, D-0060 §1)", () => {
     // A shared secondary area (arms .5) is not enough: biceps-curl (arms 1) ← db-row (arms .5).
     expect(pf("biceps-curl", ISOLATION, [], { exerciseId: "db-row", weightKg: 20 })).toEqual(
       r(null, 10, "first_time"),
+    );
+  });
+
+  it("rule-14 (AC7) the shared area must be weight 1.0 in both: a secondary area of the target doesn't count", () => {
+    // hip-thrust (glutes 1, hamstrings .5) and romanian-deadlift (hamstrings 1, glutes .5)
+    // share barbell, and each one's primary area is only the other's secondary.
+    expect(
+      pf("romanian-deadlift", COMPOUND, [], { exerciseId: "hip-thrust", weightKg: 60 }),
+    ).toEqual(r(null, 8, "first_time"));
+    expect(
+      pf("hip-thrust", COMPOUND, [], { exerciseId: "romanian-deadlift", weightKg: 60 }),
+    ).toEqual(r(null, 8, "first_time"));
+  });
+
+  it('rule-14 (AC7) no equipment counts as the item "none" (D-0040 §1): two loaded no-equipment moves share it', () => {
+    const sandbagSquat: LibraryExercise = {
+      ...ex("back-squat"),
+      id: "sandbag-squat",
+      equipment: [],
+    };
+    const sandbagLunge: LibraryExercise = {
+      ...ex("back-squat"),
+      id: "sandbag-lunge",
+      equipment: [],
+    };
+    const lib = [...LIBRARY, sandbagSquat, sandbagLunge];
+    const prev = { exerciseId: "sandbag-lunge", weightKg: 20 };
+    expect(prefill(sandbagSquat, MAIN, [], lib, NOW, TZ, prev)).toEqual(r(20, 6, "carry"));
+    // "none" is not shared with a real item: back-squat (barbell, rack) ← sandbag-lunge.
+    expect(prefill(ex("back-squat"), MAIN, [], lib, NOW, TZ, prev)).toEqual(
+      r(null, 6, "first_time"),
     );
   });
 
