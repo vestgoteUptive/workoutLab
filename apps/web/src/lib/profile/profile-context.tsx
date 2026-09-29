@@ -67,6 +67,19 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
   // Signed out there is nothing to resolve, so the gate is "resolved" from the first render:
   // `/welcome` must never wait for it (principle 5, AC-10).
   const [resolved, setResolved] = useState(!signedIn);
+  // `useState`'s initialiser runs once, so `resolved` cannot be left to it: a user who signs in
+  // *in place* — the magic-link / OTP verify firing `SIGNED_IN` while they sit on `/welcome`,
+  // which is the D-0045 §5 case this whole gate exists for — flips `signedIn` false → true with
+  // `resolved` still `true` from the signed-out initialiser. The stand-down would then see
+  // `resolved && "unknown"` for every render until `resolveProfileStatus()` settles and bounce
+  // them `/welcome` → `/` → `/welcome/save`: the very defect D-0073 §4 exists to prevent, just
+  // reached by a transition instead of a cold load. So the transition clears it, during render,
+  // before any child reads the context.
+  const wasSignedIn = useRef(signedIn);
+  if (wasSignedIn.current !== signedIn) {
+    wasSignedIn.current = signedIn;
+    if (signedIn && resolved) setResolved(false);
+  }
   // Bumped by every resolution, so a promise that settles after the component unmounted — or
   // after a newer `recheck()` overtook it — cannot set state (AC-11: no React warning, and no
   // stale answer overwriting a fresh one).

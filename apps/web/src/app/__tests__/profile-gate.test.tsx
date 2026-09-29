@@ -247,6 +247,27 @@ describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", (
     expect(locationRef).toBe(path);
     expect(screenOf("UF-01.1")).not.toBeInTheDocument();
   });
+
+  // Slow network on a *gated* route: the gate's source never settles, so the status stays at the
+  // pre-resolution `unknown` forever. `unknown` never redirects (AC-6), so the route must render
+  // its own screen indefinitely — the gate must not hold the app behind a spinner or a blank
+  // screen while it waits, and must not eventually give up and redirect.
+  it.each(["/", "/plan", "/session/setup"])(
+    "a profile read that never settles leaves %s rendering, never redirected",
+    async (path) => {
+      seedValidSession();
+      vi.stubGlobal("navigator", { onLine: true });
+      loadProfile.mockReturnValue(new Promise(() => {}));
+      const screenId = routes.find((r) => r.path === path)!.screenId;
+      render(<Harness start={path} />);
+      await waitFor(() => expect(screenOf(screenId)).toBeInTheDocument());
+      await act(async () => {});
+      await act(async () => {});
+      expect(screenOf(screenId)).toBeInTheDocument();
+      expect(locationRef).toBe(path);
+      expect(screenOf("UF-01.1")).not.toBeInTheDocument();
+    },
+  );
 });
 
 describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile", () => {
@@ -316,18 +337,126 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
     },
   );
 
-  it.each([
-    ["missing", stateMissing],
-    ["present", statePresent],
-    ["unknown", stateUnknown],
-  ])("/account redirects for a `%s` profile too (it is not stood down)", async (_name, seed) => {
-    seed();
-    render(<Harness start="/account" />);
-    await waitFor(() => expect(screenOf("UF-01.5")).not.toBeInTheDocument());
-    await act(async () => {});
-    // `missing` lands on /welcome/save via the gate on `/`; the others land on `/`.
-    expect(locationRef).not.toBe("/account");
+  // The same bounce, reached by a *transition* instead of a cold load — and this is the primary
+  // path, not an edge case: D-0045 §5 is the magic link / OTP verify firing `SIGNED_IN` in place
+  // while the user sits on `/welcome`, with the onboarding answers in this browser context and
+  // no `profiles` row yet. `resolved` comes from a `useState` initialiser, which runs once, so
+  // before the fix it was still `true` from the signed-out render when `signedIn` flipped: the
+  // stand-down saw `resolved && "unknown"`, stood aside, and the user went
+  // `/welcome` → `/` → `/welcome/save`. The cold-load tests above cannot catch it, because they
+  // never change the auth status after mount.
+  it.each(["/welcome", "/welcome/goal"])(
+    "%s does not bounce through `/` when SIGNED_IN fires in place with a missing profile",
+    async (path) => {
+      vi.stubGlobal("navigator", { onLine: true });
+      spy.setRows("profiles", []);
+      // Hold the cache read open, so the window between the auth flip and the gate's answer —
+      // the window the bug lived in — is wide enough to observe.
+      let release: (() => void) | undefined;
+      loadProfile.mockImplementation(
+        () => new Promise<null>((resolve) => (release = () => resolve(null))),
+      );
+
+      const visited: string[] = [];
+      const at = () => visited[visited.length - 1];
+      function Recorder() {
+        visited.push(useLocation().pathname);
+        return null;
+      }
+      // Signed out to begin with: no stored session (`beforeEach` cleared it).
+      render(
+        <MemoryRouter initialEntries={[path]}>
+          <AuthProvider>
+            <ProfileStatusProvider>
+              <Recorder />
+              <Shell />
+            </ProfileStatusProvider>
+          </AuthProvider>
+        </MemoryRouter>,
+      );
+      await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+      expect(at()).toBe(path);
+
+      // The verify lands: `SIGNED_IN` in place, no reload.
+      await act(async () => {
+        authStateCallbacks.forEach((cb) => cb("SIGNED_IN", { user: { id: "u1" } }));
+      });
+      await act(async () => {});
+      // Still put, and still on UF-01.1: the gate has not answered yet, so `guest-only` waits.
+      expect(at()).toBe(path);
+
+      // Now let the gate resolve, to `missing`.
+      await waitFor(() => expect(release).toBeDefined());
+      await act(async () => {
+        release!();
+        await Promise.resolve();
+      });
+      await act(async () => {});
+
+      expect(screenOf("UF-01.1")).toBeInTheDocument();
+      expect(at()).toBe(path);
+      expect(new Set(visited)).toEqual(new Set([path]));
+    },
+  );
+
+  // The contrast, so the test above cannot pass by the stand-down having been disabled for every
+  // transition: the same in-place `SIGNED_IN`, but the gate answers `present`, and T-0300b's
+  // `guest-only` redirect must still fire.
+  it("`/welcome/goal` still redirects on an in-place SIGNED_IN when the profile is `present`", async () => {
+    vi.stubGlobal("navigator", { onLine: true });
+    loadProfile.mockResolvedValue(PROFILE_ROW);
+    render(<Harness start="/welcome/goal" />);
+    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    expect(locationRef).toBe("/welcome/goal");
+
+    await act(async () => {
+      authStateCallbacks.forEach((cb) => cb("SIGNED_IN", { user: { id: "u1" } }));
+    });
+    await waitFor(() => expect(screenOf("UF-02.1")).toBeInTheDocument());
+    expect(locationRef).toBe("/");
   });
+
+  // `/account` is `guest-only` too, and the stand-down is keyed on the pathname, so it must be
+  // unaffected in every case. The expected destination is asserted exactly, not just
+  // "somewhere other than /account": a stand-down that leaked to `/account` would leave the
+  // user *on* `/account`, but so would several other bugs, and only the exact target
+  // distinguishes "redirected correctly" from "redirected somewhere odd".
+  it.each([
+    ["missing", stateMissing, "/welcome/save", "UF-01.1"],
+    ["present", statePresent, "/", "UF-02.1"],
+    ["unknown", stateUnknown, "/", "UF-02.1"],
+  ])(
+    "/account redirects for a `%s` profile too (it is not stood down)",
+    async (_name, seed, expected, expectedScreen) => {
+      seed();
+      render(<Harness start="/account" />);
+      // `missing` lands on /welcome/save via the gate on `/`; the others land on `/`.
+      await waitFor(() => expect(locationRef).toBe(expected));
+      await act(async () => {});
+      expect(locationRef).toBe(expected);
+      expect(screenOf(expectedScreen)).toBeInTheDocument();
+      expect(screenOf("UF-01.5")).not.toBeInTheDocument();
+    },
+  );
+
+  // Slow network, signed in: the gate's source never settles, so `resolved` never flips. The
+  // stand-down must fail *open* — hold the `guest-only` redirect and render `/welcome/*` —
+  // rather than leave the route permanently un-standable-down or blank. There is no timeout in
+  // the gate, so "never settles" is the worst case, and this pins which way it fails.
+  it.each(["/welcome", "/welcome/goal", "/welcome/save"])(
+    "%s renders for a signed-in user whose profile read never settles (fails open)",
+    async (path) => {
+      seedValidSession();
+      vi.stubGlobal("navigator", { onLine: true });
+      loadProfile.mockReturnValue(new Promise(() => {}));
+      render(<Harness start={path} />);
+      await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+      await act(async () => {});
+      await act(async () => {});
+      expect(screenOf("UF-01.1")).toBeInTheDocument();
+      expect(locationRef).toBe(path);
+    },
+  );
 });
 
 describe("AC-8 /session/:sessionId and its summary are never gated (principle 1)", () => {

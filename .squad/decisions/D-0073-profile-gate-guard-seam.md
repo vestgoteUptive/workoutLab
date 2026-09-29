@@ -64,6 +64,20 @@ it is the one a reviewer is most likely to want to change.
    tree with no provider keeps exactly today's `guest-only` behaviour.
    `useProfileStatus()` still returns exactly the three states D-0064 §9 names; `resolved` is a
    second, internal signal, not a fourth state.
+
+   **A `useState` initialiser is not enough, and this is the primary path rather than an edge
+   case.** `useState(!signedIn)` runs once, so a user who signs in *in place* — the magic-link or
+   OTP verify firing `SIGNED_IN` while they sit on `/welcome`, which is the D-0045 §5 case this
+   gate exists for — flips `signedIn` false → true with `resolved` still `true` from the
+   signed-out render. The stand-down then sees `resolved && "unknown"` and bounces them
+   `/welcome` → `/` → `/welcome/save`: the same defect this section exists to prevent, reached by
+   a transition instead of a cold load. `resolved` is therefore cleared by a render-phase
+   transition check (`wasSignedIn` ref), which lands before any child reads the context, so no
+   intermediate render can observe `resolved && "unknown"`. The sign-*out* direction is already
+   covered by `run()`'s early return. Found by code review on the committed diff and independently
+   by the build; every cold-load test seeds the session before `render()`, so none of them could
+   catch it — the regression test must flip auth status *after* mount (verified: removing the
+   transition reset fails exactly the two `/welcome` and `/welcome/goal` transition tests).
    **Needs a decision:** arguably yes, which is why this entry is `revisit`. The alternative — a
    fourth status such as `"resolving"` — would change the `useProfileStatus()` contract D-0064 §9
    states verbatim, so it was not taken.
