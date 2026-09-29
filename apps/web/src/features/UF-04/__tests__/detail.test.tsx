@@ -142,6 +142,8 @@ describe("AC-8 attribution (D-0005)", () => {
     await screen.findByRole("heading", { level: 1, name: "Back squat" });
     expect(line()?.textContent).toBe("Text: wger.de contributors · CC0-1.0 · Source");
     expect(screen.queryByRole("link", { name: "CC0-1.0" })).not.toBeInTheDocument();
+    // Only Source is a link: the licence is plain text, not an anchor with a missing href.
+    expect(line()?.querySelectorAll("a")).toHaveLength(1);
   });
 });
 

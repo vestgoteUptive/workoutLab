@@ -95,6 +95,15 @@ describe("AC-16 strings", () => {
     expect(source).toMatch(/^export const uf04 = \{[\s\S]*?\n\} as const;$/m);
   });
 
+  it("state styling is CSS, never inline: no style prop, and the chip keeps a :focus-visible ring", () => {
+    for (const file of sourceFiles().filter((f) => f.endsWith(".tsx"))) {
+      expect(readFileSync(file, "utf8"), file).not.toMatch(/\bstyle=/);
+    }
+    const css = readFileSync(resolve(FEATURE_DIR, "uf-04.css"), "utf8");
+    expect(css).toMatch(/\.wl-uf04__chip:focus-visible[^{]*\{[^}]*outline:/);
+    expect(css).toMatch(/\.wl-uf04__chip\[aria-pressed="true"\]/);
+  });
+
   it("no hex colours in the feature's CSS or code", () => {
     for (const file of sourceFiles()) {
       expect(readFileSync(file, "utf8"), file).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);

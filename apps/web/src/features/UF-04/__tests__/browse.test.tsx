@@ -93,6 +93,8 @@ describe("AC-2 search", () => {
       ["Barbell row", "Dumbbell row", "Inverted row", "Seated cable row"].sort(),
     );
     expect(screen.queryByText("Straight-arm pulldown")).not.toBeInTheDocument();
+    fireEvent.change(field, { target: { value: "BACK" } });
+    expect(rowNames()).toEqual(["Back squat"]);
     fireEvent.change(field, { target: { value: "zzz" } });
     expect(rowNames()).toEqual([]);
     expect(screen.getByText('No exercises match "zzz"')).toBeInTheDocument();
