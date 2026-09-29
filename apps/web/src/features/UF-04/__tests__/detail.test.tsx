@@ -202,6 +202,29 @@ describe("AC-11 variants link to compare", () => {
   });
 });
 
+describe("first visit on a deep link", () => {
+  it("waits for the first download instead of redirecting an id the cache doesn't have yet", async () => {
+    spy.reset();
+    seedSpy(spy);
+    setOnline(true);
+    await mountAt("/library/back-squat");
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Back squat" }),
+    ).toBeInTheDocument();
+    expect(currentUrl()).toBe("/library/back-squat");
+    expect(await screen.findByText("Knees caving in")).toBeInTheDocument();
+  });
+
+  it("still redirects an unknown id once the download has finished", async () => {
+    spy.reset();
+    seedSpy(spy);
+    setOnline(true);
+    await mountAt("/library/nope");
+    await waitFor(() => expect(currentUrl()).toBe("/library"));
+    await waitFor(() => expect(screenId()).toBe("UF-04.1"));
+  });
+});
+
 describe("AC-13 detail redirects", () => {
   for (const [path, target, id] of [
     ["/library/nope", "/library", "UF-04.1"],

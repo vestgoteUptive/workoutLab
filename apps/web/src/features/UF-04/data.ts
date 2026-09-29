@@ -15,6 +15,8 @@ export interface ScreenData<T> {
 
 interface Read<T> {
   key: string;
+  /** The `sync.tick` this read ran under, so a post-refresh read can be told from a first one. */
+  tick: number;
   value: T;
 }
 
@@ -24,9 +26,10 @@ export function useScreenData<T>(
   key: string,
   options: { refresh: boolean },
 ): ScreenData<T> {
+  const refresh = options.refresh;
   const [result, setResult] = useState<Read<T> | undefined>(undefined);
-  const [tick, setTick] = useState(0);
-  const [pending, setPending] = useState(options.refresh);
+  // `refreshed` flips when the refresh finished (or was skipped); `tick` re-reads the cache.
+  const [sync, setSync] = useState({ tick: 0, refreshed: !refresh });
   const readRef = useRef(read);
   useEffect(() => {
     readRef.current = read;
@@ -35,26 +38,24 @@ export function useScreenData<T>(
   useEffect(() => {
     let live = true;
     void readRef.current().then((value) => {
-      if (live) setResult({ key, value });
+      if (live) setResult({ key, tick: sync.tick, value });
     });
     return () => {
       live = false;
     };
-  }, [key, tick]);
+  }, [key, sync.tick]);
 
-  const refresh = options.refresh;
   useEffect(() => {
-    if (!refresh || !navigator.onLine) {
-      setPending(false);
+    if (!refresh) return;
+    if (!navigator.onLine) {
+      setSync((s) => ({ ...s, refreshed: true }));
       return;
     }
     let live = true;
     const timer = setTimeout(done, REFRESH_CAP_MS);
     function done(): void {
       clearTimeout(timer);
-      if (!live) return;
-      setPending(false);
-      setTick((t) => t + 1);
+      if (live) setSync((s) => ({ tick: s.tick + 1, refreshed: true }));
     }
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     // A refresh failure is not an error screen: the cache stays what the user sees.
@@ -65,5 +66,10 @@ export function useScreenData<T>(
     };
   }, [refresh]);
 
-  return { data: result && result.key === key ? result.value : undefined, pending };
+  const current = result !== undefined && result.key === key ? result : undefined;
+  // Pending until the re-read that follows the refresh has landed, so a screen never decides
+  // (redirect, "never downloaded") from the pre-refresh cache while the refresh is filling it.
+  const pending =
+    refresh && !(sync.refreshed && current !== undefined && current.tick === sync.tick);
+  return { data: current?.value, pending };
 }
