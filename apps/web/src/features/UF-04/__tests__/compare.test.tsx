@@ -14,7 +14,8 @@ vi.mock("@workoutlab/engine", async (importOriginal) => {
 });
 
 const { refreshAll } = await import("../../../lib/offline/history.js");
-const { freshOfflineDb, signIn, signOut } = await import("../../../lib/offline/__tests__/test-helpers.js");
+const { freshOfflineDb, signIn, signOut } =
+  await import("../../../lib/offline/__tests__/test-helpers.js");
 const { currentUrl, mountAt, screenId, setOnline } = await import("./harness.js");
 
 async function seed(options: Parameters<typeof seedSpy>[1] = {}): Promise<void> {
@@ -42,7 +43,10 @@ describe("AC-12 compare", () => {
     await mountAt("/library/back-squat/compare/leg-extension");
     await screen.findByRole("columnheader", { name: "Leg extension" });
     expect(
-      screen.getAllByRole("columnheader").map((h) => h.textContent).filter(Boolean),
+      screen
+        .getAllByRole("columnheader")
+        .map((h) => h.textContent)
+        .filter(Boolean),
     ).toEqual(["Back squat", "Leg extension"]);
     expect(row("Primary")).toEqual(["Glutes, Quads", "Quads"]);
     expect(row("Secondary")).toEqual(["Core, Hamstrings", "—"]);

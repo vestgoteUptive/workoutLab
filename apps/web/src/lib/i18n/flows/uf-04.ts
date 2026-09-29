@@ -14,8 +14,7 @@ export const uf04 = {
   secondaryAreas: "Secondary areas",
   equipmentLabel: "Equipment",
   bodyweight: "Bodyweight",
-  tagLine: (type: string, level: string, equipment: string) =>
-    `${type} · ${level} · ${equipment}`,
+  tagLine: (type: string, level: string, equipment: string) => `${type} · ${level} · ${equipment}`,
   listSeparator: ", ",
   dot: " · ",
   types: { compound: "Compound", isolation: "Isolation" },

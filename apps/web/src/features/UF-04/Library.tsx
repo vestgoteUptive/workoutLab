@@ -6,7 +6,7 @@ import { isEligible, type EngineProfile, type LibraryExercise } from "@workoutla
 import { AREAS, type Area } from "@workoutlab/shared";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
-import { loadLibrary, loadProfile } from "../../lib/offline/index.js";
+import { loadLibrary, loadProfile } from "../../lib/offline/history.js";
 import { useScreenData } from "./data.js";
 import { areaName, equipmentText, primaryAreaNames, secondaryAreaNames } from "./labels.js";
 import "./uf-04.css";

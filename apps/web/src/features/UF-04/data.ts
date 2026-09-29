@@ -2,7 +2,7 @@
 // online, run `refreshAll` with a 3 s cap and re-read. Only the T-0319 read-only loaders and the
 // public refresh are used: no Edge Function, no IndexedDB access, no write.
 import { useEffect, useRef, useState } from "react";
-import { refreshAll } from "../../lib/offline/index.js";
+import { refreshAll } from "../../lib/offline/history.js";
 
 export const REFRESH_CAP_MS = 3000;
 

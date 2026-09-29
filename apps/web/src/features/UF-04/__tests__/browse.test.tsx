@@ -7,18 +7,24 @@ import { L1_PLUS_NAMES_SORTED, NOW, TZ, USER, exerciseRows, seedSpy } from "./l1
 const spy = createSelectSpy();
 const hoisted = vi.hoisted(() => ({ refreshAll: vi.fn(), isEligible: vi.fn() }));
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: spy.from } }));
-vi.mock("../../../lib/offline/index.js", async (importOriginal) => ({
+vi.mock("../../../lib/offline/history.js", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   refreshAll: (...args: unknown[]) => hoisted.refreshAll(...args),
 }));
 vi.mock("@workoutlab/engine", async (importOriginal) => {
   const real = await importOriginal<typeof import("@workoutlab/engine")>();
   hoisted.isEligible.mockImplementation(real.isEligible);
-  return { ...real, isEligible: (...args: Parameters<typeof real.isEligible>) => hoisted.isEligible(...args) };
+  return {
+    ...real,
+    isEligible: (...args: Parameters<typeof real.isEligible>) => hoisted.isEligible(...args),
+  };
 });
 
-const { refreshAll } = await import("../../../lib/offline/history.js");
-const { freshOfflineDb, signIn, signOut } = await import("../../../lib/offline/__tests__/test-helpers.js");
+const { refreshAll } = await vi.importActual<typeof import("../../../lib/offline/history.js")>(
+  "../../../lib/offline/history.js",
+);
+const { freshOfflineDb, signIn, signOut } =
+  await import("../../../lib/offline/__tests__/test-helpers.js");
 const { currentUrl, mountAt, rowNames, screenId, setOnline } = await import("./harness.js");
 
 async function seed(options: Parameters<typeof seedSpy>[1] = {}): Promise<void> {
@@ -39,7 +45,9 @@ beforeEach(() => {
 afterEach(() => signOut());
 
 const chipLabels = () =>
-  within(screen.getByRole("group")).getAllByRole("button").map((b) => b.textContent);
+  within(screen.getByRole("group"))
+    .getAllByRole("button")
+    .map((b) => b.textContent);
 const chip = (name: string) => within(screen.getByRole("group")).getByRole("button", { name });
 const ROW_LABEL_FIRST = ["Back squat", "Barbell row", "Bench press"];
 
@@ -99,7 +107,16 @@ describe("AC-3 area chips", () => {
     await mountAt("/library");
     await waitFor(() => expect(rowNames()).toHaveLength(24));
     expect(chipLabels()).toEqual([
-      "All", "Chest", "Back", "Shoulders", "Arms", "Core", "Glutes", "Quads", "Hamstrings", "Calves",
+      "All",
+      "Chest",
+      "Back",
+      "Shoulders",
+      "Arms",
+      "Core",
+      "Glutes",
+      "Quads",
+      "Hamstrings",
+      "Calves",
       "My equipment",
     ]);
     fireEvent.click(chip("Hamstrings"));
@@ -127,7 +144,9 @@ describe("AC-4 My equipment is the engine's isEligible", () => {
     expect(screen.queryByText("Dumbbell row")).not.toBeInTheDocument();
     expect(hoisted.isEligible).toHaveBeenCalled();
     const real = await vi.importActual<typeof import("@workoutlab/engine")>("@workoutlab/engine");
-    const { loadLibrary } = await import("../../../lib/offline/index.js");
+    const { loadLibrary } = await vi.importActual<typeof import("../../../lib/offline/history.js")>(
+      "../../../lib/offline/history.js",
+    );
     const expected = (await loadLibrary())
       .filter((e) => real.isEligible(e, { level: "beginner", equipment: ["dumbbell"] }))
       .map((e) => e.name);

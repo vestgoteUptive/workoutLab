@@ -10,7 +10,8 @@ vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: spy.from } }))
 
 const { refreshAll } = await import("../../../lib/offline/history.js");
 const { offlineDb } = await import("../../../lib/offline/index.js");
-const { freshOfflineDb, signIn, signOut } = await import("../../../lib/offline/__tests__/test-helpers.js");
+const { freshOfflineDb, signIn, signOut } =
+  await import("../../../lib/offline/__tests__/test-helpers.js");
 const { currentUrl, mountAt, screenId, setOnline } = await import("./harness.js");
 
 async function seed(options: Parameters<typeof seedSpy>[1] = {}): Promise<void> {
@@ -33,7 +34,9 @@ describe("AC-7 detail content", () => {
   it("shows the name, tag line, ordered pills, instructions, mistakes, cue and history link", async () => {
     await seed();
     await mountAt("/library/back-squat");
-    expect(await screen.findByRole("heading", { level: 1, name: "Back squat" })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Back squat" }),
+    ).toBeInTheDocument();
     expect(document.querySelector('[data-field="tagline"]')?.textContent).toBe(
       "Compound · Beginner · Barbell, Rack",
     );
@@ -66,7 +69,13 @@ describe("AC-7 detail content", () => {
   it("contrast: a bodyweight tag line, and an unknown equipment value prints raw", async () => {
     await seed({
       extra: [
-        { id: "trx-row", name: "Trx row", type: "compound", equipment: ["trx"], areas: { back: 1 } },
+        {
+          id: "trx-row",
+          name: "Trx row",
+          type: "compound",
+          equipment: ["trx"],
+          areas: { back: 1 },
+        },
       ],
     });
     const view = await mountAt("/library/push-up");

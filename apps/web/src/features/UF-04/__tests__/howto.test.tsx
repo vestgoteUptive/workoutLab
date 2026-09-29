@@ -7,17 +7,19 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { createSelectSpy } from "../../../lib/offline/__tests__/select-spy.js";
 import { NOW, TZ, USER, seedSpy } from "./l1plus.js";
 
-
 const spy = createSelectSpy();
 const hoisted = vi.hoisted(() => ({ refreshAll: vi.fn() }));
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: spy.from } }));
-vi.mock("../../../lib/offline/index.js", async (importOriginal) => ({
+vi.mock("../../../lib/offline/history.js", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   refreshAll: (...args: unknown[]) => hoisted.refreshAll(...args),
 }));
 
-const { refreshAll } = await import("../../../lib/offline/history.js");
-const { freshOfflineDb, signIn, signOut } = await import("../../../lib/offline/__tests__/test-helpers.js");
+const { refreshAll } = await vi.importActual<typeof import("../../../lib/offline/history.js")>(
+  "../../../lib/offline/history.js",
+);
+const { freshOfflineDb, signIn, signOut } =
+  await import("../../../lib/offline/__tests__/test-helpers.js");
 const { ExerciseHowTo } = await import("../index.js");
 const { mountAt, setOnline } = await import("./harness.js");
 
@@ -102,7 +104,11 @@ describe("AC-14 the dialog", () => {
       "Drive up",
     ]);
     expect(dialog.querySelectorAll("a[href]")).toHaveLength(0);
-    expect(within(dialog).getAllByRole("button").map((b) => b.textContent)).toEqual(["Close"]);
+    expect(
+      within(dialog)
+        .getAllByRole("button")
+        .map((b) => b.textContent),
+    ).toEqual(["Close"]);
   });
 
   it("Escape and Close each call onClose once", async () => {
@@ -151,7 +157,9 @@ describe("AC-14 the dialog", () => {
     render(<Host exerciseId="nope" onClose={vi.fn()} />);
     openDialog();
     const dialog = await screen.findByRole("dialog", { name: "How to" });
-    expect(await within(dialog).findByText("Instructions download the next time you're online.")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("Instructions download the next time you're online."),
+    ).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Close" })).toBeInTheDocument();
   });
 
@@ -184,4 +192,3 @@ describe("AC-15 the dialog reads the cache only", () => {
     await waitFor(() => expect(hoisted.refreshAll).toHaveBeenCalledTimes(1));
   });
 });
-

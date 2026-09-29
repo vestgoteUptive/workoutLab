@@ -1,5 +1,5 @@
 // The D-0005 attribution block (D-0069 §2, D-0079 §5), shared by UF-04.2.
-import type { ExerciseDetail } from "../../lib/offline/index.js";
+import type { ExerciseDetail } from "../../lib/offline/db.js";
 import { en } from "../../lib/i18n/en.js";
 
 const LICENSE_LINKS: Record<string, string> = en.uf04.licenseLinks;

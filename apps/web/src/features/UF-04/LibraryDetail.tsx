@@ -3,12 +3,9 @@
 import { Link, Navigate, useParams } from "react-router";
 import type { LibraryExercise } from "@workoutlab/engine";
 import { en } from "../../lib/i18n/en.js";
-import {
-  loadExerciseDetail,
-  loadLibrary,
-  loadVariants,
-  type ExerciseDetail,
-} from "../../lib/offline/index.js";
+import type { ExerciseDetail } from "../../lib/offline/db.js";
+import { loadExerciseDetail, loadVariants } from "../../lib/offline/feature-loaders.js";
+import { loadLibrary } from "../../lib/offline/history.js";
 import { Attribution } from "./Attribution.js";
 import { useScreenData } from "./data.js";
 import { HowToBody } from "./HowToBody.js";

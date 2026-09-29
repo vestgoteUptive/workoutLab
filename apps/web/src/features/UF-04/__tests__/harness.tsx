@@ -29,7 +29,7 @@ function Where() {
   return null;
 }
 
-export async function mountAt(path: string) {
+export async function mountAt(path: string): Promise<{ unmount(): void }> {
   const { Library, LibraryDetail, Compare } = await import("../index.js");
   window.history.replaceState(null, "", path);
   return render(

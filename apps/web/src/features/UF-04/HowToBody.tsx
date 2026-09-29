@@ -1,5 +1,5 @@
 // The cue and numbered instructions, shared by UF-04.2 and the in-workout dialog.
-import type { ExerciseDetail } from "../../lib/offline/index.js";
+import type { ExerciseDetail } from "../../lib/offline/db.js";
 import { en } from "../../lib/i18n/en.js";
 
 export function HowToBody({ detail }: { detail: ExerciseDetail }) {
