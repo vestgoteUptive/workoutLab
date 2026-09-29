@@ -55,7 +55,11 @@ function useResult(props: BalanceScreenProps): {
   lastSyncedAt: string | null;
   timeZone: string;
 } {
-  const now = props.now ?? new Date();
+  // Fixed for the life of the mount. A fresh `new Date()` per render would change the hook's
+  // `nowIso` dependency on every render and re-run the load effect forever (a render loop
+  // that froze the page in the e2e). The window rolls on the next mount, as AC-A6 pins.
+  const [mountedAt] = useState(() => new Date());
+  const now = props.now ?? mountedAt;
   const timeZone = props.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   // `exactOptionalPropertyTypes`: spread the seams in only when they were actually supplied,
   // so `stubLastSyncedAt === undefined` keeps meaning "read it from IndexedDB" and is never
