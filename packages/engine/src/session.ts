@@ -11,6 +11,7 @@ import {
 } from "./energy.js";
 import { availableS, isEligible, itemCostS, setCostS } from "./cost.js";
 import { indexLibrary, primaryAreas, recentSessionIds, weightsOf } from "./history.js";
+import { lastDoneDates, rankAgainst, type SwapContext } from "./swaps.js";
 import { dayDiff } from "./time.js";
 import {
   AREAS,
@@ -79,6 +80,8 @@ interface Picked {
   lowTrimmed?: boolean;
   /** Rule 7.4 High: one back-off set on the main lift. */
   backoff?: boolean;
+  /** Rule 13: the slot's original exercise, when shuffle replaced it (D-0056 §11). */
+  previous?: LibraryExercise;
 }
 
 interface State {
@@ -237,11 +240,21 @@ function repRange(ex: LibraryExercise, isMain: boolean): [number, number] | [nul
   return ex.type === "compound" ? [8, 12] : [10, 15];
 }
 
+/** The slot's previous exercise and its pre-fill weight, for rule 14's `carry` (D-0057 §2). */
+interface PreviousSlot {
+  exerciseId: string;
+  weightKg: number | null;
+}
+
 /**
  * First-time pre-fill seam (D-0040 §4): rule 14 step 1 without the carry case. T-0205
- * replaces this behind the same call.
+ * replaces this behind the same call and fills in `carry` from `_previous` (D-0056 §11).
  */
-function prefillFor(ex: LibraryExercise, repsMin: number | null): PrefillResult {
+function prefillFor(
+  ex: LibraryExercise,
+  repsMin: number | null,
+  _previous: PreviousSlot | null,
+): PrefillResult {
   return {
     weightKg: ex.externalLoad ? null : 0,
     reps: repsMin,
@@ -257,9 +270,18 @@ function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): B
   return { weightKg: w === null ? null : floorInc(BACKOFF_FACTOR * w, inc), reps };
 }
 
+function previousOf(p: Picked): PreviousSlot | null {
+  if (p.previous === undefined) return null;
+  const [repsMin] = repRange(p.previous, p.isMain);
+  return {
+    exerciseId: p.previous.id,
+    weightKg: prefillFor(p.previous, repsMin, null).weightKg,
+  };
+}
+
 function toItem(start: Start, p: Picked): WorkoutItem {
   const [repsMin, repsMax] = repRange(p.exercise, p.isMain);
-  const prefill = prefillFor(p.exercise, repsMin);
+  const prefill = prefillFor(p.exercise, repsMin, previousOf(p));
   const area = primaryAreas(p.exercise)[0] as Area;
   const backoff =
     p.backoff === true && repsMin !== null ? backoffOf(p.exercise, prefill, repsMin) : null;
@@ -268,6 +290,7 @@ function toItem(start: Start, p: Picked): WorkoutItem {
   if (p.isMain) reasons.push({ code: "main_lift" });
   reasons.push({ code: "area_deficit", area, deficit: start.deficits[area] });
   reasons.push({ code: "days_since", area, days: start.daysSince[area] });
+  if (p.previous !== undefined) reasons.push({ code: "swap", reason: null });
   if (p.lowTrimmed === true) reasons.push({ code: "energy_low_trim" });
   if (backoff !== null) reasons.push({ code: "energy_high_backoff" });
   reasons.push({ code: "prefill", kind: prefill.kind });
@@ -283,6 +306,49 @@ function toItem(start: Start, p: Picked): WorkoutItem {
     prefill,
     reasons,
   };
+}
+
+/**
+ * Rule 13 shuffle (UF-08.2, D-0025, D-0056 §8–§12), after greedy selection and before
+ * energy. Every accessory slot not in `pinnedIds`, in session order, takes entry `n mod len`
+ * of `[original, …variety ranking]`, where the ranking is built against the plan as it
+ * stands (so earlier picks are already excluded). A pick that doesn't fit, has a recovering
+ * area at weight 1.0 or would put an area over the primary cap leaves the original. `n` is
+ * the only input that varies the result; `n = 0` changes nothing.
+ */
+function applyShuffle(s: State, n: number, pinnedIds: readonly string[], ctx: SwapContext): void {
+  for (const p of s.picked) {
+    if (p.isMain || pinnedIds.includes(p.exercise.id)) continue;
+    const planIds = new Set(s.picked.map((q) => q.exercise.id));
+    const ranking = rankAgainst(ctx, p.exercise, p, planIds, "variety", () => true);
+    const idx = n % (1 + ranking.length);
+    if (idx === 0) continue;
+    const pick = ctx.lib.get((ranking[idx - 1] as { exerciseId: string }).exerciseId);
+    if (pick === undefined) continue;
+    const oldCost = itemCostS(p.exercise, p.sets);
+    const newCost = itemCostS(pick, p.sets);
+    if (s.remainingS + oldCost - newCost < 0) continue;
+    const oldPrimary = primaryAreas(p.exercise);
+    const newPrimary = primaryAreas(pick);
+    if (newPrimary.some((a) => s.start.recovering.has(a))) continue;
+    const overCap = newPrimary.some(
+      (a) => s.primaryCount[a] - (oldPrimary.includes(a) ? 1 : 0) + 1 > MAX_ITEMS_PER_AREA,
+    );
+    if (overCap) continue;
+    s.remainingS += oldCost - newCost;
+    for (const [a, w] of weightsOf(p.exercise)) s.projected[a] -= p.sets * w;
+    for (const [a, w] of weightsOf(pick)) s.projected[a] += p.sets * w;
+    for (const a of oldPrimary) s.primaryCount[a] -= 1;
+    for (const a of newPrimary) s.primaryCount[a] += 1;
+    p.previous = p.previous ?? p.exercise;
+    p.exercise = pick;
+  }
+}
+
+function assertShuffle(n: number): void {
+  if (typeof n !== "number" || !Number.isInteger(n) || n < 0) {
+    throw new RangeError(`shuffle must be an integer ≥ 0, got ${String(n)}`);
+  }
 }
 
 /**
@@ -348,7 +414,7 @@ export function rankCandidates(
 /**
  * The next workout (UF-08.1, UF-08.4; rules 7, 10). Pure: the same inputs give a
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
- * `energy` is applied after selection (rule 7.4); `shuffle` is ignored until T-0204 (D-0040 §8).
+ * Selection is main → pinned → greedy → shuffle (rule 13), then energy (rule 7.4, D-0056 §8).
  */
 export function suggest(
   history: readonly HistorySet[],
@@ -360,6 +426,7 @@ export function suggest(
   tz: TimeZone,
 ): Workout {
   assertBudget(sessionInput.budgetMin);
+  assertShuffle(sessionInput.shuffle);
   const available = availableS(sessionInput.budgetMin, sessionInput.warmupInBudget);
   const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, now, tz);
   const s = newState(start, Math.max(0, available));
@@ -367,6 +434,14 @@ export function suggest(
   selectMain(s, sessionInput.mainLiftId);
   selectPinned(s, sessionInput.pinnedIds);
   selectGreedy(s);
+  const lib = indexLibrary(library);
+  applyShuffle(s, sessionInput.shuffle, sessionInput.pinnedIds, {
+    lib,
+    pool: start.pool,
+    recovering: start.recovering,
+    recentIds: start.recentIds,
+    lastDone: lastDoneDates(history, lib, tz),
+  });
   applyEnergy(s, sessionInput.energy);
 
   const items = s.picked.map((p) => toItem(start, p));

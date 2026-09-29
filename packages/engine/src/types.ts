@@ -220,6 +220,22 @@ export interface Workout {
   sessionReasons: Reason[];
 }
 
+// ---- Swap ranking (rule 12, UF-08.3, UF-05.1; D-0037 §2, D-0056) ----
+
+/** One `rankSwaps` entry; mirrors `api/openapi.yaml` `SwapCandidate`. */
+export interface SwapCandidate {
+  exerciseId: string;
+  /** `Σ min(w_cur, w_alt) / Σ w_cur`, rounded to 3 decimals (D-0056 §1). */
+  muscleMatch: number;
+  /** `itemCostS(candidate, slot sets)` (D-0056 §3). */
+  timeCostS: number;
+  equipment: string[];
+  /** Replacing the slot keeps the plan inside `availableS` (D-0056 §3). */
+  fitsBudget: boolean;
+  /** True at index 0 only (D-0056 §4). */
+  bestMatch: boolean;
+}
+
 // ---- Running over time (rule 8, UF-09.8; D-0037 §8, D-0040 §10) ----
 
 /** D-0037 §2. `elapsedS` excludes paused time, and the warm-up when it is off-budget. */

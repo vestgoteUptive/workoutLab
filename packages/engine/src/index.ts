@@ -1,7 +1,7 @@
 // Deterministic workout-suggestion engine (docs/engine-rules.md). Pure functions only:
-// no I/O, no clock, no randomness (rule 0, D-0024), so the same code runs in the browser
+// no I/O, no clock, no entropy source (rule 0, D-0024), so the same code runs in the browser
 // and in the Deno Edge Function. T-0200 covers rules 0–6 and 11; T-0201a adds rules 7.1–7.3 and 10;
-// T-0201b adds rules 7.4 and 8; T-0202 adds rule 9.
+// T-0201b adds rules 7.4 and 8; T-0202 adds rule 9; T-0204 adds rules 12 and 13.
 
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
@@ -29,6 +29,7 @@ export {
   MAX_ITEMS,
   MAX_ITEMS_PER_AREA,
 } from "./session.js";
+export { rankSwaps, muscleMatch } from "./swaps.js";
 export { generateWarmup, WARMUP_COST_S, WARMUP_MOVES, WARMUP_MOVE_S } from "./warmup.js";
 export {
   floorInc,
