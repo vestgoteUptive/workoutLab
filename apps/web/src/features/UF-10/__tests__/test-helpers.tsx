@@ -130,9 +130,10 @@ export interface RenderOptions extends BalanceScreenProps {
   at?: string;
 }
 
-/** Renders both UF-10 routes behind a MemoryRouter, at `at` (default `/balance`). */
-export function renderBalance({ at = "/balance", ...props }: RenderOptions = {}): RenderResult {
-  return render(
+/** The tree `renderBalance` mounts. Exported so a test can `rerender(<BalanceTree …/>)` with a
+ *  mutated stub and prove the map and the rows both follow it (AC-A15). */
+export function BalanceTree({ at = "/balance", ...props }: RenderOptions) {
+  return (
     <MemoryRouter initialEntries={[at]}>
       <LocationProbe />
       <Routes>
@@ -147,8 +148,13 @@ export function renderBalance({ at = "/balance", ...props }: RenderOptions = {})
         />
         <Route path="*" element={<span data-testid="elsewhere" />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
+}
+
+/** Renders both UF-10 routes behind a MemoryRouter, at `at` (default `/balance`). */
+export function renderBalance(options: RenderOptions = {}): RenderResult {
+  return render(<BalanceTree {...options} />);
 }
 
 // ---- DOM readers ----
