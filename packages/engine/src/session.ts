@@ -9,8 +9,9 @@ import {
   LOW_TRIM_FROM_SETS,
   LOW_TRIM_TO_SETS,
 } from "./energy.js";
-import { indexLibrary, isHardSet, normalizeHistory, primaryAreas, weightsOf } from "./history.js";
-import { dayDiff, instantMs, localDate } from "./time.js";
+import { availableS, isEligible, itemCostS, setCostS } from "./cost.js";
+import { indexLibrary, primaryAreas, recentSessionIds, weightsOf } from "./history.js";
+import { dayDiff } from "./time.js";
 import {
   AREAS,
   type Area,
@@ -20,7 +21,6 @@ import {
   type EngineProfile,
   type HistorySet,
   type Instant,
-  type Level,
   type LibraryExercise,
   type PrefillResult,
   type Reason,
@@ -31,57 +31,23 @@ import {
 } from "./types.js";
 import { generateWarmup, WARMUP_COST_S } from "./warmup.js";
 
-/** Rule 7.1 time model. */
-export const WORK_S = 45;
-export const REST_COMPOUND_S = 120;
-export const REST_ISOLATION_S = 60;
-export const TRANSITION_S = 60;
+export {
+  availableS,
+  isEligible,
+  itemCostS,
+  setCostS,
+  REST_COMPOUND_S,
+  REST_ISOLATION_S,
+  TRANSITION_S,
+  WORK_S,
+} from "./cost.js";
+
 /** Rule 7.2 caps. */
 export const MAX_ITEMS = 8;
 export const MAX_ITEMS_PER_AREA = 2;
 /** `budgetMin` bounds (D-0037 §7, D-0040 §7). */
 export const BUDGET_MIN = 1;
 export const BUDGET_MAX = 480;
-
-const LEVEL_RANK: Record<Level, number> = { beginner: 0, intermediate: 1, advanced: 2 };
-
-/** "none" means no equipment on both sides (D-0040 §1). Other spellings are not aliased. */
-function realEquipment(list: readonly string[]): string[] {
-  return list.filter((e) => e !== "none");
-}
-
-/**
- * Rule 0 eligible exercise: kind `exercise`, every equipment item in `profile.equipment`
- * (no equipment is always eligible), level ≤ profile level, and not in `excludeIds`.
- */
-export function isEligible(
-  exercise: LibraryExercise,
-  profile: Pick<EngineProfile, "level" | "equipment">,
-  excludeIds: readonly string[] = [],
-): boolean {
-  if (exercise.kind !== "exercise") return false;
-  if (excludeIds.includes(exercise.id)) return false;
-  if (LEVEL_RANK[exercise.level] > LEVEL_RANK[profile.level]) return false;
-  const have = new Set(realEquipment(profile.equipment));
-  return realEquipment(exercise.equipment).every((e) => have.has(e));
-}
-
-/** Work + rest for one set (rule 7.1). */
-export function setCostS(exercise: LibraryExercise): number {
-  const work = exercise.timed ? (exercise.defaultDurationS ?? WORK_S) : WORK_S;
-  const rest = exercise.type === "compound" ? REST_COMPOUND_S : REST_ISOLATION_S;
-  return work + rest;
-}
-
-/** `sets × (work + rest) + 60 s transition` (rule 7.1). */
-export function itemCostS(exercise: LibraryExercise, sets: number): number {
-  return sets * setCostS(exercise) + TRANSITION_S;
-}
-
-/** `budgetMin × 60 − (warmupInBudget ? 180 : 0)`; may be negative (D-0040 §7). */
-export function availableS(budgetMin: number, warmupInBudget: boolean): number {
-  return budgetMin * 60 - (warmupInBudget ? WARMUP_COST_S : 0);
-}
 
 function assertBudget(budgetMin: number): void {
   if (!Number.isInteger(budgetMin) || budgetMin < BUDGET_MIN || budgetMin > BUDGET_MAX) {
@@ -125,30 +91,6 @@ interface State {
 
 function byId(a: LibraryExercise, b: LibraryExercise): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-}
-
-/** D-0040 §9: the sessionId whose hard sets (local date ≤ D) have the greatest completedAt. */
-function recentSessionIds(
-  history: readonly HistorySet[],
-  library: readonly LibraryExercise[],
-  today: string,
-  tz: TimeZone,
-): Set<string> {
-  const lib = indexLibrary(library);
-  const hard = normalizeHistory(history).filter(
-    (s) => isHardSet(s, lib.get(s.exerciseId)) && localDate(s.completedAt, tz) <= today,
-  );
-  let best: { ms: number; sessionId: string } | null = null;
-  for (const s of hard) {
-    const ms = instantMs(s.completedAt);
-    if (best === null || ms > best.ms || (ms === best.ms && s.sessionId < best.sessionId)) {
-      best = { ms, sessionId: s.sessionId };
-    }
-  }
-  const out = new Set<string>();
-  if (best === null) return out;
-  for (const s of hard) if (s.sessionId === best.sessionId) out.add(s.exerciseId);
-  return out;
 }
 
 function buildStart(
