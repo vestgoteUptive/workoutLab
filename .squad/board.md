@@ -140,8 +140,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0307a | UF-10.1/.2 Balance: full C-01 mounted, area → /balance/:area, e2e Enter/Space once | web-feature:UF-10 | T-0318 | doing | wl-build-web |
 | T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | split → T-0308a, T-0308b, T-0308c (D-0070) | wl-build-web |
-| T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | todo (spec check) | wl-build-web |
-| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | todo (spec check) | wl-build-web |
+| T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | doing | wl-build-web |
+| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | ready | wl-build-web |
 | T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | todo | wl-build-web |
 | T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
@@ -180,6 +180,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0342 | Goal labels: if T-0301b's UF-01.2 labels differ from T-0308b's (`flows/uf-11.ts`), move them to one shared place (needs a D-0071 §1 amendment) | web-shell | T-0301b, T-0308b | todo | wl-build-web |
 | T-0343 | UF-10 midnight rollover: a Balance screen left open across local midnight keeps a stale 14-day window until remount (T-0307a build) | web-feature:UF-10 | T-0307a | todo | wl-build-web |
 | T-0344 | Fix the `-- <filter>` passthrough in the web `test:e2e` script (`pnpm test:e2e -- name` runs every spec); a fresh `vite build` needs `VITE_SUPABASE_URL` — document or default it (T-0307a build) | web-shell | — | todo | wl-build-web |
+| T-0345 | Optional: a separate 'New routine' heading on /plan/routines/new needs row 35 of `app/__tests__/routes.phase3.render.test.tsx` changed first (T-0308a spec check) | web-shell | T-0308a | todo | wl-build-web |
+| T-0346 | UF-07.1: refresh routines on mount when online (as D-0071 §8 does elsewhere); today a stale cache after a deep link can overwrite another device's edit (last write wins) — T-0308a spec check | product | T-0308a | todo | wl-spec |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
