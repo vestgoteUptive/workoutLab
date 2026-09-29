@@ -1,19 +1,20 @@
 # State
 
-- **Phase:** 1–3 overlap (contracts done; engine through T-0202; shell through T-0300c; backend suggest/balance done, finish in review)
-- **Updated:** 2026-09-28 22:45 by orchestrator (tick)
-- **Progress: 26 done · 29 left** (2 in review, 4 ready, 23 todo). The 23 todo are ~8 UI flow tickets (T-0301–T-0308, the bulk of the app), 6 infra/deploy (T-0400–T-0406), 9 smaller follow-ups.
-- **Done:** T-0001–T-0005, T-0007, T-0100a/b, T-0101, T-0102, T-0103a/b, T-0200, T-0201, T-0202, T-0203a/b, T-0300a/b/c, T-0309a, T-0901.
-- **Concurrency cap: 5** (human decision). **But lane ownership binds tighter than the cap** — see the no-parallel pairs below.
-- **In flight (4):** T-0902 build (web-shell, 2 commits, fixes the live dev-server crash), T-0203c review + QA (backend), T-0309b review (landing).
-- **Ready but path-blocked:** T-0300d (body map) waits for T-0902 to release the `web-shell` lane.
-- **Ready:** T-0204, T-0205 (engine; cannot run with each other).
-- **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy + privacy mailbox — gates the landing *prod deploy* only), **H-11 (model pins 404 — blocks AgentLab as executor)**.
+- **Phase:** 2–3 overlap. Engine rules 1–14 done; backend suggest/balance/finish done; shell through T-0300d (C-01 body map). **Phase 3 is groomed**: the 8 screen tickets are split into 22 per-flow children (D-0063–D-0070).
+- **Updated:** 2026-09-29 ~11:30 UTC by orchestrator (cloud session, handing off for a subscription switch)
+- **Progress: 37 done**, plus ~50 open rows (22 new Phase 3 children, 7 infra/deploy, ~20 small follow-ups).
+- **Done this session (all on branch `main-hzlbfc`, PR #8):** T-0204, T-0205, T-0208, T-0300d, T-0312, T-0903, D-0061 (the human's H-07 review), H-11 closed.
+- **PR #8** (`main-hzlbfc` → `main`) is green and mergeable. **The human must merge it.** A cloud container can push only `main-hzlbfc`.
+- **Concurrency cap: 5.** Lane ownership binds tighter: web-shell tickets (T-0301a, T-0318, T-0319, T-0313) run one at a time.
+- **In flight:** nothing. The Phase 3 triage check **finished**: D-0071 reconciles D-0063/D-0067 (11 points: one string module per flow plus a shared lib/i18n/workout.ts; one route rule, with no /session/:id/list; hand-offs only through index.tsx; host-owned registries UF-09/seams.tsx and UF-02/slots.tsx; one engine applySwap (T-0224) and one SwapSheet). TR-0030 resolved. Ticket files for T-0318 and T-0319 are written. The earlier "WIP(squad)" commits are superseded by the final commit.
+- **Ready now:** **T-0318** (web-shell plumbing) → **T-0319** (offline caches v2) → **T-0301a** (profile gate). All three are web-shell, so they run **one at a time in that order**. T-0318 unblocks T-0301b, T-0302a, T-0303a and T-0307a, which run in parallel afterwards. **Priority engine:** T-0219 (rule 7.1 timed costing overruns the budget; needs a decision), T-0224 (applySwap; spec settled in D-0071 §7, needs a ticket file), T-0214 (goal reps), T-0215 (one-period check-in).
+- **Waiting on humans:** merge PR #8; T-0217 (tie-break for two ratings at the same endedAt, default "higher wins"); H-12 (review C-01 on a phone); H-05, H-06, H-10 (non-blocking).
 
 ## Executor
-- **Sub-agents.** AgentLab's 13 flows are registered (the old "needs a restart" note was a misdiagnosis: `scripts/sync-agents.mjs` had never been run — a restart alone never registers a new flow). But **H-11 blocks flows in practice**: 8 of 13 roles pin `model: claude-opus-5-5`, which 404s on this subscription (ci-investigator, code-reviewer, data-modeler, designer, engine-dev, product-owner, security-reviewer, triage). Sub-agents work around it by passing an explicit `model: "opus"`; flows cannot.
-- This session's MCP connection is bound to the AgentLab process live at session start, so newly registered flows need a Claude session restart to be callable.
+- **Model pins:** the subscription switched to one that has **Opus 5 but not Opus 5.5**. The 8 Opus roles are now pinned to `claude-opus-5` (commit c48bb5f, regenerated with `node scripts/sync-agents.mjs`). The Sonnet roles stay on `claude-sonnet-5`. When spawning sub-agents, pass `model: "opus"`, or omit it to use the role pin. If the subscription changes again: edit `agents/roles/*.md`, run `node scripts/sync-agents.mjs`, and commit (a restart alone never registers anything).
+- **Desktop:** AgentLab (13 flows). **Cloud:** there is no agentlab MCP, so use sub-agents (build → QA ∥ review → product-owner accept). Give every parallel run its OWN decision-ID block and its own scratch subdir: decision D-0060 collided today, and scratch scripts got overwritten.
 - **Tooling:** `npx -y pnpm@10.28.2 …`.
+- **Before a PR push, also run the CI-only checks:** `pnpm -w format:check`, `pnpm -w check:repo`, `node supabase/scripts/vendor.mjs --check` (regenerate with `node supabase/scripts/vendor.mjs` after ANY engine or shared change), and `node supabase/scripts/gen-seed.mjs --check`. A green local turbo run does not cover these.
 
 ## Local Supabase stack — USE IT (the "Docker can't pull images" note is STALE)
 ```
@@ -35,6 +36,6 @@ eval "$(npx -y supabase@latest status -o env | sed 's/^/export /')"   # suites r
 - **Web builds die on budget/time, not correctness.** 4 AgentLab web runs died unfinished; all 4 passed as Opus sub-agents. Split UI tickets small; tell builders to commit WIP early.
 
 ## Notes for the next orchestrator
-- Next free: D-0058, TR-0030. Unused: D-0028, D-0038, D-0054.
+- Next free: **D-0072**, **TR-0031**, tickets **T-0225+** (engine/data) and **T-0320+** (web). D-0062 = T-0205 defaults; D-0063–D-0066 groom A; D-0067–D-0070 groom B. Unused: D-0028, D-0038, D-0054.
 - Spec-only and content roles have no shell. QA commits their output.
 - After each merge: `pnpm -w typecheck lint test --force --concurrency=1` on main.

@@ -2,7 +2,7 @@
 name: security-reviewer
 title: Security Reviewer
 description: Reviews auth, RLS, Edge Functions, secrets handling, headers/CSP and privacy (GDPR, account deletion/export) before release and on any auth or data-access change. Writes findings to docs/security/.
-model: claude-opus-5-5
+model: claude-opus-5
 role: reviewer
 tools: [Read, Grep, Glob, Bash, Write]
 effort: high

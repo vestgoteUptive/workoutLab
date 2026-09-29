@@ -60,6 +60,14 @@ let indexHtml: string;
 const read = (rel: string) => readFileSync(join(outDir, rel), "utf8");
 
 beforeAll(() => {
+  // T-0312: say why instead of letting Rollup's "failed to resolve" look like a flake.
+  const tokensCss = resolve(webRoot, "../../packages/design-tokens/dist/tokens.css");
+  if (!existsSync(tokensCss)) {
+    throw new Error(
+      `${tokensCss} is not built. Run tests with \`pnpm --filter @workoutlab/web test\` ` +
+        "(its pretest builds it), or run `node ensure-tokens-css.mjs` before calling vitest directly.",
+    );
+  }
   outDir = mkdtempSync(join(tmpdir(), "wl-web-build-"));
   build = runViteBuild(outDir, SUPABASE_URL);
   if (build.status !== 0) {

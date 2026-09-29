@@ -1,7 +1,7 @@
 ---
 id: D-0018
 title: Plan check-in (UF-11) — 14-day periods from onboarding, planned = rhythm range × 2, two periods in a row both ways
-status: revisit
+status: decided
 date: 2026-09-27
 by: product-owner (T-0001)
 area: product
@@ -23,3 +23,6 @@ T-0101 encodes this in `docs/engine-rules.md` rule 9. T-0100 adds `plan_checkins
 
 ## Revisit when
 After 4 weeks of real use, or if users report proposals as nagging or too slow.
+
+## Amended
+Amended 2026-09-29 by D-0061 (human review). Read it together with this file.

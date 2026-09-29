@@ -2,7 +2,7 @@
 // Source: packages/{pkg}/src. Rerun `node supabase/scripts/vendor.mjs` after an engine or
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
-import { type Area, type HistorySet, type LibraryExercise } from "./types.js";
+import { type Area, type HistorySet, type LibraryExercise, type LocalDate, type TimeZone } from "./types.js";
 /**
  * Rule 0: history is server rows ∪ the offline queue. Dedupe by `clientId`, keeping the
  * greatest `editedAt` (ties per D-0034 §3), then drop tombstones (D-0015). The result keeps
@@ -21,3 +21,5 @@ export declare function isHardSet(set: HistorySet, exercise: LibraryExercise | u
 export declare function indexLibrary(library: readonly LibraryExercise[]): Map<string, LibraryExercise>;
 /** The positive area weights of an exercise, in the fixed order. */
 export declare function weightsOf(exercise: LibraryExercise): Array<[Area, number]>;
+/** D-0040 §9: the sessionId whose hard sets (local date ≤ D) have the greatest completedAt. */
+export declare function recentSessionIds(history: readonly HistorySet[], library: readonly LibraryExercise[], today: LocalDate, tz: TimeZone): Set<string>;

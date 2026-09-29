@@ -1,7 +1,7 @@
 ---
 name: data-modeler
 description: Owns docs/data-model.md, api/openapi.yaml, Supabase SQL migrations, RLS policies and generated shared types. Use for schema, RLS, API contract and type generation work.
-model: claude-opus-5-5
+model: claude-opus-5
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 <!-- Generated from agents/roles/data-modeler.md by scripts/sync-agents.mjs. Edit the source, not this file. -->

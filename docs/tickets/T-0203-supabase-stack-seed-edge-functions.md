@@ -187,13 +187,20 @@ hard sets (2 × `barbell-back-squat`, 1 × `push-up`), 1 warm-up set and 1 tombs
 - **AC26 [c]** (idempotent) Given the AC24 finish, When the identical request is repeated, Then 200 and the body
   deep-equals the first one. The row is unchanged. Unit twin: the handler core with `now` one day later
   returns a deep-equal body (the summary uses the stored `ended_at`, D-0053 §8). **(CI + Deno unit)**
-- **AC27 [c]** (the latest wins, D-0053 §7) Given S finished at 07:31 with rating 4, When A finishes at
-  `07:40:00Z`, Then `ended_at = 07:40`, `durationS: 2400` and `withinBudget: false`. When A then posts
-  `07:31:00Z` with `effortRating: 2`, Then 200 with a body deep-equal to the 07:40 summary, and the row keeps
-  `ended_at = 07:40` and `effort_rating = 4`. **(CI)**
+- **AC27 [c]** (the latest wins, D-0053 §7 as amended by D-0058) Given S finished at 07:31 with rating 4,
+  When A finishes at `07:40:00Z` with no `effortRating`, Then `ended_at = 07:40`, `effort_rating = null`
+  (D-0058 rule 1: the winning finish owns the whole row, so an unrated win clears the superseded rating),
+  `durationS: 2400` and `withinBudget: false`. When A then posts `07:31:00Z` with `effortRating: 2`, Then
+  200 with a body deep-equal to the 07:40 summary, and the row keeps `ended_at = 07:40` and
+  `effort_rating = null` (D-0058 rule 3: an older finish writes nothing). **(CI)**
+  _Amended 2026-09-29 (T-0208 accept): this AC previously said the row keeps `effort_rating = 4`, which is
+  D-0053 §7's order-dependent behaviour that D-0058 removed._
 - **AC28 [c]** (offline replay order) Given two fresh copies of S, When one receives finishes in the order
-  [07:40, 07:31] and the other in the order [07:31, 07:40], Then both rows end with `ended_at = 07:40`
-  and both last responses are deep-equal. (Deno unit + **CI**)
+  [07:40, 07:31] and the other in the order [07:31, 07:40], with a rating on exactly one of the two
+  finishes (D-0058: a rating-free pair can't detect an order-dependent `effort_rating`), Then both rows
+  are identical in full (`ended_at = 07:40` and the same `effort_rating`) and both last responses are
+  deep-equal. Pinned both ways: rating on the 07:31 finish (row rating `null`) and on the 07:40 finish
+  (row rating kept). (Deno unit + **CI**)
 - **AC29 [c]** Given S finished at 07:31 with no rating, When A posts `07:31:00Z` with
   `effortRating: 5`, Then `effort_rating = 5` and `ended_at` is unchanged. **(CI)**
 - **AC30 [c]** Given S, When A posts, one at a time: `endedAt: "2026-09-28T06:59:59Z"` (before

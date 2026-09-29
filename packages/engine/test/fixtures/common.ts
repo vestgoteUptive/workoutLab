@@ -1,16 +1,20 @@
 // Shared fixtures from docs/engine-rules.md §Fixtures: F-tz, F-targets, library L1 and the
 // warm-up moves (D-0034 §9: names are the id with hyphens → spaces, first letter capitalised).
-import type {
-  Area,
-  AreaTarget,
-  AreaWeights,
-  EngineProfile,
-  ExerciseType,
-  HistorySet,
-  LibraryExercise,
-  Level,
-  SessionInput,
-  Workout,
+import {
+  availableS,
+  generateWarmup,
+  itemCostS,
+  WARMUP_COST_S,
+  type Area,
+  type AreaTarget,
+  type AreaWeights,
+  type EngineProfile,
+  type ExerciseType,
+  type HistorySet,
+  type LibraryExercise,
+  type Level,
+  type SessionInput,
+  type Workout,
 } from "../../src/index.js";
 
 export const TZ = "Europe/Stockholm";
@@ -260,4 +264,100 @@ export function itemsOf(w: Workout): Array<[string, number]> {
 
 export function warmupOf(w: Workout): string[] {
   return w.plan.warmup.map((m) => m.exerciseId);
+}
+
+// ---- Swap fixtures (T-0204): F-swap and hand-built sessions ----
+
+/**
+ * A `Workout` holding exactly `items` (`[exerciseId, sets, isMain?]`), with every cost and
+ * total computed by the engine's own rule 7.1 helpers. Reasons are left empty: `rankSwaps`
+ * reads only ids, sets, `isMain`, `costS` and the budget fields.
+ */
+export function sessionOf(
+  items: ReadonlyArray<readonly [string, number, boolean?]>,
+  opts: { budgetMin?: number; warmupInBudget?: boolean } = {},
+  library: readonly LibraryExercise[] = LIBRARY,
+): Workout {
+  const budgetMin = opts.budgetMin ?? 30;
+  const warmupInBudget = opts.warmupInBudget ?? true;
+  const byId = new Map(library.map((e) => [e.id, e]));
+  const planItems = items.map(([id, sets, isMain = false]) => {
+    const e = byId.get(id);
+    if (e === undefined) throw new Error(`sessionOf: ${id} is not in the library`);
+    return {
+      exerciseId: id,
+      isMain,
+      sets,
+      repsMin: null,
+      repsMax: null,
+      durationS: null,
+      costS: itemCostS(e, sets),
+      backoff: null,
+      prefill: { weightKg: null, reps: null, durationS: null, kind: "first_time" as const },
+      reasons: [],
+    };
+  });
+  const itemsTotalS = planItems.reduce((sum, i) => sum + i.costS, 0);
+  const main = planItems.find((i) => i.isMain);
+  const zero = {} as Record<Area, number>;
+  for (const a of Object.keys(F_TARGET_VALUES) as Area[]) zero[a] = 0;
+  return {
+    plan: {
+      version: 1,
+      mainLiftId: main === undefined ? null : main.exerciseId,
+      warmup: generateWarmup(
+        planItems.map((i) => i.exerciseId),
+        library,
+      ),
+      items: planItems,
+      startDeficits: zero,
+    },
+    budgetMin,
+    warmupInBudget,
+    energy: "normal",
+    itemsTotalS,
+    totalS: itemsTotalS + WARMUP_COST_S,
+    unusedS: Math.max(0, availableS(budgetMin, warmupInBudget) - itemsTotalS),
+    sessionReasons: [],
+  };
+}
+
+/** F-swap: bench-press × 4 (main), barbell-row × 3, leg-extension × 2 at budget 30, warm-up in. */
+export function fSwap(opts: { warmupInBudget?: boolean } = {}): Workout {
+  return sessionOf(
+    [
+      ["bench-press", 4, true],
+      ["barbell-row", 3],
+      ["leg-extension", 2],
+    ],
+    opts,
+  );
+}
+
+// ---- Pre-fill fixtures (T-0205): "S(date, exerciseId, [w × r, …])" ----
+
+/** One logged set: `[weightKg, reps]`, or `{durationS}` for a timed set (reps and weight null). */
+export type SetEntry =
+  readonly [number | null, number | null] | { readonly durationS: number | null };
+
+/**
+ * T-0205 "S(date, exerciseId, [w × r, …])": one session on local `date` at `time` (+02:00,
+ * default 10:00) with one hard set per entry, distinct clientIds (the `setsAt` scheme) and
+ * `sessionId` `s@<instant>` unless `opts.sessionId` is given. `opts.at` overrides the instant.
+ */
+export function setsWithReps(
+  date: string,
+  exerciseId: string,
+  entries: readonly SetEntry[],
+  opts: SetOptions & { time?: string; at?: string; sessionId?: string } = {},
+): HistorySet[] {
+  const at = opts.at ?? `${date}T${opts.time ?? "10:00"}:00+02:00`;
+  return setsAt(entries.length, exerciseId, at, opts).map((row, i) => {
+    const e = entries[i] as SetEntry;
+    const values =
+      "durationS" in e
+        ? { weightKg: null, reps: null, durationS: e.durationS }
+        : { weightKg: e[0], reps: e[1], durationS: null };
+    return { ...row, ...values, sessionId: opts.sessionId ?? row.sessionId };
+  });
 }

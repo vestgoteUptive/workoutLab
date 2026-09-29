@@ -1,7 +1,7 @@
 ---
 id: D-0024
 title: Session building — library is an engine input, main lift first, greedy by lowest projected coverage, fixed set/rep slots, warm-up generator, energy modifiers, UF-09.8 time check
-status: revisit
+status: decided
 date: 2026-09-27
 by: product-owner (T-0101)
 area: engine
@@ -25,3 +25,6 @@ T-0201 implements and tests rules 7, 8 and 10 using the worked examples R7-E*, R
 
 ## Revisit when
 The first 20 real sessions show the greedy picking odd combinations, or users skip the main lift often.
+
+## Amended
+Amended 2026-09-29 by D-0061 (human review). Read it together with this file.

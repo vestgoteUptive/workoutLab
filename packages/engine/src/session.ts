@@ -9,8 +9,17 @@ import {
   LOW_TRIM_FROM_SETS,
   LOW_TRIM_TO_SETS,
 } from "./energy.js";
-import { indexLibrary, isHardSet, normalizeHistory, primaryAreas, weightsOf } from "./history.js";
-import { dayDiff, instantMs, localDate } from "./time.js";
+import { availableS, isEligible, itemCostS, setCostS } from "./cost.js";
+import {
+  indexLibrary,
+  normalizeHistory,
+  primaryAreas,
+  recentSessionIds,
+  weightsOf,
+} from "./history.js";
+import { prefillFrom, type PrefillPrevious } from "./prefill.js";
+import { lastDoneDates, rankAgainst, type SwapContext } from "./swaps.js";
+import { dayDiff, localDate } from "./time.js";
 import {
   AREAS,
   type Area,
@@ -20,8 +29,8 @@ import {
   type EngineProfile,
   type HistorySet,
   type Instant,
-  type Level,
   type LibraryExercise,
+  type LocalDate,
   type PrefillResult,
   type Reason,
   type SessionInput,
@@ -31,57 +40,23 @@ import {
 } from "./types.js";
 import { generateWarmup, WARMUP_COST_S } from "./warmup.js";
 
-/** Rule 7.1 time model. */
-export const WORK_S = 45;
-export const REST_COMPOUND_S = 120;
-export const REST_ISOLATION_S = 60;
-export const TRANSITION_S = 60;
+export {
+  availableS,
+  isEligible,
+  itemCostS,
+  setCostS,
+  REST_COMPOUND_S,
+  REST_ISOLATION_S,
+  TRANSITION_S,
+  WORK_S,
+} from "./cost.js";
+
 /** Rule 7.2 caps. */
 export const MAX_ITEMS = 8;
 export const MAX_ITEMS_PER_AREA = 2;
 /** `budgetMin` bounds (D-0037 §7, D-0040 §7). */
 export const BUDGET_MIN = 1;
 export const BUDGET_MAX = 480;
-
-const LEVEL_RANK: Record<Level, number> = { beginner: 0, intermediate: 1, advanced: 2 };
-
-/** "none" means no equipment on both sides (D-0040 §1). Other spellings are not aliased. */
-function realEquipment(list: readonly string[]): string[] {
-  return list.filter((e) => e !== "none");
-}
-
-/**
- * Rule 0 eligible exercise: kind `exercise`, every equipment item in `profile.equipment`
- * (no equipment is always eligible), level ≤ profile level, and not in `excludeIds`.
- */
-export function isEligible(
-  exercise: LibraryExercise,
-  profile: Pick<EngineProfile, "level" | "equipment">,
-  excludeIds: readonly string[] = [],
-): boolean {
-  if (exercise.kind !== "exercise") return false;
-  if (excludeIds.includes(exercise.id)) return false;
-  if (LEVEL_RANK[exercise.level] > LEVEL_RANK[profile.level]) return false;
-  const have = new Set(realEquipment(profile.equipment));
-  return realEquipment(exercise.equipment).every((e) => have.has(e));
-}
-
-/** Work + rest for one set (rule 7.1). */
-export function setCostS(exercise: LibraryExercise): number {
-  const work = exercise.timed ? (exercise.defaultDurationS ?? WORK_S) : WORK_S;
-  const rest = exercise.type === "compound" ? REST_COMPOUND_S : REST_ISOLATION_S;
-  return work + rest;
-}
-
-/** `sets × (work + rest) + 60 s transition` (rule 7.1). */
-export function itemCostS(exercise: LibraryExercise, sets: number): number {
-  return sets * setCostS(exercise) + TRANSITION_S;
-}
-
-/** `budgetMin × 60 − (warmupInBudget ? 180 : 0)`; may be negative (D-0040 §7). */
-export function availableS(budgetMin: number, warmupInBudget: boolean): number {
-  return budgetMin * 60 - (warmupInBudget ? WARMUP_COST_S : 0);
-}
 
 function assertBudget(budgetMin: number): void {
   if (!Number.isInteger(budgetMin) || budgetMin < BUDGET_MIN || budgetMin > BUDGET_MAX) {
@@ -113,6 +88,8 @@ interface Picked {
   lowTrimmed?: boolean;
   /** Rule 7.4 High: one back-off set on the main lift. */
   backoff?: boolean;
+  /** Rule 13: the slot's original exercise, when shuffle replaced it (D-0056 §11). */
+  previous?: LibraryExercise;
 }
 
 interface State {
@@ -125,30 +102,6 @@ interface State {
 
 function byId(a: LibraryExercise, b: LibraryExercise): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-}
-
-/** D-0040 §9: the sessionId whose hard sets (local date ≤ D) have the greatest completedAt. */
-function recentSessionIds(
-  history: readonly HistorySet[],
-  library: readonly LibraryExercise[],
-  today: string,
-  tz: TimeZone,
-): Set<string> {
-  const lib = indexLibrary(library);
-  const hard = normalizeHistory(history).filter(
-    (s) => isHardSet(s, lib.get(s.exerciseId)) && localDate(s.completedAt, tz) <= today,
-  );
-  let best: { ms: number; sessionId: string } | null = null;
-  for (const s of hard) {
-    const ms = instantMs(s.completedAt);
-    if (best === null || ms > best.ms || (ms === best.ms && s.sessionId < best.sessionId)) {
-      best = { ms, sessionId: s.sessionId };
-    }
-  }
-  const out = new Set<string>();
-  if (best === null) return out;
-  for (const s of hard) if (s.sessionId === best.sessionId) out.add(s.exerciseId);
-  return out;
 }
 
 function buildStart(
@@ -295,17 +248,23 @@ function repRange(ex: LibraryExercise, isMain: boolean): [number, number] | [nul
   return ex.type === "compound" ? [8, 12] : [10, 15];
 }
 
-/**
- * First-time pre-fill seam (D-0040 §4): rule 14 step 1 without the carry case. T-0205
- * replaces this behind the same call.
- */
-function prefillFor(ex: LibraryExercise, repsMin: number | null): PrefillResult {
-  return {
-    weightKg: ex.externalLoad ? null : 0,
-    reps: repsMin,
-    durationS: ex.timed ? ex.defaultDurationS : null,
-    kind: "first_time",
-  };
+/** What rule 14 needs from `suggest` (D-0057 §7): the normalised history and today. */
+interface PrefillCtx {
+  hard: readonly HistorySet[];
+  lib: ReadonlyMap<string, LibraryExercise>;
+  today: LocalDate;
+  tz: TimeZone;
+}
+
+/** Rule 14 for one slot (D-0057 §7), replacing the D-0040 §4 first-time seam. */
+function prefillFor(
+  ctx: PrefillCtx,
+  ex: LibraryExercise,
+  repsMin: number | null,
+  repsMax: number | null,
+  previous: PrefillPrevious | null,
+): PrefillResult {
+  return prefillFrom(ex, { repsMin, repsMax }, ctx.hard, ctx.lib, ctx.today, ctx.tz, previous);
 }
 
 /** D-0040 §4: `floorInc(0.9 × prefill weight)` (null stays null) at the main `repsMin`. */
@@ -315,9 +274,19 @@ function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): B
   return { weightKg: w === null ? null : floorInc(BACKOFF_FACTOR * w, inc), reps };
 }
 
-function toItem(start: Start, p: Picked): WorkoutItem {
+/** The shuffled slot's original exercise and its own rule 14 pre-fill weight (D-0056 §11). */
+function previousOf(ctx: PrefillCtx, p: Picked): PrefillPrevious | null {
+  if (p.previous === undefined) return null;
+  const [repsMin, repsMax] = repRange(p.previous, p.isMain);
+  return {
+    exerciseId: p.previous.id,
+    weightKg: prefillFor(ctx, p.previous, repsMin, repsMax, null).weightKg,
+  };
+}
+
+function toItem(start: Start, ctx: PrefillCtx, p: Picked): WorkoutItem {
   const [repsMin, repsMax] = repRange(p.exercise, p.isMain);
-  const prefill = prefillFor(p.exercise, repsMin);
+  const prefill = prefillFor(ctx, p.exercise, repsMin, repsMax, previousOf(ctx, p));
   const area = primaryAreas(p.exercise)[0] as Area;
   const backoff =
     p.backoff === true && repsMin !== null ? backoffOf(p.exercise, prefill, repsMin) : null;
@@ -326,6 +295,7 @@ function toItem(start: Start, p: Picked): WorkoutItem {
   if (p.isMain) reasons.push({ code: "main_lift" });
   reasons.push({ code: "area_deficit", area, deficit: start.deficits[area] });
   reasons.push({ code: "days_since", area, days: start.daysSince[area] });
+  if (p.previous !== undefined) reasons.push({ code: "swap", reason: null });
   if (p.lowTrimmed === true) reasons.push({ code: "energy_low_trim" });
   if (backoff !== null) reasons.push({ code: "energy_high_backoff" });
   reasons.push({ code: "prefill", kind: prefill.kind });
@@ -341,6 +311,49 @@ function toItem(start: Start, p: Picked): WorkoutItem {
     prefill,
     reasons,
   };
+}
+
+/**
+ * Rule 13 shuffle (UF-08.2, D-0025, D-0056 §8–§12), after greedy selection and before
+ * energy. Every accessory slot not in `pinnedIds`, in session order, takes entry `n mod len`
+ * of `[original, …variety ranking]`, where the ranking is built against the plan as it
+ * stands (so earlier picks are already excluded). A pick that doesn't fit, has a recovering
+ * area at weight 1.0 or would put an area over the primary cap leaves the original. `n` is
+ * the only input that varies the result; `n = 0` changes nothing.
+ */
+function applyShuffle(s: State, n: number, pinnedIds: readonly string[], ctx: SwapContext): void {
+  for (const p of s.picked) {
+    if (p.isMain || pinnedIds.includes(p.exercise.id)) continue;
+    const planIds = new Set(s.picked.map((q) => q.exercise.id));
+    const ranking = rankAgainst(ctx, p.exercise, p, planIds, "variety", () => true);
+    const idx = n % (1 + ranking.length);
+    if (idx === 0) continue;
+    const pick = ctx.lib.get((ranking[idx - 1] as { exerciseId: string }).exerciseId);
+    if (pick === undefined) continue;
+    const oldCost = itemCostS(p.exercise, p.sets);
+    const newCost = itemCostS(pick, p.sets);
+    if (s.remainingS + oldCost - newCost < 0) continue;
+    const oldPrimary = primaryAreas(p.exercise);
+    const newPrimary = primaryAreas(pick);
+    if (newPrimary.some((a) => s.start.recovering.has(a))) continue;
+    const overCap = newPrimary.some(
+      (a) => s.primaryCount[a] - (oldPrimary.includes(a) ? 1 : 0) + 1 > MAX_ITEMS_PER_AREA,
+    );
+    if (overCap) continue;
+    s.remainingS += oldCost - newCost;
+    for (const [a, w] of weightsOf(p.exercise)) s.projected[a] -= p.sets * w;
+    for (const [a, w] of weightsOf(pick)) s.projected[a] += p.sets * w;
+    for (const a of oldPrimary) s.primaryCount[a] -= 1;
+    for (const a of newPrimary) s.primaryCount[a] += 1;
+    p.previous = p.previous ?? p.exercise;
+    p.exercise = pick;
+  }
+}
+
+function assertShuffle(n: number): void {
+  if (typeof n !== "number" || !Number.isInteger(n) || n < 0) {
+    throw new RangeError(`shuffle must be an integer ≥ 0, got ${String(n)}`);
+  }
 }
 
 /**
@@ -406,7 +419,7 @@ export function rankCandidates(
 /**
  * The next workout (UF-08.1, UF-08.4; rules 7, 10). Pure: the same inputs give a
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
- * `energy` is applied after selection (rule 7.4); `shuffle` is ignored until T-0204 (D-0040 §8).
+ * Selection is main → pinned → greedy → shuffle (rule 13), then energy (rule 7.4, D-0056 §8).
  */
 export function suggest(
   history: readonly HistorySet[],
@@ -418,6 +431,7 @@ export function suggest(
   tz: TimeZone,
 ): Workout {
   assertBudget(sessionInput.budgetMin);
+  assertShuffle(sessionInput.shuffle);
   const available = availableS(sessionInput.budgetMin, sessionInput.warmupInBudget);
   const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, now, tz);
   const s = newState(start, Math.max(0, available));
@@ -425,9 +439,18 @@ export function suggest(
   selectMain(s, sessionInput.mainLiftId);
   selectPinned(s, sessionInput.pinnedIds);
   selectGreedy(s);
+  const lib = indexLibrary(library);
+  applyShuffle(s, sessionInput.shuffle, sessionInput.pinnedIds, {
+    lib,
+    pool: start.pool,
+    recovering: start.recovering,
+    recentIds: start.recentIds,
+    lastDone: lastDoneDates(history, lib, tz),
+  });
   applyEnergy(s, sessionInput.energy);
 
-  const items = s.picked.map((p) => toItem(start, p));
+  const ctx: PrefillCtx = { hard: normalizeHistory(history), lib, today: localDate(now, tz), tz };
+  const items = s.picked.map((p) => toItem(start, ctx, p));
   const itemsTotalS = items.reduce((sum, i) => sum + i.costS, 0);
   const main = items.find((i) => i.isMain);
   return {

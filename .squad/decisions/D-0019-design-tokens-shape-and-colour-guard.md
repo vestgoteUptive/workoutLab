@@ -1,7 +1,7 @@
 ---
 id: D-0019
 title: Design tokens package shape, C-01 legend copy, and the raw-colour guard
-status: revisit
+status: decided
 date: 2026-09-27
 by: product-owner (T-0003 groom)
 area: design
@@ -38,3 +38,6 @@ T-0003 creates `packages/design-tokens`, a contract that CLAUDE.md makes the onl
 
 ## Revisit when
 The designer or a human reviews C-01 on a device (same trigger as D-0003/D-0013), or the guard produces false positives in real feature code.
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

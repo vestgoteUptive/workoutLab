@@ -1,7 +1,7 @@
 ---
 id: D-0022
 title: Exercise library file format, vocabulary and validation home (data/exercises)
-status: revisit
+status: decided
 date: 2026-09-27
 by: product-owner (T-0103 groom)
 area: data
@@ -66,3 +66,6 @@ and no third-party images in v1.
 - H-07 decides on the CC-BY-SA text (D-0005). If we replace it, flip the rows to `source: "workoutlab"`.
 - UF-01.3 user tests show that people need finer equipment choices than three profiles (for example "dumbbells + pull-up bar").
 - T-0100 picks different column names. In that case, rename the JSON fields to match in the same ticket.
+
+## Amended
+Amended 2026-09-29 by D-0061 (human review). Read it together with this file.

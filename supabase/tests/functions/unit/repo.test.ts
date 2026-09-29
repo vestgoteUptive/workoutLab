@@ -3,8 +3,83 @@
 // in chunks via `pageAll`. This test exercises `pageAll` directly against a fake `.range()`
 // query builder — no Docker, no live Supabase client — with more than 1000 fake rows so a single
 // unpaged fetch would visibly lose data.
-import { assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
-import { HISTORY_PAGE_SIZE, pageAll, type RangeQuery } from "../../../functions/_shared/repo.ts";
+import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
+import type { AuthContext } from "../../../functions/_shared/auth.ts";
+import {
+  HISTORY_PAGE_SIZE,
+  pageAll,
+  writeSessionFinish,
+  type RangeQuery,
+} from "../../../functions/_shared/repo.ts";
+
+/** A fake supabase-js client that records the payload passed to `.update()`. It implements only
+ * the chain `writeSessionFinish` uses: from().update().eq().select().maybeSingle(). */
+function fakeUpdateClient(
+  row: Record<string, unknown> = {
+    id: "s1",
+    started_at: "2026-09-28T07:00:00+00:00",
+    ended_at: "2026-09-28T07:40:00+00:00",
+    time_budget_min: 30,
+    effort_rating: null,
+  },
+) {
+  const updates: Record<string, unknown>[] = [];
+  const client = {
+    from: () => ({
+      update: (payload: Record<string, unknown>) => {
+        updates.push(payload);
+        const chain = {
+          eq: () => chain,
+          select: () => chain,
+          maybeSingle: () => Promise.resolve({ data: row, error: null }),
+        };
+        return chain;
+      },
+    }),
+  };
+  return { updates, ctx: { userId: "u", supabase: client as never } as AuthContext };
+}
+
+Deno.test(
+  "T-0208 D-0058: writeSessionFinish turns an explicit effortRating: null into effort_rating = null",
+  async () => {
+    const { updates, ctx } = fakeUpdateClient();
+    await writeSessionFinish(ctx, "s1", { endedAt: "2026-09-28T07:40:00Z", effortRating: null });
+    assertEquals(updates, [{ ended_at: "2026-09-28T07:40:00Z", effort_rating: null }]);
+  },
+);
+
+Deno.test(
+  "T-0208 D-0058: writeSessionFinish leaves effort_rating out of the update when effortRating is absent",
+  async () => {
+    const { updates, ctx } = fakeUpdateClient();
+    await writeSessionFinish(ctx, "s1", { endedAt: "2026-09-28T07:40:00Z" });
+    assertEquals(updates, [{ ended_at: "2026-09-28T07:40:00Z" }]);
+    assert(!("effort_rating" in updates[0]!));
+  },
+);
+
+Deno.test(
+  "T-0208 D-0058 rule 4: writeSessionFinish returns the row as the database stored it, not the patch",
+  async () => {
+    // The DB row keeps a rating the patch didn't name, and echoes ended_at in its own +00:00 form.
+    const { ctx } = fakeUpdateClient({
+      id: "s1",
+      started_at: "2026-09-28T07:00:00+00:00",
+      ended_at: "2026-09-28T07:40:00+00:00",
+      time_budget_min: 30,
+      effort_rating: 3,
+    });
+    const row = await writeSessionFinish(ctx, "s1", { endedAt: "2026-09-28T09:40:00+02:00" });
+    assertEquals(row, {
+      id: "s1",
+      startedAt: "2026-09-28T07:00:00+00:00",
+      endedAt: "2026-09-28T07:40:00+00:00",
+      timeBudgetMin: 30,
+      effortRating: 3,
+    });
+  },
+);
 
 function fakeRangeQuery<Row>(allRows: Row[]): RangeQuery<Row> & { calls: number } {
   const query = {

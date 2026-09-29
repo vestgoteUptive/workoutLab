@@ -1,6 +1,12 @@
 // Hand-written request validation (D-0053 §9): every request schema is closed, so an unknown key
 // is 400. Errors throw `ApiErrorResponse` (400 invalid_request) naming the offending field.
-import type { Energy, FinishRequest, Instant, SessionInput, SuggestRequest } from "@workoutlab/shared";
+import type {
+  Energy,
+  FinishRequest,
+  Instant,
+  SessionInput,
+  SuggestRequest,
+} from "@workoutlab/shared";
 import { badRequest } from "./errors.ts";
 
 const ENERGIES: readonly Energy[] = ["low", "normal", "high"];
@@ -150,9 +156,7 @@ export function validateFinishRequest(value: unknown): FinishRequest {
     effortRating = r;
   }
 
-  return effortRating === undefined
-    ? { endedAt, tz }
-    : { endedAt, effortRating, tz };
+  return effortRating === undefined ? { endedAt, tz } : { endedAt, effortRating, tz };
 }
 
 /** Parses the request body as JSON. 400 `invalid_request` when it isn't valid JSON. */

@@ -2,7 +2,7 @@
 name: code-reviewer
 title: Code Reviewer
 description: Reviews a ticket branch's diff for correctness, contract compliance, lane boundaries and code quality. Read-only apart from its verdict. Use after implementation, in parallel with QA.
-model: claude-opus-5-5
+model: claude-opus-5
 role: reviewer
 tools: [Read, Grep, Glob, Bash]
 effort: high

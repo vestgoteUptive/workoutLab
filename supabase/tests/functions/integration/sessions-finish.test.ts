@@ -264,37 +264,40 @@ Deno.test("AC25: finishing at 1921s (07:32:01) is 200 with withinBudget false", 
 
 // --- AC26: idempotent ------------------------------------------------------------------------
 
-Deno.test("AC26: repeating the identical finish returns a deep-equal body; the row is unchanged", async () => {
-  const user = await createTestUser();
-  await seedFullProfile(user.client);
-  const sessionId = await seedSessionS(user.client);
+Deno.test(
+  "AC26: repeating the identical finish returns a deep-equal body; the row is unchanged",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const sessionId = await seedSessionS(user.client);
 
-  const first = await finish(user.accessToken, sessionId, {
-    endedAt: "2026-09-28T07:31:00Z",
-    effortRating: 4,
-    tz: TZ,
-  });
-  assertEquals(first.status, 200);
-  const firstBody = await first.json();
+    const first = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:31:00Z",
+      effortRating: 4,
+      tz: TZ,
+    });
+    assertEquals(first.status, 200);
+    const firstBody = await first.json();
 
-  const second = await finish(user.accessToken, sessionId, {
-    endedAt: "2026-09-28T07:31:00Z",
-    effortRating: 4,
-    tz: TZ,
-  });
-  assertEquals(second.status, 200);
-  const secondBody = await second.json();
-  assertEquals(secondBody, firstBody);
+    const second = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:31:00Z",
+      effortRating: 4,
+      tz: TZ,
+    });
+    assertEquals(second.status, 200);
+    const secondBody = await second.json();
+    assertEquals(secondBody, firstBody);
 
-  const { data: row, error } = await user.client
-    .from("sessions")
-    .select("ended_at, effort_rating")
-    .eq("id", sessionId)
-    .single();
-  if (error) throw error;
-  assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
-  assertEquals(row.effort_rating, 4);
-});
+    const { data: row, error } = await user.client
+      .from("sessions")
+      .select("ended_at, effort_rating")
+      .eq("id", sessionId)
+      .single();
+    if (error) throw error;
+    assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
+    assertEquals(row.effort_rating, 4);
+  },
+);
 
 // --- AC27: the latest endedAt wins -----------------------------------------------------------
 
@@ -486,29 +489,140 @@ Deno.test(
   },
 );
 
-// --- AC29: a rating-only retry never moves endedAt ----------------------------------------------
+// --- T-0208: D-0058 over the wire --------------------------------------------------------------
 
-Deno.test("AC29: posting the same endedAt with a new rating updates effort_rating, not ended_at", async () => {
-  const user = await createTestUser();
-  await seedFullProfile(user.client);
-  const sessionId = await seedSessionS(user.client);
+/** Drops what legitimately differs between two users' copies of S: `sessionId`, and each area's
+ * `targetUpdatedAt` (set when the profile is seeded). `endedAt` is compared by instant, because
+ * a request may send an offset while Postgres returns `+00:00`. */
+function comparableSummary(b: Record<string, unknown>) {
+  const { sessionId: _sessionId, endedAt, ...rest } = b;
+  const balanceResult = rest.balance as { areas: Array<Record<string, unknown>> };
+  return {
+    ...rest,
+    endedAtMs: new Date(endedAt as string).getTime(),
+    balance: {
+      ...balanceResult,
+      areas: balanceResult.areas.map(({ targetUpdatedAt: _targetUpdatedAt, ...area }) => area),
+    },
+  };
+}
 
-  await finish(user.accessToken, sessionId, { endedAt: "2026-09-28T07:31:00Z", tz: TZ });
-  await finish(user.accessToken, sessionId, {
-    endedAt: "2026-09-28T07:31:00Z",
-    effortRating: 5,
-    tz: TZ,
-  });
+function permutations<T>(items: readonly T[]): T[][] {
+  if (items.length <= 1) return [items.slice()];
+  return items.flatMap((head, i) =>
+    permutations([...items.slice(0, i), ...items.slice(i + 1)]).map((rest) => [head, ...rest]),
+  );
+}
 
-  const { data: row, error } = await user.client
+async function readFinishRow(client: SupabaseClient, sessionId: string) {
+  const { data: row, error } = await client
     .from("sessions")
     .select("ended_at, effort_rating")
     .eq("id", sessionId)
     .single();
   if (error) throw error;
-  assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
-  assertEquals(row.effort_rating, 5);
-});
+  return row as { ended_at: string | null; effort_rating: number | null };
+}
+
+Deno.test(
+  "T-0208 D-0058 commutativity: all 6 orders of {rated 07:31, unrated 07:40Z, rated 07:40 as +02:00} converge on ended_at 07:40, effort_rating 5",
+  async () => {
+    // C is the same instant as B, sent with an offset, so it counts as B's rule 2 retry. The
+    // winning instant is 07:40 and the only rating seen at it is 5, so every order must end at
+    // {07:40, 5} with equal last responses.
+    const A = { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ };
+    const B = { endedAt: "2026-09-28T07:40:00Z", tz: TZ };
+    const C = { endedAt: "2026-09-28T09:40:00+02:00", effortRating: 5, tz: TZ };
+
+    let reference: unknown;
+    for (const order of permutations([A, B, C])) {
+      const label = JSON.stringify(order);
+      // One user per order, so no session's hard sets reach another's `balance`.
+      const user = await createTestUser();
+      await seedFullProfile(user.client);
+      const sessionId = await seedSessionS(user.client);
+      let lastBody: Record<string, unknown> | undefined;
+      for (const body of order) {
+        const res = await finish(user.accessToken, sessionId, body);
+        assertEquals(res.status, 200, label);
+        lastBody = await res.json();
+      }
+      const row = await readFinishRow(user.client, sessionId);
+      assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
+      assertEquals(row.effort_rating, 5, label);
+      const comparable = comparableSummary(lastBody!);
+      reference ??= comparable;
+      assertEquals(comparable, reference, label);
+    }
+  },
+);
+
+Deno.test(
+  "T-0208 D-0058: the endedAt comparison is by instant — an equal instant in +02:00 doesn't clear; a string-later but older instant writes nothing",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const sessionId = await seedSessionS(user.client);
+
+    const first = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:40:00Z",
+      effortRating: 5,
+      tz: TZ,
+    });
+    assertEquals(first.status, 200);
+    const firstBody = await first.json();
+
+    // Same instant, offset form, no rating: a rule 2 retry, so it must not clear the rating.
+    const sameInstant = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T09:40:00+02:00",
+      tz: TZ,
+    });
+    assertEquals(sameInstant.status, 200);
+    assertEquals(await sameInstant.json(), firstBody, "rule 4: summary of the unchanged row");
+    let row = await readFinishRow(user.client, sessionId);
+    assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
+    assertEquals(row.effort_rating, 5);
+
+    // 08:35+01:00 = 07:35Z is older than 07:40, so rule 3 writes nothing, not even the rating.
+    const older = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T08:35:00+01:00",
+      effortRating: 2,
+      tz: TZ,
+    });
+    assertEquals(older.status, 200);
+    assertEquals(await older.json(), firstBody);
+    row = await readFinishRow(user.client, sessionId);
+    assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
+    assertEquals(row.effort_rating, 5);
+  },
+);
+
+// --- AC29: a rating-only retry never moves endedAt ----------------------------------------------
+
+Deno.test(
+  "AC29: posting the same endedAt with a new rating updates effort_rating, not ended_at",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const sessionId = await seedSessionS(user.client);
+
+    await finish(user.accessToken, sessionId, { endedAt: "2026-09-28T07:31:00Z", tz: TZ });
+    await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:31:00Z",
+      effortRating: 5,
+      tz: TZ,
+    });
+
+    const { data: row, error } = await user.client
+      .from("sessions")
+      .select("ended_at, effort_rating")
+      .eq("id", sessionId)
+      .single();
+    if (error) throw error;
+    assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
+    assertEquals(row.effort_rating, 5);
+  },
+);
 
 // --- AC30: validation, one call per case, row unchanged -----------------------------------------
 
@@ -536,21 +650,24 @@ Deno.test("AC30: path id not-a-uuid is 400 invalid_request", async () => {
   assertEnvelope(await res.json(), "invalid_request");
 });
 
-Deno.test("AC30: effortRating 0, 6 and 3.5 are all 400 invalid_request, row unchanged", async () => {
-  const user = await createTestUser();
-  await seedFullProfile(user.client);
-  const sessionId = await seedSessionS(user.client);
-  for (const effortRating of [0, 6, 3.5]) {
-    const res = await finish(user.accessToken, sessionId, {
-      endedAt: "2026-09-28T07:31:00Z",
-      effortRating,
-      tz: TZ,
-    });
-    assertEquals(res.status, 400);
-    assertEnvelope(await res.json(), "invalid_request", "effortRating");
-  }
-  await assertSessionUnfinished(user.client, sessionId);
-});
+Deno.test(
+  "AC30: effortRating 0, 6 and 3.5 are all 400 invalid_request, row unchanged",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const sessionId = await seedSessionS(user.client);
+    for (const effortRating of [0, 6, 3.5]) {
+      const res = await finish(user.accessToken, sessionId, {
+        endedAt: "2026-09-28T07:31:00Z",
+        effortRating,
+        tz: TZ,
+      });
+      assertEquals(res.status, 400);
+      assertEnvelope(await res.json(), "invalid_request", "effortRating");
+    }
+    await assertSessionUnfinished(user.client, sessionId);
+  },
+);
 
 Deno.test("AC30: endedAt with no offset is 400 invalid_request, row unchanged", async () => {
   const user = await createTestUser();
@@ -642,28 +759,31 @@ Deno.test("AC31: GET /sessions/{id}/finish is 404 not_found", async () => {
 
 // --- AC32: zero sets -------------------------------------------------------------------------
 
-Deno.test("AC32: a session with no sets finishes with hardSets 0, exerciseCount 0, all 9 areas 0", async () => {
-  const user = await createTestUser();
-  await seedFullProfile(user.client);
-  const { data: session, error: sessionError } = await user.client
-    .from("sessions")
-    .insert({ started_at: STARTED_AT, time_budget_min: 30 })
-    .select("id")
-    .single();
-  if (sessionError) throw sessionError;
+Deno.test(
+  "AC32: a session with no sets finishes with hardSets 0, exerciseCount 0, all 9 areas 0",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const { data: session, error: sessionError } = await user.client
+      .from("sessions")
+      .insert({ started_at: STARTED_AT, time_budget_min: 30 })
+      .select("id")
+      .single();
+    if (sessionError) throw sessionError;
 
-  const res = await finish(user.accessToken, session.id, {
-    endedAt: "2026-09-28T07:31:00Z",
-    tz: TZ,
-  });
-  assertEquals(res.status, 200);
-  const summary = await res.json();
-  assertEquals(summary.hardSets, 0);
-  assertEquals(summary.exerciseCount, 0);
-  for (const v of Object.values(summary.weightedSetsByArea as Record<string, number>)) {
-    assertEquals(v, 0);
-  }
-});
+    const res = await finish(user.accessToken, session.id, {
+      endedAt: "2026-09-28T07:31:00Z",
+      tz: TZ,
+    });
+    assertEquals(res.status, 200);
+    const summary = await res.json();
+    assertEquals(summary.hardSets, 0);
+    assertEquals(summary.exerciseCount, 0);
+    for (const v of Object.values(summary.weightedSetsByArea as Record<string, number>)) {
+      assertEquals(v, 0);
+    }
+  },
+);
 
 // --- AC33: no 422 on finish for a caller with only 8 targets -------------------------------------
 

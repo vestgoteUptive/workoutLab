@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Reviews a ticket branch's diff for correctness, contract compliance, lane boundaries and code quality. Read-only apart from its verdict. Use after implementation, in parallel with QA.
-model: claude-opus-5-5
+model: claude-opus-5
 tools: Read, Grep, Glob, Bash
 ---
 <!-- Generated from agents/roles/code-reviewer.md by scripts/sync-agents.mjs. Edit the source, not this file. -->

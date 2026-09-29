@@ -1,6 +1,13 @@
 // Rule 0 (history normalisation), rule 1 (mapping) and rule 2 (hard sets).
-import { instantMs } from "./time.js";
-import { AREAS, type Area, type HistorySet, type LibraryExercise } from "./types.js";
+import { instantMs, localDate } from "./time.js";
+import {
+  AREAS,
+  type Area,
+  type HistorySet,
+  type LibraryExercise,
+  type LocalDate,
+  type TimeZone,
+} from "./types.js";
 
 /** True when `candidate` replaces `current` for the same `clientId` (rule 0, D-0034 §3). */
 function beats(candidate: HistorySet, current: HistorySet): boolean {
@@ -72,5 +79,29 @@ export function weightsOf(exercise: LibraryExercise): Array<[Area, number]> {
     const w = exercise.areas[a];
     if (w !== undefined && w > 0) out.push([a, w]);
   }
+  return out;
+}
+
+/** D-0040 §9: the sessionId whose hard sets (local date ≤ D) have the greatest completedAt. */
+export function recentSessionIds(
+  history: readonly HistorySet[],
+  library: readonly LibraryExercise[],
+  today: LocalDate,
+  tz: TimeZone,
+): Set<string> {
+  const lib = indexLibrary(library);
+  const hard = normalizeHistory(history).filter(
+    (s) => isHardSet(s, lib.get(s.exerciseId)) && localDate(s.completedAt, tz) <= today,
+  );
+  let best: { ms: number; sessionId: string } | null = null;
+  for (const s of hard) {
+    const ms = instantMs(s.completedAt);
+    if (best === null || ms > best.ms || (ms === best.ms && s.sessionId < best.sessionId)) {
+      best = { ms, sessionId: s.sessionId };
+    }
+  }
+  const out = new Set<string>();
+  if (best === null) return out;
+  for (const s of hard) if (s.sessionId === best.sessionId) out.add(s.exerciseId);
   return out;
 }
