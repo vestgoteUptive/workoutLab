@@ -169,8 +169,8 @@ export interface OfflineFixtures {
  * `exercises`, `exercise_areas`, `area_targets`, `profiles`, the four tables Dexie v2 added
  * (`exercise_variants`, `plan_checkins`, `routines`, `routine_items` — T-0319, D-0072), and the
  * `sessions`/`session_sets` upsert targets (accepted no-ops, since this spec doesn't queue
- * anything to flush). Registered
- * after `mockSupabaseAuth`'s 501 catch-all in `beforeEach`, which — being registered first — is
+ * anything to flush). Registered after `mockSupabaseAuth`'s 501 catch-all in `beforeEach`,
+ * which — being registered first — is
  * Playwright's last-matched fallback for anything none of these claim (see that function's
  * comment): a request to an endpoint this spec doesn't expect still fails loudly instead of
  * reaching the network.
