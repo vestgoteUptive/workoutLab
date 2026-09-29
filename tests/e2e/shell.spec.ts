@@ -4,7 +4,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { BASE_URL, VITE_SUPABASE_URL } from "./playwright.config.js";
-import { injectSession, mockSupabaseAuth } from "./fixtures/supabase-mock.js";
+import { injectSession, mockSupabaseAuth, mockSupabaseRest } from "./fixtures/supabase-mock.js";
 
 const TAB_ROUTES = ["/", "/library", "/progress", "/plan"] as const;
 const AXE_ROUTES = ["/welcome", "/", "/library", "/progress", "/balance", "/plan"] as const;
@@ -100,6 +100,79 @@ test.describe("AC-A13 axe", () => {
         (v) => v.impact === "serious" || v.impact === "critical",
       );
       expect(serious).toEqual([]);
+    });
+  }
+});
+
+// T-0318 AC-6: each Phase 3 sub-route is its own lazy chunk, precached with the shell, so a
+// cold *offline* load of one renders its screen. Appended to this spec as new tests only
+// (the ticket's "Paths you may change"); nothing above is changed.
+test.describe("AC-6 the Phase 3 sub-route chunks are precached (offline)", () => {
+  // `/session/:sessionId/summary` uses the `session` guard (D-0071 §2), so a stored session
+  // is enough; the stub itself makes no Supabase call. The 501 REST backstop is registered so
+  // the shell's AutoSync fetches fail loudly rather than reaching the network.
+  test.beforeEach(async ({ page }) => {
+    await mockSupabaseRest(page);
+  });
+
+  test("[data-screen-id=UF-03.3] renders offline after one online load of /session/S1/summary", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/");
+    await injectSession(page);
+
+    await page.goto("/session/S1/summary");
+    await expect(page.locator('[data-screen-id="UF-03.3"]')).toBeVisible();
+    // The chunk has to be in the precache *before* going offline, or the reload below would
+    // pass only because the browser had it in its own HTTP cache.
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+    await page.reload();
+
+    await expect(page.locator('[data-screen-id="UF-03.3"]')).toBeVisible({ timeout: 3000 });
+  });
+
+  // A cold offline load: the service worker is warmed on a *different* route, so the summary
+  // chunk can only come from the precache manifest, never from having been fetched before.
+  test("[data-screen-id=UF-03.3] renders on a cold offline navigation warmed from /", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+    await page.goto("/session/S1/summary");
+
+    await expect(page.locator('[data-screen-id="UF-03.3"]')).toBeVisible({ timeout: 3000 });
+  });
+
+  const OTHER_SUB_ROUTES = [
+    ["/library/back-squat/compare/leg-press", "UF-04.3"],
+    ["/progress/back-squat", "UF-06.2"],
+    ["/plan/edit", "UF-11.3"],
+    ["/plan/routines/new", "UF-07.1"],
+    ["/plan/routines/R1", "UF-07.1"],
+  ] as const;
+
+  for (const [path, screenId] of OTHER_SUB_ROUTES) {
+    test(`${path} renders ${screenId} offline after warming the shell`, async ({
+      page,
+      context,
+    }) => {
+      await page.goto("/");
+      await injectSession(page);
+      await page.goto("/");
+      await page.evaluate(() => navigator.serviceWorker.ready);
+
+      await context.setOffline(true);
+      await page.goto(path);
+
+      await expect(page.locator(`[data-screen-id="${screenId}"]`)).toBeVisible({ timeout: 3000 });
     });
   }
 });
