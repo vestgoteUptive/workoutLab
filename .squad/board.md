@@ -127,6 +127,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0313 | AC-D11 hardening: dynamic `import()` of components/body-map from UF-03/08/09 bypasses no-restricted-imports; add a no-restricted-syntax rule on ImportExpression + test — T-0300d follow-up | web-shell | T-0300d | todo | wl-build-web |
 | T-0314 | Add axe-core (or vitest-axe) as a direct devDependency of apps/web and point the AC-D10 helper at it (today it resolves through @axe-core/playwright, D-0060 §7) — T-0300d follow-up | infra | T-0300d | todo | wl-build-infra |
 | T-0315 | Design a C-01 body silhouette to replace the D-0060 tile grid (after the H-12 device review) | design | T-0300d | todo | wl-design |
+| T-0316 | design-tokens build-css.mjs: write tokens.css to a temp file + rename, so a concurrent reader (landing astro build) never sees a partial file — T-0312 review | design | T-0312 | todo | wl-design |
+| T-0317 | README: one line that `pnpm --filter @workoutlab/web test` builds the tokens CSS via pretest, and a direct vitest call needs `node apps/web/ensure-tokens-css.mjs` first — T-0312 follow-up | infra | T-0312 | todo | wl-build-infra |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -145,7 +147,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0903 | `pnpm -w format:check` fails on 5 supabase files already on main (supabase/functions/_shared/repo.ts, _shared/validate.ts, sessions/core.ts, supabase/tests/functions/integration/sessions-finish.test.ts, unit/sessions-core.test.ts) — found during T-0204 | backend | — | done (PR #8, 455c10d) | wl-build-backend |
-| T-0312 | `apps/web/build.test.ts` fails under `pnpm --filter @workoutlab/web test` because design-tokens' dist/tokens.css is unbuilt (passes under `turbo test`, which has dependsOn ^build). Make the web test script depend on the tokens build, or document that the filtered command needs a prior build — it cost real diagnosis time by looking like a second flake | web-shell | — | doing | wl-build-web |
+| T-0312 | `apps/web/build.test.ts` fails under `pnpm --filter @workoutlab/web test` because design-tokens' dist/tokens.css is unbuilt (passes under `turbo test`, which has dependsOn ^build). Make the web test script depend on the tokens build, or document that the filtered command needs a prior build — it cost real diagnosis time by looking like a second flake | web-shell | — | done | wl-build-web |
 | T-0311 | Flaky T-0300c offline sync-trigger tests: AC-C9 'online' event + stop() listener fail intermittently in the full suite (reproduced on stock main, 3 of 5 runs; pass 6/6 isolated). Real timing bug in the merged offline-sync triggers, not machine noise | web-shell | T-0300c | done | wl-build-web |
 | T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | done | wl-build-web |
 | T-0901 | CI e2e job: run Playwright with the tests/e2e config; webServer builds via turbo (^build) — diagnosis docs/ci/CI-T-0901-* | infra (+ tests/e2e/playwright.config.ts) | T-0300b | done | wl-build-infra (draft PR) |
