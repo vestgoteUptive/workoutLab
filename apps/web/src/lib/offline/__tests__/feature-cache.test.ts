@@ -210,6 +210,33 @@ describe("AC-4 routines", () => {
     await refreshRoutines();
     expect((await loadRoutines()).map((r) => r.items)).toEqual([[], []]);
   });
+
+  // T-0319 QA: `refreshRoutines` ALREADY sorts items before it writes them, so the read-side
+  // re-sort in `loadRoutines` was dead as far as the tests went — deleting it left every test
+  // green. Its stated purpose is a row cached by an older build, which only a direct write can
+  // produce, so that is what this asserts.
+  it("re-sorts items on read, for a row cached unsorted by an older build", async () => {
+    const { offlineDb } = await import("../db.js");
+    await offlineDb().routineCache.put({
+      key: `${USER_A}:R-legacy`,
+      userId: USER_A,
+      id: "R-legacy",
+      name: "Aaa legacy",
+      updatedAt: "2026-09-20T10:00:00.000Z",
+      items: [
+        { position: 2, exerciseId: "calf-raise" },
+        { position: 0, exerciseId: "back-squat" },
+        { position: 1, exerciseId: "leg-curl" },
+      ],
+    });
+
+    const loaded = (await loadRoutines()).find((r) => r.id === "R-legacy")!;
+    expect(loaded.items).toEqual([
+      { position: 0, exerciseId: "back-squat" },
+      { position: 1, exerciseId: "leg-curl" },
+      { position: 2, exerciseId: "calf-raise" },
+    ]);
+  });
 });
 
 describe("AC-6 a refresh replaces, a failed refresh keeps", () => {

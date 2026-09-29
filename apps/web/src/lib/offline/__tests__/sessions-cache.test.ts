@@ -202,6 +202,55 @@ describe("AC-3 queued rows win, and sorting", () => {
     expect(rows[0]!.endedAt).toBe("2026-09-17T10:05:00.000Z");
     expect(rows[0]!.effortRating).toBe(5);
   });
+
+  // T-0319 QA: the three assertions below close gaps found by fault injection. The original
+  // AC-3 sort test only ever compared rows that came out of `sessionCache` in the same order as
+  // the id tiebreak wanted (`.where({userId}).toArray()` traverses by primary key
+  // `${userId}:${id}`), so deleting `|| compare(a.id, b.id)` from `loadSessions` left every
+  // test green. And nothing exercised the `energy` fallback at all.
+  it("breaks a startedAt tie by id even when the queue supplies the lower id", async () => {
+    // The cached row's id sorts AFTER the queued row's, so map insertion order (cache first,
+    // queue second) is the OPPOSITE of the required order. Only the `id` tiebreak fixes it.
+    spy.setRows("sessions", [{ ...S1, id: "S-b", started_at: "2026-09-20T09:00:00.000Z" }]);
+    await refreshSessions(NOW, TZ);
+
+    await upsertSession({
+      id: "S-a",
+      started_at: "2026-09-20T09:00:00.000Z",
+      time_budget_min: 30,
+      energy: "normal",
+    } as never);
+
+    expect((await loadSessions()).map((s) => s.id)).toEqual(["S-a", "S-b"]);
+  });
+
+  it("keeps the cached energy when a queued edit omits it (energy is optional in SessionInsert)", async () => {
+    // `SessionInsert.energy` is `energy?: string`, so this call is type-legal through the public
+    // API: a metadata-only `upsertSession` can legitimately carry no `energy`. The cached value
+    // must survive rather than being replaced by the "normal" default.
+    spy.setRows("sessions", [{ ...S1, energy: "high", effort_rating: 5 }]);
+    await refreshSessions(NOW, TZ);
+
+    await upsertSession({
+      id: "S1",
+      started_at: S1.started_at,
+      time_budget_min: 45,
+    } as never);
+
+    const rows = await loadSessions();
+    expect(rows[0]!.energy).toBe("high");
+    expect(rows[0]!.effortRating).toBe(5);
+  });
+
+  it('falls back to "normal" for a queued-only session with no energy and no cached row', async () => {
+    await upsertSession({
+      id: "S9",
+      started_at: "2026-09-26T09:00:00.000Z",
+      time_budget_min: 30,
+    } as never);
+
+    expect((await loadSessions())[0]!.energy).toBe("normal");
+  });
 });
 
 describe("AC-6/AC-7 for sessions", () => {

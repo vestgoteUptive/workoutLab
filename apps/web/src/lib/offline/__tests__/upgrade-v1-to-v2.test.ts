@@ -73,6 +73,25 @@ function queuedSet(clientId: string, setIndex: number): QueuedSet {
   };
 }
 
+/** T-0319 QA: a SOFT-DELETED queued set. The original fixture held only
+ *  `{deletedAt: null, status: "queued"}` rows, so an `.upgrade()` that reset `deletedAt` or
+ *  `status` — resurrecting a set the user deleted offline, which is precisely what T-0300c
+ *  shipped green — left every test passing. These two rows make that state observable. */
+const DELETED_SET: QueuedSet = {
+  ...queuedSet("c-del", 3),
+  key: `${USER}:c-del`,
+  clientId: "c-del",
+  deletedAt: "2026-09-27T10:30:00.000Z",
+};
+
+/** A set the server rejected. `status: "rejected"` must not be silently re-queued either. */
+const REJECTED_SET: QueuedSet = {
+  ...queuedSet("c-rej", 4),
+  key: `${USER}:c-rej`,
+  clientId: "c-rej",
+  status: "rejected",
+};
+
 /** A finished session still in the queue. `finished: true` is the D-0053 §7 marker whose loss
  *  would clear `ended_at` server-side, so the upgrade has to carry it across verbatim. */
 const QUEUED_SESSION: QueuedSession = {
@@ -164,7 +183,7 @@ beforeEach(async () => {
   const v1 = new V1Db(dbName);
   await v1.open();
   expect(v1.verno).toBe(1);
-  await v1.sets.bulkPut([queuedSet("c-1", 0), queuedSet("c-2", 1)]);
+  await v1.sets.bulkPut([queuedSet("c-1", 0), queuedSet("c-2", 1), DELETED_SET, REJECTED_SET]);
   await v1.sessions.put(QUEUED_SESSION);
   await v1.historyCache.put(HISTORY_ROW);
   await v1.libraryCache.put(LIBRARY_ROW);
@@ -185,9 +204,27 @@ describe("AC-1 v1 → v2 upgrade", () => {
 
       // The queued offline sets: the rows NFR-OFF-2 protects.
       const sets = await db.sets.where({ userId: USER }).sortBy("setIndex");
-      expect(sets).toEqual([queuedSet("c-1", 0), queuedSet("c-2", 1)]);
-      // Still queued and still findable by the compound index the flush uses.
-      expect(await db.sets.where({ userId: USER, status: "queued" }).count()).toBe(2);
+      expect(sets).toEqual([queuedSet("c-1", 0), queuedSet("c-2", 1), DELETED_SET, REJECTED_SET]);
+      // T-0319 QA, spelled out because these are the states whose loss is silent corruption:
+      // a set deleted offline must stay deleted, and a rejected set must stay rejected.
+      expect((await db.sets.get(DELETED_SET.key))?.deletedAt).toBe("2026-09-27T10:30:00.000Z");
+      expect((await db.sets.get(REJECTED_SET.key))?.status).toBe("rejected");
+      expect(await db.sets.where({ userId: USER, status: "rejected" }).count()).toBe(1);
+      // Still queued and still findable by the compound key the flush queries on.
+      expect(await db.sets.where({ userId: USER, status: "queued" }).count()).toBe(3);
+      // T-0319 QA: the line above is NOT enough on its own. Dexie answers
+      // `where({userId, status})` from the plain `userId` index plus a filter when
+      // `[userId+status]` is missing, so dropping the compound index from the v2 schema left
+      // every test in the repo green while turning the flush's hot query into a scan of the
+      // user's whole `sets` table. Assert the index itself survived the version bump.
+      const setsIndexes = db.sets.schema.indexes.map((i) => i.name).sort();
+      expect(setsIndexes).toContain("[userId+status]");
+      expect(db.sets.schema.primKey.name).toBe("key");
+      // Every v1 index, not just the compound one: a v2 `.stores()` entry for `sets` would
+      // silently replace the whole index list.
+      expect(setsIndexes).toEqual(
+        ["[userId+status]", "editedAt", "sessionId", "status", "userId"].sort(),
+      );
 
       // The finished session, including the `finished` marker (D-0053 §7).
       expect(await db.sessions.get("S1")).toEqual(QUEUED_SESSION);
@@ -217,7 +254,7 @@ describe("AC-1 v1 → v2 upgrade", () => {
       expect(await db.checkinCache.where({ userId: USER }).toArray()).toEqual([]);
       expect(await db.routineCache.where({ userId: USER }).toArray()).toEqual([]);
 
-      expect(await db.sets.count()).toBe(2);
+      expect(await db.sets.count()).toBe(4);
       expect(await db.sessions.count()).toBe(1);
     } finally {
       db.close();
@@ -244,6 +281,8 @@ describe("AC-1 v1 → v2 upgrade", () => {
       expect(await db.sets.where({ userId: USER }).sortBy("setIndex")).toEqual([
         queuedSet("c-1", 0),
         queuedSet("c-2", 1),
+        DELETED_SET,
+        REJECTED_SET,
       ]);
       expect((await db.sessions.get("S1"))?.finished).toBe(true);
       expect((await db.sessions.get("S1"))?.row.ended_at).toBe("2026-09-27T10:05:00.000Z");
@@ -256,7 +295,7 @@ describe("AC-1 v1 → v2 upgrade", () => {
     await again.open();
     try {
       expect(again.verno).toBe(2);
-      expect(await again.sets.count()).toBe(2);
+      expect(await again.sets.count()).toBe(4);
       expect(await again.sessionCache.count()).toBe(1);
     } finally {
       again.close();
