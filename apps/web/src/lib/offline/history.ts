@@ -16,7 +16,6 @@ import {
   type AreaTarget,
   type EngineProfile,
   type LibraryExercise,
-  type PlanCheckin,
   type Tables,
 } from "@workoutlab/shared";
 import {
