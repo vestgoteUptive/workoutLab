@@ -96,7 +96,11 @@ export async function refreshHistory(now: Date, tz: string): Promise<void> {
  *  `exercises` is selected ONCE per refresh (`select("*")` already returns `instructions`,
  *  `mistakes`, `cue`, `source`, `license`, `attribution` and `source_url`), so the detail cache
  *  costs one extra request for `exercise_variants` and no second read of `exercises`. Both tables
- *  are written in one transaction, so a reader never sees a library without its details. */
+ *  are written in one transaction, so a reader never sees a library without its details.
+ *
+ *  That single transaction also means an `exercise_variants` failure blocks the library refresh
+ *  (AC-6: "the transaction isn't entered"). Deliberate, and the reason the T-0300c e2e fixture
+ *  has to stub `exercise_variants` — see D-0072. */
 export async function refreshLibrary(): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
