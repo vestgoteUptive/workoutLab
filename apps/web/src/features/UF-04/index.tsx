@@ -19,3 +19,15 @@ export function LibraryDetail() {
     </div>
   );
 }
+
+// UF-04.3 Compare variants stub (T-0318). T-0306a builds the screen.
+export function Compare() {
+  const { exerciseId, otherId } = useParams();
+  return (
+    <div data-screen-id="UF-04.3">
+      <h1>{en.screens.libraryCompare}</h1>
+      <p>{exerciseId}</p>
+      <p>{otherId}</p>
+    </div>
+  );
+}

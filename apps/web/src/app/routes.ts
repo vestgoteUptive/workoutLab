@@ -70,11 +70,25 @@ export const routes: readonly RouteConfig[] = [
     load: () => import("../features/UF-04/index.js").then((m) => ({ default: m.LibraryDetail })),
   },
   {
+    path: "/library/:exerciseId/compare/:otherId",
+    screenId: "UF-04.3",
+    showTabBar: true,
+    guard: "protected",
+    load: () => import("../features/UF-04/index.js").then((m) => ({ default: m.Compare })),
+  },
+  {
     path: "/progress",
     screenId: "UF-06.1",
     showTabBar: true,
     guard: "protected",
     load: () => import("../features/UF-06/index.js").then((m) => ({ default: m.Progress })),
+  },
+  {
+    path: "/progress/:exerciseId",
+    screenId: "UF-06.2",
+    showTabBar: true,
+    guard: "protected",
+    load: () => import("../features/UF-06/index.js").then((m) => ({ default: m.ExerciseHistory })),
   },
   {
     path: "/balance",
@@ -98,6 +112,30 @@ export const routes: readonly RouteConfig[] = [
     load: () => import("../features/UF-11/index.js").then((m) => ({ default: m.Plan })),
   },
   {
+    // No tab bar: an editing page, reached from /plan and returned to on save (D-0071 §2).
+    path: "/plan/edit",
+    screenId: "UF-11.3",
+    showTabBar: false,
+    guard: "protected",
+    load: () => import("../features/UF-11/index.js").then((m) => ({ default: m.EditPlan })),
+  },
+  {
+    // Before `/plan/routines/:routineId`, so `new` never reads as a routine id here or in
+    // `matchesShellRoute` (react-router ranks the static segment higher on its own).
+    path: "/plan/routines/new",
+    screenId: "UF-07.1",
+    showTabBar: false,
+    guard: "protected",
+    load: () => import("../features/UF-07/index.js").then((m) => ({ default: m.RoutineEditor })),
+  },
+  {
+    path: "/plan/routines/:routineId",
+    screenId: "UF-07.1",
+    showTabBar: false,
+    guard: "protected",
+    load: () => import("../features/UF-07/index.js").then((m) => ({ default: m.RoutineEditor })),
+  },
+  {
     path: "/session/setup",
     screenId: "UF-08.1",
     showTabBar: false,
@@ -110,6 +148,15 @@ export const routes: readonly RouteConfig[] = [
     showTabBar: false,
     guard: "session",
     load: () => import("../features/UF-09/index.js").then((m) => ({ default: m.SessionHost })),
+  },
+  {
+    // The `session` guard, no tab bar, and never gated by the profile gate (D-0071 §2, §11):
+    // the summary is the tail of a workout, so it must not interrupt for auth or a profile.
+    path: "/session/:sessionId/summary",
+    screenId: "UF-03.3",
+    showTabBar: false,
+    guard: "session",
+    load: () => import("../features/UF-03/index.js").then((m) => ({ default: m.Summary })),
   },
 ] as const;
 
