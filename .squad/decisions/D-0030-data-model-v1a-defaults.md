@@ -1,7 +1,7 @@
 ---
 id: D-0030
 title: Data model v1a defaults — effort_rating 1–5, energy default normal, required plan fields, trigger functions in schema private, anon revoked on owned tables, part [b] listed as pending in the doc
-status: revisit
+status: decided
 date: 2026-09-27
 by: data-modeler (T-0100a)
 area: data
@@ -25,3 +25,6 @@ T-0100a builds part [a] of the v1 schema. D-0020, D-0021 and D-0029 fix most of 
 
 ## Revisit when
 The UF-03.3 spec defines the effort scale, or T-0100b lands (then the "pending" section is removed).
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

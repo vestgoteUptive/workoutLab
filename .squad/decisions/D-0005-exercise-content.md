@@ -1,7 +1,7 @@
 ---
 id: D-0005
 title: Exercise library seeded from wger, licence tracked per row
-status: revisit
+status: decided
 date: 2026-09-27
 by: orchestrator
 area: data
@@ -11,3 +11,6 @@ Seed about 80 exercises covering all 9 areas and the equipment sets in UF-01.3. 
 
 ## Revisit when
 Before public launch: confirm that CC-BY-SA share-alike is acceptable for the text, or replace it with our own copy.
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

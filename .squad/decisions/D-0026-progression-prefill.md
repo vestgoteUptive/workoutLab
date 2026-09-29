@@ -1,7 +1,7 @@
 ---
 id: D-0026
 title: Progression and pre-fill — double progression per rep slot, hold after ≥ 10 days off, −10 % after ≥ 21 days or two misses, carry on swap, RIR not used in v1
-status: revisit
+status: decided
 date: 2026-09-27
 by: product-owner (T-0101)
 area: engine
@@ -22,3 +22,6 @@ T-0201 (or its split) implements `prefill()` with R14-E*. content (T-0103) suppl
 
 ## Revisit when
 There is enough RIR data to use it, or users edit the pre-filled weight on more than 30 % of sets.
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

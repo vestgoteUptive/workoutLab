@@ -1,7 +1,7 @@
 ---
 id: D-0059
 title: Swap ranking and shuffle (T-0204 build) — recovering filter in rankSwaps, excludeIds in the shuffle pool, missing library row throws
-status: revisit
+status: decided
 date: 2026-09-29
 by: product-owner (T-0204 accept), recording engine-dev build defaults
 area: engine
@@ -23,3 +23,6 @@ The T-0204 build (rules 12 and 13, D-0056) had to settle three points that neith
 - Rule 6 recovery gets softer, e.g. a recovering area is allowed at reduced volume. Then `rankSwaps` might return recovering candidates flagged instead of dropped, and the §9 check in the shuffle would become live.
 - `rankSwaps` gains an `excludeIds` input (e.g. for UF-05.1 mid-session swaps).
 - The library becomes user-editable and a plan can outlive its exercise row. Then (c) may need to degrade gracefully instead of throwing.
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

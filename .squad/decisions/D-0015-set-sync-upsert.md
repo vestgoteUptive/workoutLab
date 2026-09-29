@@ -1,7 +1,7 @@
 ---
 id: D-0015
 title: Set sync — one row per (user_id, client_id), completed_at is immutable, edits ordered by edited_at, deletes are tombstones
-status: revisit
+status: decided
 date: 2026-09-27
 by: triage (TR-0001, on T-0001)
 area: data
@@ -26,3 +26,6 @@ TR-0001 found three rules that cannot all hold. NFR-SYNC-2 orders set edits by "
 
 ## Revisit when
 Clock skew between two devices causes a lost edit in testing, or set editing on two devices becomes a real use case (then switch to a server-assigned revision number).
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

@@ -91,6 +91,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0211 | Engine: add a test for D-0059 (c) (a plan item whose exerciseId has no library row → rankSwaps RangeError), and build the AC24 done-set from normalizeHistory + hard-set rules instead of raw rows — T-0204 review follow-up | engine | T-0204 | todo | wl-build-engine |
 | T-0212 | docs/engine-rules.md rule 0: `rankSwaps(… tz, now)` → `(… now, tz)` per D-0056 §2 (needs a decision naming the edit) — T-0204 follow-up | engine | T-0204 | todo | wl-build-engine |
 | T-0213 | api/openapi.yaml SwapCandidate/SwapCandidateList examples: db-row muscleMatch 0.667 → 1.0 (D-0056 §1), and align `packages/shared/test/schemas.test.ts` R12-E1 entries (board line 57) — T-0204 follow-up | data | T-0204 | todo | wl-spec |
+| T-0214 | Engine: rep slots depend on profile.goal (get_stronger 3–5/5–8/10–15, build_muscle unchanged, general_fitness 8–12/10–15/10–15); rule 7 rep line + worked examples (D-0061 §1) | engine | T-0205 | todo | wl-build-engine |
+| T-0215 | Engine: plan check-in proposes after ONE off-plan period instead of two (rule 9, D-0061 §2) | engine | T-0202 | todo | wl-build-engine |
 | T-0205 | Engine: progression + pre-fill (rule 14 `prefill`), replaces the T-0201 `first_time` seam (D-0057). Build on T-0204's seam (`previous: {exerciseId, weightKg} \| null`) | engine | T-0200, T-0204 | doing | wl-build-engine |
 
 **T-0204 and T-0205 must not run in parallel:** both change `packages/engine/src/session.ts`. One engine worktree at a time; whichever lands second rebases.
@@ -115,6 +117,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
 | T-0309b | Landing build: static Astro page, no JS, tokens, privacy + 404 pages, placeholder removed (AC8–24) | landing | T-0309a | done | wl-build-web |
 | T-0310 | Account settings: JSON export (NFR-PRIV-4) and in-app account deletion (NFR-PRIV-5) | web-shell | T-0300 | todo | wl-build-web |
+| T-0216 | Account settings: "Edit equipment" checklist of the 10 vocabulary items, writing profiles.equipment[] (D-0061 §3; UF-01.3 keeps the 3 profiles) | web-feature:UF-01 | T-0300, T-0301 | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |

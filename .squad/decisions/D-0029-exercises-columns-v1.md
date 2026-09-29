@@ -1,7 +1,7 @@
 ---
 id: D-0029
 title: exercises v1 columns follow D-0022 — add cue, timed, attribution, source_url; no image_url in v1
-status: revisit
+status: decided
 date: 2026-09-27
 by: triage (TR-0003, on T-0100)
 area: data
@@ -47,3 +47,6 @@ naming the contract change. This decision names it.
 ## Revisit when
 Our own exercise illustrations are ready (add `image_url`), or H-07 replaces the wger text
 (`attribution` and `source_url` may become unused).
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.
