@@ -186,6 +186,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0348 | check-lane-paths: a heading nested under a negative `###` must inherit its denial (`### Not yours` → `#### Strings` → `- en.ts` grants today); fold into T-0340 if that lands first (T-0320 final review) | infra | T-0320 | todo | wl-build-infra |
 | T-0349 | lib/offline: an online refresh that returns empty data wipes the cache (T-0307a QA) — decide whether an empty server answer should replace a non-empty cache | web-shell | — | todo | wl-build-web |
 | T-0350 | UF-10: with no cache and no network the C-01 map stays in its loading skeleton indefinitely — show an offline/empty state (T-0307a QA, optional) | web-feature:UF-10 | T-0307a | todo | wl-build-web |
+| T-0351 | Profile gate read should fail fast: `.retry(false)` or `AbortSignal.timeout` on the profiles query in `lib/profile/status.ts`, so a network that throws yields `unknown` in <1 s instead of postgrest-js's ~7 s backoff holding /welcome open; fake-timer unit test (T-0904 diagnosis) | web-shell | T-0904 | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -203,7 +204,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0904 | CI fix: `playwright e2e` red on main since after 0fd3399 (last green run 36576269406, 13:35); first seen failing on run 36613911266 at 8cf5659, still red at 8bac5b4 (run 36623331042). Other jobs green. Blocks PR #9 (T-0320) | tbd | — | doing | wl-ci-investigate |
+| T-0904 | CI fix (diagnosed, `docs/ci/CI-T-0904-auth-e2e-unmocked-profile-read.md`): `auth.spec.ts:28` "signed in: /welcome redirects to /" never mocks `/rest/v1/profiles`; the T-0301a gate's read hits the real host, postgrest-js retries ~7 s, and `RedirectIfSignedIn` waits past the 5 s expect. First bad 790312b (merged 4b4c5f9). Fix: mock `profiles*` (present row) in the spec's beforeEach and register `mockSupabaseRest` first, add profile-present/missing helpers and an AC-7 twin, add an unclaimed-request guard; no timeout raises. Blocks PR #9 and every web merge | qa | — | doing (ci-spec) | wl-ci-investigate |
 | T-0903 | `pnpm -w format:check` fails on 5 supabase files already on main (supabase/functions/_shared/repo.ts, _shared/validate.ts, sessions/core.ts, supabase/tests/functions/integration/sessions-finish.test.ts, unit/sessions-core.test.ts) — found during T-0204 | backend | — | done (PR #8, 455c10d) | wl-build-backend |
 | T-0312 | `apps/web/build.test.ts` fails under `pnpm --filter @workoutlab/web test` because design-tokens' dist/tokens.css is unbuilt (passes under `turbo test`, which has dependsOn ^build). Make the web test script depend on the tokens build, or document that the filtered command needs a prior build — it cost real diagnosis time by looking like a second flake | web-shell | — | done | wl-build-web |
 | T-0311 | Flaky T-0300c offline sync-trigger tests: AC-C9 'online' event + stop() listener fail intermittently in the full suite (reproduced on stock main, 3 of 5 runs; pass 6/6 isolated). Real timing bug in the merged offline-sync triggers, not machine noise | web-shell | T-0300c | done | wl-build-web |
