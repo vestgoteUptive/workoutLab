@@ -97,7 +97,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0218 | Sub-millisecond endedAt: core.ts instantMs truncates to ms while the Instant pattern accepts any fraction and Postgres stores µs, so finishes < 1 ms apart are order-dependent. Default: compare at µs precision (SQL or a µs parse), no contract change — T-0208 follow-up | backend | T-0208 | todo | wl-build-backend |
 | T-0219 | **Priority (principle 2).** Rule 7.1 costs timed sets at defaultDurationS, but T-0205's prefill.durationS can reach 120 s, so a 15-min plan can overrun ~30 % (plank 45 → 120 s × 3 sets = +225 s). Needs a decision naming the rule 7.1 reading (cost at the pre-fill duration), then the engine change + tests. Land before T-0304 ships — T-0205 review | engine | T-0205 | todo | wl-idea → wl-build-engine |
 | T-0220 | Rule 7.4 High back-off can be 0 kg on a light loaded lift (2.5 kg pre-fill → floorInc(2.25) = 0); apply the D-0057 §4 floor of one increment. Needs a decision naming the change — T-0205 review | engine | T-0205 | todo | wl-build-engine |
-| T-0205 | Engine: progression + pre-fill (rule 14 `prefill`), replaces the T-0201 `first_time` seam (D-0057). Build on T-0204's seam (`previous: {exerciseId, weightKg} \| null`) | engine | T-0200, T-0204 | doing | wl-build-engine |
+| T-0221 | docs/engine-rules.md rule 14 text: add D-0057 §2/§4/§6 and D-0062 §1/§2/§4/§5, incl. the gap 10–20 clamp(min) wording (D-0057 §10) — T-0205 follow-up | engine | T-0205 | todo | wl-build-engine |
+| T-0222 | api/openapi.yaml PrefillResult.durationS: minimum 1 → 15..120 to match TIMED_MIN_S/TIMED_MAX_S (D-0062 §5); needs a decision — T-0205 follow-up | data | T-0205 | todo | wl-spec |
+| T-0205 | Engine: progression + pre-fill (rule 14 `prefill`), replaces the T-0201 `first_time` seam (D-0057). Build on T-0204's seam (`previous: {exerciseId, weightKg} \| null`) | engine | T-0200, T-0204 | done | wl-build-engine |
 
 **T-0204 and T-0205 must not run in parallel:** both change `packages/engine/src/session.ts`. One engine worktree at a time; whichever lands second rebases.
 
