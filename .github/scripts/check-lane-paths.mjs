@@ -216,7 +216,7 @@ export function laneFromTicket(ticketText) {
  * @param {string|null} input.ticketId      from `ticketIdFromBranch`; `null` no-ops (limit 1)
  * @param {string|null} input.ticketText    the ticket file's text; `null` = no ticket file
  * @param {string}      input.ownershipText `.squad/ownership.yaml`
- * @param {string[]}    input.changed       repo-relative POSIX paths from `git diff --name-only`
+ * @param {string[]}    input.changed       repo-relative POSIX paths from `git diff --name-only --no-renames`
  * @param {string}      [input.ticketPath]  where to hang a `lane-unknown` finding
  * @returns {{findings: Array<{path:string,line:number,rule:string,message:string}>, note: string|null}}
  */
@@ -357,7 +357,12 @@ export function resolveChangedPaths(git) {
     };
   }
   try {
-    const out = git(["diff", "--name-only", `${base}...HEAD`]);
+    // `--no-renames` is load-bearing (T-0320 QA). With git's default rename detection a
+    // rename collapses to the *new* path only, so moving another flow's shared file into
+    // your own lane (`flows/uf-06.ts` -> `features/UF-10/x.ts`) deletes a shared file and
+    // reports nothing: the only path git prints is one this ticket owns. `--no-renames`
+    // emits both halves, which is what AC-6 assumes ("lists both the old and new path").
+    const out = git(["diff", "--name-only", "--no-renames", `${base}...HEAD`]);
     const changed = out
       .split("\n")
       .map((l) => l.trim())

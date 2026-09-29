@@ -543,6 +543,39 @@ test("AC-8: resolveChangedPaths falls back to `main` when origin/main is absent"
   assert.ok(!seen.some((s) => s.startsWith("fetch")), "resolveChangedPaths ran a git fetch");
 });
 
+test("AC-6: resolveChangedPaths asks git for BOTH halves of a rename (--no-renames)", () => {
+  // Found by fault injection on this ticket. With git's default rename detection,
+  // `git diff --name-only` collapses a rename to the *new* path only. A UF-10 branch that
+  // renames `lib/i18n/flows/uf-06.ts` to `features/UF-10/stolen.ts` therefore deletes
+  // another flow's shared file while the only path git prints is one the ticket owns —
+  // zero findings, exit 0. Proven against a real clone: the check was silent before
+  // `--no-renames` and reports `shared-i18n-other-flow` after it.
+  const seen = [];
+  const git = (args) => {
+    seen.push(args.join(" "));
+    if (args[0] === "merge-base") return "deadbee\n";
+    if (args[0] === "diff") {
+      assert.ok(
+        args.includes("--no-renames"),
+        "git diff ran without --no-renames: a rename into the ticket's own lane hides the " +
+          "deletion of the shared file it came from",
+      );
+      return "apps/web/src/features/UF-10/stolen.ts\napps/web/src/lib/i18n/flows/uf-06.ts\n";
+    }
+    throw new Error(`unexpected git ${args.join(" ")}`);
+  };
+  const { changed } = resolveChangedPaths(git);
+  assert.deepEqual(changed, [
+    "apps/web/src/features/UF-10/stolen.ts",
+    "apps/web/src/lib/i18n/flows/uf-06.ts",
+  ]);
+  // The old half is what makes the theft loud rather than silent.
+  assert.deepEqual(
+    uf10Check(changed).map((f) => [f.path, f.rule]),
+    [["apps/web/src/lib/i18n/flows/uf-06.ts", "shared-i18n-other-flow"]],
+  );
+});
+
 test("AC-8: runCheck resolves rather than throwing when git is unavailable", async () => {
   const git = () => {
     throw new Error("spawn git ENOENT");
