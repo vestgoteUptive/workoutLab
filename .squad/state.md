@@ -7,10 +7,10 @@
 - **Concurrency cap: 5** (human decision). **But lane ownership binds tighter than the cap** — see the no-parallel pairs below.
 - **In flight:** nothing running. **PR #8 (T-0204, branch `main-hzlbfc`) needs merging** — this cloud container can push only `main-hzlbfc`, so it cannot merge to `main` itself.
 - **Ready:** T-0205 (engine; build on T-0204's seam, after PR #8 merges), T-0208 (backend, D-0058), T-0300d (C-01 body map), T-0312 (web build-script), T-0903 (format:check on 5 supabase files).
-- **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy + privacy mailbox — gates the landing *prod deploy* only), **H-11 (model pins 404 — blocks AgentLab as executor)**.
+- **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy + privacy mailbox — gates the landing *prod deploy* only).
 
 ## Executor
-- **Sub-agents.** AgentLab's 13 flows are registered (the old "needs a restart" note was a misdiagnosis: `scripts/sync-agents.mjs` had never been run — a restart alone never registers a new flow). But **H-11 blocks flows in practice**: 8 of 13 roles pin `model: claude-opus-5-5`, which 404s on this subscription (ci-investigator, code-reviewer, data-modeler, designer, engine-dev, product-owner, security-reviewer, triage). Sub-agents work around it by passing an explicit `model: "opus"`; flows cannot.
+- **Executor.** On the desktop: **AgentLab** (its 13 flows are registered; H-11 is resolved because the subscription has Opus 5.5 again, so the `claude-opus-5-5` role pins work). In a cloud session there is no `agentlab` MCP, so use **sub-agents** there. Passing `model: "opus"` is no longer needed, but it does no harm.
 - This session's MCP connection is bound to the AgentLab process live at session start, so newly registered flows need a Claude session restart to be callable.
 - **Tooling:** `npx -y pnpm@10.28.2 …`.
 
