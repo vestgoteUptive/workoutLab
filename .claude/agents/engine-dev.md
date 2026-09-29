@@ -1,7 +1,7 @@
 ---
 name: engine-dev
 description: Implements packages/engine, the pure deterministic recommendation engine, against docs/engine-rules.md, with unit tests per rule and simulated 14-day history tests. Use for any engine logic or engine-rules change.
-model: claude-opus-5
+model: claude-opus-5-5
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 <!-- Generated from agents/roles/engine-dev.md by scripts/sync-agents.mjs. Edit the source, not this file. -->

@@ -2,7 +2,7 @@
 name: data-modeler
 title: Data Modeler
 description: Owns docs/data-model.md, api/openapi.yaml, Supabase SQL migrations, RLS policies and generated shared types. Use for schema, RLS, API contract and type generation work.
-model: claude-opus-5
+model: claude-opus-5-5
 role: planner
 tools: [Read, Grep, Glob, Write, Edit, Bash]
 effort: high

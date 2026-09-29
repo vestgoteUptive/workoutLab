@@ -2,7 +2,7 @@
 name: content-curator
 title: Content Curator
 description: Builds and maintains the exercise library in data/exercises — names, area weights, equipment, level, type, steps, cues, common mistakes, variants and licence/attribution. Use for exercise content work.
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 role: researcher
 tools: [Read, Grep, Glob, Write, Edit, WebSearch, WebFetch]
 effort: medium

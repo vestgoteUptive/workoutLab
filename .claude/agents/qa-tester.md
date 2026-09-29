@@ -1,7 +1,7 @@
 ---
 name: qa-tester
 description: Independently verifies a ticket against its acceptance criteria — runs the full test suite, checks each AC has a real test, writes missing e2e tests, and reports a verdict. Use after implementation and before acceptance.
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 <!-- Generated from agents/roles/qa-tester.md by scripts/sync-agents.mjs. Edit the source, not this file. -->

@@ -1,7 +1,7 @@
 ---
 name: content-curator
 description: Builds and maintains the exercise library in data/exercises — names, area weights, equipment, level, type, steps, cues, common mistakes, variants and licence/attribution. Use for exercise content work.
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 tools: Read, Grep, Glob, Write, Edit, WebSearch, WebFetch
 ---
 <!-- Generated from agents/roles/content-curator.md by scripts/sync-agents.mjs. Edit the source, not this file. -->

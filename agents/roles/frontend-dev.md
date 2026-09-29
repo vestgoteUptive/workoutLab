@@ -2,7 +2,7 @@
 name: frontend-dev
 title: Frontend Developer
 description: Builds the React + Vite PWA (apps/web) one flow at a time from screen specs and design tokens, and the Astro landing page (apps/landing). Use for UI, PWA, offline and client state work.
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 role: writer
 tools: [Read, Grep, Glob, Write, Edit, Bash]
 effort: medium

@@ -1,7 +1,7 @@
 ---
 name: frontend-dev
 description: Builds the React + Vite PWA (apps/web) one flow at a time from screen specs and design tokens, and the Astro landing page (apps/landing). Use for UI, PWA, offline and client state work.
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 <!-- Generated from agents/roles/frontend-dev.md by scripts/sync-agents.mjs. Edit the source, not this file. -->

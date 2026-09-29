@@ -2,7 +2,7 @@
 name: triage
 title: Triage Judge
 description: Resolves conflicts between decisions, contracts, specs or agents' work. Reads open .squad/triage items, decides, writes a superseding decision and follow-up tickets. Use whenever an agent returns needs-triage or two sources disagree.
-model: claude-opus-5
+model: claude-opus-5-5
 role: reviewer
 tools: [Read, Grep, Glob, Write, Edit]
 effort: high
