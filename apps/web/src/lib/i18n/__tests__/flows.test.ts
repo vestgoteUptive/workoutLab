@@ -1,7 +1,11 @@
 // @vitest-environment node
-// T-0318 AC-7 (D-0071 §1): `lib/i18n/flows/` holds exactly uf-01.ts … uf-11.ts, each an
-// empty `as const` object, `en.ufNN` is reference-equal to its module export, and every
-// pre-existing `en` key keeps its value.
+// T-0318 AC-7 (D-0071 §1): `lib/i18n/flows/` holds exactly uf-01.ts … uf-11.ts, each exporting
+// `ufNN` as an `as const` object literal, `en.ufNN` is reference-equal to its module export, and
+// every pre-existing `en` key keeps its value.
+// The *shape* of a flow file is pinned here; its *contents* belong to the owning feature ticket,
+// which is the only ticket that edits it (D-0071 §1). Emptiness was T-0318's creation state, not
+// an invariant, so the original "exports an empty `as const` object" case is replaced by the
+// shape-and-wiring case below (TR-0031, D-0075).
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -27,10 +31,17 @@ describe("AC-7 per-flow string modules", () => {
     expect(readdirSync(FLOWS_DIR).sort()).toEqual(NUMBERS.map((n) => `uf-${n}.ts`));
   });
 
-  it.each(NUMBERS)("uf-%s.ts exports an empty `as const` object", (n) => {
+  it.each(NUMBERS)("uf-%s.ts exports `ufNN` as an `as const` object literal", (n) => {
     const source = readFileSync(resolve(FLOWS_DIR, `uf-${n}.ts`), "utf8");
-    expect(source).toContain(`export const uf${n} = {} as const;`);
-    expect(MODULES[`uf${n}` as keyof typeof MODULES]).toEqual({});
+    // The shape stays `export const ufNN = {…} as const;` (D-0071 §1, D-0075). The contents
+    // are the owning feature ticket's: emptiness was T-0318's initial state, not an invariant.
+    // Either the untouched one-liner, or a filled literal whose `} as const;` closes at
+    // column 0 — which is what Prettier produces and what keeps this a single declaration.
+    expect(source).toMatch(
+      new RegExp(`^export const uf${n} = \\{(\\} as const;|[\\s\\S]*?\\n\\} as const;)$`, "m"),
+    );
+    const mod = MODULES[`uf${n}` as keyof typeof MODULES];
+    expect(Object.getPrototypeOf(mod)).toBe(Object.prototype);
   });
 
   it.each(NUMBERS)("en.uf%s is reference-equal to the flows/uf-%s.ts export", (n) => {
