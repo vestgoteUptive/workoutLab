@@ -5,6 +5,9 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "
 import { TabBar } from "../components/tab-bar/TabBar.js";
 import { AuthProvider, useAuth } from "../lib/auth/auth-context.js";
 import { RedirectIfSignedIn, RequireAuth, RequireAuthOnceForSession } from "../lib/auth/guards.js";
+import { ProfileGate } from "../lib/profile/ProfileGate.js";
+import { isGatedPath } from "../lib/profile/gated-routes.js";
+import { ProfileStatusProvider } from "../lib/profile/profile-context.js";
 import { isArea, routes, type RouteConfig } from "./routes.js";
 import "../components/tab-bar/tab-bar.css";
 
@@ -23,6 +26,17 @@ function AutoSyncGate() {
       <LazyAutoSync />
     </Suspense>
   );
+}
+
+/**
+ * The profile gate, applied in exactly one place (AC-12): here, from the shell's route wiring,
+ * to the routes `isGatedPath` derives from the table — every `protected` entry plus
+ * `/session/setup` (D-0071 §11). It sits *inside* the auth guard, so a signed-out user still
+ * reaches the auth flow first, and *outside* Suspense, so the route's chunk is never even
+ * requested for a user who is about to be redirected to `/welcome/save`.
+ */
+function applyProfileGate(route: RouteConfig, element: ReactNode): ReactNode {
+  return isGatedPath(route) ? <ProfileGate>{element}</ProfileGate> : element;
 }
 
 function applyGuard(guard: RouteConfig["guard"], element: ReactNode): ReactNode {
@@ -71,7 +85,7 @@ export function Shell() {
           // the lazy chunk resolves, which would reset its captured decision.
           const element = applyGuard(
             route.guard,
-            <Suspense fallback={null}>{lazyElement}</Suspense>,
+            applyProfileGate(route, <Suspense fallback={null}>{lazyElement}</Suspense>),
           );
           return <Route key={route.path} path={route.path} element={element} />;
         })}
@@ -98,8 +112,10 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AutoSyncGate />
-        <Shell />
+        <ProfileStatusProvider>
+          <AutoSyncGate />
+          <Shell />
+        </ProfileStatusProvider>
       </AuthProvider>
     </BrowserRouter>
   );

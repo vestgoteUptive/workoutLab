@@ -8,6 +8,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router";
 import { useAuth } from "./auth-context.js";
+import { useProfileStatus } from "../profile/profile-context.js";
+import type { ProfileStatus } from "../profile/status.js";
 import { consumeReturnTo, rememberReturnTo } from "./return-to.js";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
@@ -31,9 +33,25 @@ export function RequireAuthOnceForSession({ children }: { children: ReactNode })
   return <>{children}</>;
 }
 
+/**
+ * T-0301a / D-0073 §1: `guest-only` is conditional for `/welcome/*` only. A signed-in user whose
+ * profile is `missing` is exactly the user D-0064 §8 needs on `/welcome/save`, so bouncing them
+ * off `/welcome/*` would make the profile gate unreachable. `present` and `unknown` keep the
+ * behaviour T-0300b defined, and `/account` is unaffected in every case — which is why this is
+ * keyed on the pathname and not on the `guest-only` guard as a class (AC-7).
+ */
+function welcomeStandsDownFor(pathname: string, profileStatus: ProfileStatus): boolean {
+  const isWelcome = pathname === "/welcome" || pathname.startsWith("/welcome/");
+  return isWelcome && profileStatus === "missing";
+}
+
 export function RedirectIfSignedIn({ children }: { children: ReactNode }) {
   const { status } = useAuth();
-  const signedIn = status === "signed-in" || status === "stale";
+  const profileStatus = useProfileStatus();
+  const location = useLocation();
+  const signedIn =
+    (status === "signed-in" || status === "stale") &&
+    !welcomeStandsDownFor(location.pathname, profileStatus);
   // Consuming the stored return-to is a side effect (it clears storage): it must run in an
   // effect, not during render, so React's (StrictMode, double-invoked) render pass never
   // discards it before the actual navigation commits.
