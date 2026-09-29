@@ -3,7 +3,7 @@ id: T-0301
 title: UF-01 Onboarding (< 60 s to a first plan) including UF-01.5 Account — profile gate, UF-01.1–.4 with the on-device plan, account and save after sign-in
 lane: web-feature:UF-01 (T-0301a is web-shell)
 screens: [UF-01.1, UF-01.2, UF-01.3, UF-01.4, UF-01.5]
-decisions: [D-0002, D-0010, D-0014, D-0017, D-0022, D-0045, D-0061, D-0063, D-0064]
+decisions: [D-0002, D-0010, D-0014, D-0017, D-0022, D-0045, D-0061, D-0063, D-0064, D-0067]
 deps: [T-0300, T-0201a]
 status: ready
 ---
@@ -18,10 +18,10 @@ Keep `T-0301` as the parent row with status `split → T-0301a, T-0301b, T-0301c
 | Child | Lane | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|---|
 | T-0301a | web-shell | Profile gate `lib/profile` + guard wiring (D-0064 §9) | T-0300 | **ready** | ¼ day |
-| T-0301b | web-feature:UF-01 | UF-01.1–.4, pending plan, timing, on-device targets | T-0300, T-0201a | **ready** | ½ day |
+| T-0301b | web-feature:UF-01 | UF-01.1–.4, pending plan, timing, on-device targets | T-0300, T-0201a, T-0318 | todo | ½ day |
 | T-0301c | web-feature:UF-01 | UF-01.5 Account (link, code, Google, privacy), `/welcome/save` | T-0301a, T-0301b | todo | ½ day |
 
-T-0301a is a web-shell ticket and must not run in parallel with any other web-shell ticket (T-0312, T-0313, T-0310). T-0301b can run in parallel with T-0301a (their paths are disjoint).
+T-0301a is a web-shell ticket and must not run in parallel with any other web-shell ticket (T-0318, T-0319, T-0312, T-0313, T-0310). T-0301b needs T-0318 only for its string file `lib/i18n/flows/uf-01.ts` (D-0067 §2). It adds no routes: `/welcome/*` already exists.
 
 ## Scope
 - In:
@@ -70,14 +70,14 @@ Vitest + Testing Library in `apps/web/src/**` (Supabase mocked with the existing
 
 ## Paths you may change
 - **T-0301a (web-shell):** `apps/web/src/lib/profile/**` (new), `apps/web/src/app/**` (the guard wiring and route guard values only), `apps/web/src/lib/auth/guards.tsx` (to accept the gate). No `routes.ts` path change.
-- **T-0301b and T-0301c (web-feature:UF-01):** `apps/web/src/features/UF-01/**`. Extras (D-0063): `apps/web/src/lib/i18n/uf-01.ts` (new; `en.ts` unchanged), and `tests/e2e/uf-01-onboarding.spec.ts` (T-0301b creates it, and T-0301c appends its account cases). `AuthCallback` stays exported from `features/UF-01/index.tsx` with the T-0300b behaviour, and T-0301c only adds the pending-plan-aware copy around it.
+- **T-0301b and T-0301c (web-feature:UF-01):** `apps/web/src/features/UF-01/**`. Extras (D-0063, D-0067 §2): `apps/web/src/lib/i18n/flows/uf-01.ts` (created empty by T-0318; `en.ts` unchanged), and `tests/e2e/uf-01-onboarding.spec.ts` (T-0301b creates it, and T-0301c appends its account cases). `AuthCallback` stays exported from `features/UF-01/index.tsx` with the T-0300b behaviour, and T-0301c only adds the pending-plan-aware copy around it.
 - No new dependencies (react, react-router, supabase-js and the engine are already dependencies of `apps/web`).
 
 ## Contract impact
 none. `profiles` and `area_targets` are written exactly as `docs/data-model.md` defines them (`onboarding_timing_ms` is write-once, `onboarded_at` and `plan_changed_at` are server-set). The engine is only called (`deriveTargets`). Tokens are only read. Defaults: D-0063, D-0064 (`revisit`).
 
 ## NFRs owned
-AN-2 client part (timing written with the profile: AC-B9, AC-C5), A11Y-6 UF-01 part (AC-B6, AC-C8), A11Y-1/2 for UF-01.x (AC-B5, AC-B6, AC-C1, AC-C8), PRIV-6 link (AC-C1), I18N-1 (lint green; strings in `lib/i18n/uf-01.ts`).
+AN-2 client part (timing written with the profile: AC-B9, AC-C5), A11Y-6 UF-01 part (AC-B6, AC-C8), A11Y-1/2 for UF-01.x (AC-B5, AC-B6, AC-C1, AC-C8), PRIV-6 link (AC-C1), I18N-1 (lint green; strings in `lib/i18n/flows/uf-01.ts`).
 
 ## Definition of done
 Tests for every AC in the child pass · `pnpm -w typecheck lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web test:e2e` green for the child's e2e ACs · `check:size` green (each route chunk ≤ 100 KB gzip) · contracts unchanged · commits start with the child id and cite screen IDs (for example `T-0301b UF-01.4: plan card from deriveTargets`).

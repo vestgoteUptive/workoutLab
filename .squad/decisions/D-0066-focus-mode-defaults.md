@@ -30,8 +30,8 @@ User flows v2 gives the UF-09 screen table and the loop (09.3 → 09.4 → 09.5 
 
 ## Consequences
 - T-0304 is split into T-0304a (machine + host + persistence), T-0304b (the set loop: 09.1, .3, .4, .5, .6), T-0304c (09.2 warm-up, 09.7 timed, wake lock, cues, reduced motion) and T-0304d (09.8, 09.9, end, the offline/keyboard e2e).
-- web-shell follow-up: a route `/session/:sessionId/summary` → UF-03.3 (T-0305). Until it exists, react-router's unknown-path rule sends the user to `/`.
-- T-0306 wires Swap into UF-09.6/UF-09.9 through the `replaceItem` event (it needs an extra-path grant on `features/UF-09/**`, or a hand-off module).
+- The UF-03.3 route `/session/:sessionId/summary` comes from T-0318 (D-0067 §2). T-0304d depends on T-0318.
+- T-0306b (Swap) and T-0305a (List view) wire in through `features/UF-09/seams.tsx` and `useFocusSession()`, and list `seams.tsx` as their one extra path.
 
 ## Revisit when
 - T-0219 changes rule 7.1 costing (then the time check becomes accurate for timed items; no UI change).

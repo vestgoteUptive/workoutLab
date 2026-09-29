@@ -30,7 +30,7 @@ The feature tickets T-0301…T-0308 each own only `apps/web/src/features/<flow>/
 ## Consequences
 - Each groomed web-feature ticket lists its `lib/i18n/flows/uf-NN.ts` and its e2e spec as explicit extra paths, and depends on T-0318.
 - Consistent with D-0067 (the T-0305–T-0308 groom), which wins where the two overlap.
-- If a flow later needs its own shell route (for example UF-03.3 after a finish), that is a web-shell follow-up, not a feature-ticket edit.
+- If a flow later needs its own shell route, that is a web-shell ticket (like T-0318 for UF-03.3), not a feature-ticket edit.
 
 ## Revisit when
 - The string files grow enough that a translation tool needs one file (then merge them into `en.ts` under the web-shell lane).

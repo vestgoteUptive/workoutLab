@@ -3,8 +3,8 @@ id: T-0304
 title: UF-09 Focus mode — state machine and persisted focus state, the set loop with auto-save, warm-up and timed sets, time check and pause, offline end to end
 lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.2, UF-09.3, UF-09.4, UF-09.5, UF-09.6, UF-09.7, UF-09.8, UF-09.9]
-decisions: [D-0002, D-0004, D-0015, D-0017, D-0024, D-0026, D-0045, D-0047, D-0053, D-0057, D-0062, D-0063, D-0065, D-0066]
-deps: [T-0303d, T-0205]
+decisions: [D-0002, D-0004, D-0015, D-0017, D-0024, D-0026, D-0045, D-0047, D-0053, D-0057, D-0062, D-0063, D-0065, D-0066, D-0067]
+deps: [T-0303d, T-0205, T-0318]
 status: todo   # split; no child is ready until T-0303d is done
 ---
 <!-- Groomed 2026-09-29 by product-owner. Split into T-0304a–d (D-0066 Consequences). ACs are tagged [a]–[d]. T-0205 is merged (D-0062). -->
@@ -19,20 +19,20 @@ Parent `T-0304` → `split → T-0304a, T-0304b, T-0304c, T-0304d`. All four are
 
 | Child | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|
-| T-0304a | Focus machine (pure reducer), session loading, persisted focus state + restore, chrome (pause button, progress bar, index), timer maths, placeholder views | T-0300, T-0205, T-0303d | todo | ½ day |
+| T-0304a | Focus machine (pure reducer), session loading, persisted focus state + restore, chrome (pause button, progress bar, index), timer maths, placeholder views, the `useFocusSession()` hook and `seams.tsx` (D-0066 §12) | T-0300, T-0205, T-0303d, T-0318 | todo | ½ day |
 | T-0304b | Set loop: UF-09.1 Get ready, .3 Current set, .4 Confirm (auto-save), .5 Rest, .6 Next exercise; back-off; in-session pre-fill | T-0304a | todo | ½ day |
 | T-0304c | UF-09.2 Warm-up, .7 Timed set (D-0062 §5 copy), wake lock, sound + 3-2-1 cues, reduced motion | T-0304b | todo | ½ day |
-| T-0304d | UF-09.8 Time check, .9 Paused, End → finish hand-off; offline, reload, two-device and keyboard e2e | T-0304c | todo | ½ day |
+| T-0304d | UF-09.8 Time check, .9 Paused, End → `/session/:id/summary`; offline, reload, two-device and keyboard e2e | T-0304c | todo | ½ day |
 
-T-0304a depends on T-0303d only for the `sessions` row it creates and `features/UF-08/focus-prefs.ts`. If T-0303d is late, T-0304a can seed a session row in tests. The orchestrator may relax that dependency then.
+T-0304a depends on T-0318 for `lib/i18n/flows/uf-09.ts`, the `/session/:sessionId/summary` route (UF-03.3) and the principle-1 import bans (D-0067 §2). It depends on T-0303d only for the `sessions` row T-0303d creates and the focus-prefs exports from `features/UF-08/index.tsx`. If T-0303d is late, T-0304a can seed a session row in tests. The orchestrator may relax that dependency then.
 
 ## Scope
 - In:
-  - [a] `features/UF-09/machine.ts` (`focusReducer`, the states in D-0066 §1, the events below), `timer.ts` (`remainingS`, `elapsedS`), `persist.ts` (`wl-focus:<sessionId>`, D-0066 §2), the `SessionHost` that loads the session row (`offlineDb().sessions.get` + `parseSessionPlan`) and library, the chrome, and a per-state view registry with placeholder views that b–d replace.
+  - [a] `features/UF-09/machine.ts` (`focusReducer`, the states in D-0066 §1, the events below), `timer.ts` (`remainingS`, `elapsedS`), `persist.ts` (`wl-focus:<sessionId>`, D-0066 §2), the `SessionHost` that loads the session row (`offlineDb().sessions.get` + `parseSessionPlan`) and library, the chrome, a per-state view registry with placeholder views that b–d replace, `useFocusSession()` exported from `features/UF-09/index.tsx`, and `features/UF-09/seams.tsx` with empty `pauseSeamActions` / `nextSeamActions` (D-0066 §12, D-0067 §4–5).
   - [b] Views for UF-09.1, .3, .4, .5, .6. `recordSet`/`editSet` wiring (D-0066 §3–6). Rest from the engine constants (§7). The 60 s set-up (§10). Back-off sets.
   - [c] Views for UF-09.2 and UF-09.7 (§8–9), `navigator.wakeLock` with `visibilitychange` re-acquire, sound and voice cues from `readFocusPrefs()`, `prefers-reduced-motion`.
-  - [d] Views for UF-09.8 (rule 8 through `timeCheck`, the new plan saved with `upsertSession`) and UF-09.9 (Resume, Skip to next, How to, List view hand-off, End). The finish: `upsertSession` with `ended_at`, then navigate to `/session/<id>/summary` (D-0066 §12). e2e for NFR-OFF-2, TIME-2, SYNC-4 and A11Y-6.
-- Out: Swap on UF-09.6/UF-09.9 (UF-05.1, T-0306, through the `replaceItem` event); the UF-03.1 list view and the UF-03.3 summary (T-0305) and their shell route (web-shell follow-up); calling `POST /sessions/{id}/finish` (T-0305 owns the summary fetch); plate loading (D-0066 §13); logging warm-up moves (§8); the T-0219 costing fix; changing `lib/offline` (web-shell); any contract change.
+  - [d] Views for UF-09.8 (rule 8 through `timeCheck`, the new plan saved with `upsertSession`) and UF-09.9 (Resume, Skip to next, How to, the seam actions, End). The finish: `upsertSession` with `ended_at`, then navigate to `/session/<id>/summary` (the T-0318 route; UF-03.3 is T-0305b). e2e for NFR-OFF-2, TIME-2, SYNC-4 and A11Y-6.
+- Out: Swap on UF-09.6/UF-09.9 (UF-05.1 `SwapSheet`, T-0306b, through `seams.tsx` + `useFocusSession().replaceItem`); the UF-03.1 list view (T-0305a, through `seams.tsx` + `useFocusSession()`); the UF-03.3 summary (T-0305b; route from T-0318); calling `POST /sessions/{id}/finish` (T-0305 owns the summary fetch); plate loading (D-0066 §13); logging warm-up moves (§8); the T-0219 costing fix; changing `lib/offline` (web-shell); any contract change.
 
 ### Edge cases that are in scope
 - **Offline:** every set goes to IndexedDB before the next screen (AC-B4). The whole loop runs with no network (AC-D8). Offline shows only the icon, never text or a banner (AC-A6). A token expiry mid-workout never interrupts (T-0300b AC-B7 holds on this route).
@@ -52,6 +52,8 @@ Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-09/**`,
 - **AC-A5 (chrome, principle 1)** Every state except `paused` and `done` renders exactly: a pause button (named "Pause workout", ≥ 44 × 44 px), a progress bar with 1 + N segments (warm-up + one per item; `aria-hidden`), and an index "k / N" (for P1 "1 / 4" on bench-press). There is no C-02 nav, no C-01 (lint), no link out of `/session/*` except through `paused`, and no other buttons besides the state's own actions (a test counts the buttons per placeholder state).
 - **AC-A6 (offline icon, NFR-OFF-6)** Offline, the chrome contains `<OfflineStatus variant="icon">` (`aria-label="Offline"`) and no text "Offline ·", no `role="alert"` and no `banner`.
 - **AC-A7 (data-screen-id)** The host renders `data-screen-id` = UF-09.1 … UF-09.9 for `getReady, warmup, set, confirm, rest, next, timed, timeCheck, paused` respectively.
+- **AC-A8 (session-state hook, D-0066 §12, D-0067 §5)** `features/UF-09/index.tsx` exports `useFocusSession` with a JSDoc listing every field. Inside the host with P1 after set 1 of bench-press is saved as 80 × 6: it returns `sessionId` "S1", `plan` deep-equal to the row's plan, `currentItemIndex` 0, `currentSetIndex` 1, `loggedSets` = [{clientId, itemIndex: 0, setIndex: 0, exerciseId: "bench-press", reps: 6, weightKg: 80, durationS: null, rir: null, backoff: false}], `rest.remainingS` 120 at the rest start, and `elapsedS` from the wall clock. `replaceItem(1, item)` replaces item 1, persists the focus state, and calls `upsertSession` with the new plan (spy). `recordSet`/`editSet`/`deleteSet` delegate to `lib/offline` (spies) and update `loggedSets`; a `deleteSet` removes the entry. Used outside the host, the hook throws a clear error.
+- **AC-A9 (seams, D-0066 §12)** `features/UF-09/seams.tsx` exports `pauseSeamActions` and `nextSeamActions`, both `[]` in this ticket. A test that injects `[{id: "x", label: "X", render}]` into each shows an "X" button on UF-09.9 after "Skip to next exercise" and on UF-09.6 next to "I'm ready". Activating it renders `render(ctx)` as an overlay in place of the screen (the only task on screen), where `ctx` = `useFocusSession()`'s value plus `close()`. `close()` returns to the same state. With empty arrays, no seam button is in the DOM.
 
 ### T-0304b The set loop
 - **AC-B1 (UF-09.1)** It shows "Get ready", a 5-s countdown (5 → 1 → "GO"), and the first item name (Warm-up, or the first exercise when `plan.warmup` is empty). At 5 s it dispatches `COUNTDOWN_END` by itself. "Start now" dispatches it immediately, and "Skip warm-up" (absent when there is no warm-up) dispatches `SKIP_WARMUP`.
@@ -77,8 +79,8 @@ Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-09/**`,
 - **AC-D2 (only between exercises, only when behind, NFR-TIME-4)** With elapsed 1454 (R8-E3, `behindS` 59), no UF-09.8 appears, and the flow goes to UF-09.6. `timeCheck` is never called in the states `set`, `confirm`, `rest`, `timed`, or mid-warm-up (spy count 0 over a full item).
 - **AC-D3 (apply an option, board note D-0047)** Trim replaces the not-started items with `result.trim.items` and calls `upsertSession({...row, plan: {...plan, items: [...done items, ...trim.items]}})`. After it resolves, UF-09.6 shows the next item. Skip next does the same with `skipNext.items`. Continue changes nothing and makes no `upsertSession` call. `minutesBehind` is rendered only when `show` is true.
 - **AC-D4 (elapsed excludes pauses and an off-budget warm-up, rule 8)** With a 120 s pause and `warmupInBudget` false with 160 s spent in the warm-up, at `now = started_at + 1780 s` the `elapsedS` passed is 1500.
-- **AC-D5 (UF-09.9 Paused)** PAUSE from UF-09.5 at 23:10 elapsed shows "Paused", "Elapsed 23:10", "Left 22 min" (`ceil(max(0, 45·60 − elapsedS) / 60)`: 1310 s → 22), and "Sets 6 / 12" (hard sets logged / Σ planned sets including back-off). Every timer is stopped (the rest remaining is unchanged after 60 s of fake time). The actions are Resume (primary), "Skip to next exercise" (moves to UF-09.6 of item k+1 after the same time check as AC-D1), "How to do <exercise>" (link to `/library/<id>`; coming back to `/session/S1` restores `paused`), "Show full list view" (`navigate("/session/S1/list")`, the T-0305 hand-off), and "End workout". There is no Swap button (T-0306).
-- **AC-D6 (end, D-0066 §12)** End workout → a confirm ("End workout? Your sets are saved.") → `upsertSession({...row, ended_at: now})` → `localStorage["wl-focus:S1"]` removed → `navigate("/session/S1/summary")`. Cancel returns to `paused`. The `done` state (the last set saved) performs the same finish with no confirm.
+- **AC-D5 (UF-09.9 Paused)** PAUSE from UF-09.5 at 23:10 elapsed shows "Paused", "Elapsed 23:10", "Left 22 min" (`ceil(max(0, 45·60 − elapsedS) / 60)`: 1310 s → 22), and "Sets 6 / 12" (hard sets logged / Σ planned sets including back-off). Every timer is stopped (the rest remaining is unchanged after 60 s of fake time). The actions are Resume (primary), "Skip to next exercise" (moves to UF-09.6 of item k+1 after the same time check as AC-D1), "How to do <exercise>" (link to `/library/<id>`; coming back to `/session/S1` restores `paused`), then the `pauseSeamActions` (empty here; List view comes from T-0305a and Swap from T-0306b, AC-A9), and "End workout". With the arrays empty, there is no Swap or List view button.
+- **AC-D6 (end, D-0066 §12)** End workout → a confirm ("End workout? Your sets are saved.") → `upsertSession({...row, ended_at: now})` → `localStorage["wl-focus:S1"]` removed → `navigate("/session/S1/summary")`. That route renders `[data-screen-id="UF-03.3"]` (the T-0318 stub, or T-0305b once merged). Cancel returns to `paused`. The `done` state (the last set saved) performs the same finish with no confirm.
 - **AC-D7 (reload, NFR-TIME-2, e2e)** Mid-rest, a page reload restores UF-09.5 with the wall-clock remaining time ±1 s. After a reload on UF-09.9, the elapsed shown equals the value before the reload ±1 s, which it computes from `started_at` and the stored `pausedMs`.
 - **AC-D8 (offline workout, NFR-OFF-2, e2e)** With a signed-in session injected and a session created through UF-08.4, the context goes offline, logs 10 sets through Done set + auto-save, and then the page is closed (a new page in the same context opens `/session/<id>`). IndexedDB holds exactly those 10 sets, with distinct `client_id`s and `is_warmup: false`, and the focus state resumes at set 11's screen. Going online flushes all 10 (the mock receives 10 `session_sets` rows after the `sessions` row).
 - **AC-D9 (two devices, NFR-SYNC-4, e2e)** Two browser contexts offline each start a workout from UF-08.4 and log 1 set. Online, the mock receives two `sessions` rows with different ids and each set references its own session. There is no merge.
@@ -86,8 +88,8 @@ Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-09/**`,
 
 ## Paths you may change
 - `apps/web/src/features/UF-09/**`.
-- Extras (D-0063): `apps/web/src/lib/i18n/uf-09.ts` (new), `tests/e2e/uf-09-focus.spec.ts` (new; T-0304b–d append), and new exports in `tests/e2e/fixtures/` (additions only).
-- Read-only imports: `lib/offline` (`recordSet`, `editSet`, `upsertSession`, `offlineDb`), `lib/format`, `lib/i18n/*`, `components/offline-status`, `features/UF-08/focus-prefs.ts` (the D-0063 §5 hand-off), `@workoutlab/engine` (`timeCheck`, `REST_COMPOUND_S`, `REST_ISOLATION_S`), `@workoutlab/shared` (`parseSessionPlan`). **Not** `components/body-map` (lint).
+- Extras (D-0063, D-0067 §2): `apps/web/src/lib/i18n/flows/uf-09.ts` (created empty by T-0318), `tests/e2e/uf-09-focus.spec.ts` (new; T-0304b–d append), and new exports in `tests/e2e/fixtures/` (additions only).
+- Read-only imports: `lib/offline` (`recordSet`, `editSet`, `upsertSession`, `offlineDb`), `lib/format`, `lib/i18n/*`, `components/offline-status`, `readFocusPrefs` from `features/UF-08/index.tsx` (the D-0063 §5 hand-off), `@workoutlab/engine` (`timeCheck`, `REST_COMPOUND_S`, `REST_ISOLATION_S`), `@workoutlab/shared` (`parseSessionPlan`). **Not** `components/body-map` (lint).
 
 ## Contract impact
 none. Sets and sessions are written through the T-0300c queue exactly as D-0015/D-0020/D-0045 §6 define. The plan is the `SessionPlan` v1 shape. `timeCheck` and the pre-fill values come from the engine unchanged. Defaults: D-0066 (`revisit`). The engine costing gap is T-0219.
@@ -96,8 +98,9 @@ none. Sets and sessions are written through the T-0300c queue exactly as D-0015/
 OFF-2 (AC-B4, AC-D8), SYNC-4 (AC-D9), PERF-4 (AC-B3), A11Y-2 Done set (AC-B2), A11Y-4 (AC-B7, AC-C2), A11Y-5 (AC-C7), A11Y-6 UF-09 part (AC-D10), TIME-1 (AC-A2, AC-A3), TIME-2 (AC-D4, AC-D7), TIME-3 (AC-C5), TIME-4 (AC-D2), OFF-6 UF-09 part (AC-A6).
 
 ## Coordination
-- T-0306 (UF-05.1) adds Swap on UF-09.6/UF-09.9 through the `replaceItem` event that T-0304a's reducer exports. It needs an extra-path grant on `features/UF-09/**`.
-- T-0305 needs shell routes `/session/:sessionId/summary` (UF-03.3) and `/session/:sessionId/list` (UF-03.1) (web-shell follow-up). Until they exist, those paths fall to the unknown-path redirect `/`, and T-0304d's unit tests assert only the `navigate` target.
+- T-0306b (UF-05.1 `SwapSheet`) adds a `swap` entry to both `pauseSeamActions` and `nextSeamActions`. T-0305a (UF-03.1 list view) adds `list-view` to `pauseSeamActions`. Each lists only `features/UF-09/seams.tsx` as its extra path, reads `useFocusSession()`, and writes only through its methods / `lib/offline` (D-0067 §4–5). Both run after T-0304a.
+- `/session/:sessionId/summary` (UF-03.3) comes from T-0318 and is built by T-0305b. UF-03.1 has no route: it renders inside the UF-09 host through the seam.
+- The UF-09.9 "How to" link may later be replaced by the `ExerciseHowTo` seam from `features/UF-04` (T-0306a) through `pauseSeamActions`. That's not required here.
 
 ## Definition of done
 Tests for every AC in the child pass · `pnpm -w typecheck lint test --force --concurrency=1` green · e2e green for the child · `check:size` green (UF-09 chunk ≤ 100 KB gzip) · contracts unchanged · commits start with the child id and cite the UF-09.n screen (for example `T-0304b UF-09.4: auto-save after 5 s`).

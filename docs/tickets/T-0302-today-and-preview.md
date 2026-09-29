@@ -3,9 +3,9 @@ id: T-0302
 title: UF-02 Today + workout preview — compact C-01 as one link to /balance fed from BalanceResult.areas, attention areas, a 45-min suggestion preview, Start → UF-08.1
 lane: web-feature:UF-02
 screens: [UF-02.1, UF-02.2]
-decisions: [D-0002, D-0003, D-0013, D-0017, D-0045, D-0060, D-0063, D-0065]
-deps: [T-0300, T-0203b]
-status: ready
+decisions: [D-0002, D-0003, D-0013, D-0017, D-0045, D-0060, D-0063, D-0065, D-0067]
+deps: [T-0300, T-0203b, T-0318]
+status: todo   # split; T-0302a becomes ready when T-0318 is done
 ---
 <!-- Groomed 2026-09-29 by product-owner. Split into T-0302a/b. ACs are tagged [a]/[b]. -->
 
@@ -17,7 +17,7 @@ Parent `T-0302` → `split → T-0302a, T-0302b`.
 
 | Child | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|
-| T-0302a | UF-02.1 Today + `lib/i18n/workout.ts` formatters | T-0300, T-0203b | **ready** | ½ day |
+| T-0302a | UF-02.1 Today + `lib/i18n/workout.ts` formatters | T-0300, T-0203b, T-0318 | todo | ½ day |
 | T-0302b | UF-02.2 Workout preview (`/?view=preview`) | T-0302a, T-0303b | todo | ¼ day |
 
 T-0302b waits for T-0303b only because both render the reason copy in `lib/i18n/workout.ts`. T-0303b may add keys to that file, and T-0302b reuses them.
@@ -26,7 +26,7 @@ T-0302b waits for T-0303b only because both render the reason copy in `lib/i18n/
 - In:
   - [a] `features/UF-02` Today: date header, `<OfflineStatus variant="text">`, compact C-01, the attention line, the "Suggested for 45 min" card (D-0065 §1), Start → `/session/setup`, "See all" → `/?view=preview`, and the loading, zero-history and no-profile states. The on-device `balance()` and `suggest()` with a 3 s-capped `refreshAll` when online (D-0063 §3). `lib/i18n/workout.ts`: `itemSummary`, `restLabel`, `reasonLine`, `sessionReasonChips`, `areaName`.
   - [b] UF-02.2 at `/?view=preview`: Back → `/`, summary chips, warm-up row, numbered items linking to `/library/:id` (UF-04.2), per-item line and reason, Start.
-- Out: UF-11.1 check-in card (T-0308; it needs a grant on `features/UF-02/Today.tsx` or a slot, D-0065 Consequences); split names, greeting, week counter, "This week"/"Latest PR" cards (D-0065 §1); the "empty or quick 20-min workout" link; Swap/Edit on UF-02.2 (swaps happen on UF-08.3 before the start; routines are T-0308); the full C-01 and UF-10 (T-0307); changing C-01 itself (web-shell); any contract change.
+- Out: UF-11.1 check-in card (T-0308c mounts `CheckinCard` from `features/UF-11/index.tsx` by editing only `features/UF-02/Today.tsx`, D-0067 §4. T-0302a leaves a marked slot between the attention line and the suggestion card, a `{/* seam: UF-11.1 CheckinCard (T-0308c) */}` comment, and adds no import of `features/UF-11`); split names, greeting, week counter, "This week"/"Latest PR" cards (D-0065 §1); the "empty or quick 20-min workout" link; Swap/Edit on UF-02.2 (swaps happen on UF-08.3 before the start; routines are T-0308); the full C-01 and UF-10 (T-0307); changing C-01 itself (web-shell); any contract change.
 
 ### Edge cases that are in scope
 - **Offline:** cold start offline renders UF-02.1 from IndexedDB with "Offline · last synced HH:MM" (AC-A6). The balance includes queued sets (AC-A2). Start still works (UF-08 is offline-capable).
@@ -58,7 +58,7 @@ Vitest + Testing Library in `apps/web/src/features/UF-02/**` and `apps/web/src/l
 
 ## Paths you may change
 - `apps/web/src/features/UF-02/**`.
-- Extras (D-0063): `apps/web/src/lib/i18n/uf-02.ts` (new), `apps/web/src/lib/i18n/workout.ts` (new, created by T-0302a; T-0302b may add keys), `tests/e2e/uf-02-today.spec.ts` (new; T-0302b appends).
+- Extras (D-0063, D-0067 §2): `apps/web/src/lib/i18n/flows/uf-02.ts` (created empty by T-0318), `apps/web/src/lib/i18n/workout.ts` (new, created by T-0302a; T-0302b may add keys), `tests/e2e/uf-02-today.spec.ts` (new; T-0302b appends).
 - Read-only imports: `components/body-map`, `components/offline-status`, `lib/offline`, `lib/format`, `lib/i18n/en.ts` (area names), `@workoutlab/engine`, `@workoutlab/shared`.
 
 ## Contract impact

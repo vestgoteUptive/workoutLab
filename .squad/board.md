@@ -115,18 +115,18 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | done | wl-build-web |
 | T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201a | split → T-0301a, T-0301b, T-0301c (D-0064) | wl-build-web |
 | T-0301a | Profile gate: lib/profile useProfileStatus/recheckProfile; signed-in without a profile → /welcome/save, /welcome/* allowed (D-0064 §9) | web-shell | T-0300 | todo (triage check) | wl-build-web |
-| T-0301b | UF-01.1–.4: welcome, goal (3), level + 3 equipment profiles, rhythm steppers, plan card from deriveTargets, pending plan 24 h, onboarding timing | web-feature:UF-01 | T-0300, T-0201a | todo (triage check) | wl-build-web |
+| T-0301b | UF-01.1–.4: welcome, goal (3), level + 3 equipment profiles, rhythm steppers, plan card from deriveTargets, pending plan 24 h, onboarding timing | web-feature:UF-01 | T-0300, T-0201a, T-0318 | todo (triage check) | wl-build-web |
 | T-0301c | UF-01.5 Account (link, code, Google, privacy link) + /welcome/save (profile + 9 targets, existing profile wins, retry) | web-feature:UF-01 | T-0301a, T-0301b | todo | wl-build-web |
 | T-0302 | UF-02 Today + workout preview (mount compact C-01 from components/body-map as one link to /balance, fed from BalanceResult.areas — T-0300d) | web-feature:UF-02 | T-0300, T-0203b | split → T-0302a, T-0302b (D-0065) | wl-build-web |
-| T-0302a | UF-02.1 Today: compact C-01 link, attention line, 45-min suggestion card, Start → UF-08.1, offline/zero states; lib/i18n/workout.ts formatters | web-feature:UF-02 | T-0300, T-0203b | todo (triage check) | wl-build-web |
+| T-0302a | UF-02.1 Today: compact C-01 link, attention line, 45-min suggestion card, Start → UF-08.1, offline/zero states; lib/i18n/workout.ts formatters | web-feature:UF-02 | T-0300, T-0203b, T-0318 | todo (triage check) | wl-build-web |
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302a, T-0303b | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203b | split → T-0303a, T-0303b, T-0303c, T-0303d (D-0065) | wl-build-web |
-| T-0303a | UF-08.1 Time & energy: stepper/chips/finish time, done-by, warm-up toggle, energy, live fit line from on-device suggest, ?step routing | web-feature:UF-08 | T-0300, T-0203b | todo (triage check) | wl-build-web |
+| T-0303a | UF-08.1 Time & energy: stepper/chips/finish time, done-by, warm-up toggle, energy, live fit line from on-device suggest, ?step routing | web-feature:UF-08 | T-0300, T-0203b, T-0318 | todo (triage check) | wl-build-web |
 | T-0303b | UF-08.2 Suggested: budget bar, why chips, rows, remove (excludeIds), shuffle (+1), time change keeps main lift | web-feature:UF-08 | T-0303a, T-0302a | todo | wl-build-web |
 | T-0303c | UF-08.3 Swap before starting: rankSwaps order, Best match, fitsBudget flag, apply via engine applySwap | web-feature:UF-08 | T-0303b, T-0204, T-0224 | todo | wl-build-web |
 | T-0303d | UF-08.4 Ready: summary, focus explainer, focus-prefs hand-off, Start → upsertSession then /session/:id | web-feature:UF-08 | T-0303b | todo | wl-build-web |
 | T-0304 | UF-09 Focus mode: state machine, timers, auto-save, time check, pause | web-feature:UF-09 | T-0303, T-0205 | split → T-0304a, T-0304b, T-0304c, T-0304d (D-0066) | wl-build-web |
-| T-0304a | UF-09 focus machine (pure reducer), session load, persisted focus state + restore, chrome, wall-clock timer maths | web-feature:UF-09 | T-0300, T-0205, T-0303d | todo | wl-build-web |
+| T-0304a | UF-09 focus machine (pure reducer), session load, persisted focus state + restore, chrome, wall-clock timer maths | web-feature:UF-09 | T-0300, T-0205, T-0303d, T-0318 | todo | wl-build-web |
 | T-0304b | UF-09.1/.3/.4/.5/.6 set loop: Done set writes first, auto-save 5 s, RIR, in-session pre-fill, back-off, rest from engine constants | web-feature:UF-09 | T-0304a | todo | wl-build-web |
 | T-0304c | UF-09.2 warm-up + UF-09.7 timed (prefill.durationS, D-0062 §5 copy), wake lock, cues, reduced motion | web-feature:UF-09 | T-0304b | todo | wl-build-web |
 | T-0304d | UF-09.8 time check (rule 8, save the new plan) + UF-09.9 paused + End; e2e offline/reload/two-device/keyboard | web-feature:UF-09 | T-0304c | todo | wl-build-web |
