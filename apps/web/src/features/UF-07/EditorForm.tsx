@@ -77,7 +77,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
                   disabled={index === 0}
                   onClick={() => editor.move(index, "up")}
                 >
-                  {"↑"}
+                  {t.glyphUp}
                 </button>
                 <button
                   type="button"
@@ -86,14 +86,14 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
                   disabled={index === last}
                   onClick={() => editor.move(index, "down")}
                 >
-                  {"↓"}
+                  {t.glyphDown}
                 </button>
                 <button
                   type="button"
                   aria-label={t.remove(label)}
                   onClick={() => editor.remove(index)}
                 >
-                  {"×"}
+                  {t.glyphRemove}
                 </button>
               </li>
             );
@@ -136,7 +136,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
                         disabled={editor.full}
                         onClick={() => editor.add(exercise.id)}
                       >
-                        {"+"}
+                        {t.glyphAdd}
                       </button>
                     )}
                   </li>
@@ -154,9 +154,9 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
         )}
       </section>
 
-      <section aria-label={en.screens.routineEditor} className="wl-routine-editor__card">
+      <div className="wl-routine-editor__card" data-card="progression">
         <p>{t.progression}</p>
-      </section>
+      </div>
 
       {editor.error ? (
         <p role="alert" className="wl-routine-editor__error" data-tone="error">
