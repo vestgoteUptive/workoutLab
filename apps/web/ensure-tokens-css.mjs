@@ -5,8 +5,11 @@
 // `pnpm --filter @workoutlab/web test` does not, so build.test.ts failed on a clean clone.
 //
 // This runs the tokens package's own `build` script when its CSS is missing or older than its
-// inputs, and does nothing otherwise. Under turbo the `^build` output is always fresh, so this
-// never rewrites the file another package's test (e.g. landing's `astro build`) may be reading.
+// inputs, and does nothing otherwise. Under turbo the `^build` output is normally fresh, so this
+// rarely rewrites the file another package's test (e.g. landing's `astro build`) may be reading.
+// Exception: turbo decides by content, not mtime, so if dist is on disk and tokens.json or
+// scripts/ was touched without a content change, turbo keeps the old dist and this rebuilds
+// once (identical output) during the turbo run.
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { createRequire } from "node:module";
