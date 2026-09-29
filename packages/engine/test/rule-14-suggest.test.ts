@@ -126,7 +126,7 @@ function withoutPrefill(w: Workout): unknown {
 
 describe("rule 14 × rule 7.4: the High back-off reads a real pre-fill", () => {
   it("R14-E9 rule-14 (AC9) bench-press 80 × 8, 7, 6 at High, 15 min, no warm-up: 80 × 7 add_rep, back-off 70 × 6", () => {
-    // D-0060 §7: bench-press is in the most recent session, so rule 7.2 rank 1 would pick
+    // D-0062 §7: bench-press is in the most recent session, so rule 7.2 rank 1 would pick
     // another main lift; AC9 names bench-press, so it is the chosen main (UF-08.1).
     const h = setsWithReps("2026-09-24", "bench-press", [
       [80, 8],
@@ -237,7 +237,7 @@ describe("rule 14 replaces the T-0201 first_time seam (D-0057 §8)", () => {
 
 describe("rule 14 in suggest over balancedHistory", () => {
   it("rule-14 (AC17) at F-input the selected items (db-bench-press, db-row, leg-extension) have no history: first_time", () => {
-    // D-0060 §8: rule 7.2 rank 1 prefers exercises not in the 09-27 session, so none of the
+    // D-0062 §8: rule 7.2 rank 1 prefers exercises not in the 09-27 session, so none of the
     // selected exercises appears in balancedHistory.
     const w = run(balancedHistory);
     expect(pairs(w)).toEqual([

@@ -1,5 +1,5 @@
 // T-0205 rule 14 UF-09.3 UF-09.4 UF-08.2: `prefill` — the 7-step waterfall, the timed
-// branch and `carry` (docs/engine-rules.md rule 14, D-0026, D-0057, D-0060). AC1–AC15, AC20.
+// branch and `carry` (docs/engine-rules.md rule 14, D-0026, D-0057, D-0062). AC1–AC15, AC20.
 import { describe, expect, it } from "vitest";
 import {
   prefill,
@@ -303,7 +303,7 @@ describe("rule 14 missing weights on a loaded exercise (D-0057 §3)", () => {
     expect(pf("back-squat", MAIN, h2)).toEqual(r(100, 8, "add_rep"));
   });
 
-  it("rule-14 (AC11) an unusable most-recent session does not fall back to an older one (D-0060 §2)", () => {
+  it("rule-14 (AC11) an unusable most-recent session does not fall back to an older one (D-0062 §2)", () => {
     const older = S("2026-09-20", "back-squat", x(100, 8, 3));
     const newest = S("2026-09-24", "back-squat", x(null, 8, 3));
     expect(pf("back-squat", MAIN, [...older, ...newest])).toEqual(r(null, 6, "first_time"));
@@ -699,7 +699,7 @@ describe("rule 14 rep-range floor and ceiling", () => {
   }
 });
 
-describe("rule 14 carry scope (D-0057 §1, D-0060 §1)", () => {
+describe("rule 14 carry scope (D-0057 §1, D-0062 §1)", () => {
   it("rule-14 (AC7) carry needs both a shared weight-1.0 area and a shared equipment item", () => {
     // straight-arm-pulldown (cable, back 1) ← lat-pulldown (cable, back 1): carry.
     expect(

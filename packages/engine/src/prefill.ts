@@ -1,4 +1,4 @@
-// Rule 14: progression and pre-fill (UF-09.3, UF-09.4, UF-08.2; D-0026, D-0057, D-0060).
+// Rule 14: progression and pre-fill (UF-09.3, UF-09.4, UF-08.2; D-0026, D-0057, D-0062).
 // Pure: `now` and `tz` are inputs, and the history is normalised per rule 0 before use.
 import { DEFAULT_INCREMENT_KG, floorInc } from "./energy.js";
 import { indexLibrary, isHardSet, normalizeHistory, primaryAreas } from "./history.js";
@@ -155,7 +155,7 @@ function stepOne(
 }
 
 /**
- * Rule 14 step 1 carry (D-0057 §1, D-0060 §1): the previous exercise is a known library
+ * Rule 14 step 1 carry (D-0057 §1, D-0062 §1): the previous exercise is a known library
  * exercise sharing a weight-1.0 area and an equipment item (`[]` ≡ `["none"]`, D-0040 §1),
  * its pre-fill weight is > 0, and this exercise takes an external load.
  */

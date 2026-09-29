@@ -46,7 +46,7 @@ const BASELINE = JSON.parse(
 ) as Record<string, Workout>;
 
 /**
- * T-0205 (rule 14, AC22, D-0060 §6): the only baseline fields rule 14 changes at F-input.
+ * T-0205 (rule 14, AC22, D-0062 §6): the only baseline fields rule 14 changes at F-input.
  * returningAfter10Days last did bench-press and calf-raise on 09-12 (gap 15), so both are
  * `hold_after_break` at 50 kg. Every other field of the baseline is still compared exactly.
  */

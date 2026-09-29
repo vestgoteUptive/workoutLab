@@ -1,6 +1,6 @@
 // T-0205 rule 14 UF-09.3 UF-09.4: seeded property tests for `prefill` (fast-check is not in
 // the lockfile, D-0036 §5). An independent oracle written from docs/engine-rules.md rule 14
-// and D-0057 §2–§6/§9 (and D-0060 §1–§4) is compared against the engine on random
+// and D-0057 §2–§6/§9 (and D-0062 §1–§4) is compared against the engine on random
 // histories built around the gap and rep boundaries. AC19, AC21, AC23.
 import { describe, expect, it } from "vitest";
 import {

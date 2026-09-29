@@ -1,5 +1,5 @@
 ---
-id: D-0060
+id: D-0062
 title: Progression and pre-fill (T-0205 build) — carry scope, unusable sessions, W = 0, timed clamp, test fixtures that the ticket mis-derived
 status: revisit
 date: 2026-09-29
