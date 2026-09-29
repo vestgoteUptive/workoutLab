@@ -1,6 +1,33 @@
 // The one catalogue for every user-facing string in apps/web/src (D-0045 §12, NFR-I18N-1).
 // T-0300a also reserves the C-01 and offline strings so T-0300c/d don't collide with this file.
+//
+// Per-flow strings live in `flows/uf-NN.ts` and are composed below as `en.uf01` … `en.uf11`
+// (D-0071 §1). Each web-feature ticket owns exactly its own flow file, so after T-0318 no
+// feature ticket edits this file: the feature lanes never collide here.
+import { uf01 } from "./flows/uf-01.js";
+import { uf02 } from "./flows/uf-02.js";
+import { uf03 } from "./flows/uf-03.js";
+import { uf04 } from "./flows/uf-04.js";
+import { uf05 } from "./flows/uf-05.js";
+import { uf06 } from "./flows/uf-06.js";
+import { uf07 } from "./flows/uf-07.js";
+import { uf08 } from "./flows/uf-08.js";
+import { uf09 } from "./flows/uf-09.js";
+import { uf10 } from "./flows/uf-10.js";
+import { uf11 } from "./flows/uf-11.js";
+
 export const en = {
+  uf01,
+  uf02,
+  uf03,
+  uf04,
+  uf05,
+  uf06,
+  uf07,
+  uf08,
+  uf09,
+  uf10,
+  uf11,
   tabBar: {
     nav: "Main",
     today: "Today",
@@ -21,6 +48,13 @@ export const en = {
     plan: "Plan",
     sessionSetup: "Session setup",
     sessionHost: "Workout",
+    // T-0318 stub titles for the Phase 3 sub-routes (D-0071 §2). The feature tickets
+    // replace the stub screens; these titles stay as the screens' <h1> text.
+    sessionSummary: "Workout summary",
+    libraryCompare: "Compare variants",
+    exerciseHistory: "Exercise history",
+    editPlan: "Edit plan",
+    routineEditor: "Edit routine",
   },
   auth: {
     emailLabel: "Email",

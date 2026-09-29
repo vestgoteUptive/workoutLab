@@ -8,3 +8,12 @@ export function Plan() {
     </div>
   );
 }
+
+// UF-11.3 Edit plan stub (T-0318). T-0308b builds the screen.
+export function EditPlan() {
+  return (
+    <div data-screen-id="UF-11.3">
+      <h1>{en.screens.editPlan}</h1>
+    </div>
+  );
+}
