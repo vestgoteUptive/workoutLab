@@ -3,6 +3,11 @@
 // `features/**` imports this module, so no feature can bypass or re-implement the gate (AC-12).
 export { PROFILE_STATUSES, resolveProfileStatus } from "./status.js";
 export type { ProfileStatus, ProfileResolution } from "./status.js";
-export { ProfileStatusProvider, useProfileStatus, useRecheckProfile } from "./profile-context.js";
+export {
+  ProfileStatusProvider,
+  useProfileStatus,
+  useProfileResolved,
+  useRecheckProfile,
+} from "./profile-context.js";
 export { ProfileGate, PROFILE_SAVE_PATH } from "./ProfileGate.js";
 export { isGatedPath, gatedPaths } from "./gated-routes.js";
