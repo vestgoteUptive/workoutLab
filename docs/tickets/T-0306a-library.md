@@ -74,12 +74,13 @@ All three routes already exist (`protected`, tab bar on, lazily loading `Library
 
 ## Acceptance criteria
 - **Test surfaces.**
-  - Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-04/__tests__/*.test.tsx`, seeding the cache through `lib/offline`'s test helpers (`freshOfflineDb`, `signIn`) and the public refreshes, with Supabase spied (`createSupabaseSpy`).
+  - Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-04/__tests__/*.test.tsx`, seeding the cache through `lib/offline`'s test helpers (`freshOfflineDb`, `signIn`) and the public refreshes, with Supabase spied by `createSelectSpy` (`lib/offline/__tests__/select-spy.ts`; the refreshes only `select`, and `createSupabaseSpy` has no `select`).
+  - A partial-cache state that no refresh can produce (AC-9: `refreshLibrary` writes `libraryCache` and `exerciseDetails` in one transaction) is seeded with `offlineDb()` **in the test file**. The no-`offlineDb(` rule (AC-16) covers non-test code only.
   - Playwright in `tests/e2e/uf-04-library.spec.ts` where tagged **e2e**.
   - `ESLint.lintText` (the D-0060 §8 pattern) where tagged **lint**.
 - **Fixture "L1+"**: the engine L1 table (`docs/engine-rules.md`, 22 exercises) plus `goblet-squat` (compound, beginner, `[dumbbell]`, quads 1, glutes 1) and `leg-press` (compound, beginner, `[machine]`, quads 1, glutes 1, hamstrings .5), so 24 exercises, plus the 8 warm-up moves.
-  - Names are the ids in sentence case (`Back squat`, `Barbell row`, `Dumbbell row`, `Pull-up`, `Straight-arm pulldown`, …). The rows are seeded in **reverse** alphabetical order, so an unsorted render fails.
-  - Details: back-squat `{instructions: ["Brace", "Sit down between your heels", "Drive up"], mistakes: ["Knees caving in"], cue: "Chest up", source: "workoutlab", license: "LicenseRef-workoutLab", attribution: null, sourceUrl: null, variants: ["goblet-squat", "leg-press"]}`.
+  - Names are the ids in sentence case, with `db-` written out as `Dumbbell` (`Back squat`, `Barbell row`, `Dumbbell bench press`, `Dumbbell row`, `Pull-up`, `Straight-arm pulldown`, …). Warm-up moves drop the `wu-` prefix (`wu-cat-cow` → `Cat cow`). The rows are seeded in **reverse** alphabetical order, so an unsorted render fails.
+  - Details: back-squat `{instructions: ["Brace", "Sit down between your heels", "Drive up"], mistakes: ["Knees caving in"], cue: "Chest up", source: "workoutlab", license: "LicenseRef-workoutLab", attribution: null, sourceUrl: null, variants: ["goblet-squat", "leg-press"]}`. wu-cat-cow `{instructions: ["Round your back", "Arch your back"], mistakes: [], cue: "Move slowly", source: "workoutlab", license: "LicenseRef-workoutLab", attribution: null, sourceUrl: null, variants: []}`.
   - Profile: F-profile (beginner, full equipment). Clock: tz `Europe/Stockholm`, now `2026-09-27T12:00:00+02:00`.
 
 - **AC-1 (browse order, no warm-ups)** Given L1+, UF-04.1 lists exactly 24 rows. The first three are `Back squat`, `Barbell row`, `Bench press`, and the last two are `Seated cable row`, `Straight-arm pulldown`. No row links to an `href` containing `/library/wu-`. **Contrast:** with the fixture seeded in reverse order, the rendered order is unchanged, so the UI sorts and doesn't just echo the cache.
@@ -120,7 +121,7 @@ All three routes already exist (`protected`, tab bar on, lazily loading `Library
 - **AC-11 (variants → compare; renders before the network)**
   - `loadVariants("back-squat")` = `["goblet-squat", "leg-press"]` gives exactly two `Variations` links, in that order, with `href` `/library/back-squat/compare/goblet-squat` and `/library/back-squat/compare/leg-press`.
   - Variants `["goblet-squat", "nope"]` give one link, so an unknown variant id is skipped. `[]` gives no `Variations` heading in the DOM.
-  - **Wait-free:** with the cache seeded and `fetch` stubbed to a promise that never resolves, with `navigator.onLine = true`, the 24 UF-04.1 rows are in the DOM without waiting on the refresh. **Contrast:** the refresh spy *was* called.
+  - **Wait-free:** with the cache seeded, `navigator.onLine = true` and `refreshAll` spied to return a promise that never resolves, the 24 UF-04.1 rows are in the DOM without waiting on the refresh. (Stub `refreshAll`, not `fetch`: with Supabase spied, a `fetch` stub is never reached and the refresh would resolve at once.) **Contrast:** the refresh spy *was* called.
 - **AC-12 (compare, D-0069 §3)** `/library/back-squat/compare/leg-extension` shows column headers `Back squat` | `Leg extension`, and these rows:
 
   | Row | Back squat | Leg extension |
@@ -148,14 +149,14 @@ All three routes already exist (`protected`, tab bar on, lazily loading `Library
   - Escape calls `onClose` once. `Close` calls it once.
   - When the caller then unmounts it, `document.activeElement` is the opener.
   - With the opener removed from the DOM before close, closing doesn't throw.
-  - `exerciseId="wu-cat-cow"` renders the warm-up's how-to (warm-ups are allowed here, D-0079 §4).
+  - `exerciseId="wu-cat-cow"` renders the warm-up's how-to, named `How to: Cat cow`, with `Move slowly` and an `<ol>` of 2 items (warm-ups are allowed here, D-0079 §4).
   - `exerciseId="nope"` renders a dialog named `How to` with `Instructions download the next time you're online.` and `Close`, with no throw.
   - The vitest axe helper (D-0060 §7) finds 0 violations on the open dialog.
 - **AC-15 (`ExerciseHowTo` reads the cache only, D-0079 §6)** With `navigator.onLine = true` and the cache seeded, opening and closing `ExerciseHowTo` makes **zero** calls to `refreshAll`, the supabase spy and `fetch`. **Contrast, same file:** `LibraryDetail` under the same conditions **does** call `refreshAll` once. That proves the spy is wired, so the zero is real.
 - **AC-16 (exports, imports and strings)**
   - `Object.keys(await import("../index.tsx"))` sorted equals exactly `["Compare", "ExerciseHowTo", "Library", "LibraryDetail"]`.
   - **lint:** `ESLint.lintText` as `src/features/UF-04/x.tsx` of `import { Progress } from "../UF-06/index.js";` and of `import { BodyMap } from "../../components/body-map/index.js";` each reports `no-restricted-imports` (D-0071 §9: UF-04 renders inside UF-09). **Contrast:** `import { loadLibrary } from "../../lib/offline/index.js";` reports nothing, and a `fatal` filter guards against a parse error passing as "nothing".
-  - A source test finds no `offlineDb(` and no `from "dexie"` under `features/UF-04/**` (D-0067 §5).
+  - A source test finds no `offlineDb(` and no `from "dexie"` under `features/UF-04/**`, excluding `__tests__/**` (D-0067 §5; test files may seed the cache directly).
   - `react/jsx-no-literals` stays green over `features/UF-04/**`. Every key the feature uses is reachable as `en.uf04.*`.
   - `lib/i18n/__tests__/flows.test.ts` stays green, which requires `flows/uf-04.ts` to stay multi-line with its closing `} as const;` at column 0 (D-0075).
 - **AC-17 (a11y, e2e, NFR-A11Y-1/-2)** In the preview build with an injected session and the mocked Supabase:

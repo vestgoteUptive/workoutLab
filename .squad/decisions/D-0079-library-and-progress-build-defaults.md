@@ -55,7 +55,7 @@ The partial-cache case is real, not hypothetical. T-0319's Dexie v2 tables start
    - A row is dated by the local date of its first hard set (by `completedAt`), and its sets are listed in `completedAt` order.
    - Rows are sorted newest first by that first `completedAt`. Ties go to the smaller `sessionId`.
    - **Recent exercises** (UF-06.1) takes an exercise's "latest session" as the one holding its greatest `completedAt`, with ties going to the smaller `sessionId` (D-0068 §4, D-0040 §9).
-10. **Dates in tests use `en-GB`.** Screens format with Intl in the device locale. Tests pass `locale: "en-GB"`, the `OfflineStatus` default, so strings like `Fri 25 Sep` and `September 2026` are exact.
+10. **Dates in tests use `en-GB` and `Europe/Stockholm`.** Screens format with Intl in the device locale and time zone. Like `OfflineStatus`, they take optional `locale` and `timeZone` overrides, and tests pass `locale: "en-GB"` (the `OfflineStatus` default) and `timeZone: "Europe/Stockholm"`, so strings like `Fri 25 Sep` and `September 2026` are exact on any host.
 
 ## Consequences
 - T-0306a encodes §1–§6, and T-0307b encodes §7–§10.

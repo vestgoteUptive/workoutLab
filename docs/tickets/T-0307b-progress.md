@@ -28,13 +28,14 @@ Both routes exist (`protected`, tab bar on). This ticket adds no route and edits
     - They render from the cache **first**. When online they run `refreshAll(now, tz)` with the 3 s cap, then re-read and recompute.
     - They call no Edge Function. They make no direct IndexedDB access and no write.
     - `now` is injected (a clock prop or module), and `tz` comes from `Intl.DateTimeFormat().resolvedOptions().timeZone` (D-0063 §3).
+    - Both screens take optional `timeZone` and `locale` overrides, the way `OfflineStatus` does. Tests pass `Europe/Stockholm` and `en-GB` through them (D-0079 §10), so no AC depends on the host's time zone.
   - **`features/UF-06/stats.ts`** holds pure functions only, each taking what it needs plus `now, tz`. None reads the clock. The exact shapes are the builder's, but these four exist and are unit-tested:
     - `monthCalendar(checkinSessions, now, tz)` gives the current local month's weeks (Monday-first), the marked local dates, and the count of completed sessions (D-0079 §7).
     - `bestSet(sets, exercise)` applies the D-0068 §5 rule and the D-0079 §8 kind. It ignores warm-up and tombstoned rows (via `normalizeHistory` + `isHardSet`), and returns `null` when there is no hard set.
     - `recentExercises(history, library, now, tz)` gives every exercise with a hard set in the 56-day window: its last local date, its best set from its latest session (D-0079 §9), and the order last date desc, then `name` by `localeCompare`.
     - `exerciseHistory(exerciseId, history, library, now, tz)` gives the D-0079 §9 rows plus Best set, Heaviest and Sessions over the same window.
   - **UF-06.1 Overview** (`/progress`):
-    - **Calendar.** The title `{Month yyyy}` and a Monday-first grid of the current local month. The days holding a completed session are marked, and today has `aria-current="date"`. Below it, `{n} workouts this month` (`1 workout this month` for n = 1).
+    - **Calendar.** The title `{Month yyyy}` and a Monday-first grid of the current local month. The days holding a completed session are marked, and today has `aria-current="date"` and a visible outline (D-0068 §5). Below it, `{n} workouts this month` (`1 workout this month` for n = 1).
     - **Balance card.** The header `Last 14 days`, and the first 4 entries of `balance(history, targets, library, now, tz).areas` **in engine order**. Each shows the area name (`en.bodyMap.areas`), `load / target` via `formatSetCount`, and a bar at `min(load/target, 1)` width filled with `var(--wl-color-coverage-{coverageStep})`. The whole card is **one** link to `/balance` (UF-10.1).
     - **Recent exercises.** One row per `recentExercises` entry: the name, `{d MMM}` and the best-set label. Each row is a link to `/progress/:id`.
     - `<OfflineStatus variant="text" />` (read-only import).
@@ -71,7 +72,9 @@ Both routes exist (`protected`, tab bar on). This ticket adds no route and edits
 ## Acceptance criteria
 - **Test surfaces.**
   - Pure `stats.ts` tests in `apps/web/src/features/UF-06/__tests__/stats.test.ts`.
-  - Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-06/__tests__/*.test.tsx`, seeding through `lib/offline`'s test helpers and public refreshes, with Supabase spied.
+  - Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-06/__tests__/*.test.tsx`, seeding through `lib/offline`'s test helpers (`freshOfflineDb`, `signIn`, `recordSet`) and public refreshes, with Supabase spied by `createSelectSpy` (`lib/offline/__tests__/select-spy.ts`; it ignores `.gte`, so the window filter under test is the screen's own).
+  - Rows a refresh would drop (AC-8's today − 56 set) are seeded with `offlineDb()` **in the test file**, with `navigator.onLine = false` so no refresh replaces them. The no-`offlineDb(` rule (AC-14) covers non-test code only.
+  - Every "through the engine" AC runs with `navigator.onLine = false` unless it says otherwise, so each engine call is made once per render and no refresh rewrites the seed.
   - Playwright in `tests/e2e/uf-06-progress.spec.ts` where tagged **e2e**.
   - `ESLint.lintText` where tagged **lint**.
 - **Fixtures.**
@@ -139,9 +142,9 @@ Both routes exist (`protected`, tab bar on). This ticket adds no route and edits
   - `{load: 0, target: 0}` renders no `NaN` or `Infinity` and a 0 % bar.
 - **AC-6 (returning after 10 days off; month rollover)**
   - Through the engine, the only session is `2026-09-17T08:00Z`, with 4 hard RDL sets. On 09-27, the calendar marks 17, reads `1 workout this month`, and Recent exercises shows `Romanian deadlift · 17 Sep · …`.
-  - With the clock at `2026-10-01T09:00:00+02:00` and the screen remounted, the title reads `October 2026`, the September sessions fixture being unchanged,, the count `0 workouts this month`, and no day is marked. Recent exercises **still** shows the RDL row (09-17 is inside the 56-day window).
+  - With the clock at `2026-10-01T09:00:00+02:00` and the screen remounted, the title reads `October 2026`, with the same sessions fixture, the count `0 workouts this month`, and no day is marked. Recent exercises **still** shows the RDL row (09-17 is inside the 56-day window).
   - October 2026 starts on a Thursday, so the first grid row has 3 blank cells.
-- **AC-7 (zero history)** Through the engine with an empty cache:
+- **AC-7 (zero history)** Through the engine with the L1 library and default targets cached, and **no** sessions or sets (an empty library would make `leg-curl` unknown, so it would redirect):
   - UF-06.1 reads `0 workouts this month` and `No exercises logged yet`. The Balance card shows 4 rows, each `0 / {target}` with a `coverage-0` fill, and equal to the engine's first 4.
   - `/progress/leg-curl` renders UF-06.2 with the heading `Leg curl`, exactly `No sets in the last 8 weeks`, and the `How to` link. **Contrast:** the `Best set`, `Heaviest` and `Sessions` cards are absent from the DOM.
   - With H seeded, `No exercises logged yet` is absent from UF-06.1, which catches a screen that always renders it.
@@ -172,14 +175,14 @@ Both routes exist (`protected`, tab bar on). This ticket adds no route and edits
     - `/progress/back-squat` has a new first row `Sun 27 Sep · 110 × 3`, `Heaviest` `110 kg`, and `Sessions` `3`.
     - The header shows `Offline · last synced 08:10`.
     - There is no element with `role="alert"`, and the `supabase.from` spy was never called.
-  - **Wait-free:** with the cache seeded and `fetch` stubbed to a promise that never resolves, with `navigator.onLine = true`, the calendar and the Recent rows are in the DOM without waiting on the refresh. **Contrast:** the `refreshAll` spy *was* called.
+  - **Wait-free:** with the cache seeded, `navigator.onLine = true` and `refreshAll` spied to return a promise that never resolves, the calendar and the Recent rows are in the DOM without waiting on the refresh. (Stub `refreshAll`, not `fetch`: with Supabase spied, a `fetch` stub is never reached.) **Contrast:** the `refreshAll` spy *was* called.
   - No `fetch` URL made by either screen contains `/functions/v1/` (D-0071 §8).
 - **AC-13 (never reachable in a workout, principle 1)**
   - **lint:** `ESLint.lintText` of `import { Progress } from "../UF-06/index.js";` reports `no-restricted-imports` as `src/features/UF-09/x.tsx`, as `src/features/UF-08/x.tsx` and as `src/features/UF-04/x.tsx` (D-0071 §9). **Contrast:** the same import as `src/features/UF-02/x.tsx` reports nothing, with a `fatal` filter.
   - **render:** rendering the router signed in at `/session/<id>` and at `/session/<id>/summary` finds **no** `a[href^="/progress"]` in the DOM.
 - **AC-14 (exports, imports and strings)**
   - `Object.keys(await import("../index.tsx"))` sorted equals exactly `["ExerciseHistory", "Progress"]`.
-  - A source test finds no `offlineDb(`, no `from "dexie"` and no import of `features/UF-10` under `features/UF-06/**`.
+  - A source test finds no `offlineDb(`, no `from "dexie"` and no import of `features/UF-10` under `features/UF-06/**`, excluding `__tests__/**` (test files may seed the cache directly).
   - `react/jsx-no-literals` stays green. Every key used is reachable as `en.uf06.*`.
   - `lib/i18n/__tests__/flows.test.ts` stays green, which requires `flows/uf-06.ts` to stay multi-line with the closing `} as const;` at column 0 (D-0075).
 - **AC-15 (a11y, e2e, NFR-A11Y-1/-2)** In the preview build with an injected session and the mocked Supabase:
@@ -192,7 +195,7 @@ Both routes exist (`protected`, tab bar on). This ticket adds no route and edits
 - **Listed extras:**
   - `apps/web/src/lib/i18n/flows/uf-06.ts`: this ticket's own flow file and no other (D-0071 §1, D-0075). You may add keys only. The file stays `export const uf06 = {` … a newline, then `} as const;` at column 0.
   - `tests/e2e/uf-06-progress.spec.ts`: a **new** file only (qa lane grant, D-0071 §10).
-  - `tests/e2e/fixtures/uf-06-progress-data.ts`: a **new** fixture file for the history, sessions and targets the e2e mock serves. Existing fixture files are not edited, which keeps this ticket clear of the other parallel lanes' fixture additions.
+  - `tests/e2e/fixtures/uf-06-progress-data.ts`: a **new** fixture file for the history, sessions and targets the e2e mock serves. Existing fixture files are not edited, which keeps this ticket clear of the other parallel lanes' fixture additions. `mockSupabaseData` always answers `sessions*` with `[]` and takes no sessions fixture, so if the spec needs session rows it registers its own `page.route` for `rest/v1/sessions*` **after** `mockSupabaseData` (Playwright runs the latest matching handler first). AC-15 as written needs none: Recent exercises and the Balance card read history only.
 - **Not yours, and each is already done for you:**
   - `apps/web/src/app/**`: both routes exist.
   - `apps/web/src/components/**`: OfflineStatus is a read-only import.
