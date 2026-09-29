@@ -8,6 +8,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Navigate, useLocation } from "react-router";
 import { useAuth } from "./auth-context.js";
+import { useProfileResolved, useProfileStatus } from "../profile/profile-context.js";
+import type { ProfileStatus } from "../profile/status.js";
 import { consumeReturnTo, rememberReturnTo } from "./return-to.js";
 
 export function RequireAuth({ children }: { children: ReactNode }) {
@@ -31,9 +33,39 @@ export function RequireAuthOnceForSession({ children }: { children: ReactNode })
   return <>{children}</>;
 }
 
+/**
+ * T-0301a / D-0073 §1: `guest-only` is conditional for `/welcome/*` only. A signed-in user whose
+ * profile is `missing` is exactly the user D-0064 §8 needs on `/welcome/save`, so bouncing them
+ * off `/welcome/*` would make the profile gate unreachable. `present` and `unknown` keep the
+ * behaviour T-0300b defined, and `/account` is unaffected in every case — which is why this is
+ * keyed on the pathname and not on the `guest-only` guard as a class (AC-7).
+ *
+ * `resolved` is why this is not a one-line status check. `"unknown"` means both "not resolved
+ * yet" and "resolved, answer unknown", and the first of those is the value on the *first*
+ * render. Redirecting on it would bounce every signed-in visitor off `/welcome/*` before the
+ * gate ever spoke, and the profile gate on `/` would then send a `missing` user back to
+ * `/welcome/save` — a visible bounce, and `/welcome` and `/welcome/goal` unreachable. So on
+ * `/welcome/*` the redirect waits for the answer. It never waits when signed out (`resolved`
+ * starts `true` there, and outside a provider), so principle 5 holds.
+ */
+function welcomeStandsDown(
+  pathname: string,
+  profileStatus: ProfileStatus,
+  profileResolved: boolean,
+): boolean {
+  const isWelcome = pathname === "/welcome" || pathname.startsWith("/welcome/");
+  if (!isWelcome) return false;
+  return !profileResolved || profileStatus === "missing";
+}
+
 export function RedirectIfSignedIn({ children }: { children: ReactNode }) {
   const { status } = useAuth();
-  const signedIn = status === "signed-in" || status === "stale";
+  const profileStatus = useProfileStatus();
+  const profileResolved = useProfileResolved();
+  const location = useLocation();
+  const signedIn =
+    (status === "signed-in" || status === "stale") &&
+    !welcomeStandsDown(location.pathname, profileStatus, profileResolved);
   // Consuming the stored return-to is a side effect (it clears storage): it must run in an
   // effect, not during render, so React's (StrictMode, double-invoked) render pass never
   // discards it before the actual navigation commits.

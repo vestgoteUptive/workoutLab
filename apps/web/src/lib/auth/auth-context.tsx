@@ -11,10 +11,26 @@ export type AuthStatus = "signed-out" | "signed-in" | "stale";
 interface StoredSession {
   access_token?: string;
   expires_at?: number;
+  user?: { id?: string } | null;
 }
 
 interface AuthContextValue {
   status: AuthStatus;
+  /**
+   * Who is signed in, or `null` when nobody is. T-0301a rework: `status` alone cannot
+   * distinguish "user A is signed in" from "user B is signed in", because both are
+   * `"signed-in"`. supabase-js fires `SIGNED_IN` for a new session **without** an intervening
+   * `SIGNED_OUT` when a user verifies a different account in place — reachable through the
+   * product's own UI, because AC-7 has a `missing` user standing down on `/welcome/*` with a
+   * live email + code form. Anything keyed on the signed-in boolean alone therefore never
+   * re-runs, and user B silently inherits user A's profile answer (D-0073 §4).
+   *
+   * `null` is deliberately not "signed out": a session whose stored JSON carries no `user`
+   * (the T-0300b fixtures) is signed in with an unknown identity. Consumers must key on
+   * `status` for signed-in-ness and on `userId` only for *change*, so an identity that stays
+   * `null` across a status flip behaves exactly as it did before this field existed (AC-9).
+   */
+  userId: string | null;
   /** Where a `protected` route sends a signed-out user (AC-B5, AC-B7). */
   redirectTarget: "/welcome" | "/account";
   signOut: () => Promise<void>;
@@ -51,8 +67,23 @@ function computeInitialStatus(): AuthStatus {
   return "signed-in";
 }
 
+/** The user id of a session object, from storage or from an auth event. Never throws. */
+function userIdOf(session: unknown): string | null {
+  const id = (session as { user?: { id?: unknown } } | null | undefined)?.user?.id;
+  return typeof id === "string" && id.length > 0 ? id : null;
+}
+
+/**
+ * Principle 5: read from the same already-persisted session `computeInitialStatus()` uses, so
+ * the first render knows who is signed in without awaiting anything.
+ */
+function computeInitialUserId(): string | null {
+  return userIdOf(readStoredSession());
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<AuthStatus>(computeInitialStatus);
+  const [userId, setUserId] = useState<string | null>(computeInitialUserId);
   // Set once a refresh fails while the user is mid-workout (AC-B7, principle 1): the guard for
   // the *next* route they visit sends them to `/account`, not onboarding, without interrupting
   // the session route itself.
@@ -73,9 +104,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           interruptedInSession.current = true;
         }
         setStatus("signed-out");
+        setUserId(null);
       } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
         interruptedInSession.current = false;
         setStatus(session ? "signed-in" : "signed-out");
+        // A `TOKEN_REFRESHED` carries the *same* user, so this is a no-op state set and nothing
+        // downstream re-resolves. Only a genuine account switch changes the value.
+        setUserId(session ? userIdOf(session) : null);
       }
     });
 
@@ -84,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ({ data, error }) => {
           if (data.session) {
             setStatus("signed-in");
+            setUserId(userIdOf(data.session));
             return;
           }
           // Only a non-retryable auth error (400 invalid_grant: the refresh token itself is
@@ -97,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             interruptedInSession.current = true;
           }
           setStatus("signed-out");
+          setUserId(null);
         },
         () => {
           // A rejected promise (e.g. `fetch` itself throwing, offline mid-flight): treat the
@@ -111,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value: AuthContextValue = {
     status,
+    userId,
     redirectTarget: interruptedInSession.current ? "/account" : "/welcome",
     signOut: async () => {
       await supabase.auth.signOut();
