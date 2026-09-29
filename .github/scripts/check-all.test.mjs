@@ -25,6 +25,37 @@ test("AC21 (direct): runAll() finds nothing on the real repo", async () => {
   assert.deepEqual(findings, []);
 });
 
+// T-0320 AC-10: every sub-check is imported *and* spread into runAll's findings. A source
+// assertion, because an import with no call site would leave the check silently inert.
+test("T-0320 AC-10: runAll imports and calls all six sub-checks", () => {
+  const src = readFileSync(path.join(__dirname, "check-all.mjs"), "utf8");
+  const SUBCHECKS = [
+    ["check-screen-ids.mjs", "runScreenIds"],
+    ["check-decision-ids.mjs", "runDecisionIds"],
+    ["check-placeholder-tests.mjs", "runPlaceholderTests"],
+    ["check-stale-wording.mjs", "runStaleWording"],
+    ["check-e2e-wiring.mjs", "runE2eWiring"],
+    ["check-lane-paths.mjs", "runLanePaths"],
+  ];
+  for (const [file, alias] of SUBCHECKS) {
+    assert.match(
+      src,
+      new RegExp(`import\\s*\\{\\s*runCheck as ${alias}\\s*\\}\\s*from\\s*"\\./${file.replace(".", "\\.")}"`),
+      `check-all.mjs does not import runCheck as ${alias} from ./${file}`,
+    );
+    assert.ok(
+      new RegExp(`${alias}\\(`).test(src.slice(src.indexOf("export async function runAll"))),
+      `check-all.mjs imports ${alias} but never calls it inside runAll`,
+    );
+  }
+});
+
+test("T-0320 AC-10: runAll threads a branch override through to the lane-path check", () => {
+  const src = readFileSync(path.join(__dirname, "check-all.mjs"), "utf8");
+  assert.match(src, /export async function runAll\(\{\s*branch\s*\}\s*=\s*\{\}\)/);
+  assert.match(src, /runLanePaths\(REPO_ROOT,\s*\{\s*branch\s*\}\)/);
+});
+
 test("AC22: ci.yml runs pnpm check:repo after pnpm format:check in the checks job", () => {
   const ci = readFileSync(path.join(REPO_ROOT, ".github/workflows/ci.yml"), "utf8");
   const checksJobMatch = ci.match(/checks:[\s\S]*?\n {2}\S/);
