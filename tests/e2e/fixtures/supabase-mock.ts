@@ -206,19 +206,25 @@ export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): P
   // unmocked `exercise_variants` select *before* entering its transaction, so `libraryCache` is
   // never written and AC-C20's `{library: 12}` assertion sees 0.
   //
-  // `exercises*` (above) also glob-matches `exercise_variants?...` — the same trap as
-  // `session_sets*` vs `session_sets_live*`. Playwright runs the most-recently-registered
-  // matching handler first, so `exercise_variants*` MUST stay registered *after* `exercises*`.
-  // Move it above and `exercises*` wins: the variants select silently returns the 12 exercise
-  // rows, which `refreshLibrary` then reads `variant_id` off — a wrong answer, not an error.
+  // On the `session_sets*` / `session_sets_live*` shadowing hazard above: it does NOT apply to
+  // any of these four, and that was measured rather than assumed (T-0323). Playwright's `*`
+  // does not match across a prefix that isn't actually a prefix: `session_sets` genuinely is a
+  // prefix of `session_sets_live`, so that glob shadows. `exercises` is NOT a prefix of
+  // `exercise_variants` (they diverge at `s` vs `_`), and likewise `routines` is not a prefix of
+  // `routine_items`. Probed directly with a scratch spec:
+  //   "exercises*"    vs "exercise_variants?..."  => no match
+  //   "exercises*"    vs "exercises?..."          => match
+  //   "session_sets*" vs "session_sets_live?..."  => match
+  //   "routines*"     vs "routine_items?..."      => no match
+  // So the four routes below are order-independent. They are still registered after `exercises*`
+  // to match this file's convention (most specific last), but nothing breaks if that moves —
+  // don't rely on the ordering as a safety property here.
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/exercise_variants*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.exerciseVariants ?? [] }),
   );
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/plan_checkins*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.checkins ?? [] }),
   );
-  // `routines*` and `routine_items*` don't glob-match each other (they diverge at `s` vs `_`),
-  // so these two are order-independent — unlike the pair above.
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/routines*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.routines ?? [] }),
   );
