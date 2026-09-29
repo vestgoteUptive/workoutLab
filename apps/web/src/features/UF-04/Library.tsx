@@ -121,12 +121,7 @@ export function Library() {
               </button>
             ))}
             {profile === null ? null : (
-              <button
-                type="button"
-                className="wl-uf04__chip"
-                aria-pressed={mine}
-                onClick={onMine}
-              >
+              <button type="button" className="wl-uf04__chip" aria-pressed={mine} onClick={onMine}>
                 {en.uf04.chipMine}
               </button>
             )}

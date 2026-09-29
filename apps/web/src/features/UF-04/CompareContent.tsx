@@ -3,11 +3,7 @@
 import { Link, Navigate, useParams } from "react-router";
 import { setCostS, type LibraryExercise } from "@workoutlab/engine";
 import { en } from "../../lib/i18n/en.js";
-import {
-  loadExerciseDetail,
-  loadLibrary,
-  type ExerciseDetail,
-} from "../../lib/offline/index.js";
+import { loadExerciseDetail, loadLibrary, type ExerciseDetail } from "../../lib/offline/index.js";
 import { useScreenData } from "./data.js";
 import {
   equipmentText,

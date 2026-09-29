@@ -65,7 +65,12 @@ export function ExerciseHowTo({ exerciseId, onClose }: ExerciseHowToProps) {
 
   return (
     <div className="wl-uf04-howto">
-      <div role="dialog" aria-modal="true" aria-labelledby={titleId} className="wl-uf04-howto__panel">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className="wl-uf04-howto__panel"
+      >
         <h2 id={titleId}>{title}</h2>
         {data === undefined ? null : data.detail === null ? (
           <p>{en.uf04.detailMissing}</p>
