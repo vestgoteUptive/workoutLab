@@ -508,6 +508,67 @@ describe("AC-8 /session/:sessionId and its summary are never gated (principle 1)
   });
 });
 
+// QA (T-0301a): the account switch. The only auth transition the gate re-resolves on is
+// `signedIn` flipping, because `run()`'s dep list is `[signedIn]` and the `wasSignedIn` transition
+// check only fires on that same flip. A `SIGNED_IN` for a *different user* with no intervening
+// `SIGNED_OUT` leaves `signedIn === true`, so nothing re-runs and user B inherits user A's answer.
+//
+// This is reachable through the product's own UI, not a synthetic event: AC-7 requires
+// `/welcome/*` to render for a signed-in `missing` user, and that splat screen
+// (`features/UF-01/index.tsx`) is the live email + code form calling `requestMagicLink` /
+// `verifyCode`. So a `missing` user standing down on `/welcome` can verify a different account
+// without ever signing out, which is exactly this sequence.
+// Both cases below are **currently broken**, so they are `it.fails`: the assertion is the
+// behaviour the gate must have, and vitest fails the test if it ever starts passing. Whoever
+// fixes the gate (web-shell owns `lib/profile`) flips these two to `it` in the same commit.
+// Filed as a follow-up in the QA result; the fix needs a user identity the gate can compare,
+// which `useAuth()` does not expose today (it publishes `status` only), so it is not a
+// test-only change and is out of QA's lane.
+describe("QA: a SIGNED_IN for a different user re-resolves the gate", () => {
+  it.fails("`present` → switch to an account with NO profile: the new user is gated", async () => {
+    // User A is signed in with a cached profile, on `/`.
+    statePresent();
+    render(<Harness start="/" />);
+    await waitFor(() => expect(screenOf("UF-02.1")).toBeInTheDocument());
+
+    // User B verifies. No SIGNED_OUT: supabase-js fires SIGNED_IN for the new session.
+    // B has no cache and no row, so B must be sent to /welcome/save.
+    loadProfile.mockResolvedValue(null);
+    spy.setRows("profiles", []);
+    await act(async () => {
+      authStateCallbacks.forEach((cb) => cb("SIGNED_IN", { user: { id: "u2" } }));
+    });
+    await act(async () => {});
+    await act(async () => {});
+    await act(async () => {});
+    expect(locationRef).toBe("/welcome/save");
+  });
+
+  it.fails(
+    "`missing` on /welcome → switch to an account that HAS a profile: no longer stood down",
+    async () => {
+      // User A is signed in, `missing`, standing down on /welcome (AC-7) with the OTP form.
+      stateMissing();
+      render(<Harness start="/welcome" />);
+      await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+      expect(locationRef).toBe("/welcome");
+
+      // User B verifies on that form. B *has* a profile, so `guest-only` must resume and take
+      // them into the app rather than leaving them stranded on onboarding.
+      loadProfile.mockResolvedValue(PROFILE_ROW);
+      spy.setRows("profiles", [PROFILE_ROW]);
+      await act(async () => {
+        authStateCallbacks.forEach((cb) => cb("SIGNED_IN", { user: { id: "u2" } }));
+      });
+      await act(async () => {});
+      await act(async () => {});
+      await act(async () => {});
+      expect(locationRef).toBe("/");
+      expect(screenOf("UF-02.1")).toBeInTheDocument();
+    },
+  );
+});
+
 describe("AC-9 signed out is unchanged (principle 5) — the AC-B5 table, against the wired shell", () => {
   it.each(["/", "/library", "/progress", "/balance", "/plan", "/session/setup"])(
     "signed out: %s renders UF-01.1",
@@ -530,6 +591,57 @@ describe("AC-9 signed out is unchanged (principle 5) — the AC-B5 table, agains
     render(<Harness start={path} />);
     await waitFor(() => expect(screenOf(screenId)).toBeInTheDocument());
     expect(locationRef).toBe(path);
+  });
+});
+
+// QA (T-0301a): D-0073 §3 decides that `stale` is gated too ("the gate is active whenever
+// `status !== "signed-out"`"), and flags it as the one of its three defaults a reviewer is most
+// likely to push back on — a `stale` user landing on `/welcome/save` unexpectedly. It had no
+// test, so the decision was unpinned: the `authStatus !== "signed-out"` in `profile-context.tsx`
+// could be narrowed to `=== "signed-in"` with the whole suite still green. This pins it, so a
+// future change of mind has to be a deliberate edit to a test that names the decision.
+describe("QA: D-0073 §3 — a `stale` session is gated too", () => {
+  it("stale + `missing` on `/` redirects to /welcome/save", async () => {
+    // An expired token makes the initial status `stale`; `getSession` never settling keeps it
+    // there, so the gate is observed against a genuinely `stale` auth status.
+    window.localStorage.setItem(
+      "sb-abc-auth-token",
+      JSON.stringify({
+        access_token: "tok",
+        expires_at: Math.floor(Date.now() / 1000) - 100,
+        user: { id: "u1" },
+      }),
+    );
+    vi.stubGlobal("navigator", { onLine: true });
+    getSession.mockReturnValue(new Promise(() => {}));
+    loadProfile.mockResolvedValue(null);
+    spy.setRows("profiles", []);
+
+    render(<Harness start="/" />);
+    await waitFor(() => expect(locationRef).toBe("/welcome/save"));
+    expect(screenOf("UF-01.1")).toBeInTheDocument();
+    // The mechanism, not just the destination: the gate really did read `profiles` for a
+    // `stale` user, rather than the redirect coming from the auth guard.
+    expect(spy.countFor("profiles")).toBe(1);
+  });
+
+  it("stale + `present` renders `/` (a stale user is not bounced when they do have a profile)", async () => {
+    window.localStorage.setItem(
+      "sb-abc-auth-token",
+      JSON.stringify({
+        access_token: "tok",
+        expires_at: Math.floor(Date.now() / 1000) - 100,
+        user: { id: "u1" },
+      }),
+    );
+    vi.stubGlobal("navigator", { onLine: true });
+    getSession.mockReturnValue(new Promise(() => {}));
+    loadProfile.mockResolvedValue(PROFILE_ROW);
+
+    render(<Harness start="/" />);
+    await waitFor(() => expect(screenOf("UF-02.1")).toBeInTheDocument());
+    await act(async () => {});
+    expect(locationRef).toBe("/");
   });
 });
 

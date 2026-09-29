@@ -274,6 +274,61 @@ describe("AC-11 recheckProfile re-evaluates, and is unmount-safe", () => {
       consoleSpy.mockRestore();
     }
   });
+
+  // QA (T-0301a): the assertion above is on `console.error` only, and React 18/19 no longer warns
+  // on a setState after unmount — so it cannot fail. Deleting the whole
+  // `if (!mounted.current || mine !== generation.current) return;` guard left all 106 gate tests
+  // green. These two assert the *mechanism* AC-11 names, so the guard cannot be dropped silently.
+  it("a resolution that settles after unmount commits no state (the mounted guard)", async () => {
+    seedSignedIn();
+    spy.setRows("profiles", [PROFILE_ROW]);
+    let release: ((v: null) => void) | undefined;
+    loadProfile.mockImplementation(
+      () => new Promise<null>((resolve) => (release = resolve as (v: null) => void)),
+    );
+    const { unmount } = render(<Harness />);
+    await waitFor(() => expect(release).toBeDefined());
+    const rendersBeforeUnmount = seen.length;
+    unmount();
+    // Let the in-flight read settle. Without the mounted guard this calls setStatus on an
+    // unmounted tree; React drops the update silently, so the observable mechanism is that no
+    // further render was produced *and* `refreshProfile` — the side effect this resolution would
+    // have fired, which is not inside any React state batch — was never called.
+    await act(async () => {
+      release!(null);
+    });
+    await act(async () => {});
+    expect(seen.length).toBe(rendersBeforeUnmount);
+    expect(refreshProfile).not.toHaveBeenCalled();
+  });
+
+  it("a stale in-flight resolution cannot overwrite a newer one (the generation guard)", async () => {
+    seedSignedIn();
+    // The first read hangs; the recheck below overtakes it.
+    const releases: Array<(v: unknown) => void> = [];
+    loadProfile.mockImplementation(
+      () => new Promise((resolve) => releases.push(resolve as (v: unknown) => void)),
+    );
+    render(<Harness />);
+    await waitFor(() => expect(releases.length).toBe(1));
+
+    const recheckDone = recheckRef!();
+    await waitFor(() => expect(releases.length).toBe(2));
+    await act(async () => {
+      releases[1]!(PROFILE_ROW);
+      await recheckDone;
+    });
+    expect(status()).toBe("present");
+
+    // Now the *first*, superseded read settles with the opposite answer. The generation guard is
+    // the only thing stopping it from clobbering `present` with a stale `missing`.
+    spy.setRows("profiles", []);
+    await act(async () => {
+      releases[0]!(null);
+    });
+    await act(async () => {});
+    expect(status()).toBe("present");
+  });
 });
 
 describe("the gate is inert when signed out (principle 5)", () => {
