@@ -8,7 +8,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, realp
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { matches, ticketIdFromBranch, lanePathsFor, checkLanePaths, resolveChangedPaths, runCheck } from "./check-lane-paths.mjs";
+import { matches, ticketIdFromBranch, lanePathsFor, checkLanePaths, listedPathsFromTicket, resolveChangedPaths, runCheck } from "./check-lane-paths.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
@@ -42,6 +42,21 @@ function makeRoot({ ci = true, tickets = {} } = {}) {
 }
 
 const BARE_CI = "name: ci\njobs:\n  checks:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - run: pnpm check:repo\n";
+
+
+/** Wrap an injected `git` so `ls-tree`/`show` serve `tickets` ({fileName: text}) as the base's docs/tickets/. */
+function withTickets(tickets, inner) {
+  return (args) => {
+    if (args[0] === "ls-tree") return Object.keys(tickets).map((n) => `docs/tickets/${n}\n`).join("");
+    if (args[0] === "show") {
+      const name = args[1].split("/").pop();
+      if (!(name in tickets)) throw new Error(`fatal: path ${args[1]} does not exist`);
+      return tickets[name];
+    }
+    return inner(args);
+  };
+}
+const UF10_AT_BASE = { "T-0307a-balance-screen.md": UF10_TICKET };
 
 // --- proof gaps closed with an injected git ---------------------------------------------
 test("QA AC-1: a ticket branch with an EMPTY slug (`t/T-0307a-`) is not a ticket branch", () => {
@@ -100,14 +115,13 @@ test("QA AC-8: a missing diff base is announced on stdout, not swallowed", async
   }
 });
 
-test("QA AC-8: a missing ticket file is announced on stdout, and a loose id prefix does not stand in for it", async () => {
-  // Only T-0307a's file exists. Branch t/T-0307-x is a different ticket (`T-0307-` != `T-0307a`).
+test("QA AC-8: a ticket missing on the base is `ticket-not-on-base`, and a loose id prefix does not stand in for it", async () => {
+  // Only T-0307a's file is on the base. Branch t/T-0307-x is a different ticket (`T-0307-` != `T-0307a`).
   const root = makeRoot({ tickets: { "T-0307a-balance-screen.md": UF10_TICKET } });
   try {
-    const git = (args) => (args[0] === "merge-base" ? "abc\n" : args[0] === "diff" ? "apps/web/src/lib/i18n/en.ts\n" : "");
-    const { result, lines } = await captureLog(() => runCheck(root, { branch: "t/T-0307-x", git, env: {} }));
-    assert.deepEqual(result, [], "T-0307 must not be judged against T-0307a's ticket file");
-    assert.ok(lines.some((l) => /no ticket file/i.test(l)), JSON.stringify(lines));
+    const git = withTickets(UF10_AT_BASE, (args) => (args[0] === "merge-base" ? "abc\n" : "apps/web/src/lib/i18n/en.ts\n"));
+    const result = await runCheck(root, { branch: "t/T-0307-x", git, env: {} });
+    assert.deepEqual(result.map((f) => f.rule), ["ticket-not-on-base"], "T-0307 must not be judged against T-0307a's ticket file");
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -116,7 +130,7 @@ test("QA AC-8: a missing ticket file is announced on stdout, and a loose id pref
 test("QA AC-9: a bare-checkout ci.yml is reported by runCheck on a ticket branch AND off one", async () => {
   const root = makeRoot({ ci: BARE_CI, tickets: { "T-0307a-balance-screen.md": UF10_TICKET } });
   try {
-    const git = (args) => (args[0] === "merge-base" ? "abc\n" : "apps/web/src/features/UF-10/x.ts\n");
+    const git = withTickets(UF10_AT_BASE, (args) => (args[0] === "merge-base" ? "abc\n" : "apps/web/src/features/UF-10/x.ts\n"));
     const onTicket = await runCheck(root, { branch: "t/T-0307a-x", git, env: {} });
     assert.ok(onTicket.some((f) => f.rule === "ci-diff-base-missing"), JSON.stringify(onTicket));
     const onMain = await runCheck(root, { branch: "main", git, env: {} });
@@ -124,7 +138,7 @@ test("QA AC-9: a bare-checkout ci.yml is reported by runCheck on a ticket branch
     // and it is combined with, not replaced by, lane findings
     const withLane = await runCheck(root, {
       branch: "t/T-0307a-x",
-      git: (a) => (a[0] === "merge-base" ? "abc\n" : "apps/web/src/lib/i18n/en.ts\n"),
+      git: withTickets(UF10_AT_BASE, (a) => (a[0] === "merge-base" ? "abc\n" : "apps/web/src/lib/i18n/en.ts\n")),
       env: {},
     });
     assert.deepEqual(withLane.map((f) => f.rule).sort(), ["ci-diff-base-missing", "shared-i18n-en-edited"]);
@@ -136,11 +150,12 @@ test("QA AC-9: a bare-checkout ci.yml is reported by runCheck on a ticket branch
 test("QA branch resolution: --branch > GITHUB_HEAD_REF > GITHUB_REF_NAME > git rev-parse", async () => {
   const root = makeRoot({ tickets: { "T-0307a-balance-screen.md": UF10_TICKET } });
   try {
-    const mk = (headRef) => (args) => {
-      if (args[0] === "rev-parse") return `${headRef}\n`;
-      if (args[0] === "merge-base") return "abc\n";
-      return "apps/web/src/lib/i18n/en.ts\n";
-    };
+    const mk = (headRef) =>
+      withTickets(UF10_AT_BASE, (args) => {
+        if (args[0] === "rev-parse") return `${headRef}\n`;
+        if (args[0] === "merge-base") return "abc\n";
+        return "apps/web/src/lib/i18n/en.ts\n";
+      });
     const run = (opts) => runCheck(root, opts).then((f) => f.map((x) => x.rule));
     const hit = ["shared-i18n-en-edited"];
     // env HEAD_REF beats REF_NAME (on a PR, REF_NAME is `12/merge`)
@@ -202,10 +217,8 @@ function git(root, ...args) {
 const FLOW = (n) => `apps/web/src/lib/i18n/flows/uf-${n}.ts`;
 
 /** A git repo on `main` holding the shared files, then a ticket branch. Returns {root, commit}. */
-function gitRepo(ticketBranch) {
-  const root = makeRoot({
-    tickets: { "T-0307a-balance-screen.md": UF10_TICKET, "T-0500-backend.md": BACKEND_TICKET },
-  });
+function gitRepo(ticketBranch, tickets = { "T-0307a-balance-screen.md": UF10_TICKET, "T-0500-backend.md": BACKEND_TICKET }) {
+  const root = makeRoot({ tickets });
   const files = {
     "apps/web/src/lib/i18n/en.ts": "export const en = {};\n",
     [FLOW("06")]: "export const uf06 = {} as const;\n",
@@ -364,4 +377,103 @@ test("QA git: origin/main is preferred over a stale local main", async () => {
   } finally {
     cleanup(root);
   }
+});
+
+// --- grants come from the BASE, not the branch (D-0074 §5) --------------------------------
+const EN = "apps/web/src/lib/i18n/en.ts";
+const withExtra = (ticket, extra) => ticket.replace("- **Listed extras:**", `- **Listed extras:**\n  - \`${extra}\` — self-granted`);
+
+test("base grants: a branch that lists en.ts in its own ticket copy and edits it is still reported (injected git)", async () => {
+  const root = makeRoot({ tickets: { "T-0307a-balance-screen.md": withExtra(UF10_TICKET, EN) } }); // the BRANCH copy grants
+  try {
+    assert.ok(listedPathsFromTicket(withExtra(UF10_TICKET, EN)).includes(EN), "test premise: the branch copy grants en.ts");
+    const git = withTickets(UF10_AT_BASE, (a) => (a[0] === "merge-base" ? "abc\n" : `${EN}\n`)); // the BASE copy does not
+    const rulesOut = (await runCheck(root, { branch: "t/T-0307a-x", git, env: {} })).map((f) => f.rule);
+    assert.deepEqual(rulesOut, ["shared-i18n-en-edited"]);
+  } finally {
+    cleanup(root);
+  }
+});
+
+test("base grants: a ticket the base copy grants is silent (injected git)", async () => {
+  const root = makeRoot({ tickets: { "T-0307a-balance-screen.md": UF10_TICKET } }); // branch copy does NOT grant
+  try {
+    const git = withTickets({ "T-0307a-balance-screen.md": withExtra(UF10_TICKET, EN) }, (a) => (a[0] === "merge-base" ? "abc\n" : `${EN}\n`));
+    assert.deepEqual(await runCheck(root, { branch: "t/T-0307a-x", git, env: {} }), []);
+  } finally {
+    cleanup(root);
+  }
+});
+
+test("base grants: ticket file absent on the base, present on the branch -> ticket-not-on-base (injected git)", async () => {
+  const root = makeRoot({ tickets: { "T-0307a-balance-screen.md": UF10_TICKET } });
+  try {
+    const git = withTickets({}, (a) => (a[0] === "merge-base" ? "abc\n" : "apps/web/src/features/UF-10/x.ts\n"));
+    const out = await runCheck(root, { branch: "t/T-0307a-x", git, env: {} });
+    assert.deepEqual(out.map((f) => f.rule), ["ticket-not-on-base"]);
+    assert.match(out[0].message, /committed on main before the build/);
+  } finally {
+    cleanup(root);
+  }
+});
+
+test("base grants (REAL git): the reviewer's reproduction, one commit grants en.ts and edits it, is reported", async () => {
+  const { root, write, commit } = gitRepo("t/T-0307a-balance-screen");
+  try {
+    write("docs/tickets/T-0307a-balance-screen.md", withExtra(UF10_TICKET, EN));
+    write(EN, "export const en = { stolen: true };\n");
+    commit("grant myself en.ts and edit it");
+    const out = await runCheck(root, { env: {} });
+    assert.ok(out.some((f) => f.rule === "shared-i18n-en-edited"), JSON.stringify(out));
+    assert.ok(!out.some((f) => f.rule === "ticket-not-on-base"));
+  } finally {
+    cleanup(root);
+  }
+});
+
+test("base grants (REAL git): a ticket file first created on the branch is ticket-not-on-base", async () => {
+  const { root, write, commit } = gitRepo("t/T-0600-new-thing");
+  try {
+    write("docs/tickets/T-0600-new-thing.md", "---\nid: T-0600\nlane: infra\n---\n## Paths you may change\n- `infra/**`\n");
+    write("infra/x.tf", "# x\n");
+    commit("ticket and code together");
+    const out = await runCheck(root, { env: {} });
+    assert.deepEqual(out.map((f) => f.rule), ["ticket-not-on-base"]);
+  } finally {
+    cleanup(root);
+  }
+});
+
+test("base grants (REAL git): a ticket that IS on the base and grants a path stays silent", async () => {
+  const { root, write, commit } = gitRepo("t/T-0307a-balance-screen", { "T-0307a-balance-screen.md": withExtra(UF10_TICKET, EN) });
+  try {
+    write(EN, "export const en = { ok: true };\n");
+    commit("edit granted en.ts");
+    assert.deepEqual(await runCheck(root, { env: {} }), []);
+  } finally {
+    cleanup(root);
+  }
+});
+
+// --- headings and paragraphs deny the bullets under them ------------------------------------
+const ticketWith = (body) => `---\nid: T-9999\nlane: infra\n---\n## Paths you may change\n${body}\n\n## Next\n- \`nope/**\`\n`;
+
+test("deny scope: `### Not yours` denies every bullet below it; a neutral heading lifts it", () => {
+  const listed = listedPathsFromTicket(
+    ticketWith("- `apps/a/**`\n\n### Not yours\n- `apps/b/**`\n- `apps/c/**`\n\n### Extras\n- `apps/d/**`"),
+  );
+  assert.deepEqual(listed, ["apps/a/**", "apps/d/**"]);
+});
+
+test("deny scope: a `**Not yours:**` paragraph above bullets denies them, and a following heading ends it", () => {
+  const listed = listedPathsFromTicket(
+    ticketWith("- `apps/a/**`\n\n**Not yours:**\n- `apps/b/**`\n- `apps/c/**`\n\n### More\n- `apps/d/**`"),
+  );
+  assert.deepEqual(listed, ["apps/a/**", "apps/d/**"]);
+  const plain = listedPathsFromTicket(ticketWith("Not yours:\n- `apps/b/**`"));
+  assert.deepEqual(plain, []);
+});
+
+test("deny scope: a `###` heading does not end the section, but `##` does", () => {
+  assert.deepEqual(listedPathsFromTicket(ticketWith("### Sub\n- `apps/a/**`")), ["apps/a/**"]);
 });

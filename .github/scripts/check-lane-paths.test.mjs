@@ -523,7 +523,7 @@ test("AC-8: a fresh branch with no commits yet gives an empty diff, not a crash"
     if (args[0] === "diff") return "\n";
     throw new Error(`unexpected git ${args.join(" ")}`);
   };
-  assert.deepEqual(resolveChangedPaths(git), { changed: [], note: null });
+  assert.deepEqual(resolveChangedPaths(git), { changed: [], note: null, base: "abc123" });
 });
 
 test("AC-8: resolveChangedPaths falls back to `main` when origin/main is absent", () => {
@@ -676,9 +676,16 @@ test("AC-10 CONTRAST: the same changed paths under a UF-10 branch report", () =>
 test("AC-10 CONTRAST (end to end): runCheck with an injected git reports on a UF-10 branch", async () => {
   // Through runCheck (branch -> ticket file -> ownership -> findings) against the real repo
   // files, with a stubbed git so it does not depend on branches, remotes or HEAD state.
+  const tickets = {};
+  for (const id of ["T-0307a", "T-0320"]) {
+    const name = readdirSync(path.join(REPO_ROOT, "docs", "tickets")).find((f) => f.startsWith(`${id}-`));
+    tickets[name] = realTicket(id);
+  }
   const git = (args) => {
     if (args[0] === "merge-base") return "abc123\n";
     if (args[0] === "diff") return `${CONTRAST_CHANGED.join("\n")}\n`;
+    if (args[0] === "ls-tree") return Object.keys(tickets).map((n) => `docs/tickets/${n}\n`).join("");
+    if (args[0] === "show") return tickets[args[1].split("/").pop()];
     throw new Error(`unexpected git ${args.join(" ")}`);
   };
   const findings = await runCheck(REPO_ROOT, { branch: "t/T-0307a-balance-screen", git, env: {} });

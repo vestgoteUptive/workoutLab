@@ -73,7 +73,7 @@ makes their parallelism safe.
 ### 4. The listed-extra escape hatch is deliberate
 D-0071 §1 already grants it ("listed as an explicit extra path"; T-0301a uses it for
 `flows/uf-01.ts`). The check therefore **reads the ticket file**, so the grant and the
-enforcement can never drift apart: a path that hits one of the four shared rules *and* appears
+enforcement can never drift apart (read from the diff base, see §5): a path that hits one of the four shared rules *and* appears
 in the ticket's `## Paths you may change` section is allowed and silent.
 
 Consequence: **a ticket file is now load-bearing for CI.** A missing or sloppy `## Paths you
@@ -90,6 +90,23 @@ deliberately rather than silently:
 
 It does **not** validate that a `## Paths you may change` section is itself sane. A ticket
 granting itself `apps/web/**` is a grooming failure, caught at accept, not here.
+
+### 5. Grants are read from the diff base, not the branch
+The ticket text is taken with `git show <merge-base>:docs/tickets/T-NNNN-*.md`, never from the
+branch's working tree. Reading the branch copy let one commit add a path to its own `## Paths
+you may change` and edit that path in the same push (found in re-review; a branch could grant
+itself `en.ts`). Consequences:
+
+- A ticket file that does not exist on the base yields the finding `ticket-not-on-base` (exit
+  1), never a silent fallback to the branch copy. Ticket files are committed on `main` before the
+  build starts; that is the orchestrator's process, and T-0320's own ticket already was.
+- Adding a grant means changing the ticket **on main** (product owner or orchestrator), moving
+  the change to the owning lane, or raising a follow-up. The `lane-path-not-owned` message says
+  so and no longer suggests editing the ticket on the branch. The accept log a build appends to
+  its own ticket is a *changed path* (listed on main), not a grant, so it is unaffected.
+- The grant parser fails closed (a negation before a path, or a negative heading or paragraph
+  above a bullet, grants nothing). The remaining prose holes (a negation after the path,
+  tables, links) wait for the structured `paths:` grant format (T-0340).
 
 ## Consequences
 - `pnpm check:repo` now fails a ticket branch that edits a file its ticket does not own. The

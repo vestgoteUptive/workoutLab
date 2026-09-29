@@ -18,7 +18,7 @@
 //   4. it does not detect two tickets that both legitimately list the same shared file —
 //      that stays D-0071 §1's "two tickets that list it never run in parallel", an
 //      orchestrator rule.
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -152,6 +152,8 @@ function sentenceAround(line, at) {
   return plainOf(line.slice(from, to));
 }
 
+const isNegativeText = (text) => NEGATION_RE.test(plainOf(text)) || WHOLE_LINE_DENIAL_RE.test(plainOf(text));
+
 const plainOf = (text) => text.replace(/`[^`]*`/g, " ").replace(/[*_]/g, "");
 
 /**
@@ -166,10 +168,20 @@ export function listedPathsFromTicket(ticketText) {
   const start = lines.findIndex((l) => /^##\s+Paths you may change\s*$/.test(l.trim()));
   if (start === -1) return [];
   const out = [];
-  let denying = false;
+  let denying = false; // the current bullet (and its sub-bullets) is a denial
+  let blockDeny = false; // a negative `###` heading above: every line under it is a denial
+  let paraDeny = false; // a negative paragraph above: every bullet under it is a denial
   for (let i = start + 1; i < lines.length; i++) {
     const line = lines[i];
-    if (/^##\s/.test(line)) break;
+    if (/^#{1,2}\s/.test(line)) break;
+    // A `###` (or deeper) heading ends the previous block. "### Not yours" denies every bullet
+    // below it until the next heading; a neutral heading lifts the denial.
+    if (/^#{3,}\s/.test(line)) {
+      blockDeny = isNegativeText(line.replace(/^#+\s*/, ""));
+      paraDeny = false;
+      denying = false;
+      continue;
+    }
     const plain = plainOf(line);
     const wholeLine = WHOLE_LINE_DENIAL_RE.test(plain);
     const opensNegative = NEGATION_RE.test(plain.replace(/^\s*[-*]\s+/, "").split(/\s+/).slice(0, 2).join(" "));
@@ -177,9 +189,19 @@ export function listedPathsFromTicket(ticketText) {
     if (bulletIndent) {
       if (bulletIndent[1].length === 0) denying = wholeLine || opensNegative;
       else if (wholeLine || opensNegative) denying = true;
+    } else if (line.trim() !== "" && !/^\s/.test(line)) {
+      // An unindented paragraph, not a wrapped bullet: a negative one ("**Not yours:**")
+      // denies the bullets that follow it, up to the next heading.
+      // Only a paragraph that OPENS negative or is a whole-line denial ("Not yours:") denies the
+      // bullets under it; a negation buried mid-sentence ("nothing overlaps") does not.
+      if (wholeLine || opensNegative) {
+        paraDeny = true;
+        denying = true;
+      }
     } else if (wholeLine || opensNegative) {
       denying = true;
     }
+    if (blockDeny || (paraDeny && bulletIndent)) continue;
     if (denying || wholeLine) continue;
     PATH_TOKEN_RE.lastIndex = 0;
     let m;
@@ -319,7 +341,7 @@ export function checkLanePaths({
       path: filePath,
       line: 1,
       rule: "lane-path-not-owned",
-      message: `${ticketId} (lane \`${laneValue ?? "(missing)"}\`) does not own this path; add it to \`## Paths you may change\` or move the change to the owning lane`,
+      message: `${ticketId} (lane \`${laneValue ?? "(missing)"}\`) does not own this path. The grant is read from the ticket as it is on the diff base (main), so editing the ticket on this branch cannot add it: ask the product owner or orchestrator to add it to \`## Paths you may change\` on main, move the change to the owning lane, or raise it as a follow-up`,
     });
   }
   return { findings, note: null };
@@ -416,23 +438,22 @@ export function resolveChangedPaths(git) {
       .split("\n")
       .map((l) => l.trim())
       .filter(Boolean);
-    return { changed, note: null };
+    return { changed, note: null, base };
   } catch {
     return { changed: null, note: "git diff failed — skipping the lane-path check" };
   }
 }
 
-function findTicketFile(root, ticketId) {
-  const dir = path.join(root, "docs", "tickets");
-  let entries;
+/** `{relPath, text}` of `docs/tickets/<ticketId>-*.md` as committed at `base`, else null. */
+function readTicketAtBase(git, base, ticketId) {
   try {
-    entries = readdirSync(dir);
+    const names = git(["ls-tree", "--name-only", base, "docs/tickets/"]).split("\n").map((l) => l.trim());
+    const relPath = names.find((n) => path.posix.basename(n).startsWith(`${ticketId}-`) && n.endsWith(".md"));
+    if (!relPath) return null;
+    return { relPath, text: git(["show", `${base}:${relPath}`]) };
   } catch {
     return null;
   }
-  const name = entries.find((f) => f.startsWith(`${ticketId}-`) && f.endsWith(".md"));
-  if (!name) return null;
-  return { relPath: `docs/tickets/${name}`, absPath: path.join(dir, name) };
 }
 
 export async function runCheck(root = REPO_ROOT, { branch, git, env = process.env } = {}) {
@@ -453,14 +474,28 @@ export async function runCheck(root = REPO_ROOT, { branch, git, env = process.en
   const ticketId = ticketIdFromBranch(resolvedBranch);
   if (!ticketId) return ciFindings;
 
-  const { changed, note: diffNote } = resolveChangedPaths(runGit);
+  const { changed, note: diffNote, base } = resolveChangedPaths(runGit);
   if (changed == null) {
     console.log(`check-lane-paths: ${diffNote}`);
     return ciFindings;
   }
   if (changed.length === 0) return ciFindings;
 
-  const ticketFile = findTicketFile(root, ticketId);
+  // Grants are read from the ticket AS IT IS ON THE DIFF BASE, never from this branch's working
+  // tree (D-0074 §5). Otherwise one commit could add a path to its own `## Paths you may
+  // change` and edit that path in the same push.
+  const ticketAtBase = readTicketAtBase(runGit, base, ticketId);
+  if (!ticketAtBase) {
+    return [
+      ...ciFindings,
+      {
+        path: `docs/tickets/${ticketId}-*.md`,
+        line: 1,
+        rule: "ticket-not-on-base",
+        message: `${ticketId} has no ticket file on the diff base (main). Ticket files are committed on main before the build starts (the orchestrator's process), and grants are read from there, not from this branch. Ask the orchestrator to commit the ticket to main first`,
+      },
+    ];
+  }
   let ownershipText = "";
   try {
     ownershipText = readFileSync(path.join(root, ".squad", "ownership.yaml"), "utf8");
@@ -469,10 +504,10 @@ export async function runCheck(root = REPO_ROOT, { branch, git, env = process.en
   }
   const { findings, note } = checkLanePaths({
     ticketId,
-    ticketText: ticketFile ? readFileSync(ticketFile.absPath, "utf8") : null,
+    ticketText: ticketAtBase.text,
     ownershipText,
     changed,
-    ticketPath: ticketFile?.relPath ?? null,
+    ticketPath: ticketAtBase.relPath,
   });
   if (note) console.log(`check-lane-paths: ${note}`);
   return [...ciFindings, ...findings];
