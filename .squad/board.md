@@ -153,7 +153,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0315 | Design a C-01 body silhouette to replace the D-0060 tile grid (after the H-12 device review) | design | T-0300d | todo | wl-design |
 | T-0316 | design-tokens build-css.mjs: write tokens.css to a temp file + rename, so a concurrent reader (landing astro build) never sees a partial file — T-0312 review | design | T-0312 | todo | wl-design |
 | T-0317 | README: one line that `pnpm --filter @workoutlab/web test` builds the tokens CSS via pretest, and a direct vitest call needs `node apps/web/ensure-tokens-css.mjs` first — T-0312 follow-up | infra | T-0312 | todo | wl-build-infra |
-| T-0318 | Phase 3 plumbing: sub-routes (UF-03.3, UF-04.3, UF-06.2, UF-07.1, UF-11.3), per-flow i18n modules, principle-1 import bans for UF-02/06/07/10/11 from UF-03/08/09 (D-0067 §2) — incl. the UF-03.3 summary route (folds in the UF-09 follow-up; no /session/:id/list); bans on imports into UF-04/UF-05 and deep cross-feature imports (D-0071 §9) | web-shell | T-0300a, T-0300b | ready | wl-build-web |
+| T-0318 | Phase 3 plumbing: sub-routes (UF-03.3, UF-04.3, UF-06.2, UF-07.1, UF-11.3), per-flow i18n modules, principle-1 import bans for UF-02/06/07/10/11 from UF-03/08/09 (D-0067 §2) — incl. the UF-03.3 summary route (folds in the UF-09 follow-up; no /session/:id/list); bans on imports into UF-04/UF-05 and deep cross-feature imports (D-0071 §9) | web-shell | T-0300a, T-0300b | doing | wl-build-web |
 | T-0319 | Offline caches v2: exercise details + variants, sessions 56 d, plan_checkins, routines — one Dexie version bump (D-0067 §3) — run after T-0318 (web-shell serial) | web-shell | T-0300c | ready | wl-build-web |
 
 ## Phase 4 — Ship

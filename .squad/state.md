@@ -1,14 +1,14 @@
 # State
 
 - **Phase:** 2–3 overlap. Engine rules 1–14 done; backend suggest/balance/finish done; shell through T-0300d (C-01 body map). **Phase 3 is groomed**: the 8 screen tickets are split into 22 per-flow children (D-0063–D-0070).
-- **Updated:** 2026-09-29 ~11:30 UTC by orchestrator (cloud session, handing off for a subscription switch)
+- **Updated:** 2026-09-29 by orchestrator (desktop session; PR #8 merged, T-0318 in flight)
 - **Progress: 37 done**, plus ~50 open rows (22 new Phase 3 children, 7 infra/deploy, ~20 small follow-ups).
 - **Done this session (all on branch `main-hzlbfc`, PR #8):** T-0204, T-0205, T-0208, T-0300d, T-0312, T-0903, D-0061 (the human's H-07 review), H-11 closed.
-- **PR #8** (`main-hzlbfc` → `main`) is green and mergeable. **The human must merge it.** A cloud container can push only `main-hzlbfc`.
+- **PR #8 is MERGED** into `main` at `25f9660` (all 3 checks green). Post-merge verify on main: `19/19 successful, 0 cached, 43.3s` with `--force --concurrency=1`. Local `main` fast-forwarded.
 - **Concurrency cap: 5.** Lane ownership binds tighter: web-shell tickets (T-0301a, T-0318, T-0319, T-0313) run one at a time.
-- **In flight:** nothing. The Phase 3 triage check **finished**: D-0071 reconciles D-0063/D-0067 (11 points: one string module per flow plus a shared lib/i18n/workout.ts; one route rule, with no /session/:id/list; hand-offs only through index.tsx; host-owned registries UF-09/seams.tsx and UF-02/slots.tsx; one engine applySwap (T-0224) and one SwapSheet). TR-0030 resolved. Ticket files for T-0318 and T-0319 are written. The earlier "WIP(squad)" commits are superseded by the final commit.
+- **In flight:** T-0318 (web-shell plumbing), build starting. The Phase 3 triage check **finished**: D-0071 reconciles D-0063/D-0067 (11 points: one string module per flow plus a shared lib/i18n/workout.ts; one route rule, with no /session/:id/list; hand-offs only through index.tsx; host-owned registries UF-09/seams.tsx and UF-02/slots.tsx; one engine applySwap (T-0224) and one SwapSheet). TR-0030 resolved. Ticket files for T-0318 and T-0319 are written. The earlier "WIP(squad)" commits are superseded by the final commit.
 - **Ready now:** **T-0318** (web-shell plumbing) → **T-0319** (offline caches v2) → **T-0301a** (profile gate). All three are web-shell, so they run **one at a time in that order**. T-0318 unblocks T-0301b, T-0302a, T-0303a and T-0307a, which run in parallel afterwards. **Priority engine:** T-0219 (rule 7.1 timed costing overruns the budget; needs a decision), T-0224 (applySwap; spec settled in D-0071 §7, needs a ticket file), T-0214 (goal reps), T-0215 (one-period check-in).
-- **Waiting on humans:** merge PR #8; T-0217 (tie-break for two ratings at the same endedAt, default "higher wins"); H-12 (review C-01 on a phone); H-05, H-06, H-10 (non-blocking).
+- **Waiting on humans:** T-0217 (tie-break for two ratings at the same endedAt, default "higher wins"); H-12 (review C-01 on a phone); H-05, H-06, H-10 (non-blocking).
 
 ## Executor
 - **Model pins:** the subscription switched to one that has **Opus 5 but not Opus 5.5**. The 8 Opus roles are now pinned to `claude-opus-5` (commit c48bb5f, regenerated with `node scripts/sync-agents.mjs`). The Sonnet roles stay on `claude-sonnet-5`. When spawning sub-agents, pass `model: "opus"`, or omit it to use the role pin. If the subscription changes again: edit `agents/roles/*.md`, run `node scripts/sync-agents.mjs`, and commit (a restart alone never registers anything).
