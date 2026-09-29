@@ -53,6 +53,7 @@ export interface BalanceScreenProps {
 function useResult(props: BalanceScreenProps): {
   result: BalanceResult | null;
   lastSyncedAt: string | null;
+  timeZone: string;
 } {
   const now = props.now ?? new Date();
   const timeZone = props.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -68,6 +69,7 @@ function useResult(props: BalanceScreenProps): {
   return {
     result: props.result ?? state.result,
     lastSyncedAt: props.lastSyncedAt !== undefined ? props.lastSyncedAt : state.lastSyncedAt,
+    timeZone,
   };
 }
 
@@ -125,7 +127,7 @@ function AreaRow({ area, locale }: { area: AreaBalance; locale: string | undefin
 
 /** UF-10.1 All areas. */
 export function Balance(props: BalanceScreenProps = {}) {
-  const { result, lastSyncedAt } = useResult(props);
+  const { result, lastSyncedAt, timeZone } = useResult(props);
   const locale = props.locale;
   const areas = result?.areas ?? [];
   // `every`, not a recomputation: the empty state is "no hard set anywhere in the window", which
@@ -141,7 +143,14 @@ export function Balance(props: BalanceScreenProps = {}) {
             : en.screens.balance}
         </h1>
         <span className="wl-balance__meta">
-          <OfflineStatus variant="text" lastSyncedAt={lastSyncedAt} locale={locale ?? "en-GB"} />
+          {/* The screen's own time zone, not the device default, so "last synced HH:MM" is
+              read in the same zone the 14-day window was computed in. */}
+          <OfflineStatus
+            variant="text"
+            lastSyncedAt={lastSyncedAt}
+            locale={locale ?? "en-GB"}
+            timeZone={timeZone}
+          />
           <Link to="/plan" className="wl-balance__plan-link">
             {en.uf10.planLink}
           </Link>
@@ -281,9 +290,8 @@ function useExerciseNames(
 /** UF-10.2 Area detail. */
 export function BalanceDetail(props: BalanceScreenProps = {}) {
   const { area: areaParam } = useParams();
-  const { result, lastSyncedAt } = useResult(props);
+  const { result, lastSyncedAt, timeZone } = useResult(props);
   const locale = props.locale;
-  const timeZone = props.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const names = useExerciseNames(props.exerciseNames);
 
   const area = useMemo(
@@ -307,7 +315,12 @@ export function BalanceDetail(props: BalanceScreenProps = {}) {
       <div className="wl-balance__header">
         <h1 className="wl-balance-detail__headline">{en.bodyMap.areas[area.area]}</h1>
         <span className="wl-balance__meta">
-          <OfflineStatus variant="text" lastSyncedAt={lastSyncedAt} locale={locale ?? "en-GB"} />
+          <OfflineStatus
+            variant="text"
+            lastSyncedAt={lastSyncedAt}
+            locale={locale ?? "en-GB"}
+            timeZone={timeZone}
+          />
         </span>
       </div>
 

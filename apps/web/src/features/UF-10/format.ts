@@ -62,14 +62,38 @@ export function windowDates(windowStart: LocalDate, count: number): LocalDate[] 
   });
 }
 
-/** `2026-09-17` → `17 Sep` (`en-GB`-style day + abbreviated month), via Intl only (NFR-I18N-2). */
+/**
+ * `2026-09-17` → `17 Sep`: the day and month in the locale's own order, with the month
+ * abbreviated to three letters.
+ *
+ * Built from `formatToParts` rather than `format` for one measured reason. CLDR's `en-GB`
+ * `month: "short"` is **"Sept"**, not "Sep" — September is the only month where the two
+ * differ, and `en-US` avoids it only by also putting the month first ("Sep 20"), which is the
+ * wrong order for this screen. The spec and the ticket both say `20 Sep`, so the locale
+ * decides the *order* and the separator while the month name is normalised to three letters.
+ * Still Intl-only: no date library, no hard-coded month table (NFR-I18N-2).
+ */
 export function formatDayMonth(date: LocalDate, locale = "en-GB"): string {
   const [y, m, d] = parts(date);
-  return new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(y, m, d)));
+  return formatPartsDayMonth(
+    new Intl.DateTimeFormat(locale, {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    }).formatToParts(new Date(Date.UTC(y, m, d))),
+  );
+}
+
+/** Joins `day`/`month`/`literal` parts, clipping the month to three letters. */
+function formatPartsDayMonth(parts: readonly Intl.DateTimeFormatPart[]): string {
+  return parts
+    .map((part) => (part.type === "month" ? shortMonth(part.value) : part.value))
+    .join("");
+}
+
+/** "Sept" → "Sep"; "Sep", "May" and any non-Latin abbreviation are returned unchanged. */
+function shortMonth(value: string): string {
+  return /^[A-Za-z]{4,}$/.test(value) ? value.slice(0, 3) : value;
 }
 
 /**
@@ -99,9 +123,12 @@ export function formatInstantDayMonth(
   iso: string,
   options: { locale: string | undefined; timeZone: string },
 ): string {
-  return new Intl.DateTimeFormat(options.locale ?? "en-GB", {
-    day: "numeric",
-    month: "short",
-    timeZone: options.timeZone,
-  }).format(new Date(iso));
+  // Same three-letter normalisation as `formatDayMonth` (see its note on `en-GB` "Sept").
+  return formatPartsDayMonth(
+    new Intl.DateTimeFormat(options.locale ?? "en-GB", {
+      day: "numeric",
+      month: "short",
+      timeZone: options.timeZone,
+    }).formatToParts(new Date(iso)),
+  );
 }
