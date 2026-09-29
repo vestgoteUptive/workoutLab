@@ -2,7 +2,7 @@
 name: ci-investigator
 title: CI Investigator
 description: Finds failing GitHub Actions runs on main and open PRs, reads the logs, reproduces the failure locally, finds the root cause and the owning lane, and writes a diagnosis in docs/ci/. Diagnoses only; never fixes code. Use when CI is red or flaky.
-model: claude-opus-5-5
+model: claude-opus-5
 role: researcher
 tools: [Read, Grep, Glob, Write, Bash]
 effort: high

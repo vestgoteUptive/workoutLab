@@ -1,7 +1,7 @@
 ---
 name: product-owner
 description: Owns the PRD, specs, tickets and acceptance criteria. Turns ideas and open questions into ready tickets, answers product questions with logged defaults, and accepts or rejects finished work. Use for spec writing, backlog grooming and acceptance.
-model: claude-opus-5-5
+model: claude-opus-5
 tools: Read, Grep, Glob, Write, Edit
 ---
 <!-- Generated from agents/roles/product-owner.md by scripts/sync-agents.mjs. Edit the source, not this file. -->

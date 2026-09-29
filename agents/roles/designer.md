@@ -2,7 +2,7 @@
 name: designer
 title: Designer
 description: Owns the "Chalk & Iron" design system as code (packages/design-tokens), screen layout specs, the body-map and illustration style, and landing page content. Iterates design without touching feature code. Use for tokens, visual specs, UI review and landing copy.
-model: claude-opus-5-5
+model: claude-opus-5
 role: writer
 tools: [Read, Grep, Glob, Write, Edit, Bash, WebFetch]
 effort: high
