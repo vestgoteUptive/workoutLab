@@ -1,0 +1,149 @@
+/* UF-07.1 Routine editor. Colours and fonts come only from @workoutlab/design-tokens.
+   State styling is keyed on data attributes and pseudo-classes, never inline, so the
+   :focus-visible ring below always wins. */
+.wl-routine-editor {
+  padding: 16px;
+  color: var(--wl-color-text);
+  font-family: var(--wl-font-body);
+}
+
+.wl-routine-editor__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wl-routine-editor__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wl-routine-editor input[type="text"] {
+  min-height: 44px;
+  padding: 8px 12px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.wl-routine-editor input[aria-invalid="true"] {
+  border-color: var(--wl-color-warn);
+}
+
+.wl-routine-editor__list,
+.wl-routine-editor__matches {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-routine-editor__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wl-routine-editor__row-name {
+  flex: 1;
+}
+
+.wl-routine-editor button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.wl-routine-editor button[data-variant="primary"] {
+  color: var(--wl-color-bg);
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+}
+
+.wl-routine-editor button[data-variant="danger"] {
+  border-color: var(--wl-color-warn);
+  color: var(--wl-color-warn);
+}
+
+.wl-routine-editor button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wl-routine-editor button:focus-visible,
+.wl-routine-editor input:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-routine-editor__picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 8px;
+}
+
+.wl-routine-editor__card {
+  padding: 12px;
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 8px;
+}
+
+.wl-routine-editor__card p {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-routine-editor__hint {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-routine-editor__hint[data-tone="warn"],
+.wl-routine-editor__error[data-tone="error"] {
+  color: var(--wl-color-warn);
+}
+
+.wl-routine-editor__error {
+  margin: 0;
+}
+
+.wl-routine-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wl-routine-editor__dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+}
+
+.wl-routine-editor__live {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

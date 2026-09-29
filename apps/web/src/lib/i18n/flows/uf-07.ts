@@ -1,3 +1,34 @@
 // UF-07 strings (D-0071 §1). Owned by the UF-07 feature ticket: it is the only ticket that
-// edits this file, so the Phase 3 feature lanes never collide in `en.ts`. Empty until then.
-export const uf07 = {} as const;
+// edits this file, so the Phase 3 feature lanes never collide in `en.ts`.
+// T-0308a fills UF-07.1, the routine editor. The heading is `en.screens.routineEditor`.
+export const uf07 = {
+  nameLabel: "Name",
+  nameInvalid: "Name your routine (up to 40 characters)",
+  exercisesHeading: "Exercises",
+  emptyList: "No exercises yet. Add up to 8.",
+  rowLabel: (position: number, name: string) => `${position}. ${name}`,
+  moveUp: (name: string) => `Move ${name} up`,
+  moveDown: (name: string) => `Move ${name} down`,
+  remove: (name: string) => `Remove ${name}`,
+  moved: (name: string, position: number) => `${name} moved to position ${position}`,
+  removed: (name: string) => `${name} removed`,
+  added: (name: string) => `${name} added`,
+  addExercise: "Add exercise",
+  done: "Done",
+  searchLabel: "Search exercises",
+  add: (name: string) => `Add ${name}`,
+  alreadyAdded: "Added",
+  limitReached: "Up to 8 exercises",
+  noMatch: (query: string) => `No exercises match "${query}"`,
+  progression:
+    "Double progression. When every set reaches the top of its rep range, the weight goes up next time. After a long break or two short sessions in a row, it steps back.",
+  save: "Save",
+  cancel: "Cancel",
+  deleteRoutine: "Delete routine",
+  connectToSave: "Connect to save",
+  saveFailed: "Couldn't save your routine. Try again.",
+  deleteFailed: "Couldn't delete your routine. Try again.",
+  deleteTitle: (name: string) => `Delete ${name}?`,
+  confirmDelete: "Delete",
+  keepRoutine: "Keep routine",
+} as const;
