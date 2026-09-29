@@ -1,0 +1,145 @@
+/* C-01 Body map (T-0300d). Colours and fonts come only from @workoutlab/design-tokens (D-0019).
+ * Fill and attention outline are set inline from the engine's coverageStep/needsAttention. */
+.wl-body-map {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: var(--wl-font-body);
+  color: var(--wl-color-text);
+}
+
+.wl-body-map__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas:
+    ". shoulders ."
+    "chest back arms"
+    ". core ."
+    "glutes quads hamstrings"
+    ". calves .";
+  gap: 8px;
+  justify-items: center;
+}
+
+.wl-body-map__link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 12px;
+}
+
+.wl-body-map__area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
+  padding: 4px;
+  margin: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--wl-color-text);
+  font: inherit;
+}
+
+/* NFR-A11Y-2: each area button is at least 44 × 44 CSS px (AC-D6). */
+button.wl-body-map__area {
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+
+button.wl-body-map__area:disabled {
+  cursor: default;
+}
+
+/* Focus ring: 2 px accent, offset 2 px. Never warn, which means "needs attention" (AC-D6). */
+.wl-body-map__area:focus-visible,
+.wl-body-map__link:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-body-map__fill {
+  display: block;
+  box-sizing: border-box;
+  width: 40px;
+  height: 28px;
+  border-radius: 8px;
+}
+
+.wl-body-map--compact .wl-body-map__fill {
+  width: 28px;
+  height: 18px;
+}
+
+.wl-body-map__area-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wl-color-text-muted);
+}
+
+/* Numeric labels: text on bg, DM Sans 700, at least 12 px (NFR-A11Y-3). */
+.wl-body-map__value {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wl-color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-body-map__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-body-map__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-body-map__swatch {
+  display: inline-block;
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.wl-body-map__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes wl-body-map-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+/* Belt and braces: the component only sets the pulse when motion is allowed (AC-D9). */
+@media (prefers-reduced-motion: reduce) {
+  .wl-body-map * {
+    animation: none !important;
+  }
+}

@@ -1,7 +1,7 @@
 ---
 id: D-0020
 title: Data model v1 write rules — client-generated ids, a guard trigger enforces the D-0015 set upsert, write-once and server-set columns, lenient checks on offline-synced rows
-status: revisit
+status: decided
 date: 2026-09-27
 by: product-owner (T-0100 groom)
 area: data
@@ -28,3 +28,6 @@ D-0015 fixes the set-sync semantics (one row per `(user_id, client_id)`, the new
 
 ## Revisit when
 The same triggers as D-0015 (clock skew loses an edit; real two-device editing), or when a queued row fails a constraint in testing.
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

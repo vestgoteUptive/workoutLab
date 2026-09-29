@@ -1,7 +1,7 @@
 ---
 id: D-0021
 title: Data model v1 shape — auth.users as users, slug ids for the library (anon-readable), fixed vocabularies, plan_checkins lifecycle, routines, private analytics schema in UTC
-status: revisit
+status: decided
 date: 2026-09-27
 by: product-owner (T-0100 groom)
 area: data
@@ -28,3 +28,6 @@ Gap B3 lists what `docs/data-model.md` lacks: types, keys, indexes, RLS, variant
 
 ## Revisit when
 T-0101 defines progression rules, T-0301 finalises the UF-01.2 goal copy, or the first user test shows metric numbers that look off because of UTC dating.
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

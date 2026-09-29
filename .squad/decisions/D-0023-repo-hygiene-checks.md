@@ -1,7 +1,7 @@
 ---
 id: D-0023
 title: Repo hygiene checks (T-0004) — valid screen IDs, v1 labels, decision ids, placeholder markers
-status: revisit
+status: decided
 date: 2026-09-27
 by: product-owner
 area: process
@@ -63,3 +63,6 @@ ticket has landed, and where the scripts live.
 - Triage ids (TR-NNNN) collide as well. Then extend rule 3 to `.squad/triage/`.
 - Screen IDs start appearing in code or commit messages that should also be checked.
 - The board format changes (the check parses its table rows).
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

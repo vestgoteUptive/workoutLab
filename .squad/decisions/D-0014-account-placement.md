@@ -1,7 +1,7 @@
 ---
 id: D-0014
 title: UF-01.5 Account comes after the plan preview; the 60 s is measured from UF-01.1 to UF-01.4
-status: revisit
+status: decided
 date: 2026-09-27
 by: product-owner (T-0001)
 area: product
@@ -21,3 +21,6 @@ T-0301 builds this order. The e2e test in T-0403 times UF-01.1 → UF-01.4.
 
 ## Revisit when
 The first user test, especially if drop-off at UF-01.5 exceeds 30 %.
+
+## Confirmed
+Confirmed by the human 2026-09-29 (D-0061). It reopens only through its own "Revisit when" trigger.

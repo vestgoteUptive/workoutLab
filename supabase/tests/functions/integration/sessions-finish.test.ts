@@ -489,6 +489,114 @@ Deno.test(
   },
 );
 
+// --- T-0208: D-0058 over the wire --------------------------------------------------------------
+
+/** Drops what legitimately differs between two users' copies of S: `sessionId`, and each area's
+ * `targetUpdatedAt` (set when the profile is seeded). `endedAt` is compared by instant, because
+ * a request may send an offset while Postgres returns `+00:00`. */
+function comparableSummary(b: Record<string, unknown>) {
+  const { sessionId: _sessionId, endedAt, ...rest } = b;
+  const balanceResult = rest.balance as { areas: Array<Record<string, unknown>> };
+  return {
+    ...rest,
+    endedAtMs: new Date(endedAt as string).getTime(),
+    balance: {
+      ...balanceResult,
+      areas: balanceResult.areas.map(({ targetUpdatedAt: _targetUpdatedAt, ...area }) => area),
+    },
+  };
+}
+
+function permutations<T>(items: readonly T[]): T[][] {
+  if (items.length <= 1) return [items.slice()];
+  return items.flatMap((head, i) =>
+    permutations([...items.slice(0, i), ...items.slice(i + 1)]).map((rest) => [head, ...rest]),
+  );
+}
+
+async function readFinishRow(client: SupabaseClient, sessionId: string) {
+  const { data: row, error } = await client
+    .from("sessions")
+    .select("ended_at, effort_rating")
+    .eq("id", sessionId)
+    .single();
+  if (error) throw error;
+  return row as { ended_at: string | null; effort_rating: number | null };
+}
+
+Deno.test(
+  "T-0208 D-0058 commutativity: all 6 orders of {rated 07:31, unrated 07:40Z, rated 07:40 as +02:00} converge on ended_at 07:40, effort_rating 5",
+  async () => {
+    // C is the same instant as B, sent with an offset, so it counts as B's rule 2 retry. The
+    // winning instant is 07:40 and the only rating seen at it is 5, so every order must end at
+    // {07:40, 5} with equal last responses.
+    const A = { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ };
+    const B = { endedAt: "2026-09-28T07:40:00Z", tz: TZ };
+    const C = { endedAt: "2026-09-28T09:40:00+02:00", effortRating: 5, tz: TZ };
+
+    let reference: unknown;
+    for (const order of permutations([A, B, C])) {
+      const label = JSON.stringify(order);
+      // One user per order, so no session's hard sets reach another's `balance`.
+      const user = await createTestUser();
+      await seedFullProfile(user.client);
+      const sessionId = await seedSessionS(user.client);
+      let lastBody: Record<string, unknown> | undefined;
+      for (const body of order) {
+        const res = await finish(user.accessToken, sessionId, body);
+        assertEquals(res.status, 200, label);
+        lastBody = await res.json();
+      }
+      const row = await readFinishRow(user.client, sessionId);
+      assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
+      assertEquals(row.effort_rating, 5, label);
+      const comparable = comparableSummary(lastBody!);
+      reference ??= comparable;
+      assertEquals(comparable, reference, label);
+    }
+  },
+);
+
+Deno.test(
+  "T-0208 D-0058: the endedAt comparison is by instant — an equal instant in +02:00 doesn't clear; a string-later but older instant writes nothing",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const sessionId = await seedSessionS(user.client);
+
+    const first = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:40:00Z",
+      effortRating: 5,
+      tz: TZ,
+    });
+    assertEquals(first.status, 200);
+    const firstBody = await first.json();
+
+    // Same instant, offset form, no rating: a rule 2 retry, so it must not clear the rating.
+    const sameInstant = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T09:40:00+02:00",
+      tz: TZ,
+    });
+    assertEquals(sameInstant.status, 200);
+    assertEquals(await sameInstant.json(), firstBody, "rule 4: summary of the unchanged row");
+    let row = await readFinishRow(user.client, sessionId);
+    assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
+    assertEquals(row.effort_rating, 5);
+
+    // 08:35+01:00 = 07:35Z is older than 07:40, so rule 3 writes nothing, not even the rating.
+    const older = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T08:35:00+01:00",
+      effortRating: 2,
+      tz: TZ,
+    });
+    assertEquals(older.status, 200);
+    assertEquals(await older.json(), firstBody);
+    row = await readFinishRow(user.client, sessionId);
+    assertInstantEquals(row.ended_at, "2026-09-28T07:40:00Z");
+    assertEquals(row.effort_rating, 5);
+  },
+);
+
 // --- AC29: a rating-only retry never moves endedAt ----------------------------------------------
 
 Deno.test(

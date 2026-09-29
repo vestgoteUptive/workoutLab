@@ -34,6 +34,6 @@ eval "$(npx -y supabase@latest status -o env | sed 's/^/export /')"   # suites r
 - **Web builds die on budget/time, not correctness.** 4 AgentLab web runs died unfinished; all 4 passed as Opus sub-agents. Split UI tickets small; tell builders to commit WIP early.
 
 ## Notes for the next orchestrator
-- Next free: D-0060, TR-0030 (D-0058 = T-0208's rule, D-0059 = T-0204's defaults). Unused: D-0028, D-0038, D-0054.
+- Next free: D-0062, TR-0030 (D-0058 = T-0208's rule, D-0059 = T-0204's defaults, D-0060 = T-0300d's defaults, D-0061 = the human's H-07 review). Unused: D-0028, D-0038, D-0054.
 - Spec-only and content roles have no shell. QA commits their output.
 - After each merge: `pnpm -w typecheck lint test --force --concurrency=1` on main.
