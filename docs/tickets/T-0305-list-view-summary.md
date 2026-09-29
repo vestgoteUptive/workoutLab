@@ -3,11 +3,11 @@ id: T-0305
 title: UF-03 List view (set table + rest, reached from Pause) and UF-03.3 workout summary
 lane: split → web-feature:UF-03 (T-0305a, T-0305b)
 screens: [UF-03.1, UF-03.2, UF-03.3, UF-09.9]
-decisions: [D-0013, D-0015, D-0030, D-0034, D-0040, D-0045, D-0053, D-0060, D-0061, D-0067, D-0068, D-0069]
+decisions: [D-0013, D-0015, D-0030, D-0034, D-0040, D-0045, D-0053, D-0060, D-0061, D-0066, D-0067, D-0068, D-0069, D-0071]
 deps: [T-0304, T-0306a, T-0306b, T-0318]
-status: ready
+status: split   # → T-0305a, T-0305b; neither is ready until T-0304 (all children) and T-0318 are done
 ---
-<!-- Groomed 2026-09-29 by product-owner. Build flow: wl-build-web. Split per screen group (D-0067 §1); ACs tagged [a]/[b]. -->
+<!-- Groomed 2026-09-29 by product-owner. Build flow: wl-build-web. Split per screen group (D-0067 §1); ACs tagged [a]/[b]. Reconciled with T-0304 by triage 2026-09-29 (TR-0030, D-0071): the list view and how-to are entries in features/UF-09/seams.tsx, session state is useFocusSession() via ctx, finish is ctx.finish(), and the summary save sends the whole row. -->
 
 ## Why
 - **UF-03.1 and UF-03.2:** classic set-table logging for users who prefer it. It's reached from UF-09.9 Paused ("List view"), so it's an opt-in exception to focus mode. It still has no tab bar, no C-01, no Balance and no check-in (principle 1, D-0045 §4, D-0018).
