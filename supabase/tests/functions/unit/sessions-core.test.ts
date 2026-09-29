@@ -597,6 +597,34 @@ Deno.test(
   },
 );
 
+Deno.test(
+  "T-0208 D-0058: the instant compare keeps milliseconds — 500 ms later is a strict win, 500 ms earlier is a no-op",
+  async () => {
+    // (a) req > stored by 500 ms: rule 1, so ended_at moves and the unrated winner clears the 5.
+    const a = spyingStore(sessionFixture({ endedAt: "2026-09-28T07:40:00.000Z", effortRating: 5 }));
+    await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:40:00.500Z", tz: TZ },
+      a.deps,
+    );
+    assertEquals(a.patches, [{ endedAt: "2026-09-28T07:40:00.500Z", effortRating: null }]);
+
+    // (b) req < stored by 500 ms: rule 3, so even a rated request writes nothing.
+    const b = spyingStore(
+      sessionFixture({ endedAt: "2026-09-28T07:40:00.500Z", effortRating: null }),
+    );
+    await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:40:00.000Z", effortRating: 3, tz: TZ },
+      b.deps,
+    );
+    assertEquals(b.patches, []);
+    assertEquals(b.store.get().effortRating, null);
+  },
+);
+
 // --- AC29: a rating-only retry never moves endedAt ------------------------------------------------
 
 Deno.test(
