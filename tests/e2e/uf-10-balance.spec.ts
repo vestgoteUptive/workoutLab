@@ -149,6 +149,37 @@ test.describe("AC-A16 real keyboard navigates exactly once", () => {
   });
 });
 
+test.describe("keyboard focus on an attention row (WCAG 2.4.7)", () => {
+  test("focusing a needs-attention row repaints its outline accent, not warn", async ({ page }) => {
+    await openBalance(page, "mixed");
+    const row = page.locator('[data-part="row"][data-attention="true"]').first();
+    await expect(row).toBeVisible();
+    const colours = (): Promise<{ outline: string; accent: string; warn: string }> =>
+      row.evaluate((el) => {
+        const resolve = (token: string): string => {
+          const probe = document.createElement("span");
+          probe.style.color = `var(${token})`;
+          document.body.append(probe);
+          const c = getComputedStyle(probe).color;
+          probe.remove();
+          return c;
+        };
+        return {
+          outline: getComputedStyle(el).outlineColor,
+          accent: resolve("--wl-color-accent"),
+          warn: resolve("--wl-color-warn"),
+        };
+      });
+    const before = await colours();
+    expect(before.outline).toBe(before.warn);
+    await page.keyboard.press("Shift"); // a keyboard interaction, so :focus-visible applies
+    await row.focus();
+    const after = await colours();
+    expect(after.outline).toBe(after.accent);
+    expect(after.accent).not.toBe(after.warn);
+  });
+});
+
 test.describe("AC-A17 axe (NFR-A11Y-1)", () => {
   const cases: Array<[string, Fixture, string]> = [
     ["/balance, zero history", "zero", "/balance"],

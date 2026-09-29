@@ -15,7 +15,6 @@
 // guarantee is AC-A12's: no `a[href^="/balance"]` exists on a session route.
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
-import { attentionLegend } from "@workoutlab/design-tokens";
 import type { Area, AreaBalance, BalanceResult, Contributor } from "@workoutlab/shared";
 import { BodyMap } from "../../components/body-map/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
@@ -35,8 +34,6 @@ import {
 } from "./format.js";
 import { useBalance } from "./use-balance.js";
 import "./balance.css";
-
-const ATTENTION_OUTLINE = `${attentionLegend.widthPx}px solid ${tokenVar(attentionLegend.token)}`;
 
 /** Test seams (AC-A5, AC-A7, AC-A8, AC-A13): the screens take their clock and their data in. */
 export interface BalanceScreenProps {
@@ -106,11 +103,6 @@ function AreaRow({ area, locale }: { area: AreaBalance; locale: string | undefin
         data-area={area.area}
         data-attention={area.needsAttention ? "true" : undefined}
         aria-label={en.uf10.rowName(en.bodyMap.areas[area.area], load, target, area.needsAttention)}
-        // The D-0003 attention outline: `warn`, 2 px, an outline and never a fill. Straight from
-        // the engine's `needsAttention` — never derived from the deficit here.
-        style={
-          area.needsAttention ? { outline: ATTENTION_OUTLINE, outlineOffset: "0px" } : undefined
-        }
       >
         <span className="wl-balance__row-name" aria-hidden="true">
           {en.bodyMap.areas[area.area]}

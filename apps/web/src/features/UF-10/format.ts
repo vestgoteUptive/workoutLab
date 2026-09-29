@@ -39,7 +39,8 @@ export function barWidth(load: number, target: number): string {
 
 /** The engine's `deficit` as a whole percent, half up (`0.625` → `63`, `0.5` → `50`). */
 export function deficitPercent(deficit: number): number {
-  return Math.round(deficit * 100);
+  // Half up, with an epsilon so a binary-float artefact (0.285 * 100 = 28.499999…) still rounds up.
+  return Math.floor(deficit * 100 + 0.5 + 1e-9);
 }
 
 /** Whole local days from `from` to `to`, both `YYYY-MM-DD`. Calendar arithmetic, never tz-shifted. */

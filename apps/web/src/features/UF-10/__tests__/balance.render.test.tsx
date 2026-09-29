@@ -79,17 +79,34 @@ describe("AC-A5 engine order — the UI does not sort", () => {
     // The exact set, so a tenth outlined row fails rather than being absorbed.
     expect(outlinedRowAreas()).toEqual(["calves", "hamstrings"]);
     for (const area of EXPECTED) {
-      const outlined = row(area)!.style.outline !== "";
+      const outlined = row(area)!.getAttribute("data-attention") === "true";
       expect(outlined, area).toBe(area === "calves" || area === "hamstrings");
     }
   });
 
   it("the outline is the D-0003 2 px warn outline, and never a fill", () => {
     renderStub(ORDERED);
-    expect(row("calves")!.style.outline).toBe("2px solid var(--wl-color-warn)");
+    // The outline is drawn by CSS (see the focus-visible test below), never inline.
+    expect(row("calves")!.style.outline).toBe("");
+    expect(row("calves")!.getAttribute("data-attention")).toBe("true");
     // `warn` never becomes a background: attention is an outline (D-0003).
     expect(row("calves")!.style.backgroundColor).not.toContain("warn");
     expect(rowFill("calves")).toBe("var(--wl-color-coverage-1)");
+  });
+
+  it("keyboard focus stays visible on an attention row: the warn rule precedes :focus-visible (WCAG 2.4.7)", () => {
+    const css = readFileSync(resolve(__dirname, "../balance.css"), "utf8");
+    const warn = css.indexOf('.wl-balance__row[data-attention="true"] {');
+    const focus = css.indexOf(".wl-balance__row:focus-visible");
+    expect(warn).toBeGreaterThanOrEqual(0);
+    expect(focus).toBeGreaterThan(warn);
+    // Equal specificity, so source order decides; and no inline style may outrank either.
+    expect(css.slice(warn, css.indexOf("}", warn))).toContain("var(--wl-color-warn)");
+    expect(css.slice(focus, css.indexOf("}", focus))).toContain("var(--wl-color-accent)");
+    renderStub(ORDERED);
+    for (const el of document.querySelectorAll<HTMLElement>('[data-part="row"]')) {
+      expect(el.getAttribute("style") ?? "", el.dataset.area).not.toContain("outline");
+    }
   });
 
   it("CONTRAST: the same stub REVERSED renders reversed", () => {
@@ -224,6 +241,16 @@ describe("AC-A13 the UI computes nothing — principle 3", () => {
         (el) => el.textContent,
       ),
     ).toEqual(["Back squat 2 · 25 Sep", "Romanian deadlift 4 · 20 Sep"]);
+  });
+
+  it("half up survives binary floats: 0.285 shows 29 %, not 28", () => {
+    const areas = zeroAreas().map((a) =>
+      a.area === "quads"
+        ? areaBalance("quads", { load: 6, target: 16, deficit: 0.285, coverageStep: 2 })
+        : a,
+    );
+    renderStub(areas, { at: "/balance/quads" });
+    expect(document.querySelector('[data-part="deficit"]')).toHaveTextContent("29 %");
   });
 
   it("the deficit is rounded half up from the engine's value, not recomputed", () => {

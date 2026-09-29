@@ -192,7 +192,7 @@ export function rowBarWidth(area: Area | string): string | undefined {
 /** The areas whose row carries the D-0003 attention outline, in DOM order. */
 export function outlinedRowAreas(): string[] {
   return rowElements()
-    .filter((el) => el.style.outline !== "")
+    .filter((el) => el.getAttribute("data-attention") === "true")
     .map((el) => el.getAttribute("data-area")!);
 }
 

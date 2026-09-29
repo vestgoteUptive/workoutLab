@@ -98,6 +98,13 @@
   text-decoration: none;
 }
 
+/* D-0003 attention outline: warn, 2 px, never a fill. In CSS (not inline) and BEFORE the
+   :focus-visible rule below, so keyboard focus (WCAG 2.4.7) still repaints it accent. */
+.wl-balance__row[data-attention="true"] {
+  outline: 2px solid var(--wl-color-warn);
+  outline-offset: 0;
+}
+
 .wl-balance__row:hover {
   background: var(--wl-color-surface-2);
 }

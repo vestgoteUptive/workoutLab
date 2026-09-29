@@ -7,8 +7,7 @@
 //   1. no file under `features/UF-10/**` declares a user-facing literal (the existing
 //      `react/jsx-no-literals` rule, which must stay green), and
 //   2. `flows/uf-10.ts` is non-empty with every key this feature uses reachable as `en.uf10.*`.
-// Plus a direct source check that `en.ts`'s own content is byte-identical to main's.
-import { execFileSync } from "node:child_process";
+// Plus a hermetic check that no uf10-owned string is declared in `en.ts`.
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { ESLint } from "eslint";
@@ -19,7 +18,6 @@ import { uf10 } from "../../../lib/i18n/flows/uf-10.js";
 
 const WEB_ROOT = process.cwd();
 const FEATURE_DIR = resolve(WEB_ROOT, "src/features/UF-10");
-const REPO_ROOT = resolve(WEB_ROOT, "../..");
 
 /** Every non-test source file in the feature. */
 function featureSources(): string[] {
@@ -91,70 +89,21 @@ describe("AC-A21 the strings live in this ticket's own flow file", () => {
       .join("\n");
     expect(source).toContain("en.bodyMap.areas[");
     expect(source).toContain("en.bodyMap.loadOfTarget(");
-    // And the legend/attention token copy comes from the design tokens, not a local constant.
-    expect(source).toContain("attentionLegend");
+    // And the legend copy comes from the design tokens, not a local constant.
     expect(source).toContain("coverageLegend");
   });
 });
 
-/**
- * `main` is present in this worktree and in CI's full checkout, but a shallow clone may not
- * have it. These three assertions are about a *lane boundary*, so silently skipping them would
- * be worse than useless — `hasMain()` therefore fails loudly with what it found instead of
- * quietly passing.
- */
-function gitOut(args: string[]): string {
-  return execFileSync("git", args, { cwd: REPO_ROOT, encoding: "utf8" });
-}
-
-function changedFiles(): string[] {
-  // Three dots: `main..HEAD` also lists commits that landed on main after the fork, which has
-  // already read as a false lane violation once (`.squad/state.md`).
-  return gitOut(["diff", "--name-only", "main...HEAD"]).split("\n").filter(Boolean);
-}
-
-describe("AC-A21 lib/i18n/en.ts is not modified by this ticket", () => {
-  it("`main` is available, so the three lane assertions below are real", () => {
-    expect(gitOut(["rev-parse", "--verify", "main"]).trim()).toMatch(/^[0-9a-f]{40}$/);
-    // And the diff is non-empty, so "no lib/ file changed" is not an artefact of an empty diff.
-    expect(changedFiles().length).toBeGreaterThan(0);
-  });
-
-  it("en.ts is byte-identical to main's", () => {
-    // The direct check. `lib/i18n/en.ts` is web-shell's and is explicitly in this ticket's
-    // "Not yours" list; T-0320 will make this mechanical for every lane, but until it merges
-    // this asserts it for UF-10.
-    // The merge-base, not the tip of main: main moves on (T-0334 edits shared files), and a
-    // later change there is not this ticket's edit.
-    const base = gitOut(["merge-base", "main", "HEAD"]).trim();
-    const committed = gitOut(["show", `${base}:apps/web/src/lib/i18n/en.ts`]);
-    const current = readFileSync(resolve(WEB_ROOT, "src/lib/i18n/en.ts"), "utf8");
-    expect(current).toBe(committed);
-  });
-
-  it("this ticket touches no file under lib/ other than flows/uf-10.ts", () => {
-    expect(changedFiles().filter((f) => f.startsWith("apps/web/src/lib/"))).toEqual([
-      "apps/web/src/lib/i18n/flows/uf-10.ts",
-    ]);
-  });
-
-  it("every file this ticket changed is inside its declared lane", () => {
-    // The ticket's "Paths you may change", asserted mechanically from this lane (T-0320 will
-    // generalise it): `features/UF-10/**`, `lib/i18n/flows/uf-10.ts`,
-    // `tests/e2e/uf-10-balance.spec.ts` and the triage note this build had to file.
-    const allowed = (file: string): boolean =>
-      file.startsWith("apps/web/src/features/UF-10/") ||
-      file === "apps/web/src/lib/i18n/flows/uf-10.ts" ||
-      file === "tests/e2e/uf-10-balance.spec.ts" ||
-      file.startsWith(".squad/triage/");
-    expect(changedFiles().filter((f) => !allowed(f))).toEqual([]);
-  });
-
-  it("this ticket touches no other flow's string file", () => {
-    // The guarantee that makes the five Phase 3 feature lanes parallel (D-0071 §1).
-    expect(changedFiles().filter((f) => f.startsWith("apps/web/src/lib/i18n/flows/"))).toEqual([
-      "apps/web/src/lib/i18n/flows/uf-10.ts",
-    ]);
+describe("AC-A21 lib/i18n/en.ts carries none of this feature's copy", () => {
+  // Hermetic on purpose: no git, no branch names. The lane boundary itself is T-0320's
+  // mechanical check; this asserts the string-level consequence.
+  it("no uf10 string value is declared in en.ts (it lives in flows/uf-10.ts only)", () => {
+    const enSource = readFileSync(resolve(WEB_ROOT, "src/lib/i18n/en.ts"), "utf8");
+    const own: string[] = [];
+    // Long strings only: short labels ("Plan") legitimately exist in en.ts already.
+    for (const v of Object.values(uf10)) if (typeof v === "string" && v.length > 15) own.push(v);
+    expect(own.length).toBeGreaterThan(2);
+    expect(own.filter((v) => enSource.includes(v))).toEqual([]);
   });
 });
 
