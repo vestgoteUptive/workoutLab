@@ -10,7 +10,11 @@ import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Shell } from "../App.js";
 import { AuthProvider } from "../../lib/auth/auth-context.js";
-import { ProfileStatusProvider, useRecheckProfile } from "../../lib/profile/index.js";
+import {
+  ProfileStatusProvider,
+  useProfileStatus,
+  useRecheckProfile,
+} from "../../lib/profile/index.js";
 import { gatedPaths } from "../../lib/profile/gated-routes.js";
 import { routes } from "../routes.js";
 import { createSelectSpy, type SelectSpy } from "../../lib/offline/__tests__/select-spy.js";
@@ -508,24 +512,27 @@ describe("AC-8 /session/:sessionId and its summary are never gated (principle 1)
   });
 });
 
-// QA (T-0301a): the account switch. The only auth transition the gate re-resolves on is
-// `signedIn` flipping, because `run()`'s dep list is `[signedIn]` and the `wasSignedIn` transition
-// check only fires on that same flip. A `SIGNED_IN` for a *different user* with no intervening
-// `SIGNED_OUT` leaves `signedIn === true`, so nothing re-runs and user B inherits user A's answer.
+// QA (T-0301a): the account switch, found by QA and fixed in the T-0301a rework. The gate used
+// to re-resolve only on `signedIn` flipping, because `run()`'s dep list was `[signedIn]` and the
+// transition check keyed on the same boolean. A `SIGNED_IN` for a *different user* with no
+// intervening `SIGNED_OUT` leaves `signedIn === true`, so nothing re-ran and user B inherited
+// user A's answer: `present` → B is never gated (the silent-corruption class D-0064 §9 exists to
+// close), `missing` → B is stranded on onboarding.
 //
 // This is reachable through the product's own UI, not a synthetic event: AC-7 requires
 // `/welcome/*` to render for a signed-in `missing` user, and that splat screen
 // (`features/UF-01/index.tsx`) is the live email + code form calling `requestMagicLink` /
 // `verifyCode`. So a `missing` user standing down on `/welcome` can verify a different account
 // without ever signing out, which is exactly this sequence.
-// Both cases below are **currently broken**, so they are `it.fails`: the assertion is the
-// behaviour the gate must have, and vitest fails the test if it ever starts passing. Whoever
-// fixes the gate (web-shell owns `lib/profile`) flips these two to `it` in the same commit.
-// Filed as a follow-up in the QA result; the fix needs a user identity the gate can compare,
-// which `useAuth()` does not expose today (it publishes `status` only), so it is not a
-// test-only change and is out of QA's lane.
+//
+// The fix (D-0073 §4): `useAuth()` publishes `userId`, read from the stored session on the first
+// render and from each auth event's session after that, and the gate keys both `run()` and its
+// render-phase transition check on that identity instead of on the signed-in boolean. A
+// signed-in → signed-in identity change also resets `status` to `"unknown"`, so neither
+// direction can be answered with the previous user's result. Both cases were `it.fails` when QA
+// filed them; they are plain `it` now and must stay passing.
 describe("QA: a SIGNED_IN for a different user re-resolves the gate", () => {
-  it.fails("`present` → switch to an account with NO profile: the new user is gated", async () => {
+  it("`present` → switch to an account with NO profile: the new user is gated", async () => {
     // User A is signed in with a cached profile, on `/`.
     statePresent();
     render(<Harness start="/" />);
@@ -544,29 +551,67 @@ describe("QA: a SIGNED_IN for a different user re-resolves the gate", () => {
     expect(locationRef).toBe("/welcome/save");
   });
 
-  it.fails(
-    "`missing` on /welcome → switch to an account that HAS a profile: no longer stood down",
-    async () => {
-      // User A is signed in, `missing`, standing down on /welcome (AC-7) with the OTP form.
-      stateMissing();
-      render(<Harness start="/welcome" />);
-      await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
-      expect(locationRef).toBe("/welcome");
+  it("`missing` on /welcome → switch to an account that HAS a profile: no longer stood down", async () => {
+    // User A is signed in, `missing`, standing down on /welcome (AC-7) with the OTP form.
+    stateMissing();
+    render(<Harness start="/welcome" />);
+    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    expect(locationRef).toBe("/welcome");
 
-      // User B verifies on that form. B *has* a profile, so `guest-only` must resume and take
-      // them into the app rather than leaving them stranded on onboarding.
-      loadProfile.mockResolvedValue(PROFILE_ROW);
-      spy.setRows("profiles", [PROFILE_ROW]);
-      await act(async () => {
-        authStateCallbacks.forEach((cb) => cb("SIGNED_IN", { user: { id: "u2" } }));
-      });
-      await act(async () => {});
-      await act(async () => {});
-      await act(async () => {});
-      expect(locationRef).toBe("/");
-      expect(screenOf("UF-02.1")).toBeInTheDocument();
-    },
-  );
+    // User B verifies on that form. B *has* a profile, so `guest-only` must resume and take
+    // them into the app rather than leaving them stranded on onboarding.
+    loadProfile.mockResolvedValue(PROFILE_ROW);
+    spy.setRows("profiles", [PROFILE_ROW]);
+    await act(async () => {
+      authStateCallbacks.forEach((cb) => cb("SIGNED_IN", { user: { id: "u2" } }));
+    });
+    await act(async () => {});
+    await act(async () => {});
+    await act(async () => {});
+    expect(locationRef).toBe("/");
+    expect(screenOf("UF-02.1")).toBeInTheDocument();
+  });
+
+  // The two cases above are satisfied by re-running the resolution alone, because both end
+  // states are right once B's own answer lands. This one pins the *window* in between, which
+  // re-running does not cover: `ProfileGate` keys on `status` only and ignores `resolved`, so
+  // for as long as the held `status` is user A's, every gated route is deciding B's fate from
+  // A's profile. A's answer must therefore be dropped at the identity change, during render,
+  // not merely overwritten whenever B's read happens to settle. With B's read never settling,
+  // the window is unbounded and the whole sequence of committed statuses is observable.
+  it("no committed frame carries the previous user's status once the identity changes", async () => {
+    const committed: string[] = [];
+    function StatusProbe() {
+      committed.push(useProfileStatus());
+      return null;
+    }
+    statePresent();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AuthProvider>
+          <ProfileStatusProvider>
+            <StatusProbe />
+            <Shell />
+          </ProfileStatusProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(committed).toContain("present"));
+
+    // User B verifies in place, and B's profile read never settles.
+    loadProfile.mockReturnValue(new Promise(() => {}));
+    committed.length = 0;
+    await act(async () => {
+      authStateCallbacks.forEach((cb) => cb("SIGNED_IN", { user: { id: "u2" } }));
+    });
+    await act(async () => {});
+    await act(async () => {});
+
+    // Every frame after the switch is `unknown`: A's `present` is gone, and B has not answered.
+    expect(committed.length).toBeGreaterThan(0);
+    expect(committed).not.toContain("present");
+    expect(new Set(committed)).toEqual(new Set(["unknown"]));
+  });
 });
 
 describe("AC-9 signed out is unchanged (principle 5) — the AC-B5 table, against the wired shell", () => {

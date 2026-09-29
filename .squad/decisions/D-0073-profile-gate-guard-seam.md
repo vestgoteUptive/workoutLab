@@ -72,15 +72,68 @@ it is the one a reviewer is most likely to want to change.
    signed-out render. The stand-down then sees `resolved && "unknown"` and bounces them
    `/welcome` → `/` → `/welcome/save`: the same defect this section exists to prevent, reached by
    a transition instead of a cold load. `resolved` is therefore cleared by a render-phase
-   transition check (`wasSignedIn` ref), which lands before any child reads the context, so no
-   intermediate render can observe `resolved && "unknown"`. The sign-*out* direction is already
-   covered by `run()`'s early return. Found by code review on the committed diff and independently
-   by the build; every cold-load test seeds the session before `render()`, so none of them could
-   catch it — the regression test must flip auth status *after* mount (verified: removing the
-   transition reset fails exactly the two `/welcome` and `/welcome/goal` transition tests).
+   transition check, which lands before any child reads the context, so no intermediate render
+   can observe `resolved && "unknown"`. Found by code review on the committed diff and
+   independently by the build; every cold-load test seeds the session before `render()`, so none
+   of them could catch it — the regression test must flip auth status *after* mount (verified:
+   removing the transition reset fails exactly the two `/welcome` and `/welcome/goal` transition
+   tests).
    **Needs a decision:** arguably yes, which is why this entry is `revisit`. The alternative — a
    fourth status such as `"resolving"` — would change the `useProfileStatus()` contract D-0064 §9
    states verbatim, so it was not taken.
+
+   **The gate keys on a user identity, not on the signed-in boolean (the account switch).**
+   Superseding this section's earlier claim that "the sign-out direction is already covered by
+   `run()`'s early return": true, but incomplete. That sentence enumerated two directions —
+   signed-out → signed-in (the transition reset) and signed-in → signed-out (`run()`'s early
+   return) — and missed the third. **Signed-in → signed-in was covered by nothing.** Found by QA
+   on the committed build.
+
+   supabase-js fires `SIGNED_IN` for a new session with **no** intervening `SIGNED_OUT` when a
+   user verifies a different account in place. `signedIn` stays `true`, so there was no
+   transition, no new `run()` identity (its dep list was `[signedIn]`) and no re-render: user B
+   inherited user A's `status` *and* `resolved: true`. Both directions were wrong. A `present` →
+   B with no profile meant **B was never gated**, every engine read returned nothing and
+   `/workouts/suggest` 422'd — the silent-corruption class D-0064 §9 exists to close. A `missing`
+   on `/welcome` → B who *has* a profile left **B stranded on onboarding**, because the §1
+   stand-down kept using A's `missing`.
+
+   It is reachable through the product's own UI, not a synthetic event: §1 and AC-7 *require*
+   `/welcome/*` to render for a signed-in `missing` user, and that screen
+   (`features/UF-01/index.tsx`) is a live email + code form calling `requestMagicLink` /
+   `verifyCode`. A `missing` user standing down on `/welcome` can therefore verify a different
+   account without ever signing out.
+
+   **Default:** `useAuth()` publishes `userId: string | null` alongside `status` — read
+   synchronously from the already-persisted session on the first render (principle 5, the same
+   source `computeInitialStatus()` uses) and from each auth event's `session.user.id` after that.
+   `AuthStatus` keeps its three values and `redirectTarget` its contract; `userId` is an
+   additional field, so nothing that reads `status` changes behaviour. The gate then derives one
+   key, `signedIn ? "in:<userId>" : "out"`, and uses it for **both** `run()`'s dep list and the
+   render-phase transition check. Three properties follow:
+   - Signed out the key is the constant `"out"`, so the inert path (principle 5, AC-10) is
+     untouched.
+   - When the stored session carries no `user` at all — the T-0300b fixtures in
+     `auth-guard.test.tsx` and `auth-guard.phase3.test.tsx`, which stay unedited per AC-9 — the
+     key is constant per signed-in-ness, i.e. *exactly* the old `[signedIn]` behaviour. A `null`
+     identity is deliberately not read as "signed out": consumers key on `status` for
+     signed-in-ness and on `userId` only for *change*.
+   - `TOKEN_REFRESHED` carries the same user, so the key does not change and a token refresh
+     still does not re-resolve. Only a genuine account switch does.
+
+   **Re-running is not sufficient on its own**, which is why the identity change also resets
+   `status` to `"unknown"` (and clears `refreshedFor`, since B's cache is not A's). `ProfileGate`
+   keys on `status` alone and ignores `resolved`, so for as long as the held `status` is A's,
+   every gated route is deciding B's fate from A's profile. Overwriting it whenever B's read
+   happens to settle leaves that window open for an unbounded time if B's read is slow or never
+   settles. Dropping it during render closes the window instead of shortening it.
+   Verified by fault injection, each half separately: reverting `run()`'s dep list to
+   `[signedIn]` fails both account-switch tests; disabling only the `status` reset fails the
+   committed-frames test while the other two still pass; publishing no identity at all
+   (`userId: null`) fails all three.
+   **Needs a decision:** no — it closes a defect against D-0064 §9's own intent, and adds a
+   field rather than changing a contract. Recorded because §4's earlier two-direction claim was
+   wrong and a future reader would otherwise inherit it.
 
 Also noted, no default needed: §9's "a cached profile → `present` with no network wait" does not
 ask the gate to revalidate afterwards, and it does not. `refreshProfile()` already runs from
@@ -88,6 +141,10 @@ ask the gate to revalidate afterwards, and it does not. `refreshProfile()` alrea
 calls `refreshProfile()` only for a row it read from the network, once per distinct resolution.
 
 ## Consequences
+- `AuthContextValue` gains `userId: string | null` (§4). Any future consumer that wants "who is
+  signed in" reads it from there rather than re-parsing localStorage or calling `getUser()`.
+  It is an identity for *comparison*, not an authorisation claim: RLS remains the only thing
+  that decides what a user may read or write.
 - `apps/web/src/lib/auth/guards.tsx` now imports `lib/profile`. `lib/profile` does **not** import
   `lib/auth/guards`, so there is no cycle; it imports `lib/auth/auth-context` and, dynamically,
   `lib/auth/client` and `lib/offline`.

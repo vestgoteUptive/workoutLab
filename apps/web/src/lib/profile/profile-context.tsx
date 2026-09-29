@@ -59,14 +59,29 @@ export function useRecheckProfile(): () => Promise<void> {
 }
 
 export function ProfileStatusProvider({ children }: { children: ReactNode }) {
-  const { status: authStatus } = useAuth();
+  const { status: authStatus, userId } = useAuth();
   // Signed out the gate is inert (principle 5): `unknown`, no storage read, no network call.
   const signedIn = authStatus !== "signed-out";
+  // The gate's answer is about *a user*, not about being signed in, so the identity of the
+  // answer's owner is what it keys on. `signedIn` alone is not enough: supabase-js fires
+  // `SIGNED_IN` for a new session with no intervening `SIGNED_OUT` when a user verifies a
+  // different account in place, which leaves `signedIn === true` — no transition, no new effect
+  // identity, no re-render — and user B silently inherits user A's `status` and `resolved`
+  // (D-0073 §4). Signed out the key is a constant, so the inert path is untouched, and when the
+  // session carries no `user` at all (the T-0300b fixtures) the key is constant per
+  // signed-in-ness, i.e. exactly the old `[signedIn]` behaviour (AC-9).
+  const authKey = signedIn ? `in:${userId ?? ""}` : "out";
 
   const [status, setStatus] = useState<ProfileStatus>("unknown");
   // Signed out there is nothing to resolve, so the gate is "resolved" from the first render:
   // `/welcome` must never wait for it (principle 5, AC-10).
   const [resolved, setResolved] = useState(!signedIn);
+  // `refreshProfile()` warms the cache once per *distinct* resolution that produced a
+  // network-sourced row (AC-3): a re-render, or a `recheck()` that finds the same answer the
+  // gate already holds, must not refetch. A recheck that actually changes the answer (the
+  // T-0301c case, `missing` → `present`) does warm the cache, which is the point of the call.
+  // Declared before the transition check below, which resets it on an account switch.
+  const refreshedFor = useRef<ProfileStatus | null>(null);
   // `useState`'s initialiser runs once, so `resolved` cannot be left to it: a user who signs in
   // *in place* — the magic-link / OTP verify firing `SIGNED_IN` while they sit on `/welcome`,
   // which is the D-0045 §5 case this whole gate exists for — flips `signedIn` false → true with
@@ -75,21 +90,31 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
   // them `/welcome` → `/` → `/welcome/save`: the very defect D-0073 §4 exists to prevent, just
   // reached by a transition instead of a cold load. So the transition clears it, during render,
   // before any child reads the context.
-  const wasSignedIn = useRef(signedIn);
-  if (wasSignedIn.current !== signedIn) {
-    wasSignedIn.current = signedIn;
+  //
+  // The same argument covers the account switch, which needs one thing more. On a
+  // signed-out → signed-in flip the held `status` is already `"unknown"`, so clearing
+  // `resolved` is enough. On a signed-in → signed-in flip it is user A's *answer*, and a stale
+  // `"missing"` strands user B on onboarding (the §1 stand-down keeps firing) while a stale
+  // `"present"` leaves them ungated, which is the silent-corruption class this gate exists to
+  // close. So the identity change resets the answer as well, back to the one value that never
+  // redirects either way.
+  const lastAuthKey = useRef(authKey);
+  if (lastAuthKey.current !== authKey) {
+    const switchedUser = signedIn && lastAuthKey.current !== "out";
+    lastAuthKey.current = authKey;
     if (signedIn && resolved) setResolved(false);
+    if (switchedUser) {
+      setStatus("unknown");
+      // The new user's cache is not the old user's, so the next network-sourced answer must be
+      // allowed to warm it again even if it is the same `ProfileStatus` value (AC-3).
+      refreshedFor.current = null;
+    }
   }
   // Bumped by every resolution, so a promise that settles after the component unmounted — or
   // after a newer `recheck()` overtook it — cannot set state (AC-11: no React warning, and no
   // stale answer overwriting a fresh one).
   const generation = useRef(0);
   const mounted = useRef(true);
-  // `refreshProfile()` warms the cache once per *distinct* resolution that produced a
-  // network-sourced row (AC-3): a re-render, or a `recheck()` that finds the same answer the
-  // gate already holds, must not refetch. A recheck that actually changes the answer (the
-  // T-0301c case, `missing` → `present`) does warm the cache, which is the point of the call.
-  const refreshedFor = useRef<ProfileStatus | null>(null);
 
   useEffect(() => {
     mounted.current = true;
@@ -116,7 +141,12 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
       // the gate's answer (AC-3).
       void import("../offline/index.js").then((m) => m.refreshProfile()).catch(() => {});
     }
-  }, [signedIn]);
+    // `authKey` is the real key: an account switch keeps `signedIn` true, so keying on the
+    // boolean alone gives `run()` the same identity and the effect below never re-fires
+    // (D-0073 §4). `signedIn` is listed because the body reads it and exhaustive-deps requires
+    // it, but it cannot widen the dep set: it is derived from the same value as `authKey` and
+    // can never change without `authKey` changing too.
+  }, [authKey, signedIn]);
 
   useEffect(() => {
     void run();
