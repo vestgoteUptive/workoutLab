@@ -131,6 +131,15 @@ describe("AC-1 calendar = rule 9 completed sessions, on local dates", () => {
     expect(passed).toEqual(await offline.loadSessions());
   });
 
+  it("counts a session that has not ended (rule 9), and skips a warm-up-only one", async () => {
+    await seed({ history, sessions });
+    renderAt("/progress");
+    await countText("4 workouts this month");
+    // S5 has `endedAt: null` and is one of the four; S2 (warm-up only) is not.
+    expect(markedDays()).toContain("20");
+    expect(markedDays()).not.toContain("14");
+  });
+
   it("reads '1 workout this month' with only S1", async () => {
     await seed({ history: sessionSets("S1", 3, "2026-09-01 09:00"), sessions: [sessions[0]!] });
     renderAt("/progress");

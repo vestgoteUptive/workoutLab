@@ -165,6 +165,41 @@ describe("recentExercises and exerciseHistory over H", () => {
   });
 });
 
+describe("engine normalisation (rule 0)", () => {
+  it("shows only the newest edit of a set and drops a set whose newest version is a tombstone", () => {
+    const original = set("E1", "back-squat", "2026-09-25 10:00", { w: 100, r: 5 });
+    const edited = {
+      ...original,
+      reps: 9,
+      editedAt: new Date("2026-09-25T11:00:00+02:00").toISOString(),
+    };
+    const dead = set("E1", "back-squat", "2026-09-25 10:10", { w: 120, r: 5 });
+    const tombstone = {
+      ...dead,
+      deletedAt: new Date("2026-09-25T12:00:00+02:00").toISOString(),
+      editedAt: new Date("2026-09-25T12:00:00+02:00").toISOString(),
+    };
+    const h = exerciseHistory(
+      "back-squat",
+      [original, edited, dead, tombstone],
+      LIBRARY,
+      NOW,
+      TZ,
+      LOCALE,
+    )!;
+    expect(h.rows[0]!.sets).toEqual(["100 × 9"]);
+    expect(h.heaviestKg).toBe(100);
+  });
+
+  it("dates a row by its first set, even when the session crosses midnight", () => {
+    const sets = [
+      set("N", "back-squat", "2026-09-24 23:50", { w: 100, r: 5 }),
+      set("N", "back-squat", "2026-09-25 00:10", { w: 100, r: 5 }),
+    ];
+    expect(exerciseHistory("back-squat", sets, LIBRARY, NOW, TZ)!.rows[0]!.date).toBe("2026-09-24");
+  });
+});
+
 describe("AC-8 stats.ts is clock-free and pure", () => {
   it("has no Date.now, zero-argument new Date() or Math.random", () => {
     const source = readFileSync(resolve(__dirname, "../stats.ts"), "utf8");
