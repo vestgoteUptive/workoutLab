@@ -12,5 +12,6 @@ export { suggest, isEligible, rankCandidates, itemCostS, setCostS, availableS, W
 export { rankSwaps, muscleMatch } from "./swaps.js";
 export { generateWarmup, WARMUP_COST_S, WARMUP_MOVES, WARMUP_MOVE_S } from "./warmup.js";
 export { floorInc, DEFAULT_INCREMENT_KG, BACKOFF_FACTOR, LOW_TRIM_FROM_SETS, LOW_TRIM_TO_SETS, } from "./energy.js";
+export { prefill, floor5, REENTRY_GAP_DAYS, HOLD_GAP_DAYS, TIMED_STEP_S, TIMED_MAX_S, TIMED_MIN_S, type PrefillSlot, type PrefillPrevious, } from "./prefill.js";
 export { timeCheck, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.js";
 export { evaluateCheckin, checkinSessions, periodStatus, PERIOD_DAYS, UNDER_FACTOR_X10, OVER_FACTOR_X10, RHYTHM_FLOOR, RHYTHM_CEILING, COMPARED_PERIODS, } from "./checkin.js";
