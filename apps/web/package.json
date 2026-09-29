@@ -9,6 +9,7 @@
     "preview": "vite preview --port 4173 --strictPort",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint . && wl-check-colours .",
+    "pretest": "node ensure-tokens-css.mjs",
     "test": "vitest run",
     "test:e2e": "playwright test --config ../../tests/e2e/playwright.config.ts",
     "check:size": "node scripts/check-bundle-size.mjs dist"
