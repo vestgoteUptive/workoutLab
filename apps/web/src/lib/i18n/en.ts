@@ -45,10 +45,6 @@ export const en = {
   },
   bodyMap: {
     legendName: "Coverage legend",
-    needsAttention: "needs attention",
-    underTarget: "under target",
-    onTarget: "on target",
-    noHardSets: "no hard sets",
     hardSets: "hard sets",
     of: "of",
     // T-0300d (C-01). The coverage/attention legend copy is NOT in this catalogue: it comes
@@ -59,11 +55,16 @@ export const en = {
     compactLink: "Body map, last 14 days. Open all areas",
     /** Visible numeric label (NFR-A11Y-3). `load`/`target` arrive already formatted. */
     loadOfTarget: (load: string, target: string) => `${load} / ${target}`,
-    /** "<Area>, <load> of <target> hard sets, <srLabel>[, needs attention]" (C-01 spec). */
-    areaName: (area: string, load: string, target: string, step: string, attention: boolean) =>
-      `${area}, ${load} of ${target} hard sets, ${step}${attention ? ", needs attention" : ""}`,
+    /**
+     * "<Area>, <load> of <target> hard sets[, <detail>…]" (C-01 spec). The details are the
+     * coverage and attention srLabels from @workoutlab/design-tokens; empty ones are skipped.
+     */
+    areaName: (area: string, load: string, target: string, details: readonly string[]) =>
+      [`${area}, ${load} of ${target} hard sets`, ...details.filter((d) => d !== "")].join(", "),
     /** Accessible name of an area button while the balance is loading (AC-D9). */
     areaLoading: (area: string) => `${area}, loading`,
+    /** Accessible name of an area with no balance data while not loading (D-0060 §2). */
+    areaNoData: (area: string) => area,
     areas: {
       chest: "Chest",
       back: "Back",

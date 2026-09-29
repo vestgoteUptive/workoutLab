@@ -39,11 +39,14 @@ function fillToken(step: number): ColorName {
   return entry ? entry.token : "surface-2";
 }
 
-/** The legend `srLabel` for an engine step, lower-cased for use inside a sentence. */
+/** A token `srLabel`, lower-cased for use inside a sentence. */
+const inSentence = (label: string): string =>
+  label.charAt(0).toLocaleLowerCase("en") + label.slice(1);
+
+/** The legend `srLabel` for an engine step; "" for a step outside 0–4 (skipped in the name). */
 function stepSrLabel(step: number): string {
   const entry = coverageLegend.find((e) => e.step === step);
-  if (!entry) return "";
-  return entry.srLabel.charAt(0).toLocaleLowerCase("en") + entry.srLabel.slice(1);
+  return entry ? inSentence(entry.srLabel) : "";
 }
 
 const tokenVar = (name: ColorName): string => `var(--wl-color-${name})`;
@@ -109,14 +112,14 @@ function AreaContent({
 }
 
 function accessibleName(view: AreaView, loading: boolean, locale: string | undefined): string {
-  if (loading || !view.data) return en.bodyMap.areaLoading(view.name);
+  if (loading) return en.bodyMap.areaLoading(view.name);
+  if (!view.data) return en.bodyMap.areaNoData(view.name);
   const d = view.data;
   return en.bodyMap.areaName(
     view.name,
     formatSetCount(d.load, locale),
     formatSetCount(d.target, locale),
-    stepSrLabel(d.coverageStep),
-    d.needsAttention,
+    [stepSrLabel(d.coverageStep), d.needsAttention ? inSentence(attentionLegend.srLabel) : ""],
   );
 }
 
