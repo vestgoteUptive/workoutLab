@@ -1,6 +1,9 @@
 // AC-C17: a flush that sent >= 1 row triggers exactly one refetch each of history, targets,
 // profile (and, in this implementation, library too — all read-side caches, D-0045 §6/§7). A
 // flush with an empty queue triggers none.
+//
+// T-0319 AC-8 extends this: the same flush also refetches `sessions` and `plan_checkins`, and
+// does NOT refetch routines (nothing the queue sends can make the routine cache stale).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const onAuthStateChange = vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } }));
@@ -14,11 +17,17 @@ const refreshHistory = vi.fn().mockResolvedValue(undefined);
 const refreshLibrary = vi.fn().mockResolvedValue(undefined);
 const refreshTargets = vi.fn().mockResolvedValue(undefined);
 const refreshProfile = vi.fn().mockResolvedValue(undefined);
+const refreshSessions = vi.fn().mockResolvedValue(undefined);
+const refreshCheckins = vi.fn().mockResolvedValue(undefined);
+const refreshRoutines = vi.fn().mockResolvedValue(undefined);
 vi.mock("../history.js", () => ({
   refreshHistory,
   refreshLibrary,
   refreshTargets,
   refreshProfile,
+  refreshSessions,
+  refreshCheckins,
+  refreshRoutines,
 }));
 
 const { startSync } = await import("../sync.js");
@@ -34,6 +43,9 @@ beforeEach(() => {
   refreshLibrary.mockClear();
   refreshTargets.mockClear();
   refreshProfile.mockClear();
+  refreshSessions.mockClear();
+  refreshCheckins.mockClear();
+  refreshRoutines.mockClear();
   signIn(USER);
 });
 
@@ -62,6 +74,12 @@ describe("startSync refetch after flush (AC-C17)", () => {
     expect(refreshHistory).toHaveBeenCalledTimes(1);
     expect(refreshTargets).toHaveBeenCalledTimes(1);
     expect(refreshProfile).toHaveBeenCalledTimes(1);
+    // T-0319 AC-8: sessions and check-ins join the post-flush refetch.
+    expect(refreshSessions).toHaveBeenCalledTimes(1);
+    expect(refreshCheckins).toHaveBeenCalledTimes(1);
+    // Routines can't be made stale by a flush (the queue only sends sessions/session_sets), so
+    // the post-flush refetch deliberately leaves them alone.
+    expect(refreshRoutines).not.toHaveBeenCalled();
   });
 
   it("triggers no refetch when the queue is empty", async () => {
@@ -76,5 +94,8 @@ describe("startSync refetch after flush (AC-C17)", () => {
     expect(refreshHistory).not.toHaveBeenCalled();
     expect(refreshTargets).not.toHaveBeenCalled();
     expect(refreshProfile).not.toHaveBeenCalled();
+    // T-0319 AC-8: "a flush that sent nothing calls neither".
+    expect(refreshSessions).not.toHaveBeenCalled();
+    expect(refreshCheckins).not.toHaveBeenCalled();
   });
 });
