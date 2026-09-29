@@ -1,14 +1,13 @@
 // Shared helpers for the C-01 tests (T-0300d).
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import type { ReactElement } from "react";
-import { render } from "@testing-library/react";
+import { render, type RenderResult } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import type { Area } from "@workoutlab/shared";
 
-/** The component folder, relative to the package root (vitest runs with cwd = apps/web). */
-export const COMPONENT_DIR = resolve(process.cwd(), "src/components/body-map");
-export const CSS_PATH = resolve(COMPONENT_DIR, "body-map.css");
+import { CSS_PATH } from "./paths.js";
+
+export { COMPONENT_DIR, CSS_PATH } from "./paths.js";
 
 /** Vitest doesn't process CSS imports, so tests that read computed styles inject the real file. */
 export function injectBodyMapCss(): HTMLStyleElement {
@@ -24,7 +23,7 @@ function LocationProbe() {
 }
 
 /** Renders `ui` inside a router with a location probe, starting at `path`. */
-export function renderInRouter(ui: ReactElement, path = "/") {
+export function renderInRouter(ui: ReactElement, path = "/"): RenderResult {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Routes>

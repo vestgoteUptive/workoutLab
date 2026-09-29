@@ -6,13 +6,7 @@ import { fireEvent, screen, within } from "@testing-library/react";
 import { attentionLegend, coverageLegend, type CoverageStep } from "@workoutlab/design-tokens";
 import { AREAS } from "@workoutlab/shared";
 import { BodyMap } from "../index.js";
-import {
-  attentionFixture,
-  mixedFixture,
-  TARGETS,
-  withArea,
-  zeroFixture,
-} from "./fixtures.js";
+import { attentionFixture, mixedFixture, TARGETS, withArea, zeroFixture } from "./fixtures.js";
 import {
   accessibleText,
   areaEl,
@@ -65,7 +59,7 @@ describe("AC-D1 fill from coverageStep only (principle 3)", () => {
     }
   }
 
-  it('AC-D1: hamstrings {load: 19.9, target: 20, coverageStep: 1} is coverage-1, not derived', () => {
+  it("AC-D1: hamstrings {load: 19.9, target: 20, coverageStep: 1} is coverage-1, not derived", () => {
     const { container } = renderInRouter(<BodyMap variant="full" areas={mixedFixture} />);
     expect(fillOf(container, "hamstrings").style.backgroundColor).toBe(
       "var(--wl-color-coverage-1)",

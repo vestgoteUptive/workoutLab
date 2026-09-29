@@ -26,4 +26,23 @@ export default [
       ],
     },
   },
+  {
+    // C-01 Body map is never shown during a workout (principle 1, D-0045 §4, AC-D11):
+    // UF-03, UF-08 and UF-09 may not import components/body-map.
+    files: ["src/features/UF-03/**", "src/features/UF-08/**", "src/features/UF-09/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              regex: "(^|/)components/body-map(/|$)",
+              message:
+                "C-01 Body map is not allowed in UF-03/UF-08/UF-09 (principle 1: one task on screen during a workout, D-0045 §4).",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
