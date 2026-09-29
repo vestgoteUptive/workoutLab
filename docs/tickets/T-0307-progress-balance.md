@@ -3,10 +3,11 @@ id: T-0307
 title: UF-10 Balance (all areas + area detail, full C-01) and UF-06 Progress (overview + exercise history)
 lane: split → web-feature:UF-10 (T-0307a), web-feature:UF-06 (T-0307b)
 screens: [UF-10.1, UF-10.2, UF-06.1, UF-06.2]
-decisions: [D-0002, D-0003, D-0013, D-0027, D-0034, D-0045, D-0060, D-0061, D-0067, D-0068]
+decisions: [D-0002, D-0003, D-0013, D-0027, D-0034, D-0045, D-0060, D-0061, D-0067, D-0068, D-0071]
 deps: [T-0300, T-0203b, T-0318, T-0319]
-status: ready
+status: split   # → T-0307a (ready after T-0318), T-0307b (ready after T-0318 + T-0319)
 ---
+<!-- Reconciled by triage 2026-09-29 (TR-0030): e2e files renamed per D-0071 §10; no other change. -->
 <!-- Groomed 2026-09-29 by product-owner. Build flow: wl-build-web. Split per flow (D-0067 §1); ACs tagged [a]/[b]. -->
 
 ## Why
@@ -32,7 +33,7 @@ The children don't overlap in paths and can run in parallel.
     - The contributors in engine order: library name, `weightedSets` and `lastDate`.
     - Recovering, with "≥ 6 weighted hard sets in the last 48 h".
     - "Start workout" linking to `/session/setup`.
-  - [a] Playwright `tests/e2e/balance.spec.ts`.
+  - [a] Playwright `tests/e2e/uf-10-balance.spec.ts`.
   - [b] **UF-06.1:** the month calendar, the Balance card linking to UF-10.1, and the recent exercises (D-0068 §5).
   - [b] **UF-06.2:** the history of one exercise in the cached window (D-0068 §5–§6).
   - [b] `features/UF-06/stats.ts` holds the pure functions.
@@ -87,8 +88,8 @@ The children don't overlap in paths and can run in parallel.
 - **AC-B9 (a11y, e2e)** axe on `/progress` and `/progress/<id>` finds 0 serious or critical violations. Every link and chip is ≥ 44 × 44 px.
 
 ## Paths you may change
-- [a] `apps/web/src/features/UF-10/**`, `apps/web/src/lib/i18n/flows/uf-10.ts` (extra, D-0067 §2), `tests/e2e/balance.spec.ts` (extra, qa lane: new file only, reusing `tests/e2e/fixtures`).
-- [b] `apps/web/src/features/UF-06/**`, `apps/web/src/lib/i18n/flows/uf-06.ts` (extra), `tests/e2e/progress.spec.ts` (extra, new file).
+- [a] `apps/web/src/features/UF-10/**`, `apps/web/src/lib/i18n/flows/uf-10.ts` (extra, D-0071 §1), `tests/e2e/uf-10-balance.spec.ts` (extra, qa lane: new file only, reusing `tests/e2e/fixtures`, D-0071 §10).
+- [b] `apps/web/src/features/UF-06/**`, `apps/web/src/lib/i18n/flows/uf-06.ts` (extra), `tests/e2e/uf-06-progress.spec.ts` (extra, new file).
 
 ## Contract impact
 None. The screens read `BalanceResult`/`AreaBalance` exactly as in `api/openapi.yaml` and call the engine's public functions only. The new defaults are in D-0067/D-0068 (`revisit`).

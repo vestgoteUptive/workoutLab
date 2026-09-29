@@ -3,11 +3,11 @@ id: T-0306
 title: UF-04 Exercise library (browse, detail with attribution, compare) and UF-05.1 in-workout swap sheet
 lane: split → web-feature:UF-04 (T-0306a), web-feature:UF-05 (T-0306b)
 screens: [UF-04.1, UF-04.2, UF-04.3, UF-05.1, UF-09.6, UF-09.9]
-decisions: [D-0005, D-0025, D-0034, D-0040, D-0056, D-0057, D-0059, D-0061, D-0062, D-0067, D-0069]
-deps: [T-0300, T-0203b, T-0204, T-0205, T-0304, T-0318, T-0319]
-status: ready
+decisions: [D-0005, D-0025, D-0034, D-0040, D-0056, D-0057, D-0059, D-0061, D-0062, D-0065, D-0066, D-0067, D-0069, D-0071]
+deps: [T-0300, T-0203b, T-0204, T-0205, T-0224, T-0304, T-0318, T-0319]
+status: split   # → T-0306a (ready after T-0318 + T-0319), T-0306b (after T-0304, T-0224, T-0318)
 ---
-<!-- Groomed 2026-09-29 by product-owner. Build flow: wl-build-web. Split per flow (D-0067 §1); ACs tagged [a]/[b]. -->
+<!-- Groomed 2026-09-29 by product-owner. Build flow: wl-build-web. Split per flow (D-0067 §1); ACs tagged [a]/[b]. Reconciled by triage 2026-09-29 (TR-0030, D-0071): SwapSheet takes a Workout and returns the engine applySwap (T-0224) result; the UI builds no swapped item; UF-09 mounts only through seams.tsx and persists through useFocusSession().replaceItem; UF-08.3 (T-0303c) reuses this sheet. -->
 
 ## Why
 - **UF-04:** every exercise gets its explanation, with attribution on UF-04.2 (D-0005: the human kept CC-BY-SA in D-0061).
@@ -17,7 +17,7 @@ status: ready
 | Child | Lane | Scope | Deps | ~Size |
 |---|---|---|---|---|
 | T-0306a | web-feature:UF-04 | UF-04.1/.2/.3 plus the exported `ExerciseHowTo` | T-0318, T-0319 | ½ day |
-| T-0306b | web-feature:UF-05 | `SwapSheet` plus the apply-swap function, mounted on UF-09.9 and UF-09.6 | T-0304, T-0318 (T-0204, T-0205 done) | ½ day |
+| T-0306b | web-feature:UF-05 | `SwapSheet` (rankSwaps + engine `applySwap`), mounted on UF-09.9 and UF-09.6 through `seams.tsx` | T-0304, T-0224, T-0318 (T-0204, T-0205 done) | ½ day |
 
 ## Scope
 - In:
@@ -26,17 +26,19 @@ status: ready
   - [a] **UF-04.3** Compare, from the data we have (D-0069 §3).
   - [a] **`ExerciseHowTo`**, the in-workout dialog (D-0069 §4).
   - [a] **Data:** `loadLibrary()`, `loadExerciseDetail()` and `loadVariants()` (T-0319) and `loadProfile()`.
-  - [b] **`SwapSheet`**, props `{sessionId, plan, sessionRow, itemIndex, onClose, onSwapped}`:
-    - the reason chips, and `rankSwaps` rendered in engine order (D-0069 §5)
-    - `applySwap()`, a pure function that builds the updated `SessionPlan` (D-0069 §6)
-    - persisting through `upsertSession({id, plan})`
-    - mounting on the UF-09.9 "Swap" and UF-09.6 "Swap" actions
+  - [b] **`SwapSheet`**, exported from `features/UF-05/index.tsx`, props `{workout, itemIndex, onApply(result: Workout), onClose}` (D-0071 §7). It is the one swap sheet, used by UF-09.9, UF-09.6, UF-03.1 and UF-08.3.
+    - It loads `loadEngineHistory()`, `loadProfile()` and `loadLibrary()` from `lib/offline`.
+    - It renders the reason chips, with `rankSwaps` in engine order (D-0069 §5).
+    - "Use {name}" calls the **engine** `applySwap(workout, currentExerciseId, candidateId, reason, history, profile, library, now, tz)` (T-0224) and passes its `Workout` to `onApply` unchanged. The sheet builds no plan item and persists nothing.
+  - [b] **Seams:** a `swap` entry (label "Swap", `keepsClockRunning: false`) in both `pauseSeamActions` (the current item) and `nextSeamActions` (the upcoming item) in `features/UF-09/seams.tsx`. Its `render(ctx)` mounts `SwapSheet` with `ctx.workout`, and `onApply(result)` calls `ctx.replaceItem(i, result.plan.items[i], result.plan.mainLiftId)`, which persists the whole row (D-0071 §5–§6).
 - Out:
   - "Also replace in my routine" and "Always use this in <routine>" (D-0069 §7).
   - Research, emphasis bars and stance diagrams (D-0069 §3).
   - "Add to a routine" on UF-04.2 (UF-07 adds through its own picker).
-  - The UF-08.3 pre-start swap (T-0303).
-  - The UF-03.1 swap icon (T-0305a mounts the sheet).
+  - The UF-08.3 mount (T-0303c mounts this sheet).
+  - The UF-03.1 swap button (T-0305a mounts this sheet).
+  - The swap semantics themselves (rep slot, carry, reasons, costs): engine T-0224. The UI never builds a swapped item (principle 3).
+  - The `ExerciseHowTo` seam entry on UF-09.9 (T-0305a).
   - Contracts.
 
 ### Edge cases that are in scope
@@ -91,24 +93,19 @@ status: ready
   - The chip set is exactly: Best match, Equipment taken, Discomfort, Variety, Short on time.
 - **AC-B4 (row content)** A candidate `{exerciseId: straight-arm-pulldown, muscleMatch: 0.667, timeCostS: 375, equipment: [cable], fitsBudget: true}` reads "Straight-arm pulldown", "67 % muscle match", "7 min" and "Cable". `equipment: []` reads "Bodyweight".
 - **AC-B5 (over budget still pickable)** A mocked candidate with `fitsBudget: false` shows "Over your time", and it can be selected and applied.
-- **AC-B6 (Workout built from the stored plan, D-0069 §5)** Given `sessionRow {time_budget_min 30, warmup_in_budget true, energy "normal"}` and the plan items' `costS` [720, 555, 270], the `Workout` passed to `rankSwaps` has `budgetMin 30`, `warmupInBudget true`, `itemsTotalS 1545`, `totalS 1725`, `unusedS 75` and `sessionReasons []`, and `plan` is the stored plan by reference-equal content.
-- **AC-B7 (applySwap, D-0069 §6)** `applySwap(plan, 1, {exerciseId: "db-row", timeCostS: 555}, "variety", deps)` returns a plan where:
-  - item 1 has `exerciseId "db-row"`, `sets 3`, `isMain false` and `costS 555`
-  - `prefill` equals engine `prefill(db-row, {repsMin 8, repsMax 12}, history, library, now, tz, {exerciseId: "barbell-row", weightKg: <old prefill weight>})`
-  - `reasons` contains `{code: "swap", reason: "variety"}` directly after the `days_since` entry (or after `area_deficit` when there's no `days_since`)
-  - every other item is deep-equal to the input
-  - the input isn't mutated
-  - "Best match" gives `reason: null`
-- **AC-B8 (main slot)** Swapping item 0 (bench-press, `isMain`) to push-up keeps `isMain: true` and sets `plan.mainLiftId = "push-up"`.
-- **AC-B9 (carry, R14-E7 through the sheet)** A plan whose item 1 is lat-pulldown with a pre-fill weight of 50, swapped to seated-cable-row with no history, stores `prefill {weightKg: 50, kind: "carry"}`. barbell-row at 60 swapped to db-row stores `weightKg: null, kind: "first_time"`.
-- **AC-B10 (persisted, offline)** With `navigator.onLine = false`, Apply calls `upsertSession({id, plan: <new plan>})` once, and the IndexedDB session row holds the new plan. A remount of the UF-09 host reads it back. Logged sets of the old exercise keep `exerciseId "barbell-row"`.
-- **AC-B11 (mounted, principle 1)** On UF-09.9 Paused, "Swap" opens the sheet for the current item. On UF-09.6 Next exercise, "Swap" opens it for the upcoming item. Cancel returns to the same screen with the plan unchanged (deep-equal). The sheet contains no link to `/balance`, `/plan`, `/library` or `/progress`.
+- **AC-B6 (the sheet ranks the Workout it's given, D-0069 §5)** Given a `Workout` with `budgetMin 30`, `warmupInBudget true`, `itemsTotalS 1545`, `totalS 1725`, `unusedS 75` and `sessionReasons []` (the fixture plan with `costS` [720, 555, 270], built the D-0069 §5 way, which is what `ctx.workout` gives in UF-09), `rankSwaps` receives that exact object (reference-equal). The sheet computes no totals.
+- **AC-B7 (apply through the engine, D-0071 §7)** Picking db-row with "Variety" and "Use Db row" calls the engine `applySwap(workout, "barbell-row", "db-row", "variety", history, profile, library, now, tz)` (T-0224) exactly once (spy on the real function), and `onApply` receives its return value reference-equal. "Best match" passes `reason: null`. A source test finds no `prefill(` call, no `costS` arithmetic and no `reasons` construction in `features/UF-05`. The swap semantics (rep slot, carry, reason position, costs, `mainLiftId`) are T-0224's worked examples, not ACs here.
+- **AC-B8 (main slot, through the real engine)** Swapping item 0 (bench-press, `isMain`) to push-up through the real `applySwap` gives `onApply` a result with `plan.items[0].isMain` true and `plan.mainLiftId` "push-up", and the seam passes `"push-up"` as `replaceItem`'s third argument.
+- **AC-B9 (carry, R14-E7, through the real engine)** A lat-pulldown item with a pre-fill weight of 50, swapped to seated-cable-row with no history, renders the engine's `prefill {weightKg: 50, kind: "carry"}` on the next UF-09.3. barbell-row at 60 swapped to db-row renders `weightKg: null, kind: "first_time"` ("Set weight").
+- **AC-B10 (persisted, offline, D-0071 §5–§6)** With `navigator.onLine = false`, Apply from the UF-09.9 seam calls `ctx.replaceItem(1, result.plan.items[1], result.plan.mainLiftId)` once and makes no direct `upsertSession` call from `features/UF-05` (spy). In the integration test with the real host, the IndexedDB row then holds the new plan, and its other fields are unchanged. A remount of the UF-09 host reads it back. The applied plan passes `parseSessionPlan`. Logged sets of the old exercise keep `exerciseId "barbell-row"`, and logging continues at the next set index.
+- **AC-B11 (mounted through seams.tsx, principle 1)** `seams.tsx` has a `swap` entry (`keepsClockRunning: false`) in both arrays, and the diff touches no other `features/UF-09` file. On UF-09.9 Paused, "Swap" (after Resume, in the T-0304 AC-A9 order) opens the sheet for the current item. On UF-09.6 Next exercise, "Swap" opens it for the upcoming item, and the 60 s countdown doesn't run while it's open. Cancel returns to the same screen with the plan unchanged (deep-equal) and no write. The sheet contains no link to `/balance`, `/plan`, `/library` or `/progress`. `features/UF-05` doesn't import `features/UF-09` (source test).
 - **AC-B12 (empty list)** A mocked `[]` shows "No alternatives fit your equipment" and a Close button, and nothing is written.
 - **AC-B13 (a11y)** The sheet is `role="dialog"` with an accessible name of "Replace <exercise name>". The reason chips are a radio group. Every option row is ≥ 44 px tall. vitest axe (the D-0060 §7 helper) finds 0 violations.
 
 ## Paths you may change
-- [a] `apps/web/src/features/UF-04/**`, `apps/web/src/lib/i18n/flows/uf-04.ts` (extra), `tests/e2e/library.spec.ts` (extra, new file).
-- [b] `apps/web/src/features/UF-05/**`, `apps/web/src/lib/i18n/flows/uf-05.ts` (extra), and in `apps/web/src/features/UF-09/**` only the UF-09.9 and UF-09.6 action wiring that opens `SwapSheet` (extra, D-0067 §4). Name the files in the PR.
+- [a] `apps/web/src/features/UF-04/**`, `apps/web/src/lib/i18n/flows/uf-04.ts` (extra), `tests/e2e/uf-04-library.spec.ts` (extra, new file, D-0071 §10). `features/UF-04/index.tsx` exports `ExerciseHowTo` (T-0305a mounts it on UF-09.9 and UF-03.1).
+- [b] `apps/web/src/features/UF-05/**`, `apps/web/src/lib/i18n/flows/uf-05.ts` (extra), and in `features/UF-09` **only `apps/web/src/features/UF-09/seams.tsx`** (extra, D-0071 §4: the `swap` entries). If the host's overlay mechanism lacks something, raise a follow-up for web-feature:UF-09.
+- Read-only imports: `@workoutlab/engine` (`rankSwaps`, `applySwap`), `lib/offline` loaders, `lib/i18n/*`. `features/UF-04` and `features/UF-05` may not import `features/UF-02|06|07|10|11` or `components/body-map` (D-0071 §9), because they render inside UF-09.
 
 ## Contract impact
 None. `SwapCandidate`/`SwapCandidateList` render as in `api/openapi.yaml`. The stored plan stays a valid `SessionPlan` v1 (a test runs `parseSessionPlan` on the applied plan). The defaults are in D-0069 (`revisit`).

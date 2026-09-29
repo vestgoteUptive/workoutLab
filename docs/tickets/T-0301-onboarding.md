@@ -3,10 +3,11 @@ id: T-0301
 title: UF-01 Onboarding (< 60 s to a first plan) including UF-01.5 Account — profile gate, UF-01.1–.4 with the on-device plan, account and save after sign-in
 lane: web-feature:UF-01 (T-0301a is web-shell)
 screens: [UF-01.1, UF-01.2, UF-01.3, UF-01.4, UF-01.5]
-decisions: [D-0002, D-0010, D-0014, D-0017, D-0022, D-0045, D-0061, D-0063, D-0064, D-0067]
-deps: [T-0300, T-0201a]
-status: ready
+decisions: [D-0002, D-0010, D-0014, D-0017, D-0022, D-0045, D-0061, D-0063, D-0064, D-0067, D-0071]
+deps: [T-0300, T-0201a, T-0318]
+status: split   # → T-0301a (ready; web-shell, runs after T-0318 and T-0319), T-0301b (after T-0318), T-0301c (after a + b)
 ---
+<!-- Reconciled by triage 2026-09-29 (TR-0030, D-0071 §11): the gate covers every protected route plus /session/setup (including T-0318's new routes), never /session/:id or /session/:id/summary. -->
 <!-- Groomed 2026-09-29 by product-owner. Split into T-0301a/b/c (D-0064 Consequences). ACs are tagged [a]–[c]. -->
 
 ## Why
@@ -21,7 +22,7 @@ Keep `T-0301` as the parent row with status `split → T-0301a, T-0301b, T-0301c
 | T-0301b | web-feature:UF-01 | UF-01.1–.4, pending plan, timing, on-device targets | T-0300, T-0201a, T-0318 | todo | ½ day |
 | T-0301c | web-feature:UF-01 | UF-01.5 Account (link, code, Google, privacy), `/welcome/save` | T-0301a, T-0301b | todo | ½ day |
 
-T-0301a is a web-shell ticket and must not run in parallel with any other web-shell ticket (T-0318, T-0319, T-0312, T-0313, T-0310). T-0301b needs T-0318 only for its string file `lib/i18n/flows/uf-01.ts` (D-0067 §2). It adds no routes: `/welcome/*` already exists.
+T-0301a is a web-shell ticket and must not run in parallel with any other web-shell ticket (T-0318, T-0319, T-0312, T-0313, T-0310). Order (D-0071 §11): T-0318 → T-0319 → T-0301a, because T-0318 unblocks every feature ticket and T-0301a only T-0301c. If T-0301a runs before T-0318, its AC-A2 table still holds, and T-0318's AC-5 covers the new routes. T-0301b needs T-0318 only for its string file `lib/i18n/flows/uf-01.ts` (D-0067 §2). It adds no routes: `/welcome/*` already exists.
 
 ## Scope
 - In:
@@ -41,7 +42,7 @@ Vitest + Testing Library in `apps/web/src/**` (Supabase mocked with the existing
 
 ### T-0301a Profile gate (web-shell)
 - **AC-A1 (status sources)** Given signed in and a cached profile (`loadProfile()` resolves to a profile), When `useProfileStatus()` first renders, Then it returns `"present"` with no `from("profiles")` call awaited. Given no cache, online, and `profiles…maybeSingle()` resolving `{data: null}`, Then it returns `"missing"`. Given `{data: row}`, Then `"present"` and `refreshProfile()` was called once. Given the call rejects, or `navigator.onLine === false`, Then `"unknown"`.
-- **AC-A2 (redirects)** Signed in with status `missing`: `/`, `/library`, `/library/back-squat`, `/progress`, `/balance`, `/balance/core`, `/plan` and `/session/setup` each end at `/welcome/save`. `/welcome`, `/welcome/goal` and `/welcome/save` render without a redirect. `/session/0b9e…` renders the UF-09 host (never gated, principle 1). Signed in with `present`: `/welcome/goal` still redirects as T-0300b does (the return-to path, or `/`). Signed out: the AC-B5 table of T-0300b is unchanged (its tests stay green, not edited).
+- **AC-A2 (redirects)** The gate applies to **every route whose `guard` is `protected`, plus `/session/setup`**, derived from `routes.ts` rather than a hard-coded list, so routes T-0318 adds are gated too (D-0071 §11). A test iterates `routes` and asserts it. Signed in with status `missing`: `/`, `/library`, `/library/back-squat`, `/progress`, `/balance`, `/balance/core`, `/plan` and `/session/setup` each end at `/welcome/save`. `/welcome`, `/welcome/goal` and `/welcome/save` render without a redirect. `/session/0b9e…` renders the UF-09 host and `/session/0b9e…/summary` (once T-0318 adds it) renders UF-03.3, neither gated (principle 1). Signed in with `present`: `/welcome/goal` still redirects as T-0300b does (the return-to path, or `/`). Signed out: the AC-B5 table of T-0300b is unchanged (its tests stay green, not edited).
 - **AC-A3 (unknown never redirects)** Signed in with status `unknown`: `/` renders UF-02.1 and `/welcome/goal` redirects to `/` (as for `present`).
 - **AC-A4 (recheck)** Given `missing`, When the profile row appears and `recheckProfile()` is called, Then the status becomes `present` and a component on `/welcome/save` that navigates to `/` lands on UF-02.1 (no loop back to `/welcome/save`).
 - **AC-A5 (principle 5)** Signed out, `/welcome` renders UF-01.1 on the first committed render with a `fetch` that never resolves and no `loadProfile`/`from("profiles")` call (spies). `lib/profile` isn't in the static import graph of `features/UF-01` (a source test).

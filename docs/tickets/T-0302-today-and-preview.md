@@ -3,10 +3,11 @@ id: T-0302
 title: UF-02 Today + workout preview — compact C-01 as one link to /balance fed from BalanceResult.areas, attention areas, a 45-min suggestion preview, Start → UF-08.1
 lane: web-feature:UF-02
 screens: [UF-02.1, UF-02.2]
-decisions: [D-0002, D-0003, D-0013, D-0017, D-0045, D-0060, D-0063, D-0065, D-0067]
+decisions: [D-0002, D-0003, D-0013, D-0017, D-0045, D-0060, D-0063, D-0065, D-0067, D-0071]
 deps: [T-0300, T-0203b, T-0318]
-status: todo   # split; T-0302a becomes ready when T-0318 is done
+status: split   # → T-0302a, T-0302b; T-0302a becomes ready when T-0318 is done
 ---
+<!-- Reconciled by triage 2026-09-29 (TR-0030, D-0071 §4): the UF-11.1 card is mounted through features/UF-02/slots.tsx (AC-A11), not by T-0308c editing Today.tsx. -->
 <!-- Groomed 2026-09-29 by product-owner. Split into T-0302a/b. ACs are tagged [a]/[b]. -->
 
 ## Why
@@ -26,7 +27,7 @@ T-0302b waits for T-0303b only because both render the reason copy in `lib/i18n/
 - In:
   - [a] `features/UF-02` Today: date header, `<OfflineStatus variant="text">`, compact C-01, the attention line, the "Suggested for 45 min" card (D-0065 §1), Start → `/session/setup`, "See all" → `/?view=preview`, and the loading, zero-history and no-profile states. The on-device `balance()` and `suggest()` with a 3 s-capped `refreshAll` when online (D-0063 §3). `lib/i18n/workout.ts`: `itemSummary`, `restLabel`, `reasonLine`, `sessionReasonChips`, `areaName`.
   - [b] UF-02.2 at `/?view=preview`: Back → `/`, summary chips, warm-up row, numbered items linking to `/library/:id` (UF-04.2), per-item line and reason, Start.
-- Out: UF-11.1 check-in card (T-0308c mounts `CheckinCard` from `features/UF-11/index.tsx` by editing only `features/UF-02/Today.tsx`, D-0067 §4. T-0302a leaves a marked slot between the attention line and the suggestion card, a `{/* seam: UF-11.1 CheckinCard (T-0308c) */}` comment, and adds no import of `features/UF-11`); split names, greeting, week counter, "This week"/"Latest PR" cards (D-0065 §1); the "empty or quick 20-min workout" link; Swap/Edit on UF-02.2 (swaps happen on UF-08.3 before the start; routines are T-0308); the full C-01 and UF-10 (T-0307); changing C-01 itself (web-shell); any contract change.
+- Out: UF-11.1 check-in card (T-0308c fills it through `features/UF-02/slots.tsx`, its only UF-02 grant, D-0071 §4. T-0302a creates `slots.tsx` exporting `todayCheckinSlot: ComponentType | null = null`, renders it after the C-01 compact region and the attention line and before the suggestion card, and adds no import of `features/UF-11`, AC-A11); split names, greeting, week counter, "This week"/"Latest PR" cards (D-0065 §1); the "empty or quick 20-min workout" link; Swap/Edit on UF-02.2 (swaps happen on UF-08.3 before the start; routines are T-0308); the full C-01 and UF-10 (T-0307); changing C-01 itself (web-shell); any contract change.
 
 ### Edge cases that are in scope
 - **Offline:** cold start offline renders UF-02.1 from IndexedDB with "Offline · last synced HH:MM" (AC-A6). The balance includes queued sets (AC-A2). Start still works (UF-08 is offline-capable).
@@ -49,6 +50,8 @@ Vitest + Testing Library in `apps/web/src/features/UF-02/**` and `apps/web/src/l
 - **AC-A9 (formatters, `lib/i18n/workout.ts`)** `itemSummary({sets: 4, repsMin: 6, repsMax: 8, durationS: null})` = "4 × 6–8". `repsMin === repsMax === 5` → "4 × 5". `{sets: 3, repsMin: null, durationS: 45}` → "3 × 45 s". `restLabel(120)` = "2:00", `restLabel(60)` = "1:00". `reasonLine`: `main_lift` → "Main lift"; `area_deficit {hamstrings, 0.625}` → "Hamstrings 63 % below target" (the UI rounds %, rule 5: half up); `days_since {quads, null}` → "Quads not trained yet"; `days_since {quads, 1}` → "Quads last trained 1 day ago" and `…, 12` → "… 12 days ago"; `recovering_skipped {quads}` → "Quads recovering, skipped"; `energy_low_trim` → "Trimmed for low energy"; `energy_high_backoff` → "Back-off set added"; `swap {variety}` → "Swapped for variety" and `swap {null}` → "Shuffled"; `prefill` codes → "" (not a "why" line). The line for an item joins its non-empty codes in `reasons` order with " · ", at most 2. Every string lives in the file (the jsx-no-literals lint is green).
 - **AC-A10 (a11y + perf, e2e)** axe on `/` reports 0 serious/critical (NFR-A11Y-1). Start and "See all" are ≥ 44 × 44 px (NFR-A11Y-2). `check:size` keeps the UF-02 chunk ≤ 100 KB gzip (NFR-PERF-2). The engine runs after the first paint (the h1 is in the DOM before `balance` is called: spy order).
 
+- **AC-A11 (check-in slot, D-0071 §4)** `features/UF-02/slots.tsx` exports `todayCheckinSlot`, which is `null` in this ticket (a test pins it), and `features/UF-02` has no import of `features/UF-11` (source test). With a test component injected, it renders exactly once, after the C-01 compact region and the attention line (or right after C-01 when there's no attention line) and before the suggestion card in DOM order. With `null`, nothing renders there and there's no layout gap. Today renders the slot inside a `Suspense` with a `null` fallback, so a lazy component doesn't block the first paint (AC-A10).
+
 ### T-0302b UF-02.2 Workout preview
 - **AC-B1 (route, D-0063 §2)** `/?view=preview` renders `[data-screen-id="UF-02.2"]` and not UF-02.1. Back (a 44 px link named "Back") returns to `/`. The browser Back from preview lands on UF-02.1. C-02 is visible (it is the `/` route).
 - **AC-B2 (render W-R7E4 as is, principle 3)** The chips read "~29 min", "9 sets" (Σ `sets` + back-off sets) and the equipment union of the items in plan order with "none" dropped (library names, e.g. "Barbell · Bench · Rack · Machine"). A warm-up row lists the 4 `plan.warmup` moves by library name with "Warm-up · 3 min" when `warmupInBudget` is true, and "Warm-up · not counted" when it's false. Then 3 numbered rows in plan order: "Bench press" / "4 × 6–8 · rest 2:00" / "Main lift · Chest 100 % below target". "Leg extension" shows "rest 1:00" (`REST_ISOLATION_S` from the engine by library `type`). No row is re-sorted: a fixture with the items reversed renders reversed.
@@ -58,7 +61,8 @@ Vitest + Testing Library in `apps/web/src/features/UF-02/**` and `apps/web/src/l
 
 ## Paths you may change
 - `apps/web/src/features/UF-02/**`.
-- Extras (D-0063, D-0067 §2): `apps/web/src/lib/i18n/flows/uf-02.ts` (created empty by T-0318), `apps/web/src/lib/i18n/workout.ts` (new, created by T-0302a; T-0302b may add keys), `tests/e2e/uf-02-today.spec.ts` (new; T-0302b appends).
+- Extras (D-0071 §1, §10): `apps/web/src/lib/i18n/flows/uf-02.ts` (created empty by T-0318), `apps/web/src/lib/i18n/workout.ts` (new, created by T-0302a; T-0302b may add keys; never in parallel with T-0303b), `tests/e2e/uf-02-today.spec.ts` (new; T-0302b appends).
+- `features/UF-02/slots.tsx` is the one UF-02 file T-0308c may edit later. Keep its export stable.
 - Read-only imports: `components/body-map`, `components/offline-status`, `lib/offline`, `lib/format`, `lib/i18n/en.ts` (area names), `@workoutlab/engine`, `@workoutlab/shared`.
 
 ## Contract impact

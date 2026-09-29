@@ -3,11 +3,11 @@ id: T-0303
 title: UF-08 Session setup — time & energy with a live fit line, the suggested workout (bar, why, remove, shuffle), swap before starting, ready + start the session
 lane: web-feature:UF-08
 screens: [UF-08.1, UF-08.2, UF-08.3, UF-08.4]
-decisions: [D-0002, D-0004, D-0017, D-0024, D-0025, D-0040, D-0045, D-0047, D-0056, D-0057, D-0059, D-0062, D-0063, D-0065, D-0067]
+decisions: [D-0002, D-0004, D-0017, D-0024, D-0025, D-0040, D-0045, D-0047, D-0056, D-0057, D-0059, D-0062, D-0063, D-0065, D-0067, D-0071]
 deps: [T-0300, T-0203b, T-0318]
-status: todo   # split; T-0303a becomes ready when T-0318 is done
+status: split   # → T-0303a–d; T-0303a becomes ready when T-0318 is done
 ---
-<!-- Groomed 2026-09-29 by product-owner. Split into T-0303a–d (D-0065 Consequences). ACs are tagged [a]–[d]. -->
+<!-- Groomed 2026-09-29 by product-owner. Split into T-0303a–d (D-0065 Consequences). ACs are tagged [a]–[d]. Reconciled by triage 2026-09-29 (TR-0030, D-0071 §7): T-0303c mounts the shared SwapSheet (features/UF-05, T-0306b) instead of building a second sheet. -->
 
 ## Why
 Principle 2: every workout start asks how long the user has (UF-08.1), and the time shapes selection. It isn't just a display. Principle 3: the list, its order, set counts, reps, pre-fill weights, "why" reasons, shuffles and swap rankings all come from `@workoutlab/engine` (`suggest`, `rankSwaps`, rules 7, 10, 12, 13, 14), and the UI renders them without re-sorting or recomputing. NFR-OFF-3: this works offline from the cache plus queued sets. The ticket ends by creating the `sessions` row (with `plan`) that focus mode (T-0304) runs on.
@@ -19,7 +19,7 @@ Parent `T-0303` → `split → T-0303a, T-0303b, T-0303c, T-0303d`. All four are
 |---|---|---|---|---|
 | T-0303a | UF-08.1 Time & energy + setup data loading + step routing | T-0300, T-0203b, T-0318 | todo | ½ day |
 | T-0303b | UF-08.2 Suggested workout (bar, why, rows, remove, shuffle, time change) | T-0303a, T-0302a | todo | ½ day |
-| T-0303c | UF-08.3 Swap before starting (`rankSwaps` + engine `applySwap`) | T-0303b, T-0204, **T-0224** (engine `applySwap`, new) | todo | ⅓ day |
+| T-0303c | UF-08.3 Swap before starting: mounts `SwapSheet` from `features/UF-05` (which calls `rankSwaps` + engine `applySwap`, D-0071 §7) | T-0303b, **T-0306b** (`SwapSheet`, which needs T-0224) | todo | ¼ day |
 | T-0303d | UF-08.4 Ready + focus prefs + start the session | T-0303b | todo | ⅓ day |
 
 T-0303d doesn't wait for T-0303c: UF-08.2 simply has no swap action until T-0303c lands (D-0065 §5). If c and d are both ready, run d first (T-0304 needs it).
@@ -28,9 +28,9 @@ T-0303d doesn't wait for T-0303c: UF-08.2 simply has no swap action until T-0303
 - In:
   - [a] `/session/setup` host with the `?step=` views (D-0063 §2), data loading (`loadEngineHistory`, `loadLibrary`, `loadTargets`, `loadProfile`, `refreshAll` capped at 3 s), UF-08.1: stepper, chips, "done by", finish-time input, warm-up toggle, energy, live fit line, "Suggest my workout". Close (×) → `/`.
   - [b] UF-08.2: the time-budget bar, session "why" chips, item rows (sets × reps · weight · minutes · reason), Remove (`excludeIds`), Shuffle (`shuffle + 1`), time chips that rebuild with `mainLiftId` kept, the over-budget state, "Looks good" → ready.
-  - [c] UF-08.3 swap sheet: reason chips, `rankSwaps` list in engine order, Best match, muscle match, time cost, equipment, `fitsBudget: false` flagged, "Use X" through the engine `applySwap`, Keep.
+  - [c] UF-08.3: a "Swap {name}" button per item on UF-08.2 that opens `SwapSheet` (`{workout, itemIndex, onApply, onClose}` from `features/UF-05/index.tsx`) at `?step=swap`. `onApply(result)` makes `result` the current `Workout` and returns to UF-08.2. Close is "Keep". The chips, row copy, engine order and `applySwap` call are the sheet's (T-0306b, D-0069 §5), with one copy for every mount.
   - [d] UF-08.4: summary, the 4-step focus explainer, the 3 settings in `features/UF-08/focus-prefs.ts` (D-0063 §5), Start → `upsertSession` → `/session/<id>` (D-0065 §7).
-- Out: "Always use this in <routine>" and "Skip it today" (D-0065 §5; routines are T-0308); UF-05.1 mid-workout swap (T-0306b); focus mode (T-0304); the engine `applySwap` itself (T-0224, engine lane); remembering the last budget (D-0065 revisit); calling `POST /workouts/suggest` (D-0063 §3); any contract change.
+- Out: "Always use this in <routine>" and "Skip it today" (D-0065 §5; routines are T-0308); the swap sheet itself and the UF-05.1 mid-workout swap (T-0306b); focus mode (T-0304); the engine `applySwap` itself (T-0224, engine lane); remembering the last budget (D-0065 revisit); calling `POST /workouts/suggest` (D-0063 §3); any contract change.
 
 ### Edge cases that are in scope
 - **Offline:** the whole setup runs offline from the cache and the queue. The output equals the online output for the same cache (AC-A7). Start queues the session in IndexedDB (AC-D4).
@@ -60,30 +60,31 @@ Vitest + Testing Library in `apps/web/src/features/UF-08/**`, with `lib/offline`
 - **AC-B6 (hand-off)** "Looks good" goes to `?step=ready` carrying the current `Workout` plus `{budgetMin, warmupInBudget, energy}`. Back goes to `?step=time` with the setup values kept. With T-0303c not merged, no swap button is in the DOM.
 
 ### T-0303c UF-08.3 Swap before starting
-- **AC-C1 (ranking from the engine, D-0056, D-0059)** Opening swap on the barbell-row slot of the R12 fixture session (bench-press × 4 main, barbell-row × 3, leg-extension × 2) at F-web calls `rankSwaps("barbell-row", null, workout, {level, equipment}, library, history, now, tz)` and renders R12-E1 in order: db-row, inverted-row, lat-pulldown, seated-cable-row, straight-arm-pulldown. Only db-row has "Best match" (`bestMatch`). Tapping "Short on time" re-calls it with `"short_on_time"` and renders R12-E2 in order. The reason chips are the 4 `SwapReason`s, in the `api/openapi.yaml` enum order, with labels "Equipment taken", "Discomfort", "Want variety", "Short on time". No reason is selected at first (`null`).
-- **AC-C2 (candidate row)** For `{muscleMatch: 1, timeCostS: 555, equipment: ["dumbbell","bench"], fitsBudget: true}`: "Same muscles · 10 min · Dumbbell, Bench". For `muscleMatch: 0.667`: "67 % muscle match". For `fitsBudget: false`: "Doesn't fit your time" in `warn`, and the row is still selectable (D-0056 §3). An empty list → "No alternatives with your equipment" and only Keep.
-- **AC-C3 (apply through the engine)** Selecting db-row with reason `short_on_time` and "Use Db row" calls `applySwap(workout, "barbell-row", "db-row", "short_on_time", history, profile, library, now, tz)` (T-0224) exactly once, and UF-08.2 renders its returned `Workout` as is (the row at the same position, and its reason line includes "Swapped: short on time"). Keep returns to UF-08.2 with the workout reference-unchanged.
-- **AC-C4 (over budget after swap)** Given `applySwap` returns a workout over `availableS`, UF-08.2 shows the AC-B5 over state.
-- **AC-C5 (a11y)** The sheet is a `role="dialog"` with `aria-modal`, named "Swap <exercise>". Focus moves into it and returns to the swap button on close, and Escape = Keep. The candidates are a radio group.
+The ranking, chips, row copy, empty state and dialog a11y are T-0306b's `SwapSheet` ACs (D-0071 §7: one sheet, one copy). They aren't repeated here.
+- **AC-C1 (mount, D-0071 §7)** On UF-08.2 for the R12 fixture session (bench-press × 4 main, barbell-row × 3, leg-extension × 2), "Swap Barbell row" goes to `?step=swap` and renders `SwapSheet` (imported from `features/UF-05/index.tsx`, not a deep path) with `workout` = the current `Workout` (reference-equal) and `itemIndex` 1. The warm-up row has no swap button. A cold load of `?step=swap` shows UF-08.1 (AC-A6).
+- **AC-C2 (apply renders the engine result)** With the real sheet and engine, picking db-row with "Short on time" and applying: UF-08.2 renders the `Workout` handed to `onApply` as is. db-row is at position 2, and its reason line is `reasonLine`'s output for `swap {short_on_time}`. The next `suggest` call (for example a Shuffle) isn't made by the apply (spy count unchanged). The later time-chip/Remove/Shuffle actions still re-run `suggest` from the setup inputs (D-0065 §4), which drops the swap, and that is expected in v1.
+- **AC-C3 (keep)** Close/Escape ("Keep") returns to UF-08.2 with the `Workout` reference-unchanged and focus on the swap button that opened it.
+- **AC-C4 (over budget after swap)** Given `onApply` receives a workout with `itemsTotalS` over `availableS`, UF-08.2 shows the AC-B5 over state.
+- **AC-C5 (start after a swap)** After a swap, "Looks good" → Start stores `plan` = the swapped `workout.plan` (deep-equal, passes `parseSessionPlan`).
 
 ### T-0303d UF-08.4 Ready + start
 - **AC-D1 (summary)** Given W-R7E4 at F-tz, the summary reads "29 min · warm-up + 3 exercises · 9 sets · done by 12:29" (m = `ceil(totalS / 60)` = 29, done by = `now + m` minutes, so the two numbers agree). The 4 explainer steps render with the copy "One thing on screen", "Tap Done after each set", "Rest counts down by itself", "Everything else is behind pause".
-- **AC-D2 (focus prefs, D-0065 §6)** 3 switches (`role="switch"` or checkbox): "Sound cues", "Voice countdown 3-2-1", "Keep screen awake", all on by default. Toggling one writes `localStorage["wl-focus-prefs"]` `{version: 1, sound, voice, keepAwake}`, and a remount shows the stored values. `readFocusPrefs()` returns the defaults for a missing or invalid value. `focus-prefs.ts` exports only `readFocusPrefs`, `writeFocusPrefs` and `type FocusPrefs` (a test on the module's keys), and `features/UF-08/index.tsx` re-exports exactly these three: the hand-off T-0304c imports from `index.tsx` (D-0067 §4).
+- **AC-D2 (focus prefs, D-0065 §6)** 3 switches (`role="switch"` or checkbox): "Sound cues", "Voice countdown 3-2-1", "Keep screen awake", all on by default. Toggling one writes `localStorage["wl-focus-prefs"]` `{version: 1, sound, voice, keepAwake}`, and a remount shows the stored values. `readFocusPrefs()` returns the defaults for a missing or invalid value. `focus-prefs.ts` exports only `readFocusPrefs`, `writeFocusPrefs` and `type FocusPrefs` (a test on the module's keys), and `features/UF-08/index.tsx` re-exports exactly these three: the hand-off T-0304c imports from `index.tsx` (D-0071 §3).
 - **AC-D3 (Start writes the session first, NFR-OFF-2)** Start calls `upsertSession({id, started_at: "2026-09-27T10:00:00.000Z", ended_at: null, time_budget_min: 30, energy: "normal", warmup_in_budget: true, plan: workout.plan})` with `id` a UUID v4. `navigate("/session/<id>")` is called only after that promise resolves (a deferred promise holds navigation). A second tap while it is pending makes no second call. The stored `plan` passes `parseSessionPlan` and deep-equals `workout.plan`.
 - **AC-D4 (offline + two starts, NFR-SYNC-4)** With `fake-indexeddb` and the real `upsertSession`, offline: after Start, `offlineDb().sessions.get(id)` holds the row with `pending: true`. Two Start runs (for example two devices or two setups) give two different ids and two rows.
 - **AC-D5 (empty plan)** Given `plan.items` `[]`, the summary reads "warm-up only", and Start still creates the session.
 - **AC-D6 (e2e happy path + a11y)** Signed in with a mocked cache: `/` → Start → UF-08.1 (45) → chip 30 → Suggest → UF-08.2 → Looks good → UF-08.4 → Start lands on `/session/<uuid>` (the UF-09 host), and IndexedDB has the session. The run works keyboard-only. axe reports 0 serious/critical on UF-08.1, .2, .4 (and .3 once T-0303c lands, which appends to the same spec).
 
 ## Paths you may change
-- `apps/web/src/features/UF-08/**` (including `focus-prefs.ts`, the D-0063 §5 hand-off).
-- Extras (D-0063, D-0067 §2): `apps/web/src/lib/i18n/flows/uf-08.ts` (created empty by T-0318); `apps/web/src/lib/i18n/workout.ts` (T-0303b may **add** keys, never change existing ones); `tests/e2e/uf-08-setup.spec.ts` (new; the later children append).
-- Read-only imports: `lib/offline`, `lib/format`, `lib/i18n/*`, `components/offline-status`, `@workoutlab/engine`, `@workoutlab/shared`. **Not** `components/body-map` (principle 1, AC-D11 of T-0300).
+- `apps/web/src/features/UF-08/**` (including `focus-prefs.ts`; `index.tsx` re-exports its three names, the D-0071 §3 hand-off).
+- Extras (D-0071 §1, §10): `apps/web/src/lib/i18n/flows/uf-08.ts` (created empty by T-0318); `apps/web/src/lib/i18n/workout.ts` (T-0303b only, which may **add** keys and never change existing ones, and doesn't run in parallel with T-0302a/b); `tests/e2e/uf-08-setup.spec.ts` (new; the later children append).
+- Read-only imports: `lib/offline`, `lib/format`, `lib/i18n/*`, `components/offline-status`, `@workoutlab/engine`, `@workoutlab/shared`, `features/UF-05/index.tsx` (`SwapSheet`, T-0303c). **Not** `components/body-map`, and not `features/UF-02|06|07|10|11` (principle 1, D-0071 §9).
 
 ## Contract impact
-none for T-0303a/b/d. T-0303c needs the engine ticket T-0224 `applySwap` (a rule 12 addendum in `docs/engine-rules.md` under an engine-lane decision, D-0065 §5). This ticket doesn't change it and must not reimplement it in the UI.
+none. T-0303c reaches the engine `applySwap` (T-0224, a rule 12 addendum under an engine-lane decision, D-0065 §5, D-0071 §7) only through `SwapSheet` (T-0306b). This ticket doesn't change it and must not reimplement it in the UI.
 
 ## NFRs owned
-OFF-3 (AC-A7), OFF-2 start part (AC-D3, AC-D4), SYNC-4 start part (AC-D4), I18N-2 (AC-A2), A11Y-1/2/6 for UF-08 (AC-A1, AC-B4, AC-C5, AC-D6).
+OFF-3 (AC-A7), OFF-2 start part (AC-D3, AC-D4), SYNC-4 start part (AC-D4), I18N-2 (AC-A2), A11Y-1/2/6 for UF-08 (AC-A1, AC-B4, AC-C3, AC-D6).
 
 ## Definition of done
 Tests for every AC in the child pass · `pnpm -w typecheck lint test --force --concurrency=1` green · e2e green for the child · `check:size` green · contracts unchanged · commits start with the child id and cite UF-08.n.

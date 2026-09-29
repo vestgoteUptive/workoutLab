@@ -3,11 +3,11 @@ id: T-0308
 title: UF-07.1 Routine builder, UF-11.2 Plan + UF-11.3 Edit plan, UF-11.1 Plan check-in card
 lane: split → web-feature:UF-07 (T-0308a), web-feature:UF-11 (T-0308b, T-0308c)
 screens: [UF-07.1, UF-11.1, UF-11.2, UF-11.3, UF-02.1]
-decisions: [D-0018, D-0021, D-0027, D-0041, D-0050, D-0061, D-0067, D-0070]
-deps: [T-0300, T-0202, T-0100b, T-0215, T-0223, T-0302, T-0318, T-0319]
-status: ready
+decisions: [D-0018, D-0021, D-0027, D-0041, D-0050, D-0061, D-0064, D-0067, D-0070, D-0071]
+deps: [T-0300, T-0202, T-0100b, T-0215, T-0223, T-0302a, T-0318, T-0319]
+status: split   # → T-0308a, T-0308b (ready after T-0318 + T-0319), T-0308c (after T-0308b, T-0215, T-0223, T-0302a)
 ---
-<!-- Groomed 2026-09-29 by product-owner. Build flow: wl-build-web. Split per flow (D-0067 §1); ACs tagged [a]/[b]/[c]. -->
+<!-- Groomed 2026-09-29 by product-owner. Build flow: wl-build-web. Split per flow (D-0067 §1); ACs tagged [a]/[b]/[c]. Reconciled by triage 2026-09-29 (TR-0030, D-0071 §4): the UF-02.1 mount goes through features/UF-02/slots.tsx only, and the e2e files are renamed (D-0071 §10). -->
 
 ## Why
 - **Principle 4:** targets adapt to what the user actually does, and never silently. UF-11.1 renders `evaluateCheckin` (rule 9, now one period per D-0061 / T-0215) and asks before anything changes. UF-11.2 shows the plan, and UF-11.3 edits it.
@@ -20,7 +20,7 @@ status: ready
 |---|---|---|---|---|
 | T-0308a | web-feature:UF-07 | UF-07.1 routine editor at `/plan/routines/new` and `/plan/routines/:id` | T-0318, T-0319 (T-0100b done) | ½ day |
 | T-0308b | web-feature:UF-11 | UF-11.2 Plan (incl. the routine list) + UF-11.3 Edit plan | T-0318, T-0319 (T-0202 done) | ½ day |
-| T-0308c | web-feature:UF-11 | UF-11.1 `CheckinCard`: evaluate, insert row, Accept/Keep, offline, mounted on UF-11.2 and UF-02.1 | T-0308b, T-0215, T-0223, T-0302 | ½ day |
+| T-0308c | web-feature:UF-11 | UF-11.1 `CheckinCard`: evaluate, insert row, Accept/Keep, offline, mounted on UF-11.2 and (through `features/UF-02/slots.tsx`) UF-02.1 | T-0308b, T-0215, T-0223, T-0302a | ½ day |
 
 T-0308a can run in parallel with T-0308b. T-0308c follows T-0308b, because they share `features/UF-11`.
 
@@ -43,7 +43,7 @@ T-0308a can run in parallel with T-0308b. T-0308c follows T-0308b, because they 
     - copy and preview per D-0070 §5
     - inserts the row on first show (D-0070 §4)
     - Accept/Keep (D-0070 §3), disabled offline (D-0070 §7)
-    - mounted at the top of UF-11.2 and on UF-02.1 below C-01 (extra: the one mount line in `features/UF-02`)
+    - mounted at the top of UF-11.2, and on UF-02.1 by setting `todayCheckinSlot` in `features/UF-02/slots.tsx` to a lazily loaded `CheckinCard` from `features/UF-11/index.tsx`. That file is the only UF-02 file edited (D-0071 §4). T-0302a places the slot after C-01 and the attention line.
 - Out:
   - Starting a workout from a routine (a UF-08 follow-up).
   - Per-routine sets, reps or progression (D-0070 §1).
@@ -127,13 +127,14 @@ T-0308a can run in parallel with T-0308b. T-0308c follows T-0308b, because they 
 - **AC-C10 (never silent, spec AC6)** With the AC-C1 proposal pending, 5 remounts of UF-02.1 on 5 different fake days (27 Sep–1 Oct) make no `profiles` or `area_targets` writes, and the card is shown each time.
 - **AC-C11 (never in a workout, principle 1, spec AC9)** With the AC-C1 proposal cached, rendering the router at `/session/setup`, `/session/S1` and `/session/S1/summary` puts no element with the card's test id or text in the DOM. `/` shows it. ESLint on `features/UF-03|UF-08|UF-09` importing `features/UF-11` reports `no-restricted-imports` (T-0318).
 - **AC-C12 (offline, spec AC10)** With `navigator.onLine = false`, the card is visible, Accept and Keep current are `disabled`, and "Connect to update your plan" is shown. Dispatching `online` (with `navigator.onLine` true) enables both without a remount.
-- **AC-C13 (placement)** On UF-02.1, the card follows the C-01 compact region in DOM order. On UF-11.2, it's the first child of the main content.
+- **AC-C13 (placement)** On UF-02.1, the card renders through `todayCheckinSlot`, after the C-01 compact region and the attention line and before the suggestion card in DOM order (T-0302a AC-A11). The diff touches no `features/UF-02` file other than `slots.tsx`, and `slots.tsx` loads `CheckinCard` lazily, so the UF-02 chunk stays ≤ 100 KB gzip (`check:size`). On UF-11.2, it's the first child of the main content.
 - **AC-C14 (e2e)** Preview build, a mocked Supabase with the AC-C1 data: `/` shows the card, and Accept makes the three expected requests in order and removes the card. axe on `/` with the card finds 0 serious or critical violations.
 
 ## Paths you may change
 - [a] `apps/web/src/features/UF-07/**`, `apps/web/src/lib/i18n/flows/uf-07.ts` (extra).
-- [b] `apps/web/src/features/UF-11/**`, `apps/web/src/lib/i18n/flows/uf-11.ts` (extra), `tests/e2e/plan.spec.ts` (extra, new file).
-- [c] `apps/web/src/features/UF-11/**`, `apps/web/src/lib/i18n/flows/uf-11.ts`, the one `CheckinCard` mount in `apps/web/src/features/UF-02/**` (extra, D-0067 §4; after T-0302), `tests/e2e/checkin.spec.ts` (extra, new file).
+- [b] `apps/web/src/features/UF-11/**`, `apps/web/src/lib/i18n/flows/uf-11.ts` (extra), `tests/e2e/uf-11-plan.spec.ts` (extra, new file, D-0071 §10).
+- [c] `apps/web/src/features/UF-11/**`, `apps/web/src/lib/i18n/flows/uf-11.ts`, **only `apps/web/src/features/UF-02/slots.tsx`** in UF-02 (extra, D-0071 §4; after T-0302a), and `tests/e2e/uf-11-plan.spec.ts` (appends; no new `checkin.spec.ts`).
+- `features/UF-11/index.tsx` exports `Plan`, `EditPlan` (T-0318 stubs, replaced by b) and `CheckinCard` (c).
 
 ## Contract impact
 - None in this ticket. Writes use `profiles`, `area_targets`, `plan_checkins`, `routines` and `routine_items` exactly as in `docs/data-model.md`.
