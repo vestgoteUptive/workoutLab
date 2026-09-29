@@ -303,6 +303,15 @@ describe("AC-6 returning after 10 days off, and month rollover", () => {
   });
 });
 
+describe("a device that has never synced (empty caches)", () => {
+  it("renders the calendar and the empty copy, and no Balance card, without throwing", async () => {
+    renderAt("/progress");
+    expect(await countText("0 workouts this month")).toBeInTheDocument();
+    expect(screen.getByText("No exercises logged yet")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Balance, last 14 days" })).not.toBeInTheDocument();
+  });
+});
+
 describe("AC-7 zero history", () => {
   it("UF-06.1 shows zeros and the empty copy, then H removes it", async () => {
     await seed({});

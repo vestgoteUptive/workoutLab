@@ -11,6 +11,8 @@ import { monthCalendar, recentExercises } from "./stats.js";
 import { statusProps, useProgressData, type ProgressOptions } from "./use-progress-data.js";
 import "./progress.css";
 
+const AREA_COUNT = 9;
+
 export function Progress(props: ProgressOptions) {
   const { data, now, timeZone, locale } = useProgressData(props);
 
@@ -19,7 +21,12 @@ export function Progress(props: ProgressOptions) {
     const completed = checkinSessions(data.sessions, data.history, data.library);
     return {
       calendar: monthCalendar(completed, now, timeZone),
-      areas: balance(data.history, data.targets, data.library, now.toISOString(), timeZone).areas,
+      // `balance()` needs all nine targets. A device that has never synced has none, so the
+      // card waits for the first refresh instead of throwing.
+      areas:
+        data.targets.length >= AREA_COUNT
+          ? balance(data.history, data.targets, data.library, now.toISOString(), timeZone).areas
+          : null,
       recent: recentExercises(data.history, data.library, now, timeZone, locale),
     };
   }, [data, now, timeZone, locale]);
@@ -75,7 +82,9 @@ export function Progress(props: ProgressOptions) {
             <p className="wl-progress__count">{en.uf06.workoutsThisMonth(view.calendar.count)}</p>
           </section>
 
-          <BalanceCard areas={view.areas.slice(0, 4)} locale={locale} />
+          {view.areas === null ? null : (
+            <BalanceCard areas={view.areas.slice(0, 4)} locale={locale} />
+          )}
 
           <section className="wl-progress__section">
             <h2 className="wl-progress__heading">{en.uf06.recentTitle}</h2>

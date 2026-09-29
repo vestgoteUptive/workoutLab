@@ -1,6 +1,6 @@
 // Shared UF-06 test fixtures (T-0307b): the L1 subset the ACs use, targets, history H and a
 // seeding helper. Test-only; production code never imports this file.
-import type { AreaTarget, HistorySet, LibraryExercise } from "@workoutlab/engine";
+import type { AreaTarget, HistorySet, LibraryExercise } from "@workoutlab/shared";
 import { offlineDb, setKey } from "../../../lib/offline/db.js";
 
 export const TZ = "Europe/Stockholm";
@@ -24,7 +24,7 @@ function exercise(
     areas,
     timed: opts.timedS !== undefined,
     defaultDurationS: opts.timedS ?? null,
-    incrementKg: opts.bodyweight || opts.timedS !== undefined ? null : 2.5,
+    incrementKg: opts.bodyweight || opts.timedS !== undefined ? 0 : 2.5,
     externalLoad: !(opts.bodyweight || opts.timedS !== undefined),
   };
 }
