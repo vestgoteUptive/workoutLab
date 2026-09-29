@@ -29,6 +29,15 @@ async function refreshCapped(): Promise<void> {
   }
 }
 
+/** Runs a read and falls back on any failure, including a loader that throws synchronously. */
+async function attempt<T>(read: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await read();
+  } catch {
+    return fallback;
+  }
+}
+
 function useOnline(): boolean {
   const [online, setOnline] = useState(() => navigator.onLine);
   useEffect(() => {
@@ -87,18 +96,25 @@ export function useRoutineEditor(routineId: string | undefined) {
   useEffect(() => {
     let cancelled = false;
     void (async () => {
-      const lib = await loadLibrary().catch(() => [] as LibraryExercise[]);
+      const lib = await attempt(() => loadLibrary(), [] as LibraryExercise[]);
       if (cancelled) return;
       setLibrary(lib);
       if (routineId === undefined) return;
 
-      let found = (await loadRoutines().catch(() => [])).find((r) => r.id === routineId);
+      // A cache that can't be read at all (`null`) is not "unknown routine": stay put, and
+      // redirect only when a read succeeded and the id really isn't there.
+      const read = async () => {
+        const routines = await attempt(() => loadRoutines(), null);
+        return routines === null ? null : (routines.find((r) => r.id === routineId) ?? undefined);
+      };
+      let found = await read();
+      if (cancelled || found === null) return;
       if (!found && navigator.onLine) {
         await refreshCapped();
         if (cancelled) return;
-        found = (await loadRoutines().catch(() => [])).find((r) => r.id === routineId);
+        found = await read();
+        if (cancelled || found === null) return;
       }
-      if (cancelled) return;
       if (!found) {
         navigate(PLAN_PATH, { replace: true });
         return;

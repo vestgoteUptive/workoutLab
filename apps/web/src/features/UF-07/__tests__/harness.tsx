@@ -78,7 +78,7 @@ function Probe() {
   return <div data-testid="location">{location.pathname}</div>;
 }
 
-export function renderEditor(path: string) {
+export function renderEditor(path: string): ReturnType<typeof render> {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Probe />
