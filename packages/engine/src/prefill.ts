@@ -225,7 +225,8 @@ export function prefillFrom(
   const loaded = exercise.externalLoad;
   const inc = exercise.incrementKg ?? DEFAULT_INCREMENT_KG;
   const W = cur.w;
-  const dropped = loaded ? round3(Math.max(inc, floorInc(DROP_FACTOR * W, inc))) : 0;
+  // D-0057 §4: one increment is the floor when W > 0; W = 0 stays 0 (and always for bodyweight).
+  const dropped = loaded && W > 0 ? round3(Math.max(inc, floorInc(DROP_FACTOR * W, inc))) : 0;
   const res = (weightKg: number, reps: number, kind: PrefillResult["kind"]): PrefillResult => ({
     weightKg: round3(weightKg),
     reps,

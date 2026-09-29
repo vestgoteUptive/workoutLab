@@ -45,6 +45,31 @@ const BASELINE = JSON.parse(
   readFileSync(path.join(TEST_DIR, "fixtures", "pre-t0204-suggest.json"), "utf8"),
 ) as Record<string, Workout>;
 
+/**
+ * T-0205 (rule 14, AC22, D-0060 §6): the only baseline fields rule 14 changes at F-input.
+ * returningAfter10Days last did bench-press and calf-raise on 09-12 (gap 15), so both are
+ * `hold_after_break` at 50 kg. Every other field of the baseline is still compared exactly.
+ */
+const T0205_PREFILL: Record<string, Record<string, WorkoutItem["prefill"]>> = {
+  returningAfter10Days: {
+    "bench-press": { weightKg: 50, reps: 6, durationS: null, kind: "hold_after_break" },
+    "calf-raise": { weightKg: 50, reps: 10, durationS: null, kind: "hold_after_break" },
+  },
+};
+
+function withRule14(name: string, before: Workout | undefined): Workout | undefined {
+  const patch = T0205_PREFILL[name];
+  if (before === undefined || patch === undefined) return before;
+  const items = before.plan.items.map((i) => {
+    const pf = patch[i.exerciseId];
+    if (pf === undefined) return i;
+    const reasons = i.reasons.map((r) => (r.code === "prefill" ? { ...r, kind: pf.kind } : r));
+    return { ...i, prefill: pf, reasons };
+  });
+  expect(items.map((i) => i.exerciseId)).toEqual(expect.arrayContaining(Object.keys(patch)));
+  return { ...before, plan: { ...before.plan, items } };
+}
+
 const HISTORIES: Array<[string, HistorySet[]]> = [
   ["zero", []],
   ...Object.entries(SIMULATED_HISTORIES).map(([k, h]): [string, HistorySet[]] => [k, h]),
@@ -73,7 +98,7 @@ describe("rule 13 shuffle = 0", () => {
     for (const [name, history] of HISTORIES) {
       for (const energy of ENERGIES) {
         const w = run(history, input({ energy }));
-        const before = BASELINE[`${name}/${energy}`];
+        const before = withRule14(name, BASELINE[`${name}/${energy}`]);
         expect(before, `${name}/${energy}`).toBeDefined();
         expect(w, `${name}/${energy}`).toEqual(before);
         expect(swapped(w), `${name}/${energy}`).toEqual([]);
