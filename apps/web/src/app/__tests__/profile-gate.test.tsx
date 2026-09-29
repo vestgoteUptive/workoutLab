@@ -13,7 +13,7 @@ import { AuthProvider } from "../../lib/auth/auth-context.js";
 import { ProfileStatusProvider, useRecheckProfile } from "../../lib/profile/index.js";
 import { gatedPaths } from "../../lib/profile/gated-routes.js";
 import { routes } from "../routes.js";
-import { createSelectSpy } from "../../lib/offline/__tests__/select-spy.js";
+import { createSelectSpy, type SelectSpy } from "../../lib/offline/__tests__/select-spy.js";
 
 const { loadProfile, refreshProfile } = vi.hoisted(() => ({
   loadProfile: vi.fn(),
@@ -21,29 +21,30 @@ const { loadProfile, refreshProfile } = vi.hoisted(() => ({
 }));
 vi.mock("../../lib/offline/index.js", () => ({ loadProfile, refreshProfile }));
 
-const { selectSpy, onAuthStateChange, getSession, signOut, authStateCallbacks } = vi.hoisted(
-  () => {
-    const authStateCallbacks: Array<(event: string, session: unknown) => void> = [];
-    return {
-      selectSpy: {
-        current: null as ReturnType<
-          typeof import("../../lib/offline/__tests__/select-spy.js").createSelectSpy
-        > | null,
-      },
-      authStateCallbacks,
-      onAuthStateChange: vi.fn((cb: (event: string, session: unknown) => void) => {
-        authStateCallbacks.push(cb);
-        return { data: { subscription: { unsubscribe: vi.fn() } } };
-      }),
-      getSession: vi.fn(),
-      signOut: vi.fn(),
-    };
-  },
-);
+const { selectSpy, onAuthStateChange, getSession, signOut, authStateCallbacks } = vi.hoisted(() => {
+  const authStateCallbacks: Array<(event: string, session: unknown) => void> = [];
+  return {
+    // A mutable holder, because `vi.hoisted` runs before module scope: the spy is created
+    // at module scope below and dropped in here.
+    selectSpy: { current: null as SelectSpy | null },
+    authStateCallbacks,
+    onAuthStateChange: vi.fn((cb: (event: string, session: unknown) => void) => {
+      authStateCallbacks.push(cb);
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
+    }),
+    getSession: vi.fn(),
+    signOut: vi.fn(),
+  };
+});
 vi.mock("../../lib/auth/client.js", () => ({
   supabase: {
     auth: { onAuthStateChange, getSession, signOut },
-    from: (table: string) => selectSpy.current!.from(table),
+    // `SelectSpy.from` is typed `ReturnType<typeof vi.fn>`, which `tsc` widens to
+    // `Mock<Procedure | Constructable>` and therefore does not treat as callable. The cast is
+    // on the *call*, so the holder keeps the real `SelectSpy` type and `setRows`/`countFor`
+    // stay checked. (Tightening `select-spy.ts` itself belongs to T-0319's file, not this
+    // ticket — see the follow-up in the result.)
+    from: (table: string) => (selectSpy.current!.from as (t: string) => unknown)(table),
   },
 }));
 selectSpy.current = createSelectSpy();
@@ -405,7 +406,10 @@ describe("AC-9 signed out is unchanged (principle 5) — the AC-B5 table, agains
 
 describe("AC-10 signed out: the gate costs nothing (principle 5)", () => {
   it("/welcome renders on the first committed render, with no loader, refresh or select", () => {
-    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    );
     getSession.mockReturnValue(new Promise(() => {}));
     render(<Harness start="/welcome" />);
     // Synchronous: no `await`/`waitFor` before these assertions (the T-0300b AC-B6 pattern).

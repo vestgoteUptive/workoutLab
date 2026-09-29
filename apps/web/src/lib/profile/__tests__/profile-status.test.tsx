@@ -12,7 +12,7 @@ import {
   useRecheckProfile,
   type ProfileStatus,
 } from "../index.js";
-import { createSelectSpy } from "../../offline/__tests__/select-spy.js";
+import { createSelectSpy, type SelectSpy } from "../../offline/__tests__/select-spy.js";
 
 const { loadProfile, refreshProfile } = vi.hoisted(() => ({
   loadProfile: vi.fn(),
@@ -23,7 +23,8 @@ vi.mock("../../offline/index.js", () => ({ loadProfile, refreshProfile }));
 const { selectSpy, rejectNext, onAuthStateChange, getSession, signOut } = vi.hoisted(() => {
   // Required inside `vi.hoisted`: the factory below runs before module-scope initialisers.
   return {
-    selectSpy: { current: null as ReturnType<typeof import("../../offline/__tests__/select-spy.js").createSelectSpy> | null },
+    // A mutable holder, because `vi.hoisted` runs before module scope.
+    selectSpy: { current: null as SelectSpy | null },
     rejectNext: { current: false },
     onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
     getSession: vi.fn(),
@@ -36,8 +37,13 @@ vi.mock("../../auth/client.js", () => ({
     // `from` is delegated, so the spy can be created at module scope and swapped per test.
     from: (table: string) =>
       rejectNext.current
-        ? { select: () => ({ maybeSingle: () => Promise.reject(new TypeError("Failed to fetch")) }) }
-        : selectSpy.current!.from(table),
+        ? {
+            select: () => ({ maybeSingle: () => Promise.reject(new TypeError("Failed to fetch")) }),
+          }
+        : // `SelectSpy.from` is `ReturnType<typeof vi.fn>`, which `tsc` widens to
+          // `Mock<Procedure | Constructable>` and does not treat as callable; the cast is on the
+          // call, so `setRows`/`countFor` on the holder stay type-checked.
+          (selectSpy.current!.from as (t: string) => unknown)(table),
   },
 }));
 selectSpy.current = createSelectSpy();
@@ -140,7 +146,10 @@ describe("AC-2 cached fast path: `present` with no network wait", () => {
   it("online, with `fetch` never resolving: still reaches `present`, and never selects profiles", async () => {
     seedSignedIn();
     loadProfile.mockResolvedValue(PROFILE_ROW);
-    vi.stubGlobal("fetch", vi.fn(() => new Promise(() => {})));
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    );
     render(<Harness />);
     await waitFor(() => expect(status()).toBe("present"));
     expect(spy.countFor("profiles")).toBe(0);
@@ -250,7 +259,9 @@ describe("AC-11 recheckProfile re-evaluates, and is unmount-safe", () => {
         }),
     );
     const errors: unknown[] = [];
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation((...args) => errors.push(args));
+    const consoleSpy = vi
+      .spyOn(console, "error")
+      .mockImplementation((...args) => errors.push(args));
     try {
       const { unmount } = render(<Harness />);
       await waitFor(() => expect(release).toBeDefined());

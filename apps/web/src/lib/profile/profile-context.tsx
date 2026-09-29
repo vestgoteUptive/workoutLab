@@ -101,9 +101,7 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
       refreshedFor.current = next;
       // Fire and forget: warming the cache for the next cold start must never block, or fail,
       // the gate's answer (AC-3).
-      void import("../offline/index.js")
-        .then((m) => m.refreshProfile())
-        .catch(() => {});
+      void import("../offline/index.js").then((m) => m.refreshProfile()).catch(() => {});
     }
   }, [signedIn]);
 

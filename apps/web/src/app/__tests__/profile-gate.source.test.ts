@@ -48,9 +48,7 @@ describe("AC-12 the gate is applied in exactly one place", () => {
   });
 
   it("no file outside app/ and lib/ renders ProfileGate", () => {
-    const offenders = FEATURE_FILES.filter((f) =>
-      readFileSync(f, "utf8").includes("ProfileGate"),
-    );
+    const offenders = FEATURE_FILES.filter((f) => readFileSync(f, "utf8").includes("ProfileGate"));
     expect(offenders).toEqual([]);
   });
 
