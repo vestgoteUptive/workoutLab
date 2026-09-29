@@ -6,6 +6,8 @@ date: 2026-09-29
 by: product-owner (T-0301–T-0304 groom)
 area: web
 ---
+> **Superseded in part by D-0071 (2026-09-29, TR-0030).** §1, §2, §4, §5 and §6 are replaced by D-0071 §1, §2, §10, §3–§4 and §2/§11 respectively. §3 (on-device engine) stays in force, restated in D-0071 §8.
+
 ## Context
 The feature tickets T-0301…T-0308 each own only `apps/web/src/features/<flow>/**` (`.squad/ownership.yaml`). Grooming T-0301–T-0304 turned up five things that no decision settles:
 1. NFR-I18N-1 and D-0045 §12 put every string in "one catalogue (`apps/web/src/lib/i18n`)". `en.ts` belongs to web-shell, so feature tickets can't add strings to it, and if several parallel tickets edited one file they would always conflict.

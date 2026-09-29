@@ -6,6 +6,8 @@ date: 2026-09-29
 by: product-owner (T-0304 groom)
 area: product
 ---
+> **Amended in part by D-0071 (2026-09-29).** §12: the seam entries carry `keepsClockRunning`, the UF-09.9 order follows user flows v2 (Resume · swap · Skip · how-to · list-view · End), "How to" is a seam (`ExerciseHowTo`, added by T-0305a) rather than a link to `/library/<id>`, and `useFocusSession()`'s `replaceItem`/`finish()` are specified in D-0071 §4–§5. The session row is `(await offlineDb().sessions.get(id)).row`.
+
 ## Context
 User flows v2 gives the UF-09 screen table and the loop (09.3 → 09.4 → 09.5 → 09.3; between exercises 09.8 → 09.6 → 09.3). NFR-TIME-1…4, NFR-OFF-2, NFR-PERF-4 and NFR-A11Y-2/4/5/6 set the numbers. D-0057 and D-0062 define the pre-fill. Still open: where the in-progress state lives (the `lib/offline` queue removes flushed sets, so it can't tell "which set is next"); when the set row is written; what RIR "1–2" stores; what the second set pre-fills after the user edits the first; the rest length; whether warm-up moves are logged; what a null weight does to auto-save; plate loading; swap; and where "End" goes, since UF-03.3 has no route yet. There is also a known engine gap: rule 7.1 costs timed items at `defaultDurationS`, while `prefill.durationS` can reach 120 s, so a plan can overrun its budget (T-0219). And a clamped timed pre-fill can report `hold` while the duration went down (D-0062 §5).
 

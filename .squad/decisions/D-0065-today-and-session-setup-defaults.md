@@ -6,6 +6,8 @@ date: 2026-09-29
 by: product-owner (T-0302/T-0303 groom)
 area: product
 ---
+> **Amended in part by D-0071 (2026-09-29).** §5: `applySwap` semantics are fixed in D-0071 §7, and UF-08.3 mounts the shared `SwapSheet` from `features/UF-05` instead of building its own sheet. Consequences: T-0308c mounts `CheckinCard` through `features/UF-02/slots.tsx`, not by editing `Today.tsx` (D-0071 §4).
+
 ## Context
 UF-02.1 shows "Today's workout" before the user has said how much time they have. UF-08 has several actions that change the plan (time change, remove, shuffle, swap), and principle 3 forbids the UI from re-deciding anything. The prototype also shows content the engine doesn't produce: split names ("Lower A"), "Hi, [NAME]", "Week 3 of …", "This week 3/4", "Latest PR", the "Always use this in <routine>" option, and a "Skip it today" swap option. D-0056 §Consequences says "applying a user swap to a stored plan is UI work". Rule 7.2's rep range for the new slot, and rule 14 `carry` through `previous`, are engine logic, though, so the UI would have to copy them.
 

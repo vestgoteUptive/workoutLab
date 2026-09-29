@@ -6,6 +6,8 @@ date: 2026-09-29
 by: product-owner (T-0306 groom)
 area: product
 ---
+> **Amended in part by D-0071 (2026-09-29).** §5: `SwapSheet` takes a `Workout` (props `{workout, itemIndex, onApply, onClose}`) and is the one swap sheet, used by UF-08.3 too. §6: the swapped item is built by the engine's `applySwap` (T-0224, D-0071 §7), not by the UI, and it is persisted through `useFocusSession().replaceItem` with the whole row (D-0071 §5–§6). Consequences: the UF-09 mounts go through `features/UF-09/seams.tsx` only.
+
 ## Context
 The prototypes for UF-04.1–.3 and UF-05.1 show content the library doesn't have:
 - movement patterns ("squat pattern") and stabiliser muscles,

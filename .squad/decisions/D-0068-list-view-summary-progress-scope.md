@@ -6,6 +6,8 @@ date: 2026-09-29
 by: product-owner (T-0305, T-0307 groom)
 area: product
 ---
+> **Amended in part by D-0071 (2026-09-29).** §2: Save sends the whole stored row, `upsertSession({...row, ended_at, effort_rating})`, never a partial row (D-0071 §6). "No `/finish` in v1" is confirmed as consistent with D-0001, D-0053 and T-0203c (D-0071 §8).
+
 ## Context
 The prototypes for UF-03.1–.3, UF-06.1 and UF-06.2 show numbers that no engine rule, contract or decision defines: a "New personal record" card with an estimated 1RM (Brzycki), total volume in kg, a "3-week streak", "Weekly sets per muscle", a 12-week trend chart, and a 3-option effort picker whose copy says "Used to tune next week's weights".
 

@@ -6,6 +6,8 @@ date: 2026-09-29
 by: product-owner (T-0305–T-0308 groom)
 area: web
 ---
+> **Superseded in part by D-0071 (2026-09-29, TR-0030).** §2's routes, string modules and import bans are replaced by D-0071 §1, §2 and §9, and the T-0318 ticket file now holds that scope. §4 (seams) is replaced by D-0071 §3–§4 and §7. §5 (session-state seam) is replaced by D-0071 §5. The Consequences line "the product-owner writes the T-0318 and T-0319 ticket files" is discharged: triage wrote them. §1 (split per flow) and §3 (offline caches v2, now the T-0319 ticket) stay in force.
+
 ## Context
 T-0305–T-0308 each combine two or three screens. The board also lists T-0307 as one lane (web-feature:UF-06), but `ownership.yaml` gives each flow its own path, `apps/web/src/features/<flow>/**`. So UF-10 code isn't in the UF-06 lane. Web builds have died on time and budget when tickets were big (`.squad/state.md`). Grooming also found four shared gaps that no feature lane may fill alone:
 1. **Routes.** D-0045 §2 has no route for UF-03.3, UF-04.3, UF-06.2, UF-07.1 or UF-11.3. `/progress`, `/plan` and `/session/:sessionId` are exact paths, so a feature can't add a sub-route. `apps/web/src/app/routes.ts` belongs to web-shell.
