@@ -199,6 +199,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
+| T-0904 | CI fix: `playwright e2e` red on main since after 0fd3399 (last green run 36576269406, 13:35); first seen failing on run 36613911266 at 8cf5659, still red at 8bac5b4 (run 36623331042). Other jobs green. Blocks PR #9 (T-0320) | tbd | — | doing | wl-ci-investigate |
 | T-0903 | `pnpm -w format:check` fails on 5 supabase files already on main (supabase/functions/_shared/repo.ts, _shared/validate.ts, sessions/core.ts, supabase/tests/functions/integration/sessions-finish.test.ts, unit/sessions-core.test.ts) — found during T-0204 | backend | — | done (PR #8, 455c10d) | wl-build-backend |
 | T-0312 | `apps/web/build.test.ts` fails under `pnpm --filter @workoutlab/web test` because design-tokens' dist/tokens.css is unbuilt (passes under `turbo test`, which has dependsOn ^build). Make the web test script depend on the tokens build, or document that the filtered command needs a prior build — it cost real diagnosis time by looking like a second flake | web-shell | — | done | wl-build-web |
 | T-0311 | Flaky T-0300c offline sync-trigger tests: AC-C9 'online' event + stop() listener fail intermittently in the full suite (reproduced on stock main, 3 of 5 runs; pass 6/6 isolated). Real timing bug in the merged offline-sync triggers, not machine noise | web-shell | T-0300c | done | wl-build-web |
