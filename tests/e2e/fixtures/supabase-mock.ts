@@ -153,12 +153,23 @@ export interface OfflineFixtures {
   exerciseAreas: unknown[];
   areaTargets: unknown[];
   profile: unknown;
+  // The four tables T-0319's Dexie v2 refreshes select (D-0072). Optional, defaulting to `[]`:
+  // no spec asserts on `exerciseDetails`, `checkinCache` or `routineCache` yet, and AC-C20 only
+  // needs these selects to *resolve* instead of hitting the 501 catch-all. Declaring them here
+  // rather than hard-coding `[]` lets a later spec — say one asserting a cached routine renders
+  // offline — supply real rows without reopening this fixture.
+  exerciseVariants?: unknown[];
+  checkins?: unknown[];
+  routines?: unknown[];
+  routineItems?: unknown[];
 }
 
 /**
  * Mocks the PostgREST endpoints `lib/offline/*` calls (AC-C20, D-0045 §7): `session_sets_live`,
- * `exercises`, `exercise_areas`, `area_targets`, `profiles`, and the `sessions`/`session_sets`
- * upsert targets (accepted no-ops, since this spec doesn't queue anything to flush). Registered
+ * `exercises`, `exercise_areas`, `area_targets`, `profiles`, the four tables Dexie v2 added
+ * (`exercise_variants`, `plan_checkins`, `routines`, `routine_items` — T-0319, D-0072), and the
+ * `sessions`/`session_sets` upsert targets (accepted no-ops, since this spec doesn't queue
+ * anything to flush). Registered
  * after `mockSupabaseAuth`'s 501 catch-all in `beforeEach`, which — being registered first — is
  * Playwright's last-matched fallback for anything none of these claim (see that function's
  * comment): a request to an endpoint this spec doesn't expect still fails loudly instead of
@@ -189,5 +200,29 @@ export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): P
   );
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets_live*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.sets }),
+  );
+
+  // Dexie v2's four new selects (T-0319, D-0072). Without them `refreshLibrary` throws on the
+  // unmocked `exercise_variants` select *before* entering its transaction, so `libraryCache` is
+  // never written and AC-C20's `{library: 12}` assertion sees 0.
+  //
+  // `exercises*` (above) also glob-matches `exercise_variants?...` — the same trap as
+  // `session_sets*` vs `session_sets_live*`. Playwright runs the most-recently-registered
+  // matching handler first, so `exercise_variants*` MUST stay registered *after* `exercises*`.
+  // Move it above and `exercises*` wins: the variants select silently returns the 12 exercise
+  // rows, which `refreshLibrary` then reads `variant_id` off — a wrong answer, not an error.
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/exercise_variants*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.exerciseVariants ?? [] }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/plan_checkins*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.checkins ?? [] }),
+  );
+  // `routines*` and `routine_items*` don't glob-match each other (they diverge at `s` vs `_`),
+  // so these two are order-independent — unlike the pair above.
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/routines*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.routines ?? [] }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/routine_items*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.routineItems ?? [] }),
   );
 }
