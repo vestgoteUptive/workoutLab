@@ -134,14 +134,14 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0305a | UF-03.1/.2 List view: set table + rest, inside the UF-09 host | web-feature:UF-03 | T-0304, T-0306a, T-0306b, T-0318 | todo | wl-build-web |
 | T-0305b | UF-03.3 Summary: device-side summary, effort 1–5, save via queue (no /finish call in v1, D-0068 §2) | web-feature:UF-03 | T-0304, T-0318, T-0324 | todo | wl-build-web |
 | T-0306 | UF-04 Library + UF-05 in-workout swap | web-feature:UF-04 | T-0300, T-0203b, T-0204 | split → T-0306a, T-0306b (D-0069) | wl-build-web |
-| T-0306a | UF-04.1/.2/.3 Library: browse, detail + attribution, compare; ExerciseHowTo | web-feature:UF-04 | T-0318, T-0319 | todo (grooming) | wl-build-web |
+| T-0306a | UF-04.1/.2/.3 Library: browse, detail + attribution, compare; ExerciseHowTo | web-feature:UF-04 | T-0318, T-0319, T-0334 | todo (spec check) | wl-build-web |
 | T-0306b | UF-05.1 SwapSheet (rankSwaps + engine applySwap T-0224), mounted via features/UF-09/seams.tsx on UF-09.9/09.6 | web-feature:UF-05 | T-0304d, T-0224, T-0318 | todo | wl-build-web |
 | T-0307 | UF-06 Progress + UF-10 Balance (mount full C-01 on UF-10.1, area buttons → /balance/:area; add a Playwright check that real Enter/Space navigates once — T-0300d) | web-feature:UF-06 | T-0300, T-0203b | split → T-0307a, T-0307b (D-0068) | wl-build-web |
 | T-0307a | UF-10.1/.2 Balance: full C-01 mounted, area → /balance/:area, e2e Enter/Space once | web-feature:UF-10 | T-0318 | doing | wl-build-web |
-| T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319 | todo (grooming) | wl-build-web |
+| T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319, T-0334 | todo (spec check) | wl-build-web |
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | split → T-0308a, T-0308b, T-0308c (D-0070) | wl-build-web |
-| T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319 | todo (grooming) | wl-build-web |
-| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319 | todo (grooming) | wl-build-web |
+| T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | todo (spec check) | wl-build-web |
+| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | todo (spec check) | wl-build-web |
 | T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | todo | wl-build-web |
 | T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
@@ -176,6 +176,10 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0338 | check-lane-paths: flag symlinks (mode 120000) added under a feature lane that point into shared paths — also sidesteps specifier-based import bans — T-0320 review | infra | T-0320 | todo | wl-build-infra |
 | T-0339 | Decide and pin: should web-shell's own tickets be exempt from the four shared-file rules (`routes.ts`, `eslint.config.mjs`, `en.ts`, `flows/*`) when they do not list them? Today they are flagged (QA mutant M8b survives either way) — T-0320 review + QA | infra | T-0320 | todo | wl-build-infra |
 | T-0340 | Structured lane grants: a front-matter `paths:` list (or fenced block) in tickets, read instead of prose; revisit D-0074. The prose heuristic failed open on "Don't touch `x`" in 6 real tickets (T-0320 review) | product | T-0320 | todo | wl-spec |
+| T-0341 | Move equipment labels (Bodyweight, Pull-up bar, …) from `flows/uf-04.ts` to a shared `lib/i18n` module once UF-01.3 or UF-05 needs them (D-0079 §5) | web-shell | T-0306a | todo | wl-build-web |
+| T-0342 | Goal labels: if T-0301b's UF-01.2 labels differ from T-0308b's (`flows/uf-11.ts`), move them to one shared place (needs a D-0071 §1 amendment) | web-shell | T-0301b, T-0308b | todo | wl-build-web |
+| T-0343 | UF-10 midnight rollover: a Balance screen left open across local midnight keeps a stale 14-day window until remount (T-0307a build) | web-feature:UF-10 | T-0307a | todo | wl-build-web |
+| T-0344 | Fix the `-- <filter>` passthrough in the web `test:e2e` script (`pnpm test:e2e -- name` runs every spec); a fresh `vite build` needs `VITE_SUPABASE_URL` — document or default it (T-0307a build) | web-shell | — | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
