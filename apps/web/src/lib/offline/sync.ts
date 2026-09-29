@@ -3,16 +3,32 @@
 import { supabase } from "../auth/client.js";
 import { clearAuthBlocked, flush } from "./flush.js";
 import { RetryScheduler } from "./retry.js";
-import { refreshHistory, refreshLibrary, refreshTargets, refreshProfile } from "./history.js";
+import {
+  refreshHistory,
+  refreshLibrary,
+  refreshTargets,
+  refreshProfile,
+  refreshSessions,
+  refreshCheckins,
+} from "./history.js";
 import { currentUserId } from "./current-user.js";
 
-/** One refetch each of history, targets and profile after a flush that sent ≥ 1 row (AC-C17). */
+/** One refetch each of history, targets, profile and library after a flush that sent ≥ 1 row
+ *  (AC-C17), plus sessions and check-ins (T-0319 AC-8): a flush is exactly when the server's
+ *  `sessions` rows and the check-in answers can have moved on from the cache.
+ *
+ *  Routines are NOT refetched here. Nothing in the flush queue writes `routines` or
+ *  `routine_items` (the queue only sends `sessions` and `session_sets`), so a flush can never
+ *  make the routine cache stale. `refreshAll()` covers it. */
 async function refetchAfterFlush(tz: string): Promise<void> {
+  const now = new Date();
   await Promise.all([
-    refreshHistory(new Date(), tz),
+    refreshHistory(now, tz),
     refreshTargets(),
     refreshProfile(),
     refreshLibrary(),
+    refreshSessions(now, tz),
+    refreshCheckins(),
   ]);
 }
 

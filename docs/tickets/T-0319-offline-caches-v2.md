@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-04.1, UF-04.2, UF-04.3, UF-06.1, UF-06.2, UF-07.1, UF-11.1, UF-11.2]
 decisions: [D-0001, D-0021, D-0034, D-0045, D-0067, D-0070, D-0071]
 deps: [T-0300c]
-status: ready
+status: done
 ---
 <!-- Written by triage 2026-09-29 (TR-0030) from D-0067 §3 (in force) and D-0071. Build flow: wl-build-web. About ½ day. Web-shell: runs after T-0318 and before T-0301a, never in parallel with another web-shell ticket. -->
 
@@ -71,3 +71,64 @@ None. The selects read `exercises`, `exercise_variants`, `sessions`, `plan_check
 
 ## Definition of done
 Every AC has a passing test · `pnpm -w typecheck lint test --force --concurrency=1` green · contracts unchanged · commits start `T-0319:` and cite the screens served (for example `T-0319 UF-04.2: cache exercise details and variants`).
+
+## Accept log
+
+**Verdict: `done`** (product-owner, accept mode, 2026-09-29). Branch `t/T-0319-offline-caches-v2`, HEAD `7542a29`, 8 commits, forked from main at `d902a20`.
+
+### Acceptance criteria
+
+| AC | Verdict | Evidence |
+|---|---|---|
+| AC-1 v1 → v2 upgrade | **met** | `__tests__/upgrade-v1-to-v2.test.ts` opens a populated v1 database at `verno` 2, asserts every v1 row deep-equal, and asserts the four new tables exist and are empty. `db.ts` `version(2).stores({…})` adds four stores and **no `.upgrade()` callback**, with the reason stated in the comment: an upgrade callback is the only thing that could rewrite a queued row (NFR-OFF-2). |
+| AC-2 details + variants | **met** | `__tests__/feature-cache.test.ts` "AC-2 exercise details + variants" deep-equals the back-squat detail, `loadVariants` = `["goblet-squat","leg-press"]`, `null`/`[]` for `"nope"`, and `exercises` selected once (`spy.countFor("exercises")` = 1). `refreshLibrary` reads `exercises`, `exercise_areas` and `exercise_variants` and writes both tables in one transaction. |
+| AC-3 sessions window + queue wins | **met** | `__tests__/sessions-cache.test.ts`: the `.gte("started_at", windowStartInstant(now, tz, 56))` filter value is spied; S1/S2 in, S3 out; queued S1 wins; queued-only S4 included; sort by `startedAt` then `id`. |
+| AC-4 check-ins + routines | **met** | `feature-cache.test.ts` "AC-4 check-ins" (deep-equal via `toPlanCheckin`, newest `proposedAt` first) and "AC-4 routines" (items resorted `[0,1,2]` from stored `[2,0,1]`, routines by `name`). Items are sorted on both write (`history.ts`) and read (`feature-loaders.ts`), so a row cached by an older build still comes out ordered. |
+| AC-5 offline loaders | **met** | `__tests__/offline-loaders.test.ts` "AC-5": after one online `refreshAll`, all 5 loaders resolve values identical to online with `fetch` rejecting and `navigator.onLine = false`, and both the supabase spy count *and* the `fetch` spy are unchanged. Asserted two ways, since either alone is weak. |
+| AC-6 refresh replaces, failure keeps | **met** | `feature-cache.test.ts` "AC-6" plus "AC-6/AC-7 for sessions". Structurally guaranteed: all three refreshes `throw` on `error` **before** `db.transaction(...)` is entered, so a failed select cannot partially replace a cache. |
+| AC-7 per user | **met** | `feature-cache.test.ts` "AC-7 per user" and the sessions equivalent: A's rows are invisible while B is current, and B's refresh (a `where({userId}).delete()` scoped by user) does not delete A's rows. The T-0300c AC-C12 pattern. |
+| AC-8 refreshAll + post-flush refetch | **met** | `offline-loaders.test.ts` "AC-8" (each new table selected once, all four caches filled) and `__tests__/sync.test.ts` (a flush that sent ≥ 1 row calls `refreshSessions` + `refreshCheckins` once; a flush that sent nothing calls neither). `sync.ts` correctly adds only those two to the post-flush path, not `refreshRoutines` — a flush cannot make routines stale. Existing T-0300c tests pass unchanged. |
+| AC-9 no write helpers | **met** | `offline-loaders.test.ts` "AC-9" asserts the **exact** export key set (v1 surface + 3 refreshes + 5 loaders), that no v1 export was removed or renamed, and that no write helper for `routines`, `routine_items`, `plan_checkins`, `profiles` or `area_targets` is exported (regex over the key set plus named negatives). D-0070 §2–§3 holds. |
+
+**9 / 9 met.**
+
+### The coverage came from QA, not the build
+
+Recorded explicitly, because it is the substantive judgement in this acceptance.
+
+QA's verdict would have been **FAIL at `a5cfc86`** (the builder's own HEAD) and is PASS only as committed at `7542a29`. Four mutations of the implementation left the builder's 459-test suite 100 % green:
+
+1. an `.upgrade()` resetting `deletedAt` — an offline-**deleted** set silently resurrected;
+2. an `.upgrade()` re-queueing a `rejected` set;
+3. dropping `[userId+status]` from the v2 schema — 81/81 stayed green, because Dexie answers `where({userId, status})` from the plain `userId` index plus a filter, turning the flush's hot query into a full table scan of the user's `sets`;
+4. an untestable `id` tiebreak, an untested `energy` fallback, and a dead read-side item sort.
+
+(1) and (2) are exactly the **T-0300c data-loss class**, and they were invisible because the v1 fixture held only `{deletedAt: null, status: "queued"}` rows. (3) was undetectable by any other means, since the index is never referenced by name anywhere in `lib/offline`.
+
+QA closed all four with 4 new tests (web 459 → **463**) and **changed no production code** — verified mechanically: `git diff a5cfc86..HEAD` over all five production files is empty.
+
+**Accepted as `done`, not sent back for rework.** The reasoning: the delivered *behaviour* was correct throughout. Every fault QA injected was a mutation QA introduced itself; none was a defect in the implementation. What was missing was proof, and the proof now exists. An independent QA pass finding and closing test gaps that the builder's own fault injection missed is the squad working as designed — it is precisely why build and QA are separate lanes with separate fault-injection budgets. Sending the ticket back would ask the builder to re-derive tests that already exist and pass, with no change to shipped behaviour.
+
+Two things keep this from being a blanket precedent. First, the fixture blind spot is now fixed in the durable artefact: `upgrade-v1-to-v2.test.ts` seeds `DELETED_SET` and `REJECTED_SET` and asserts both survive, so the next Dexie version bump inherits the guard rather than rediscovering it. Second, the `[userId+status]` assertion pins the whole v1 index list, not just the compound index, so a future `.stores()` entry for `sets` that silently replaces the index list now fails a test.
+
+**Follow-up for grooming:** the recurring lesson is that a v1 *fixture* must carry every terminal row state (`deletedAt` set, `status: "rejected"`), not just the happy path. Worth folding into the build-lane checklist for any future schema migration so the next builder plants these faults itself.
+
+### Latent contradiction with D-0058 — correctly deferred
+
+Code review found that `loadSessions`' `effortRating` cache fallback (`row.effort_rating ?? previous?.effortRating ?? null`) cannot represent the legitimate NULL server state, so a **cleared** rating reappears from cache. Confirmed against D-0058 and confirmed **unreachable today**: nothing outside `lib/offline` writes a rating, and the finish path goes through the Edge Function. Filed as **T-0324** and made a **dependency of T-0305b**, the ticket whose finish/edit UI would make it live. Correct call — fixing it here would have been speculative work against a UI that does not exist.
+
+### Definition of done
+
+- **Tests:** `pnpm -w typecheck lint test --force --concurrency=1` green — 19/19 tasks, `0 cached`, web **463/463** (38 T-0319 tests from the build + 4 from QA).
+- `format:check` and `check:repo` clean.
+- **Bundle** (fresh build, D-0045 §13): entry **142.27 KB** gzip vs 200 KB budget, flat versus main; largest lazy chunk **36.11 KB** vs 100 KB. The v2 code lands in the lazy `AutoSync` chunk, so `/welcome`'s first render still never imports Dexie (principle 5).
+- **Contracts unchanged:** verified zero contract files touched. The selects read `exercises`, `exercise_variants`, `sessions`, `plan_checkins`, `routines` and `routine_items` exactly as `docs/data-model.md` defines them, under existing RLS.
+- **Lane discipline:** all 12 changed files are inside `apps/web/src/lib/offline/**` (web-shell, the ticket's only granted path) plus one decision file. The builder found a red e2e test and **correctly refused to fix it** — `tests/e2e/**` is the **qa** lane — recording the reasoning and the rejected alternative (decoupling `exerciseDetails` from `libraryCache`) in **D-0072**. That is the right instinct: the rejected alternative would have contradicted both the ticket's "one transaction" wording and AC-6.
+
+### e2e status — satisfied by T-0323
+
+**Agreed.** `tests/e2e/offline.spec.ts` AC-C20 was red on this branch for the reason D-0072 measured: `refreshLibrary` throws on the unmocked `exercise_variants` select before entering its transaction, so `libraryCache` stays at 0 rows. The fix, **T-0323** (qa lane, fixture-only, four `json: []` routes), is **already merged to main** and takes that suite from 1 failed / 23 passed to **24 passed** against T-0319's code. So merging T-0319 will not leave `main` red, and the requirement is met.
+
+Worth noting D-0072's own self-correction: the registration-order hazard it first claimed was **wrong**, and T-0323 disproved it empirically (Playwright's `*` shadows only on a genuine table-name prefix — `session_sets` / `session_sets_live` is real, `exercises` / `exercise_variants` is not). A decision that corrects itself with measurement is the behaviour to keep.
+
+**Note for a future ticket** (from D-0072's "Revisit when", not blocking): if the e2e fixture grows a third "table I forgot to mock" failure, default unmocked `/rest/v1` **reads** to `200 []` and 501 only writes. Two occurrences so far.

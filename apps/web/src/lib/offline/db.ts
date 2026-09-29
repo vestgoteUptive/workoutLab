@@ -11,6 +11,7 @@ import type {
   Database as SupabaseDatabase,
   EngineProfile,
   LibraryExercise,
+  PlanCheckin,
 } from "@workoutlab/shared";
 
 /** A queued `sessions` row (D-0045 §6: one entry per `id`). */
@@ -90,6 +91,64 @@ export interface CachedProfile {
   profile: EngineProfile;
 }
 
+/** The UF-04 how-to text of one exercise, plus its variant ids (D-0067 §3, NFR-OFF-1).
+ *
+ *  These fields are the ones `LibraryExercise` deliberately drops, so `libraryCache` (engine
+ *  shaped) and this table together cover the whole `exercises` row without a second request:
+ *  `refreshLibrary` writes both from the one `select("*")` it already runs. */
+export interface ExerciseDetail {
+  id: string;
+  instructions: string[];
+  mistakes: string[];
+  cue: string | null;
+  source: string;
+  license: string;
+  attribution: string | null;
+  sourceUrl: string | null;
+  /** The `variant_id`s paired with this exercise, sorted by id (UF-04.3, UF-05). */
+  variants: string[];
+}
+
+export interface CachedExerciseDetail {
+  key: string;
+  userId: string;
+  detail: ExerciseDetail;
+}
+
+/** One cached `sessions` row from the last `refreshSessions()` (56 local days, the history
+ *  window of D-0034 §3). UF-06 and UF-11 read `{id, startedAt}`; UF-03.3 reads the rest. */
+export interface CachedSession {
+  key: string;
+  userId: string;
+  id: string;
+  startedAt: string;
+  endedAt: string | null;
+  timeBudgetMin: number;
+  effortRating: number | null;
+  energy: string;
+}
+
+export interface CachedCheckin {
+  key: string;
+  userId: string;
+  checkin: PlanCheckin;
+}
+
+/** One routine item, trimmed to what UF-07.1 and UF-11.2 read offline (D-0067 §3). */
+export interface CachedRoutineItem {
+  position: number;
+  exerciseId: string;
+}
+
+export interface CachedRoutine {
+  key: string;
+  userId: string;
+  id: string;
+  name: string;
+  updatedAt: string;
+  items: CachedRoutineItem[];
+}
+
 /** Per-user sync bookkeeping: last successful `refreshHistory()`, and whether
  *  `navigator.storage.persist()` has already been requested (AC-C18, survives a reload). */
 export interface SyncMeta {
@@ -108,6 +167,12 @@ export class OfflineDb extends Dexie {
   targetCache!: Table<CachedAreaTarget, string>;
   profileCache!: Table<CachedProfile, string>;
   syncMeta!: Table<SyncMeta, string>;
+  // Version 2 (T-0319, D-0067 §3, §5): the four read-only feature caches. One bump adds all of
+  // them, so no feature ticket has to touch IndexedDB afterwards.
+  exerciseDetails!: Table<CachedExerciseDetail, string>;
+  sessionCache!: Table<CachedSession, string>;
+  checkinCache!: Table<CachedCheckin, string>;
+  routineCache!: Table<CachedRoutine, string>;
 
   constructor(name: string = DB_NAME) {
     super(name);
@@ -119,6 +184,17 @@ export class OfflineDb extends Dexie {
       targetCache: "key, userId",
       profileCache: "userId",
       syncMeta: "userId",
+    });
+    // Version 2 adds four tables and changes nothing about v1. Dexie carries every existing
+    // store and row across unchanged when a version only *adds* stores, so there is no
+    // `.upgrade()` here on purpose: an upgrade callback is the only thing that could rewrite a
+    // queued row, and NFR-OFF-2 says none may be lost. The new tables start empty and are
+    // filled by the next `refreshAll()`.
+    this.version(2).stores({
+      exerciseDetails: "key, userId",
+      sessionCache: "key, userId, startedAt",
+      checkinCache: "key, userId",
+      routineCache: "key, userId, name",
     });
   }
 }
