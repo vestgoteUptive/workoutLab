@@ -9,6 +9,7 @@ export { areaLoads, recoveringAreas, RECOVERY_THRESHOLD, RECOVERY_WINDOW_MS } fr
 export { deriveTargets, previewTargets, BASE_TARGETS } from "./targets.js";
 export { balance, deficitOf, coverageStepOf, ATTENTION_DEFICIT, ATTENTION_DAYS, } from "./balance.js";
 export { suggest, isEligible, rankCandidates, itemCostS, setCostS, availableS, WORK_S, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, MAX_ITEMS, MAX_ITEMS_PER_AREA, } from "./session.js";
+export { rankSwaps, muscleMatch } from "./swaps.js";
 export { generateWarmup, WARMUP_COST_S, WARMUP_MOVES, WARMUP_MOVE_S } from "./warmup.js";
 export { floorInc, DEFAULT_INCREMENT_KG, BACKOFF_FACTOR, LOW_TRIM_FROM_SETS, LOW_TRIM_TO_SETS, } from "./energy.js";
 export { timeCheck, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.js";

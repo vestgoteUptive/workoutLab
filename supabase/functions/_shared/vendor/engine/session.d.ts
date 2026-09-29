@@ -3,28 +3,13 @@
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
 import { type Area, type AreaTarget, type EngineProfile, type HistorySet, type Instant, type LibraryExercise, type SessionInput, type TimeZone, type Workout } from "./types.js";
-/** Rule 7.1 time model. */
-export declare const WORK_S = 45;
-export declare const REST_COMPOUND_S = 120;
-export declare const REST_ISOLATION_S = 60;
-export declare const TRANSITION_S = 60;
+export { availableS, isEligible, itemCostS, setCostS, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, WORK_S, } from "./cost.js";
 /** Rule 7.2 caps. */
 export declare const MAX_ITEMS = 8;
 export declare const MAX_ITEMS_PER_AREA = 2;
 /** `budgetMin` bounds (D-0037 §7, D-0040 §7). */
 export declare const BUDGET_MIN = 1;
 export declare const BUDGET_MAX = 480;
-/**
- * Rule 0 eligible exercise: kind `exercise`, every equipment item in `profile.equipment`
- * (no equipment is always eligible), level ≤ profile level, and not in `excludeIds`.
- */
-export declare function isEligible(exercise: LibraryExercise, profile: Pick<EngineProfile, "level" | "equipment">, excludeIds?: readonly string[]): boolean;
-/** Work + rest for one set (rule 7.1). */
-export declare function setCostS(exercise: LibraryExercise): number;
-/** `sets × (work + rest) + 60 s transition` (rule 7.1). */
-export declare function itemCostS(exercise: LibraryExercise, sets: number): number;
-/** `budgetMin × 60 − (warmupInBudget ? 180 : 0)`; may be negative (D-0040 §7). */
-export declare function availableS(budgetMin: number, warmupInBudget: boolean): number;
 /**
  * Rule 7.2 candidate ranking for `area` at session start (R7-E7): the ids of the eligible
  * exercises with weight 1.0 there and no recovering primary area.
@@ -33,6 +18,6 @@ export declare function rankCandidates(area: Area, history: readonly HistorySet[
 /**
  * The next workout (UF-08.1, UF-08.4; rules 7, 10). Pure: the same inputs give a
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
- * `energy` is applied after selection (rule 7.4); `shuffle` is ignored until T-0204 (D-0040 §8).
+ * Selection is main → pinned → greedy → shuffle (rule 13), then energy (rule 7.4, D-0056 §8).
  */
 export declare function suggest(history: readonly HistorySet[], targets: readonly AreaTarget[], profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], sessionInput: SessionInput, now: Instant, tz: TimeZone): Workout;
