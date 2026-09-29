@@ -28,11 +28,14 @@ async function restricted(relPath: string, code: string) {
 const IMPORT_UF10 = 'import { Balance } from "../UF-10/index.js";\nexport const X = Balance;\n';
 
 describe("AC-A12 lint: features/UF-10 is not importable from a flow that renders in a workout", () => {
-  it.each(["UF-09", "UF-08"])("%s importing features/UF-10 reports no-restricted-imports", async (flow) => {
-    const errors = await restricted(`src/features/${flow}/x.tsx`, IMPORT_UF10);
-    expect(errors.length).toBeGreaterThanOrEqual(1);
-    expect(errors[0]!.severity).toBe(2);
-  });
+  it.each(["UF-09", "UF-08"])(
+    "%s importing features/UF-10 reports no-restricted-imports",
+    async (flow) => {
+      const errors = await restricted(`src/features/${flow}/x.tsx`, IMPORT_UF10);
+      expect(errors.length).toBeGreaterThanOrEqual(1);
+      expect(errors[0]!.severity).toBe(2);
+    },
+  );
 
   it.each(["UF-03", "UF-04", "UF-05"])(
     "%s importing features/UF-10 also reports it (UF-04/UF-05 mount inside UF-09)",
@@ -67,7 +70,8 @@ describe("AC-A12 lint: features/UF-10 is not importable from a flow that renders
   });
 
   it("a deep import into UF-10 is banned from everywhere, UF-02 included (D-0071 §3)", async () => {
-    const deep = 'import { useBalance } from "../UF-10/use-balance.js";\nexport const X = useBalance;\n';
+    const deep =
+      'import { useBalance } from "../UF-10/use-balance.js";\nexport const X = useBalance;\n';
     expect(await restricted("src/features/UF-02/x.tsx", deep)).not.toHaveLength(0);
     expect(await restricted("src/features/UF-09/x.tsx", deep)).not.toHaveLength(0);
   });

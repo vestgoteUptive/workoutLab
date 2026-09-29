@@ -46,19 +46,25 @@ describe("AC-A12 render: no /balance link exists on a session route", () => {
     expect(links.map((l) => l.getAttribute("href"))).toEqual([]);
   });
 
-  it.each(SESSION_ROUTES)("%s has no C-01 body map either (its compact variant links to /balance)", async (path) => {
-    await renderShellAt(path);
-    expect(document.querySelector('[data-component="C-01"]')).toBeNull();
-    expect(document.querySelector('[data-screen-id="UF-10.1"]')).toBeNull();
-    expect(document.querySelector('[data-screen-id="UF-10.2"]')).toBeNull();
-  });
+  it.each(SESSION_ROUTES)(
+    "%s has no C-01 body map either (its compact variant links to /balance)",
+    async (path) => {
+      await renderShellAt(path);
+      expect(document.querySelector('[data-component="C-01"]')).toBeNull();
+      expect(document.querySelector('[data-screen-id="UF-10.1"]')).toBeNull();
+      expect(document.querySelector('[data-screen-id="UF-10.2"]')).toBeNull();
+    },
+  );
 
-  it.each(SESSION_ROUTES)("%s has no tab bar, so C-02 cannot lead out of the workout", async (path) => {
-    // The tab bar's Progress tab treats `/balance*` as its own (TabBar.tsx), so a tab bar on a
-    // session route would be a second route out of focus mode.
-    await renderShellAt(path);
-    expect(document.querySelector("nav")).toBeNull();
-  });
+  it.each(SESSION_ROUTES)(
+    "%s has no tab bar, so C-02 cannot lead out of the workout",
+    async (path) => {
+      // The tab bar's Progress tab treats `/balance*` as its own (TabBar.tsx), so a tab bar on a
+      // session route would be a second route out of focus mode.
+      await renderShellAt(path);
+      expect(document.querySelector("nav")).toBeNull();
+    },
+  );
 
   it("CONTRAST: the very same query DOES find /balance links on /balance itself", async () => {
     // Without a positive case, "no link found" could just mean the selector never matches

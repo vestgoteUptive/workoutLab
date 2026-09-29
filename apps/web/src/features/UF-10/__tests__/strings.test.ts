@@ -28,10 +28,7 @@ function featureSources(): string[] {
 
 describe("AC-A21 the strings live in this ticket's own flow file", () => {
   it("flows/uf-10.ts is non-empty and keeps the `export const uf10 = {…} as const` shape", () => {
-    const source = readFileSync(
-      resolve(WEB_ROOT, "src/lib/i18n/flows/uf-10.ts"),
-      "utf8",
-    );
+    const source = readFileSync(resolve(WEB_ROOT, "src/lib/i18n/flows/uf-10.ts"), "utf8");
     expect(source).toMatch(/export const uf10 = \{[\s\S]+\} as const;/);
     expect(Object.keys(uf10).length).toBeGreaterThan(0);
   });

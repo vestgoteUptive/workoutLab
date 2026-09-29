@@ -46,39 +46,64 @@ afterEach(() => {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe("QA: no render loop through the real route table (online, no injected props)", () => {
-  it.each(["/balance", "/balance/hamstrings"])("%s loads a bounded number of times", async (path) => {
-    vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
-    const refresh = vi.spyOn(history, "refreshAll").mockResolvedValue(undefined);
-    const targets = vi.spyOn(history, "loadTargets");
-    const library = vi.spyOn(history, "loadLibrary");
-    await seedCache(db, {
-      library: LIBRARY,
-      targets: defaultTargets(),
-      sets: sets(RDL.id, new Date(Date.now() - 2 * 86_400_000).toISOString(), 4),
-    });
-    render(
-      <MemoryRouter initialEntries={[path]}>
-        <Shell />
-      </MemoryRouter>,
-    );
-    await waitFor(() => expect(document.querySelector("[data-screen-id^='UF-10']")).not.toBeNull());
-    await waitFor(() => expect(targets.mock.calls.length).toBeGreaterThanOrEqual(2));
-    await sleep(400);
-    // one cache read + one post-refresh recompute, never a loop
-    expect(targets.mock.calls.length).toBe(2);
-    expect(refresh).toHaveBeenCalledTimes(1);
-    expect(library.mock.calls.length).toBeLessThanOrEqual(4);
-  });
+  it.each(["/balance", "/balance/hamstrings"])(
+    "%s loads a bounded number of times",
+    async (path) => {
+      vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
+      const refresh = vi.spyOn(history, "refreshAll").mockResolvedValue(undefined);
+      const targets = vi.spyOn(history, "loadTargets");
+      const library = vi.spyOn(history, "loadLibrary");
+      await seedCache(db, {
+        library: LIBRARY,
+        targets: defaultTargets(),
+        sets: sets(RDL.id, new Date(Date.now() - 2 * 86_400_000).toISOString(), 4),
+      });
+      render(
+        <MemoryRouter initialEntries={[path]}>
+          <Shell />
+        </MemoryRouter>,
+      );
+      await waitFor(() =>
+        expect(document.querySelector("[data-screen-id^='UF-10']")).not.toBeNull(),
+      );
+      await waitFor(() => expect(targets.mock.calls.length).toBeGreaterThanOrEqual(2));
+      await sleep(400);
+      // one cache read + one post-refresh recompute, never a loop
+      expect(targets.mock.calls.length).toBe(2);
+      expect(refresh).toHaveBeenCalledTimes(1);
+      expect(library.mock.calls.length).toBeLessThanOrEqual(4);
+    },
+  );
 });
 
 describe("QA: rows are the engine's, incl. DST and the exact 14-day edge", () => {
   // Stockholm DST ends 2026-10-25 03:00 -> 02:00. Window on 2026-10-25 is 12–25 Oct.
   const tz = TZ;
   const cases: Array<[string, string, string, boolean]> = [
-    ["local 00:00:00 on D-13 (+02:00) counts", "2026-10-25T12:00:00+01:00", "2026-10-12T00:00:00+02:00", true],
-    ["local 23:59:59 on D-14 does not count", "2026-10-25T12:00:00+01:00", "2026-10-11T23:59:59+02:00", false],
-    ["set on the DST-change night counts", "2026-10-25T12:00:00+01:00", "2026-10-25T01:30:00+02:00", true],
-    ["exactly 14 x 24h ago at same clock time counts (D-13 midday)", "2026-10-25T12:00:00+01:00", "2026-10-12T12:00:00+02:00", true],
+    [
+      "local 00:00:00 on D-13 (+02:00) counts",
+      "2026-10-25T12:00:00+01:00",
+      "2026-10-12T00:00:00+02:00",
+      true,
+    ],
+    [
+      "local 23:59:59 on D-14 does not count",
+      "2026-10-25T12:00:00+01:00",
+      "2026-10-11T23:59:59+02:00",
+      false,
+    ],
+    [
+      "set on the DST-change night counts",
+      "2026-10-25T12:00:00+01:00",
+      "2026-10-25T01:30:00+02:00",
+      true,
+    ],
+    [
+      "exactly 14 x 24h ago at same clock time counts (D-13 midday)",
+      "2026-10-25T12:00:00+01:00",
+      "2026-10-12T12:00:00+02:00",
+      true,
+    ],
   ];
   it.each(cases)("%s", async (_n, now, completedAt, counts) => {
     await seedCache(db, {
@@ -113,7 +138,11 @@ describe("QA: last trained wording and CTA", () => {
     ["2026-09-24T09:00:00+02:00", en.uf10.lastTrainedDaysAgo("3")],
   ])("hamstrings trained %s reads %s", async (when, text) => {
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
-    await seedCache(db, { library: LIBRARY, targets: defaultTargets(), sets: sets(RDL.id, when, 2) });
+    await seedCache(db, {
+      library: LIBRARY,
+      targets: defaultTargets(),
+      sets: sets(RDL.id, when, 2),
+    });
     renderBalance({ at: "/balance/hamstrings", now: new Date(NOW), timeZone: TZ, locale: "en-GB" });
     await waitFor(() =>
       expect(document.querySelector('[data-part="last-trained"]')?.textContent).toBe(text),
@@ -171,7 +200,10 @@ describe("QA: empty and partial cache, signed out", () => {
 
   it("targets cached but library empty: renders without crashing (the engine cannot weight unknown exercises, so load is 0)", async () => {
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
-    await seedCache(db, { targets: defaultTargets(), sets: sets(RDL.id, "2026-09-25T10:00:00+02:00", 2) });
+    await seedCache(db, {
+      targets: defaultTargets(),
+      sets: sets(RDL.id, "2026-09-25T10:00:00+02:00", 2),
+    });
     renderBalance({ at: "/balance/hamstrings", now: new Date(NOW), timeZone: TZ, locale: "en-GB" });
     await waitFor(() =>
       expect(document.querySelector('[data-part="value"]')?.textContent).toBe("0 / 16"),
