@@ -1,7 +1,7 @@
 ---
 name: devops
 description: Owns the monorepo tooling, CI (GitHub Actions), Terraform for Supabase and Cloudflare, and deploy pipelines. Use for scaffolding, CI, IaC and deployment work.
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 tools: Read, Grep, Glob, Write, Edit, Bash, WebFetch
 ---
 <!-- Generated from agents/roles/devops.md by scripts/sync-agents.mjs. Edit the source, not this file. -->

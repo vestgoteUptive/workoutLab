@@ -2,7 +2,7 @@
 name: engine-dev
 title: Engine Developer
 description: Implements packages/engine, the pure deterministic recommendation engine, against docs/engine-rules.md, with unit tests per rule and simulated 14-day history tests. Use for any engine logic or engine-rules change.
-model: claude-opus-5
+model: claude-opus-5-5
 role: writer
 tools: [Read, Grep, Glob, Write, Edit, Bash]
 effort: high

@@ -1,7 +1,7 @@
 ---
 name: triage
 description: Resolves conflicts between decisions, contracts, specs or agents' work. Reads open .squad/triage items, decides, writes a superseding decision and follow-up tickets. Use whenever an agent returns needs-triage or two sources disagree.
-model: claude-opus-5
+model: claude-opus-5-5
 tools: Read, Grep, Glob, Write, Edit
 ---
 <!-- Generated from agents/roles/triage.md by scripts/sync-agents.mjs. Edit the source, not this file. -->

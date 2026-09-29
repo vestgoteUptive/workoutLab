@@ -2,7 +2,7 @@
 name: product-owner
 title: Product Owner
 description: Owns the PRD, specs, tickets and acceptance criteria. Turns ideas and open questions into ready tickets, answers product questions with logged defaults, and accepts or rejects finished work. Use for spec writing, backlog grooming and acceptance.
-model: claude-opus-5
+model: claude-opus-5-5
 role: planner
 tools: [Read, Grep, Glob, Write, Edit]
 effort: high

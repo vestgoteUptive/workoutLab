@@ -2,7 +2,7 @@
 name: devops
 title: DevOps
 description: Owns the monorepo tooling, CI (GitHub Actions), Terraform for Supabase and Cloudflare, and deploy pipelines. Use for scaffolding, CI, IaC and deployment work.
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 role: writer
 tools: [Read, Grep, Glob, Write, Edit, Bash, WebFetch]
 effort: medium

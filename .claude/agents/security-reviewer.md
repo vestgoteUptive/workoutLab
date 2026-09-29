@@ -1,7 +1,7 @@
 ---
 name: security-reviewer
 description: Reviews auth, RLS, Edge Functions, secrets handling, headers/CSP and privacy (GDPR, account deletion/export) before release and on any auth or data-access change. Writes findings to docs/security/.
-model: claude-opus-5
+model: claude-opus-5-5
 tools: Read, Grep, Glob, Bash, Write
 ---
 <!-- Generated from agents/roles/security-reviewer.md by scripts/sync-agents.mjs. Edit the source, not this file. -->
