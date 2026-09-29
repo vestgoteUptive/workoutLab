@@ -264,37 +264,40 @@ Deno.test("AC25: finishing at 1921s (07:32:01) is 200 with withinBudget false", 
 
 // --- AC26: idempotent ------------------------------------------------------------------------
 
-Deno.test("AC26: repeating the identical finish returns a deep-equal body; the row is unchanged", async () => {
-  const user = await createTestUser();
-  await seedFullProfile(user.client);
-  const sessionId = await seedSessionS(user.client);
+Deno.test(
+  "AC26: repeating the identical finish returns a deep-equal body; the row is unchanged",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const sessionId = await seedSessionS(user.client);
 
-  const first = await finish(user.accessToken, sessionId, {
-    endedAt: "2026-09-28T07:31:00Z",
-    effortRating: 4,
-    tz: TZ,
-  });
-  assertEquals(first.status, 200);
-  const firstBody = await first.json();
+    const first = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:31:00Z",
+      effortRating: 4,
+      tz: TZ,
+    });
+    assertEquals(first.status, 200);
+    const firstBody = await first.json();
 
-  const second = await finish(user.accessToken, sessionId, {
-    endedAt: "2026-09-28T07:31:00Z",
-    effortRating: 4,
-    tz: TZ,
-  });
-  assertEquals(second.status, 200);
-  const secondBody = await second.json();
-  assertEquals(secondBody, firstBody);
+    const second = await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:31:00Z",
+      effortRating: 4,
+      tz: TZ,
+    });
+    assertEquals(second.status, 200);
+    const secondBody = await second.json();
+    assertEquals(secondBody, firstBody);
 
-  const { data: row, error } = await user.client
-    .from("sessions")
-    .select("ended_at, effort_rating")
-    .eq("id", sessionId)
-    .single();
-  if (error) throw error;
-  assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
-  assertEquals(row.effort_rating, 4);
-});
+    const { data: row, error } = await user.client
+      .from("sessions")
+      .select("ended_at, effort_rating")
+      .eq("id", sessionId)
+      .single();
+    if (error) throw error;
+    assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
+    assertEquals(row.effort_rating, 4);
+  },
+);
 
 // --- AC27: the latest endedAt wins -----------------------------------------------------------
 
@@ -488,27 +491,30 @@ Deno.test(
 
 // --- AC29: a rating-only retry never moves endedAt ----------------------------------------------
 
-Deno.test("AC29: posting the same endedAt with a new rating updates effort_rating, not ended_at", async () => {
-  const user = await createTestUser();
-  await seedFullProfile(user.client);
-  const sessionId = await seedSessionS(user.client);
+Deno.test(
+  "AC29: posting the same endedAt with a new rating updates effort_rating, not ended_at",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const sessionId = await seedSessionS(user.client);
 
-  await finish(user.accessToken, sessionId, { endedAt: "2026-09-28T07:31:00Z", tz: TZ });
-  await finish(user.accessToken, sessionId, {
-    endedAt: "2026-09-28T07:31:00Z",
-    effortRating: 5,
-    tz: TZ,
-  });
+    await finish(user.accessToken, sessionId, { endedAt: "2026-09-28T07:31:00Z", tz: TZ });
+    await finish(user.accessToken, sessionId, {
+      endedAt: "2026-09-28T07:31:00Z",
+      effortRating: 5,
+      tz: TZ,
+    });
 
-  const { data: row, error } = await user.client
-    .from("sessions")
-    .select("ended_at, effort_rating")
-    .eq("id", sessionId)
-    .single();
-  if (error) throw error;
-  assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
-  assertEquals(row.effort_rating, 5);
-});
+    const { data: row, error } = await user.client
+      .from("sessions")
+      .select("ended_at, effort_rating")
+      .eq("id", sessionId)
+      .single();
+    if (error) throw error;
+    assertInstantEquals(row.ended_at, "2026-09-28T07:31:00Z");
+    assertEquals(row.effort_rating, 5);
+  },
+);
 
 // --- AC30: validation, one call per case, row unchanged -----------------------------------------
 
@@ -536,21 +542,24 @@ Deno.test("AC30: path id not-a-uuid is 400 invalid_request", async () => {
   assertEnvelope(await res.json(), "invalid_request");
 });
 
-Deno.test("AC30: effortRating 0, 6 and 3.5 are all 400 invalid_request, row unchanged", async () => {
-  const user = await createTestUser();
-  await seedFullProfile(user.client);
-  const sessionId = await seedSessionS(user.client);
-  for (const effortRating of [0, 6, 3.5]) {
-    const res = await finish(user.accessToken, sessionId, {
-      endedAt: "2026-09-28T07:31:00Z",
-      effortRating,
-      tz: TZ,
-    });
-    assertEquals(res.status, 400);
-    assertEnvelope(await res.json(), "invalid_request", "effortRating");
-  }
-  await assertSessionUnfinished(user.client, sessionId);
-});
+Deno.test(
+  "AC30: effortRating 0, 6 and 3.5 are all 400 invalid_request, row unchanged",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const sessionId = await seedSessionS(user.client);
+    for (const effortRating of [0, 6, 3.5]) {
+      const res = await finish(user.accessToken, sessionId, {
+        endedAt: "2026-09-28T07:31:00Z",
+        effortRating,
+        tz: TZ,
+      });
+      assertEquals(res.status, 400);
+      assertEnvelope(await res.json(), "invalid_request", "effortRating");
+    }
+    await assertSessionUnfinished(user.client, sessionId);
+  },
+);
 
 Deno.test("AC30: endedAt with no offset is 400 invalid_request, row unchanged", async () => {
   const user = await createTestUser();
@@ -642,28 +651,31 @@ Deno.test("AC31: GET /sessions/{id}/finish is 404 not_found", async () => {
 
 // --- AC32: zero sets -------------------------------------------------------------------------
 
-Deno.test("AC32: a session with no sets finishes with hardSets 0, exerciseCount 0, all 9 areas 0", async () => {
-  const user = await createTestUser();
-  await seedFullProfile(user.client);
-  const { data: session, error: sessionError } = await user.client
-    .from("sessions")
-    .insert({ started_at: STARTED_AT, time_budget_min: 30 })
-    .select("id")
-    .single();
-  if (sessionError) throw sessionError;
+Deno.test(
+  "AC32: a session with no sets finishes with hardSets 0, exerciseCount 0, all 9 areas 0",
+  async () => {
+    const user = await createTestUser();
+    await seedFullProfile(user.client);
+    const { data: session, error: sessionError } = await user.client
+      .from("sessions")
+      .insert({ started_at: STARTED_AT, time_budget_min: 30 })
+      .select("id")
+      .single();
+    if (sessionError) throw sessionError;
 
-  const res = await finish(user.accessToken, session.id, {
-    endedAt: "2026-09-28T07:31:00Z",
-    tz: TZ,
-  });
-  assertEquals(res.status, 200);
-  const summary = await res.json();
-  assertEquals(summary.hardSets, 0);
-  assertEquals(summary.exerciseCount, 0);
-  for (const v of Object.values(summary.weightedSetsByArea as Record<string, number>)) {
-    assertEquals(v, 0);
-  }
-});
+    const res = await finish(user.accessToken, session.id, {
+      endedAt: "2026-09-28T07:31:00Z",
+      tz: TZ,
+    });
+    assertEquals(res.status, 200);
+    const summary = await res.json();
+    assertEquals(summary.hardSets, 0);
+    assertEquals(summary.exerciseCount, 0);
+    for (const v of Object.values(summary.weightedSetsByArea as Record<string, number>)) {
+      assertEquals(v, 0);
+    }
+  },
+);
 
 // --- AC33: no 422 on finish for a caller with only 8 targets -------------------------------------
 

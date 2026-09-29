@@ -86,25 +86,28 @@ async function assertBadRequest(fn: () => Promise<unknown>, namedField?: string)
 
 // --- AC24: basic finish -------------------------------------------------------------------------
 
-Deno.test("AC24: finishing S at 07:31 gives durationS 1860, hardSets 3, exerciseCount 2, quads>=2 chest=1", async () => {
-  const store = makeFakeStore(sessionFixture());
-  const result = await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ },
-    store.deps(),
-  );
-  assertEquals(result.durationS, 1860);
-  assertEquals(result.timeBudgetMin, 30);
-  assertEquals(result.withinBudget, true);
-  assertEquals(result.hardSets, 3);
-  assertEquals(result.exerciseCount, 2);
-  assertEquals(Object.keys(result.weightedSetsByArea).length, 9);
-  assert(result.weightedSetsByArea.quads >= 2);
-  assertEquals(result.weightedSetsByArea.chest, 1);
-  assertEquals(store.get().endedAt, "2026-09-28T07:31:00Z");
-  assertEquals(store.get().effortRating, 4);
-});
+Deno.test(
+  "AC24: finishing S at 07:31 gives durationS 1860, hardSets 3, exerciseCount 2, quads>=2 chest=1",
+  async () => {
+    const store = makeFakeStore(sessionFixture());
+    const result = await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ },
+      store.deps(),
+    );
+    assertEquals(result.durationS, 1860);
+    assertEquals(result.timeBudgetMin, 30);
+    assertEquals(result.withinBudget, true);
+    assertEquals(result.hardSets, 3);
+    assertEquals(result.exerciseCount, 2);
+    assertEquals(Object.keys(result.weightedSetsByArea).length, 9);
+    assert(result.weightedSetsByArea.quads >= 2);
+    assertEquals(result.weightedSetsByArea.chest, 1);
+    assertEquals(store.get().endedAt, "2026-09-28T07:31:00Z");
+    assertEquals(store.get().effortRating, 4);
+  },
+);
 
 // --- AC25: withinBudget boundary -----------------------------------------------------------------
 
@@ -151,182 +154,204 @@ Deno.test("AC26: repeating the identical finish returns a deep-equal body", asyn
   assertEquals(second, first);
 });
 
-Deno.test("AC26 unit twin: the handler core with now one day later still returns a deep-equal summary", async () => {
-  // The summary is a pure function of the *stored* ended_at, never the server clock (D-0053 §8),
-  // so this deps fixture's loadFinishEngineInputs never even reads a "now" — it's driven purely
-  // by the stored row, which the two calls below share via the same fake store.
-  const store = makeFakeStore(sessionFixture());
-  const first = await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ },
-    store.deps(),
-  );
-  // A second call, simulating "one day later": nothing about deps changes with server time,
-  // because the core never reads a clock — only `loadOwnedSession`'s returned row matters.
-  const second = await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ },
-    store.deps(),
-  );
-  assertEquals(second, first);
-});
+Deno.test(
+  "AC26 unit twin: the handler core with now one day later still returns a deep-equal summary",
+  async () => {
+    // The summary is a pure function of the *stored* ended_at, never the server clock (D-0053 §8),
+    // so this deps fixture's loadFinishEngineInputs never even reads a "now" — it's driven purely
+    // by the stored row, which the two calls below share via the same fake store.
+    const store = makeFakeStore(sessionFixture());
+    const first = await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ },
+      store.deps(),
+    );
+    // A second call, simulating "one day later": nothing about deps changes with server time,
+    // because the core never reads a clock — only `loadOwnedSession`'s returned row matters.
+    const second = await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ },
+      store.deps(),
+    );
+    assertEquals(second, first);
+  },
+);
 
 // --- AC27: the latest endedAt wins --------------------------------------------------------------
 
-Deno.test("AC27: a later finish (07:40) overwrites 07:31, then an older retry (07:31) is a no-op", async () => {
-  const store = makeFakeStore(sessionFixture());
-  await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ },
-    store.deps(),
-  );
-  const at0740 = await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:40:00Z", tz: TZ },
-    store.deps(),
-  );
-  assertEquals(at0740.endedAt, "2026-09-28T07:40:00Z");
-  assertEquals(at0740.durationS, 2400);
-  assertEquals(at0740.withinBudget, false);
-  // D-0058 rule 1: the winning finish owns the *whole* row, so this unrated 07:40 win clears the
-  // rating the superseded 07:31 finish left behind. Preserving the 4 here is precisely what made
-  // the row order-dependent.
-  assertEquals(
-    store.get().effortRating,
-    null,
-    "an unrated winning finish clears the superseded finish's rating (D-0058 rule 1)",
-  );
+Deno.test(
+  "AC27: a later finish (07:40) overwrites 07:31, then an older retry (07:31) is a no-op",
+  async () => {
+    const store = makeFakeStore(sessionFixture());
+    await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ },
+      store.deps(),
+    );
+    const at0740 = await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:40:00Z", tz: TZ },
+      store.deps(),
+    );
+    assertEquals(at0740.endedAt, "2026-09-28T07:40:00Z");
+    assertEquals(at0740.durationS, 2400);
+    assertEquals(at0740.withinBudget, false);
+    // D-0058 rule 1: the winning finish owns the *whole* row, so this unrated 07:40 win clears the
+    // rating the superseded 07:31 finish left behind. Preserving the 4 here is precisely what made
+    // the row order-dependent.
+    assertEquals(
+      store.get().effortRating,
+      null,
+      "an unrated winning finish clears the superseded finish's rating (D-0058 rule 1)",
+    );
 
-  const retryOlder = await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", effortRating: 2, tz: TZ },
-    store.deps(),
-  );
-  assertEquals(retryOlder, at0740, "an older endedAt with a new rating still returns the 07:40 summary");
-  assertEquals(store.get().endedAt, "2026-09-28T07:40:00Z");
-  assertEquals(
-    store.get().effortRating,
-    null,
-    "D-0058 rule 3: a strictly older request writes nothing at all, not even its rating",
-  );
-});
+    const retryOlder = await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", effortRating: 2, tz: TZ },
+      store.deps(),
+    );
+    assertEquals(
+      retryOlder,
+      at0740,
+      "an older endedAt with a new rating still returns the 07:40 summary",
+    );
+    assertEquals(store.get().endedAt, "2026-09-28T07:40:00Z");
+    assertEquals(
+      store.get().effortRating,
+      null,
+      "D-0058 rule 3: a strictly older request writes nothing at all, not even its rating",
+    );
+  },
+);
 
-Deno.test("AC27 (D-0058 rule 2): an equal-endedAt retry adds a rating and a later unrated retry never clears it", async () => {
-  const store = makeFakeStore(sessionFixture());
-  await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
-    store.deps(),
-  );
-  assertEquals(store.get().effortRating, null, "the first, unrated finish stores no rating");
+Deno.test(
+  "AC27 (D-0058 rule 2): an equal-endedAt retry adds a rating and a later unrated retry never clears it",
+  async () => {
+    const store = makeFakeStore(sessionFixture());
+    await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
+      store.deps(),
+    );
+    assertEquals(store.get().effortRating, null, "the first, unrated finish stores no rating");
 
-  // Rule 2: same endedAt, now carrying a rating — the retry *adds* it.
-  await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", effortRating: 3, tz: TZ },
-    store.deps(),
-  );
-  assertEquals(store.get().effortRating, 3, "an equal-endedAt retry may add a rating");
+    // Rule 2: same endedAt, now carrying a rating — the retry *adds* it.
+    await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", effortRating: 3, tz: TZ },
+      store.deps(),
+    );
+    assertEquals(store.get().effortRating, 3, "an equal-endedAt retry may add a rating");
 
-  // Rule 2 again: same endedAt, no rating — must NOT clear the one just added. This is the
-  // boundary that keeps rule 1's `?? null` from leaking into retries (e.g. a duplicate delivery
-  // of the original unrated finish arriving after the user rated it).
-  await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
-    store.deps(),
-  );
-  assertEquals(
-    store.get().effortRating,
-    3,
-    "an unrated equal-endedAt retry must never clear an existing rating (D-0058 rule 2)",
-  );
-  assertEquals(store.get().endedAt, "2026-09-28T07:31:00Z");
-});
+    // Rule 2 again: same endedAt, no rating — must NOT clear the one just added. This is the
+    // boundary that keeps rule 1's `?? null` from leaking into retries (e.g. a duplicate delivery
+    // of the original unrated finish arriving after the user rated it).
+    await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
+      store.deps(),
+    );
+    assertEquals(
+      store.get().effortRating,
+      3,
+      "an unrated equal-endedAt retry must never clear an existing rating (D-0058 rule 2)",
+    );
+    assertEquals(store.get().endedAt, "2026-09-28T07:31:00Z");
+  },
+);
 
 // --- AC28: offline replay order (commutativity) --------------------------------------------------
 
-Deno.test("AC28: replaying [07:40, rated 07:31] and [rated 07:31, 07:40] converge on the same full row and response", async () => {
-  // D-0058's scenario: exactly ONE of the two finishes carries a rating — A = rated 07:31,
-  // B = unrated 07:40 (a rating given on one device, a later correction from another). A
-  // rating-free pair cannot detect an order-dependent `effort_rating`, which is why the original
-  // green AC28 missed the defect. The convergent row is the *winning* finish's row: ended_at
-  // 07:40 with NO rating, because the 07:40 finish carries none (rule 1).
-  const RATED_0731 = { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ } as const;
-  const UNRATED_0740 = { endedAt: "2026-09-28T07:40:00Z", tz: TZ } as const;
+Deno.test(
+  "AC28: replaying [07:40, rated 07:31] and [rated 07:31, 07:40] converge on the same full row and response",
+  async () => {
+    // D-0058's scenario: exactly ONE of the two finishes carries a rating — A = rated 07:31,
+    // B = unrated 07:40 (a rating given on one device, a later correction from another). A
+    // rating-free pair cannot detect an order-dependent `effort_rating`, which is why the original
+    // green AC28 missed the defect. The convergent row is the *winning* finish's row: ended_at
+    // 07:40 with NO rating, because the 07:40 finish carries none (rule 1).
+    const RATED_0731 = { endedAt: "2026-09-28T07:31:00Z", effortRating: 4, tz: TZ } as const;
+    const UNRATED_0740 = { endedAt: "2026-09-28T07:40:00Z", tz: TZ } as const;
 
-  // Order [B, A]: the winner arrives first, then the older rated replay.
-  const storeA = makeFakeStore(sessionFixture());
-  await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0740, storeA.deps());
-  const lastA = await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0731, storeA.deps());
+    // Order [B, A]: the winner arrives first, then the older rated replay.
+    const storeA = makeFakeStore(sessionFixture());
+    await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0740, storeA.deps());
+    const lastA = await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0731, storeA.deps());
 
-  // Order [A, B]: the rated older finish lands first and is then superseded.
-  const storeB = makeFakeStore(sessionFixture());
-  await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0731, storeB.deps());
-  const lastB = await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0740, storeB.deps());
+    // Order [A, B]: the rated older finish lands first and is then superseded.
+    const storeB = makeFakeStore(sessionFixture());
+    await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0731, storeB.deps());
+    const lastB = await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0740, storeB.deps());
 
-  // The FULL row converges, not just ended_at. Before D-0058, ended_at matched in both orders
-  // while effort_rating was null here and 4 there.
-  assertEquals(storeA.get().endedAt, "2026-09-28T07:40:00Z");
-  assertEquals(storeB.get().endedAt, "2026-09-28T07:40:00Z");
-  assertEquals(storeA.get().effortRating, null);
-  assertEquals(storeB.get().effortRating, null);
-  assertEquals(
-    storeA.get(),
-    storeB.get(),
-    "the whole stored row must be independent of replay order (D-0058)",
-  );
-  assertEquals(lastA, lastB);
-});
+    // The FULL row converges, not just ended_at. Before D-0058, ended_at matched in both orders
+    // while effort_rating was null here and 4 there.
+    assertEquals(storeA.get().endedAt, "2026-09-28T07:40:00Z");
+    assertEquals(storeB.get().endedAt, "2026-09-28T07:40:00Z");
+    assertEquals(storeA.get().effortRating, null);
+    assertEquals(storeB.get().effortRating, null);
+    assertEquals(
+      storeA.get(),
+      storeB.get(),
+      "the whole stored row must be independent of replay order (D-0058)",
+    );
+    assertEquals(lastA, lastB);
+  },
+);
 
-Deno.test("AC28: the same two finishes converge with the rating on the LATER finish instead", async () => {
-  // The mirror case: the rating rides the *winning* 07:40 finish, so it survives in both orders.
-  // Together with the test above this pins that convergence follows the winning endedAt rather
-  // than "whichever rating arrived last" or "any rating ever seen".
-  const UNRATED_0731 = { endedAt: "2026-09-28T07:31:00Z", tz: TZ } as const;
-  const RATED_0740 = { endedAt: "2026-09-28T07:40:00Z", effortRating: 5, tz: TZ } as const;
+Deno.test(
+  "AC28: the same two finishes converge with the rating on the LATER finish instead",
+  async () => {
+    // The mirror case: the rating rides the *winning* 07:40 finish, so it survives in both orders.
+    // Together with the test above this pins that convergence follows the winning endedAt rather
+    // than "whichever rating arrived last" or "any rating ever seen".
+    const UNRATED_0731 = { endedAt: "2026-09-28T07:31:00Z", tz: TZ } as const;
+    const RATED_0740 = { endedAt: "2026-09-28T07:40:00Z", effortRating: 5, tz: TZ } as const;
 
-  const storeA = makeFakeStore(sessionFixture());
-  await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0740, storeA.deps());
-  const lastA = await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0731, storeA.deps());
+    const storeA = makeFakeStore(sessionFixture());
+    await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0740, storeA.deps());
+    const lastA = await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0731, storeA.deps());
 
-  const storeB = makeFakeStore(sessionFixture());
-  await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0731, storeB.deps());
-  const lastB = await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0740, storeB.deps());
+    const storeB = makeFakeStore(sessionFixture());
+    await finishSessionCore(FAKE_CTX, SESSION_ID, UNRATED_0731, storeB.deps());
+    const lastB = await finishSessionCore(FAKE_CTX, SESSION_ID, RATED_0740, storeB.deps());
 
-  assertEquals(storeA.get().effortRating, 5);
-  assertEquals(storeB.get().effortRating, 5);
-  assertEquals(storeA.get(), storeB.get());
-  assertEquals(lastA, lastB);
-});
+    assertEquals(storeA.get().effortRating, 5);
+    assertEquals(storeB.get().effortRating, 5);
+    assertEquals(storeA.get(), storeB.get());
+    assertEquals(lastA, lastB);
+  },
+);
 
 // --- AC29: a rating-only retry never moves endedAt ------------------------------------------------
 
-Deno.test("AC29: posting the same endedAt with a new rating updates effortRating, not endedAt", async () => {
-  const store = makeFakeStore(sessionFixture());
-  await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
-    store.deps(),
-  );
-  await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", effortRating: 5, tz: TZ },
-    store.deps(),
-  );
-  assertEquals(store.get().effortRating, 5);
-  assertEquals(store.get().endedAt, "2026-09-28T07:31:00Z");
-});
+Deno.test(
+  "AC29: posting the same endedAt with a new rating updates effortRating, not endedAt",
+  async () => {
+    const store = makeFakeStore(sessionFixture());
+    await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
+      store.deps(),
+    );
+    await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", effortRating: 5, tz: TZ },
+      store.deps(),
+    );
+    assertEquals(store.get().effortRating, 5);
+    assertEquals(store.get().endedAt, "2026-09-28T07:31:00Z");
+  },
+);
 
 // --- AC30: validation --------------------------------------------------------------------------
 
@@ -449,42 +474,51 @@ Deno.test("AC31: an unknown/unowned session id is 404 not_found", async () => {
 
 // --- AC32: zero sets -------------------------------------------------------------------------
 
-Deno.test("AC32: a session with no sets finishes with hardSets 0, exerciseCount 0, all areas 0", async () => {
-  const deps = depsFixture({ loadSessionSets: async () => emptySessionSetsFixture() });
-  const result = await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
-    deps,
-  );
-  assertEquals(result.hardSets, 0);
-  assertEquals(result.exerciseCount, 0);
-  for (const v of Object.values(result.weightedSetsByArea)) assertEquals(v, 0);
-});
+Deno.test(
+  "AC32: a session with no sets finishes with hardSets 0, exerciseCount 0, all areas 0",
+  async () => {
+    const deps = depsFixture({ loadSessionSets: async () => emptySessionSetsFixture() });
+    const result = await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
+      deps,
+    );
+    assertEquals(result.hardSets, 0);
+    assertEquals(result.exerciseCount, 0);
+    for (const v of Object.values(result.weightedSetsByArea)) assertEquals(v, 0);
+  },
+);
 
 // --- AC33: no 422 on finish; falls back to deriveTargets/BASE_TARGETS -----------------------------
 
-Deno.test("AC33: finish never 422s even when loadFinishEngineInputs models fewer than 9 targets via the default-source fallback", async () => {
-  // The core itself never enforces a target count — that fallback lives in
-  // `loadFinishEngineInputs` (repo.ts). This test proves the core accepts whatever targets/source
-  // that loader returns (here: a `source: "default"` fallback for a hypothetical 8-target/derived
-  // caller) and completes with 200, never throwing profileMissing.
-  const fallbackTargets: AreaTarget[] = nineAreaTargets().map((t) => ({
-    ...t,
-    source: "default" as const,
-  }));
-  const deps = depsFixture({
-    loadFinishEngineInputs: async (): Promise<FinishEngineInputs> => ({
-      targets: fallbackTargets,
-      library: libraryFixture(),
-      history: [],
-    }),
-  });
-  const result = await finishSessionCore(
-    FAKE_CTX,
-    SESSION_ID,
-    { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
-    deps,
-  );
-  assertEquals(result.balance.areas.every((a) => a.targetSource === "default"), true);
-});
+Deno.test(
+  "AC33: finish never 422s even when loadFinishEngineInputs models fewer than 9 targets via the default-source fallback",
+  async () => {
+    // The core itself never enforces a target count — that fallback lives in
+    // `loadFinishEngineInputs` (repo.ts). This test proves the core accepts whatever targets/source
+    // that loader returns (here: a `source: "default"` fallback for a hypothetical 8-target/derived
+    // caller) and completes with 200, never throwing profileMissing.
+    const fallbackTargets: AreaTarget[] = nineAreaTargets().map((t) => ({
+      ...t,
+      source: "default" as const,
+    }));
+    const deps = depsFixture({
+      loadFinishEngineInputs: async (): Promise<FinishEngineInputs> => ({
+        targets: fallbackTargets,
+        library: libraryFixture(),
+        history: [],
+      }),
+    });
+    const result = await finishSessionCore(
+      FAKE_CTX,
+      SESSION_ID,
+      { endedAt: "2026-09-28T07:31:00Z", tz: TZ },
+      deps,
+    );
+    assertEquals(
+      result.balance.areas.every((a) => a.targetSource === "default"),
+      true,
+    );
+  },
+);

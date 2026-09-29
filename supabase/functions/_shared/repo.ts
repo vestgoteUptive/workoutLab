@@ -70,9 +70,7 @@ export interface EngineInputs {
 /** The full exercise library (both kinds) with its `exercise_areas`, mapped with
  * `toLibraryExercise` (D-0053 §6). Shared by every engine path: `loadEngineInputs` (suggest,
  * balance) and the finish summary. */
-async function loadLibrary(
-  supabase: AuthContext["supabase"],
-): Promise<LibraryExercise[]> {
+async function loadLibrary(supabase: AuthContext["supabase"]): Promise<LibraryExercise[]> {
   const [exercisesRes, exerciseAreasRes] = await Promise.all([
     supabase.from("exercises").select("*"),
     supabase.from("exercise_areas").select("exercise_id, area_id, weight"),
@@ -97,10 +95,7 @@ async function loadLibrary(
  * `client_id` so pagination is stable and exhaustive regardless of insertion order or concurrent
  * writes during the read. Shared by `loadEngineInputs` (suggest, balance) and the finish
  * summary's `balance` component (D-0053 §8), which both need the same window as of `now`. */
-async function loadHistoryWindow(
-  ctx: AuthContext,
-  now: Instant,
-): Promise<HistorySet[]> {
+async function loadHistoryWindow(ctx: AuthContext, now: Instant): Promise<HistorySet[]> {
   const { supabase, userId } = ctx;
   const windowStart = new Date(
     new Date(now).getTime() - HISTORY_WINDOW_DAYS * 24 * 60 * 60 * 1000,
@@ -216,10 +211,7 @@ export async function writeSessionFinish(
  * Kept ordered by `client_id` for a stable, exhaustive page walk. Tombstoned sets are excluded at
  * the query level: `isHardSet` would drop them anyway (rule 2), but the summary's `hardSets` and
  * `exerciseCount` only need live rows, so filtering here keeps the payload smaller. */
-export async function loadSessionSets(
-  ctx: AuthContext,
-  sessionId: string,
-): Promise<HistorySet[]> {
+export async function loadSessionSets(ctx: AuthContext, sessionId: string): Promise<HistorySet[]> {
   const rows = await pageAll(
     ctx.supabase
       .from("session_sets")

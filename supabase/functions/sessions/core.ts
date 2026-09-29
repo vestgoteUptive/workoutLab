@@ -24,11 +24,7 @@ import {
   writeSessionFinish,
   type SessionRow,
 } from "../_shared/repo.ts";
-import {
-  parseJsonBody,
-  validateFinishRequest,
-  validateSessionId,
-} from "../_shared/validate.ts";
+import { parseJsonBody, validateFinishRequest, validateSessionId } from "../_shared/validate.ts";
 
 export interface FinishDeps {
   loadOwnedSession: typeof loadOwnedSession;
