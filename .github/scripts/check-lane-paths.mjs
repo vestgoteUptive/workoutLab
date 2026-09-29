@@ -116,10 +116,50 @@ function looksLikePath(token) {
 }
 
 /**
+ * Words that turn what follows into a denial or an exclusion. The grant parser fails CLOSED:
+ * a path is granted only if NO negation or exclusion word precedes it on its line. "Don't touch
+ * `turbo.json`", "Not `packages/engine/**`", "no contract: `docs/engine-rules.md`" and
+ * "`apps/landing/**` except `apps/landing/src/content/**`" therefore grant only what stands
+ * before the negation. Markdown emphasis (`**not**`) is stripped first; backticked paths are
+ * blanked so a path that merely contains "no" cannot trip it.
+ */
+const NEGATION_RE =
+  /\b(?:not|no|never|nothing|none|except|excluding|without|read-only)\b|\b\w+n['\u2019]t\b/i;
+
+/**
+ * Phrases that deny the WHOLE line, wherever they sit: they negate a path that came before them
+ * ("`x` is not yours", "`x` is read-only here") or cite one as a rule ("Under `x` rule 1").
+ */
+const WHOLE_LINE_DENIAL_RE =
+  /\bnot\s+yours\b|\bnot\s+for\s+you\b|\bdo\s+not\s+edit\b|\bunder\b[^.]*\brule\b/i;
+
+const READ_ONLY_RE = /\bread-only\b/i;
+const EXCEPT_RE = /\b(?:except|excluding)\b/i;
+
+/** The sentence (split on `. ` or `; `) of `line` that contains index `at`, emphasis stripped. */
+function sentenceAround(line, at) {
+  const boundary = /[.;]\s/g;
+  let from = 0;
+  let to = line.length;
+  let b;
+  while ((b = boundary.exec(line))) {
+    if (b.index < at) from = b.index + 2;
+    else {
+      to = b.index;
+      break;
+    }
+  }
+  return plainOf(line.slice(from, to));
+}
+
+const plainOf = (text) => text.replace(/`[^`]*`/g, " ").replace(/[*_]/g, "");
+
+/**
  * AC-3. Extract the paths a ticket grants itself. Reads only the `## Paths you may change`
- * section (stops at the next `##`), and only its grant bullets — a bullet that starts a
- * "Not yours" / "already done for you" clause is a denial, not a grant, so its paths are
- * skipped. Sub-bullets under a grant bullet are kept (the "Listed extras:" shape).
+ * section (stops at the next `##`). Fails closed (see NEGATION_RE): a path after any negation on
+ * its line, or anywhere on a whole-line denial, is not granted, and a top-level bullet that
+ * opens with a negation also silences its sub-bullets. Sub-bullets under a grant bullet are
+ * kept (the "Listed extras:" shape).
  */
 export function listedPathsFromTicket(ticketText) {
   const lines = toLines(ticketText ?? "");
@@ -130,14 +170,17 @@ export function listedPathsFromTicket(ticketText) {
   for (let i = start + 1; i < lines.length; i++) {
     const line = lines[i];
     if (/^##\s/.test(line)) break;
+    const plain = plainOf(line);
+    const wholeLine = WHOLE_LINE_DENIAL_RE.test(plain);
+    const opensNegative = NEGATION_RE.test(plain.replace(/^\s*[-*]\s+/, "").split(/\s+/).slice(0, 2).join(" "));
     const bulletIndent = line.match(/^(\s*)[-*]\s/);
     if (bulletIndent) {
-      const indent = bulletIndent[1].length;
-      const isNegative = /not\s+yours|not\s+for\s+you|do\s+not\s+edit/i.test(line);
-      if (indent === 0) denying = isNegative;
-      else if (isNegative) denying = true;
+      if (bulletIndent[1].length === 0) denying = wholeLine || opensNegative;
+      else if (wholeLine || opensNegative) denying = true;
+    } else if (wholeLine || opensNegative) {
+      denying = true;
     }
-    if (denying) continue;
+    if (denying || wholeLine) continue;
     PATH_TOKEN_RE.lastIndex = 0;
     let m;
     while ((m = PATH_TOKEN_RE.exec(line))) {
@@ -148,6 +191,12 @@ export function listedPathsFromTicket(ticketText) {
       // silently widens the grant.
       const before = line.slice(0, m.index);
       if (/\b(?:per|see|from|against|in|cf\.?)\s+$/i.test(before)) continue;
+      if (NEGATION_RE.test(plainOf(before))) continue;
+      // "`x` stays read-only." names a path AFTER the word that denies it, so the check above
+      // cannot see it. Look at the rest of the sentence too, unless the sentence is an
+      // "A except B, which is read-only" shape, where `A` is the grant.
+      const sentence = sentenceAround(line, m.index);
+      if (READ_ONLY_RE.test(sentence) && !EXCEPT_RE.test(sentence)) continue;
       out.push(token);
     }
   }

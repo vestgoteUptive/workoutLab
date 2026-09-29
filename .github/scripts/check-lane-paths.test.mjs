@@ -638,66 +638,122 @@ test("AC-10: check-all.mjs imports runCheck from check-lane-paths.mjs and calls 
   assert.match(src, /\.\.\.\(await runLanePaths\(/, "runAll must spread runLanePaths' findings");
 });
 
-test("AC-10: pnpm check:repo exits 0 on this branch", () => {
-  // One of the two tests that touch the real repo and the real git. On `main` the check
-  // no-ops (AC-8), so this is a smoke test there and a real assertion on a ticket branch.
+test("AC-10: pnpm check:repo exits 0 on the current checkout, whatever it is", () => {
+  // Smoke only: the repo's own gate must be green wherever this test runs. It reads the live
+  // checkout, so it is green on `main` (no-op, AC-8), on a ticket branch that stays in its
+  // lane, and in CI's detached HEAD (no base -> no-op). The assertions that depend on WHAT a
+  // diff contains are the two contrasts below, which use a constant `changed` array.
   execFileSync("node", [path.join(__dirname, "check-all.mjs")], { cwd: REPO_ROOT, stdio: "pipe" });
 });
 
-test("AC-10 CONTRAST: the same changed paths under a UF-10 branch report", () => {
-  // Proves the green above is not because the check is inert: this branch's changed paths are
-  // .github/** plus docs/tickets/, which web-feature:UF-10 does not own.
-  const changed = execFileSync(
-    "git",
-    ["diff", "--name-only", `${execFileSync("git", ["merge-base", "main", "HEAD"], { cwd: REPO_ROOT, encoding: "utf8" }).trim()}...HEAD`],
-    { cwd: REPO_ROOT, encoding: "utf8" },
-  )
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  assert.ok(changed.length > 0, "no committed diff against main — the contrast would be vacuous");
-  assert.ok(
-    changed.some((p) => p.startsWith(".github/")),
-    `expected a .github/ path in the diff, got ${JSON.stringify(changed)}`,
-  );
+// A constant diff: `.github/**` plus a ticket file, the shape of a T-0320 commit. No live git.
+const CONTRAST_CHANGED = [
+  ".github/scripts/check-lane-paths.mjs",
+  ".github/workflows/ci.yml",
+  "docs/tickets/T-0320-shared-file-enforcement.md",
+];
 
-  // Silent under its own ticket...
+test("AC-10 CONTRAST: the same changed paths under a UF-10 branch report", () => {
+  // Proves the green above is not because the check is inert. Hermetic: no git, no branch.
   const own = checkLanePaths({
     ticketId: "T-0320",
     ticketText: realTicket("T-0320"),
     ownershipText: realOwnership(),
-    changed,
+    changed: CONTRAST_CHANGED,
   }).findings;
   assert.deepEqual(own, [], `T-0320 must own its own diff; got ${JSON.stringify(own)}`);
 
-  // ...and reporting under T-0307a's.
   const foreign = checkLanePaths({
     ticketId: "T-0307a",
     ticketText: realTicket("T-0307a"),
     ownershipText: realOwnership(),
-    changed,
+    changed: CONTRAST_CHANGED,
   }).findings;
   assert.ok(foreign.length > 0, "a UF-10 ticket was allowed to change .github/** — the check is inert");
   assert.ok(foreign.some((f) => f.rule === "lane-path-not-owned"));
 });
 
-test("AC-10 CONTRAST (end to end): check-all.mjs --branch t/T-0307a-... exits non-zero", () => {
-  // The same contrast through the real CLI, so registration in check-all is proven to carry
-  // the findings out to the exit code, not just into an array.
-  let exitCode = 0;
-  let stdout = "";
-  try {
-    stdout = execFileSync(
-      "node",
-      [path.join(__dirname, "check-all.mjs"), "--branch", "t/T-0307a-balance-screen"],
-      { cwd: REPO_ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] },
-    );
-  } catch (err) {
-    exitCode = err.status;
-    stdout = err.stdout ?? "";
+test("AC-10 CONTRAST (end to end): runCheck with an injected git reports on a UF-10 branch", async () => {
+  // Through runCheck (branch -> ticket file -> ownership -> findings) against the real repo
+  // files, with a stubbed git so it does not depend on branches, remotes or HEAD state.
+  const git = (args) => {
+    if (args[0] === "merge-base") return "abc123\n";
+    if (args[0] === "diff") return `${CONTRAST_CHANGED.join("\n")}\n`;
+    throw new Error(`unexpected git ${args.join(" ")}`);
+  };
+  const findings = await runCheck(REPO_ROOT, { branch: "t/T-0307a-balance-screen", git, env: {} });
+  assert.ok(findings.some((f) => f.rule === "lane-path-not-owned"), JSON.stringify(findings));
+  const own = await runCheck(REPO_ROOT, { branch: "t/T-0320-shared-file-enforcement", git, env: {} });
+  assert.deepEqual(own, []);
+});
+
+// ---------------------------------------------------------------------------
+// AC-3 fail-closed: a negation or exclusion grants nothing (code review, T-0320).
+// The lines below are copied verbatim from real tickets on main.
+// ---------------------------------------------------------------------------
+const section = (...bullets) => `---\nid: T-9999\nlane: infra\n---\n## Paths you may change\n${bullets.map((b) => `- ${b}`).join("\n")}\n\n## Next\n`;
+
+const REAL_DENIALS = [
+  ["T-0309 Don't touch", "Don't touch `turbo.json`, `.github/**` or the root ESLint config.", ["turbo.json", ".github/**"]],
+  ["T-0102 Not", "Not `packages/engine/**`, `supabase/functions/**`, `.github/**`, `docs/engine-rules.md`", ["packages/engine/**", ".github/**", "docs/engine-rules.md"]],
+  ["T-0204 Don't touch", "Don't touch `api/openapi.yaml`, `packages/shared/**` or `supabase/functions/**`.", ["api/openapi.yaml", "packages/shared/**"]],
+  ["T-0902 Do **not** touch", "Do **not** touch `api/openapi.yaml`, `docs/data-model.md`", ["api/openapi.yaml", "docs/data-model.md"]],
+  ["T-0205 no contract", "This ticket changes **no** contract: `docs/engine-rules.md`, `api/openapi.yaml`, `docs/data-model.md`.", ["docs/engine-rules.md", "api/openapi.yaml"]],
+  ["T-0001 Under rule", "Under `.squad/README.md` rule 1", [".squad/README.md"]],
+  ["synthetic Don't touch", "Don't touch `apps/web/src/lib/i18n/en.ts`", ["apps/web/src/lib/i18n/en.ts"]],
+  ["never", "Never edit `apps/web/src/lib/i18n/en.ts`", ["apps/web/src/lib/i18n/en.ts"]],
+  ["nothing", "Nothing in `packages/shared/**`", ["packages/shared/**"]],
+  ["curly apostrophe", "Don\u2019t touch `turbo.json`", ["turbo.json"]],
+];
+
+for (const [name, line, mustNotGrant] of REAL_DENIALS) {
+  test(`AC-3 fail closed: "${name}" grants nothing`, () => {
+    const listed = listedPathsFromTicket(section("`apps/web/src/features/UF-10/**`", line));
+    for (const p of mustNotGrant) assert.ok(!listed.includes(p), `${p} was granted by: ${line}`);
+    assert.ok(listed.includes("apps/web/src/features/UF-10/**"), "the real grant next to it was lost");
+  });
+}
+
+test("AC-3 fail closed: `except ... read-only` grants the left side only (T-0309b)", () => {
+  const listed = listedPathsFromTicket(
+    section(
+      "**T-0309b (landing):** `apps/landing/**` except `apps/landing/src/content/**`, which is read-only here. Don't touch `turbo.json`.",
+    ),
+  );
+  assert.deepEqual(listed, ["apps/landing/**"]);
+});
+
+test("AC-3 fail closed: a path followed by 'stays read-only' is not granted (T-0202)", () => {
+  const listed = listedPathsFromTicket(
+    section("`packages/engine/**`: `src/**` and `test/**`. `test/fixtures/histories.ts` stays read-only."),
+  );
+  assert.ok(listed.includes("packages/engine/**"));
+  assert.ok(!listed.includes("test/fixtures/histories.ts"));
+});
+
+test("AC-3 fail closed: a negative bullet silences its sub-bullets", () => {
+  const text = "---\nid: T-9999\n---\n## Paths you may change\n- Not these:\n  - `turbo.json`\n- `apps/x/**`\n";
+  assert.deepEqual(listedPathsFromTicket(text), ["apps/x/**"]);
+});
+
+test("AC-3 fail closed: the real T-0309 ticket no longer grants turbo.json or .github/**", () => {
+  const listed = listedPathsFromTicket(realTicket("T-0309"));
+  for (const p of ["turbo.json", ".github/**"]) assert.ok(!listed.includes(p), `${p} granted`);
+  assert.ok(listed.includes("apps/landing/**"));
+});
+
+test("AC-3 fail closed: T-0307a's real extras are still granted", () => {
+  const listed = listedPathsFromTicket(realTicket("T-0307a"));
+  for (const p of [
+    "apps/web/src/features/UF-10/**",
+    "apps/web/src/lib/i18n/flows/uf-10.ts",
+    "tests/e2e/uf-10-balance.spec.ts",
+  ]) {
+    assert.ok(listed.includes(p), `${p} lost`);
   }
-  assert.equal(exitCode, 1, `expected exit 1; stdout was:\n${stdout}`);
-  assert.match(stdout, /lane-path-not-owned/);
+  for (const p of ["apps/web/src/lib/i18n/flows/uf-06.ts", "apps/web/src/app/**", "apps/web/eslint.config.mjs"]) {
+    assert.ok(!listed.includes(p), `${p} granted`);
+  }
 });
 
 // ---------------------------------------------------------------------------

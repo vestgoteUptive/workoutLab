@@ -4,7 +4,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, copyFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, readdirSync, realpathSync, rmSync, copyFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -160,21 +160,34 @@ test("QA branch resolution: --branch > GITHUB_HEAD_REF > GITHUB_REF_NAME > git r
   }
 });
 
-test("QA CLI: check-lane-paths.mjs itself exits 1 on findings (not just check-all)", () => {
+test("QA CLI: check-lane-paths.mjs itself exits 1 on findings (hermetic temp repo, not the live checkout)", () => {
+  // The script finds its repo root from its own location, so run a COPY inside a throwaway git
+  // repo. Never the live checkout: there the diff depends on which branch the test runs on.
+  const { root, write, commit } = gitRepo("t/T-0307a-balance-screen");
   let status = 0;
   let stdout = "";
   try {
-    stdout = execFileSync("node", [path.join(__dirname, "check-lane-paths.mjs"), "--branch", "t/T-0307a-balance-screen"], {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-  } catch (err) {
-    status = err.status;
-    stdout = err.stdout ?? "";
+    for (const f of readdirSync(__dirname).filter((n) => n.endsWith(".mjs") && !n.endsWith(".test.mjs"))) {
+      write(path.join(".github", "scripts", f), readFileSync(path.join(__dirname, f), "utf8"));
+    }
+    write("apps/web/src/lib/i18n/en.ts", "export const en = { changed: true };\n");
+    commit("edit en.ts from a feature lane");
+    try {
+      stdout = execFileSync("node", [path.join(realpathSync(root), ".github", "scripts", "check-lane-paths.mjs")], {
+        cwd: root,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "pipe"],
+        env: { ...process.env, GITHUB_HEAD_REF: "", GITHUB_REF_NAME: "" },
+      });
+    } catch (err) {
+      status = err.status;
+      stdout = err.stdout ?? "";
+    }
+    assert.equal(status, 1, stdout);
+    assert.match(stdout, /shared-i18n-en-edited/);
+  } finally {
+    cleanup(root);
   }
-  assert.equal(status, 1, stdout);
-  assert.match(stdout, /lane-path-not-owned/);
 });
 
 // --- REAL temporary git repository --------------------------------------------------------
