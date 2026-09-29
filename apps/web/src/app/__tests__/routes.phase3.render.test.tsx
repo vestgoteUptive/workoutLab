@@ -49,12 +49,15 @@ describe("AC-2 the new stubs render", () => {
     },
   );
 
-  it.each(NEW_SCREENS)("%s shows the tab bar only when the table says so", async (path, _id, showTabBar) => {
-    await renderAt(path);
-    const nav = screen.queryByRole("navigation", { name: en.tabBar.nav });
-    if (showTabBar) expect(nav).toBeInTheDocument();
-    else expect(nav).not.toBeInTheDocument();
-  });
+  it.each(NEW_SCREENS)(
+    "%s shows the tab bar only when the table says so",
+    async (path, _id, showTabBar) => {
+      await renderAt(path);
+      const nav = screen.queryByRole("navigation", { name: en.tabBar.nav });
+      if (showTabBar) expect(nav).toBeInTheDocument();
+      else expect(nav).not.toBeInTheDocument();
+    },
+  );
 
   // Guards against a stub whose <h1> happens to read right but hard-codes the string
   // instead of reading `en.screens` (NFR-I18N-1). `jsx-no-literals` also catches a bare
@@ -66,10 +69,7 @@ describe("AC-2 the new stubs render", () => {
     ["UF-07", "RoutineEditor", "routineEditor"],
     ["UF-11", "EditPlan", "editPlan"],
   ])("features/%s %s reads its title from en.screens.%s", (flow, exportName, key) => {
-    const source = readFileSync(
-      resolve(__dirname, `../../features/${flow}/index.tsx`),
-      "utf8",
-    );
+    const source = readFileSync(resolve(__dirname, `../../features/${flow}/index.tsx`), "utf8");
     const fn = source.slice(source.indexOf(`export function ${exportName}(`));
     const body = fn.slice(0, fn.indexOf("\n}"));
     expect(body).toContain(`<h1>{en.screens.${key}}</h1>`);

@@ -47,8 +47,14 @@ describe("AC-8 principle 1: the out-of-workout flows are not importable during a
   // `no-restricted-imports` matches the specifier as written, so the spelled-out and
   // nested-file forms have to be banned too, or the rule is trivially side-stepped.
   it.each([
-    ['import { C } from "../../features/UF-11/index.js";\nexport const X = C;\n', "src/features/UF-09/sub/x.tsx"],
-    ['import { C } from "../../UF-11/index.js";\nexport const X = C;\n', "src/features/UF-09/sub/x.tsx"],
+    [
+      'import { C } from "../../features/UF-11/index.js";\nexport const X = C;\n',
+      "src/features/UF-09/sub/x.tsx",
+    ],
+    [
+      'import { C } from "../../UF-11/index.js";\nexport const X = C;\n',
+      "src/features/UF-09/sub/x.tsx",
+    ],
     ['export { C } from "../UF-11/index.js";\n', "src/features/UF-09/x.tsx"],
     ['import { C } from "../UF-11";\nexport const X = C;\n', "src/features/UF-09/x.tsx"],
   ])("also bans %s", async (code, path) => {
@@ -68,14 +74,17 @@ describe("AC-8 principle 1: the out-of-workout flows are not importable during a
     ["UF-03", "UF-05"],
     ["UF-09", "UF-04"],
     ["UF-09", "UF-05"],
-  ])("%s may import features/%s (the how-to and swap sheets, D-0071 §4)", async (importer, target) => {
-    expect(
-      await restricted(
-        `src/features/${importer}/x.tsx`,
-        `import { C } from "../${target}/index.js";\nexport const X = C;\n`,
-      ),
-    ).toHaveLength(0);
-  });
+  ])(
+    "%s may import features/%s (the how-to and swap sheets, D-0071 §4)",
+    async (importer, target) => {
+      expect(
+        await restricted(
+          `src/features/${importer}/x.tsx`,
+          `import { C } from "../${target}/index.js";\nexport const X = C;\n`,
+        ),
+      ).toHaveLength(0);
+    },
+  );
 
   it("UF-02 may import features/UF-11 (the Today check-in slot, D-0071 §4)", async () => {
     expect(
