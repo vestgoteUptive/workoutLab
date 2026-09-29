@@ -63,7 +63,9 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
 
       <section aria-labelledby="wl-routine-exercises">
         <h2 id="wl-routine-exercises">{t.exercisesHeading}</h2>
-        {editor.items.length === 0 ? <p className="wl-routine-editor__hint">{t.emptyList}</p> : null}
+        {editor.items.length === 0 ? (
+          <p className="wl-routine-editor__hint">{t.emptyList}</p>
+        ) : null}
         <ol ref={editor.listRef} className="wl-routine-editor__list">
           {editor.items.map((exerciseId, index) => {
             const label = editor.nameOf(exerciseId);

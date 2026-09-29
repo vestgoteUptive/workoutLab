@@ -134,8 +134,9 @@ export function useRoutineEditor(routineId: string | undefined) {
     const target = pendingFocus.current;
     if (!target) return;
     pendingFocus.current = null;
-    const row = Array.from(listRef.current?.querySelectorAll<HTMLElement>("[data-exercise]") ?? [])
-      .find((el) => el.dataset.exercise === target.exerciseId);
+    const row = Array.from(
+      listRef.current?.querySelectorAll<HTMLElement>("[data-exercise]") ?? [],
+    ).find((el) => el.dataset.exercise === target.exerciseId);
     const primary = row?.querySelector<HTMLButtonElement>(`[data-move="${target.dir}"]`);
     const other = row?.querySelector<HTMLButtonElement>(
       `[data-move="${target.dir === "up" ? "down" : "up"}"]`,
@@ -202,7 +203,9 @@ export function useRoutineEditor(routineId: string | undefined) {
         duration_s: null,
         progression: "double_progression",
       }));
-      check(await supabase.from("routine_items").upsert(rows, { onConflict: "routine_id,position" }));
+      check(
+        await supabase.from("routine_items").upsert(rows, { onConflict: "routine_id,position" }),
+      );
     } catch {
       setError("save");
       setSaving(false);

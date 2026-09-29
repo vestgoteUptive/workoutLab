@@ -14,7 +14,11 @@ export const USER = "33333333-3333-4333-8333-333333333333";
 export const R = "22222222-2222-4222-8222-222222222222";
 export const R2 = "44444444-4444-4444-8444-444444444444";
 
-function exercise(id: string, name: string, kind: "exercise" | "warmup" = "exercise"): LibraryExercise {
+function exercise(
+  id: string,
+  name: string,
+  kind: "exercise" | "warmup" = "exercise",
+): LibraryExercise {
   return {
     id,
     name,
@@ -100,4 +104,3 @@ export const FIXED_COLUMNS = {
 export function itemRow(routineId: string, position: number, exerciseId: string) {
   return { routine_id: routineId, position, exercise_id: exerciseId, ...FIXED_COLUMNS };
 }
-

@@ -30,7 +30,11 @@ export const spy = {
     const mode = queue?.shift();
     if (mode === "reject") return Promise.reject(new Error("network down"));
     if (mode === "error") {
-      return Promise.resolve({ data: null, error: { code: "42501", message: "denied" }, status: 403 });
+      return Promise.resolve({
+        data: null,
+        error: { code: "42501", message: "denied" },
+        status: 403,
+      });
     }
     return Promise.resolve({ data: null, error: null, status: 200 });
   },
