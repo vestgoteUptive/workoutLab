@@ -1,0 +1,103 @@
+---
+id: T-0304
+title: UF-09 Focus mode — state machine and persisted focus state, the set loop with auto-save, warm-up and timed sets, time check and pause, offline end to end
+lane: web-feature:UF-09
+screens: [UF-09.1, UF-09.2, UF-09.3, UF-09.4, UF-09.5, UF-09.6, UF-09.7, UF-09.8, UF-09.9]
+decisions: [D-0002, D-0004, D-0015, D-0017, D-0024, D-0026, D-0045, D-0047, D-0053, D-0057, D-0062, D-0063, D-0065, D-0066]
+deps: [T-0303d, T-0205]
+status: todo   # split; no child is ready until T-0303d is done
+---
+<!-- Groomed 2026-09-29 by product-owner. Split into T-0304a–d (D-0066 Consequences). ACs are tagged [a]–[d]. T-0205 is merged (D-0062). -->
+
+## Why
+Principle 1: during a workout the screen shows one task. UF-09 is the core of the product, and everything secondary is behind Pause (UF-09.9). Principle 3 (user flows v2 "pre-fill, don't ask"): weights, reps and hold times come from the engine's `prefill` (rule 14, D-0057, D-0062), so the user normally just taps **Done set**. Every set must reach IndexedDB before the UI moves on and survive a killed tab offline (NFR-OFF-2). Timers must be wall-clock based so they survive locking the phone (NFR-TIME-1). The time check (UF-09.8, rule 8) appears only between exercises and applies the engine's Trim / Skip next (NFR-TIME-4).
+
+**Known engine gap (not a dependency):** rule 7.1 costs timed items at `defaultDurationS`, while `prefill.durationS` can reach 120 s, so a plan with a progressed plank can overrun its budget and the time check under-estimates what is left. T-0219 (engine) fixes the costing. Focus mode renders `prefill.durationS` as the hold time and passes the engine's plan to `timeCheck` unchanged, so no UI change is needed when T-0219 lands (D-0066 §9).
+
+## Split (the orchestrator edits the board)
+Parent `T-0304` → `split → T-0304a, T-0304b, T-0304c, T-0304d`. All four are in lane web-feature:UF-09, so they run one after another.
+
+| Child | Scope | Deps | Status | ~Size |
+|---|---|---|---|---|
+| T-0304a | Focus machine (pure reducer), session loading, persisted focus state + restore, chrome (pause button, progress bar, index), timer maths, placeholder views | T-0300, T-0205, T-0303d | todo | ½ day |
+| T-0304b | Set loop: UF-09.1 Get ready, .3 Current set, .4 Confirm (auto-save), .5 Rest, .6 Next exercise; back-off; in-session pre-fill | T-0304a | todo | ½ day |
+| T-0304c | UF-09.2 Warm-up, .7 Timed set (D-0062 §5 copy), wake lock, sound + 3-2-1 cues, reduced motion | T-0304b | todo | ½ day |
+| T-0304d | UF-09.8 Time check, .9 Paused, End → finish hand-off; offline, reload, two-device and keyboard e2e | T-0304c | todo | ½ day |
+
+T-0304a depends on T-0303d only for the `sessions` row it creates and `features/UF-08/focus-prefs.ts`. If T-0303d is late, T-0304a can seed a session row in tests. The orchestrator may relax that dependency then.
+
+## Scope
+- In:
+  - [a] `features/UF-09/machine.ts` (`focusReducer`, the states in D-0066 §1, the events below), `timer.ts` (`remainingS`, `elapsedS`), `persist.ts` (`wl-focus:<sessionId>`, D-0066 §2), the `SessionHost` that loads the session row (`offlineDb().sessions.get` + `parseSessionPlan`) and library, the chrome, and a per-state view registry with placeholder views that b–d replace.
+  - [b] Views for UF-09.1, .3, .4, .5, .6. `recordSet`/`editSet` wiring (D-0066 §3–6). Rest from the engine constants (§7). The 60 s set-up (§10). Back-off sets.
+  - [c] Views for UF-09.2 and UF-09.7 (§8–9), `navigator.wakeLock` with `visibilitychange` re-acquire, sound and voice cues from `readFocusPrefs()`, `prefers-reduced-motion`.
+  - [d] Views for UF-09.8 (rule 8 through `timeCheck`, the new plan saved with `upsertSession`) and UF-09.9 (Resume, Skip to next, How to, List view hand-off, End). The finish: `upsertSession` with `ended_at`, then navigate to `/session/<id>/summary` (D-0066 §12). e2e for NFR-OFF-2, TIME-2, SYNC-4 and A11Y-6.
+- Out: Swap on UF-09.6/UF-09.9 (UF-05.1, T-0306, through the `replaceItem` event); the UF-03.1 list view and the UF-03.3 summary (T-0305) and their shell route (web-shell follow-up); calling `POST /sessions/{id}/finish` (T-0305 owns the summary fetch); plate loading (D-0066 §13); logging warm-up moves (§8); the T-0219 costing fix; changing `lib/offline` (web-shell); any contract change.
+
+### Edge cases that are in scope
+- **Offline:** every set goes to IndexedDB before the next screen (AC-B4). The whole loop runs with no network (AC-D8). Offline shows only the icon, never text or a banner (AC-A6). A token expiry mid-workout never interrupts (T-0300b AC-B7 holds on this route).
+- **Time running out:** the time check only between exercises, never mid-item (AC-D2). Trim / Skip next saved as the new plan (AC-D3). The current exercise is never interrupted (NFR-TIME-4). The UF-09.6 countdown auto-advances (AC-B7).
+- **Zero history:** a null pre-fill weight on a loaded lift means "ask". UF-09.3 shows "Set weight", UF-09.4 has an empty weight field and no auto-save (AC-B5).
+- **Returning after 10 days off:** `hold_after_break` pre-fills render as returned, with no "same as last time" copy for a clamped timed hold (AC-C4). A focus state left in localStorage 10 days ago for a finished session is ignored (AC-A4).
+- **Reload / kill:** restoring mid-rest shows the wall-clock remaining time (AC-A3, AC-D7).
+
+## Acceptance criteria
+Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-09/**`, with fake timers and a mocked `Date.now` wherever time matters. Playwright in `tests/e2e/uf-09-focus.spec.ts` where tagged **e2e**. **P1** = a session row with `id` S1, `started_at` `2026-09-27T10:00:00.000Z`, `time_budget_min` 45, `warmup_in_budget` true, energy normal, and plan: warm-up [wu-scap-push-up, wu-band-pull-apart, wu-bodyweight-squat, wu-arm-circle] at 40 s; items bench-press × 4 main (6–8, prefill 80 × 6 `add_rep`, `costS` 720), barbell-row × 3 (8–12, prefill 60 × 8, 555), leg-curl × 3 (10–15, prefill null × 10 `first_time`, 375), plank × 2 timed (prefill `durationS` 50 `add_rep`, item `durationS` 45, `costS` 330); `startDeficits` all 1; the L1 library.
+
+### T-0304a Machine, host, persistence
+- **AC-A1 (transitions, pure)** `focusReducer` is pure (frozen inputs don't throw, and two calls are deep-equal). A table test from P1 covers: `getReady` + `COUNTDOWN_END` → `warmup` move 0; `getReady` + `SKIP_WARMUP` → `set` item 0 set 1; the last warm-up move ending → `next` item 0; `set` + `SET_RECORDED` → `confirm`; `confirm` + `SAVED` (set 1 of 4) → `rest` then `REST_END` → `set` set 2; the last set of bench-press saved → `rest` → `REST_END` → `betweenItems` (the check point, which d resolves to `timeCheck` or `next`); `next` + `READY` → `set` item 1; plank (timed) → `timed` instead of `set`; the last set of the last item saved → `done` (no rest); any non-`done` state + `PAUSE` → `paused`, then `RESUME` → the same state. An empty `items` plan with no warm-up → `done` after `getReady`. With `item.backoff` non-null, a 5th set flagged `backoff: true` follows set 4.
+- **AC-A2 (wall-clock timers, NFR-TIME-1)** `remainingS({startedAtMs: 0, durationS: 120, pausedMs: 0}, nowMs: 90_000)` = 30, at 120 000 → 0, at 200 000 → 0. With `pausedMs` 15 000 at 90 000 → 45. Pausing at t and resuming at t + 20 s adds exactly 20 000 to `pausedMs`. No timer in `features/UF-09` counts ticks (a source test: no `-= 1` or `--` on a timer value, and `setInterval` only triggers re-renders).
+- **AC-A3 (persist + restore)** After each transition, `localStorage["wl-focus:S1"]` holds `{version: 1, …state}` (a synchronous write, asserted right after dispatch). Unmounting and remounting `/session/S1` at the same `Date.now` renders the same state and screen id. Remounting 90 s later in a 120 s rest shows 30 s left ±1 (NFR-TIME-1).
+- **AC-A4 (loading edge cases)** No session row for `/session/nope` → "This workout isn't on this device" and a link to `/`, with no throw. `row.plan` that fails `parseSessionPlan` → the same message. A row with `ended_at` set → a stored focus state is ignored and removed, and the host shows "This workout has ended" with a link to `/`. An invalid or `version: 2` focus value → a start at UF-09.1.
+- **AC-A5 (chrome, principle 1)** Every state except `paused` and `done` renders exactly: a pause button (named "Pause workout", ≥ 44 × 44 px), a progress bar with 1 + N segments (warm-up + one per item; `aria-hidden`), and an index "k / N" (for P1 "1 / 4" on bench-press). There is no C-02 nav, no C-01 (lint), no link out of `/session/*` except through `paused`, and no other buttons besides the state's own actions (a test counts the buttons per placeholder state).
+- **AC-A6 (offline icon, NFR-OFF-6)** Offline, the chrome contains `<OfflineStatus variant="icon">` (`aria-label="Offline"`) and no text "Offline ·", no `role="alert"` and no `banner`.
+- **AC-A7 (data-screen-id)** The host renders `data-screen-id` = UF-09.1 … UF-09.9 for `getReady, warmup, set, confirm, rest, next, timed, timeCheck, paused` respectively.
+
+### T-0304b The set loop
+- **AC-B1 (UF-09.1)** It shows "Get ready", a 5-s countdown (5 → 1 → "GO"), and the first item name (Warm-up, or the first exercise when `plan.warmup` is empty). At 5 s it dispatches `COUNTDOWN_END` by itself. "Start now" dispatches it immediately, and "Skip warm-up" (absent when there is no warm-up) dispatches `SKIP_WARMUP`.
+- **AC-B2 (UF-09.3 renders the pre-fill, principle 3)** For bench-press set 1 of P1: "Bench press", "Set 1 of 4", "80 kg × 6" from `item.prefill`, and the library `cue`. The Done set button is ≥ 200 px tall and ≥ 44 px wide (NFR-A11Y-2).
+- **AC-B3 (Done set feedback < 100 ms, NFR-PERF-4)** With `recordSet` held pending, clicking Done set sets `aria-pressed`/`data-state="saving"` on the button within the same act() (< 100 ms of fake time) and the screen is still UF-09.3. When the promise resolves, the screen is UF-09.4.
+- **AC-B4 (write before moving on, NFR-OFF-2)** Done set calls `recordSet({sessionId: "S1", exerciseId: "bench-press", setIndex: 0, kind: "reps", reps: 6, weightKg: 80, isWarmup: false, backoff: false})` once. A rejected `recordSet` keeps UF-09.3 with "Couldn't save. Tap Done set again." and no transition. After the real `recordSet` resolves, a fresh Dexie instance sees the row (`fake-indexeddb`).
+- **AC-B5 (UF-09.4 confirm + auto-save, D-0066 §4–5)** UF-09.4 shows the reps (6) and weight (80) with −/+ steppers (reps step 1, floor 0; weight step `incrementKg` 2.5, floor 0) and the RIR choice None / 1–2 / 3+. Untouched, after 5 s it dispatches `SAVED` with no `editSet` call (the values equal what was recorded), and the text "Saving as planned in N s… tap anything to edit" counts down. Any touch cancels the auto-save ("Tap save when ready."). Save then calls `editSet(clientId, {reps, weightKg, rir})` with rir 0 / 2 / 3 for None / 1–2 / 3+, or `rir: null` when none was picked. For leg-curl (prefill weight null): UF-09.3 shows "Set weight", UF-09.4 has an empty weight field (`inputmode="decimal"`), there is no auto-save, and Save with it empty logs `weightKg: null`. For push-up (`externalLoad: false`): no weight control, and `weightKg: 0`.
+- **AC-B6 (in-session pre-fill + back-off, D-0066 §6)** If set 1 of bench-press was saved as 77.5 × 5, set 2 pre-fills 77.5 × 5. If set 1 had weight null, set 2 falls back to `prefill` 80. With `backoff: {weightKg: 70, reps: 6}`, set 5 shows "Back-off set", "70 kg × 6", and records `backoff: true`.
+- **AC-B7 (UF-09.5 rest + UF-09.6 next, D-0066 §7, §10)** After saving a bench-press set, rest starts by itself at `REST_COMPOUND_S` (120, imported from `@workoutlab/engine`), and after a leg-curl set at `REST_ISOLATION_S` (60). −15 s ×9 from 120 → 0 (floor), and +15 s → +15 with no cap. At ≤ 10 s left the ring and label use `var(--wl-color-warn)`. At 0 it shows "GO" and moves to the next set. Skip moves at once. The rest screen shows "Next · set 2 of 4" and "80 kg × 6". `aria-live="polite"` announces "10 seconds" at 10 s and "Go" at 0, and nothing on other ticks (NFR-A11Y-4). UF-09.6 shows the next item's name, "3 × 8–12 · 60 kg", its cue, "I'm ready" and a 60 s countdown that dispatches `READY` at 0.
+- **AC-B8 (no rest after the last set)** Saving the last set of the last item goes straight to `done` with no rest screen.
+
+### T-0304c Warm-up, timed sets, device features
+- **AC-C1 (UF-09.2)** Each `plan.warmup` move shows its library name and cue with a 40 s countdown (`durationS`). At 0 it advances to the next move, and after the 4th to UF-09.6 for item 0. "Restart" resets the current move to 40 s (from wall clock). "Next move" advances. No `recordSet` call is made during the warm-up (D-0066 §8).
+- **AC-C2 (UF-09.7 timed, D-0062)** For plank set 1 of P1: "Get in position" for 3 s, then "Hold" counting down from **50 s** (`prefill.durationS`, not `item.durationS` 45). At 0 it calls `recordSet({exerciseId: "plank", kind: "timed", durationS: 50, reps: null, weightKg: null, isWarmup: false, backoff: false})`, awaits it, and goes to rest (`REST_ISOLATION_S`). A pause/resume button (named "Pause timer" / "Resume timer", ≥ 44 px) stops and restarts only this ring, and a 20 s pause makes the hold end 20 s later. `aria-live` announces "Done" at 0 (NFR-A11Y-4).
+- **AC-C3 (timed hold after a pause of the workout)** A workout pause during the hold (UF-09.9) stops the hold too (the remaining time is the same after Resume).
+- **AC-C4 (clamped timed copy, D-0062 §5)** For a timed item with `prefill {durationS: 120, kind: "hold"}`, the screen reads "Hold 2:00", and the text of UF-09.6 and UF-09.7 doesn't match `/same|last time|as before/i`. For `kind: "add_rep"` it may read "+5 s on last time". For `hold_after_break` and `reentry` it reads "Easing back in".
+- **AC-C5 (wake lock, NFR-TIME-3)** With `readFocusPrefs().keepAwake` true, mounting the host calls `navigator.wakeLock.request("screen")` once. A `visibilitychange` to visible after a release calls it again, and unmount releases it. With `keepAwake` false, or `navigator.wakeLock` undefined, there is no call and no throw.
+- **AC-C6 (cues)** With `sound` true, a short tone (an `AudioContext` oscillator, mocked) plays at 10 s and 0 on UF-09.5 and at 0 on UF-09.7. With `voice` true, `speechSynthesis.speak` is called with "3", "2", "1" at 3/2/1 s before 0 on UF-09.5 and on UF-09.1. With both false, neither API is touched. A missing API never throws.
+- **AC-C7 (reduced motion, NFR-A11Y-5)** Under `matchMedia("(prefers-reduced-motion: reduce)")` true, no ring has a CSS transition or animation (computed style), and the countdown still updates as text. Without the preference, the ring's `stroke-dashoffset` transition is set.
+
+### T-0304d Time check, pause, end, e2e
+- **AC-D1 (R8-E1 through the engine, rule 8)** P1-R8 = P1 with the R8 fixture items (bench-press × 4 main 720, barbell-row × 3 555, leg-curl × 3 375, lateral-raise × 3 375, `startDeficits` chest .8, back .6, hamstrings .9, shoulders .5). At the check point after item 0 with `now` = `started_at` + 1500 s and no pauses: `timeCheck(workout, {elapsedS: 1500, nextItemIndex: 1})` is called once (spy on the real function), UF-09.8 shows "2 min behind", "You planned to finish by 10:45" (`started_at + 45 min`, in the device tz, rendered in UTC for this test) and the 3 options Continue / Trim ("lateral-raise 3 → 2", projected finish from `trim.projectedS`) / Skip next ("Skip Barbell row"). The workout passed has `plan` = the row's plan and `budgetMin` 45 (D-0066 §11).
+- **AC-D2 (only between exercises, only when behind, NFR-TIME-4)** With elapsed 1454 (R8-E3, `behindS` 59), no UF-09.8 appears, and the flow goes to UF-09.6. `timeCheck` is never called in the states `set`, `confirm`, `rest`, `timed`, or mid-warm-up (spy count 0 over a full item).
+- **AC-D3 (apply an option, board note D-0047)** Trim replaces the not-started items with `result.trim.items` and calls `upsertSession({...row, plan: {...plan, items: [...done items, ...trim.items]}})`. After it resolves, UF-09.6 shows the next item. Skip next does the same with `skipNext.items`. Continue changes nothing and makes no `upsertSession` call. `minutesBehind` is rendered only when `show` is true.
+- **AC-D4 (elapsed excludes pauses and an off-budget warm-up, rule 8)** With a 120 s pause and `warmupInBudget` false with 160 s spent in the warm-up, at `now = started_at + 1780 s` the `elapsedS` passed is 1500.
+- **AC-D5 (UF-09.9 Paused)** PAUSE from UF-09.5 at 23:10 elapsed shows "Paused", "Elapsed 23:10", "Left 22 min" (`ceil(max(0, 45·60 − elapsedS) / 60)`: 1310 s → 22), and "Sets 6 / 12" (hard sets logged / Σ planned sets including back-off). Every timer is stopped (the rest remaining is unchanged after 60 s of fake time). The actions are Resume (primary), "Skip to next exercise" (moves to UF-09.6 of item k+1 after the same time check as AC-D1), "How to do <exercise>" (link to `/library/<id>`; coming back to `/session/S1` restores `paused`), "Show full list view" (`navigate("/session/S1/list")`, the T-0305 hand-off), and "End workout". There is no Swap button (T-0306).
+- **AC-D6 (end, D-0066 §12)** End workout → a confirm ("End workout? Your sets are saved.") → `upsertSession({...row, ended_at: now})` → `localStorage["wl-focus:S1"]` removed → `navigate("/session/S1/summary")`. Cancel returns to `paused`. The `done` state (the last set saved) performs the same finish with no confirm.
+- **AC-D7 (reload, NFR-TIME-2, e2e)** Mid-rest, a page reload restores UF-09.5 with the wall-clock remaining time ±1 s. After a reload on UF-09.9, the elapsed shown equals the value before the reload ±1 s, which it computes from `started_at` and the stored `pausedMs`.
+- **AC-D8 (offline workout, NFR-OFF-2, e2e)** With a signed-in session injected and a session created through UF-08.4, the context goes offline, logs 10 sets through Done set + auto-save, and then the page is closed (a new page in the same context opens `/session/<id>`). IndexedDB holds exactly those 10 sets, with distinct `client_id`s and `is_warmup: false`, and the focus state resumes at set 11's screen. Going online flushes all 10 (the mock receives 10 `session_sets` rows after the `sessions` row).
+- **AC-D9 (two devices, NFR-SYNC-4, e2e)** Two browser contexts offline each start a workout from UF-08.4 and log 1 set. Online, the mock receives two `sessions` rows with different ids and each set references its own session. There is no merge.
+- **AC-D10 (keyboard + axe, NFR-A11Y-1/6, e2e)** One set loop (UF-09.3 → .4 → .5 → .3), pause, resume and End run keyboard only (Tab/Enter/Space). Focus lands on the primary action of each new screen. axe reports 0 serious/critical on UF-09.1, .3, .4, .5, .6, .8, .9.
+
+## Paths you may change
+- `apps/web/src/features/UF-09/**`.
+- Extras (D-0063): `apps/web/src/lib/i18n/uf-09.ts` (new), `tests/e2e/uf-09-focus.spec.ts` (new; T-0304b–d append), and new exports in `tests/e2e/fixtures/` (additions only).
+- Read-only imports: `lib/offline` (`recordSet`, `editSet`, `upsertSession`, `offlineDb`), `lib/format`, `lib/i18n/*`, `components/offline-status`, `features/UF-08/focus-prefs.ts` (the D-0063 §5 hand-off), `@workoutlab/engine` (`timeCheck`, `REST_COMPOUND_S`, `REST_ISOLATION_S`), `@workoutlab/shared` (`parseSessionPlan`). **Not** `components/body-map` (lint).
+
+## Contract impact
+none. Sets and sessions are written through the T-0300c queue exactly as D-0015/D-0020/D-0045 §6 define. The plan is the `SessionPlan` v1 shape. `timeCheck` and the pre-fill values come from the engine unchanged. Defaults: D-0066 (`revisit`). The engine costing gap is T-0219.
+
+## NFRs owned
+OFF-2 (AC-B4, AC-D8), SYNC-4 (AC-D9), PERF-4 (AC-B3), A11Y-2 Done set (AC-B2), A11Y-4 (AC-B7, AC-C2), A11Y-5 (AC-C7), A11Y-6 UF-09 part (AC-D10), TIME-1 (AC-A2, AC-A3), TIME-2 (AC-D4, AC-D7), TIME-3 (AC-C5), TIME-4 (AC-D2), OFF-6 UF-09 part (AC-A6).
+
+## Coordination
+- T-0306 (UF-05.1) adds Swap on UF-09.6/UF-09.9 through the `replaceItem` event that T-0304a's reducer exports. It needs an extra-path grant on `features/UF-09/**`.
+- T-0305 needs shell routes `/session/:sessionId/summary` (UF-03.3) and `/session/:sessionId/list` (UF-03.1) (web-shell follow-up). Until they exist, those paths fall to the unknown-path redirect `/`, and T-0304d's unit tests assert only the `navigate` target.
+
+## Definition of done
+Tests for every AC in the child pass · `pnpm -w typecheck lint test --force --concurrency=1` green · e2e green for the child · `check:size` green (UF-09 chunk ≤ 100 KB gzip) · contracts unchanged · commits start with the child id and cite the UF-09.n screen (for example `T-0304b UF-09.4: auto-save after 5 s`).
