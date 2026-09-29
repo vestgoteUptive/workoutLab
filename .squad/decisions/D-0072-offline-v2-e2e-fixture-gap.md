@@ -41,11 +41,25 @@ Reasons:
   time before (T-0203b).
 
 The follow-up is small and fully specified: register four more routes in `mockSupabaseData`,
-each `status: 200, json: []` by default, with optional fixture fields. **Registration order
-matters**: Playwright runs the most-recently-registered matching handler first, and
-`/rest/v1/exercises*` glob-matches `exercise_variants?...` too, so `exercise_variants*` must be
-registered **after** `exercises*` — the same trap the file already documents for
-`session_sets*` vs `session_sets_live*`.
+each `status: 200, json: []` by default, with optional fixture fields.
+
+**Correction (2026-09-29, T-0323): the registration-order warning first written here was wrong.**
+This decision originally claimed `/rest/v1/exercises*` glob-matches `exercise_variants?...`, so
+ordering was load-bearing. T-0323 planted exactly that hazardous order and the suite stayed at
+24/24; the orchestrator then confirmed it independently with a Playwright route probe that
+registered `exercises*` **last** (where it would win if it matched):
+
+| pattern | request | result |
+|---|---|---|
+| `exercises*` | `exercise_variants?select=*` | **no match** — the variants handler answered |
+| `session_sets*` | `session_sets_live?select=*` | **shadowed** — `session_sets*` answered |
+| `routines*` | `routine_items?select=*` | **no match** — no handler at all |
+
+Playwright's `*` only shadows when one table name is a genuine **prefix** of the other.
+`session_sets` *is* a prefix of `session_sets_live`, so that documented hazard is real;
+`exercises` is not a prefix of `exercise_variants` (they diverge at `s` vs `_`), and `routines`
+is not a prefix of `routine_items`. Keep the most-specific-last registration order as a cheap
+convention, but **do not rely on ordering as a safety property for these four tables**.
 
 ## Consequences
 - `tests/e2e/offline.spec.ts` AC-C20 is red on this branch (1 failed / 24). Every other check is
