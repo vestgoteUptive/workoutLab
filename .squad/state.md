@@ -1,13 +1,12 @@
 # State
 
-- **Phase:** 1–3 overlap (contracts done; engine through T-0202; shell through T-0300c; backend suggest/balance done, finish in review)
-- **Updated:** 2026-09-28 22:45 by orchestrator (tick)
-- **Progress: 26 done · 29 left** (2 in review, 4 ready, 23 todo). The 23 todo are ~8 UI flow tickets (T-0301–T-0308, the bulk of the app), 6 infra/deploy (T-0400–T-0406), 9 smaller follow-ups.
-- **Done:** T-0001–T-0005, T-0007, T-0100a/b, T-0101, T-0102, T-0103a/b, T-0200, T-0201, T-0202, T-0203a/b, T-0300a/b/c, T-0309a, T-0901.
+- **Phase:** 1–3 overlap (contracts done; engine through T-0204 (rules 12–13); shell through T-0300c; backend suggest/balance/finish done)
+- **Updated:** 2026-09-29 by orchestrator (cloud session)
+- **Progress: 31 done · 30 left** (T-0204 accepted, in PR #8 awaiting merge; 4 follow-ups filed). Remaining bulk: ~8 UI flow tickets (T-0301–T-0308), 6 infra/deploy (T-0400–T-0406), smaller follow-ups.
+- **Done:** T-0001–T-0005, T-0007, T-0100a/b, T-0101, T-0102, T-0103a/b, T-0200, T-0201, T-0202, T-0203a/b/c, T-0204 (PR #8), T-0300a/b/c, T-0309a/b, T-0311, T-0901, T-0902.
 - **Concurrency cap: 5** (human decision). **But lane ownership binds tighter than the cap** — see the no-parallel pairs below.
-- **In flight (4):** T-0902 build (web-shell, 2 commits, fixes the live dev-server crash), T-0203c review + QA (backend), T-0309b review (landing).
-- **Ready but path-blocked:** T-0300d (body map) waits for T-0902 to release the `web-shell` lane.
-- **Ready:** T-0204, T-0205 (engine; cannot run with each other).
+- **In flight:** nothing running. **PR #8 (T-0204, branch `main-hzlbfc`) needs merging** — this cloud container can push only `main-hzlbfc`, so it cannot merge to `main` itself.
+- **Ready:** T-0205 (engine; build on T-0204's seam, after PR #8 merges), T-0208 (backend, D-0058), T-0300d (C-01 body map), T-0312 (web build-script), T-0903 (format:check on 5 supabase files).
 - **Waiting on humans:** H-05, H-06, H-07 (revisit decisions), H-10 (landing copy + privacy mailbox — gates the landing *prod deploy* only), **H-11 (model pins 404 — blocks AgentLab as executor)**.
 
 ## Executor
@@ -35,6 +34,6 @@ eval "$(npx -y supabase@latest status -o env | sed 's/^/export /')"   # suites r
 - **Web builds die on budget/time, not correctness.** 4 AgentLab web runs died unfinished; all 4 passed as Opus sub-agents. Split UI tickets small; tell builders to commit WIP early.
 
 ## Notes for the next orchestrator
-- Next free: D-0058, TR-0030. Unused: D-0028, D-0038, D-0054.
+- Next free: D-0060, TR-0030 (D-0058 = T-0208's rule, D-0059 = T-0204's defaults). Unused: D-0028, D-0038, D-0054.
 - Spec-only and content roles have no shell. QA commits their output.
 - After each merge: `pnpm -w typecheck lint test --force --concurrency=1` on main.
