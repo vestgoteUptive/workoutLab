@@ -333,3 +333,31 @@ export function fSwap(opts: { warmupInBudget?: boolean } = {}): Workout {
     opts,
   );
 }
+
+// ---- Pre-fill fixtures (T-0205): "S(date, exerciseId, [w × r, …])" ----
+
+/** One logged set: `[weightKg, reps]`, or `{durationS}` for a timed set (reps and weight null). */
+export type SetEntry =
+  readonly [number | null, number | null] | { readonly durationS: number | null };
+
+/**
+ * T-0205 "S(date, exerciseId, [w × r, …])": one session on local `date` at `time` (+02:00,
+ * default 10:00) with one hard set per entry, distinct clientIds (the `setsAt` scheme) and
+ * `sessionId` `s@<instant>` unless `opts.sessionId` is given. `opts.at` overrides the instant.
+ */
+export function setsWithReps(
+  date: string,
+  exerciseId: string,
+  entries: readonly SetEntry[],
+  opts: SetOptions & { time?: string; at?: string; sessionId?: string } = {},
+): HistorySet[] {
+  const at = opts.at ?? `${date}T${opts.time ?? "10:00"}:00+02:00`;
+  return setsAt(entries.length, exerciseId, at, opts).map((row, i) => {
+    const e = entries[i] as SetEntry;
+    const values =
+      "durationS" in e
+        ? { weightKg: null, reps: null, durationS: e.durationS }
+        : { weightKg: e[0], reps: e[1], durationS: null };
+    return { ...row, ...values, sessionId: opts.sessionId ?? row.sessionId };
+  });
+}

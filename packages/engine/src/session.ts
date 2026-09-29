@@ -10,9 +10,16 @@ import {
   LOW_TRIM_TO_SETS,
 } from "./energy.js";
 import { availableS, isEligible, itemCostS, setCostS } from "./cost.js";
-import { indexLibrary, primaryAreas, recentSessionIds, weightsOf } from "./history.js";
+import {
+  indexLibrary,
+  normalizeHistory,
+  primaryAreas,
+  recentSessionIds,
+  weightsOf,
+} from "./history.js";
+import { prefillFrom, type PrefillPrevious } from "./prefill.js";
 import { lastDoneDates, rankAgainst, type SwapContext } from "./swaps.js";
-import { dayDiff } from "./time.js";
+import { dayDiff, localDate } from "./time.js";
 import {
   AREAS,
   type Area,
@@ -23,6 +30,7 @@ import {
   type HistorySet,
   type Instant,
   type LibraryExercise,
+  type LocalDate,
   type PrefillResult,
   type Reason,
   type SessionInput,
@@ -240,27 +248,23 @@ function repRange(ex: LibraryExercise, isMain: boolean): [number, number] | [nul
   return ex.type === "compound" ? [8, 12] : [10, 15];
 }
 
-/** The slot's previous exercise and its pre-fill weight, for rule 14's `carry` (D-0057 §2). */
-interface PreviousSlot {
-  exerciseId: string;
-  weightKg: number | null;
+/** What rule 14 needs from `suggest` (D-0057 §7): the normalised history and today. */
+interface PrefillCtx {
+  hard: readonly HistorySet[];
+  lib: ReadonlyMap<string, LibraryExercise>;
+  today: LocalDate;
+  tz: TimeZone;
 }
 
-/**
- * First-time pre-fill seam (D-0040 §4): rule 14 step 1 without the carry case. T-0205
- * replaces this behind the same call and fills in `carry` from `_previous` (D-0056 §11).
- */
+/** Rule 14 for one slot (D-0057 §7), replacing the D-0040 §4 first-time seam. */
 function prefillFor(
+  ctx: PrefillCtx,
   ex: LibraryExercise,
   repsMin: number | null,
-  _previous: PreviousSlot | null,
+  repsMax: number | null,
+  previous: PrefillPrevious | null,
 ): PrefillResult {
-  return {
-    weightKg: ex.externalLoad ? null : 0,
-    reps: repsMin,
-    durationS: ex.timed ? ex.defaultDurationS : null,
-    kind: "first_time",
-  };
+  return prefillFrom(ex, { repsMin, repsMax }, ctx.hard, ctx.lib, ctx.today, ctx.tz, previous);
 }
 
 /** D-0040 §4: `floorInc(0.9 × prefill weight)` (null stays null) at the main `repsMin`. */
@@ -270,18 +274,19 @@ function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): B
   return { weightKg: w === null ? null : floorInc(BACKOFF_FACTOR * w, inc), reps };
 }
 
-function previousOf(p: Picked): PreviousSlot | null {
+/** The shuffled slot's original exercise and its own rule 14 pre-fill weight (D-0056 §11). */
+function previousOf(ctx: PrefillCtx, p: Picked): PrefillPrevious | null {
   if (p.previous === undefined) return null;
-  const [repsMin] = repRange(p.previous, p.isMain);
+  const [repsMin, repsMax] = repRange(p.previous, p.isMain);
   return {
     exerciseId: p.previous.id,
-    weightKg: prefillFor(p.previous, repsMin, null).weightKg,
+    weightKg: prefillFor(ctx, p.previous, repsMin, repsMax, null).weightKg,
   };
 }
 
-function toItem(start: Start, p: Picked): WorkoutItem {
+function toItem(start: Start, ctx: PrefillCtx, p: Picked): WorkoutItem {
   const [repsMin, repsMax] = repRange(p.exercise, p.isMain);
-  const prefill = prefillFor(p.exercise, repsMin, previousOf(p));
+  const prefill = prefillFor(ctx, p.exercise, repsMin, repsMax, previousOf(ctx, p));
   const area = primaryAreas(p.exercise)[0] as Area;
   const backoff =
     p.backoff === true && repsMin !== null ? backoffOf(p.exercise, prefill, repsMin) : null;
@@ -444,7 +449,8 @@ export function suggest(
   });
   applyEnergy(s, sessionInput.energy);
 
-  const items = s.picked.map((p) => toItem(start, p));
+  const ctx: PrefillCtx = { hard: normalizeHistory(history), lib, today: localDate(now, tz), tz };
+  const items = s.picked.map((p) => toItem(start, ctx, p));
   const itemsTotalS = items.reduce((sum, i) => sum + i.costS, 0);
   const main = items.find((i) => i.isMain);
   return {
