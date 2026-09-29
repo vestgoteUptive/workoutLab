@@ -118,6 +118,9 @@ test.describe("AC-A16 real keyboard navigates exactly once", () => {
     await expect(page.locator('[data-screen-id="UF-10.1"]')).toBeVisible();
 
     const hamstrings = page.locator('[data-variant="full"] button[data-area="hamstrings"]');
+    // The map buttons are disabled while the cache read is in flight ("Hamstrings, loading");
+    // focus() on a disabled button is a no-op, which made this spec flaky on a cold start.
+    await expect(hamstrings).toBeEnabled();
     await hamstrings.focus();
     await expect(hamstrings).toBeFocused();
     await page.keyboard.press("Enter");
@@ -131,6 +134,7 @@ test.describe("AC-A16 real keyboard navigates exactly once", () => {
     await expect(page.locator('[data-screen-id="UF-10.1"]')).toBeVisible();
 
     const calves = page.locator('[data-variant="full"] button[data-area="calves"]');
+    await expect(calves).toBeEnabled();
     await calves.focus();
     await expect(calves).toBeFocused();
     await page.keyboard.press("Space");
@@ -160,6 +164,28 @@ test.describe("AC-A17 axe (NFR-A11Y-1)", () => {
         (v) => v.impact === "serious" || v.impact === "critical",
       );
       expect(serious).toEqual([]);
+    });
+  }
+});
+
+test.describe("QA: console errors and render-loop guard on the real route", () => {
+  for (const path of ["/balance", "/balance/hamstrings"]) {
+    test(`${path} logs no console error / page error and does not loop`, async ({ page }) => {
+      const problems: string[] = [];
+      page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
+      page.on("console", (m) => {
+        if (m.type() === "error") problems.push(`console.error: ${m.text()}`);
+      });
+      let targetReads = 0;
+      page.on("request", (r) => {
+        if (r.url().includes("/rest/v1/area_targets")) targetReads += 1;
+      });
+      await openBalance(page, "mixed", path);
+      await expect(page.locator("[data-screen-id^='UF-10']")).toBeVisible();
+      await page.waitForTimeout(1500);
+      // one refresh per mount; a per-render `new Date()` loop would issue dozens.
+      expect(targetReads).toBeLessThanOrEqual(2);
+      expect(problems).toEqual([]);
     });
   }
 });
