@@ -2,7 +2,7 @@
 name: qa-tester
 title: QA Tester
 description: Independently verifies a ticket against its acceptance criteria — runs the full test suite, checks each AC has a real test, writes missing e2e tests, and reports a verdict. Use after implementation and before acceptance.
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 role: validator
 tools: [Read, Grep, Glob, Write, Edit, Bash]
 effort: medium

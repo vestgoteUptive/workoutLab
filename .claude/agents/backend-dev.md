@@ -1,7 +1,7 @@
 ---
 name: backend-dev
 description: Builds Supabase Edge Functions, seed data loading, auth configuration and pgTAP tests on the local Supabase stack. Use for server-side logic, functions and Supabase config.
-model: claude-sonnet-5
+model: claude-sonnet-5-5
 tools: Read, Grep, Glob, Write, Edit, Bash
 ---
 <!-- Generated from agents/roles/backend-dev.md by scripts/sync-agents.mjs. Edit the source, not this file. -->
