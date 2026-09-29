@@ -158,7 +158,7 @@ Every item carries machine-readable reasons, and the UI or an optional LLM only 
 - `short_on_time`: timeCostS asc, muscleMatch desc, id.
 
 Fixture: the session is bench-press × 4 (main), barbell-row × 3, leg-extension × 2. The current exercise is barbell-row.
-- **R12-E1 (none)** db-row, inverted-row, lat-pulldown, seated-cable-row, straight-arm-pulldown (muscleMatch 0.667). pull-up is excluded by level.
+- **R12-E1 (none)** db-row, inverted-row, lat-pulldown, seated-cable-row (muscleMatch 1.0), then straight-arm-pulldown (0.667). pull-up is excluded by level (D-0056).
 - **R12-E2 (short_on_time)** straight-arm-pulldown (375 s), db-row, inverted-row, lat-pulldown, seated-cable-row. All have `fitsBudget` true.
 - **R12-E3 (variety)** Given lat-pulldown last done 09-20 and db-row 09-10, Then inverted-row, seated-cable-row, straight-arm-pulldown, db-row, lat-pulldown.
 - **R12-E4 (discomfort)** lat-pulldown, seated-cable-row, straight-arm-pulldown, db-row, inverted-row.
