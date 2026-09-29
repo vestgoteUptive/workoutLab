@@ -27,3 +27,4 @@ T-0300d builds C-01 (`apps/web/src/components/body-map`) from `Design-docs/docs/
 ## Revisit when
 - Design delivers a body silhouette or a C-01 screen spec, or reviews C-01 on a device (the D-0003/D-0013 trigger).
 - A feature needs C-01 outside a router.
+- Near-target rounding (T-0300d accept, product-owner): 19.96 / 20 shows "20.0 / 20" next to a step-3 ("under target") fill, which reads as on target. This follows D-0013 and §3, so it is not a bug. Resolve it during the H-12 phone review (D-0061) or when the design settles the label format. Options: round fractional loads down (floor to one decimal), show two decimals when rounding would reach the target, or keep it as is. The fill must stay engine-driven (principle 3) whatever is chosen.
