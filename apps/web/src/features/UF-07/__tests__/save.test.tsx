@@ -2,7 +2,7 @@
 // A7 (sets never carried through), A8 (delete), A10 (errors, both forms), A13 (cancel, double
 // submit).
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { R, R2, UUID_V4, itemRow, putRoutine, renderEditor, seed } from "./harness.js";
 import { offline, spy } from "./spies.js";
 
@@ -276,6 +276,19 @@ describe("AC-A13 cancel and double submit", () => {
     const button = screen.getByRole("button", { name: "Save" });
     fireEvent.click(button);
     fireEvent.click(button);
+    await waitFor(() => expect(location().textContent).toBe("/plan"));
+    expect(spy.calls.filter((c) => c.table === "routines" && c.method === "upsert")).toHaveLength(
+      1,
+    );
+  });
+
+  it("two submits in the same tick (Enter twice) still produce one routines.upsert", async () => {
+    await ready(`/plan/routines/${R}`, 3);
+    const form = screen.getByRole("form");
+    act(() => {
+      fireEvent.submit(form);
+      fireEvent.submit(form);
+    });
     await waitFor(() => expect(location().textContent).toBe("/plan"));
     expect(spy.calls.filter((c) => c.table === "routines" && c.method === "upsert")).toHaveLength(
       1,

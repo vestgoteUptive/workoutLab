@@ -44,6 +44,8 @@ export const LIBRARY: LibraryExercise[] = [
   exercise("pull-up", "Pull-up"),
   exercise("overhead-press", "Overhead press"),
   exercise("plank", "Plank"),
+  // Sorts first by name but last by id, so a picker that trusts cache order fails.
+  exercise("zzz-arnold-press", "Arnold press"),
   exercise("jumping-jacks", "Jumping jacks", "warmup"),
 ];
 

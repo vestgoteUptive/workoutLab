@@ -129,7 +129,8 @@ describe("AC-A6 picker scope and search", () => {
     openPicker();
     const names = rowNames();
     expect(names).toEqual([...names].sort((a, b) => a!.localeCompare(b!, "en")));
-    expect(names).toHaveLength(9);
+    expect(names).toHaveLength(10);
+    expect(names[0]).toBe("Arnold press");
     expect(names).not.toContain("Jumping jacks");
   });
 
@@ -138,6 +139,17 @@ describe("AC-A6 picker scope and search", () => {
     openPicker();
     search("SQUAT");
     expect(rowNames()).toEqual(["Barbell back squat", "Barbell front squat", "Goblet squat"]);
+  });
+
+  it("a lowercase query matches capitalised names", async () => {
+    await ready("/plan/routines/new");
+    openPicker();
+    search("  barbell ");
+    expect(rowNames()).toEqual([
+      "Barbell back squat",
+      "Barbell front squat",
+      "Romanian deadlift (barbell)",
+    ]);
   });
 
   it("zzz shows the empty message and no Add buttons", async () => {
