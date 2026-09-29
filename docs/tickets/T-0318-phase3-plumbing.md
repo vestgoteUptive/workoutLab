@@ -44,7 +44,7 @@ The former UF-09 follow-up "web-shell: routes /session/:id/summary and /session/
 
 ### Edge cases that are in scope
 - **Offline:** every new route is a lazy chunk precached with the shell. A cold offline load of `/session/S1/summary` renders its stub (AC-6).
-- **Route ranking:** `/session/setup` still renders UF-08.1 and never the summary. `/session/setup/summary` isn't a summary for a session called "setup": the summary route rejects the id `setup` and falls to the unknown-path redirect.
+- **Route ranking:** `/session/setup` still renders UF-08.1 and never the summary or the UF-09 host.
 - **Bad ids:** stubs render for any id. The feature tickets own the redirects (T-0306a AC-A8/A9, T-0307b AC-B7, T-0308a AC-A7, T-0305b AC-B8).
 - **Time running out / zero history / returning after 10 days off:** not applicable (no screen logic).
 
@@ -53,7 +53,7 @@ Vitest + Testing Library in `apps/web/src/app/**` and `apps/web/src/lib/i18n/**`
 
 - **AC-1 (routes table)** `routes` contains the 6 new entries with exactly the path, `screenId`, guard and `showTabBar` values in the Scope table, and every existing entry is unchanged (a snapshot of the pre-existing entries). Each new `load` is a dynamic `import()` of the feature's `index.js` (a source test, as T-0300a AC-A6).
 - **AC-2 (stubs render)** Rendering the router signed in at each new path (for example `/session/S1/summary`, `/library/back-squat/compare/leg-press`, `/progress/back-squat`, `/plan/edit`, `/plan/routines/new`, `/plan/routines/R1`) renders exactly one `[data-screen-id]` with the table's screen id and an `<h1>`. The tab bar is present exactly on the `yes` rows.
-- **AC-3 (ranking)** `/session/setup` renders `UF-08.1`. `/session/S1` renders the UF-09 host. `/session/S1/summary` renders `UF-03.3`. `/library/back-squat` renders `UF-04.2`. `/progress` renders `UF-06.1`. `/plan` renders `UF-11.2`. `/session/setup/summary` doesn't render UF-03.3.
+- **AC-3 (ranking)** `/session/setup` renders `UF-08.1`. `/session/S1` renders the UF-09 host. `/session/S1/summary` renders `UF-03.3`. `/library/back-squat` renders `UF-04.2`. `/progress` renders `UF-06.1`. `/plan` renders `UF-11.2`.
 - **AC-4 (C-02 prefix)** On `/library/back-squat/compare/leg-press` the Library tab has `aria-current="page"`, and on `/progress/back-squat` the Progress tab does. On `/`, only Today has it.
 - **AC-5 (guards)** Signed out, each new `protected` path redirects as T-0300b AC-B5 defines, and `/session/S1/summary` behaves like `/session/S1` (the `session` guard: decided once at mount, so no banner or redirect on a later token expiry). The existing `auth-guard.test.tsx` passes unchanged.
 - **AC-6 (offline chunk)** In the preview build, after one online load, an offline reload of `/session/S1/summary` renders `UF-03.3` (the new chunks are precached). This is appended to the existing shell e2e spec as new tests only. `check:size`: every new chunk ≤ 100 KB gzip, and the initial bundle stays within NFR-PERF-2.

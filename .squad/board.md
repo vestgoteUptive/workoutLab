@@ -100,7 +100,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0221 | docs/engine-rules.md rule 14 text: add D-0057 §2/§4/§6 and D-0062 §1/§2/§4/§5, incl. the gap 10–20 clamp(min) wording (D-0057 §10) — T-0205 follow-up | engine | T-0205 | todo | wl-build-engine |
 | T-0222 | api/openapi.yaml PrefillResult.durationS: minimum 1 → 15..120 to match TIMED_MIN_S/TIMED_MAX_S (D-0062 §5); needs a decision — T-0205 follow-up | data | T-0205 | todo | wl-spec |
 | T-0223 | plan_checkins for one-period check-ins: period_index >= 0, completed_prev nullable; openapi CheckinPeriod.index / PlanCheckin.periodIndex min 0, completedPrev nullable; regen types (D-0070 §6) | data | T-0215 | todo | wl-build-data |
-| T-0224 | Engine: pure applySwap(workout, currentExerciseId, candidateId, reason, history, profile, library, now, tz) → Workout — keeps slot position + set count, new rep slot (rule 7.2), prefill with previous = current slot, swap {reason}, recomputed costS/totals; needs a decision naming a rule 12 addendum (D-0065 §5). Unblocks T-0303c, T-0306b | engine | T-0204, T-0205 | todo | wl-idea → wl-build-engine |
+| T-0224 | Engine: pure applySwap(workout, currentExerciseId, candidateId, reason, history, profile, library, now, tz) → Workout — keeps slot position + set count, new rep slot (rule 7.2), prefill with previous = current slot, swap {reason}, recomputed costS/totals; needs a decision naming a rule 12 addendum (D-0065 §5). Unblocks T-0303c, T-0306b | engine | T-0204, T-0205 | todo (needs ticket file) | wl-build-engine |
 | T-0205 | Engine: progression + pre-fill (rule 14 `prefill`), replaces the T-0201 `first_time` seam (D-0057). Build on T-0204's seam (`previous: {exerciseId, weightKg} \| null`) | engine | T-0200, T-0204 | done | wl-build-engine |
 
 **T-0204 and T-0205 must not run in parallel:** both change `packages/engine/src/session.ts`. One engine worktree at a time; whichever lands second rebases.
@@ -114,19 +114,19 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0300c | Offline set queue (Dexie per D-0001/TR-0022), sync, engine input with pending rows (AC-C*) | web-shell | T-0300b, T-0102b | done | wl-build-web |
 | T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | done | wl-build-web |
 | T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201a | split → T-0301a, T-0301b, T-0301c (D-0064) | wl-build-web |
-| T-0301a | Profile gate: lib/profile useProfileStatus/recheckProfile; signed-in without a profile → /welcome/save, /welcome/* allowed (D-0064 §9) | web-shell | T-0300 | todo (triage check) | wl-build-web |
-| T-0301b | UF-01.1–.4: welcome, goal (3), level + 3 equipment profiles, rhythm steppers, plan card from deriveTargets, pending plan 24 h, onboarding timing | web-feature:UF-01 | T-0300, T-0201a, T-0318 | todo (triage check) | wl-build-web |
+| T-0301a | Profile gate: lib/profile useProfileStatus/recheckProfile; signed-in without a profile → /welcome/save, /welcome/* allowed (D-0064 §9) — web-shell order T-0318 → T-0319 → T-0301a; gate = every protected route + /session/setup (D-0071 §11) | web-shell | T-0300 | ready | wl-build-web |
+| T-0301b | UF-01.1–.4: welcome, goal (3), level + 3 equipment profiles, rhythm steppers, plan card from deriveTargets, pending plan 24 h, onboarding timing | web-feature:UF-01 | T-0300, T-0201a, T-0318 | todo | wl-build-web |
 | T-0301c | UF-01.5 Account (link, code, Google, privacy link) + /welcome/save (profile + 9 targets, existing profile wins, retry) | web-feature:UF-01 | T-0301a, T-0301b | todo | wl-build-web |
 | T-0302 | UF-02 Today + workout preview (mount compact C-01 from components/body-map as one link to /balance, fed from BalanceResult.areas — T-0300d) | web-feature:UF-02 | T-0300, T-0203b | split → T-0302a, T-0302b (D-0065) | wl-build-web |
-| T-0302a | UF-02.1 Today: compact C-01 link, attention line, 45-min suggestion card, Start → UF-08.1, offline/zero states; lib/i18n/workout.ts formatters | web-feature:UF-02 | T-0300, T-0203b, T-0318 | todo (triage check) | wl-build-web |
+| T-0302a | UF-02.1 Today: compact C-01 link, attention line, 45-min suggestion card, Start → UF-08.1, offline/zero states; lib/i18n/workout.ts formatters + features/UF-02/slots.tsx (todayCheckinSlot) | web-feature:UF-02 | T-0300, T-0203b, T-0318 | todo | wl-build-web |
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302a, T-0303b | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203b | split → T-0303a, T-0303b, T-0303c, T-0303d (D-0065) | wl-build-web |
-| T-0303a | UF-08.1 Time & energy: stepper/chips/finish time, done-by, warm-up toggle, energy, live fit line from on-device suggest, ?step routing | web-feature:UF-08 | T-0300, T-0203b, T-0318 | todo (triage check) | wl-build-web |
+| T-0303a | UF-08.1 Time & energy: stepper/chips/finish time, done-by, warm-up toggle, energy, live fit line from on-device suggest, ?step routing | web-feature:UF-08 | T-0300, T-0203b, T-0318 | todo | wl-build-web |
 | T-0303b | UF-08.2 Suggested: budget bar, why chips, rows, remove (excludeIds), shuffle (+1), time change keeps main lift | web-feature:UF-08 | T-0303a, T-0302a | todo | wl-build-web |
-| T-0303c | UF-08.3 Swap before starting: rankSwaps order, Best match, fitsBudget flag, apply via engine applySwap | web-feature:UF-08 | T-0303b, T-0204, T-0224 | todo | wl-build-web |
+| T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0306b | todo | wl-build-web |
 | T-0303d | UF-08.4 Ready: summary, focus explainer, focus-prefs hand-off, Start → upsertSession then /session/:id | web-feature:UF-08 | T-0303b | todo | wl-build-web |
 | T-0304 | UF-09 Focus mode: state machine, timers, auto-save, time check, pause | web-feature:UF-09 | T-0303, T-0205 | split → T-0304a, T-0304b, T-0304c, T-0304d (D-0066) | wl-build-web |
-| T-0304a | UF-09 focus machine (pure reducer), session load, persisted focus state + restore, chrome, wall-clock timer maths | web-feature:UF-09 | T-0300, T-0205, T-0303d, T-0318 | todo | wl-build-web |
+| T-0304a | UF-09 focus machine (pure reducer), session load, persisted focus state + restore, chrome, wall-clock timer maths + seams.tsx + useFocusSession() | web-feature:UF-09 | T-0300, T-0205, T-0303d, T-0318 | todo | wl-build-web |
 | T-0304b | UF-09.1/.3/.4/.5/.6 set loop: Done set writes first, auto-save 5 s, RIR, in-session pre-fill, back-off, rest from engine constants | web-feature:UF-09 | T-0304a | todo | wl-build-web |
 | T-0304c | UF-09.2 warm-up + UF-09.7 timed (prefill.durationS, D-0062 §5 copy), wake lock, cues, reduced motion | web-feature:UF-09 | T-0304b | todo | wl-build-web |
 | T-0304d | UF-09.8 time check (rule 8, save the new plan) + UF-09.9 paused + End; e2e offline/reload/two-device/keyboard | web-feature:UF-09 | T-0304c | todo | wl-build-web |
@@ -135,26 +135,26 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0305b | UF-03.3 Summary: device-side summary, effort 1–5, save via queue (no /finish call in v1, D-0068 §2) | web-feature:UF-03 | T-0304, T-0318 | todo | wl-build-web |
 | T-0306 | UF-04 Library + UF-05 in-workout swap | web-feature:UF-04 | T-0300, T-0203b, T-0204 | split → T-0306a, T-0306b (D-0069) | wl-build-web |
 | T-0306a | UF-04.1/.2/.3 Library: browse, detail + attribution, compare; ExerciseHowTo | web-feature:UF-04 | T-0318, T-0319 | todo | wl-build-web |
-| T-0306b | UF-05.1 Swap sheet: rankSwaps order, applySwap + prefill carry; mounted on UF-09.9/09.6 | web-feature:UF-05 | T-0304, T-0318 | todo | wl-build-web |
+| T-0306b | UF-05.1 SwapSheet (rankSwaps + engine applySwap T-0224), mounted via features/UF-09/seams.tsx on UF-09.9/09.6 | web-feature:UF-05 | T-0304d, T-0224, T-0318 | todo | wl-build-web |
 | T-0307 | UF-06 Progress + UF-10 Balance (mount full C-01 on UF-10.1, area buttons → /balance/:area; add a Playwright check that real Enter/Space navigates once — T-0300d) | web-feature:UF-06 | T-0300, T-0203b | split → T-0307a, T-0307b (D-0068) | wl-build-web |
 | T-0307a | UF-10.1/.2 Balance: full C-01 mounted, area → /balance/:area, e2e Enter/Space once | web-feature:UF-10 | T-0318 | todo | wl-build-web |
 | T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319 | todo | wl-build-web |
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | split → T-0308a, T-0308b, T-0308c (D-0070) | wl-build-web |
 | T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319 | todo | wl-build-web |
 | T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319 | todo | wl-build-web |
-| T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302 | todo | wl-build-web |
+| T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | todo | wl-build-web |
 | T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
 | T-0309b | Landing build: static Astro page, no JS, tokens, privacy + 404 pages, placeholder removed (AC8–24) | landing | T-0309a | done | wl-build-web |
 | T-0310 | Account settings: JSON export (NFR-PRIV-4) and in-app account deletion (NFR-PRIV-5) | web-shell | T-0300 | todo | wl-build-web |
 | T-0216 | Account settings: "Edit equipment" checklist of the 10 vocabulary items, writing profiles.equipment[] (D-0061 §3; UF-01.3 keeps the 3 profiles) | web-feature:UF-01 | T-0300, T-0301 | todo | wl-build-web |
-| T-0313 | AC-D11 hardening: dynamic `import()` of components/body-map from UF-03/08/09 bypasses no-restricted-imports; add a no-restricted-syntax rule on ImportExpression + test — T-0300d follow-up | web-shell | T-0300d | todo | wl-build-web |
+| T-0313 | AC-D11 hardening: dynamic `import()` of components/body-map from UF-03/08/09 bypasses no-restricted-imports; add a no-restricted-syntax rule on ImportExpression + test — T-0300d follow-up Also cover the D-0071 §9 patterns (UF-02/06/07/10/11 from UF-03/04/05/08/09; deep feature imports). | web-shell | T-0300d | todo | wl-build-web |
 | T-0314 | Add axe-core (or vitest-axe) as a direct devDependency of apps/web and point the AC-D10 helper at it (today it resolves through @axe-core/playwright, D-0060 §7) — T-0300d follow-up | infra | T-0300d | todo | wl-build-infra |
 | T-0315 | Design a C-01 body silhouette to replace the D-0060 tile grid (after the H-12 device review) | design | T-0300d | todo | wl-design |
 | T-0316 | design-tokens build-css.mjs: write tokens.css to a temp file + rename, so a concurrent reader (landing astro build) never sees a partial file — T-0312 review | design | T-0312 | todo | wl-design |
 | T-0317 | README: one line that `pnpm --filter @workoutlab/web test` builds the tokens CSS via pretest, and a direct vitest call needs `node apps/web/ensure-tokens-css.mjs` first — T-0312 follow-up | infra | T-0312 | todo | wl-build-infra |
-| T-0318 | Phase 3 plumbing: sub-routes (UF-03.3, UF-04.3, UF-06.2, UF-07.1, UF-11.3), per-flow i18n modules, principle-1 import bans for UF-02/06/07/10/11 from UF-03/08/09 (D-0067 §2) | web-shell | T-0300a, T-0300b | todo (needs ticket file) | wl-build-web |
-| T-0319 | Offline caches v2: exercise details + variants, sessions 56 d, plan_checkins, routines — one Dexie version bump (D-0067 §3) | web-shell | T-0300c | todo (needs ticket file) | wl-build-web |
+| T-0318 | Phase 3 plumbing: sub-routes (UF-03.3, UF-04.3, UF-06.2, UF-07.1, UF-11.3), per-flow i18n modules, principle-1 import bans for UF-02/06/07/10/11 from UF-03/08/09 (D-0067 §2) — incl. the UF-03.3 summary route (folds in the UF-09 follow-up; no /session/:id/list); bans on imports into UF-04/UF-05 and deep cross-feature imports (D-0071 §9) | web-shell | T-0300a, T-0300b | ready | wl-build-web |
+| T-0319 | Offline caches v2: exercise details + variants, sessions 56 d, plan_checkins, routines — one Dexie version bump (D-0067 §3) — run after T-0318 (web-shell serial) | web-shell | T-0300c | ready | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |

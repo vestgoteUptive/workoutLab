@@ -6,8 +6,8 @@
 - **Done this session (all on branch `main-hzlbfc`, PR #8):** T-0204, T-0205, T-0208, T-0300d, T-0312, T-0903, D-0061 (the human's H-07 review), H-11 closed.
 - **PR #8** (`main-hzlbfc` → `main`) is green and mergeable. **The human must merge it.** A cloud container can push only `main-hzlbfc`.
 - **Concurrency cap: 5.** Lane ownership binds tighter: web-shell tickets (T-0301a, T-0318, T-0319, T-0313) run one at a time.
-- **In flight at handoff:** a **triage check of the Phase 3 specs** (reconcile D-0063 vs D-0067 into **D-0071**, check the seams between T-0304 and T-0305a/T-0306b and between T-0302a and T-0308c, check lanes, list which rows are ready). It was still running and its partial edits were pushed as the WIP commit after 4daa3b6 (review them; they may be incomplete): `D-0071-phase3-cross-flow-conventions.md` plus changes to D-0063, D-0065–D-0069 and T-0304. **Next session: `git status` first.** If those files are there and look complete, commit them. Otherwise rerun the triage check (brief in journal 2026-09-29, "Phase 3 grooming").
-- **Next to build:** **T-0318** (web-shell plumbing: routes, per-flow i18n, import bans; scope in D-0067 §2; needs a ticket file if triage didn't write one). It unblocks T-0301b, T-0302a, T-0303a and T-0307a, and after that they can run in parallel. Also ready-ish: T-0301a (profile gate, web-shell; not in parallel with T-0318). **Priority engine:** T-0219 (rule 7.1 timed costing overruns the budget; needs a decision first), T-0224 (applySwap), T-0214 (goal reps, D-0061), T-0215 (one-period check-in).
+- **In flight:** nothing. The Phase 3 triage check **finished**: D-0071 reconciles D-0063/D-0067 (11 points: one string module per flow plus a shared lib/i18n/workout.ts; one route rule, with no /session/:id/list; hand-offs only through index.tsx; host-owned registries UF-09/seams.tsx and UF-02/slots.tsx; one engine applySwap (T-0224) and one SwapSheet). TR-0030 resolved. Ticket files for T-0318 and T-0319 are written. The earlier "WIP(squad)" commits are superseded by the final commit.
+- **Ready now:** **T-0318** (web-shell plumbing) → **T-0319** (offline caches v2) → **T-0301a** (profile gate). All three are web-shell, so they run **one at a time in that order**. T-0318 unblocks T-0301b, T-0302a, T-0303a and T-0307a, which run in parallel afterwards. **Priority engine:** T-0219 (rule 7.1 timed costing overruns the budget; needs a decision), T-0224 (applySwap; spec settled in D-0071 §7, needs a ticket file), T-0214 (goal reps), T-0215 (one-period check-in).
 - **Waiting on humans:** merge PR #8; T-0217 (tie-break for two ratings at the same endedAt, default "higher wins"); H-12 (review C-01 on a phone); H-05, H-06, H-10 (non-blocking).
 
 ## Executor
@@ -36,6 +36,6 @@ eval "$(npx -y supabase@latest status -o env | sed 's/^/export /')"   # suites r
 - **Web builds die on budget/time, not correctness.** 4 AgentLab web runs died unfinished; all 4 passed as Opus sub-agents. Split UI tickets small; tell builders to commit WIP early.
 
 ## Notes for the next orchestrator
-- Next free: **D-0072** (D-0071 = the triage reconciliation, if committed), **TR-0030**, tickets **T-0225+** (engine/data) and **T-0320+** (web). D-0062 = T-0205 defaults; D-0063–D-0066 groom A; D-0067–D-0070 groom B. Unused: D-0028, D-0038, D-0054.
+- Next free: **D-0072**, **TR-0031**, tickets **T-0225+** (engine/data) and **T-0320+** (web). D-0062 = T-0205 defaults; D-0063–D-0066 groom A; D-0067–D-0070 groom B. Unused: D-0028, D-0038, D-0054.
 - Spec-only and content roles have no shell. QA commits their output.
 - After each merge: `pnpm -w typecheck lint test --force --concurrency=1` on main.
