@@ -51,5 +51,29 @@ export const en = {
     noHardSets: "no hard sets",
     hardSets: "hard sets",
     of: "of",
+    // T-0300d (C-01). The coverage/attention legend copy is NOT in this catalogue: it comes
+    // from `coverageLegend`/`attentionLegend` in @workoutlab/design-tokens (D-0019, AC-D7).
+    /** Accessible name of the full map region (UF-10.1). */
+    mapName: "Body map",
+    /** Accessible name of the compact map, which is one link to UF-10.1 (D-0045 §4). */
+    compactLink: "Body map, last 14 days. Open all areas",
+    /** Visible numeric label (NFR-A11Y-3). `load`/`target` arrive already formatted. */
+    loadOfTarget: (load: string, target: string) => `${load} / ${target}`,
+    /** "<Area>, <load> of <target> hard sets, <srLabel>[, needs attention]" (C-01 spec). */
+    areaName: (area: string, load: string, target: string, step: string, attention: boolean) =>
+      `${area}, ${load} of ${target} hard sets, ${step}${attention ? ", needs attention" : ""}`,
+    /** Accessible name of an area button while the balance is loading (AC-D9). */
+    areaLoading: (area: string) => `${area}, loading`,
+    areas: {
+      chest: "Chest",
+      back: "Back",
+      shoulders: "Shoulders",
+      arms: "Arms",
+      core: "Core",
+      glutes: "Glutes",
+      quads: "Quads",
+      hamstrings: "Hamstrings",
+      calves: "Calves",
+    },
   },
 } as const;
