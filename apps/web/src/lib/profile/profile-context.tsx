@@ -51,8 +51,11 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
   // stale answer overwriting a fresh one).
   const generation = useRef(0);
   const mounted = useRef(true);
-  // `refreshProfile()` warms the cache at most once per mount for a network-sourced row (AC-3).
-  const refreshed = useRef(false);
+  // `refreshProfile()` warms the cache once per *distinct* resolution that produced a
+  // network-sourced row (AC-3): a re-render, or a `recheck()` that finds the same answer the
+  // gate already holds, must not refetch. A recheck that actually changes the answer (the
+  // T-0301c case, `missing` → `present`) does warm the cache, which is the point of the call.
+  const refreshedFor = useRef<ProfileStatus | null>(null);
 
   useEffect(() => {
     mounted.current = true;
@@ -71,8 +74,8 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
     const { status: next, shouldRefreshCache } = await resolveProfileStatus();
     if (!mounted.current || mine !== generation.current) return;
     setStatus(next);
-    if (shouldRefreshCache && !refreshed.current) {
-      refreshed.current = true;
+    if (shouldRefreshCache && refreshedFor.current !== next) {
+      refreshedFor.current = next;
       // Fire and forget: warming the cache for the next cold start must never block, or fail,
       // the gate's answer (AC-3).
       void import("../offline/index.js")
@@ -86,7 +89,6 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
   }, [run]);
 
   const recheck = useCallback(async () => {
-    refreshed.current = false;
     await run();
   }, [run]);
 
