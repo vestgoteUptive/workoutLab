@@ -34,8 +34,11 @@ All three routes exist: `/plan` → `Plan` (UF-11.2, tab bar on) and `/plan/edit
     - Routines: one link per `loadRoutines()` entry, in loader order, reading `{name} · {n} exercise(s)` with `href="/plan/routines/{id}"`. With none: `No routines yet`. There is always a `New routine` link to `/plan/routines/new`.
     - An `Edit plan` link to `/plan/edit`.
     - `<OfflineStatus variant="text" />`, a read-only import from `components/offline-status/OfflineStatus.tsx`.
+  - **Shell tests you can't edit** (web-shell's `app/**`), which stay green unmodified:
+    - `app/__tests__/routes.phase3.render.test.tsx:65-76` scans `features/UF-11/index.tsx`. The body of `export function EditPlan(` (up to its first line that starts with `}`) must contain the literal `<h1>{en.screens.editPlan}</h1>`, so `EditPlan` renders its heading itself, not through a child component.
+    - That file, `auth-guard.phase3.test.tsx` and `App.test.tsx` render `/plan` and `/plan/edit` with no cached profile, no user id in the session, and in one case a `supabase` mock with no `from`. `auth-guard.phase3.test.tsx:156-173` also fires `SIGNED_OUT` on `/plan/edit`. So on both screens, the `[data-screen-id]` host and its `<h1>` are in the DOM on the **first** render, before any `await`, and in every state, including loading and cold cache. A missing `from` or a failed refresh never throws out of the component.
   - **UF-11.3 Edit plan** (`[data-screen-id="UF-11.3"]`, `<h1>` from `en.screens.editPlan`):
-    - The draft is initialised once from `loadProfile()`.
+    - The draft is initialised once, from the first read that finds a profile. That's the cache read, or the re-read after `refreshAll` on a cold cache online. A later refresh never overwrites it. The **baseline** that D-0081 §2 compares the draft against is that same snapshot. It doesn't change after a failed or partly failed Save, so a retry after "(2) ok, (3) failed" stays enabled and re-runs from (1) (AC-B12).
     - Goal: a radio group `Goal` with the 3 labels.
     - Rhythm: a group `Sessions per week` with `Decrease minimum` / `Increase minimum` / `Decrease maximum` / `Increase maximum` buttons.
       - Each bound stays within 1–7.
@@ -77,7 +80,9 @@ All three routes exist: `/plan` → `Plan` (UF-11.2, tab bar on) and `/plan/edit
 - **Time running out / mid-workout:** not applicable. T-0318's import ban stops UF-03/04/05/08/09 from importing `features/UF-11`, and T-0308c adds the route-level assertion for the card.
 
 ## Acceptance criteria
-- **Test surfaces.** Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-11/__tests__/*.test.tsx`, with pure helpers in `*.test.ts`. Supabase is spied at `from(table)` and records the method, payload, options and filters (`eq`/`is`) in call order. A feature-local spy is fine, and `lib/offline/__tests__/supabase-spy.ts` may be imported read-only. `refreshAll` and `refreshRoutines` are spied through `vi.mock` of `lib/offline` with pass-through. Playwright in `tests/e2e/uf-11-plan.spec.ts` where tagged **e2e**.
+- **Test surfaces.** Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-11/__tests__/*.test.tsx`, with pure helpers in `*.test.ts`. Supabase is spied at `from(table)` and records the method, payload, options and filters (`eq`/`is`) in call order. A feature-local spy is fine, and `lib/offline/__tests__/supabase-spy.ts` may be imported read-only. Playwright in `tests/e2e/uf-11-plan.spec.ts` where tagged **e2e**.
+  - **`refreshAll` is a stub by default.** Use `vi.mock` of `lib/offline`, passing every other export through, so that `refreshAll` (and `refreshRoutines`) is a resolved `vi.fn()`. The real `refreshAll` calls `from("sessions")`, `from("routines")`, `from("session_sets_live")` and others to `select`. Those calls would land in the spy's log and contradict AC-B6's "`from` never called", AC-B11's exact call list and AC-B11's "no call to `sessions` … `routines`". Only AC-B6's cache-first case uses the real `refreshAll` (pass-through), with `fetch` never resolving.
+  - **What counts as a failed step.** A step fails when its promise rejects **or** when it resolves with a non-null `error`. supabase-js resolves `{data, error}` on a 4xx/5xx and doesn't throw. Every failure case in AC-B12 runs in both forms.
 - **Fixture F** (after `docs/specs/uf-11-plan-checkin.md`):
   - tz `Europe/Stockholm`, now `2026-09-27T12:00:00+02:00`.
   - Profile: `{goal: "build_muscle", level: "intermediate", equipment: [], rhythmMin: 3, rhythmMax: 4, priorityAreas: [], onboardedAt: "2026-08-02T08:00:00Z", planUpdatedAt: "2026-08-02T08:00:00Z"}`.
@@ -105,6 +110,7 @@ All three routes exist: `/plan` → `Plan` (UF-11.2, tab bar on) and `/plan/edit
     - with one row `{answer: "kept", answeredAt: "2026-09-13T08:00:00Z", proposedAt: "2026-09-13T08:00:00Z"}`: `Next check-in: 11 Oct`
   - **Stubbed:** an evaluation `{periods: [{index: 3, …}], proposal: null, nextCheckinDate: "2026-12-24"}` shows `Next check-in: 24 Dec`. A UI that computed the date itself would show 11 Oct.
   - **Contrast:** stubbing `nextCheckinDate: "2026-12-24"` with `periods: []` and no rows shows `First check-in on 24 Dec`.
+  - **Contrast (the date is a local date, not an instant):** with the same stub and `tz` resolved as `America/Los_Angeles` (spy `Intl.DateTimeFormat().resolvedOptions`), the line still reads `24 Dec`. Formatting `new Date("2026-12-24")` in `tz` would print `23 Dec`.
 - **AC-B4 (last 3 check-ins)** Given 4 rows put into the cache in the order K2, K4, K1, K3:
   - K1 `{proposedAt: "2026-08-16T08:00:00Z", completedLast: 3, before 4–5, proposed 3–4, answer: "accepted"}`
   - K2 `{"2026-08-30T08:00:00Z", 2, 3–4, 2–3, "withdrawn"}`
@@ -174,13 +180,14 @@ All three routes exist: `/plan` → `Plan` (UF-11.2, tab bar on) and `/plan/edit
 ### Both
 - **AC-B15 (a11y — e2e, NFR-A11Y-1/-2)** In the preview build, with an injected session and the mocked Supabase (`mockSupabaseData` fed F plus the AC-B4 rows and two routines):
   - `@axe-core/playwright` reports 0 serious or critical violations on `/plan` and on `/plan/edit`.
-  - Every `button`, `input`, `[role=radio]` and `a` on both has a `boundingBox()` of at least 44 × 44 CSS px.
+  - Every `button`, `input`, `[role=radio]` and `a` on both has a `boundingBox()` of at least 44 × 44 CSS px. A native `input[type=radio]` is measured by its `<label>`, which is the hit target and must wrap it or point to it with `for`. So a visually hidden radio with a 44 px label passes, and a bare 13 px radio fails.
   - With the real keyboard on `/plan/edit`, Tab to the `Back` chip and press Space gives `aria-pressed="true"`.
   - `Edit plan` on `/plan` lands on `[data-screen-id="UF-11.3"]`, and `Cancel` returns to `[data-screen-id="UF-11.2"]`.
 - **AC-B16 (strings, exports and the shared-file boundary)**
   - Every user-facing string comes from `en.uf11`, `en.screens`, `en.bodyMap.areas` or `OfflineStatus`. `react/jsx-no-literals` stays green.
   - `flows/uf-11.ts` is filled multi-line with `} as const;` at column 0, so `lib/i18n/__tests__/flows.test.ts` (D-0075) stays green **unmodified**.
   - A test pins `Object.keys(await import("../index.js")).sort()` to exactly `["EditPlan", "Plan"]`.
+  - `apps/web/src/app/__tests__/routes.phase3.render.test.tsx`, `auth-guard.phase3.test.tsx` and `App.test.tsx` stay green **unmodified** (see "Shell tests you can't edit" in Scope).
   - `git diff --name-only main...HEAD` lists no path outside "Paths you may change".
   - `pnpm -w lint` is green.
 
