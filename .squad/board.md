@@ -83,7 +83,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0203b | Edge Function setup (vendored engine/shared, D-0053 §1) + suggest + balance | backend | T-0203a, T-0201a, T-0102b | done | wl-build-backend |
 | T-0203c | Edge Function finish (latest endedAt wins, D-0053 §7–8) | backend | T-0203b | done | wl-build-backend |
 | T-0206 | Page the exercises/exercise_areas library reads through pageAll (or guard as the library nears PostgREST max_rows = 1000) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
-| T-0208 | Finish: make effort_rating follow the endedAt max per D-0058 (strict win writes effortRating ?? NULL) + AC28 twins must carry a rating on exactly one finish | backend | T-0203c | ready | wl-build-backend |
+| T-0208 | Finish: make effort_rating follow the endedAt max per D-0058 (strict win writes effortRating ?? NULL) + AC28 twins must carry a rating on exactly one finish | backend | T-0203c | doing | wl-build-backend |
 | T-0209 | Close the non-atomic read-modify-write race on concurrent finishes (conditional update or trigger) — T-0203c review follow-up | backend | T-0203c | todo | wl-build-backend |
 | T-0210 | Stale comment sessions/core.ts:1-4 (injected `now` no longer taken); document loadSessionSets' RLS dependency for sort-key uniqueness | backend | T-0203c | todo | wl-build-backend |
 | T-0207 | Attach x-request-id to OPTIONS preflight responses (D-0053 §5 says every response) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
@@ -91,7 +91,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0211 | Engine: add a test for D-0059 (c) (a plan item whose exerciseId has no library row → rankSwaps RangeError), and build the AC24 done-set from normalizeHistory + hard-set rules instead of raw rows — T-0204 review follow-up | engine | T-0204 | todo | wl-build-engine |
 | T-0212 | docs/engine-rules.md rule 0: `rankSwaps(… tz, now)` → `(… now, tz)` per D-0056 §2 (needs a decision naming the edit) — T-0204 follow-up | engine | T-0204 | todo | wl-build-engine |
 | T-0213 | api/openapi.yaml SwapCandidate/SwapCandidateList examples: db-row muscleMatch 0.667 → 1.0 (D-0056 §1), and align `packages/shared/test/schemas.test.ts` R12-E1 entries (board line 57) — T-0204 follow-up | data | T-0204 | todo | wl-spec |
-| T-0205 | Engine: progression + pre-fill (rule 14 `prefill`), replaces the T-0201 `first_time` seam (D-0057). Build on T-0204's seam (`previous: {exerciseId, weightKg} \| null`) | engine | T-0200, T-0204 | ready | wl-build-engine |
+| T-0205 | Engine: progression + pre-fill (rule 14 `prefill`), replaces the T-0201 `first_time` seam (D-0057). Build on T-0204's seam (`previous: {exerciseId, weightKg} \| null`) | engine | T-0200, T-0204 | doing | wl-build-engine |
 
 **T-0204 and T-0205 must not run in parallel:** both change `packages/engine/src/session.ts`. One engine worktree at a time; whichever lands second rebases.
 
@@ -102,7 +102,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0300a | PWA shell: routes, tab bar C-02, tokens.css, manifest/icons from tokens, placeholder removed (AC-A*) | web-shell | T-0002, T-0003, T-0102a | done | wl-build-web |
 | T-0300b | Auth: magic link + 6-digit code, guard (/welcome/* public, D-0014), callback (AC-B*) | web-shell | T-0300a | done | wl-build-web |
 | T-0300c | Offline set queue (Dexie per D-0001/TR-0022), sync, engine input with pending rows (AC-C*) | web-shell | T-0300b, T-0102b | done | wl-build-web |
-| T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | ready | wl-build-web |
+| T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | doing | wl-build-web |
 | T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201a | todo | wl-build-web |
 | T-0302 | UF-02 Today + workout preview | web-feature:UF-02 | T-0300, T-0203b | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203b | todo | wl-build-web |
@@ -132,7 +132,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0903 | `pnpm -w format:check` fails on 5 supabase files already on main (supabase/functions/_shared/repo.ts, _shared/validate.ts, sessions/core.ts, supabase/tests/functions/integration/sessions-finish.test.ts, unit/sessions-core.test.ts) — found during T-0204 | backend | — | ready | wl-build-backend |
+| T-0903 | `pnpm -w format:check` fails on 5 supabase files already on main (supabase/functions/_shared/repo.ts, _shared/validate.ts, sessions/core.ts, supabase/tests/functions/integration/sessions-finish.test.ts, unit/sessions-core.test.ts) — found during T-0204 | backend | — | done (PR #8, 455c10d) | wl-build-backend |
 | T-0312 | `apps/web/build.test.ts` fails under `pnpm --filter @workoutlab/web test` because design-tokens' dist/tokens.css is unbuilt (passes under `turbo test`, which has dependsOn ^build). Make the web test script depend on the tokens build, or document that the filtered command needs a prior build — it cost real diagnosis time by looking like a second flake | web-shell | — | ready | wl-build-web |
 | T-0311 | Flaky T-0300c offline sync-trigger tests: AC-C9 'online' event + stop() listener fail intermittently in the full suite (reproduced on stock main, 3 of 5 runs; pass 6/6 isolated). Real timing bug in the merged offline-sync triggers, not machine noise | web-shell | T-0300c | done | wl-build-web |
 | T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | done | wl-build-web |
