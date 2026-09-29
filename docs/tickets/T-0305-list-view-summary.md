@@ -25,7 +25,10 @@ Both children are in `features/UF-03`, so run a then b, or b then a. They don't 
 
 ## Scope
 - In:
-  - [a] A `ListView` rendered by the UF-09 host when the user picks "List view" on UF-09.9, using T-0304's session state (D-0067 §5). It shows:
+  - [a] **Seams in `features/UF-09/seams.tsx`** (D-0071 §4), the only UF-09 file this ticket edits:
+    - `list-view` in `pauseSeamActions`: label "List view", `keepsClockRunning: true`, `render(ctx)` → `<ListView ctx={ctx} />` from `features/UF-03/index.tsx`
+    - `how-to` in `pauseSeamActions`: label "How to", `keepsClockRunning: false`, `render(ctx)` → `ExerciseHowTo` from `features/UF-04/index.tsx` for the current item
+  - [a] A `ListView` rendered by the UF-09 host as that overlay. Its session state is `ctx` = `useFocusSession()` plus `close()` (D-0071 §5). `features/UF-03` never imports `features/UF-09`. It shows:
     - **header:** the elapsed time (from `started_at`, NFR-TIME-2), "Focus mode" (back to UF-09 at the current step) and "Finish"
     - **current exercise card:** the name, "target {sets} × {repsMin}–{repsMax}" or "{durationS} s", the cue, a "How to" button (`ExerciseHowTo`), a "Swap" button (`SwapSheet`), set rows (warm-up rows labelled W, then 1…N), the "Previous" column (D-0068 §4), kg/reps inputs pre-filled from `item.prefill`, a done checkbox and "+ Add set"
     - **the other items:** collapsed cards with "{done} / {sets} sets"
@@ -39,11 +42,13 @@ Both children are in `features/UF-03`, so run a then b, or b then a. They don't 
     - a device-side summary through engine calls (D-0068 §1)
     - effort chips 1–5 (D-0068 §3)
     - "See balance" → `/balance`
-    - "Save workout" → `upsertSession({id, ended_at, effort_rating})`, then `/` (D-0068 §2)
+    - "Save workout" → `upsertSession({...row, ended_at, effort_rating})` with the whole stored row (D-0071 §6, never a partial row), then `/` (D-0068 §2)
     - `<OfflineStatus variant="text">`
+    - the session row from `(await offlineDb().sessions.get(id)).row` and the sets from `loadEngineHistory()`
 - Out:
   - PR card, volume and e1RM (D-0068 §5).
-  - `POST /sessions/{id}/finish` (D-0068 §2).
+  - `POST /sessions/{id}/finish` (D-0068 §2; the web calls no Edge Function in v1, D-0071 §8).
+  - Swap entries in `seams.tsx` (T-0306b). UF-03.1's own "Swap" button mounts `SwapSheet` directly.
   - Reordering exercises in the list.
   - Editing sets of finished sessions (Phase 5).
   - C-01 on UF-03 (banned, AC-D11).
@@ -64,7 +69,7 @@ Both children are in `features/UF-03`, so run a then b, or b then a. They don't 
   - Library: engine L1.
   - Session S1: started 11:00, budget 45, warm-up on. Plan: back-squat × 4 (main, 6–8, prefill 100 × 6), romanian-deadlift × 3 (8–12, prefill 80 × 8), leg-curl × 3 (10–15).
   - Earlier session S0 on 2026-09-24: back-squat 97.5 × 8, 97.5 × 8, 97.5 × 7, 97.5 × 6 (hard) plus 40 × 10 (warm-up).
-- The session state is handed to `ListView`/`Summary` directly (D-0067 §5).
+- `ListView` tests build a `ctx` object (the `useFocusSession()` shape plus `close()`) with spied methods, so they don't depend on T-0304 internals (D-0071 §5). `Summary` tests seed the IndexedDB session row and sets. One integration test mounts the real UF-09 host with the real `seams.tsx`.
 
 ### T-0305a UF-03.1 / UF-03.2
 - **AC-A1 (entry, principle 1)** Given UF-09.9 Paused, When "List view" is chosen, Then `[data-screen-id="UF-03.1"]` renders inside `/session/S1` (the location doesn't change). There's no `nav` landmark, no C-01 region, no `a[href^="/balance"]`, no `a[href^="/plan"]` and no check-in card. "Focus mode" returns to the UF-09 step for the current item and set.
