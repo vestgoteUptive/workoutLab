@@ -83,7 +83,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0203b | Edge Function setup (vendored engine/shared, D-0053 §1) + suggest + balance | backend | T-0203a, T-0201a, T-0102b | done | wl-build-backend |
 | T-0203c | Edge Function finish (latest endedAt wins, D-0053 §7–8) | backend | T-0203b | done | wl-build-backend |
 | T-0206 | Page the exercises/exercise_areas library reads through pageAll (or guard as the library nears PostgREST max_rows = 1000) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
-| T-0208 | Finish: make effort_rating follow the endedAt max per D-0058 (strict win writes effortRating ?? NULL) + AC28 twins must carry a rating on exactly one finish | backend | T-0203c | doing | wl-build-backend |
+| T-0208 | Finish: make effort_rating follow the endedAt max per D-0058 (strict win writes effortRating ?? NULL) + AC28 twins must carry a rating on exactly one finish | backend | T-0203c | done | wl-build-backend |
 | T-0209 | Close the non-atomic read-modify-write race on concurrent finishes (conditional update or trigger) — T-0203c review follow-up | backend | T-0203c | todo | wl-build-backend |
 | T-0210 | Stale comment sessions/core.ts:1-4 (injected `now` no longer taken); document loadSessionSets' RLS dependency for sort-key uniqueness | backend | T-0203c | todo | wl-build-backend |
 | T-0207 | Attach x-request-id to OPTIONS preflight responses (D-0053 §5 says every response) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
@@ -93,6 +93,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0213 | api/openapi.yaml SwapCandidate/SwapCandidateList examples: db-row muscleMatch 0.667 → 1.0 (D-0056 §1), and align `packages/shared/test/schemas.test.ts` R12-E1 entries (board line 57) — T-0204 follow-up | data | T-0204 | todo | wl-spec |
 | T-0214 | Engine: rep slots depend on profile.goal (get_stronger 3–5/5–8/10–15, build_muscle unchanged, general_fitness 8–12/10–15/10–15); rule 7 rep line + worked examples (D-0061 §1) | engine | T-0205 | todo | wl-build-engine |
 | T-0215 | Engine: plan check-in proposes after ONE off-plan period instead of two (rule 9, D-0061 §2) | engine | T-0202 | todo | wl-build-engine |
+| T-0217 | Needs a decision (amends D-0058): tie-break for two different ratings at the same winning endedAt. Default proposal: the higher rating wins (order-independent), which changes AC29's correction meaning; alternative: document last-arrival-wins as an exception. Then a unit test with two ratings at one endedAt — T-0208 follow-up | backend | T-0208 | todo | wl-triage → wl-build-backend |
+| T-0218 | Sub-millisecond endedAt: core.ts instantMs truncates to ms while the Instant pattern accepts any fraction and Postgres stores µs, so finishes < 1 ms apart are order-dependent. Default: compare at µs precision (SQL or a µs parse), no contract change — T-0208 follow-up | backend | T-0208 | todo | wl-build-backend |
 | T-0205 | Engine: progression + pre-fill (rule 14 `prefill`), replaces the T-0201 `first_time` seam (D-0057). Build on T-0204's seam (`previous: {exerciseId, weightKg} \| null`) | engine | T-0200, T-0204 | doing | wl-build-engine |
 
 **T-0204 and T-0205 must not run in parallel:** both change `packages/engine/src/session.ts`. One engine worktree at a time; whichever lands second rebases.
