@@ -424,8 +424,9 @@ describe("AC-B13 offline (D-0070 §7)", () => {
       await tap(chip("arms"));
       await tap(screen.getByRole("button", { name: u.increaseMin }));
       const rows = listRows(u.previewHeading);
-      const rhythm = screen.getByRole("group", { name: u.rhythmGroup }).querySelector("p")!
-        .textContent;
+      const rhythm = screen
+        .getByRole("group", { name: u.rhythmGroup })
+        .querySelector("p")!.textContent;
       expect(rhythm).toBe("4–4 per week · 8–8 per 14 days");
       expect(AREAS.filter((a) => chip(a).getAttribute("aria-pressed") === "true")).toEqual([
         "back",
@@ -484,9 +485,9 @@ describe("AC-B14 cancel", () => {
     renderPlan({ at: "/plan/edit" });
     await waitFor(() => expect(listRows(u.previewHeading)).toHaveLength(9));
     expect(screen.getByRole("radio", { name: u.goals.build_muscle })).toBeChecked();
-    expect(
-      screen.getByRole("group", { name: u.rhythmGroup }).querySelector("p")!.textContent,
-    ).toBe("3–4 per week · 6–8 per 14 days");
+    expect(screen.getByRole("group", { name: u.rhythmGroup }).querySelector("p")!.textContent).toBe(
+      "3–4 per week · 6–8 per 14 days",
+    );
     expect(AREAS.filter((a) => chip(a).getAttribute("aria-pressed") === "true")).toEqual([]);
     expect(listRows(u.previewHeading)).toEqual(
       AREAS.map((a, i) => `${en.bodyMap.areas[a]} ${F_SETS[i]}`),

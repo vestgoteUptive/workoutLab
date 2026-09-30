@@ -6,7 +6,11 @@ import { render, type RenderResult } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { vi } from "vitest";
 import type { AreaTarget, EngineProfile, LibraryExercise, PlanCheckin } from "@workoutlab/shared";
-import { resetOfflineDbForTest, type CachedRoutineItem, type OfflineDb } from "../../../lib/offline/db.js";
+import {
+  resetOfflineDbForTest,
+  type CachedRoutineItem,
+  type OfflineDb,
+} from "../../../lib/offline/db.js";
 import { EditPlan, Plan } from "../index.js";
 import { NOW } from "./fixtures.js";
 
@@ -147,13 +151,13 @@ export function useTimeZone(tz: string): () => void {
   // `TRUE_RESOLVED_OPTIONS` and `AMBIENT_TZ` are captured once at module load, before any spy
   // exists. Reading `proto.resolvedOptions` here instead would chain one spy onto the last and
   // blow the stack the second time a test calls this.
-  const spy = vi
-    .spyOn(proto, "resolvedOptions")
-    .mockImplementation(function (this: Intl.DateTimeFormat) {
-      const resolved = TRUE_RESOLVED_OPTIONS.call(this);
-      // A formatter asked for a specific zone keeps it; only the ambient default is overridden.
-      return resolved.timeZone === AMBIENT_TZ ? { ...resolved, timeZone: tz } : resolved;
-    });
+  const spy = vi.spyOn(proto, "resolvedOptions").mockImplementation(function (
+    this: Intl.DateTimeFormat,
+  ) {
+    const resolved = TRUE_RESOLVED_OPTIONS.call(this);
+    // A formatter asked for a specific zone keeps it; only the ambient default is overridden.
+    return resolved.timeZone === AMBIENT_TZ ? { ...resolved, timeZone: tz } : resolved;
+  });
   return () => spy.mockRestore();
 }
 

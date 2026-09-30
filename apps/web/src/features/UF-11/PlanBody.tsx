@@ -65,7 +65,12 @@ function PlanContent({ data }: { data: PlanData }) {
                 {u.checkinRow(
                   formatInstantDay(c.proposedAt, tz),
                   u.sessions(c.completedLast),
-                  u.checkinChange(c.rhythmMinBefore, c.rhythmMaxBefore, c.proposedMin, c.proposedMax),
+                  u.checkinChange(
+                    c.rhythmMinBefore,
+                    c.rhythmMaxBefore,
+                    c.proposedMin,
+                    c.proposedMax,
+                  ),
                   answerLabel(c.answer),
                 )}
               </li>

@@ -108,7 +108,11 @@ function exercise(id: string, area: string) {
   };
 }
 
-const EXERCISES = [exercise("squat", "quads"), exercise("rdl", "hamstrings"), exercise("bench", "chest")];
+const EXERCISES = [
+  exercise("squat", "quads"),
+  exercise("rdl", "hamstrings"),
+  exercise("bench", "chest"),
+];
 
 /** Everything `mockSupabaseData` needs for UF-11.2 and UF-11.3. */
 export const UF11_FIXTURES: OfflineFixtures = {

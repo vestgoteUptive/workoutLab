@@ -12,7 +12,12 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
-import { injectSession, mockSupabaseAuth, mockSupabaseData, mockSupabaseRest } from "./fixtures/supabase-mock.js";
+import {
+  injectSession,
+  mockSupabaseAuth,
+  mockSupabaseData,
+  mockSupabaseRest,
+} from "./fixtures/supabase-mock.js";
 import { ROUTINE_A_ID, UF11_FIXTURES } from "./fixtures/uf-11-plan.js";
 
 const MIN_TARGET_PX = 44;
@@ -92,8 +97,7 @@ test.describe("AC-B15 accessibility (NFR-A11Y-1/-2)", () => {
         // radio fails.
         const measured = await element.evaluate((el) => {
           const isRadio =
-            el.tagName.toLowerCase() === "input" &&
-            (el as HTMLInputElement).type === "radio";
+            el.tagName.toLowerCase() === "input" && (el as HTMLInputElement).type === "radio";
           if (!isRadio) return null;
           const byWrap = el.closest("label");
           const byFor = el.id ? document.querySelector(`label[for="${el.id}"]`) : null;

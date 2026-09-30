@@ -29,9 +29,7 @@ export interface PlanData {
 }
 
 export type PlanState =
-  | { phase: "loading" }
-  | { phase: "cold" }
-  | { phase: "ready"; data: PlanData };
+  { phase: "loading" } | { phase: "cold" } | { phase: "ready"; data: PlanData };
 
 export type Clock = () => Date;
 

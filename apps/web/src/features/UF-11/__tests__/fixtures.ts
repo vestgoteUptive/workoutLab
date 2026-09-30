@@ -25,7 +25,9 @@ export function profileF(overrides: Partial<EngineProfile> = {}): EngineProfile 
 /** Fixture F's 9 targets: 20/20/16/12/12/20/20/16/12, all `default`. */
 export const F_SETS = [20, 20, 16, 12, 12, 20, 20, 16, 12] as const;
 
-export function targetsF(overrides: Partial<Record<string, Partial<AreaTarget>>> = {}): AreaTarget[] {
+export function targetsF(
+  overrides: Partial<Record<string, Partial<AreaTarget>>> = {},
+): AreaTarget[] {
   return AREAS.map((area, i) => ({
     area,
     setsPer14d: F_SETS[i]!,

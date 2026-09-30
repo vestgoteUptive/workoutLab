@@ -19,7 +19,11 @@ import {
 
 vi.mock("../../../lib/offline/index.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../lib/offline/index.js")>();
-  return { ...actual, refreshAll: vi.fn(async () => undefined), refreshRoutines: vi.fn(async () => undefined) };
+  return {
+    ...actual,
+    refreshAll: vi.fn(async () => undefined),
+    refreshRoutines: vi.fn(async () => undefined),
+  };
 });
 
 const previewSpy = vi.fn();
@@ -346,7 +350,8 @@ describe("AC-B9 rhythm steppers, through the engine", () => {
 
 describe("AC-B10 the engine's numbers, verbatim (principle 3)", () => {
   it("a stub returning back: 99 shows `Back 99` and saves 99", async () => {
-    previewOverride.current = (real) => real.map((p) => (p.area === "back" ? { ...p, setsPer14d: 99 } : p));
+    previewOverride.current = (real) =>
+      real.map((p) => (p.area === "back" ? { ...p, setsPer14d: 99 } : p));
     await openEdit();
     await tap(chip("core"));
     expect(previewOf("back")).toBe("Back 99");

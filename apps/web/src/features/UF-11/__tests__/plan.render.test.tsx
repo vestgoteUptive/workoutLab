@@ -8,17 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, screen, waitFor } from "@testing-library/react";
 import { AREAS } from "@workoutlab/shared";
 import { en } from "../../../lib/i18n/en.js";
-import {
-  K1,
-  K2,
-  K3,
-  K4,
-  KEPT_13_SEP,
-  NOW,
-  TZ,
-  profileF,
-  targetsF,
-} from "./fixtures.js";
+import { K1, K2, K3, K4, KEPT_13_SEP, NOW, TZ, profileF, targetsF } from "./fixtures.js";
 import {
   freshDb,
   listRows,
@@ -31,7 +21,11 @@ import {
 
 vi.mock("../../../lib/offline/index.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../lib/offline/index.js")>();
-  return { ...actual, refreshAll: vi.fn(async () => undefined), refreshRoutines: vi.fn(async () => undefined) };
+  return {
+    ...actual,
+    refreshAll: vi.fn(async () => undefined),
+    refreshRoutines: vi.fn(async () => undefined),
+  };
 });
 
 const u = en.uf11;
@@ -226,7 +220,9 @@ describe("AC-B3 stubbed: the UI renders the engine's date verbatim (principle 3)
   it("nextCheckinDate 2026-12-24 with non-empty periods reads `Next check-in: 24 Dec`, not 11 Oct", async () => {
     const engine = await import("../checkin-evaluation.js");
     vi.spyOn(engine, "evaluatePlanCheckin").mockReturnValue({
-      periods: [{ index: 3, start: "2026-09-13", end: "2026-09-26", completed: 4, status: "on_plan" }],
+      periods: [
+        { index: 3, start: "2026-09-13", end: "2026-09-26", completed: 4, status: "on_plan" },
+      ],
       proposal: null,
       nextCheckinDate: "2026-12-24",
     });
@@ -319,14 +315,24 @@ describe("AC-B5 routines list", () => {
       profile: profileF(),
       targets: targetsF(),
       routines: [
-        { id: "r-lower", name: "Lower A", items: [{ position: 0, exerciseId: "e1" }, { position: 1, exerciseId: "e2" }] },
+        {
+          id: "r-lower",
+          name: "Lower A",
+          items: [
+            { position: 0, exerciseId: "e1" },
+            { position: 1, exerciseId: "e2" },
+          ],
+        },
         { id: "r-upper", name: "Upper B", items: [{ position: 0, exerciseId: "e3" }] },
       ],
     });
     renderPlan();
     await targetRows();
     await waitFor(() => expect(listRows(u.headings.routines)).toHaveLength(2));
-    expect(listRows(u.headings.routines)).toEqual(["Lower A · 2 exercises", "Upper B · 1 exercise"]);
+    expect(listRows(u.headings.routines)).toEqual([
+      "Lower A · 2 exercises",
+      "Upper B · 1 exercise",
+    ]);
     expect(screen.getByRole("link", { name: "Lower A · 2 exercises" })).toHaveAttribute(
       "href",
       "/plan/routines/r-lower",
@@ -383,7 +389,9 @@ describe("the check-in evaluation runs over the real engine feed", () => {
         } as never,
       ],
       sessions: [{ id: "S1", startedAt: "2026-09-26T10:00:00Z" }],
-      sets: [{ id: "x1", sessionId: "S1", exerciseId: "bench", completedAt: "2026-09-26T10:05:00Z" }],
+      sets: [
+        { id: "x1", sessionId: "S1", exerciseId: "bench", completedAt: "2026-09-26T10:05:00Z" },
+      ],
     });
     renderPlan();
     await targetRows();

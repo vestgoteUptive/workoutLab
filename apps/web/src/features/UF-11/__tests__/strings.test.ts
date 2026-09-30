@@ -32,9 +32,7 @@ describe("AC-B16 the flow file", () => {
     // green UNMODIFIED, so the same regex is pinned here: a failure points at this ticket's file
     // rather than at the shared test.
     const source = readFileSync(FLOW_FILE, "utf8");
-    expect(source).toMatch(
-      /^export const uf11 = \{(\} as const;|[\s\S]*?\n\} as const;)$/m,
-    );
+    expect(source).toMatch(/^export const uf11 = \{(\} as const;|[\s\S]*?\n\} as const;)$/m);
     // Multi-line, not the untouched one-liner.
     expect(source.split("\n").length).toBeGreaterThan(5);
   });
