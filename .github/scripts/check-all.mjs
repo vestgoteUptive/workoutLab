@@ -7,8 +7,13 @@ import { runCheck as runDecisionIds } from "./check-decision-ids.mjs";
 import { runCheck as runPlaceholderTests } from "./check-placeholder-tests.mjs";
 import { runCheck as runStaleWording } from "./check-stale-wording.mjs";
 import { runCheck as runE2eWiring } from "./check-e2e-wiring.mjs";
+import { runCheck as runLanePaths } from "./check-lane-paths.mjs";
 
-export async function runAll() {
+const __filename = fileURLToPath(import.meta.url);
+const REPO_ROOT = path.resolve(path.dirname(__filename), "..", "..");
+
+/** `opts.branch` overrides the branch the lane-path check reads (T-0320 AC-10 contrast). */
+export async function runAll({ branch } = {}) {
   const screenIds = await runScreenIds();
   if (screenIds.error) {
     return {
@@ -23,12 +28,19 @@ export async function runAll() {
     ...(await runPlaceholderTests()),
     ...(await runStaleWording()),
     ...(await runE2eWiring()),
+    ...(await runLanePaths(REPO_ROOT, { branch })),
   ];
   return { ok: findings.length === 0, fatal: null, findings };
 }
 
+function parseArgs(argv) {
+  const idx = argv.indexOf("--branch");
+  if (idx !== -1 && argv[idx + 1]) return { branch: argv[idx + 1] };
+  return {};
+}
+
 async function main() {
-  const { ok, fatal, findings } = await runAll();
+  const { ok, fatal, findings } = await runAll(parseArgs(process.argv.slice(2)));
   if (fatal) {
     console.log(`Design-docs/docs/product/user-flows.md:1: ${fatal}: no flow index table found`);
     process.exit(1);
