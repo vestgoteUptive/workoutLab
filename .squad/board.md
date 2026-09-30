@@ -137,11 +137,11 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0306a | UF-04.1/.2/.3 Library: browse, detail + attribution, compare; ExerciseHowTo | web-feature:UF-04 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0306b | UF-05.1 SwapSheet (rankSwaps + engine applySwap T-0224), mounted via features/UF-09/seams.tsx on UF-09.9/09.6 | web-feature:UF-05 | T-0304d, T-0224, T-0318 | todo | wl-build-web |
 | T-0307 | UF-06 Progress + UF-10 Balance (mount full C-01 on UF-10.1, area buttons → /balance/:area; add a Playwright check that real Enter/Space navigates once — T-0300d) | web-feature:UF-06 | T-0300, T-0203b | split → T-0307a, T-0307b (D-0068) | wl-build-web |
-| T-0307a | UF-10.1/.2 Balance: full C-01 mounted, area → /balance/:area, e2e Enter/Space once | web-feature:UF-10 | T-0318 | doing | wl-build-web |
+| T-0307a | UF-10.1/.2 Balance: full C-01 mounted, area → /balance/:area, e2e Enter/Space once | web-feature:UF-10 | T-0318 | review (accepted; PR #10, awaiting T-0904 + green CI) | wl-build-web |
 | T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | split → T-0308a, T-0308b, T-0308c (D-0070) | wl-build-web |
 | T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | doing | wl-build-web |
-| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | ready | wl-build-web |
+| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | todo | wl-build-web |
 | T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
@@ -187,6 +187,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0349 | lib/offline: an online refresh that returns empty data wipes the cache (T-0307a QA) — decide whether an empty server answer should replace a non-empty cache | web-shell | — | todo | wl-build-web |
 | T-0350 | UF-10: with no cache and no network the C-01 map stays in its loading skeleton indefinitely — show an offline/empty state (T-0307a QA, optional) | web-feature:UF-10 | T-0307a | todo | wl-build-web |
 | T-0351 | Profile gate read should fail fast: `.retry(false)` or `AbortSignal.timeout` on the profiles query in `lib/profile/status.ts`, so a network that throws yields `unknown` in <1 s instead of postgrest-js's ~7 s backoff holding /welcome open; fake-timer unit test (T-0904 diagnosis) | web-shell | T-0904 | todo | wl-build-web |
+| T-0352 | OfflineStatus/formatTime: zero-pad HH:MM (`08:10`, not `8:10`), then tighten T-0307a AC-A8 to the literal (T-0307a accept) | web-shell | — | todo | wl-build-web |
+| T-0353 | UF-10 e2e: reach C-01 buttons with real Tab presses rather than `locator.focus()` (AC-A16 wording), plus a `boundingBox()` ≥ 44×44 check on a balance row (AC-A14) (T-0307a accept) | web-feature:UF-10 | T-0307a | todo | wl-build-web |
+| T-0354 | UF-10.2: contributors flash the raw `exerciseId` until `loadLibrary()` resolves — render once the name is known or use a neutral placeholder (T-0307a accept) | web-feature:UF-10 | T-0307a | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -204,7 +207,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0904 | CI fix (diagnosed, `docs/ci/CI-T-0904-auth-e2e-unmocked-profile-read.md`): `auth.spec.ts:28` "signed in: /welcome redirects to /" never mocks `/rest/v1/profiles`; the T-0301a gate's read hits the real host, postgrest-js retries ~7 s, and `RedirectIfSignedIn` waits past the 5 s expect. First bad 790312b (merged 4b4c5f9). Fix: mock `profiles*` (present row) in the spec's beforeEach and register `mockSupabaseRest` first, add profile-present/missing helpers and an AC-7 twin, add an unclaimed-request guard; no timeout raises. Blocks PR #9 and every web merge | qa | — | doing (ci-spec) | wl-ci-investigate |
+| T-0904 | CI fix (diagnosed, `docs/ci/CI-T-0904-auth-e2e-unmocked-profile-read.md`): `auth.spec.ts:28` "signed in: /welcome redirects to /" never mocks `/rest/v1/profiles`; the T-0301a gate's read hits the real host, postgrest-js retries ~7 s, and `RedirectIfSignedIn` waits past the 5 s expect. First bad 790312b (merged 4b4c5f9). Fix: mock `profiles*` (present row) in the spec's beforeEach and register `mockSupabaseRest` first, add profile-present/missing helpers and an AC-7 twin, add an unclaimed-request guard; no timeout raises. Blocks PR #9 and every web merge | qa | — | done | wl-build-qa |
 | T-0903 | `pnpm -w format:check` fails on 5 supabase files already on main (supabase/functions/_shared/repo.ts, _shared/validate.ts, sessions/core.ts, supabase/tests/functions/integration/sessions-finish.test.ts, unit/sessions-core.test.ts) — found during T-0204 | backend | — | done (PR #8, 455c10d) | wl-build-backend |
 | T-0312 | `apps/web/build.test.ts` fails under `pnpm --filter @workoutlab/web test` because design-tokens' dist/tokens.css is unbuilt (passes under `turbo test`, which has dependsOn ^build). Make the web test script depend on the tokens build, or document that the filtered command needs a prior build — it cost real diagnosis time by looking like a second flake | web-shell | — | done | wl-build-web |
 | T-0311 | Flaky T-0300c offline sync-trigger tests: AC-C9 'online' event + stop() listener fail intermittently in the full suite (reproduced on stock main, 3 of 5 runs; pass 6/6 isolated). Real timing bug in the merged offline-sync triggers, not machine noise | web-shell | T-0300c | done | wl-build-web |
