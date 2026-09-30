@@ -26,6 +26,38 @@ vi.mock("../../lib/auth/client.js", () => ({
   supabase: { auth: { onAuthStateChange, getSession, signOut } },
 }));
 
+// UF-06.2 (`/progress/:exerciseId`) reads the T-0319 loaders and redirects to `/progress` when
+// its id is not a known exercise (D-0079 §4). The "signed in" contrast case below asserts the
+// route *reaches its screen*, so the library must contain `back-squat`; with the empty cache a
+// stub never touched, the screen would leave for its own reasons and the guard would no longer
+// be what the case tests (D-0088 §2: keep the guarantee, seed the fixture). Only the UF-06
+// loaders are overridden, so every other route keeps the real `lib/offline`.
+vi.mock("../../lib/offline/index.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../lib/offline/index.js")>();
+  return {
+    ...actual,
+    loadSessions: vi.fn(async () => []),
+    loadEngineHistory: vi.fn(async () => []),
+    loadLibrary: vi.fn(async () => [
+      {
+        id: "back-squat",
+        name: "Back squat",
+        kind: "exercise",
+        type: "compound",
+        level: "beginner",
+        equipment: [],
+        areas: { quads: 1 },
+        timed: false,
+        defaultDurationS: null,
+        incrementKg: 2.5,
+        externalLoad: true,
+      },
+    ]),
+    loadTargets: vi.fn(async () => []),
+    refreshAll: vi.fn(async () => undefined),
+  };
+});
+
 let navigateRef: ((path: string) => void) | undefined;
 
 function NavHelper() {
