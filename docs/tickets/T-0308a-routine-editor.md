@@ -21,7 +21,10 @@ Both routes already exist (`/plan/routines/new` and `/plan/routines/:routineId` 
     - The feature never touches IndexedDB directly: no `offlineDb()`, no Dexie import, no cache write.
     - Writes use `supabase` from `lib/auth/client.ts` and go only to `routines` and `routine_items`.
   - **The screen** (`[data-screen-id="UF-07.1"]`):
-    - `<h1>`: `New routine` on `/plan/routines/new`, and `Edit routine` (`en.screens.routineEditor`) on `/plan/routines/:id`.
+    - `<h1>`: `Edit routine` (`en.screens.routineEditor`) on **both** `/plan/routines/new` and `/plan/routines/:id`. User flows v2 names UF-07.1 "Edit routine". T-0318's accepted `app/__tests__/routes.phase3.render.test.tsx` asserts that heading text on `/plan/routines/new` (line 35), and `en.ts` says the stub titles "stay as the screens' <h1> text".
+    - **Shell tests you can't edit** (web-shell's `app/**`), which stay green unmodified:
+      - `routes.phase3.render.test.tsx:65-76` scans `features/UF-07/index.tsx`. The body of `export function RoutineEditor(` (up to its first line that starts with `}`) must contain the literal `<h1>{en.screens.routineEditor}</h1>`. So the heading is rendered by `RoutineEditor` itself, not by a child component.
+      - `routes.phase3.render.test.tsx:40-50` and `auth-guard.phase3.test.tsx:97-104` render `/plan/routines/R1` with no cached routine, no user id in the session, and in one case a `supabase` mock that has no `from`. The `[data-screen-id="UF-07.1"]` host and its `<h1>` are therefore in the DOM on the **first** render, before any `await`, including the loading state and an unknown id before the D-0081 §5 redirect. A missing `from` or a failed refresh never throws out of the component.
     - A **name** field labelled `Name`, trimmed, 1–40 characters after trimming.
     - The **exercise list** in order. Each row shows `{n}. {library name}` and has three buttons: `Move {name} up`, `Move {name} down` and `Remove {name}`.
     - `Add exercise` opens the **in-screen picker** (D-0081 §6): a search field `Search exercises`, then one row per match with an `Add {name}` button. An exercise already in the list shows `Added` (disabled). With 8 items every Add is disabled and `Up to 8 exercises` is shown. No match reads `No exercises match "{query}"`. `Done` closes the picker. The picker stays open after an Add, so several exercises can be added in a row.
@@ -58,6 +61,8 @@ Both routes already exist (`/plan/routines/new` and `/plan/routines/:routineId` 
 
 ## Acceptance criteria
 - **Test surfaces.** Vitest + Testing Library + `fake-indexeddb` in `apps/web/src/features/UF-07/__tests__/*.test.tsx`. Supabase is spied at `from(table)` and records every call in order, including its method (`upsert`/`delete`/`update`/`insert`/`select`), payload, options and filter chain (`eq`/`gte`). A feature-local spy is fine. `lib/offline/__tests__/supabase-spy.ts` may be imported read-only but not edited. Playwright in `tests/e2e/uf-07-routines.spec.ts` where tagged **e2e**.
+  - **`refreshRoutines` is a stub.** Use `vi.mock` of `lib/offline`, passing every other export through, so that `refreshRoutines` is a resolved `vi.fn()`. The real one calls `from("routines").select(…)` and `from("routine_items").select(…)`. Its calls would then land in the spy's log and contradict AC-A1's "exactly three calls" and AC-A8's "never `routine_items`". AC-A11's third case gives the stub a body that writes the cache.
+  - **What counts as a failed step.** A step fails when its promise rejects **or** when it resolves with a non-null `error`. supabase-js resolves `{data, error}` on a 4xx/5xx and doesn't throw. Every failure case in AC-A10 runs in both forms.
 - **Fixtures.** Seed the `lib/offline` cache with a library that holds at least these entries:
   - `barbell-back-squat` "Barbell back squat"
   - `barbell-front-squat` "Barbell front squat"
@@ -66,8 +71,8 @@ Both routes already exist (`/plan/routines/new` and `/plan/routines/:routineId` 
   - `leg-curl-machine` "Leg curl (machine)"
   - `jumping-jacks` "Jumping jacks" (`kind: "warmup"`)
   - enough further `kind: "exercise"` entries to reach 9
-  - Routine R `{id: "11111111-1111-4111-8111-111111111111", name: "Lower A", items: [barbell-back-squat, romanian-deadlift-barbell, leg-curl-machine]}`.
-  - The user is signed in, and `navigator.onLine = true` unless the AC says otherwise.
+  - Routine R `{id: "22222222-2222-4222-8222-222222222222", name: "Lower A", items: [barbell-back-squat, romanian-deadlift-barbell, leg-curl-machine]}`.
+  - The user is signed in, and `navigator.onLine = true` unless the AC says otherwise. The signed-in user id is **not** R's id. `11111111-1111-4111-8111-111111111111` is the e2e `FAKE_USER_ID` and the `lib/offline` tests' `USER`. If R reused it, a Delete that filtered on the user id would still pass AC-A8's `eq("id", R)`.
 
 - **AC-A1 (create)** On `/plan/routines/new`, online:
   - Given the name `Lower A` and Add Barbell back squat, then Add Romanian deadlift (barbell), When Save is pressed, Then the spy records exactly these three calls, in this order:
@@ -79,12 +84,12 @@ Both routes already exist (`/plan/routines/new` and `/plan/routines/:routineId` 
 - **AC-A2 (a retry reuses the new routine's id — D-0081 §4)** On `/plan/routines/new`:
   - Given the `routine_items.upsert` rejects on the first Save and succeeds on the second, When Save is pressed twice (once per attempt), Then both `routines.upsert` calls carry the **same** `id`.
   - Across the whole test the spy saw exactly **one** distinct `routines.id`.
-- **AC-A3 (edit, reorder, remove)** On `/plan/routines/11111111-…`, Given the loaded list [Barbell back squat, Romanian deadlift (barbell), Leg curl (machine)]:
+- **AC-A3 (edit, reorder, remove)** On `/plan/routines/22222222-…`, Given the loaded list [Barbell back squat, Romanian deadlift (barbell), Leg curl (machine)]:
   - When `Move Leg curl (machine) up` is pressed once, then `Remove Barbell back squat`, then Save, Then:
     - the rows read `1. Leg curl (machine)` and `2. Romanian deadlift (barbell)` before Save
     - the `delete` has `gte("position", 2)`
     - the items upsert holds exactly `[{position: 0, exercise_id: "leg-curl-machine"}, {position: 1, exercise_id: "romanian-deadlift-barbell"}]` (plus the fixed columns)
-    - `routines.upsert` carries `{id: "11111111-…", name: "Lower A"}`
+    - `routines.upsert` carries `{id: "22222222-…", name: "Lower A"}`
   - **Contrast:** a Save with no edits still sends all three calls with the loaded order unchanged. A server-wins rewrite is the D-0070 §2 behaviour, not a no-op.
 - **AC-A4 (move buttons: ends, keyboard, focus)**
   - `Move {first} up` and `Move {last} down` are `disabled`, and every other move button is enabled.
@@ -105,14 +110,14 @@ Both routes already exist (`/plan/routines/new` and `/plan/routines/:routineId` 
 - **AC-A7 (no sets/reps/progression editing — D-0070 §1)**
   - The screen has no `input[type=number]`, no `select`, no `role="spinbutton"` and no control whose accessible name matches `/sets|reps|progression/i`. The only text input besides the picker's search is `Name`.
   - The progression card's text equals the D-0070 §1 sentence exactly, and there is no button or link inside the card.
-  - A routine whose server rows carried `sets: 5` is rewritten with `sets: 3` on Save (AC-A1's fixed columns). This pins that the UI never carries a sets value through.
+  - A routine whose cached items carry an extra `sets: 5` property is rewritten with `sets: 3` on Save (AC-A1's fixed columns). `CachedRoutineItem` is only `{position, exerciseId}`, so the fixture adds the property with a cast, standing in for a server row with `sets: 5`. This pins that the UI never carries a sets value through.
 - **AC-A8 (delete)**
-  - On `/plan/routines/11111111-…`: `Delete routine` → the dialog `Delete Lower A?` → `Delete`. The spy then records exactly one call, `routines.delete()` with `eq("id", "11111111-…")`, followed by `refreshRoutines` and `/plan`.
+  - On `/plan/routines/22222222-…`: `Delete routine` → the dialog `Delete Lower A?` → `Delete`. The spy then records exactly one call, `routines.delete()` with `eq("id", "22222222-…")`, followed by `refreshRoutines` and `/plan`.
   - During the whole test, `from` is **never** called with `session_sets`, `sessions` or `routine_items`. The cascade is the database's job.
   - `Keep routine` closes the dialog with no call.
   - **Contrast:** `/plan/routines/new` has no `Delete routine` control in the DOM.
 - **AC-A9 (offline — D-0070 §2)** Given `navigator.onLine = false` and `fetch` stubbed to a promise that never resolves:
-  - `/plan/routines/11111111-…` renders the 3 rows from the cache without waiting on the network.
+  - `/plan/routines/22222222-…` renders the 3 rows from the cache without waiting on the network.
   - Save and Delete are `disabled`, and `Connect to save` is shown.
   - Move and Remove still work on the draft.
   - The spy records **no** write.
@@ -143,6 +148,7 @@ Both routes already exist (`/plan/routines/new` and `/plan/routines/:routineId` 
   - Every user-facing string comes from `en.uf07` or from an existing `en.*` key, and `react/jsx-no-literals` stays green.
   - `flows/uf-07.ts` is filled multi-line, with `} as const;` at column 0, so `lib/i18n/__tests__/flows.test.ts` (D-0075) stays green **unmodified**.
   - A test pins `Object.keys(await import("../index.js"))` to exactly `["RoutineEditor"]`.
+  - `apps/web/src/app/__tests__/routes.phase3.render.test.tsx`, `auth-guard.phase3.test.tsx` and `App.test.tsx` stay green **unmodified** (see "Shell tests you can't edit" in Scope). A feature test also pins that `/plan/routines/new` and an unknown `/plan/routines/X` both have `[data-screen-id="UF-07.1"]` with `<h1>Edit routine</h1>` synchronously after the lazy chunk resolves, before any IndexedDB read settles.
   - The branch's `git diff --name-only main...HEAD` lists no path outside "Paths you may change".
   - `pnpm -w lint` is green.
 
@@ -167,6 +173,7 @@ None. The writes use `routines {id, name}` and `routine_items {routine_id, posit
 
 ## Ambiguity resolved (state it, do not stall)
 - The parent T-0308 AC-A1/A2 named exercises `back-squat`, `romanian-deadlift` and `leg-curl`, which are not library ids. **Default taken: the real seed ids** `barbell-back-squat`, `romanian-deadlift-barbell` and `leg-curl-machine`, and the move/remove buttons are named with the **library name** (`Move Leg curl (machine) up`) rather than the id, because a screen reader should say the name.
+- The `<h1>` is `Edit routine` on `/plan/routines/new` as well, not `New routine` (check mode, 2026-09-29). The groom's `New routine` heading fails T-0318's accepted `routes.phase3.render.test.tsx:35`, which this lane may not edit. User flows v2 already names the screen "Edit routine". If product wants a distinct heading for a new routine, it's a web-shell follow-up to change that test row, plus a one-line change here. `New routine` stays the UF-11.2 link label (T-0308b).
 - The new-routine id lifetime, the unknown-id refresh, the picker order and match rule, and Cancel without a confirm are D-0081 §4–§6.
 
 ## Definition of done

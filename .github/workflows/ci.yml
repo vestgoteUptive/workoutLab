@@ -17,7 +17,14 @@ jobs:
     name: typecheck / lint / unit test
     runs-on: ubuntu-latest
     steps:
+      # T-0320/D-0074: `fetch-depth: 0` is load-bearing, not a nicety. `check:repo`'s
+      # check-lane-paths sub-check needs `git merge-base origin/main HEAD`; the default
+      # shallow checkout has no merge base, so the check would silently no-op on every PR
+      # — worse than no check. `.github/scripts/check-lane-paths.test.mjs` asserts this,
+      # with a bare-checkout fixture as the failing contrast.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
