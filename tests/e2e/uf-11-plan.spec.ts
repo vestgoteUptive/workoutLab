@@ -59,6 +59,17 @@ test.describe("AC-B15 accessibility (NFR-A11Y-1/-2)", () => {
       const host = page.locator(`[data-screen-id="${screenId}"]`);
       await expect(host).toBeVisible();
       await expect(page.locator("h1")).toBeVisible();
+      // The host and its <h1> are on the FIRST render, before the cache read, so waiting on
+      // them is not enough: the controls arrive with the content. Wait for the screen's own
+      // content marker, or the loop below measures an empty screen. The `count > 3` contrast
+      // below is what caught this.
+      await expect(
+        page.locator(
+          path === "/plan"
+            ? 'ul[aria-label="Targets"] li'
+            : 'ul[aria-label="New targets per 14 days"] li',
+        ),
+      ).toHaveCount(9);
 
       const candidates = host.locator("button, input, [role=radio], a");
       const count = await candidates.count();
