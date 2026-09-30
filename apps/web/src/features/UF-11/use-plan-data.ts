@@ -62,14 +62,20 @@ async function read(clock: Clock, tz: string): Promise<PlanData | null> {
 
 export function usePlanData(clock: Clock): PlanState {
   const [state, setState] = useState<PlanState>({ phase: "loading" });
-  const clockRef = useRef(clock);
-  clockRef.current = clock;
+  // `now` is PINNED at mount: both the clock function and the instant it returns. T-0307a's e2e
+  // found the alternative the hard way — a `now` read per render changed the effect's dependency
+  // every render and froze the screen in a reload loop that no unit test could see, because every
+  // unit test injects a fixed `now`. Nothing below reads `clock` again, so a fresh prop identity
+  // on a re-render (the router's `now={() => new Date()}`) cannot restart the load.
+  const pinned = useRef<Date | null>(null);
+  pinned.current ??= clock();
+  const at = pinned.current;
 
   useEffect(() => {
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     const tz = resolveTimeZone();
-    const safeRead = () => read(clockRef.current, tz).catch(() => null);
+    const safeRead = () => read(() => at, tz).catch(() => null);
 
     async function run() {
       const first = await safeRead();
@@ -82,7 +88,7 @@ export function usePlanData(clock: Clock): PlanState {
       await new Promise<void>((resolve) => {
         timer = setTimeout(resolve, REFRESH_CAP_MS);
         Promise.resolve()
-          .then(() => refreshAll(clockRef.current(), tz))
+          .then(() => refreshAll(at, tz))
           .then(
             () => undefined,
             () => undefined,
