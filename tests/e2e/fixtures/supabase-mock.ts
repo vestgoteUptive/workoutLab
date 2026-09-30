@@ -147,6 +147,67 @@ export async function injectSession(
 /** The user id `injectSession`'s session carries (T-0300c offline e2e). */
 export const FAKE_USER_ID = FAKE_USER.id;
 
+/** The profile row shape `offline.spec.ts` uses, carried by `mockProfilePresent` (D-0064 §9). */
+const PROFILE_ROW = {
+  user_id: FAKE_USER_ID,
+  goal: "build_muscle",
+  level: "beginner",
+  equipment: [] as string[],
+  rhythm_min: 3,
+  rhythm_max: 4,
+  priority_areas: [] as string[],
+  onboarded_at: "2026-09-01T00:00:00.000Z",
+  plan_changed_at: "2026-09-01T00:00:00.000Z",
+};
+
+/** The default row `mockProfilePresent` answers with, exported so a spec can assert on it. */
+export const FAKE_PROFILE_ROW = PROFILE_ROW;
+
+/**
+ * Answers the profile gate's read (`GET /rest/v1/profiles?select=*`, `lib/profile/status.ts`)
+ * with **one row**, so `useProfileStatus()` resolves `present` (D-0064 §9, D-0073 §1) and a
+ * signed-in user is redirected off `/welcome/*` instead of standing down.
+ *
+ * Every signed-in spec must state its profile state (D-0086). Without this, the read goes to the
+ * real `abc.supabase.co`, `fetch` *throws* `ERR_NAME_NOT_RESOLVED`, and postgrest-js retries it
+ * with 1 s / 2 s / 4 s backoff — the gate resolves only after ~7 s, past the default 5 s `expect`
+ * timeout. That is the T-0904 regression; see docs/ci/CI-T-0904-auth-e2e-unmocked-profile-read.md.
+ *
+ * The body is `[row]`, the shape real PostgREST returns for the `Accept: application/json`
+ * header `maybeSingle()` sends (it does not send `Accept: application/vnd.pgrst.object+json`,
+ * which would want a bare object). A wrong shape therefore fails a behaviour AC rather than
+ * passing silently.
+ *
+ * Register this **after** `mockSupabaseRest`: Playwright runs the most-recently-registered
+ * matching handler first, so the 501 backstop must be registered first to be matched last.
+ * AC-2's `waitForResponse` on a `200` catches the reverse order.
+ */
+export async function mockProfilePresent(
+  page: Page,
+  row: Record<string, unknown> = PROFILE_ROW,
+): Promise<void> {
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, (route) =>
+    route.fulfill({ status: 200, json: [row] }),
+  );
+}
+
+/**
+ * Answers the profile gate's read with **no row**, so `useProfileStatus()` resolves `missing`:
+ * `/welcome/*` stands down and renders onboarding (D-0073 §1, T-0301a AC-7), and a gated route
+ * redirects to `/welcome/save` (D-0064 §9).
+ *
+ * `200 []` is what real PostgREST returns for a `maybeSingle()` that matches nothing — not a
+ * 404 and not `null` — which is why `maybeSingle()` gives `{data: null, error: null}` for it.
+ *
+ * Called in a test body, this overrides a `beforeEach`'s `mockProfilePresent`, because the
+ * most-recently-registered matching route runs first.
+ */
+export async function mockProfileMissing(page: Page): Promise<void> {
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, (route) =>
+    route.fulfill({ status: 200, json: [] }),
+  );
+}
+
 export interface OfflineFixtures {
   sets: unknown[];
   exercises: unknown[];

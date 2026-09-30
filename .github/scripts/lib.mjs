@@ -49,6 +49,39 @@ export async function loadFiles(dir, test, base = dir) {
   }));
 }
 
+/**
+ * Compile a repo-relative POSIX glob to an anchored RegExp (T-0320). `**` crosses `/`,
+ * a single `*` does not, `?` is one non-`/` character. Everything else is literal.
+ * No dependency (D-0023: Node built-ins only).
+ */
+export function globToRegExp(pattern) {
+  let out = "";
+  for (let i = 0; i < pattern.length; i++) {
+    const ch = pattern[i];
+    if (ch === "*") {
+      if (pattern[i + 1] === "*") {
+        // `a/**/b`: the `**` may match zero segments, so the trailing `/` is optional.
+        if (pattern[i + 2] === "/") {
+          out += "(?:.*/)?";
+          i += 2;
+        } else {
+          out += ".*";
+          i += 1;
+        }
+      } else {
+        out += "[^/]*";
+      }
+      continue;
+    }
+    if (ch === "?") {
+      out += "[^/]";
+      continue;
+    }
+    out += ch.replace(/[.+^${}()|[\]\\]/g, "\\$&");
+  }
+  return new RegExp(`^${out}$`);
+}
+
 /** Format one finding as `<path>:<line>: <rule>: <message>`. */
 export function formatFinding(finding) {
   return `${finding.path}:${finding.line}: ${finding.rule}: ${finding.message}`;

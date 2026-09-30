@@ -1,33 +1,18 @@
-// UF-04 Library stubs (T-0300a). The feature ticket builds the designed screens.
-import { useParams } from "react-router";
+// UF-04 Library (T-0306a). Exports exactly `Library`, `LibraryDetail`, `Compare` and
+// `ExerciseHowTo` (D-0071 §3). `ExerciseHowTo` lives in its own module so the UF-09 chunk that
+// imports it doesn't pull in the browse screens' code.
 import { en } from "../../lib/i18n/en.js";
+import { CompareContent } from "./CompareContent.js";
 
-export function Library() {
-  return (
-    <div data-screen-id="UF-04.1">
-      <h1>{en.screens.library}</h1>
-    </div>
-  );
-}
+export { Library } from "./Library.js";
+export { LibraryDetail } from "./LibraryDetail.js";
+export { ExerciseHowTo } from "./ExerciseHowTo.js";
 
-export function LibraryDetail() {
-  const { exerciseId } = useParams();
-  return (
-    <div data-screen-id="UF-04.2">
-      <h1>{en.screens.libraryDetail}</h1>
-      <p>{exerciseId}</p>
-    </div>
-  );
-}
-
-// UF-04.3 Compare variants stub (T-0318). T-0306a builds the screen.
 export function Compare() {
-  const { exerciseId, otherId } = useParams();
   return (
-    <div data-screen-id="UF-04.3">
+    <div data-screen-id="UF-04.3" className="wl-uf04">
       <h1>{en.screens.libraryCompare}</h1>
-      <p>{exerciseId}</p>
-      <p>{otherId}</p>
+      <CompareContent />
     </div>
   );
 }

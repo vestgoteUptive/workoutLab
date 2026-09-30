@@ -1,0 +1,14 @@
+name: CI
+on:
+  pull_request:
+jobs:
+  checks:
+    name: typecheck / lint / unit test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:repo
+      - name: Fetch the diff base, too late to help
+        run: git fetch --no-tags origin main

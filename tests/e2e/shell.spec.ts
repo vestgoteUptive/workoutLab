@@ -1,19 +1,38 @@
 // T-0300a shell e2e (AC-A5, AC-A7, AC-A10, AC-A13). Runs against `vite preview` with the
-// service worker for real: no Supabase calls happen in this ticket's routes (auth is
-// T-0300b), so nothing needs `page.route` mocking here.
+// service worker for real.
+//
+// T-0904 corrects the stale claim that used to stand here ("no Supabase calls happen in this
+// ticket's routes, so nothing needs `page.route` mocking"). It has been false since T-0301a:
+// every test below that calls `injectSession` also triggers the profile gate's
+// `GET /rest/v1/profiles` and `lib/offline`'s AutoSync selects. They kept passing only because
+// `unknown` doesn't redirect on `/` — the same leak that made `auth.spec.ts` red, surviving here
+// by luck. `test` now comes from `fixtures/guarded-test.js`, which fails on any unclaimed
+// Supabase request (D-0086), and the signed-in tests state their profile state.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
 import { BASE_URL, VITE_SUPABASE_URL } from "./playwright.config.js";
-import { injectSession, mockSupabaseAuth, mockSupabaseRest } from "./fixtures/supabase-mock.js";
+import {
+  injectSession,
+  mockProfilePresent,
+  mockSupabaseAuth,
+  mockSupabaseRest,
+} from "./fixtures/supabase-mock.js";
+import { expect, test } from "./fixtures/guarded-test.js";
 
 const TAB_ROUTES = ["/", "/library", "/progress", "/plan"] as const;
 const AXE_ROUTES = ["/welcome", "/", "/library", "/progress", "/balance", "/plan"] as const;
 
 test.beforeEach(async ({ page }) => {
-  // Registered first so it's the final backstop (see `mockSupabaseEmailAuth`'s comment):
-  // these routes don't drive email/OTP, but the shell still calls `getSession`/`onAuthStateChange`
-  // through the real SDK, so any unmocked Supabase call must fail loudly, not hit the network.
+  // The two 501 catch-alls are registered first so they end up matched *last*, as the final
+  // backstop (Playwright runs the most-recently-registered matching handler first): the shell
+  // calls `getSession`/`onAuthStateChange` through the real SDK and AutoSync fires a batch of
+  // selects, and any call a test doesn't expect must fail loudly rather than reach the network.
   await mockSupabaseAuth(page);
+  await mockSupabaseRest(page);
+  // Registered after the catch-all so it wins for `profiles*`. Every signed-in test here wants
+  // `present`: these are the signed-in shell routes, and a `missing` profile would send them to
+  // `/welcome/save` (D-0064 §9) instead of rendering the tab bar the assertions look for. The
+  // one signed-out test (AC-A5, and AC-A13's `/welcome`) never triggers the read at all.
+  await mockProfilePresent(page);
 });
 
 test.describe("AC-A5 offline shell", () => {
@@ -111,6 +130,13 @@ test.describe("AC-6 the Phase 3 sub-route chunks are precached (offline)", () =>
   // `/session/:sessionId/summary` uses the `session` guard (D-0071 §2), so a stored session
   // is enough; the stub itself makes no Supabase call. The 501 REST backstop is registered so
   // the shell's AutoSync fetches fail loudly rather than reaching the network.
+  //
+  // T-0904: this runs *after* the outer `beforeEach`, so re-registering the catch-all here puts
+  // it ahead of that block's `mockProfilePresent` for `profiles*` too, and these tests resolve
+  // the gate as `unknown` rather than `present`. That is deliberate and harmless — the routes
+  // under test are `session`-guarded, not `protected`, so the profile gate doesn't redirect them
+  // (D-0073 §2) — and the request is still claimed by the 501, so the guard stays green. Stated
+  // rather than left implicit, because the shadowing is the non-obvious part.
   test.beforeEach(async ({ page }) => {
     await mockSupabaseRest(page);
   });
