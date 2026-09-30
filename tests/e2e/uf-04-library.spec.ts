@@ -1,7 +1,14 @@
 // T-0306a UF-04 Library e2e (AC-17): a11y, touch targets and the keyboard happy path, on the
 // preview build with an injected session and mocked Supabase.
+//
+// T-0904 (D-0086): `test` comes from `fixtures/guarded-test.js`, not `@playwright/test`, so a
+// Supabase request no route claims fails this spec at teardown instead of reaching the real host
+// and surfacing as a timeout three layers from its cause. UF-04 renders through `refreshAll`,
+// which selects nine tables, so an unclaimed read here is a live hazard rather than a
+// theoretical one: `mockSupabaseData` has to cover every one of them.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
+import { expect, test } from "./fixtures/guarded-test.js";
 import {
   injectSession,
   mockSupabaseAuth,
