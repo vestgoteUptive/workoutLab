@@ -3,7 +3,8 @@
 // the mount-stability proof each stand on their own.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { MemoryRouter } from "react-router";
+import { Shell } from "../../../app/App.js";
 import { R, renderEditor, seed } from "./harness.js";
 import { offline, spy } from "./spies.js";
 
@@ -11,6 +12,11 @@ vi.mock("../../../lib/auth/client.js", async () => (await import("./spies.js")).
 vi.mock("../../../lib/offline/index.js", async (importActual) =>
   (await import("./spies.js")).mockedOffline(importActual),
 );
+// `Shell` mounts the auth guard, which needs a provider. The editor itself reads no auth.
+vi.mock("../../../lib/auth/auth-context.js", () => ({
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
+  useAuth: () => ({ status: "signed-in" as const, redirectTarget: "/welcome", signOut: vi.fn() }),
+}));
 
 const FOCUSABLE = "a[href], button:not([disabled]), input, select, textarea, [tabindex]";
 const up = () => screen.getByRole("button", { name: "Move Leg curl (machine) up" });
@@ -115,5 +121,78 @@ describe("AC-A4 the keyboard reaches and activates the move buttons", () => {
     }
     expect(screen.getByText("3. Leg curl (machine)")).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("");
+  });
+});
+
+// The render-loop trap (shipped by T-0307a and T-0308b). A per-render `new Date()`, or a ref
+// assigned during render, that reaches the load effect's deps re-runs the loaders forever. Unit
+// tests miss it whenever they inject `now`, so these mount through the real `Shell` with **no
+// `now` seam of any kind**: the hook reads the wall clock, and every re-render gets a fresh
+// closure. The assertion is on unbounded growth, not on an exact count, because the count under
+// the fault depends on how fast the machine spins.
+describe("the load effect is pinned at mount (render-loop guard)", () => {
+  /** Settles for `ms` of real time, letting any runaway effect chain keep going. */
+  const settle = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const mountShell = (path: string) =>
+    render(
+      <MemoryRouter initialEntries={[path]}>
+        <Shell />
+      </MemoryRouter>,
+    );
+
+  it("an existing routine reads each cache once and stops, across a long settle and forced re-renders", async () => {
+    mountShell(`/plan/routines/${R}`);
+    await screen.findByText("1. Barbell back squat");
+    await settle(120);
+    const after = { lib: offline.loadLibraryCalls, routines: offline.loadRoutinesCalls };
+    expect(after).toEqual({ lib: 1, routines: 1 });
+
+    // Force re-renders from the outside, the way a parent or a resize would. A `new Date()` on
+    // the render path gives the effect a new dep on each one, so the loaders run again.
+    for (let i = 0; i < 6; i++) {
+      act(() => {
+        fireEvent.change(screen.getByLabelText("Name"), { target: { value: `Lower A${i}` } });
+      });
+      await settle(20);
+    }
+    expect(offline.loadLibraryCalls).toBe(after.lib);
+    expect(offline.loadRoutinesCalls).toBe(after.routines);
+    // A loop would also drive the refresh and the redirect.
+    expect(offline.refreshRoutines).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Name")).toHaveValue("Lower A5");
+  });
+
+  it("a new routine's id is pinned at mount: 20 re-renders never change it, and Save sends that one id", async () => {
+    mountShell("/plan/routines/new");
+    await screen.findByLabelText("Name");
+    fireEvent.change(screen.getByLabelText("Name"), { target: { value: "Push" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add exercise" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Add Plank" }));
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
+    // Save on every re-render, so a per-render id shows up as a second id in the spy. A ref
+    // assigned during render (the other shape the brief names) fails here, not just at a retry.
+    // Every attempt fails at step 1, so the editor stays mounted for all 20 and never navigates.
+    spy.fail("routines.upsert", ...Array.from({ length: 20 }, () => "error" as const));
+    for (let i = 0; i < 20; i++) {
+      fireEvent.change(screen.getByLabelText("Name"), { target: { value: `Push ${i}` } });
+      fireEvent.submit(screen.getByRole("form"));
+      await settle(5);
+    }
+    await settle(80);
+    expect(offline.loadLibraryCalls).toBe(1);
+    const routineCalls = spy.calls.filter((c) => c.table === "routines");
+    expect(routineCalls.length).toBeGreaterThanOrEqual(20);
+    const ids = new Set(routineCalls.map((c) => (c.payload as { id: string }).id));
+    expect(ids.size).toBe(1);
+  });
+
+  it("an unknown id redirects once: the loaders and the refresh each run once, not in a loop", async () => {
+    mountShell("/plan/routines/99999999-9999-4999-8999-999999999999");
+    await settle(150);
+    expect(offline.refreshRoutines).toHaveBeenCalledTimes(1);
+    expect(offline.loadLibraryCalls).toBe(1);
+    // The unknown-id path reads the cache twice by design: once before the refresh, once after.
+    expect(offline.loadRoutinesCalls).toBe(2);
   });
 });
