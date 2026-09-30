@@ -24,9 +24,8 @@ vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: spy.from } }))
 const { ExerciseHistory } = await import("../ExerciseHistory.js");
 const { Progress } = await import("../Progress.js");
 const offline = await import("../../../lib/offline/index.js");
-const { freshOfflineDb, signIn, signOut } = await import(
-  "../../../lib/offline/__tests__/test-helpers.js"
-);
+const { freshOfflineDb, signIn, signOut } =
+  await import("../../../lib/offline/__tests__/test-helpers.js");
 const { LOCALE, NOW, TZ, USER, historyH, seed, set } = await import("./fixtures.js");
 
 /** The `exercises` row shape `refreshLibrary` maps, for the two ids these tests need. */
