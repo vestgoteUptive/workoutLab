@@ -31,7 +31,7 @@ vi.mock("@workoutlab/engine", async (importOriginal) => {
     // return value; the other tests run "through the engine".
     previewTargets: (...args: Parameters<typeof actual.previewTargets>) => {
       const real = actual.previewTargets(...args);
-      previewSpy(...args);
+      previewSpy(args[0]);
       const override = previewOverride.current;
       return override ? override(real) : real;
     },
@@ -100,7 +100,7 @@ function saveButton(): HTMLElement {
   return screen.getByRole("button", { name: u.save });
 }
 function previewOf(area: Area): string {
-  return listRows(u.previewHeading)[AREAS.indexOf(area)];
+  return listRows(u.previewHeading)[AREAS.indexOf(area)] ?? "";
 }
 function readout(): string {
   const group = screen.getByRole("group", { name: u.rhythmGroup });
@@ -300,9 +300,9 @@ describe("AC-B9 rhythm steppers, through the engine", () => {
     };
     const names = [u.decreaseMin, u.increaseMin, u.decreaseMax, u.increaseMax];
     for (let i = 0; i < 20; i += 1) {
-      const name = names[Math.floor(next() * names.length)];
-      const button = screen.getByRole("button", { name });
-      if (!(button as HTMLButtonElement).disabled) await tap(button);
+      const name = names[Math.floor(next() * names.length)]!;
+      const button = screen.getByRole("button", { name }) as HTMLButtonElement;
+      if (!button.disabled) await tap(button);
       const [, min, max] = /^(\d)–(\d) per week/.exec(readout())!;
       expect(Number(min)).toBeGreaterThanOrEqual(1);
       expect(Number(max)).toBeLessThanOrEqual(7);
@@ -328,7 +328,7 @@ describe("AC-B9 rhythm steppers, through the engine", () => {
     const order = Array.from(
       screen.getByRole("group", { name: u.rhythmGroup }).querySelectorAll("button"),
     );
-    const decreaseMax = order[order.indexOf(increaseMin) + 1];
+    const decreaseMax = order[order.indexOf(increaseMin as HTMLButtonElement) + 1]!;
     expect(decreaseMax).toBe(screen.getByRole("button", { name: u.decreaseMax }));
     decreaseMax.focus();
     expect(decreaseMax).toHaveFocus();

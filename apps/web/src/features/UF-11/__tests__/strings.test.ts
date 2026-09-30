@@ -145,7 +145,8 @@ describe("AC-B16 no second string catalogue", () => {
         );
       }
       // And no literal outside the structural allowlist.
-      for (const [, literal] of code.matchAll(/"([^"\\\n]{2,})"/g)) {
+      for (const match of code.matchAll(/"([^"\\\n]{2,})"/g)) {
+        const literal = match[1]!;
         if (allowed.has(literal)) continue;
         // Import specifiers and class names are not user-facing.
         if (literal.startsWith("wl-")) continue;

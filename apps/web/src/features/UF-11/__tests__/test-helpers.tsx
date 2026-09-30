@@ -220,8 +220,17 @@ export interface StepResult {
   mode: "ok" | "reject" | "error";
 }
 
+/** The subset of a PostgrestQueryBuilder the UF-11 writes use. */
+export interface FromBuilder {
+  upsert: (payload: unknown, options?: unknown) => unknown;
+  update: (payload: unknown, options?: unknown) => unknown;
+  insert: (payload: unknown, options?: unknown) => unknown;
+  delete: (options?: unknown) => unknown;
+  select: (payload?: unknown) => unknown;
+}
+
 export interface SupabaseFromSpy {
-  from: ReturnType<typeof vi.fn>;
+  from: ReturnType<typeof vi.fn<(table: string) => FromBuilder>>;
   calls: SpyCall[];
   /** Fail the next call on `table` with `mode`; every other call succeeds. */
   failOn: (table: string, mode: "reject" | "error") => void;
@@ -277,7 +286,7 @@ export function createFromSpy(): SupabaseFromSpy {
     return chain;
   }
 
-  const from = vi.fn((table: string) => ({
+  const from = vi.fn((table: string): FromBuilder => ({
     upsert: (payload: unknown, options?: unknown) => builder(table, "upsert", payload, options),
     update: (payload: unknown, options?: unknown) => builder(table, "update", payload, options),
     insert: (payload: unknown, options?: unknown) => builder(table, "insert", payload, options),

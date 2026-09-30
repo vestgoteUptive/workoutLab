@@ -28,7 +28,7 @@ export const F_SETS = [20, 20, 16, 12, 12, 20, 20, 16, 12] as const;
 export function targetsF(overrides: Partial<Record<string, Partial<AreaTarget>>> = {}): AreaTarget[] {
   return AREAS.map((area, i) => ({
     area,
-    setsPer14d: F_SETS[i],
+    setsPer14d: F_SETS[i]!,
     source: "default" as const,
     updatedAt: "2026-08-02T08:00:00Z",
     ...overrides[area],

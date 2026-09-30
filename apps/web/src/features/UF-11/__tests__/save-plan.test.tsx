@@ -16,6 +16,8 @@ import { AREAS, type Area } from "@workoutlab/shared";
 import { en } from "../../../lib/i18n/en.js";
 import { F_SETS, NOW_ISO, TZ, profileF, targetsF } from "./fixtures.js";
 import {
+  type FromBuilder,
+  type SpyCall,
   TEST_USER,
   createFromSpy,
   freshDb,
@@ -37,7 +39,8 @@ vi.mock("../../../lib/offline/index.js", async (importOriginal) => {
     ...actual,
     refreshRoutines: vi.fn(async () => undefined),
     refreshAll: async () => {
-      await refreshAllSpy();
+      refreshAllSpy();
+      await Promise.resolve();
       if (refreshAllRejects.current) throw new Error("refreshAll failed");
     },
   };
@@ -109,6 +112,13 @@ function writtenTables(): string[] {
   return spy.calls.map((c) => c.table);
 }
 
+/** The nth recorded call, asserted to exist so the test names the real problem when it doesn't. */
+function callAt(index: number): SpyCall {
+  const call = spy.calls[index];
+  expect(call, `expected at least ${index + 1} supabase call(s)`).toBeDefined();
+  return call!;
+}
+
 // ------------------------------------------------------------------------------------------
 // AC-B11
 // ------------------------------------------------------------------------------------------
@@ -133,7 +143,7 @@ describe("AC-B11 Save: order and exact payloads (D-0070 §3)", () => {
     await tap(saveButton());
     await waitFor(() => expect(spy.calls.length).toBe(3));
 
-    const call = spy.calls[0];
+    const call = callAt(0);
     expect(call.options).toEqual({ onConflict: "user_id,area_id" });
     const rows = call.payload as { area_id: string; sets_per_14d: number; source: string }[];
     expect(rows).toHaveLength(9);
@@ -158,7 +168,7 @@ describe("AC-B11 Save: order and exact payloads (D-0070 §3)", () => {
     await tap(saveButton());
     await waitFor(() => expect(spy.calls.length).toBe(3));
 
-    const call = spy.calls[1];
+    const call = callAt(1);
     expect(call.payload).toEqual({
       goal: "build_muscle",
       rhythm_min: 3,
@@ -182,7 +192,7 @@ describe("AC-B11 Save: order and exact payloads (D-0070 §3)", () => {
     await tap(saveButton());
     await waitFor(() => expect(spy.calls.length).toBe(3));
 
-    const call = spy.calls[2];
+    const call = callAt(2);
     expect(call.payload).toEqual({ answer: "withdrawn", answered_at: NOW_ISO });
     expect(call.filters).toEqual([{ op: "is", column: "answer", value: null }]);
   });
@@ -294,7 +304,7 @@ describe.each(FAILURE_FORMS)("AC-B12 partial failure — the `%s` form", (form) 
       "profiles.update",
       "plan_checkins.update",
     ]);
-    const rows = spy.calls[0].payload as { area_id: string; sets_per_14d: number }[];
+    const rows = callAt(0).payload as { area_id: string; sets_per_14d: number }[];
     expect(rows.find((r) => r.area_id === "back")!.sets_per_14d).toBe(25);
   });
 
@@ -335,14 +345,15 @@ describe("AC-B12 double submit and a failed refresh", () => {
     const gate = new Promise<void>((resolve) => {
       release = resolve;
     });
-    const original = spy.from.getMockImplementation()!;
-    spy.from.mockImplementation((table: string) => {
-      const builder = original(table) as Record<string, unknown>;
+    const original = spy.from.getMockImplementation() as (table: string) => FromBuilder;
+    spy.from.mockImplementation((table: string): FromBuilder => {
+      const builder = original(table);
       if (table !== "area_targets") return builder;
-      const upsert = builder.upsert as (...a: unknown[]) => PromiseLike<unknown>;
       return {
         ...builder,
-        upsert: (...args: unknown[]) => gate.then(() => upsert(...args)),
+        // Step (1) waits on the gate, so "a save is in flight" is observable.
+        upsert: (payload: unknown, options?: unknown) =>
+          gate.then(() => builder.upsert(payload, options)),
       };
     });
 
