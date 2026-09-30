@@ -155,3 +155,33 @@ describe("a cache that cannot be read never redirects", () => {
     expect(screen.getByText("2. leg-curl-machine")).toBeInTheDocument();
   });
 });
+
+// A refresh that never settles is the realistic flaky-network case: `navigator.onLine` is true,
+// but the request hangs. Without the cap the user sits on a heading with no form and no way out.
+// Real timer turns, not a microtask flush, so the mid-flight window the test exists to catch
+// stays open (the brief's trap 4).
+describe("a refresh that never settles is capped, then the redirect lands", () => {
+  beforeEach(() => seed());
+
+  it("holds while the refresh hangs, and redirects once the 3s cap fires", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      offline.refreshRoutines.mockImplementation(() => new Promise<void>(() => {}));
+      renderEditor("/plan/routines/99999999-9999-4999-8999-999999999999");
+      await vi.advanceTimersByTimeAsync(10);
+      // Still waiting on the refresh: no redirect yet, and no premature "unknown routine".
+      expect(offline.refreshRoutines).toHaveBeenCalledTimes(1);
+      expect(location()).toHaveTextContent("/plan/routines/99999999");
+
+      await vi.advanceTimersByTimeAsync(2500);
+      expect(location()).toHaveTextContent("/plan/routines/99999999");
+
+      // The cap fires at 3000ms, the second read still misses, and the redirect lands.
+      await vi.advanceTimersByTimeAsync(600);
+      await vi.waitFor(() => expect(location().textContent).toBe("/plan"));
+      expect(spy.calls).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
