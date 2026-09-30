@@ -230,3 +230,42 @@ test.describe("the happy path: the plan renders from the mocked server", () => {
     await expect(save).toBeDisabled();
   });
 });
+
+// QA (T-0308b verification): the unit suite pins the render-loop guard through a counted
+// `loadProfile`, but only in jsdom with a mocked `refreshAll`. On the real route `now` defaults to
+// `systemClock` and `refreshAll` really fetches, so a per-render clock shows up as a storm of REST
+// reads — which is exactly how T-0307a's UF-10 loop was found. This is the browser-level mirror,
+// plus the console-error check the UF-10 spec already carries.
+test.describe("QA: console errors and the render-loop guard on the real route", () => {
+  for (const path of ["/plan", "/plan/edit"] as const) {
+    test(`${path} logs no console error / page error and does not loop`, async ({ page }) => {
+      const problems: string[] = [];
+      page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
+      page.on("console", (m) => {
+        if (m.type() === "error") problems.push(`console.error: ${m.text()}`);
+      });
+      let profileReads = 0;
+      page.on("request", (r) => {
+        if (r.url().includes("/rest/v1/profiles")) profileReads += 1;
+      });
+
+      await open(page, path);
+      await expect(page.locator("[data-screen-id^='UF-11']")).toBeVisible();
+      await expect(
+        page.locator(
+          path === "/plan"
+            ? 'ul[aria-label="Targets"] li'
+            : 'ul[aria-label="New targets per 14 days"] li',
+        ),
+      ).toHaveCount(9);
+      await page.waitForTimeout(1500);
+
+      // `open()` navigates twice (`/` to inject the session, then `path`), and the shell's own
+      // profile gate reads `profiles` alongside each mount's single `refreshAll`. That is a fixed
+      // 4 on this route. The bound is deliberately just above it: a per-render clock re-runs the
+      // effect on every render and issues dozens, which is what T-0307a's loop looked like.
+      expect(profileReads, `profiles was read ${profileReads} times`).toBeLessThanOrEqual(6);
+      expect(problems).toEqual([]);
+    });
+  }
+});
