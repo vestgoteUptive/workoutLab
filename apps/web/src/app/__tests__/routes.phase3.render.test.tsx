@@ -14,6 +14,36 @@ vi.mock("../../lib/auth/auth-context.js", () => ({
   useAuth: () => ({ status: "signed-in" as const, redirectTarget: "/welcome", signOut: vi.fn() }),
 }));
 
+/** The one exercise `/progress/back-squat` needs; its `name` is UF-06.2's `<h1>`. */
+const BACK_SQUAT = {
+  id: "back-squat",
+  name: "Back squat",
+  kind: "exercise",
+  type: "compound",
+  level: "beginner",
+  equipment: [],
+  areas: { quads: 1 },
+  timed: false,
+  defaultDurationS: null,
+  incrementKg: 2.5,
+  externalLoad: true,
+};
+
+// UF-06.2 redirects an unknown exercise id to `/progress` (D-0079 §4), so with the empty cache
+// a stub never touched it would render UF-06.1 and the row below would assert the wrong screen.
+// Seeding keeps the row testing the route (D-0088 §2). Only the UF-06 loaders are overridden.
+vi.mock("../../lib/offline/index.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../lib/offline/index.js")>();
+  return {
+    ...actual,
+    loadSessions: vi.fn(async () => []),
+    loadEngineHistory: vi.fn(async () => []),
+    loadLibrary: vi.fn(async () => [BACK_SQUAT]),
+    loadTargets: vi.fn(async () => []),
+    refreshAll: vi.fn(async () => undefined),
+  };
+});
+
 async function renderAt(path: string) {
   const view = render(
     <MemoryRouter initialEntries={[path]}>
@@ -26,11 +56,13 @@ async function renderAt(path: string) {
   return view;
 }
 
-/** The Scope table: path → [screen id, tab bar, stub title]. */
+/** The Scope table: path → [screen id, tab bar, `<h1>` text]. A screen still on its T-0318
+ *  stub reads `en.screens.*`; a built screen whose heading is its own data reads that data
+ *  (UF-06.2's `<h1>` is the exercise name, D-0088 §2). */
 const NEW_SCREENS: ReadonlyArray<readonly [string, string, boolean, string]> = [
   ["/session/S1/summary", "UF-03.3", false, en.screens.sessionSummary],
   ["/library/back-squat/compare/leg-press", "UF-04.3", true, en.screens.libraryCompare],
-  ["/progress/back-squat", "UF-06.2", true, en.screens.exerciseHistory],
+  ["/progress/back-squat", "UF-06.2", true, BACK_SQUAT.name],
   ["/plan/edit", "UF-11.3", false, en.screens.editPlan],
   ["/plan/routines/new", "UF-07.1", false, en.screens.routineEditor],
   ["/plan/routines/R1", "UF-07.1", false, en.screens.routineEditor],
@@ -65,7 +97,6 @@ describe("AC-2 the new stubs render", () => {
   it.each([
     ["UF-03", "Summary", "sessionSummary"],
     ["UF-04", "Compare", "libraryCompare"],
-    ["UF-06", "ExerciseHistory", "exerciseHistory"],
     ["UF-07", "RoutineEditor", "routineEditor"],
     ["UF-11", "EditPlan", "editPlan"],
   ])("features/%s %s reads its title from en.screens.%s", (flow, exportName, key) => {
@@ -73,6 +104,24 @@ describe("AC-2 the new stubs render", () => {
     const fn = source.slice(source.indexOf(`export function ${exportName}(`));
     const body = fn.slice(0, fn.indexOf("\n}"));
     expect(body).toContain(`<h1>{en.screens.${key}}</h1>`);
+  });
+
+  // UF-06.2 is built, so its heading is the exercise's own name rather than a catalogue
+  // entry, and its component lives in its own module instead of `index.tsx` (D-0088 §2:
+  // point the scan at the built heading). The NFR-I18N-1 guarantee is unchanged and still
+  // the point: the <h1> must be an expression, never a hard-coded or duplicated string.
+  it("features/UF-06 ExerciseHistory renders the exercise name as its <h1>", () => {
+    const source = readFileSync(
+      resolve(__dirname, "../../features/UF-06/ExerciseHistory.tsx"),
+      "utf8",
+    );
+    expect(source).toContain('<h1 className="wl-progress__title">{history.exercise.name}</h1>');
+    // No literal or second catalogue standing in for the heading.
+    expect(source).not.toMatch(/<h1[^>]*>[^{<]/);
+    expect(source).not.toContain("en.screens.exerciseHistory");
+    // `index.tsx` only re-exports, so nothing there can shadow the heading above.
+    const index = readFileSync(resolve(__dirname, "../../features/UF-06/index.tsx"), "utf8");
+    expect(index).not.toContain("<h1");
   });
 });
 
