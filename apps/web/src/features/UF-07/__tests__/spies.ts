@@ -77,11 +77,16 @@ export const offline = {
   loadRoutinesCalls: 0,
   loadLibraryCalls: 0,
   gate: null as Promise<void> | null,
+  /** Makes a loader reject, standing in for an IndexedDB the browser won't open (D-0081 §5). */
+  throwRoutines: false,
+  throwLibrary: false,
   reset() {
     offline.refreshRoutines = vi.fn(async () => {});
     offline.loadRoutinesCalls = 0;
     offline.loadLibraryCalls = 0;
     offline.gate = null;
+    offline.throwRoutines = false;
+    offline.throwLibrary = false;
   },
 };
 
@@ -104,11 +109,13 @@ export async function mockedOffline(
     loadRoutines: async () => {
       offline.loadRoutinesCalls += 1;
       await offline.gate;
+      if (offline.throwRoutines) throw new DOMException("UnknownError", "UnknownError");
       return actual.loadRoutines();
     },
     loadLibrary: async () => {
       offline.loadLibraryCalls += 1;
       await offline.gate;
+      if (offline.throwLibrary) throw new DOMException("UnknownError", "UnknownError");
       return actual.loadLibrary();
     },
   };

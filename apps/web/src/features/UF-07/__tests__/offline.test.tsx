@@ -114,3 +114,44 @@ describe("AC-A11 unknown routine id", () => {
     await waitFor(() => expect(location().textContent).toBe("/plan"));
   });
 });
+
+// D-0081 §5 draws the line at "a read that succeeded and didn't find it". A cache the browser
+// won't open at all is not that, so it must never cost the user their routine by redirecting.
+// Commit 85f134c added the guard; nothing pinned it, and `loadRoutines` resolves `[]` rather
+// than rejecting, so the `null` branch is only reachable through a throwing loader.
+describe("a cache that cannot be read never redirects", () => {
+  beforeEach(() => seed());
+
+  it.each([true, false])(
+    "loadRoutines rejects (online: %s): the editor stays put and does not redirect",
+    async (isOnline) => {
+      setOnline(isOnline);
+      offline.throwRoutines = true;
+      renderEditor(`/plan/routines/${R}`);
+      await screen.findByRole("heading", { level: 1 });
+      // Long enough for a redirect to have landed if one were coming.
+      await new Promise((resolve) => setTimeout(resolve, 80));
+      expect(location()).toHaveTextContent(`/plan/routines/${R}`);
+      expect(spy.calls).toHaveLength(0);
+      setOnline(true);
+    },
+  );
+
+  it("contrast: the same read succeeding but not finding the id does redirect", async () => {
+    setOnline(false);
+    renderEditor("/plan/routines/99999999-9999-4999-8999-999999999999");
+    await waitFor(() => expect(location().textContent).toBe("/plan"));
+    setOnline(true);
+  });
+
+  it("loadLibrary rejects: the rows still render from their raw ids and nothing throws", async () => {
+    offline.throwLibrary = true;
+    renderEditor(`/plan/routines/${R}`);
+    // No library means no display names, so AC-A12's raw-id fallback carries the whole list.
+    expect(await screen.findByText("1. barbell-back-squat")).toBeInTheDocument();
+    expect(screen.getByText("3. leg-curl-machine")).toBeInTheDocument();
+    expect(location()).toHaveTextContent(`/plan/routines/${R}`);
+    fireEvent.click(screen.getByRole("button", { name: "Move leg-curl-machine up" }));
+    expect(screen.getByText("2. leg-curl-machine")).toBeInTheDocument();
+  });
+});
