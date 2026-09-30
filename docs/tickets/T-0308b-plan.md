@@ -143,7 +143,7 @@ All three routes exist: `/plan` → `Plan` (UF-11.2, tab bar on) and `/plan/edit
   - **Contrast:** priorities `[back, arms]` loaded, tapped off and back on in the order arms, back, is unchanged (set comparison), so Save stays disabled.
 - **AC-B8 (priorities, preview and the limit — spec AC15)** Through the engine, with F:
   - Tapping `Arms`, `Back`, `Hamstrings` (in that order) shows `Back 25`, `Hamstrings 20` and `Arms 15`. **Contrast:** `Chest 20` and `Calves 12` are unchanged.
-  - The last `previewTargets` call received `{rhythmMin: 3, rhythmMax: 4, priorityAreas: ["back", "hamstrings", "arms"]}` in the fixed order.
+  - The last `previewTargets` call received `{rhythmMin: 3, rhythmMax: 4, priorityAreas: ["back", "arms", "hamstrings"]}` in the fixed order.
   - With 3 selected, tapping `Quads` leaves it `aria-pressed="false"`, shows `Pick up to 3`, keeps exactly 3 pressed, and makes **no** `previewTargets` call with 4 areas.
   - **Contrast:** `Pick up to 3` is **absent** before that tap, and absent again after `Arms` is deselected, when `Quads` can then be selected.
 - **AC-B9 (rhythm steppers)** Through the engine, from F's 3–4:
@@ -159,7 +159,7 @@ All three routes exist: `/plan` → `Plan` (UF-11.2, tab bar on) and `/plan/edit
   - **Contrast:** change the draft rhythm after the priorities, so the stub is called with the new input and returns `back: 98`. The upsert then carries `98`, never `99`, so the Save uses the **last** preview and not a stale one or a UI recomputation.
 - **AC-B11 (Save: order and exact payloads — D-0070 §3)** With F, select `Back`, `Hamstrings` and `Arms`, then Save, online. The spy records exactly these calls, in order:
   - (1) `area_targets.upsert(rows, {onConflict: "user_id,area_id"})`, where `rows` is 9 objects with exactly the keys `area_id`, `sets_per_14d` and `source`. Back is 25, hamstrings 20, arms 15, the rest as F, and all `source: "default"`.
-  - (2) `profiles.update({goal: "build_muscle", rhythm_min: 3, rhythm_max: 4, priority_areas: ["back", "hamstrings", "arms"]})` with `eq("user_id", <the signed-in id>)`. The payload has **exactly** those four keys: no `level`, `equipment`, `onboarded_at` or `plan_changed_at`.
+  - (2) `profiles.update({goal: "build_muscle", rhythm_min: 3, rhythm_max: 4, priority_areas: ["back", "arms", "hamstrings"]})` with `eq("user_id", <the signed-in id>)`. The payload has **exactly** those four keys: no `level`, `equipment`, `onboarded_at` or `plan_changed_at`.
   - (3) `plan_checkins.update({answer: "withdrawn", answered_at: "2026-09-27T10:00:00.000Z"})` with `is("answer", null)`.
   - Then `refreshAll` is called, then the location is `/plan`.
   - **Contrast:** no `insert` or `delete` on any table, and no call to `sessions`, `session_sets` or `routines`.
@@ -207,6 +207,13 @@ All three routes exist: `/plan` → `Plan` (UF-11.2, tab bar on) and `/plan/edit
   - `apps/web/src/features/UF-02/**`: T-0308c's single `slots.tsx` grant, not this ticket's.
   - Any file under `packages/**`, and every contract file.
   - If you believe you need one of these, stop and put it in your result as a follow-up.
+
+<!-- Correction 2026-09-30 (orchestrator, from the T-0308b build): AC-B8/AC-B11 originally wrote this array as
+     ["back", "hamstrings", "arms"], which is neither tap order nor fixed order. `AREAS` in packages/shared/src/index.ts:76
+     is [chest, back, shoulders, arms, core, glutes, quads, hamstrings, calves], so `arms` (index 3) precedes `hamstrings`
+     (index 7) and the fixed order is ["back", "arms", "hamstrings"]. A transcription slip in the ticket, not a code defect:
+     the product code was already correct and its test derives the order from AREAS so it cannot drift. Do NOT "fix" the
+     code to match an older copy of this AC. -->
 
 ## Contract impact
 None. The reads are the T-0319 loaders and the engine's public `evaluateCheckin`, `checkinSessions` and `previewTargets` (shapes as in `api/openapi.yaml` `CheckinEvaluation`/`PreviewTarget`). The writes use `area_targets {area_id, sets_per_14d, source}`, `profiles {goal, rhythm_min, rhythm_max, priority_areas}` and `plan_checkins {answer, answered_at}` exactly as in `docs/data-model.md`.
