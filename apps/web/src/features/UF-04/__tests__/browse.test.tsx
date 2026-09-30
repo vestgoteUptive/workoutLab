@@ -247,13 +247,59 @@ describe("AC-5 filters live in the URL", () => {
   });
 });
 
+const DOWNLOAD_COPY = "The exercise library downloads the first time you're online.";
+
 describe("AC-6 never downloaded", () => {
   it("offline with an empty cache shows the download copy, no empty-match text, no chips", async () => {
     await mountAt("/library");
-    await screen.findByText("The exercise library downloads the first time you're online.");
+    await screen.findByText(DOWNLOAD_COPY);
     expect(screen.queryByText(/No exercises match/)).not.toBeInTheDocument();
     expect(screen.queryByRole("group")).not.toBeInTheDocument();
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+
+  // The offline path above is the easy half. Online on a first-ever launch the cache is also
+  // empty, but the download is in flight, so the download copy is the opposite of the truth.
+  // The refresh must be genuinely deferred: an instantaneous one closes the window that has
+  // the bug, and the assertion would pass vacuously.
+  it("online with an empty cache never shows the download copy while the refresh is in flight", async () => {
+    spy.reset();
+    seedSpy(spy);
+    setOnline(true);
+    let fillCache = (): void => {};
+    const inFlight = new Promise<void>((resolve) => {
+      // Resolving runs the real refresh, so the cache is actually filled by this promise.
+      fillCache = () => resolve(refreshAll(NOW, TZ).then(() => undefined));
+    });
+    hoisted.refreshAll.mockReturnValue(inFlight);
+
+    await mountAt("/library");
+
+    // The shell is held: no download copy, and no empty-match text standing in for it.
+    expect(screenId()).toBe("UF-04.1");
+    expect(rowNames()).toHaveLength(0);
+    expect(screen.queryByText(DOWNLOAD_COPY)).not.toBeInTheDocument();
+    expect(screen.queryByText(/No exercises match/)).not.toBeInTheDocument();
+    // The pre-refresh cache read resolves on a real macrotask (IndexedDB), not a microtask, so
+    // the window with the bug only opens after a timer tick. Flushing microtasks alone lets this
+    // assertion pass against the unfixed component, which is the trap this test exists to avoid.
+    for (const ms of [0, 5, 50]) {
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, ms));
+      });
+      // Still mid-download: the cache is empty, but claiming "never downloaded" would be a lie.
+      expect(screen.queryByText(DOWNLOAD_COPY)).not.toBeInTheDocument();
+      expect(rowNames()).toHaveLength(0);
+    }
+
+    await act(async () => {
+      fillCache();
+      await inFlight;
+    });
+
+    // Once the download lands the real rows appear, and the copy was never shown.
+    await waitFor(() => expect(rowNames()).toHaveLength(24));
+    expect(screen.queryByText(DOWNLOAD_COPY)).not.toBeInTheDocument();
   });
 });
 

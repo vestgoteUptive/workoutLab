@@ -27,7 +27,7 @@ function isAreaParam(value: string | null): value is Area {
 
 export function Library() {
   const [params, setParams] = useSearchParams();
-  const { data } = useScreenData(readLibrary, "library", { refresh: true });
+  const { data, pending } = useScreenData(readLibrary, "library", { refresh: true });
 
   const rawQuery = params.get("q") ?? "";
   const areaParam = params.get("area");
@@ -45,6 +45,9 @@ export function Library() {
   const profile = data?.profile ?? null;
   const mine = mineParam && profile !== null;
   const query = rawQuery.trim().toLowerCase();
+  // A first-ever visit holds the shell rather than claiming "never downloaded" from the
+  // pre-refresh cache while the refresh that fills it is still in flight.
+  const waitingForFirstDownload = exercises.length === 0 && pending;
 
   const rows = useMemo(
     () =>
@@ -89,7 +92,7 @@ export function Library() {
     <div data-screen-id="UF-04.1" className="wl-uf04">
       <h1>{en.screens.library}</h1>
       <OfflineStatus variant="text" />
-      {data === undefined ? null : exercises.length === 0 ? (
+      {data === undefined || waitingForFirstDownload ? null : exercises.length === 0 ? (
         <p>{en.uf04.neverDownloaded}</p>
       ) : (
         <>
