@@ -1,0 +1,7 @@
+lanes:
+  web-feature:
+    agent: frontend-dev
+    paths: ["apps/web/src/features/<flow>/**"]
+  infra:
+    agent: devops
+    paths: [infra/**, .github/**, package.json]

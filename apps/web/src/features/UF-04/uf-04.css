@@ -1,0 +1,142 @@
+/* UF-04 Library styling. Colours and fonts come only from @workoutlab/design-tokens (D-0019).
+   State (pressed chips) is styled from data/aria attributes here, never inline, so the
+   :focus-visible ring is never overridden (WCAG 2.4.7). */
+.wl-uf04 {
+  padding: 16px;
+  color: var(--wl-color-text);
+}
+
+.wl-uf04 h1 {
+  font-family: var(--wl-font-display);
+}
+
+.wl-uf04__search {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding: 8px 12px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.wl-uf04__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 12px;
+}
+
+.wl-uf04__chip {
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 8px 16px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 22px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.wl-uf04__chip[aria-pressed="true"] {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+}
+
+.wl-uf04__chip:focus-visible,
+.wl-uf04__row:focus-visible,
+.wl-uf04__link:focus-visible,
+.wl-uf04__search:focus-visible,
+.wl-uf04-howto__close:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-uf04__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wl-uf04__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  box-sizing: border-box;
+  min-block-size: 44px;
+  padding: 12px 8px;
+  color: var(--wl-color-text);
+  text-decoration: none;
+  border-block-end: 1px solid var(--wl-color-line);
+}
+
+.wl-uf04__row-name {
+  font-weight: 700;
+}
+
+.wl-uf04__row-areas {
+  color: var(--wl-color-accent);
+}
+
+.wl-uf04__row-muted {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf04__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf04__pill {
+  padding: 4px 12px;
+  border-radius: 14px;
+  color: var(--wl-color-text-muted);
+  background: var(--wl-color-surface-2);
+}
+
+.wl-uf04__pill[data-weight="primary"] {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+}
+
+.wl-uf04__link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  color: var(--wl-color-accent);
+}
+
+.wl-uf04__attribution,
+.wl-uf04__attribution a {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf04__compare {
+  inline-size: 100%;
+  border-collapse: collapse;
+}
+
+.wl-uf04__compare th,
+.wl-uf04__compare td {
+  padding: 8px;
+  text-align: start;
+  vertical-align: top;
+  border-block-end: 1px solid var(--wl-color-line);
+}
+
+.wl-uf04__sr-only {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
