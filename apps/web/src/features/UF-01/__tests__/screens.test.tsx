@@ -5,7 +5,7 @@ import { act, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const fetchSpy = vi.fn(() => new Promise<Response>(() => {}));
-vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: vi.fn(), auth: {} } }));
+vi.mock("../../../lib/auth/client.js", async () => (await import("./client-mock.js")).clientMock());
 
 const { KEY, findScreen, mountAt, progressText, screenId, settle, stored, where } =
   await import("./harness.js");
@@ -112,12 +112,19 @@ describe("AC-2 sub-path screen ids (D-0097 §1)", () => {
     expect(where.current).toBe(path);
   });
 
-  it("UF-01.4 is a placeholder with a heading only", async () => {
+  // T-0301d replaced T-0301b's heading-only placeholder with the designed UF-01.4
+  // (`schedule.test.tsx` covers it in full).
+  it("UF-01.4 is the designed screen: one h1, the four steppers, Back and Save my plan", async () => {
     mountAt("/welcome/schedule");
     const root = await findScreen("UF-01.4");
-    expect(within(root).getByRole("heading", { level: 1 })).toBeInTheDocument();
-    expect(within(root).queryAllByRole("button")).toEqual([]);
-    expect(within(root).queryAllByRole("link")).toEqual([]);
+    expect(within(root).getAllByRole("heading", { level: 1 })).toHaveLength(1);
+    expect(within(root).getAllByRole("button")).toHaveLength(4);
+    expect(within(root).getByRole("link", { name: "Back" })).toHaveAttribute(
+      "href",
+      "/welcome/level",
+    );
+    expect(within(root).getByRole("link", { name: "Save my plan" })).toBeInTheDocument();
+    expect(progressText()).toBe("3/3");
   });
 });
 
@@ -225,7 +232,8 @@ describe("AC-5 the record is written (D-0064 §6, D-0098)", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Dumbbells" }));
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));
     await findScreen("UF-01.4");
-    expect(stored()).toEqual(RECORD_AC5);
+    // UF-01.4 showed its plan, so the record is now saveable (D-0098, T-0301d AC-3).
+    expect(stored()).toEqual({ ...RECORD_AC5, planShown: true });
   });
 
   it("each radio change rewrites the key and savedAtMs", async () => {
@@ -281,6 +289,7 @@ describe("AC-5 the record is written (D-0064 §6, D-0098)", () => {
       goal: "build_muscle",
       level: "beginner",
       equipmentProfile: "full-gym",
+      planShown: true,
       savedAtMs: 8_000,
     });
   });

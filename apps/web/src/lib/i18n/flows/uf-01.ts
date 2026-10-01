@@ -60,7 +60,30 @@ export const uf01 = {
   },
 
   schedule: {
-    /** UF-01.4 placeholder heading (T-0301d builds the screen). */
+    /** UF-01.4 heading (prototype `UF01-4-Schedule.dc.html`). */
     heading: "When can you train?",
+    subtitle: "Sessions per week. A range is fine; change it any time.",
+    /** The two rhythm steppers (D-0064 §4). */
+    minLabel: "At least",
+    maxLabel: "At most",
+    perWeek: "per week",
+    minUp: "One more session per week, minimum",
+    minDown: "One fewer session per week, minimum",
+    maxUp: "One more session per week, maximum",
+    maxDown: "One fewer session per week, maximum",
+    /** Read by the stepper's live region when its value changes. */
+    minValueName: (n: string) => `At least ${n} sessions per week`,
+    maxValueName: (n: string) => `At most ${n} sessions per week`,
+    /** The plan card (D-0064 §5). */
+    planTag: "Your plan",
+    /** "Beginner · Full gym" under the goal. */
+    planSub: (level: string, equipment: string) => `${level} · ${equipment}`,
+    /** "3–4 per week · 6–8 per 14 days"; one number when min equals max. */
+    rhythmLine: (min: number, max: number) =>
+      min === max
+        ? `${min} per week · ${2 * min} per 14 days`
+        : `${min}–${max} per week · ${2 * min}–${2 * max} per 14 days`,
+    targetsHeading: "Hard sets per 14 days",
+    save: "Save my plan",
   },
 } as const;

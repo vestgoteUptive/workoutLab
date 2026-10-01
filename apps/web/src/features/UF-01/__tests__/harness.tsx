@@ -1,9 +1,11 @@
 // Test harness for UF-01 (T-0301b). Mounts the `Welcome` export of `features/UF-01/index.tsx`
 // (the name `routes.ts` loads) under a `MemoryRouter` with a `/welcome/*` route, the way the
-// shell mounts it. `index.tsx` also exports UF-01.5, which imports `lib/auth/client`, so each
-// test file mocks that module before importing this harness.
+// shell mounts it, inside the shell's `AuthProvider` (UF-01.4's hand-off reads `useAuth()`).
+// `index.tsx` also exports UF-01.5, which imports `lib/auth/client`, so each test file mocks that
+// module (with `clientMock()` from `./client-mock.js`) before importing this harness.
 import { act, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
+import { AuthProvider } from "../../../lib/auth/auth-context.js";
 import { Welcome } from "../index.js";
 
 export const KEY = "wl-onboarding";
@@ -18,11 +20,13 @@ function Probe() {
 export function mountAt(path: string): { unmount(): void; container: HTMLElement } {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <Probe />
-      <Routes>
-        <Route path="/welcome/*" element={<Welcome />} />
-        <Route path="/account" element={<div data-screen-id="UF-01.5" />} />
-      </Routes>
+      <AuthProvider>
+        <Probe />
+        <Routes>
+          <Route path="/welcome/*" element={<Welcome />} />
+          <Route path="/account" element={<div data-screen-id="UF-01.5" />} />
+        </Routes>
+      </AuthProvider>
     </MemoryRouter>,
   );
 }
@@ -56,4 +60,29 @@ export function progressText(): string | null {
 
 export function setOnline(value: boolean): void {
   Object.defineProperty(window.navigator, "onLine", { configurable: true, get: () => value });
+}
+
+/** A stored, unexpired supabase-js session (as `profile-gate.test.tsx`'s `seedValidSession`). */
+export function seedValidSession(): void {
+  window.localStorage.setItem(
+    "sb-abc-auth-token",
+    JSON.stringify({
+      access_token: "tok",
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      user: { id: "u1" },
+    }),
+  );
+}
+
+/** The 9 rendered `[area, sets]` rows of the UF-01.4 plan card, in DOM order. */
+export function targetRows(): Array<[string, number]> {
+  return [...document.querySelectorAll<HTMLElement>("[data-area]")].map((li) => [
+    li.dataset.area!,
+    Number(li.querySelector('[data-field="sets"]')!.textContent),
+  ]);
+}
+
+/** The rendered value of a stepper (`rhythm-min` or `rhythm-max`). */
+export function stepperValue(id: "rhythm-min" | "rhythm-max"): number {
+  return Number(document.querySelector(`[data-field="${id}"] [aria-hidden="true"]`)!.textContent);
 }

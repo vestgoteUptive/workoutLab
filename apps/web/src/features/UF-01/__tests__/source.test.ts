@@ -74,7 +74,6 @@ const MODULES = {
   "UF-01.1": "WelcomeScreen.tsx",
   "UF-01.2": "GoalScreen.tsx",
   "UF-01.3": "LevelScreen.tsx",
-  "UF-01.4 placeholder": "SchedulePlaceholder.tsx",
   "the /welcome/* splat": "WelcomeRoutes.tsx",
 } as const;
 
@@ -113,7 +112,7 @@ describe("AC-1 / AC-9 the UF-01.1–.3 static import graphs", () => {
 });
 
 describe("AC-1 UF-01.2, UF-01.3 and UF-01.4 load only through React.lazy", () => {
-  const LAZY = ["GoalScreen", "LevelScreen", "SchedulePlaceholder"];
+  const LAZY = ["GoalScreen", "LevelScreen", "ScheduleScreen"];
 
   it("the splat imports them only as lazy(() => import(…))", () => {
     const source = readFileSync(resolve(FEATURE_DIR, "WelcomeRoutes.tsx"), "utf8");
@@ -160,6 +159,81 @@ describe("AC-1 UF-01.2, UF-01.3 and UF-01.4 load only through React.lazy", () =>
   });
 });
 
+// T-0301d AC-9 (principle 5) and the source half of AC-1 (principle 3).
+describe("T-0301d AC-9 the engine is imported only by UF-01.4, which loads lazily", () => {
+  const ENGINE = BANNED[0]![1];
+  /** Every specifier a file imports, type-only and dynamic included. */
+  function allSpecifiers(source: string): string[] {
+    const out: string[] = [];
+    const re = /(?:from\s+|import\s*\(\s*|import\s+)["']([^"']+)["']/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(source))) out.push(m[1]!);
+    return out;
+  }
+
+  it("ScheduleScreen.tsx is the only non-test UF-01 file that names @workoutlab/engine", () => {
+    const sources = readdirSync(FEATURE_DIR).filter((f) => /\.tsx?$/.test(f));
+    const importers = sources.filter((file) =>
+      allSpecifiers(readFileSync(resolve(FEATURE_DIR, file), "utf8")).some((s) => ENGINE.test(s)),
+    );
+    expect(importers).toEqual(["ScheduleScreen.tsx"]);
+  });
+
+  it("the /welcome first chunk (index.tsx's static graph) reaches neither the engine nor UF-01.4", () => {
+    const graph = staticGraph(resolve(FEATURE_DIR, "index.tsx"));
+    expect(graph.filter(({ spec }) => ENGINE.test(spec))).toEqual([]);
+    expect(graph.map((e) => e.spec)).not.toContain("./ScheduleScreen.js");
+    expect(graph.map((e) => e.spec)).not.toContain("./PlanCard.js");
+  });
+
+  it("contrast: UF-01.4's own graph does reach the engine (the walk is not vacuous)", () => {
+    const graph = staticGraph(resolve(FEATURE_DIR, "ScheduleScreen.tsx"));
+    expect(graph).toContainEqual({
+      file: "features/UF-01/ScheduleScreen.tsx",
+      spec: "@workoutlab/engine",
+    });
+    expect(graph.map((e) => e.spec)).toContain("./PlanCard.js");
+  });
+
+  it("UF-01.4 reaches no lib/offline or lib/profile, and lib/auth only via useAuth's module", () => {
+    const graph = staticGraph(resolve(FEATURE_DIR, "ScheduleScreen.tsx"));
+    expect(graph.filter(({ spec }) => /(^|\/)lib\/(offline|profile)(\/|$)/.test(spec))).toEqual([]);
+    const authFromFeature = graph.filter(
+      ({ file, spec }) => file.startsWith("features/") && /(^|\/)lib\/auth\//.test(spec),
+    );
+    expect(authFromFeature).toEqual([
+      { file: "features/UF-01/ScheduleScreen.tsx", spec: "../../lib/auth/auth-context.js" },
+    ]);
+  });
+});
+
+describe("T-0301d AC-1 the plan card renders the engine's numbers as they are", () => {
+  const schedule = readFileSync(resolve(FEATURE_DIR, "ScheduleScreen.tsx"), "utf8");
+  const card = readFileSync(resolve(FEATURE_DIR, "PlanCard.tsx"), "utf8");
+
+  it("deriveTargets is called in exactly one place, with priorityAreas: []", () => {
+    expect(schedule.match(/\bderiveTargets\(/g)).toHaveLength(1);
+    expect(schedule).toMatch(/deriveTargets\(\{[^}]*priorityAreas:\s*\[\][^}]*\}\)/);
+    const others = readdirSync(FEATURE_DIR)
+      .filter((f) => /\.tsx?$/.test(f) && f !== "ScheduleScreen.tsx")
+      .filter((f) => readFileSync(resolve(FEATURE_DIR, f), "utf8").includes("deriveTargets("));
+    expect(others).toEqual([]);
+  });
+
+  it("its result goes to the card's targets prop, which renders targets[area] untouched", () => {
+    expect(schedule).toMatch(/const targets = deriveTargets\(/);
+    expect(schedule).toMatch(/<PlanCard[^>]*\btargets=\{targets\}/);
+    expect(card).toMatch(/targets: Readonly<Record<Area, number>>/);
+    expect(card).toMatch(/AREAS\.map\(/);
+    expect(card).toMatch(/\{String\(targets\[area\]\)\}/);
+    // The only uses of `targets` in the card: the prop's type, its destructuring, the render.
+    const uses = card.match(/\btargets\b[^,\n]*/g) ?? [];
+    expect(uses.filter((u) => /targets\s*\[area\]\s*[-+*/%]|[-+*/%]\s*targets\b/.test(u))).toEqual(
+      [],
+    );
+  });
+});
+
 describe("AC-11 strings (NFR-I18N-1)", () => {
   const eslint = new ESLint({ cwd: WEB_ROOT });
 
@@ -183,17 +257,27 @@ describe("AC-11 strings (NFR-I18N-1)", () => {
     expect(result!.messages.map((m) => m.ruleId)).toContain("react/jsx-no-literals");
   });
 
-  it("the UF-01.1–.3 modules take their copy from en.uf01 only", () => {
+  it("the UF-01.1–.4 modules take their copy from en.uf01 only", () => {
     for (const file of [
       "WelcomeScreen.tsx",
       "GoalScreen.tsx",
       "LevelScreen.tsx",
       "StepHeader.tsx",
+      "ScheduleScreen.tsx",
     ]) {
       const source = readFileSync(resolve(FEATURE_DIR, file), "utf8");
       const enUses = source.match(/(?<![\w./])en\.[a-zA-Z0-9]+/g) ?? [];
       expect(enUses.length, file).toBeGreaterThan(0);
       expect(new Set(enUses), file).toEqual(new Set(["en.uf01"]));
     }
+  });
+
+  it("the plan card takes its copy from en.uf01, and the 9 area names from en.bodyMap.areas", () => {
+    // The area names are shared, never duplicated per flow (as UF-04 and UF-10 do).
+    const source = readFileSync(resolve(FEATURE_DIR, "PlanCard.tsx"), "utf8");
+    const enUses = source.match(/(?<![\w./])en\.[a-zA-Z0-9]+(\.[a-zA-Z0-9]+)?/g) ?? [];
+    expect(new Set(enUses.map((u) => (u.startsWith("en.uf01") ? "en.uf01" : u)))).toEqual(
+      new Set(["en.uf01", "en.bodyMap.areas"]),
+    );
   });
 });
