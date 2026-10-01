@@ -18,6 +18,9 @@ import {
 import { gatedPaths } from "../../lib/profile/gated-routes.js";
 import { routes } from "../routes.js";
 import { createSelectSpy, type SelectSpy } from "../../lib/offline/__tests__/select-spy.js";
+import { freshOfflineDb } from "../../lib/offline/__tests__/test-helpers.js";
+import { seedLibrary } from "../../lib/offline/__tests__/seed-library.js";
+import { toLibraryExercise, type Tables } from "@workoutlab/shared";
 
 const { loadProfile, refreshProfile } = vi.hoisted(() => ({
   loadProfile: vi.fn(),
@@ -136,10 +139,12 @@ beforeEach(() => {
   recheckRef = undefined;
   locationRef = "";
   authStateCallbacks.length = 0;
+  freshOfflineDb();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  freshOfflineDb();
 });
 
 // ---------------------------------------------------------------------------
@@ -167,6 +172,120 @@ const GATED: ReadonlyArray<readonly [string, string]> = gatedPaths(routes).map((
   const route = routes.find((r) => r.path === pattern)!;
   return [concrete(pattern), route.screenId] as const;
 });
+
+// ---------------------------------------------------------------------------
+// T-0366 (D-0088 §2, D-0091 §1): the AC-6 fixtures for the two built UF-04 screens.
+//
+// UF-04.2 and UF-04.3 render their `data-screen-id` wrapper during the first cache read, then
+// redirect to /library when the exercise isn't cached (D-0079 §3). On an empty cache the AC-6
+// rows could therefore pass on the wrapper alone. These rows seed the library and assert the
+// built content and that the location holds. UF-04 reads `lib/offline/history.js` directly (not
+// the mocked `index.js`), so the seed goes into the real (fake-indexeddb) Dexie cache for `u1`.
+// Online (`present`) the screen runs its own `refreshAll`, which replaces the cache from
+// `supabase.from`; the select spy returns the same exercises, so the refresh writes them back.
+// ---------------------------------------------------------------------------
+
+const USER_ID = "u1"; // the id `seedValidSession()` stores
+
+function exerciseRow(id: string, name: string): Tables<"exercises"> {
+  return {
+    id,
+    name,
+    kind: "exercise",
+    type: "compound",
+    level: "intermediate",
+    equipment: ["barbell"],
+    instructions: ["Brace.", "Drive up."],
+    mistakes: [],
+    cue: "Chest up",
+    source: "workoutlab",
+    license: "LicenseRef-workoutLab",
+    attribution: null,
+    source_url: null,
+    timed: false,
+    increment_kg: 2.5,
+    default_duration_s: null,
+    external_load: true,
+  };
+}
+
+const UF04_EXERCISES = [
+  exerciseRow("back-squat", "Back squat"),
+  exerciseRow("leg-press", "Leg press"),
+];
+const UF04_AREAS = UF04_EXERCISES.flatMap((e) => [
+  { exercise_id: e.id, area_id: "quads", weight: 1 },
+  { exercise_id: e.id, area_id: "glutes", weight: 0.5 },
+]);
+const UF04_VARIANTS = [{ exercise_id: "back-squat", variant_id: "leg-press" }];
+
+interface Uf04Fixture {
+  /** The exercise ids the screen needs in the cache. */
+  exerciseIds: readonly string[];
+  /** Resolves once the built content (not just the wrapper) is on screen. */
+  built: () => Promise<void>;
+  /** Asserts the built content is still on screen. */
+  stillBuilt: () => void;
+}
+
+/** Per route pattern; only the AC-6 `unknown`/`present` rows look this up. */
+const UF04_FIXTURES: Record<string, Uf04Fixture> = {
+  "/library/:exerciseId": {
+    exerciseIds: ["back-squat"],
+    built: async () => {
+      await screen.findByRole("heading", { level: 1, name: "Back squat" });
+    },
+    stillBuilt: () => {
+      expect(screen.getByRole("heading", { level: 1, name: "Back squat" })).toBeInTheDocument();
+    },
+  },
+  "/library/:exerciseId/compare/:otherId": {
+    exerciseIds: ["back-squat", "leg-press"],
+    built: async () => {
+      await screen.findByRole("columnheader", { name: "Back squat" });
+      await screen.findByRole("columnheader", { name: "Leg press" });
+    },
+    stillBuilt: () => {
+      expect(screen.getByRole("columnheader", { name: "Back squat" })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: "Leg press" })).toBeInTheDocument();
+    },
+  },
+};
+
+/** The fixture for a concrete AC-6 path, found through the pattern it was built from. */
+function uf04FixtureFor(path: string): Uf04Fixture | undefined {
+  const pattern = gatedPaths(routes).find((p) => concrete(p) === path);
+  return pattern === undefined ? undefined : UF04_FIXTURES[pattern];
+}
+
+/** Seeds the Dexie cache for `u1` (both iterations) and, online, the spy rows the refresh reads. */
+async function seedUf04(fixture: Uf04Fixture, online: boolean): Promise<void> {
+  const rows = UF04_EXERCISES.filter((e) => fixture.exerciseIds.includes(e.id));
+  const areasOf = (id: string) => UF04_AREAS.filter((a) => a.exercise_id === id);
+  await seedLibrary(
+    USER_ID,
+    rows.map((row) => toLibraryExercise(row, areasOf(row.id))),
+  );
+  if (online) {
+    spy.setRows("exercises", rows);
+    spy.setRows(
+      "exercise_areas",
+      UF04_AREAS.filter((a) => fixture.exerciseIds.includes(a.exercise_id)),
+    );
+    spy.setRows(
+      "exercise_variants",
+      UF04_VARIANTS.filter(
+        (v) =>
+          fixture.exerciseIds.includes(v.exercise_id) && fixture.exerciseIds.includes(v.variant_id),
+      ),
+    );
+  }
+}
+
+/** One macrotask turn, so a redirect queued behind the cache read (or the refresh) has landed. */
+async function settleTurn(): Promise<void> {
+  await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+}
 
 describe("the gated set is derived from routes.ts, with an exact expected count", () => {
   it("is the 12 `protected` entries plus /session/setup, and nothing else", () => {
@@ -234,8 +353,17 @@ describe("AC-5 signed in + `missing`: every gated route redirects to /welcome/sa
 describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", () => {
   it.each(GATED)("`unknown`: %s renders %s, not /welcome/save", async (path, screenId) => {
     stateUnknown();
+    const uf04 = uf04FixtureFor(path);
+    if (uf04) await seedUf04(uf04, false);
     render(<Harness start={path} />);
     await waitFor(() => expect(screenOf(screenId)).toBeInTheDocument());
+    if (uf04) {
+      // T-0366: the built screen, not the transient wrapper, then a macrotask turn.
+      await uf04.built();
+      await settleTurn();
+      uf04.stillBuilt();
+      expect(screenOf("UF-04.1")).not.toBeInTheDocument();
+    }
     // Settle one more tick, so a late redirect would still be caught.
     await act(async () => {});
     expect(screenOf(screenId)).toBeInTheDocument();
@@ -245,8 +373,18 @@ describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", (
 
   it.each(GATED)("`present`: %s renders %s, not /welcome/save", async (path, screenId) => {
     statePresent();
+    const uf04 = uf04FixtureFor(path);
+    if (uf04) await seedUf04(uf04, true);
     render(<Harness start={path} />);
     await waitFor(() => expect(screenOf(screenId)).toBeInTheDocument());
+    if (uf04) {
+      // T-0366: the built screen survives the screen's own `refreshAll` against the spy.
+      await uf04.built();
+      await waitFor(() => expect(spy.countFor("exercises")).toBeGreaterThanOrEqual(1));
+      await settleTurn();
+      uf04.stillBuilt();
+      expect(screenOf("UF-04.1")).not.toBeInTheDocument();
+    }
     await act(async () => {});
     expect(locationRef).toBe(path);
     expect(screenOf("UF-01.1")).not.toBeInTheDocument();
