@@ -84,8 +84,9 @@ An area is **recovering** when the weighted hard sets with `completed_at` in `(n
 
 ## 7. Session building (D-0004, D-0024)
 ### 7.1 Time model
-Set cost = work + rest. Work is 45 s, or the target duration for a timed set. Rest is 120 s for a compound and 60 s for an isolation. Item cost = sets × set cost + 60 s transition. The warm-up costs 4 × 40 s + 20 s = 180 s. `available = budgetMin × 60 − (warmupInBudget ? 180 : 0)`. Σ item costs never exceeds `available`. When `warmupInBudget` is off, the warm-up is still generated but not counted.
+Set cost = work + rest. Work is 45 s for a non-timed set. For a timed set, work is its **planned duration**: the rule 14 pre-fill `durationS` for that exercise over the same history and `now`, which is `defaultDurationS` with no usable history (D-0092). The item's `durationS` is that planned duration (a timed exercise with neither falls back to 45 s). Rest is 120 s for a compound and 60 s for an isolation. Item cost = sets × set cost + 60 s transition. The warm-up costs 4 × 40 s + 20 s = 180 s. `available = budgetMin × 60 − (warmupInBudget ? 180 : 0)`. Σ item costs never exceeds `available`. When `warmupInBudget` is off, the warm-up is still generated but not counted. Every time cost in the engine uses this model: rule 7.2 selection, rule 7.4, rule 12 `timeCostS` and `fitsBudget`, rule 13's fit check and `applySwap`. Rule 8 reads the item `costS`.
 - **R7-E1** back-squat × 4 = 720 s. leg-curl × 3 = 375 s. plank × 2 = 270 s.
+- **R7-E13 (timed set at its planned duration, D-0092)** Given plank logged 3 × 115 s on 2026-09-24 (10:00) and `budgetMin 20`, warm-up off, `pinnedIds ["plank"]` (`available` 1200), Then plank is planned at 120 s (rule 14 `add_rep`, capped). bench-press × 4 (720 s) leaves 480 s, plank × 3 would cost 3 × 180 + 60 = 600 s, so the items are bench-press × 4 and plank × 2 at 120 s (420 s). The item total is 1140 s and `unusedS` is 60. At zero history the same input gives plank × 3 at 45 s (375 s), an item total of 1095 s.
 
 ### 7.2 Main lift and greedy selection
 The projected load starts at the rule-3 load. `r(area) = projectedLoad / target`. An area is **eligible** if it is not recovering, not exhausted, has fewer than 2 items with it as a primary area, and the session has fewer than 8 items. **Candidates** for an area are the eligible exercises with weight 1.0 in that area that are not yet in the session and have no recovering primary area. Candidates are ranked by: (1) not in the most recent session with hard sets first; (2) gap fit `Σ_a w(a) × projectedDeficit(a)` descending, where recovering areas count 0; (3) id ascending.
@@ -200,3 +201,4 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 0–6, 11 (R0–R6, R11) | T-0200 |
 | 7, 8, 10, 12, 13, 14 | T-0201 (a split is proposed by T-0101) |
 | 9 + simulated suite | T-0202 |
+| 7.1 timed planned duration (R7-E13, D-0092) | T-0219 |

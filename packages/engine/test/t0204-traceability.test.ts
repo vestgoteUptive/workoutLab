@@ -39,6 +39,20 @@ function rulesOnMain(): string | null {
   return null;
 }
 
+/**
+ * The sections T-0204 guards (D-0092 §6): rule 12 from `## 12.` up to and including the
+ * `- **R12-E5` line, and rule 13 from `## 13.` up to `## 14.`.
+ */
+function guarded(doc: string): string {
+  const r12 = doc.indexOf("\n## 12.");
+  const e5 = doc.indexOf("\n- **R12-E5", r12);
+  const e5End = doc.indexOf("\n", e5 + 1);
+  const r13 = doc.indexOf("\n## 13.");
+  const r14 = doc.indexOf("\n## 14.", r13);
+  for (const i of [r12, e5, e5End, r13, r14]) expect(i).toBeGreaterThan(-1);
+  return `${doc.slice(r12, e5End)}\n${doc.slice(r13, r14)}`;
+}
+
 describe("T-0204 contract edit (D-0056 §1)", () => {
   it("R12-E1 rule-12 (AC25) the R12-E1 line says muscleMatch 1.0 and 0.667 and cites D-0056", () => {
     const lines = readFileSync(RULES, "utf8").split("\n");
@@ -68,13 +82,14 @@ describe("T-0204 contract edit (D-0056 §1)", () => {
     expect(lines).not.toContain(R12_E1_LINE.before);
   });
 
-  it("rule-12 (AC25) against main, engine-rules.md differs by at most that one line", () => {
-    const current = readFileSync(RULES, "utf8");
+  it("rule-12 (AC25) against main, rule 12 (to R12-E5) and rule 13 differ by at most that one line", () => {
+    const current = guarded(readFileSync(RULES, "utf8"));
     const main = rulesOnMain();
     // Shallow CI clones have no main; the fixture test above still pins the line.
     if (main === null) return;
+    // D-0092 §6: the guard covers the sections T-0204 owned, not the whole file.
     const reverted = current.replace(R12_E1_LINE.after, R12_E1_LINE.before);
-    expect([current, reverted]).toContain(main);
+    expect([current, reverted]).toContain(guarded(main));
   });
 });
 

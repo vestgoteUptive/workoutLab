@@ -39,7 +39,6 @@ import {
   profile,
   setsWithReps,
 } from "./fixtures/common.js";
-import { R12_E1_LINE } from "./fixtures/r12-e1-d0056.js";
 import {
   SIMULATED_HISTORIES,
   allChestNoLegsHistory,
@@ -792,6 +791,15 @@ function rulesOnMain(): string | null {
   return null;
 }
 
+/** Rule 14's text: from the `## 14.` heading up to `## Required tests` (D-0092 §6). */
+function rule14Of(doc: string): string {
+  const start = doc.indexOf("\n## 14.");
+  const end = doc.indexOf("\n## Required tests", start);
+  expect(start).toBeGreaterThan(-1);
+  expect(end).toBeGreaterThan(start);
+  return doc.slice(start, end);
+}
+
 describe("rule 14 traceability", () => {
   it("rule-14 (AC25) every rule 14 example id appears in a test title", () => {
     const titleRe = /\b(?:it|test)(?:\.each\([\s\S]*?\))?\(\s*(["'`])((?:\\.|(?!\1).)*)\1/g;
@@ -816,12 +824,13 @@ describe("rule 14 traceability", () => {
     }
   });
 
-  it("rule-14 (AC25) docs/engine-rules.md is unchanged against main", () => {
+  it("rule-14 (AC25) docs/engine-rules.md rule 14 (## 14. up to ## Required tests) is unchanged against main", () => {
     const main = rulesOnMain();
     // Shallow CI clones have no main; the rule text is then pinned by the tests above.
     if (main === null) return;
-    // T-0204 landed first on this base: its D-0056 §1 R12-E1 line is the only allowed change.
+    // D-0092 §6: this guard covers the section T-0205 owned, not the whole file, so later
+    // tickets may edit other rules under their own decisions.
     const current = readFileSync(path.join(REPO_DIR, "docs", "engine-rules.md"), "utf8");
-    expect([main, main.replace(R12_E1_LINE.before, R12_E1_LINE.after)]).toContain(current);
+    expect(rule14Of(current)).toBe(rule14Of(main));
   });
 });
