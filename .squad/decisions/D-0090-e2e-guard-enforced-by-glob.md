@@ -31,7 +31,7 @@ Measured on `main` on 2026-10-01:
    allowed (`type Page`, as in `uf-04-library.spec.ts:10`). There is no allow-list and no
    per-file opt-out. `fixture-guard.spec.ts` itself is in scope, and it already complies.
 3. **Timing (D-0086's trigger).** T-0356 depends on T-0307b, T-0308a and T-0308b, the Phase 3
-   branches in `doing` on 2026-10-01 that may add e2e specs. It is built after they merge, and it
+   branches that were `doing` and are `blocked:H-13` on 2026-10-01 (branches missing on this machine) that may add e2e specs. It is built after they merge, and it
    migrates every unguarded spec on `main` at build time. Today that is `uf-10-balance.spec.ts`.
    Until then, reviewers of those three branches should ask for the guarded import, which costs
    one line.

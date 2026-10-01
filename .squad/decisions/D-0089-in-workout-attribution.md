@@ -51,13 +51,15 @@ text line in one component, and it needs no link, so principle 1 holds.
 - web-feature:UF-04 builds this in **T-0364**. The new string keys go in
   `apps/web/src/lib/i18n/flows/uf-04.ts` under D-0075.
 - Any future surface that renders `instructions` or `cue` from a third-party row (for example a
-  UF-09 step that inlines the cue) must show the same link-free credit. T-0364 exports the line as
-  a reusable component so that surface does not invent its own.
+  UF-09 step that inlines the cue) must show the same link-free credit. T-0364 builds the line as
+  a component exported from `InlineCredit.tsx` (not from the feature's `index.tsx`; a public
+  export comes with a later decision) so that surface does not invent its own.
 - No contract change. `ExerciseDetail` already carries `source`, `license` and `attribution`.
 
 ## Revisit when
-- **Before public launch (D-0005 "Revisit when"):** whoever confirms that CC-BY-SA share-alike is
-  acceptable also confirms that this in-workout form is enough. That means name plus licence
+- **A licence or legal review of in-session display before public launch:** D-0061 (2026-09-29)
+  confirmed CC-BY-SA share-alike without weighing in-workout display, so that review must confirm
+  this in-workout form is enough. That means name plus licence
   name, with the licence URI and source link one screen away on UF-04.2. If they say it is not,
   add the licence URI as plain text, or replace the wger text with our own copy. The second
   removes the line entirely, because the rows flip to `source: "workoutlab"`.
