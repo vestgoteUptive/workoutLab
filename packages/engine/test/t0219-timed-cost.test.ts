@@ -682,7 +682,7 @@ describe("simulated 14-day histories with a timed exercise (AC8, AC9)", () => {
     }
   });
 
-  it("rule-9 (AC9) evaluateCheckin (F-checkin via checkinSessions) is unchanged for every history", () => {
+  it("rule-9 (AC9) evaluateCheckin (F-checkin via checkinSessions) matches the baseline's last ended period for every history", () => {
     for (const [name, h] of AC9_HISTORIES) {
       const got = evaluateCheckin(
         checkinSessions(sessionRefsOf(h), h, LIBRARY),

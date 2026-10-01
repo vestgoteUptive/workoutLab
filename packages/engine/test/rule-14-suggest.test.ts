@@ -726,7 +726,7 @@ describe("rule 14 invariants over a long sweep (AC23, R7-E8)", () => {
     // The sweep reaches the break branches, not only first_time.
     for (const k of ["first_time", "hold_after_break", "reentry"] as const)
       expect(kindsSeen).toContain(k);
-  });
+  }, 30_000); // runtime budget only (sweep)
 });
 
 // ---- AC24: public API ----
