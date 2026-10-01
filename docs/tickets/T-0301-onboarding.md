@@ -5,8 +5,9 @@ lane: web-feature:UF-01 (T-0301a is web-shell)
 screens: [UF-01.1, UF-01.2, UF-01.3, UF-01.4, UF-01.5]
 decisions: [D-0002, D-0010, D-0014, D-0017, D-0022, D-0045, D-0061, D-0063, D-0064, D-0067, D-0071]
 deps: [T-0300, T-0201a, T-0318]
-status: split   # → T-0301a (ready; web-shell, runs after T-0318 and T-0319), T-0301b (after T-0318), T-0301c (after a + b)
+status: split   # → T-0301a (done), T-0301b (ready), T-0301d (after b), T-0301c (after a + b + d)
 ---
+<!-- Re-groomed 2026-10-01 by product-owner: T-0301b was split again so each web build stays small. T-0301b keeps UF-01.1–.3, the pending-plan record and the start time (ACs B1–B3, the storage part of B8, the start part of B9). The new T-0301d takes UF-01.4, the plan card, timingMs, the hand-off and the e2e (B4–B7, B9 end, B10, the full B8 literal). D-0097 lets the UF-01 tickets update the stub-era UF-01.1 rows in the web-shell tests. D-0098 adds `planShown` to the pending plan, which T-0301c's AC-C1, AC-C5 and AC-C7 fixtures need. Child files: `T-0301b-onboarding-screens.md`, `T-0301d-onboarding-plan.md`. -->
 <!-- Reconciled by triage 2026-09-29 (TR-0030, D-0071 §11): the gate covers every protected route plus /session/setup (including T-0318's new routes), never /session/:id or /session/:id/summary. -->
 <!-- Groomed 2026-09-29 by product-owner. Split into T-0301a/b/c (D-0064 Consequences). ACs are tagged [a]–[c]. -->
 
@@ -18,9 +19,10 @@ Keep `T-0301` as the parent row with status `split → T-0301a, T-0301b, T-0301c
 
 | Child | Lane | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|---|
-| T-0301a | web-shell | Profile gate `lib/profile` + guard wiring (D-0064 §9) | T-0300 | **ready** | ¼ day |
-| T-0301b | web-feature:UF-01 | UF-01.1–.4, pending plan, timing, on-device targets | T-0300, T-0201a, T-0318 | todo | ½ day |
-| T-0301c | web-feature:UF-01 | UF-01.5 Account (link, code, Google, privacy), `/welcome/save` | T-0301a, T-0301b | todo | ½ day |
+| T-0301a | web-shell | Profile gate `lib/profile` + guard wiring (D-0064 §9) | T-0300 | done | ¼ day |
+| T-0301b | web-feature:UF-01 | UF-01.1–.3, pending-plan record, start time (D-0097, D-0098) | T-0300, T-0318, T-0301a | ready | ½ day |
+| T-0301d | web-feature:UF-01 | UF-01.4 steppers + plan card from `deriveTargets`, timingMs, `planShown`, hand-off, e2e | T-0301b, T-0201a | todo | ½ day |
+| T-0301c | web-feature:UF-01 | UF-01.5 Account (link, code, Google, privacy), `/welcome/save` | T-0301a, T-0301b, T-0301d | todo | ½ day |
 
 T-0301a is a web-shell ticket and must not run in parallel with any other web-shell ticket (T-0318, T-0319, T-0312, T-0313, T-0310). Order (D-0071 §11): T-0318 → T-0319 → T-0301a, because T-0318 unblocks every feature ticket and T-0301a only T-0301c. If T-0301a runs before T-0318, its AC-A2 table still holds, and T-0318's AC-5 covers the new routes. T-0301b needs T-0318 only for its string file `lib/i18n/flows/uf-01.ts` (D-0067 §2). It adds no routes: `/welcome/*` already exists.
 
