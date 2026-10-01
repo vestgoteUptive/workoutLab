@@ -123,6 +123,12 @@ Vitest + Testing Library in `apps/web/src/features/UF-01/__tests__/`. `lib/auth/
     - the location stays `/welcome/save`.
   - When Retry is activated (twice quickly) and both upserts succeed, Then one more targets upsert and one profiles upsert run, the profiles **select** count stays 1, and the AC-5 end state follows.
   - Given the targets upsert succeeds and the profiles upsert fails, Then the same error shows. Retry resends **both** upserts, in AC-5 order.
+  - Given the step-1 `profiles` existence select resolves `{error: {code: "500"}}` (or rejects), Then:
+    - the same "Couldn't save your plan. Try again." alert and Retry show;
+    - both upserts have 0 calls;
+    - `wl-onboarding` is byte-identical.
+
+    When Retry is activated, step 1 runs again (select count 2), and only after it succeeds with `{data: null}` do the upserts follow, in AC-5 order. Step 1 runs once **successfully** per visit (D-0100 §3).
   - The recheck is never called before a successful profiles upsert or an AC-6 existing row.
 - **AC-8 (offline, D-0100 §4)**
   - Given `PLAN` and `navigator.onLine = false` at mount, Then `supabase.from` has 0 calls, "Connect to save your plan" shows, and there is no enabled Retry.
@@ -159,6 +165,10 @@ Vitest + Testing Library in `apps/web/src/features/UF-01/__tests__/`. `lib/auth/
     - the D-0073 §3 `stale` + `missing` case;
     - the first AC-11 case.
   - **The "not redirected" marker:** in the AC-6 `unknown` and `present` bodies and the "never settles" body, `expect(screenOf("UF-01.5-save")).not.toBeInTheDocument()` is added right after the existing UF-01.1 negative. Without it, a redirect to `/welcome/save` would no longer show UF-01.1.
+  - **Waiting for the lazy chunk:** `SaveScreen` loads through `React.lazy`, so a positive `UF-01.5-save` assertion may (and should) wait for it, with `await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument())` or `await screen.findBy…`.
+    - This covers the D-0073 §3 `stale` case (~line 905), which today asserts synchronously after a location `waitFor`. A synchronous assertion on a cold lazy chunk is the T-0331 flake class.
+    - That wrapping is the only other change allowed on those lines.
+    - Negative markers stay synchronous, after the body's existing settle.
   - **The stale case** still asserts `spy.countFor("profiles")` is 1. AC-9 keeps that true, because the no-plan screen makes no call.
   - **Scope of the diff:** `git diff main` on the file shows only these changes. The number of `/welcome/save` cases (array entries plus single cases) is equal before and after. The file passes in full and in isolation (`-t '/welcome/save'`).
   - **`apps/web/src/app/auth-guard.test.tsx`** is granted by D-0097 §4. It has no `/welcome/save` row today, so its expected diff is empty.

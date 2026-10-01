@@ -7,6 +7,8 @@ by: product-owner (groom T-0301b)
 area: product
 builds-on: D-0014, D-0064 §6–§8
 ---
+> **Amended by D-0100 (§2), 2026-10-01.** §2: with no saveable plan, `/welcome/save` no longer goes to `/welcome/goal`. It stays on screen `UF-01.5-save` and offers a "Set up my plan" link to `/welcome/goal`. The rule that a record with `planShown: false` counts as "no pending plan" is unchanged.
+
 ## Context
 D-0064 §7 sets `startedAtMs` at the first commit of UF-01.1, and §6 keeps it inside the
 `wl-onboarding` record. So the record exists as soon as UF-01.1 renders, holding the §2 default

@@ -6,7 +6,7 @@ date: 2026-10-01
 by: product-owner (groom T-0301c)
 area: product
 builds-on: D-0064 §8, D-0097, D-0098, D-0073
-amends: D-0064 §8 (the no-plan branch and the write order), D-0097 §1 (the `/welcome/save` row)
+amends: D-0064 §8 (the no-plan branch and the write order), D-0097 §1 (the `/welcome/save` row), D-0098 §2 (the `/welcome/save` no-plan clause)
 ---
 ## Context
 T-0301c builds `/welcome/save`, the step D-0064 §8 defines. Grooming it against the merged code
@@ -54,9 +54,11 @@ turned up four open points:
       onboarding_timing_ms}` and `{onConflict: "user_id"}`.
    4. Clear the pending plan, `await` the gate recheck (D-0101), then `navigate("/", {replace: true})`.
 
-   The existence check (step 1) runs once per visit. Retry after a failure resends steps 2 and 3,
-   which are idempotent upserts. It doesn't re-run step 1, because a profile written by this same
-   attempt would otherwise count as "existing" and skip the targets. A partial failure can leave
+   The existence check (step 1) runs once **successfully** per visit. If step 1 itself fails (an
+   `{error}` or a rejection), the screen shows the §4 error, and Retry runs step 1 again. Once
+   step 1 has succeeded, Retry after a later failure resends only steps 2 and 3, which are
+   idempotent upserts. It doesn't re-run step 1, because a profile written by this same attempt
+   would otherwise count as "existing" and skip the targets. A partial failure can leave
    targets without a profile, never a profile without targets. The gate then stays `missing` and
    brings the user back here, which is §8's intent.
 4. **Failure and offline.** On a failed write, the screen keeps the pending plan and shows "Couldn't
