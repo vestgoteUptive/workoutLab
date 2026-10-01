@@ -11,7 +11,8 @@ import { indexLibrary, isHardSet, normalizeHistory, primaryAreas, recentSessionI
 import { recoveringAreas } from "./load.js";
 import { plannedDurationFrom } from "./prefill.js";
 import { localDate } from "./time.js";
-const SWAP_REASONS = [
+/** The `SwapReason` values (D-0037 §2). */
+export const SWAP_REASONS = [
     "equipment_taken",
     "discomfort",
     "variety",

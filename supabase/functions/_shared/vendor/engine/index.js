@@ -7,7 +7,8 @@
 // no I/O, no clock, no entropy source (rule 0, D-0024), so the same code runs in the browser
 // and in the Deno Edge Function. T-0200 covers rules 0–6 and 11; T-0201a adds rules 7.1–7.3 and 10;
 // T-0201b adds rules 7.4 and 8; T-0202 adds rule 9; T-0204 adds rules 12 and 13;
-// T-0205 adds rule 14 (prefill); T-0219 costs timed sets at the planned duration (D-0092).
+// T-0205 adds rule 14 (prefill); T-0219 costs timed sets at the planned duration (D-0092);
+// T-0224 adds rule 12.1 applySwap (D-0093).
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
 export { localDate, windowOf, addDays, dayDiff, WINDOW_DAYS } from "./time.js";
@@ -16,6 +17,7 @@ export { deriveTargets, previewTargets, BASE_TARGETS } from "./targets.js";
 export { balance, deficitOf, coverageStepOf, ATTENTION_DEFICIT, ATTENTION_DAYS, } from "./balance.js";
 export { suggest, isEligible, rankCandidates, itemCostS, setCostS, availableS, WORK_S, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, MAX_ITEMS, MAX_ITEMS_PER_AREA, } from "./session.js";
 export { rankSwaps, muscleMatch } from "./swaps.js";
+export { applySwap } from "./apply-swap.js";
 export { generateWarmup, WARMUP_COST_S, WARMUP_MOVES, WARMUP_MOVE_S } from "./warmup.js";
 export { floorInc, DEFAULT_INCREMENT_KG, BACKOFF_FACTOR, LOW_TRIM_FROM_SETS, LOW_TRIM_TO_SETS, } from "./energy.js";
 export { prefill, plannedDurationS, floor5, REENTRY_GAP_DAYS, HOLD_GAP_DAYS, TIMED_STEP_S, TIMED_MAX_S, TIMED_MIN_S, } from "./prefill.js";
