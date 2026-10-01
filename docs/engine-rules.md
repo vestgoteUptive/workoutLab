@@ -129,11 +129,11 @@ Fixture: budget 45 min, warm-up on. The plan is bench-press × 4 (main, chest 0.
 - **Completed session:** a session with ≥ 1 hard set (not warm-up, not tombstoned), dated by the local date of `started_at`. A **planned session** has no row: the plan is `2·rhythmMin – 2·rhythmMax` sessions per period. Suggested but unstarted workouts count for nothing.
 - **Under:** completed < 0.7 × 2·rhythmMin. **Over:** completed > 1.1 × 2·rhythmMax. Anything else is on plan.
 - **Reset:** `resetDate = max(local date of the last checkins.answered_at, local date of `profiles.plan_changed_at` (engine field `planUpdatedAt`, D-0035, D-0041))`. A period is eligible if its end ≥ `resetDate`.
-- **Proposal:** look at the last two ended eligible periods. If both are under, propose (min − 1, max − 1). If both are over, propose (min + 1, max + 1). Clamp to 1–7, keeping min ≤ max. If the result equals the current rhythm, there is no proposal. With fewer than two eligible ended periods, there is no proposal.
-- **Output:** `{periods[{index, start, end, completed, status}], proposal: {direction, rhythmMin, rhythmMax, previewTargets} | null, nextCheckinDate}`. `previewTargets` is rule 4 with the proposed rhythm. `nextCheckinDate` is the day after the current period ends. The engine never changes targets. Only an Accept (UI → API) does.
-- **R9-E1…E11** are UF-11 spec AC1, AC2, AC3, AC4, AC5, AC7 (engine part), AC8, AC11, AC12, AC13 and AC14, with that spec's fixtures. AC6 and AC16 are covered by statelessness and R0-E1.
-- **R9-E12 (mid-period reset)** Given a Keep on 2026-09-30 and P4 = 3, P5 = 2, Then on 2026-10-25 the result proposes 2–3 (P4 ends 10-10 ≥ 09-30, so it is eligible).
-- **R9-E13 (edit plan resets)** Given P2 = 4 and P3 = 3 and `plan_changed_at` 2026-09-20, Then there is no proposal on 2026-09-27 (P2 is not eligible).
+- **Proposal:** Look at the last ended period, if it is eligible. If it is under, propose (min − 1, max − 1). If it is over, propose (min + 1, max + 1). Clamp to 1–7, keeping min ≤ max. If the result equals the current rhythm, there is no proposal. With no eligible ended period, there is no proposal (D-0061 §2, D-0094).
+- **Output:** `{periods[{index, start, end, completed, status}], proposal: {direction, rhythmMin, rhythmMax, previewTargets} | null, nextCheckinDate}`. `periods` holds at most one entry: the last ended period if it is eligible, otherwise none (D-0094). `previewTargets` is rule 4 with the proposed rhythm. `nextCheckinDate` is the day after the current period ends. The engine never changes targets. Only an Accept (UI → API) does.
+- **R9-E1…E11** are UF-11 spec AC1, AC2, AC3, AC4, AC5, AC7 (engine part), AC8, AC11, AC12, AC13 and AC14, with that spec's fixtures, re-derived for one period (D-0094). AC6 and AC16 are covered by statelessness and R0-E1.
+- **R9-E12 (mid-period reset)** Given a Keep on 2026-09-30 and P3 = 3, P4 = 3, Then on 2026-10-11 the result lists P4 alone and proposes 2–3 (P4 ends 10-10 ≥ 09-30, so it is eligible; on 2026-09-30 itself P3 ends 09-26 < 09-30, so there is no proposal; D-0094).
+- **R9-E13 (edit plan resets)** Given P2 = 4 and P3 = 3 and `plan_changed_at` 2026-09-20, Then on 2026-09-27 the result lists P3 alone and proposes 2–3 (P3 ends 09-26 ≥ 09-20, so it is eligible; an edit on 09-27 would leave no eligible period and no proposal; D-0094).
 
 ## 10. Explanation
 Every item carries machine-readable reasons, and the UI or an optional LLM only turns them into words. The codes are: `main_lift`, `area_deficit {area, deficit}`, `days_since {area, days | null}`, `recovering_skipped {area}`, `energy_low_trim`, `energy_high_backoff`, `swap {reason}`, `prefill {kind: first_time|carry|reentry|hold_after_break|increase|deload|hold|add_rep}`. `sessionReasons` (≤ 3) starts with at most 2 `recovering_skipped {area}` entries for the recovering areas in the fixed order, then is filled with `area_deficit` entries for the items' distinct first primary areas, in session order, up to 3 in total (D-0040).
@@ -202,3 +202,4 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 7, 8, 10, 12, 13, 14 | T-0201 (a split is proposed by T-0101) |
 | 9 + simulated suite | T-0202 |
 | 7.1 timed planned duration (R7-E13, D-0092) | T-0219 |
+| 9 one-period check-in (R9-E1…E13 re-derived, D-0061 §2, D-0094) | T-0215 |

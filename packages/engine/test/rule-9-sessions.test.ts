@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { checkinSessions, evaluateCheckin, type HistorySet } from "@workoutlab/engine";
 import {
   CHECKIN_TZ as TZ,
+  DOWN_2_3,
   F_CHECKIN,
   NO_CHECKINS,
   on,
@@ -49,8 +50,9 @@ describe("rule 9 session counting", () => {
       on("2026-09-27"),
       TZ,
     );
-    expect(r.periods).toStrictEqual([per(2, 7, "on_plan"), per(3, 3, "under")]);
-    expect(r.proposal).toBeNull();
+    // One period (D-0061 §2, D-0094): P3 = 3 is under, so it proposes on its own (T-0215 AC10).
+    expect(r.periods).toStrictEqual([per(3, 3, "under")]);
+    expect(r.proposal).toStrictEqual(DOWN_2_3);
 
     const shiftedRefs = refs.map((s) =>
       s.id === "mid" ? { ...s, startedAt: "2026-09-26T22:30:00Z" } : s,
@@ -62,7 +64,7 @@ describe("rule 9 session counting", () => {
       on("2026-09-27"),
       TZ,
     );
-    expect(shifted.periods.find((p) => p.index === 3)?.completed).toBe(2);
+    expect(shifted.periods).toStrictEqual([per(3, 2, "under")]);
   });
 
   it("rule-9 (AC23) checkinSessions normalises offline-merged history and ignores orphan sets (D-0041 §3)", () => {
