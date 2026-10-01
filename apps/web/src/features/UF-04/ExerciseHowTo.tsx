@@ -1,6 +1,7 @@
 // The in-workout how-to dialog (T-0306a, D-0069 §4, D-0079 §6). It renders inside UF-09, so it
 // reads the cache only (no refresh, no supabase-js, no fetch), holds no link out of the session
-// (principle 1) and owns exactly one control: Close.
+// (principle 1) and owns exactly one control: Close. Third-party text carries a link-free
+// inline credit (D-0089 §1).
 import { useEffect, useId, useRef } from "react";
 import type { LibraryExercise } from "@workoutlab/engine";
 import { en } from "../../lib/i18n/en.js";
@@ -9,6 +10,7 @@ import { loadLibrary } from "../../lib/offline/history.js";
 import { loadExerciseDetail } from "../../lib/offline/feature-loaders.js";
 import { useScreenData } from "./data.js";
 import { HowToBody } from "./HowToBody.js";
+import { InlineCredit } from "./InlineCredit.js";
 import "./how-to.css";
 
 export interface ExerciseHowToProps {
@@ -77,7 +79,10 @@ export function ExerciseHowTo({ exerciseId, onClose }: ExerciseHowToProps) {
         {data === undefined ? null : data.detail === null ? (
           <p>{en.uf04.detailMissing}</p>
         ) : (
-          <HowToBody detail={data.detail} />
+          <>
+            <HowToBody detail={data.detail} />
+            <InlineCredit detail={data.detail} />
+          </>
         )}
         <button type="button" className="wl-uf04-howto__close" ref={closeRef} onClick={onClose}>
           {en.uf04.close}
