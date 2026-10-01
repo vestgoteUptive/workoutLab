@@ -26,6 +26,20 @@ describe("OfflineStatus (AC-C19)", () => {
     expect(screen.getByText("Offline · last synced 14:05")).toBeInTheDocument();
   });
 
+  // T-0355 AC5: the default en-GB locale zero-pads the hour (D-0045 §9 `timeStyle: "short"`).
+  it('text variant reads "Offline · last synced 08:10" with the default locale', () => {
+    setOnline(false);
+    render(
+      <OfflineStatus
+        variant="text"
+        lastSyncedAt="2026-09-27T06:10:00Z"
+        timeZone="Europe/Stockholm"
+      />,
+    );
+    const line = document.querySelector(".wl-offline-status__text");
+    expect(line?.textContent).toBe("Offline · last synced 08:10");
+  });
+
   it('text variant reads "Offline · not synced yet" when nothing has synced', () => {
     setOnline(false);
     render(<OfflineStatus variant="text" lastSyncedAt={null} />);
