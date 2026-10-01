@@ -94,7 +94,7 @@ describe("AC-B5 route guard", () => {
   it("signed out: /welcome/goal renders without a redirect (D-0014, TR-0022)", async () => {
     render(<Harness start="/welcome/goal" />);
     await waitFor(() => {
-      expect(document.querySelector('[data-screen-id="UF-01.1"]')).toBeInTheDocument();
+      expect(document.querySelector('[data-screen-id="UF-01.2"]')).toBeInTheDocument();
     });
   });
 
@@ -128,7 +128,11 @@ describe("AC-B6 principle 5 + stale session", () => {
     getSession.mockReturnValue(new Promise(() => {})); // never resolves
     render(<Harness start="/" />);
     // Synchronous: no `await`/`waitFor` before this assertion.
-    expect(screen.getByText("Welcome")).toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("heading", { level: 1, name: "Train with a plan. Log in seconds." })
+        .closest('[data-screen-id="UF-01.1"]'),
+    ).toBeInTheDocument();
     expect(getSession).not.toHaveBeenCalled();
   });
 

@@ -275,7 +275,7 @@ describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", (
 });
 
 describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile", () => {
-  it.each(["/welcome/save", "/welcome", "/welcome/goal"])(
+  it.each(["/welcome/save", "/welcome"])(
     "signed in + `missing`: %s renders UF-01.1 and stays put",
     async (path) => {
       stateMissing();
@@ -286,6 +286,15 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
       expect(locationRef).toBe(path);
     },
   );
+
+  it("signed in + `missing`: /welcome/goal renders UF-01.2 and stays put", async () => {
+    stateMissing();
+    render(<Harness start="/welcome/goal" />);
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    await act(async () => {});
+    expect(screenOf("UF-01.2")).toBeInTheDocument();
+    expect(locationRef).toBe("/welcome/goal");
+  });
 
   // The contrast pair. Without it, a `guest-only` guard disabled outright would pass AC-7.
   it("signed in + `present`: /welcome/goal still redirects to / (UF-02.1)", async () => {
@@ -316,7 +325,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // /welcome → / and then (via the gate on `/`) → /welcome/save. The visible symptom is the
   // intermediate `/` in the location history, so that is what this asserts — not just the end
   // state, which happened to be right.
-  it.each(["/welcome", "/welcome/goal", "/welcome/save"])(
+  it.each(["/welcome", "/welcome/save"])(
     "%s never passes through `/` on the way (no first-render bounce)",
     async (path) => {
       stateMissing();
@@ -341,6 +350,28 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
     },
   );
 
+  it("/welcome/goal never passes through `/` on the way (no first-render bounce)", async () => {
+    stateMissing();
+    const visited: string[] = [];
+    function Recorder() {
+      visited.push(useLocation().pathname);
+      return null;
+    }
+    render(
+      <MemoryRouter initialEntries={["/welcome/goal"]}>
+        <AuthProvider>
+          <ProfileStatusProvider>
+            <Recorder />
+            <Shell />
+          </ProfileStatusProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    await act(async () => {});
+    expect(new Set(visited)).toEqual(new Set(["/welcome/goal"]));
+  });
+
   // The same bounce, reached by a *transition* instead of a cold load — and this is the primary
   // path, not an edge case: D-0045 §5 is the magic link / OTP verify firing `SIGNED_IN` in place
   // while the user sits on `/welcome`, with the onboarding answers in this browser context and
@@ -349,7 +380,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // stand-down saw `resolved && "unknown"`, stood aside, and the user went
   // `/welcome` → `/` → `/welcome/save`. The cold-load tests above cannot catch it, because they
   // never change the auth status after mount.
-  it.each(["/welcome", "/welcome/goal"])(
+  it.each(["/welcome"])(
     "%s does not bounce through `/` when SIGNED_IN fires in place with a missing profile",
     async (path) => {
       vi.stubGlobal("navigator", { onLine: true });
@@ -403,6 +434,57 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
     },
   );
 
+  it("/welcome/goal does not bounce through `/` when SIGNED_IN fires in place with a missing profile", async () => {
+    vi.stubGlobal("navigator", { onLine: true });
+    spy.setRows("profiles", []);
+    // Hold the cache read open, so the window between the auth flip and the gate's answer —
+    // the window the bug lived in — is wide enough to observe.
+    let release: (() => void) | undefined;
+    loadProfile.mockImplementation(
+      () => new Promise<null>((resolve) => (release = () => resolve(null))),
+    );
+
+    const visited: string[] = [];
+    const at = () => visited[visited.length - 1];
+    function Recorder() {
+      visited.push(useLocation().pathname);
+      return null;
+    }
+    // Signed out to begin with: no stored session (`beforeEach` cleared it).
+    render(
+      <MemoryRouter initialEntries={["/welcome/goal"]}>
+        <AuthProvider>
+          <ProfileStatusProvider>
+            <Recorder />
+            <Shell />
+          </ProfileStatusProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    expect(at()).toBe("/welcome/goal");
+
+    // The verify lands: `SIGNED_IN` in place, no reload.
+    await act(async () => {
+      authStateCallbacks.forEach((cb) => cb("SIGNED_IN", { user: { id: "u1" } }));
+    });
+    await act(async () => {});
+    // Still put, and still on UF-01.2: the gate has not answered yet, so `guest-only` waits.
+    expect(at()).toBe("/welcome/goal");
+
+    // Now let the gate resolve, to `missing`.
+    await waitFor(() => expect(release).toBeDefined());
+    await act(async () => {
+      release!();
+      await Promise.resolve();
+    });
+    await act(async () => {});
+
+    expect(screenOf("UF-01.2")).toBeInTheDocument();
+    expect(at()).toBe("/welcome/goal");
+    expect(new Set(visited)).toEqual(new Set(["/welcome/goal"]));
+  });
+
   // The contrast, so the test above cannot pass by the stand-down having been disabled for every
   // transition: the same in-place `SIGNED_IN`, but the gate answers `present`, and T-0300b's
   // `guest-only` redirect must still fire.
@@ -410,7 +492,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
     vi.stubGlobal("navigator", { onLine: true });
     loadProfile.mockResolvedValue(PROFILE_ROW);
     render(<Harness start="/welcome/goal" />);
-    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
     expect(locationRef).toBe("/welcome/goal");
 
     await act(async () => {
@@ -447,7 +529,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // stand-down must fail *open* — hold the `guest-only` redirect and render `/welcome/*` —
   // rather than leave the route permanently un-standable-down or blank. There is no timeout in
   // the gate, so "never settles" is the worst case, and this pins which way it fails.
-  it.each(["/welcome", "/welcome/goal", "/welcome/save"])(
+  it.each(["/welcome", "/welcome/save"])(
     "%s renders for a signed-in user whose profile read never settles (fails open)",
     async (path) => {
       seedValidSession();
@@ -461,6 +543,18 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
       expect(locationRef).toBe(path);
     },
   );
+
+  it("/welcome/goal renders for a signed-in user whose profile read never settles (fails open)", async () => {
+    seedValidSession();
+    vi.stubGlobal("navigator", { onLine: true });
+    loadProfile.mockReturnValue(new Promise(() => {}));
+    render(<Harness start="/welcome/goal" />);
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    await act(async () => {});
+    await act(async () => {});
+    expect(screenOf("UF-01.2")).toBeInTheDocument();
+    expect(locationRef).toBe("/welcome/goal");
+  });
 });
 
 describe("AC-8 /session/:sessionId and its summary are never gated (principle 1)", () => {
@@ -623,10 +717,16 @@ describe("AC-9 signed out is unchanged (principle 5) — the AC-B5 table, agains
     },
   );
 
-  it.each(["/welcome", "/welcome/goal"])("signed out: %s renders UF-01.1", async (path) => {
+  it.each(["/welcome"])("signed out: %s renders UF-01.1", async (path) => {
     render(<Harness start={path} />);
     await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
     expect(locationRef).toBe(path);
+  });
+
+  it("signed out: /welcome/goal renders UF-01.2", async () => {
+    render(<Harness start="/welcome/goal" />);
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    expect(locationRef).toBe("/welcome/goal");
   });
 
   it.each([
@@ -699,7 +799,11 @@ describe("AC-10 signed out: the gate costs nothing (principle 5)", () => {
     getSession.mockReturnValue(new Promise(() => {}));
     render(<Harness start="/welcome" />);
     // Synchronous: no `await`/`waitFor` before these assertions (the T-0300b AC-B6 pattern).
-    expect(screen.getByText("Welcome")).toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("heading", { level: 1, name: "Train with a plan. Log in seconds." })
+        .closest('[data-screen-id="UF-01.1"]'),
+    ).toBeInTheDocument();
     expect(loadProfile).not.toHaveBeenCalled();
     expect(refreshProfile).not.toHaveBeenCalled();
     expect(spy.from).not.toHaveBeenCalled();
