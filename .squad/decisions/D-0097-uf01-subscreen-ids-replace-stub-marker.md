@@ -7,6 +7,8 @@ by: product-owner (groom T-0301b)
 area: process
 builds-on: D-0071 §2, D-0064, D-0075, D-0088
 ---
+> **Amended by D-0100 (2026-10-01).** §1: `/welcome/save` renders `UF-01.5-save` once T-0301c builds it. T-0301c's grant (§4) also covers the AC-5, `/account`, `stale` and AC-11 rows, whose target is `/welcome/save`, and the AC-6 "not redirected" markers (T-0301c AC-13).
+
 ## Context
 T-0300a's stub renders `[data-screen-id="UF-01.1"]` for every path under `/welcome/*`, with the `<h1>` text
 "Welcome". Web-shell tests (T-0300b, T-0301a) rely on that stub in two ways.
