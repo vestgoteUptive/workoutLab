@@ -63,3 +63,4 @@ Tests for every AC pass, with a recorded run for AC-4 · `pnpm -w typecheck lint
 - **Flow:** `wl-build-web`. This ticket doesn't touch `profile-gate.test.tsx` or `auth-guard.test.tsx`.
 
 ## Accept log
+- 2026-10-01 frontend-dev (build): `seedCache` keys now come from `userScopedKey` / `setKey`. New `features/UF-10/__tests__/test-helpers.test.ts` covers AC-1 (source check, comments stripped) and AC-2 (keyed `get` on all four tables, and an empty seed). AC-3: the full `@workoutlab/web` suite passes, 73 files / 935 tests, with no other UF-10 test edited. AC-4 drift proof, uncommitted and reverted: (1) `userScopedKey` separator set to `"|"` → test-helpers.test.ts 4/4 pass; (2) the same, plus `targetCache` hand-built as `` `${userId}:${target.area}` `` → 2 fail: AC-1 template-literal match, and AC-2 `targetCache: expected undefined`. After revert, `git diff main -- apps/web/src/lib` is empty.
