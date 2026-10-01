@@ -60,3 +60,9 @@ Tests for every AC pass, or a recorded run for AC-4 · `pnpm -w typecheck lint t
 ## Notes
 - **Flow:** `wl-build-web`.
 - **Folded in:** T-0368 is delivered by Part B (AC-5 to AC-8). On accept, T-0368 is closed together with T-0357.
+
+## Build log
+- 2026-10-01, frontend-dev. Part A: `Library({ timeZone? })` resolves the zone once per mount (`useState`) and passes it to `<OfflineStatus timeZone={timeZone}>`; `mountAt(path, { timeZone })`; `pinDeviceTimeZone` deleted. Part B: `Object.hasOwn` in `InlineCredit` and `Attribution`, and `attribution.trim() === ""` counts as absent in both.
+- Tests: AC-1 and AC-2 in `__tests__/offline.test.tsx` (`T-0357 explicit zone …`) and `__tests__/zone-credit-source.test.ts`; AC-5 to AC-8 in `__tests__/credit-hardening.test.tsx`. `routes.ts`, `browse`, `route`, `howto-credit` and `detail` tests are unedited (AC-3, AC-9).
+- AC-4 fault proof (machine zone UTC): with `timeZone={timeZone}` removed, `pnpm --filter @workoutlab/web exec vitest run src/features/UF-04/__tests__/offline.test.tsx src/features/UF-04/__tests__/zone-credit-source.test.ts` fails 4 tests. The first failing assertion is `expected 'Offline · last synced 07:30' to be 'Offline · last synced 09:30'`; the Tokyo case gets `07:30` against `16:30`, and the source check fails too. Reverted.
+- Part B fault proof: on unfixed components, all 8 new AC-5 to AC-8 cases fail (`… · function…`, `Text:  · CC BY-SA 4.0`, a console.error for the function `href`) and the 4 contrast cases pass.
