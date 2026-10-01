@@ -299,3 +299,119 @@
   outline: 2px solid var(--wl-color-accent);
   outline-offset: 2px;
 }
+
+/* UF-01.4 Schedule & plan (T-0301d). */
+.wl-uf01__steppers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.wl-uf01__stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 16px;
+  background: var(--wl-color-surface);
+}
+
+.wl-uf01__stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.wl-uf01__step {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 48px;
+  block-size: 48px;
+  padding: 0;
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.wl-uf01__step[aria-disabled="true"] {
+  color: var(--wl-color-text-muted);
+  border-color: var(--wl-color-line);
+  cursor: not-allowed;
+}
+
+.wl-uf01__stepper-value {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.wl-uf01__stepper-unit {
+  font-size: 13px;
+  text-align: center;
+}
+
+.wl-uf01__plan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 16px;
+  background: var(--wl-color-surface);
+}
+
+.wl-uf01__tag--accent {
+  color: var(--wl-color-accent);
+}
+
+.wl-uf01__plan-title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.wl-uf01__rhythm {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wl-uf01__targets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf01__target {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--wl-color-surface-2);
+  font-size: 13px;
+}
+
+.wl-uf01__target-sets {
+  font-weight: 700;
+}
+
+.wl-uf01__step:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}

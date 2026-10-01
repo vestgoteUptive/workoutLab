@@ -1,10 +1,10 @@
-// The UF-01.2/UF-01.3 header: Back, the three-segment progress and "n/3" (prototype).
+// The UF-01.2–UF-01.4 header: Back, the three-segment progress and "n/3" (prototype).
 import { Link } from "react-router";
 import { en } from "../../lib/i18n/en.js";
 
 const TOTAL = 3;
 
-export function StepHeader({ step, backTo }: { step: 1 | 2; backTo: string }) {
+export function StepHeader({ step, backTo }: { step: 1 | 2 | 3; backTo: string }) {
   return (
     <div className="wl-uf01__header">
       <Link to={backTo} className="wl-uf01__back" aria-label={en.uf01.back}>

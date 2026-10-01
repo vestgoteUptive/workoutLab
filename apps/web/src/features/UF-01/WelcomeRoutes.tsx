@@ -20,8 +20,10 @@ const GoalScreen = lazy(() => import("./GoalScreen.js").then((m) => ({ default: 
 const LevelScreen = lazy(() =>
   import("./LevelScreen.js").then((m) => ({ default: m.LevelScreen })),
 );
-const SchedulePlaceholder = lazy(() =>
-  import("./SchedulePlaceholder.js").then((m) => ({ default: m.SchedulePlaceholder })),
+// UF-01.4 is the only step that imports the engine (`deriveTargets`), so the engine stays out of
+// this chunk too (principle 5).
+const ScheduleScreen = lazy(() =>
+  import("./ScheduleScreen.js").then((m) => ({ default: m.ScheduleScreen })),
 );
 
 export function Welcome() {
@@ -31,7 +33,7 @@ export function Welcome() {
         <Route index element={<WelcomeScreen />} />
         <Route path="goal" element={<GoalScreen store={pendingPlan} />} />
         <Route path="level" element={<LevelScreen store={pendingPlan} />} />
-        <Route path="schedule" element={<SchedulePlaceholder />} />
+        <Route path="schedule" element={<ScheduleScreen store={pendingPlan} />} />
         <Route path="*" element={<WelcomeScreen />} />
       </Routes>
     </Suspense>
