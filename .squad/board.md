@@ -206,7 +206,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0367 | D-0091 §2 wording: the loop's `toHaveURL` narrows the redirect race but does not close it; §1 content assertions are the real guard. Fix D-0091 and T-0307b's ticket text if it repeats the claim (T-0905 review + accept). Docs only | product | — | done | wl-spec |
 | T-0368 | InlineCredit + UF-04.2 Attribution hardening: `Object.hasOwn(LICENSE_LABELS, license)` for the label lookup; treat empty-string attribution like null; a test for each (T-0364 review/accept, low) | web-feature:UF-04 | T-0364 | folded → T-0357 | wl-build-web |
 | T-0369 | e2e axe check of UF-09.9 how-to with a wger row (jsdom axe missed an aria-hidden+tabIndex fault in T-0364 QA), once the first wger row ships | qa | T-0364 | todo | wl-build-qa |
-| T-0370 | Share the library-cache key builder (`${userId}:${id}`) between `lib/offline/history.ts:143` and `lib/offline/__tests__/seed-library.ts` so a key-format change cannot make test seeds drift from production writes (T-0365 review/accept, low) | web-shell | T-0365 | doing | wl-build-web |
+| T-0370 | Share the library-cache key builder (`${userId}:${id}`) between `lib/offline/history.ts:143` and `lib/offline/__tests__/seed-library.ts` so a key-format change cannot make test seeds drift from production writes (T-0365 review/accept, low) | web-shell | T-0365 | done | wl-build-web |
+| T-0371 | UF-10 `features/UF-10/__tests__/test-helpers.tsx`: build cache keys with `userScopedKey`/`setKey` from `lib/offline/db.ts` (T-0370 follow-up) | web-feature:UF-10 | T-0370 | todo | wl-build-web |
+| T-0372 | `key-builder-source.test.ts` scan gaps: string-concatenated keys (`a + ":" + b`), member-expression templates (`${a.b}:${…}`), block-comment strip inside string literals (T-0370 QA/review, low) | web-shell | T-0370 | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
