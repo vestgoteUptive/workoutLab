@@ -19,7 +19,7 @@ status: ready
     - `back-squat` ("Back squat")
     - `leg-press` ("Leg press")
 
-    Each row is `kind: "exercise"` with its area rows. Use `freshOfflineDb` / `signIn` from `apps/web/src/lib/offline/__tests__/test-helpers.ts`, Dexie directly, or a small new seed helper under `apps/web/src/lib/offline/__tests__/`. Do **not** import from `apps/web/src/features/UF-04/__tests__/**`, which are another lane's test helpers.
+    Each row is `kind: "exercise"` with its area rows, keyed to the user id that `signIn(userId)` stored (TR-0032). `loadLibrary()` reads by `currentUserId()`, so a session without `user.id` reads an empty library. The file's existing `seedValidSession()` writes no `user` and stays as it is, because the other rows use it (D-0088 §3). Use `freshOfflineDb` / `signIn` from `apps/web/src/lib/offline/__tests__/test-helpers.ts`, Dexie directly, or a small new seed helper under `apps/web/src/lib/offline/__tests__/`. Do **not** import from `apps/web/src/features/UF-04/__tests__/**`, which are another lane's test helpers.
   - **No network.** The case runs with `navigator.onLine` false, so `useScreenData` skips the refresh, or with an explicit `from` stub. Either way it makes no real `supabase.from` call. The file's `lib/auth/client.js` mock has no `from`, and the other cases must not change behaviour.
   - **Assert the built screen and that the location holds.** Add a location probe to the harness, for example `useLocation` in `NavHelper`, so the test can read the current pathname. Additive only.
 - Out:
@@ -34,7 +34,7 @@ status: ready
 - **Empty cache.** The signed-in-with-nothing-cached path redirects to `/library`. It is pinned in `features/UF-04/__tests__/compare.test.tsx` (T-0306a) and by T-0905 AC-2 in e2e. AC-3.1 below shows that this test would catch it.
 
 ## Acceptance criteria
-- **AC-1 (signed in, seeded: the built UF-04.3 renders and stays).** Given a valid stored session (`seedValidSession`), `navigator.onLine` false and the cache seeded with `back-squat` and `leg-press`, when `<Harness start="/library/back-squat/compare/leg-press" />` renders, then:
+- **AC-1 (signed in, seeded: the built UF-04.3 renders and stays).** Given a valid stored session that carries a user id (`signIn(userId)` from `apps/web/src/lib/offline/__tests__/test-helpers.ts`, which writes `user: { id }`), `navigator.onLine` false and the cache seeded with `back-squat` and `leg-press` for that same user id, when `<Harness start="/library/back-squat/compare/leg-press" />` renders, then:
   - `findByRole("columnheader", { name: "Leg press" })` and `findByRole("columnheader", { name: "Back squat" })` resolve.
   - `[data-screen-id="UF-04.3"]` is in the document.
   - The probed pathname is still `/library/back-squat/compare/leg-press`.
@@ -53,9 +53,9 @@ status: ready
 - `pnpm -w typecheck lint test` is green.
 
 ## Paths you may change
-- `apps/web/src/app/__tests__/auth-guard.phase3.test.tsx`: the UF-04.3 signed-in case, the harness location probe and the seed setup only (D-0088 §2–§3).
-- `apps/web/src/lib/offline/__tests__/` (web-shell): a new seed helper file, if needed. Existing helpers stay backwards-compatible.
-- `docs/tickets/T-0365-auth-guard-uf043-seeded.md` (this file), for the accept log only.
+- `apps/web/src/app/__tests__/auth-guard.phase3.test.tsx` and `apps/web/src/lib/offline/__tests__/**` (the lane: `web-shell`). In the test file: the UF-04.3 signed-in case, the harness location probe and the seed setup (D-0088 §2–§3). In the helpers folder: a new seed helper file, if needed; existing helpers stay backwards-compatible.
+- **Listed extras:**
+  - `docs/tickets/T-0365-auth-guard-uf043-seeded.md` — this file, for the accept log
 
 ## Contract impact
 None.

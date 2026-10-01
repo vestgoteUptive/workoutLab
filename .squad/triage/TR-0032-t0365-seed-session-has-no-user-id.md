@@ -1,6 +1,6 @@
 ---
 id: TR-0032
-status: open
+status: resolved
 raised_by: triage (check mode) on T-0905 ci-spec
 date: 2026-10-01
 ---
@@ -40,3 +40,23 @@ date: 2026-10-01
 T-0365 (AC-1 is unsatisfiable as written). T-0905 is not blocked.
 
 ## Resolution
+Resolved 2026-10-01 by triage. Option 1 (wording only). No new decision: this aligns T-0365's AC with its own
+Scope and with D-0088 §2 / D-0091 §1 ("seed the fixture so the screen really renders"). Item 2 is wording.
+
+1. **T-0365 AC-1 (done).** `docs/tickets/T-0365-auth-guard-uf043-seeded.md` AC-1 now reads "a valid stored
+   session that carries a user id (`signIn(userId)` from `lib/offline/__tests__/test-helpers.ts`) … the cache
+   seeded … for that same user id". The Scope seed bullet says the rows are keyed to that user id and that the
+   file's existing `seedValidSession()` stays unchanged, because the other rows use it (D-0088 §3, T-0365
+   AC-4). Extending `seedValidSession` was rejected: it touches a helper every other row uses, and AC-4's
+   byte-identity is easier to review when the helper stays as it is. The `## Paths you may change` section now
+   uses the lane bullet plus the `- **Listed extras:**` sub-bullet shape that `check-lane-paths` parses. The
+   grant is unchanged. T-0365 can go to `ready`.
+2. **D-0091 §2/§4 wording (deferred, not edited here).** The finding is correct. The `OTHER_SUB_ROUTES` URL
+   assertion fails only when the redirect has already happened, so it narrows the race but does not close it.
+   The deterministic signal is the built-content assertion (D-0091 §1). D-0091 is being edited by a separate
+   product-owner run (T-0367, §2), so triage leaves it alone to avoid a conflicting edit. That run, or a
+   follow-up, replaces "deterministic failure" / "fails deterministically" in §2 and §4 with "a failure
+   whenever the redirect has already happened, which narrows the race". It also states that the real guard
+   for UF-06.2 is T-0307b moving that row out of the loop and asserting built content per §1, written as a
+   T-0307b AC and not only a Paths note. The T-0905 scope bullet is merged history and stays as it is.
+   Option 2 (stub `<h1>` column) was rejected because it reopens T-0905 AC-5.
