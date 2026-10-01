@@ -131,13 +131,18 @@ export function ScheduleScreen({ store }: { store: PendingPlanStore }) {
     priorityAreas: [],
   });
 
-  // The first commit with the plan card (it renders synchronously with this screen).
+  // The first commit with the plan card (it renders synchronously with this screen). Once
+  // `planShown` is true the first-plan moment has passed, so `timingMs` is frozen, null or not
+  // (D-0064 §7, D-0098): a later UF-01.1 visit must not time from a second start (T-0377).
   useLayoutEffect(() => {
     const now = Date.now();
     const current = readPendingPlan(now);
     const startedAtMs = current?.startedAtMs ?? null;
-    const timingMs =
-      current?.timingMs ?? (startedAtMs === null ? null : Math.max(0, now - startedAtMs));
+    const timingMs = current?.planShown
+      ? current.timingMs
+      : startedAtMs === null
+        ? null
+        : Math.max(0, now - startedAtMs);
     updatePendingPlan({ planShown: true, timingMs }, now);
   }, []);
 

@@ -62,3 +62,4 @@ Tests for every AC pass, with a recorded run for AC-4 · `pnpm -w typecheck lint
 - **Flow:** `wl-build-web`. This ticket doesn't touch `profile-gate.test.tsx` or `auth-guard.test.tsx`.
 
 ## Accept log
+- 2026-10-01 frontend-dev (build): `ScheduleScreen.tsx` first-commit effect now uses `current?.planShown ? current.timingMs : …`. New `__tests__/timing-frozen.test.tsx` covers AC-1 and AC-2. AC-3: `schedule.test.tsx` AC-5 is unedited and green (UF-01 suite 8 files / 127 tests). AC-4 fault proof: with the old `current?.timingMs ?? …` expression restored (stashed, not committed), AC-1 fails with `timingMs` 20000 where null was expected, and AC-2 passes (that value was already kept). The fix was then restored. Full web suite: 936/937, with one load-only timeout in UF-10 `strings.test.ts` that passes alone (11/11). typecheck, lint, `-w format:check` and `check-all.mjs` (exit 0) are green.
