@@ -2,7 +2,7 @@
 -- AC24 [a][b] (indexes), AC23 (data minimisation), D-0029 (exercises columns, TR-0003).
 -- The AC1 block is generated from the column tables in docs/data-model.md (parts [a] and [b], T-0100b).
 begin;
-select plan(244);
+select plan(245);
 
 -- AC1 -------------------------------------------------------------------------------------------
 -- areas
@@ -213,7 +213,11 @@ select col_not_null('public', 'plan_checkins', 'user_id', 'plan_checkins.user_id
 select col_type_is('public', 'plan_checkins', 'period_index', 'integer', 'plan_checkins.period_index is integer');
 select col_not_null('public', 'plan_checkins', 'period_index', 'plan_checkins.period_index is not null');
 select col_type_is('public', 'plan_checkins', 'completed_prev', 'integer', 'plan_checkins.completed_prev is integer');
-select col_not_null('public', 'plan_checkins', 'completed_prev', 'plan_checkins.completed_prev is not null');
+select col_is_null('public', 'plan_checkins', 'completed_prev', 'plan_checkins.completed_prev is nullable (one-period evaluation, D-0070 §6)');
+select is(pg_get_constraintdef((select oid from pg_catalog.pg_constraint
+                                 where conrelid = 'public.plan_checkins'::regclass
+                                   and conname = 'plan_checkins_period_index_check')),
+  'CHECK ((period_index >= 0))', 'plan_checkins_period_index_check is period_index >= 0 (D-0070 §6, D-0094)');
 select col_type_is('public', 'plan_checkins', 'completed_last', 'integer', 'plan_checkins.completed_last is integer');
 select col_not_null('public', 'plan_checkins', 'completed_last', 'plan_checkins.completed_last is not null');
 select col_type_is('public', 'plan_checkins', 'rhythm_min_before', 'smallint', 'plan_checkins.rhythm_min_before is smallint');
