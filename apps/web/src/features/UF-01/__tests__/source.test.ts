@@ -135,6 +135,22 @@ describe("AC-1 UF-01.2, UF-01.3 and UF-01.4 load only through React.lazy", () =>
     expect(files.has("./WelcomeScreen.js")).toBe(true);
   });
 
+  it("they value-import no feature module the splat's chunk holds (keeps its manifest entry)", () => {
+    const splatLocal = new Set(
+      staticGraph(resolve(FEATURE_DIR, "index.tsx"))
+        .map((e) => e.spec)
+        .filter((s) => s.startsWith("./")),
+    );
+    expect(splatLocal.has("./pending-plan.js")).toBe(true);
+    for (const name of LAZY) {
+      const specs = staticSpecifiers(readFileSync(resolve(FEATURE_DIR, `${name}.tsx`), "utf8"));
+      expect(
+        specs.filter((s) => splatLocal.has(s)),
+        name,
+      ).toEqual([]);
+    }
+  });
+
   it("no non-test file in the feature imports them statically", () => {
     const sources = readdirSync(FEATURE_DIR).filter((f) => /\.tsx?$/.test(f));
     for (const file of sources) {

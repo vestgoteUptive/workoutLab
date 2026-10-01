@@ -6,6 +6,8 @@
 import type { Goal, Level } from "@workoutlab/shared";
 import { EQUIPMENT_PROFILE_IDS, type EquipmentProfileId } from "./equipment-profiles.js";
 
+export { EQUIPMENT_PROFILE_IDS };
+
 export const STORAGE_KEY = "wl-onboarding";
 /** A record older than this is deleted on read (D-0064 §6): `now − savedAtMs > MAX_AGE_MS`. */
 export const MAX_AGE_MS = 86_400_000;

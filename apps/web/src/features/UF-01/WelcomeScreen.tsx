@@ -6,7 +6,6 @@ import { useLayoutEffect } from "react";
 import { Link } from "react-router";
 import { en } from "../../lib/i18n/en.js";
 import { markOnboardingStarted } from "./pending-plan.js";
-import "./uf-01.css";
 
 const t = en.uf01;
 

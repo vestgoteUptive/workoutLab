@@ -15,7 +15,7 @@ function Probe() {
   return null;
 }
 
-export function mountAt(path: string) {
+export function mountAt(path: string): { unmount(): void; container: HTMLElement } {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <Probe />

@@ -1,16 +1,17 @@
 // UF-01.2 Goal (prototype `UF01-2-Goal.dc.html`, D-0064 §1–§2): the 3 `Goal` values in enum
 // order, "Build muscle" preselected. Every change rewrites the pending plan (D-0064 §6).
+// The pending-plan module arrives as the `store` prop from the splat (see `WelcomeRoutes.tsx`).
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import type { Goal } from "@workoutlab/shared";
 import { en } from "../../lib/i18n/en.js";
-import { GOALS, initialAnswers, updatePendingPlan } from "./pending-plan.js";
+import type { PendingPlanStore } from "./WelcomeRoutes.js";
 import { StepHeader } from "./StepHeader.js";
-import "./uf-01.css";
 
 const t = en.uf01;
 
-export function GoalScreen() {
+export function GoalScreen({ store }: { store: PendingPlanStore }) {
+  const { GOALS, initialAnswers, updatePendingPlan } = store;
   const navigate = useNavigate();
   const [goal, setGoal] = useState<Goal>(() => initialAnswers().goal);
 

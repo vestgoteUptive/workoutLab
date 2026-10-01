@@ -1,18 +1,19 @@
 // UF-01.3 Level & equipment (prototype `UF01-3-Experience.dc.html`, D-0061 §3, D-0064 §2–§3):
 // a level group (Beginner preselected) and the 3 equipment profiles (Full gym preselected).
-// Every change rewrites the pending plan (D-0064 §6).
+// Every change rewrites the pending plan (D-0064 §6). The pending-plan module arrives as the
+// `store` prop from the splat (see `WelcomeRoutes.tsx`).
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
 import type { Level } from "@workoutlab/shared";
 import { en } from "../../lib/i18n/en.js";
-import { EQUIPMENT_PROFILE_IDS, type EquipmentProfileId } from "./equipment-profiles.js";
-import { LEVELS, initialAnswers, updatePendingPlan } from "./pending-plan.js";
+import type { EquipmentProfileId } from "./equipment-profiles.js";
+import type { PendingPlanStore } from "./WelcomeRoutes.js";
 import { StepHeader } from "./StepHeader.js";
-import "./uf-01.css";
 
 const t = en.uf01;
 
-export function LevelScreen() {
+export function LevelScreen({ store }: { store: PendingPlanStore }) {
+  const { EQUIPMENT_PROFILE_IDS, LEVELS, initialAnswers, updatePendingPlan } = store;
   const navigate = useNavigate();
   const [initial] = useState(() => initialAnswers());
   const [level, setLevel] = useState<Level>(initial.level);
