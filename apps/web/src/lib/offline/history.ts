@@ -21,6 +21,7 @@ import {
 import {
   offlineDb,
   setKey,
+  userScopedKey,
   type CachedRoutineItem,
   type CachedSession,
   type ExerciseDetail,
@@ -140,7 +141,7 @@ export async function refreshLibrary(): Promise<void> {
   const rows = (exercises ?? []) as Tables<"exercises">[];
   const cached = rows.map((row) => {
     const mapped = toLibraryExercise(row, byExercise.get(row.id) ?? []);
-    return { key: `${userId}:${mapped.id}`, userId, exercise: mapped };
+    return { key: userScopedKey(userId, mapped.id), userId, exercise: mapped };
   });
   const details = rows.map((row) => {
     const detail: ExerciseDetail = {
@@ -154,7 +155,7 @@ export async function refreshLibrary(): Promise<void> {
       sourceUrl: row.source_url,
       variants: [...(variantsByExercise.get(row.id) ?? [])].sort((a, b) => (a < b ? -1 : 1)),
     };
-    return { key: `${userId}:${row.id}`, userId, detail };
+    return { key: userScopedKey(userId, row.id), userId, detail };
   });
 
   await db.transaction("rw", db.libraryCache, db.exerciseDetails, async () => {
@@ -187,7 +188,7 @@ export async function refreshSessions(now: Date, tz: string): Promise<void> {
     >
   >;
   const cached: CachedSession[] = rows.map((row) => ({
-    key: `${userId}:${row.id}`,
+    key: userScopedKey(userId, row.id),
     userId,
     id: row.id,
     startedAt: row.started_at,
@@ -215,7 +216,7 @@ export async function refreshCheckins(): Promise<void> {
 
   const cached = (data ?? []).map((row: Tables<"plan_checkins">) => {
     const checkin = toPlanCheckin(row);
-    return { key: `${userId}:${checkin.id}`, userId, checkin };
+    return { key: userScopedKey(userId, checkin.id), userId, checkin };
   });
 
   await db.transaction("rw", db.checkinCache, async () => {
@@ -252,7 +253,7 @@ export async function refreshRoutines(): Promise<void> {
   const cached = (
     (routines ?? []) as Array<Pick<Tables<"routines">, "id" | "name" | "updated_at">>
   ).map((row) => ({
-    key: `${userId}:${row.id}`,
+    key: userScopedKey(userId, row.id),
     userId,
     id: row.id,
     name: row.name,
@@ -277,7 +278,7 @@ export async function refreshTargets(): Promise<void> {
 
   const cached = (data ?? []).map((row: Tables<"area_targets">) => {
     const mapped = toAreaTarget(row);
-    return { key: `${userId}:${mapped.area}`, userId, target: mapped };
+    return { key: userScopedKey(userId, mapped.area), userId, target: mapped };
   });
 
   await db.transaction("rw", db.targetCache, async () => {
