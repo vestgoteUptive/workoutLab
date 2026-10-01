@@ -4,7 +4,9 @@
 // Use as: `vi.mock("../../../lib/auth/client.js", async () => (await import("./client-mock.js")).clientMock(from));`
 import { vi } from "vitest";
 
-export function clientMock(from: (...args: unknown[]) => unknown = vi.fn()) {
+export function clientMock(from: (...args: unknown[]) => unknown = vi.fn()): {
+  supabase: Record<string, unknown>;
+} {
   return {
     supabase: {
       from,
