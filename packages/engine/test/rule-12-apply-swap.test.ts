@@ -502,9 +502,23 @@ const H_sc9 = setsWithReps("2026-09-15", "seated-cable-row", [
 const AC1_R = swap(W, "inverted-row", "barbell-row", "variety");
 const CALLS: Call[] = [
   { name: "AC1", w: W, cur: "inverted-row", cand: "barbell-row", reason: "variety", history: [] },
-  { name: "AC2", w: W_lat, cur: "lat-pulldown", cand: "seated-cable-row", reason: null, history: [] },
+  {
+    name: "AC2",
+    w: W_lat,
+    cur: "lat-pulldown",
+    cand: "seated-cable-row",
+    reason: null,
+    history: [],
+  },
   { name: "AC2b", w: W_row, cur: "barbell-row", cand: "db-row", reason: "variety", history: [] },
-  { name: "AC3", w: W, cur: "bench-press", cand: "push-up", reason: "equipment_taken", history: [] },
+  {
+    name: "AC3",
+    w: W,
+    cur: "bench-press",
+    cand: "push-up",
+    reason: "equipment_taken",
+    history: [],
+  },
   { name: "AC4", w: W_t, cur: "dead-bug", cand: "plank", reason: "short_on_time", history: H_p },
   { name: "AC4b", w: W_t, cur: "dead-bug", cand: "plank", reason: "short_on_time", history: [] },
   { name: "AC5", w: W_h, cur: "bench-press", cand: "db-bench-press", reason: null, history: H_b },
