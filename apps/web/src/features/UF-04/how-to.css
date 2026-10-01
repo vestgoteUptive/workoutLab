@@ -35,3 +35,7 @@
   font: inherit;
   cursor: pointer;
 }
+
+.wl-uf04-howto__credit {
+  color: var(--wl-color-text-muted);
+}
