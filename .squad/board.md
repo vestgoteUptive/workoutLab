@@ -215,7 +215,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0374 | T-0219 AC6 ticket wording: F-input never shuffles plank into a slot; require the forced-core exclude list + minute-grid oldCost sweep as accepted (docs only) | product | T-0219 | todo | wl-spec |
 | T-0375 | Shell sync first-render checks (auth-guard AC-B6, profile-gate AC-10) catch a lazy UF-01.1 only in isolation (module cache warmed by earlier tests); make them robust (vi.resetModules or own file) (T-0301b QA) | web-shell | T-0301b | folded → T-0331 | wl-build-web |
 | T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | todo | wl-build-web |
-| T-0377 | UF-01.4 timingMs edge: when startedAtMs was null at the first UF-01.4 commit, a later visit (after Back → /welcome) must not compute timingMs from the second start; guard on `planShown` + test (T-0301d review/accept, analytics only) | web-feature:UF-01 | T-0301d | ready | wl-build-web |
+| T-0377 | UF-01.4 timingMs edge: when startedAtMs was null at the first UF-01.4 commit, a later visit (after Back → /welcome) must not compute timingMs from the second start; guard on `planShown` + test (T-0301d review/accept, analytics only) | web-feature:UF-01 | T-0301d | doing | wl-build-web |
 | T-0378 | Signed-in shell offline hydrate raises an unhandled pageerror when Supabase reads fail (session_sets_live, exercises, area_targets…); catch and degrade, or ensure T-0301c's signed-in e2e mocks them (T-0301d QA) | web-shell | — | ready | wl-build-web |
 
 ## Phase 4 — Ship
