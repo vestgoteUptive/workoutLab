@@ -38,7 +38,7 @@ select throws_ok($$insert into public.plan_checkins (period_index, completed_pre
   values (4, 4, 3, 3, 4, 2, 3, '2026-10-11T07:00Z', 'maybe', '2026-10-11T07:01Z')$$, '23514', null, 'answer maybe gives 23514');
 select throws_ok($$insert into public.plan_checkins (period_index, completed_prev, completed_last,
     rhythm_min_before, rhythm_max_before, proposed_min, proposed_max, proposed_at)
-  values (0, 4, 3, 3, 4, 2, 3, '2026-10-11T07:00Z')$$, '23514', null, 'period_index 0 gives 23514');
+  values (-1, 4, 3, 3, 4, 2, 3, '2026-10-11T07:00Z')$$, '23514', null, 'period_index -1 gives 23514');
 reset role;
 
 select * from finish();

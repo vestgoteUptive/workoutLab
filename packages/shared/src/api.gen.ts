@@ -1541,7 +1541,7 @@ export interface components {
       hardSetCount: number;
     };
     /**
-     * @description A `plan_checkins` row as rule 9 reads it (D-0018, D-0027).
+     * @description A `plan_checkins` row as rule 9 reads it (D-0018, D-0027). `completedPrev` is null for a one-period evaluation (D-0070 §6, D-0094).
      * @example {
      *       "id": "P1",
      *       "periodIndex": 3,
@@ -1555,11 +1555,24 @@ export interface components {
      *       "answer": null,
      *       "answeredAt": null
      *     }
+     * @example {
+     *       "id": "P0",
+     *       "periodIndex": 0,
+     *       "completedPrev": null,
+     *       "completedLast": 0,
+     *       "rhythmMinBefore": 3,
+     *       "rhythmMaxBefore": 4,
+     *       "proposedMin": 2,
+     *       "proposedMax": 3,
+     *       "proposedAt": "2026-10-04T07:00:00Z",
+     *       "answer": null,
+     *       "answeredAt": null
+     *     }
      */
     PlanCheckin: {
       id: string;
       periodIndex: number;
-      completedPrev: number;
+      completedPrev: number | null;
       completedLast: number;
       rhythmMinBefore: number;
       rhythmMaxBefore: number;
@@ -1575,6 +1588,13 @@ export interface components {
      *       "start": "2026-08-30",
      *       "end": "2026-09-12",
      *       "completed": 4,
+     *       "status": "under"
+     *     }
+     * @example {
+     *       "index": 0,
+     *       "start": "2026-09-20",
+     *       "end": "2026-10-03",
+     *       "completed": 0,
      *       "status": "under"
      *     }
      */
