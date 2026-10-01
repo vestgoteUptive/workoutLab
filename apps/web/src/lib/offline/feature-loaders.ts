@@ -10,7 +10,7 @@
 // (AC-5). Sorting happens here, not in the query, so the order holds whatever IndexedDB's index
 // traversal returns.
 import type { PlanCheckin } from "@workoutlab/shared";
-import { offlineDb, type CachedRoutineItem, type ExerciseDetail } from "./db.js";
+import { offlineDb, userScopedKey, type CachedRoutineItem, type ExerciseDetail } from "./db.js";
 import { currentUserId } from "./current-user.js";
 
 /** One cached session as UF-03.3/UF-06/UF-11 read it. */
@@ -34,7 +34,7 @@ export interface OfflineRoutine {
 export async function loadExerciseDetail(id: string): Promise<ExerciseDetail | null> {
   const userId = currentUserId();
   if (!userId) return null;
-  const row = await offlineDb().exerciseDetails.get(`${userId}:${id}`);
+  const row = await offlineDb().exerciseDetails.get(userScopedKey(userId, id));
   return row?.detail ?? null;
 }
 

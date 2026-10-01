@@ -213,6 +213,13 @@ export function resetOfflineDbForTest(name: string = DB_NAME): OfflineDb {
   return db;
 }
 
+/** The one place the user-scoped IndexedDB key format lives (T-0370): `userId:id`. Every
+ *  per-user cache row and queued set is keyed through this, so a test seed and production can't
+ *  drift apart. The format is on disk; changing it means a Dexie version bump and a migration. */
+export function userScopedKey(userId: string, id: string): string {
+  return `${userId}:${id}`;
+}
+
 export function setKey(userId: string, clientId: string): string {
-  return `${userId}:${clientId}`;
+  return userScopedKey(userId, clientId);
 }
