@@ -1,5 +1,6 @@
-// UF-01 Welcome / Account / auth-callback (T-0300a stub; T-0300b wires real `lib/auth`
-// behaviour behind these routes; T-0301 replaces them with the designed screens).
+// UF-01 Welcome / Account / auth-callback. `Welcome` is the `/welcome/*` splat with UF-01.1–.4
+// (T-0301b, `WelcomeRoutes.tsx`). `Account` and `AuthCallback` keep their T-0300b behaviour
+// until T-0301c builds UF-01.5.
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { en } from "../../lib/i18n/en.js";
@@ -7,13 +8,7 @@ import { supabase } from "../../lib/auth/client.js";
 import { lastEmail, requestMagicLink, verifyCode } from "../../lib/auth/magic-link.js";
 import { consumeReturnTo } from "../../lib/auth/return-to.js";
 
-export function Welcome() {
-  return (
-    <div data-screen-id="UF-01.1">
-      <h1>{en.screens.welcome}</h1>
-    </div>
-  );
-}
+export { Welcome } from "./WelcomeRoutes.js";
 
 type Mode = "link" | "code";
 
