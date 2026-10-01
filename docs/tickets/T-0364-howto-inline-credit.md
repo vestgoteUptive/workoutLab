@@ -74,8 +74,9 @@ squat is overridden through `seed({details})` where a case says so.
   `Compare, ExerciseHowTo, Library, LibraryDetail`.
 
 ## Paths you may change
-`apps/web/src/features/UF-04/**`; `apps/web/src/lib/i18n/flows/uf-04.ts` (D-0075 fillable flow
-strings file).
+- `apps/web/src/features/UF-04/**` (the lane: `web-feature:UF-04`).
+- **Listed extras:**
+  - `apps/web/src/lib/i18n/flows/uf-04.ts`: this ticket's own flow strings file (D-0075); add keys only.
 
 ## Contract impact
 none. `ExerciseDetail` already carries `source`, `license` and `attribution`.
