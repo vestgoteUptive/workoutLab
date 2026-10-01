@@ -94,3 +94,28 @@ Tests for every AC pass, with recorded runs for AC-1, AC-3 and AC-5 · `pnpm -w 
 - Ask review to check AC-6 line by line.
 
 ## Accept log
+
+### Build 2026-10-01 (frontend-dev, `wl-build-web`)
+`V` = `pnpm --filter @workoutlab/web exec vitest run`, from the worktree root.
+
+- **AC-1 (before, on base `d200011`):**
+  1. `V src/app/__tests__/profile-gate.test.tsx -t 'first committed render'`: exit 1. AC-10 fails at `profile-gate.test.tsx:942`, `Unable to find … role "heading" and name "Train with a plan. Log in seconds."`.
+  2. `V src/app/__tests__/profile-gate.test.tsx --sequence.shuffle --sequence.seed=1790895837776`: exit 1. 1 of 88 tests fails: "/account redirects for a `unknown` profile too", at `:661`, `expect(screenOf("UF-02.1")).toBeInTheDocument()` with `Received: null`.
+  3. `V src/app/auth-guard.test.tsx -t 'first committed render'`: exit 1. AC-B6 fails at `auth-guard.test.tsx:133`, the same heading `getByRole` error.
+  4. `V src/app/auth-guard.test.tsx -t 'stays signed in'`: exit 1. Both cases fail, at `:169` and `:181` (`UF-02.1`, `null`). `V src/app/__tests__/profile-gate.test.tsx -t '/account redirects'`: exit 1. The `missing` row fails at `:661`.
+  - Also before: `-t 'stale'` fails at `:905` and `-t 'HAS a profile'` fails at `:804` (both `UF-0x.x`, `null`). So every listed assert was at risk.
+- **AC-2 (after):** commands 1 to 4, `-t 'stale'` and `-t 'HAS a profile'` all exit 0.
+- **AC-3 (after):** each file passes in full in default order (profile-gate 89/89, auth-guard 21/21). Each also passes shuffled with seeds `1790895837776`, `11`, `424242` and `987654321`.
+- **AC-4:** in the warmed AC-10 and AC-B6 cases, the asserts after the second `render` are word for word the same as before, with nothing awaited in between. `-t 'twin'` passes in each file.
+- **AC-5 (faults were injected, run, and reverted, never committed):**
+  1. `ProfileStatusProvider` statically imports `loadProfile` and calls it in the signed-out branch of `run()`. The warmed AC-10 fails at `:957` and the twin fails at `:972`, both on `expect(loadProfile).not.toHaveBeenCalled()`. Both fail in isolation (`-t 'first committed render'`, `-t 'twin'`) and in the full file. In the full file "and still nothing after the tree settles" also fails, at `:986`.
+  2. In `App.tsx` the `guest-only` element is wrapped in a component that renders `null` until `supabase.auth.getSession()` settles. The warmed AC-B6 fails in its own warm-up at `:133` (`findByRole` heading, timeout). The twin fails first on its zero-call check, at `:155` (`expect(getSession).not.toHaveBeenCalled()`). Both fail in isolation and in the full file, where only these 2 tests fail.
+  - After the warm-up, the AC-10 case clears the `spy.calls` counter (`spy.calls.length = 0`) as well as the `loadProfile`, `refreshProfile` and `spy.from` mock history.
+  - `git diff main...HEAD --stat` lists only the two test files and this ticket.
+- **AC-6:** the removed lines are:
+  - the 2 `import` lines, which gain `cleanup`;
+  - the 2 `it(…, () =>` headers, which become `async`;
+  - 5 synchronous positive screen asserts, each re-added inside `await waitFor(() => …)` with the same selector.
+
+  No `expect` is removed and no negative assert changes. No `timeout`, `skip`, `todo` or `fails` is added. Tests go 88→89 and 20→21 (+2, the twins).
+- `pnpm --filter @workoutlab/web typecheck lint test`: green (72 files, 925 tests).
