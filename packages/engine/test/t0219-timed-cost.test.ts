@@ -18,6 +18,7 @@ import {
   setCostS,
   suggest,
   timeCheck,
+  type CheckinEvaluation,
   type HistorySet,
   type LibraryExercise,
   type SessionInput,
@@ -690,7 +691,12 @@ describe("simulated 14-day histories with a timed exercise (AC8, AC9)", () => {
         NOW,
         TZ,
       );
-      expect(got, name).toStrictEqual(BASELINE[`checkin/${name}`]);
+      // T-0215 (D-0061 §2, D-0094 §1): the baseline was captured under two periods; `periods`
+      // now lists only its last entry. Each baseline proposal already followed that last
+      // period alone (under → down 2–3, on_plan → null), so `proposal` is compared as captured.
+      const base = BASELINE[`checkin/${name}`] as CheckinEvaluation;
+      expect(got, name).toStrictEqual({ ...base, periods: base.periods.slice(-1) });
+      expect(got.periods, name).toHaveLength(1);
     }
   });
 
