@@ -762,15 +762,16 @@ components:
         hardSetCount: { type: integer, minimum: 0 }
       examples: [{ id: S1, startedAt: "2026-09-20T10:00:00Z", hardSetCount: 9 }]
     PlanCheckin:
-      description: A `plan_checkins` row as rule 9 reads it (D-0018, D-0027).
+      description: A `plan_checkins` row as rule 9 reads it (D-0018, D-0027). `completedPrev` is null for a one-period evaluation (D-0070 §6, D-0094).
       x-engine-function: evaluateCheckin
       type: object
       additionalProperties: false
       required: [id, periodIndex, completedPrev, completedLast, rhythmMinBefore, rhythmMaxBefore, proposedMin, proposedMax, proposedAt, answer, answeredAt]
       properties:
         id: { type: string, minLength: 1 }
-        periodIndex: { type: integer, minimum: 1 }
-        completedPrev: { type: integer, minimum: 0 }
+        periodIndex: { type: integer, minimum: 0 }
+        completedPrev:
+          anyOf: [{ type: integer, minimum: 0 }, { type: "null" }]
         completedLast: { type: integer, minimum: 0 }
         rhythmMinBefore: { type: integer, minimum: 1, maximum: 7 }
         rhythmMaxBefore: { type: integer, minimum: 1, maximum: 7 }
@@ -783,6 +784,7 @@ components:
           anyOf: [{ $ref: "#/components/schemas/Instant" }, { type: "null" }]
       examples:
         - { id: P1, periodIndex: 3, completedPrev: 4, completedLast: 3, rhythmMinBefore: 3, rhythmMaxBefore: 4, proposedMin: 2, proposedMax: 3, proposedAt: "2026-09-27T09:00:00Z", answer: null, answeredAt: null }
+        - { id: P0, periodIndex: 0, completedPrev: null, completedLast: 0, rhythmMinBefore: 3, rhythmMaxBefore: 4, proposedMin: 2, proposedMax: 3, proposedAt: "2026-10-04T07:00:00Z", answer: null, answeredAt: null }
 
     # ---------- check-in (rule 9, UF-11) ----------
     CheckinPeriod:
@@ -790,12 +792,14 @@ components:
       additionalProperties: false
       required: [index, start, end, completed, status]
       properties:
-        index: { type: integer, minimum: 1 }
+        index: { type: integer, minimum: 0 }
         start: { $ref: "#/components/schemas/LocalDate" }
         end: { $ref: "#/components/schemas/LocalDate" }
         completed: { type: integer, minimum: 0 }
         status: { type: string, enum: [under, on_plan, over] }
-      examples: [{ index: 2, start: "2026-08-30", end: "2026-09-12", completed: 4, status: under }]
+      examples:
+        - { index: 2, start: "2026-08-30", end: "2026-09-12", completed: 4, status: under }
+        - { index: 0, start: "2026-09-20", end: "2026-10-03", completed: 0, status: under }
     PreviewTarget:
       type: object
       additionalProperties: false

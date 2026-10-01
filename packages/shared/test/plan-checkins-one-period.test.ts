@@ -23,12 +23,12 @@ const expectInvalid = (component: string, value: unknown) =>
 describe("AC-4 plan_checkins database types (D-0043)", () => {
   it("completed_prev is number | null on Row, optional and nullable on Insert and Update", () => {
     expectTypeOf<Tables<"plan_checkins">["completed_prev"]>().toEqualTypeOf<number | null>();
-    expectTypeOf<
-      Required<TablesInsert<"plan_checkins">>["completed_prev"]
-    >().toEqualTypeOf<number | null>();
-    expectTypeOf<
-      Required<TablesUpdate<"plan_checkins">>["completed_prev"]
-    >().toEqualTypeOf<number | null>();
+    expectTypeOf<Required<TablesInsert<"plan_checkins">>["completed_prev"]>().toEqualTypeOf<
+      number | null
+    >();
+    expectTypeOf<Required<TablesUpdate<"plan_checkins">>["completed_prev"]>().toEqualTypeOf<
+      number | null
+    >();
     const insert: TablesInsert<"plan_checkins"> = {
       period_index: 0,
       completed_last: 0,
@@ -120,8 +120,7 @@ describe("AC-5 PlanCheckin and CheckinEvaluation in api/openapi.yaml", () => {
   });
 
   it("documents the period-0 examples, and every PlanCheckin / CheckinPeriod example validates", () => {
-    const examples = (name: string) =>
-      (spec.components.schemas[name]?.["examples"] ?? []) as Obj[];
+    const examples = (name: string) => (spec.components.schemas[name]?.["examples"] ?? []) as Obj[];
     expect(examples("PlanCheckin")).toContainEqual(p0);
     expect(examples("CheckinPeriod").some((e) => e["index"] === 0)).toBe(true);
     for (const name of ["PlanCheckin", "CheckinPeriod"]) {
