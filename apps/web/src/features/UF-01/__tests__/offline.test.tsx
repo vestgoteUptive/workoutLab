@@ -6,7 +6,9 @@ import { fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const supabaseFrom = vi.fn();
-vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: supabaseFrom, auth: {} } }));
+vi.mock("../../../lib/auth/client.js", async () =>
+  (await import("./client-mock.js")).clientMock(supabaseFrom),
+);
 
 const { findScreen, mountAt, setOnline, stored } = await import("./harness.js");
 
@@ -53,8 +55,9 @@ describe("AC-9 offline (no network)", () => {
         rhythmMin: 3,
         rhythmMax: 4,
         startedAtMs: 9_000_000,
-        timingMs: null,
-        planShown: false,
+        // UF-01.4 showed its plan on the device (T-0301d AC-6): timed and saveable.
+        timingMs: 0,
+        planShown: true,
         savedAtMs: 9_000_000,
       });
       expect(fetchSpy).not.toHaveBeenCalled();

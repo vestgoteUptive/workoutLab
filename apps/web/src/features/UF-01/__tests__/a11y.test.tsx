@@ -7,7 +7,7 @@ import { screen } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { en } from "../../../lib/i18n/en.js";
 
-vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: vi.fn(), auth: {} } }));
+vi.mock("../../../lib/auth/client.js", async () => (await import("./client-mock.js")).clientMock());
 
 const { findScreen, mountAt, stored, where } = await import("./harness.js");
 const { press, tabTo } = await import("./keyboard.js");
@@ -97,11 +97,52 @@ describe("AC-8 keyboard only (NFR-A11Y-6)", () => {
   });
 });
 
+describe("T-0301d AC-7 UF-01.4 by keyboard (NFR-A11Y-6)", () => {
+  const value = (id: string) =>
+    document.querySelector(`[data-field="${id}"] [aria-hidden="true"]`)!.textContent;
+
+  it("Tab reaches each stepper button; Enter and Space step; Tab reaches Save my plan", async () => {
+    mountAt("/welcome/schedule");
+    await findScreen("UF-01.4");
+    await tabTo((el) => el.getAttribute("aria-label") === "One more session per week, maximum");
+    await press("Enter");
+    expect(value("rhythm-max")).toBe("5");
+    await press("Space");
+    expect(value("rhythm-max")).toBe("6");
+    await press("ShiftTab", "ShiftTab", "ShiftTab");
+    expect(focused().getAttribute("aria-label")).toBe("One fewer session per week, minimum");
+    await press("Space");
+    expect(value("rhythm-min")).toBe("2");
+    expect(stored()).toMatchObject({ rhythmMin: 2, rhythmMax: 6, planShown: true });
+    await tabTo(isNamed("Save my plan"));
+    await press("Enter");
+    await findScreen("UF-01.5");
+    expect(where.current).toBe("/account");
+  });
+
+  it("from /welcome to the plan with the keyboard only", async () => {
+    mountAt("/welcome");
+    await findScreen("UF-01.1");
+    await tabTo(isNamed("Get started"));
+    await press("Enter");
+    await findScreen("UF-01.2");
+    await tabTo(isNamed("Continue"));
+    await press("Enter");
+    await findScreen("UF-01.3");
+    await tabTo(isNamed("Continue"));
+    await press("Space");
+    await findScreen("UF-01.4");
+    expect(document.querySelectorAll("[data-area]")).toHaveLength(9);
+    expect(stored()).toMatchObject({ planShown: true });
+  });
+});
+
 describe("AC-8 axe (NFR-A11Y-1)", () => {
   it.each([
     ["/welcome", "UF-01.1"],
     ["/welcome/goal", "UF-01.2"],
     ["/welcome/level", "UF-01.3"],
+    ["/welcome/schedule", "UF-01.4"],
   ])("%s (%s) has no axe violations", async (path, id) => {
     const view = mountAt(path);
     await findScreen(id);
@@ -125,15 +166,29 @@ function catalogue(): Set<string> {
   return out;
 }
 
-describe("AC-11 every visible string on UF-01.1–.3 comes from en.uf01", () => {
+describe("AC-11 every visible string on UF-01.1–.4 comes from en.uf01", () => {
   it.each([
     ["/welcome", "UF-01.1"],
     ["/welcome/goal", "UF-01.2"],
     ["/welcome/level", "UF-01.3"],
+    ["/welcome/schedule", "UF-01.4"],
   ])("%s (%s)", async (path, id) => {
     mountAt(path);
     const root = await findScreen(id);
     const known = catalogue();
+    if (id === "UF-01.4") {
+      // T-0301d AC-10: the rendered rhythm line, the stepper value names and the plan sub-line
+      // are en.uf01 functions; the 9 area names are the shared en.bodyMap.areas.
+      const s = en.uf01.schedule;
+      known.add(en.uf01.progressName("3", "3"));
+      known.add(s.rhythmLine(3, 4));
+      known.add(s.minValueName("3"));
+      known.add(s.maxValueName("4"));
+      known.add(
+        s.planSub(en.uf01.level.levels.beginner.label, en.uf01.level.equipment["full-gym"]),
+      );
+      Object.values(en.bodyMap.areas).forEach((a) => known.add(a));
+    }
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const texts: string[] = [];
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
