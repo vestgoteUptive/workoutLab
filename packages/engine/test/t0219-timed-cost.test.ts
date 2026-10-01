@@ -45,6 +45,13 @@ import { timedCoreHistory } from "./fixtures/histories-timed.js";
 import { mulberry32 } from "./fixtures/random.js";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+/** Runtime budget for the long sweeps (they take seconds under turbo load); not an assertion. */
+const SWEEP_TIMEOUT_MS = 30_000;
+/** Minute by minute where timed costs bite (15…30), then R7-E8's step of 5 up to 120. */
+const SWEEP_BUDGETS = [
+  ...Array.from({ length: 16 }, (_, i) => 15 + i),
+  ...Array.from({ length: 18 }, (_, i) => 35 + 5 * i),
+];
 /** Captured from main (ec6782b) before this ticket's change (AC7, AC9). */
 const BASELINE = JSON.parse(
   readFileSync(path.join(TEST_DIR, "fixtures", "pre-t0219-baseline.json"), "utf8"),
@@ -436,6 +443,130 @@ describe("rule 13 shuffle fits a timed pick at its planned duration (D-0092 §2)
     }
     expect(placed).toEqual([2, 5]);
   });
+
+  /** QA F4b: plank planned at 35 s (reentry); dead-bug and hanging-knee-raise in the last session. */
+  const REENTRY_CORE: HistorySet[] = [
+    ...P("2026-09-01", [40, 40, 40]),
+    ...setsOn(2, "dead-bug", "2026-09-24"),
+    ...setsOn(2, "hanging-knee-raise", "2026-09-24"),
+  ];
+  /** Plank planned at 120 s (add_rep); dead-bug and hanging-knee-raise in the last session. */
+  const PROGRESSED_CORE: HistorySet[] = [
+    ...AC1_HISTORY,
+    ...setsOn(2, "dead-bug", "2026-09-25"),
+    ...setsOn(2, "hanging-knee-raise", "2026-09-25"),
+  ];
+
+  it("rule-13 (AC6) shuffling a planned-35 s plank out frees only its planned cost: a 375 s pick doesn't fit at 18 min", () => {
+    // available 1080. bench-press × 4 = 720 s leaves 360. Core candidates: plank first (dead-bug
+    // and hanging-knee-raise are in the most recent session); plank × 3 at 35 s = 3 × 95 + 60 =
+    // 345 s, 15 s left. Shuffle 1/4 → dead-bug, 2/5 → hanging-knee-raise (variety: last done
+    // 09-24 ties, then id), each × 3 = 375 s: 15 + 345 − 375 < 0, so plank stays. Freeing plank
+    // at its default 45 s (375 s) instead would accept the pick and go 15 s over budget.
+    for (const energy of ["normal", "high"] as const)
+      for (let n = 0; n <= 6; n++) {
+        const si = input({
+          budgetMin: 18,
+          warmupInBudget: false,
+          energy,
+          shuffle: n,
+          excludeIds: CORE_ONLY,
+        });
+        const w = run(REENTRY_CORE, si);
+        const label = `${energy} shuffle ${n}`;
+        expect(itemsOf(w), label).toEqual([
+          ["bench-press", 4],
+          ["plank", 3],
+        ]);
+        expect(
+          w.plan.items.map((i) => [i.durationS, i.costS, i.backoff]),
+          label,
+        ).toEqual([
+          [null, 720, null],
+          [35, 345, null],
+        ]);
+        expect([w.itemsTotalS, w.unusedS], label).toEqual([1065, 15]);
+        expect(w.itemsTotalS, label).toBeLessThanOrEqual(availableS(18, false));
+        checkCaps(w, si, label);
+        checkIdentity(w, label);
+      }
+  });
+
+  it("rule-13 rule-7.4 (AC6) shuffling a planned-120 s plank out frees 420 s, so High adds the back-off (20–21 min)", () => {
+    // bench-press × 4 = 720 s. Plank (not in the last session) is the core pick: × 3 at 120 s =
+    // 600 s doesn't fit, × 2 = 2 × 180 + 60 = 420 s does. Left: 60 s at 20 min, 120 s at 21.
+    // Shuffle 1/4 → dead-bug × 2, 2/5 → hanging-knee-raise × 2 (270 s): left 60 + 420 − 270 =
+    // 210 (270 at 21) ≥ one bench-press set (165), so High adds the back-off: 720 + 165 = 885.
+    // Freeing plank at 45 s (270 s) would leave 60 (120) < 165: no back-off.
+    const picks: Record<number, string> = { 1: "dead-bug", 2: "hanging-knee-raise" };
+    for (const budgetMin of [20, 21])
+      for (let n = 0; n <= 6; n++) {
+        const si = input({
+          budgetMin,
+          warmupInBudget: false,
+          energy: "high",
+          shuffle: n,
+          excludeIds: CORE_ONLY,
+        });
+        const w = run(PROGRESSED_CORE, si);
+        const label = `${budgetMin} shuffle ${n}`;
+        const available = availableS(budgetMin, false);
+        const pick = picks[n % 3];
+        if (pick === undefined) {
+          expect(itemsOf(w), label).toEqual([
+            ["bench-press", 4],
+            ["plank", 2],
+          ]);
+          expect(item(w, "bench-press").backoff, label).toBeNull();
+          expect([w.itemsTotalS, w.unusedS], label).toEqual([1140, available - 1140]);
+        } else {
+          expect(itemsOf(w), label).toEqual([
+            ["bench-press", 4],
+            [pick, 2],
+          ]);
+          expect(item(w, "bench-press").backoff, label).not.toBeNull();
+          expect(
+            w.plan.items.map((i) => i.costS),
+            label,
+          ).toEqual([885, 270]);
+          expect([w.itemsTotalS, w.unusedS], label).toEqual([1155, available - 1155]);
+        }
+        checkCaps(w, si, label);
+        checkIdentity(w, label);
+      }
+  });
+
+  it(
+    "R7-E8 rule-13 (AC6, AC10) shuffle sweep with a forced core slot: budgetMin 15…30 step 1, 35…120 step 5 × warm-up × shuffle 0…6 × energy never goes over",
+    () => {
+      let n = 0;
+      for (const [name, h] of [
+        ["AC1", AC1_HISTORY],
+        ["reentryCore", REENTRY_CORE],
+        ["progressedCore", PROGRESSED_CORE],
+        ["timedCore", timedCoreHistory],
+      ] as Array<[string, HistorySet[]]>)
+        for (const budgetMin of SWEEP_BUDGETS)
+          for (const wu of [true, false])
+            for (let shuffle = 0; shuffle <= 6; shuffle++)
+              for (const energy of ["normal", "low", "high"] as const) {
+                const si = input({
+                  budgetMin,
+                  warmupInBudget: wu,
+                  shuffle,
+                  energy,
+                  excludeIds: CORE_ONLY,
+                });
+                const label = `${name} ${budgetMin} ${wu} ${shuffle} ${energy}`;
+                const w = run(h, si);
+                checkCaps(w, si, label);
+                checkIdentity(w, label);
+                n++;
+              }
+      expect(n).toBe(4 * 34 * 2 * 7 * 3);
+    },
+    SWEEP_TIMEOUT_MS,
+  );
 });
 
 // ---- AC7: zero history is byte-identical ----
@@ -444,38 +575,46 @@ describe("zero history (and any history without timed sets) is byte-identical (D
   const ENERGIES = ["normal", "low", "high"] as const;
   const BUDGETS = [15, 20, 30, 90];
 
-  it("rule-7 (AC7) suggest at [] over energy × budget × warm-up × pins equals the pre-change snapshot", () => {
-    let n = 0;
-    for (const energy of ENERGIES)
-      for (const budgetMin of BUDGETS)
-        for (const wu of [true, false])
-          for (const pins of PINS) {
-            const key = `suggest/zero/${energy}/${budgetMin}/${wu ? "wu" : "nowu"}/${pins.length ? "plank" : "none"}`;
-            const w = run([], input({ energy, budgetMin, warmupInBudget: wu, pinnedIds: pins }));
-            expect(BASELINE[key], key).toBeDefined();
-            expect(JSON.stringify(w), key).toBe(JSON.stringify(BASELINE[key]));
-            n++;
-          }
-    expect(n).toBe(48);
-  });
-
-  it("rule-7 (AC7) the simulated histories without timed sets are byte-identical too", () => {
-    for (const name of Object.keys(SIMULATED_HISTORIES) as Array<
-      keyof typeof SIMULATED_HISTORIES
-    >) {
+  it(
+    "rule-7 (AC7) suggest at [] over energy × budget × warm-up × pins equals the pre-change snapshot",
+    () => {
+      let n = 0;
       for (const energy of ENERGIES)
         for (const budgetMin of BUDGETS)
           for (const wu of [true, false])
             for (const pins of PINS) {
-              const key = `suggest/${name}/${energy}/${budgetMin}/${wu ? "wu" : "nowu"}/${pins.length ? "plank" : "none"}`;
-              const w = run(
-                SIMULATED_HISTORIES[name],
-                input({ energy, budgetMin, warmupInBudget: wu, pinnedIds: pins }),
-              );
+              const key = `suggest/zero/${energy}/${budgetMin}/${wu ? "wu" : "nowu"}/${pins.length ? "plank" : "none"}`;
+              const w = run([], input({ energy, budgetMin, warmupInBudget: wu, pinnedIds: pins }));
+              expect(BASELINE[key], key).toBeDefined();
               expect(JSON.stringify(w), key).toBe(JSON.stringify(BASELINE[key]));
+              n++;
             }
-    }
-  });
+      expect(n).toBe(48);
+    },
+    SWEEP_TIMEOUT_MS,
+  );
+
+  it(
+    "rule-7 (AC7) the simulated histories without timed sets are byte-identical too",
+    () => {
+      for (const name of Object.keys(SIMULATED_HISTORIES) as Array<
+        keyof typeof SIMULATED_HISTORIES
+      >) {
+        for (const energy of ENERGIES)
+          for (const budgetMin of BUDGETS)
+            for (const wu of [true, false])
+              for (const pins of PINS) {
+                const key = `suggest/${name}/${energy}/${budgetMin}/${wu ? "wu" : "nowu"}/${pins.length ? "plank" : "none"}`;
+                const w = run(
+                  SIMULATED_HISTORIES[name],
+                  input({ energy, budgetMin, warmupInBudget: wu, pinnedIds: pins }),
+                );
+                expect(JSON.stringify(w), key).toBe(JSON.stringify(BASELINE[key]));
+              }
+      }
+    },
+    SWEEP_TIMEOUT_MS,
+  );
 
   it("R12-E1 R12-E2 R12-E3 R12-E4 R12-E5 rule-12 (AC7) rankSwaps over the R12 fixtures equals the pre-change snapshot", () => {
     const reasons: Array<SwapReason | null> = [
@@ -584,22 +723,26 @@ describe("simulated 14-day histories with a timed exercise (AC8, AC9)", () => {
 // ---- AC10: R7-E8 extended ----
 
 describe("R7-E8 extended: never over budget with timed sets (AC10)", () => {
-  it("R7-E8 rule-7 (AC10) budgetMin 15…120 × warm-up × AC9 histories × pins × energy: caps and identity hold", () => {
-    let n = 0;
-    for (let budgetMin = 15; budgetMin <= 120; budgetMin += 5)
-      for (const wu of [true, false])
-        for (const [name, h] of AC9_HISTORIES)
-          for (const pins of PINS)
-            for (const energy of ["normal", "low", "high"] as const) {
-              const si = input({ budgetMin, warmupInBudget: wu, pinnedIds: pins, energy });
-              const label = `${name} ${budgetMin} ${wu} ${pins.join()} ${energy}`;
-              const w = run(h, si);
-              checkCaps(w, si, label);
-              checkIdentity(w, label);
-              n++;
-            }
-    expect(n).toBe(22 * 2 * 6 * 2 * 3);
-  });
+  it(
+    "R7-E8 rule-7 (AC10) budgetMin 15…120 × warm-up × AC9 histories × pins × energy: caps and identity hold",
+    () => {
+      let n = 0;
+      for (let budgetMin = 15; budgetMin <= 120; budgetMin += 5)
+        for (const wu of [true, false])
+          for (const [name, h] of AC9_HISTORIES)
+            for (const pins of PINS)
+              for (const energy of ["normal", "low", "high"] as const) {
+                const si = input({ budgetMin, warmupInBudget: wu, pinnedIds: pins, energy });
+                const label = `${name} ${budgetMin} ${wu} ${pins.join()} ${energy}`;
+                const w = run(h, si);
+                checkCaps(w, si, label);
+                checkIdentity(w, label);
+                n++;
+              }
+      expect(n).toBe(22 * 2 * 6 * 2 * 3);
+    },
+    SWEEP_TIMEOUT_MS,
+  );
 });
 
 // ---- AC11: offline-merged ----
@@ -673,22 +816,26 @@ describe("determinism and purity (R0-E1, AC15)", () => {
     ),
   ];
 
-  it("R0-E1 rule-0 (AC15) two runs deep-equal; frozen inputs neither throw nor change; history/library order is irrelevant", () => {
-    for (const [label, h, si] of cases) {
-      const first = run(h, si);
-      expect(run(h, si), label).toStrictEqual(first);
-      const fh = deepFreeze(structuredClone(h));
-      const fsi = deepFreeze(structuredClone(si));
-      const flib = deepFreeze(structuredClone(LIBRARY));
-      const before = JSON.stringify([fh, fsi, flib]);
-      expect(suggest(fh, F_TARGETS, F_PROFILE, flib, fsi, NOW, TZ), label).toStrictEqual(first);
-      expect(JSON.stringify([fh, fsi, flib]), label).toBe(before);
-      expect(run([...h].reverse(), si, [...LIBRARY].reverse()), label).toStrictEqual(first);
-      expect(plannedDurationS(PLANK, [...h].reverse(), [...LIBRARY].reverse(), NOW, TZ)).toBe(
-        plannedDurationS(PLANK, fh, flib, NOW, TZ),
-      );
-    }
-  });
+  it(
+    "R0-E1 rule-0 (AC15) two runs deep-equal; frozen inputs neither throw nor change; history/library order is irrelevant",
+    () => {
+      for (const [label, h, si] of cases) {
+        const first = run(h, si);
+        expect(run(h, si), label).toStrictEqual(first);
+        const fh = deepFreeze(structuredClone(h));
+        const fsi = deepFreeze(structuredClone(si));
+        const flib = deepFreeze(structuredClone(LIBRARY));
+        const before = JSON.stringify([fh, fsi, flib]);
+        expect(suggest(fh, F_TARGETS, F_PROFILE, flib, fsi, NOW, TZ), label).toStrictEqual(first);
+        expect(JSON.stringify([fh, fsi, flib]), label).toBe(before);
+        expect(run([...h].reverse(), si, [...LIBRARY].reverse()), label).toStrictEqual(first);
+        expect(plannedDurationS(PLANK, [...h].reverse(), [...LIBRARY].reverse(), NOW, TZ)).toBe(
+          plannedDurationS(PLANK, fh, flib, NOW, TZ),
+        );
+      }
+    },
+    SWEEP_TIMEOUT_MS,
+  );
 
   it("R0-E1 rule-0 rule-12 (AC15) rankSwaps with timed history is deterministic and order-independent", () => {
     const session = sessionOf(
