@@ -28,15 +28,23 @@ export function isEligible(exercise, profile, excludeIds = []) {
     const have = new Set(realEquipment(profile.equipment));
     return realEquipment(exercise.equipment).every((e) => have.has(e));
 }
-/** Work + rest for one set (rule 7.1). */
-export function setCostS(exercise) {
-    const work = exercise.timed ? (exercise.defaultDurationS ?? WORK_S) : WORK_S;
+/**
+ * Work + rest for one set (rule 7.1). `durationS` is a timed set's planned duration (D-0092 §1,
+ * `plannedDurationS`); without it (or when it is null) a timed set works its library
+ * `defaultDurationS`, so the 1-argument result is unchanged (D-0092 §4). A non-timed set
+ * always works 45 s, and a timed exercise with no duration at all falls back to 45 s.
+ */
+export function setCostS(exercise, durationS) {
+    const work = exercise.timed ? (durationS ?? exercise.defaultDurationS ?? WORK_S) : WORK_S;
     const rest = exercise.type === "compound" ? REST_COMPOUND_S : REST_ISOLATION_S;
     return work + rest;
 }
-/** `sets × (work + rest) + 60 s transition` (rule 7.1). */
-export function itemCostS(exercise, sets) {
-    return sets * setCostS(exercise) + TRANSITION_S;
+/**
+ * `sets × (work + rest) + 60 s transition` (rule 7.1). `durationS` as for `setCostS`; the
+ * 2-argument result is unchanged (D-0092 §4).
+ */
+export function itemCostS(exercise, sets, durationS) {
+    return sets * setCostS(exercise, durationS) + TRANSITION_S;
 }
 /** `budgetMin × 60 − (warmupInBudget ? 180 : 0)`; may be negative (D-0040 §7). */
 export function availableS(budgetMin, warmupInBudget) {

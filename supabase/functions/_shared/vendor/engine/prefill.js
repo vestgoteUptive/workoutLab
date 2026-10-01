@@ -209,3 +209,23 @@ export function prefill(exercise, slot, history, library, now, tz, previous) {
     const today = localDate(now, tz);
     return prefillFrom(exercise, slot, normalizeHistory(history), indexLibrary(library), today, tz, previous);
 }
+/** Internal `plannedDurationS` over an already-normalised history and today's local date. */
+export function plannedDurationFrom(exercise, hard, lib, today, tz) {
+    if (!exercise.timed)
+        return null;
+    // Rule 14's timed branch never reads the slot or `previous` (D-0057 §6, D-0092 §1).
+    return prefillFrom(exercise, { repsMin: null, repsMax: null }, hard, lib, today, tz, null)
+        .durationS;
+}
+/**
+ * Rule 7.1 planned duration (D-0092 §1): the work of one set of a timed `exercise`, which is
+ * the rule 14 pre-fill `durationS` over the same `history`, `now` and `tz` (`defaultDurationS`
+ * with no usable history). `null` for a non-timed exercise (or a timed one with no default and
+ * no usable history; rule 7.1 then costs 45 s). Throws `RangeError` on `now` without an offset.
+ */
+export function plannedDurationS(exercise, history, library, now, tz) {
+    const today = localDate(now, tz);
+    if (!exercise.timed)
+        return null;
+    return plannedDurationFrom(exercise, normalizeHistory(history), indexLibrary(library), today, tz);
+}

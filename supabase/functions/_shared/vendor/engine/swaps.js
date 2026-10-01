@@ -9,6 +9,7 @@
 import { availableS, isEligible, itemCostS, realEquipment } from "./cost.js";
 import { indexLibrary, isHardSet, normalizeHistory, primaryAreas, recentSessionIds, weightsOf, } from "./history.js";
 import { recoveringAreas } from "./load.js";
+import { plannedDurationFrom } from "./prefill.js";
 import { localDate } from "./time.js";
 const SWAP_REASONS = [
     "equipment_taken",
@@ -69,7 +70,7 @@ export function rankAgainst(ctx, cur, slot, planIds, reason, fits) {
         .map((ex) => ({
         ex,
         mm: muscleMatch(cur, ex),
-        timeCostS: itemCostS(ex, slot.sets),
+        timeCostS: itemCostS(ex, slot.sets, ctx.durationOf(ex)),
         shared: sharedCount(ex.equipment, curEquipment),
     }));
     const mmThenId = (x, y) => y.mm - x.mm || byIdStr(x.ex.id, y.ex.id);
@@ -145,14 +146,17 @@ export function rankSwaps(currentExerciseId, reason, session, profile, library, 
     const cur = lib.get(currentExerciseId);
     if (cur === undefined)
         throw new RangeError(`${currentExerciseId} is not in the library`);
+    const hard = normalizeHistory(history);
+    const today = localDate(now, tz);
     const ctx = {
         lib,
         pool: [...lib.values()]
             .filter((e) => isEligible(e, profile))
             .sort((a, b) => byIdStr(a.id, b.id)),
         recovering: new Set(recoveringAreas(history, library, now)),
-        recentIds: recentSessionIds(history, library, localDate(now, tz), tz),
+        recentIds: recentSessionIds(history, library, today, tz),
         lastDone: lastDoneDates(history, lib, tz),
+        durationOf: (ex) => plannedDurationFrom(ex, hard, lib, today, tz),
     };
     const planIds = new Set(session.plan.items.map((i) => i.exerciseId));
     const available = availableS(session.budgetMin, session.warmupInBudget);

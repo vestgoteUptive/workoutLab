@@ -18,6 +18,8 @@ export interface SwapContext {
     recentIds: ReadonlySet<string>;
     /** Latest local date of a hard set per exercise, over the whole passed history (D-0056 §6). */
     lastDone: ReadonlyMap<string, LocalDate>;
+    /** A timed exercise's planned duration (D-0092 §1), so `timeCostS` uses it (D-0092 §2). */
+    durationOf: (ex: LibraryExercise) => number | null;
 }
 /** The slot being replaced (D-0056 §2). */
 export interface SwapSlot {
