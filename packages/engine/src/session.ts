@@ -17,7 +17,7 @@ import {
   recentSessionIds,
   weightsOf,
 } from "./history.js";
-import { prefillFrom, type PrefillPrevious } from "./prefill.js";
+import { plannedDurationFrom, prefillFrom, type PrefillPrevious } from "./prefill.js";
 import { lastDoneDates, rankAgainst, type SwapContext } from "./swaps.js";
 import { dayDiff, localDate } from "./time.js";
 import {
@@ -92,8 +92,13 @@ interface Picked {
   previous?: LibraryExercise;
 }
 
+/** A timed exercise's planned duration (D-0092 §1); null for a non-timed one. */
+type DurationOf = (ex: LibraryExercise) => number | null;
+
 interface State {
   start: Start;
+  /** Rule 7.1 work of a timed set: the planned duration, used by every time cost (D-0092 §2). */
+  durationOf: DurationOf;
   projected: AreaNumbers;
   picked: Picked[];
   primaryCount: Record<Area, number>;
@@ -142,11 +147,24 @@ function buildStart(
   };
 }
 
-function newState(start: Start, available: number): State {
+function newState(start: Start, available: number, durationOf: DurationOf): State {
   const primaryCount = {} as Record<Area, number>;
   for (const a of AREAS) primaryCount[a] = 0;
-  return { start, projected: { ...start.loads }, picked: [], primaryCount, remainingS: available };
+  return {
+    start,
+    durationOf,
+    projected: { ...start.loads },
+    picked: [],
+    primaryCount,
+    remainingS: available,
+  };
 }
+
+/** `itemCostS` at the planned duration (D-0092 §2). */
+const costOf = (s: State, ex: LibraryExercise, sets: number): number =>
+  itemCostS(ex, sets, s.durationOf(ex));
+/** `setCostS` at the planned duration (D-0092 §2). */
+const setCostOf = (s: State, ex: LibraryExercise): number => setCostS(ex, s.durationOf(ex));
 
 const ratio = (s: State, a: Area): number => s.projected[a] / s.start.targets[a];
 
@@ -185,7 +203,7 @@ function candidates(s: State, area: Area): LibraryExercise[] {
 /** Adds `ex` at the first set count in `tries` that fits; true when added. */
 function tryAdd(s: State, ex: LibraryExercise, tries: readonly number[], isMain: boolean): boolean {
   for (const sets of tries) {
-    const cost = itemCostS(ex, sets);
+    const cost = costOf(s, ex, sets);
     if (cost > s.remainingS) continue;
     s.picked.push({ exercise: ex, sets, isMain });
     s.remainingS -= cost;
@@ -256,6 +274,32 @@ interface PrefillCtx {
   tz: TimeZone;
 }
 
+/** The planned duration of each exercise over `ctx`, computed once per exercise (D-0092 §1). */
+function durationsOf(ctx: PrefillCtx): DurationOf {
+  const memo = new Map<string, number | null>();
+  return (ex) => {
+    if (!ex.timed) return null;
+    if (!memo.has(ex.id)) {
+      memo.set(ex.id, plannedDurationFrom(ex, ctx.hard, ctx.lib, ctx.today, ctx.tz));
+    }
+    return memo.get(ex.id) ?? null;
+  };
+}
+
+function prefillCtxOf(
+  history: readonly HistorySet[],
+  library: readonly LibraryExercise[],
+  now: Instant,
+  tz: TimeZone,
+): PrefillCtx {
+  return {
+    hard: normalizeHistory(history),
+    lib: indexLibrary(library),
+    today: localDate(now, tz),
+    tz,
+  };
+}
+
 /** Rule 14 for one slot (D-0057 §7), replacing the D-0040 §4 first-time seam. */
 function prefillFor(
   ctx: PrefillCtx,
@@ -284,7 +328,7 @@ function previousOf(ctx: PrefillCtx, p: Picked): PrefillPrevious | null {
   };
 }
 
-function toItem(start: Start, ctx: PrefillCtx, p: Picked): WorkoutItem {
+function toItem(start: Start, ctx: PrefillCtx, p: Picked, durationOf: DurationOf): WorkoutItem {
   const [repsMin, repsMax] = repRange(p.exercise, p.isMain);
   const prefill = prefillFor(ctx, p.exercise, repsMin, repsMax, previousOf(ctx, p));
   const area = primaryAreas(p.exercise)[0] as Area;
@@ -305,8 +349,11 @@ function toItem(start: Start, ctx: PrefillCtx, p: Picked): WorkoutItem {
     sets: p.sets,
     repsMin,
     repsMax,
-    durationS: p.exercise.timed ? p.exercise.defaultDurationS : null,
-    costS: itemCostS(p.exercise, p.sets) + (backoff === null ? 0 : setCostS(p.exercise)),
+    // D-0092 §3: a timed item's duration is its planned duration, which is the pre-fill's.
+    durationS: p.exercise.timed ? prefill.durationS : null,
+    costS:
+      itemCostS(p.exercise, p.sets, durationOf(p.exercise)) +
+      (backoff === null ? 0 : setCostS(p.exercise, durationOf(p.exercise))),
     backoff,
     prefill,
     reasons,
@@ -330,8 +377,8 @@ function applyShuffle(s: State, n: number, pinnedIds: readonly string[], ctx: Sw
     if (idx === 0) continue;
     const pick = ctx.lib.get((ranking[idx - 1] as { exerciseId: string }).exerciseId);
     if (pick === undefined) continue;
-    const oldCost = itemCostS(p.exercise, p.sets);
-    const newCost = itemCostS(pick, p.sets);
+    const oldCost = costOf(s, p.exercise, p.sets);
+    const newCost = costOf(s, pick, p.sets);
     if (s.remainingS + oldCost - newCost < 0) continue;
     const oldPrimary = primaryAreas(p.exercise);
     const newPrimary = primaryAreas(pick);
@@ -366,14 +413,14 @@ function applyEnergy(s: State, energy: SessionInput["energy"]): void {
   if (energy === "low") {
     for (const p of s.picked) {
       if (p.isMain || p.sets !== LOW_TRIM_FROM_SETS) continue;
-      s.remainingS += (p.sets - LOW_TRIM_TO_SETS) * setCostS(p.exercise);
+      s.remainingS += (p.sets - LOW_TRIM_TO_SETS) * setCostOf(s, p.exercise);
       p.sets = LOW_TRIM_TO_SETS;
       p.lowTrimmed = true;
     }
   } else if (energy === "high") {
     const main = s.picked.find((p) => p.isMain);
     if (main === undefined || main.exercise.timed) return;
-    const cost = setCostS(main.exercise);
+    const cost = setCostOf(s, main.exercise);
     if (s.remainingS < cost) return;
     main.backoff = true;
     s.remainingS -= cost;
@@ -413,7 +460,8 @@ export function rankCandidates(
   tz: TimeZone,
 ): string[] {
   const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, now, tz);
-  return candidates(newState(start, 0), area).map((e) => e.id);
+  const durationOf = durationsOf(prefillCtxOf(history, library, now, tz));
+  return candidates(newState(start, 0, durationOf), area).map((e) => e.id);
 }
 
 /**
@@ -434,23 +482,25 @@ export function suggest(
   assertShuffle(sessionInput.shuffle);
   const available = availableS(sessionInput.budgetMin, sessionInput.warmupInBudget);
   const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, now, tz);
-  const s = newState(start, Math.max(0, available));
+  const lib = indexLibrary(library);
+  const ctx: PrefillCtx = { hard: normalizeHistory(history), lib, today: localDate(now, tz), tz };
+  const durationOf = durationsOf(ctx);
+  const s = newState(start, Math.max(0, available), durationOf);
 
   selectMain(s, sessionInput.mainLiftId);
   selectPinned(s, sessionInput.pinnedIds);
   selectGreedy(s);
-  const lib = indexLibrary(library);
   applyShuffle(s, sessionInput.shuffle, sessionInput.pinnedIds, {
     lib,
     pool: start.pool,
     recovering: start.recovering,
     recentIds: start.recentIds,
     lastDone: lastDoneDates(history, lib, tz),
+    durationOf,
   });
   applyEnergy(s, sessionInput.energy);
 
-  const ctx: PrefillCtx = { hard: normalizeHistory(history), lib, today: localDate(now, tz), tz };
-  const items = s.picked.map((p) => toItem(start, ctx, p));
+  const items = s.picked.map((p) => toItem(start, ctx, p, durationOf));
   const itemsTotalS = items.reduce((sum, i) => sum + i.costS, 0);
   const main = items.find((i) => i.isMain);
   return {
