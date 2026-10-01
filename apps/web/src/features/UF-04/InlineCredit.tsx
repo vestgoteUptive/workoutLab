@@ -10,8 +10,16 @@ const LICENSE_LABELS: Record<string, string> = en.uf04.licenseLabels;
 export function InlineCredit({ detail }: { detail: ExerciseDetail }) {
   if (detail.source === "workoutlab") return null;
   const parts: string[] = [];
-  if (detail.attribution !== null) parts.push(detail.attribution);
-  parts.push(LICENSE_LABELS[detail.license] ?? detail.license);
+  // Content data (D-0005): a blank attribution is absent, and only own keys of the label map
+  // count, so a licence named after an Object.prototype member prints as itself (T-0357).
+  if (detail.attribution !== null && detail.attribution.trim() !== "") {
+    parts.push(detail.attribution);
+  }
+  parts.push(
+    Object.hasOwn(LICENSE_LABELS, detail.license)
+      ? LICENSE_LABELS[detail.license]!
+      : detail.license,
+  );
   return (
     <p data-field="inline-credit" className="wl-uf04-howto__credit">
       {en.uf04.attributionPrefix}
