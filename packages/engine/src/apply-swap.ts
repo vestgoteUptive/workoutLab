@@ -1,0 +1,159 @@
+// Rule 12.1 `applySwap` (UF-05.1, UF-08.3; D-0071 §7, D-0093, D-0096 §1). Pure: rebuilds one
+// item of a workout the way `suggest` builds it (one shared `buildItem`), keeps every other
+// field, and recomputes the totals. The UI never builds a plan item (principle 3).
+import { availableS } from "./cost.js";
+import { indexLibrary, normalizeHistory, primaryAreas } from "./history.js";
+import { aggregateWindow } from "./load.js";
+import { plannedDurationFrom, prefillFrom } from "./prefill.js";
+import { buildItem, repRange } from "./session.js";
+import { SWAP_REASONS } from "./swaps.js";
+import { dayDiff, instantMs, localDate } from "./time.js";
+import {
+  AREAS,
+  type Area,
+  type EngineProfile,
+  type HistorySet,
+  type Instant,
+  type LibraryExercise,
+  type Reason,
+  type SwapReason,
+  type TimeZone,
+  type Workout,
+  type WorkoutItem,
+} from "./types.js";
+import { WARMUP_COST_S } from "./warmup.js";
+
+function copyItem(i: WorkoutItem): WorkoutItem {
+  return {
+    exerciseId: i.exerciseId,
+    isMain: i.isMain,
+    sets: i.sets,
+    repsMin: i.repsMin,
+    repsMax: i.repsMax,
+    durationS: i.durationS,
+    costS: i.costS,
+    backoff: i.backoff === null ? null : { ...i.backoff },
+    prefill: { ...i.prefill },
+    reasons: i.reasons.map((r): Reason => ({ ...r })),
+  };
+}
+
+/** D-0093 §6: structural checks only; ranking filters stay in `rankSwaps` (D-0071 §7). */
+function assertSwap(
+  workout: Workout,
+  currentExerciseId: string,
+  candidateId: string,
+  reason: SwapReason | null,
+  lib: ReadonlyMap<string, LibraryExercise>,
+  now: Instant,
+): { index: number; old: WorkoutItem; cur: LibraryExercise; next: LibraryExercise } {
+  if (reason !== null && !SWAP_REASONS.includes(reason)) {
+    throw new RangeError(`Unknown swap reason: ${String(reason)}`);
+  }
+  instantMs(now);
+  const items = workout.plan.items;
+  const index = items.findIndex((i) => i.exerciseId === currentExerciseId);
+  const old = items[index];
+  if (old === undefined) throw new RangeError(`${currentExerciseId} is not an item of the plan`);
+  const cur = lib.get(currentExerciseId);
+  if (cur === undefined) throw new RangeError(`${currentExerciseId} is not in the library`);
+  const next = lib.get(candidateId);
+  if (next === undefined) throw new RangeError(`${candidateId} is not in the library`);
+  if (next.kind !== "exercise") throw new RangeError(`${candidateId} is a warm-up move`);
+  if (candidateId === currentExerciseId) {
+    throw new RangeError(`${candidateId} is the exercise being replaced`);
+  }
+  if (items.some((i) => i.exerciseId === candidateId)) {
+    throw new RangeError(`${candidateId} is already in the plan`);
+  }
+  if (old.isMain && next.type !== "compound") {
+    throw new RangeError(`the main slot takes a compound; ${candidateId} is not`);
+  }
+  const curPrimary = primaryAreas(cur);
+  if (!primaryAreas(next).some((a) => curPrimary.includes(a))) {
+    throw new RangeError(`${candidateId} shares no weight-1.0 area with ${currentExerciseId}`);
+  }
+  return { index, old, cur, next };
+}
+
+/**
+ * Rule 12.1 (UF-05.1, UF-08.3; D-0071 §7, D-0093): `workout` with the item `currentExerciseId`
+ * replaced by `candidateId` at the same position, `sets` and `isMain`. The new item has rule
+ * 7.2's rep slot, the rule 14 pre-fill with the replaced exercise as `previous` (carry), a
+ * timed duration and cost at the planned duration (D-0092, D-0096 §1), the back-off recomputed
+ * when the slot had one, and reasons rebuilt for its first primary area with `swap {reason}`.
+ * Totals are recomputed and may exceed the budget (D-0093 §5); `mainLiftId` follows the main
+ * slot. The warm-up, `startDeficits`, the session fields and every other item are unchanged.
+ * Throws `RangeError` on the D-0093 §6 structural errors. `profile` is the type `suggest`
+ * takes; today's rep slots do not read it (T-0214 adds the goal, D-0095).
+ */
+export function applySwap(
+  workout: Workout,
+  currentExerciseId: string,
+  candidateId: string,
+  reason: SwapReason | null,
+  history: readonly HistorySet[],
+  profile: Pick<EngineProfile, "level" | "equipment">,
+  library: readonly LibraryExercise[],
+  now: Instant,
+  tz: TimeZone,
+): Workout {
+  void profile;
+  const lib = indexLibrary(library);
+  const { index, old, next } = assertSwap(
+    workout,
+    currentExerciseId,
+    candidateId,
+    reason,
+    lib,
+    now,
+  );
+  const hard = normalizeHistory(history);
+  const today = localDate(now, tz);
+  const [repsMin, repsMax] = repRange(next, old.isMain);
+  // D-0093 §2: `previous` is the exercise being replaced, at its own pre-fill weight.
+  const prefill = prefillFrom(next, { repsMin, repsMax }, hard, lib, today, tz, {
+    exerciseId: old.exerciseId,
+    weightKg: old.prefill.weightKg,
+  });
+  // D-0093 §3: `days_since` counts every set up to `now`, including today's (rule 5).
+  const agg = aggregateWindow(history, library, now, tz);
+  const daysSince = {} as Record<Area, number | null>;
+  for (const a of AREAS) {
+    const last = agg.lastTrainedDate[a];
+    daysSince[a] = last === null ? null : dayDiff(last, agg.windowEnd);
+  }
+  const item = buildItem(
+    {
+      exercise: next,
+      isMain: old.isMain,
+      sets: old.sets,
+      prefill,
+      backoff: old.backoff !== null,
+      swap: reason,
+      lowTrimmed: old.reasons.some((r) => r.code === "energy_low_trim"),
+      plannedS: plannedDurationFrom(next, hard, lib, today, tz),
+    },
+    { deficits: workout.plan.startDeficits, daysSince },
+  );
+
+  const items = workout.plan.items.map((i, k) => (k === index ? item : copyItem(i)));
+  const itemsTotalS = items.reduce((sum, i) => sum + i.costS, 0);
+  const available = availableS(workout.budgetMin, workout.warmupInBudget);
+  return {
+    plan: {
+      version: workout.plan.version,
+      mainLiftId: old.isMain ? next.id : workout.plan.mainLiftId,
+      warmup: workout.plan.warmup.map((m) => ({ ...m })),
+      items,
+      startDeficits: { ...workout.plan.startDeficits },
+    },
+    budgetMin: workout.budgetMin,
+    warmupInBudget: workout.warmupInBudget,
+    energy: workout.energy,
+    itemsTotalS,
+    totalS: itemsTotalS + WARMUP_COST_S,
+    unusedS: Math.max(0, available - itemsTotalS),
+    sessionReasons: workout.sessionReasons.map((r): Reason => ({ ...r })),
+  };
+}

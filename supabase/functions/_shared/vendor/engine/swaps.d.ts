@@ -3,6 +3,8 @@
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
 import type { Area, EngineProfile, HistorySet, Instant, LibraryExercise, LocalDate, SwapCandidate, SwapReason, TimeZone, Workout } from "./types.js";
+/** The `SwapReason` values (D-0037 §2). */
+export declare const SWAP_REASONS: readonly SwapReason[];
 /**
  * Rule 12: `Σ min(w_cur, w_alt) / Σ w_cur` over the current exercise's areas, rounded to 3
  * decimals so equal matches tie exactly (D-0056 §1). In [0, 1]; 0 when `cur` has no areas.

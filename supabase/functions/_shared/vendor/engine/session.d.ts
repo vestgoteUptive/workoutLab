@@ -2,7 +2,7 @@
 // Source: packages/{pkg}/src. Rerun `node supabase/scripts/vendor.mjs` after an engine or
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
-import { type Area, type AreaTarget, type EngineProfile, type HistorySet, type Instant, type LibraryExercise, type SessionInput, type TimeZone, type Workout } from "./types.js";
+import { type Area, type AreaNumbers, type AreaTarget, type Backoff, type EngineProfile, type HistorySet, type Instant, type LibraryExercise, type PrefillResult, type SessionInput, type SwapReason, type TimeZone, type Workout, type WorkoutItem } from "./types.js";
 export { availableS, isEligible, itemCostS, setCostS, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, WORK_S, } from "./cost.js";
 /** Rule 7.2 caps. */
 export declare const MAX_ITEMS = 8;
@@ -10,6 +10,37 @@ export declare const MAX_ITEMS_PER_AREA = 2;
 /** `budgetMin` bounds (D-0037 §7, D-0040 §7). */
 export declare const BUDGET_MIN = 1;
 export declare const BUDGET_MAX = 480;
+/** Rule 7.2 rep ranges; timed items have none (D-0040 §5). Shared with `applySwap` (D-0093 §2). */
+export declare function repRange(ex: LibraryExercise, isMain: boolean): [number, number] | [null, null];
+/** D-0040 §4: `floorInc(0.9 × prefill weight)` (null stays null) at the main `repsMin`. */
+export declare function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): Backoff;
+/** The per-area numbers an item's `area_deficit` and `days_since` reasons read (D-0040 §6). */
+export interface ReasonContext {
+    deficits: AreaNumbers;
+    daysSince: Record<Area, number | null>;
+}
+/** One slot as `suggest` and `applySwap` build it (D-0093 §2–§3). */
+export interface ItemSpec {
+    exercise: LibraryExercise;
+    isMain: boolean;
+    sets: number;
+    /** The rule 14 pre-fill at `repRange(exercise, isMain)`. */
+    prefill: PrefillResult;
+    /** Rule 7.4 High: the slot has a back-off set (a timed exercise never gets one, D-0047). */
+    backoff: boolean;
+    /** `swap {reason}` when the slot was swapped or shuffled; `undefined` adds no swap reason. */
+    swap: SwapReason | null | undefined;
+    /** Rule 7.4 Low: trimmed from 3 to 2 sets. */
+    lowTrimmed: boolean;
+    /** The exercise's planned duration (D-0092 §1); null for a non-timed exercise. */
+    plannedS: number | null;
+}
+/**
+ * The one item builder behind `suggest` and `applySwap` (D-0093 §2–§3): the rule 7.2 rep slot,
+ * the back-off, the planned-duration cost (D-0092) and the reasons in the D-0040 §6 order for
+ * the exercise's first primary area.
+ */
+export declare function buildItem(spec: ItemSpec, rc: ReasonContext): WorkoutItem;
 /**
  * Rule 7.2 candidate ranking for `area` at session start (R7-E7): the ids of the eligible
  * exercises with weight 1.0 there and no recovering primary area.

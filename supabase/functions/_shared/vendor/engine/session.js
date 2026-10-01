@@ -171,8 +171,8 @@ function selectGreedy(s) {
             exhausted.add(area);
     }
 }
-/** Rule 7.2 rep ranges; timed items have none (D-0040 §5). */
-function repRange(ex, isMain) {
+/** Rule 7.2 rep ranges; timed items have none (D-0040 §5). Shared with `applySwap` (D-0093 §2). */
+export function repRange(ex, isMain) {
     if (ex.timed)
         return [null, null];
     if (isMain)
@@ -204,7 +204,7 @@ function prefillFor(ctx, ex, repsMin, repsMax, previous) {
     return prefillFrom(ex, { repsMin, repsMax }, ctx.hard, ctx.lib, ctx.today, ctx.tz, previous);
 }
 /** D-0040 §4: `floorInc(0.9 × prefill weight)` (null stays null) at the main `repsMin`. */
-function backoffOf(ex, prefill, reps) {
+export function backoffOf(ex, prefill, reps) {
     const w = prefill.weightKg;
     const inc = ex.incrementKg ?? DEFAULT_INCREMENT_KG;
     return { weightKg: w === null ? null : floorInc(BACKOFF_FACTOR * w, inc), reps };
@@ -219,38 +219,56 @@ function previousOf(ctx, p) {
         weightKg: prefillFor(ctx, p.previous, repsMin, repsMax, null).weightKg,
     };
 }
-function toItem(start, ctx, p, durationOf) {
-    const [repsMin, repsMax] = repRange(p.exercise, p.isMain);
-    const prefill = prefillFor(ctx, p.exercise, repsMin, repsMax, previousOf(ctx, p));
-    const area = primaryAreas(p.exercise)[0];
-    const backoff = p.backoff === true && repsMin !== null ? backoffOf(p.exercise, prefill, repsMin) : null;
+/**
+ * The one item builder behind `suggest` and `applySwap` (D-0093 §2–§3): the rule 7.2 rep slot,
+ * the back-off, the planned-duration cost (D-0092) and the reasons in the D-0040 §6 order for
+ * the exercise's first primary area.
+ */
+export function buildItem(spec, rc) {
+    const { exercise, isMain, sets, prefill } = spec;
+    const [repsMin, repsMax] = repRange(exercise, isMain);
+    const area = primaryAreas(exercise)[0];
+    const backoff = spec.backoff && repsMin !== null ? backoffOf(exercise, prefill, repsMin) : null;
     // Item reason order (D-0040 §6).
     const reasons = [];
-    if (p.isMain)
+    if (isMain)
         reasons.push({ code: "main_lift" });
-    reasons.push({ code: "area_deficit", area, deficit: start.deficits[area] });
-    reasons.push({ code: "days_since", area, days: start.daysSince[area] });
-    if (p.previous !== undefined)
-        reasons.push({ code: "swap", reason: null });
-    if (p.lowTrimmed === true)
+    reasons.push({ code: "area_deficit", area, deficit: rc.deficits[area] });
+    reasons.push({ code: "days_since", area, days: rc.daysSince[area] });
+    if (spec.swap !== undefined)
+        reasons.push({ code: "swap", reason: spec.swap });
+    if (spec.lowTrimmed)
         reasons.push({ code: "energy_low_trim" });
     if (backoff !== null)
         reasons.push({ code: "energy_high_backoff" });
     reasons.push({ code: "prefill", kind: prefill.kind });
     return {
-        exerciseId: p.exercise.id,
-        isMain: p.isMain,
-        sets: p.sets,
+        exerciseId: exercise.id,
+        isMain,
+        sets,
         repsMin,
         repsMax,
         // D-0092 §3: a timed item's duration is its planned duration, which is the pre-fill's.
-        durationS: p.exercise.timed ? prefill.durationS : null,
-        costS: itemCostS(p.exercise, p.sets, durationOf(p.exercise)) +
-            (backoff === null ? 0 : setCostS(p.exercise, durationOf(p.exercise))),
+        durationS: exercise.timed ? prefill.durationS : null,
+        costS: itemCostS(exercise, sets, spec.plannedS) +
+            (backoff === null ? 0 : setCostS(exercise, spec.plannedS)),
         backoff,
         prefill,
         reasons,
     };
+}
+function toItem(start, ctx, p, durationOf) {
+    const [repsMin, repsMax] = repRange(p.exercise, p.isMain);
+    return buildItem({
+        exercise: p.exercise,
+        isMain: p.isMain,
+        sets: p.sets,
+        prefill: prefillFor(ctx, p.exercise, repsMin, repsMax, previousOf(ctx, p)),
+        backoff: p.backoff === true,
+        swap: p.previous === undefined ? undefined : null,
+        lowTrimmed: p.lowTrimmed === true,
+        plannedS: durationOf(p.exercise),
+    }, start);
 }
 /**
  * Rule 13 shuffle (UF-08.2, D-0025, D-0056 §8–§12), after greedy selection and before
