@@ -4,10 +4,10 @@ title: UF-01.5 Account (magic link, code, Google, privacy link) and `/welcome/sa
 lane: web-feature:UF-01
 screens: [UF-01.5, UF-01.4, UF-01.1, UF-02.1]
 decisions: [D-0010, D-0014, D-0045, D-0064, D-0071, D-0073, D-0097, D-0098, D-0100, D-0101]
-deps: [T-0301a, T-0301b, T-0301d]
+deps: [T-0301a, T-0301b, T-0301d, T-0331, T-0378]
 status: todo
 ---
-<!-- Groomed 2026-10-01 by product-owner (groom T-0301c) from docs/tickets/T-0301-onboarding.md ACs C1–C8. Build flow: wl-build-web. About ¾ day. Becomes ready when T-0301d is done (T-0301a and T-0301b are done). Shared files: apps/web/src/app/__tests__/profile-gate.test.tsx is also edited by T-0331 and T-0375, and profile-gate.source.test.ts by any T-0328/T-0333 build. Never run this ticket in parallel with any of them. -->
+<!-- Groomed 2026-10-01 by product-owner (groom T-0301c) from docs/tickets/T-0301-onboarding.md ACs C1–C8. Build flow: wl-build-web. About ¾ day. Becomes ready when T-0301d, T-0331 and T-0378 are done (T-0378: its signed-in e2e must not hit an unhandled hydrate rejection) (T-0301a and T-0301b are done). Shared files: apps/web/src/app/__tests__/profile-gate.test.tsx is also edited by T-0331 (T-0375 is folded into it), and profile-gate.source.test.ts by any T-0328/T-0333 build. Never run this ticket in parallel with any of them. -->
 
 ## Why
 Principle 5 ends at UF-01.4 with a plan on screen. The plan only counts once it is saved, and saving needs an account (no guest mode, D-0014). This ticket builds the last two pieces of onboarding:
@@ -200,5 +200,5 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 
 ## Notes
 - **Flow:** `wl-build-web`. Ask review to check that the three web-shell test files change only within AC-12 and AC-13, and that `SaveScreen.tsx` is the only feature file importing `lib/profile`.
-- **Serial with:** T-0331 and T-0375 (`profile-gate.test.tsx`), and any T-0328 or T-0333 build (the gate seam that D-0101 depends on).
+- **Serial with:** T-0331 (`profile-gate.test.tsx`; T-0375 is folded into it), T-0377 (`features/UF-01/**`, either order), and any T-0328 or T-0333 build (the gate seam that D-0101 depends on).
 - **Google** needs H-08 done in the Supabase dashboard to work for real. The tests mock it, so this ticket doesn't wait on it.

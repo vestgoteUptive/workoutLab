@@ -67,7 +67,7 @@ Commands run from the worktree root. `V` stands for `pnpm --filter @workoutlab/w
 - **AC-4 (first-render checks keep their meaning).** In the warmed AC-10 and AC-B6 cases, the assertions after the second `render` are word for word the same as on `main`: the synchronous heading in UF-01.1, plus the zero-call spies. Nothing between that `render` and those assertions is awaited. Each twin passes in isolation (`-t` with the twin's name).
 - **AC-5 (the checks still catch a principle-5 regression).** Run two injected faults and record them. Neither is committed.
   1. Make `ProfileStatusProvider` call `loadProfile()` even when signed out. The warmed AC-10 case fails on `loadProfile` not being called, and so does its twin. Both fail in isolation and in the full file.
-  2. Make the `/welcome` route render `null` until `getSession()` settles. For example, wrap the guest-only element so it waits on `supabase.auth.getSession()`. The AC-B6 twin's `findBy` fails, and the warmed AC-B6 fails on its synchronous `getByRole`.
+  2. Make the `/welcome` route render `null` until `getSession()` settles. For example, wrap the guest-only element so it waits on `supabase.auth.getSession()`. Both the warmed AC-B6 and its twin must fail; record which assertion each fails on (the warmed one may time out in its own warm-up, the twin may fail its zero-call check first). Also reset `spy.countFor('profiles')` (a counter, not a `vi.fn`) after the AC-10 warm-up.
 
   Revert both. `git diff main --stat` lists only the two test files and this ticket.
 - **AC-6 (nothing weakened).** Given `git diff main` on the two files:
