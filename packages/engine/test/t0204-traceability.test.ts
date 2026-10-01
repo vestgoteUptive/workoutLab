@@ -56,7 +56,8 @@ function guarded(doc: string): string {
 describe("T-0204 contract edit (D-0056 §1)", () => {
   it("R12-E1 rule-12 (AC25) the R12-E1 line says muscleMatch 1.0 and 0.667 and cites D-0056", () => {
     const lines = readFileSync(RULES, "utf8").split("\n");
-    const e1 = lines.filter((l) => l.startsWith("- **R12-E1"));
+    // The exact id: R12-E10 and R12-E11 (T-0224, D-0093) share the "R12-E1" prefix.
+    const e1 = lines.filter((l) => /^- \*\*R12-E1(?!\d)/.test(l));
     expect(e1).toEqual([R12_E1_LINE.after]);
     const line = e1[0] ?? "";
     expect(line).toContain("muscleMatch 1.0");

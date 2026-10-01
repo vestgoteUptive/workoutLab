@@ -365,7 +365,7 @@ describe("rule 13 keeps the rule 7.2 invariants", () => {
         }
       }
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 });
 
 describe("rule 13 determinism and validation", () => {
