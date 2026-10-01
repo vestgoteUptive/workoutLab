@@ -5,17 +5,17 @@ import { availableS } from "./cost.js";
 import { indexLibrary, normalizeHistory, primaryAreas } from "./history.js";
 import { aggregateWindow } from "./load.js";
 import { plannedDurationFrom, prefillFrom } from "./prefill.js";
-import { buildItem, repRange } from "./session.js";
+import { buildItem, goalOf, repRange } from "./session.js";
 import { SWAP_REASONS } from "./swaps.js";
 import { dayDiff, instantMs, localDate } from "./time.js";
 import {
   AREAS,
   type Area,
-  type EngineProfile,
   type HistorySet,
   type Instant,
   type LibraryExercise,
   type Reason,
+  type SuggestProfile,
   type SwapReason,
   type TimeZone,
   type Workout,
@@ -85,7 +85,8 @@ function assertSwap(
  * Totals are recomputed and may exceed the budget (D-0093 §5); `mainLiftId` follows the main
  * slot. The warm-up, `startDeficits`, the session fields and every other item are unchanged.
  * Throws `RangeError` on the D-0093 §6 structural errors. `profile` is the type `suggest`
- * takes; today's rep slots do not read it (T-0214 adds the goal, D-0095).
+ * takes; its `goal` picks the rebuilt rep slot (D-0095 §2; absent means `build_muscle`, an
+ * unknown goal throws `RangeError`).
  */
 export function applySwap(
   workout: Workout,
@@ -93,12 +94,12 @@ export function applySwap(
   candidateId: string,
   reason: SwapReason | null,
   history: readonly HistorySet[],
-  profile: Pick<EngineProfile, "level" | "equipment">,
+  profile: SuggestProfile,
   library: readonly LibraryExercise[],
   now: Instant,
   tz: TimeZone,
 ): Workout {
-  void profile;
+  const goal = goalOf(profile);
   const lib = indexLibrary(library);
   const { index, old, next } = assertSwap(
     workout,
@@ -110,7 +111,7 @@ export function applySwap(
   );
   const hard = normalizeHistory(history);
   const today = localDate(now, tz);
-  const [repsMin, repsMax] = repRange(next, old.isMain);
+  const [repsMin, repsMax] = repRange(next, old.isMain, goal);
   // D-0093 §2: `previous` is the exercise being replaced, at its own pre-fill weight.
   const prefill = prefillFrom(next, { repsMin, repsMax }, hard, lib, today, tz, {
     exerciseId: old.exerciseId,
@@ -133,6 +134,7 @@ export function applySwap(
       swap: reason,
       lowTrimmed: old.reasons.some((r) => r.code === "energy_low_trim"),
       plannedS: plannedDurationFrom(next, hard, lib, today, tz),
+      goal,
     },
     { deficits: workout.plan.startDeficits, daysSince },
   );
