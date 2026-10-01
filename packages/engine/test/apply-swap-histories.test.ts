@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   applySwap,
   availableS,
+  floorInc,
   plannedDurationS,
   prefill,
   rankSwaps,
@@ -138,6 +139,17 @@ describe("applySwap over the simulated 14-day histories (AC12)", () => {
             exerciseId: old.exerciseId,
             weightKg: old.prefill.weightKg,
           }),
+        );
+        // Rule 7.4 / D-0093 §2: the back-off is recomputed from the new pre-fill and increment.
+        const slot = slotOf(next, old.isMain);
+        const w0 = item.prefill.weightKg;
+        expect(item.backoff, label).toStrictEqual(
+          old.backoff === null || next.timed
+            ? null
+            : {
+                weightKg: w0 === null ? null : floorInc(0.9 * w0, next.incrementKg ?? 2.5),
+                reps: slot.repsMin,
+              },
         );
         r.plan.items.forEach((it, i) => {
           if (i !== k) expect(it, `${label} item ${i}`).toStrictEqual(w.plan.items[i]);
