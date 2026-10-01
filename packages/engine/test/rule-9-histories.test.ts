@@ -198,12 +198,16 @@ describe("rule 9 invariants (AC25)", () => {
   }, 30_000); // runtime budget only (sweep)
 
   it("rule-9 (AC25) invariants hold with a Keep and a mid-period plan edit", () => {
-    const inputs: Array<[string, CheckinSession[]]> = (Object.keys(SIMULATED_HISTORIES) as Name[]).map(
-      (n): [string, CheckinSession[]] => [n, sessionsOf(SIMULATED_HISTORIES[n])],
-    );
+    const inputs: Array<[string, CheckinSession[]]> = (
+      Object.keys(SIMULATED_HISTORIES) as Name[]
+    ).map((n): [string, CheckinSession[]] => [n, sessionsOf(SIMULATED_HISTORIES[n])]);
     const resets: Array<[string, Partial<CheckinProfile>, CheckinAnswer[]]> = [
       ["keep 09-30", {}, [{ answeredAt: "2026-09-30T19:00:00+02:00" }]],
-      ["mid-period plan edit 09-20", { planUpdatedAt: "2026-09-20T09:00:00+02:00" }, [{ answeredAt: null }]],
+      [
+        "mid-period plan edit 09-20",
+        { planUpdatedAt: "2026-09-20T09:00:00+02:00" },
+        [{ answeredAt: null }],
+      ],
     ];
     let listed = 0;
     for (const [name, sessions] of inputs) {
