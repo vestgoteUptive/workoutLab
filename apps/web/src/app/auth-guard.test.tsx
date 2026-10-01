@@ -1,6 +1,6 @@
 // AC-B5 (guard), AC-B6 (principle 5 + stale session), AC-B7 (no auth interruption mid-workout).
 import { useEffect } from "react";
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, useNavigate } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Shell } from "./App.js";
@@ -124,8 +124,15 @@ describe("AC-B5 route guard", () => {
 });
 
 describe("AC-B6 principle 5 + stale session", () => {
-  it("renders UF-01.1 on the first committed render, with no network call awaited", () => {
+  it("renders UF-01.1 on the first committed render, with no network call awaited", async () => {
     getSession.mockReturnValue(new Promise(() => {})); // never resolves
+    // Warm-up (D-0103 §2): the shell renders every route through `React.lazy`, so "the first
+    // committed render" means once this route's chunk is loaded. Load it here, in this test,
+    // with the same route and auth state, so the check never depends on test order.
+    render(<Harness start="/" />);
+    await screen.findByRole("heading", { level: 1, name: "Train with a plan. Log in seconds." });
+    cleanup();
+    getSession.mockClear(); // history only: the never-settling implementation stays
     render(<Harness start="/" />);
     // Synchronous: no `await`/`waitFor` before this assertion.
     expect(
@@ -134,6 +141,23 @@ describe("AC-B6 principle 5 + stale session", () => {
         .closest('[data-screen-id="UF-01.1"]'),
     ).toBeInTheDocument();
     expect(getSession).not.toHaveBeenCalled();
+  });
+
+  // The order-independent twin (D-0103 §3): no warm-up, so the chunk may be cold. With `fetch`
+  // and `getSession` never settling, UF-01.1 can only appear if nothing waits on the network.
+  it("renders UF-01.1 without a warm-up, with nothing awaited on the network (twin)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    );
+    getSession.mockReturnValue(new Promise(() => {})); // never resolves
+    render(<Harness start="/" />);
+    expect(getSession).not.toHaveBeenCalled();
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Train with a plan. Log in seconds.",
+    });
+    expect(heading.closest('[data-screen-id="UF-01.1"]')).toBeInTheDocument();
   });
 
   it("stale + offline renders UF-02.1 at /", async () => {
@@ -166,7 +190,9 @@ describe("AC-B6 principle 5 + stale session", () => {
     render(<Harness start="/" />);
     await waitFor(() => expect(getSession).toHaveBeenCalled());
     // Still on the protected route: a network hiccup must not sign the user out (AC-B6).
-    expect(document.querySelector('[data-screen-id="UF-02.1"]')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.querySelector('[data-screen-id="UF-02.1"]')).toBeInTheDocument();
+    });
   });
 
   it("stale + online + 500 from Supabase stays signed in (stale), not bounced out", async () => {
@@ -178,7 +204,9 @@ describe("AC-B6 principle 5 + stale session", () => {
     });
     render(<Harness start="/" />);
     await waitFor(() => expect(getSession).toHaveBeenCalled());
-    expect(document.querySelector('[data-screen-id="UF-02.1"]')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.querySelector('[data-screen-id="UF-02.1"]')).toBeInTheDocument();
+    });
   });
 });
 

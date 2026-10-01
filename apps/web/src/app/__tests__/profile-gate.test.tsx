@@ -4,7 +4,7 @@
 // `ProfileStatusProvider` the real `App` mounts. `lib/offline` and `supabase.from` are mocked
 // with the `select-spy.ts` pattern. Every assertion is on behaviour: which screen id is on the
 // DOM, which router location settled, which spy was called.
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, useLocation, useNavigate } from "react-router";
 import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -658,7 +658,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
       await waitFor(() => expect(locationRef).toBe(expected));
       await act(async () => {});
       expect(locationRef).toBe(expected);
-      expect(screenOf(expectedScreen)).toBeInTheDocument();
+      await waitFor(() => expect(screenOf(expectedScreen)).toBeInTheDocument());
       expect(screenOf("UF-01.5")).not.toBeInTheDocument();
     },
   );
@@ -801,7 +801,7 @@ describe("QA: a SIGNED_IN for a different user re-resolves the gate", () => {
     await act(async () => {});
     await act(async () => {});
     expect(locationRef).toBe("/");
-    expect(screenOf("UF-02.1")).toBeInTheDocument();
+    await waitFor(() => expect(screenOf("UF-02.1")).toBeInTheDocument());
   });
 
   // The two cases above are satisfied by re-running the resolution alone, because both end
@@ -902,7 +902,7 @@ describe("QA: D-0073 §3 — a `stale` session is gated too", () => {
 
     render(<Harness start="/" />);
     await waitFor(() => expect(locationRef).toBe("/welcome/save"));
-    expect(screenOf("UF-01.1")).toBeInTheDocument();
+    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
     // The mechanism, not just the destination: the gate really did read `profiles` for a
     // `stale` user, rather than the redirect coming from the auth guard.
     expect(spy.countFor("profiles")).toBe(1);
@@ -929,12 +929,24 @@ describe("QA: D-0073 §3 — a `stale` session is gated too", () => {
 });
 
 describe("AC-10 signed out: the gate costs nothing (principle 5)", () => {
-  it("/welcome renders on the first committed render, with no loader, refresh or select", () => {
+  it("/welcome renders on the first committed render, with no loader, refresh or select", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => new Promise(() => {})),
     );
     getSession.mockReturnValue(new Promise(() => {}));
+    // Warm-up (D-0103 §2): the shell renders every route through `React.lazy`, so "the first
+    // committed render" means once this route's chunk is loaded. Load it here, in this test,
+    // with the same route and auth state, so the check never depends on test order.
+    render(<Harness start="/welcome" />);
+    await screen.findByRole("heading", { level: 1, name: "Train with a plan. Log in seconds." });
+    cleanup();
+    // Clear call history only: every implementation (the never-settling `getSession`, the
+    // stubbed `fetch`, the `from` spy) stays. `spy.calls` backs `countFor`, a counter, not a mock.
+    loadProfile.mockClear();
+    refreshProfile.mockClear();
+    spy.from.mockClear();
+    spy.calls.length = 0;
     render(<Harness start="/welcome" />);
     // Synchronous: no `await`/`waitFor` before these assertions (the T-0300b AC-B6 pattern).
     expect(
@@ -946,6 +958,25 @@ describe("AC-10 signed out: the gate costs nothing (principle 5)", () => {
     expect(refreshProfile).not.toHaveBeenCalled();
     expect(spy.from).not.toHaveBeenCalled();
     expect(spy.countFor("profiles")).toBe(0);
+  });
+
+  // The order-independent twin (D-0103 §3): no warm-up, so the chunk may be cold. With `fetch`
+  // and `getSession` never settling, UF-01.1 can only appear if nothing waits on the network.
+  it("/welcome renders UF-01.1 without a warm-up, with no loader, refresh or select (twin)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    );
+    getSession.mockReturnValue(new Promise(() => {}));
+    render(<Harness start="/welcome" />);
+    expect(loadProfile).not.toHaveBeenCalled();
+    expect(refreshProfile).not.toHaveBeenCalled();
+    expect(spy.from).not.toHaveBeenCalled();
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Train with a plan. Log in seconds.",
+    });
+    expect(heading.closest('[data-screen-id="UF-01.1"]')).toBeInTheDocument();
   });
 
   it("and still nothing after the tree settles", async () => {
