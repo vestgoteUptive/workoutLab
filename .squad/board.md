@@ -115,8 +115,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0300d | C-01 body map + legend (compact on Today, full on Balance) (AC-D*) | web-shell | T-0300a | done | wl-build-web |
 | T-0301 | UF-01 Onboarding (< 60 s to first plan) incl. UF-01.5 Account | web-feature:UF-01 | T-0300, T-0201a | split → T-0301a, T-0301b, T-0301c (D-0064) | wl-build-web |
 | T-0301a | Profile gate: lib/profile useProfileStatus/recheckProfile; signed-in without a profile → /welcome/save, /welcome/* allowed (D-0064 §9) — web-shell order T-0318 → T-0319 → T-0301a; gate = every protected route + /session/setup (D-0071 §11) | web-shell | T-0300 | done | wl-build-web |
-| T-0301b | UF-01.1–.3: welcome, goal (3), level + 3 equipment profiles; pending-plan record (24 h, planShown) and start time (D-0097, D-0098) | web-feature:UF-01 | T-0300, T-0318, T-0301a | doing | wl-build-web |
-| T-0301d | UF-01.4 rhythm steppers + plan card from deriveTargets, timingMs, planShown, hand-off, e2e `uf-01-onboarding.spec.ts` (D-0064, D-0098) | web-feature:UF-01 | T-0301b, T-0201a | todo | wl-build-web |
+| T-0301b | UF-01.1–.3: welcome, goal (3), level + 3 equipment profiles; pending-plan record (24 h, planShown) and start time (D-0097, D-0098) | web-feature:UF-01 | T-0300, T-0318, T-0301a | done | wl-build-web |
+| T-0301d | UF-01.4 rhythm steppers + plan card from deriveTargets, timingMs, planShown, hand-off, e2e `uf-01-onboarding.spec.ts` (D-0064, D-0098) | web-feature:UF-01 | T-0301b, T-0201a | ready | wl-build-web |
 | T-0301c | UF-01.5 Account (link, code, Google, privacy link) + /welcome/save (profile + 9 targets, existing profile wins, retry) | web-feature:UF-01 | T-0301a, T-0301b | todo | wl-build-web |
 | T-0302 | UF-02 Today + workout preview (mount compact C-01 from components/body-map as one link to /balance, fed from BalanceResult.areas — T-0300d) | web-feature:UF-02 | T-0300, T-0203b | split → T-0302a, T-0302b (D-0065) | wl-build-web |
 | T-0302a | UF-02.1 Today: compact C-01 link, attention line, 45-min suggestion card, Start → UF-08.1, offline/zero states; lib/i18n/workout.ts formatters + features/UF-02/slots.tsx (todayCheckinSlot) | web-feature:UF-02 | T-0300, T-0203b, T-0318 | todo | wl-build-web |
@@ -210,6 +210,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0371 | UF-10 `features/UF-10/__tests__/test-helpers.tsx`: build cache keys with `userScopedKey`/`setKey` from `lib/offline/db.ts` (T-0370 follow-up) | web-feature:UF-10 | T-0370 | todo | wl-build-web |
 | T-0372 | `key-builder-source.test.ts` scan gaps: string-concatenated keys (`a + ":" + b`), member-expression templates (`${a.b}:${…}`), block-comment strip inside string literals (T-0370 QA/review, low) | web-shell | T-0370 | todo | wl-build-web |
 | T-0373 | UF-04 `zone-credit-source.test.ts`: the `<OfflineStatus` regex `[^>]*>` stops at `=>` inside JSX attributes; match to `/>` or parse (T-0357 accept, low; batch with the next UF-04 ticket) | web-feature:UF-04 | T-0357 | todo | wl-build-web |
+| T-0374 | T-0219 AC6 ticket wording: F-input never shuffles plank into a slot; require the forced-core exclude list + minute-grid oldCost sweep as accepted (docs only) | product | T-0219 | todo | wl-spec |
+| T-0375 | Shell sync first-render checks (auth-guard AC-B6, profile-gate AC-10) catch a lazy UF-01.1 only in isolation (module cache warmed by earlier tests); make them robust (vi.resetModules or own file) (T-0301b QA) | web-shell | T-0301b | todo | wl-build-web |
+| T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
