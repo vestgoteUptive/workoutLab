@@ -195,6 +195,7 @@ Both routes exist (`protected`, tab bar on). This ticket adds no route and edits
 - **Listed extras:**
   - `apps/web/src/lib/i18n/flows/uf-06.ts`: this ticket's own flow file and no other (D-0071 §1, D-0075). You may add keys only. The file stays `export const uf06 = {` … a newline, then `} as const;` at column 0.
   - `tests/e2e/uf-06-progress.spec.ts`: a **new** file only (qa lane grant, D-0071 §10).
+  - `tests/e2e/shell.spec.ts`: **only** the `/progress/back-squat` (UF-06.2) row of the AC-6 offline loop — seed UF-06.2's data the way T-0905 AC-1 seeds UF-04.3, so the built screen does not race its empty-cache redirect (D-0091 §5, granted 2026-10-01).
   - `tests/e2e/fixtures/uf-06-progress-data.ts`: a **new** fixture file for the history, sessions and targets the e2e mock serves. Existing fixture files are not edited, which keeps this ticket clear of the other parallel lanes' fixture additions. `mockSupabaseData` always answers `sessions*` with `[]` and takes no sessions fixture, so if the spec needs session rows it registers its own `page.route` for `rest/v1/sessions*` **after** `mockSupabaseData` (Playwright runs the latest matching handler first). AC-15 as written needs none: Recent exercises and the Balance card read history only.
 - **Not yours, and each is already done for you:**
   - `apps/web/src/app/**`: both routes exist.

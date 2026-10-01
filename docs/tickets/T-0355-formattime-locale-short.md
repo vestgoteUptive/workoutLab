@@ -68,11 +68,10 @@ The code drifted from it.
   already pins its 12-hour form.
 
 ## Paths you may change
-`apps/web/src/lib/format/**`, `apps/web/src/components/offline-status/**` (web-shell). The
-following are **explicit extras**: test-only edits that tighten an assertion to the spec literal,
-with no production code:
-- `apps/web/src/features/UF-10/__tests__/balance.engine.test.tsx`
-- `apps/web/src/features/UF-04/__tests__/offline.test.tsx`
+- `apps/web/src/lib/format/**` and `apps/web/src/components/offline-status/**` (the lane: `web-shell`).
+- **Listed extras** (test-only edits that tighten an assertion to the spec literal; production code in them stays as it is):
+  - `apps/web/src/features/UF-10/__tests__/balance.engine.test.tsx`
+  - `apps/web/src/features/UF-04/__tests__/offline.test.tsx`
 
 ## Contract impact
 none. This aligns the code with D-0045 §9 and changes no contract.
