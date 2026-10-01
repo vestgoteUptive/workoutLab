@@ -3,36 +3,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import { createSelectSpy } from "../../../lib/offline/__tests__/select-spy.js";
 import { en } from "../../../lib/i18n/en.js";
+import { formatTime } from "../../../lib/format/intl.js";
 import { NOW, TZ, USER, seedSpy } from "./l1plus.js";
 
 /** 09:30 local (Europe/Stockholm), the instant the offline line must report. */
 const SYNCED_AT = new Date("2026-09-27T09:30:00+02:00");
-
-/**
- * `<OfflineStatus variant="text" />` takes its zone from the device default, so the rendered
- * clock time would otherwise depend on the machine running the suite. Pin the default to the
- * fixture's zone for the duration of a test, and restore it afterwards.
- */
-function pinDeviceTimeZone(timeZone: string): () => void {
-  const real = Intl.DateTimeFormat;
-  const patched = function DateTimeFormat(
-    this: unknown,
-    locales?: Intl.LocalesArgument,
-    options?: Intl.DateTimeFormatOptions,
-  ) {
-    const dtf = new real(locales, options);
-    if (options === undefined && locales === undefined) {
-      const resolved = dtf.resolvedOptions.bind(dtf);
-      dtf.resolvedOptions = () => ({ ...resolved(), timeZone });
-    }
-    return dtf;
-  } as unknown as typeof Intl.DateTimeFormat;
-  patched.supportedLocalesOf = real.supportedLocalesOf;
-  Intl.DateTimeFormat = patched;
-  return () => {
-    Intl.DateTimeFormat = real;
-  };
-}
 
 const spy = createSelectSpy();
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: spy.from } }));
@@ -81,13 +56,13 @@ describe("AC-10 offline", () => {
     // above each ran the component's own `refreshAll(new Date(), tz)`, which writes the wall
     // clock, so the sync time on screen is otherwise whatever time the suite happens to run at.
     await refreshAll(SYNCED_AT, TZ);
-    const restoreTimeZone = pinDeviceTimeZone(TZ);
 
     setOnline(false);
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("offline"));
     const callsBefore = spy.from.mock.calls.length;
 
-    const view = await mountAt("/library");
+    // T-0357 AC-1: the zone is passed explicitly, so no `Intl` patch is needed for a stable time.
+    const view = await mountAt("/library", { timeZone: TZ });
     await waitFor(browseReady);
     expect(rowNames()).toEqual(onlineBrowse.rows);
     expect(rowHrefs()).toEqual(onlineBrowse.hrefs);
@@ -98,7 +73,6 @@ describe("AC-10 offline", () => {
     // The offline variant with a time, not the generic "not synced yet".
     expect(offlineLine?.textContent).not.toBe(en.offline.notSyncedYet);
     view.unmount();
-    restoreTimeZone();
 
     const offlineDetail = await snapshot("/library/back-squat", detailReady);
     expect(offlineDetail).toEqual(onlineDetail);
@@ -108,5 +82,44 @@ describe("AC-10 offline", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(spy.from.mock.calls.length).toBe(callsBefore);
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+// T-0357 UF-04.1 (D-0045 §9): Library passes an explicit zone to OfflineStatus.
+describe("T-0357 explicit zone for the offline line", () => {
+  async function offlineLineAt(options: { timeZone?: string }): Promise<string | null | undefined> {
+    spy.reset();
+    seedSpy(spy);
+    await refreshAll(SYNCED_AT, TZ);
+    setOnline(false);
+    const view = await mountAt("/library", options);
+    await waitFor(() =>
+      expect(document.querySelector(".wl-offline-status__text")?.textContent).not.toBe(
+        en.offline.notSyncedYet,
+      ),
+    );
+    await waitFor(() => expect(rowNames()).toHaveLength(24));
+    const text = document.querySelector(".wl-offline-status__text")?.textContent;
+    view.unmount();
+    return text;
+  }
+
+  it("AC-1 Europe/Stockholm reads 09:30", async () => {
+    expect(await offlineLineAt({ timeZone: "Europe/Stockholm" })).toBe(
+      en.offline.lastSynced("09:30"),
+    );
+  });
+
+  it("AC-1 Asia/Tokyo reads 16:30", async () => {
+    expect(await offlineLineAt({ timeZone: "Asia/Tokyo" })).toBe(en.offline.lastSynced("16:30"));
+  });
+
+  it("AC-2 with no prop, the device zone is used", async () => {
+    const deviceZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    expect(await offlineLineAt({})).toBe(
+      en.offline.lastSynced(
+        formatTime(SYNCED_AT.toISOString(), { locale: "en-GB", timeZone: deviceZone }),
+      ),
+    );
   });
 });
