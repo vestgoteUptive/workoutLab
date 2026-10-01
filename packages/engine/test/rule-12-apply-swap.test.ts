@@ -427,6 +427,56 @@ describe("rule 12.1 applySwap edge cases", () => {
   });
 });
 
+// R7-E11: R7-E4 with Low energy trims inverted-row 3 → 2 (`energy_low_trim`); leg-extension
+// was already at 2 and bench-press is the main lift, so neither is trimmed.
+const W_low = suggest([], F_TARGETS, F_PROFILE, LIBRARY, input({ energy: "low" }), NOW, TZ);
+
+describe("rule 12.1 applySwap on a Low-energy plan (D-0093 §3.5)", () => {
+  it("rule-12 rule-7 (D-0093 §3.5) precondition: W_low is R7-E11, only inverted-row is trimmed", () => {
+    expect(W_low.plan.items.map((i) => [i.exerciseId, i.sets])).toEqual([
+      ["bench-press", 4],
+      ["inverted-row", 2],
+      ["leg-extension", 2],
+    ]);
+    const trimmed = W_low.plan.items.map((i) =>
+      i.reasons.some((r) => r.code === "energy_low_trim"),
+    );
+    expect(trimmed).toEqual([false, true, false]);
+  });
+
+  it("rule-12 rule-7 (D-0093 §3.5) a Low-trimmed slot keeps energy_low_trim after swap {reason}", () => {
+    const r = swap(W_low, "inverted-row", "barbell-row", "variety");
+    // Sets stay 2: 2 × 165 + 60 = 390. Reasons in the D-0040 §6 order.
+    expect(r.plan.items[1]).toMatchObject({ exerciseId: "barbell-row", sets: 2, costS: 390 });
+    expect(r.plan.items[1]?.reasons).toStrictEqual([
+      { code: "area_deficit", area: "back", deficit: 1 },
+      { code: "days_since", area: "back", days: null },
+      { code: "swap", reason: "variety" },
+      { code: "energy_low_trim" },
+      { code: "prefill", kind: "first_time" },
+    ]);
+    expectUnchanged(r, W_low, 1);
+  });
+
+  it("rule-12 rule-7 (D-0093 §3.5) contrast: an untrimmed slot of the same plan gets no energy_low_trim", () => {
+    const r = swap(W_low, "leg-extension", "back-squat", null);
+    expect(r.plan.items[2]?.reasons).toStrictEqual([
+      { code: "area_deficit", area: "glutes", deficit: 1 },
+      { code: "days_since", area: "glutes", days: null },
+      { code: "swap", reason: null },
+      { code: "prefill", kind: "first_time" },
+    ]);
+    const main = swap(W_low, "bench-press", "push-up", null);
+    expect(main.plan.items[0]?.reasons.map((x) => x.code)).toEqual([
+      "main_lift",
+      "area_deficit",
+      "days_since",
+      "swap",
+      "prefill",
+    ]);
+  });
+});
+
 describe("rule 12.1 applySwap validation (D-0093 §6)", () => {
   const W_br = sessionOf([["barbell-row", 4, true]]);
   const W_backs = sessionOf([
