@@ -65,3 +65,12 @@ Every AC has a passing test, or a recorded run for AC-1 and AC-4 · `pnpm -w typ
 ## Notes
 - **Flow:** `wl-build-web`. Ask review to check that the diff stays inside D-0088 §2–§3: two rows' fixtures and assertions, and nothing else.
 - If T-0370 lands first, `seedLibrary` already uses the shared key builder. Nothing here depends on that.
+
+## Build log
+- 2026-10-01, frontend-dev (build), on top of 8b9a70f.
+  - AC-1, before the change: `vitest run src/app/__tests__/profile-gate.test.tsx -t "AC-6"` with `CompareContent.tsx`'s lookup forced to miss (`find("__miss__")`) gave **29/29 pass**, so the UF-04.3 `unknown`/`present` rows passed on the wrapper alone. With `LibraryDetail.tsx`'s lookup forced to miss it was also **29/29 pass** (the UF-04.2 rows pass on the wrapper too). Both reverted.
+  - AC-4, after the change (same command, file uncommitted, reverted each time):
+    1. Seed dropped (both `seedUf04` calls removed): 4 fail. First failure: `Unable to find role="heading" and name "Back squat"` (UF-04.2), `Unable to find role="columnheader" and name "Back squat"` (UF-04.3).
+    2. `CompareContent.tsx` lookup forced to miss: the 2 UF-04.3 rows fail with `Unable to find role="columnheader" and name "Back squat"`. (The same miss in `LibraryDetail.tsx` fails the 2 UF-04.2 rows on the heading.)
+    3. Spy rows dropped, Dexie seed kept: the 2 `present` rows fail in `stillBuilt()` after the 50 ms turn (`Unable to find an accessible element with the role "heading"` / `"columnheader"`), because the refresh emptied the cache.
+  - `git diff main -- apps/web/src/features` is empty.
