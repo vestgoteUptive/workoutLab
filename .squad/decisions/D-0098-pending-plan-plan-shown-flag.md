@@ -40,3 +40,7 @@ starts at `/welcome/goal` (D-0064 §7).
 ## Revisit when
 - UF-01.5 drop-off data (D-0064) shows users expecting "I already have an account" to keep the
   answers they never confirmed.
+- `startedAtMs` survives a detour. A user who opens UF-01.1, taps "I already have an account", comes
+  back hours later (within 24 h) and then onboards gets a `timingMs` that includes the detour. That
+  inflates NFR-AN-2's p50/p90. Revisit if the first metric run shows outliers of this shape. One
+  option: reset `startedAtMs` whenever UF-01.5 is reached with `planShown: false`.

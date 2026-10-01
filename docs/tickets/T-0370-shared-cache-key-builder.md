@@ -29,8 +29,14 @@ status: ready
 ## Acceptance criteria
 - **AC-1 (the builder)** `userScopedKey("u1", "back-squat")` is `"u1:back-squat"`. `setKey("u1", "c-1")` is `"u1:c-1"`. Both are unit-tested in `lib/offline/__tests__/`.
 - **AC-2 (one place)** A source test reads every `.ts` file directly under `apps/web/src/lib/offline/` (excluding `__tests__/`) and `lib/offline/__tests__/seed-library.ts`, strips `//` and `/* */` comments (both `db.ts:40` and `seed-library.ts:2` quote the format in a comment), and finds no template literal matching `` /`\$\{\w+\}:\$\{/ ``. A non-vacuity check asserts that `db.ts` itself contains exactly one such template (inside `userScopedKey`), and that `history.ts`, `feature-loaders.ts` and `seed-library.ts` each reference `userScopedKey`.
-- **AC-3 (behaviour unchanged)** The existing `lib/offline` suite passes unedited: `history.test.ts`, `feature-cache.test.ts`, `sessions-cache.test.ts`, `user-isolation.test.ts`, `upgrade-v1-to-v2.test.ts` and the queue tests. So do `app/__tests__/auth-guard.phase3.test.tsx` (the T-0365 seeded UF-04.3 case) and the UF-04 feature tests. One new test writes a `libraryCache` row with the literal key `"u1:back-squat"` and checks that `loadLibrary()` for `u1` and an `exerciseDetails` read via `feature-loaders` both find their rows. This pins that the on-disk format didn't move.
-- **AC-4 (drift proof, recorded)** Change `userScopedKey`'s separator to `"|"` (uncommitted). The T-0365 case in `auth-guard.phase3.test.tsx` still passes, because seed and production agree. AC-1 and AC-3's literal-key test fail, because the format is pinned. Record the command and the results in `testsRun`, then revert.
+- **AC-3 (behaviour unchanged)** The existing `lib/offline` suite passes unedited: `history.test.ts`, `feature-cache.test.ts`, `sessions-cache.test.ts`, `user-isolation.test.ts`, `upgrade-v1-to-v2.test.ts` and the queue tests. So do `app/__tests__/auth-guard.phase3.test.tsx` (the T-0365 seeded UF-04.3 case) and the UF-04 feature tests. One new test pins that the on-disk format didn't move:
+  - It writes a `libraryCache` row with the literal key `"u1:back-squat"` and checks that `loadLibrary()` for `u1` finds it.
+  - It writes an `exerciseDetails` row with the literal key `"u1:back-squat"` directly to Dexie, and checks that the `feature-loaders` detail read, which does a `get` by key, returns it.
+
+  `loadLibrary()` reads through the `userId` index and would still pass if the format moved. The keyed `get` on `exerciseDetails` is what catches it.
+- **AC-4 (drift proof, recorded)** Change `userScopedKey`'s separator to `"|"` (uncommitted).
+  - Still passes: the T-0365 case in `auth-guard.phase3.test.tsx`, because seed and production agree.
+  - Fails: AC-1, and AC-3's `exerciseDetails` literal-key `get`, because the format is pinned. Record the command and the results in `testsRun`, then revert.
 - `pnpm -w typecheck lint test` is green.
 
 ## Paths you may change

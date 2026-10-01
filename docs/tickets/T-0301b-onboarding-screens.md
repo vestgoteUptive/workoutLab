@@ -10,7 +10,7 @@ status: ready
 <!-- Groomed 2026-10-01 by product-owner from docs/tickets/T-0301-onboarding.md (ACs B1–B3, the storage half of B8, the start half of B9). Build flow: wl-build-web. About ½ day. The old T-0301b scope was split: UF-01.4, the plan card, the hand-off and the e2e moved to T-0301d. T-0301c (UF-01.5 + /welcome/save) is unchanged and now depends on T-0301b and T-0301d. Don't run in parallel with T-0366, T-0331 or T-0301c: they all touch profile-gate.test.tsx. -->
 
 ## Why
-Principle 5: a first plan in under 60 s, timed from the first render of UF-01.1 to the first render of UF-01.4 with a plan (D-0014, NFR-AN-2). Today `/welcome/*` is T-0300a's stub, one `<h1>Welcome</h1>` for every sub-path. This ticket builds the first three screens of the path, nested under `/welcome/*` (D-0063 §2). It also adds the local record they write (D-0064 §6, D-0098) and the start of the timing (D-0064 §7). T-0301d then builds UF-01.4, which turns these answers into the engine's plan.
+Principle 5: a first plan in under 60 s, timed from the first render of UF-01.1 to the first render of UF-01.4 with a plan (D-0014, NFR-AN-2). Today `/welcome/*` is T-0300a's stub, one `<h1>Welcome</h1>` for every sub-path. This ticket builds the first three screens of the path, nested under `/welcome/*` (D-0071 §2, which replaces D-0063 §2). It also adds the local record they write (D-0064 §6, D-0098) and the start of the timing (D-0064 §7). T-0301d then builds UF-01.4, which turns these answers into the engine's plan.
 
 ## Scope
 - In:
@@ -21,7 +21,7 @@ Principle 5: a first plan in under 60 s, timed from the first render of UF-01.1 
   - **`features/UF-01/equipment-profiles.ts`**: the 3 profiles as constants (D-0064 §3 consequence: pinned by a literal test until a shared package exposes them).
   - **`features/UF-01/pending-plan.ts`**: read, write and clear `localStorage["wl-onboarding"]`, with the D-0098 shape, the 24 h expiry and the invalid-value rule. This is the one module T-0301c and T-0301d use to touch the key.
   - **Start time** (D-0064 §7): `startedAtMs` is set at the first commit of UF-01.1.
-  - **Strings** in `lib/i18n/flows/uf-01.ts` only (D-0063 §1, D-0071 §1). The goal labels stay in this file. They aren't shared with `flows/uf-11.ts`. T-0342 decides about sharing them after T-0308b, which is blocked:H-13.
+  - **Strings** in `lib/i18n/flows/uf-01.ts` only (D-0071 §1). The goal labels stay in this file. They aren't shared with `flows/uf-11.ts`. T-0342 decides about sharing them after T-0308b, which is blocked:H-13.
   - **D-0097 row updates** in two web-shell test files. Only the `/welcome/goal` rows change. See "Paths you may change".
 - Out:
   - UF-01.4's steppers, its plan card, `deriveTargets`, `timingMs`, `planShown: true` and the hand-off button (T-0301d).
@@ -47,15 +47,19 @@ Vitest + Testing Library in `apps/web/src/features/UF-01/__tests__/`. `Date.now`
 - **AC-7 (start time, D-0064 §7)** Given `Date.now` = 1 000 000 and no record, When `/welcome` commits, Then the stored `startedAtMs` is 1 000 000 and `planShown` is false. Given that record, When the user goes to `/welcome/goal`, presses Back, and UF-01.1 commits again at `Date.now` = 1 010 000, Then `startedAtMs` is still 1 000 000. Given an expired record (AC-6) at `Date.now` = 2 000 000, When `/welcome` commits, Then `startedAtMs` is 2 000 000. Given a record with `startedAtMs: null` created on `/welcome/goal`, When `/welcome` commits later, Then `startedAtMs` is set then (the earliest UF-01.1 commit wins, and it never moves once set).
 - **AC-8 (keyboard and a11y, NFR-A11Y-1, NFR-A11Y-6)** Using only `userEvent.keyboard` (Tab, Enter, Space, the arrow keys), a test goes from `/welcome` → Get started → ArrowDown to "Get stronger" → Continue → `/welcome/level`, and the record holds `get_stronger`. Each radio group has an accessible name (`fieldset`/`legend` or `aria-labelledby`). axe on UF-01.1, UF-01.2 and UF-01.3 reports 0 violations, with colour-contrast off as in the UF-04 test.
 - **AC-9 (offline, no network)** Given `navigator.onLine = false` and `fetch` rejecting, When the AC-5 path runs from `/welcome`, Then every screen renders and the record is written. Spies show 0 calls to `fetch` and 0 imports of `@supabase/supabase-js`, `lib/offline` and `lib/profile` from the UF-01.1–.3 modules (the source test from AC-1, extended to the UF-01.2 and UF-01.3 modules).
-- **AC-10 (the web-shell rows, D-0097)** In `apps/web/src/app/auth-guard.test.tsx` and `apps/web/src/app/__tests__/profile-gate.test.tsx`, every row that asserted UF-01.1 on `/welcome/goal` now asserts UF-01.2, with its location and no-bounce assertions unchanged. AC-10's synchronous first-render query points at the built UF-01.1 heading. `git diff main` on both files shows only these changes. Every `/welcome`, `/welcome/save` and `/account` row is byte-identical. Both files pass in full.
+- **AC-10 (the web-shell rows, D-0097 §2–§3)** In `apps/web/src/app/auth-guard.test.tsx` and `apps/web/src/app/__tests__/profile-gate.test.tsx`:
+  - Where `/welcome/goal` sits in a shared `it.each` array (profile-gate today: lines ~278, 319, 352, 450 and 626), it is removed from the array. A sibling case for `/welcome/goal` alone takes its place. The sibling has the same state setup and the same location and no-bounce assertions as the shared body, and asserts UF-01.2 where the shared body asserts UF-01.1. The shared bodies and the remaining entries are byte-identical.
+  - Single `/welcome/goal` cases (auth-guard "signed out: /welcome/goal renders without a redirect", and the profile-gate in-place `SIGNED_IN` `present` contrast) change only their expected id, to UF-01.2.
+  - The two synchronous first-render text queries, `auth-guard.test.tsx:131` (AC-B6) and `profile-gate.test.tsx:702` (AC-10), point at the built UF-01.1 heading instead of "Welcome". Each still runs with no `await` or `waitFor` before it.
+  - `git diff main` on both files shows only these changes. The number of `/welcome/goal` cases before and after is equal, counting array entries plus single cases. Both files pass in full.
 - **AC-11 (strings and lint, NFR-I18N-1)** Every user-visible string on UF-01.1–.3 comes from `en.uf01` (`lib/i18n/flows/uf-01.ts`). `react/jsx-no-literals` is green. `en.ts` is unchanged.
 
 ## Paths you may change
 - `apps/web/src/features/UF-01/**` (the lane: `web-feature:UF-01`).
 - **Listed extras:**
-  - `apps/web/src/lib/i18n/flows/uf-01.ts`: this flow's strings file (D-0063 §1, D-0071 §1); add keys only.
-  - `apps/web/src/app/auth-guard.test.tsx`: the `/welcome/goal` row only (D-0097 §2, §4).
-  - `apps/web/src/app/__tests__/profile-gate.test.tsx`: the `/welcome/goal` rows and the AC-10 heading query only (D-0097 §2–§4).
+  - `apps/web/src/lib/i18n/flows/uf-01.ts`: this flow's strings file (D-0071 §1); add keys only.
+  - `apps/web/src/app/auth-guard.test.tsx`: the `/welcome/goal` row and the AC-B6 heading query only (D-0097 §2–§4).
+  - `apps/web/src/app/__tests__/profile-gate.test.tsx`: the `/welcome/goal` rows (split out of shared arrays into sibling cases) and the AC-10 heading query only (D-0097 §2–§4).
   - `docs/tickets/T-0301b-onboarding-screens.md`: this file, for the accept log.
 
 ## Contract impact

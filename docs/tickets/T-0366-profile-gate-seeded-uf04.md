@@ -48,7 +48,7 @@ The file seeds no library. `lib/offline/index.js` is mocked, but UF-04 reads `li
 
   Revert all three. `git diff main -- apps/web/src/features` is empty.
 - **AC-5 (nothing else changed or weakened)** The gated-set describe still pins 12 `protected` + `/session/setup` = 13 paths. Every other row of AC-6, and every other describe, is unchanged in `git diff main`. No `timeout` option is added. The full file passes.
-- **AC-6 (isolation)** The cache is fresh for each test (`freshOfflineDb` in `beforeEach` and `afterEach`), and the spy rows are reset by the existing `spy.reset()`. `vitest run src/app/__tests__/profile-gate.test.tsx --sequence.shuffle` passes 3 times in a row.
+- **AC-6 (isolation)** The cache is fresh for each test (`freshOfflineDb` in `beforeEach` and `afterEach`), and the spy rows are reset by the existing `spy.reset()`. `vitest run src/app/__tests__/profile-gate.test.tsx --sequence.shuffle -t "AC-6|the gated set"` passes 3 times in a row. That filter covers the AC-6 describe and the gated-set describe. The whole file isn't shuffled, because T-0331's AC-10 lazy-chunk order-dependence is out of scope here.
 - `pnpm -w typecheck lint test` is green.
 
 ## Paths you may change
