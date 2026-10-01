@@ -7,6 +7,8 @@ by: product-owner (T-0301 groom)
 area: product
 ---
 > **Amended by D-0098 (2026-10-01).** §6: the pending-plan record gains `planShown: boolean`, and only a record with `planShown: true` is offered for saving (§8). D-0097 sets the screen ids under `/welcome/*`. Everything else here is unchanged.
+>
+> **Amended by D-0100 (2026-10-01).** §8: with no saveable plan, `/welcome/save` stays and links to `/welcome/goal` (it no longer redirects). The 9 `area_targets` are written **before** `profiles`, so a partial failure never leaves a profile without targets. D-0101 lets `/welcome/save` call `useRecheckProfile()`.
 
 ## Context
 D-0014 fixes the order (UF-01.1 → .2 → .3 → .4 → .5), the 60 s metric (first render of UF-01.1 → first render of UF-01.4 with a plan), the on-device plan and the 24 h local copy. D-0022 §6 and D-0061 §3 fix three equipment profiles on UF-01.3. The prototype differs from the contracts in several places, and some flows aren't described anywhere:

@@ -5,8 +5,10 @@ lane: web-feature:UF-01 (T-0301a is web-shell)
 screens: [UF-01.1, UF-01.2, UF-01.3, UF-01.4, UF-01.5]
 decisions: [D-0002, D-0010, D-0014, D-0017, D-0022, D-0045, D-0061, D-0063, D-0064, D-0067, D-0071]
 deps: [T-0300, T-0201a, T-0318]
-status: split   # → T-0301a (done), T-0301b (ready), T-0301d (after b), T-0301c (after a + b + d)
+status: split   # → T-0301a (done), T-0301b (done), T-0301d (doing), T-0301c (todo, after a + b + d)
 ---
+<!-- Re-groomed 2026-10-01 by product-owner (groom T-0301c). T-0301c now has its own file, `T-0301c-account-and-save.md`, and its ACs replace AC-C1–C8 below. Changes from this file: `/welcome/save` renders its own id `UF-01.5-save`, and with no saveable plan it stays and links to `/welcome/goal` instead of redirecting. It writes the 9 targets before the profile, and it never touches `startedAtMs` (D-0100). It is the one feature file that may import `lib/profile`, and only for `useRecheckProfile` (D-0101). The e2e spec `tests/e2e/uf-01-onboarding.spec.ts` is created by T-0301d, and T-0301c appends to it. The AC-B8 literal gains `planShown` (D-0098). -->
+
 <!-- Re-groomed 2026-10-01 by product-owner: T-0301b was split again so each web build stays small. T-0301b keeps UF-01.1–.3, the pending-plan record and the start time (ACs B1–B3, the storage part of B8, the start part of B9). The new T-0301d takes UF-01.4, the plan card, timingMs, the hand-off and the e2e (B4–B7, B9 end, B10, the full B8 literal). D-0097 lets the UF-01 tickets update the stub-era UF-01.1 rows in the web-shell tests. D-0098 adds `planShown` to the pending plan, which T-0301c's AC-C1, AC-C5 and AC-C7 fixtures need. Child files: `T-0301b-onboarding-screens.md`, `T-0301d-onboarding-plan.md`. -->
 <!-- Reconciled by triage 2026-09-29 (TR-0030, D-0071 §11): the gate covers every protected route plus /session/setup (including T-0318's new routes), never /session/:id or /session/:id/summary. -->
 <!-- Groomed 2026-09-29 by product-owner. Split into T-0301a/b/c (D-0064 Consequences). ACs are tagged [a]–[c]. -->
@@ -15,14 +17,14 @@ status: split   # → T-0301a (done), T-0301b (ready), T-0301d (after b), T-0301
 Principle 5: a first plan in under 60 s, measured from the first render of UF-01.1 to the first render of UF-01.4 with a plan (D-0014, NFR-AN-2, PRD target p50 ≤ 45 s, p90 ≤ 60 s). The plan is computed on the device by the engine (principle 3) and saved only after sign-in at UF-01.5 (no guest mode, D-0014). Two real edge cases need shell support. A magic link that opens in a different browser context (iOS PWA → Safari, D-0045 §5) signs the user in without the locally held answers. An old account can meet a new device's answers. Both are handled by a profile gate plus a save step (D-0064 §8–9). Today the `/welcome` and `/account` screens are T-0300's stubs.
 
 ## Split (the orchestrator edits the board)
-Keep `T-0301` as the parent row with status `split → T-0301a, T-0301b, T-0301c`. Mark it `done` once all three children are done.
+Keep `T-0301` as the parent row with status `split → T-0301a, T-0301b, T-0301c, T-0301d`. Mark it `done` once all four children are done.
 
 | Child | Lane | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|---|
 | T-0301a | web-shell | Profile gate `lib/profile` + guard wiring (D-0064 §9) | T-0300 | done | ¼ day |
-| T-0301b | web-feature:UF-01 | UF-01.1–.3, pending-plan record, start time (D-0097, D-0098) | T-0300, T-0318, T-0301a | ready | ½ day |
-| T-0301d | web-feature:UF-01 | UF-01.4 steppers + plan card from `deriveTargets`, timingMs, `planShown`, hand-off, e2e | T-0301b, T-0201a | todo | ½ day |
-| T-0301c | web-feature:UF-01 | UF-01.5 Account (link, code, Google, privacy), `/welcome/save` | T-0301a, T-0301b, T-0301d | todo | ½ day |
+| T-0301b | web-feature:UF-01 | UF-01.1–.3, pending-plan record, start time (D-0097, D-0098) | T-0300, T-0318, T-0301a | done | ½ day |
+| T-0301d | web-feature:UF-01 | UF-01.4 steppers + plan card from `deriveTargets`, timingMs, `planShown`, hand-off, e2e spec | T-0301b, T-0201a | doing | ½ day |
+| T-0301c | web-feature:UF-01 | UF-01.5 Account (link, code, Google, privacy), `/welcome/save` (D-0100, D-0101), file `T-0301c-account-and-save.md` | T-0301a, T-0301b, T-0301d | todo | ¾ day |
 
 T-0301a is a web-shell ticket and must not run in parallel with any other web-shell ticket (T-0318, T-0319, T-0312, T-0313, T-0310). Order (D-0071 §11): T-0318 → T-0319 → T-0301a, because T-0318 unblocks every feature ticket and T-0301a only T-0301c. If T-0301a runs before T-0318, its AC-A2 table still holds, and T-0318's AC-5 covers the new routes. T-0301b needs T-0318 only for its string file `lib/i18n/flows/uf-01.ts` (D-0067 §2). It adds no routes: `/welcome/*` already exists.
 
@@ -57,11 +59,12 @@ Vitest + Testing Library in `apps/web/src/**` (Supabase mocked with the existing
 - **AC-B5 (stepper rules, D-0064 §4)** From 3–4: min + ×2 → 5–5, min + → 6–6. From 3–4: max − → 3–3, max − → 2–2. Min − at 1 and max + at 7 are disabled (`aria-disabled`). Each stepper button is ≥ 44 × 44 px (NFR-A11Y-2) and named ("One more session per week, minimum", …).
 - **AC-B6 (3 activations, principle 5, e2e)** At a 360 × 640 viewport with Supabase mocked, starting at `/welcome`: activating Get started → Continue → Continue renders `[data-screen-id="UF-01.4"]` with the 9 target rows, in < 5 s wall time for the scripted run. `localStorage["wl-onboarding"].timingMs` is an integer ≥ 0 and ≤ that wall time + 50 ms. The same run using only the keyboard (Tab/Enter/Space/arrow keys) reaches the same state (NFR-A11Y-6). axe on each of UF-01.1–.4 reports 0 serious or critical violations (NFR-A11Y-1).
 - **AC-B7 (offline)** With `navigator.onLine = false` and `fetch` rejecting, UF-01.2 → .4 render and the plan card shows the R4-E1 values (no network call made: a spy).
-- **AC-B8 (pending plan, D-0064 §6)** Choosing `get_stronger`, Advanced, Dumbbells and 2–3 writes `wl-onboarding` = `{version: 1, goal: "get_stronger", level: "advanced", equipmentProfile: "dumbbells", rhythmMin: 2, rhythmMax: 3, startedAtMs, timingMs, savedAtMs}`. A remount within 24 h pre-selects those answers. With `savedAtMs` 24 h + 1 ms in the past, or `version: 2`, or invalid JSON, the key is removed and the defaults show.
+- **AC-B8 (pending plan, D-0064 §6)** Choosing `get_stronger`, Advanced, Dumbbells and 2–3 writes `wl-onboarding` = `{version: 1, goal: "get_stronger", level: "advanced", equipmentProfile: "dumbbells", rhythmMin: 2, rhythmMax: 3, startedAtMs, timingMs, planShown: true, savedAtMs}` (`planShown` per D-0098; T-0301b writes it `false`, and T-0301d sets it `true` at UF-01.4). A remount within 24 h pre-selects those answers. With `savedAtMs` 24 h + 1 ms in the past, or `version: 2`, or invalid JSON, the key is removed and the defaults show.
 - **AC-B9 (timing, D-0064 §7, NFR-AN-2)** With `Date.now` faked at 1 000 000 on the first UF-01.1 commit and 1 042 000 on the first UF-01.4 commit with a plan, `timingMs` = 42 000. A second visit to UF-01.1 (Back) doesn't reset `startedAtMs`. A re-render of UF-01.4 doesn't change `timingMs`. Starting at `/welcome/goal` with no `startedAtMs` leaves `timingMs` null.
 - **AC-B10 (hand-off)** Signed out, UF-01.4's primary button ("Save my plan") navigates to `/account`. Signed in (the signed-in onboarding path), it navigates to `/welcome/save`.
 
 ### T-0301c UF-01.5 Account + save
+> **Superseded by `docs/tickets/T-0301c-account-and-save.md`** (AC-1–AC-15). D-0100 changes AC-C7's no-plan branch (stay on `/welcome/save` and link to `/welcome/goal`) and AC-C5's write order (the targets first, then the profile). D-0098 adds `planShown: true` to the AC-C1, AC-C5 and AC-C7 fixtures. The text below is kept as history.
 - **AC-C1 (UF-01.5 layout)** `/account` renders `UF-01.5`. With a valid pending plan, the heading is "Save your plan" and a Back link goes to `/welcome/schedule`. Without one, the heading is "Sign in". It shows an email field, "Send link", an "Enter code" mode (6-digit, `autocomplete="one-time-code"`), "Continue with Google", and a link to `https://workout.vestgote.com/privacy/` (NFR-PRIV-6). All controls are ≥ 44 px tall.
 - **AC-C2 (magic link + code reuse T-0300b)** "Send link" with " Ada@Example.com " calls `requestMagicLink` (spy) and shows `auth.linkSent`. The results `invalid_email`, `offline` and `rate_limited` show the matching `auth.*` text in `role="status"`. "Verify code" calls `verifyCode(email, code)`. The T-0300b tests `magic-link.test.ts`, `auth-callback.test.tsx` and `auth-guard.test.tsx` pass unchanged.
 - **AC-C3 (Google)** "Continue with Google" calls `supabase.auth.signInWithOAuth({provider: "google", options: {redirectTo: "<origin>/auth/callback"}})` once. Offline, the button is disabled with `auth.offline` as its description.
@@ -73,7 +76,7 @@ Vitest + Testing Library in `apps/web/src/**` (Supabase mocked with the existing
 
 ## Paths you may change
 - **T-0301a (web-shell):** `apps/web/src/lib/profile/**` (new), `apps/web/src/app/**` (the guard wiring and route guard values only), `apps/web/src/lib/auth/guards.tsx` (to accept the gate). No `routes.ts` path change.
-- **T-0301b and T-0301c (web-feature:UF-01):** `apps/web/src/features/UF-01/**`. Extras (D-0063, D-0067 §2): `apps/web/src/lib/i18n/flows/uf-01.ts` (created empty by T-0318; `en.ts` unchanged), and `tests/e2e/uf-01-onboarding.spec.ts` (T-0301b creates it, and T-0301c appends its account cases). `AuthCallback` stays exported from `features/UF-01/index.tsx` with the T-0300b behaviour, and T-0301c only adds the pending-plan-aware copy around it.
+- **T-0301b, T-0301d and T-0301c (web-feature:UF-01):** `apps/web/src/features/UF-01/**`. Extras (D-0063, D-0067 §2): `apps/web/src/lib/i18n/flows/uf-01.ts` (created empty by T-0318; `en.ts` unchanged), and `tests/e2e/uf-01-onboarding.spec.ts` (T-0301d creates it, and T-0301c appends its account cases). Each child's own file lists its exact grants. They are authoritative, including T-0301c's web-shell test rows (D-0097, D-0100) and `profile-gate.source.test.ts` (D-0101). `AuthCallback` stays exported from `features/UF-01/index.tsx` with the T-0300b behaviour, and T-0301c only adds the pending-plan-aware copy around it.
 - No new dependencies (react, react-router, supabase-js and the engine are already dependencies of `apps/web`).
 
 ## Contract impact
