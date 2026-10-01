@@ -217,6 +217,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | todo | wl-build-web |
 | T-0377 | UF-01.4 timingMs edge: when startedAtMs was null at the first UF-01.4 commit, a later visit (after Back → /welcome) must not compute timingMs from the second start; guard on `planShown` + test (T-0301d review/accept, analytics only) | web-feature:UF-01 | T-0301d | doing | wl-build-web |
 | T-0378 | Signed-in shell offline hydrate raises an unhandled pageerror when Supabase reads fail (session_sets_live, exercises, area_targets…); catch and degrade, or ensure T-0301c's signed-in e2e mocks them (T-0301d QA) | web-shell | — | ready | wl-build-web |
+| T-0379 | Lint-in-vitest tests time out at the 5 s default under machine load (`import-bans.test.ts` AC-11 "features lints clean", `features/UF-10/strings.test.ts` AC-A21 jsx-no-literals): give them an explicit per-test runtime budget or move them to the lint step (T-0331 QA) | web-shell | — | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
