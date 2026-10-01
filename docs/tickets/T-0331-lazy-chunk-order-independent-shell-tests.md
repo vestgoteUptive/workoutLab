@@ -119,3 +119,24 @@ Tests for every AC pass, with recorded runs for AC-1, AC-3 and AC-5 · `pnpm -w 
 
   No `expect` is removed and no negative assert changes. No `timeout`, `skip`, `todo` or `fails` is added. Tests go 88→89 and 20→21 (+2, the twins).
 - `pnpm --filter @workoutlab/web typecheck lint test`: green (72 files, 925 tests).
+
+### QA 2026-10-01: PASS
+- AC-3: three more seeds, `7`, `31337` and `20261001`, plus the isolated `-t` runs. All green on both files.
+- AC-5.1: QA re-planted the eager-`loadProfile` fault. It fails the warmed case (`:957`), the twin (`:972`) and the settle check (`:986`).
+- AC-6: QA checked the diff line by line. It is clean.
+- Full web suite under load average 11–16: 1–2 lint-in-vitest timeouts, in files this ticket does not touch (`import-bans` AC-11, UF-10 strings AC-A21). Both are green in isolation. That is load flakiness outside this ticket, so it goes to a follow-up.
+
+### Review 2026-10-01: APPROVE
+The warm-up clears call history only and keeps each spy's implementation. The twins run cold. Nothing is weakened.
+
+### Accept 2026-10-01 (product-owner): done
+- AC-1: recorded. All four commands failed on base, plus `-t 'stale'` and `-t 'HAS a profile'`, with exit codes and first failing lines.
+- AC-2: recorded. All isolated runs pass.
+- AC-3: passes. Default order, seed `1790895837776`, and six more recorded seeds across Build and QA.
+- AC-4: holds. The asserts after the second render are word for word the same, with nothing awaited in between. The twins pass in isolation.
+- AC-5: both faults fail the warmed case and its twin, with assertions recorded, and both were reverted. The `profiles` counter is reset after the AC-10 warm-up (`spy.calls.length = 0`).
+- AC-6: holds. Review and QA both checked the diff line by line. Tests rose by exactly +2.
+- DoD gate: the web package's typecheck, lint and test are green. The change is test-only inside `apps/web`, so the other workspace packages are unaffected. The under-load lint timeouts are in untouched files and pass in isolation, so they don't block this ticket.
+- Principle 5 holds. Nothing is awaited before UF-01.1, and the cold twins now guard that independently of test order.
+- T-0375 is `folded`.
+- Follow-up: make the lint-in-vitest tests robust under CPU load (`import-bans` AC-11, UF-10 strings AC-A21), lane web-shell/tooling.
