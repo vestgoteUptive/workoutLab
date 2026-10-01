@@ -3,7 +3,7 @@ id: T-0307b
 title: UF-06.1 / UF-06.2 Progress: current-month calendar from `checkinSessions`, the Balance card from `balance()`, recent exercises and one exercise's 8-week history, all pure in `stats.ts` (no PRs, e1RM, volume, streaks or charts in v1, D-0068)
 lane: web-feature:UF-06
 screens: [UF-06.1, UF-06.2]
-decisions: [D-0002, D-0003, D-0013, D-0034, D-0040, D-0045, D-0067, D-0068, D-0071, D-0075, D-0079]
+decisions: [D-0002, D-0003, D-0013, D-0034, D-0040, D-0045, D-0067, D-0068, D-0071, D-0075, D-0079, D-0091]
 deps: [T-0318, T-0319, T-0334]
 status: ready
 ---
@@ -189,13 +189,27 @@ Both routes exist (`protected`, tab bar on). This ticket adds no route and edits
   - `@axe-core/playwright` finds 0 serious or critical violations on `/progress` with the zero-history fixture, on `/progress` with H, and on `/progress/back-squat`.
   - The Balance card link and every Recent exercises row have a `boundingBox()` of ≥ 44 × 44 CSS px.
   - Keyboard: Tab to the Balance card, press Enter, then the URL is `/balance`. Go Back, Tab to the `Back squat` row, press Enter, then the URL is `/progress/back-squat`.
+- **AC-16 (e2e: the UF-06.2 offline row leaves the loop and asserts built content, D-0091 §1, §4)** In `tests/e2e/shell.spec.ts` (AC-6 offline describe):
+  - **The loop.** `OTHER_SUB_ROUTES` no longer contains `/progress/back-squat`. Its other three rows (`/plan/edit`, `/plan/routines/new`, `/plan/routines/R1`) and the loop body are byte-identical to `main`.
+  - **The dedicated test.**
+    - It seeds the library the way T-0905 AC-1 seeds UF-04.3: one online visit with `mockSupabaseData`, so `back-squat` is in the IndexedDB cache.
+    - It then goes offline and makes a cold `goto("/progress/back-squat")`.
+    - It asserts that `[data-screen-id="UF-06.2"]` is visible, that the heading `Back squat` is visible, and that the `How to` link with `href="/library/back-squat"` is visible. These are built content that the stub never renders.
+    - Only then does it assert `toHaveURL(/\/progress\/back-squat$/)`.
+    - The URL check alone is not the guard: it narrows the redirect race but does not close it (D-0091 §2). The content assertions are the guard.
+  - **The contrast.** With the existing 501 setup (empty cache, a warm-up on `/` only), the same offline `goto` lands on `/progress` with `[data-screen-id="UF-06.1"]` visible. This pins the D-0079 §4 redirect instead of racing it.
+  - **The comment.** The D-0091 paragraph above the describe says:
+    - the loop's URL check narrows the race for stub rows;
+    - built screens get their own seeded content tests;
+    - UF-06.2 is now one of them.
+  - **Fault proof.** In `features/UF-06`, make the exercise lookup always miss, and run the dedicated test with `--repeat-each=3 --workers=1`. It fails 3 of 3, on the `Back squat` heading or the URL, not on a timeout of the wrapper. Report this in the result. It is not committed.
 
 ## Paths you may change
 - `apps/web/src/features/UF-06/**` (the lane: `web-feature:UF-06`).
 - **Listed extras:**
   - `apps/web/src/lib/i18n/flows/uf-06.ts`: this ticket's own flow file and no other (D-0071 §1, D-0075). You may add keys only. The file stays `export const uf06 = {` … a newline, then `} as const;` at column 0.
   - `tests/e2e/uf-06-progress.spec.ts`: a **new** file only (qa lane grant, D-0071 §10).
-  - `tests/e2e/shell.spec.ts`: **only** the `/progress/back-squat` (UF-06.2) row of the AC-6 offline loop — seed UF-06.2's data the way T-0905 AC-1 seeds UF-04.3, so the built screen does not race its empty-cache redirect (D-0091 §5, granted 2026-10-01).
+  - `tests/e2e/shell.spec.ts`: the `/progress/back-squat` (UF-06.2) row of the AC-6 offline describe, moved out of `OTHER_SUB_ROUTES` into its own seeded test that asserts UF-06.2's built content (AC-16), plus the D-0091 paragraph of the comment above that describe (D-0091 §4–§5, granted 2026-10-01).
   - `tests/e2e/fixtures/uf-06-progress-data.ts`: a **new** fixture file for the history, sessions and targets the e2e mock serves. Existing fixture files are not edited, which keeps this ticket clear of the other parallel lanes' fixture additions. `mockSupabaseData` always answers `sessions*` with `[]` and takes no sessions fixture, so if the spec needs session rows it registers its own `page.route` for `rest/v1/sessions*` **after** `mockSupabaseData` (Playwright runs the latest matching handler first). AC-15 as written needs none: Recent exercises and the Balance card read history only.
 - **Not yours, and each is already done for you:**
   - `apps/web/src/app/**`: both routes exist.
