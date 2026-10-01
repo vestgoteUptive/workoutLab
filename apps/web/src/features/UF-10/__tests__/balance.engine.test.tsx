@@ -355,18 +355,12 @@ describe("AC-A8 offline, queued sets count", () => {
   it("the header shows the offline line with the 08:10 sync time, with no alert and no banner", async () => {
     await renderWith({ queued: true, online: false });
 
-    // The AC's literal string is `Offline · last synced 08:10`. What ships is `8:10`: the
-    // shared `OfflineStatus` formats through `lib/format/intl.ts`'s `formatTime`, which uses
-    // `hour: "numeric"` and so drops the leading zero. Measured, not assumed — the rendered
-    // node reads "Offline · last synced 8:10". `components/offline-status/**` and
-    // `lib/format/**` are web-shell's, so T-0307a asserts the shipped string and files the
-    // zero-padding as a follow-up rather than editing either file.
     const offlineLine = document.querySelector(".wl-offline-status__text");
-    expect(offlineLine).toHaveTextContent("Offline · last synced 8:10");
+    expect(offlineLine).toHaveTextContent("Offline · last synced 08:10");
     // The part of the AC that is this screen's own: the line comes from the catalogue, carries
     // the cached `lastSyncedAt` (08:10 local), and is the offline variant rather than a generic
     // "offline" with no time.
-    expect(offlineLine!.textContent).toBe(en.offline.lastSynced("8:10"));
+    expect(offlineLine!.textContent).toBe(en.offline.lastSynced("08:10"));
     expect(offlineLine!.textContent).not.toBe(en.offline.notSyncedYet);
     expect(document.querySelector('[role="alert"]')).toBeNull();
     expect(document.querySelector('[role="banner"]')).toBeNull();

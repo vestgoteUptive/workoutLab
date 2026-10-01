@@ -92,13 +92,9 @@ describe("AC-10 offline", () => {
     expect(rowNames()).toEqual(onlineBrowse.rows);
     expect(rowHrefs()).toEqual(onlineBrowse.hrefs);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    // Asserted exactly, not as a `\d\d:\d\d` regex. The shared `OfflineStatus` formats through
-    // `lib/format/intl.ts`'s `formatTime`, which uses `hour: "numeric"` and so drops the leading
-    // zero: the AC's `HH:MM` prose ships as `9:30` (the same measurement T-0307a recorded for
-    // its `08:10`). `components/offline-status/**` and `lib/format/**` belong to web-shell, so
-    // this asserts the shipped string and the zero-padding goes out as a follow-up.
+    // Asserted exactly as the AC literal `HH:MM` (D-0045 §9 `timeStyle: "short"`, fixed in T-0355).
     const offlineLine = document.querySelector(".wl-offline-status__text");
-    expect(offlineLine?.textContent).toBe(en.offline.lastSynced("9:30"));
+    expect(offlineLine?.textContent).toBe(en.offline.lastSynced("09:30"));
     // The offline variant with a time, not the generic "not synced yet".
     expect(offlineLine?.textContent).not.toBe(en.offline.notSyncedYet);
     view.unmount();

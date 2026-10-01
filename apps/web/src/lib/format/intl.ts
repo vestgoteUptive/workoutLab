@@ -56,12 +56,14 @@ export function localDate(iso: string, timeZone: string): string {
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
 
-/** `iso` rendered as a locale/tz clock time, with narrow/no-break spaces normalised to a plain space. */
+/**
+ * `iso` rendered as the locale's short clock time in `timeZone` (D-0045 §9 `timeStyle: "short"`:
+ * en-GB `08:10`, en-US `8:05 AM`), with narrow/no-break spaces normalised to a plain space.
+ */
 export function formatTime(iso: string, options: { locale: string; timeZone: string }): string {
   const dtf = new Intl.DateTimeFormat(options.locale, {
     timeZone: options.timeZone,
-    hour: "numeric",
-    minute: "2-digit",
+    timeStyle: "short",
   });
   const narrowNoBreakSpace = String.fromCharCode(0x202f);
   const noBreakSpace = String.fromCharCode(0x00a0);
