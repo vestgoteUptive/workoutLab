@@ -25,7 +25,16 @@ function isAreaParam(value: string | null): value is Area {
   return value !== null && (AREAS as readonly string[]).includes(value);
 }
 
-export function Library() {
+export interface LibraryProps {
+  /** IANA zone for the offline "last synced" time (D-0045 §9). Defaults to the device zone. */
+  timeZone?: string;
+}
+
+export function Library(props: LibraryProps = {}) {
+  // Resolved once per mount and always passed down, never left to OfflineStatus's own default.
+  const [timeZone] = useState(
+    () => props.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+  );
   const [params, setParams] = useSearchParams();
   const { data, pending } = useScreenData(readLibrary, "library", { refresh: true });
 
@@ -91,7 +100,7 @@ export function Library() {
   return (
     <div data-screen-id="UF-04.1" className="wl-uf04">
       <h1>{en.screens.library}</h1>
-      <OfflineStatus variant="text" />
+      <OfflineStatus variant="text" timeZone={timeZone} />
       {data === undefined || waitingForFirstDownload ? null : exercises.length === 0 ? (
         <p>{en.uf04.neverDownloaded}</p>
       ) : (

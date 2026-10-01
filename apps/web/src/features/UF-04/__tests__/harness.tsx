@@ -29,14 +29,22 @@ function Where() {
   return null;
 }
 
-export async function mountAt(path: string): Promise<{ unmount(): void }> {
+export async function mountAt(
+  path: string,
+  options: { timeZone?: string } = {},
+): Promise<{ unmount(): void }> {
   const { Library, LibraryDetail, Compare } = await import("../index.js");
   window.history.replaceState(null, "", path);
   return render(
     <BrowserRouter>
       <Where />
       <Routes>
-        <Route path="/library" element={<Library />} />
+        <Route
+          path="/library"
+          element={
+            <Library {...(options.timeZone === undefined ? {} : { timeZone: options.timeZone })} />
+          }
+        />
         <Route path="/library/:exerciseId" element={<LibraryDetail />} />
         <Route path="/library/:exerciseId/compare/:otherId" element={<Compare />} />
         <Route path="/progress/:id" element={<div data-screen-id="UF-06.2" />} />

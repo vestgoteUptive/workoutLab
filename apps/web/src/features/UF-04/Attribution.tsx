@@ -13,9 +13,15 @@ export function Attribution({ detail }: { detail: ExerciseDetail }) {
       </p>
     );
   }
-  const licenseHref = LICENSE_LINKS[detail.license];
+  // Content data (D-0005): only own keys of the link map count, so a licence named after an
+  // Object.prototype member prints as plain text, and a blank attribution is absent (T-0357).
+  const licenseHref = Object.hasOwn(LICENSE_LINKS, detail.license)
+    ? LICENSE_LINKS[detail.license]
+    : undefined;
   const parts: React.ReactNode[] = [];
-  if (detail.attribution !== null) parts.push(detail.attribution);
+  if (detail.attribution !== null && detail.attribution.trim() !== "") {
+    parts.push(detail.attribution);
+  }
   parts.push(
     licenseHref === undefined ? (
       detail.license
