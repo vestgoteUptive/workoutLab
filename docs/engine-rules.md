@@ -6,6 +6,7 @@ Every rule has worked examples (`Rn-Em`). Each example is at least one unit test
 ## Fixtures (used by every example unless it says otherwise)
 - **F-tz:** `tz = Europe/Stockholm`, `now = 2026-09-27T12:00:00+02:00`, so today is D = 2026-09-27.
 - **F-profile:** level `beginner`; equipment `full` = [barbell, rack, bench, dumbbell, cable, machine, pullup-bar]; rhythm 3–4; no priority areas; onboarded and `plan_changed_at` 2026-08-02.
+- **F-goal:** `goal` is `build_muscle` unless an example says otherwise (D-0061 §1, D-0095).
 - **F-targets:** rule 4 with F-profile: chest/back/glutes/quads 20, shoulders/hamstrings 16, arms/core/calves 12.
 - **F-input:** `budgetMin 30, warmupInBudget true, energy normal, shuffle 0`, with no main/pinned/excluded ids.
 - **F-history:** empty.
@@ -93,7 +94,7 @@ The projected load starts at the rule-3 load. `r(area) = projectedLoad / target`
 1. **Main lift:** `sessionInput.mainLiftId`, if it is eligible. Otherwise take the lowest-`r` eligible area (ties by the fixed order) and its top compound candidate. If that area has no compound, try the next area. Try 4, then 3, then 2 sets. If no compound fits anywhere, `mainLiftId = null`.
 2. **Pinned:** each of `pinnedIds`, in order, at 3 sets, falling back to 2. Skip it if it doesn't fit.
 3. **Greedy:** repeat. Take the lowest-`r` eligible area and try its candidates in rank order at 3 sets, then 2. The first one that fits is added, and projected loads are updated with `sets × w(a)`. If none fits, the area is exhausted. Stop when no area is eligible.
-- **Reps (pre-fill ranges, rule 14):** main lift 6–8, other compounds 8–12, isolation 10–15.
+- **Reps (pre-fill ranges, rule 14) by `profile.goal` (D-0061 §1, D-0095):** `get_stronger` main lift 3–5, other compounds 5–8, isolation 10–15; `build_muscle` main lift 6–8, other compounds 8–12, isolation 10–15; `general_fitness` main lift 8–12, other compounds 10–15, isolation 10–15. A profile without a goal gets `build_muscle`, and an unknown goal is a `RangeError`. The goal changes only these slots, and so rule 14's low/high, the rule 7.4 back-off reps (the goal's main low) and `applySwap`'s slot. Selection, sets and costs never depend on it.
 - **R7-E2 (15 min, zero history)** Given `budgetMin 15`, Then the items are [bench-press × 4], with a total of 900 s. The bench-press, db-bench-press and push-up candidates tie at gap fit 2.0, so id ascending decides.
 - **R7-E3 (recovering skipped)** Given 6 hard back-squat sets at `now − 24 h`, Then the main lift is bench-press, no item has quads or glutes at weight 1.0, and the reasons include `recovering_skipped` for quads and glutes.
 - **R7-E4 (30 min, zero history)** Then the items are bench-press × 4 (main), inverted-row × 3 (gap fit 1.917 beats barbell-row at 1.417), then leg-extension × 2 (glutes is exhausted because back-squat and hip-thrust × 2 = 390 s > 345 s left). The item total is 1545 s, the total with warm-up is 1725 s, and `unusedS` is 75.
@@ -101,6 +102,8 @@ The projected load starts at the rule-3 load. `r(area) = projectedLoad / target`
 - **R7-E6 (no equipment)** Given equipment [] and `budgetMin 15`, Then the items are [push-up × 4 at 6 reps, 0 kg].
 - **R7-E7 (candidate rank)** Given the most recent session contains inverted-row × 3, Then the back ranking is barbell-row, db-row, lat-pulldown, seated-cable-row, straight-arm-pulldown, inverted-row.
 - **R7-E8 (never over)** For every `budgetMin` in 15..120 step 5, with warm-up on and off, over F-history and every simulated history, Then Σ item costs ≤ `available`, there are ≤ 8 items, and no area is the primary area of more than 2 items.
+- **R7-E14 (slots by goal at zero history, D-0095)** For R7-E4 under `get_stronger`, the items, costs and totals are unchanged (bench-press × 4, inverted-row × 3, leg-extension × 2; 1545 s, `unusedS` 75), with reps 3–5, 5–8 and 10–15 and pre-fills null × 3, 0 × 5 and null × 10 (`first_time`). Under `general_fitness` the reps are 8–12, 10–15 and 10–15, with null × 8, 0 × 10 and null × 10.
+- **R7-E15 (one history, three goals, D-0095 §3)** back-squat as the main lift, last on 09-24 at 100 × 8, 8, 8: `build_muscle` (6–8) gives 102.5 × 6 `increase` (R14-E1), `get_stronger` (3–5) gives 102.5 × 3 `increase`, and `general_fitness` (8–12) gives 100 × 9 `add_rep`.
 
 ### 7.3 Warm-up (D-0004)
 There are 4 moves. The area list is the primary areas of the items in session order, deduplicated. Go round-robin over the list. For each area, pick the unused warm-up move with the highest weight for it (ties by id), and skip areas with none left. Stop at 4. Fill with general moves by id, then with any unused move by id.
@@ -219,3 +222,4 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 7.1 timed planned duration (R7-E13, D-0092) | T-0219 |
 | 9 one-period check-in (R9-E1…E13 re-derived, D-0061 §2, D-0094) | T-0215 |
 | 12.1 applySwap (R12-E6…E11, D-0071 §7, D-0093, D-0096 §1) | T-0224 |
+| 7.2 rep slots by goal (F-goal, R7-E14, R7-E15, D-0061 §1, D-0095) | T-0214 |
