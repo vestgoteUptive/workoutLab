@@ -3,11 +3,11 @@ id: T-0214
 title: "Engine: rule 7.2 rep slots depend on profile.goal (get_stronger 3–5/5–8/10–15, build_muscle unchanged, general_fitness 8–12/10–15/10–15), D-0061 §1, D-0095"
 lane: engine
 screens: [UF-08.2, UF-09.3, UF-09.4, UF-01.4]
-decisions: [D-0024, D-0040, D-0057, D-0061, D-0093, D-0095]
+decisions: [D-0024, D-0040, D-0057, D-0061, D-0093, D-0095, D-0096]
 deps: [T-0205, T-0224]
 status: ready
 ---
-<!-- Written by product-owner 2026-10-01 (groom mode). Build flow: wl-build-engine. About ½ day. Runs after T-0219 and T-0224 (all three change src/session.ts and docs/engine-rules.md). The board lists only T-0205 as a dep; T-0224 is added here for the serialisation, so applySwap is made goal-aware in the same change. -->
+<!-- Written by product-owner 2026-10-01 (groom mode). Build flow: wl-build-engine. About ½ day. Engine tickets run one at a time (D-0096 §3): T-0219 → T-0215 → T-0224 → T-0214. T-0224 is a dep so applySwap is made goal-aware in the same change. -->
 
 ## Why
 The human decided (D-0061 §1) that the onboarding goal must change the workout. "Get stronger" means heavier sets with fewer reps, "General fitness" means lighter sets with more reps, and "Build muscle" keeps today's ranges. The goal changes only the rule 7.2 rep slots. Selection, costs (work stays 45 s per set), targets (rule 4) and level are unchanged, so the time budget and the deterministic plan are untouched (principles 2 and 3). Rule 14 progression reads the slot's low/high, so it follows automatically. D-0095 settles the build:
@@ -106,8 +106,9 @@ The human decided (D-0061 §1) that the onboarding goal must change the workout.
   - a `- **F-goal:**` line follows F-profile;
   - the F-profile line is byte-identical (the T-0202 guard stays green);
   - lines starting `- **R7-E14` and `- **R7-E15` exist;
-  - the Traceability table has a T-0214 row;
-  - no rule other than 7 and §Fixtures changed against `main` (skip on a shallow clone). If no earlier engine ticket has re-scoped the two whole-file guards, do T-0219 AC14 here (D-0092 §6).
+  - the Traceability table has a T-0214 row.
+
+  The committed test pins only this ticket's own content and the byte-identical F-profile line. There is no committed "every other section unchanged" test (D-0096 §2). Instead, before returning, run `git diff main...HEAD -- docs/engine-rules.md` and list the changed sections in the result and the commit message. The expected sections are §Fixtures, §7.2 and Traceability. Code review checks that list against the Listed extras grant. If no earlier engine ticket has re-scoped the two whole-file guards, do T-0219 AC14 here (D-0092 §6).
 - **AC13 (determinism and purity)** For AC1–AC8's inputs: reruns are deep-equal, deep-frozen inputs neither throw nor change, and reversed `history`/`library` give deep-equal results. `pnpm --filter @workoutlab/engine lint` passes.
 
 ## Paths you may change
@@ -126,7 +127,7 @@ The human decided (D-0061 §1) that the onboarding goal must change the workout.
   - possibly `src/types.ts` and `src/index.ts`;
   - new `test/rule-7-goal-reps.test.ts`;
   - `docs/engine-rules.md` §Fixtures, §7.2 and Traceability.
-- **Serialise:** T-0219 → T-0224 → **T-0214**. All change `src/session.ts` and `docs/engine-rules.md`. If T-0224 has not landed, skip AC8 and say so in the commit. T-0224 then makes `applySwap` goal-aware itself (D-0095 §2).
+- **Engine tickets run one at a time** (D-0096 §3): T-0219 → T-0215 → T-0224 → **T-0214**. T-0224 is a dependency, so AC8 always applies.
 - Backend follow-up: `supabase/functions/workouts/core.ts` `suggestProfile` passes `goal`, and the vendored engine is regenerated (D-0053 §1).
 
 ## Definition of done

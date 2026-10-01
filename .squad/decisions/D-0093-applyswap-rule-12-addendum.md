@@ -5,7 +5,7 @@ status: revisit
 date: 2026-10-01
 by: product-owner (T-0224 groom)
 area: engine
-builds-on: D-0065 §5, D-0069 §6, D-0071 §7, D-0092
+builds-on: D-0065 §5, D-0069 §6, D-0071 §7, D-0092, D-0096 (§1 supersedes D-0071 §7's timed parenthetical)
 ---
 ## Context
 D-0071 §7 fixes `applySwap`'s signature and its main semantics: it keeps the position, `sets`
@@ -76,7 +76,8 @@ lane. Grooming T-0224 found six points that D-0065, D-0069 and D-0071 leave open
 7. **The input is not mutated, and the output is deterministic.** It has exactly the `Workout`
    and `WorkoutItem` keys of `api/openapi.yaml`. `parseSessionPlan` round-trips are asserted
    on the web side (T-0306b AC-B10), because the engine package has no `@workoutlab/shared`
-   dependency.
+   dependency. T-0306b has no ticket file yet, so its groom must carry this round-trip as an
+   AC.
 8. **Contract change (engine lane):** `docs/engine-rules.md` gets a `### 12.1 applySwap`
    subsection after R12-E5, with §1–§6 in rule form and worked examples **R12-E6…R12-E11**,
    plus a Traceability row for T-0224. Rule 0's function list gains `applySwap(…)`. The R12-E1…E5

@@ -3,11 +3,11 @@ id: T-0224
 title: "Engine: pure applySwap(workout, current, candidate, reason, history, profile, library, now, tz) → Workout, the rule 12 addendum (D-0071 §7, D-0093)"
 lane: engine
 screens: [UF-05.1, UF-08.3, UF-09.9, UF-09.6]
-decisions: [D-0025, D-0040, D-0056, D-0057, D-0062, D-0065, D-0069, D-0071, D-0092, D-0093]
-deps: [T-0204, T-0205, T-0219]
+decisions: [D-0025, D-0040, D-0056, D-0057, D-0062, D-0065, D-0069, D-0071, D-0092, D-0093, D-0096]
+deps: [T-0204, T-0205, T-0219, T-0215]
 status: ready
 ---
-<!-- Written by product-owner 2026-10-01 (groom mode). Build flow: wl-build-engine. About ½ day. Unblocks T-0306b (SwapSheet) and through it T-0303c. Depends on T-0219 so the timed cost is built once at the planned duration (D-0092); if the orchestrator must run it first, see Coordination. -->
+<!-- Written by product-owner 2026-10-01 (groom mode). Build flow: wl-build-engine. About ½ day. Unblocks T-0306b (SwapSheet) and through it T-0303c. Depends on T-0219 so the timed cost is built once at the planned duration (D-0092). Engine tickets run one at a time (D-0096 §3): T-0219 → T-0215 → T-0224 → T-0214. -->
 
 ## Why
 Principle 3: the UI never builds a plan item. UF-05.1 (mid-workout swap, from UF-09.9 Paused and UF-09.6 Next exercise) and UF-08.3 (swap before starting) both hand the user's pick to one engine function. That function rebuilds the slot exactly as `suggest` would have built it for that exercise: the rep slot, the carried pre-fill weight, the reasons, and the costs that keep the plan honest about the budget (principle 2). D-0071 §7 fixed the signature and the main semantics. D-0093 settles the open points (reasons, back-off, warm-up, validation) and names the rule 12 addendum. The UI side (T-0306b) only asserts that it calls `applySwap` and renders the result.
@@ -71,7 +71,7 @@ Principle 3: the UI never builds a plan item. UF-05.1 (mid-workout swap, from UF
 - **AC3 (R12-E8, the main slot, the former T-0306b AC-B8)** `applySwap(W, "bench-press", "push-up", "equipment_taken", [], …)`:
   - `items[0]` is `push-up × 4`, `isMain: true`, reps 6–8, `costS` 720, `prefill {weightKg: 0, reps: 6, durationS: null, kind: "first_time"}`, and `reasons` `[main_lift, area_deficit {chest, 1}, days_since {chest, null}, swap {equipment_taken}, prefill {first_time}]`.
   - `plan.mainLiftId` is `"push-up"`, and `plan.warmup` is unchanged.
-- **AC4 (R12-E9, a timed candidate, D-0092)** `applySwap(W_t, "dead-bug", "plank", "short_on_time", H_p, …)`:
+- **AC4 (R12-E9, a timed candidate, D-0092, D-0096 §1)** The timed `durationS` is the planned duration `prefill.durationS`, not `defaultDurationS`. D-0096 §1 supersedes D-0071 §7's timed parenthetical. `applySwap(W_t, "dead-bug", "plank", "short_on_time", H_p, …)`:
   - `items[1]` is `plank × 2`, `repsMin`/`repsMax` null, `durationS` 120, `costS` 2 × (120 + 60) + 60 = 420, and `prefill {weightKg: null, reps: null, durationS: 120, kind: "add_rep"}`.
   - Its `reasons` are `[area_deficit {core, 0}, days_since {core, 3}, swap {short_on_time}, prefill {add_rep}]`.
   - `itemsTotalS` 1140, `totalS` 1320, `unusedS` 60.
@@ -134,7 +134,9 @@ Principle 3: the UI never builds a plan item. UF-05.1 (mid-workout swap, from UF
   - lines starting `- **R12-E6` … `- **R12-E11` exist, each citing D-0093;
   - rule 0's function list contains `applySwap(`;
   - the Traceability table has a T-0224 row;
-  - the R12-E1…R12-E5 lines and rule 13 are unchanged against `main` (T-0219's re-scoped guard, D-0092 §6). If T-0219 has not landed, this ticket re-scopes the two guards as T-0219 AC14 describes.
+  - the R12-E1…R12-E5 lines and rule 13 are unchanged against `main`, through T-0219's re-scoped T-0204 guard (D-0092 §6).
+
+  The committed test pins only this ticket's own content plus that section guard. There is no committed "every other section unchanged" test (D-0096 §2). Instead, before returning, run `git diff main...HEAD -- docs/engine-rules.md` and list the changed sections in the result and the commit message. The expected sections are rule 0's list, §12.1 and Traceability. Code review checks that list against the Listed extras grant.
 - **AC15 (public API and traceability)**
   - `import { applySwap } from "@workoutlab/engine"` typechecks.
   - `expectTypeOf(applySwap).returns.toEqualTypeOf<Workout>()`.
@@ -157,8 +159,8 @@ Principle 3: the UI never builds a plan item. UF-05.1 (mid-workout swap, from UF
   - `src/index.ts`;
   - a new `test/rule-12-apply-swap.test.ts` and a new `test/apply-swap-histories.test.ts`;
   - `docs/engine-rules.md` rule 0's list, §12.1 and the Traceability table.
-- **Serialise:** T-0219 → **T-0224** → T-0214. All three change `src/session.ts` and `docs/engine-rules.md`.
-  - If the orchestrator must run T-0224 before T-0219, AC4 and AC12 use `defaultDurationS` for timed costs (AC4: `costS` 270, `durationS` = `prefill.durationS` 120). T-0219 then updates exactly those two assertions to D-0092, and the commit says which case applies.
+- **Engine tickets run one at a time** (D-0096 §3; they share `packages/engine/**`): T-0219 → T-0215 → **T-0224** → T-0214.
+- **`parseSessionPlan` round-trip:** the engine can't assert it (no `@workoutlab/shared` dependency, D-0093 §7). T-0306b has no ticket file yet, so its groom must carry an AC: "the `applySwap` result's plan passes `parseSessionPlan`" (today T-0306-library-swap.md AC-B10).
 - When T-0214 lands after this ticket, it makes `applySwap`'s rep slot goal-aware (D-0095). Its tests add a goal case to R12-E8.
 - T-0306b's AC-B7–B9 now point here: R12-E6…R12-E8 carry their semantics (D-0071 §7).
 

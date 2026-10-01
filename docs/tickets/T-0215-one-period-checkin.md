@@ -3,11 +3,11 @@ id: T-0215
 title: "Engine: plan check-in proposes after ONE ended period (rule 9, D-0061 §2, D-0094); re-derive R9-E1…E13 and the simulated histories"
 lane: engine
 screens: [UF-11.1, UF-11.2, UF-02.1]
-decisions: [D-0018, D-0027, D-0041, D-0061, D-0070, D-0094]
-deps: [T-0202]
+decisions: [D-0018, D-0027, D-0041, D-0061, D-0070, D-0094, D-0096]
+deps: [T-0202, T-0219]
 status: ready
 ---
-<!-- Written by product-owner 2026-10-01 (groom mode). Build flow: wl-build-engine. About ½ day. T-0223 (data) depends on this ticket, and T-0308c depends on both. Touches src/checkin.ts only, so it does not conflict with the session.ts tickets (T-0219, T-0224, T-0214); see Coordination. -->
+<!-- Written by product-owner 2026-10-01 (groom mode). Build flow: wl-build-engine. About ½ day. T-0223 (data) depends on this ticket, and T-0308c depends on both. Engine tickets run one at a time (D-0096 §3): T-0219 → T-0215 → T-0224 → T-0214. -->
 
 ## Why
 Principle 4: targets adapt to what the user actually does, and never silently. The human decided (D-0061 §2) that two periods in a row was too slow. One 14-day period that is under (completed < 0.7 × 2·min) proposes one session fewer per week, and one that is over (> 1.1 × 2·max) proposes one more. The clamp, Accept/Keep, the reset and "never on UF-08/UF-09" are unchanged. D-0094 fixes the build:
@@ -158,8 +158,9 @@ Principle 4: targets adapt to what the user actually does, and never silently. T
   - the R9-E1…E11 line contains "re-derived for one period (D-0094)";
   - the R9-E12 line says 2026-10-11;
   - the R9-E13 line contains `` `plan_changed_at` 2026-09-20 `` exactly once and cites D-0094;
-  - the Traceability table has a T-0215 row;
-  - no rule other than 9 changed against `main` (skip on a shallow clone). If no earlier engine ticket has re-scoped the two whole-file guards, do T-0219 AC14 here (D-0092 §6).
+  - the Traceability table has a T-0215 row.
+
+  The committed test pins only this ticket's own content. There is no committed "every other section unchanged" test (D-0096 §2). Instead, before returning, run `git diff main...HEAD -- docs/engine-rules.md` and list the changed sections in the result and the commit message. The expected sections are rule 9 and Traceability. Code review checks that list against the Listed extras grant. If no earlier engine ticket has re-scoped the two whole-file guards, do T-0219 AC14 here (D-0092 §6).
 - **AC28 (public API, purity)**
   - `COMPARED_PERIODS === 1`, and `CheckinEvaluation`'s type is unchanged (the T-0202 `expectTypeOf` test stays green).
   - `pnpm --filter @workoutlab/engine lint` passes.
@@ -180,7 +181,7 @@ Principle 4: targets adapt to what the user actually does, and never silently. T
   - `packages/engine/src/checkin.ts`;
   - `test/rule-9-checkin.test.ts`, `test/rule-9-histories.test.ts`, `test/rule-9-sessions.test.ts` (only if an AC10 expectation lives there), `test/fixtures/checkin.ts` (`AC1_RESULT`), `test/fixtures/rename-d0041.ts` (pair 3) and `test/housekeeping.test.ts` (one expectation);
   - `docs/engine-rules.md` rule 9 and the Traceability table.
-- It does **not** change `src/session.ts`. It may run in parallel with T-0219, T-0224 or T-0214 if the orchestrator accepts a `docs/engine-rules.md` merge in a different section (rule 9 against rules 7 and 12). Otherwise run it after T-0219.
+- **Engine tickets run one at a time** (D-0096 §3; they share `packages/engine/**`): T-0219 → **T-0215** → T-0224 → T-0214. T-0215 goes second because it unblocks the data lane's T-0223, which can then run while T-0224 builds.
 - **T-0223 (data) depends on T-0215:** `plan_checkins.period_index >= 0`, nullable `completed_prev`, and openapi `CheckinPeriod.index` / `PlanCheckin.periodIndex` minimum 0. AC8's period-0 proposal is the case that needs it. T-0308c depends on both.
 - Product follow-up: `docs/specs/uf-11-plan-checkin.md` ACs 1–5, 8 and 11–14 get one-period wording (D-0070 Consequences).
 

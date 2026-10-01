@@ -3,11 +3,11 @@ id: T-0219
 title: "Engine: rule 7.1 costs timed sets at the planned (pre-fill) duration, so a plan with a progressed plank stays inside the budget (D-0092)"
 lane: engine
 screens: [UF-08.1, UF-08.2, UF-08.3, UF-09.5, UF-05.1]
-decisions: [D-0024, D-0040, D-0056, D-0057, D-0062, D-0092]
+decisions: [D-0024, D-0040, D-0056, D-0057, D-0062, D-0092, D-0096]
 deps: [T-0205]
 status: ready
 ---
-<!-- Written by product-owner 2026-10-01 (groom mode). Build flow: wl-build-engine (the board's wl-idea step is done: D-0092 is the decision). About ½ day. Priority: lands before T-0304 ships (principle 2). Serialise with T-0224 and T-0214, which also change src/session.ts; order T-0219 → T-0224 → T-0214. -->
+<!-- Written by product-owner 2026-10-01 (groom mode). Build flow: wl-build-engine (the board's wl-idea step is done: D-0092 is the decision). About ½ day. Priority: lands before T-0304 ships (principle 2). Engine tickets run one at a time (D-0096 §3): T-0219 → T-0215 → T-0224 → T-0214. -->
 
 ## Why
 Principle 2: the time budget is a first-class input, and R7-E8 promises Σ item costs ≤ `available`. Today a timed set is costed at the library's `defaultDurationS`, but since T-0205 the user is shown the rule 14 pre-fill `prefill.durationS`, which grows 5 s per session up to 120 s. A plank logged at 115 s last time is planned at 3 × (45 + 60) + 60 = 375 s. It is shown at 120 s, so it takes 600 s. In a 20-minute plan with the warm-up off, the plan says 1095 s and the user spends 1320 s. D-0092 settles the reading of rule 7.1: a timed set's work is the **planned duration**, which is the rule 14 pre-fill duration for that exercise over the same history and `now`. It applies everywhere the engine costs time.
@@ -116,8 +116,9 @@ Principle 2: the time budget is a first-class input, and R7-E8 promises Σ item 
   - rule 7.1 contains "Every time cost in the engine uses this model: rule 7.2 selection, rule 7.4, rule 12 `timeCostS` and `fitsBudget`, rule 13's fit check and `applySwap`";
   - a line starting `- **R7-E13` cites D-0092 and contains `1140`;
   - the Traceability table has a row for T-0219;
-  - R7-E1 is unchanged;
-  - no other rule's text changed. Compare each `## n.` section other than 7 with `main`, and skip on a shallow clone.
+  - R7-E1 is unchanged.
+
+  The committed test pins only this ticket's own content and the AC14 section guards. There is no committed "every other section unchanged" test (D-0096 §2). Instead, before returning, run `git diff main...HEAD -- docs/engine-rules.md` and list the changed sections in the result and the commit message. The expected sections are §7.1 and Traceability. Code review checks that list against the Listed extras grant.
 - **AC14 (guards re-scoped, D-0092 §6)**
   - `rule-14-suggest.test.ts`'s "docs/engine-rules.md is unchanged against main" compares only rule 14's section (from `## 14.` up to `## Required tests`) with `main`.
   - `t0204-traceability.test.ts`'s "differs by at most that one line" compares only rule 12 (up to and including the `- **R12-E5` line, with the existing D-0056 one-line allowance) and rule 13 with `main`.
@@ -140,7 +141,7 @@ Principle 2: the time budget is a first-class input, and R7-E8 promises Σ item 
   - new tests and `test/fixtures/histories-timed.ts`;
   - edits to `test/rule-14-suggest.test.ts` and `test/t0204-traceability.test.ts` (AC14 only);
   - `docs/engine-rules.md` §7.1 and the Traceability table.
-- **Serialise with T-0224 and T-0214**, which both change `src/session.ts` and `docs/engine-rules.md`. Order: T-0219 → T-0224 → T-0214. T-0215 changes `src/checkin.ts` and rule 9 only. It overlaps this ticket only in `docs/engine-rules.md` (a different section) and possibly `src/index.ts`, so it may run in parallel if the orchestrator accepts that merge.
+- **Engine tickets run one at a time** (D-0096 §3; they share `packages/engine/**`): T-0219 → T-0215 → T-0224 → T-0214.
 - Whichever engine ticket edits `docs/engine-rules.md` first does AC14. If T-0224, T-0214 or T-0215 lands first, it does AC14 and this ticket checks it is already done.
 - T-0304 (UF-09.5) can read `item.durationS` or `prefill.durationS`, since they are equal now. This closes the T-0205 web follow-up "use `prefill.durationS` rather than `item.durationS`".
 
