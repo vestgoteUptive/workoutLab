@@ -52,3 +52,12 @@ Tests for every AC pass, or a recorded run for AC-4 · `pnpm -w typecheck lint t
 
 ## Follow-ups to file
 - web-feature:UF-10: `features/UF-10/__tests__/test-helpers.tsx` builds `` `${userId}:${…}` `` by hand for `libraryCache`, `targetCache` and two other caches. Switch it to `userScopedKey` after T-0370.
+
+## Accept log
+- 2026-10-01, product-owner: **done** at 8ffd961 (`t/T-0370-shared-cache-key`, `lib/offline/**` only).
+  - AC-1: `key-builder.test.ts` (`userScopedKey`, `setKey`).
+  - AC-2: `key-builder-source.test.ts` (comment-stripped scan; non-vacuity for `db.ts` exactly one, plus references in `history.ts`, `feature-loaders.ts` and `seed-library.ts`).
+  - AC-3: existing suites unedited and green (781/781). The new literal-key tests cover `libraryCache` via `loadLibrary()` and `exerciseDetails` via the keyed `get` in `feature-loaders`.
+  - AC-4: QA moved the separator to `"|"`. 9 tests in 4 files failed, including AC-1, the AC-3 keyed `get` and the queue/flush tests. The T-0365 seeded case still passed. The change was reverted.
+  - DoD: root `pnpm -w typecheck lint test --force --concurrency=1` passed 19/19. Contracts unchanged. Review APPROVE.
+  - Residual: the AC-2 scan catches only template literals with bare identifiers. String concatenation and member expressions slip past it. This is outside the AC's letter and is filed as a follow-up.
