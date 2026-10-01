@@ -26,7 +26,8 @@ import type {
   Workout,
 } from "./types.js";
 
-const SWAP_REASONS: readonly SwapReason[] = [
+/** The `SwapReason` values (D-0037 §2). */
+export const SWAP_REASONS: readonly SwapReason[] = [
   "equipment_taken",
   "discomfort",
   "variety",
