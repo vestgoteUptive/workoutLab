@@ -553,7 +553,7 @@ const run = (c: Call, w = c.w, history = c.history, library = LIBRARY): Workout 
 function requiredOf(openapi: string, name: string): string[] {
   const start = openapi.indexOf(`\n    ${name}:\n`);
   expect(start, name).toBeGreaterThan(-1);
-  const m = /\n      required: \[([^\]]*)\]/.exec(openapi.slice(start + 1));
+  const m = /\n {6}required: \[([^\]]*)\]/.exec(openapi.slice(start + 1));
   expect(m, name).not.toBeNull();
   return (m?.[1] ?? "").split(",").map((s) => s.trim());
 }
