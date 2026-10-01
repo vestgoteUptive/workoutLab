@@ -9,9 +9,9 @@ import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Shell } from "../App.js";
 import { AuthProvider } from "../../lib/auth/auth-context.js";
-import type { LibraryExercise } from "@workoutlab/engine";
 import { freshOfflineDb, signIn } from "../../lib/offline/__tests__/test-helpers.js";
 import { seedLibrary } from "../../lib/offline/__tests__/seed-library.js";
+import type { CachedLibraryExercise } from "../../lib/offline/db.js";
 
 const { onAuthStateChange, getSession, signOut, authStateCallbacks } = vi.hoisted(() => {
   const authStateCallbacks: Array<(event: string, session: unknown) => void> = [];
@@ -124,7 +124,7 @@ describe("AC-5 the new protected routes redirect when signed out (as AC-B5)", ()
 // no `supabase.from`), and asserts the built table and that the location holds.
 describe("T-0365 signed in: UF-04.3 with a seeded library", () => {
   const USER_ID = "u-t0365";
-  const exercise = (id: string, name: string): LibraryExercise => ({
+  const exercise = (id: string, name: string): CachedLibraryExercise["exercise"] => ({
     id,
     name,
     kind: "exercise",
