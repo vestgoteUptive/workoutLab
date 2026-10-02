@@ -18,7 +18,7 @@ Parent `T-0303` → `split → T-0303a, T-0303b, T-0303c, T-0303d`. All four are
 | Child | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|
 | T-0303a | UF-08.1 Time & energy + setup data loading + step routing | T-0300, T-0203b, T-0318 | todo | ½ day |
-| T-0303b | UF-08.2 Suggested workout (bar, why, rows, remove, shuffle, time change) | T-0303a, T-0302a | todo | ½ day |
+| T-0303b | UF-08.2 Suggested workout (bar, why, rows, remove, shuffle, time change) | T-0303a, T-0302c (D-0106: workout.ts moved there) | todo | ½ day |
 | T-0303c | UF-08.3 Swap before starting: mounts `SwapSheet` from `features/UF-05` (which calls `rankSwaps` + engine `applySwap`, D-0071 §7) | T-0303b, **T-0306b** (`SwapSheet`, which needs T-0224) | todo | ¼ day |
 | T-0303d | UF-08.4 Ready + focus prefs + start the session | T-0303b | todo | ⅓ day |
 
@@ -54,7 +54,7 @@ Vitest + Testing Library in `apps/web/src/features/UF-08/**`, with `lib/offline`
 ### T-0303b UF-08.2 Suggested workout
 - **AC-B1 (budget bar)** Given W-R7E4 (the `api/openapi.yaml` Workout example, budget 30, warm-up in budget), the bar has, in order, a warm-up segment (flex 180), 3 item segments (flex 720, 555, 270 = `costS`) and an unused segment (flex 75 = `unusedS`), with the text "About 29 of 30 min". With `warmupInBudget: false`, there is no warm-up segment and the text is "About 26 of 30 min + warm-up" (`ceil(itemsTotalS / 60)`). The bar is `aria-hidden`, and the text carries the information.
 - **AC-B2 (rows render the engine, principle 3)** Rows in plan order: "Bench press", "4 × 6–8 · 12 min" (`ceil(costS / 60)`), and the reason line from `lib/i18n/workout.ts` "Main lift · Chest 100 % below target". The pre-fill weight: `80` → "· 80 kg", `null` → nothing, bodyweight → "· Bodyweight". A back-off item adds "+ 1 back-off 70 × 6" from `item.backoff`. A reversed-items fixture renders reversed (no sort in the UI). A warm-up row (the `plan.warmup` names, "3 min") has no remove or swap control.
-- **AC-B3 (session chips)** `sessionReasons` render as up to 3 chips in order via `reasonLine`, for example "Quads recovering, skipped" for `recovering_skipped {quads}`.
+- **AC-B3 (session chips)** `sessionReasons` render as up to 3 chips in order via `sessionReasonChips` from `lib/i18n/workout.ts`, the same function UF-02.1 uses (D-0106 §4). For example `recovering_skipped {quads}` → "Quads recovering, skipped", and `area_deficit {chest, 1}` → "Chest".
 - **AC-B4 (actions go back through the engine, D-0065 §4)** Remove on "Inverted row" re-calls `suggest` with `excludeIds: ["inverted-row"]` and renders the new result. A second Remove appends to it. Remove on the main lift also sets `mainLiftId: null`. Shuffle calls `suggest` with `shuffle` 1, then 2, then 3 (never reset by a remove or a time change) and keeps `excludeIds`. The time chips 30/45/60 re-call `suggest` with the chosen `budgetMin` and `mainLiftId` = the current main lift (R7-E5: from 30 to 20 with bench-press kept gives bench-press × 4 + straight-arm-pulldown × 2). Each action makes exactly one `suggest` call. Remove and swap buttons are ≥ 44 × 44 px and named "Remove Bench press" / "Swap Bench press".
 - **AC-B5 (over budget)** Given a `Workout` with `itemsTotalS` > `availableS(budgetMin, warmupInBudget)` (the engine function), Then the bar's item segments use `var(--wl-color-warn)` and the text is "{ceil(totalS/60)} min, {over} over", where over = `ceil((itemsTotalS − availableS) / 60)`. Otherwise no warn colour appears (a style test).
 - **AC-B6 (hand-off)** "Looks good" goes to `?step=ready` carrying the current `Workout` plus `{budgetMin, warmupInBudget, energy}`. Back goes to `?step=time` with the setup values kept. With T-0303c not merged, no swap button is in the DOM.
@@ -77,7 +77,7 @@ The ranking, chips, row copy, empty state and dialog a11y are T-0306b's `SwapShe
 
 ## Paths you may change
 - `apps/web/src/features/UF-08/**` (including `focus-prefs.ts`; `index.tsx` re-exports its three names, the D-0071 §3 hand-off).
-- Extras (D-0071 §1, §10): `apps/web/src/lib/i18n/flows/uf-08.ts` (created empty by T-0318); `apps/web/src/lib/i18n/workout.ts` (T-0303b only, which may **add** keys and never change existing ones, and doesn't run in parallel with T-0302a/b); `tests/e2e/uf-08-setup.spec.ts` (new; the later children append).
+- Extras (D-0071 §1, §10): `apps/web/src/lib/i18n/flows/uf-08.ts` (created empty by T-0318); `apps/web/src/lib/i18n/workout.ts` (T-0303b only, which may **add** keys and never change existing ones, and doesn't run in parallel with T-0302b/c); `tests/e2e/uf-08-setup.spec.ts` (new; the later children append).
 - Read-only imports: `lib/offline`, `lib/format`, `lib/i18n/*`, `components/offline-status`, `@workoutlab/engine`, `@workoutlab/shared`, `features/UF-05/index.tsx` (`SwapSheet`, T-0303c). **Not** `components/body-map`, and not `features/UF-02|06|07|10|11` (principle 1, D-0071 §9).
 
 ## Contract impact
