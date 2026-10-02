@@ -8,8 +8,9 @@ import { describe, expect, it } from "vitest";
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 const SELF = "t0424-test-hygiene.test.ts";
-// Built from parts, so this file doesn't match its own guard.
-const PATTERN = ["document", "body", "innerHTML"].join(".") + " =";
+// An assignment with or without spaces (`=`, ` = `), not a comparison (`==`, `===`). The escaped
+// dots mean the regex source doesn't match itself.
+const PATTERN = /document\.body\.innerHTML\s*=(?!=)/;
 
 describe("T-0424 AC3 the UF-09 test hygiene guard", () => {
   const files = readdirSync(DIR)
@@ -21,7 +22,7 @@ describe("T-0424 AC3 the UF-09 test hygiene guard", () => {
   });
 
   it("T-0424 AC3 no test file clears document.body.innerHTML", () => {
-    const offenders = files.filter((f) => readFileSync(join(DIR, f), "utf8").includes(PATTERN));
+    const offenders = files.filter((f) => PATTERN.test(readFileSync(join(DIR, f), "utf8")));
     expect(offenders).toEqual([]);
   });
 });

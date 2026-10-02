@@ -110,3 +110,20 @@ screen (for example `T-0424 UF-09.7: assert elapsedS while the ring is held`).
 - **Gate:** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: 4/4
   tasks, 171 files / 2676 tests passed. `-w format:check` clean. `node .github/scripts/check-all.mjs`
   exit 0. `--filter @workoutlab/web test:e2e uf-09`: 10 passed.
+
+### QA 2026-10-02 (qa-tester): pass
+- **AC-1** Planted F6 in `session.tsx` (`pausedAtMs: state.pausedAtMs ?? state.timerPausedAtMs`):
+  the branch test went red at :345 (`expected +0 to be 10`). main's version of the test under the
+  same fault: 2 passed (F6 slips through on main). Reverted from a backup copy.
+- **AC-2** With `cleanup()` removed, the test went red at :417 (`expected one [data-screen-id], found
+  UF-09.7,UF-09.7`). Reverted.
+- **AC-3** With main's `timed-set.test.tsx`, the guard went red with offenders `["timed-set.test.tsx"]`.
+  **Tightened (review note):** the pattern is now `/document\.body\.innerHTML\s*=(?!=)/`. Proof with a
+  scratch `zz-plant.test.ts`: `innerHTML="";` (no space) red; tab/newline before `=` red;
+  `===` / `==` / `expect(document.body.innerHTML)` green. With the self-exclusion removed, still green
+  (the regex source doesn't match itself). Branch: 2 passed. Scratch file removed.
+- **AC-4** `git diff --stat main...HEAD -- apps/web/src/features/UF-09 ':!…/__tests__'` is empty;
+  34 UF-09 test files.
+- **Gates:** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: 4/4,
+  171 files / 2676 tests passed. `test:e2e uf-09`: 10 passed. `-w format:check` clean.
+  `check-all.mjs` exit 0.
