@@ -79,3 +79,24 @@ none (`docs/engine-rules.md` and `api/openapi.yaml` unchanged)
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green · contracts unchanged · commit messages start with `T-0237` (e.g. `T-0237: retire the four frozen engine baselines; keep the inline invariants`).
 
 ## Build / accept log
+
+### Build (engine-dev, 2026-10-02)
+- **AC1:** these tests no longer read a fixture. Each one keeps its rule/AC prefix:
+  - `rule-13-shuffle.test.ts`: the test is now "rule-13 (AC13) shuffle 0 swaps nothing for every history and energy". It loops over `HISTORIES` × `ENERGIES` and checks `swapped(w)` = `[]` and `w.plan.items.length > 0`. The case count is pinned as the literal `15` (5 × 3). `BASELINE`, `T0205_PREFILL`, `withRule14` and the fs/path imports are gone. "the R7-E4 plan is unchanged at shuffle 0" was not edited.
+  - `rule-14-suggest.test.ts`: the test is now "rule-14 (AC16) zero history: every item is first_time with the D-0057 prefill shape (…)". It keeps the prefill loop and the `first_time` reason, adds `items.length > 0`, and pins `n === 36`. `BASELINE` and `withoutPrefill` are gone.
+  - `rule-7-goal-reps.test.ts`: R7-E14 (AC1) now checks `JSON.stringify(run([], BM)) === JSON.stringify(run([], NO_GOAL))`, and the inline `reps` assertion stays. The test is now "rule-7 (AC10) suggest is byte-identical under F-profile and with no goal key (history × energy × budget × warm-up × pins)". It builds its grid inline: zero plus the 4 `SIMULATED_HISTORIES`, × normal/low/high × 15/20/30/90 × wu on/off × `[]`/`["plank"]`. It checks NO_GOAL against BM and pins `n === 240`. The 60 s budget is kept.
+  - `t0219-timed-cost.test.ts`: R7-E13 (AC1) contrast lost only the `toStrictEqual(BASELINE[…])` line. The inline `[45, 375, 45]` and `[1095, 105]` checks stay.
+- **Retired** (each one has a comment that cites its ticket's build/accept log and T-0237, and none names the fixture file):
+  - `rule-14 (AC16) (AC23) non-empty histories: selection, sets, costs and totals equal the pre-T-0205 result`
+  - `rule-7 (AC7) suggest at [] over energy × budget × warm-up × pins equals the pre-change snapshot`
+  - `rule-7 (AC7) the simulated histories without timed sets are byte-identical too`
+  - `R12-E1 R12-E2 R12-E3 R12-E4 R12-E5 rule-12 (AC7) rankSwaps over the R12 fixtures equals the pre-change snapshot`. R12-E1…E5 still start titles in `rule-12-swaps.test.ts`, so T-0204 AC27 passes without edits.
+  - `rule-11 (AC9) balance is unchanged by this ticket for every history`
+  - `rule-9 (AC9) evaluateCheckin (F-checkin via checkinSessions) matches the baseline's last ended period for every history`
+  - `rule-12 (AC5) every AC4 fresh plan equals the snapshot captured on main before D-0105` (t0226)
+- Imports that lint flagged as unused were removed (`readFileSync`, `path`, `fileURLToPath`, `TEST_DIR`, `balance`, `checkinSessions`, `evaluateCheckin`, `CheckinEvaluation`, `F_CHECKIN`/`NO_CHECKINS`/`sessionRefsOf`, `fSwap` in t0219).
+- The four fixtures were deleted with `git rm`.
+- **AC2 red:** for this run only, `goalOf` in `src/session.ts:289` returned `"get_stronger"` for a missing goal. `vitest run test/rule-7-goal-reps.test.ts -t "R7-E14|AC10"` gave 2 failed: R7-E14 (AC1) with `expected '{"plan":…' to be '{"plan":…'`, and rule-7 (AC10) at `zero/normal/15/wu/none`. Reverted from a byte copy: `git status packages/engine/src` is clean and nothing was committed.
+- **AC3:** the new `test/t0237-no-frozen-baselines.test.ts` has 2 `T-0237 AC3` cases. One checks that none of the 4 fixtures exists. The other checks that no `.ts` under `test/` (recursive, excluding itself, more than 30 files scanned) contains any of the 4 names, which the file builds from parts. **Red on unfixed code:** with main's 5 test files and 4 fixtures restored, both fail: `expected [ 'pre-t0204-suggest', …(3) ] to deeply equal []` and `expected [ …(5) ] to deeply equal []`. The files were restored afterwards.
+- **AC4:** `git diff --stat main...HEAD -- packages/engine/src` is empty. Engine tests went from 636 (37 files) to 631 (38 files): 7 retired and 2 added. The T-0236 guard, the T-0230 budget guard (`test-budgets.test.ts`) and `t0204-traceability.test.ts` pass without edits.
+- **AC5:** engine `typecheck`, `lint` and `test` (631 passed) are each green under `flock`. `-w format:check` is clean. `node .github/scripts/check-all.mjs` exits 0, and so does `node supabase/scripts/vendor.mjs --check` (src is unchanged, so no regen).
