@@ -75,3 +75,14 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
 - CI on PR #23 failed in `packages/engine/test/rule-14-suggest.test.ts`: the T-0205 AC21 test still expected `minimum: 1`. Merged `origin/main`, which brings in the Listed-extras grant. Changed only the AC21 `durationS` bounds regex, to `minimum: 15, maximum: 120` (D-0133). The rest of the assertion is unchanged.
 - Red before the edit, against the new yaml: `vitest run test/rule-14-suggest.test.ts -t "exactly these keys"` → 1 failed. Green after → 1 passed.
 - `flock … pnpm -w typecheck lint test --force --concurrency=1`: 19/19 tasks (engine 33 files, shared 9, web 139, exercises 16, design-tokens 7, landing 11). `format:check` is clean. `check-all.mjs` exits 0. `vendor.mjs --check` exits 0.
+
+### Accept (2026-10-02, product-owner): done
+Checked at HEAD 574bbba against each AC.
+- AC1: `T-0222 AC1` asserts the `durationS` deep-equal and the description. `api/openapi.yaml` L432 is `{ type: [integer, "null"], minimum: 15, maximum: 120 }`, and the description cites `15..120` and D-0133. Red on main.
+- AC2: `it.each` accepts 15/45/120/null and rejects 14/121/1/600 with `invalid`. The four rejects were red on main.
+- AC3: the test reads `TIMED_MIN_S`/`TIMED_MAX_S` from `packages/engine/src/prefill.ts` as text and compares them with the schema bounds. A separate test checks that `@workoutlab/shared` gains no engine dependency. The range check was red on main.
+- AC4: the existing drift tests (`SESSION_PLAN_SCHEMA`, T-0229 AC2, `api.gen.ts`) pass unedited. The new `T-0222 AC4` test checks `maximum: 120` in the `PrefillResult` closure. Review confirmed the generated files are byte-identical to a scratch regeneration.
+- AC5: every existing shared, web and supabase test passes unedited. The fixtures hold 45, 45, 50 and 120 s, so no triage was needed. The openapi diff is +5 −2, all inside `PrefillResult`. The one engine test edit (the T-0205 AC21 bounds regex) is a Listed extra granted on main after CI. It was red before the edit and green after, and it follows the narrowed contract.
+- AC6: `vendor.mjs --check` exits 0. Draft PR #23 (https://github.com/vestgoteUptive/workoutLab/pull/23), CI run 2: `checks` (typecheck/lint/unit), `supabase` (db tests) and playwright e2e all pass.
+- DoD: the `-w typecheck lint test --force --concurrency=1` gate is 19/19. The contract change is linked to D-0133. Review approved, and no LLM or runtime compile was added (D-0117). Principles hold: the engine is unchanged and deterministic, and UF-09.5 can no longer run a timed set outside 15..120 s.
+- Follow-ups: T-0413 (an out-of-range stored plan opens as notOnDevice; confirm the UX) and the content check on `default_duration_s` (D-0133 Consequences).
