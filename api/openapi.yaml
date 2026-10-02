@@ -418,7 +418,10 @@ components:
 
     # ---------- workout and session plan (rules 7, 13, 14; D-0024, D-0035) ----------
     PrefillResult:
-      description: Pre-filled load for an item (rule 14, UF-09.3, UF-09.4).
+      description: >-
+        Pre-filled load for an item (rule 14, UF-09.3, UF-09.4). A timed `durationS` is within
+        15..120 s (TIMED_MIN_S..TIMED_MAX_S, D-0062 §5). `first_time` echoes the library
+        `defaultDurationS`, which content keeps within the same range (D-0133).
       x-engine-function: prefill
       type: object
       additionalProperties: false
@@ -426,7 +429,7 @@ components:
       properties:
         weightKg: { type: [number, "null"], minimum: 0 }
         reps: { type: [integer, "null"], minimum: 1 }
-        durationS: { type: [integer, "null"], minimum: 1 }
+        durationS: { type: [integer, "null"], minimum: 15, maximum: 120 }
         kind: { $ref: "#/components/schemas/PrefillKind" }
       examples:
         - { weightKg: null, reps: 6, durationS: null, kind: first_time }
