@@ -5,7 +5,7 @@ lane: web-feature:UF-01
 screens: [UF-01.5]
 decisions: [D-0104, D-0115]
 deps: [T-0378]
-status: ready
+status: done
 ---
 ## Why
 `features/UF-01/index.tsx` `AuthCallback` calls
@@ -33,3 +33,12 @@ none
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0380b` and cite screen IDs.
+
+## Accept log
+- 2026-10-02, product owner, branch at 3d3e1e5: **done**.
+  - AC1: `__tests__/auth-callback-reject.test.tsx`, "AC1" block. A `TypeError("Failed to fetch")` rejection, plus an `AbortError` `DOMException` case, shows `linkExpired` and the `/account` link with `sendNewLink` inside `UF-01.5-auth-callback`. The tests also confirm no `navigate`, no unhandled rejection (`process.on("unhandledRejection")` spy) and no `console.error`. Passing.
+  - AC2: "AC2" block. `planKept` is shown, and `readSaveablePlan()` is still non-null with the stored value byte-identical afterwards. Passing.
+  - AC3: "AC3" block. `{ error: null }` navigates to `/history` (consumed return-to), or to `/` without one, with `replace: true`. `{ error }` shows the expired state. The existing UF-01 tests are unchanged and green (web 1354, UF-01 + lib/auth 212/212, auth e2e 7/7).
+  - QA: with `onRejected` removed, 3 tests went red; with it restored, all green. Review: APPROVE. The rejection handler sits on `.then`'s second argument, so a throw in the success branch is not masked.
+  - Principles: not affected (the change is limited to the auth callback, with no copy or contract change). Scope held: no retry and no change to the resolved paths.
+  - Follow-up from review (pre-existing, out of scope): T-0392, `consumeReturnTo` should only accept same-origin paths.

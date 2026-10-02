@@ -28,13 +28,20 @@ export function AuthCallback() {
       return;
     }
 
-    void supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      if (error) {
+    // A rejection (network `TypeError`, fetch abort) is handled exactly like `{ error }`
+    // (D-0115 §2, T-0380b): the expired state, never a stuck "Signing you in".
+    void supabase.auth.exchangeCodeForSession(code).then(
+      ({ error }) => {
+        if (error) {
+          setExpired(true);
+          return;
+        }
+        navigate(consumeReturnTo(), { replace: true });
+      },
+      () => {
         setExpired(true);
-        return;
-      }
-      navigate(consumeReturnTo(), { replace: true });
-    });
+      },
+    );
     // Runs once for this landing: params don't change under this route.
   }, []);
 
