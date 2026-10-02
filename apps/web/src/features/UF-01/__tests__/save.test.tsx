@@ -31,21 +31,25 @@ const { db, recheck } = vi.hoisted(() => {
     const next = queues.get(key)?.shift();
     return next ? next() : Promise.resolve({ data: null, error: null });
   };
-  const from = vi.fn((table: string) => ({
-    select: (...args: unknown[]) => {
-      calls.push({ table, op: "select", args });
-      return {
-        maybeSingle: () => {
-          calls.push({ table, op: "maybeSingle", args: [] });
-          return answer(`${table}:select`);
-        },
-      };
-    },
-    upsert: (...args: unknown[]) => {
-      calls.push({ table, op: "upsert", args });
-      return answer(`${table}:upsert`);
-    },
-  }));
+  // Typed `(...args: unknown[])` to fit `clientMock`'s `from` parameter.
+  const from = vi.fn((...fromArgs: unknown[]) => {
+    const table = fromArgs[0] as string;
+    return {
+      select: (...args: unknown[]) => {
+        calls.push({ table, op: "select", args });
+        return {
+          maybeSingle: () => {
+            calls.push({ table, op: "maybeSingle", args: [] });
+            return answer(`${table}:select`);
+          },
+        };
+      },
+      upsert: (...args: unknown[]) => {
+        calls.push({ table, op: "upsert", args });
+        return answer(`${table}:upsert`);
+      },
+    };
+  });
   return {
     db: {
       from,
@@ -173,7 +177,6 @@ function store(record: unknown): string {
   return raw;
 }
 
-const ok: Responder = () => Promise.resolve({ data: null, error: null });
 const fail: Responder = () => Promise.resolve({ data: null, error: { code: "500" } });
 
 function upsertArgs(table: string, n = 0): unknown[] {
@@ -270,9 +273,7 @@ describe("AC-5 the save (D-0100 §3, principle 3)", () => {
   it("the rows follow deriveTargets: +1 per area from the engine gives +1 per row", async () => {
     deriveTargets.mockImplementation((input) => {
       const real = realDerive(input);
-      return Object.fromEntries(
-        Object.entries(real).map(([k, v]) => [k, v + 1]),
-      ) as typeof real;
+      return Object.fromEntries(Object.entries(real).map(([k, v]) => [k, v + 1])) as typeof real;
     });
     arrange();
     mount();
@@ -320,9 +321,7 @@ describe("AC-5 the save (D-0100 §3, principle 3)", () => {
 describe("AC-6 the existing profile wins (D-0064 §8)", () => {
   it("a row from the select: no upsert, the record is removed, recheck once, then /", async () => {
     arrange();
-    db.queue("profiles:select", () =>
-      Promise.resolve({ data: { user_id: "u1" }, error: null }),
-    );
+    db.queue("profiles:select", () => Promise.resolve({ data: { user_id: "u1" }, error: null }));
     mount();
     await waitFor(() => expect(where.current).toBe("/"));
     expect(db.count("area_targets", "upsert")).toBe(0);
@@ -501,9 +500,7 @@ describe("AC-9 no saveable plan (D-0100 §2)", () => {
     mount();
     const root = await findSave();
     expect(within(root).getAllByRole("heading", { level: 1 })).toHaveLength(1);
-    expect(within(root).getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Set up your plan",
-    );
+    expect(within(root).getByRole("heading", { level: 1 })).toHaveTextContent("Set up your plan");
     expect(
       within(root).getByText("Your answers aren't on this device. It takes under a minute."),
     ).toBeInTheDocument();
