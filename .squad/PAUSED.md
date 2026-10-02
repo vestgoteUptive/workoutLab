@@ -9,8 +9,8 @@ its own ticket branch and never touches `main`.
 2. The orchestrator first does the checks below, then deletes this file and goes on as normal.
 
 ## First checks on resume
-- **`main` has a local, unpushed merge of T-0308b** (`dd95964`, 25 commits ahead of `origin/main` at pause time).
-  Its verification log is `~/.cache/wl-pw-tmp/verify-T-0308b.log` (it needs `CHECK_OK`, `Tasks: 19 successful`,
+- **`main` has a local, unpushed merge of T-0308b** (`dd95964`) plus the T-0450 fix and D-0158.
+  Its verification log is `~/.cache/wl-pw-tmp/verify-main-2.log` (it needs `CHECK_OK`, `Tasks: 19 successful`,
   `# pass 146` and `N passed` with no `failed`). Green → set T-0308b `done`, push `main`, remove its worktree.
   Not green or incomplete → rerun the gate on `main`:
   `flock /tmp/workoutlab-tests.lock npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1`,
@@ -23,10 +23,10 @@ its own ticket branch and never touches `main`.
 ## Tickets in flight at pause (worktrees under `../workoutLab-worktrees/`)
 | Ticket | What | Where it stood | Next step |
 |---|---|---|---|
-| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | Accepted; merged on local `main`; verification running | See first checks |
+| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | Accepted; merged on local `main`. First verify failed only on AC-B16's branch-only `git diff` test → retired on `main` as **T-0450** (`f22e589`); re-verify log `~/.cache/wl-pw-tmp/verify-main-2.log` | See first checks |
 | T-0422 | UF-05.1 swap seam on UF-09.9 / UF-09.6 | Build ×3 done, review approved (incl. error boundary), **QA running** | QA verdict → accept → merge (full gate + whole e2e) |
-| T-0304g | UF-09 wake lock, cues, reduced motion | Build done, review approved, **QA running** | QA verdict → accept → merge |
-| T-0440 | e2e: no server reuse on :4173, tmpfs preflight | Build done, review approved, **QA running** | QA verdict → accept → merge; then shorten the two traps in `state.md` |
+| T-0304g | UF-09 wake lock, cues, reduced motion | Review approved. QA proved every AC and fault (58/58; F1, F3, its own wake-lock fault) but stopped before its gate: it left 3 stray files, which the orchestrator removed (worktree clean at `bcf51a3`) | Run the cached gate (D-0158 §1) in the worktree, commit QA's log, then accept → merge |
+| T-0440 | e2e: no server reuse on :4173, tmpfs preflight | Review approved, **QA passed** (`12ea587`, e2e 152/152) | Accept → merge; then shorten the two traps in `state.md` |
 | T-0307b | UF-06 Progress | Review asked for changes (AC-10 test can't fail, + 3 lows); **rework running** | Re-review → QA → accept → merge |
 | T-0308a | UF-07.1 Routine editor | **Post-merge catch-up running** (main merged, finish ACs, green the gate) | Review → QA → accept → merge |
 
@@ -39,6 +39,11 @@ T-0415 (UF-09 List-view host support; after T-0422 merges, not with T-0394), T-0
 after T-0422), T-0436 (e2e 501-backstop detection; after T-0422), T-0356, T-0362, T-0395. Also groom T-0441 (Vitest
 `/tmp` leak) with priority.
 
+## Process changes made during the pause
+- **D-0158 tiered test gate:** builders run affected tests and one cached full gate, QA proves faults on the
+  ticket's own tests (no full rerun), and only the orchestrator runs the forced full gate on `main` after a merge.
+  Already in `agents/roles/_common.md`, `qa-tester.md` and `.claude/commands/tick.md`.
+
 ## Environment notes (this machine)
 - `/tmp` is a RAM tmpfs. Run e2e with `TMPDIR=$HOME/.cache/wl-pw-tmp`. If `/tmp` fills again, the stale Vitest
   dirs `/tmp/<21-char id>/{client,ssr}` older than 30 min can be removed (T-0441 fixes the leak).
@@ -46,7 +51,7 @@ after T-0422), T-0436 (e2e 501-backstop detection; after T-0422), T-0356, T-0362
 - `pnpm -w typecheck lint test` skips the repo checks; also run `pnpm -w test:repo-checks` (T-0444).
 
 ## Where everything else is
-- Current phase, traps and next free IDs: `.squad/state.md` (next decision **D-0158**, tickets **T-0451+**, TR-0044).
+- Current phase, traps and next free IDs: `.squad/state.md` (next decision **D-0159**, tickets **T-0451+**, TR-0044).
 - Board (open work): `.squad/board.md`; archived rows: `.squad/board-done.md`; decisions: `.squad/decisions/INDEX.md`.
 - Today's journal: `.squad/journal/2026-10-02.md`. Waiting on the human: `.squad/needs-human.md` (only
   deploy-time gates H-14, H-06, H-10 and optional H-05, H-12 remain).
