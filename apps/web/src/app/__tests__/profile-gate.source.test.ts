@@ -46,13 +46,28 @@ const PROFILE_ALLOW: Readonly<Record<string, readonly string[]>> = {
   "features/UF-01/SaveScreen.tsx": ["useRecheckProfile"],
 };
 
-/** Every static `import`/`export … from` statement on `lib/profile`, as its clause text. */
+/**
+ * Every static statement on `lib/profile`: `import`/`export … from` as its clause text, and a
+ * bare side-effect `import "…"` as `import "<specifier>"` (which never matches the allowed form).
+ */
 function profileStatements(source: string): string[] {
   const out: string[] = [];
   const re = /^\s*((?:import|export)\s[^;]*?)from\s+["']([^"']+)["']/gm;
   let m: RegExpExecArray | null;
   while ((m = re.exec(source))) if (m[2]!.includes("lib/profile")) out.push(m[1]!.trim());
+  const bare = /^\s*import\s+["']([^"']+)["']/gm;
+  while ((m = bare.exec(source))) if (m[1]!.includes("lib/profile")) out.push(`import "${m[1]}"`);
   return out;
+}
+
+/** The check the "features/UF-01 does not import lib/profile … or lib/offline" test runs. */
+function uf01Violations(file: string, source: string): string[] {
+  return [
+    ...profileViolations(file, source, "static"),
+    ...staticSpecifiers(source)
+      .filter((s) => s.includes("lib/offline"))
+      .map((s) => `${file}: ${s}`),
+  ];
 }
 
 function dynamicProfileImport(source: string): boolean {
@@ -170,6 +185,35 @@ describe("AC-12 the gate is applied in exactly one place", () => {
       expect(profileViolations(SAVE, source, "dynamic")).not.toEqual([]);
     });
 
+    // QA (T-0301c rework): a bare side-effect import is a lib/profile import too.
+    it("a bare import of lib/profile added to SaveScreen.tsx fails (a second statement)", () => {
+      const save = readFileSync(resolve(SRC, SAVE), "utf8");
+      const source = `import "../../lib/profile/index.js";\n${save}`;
+      expect(profileViolations(SAVE, save, "static")).toEqual([]);
+      expect(profileViolations(SAVE, source, "static")).not.toEqual([]);
+      expect(uf01Violations(SAVE, source)).not.toEqual([]);
+    });
+
+    it("a bare import of lib/profile in GoalScreen.tsx fails both ban checks", () => {
+      const goal = readFileSync(resolve(SRC, GOAL), "utf8");
+      const source = `import "../../lib/profile/index.js";\n${goal}`;
+      expect(uf01Violations(GOAL, goal)).toEqual([]);
+      // "no file under features/ imports lib/profile, except the D-0101 allow-list"
+      expect(profileViolations(GOAL, source, "static")).toEqual([
+        `${GOAL}: import "../../lib/profile/index.js"`,
+      ]);
+      // "features/UF-01 does not import lib/profile (…) or lib/offline"
+      expect(uf01Violations(GOAL, source)).toEqual([
+        `${GOAL}: import "../../lib/profile/index.js"`,
+      ]);
+    });
+
+    it("the lib/offline half still fires on a bare import", () => {
+      const goal = readFileSync(resolve(SRC, GOAL), "utf8");
+      const source = `import "../../lib/offline/index.js";\n${goal}`;
+      expect(uf01Violations(GOAL, source)).toEqual([`${GOAL}: ../../lib/offline/index.js`]);
+    });
+
     it("the allowed form itself passes", () => {
       const source = 'import { useRecheckProfile } from "../../lib/profile/index.js";\n';
       expect(profileViolations(SAVE, source, "static")).toEqual([]);
@@ -219,10 +263,7 @@ describe("AC-10 a signed-out first render cannot pull the Dexie chunk", () => {
     const uf01 = walk(resolve(SRC, "features/UF-01"));
     expect(uf01.length).toBeGreaterThan(0);
     for (const file of uf01) {
-      const source = readFileSync(file, "utf8");
-      const specs = staticSpecifiers(source);
-      expect(profileViolations(file.slice(SRC.length + 1), source, "static")).toEqual([]);
-      expect(specs.filter((s) => s.includes("lib/offline"))).toEqual([]);
+      expect(uf01Violations(file.slice(SRC.length + 1), readFileSync(file, "utf8"))).toEqual([]);
     }
   });
 });
