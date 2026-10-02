@@ -103,3 +103,19 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 - **Flow:** `wl-build-web`.
 - **Board:** T-0303c (UF-08.3) may depend on this ticket instead of T-0306b (D-0142 Consequences).
 - **Parallel:** it is parallel-safe with T-0419 (UF-03) and every UF-09 ticket.
+
+## Build log
+- 2026-10-02, frontend-dev. `features/UF-05/index.tsx` exports only `SwapSheet` (and the `SwapSheetProps` type). `SwapSheet.tsx` reads `loadEngineHistory`, `loadProfile` and `loadLibrary` from IndexedDB (no refresh, no fetch). It renders `rankSwaps(current, reason, workout, profile, library, history, now, tz)` as returned and passes `applySwap(…)`'s result to `onApply` unchanged. `labels.ts` words a candidate (percent, `ceil` minutes, equipment, with "Bodyweight" for `[]`/`["none"]`). `uf-05.css` uses tokens only. The strings are in `flows/uf-05.ts`, and the equipment labels are copied from UF-04 (D-0079 §5). Build defaults are in **D-0160**: one mount-time `now`, the first row preselected and re-selected on a chip change, a `rankSwaps` throw shown as the load failure, Close in every state.
+- Tests (`features/UF-05/__tests__/`, 62 cases):
+  - `engine.test.tsx` (real `rankSwaps`/`applySwap`, spied with `vi.spyOn` on the namespace; real fake-indexeddb cache): AC-1, AC-3, AC-6, AC-7, AC-9 offline (plus a queued-set case), AC-10 (R12-E6, E8, E9 and E10 through the sheet; each result `toStrictEqual`s an independent `applySwap` call and `parseSessionPlan` round-trips it through JSON), and AC-5 with the real R12-E11 over-budget candidate.
+  - `mocked.test.tsx`: AC-2, AC-4, AC-5, AC-8, and AC-9 pending, rejection and throw.
+  - `dialog.test.tsx`: AC-11, including axe in three states and the 44 px stylesheet check.
+  - `exports-and-lint.test.ts`: AC-12 and the AC-6 source test.
+- Red on `main`: with the four UF-05 source files removed and `flows/uf-05.ts` at its `main` content, the three render suites fail to import and 6 of the 13 `exports-and-lint` cases fail. The 7 that pass are the ESLint config checks and the regex self-tests, which hold on `main` by design.
+- Planted faults (`vitest run` of the three render suites, 49 cases; each fault reverted after):
+  - **UI sort by `muscleMatch`:** 2 red, AC-2 "renders the mocked order…" and AC-3 "Short on time renders R12-E2…".
+  - **UI-built item `{...plan.items[i], exerciseId: candidateId}` passed to `onApply`:** 11 red: AC-6 (reference-equal), AC-7 ×4, AC-9 queued, AC-10 ×4 (R12-E6, E8, E9, E10) and the R12-E11 case.
+  - **Hiding `fitsBudget: false` rows:** 3 red: AC-5 mocked, AC-5 R12-E11, and AC-2 "never filters".
+- Both values: Best match vs another chip, bestMatch tag true/false, fitsBudget true/false, ceil 375 → 7 and 360 → 6, `[]`/`["none"]` vs real equipment, main vs accessory slot, carry vs first_time, a 12-day vs a 3-day gap, empty vs non-empty, loaded vs failed, void vs promise `onApply`, a resolved vs rejected promise, and applySwap ok vs throwing.
+- No Playwright spec: the sheet has no route or mount until T-0422, whose e2e measures the row with `boundingBox()`.
+- Gates: web `typecheck` and `lint` are green, `-w format:check` is green and `check:repo` is green. Web `test` has 2362 passing and 1 failing: `build.test.ts` AC-A6 requires every `src/features/*` folder to be a route chunk, and UF-05 has no route by design. That file is in the web-shell lane, so this is **TR-0042**, and the branch must not merge before it is fixed.
