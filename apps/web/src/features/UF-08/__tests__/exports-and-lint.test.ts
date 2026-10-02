@@ -1,7 +1,6 @@
 // @vitest-environment node
 // T-0303a AC-13: strings from `en.uf08` (D-0075 shape), jsx-no-literals, the export set, and the
 // D-0071 §9 import bans. Source scans exclude `__tests__/**`.
-import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { ESLint } from "eslint";
@@ -124,62 +123,52 @@ describe("AC-13 strings", () => {
   });
 });
 
-// ---- T-0303b AC-11 / AC-13 ----
+// ---- T-0303b AC-11 ----
+// The "en.ts and workout.ts unchanged" and AC-13 "shell files unchanged" checks are a
+// `git diff --name-only main...HEAD` in the review/DoD run (ticket build log); lanes are enforced
+// by check-lane-paths. Here: workout.ts is imported read-only, from one file, by its own names.
 
-function branchDiff(): string[] | null {
-  try {
-    const out = execFileSync("git", ["diff", "--name-only", "main...HEAD"], {
-      cwd: WEB_ROOT,
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-    });
-    return out.split("\n").filter((l) => l !== "");
-  } catch {
-    // No `main` ref (a shallow CI checkout, or after the merge): the DoD run checks it instead.
-    return null;
-  }
+/** UF-08 source files that mention `lib/i18n/workout` in any import form. */
+function workoutImporters(files: { name: string; source: string }[]): string[] {
+  return files.filter((f) => /lib\/i18n\/workout/.test(f.source)).map((f) => f.name);
 }
 
-const diff = branchDiff();
-
 describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (D-0109 §7)", () => {
-  it.skipIf(diff === null)("git diff main...HEAD lists neither en.ts nor workout.ts", () => {
-    expect(diff).not.toContain("apps/web/src/lib/i18n/en.ts");
-    expect(diff).not.toContain("apps/web/src/lib/i18n/workout.ts");
+  const files = () =>
+    sourceFiles()
+      .filter((f) => /\.tsx?$/.test(f))
+      .map((f) => ({ name: f.split("/").at(-1)!, source: readFileSync(f, "utf8") }));
+
+  it("only Suggested.tsx mentions lib/i18n/workout, in any import form", () => {
+    expect(workoutImporters(files())).toEqual(["Suggested.tsx"]);
   });
 
-  it("the feature imports only workout.ts's own exports, and only from Suggested.tsx", async () => {
-    const workout = await import("../../../lib/i18n/workout.js");
-    const importers: string[] = [];
-    for (const file of sourceFiles().filter((f) => /\.tsx?$/.test(f))) {
-      const source = readFileSync(file, "utf8");
-      for (const m of source.matchAll(
-        /import \{([^}]*)\} from "\.\.\/\.\.\/lib\/i18n\/workout\.js"/g,
-      )) {
-        importers.push(file.split("/").at(-1)!);
-        for (const name of m[1]!
-          .split(",")
-          .map((n) => n.trim())
-          .filter(Boolean)) {
-          expect(Object.keys(workout), name).toContain(name);
-        }
-      }
+  it("contrast: a namespace, type-only or extensionless import elsewhere is caught", () => {
+    const base = files();
+    for (const source of [
+      'import * as w from "../../lib/i18n/workout.js";\nexport const X = w;\n',
+      'import type { itemSummary } from "../../lib/i18n/workout";\n',
+      'export { areaName } from "../../lib/i18n/workout.js";\n',
+    ]) {
+      expect(workoutImporters([...base, { name: "Other.tsx", source }]), source).toEqual([
+        "Suggested.tsx",
+        "Other.tsx",
+      ]);
     }
-    expect(importers).toEqual(["Suggested.tsx"]);
   });
-});
 
-describe("T-0303b AC-13 shell files unchanged (D-0108 §3)", () => {
-  it.skipIf(diff === null)(
-    "git diff main...HEAD lists nothing under app/**, tests/e2e/fixtures/** or the shell specs",
-    () => {
-      const touched = diff!.filter(
-        (f) =>
-          f.startsWith("apps/web/src/app/") ||
-          f.startsWith("tests/e2e/fixtures/") ||
-          /^tests\/e2e\/(offline|auth|shell)\.spec\.ts$/.test(f),
-      );
-      expect(touched).toEqual([]);
-    },
-  );
+  it("Suggested.tsx imports only names workout.ts exports", async () => {
+    const workout = await import("../../../lib/i18n/workout.js");
+    const source = files().find((f) => f.name === "Suggested.tsx")!.source;
+    const imports = [
+      ...source.matchAll(/import \{([^}]*)\} from "\.\.\/\.\.\/lib\/i18n\/workout\.js"/g),
+    ];
+    expect(imports).toHaveLength(1);
+    const names = imports[0]![1]!
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) expect(Object.keys(workout), name).toContain(name);
+  });
 });

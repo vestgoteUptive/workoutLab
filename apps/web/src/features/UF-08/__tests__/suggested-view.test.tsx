@@ -3,7 +3,9 @@
 // on injected `Workout`s. `Suggested` is rendered on its own inside a router; the host's actions
 // are covered in suggested-actions.test.tsx.
 import { useState } from "react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import type { Reason, Workout, WorkoutItem } from "@workoutlab/engine";
@@ -266,6 +268,16 @@ describe("AC-6 the Time group (D-0109 §3)", () => {
 });
 
 describe("AC-7 the bar (D-0109 §5)", () => {
+  // Vitest doesn't process CSS imports, so the feature's stylesheet is attached by hand for the
+  // computed-style asserts.
+  let sheet: HTMLStyleElement;
+  beforeAll(() => {
+    sheet = document.createElement("style");
+    sheet.textContent = readFileSync(resolve(__dirname, "../uf-08.css"), "utf8");
+    document.head.appendChild(sheet);
+  });
+  afterAll(() => sheet.remove());
+
   const grows = () => segments().map((s) => [s.dataset.segment, s.style.flexGrow]);
   const warned = () =>
     segments().filter((s) => getComputedStyle(s).backgroundColor === "var(--wl-color-warn)");
@@ -348,7 +360,16 @@ describe("AC-10 names and focus after Remove (D-0109 §6)", () => {
   /** Plays the host: each Remove swaps in the next scripted `Workout`. */
   function Scripted({ start, next }: { start: Workout; next: Workout }) {
     const [workout, setWorkout] = useState(start);
-    return <Suggested {...props(workout, { onRemove: () => setWorkout(next) })} />;
+    return (
+      <Suggested
+        {...props(workout, {
+          onRemove: () => {
+            setWorkout(next);
+            return true;
+          },
+        })}
+      />
+    );
   }
 
   function play(start: Workout, next: Workout) {
@@ -398,6 +419,51 @@ describe("AC-10 names and focus after Remove (D-0109 §6)", () => {
     play(start, next);
     fireEvent.click(screen.getByRole("button", { name: "Remove Bench press" }));
     expect(screen.getByRole("button", { name: "Looks good" })).toHaveFocus();
+  });
+
+  it("a Remove that changes nothing (suggest rejected) leaves no focus pending for Shuffle", () => {
+    function FailingRemoveHost() {
+      const [workout, setWorkout] = useState(wR7E4());
+      return (
+        <Suggested
+          {...props(workout, {
+            onRemove: () => false,
+            onShuffle: () => setWorkout(wR7E4()),
+          })}
+        />
+      );
+    }
+    render(
+      <MemoryRouter>
+        <FailingRemoveHost />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Remove Inverted row" }));
+    const shuffle = screen.getByRole("button", { name: "Shuffle" });
+    shuffle.focus();
+    fireEvent.click(shuffle);
+    expect(shuffle).toHaveFocus();
+  });
+
+  it("a Remove that changes nothing leaves no focus pending for a later time chip", () => {
+    function LateHost() {
+      const [workout, setWorkout] = useState(wR7E4());
+      return (
+        <Suggested
+          {...props(workout, { onRemove: () => false, onBudget: () => setWorkout(wR7E4()) })}
+        />
+      );
+    }
+    render(
+      <MemoryRouter>
+        <LateHost />
+      </MemoryRouter>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Remove Leg extension" }));
+    const chip = screen.getByRole("button", { name: "45 minutes" });
+    chip.focus();
+    fireEvent.click(chip);
+    expect(chip).toHaveFocus();
   });
 
   it("contrast: Shuffle moves no focus (no Remove pending)", () => {

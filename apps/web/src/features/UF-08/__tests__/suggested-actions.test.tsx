@@ -437,6 +437,24 @@ describe("AC-10 focus through the host (D-0109 §6)", () => {
     expect(button(`Remove ${name}`)).toHaveFocus();
   });
 
+  it("a Remove whose suggest call throws keeps the plan, and a later Shuffle keeps focus on Shuffle", async () => {
+    const { base } = await toSuggested();
+    const before = shownWorkout();
+    spy.mockImplementationOnce(() => {
+      throw new Error("engine rejected");
+    });
+    fireEvent.click(button("Remove Inverted row"));
+    expect(calls()).toBe(base + 1);
+    expect(shownWorkout()).toBe(before);
+    expect(rowNames()).toContain("Inverted row");
+    const shuffle = button("Shuffle");
+    shuffle.focus();
+    fireEvent.click(shuffle);
+    expect(calls()).toBe(base + 2);
+    expect(lastInput()).toEqual(input({ shuffle: 1 }));
+    expect(button("Shuffle")).toHaveFocus();
+  });
+
   it("Shuffle keeps focus on Shuffle; a time chip keeps focus on the chip", async () => {
     await toSuggested();
     const shuffle = button("Shuffle");

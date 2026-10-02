@@ -19,8 +19,11 @@ export interface SuggestedProps {
   library: LibraryLookup;
   /** For the weight's `Intl.NumberFormat` (D-0109 §4). */
   locale: string;
-  /** Remove one item: the host re-suggests with it in `excludeIds`. */
-  onRemove: (exerciseId: string) => void;
+  /**
+   * Remove one item: the host re-suggests with it in `excludeIds`. Returns whether a new plan
+   * was set (false when `suggest` rejected and the plan stayed as it was).
+   */
+  onRemove: (exerciseId: string) => boolean;
   /** The host re-suggests with `shuffle + 1`. */
   onShuffle: () => void;
   /** The host re-suggests at `budgetMin`. Only called for a chip that isn't the active one. */
@@ -49,18 +52,22 @@ function backoffLine(item: WorkoutItem, locale: string): string | null {
   return en.uf08.backoff(weightText(item.backoff.weightKg, locale), item.backoff.reps);
 }
 
-/** One bar segment. Its `flex-grow` is data (seconds), so it is set on the node, not in CSS. */
+/** One bar segment. Its `flex-grow` is data (seconds), so it is set on the node; the over-budget
+ *  colour is the `--warn` class (uf-08.css). */
 function Segment({ kind, seconds, warn }: { kind: string; seconds: number; warn: boolean }) {
   const ref = useCallback(
     (el: HTMLSpanElement | null) => {
-      if (!el) return;
-      el.style.flexGrow = String(seconds);
-      if (warn) el.style.backgroundColor = "var(--wl-color-warn)";
-      else el.style.removeProperty("background-color");
+      if (el) el.style.flexGrow = String(seconds);
     },
-    [seconds, warn],
+    [seconds],
   );
-  return <span ref={ref} className="wl-uf08__seg" data-segment={kind} />;
+  return (
+    <span
+      ref={ref}
+      className={warn ? "wl-uf08__seg wl-uf08__seg--warn" : "wl-uf08__seg"}
+      data-segment={kind}
+    />
+  );
 }
 
 /** The bar and its text (D-0109 §5). */
@@ -150,7 +157,9 @@ export function Suggested({
             aria-label={en.uf08.chipName(String(m))}
             aria-pressed={workout.budgetMin === m ? "true" : "false"}
             onClick={() => {
-              if (m !== workout.budgetMin) onBudget(m);
+              if (m === workout.budgetMin) return;
+              pendingFocus.current = null;
+              onBudget(m);
             }}
           >
             {m}
@@ -211,7 +220,8 @@ export function Suggested({
                   aria-label={en.uf08.remove(name)}
                   onClick={() => {
                     pendingFocus.current = index;
-                    onRemove(item.exerciseId);
+                    // No new plan → no re-render to move focus for; never leave it pending.
+                    if (!onRemove(item.exerciseId)) pendingFocus.current = null;
                   }}
                 >
                   <svg
@@ -236,7 +246,14 @@ export function Suggested({
       )}
 
       <div className="wl-uf08__actions">
-        <button type="button" className="wl-uf08__ghost" onClick={onShuffle}>
+        <button
+          type="button"
+          className="wl-uf08__ghost"
+          onClick={() => {
+            pendingFocus.current = null;
+            onShuffle();
+          }}
+        >
           {en.uf08.shuffle}
         </button>
         <button

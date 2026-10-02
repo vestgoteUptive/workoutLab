@@ -286,6 +286,11 @@
   background: var(--wl-color-surface-2);
 }
 
+/* Over the budget (D-0109 §5): the item segments only. */
+.wl-uf08__seg--warn {
+  background-color: var(--wl-color-warn);
+}
+
 .wl-uf08__budget-text {
   margin: 0;
   font-size: 14px;

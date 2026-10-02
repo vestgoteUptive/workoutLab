@@ -170,7 +170,7 @@ export function SessionSetup({ now, locale, timeZone }: SessionSetupProps = {}) 
       shuffle?: number;
       excludeIds?: string[];
       mainLiftId?: string | null;
-    }) => {
+    }): boolean => {
       const next = {
         budgetMin: change.budgetMin ?? budgetMin,
         shuffle: change.shuffle ?? adjusted.shuffle,
@@ -192,9 +192,10 @@ export function SessionSetup({ now, locale, timeZone }: SessionSetupProps = {}) 
         nowIso,
         tz,
       );
-      if (result === null) return;
+      if (result === null) return false;
       if (next.budgetMin !== budgetMin) setBudgetMin(next.budgetMin);
       setAdjusted({ workout: result, shuffle: next.shuffle, excludeIds: next.excludeIds });
+      return true;
     };
     const plan = adjusted.workout.plan;
     return (
@@ -204,7 +205,7 @@ export function SessionSetup({ now, locale, timeZone }: SessionSetupProps = {}) 
         locale={loc}
         onRemove={(exerciseId) => {
           const isMain = plan.items.some((i) => i.exerciseId === exerciseId && i.isMain);
-          resuggest({
+          return resuggest({
             excludeIds: [...adjusted.excludeIds, exerciseId],
             ...(isMain ? { mainLiftId: null } : {}),
           });
