@@ -53,6 +53,10 @@ const readyView = vi.mocked(Ready);
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
+// T-0408 (D-0096): local budgets on waits for lazy route chunks (the --concurrency=1 gate).
+const LAZY_WAIT_MS = 5_000;
+const LAZY_TEST_MS = 15_000;
+
 /** Every committed location, in order (to count navigations and their types). */
 let navLog: { pathname: string; search: string; type: string }[] = [];
 const unhandled: unknown[] = [];
@@ -96,15 +100,15 @@ async function toReady(
   opts: { setup?: () => void; adjust?: () => void } = {},
 ) {
   renderHost(props);
-  await waitFor(() => expect(fitLine()).toHaveTextContent(/^Fits: /));
+  await waitFor(() => expect(fitLine()).toHaveTextContent(/^Fits: /), { timeout: LAZY_WAIT_MS });
   fireEvent.click(button("30 minutes"));
   opts.setup?.();
-  await waitFor(() => expect(fitLine()).toHaveTextContent(/^Fits: /));
+  await waitFor(() => expect(fitLine()).toHaveTextContent(/^Fits: /), { timeout: LAZY_WAIT_MS });
   fireEvent.click(button("Suggest my workout"));
-  await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]));
+  await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]), { timeout: LAZY_WAIT_MS });
   opts.adjust?.();
   fireEvent.click(button("Looks good"));
-  await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));
+  await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]), { timeout: LAZY_WAIT_MS });
 }
 
 function deferred() {
@@ -304,21 +308,27 @@ describe("AC-5 a failed write (D-0110 §3)", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 
-  it("retry: the second tap reuses the same id and navigates once on resolve", async () => {
-    upsert.mockRejectedValueOnce(new Error("AbortError"));
-    await toReady({ ...F_TZ_PROPS, clock: movableClock().clock });
-    const before = navLog.length;
-    fireEvent.click(startButton());
-    await screen.findByRole("alert");
-    fireEvent.click(startButton());
-    await waitFor(() => expect(screen.getByTestId("focus")).toBeInTheDocument());
-    expect(upsert).toHaveBeenCalledTimes(2);
-    const [first, second] = upsert.mock.calls.map((c) => c[0].id);
-    expect(first).toMatch(UUID_V4);
-    expect(second).toBe(first);
-    expect(navLog).toHaveLength(before + 1);
-    expect(last()).toEqual({ pathname: `/session/${first}`, search: "", type: "REPLACE" });
-  });
+  it(
+    "retry: the second tap reuses the same id and navigates once on resolve",
+    async () => {
+      upsert.mockRejectedValueOnce(new Error("AbortError"));
+      await toReady({ ...F_TZ_PROPS, clock: movableClock().clock });
+      const before = navLog.length;
+      fireEvent.click(startButton());
+      await screen.findByRole("alert", undefined, { timeout: LAZY_WAIT_MS });
+      fireEvent.click(startButton());
+      await waitFor(() => expect(screen.getByTestId("focus")).toBeInTheDocument(), {
+        timeout: LAZY_WAIT_MS,
+      });
+      expect(upsert).toHaveBeenCalledTimes(2);
+      const [first, second] = upsert.mock.calls.map((c) => c[0].id);
+      expect(first).toMatch(UUID_V4);
+      expect(second).toBe(first);
+      expect(navLog).toHaveLength(before + 1);
+      expect(last()).toEqual({ pathname: `/session/${first}`, search: "", type: "REPLACE" });
+    },
+    LAZY_TEST_MS,
+  );
 
   it("a new visit: Back to UF-08.2, Looks good, Start uses a different id", async () => {
     upsert.mockRejectedValueOnce(new Error("AbortError"));
