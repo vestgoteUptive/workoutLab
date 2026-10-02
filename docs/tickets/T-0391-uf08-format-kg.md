@@ -79,3 +79,14 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
 - **e2e.** `DETAIL_PATTERN` now requires ` kg`. A `T-0391 AC6` table of 5 rows in the same spec checks it: `"…80 kg…"` matches and `"…80 kg…"` (plain space) does not. T-0393's AC2–AC4 still pass against the stricter pattern, so the app renders U+00A0 end to end.
 - **Red proof.** I ran `vitest -t "T-0391"` after checking out main's `Suggested.tsx`, `rows.ts` and `flows/uf-08.ts`. **14 of 16 failed**: all 7 AC1, both AC2, the 2 weighted AC3 rows and all 3 AC4. The 2 that passed are the unchanged null back-off rows ("+ 1 back-off set" and no element). Then I restored the files.
 - **Runs (all under the lock).** UF-08 vitest 283/283. Web `test` 139 files / 2115 tests. `-w typecheck lint test --force --concurrency=1` 19/19 tasks. The `uf-08-setup.spec.ts` Playwright run passed 24/24. `-w format:check` was clean and `check-all.mjs` exited 0.
+
+### Accept (2026-10-02, product-owner): done
+Checked at HEAD 7419546 against each AC.
+- AC1: the six-row `T-0391 AC1` table (80, 77.5, 100 `hold_after_break`, 0, 1250 with no grouping, 2.125 → 2.13) and the 0 kg / Bodyweight case assert the exact `detail(0)` string with U+00A0. Red on unfixed code: all 7 failed in the red proof.
+- AC2: sv-SE 77,5 and de-DE 1250 (no "1.250") rows. Both were red on main.
+- AC3: four rows covering 70 kg × 6, sv-SE 72,5 kg × 5, the null-weight row ("+ 1 back-off set") and the null row (no element). They assert exact `textContent`, which is stricter than before. The 2 weighted rows were red; the 2 null rows pass on main, as the AC expects ("unchanged").
+- AC4: three cases. `Suggested.tsx` imports `formatKg` from `../../lib/format/number.js` (l.14). No non-test UF-08 source matches the forbidden pattern; I confirmed this by grep. `en.uf08` has no `weightKg` key, and `flows/uf-08.ts` keeps only `backoff`/`backoffSet`. The `backoff` JSDoc reads "+ 1 back-off 70 kg × 6". All three were red on main.
+- AC5: only the sanctioned assertions moved. The null `it.each` stays unedited, and `exports-and-lint.test.ts` is unedited with `keys.size > 15` still passing (about 50 keys). Review confirmed this. UF-08 vitest 283/283.
+- AC6: `DETAIL_PATTERN` requires ` kg` (l.215). The `T-0391 AC6` 5-row table proves the U+00A0 row matches and the plain-space row does not. `uf-08-setup` e2e 24/24 passed, including T-0393 AC2–AC4 against the stricter pattern, which also covers the Coordination check.
+- DoD: `-w typecheck lint test --force --concurrency=1` 19/19, e2e green, contracts unchanged (no contract file touched), commits cite T-0391 UF-08.2.
+- Principles: display formatting only. Focus mode, the time budget, the engine, targets and onboarding are untouched. D-0109 §4 bodyweight/null rules are kept.
