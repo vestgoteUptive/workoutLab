@@ -269,7 +269,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0418 | UF-03.2 rest bar + rest view, Swap button in the list (D-0142) | web-feature:UF-03 | T-0417, T-0421, T-0414 | todo | wl-build-web |
 | T-0419 | UF-03.3 Summary content and states (unknown id → not on device; ended_at null → still running; now = ended_at; no mount refresh) (D-0142) | web-feature:UF-03 | T-0318, T-0319 | doing | wl-build-web |
 | T-0420 | UF-03.3 effort 1–5 + Save through the queue (whole row, no /finish), uf-03-list-summary e2e (D-0142) | web-feature:UF-03 | T-0419, T-0324 | todo | wl-build-web |
-| T-0421 | UF-05.1 SwapSheet: rankSwaps in engine order, Use → applySwap, D-0093 §7 parseSessionPlan round-trip (D-0142) | web-feature:UF-05 | T-0224, T-0226, T-0318 | doing | wl-build-web |
+| T-0421 | UF-05.1 SwapSheet: rankSwaps in engine order, Use → applySwap, D-0093 §7 parseSessionPlan round-trip (D-0142) | web-feature:UF-05 | T-0224, T-0226, T-0318 | triage:TR-0042 | wl-build-web |
 | T-0422 | UF-05 swap seam on UF-09.9/09.6, persisted via replaceItem, uf-05-swap e2e (D-0142) | web-feature:UF-05 | T-0421, T-0304d, T-0414 | todo | wl-build-web |
 | T-0423 | UF-09.7 a11y: at hold 0 the 'Pause timer' toggle disappears and focus goes with it; move focus to 'Log hold' on a failed write (or the next step) (T-0304c review) | web-feature:UF-09 | T-0304c | todo | wl-build-web |
 | T-0424 | UF-09 timed tests hardening: assert session().elapsedS while the ring is held (+20 during a 20 s ring pause); timed-set 'restore: a remount while ring-paused' uses cleanup()/unmount instead of clearing document.body (T-0304c QA) | web-feature:UF-09 | T-0304c | todo | wl-build-web |
