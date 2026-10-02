@@ -441,12 +441,16 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
  * write landed after Pause, so the hook dispatched SET_LOGGED, not SET_RECORDED. The walk goes
  * where that record would have gone, timed from the resume: `confirm` (with the auto-save, or
  * none for "ask") after a reps set, `rest`/`done` after a timed one. Otherwise `state` as is.
+ * The entry must be of the current item's exercise (T-0410): after a swap while paused, a set of
+ * the old exercise at the same position is not the set on screen.
  */
 function movedOnIfLogged(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
   if (state.phase !== "set" && state.phase !== "timed") return state;
+  const exerciseId = ctx.plan.items[state.itemIndex]?.exerciseId;
   let entry: LoggedSet | undefined;
   for (const s of state.loggedSets) {
-    if (s.itemIndex === state.itemIndex && s.setIndex === state.setIndex) entry = s;
+    const here = s.itemIndex === state.itemIndex && s.setIndex === state.setIndex;
+    if (here && s.exerciseId === exerciseId) entry = s;
   }
   if (!entry) return state;
   if (state.phase === "timed") return afterSet(state, ctx, atMs);

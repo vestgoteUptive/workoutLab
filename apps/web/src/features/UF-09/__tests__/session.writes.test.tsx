@@ -11,7 +11,7 @@ import type { FocusSession } from "../session.js";
 import { BENCH, P1, PLANK, ROW, S1, STARTED_AT, STARTED_AT_MS, USER_A } from "./fixtures.js";
 import { flushReal, freshDb, seedSession, signIn, storedFocus, useFakeClock } from "./helpers.js";
 import { probe, session } from "./probe.js";
-import { call, renderSession } from "./session-helpers.js";
+import { call, deferred, renderSession } from "./session-helpers.js";
 import { countOf, dispatched, lastStore, stores } from "./store-spy.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
@@ -362,5 +362,99 @@ describe("AC-4 replaceItem", () => {
     await call(() => session().replaceItem(1, { ...PUSH_UP, isMain: false }));
     expect(upsertSpy).toHaveBeenCalledTimes(1);
     expect(session().plan.items[1]!.exerciseId).toBe("push-up");
+  });
+});
+
+// T-0410 (UF-09.3, UF-09.9, NFR-SYNC-1): the in-flight recordSet key is
+// `${source}:${itemIndex}:${setIndex}:${exerciseId}`, so only a true repeat of a pending write
+// (a remounted Done set) is merged; another exercise at that position, or a List-view log, is not.
+describe("T-0410 recordSet in-flight dedupe key", () => {
+  /** Holds the next `lib/offline` `recordSet` until `release()`, then runs the real write. */
+  function holdNextRecord() {
+    const real = recordSpy.getMockImplementation()!;
+    const gate = deferred<void>();
+    recordSpy.mockImplementationOnce(async (input) => {
+      await gate.promise;
+      return real(input);
+    });
+    return { release: () => gate.resolve() };
+  }
+
+  async function both(a: Promise<unknown>, b: Promise<unknown>, release: () => void) {
+    release();
+    const out = await call(() => Promise.all([a, b]));
+    return out as [{ clientId: string }, { clientId: string }];
+  }
+
+  it("T-0410 AC3 the same input twice with no source → one lib/offline write, one clientId", async () => {
+    seedFocus({ phase: "set" });
+    await renderSession();
+    const { release } = holdNextRecord();
+    const input = setInput(0, 0);
+    const a = session().recordSet(input);
+    const b = session().recordSet(input);
+    const [ra, rb] = await both(a, b, release);
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+    expect(ra.clientId).toBe(rb.clientId);
+    expect(session().loggedSets).toHaveLength(1);
+  });
+
+  it("T-0410 AC3 the same input twice with source list → one lib/offline write, one clientId", async () => {
+    seedFocus({ phase: "set" });
+    await renderSession();
+    const { release } = holdNextRecord();
+    const input = { ...setInput(0, 0), source: "list" as const };
+    const a = session().recordSet(input);
+    const b = session().recordSet(input);
+    const [ra, rb] = await both(a, b, release);
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+    expect(recordSpy.mock.calls[0]![0]).not.toHaveProperty("source");
+    expect(ra.clientId).toBe(rb.clientId);
+  });
+
+  it("T-0410 AC4 a pending bench-press write at (0, 0) does not swallow a db-row write at (0, 0)", async () => {
+    seedFocus({ phase: "paused", resumePhase: "set", pausedAtMs: NOW });
+    await renderSession();
+    const { release } = holdNextRecord();
+    const a = session().recordSet(setInput(0, 0));
+    const b = session().recordSet(setInput(0, 0, { exerciseId: "db-row" }));
+    const [ra, rb] = await both(a, b, release);
+    expect(recordSpy).toHaveBeenCalledTimes(2);
+    expect(recordSpy.mock.calls.map((c) => c[0].exerciseId)).toEqual(["bench-press", "db-row"]);
+    expect(ra.clientId).not.toBe(rb.clientId);
+    const listed = session().loggedSets;
+    expect(listed).toHaveLength(2);
+    expect(listed.filter((s) => s.clientId === ra.clientId)).toHaveLength(1);
+    expect(listed.filter((s) => s.clientId === rb.clientId)).toHaveLength(1);
+  });
+
+  it("T-0410 AC5 a pending focus write does not swallow a List-view log of the same set; source never reaches lib/offline", async () => {
+    seedFocus({ phase: "paused", resumePhase: "set", pausedAtMs: NOW });
+    await renderSession();
+    const { release } = holdNextRecord();
+    const input = setInput(0, 0);
+    const a = session().recordSet(input);
+    const b = session().recordSet({ ...input, source: "list" });
+    const [ra, rb] = await both(a, b, release);
+    expect(recordSpy).toHaveBeenCalledTimes(2);
+    expect(ra.clientId).not.toBe(rb.clientId);
+    for (const [arg] of recordSpy.mock.calls) {
+      expect(arg).not.toHaveProperty("source");
+      expect(arg).toEqual(input);
+    }
+  });
+
+  it("T-0410 AC6 once the held write resolves, the same key writes again", async () => {
+    seedFocus({ phase: "set" });
+    await renderSession();
+    const { release } = holdNextRecord();
+    const input = setInput(0, 0);
+    const a = session().recordSet(input);
+    release();
+    const ra = await call(() => a);
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+    const rb = await call(() => session().recordSet(input));
+    expect(recordSpy).toHaveBeenCalledTimes(2);
+    expect(rb.clientId).not.toBe(ra.clientId);
   });
 });

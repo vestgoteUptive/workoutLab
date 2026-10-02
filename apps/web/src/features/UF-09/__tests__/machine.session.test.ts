@@ -1,7 +1,9 @@
 // T-0304e: the reducer events behind `useFocusSession()` (D-0071 §5). The reducer stays pure: no
 // clock, no mutation, and an event that doesn't apply returns the same state object.
 import { describe, expect, it } from "vitest";
+import type { LibraryExercise } from "@workoutlab/shared";
 import {
+  AUTOSAVE_S,
   focusReducer,
   initialFocusState,
   type FocusCtx,
@@ -9,7 +11,7 @@ import {
   type FocusState,
   type LoggedSet,
 } from "../machine.js";
-import { L1, P1, PLANK, S1 } from "./fixtures.js";
+import { L1, P1, PLANK, ROW, S1 } from "./fixtures.js";
 
 const T0 = 1_000_000;
 const CTX: FocusCtx = { plan: P1, library: L1 };
@@ -273,5 +275,104 @@ describe("RESYNC", () => {
       warmupSpentMs: 10_000,
       warmupStartedAtMs: null,
     });
+  });
+});
+
+// T-0410 (UF-09.3, UF-09.4, UF-09.9): RESUME moves on only for a logged set of the CURRENT item's
+// exercise. After a swap while paused, a set of the old exercise at the same position is not the
+// set on screen.
+describe("T-0410 RESUME after a swap while paused", () => {
+  const lib = (id: string, extra: Partial<LibraryExercise>): LibraryExercise => ({
+    id,
+    name: id,
+    kind: "exercise",
+    type: "compound",
+    level: "beginner",
+    equipment: [],
+    areas: {},
+    timed: false,
+    defaultDurationS: null,
+    incrementKg: 2.5,
+    externalLoad: true,
+    ...extra,
+  });
+  const DB_ROW_EX = lib("db-row", {
+    equipment: ["dumbbell", "bench"],
+    areas: { back: 1, arms: 0.5 },
+  });
+  const SIDE_PLANK_EX = lib("side-plank", {
+    type: "isolation",
+    areas: { core: 1 },
+    timed: true,
+    defaultDurationS: 45,
+    incrementKg: 0,
+    externalLoad: false,
+  });
+  const LIB: LibraryExercise[] = [...L1, DB_ROW_EX, SIDE_PLANK_EX];
+  const BEFORE: FocusCtx = { plan: P1, library: LIB };
+  const DB_ROW = { ...ROW, exerciseId: "db-row", sets: 2 };
+  const SIDE_PLANK = { ...PLANK, exerciseId: "side-plank", sets: 1 };
+  const swapped = (index: number, item: (typeof P1.items)[number]): FocusCtx => ({
+    plan: { ...P1, items: P1.items.map((it, k) => (k === index ? item : it)) },
+    library: LIB,
+  });
+
+  function pauseAndSwap(start: FocusState, index: number, after: FocusCtx): FocusState {
+    const paused = reduce(start, { type: "PAUSE", atMs: T0 + 1000 }, BEFORE);
+    const replaced = reduce(
+      paused,
+      { type: "PLAN_REPLACED", itemIndex: index, atMs: T0 + 2000 },
+      after,
+    );
+    return replaced;
+  }
+
+  it("T-0410 AC1 reps: old barbell-row set at the clamped position → RESUME stays on set 1 of db-row", () => {
+    const start = at("set", { itemIndex: 1, setIndex: 2, loggedSets: [set(1, 0), set(1, 1)] });
+    const after = swapped(1, DB_ROW);
+    const replaced = pauseAndSwap(start, 1, after);
+    expect(replaced).toMatchObject({ phase: "paused", resumePhase: "set", setIndex: 1 });
+    const resumed = reduce(replaced, { type: "RESUME", atMs: T0 + 30_000 }, after);
+    expect(resumed).toMatchObject({ phase: "set", itemIndex: 1, setIndex: 1 });
+    expect(resumed.timer).toBe(start.timer);
+    expect(resumed.timer).toBeNull();
+  });
+
+  it("T-0410 AC1 pair: a db-row set logged at (1, 1) while paused → RESUME goes to confirm with the auto-save", () => {
+    const start = at("set", { itemIndex: 1, setIndex: 2, loggedSets: [set(1, 0), set(1, 1)] });
+    const after = swapped(1, DB_ROW);
+    const replaced = pauseAndSwap(start, 1, after);
+    const dbRowSet = set(1, 1, { clientId: "c-db-row", exerciseId: "db-row", weightKg: 30 });
+    const logged = reduce(replaced, { type: "SET_LOGGED", set: dbRowSet, atMs: T0 + 3000 }, after);
+    const resumed = reduce(logged, { type: "RESUME", atMs: T0 + 30_000 }, after);
+    expect(resumed).toMatchObject({ phase: "confirm", itemIndex: 1, setIndex: 1 });
+    expect(resumed.timer).toEqual({ startedAtMs: T0 + 30_000, durationS: AUTOSAVE_S, pausedMs: 0 });
+  });
+
+  const plankSet = (extra: Partial<LoggedSet> = {}): LoggedSet =>
+    set(3, 0, { reps: null, weightKg: null, durationS: 50, ...extra });
+
+  it("T-0410 AC2 timed: old plank set at the clamped position → RESUME stays in timed at set 0", () => {
+    const start = at("timed", { itemIndex: 3, setIndex: 1, loggedSets: [plankSet()] });
+    const after = swapped(3, SIDE_PLANK);
+    const replaced = pauseAndSwap(start, 3, after);
+    expect(replaced).toMatchObject({ phase: "paused", resumePhase: "timed", setIndex: 0 });
+    const resumed = reduce(replaced, { type: "RESUME", atMs: T0 + 30_000 }, after);
+    expect(resumed).toMatchObject({ phase: "timed", itemIndex: 3, setIndex: 0, timer: null });
+  });
+
+  it("T-0410 AC2 pair: a side-plank set logged at (3, 0) while paused → RESUME = TIMED_RECORDED at that atMs", () => {
+    const start = at("timed", { itemIndex: 3, setIndex: 1, loggedSets: [plankSet()] });
+    const after = swapped(3, SIDE_PLANK);
+    const replaced = pauseAndSwap(start, 3, after);
+    const side = plankSet({ clientId: "c-side", exerciseId: "side-plank" });
+    const logged = reduce(replaced, { type: "SET_LOGGED", set: side, atMs: T0 + 3000 }, after);
+    const atMs = T0 + 30_000;
+    const resumed = reduce(logged, { type: "RESUME", atMs }, after);
+    const plainResume = reduce(replaced, { type: "RESUME", atMs }, after);
+    expect(plainResume.phase).toBe("timed");
+    const recorded = reduce(plainResume, { type: "TIMED_RECORDED", set: side, atMs }, after);
+    expect(resumed).toEqual(recorded);
+    expect(resumed.phase).not.toBe("timed");
   });
 });

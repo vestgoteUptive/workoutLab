@@ -113,3 +113,22 @@ green · e2e green (it touches `apps/web/src/**`) · contracts unchanged · comm
 set`).
 
 ## Build / accept log
+
+### Build 2026-10-02 (frontend-dev)
+- `machine.ts` `movedOnIfLogged`: the logged entry at `itemIndex:setIndex` must also have the
+  current item's `exerciseId`; otherwise RESUME returns the resumed state as is. Still pure.
+- `session.tsx`: `FocusSetInput.source?: "focus" | "list"` (default `"focus"`). The in-flight key
+  is `${source}:${itemIndex}:${setIndex}:${exerciseId}`. `source` is destructured off before
+  `writeSet`, so `lib/offline` `recordSet` never sees it. The `FocusSession.recordSet` doc names
+  the key. `writeSet`'s position-based dispatch is unchanged.
+- Tests: `__tests__/machine.session.test.ts` "T-0410 RESUME after a swap while paused" (AC1, AC1
+  pair, AC2, AC2 pair; `db-row` and `side-plank` rows added to the test's own ctx library);
+  `__tests__/session.writes.test.tsx` "T-0410 recordSet in-flight dedupe key" (AC3 no source and
+  `source: "list"`, AC4, AC5, AC6), with the first `lib/offline` `recordSet` held on a deferred
+  gate and then run for real; every promise is resolved, so no unhandled rejections.
+- **Red proof** (new tests against main's `machine.ts` and `session.tsx`, before the fix):
+  6 failed / 51 passed. AC1 (phase was `confirm`), AC2 (left `timed`: phase `done`), AC4 and AC5
+  (`recordSet` called 1 time, expected 2) all failed, as did the AC2 pair (its plain-RESUME
+  baseline left `timed`) and AC3's `source: "list"` half (`source` reached `lib/offline`). AC3 (no
+  source) and AC6 passed on main, as they pin T-0304b behaviour.
+- AC7: no existing UF-09 test or e2e row edited; the export pin is unchanged.

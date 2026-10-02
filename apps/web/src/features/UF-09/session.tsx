@@ -23,8 +23,10 @@ import { elapsedS as elapsedSOf, remainingS } from "./timer.js";
 /** The stored `sessions` row (`(await offlineDb().sessions.get(id)).row`). */
 export type SessionRow = SessionInsert;
 
-/** `recordSet`'s input: the `lib/offline` input plus the plan item the set belongs to. */
-export type FocusSetInput = RecordSetInput & { itemIndex: number };
+/** `recordSet`'s input: the `lib/offline` input plus the plan item the set belongs to, and who
+ *  logs it: `"focus"` (the default, UF-09.3/.7) or `"list"` (the UF-09.9 List view, T-0305a).
+ *  `source` only keys the in-flight dedupe; it never reaches `lib/offline`. */
+export type FocusSetInput = RecordSetInput & { itemIndex: number; source?: "focus" | "list" };
 
 /**
  * The value of `useFocusSession()` (D-0066 §12, D-0071 §5). A seam overlay gets the same value
@@ -56,7 +58,10 @@ export interface FocusSession {
   elapsedS: number;
   /** Logs a set through `lib/offline` `recordSet`, then adds it to `loggedSets`. The current
    *  set in `set`/`timed` moves the machine (`SET_RECORDED`/`TIMED_RECORDED`); any other set is
-   *  a List-view log and moves nothing. Rejects, with no change, when the write rejects. */
+   *  a List-view log and moves nothing. Rejects, with no change, when the write rejects.
+   *  While a write is pending, a call with the same key
+   *  `${source ?? "focus"}:${itemIndex}:${setIndex}:${exerciseId}` gets that write's promise
+   *  (a remounted Done set), not a second row; any other key writes its own row (T-0410). */
   recordSet(input: FocusSetInput): Promise<LoggedSet>;
   /** `lib/offline` `editSet`, then updates that entry. */
   editSet(clientId: string, patch: SetEdit): Promise<void>;
@@ -143,12 +148,14 @@ async function storedRow(sessionId: string): Promise<SessionRow> {
 export function createFocusActions(deps: FocusActionDeps): FocusActions {
   const { sessionId, store, storage } = deps;
   let finishing: Promise<void> | null = null;
-  /** In-flight `recordSet` writes by `itemIndex:setIndex` (NFR-SYNC-1, T-0304b rework): a view
-   *  remounted by Pause → Resume has lost its own pending guard, so a second Done set for the
-   *  same set while the first write is pending gets the same promise, not a second row. */
+  /** In-flight `recordSet` writes by `source:itemIndex:setIndex:exerciseId` (NFR-SYNC-1, T-0304b
+   *  rework, T-0410): a view remounted by Pause → Resume has lost its own pending guard, so a
+   *  second Done set for the same set while the first write is pending gets the same promise,
+   *  not a second row. Another exercise at that position (after a swap) or a List-view log is a
+   *  different set and writes its own row. */
   const recording = new Map<string, Promise<LoggedSet>>();
 
-  const writeSet = async (input: FocusSetInput): Promise<LoggedSet> => {
+  const writeSet = async (input: Omit<FocusSetInput, "source">): Promise<LoggedSet> => {
     const queued = await queueRecordSet(input);
     const set: LoggedSet = {
       clientId: queued.clientId,
@@ -172,8 +179,8 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
   };
 
   return {
-    recordSet(input) {
-      const key = `${input.itemIndex}:${input.setIndex}`;
+    recordSet({ source = "focus", ...input }) {
+      const key = `${source}:${input.itemIndex}:${input.setIndex}:${input.exerciseId}`;
       const pending = recording.get(key);
       if (pending) return pending;
       const run = writeSet(input);
