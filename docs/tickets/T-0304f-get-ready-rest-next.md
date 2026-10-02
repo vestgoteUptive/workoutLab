@@ -193,3 +193,35 @@ example `T-0304f UF-09.5: rest ring warns at 10 s`).
   - **UF-09.6 kg.** There is no kg element (and no "·") for a `null` pre-fill weight, and none for a bodyweight lift (`externalLoad: false`).
   - **e2e names.** The e2e library mock is empty, so names fall back to the exercise id ("Next · barbell-row"). Each AC-5 row removes the stored `wl-focus:<id>` before the offline reload, so UF-09.1 starts afresh and isn't expired by the precache wait.
 - **Runs.** These were all green: `pnpm --filter @workoutlab/web typecheck lint test` (135 files, 2032 tests); `test:e2e uf-09-focus uf-08-setup` (23 passed); `-w format:check`; `check:repo`.
+
+## Accept log
+
+### QA 2026-10-02: done
+- AC-1 to AC-6 are each proven with both values of every binary condition.
+- 9 planted faults; 8 went red. The 9th (the `saidTen` guard removed) is harmless: setting the same text again re-announces nothing.
+- `pnpm -w typecheck lint test --force --concurrency=1` 19/19 and the whole e2e suite 86/86, under the lock.
+- Break-it probes passed: reload mid-rest, Pause/Resume, +15 s after the 10 s crossing, −15 s ×9, and rest expiry under the List-view overlay. Console clean.
+
+### Review 2026-10-02: approved
+The timers are wall-clock from the machine. The announcer speaks only on crossings it saw, and it is idempotent under StrictMode. The rest buttons go through the hook. The CSS uses tokens only, and the i18n is clean.
+
+### Accept 2026-10-02 (product-owner): done
+- **AC-1:** passes (`get-ready.test.tsx`). The 5 → 1 bare-second countdown, the no-warm-up pair, COUNTDOWN_END to UF-09.2 or UF-09.3, Start now, Skip warm-up, and focus on mount are all covered.
+- **AC-2:** passes (`announcer.test.tsx`, 11 cases). This covers the live 120 s rest ("" → "10 seconds" → "Go", still in the DOM on UF-09.3), the Skip and Start now pairs, the UF-09.1 expiry "Go", and the two restore-past-expiry cases staying "" after 50 ms. The planted fault (announcer inside the rest view) turned 19 of 20 red, as required.
+- **AC-3:** passes (`rest.test.tsx`, `countdown-sources.test.ts`). The lengths are `REST_COMPOUND_S`/`REST_ISOLATION_S`, with a live source scan for literals. The other checks: −15 s ×9 shows 0:00, GO and one REST_END; +15 s gives 2:15; Skip; the warn at 11/10 with the `var(--wl-color-warn)` source test; and the four "Next" lines with focus on Skip rest. The planted `< 10` fault went red, as required.
+- **AC-4:** passes (`next-exercise.test.tsx`). This covers the heading, `itemSummary`, the sibling kg and the cue (with no-cue and rejected-read pairs), the null-weight pair, READY at 60 s and on I'm ready, focus, and the seams pair.
+- **AC-5:** passes. The rows "T-0304f AC-5 get ready, rest and next, offline" in `tests/e2e/uf-09-focus.spec.ts` run offline after the precache. axe gives 0 serious or critical on .1, .5 and .6, and the request guard reports nothing unclaimed. The T-0304a AC-7 e2e UF-09.1 count is updated to 3 and noted in the build log.
+- **AC-6:** passes. The strings come from `en.uf09`, and lint is green. The export pin is unchanged. The button pins are `getReady` 3/2, `rest` 4 and `next` 2. The T-0304a AC-2 tick scan is still green, and it also runs over the new views.
+- **Pin edits.** The `host.chrome`, `seams` and e2e button-count edits are exactly what D-0118 §12 names.
+  - The `host.expiry.test.tsx` (T-0304a AC-9) edit, "0:01" → "1", falls under §12's update-not-drop intent. That pin encoded the placeholder's text format, and AC-1 (parent AC-B1) requires the bare-second format. Every timing assertion in that case is unchanged: still UF-09.1 at 4 999 ms, zero COUNTDOWN_END, then UF-09.2 with one COUNTDOWN_END at 5 s. Nothing is weakened.
+  - A one-line §12 amendment that covers placeholder text-format pins is proposed as a follow-up.
+- **Principles.** Every principle holds:
+  - 1: each countdown view shows one task, and the announcer is a visually hidden live region, not on-screen content.
+  - 2: untouched.
+  - 3: the rest lengths come from the engine constants.
+  - 4 and 5: unaffected.
+- **Edge cases.** Offline (AC-5), time running out (−15 s floor, Skip, the 60 s auto-advance), zero history ("Set weight", no kg element) and reload (the T-0304a AC-4 restore stays green) are all covered.
+- **DoD.** The full gate and the whole e2e suite are green under the lock. Contracts are unchanged. The commits cite T-0304f and the screen IDs.
+- **Follow-ups:**
+  - Amend D-0118 §12 so it also covers placeholder text-format pins (squad/orchestrator).
+  - Add a Date-only jump case to `get-ready.test.tsx` (web-feature:UF-09, optional).
