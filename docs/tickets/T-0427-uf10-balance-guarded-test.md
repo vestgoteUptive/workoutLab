@@ -131,3 +131,25 @@ guarded fixture`).
   `test:repo-checks` gave 146 pass. `format:check` and `check:repo` were green.
 - **Follow-up (from Coordination):** every `tests/e2e/*.spec.ts` now imports the fixture. A
   later qa ticket can assert "every spec is guarded" at the source level.
+
+### QA (2026-10-02): pass
+QA reran every claim on HEAD 033f7b5 and reverted each probe. `git status` was clean afterwards.
+- **AC1 red run, reproduced.** With the old `import { expect, test, type Page } from
+  "@playwright/test"` restored, `test:e2e uf-10-balance` failed with `Test has unknown parameter
+  "supabaseGuard".` / `"consoleGuard".`. **Extra QA probe:** a planted
+  `fetch(VITE_SUPABASE_URL + "/functions/v1/qa-probe")` in the AC1 test made
+  `supabaseGuard.unclaimed()` fail (`GET https://abc.supabase.co/functions/v1/qa-probe`), plus
+  the teardown `unclaimed supabase request`. So the assertion is live.
+- **AC3 planted fault, reproduced.** Adding `console.error("t0427-planted")` after the settle in
+  the `/balance` QA test failed it at teardown (`guarded-test.ts:226`) with `console error in
+  e2e … console.error: t0427-planted (:0)`. The other 7 tests passed.
+- **AC2/AC4.** The spec has no `consoleGuard.allow(` and no `forgetPlantedLeaks`. In
+  `fixture-guard.spec.ts`, `T-0425 AC5 uf-10-balance.spec.ts imports test from guarded-test.js`,
+  `T-0425 AC5 every consoleGuard.allow(` and `T-0430 AC1 no guarded spec registers its own
+  console or pageerror listener` all pass (46/46).
+- **AC5 and the gates.** `test:e2e` gave 138 passed. `pnpm -w typecheck lint test --force
+  --concurrency=1` gave 19/19. `format:check` was green, `check-all.mjs` exited 0, and
+  `test:repo-checks` gave 146 pass / 0 fail. The branch merges cleanly into the current main.
+- **Note (not a gap).** A request that hits the spec's own `mockSupabaseRest` 501 backstop counts
+  as claimed, so the guard doesn't enforce the build log's "none reached the backstop". The
+  existing behaviour assertions would catch a missing data mock.
