@@ -124,3 +124,25 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
   - (b) **One `now` per open:** `Date` moves 10 min forward between mount and Use, and `applySwap` still gets the mount-time `now`, the same one `rankSwaps` got. With `new Date().toISOString()` read at the tap, 1 case is red. The contrast case: a sheet opened after the move uses the new time.
   - (c) **Tab wrap:** Tab on Close goes to the first control, Shift+Tab on the first control (or on the panel) goes to Close, and a middle control is left to the browser. With the wrap's `focus()` calls removed, 2 cases are red.
 - **Slot change while mounted (the choice for T-0422, T-0418 and T-0303c): the sheet resets itself.** When `itemIndex` or the current item's `exerciseId` changes, it goes back to Best match, selects the first row and clears the notice. A new `workout` object for the same slot keeps the reason and the pick, so a host that re-reads its plan doesn't wipe the user's choice. Mounts don't need `key={itemIndex}`, and a key does no harm. This is documented on `SwapSheet`. With the reset removed from the slot check, 1 case is red ("a new itemIndex goes back to Best match"), and its contrast (same slot, new object) stays green.
+
+## Accept log
+- 2026-10-02, product-owner, accept at `b050c39` (main merged in, with T-0426/D-0144; TR-0042 resolved). Verdict: **done**.
+- Each AC mapped to its test in `features/UF-05/__tests__/`:
+  - AC-1: `engine.test` "opens on Best match with the rule 12 order and one Best match tag".
+  - AC-2: `mocked.test` mocked order, its reverse as the contrast, and "never filters".
+  - AC-3: `engine.test` checks the five-chip radiogroup, Short on time renders R12-E2 and Discomfort renders R12-E4 (then back to null), and `it.each` covers equipment_taken and variety.
+  - AC-4: `mocked.test` row content, with ceil 375 → 7 and 360 → 6, Bodyweight for `[]`/`["none"]`, and the bestMatch tag both ways.
+  - AC-5: `mocked.test` fitsBudget false and true, plus the real-engine R12-E11 case in `engine.test`.
+  - AC-6: `engine.test` checks the Variety → db-row reference-equal spy args and return, the Best match null reason, and the first row applied by default. `exports-and-lint` has the source test (no `prefill(`, costS arithmetic, reasons or item spread).
+  - AC-7: `engine.test` main vs accessory slot, carry vs first_time, and a 12-day vs 3-day gap (hold_after_break).
+  - AC-8: `mocked.test` empty vs non-empty, profile null, library rejecting and rankSwaps throwing, with an `unhandledRejection` listener.
+  - AC-9: offline with no fetch and the queued set in `engine.test`. Pending with aria-disabled, void onApply, rejection with the polite notice and retry, and a RangeError throw in `mocked.test`.
+  - AC-10: `engine.test` `it.each` over R12-E6, E8, E9 and E10 through `parseSessionPlan`, plus a contrast showing that the parser can reject.
+  - AC-11: `dialog.test` dialog name, Escape, no `a[href]` in any state, the Replacement radiogroup, the 44 px stylesheet check, and axe in all three states.
+  - AC-12: `exports-and-lint` export-keys pin, the import bans and the `ESLint.lintText` ban check.
+- Planted faults: the three the ticket requires (UI sort, UI-built item, hiding fitsBudget:false) are recorded red in the build log. Rework 2 adds red proofs for the D-0160 chip reset, one `now` per open, the Tab wrap and the slot reset. Review found three untested D-0160 behaviours, and all three are now covered.
+- Principles:
+  - Principle 1 holds: it is a modal dialog with one task, no links, and Escape and Close only call `onClose`.
+  - Principle 3 holds: rows come from `rankSwaps` as returned, and `onApply` gets `applySwap`'s result unchanged.
+  - The time budget is respected: over-budget candidates are tagged and still pickable.
+- Contracts are unchanged. The build defaults are in D-0160 (`status: revisit`). Gates as reported by the builder: UF-05 75/75, web 2462 including `build.test`, and format and check-all green. The accept pass re-ran no tests.
