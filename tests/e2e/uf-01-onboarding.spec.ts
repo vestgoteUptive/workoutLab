@@ -446,8 +446,16 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
     const send = page.getByRole("button", { name: "Send link" });
     await tabTo(page, send);
     await expectVisibleFocus(send);
+    // T-0399 AC3 guard: a second status region outside the app root (an offline banner, a toast)
+    // must not break the UF-01.5 assertion, so the locator is scoped to the screen.
+    await page.evaluate(() => {
+      const other = document.createElement("p");
+      other.setAttribute("role", "status");
+      other.textContent = "other";
+      document.body.append(other);
+    });
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("status")).toHaveText(
+    await expect(page.locator(SCREEN("UF-01.5")).getByRole("status")).toHaveText(
       "Check your email for a link and a 6-digit code.",
     );
 

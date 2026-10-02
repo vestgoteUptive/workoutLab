@@ -433,19 +433,19 @@ describe("T-0382 UF-01.5 tabs and live region", () => {
     expectSelected(sendTab(), codeTab());
   });
 
-  it("T-0382 AC2 End goes to Enter code and Home to Send link (each also from its own end)", () => {
+  it("T-0399 AC2 (T-0382 AC2) End goes to Enter code and Home to Send link (each also from its own end)", async () => {
     renderAt("/account");
     sendTab().focus();
-    fireEvent.keyDown(sendTab(), { key: "End" });
+    await press("End");
     expect(document.activeElement).toBe(codeTab());
     expectSelected(codeTab(), sendTab());
-    fireEvent.keyDown(codeTab(), { key: "End" });
+    await press("End");
     expect(document.activeElement).toBe(codeTab());
     expectSelected(codeTab(), sendTab());
-    fireEvent.keyDown(codeTab(), { key: "Home" });
+    await press("Home");
     expect(document.activeElement).toBe(sendTab());
     expectSelected(sendTab(), codeTab());
-    fireEvent.keyDown(sendTab(), { key: "Home" });
+    await press("Home");
     expect(document.activeElement).toBe(sendTab());
     expectSelected(sendTab(), codeTab());
   });
