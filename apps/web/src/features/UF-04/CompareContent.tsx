@@ -2,6 +2,7 @@
 // time per set is the engine's `setCostS`, never re-derived here (principle 3).
 import { Link, Navigate, useParams } from "react-router";
 import { setCostS, type LibraryExercise } from "@workoutlab/engine";
+import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import type { ExerciseDetail } from "../../lib/offline/db.js";
 import { loadLibrary } from "../../lib/offline/history.js";
@@ -28,6 +29,7 @@ function orNone(values: string[]): string {
 
 export function CompareContent() {
   const { exerciseId = "", otherId = "" } = useParams();
+  const { status } = useAuth();
   const key = `${exerciseId}|${otherId}`;
   const { data, pending } = useScreenData<CompareData>(
     async () => {
@@ -39,7 +41,7 @@ export function CompareContent() {
       return { library, details: { [exerciseId]: first, [otherId]: second } };
     },
     key,
-    { refresh: true },
+    { refresh: true, status },
   );
 
   if (data === undefined) return null;

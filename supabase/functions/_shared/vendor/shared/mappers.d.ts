@@ -26,6 +26,9 @@ export declare function toAreaTarget(row: AreaTargetRow): AreaTarget;
 export declare function toAreaTargets(rows: readonly AreaTargetRow[]): AreaTarget[];
 /** `profiles` → EngineProfile. `plan_changed_at` is the engine's `planUpdatedAt` (D-0035, D-0041 §1). */
 export declare function toEngineProfile(row: ProfileRow): EngineProfile;
-/** `plan_checkins` → PlanCheckin. The engine reads only `answeredAt` (D-0041 §2). */
+/**
+ * `plan_checkins` → PlanCheckin. The engine reads only `answeredAt` (D-0041 §2). A null
+ * `completed_prev` (one-period evaluation, D-0070 §6) stays null.
+ */
 export declare function toPlanCheckin(row: PlanCheckinRow): PlanCheckin;
 export {};

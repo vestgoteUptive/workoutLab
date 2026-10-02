@@ -2,7 +2,7 @@
 // Source: packages/{pkg}/src. Rerun `node supabase/scripts/vendor.mjs` after an engine or
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
-import { type Area, type AreaTarget, type EngineProfile, type HistorySet, type Instant, type LibraryExercise, type SessionInput, type TimeZone, type Workout } from "./types.js";
+import { type Area, type AreaNumbers, type AreaTarget, type Backoff, type EngineProfile, type Goal, type HistorySet, type Instant, type LibraryExercise, type PrefillResult, type SessionInput, type SuggestProfile, type SwapReason, type TimeZone, type Workout, type WorkoutItem } from "./types.js";
 export { availableS, isEligible, itemCostS, setCostS, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, WORK_S, } from "./cost.js";
 /** Rule 7.2 caps. */
 export declare const MAX_ITEMS = 8;
@@ -10,6 +10,58 @@ export declare const MAX_ITEMS_PER_AREA = 2;
 /** `budgetMin` bounds (D-0037 §7, D-0040 §7). */
 export declare const BUDGET_MIN = 1;
 export declare const BUDGET_MAX = 480;
+/** The default goal when a profile has none (D-0095 §1): today's rule 7.2 slots. */
+export declare const DEFAULT_GOAL: Goal;
+/** Rule 7.2 rep slots by goal (D-0061 §1, D-0095): main lift, other compounds, isolation. */
+export declare const REP_SLOTS: Readonly<Record<Goal, Readonly<{
+    main: readonly [number, number];
+    compound: readonly [number, number];
+    isolation: readonly [number, number];
+}>>>;
+/**
+ * The goal a profile asks for (D-0095 §1): absent (or undefined) means `build_muscle`; any
+ * value that is not a `Goal` throws `RangeError`.
+ */
+export declare function goalOf(profile: Pick<SuggestProfile, "goal">): Goal;
+/**
+ * Rule 7.2 rep ranges for `goal` (D-0061 §1, D-0095 §2); timed items have none (D-0040 §5).
+ * Shared with `applySwap` (D-0093 §2). The default goal gives today's 6–8 / 8–12 / 10–15.
+ */
+export declare function repRange(ex: LibraryExercise, isMain: boolean, goal?: Goal): [number, number] | [null, null];
+/**
+ * The one rule 7.4 back-off (D-0040 §4, D-0131 §2), used by `suggest` and by `applySwap`'s rule
+ * 12.1 recompute: `backoffWeightKg(prefill weight, inc)` at the main `repsMin`.
+ */
+export declare function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): Backoff;
+/** The per-area numbers an item's `area_deficit` and `days_since` reasons read (D-0040 §6). */
+export interface ReasonContext {
+    deficits: AreaNumbers;
+    daysSince: Record<Area, number | null>;
+}
+/** One slot as `suggest` and `applySwap` build it (D-0093 §2–§3). */
+export interface ItemSpec {
+    exercise: LibraryExercise;
+    isMain: boolean;
+    sets: number;
+    /** The rule 14 pre-fill at `repRange(exercise, isMain, goal)`. */
+    prefill: PrefillResult;
+    /** Rule 7.4 High: the slot has a back-off set (a timed exercise never gets one, D-0047). */
+    backoff: boolean;
+    /** `swap {reason}` when the slot was swapped or shuffled; `undefined` adds no swap reason. */
+    swap: SwapReason | null | undefined;
+    /** Rule 7.4 Low: trimmed from 3 to 2 sets. */
+    lowTrimmed: boolean;
+    /** The exercise's planned duration (D-0092 §1); null for a non-timed exercise. */
+    plannedS: number | null;
+    /** The profile's goal for the rule 7.2 rep slot (D-0095 §2); absent means `build_muscle`. */
+    goal?: Goal;
+}
+/**
+ * The one item builder behind `suggest` and `applySwap` (D-0093 §2–§3): the rule 7.2 rep slot,
+ * the back-off, the planned-duration cost (D-0092) and the reasons in the D-0040 §6 order for
+ * the exercise's first primary area.
+ */
+export declare function buildItem(spec: ItemSpec, rc: ReasonContext): WorkoutItem;
 /**
  * Rule 7.2 candidate ranking for `area` at session start (R7-E7): the ids of the eligible
  * exercises with weight 1.0 there and no recovering primary area.
@@ -19,5 +71,7 @@ export declare function rankCandidates(area: Area, history: readonly HistorySet[
  * The next workout (UF-08.1, UF-08.4; rules 7, 10). Pure: the same inputs give a
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
  * Selection is main → pinned → greedy → shuffle (rule 13), then energy (rule 7.4, D-0056 §8).
+ * `profile.goal` picks the rule 7.2 rep slots only (D-0061 §1, D-0095); absent means
+ * `build_muscle`, and an unknown goal throws `RangeError`.
  */
-export declare function suggest(history: readonly HistorySet[], targets: readonly AreaTarget[], profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], sessionInput: SessionInput, now: Instant, tz: TimeZone): Workout;
+export declare function suggest(history: readonly HistorySet[], targets: readonly AreaTarget[], profile: SuggestProfile, library: readonly LibraryExercise[], sessionInput: SessionInput, now: Instant, tz: TimeZone): Workout;

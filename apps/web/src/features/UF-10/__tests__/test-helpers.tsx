@@ -5,7 +5,12 @@ import type { ReactElement } from "react";
 import { render, type RenderResult } from "@testing-library/react";
 import { MemoryRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router";
 import type { Area, AreaTarget, LibraryExercise } from "@workoutlab/shared";
-import { resetOfflineDbForTest, type OfflineDb } from "../../../lib/offline/db.js";
+import {
+  resetOfflineDbForTest,
+  setKey,
+  userScopedKey,
+  type OfflineDb,
+} from "../../../lib/offline/db.js";
 import { Balance, BalanceDetail, type BalanceScreenProps } from "../index.js";
 import { AREA_ORDER, type SetSpec } from "./fixtures.js";
 
@@ -50,14 +55,16 @@ export interface SeedOptions {
 /**
  * Seeds the real `lib/offline` caches. This writes the same rows `refreshHistory`/
  * `refreshLibrary`/`refreshTargets` would, so the screens' own loaders (`loadEngineHistory`,
- * `loadLibrary`, `loadTargets`) read them without a single mock.
+ * `loadLibrary`, `loadTargets`) read them without a single mock. Every key comes from the
+ * production builders (`userScopedKey`, `setKey`; T-0371, D-0091 §1), so a keyed `get` finds
+ * the seeded row even if the on-disk key format moves.
  */
 export async function seedCache(db: OfflineDb, options: SeedOptions = {}): Promise<void> {
   const userId = options.userId ?? TEST_USER;
 
   for (const spec of options.sets ?? []) {
     await db.historyCache.put({
-      key: `${userId}:${spec.id}`,
+      key: userScopedKey(userId, spec.id),
       userId,
       clientId: spec.id,
       sessionId: "S1",
@@ -74,7 +81,7 @@ export async function seedCache(db: OfflineDb, options: SeedOptions = {}): Promi
 
   for (const spec of options.queuedSets ?? []) {
     await db.sets.put({
-      key: `${userId}:${spec.id}`,
+      key: setKey(userId, spec.id),
       userId,
       clientId: spec.id,
       sessionId: "S2",
@@ -95,11 +102,11 @@ export async function seedCache(db: OfflineDb, options: SeedOptions = {}): Promi
   }
 
   for (const exercise of options.library ?? []) {
-    await db.libraryCache.put({ key: `${userId}:${exercise.id}`, userId, exercise });
+    await db.libraryCache.put({ key: userScopedKey(userId, exercise.id), userId, exercise });
   }
 
   for (const target of options.targets ?? []) {
-    await db.targetCache.put({ key: `${userId}:${target.area}`, userId, target });
+    await db.targetCache.put({ key: userScopedKey(userId, target.area), userId, target });
   }
 
   if (options.lastSyncedAt !== undefined) {

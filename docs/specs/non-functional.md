@@ -60,8 +60,8 @@ Reference device: a mid-range Android (Moto G Power class), Chrome, "Fast 4G" th
 | NFR-PRIV-1 | Data is hosted in an EU region (default Supabase `eu-north-1` Stockholm, else `eu-central-1`). | Terraform plan asserts the region. | T-0400 |
 | NFR-PRIV-2 | Data minimisation: we collect email, training data and plan settings only. No DOB, sex, body weight, heart rate or location coordinates (`sessions.location` is a label such as "gym" or "home"). | Schema review in T-0100, plus a security review. | T-0100 |
 | NFR-PRIV-3 | RLS: a user can read and write only their own rows. `exercises` and `areas` are read-only for everyone. | pgTAP: user A can't select, update or delete user B's rows. | T-0100 |
-| NFR-PRIV-4 | Export in-app: one JSON file with every row the user owns, delivered within 10 s for 2 years of data. | Edge function or client test with a seed of 5,000 sets. | T-0307 or follow-up |
-| NFR-PRIV-5 | Account deletion in-app: after confirmation, the auth user and all owned rows are deleted immediately (cascade), and local caches and the queue are cleared. | pgTAP cascade test + e2e. | follow-up (web-shell) |
+| NFR-PRIV-4 | Export in-app: one JSON file with every row the user owns, delivered within 10 s for 2 years of data. | Edge function or client test with a seed of 5,000 sets. | T-0310c, T-0310d (D-0136) |
+| NFR-PRIV-5 | Account deletion in-app: after confirmation, the auth user and all owned rows are deleted immediately (cascade), and local caches and the queue are cleared. | pgTAP cascade test + e2e. | T-0310b, T-0310c, T-0310d (D-0135, D-0136) |
 | NFR-PRIV-6 | A privacy notice linked from UF-01.5 and the landing page covers what we store, why, where, and how to export or delete it. | Content review before H-06. | T-0309, T-0403 |
 | NFR-PRIV-7 | No credentials or PII appear in logs. Edge Functions log request IDs, not emails. | Security review. | T-0203 |
 

@@ -125,7 +125,7 @@ describe("R7-E8 never over budget (property)", () => {
         }
       }
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 
   it("R7-E8 rule-7 (AC14) 200 seeded histories with budgets 1–480 (a failure prints its seed)", () => {
     for (let seed = 1; seed <= 200; seed++) {
@@ -141,7 +141,7 @@ describe("R7-E8 never over budget (property)", () => {
         throw new Error(`seed ${seed}: ${(err as Error).message}`);
       }
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 });
 
 /** AC28: Low never changes the main item or adds items; High adds ≤ 1 back-off, main only. */
@@ -187,7 +187,7 @@ describe("rule 7.4 energy keeps the R7-E8 invariants (property)", () => {
           }
         }
       }
-    });
+    }, 30_000); // runtime budget only (sweep)
 
     it(`rule-7 (AC28) energy ${energy}: 200 seeded histories with budgets 1–480 (a failure prints its seed)`, () => {
       for (let seed = 1; seed <= 200; seed++) {
@@ -204,7 +204,7 @@ describe("rule 7.4 energy keeps the R7-E8 invariants (property)", () => {
           throw new Error(`seed ${seed}: ${(err as Error).message}`);
         }
       }
-    });
+    }, 30_000); // runtime budget only (sweep)
   }
 });
 

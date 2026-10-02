@@ -1,0 +1,177 @@
+/* UF-05.1 Swap sheet (T-0421). Tokens only (D-0019): no hex values, no new fonts. State (the
+   checked chip and row, aria-disabled) is styled from attributes here, never inline, so the
+   :focus-visible ring is never overridden (WCAG 2.4.7). Every control is at least 44 × 44 px
+   (NFR-A11Y-2). */
+.wl-uf05 {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--wl-color-bg-focus);
+}
+
+.wl-uf05__panel {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  inline-size: 100%;
+  max-block-size: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface);
+  border-top: 1px solid var(--wl-color-line-strong);
+  font-family: var(--wl-font-body);
+}
+
+.wl-uf05__panel:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: -2px;
+}
+
+.wl-uf05__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+}
+
+.wl-uf05__message,
+.wl-uf05__notice {
+  margin: 0;
+}
+
+.wl-uf05__notice:empty {
+  display: none;
+}
+
+.wl-uf05__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wl-uf05__chip,
+.wl-uf05__row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--wl-color-line-strong);
+  cursor: pointer;
+}
+
+.wl-uf05__chip {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-weight: 500;
+}
+
+.wl-uf05__chip input,
+.wl-uf05__row input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.wl-uf05__chip:has(input:checked) {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+  font-weight: 700;
+}
+
+.wl-uf05__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-uf05__row {
+  min-height: 56px;
+  padding: 8px 12px;
+  border-radius: 16px;
+}
+
+.wl-uf05__row:has(input:checked) {
+  border: 2px solid var(--wl-color-accent);
+}
+
+.wl-uf05__chip:has(input:focus-visible),
+.wl-uf05__row:has(input:focus-visible) {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-uf05__row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wl-uf05__name {
+  font-weight: 700;
+}
+
+.wl-uf05__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf05__tags {
+  display: flex;
+  gap: 8px;
+}
+
+.wl-uf05__tag {
+  padding: 2px 8px;
+  color: var(--wl-color-accent-hover);
+  background: var(--wl-color-surface-2);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.wl-uf05__tag[data-tag="over-time"] {
+  color: var(--wl-color-warn);
+}
+
+.wl-uf05__use,
+.wl-uf05__close {
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 8px 24px;
+  border-radius: 8px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.wl-uf05__use {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border: 0;
+  font-weight: 700;
+}
+
+.wl-uf05__use[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.wl-uf05__close {
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 1px solid var(--wl-color-line-strong);
+}
+
+.wl-uf05__use:focus-visible,
+.wl-uf05__close:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}

@@ -14,8 +14,15 @@ import {
   injectSession,
   mockProfilePresent,
   mockSupabaseAuth,
+  mockSupabaseData,
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
+import {
+  exerciseAreas,
+  exerciseVariants,
+  exercises,
+  profile,
+} from "./fixtures/uf-04-library-data.js";
 import { expect, test } from "./fixtures/guarded-test.js";
 
 const TAB_ROUTES = ["/", "/library", "/progress", "/plan"] as const;
@@ -137,6 +144,17 @@ test.describe("AC-6 the Phase 3 sub-route chunks are precached (offline)", () =>
   // under test are `session`-guarded, not `protected`, so the profile gate doesn't redirect them
   // (D-0073 §2) — and the request is still claimed by the 501, so the guard stays green. Stated
   // rather than left implicit, because the shadowing is the non-obvious part.
+  //
+  // T-0905 (D-0091): rows for *built* screens seed their data and assert the URL holds; the
+  // generic loop below is for stubs only. A built screen may correctly redirect on an empty
+  // cache (UF-04.3 sends an unknown exercise id to `/library`, D-0079 §3), and a bare
+  // `toBeVisible` on the outer `data-screen-id` wrapper then passes or fails on whether the
+  // first poll lands before the redirect. So UF-04.3 has its own seeded test plus an
+  // empty-cache contrast, and the loop asserts the URL is unchanged after render, which turns
+  // the next built screen that redirects into a deterministic failure. The T-0904 note above
+  // (the 501 shadowing `profiles*`) still applies to the stub rows. `/progress/back-squat`
+  // (UF-06.2) is still the stub on main; T-0307b takes it out of the loop and seeds it the
+  // same way (D-0091 §4–§5).
   test.beforeEach(async ({ page }) => {
     await mockSupabaseRest(page);
   });
@@ -177,8 +195,9 @@ test.describe("AC-6 the Phase 3 sub-route chunks are precached (offline)", () =>
     await expect(page.locator('[data-screen-id="UF-03.3"]')).toBeVisible({ timeout: 3000 });
   });
 
+  const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
   const OTHER_SUB_ROUTES = [
-    ["/library/back-squat/compare/leg-press", "UF-04.3"],
     ["/progress/back-squat", "UF-06.2"],
     ["/plan/edit", "UF-11.3"],
     ["/plan/routines/new", "UF-07.1"],
@@ -199,6 +218,55 @@ test.describe("AC-6 the Phase 3 sub-route chunks are precached (offline)", () =>
       await page.goto(path);
 
       await expect(page.locator(`[data-screen-id="${screenId}"]`)).toBeVisible({ timeout: 3000 });
+      await expect(page).toHaveURL(new RegExp(`${escapeRegExp(path)}$`));
     });
   }
+
+  // T-0905 AC-1 (D-0091 §1–§2): with the library cached by one online visit, a cold offline
+  // deep-link to Compare renders the built UF-04.3 and stays on its URL.
+  test("/library/back-squat/compare/leg-press renders UF-04.3 offline with a cached library", async ({
+    page,
+    context,
+  }) => {
+    // Registered after this describe's 501 backstop, so it wins for every table it serves
+    // (Playwright runs the most-recently-registered matching handler first).
+    await mockSupabaseData(page, {
+      sets: [],
+      exercises,
+      exerciseAreas,
+      exerciseVariants,
+      areaTargets: [],
+      profile,
+    });
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/library");
+    await expect(page.locator('[data-field="name"]').first()).toBeVisible();
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+    await page.goto("/library/back-squat/compare/leg-press");
+
+    await expect(page.locator('[data-screen-id="UF-04.3"]')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("columnheader", { name: "Leg press" })).toBeVisible();
+    await expect(page).toHaveURL(/\/library\/back-squat\/compare\/leg-press$/);
+  });
+
+  // T-0905 AC-2 (D-0091 §3, D-0079 §3): the contrast. With nothing cached, the same offline
+  // deep-link redirects to the Library's empty state instead of a blank screen.
+  test("/library/back-squat/compare/leg-press lands on UF-04.1 offline with an empty cache", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+    await page.goto("/library/back-squat/compare/leg-press");
+
+    await expect(page).toHaveURL(/\/library$/);
+    await expect(page.locator('[data-screen-id="UF-04.1"]')).toBeVisible({ timeout: 3000 });
+  });
 });

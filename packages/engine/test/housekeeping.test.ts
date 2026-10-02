@@ -268,6 +268,7 @@ describe("housekeeping T-0202 (rule 9)", () => {
       "Europe/Stockholm",
     );
     expect(r.nextCheckinDate).toBe("2026-10-11");
-    expect(r.periods.map((p) => p.index)).toEqual([2, 3]);
+    // One period (D-0094 §1, T-0215 AC26): only P3, the last ended period, is listed.
+    expect(r.periods.map((p) => p.index)).toEqual([3]);
   });
 });

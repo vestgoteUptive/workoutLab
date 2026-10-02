@@ -12,6 +12,11 @@ import {
   refreshCheckins,
 } from "./history.js";
 import { currentUserId } from "./current-user.js";
+import { onQueueWrite } from "./queue.js";
+
+/** D-0116 §2: an online enqueue flushes this long after the *last* queue write (trailing
+ *  debounce), so a burst of writes inside the window gives one flush. */
+const ENQUEUE_FLUSH_DEBOUNCE_MS = 250;
 
 /** One refetch each of history, targets, profile and library after a flush that sent ≥ 1 row
  *  (AC-C17), plus sessions and check-ins (T-0319 AC-8): a flush is exactly when the server's
@@ -65,6 +70,46 @@ export function startSync(options: { tz: string }): SyncHandle {
     inFlight = inFlight.then(() => guarded);
   }
 
+  // D-0116 §1–§4: flush soon after an online enqueue. The queue notifies once its IDB write has
+  // committed; offline at notify time does nothing (the `online` event covers it). At most one
+  // enqueue-triggered flush is in flight: a debounce that fires while one runs queues exactly one
+  // more, which starts once the running one settles. Each such flush goes through the scheduler
+  // (so `network-error` gets the normal backoff, D-0045 §6) and through `track()` (so `settled()`
+  // covers it and a rejection is swallowed, D-0104).
+  let stopped = false;
+  let debounce: ReturnType<typeof setTimeout> | null = null;
+  let enqueueFlushRunning = false;
+  let enqueueFlushQueued = false;
+
+  function enqueueFlush(): Promise<void> {
+    if (stopped) return Promise.resolve();
+    if (enqueueFlushRunning) {
+      enqueueFlushQueued = true;
+      return Promise.resolve();
+    }
+    enqueueFlushRunning = true;
+    return scheduler
+      .runNow()
+      .catch(() => undefined)
+      .then(() => {
+        enqueueFlushRunning = false;
+        if (!enqueueFlushQueued) return;
+        enqueueFlushQueued = false;
+        return enqueueFlush();
+      });
+  }
+
+  const unsubscribeQueue = onQueueWrite(() => {
+    if (stopped || !navigator.onLine) return;
+    if (debounce) clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      debounce = null;
+      // The follow-up flush (if one gets queued) is part of this promise, so `settled()` waits
+      // for it too.
+      track(enqueueFlush());
+    }, ENQUEUE_FLUSH_DEBOUNCE_MS);
+  });
+
   const onOnline = () => track(scheduler.runNow());
   window.addEventListener("online", onOnline);
 
@@ -92,9 +137,15 @@ export function startSync(options: { tz: string }): SyncHandle {
       }
     },
     stop: () => {
+      stopped = true;
+      if (debounce) {
+        clearTimeout(debounce);
+        debounce = null;
+      }
+      unsubscribeQueue();
       window.removeEventListener("online", onOnline);
       subscription.subscription.unsubscribe();
-      scheduler.cancel();
+      scheduler.stop();
     },
   };
 }

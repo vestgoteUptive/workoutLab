@@ -6,6 +6,11 @@ date: 2026-09-29
 by: product-owner (T-0304 groom)
 area: product
 ---
+> **Amended in part by D-0111 (2026-10-02).**
+> - §1: the reducer is `focusReducer(state, event, ctx)` with `ctx = {plan, library}`, and every event carries `atMs`, so the reducer never reads a clock.
+> - D-0111 §4–§8 fix the state, the events, the synchronous store and timer expiry.
+> - §12: `useFocusSession()` and `seams.tsx` move to T-0304e (D-0111 §1).
+>
 > **Amended in part by D-0071 (2026-09-29).** §12: the seam entries carry `keepsClockRunning`, the UF-09.9 order follows user flows v2 (Resume · swap · Skip · how-to · list-view · End), "How to" is a seam (`ExerciseHowTo`, added by T-0305a) rather than a link to `/library/<id>`, and `useFocusSession()`'s `replaceItem`/`finish()` are specified in D-0071 §4–§5. The session row is `(await offlineDb().sessions.get(id)).row`.
 
 ## Context

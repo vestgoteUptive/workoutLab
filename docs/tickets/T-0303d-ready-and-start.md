@@ -1,0 +1,166 @@
+---
+id: T-0303d
+title: UF-08.4 Ready — summary, the 4-step focus explainer, the focus-prefs module and its index.tsx hand-off, Start → upsertSession (IndexedDB first, offline the same) → /session/<id>
+lane: web-feature:UF-08
+screens: [UF-08.4]
+decisions: [D-0002, D-0004, D-0015, D-0045, D-0053, D-0063, D-0065, D-0071, D-0086, D-0091, D-0103, D-0107, D-0108, D-0109, D-0110, D-0112, D-0123]
+deps: [T-0303b]
+status: done
+---
+<!-- Groomed 2026-10-02 by product-owner. Child of docs/tickets/T-0303-session-setup.md (ACs D1–D6 there, refined by D-0110). Build flow: wl-build-web. About ⅓ day. Becomes ready when T-0303b is done. Runs before T-0303c if both are ready (the parent's note). -->
+
+## Why
+UF-08.4 is the last screen before focus mode. It shows the engine's numbers for the plan the user is about to do, explains focus mode in four steps (principle 1: one task on screen, everything else behind Pause), and holds the three device settings that focus mode reads. Start creates the `sessions` row in IndexedDB **before** it navigates (NFR-OFF-2), so a workout started offline, or in a tab killed a second later, is never lost. Each Start makes its own session (NFR-SYNC-4). The web calls no Edge Function: the row goes through the `lib/offline` queue, and `AutoSync` sends it when it can (D-0071 §8).
+
+## Scope
+- In:
+  - **The UF-08.4 view in `features/UF-08`,** replacing the T-0303b placeholder. It keeps `data-screen-id="UF-08.4"` and contains:
+    - the summary line (D-0110 §2);
+    - the 4-step explainer;
+    - 3 switches;
+    - Start;
+    - Back → `?step=suggested`.
+  - **`features/UF-08/focus-prefs.ts`** (D-0110 §6) and its re-export from `features/UF-08/index.tsx`.
+  - **The `clock` prop** on `SessionSetup` (D-0110 §1).
+  - **Start** → `upsertSession` → `navigate("/session/<id>", {replace: true})` (D-0110 §3–§5).
+  - **Strings and e2e.** Strings go in `lib/i18n/flows/uf-08.ts`. e2e rows are appended to `tests/e2e/uf-08-setup.spec.ts`.
+- Out:
+  - Focus mode itself (T-0304a–e). Whatever the UF-09 host renders at `/session/<id>` is asserted only as `[data-screen-id^="UF-09"]`.
+  - Reading the prefs in UF-09 (T-0304c).
+  - Swap (T-0303c).
+  - Calling `POST /sessions/{id}/finish` or any Edge Function.
+  - Edits to `lib/offline/**` (`upsertSession` is imported as it is), `routes.ts`, `en.ts`, `components/**`, `tests/e2e/fixtures/**` and the shell tests (D-0108 §2–§3).
+  - Any contract change.
+
+### Edge cases that are in scope
+- **Offline:** Start writes IndexedDB and navigates with no network wait, online or offline (AC-6). A session started offline is sent once the device is back online. A session started online is sent at the next AutoSync trigger, such as a reload (AC-10, D-0112 §3).
+- **Time running out:** "done by" is computed when Ready opens, and `started_at` is the Start tap, so setup time isn't charged to the workout's rule 8 clock (AC-1, AC-4). An empty plan still starts (AC-7).
+- **Zero history:** the summary renders the zero-history plan's numbers (W-R7E4, AC-1).
+- **Returning after 10 days off:** nothing here depends on history beyond the `Workout` it receives. Two setups started on two devices after a break make two sessions (AC-6).
+- **Double tap / failed write:** one session per Ready visit, and a retry reuses the id (AC-5).
+
+## Acceptance criteria
+**Test setup.**
+- Vitest + Testing Library in `apps/web/src/features/UF-08/__tests__/`, with T-0303a's F-web fixtures.
+- `now` and `clock` are injected (F-tz: `2026-09-27T12:00:00+02:00`, Europe/Stockholm, en-GB). `lib/offline` loaders are mocked. `upsertSession` is a spy unless an AC says "real" (then `fake-indexeddb`, plus a signed-in user stubbed through the supabase-js `localStorage` auth key that `currentUserId()` reads).
+- W-R7E4 is the `api/openapi.yaml` Workout example.
+- **Test rules** (state.md traps):
+  - Both values of every binary condition get a test.
+  - Negative asserts wait a real 50 ms macrotask.
+  - The "navigate only after the write" assert (AC-4) must fail on a planted fault: navigate before awaiting. The build log records it turning red.
+  - Positive asserts on lazy content wait (D-0103 §1).
+
+- **AC-1 (summary, D-0110 §1–§2)**
+  - **W-R7E4.** With `clock()` = F-tz now when Ready mounts, the summary reads "29 min · warm-up + 3 exercises · 9 sets · done by 12:29".
+  - **The clock pair.** With `clock()` = 12:10 local when Ready mounts (and `now` still 12:00), it reads "… · done by 12:39". The done-by follows the Ready-time clock, not the mount `now`.
+  - **Singular.** R7-E2 (15 min, zero history) reads "… warm-up + 1 exercise · 4 sets · …".
+  - **Back-off counts.** R7-E12 (15 min, warm-up off, High) reads "… 1 exercise · 5 sets · …".
+  - **en-US.** With locale en-US, `America/New_York` and `clock()` = `2026-09-27T12:00:00-04:00`, the done-by equals `formatTime(…)` from `lib/format`, giving "12:29 PM" (U+202F normalised).
+- **AC-2 (explainer)** An ordered list of exactly 4 items, in order: "One thing on screen", "Tap Done after each set", "Rest counts down by itself", "Everything else is behind pause".
+- **AC-3 (focus prefs, D-0110 §6)**
+  - **The switches.** 3 switches (`role="switch"` or checkbox): "Sound cues", "Voice countdown 3-2-1", "Keep screen awake". With nothing stored, all are on.
+  - **Storing.** Toggling "Voice countdown 3-2-1" off writes `localStorage["wl-focus-prefs"]` = `{"version":1,"sound":true,"voice":false,"keepAwake":true}`, and a remount shows it off. Toggling it back on writes `voice: true`.
+  - **`readFocusPrefs()` returns the defaults for:**
+    - a missing key;
+    - `"{"` (invalid JSON);
+    - `{version: 2, …}`;
+    - `{version: 1, sound: "yes", …}`;
+    - a `localStorage.getItem` that throws.
+  - **Pair.** It returns the stored values for a valid version-1 value.
+  - **A throwing `setItem`.** It doesn't throw out of `writeFocusPrefs`, and the switch still shows the new value.
+  - **Module keys.** `Object.keys(await import("…/focus-prefs"))` sorted is `["readFocusPrefs", "writeFocusPrefs"]`.
+  - **No runtime imports.** A source test finds no non-`import type` import statement in `focus-prefs.ts`.
+- **AC-4 (Start writes the session first, NFR-OFF-2, D-0065 §7, D-0110 §1 §4)** From W-R7E4 at F-tz, with `clock()` = `2026-09-27T12:04:00+02:00` at the tap:
+  - **The call.** Start calls `upsertSession` once with `{id, started_at: "2026-09-27T10:04:00.000Z", ended_at: null, time_budget_min: 30, energy: "normal", warmup_in_budget: true, plan: workout.plan}`.
+    - `id` matches the UUID v4 pattern.
+    - `plan` deep-equals `workout.plan` and passes `parseSessionPlan` (`ok: true`).
+    - The pair: `clock()` = 12:00 gives `"2026-09-27T10:00:00.000Z"`.
+  - **The inputs flow through.** After UF-08.2 chip 20 and UF-08.1 Low + warm-up off, the call has `time_budget_min: 20`, `energy: "low"` and `warmup_in_budget: false`.
+  - **Navigate after the write.** With `upsertSession` held on a deferred promise, the location is still `?step=ready` after 50 ms. On resolve it becomes `/session/<id>` (the same `id`) by a REPLACE navigation (`useNavigationType()` === "REPLACE").
+  - **Double tap.** A second tap while pending makes no second call. Start has `aria-disabled="true"` while pending and not before.
+- **AC-5 (a failed write, D-0110 §3)**
+  - **Rejection.** `upsertSession` rejecting shows "Couldn't start the workout. Try again." (`role="alert"`). The location is unchanged after 50 ms, there is no unhandled rejection, and Start is enabled again.
+  - **Retry.** The retry calls `upsertSession` with the **same** `id`, and on resolve navigates once.
+  - **A new visit.** Back to UF-08.2, then Looks good, then Start uses a **different** `id`.
+- **AC-6 (offline and two starts, real queue, NFR-SYNC-4, D-0110 §5)** With the real `upsertSession` over `fake-indexeddb`:
+  - **Offline.** With `navigator.onLine` false, after Start `offlineDb().sessions.get(id)` holds `{id, row: {…AC-4 row}, pending: true, finished: false}`, and navigation happened.
+  - **Online, the pair.** With `navigator.onLine` true and a `fetch` that never resolves, the same row is written and navigation happens with no wait for the network. A fetch spy records no call made by Start.
+  - **Two starts.** Two separate setups (two renders) give two different ids and two rows.
+- **AC-7 (empty plan)**
+  - **Warm-up only.** Given `plan.items` `[]` (with the 4 warm-up moves, `totalS` 180), the summary reads "3 min · warm-up only · done by 12:03", and Start creates the session with `plan.items` `[]`.
+  - **Nothing planned.** With `plan.warmup` also `[]` (`totalS` 0), it reads "Nothing planned · done by 12:00", and Start still works.
+- **AC-8 (Back and cold load, D-0110 §7)**
+  - **Back.** Back goes to `?step=suggested` and renders the same `Workout` (reference-equal), with no `suggest` call (spy count unchanged after 50 ms).
+  - **Cold load.** A cold load of `?step=ready` still shows UF-08.1 (T-0303a AC-1).
+- **AC-9 (strings, exports, lint, D-0071 §3)**
+  - **Strings.** Every UF-08.4 string comes from `en.uf08`. `react/jsx-no-literals` is green, and `en.ts` is unchanged.
+  - **Exports.** The T-0303a export pin in `features/UF-08/__tests__/` is updated to `Object.keys(index)` sorted = `["SessionSetup", "readFocusPrefs", "writeFocusPrefs"]`, and `type FocusPrefs` is importable from `features/UF-08/index.tsx` (a type-level test).
+  - **Import bans.** The D-0071 §9 bans are green.
+- **AC-10 (e2e: start online and offline, a11y, D-0086, D-0091 §1, D-0108)** Rows appended to `tests/e2e/uf-08-setup.spec.ts`, reusing T-0303a's in-spec seed, with no fixture edits. The spec registers its own `sessions` route after `mockSupabaseData` to record the upserted rows (the later-registered handler wins).
+  - **Online.** `/` → "Start workout" → UF-08.1 (45) → chip 30 → Suggest → UF-08.2 → Looks good → UF-08.4 → Start.
+    - The URL becomes `/session/<uuid v4>`, and `[data-screen-id^="UF-09"]` is visible.
+    - IndexedDB `wl-offline.sessions` holds that id with `pending: true` (read with `page.evaluate`).
+    - The spec then reloads the page, which mounts AutoSync and runs its `flushNow()` (D-0112 §1). Within 5 s of the reload, exactly one recorded `sessions` request carries that `id`, with `time_budget_min` 30.
+    - The spec doesn't depend on a send before the reload, and doesn't assert that one is absent. Today no flush runs on enqueue (D-0112 §4).
+  - **Offline.** After the precache settles: offline → reload `/session/setup` → Suggest → Looks good → Start.
+    - The URL becomes `/session/<uuid>`, IndexedDB holds the row, and no `sessions` request is recorded while offline.
+    - Going online then records exactly one `sessions` request carrying that `id`.
+  - **Back after Start (amended by D-0123 §2, TR-0038).** After the online Start lands on `/session/<id>`, `page.goBack()`, then wait for `[data-screen-id]` to be visible:
+    - the URL doesn't match `/step=ready/`, and `[data-screen-id="UF-08.4"]` is not in the DOM after 50 ms (no Start for the started session is under the workout);
+    - the one `[data-screen-id]` is `UF-08.1` or starts with `UF-09` (UF-08.1 today, through `?step=suggested` and the host's replace; UF-09.9 once T-0394 lands, which tightens this row).
+    - The `test.fail(true, "TR-0038: …")` row is replaced by this row. AC-4's single REPLACE and the setup PUSHes (D-0107 §1) are unchanged.
+  - **a11y.**
+    - axe on UF-08.4 reports 0 serious or critical violations.
+    - Start, Back and the 3 switches are each ≥ 44 × 44 px.
+    - Looks good → toggle a switch → Start works by keyboard only.
+  - **Requests.** The guard reports no unclaimed Supabase request.
+- **AC-11 (shell tests unchanged, D-0108 §3)** `git diff main...HEAD` lists nothing under `apps/web/src/app/**`, `tests/e2e/fixtures/**` or `tests/e2e/{offline,auth,shell}.spec.ts`, and those pass in the DoD run.
+
+## Paths you may change
+- `apps/web/src/features/UF-08/**` (the lane: `web-feature:UF-08`), including focus-prefs.ts and the index.tsx re-export.
+- **Listed extras:**
+  - `apps/web/src/lib/i18n/flows/uf-08.ts`: this flow's strings file (D-0071 §1, D-0075); add keys only, multi-line shape.
+  - `tests/e2e/uf-08-setup.spec.ts`: append rows to the T-0303a spec (D-0071 §10).
+  - `docs/tickets/T-0303d-ready-and-start.md`: this file, for the accept log.
+- Read-only imports (not grants): `lib/offline` (`upsertSession`, `offlineDb`), `lib/format`, `lib/i18n/en.ts`, `lib/i18n/workout.ts`, `components/offline-status`, `@workoutlab/engine`, `@workoutlab/shared` (`parseSessionPlan`), and the existing `tests/e2e/fixtures/*` exports.
+
+## Contract impact
+None. The `sessions` row is the `docs/data-model.md` shape (`user_id` defaults to `auth.uid()` on the server), written through the T-0300c queue exactly as D-0045 §6 and D-0053 §7 define. The plan is `SessionPlan` v1 as the engine returned it.
+
+## NFRs owned
+OFF-2 start part (AC-4, AC-6, AC-10), SYNC-4 start part (AC-5, AC-6), I18N-2 (AC-1), A11Y-1/2/6 on UF-08.4 (AC-10).
+
+## Definition of done
+Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web test:e2e` green (the whole suite) · `format:check`, `check:repo` and `check:size` green · contracts unchanged · commits start `T-0303d` and cite UF-08.4 (for example `T-0303d UF-08.4: Start writes the session before navigating`).
+
+## Notes
+- **Flow:** `wl-build-web`.
+- **Parallel.** This ticket is in the same lane as T-0303b and T-0303c, so they run one after another. It is parallel-safe by files with the UF-09 tickets: T-0304a–e never edit `features/UF-08/**`, and they import `readFocusPrefs` only through `index.tsx`, starting with T-0304c. Verification runs are staggered (state.md).
+- **The e2e target.** If T-0304a has merged, `/session/<id>` renders `UF-09.1`. Before that, it renders the stub `UF-09`. The `^=` selector accepts both.
+
+## Build log (2026-10-02, frontend-dev)
+- **View.** `Ready.tsx` replaces the placeholder and keeps `data-screen-id="UF-08.4"`. It shows Back (→ `?step=suggested`, a Link), the D-0110 §2 summary, the 4-step `<ol>` explainer, 3 checkboxes in a fieldset ("Focus mode settings"), the `role="alert"` start error and Start. Each switch is a 44 × 44 target. All strings are new `en.uf08` keys in `flows/uf-08.ts`, added only. The summary's done-by is `formatTime(readyAt + ceil(totalS/60) min)`, where `readyAt = clock()` is read once in a `useState` initialiser.
+- **Host.** `SessionSetup` takes `clock?: () => Date` (default `new Date()`) and passes `clock`, `locale` and `timeZone` to `Ready`. UF-08.1 and UF-08.2 still use `now`.
+- **Start.** A ref guard blocks a second tap. `sessionId.current ??= crypto.randomUUID()` gives one id per mount of the Ready step (Back unmounts it), and a retry reuses it. `started_at = clock().toISOString()` at the tap. The `time_budget_min`, `energy` and `warmup_in_budget` fields come from the `Workout`, the engine's own echo of the inputs. Then `await upsertSession(row)` (`lib/offline/queue.ts`, imported as it is) → `navigate("/session/<id>", {replace: true})`. A rejection shows the alert and re-enables Start, with no rethrow. `aria-disabled="true"` is set only while the write is pending.
+- **focus-prefs.ts.** No imports at all. `readFocusPrefs`/`writeFocusPrefs`/`type FocusPrefs` are re-exported from `index.tsx`, and the T-0303a export pin is now `["SessionSetup", "readFocusPrefs", "writeFocusPrefs"]` (sorted).
+- **Planted fault (ticket): navigate before awaiting the write.** `void navigate(...)` was moved above `await upsertSession(row)`. 8 tests went red, including AC-4 "navigates only after the write" at `expect(last()).toMatchObject({pathname: "/session/setup", search: "?step=ready"})`, as well as AC-4 double tap, all 3 AC-5 rows and all 3 AC-6 real-queue rows (the IndexedDB read ran before the write). Reverted, green.
+- **AC-10 Back after Start → TR-0038 (raised to the orchestrator; the triage file is outside this lane).** D-0110 §4's single replace swaps only `?step=ready`. The setup steps are PUSHes (D-0107 §1, T-0303a/b), so browser Back lands on `?step=suggested`, and the host replaces that with `/session/setup`. Measured: `Received string: "http://localhost:4173/session/setup"`. The literal row stays in `uf-08-setup.spec.ts` under `test.fail(true, "TR-0038: …")`. Every other AC-10 row passes: online (IndexedDB `pending: true`, then a reload gives exactly one `sessions` write carrying the id with `time_budget_min` 30), offline (no write while offline, then exactly one after `setOffline(false)`), UF-09.1 visible after Start, axe, 44 px and keyboard.
+- **AC-11** (checked at DoD, not as a committed test). `git diff --name-only main...HEAD` lists only `features/UF-08/**`, `lib/i18n/flows/uf-08.ts` and `tests/e2e/uf-08-setup.spec.ts` (plus this ticket). It lists nothing under `apps/web/src/app/**`, `tests/e2e/fixtures/**`, `tests/e2e/{offline,auth,shell}.spec.ts`, `lib/offline/**` or `en.ts`.
+- **Runs.**
+  - web `test`: 110 files, 1618 tests. 1 load-only timeout (`app/__tests__/import-bans.test.ts` "features lints clean", 5.4 s under the parallel run) passed isolated, 68/68.
+  - UF-08 folder: 241 tests green.
+  - `-w typecheck` and `-w lint` green; `-w format:check` clean; `check-all.mjs` exit 0.
+  - Fresh build with the e2e env, then `check:size` exit 0.
+  - `test:e2e`: 82 passed, the whole suite, including the expected-fail TR-0038 row.
+- **TR-0038 resolved (D-0123 §2).** The `test.fail` row is replaced by the amended AC-10 Back row. After `goBack()` the URL doesn't match `/step=ready/`, UF-08.4 isn't in the DOM after 50 ms, and the single `[data-screen-id]` is `UF-08.1` (today) or starts with `UF-09`. No UF-08 code change. `uf-08-setup` e2e: 15 passed.
+
+## Accept log (2026-10-02, product-owner)
+- **Verdict: done.** Branch `t/T-0303d-ready-and-start` at 448dbc5, working tree clean.
+- **ACs.** QA proved AC-1 to AC-11 against both values of each binary condition. Three planted faults turned red: navigate before the write, `started_at` taken from mount, and a new id per tap. The build's own planted fault (navigate before the write) turned 8 tests red. AC-10's Back row is the D-0123 §2 version, and no `test.fail`/TR-0038 row is left in `tests/e2e/uf-08-setup.spec.ts`. AC-11: the diff touches nothing under `app/**`, `tests/e2e/fixtures/**` or the shell specs, and offline/auth/shell pass 26/26.
+- **DoD runs (QA).** `pnpm -w test --force --concurrency=1` green (web 1640). uf-08 and uf-09 e2e 19/19. Zero console errors in the T-0303d e2e rows. Build: UF-08 vitest 241/241, `uf-08-setup` e2e 15/15. Contracts unchanged.
+- **Principles.** Principle 1: the explainer teaches one task on screen, with the rest behind Pause. Principle 2: the time budget flows into the row (AC-4). Principle 3: no engine or LLM involvement, and the plan is the engine's own `SessionPlan`. The offline-first start holds (NFR-OFF-2).
+- **Non-blocking, carried forward.**
+  - The `mounted === false` branches are untested: Back while Start is pending leaves an orphan pending session. Already filed as T-0397.
+  - The e2e Back row doesn't catch a PUSH navigate (only AC-4's REPLACE vitest does). T-0394 tightens it.
+  - `startWorkout()` in the e2e asserts `UF-09.1`, not `^UF-09`, which couples it to UF-09's first screen. This is a new follow-up.
+  - The online `pending: true` row will race once T-0385 lands. T-0385 already rewrites it.

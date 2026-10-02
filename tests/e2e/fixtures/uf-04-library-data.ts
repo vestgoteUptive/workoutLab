@@ -253,3 +253,13 @@ export const profile = {
   onboarded_at: "2026-09-01T00:00:00.000Z",
   plan_changed_at: "2026-09-01T00:00:00.000Z",
 };
+
+// T-0393 (D-0071 §10, additive): `exercises` row for row, with `external_load` true exactly when
+// the row's equipment holds a loadable item (D-0044: external load = NOT bodyweight). No equipment,
+// `rack`-only, `pullup-bar`-only and every warm-up stay false. `exercises` itself is unchanged.
+const LOADABLE = new Set(["barbell", "dumbbell", "machine", "cable"]);
+export const exercisesLoaded: Row[] = exercises.map((row): Row => ({
+  ...row,
+  external_load:
+    row.kind === "exercise" && (row.equipment as string[]).some((item) => LOADABLE.has(item)),
+}));

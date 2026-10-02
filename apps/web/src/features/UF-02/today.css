@@ -1,0 +1,161 @@
+/* UF-02.1 Today (T-0302a). Colours and fonts come only from @workoutlab/design-tokens
+ * (D-0019): there is no raw hex in this file. C-01 styles itself (components/body-map). */
+
+.wl-today {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  font-family: var(--wl-font-body);
+  color: var(--wl-color-text);
+}
+
+.wl-today__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 4px;
+}
+
+.wl-today__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 32px;
+  line-height: 1.1;
+  color: var(--wl-color-text);
+}
+
+.wl-today__date {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+}
+
+.wl-today__status {
+  flex-basis: 100%;
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+}
+
+.wl-today__attention,
+.wl-today__empty,
+.wl-today__no-plan {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.wl-today__empty,
+.wl-today__no-plan {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-today__more {
+  color: var(--wl-color-accent);
+}
+
+/* NFR-A11Y-2: 44 × 44 CSS px. */
+.wl-today__start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: 14px;
+  background: var(--wl-color-accent);
+  color: var(--wl-color-on-accent);
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.wl-today__start:hover {
+  background: var(--wl-color-accent-hover);
+}
+
+/* UF-02.1 suggestion card (T-0302c). The skeleton and the loaded card share this class, so the
+ * box holds its height while the first read is pending (NFR-PERF-1 layout part). */
+.wl-today-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  min-height: 176px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 14px;
+  background: var(--wl-color-surface);
+}
+
+.wl-today-card__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--wl-color-text);
+}
+
+.wl-today-card__summary,
+.wl-today-card__more,
+.wl-today-card__empty {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+}
+
+.wl-today-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-today-card__chip {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--wl-color-line-strong);
+  color: var(--wl-color-text);
+  font-size: 13px;
+}
+
+.wl-today-card__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-today-card__row {
+  font-size: 15px;
+}
+
+/* NFR-A11Y-2: 44 × 44 CSS px. */
+.wl-today-card__see-all {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--wl-color-accent);
+  font-weight: 600;
+}
+
+.wl-today-card__bar {
+  display: block;
+  height: 16px;
+  border-radius: 6px;
+  background: var(--wl-color-surface-2);
+}
+
+.wl-today-card__bar--short {
+  width: 60%;
+}

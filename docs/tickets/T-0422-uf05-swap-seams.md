@@ -1,0 +1,136 @@
+---
+id: T-0422
+title: "UF-05.1 mounted in focus mode: the swap seam on UF-09.9 Paused and UF-09.6 Next exercise (seams.tsx), the D-0142 §7 target, apply → ctx.replaceItem persisted offline, the stored plan round-trips through parseSessionPlan; the swap e2e"
+lane: web-feature:UF-05
+screens: [UF-05.1, UF-09.9, UF-09.6, UF-09.3, UF-09.4, UF-09.5]
+decisions: [D-0142, D-0153, D-0160, D-0069, D-0071, D-0093, D-0111, D-0118, D-0120, D-0140, D-0149, D-0086]
+deps: [T-0421, T-0304d, T-0414]
+status: ready
+---
+<!-- Groomed 2026-10-02 by product-owner. Second child of the T-0306b board row (D-0142 §1 §6 §7). Re-checked against main after T-0421 and T-0304d merged (2026-10-02 groom). SwapSheet's props are `{workout, itemIndex, onApply(result: Workout), onClose, timeZone?}`. seams.tsx still has both arrays `[]`, and ORDER already places `swap`. AC-7 now carries the D-0153 §2 confirm rule, which adds one listed extra in machine.ts. Build flow: wl-build-web. About ⅔ day. It edits features/UF-09/seams.tsx and machine.ts, so it never runs in parallel with T-0415 or T-0416. -->
+
+## Why
+- **UF-05.1 mid-session (D-0069 §6, D-0071 §4 §7):** the user replaces an exercise without leaving focus mode. It is reachable only from UF-09.9 Paused and UF-09.6 Next exercise, so the set screens stay one task (principle 1).
+- **D-0071 §6:** the new plan is saved as the whole row through `ctx.replaceItem`, offline-safe.
+- **D-0093 §7:** the stored plan must stay a valid `SessionPlan` v1.
+
+## Scope
+- In:
+  - **`features/UF-09/seams.tsx`**, the seam grant (D-0071 §4). A `swap` entry is added to both `pauseSeamActions` and `nextSeamActions`:
+    - label "Swap" (`en.uf05`), `keepsClockRunning: false`;
+    - `render(ctx)` gives `<SwapSheet workout={ctx.workout} itemIndex={target} onApply={…} onClose={ctx.close} />`, where `target` is the D-0142 §7 rule, as a pure helper in `seams.tsx`;
+    - `onApply(result)` returns `ctx.replaceItem(target, result.plan.items[target], result.plan.mainLiftId)` and then calls `ctx.close()`;
+    - it may be `lazy()`-loaded (D-0142 §8).
+  - **The UF-09 pins these entries change** (D-0142 §6, a named change listed in the build log).
+  - **`features/UF-09/machine.ts` `planReplaced`: the D-0153 §2 confirm branch.** A swap of the current item while UF-09.4 is in play (`confirm`, or paused from it) saves the recorded set as recorded and moves on as `SAVED` with no edit would. This is the one `machine.ts` change. The T-0414 AC5 clamp-only pin drops its `confirm` row (a named change).
+  - **A new e2e file,** `tests/e2e/uf-05-swap.spec.ts` (D-0071 §10).
+  - Strings in `flows/uf-05.ts`.
+- Out:
+  - The sheet's own behaviour (T-0421), and the List view's Swap (T-0418).
+  - Any UF-09 source file other than `seams.tsx` and the `planReplaced` branch in `machine.ts`. If the host lacks something, that is a follow-up for web-feature:UF-09.
+  - A swap from UF-09.3/.4/.5/.7 directly. Those screens stay one task, and Pause is the way in.
+  - "Also replace in my routine" (D-0069 §7).
+
+### Edge cases that are in scope
+- **Offline:** apply writes through `replaceItem` → the queue, and a reload shows the new exercise (AC-5, AC-10).
+- **Time running out:** an "Over your time" candidate can be applied (T-0421 AC-5). The next check point uses the new plan's costs (the plan the store holds).
+- **Zero history:** the new item shows the engine's `first_time` "Set weight" on UF-09.3 (AC-5).
+- **Returning after 10 days off:** the engine's `hold_after_break` pre-fill renders on UF-09.3 as given (T-0421 AC-7 is the engine half).
+- **Reload mid-swap:** the sheet isn't persisted. A reload with it open restores `paused` (AC-2).
+
+## Acceptance criteria
+**Test setup.** As T-0304d: the real `SessionHost` with the **module** arrays (no `seams` prop), plan P1 (`__tests__/fixtures.ts`: bench-press × 4 main, barbell-row × 3, leg-curl × 3, plank × 2), `fake-indexeddb`, a signed-in user, `locale="en-GB"`, `timeZone="UTC"`, the real `rankSwaps`/`applySwap`, and the real `upsertSession` in a spy. The cache has a beginner, full-equipment profile and engine L1. Unit tests of the `swap` entry's `render`/`onApply` pass a test-built `ctx`.
+
+**Test rules.** Both values of every binary condition get a test. Negative asserts wait ≥ 50 ms. Every AC except AC-9 (a pin) must fail on `main` as of this groom (the arrays have no `swap`, and `planReplaced` clamps `confirm` only). No new UF-09 test sets `document.body.innerHTML`, because the T-0424 AC-3 guard scans `features/UF-09/__tests__/`; use `cleanup()` or `unmount()`. SwapSheet tests freeze `Date` alone (D-0160 Consequences). Host tests use the UF-09 `useFakeClock` + `flushReal` helpers. The build log records these planted faults turning their ACs red:
+- `target = ctx.currentItemIndex` always (AC-3);
+- `replaceItem` without the third argument (AC-6);
+- a direct `upsertSession` call in the seam (AC-5);
+- the old `confirm` clamp-only branch restored in `planReplaced` (AC-7).
+
+- **AC-1 (entries and order, D-0071 §4)**
+  - **The arrays.** `pauseSeamActions` and `nextSeamActions` each contain one `swap` entry with `keepsClockRunning: false`.
+  - **UF-09.9.** The order is Resume · Swap · Skip to next exercise · (How to · List view, if T-0416 has landed) · End workout.
+  - **UF-09.6.** The step's buttons are "I'm ready" then "Swap" (with the chrome's "Pause workout").
+  - **The diff** touches `features/UF-09` source only in `seams.tsx` and `machine.ts` `planReplaced`. In `features/UF-09/__tests__` it changes only the D-0142 §6 pins and the T-0414 AC5 `confirm` row (D-0153 §2), and adds `t0422*` files. Record `git diff --stat main...HEAD -- apps/web/src/features/UF-09` in the build log (not in a test).
+  - **No import of UF-09.** `features/UF-05` has no import of `features/UF-09` (the T-0421 source test still passes).
+- **AC-2 (Swap from UF-09.9)**
+  - **Opens.** Paused from barbell-row set 2 (`resumePhase: "set"`, item 1, set index 0 logged), "Swap" shows the dialog "Replace Barbell row" in place of UF-09.9.
+  - **The clock stays paused.** After 10 min of fake time with the sheet open, the stored state is deep-equal to before.
+  - **Cancel** returns to UF-09.9 with the plan deep-equal to before and no `upsertSession` call.
+  - **Reload.** A remount with the sheet open restores UF-09.9 paused.
+  - **No way out.** There is no `a[href]` in the DOM while the sheet is open.
+- **AC-3 (which item, D-0142 §7)**
+  - **Finished item.** Paused in the rest after bench-press set 4 (all 4 logged), "Swap" opens "Replace Barbell row" (item 1).
+  - **The pair.** Paused in the rest after bench-press set 2, it opens "Replace Bench press".
+  - **Skipped.** With bench-press complete and item 1 in `skippedItems`, it opens "Replace Leg curl".
+  - **None left.** With every set of P1 logged, it opens the current item.
+- **AC-4 (Swap from UF-09.6)**
+  - **Opens.** On UF-09.6 for item 1 with 50 s left, "Swap" opens "Replace Barbell row" (the upcoming item).
+  - **The countdown stops.** After 90 s of fake time with the sheet open, Cancel returns to UF-09.6 with 50 s left (the host's PAUSE/RESUME, D-0071 §4).
+  - **Apply** returns to UF-09.6, now showing the new exercise's name, and the countdown runs on from 50 s.
+- **AC-5 (apply persisted offline, D-0071 §5 §6, D-0093 §7)** With `navigator.onLine = false`, from AC-2's state, picking db-row and "Use Db row":
+  - **The call.** `ctx.replaceItem(1, result.plan.items[1], result.plan.mainLiftId)` runs once, and `features/UF-05` makes no `upsertSession` call (spy).
+  - **The stored row.** The IndexedDB row's plan has `items[1].exerciseId` "db-row". Its other fields are deep-equal to before, and `parseSessionPlan(row.plan)` is `ok`.
+  - **After Resume,** UF-09.3 shows "Db row", "Set 2 of 3", and the load line "Set weight" with "8 reps" (the engine's `first_time` pre-fill, D-0118 §9).
+  - **Logging.** The logged barbell-row set keeps `exerciseId "barbell-row"`. The next Done set records `exerciseId "db-row"` at `setIndex: 1`, and no two live sets share an `(itemIndex, setIndex)` (D-0140).
+  - **Remount.** A remount of the host reads "Db row" back.
+- **AC-6 (main slot)** Swapping item 0 (bench-press) to push-up under "Equipment taken" calls `replaceItem(0, item, "push-up")`. The stored `plan.mainLiftId` is "push-up", and `items[0].isMain` is true.
+- **AC-7 (a swap while UF-09.4 is in play, D-0153 §2, amends D-0140 §1)**
+  - **Reducer, paused.**
+    - Given: `paused` with `resumePhase: "confirm"` on item 1, barbell-row sets `(1, 0)` and `(1, 1)` logged (set 2 recorded, `setIndex: 1`), `pausedAtMs: P`.
+    - When: `PLAN_REPLACED` for item 1 with db-row × 3.
+    - Then: `phase: "paused"`, `resumePhase: "rest"`, `setIndex: 1`, and `timer: {startedAtMs: P, durationS: restFor("db-row"), pausedMs: 0}`. `loggedSets` is deep-equal to before, so both entries keep `exerciseId: "barbell-row"`, and the state passes `isValidFocusState`.
+    - Red on main: the state is unchanged (`resumePhase: "confirm"`).
+  - **Reducer, running.** The same from `phase: "confirm"` (no pause) gives `phase: "rest"` with the rest starting at the event's `atMs`.
+  - **Reducer, fewer sets.** Given `confirm` at `(1, 2)` (all three barbell-row sets logged), a swap to an item with 2 sets gives `rest` at `setIndex: 1`, and `REST_END` then reaches `betweenItems`.
+  - **Reducer, last item.** A swap of item 3 while paused from `confirm` on its last set gives `done`, ends the pause (`resumePhase: null`, `pausedAtMs: null`, `workoutPausedMs` grows by `atMs − P`), and passes `isValidFocusState`.
+  - **The pair.** A `PLAN_REPLACED` for another item while paused from `confirm` returns the same state object. The T-0414 AC5 rows for `rest`, `next` and paused-on-rest stay clamp-only and unedited.
+  - **Host.**
+    - Given: paused from UF-09.4 with barbell-row set 2 recorded. Swap → db-row → "Use Db row" (offline). The D-0142 §7 target is item 1, because set index 2 is still unlogged.
+    - Then Resume shows UF-09.5 (rest), not UF-09.4.
+    - The rest's end shows UF-09.3 "Db row" "Set 3 of 3". The next Done set records `exerciseId "db-row"` at `setIndex: 2`.
+    - The queued barbell-row sets are unchanged (`lib/offline` spy: no `editSet` call), and no two live sets share a position.
+  - **Host pair.** Paused from UF-09.4 on bench-press set 4 of 4 (item 0 complete), Swap targets item 1 (D-0142 §7). After "Use …" and Resume, UF-09.4 shows bench-press with the recorded values. Save leads to UF-09.5 and then UF-09.6 with the new item 1 name.
+- **AC-8 (strings and a11y)** Every new string is in `en.uf05` (`react/jsx-no-literals` green). The vitest axe helper finds 0 violations with the sheet open over UF-09.9 and over UF-09.6.
+- **AC-9 (unchanged surfaces)** The UF-09 `index.tsx` export pin and `features/UF-05/index.tsx`'s pin (exactly `SwapSheet`) are unchanged. The T-0304a AC-2 tick-counting test still passes.
+- **AC-10 (e2e, new file `tests/e2e/uf-05-swap.spec.ts`)** In the preview build, offline, with the T-0904 guard (D-0086):
+  - Seed a P1-like session row and its library and profile cache (an in-spec seed, the `uf-09-focus.spec.ts` pattern).
+  - Pause → Swap by keyboard. The first option row is ≥ 44 px tall (`boundingBox()`).
+  - Pick the first option and "Use …", then Resume. UF-09.3 shows that option's name.
+  - **After a reload,** the IndexedDB `wl-offline.sessions` row's plan has the new exercise, and UF-09 shows it.
+  - **axe** on the open sheet reports 0 serious or critical violations.
+  - **Requests.** The guard reports no unclaimed request.
+
+## Paths you may change
+- `apps/web/src/features/UF-05/**` (the lane: `web-feature:UF-05`).
+- **Listed extras:**
+  - `apps/web/src/features/UF-09/seams.tsx`: the `swap` entries and their target helper (D-0071 §4, D-0142 §7).
+  - `apps/web/src/features/UF-09/machine.ts`: the `planReplaced` confirm branch (D-0153 §2), and its doc comment.
+  - `apps/web/src/features/UF-09/__tests__/*.test.tsx`: the D-0142 §6 pins these entries change, plus new `t0422*` test files. The pins are the module-array contents in `seams.test.tsx` AC-9 and its two "with the module arrays" rows, `paused.test.tsx` "the pair: with the module arrays …", `next-exercise.test.tsx` "the pair: with the module arrays only I'm ready …", and the UF-09.9 and UF-09.6 button counts.
+  - `apps/web/src/features/UF-09/__tests__/machine.session.test.ts`: only the `confirm` row of "T-0414 AC5 rest, next, confirm and paused-on-rest keep the clamp-only result" (D-0153 §2, a named change).
+  - `apps/web/src/features/UF-09/__tests__/t0422*.test.ts`: new reducer test files.
+  - `tests/e2e/uf-09-focus.spec.ts`: the UF-09.9 button count in its seeded-session row (line 221 on main: 2 becomes 3, D-0142 §6).
+  - `tests/e2e/uf-05-swap.spec.ts`: a new file (D-0071 §10).
+  - `tests/e2e/fixtures/**`: additive exports (D-0071 §10).
+  - `apps/web/src/lib/i18n/flows/uf-05.ts`: this flow's strings file (D-0071 §1); add keys.
+  - `docs/tickets/T-0422-uf05-swap-seams.md`: this file, for the build and accept logs.
+- Read-only imports (not grants): `features/UF-05/index.tsx` (from `seams.tsx`), `@workoutlab/shared` (`parseSessionPlan`, tests), `lib/offline` (tests), the existing `tests/e2e/fixtures/*` exports.
+
+## Contract impact
+None. The plan is written as `SessionPlan` v1 through the queue, as a whole row (D-0071 §6).
+
+## Definition of done
+Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web test:e2e` green (the whole suite) · `check:size` green · contracts unchanged · commits start `T-0422` and cite the screen (for example `T-0422 UF-05.1: swap seam on UF-09.9`).
+
+## Notes
+- **Flow:** `wl-build-web`.
+- **T-0306b is done** when T-0421 and T-0422 are.
+- **Parallel (2026-10-02 groom):**
+  - **Never with T-0415 or T-0416** (D-0142 §1). T-0415 also edits `machine.ts`.
+  - **With T-0423 and T-0424, allowed.** They don't touch `seams.tsx`, `machine.ts`, `paused.test.tsx`, `seams.test.tsx`, `next-exercise.test.tsx` or `machine.session.test.ts`. T-0423 AC-6 needs `host.chrome.test.tsx` unedited, and this ticket must not edit it either. If a `host.chrome.test.tsx` pin breaks, wait for T-0423 to merge first.
+  - **With T-0435, allowed.** T-0435 edits `session.tsx` and adds `t0435*` tests, so there is no shared file.
+  - **With T-0433, allowed.** It is in the UF-03 lane.
+  - **Before T-0394, preferably.** T-0394's "Back closes a seam overlay" (host.tsx) should be tested against this real swap overlay.
+- **T-0303c and T-0418** mount the same `SwapSheet`, not this seam, so they don't depend on this ticket.
+
+- **From T-0414 review (2026-10-02):** D-0140 left a swap from `confirm` out of scope. D-0153 §2 now settles it, and it is AC-7.

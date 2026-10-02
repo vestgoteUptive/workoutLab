@@ -34,3 +34,12 @@ export declare function prefillFrom(exercise: LibraryExercise, slot: PrefillSlot
  * an offset, or a negative `previous.weightKg`.
  */
 export declare function prefill(exercise: LibraryExercise, slot: PrefillSlot, history: readonly HistorySet[], library: readonly LibraryExercise[], now: Instant, tz: TimeZone, previous: PrefillPrevious | null): PrefillResult;
+/** Internal `plannedDurationS` over an already-normalised history and today's local date. */
+export declare function plannedDurationFrom(exercise: LibraryExercise, hard: readonly HistorySet[], lib: ReadonlyMap<string, LibraryExercise>, today: LocalDate, tz: TimeZone): number | null;
+/**
+ * Rule 7.1 planned duration (D-0092 §1): the work of one set of a timed `exercise`, which is
+ * the rule 14 pre-fill `durationS` over the same `history`, `now` and `tz` (`defaultDurationS`
+ * with no usable history). `null` for a non-timed exercise (or a timed one with no default and
+ * no usable history; rule 7.1 then costs 45 s). Throws `RangeError` on `now` without an offset.
+ */
+export declare function plannedDurationS(exercise: LibraryExercise, history: readonly HistorySet[], library: readonly LibraryExercise[], now: Instant, tz: TimeZone): number | null;

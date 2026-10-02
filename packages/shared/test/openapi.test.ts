@@ -22,10 +22,15 @@ describe("AC1 valid OpenAPI 3.1", () => {
   });
 });
 
-describe("AC2 exactly the three Edge Function paths (gap B2, D-0001)", () => {
-  it("has only suggest, balance and finish", () => {
+describe("AC2 exactly the four Edge Function paths (gap B2, D-0001, D-0135)", () => {
+  it("has only suggest, balance, finish and account delete", () => {
     const ops = OPERATIONS.map(({ method, path: p }) => `${method.toUpperCase()} ${p}`).sort();
-    expect(ops).toEqual(["GET /balance", "POST /sessions/{id}/finish", "POST /workouts/suggest"]);
+    expect(ops).toEqual([
+      "DELETE /account",
+      "GET /balance",
+      "POST /sessions/{id}/finish",
+      "POST /workouts/suggest",
+    ]);
   });
 
   it("drops the plain-CRUD paths", () => {
@@ -123,6 +128,7 @@ describe("AC5 one error envelope (D-0037 §4, NFR-PRIV-7)", () => {
       "POST /workouts/suggest": ["400", "401", "422", "500"],
       "GET /balance": ["400", "401", "422", "500"],
       "POST /sessions/{id}/finish": ["400", "401", "404", "500"],
+      "DELETE /account": ["401", "500"],
     };
     for (const { method, path: p, op } of OPERATIONS) {
       const responses = op["responses"] as Record<string, { $ref?: string }>;

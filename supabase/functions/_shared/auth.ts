@@ -1,7 +1,7 @@
 // Bearer-JWT auth (D-0053 §4). `verify_jwt = false` in config.toml, so the gateway never answers
 // with a non-ApiError 401: each function checks the token itself and returns 401 `unauthorized`
 // in the envelope when it's missing, malformed or expired. Every DB call uses a client that
-// carries the caller's JWT, so RLS applies; this file never reads SUPABASE_SERVICE_ROLE_KEY.
+// carries the caller's JWT, so RLS applies; this file never reads the service-role key.
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@workoutlab/shared";
 import { internalError, unauthorized } from "./errors.ts";

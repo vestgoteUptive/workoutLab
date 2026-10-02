@@ -20,6 +20,7 @@ import { BodyMap } from "../../components/body-map/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
 import { formatSetCount } from "../../lib/format/number.js";
+import { useAuth } from "../../lib/auth/auth-context.js";
 import { loadLibrary } from "../../lib/offline/history.js";
 import {
   barWidth,
@@ -58,12 +59,15 @@ function useResult(props: BalanceScreenProps): {
   const [mountedAt] = useState(() => new Date());
   const now = props.now ?? mountedAt;
   const timeZone = props.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // D-0113 §1: the mount refresh is gated on the auth status, read here and passed down.
+  const { status } = useAuth();
   // `exactOptionalPropertyTypes`: spread the seams in only when they were actually supplied,
   // so `stubLastSyncedAt === undefined` keeps meaning "read it from IndexedDB" and is never
   // confused with an explicit `lastSyncedAt: undefined`.
   const state = useBalance({
     now,
     timeZone,
+    status,
     ...(props.result !== undefined ? { stub: props.result } : {}),
     ...(props.lastSyncedAt !== undefined ? { stubLastSyncedAt: props.lastSyncedAt } : {}),
   });
@@ -271,10 +275,15 @@ function useExerciseNames(
   useEffect(() => {
     if (override !== undefined) return;
     let live = true;
-    void loadLibrary().then((library) => {
-      if (!live) return;
-      setLoaded(new Map(library.map((e) => [e.id, e.name])));
-    });
+    // D-0104 / D-0115 §2: a rejected read keeps the empty map, so contributor rows fall back to
+    // the exercise id.
+    loadLibrary().then(
+      (library) => {
+        if (!live) return;
+        setLoaded(new Map(library.map((e) => [e.id, e.name])));
+      },
+      () => undefined,
+    );
     return () => {
       live = false;
     };

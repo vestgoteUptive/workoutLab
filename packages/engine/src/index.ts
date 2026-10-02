@@ -2,7 +2,10 @@
 // no I/O, no clock, no entropy source (rule 0, D-0024), so the same code runs in the browser
 // and in the Deno Edge Function. T-0200 covers rules 0–6 and 11; T-0201a adds rules 7.1–7.3 and 10;
 // T-0201b adds rules 7.4 and 8; T-0202 adds rule 9; T-0204 adds rules 12 and 13;
-// T-0205 adds rule 14 (prefill).
+// T-0205 adds rule 14 (prefill); T-0219 costs timed sets at the planned duration (D-0092);
+// T-0224 adds rule 12.1 applySwap (D-0093); T-0214 makes the rule 7.2 rep slots follow the
+// profile goal (D-0061 §1, D-0095); T-0226 makes rule 12 fitsBudget count the back-off set
+// applySwap re-adds (D-0105).
 
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
@@ -29,8 +32,12 @@ export {
   TRANSITION_S,
   MAX_ITEMS,
   MAX_ITEMS_PER_AREA,
+  REP_SLOTS,
+  DEFAULT_GOAL,
 } from "./session.js";
+export { getsBackoff } from "./cost.js";
 export { rankSwaps, muscleMatch } from "./swaps.js";
+export { applySwap } from "./apply-swap.js";
 export { generateWarmup, WARMUP_COST_S, WARMUP_MOVES, WARMUP_MOVE_S } from "./warmup.js";
 export {
   floorInc,
@@ -41,6 +48,7 @@ export {
 } from "./energy.js";
 export {
   prefill,
+  plannedDurationS,
   floor5,
   REENTRY_GAP_DAYS,
   HOLD_GAP_DAYS,

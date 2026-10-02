@@ -37,13 +37,17 @@ biggest gaps within the user's time budget.
 | UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
 | UF-09 Focus mode | .1–.9 (below) | One step at a time | Apple Fitness, NTC |
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
-| UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan | Adaptive targets; edit goal, rhythm, priorities | Apple Fitness, Freeletics |
+| UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings | Adaptive targets; edit goal, rhythm, priorities; export or delete your data | Apple Fitness, Freeletics |
 
 Shared components: C-01 Body map, C-02 Tab bar.
 
 ## UF-01.5 Account
 
 Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Returning users reach it from "I have an account" on UF-01.1. The UF-01.4 plan is computed on the device and saved after sign-in. There is no guest mode, and the < 60 s is measured from UF-01.1 to UF-01.4.
+
+## UF-02 Today
+
+- **UF-02.1 Today: workout in progress** (D-0139). When this user has an unfinished workout started on this device in the last 12 h, Today shows one card under the header: "Workout in progress", "Started HH:MM · n of N sets" and **Resume workout**, which reopens focus mode where it was left (UF-09). With several, the newest one. "Start workout" stays. An older unfinished workout shows no card (it is stale, D-0111 §7). Works offline.
 
 ## UF-08 Session setup
 
@@ -106,6 +110,7 @@ Full spec and ACs: `docs/specs/uf-11-plan-checkin.md` (D-0018). Principle: targe
 - **UF-11.1 Check-in**: a card on UF-02.1 and UF-11.2 when two 14-day periods in a row were under (< 70 % of the planned minimum) or over (> 110 % of the planned maximum). It proposes rhythm −1 or +1 per week on both bounds, clamped to 1–7, and shows the clamped values (1–2 → "Switch to 1–1 per week?", never "0–1"; 6–7 → "Step up to 7–7 per week?"). No card when the clamped rhythm equals the current one (1–1 under, 7–7 over). It previews the new targets. Accept / Keep current. Never shown on UF-03, UF-08 or UF-09. Offline: the actions are disabled.
 - **UF-11.2 Plan**: goal, rhythm, priority areas, per-area targets with source, next check-in date, the last 3 check-ins.
 - **UF-11.3 Edit plan**: goal, rhythm (1–7 per week), up to 3 priority areas. Save re-derives the targets and resets the check-in streak.
+- **UF-11.4 Account settings** (D-0136): reached from an "Account" link on UF-11.2, never from UF-03, UF-08 or UF-09. It shows the signed-in email, "Export my data" (one JSON file with every row the user owns, NFR-PRIV-4), "Sign out", and "Delete account" (NFR-PRIV-5). Deletion is confirmed by typing "delete". It removes the account and every owned row on the server (D-0135), then this user's data on the device, then signs out. Offline: export and delete are disabled.
 
 ## Open questions
 

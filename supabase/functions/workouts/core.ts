@@ -20,8 +20,10 @@ export const defaultSuggestDeps: SuggestDeps = {
   suggest,
 };
 
-function suggestProfile(profile: EngineProfile): Pick<EngineProfile, "level" | "equipment"> {
-  return { level: profile.level, equipment: profile.equipment };
+/** The profile the vendored `suggest` takes (D-0095 §1, §5): `goal` picks the rule 7.2 rep slots
+ * (D-0061 §1), so the server plan matches the device plan for the same history. */
+function suggestProfile(profile: EngineProfile): Parameters<typeof suggest>[2] {
+  return { level: profile.level, equipment: profile.equipment, goal: profile.goal };
 }
 
 /** The handler core: validates the body, loads the caller's engine inputs (422 before any engine

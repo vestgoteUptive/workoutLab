@@ -136,7 +136,8 @@ export declare const SESSION_PLAN_SCHEMA: {
                 };
                 readonly durationS: {
                     readonly type: readonly ["integer", "null"];
-                    readonly minimum: 1;
+                    readonly minimum: 15;
+                    readonly maximum: 120;
                 };
                 readonly kind: {
                     readonly $ref: "#/$defs/PrefillKind";

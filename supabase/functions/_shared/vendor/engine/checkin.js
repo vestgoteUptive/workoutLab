@@ -3,7 +3,8 @@
 // shared change; CI fails on drift (`vendor.mjs --check`).
 /// <reference types="./checkin.d.ts" />
 
-// Rule 9: adaptive targets / plan check-in (UF-11.1, UF-11.2; D-0018, D-0027, D-0041).
+// Rule 9: adaptive targets / plan check-in (UF-11.1, UF-11.2; D-0018, D-0027, D-0041, D-0061 §2,
+// D-0094). One ended 14-day period that is under or over is enough to propose.
 // Stateless and pure: the same inputs give the same proposal every time, on the device,
 // offline (D-0037 §2). The engine never changes targets; only an Accept (UI → data) does.
 import { indexLibrary, isHardSet, normalizeHistory } from "./history.js";
@@ -18,8 +19,8 @@ export const OVER_FACTOR_X10 = 22;
 /** Proposed rhythms are clamped to 1–7 sessions per week (rule 9). */
 export const RHYTHM_FLOOR = 1;
 export const RHYTHM_CEILING = 7;
-/** At most this many periods are listed and compared (D-0041 §4). */
-export const COMPARED_PERIODS = 2;
+/** At most this many periods are listed and compared: the last ended one (D-0061 §2, D-0094 §1). */
+export const COMPARED_PERIODS = 1;
 /** Rule 9 status of one period, in exact integer arithmetic (D-0041 §5). */
 export function periodStatus(completed, rhythmMin, rhythmMax) {
     if (10 * completed < UNDER_FACTOR_X10 * rhythmMin)
@@ -49,10 +50,12 @@ function lastAnsweredDate(checkins, tz) {
     return latest;
 }
 /**
- * Rule 9. `periods` are the last ≤ 2 ended eligible periods in ascending index (D-0041 §4).
- * A proposal needs two of them with the same non-`on_plan` status; it moves the rhythm by
- * ±1, clamped to 1–7, and is null when the clamp leaves the rhythm unchanged. The result
- * doesn't depend on the order of `sessions` or `checkins` (D-0041 §2).
+ * Rule 9. `periods` holds at most one entry: the last ended period (index `currentIndex − 1`)
+ * if its end ≥ `resetDate`, otherwise none (D-0094 §1). Eligibility only grows with the end
+ * date, so there is no earlier period to fall back to. If that period is `under` or `over`,
+ * the proposal moves the rhythm by ±1, clamped to 1–7, and is null when the clamp leaves the
+ * rhythm unchanged (D-0061 §2, D-0094 §2). The result doesn't depend on the order of
+ * `sessions` or `checkins` (D-0041 §2).
  */
 export function evaluateCheckin(sessions, profile, checkins, now, tz) {
     const { rhythmMin, rhythmMax } = profile;
@@ -98,14 +101,12 @@ export function evaluateCheckin(sessions, profile, checkins, now, tz) {
         nextCheckinDate: addDays(onboardDate, PERIOD_DAYS * (currentIndex + 1)),
     };
 }
+/** D-0094 §2: the one listed period decides; none listed, or on plan, means no proposal. */
 function proposalFor(periods, profile) {
-    if (periods.length < COMPARED_PERIODS)
+    const last = periods[periods.length - 1];
+    if (last === undefined || last.status === "on_plan")
         return null;
-    const [a, b] = periods;
-    if (a === undefined || b === undefined || a.status !== b.status || a.status === "on_plan") {
-        return null;
-    }
-    const direction = a.status === "under" ? "down" : "up";
+    const direction = last.status === "under" ? "down" : "up";
     const delta = direction === "down" ? -1 : 1;
     const newMax = clampRhythm(profile.rhythmMax + delta);
     const newMin = Math.min(clampRhythm(profile.rhythmMin + delta), newMax);

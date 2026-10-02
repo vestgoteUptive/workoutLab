@@ -139,7 +139,10 @@ export function toEngineProfile(row: ProfileRow): EngineProfile {
   };
 }
 
-/** `plan_checkins` → PlanCheckin. The engine reads only `answeredAt` (D-0041 §2). */
+/**
+ * `plan_checkins` → PlanCheckin. The engine reads only `answeredAt` (D-0041 §2). A null
+ * `completed_prev` (one-period evaluation, D-0070 §6) stays null.
+ */
 export function toPlanCheckin(row: PlanCheckinRow): PlanCheckin {
   return {
     id: row.id,

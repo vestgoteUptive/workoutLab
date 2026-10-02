@@ -15,9 +15,24 @@ export declare function realEquipment(list: readonly string[]): string[];
  * (no equipment is always eligible), level ≤ profile level, and not in `excludeIds`.
  */
 export declare function isEligible(exercise: LibraryExercise, profile: Pick<EngineProfile, "level" | "equipment">, excludeIds?: readonly string[]): boolean;
-/** Work + rest for one set (rule 7.1). */
-export declare function setCostS(exercise: LibraryExercise): number;
-/** `sets × (work + rest) + 60 s transition` (rule 7.1). */
-export declare function itemCostS(exercise: LibraryExercise, sets: number): number;
+/**
+ * Work + rest for one set (rule 7.1). `durationS` is a timed set's planned duration (D-0092 §1,
+ * `plannedDurationS`); without it (or when it is null) a timed set works its library
+ * `defaultDurationS`, so the 1-argument result is unchanged (D-0092 §4). A non-timed set
+ * always works 45 s, and a timed exercise with no duration at all falls back to 45 s.
+ */
+export declare function setCostS(exercise: LibraryExercise, durationS?: number | null): number;
+/**
+ * `sets × (work + rest) + 60 s transition` (rule 7.1). `durationS` as for `setCostS`; the
+ * 2-argument result is unchanged (D-0092 §4).
+ */
+export declare function itemCostS(exercise: LibraryExercise, sets: number, durationS?: number | null): number;
 /** `budgetMin × 60 − (warmupInBudget ? 180 : 0)`; may be negative (D-0040 §7). */
 export declare function availableS(budgetMin: number, warmupInBudget: boolean): number;
+/**
+ * Rule 7.4 / 12.1 (D-0093 §2, D-0105 §2): whether `exercise` in a slot gets a back-off set.
+ * True exactly when the slot has one (`slotHasBackoff`) and `exercise` is not timed (a timed
+ * exercise never gets one, D-0047). The one predicate behind `buildItem` (so `suggest` and
+ * `applySwap`) and rule 12's `fitsBudget`, so the two cannot drift.
+ */
+export declare function getsBackoff(slotHasBackoff: boolean, exercise: Pick<LibraryExercise, "timed">): boolean;
