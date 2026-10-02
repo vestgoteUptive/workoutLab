@@ -134,3 +134,87 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 - **T-0303c and T-0418** mount the same `SwapSheet`, not this seam, so they don't depend on this ticket.
 
 - **From T-0414 review (2026-10-02):** D-0140 left a swap from `confirm` out of scope. D-0153 §2 now settles it, and it is AC-7.
+
+## Build log (frontend-dev, 2026-10-02)
+**Status: needs-triage (TR-0043).** Every AC is implemented. The branch must not merge until TR-0043 is resolved and the `host.chrome.test.tsx` pins are updated after T-0423 merges.
+
+### What changed
+- **`features/UF-09/seams.tsx`.** One `swap` entry is in both arrays: label `en.uf05.swapAction` ("Swap"), `keepsClockRunning: false`.
+  - It `lazy()`-loads `SwapSheet` from `../UF-05/index.js` (D-0142 §8).
+  - `swapTarget(ctx)` is the pure D-0142 §7 helper.
+  - `onApply` awaits `ctx.replaceItem(target, result.plan.items[target], result.plan.mainLiftId)`, then calls `ctx.close()`. A rejection leaves the sheet open with T-0421's save notice.
+  - The label is read as `const { uf05 } = en`. The UF-09 strings scan (`exports-and-lint.test.ts`, which T-0423 AC-6 pins unedited) bans the literal `en.uf0X` in UF-09 sources. This file is the seam flow's one grant (D-0071 §4).
+  - The dynamic `import()` also keeps the T-0304e pin "seams.tsx imports nothing from UF-03/04/05 (static)" green.
+- **`features/UF-09/machine.ts`.** `planReplaced` has the D-0153 §2 confirm branch (`savedBySwap`) and its doc comment.
+- **`flows/uf-05.ts`.** Adds `swapAction: "Swap"`.
+- **Named pin changes (D-0142 §6, D-0153 §2):**
+  - `seams.test.tsx` AC-9: the arrays hold exactly `["swap"]`, and both "with the module arrays" rows are the real lists.
+  - `paused.test.tsx`: "actions: …", "the pair: with the module arrays …", "hidden on the last item", "hidden in a pause taken on UF-09.8", and the AC-8 Cancel list. Each UF-09.9 list gains "Swap".
+  - `next-exercise.test.tsx`: "the pair: with the module arrays …" is now `["Pause workout", "I'm ready", "Swap"]`.
+  - `machine.session.test.ts`: the T-0414 AC5 clamp-only row for `confirm` is dropped.
+  - `tests/e2e/uf-09-focus.spec.ts` AC-7: the UF-09.9 button count goes from 2 to 3.
+- **New files:**
+  - `t0422.machine.test.ts`, `t0422.seams.test.tsx`, `t0422.host.test.tsx`;
+  - `tests/e2e/uf-05-swap.spec.ts`.
+
+`git diff --stat main...HEAD -- apps/web/src/features/UF-09`:
+```
+ __tests__/machine.session.test.ts   |   4 +-
+ __tests__/next-exercise.test.tsx    |  11 +-
+ __tests__/paused.test.tsx           |  25 +-
+ __tests__/seams.test.tsx            |  29 +-
+ __tests__/t0422.host.test.tsx       | 730 ++++
+ __tests__/t0422.machine.test.ts     | 163 ++++
+ __tests__/t0422.seams.test.tsx      | 240 ++++
+ machine.ts                          |  29 +-
+ seams.tsx                           |  65 +-
+ 9 files changed, 1266 insertions(+), 30 deletions(-)
+```
+
+### AC → test
+| AC | Tests |
+|---|---|
+| AC-1 | `t0422.seams` "each array holds one swap entry …"; `seams.test` AC-9 (arrays, UF-09.6/UF-09.9 lists); `paused.test` "the pair: with the module arrays …"; `next-exercise.test` "the pair: …"; UF-05 `exports-and-lint` (no UF-09 import, unchanged). The diff stat is above. |
+| AC-2 | `t0422.host` "T-0422 AC-2 …": opens, the clock stays paused (10 min), Cancel, reload, no way out |
+| AC-3 | `t0422.host` "T-0422 AC-3 …" (finished, pair, skipped, none left); `t0422.seams` "AC-3 swapTarget" (pure, both values) |
+| AC-4 | `t0422.host` "T-0422 AC-4 …": opens, the countdown stops (90 s → 0:50), the pair (runs without the sheet), apply → new name, runs on from 0:50 |
+| AC-5 | `t0422.host` "T-0422 AC-5 …": one `replaceItem` with the engine's item and main lift, one `upsertSession`, stored row and `parseSessionPlan` ok, set line, logging (`db-row` at `setIndex: 1`, unique positions), remount. **The load-line test is red: TR-0043, conflict 1.** |
+| AC-6 | `t0422.host` "T-0422 AC-6 …" (push-up under Equipment taken, the 3-argument call, `mainLiftId`, `isMain`), plus the non-main pair |
+| AC-7 | `t0422.machine` (paused, running, the rest by type, fewer sets with its pair, last item paused/running with its pair, another item returns the same object); `t0422.host` "T-0422 AC-7 host …" (Swap from UF-09.4 → UF-09.5 → Db row Set 3 of 3 at `setIndex: 2`, no `editSet`, queued rows unchanged) and the host pair (bench-press set 4 of 4 → item 1, UF-09.4 as recorded → Save → UF-09.5 → UF-09.6 Db row) |
+| AC-8 | `t0422.host` "T-0422 AC-8 axe …" over UF-09.9 and over UF-09.6 (0 violations); `exports-and-lint` jsx-no-literals in UF-09 and UF-05 |
+| AC-9 | These pass unchanged: UF-09 `exports-and-lint` (index pin), UF-05 `exports-and-lint` (exactly `SwapSheet`), and the T-0304a AC-2 tick test |
+| AC-10 | `tests/e2e/uf-05-swap.spec.ts`: offline; keyboard Swap; first row ≥ 44 px; Use; Resume shows the option; the reload reads it back from `wl-offline.sessions`; axe clean; guarded |
+
+### Red on main
+- The vitest run used `main`'s `seams.tsx`, `machine.ts` and `flows/uf-05.ts`, with the new tests: 40 of 42 failed.
+  - The two that passed are the pairs that hold on main too: "with no sheet open the countdown runs" and "another item returns the same state object".
+  - Every AC from 1 to 8 had red tests.
+- The e2e run used `main`'s `seams.tsx` (`t0422.seams` moved aside so `tsc -b` builds). `uf-05-swap` failed with no Swap button: `keyTo` timed out.
+
+### Planted faults (each reverted)
+1. `target = ctx.currentItemIndex`: 5 red.
+   - AC-3 "finished item" and "skipped";
+   - `t0422.seams` "renders the sheet over the target item";
+   - the AC-7 host pair;
+   - (the TR-0043 test).
+2. `replaceItem` without the third argument: 5 red.
+   - AC-6 both;
+   - AC-5 "one replaceItem …";
+   - `t0422.seams` "Use: replaceItem(…)";
+   - (the TR-0043 test).
+3. A direct `upsertSession` call in the seam: AC-5 "one replaceItem …, one row write …" is red (2 calls), plus the TR-0043 test.
+4. The old `confirm` clamp-only branch restored in `planReplaced`: 10 red.
+   - all 8 positive `t0422.machine` tests;
+   - the AC-7 host test;
+   - (the TR-0043 test).
+
+### Gate (2026-10-02)
+- `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: typecheck and lint are green. Test: 5 failed of 2696, all expected.
+  - `host.chrome.test.tsx` × 3 (next, paused, paused on the last item). These pin the module arrays and gain "Swap". They are deferred until T-0423 merges (Notes; T-0423 AC-6 needs the file unedited).
+  - `t0422.host` AC-5 load line (TR-0043, conflict 1).
+  - `build.test.ts` AC-A6 "no seam-mounted feature is in the entry chunk" (TR-0043, conflict 2). `Couldn't load alternatives.` reaches the entry through the `en` catalogue, not through UF-05's code. UF-05 is its own lazy chunk.
+- `-w format:check`: green.
+- `node .github/scripts/check-all.mjs`: green.
+  - TR-0043 is left untracked in the worktree for the orchestrator, because `.squad/triage/**` isn't in this lane.
+- `check:size`: green.
+- The whole web `test:e2e`, with `TMPDIR=$HOME/.cache/wl-pw-tmp` (the /tmp tmpfs is full): 139 passed.
