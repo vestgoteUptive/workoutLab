@@ -81,6 +81,12 @@ async function loadSheetData(): Promise<SheetData | null> {
   return { history, profile, library: library as LibraryExercise[] };
 }
 
+/**
+ * The UF-05.1 swap sheet. A mount may keep it open across prop changes: when `itemIndex` or the
+ * current item's `exerciseId` changes, the sheet resets to Best match with the first row selected
+ * and no notice (D-0160). A new `workout` object for the same slot (for example after the host
+ * re-reads the plan) keeps the chosen reason and row.
+ */
 export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: SwapSheetProps) {
   const titleId = useId();
   const groupName = useId();
@@ -99,6 +105,16 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
   const [reason, setReason] = useState<SwapReason | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
+
+  // A different slot is a different task: start over from Best match (D-0160).
+  const slotKey = `${itemIndex}:${current?.exerciseId ?? ""}`;
+  const [shownSlot, setShownSlot] = useState(slotKey);
+  if (shownSlot !== slotKey) {
+    setShownSlot(slotKey);
+    setReason(null);
+    setSelectedId(null);
+    setNotice(null);
+  }
   const [pending, setPending] = useState(false);
   const pendingRef = useRef(false);
   const mounted = useRef(true);
