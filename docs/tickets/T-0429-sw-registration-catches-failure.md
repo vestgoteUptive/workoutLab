@@ -147,3 +147,26 @@ start `T-0429` (for example `T-0429: register the service worker with a rejectio
   --force --concurrency=1` 19/19 tasks, `test:repo-checks` 146 pass; `check:size` green;
   `pnpm -w format:check` green; `pnpm check:repo` green. The CSP is unchanged (`script-src
   'self'`), and the built `index.html` has a single `<script>`, the module entry with a `src`.
+
+## QA log (qa-tester, 2026-10-02)
+- **Verdict: pass.** The tree was clean at 8ae4f3c, and every run below was under `flock /tmp/workoutlab-tests.lock`.
+- **AC1 red reproduced.** With main's `vite.config.ts` (`injectRegister: "auto"`) and `main.tsx` restored and the
+  new tests kept, `test:e2e sw-registration.spec.ts` gives AC1 red: `consoleGuard.errors()` =
+  `["pageerror: t0429-register-failed"]`, and the fixture teardown fails on the same line. AC2 passes.
+  In the same state, `vitest run build.test.ts -t T-0429` gives 2 of 2 red (`index.html` carries
+  `<script id="vite-plugin-pwa:register-sw" src="/registerSW.js">`). Reverted.
+- **AC2 planted fault reproduced.** With `injectRegister: "auto"` next to the bundle call, AC2 is red
+  (`Expected: 1, Received: 2`). AC1 is also red (2 calls, plus the injected script's pageerror). Reverted.
+- **Extra fault (QA).** With `.catch` changed to `.then` in `register.ts` (the rejection goes unhandled),
+  e2e AC1 is red (pageerror) and the unit test "a rejected registration logs one warning and no error"
+  is red (Unhandled Rejection). Reverted. So AC1 depends on the handler itself, not only on
+  `injectRegister`.
+- **D-0154 / AC3.** The interception assertion in "setOffline does not suspend interception" is
+  unchanged (`501` and `guard.unclaimed()` = the one offline URL); the only change is the added
+  `serviceWorker.ready` await. `grep -rl "Failed to register a ServiceWorker" tests/e2e` is empty.
+  `test:e2e fixture-guard.spec.ts sw-registration.spec.ts -g "setOffline|T-0429" --repeat-each=10`
+  gives 40 passed, so it isn't flaky.
+- **Gates.** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: 4/4
+  tasks, 169 files / 2661 tests green. `test:e2e` (whole suite): 142 passed. `check:size` exit 0,
+  `-w format:check` exit 0, `node .github/scripts/check-all.mjs` exit 0. The contracts and the AC5
+  specs (shell, offline, uf-02, uf-08, uf-09) are unchanged against main.
