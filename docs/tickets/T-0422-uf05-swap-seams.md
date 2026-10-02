@@ -158,7 +158,7 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 - **From T-0414 review (2026-10-02):** D-0140 left a swap from `confirm` out of scope. D-0153 §2 now settles it, and it is AC-7.
 
 ## Build log (frontend-dev, 2026-10-02)
-**Status: needs-triage (TR-0043).** Every AC is implemented. The branch must not merge until TR-0043 is resolved and the `host.chrome.test.tsx` pins are updated after T-0423 merges.
+**Status (attempt 1): needs-triage (TR-0043).** Superseded by the attempt 2 log below: TR-0043 is resolved by D-0156, and the branch is done.
 
 ### What changed
 - **`features/UF-09/seams.tsx`.** One `swap` entry is in both arrays: label `en.uf05.swapAction` ("Swap"), `keepsClockRunning: false`.
@@ -240,3 +240,53 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
   - TR-0043 is left untracked in the worktree for the orchestrator, because `.squad/triage/**` isn't in this lane.
 - `check:size`: green.
 - The whole web `test:e2e`, with `TMPDIR=$HOME/.cache/wl-pw-tmp` (the /tmp tmpfs is full): 139 passed.
+
+## Build log, attempt 2 (frontend-dev, 2026-10-02): done
+`git merge main` brought in D-0156 and T-0423, and merged cleanly.
+
+### What changed
+- **`features/UF-09/prefill.ts`** (D-0156 §1, AC-11). `nextSetPrefill` matches the previous entry on `itemIndex`, `setIndex − 1` **and** `exerciseId === item.exerciseId`. The doc comment cites D-0156 §1. Nothing else in the file changed.
+- **`__tests__/prefill.test.ts`.** The cases are added in a new describe, "T-0422 AC-11 nextSetPrefill after a swap": same exercise carries, a swapped exercise doesn't, mixed history, swap back, and the per-field fallback. The existing cases are unedited.
+- **`__tests__/t0422.host.test.tsx`.** The AC-5 load-line test is unedited, and it now passes. The AC-7 host test gets one more assertion: UF-09.5 shows "Next · set 3 of 3", and the page has no "60 kg".
+- **`apps/web/build.test.ts`** (D-0156 §2, AC-12). Only `SEAM_SENTINELS["UF-05"]` changed, to `["wl-uf05"]`, and its comment now cites D-0156 and D-0071 §1.
+- **`__tests__/host.chrome.test.tsx`** (D-0142 §6 named changes). Three pins changed:
+  - next is now Pause workout, I'm ready, Swap;
+  - paused is now Resume, Swap, Skip to next exercise, End workout (4 buttons);
+  - paused on the last item is now Resume, Swap, End workout.
+- **No other UF-09 test moved.** Every existing test passed unedited with the filter: `src/features/UF-09`, `UF-05` and `build.test.ts` gave 871/871.
+
+`git diff --stat main...HEAD -- apps/web/src/features/UF-09`:
+```
+ __tests__/host.chrome.test.tsx      |  13 +-
+ __tests__/machine.session.test.ts   |   4 +-
+ __tests__/next-exercise.test.tsx    |  11 +-
+ __tests__/paused.test.tsx           |  25 +-
+ __tests__/prefill.test.ts           |  63 +-
+ __tests__/seams.test.tsx            |  29 +-
+ __tests__/t0422.host.test.tsx       | 733 ++++
+ __tests__/t0422.machine.test.ts     | 163 ++++
+ __tests__/t0422.seams.test.tsx      | 240 ++++
+ machine.ts                          |  29 +-
+ prefill.ts                          |  12 +-
+ seams.tsx                           |  65 +-
+ 12 files changed, 1350 insertions(+), 37 deletions(-)
+```
+
+### Planted faults
+Each fault was made on a scratch copy and reverted from a backup with `cmp` (no `git checkout`).
+- **The `exerciseId` filter removed from `nextSetPrefill`.** 3 tests go red:
+  - AC-11 "a swapped exercise doesn't carry";
+  - the AC-5 load line (`t0422.host`);
+  - the AC-7 host test (its "Next" line shows 60 kg).
+  The carry cases stay green, as they should.
+- **The copy sentinel restored** (`["Couldn't load alternatives.", "wl-uf05"]`). AC-A6 "no seam-mounted feature is in the entry chunk" goes red: `entry-graph files with a UF-05 sentinel`.
+- **The copy sentinel gone, plus a side-effect `import "../features/UF-05/index.js"` in `src/app/App.tsx`.** AC-A6 §3 is still red, on `assets/index-….css: wl-uf05`.
+- **With the new sentinel and no fault,** AC-A6 is 3/3 green.
+
+### Gate (2026-10-02)
+- `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1`: 19/19 tasks; web 2745/2745.
+  - The first run had one red, UF-08 `ready-start.test.tsx` "retry: the second tap…". It is outside this diff. It passed 3/3 on its own, and the rerun of the whole gate was green.
+- The whole web `test:e2e` with `TMPDIR=$HOME/.cache/wl-pw-tmp`: 144 passed.
+- `check:size`: green.
+- `-w format:check`: green.
+- `node .github/scripts/check-all.mjs`: green.
