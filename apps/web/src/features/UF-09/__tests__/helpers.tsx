@@ -49,7 +49,8 @@ export async function seedSession(row: SeedRow = {}): Promise<void> {
     energy: "normal",
     warmup_in_budget: row.warmup_in_budget ?? true,
     ended_at: row.ended_at ?? null,
-    plan: (row.plan === undefined ? P1 : row.plan) as Json,
+    // A deliberately invalid plan is part of AC-5, so the type is widened on purpose.
+    plan: (row.plan === undefined ? P1 : row.plan) as SessionPlan | null,
   });
 }
 
