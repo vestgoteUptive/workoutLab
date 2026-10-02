@@ -111,3 +111,31 @@ None. This is a read of the existing `loadSessions()` view and the existing queu
   - **Not with T-0416, T-0417 or T-0418.** They are the same UF-03 lane and share `__tests__/helpers.tsx`, so run T-0433 before or after them.
   - **Allowed with T-0434** (web-shell `lib/offline`), as long as T-0434 doesn't change what `loadSessions()` returns for these fixtures.
 - **Not in scope, filed as a thought:** when the merged view's `endedAt` is later than the raw row's (another device finished later), UF-03.3 still shows numbers at the raw `ended_at` and Save re-sends it. D-0148 §1 keeps the later finish on the device either way. Raise a follow-up only if it shows up in use.
+
+## Build log (frontend-dev, 2026-10-02)
+- **Files.** `features/UF-03/summary-data.ts`: new `viewEffort(sessions, id, raw)`, which is `storedEffort` of the `loadSessions()` entry's `effortRating`, or of the raw `effort_rating` when there is no entry. `loadSummary` reads `loadSessions()` next to the history, library and targets, and uses it only for `effortRating`. `now` and the numbers are unchanged. `features/UF-03/EffortSave.tsx`: a `touched` ref set by a chip pick. An untouched Save sends `viewEffort(await loadSessions(), id, entry.row.effort_rating)`, with both read at the tap after `sessions.get(id)`. A `mounted` ref guards `navigate("/", {replace: true})` and the `failed` state. Tests: new `__tests__/summary.merged.test.tsx` (15 tests). Additive changes in `__tests__/helpers.tsx`: `seedSessionCache`, `setQueuedFlags` and a `/balance` route in `renderSummary`. Additive in `__tests__/mocks.ts`: `featureLoaderSpies`, which wraps the real `loadSessions` in a spy.
+- **AC → test** (`summary.merged.test.tsx`; every test also asserts after it that no `refresh*` spy was called and the `unhandledRejection` probe is empty):
+  - AC-1: "marked … 'Easy'", "the pair, unmarked … 'Hard'", "the pair, no cached row", "a later cached finish … 'Very hard'", "nothing … no chip".
+  - AC-2: "marked: no pick sends … 2", "tap-time … (1)", "touched … 5", "touched back … 2 … view changed to 1", "no cached row … 3", "no entry (the fallback) … raw 3" (`loadSessions` spy `mockResolvedValueOnce([])` at the tap).
+  - AC-3: "offline, marked, untouched …": `pending: true`, `finished: true`, row `{...row, effort_rating: 2}`, no `cacheCurrent` key, replace (one step back is `/`), `fetch` not called.
+  - AC-4: "left through 'See balance'" (`/balance` after 50 ms, the row holds 4, one step back is the summary), "the pair: staying …" (replace to `/`), "rejected after leaving" (probe empty, `console.error` spy not called, `/balance` stays).
+  - AC-5: `exports-and-lint.test.ts`, `summary.save/states/numbers.test.tsx` and `index.tsx` are unedited and green. `flows/uf-03.ts` is untouched. `grep -rnE "\brefresh[A-Z]\w*" apps/web/src/features/UF-03 | grep -v __tests__` finds nothing (exit 1).
+- **Red on main** (the new test file against the unfixed `summary-data.ts`/`EffortSave.tsx`): 9 of 15 fail.
+  - AC-1: marked `expected ['Hard'] to deeply equal ['Easy']`, later cached finish `['Hard']` vs `['Very hard']`, nothing `['Hard']` vs `[]`.
+  - AC-2: marked `effort_rating: 4` vs expected 2; tap-time `4` vs expected 1; touched back fails on the preselect (`['Hard']` vs `['Easy']`); no entry fails because `loadSessions` is never called at the tap.
+  - AC-3: the queued row has `effort_rating: 4`, expected 2.
+  - AC-4: left through "See balance" `expected '/' to be '/balance'`.
+  - These are green on main by design: the unmarked pair, the no-cached-row pair, touched, the no-cached-row Save, the stay-on-summary pair and rejected-after-leaving.
+- **Planted faults.** Each was applied alone to the fixed code, then `summary.merged` + `summary.save` were run (34 tests) and the fault reverted:
+  - F1, preselect read from the raw row (`storedEffort(row.effort_rating)`): 4 red (AC-1 marked, later cached finish, nothing; AC-2 touched back).
+  - F2, the untouched value taken from mount state (`rating`): 2 red (AC-2 tap-time `4` vs 1; no entry, no tap-time read).
+  - F3, unconditional `navigate`: 1 red (AC-4 left through "See balance", `'/'` vs `'/balance'`).
+  - F4, `touched` ignored (always the view): 13 red (AC-2 touched and touched back, AC-4 both, and 9 in `summary.save`).
+  - F5, the no-entry fallback as `null`: 1 red (AC-2 no entry).
+  - F6, `setState("failed")` without the mounted guard: stays green. React 18+ doesn't warn on a set-state after unmount, so the guard only stops a render that would never show. AC-4's "rejected after leaving" pins what the user would see: no throw, no `console.error`, `/balance` stays.
+- **Runs.**
+  - `flock … turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: 4/4 tasks, 169 test files green.
+  - `pnpm -w format:check`: green.
+  - `node .github/scripts/check-all.mjs`: exit 0.
+  - `pnpm --filter @workoutlab/web test:e2e uf-03`: 2/2. The whole e2e suite: 137 passed.
+- **Defaults (none needed a decision).** A pick back to the preselected value counts as touched, as the ticket's "touched back" says. The tap reads `sessions.get` first and then `loadSessions`, so a gone row still fails before any view read.
