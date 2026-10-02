@@ -125,3 +125,42 @@ Tests for every AC pass, with AC8–AC10 on the real local stack (paste the `den
   - `deno test --config supabase/tests/functions/deno.json --allow-net --allow-env --allow-read --allow-run=psql --allow-write supabase/tests/functions/`: 160 passed | 1 failed. All T-0310b tests pass: AC8 ok (2s), AC9 ok, AC10 ok (`DELETE /account took 115 ms` for 400 sessions / 5,000 sets). The one failure is the existing `seed-roundtrip.test.ts` AC3, because `psql` isn't installed on this host (`psql not found`); it's unrelated and runs in CI.
   - `supabase test db` on a fresh reset: Files=14, Tests=535, PASS. (Run after the integration tests without a reset, the analytics/count tests see the leftover users; that's the existing ordering, CI runs pgTAP first.)
 - **Gates:** the branch was fast-forwarded to `main` 754dbf3 first (main had moved on; no overlap with `supabase/**`, and the engine's rule-14 "unchanged against main" test needs the current main). `npx -y deno@2 check` of every function entry point and `account/*.ts`: clean. Deno unit tests: 115 passed. `node --test "supabase/tests/scripts/*.test.mjs"`: pass 27. `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1`: 19/19 tasks successful. `format:check`: clean. `check:repo`: exit 0. `node supabase/scripts/vendor.mjs --check`: exit 0.
+
+### 2026-10-02 rework 1 (backend-dev): security-review MEDIUM, AC6 fence too narrow
+- **Finding:** the AC6 fence was one literal regex. It missed `Deno.env.toObject()`, a non-literal `Deno.env.get(x)`, template literals and concatenation, other key names (`SUPABASE_SECRET_KEYS`, `SB_SECRET_KEY`) and dynamic `import()`.
+- **Fix** (`supabase/tests/scripts/functions-platform.test.mjs`): `scanForSecretAccess` runs over **every** file under `supabase/functions/`, `_shared/vendor` included, except `account/admin.ts`.
+  - Substring bans on the raw text: `Deno.env.toObject`, `SERVICE_ROLE`, `SECRET_KEY`, `SB_SECRET`, `auth.admin`, `import(`, `process.env`/`node:process`, `globalThis`, `eval(`/`new Function(`.
+  - On the code with comments stripped, every `Deno` use must be `Deno.serve` or `Deno.env.get("<LITERAL>")`. Anything else is flagged: a non-literal get, `Deno["env"]`, `const { env } = Deno`, or passing `Deno.env` around.
+  - `admin.ts` is pinned more tightly: its only `Deno` uses are `env.get("SUPABASE_URL")` and `env.get("SUPABASE_SERVICE_ROLE_KEY")`, `auth.admin` appears exactly once, and there is no `import(`, `globalThis` or `process.env`.
+  - The non-vacuity check stays: the set of key readers must be exactly `["account/admin.ts"]`.
+- **Existing files that tripped a ban:**
+  - `_shared/auth.ts`'s header comment named `SUPABASE_SERVICE_ROLE_KEY`. I reworded it to "the service-role key", so it needs no allowance.
+  - `_shared/cors.ts` defaults an injectable env to `Deno.env` 3 times. This is one named allowance in `SECRET_FENCE_ALLOWANCES`: exactly 3 `= Deno.env` defaults, and a separate test pins every `env.get(` in that file to `"ALLOWED_ORIGINS"`.
+  - Vendor has no hits.
+- **Positive fixtures:** 15 in-test cases, one or more per banned form, plus 3 contrast cases that pass.
+- **Proven red against the real fence:** I wrote each of these, one at a time, into a temporary `supabase/functions/_shared/zz-probe.ts`. Each made `…reaches a secret` fail (`# fail 1`), and the old literal regex matched none of them:
+  - `toObject()`
+  - `get(n)`
+  - a template literal
+  - `"…" + "…"`
+  - `SUPABASE_SECRET_KEYS`
+  - `SB_SECRET_KEY`
+  - `x.auth.admin.deleteUser`
+  - `import("../account/admin.ts")`
+  - `Deno["env"]`
+  - `const { env } = Deno`
+  - `globalThis.Deno`
+  - `process.env`
+- **Other temporary edits, each reverted:**
+  - A probe in `_shared/vendor/shared/` failed the scan.
+  - `env.get("SUPA" + "BASE_URL")` in `cors.ts` failed the ALLOWED_ORIGINS test.
+  - A 4th `= Deno.env` alias in `cors.ts` failed the scan.
+  - Making `admin.ts` stop reading the key failed both the reader-set test and the admin pin test.
+- **Runs:**
+  - `node --test "supabase/tests/scripts/*.test.mjs"`: pass 30, fail 0.
+  - Deno unit tests: 115 passed.
+  - `npx -y deno@2 check` (functions): clean.
+  - `format:check`: clean.
+  - `check:repo`: exit 0.
+  - `vendor.mjs --check`: exit 0.
+- **Residual risk:** this is a static, text-level scan. It can't see through obfuscation such as unicode escapes in identifiers or `Reflect`-style indirection on an alias it doesn't recognise. The security review of `admin.ts` is still the backstop.
