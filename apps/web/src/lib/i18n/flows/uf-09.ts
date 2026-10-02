@@ -68,6 +68,10 @@ export const uf09 = {
   // The chrome announcer (T-0304f, D-0118 §10, NFR-A11Y-4).
   announceTen: "10 seconds",
   announceGo: "Go",
+  // The UF-09.5 / UF-09.1 voice cue words (T-0304g, D-0119 §7), spoken by speechSynthesis.
+  voiceThree: "3",
+  voiceTwo: "2",
+  voiceOne: "1",
   // UF-09.2 Warm-up (T-0304c, D-0066 §8, D-0119 §5).
   warmupMove: (n: number, total: number) => `Move ${n} of ${total}`,
   restartMove: "Restart",
