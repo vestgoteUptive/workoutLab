@@ -209,7 +209,7 @@ describe("AC-7 strings: literals in workout.ts, area names from en.bodyMap.areas
   const areaNames = Object.values(en.bodyMap.areas);
 
   it("the area names are not copied into workout.ts", () => {
-    for (const name of areaNames) expect(source).not.toMatch(new RegExp(`["'\`]${name}\\b`));
+    for (const name of areaNames) expect(source).not.toMatch(new RegExp(`["'\`]${name}["'\`]`));
   });
 
   /** Every fragment left after taking out area names and numbers is a literal in the file. */

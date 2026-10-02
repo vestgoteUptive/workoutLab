@@ -1,6 +1,7 @@
 // T-0302a AC-3: the real `@workoutlab/engine` over the real `lib/offline` cache (fake-indexeddb),
 // cached server rows plus sets queued through `recordSet` (principle 3, NFR-OFF-3, R11-E4).
 // `balance` and `loadEngineHistory` are spies that call the real functions, to count them.
+// T-0302c AC-1: `suggest` is one too, so the card's preview is pinned to the device as well.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
 import { recordSet } from "../../../lib/offline/queue.js";
@@ -13,14 +14,14 @@ vi.mock("../../../lib/auth/auth-context.js", () => ({
 }));
 vi.mock("@workoutlab/engine", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@workoutlab/engine")>();
-  return { ...actual, balance: vi.fn(actual.balance) };
+  return { ...actual, balance: vi.fn(actual.balance), suggest: vi.fn(actual.suggest) };
 });
 vi.mock("../../../lib/offline/engine-feed.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../lib/offline/engine-feed.js")>();
   return { ...actual, loadEngineHistory: vi.fn(actual.loadEngineHistory) };
 });
 
-const { balance } = await import("@workoutlab/engine");
+const { balance, suggest } = await import("@workoutlab/engine");
 const { loadEngineHistory } = await import("../../../lib/offline/engine-feed.js");
 
 let online = false;
@@ -29,6 +30,7 @@ beforeEach(async () => {
   online = false;
   vi.spyOn(navigator, "onLine", "get").mockImplementation(() => online);
   vi.mocked(balance).mockClear();
+  vi.mocked(suggest).mockClear();
   vi.mocked(loadEngineHistory).mockClear();
   const db = freshDb();
   signIn();
@@ -101,5 +103,25 @@ describe("AC-3 real balance with queued sets", () => {
     // One cache read so far (the refresh is still hanging, inside its 3 s cap): one balance.
     expect(loadEngineHistory).toHaveBeenCalledTimes(1);
     expect(balance).toHaveBeenCalledTimes(1);
+  });
+
+  it("T-0302c AC-1: the card's suggest runs on the device; fetch never reaches /functions/v1/", async () => {
+    online = true;
+    await queueThree();
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockImplementation(() => new Promise<Response>(() => {}));
+    renderToday(F_TZ);
+    await waitFor(() =>
+      expect(document.querySelectorAll('[data-part="card-row"]').length).toBeGreaterThan(0),
+    );
+    await waitFor(() => expect(fetchSpy).toHaveBeenCalled());
+    await macrotask();
+    expect(suggest).toHaveBeenCalledTimes(1);
+    // The queued sets reach suggest too: 4 cached + 3 queued RDL sets.
+    expect(vi.mocked(suggest).mock.calls[0]![0]).toHaveLength(7);
+    const urls = fetchSpy.mock.calls.map(([input]) => urlOf(input));
+    expect(urls.filter((u) => u.includes("/functions/v1/"))).toEqual([]);
+    expect(urls.filter((u) => u.includes("/workouts/suggest"))).toEqual([]);
   });
 });

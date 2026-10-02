@@ -329,7 +329,9 @@ describe("AC-7 which line shows above Start (real engine, F-targets, a profile)"
     renderToday(F_TZ);
     await waitForTiles();
     expect(part("attention")).not.toBeNull();
-    expect(aboveStart()).toBe(part("attention"));
+    // T-0302c: the suggestion card sits between the attention line and Start (D-0106 §1).
+    expect(aboveStart()).toBe(part("card"));
+    expect(part("card")!.previousElementSibling).toBe(part("attention"));
     expect(part("no-workouts")).toBeNull();
     expect(part("nothing-recent")).toBeNull();
   });
@@ -343,7 +345,11 @@ describe("AC-7 which line shows above Start (real engine, F-targets, a profile)"
     expect(part("attention")).toBeNull();
     expect(part("no-workouts")).toBeNull();
     expect(part("nothing-recent")).toBeNull();
-    expect(aboveStart()).toBe(document.querySelector('[data-component="C-01"]'));
+    // T-0302c: the suggestion card sits between C-01 and Start (D-0106 §1).
+    expect(aboveStart()).toBe(part("card"));
+    expect(part("card")!.previousElementSibling).toBe(
+      document.querySelector('[data-component="C-01"]'),
+    );
   });
 });
 
