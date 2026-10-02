@@ -198,3 +198,12 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - Add T-0304e (lane `web-feature:UF-09`, deps T-0304a).
   - Re-point T-0304b's dep from T-0304a to T-0304e.
 - **Size.** This is the upper end of ½ day. Spend the effort on AC-1 (the table), AC-3/AC-4 (persistence and restore) and AC-9 (expiry). The placeholders are deliberately bare.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** All ACs have tests in `apps/web/src/features/UF-09/__tests__/` and `tests/e2e/uf-09-focus.spec.ts`.
+- **Planted faults.** Each was applied, run, and reverted:
+  - AC-3: the write in `queueMicrotask` → `store.test.ts` 4 red. The write moved into a host `useEffect` → `store.test.ts` 4 red, and `host.restore` "at 600 s" red.
+  - AC-4: a tick-counting countdown (`setLeft((n) => n - 1)`) → `host.restore` 3 red, and the AC-2 source test red.
+  - AC-9: an expiry dispatched twice → `host.expiry` 4 red, and `host.restore` "at 600 s" red.
+  - AC-5: `>=` for the 12 h bound → "exactly 12 h" red. Dropping the `userId` check → the other-user row red.
+- **TR-0036 (open).** In the built app, `parseSessionPlan` (an Ajv runtime compile) is blocked by the CSP (`script-src 'self'`, no `'unsafe-eval'`). Every real row therefore reads as not on this device. The seeded-session e2e row (the AC-7 44 × 44 check) is marked `test.fail` with TR-0036 until that's fixed.
