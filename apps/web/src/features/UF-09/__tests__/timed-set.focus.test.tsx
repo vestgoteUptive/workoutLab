@@ -216,6 +216,25 @@ describe("T-0423 AC-3 a failed write", () => {
     expect(focused()).toBe(button("Log hold"));
   });
 
+  it("a remount with holdFailed already true (reject → Pause workout → Resume) focuses 'Log hold'", async () => {
+    recordSpy.mockRejectedValueOnce(new Error("quota"));
+    seedHold();
+    await renderLoaded();
+    await advance(53_000);
+    expect(focused()).toBe(button("Log hold"));
+    fireEvent.click(button("Pause workout"));
+    await flushReal();
+    expect(screenId()).toBe("UF-09.9");
+    fireEvent.click(button("Resume"));
+    await flushReal();
+    expect(screenId()).toBe("UF-09.7");
+    expect(statusText()).toBe(HOLD_ERROR);
+    expect(focused()).toBe(button("Log hold"));
+    await advance(1000);
+    expect(focused()).toBe(button("Log hold"));
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+  });
+
   it("the pair: focus on 'Pause workout' when the write rejects stays there; Log hold is rendered", async () => {
     const gate = holdNextWriteToReject();
     seedHold();

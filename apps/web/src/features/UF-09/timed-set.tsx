@@ -43,13 +43,15 @@ export function TimedSet({
   const viewRef = useRef<HTMLDivElement>(null);
   const running = remaining > 0;
 
-  // Entry focus: the ring toggle, or the heading when the hold has already ended (a restore).
+  // Entry focus while the hold runs: the ring toggle. A mount at 0 (a restore, or back from
+  // UF-09.9 / an overlay) has no toggle, and the two layout effects below place focus instead:
+  // the heading, then "Log hold" when the write has already failed (T-0423 rework).
   useEffect(() => {
-    (toggleRef.current ?? headingRef.current)?.focus();
+    toggleRef.current?.focus();
   }, []);
 
   // At 0 the toggle leaves the DOM; if it had focus, the heading takes it while the hold is saved
-  // (T-0423 AC-2). A control the user focused elsewhere keeps it.
+  // (T-0423 AC-2, AC-4 on a mount at 0). A control the user focused elsewhere keeps it.
   useLayoutEffect(() => {
     if (!running && focusLost(document.activeElement)) headingRef.current?.focus();
   }, [running]);

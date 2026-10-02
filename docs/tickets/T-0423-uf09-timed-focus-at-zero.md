@@ -159,3 +159,17 @@ green · contracts unchanged · commits start `T-0423` and cite the screen (for 
   4/4 tasks green (169 files, 2666 tests); `test:e2e uf-09-focus` 10 passed; `-w format:check`
   exit 0; `check-all.mjs` exit 0.
 - **Verdict:** done. No tests added.
+
+### Build, attempt 2 (frontend-dev, 2026-10-02)
+- **Review finding:** the passive mount effect always called `(toggle ?? heading).focus()`. It ran
+  after the `holdFailed` layout effect, so a remount where `holdFailed` was already true (reject →
+  Pause workout → Resume, or a closed List-view overlay) moved focus from "Log hold" to the `<h1>`.
+- **Fix (`timed-set.tsx`):** the mount effect now focuses only the ring toggle. On a mount at 0,
+  focus is placed by the `[running]` layout effect (the heading) and then the `[holdFailed]` layout
+  effect ("Log hold"). The `?? headingRef` fallback, which QA found redundant, is removed.
+- **New test:** "a remount with holdFailed already true (reject → Pause workout → Resume) focuses
+  'Log hold'" (AC-3, in `timed-set.focus.test.tsx`). **Red** before the fix: 1 failed, 12 passed,
+  `AssertionError: expected <h1 class="wl-uf09__title" …(1)></h1> to be <button type="button"
+  …(2)></button>`. **Green** after it: 13/13.
+- **Gates:** web turbo `typecheck lint test --force --concurrency=1` 4/4 tasks green (169 files,
+  2667 tests); `-w format:check` clean; `check-all.mjs` exit 0; e2e `uf-09-focus.spec.ts` 10/10.
