@@ -62,7 +62,8 @@ const SEEDS: Record<ViewPhase, Partial<FocusState>> = {
   confirm: { phase: "confirm", timer: null, loggedSets: loggedSets(0, 1) },
   rest: { phase: "rest", timer: running(120), loggedSets: loggedSets(0, 1) },
   next: { phase: "next", itemIndex: 1, timer: running(60) },
-  timed: { phase: "timed", itemIndex: 3, timer: null },
+  // T-0304c (D-0119 §1): a stored `timed` carries its position + hold timer.
+  timed: { phase: "timed", itemIndex: 3, timer: running(53) },
   timeCheck: { phase: "timeCheck", itemIndex: 1 },
   paused: { phase: "paused", resumePhase: "rest", pausedAtMs: NOW, timer: running(120) },
 };

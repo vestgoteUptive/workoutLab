@@ -1,7 +1,4 @@
 // T-0204 UF-08.2: rule 13 deterministic shuffle inside suggest(). AC13–AC23.
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   availableS,
@@ -40,36 +37,6 @@ import {
   returningAfter10DaysHistory,
 } from "./fixtures/histories.js";
 
-const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
-const BASELINE = JSON.parse(
-  readFileSync(path.join(TEST_DIR, "fixtures", "pre-t0204-suggest.json"), "utf8"),
-) as Record<string, Workout>;
-
-/**
- * T-0205 (rule 14, AC22, D-0062 §6): the only baseline fields rule 14 changes at F-input.
- * returningAfter10Days last did bench-press and calf-raise on 09-12 (gap 15), so both are
- * `hold_after_break` at 50 kg. Every other field of the baseline is still compared exactly.
- */
-const T0205_PREFILL: Record<string, Record<string, WorkoutItem["prefill"]>> = {
-  returningAfter10Days: {
-    "bench-press": { weightKg: 50, reps: 6, durationS: null, kind: "hold_after_break" },
-    "calf-raise": { weightKg: 50, reps: 10, durationS: null, kind: "hold_after_break" },
-  },
-};
-
-function withRule14(name: string, before: Workout | undefined): Workout | undefined {
-  const patch = T0205_PREFILL[name];
-  if (before === undefined || patch === undefined) return before;
-  const items = before.plan.items.map((i) => {
-    const pf = patch[i.exerciseId];
-    if (pf === undefined) return i;
-    const reasons = i.reasons.map((r) => (r.code === "prefill" ? { ...r, kind: pf.kind } : r));
-    return { ...i, prefill: pf, reasons };
-  });
-  expect(items.map((i) => i.exerciseId)).toEqual(expect.arrayContaining(Object.keys(patch)));
-  return { ...before, plan: { ...before.plan, items } };
-}
-
 const HISTORIES: Array<[string, HistorySet[]]> = [
   ["zero", []],
   ...Object.entries(SIMULATED_HISTORIES).map(([k, h]): [string, HistorySet[]] => [k, h]),
@@ -94,16 +61,20 @@ function item(w: Workout, id: string): WorkoutItem {
 }
 
 describe("rule 13 shuffle = 0", () => {
-  it("rule-13 (AC13) shuffle 0 deep-equals the pre-T-0204 suggest output for every history and energy", () => {
+  // The frozen comparison against the pre-T-0204 suggest output was a one-time proof, recorded
+  // in the T-0204 build and accept log (docs/tickets/T-0204-…). Retired by T-0237: the
+  // standing invariant is that shuffle 0 swaps nothing, on a non-empty plan.
+  it("rule-13 (AC13) shuffle 0 swaps nothing for every history and energy", () => {
+    let n = 0;
     for (const [name, history] of HISTORIES) {
       for (const energy of ENERGIES) {
         const w = run(history, input({ energy }));
-        const before = withRule14(name, BASELINE[`${name}/${energy}`]);
-        expect(before, `${name}/${energy}`).toBeDefined();
-        expect(w, `${name}/${energy}`).toEqual(before);
+        expect(w.plan.items.length, `${name}/${energy}`).toBeGreaterThan(0);
         expect(swapped(w), `${name}/${energy}`).toEqual([]);
+        n++;
       }
     }
+    expect(n).toBe(15);
   });
 
   it("rule-13 (AC13) the R7-E4 plan is unchanged at shuffle 0", () => {

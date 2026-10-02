@@ -286,28 +286,10 @@ describe("rule 12 fitsBudget is exactly applySwap's budget check (AC4, AC8)", ()
   }, 30_000); // runtime budget only (sweep)
 });
 
-// ---- AC5 ----
-
-const PRE = JSON.parse(
-  readFileSync(path.join(TEST_DIR, "fixtures", "pre-t0226-suggest.json"), "utf8"),
-) as Record<string, unknown>;
-
-describe("suggest is byte-identical to the pre-T-0226 snapshot (AC5)", () => {
-  it("rule-12 (AC5) every AC4 fresh plan equals the snapshot captured on main before D-0105", () => {
-    let n = 0;
-    for (const [hn, h] of HISTORIES) {
-      for (const [inName, inp] of INPUTS) {
-        const key = `${hn}|${inName}`;
-        expect(Object.keys(PRE)).toContain(key);
-        const w = suggest(h, F_TARGETS, F_PROFILE, LIBRARY, inp, NOW, TZ);
-        expect(JSON.stringify(w), key).toBe(JSON.stringify(PRE[key]));
-        expect(JSON.parse(JSON.stringify(w))).toStrictEqual(PRE[key]);
-        n++;
-      }
-    }
-    expect(n).toBe(Object.keys(PRE).length);
-  });
-});
+// ---- AC5 (retired) ----
+// "suggest is byte-identical to the pre-T-0226 snapshot (AC5)" compared every AC4 fresh plan
+// against output captured on main before D-0105. That was a one-time proof, recorded in the
+// T-0226 build and accept log (docs/tickets/T-0226-…). Retired by T-0237.
 
 // ---- AC6 ----
 

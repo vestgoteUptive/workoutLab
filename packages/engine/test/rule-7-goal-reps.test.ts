@@ -52,9 +52,6 @@ import { timedCoreHistory } from "./fixtures/histories-timed.js";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = path.resolve(TEST_DIR, "..", "..", "..");
-const BASELINE = JSON.parse(
-  readFileSync(path.join(TEST_DIR, "fixtures", "pre-t0219-baseline.json"), "utf8"),
-) as Record<string, unknown>;
 
 const GS = profile({ goal: "get_stronger" });
 const GF = profile({ goal: "general_fitness" });
@@ -232,10 +229,10 @@ describe("rule 7.2 rep slots by goal at zero history (R7-E14, D-0095)", () => {
   });
 
   it("R7-E14 rule-7 (AC1) F-profile and a profile with no goal key both give today's R7-E4 result", () => {
-    const today = BASELINE["suggest/zero/normal/30/wu/none"];
-    expect(today).toBeDefined();
-    expect(JSON.stringify(run([], BM))).toBe(JSON.stringify(today));
-    expect(JSON.stringify(run([], NO_GOAL))).toBe(JSON.stringify(today));
+    // The frozen comparison against the pre-T-0219 suggest output was a one-time proof,
+    // recorded in the T-0219 build and accept log (docs/tickets/T-0219-…). Retired by T-0237:
+    // F-profile and no goal key must be byte-identical, and the R7-E4 values below are inline.
+    expect(JSON.stringify(run([], BM))).toBe(JSON.stringify(run([], NO_GOAL)));
     expect(reps(run([], NO_GOAL))).toEqual([
       [6, 8],
       [8, 12],
@@ -527,32 +524,30 @@ describe("profile.goal validation and default (D-0095 §1)", () => {
     expectTypeOf<SuggestP["goal"]>().toEqualTypeOf<Goal | undefined>();
   });
 
-  it("rule-7 (AC10) every pre-T-0219 suggest snapshot is byte-identical under F-profile and with no goal key", () => {
-    const histories: Record<string, readonly HistorySet[]> = { zero: [], ...SIMULATED_HISTORIES };
+  // The frozen comparison against the pre-T-0219 suggest output was a one-time proof, recorded
+  // in the T-0219 build and accept log (docs/tickets/T-0219-…). Retired by T-0237: the same
+  // grid is built inline, and F-profile and no goal key must be byte-identical on every case.
+  it("rule-7 (AC10) suggest is byte-identical under F-profile and with no goal key (history × energy × budget × warm-up × pins)", () => {
+    const histories: Array<[string, readonly HistorySet[]]> = [
+      ["zero", []],
+      ...Object.entries(SIMULATED_HISTORIES),
+    ];
     let n = 0;
-    for (const [key, before] of Object.entries(BASELINE)) {
-      const parts = key.split("/");
-      if (parts[0] !== "suggest") continue;
-      const [, name, energy, budget, wu, pins] = parts as [
-        string,
-        string,
-        SessionInput["energy"],
-        string,
-        string,
-        string,
-      ];
-      const h = histories[name];
-      expect(h, key).toBeDefined();
-      const si = input({
-        energy,
-        budgetMin: Number(budget),
-        warmupInBudget: wu === "wu",
-        pinnedIds: pins === "plank" ? ["plank"] : [],
-      });
-      expect(JSON.stringify(run(h as HistorySet[], NO_GOAL, si)), key).toBe(JSON.stringify(before));
-      n++;
+    for (const [name, h] of histories) {
+      for (const energy of ["normal", "low", "high"] as const) {
+        for (const budgetMin of [15, 20, 30, 90]) {
+          for (const warmupInBudget of [true, false]) {
+            for (const pinnedIds of [[], ["plank"]]) {
+              const key = `${name}/${energy}/${budgetMin}/${warmupInBudget ? "wu" : "nowu"}/${pinnedIds.join(",") || "none"}`;
+              const si = input({ energy, budgetMin, warmupInBudget, pinnedIds });
+              expect(JSON.stringify(run(h, NO_GOAL, si)), key).toBe(JSON.stringify(run(h, BM, si)));
+              n++;
+            }
+          }
+        }
+      }
     }
-    expect(n).toBeGreaterThan(0);
+    expect(n).toBe(240);
   }, 60_000);
 });
 

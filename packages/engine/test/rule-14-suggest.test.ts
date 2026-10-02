@@ -51,9 +51,6 @@ import { rule14GuardDiff, rule14GuardedLines } from "./fixtures/rule14-pinned-d0
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = path.resolve(TEST_DIR, "..", "..", "..");
-const BASELINE = JSON.parse(
-  readFileSync(path.join(TEST_DIR, "fixtures", "pre-t0205-suggest.json"), "utf8"),
-) as Record<string, Workout>;
 
 const KINDS: PrefillKind[] = [
   "first_time",
@@ -105,22 +102,6 @@ const prefillReason = (i: WorkoutItem): PrefillKind | undefined => {
   const r = i.reasons.find((x) => x.code === "prefill");
   return r !== undefined && r.code === "prefill" ? r.kind : undefined;
 };
-
-/** A workout with every rule 14 output blanked, to compare selection and cost only. */
-function withoutPrefill(w: Workout): unknown {
-  return {
-    ...w,
-    plan: {
-      ...w.plan,
-      items: w.plan.items.map((i) => ({
-        ...i,
-        prefill: "*",
-        backoff: i.backoff === null ? null : { ...i.backoff, weightKg: "*" },
-        reasons: i.reasons.map((r) => (r.code === "prefill" ? { code: "prefill" } : r)),
-      })),
-    },
-  };
-}
 
 // ---- AC9: R14-E9 ----
 
@@ -178,17 +159,18 @@ describe("rule 14 × rule 7.4: the High back-off reads a real pre-fill", () => {
 // ---- AC16: the seam is replaced, zero-history results unchanged ----
 
 describe("rule 14 replaces the T-0201 first_time seam (D-0057 §8)", () => {
-  it("rule-14 (AC16) zero history: every suggest deep-equals the pre-T-0205 result (energy × budget × warm-up × shuffle)", () => {
+  // The frozen comparison against the pre-T-0205 suggest output was a one-time proof, recorded
+  // in the T-0205 build and accept log (docs/tickets/T-0205-…). Retired by T-0237: the
+  // standing invariant is the first_time prefill shape on every zero-history item.
+  it("rule-14 (AC16) zero history: every item is first_time with the D-0057 prefill shape (energy × budget × warm-up × shuffle)", () => {
     let n = 0;
     for (const energy of ["normal", "low", "high"] as const) {
       for (const budgetMin of [15, 20, 30]) {
         for (const warmupInBudget of [true, false]) {
           for (const shuffle of [0, 1]) {
             const key = `zero/${energy}/${budgetMin}/${warmupInBudget ? "wu" : "nowu"}/${shuffle}`;
-            const before = BASELINE[key];
-            expect(before, key).toBeDefined();
             const w = run([], input({ energy, budgetMin, warmupInBudget, shuffle }));
-            expect(w, key).toEqual(before);
+            expect(w.plan.items.length, key).toBeGreaterThan(0);
             for (const i of w.plan.items) {
               const ex = LIBRARY.find((e) => e.id === i.exerciseId) as LibraryExercise;
               expect(i.prefill, key).toEqual({
@@ -207,30 +189,9 @@ describe("rule 14 replaces the T-0201 first_time seam (D-0057 §8)", () => {
     expect(n).toBe(36);
   });
 
-  it("rule-14 (AC16) (AC23) non-empty histories: selection, sets, costs and totals equal the pre-T-0205 result", () => {
-    for (const [key, before] of Object.entries(BASELINE)) {
-      if (key === "//") continue;
-      const [name, energy, budget, wu, shuffle] = key.split("/") as [
-        string,
-        string,
-        string,
-        string,
-        string,
-      ];
-      const history = HISTORIES.find(([k]) => k === name)?.[1];
-      expect(history, key).toBeDefined();
-      const w = run(
-        history as HistorySet[],
-        input({
-          energy: energy as SessionInput["energy"],
-          budgetMin: Number(budget),
-          warmupInBudget: wu === "wu",
-          shuffle: Number(shuffle),
-        }),
-      );
-      expect(withoutPrefill(w), key).toEqual(withoutPrefill(before));
-    }
-  });
+  // "rule-14 (AC16) (AC23) non-empty histories …" deep-equalled selection, sets, costs and
+  // totals against the pre-T-0205 suggest output. That was a one-time proof, recorded in the
+  // T-0205 build and accept log (docs/tickets/T-0205-…). Retired by T-0237.
 });
 
 // ---- AC17: suggest uses real progression ----

@@ -106,3 +106,5 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 - **Flow:** `wl-build-web`.
 - **T-0306b is done** when T-0421 and T-0422 are.
 - **Parallel:** never with T-0415 or T-0416 (D-0142 §1).
+
+- **From T-0414 review (2026-10-02):** D-0140 left a swap from `confirm` out of scope. If the swap sheet can open from UF-09.4, the recorded old-exercise set can still share a position with the next set; handle it here (or keep the seam off UF-09.4).

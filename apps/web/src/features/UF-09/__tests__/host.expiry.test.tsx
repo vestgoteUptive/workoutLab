@@ -1,5 +1,5 @@
 // T-0304a AC-9 (D-0111 §5 §8): the host fires each phase's end event exactly once when its
-// wall-clock timer reaches 0; `timed` waits; `betweenItems` is resolved inside the store.
+// wall-clock timer reaches 0; `timed` ends by its auto-log (T-0304c); `betweenItems` is resolved inside the store.
 import { screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initialFocusState, type FocusState, type LoggedSet } from "../machine.js";
@@ -164,13 +164,17 @@ describe("AC-9 auto-advance", () => {
   });
 });
 
-describe("AC-9 timed waits", () => {
-  it("timed doesn't advance after 600 s", async () => {
-    seed({ phase: "timed", itemIndex: 3, timer: null });
+// T-0304c (D-0119 §3, the D-0111 §8 hand-off): T-0304a's "timed doesn't advance after 600 s" is
+// replaced by the auto-log. `timed` still has no end event of its own; at 0 the host logs the
+// hold once through the hook, which dispatches the one TIMED_RECORDED after the write.
+describe("AC-9 timed ends by its auto-log (T-0304c)", () => {
+  it("timed: after 600 s, no end event, exactly one TIMED_RECORDED, then UF-09.5", async () => {
+    seed({ phase: "timed", itemIndex: 3, timer: { startedAtMs: NOW, durationS: 53, pausedMs: 0 } });
     await renderLoaded();
     await advance(600_000);
-    expect(screenId()).toBe("UF-09.7");
-    expect(dispatched).toEqual([]);
+    expect(screenId()).toBe("UF-09.5");
+    expect(dispatched.map((e) => e.type)).toEqual(["TIMED_RECORDED"]);
+    expect(countOf("TIMED_RECORDED")).toBe(1);
   });
 });
 
