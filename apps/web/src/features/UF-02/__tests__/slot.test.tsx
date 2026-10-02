@@ -1,5 +1,7 @@
 // T-0302a AC-5: the check-in slot (D-0071 §4). `slots.js` is mocked so a test can inject a
 // component; the loaders are mocked as in today.test.tsx.
+// T-0302c inserts the suggestion card straight after the slot (D-0106 §1), so the element
+// between the slot and Start / the no-workouts line is now exactly that card.
 import { lazy, type ComponentType } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
@@ -56,6 +58,7 @@ beforeEach(() => {
 });
 
 const c01 = () => document.querySelector('[data-component="C-01"]');
+const card = () => part("card");
 const injected = () => document.querySelectorAll('[data-testid="injected"]');
 const follows = (a: Node, b: Node) =>
   (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
@@ -72,7 +75,8 @@ describe("AC-5 injected", () => {
     expect(follows(part("attention")!, el)).toBe(true);
     expect(part("attention")!.nextElementSibling).toBe(el);
     expect(follows(el, part("start")!)).toBe(true);
-    expect(aboveStart()).toBe(el);
+    expect(el.nextElementSibling).toBe(card());
+    expect(aboveStart()).toBe(card());
     expect(renders).toBeGreaterThan(0);
   });
 
@@ -85,7 +89,8 @@ describe("AC-5 injected", () => {
     const el = injected()[0]!;
     expect(injected()).toHaveLength(1);
     expect(c01()!.nextElementSibling).toBe(el);
-    expect(el.nextElementSibling).toBe(part("no-workouts"));
+    expect(el.nextElementSibling).toBe(card());
+    expect(card()!.nextElementSibling).toBe(part("no-workouts"));
     expect(follows(el, part("start")!)).toBe(true);
   });
 
@@ -96,23 +101,27 @@ describe("AC-5 injected", () => {
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
     await waitFor(() => expect(part("attention")).not.toBeNull());
     expect(await screen.findByRole("link", { name: "Start workout" })).toBeInTheDocument();
-    // The fallback is null: nothing at all between the attention line and Start.
-    expect(part("attention")!.nextElementSibling).toBe(part("start"));
+    // The fallback is null: only the suggestion card between the attention line and Start.
+    await waitFor(() => expect(card()).not.toHaveAttribute("aria-busy"));
+    expect(part("attention")!.nextElementSibling).toBe(card());
+    expect(card()!.nextElementSibling).toBe(part("start"));
   });
 });
 
 describe("AC-5 null", () => {
-  it("nothing renders between the attention line and Start", async () => {
+  it("only the suggestion card renders between the attention line and Start", async () => {
     mocks.loadEngineHistory.mockResolvedValue(R5_E1);
     renderToday(F_TZ);
     await waitFor(() => expect(part("attention")).not.toBeNull());
-    expect(part("attention")!.nextElementSibling).toBe(part("start"));
+    expect(part("attention")!.nextElementSibling).toBe(card());
+    expect(card()!.nextElementSibling).toBe(part("start"));
     expect(injected()).toHaveLength(0);
   });
 
-  it("with no attention line, C-01 is followed straight by the no-workouts line", async () => {
+  it("with no attention line, C-01 is followed by the card, then the no-workouts line", async () => {
     renderToday(F_TZ);
     await waitFor(() => expect(part("no-workouts")).not.toBeNull());
-    expect(c01()!.nextElementSibling).toBe(part("no-workouts"));
+    expect(c01()!.nextElementSibling).toBe(card());
+    expect(card()!.nextElementSibling).toBe(part("no-workouts"));
   });
 });

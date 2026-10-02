@@ -1,7 +1,9 @@
-// T-0302a UF-02.1 test fixtures (docs/engine-rules.md §Fixtures):
+// T-0302a/T-0302c UF-02.1 test fixtures (docs/engine-rules.md §Fixtures):
 //   F-tz      now = 2026-09-27T12:00:00+02:00, Europe/Stockholm, en-GB
 //   F-targets chest/back/glutes/quads 20, shoulders/hamstrings 16, arms/core/calves 12
-//   L1        the library table, as a web fixture copy
+//   L1        the library table, as a web fixture copy, with display names ("Bench press")
+//   W-R7E4    the `Workout` example in api/openapi.yaml (T-0302c)
+import type { Workout, WorkoutItem } from "@workoutlab/engine";
 import type {
   Area,
   AreaBalance,
@@ -102,10 +104,16 @@ const L1_ROWS: Row[] = [
   ["hanging-knee-raise", "isolation", ["pullup-bar"], { core: 1 }, null],
 ];
 
+/** "bench-press" → "Bench press": a fixture display name, so a row can show the library name. */
+const displayName = (id: string): string => {
+  const words = id.replace(/-/g, " ");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
 /** The L1 library (docs/engine-rules.md §Fixtures). */
 export const L1: LibraryExercise[] = L1_ROWS.map(([id, type, equipment, areas, inc, extra]) => ({
   id,
-  name: id,
+  name: displayName(id),
   kind: "exercise",
   type,
   level: "beginner",
@@ -195,3 +203,88 @@ export function resultWithAttention(flagged: readonly Area[]): BalanceResult {
     ...rest.map((a) => areaBalance(a, { load: 5, deficit: 0.2, coverageStep: 3 })),
   ]);
 }
+
+// ---- T-0302c: suggest() outputs, for the "the card renders the engine's Workout" ACs ----
+
+export function workoutItem(
+  exerciseId: string,
+  sets: number,
+  repsMin: number | null,
+  repsMax: number | null,
+  overrides: Partial<WorkoutItem> = {},
+): WorkoutItem {
+  return {
+    exerciseId,
+    isMain: false,
+    sets,
+    repsMin,
+    repsMax,
+    durationS: null,
+    costS: 300,
+    backoff: null,
+    prefill: { weightKg: null, reps: repsMin, durationS: null, kind: "first_time" },
+    reasons: [],
+    ...overrides,
+  };
+}
+
+const ALL_ONE = Object.fromEntries(AREA_ORDER.map((a) => [a, 1])) as Record<Area, number>;
+
+export function workoutOf(
+  items: WorkoutItem[],
+  overrides: Partial<Omit<Workout, "plan">> = {},
+): Workout {
+  return {
+    plan: { version: 1, mainLiftId: null, warmup: [], items, startDeficits: ALL_ONE },
+    budgetMin: 45,
+    warmupInBudget: true,
+    energy: "normal",
+    itemsTotalS: items.reduce((sum, i) => sum + i.costS, 0),
+    totalS: 1725,
+    unusedS: 0,
+    sessionReasons: [],
+    ...overrides,
+  };
+}
+
+/** W-R7E4: the `Workout` example in api/openapi.yaml (R7-E4). */
+export const W_R7E4_ITEMS: WorkoutItem[] = [
+  workoutItem("bench-press", 4, 6, 8, {
+    isMain: true,
+    costS: 720,
+    prefill: { weightKg: null, reps: 6, durationS: null, kind: "first_time" },
+    reasons: [
+      { code: "main_lift" },
+      { code: "area_deficit", area: "chest", deficit: 1 },
+      { code: "days_since", area: "chest", days: null },
+      { code: "prefill", kind: "first_time" },
+    ],
+  }),
+  workoutItem("inverted-row", 3, 8, 12, {
+    costS: 555,
+    prefill: { weightKg: 0, reps: 8, durationS: null, kind: "first_time" },
+    reasons: [{ code: "area_deficit", area: "back", deficit: 1 }],
+  }),
+  workoutItem("leg-extension", 2, 10, 15, {
+    costS: 270,
+    prefill: { weightKg: null, reps: 10, durationS: null, kind: "first_time" },
+    reasons: [{ code: "area_deficit", area: "quads", deficit: 1 }],
+  }),
+];
+
+const W_R7E4_BASE = workoutOf(W_R7E4_ITEMS, {
+  budgetMin: 30,
+  itemsTotalS: 1545,
+  totalS: 1725,
+  unusedS: 75,
+  sessionReasons: [
+    { code: "area_deficit", area: "chest", deficit: 1 },
+    { code: "area_deficit", area: "back", deficit: 1 },
+    { code: "area_deficit", area: "quads", deficit: 1 },
+  ],
+});
+
+export const W_R7E4: Workout = {
+  ...W_R7E4_BASE,
+  plan: { ...W_R7E4_BASE.plan, mainLiftId: "bench-press" },
+};

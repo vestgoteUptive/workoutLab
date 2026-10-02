@@ -16,4 +16,21 @@ export const uf02 = {
   /** No cached profile or not all nine targets (AC-10). */
   noPlan: "Connect to finish setting up your plan",
   start: "Start workout",
+  // T-0302c: the 45-min suggestion card (D-0065 §1). The reason words live in `lib/i18n/workout.ts`.
+  /** The card's accessible name. */
+  cardLabel: "Suggested workout",
+  /** `minutes` arrives already formatted. */
+  suggestedFor: (minutes: string) => `Suggested for ${minutes} min`,
+  /** "3 exercises · ~29 min". `count` picks the noun; the texts arrive already formatted. */
+  cardSummary: (count: number, countText: string, minutes: string) =>
+    `${countText} ${count === 1 ? "exercise" : "exercises"} · ~${minutes} min`,
+  /** One row: the library name, then `itemSummary`, e.g. "Bench press 4 × 6–8". */
+  itemRow: (name: string, summary: string) => `${name} ${summary}`,
+  /** The session-reason chips' accessible name. */
+  chipsLabel: "Why these",
+  seeAll: "See all",
+  /** `plan.items` is empty. */
+  nothingSuggested: "Nothing suggested yet",
+  /** The skeleton's accessible name while the first read is pending. */
+  cardLoading: "Loading the suggestion",
 } as const;
