@@ -268,6 +268,34 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
   };
 }
 
+/**
+ * UF-09.8 Trim / Skip next (T-0304d, D-0120 §1, D-0071 §6): reads the stored row, writes
+ * `{...row, plan: {...plan, items}}` with `items` exactly as the engine returned them (the whole
+ * list), and only then moves the machine (`applyPlan` → `PLAN_APPLIED`). One write while pending.
+ */
+export function createPlanApply(
+  deps: Pick<FocusActionDeps, "sessionId" | "store" | "onRow">,
+): (items: WorkoutItem[]) => Promise<void> {
+  let applying: Promise<void> | null = null;
+  return (items) => {
+    if (applying) return applying;
+    const run = (async () => {
+      const row = await storedRow(deps.sessionId);
+      const plan: SessionPlan = { ...deps.store.getSnapshot().ctx.plan, items };
+      const written: SessionRow = { ...row, plan };
+      await upsertSession(written);
+      deps.store.applyPlan(plan, Date.now());
+      deps.onRow(written);
+    })();
+    applying = run;
+    const clear = () => {
+      if (applying === run) applying = null;
+    };
+    run.then(clear, clear);
+    return run;
+  };
+}
+
 function currentSetIndex(state: FocusState, plan: SessionPlan): number {
   if (state.phase !== "rest") return state.setIndex;
   const item = plan.items[state.itemIndex];

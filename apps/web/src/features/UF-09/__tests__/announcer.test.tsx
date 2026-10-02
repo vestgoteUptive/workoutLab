@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
 import type { FocusState } from "../machine.js";
 import type { ViewPhase } from "../views.js";
-import { STARTED_AT_MS, USER_A } from "./fixtures.js";
+import { STARTED_AT_MS, USER_A, behindStartedAt } from "./fixtures.js";
 import {
   advance,
   flushReal,
@@ -83,6 +83,8 @@ describe("AC-2 exactly one announcer in every machine state", () => {
   it.each(Object.keys(SEEDS) as ViewPhase[])(
     "%s: one [data-field=announcer] with aria-live=polite, empty",
     async (phase) => {
+      // T-0304d (D-0120 §4): a restored time check re-runs rule 8, so this one is behind.
+      if (phase === "timeCheck") await seedSession({ started_at: behindStartedAt(NOW) });
       seedFocus(NOW, SEEDS[phase]);
       await render();
       expect(screenId()).toBe(SCREEN[phase]);

@@ -265,3 +265,108 @@ example `T-0304d UF-09.8: Trim saves the engine's item list`).
 - **Parallel.** It is parallel-safe by files with every UF-08 ticket.
 
 - **From T-0304e review (2026-10-02):** `store.replacePlan(plan, itemIndex)` dispatches PLAN_REPLACED, which returns the same state from `timeCheck` and when itemIndex is past the new end. The time-check apply ("Nothing left → done", and the move to UF-09.6) needs its own reducer event or a broader replacePlan. Also: `ctx.resume()` is handed to `keepsClockRunning: false` overlays; hide or document it when wiring UF-09.9's seams.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** Every AC has tests in `apps/web/src/features/UF-09/__tests__/`:
+  - AC-1 to AC-5: `time-check.test.tsx` (27). It runs the REAL engine `timeCheck` wrapped in a spy
+    (`vi.mock("@workoutlab/engine")` through `r8-mock.ts`) and `upsertSession` as a spy over the
+    real one. P1-R8 is in `r8-fixtures.ts` (lateral-raise added to the test library).
+  - AC-2's store-level walks ("never mid-item", "never after the last item") use
+    `createFocusStore` with the production `ruleEightCheckPoint`.
+  - AC-6 to AC-8: `paused.test.tsx` (23), plus `resume()` from a `keepsClockRunning: false`
+    overlay (the T-0304e review note).
+  - Pure reducer and persist rules: `machine.t0304d.test.ts` (18). Covers `PLAN_APPLIED` (also
+    paused on UF-09.8), `SKIP_ITEM` and its no-ops, `CHECK_RESOLVED` past the last item, the
+    D-0120 §5 range rule, `skippedItems` validation and `canSkipItem` in the warm-up.
+  - AC-9: `store.test.ts` "T-0304d AC-9". The walk asserts storage = `getState()` right after
+    each of `SKIP_WARMUP`, `AUTOSAVE_CANCEL`, `SKIP_ITEM` (→ `CHECK_RESOLVED` → `timeCheck`),
+    `CONTINUE`, `applyPlan` (`PLAN_APPLIED`), `TIMER_PAUSE` and `TIMER_RESUME`.
+  - AC-10: the row "T-0304d AC-10 time check, pause and end, by keyboard" in
+    `tests/e2e/uf-09-focus.spec.ts`. `seedSessionRow` gained a `startedAt` argument.
+    `page.clock.pauseAt` freezes the clock before the session loads, so the check sees exactly
+    1500 s. The clock resumes once UF-09.8 shows, because axe needs timers.
+  - AC-11: `exports-and-lint.test.ts` (strings, jsx-no-literals, the bans, the export pin) and
+    the `timer.test.ts` tick scan are unchanged and green.
+- **What was built.**
+  - **`time-check.ts`.**
+    - `ruleEightCheckPoint(holder)` calls `timeCheck(buildWorkout(row, plan), {elapsedS,
+      nextItemIndex: itemIndex + 1})` once and keeps the answer in a per-mount `CheckHolder`. It
+      makes no call when no item follows.
+    - `elapsedS` is rule 8's `max(0, floor(…))` from `timer.ts`. A throw resolves to `"next"`.
+    - `plannedFinishMs` and `projectedFinishMs` follow D-0120 §2.
+  - **`time-check-view.tsx` (UF-09.8).**
+    - The h1 is "{n} min behind", then "You planned to finish by {time}".
+    - Continue, Trim and Skip next each have their lines and "Done by {time}" as
+      `aria-describedby`. Focus goes to Continue.
+    - Trim shows only when `trim.items` differs (deep) from `plan.items`.
+    - While a write is pending, all three options are `aria-disabled` and inert. A rejection
+      shows the polite error.
+  - **The write path.** `session.tsx` `createPlanApply`:
+    - It reads the stored row and writes `{...row, plan: {...plan, items}}`, with `items` exactly
+      as the engine returned them. One write while pending.
+    - Then `store.applyPlan(plan, atMs)` (new) sets `ctx.plan` and reduces `PLAN_APPLIED`: `next`
+      at the same `itemIndex`, or `done` when nothing is left, which finishes.
+  - **`paused.tsx` (UF-09.9).**
+    - Elapsed, Left and Sets follow D-0120 §6.
+    - Resume (focused), the seams and "Skip to next exercise" (`SKIP_ITEM`) and End workout, all
+      through `orderActions`.
+    - End confirms in place. Focus goes to Cancel, and back to Resume after Cancel. End calls
+      `finish()`, and a rejection shows the polite error.
+  - **`machine.ts`.**
+    - New state field `skippedItems`, and new events `PLAN_APPLIED` and `SKIP_ITEM`.
+    - `firstIncompleteSet` (so the `close()` re-sync) treats skipped items as complete.
+    - `CHECK_RESOLVED` past the last item goes to `done`.
+  - **`persist.ts`.**
+    - A `timeCheck` (or a pause on one) at `itemIndex === items.length` is valid and restores as
+      `done`.
+    - `skippedItems` reads `[]` when absent, and is rejected when out of range or not integers.
+  - **`host.tsx`.**
+    - Rule 8 is the default check point. An injected `resolveCheckPoint` still overrides it, and
+      the overlay gate still forces `"next"`.
+    - A `timeCheck` with no answer from this mount (a restore, or an injected check point) makes
+      one fresh call. If that no longer shows, or throws, it dispatches `CONTINUE`.
+    - `timeZone?` prop. `formatTime` gets `locale ?? Intl…resolvedOptions().locale` and
+      `timeZone ?? Intl…resolvedOptions().timeZone`.
+    - A `keepsClockRunning: false` overlay's `resume()` closes the overlay first.
+  - **Strings** are added to `flows/uf-09.ts`. The plurals live in the keys.
+- **Planted faults.** Each was applied, run and reverted:
+  - **AC-2, the check on every `REST_END`** (store: `if (event.type === "REST_END")` in place of
+    the `betweenItems` test) → 6 red, including "never mid-item: a full walk of item 0 makes 0
+    calls before its last REST_END" and the 4 Skip-to-next cases.
+  - **AC-3, `items: [...doneItems, ...option.items]`** (in `createPlanApply`) → 4 red: Trim,
+    Skip next, pending, nothing left.
+  - **AC-4, no `floor`** (`timer.ts` `elapsedS` returns `ms / 1000`) → "a sub-second now
+    (+1500.4 s) passes the integer 1500…" red. `timeCheck` threw a `RangeError`, and UF-09.8
+    never showed.
+  - **AC-7, the re-sync ignoring `skippedItems`** → "re-sync: after skipping item 0…" red.
+- **Pins and seeds updated, not dropped (D-0118 §12).**
+  - **Button pins.**
+    - `host.chrome.test.tsx` AC-7: `timeCheck` is now `["Pause workout", "Continue", "Trim",
+      "Skip next"]`.
+    - `paused` is now 3 buttons (Resume, Skip to next exercise, End workout). A new case pins 2
+      (Resume, End workout) on the last item.
+    - `seams.test.tsx`: the two UF-09.9 lists gain Skip to next exercise and End workout in
+      their v2 places.
+    - The e2e row "AC-7 the chrome on a seeded session" now expects 2 buttons on UF-09.9 (Resume,
+      End workout) for its one-item plan.
+  - **Seeds.** A restored time check re-runs rule 8 (D-0120 §4), so the seeded `timeCheck` cases
+    now seed a `started_at` that puts P1 60 s behind (`behindStartedAt` in `fixtures.ts`). This
+    applies to `host.chrome.test.tsx`, `host.load.test.tsx` (AC-6 screen ids),
+    `announcer.test.tsx` (AC-2) and `host.expiry.test.tsx` (the injected `resolveCheckPoint`
+    case). In that last case the heading assert "Time check" becomes "1 min behind", the built
+    view's heading. No timing or transition assertion changed.
+- **Defaults (D-0149, `status: revisit`, text in the build report for the orchestrator).**
+  - `PLAN_APPLIED` while paused on UF-09.8 (Pause pressed during the write) keeps the pause, with
+    `resumePhase: "next"` and the set-up starting at the pause. With nothing left it goes to
+    `done` and ends the pause.
+  - Skip to next is hidden whenever no item follows `itemIndex`, the warm-up included. This
+    matches the AC-10 pin of 2 buttons for a one-item plan.
+  - An injected check point that answers `"timeCheck"` gets a fresh rule 8 call for the view.
+  - `CHECK_RESOLVED` past the last item goes to `done`.
+  - The UF-09.8 heading is "{n} min behind". The Trim lines read "{name} {a} → {b} sets" or
+    "Drop {name}".
+- **Evidence.**
+  - `pnpm -w typecheck lint test --force --concurrency=1`: 19/19 tasks, web 153 files.
+  - uf-09-focus + uf-08-setup e2e: 38/38. The whole web e2e suite: 101/101.
+  - `format:check`, `check:repo` and `check:size` are green.
+  - No contract changed.

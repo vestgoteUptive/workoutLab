@@ -83,4 +83,25 @@ export const uf09 = {
   holdError: "Couldn't save. Tap Log hold to try again.",
   // The chrome announcer, when a hold is logged (D-0118 §10, NFR-A11Y-4).
   announceDone: "Done",
+  // UF-09.8 Time check (T-0304d, D-0024, D-0120 §1 §2). Plurals live in the keys (D-0114 §3).
+  minutesBehind: (n: number) => (n === 1 ? "1 min behind" : `${n} min behind`),
+  plannedFinish: (time: string) => `You planned to finish by ${time}`,
+  doneBy: (time: string) => `Done by ${time}`,
+  continueOption: "Continue",
+  trimOption: "Trim",
+  skipNextOption: "Skip next",
+  trimSets: (name: string, from: number, to: number) =>
+    `${name} ${from} → ${to} ${to === 1 ? "set" : "sets"}`,
+  trimDrop: (name: string) => `Drop ${name}`,
+  skipItem: (name: string) => `Skip ${name}`,
+  applyError: "Couldn't save the new plan. Try again.",
+  // UF-09.9 Paused (T-0304d, D-0120 §6–§8).
+  elapsed: (clock: string) => `Elapsed ${clock}`,
+  left: (n: number) => (n === 1 ? "Left 1 min" : `Left ${n} min`),
+  sets: (logged: number, planned: number) => `Sets ${logged} / ${planned}`,
+  skipToNext: "Skip to next exercise",
+  endWorkout: "End workout",
+  endQuestion: "End workout? Your sets are saved.",
+  cancel: "Cancel",
+  endError: "Couldn't end the workout. Try again.",
 } as const;
