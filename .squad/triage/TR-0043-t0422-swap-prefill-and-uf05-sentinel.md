@@ -1,6 +1,6 @@
 ---
 id: TR-0043
-status: open
+status: resolved
 raised_by: frontend-dev (build) on T-0422
 date: 2026-10-02
 ---
@@ -48,3 +48,16 @@ The branch must not merge until conflict 1 and conflict 2 are resolved and the h
 ## Blocking
 - T-0422 (merge only).
 - Conflict 2 also blocks every later `SwapSheet` mount: T-0418 and T-0303c.
+
+## Resolution
+Resolved by triage on 2026-10-02: [D-0156](../decisions/D-0156-swap-prefill-same-exercise-and-uf05-class-sentinel.md). Option 1 was chosen for both conflicts, and both fixes fold into T-0422 as listed extras. No separate tickets are created.
+
+1. **Conflict 1 (amends D-0118 §7).** Set k > 1 carries a field from the saved entry for set k − 1 only when that entry's `exerciseId` is the item's current `exerciseId`. Otherwise the field is set 1's value, which is the new item's engine pre-fill. This is the D-0140 / T-0410 "same position and same exercise" rule. The AC-5 expectation "Set weight" / "8 reps" stands unchanged.
+2. **Conflict 2 (amends D-0144 §3c).** For UF-05 the sentinel is `wl-uf05` alone, and the copy sentinel is dropped. Flow strings are in the entry by design (D-0071 §1). §3a and §3b are unchanged.
+3. **Landing.** T-0422 adds the following, recorded in its ticket as AC-11, AC-12 and listed extras:
+   - `features/UF-09/prefill.ts`: the filter and its doc comment;
+   - `features/UF-09/__tests__/prefill.test.ts`: added cases only;
+   - `apps/web/build.test.ts`: the `SEAM_SENTINELS["UF-05"]` entry and its comment only.
+
+   This is a named exception to D-0144 §5 for these edits only. T-0304g and T-0424 share none of these files.
+4. **The merge condition that remains.** The `host.chrome.test.tsx` pins still wait for T-0423 to merge, as in the ticket's Notes.
