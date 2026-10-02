@@ -73,3 +73,10 @@ none
 
 ## Definition of done
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force` green · contracts unchanged · commit messages start with `T-0390` and cite UF-09.1 (e.g. `T-0390 UF-09.1: widen the no-eval bundle scan (D-0117 §4c)`).
+
+## Build log
+- 2026-10-02, frontend-dev (build), on top of 742d669.
+  - Today's bundle, before the change: a scratch `vite build` (32 JS assets) scanned with all eight markers gave **0 hits**. No triage needed.
+  - Change: `CODEGEN_MARKERS` (the existing three plus five new regexes) and `codegenHits()` sit next to the `T-0229 AC6` block. The scan test is retitled `T-0390 AC1 AC3 (T-0229 AC6) …` and fails as `asset: marker`. The new `T-0390 AC2` table has 9 flagged and 9 clean samples. No other assertion is touched (AC4).
+  - Red proofs (temporary patch that appended `$PLANT` to the first built chunk, `registerSW.js`, then reverted): `Function('return this')()`, ``Function(`a`,`b`)``, `eval("1")`, `(0,eval)("x")` and `"ajv/dist/compile/index"` each turned AC1 red. The `(0,eval)` run failed with `registerSW.js: \(\s*0\s*,\s*eval\s*\)\s*\(`. A plant of all AC2 clean samples stayed green. With the `eval(` regex removed, AC2 went red on `eval("1")` and `;eval(x)` (2 fail, 16 pass). Restored.
+  - Checks: web typecheck and lint clean, web `test` 110 files / 1639 tests pass, `-w format:check` clean, `check-all.mjs` exit 0.

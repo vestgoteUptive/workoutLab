@@ -212,18 +212,65 @@ describe("AC-A10 CSP", () => {
   );
 });
 
+// D-0117 §4c / T-0390: markers of runtime code generation, which `script-src 'self'` blocks.
+// The lookbehind keeps `isFunction(`, `x.eval(`, `$eval(` and `retrieval(` from matching.
+const CODEGEN_MARKERS: readonly RegExp[] = [
+  /new Function\(/,
+  /Function\("/,
+  /Error compiling schema/,
+  /(?<![\w$.])Function\(\s*'/,
+  /(?<![\w$.])Function\(\s*`/,
+  /(?<![\w$.])eval\(/,
+  /\(\s*0\s*,\s*eval\s*\)\s*\(/,
+  /ajv\/dist\/compile/,
+];
+
+/** The marker sources that `text` matches; empty when the text is clean. */
+function codegenHits(text: string): string[] {
+  return CODEGEN_MARKERS.filter((m) => m.test(text)).map((m) => m.source);
+}
+
 describe("T-0229 AC6 no runtime code generation in the bundle (D-0117 §4c)", () => {
-  it('T-0229 AC6 no dist JS asset contains new Function(, Function(" or Error compiling schema', () => {
-    const markers = ["new Function(", 'Function("', "Error compiling schema"];
+  it("T-0390 AC1 AC3 (T-0229 AC6) no dist JS asset matches a code-generation marker", () => {
     const assets = (readdirSync(outDir, { recursive: true }) as string[])
       .map((f) => f.split("\\").join("/"))
       .filter((f) => f.endsWith(".js"));
     expect(assets.length).toBeGreaterThan(0);
-    const hits = assets.flatMap((asset) => {
-      const text = read(asset);
-      return markers.filter((m) => text.includes(m)).map((m) => `${asset}: ${m}`);
-    });
+    const hits = assets.flatMap((asset) => codegenHits(read(asset)).map((m) => `${asset}: ${m}`));
     expect(hits).toEqual([]);
+  });
+});
+
+describe("T-0390 AC2 code-generation matcher table (D-0117 §4c)", () => {
+  const flagged = [
+    "Function('return this')()",
+    "Function(`a`, `b`)",
+    'eval("1")',
+    ";eval(x)",
+    '(0,eval)("x")',
+    "( 0 , eval )(x)",
+    'require("ajv/dist/compile/index")',
+    "new Function(a)",
+    'Function("x")',
+  ];
+  const clean = [
+    "retrieval(x)",
+    "isFunction(x)",
+    "x.eval(y)",
+    "$eval(y)",
+    "toFunction('a')",
+    "evaluate(x)",
+    '"interval"',
+    "typeof Function",
+    "Function.prototype.call(x)",
+  ];
+
+  it.each(flagged)("T-0390 AC2 flags %s", (sample) => {
+    expect(codegenHits(sample)).not.toEqual([]);
+  });
+
+  it.each(clean)("T-0390 AC2 does not flag %s", (sample) => {
+    expect(codegenHits(sample)).toEqual([]);
   });
 });
 
