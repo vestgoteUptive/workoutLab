@@ -167,3 +167,10 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 ## Notes
 - **Flow:** `wl-build-web`. Parallel-safe with T-0303a (D-0108 §1). Don't run it at the same time as another ticket that runs the `profile-gate.test.tsx` suite in its own worktree on this machine (state.md: one vitest per machine).
 - **Board (orchestrator):** this row loses "lib/i18n/workout.ts formatters" (D-0106 §6). It keeps "features/UF-02/slots.tsx (todayCheckinSlot)".
+
+## Build log (frontend-dev, 2026-10-02)
+- **AC-8 cap, planted faults.** Both were run with `vitest -t "the cap"` against `features/UF-02/use-today.ts` and then reverted:
+  - (a) awaiting `refreshAll` without the cap (`refreshAll(…).then(noop, noop)` in place of `settledOrCapped(…)`) failed with "expected vi.fn() to be called 2 times, but got 1 times".
+  - (b) a cap that fires but returns before the recompute (a `capped` flag checked after `await refreshed`) failed the same way.
+  - The fixed code passes.
+- **AC-14.** `profile-gate.test.tsx` "stale + `missing` on `/` redirects to /welcome/save" goes red, because Today's mount-time refresh adds a second `profiles` read. Raised as TR-0034 and not edited (D-0108 §3).
