@@ -21,6 +21,8 @@ status: todo
 - In (all in `apps/web/src/features/UF-09/`):
   - **The UF-09.2 view:** the move name, the cue, a 40 s `role="timer"`, "Restart" and "Next move".
   - **The UF-09.7 view:**
+    - the exercise name as the heading ("Hold name" in the user-flows table), with the D-0118 §8
+      fallback;
     - "Get in position" then "Hold";
     - the ring;
     - "Pause timer" / "Resume timer";
@@ -82,6 +84,8 @@ status: todo
   - **Focus** lands on "Next move".
   - **Button pin.** The T-0304a AC-7 count for `warmup` becomes 3 (Pause, Restart, Next move).
 - **AC-2 (UF-09.7 position + hold, parent AC-C2, D-0119 §1)** Plank set 1:
+  - **Heading.** The `<h1>` is "Plank" in both the position and the hold phase. The pair: with plank
+    missing from the library, it is "plank" (D-0118 §8).
   - **Entry.** On entering `timed`, the persisted `timer` is `{startedAtMs: atMs, durationS: 53,
     pausedMs: 0}` (3 + 50).
   - **Position.** For 3 s it shows "Get in position" and 3, 2, 1.

@@ -81,6 +81,10 @@ because the rest view unmounts at the very moment "Go" is due (D-0118 §10, NFR-
     DOM there.
   - **The pair, Skip.** "Skip rest" at 50 s leaves it "". "Start now" on UF-09.1 leaves it "" too.
   - **UF-09.1 expiry.** It ends with "Go".
+  - **Restore past an expiry.** A remount 600 s into a 120 s rest lands on UF-09.3 through the
+    T-0304a restore expiry, and the announcer stays "" (checked after 50 ms). Neither "10 seconds"
+    nor "Go" is said, because the crossing wasn't observed in this mount. The same holds for a
+    restore past the UF-09.1 countdown. The pair is the live expiry above, which says "Go".
 - **AC-3 (UF-09.5 Rest, parent AC-B7, D-0066 §7)**
   - **Lengths.** After saving a bench-press set, the rest starts by itself at `REST_COMPOUND_S`
     (120). After a leg-curl set it is `REST_ISOLATION_S` (60). Both are imported from

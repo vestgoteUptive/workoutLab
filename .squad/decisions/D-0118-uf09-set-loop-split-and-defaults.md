@@ -64,6 +64,11 @@ Grooming the set loop also found these open points:
    (not the chrome) dispatches `AUTOSAVE_CANCEL` once. Edits that a touch makes (reps, weight, RIR)
    live in the view's own state. A reload restores the recorded values with no auto-save ("Tap save
    when ready."). The set that is already recorded is never lost.
+   - Programmatic focus, such as Save focused on entry, isn't a touch.
+   - Pause → Resume drops unsaved edits the same way a reload does. The paused view replaces the
+     step, so its local state goes. This is cheaper than a persisted draft, and safe: the recorded
+     set stands, and the cancel is persisted, so nothing auto-saves behind the user's back.
+   - A stepper on an empty or invalid weight counts from 0.
 4. **Save.** Save compares `{reps, weightKg, rir}` with the recorded entry.
    - If any of them differs, it calls the hook's `editSet(clientId, {reps, weightKg, rir})`, and
      after that resolves it dispatches `SAVED {set}`.
@@ -117,6 +122,8 @@ Grooming the set loop also found these open points:
     - It says "Go" when a rest or the UF-09.1 countdown ends by expiry. A Skip or "Start now" says
       nothing.
     - It is empty on every other tick (NFR-A11Y-4). T-0304c adds "Done" for a timed hold.
+    - A restore past an expiry announces nothing. Only crossings observed in the current mount
+      speak, the D-0119 §7 rule.
     - The rest ring's label reads "GO" whenever `remainingS` is 0.
 11. **Formatter outputs stay whole.** UF-09.6's detail renders `itemSummary(item)` and the
     `formatKg` weight as two sibling elements, with an `aria-hidden` "·" between them. Neither
@@ -138,9 +145,15 @@ Grooming the set loop also found these open points:
 - No contract changes. Sets go through `lib/offline` exactly as D-0015 and D-0045 §6 define.
 
 ## Revisit when
-- A kill between the IndexedDB commit of `recordSet` and the store's `SET_RECORDED` write
-  (milliseconds) is seen to duplicate a set in real use. Then reconcile on restore against the
-  queue's sets for the session.
+- **A set is duplicated by a kill in a short window.** There are two such windows, each a few
+  milliseconds long:
+  - between the IndexedDB commit of `recordSet` and the store's `SET_RECORDED` write (Done set);
+  - between that commit and the `TIMED_RECORDED` write (the timed auto-log, D-0119 §3).
+  - **How to observe it:** two live `sets` rows with the same `(sessionId, exerciseId, setIndex)`
+    show up in UF-03.1 List view or the UF-03.3 summary, or in a `session_sets` query on the server.
+  - **Then:** reconcile on restore against the queue's sets for the session. The likely later fix is
+    a `pendingClientId`: the client id is generated and persisted in the focus state before the
+    write, and `lib/offline` (web-shell) accepts it so that a retry is idempotent.
 - Users edit on UF-09.4 so often that the 5 s auto-save feels hurried, or more than 30 % of
   auto-saves are followed by a List-view edit (D-0026 trigger).
 - A lb unit setting or a second UI language arrives (D-0114 §4, D-0115 Revisit).

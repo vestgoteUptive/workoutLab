@@ -36,11 +36,14 @@ status: todo
   - **The End confirm in place** → `finish()` (D-0120 §8).
   - **Restore rules.** `persist.ts` adds the D-0120 §5 rule and `skippedItems` validation. The
     T-0304e `close()` re-sync treats skipped items as complete.
-  - **Props.** `SessionHost` gains `timeZone?: string` (D-0120 §2).
+  - **Props.** `SessionHost` gains `timeZone?: string` (D-0120 §2). `formatTime` takes a string
+    `locale`, so when the `locale` prop is absent the host resolves the runtime default with
+    `Intl.DateTimeFormat().resolvedOptions().locale` before calling it.
   - **Strings and e2e.** Strings go in `flows/uf-09.ts`. e2e rows are appended to
     `tests/e2e/uf-09-focus.spec.ts`, and the T-0304a row's UF-09.9 button count is updated.
 - Out:
   - The UF-08.4-started e2e (T-0304h).
+  - The browser Back button in a running state (it pauses to UF-09.9): T-0394, D-0123.
   - Swap, How to and List view (T-0306b, T-0305a). Their seam positions are tested with injected
     entries.
   - The UF-03.3 summary (T-0305b).
@@ -94,7 +97,7 @@ status: todo
   - **The text.** UF-09.8 shows:
     - "2 min behind";
     - "You planned to finish by 10:45";
-    - Continue;
+    - Continue, with "Done by 10:46" (1500 + 1305 = 2805 s);
     - Trim, with "Lateral raise 3 → 2 sets" and "Done by 10:45";
     - Skip next, with "Skip Barbell row" and "Done by 10:37".
   - **Pause.** Pause and Resume on UF-09.8 make no second call.
@@ -135,13 +138,18 @@ status: todo
     = `started_at` + 1780 s, the `elapsedS` passed is 1500. The pair, warm-up in budget, is 1660.
   - **Planned finish.** With that pause and the off-budget warm-up, "You planned to finish by" reads
     `started_at` + 45 min + 120 s + 160 s = "10:49".
+  - **Sub-second `now` (D-0066 §11's floor).** With `now` = `started_at` + 1500.4 s (no pauses),
+    the `elapsedS` passed is the integer 1500, `timeCheck` doesn't throw, and UF-09.8 shows. This
+    pins the `floor`: without it, `timeCheck` throws a `RangeError` on a non-integer, D-0120 §3
+    resolves to `"next"`, and UF-09.8 would silently never show. The planted fault (no floor) turns
+    this red, and the build log records it.
   - **Clock skew.** With `now` = `started_at` − 60 s at the check point, `elapsedS` passed is 0, and
     the screen is UF-09.6 if not behind.
   - **Throwing check.** With `timeCheck` mocked to throw a `RangeError`, the screen is UF-09.6,
     with no uncaught error and no `role="alert"`.
 - **AC-5 (restore, D-0120 §4–§5)**
   - **Re-run.** Remounting in `timeCheck` (AC-1's state) 30 s later makes exactly one fresh call,
-    with `elapsedS` 1530. While still behind, it shows UF-09.8.
+    with `{elapsedS: 1530, nextItemIndex: 1}`. While still behind, it shows UF-09.8.
   - **No longer behind.** A remount where the fresh result has `show: false` (a mocked
     `timeCheck`) dispatches `CONTINUE`, which gives UF-09.6.
   - **Past the end.** A stored `timeCheck` with `itemIndex` equal to `plan.items.length` restores to
@@ -200,6 +208,10 @@ status: todo
 - **AC-10 (e2e: time check, pause and end, D-0120 §9, D-0086, D-0091 §1)** Rows are appended to
   `tests/e2e/uf-09-focus.spec.ts`. They use the spec's `seedSessionRow`, extended in the spec with a
   `startedAt` argument. The seed is the P1-R8 items, `warmup` `[]`, and `started_at` = now − 1500 s.
+  - **Clock.** Prefer `page.clock` (installed before the first `goto`), so that `elapsedS` at the
+    check is fixed. With real time, a slow run grows `behindS`, and Trim can cut more sets than the
+    assert expects. With real time, the plan assert must be computed from the shown option, not
+    pinned.
   - **Keyboard only** (Tab / Enter / Space):
     - Skip warm-up is absent, so UF-09.1 → bench-press × 4 (Done set, Save, Skip rest) → UF-09.8;
     - UF-09.8 shows "min behind" and Trim;
@@ -248,4 +260,6 @@ example `T-0304d UF-09.8: Trim saves the engine's item list`).
   T-0303d is late it can run before T-0304g.
 - **After this ticket,** T-0306b (Swap) and T-0305a (How to, List view) can add their seam entries.
   Their board deps are unchanged.
+- **Back.** The browser Back button in a running state goes to Pause (UF-09.9) through a same-URL
+  history guard. That is T-0394 (D-0123, deps T-0304d and T-0303d), not this ticket.
 - **Parallel.** It is parallel-safe by files with every UF-08 ticket.

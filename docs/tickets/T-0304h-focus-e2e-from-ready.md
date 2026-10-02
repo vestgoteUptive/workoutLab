@@ -4,7 +4,7 @@ title: UF-09 end-to-end from UF-08.4 — reload mid-rest and mid-pause (NFR-TIME
 lane: web-feature:UF-09
 screens: [UF-08.4, UF-09.1, UF-09.2, UF-09.3, UF-09.4, UF-09.5, UF-09.6, UF-09.9, UF-03.3]
 decisions: [D-0045, D-0066, D-0071, D-0086, D-0091, D-0110, D-0112, D-0116, D-0118, D-0120]
-deps: [T-0304d, T-0303d]
+deps: [T-0304d, T-0304g, T-0303d]
 status: todo
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of docs/tickets/T-0304-focus-mode.md (parent AC-D7–D10, except the UF-09.8/.9 keyboard + axe rows, which are T-0304d AC-10). Split out of the parent's T-0304d row by D-0118 §1. Mostly e2e; UF-09 code changes only to fix what these rows find. Build flow: wl-build-web. About ½ day. -->
@@ -139,7 +139,8 @@ and cite the screen (for example `T-0304h UF-09.3: ten offline sets survive a cl
 ## Notes
 - **Flow:** `wl-build-web`.
 - **Deps.** It needs T-0304d, for UF-09.9 End and its focus. It needs **T-0303d**, for UF-08.4 Start.
-  It runs last in the lane (D-0118 §1).
+  It needs T-0304g, so the full device-feature build is what these rows exercise. It runs last in
+  the lane (D-0118 §1). Back handling in a running state is T-0394 (D-0123), not this ticket.
 - **Fixture note.** T-0393 (todo) makes the `uf-04-library-data` exercises bodyweight-only today, so
   these rows assert set counts and fields, not kg text. They stay valid when T-0393 adds loaded
   exercises.

@@ -47,7 +47,11 @@ Grooming also found these open points:
      warmupSpentMs)`. This extends D-0066 §11 by the off-budget warm-up, the same term that rule 8's
      elapsed time excludes.
    - The projected finish of an option is `now + (option.projectedS − elapsedS)`.
-3. **Never blocked by the check.** `elapsedS` passed to `timeCheck` is `max(0, …)`. If `timeCheck`
+   - `formatTime` takes a string `locale`. With the `locale` prop absent, the host passes
+     `Intl.DateTimeFormat().resolvedOptions().locale`.
+3. **Never blocked by the check.** `elapsedS` passed to `timeCheck` is `max(0, floor(…))`, an
+   integer, as D-0066 §11 floors it. `timeCheck` throws a `RangeError` on a non-integer, and this
+   rule would then hide UF-09.8 silently, so T-0304d pins a sub-second `now`. If `timeCheck` still
    throws, the check point resolves to `"next"`. There is no UF-09.8 and no error UI.
 4. **One call per check point per mount.**
    - The rule 8 resolver calls `timeCheck(workout, {elapsedS, nextItemIndex: itemIndex + 1})` once,

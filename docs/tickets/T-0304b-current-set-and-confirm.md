@@ -95,6 +95,14 @@ persisted wall-clock timer in the focus state, not a `setTimeout` (D-0118 §2).
   - **Pre-fill kinds.** A `reentry` pre-fill renders its values with no "last time" text.
   - **Done set.** It is a `button` named "Done set", the step view's primary action. Its CSS class
     sets `min-height: 200px`. The real size is checked in AC-12.
+  - **Focus.** On entering UF-09.3 (from a rest end, `READY` or `SKIP_WARMUP`), Done set is
+    `document.activeElement`.
+  - **Rejected reads (D-0104).** These are caught, with no unhandled rejection and no
+    `console.error`:
+    - A rejected `loadExerciseDetail` renders no cue element, and Done set still works.
+    - A rejected `loadLibrary` (so `ctx.library` is `[]`) shows the heading "bench-press" (the
+      D-0118 §8 id fallback), and Done set still works.
+    - The pair is the resolved case above.
 - **AC-2 (Done set feedback < 100 ms, NFR-PERF-4)**
   - **Synchronous feedback.** With `recordSet` held on a deferred promise, right after
     `fireEvent.click(doneSet)`, before any `await` or timer advance, the button has
@@ -133,6 +141,14 @@ persisted wall-clock timer in the focus state, not a `setTimeout` (D-0118 §2).
   - **Reload.** A remount after a cancel shows the recorded values and "Tap save when ready.", with
     no countdown.
   - **The pair.** A `pointerdown` on the chrome's "Pause workout" doesn't cancel.
+  - **Focus.** On entering UF-09.4, Save is `document.activeElement`. That programmatic focus (a
+    `focus` event, with no `pointerdown` or `keydown`) doesn't cancel: the persisted `timer` is still
+    non-null, and the auto-save fires at 5 s.
+  - **Pause drops unsaved edits (D-0118 §3).**
+    - The user touches, changes reps 6 → 5, then Pause workout → Resume.
+    - UF-09.4 shows the recorded values (reps 6) and "Tap save when ready.", with no countdown,
+      because the cancel was persisted.
+    - Save then makes 0 `editSet` calls. The recorded set stands, so nothing wrong is logged.
   - **No-op.** `AUTOSAVE_CANCEL` in `set`, or with the timer already `null`, returns the same state
     object (a reducer test).
 - **AC-6 (steppers, RIR, Save, D-0066 §4–§5, D-0118 §4 §6)** On bench-press set 1 (80 × 6):
@@ -142,6 +158,9 @@ persisted wall-clock timer in the focus state, not a `setTimeout` (D-0118 §2).
   - **Typed weight.** The weight input has `inputmode="decimal"` and reads "80". Typing "77,5"
     saves 77.5, and "77.5" saves the same. "abc" gives Save `aria-disabled="true"` and the hint
     "Enter a weight like 82.5". An empty field saves `weightKg: null`.
+  - **Stepping from an empty or invalid weight.** "More weight" counts from 0, so it gives the
+    increment ("2.5" on bench-press, "5" on leg-curl). "Less weight" gives "0". Either one clears
+    the hint and enables Save.
   - **RIR.** A radio group labelled "Reps in reserve" with None, 1–2 and 3+ maps to `rir` 0, 2 and
     3. None of them is checked at first.
   - **Save with a change.** Reps 5, weight 77.5 and 1–2 → Save calls `editSet(clientId, {reps: 5,
