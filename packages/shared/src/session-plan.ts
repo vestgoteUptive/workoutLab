@@ -2,7 +2,7 @@
 // (T-0102 AC17, D-0037 §7, D-0043). The device may read a plan written by an older or newer app
 // version, offline, so every failure is a value, not an exception.
 import type { SessionPlan } from "./index.js";
-import { validate as generatedValidate } from "./session-plan.validate.gen.js";
+import { validateSessionPlan } from "./session-plan.validate.gen.js";
 
 export type SessionPlanParseError = "unsupported_version" | "invalid";
 
@@ -11,7 +11,7 @@ export type SessionPlanParseResult =
 
 // Precompiled by gen:api from SESSION_PLAN_SCHEMA (Ajv standalone, D-0117): nothing compiles code
 // at runtime, so this runs under the PWA's CSP (`script-src 'self'`, no 'unsafe-eval').
-const validate = generatedValidate as (value: unknown) => boolean;
+const validate: (value: unknown) => boolean = validateSessionPlan;
 
 /**
  * Parses the `sessions.plan` column.

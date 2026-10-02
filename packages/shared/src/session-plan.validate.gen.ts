@@ -3,8 +3,6 @@
 // @ts-nocheck
 
 "use strict";
-export const validate = validate20;
-export default validate20;
 const schema31 = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: "https://workoutlab.local/api/session-plan",
@@ -3625,3 +3623,4 @@ function validate20(
   return errors === 0;
 }
 validate20.evaluated = { props: true, dynamicProps: false, dynamicItems: false };
+export const validateSessionPlan: (data: unknown) => boolean = validate20;

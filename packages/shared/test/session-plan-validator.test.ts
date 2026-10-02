@@ -13,7 +13,7 @@ import {
 } from "../scripts/gen-api.js";
 import { parseSessionPlan } from "../src/index.js";
 import { SESSION_PLAN_SCHEMA } from "../src/session-plan.schema.gen.js";
-import { validate as generatedValidate } from "../src/session-plan.validate.gen.js";
+import { validateSessionPlan } from "../src/session-plan.validate.gen.js";
 import { REPO_ROOT, clone, exampleOf } from "./support/spec.js";
 
 type Obj = Record<string, unknown>;
@@ -23,7 +23,7 @@ const noDeficits = (() => {
   delete copy.startDeficits;
   return copy;
 })();
-const generated = generatedValidate as (value: unknown) => boolean;
+const generated: (value: unknown) => boolean = validateSessionPlan;
 const PACKAGE_ROOT = fileURLToPath(new URL("..", import.meta.url));
 
 describe("T-0229 AC1 behaviour unchanged", () => {
@@ -184,6 +184,17 @@ describe("T-0229 AC5 no runtime schema compile in shipped source", () => {
     expect(text).not.toMatch(/^\s*import\b/m);
     expect(text).not.toMatch(/\bimport\s*\(/);
     expect(text).not.toMatch(/\brequire\s*\(/);
+  });
+
+  it("T-0229 AC8 session-plan.validate.gen.ts exports only one typed binding (clean .d.ts for Deno)", () => {
+    // An exported Ajv function would make tsc declare its untyped options, which Deno's checker
+    // rejects on the vendored .d.ts (TS2339).
+    const text = readFileSync(VALIDATOR_PATH, "utf8");
+    const exports = text.match(/^export\b.*$/gm) ?? [];
+    expect(exports).toHaveLength(1);
+    expect(exports[0]).toMatch(
+      /^export const validateSessionPlan: \(data: unknown\) => boolean = \w+;$/,
+    );
   });
 
   it("T-0229 AC5 no new Function, Ajv .compile( or eval( in shared, engine or web source", () => {

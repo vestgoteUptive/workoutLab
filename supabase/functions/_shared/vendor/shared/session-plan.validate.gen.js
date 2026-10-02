@@ -7,8 +7,6 @@
 // Ajv standalone validator for SESSION_PLAN_SCHEMA, used by parseSessionPlan() (D-0117).
 // @ts-nocheck
 "use strict";
-export const validate = validate20;
-export default validate20;
 const schema31 = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     $id: "https://workoutlab.local/api/session-plan",
@@ -3623,3 +3621,4 @@ function validate20(data, { instancePath = "", parentData, parentDataProperty, r
     return errors === 0;
 }
 validate20.evaluated = { props: true, dynamicProps: false, dynamicItems: false };
+export const validateSessionPlan = validate20;

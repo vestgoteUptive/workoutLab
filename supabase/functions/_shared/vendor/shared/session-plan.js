@@ -3,10 +3,10 @@
 // shared change; CI fails on drift (`vendor.mjs --check`).
 /// <reference types="./session-plan.d.ts" />
 
-import { validate as generatedValidate } from "./session-plan.validate.gen.js";
+import { validateSessionPlan } from "./session-plan.validate.gen.js";
 // Precompiled by gen:api from SESSION_PLAN_SCHEMA (Ajv standalone, D-0117): nothing compiles code
 // at runtime, so this runs under the PWA's CSP (`script-src 'self'`, no 'unsafe-eval').
-const validate = generatedValidate;
+const validate = validateSessionPlan;
 /**
  * Parses the `sessions.plan` column.
  * - `null` (no stored plan) → `{ok: true, plan: null}`.
