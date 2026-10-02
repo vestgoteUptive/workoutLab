@@ -207,10 +207,13 @@ Both routes exist (`protected`, tab bar on). This ticket adds no route and edits
 ## Paths you may change
 - `apps/web/src/features/UF-06/**` (the lane: `web-feature:UF-06`).
 - **Listed extras:**
+  - `docs/tickets/T-0307b-progress.md`: this file, for the build, QA and accept logs (added 2026-10-02 by the orchestrator after the H-13 catch-up).
   - `apps/web/src/lib/i18n/flows/uf-06.ts`: this ticket's own flow file and no other (D-0071 §1, D-0075). You may add keys only. The file stays `export const uf06 = {` … a newline, then `} as const;` at column 0.
   - `tests/e2e/uf-06-progress.spec.ts`: a **new** file only (qa lane grant, D-0071 §10).
   - `tests/e2e/shell.spec.ts`: the `/progress/back-squat` (UF-06.2) row of the AC-6 offline describe, moved out of `OTHER_SUB_ROUTES` into its own seeded test that asserts UF-06.2's built content (AC-16), plus the D-0091 paragraph of the comment above that describe (D-0091 §4–§5, granted 2026-10-01).
   - `tests/e2e/fixtures/uf-06-progress-data.ts`: a **new** fixture file for the history, sessions and targets the e2e mock serves. Existing fixture files are not edited, which keeps this ticket clear of the other parallel lanes' fixture additions. `mockSupabaseData` always answers `sessions*` with `[]` and takes no sessions fixture, so if the spec needs session rows it registers its own `page.route` for `rest/v1/sessions*` **after** `mockSupabaseData` (Playwright runs the latest matching handler first). AC-15 as written needs none: Recent exercises and the Balance card read history only.
+  - `.squad/decisions/D-0084-progress-date-abbreviation-and-unsynced-balance.md`: a **new** decision file only (orchestrator grant, 2026-09-30). `.squad/decisions/**` belongs to the **process** lane per `.squad/ownership.yaml:53`, and T-0320's `check-lane-paths` correctly flagged the build for writing there without a grant. The content is sound and already implemented, commented and test-covered (Sept→Sep in `format.ts`, the `AREA_COUNT` guard in `Progress.tsx`, `tabIndex={-1}` on today's cell), so granting the path is cheaper than re-filing it and leaves the decision where a reader expects it. This grant covers that one file, not the directory.
+  - Three web-shell test files, **for your own routes' rows only**, per **D-0088** (which names this ticket, and whose point 4 requires the orchestrator to add them here because T-0320 reads grants from the base): `apps/web/src/app/__tests__/routes.phase3.render.test.tsx`, `apps/web/src/app/__tests__/auth-guard.phase3.test.tsx`, `apps/web/src/app/__tests__/profile-gate.test.tsx`. T-0318 pinned the **stub** state of `/progress` and `/progress/:exerciseId` — a stub `<h1>` title, a source scan for `<h1>{en.screens.exerciseHistory}</h1>`, and mocks shaped to what a stub loaded. Those are not invariants once the real screen exists. Per D-0088 §2 **keep every guarantee**: seed the library cache so `/progress/back-squat` renders (rather than switching to a route where nothing can fail), point the source scan at the built heading, and leave route ranking and the C-02 active tab asserted. Per D-0088 §3 touch **only** rows naming your own routes; every other row stays byte-identical.
 - **Not yours, and each is already done for you:**
   - `apps/web/src/app/**`: both routes exist.
   - `apps/web/src/components/**`: OfflineStatus is a read-only import.
@@ -241,3 +244,12 @@ None. The screens read the T-0319 `OfflineSession`, `HistorySet`, `LibraryExerci
 - Commits start `T-0307b:` and cite screen IDs (e.g. `T-0307b UF-06.1: calendar from checkinSessions`).
 
 **Bundle claims:** make one only after a fresh `pnpm --filter @workoutlab/web build`, with measured gzip numbers (T-0322). The UF-06 chunk budget is 100 KB.
+
+## Build log (frontend-dev)
+
+### Post-merge catch-up 2026-10-02 (landed on main by the orchestrator)
+- Merges: `4479e0a` (main, ~610 commits; the `routes.phase3.render.test.tsx` conflict is coherent — branch `BACK_SQUAT` fixture plus partial `lib/offline` mock beside main's `LAZY_WAIT_MS`/`LAZY_TEST_MS`, one `vi.mock` per module, non-UF-06 rows unchanged) and `af9d554` (4 squad-only commits incl. the D-0084/D-0088 grants).
+- AC-1…AC-15 were built before the pause; AC-16 (granted 2026-10-01) is new: `/progress/back-squat` leaves `OTHER_SUB_ROUTES` in `tests/e2e/shell.spec.ts` for a seeded offline test (UF-06.2 visible, `Back squat` `<h1>`, `How to` → `/library/back-squat`, URL last) plus an empty-cache contrast landing on UF-06.1. D-0091 paragraph updated.
+- AC-16 fault: `stats.ts` lookup `&& false` → 3/3 red on the UF-06.2 marker (redirect). Reverted.
+- T-0430: `uf-06-progress.spec.ts` imports `./fixtures/guarded-test.js`, no own listeners.
+- Gate at f797a0b: web turbo 4/4 (2765 tests), format, repo-checks 146/146, check-all, e2e 149/149.

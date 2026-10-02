@@ -66,21 +66,5 @@ Every AC has a passing test, or a recorded run for AC-1 and AC-4 · `pnpm -w typ
 - **Flow:** `wl-build-web`. Ask review to check that the diff stays inside D-0088 §2–§3: two rows' fixtures and assertions, and nothing else.
 - If T-0370 lands first, `seedLibrary` already uses the shared key builder. Nothing here depends on that.
 
-## Build log
-- 2026-10-01, frontend-dev (build), on top of 8b9a70f.
-  - AC-1, before the change: `vitest run src/app/__tests__/profile-gate.test.tsx -t "AC-6"` with `CompareContent.tsx`'s lookup forced to miss (`find("__miss__")`) gave **29/29 pass**, so the UF-04.3 `unknown`/`present` rows passed on the wrapper alone. With `LibraryDetail.tsx`'s lookup forced to miss it was also **29/29 pass** (the UF-04.2 rows pass on the wrapper too). Both reverted.
-  - AC-4, after the change (same command, file uncommitted, reverted each time):
-    1. Seed dropped (both `seedUf04` calls removed): 4 fail. First failure: `Unable to find role="heading" and name "Back squat"` (UF-04.2), `Unable to find role="columnheader" and name "Back squat"` (UF-04.3).
-    2. `CompareContent.tsx` lookup forced to miss: the 2 UF-04.3 rows fail with `Unable to find role="columnheader" and name "Back squat"`. (The same miss in `LibraryDetail.tsx` fails the 2 UF-04.2 rows on the heading.)
-    3. Spy rows dropped, Dexie seed kept: the 2 `present` rows fail in `stillBuilt()` after the 50 ms turn (`Unable to find an accessible element with the role "heading"` / `"columnheader"`), because the refresh emptied the cache.
-  - `git diff main -- apps/web/src/features` is empty.
-
-## Accept log
-- 2026-10-01, product-owner (accept), branch `t/T-0366-profile-gate-seeded` at babbef6: **done**.
-  - AC-1: recorded above (29/29 with each lookup forced to miss, so the old rows passed on the wrapper).
-  - AC-2/AC-3: `UF04_FIXTURES` seeds `u1`'s cache (and, online, the spy's `exercises`/`exercise_areas`/`exercise_variants`). It asserts the h1 "Back squat" or both columnheaders, a 50 ms settled turn, content still built, UF-04.1 and UF-01.1 absent, and the location held. `present` also asserts `spy.countFor("exercises") >= 1`.
-  - AC-4: three faults recorded above, each caught. QA re-planted 2 faults and both were caught.
-  - AC-5: the gated set still pins 12 + 1 = 13. Only the two `it.each` bodies gained the fixture lookup. There is no `timeout`. The file passes 88/88 twice.
-  - AC-6: `freshOfflineDb` runs in `beforeEach` and `afterEach`. The scoped shuffle passed 3 times. With `main`'s file, a shuffle seed fails the UF-04 rows; the branch does not.
-  - Gate: root 19/19, web 887/887. Review: APPROVE (nits only). Contracts unchanged.
-  - Not in scope (pre-existing, reproduced on `main`): shuffling the whole file with seed 1790895837776 fails AC-7 "/account redirects for a `unknown` profile". This is cold lazy-chunk order dependence, the same class as T-0331. Filed as a follow-up.
+## Build / accept log
+Archived in `docs/tickets/log/T-0366.md` (D-0157).

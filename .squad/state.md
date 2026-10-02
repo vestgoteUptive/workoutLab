@@ -21,7 +21,7 @@ H-13 (push branches); H-14 (service-role key for the account function, prod only
 - Sub-agents: build → QA ∥ review → product-owner accept; spec: product-owner → triage check. Spec/content/triage roles have **no shell**: the orchestrator commits their files.
 - Model pins (D-0076): execution roles `claude-sonnet-5-5`, judgement roles `claude-opus-5-5`.
 - Tooling: `npx -y pnpm@10.28.2 …`. Each new worktree needs `install --frozen-lockfile`.
-- Give every parallel run its own decision-ID block. Next free: **D-0157** (D-0160 taken), D-0152 reserved for T-0420) (D-0150 used by T-0304c), **TR-0044**, tickets **T-0443+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0241+** (engine/data), **T-0906+** (CI).
+- Give every parallel run its own decision-ID block. Next free: **D-0158** (D-0160 taken), D-0152 reserved for T-0420) (D-0150 used by T-0304c), **TR-0044**, tickets **T-0451+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0241+** (engine/data), **T-0906+** (CI).
 
 ## Traps (condensed — full history in journals 2026-09-28..10-01)
 - **Never commit a test that asserts `git diff main...HEAD`** (T-0303b review): it fails on other lanes' branches after merge and silently skips in CI (no local `main`). Record diff checks in the ticket build log instead; check-lane-paths enforces lanes.
@@ -37,6 +37,7 @@ H-13 (push branches); H-14 (service-role key for the account function, prod only
 - Require a clean `git status` + stated HEAD before review/QA. Confirm a planted fault actually landed.
 - A contract change (openapi, data-model, engine-rules) must run the whole `-w` gate: other packages pin contract text (T-0222: engine AC21 regex).
 - **`/tmp` is a RAM tmpfs here.** When it fills (~80%), Chromium fails e2e with `ERR_INSUFFICIENT_RESOURCES` / `Target crashed` on every page (84 false reds 2026-10-02). Run e2e with `TMPDIR=$HOME/.cache/wl-pw-tmp`. Also `reuseExistingServer` silently reuses another worktree's :4173 (T-0440).
+- **`pnpm -w typecheck lint test` skips `test:repo-checks`** (args go to the root `typecheck` script). Run `pnpm -w test:repo-checks` too until T-0444 lands.
 - Never push main while a merge on it is still being verified (T-0310c slip, 2026-10-02).
 - "Tests pass" ≠ correct; "tests fail" ≠ broken (check the contract first).
 - Local Supabase: `npx -y supabase@latest start -x vector,logflare`; `eval "$(npx -y supabase@latest status -o env | sed 's/^/export /')"`. The stack serves functions of the directory it was started from.

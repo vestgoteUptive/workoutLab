@@ -137,11 +137,5 @@ D-0105 fixes the formula. SwapSheet (UF-05.1 from UF-09.9 and UF-09.6, and UF-08
 - The contract change is linked to D-0105.
 - Commit messages start with `T-0226` and cite UF-05.1 (e.g. `T-0226 UF-05.1: fitsBudget counts the back-off set`).
 
-## Accept log
-- 2026-10-02, product-owner (accept), branch at 06ce3f5: **done**.
-  - AC1–AC8 each map to tests in `packages/engine/test/t0226-fits-budget.test.ts`; QA PASS on all eight. Engine suite: 543 tests (528 existing, unedited, plus 15 new).
-  - AC5: with `main`'s `src` swapped in, the snapshot and all 528 existing tests pass, and only the 5 expected new tests fail. So `suggest` is byte-identical and the snapshot reflects `main`.
-  - AC4 non-vacuity counts confirmed (252/8/4/64). Mutation faults C, D and F go red. Fault E (`defaultDurationS` vs planned) is an equivalent mutant, because non-timed sets always cost 45 s of work.
-  - AC7: `docs/engine-rules.md` has the `**fitsBudget**` bullet and R12-E12 in §12.1 (both cite D-0105) and one T-0226 Traceability row.
-  - Principle 2 holds: a "fits" candidate can no longer push the plan over budget, including on plans that are already over budget. Principle 3 holds: the change is pure and deterministic (AC8). `timeCostS`, `api/openapi.yaml` and ranking order are unchanged.
-  - Non-blocking: the `session.ts` ↔ `swaps.ts` import cycle (safe in ESM). Load-only timeouts under parallel turbo are already tracked in T-0379.
+## Build / accept log
+Archived in `docs/tickets/log/T-0226.md` (D-0157).
