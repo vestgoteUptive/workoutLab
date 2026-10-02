@@ -5,7 +5,7 @@
 - **`main`:** green 2026-10-02 after T-0304d (-w gate 19/19, whole e2e 137/137) and T-0431 (web gate 4/4, e2e offline+uf-03+uf-09 13/13).
 - **In flight:** T-0422 (UF-05 swap seams), T-0424 (UF-09 timed tests), T-0440 (e2e no server reuse + tmp preflight), T-0304g (UF-09 device features) — all builds. Merged today: T-0304d, T-0431, T-0427, T-0429, T-0423, T-0433, T-0435.
 
-## Blocked on H-13
+## H-13 resolved (2026-10-02)
 T-0307b (UF-06), T-0308a (UF-07), T-0308b (UF-11, review-approved at `17091a5`) were in flight on **another machine**; their branches are on neither this machine nor `origin`. Also waiting on them: T-0356 (D-0090), T-0362, T-0363. Don't restart from scratch unless the human says the work is lost. When the branches appear: fetch, recreate worktrees, `git merge main`, then QA → review → accept.
 
 ## Next

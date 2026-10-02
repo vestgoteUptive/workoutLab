@@ -160,10 +160,10 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0306b | UF-05.1 SwapSheet (rankSwaps + engine applySwap T-0224), mounted via features/UF-09/seams.tsx on UF-09.9/09.6 | web-feature:UF-05 | T-0304d, T-0224, T-0318, T-0414 | split → T-0421, T-0422 (D-0142) | wl-build-web |
 | T-0307 | UF-06 Progress + UF-10 Balance (mount full C-01 on UF-10.1, area buttons → /balance/:area; add a Playwright check that real Enter/Space navigates once — T-0300d) | web-feature:UF-06 | T-0300, T-0203b | split → T-0307a, T-0307b (D-0068) | wl-build-web |
 | T-0307a | UF-10.1/.2 Balance: full C-01 mounted, area → /balance/:area, e2e Enter/Space once | web-feature:UF-10 | T-0318 | done | wl-build-web |
-| T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319, T-0334 | blocked:H-13 | wl-build-web |
+| T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0308 | UF-07 Routine builder + UF-11 Plan check-in | web-feature:UF-07 | T-0300, T-0202, T-0100b | split → T-0308a, T-0308b, T-0308c (D-0070) | wl-build-web |
-| T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | blocked:H-13 | wl-build-web |
-| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | blocked:H-13 | wl-build-web |
+| T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | doing | wl-build-web |
+| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | todo | wl-build-web |
 | T-0309 | Landing page "workout LAB by Uptive" | landing | T-0003 | split → T-0309a, T-0309b (D-0046) | wl-design → wl-build-web |
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
