@@ -7,6 +7,7 @@ by: product-owner (groom T-0301c)
 area: product
 builds-on: D-0064 §8, D-0097, D-0098, D-0073
 amends: D-0064 §8 (the no-plan branch and the write order), D-0097 §1 (the `/welcome/save` row), D-0098 §2 (the `/welcome/save` no-plan clause)
+addenda: 2026-10-02 §6 (T-0381, signed-out visitor with a saveable plan)
 ---
 ## Context
 T-0301c builds `/welcome/save`, the step D-0064 §8 defines. Grooming it against the merged code
@@ -82,6 +83,26 @@ turned up four open points:
   device's upserts then overwrite its targets and rhythm. The `profiles` trigger keeps
   `onboarded_at` and `onboarding_timing_ms`. This is accepted at v1 scale. An RPC that writes both
   rows in one transaction is the fix if it is ever reported (the same route as D-0070's revisit).
+
+## Addendum 2026-10-02 (T-0381, product-owner groom): a signed-out visitor with a saveable plan
+Records what T-0301c shipped (`features/UF-01/SaveScreen.tsx`). §2–§4 assumed a signed-in user, so
+they didn't cover this case.
+
+6. **Signed out, with a saveable plan: replace-navigate to `/account`.** `/welcome/save` checks
+   for a saveable plan first (§2), and then the auth status:
+   - No saveable plan: the §2 screen, whatever the auth status.
+   - A saveable plan and `status === "signed-out"`: `navigate("/account", {replace: true})` (a
+     `<Navigate replace>`). That means no Supabase call, no write, and the pending plan stays
+     byte-identical. UF-01.5 then shows its "Save your plan" heading and the Back link to
+     `/welcome/schedule` (T-0301c), because the plan is saveable. The user signs in there, and the
+     signed-in return lands on `/welcome/save` through the profile gate (D-0073), where §3 runs.
+   - `replace` keeps Back on UF-01.5 from bouncing to `/welcome/save` and straight back.
+   - Why: a saveable plan needs an account (D-0014, no guest mode). Sending the user to the sign-in
+     screen that already says "Save your plan" is the shortest path, and it adds no screen.
+   - Tests: `features/UF-01/__tests__/save.test.tsx` "signed out with PLAN: sent to /account to
+     sign in first, with no call" covers the location, the absence of a call and the unchanged
+     record. T-0382 adds the `replace` assertion: the history entry count stays the same, and
+     Back doesn't return to `/welcome/save`.
 
 ## Revisit when
 - The first user test shows people confused by the "Set up your plan" screen, or drop-off there
