@@ -2,8 +2,8 @@
 
 - **Phase:** 3 (App). On main: engine rules 1–14 + D-0092..D-0096 changes; UF-01 onboarding complete (.1–.5); UF-02.1 Today; UF-04 Library; **UF-08.1–.4 setup complete (Start → /session/:id)**; **UF-09 machine, hook + seams, UF-09.3/.4 set loop (T-0304a, T-0304e, T-0304b)**; UF-10 Balance.
 - **Updated:** 2026-10-02 by orchestrator (no AgentLab on this machine → sub-agents).
-- **`main`:** green 2026-10-02 after T-0385 merge: web 1968/1968, whole e2e 83/83, typecheck/check-all; pushed.
-- **In flight:** T-0304f (QA), T-0408 (build), T-0411 (small fix after review). Ready: T-0407 (after T-0304f: same e2e spec), T-0409 (UF-09, after T-0304f), T-0391/T-0397 (UF-08, serial), T-0396, T-0393.
+- **`main`:** green 2026-10-02 after T-0411 merge: web 2035/2035, whole e2e 83/83, typecheck/format/check-all; pushed.
+- **In flight:** T-0304f (QA; review approved), T-0393 (build), engine groom (T-0211, T-0212, T-0220, T-0221, T-0222). Ready: T-0407 + T-0409 + T-0410 (UF-09, after T-0304f), T-0391/T-0397 (UF-08, serial). T-0233 after T-0409.
 
 ## Blocked on H-13
 T-0307b (UF-06), T-0308a (UF-07), T-0308b (UF-11, review-approved at `17091a5`) were in flight on **another machine**; their branches are on neither this machine nor `origin`. Also waiting on them: T-0356 (D-0090), T-0362, T-0363. Don't restart from scratch unless the human says the work is lost. When the branches appear: fetch, recreate worktrees, `git merge main`, then QA → review → accept.
