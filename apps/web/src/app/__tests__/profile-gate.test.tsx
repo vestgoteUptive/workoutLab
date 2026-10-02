@@ -59,6 +59,10 @@ const spy = selectSpy.current;
 
 const PROFILE_ROW = { id: "u1", goal: "build" };
 
+// T-0408 (D-0096): local budgets on waits for lazy route chunks (the --concurrency=1 gate).
+const LAZY_WAIT_MS = 5_000;
+const LAZY_TEST_MS = 15_000;
+
 let navigateRef: ((path: string) => void) | undefined;
 let locationRef = "";
 let recheckRef: (() => Promise<void>) | undefined;
@@ -338,12 +342,18 @@ describe("the gated set is derived from routes.ts, with an exact expected count"
 });
 
 describe("AC-5 signed in + `missing`: every gated route redirects to /welcome/save", () => {
-  it.each(GATED)("%s redirects to /welcome/save", async (path) => {
-    stateMissing();
-    render(<Harness start={path} />);
-    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
-    expect(locationRef).toBe("/welcome/save");
-  });
+  it.each(GATED)(
+    "%s redirects to /welcome/save",
+    async (path) => {
+      stateMissing();
+      render(<Harness start={path} />);
+      await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument(), {
+        timeout: LAZY_WAIT_MS,
+      });
+      expect(locationRef).toBe("/welcome/save");
+    },
+    LAZY_TEST_MS,
+  );
 
   it("visits a non-zero number of paths", () => {
     expect(GATED.length).toBe(13);
