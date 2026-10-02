@@ -111,3 +111,15 @@ Tests for every AC pass, including the AC6 simulated 14-day histories · `npx -y
   - `test/rule-14-properties.test.ts`: the independent oracle's `drop` gains `Math.min(cur.w, …)` (seed 32, leg-curl W 2 inc 5, expected 5 vs the engine's 2). No other oracle line, seed or count changed.
   No frozen `pre-*.json` baseline exists any more (T-0237).
 - Gates: engine typecheck, lint and test (39 files, 650 tests) green; `-w format:check` clean; `check-all.mjs` exit 0. The vendored engine copy was not regenerated (orchestrator, D-0053 §1).
+
+### Accept 2026-10-02 (product-owner): done
+Branch `t/T-0235-rule-14-drop-floor-cap` at 2eeedb3. QA: done. Review: approved. The `-w` gate passed 19/19.
+- **AC1 to AC3:** titled tests in `test/t0235-drop-floor-cap.test.ts`. They return 2 × 6 `reentry`, 2 × 6 `deload`, and through `suggest` a back-off of 2 × 6 with 885 s/15 s derived by hand from rules 7.1 and 7.4. All three were red on main (2.5).
+- **AC4:** every table row is tested, plus the edge cases: zero history, 10 days off (`hold_after_break`), timed reentry, offline-merged. R14-E1…E9 and R7-E16 pass unedited.
+- **AC5:** the property sweep over W 0.25..200 and inc [1, 1.25, 2, 2.5, 5] hits both branches. It has the `sweep` title and the 30 s budget.
+- **AC6:** 616 plans across 7 histories. 176 hit the capped branch and 72 the unchanged one. The standard histories reach step 5 directly, so the R14-E4/E5 fallback is not used. The test compares against the inline formula, not a snapshot.
+- **AC7:** the doc test asserts the step 2 and 5 text, the Drop floor bullet tokens, nine R14-E lines and one T-0235 Traceability row. `git diff main...HEAD -- docs/engine-rules.md` touches only rule 14 steps 2 and 5, the Drop floor bullet and Traceability, exactly D-0137 §4.
+- **AC8:** the engine suite is green (650 tests). No test literal changed. The pinned D-0132 strings (`step2`, `step5`, `bullets[2]`) and the property oracle's `drop` follow D-0137 under D-0143, because D-0137 §4 names exactly those lines. The T-0221 test file is unedited, and the oracle still catches planted engine faults it doesn't share (QA). This is not the "other changed expectation" that AC8 sends to triage.
+- **AC9:** reruns are deep-equal, frozen inputs are not mutated, and engine lint is green.
+- **Principles:** principle 3 holds. `prefill` stays pure, the one `src` line matches D-0137 §1, and only `0 < W < inc` results change. No UI, flow or onboarding impact. UF-09.3 now never shows a "drop" heavier than last time.
+- **At merge (orchestrator):** regenerate the vendored engine (`node supabase/scripts/vendor.mjs`, then `--check`, D-0053 §1). D-0143 stays `revisit` until a human reviews it.
