@@ -255,7 +255,7 @@ describe("rule 14 prefill properties (seeded)", () => {
     ]) {
       expect(kinds.get(k) ?? 0, k).toBeGreaterThan(10);
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 
   it("rule-14 (AC19) same input → same output; history order and library order don't matter; inputs unchanged", () => {
     for (let seed = 1; seed <= 1000; seed++) {
@@ -270,7 +270,7 @@ describe("rule 14 prefill properties (seeded)", () => {
       ).toEqual(a);
       expect(history).toEqual(snapshot);
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 
   it("rule-14 (AC21) invariants: shape, bounds, bodyweight 0, carry only with a previous, reps in range", () => {
     for (let seed = 1; seed <= N; seed++) {
@@ -298,5 +298,5 @@ describe("rule 14 prefill properties (seeded)", () => {
         if (p.kind !== "add_rep" && p.kind !== "increase") expect(p.reps, l).toBe(slot.repsMin);
       }
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 });
