@@ -36,5 +36,6 @@ H-13 (push branches); H-14 (service-role key for the account function, prod only
 - Binary-condition ACs: the other value needs a test too. Timing tests: prove they fail on unfixed code; use a 50 ms macrotask, not microtask flushes.
 - Require a clean `git status` + stated HEAD before review/QA. Confirm a planted fault actually landed.
 - A contract change (openapi, data-model, engine-rules) must run the whole `-w` gate: other packages pin contract text (T-0222: engine AC21 regex).
+- Never push main while a merge on it is still being verified (T-0310c slip, 2026-10-02).
 - "Tests pass" ≠ correct; "tests fail" ≠ broken (check the contract first).
 - Local Supabase: `npx -y supabase@latest start -x vector,logflare`; `eval "$(npx -y supabase@latest status -o env | sed 's/^/export /')"`. The stack serves functions of the directory it was started from.
