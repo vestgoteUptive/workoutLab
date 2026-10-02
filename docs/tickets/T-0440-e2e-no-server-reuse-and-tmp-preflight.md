@@ -147,3 +147,11 @@ commits start `T-0440` (for example `T-0440: never reuse a server on :4173`).
   - `pnpm -w test:repo-checks`: 146 of 146 passed.
   - `pnpm -w format:check`: clean.
   - `node .github/scripts/check-all.mjs`: exit 0.
+
+## QA log
+2026-10-02, qa. I merged `main` (64a49ec) and the tree was clean. Every run used `flock`, and `TMPDIR=$HOME/.cache/wl-pw-tmp` unless noted. `/tmp` was a tmpfs at 48 %.
+- **AC-1 red.** I swapped in main's config, and `e2e-config.spec.ts` gave 2 failed and 7 passed (AC1: Expected `false`, Received `true`; AC4: no preflight import). I then restored the config.
+- **AC-2.** With `python3 -m http.server 4173` running, `test:e2e` exited 1 after 3 s with `http://localhost:4173 is already used`. No build started and no test ran. I then stopped the stand-in.
+- **AC-3/AC-5.** Both are covered by spec tests, and they pass.
+- **AC-4.** With the threshold planted at 0 and `TMPDIR` unset, the run stopped at `playwright.config.ts:13` with the preflight message (48 %) and ran no test. The pair (`TMPDIR` on disk) loaded the config: 8 passed, and the 79 % test failed, as it should. I restored the file from a backup. `check-e2e-wiring` exited 0, and its tests gave 14 of 14.
+- **Gate.** e2e 152/152 passed. `typecheck lint test --force --concurrency=1`: 19/19. `test:repo-checks`: 146/146. `format:check` was clean, and `check-all` exited 0. Verdict: pass.
