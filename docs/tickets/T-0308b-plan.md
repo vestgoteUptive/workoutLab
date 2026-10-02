@@ -197,6 +197,7 @@ All three routes exist: `/plan` → `Plan` (UF-11.2, tab bar on) and `/plan/edit
   - `apps/web/src/lib/i18n/flows/uf-11.ts`: this ticket's own flow file, and no other (D-0071 §1, D-0075). Add keys only. The `export const uf11 = {…} as const;` shape stays, written multi-line.
   - `tests/e2e/uf-11-plan.spec.ts`: a new file (D-0071 §10). T-0308c appends to it later.
   - `tests/e2e/fixtures/uf-11-plan.ts`: an optional new file with this spec's fixture data, passed to the existing `mockSupabaseData(page, fixtures)`.
+  - `docs/tickets/T-0308b-plan.md`: this file, for the build, QA and accept logs (added 2026-10-02 by the orchestrator after the H-13 catch-up).
 - **Not yours, and each is already done for you:**
   - `apps/web/src/app/**`: both routes exist.
   - `apps/web/src/components/**`: OfflineStatus is a read-only import.
