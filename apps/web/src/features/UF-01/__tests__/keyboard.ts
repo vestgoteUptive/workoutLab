@@ -10,10 +10,21 @@
 // - Space: activate a focused button; check a focused radio.
 // - ArrowDown/ArrowRight, ArrowUp/ArrowLeft on a radio: move to the next/previous radio of the
 //   same `name` (wrapping), focus it and check it, firing `click` (which React maps to onChange).
+// - Home / End (T-0399): no default action. Browsers have none on a button either; the
+//   component's own keydown handler does the work.
 import { act, fireEvent } from "@testing-library/react";
 
-type Key =
-  "Tab" | "ShiftTab" | "Enter" | "Space" | "ArrowDown" | "ArrowUp" | "ArrowRight" | "ArrowLeft";
+export type Key =
+  | "Tab"
+  | "ShiftTab"
+  | "Enter"
+  | "Space"
+  | "ArrowDown"
+  | "ArrowUp"
+  | "ArrowRight"
+  | "ArrowLeft"
+  | "Home"
+  | "End";
 
 const TABBABLE = "a[href], button:not([disabled]), input:not([disabled]), [tabindex]";
 
@@ -64,6 +75,7 @@ function defaultAction(key: Key, target: HTMLElement): void {
     else if (isRadio(target) && !target.checked) fireEvent.click(target);
     return;
   }
+  if (key === "Home" || key === "End") return;
   if (isRadio(target)) {
     const group = radioGroup(target);
     const at = group.indexOf(target);
@@ -83,6 +95,8 @@ const KEY_PROPS: Record<Key, { key: string; code: string; shiftKey?: boolean }> 
   ArrowUp: { key: "ArrowUp", code: "ArrowUp" },
   ArrowRight: { key: "ArrowRight", code: "ArrowRight" },
   ArrowLeft: { key: "ArrowLeft", code: "ArrowLeft" },
+  Home: { key: "Home", code: "Home" },
+  End: { key: "End", code: "End" },
 };
 
 /** Presses each key in turn on the focused element. */
