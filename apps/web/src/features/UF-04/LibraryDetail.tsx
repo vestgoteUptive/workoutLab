@@ -2,6 +2,7 @@
 // library row alone is enough for the header, so a missing detail never redirects.
 import { Link, Navigate, useParams } from "react-router";
 import type { LibraryExercise } from "@workoutlab/engine";
+import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import type { ExerciseDetail } from "../../lib/offline/db.js";
 import { loadExerciseDetail, loadVariants } from "../../lib/offline/feature-loaders.js";
@@ -20,6 +21,7 @@ interface DetailData {
 
 export function LibraryDetail() {
   const { exerciseId = "" } = useParams();
+  const { status } = useAuth();
   const { data, pending } = useScreenData<DetailData>(
     async () => {
       const [library, detail, variants] = await Promise.all([
@@ -30,7 +32,7 @@ export function LibraryDetail() {
       return { library, detail, variants };
     },
     exerciseId,
-    { refresh: true },
+    { refresh: true, status },
   );
 
   if (data === undefined) return <div data-screen-id="UF-04.2" className="wl-uf04" />;

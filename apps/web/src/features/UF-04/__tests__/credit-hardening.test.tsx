@@ -10,6 +10,7 @@ import { NOW, TZ, USER, seedSpy } from "./l1plus.js";
 const spy = createSelectSpy();
 const hoisted = vi.hoisted(() => ({ refreshAll: vi.fn() }));
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: spy.from } }));
+vi.mock("../../../lib/auth/auth-context.js", () => import("./auth-mock.js"));
 vi.mock("../../../lib/offline/history.js", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   refreshAll: (...args: unknown[]) => hoisted.refreshAll(...args),

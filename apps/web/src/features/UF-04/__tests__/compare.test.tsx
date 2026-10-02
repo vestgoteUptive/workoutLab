@@ -7,6 +7,7 @@ import { NOW, TZ, USER, seedSpy } from "./l1plus.js";
 const spy = createSelectSpy();
 const hoisted = vi.hoisted(() => ({ setCostS: vi.fn() }));
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: spy.from } }));
+vi.mock("../../../lib/auth/auth-context.js", () => import("./auth-mock.js"));
 vi.mock("@workoutlab/engine", async (importOriginal) => {
   const real = await importOriginal<typeof import("@workoutlab/engine")>();
   hoisted.setCostS.mockImplementation(real.setCostS);
