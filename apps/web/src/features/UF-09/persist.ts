@@ -48,6 +48,9 @@ export function removeFocusState(storage: FocusStorage | null, sessionId: string
   }
 }
 
+/** The phases whose timer ends them (D-0111 §8): they must carry a timer. */
+const TIMER_PHASES: readonly Phase[] = ["getReady", "warmup", "rest", "next"];
+
 const isInt = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v);
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 const isPhase = (v: unknown): v is Phase =>
@@ -76,6 +79,11 @@ export function isValidFocusState(v: unknown, sessionId: string, ctx: FocusCtx):
     return false;
   }
   if (!validTimer(s.timer)) return false;
+  // A phase that ends by its timer can't be restored without one: it would never end.
+  const runningPhase = s.phase === "paused" ? s.resumePhase : s.phase;
+  if (isPhase(runningPhase) && TIMER_PHASES.includes(runningPhase) && s.timer === null) {
+    return false;
+  }
   if (s.pausedAtMs !== null && !isNum(s.pausedAtMs)) return false;
   if (s.phase === "paused") {
     if (!isPhase(s.resumePhase) || s.resumePhase === "paused" || s.resumePhase === "done") {

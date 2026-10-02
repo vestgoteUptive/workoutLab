@@ -195,6 +195,15 @@ describe("AC-5 bad stored states start fresh", () => {
     ["version: 2", JSON.stringify({ ...valid(), version: 2 })],
     ["an unknown phase", JSON.stringify({ ...valid(), phase: "stretching" })],
     ["itemIndex 9 for a 4-item plan", JSON.stringify({ ...valid(), itemIndex: 9 })],
+    // A phase that ends by its timer, stored with `timer: null`, would never end.
+    ["getReady with timer null", JSON.stringify({ ...valid(), phase: "getReady" })],
+    ["warmup with timer null", JSON.stringify({ ...valid(), phase: "warmup" })],
+    ["rest with timer null", JSON.stringify({ ...valid(), phase: "rest" })],
+    ["next with timer null", JSON.stringify({ ...valid(), phase: "next" })],
+    [
+      "paused over a rest with timer null",
+      JSON.stringify({ ...valid(), phase: "paused", resumePhase: "rest", pausedAtMs: NOW }),
+    ],
   ])("%s is removed and the machine starts at UF-09.1", async (_name, raw) => {
     await seedSession();
     window.localStorage.setItem(KEY, raw);
@@ -202,6 +211,36 @@ describe("AC-5 bad stored states start fresh", () => {
     expect(screenId()).toBe("UF-09.1");
     // Removed, then replaced by the fresh state the host starts with.
     expect(storedFocus()).toEqual(initialFocusState(S1, P1, NOW));
+  });
+
+  it.each([
+    [
+      "rest with a timer",
+      { phase: "rest", timer: { startedAtMs: NOW, durationS: 120, pausedMs: 0 } },
+      "UF-09.5",
+    ],
+    [
+      "paused over a rest with a timer",
+      {
+        phase: "paused",
+        resumePhase: "rest",
+        pausedAtMs: NOW,
+        timer: { startedAtMs: NOW, durationS: 120, pausedMs: 0 },
+      },
+      "UF-09.9",
+    ],
+    [
+      "paused over a set with timer null",
+      { phase: "paused", resumePhase: "set", pausedAtMs: NOW },
+      "UF-09.9",
+    ],
+  ] as const)("the pair: %s restores", async (_name, patch, id) => {
+    await seedSession();
+    const state = { ...valid(), ...patch } as FocusState;
+    store(state);
+    await renderLoaded();
+    expect(screenId()).toBe(id);
+    expect(storedFocus()).toEqual(state);
   });
 
   it("the pair: a valid one restores", async () => {
@@ -236,7 +275,7 @@ describe("AC-6 screen ids", () => {
   ];
   it.each(STEPS)("a seeded %s state renders %s, alone", async (phase, id) => {
     await seedSession();
-    const timer = ["getReady", "warmup", "rest", "next"].includes(phase)
+    const timer = ["getReady", "warmup", "rest", "next", "paused"].includes(phase)
       ? { startedAtMs: NOW, durationS: 40, pausedMs: 0 }
       : null;
     store({

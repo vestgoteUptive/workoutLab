@@ -207,3 +207,15 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - AC-9: an expiry dispatched twice → `host.expiry` 4 red, and `host.restore` "at 600 s" red.
   - AC-5: `>=` for the 12 h bound → "exactly 12 h" red. Dropping the `userId` check → the other-user row red.
 - **TR-0036 (open).** In the built app, `parseSessionPlan` (an Ajv runtime compile) is blocked by the CSP (`script-src 'self'`, no `'unsafe-eval'`). Every real row therefore reads as not on this device. The seeded-session e2e row (the AC-7 44 × 44 check) is marked `test.fail` with TR-0036 until that's fixed.
+- **Defaults T-0304b–e can rely on.** All are within D-0111, with no new decision:
+  - `CHECK_RESOLVED` moves `itemIndex` to the next item for both `to: "next"` and `to: "timeCheck"`. In `timeCheck`, `itemIndex` is therefore already the next item (rule 8's `nextItemIndex`). `CONTINUE` goes to `next` with a 60 s timer and the same `itemIndex`.
+  - `RESUME` from a pause taken during `warmup` moves `warmupStartedAtMs` forward by the pause length. `warmupSpentMs = leave − warmupStartedAtMs` then excludes pauses. `warmupStartedAtMs` is `null` outside the warm-up, and `SKIP_WARMUP` leaves `warmupSpentMs` at 0.
+  - If there is no cached library, the host runs with `ctx.library = []`. Every rest is then `REST_COMPOUND_S`, and an exercise missing from the library gets the same.
+  - The reducer stamps each logged entry with `itemIndex`, `setIndex`, `exerciseId` and `backoff = setIndex >= item.sets`, whatever the event carried.
+  - A fresh start writes its initial state once. A restored state isn't rewritten until its first transition.
+  - Expiry is checked after every render and by an exact wall-clock `setTimeout`. Because the check also runs on the 1 s re-render, a timer that still reads more than 0 when the timeout fires (clock moved back) ends on a later tick. Both checks read `store.getState()`, so each end event is dispatched once.
+  - A stored state is rejected in two cases: its phase (or, when paused, its `resumePhase`) is one of `getReady`, `warmup`, `rest` or `next` with `timer: null`; or it is paused with `resumePhase` set to `paused` or `done`.
+- **Rework 2 planted faults:**
+  - The expiry check limited to `[store, state]` changes (the old behaviour) → the clock-moved-back test red.
+  - The timer-required validation removed → 5 stored-state rows red.
+  - The reducer passing the input's `backoff` through → the back-off test red.

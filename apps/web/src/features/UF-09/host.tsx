@@ -68,10 +68,13 @@ function Machine({ store, ctx }: { store: FocusStore; ctx: FocusCtx }) {
   const state = useSyncExternalStore(store.subscribe, store.getState, store.getState);
   useRerenderEverySecond();
 
-  // A restored or just-reached state whose timer has already run out ends once, now.
+  // After every render — a transition, or the 1 s re-render — a timer that has run out ends,
+  // once. Running on every re-render (not only when `state` changes) means a timer that still
+  // reads > 0 when the exact timeout fires (the wall clock moved back, or the timeout fired a
+  // little early) is caught on a later tick instead of sticking at 0:00 forever.
   useEffect(() => {
     fireExpired(store);
-  }, [store, state]);
+  });
 
   // The exact moment the running timer reaches 0 (wall-clock maths, not ticks).
   useEffect(() => {

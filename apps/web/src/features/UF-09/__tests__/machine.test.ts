@@ -64,7 +64,7 @@ function walkItem(state: FocusState, itemIndex: number, sets: number, ctx: Focus
   for (let i = 0; i < sets; i += 1) {
     s = run(
       s,
-      [ev("SET_RECORDED", T0, { set: logged(itemIndex, i, item.exerciseId, i >= item.sets) })],
+      [ev("SET_RECORDED", T0, { set: logged(itemIndex, i, item.exerciseId, false) })],
       ctx,
     );
     s = run(s, [ev("SAVED", T0)], ctx);
@@ -349,8 +349,10 @@ describe("AC-1 table from P1", () => {
     expect(s.phase).toBe("rest");
     s = run(s, [ev("REST_END", T0)], ctx);
     expect(s).toMatchObject({ phase: "set", itemIndex: 0, setIndex: 4 });
-    s = run(s, [ev("SET_RECORDED", T0, { set: logged(0, 4, "bench-press", true) })], ctx);
+    // The input says `backoff: false`: the reducer stamps `setIndex >= item.sets` itself.
+    s = run(s, [ev("SET_RECORDED", T0, { set: logged(0, 4, "bench-press", false) })], ctx);
     expect(s.loggedSets.at(-1)).toMatchObject({ setIndex: 4, backoff: true });
+    expect(s.loggedSets).toHaveLength(5);
     expect(s.loggedSets.slice(0, 4).every((l) => !l.backoff)).toBe(true);
     s = run(s, [ev("SAVED", T0), ev("REST_END", T0)], ctx);
     expect(s.phase).toBe("betweenItems");
@@ -358,6 +360,7 @@ describe("AC-1 table from P1", () => {
 
   it("back-off: with backoff null, set 3 is the item's last", () => {
     let s = walkItem(at("set"), 0, 4);
+    expect(s.loggedSets.map((l) => l.backoff)).toEqual([false, false, false, false]);
     s = run(s, [ev("REST_END", T0)]);
     expect(s.phase).toBe("betweenItems");
   });

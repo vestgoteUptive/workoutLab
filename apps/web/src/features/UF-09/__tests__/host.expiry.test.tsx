@@ -107,6 +107,30 @@ describe("AC-9 auto-advance", () => {
     expect(countOf("READY")).toBe(1);
   });
 
+  it("the wall clock moving back after the exact timeout is scheduled: rest still ends, once", async () => {
+    seed({
+      phase: "rest",
+      itemIndex: 0,
+      setIndex: 0,
+      timer: { startedAtMs: NOW, durationS: 120, pausedMs: 0 },
+    });
+    await renderLoaded();
+    expect(screenId()).toBe("UF-09.5");
+    // The exact timeout is now scheduled for NOW + 120 s. Move the wall clock back 10 s (NTP or a
+    // manual change): when that timeout fires, the timer still reads 0:10.
+    vi.setSystemTime(Date.now() - 10_000);
+    await advance(120_000);
+    expect(screenId()).toBe("UF-09.5");
+    expect(timerText()).toBe("0:10");
+    expect(countOf("REST_END")).toBe(0);
+    await advance(10_000);
+    expect(screenId()).toBe("UF-09.3");
+    expect(countOf("REST_END")).toBe(1);
+    await advance(30_000);
+    expect(countOf("REST_END")).toBe(1);
+    expect(storedFocus()).toMatchObject({ phase: "set", setIndex: 1 });
+  });
+
   it("a paused rest doesn't expire (the pair of the rest case)", async () => {
     seed({
       phase: "paused",

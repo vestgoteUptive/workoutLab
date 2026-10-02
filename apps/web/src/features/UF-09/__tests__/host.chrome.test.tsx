@@ -51,7 +51,10 @@ function seeded(phase: Phase, patch: Partial<FocusState> = {}): FocusState {
   return {
     ...initialFocusState(S1, P1, NOW),
     phase,
-    timer: TIMED_PHASES.includes(phase) ? { startedAtMs: NOW, durationS: 40, pausedMs: 0 } : null,
+    timer:
+      TIMED_PHASES.includes(phase) || phase === "paused"
+        ? { startedAtMs: NOW, durationS: 40, pausedMs: 0 }
+        : null,
     itemIndex: phase === "timed" ? 3 : phase === "getReady" || phase === "warmup" ? 0 : 1,
     pausedAtMs: phase === "paused" ? NOW : null,
     resumePhase: phase === "paused" ? "rest" : null,
