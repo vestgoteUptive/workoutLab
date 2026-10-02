@@ -161,3 +161,17 @@ example `T-0431 UF-03.3: a flushed session row defers to a newer cache (D-0151)`
   - **New tests** (4, in `sessions-merge-flushed.test.ts`, "rework"): (a) A held, then Save 4 + flush + B; B released first (marked, 4), then A: loader E/4 and the mark is cleared; (b) the pair, A first then B: 4 and marked; (c) a stale mark on an entry that fails the compare is cleared (loader 3), and its pair (a matching snapshot keeps the mark, USER_B's marked entry untouched).
   - **Red on f5aa5a0** (that commit's `history.ts` swapped in): 2 red. (a) `expected null to be 4`, and (c) the mark is not cleared. **Planted fault** (the clear branch removed): the same 2 red. Re-checked on the reworked code: F2 (never mark) gives 14 red, F3 (no structural compare) gives 3 red (AC-4 re-queued-and-flushed, rework (a), (b)). F1 and F4 are loader-only and unchanged.
   - **Runs (under the test lock).** `vitest run src/lib/offline` 231 passed; web `typecheck` / `lint` green; web `test` 163 files, 2562 tests passed; `playwright … offline.spec.ts` 1 passed; `pnpm -w format:check` clean; `check-all.mjs` exit 0.
+
+## Accept log
+- **2026-10-02, product-owner (accept): done.** Branch `t/T-0431-load-sessions-flushed-row-defers` at 93678d0.
+  - **AC-1:** `sessions-merge-flushed.test.ts` AC-1 ×3 (E/null with the mark, the E/5 pair, other fields from the cache). These are red on main (3 instead of null or 5, and the queued `normal`/45).
+  - **AC-2:** a cache older than the flush (null, unmarked); the T-0420 sequence for a saved `null` and a saved `4` at every step, with no `cacheCurrent` after the Save and after its flush; an older-build entry without the field.
+  - **AC-3:** ended_at null / 2 gives E/2; the 10:50 pair.
+  - **AC-4:** a failed refresh and its pair; a pending entry; pending at the snapshot and then flushed; re-queued during the request; re-queued and flushed during it (the structural compare, F3 red) and its pair; USER_B isolation; no cached row.
+  - **AC-5:** absent `ended_at` gives 10:05/2 (red on main, got 5); explicit null gives 10:05/5; both keys absent; no cached row gives null/2.
+  - **AC-6:** `syncStatus` counts only `pending: true` entries, marked or not. `sessions-merge`, `sessions-cache`, `offline-loaders` and the flush tests pass unedited.
+  - **Planted faults:** F1 to F4 are each recorded as turning their AC red (F1 → AC-2, F2 → AC-1, F3 → AC-4 re-queued-and-flushed, F4 → AC-5).
+  - **Review blocker (rework 2):** the recompute-every-mark rule is pinned by rework tests (a), (b) and (c). (a) and (c) were red on f5aa5a0 and with the clear branch removed. Re-review approved. The rule stays within D-0151 §1 §2 and is noted on D-0151.
+  - **Principles:** Principle 4 is served: UF-11 now reads the server's current `effortRating`. Principles 1, 2, 3 and 5 are not touched (no change to UF-09, the engine or onboarding).
+  - **Contracts:** unchanged. The marker is a local IndexedDB field with no Dexie version bump.
+  - **Follow-up already filed:** T-0434, the identical re-save gap (low priority).
