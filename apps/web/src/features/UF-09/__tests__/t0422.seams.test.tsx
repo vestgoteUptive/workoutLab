@@ -1,6 +1,7 @@
 // T-0422 AC-1 (the entries, D-0071 §4), AC-3 (the D-0142 §7 target, pure) and the `swap`
 // entry's `render`/`onApply` against a test-built `ctx` (the sheet over a real cache, the real
 // engine). SwapSheet tests freeze `Date` alone (D-0160 Consequences).
+import { Component, type ReactNode } from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { en } from "../../../lib/i18n/en.js";
@@ -223,6 +224,54 @@ describe("T-0422 the swap entry's render and onApply (test-built ctx)", () => {
     await act(async () => held.resolve!());
     await flushReal();
     expect(order).toEqual(["replaceItem", "close"]);
+  });
+
+  // T-0422 attempt 3 (review): the seam's error boundary wraps only the lazy sheet. An error
+  // outside it (a sibling here) still reaches the boundary above, not the swap fallback.
+  it("the swap boundary doesn't catch an error outside the sheet", async () => {
+    class Outer extends Component<{ children: ReactNode }, { caught: string | null }> {
+      override state = { caught: null as string | null };
+      static getDerivedStateFromError(error: Error) {
+        return { caught: error.message };
+      }
+      override render() {
+        return this.state.caught === null ? this.props.children : <p>outer: {this.state.caught}</p>;
+      }
+    }
+    function Thrower(): never {
+      throw new Error("outside the overlay");
+    }
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { ctx } = ctxWith({ itemIndex: 1 });
+    render(
+      <Outer>
+        {swap().render(ctx)}
+        <Thrower />
+      </Outer>,
+    );
+    await flushReal();
+    expect(screen.getByText("outer: outside the overlay")).toBeInTheDocument();
+    expect(screen.queryByText(en.uf05.loadFailed)).toBeNull();
+  });
+
+  // T-0422 attempt 3 (review): the target is fixed when the overlay opens. After replaceItem
+  // resolves and before close(), the host re-renders with the logged set that completes item 1;
+  // a target recomputed then would flash "Replace Leg curl".
+  it("the target is stable across a rerender after replaceItem resolves", async () => {
+    const two = [logged(1, 0), logged(1, 1)];
+    const { ctx } = ctxWith({ itemIndex: 1, loggedSets: two });
+    const view = render(<>{swap().render(ctx)}</>);
+    await findEl(() => screen.queryByRole("radiogroup", { name: "Replacement" }));
+    expect(screen.getByRole("dialog", { name: "Replace Barbell row" })).toBeInTheDocument();
+    await use("db-row", "Db row");
+    expect(ctx.replaceItem).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(ctx.replaceItem).mock.calls[0]![0]).toBe(1);
+    const later = ctxWith({ itemIndex: 1, loggedSets: [...two, logged(1, 2)] }).ctx;
+    expect(swapTarget(later)).toBe(2);
+    view.rerender(<>{swap().render(later)}</>);
+    await flushReal();
+    expect(screen.getByRole("dialog", { name: "Replace Barbell row" })).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Replace Leg curl" })).toBeNull();
   });
 
   it("the pair: a rejected replaceItem leaves the sheet open with the save notice, no close()", async () => {

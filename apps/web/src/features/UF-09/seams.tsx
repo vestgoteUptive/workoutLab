@@ -4,7 +4,7 @@
 // - T-0305a adds `how-to` and `list-view` to `pauseSeamActions`.
 // An entry's overlay replaces the current screen while it is open (principle 1). It gets the
 // session through `ctx` and never imports UF-09, so there are no import cycles.
-import { Suspense, lazy, type ReactNode } from "react";
+import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { setsInItem } from "./machine.js";
 import type { FocusSession } from "./session.js";
@@ -44,23 +44,85 @@ export function swapTarget(ctx: SwapTargetInput): number {
   return ctx.currentItemIndex;
 }
 
-/** The UF-05.1 sheet over the D-0142 §7 target. "Use …" writes through `replaceItem` (the
- *  queue, D-0071 §6) and then closes; a rejected write leaves the sheet open with its notice. */
-function renderSwap(ctx: FocusSession): ReactNode {
-  const target = swapTarget(ctx);
+/**
+ * What the overlay shows while the UF-05 chunk is loading, or after it failed to load: still one
+ * task on screen (UF-05.1), with a way back to where Swap was tapped (`ctx.close`). Focus moves
+ * to Close, so a keyboard user is never stranded on an empty overlay.
+ */
+function SwapPlaceholder({ message, onClose }: { message: string; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    closeRef.current?.focus();
+  }, []);
   return (
-    <Suspense fallback={null}>
-      <SwapSheet
-        workout={ctx.workout}
-        itemIndex={target}
-        onApply={async (result) => {
-          await ctx.replaceItem(target, result.plan.items[target]!, result.plan.mainLiftId);
-          ctx.close();
-        }}
-        onClose={ctx.close}
-      />
-    </Suspense>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={uf05.titleFallback}
+      className="wl-uf09__view"
+      data-screen-id="UF-05.1"
+    >
+      <p className="wl-uf09__status" role="status">
+        {message}
+      </p>
+      <button
+        ref={closeRef}
+        type="button"
+        className="wl-uf09__secondary wl-uf09__wide"
+        onClick={onClose}
+      >
+        {uf05.close}
+      </button>
+    </div>
   );
+}
+
+interface BoundaryProps {
+  onClose: () => void;
+  children: ReactNode;
+}
+
+/** Catches a rejected UF-05 import (a stale deploy's 404 chunk) and any render error inside the
+ *  sheet, so the host stays mounted. It wraps only the lazy sheet, nothing outside the overlay. */
+class SwapBoundary extends Component<BoundaryProps, { failed: boolean }> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  override render(): ReactNode {
+    if (this.state.failed) {
+      return <SwapPlaceholder message={uf05.loadFailed} onClose={this.props.onClose} />;
+    }
+    return this.props.children;
+  }
+}
+
+/** The UF-05.1 sheet over the D-0142 §7 target, fixed when the overlay opens (a re-render after
+ *  `replaceItem` resolves never moves it). "Use …" writes through `replaceItem` (the queue,
+ *  D-0071 §6) and then closes; a rejected write leaves the sheet open with its notice. */
+function SwapOverlay({ ctx }: { ctx: FocusSession }) {
+  const [target] = useState(() => swapTarget(ctx));
+  return (
+    <SwapBoundary onClose={ctx.close}>
+      <Suspense fallback={<SwapPlaceholder message={uf05.loading} onClose={ctx.close} />}>
+        <SwapSheet
+          workout={ctx.workout}
+          itemIndex={target}
+          onApply={async (result) => {
+            await ctx.replaceItem(target, result.plan.items[target]!, result.plan.mainLiftId);
+            ctx.close();
+          }}
+          onClose={ctx.close}
+        />
+      </Suspense>
+    </SwapBoundary>
+  );
+}
+
+function renderSwap(ctx: FocusSession): ReactNode {
+  return <SwapOverlay ctx={ctx} />;
 }
 
 /** UF-05.1 Swap (T-0422). The workout stays paused while the sheet is open (D-0071 §4). */
