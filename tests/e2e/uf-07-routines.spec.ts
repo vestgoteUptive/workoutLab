@@ -1,8 +1,12 @@
 // T-0308a UF-07.1 e2e (D-0071 §10): the happy path, the real-keyboard move, and axe plus
 // 44 x 44 px targets (AC-A14). Supabase is mocked through `page.route` only. Run with one worker:
 // `playwright test --workers=1`.
+//
+// `test` comes from `fixtures/guarded-test.js` (T-0904, D-0086; T-0425 consoleGuard): an unclaimed
+// Supabase request, a `console.error` or a `pageerror` fails the test at teardown.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures/guarded-test.js";
 import {
   FAKE_USER_ID,
   VITE_SUPABASE_URL,
