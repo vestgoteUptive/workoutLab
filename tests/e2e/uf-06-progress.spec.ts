@@ -2,7 +2,8 @@
 // mocked. axe on both screens, 44 px targets, and the keyboard path into Balance and an
 // exercise's history.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures/guarded-test.js";
 import {
   injectSession,
   mockSupabaseAuth,
