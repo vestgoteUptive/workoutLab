@@ -132,7 +132,10 @@ Grooming the set loop also found these open points:
     changes T-0304a AC-7's per-state "exactly 1 button" assertion for that state to the new view's
     exact count (for example UF-09.3: Pause + Done set = 2). It lists the change in its build log.
     The other assertions in that test stay as they are. This doesn't weaken the test: it encodes
-    the real view.
+    the real view. The same applies to a placeholder's text-format pins (for example T-0304a AC-9's
+    UF-09.1 timer text `0:01` → `1`, forced by T-0304f AC-1): update the text, keep every timing
+    and transition assertion unchanged, and list it in the build log. (Amended 2026-10-02 at the
+    T-0304f accept.)
 
 ## Consequences
 - The orchestrator edits the board:
