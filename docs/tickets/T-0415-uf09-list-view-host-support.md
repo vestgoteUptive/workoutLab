@@ -68,3 +68,5 @@ Tests for every AC pass, with the red runs recorded · `pnpm -w typecheck lint t
 - **Flow:** `wl-build-web`.
 - **Why it waits for T-0304d and T-0414:** both change `machine.ts` and `host.tsx`. The UF-09 lane runs one ticket at a time.
 - **Parallel:** it shares no file with T-0419–T-0421. It may not run in parallel with T-0416 or T-0422, because they edit `seams.tsx` and UF-09 test pins (D-0142 §1).
+
+- **From T-0414 review (2026-10-02):** READY/next can enter `set` at setIndex 0 even when a List-view log already filled that position. Pick the first free set there, with a test.
