@@ -462,21 +462,21 @@ test.describe("T-0303d AC-10 UF-08.4 online", () => {
     expect(carrying[0]!.find((r) => r.id === id)!.time_budget_min).toBe(30);
   });
 
-  test("browser Back from /session/<id> doesn't land on a setup URL (the replace)", async ({
-    page,
-  }) => {
-    // TR-0038: the D-0110 §4 replace swaps only the `?step=ready` entry; the setup steps are
-    // PUSHes (D-0107 §1, T-0303b AC-8), so Back lands on `?step=suggested` → `/session/setup`.
-    // The literal row is kept, expected to fail, until TR-0038 is resolved.
-    test.fail(true, "TR-0038: replace alone leaves the earlier setup steps under the workout");
+  test("browser Back from /session/<id> never lands on UF-08.4 (D-0123 §2)", async ({ page }) => {
     await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
     await toReady(page);
     await startWorkout(page);
     await page.goBack();
-    await page.waitForLoadState();
-    await expect(page).not.toHaveURL(/\/session\/setup/);
+    await expect(page.locator("[data-screen-id]").first()).toBeVisible();
+    await page.waitForTimeout(50);
+    await expect(page).not.toHaveURL(/step=ready/);
+    await expect(screenUF084(page)).toHaveCount(0);
+    const ids = page.locator("[data-screen-id]");
+    await expect(ids).toHaveCount(1);
+    // UF-08.1 today (via ?step=suggested and the host's replace); UF-09.9 once T-0394 lands.
+    expect(await ids.getAttribute("data-screen-id")).toMatch(/^(UF-08\.1$|UF-09)/);
   });
 });
 
