@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.4]
 decisions: [D-0002, D-0004, D-0015, D-0045, D-0053, D-0063, D-0065, D-0071, D-0086, D-0091, D-0103, D-0107, D-0108, D-0109, D-0110, D-0112, D-0123]
 deps: [T-0303b]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of docs/tickets/T-0303-session-setup.md (ACs D1–D6 there, refined by D-0110). Build flow: wl-build-web. About ⅓ day. Becomes ready when T-0303b is done. Runs before T-0303c if both are ready (the parent's note). -->
 
@@ -153,3 +153,14 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - Fresh build with the e2e env, then `check:size` exit 0.
   - `test:e2e`: 82 passed, the whole suite, including the expected-fail TR-0038 row.
 - **TR-0038 resolved (D-0123 §2).** The `test.fail` row is replaced by the amended AC-10 Back row. After `goBack()` the URL doesn't match `/step=ready/`, UF-08.4 isn't in the DOM after 50 ms, and the single `[data-screen-id]` is `UF-08.1` (today) or starts with `UF-09`. No UF-08 code change. `uf-08-setup` e2e: 15 passed.
+
+## Accept log (2026-10-02, product-owner)
+- **Verdict: done.** Branch `t/T-0303d-ready-and-start` at 448dbc5, working tree clean.
+- **ACs.** QA proved AC-1 to AC-11 against both values of each binary condition. Three planted faults turned red: navigate before the write, `started_at` taken from mount, and a new id per tap. The build's own planted fault (navigate before the write) turned 8 tests red. AC-10's Back row is the D-0123 §2 version, and no `test.fail`/TR-0038 row is left in `tests/e2e/uf-08-setup.spec.ts`. AC-11: the diff touches nothing under `app/**`, `tests/e2e/fixtures/**` or the shell specs, and offline/auth/shell pass 26/26.
+- **DoD runs (QA).** `pnpm -w test --force --concurrency=1` green (web 1640). uf-08 and uf-09 e2e 19/19. Zero console errors in the T-0303d e2e rows. Build: UF-08 vitest 241/241, `uf-08-setup` e2e 15/15. Contracts unchanged.
+- **Principles.** Principle 1: the explainer teaches one task on screen, with the rest behind Pause. Principle 2: the time budget flows into the row (AC-4). Principle 3: no engine or LLM involvement, and the plan is the engine's own `SessionPlan`. The offline-first start holds (NFR-OFF-2).
+- **Non-blocking, carried forward.**
+  - The `mounted === false` branches are untested: Back while Start is pending leaves an orphan pending session. Already filed as T-0397.
+  - The e2e Back row doesn't catch a PUSH navigate (only AC-4's REPLACE vitest does). T-0394 tightens it.
+  - `startWorkout()` in the e2e asserts `UF-09.1`, not `^UF-09`, which couples it to UF-09's first screen. This is a new follow-up.
+  - The online `pending: true` row will race once T-0385 lands. T-0385 already rewrites it.
