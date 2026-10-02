@@ -44,6 +44,10 @@ export const GET_READY_S = 5;
 export const NEXT_SETUP_S = 60;
 /** UF-09.4 auto-save after an untouched confirm (D-0118 §2, NFR-TIME-1). */
 export const AUTOSAVE_S = 5;
+/** UF-09.7 "Get in position" before the hold (D-0119 §1). One timer runs position + hold. */
+export const POSITION_S = 3;
+/** The hold when neither the pre-fill nor the item has a duration (D-0119 §1). */
+export const DEFAULT_HOLD_S = 45;
 
 export type { FocusTimer };
 
@@ -77,6 +81,9 @@ export interface FocusState {
   warmupStartedAtMs: number | null;
   warmupSpentMs: number;
   loggedSets: LoggedSet[];
+  /** UF-09.7's ring-only pause (T-0304c, D-0119 §2): when "Pause timer" was tapped, else `null`.
+   *  Only the `timed` timer stops; `workoutPausedMs` (rule 8's elapsed time) doesn't move. */
+  timerPausedAtMs: number | null;
 }
 
 export interface FocusCtx {
@@ -115,7 +122,13 @@ export type FocusEvent =
   /** `close()` from a `keepsClockRunning: true` overlay: re-sync from `loggedSets`. */
   | ({ type: "RESYNC" } & At)
   // T-0304b (D-0118 §2 §3): a touch on UF-09.4 stops the auto-save. Added, none changed.
-  | ({ type: "AUTOSAVE_CANCEL" } & At);
+  | ({ type: "AUTOSAVE_CANCEL" } & At)
+  // T-0304c (D-0119 §2): UF-09.7's ring-only pause. Valid only in `timed`. Added, none changed.
+  | ({ type: "TIMER_PAUSE" } & At)
+  | ({ type: "TIMER_RESUME" } & At)
+  /** T-0304c (D-0119 §3): a hold at 0 whose set is already logged (of this exercise, T-0410)
+   *  moves on as its TIMED_RECORDED would have, with no second entry. Otherwise a no-op. */
+  | ({ type: "HOLD_ALREADY_LOGGED" } & At);
 
 function timerAt(atMs: number, durationS: number): FocusTimer {
   return { startedAtMs: atMs, durationS, pausedMs: 0 };
@@ -137,12 +150,31 @@ export function initialFocusState(sessionId: string, _plan: SessionPlan, atMs: n
     warmupStartedAtMs: null,
     warmupSpentMs: 0,
     loggedSets: [],
+    timerPausedAtMs: null,
   };
 }
 
 /** The number of sets in an item, counting the back-off set (rule 13). */
 export function setsInItem(item: SessionPlan["items"][number]): number {
   return item.sets + (item.backoff ? 1 : 0);
+}
+
+/** The hold of a timed item (D-0119 §1, principle 3): the engine's `prefill.durationS`, else the
+ *  item's `durationS`, else 45 s. */
+export function holdSeconds(item: SessionPlan["items"][number]): number {
+  return item.prefill.durationS ?? item.durationS ?? DEFAULT_HOLD_S;
+}
+
+/** The one `timed` timer (D-0119 §1): 3 s to get in position, then the hold, from `atMs`. */
+function timedTimer(ctx: FocusCtx, itemIndex: number, atMs: number): FocusTimer {
+  const item = ctx.plan.items[itemIndex]!;
+  return timerAt(atMs, POSITION_S + holdSeconds(item));
+}
+
+/** The `timed` time left at `nowMs`: frozen at the ring pause while "Pause timer" holds it. */
+export function timedRemainingS(state: FocusState, nowMs: number): number {
+  if (!state.timer) return 0;
+  return remainingS(state.timer, state.timerPausedAtMs ?? nowMs);
 }
 
 /** Rest by library `type` (D-0066 §7). A missing exercise gets the longer, safer rest. */
@@ -200,15 +232,16 @@ export function firstIncompleteSet(
 const REST_STARTABLE: ReadonlySet<Phase> = new Set<Phase>(["set", "confirm", "rest", "timed"]);
 
 /** Entering item `itemIndex`: `timed` when its `repsMin` is null, else `set`; `done` past the end. */
-function enterItem(state: FocusState, ctx: FocusCtx, itemIndex: number): FocusState {
+function enterItem(state: FocusState, ctx: FocusCtx, itemIndex: number, atMs: number): FocusState {
   const item = ctx.plan.items[itemIndex];
   if (!item) return { ...state, phase: "done", timer: null };
+  const timed = item.repsMin === null;
   return {
     ...state,
-    phase: item.repsMin === null ? "timed" : "set",
+    phase: timed ? "timed" : "set",
     itemIndex,
     setIndex: 0,
-    timer: null,
+    timer: timed ? timedTimer(ctx, itemIndex, atMs) : null,
   };
 }
 
@@ -271,6 +304,15 @@ const PAUSABLE: ReadonlySet<Phase> = new Set<Phase>([
  * mutation. An event that doesn't apply returns `state` itself (reference-equal).
  */
 export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx): FocusState {
+  const next = transition(state, event, ctx);
+  if (next === state || next.timerPausedAtMs === null) return next;
+  // The ring pause belongs to one `timed` timer: leaving `timed`, or a new timer, drops it.
+  const running = next.phase === "paused" ? next.resumePhase : next.phase;
+  if (running === "timed" && next.timer === state.timer) return next;
+  return { ...next, timerPausedAtMs: null };
+}
+
+function transition(state: FocusState, event: FocusEvent, ctx: FocusCtx): FocusState {
   const { plan } = ctx;
   switch (event.type) {
     case "COUNTDOWN_END": {
@@ -278,11 +320,15 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
       if (plan.warmup.length > 0) {
         return { ...startWarmupMove(state, ctx, 0, event.atMs), warmupStartedAtMs: event.atMs };
       }
-      return enterItem(state, ctx, 0);
+      return enterItem(state, ctx, 0, event.atMs);
     }
     case "SKIP_WARMUP": {
       if (state.phase !== "getReady") return state;
-      return { ...enterItem(state, ctx, 0), warmupSpentMs: 0, warmupStartedAtMs: null };
+      return {
+        ...enterItem(state, ctx, 0, event.atMs),
+        warmupSpentMs: 0,
+        warmupStartedAtMs: null,
+      };
     }
     case "WARMUP_NEXT": {
       if (state.phase !== "warmup") return state;
@@ -305,7 +351,7 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
     }
     case "READY": {
       if (state.phase !== "next") return state;
-      return enterItem(state, ctx, state.itemIndex);
+      return enterItem(state, ctx, state.itemIndex, event.atMs);
     }
     case "SET_RECORDED": {
       if (state.phase !== "set") return state;
@@ -340,11 +386,12 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
       const item = plan.items[state.itemIndex]!;
       const nextSet = setAfterRest(state, ctx);
       if (nextSet !== null) {
+        const timed = item.repsMin === null;
         return {
           ...state,
-          phase: item.repsMin === null ? "timed" : "set",
+          phase: timed ? "timed" : "set",
           setIndex: nextSet,
-          timer: null,
+          timer: timed ? timedTimer(ctx, state.itemIndex, event.atMs) : null,
         };
       }
       return { ...state, phase: "betweenItems", timer: null };
@@ -386,13 +433,19 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
         return state;
       }
       const pausedFor = Math.max(0, event.atMs - state.pausedAtMs);
+      // A ring already paused by "Pause timer" keeps its own pause, which covers this time too:
+      // adding it here as well would count it twice (D-0119 §2).
+      const ringHeld = state.resumePhase === "timed" && state.timerPausedAtMs !== null;
       const resumed: FocusState = {
         ...state,
         phase: state.resumePhase,
         resumePhase: null,
         pausedAtMs: null,
         workoutPausedMs: state.workoutPausedMs + pausedFor,
-        timer: state.timer ? { ...state.timer, pausedMs: state.timer.pausedMs + pausedFor } : null,
+        timer:
+          state.timer && !ringHeld
+            ? { ...state.timer, pausedMs: state.timer.pausedMs + pausedFor }
+            : state.timer,
         warmupStartedAtMs:
           state.resumePhase === "warmup" && state.warmupStartedAtMs !== null
             ? state.warmupStartedAtMs + pausedFor
@@ -427,8 +480,25 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
       if (state.phase !== "confirm" || state.timer === null) return state;
       return { ...state, timer: null };
     }
+    case "TIMER_PAUSE": {
+      if (state.phase !== "timed" || !state.timer || state.timerPausedAtMs !== null) return state;
+      // A hold already at 0 is ending (the auto-log): there is nothing left to pause.
+      if (remainingS(state.timer, event.atMs) === 0) return state;
+      return { ...state, timerPausedAtMs: event.atMs };
+    }
+    case "TIMER_RESUME": {
+      if (state.phase !== "timed" || !state.timer || state.timerPausedAtMs === null) return state;
+      const heldFor = Math.max(0, event.atMs - state.timerPausedAtMs);
+      return {
+        ...state,
+        timerPausedAtMs: null,
+        timer: { ...state.timer, pausedMs: state.timer.pausedMs + heldFor },
+      };
+    }
+    case "HOLD_ALREADY_LOGGED":
+      return state.phase === "timed" ? movedOnIfLogged(state, ctx, event.atMs) : state;
     case "PLAN_REPLACED":
-      return planReplaced(state, ctx, event.itemIndex);
+      return planReplaced(state, ctx, event.itemIndex, event.atMs);
     case "RESYNC":
       return resync(state, ctx, event.atMs);
     default:
@@ -459,7 +529,12 @@ function movedOnIfLogged(state: FocusState, ctx: FocusCtx, atMs: number): FocusS
 
 /** After `replaceItem` on the current item: the set phase follows the new item (`timed` when its
  *  `repsMin` is null), and `setIndex` stays, kept inside the new item's set count. */
-function planReplaced(state: FocusState, ctx: FocusCtx, itemIndex: number): FocusState {
+function planReplaced(
+  state: FocusState,
+  ctx: FocusCtx,
+  itemIndex: number,
+  atMs: number,
+): FocusState {
   if (itemIndex !== state.itemIndex) return state;
   const item = ctx.plan.items[itemIndex];
   if (!item) return state;
@@ -471,7 +546,19 @@ function planReplaced(state: FocusState, ctx: FocusCtx, itemIndex: number): Focu
   if (phase === state.phase && resumePhase === state.resumePhase && setIndex === state.setIndex) {
     return state;
   }
-  return { ...state, phase, resumePhase, setIndex };
+  // The set step becoming a timed one starts its timer (D-0119 §1); a timed one becoming a reps
+  // set has none. While paused, the new timer starts at the pause, so RESUME starts it running.
+  const was = state.phase === "paused" ? state.resumePhase : state.phase;
+  const now = phase === "paused" ? resumePhase : phase;
+  let timer = state.timer;
+  if (was === "set" && now === "timed") {
+    timer = timedTimer(
+      ctx,
+      itemIndex,
+      state.phase === "paused" ? (state.pausedAtMs ?? atMs) : atMs,
+    );
+  } else if (was === "timed" && now === "set") timer = null;
+  return { ...state, phase, resumePhase, setIndex, timer };
 }
 
 /** D-0071 §5 `close()` re-sync. A running rest stays. Otherwise the machine goes to the first
@@ -510,6 +597,6 @@ function resync(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
     phase: entry,
     itemIndex: target.itemIndex,
     setIndex: target.setIndex,
-    timer: null,
+    timer: entry === "timed" ? timedTimer(ctx, target.itemIndex, atMs) : null,
   };
 }

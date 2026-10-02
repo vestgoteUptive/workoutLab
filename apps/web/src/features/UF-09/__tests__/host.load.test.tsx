@@ -289,7 +289,8 @@ describe("AC-6 screen ids", () => {
   ];
   it.each(STEPS)("a seeded %s state renders %s, alone", async (phase, id) => {
     await seedSession();
-    const timer = ["getReady", "warmup", "rest", "next", "paused"].includes(phase)
+    // T-0304c (D-0119 §1): `timed` carries its position + hold timer too.
+    const timer = ["getReady", "warmup", "rest", "next", "timed", "paused"].includes(phase)
       ? { startedAtMs: NOW, durationS: 40, pausedMs: 0 }
       : null;
     store({

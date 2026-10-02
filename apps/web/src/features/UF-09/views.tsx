@@ -2,6 +2,7 @@
 // and `m:ss` for a phase with a timer. T-0304b–d replace them and own their buttons; `paused`
 // has its one button, Resume. T-0304b: UF-09.3 (`set`) and UF-09.4 (`confirm`) are built.
 // T-0304f: UF-09.1 (`getReady`), UF-09.5 (`rest`) and UF-09.6 (`next`) are built.
+// T-0304c: UF-09.2 (`warmup`) and UF-09.7 (`timed`) are built.
 import type { ReactElement, ReactNode } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { ConfirmSet } from "./confirm-set.js";
@@ -11,7 +12,9 @@ import type { FocusCtx, FocusEvent, FocusState, LoggedSet, Phase } from "./machi
 import { NextExercise } from "./next-exercise.js";
 import { Rest } from "./rest.js";
 import { orderActions } from "./seams.js";
+import { TimedSet } from "./timed-set.js";
 import { formatClock, remainingS } from "./timer.js";
+import { Warmup } from "./warmup.js";
 
 export type ViewPhase = Exclude<Phase, "betweenItems" | "done">;
 
@@ -45,6 +48,11 @@ export interface ViewProps {
   send: (event: ViewEvent) => void;
   /** The seam entries for this screen: `pause` on UF-09.9, `next` on UF-09.6, else none. */
   seams: readonly SeamButton[];
+  /** UF-09.7: the host's auto-log of this hold was rejected (D-0119 §3). Absent: `false`. */
+  holdFailed?: boolean;
+  /** UF-09.7 "Log hold": logs the current hold again through the hook; rejects on a failed
+   *  write. Only the host passes it (the views rendered on their own in tests have no hook). */
+  onLogHold?: () => Promise<void>;
 }
 
 function SeamButtonView({ seam }: { seam: SeamButton }) {
@@ -120,12 +128,12 @@ const placeholder = (phase: ViewPhase) => {
 
 export const VIEWS: Record<ViewPhase, (props: ViewProps) => ReactElement> = {
   getReady: GetReady,
-  warmup: placeholder("warmup"),
+  warmup: Warmup,
   set: CurrentSet,
   confirm: ConfirmSet,
   rest: Rest,
   next: NextExercise,
-  timed: placeholder("timed"),
+  timed: TimedSet,
   timeCheck: placeholder("timeCheck"),
   paused: Paused,
 };

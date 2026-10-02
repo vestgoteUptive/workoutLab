@@ -244,6 +244,8 @@ describe("AC-6 done → finish()", () => {
       phase: "timed",
       itemIndex: 3,
       setIndex: 1,
+      // T-0304c (D-0119 §1): a stored `timed` carries its position + hold timer.
+      timer: { startedAtMs: NOW, durationS: 53, pausedMs: 0 },
       loggedSets: [
         {
           clientId: "p0",
@@ -274,7 +276,12 @@ describe("AC-6 done → finish()", () => {
 
   it("the pair: in rest of the last-but-one set, no write with ended_at happens", async () => {
     await seedSession();
-    seedFocus({ phase: "timed", itemIndex: 3, setIndex: 0 });
+    seedFocus({
+      phase: "timed",
+      itemIndex: 3,
+      setIndex: 0,
+      timer: { startedAtMs: NOW, durationS: 53, pausedMs: 0 },
+    });
     await renderSession();
     await call(() => session().recordSet(plankSet(0)));
     expect(session().state.phase).toBe("rest");
