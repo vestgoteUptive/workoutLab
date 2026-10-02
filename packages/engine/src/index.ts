@@ -34,8 +34,8 @@ export {
   MAX_ITEMS_PER_AREA,
   REP_SLOTS,
   DEFAULT_GOAL,
-  getsBackoff,
 } from "./session.js";
+export { getsBackoff } from "./cost.js";
 export { rankSwaps, muscleMatch } from "./swaps.js";
 export { applySwap } from "./apply-swap.js";
 export { generateWarmup, WARMUP_COST_S, WARMUP_MOVES, WARMUP_MOVE_S } from "./warmup.js";
