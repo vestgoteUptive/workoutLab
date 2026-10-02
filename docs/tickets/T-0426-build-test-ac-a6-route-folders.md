@@ -94,3 +94,29 @@ check. D-0144 decides the new rule.
     'src/features/UF-05/index.tsx'`).
   - (ii), (iii-a) and (iv) ran while the sentinel was only `wl-uf05`. The final change only
     widened §3c to a list; §2 and §3a/§3b are byte-identical. (i) and (iii-b) ran on the final test.
+
+### Accept 2026-10-02 (product-owner): done
+- Checked `apps/web/build.test.ts` at 1da41ba against D-0144 §1–§3 and this ticket's scope.
+  - §1: route folders come from the `import("../features/<dir>/index.js")` specifiers in
+    `routes.ts` (deduped, non-empty). Each must be a dynamic-entry chunk the entry loads, in a
+    separate file.
+  - §2: `SEAM_MOUNTED_FEATURES = ["UF-05"]`. Any unlisted, unrouted folder fails. A listed folder
+    that is missing from disk passes. A folder that is both listed and routed fails.
+  - §3: (a) checks `entry.dynamicImports`. (b) checks the transitive static `imports` graph for a
+    `src` under the folder. (c) checks that the JS and CSS of the entry graph carry no sentinel.
+    Every listed folder must have sentinels defined.
+- AC1 met: 3 of 3 AC-A6 cases pass on main + the change, and also with T-0421's UF-05 overlay on top.
+- AC2 met: red proofs (i)–(iv) are recorded with their failure messages and were reverted.
+  Proof (iii) covers both the side-effect import (caught only in the entry CSS through `wl-uf05`)
+  and the used import (caught in JS and CSS). This shows the second sentinel is needed.
+  `wl-uf05` is within D-0144 §3c's latitude ("pick another UF-05-only string"), and the code
+  comment explains it. Proofs (ii), (iii-a) and (iv) ran before §3c became a list. The later
+  change only widened the sentinel set, so they still hold.
+- AC3 met: only the AC-A6 block changed. AC-A2/A3/A5/A10/A11, the dev icons case and the
+  T-0390/T-0398 codegen scan are untouched.
+- AC4 met: web suite 2387 green; format:check and check-all green (orchestrator QA).
+- Principles: test-only, no `src/**` or contract change. No principle is affected.
+- Note, not blocking: the `routes.ts` regex would also match a commented-out `import(...)`.
+  Proof (ii) shows that removing a loader is caught. Leaving a dead commented specifier behind
+  would hide it only if the chunk still built, and an unused import cannot build a chunk, so §1
+  would fail anyway.
