@@ -5,6 +5,7 @@ import { Link, useSearchParams } from "react-router";
 import { isEligible, type EngineProfile, type LibraryExercise } from "@workoutlab/engine";
 import { AREAS, type Area } from "@workoutlab/shared";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
+import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import { loadLibrary, loadProfile } from "../../lib/offline/history.js";
 import { useScreenData } from "./data.js";
@@ -36,7 +37,8 @@ export function Library(props: LibraryProps = {}) {
     () => props.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
   );
   const [params, setParams] = useSearchParams();
-  const { data, pending } = useScreenData(readLibrary, "library", { refresh: true });
+  const { status } = useAuth();
+  const { data, pending } = useScreenData(readLibrary, "library", { refresh: true, status });
 
   const rawQuery = params.get("q") ?? "";
   const areaParam = params.get("area");
