@@ -186,3 +186,26 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
     - `host.expiry.test.tsx`: "rest at 120 s", "the wall clock moving back", and the four check-point tests.
     - `machine.test.ts`: "the last bench-press set → rest → REST_END".
   - **QA gap closed.** `session.finish.test.tsx` wraps `useNavigate` and asserts that `wl-focus:S1` is already gone at the moment `navigate` is called. Swapping `removeFocusState` and `navigate` turns both AC-5 order tests red. Reverted.
+
+## Accept log
+- **2026-10-02, product-owner (accept), attempt 2 at c5e914c: done.**
+- **ACs.** QA on 172f2e9 proved AC-1 through AC-12 with 9 planted faults, and 8 went red. The one that stayed green was the AC-5 order "remove the focus key before navigate". The rework closed it: the finish test now checks that the key is already gone when `navigate` is called, and swapping the two calls turns both AC-5 order tests red. All the planted faults the ticket asks for are in the build log, including AC-6's "navigate before the write".
+- **Review finding, fixed in 7af7b60 and c5e914c.** `REST_START` from an unlogged set skipped that set. `setAfterRest` now searches from the current set inclusive. Tests (a)–(d) and the List-view scenario cover it, and the builder showed them red on 172f2e9. AC-1's `currentSetIndex` = 1 after set 0 is saved still holds, because set 0 is logged at that point. The re-review approved.
+- **T-0304a seeds.** 7 seeds now include the sets they follow, so they model states the real flow can reach. No assertion changed, so no test was weakened. The `host.load.test.tsx` S3 change keeps all its assertions (D-0111 §3).
+- **Evidence (rework).**
+  - UF-09 vitest: 237/237.
+  - web: 1592/1592.
+  - `uf-09-focus` e2e: 4/4.
+  - typecheck, lint, format and check-all: green.
+  - Attempt 1 ran the whole e2e suite (71/71) and `check:size` (UF-09 chunk about 6.5 KB gzip). The rework touched only `features/UF-09/**`.
+- **Principles.**
+  - Principle 1: an overlay replaces the screen. It is the only task and has no `[data-screen-id]`.
+  - Principle 2: the check point is forced to `"next"` only while a `keepsClockRunning` overlay is open.
+  - Principle 3: the reducer events are pure, and rest lengths come from the engine.
+  - No contract changed (AC-11 diff check).
+- **Follow-ups.**
+  - T-0304b: a double tap on Save logs a duplicate set. Guard it in the set loop.
+  - T-0304c: the timed auto-log must pass `itemIndex` (D-0119 §3).
+  - T-0304d: the time-check apply needs its own event, or `replacePlan` needs to be broader.
+  - Minor, UF-09 lane: `ctx.resume()` is exposed to `keepsClockRunning: false` overlays. Either hide it or document it. Also, `replaceItem` builds from the parsed plan rather than the raw stored plan. Confirm this is lossless.
+  - The full DoD run (the whole e2e suite on c5e914c, `typecheck lint test --force`, `check:size`) is confirmed by the PR CI before merge.
