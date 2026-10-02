@@ -20,6 +20,11 @@ export interface SelectSpy {
   /** Makes every select on this table reject with a PostgrestError-like object (AC-6). */
   fail: (table: string, error: { code: string; message: string }) => void;
   clearFailure: (table: string) => void;
+  /** Holds every select on this table issued from now on: it resolves only after `release`
+   *  (T-0431 AC-4, a queue write landing while the request is in flight). */
+  hold: (table: string) => void;
+  /** Resolves the held selects on this table, and stops holding it. */
+  release: (table: string) => void;
   reset: () => void;
   countFor: (table: string) => number;
 }
@@ -28,6 +33,7 @@ export function createSelectSpy(): SelectSpy {
   const calls: SelectCall[] = [];
   const rowsByTable = new Map<string, unknown[]>();
   const failures = new Map<string, { code: string; message: string }>();
+  const holds = new Map<string, { gate: Promise<void>; open: () => void }>();
 
   function makeQuery(table: string, columns: string) {
     const call: SelectCall = { table, columns };
@@ -35,10 +41,11 @@ export function createSelectSpy(): SelectSpy {
     const failure = failures.get(table);
     const rows = rowsByTable.get(table) ?? [];
     const result = failure ? { data: null, error: failure } : { data: rows, error: null };
+    const gate = holds.get(table)?.gate ?? Promise.resolve();
     return {
       gte: (col: string, value: string) => {
         call.gte = [col, value];
-        return Promise.resolve(result);
+        return gate.then(() => result);
       },
       maybeSingle: () =>
         Promise.resolve(failure ? result : { data: (rows[0] as unknown) ?? null, error: null }),
@@ -56,10 +63,22 @@ export function createSelectSpy(): SelectSpy {
     setRows: (table, rows) => rowsByTable.set(table, rows),
     fail: (table, error) => failures.set(table, error),
     clearFailure: (table) => failures.delete(table),
+    hold: (table) => {
+      if (holds.has(table)) return;
+      let open!: () => void;
+      const gate = new Promise<void>((resolve) => (open = resolve));
+      holds.set(table, { gate, open });
+    },
+    release: (table) => {
+      holds.get(table)?.open();
+      holds.delete(table);
+    },
     reset: () => {
       calls.length = 0;
       rowsByTable.clear();
       failures.clear();
+      for (const { open } of holds.values()) open();
+      holds.clear();
       from.mockClear();
     },
     countFor: (table) => calls.filter((c) => c.table === table).length,

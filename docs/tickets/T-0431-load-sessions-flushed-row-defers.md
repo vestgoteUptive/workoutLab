@@ -133,3 +133,25 @@ example `T-0431 UF-03.3: a flushed session row defers to a newer cache (D-0151)`
   different set of paths: `vite.config.ts`, `main.tsx` and `lib/pwa`). If T-0420 merges first,
   its UF-03 tests must stay green here unedited. A failure there means that this ticket broke
   D-0151 §5.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** D-0151 §1–§6 in `apps/web/src/lib/offline`:
+  - `db.ts`: `QueuedSession.cacheCurrent?: true`, optional and non-indexed (no Dexie bump), doc comment cites D-0151 §1 §3 §4.
+  - `history.ts` `refreshSessions`: snapshots this user's `pending: false` entries before the `select`; after a successful `select`, one `rw` transaction over `sessionCache` + `sessions` replaces the cache and puts `{ ...current, cacheCurrent: true }` for each snapshotted entry that is still this user's, still `pending: false`, and still equal on `finished` and `sameValue(row)` (the T-0411 compare, already exported from `flush.ts`, so `flush.ts` is unchanged). A failed `select` throws before the transaction, so nothing is marked.
+  - `feature-loaders.ts` `loadSessions`: a `pending: false` + `cacheCurrent: true` entry with a cached row takes the cached row and only `endedAt` follows D-0148 §1 (§4). Every other entry keeps D-0148, except that with no own `ended_at` key `endedAt` is the cached one (or `null`) and the cached-finish-wins-whole rule is skipped, so a present `effort_rating` still wins (§6). Doc comment updated.
+  - `upsertSession` and the flush already write entries without `cacheCurrent` (§3); pinned by the AC-2 T-0420 sequence.
+  - `__tests__/select-spy.ts`: `hold(table)` / `release(table)` (held selects resolve on release; `reset` releases all).
+- **Tests.** New `apps/web/src/lib/offline/__tests__/sessions-merge-flushed.test.ts` (24 tests), on the `sessions-merge.test.ts` harness plus an `upsert` stub so "flush S1" is the real `flush(USER_A)`:
+  - AC-1: refresh E/null gives null and marks; pair E/5 gives 5; other fields (`energy` high, `time_budget_min` 30, `started_at`) from the cache.
+  - AC-2: a refresh at E/3 before a flushed E/null gives null, unmarked; the T-0420 sequence for a saved `null` and a saved `4` (pending, after flush, after the next refresh; no `cacheCurrent` after the Save and after its flush); an older-build entry without the field keeps its 3 under a cache at E/5.
+  - AC-3: refresh `ended_at: null`/2 gives E/2; pair 10:50/2 gives 10:50/2.
+  - AC-4: failed refresh (unmarked, 3) and its pair (succeeds, marked, null); a pending entry is never marked (3); pending at the snapshot and flushed during a held select stays unmarked (3); re-queued during a held select (pending, unmarked, 4); re-queued and flushed during it (`pending: false`, unmarked, 4) and the pair (unchanged during the hold, marked); USER_B's S1-B untouched while USER_A's S1 is marked; a marked entry with no cached row is used as is (E/3).
+  - AC-5: absent `ended_at` + rating 2 gives 10:05/2; explicit null gives 10:05/5; both keys absent give 10:05/5; no cached row gives null/2.
+  - AC-6: `syncStatus().sessions` is 0 for a marked flushed entry and 1 for a pending entry with and without the field. `sessions-merge.test.ts`, `sessions-cache.test.ts`, `offline-loaders.test.ts`, `flush*.test.ts` unedited and green.
+- **Red on main** (main's `db.ts`, `history.ts`, `feature-loaders.ts` swapped in): 12 of 24 red. AC-1 "refresh at E / null" (expected null, got 3), AC-1 pair (expected 5, got 3), AC-1 other fields (got the queued `normal`/45); AC-5 "absent ended_at" (expected 2, got 5). The others red on main are the mark assertions (AC-2 T-0420 ×2, AC-3, AC-4 ×4, AC-6).
+- **Planted faults** (each applied alone, run, reverted):
+  - F1 defer on any `pending: false`, ignoring the mark → 7 red, including AC-2 "refresh at E / 3, then a flushed E / null" (got 3), AC-2 T-0420 ×2, AC-2 older build, AC-4 failed refresh, AC-4 pending-at-snapshot, AC-4 re-queued and flushed.
+  - F2 never set the mark → 11 red, including AC-1 ×3, AC-3, AC-4 ×4, AC-6.
+  - F3 mark without the structural compare → 1 red: AC-4 "re-queued and flushed during the request".
+  - F4 `row.ended_at ?? null` for an absent key (`hasEnd = true`) → 1 red: AC-5 "absent ended_at with effort_rating 2".
+- **Runs (under the test lock).** `pnpm --filter @workoutlab/web typecheck` / `lint` green; `pnpm --filter @workoutlab/web test` 163 files, 2558 tests passed; `pnpm --filter @workoutlab/web test:e2e` 123 passed (the whole suite ran, `offline.spec.ts` included); `pnpm -w format:check` clean; `node .github/scripts/check-all.mjs` exit 0.

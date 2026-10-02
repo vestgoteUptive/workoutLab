@@ -27,6 +27,7 @@ import {
   type ExerciseDetail,
 } from "./db.js";
 import { currentUserId } from "./current-user.js";
+import { sameValue } from "./flush.js";
 
 export const HISTORY_WINDOW_DAYS = 56;
 
@@ -175,6 +176,12 @@ export async function refreshSessions(now: Date, tz: string): Promise<void> {
   const db = offlineDb();
   const windowStart = windowStartInstant(now.toISOString(), tz, HISTORY_WINDOW_DAYS);
 
+  // D-0151 §2: the entries that are already flushed BEFORE the request is issued. Only these can
+  // be marked `cacheCurrent`, because only for them is the server row this select returns at
+  // least as new as what the entry sent. An entry still pending here is never marked, even if a
+  // flush finishes it during the request.
+  const flushedBefore = (await db.sessions.where({ userId }).toArray()).filter((q) => !q.pending);
+
   const { data, error } = await supabase
     .from("sessions")
     .select("id, started_at, ended_at, time_budget_min, effort_rating, energy")
@@ -198,9 +205,20 @@ export async function refreshSessions(now: Date, tz: string): Promise<void> {
     energy: row.energy,
   }));
 
-  await db.transaction("rw", db.sessionCache, async () => {
+  // One transaction for the cache and the marks (D-0151 §2), so a reader never sees a new cache
+  // with an unmarked entry it should defer to, and no `upsertSession` or flush lands between the
+  // compare and the put. A changed entry (re-queued, or re-queued and flushed, during the
+  // request) fails the compare and stays unmarked.
+  await db.transaction("rw", db.sessionCache, db.sessions, async () => {
     await db.sessionCache.where({ userId }).delete();
     await db.sessionCache.bulkPut(cached);
+    for (const snapshot of flushedBefore) {
+      const current = await db.sessions.get(snapshot.id);
+      if (!current || current.userId !== userId || current.pending) continue;
+      if (current.finished !== snapshot.finished || !sameValue(current.row, snapshot.row)) continue;
+      if (current.cacheCurrent === true) continue;
+      await db.sessions.put({ ...current, cacheCurrent: true });
+    }
   });
 }
 
