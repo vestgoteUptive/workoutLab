@@ -416,7 +416,7 @@ test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
 // ready → UF-09.7 "Get in position" → "Hold", offline after a reload; the hold auto-logs one
 // `timed` row and the warm-up none. The hold is 15 s, the smallest `prefill.durationS` the
 // SessionPlan contract allows (15..120, D-0062 §5, D-0133): the ticket's 5 s would be an
-// unreadable plan (D-0138), so the page clock runs the hold instead (D-0120 §9, D-0142).
+// unreadable plan (D-0138), so the page clock runs the hold instead (D-0120 §9, D-0150).
 const TIMED_PLAN = {
   ...PLAN,
   mainLiftId: null,

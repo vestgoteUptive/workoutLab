@@ -187,7 +187,7 @@ example `T-0304c UF-09.7: hold from prefill.durationS, auto-logged once`).
   - **`machine.ts`.**
     - New exports: `POSITION_S = 3`, `DEFAULT_HOLD_S = 45`, `holdSeconds(item)` and `timedRemainingS(state, now)`.
     - Every way into `timed` gets `{startedAtMs: atMs, durationS: 3 + hold, pausedMs: 0}`.
-    - New state field `timerPausedAtMs`. New events `TIMER_PAUSE`, `TIMER_RESUME` and `HOLD_ALREADY_LOGGED` (D-0142 §2).
+    - New state field `timerPausedAtMs`. New events `TIMER_PAUSE`, `TIMER_RESUME` and `HOLD_ALREADY_LOGGED` (D-0150 §2).
     - `RESUME` skips `timer.pausedMs` while the ring is paused.
     - A wrapper around the switch drops `timerPausedAtMs` when the state leaves `timed` or gets a new timer.
   - **`persist.ts`.** `timed` is a timer phase, so a stored `timed` with `timer: null` is invalid (D-0119 §1). A missing `timerPausedAtMs` reads as `null`, and any other non-number is rejected.
@@ -214,11 +214,11 @@ example `T-0304c UF-09.7: hold from prefill.durationS, auto-logged once`).
   - **The D-0119 hand-off.** `host.expiry.test.tsx`'s T-0304a AC-9 "timed doesn't advance after 600 s" is replaced in place by "timed: after 600 s, no end event, exactly one TIMED_RECORDED, then UF-09.5".
   - **Button pins.** `host.chrome.test.tsx` AC-7: `warmup` is `["Pause workout", "Restart", "Next move"]` and `timed` is `["Pause workout", "Pause timer"]`. `timed` joins the phases that show a `role="timer"`.
   - **Seeds.** A stored `timed` now needs its timer (D-0119 §1), so the `timed` seeds in these files gain `timer: {startedAtMs: NOW, durationS: 53, pausedMs: 0}`: `host.chrome.test.tsx`, `host.load.test.tsx` (AC-6 screen ids), `announcer.test.tsx` (AC-2), `session.writes.test.tsx` (2 cases) and `session.finish.test.tsx` (2 cases). No assertion changed.
-- **Defaults (D-0142, `status: revisit`).**
+- **Defaults (D-0150, `status: revisit`).**
   - **The AC-6 hold is 15 s, not 5 s.** `PrefillResult.durationS` is 15..120 in the contract, and a 5 s plan renders the D-0138 unreadable state. The row uses `page.clock`.
   - **An already-logged hold moves on.** It goes to rest or done through `HOLD_ALREADY_LOGGED`, with no second entry, instead of staying at 0:00.
   - **The auto-log guard matches `exerciseId` too** (T-0410).
-  - **The swap and RESYNC timer rules** follow D-0142 §4. There is no ring pause at 0.
+  - **The swap and RESYNC timer rules** follow D-0150 §4. There is no ring pause at 0.
   - **UF-09.7 has two lines.** The static target reads "Hold {m:ss}". The phase label ("Get in position" / "Hold") and the `role="timer"` countdown sit in the ring.
 - **Runs** (every test command under `flock /tmp/workoutlab-tests.lock`):
   - `pnpm --filter @workoutlab/web typecheck`: green.

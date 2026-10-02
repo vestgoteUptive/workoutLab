@@ -1,5 +1,5 @@
 ---
-id: D-0142
+id: D-0150
 title: "UF-09 timed set build defaults (T-0304c): a 15 s e2e hold run by the page clock, an already-logged hold moves on with HOLD_ALREADY_LOGGED, the auto-log guard matches the exercise, the swap rules for the timed timer, no ring pause at 0, and a separate 'Hold {m:ss}' target line"
 status: revisit
 date: 2026-10-02
