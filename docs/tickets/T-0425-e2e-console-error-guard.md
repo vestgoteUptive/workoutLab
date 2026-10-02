@@ -97,3 +97,37 @@ green · contracts unchanged · commits start `T-0425` (for example `T-0425: fai
 on console errors and page errors`).
 
 ## Build / accept log
+
+### Build (qa, 2026-10-02)
+- `tests/e2e/fixtures/guarded-test.ts`: `installConsoleGuard(context)`, `CONSOLE_ERROR_MESSAGE`,
+  `ConsoleGuard` (`allow`, `errors`, `assertClean`) and the `consoleGuard` auto fixture next to
+  `supabaseGuard`. It attaches to `context.pages()` and to `context.on("page")`. Lines are
+  `console.error: <text> (<url>:<line>)` and `pageerror: <message>`. The one exemption is console
+  text starting with `Failed to load resource:`. A `pageerror` is never exempt (a self-test pins
+  this with a thrown error that starts with that prefix). `errors()` lists every recorded line,
+  allowed or not. `assertClean()` throws on the lines no `allow` matches.
+- `tests/e2e/fixture-guard.spec.ts`: T-0425 AC1–AC5 self-tests. `test.fail` covers AC1, AC2
+  (throw and rejection) and AC4. The direct `installConsoleGuard` tests pin the message text, the
+  501 exemption, `allow`, "exactly once" and the serial carry-over pair. The AC5 source assertion
+  now lists every `*.spec.ts` that imports the fixture (10 today, `uf-10-balance.spec.ts` still
+  imports `@playwright/test` and is out of scope). It also checks that each `consoleGuard.allow(`
+  outside this file has a `T-NNNN` on the line above. The spec list is built at collection time,
+  so `read` uses `__dirname` instead of `test.info().file`.
+- **Red on unfixed code:** the same four `test.fail` tests (AC1, AC2 x2, AC4) were run on the
+  branch base `ba2862f`, before the guard existed. `4 failed`, each with "Expected to fail, but
+  passed." Mutation check after the build: commenting out the fixture's `guard.assertClean()`
+  gives the same 4 red.
+- **Allows added outside `fixture-guard.spec.ts`: none.** The full suite (123 tests) found one
+  real error, and it was in `fixture-guard.spec.ts` itself. In the T-0904 test "setOffline does
+  not suspend interception", going offline right after the first `/welcome` load can beat the
+  service worker's `sw.js` fetch. vite-plugin-pwa's injected `navigator.serviceWorker.register()`
+  (`injectRegister: "auto"`) has no rejection handler, so the page logs `console.error: An unknown
+  error occurred when fetching the script.` plus `pageerror: Failed to register a ServiceWorker
+  for scope ('http://localhost:4173/') with script ('http://localhost:4173/sw.js'): An unknown
+  error occurred when fetching the script.` That test now has a narrow
+  `consoleGuard.allow(/Failed to register a ServiceWorker|An unknown error occurred when fetching
+  the script/)` and a comment. Follow-up for web-shell: catch the failure of the SW registration.
+  `uf-09-focus.spec.ts` (T-0304d in parallel): no finding, left untouched.
+- Results: `flock … pnpm --filter @workoutlab/web test:e2e` gave 123 passed, run twice.
+  `pnpm -w typecheck lint test --force --concurrency=1` gave 19/19 tasks. `test:repo-checks`
+  gave 146 pass. `format:check` and `check:repo` were green.
