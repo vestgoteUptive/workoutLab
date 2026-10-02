@@ -177,3 +177,9 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - The fixed code passes.
 - **AC-14.** Before D-0113, `profile-gate.test.tsx` "stale + `missing` on `/` redirects to /welcome/save" went red, because Today's mount-time refresh added a second `profiles` read. It was raised as TR-0035 and the file was not edited (D-0108 §3). With the D-0113 gate (online and signed in, once per mount), the unchanged file passes 89/89.
 - **AC-8 D-0113, planted fault (c).** Dropping the once-per-mount flag (`refreshStarted.current ||` removed from the refresh effect's guard) turns "stale → signed-in during the mount" red: "expected vi.fn() to be called 1 times, but got 2 times" (the stale → signed-in flap). Faults (a) and (b) were re-run on the gated hook and are still red. All three were reverted.
+
+## Accept log (product-owner, 2026-10-02)
+- **Verdict: done** (attempt 2, branch at 333c4ad, after TR-0035 / D-0113).
+- **ACs.** QA PASS on AC-1..AC-14. Root gate 19/19 (web 1087 tests), profile-gate 89/89 with the file unchanged (AC-14), e2e 59/59 (AC-11, AC-12), check:size green with the UF-02 chunk at 1.5 KB gzip (AC-12). Planted faults (a), (b) and (c) turn the AC-8 tests red, as the build log records.
+- **Principles.** P2: Start is a link to `/session/setup` and never calls `upsertSession` (AC-6). P3: the numbers come only from on-device `balance()`, there are no `/functions/v1/` calls (AC-3), and the source test plus 8 behaviour tests catch inline attention arithmetic (AC-2, AC-7). P5: the screen cold-starts offline from IndexedDB, and the no-profile state does not block on the network (AC-10, AC-11). P1 and P4 are not touched by this ticket.
+- **Review.** APPROVE. Minor findings are not AC gaps and are filed as follow-ups.
