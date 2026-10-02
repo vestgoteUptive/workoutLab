@@ -206,18 +206,34 @@ export async function refreshSessions(now: Date, tz: string): Promise<void> {
   }));
 
   // One transaction for the cache and the marks (D-0151 §2), so a reader never sees a new cache
-  // with an unmarked entry it should defer to, and no `upsertSession` or flush lands between the
-  // compare and the put. A changed entry (re-queued, or re-queued and flushed, during the
-  // request) fails the compare and stays unmarked.
+  // with marks that belong to another one, and no `upsertSession` or flush lands between the
+  // compare and the put.
+  //
+  // The marks are RECOMPUTED for every entry of this user, not only added (T-0431 rework): a mark
+  // says "the cache that is there now came from a request issued after this entry's flush", and
+  // this transaction replaces the whole cache. So an entry that passes THIS refresh's snapshot
+  // compare is marked, and every other entry loses a mark it may carry. Without the clear, an
+  // older refresh landing after a newer one would leave the newer one's mark on a stale cache,
+  // and the loader would defer to it. A changed entry (re-queued, or re-queued and flushed,
+  // during the request) fails the compare.
   await db.transaction("rw", db.sessionCache, db.sessions, async () => {
     await db.sessionCache.where({ userId }).delete();
     await db.sessionCache.bulkPut(cached);
-    for (const snapshot of flushedBefore) {
-      const current = await db.sessions.get(snapshot.id);
-      if (!current || current.userId !== userId || current.pending) continue;
-      if (current.finished !== snapshot.finished || !sameValue(current.row, snapshot.row)) continue;
-      if (current.cacheCurrent === true) continue;
-      await db.sessions.put({ ...current, cacheCurrent: true });
+    const snapshots = new Map(flushedBefore.map((q) => [q.id, q]));
+    for (const current of await db.sessions.where({ userId }).toArray()) {
+      const snapshot = snapshots.get(current.id);
+      const passes =
+        snapshot !== undefined &&
+        !current.pending &&
+        current.finished === snapshot.finished &&
+        sameValue(current.row, snapshot.row);
+      if (passes) {
+        if (current.cacheCurrent !== true)
+          await db.sessions.put({ ...current, cacheCurrent: true });
+      } else if (Object.hasOwn(current, "cacheCurrent")) {
+        const { cacheCurrent: _stale, ...unmarked } = current;
+        await db.sessions.put(unmarked);
+      }
     }
   });
 }

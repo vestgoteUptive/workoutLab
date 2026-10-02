@@ -20,10 +20,11 @@ export interface SelectSpy {
   /** Makes every select on this table reject with a PostgrestError-like object (AC-6). */
   fail: (table: string, error: { code: string; message: string }) => void;
   clearFailure: (table: string) => void;
-  /** Holds every select on this table issued from now on: it resolves only after `release`
-   *  (T-0431 AC-4, a queue write landing while the request is in flight). */
-  hold: (table: string) => void;
-  /** Resolves the held selects on this table, and stops holding it. */
+  /** Holds every select on this table issued from now on, until `release(table)` or the
+   *  returned function opens it (T-0431 AC-4). Each call starts a new gate, so two selects held
+   *  by two calls can be released in either order (the T-0431 rework: concurrent refreshes). */
+  hold: (table: string) => () => void;
+  /** Resolves every held select on this table, and stops holding it. */
   release: (table: string) => void;
   reset: () => void;
   countFor: (table: string) => number;
@@ -33,7 +34,9 @@ export function createSelectSpy(): SelectSpy {
   const calls: SelectCall[] = [];
   const rowsByTable = new Map<string, unknown[]>();
   const failures = new Map<string, { code: string; message: string }>();
-  const holds = new Map<string, { gate: Promise<void>; open: () => void }>();
+  /** The gate new selects on a table wait for, and every opener issued for that table. */
+  const holds = new Map<string, Promise<void>>();
+  const openers = new Map<string, Array<() => void>>();
 
   function makeQuery(table: string, columns: string) {
     const call: SelectCall = { table, columns };
@@ -41,7 +44,7 @@ export function createSelectSpy(): SelectSpy {
     const failure = failures.get(table);
     const rows = rowsByTable.get(table) ?? [];
     const result = failure ? { data: null, error: failure } : { data: rows, error: null };
-    const gate = holds.get(table)?.gate ?? Promise.resolve();
+    const gate = holds.get(table) ?? Promise.resolve();
     return {
       gte: (col: string, value: string) => {
         call.gte = [col, value];
@@ -64,20 +67,26 @@ export function createSelectSpy(): SelectSpy {
     fail: (table, error) => failures.set(table, error),
     clearFailure: (table) => failures.delete(table),
     hold: (table) => {
-      if (holds.has(table)) return;
       let open!: () => void;
       const gate = new Promise<void>((resolve) => (open = resolve));
-      holds.set(table, { gate, open });
+      holds.set(table, gate);
+      openers.set(table, [...(openers.get(table) ?? []), open]);
+      return () => {
+        open();
+        if (holds.get(table) === gate) holds.delete(table);
+      };
     },
     release: (table) => {
-      holds.get(table)?.open();
+      for (const open of openers.get(table) ?? []) open();
+      openers.delete(table);
       holds.delete(table);
     },
     reset: () => {
       calls.length = 0;
       rowsByTable.clear();
       failures.clear();
-      for (const { open } of holds.values()) open();
+      for (const list of openers.values()) for (const open of list) open();
+      openers.clear();
       holds.clear();
       from.mockClear();
     },

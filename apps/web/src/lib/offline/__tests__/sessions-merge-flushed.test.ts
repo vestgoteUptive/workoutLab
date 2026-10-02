@@ -393,6 +393,96 @@ describe("AC-5 an absent queued ended_at key (D-0151 §6)", () => {
   });
 });
 
+describe("rework: each refresh recomputes the marks, so concurrent refreshes can't leave a stale one (D-0151 §1 §2)", () => {
+  /** Finish S1 at E / null and flush it, start refresh A (cache E / null) and hold it, then Save
+   *  4 and flush it, and start refresh B (cache E / 4) on its own gate. */
+  async function startAThenSaveThenStartB() {
+    await queueAndFlushS1(E, null);
+
+    spy.setRows("sessions", [{ ...S1, ended_at: E, effort_rating: null }]);
+    const releaseA = spy.hold("sessions");
+    const refreshA = refreshSessions(NOW, TZ);
+    await vi.waitFor(() => expect(spy.countFor("sessions")).toBe(1));
+
+    // UF-03.3 Save, then its flush.
+    await upsertSession({ ...(await entryS1()).row, effort_rating: 4 });
+    await flushA();
+
+    spy.setRows("sessions", [{ ...S1, ended_at: E, effort_rating: 4 }]);
+    const releaseB = spy.hold("sessions");
+    const refreshB = refreshSessions(NOW, TZ);
+    await vi.waitFor(() => expect(spy.countFor("sessions")).toBe(2));
+    return { releaseA, refreshA, releaseB, refreshB };
+  }
+
+  it("(a) the older refresh A lands last: B's mark is cleared and the saved 4 still shows", async () => {
+    const { releaseA, refreshA, releaseB, refreshB } = await startAThenSaveThenStartB();
+
+    releaseB();
+    await refreshB;
+    expect((await entryS1()).cacheCurrent).toBe(true);
+    expect((await loadS1()).effortRating).toBe(4);
+
+    releaseA();
+    await refreshA;
+    const s1 = await loadS1();
+    expect(s1.endedAt).toBe(E);
+    expect(s1.effortRating).toBe(4);
+    const entry = await entryS1();
+    expect(entry.pending).toBe(false);
+    expect(Object.hasOwn(entry, "cacheCurrent")).toBe(false);
+  });
+
+  it("(b) the pair: A lands first, then B; the rating is 4 and the entry is marked", async () => {
+    const { releaseA, refreshA, releaseB, refreshB } = await startAThenSaveThenStartB();
+
+    releaseA();
+    await refreshA;
+    expect(Object.hasOwn(await entryS1(), "cacheCurrent")).toBe(false);
+    expect((await loadS1()).effortRating).toBe(4);
+
+    releaseB();
+    await refreshB;
+    expect((await entryS1()).cacheCurrent).toBe(true);
+    expect((await loadS1()).effortRating).toBe(4);
+  });
+
+  it("(c) a stale mark is cleared by a refresh whose snapshot doesn't match the entry", async () => {
+    // A mark on an entry that no longer passes the compare: pending again (not reachable through
+    // upsertSession, which writes a fresh entry, but a mark this refresh didn't earn all the same).
+    await offlineDb().sessions.put({
+      id: "S1",
+      userId: USER_A,
+      row: s1Row(E, 3) as never,
+      finished: true,
+      pending: true,
+      cacheCurrent: true,
+    });
+    await refreshS1({ ended_at: E, effort_rating: null });
+
+    expect(Object.hasOwn(await entryS1(), "cacheCurrent")).toBe(false);
+    expect((await loadS1()).effortRating).toBe(3);
+  });
+
+  it("(c) the pair: a matching snapshot keeps the mark, and other users' marks are untouched", async () => {
+    await offlineDb().sessions.put({
+      id: "S1-B",
+      userId: USER_B,
+      row: { ...s1Row(E, 3), id: "S1-B" } as never,
+      finished: true,
+      pending: true,
+      cacheCurrent: true,
+    });
+    await queueAndFlushS1(E, 3);
+    await refreshS1({ ended_at: E, effort_rating: null });
+    await refreshS1({ ended_at: E, effort_rating: null });
+
+    expect((await entryS1()).cacheCurrent).toBe(true);
+    expect((await loadS1()).effortRating).toBeNull();
+    expect((await offlineDb().sessions.get("S1-B"))?.cacheCurrent).toBe(true);
+  });
+});
+
 describe("AC-6 syncStatus counts only pending:true entries, marked or not", () => {
   it("a marked flushed entry is not counted", async () => {
     await queueAndFlushS1(E, 3);
