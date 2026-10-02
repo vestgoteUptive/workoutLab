@@ -3,7 +3,7 @@ info:
   title: workoutLab Edge Functions
   version: 1.0.0
   description: >-
-    The three server-side functions of workoutLab (D-0001, D-0037). Plain CRUD (profile, exercises,
+    The four server-side functions of workoutLab (D-0001, D-0037). Plain CRUD (profile, exercises,
     sessions, sets) goes through supabase-js + RLS and is typed by the generated DB types in
     packages/shared. Engine-only shapes that the device computes offline (check-in, swaps, time
     check, pre-fill and the engine inputs) are path-less components marked `x-engine-function`.
@@ -20,6 +20,8 @@ security:
 tags:
   - name: engine
     description: Deterministic engine run server-side (docs/engine-rules.md).
+  - name: account
+    description: The caller's own account (NFR-PRIV-4, NFR-PRIV-5).
 paths:
   /workouts/suggest:
     post:
@@ -98,6 +100,22 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/Internal" }
+  /account:
+    delete:
+      operationId: deleteAccount
+      tags: [account]
+      summary: Delete the caller's account and every row they own (UF-11.4, NFR-PRIV-5)
+      description: >-
+        Verifies the bearer token and deletes the caller's `auth.users` row with the Auth admin
+        API (D-0135). The `on delete cascade` foreign keys (D-0020) remove every row the caller
+        owns in the same step. There is no request body; the user id comes only from the verified
+        token. A repeat call with the same token is 401, because the token no longer verifies; it
+        is never 404 and never 403.
+      responses:
+        "204":
+          description: Deleted. No body.
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "500": { $ref: "#/components/responses/Internal" }
 components:
   securitySchemes:
