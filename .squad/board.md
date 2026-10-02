@@ -227,6 +227,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0380a | OfflineStatus.tsx: rejected loadLastSyncedAt falls back to "Offline · not synced yet" (D-0104 pattern) | web-shell | T-0378 | ready | wl-build-web |
 | T-0380b | UF-01 AuthCallback: rejected exchangeCodeForSession handled like {error} (expired state + /account link) | web-feature:UF-01 | T-0378 | ready | wl-build-web |
 | T-0389 | Real-browser 24-hour `<input type=time>` probe for UF-08.1 (cut from T-0386) | qa | T-0303a | todo | wl-build-qa |
+| T-0390 | Widen the T-0229 AC6 bundle scan: `Function('…')`, ``Function(`…`)``, `eval(`, `(0,eval)(` and the `ajv/dist/compile` marker (D-0117 §4c) (T-0229 review) | web-shell | T-0229 | todo | wl-build-web |
 | T-0381 | D-0100 addendum (revisit): a signed-out visitor at /welcome/save with a saveable plan is replace-navigated to /account ("Save your plan"), as shipped in T-0301c | product | T-0301c | todo | wl-spec |
 | T-0382 | UF-01.5 Account a11y: roving tabindex + arrow keys on the Send link / Enter code tabs; mount the role=status live region before its first message (T-0301c review, pre-existing low) | web-feature:UF-01 | T-0301c | todo | wl-build-web |
 | T-0383 | D-0113 retrofit: `features/UF-10/use-balance.ts` mount refreshAll only when online AND signed-in, once per mount; tests stale-online → 0, stale → signed-in → 1 (TR-0035) | web-feature:UF-10 | — | ready | wl-build-web |
