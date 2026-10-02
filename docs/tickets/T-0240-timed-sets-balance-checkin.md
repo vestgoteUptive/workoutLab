@@ -95,3 +95,32 @@ none (`docs/engine-rules.md` and `api/openapi.yaml` unchanged)
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green · contracts unchanged · commit messages start with `T-0240` (e.g. `T-0240 UF-10.1 UF-11.1: pin timed hard sets in balance and check-in`).
 
 ## Build / accept log
+
+### Build (engine-dev, 2026-10-02)
+- **New file:** `packages/engine/test/t0240-timed-balance-checkin.test.ts`, 5 cases titled `T-0240 AC1` … `T-0240 AC5`. Every expected value is an inline literal derived by hand. No snapshot is used and no fixture file is read. Two in-file helpers: `plankToDeadBug` (each plank row becomes a `dead-bug` row with `reps` 10, `weightKg`/`durationS` null; the clientId prefix `plank@` becomes `dead-bug@`; `sessionId`, `completedAt` and `isWarmup` are kept) and `plankAsWarmup`.
+- **AC1:** core `load` 12, `target` 12, `deficit` 0, `coverageStep` 4, `days` `[0,0,0,0,0,0,3,0,3,0,3,0,3,0]`, `lastTrainedDate` `"2026-09-26"`, contributors `[{plank, 12, "2026-09-26"}]`. Chest `load` 12, `deficit` 0.4. Main agreed with every hand-derived literal, so no triage was needed.
+- **AC2:** `deadBugAsPlank(balance(rewritten))` `toStrictEqual` `balance(timedCoreHistory)`. This covers all 9 areas, their order, `windowStart`, `windowEnd` and `computedAt`. A guard first checks that core's only contributor on the rep side is `dead-bug`.
+- **AC3:** with every plank row set to `isWarmup: true`, core has `load` 0, `coverageStep` 0 and `contributors` `[]`, and chest `load` is 12.
+- **AC4:** `checkinSessions` returns 4 sessions in input order (09-20, 22, 24, 26 at 18:00+02:00). Each has `hardSetCount` 9, or 3 when the history is plank-only.
+- **AC5:** with plank-only data, rhythm 2–3 and `NO_CHECKINS`, the result is `{periods: [{index 3, 2026-09-13…2026-09-26, completed 4, on_plan}], proposal: null, nextCheckinDate: "2026-10-11"}`. When the planks are warm-ups, the period has `completed` 0 and status `under`, and `proposal.direction` is `"down"`.
+- **AC6 red:** for this run only, `src/history.ts:61` `isHardSet` gained `set.durationS === null &&`. `vitest run test/t0240-timed-balance-checkin.test.ts` gave 4 failed and 1 passed (AC3, as expected):
+  - AC1: `AssertionError: expected +0 to be 12`
+  - AC2: `expected { windowStart: '2026-09-14', …(3) } to strictly equal { windowStart: '2026-09-14', …(3) }`
+  - AC4: `expected [ …(4) ] to deeply equal [ …(4) ]`
+  - AC5: `expected { …(3) } to strictly equal { …(3) }`
+  
+  The file was restored from a byte copy. `git status packages/engine/src` is clean and nothing in `src/` was committed.
+- **AC7:** `git diff --stat main...HEAD -- packages/engine/src` is empty. Engine tests went from 650 (39 files) to 655 (40 files). The T-0230 budget guard, the T-0236 and T-0237 guards and the traceability tests pass without edits. No title uses sweep or seed words.
+- **AC8:** engine `typecheck`, `lint` and `test` are each green under `flock`. `-w format:check`, `node .github/scripts/check-all.mjs` and `node supabase/scripts/vendor.mjs --check` are clean (src is unchanged, so there is no regen).
+
+### Accept (product-owner, 2026-10-02): done
+Checked against `packages/engine/test/t0240-timed-balance-checkin.test.ts` at HEAD 2458158.
+- **AC1:** met. The test pins core `load` 12, `target` 12, `deficit` 0, `coverageStep` 4, the 14-entry `days` array (3 at indexes 6, 8, 10, 12), `lastTrainedDate` 2026-09-26, the single plank contributor, and chest `load` 12 / `deficit` 0.4. It also pins `windowStart`/`windowEnd`. All of these are inline literals.
+- **AC2:** met. The full `BalanceResult` is compared with `toStrictEqual` after the dead-bug to plank remap, covering all 9 areas, their order, the window and `computedAt`. A guard checks that the rewrite really happened.
+- **AC3:** met. Core is 0/0/[] when the planks are warm-ups, and chest is still 12. Together with AC1 this tests both values of `isWarmup` on a timed row.
+- **AC4:** met. 4 sessions in input order with `hardSetCount` 9, and 3 when plank-only.
+- **AC5:** met. The on-plan result is deep-equal to the literal in the spec. The warm-up pair gives `completed` 0, `under` and a non-null `proposal` with direction `down`.
+- **AC6:** met. The build log records the red run: the `isHardSet` mutation turned AC1, AC2, AC4 and AC5 red, and AC3 stayed green, as the ticket expects. It gives the first failure lines, and `src/` is clean.
+- **AC7:** met. The src diff is empty, the count went from 650 to 655, and the guard and traceability tests pass unedited.
+- **AC8:** met. Per the build log and the orchestrator QA, engine typecheck, lint and test are green, and format, check-all and vendor --check are clean.
+- **Principles:** the engine is unchanged, so it stays deterministic. This adds a guard for principle 4 (check-in counts that feed adaptive targets). No contract changed. Review and QA rely on the mutation proof and the inline literals, and that is enough evidence for a test-only ticket.
