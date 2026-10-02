@@ -1,7 +1,16 @@
 // Playwright home for every apps/web e2e spec (D-0045 §10). Runs against `vite preview`
 // (a real build, no Docker) with Supabase mocked per-spec via `page.route` (T-0300b/c add
 // the mock helpers in `fixtures/`). Invoked by `apps/web`'s `test:e2e` script.
+// T-0440 (D-0155 §5–§6), two traps that now fail loudly at the start instead of as dozens of
+// false reds: a busy :4173 stops the run with "is already used" (never reuse another worktree's
+// server; wait for the other run, then rerun), and a nearly full tmpfs temp dir stops it at load
+// (rerun with `TMPDIR=$HOME/.cache/wl-pw-tmp`).
 import { defineConfig, devices } from "@playwright/test";
+import { checkTmpdir } from "./fixtures/preflight.js";
+
+// D-0155 §6: at load, before any build or browser starts. Never sets TMPDIR itself.
+const tmpdirProblem = checkTmpdir();
+if (tmpdirProblem) throw new Error(tmpdirProblem);
 
 const PORT = 4173;
 const BASE_URL = `http://localhost:${PORT}`;
@@ -39,7 +48,9 @@ export default defineConfig({
     command:
       "pnpm turbo run build --filter=@workoutlab/web && pnpm --filter @workoutlab/web preview",
     url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
+    // T-0440 (D-0155 §5): never, in CI or locally. A reused server is often another worktree's
+    // build; with `--strictPort` on `preview`, a busy :4173 fails at once with "is already used".
+    reuseExistingServer: false,
     timeout: 120_000,
     env: { VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY },
   },
