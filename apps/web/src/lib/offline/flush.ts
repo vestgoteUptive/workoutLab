@@ -107,24 +107,86 @@ async function flushSessions(userId: string): Promise<{ ok: boolean; sentAny: bo
   return { ok: true, sentAny: true };
 }
 
-/** The same value with every object's keys sorted (and `undefined` members dropped), so two
- *  structurally equal rows serialise identically whatever order their keys were written in. */
-function sortedKeys(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(sortedKeys);
-  if (value !== null && typeof value === "object") {
-    const record = value as Record<string, unknown>;
-    return Object.fromEntries(
-      Object.keys(record)
-        .filter((k) => record[k] !== undefined)
-        .sort()
-        .map((k) => [k, sortedKeys(record[k])]),
-    );
-  }
-  return value;
+const objectToString = Object.prototype.toString;
+
+function tagOf(value: object): string {
+  return objectToString.call(value);
 }
 
-function canonical(value: unknown): string {
-  return JSON.stringify(sortedKeys(value));
+/** A plain object: `{}`-like, prototype `Object.prototype` or `null`. Checked by shape rather
+ *  than identity, so an object cloned in another realm (IndexedDB's structured clone) still
+ *  counts. */
+function isPlainObject(value: object): boolean {
+  if (tagOf(value) !== "[object Object]") return false;
+  const proto: unknown = Object.getPrototypeOf(value);
+  return proto === null || Object.getPrototypeOf(proto) === null;
+}
+
+function definedKeys(record: Record<string, unknown>): string[] {
+  return Object.keys(record).filter((k) => record[k] !== undefined);
+}
+
+function sameValueUnsafe(a: unknown, b: unknown): boolean {
+  if (a === b) return typeof a !== "function";
+  if (typeof a === "number" && typeof b === "number") return Number.isNaN(a) && Number.isNaN(b);
+  if (a === null || b === null || typeof a !== "object" || typeof b !== "object") return false;
+
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) if (!sameValueUnsafe(a[i], b[i])) return false;
+    return true;
+  }
+
+  const tag = tagOf(a);
+  if (tag !== tagOf(b)) return false;
+
+  if (tag === "[object Date]") {
+    const ta = Date.prototype.getTime.call(a);
+    const tb = Date.prototype.getTime.call(b);
+    return ta === tb || (Number.isNaN(ta) && Number.isNaN(tb));
+  }
+  if (tag === "[object Map]") {
+    const ma = a as Map<unknown, unknown>;
+    const mb = b as Map<unknown, unknown>;
+    const sizeA = Reflect.get(Map.prototype, "size", ma) as number;
+    if (sizeA !== (Reflect.get(Map.prototype, "size", mb) as number)) return false;
+    const ea = [...Map.prototype.entries.call(ma)];
+    const eb = [...Map.prototype.entries.call(mb)];
+    return ea.every(([k, v], i) => sameValueUnsafe(k, eb[i]![0]) && sameValueUnsafe(v, eb[i]![1]));
+  }
+  if (tag === "[object Set]") {
+    const sa = a as Set<unknown>;
+    const sb = b as Set<unknown>;
+    const sizeA = Reflect.get(Set.prototype, "size", sa) as number;
+    if (sizeA !== (Reflect.get(Set.prototype, "size", sb) as number)) return false;
+    const va = [...Set.prototype.values.call(sa)];
+    const vb = [...Set.prototype.values.call(sb)];
+    return va.every((v, i) => sameValueUnsafe(v, vb[i]));
+  }
+  if (isPlainObject(a) && isPlainObject(b)) {
+    const ra = a as Record<string, unknown>;
+    const rb = b as Record<string, unknown>;
+    const ka = definedKeys(ra);
+    const kb = definedKeys(rb);
+    if (ka.length !== kb.length) return false;
+    return ka.every((k) => rb[k] !== undefined && sameValueUnsafe(ra[k], rb[k]));
+  }
+  // Class instances, typed arrays, anything else: not provably equal, so not equal. The entry
+  // stays `pending` and the next flush sends it again (the upsert is idempotent, T-0411).
+  return false;
+}
+
+/** Structural equality for queued rows (T-0411). Unlike a JSON compare it tells apart values
+ *  JSON flattens (`Date`, `Map`, `Set`, `NaN`, `±Infinity`). Primitives compare with `===`
+ *  plus `NaN` equals `NaN` (so `0` equals `-0`); plain objects ignore key order and treat a
+ *  missing key as `undefined`. Anything it can't prove equal is different. Never throws (a cycle
+ *  or a spoofed tag compares as different). */
+export function sameValue(a: unknown, b: unknown): boolean {
+  try {
+    return sameValueUnsafe(a, b);
+  } catch {
+    return false;
+  }
 }
 
 /** True when the stored entry is still exactly what this flush sent: same row, same `finished`,
@@ -134,7 +196,7 @@ function sameQueuedSession(current: QueuedSession, sent: QueuedSession): boolean
     current.pending &&
     current.userId === sent.userId &&
     current.finished === sent.finished &&
-    canonical(current.row) === canonical(sent.row)
+    sameValue(current.row, sent.row)
   );
 }
 
