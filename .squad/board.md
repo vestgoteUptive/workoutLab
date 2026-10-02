@@ -213,7 +213,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0369 | e2e axe check of UF-09.9 how-to with a wger row (jsdom axe missed an aria-hidden+tabIndex fault in T-0364 QA), once the first wger row ships | qa | T-0364 | todo | wl-build-qa |
 | T-0370 | Share the library-cache key builder (`${userId}:${id}`) between `lib/offline/history.ts:143` and `lib/offline/__tests__/seed-library.ts` so a key-format change cannot make test seeds drift from production writes (T-0365 review/accept, low) | web-shell | T-0365 | done | wl-build-web |
 | T-0371 | UF-10 `features/UF-10/__tests__/test-helpers.tsx`: build cache keys with `userScopedKey`/`setKey` from `lib/offline/db.ts` (T-0370 follow-up) | web-feature:UF-10 | T-0370 | done | wl-build-web |
-| T-0372 | `key-builder-source.test.ts` scan gaps: string-concatenated keys (`a + ":" + b`), member-expression templates (`${a.b}:${…}`), block-comment strip inside string literals (T-0370 QA/review, low) | web-shell | T-0370 | doing | wl-build-web |
+| T-0372 | `key-builder-source.test.ts` scan gaps: string-concatenated keys (`a + ":" + b`), member-expression templates (`${a.b}:${…}`), block-comment strip inside string literals (T-0370 QA/review, low) | web-shell | T-0370 | done | wl-build-web |
 | T-0373 | UF-04 `zone-credit-source.test.ts`: the `<OfflineStatus` regex `[^>]*>` stops at `=>` inside JSX attributes; match to `/>` or parse (T-0357 accept, low; batch with the next UF-04 ticket) | web-feature:UF-04 | T-0357 | done | wl-build-web |
 | T-0374 | T-0219 AC6 ticket wording: F-input never shuffles plank into a slot; require the forced-core exclude list + minute-grid oldCost sweep as accepted (docs only) | product | T-0219 | todo | wl-spec |
 | T-0375 | Shell sync first-render checks (auth-guard AC-B6, profile-gate AC-10) catch a lazy UF-01.1 only in isolation (module cache warmed by earlier tests); make them robust (vi.resetModules or own file) (T-0301b QA) | web-shell | T-0301b | folded → T-0331 (done) | wl-build-web |
@@ -224,6 +224,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0380 | Rejection guards on remaining fire-and-forget local/auth reads: `OfflineStatus.tsx:45` (`void loadLastSyncedAt().then`), UF-10 `index.tsx:274`, UF-04 `data.ts:40`, UF-01 `index.tsx:120` (exchangeCodeForSession, silent fallback to sign-in) — D-0104 pattern, one test each (T-0378 QA/accept; split per lane at groom) | web-shell | T-0378 | todo | wl-build-web |
 | T-0381 | D-0100 addendum (revisit): a signed-out visitor at /welcome/save with a saveable plan is replace-navigated to /account ("Save your plan"), as shipped in T-0301c | product | T-0301c | todo | wl-spec |
 | T-0382 | UF-01.5 Account a11y: roving tabindex + arrow keys on the Send link / Enter code tabs; mount the role=status live region before its first message (T-0301c review, pre-existing low) | web-feature:UF-01 | T-0301c | todo | wl-build-web |
+| T-0383 | D-0113 retrofit: `features/UF-10/use-balance.ts` mount refreshAll only when online AND signed-in, once per mount; tests stale-online → 0, stale → signed-in → 1 (TR-0035) | web-feature:UF-10 | — | todo | wl-build-web |
+| T-0384 | D-0113 retrofit: `features/UF-04/data.ts` mount refreshAll only when online AND signed-in, once per mount; same tests; LibraryDetail "calls refreshAll once" tests run signed-in (TR-0035) | web-feature:UF-04 | — | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |

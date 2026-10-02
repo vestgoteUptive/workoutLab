@@ -3,7 +3,7 @@ id: T-0302a
 title: UF-02.1 Today frame — header and date, compact C-01 as one link to /balance from the on-device balance(), the attention line, the check-in slot, zero-history and no-profile states, Start → UF-08.1, offline cold start
 lane: web-feature:UF-02
 screens: [UF-02.1]
-decisions: [D-0002, D-0003, D-0045, D-0060, D-0063, D-0065, D-0071, D-0086, D-0091, D-0103, D-0104, D-0106, D-0108]
+decisions: [D-0002, D-0003, D-0045, D-0060, D-0063, D-0065, D-0071, D-0086, D-0091, D-0103, D-0104, D-0106, D-0108, D-0113]
 deps: [T-0300, T-0203b, T-0318]
 status: ready
 ---
@@ -18,7 +18,7 @@ UF-02.1 is the daily entry point (PRD). It shows what's under target in the roll
   - A data hook in `features/UF-02/`, following the `features/UF-10/use-balance.ts` pattern but written in UF-02, because UF-02 can't deep-import UF-10:
     - a cache read through `loadEngineHistory`, `loadTargets`, `loadLibrary`, `loadProfile` and `lastSyncedAt`;
     - `balance(history, targets, library, now, tz)` once per cache read;
-    - when online, one `refreshAll(now, tz)` per mount, capped at 3 s, then a recompute.
+    - when online **and signed in** (`useAuth().status === "signed-in"`, D-0113), one `refreshAll(now, tz)` per mount, capped at 3 s, then a recompute.
   - Header: `<h1>` = `en.screens.today`, a date line in the device locale and tz, and `<OfflineStatus variant="text">`.
   - The compact `<BodyMap>` from `components/body-map`.
   - The attention line.
@@ -108,11 +108,13 @@ UF-02.1 is the daily entry point (PRD). It shows what's under target in the roll
   - **Only older sets.** Given 4 hard RDL sets on 2026-09-01 only (before the window 09-14…09-27), all tiles read 0. "Nothing logged in the last 14 days. Start a workout to pick up again." shows directly above Start. There is no attention line and no "No workouts yet" line.
   - **R5-E1** (4 RDL sets on 09-17, inside the window). The attention line shows, and neither of the other two lines does.
   - **A balanced history** (no area `needsAttention`, some load > 0). None of the three lines shows. This is the only state with no line, and it is AC-4's 0-attention case.
-- **AC-8 (loading and refresh, D-0071 §8, D-0104)**
+- **AC-8 (loading and refresh, D-0071 §8, D-0104, D-0113)** `useAuth` comes from `lib/auth/auth-context.js` (a read-only import). Tests `vi.mock` it, as UF-10's `qa-real-path.test.tsx` does. Unless a case says otherwise, "online" below means `navigator.onLine` true **and** `status: "signed-in"`.
   - **Loading.** Before the loaders resolve, C-01 renders with `loading` true (its `aria-busy`), and there is no attention line and no no-workouts line.
-  - **Online.** `refreshAll` is called exactly once per mount. After it resolves, `balance` runs once more, and the tiles show the refreshed cache (a loader mock that returns new rows on its second call).
+  - **Online and signed in.** `refreshAll` is called exactly once per mount. After it resolves, `balance` runs once more, and the tiles show the refreshed cache (a loader mock that returns new rows on its second call).
   - **Offline.** `refreshAll` isn't called (0 calls after a 50 ms macrotask).
-  - **The cap: recompute after the refresh resolves or after 3 s, whichever comes first (parent AC-A7).** With `refreshAll` never resolving (fake timers):
+  - **Online but `stale` (D-0113 §3).** With `navigator.onLine` true and `status: "stale"`, `refreshAll` isn't called (0 calls after a 50 ms macrotask). The cached render shows, and `balance` is called exactly once. A `signed-out` status gives the same result.
+  - **`stale` → `signed-in` during the mount (D-0113 §2).** Re-render with the mocked status changed to `signed-in`. `refreshAll` is called exactly once, and there is no further call after another 50 ms macrotask or a second re-render with `signed-in`. The planted fault "the refresh effect has no once-per-mount flag" must turn this test red, and the build log records it.
+  - **The cap: recompute after the refresh resolves or after 3 s, whichever comes first (parent AC-A7).** Online and signed in, with `refreshAll` never resolving (fake timers):
     - The cached render is on screen before 3 000 ms. At 2 999 ms there is exactly 1 `balance` call and 1 read of each loader.
     - Advancing to 3 000 ms gives exactly one more `balance` call (count 1 → 2) over a second cache read (loader mock counts 1 → 2).
     - Another 10 000 ms adds no call.
@@ -121,7 +123,7 @@ UF-02.1 is the daily entry point (PRD). It shows what's under target in the roll
 - **AC-9 (offline status)** With `navigator.onLine` false and `lastSyncedAt` "2026-09-27T08:15:00Z", the header shows "Offline · last synced 10:15". With `lastSyncedAt` null, it shows "Offline · not synced yet". Online, neither text is in the DOM.
 - **AC-10 (no profile or targets)**
   - **Missing data.** Given `loadProfile()` null (one test), or 8 targets (another test), the screen shows "Connect to finish setting up your plan". There is no C-01, no attention line and no Start, and `balance` has 0 calls.
-  - **Recovery.** Online, a `refreshAll` that fills the profile and 9 targets brings back the normal render (C-01 present, `balance` called once).
+  - **Recovery.** Online and signed in, a `refreshAll` that fills the profile and 9 targets brings back the normal render (C-01 present, `balance` called once).
   - **Present.** Profile + 9 targets: the message is absent.
   - **Rejecting loader.** A rejecting `loadTargets` gives the same message with no uncaught error.
 - **AC-11 (offline cold start, e2e, NFR-OFF-1, OFF-6, AN-1, D-0091 §1, D-0108)** In `tests/e2e/uf-02-today.spec.ts`, which imports `test`/`expect` from `fixtures/guarded-test.js`:
@@ -145,7 +147,7 @@ UF-02.1 is the daily entry point (PRD). It shows what's under target in the roll
   - **Exports.** A test pins `Object.keys` of `features/UF-02/index.tsx` to `["Today"]`.
 - **AC-14 (shell tests unchanged, D-0108 §3)**
   - **Byte-identical.** `git diff main...HEAD` lists no file under `apps/web/src/app/**`, `tests/e2e/fixtures/**`, or `tests/e2e/{offline,auth,shell}.spec.ts`.
-  - **Green.** Those files' tests pass in the DoD run. The relevant cases are App.test `/` → UF-02.1, auth-guard "stale + offline renders UF-02.1", the profile-gate `/` cases, and offline.spec AC-C20.
+  - **Green.** Those files' tests pass in the DoD run. The relevant cases are App.test `/` → UF-02.1, auth-guard "stale + offline renders UF-02.1", the profile-gate `/` cases (including "stale + `missing` on `/`" with its single `profiles` read, which AC-8's signed-in condition keeps green: TR-0035, D-0113), and offline.spec AC-C20.
 
 ## Paths you may change
 - `apps/web/src/features/UF-02/**` (the lane: `web-feature:UF-02`).
