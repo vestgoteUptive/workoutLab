@@ -62,3 +62,15 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
   - web `typecheck`, `lint` green; web `test`: 121 files, 1806 tests green (`lib/offline`: 20 files, 132 tests, existing ones unchanged, AC9).
   - e2e `offline`, `uf-08-setup`, `uf-09-focus`: 20 passed.
   - `-w format:check` clean; `check-all.mjs` exit 0.
+
+## Build log, rework 2 (2026-10-02, frontend-dev)
+- **Blocking review finding: session pending-clear race (fixed).** `flushSessions` (`lib/offline/flush.ts`) used to `bulkPut` the pre-request snapshot with `pending: false`. A Finish (`upsertSession` with `ended_at`) that landed while a D-0116 enqueue flush was in flight was overwritten with the old row, so it never synced and the D-0053 §7 `finished` marker was lost. Now one `rw` transaction re-reads each sent id and sets `pending: false` only if the stored entry is still pending with the same `userId`, `finished` and `row` (compared key-order independently). A changed entry stays pending, and the single-flight follow-up flush sends the newer row. No new field: `QueuedSession` (local IndexedDB only, not the `docs/data-model.md` contract) keeps its shape and there is no Dexie version bump.
+- **RetryScheduler.stop()** (`retry.ts`). `stop()` sets a flag and cancels the timer. A run that was in flight when the sync handle stopped and resolves `network-error` afterwards no longer arms a retry. `runNow()` still runs if called. `sync.ts` `stop()` calls `scheduler.stop()` instead of `cancel()`.
+- **Tests added** (`sync.enqueue-flush.test.ts` +8, new `retry.stop.test.ts` 2):
+  - (a) The sessions version of AC6: the sessions send hangs, Finish is upserted, the send is released. Two `sessions` requests; the second carries `ended_at`; stored `pending: false, finished: true` with the newer `ended_at`.
+  - (b) The pair: no write during the send gives one request and `pending: false` with the original row.
+  - `flush()` called directly with a re-queue inside the request: the entry stays `pending: true, finished: true`. Its pair: an identical re-queue with a different key order is cleared.
+  - (d) A throwing `onQueueWrite` listener rejects neither `recordSet` nor `upsertSession`, and later listeners still run. Pair: no throwing listener.
+  - (e) A network-error resolving after `stop()` leaves 0 timers and no further flush. Pair: still running, it arms the 2 s retry. Both are also covered at the `RetryScheduler` unit level.
+- **Red proofs.** `flush.ts`, `retry.ts` and `sync.ts` from 270c095: 4 red: (a) ("length of 2 but got 1"), the direct-flush re-queue row, and both (e) rows. Planted fault for (d) (no try/catch around listeners): red. Restored and checked with `cmp`.
+- **Runs.** web `typecheck` and `lint` green. web `test`: 122 files, 1816 tests green. e2e `offline`, `uf-08-setup`, `uf-09-focus`: 20 passed. `-w format:check` clean. `check-all.mjs` exit 0.

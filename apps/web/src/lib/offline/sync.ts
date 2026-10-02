@@ -145,7 +145,7 @@ export function startSync(options: { tz: string }): SyncHandle {
       unsubscribeQueue();
       window.removeEventListener("online", onOnline);
       subscription.subscription.unsubscribe();
-      scheduler.cancel();
+      scheduler.stop();
     },
   };
 }

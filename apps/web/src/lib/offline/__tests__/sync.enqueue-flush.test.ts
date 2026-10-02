@@ -40,7 +40,7 @@ vi.mock("../flush.js", async (importOriginal) => {
 const { startSync } = await import("../sync.js");
 type SyncHandle = import("../sync.js").SyncHandle;
 const { flush } = await import("../flush.js");
-const { recordSet, editSet, deleteSet, upsertSession } = await import("../queue.js");
+const { recordSet, editSet, deleteSet, upsertSession, onQueueWrite } = await import("../queue.js");
 type RecordSetInput = import("../queue.js").RecordSetInput;
 type SessionInsert = import("../queue.js").SessionInsert;
 const { offlineDb } = await import("../db.js");
@@ -422,5 +422,173 @@ describe("AC8 a failed IDB write", () => {
     await expect(upsertSession(sessionRow())).rejects.toThrow("AbortError");
     await vi.advanceTimersByTimeAsync(1000);
     expect(flushStarts).toHaveBeenCalledTimes(0);
+  });
+});
+
+describe("rework: a session re-queued while its flush is in flight is not lost (D-0053 §7)", () => {
+  /** A `sessions` handler that hangs until `release()`; later calls resolve at once. */
+  function hangFirstSessionsSend(): { release: () => void; started: () => boolean } {
+    let release: (() => void) | null = null;
+    let calls = 0;
+    spy.setHandler("sessions", () => {
+      calls += 1;
+      if (calls > 1) return { error: null };
+      return new Promise<{ error: null }>((resolve) => {
+        release = () => resolve({ error: null });
+      });
+    });
+    return { release: () => release!(), started: () => release !== null };
+  }
+
+  const ENDED_AT = "2026-10-02T10:40:00.000Z";
+
+  it("a Finish during the in-flight send is sent next and stored finished, pending=false", async () => {
+    const hang = hangFirstSessionsSend();
+    const handle = start();
+
+    await upsertSession(sessionRow());
+    await vi.advanceTimersByTimeAsync(250);
+    await vi.waitFor(() => expect(hang.started()).toBe(true));
+
+    // Finish lands while the first request is still in flight.
+    await upsertSession({ ...sessionRow(), ended_at: ENDED_AT });
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(flushStarts).toHaveBeenCalledTimes(1);
+
+    hang.release();
+    await handle.settled();
+
+    const sends = spy.calls.filter((c) => c.table === "sessions");
+    expect(sends).toHaveLength(2);
+    expect((sends[0]!.rows[0] as { ended_at?: string | null }).ended_at ?? null).toBeNull();
+    expect((sends[1]!.rows[0] as { ended_at?: string | null }).ended_at).toBe(ENDED_AT);
+
+    const stored = await offlineDb().sessions.get(SESSION_ID);
+    expect(stored).toMatchObject({ pending: false, finished: true });
+    expect(stored!.row.ended_at).toBe(ENDED_AT);
+  });
+
+  it("the pair: no write during the send still clears pending, with one request", async () => {
+    const hang = hangFirstSessionsSend();
+    const handle = start();
+
+    await upsertSession(sessionRow());
+    await vi.advanceTimersByTimeAsync(250);
+    await vi.waitFor(() => expect(hang.started()).toBe(true));
+    hang.release();
+    await handle.settled();
+
+    expect(spy.calls.filter((c) => c.table === "sessions")).toHaveLength(1);
+    const stored = await offlineDb().sessions.get(SESSION_ID);
+    expect(stored).toMatchObject({ pending: false, finished: false });
+    expect(stored!.row).toEqual(sessionRow());
+  });
+
+  it("flush() directly: a re-queue during the request stays pending with the newer row", async () => {
+    spy.setHandler("sessions", async () => {
+      await upsertSession({ ...sessionRow(), ended_at: ENDED_AT });
+      return { error: null };
+    });
+    await upsertSession(sessionRow());
+
+    await flush(USER);
+
+    const stored = await offlineDb().sessions.get(SESSION_ID);
+    expect(stored).toMatchObject({ pending: true, finished: true });
+    expect(stored!.row.ended_at).toBe(ENDED_AT);
+  });
+
+  it("flush() directly, the pair: an identical re-queue (same content) is cleared", async () => {
+    spy.setHandler("sessions", async () => {
+      // Same fields, different key order: still the row that was sent.
+      const { time_budget_min, ...rest } = sessionRow();
+      await upsertSession({ time_budget_min, ...rest });
+      return { error: null };
+    });
+    await upsertSession(sessionRow());
+
+    await flush(USER);
+
+    expect(await offlineDb().sessions.get(SESSION_ID)).toMatchObject({ pending: false });
+  });
+});
+
+describe("rework: a throwing onQueueWrite listener never fails the write", () => {
+  it("recordSet and upsertSession still resolve, and other listeners still run", async () => {
+    const after = vi.fn();
+    const offThrowing = onQueueWrite(() => {
+      throw new Error("listener boom");
+    });
+    const offAfter = onQueueWrite(after);
+    try {
+      const set = await recordSet(SET);
+      expect(await offlineDb().sets.get(set.key)).toBeDefined();
+      const session = await upsertSession(sessionRow());
+      expect(session.pending).toBe(true);
+      expect(after).toHaveBeenCalledTimes(2);
+    } finally {
+      offThrowing();
+      offAfter();
+    }
+  });
+
+  it("the pair: with no throwing listener, the same writes resolve and notify", async () => {
+    const after = vi.fn();
+    const off = onQueueWrite(after);
+    try {
+      await recordSet(SET);
+      await upsertSession(sessionRow());
+      expect(after).toHaveBeenCalledTimes(2);
+    } finally {
+      off();
+    }
+  });
+});
+
+describe("rework: a network-error that resolves after stop() schedules no retry", () => {
+  function hangThenNetworkError(): { fail: () => void; started: () => boolean } {
+    let fail: (() => void) | null = null;
+    spy.setHandler(
+      "session_sets",
+      () =>
+        new Promise<never>((_resolve, reject) => {
+          fail = () => reject(new TypeError("Failed to fetch"));
+        }),
+    );
+    return { fail: () => fail!(), started: () => fail !== null };
+  }
+
+  it("stopped while in flight: no backoff timer and no further flush", async () => {
+    const net = hangThenNetworkError();
+    const handle = start();
+    await recordSet(SET);
+    await vi.advanceTimersByTimeAsync(250);
+    await vi.waitFor(() => expect(net.started()).toBe(true));
+
+    handle.stop();
+    net.fail();
+    await handle.settled();
+
+    expect(await vi.mocked(flush).mock.results[0]!.value).toBe("network-error");
+    expect(vi.getTimerCount()).toBe(0);
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(flushStarts).toHaveBeenCalledTimes(1);
+  });
+
+  it("the pair: still running, the same network-error arms the 2 s retry", async () => {
+    const net = hangThenNetworkError();
+    const handle = start();
+    await recordSet(SET);
+    await vi.advanceTimersByTimeAsync(250);
+    await vi.waitFor(() => expect(net.started()).toBe(true));
+
+    net.fail();
+    await handle.settled();
+
+    expect(vi.getTimerCount()).toBe(1);
+    spy.setHandler("session_sets", () => ({ error: null }));
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(flushStarts).toHaveBeenCalledTimes(2);
+    await vi.waitFor(() => expect(sentSetIds()).toHaveLength(2));
   });
 });
