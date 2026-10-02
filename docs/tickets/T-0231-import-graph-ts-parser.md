@@ -71,3 +71,8 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
   - Red proof: I added the new cases first, with main's regex still in place. 3 of 6 failed: the `;` in a line comment (`[]` instead of `["semi.ts"]`), the commented-out import (`["ghost.ts"]` instead of `[]`), and also the `;` in a block comment (`[]` instead of `["block.ts"]`, because the regex's `[^;]*?` stops at the `;`). The other 3 passed on the regex too.
   - AC2: I printed the live edge count with a temporary test, which was then removed. It is 57 before (regex) and 57 after (AST), and the two serialized edge lists are byte-identical. The T-0228 AC3 tests pass unedited.
   - AC3: engine `typecheck`, `lint` and `test` are green (33 files, 558 tests, so +6 over 552). `-w format:check`, `.github/scripts/check-all.mjs` and `supabase/scripts/vendor.mjs --check` exit 0. `src/**` is untouched, so there is no vendor regen.
+- 2026-10-02 accept (product-owner): **done.** Branch `t/T-0231-import-graph-ts-parser` at 16c79b9. The orchestrator reviewed it and QA passed.
+  - AC1: all 6 `T-0231 AC1` tests are present, and each one checks an exact array. Between them they cover the edge being kept and a ghost edge not being invented. The red proof is recorded: 3 of the 6 fail on main's regex, including both cases the ticket requires to fail (`;` in a comment, commented-out import). The T-0228 "skips `import type`" test is unedited.
+  - AC2: the T-0228 AC3 tests are unedited and pass. The edge count is 57 before and 57 after, and the edge lists are byte-identical.
+  - AC3: the engine `typecheck lint test` run is green (558/558).
+  - Principles: this is a test-only change. `src/**` and the contracts are unchanged, and engine determinism is unaffected.
