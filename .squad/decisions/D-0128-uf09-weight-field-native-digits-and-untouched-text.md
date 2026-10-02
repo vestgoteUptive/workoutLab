@@ -50,6 +50,9 @@ Normalising digits fixes both cases.
 - An untouched or unedited weight never rewrites the stored set.
 - A user can't save 82.13 over a recorded 82.125 by retyping exactly "82.13". They would have to
   type something else first. That is an acceptable edge case.
+- This doesn't settle whether a 3-decimal pre-fill should be rounded to 2 decimals when the set is
+  recorded. `sets.weight_kg` is `numeric(6,2)` in `docs/data-model.md`, so today the server row
+  can differ from the local entry. That question is a separate follow-up.
 
 ## Revisit when
 - Any number input other than UF-09.4 parses user text (UF-07, UF-11). Then move the digit
