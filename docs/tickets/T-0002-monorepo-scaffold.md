@@ -66,17 +66,5 @@ none
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0002`.
 
-## Accept log
-- 2026-09-27 pass 1: **failed**. AC1–AC4 are met. Build, QA and review all confirmed them
-  with the cache forced off. AC5 (missing `globalDependencies`), AC6 (`.gitkeep` renamed
-  into the design lane) and AC7 (engine tsconfig allows DOM and Node types) are not met.
-  This file now lists the scope that review blocker #1 said was missing, so the bootstrap
-  scaffolds are allowed.
-- 2026-09-27 pass 2: **failed**, because of a decision id collision. The ACs are not the
-  problem. AC1–AC7 are met: build, QA and review each confirmed them with `--force`, the
-  AC5 dry-run, and the AC7 probe file. The blocker is that main already has
-  `.squad/decisions/D-0015-set-sync-upsert.md`, which T-0001 merged. This branch adds a
-  second D-0015. Fix: rename the bootstrap decision to **D-0016** (the filename and `id:`),
-  then update `decisions:` in the frontmatter and the "per D-0016" line in Scope. No other
-  change is needed. Before renaming, check the highest D-number on main.
-- 2026-09-27 orchestrator: renamed to D-0016 as specified (no rebuild needed); merged after re-verifying typecheck/lint/test.
+## Build / accept log
+Archived in `docs/tickets/log/T-0002.md` (D-0157).

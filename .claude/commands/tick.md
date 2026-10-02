@@ -61,6 +61,7 @@ For each finished ticket:
 
 ## 6. Log
 - Append one line per ticket to `.squad/journal/<today>.md`: ticket, executor and run id, result, attempts, and cost if known.
+- Run `node .squad/tools/archive.mjs` on `main` after the board is updated (D-0157): it archives done board rows and done-ticket logs and regenerates the decisions index.
 - Rewrite `.squad/state.md`: phase, what's in flight, next step, waiting-on-humans. Keep it under 60 lines.
 - Commit the `.squad/` and board changes on `main` as `chore(squad): tick <date time>`. If `origin` exists and gate H-01 is done, push `main` and the ticket branches.
 

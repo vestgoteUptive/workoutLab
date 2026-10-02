@@ -69,12 +69,5 @@ None.
 ## Notes
 - **Flow:** `wl-build-web`. Ask review to check that the diff stays inside D-0088 §2–§3: one route's case changes, and nothing else does.
 
-## Accept log
-- 2026-10-01, product-owner (accept), branch at 3dbcd0c: **done**.
-  - AC-1: new describe "T-0365 signed in: UF-04.3 with a seeded library". It uses `signIn("u-t0365")`, `seedLibrary` for the same id, and `navigator.onLine` false. It asserts both columnheaders, the UF-04.3 marker, `pathnameRef === COMPARE_PATH`, and that UF-01.1 and UF-04.1 are absent. Pass.
-  - AC-2: the signed-out `it.each` still runs all 5 `NEW_PROTECTED_PATHS` rows. Byte-identical.
-  - AC-3: QA reproduced both faults independently. Seed dropped: the new case fails and the old row passes. Forced lookup miss: the new case fails. Both reverted, and `features/**` is untouched.
-  - AC-4: the other 4 rows and the summary describe are unchanged (signed-in uses the filtered `SIGNED_IN_PATHS`). No `timeout` option added. 14/14 pass.
-  - AC-5: `freshOfflineDb` runs in beforeEach and afterEach, and the `onLine` descriptor is restored. 3 shuffled runs green.
-  - DoD: root `pnpm -w typecheck lint test` green (web 759/759). Review APPROVE, check:repo 0.
-  - Nits accepted: the fixed 50 ms settle is a settle, not a timeout. The commit prefix `T-0365 UF-04.3:` follows the CLAUDE.md convention (`T-0304 UF-09.5:`).
+## Build / accept log
+Archived in `docs/tickets/log/T-0365.md` (D-0157).

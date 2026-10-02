@@ -75,11 +75,5 @@ Tests for every AC pass, with a recorded run for AC-5 · `pnpm -w typecheck lint
 ## Notes
 - **Flow:** `wl-build-web`. This ticket doesn't touch `profile-gate.test.tsx` or `auth-guard.test.tsx`.
 
-## Accept log
-- 2026-10-02, product-owner (accept), branch at 95629d0: **done**.
-  - AC-1, AC-2 and AC-3 are covered by `__tests__/key-scan.test.ts`, which uses `it.each` over the exact synthetic sources in this ticket. There is one more case: a chained key is reported once, with its offset.
-  - AC-4 is covered by `key-builder-source.test.ts`. "no file but db.ts" uses `findHandBuiltKeys`. db.ts has exactly 1 span, inside the `userScopedKey(`…`setKey(` range. "scans the expected files" and the three "references userScopedKey" cases are unedited.
-  - AC-5: QA recorded both faults (the `history.ts` concat and the `feature-loaders.ts` member template). Both are red with the new helper and missed by the old regex. Both were reverted and not committed.
-  - Test results: lib/offline 114/114. Review: APPROVE.
-  - The change is test-only, as the scope requires. No production key was found. Contracts are unchanged.
-  - Known limits, outside this ticket and not filed: `` `${u}:` + id ``, `u + (":" + id)` and `[u, id].join(":")`.
+## Build / accept log
+Archived in `docs/tickets/log/T-0372.md` (D-0157).

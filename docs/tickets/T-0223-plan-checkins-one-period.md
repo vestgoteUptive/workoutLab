@@ -96,17 +96,5 @@ Tests for every AC pass (Vitest locally, plus `supabase test db` on the draft PR
 - **Flow:** `wl-build-data`. Don't run it in parallel with another ticket that edits `supabase/tests/database/001_schema.test.sql` or regenerates `supabase/functions/_shared/vendor/**`.
 - If T-0215's merge left `vendor/engine` stale on `main`, the vendor regeneration here picks it up too. That is the same command and the same granted path, and the result notes should say so.
 
-## Accept log
-**2026-10-01, product-owner (accept), branch at 91d8b4f: done.**
-- **Build:** forward-only migration `20261001090000_plan_checkins_one_period.sql` (`period_index >= 0` under the same constraint name `plan_checkins_period_index_check`; `completed_prev` nullable, `>= 0` kept; `20260928090000` unedited). `docs/data-model.md`, `api/openapi.yaml` (minimum 0 on `PlanCheckin.periodIndex` and `CheckinPeriod.index`; `completedPrev` `anyOf` integer|null and still required; `info.version` 1.0.0), `api.gen.ts`, `database.gen.ts` (D-0043 hand edit), the mapper passes null through, and `vendor/**` regenerated. pgTAP 535/535.
-- **QA: PASS AC-1..AC-8.**
-  - An existing row survives the migration: reset to the previous migration, inserted period 1 / `completed_prev` 4, migrated up, and the row was byte-identical.
-  - RLS is unchanged.
-  - The D-0043 hand edit matches CLI output (44/44 lines).
-  - The mapper is the only non-test consumer of `completedPrev`.
-  - Both injected migration faults turn tests red, and the old contracts give 4 Vitest failures and 7 TS errors, so the tests bite.
-- **Review:** APPROVE, nothing blocking.
-- **AC-9:** draft PR #15 https://github.com/vestgoteUptive/workoutLab/pull/15. CI run 36941832970 (https://github.com/vestgoteUptive/workoutLab/actions/runs/36941832970): `typecheck / lint / unit test` (which includes check-lane-paths) passed, `supabase db tests` (`db reset`, `test db`, `vendor.mjs --check`, `gen-seed.mjs --check`) passed, and `playwright e2e` passed.
-- **Principles:** none at risk. This is a schema-only change. The engine stays deterministic (T-0215 owns rule 9), adaptive targets (UF-11) can now store the one-period check-in that D-0061 §2 calls for, and no workout path touches `plan_checkins`.
-- **Contracts:** changed only as D-0070 §6 names (confirmed by D-0094 §6).
-- **Unblocks:** T-0308c.
+## Build / accept log
+Archived in `docs/tickets/log/T-0223.md` (D-0157).

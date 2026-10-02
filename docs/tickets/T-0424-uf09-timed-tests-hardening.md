@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.7]
 decisions: [D-0066, D-0119, D-0150]
 deps: [T-0304d]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Follow-up from the T-0304c QA run and accept log (QA's F6 was not caught). Build flow: wl-build-web. About ¼ day. Test-only: `src/**` behaviour is unchanged. Depends on T-0304d: T-0304d changes `session.tsx`/`host.tsx`, which these tests exercise, and shares the lane. -->
 
@@ -82,3 +82,4 @@ screen (for example `T-0424 UF-09.7: assert elapsedS while the ring is held`).
   one after the other in the lane.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0424.md` (D-0157).

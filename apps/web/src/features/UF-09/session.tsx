@@ -72,7 +72,9 @@ export interface FocusSession {
    *  their `exerciseId`. */
   replaceItem(index: number, item: WorkoutItem, mainLiftId?: string | null): Promise<void>;
   /** Writes `{...row, ended_at: now}`, removes `wl-focus:<id>`, then navigates to
-   *  `/session/<id>/summary`. No UI and no confirm; one write while pending. */
+   *  `/session/<id>/summary`. No UI and no confirm; one write while pending. A failed one can
+   *  be called again; before it rejects it applies a UF-09.8 plan write it waited for that had
+   *  landed (D-0153 §6). */
   finish(): Promise<void>;
   /** Starts a wall-clock rest for `exerciseId` (`REST_COMPOUND_S` / `REST_ISOLATION_S`). */
   startRest(exerciseId: string): void;
@@ -150,10 +152,14 @@ export interface FocusActionDeps {
 export interface SessionWrites {
   plan: Promise<void> | null;
   finishing: boolean;
+  /** A plan write that landed after `finish()` started (D-0153 §6): the written row and its
+   *  plan, not yet applied to the store. A failed finish applies it; a finish that succeeds
+   *  drops it. `null` otherwise. */
+  landed: { row: SessionRow; plan: SessionPlan } | null;
 }
 
 export function createSessionWrites(): SessionWrites {
-  return { plan: null, finishing: false };
+  return { plan: null, finishing: false, landed: null };
 }
 
 async function storedRow(sessionId: string): Promise<SessionRow> {
@@ -258,15 +264,30 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
       if (finishing) return finishing;
       writes.finishing = true;
       const run = (async () => {
-        // A pending plan write lands first, so the row read here already has it.
-        const pendingPlan = writes.plan;
-        if (pendingPlan) await pendingPlan.catch(() => undefined);
-        const row = await storedRow(sessionId);
-        const written: SessionRow = { ...row, ended_at: new Date(Date.now()).toISOString() };
-        await upsertSession(written);
-        removeFocusState(storage, sessionId);
-        deps.onRow(written);
-        deps.navigate(`/session/${sessionId}/summary`);
+        try {
+          // A pending plan write lands first, so the row read here already has it.
+          const pendingPlan = writes.plan;
+          if (pendingPlan) await pendingPlan.catch(() => undefined);
+          const row = await storedRow(sessionId);
+          const written: SessionRow = { ...row, ended_at: new Date(Date.now()).toISOString() };
+          await upsertSession(written);
+          // Ended: the ended row is the last write, and the store doesn't move after it.
+          writes.landed = null;
+          removeFocusState(storage, sessionId);
+          deps.onRow(written);
+          deps.navigate(`/session/${sessionId}/summary`);
+        } catch (error) {
+          // D-0153 §6: the workout carries on, so the store walks what the row now holds. A plan
+          // write that landed while this finish waited is applied as it would have been without
+          // it (PLAN_APPLIED; D-0149 §1 while paused), before this promise rejects.
+          const landed = writes.landed;
+          writes.landed = null;
+          if (landed) {
+            store.applyPlan(landed.plan, Date.now());
+            deps.onRow(landed.row);
+          }
+          throw error;
+        }
       })();
       finishing = run;
       // A failed finish can be tried again; a pending or finished one is never written twice.
@@ -315,7 +336,11 @@ export function createPlanApply(
       const written: SessionRow = { ...row, plan };
       await upsertSession(written);
       // finish() started while this write was in flight: it waits for it and ends from there.
-      if (ended()) return;
+      // The landed write is kept, so a failed finish can apply it (D-0153 §6).
+      if (ended()) {
+        if (writes.finishing) writes.landed = { row: written, plan };
+        return;
+      }
       deps.store.applyPlan(plan, Date.now());
       deps.onRow(written);
     })();

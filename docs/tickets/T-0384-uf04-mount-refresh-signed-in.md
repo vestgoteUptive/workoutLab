@@ -51,10 +51,5 @@ none
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0384` and cite screen IDs.
 
-## Accept log
-- 2026-10-02, product-owner (accept), branch at db1250c: **done**.
-  - AC1 to AC7: `__tests__/refresh-auth.test.tsx` has one describe per AC. AC1 covers signed-in, one call and the re-read. AC2 covers stale with 0 `refreshAll` and 0 `supabase.from` calls, plus `pending` false after the first read. AC3 covers signed-out. AC4 covers the late signed-in start: `pending` again until the re-read, still 1 call after a further re-render, plus the once-per-mount flag and StrictMode. AC5 uses fake timers: the re-read lands at 4000 ms, not 3000 ms. AC6 covers the LibraryDetail single call, with a stale contrast case. AC7 covers the rejected read: no unhandled rejection, no `console.error`, and both reads rejecting leave the empty wrapper.
-  - AC8: the existing UF-04 suites run with the `useAuth` mock (`__tests__/auth-mock.ts`). Root typecheck, lint and test are green (web 1348). e2e passes 66/66.
-  - QA PASS: four independent fault injections (gate, once-per-mount, read guard, late pending) each turned the tests red. Review APPROVE.
-  - Principles: ExerciseHowTo is unchanged (`refresh: false`). It mounts without an AuthProvider, so the in-workout how-to (UF-09, principle 1) is unaffected. The engine and contracts are untouched. `app/**` and `lib/**` are untouched.
-  - Reviewer non-blocking notes (no follow-up filed): the cap timer is not cleared on unmount, which is harmless. `done` can fire twice on a hung refresh, which was already the case before this change.
+## Build / accept log
+Archived in `docs/tickets/log/T-0384.md` (D-0157).
