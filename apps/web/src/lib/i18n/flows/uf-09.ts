@@ -49,4 +49,21 @@ export const uf09 = {
   autosaveOff: "Tap save when ready.",
   save: "Save",
   saveError: "Couldn't save. Tap Save again.",
+  // UF-09.1 Get ready (T-0304f, parent AC-B1).
+  startNow: "Start now",
+  skipWarmup: "Skip warm-up",
+  go: "GO",
+  // UF-09.5 Rest (T-0304f, D-0066 §7, D-0118 §10).
+  restLess: "−15 s",
+  restMore: "+15 s",
+  skipRest: "Skip rest",
+  nextSet: (n: number, total: number) => `Next · set ${n} of ${total}`,
+  nextBackoff: "Next · back-off set",
+  nextItem: (name: string) => `Next · ${name}`,
+  // UF-09.6 Next exercise (T-0304f, D-0066 §10, D-0118 §11).
+  imReady: "I'm ready",
+  separator: "·",
+  // The chrome announcer (T-0304f, D-0118 §10, NFR-A11Y-4).
+  announceTen: "10 seconds",
+  announceGo: "Go",
 } as const;

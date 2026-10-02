@@ -66,7 +66,8 @@ describe("AC-9 auto-advance", () => {
     expect(screenId()).toBe("UF-09.1");
     await advance(4999);
     expect(screenId()).toBe("UF-09.1");
-    expect(timerText()).toBe("0:01");
+    // T-0304f: the built UF-09.1 counts bare seconds, 5 → 1 (parent AC-B1).
+    expect(timerText()).toBe("1");
     expect(countOf("COUNTDOWN_END")).toBe(0);
     await advance(1);
     expect(screenId()).toBe("UF-09.2");

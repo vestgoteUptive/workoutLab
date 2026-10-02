@@ -26,8 +26,13 @@ const KEY = `wl-focus:${S1}`;
 const TIMED_PHASES: Phase[] = ["getReady", "warmup", "rest", "next"];
 /** T-0304a AC-7's "exactly 1 button" per placeholder state, updated (not dropped) as each
  *  child builds a view (D-0118 §12). T-0304b: `set` is Pause + Done set; `confirm` (barbell-row,
- *  a loaded lift) is Pause, 2 reps steppers, 2 weight steppers and Save. */
+ *  a loaded lift) is Pause, 2 reps steppers, 2 weight steppers and Save. T-0304f: `getReady`
+ *  (P1, with a warm-up) is Pause, Start now and Skip warm-up; `rest` is Pause, −15 s, +15 s and
+ *  Skip rest; `next` (the module's empty seams) is Pause and I'm ready. */
 const BUTTONS: Partial<Record<Phase, string[]>> = {
+  getReady: ["Pause workout", "Start now", "Skip warm-up"],
+  rest: ["Pause workout", "−15 s", "+15 s", "Skip rest"],
+  next: ["Pause workout", "I'm ready"],
   set: ["Pause workout", "Done set"],
   confirm: ["Pause workout", "Fewer reps", "More reps", "Less weight", "More weight", "Save"],
 };
@@ -114,6 +119,17 @@ describe("AC-7 chrome on every machine state except paused", () => {
       expectNoWayOut();
     },
   );
+
+  it("getReady without a warm-up: exactly 2 buttons (Pause workout, Start now)", async () => {
+    await show(seeded("getReady"), planWith({ warmup: [] }));
+    expect(screenId()).toBe("UF-09.1");
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.map((b) => b.getAttribute("aria-label") ?? b.textContent)).toEqual([
+      "Pause workout",
+      "Start now",
+    ]);
+    expectNoWayOut();
+  });
 
   it("paused: exactly 1 button (Resume) and no chrome", async () => {
     await show(seeded("paused"));

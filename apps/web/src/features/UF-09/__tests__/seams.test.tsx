@@ -96,11 +96,12 @@ describe("AC-9 empty registries", () => {
     expect(nextSeamActions).toEqual([]);
   });
 
-  it("UF-09.6 with the module arrays: no seam button, only Pause", async () => {
+  // T-0304f (D-0118 §12): the built UF-09.6 adds its own "I'm ready" before any seam.
+  it("UF-09.6 with the module arrays: no seam button, only Pause and I'm ready", async () => {
     seedFocus({ phase: "next", timer: { startedAtMs: NOW, durationS: 60, pausedMs: 0 } });
     await renderSession();
     expect(screenId()).toBe("UF-09.6");
-    expect(buttonNames()).toEqual(["Pause workout"]);
+    expect(buttonNames()).toEqual(["Pause workout", "I'm ready"]);
     expect(document.querySelector("[data-seam-id]")).toBeNull();
   });
 
@@ -152,7 +153,7 @@ describe("AC-9 injection", () => {
   it("UF-09.6 renders the Swap entry", async () => {
     seedFocus({ phase: "next", timer: { startedAtMs: NOW, durationS: 60, pausedMs: 0 } });
     await renderSession({ seams: { next: [swap] } });
-    expect(buttonNames()).toEqual(["Pause workout", "Swap"]);
+    expect(buttonNames()).toEqual(["Pause workout", "I'm ready", "Swap"]);
   });
 
   it("a screen other than UF-09.6/.9 renders no seam entry", async () => {
