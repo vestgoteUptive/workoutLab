@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.7, UF-09.5]
 decisions: [D-0071, D-0118, D-0119, D-0150]
 deps: [T-0304d]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Follow-up from the T-0304c review/accept log. Build flow: wl-build-web. About ¼ day. Depends on T-0304d: both edit the UF-09 host and views (`host.tsx`, `views.tsx`), and they share the lane. Parallel-safe by files with T-0424 only if T-0424 stays in `timed-set.test.tsx` and this ticket keeps its tests in a new file (below). -->
 
@@ -173,3 +173,28 @@ green · contracts unchanged · commits start `T-0423` and cite the screen (for 
   …(2)></button>`. **Green** after it: 13/13.
 - **Gates:** web turbo `typecheck lint test --force --concurrency=1` 4/4 tasks green (169 files,
   2667 tests); `-w format:check` clean; `check-all.mjs` exit 0; e2e `uf-09-focus.spec.ts` 10/10.
+
+### Accept log (product-owner, 2026-10-02, HEAD b0050ce)
+- **Inputs:** build 1 (ac669c3), QA pass (d65da54, faults F1–F4 red), review 1 changes requested
+  (MEDIUM: the mount effect took focus from "Log hold" on a remount with `holdFailed` true), build 2
+  (b0050ce, fix plus a new red-then-green test), re-review approve.
+- **Per AC** (all in `__tests__/timed-set.focus.test.tsx`, 13/13 green):
+  - AC-1 pass: mount focus on "Pause timer"; ring paused, "Resume timer" still focused after 120 s.
+  - AC-2 pass: at 0 with a held write, the `<h1>` "Plank" with `tabindex="-1"` is focused, never the
+    body over 5 × 1 s, buttons `["Pause workout"]`; the pair ("Pause workout" keeps focus) passes.
+  - AC-3 pass: a rejection focuses "Log hold" with the unchanged copy; a second rejection keeps it
+    there; the pair ("Pause workout" keeps focus, "Log hold" rendered) passes. The review case
+    (a remount with `holdFailed` already true focuses "Log hold") is now pinned as well.
+  - AC-4 pass: a remount 10 min after the end puts focus on the `<h1>` while pending, then on
+    "Log hold" after the rejection.
+  - AC-5 pass: fresh and already-logged (3, 0) both land on UF-09.5 with "Skip rest" focused.
+  - AC-6 pass: the existing suites are unedited and green; `flows/uf-09.ts` is untouched (QA diff
+    against 10e9622).
+- **Red-on-main requirement:** recorded in build 1 (AC-2 ×2, AC-3 ×2, AC-4 ×2 red).
+- **Principles:** one task on screen holds (no new control, and the heading isn't in the Tab
+  order). Engine, time budget, targets and onboarding are not touched. Contracts unchanged.
+- **DoD note:** the whole e2e suite ran green at build 1 (137 passed). Build 2 removed only the
+  mount fallback in `timed-set.tsx`, and `uf-09-focus.spec.ts` ran 10/10 after it. Accepted on that
+  basis; the orchestrator's pre-merge gate re-runs the full suite.
+- **Verdict:** done. Optional follow-up: render the focus tests inside `<StrictMode>` as well
+  (review low).
