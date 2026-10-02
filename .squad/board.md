@@ -125,15 +125,16 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0302 | UF-02 Today + workout preview (mount compact C-01 from components/body-map as one link to /balance, fed from BalanceResult.areas — T-0300d) | web-feature:UF-02 | T-0300, T-0203b | split → T-0302a, T-0302b (D-0065) | wl-build-web |
 | T-0302a | UF-02.1 Today frame: header/date, OfflineStatus, compact C-01, attention line, zero-history / nothing-in-window lines, features/UF-02/slots.tsx (todayCheckinSlot), Start → UF-08.1, refresh cap, offline e2e (D-0106) | web-feature:UF-02 | T-0300, T-0203b, T-0318 | doing | wl-build-web |
 | T-0302c | UF-02.1 suggestion card (45-min suggest() with goal, rows, chips via sessionReasonChips, +N more, See all, empty plan, skeleton) + lib/i18n/workout.ts formatters (D-0106) | web-feature:UF-02 | T-0302a | todo | wl-build-web |
-| T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c, T-0303b (D-0106 §6) | todo | wl-build-web |
+| T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203b | split → T-0303a, T-0303b, T-0303c, T-0303d (D-0065) | wl-build-web |
 | T-0303a | UF-08.1 Time & energy: stepper/chips/finish time, done-by, warm-up toggle, energy, live fit line from on-device suggest, ?step routing | web-feature:UF-08 | T-0300, T-0203b, T-0318 | doing | wl-build-web |
 | T-0303b | UF-08.2 Suggested: budget bar, why chips, rows, remove (excludeIds), shuffle (+1), time change keeps main lift | web-feature:UF-08 | T-0303a, T-0302c (D-0106 §6) | todo | wl-build-web |
 | T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0306b | todo | wl-build-web |
 | T-0303d | UF-08.4 Ready: summary, focus explainer, focus-prefs hand-off, Start → upsertSession then /session/:id | web-feature:UF-08 | T-0303b | todo | wl-build-web |
-| T-0304 | UF-09 Focus mode: state machine, timers, auto-save, time check, pause | web-feature:UF-09 | T-0303, T-0205 | split → T-0304a, T-0304b, T-0304c, T-0304d (D-0066) | wl-build-web |
-| T-0304a | UF-09 focus machine (pure reducer), session load, persisted focus state + restore, chrome, wall-clock timer maths + seams.tsx + useFocusSession() | web-feature:UF-09 | T-0300, T-0205, T-0303d, T-0318 | todo | wl-build-web |
-| T-0304b | UF-09.1/.3/.4/.5/.6 set loop: Done set writes first, auto-save 5 s, RIR, in-session pre-fill, back-off, rest from engine constants | web-feature:UF-09 | T-0304a | todo | wl-build-web |
+| T-0304 | UF-09 Focus mode: state machine, timers, auto-save, time check, pause | web-feature:UF-09 | T-0303, T-0205 | split → T-0304a, T-0304e, T-0304b, T-0304c, T-0304d (D-0066, D-0111) | wl-build-web |
+| T-0304a | UF-09 focus machine (pure reducer, atMs events), session load + restore guards, persisted focus state, host + chrome, wall-clock timer maths (D-0111) | web-feature:UF-09 | T-0300, T-0205, T-0318 | doing | wl-build-web |
+| T-0304e | UF-09 useFocusSession() + seams.tsx, orderActions, overlay mechanics, done → finish() with whole-row upserts (D-0111, D-0071 §6) | web-feature:UF-09 | T-0304a | todo | wl-build-web |
+| T-0304b | UF-09.1/.3/.4/.5/.6 set loop: Done set writes first, auto-save 5 s, RIR, in-session pre-fill, back-off, rest from engine constants | web-feature:UF-09 | T-0304e | todo | wl-build-web |
 | T-0304c | UF-09.2 warm-up + UF-09.7 timed (prefill.durationS, D-0062 §5 copy), wake lock, cues, reduced motion | web-feature:UF-09 | T-0304b | todo | wl-build-web |
 | T-0304d | UF-09.8 time check (rule 8, save the new plan) + UF-09.9 paused + End; e2e offline/reload/two-device/keyboard | web-feature:UF-09 | T-0304c | todo | wl-build-web |
 | T-0305 | UF-03 List view + summary | web-feature:UF-03 | T-0304 | split → T-0305a, T-0305b (D-0068) | wl-build-web |
@@ -226,6 +227,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0382 | UF-01.5 Account a11y: roving tabindex + arrow keys on the Send link / Enter code tabs; mount the role=status live region before its first message (T-0301c review, pre-existing low) | web-feature:UF-01 | T-0301c | todo | wl-build-web |
 | T-0383 | D-0113 retrofit: `features/UF-10/use-balance.ts` mount refreshAll only when online AND signed-in, once per mount; tests stale-online → 0, stale → signed-in → 1 (TR-0035) | web-feature:UF-10 | — | todo | wl-build-web |
 | T-0384 | D-0113 retrofit: `features/UF-04/data.ts` mount refreshAll only when online AND signed-in, once per mount; same tests; LibraryDetail "calls refreshAll once" tests run signed-in (TR-0035) | web-feature:UF-04 | — | todo | wl-build-web |
+| T-0385 | Flush soon after an online enqueue (upsertSession/recordSet/editSet/deleteSet) — today rows wait for mount/online/auth events; then restore T-0303d AC-10 to the direct form (D-0112 §4) | web-shell | — | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
