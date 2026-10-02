@@ -1,4 +1,4 @@
-// UF-09.4 Confirm set (T-0304b, D-0066 §4 §5, D-0118 §2–§6). The set is already recorded; this
+// UF-09.4 Confirm set (T-0304b, T-0409, D-0066 §4 §5, D-0118 §2–§6, D-0128 §4). The set is already recorded; this
 // screen only corrects it. An untouched confirm auto-saves after 5 s from the wall clock (the
 // machine's persisted `confirm` timer, NFR-TIME-1). A `pointerdown` or `keydown` inside this view
 // (not the chrome) cancels it; programmatic focus doesn't. Edits live here, so a reload or a
@@ -41,9 +41,12 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
   const recorded = recordedSet(state);
 
   const [reps, setReps] = useState<number | null>(recorded?.reps ?? null);
-  const [weightText, setWeightText] = useState(
+  // The text the field opened with (D-0128 §4). While the field still reads it, it stands for
+  // `recorded.weightKg` exactly, so a 3-decimal 82.125 shown as "82.13" isn't saved as 82.13.
+  const [openingText] = useState(
     recorded?.weightKg == null ? "" : formatDecimal(recorded.weightKg, locale),
   );
+  const [weightText, setWeightText] = useState(openingText);
   const [rir, setRir] = useState<number | null>(recorded?.rir ?? null);
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -58,9 +61,11 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
     saveRef.current?.focus();
   }, []);
 
+  const unedited = weightText === openingText;
   const parsed = parseWeight(weightText);
-  const invalid = !bodyweight && !parsed.ok;
-  const weightKg = bodyweight ? (recorded?.weightKg ?? null) : parsed.ok ? parsed.value : null;
+  const invalid = !bodyweight && !unedited && !parsed.ok;
+  const weightKg =
+    bodyweight || unedited ? (recorded?.weightKg ?? null) : parsed.ok ? parsed.value : null;
 
   const edit = <T,>(set: (value: T) => void) => {
     return (value: T) => {

@@ -1,6 +1,8 @@
 // T-0304b AC-8 (`nextSetPrefill`, D-0066 §6, D-0118 §7) and the AC-6 weight parsing
-// (`weight-input.ts`, D-0118 §6). Pure functions, no DOM.
+// (`weight-input.ts`, D-0118 §6), plus T-0409 AC1–AC3 (native digits and the Arabic decimal
+// separator, D-0128 §1–§3). Pure functions, no DOM.
 import { describe, expect, it } from "vitest";
+import { formatDecimal } from "../../../lib/format/number.js";
 import type { SessionPlan } from "@workoutlab/shared";
 import type { LoggedSet } from "../machine.js";
 import { nextSetPrefill } from "../prefill.js";
@@ -132,4 +134,55 @@ describe("AC-6 parseWeight", () => {
     expect(stepWeight("1", -2.5)).toBe(0);
     expect(stepWeight("0.1", 0.2)).toBe(0.3);
   });
+});
+
+describe("T-0409 parseWeight reads native digits (D-0128 §1–§3)", () => {
+  it.each([
+    ["\u0667\u0667\u066B\u0665", 77.5], // ٧٧٫٥ Arabic-Indic
+    ["\u0668\u0660", 80], // ٨٠
+    ["\u06F8\u06F2\u066B\u06F2\u06F5", 82.25], // ۸۲٫۲۵ Extended Arabic-Indic
+    ["\u096D\u096D.\u096B", 77.5], // ७७.५ Devanagari
+    ["\u09ED\u09ED.\u09EB", 77.5], // ৭৭.৫ Bengali
+    ["\uFF17\uFF17.\uFF15", 77.5], // ７７.５ Fullwidth
+    [" \u0667\u0667,\u0665 ", 77.5], //  ٧٧,٥  trimmed, comma
+  ])("T-0409 AC1 %j → %d", (text, value) => {
+    expect(parseWeight(text)).toEqual({ ok: true, value });
+  });
+
+  it.each([
+    "\u0667\u0667\u066B", // ٧٧٫
+    "\u066B\u0665", // ٫٥
+    "\u0667\u0667\u066B\u0665\u066B\u0665", // ٧٧٫٥٫٥
+    "\u0667\u0667\u066B\u0665,\u0665", // ٧٧٫٥,٥
+    "\u0661\u066B\u0662\u0663\u0664", // ١٫٢٣٤ (3 decimals)
+    "\u0667\u066C\u0665", // ٧٬٥ (U+066C thousands separator)
+    "-\u0665", // -٥
+    "\u0668 \u0660", // ٨ ٠
+  ])("T-0409 AC2 %j is invalid", (text) => {
+    expect(parseWeight(text)).toEqual({ ok: false });
+  });
+
+  it("T-0409 AC2 the pair: the same shapes in valid form parse", () => {
+    expect(parseWeight("\u0667\u0667\u066B\u0665")).toEqual({ ok: true, value: 77.5 });
+    expect(parseWeight("\u0661\u066B\u0662\u0663")).toEqual({ ok: true, value: 1.23 });
+    expect(parseWeight("\u0665")).toEqual({ ok: true, value: 5 });
+  });
+
+  it("T-0409 AC1 stepWeight steps from a native-digit value", () => {
+    expect(stepWeight("\u0667\u0667\u066B\u0665", 2.5)).toBe(80);
+    expect(stepWeight("\u0667\u066C\u0665", 2.5)).toBe(2.5);
+  });
+
+  it("T-0409 AC3 the native-digit path really runs: ar-EG 77.5 is ٧٧٫٥", () => {
+    expect(formatDecimal(77.5, "ar-EG")).toBe("\u0667\u0667\u066B\u0665");
+  });
+
+  const LOCALES = ["en-GB", "sv-SE", "de-DE", "ar-EG", "fa-IR", "hi-IN-u-nu-deva", "bn-BD"];
+  const VALUES = [0, 2.5, 77.5, 82.25, 1234.5];
+  it.each(LOCALES.flatMap((locale) => VALUES.map((v) => [locale, v] as const)))(
+    "T-0409 AC3 %s: parseWeight(formatDecimal(%d)) round-trips",
+    (locale, v) => {
+      expect(parseWeight(formatDecimal(v, locale))).toEqual({ ok: true, value: v });
+    },
+  );
 });

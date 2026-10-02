@@ -1,10 +1,11 @@
 // T-0304b AC-4 (the persisted auto-save, NFR-TIME-1, D-0118 §2), AC-5 (a touch cancels, D-0118 §3)
-// and AC-6 (steppers, RIR, Save, D-0066 §4–§5, D-0118 §4 §6) on UF-09.4.
+// and AC-6 (steppers, RIR, Save, D-0066 §4–§5, D-0118 §4 §6) on UF-09.4, plus T-0409 AC4–AC6
+// (native digits, and an unedited field keeps the recorded weight, D-0128 §4).
 import { fireEvent, screen, within } from "@testing-library/react";
 import type { SessionPlan } from "@workoutlab/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
-import { P1, STARTED_AT_MS, USER_A } from "./fixtures.js";
+import { BENCH, P1, STARTED_AT_MS, USER_A } from "./fixtures.js";
 import {
   advance,
   flushReal,
@@ -15,7 +16,7 @@ import {
   useFakeClock,
 } from "./helpers.js";
 import { renderSession } from "./session-helpers.js";
-import { L2, defaultDetail } from "./set-loop-fixtures.js";
+import { L2, defaultDetail, planOf } from "./set-loop-fixtures.js";
 import {
   autosaveText,
   doneSet,
@@ -447,5 +448,120 @@ describe("AC-6 Save", () => {
     press("Save");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
+/** Mounts a bench-press-only plan whose set 1 is pre-filled at `weightKg`, in `locale`, taps
+ *  Done set and lands on UF-09.4 (T-0409). */
+async function toConfirmAt(weightKg: number, locale: string): Promise<void> {
+  const plan = planOf([{ ...BENCH, prefill: { ...BENCH.prefill, weightKg } }]);
+  await seedSession({ plan });
+  seedFocus(NOW, { phase: "set", itemIndex: 0 }, plan);
+  current = await renderSession({ locale });
+  await doneSet();
+  expect(storedState().loggedSets[0]).toMatchObject({ weightKg, reps: 6, rir: null });
+}
+
+const touch = () => fireEvent.pointerDown(screen.getByRole("group", { name: "Reps" }));
+
+describe("T-0409 ar-EG pre-fill (D-0128 §1–§3)", () => {
+  it("T-0409 AC4 the pre-filled ٧٧٫٥ is valid: no aria-disabled, no hint", async () => {
+    await toConfirmAt(77.5, "ar-EG");
+    expect(weightInput().value).toBe("\u0667\u0667\u066B\u0665");
+    expect(saveButton()).not.toHaveAttribute("aria-disabled");
+    expect(screen.queryByText(/Enter a weight like/)).not.toBeInTheDocument();
+  });
+
+  it("T-0409 AC4 the pair: a typed invalid ar-EG text still blocks Save with the hint", async () => {
+    await toConfirmAt(77.5, "ar-EG");
+    typeWeight("\u0667\u066C\u0665");
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText(/Enter a weight like/)).toBeInTheDocument();
+  });
+
+  it("T-0409 AC4 touch then Save: 0 editSet calls, UF-09.5", async () => {
+    await toConfirmAt(77.5, "ar-EG");
+    touch();
+    press("Save");
+    await findScreen("UF-09.5");
+    expect(editSpy).not.toHaveBeenCalled();
+  });
+
+  it("T-0409 AC4 More weight reads ٨٠ and Save sends weightKg 80", async () => {
+    await toConfirmAt(77.5, "ar-EG");
+    press("More weight");
+    expect(weightInput().value).toBe("\u0668\u0660");
+    press("Save");
+    await findScreen("UF-09.5");
+    expect(editSpy).toHaveBeenCalledTimes(1);
+    expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 80, rir: null });
+  });
+
+  it("T-0409 AC4 a typed Arabic-Indic weight saves its value", async () => {
+    await toConfirmAt(77.5, "ar-EG");
+    typeWeight("\u0668\u0662\u066B\u0665");
+    press("Save");
+    await findScreen("UF-09.5");
+    expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 82.5, rir: null });
+  });
+});
+
+describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
+  it("T-0409 AC5 82.125 reads 82.13; touch then Save: 0 editSet calls, the entry keeps 82.125", async () => {
+    await toConfirmAt(82.125, "en-GB");
+    expect(weightInput().value).toBe("82.13");
+    touch();
+    press("Save");
+    await findScreen("UF-09.5");
+    expect(editSpy).not.toHaveBeenCalled();
+    expect(storedState().loggedSets[0]!.weightKg).toBe(82.125);
+  });
+
+  it("T-0409 AC5 reps 6 → 7 then Save: editSet once with weightKg 82.125", async () => {
+    await toConfirmAt(82.125, "en-GB");
+    const { clientId } = storedState().loggedSets[0]!;
+    press("More reps");
+    press("Save");
+    await findScreen("UF-09.5");
+    expect(editSpy).toHaveBeenCalledTimes(1);
+    expect(editSpy).toHaveBeenCalledWith(clientId, { reps: 7, weightKg: 82.125, rir: null });
+  });
+
+  it("T-0409 AC6 typing 82.5 counts: editSet with weightKg 82.5", async () => {
+    await toConfirmAt(82.125, "en-GB");
+    typeWeight("82.5");
+    press("Save");
+    await findScreen("UF-09.5");
+    expect(editSpy).toHaveBeenCalledTimes(1);
+    expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 82.5, rir: null });
+  });
+
+  it("T-0409 AC6 More then Less weight is back at 82.13: 0 editSet calls", async () => {
+    await toConfirmAt(82.125, "en-GB");
+    press("More weight");
+    expect(weightInput().value).toBe("84.63");
+    press("Less weight");
+    expect(weightInput().value).toBe("82.13");
+    press("Save");
+    await findScreen("UF-09.5");
+    expect(editSpy).not.toHaveBeenCalled();
+    expect(storedState().loggedSets[0]!.weightKg).toBe(82.125);
+  });
+
+  it("T-0409 AC6 the pair: More weight alone counts: editSet with weightKg 84.63", async () => {
+    await toConfirmAt(82.125, "en-GB");
+    press("More weight");
+    press("Save");
+    await findScreen("UF-09.5");
+    expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 84.63, rir: null });
+  });
+
+  it("T-0409 AC6 clearing the field saves weightKg null", async () => {
+    await toConfirmAt(82.125, "en-GB");
+    typeWeight("");
+    press("Save");
+    await findScreen("UF-09.5");
+    expect(editSpy).toHaveBeenCalledTimes(1);
+    expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: null, rir: null });
   });
 });
