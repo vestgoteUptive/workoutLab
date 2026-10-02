@@ -226,3 +226,25 @@ example `T-0304c UF-09.7: hold from prefill.durationS, auto-logged once`).
   - `test:repo-checks`: 146 pass.
   - `pnpm --filter @workoutlab/web test:e2e`: the whole suite, 100/100, including the new row.
   - `-w format:check`, `check:repo` (check-all), and `check:size` (after a build with the e2e mock env): all green.
+
+## Accept log
+- **2026-10-02, product-owner (accept) at 9b72267: done.**
+- **ACs.** QA proved AC-1 through AC-7, each with both values of its binary conditions.
+  - **AC-1** (`warmup.test.tsx`): the cue / no-cue pair, auto-advance into UF-09.6, a wall-clock Restart, Next move, 0 `recordSet` calls, focus, and the 3-button pin.
+  - **AC-2** (`machine.timed.test.ts`, `timed-set.test.tsx`): the 53 s entry timer on every way into `timed`, 3-2-1, "Hold 0:50" from `prefill.durationS` (not 45), the fallbacks, and the "Plank" / "plank" h1.
+  - **AC-3:** exactly one `recordSet` with the AC payload, counted before the hook's dedupe; rest / done; "Done" announced; the pending, restore-at-10-min and already-logged pairs; the polite rejection and "Log hold".
+  - **AC-4:** the ring pause (`elapsedS` +20, `workoutPausedMs` unchanged), the workout pause (+60 000), both pauses counted once, restore while ring-paused, old stored states, the no-op, and the 2-button pin.
+  - **AC-5:** "Hold 2:00", "Easing back in" for `hold_after_break` and `reentry`, no line for the others, and no "same / last time" text for any kind.
+  - **AC-6:** the offline e2e row, with one IndexedDB `timed` row, no warm-up row, axe clean and the request guard clean.
+  - **AC-7:** strings, lint bans, the export pin and the tick scan are green. The T-0304a AC-9 hand-off is replaced in place and noted in the build log.
+- **Planted faults.** The two the ticket requires (the auto-log in-flight guard removed; a ring pause that adds to `workoutPausedMs`) went red in the build and red again under QA. QA's F4a, F4b and F5 were red too.
+- **One gap QA found.** F6 (rule 8's `elapsedS` stopping *while* the ring is held) is not caught, because the AC-4 test reads `elapsedS` after Resume timer. That is what the AC says, so the AC passes. Moved to T-0424 to harden the test.
+- **Deviation accepted (D-0150, revisit).** The AC-6 hold is 15 s, not 5 s. `PrefillResult.durationS` is 15..120 in `api/openapi.yaml`, so a 5 s seed would break the contract. Review agreed. The other D-0150 defaults (`HOLD_ALREADY_LOGGED`, the `exerciseId` guard, the swap / RESYNC timer rules, two lines on UF-09.7) fit D-0119.
+- **Seeds.** 6 test files gained the `timed` timer that D-0119 §1 now requires. No assertion changed and nothing was weakened. Review checked this.
+- **Principles.**
+  - P1: UF-09.2 and UF-09.7 each show one move or one hold. The ring pause is a single toggle, and everything else stays behind Pause.
+  - P2: the ring pause holds only the hold. Rule 8's workout clock keeps running.
+  - P3: the hold length is the engine's `prefill.durationS`, shown as given. The copy never claims "same as last time" (D-0062 §5).
+  - No contract changed. D-0150 is on main.
+- **Evidence.** Whole e2e suite 100/100. `pnpm -w typecheck lint test` green. The engine-doc diff from the build run was fixed by merging main. check-all is green after D-0150 landed. QA's 10/10 break-it probes passed and the console was clean.
+- **Follow-ups:** T-0423 (focus at hold 0), T-0424 (the `elapsedS`-while-held assert and the remount cleanup), T-0425 (the e2e console-error check). Losing a timed state in the pre-launch persist migration is accepted per D-0119 §1.
