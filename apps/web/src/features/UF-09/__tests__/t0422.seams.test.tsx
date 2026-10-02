@@ -7,10 +7,43 @@ import { en } from "../../../lib/i18n/en.js";
 import { initialFocusState, type FocusState, type LoggedSet } from "../machine.js";
 import { nextSeamActions, pauseSeamActions, swapTarget } from "../seams.js";
 import { buildWorkout, type FocusSession, type SessionRow } from "../session.js";
-import { P1, S1, STARTED_AT, STARTED_AT_MS, USER_A } from "./fixtures.js";
+import { L1, P1, S1, STARTED_AT, STARTED_AT_MS, USER_A } from "./fixtures.js";
 import { flushReal, freshDb, signIn } from "./helpers.js";
 import { findEl } from "./set-loop-helpers.js";
-import { seedSwapCache } from "./t0422-fixtures.js";
+import type { LibraryExercise } from "@workoutlab/shared";
+import { offlineDb, userScopedKey } from "../../../lib/offline/db.js";
+
+/** The sheet's cache: a beginner, full-equipment profile and P1's L1 rows plus db-row. */
+async function seedSwapCache(): Promise<void> {
+  const db = offlineDb();
+  await db.profileCache.put({
+    userId: USER_A,
+    profile: {
+      goal: "build_muscle",
+      level: "beginner",
+      equipment: ["barbell", "rack", "bench", "dumbbell", "cable", "machine", "pullup-bar"],
+      rhythmMin: 3,
+      rhythmMax: 4,
+      priorityAreas: [],
+      onboardedAt: "2026-08-02T10:00:00Z",
+      planUpdatedAt: "2026-08-02T10:00:00Z",
+    },
+  });
+  const dbRow: LibraryExercise = {
+    ...L1.find((e) => e.id === "barbell-row")!,
+    id: "db-row",
+    name: "Db row",
+    equipment: ["dumbbell", "bench"],
+    incrementKg: 2,
+  };
+  await db.libraryCache.bulkPut(
+    [...L1, dbRow].map((exercise) => ({
+      key: userScopedKey(USER_A, exercise.id),
+      userId: USER_A,
+      exercise,
+    })),
+  );
+}
 
 const ROW: SessionRow = {
   id: S1,
