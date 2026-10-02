@@ -120,3 +120,11 @@ D-0131 applies the D-0057 §4 floor of one increment, capped at the main weight 
 Tests for every AC pass, including the AC6 simulated 14-day histories · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` is green · the contract change is linked to D-0131 · commit messages start with `T-0220` and cite UF-08.2 (e.g. `T-0220 UF-08.2: back-off floor of one increment on light lifts (D-0131)`).
 
 ## Build / accept log
+
+### Build 2026-10-02 (engine-dev)
+- **Red on unfixed code:** `test/t0220-backoff-floor.test.ts` run before the fix: 14 failed. AC1 `expected { weightKg: +0, reps: 6 } to deeply equal { weightKg: 2.5, reps: 6 }`; AC2 and AC3 got `{ weightKg: 0, reps: 6 }` (AC3: `floorInc(1.8, 2) = 0`); AC4 rows 2.5/2.5, 2/2.5, 2/2, 2.75/2.5, 5/5 got 0; AC5 `w 0.5 inc 1: expected +0 to be 0.5`; AC6 `light|b15|wuoff: expected 0 to be greater than 0`; AC7 four text checks. AC9 (purity) passed before and after.
+- **Fix:** `backoffWeightKg(w, inc)` in `src/energy.ts` (D-0131 §1); `backoffOf` in `src/session.ts` calls it, so `suggest` (rule 7.4) and `applySwap` (rule 12.1, via `buildItem`) share it (D-0131 §2). No public export added.
+- **AC6 snapshot:** `test/fixtures/pre-t0220-suggest.json` was captured on the unfixed code (6 histories × budgets 15..120 step 5 × warm-up on/off = 264 plans, 147 back-offs). After the fix every plan deep-equals the snapshot with back-off weights blanked; only `light|…` back-offs differ (0 → 2.5).
+- **AC7:** `git diff main...HEAD -- docs/engine-rules.md` changes §7.4 (High sentence, new R7-E16 line), the §12.1 Item bullet and one Traceability row. The T-0204, T-0205 and T-0224 guards pass unedited.
+- **AC8:** no existing literal changed; all 34 engine test files (595 tests) pass unedited.
+- Gates: engine typecheck, lint and test green; `-w format:check` clean; `check-all.mjs` exit 0. The vendored engine copy was not regenerated (orchestrator, D-0053 §1).
