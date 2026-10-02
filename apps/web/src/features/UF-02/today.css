@@ -1,0 +1,76 @@
+/* UF-02.1 Today (T-0302a). Colours and fonts come only from @workoutlab/design-tokens
+ * (D-0019): there is no raw hex in this file. C-01 styles itself (components/body-map). */
+
+.wl-today {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  font-family: var(--wl-font-body);
+  color: var(--wl-color-text);
+}
+
+.wl-today__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 4px;
+}
+
+.wl-today__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 32px;
+  line-height: 1.1;
+  color: var(--wl-color-text);
+}
+
+.wl-today__date {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+}
+
+.wl-today__status {
+  flex-basis: 100%;
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+}
+
+.wl-today__attention,
+.wl-today__empty,
+.wl-today__no-plan {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.wl-today__empty,
+.wl-today__no-plan {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-today__more {
+  color: var(--wl-color-accent);
+}
+
+/* NFR-A11Y-2: 44 × 44 CSS px. */
+.wl-today__start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: 14px;
+  background: var(--wl-color-accent);
+  color: var(--wl-color-on-accent);
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.wl-today__start:hover {
+  background: var(--wl-color-accent-hover);
+}
