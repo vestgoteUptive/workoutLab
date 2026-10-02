@@ -1,12 +1,13 @@
 // T-0304a AC-5 (loading edge cases, D-0111 §3 §7), AC-6 (screen ids) and AC-8 (offline icon,
-// no mount refresh, D-0111 §11). Rows are written with the real `upsertSession`.
+// no mount refresh, D-0111 §11), and T-0413 (the unreadable-plan state, D-0138). Rows are
+// written with the real `upsertSession`.
 import { screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
 import { offlineDb as realOfflineDb } from "../../../lib/offline/db.js";
 import { en } from "../../../lib/i18n/en.js";
 import { initialFocusState, type FocusState, type Phase } from "../machine.js";
-import { P1, S1, STARTED_AT_MS, USER_A, USER_B } from "./fixtures.js";
+import { P1, PLANK, S1, STARTED_AT_MS, USER_A, USER_B, planWith } from "./fixtures.js";
 import {
   flushReal,
   freshDb,
@@ -73,6 +74,18 @@ function expectNotOnDevice(): void {
   expect(screen.queryByRole("banner")).not.toBeInTheDocument();
 }
 
+function expectUnreadable(): void {
+  expect(screenId()).toBe("UF-09");
+  expect(screenIds()).toEqual(["UF-09"]);
+  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(t.unreadableTitle);
+  expect(t.unreadableTitle).toBe("This workout's plan can't be read");
+  expect(document.body.textContent).not.toContain(t.notOnDeviceTitle);
+  expectHomeLink();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+  expect(document.body.innerHTML).not.toMatch(/UF-09\.\d/);
+}
+
 describe("AC-5 not on this device", () => {
   it("/session/nope (no row)", async () => {
     await seedSession();
@@ -95,7 +108,8 @@ describe("AC-5 not on this device", () => {
   it("row.plan failing parseSessionPlan", async () => {
     await seedSession({ plan: { version: 1, items: "nope" } });
     await renderLoaded();
-    expectNotOnDevice();
+    // D-0138 §1: the user's own row with a corrupt plan is "unreadable", not "not on this device".
+    expectUnreadable();
   });
 
   it("row.plan null", async () => {
@@ -356,4 +370,139 @@ describe("AC-8 offline icon (NFR-OFF-6)", () => {
       expect(vi.mocked(offline.loadLibrary)).toHaveBeenCalled();
     },
   );
+});
+
+describe("T-0413 the unreadable-plan state (D-0138)", () => {
+  const CORRUPT = { version: 1, items: "nope" };
+  // P1 with its timed item's prefill outside 15..120 (D-0133 §5).
+  const withPlankPrefill = (durationS: number) =>
+    planWith({
+      items: [
+        P1.items[0]!,
+        P1.items[1]!,
+        P1.items[2]!,
+        { ...PLANK, prefill: { ...PLANK.prefill, durationS } },
+      ],
+    });
+
+  it("T-0413 AC1 a corrupt plan for the signed-in user: 'This workout's plan can't be read', one link home", async () => {
+    await seedSession({ plan: CORRUPT });
+    await renderLoaded();
+    expectUnreadable();
+  });
+
+  it("T-0413 AC2 a timed prefill.durationS of 3 renders the AC1 state; the pair: 45 starts at UF-09.1", async () => {
+    await seedSession({ plan: withPlankPrefill(3) });
+    const view = await renderLoaded();
+    expectUnreadable();
+    view.unmount();
+    await seedSession({ id: "S2", plan: withPlankPrefill(45) });
+    await renderLoaded({ path: "/session/S2" });
+    expect(screenId()).toBe("UF-09.1");
+  });
+
+  it("T-0413 AC3 one console.warn with the session id and the parser error, no plan contents, no user id, no console.error", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const error = vi.spyOn(console, "error");
+    await seedSession({ plan: CORRUPT });
+    await renderLoaded();
+    expectUnreadable();
+    expect(warn).toHaveBeenCalledTimes(1);
+    const args = warn.mock.calls[0]!;
+    expect(args).toHaveLength(1);
+    const line = args[0] as string;
+    expect(typeof line).toBe("string");
+    for (const part of ["UF-09", S1, "parseSessionPlan", "invalid"]) expect(line).toContain(part);
+    expect(line).not.toContain("nope");
+    expect(line).not.toContain("items");
+    expect(line).not.toContain(USER_A);
+    expect(error).not.toHaveBeenCalled();
+  });
+
+  describe("T-0413 AC3 the pair: zero console.warn for a valid row and every not-on-device case", () => {
+    let warn: ReturnType<typeof vi.spyOn>;
+    beforeEach(() => {
+      warn = vi.spyOn(console, "warn");
+    });
+
+    it("a valid row", async () => {
+      await seedSession();
+      await renderLoaded();
+      expect(screenId()).toBe("UF-09.1");
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("no row", async () => {
+      await seedSession();
+      await renderLoaded({ path: "/session/nope" });
+      expectNotOnDevice();
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("another user's row (even with a corrupt plan)", async () => {
+      signIn(USER_B);
+      await seedSession({ plan: CORRUPT });
+      signIn(USER_A);
+      await renderLoaded();
+      expectNotOnDevice();
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("plan: null", async () => {
+      await seedSession({ plan: null });
+      await renderLoaded();
+      expectNotOnDevice();
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("IndexedDB unavailable", async () => {
+      await seedSession();
+      vi.mocked(offline.offlineDb).mockImplementation(() => {
+        throw new Error("indexedDB is not available");
+      });
+      await renderLoaded();
+      expectNotOnDevice();
+      expect(warn).not.toHaveBeenCalled();
+    });
+
+    it("a rejected read", async () => {
+      await seedSession();
+      vi.spyOn(offline.offlineDb().sessions, "get").mockRejectedValue(
+        new Error("DatabaseClosedError"),
+      );
+      await renderLoaded();
+      expectNotOnDevice();
+      expect(warn).not.toHaveBeenCalled();
+    });
+  });
+
+  it("T-0413 AC5 nothing is deleted: wl-focus:S1 keeps the same string, and the row stays", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await seedSession({ plan: CORRUPT });
+    const raw = JSON.stringify({ ...initialFocusState(S1, P1, NOW), phase: "set", timer: null });
+    window.localStorage.setItem(KEY, raw);
+    await renderLoaded();
+    expectUnreadable();
+    expect(window.localStorage.getItem(KEY)).toBe(raw);
+    const entry = await offline.offlineDb().sessions.get(S1);
+    expect(entry).toBeDefined();
+    expect(entry!.row.plan).toEqual(CORRUPT);
+  });
+
+  it("T-0413 AC6 order: a corrupt plan with ended_at set renders unreadable, not ended", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await seedSession({ plan: CORRUPT, ended_at: "2026-09-27T10:50:00.000Z" });
+    await renderLoaded();
+    expectUnreadable();
+    expect(document.body.textContent).not.toContain(t.endedTitle);
+  });
+
+  it("T-0413 AC6 order: a stale started_at with a corrupt plan renders unreadable, not stale", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await seedSession({ plan: CORRUPT });
+    vi.setSystemTime(STARTED_AT_MS + 13 * 60 * 60_000);
+    await renderLoaded();
+    expectUnreadable();
+    expect(document.body.textContent).not.toMatch(/This workout was started on/);
+  });
 });

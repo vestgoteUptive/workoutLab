@@ -1,4 +1,4 @@
-// UF-09 session loading and restore (T-0304a, D-0066 §2, D-0111 §3 §7 §11). IndexedDB only:
+// UF-09 session loading and restore (T-0304a, D-0066 §2, D-0111 §3 §7 §11, D-0138). IndexedDB only:
 // the session row and the cached library. No network and no `refresh*` call, so online and
 // offline behave the same and nothing re-times a step mid-workout (D-0111 §11).
 import { parseSessionPlan } from "@workoutlab/shared";
@@ -24,6 +24,8 @@ export const STALE_AFTER_MS = 12 * 60 * 60 * 1000;
 export type HostLoad =
   | { kind: "loading" }
   | { kind: "notOnDevice" }
+  /** The user's own row is on the device, but its plan fails `parseSessionPlan` (D-0138). */
+  | { kind: "unreadable" }
   | { kind: "ended" }
   | { kind: "stale"; startedAt: string }
   | {
@@ -46,7 +48,15 @@ export async function loadSession(
     const entry = await offlineDb().sessions.get(sessionId);
     if (!entry || entry.userId !== currentUserId()) return { kind: "notOnDevice" };
     const parsed = parseSessionPlan(entry.row.plan ?? null);
-    if (!parsed.ok || parsed.plan === null) return { kind: "notOnDevice" };
+    // D-0138 §1 §5 §6: checked before ended and stale. The log carries the session id and the
+    // parser's error only: never the plan's contents, never the user id. `warn`, not `error`.
+    if (!parsed.ok) {
+      console.warn(
+        `[workoutLab] UF-09: stored plan for session ${sessionId} failed parseSessionPlan (${parsed.error})`,
+      );
+      return { kind: "unreadable" };
+    }
+    if (parsed.plan === null) return { kind: "notOnDevice" };
     const plan = parsed.plan;
 
     if (entry.row.ended_at != null) {
