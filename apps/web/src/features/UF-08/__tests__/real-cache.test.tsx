@@ -10,6 +10,9 @@ import { resetOfflineDbForTest, userScopedKey, type OfflineDb } from "../../../l
 import { NOW, fLibrary, fProfile, fTargets } from "./fixtures.js";
 import { fitLine, renderSetup, setOnline } from "./harness.js";
 
+// D-0113: the mount refresh needs a signed-in session. `auth.status` is read on every render.
+const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
+vi.mock("../../../lib/auth/auth-context.js", () => ({ useAuth: () => ({ status: auth.status }) }));
 vi.mock("@workoutlab/engine", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@workoutlab/engine")>();
   return { ...actual, suggest: vi.fn(actual.suggest) };
@@ -56,6 +59,7 @@ async function queueSquats(n: number): Promise<void> {
 let db: OfflineDb;
 
 beforeEach(async () => {
+  auth.status = "signed-in";
   vi.clearAllMocks();
   counter += 1;
   db = resetOfflineDbForTest(`wl-offline-uf08-${counter}`);

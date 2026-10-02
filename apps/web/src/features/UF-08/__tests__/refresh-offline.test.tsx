@@ -11,6 +11,8 @@ import type { HistorySet } from "@workoutlab/shared";
 import { loadTargets, refreshAll } from "../../../lib/offline/history.js";
 import { fTargets } from "./fixtures.js";
 import {
+  F_TZ_PROPS,
+  SetupTree,
   fCache,
   fitLine,
   hangLoaders,
@@ -21,6 +23,9 @@ import {
   settle,
 } from "./harness.js";
 
+// D-0113: the mount refresh needs a signed-in session. `auth.status` is read on every render.
+const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
+vi.mock("../../../lib/auth/auth-context.js", () => ({ useAuth: () => ({ status: auth.status }) }));
 vi.mock("../../../lib/offline/history.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../lib/offline/history.js")>();
   return {
@@ -42,6 +47,7 @@ const spy = vi.mocked(suggest);
 const refresh = vi.mocked(refreshAll);
 
 beforeEach(() => {
+  auth.status = "signed-in";
   vi.clearAllMocks();
   refresh.mockImplementation(async () => {});
   serveCache();
@@ -73,6 +79,8 @@ function hardSet(id: string, exerciseId: string, at: string): HistorySet {
 describe("AC-9 same result offline and online", () => {
   async function run(online: boolean): Promise<{ line: string; workout: Workout }> {
     setOnline(online);
+    // The online run is online AND signed in (D-0113 §5).
+    auth.status = "signed-in";
     const view = renderSetup();
     await loadedLine();
     if (online) await waitFor(() => expect(loaderReads()).toEqual([2, 2, 2, 2]));
@@ -109,6 +117,68 @@ describe("AC-9 same result offline and online", () => {
     const [now, tz] = refresh.mock.calls[0]!;
     expect(now.toISOString()).toBe("2026-09-27T16:00:00.000Z");
     expect(tz).toBe("America/New_York");
+  });
+});
+
+describe("AC-10 auth condition (D-0113 §1-§3)", () => {
+  it("online + signed-in: refreshAll exactly once per mount", async () => {
+    setOnline(true);
+    const view = renderSetup();
+    await loadedLine();
+    await settle();
+    expect(refresh).toHaveBeenCalledTimes(1);
+    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    await settle();
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["stale", "signed-out"] as const)(
+    "online + %s: 0 refreshAll calls, rendered from the cache, each loader read once",
+    async (status) => {
+      auth.status = status;
+      setOnline(true);
+      renderSetup();
+      await loadedLine();
+      await settle();
+      expect(refresh).toHaveBeenCalledTimes(0);
+      expect(fitLine().textContent).toMatch(/^Fits: /);
+      expect(loaderReads()).toEqual([1, 1, 1, 1]);
+    },
+  );
+
+  it("stale → signed-in during the mount: exactly 1 call, none after 50 ms or a second signed-in render", async () => {
+    auth.status = "stale";
+    setOnline(true);
+    const view = renderSetup();
+    await loadedLine();
+    await settle();
+    expect(refresh).toHaveBeenCalledTimes(0);
+
+    auth.status = "signed-in";
+    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    await settle();
+    expect(refresh).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(loaderReads()).toEqual([2, 2, 2, 2]));
+
+    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    await settle();
+    expect(refresh).toHaveBeenCalledTimes(1);
+
+    // Signed in → stale → signed in again in the same mount: still once.
+    auth.status = "stale";
+    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    auth.status = "signed-in";
+    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    await settle();
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("contrast: offline + signed-in makes 0 calls", async () => {
+    setOnline(false);
+    renderSetup();
+    await loadedLine();
+    await settle();
+    expect(refresh).toHaveBeenCalledTimes(0);
   });
 });
 

@@ -14,6 +14,9 @@ import {
   settle,
 } from "./harness.js";
 
+// D-0113: the mount refresh needs a signed-in session. `auth.status` is read on every render.
+const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
+vi.mock("../../../lib/auth/auth-context.js", () => ({ useAuth: () => ({ status: auth.status }) }));
 vi.mock("../../../lib/offline/history.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../lib/offline/history.js")>();
   return {
@@ -35,6 +38,7 @@ const spy = vi.mocked(suggest);
 let realSuggest: typeof suggest;
 
 beforeEach(async () => {
+  auth.status = "signed-in";
   const actual = await vi.importActual<typeof import("@workoutlab/engine")>("@workoutlab/engine");
   realSuggest = actual.suggest;
   spy.mockReset();

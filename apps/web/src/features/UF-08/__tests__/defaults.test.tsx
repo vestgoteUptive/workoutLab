@@ -7,6 +7,9 @@ import { refreshAll } from "../../../lib/offline/history.js";
 import { NOW, TZ } from "./fixtures.js";
 import { doneBy, renderSetup, serveCache } from "./harness.js";
 
+// D-0113: the mount refresh needs a signed-in session. `auth.status` is read on every render.
+const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
+vi.mock("../../../lib/auth/auth-context.js", () => ({ useAuth: () => ({ status: auth.status }) }));
 vi.mock("../../../lib/offline/history.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../lib/offline/history.js")>();
   return {
@@ -21,6 +24,7 @@ vi.mock("../../../lib/offline/history.js", async (importOriginal) => {
 vi.mock("../../../lib/offline/engine-feed.js", () => ({ loadEngineHistory: vi.fn() }));
 
 beforeEach(() => {
+  auth.status = "signed-in";
   vi.clearAllMocks();
   serveCache();
 });

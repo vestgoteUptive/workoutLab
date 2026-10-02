@@ -14,6 +14,7 @@ import { useEffect, useId, useMemo, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { suggest, type Energy, type Workout } from "@workoutlab/engine";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
+import { useAuth } from "../../lib/auth/auth-context.js";
 import { formatTime } from "../../lib/format/intl.js";
 import { en } from "../../lib/i18n/en.js";
 import { Suggested } from "./Suggested.js";
@@ -112,7 +113,8 @@ export function SessionSetup({ now, locale, timeZone }: SessionSetupProps = {}) 
   const [finishError, setFinishError] = useState(false);
   const [handedOff, setHandedOff] = useState(false);
 
-  const state = useSetupData(nowIso, tz);
+  const { status } = useAuth();
+  const state = useSetupData(nowIso, tz, status === "signed-in");
   const data = state.kind === "ready" ? state.data : null;
 
   const workout = useMemo(
