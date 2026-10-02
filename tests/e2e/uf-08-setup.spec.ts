@@ -18,6 +18,7 @@ import {
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercises, profile } from "./fixtures/uf-04-library-data.js";
+import { VITE_SUPABASE_URL } from "./playwright.config.js";
 
 const F_TARGETS: Record<string, number> = {
   chest: 20,
@@ -355,5 +356,222 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
     await expect(page).toHaveURL(/\/session\/setup\?step=ready$/);
     await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+  });
+});
+
+// ---- T-0303d UF-08.4 Ready and Start (AC-10; D-0086, D-0091 §1, D-0108, D-0110, D-0112) ----
+// The spec registers its own `sessions` route after `mockSupabaseData` (the later-registered
+// handler wins) to record what AutoSync upserts. Start itself makes no request (D-0110 §5): the
+// row goes to IndexedDB and is sent at the next AutoSync trigger (a reload, or the `online`
+// event, D-0112 §1-§3).
+
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+const SESSION_URL = /\/session\/([0-9a-f-]{36})$/;
+
+const screenUF084 = (page: Page) => page.locator('[data-screen-id="UF-08.4"]');
+
+interface SessionUpsert {
+  id: string;
+  time_budget_min: number;
+}
+
+/** Records every `sessions` write; reads answer `[]` as `mockSupabaseData` does. */
+async function recordSessions(page: Page): Promise<SessionUpsert[][]> {
+  const writes: SessionUpsert[][] = [];
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/sessions*`, async (route) => {
+    const request = route.request();
+    if (request.method() === "GET") {
+      await route.fulfill({ status: 200, json: [] });
+      return;
+    }
+    const body = request.postDataJSON() as SessionUpsert | SessionUpsert[];
+    writes.push(Array.isArray(body) ? body : [body]);
+    await route.fulfill({ status: 201, json: [] });
+  });
+  return writes;
+}
+
+function requestsCarrying(writes: SessionUpsert[][], id: string): SessionUpsert[][] {
+  return writes.filter((rows) => rows.some((r) => r.id === id));
+}
+
+/** The app's own `wl-offline.sessions` entry for `id`, or null. */
+async function storedSession(
+  page: Page,
+  id: string,
+): Promise<{ pending: boolean; time_budget_min: number } | null> {
+  return page.evaluate(async (key: string) => {
+    const req = indexedDB.open("wl-offline");
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const entry = await new Promise<
+      { pending: boolean; row: { time_budget_min: number } } | undefined
+    >((resolve, reject) => {
+      const get = db.transaction("sessions", "readonly").objectStore("sessions").get(key);
+      get.onsuccess = () => resolve(get.result as never);
+      get.onerror = () => reject(get.error);
+    });
+    db.close();
+    return entry ? { pending: entry.pending, time_budget_min: entry.row.time_budget_min } : null;
+  }, id);
+}
+
+/** UF-08.2 → Looks good → UF-08.4. */
+async function toReady(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Looks good" }).click();
+  await expect(page).toHaveURL(/\/session\/setup\?step=ready$/);
+  await expect(screenUF084(page)).toBeVisible();
+  await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+}
+
+/** Start → `/session/<uuid v4>` with focus mode on screen. Returns the id. */
+async function startWorkout(page: Page): Promise<string> {
+  await page.getByRole("button", { name: "Start" }).click();
+  await expect(page).toHaveURL(SESSION_URL);
+  const id = SESSION_URL.exec(page.url())![1]!;
+  expect(id).toMatch(UUID_V4);
+  await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible();
+  // T-0304a is merged: the seeded session renders the focus machine's first step.
+  await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+  return id;
+}
+
+test.describe("T-0303d AC-10 UF-08.4 online", () => {
+  test("Start → /session/<uuid>, the row is pending in IndexedDB, and the reload sends it once", async ({
+    page,
+  }) => {
+    const writes = await recordSessions(page);
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    await expect(page.locator('[data-part="summary"]')).toHaveText(
+      /^\d+ min · warm-up \+ \d+ exercises? · \d+ sets? · done by \d{1,2}:\d{2}( [AP]M)?$/,
+    );
+    const id = await startWorkout(page);
+    expect(await storedSession(page, id)).toEqual({ pending: true, time_budget_min: 30 });
+
+    // D-0112 §1: the reload mounts AutoSync, whose flushNow() sends the queued row.
+    await page.reload();
+    await expect
+      .poll(() => requestsCarrying(writes, id).length, { timeout: 5000 })
+      .toBeGreaterThanOrEqual(1);
+    const carrying = requestsCarrying(writes, id);
+    expect(carrying).toHaveLength(1);
+    expect(carrying[0]!.find((r) => r.id === id)!.time_budget_min).toBe(30);
+  });
+
+  test("browser Back from /session/<id> doesn't land on a setup URL (the replace)", async ({
+    page,
+  }) => {
+    // TR-0038: the D-0110 §4 replace swaps only the `?step=ready` entry; the setup steps are
+    // PUSHes (D-0107 §1, T-0303b AC-8), so Back lands on `?step=suggested` → `/session/setup`.
+    // The literal row is kept, expected to fail, until TR-0038 is resolved.
+    test.fail(true, "TR-0038: replace alone leaves the earlier setup steps under the workout");
+    await recordSessions(page);
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    await startWorkout(page);
+    await page.goBack();
+    await page.waitForLoadState();
+    await expect(page).not.toHaveURL(/\/session\/setup/);
+  });
+});
+
+test.describe("T-0303d AC-10 UF-08.4 offline (NFR-OFF-2)", () => {
+  test("offline Start writes IndexedDB and navigates; going online sends it once", async ({
+    page,
+    context,
+  }) => {
+    const writes = await recordSessions(page);
+    await openSetup(page);
+    await expect.poll(() => cachedCounts(page)).toEqual({ library: exercises.length, targets: 9 });
+    await precacheSettled(page);
+
+    await context.setOffline(true);
+    await page.goto("/session/setup");
+    await expect(screenUF081(page)).toBeVisible({ timeout: 3000 });
+    await expect(fitLine(page)).toHaveText(FIT_PATTERN);
+    await page.getByRole("button", { name: "Suggest my workout" }).click();
+    await expect(screenUF082(page)).toBeVisible();
+    await toReady(page);
+    const id = await startWorkout(page);
+    expect(await storedSession(page, id)).toEqual({ pending: true, time_budget_min: 45 });
+    expect(writes).toEqual([]);
+
+    await context.setOffline(false);
+    await expect.poll(() => requestsCarrying(writes, id).length, { timeout: 5000 }).toBe(1);
+    expect(requestsCarrying(writes, id)).toHaveLength(1);
+  });
+});
+
+test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
+  test("axe reports 0 serious or critical violations on UF-08.4", async ({ page }) => {
+    await recordSessions(page);
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    const results = await new AxeBuilder({ page }).analyze();
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious).toEqual([]);
+  });
+
+  test("Start, Back and the 3 switches are each ≥ 44 × 44 px", async ({ page }) => {
+    await recordSessions(page);
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    const targets = [
+      page.getByRole("button", { name: "Start" }),
+      page.getByRole("link", { name: "Back" }),
+      page.getByRole("checkbox", { name: "Sound cues" }),
+      page.getByRole("checkbox", { name: "Voice countdown 3-2-1" }),
+      page.getByRole("checkbox", { name: "Keep screen awake" }),
+    ];
+    for (const target of targets) {
+      const box = await target.boundingBox();
+      expect(box, String(target)).not.toBeNull();
+      expect(box!.width, String(target)).toBeGreaterThanOrEqual(44);
+      expect(box!.height, String(target)).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test("keyboard only: Looks good → toggle a switch → Start", async ({ page }) => {
+    await recordSessions(page);
+    await openSetup(page);
+    await suggestAt30(page);
+    const focused = (locator: ReturnType<Page["getByRole"]>) =>
+      locator.evaluate((el) => el === document.activeElement);
+    async function tabTo(locator: ReturnType<Page["getByRole"]>, label: string): Promise<void> {
+      for (let i = 0; i < 30; i += 1) {
+        if (await focused(locator)) return;
+        await page.keyboard.press("Tab");
+      }
+      throw new Error(`Tab never reached ${label}`);
+    }
+
+    await page.locator("body").focus();
+    const go = page.getByRole("button", { name: "Looks good" });
+    await tabTo(go, "Looks good");
+    await page.keyboard.press("Enter");
+    await expect(screenUF084(page)).toBeVisible();
+
+    const voice = page.getByRole("checkbox", { name: "Voice countdown 3-2-1" });
+    await tabTo(voice, "Voice countdown 3-2-1");
+    await page.keyboard.press("Space");
+    await expect(voice).not.toBeChecked();
+    expect(await page.evaluate(() => localStorage.getItem("wl-focus-prefs"))).toBe(
+      '{"version":1,"sound":true,"voice":false,"keepAwake":true}',
+    );
+
+    const start = page.getByRole("button", { name: "Start" });
+    await tabTo(start, "Start");
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(SESSION_URL);
+    await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible();
   });
 });
