@@ -635,6 +635,9 @@ describe("T-0422 AC-7 host: a swap while UF-09.4 is in play (D-0153 §2)", () =>
 
     await click("Resume");
     expect(screenId()).toBe("UF-09.5");
+    // AC-11 (D-0156 §1): the "Next" line doesn't carry barbell-row set 2's 60 kg onto db-row.
+    expect(screen.getByText("Next · set 3 of 3")).toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/60\s?kg/);
     await advance(120_000);
     await findScreen("UF-09.3");
     expect(heading()).toBe("Db row");
