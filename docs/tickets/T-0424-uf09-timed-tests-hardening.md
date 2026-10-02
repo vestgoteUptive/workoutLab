@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.7]
 decisions: [D-0066, D-0119, D-0150]
 deps: [T-0304d]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Follow-up from the T-0304c QA run and accept log (QA's F6 was not caught). Build flow: wl-build-web. About ¼ day. Test-only: `src/**` behaviour is unchanged. Depends on T-0304d: T-0304d changes `session.tsx`/`host.tsx`, which these tests exercise, and shares the lane. -->
 
@@ -127,3 +127,24 @@ screen (for example `T-0424 UF-09.7: assert elapsedS while the ring is held`).
 - **Gates:** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: 4/4,
   171 files / 2676 tests passed. `test:e2e uf-09`: 10 passed. `-w format:check` clean.
   `check-all.mjs` exit 0.
+
+### Accept 2026-10-02 (product-owner): done
+- **AC-1 pass.** `timed-set.test.tsx:340-353` asserts `elapsedS − elapsedBefore` is 10 and 20 with
+  `timerText()` "0:30" while the ring is held, and keeps the post-Resume assert. Build and QA both
+  ran F6: red at :345 on the branch, green on main's test. Principle 2 (the workout clock keeps
+  running during a ring-only pause, D-0119 §2) is now encoded.
+- **AC-2 pass.** `cleanup()` replaces the body reset (:414). The test asserts one `[data-screen-id]`
+  and that it is `UF-09.7`, Resume timer, "0:30", the `storedState()` deep-equal, and 0 `recordSpy`
+  calls after `flushReal(50)` (:417-425). Red without `cleanup()` (two hosts), and red on a planted
+  direct `recordSet`.
+- **AC-3 pass.** `t0424-test-hygiene.test.ts`: both titles start `T-0424 AC3`, it reads 34 files
+  (itself excluded), and the floor is `> 20`. The pattern is `/document\.body\.innerHTML\s*=(?!=)/`
+  (QA tightened it). It is a regex literal, not built from string parts, but the escaped dots mean
+  it can't match its own source, and QA proved that with the self-exclusion removed. That meets the
+  AC's intent. Red on main's `timed-set.test.tsx`.
+- **AC-4 pass.** The non-test diff under `features/UF-09` is empty. UF-09 went from 679 tests
+  (33 files) to 681 (34). The other tests are unedited and green.
+- **DoD:** web gate 4/4 (2676 tests), e2e uf-09 10/10, format:check and check-all green. No contract
+  change. Principles 1-5 are unaffected (test-only).
+- **Follow-up:** T-0443 (the same `document.body.innerHTML` reset in UF-01 and UF-08 tests, their own
+  lanes), already filed by review.
