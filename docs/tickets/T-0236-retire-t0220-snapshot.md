@@ -69,3 +69,11 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
 - `packages/engine/test/fixtures/pre-t0220-suggest.json` deleted (`git rm`).
 - **AC4:** `git diff --stat main...HEAD -- packages/engine/src` is empty. Engine tests went from 630 (main, 36 files) to 632 (37 files). The only new cases are the 2 AC3 cases, and no other test was edited.
 - **AC5:** `flock … --filter @workoutlab/engine typecheck`, `lint` and `test` are each green (632 passed). `-w format:check` is clean. `node .github/scripts/check-all.mjs` exits 0, and so does `node supabase/scripts/vendor.mjs --check` (no regen needed; src is unchanged).
+
+### Accept (product-owner, 2026-10-02): done
+- **AC1:** met. The sweep at `t0220-backoff-floor.test.ts:146–184` keeps its `T-0220 AC6 … sweep …` title, `SWEEP_TIMEOUT_MS` (30_000) and the `SWEEP_HISTORIES` × `sweepInputs()` loops. It asserts the literal `cases === 264` and null/0/`(0, pw]`. It checks `bw === oldBackoff(pw, inc)` when the old formula is `> 0`, and that any difference (with `pw > 0`) is only in `light`. Both non-vacuity counters are `> 0`. There is no `PRE` read and no deep-equal. The retirement comment above the test cites the T-0220 build/accept log and T-0236. The T-0230 guard was not edited.
+- **AC2:** met, from the builder's red run (`light|b15|wuoff: expected 0 to be greater than 0`). Nothing was committed to `src`.
+- **AC3:** met. `t0236-no-t0220-snapshot.test.ts` has both `T-0236 AC3` cases, plus a non-vacuity check that more than 30 files are scanned. The fixture is absent in the worktree. The only file that mentions `pre-t0220-suggest` is this test, and it builds the name by joining parts. The builder recorded both cases red with main's test and the fixture restored.
+- **AC4:** met. The `src` diff is empty, and the engine count went 630 → 632 (only the 2 AC3 cases).
+- **AC5:** met. The builder reports engine typecheck, lint and test green (632/632), plus format:check, check-all and vendor `--check`.
+- Principles: test-only, with no change to engine behaviour or contracts. The deterministic-engine guard is kept, and D-0131 is still checked on every sweep case.
