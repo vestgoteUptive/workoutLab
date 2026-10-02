@@ -7,7 +7,7 @@
 // main lift, pinned and greedy selection (7.2), energy (7.4), reasons (rule 10) and
 // `suggest()` for UF-08.1 / UF-08.3 / UF-08.4 (D-0024, D-0037 §6–§7, D-0040, D-0042, D-0047).
 import { balance } from "./balance.js";
-import { BACKOFF_FACTOR, DEFAULT_INCREMENT_KG, floorInc, LOW_TRIM_FROM_SETS, LOW_TRIM_TO_SETS, } from "./energy.js";
+import { backoffWeightKg, DEFAULT_INCREMENT_KG, LOW_TRIM_FROM_SETS, LOW_TRIM_TO_SETS, } from "./energy.js";
 import { availableS, getsBackoff, isEligible, itemCostS, setCostS } from "./cost.js";
 import { indexLibrary, normalizeHistory, primaryAreas, recentSessionIds, weightsOf, } from "./history.js";
 import { plannedDurationFrom, prefillFrom } from "./prefill.js";
@@ -227,11 +227,13 @@ function prefillCtxOf(history, library, now, tz, goal = DEFAULT_GOAL) {
 function prefillFor(ctx, ex, repsMin, repsMax, previous) {
     return prefillFrom(ex, { repsMin, repsMax }, ctx.hard, ctx.lib, ctx.today, ctx.tz, previous);
 }
-/** D-0040 §4: `floorInc(0.9 × prefill weight)` (null stays null) at the main `repsMin`. */
+/**
+ * The one rule 7.4 back-off (D-0040 §4, D-0131 §2), used by `suggest` and by `applySwap`'s rule
+ * 12.1 recompute: `backoffWeightKg(prefill weight, inc)` at the main `repsMin`.
+ */
 export function backoffOf(ex, prefill, reps) {
-    const w = prefill.weightKg;
     const inc = ex.incrementKg ?? DEFAULT_INCREMENT_KG;
-    return { weightKg: w === null ? null : floorInc(BACKOFF_FACTOR * w, inc), reps };
+    return { weightKg: backoffWeightKg(prefill.weightKg, inc), reps };
 }
 /** The shuffled slot's original exercise and its own rule 14 pre-fill weight (D-0056 §11). */
 function previousOf(ctx, p) {

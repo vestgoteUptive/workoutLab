@@ -28,7 +28,10 @@ export declare function goalOf(profile: Pick<SuggestProfile, "goal">): Goal;
  * Shared with `applySwap` (D-0093 §2). The default goal gives today's 6–8 / 8–12 / 10–15.
  */
 export declare function repRange(ex: LibraryExercise, isMain: boolean, goal?: Goal): [number, number] | [null, null];
-/** D-0040 §4: `floorInc(0.9 × prefill weight)` (null stays null) at the main `repsMin`. */
+/**
+ * The one rule 7.4 back-off (D-0040 §4, D-0131 §2), used by `suggest` and by `applySwap`'s rule
+ * 12.1 recompute: `backoffWeightKg(prefill weight, inc)` at the main `repsMin`.
+ */
 export declare function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): Backoff;
 /** The per-area numbers an item's `area_deficit` and `days_since` reasons read (D-0040 §6). */
 export interface ReasonContext {
