@@ -169,3 +169,17 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 ## Notes
 - **Flow:** `wl-build-web`. Parallel-safe with T-0303a (D-0108 §1). Don't run it at the same time as another ticket that runs the `profile-gate.test.tsx` suite in its own worktree on this machine (state.md: one vitest per machine).
 - **Board (orchestrator):** this row loses "lib/i18n/workout.ts formatters" (D-0106 §6). It keeps "features/UF-02/slots.tsx (todayCheckinSlot)".
+
+## Build log (frontend-dev, 2026-10-02)
+- **AC-8 cap, planted faults.** Both were run with `vitest -t "the cap"` against `features/UF-02/use-today.ts` and then reverted:
+  - (a) awaiting `refreshAll` without the cap (`refreshAll(…).then(noop, noop)` in place of `settledOrCapped(…)`) failed with "expected vi.fn() to be called 2 times, but got 1 times".
+  - (b) a cap that fires but returns before the recompute (a `capped` flag checked after `await refreshed`) failed the same way.
+  - The fixed code passes.
+- **AC-14.** Before D-0113, `profile-gate.test.tsx` "stale + `missing` on `/` redirects to /welcome/save" went red, because Today's mount-time refresh added a second `profiles` read. It was raised as TR-0035 and the file was not edited (D-0108 §3). With the D-0113 gate (online and signed in, once per mount), the unchanged file passes 89/89.
+- **AC-8 D-0113, planted fault (c).** Dropping the once-per-mount flag (`refreshStarted.current ||` removed from the refresh effect's guard) turns "stale → signed-in during the mount" red: "expected vi.fn() to be called 1 times, but got 2 times" (the stale → signed-in flap). Faults (a) and (b) were re-run on the gated hook and are still red. All three were reverted.
+
+## Accept log (product-owner, 2026-10-02)
+- **Verdict: done** (attempt 2, branch at 333c4ad, after TR-0035 / D-0113).
+- **ACs.** QA PASS on AC-1..AC-14. Root gate 19/19 (web 1087 tests), profile-gate 89/89 with the file unchanged (AC-14), e2e 59/59 (AC-11, AC-12), check:size green with the UF-02 chunk at 1.5 KB gzip (AC-12). Planted faults (a), (b) and (c) turn the AC-8 tests red, as the build log records.
+- **Principles.** P2: Start is a link to `/session/setup` and never calls `upsertSession` (AC-6). P3: the numbers come only from on-device `balance()`, there are no `/functions/v1/` calls (AC-3), and the source test plus 8 behaviour tests catch inline attention arithmetic (AC-2, AC-7). P5: the screen cold-starts offline from IndexedDB, and the no-profile state does not block on the network (AC-10, AC-11). P1 and P4 are not touched by this ticket.
+- **Review.** APPROVE. Minor findings are not AC gaps and are filed as follow-ups.
