@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.3, UF-09.4]
 decisions: [D-0015, D-0026, D-0040, D-0057, D-0062, D-0066, D-0071, D-0086, D-0091, D-0103, D-0111, D-0114, D-0115, D-0118]
 deps: [T-0304e]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of docs/tickets/T-0304-focus-mode.md. The parent's T-0304b row is split by D-0118 §1: this ticket keeps UF-09.3/.4 (parent AC-B2–B6, B8); UF-09.1/.5/.6 (B1, B7) move to T-0304f. Build flow: wl-build-web. About ½ day. Becomes ready when T-0304e is done. -->
 
@@ -335,3 +335,25 @@ and cite the screen (for example `T-0304b UF-09.4: auto-save after 5 s from the 
     - typecheck and lint: 0.
     - e2e `uf-09-focus`: 5/5 on its own preview server (:4173 was free).
     - `-w format:check`: 0. `check-all.mjs`: 0.
+
+## Accept log (2026-10-02, product-owner)
+Verdict: **done**. Branch `t/T-0304b-current-set-and-confirm` @ e86a7e8 (c5d767f is QA's merge of main).
+- AC-1 to AC-3 (`current-set.test.tsx`): pre-fill render with the cue / no-cue / no-library / sv-SE pairs, synchronous `data-state="saving"` before any await, one write per set, the exact `recordSet` payload, a fresh-Dexie row check, and the polite rejection with retry. The planted fault (saving state after the await) was red.
+- AC-4 and AC-5 (`confirm-set.test.tsx`, `machine.autosave.test.ts`): a persisted wall-clock `confirm` timer, 4 999 / 5 000 ms edges, restore mid-countdown and restore expired (exactly one `SAVED`), Pause keeps the timer, and touch / keyboard / reload cancels. Programmatic focus doesn't cancel. Pause drops unsaved edits. Reducer no-ops. Both timing faults (component `setTimeout`, tick counting) were red in build and red again when QA re-planted them.
+- AC-6 to AC-9 (`confirm-set.test.tsx`, `set-loop.test.tsx`, `prefill.test.ts`): steppers and floors per `incrementKg`, the typed-weight parse, RIR mapping, `editSet` only on a change, the null-weight "ask" path, bodyweight PU, carry / fallback / back-off and the `nextSetPrefill` table. No UF-09.5 renders after the last set.
+- AC-10: `number.test.ts`, 5 `formatDecimal` rows. The `formatKg` tests are unchanged.
+- AC-11: strings come from `en.uf09`. The export pin and lint bans are green. The button pins are updated per state, not dropped (D-0118 §12, the change is listed in the build log). The tick-counting source test is green.
+- AC-12: the e2e row "T-0304b AC-12 one set offline" covers an offline reload, Done set ≥ 200 × 44 px, the real 5 s auto-save, exactly one IndexedDB row with the AC values, and axe 0 serious/critical. The one excluded rule is D-0127, scoped to the shell's offline icon (T-0407).
+- Rework 2 (the Pause race that QA reproduced): `RESUME` moves on when the current set is already logged, and `recordSet` dedupes in-flight writes per `itemIndex:setIndex`. 5 new tests were red on c5d767f, each half planted out turned tests red, and both pairs pass. Re-review: approved.
+- Principles:
+  - P1: UF-09.3 is one set and one button. UF-09.4 is its confirm.
+  - P3: the engine's `prefill` is rendered as given. `nextSetPrefill` only carries the user's own in-session values. No contract changed.
+  - NFR-OFF-2: the write lands before any transition.
+  - P2, P4 and P5 are untouched.
+- Evidence:
+  - QA on c5d767f: the `-w --force --concurrency=1` gate was green on rerun (the first run's 2 unrelated lazy-route timeouts go to T-0401). Whole e2e 83/83.
+  - Rework at e86a7e8: UF-09 360/360, web 1914, typecheck, lint, format and check-all green, `uf-09-focus` e2e 5/5. The rework only touched the UF-09 reducer, hook and tests. The orchestrator's merge gate reruns the full suite.
+- Follow-ups:
+  1. `movedOnIfLogged` should also require `entry.exerciseId` to equal the current item's exerciseId. Fix it before the UF-09.9 swap UI (T-0304d) can reach it (web-feature:UF-09).
+  2. The `recordSet` dedupe key collapses a List-view log of the same set while a Done set is pending. Include the source or exerciseId in the key, and test both (web-feature:UF-09).
+  3. Already filed: T-0401 (lazy-route timeouts), T-0402 (locale digits, > 2 decimals), T-0407 (offline icon `role="img"`, D-0127).
