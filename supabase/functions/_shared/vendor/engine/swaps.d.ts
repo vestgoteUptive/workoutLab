@@ -33,9 +33,9 @@ export declare function lastDoneDates(history: readonly HistorySet[], lib: Reado
 /**
  * Rule 12 candidates and sort for replacing `cur` at `slot`, given the ids already in the
  * session (`planIds`, which includes `cur`). Returns the rows in rank order; `fits` decides
- * `fitsBudget` from a candidate's `timeCostS`.
+ * `fitsBudget` from a candidate's `timeCostS` and the candidate itself (D-0105 §1).
  */
-export declare function rankAgainst(ctx: SwapContext, cur: LibraryExercise, slot: SwapSlot, planIds: ReadonlySet<string>, reason: SwapReason | null, fits: (timeCostS: number) => boolean): SwapCandidate[];
+export declare function rankAgainst(ctx: SwapContext, cur: LibraryExercise, slot: SwapSlot, planIds: ReadonlySet<string>, reason: SwapReason | null, fits: (timeCostS: number, candidate: LibraryExercise) => boolean): SwapCandidate[];
 /**
  * Rule 12 (UF-08.3, UF-05.1): the ranked alternatives for the item `currentExerciseId` in
  * `session` (D-0056 §2). Throws `RangeError` when that id isn't an item of the plan or isn't
