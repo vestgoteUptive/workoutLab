@@ -5,7 +5,7 @@ lane: qa
 screens: []
 decisions: [D-0086, D-0091]
 deps: [T-0425]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. From the T-0425 review and accept log. Build flow: wl-build-qa. About ⅓ day. No app code changes. T-0425 is done, so this is ready now. Order in tests/e2e/**: T-0430 first, then T-0427 (qa) and T-0429 (web-shell). Both depend on this ticket, and they can run in parallel with each other because they touch different spec files. -->
 
@@ -150,3 +150,30 @@ whole suite) · `format:check` and `check:repo` green · contracts unchanged · 
   `no-irregular-whitespace` at `uf-08-setup.spec.ts:837` (`MAIN_DETAIL`, line 851 on main). It is
   on main already: the U+00A0 is deliberate (T-0391 AC6), and `tests/e2e` is not in the turbo
   lint scope.
+
+### Accept (product-owner, 2026-10-02): done
+- **AC1:** `ownConsoleListeners` in `fixtures/source-rules.ts` checks code only, after
+  `stripComments`. All four unit cases are present, plus extra cases: block comments, a `//`
+  inside a URL, and line numbers that survive a multi-line comment. The guarded-spec run
+  excludes `fixture-guard.spec.ts` and expects `[]`. It was red on the unfixed code at
+  `uf-08-setup.spec.ts:684/:687`. `uf-10-balance.spec.ts:206–207` is not guarded yet, so
+  T-0427 covers it.
+- **AC2:** grep finds no `consoleErrors` anywhere in `tests/e2e`, and a source test locks that
+  in. The planted fault is recorded: it failed at the `assertClean` teardown with
+  `t0430-planted`, then was reverted. "Every other assertion kept" rests on the build log and
+  the orchestrator's review.
+- **AC3:** `allowCommentViolations` and `commentBlockAbove` match the rule: contiguous `//`
+  lines, and a blank or code line ends the block. All seven unit cases are present. The T-0425
+  AC5 test uses the new rule for every spec except this file.
+- **AC4:** `allow` throws on `pattern.global || pattern.sticky` with a message containing
+  `consoleGuard.allow` and `global or sticky`. The tests cover `/g`, `/y` and `/gi` (rejected),
+  `/`, `/i`, `/m`, `/s` and `/u` (accepted), and the two identical `/t0430-flag/i` lines. It was
+  red on the unfixed code (`/x/g` did not throw).
+- **AC5:** the comment above the SW allow starts with `// T-0429 (web-shell) removes this
+  allow.` A test finds that block through `commentBlockAbove`.
+- **AC6:** whole e2e suite 133/133. The `-w` gate passed 19/19. Repo checks passed 146. Format
+  and check-all are green. All runs were under the lock. No allow was added outside
+  `fixture-guard.spec.ts`.
+- **Principles:** this is a test-only change, and contracts are unchanged. Carry-over: T-0420's
+  `uf-03-list-summary.spec.ts` must pass AC1 and AC3 on rebase. The orchestrator checks this at
+  T-0420's merge.
