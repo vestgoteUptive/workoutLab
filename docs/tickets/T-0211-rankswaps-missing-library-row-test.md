@@ -98,3 +98,21 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
   - `pnpm -w format:check`;
   - `node .github/scripts/check-all.mjs`;
   - `node supabase/scripts/vendor.mjs --check`.
+
+### Accept (product-owner, 2026-10-02): done
+I read `packages/engine/test/rule-12-swaps.test.ts` at 86fe4fe and checked it against every AC. I didn't rerun the tests myself (this session had no shell). The test evidence is the build log plus the orchestrator's QA and review, which relied on the mutation proof and the contrast cases.
+- **AC1:** met.
+  - The test is parameterised over `barbell-row` (a plain slot) and `bench-press` (the main slot).
+  - Each removes the current item from `LIBRARY` and runs across all five `REASONS` with both `[]` and `balancedHistory`.
+  - It asserts `toThrow(RangeError)` and `toThrow(/<id> is not in the library/)` separately, so a `TypeError` can't pass.
+  - The contrast test makes the same calls with the full `LIBRARY` and asserts `not.toThrow()`.
+  - Mutation proof: with the guard removed, the test went red (2 failed, `TypeError`). The guard was restored and isn't committed.
+- **AC2:** met.
+  - `doneIdsOf` is exactly `normalizeHistory` + `isHardSet` from the engine's exports, and the existing AC24 invariant test now uses it over all four `SIMULATED_HISTORIES`.
+  - The tombstone variant follows the AC to the letter: `clientId` `t0211-x`, one `sessionId`, and the timestamps at 2026-09-20 and 2026-09-21 +02:00 with `pending: true`.
+  - `X = neverDone[0]` with `neverDone.length >= 2`, which meets the "followed by at least one more never-done" rule.
+  - The test asserts all four points: the non-vacuity check (the raw filter has `X`, `doneIdsOf` doesn't), `suggest` and `rankSwaps` deep-equal on the variant, the invariant holds with `doneIdsOf`, and it explicitly fails with the raw filter.
+  - The preconditions are asserted, with `w` or `L` in the failure message.
+- **AC3:** met. `src/**` diff is empty. Outside the new T-0211 block, the only edits are the imports, the helpers and the AC24 done-set line. The `returningAfter10Days` concrete list is untouched. The count went from 632 to 636, which is the 4 new T-0211 tests. `SIMULATED_HISTORIES` and `fixtures/histories.ts` are unchanged.
+- **AC4:** met. Engine typecheck, lint and test are green (37 files, 636 tests), and format:check, check-all and vendor --check are green.
+- **Principles:** unaffected. This is a test-only change, and it makes the deterministic-engine guarantee stronger.
