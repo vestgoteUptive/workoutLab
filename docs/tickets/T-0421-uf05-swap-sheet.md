@@ -103,3 +103,46 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 - **Flow:** `wl-build-web`.
 - **Board:** T-0303c (UF-08.3) may depend on this ticket instead of T-0306b (D-0142 Consequences).
 - **Parallel:** it is parallel-safe with T-0419 (UF-03) and every UF-09 ticket.
+
+## Build log
+- 2026-10-02, frontend-dev. `features/UF-05/index.tsx` exports only `SwapSheet` (and the `SwapSheetProps` type). `SwapSheet.tsx` reads `loadEngineHistory`, `loadProfile` and `loadLibrary` from IndexedDB (no refresh, no fetch). It renders `rankSwaps(current, reason, workout, profile, library, history, now, tz)` as returned and passes `applySwap(…)`'s result to `onApply` unchanged. `labels.ts` words a candidate (percent, `ceil` minutes, equipment, with "Bodyweight" for `[]`/`["none"]`). `uf-05.css` uses tokens only. The strings are in `flows/uf-05.ts`, and the equipment labels are copied from UF-04 (D-0079 §5). Build defaults are in **D-0160**: one mount-time `now`, the first row preselected and re-selected on a chip change, a `rankSwaps` throw shown as the load failure, Close in every state.
+- Tests (`features/UF-05/__tests__/`, 62 cases):
+  - `engine.test.tsx` (real `rankSwaps`/`applySwap`, spied with `vi.spyOn` on the namespace; real fake-indexeddb cache): AC-1, AC-3, AC-6, AC-7, AC-9 offline (plus a queued-set case), AC-10 (R12-E6, E8, E9 and E10 through the sheet; each result `toStrictEqual`s an independent `applySwap` call and `parseSessionPlan` round-trips it through JSON), and AC-5 with the real R12-E11 over-budget candidate.
+  - `mocked.test.tsx`: AC-2, AC-4, AC-5, AC-8, and AC-9 pending, rejection and throw.
+  - `dialog.test.tsx`: AC-11, including axe in three states and the 44 px stylesheet check.
+  - `exports-and-lint.test.ts`: AC-12 and the AC-6 source test.
+- Red on `main`: with the four UF-05 source files removed and `flows/uf-05.ts` at its `main` content, the three render suites fail to import and 6 of the 13 `exports-and-lint` cases fail. The 7 that pass are the ESLint config checks and the regex self-tests, which hold on `main` by design.
+- Planted faults (`vitest run` of the three render suites, 49 cases; each fault reverted after):
+  - **UI sort by `muscleMatch`:** 2 red, AC-2 "renders the mocked order…" and AC-3 "Short on time renders R12-E2…".
+  - **UI-built item `{...plan.items[i], exerciseId: candidateId}` passed to `onApply`:** 11 red: AC-6 (reference-equal), AC-7 ×4, AC-9 queued, AC-10 ×4 (R12-E6, E8, E9, E10) and the R12-E11 case.
+  - **Hiding `fitsBudget: false` rows:** 3 red: AC-5 mocked, AC-5 R12-E11, and AC-2 "never filters".
+- Both values: Best match vs another chip, bestMatch tag true/false, fitsBudget true/false, ceil 375 → 7 and 360 → 6, `[]`/`["none"]` vs real equipment, main vs accessory slot, carry vs first_time, a 12-day vs a 3-day gap, empty vs non-empty, loaded vs failed, void vs promise `onApply`, a resolved vs rejected promise, and applySwap ok vs throwing.
+- No Playwright spec: the sheet has no route or mount until T-0422, whose e2e measures the row with `boundingBox()`.
+- Gates: web `typecheck` and `lint` are green, `-w format:check` is green and `check:repo` is green. Web `test` has 2362 passing and 1 failing: `build.test.ts` AC-A6 requires every `src/features/*` folder to be a route chunk, and UF-05 has no route by design. That file is in the web-shell lane, so this is **TR-0042**, and the branch must not merge before it is fixed.
+- 2026-10-02, frontend-dev, rework (attempt 2). Merged `main`, which brings T-0426/D-0144 (build.test AC-A6 now checks route folders), so TR-0042 is resolved. New `__tests__/d0160.test.tsx` (10 cases) covers D-0160 behaviour that had no test. Planted faults, run on the UF-05 suite (75 cases), each reverted after:
+  - (a) **Chip reset:** a pick that is also in the next chip's ranking (lat-pulldown, then Short on time) goes back to the first row. With `setSelectedId(null)` deleted from `chooseReason`, 1 case is red.
+  - (b) **One `now` per open:** `Date` moves 10 min forward between mount and Use, and `applySwap` still gets the mount-time `now`, the same one `rankSwaps` got. With `new Date().toISOString()` read at the tap, 1 case is red. The contrast case: a sheet opened after the move uses the new time.
+  - (c) **Tab wrap:** Tab on Close goes to the first control, Shift+Tab on the first control (or on the panel) goes to Close, and a middle control is left to the browser. With the wrap's `focus()` calls removed, 2 cases are red.
+- **Slot change while mounted (the choice for T-0422, T-0418 and T-0303c): the sheet resets itself.** When `itemIndex` or the current item's `exerciseId` changes, it goes back to Best match, selects the first row and clears the notice. A new `workout` object for the same slot keeps the reason and the pick, so a host that re-reads its plan doesn't wipe the user's choice. Mounts don't need `key={itemIndex}`, and a key does no harm. This is documented on `SwapSheet`. With the reset removed from the slot check, 1 case is red ("a new itemIndex goes back to Best match"), and its contrast (same slot, new object) stays green.
+
+## Accept log
+- 2026-10-02, product-owner, accept at `b050c39` (main merged in, with T-0426/D-0144; TR-0042 resolved). Verdict: **done**.
+- Each AC mapped to its test in `features/UF-05/__tests__/`:
+  - AC-1: `engine.test` "opens on Best match with the rule 12 order and one Best match tag".
+  - AC-2: `mocked.test` mocked order, its reverse as the contrast, and "never filters".
+  - AC-3: `engine.test` checks the five-chip radiogroup, Short on time renders R12-E2 and Discomfort renders R12-E4 (then back to null), and `it.each` covers equipment_taken and variety.
+  - AC-4: `mocked.test` row content, with ceil 375 → 7 and 360 → 6, Bodyweight for `[]`/`["none"]`, and the bestMatch tag both ways.
+  - AC-5: `mocked.test` fitsBudget false and true, plus the real-engine R12-E11 case in `engine.test`.
+  - AC-6: `engine.test` checks the Variety → db-row reference-equal spy args and return, the Best match null reason, and the first row applied by default. `exports-and-lint` has the source test (no `prefill(`, costS arithmetic, reasons or item spread).
+  - AC-7: `engine.test` main vs accessory slot, carry vs first_time, and a 12-day vs 3-day gap (hold_after_break).
+  - AC-8: `mocked.test` empty vs non-empty, profile null, library rejecting and rankSwaps throwing, with an `unhandledRejection` listener.
+  - AC-9: offline with no fetch and the queued set in `engine.test`. Pending with aria-disabled, void onApply, rejection with the polite notice and retry, and a RangeError throw in `mocked.test`.
+  - AC-10: `engine.test` `it.each` over R12-E6, E8, E9 and E10 through `parseSessionPlan`, plus a contrast showing that the parser can reject.
+  - AC-11: `dialog.test` dialog name, Escape, no `a[href]` in any state, the Replacement radiogroup, the 44 px stylesheet check, and axe in all three states.
+  - AC-12: `exports-and-lint` export-keys pin, the import bans and the `ESLint.lintText` ban check.
+- Planted faults: the three the ticket requires (UI sort, UI-built item, hiding fitsBudget:false) are recorded red in the build log. Rework 2 adds red proofs for the D-0160 chip reset, one `now` per open, the Tab wrap and the slot reset. Review found three untested D-0160 behaviours, and all three are now covered.
+- Principles:
+  - Principle 1 holds: it is a modal dialog with one task, no links, and Escape and Close only call `onClose`.
+  - Principle 3 holds: rows come from `rankSwaps` as returned, and `onApply` gets `applySwap`'s result unchanged.
+  - The time budget is respected: over-budget candidates are tagged and still pickable.
+- Contracts are unchanged. The build defaults are in D-0160 (`status: revisit`). Gates as reported by the builder: UF-05 75/75, web 2462 including `build.test`, and format and check-all green. The accept pass re-ran no tests.
