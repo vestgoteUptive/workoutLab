@@ -1,6 +1,6 @@
 ---
 id: TR-0036
-status: open
+status: resolved
 raised_by: frontend-dev (build) on T-0304a
 date: 2026-10-02
 ---
@@ -25,3 +25,19 @@ The ticket and the decided CSP can't both hold, and the fix isn't in `web-featur
 
 ## Impact
 T-0304a is otherwise complete (AC-1 to AC-12 in Vitest, AC-13 in e2e). Until this is fixed, focus mode can't start a workout in the real app. T-0304b to T-0304e and every e2e that starts a session (T-0304d AC-D7 to D10) depend on the fix.
+
+## Resolution
+Resolved 2026-10-02 by triage: **option 1**, see [D-0117](../decisions/D-0117-precompiled-session-plan-validator.md), which amends D-0043 §3. D-0043's own revisit trigger ("the PWA sets a CSP without 'unsafe-eval'") has fired.
+
+- `gen:api` generates an Ajv standalone validator, `packages/shared/src/session-plan.validate.gen.ts`, with no runtime imports (`unicode: false`). `parseSessionPlan` calls it. Nothing compiles code at runtime. The CSP and T-0300a AC-A10 stay strict. The contracts and the D-0043 §4 semantics are unchanged.
+- Option 2 (`'unsafe-eval'`) is rejected because of its XSS cost for one validator. Option 3 (a UI-side check) is rejected because it would be a second copy of a shared contract.
+- Guards:
+  - a Node test with code generation disabled (`--disallow-code-generation-from-strings`), with a control showing the old path fails;
+  - a source scan for runtime compiles;
+  - a scan of the built bundle for `new Function` and Ajv's compile error string;
+  - a real-CSP Chromium e2e;
+  - T-0304a's AC-7 row, once its `test.fail` marker is removed.
+- Ticket: [T-0229](../../docs/tickets/T-0229-standalone-validators.md), lane `data` (`packages/shared/**`; the generator is `packages/shared/scripts/gen-api.ts`). Listed extras: `apps/web/build.test.ts`, `tests/e2e/csp-session-plan.spec.ts`, and the vendor copy regenerated with `node supabase/scripts/vendor.mjs` in the same branch. The vendor copy **must** be regenerated, because `vendor.mjs` compiles every `packages/shared/src/*.ts` and today's vendor `session-plan.js` imports `ajv/dist/2020.js`.
+- Survey: the only runtime Ajv compile in shipped source is `packages/shared/src/session-plan.ts`. The mappers are hand-written, and engine, `lib/offline`, UF-01, UF-02, UF-08, UF-10 and UF-11 have no runtime schema compile. No `apps/web/src` file on `main` calls `parseSessionPlan`, so the bug is latent on `main` and first reached by T-0304a. Edge Functions run on Deno with no CSP and don't call it.
+- T-0304a stays held. It merges after T-0229, rebased, with the AC-7 `test.fail` marker removed and that row green.
+- No human gate.
