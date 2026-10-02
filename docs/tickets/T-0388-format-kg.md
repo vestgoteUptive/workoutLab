@@ -39,3 +39,16 @@ none
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0388` and cite screen IDs.
+
+## Accept log
+- PO accept (build f627100): **done**.
+- AC1: `number.test.ts` "AC1" covers 82.5, 80, 41.25, 0 and 2.125 → "2.13" in en-GB, joined with U+00A0 (D-0115 §6). It also asserts there is no plain space.
+- AC2: sv-SE 82.5 → "82,5 kg" and de-DE 41.25 → "41,25 kg".
+- AC3: 1250 → "1250 kg" in en-GB, de-DE and sv-SE (`useGrouping: false`).
+- AC4: no locale equals the resolved runtime locale.
+- AC5: the `formatSetCount` cases pass unchanged and `formatKg.length === formatSetCount.length` (TR-0037 wording).
+- Wrong-implementation proofs (plain space, grouping, max 1 decimal, hard-coded locale, truncation) each fail a test. Review: APPROVE.
+- Accepted nits:
+  - AC4 is only as strong as the runtime locale. On an en runtime, a hard-coded "en" would pass; the hard-coded-locale proof covers this case.
+  - -0 renders "-0 kg", which matches `formatSetCount`.
+- No caller change and no contract touched.

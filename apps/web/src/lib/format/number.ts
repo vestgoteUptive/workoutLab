@@ -13,3 +13,18 @@ export function formatSetCount(value: number, locale?: string): string {
     useGrouping: false,
   }).format(value);
 }
+
+/**
+ * A weight in kilograms for display (D-0114 §3, D-0115 §6): up to two decimals (82.5 → "82.5 kg",
+ * 80 → "80 kg", 2.125 → "2.13 kg"), no digit grouping, then U+00A0 and the SI symbol `kg`.
+ * Rounding is Intl's default half-expand. The decimal separator follows `locale`; an absent
+ * `locale` means the runtime default.
+ */
+export function formatKg(value: number, locale?: string): string {
+  const number = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  }).format(value);
+  return `${number}\u00A0kg`;
+}

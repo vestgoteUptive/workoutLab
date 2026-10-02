@@ -3,7 +3,7 @@ id: T-0303d
 title: UF-08.4 Ready — summary, the 4-step focus explainer, the focus-prefs module and its index.tsx hand-off, Start → upsertSession (IndexedDB first, offline the same) → /session/<id>
 lane: web-feature:UF-08
 screens: [UF-08.4]
-decisions: [D-0002, D-0004, D-0015, D-0045, D-0053, D-0063, D-0065, D-0071, D-0086, D-0091, D-0103, D-0107, D-0108, D-0109, D-0110, D-0112]
+decisions: [D-0002, D-0004, D-0015, D-0045, D-0053, D-0063, D-0065, D-0071, D-0086, D-0091, D-0103, D-0107, D-0108, D-0109, D-0110, D-0112, D-0123]
 deps: [T-0303b]
 status: todo
 ---
@@ -105,7 +105,10 @@ UF-08.4 is the last screen before focus mode. It shows the engine's numbers for 
   - **Offline.** After the precache settles: offline → reload `/session/setup` → Suggest → Looks good → Start.
     - The URL becomes `/session/<uuid>`, IndexedDB holds the row, and no `sessions` request is recorded while offline.
     - Going online then records exactly one `sessions` request carrying that `id`.
-  - **Back after Start.** The browser Back from `/session/<id>` doesn't land on any `/session/setup` URL (the replace).
+  - **Back after Start (amended by D-0123 §2, TR-0038).** After the online Start lands on `/session/<id>`, `page.goBack()`, then wait for `[data-screen-id]` to be visible:
+    - the URL doesn't match `/step=ready/`, and `[data-screen-id="UF-08.4"]` is not in the DOM after 50 ms (no Start for the started session is under the workout);
+    - the one `[data-screen-id]` is `UF-08.1` or starts with `UF-09` (UF-08.1 today, through `?step=suggested` and the host's replace; UF-09.9 once T-0394 lands, which tightens this row).
+    - The `test.fail(true, "TR-0038: …")` row is replaced by this row. AC-4's single REPLACE and the setup PUSHes (D-0107 §1) are unchanged.
   - **a11y.**
     - axe on UF-08.4 reports 0 serious or critical violations.
     - Start, Back and the 3 switches are each ≥ 44 × 44 px.

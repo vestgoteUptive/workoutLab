@@ -41,3 +41,10 @@ none
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0379` and cite screen IDs.
+
+## Accept log
+- AC1: `vitest run src/app/__tests__/import-bans.test.ts -t "features lints clean" --testTimeout=1` → 1 passed, 67 skipped. The `it` carries `{ timeout: LINT_BUDGET_MS }` (30 000 ms).
+- AC2: `vitest run src/features/UF-10/__tests__/strings.test.ts -t "react/jsx-no-literals is green across features/UF-10" --testTimeout=1` → 1 passed, 10 skipped. Contrast: `-t "CONTRAST" --testTimeout=1` in the same file → "Test timed out in 1ms", so a test without its own budget still obeys the global.
+- AC3: the budget goes in Vitest's options argument (`it(name, { timeout }, fn)`), so each body is untouched; `git diff main -U0 | grep expect` shows no changed `expect` line. The UF-10 title line was already past Prettier's 100-column width, so that one `it` carries `// prettier-ignore`; without it Prettier re-indents the body.
+- AC4: `vite.config.ts` is unchanged (no `testTimeout`, Vitest default 5 s). `pnpm --filter @workoutlab/web test` → 95 files, 1348 tests passed; typecheck, lint, `-w format:check` and `check-all.mjs` all green.
+- PO accept (build c89ae53): **done**. AC1–AC4 are each backed by a run: the orchestrator re-ran the AC1 command and it passed, and the contrast run proves the global 5 s stays in force. `LINT_BUDGET_MS = 30_000` is declared once per file and used only on the two named `it`s. The one `// prettier-ignore` is a formatting directive and changes no assertion, so AC3 holds. No contract is touched and the principles are unaffected (test-only change). Follow-up: give `never-in-workout.lint.test.ts` (UF-10) the same budget in its own ticket. Do the UF-01/UF-04/UF-08 lint tests only if they flake (D-0115 Consequences).
