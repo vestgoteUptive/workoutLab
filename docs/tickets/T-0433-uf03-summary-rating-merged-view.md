@@ -139,3 +139,19 @@ None. This is a read of the existing `loadSessions()` view and the existing queu
   - `node .github/scripts/check-all.mjs`: exit 0.
   - `pnpm --filter @workoutlab/web test:e2e uf-03`: 2/2. The whole e2e suite: 137 passed.
 - **Defaults (none needed a decision).** A pick back to the preselected value counts as touched, as the ticket's "touched back" says. The tap reads `sessions.get` first and then `loadSessions`, so a gone row still fails before any view read.
+
+## QA log (qa-tester, 2026-10-02)
+- **Start.** Branch `t/T-0433-uf03-summary-rating-merged-view` at `6c00734`, `git status` clean.
+- **Red on main reproduced.** The test file was run against main's `summary-data.ts` and `EffortSave.tsx`, restored afterwards from a backup copy. 9 of 15 fail, the same set and the same assertions as the build log: AC-1 marked `['Hard']` vs `['Easy']`, AC-2 marked and tap-time (the effort_rating deep-equal), AC-4 left through "See balance" `'/'` vs `'/balance'`.
+- **Planted faults reproduced** against HEAD (`summary.merged` + `summary.save`, 34 tests). Each was reverted from a backup, and the tree was clean after each:
+  - F1 `storedEffort(row.effort_rating)`: 4 red.
+  - F2 the untouched value is `rating`: 2 red (tap-time, no entry).
+  - F3 unconditional `navigate`: 1 red (AC-4 left).
+- **QA fault F7** (`viewEffort` takes `sessions[0]`, not the entry with this id): all 90 UF-03 tests stayed green, because S1 was the only `loadSessions()` entry in every fixture. Added "QA: the view entry is S1's, not the first in the list". It caches a session started a day earlier with rating 1, so that session sorts first, and asserts "Easy" is preselected and the untouched Save sends 2. Green on HEAD, red under F7 (`['Very easy']` vs `['Easy']`).
+- **Binary pairs.** marked/unmarked, cached row/none, view entry/none (spy), touched/untouched (plus touched back), mounted/left on resolve, and left on reject. The "mounted on reject" half is T-0420's `summary.save` failure test, unedited. Online/offline: AC-3 is offline, and the online path is the AC-2 tests plus `summary.save`.
+- **AC-5.** No diff against main in `index.tsx`, `flows/`, `summary.save/states/numbers.test.tsx`, `exports-and-lint.test.ts` or the contracts. `grep -rnE "\brefresh[A-Z]\w*" apps/web/src/features/UF-03 | grep -v __tests__` finds nothing.
+- **Runs.**
+  - `flock … turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: 4/4 tasks, 169 files, 2670 tests green.
+  - `-w format:check`: green.
+  - `node .github/scripts/check-all.mjs`: exit 0.
+  - `test:e2e uf-03`: 2/2, run with `TMPDIR=$HOME/.cache/wl-pw-tmp`. Earlier runs with the default TMPDIR failed with `net::ERR_INSUFFICIENT_RESOURCES` at the first `page.goto`. `offline.spec.ts` failed the same way, and so did main's UF-03 sources. Cause: /tmp is a RAM tmpfs at 80%, so these were environment false reds.

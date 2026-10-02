@@ -272,6 +272,27 @@ describe("AC-2 an untouched Save sends the view's rating (D-0153 §4)", () => {
   });
 });
 
+describe("QA: the view entry is S1's, not the first in the list", () => {
+  it("another cached session sorted first (rating 1) neither preselects nor is sent", async () => {
+    await seedMarked();
+    // Started a day earlier, so `loadSessions()` (sorted by startedAt) lists it before S1.
+    await seedSessionCache(db, {
+      id: "S9",
+      startedAt: "2026-09-26T09:00:00.000Z",
+      endedAt: "2026-09-26T09:40:00.000Z",
+      effortRating: 1,
+    });
+    const view = await realLoadSessions();
+    expect(view.map((s) => s.id)).toEqual(["S9", S1]);
+    await open();
+    expect(checkedNames()).toEqual(["Easy"]);
+    const row = (await storedEntry()).row;
+    fireEvent.click(saveButton());
+    await waitFor(() => expect(location.pathname).toBe("/"));
+    expect(upsertCalls()).toEqual([[{ ...row, effort_rating: 2 }]]);
+  });
+});
+
 describe("AC-3 offline and the whole row", () => {
   let onLine: PropertyDescriptor | undefined;
   beforeEach(() => {
