@@ -51,3 +51,11 @@ none
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0383` and cite screen IDs.
+
+## Accept log
+- 2026-10-02 · product-owner · **done** (branch at 9fe2c26).
+  - AC1 to AC8 each have a named test in `__tests__/refresh-auth.test.tsx`. AC1 adds a re-render case and a StrictMode case. AC2/AC3 run as one `it.each`, with a signed-in CONTRAST proving that the `fromCalls` spy records real reads. AC4 adds the case signed-in → stale → signed-in. AC6 checks for no re-read at 3000 ms or 3999 ms, then the re-read at 4000 ms. AC7 has a CONTRAST case with names resolved. AC8 asserts the `result: null` render with no alert.
+  - AC9: the UF-10 suites share `__tests__/auth-mock.ts` (mirrors UF-04/T-0384). UF-10 123/123 and web 1590 are green. `never-in-workout.lint.test.ts` gets the 30 s budget (T-0379 follow-up).
+  - Fault proofs: 7 red with the fix removed. Removing the once-per-mount flag turns 1 red, removing the auth check 4, removing each guard 1, removing the first-paint gate 1. Orchestrator QA re-planted the auth-gate fault (4 red), reverted it (123/123) and left a clean tree.
+  - Principles: deterministic engine untouched, offline cache-first paint kept (AC-A18), 3 s cap value and copy unchanged. Contracts unchanged.
+  - Review APPROVE. Non-blocking notes: (a) a stale overwrite is theoretically possible only if the `now`/`timeZone` props become live; (b) the sync-throw note is shared with UF-04 and goes to the D-0113 Revisit (shared `useMountRefresh`).
