@@ -52,6 +52,16 @@ export async function loadVariants(id: string): Promise<string[]> {
  *  or not — a flushed row keeps its entry (it carries the D-0053 §7 `finished` marker), and
  *  dropping the non-pending ones would hide a just-finished session until the next refresh.
  *
+ *  When a session has both a cached and a queued row, the fields merge per D-0148 (T-0324):
+ *  - `endedAt` is the later INSTANT of the two (`Date.parse`, never a string compare); an equal
+ *    instant keeps the queued string, an unparsable side lets the queued non-null value win, and
+ *    it is `null` only when both are null (§1). A finish therefore never disappears (D-0053 §7).
+ *  - When the cached `endedAt` is strictly later (or the queued one is null), the cached finish
+ *    wins whole: `effortRating` is the cached value (§2, the D-0058 §1 rule on the device).
+ *  - Otherwise a PRESENT queued `effort_rating` key wins, explicit `null` included, so a cleared
+ *    rating (UF-03.3 Save with no chip) stays cleared; an absent key keeps the cached value (§3).
+ *  - `energy` keeps its coalesce (§4); with no cached row the queued row is used as is (§5).
+ *
  *  Sorted by `startedAt`, then `id`, so the order is total and stable. */
 export async function loadSessions(): Promise<OfflineSession[]> {
   const userId = currentUserId();
@@ -77,14 +87,20 @@ export async function loadSessions(): Promise<OfflineSession[]> {
   for (const entry of queued) {
     const row = entry.row;
     const previous = byId.get(entry.id);
+    const queuedEnd = row.ended_at ?? null;
+    const cachedWins = previous !== undefined && cachedFinishIsLater(previous.endedAt, queuedEnd);
+    const effortRating = cachedWins
+      ? previous.effortRating
+      : Object.hasOwn(row, "effort_rating")
+        ? (row.effort_rating ?? null)
+        : (previous?.effortRating ?? null);
     byId.set(entry.id, {
       id: entry.id,
       startedAt: row.started_at,
-      // A finished session must never appear unfinished again (D-0053 §7): the queue's
-      // `ended_at` is already guarded by `upsertSession`, and the cached row is the fallback.
-      endedAt: row.ended_at ?? previous?.endedAt ?? null,
+      // D-0148 §1: the later instant of the two, so a finish never disappears (D-0053 §7).
+      endedAt: cachedWins ? previous.endedAt : queuedEnd,
       timeBudgetMin: row.time_budget_min,
-      effortRating: row.effort_rating ?? previous?.effortRating ?? null,
+      effortRating,
       energy: row.energy ?? previous?.energy ?? "normal",
     });
   }
@@ -120,6 +136,18 @@ export async function loadRoutines(): Promise<OfflineRoutine[]> {
       items: [...r.items].sort((a, b) => a.position - b.position),
     }))
     .sort((a, b) => a.name.localeCompare(b.name) || compare(a.id, b.id));
+}
+
+/** D-0148 §1 §2: true when the cached `endedAt` must win over the queued one — the cached value
+ *  is non-null and either the queued value is null, or both parse and the cached instant is
+ *  STRICTLY later. An equal instant or an unparsable side keeps the queued value. */
+function cachedFinishIsLater(cachedEnd: string | null, queuedEnd: string | null): boolean {
+  if (cachedEnd === null) return false;
+  if (queuedEnd === null) return true;
+  const cached = Date.parse(cachedEnd);
+  const queued = Date.parse(queuedEnd);
+  if (Number.isNaN(cached) || Number.isNaN(queued)) return false;
+  return cached > queued;
 }
 
 function compare(a: string, b: string): number {
