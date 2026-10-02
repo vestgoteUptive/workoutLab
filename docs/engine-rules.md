@@ -202,8 +202,9 @@ Fixture W is R7-E4 (bench-press × 4 main 720 s, inverted-row × 3 555 s, leg-ex
 7. Otherwise: `W`, `min(high, minReps + 1)` (`add_rep`).
 
 For timed sets, the first time uses `default_duration_s`. After that the duration is `min(last) + 5 s` (≤ 120). When `gap ≥ 10` it stays at `min(last)`, and when `gap ≥ 21` it is `max(15, floor5(0.9 × min))`. `floorInc(x) = floor(round3(x) / inc) × inc`.
+
 **Edge cases (D-0057, D-0062, D-0132):**
-- **Bodyweight (D-0057 §2):** for `externalLoad: false`, `W` is 0 and the weight stays 0 in every branch. Step 4 gives 0 at high reps (`increase`). `floorInc` is never applied.
+- **Bodyweight (D-0057 §2):** for `externalLoad: false`, `W` is 0 and the weight stays 0 in every branch. Every set with non-null reps counts as "at W", whatever weight was logged (D-0057 §2). Step 4 gives 0 at high reps (`increase`). `floorInc` is never applied.
 - **Usable sets (D-0057 §3, D-0062 §2, §3):** `W` is the highest non-null weight among the session's hard sets, including sets whose reps are null. Sets whose reps are null are ignored for `minReps` and "all at W". If the most recent session containing the exercise has no usable set (no non-null weight on a loaded lift, no non-null reps at `W`, or no non-null `durationS` when timed), step 1 applies. The engine never falls back to an older session. Step 5's second session must be usable too, or step 5 does not match.
 - **Drop floor (D-0057 §4, D-0062 §4):** `inc = incrementKg ?? 2.5`. Steps 2 and 5 never give less than one increment when `W > 0`. A loaded lift logged at 0 kg has `W = 0`, a recorded weight: steps 2, 3, 5, 6 and 7 give 0, and step 4 gives `0 + inc`.
 - **Carry (D-0062 §1):** step 1 carries only when the previous weight is > 0, the exercise is non-timed with `externalLoad: true`, and the previous exercise is a library row of kind `exercise` sharing a weight-1.0 area and an equipment item (`[]` ≡ `["none"]`, D-0040 §1). The carried weight is rounded to 3 decimals. Otherwise step 1 is `first_time`.

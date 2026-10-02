@@ -17,6 +17,7 @@ import {
 } from "../src/index.js";
 import { LIBRARY, NOW, TZ, setsWithReps, type SetEntry } from "./fixtures/common.js";
 import {
+  RULE14_D0132,
   RULE14_PINNED,
   rule14GuardDiff,
   rule14GuardedLines,
@@ -65,6 +66,19 @@ describe("T-0221 rule 14 text (D-0132 §1)", () => {
     const step4 = one(lines, "4. ");
     expect(step4).toContain("bodyweight");
     expect(step4).toContain("high reps");
+  });
+
+  it("T-0221 AC1 AC2 rule-14 steps 2, 4, 5 and the edge-case block are byte-identical to the D-0132 text", () => {
+    const lines = rule14();
+    expect(one(lines, "2. ")).toBe(RULE14_D0132.step2);
+    expect(one(lines, "4. ")).toBe(RULE14_D0132.step4);
+    expect(one(lines, "5. ")).toBe(RULE14_D0132.step5);
+    const block = lines.indexOf(one(lines, BLOCK));
+    expect(lines[block]).toBe(RULE14_D0132.edgeCases);
+    expect(lines.slice(block + 1, block + 6)).toEqual([...RULE14_D0132.bullets]);
+    // CommonMark: a blank line keeps the bold block line out of the timed paragraph.
+    expect(lines[block - 1]).toBe("");
+    expect(lines[block - 2]?.startsWith("For timed sets")).toBe(true);
   });
 
   it("T-0221 AC2 rule-14 has one edge-case block between the timed paragraph and R14-E1", () => {
@@ -239,6 +253,20 @@ describe("T-0221 rule 14 edge-case facts (D-0132 §3)", () => {
     expect(pf("back-squat", MAIN, S("2026-09-24", "back-squat", x(0, 7, 3)))).toEqual(
       res(0, 8, "add_rep"),
     );
+  });
+
+  it("T-0221 AC5 rule-14 Bodyweight: every set with non-null reps counts as at W, whatever weight was logged", () => {
+    // push-up 5 kg × 12, 12, 12: W is 0, all three sets are at W with reps 12 ≥ high 12 →
+    // step 4, 0 × 12 increase. A null weight reads the same.
+    expect(pf("push-up", COMPOUND, S("2026-09-24", "push-up", x(5, 12, 3)))).toEqual(
+      res(0, 12, "increase"),
+    );
+    expect(pf("push-up", COMPOUND, S("2026-09-24", "push-up", x(null, 12, 3)))).toEqual(
+      res(0, 12, "increase"),
+    );
+    // Mixed stray weights: the 5 kg set's 9 reps count too → minReps 9 → 0 × 10 add_rep.
+    const h = S("2026-09-24", "push-up", [...x(10, 12), ...x(5, 9), ...x(null, 12)]);
+    expect(pf("push-up", COMPOUND, h)).toEqual(res(0, 10, "add_rep"));
   });
 
   it("T-0221 AC5 rule-14 Usable sets: W counts a reps-null set, so a heavier reps-null set leaves no usable set at W → step 1", () => {
