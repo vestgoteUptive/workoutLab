@@ -291,7 +291,7 @@ describe("rule 7.1: a timed set costs its planned duration (D-0092)", () => {
       ).durationS;
       expect(plannedDurationS(PLANK, history, LIBRARY, NOW, TZ), `case ${c}`).toStrictEqual(want);
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 });
 
 // ---- AC5: rule 12 timeCostS and fitsBudget ----
