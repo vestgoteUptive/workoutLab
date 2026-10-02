@@ -147,3 +147,21 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 - **T-0302a tests touched.** Four DOM-order asserts in `slot.test.tsx` and two in `today.test.tsx` now expect the inserted card between the slot/attention line and Start (D-0106 §1 position). Every one still pins the exact neighbours. L1 fixture rows now carry display names ("Bench press"), because rows show the library name.
 - **Fault proofs** (each mutation turned the named tests red, then was reverted): rows reversed, 4 rows, id instead of name, budget 60, a profile copy, goal dropped, floor instead of ceil, skeleton class changed, no aria-busy, See all on the empty plan, min-height removed, `a.load < a.target * 0.5` in Today.tsx, suggest before the no-plan gate, the re-read skipped, swap null → "Shuffled", area_deficit chips as full lines, recovering chips as bare names, `Math.round` rounding, days 0 removed, chips cap 4, a 7th export, a shared read flag, a re-read ignoring input changes, no pause on unmount, and no resume on remount.
 - **Gates.** `pnpm -w typecheck lint test --force --concurrency=1` 19/19 (web 1199 tests). `test:e2e` 62/62. `format:check`, `check-all`, and `check:size` are green, with the UF-02 chunk at 7.1 KB gzip.
+
+## Accept log (product-owner, 2026-10-02)
+- **Verdict: done** (attempt 1, branch at b009295).
+- **ACs.** QA PASS on AC-1..AC-10.
+  - Root gate `--force` 19/19 (web 1199 tests). e2e 62/62 (AC-3 See all ≥ 44 × 44, AC-5 height, AC-9 offline card and axe). `check:size` green: UF-02 chunk 7.07 KB gzip, initial bundle unchanged (AC-9).
+  - QA re-derived "~29 min" from engine-rules §7.1 (`ceil(1725 / 60)`, AC-2). Three re-planted faults went red. The six re-pointed T-0302a DOM-order asserts still pin both neighbours, so T-0302a's ACs still hold. AC-10 shell files are unchanged.
+- **Principles.**
+  - P3: the list, order, sets, reps and chips are `suggest()` output rendered as it is. The call is on-device, with `goal` passed through (D-0095), and there are no `/functions/v1/` calls (AC-1).
+  - P2: the card is labelled "Suggested for 45 min", and Start still goes only to `/session/setup` (UF-08.1), D-0065 §1.
+  - P5: first paint is unaffected. FCP is about 55 ms, and the h1 paints before `suggest` runs (about 9 ms on a 448-set history). The card renders in the offline cold start.
+  - P1 and P4 are not touched by this ticket.
+- **Builder defaults** (no AC or decision covered these; accepted as product defaults, revisit with T-0387):
+  1. **`suggest` throws → no card.** The region renders nothing, and Today and Start stay usable. A plan is never invented when the engine fails (P3).
+  2. **Empty plan keeps the title and drops the summary.** "Suggested for 45 min" stays. The "{n} exercises · ~{m} min" line is omitted in favour of "Nothing suggested yet", with no rows, See all or chips (AC-4).
+  3. **Singular "1 exercise".** The summary uses the singular for n = 1, in English only. Plural rules for other locales belong to T-0387.
+- **Review.** APPROVE. Follow-up T-0387 is already filed: the `workout.ts` locale, needed before UF-08.2 or UF-09 depend on it. Minor findings, which are not AC gaps:
+  - plurals are English-only (covered by T-0387);
+  - the unsettled-refresh closure is retained after unmount (follow-up, lane `web-feature:UF-02`).
