@@ -142,3 +142,5 @@ None. The screen calls `lib/account` (T-0310c), which implements D-0135 §1 and 
 Every AC has a passing test · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` is green · `pnpm --filter @workoutlab/web test:e2e` is green, including `uf-11-account.spec.ts` · contracts unchanged · commits start with `T-0310d` and cite UF-11.4 (e.g. `T-0310d UF-11.4: account settings screen (D-0136)`) · no bundle-size claim without a fresh build and the measured numbers (T-0322).
 
 ## Build / accept log
+
+- **From T-0310c rework 2 (2026-10-02):** after `deleteAccountAndSignOut` returns "deleted", navigate with `window.location.replace("/welcome")` if `useAuth().status` isn't yet signed-out. If `signOut` threw before supabase-js cleared its in-memory session, the guest-only /welcome route would otherwise bounce the user back to /.
