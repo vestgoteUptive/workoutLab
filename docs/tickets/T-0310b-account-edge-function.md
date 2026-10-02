@@ -164,3 +164,14 @@ Tests for every AC pass, with AC8–AC10 on the real local stack (paste the `den
   - `check:repo`: exit 0.
   - `vendor.mjs --check`: exit 0.
 - **Residual risk:** this is a static, text-level scan. It can't see through obfuscation such as unicode escapes in identifiers or `Reflect`-style indirection on an alias it doesn't recognise. The security review of `admin.ts` is still the backstop.
+
+### 2026-10-02 accept (product-owner): done, merge gated on PR #26 CI
+Reviewed at HEAD 52b06a6, with the build log, rework 1, security review 1 (no high findings; the MEDIUM was the narrow AC6 fence) and the re-review (MEDIUM resolved).
+- **AC1–AC5, AC7, AC11:** `supabase/tests/functions/unit/account.test.ts`, with the AC5 preflight line in `unit/platform.test.ts`. Titles match. Spot-checked: AC2 sends U2 in the body, query and header; AC3 runs the real `authenticate` (no header, Basic, expired JWT); AC4 asserts the exact envelope and no leak, plus the key-unset case with no network call; AC5 covers the 404 matrix, the preflight and the disallowed-origin contrast. Deno unit: 115 passed. All were red on `main`.
+- **AC6:** `supabase/tests/scripts/functions-platform.test.mjs`. The reader set is exactly `["account/admin.ts"]`, with the non-vacuity check shown red. The fence goes beyond the AC (vendor included, bypass forms banned, 15 fixtures, 12 forms proven red). `node --test`: pass 30.
+- **AC8–AC10:** `integration/account-delete.test.ts` on the real local stack (not mocked). The cascade covers all 7 tables, including a tombstoned set; B is untouched and B's balance is 200; a repeat call is 401; the zero-history user gets 204; 2 years of data deletes in 115 ms against the 10 s bound. The only failure in that run is `seed-roundtrip` AC3, which is unrelated: `psql` isn't on this host, and CI has it.
+- **Scope and contracts:** no migration, no `openapi.yaml` edit, no web code, no vendor edit. `admin.ts` matches D-0135 §3: one `deleteUser(userId, false)`, no data calls, throws before any network call when the env is missing. CORS adds DELETE (§4). `config.toml` has `[functions.account] verify_jwt = false`.
+- **Gates:** `-w typecheck lint test` 19/19, `deno check` clean, `vendor.mjs --check` exit 0, pgTAP 535 on a fresh reset.
+- **Principles:** this is a backend-only privacy path. It doesn't touch focus mode, the time budget, the engine, targets or onboarding.
+- **Follow-ups:** T-0238 (rate limit, deploy `verify_jwt`, LOW) and T-0239 (fence obfuscation gaps, LOW), both backend. H-14 (prod service-role key) is in needs-human.
+- **Merge condition:** PR #26 CI must be green. That includes the supabase job (the integration suite with `psql`, so `seed-roundtrip` AC3 too). If CI is red, this accept is void and the ticket goes back to build.
