@@ -46,8 +46,10 @@ Take the flow from the board's Flow column. Input: `{ repoPath: <absolute worktr
 - **AgentLab:** call `start_run` with `flowId`, `input` and `folder: <worktree path>`. Then call `get_run` with `waitSeconds: 600`, repeating until the run finishes. Record the run id.
 - **Sub-agents:** chain the same steps with the Agent tool, using `subagent_type` = the role name, the same input in the prompt, and `run_in_background` for parallel tickets:
   1. build (the lane's role)
-  2. `qa-tester` and `code-reviewer` in parallel
-  3. `product-owner` in accept mode, given all three results.
+  2. `code-reviewer` first (static, cheap). If it requests changes, send them back to the builder before any QA run.
+  3. `qa-tester` once review approves (for a test-only or infra ticket, review and QA may run in parallel).
+  4. `product-owner` in accept mode, given all three results.
+  (D-0157 §8: review catches real bugs at 20–35k tokens; QA run before a rework has to be partly redone.)
   For `wl-spec`: `product-owner` (spec), then `triage` (check).
 
 ## 5. Review and merge (your own judgement, Opus)
@@ -61,6 +63,7 @@ For each finished ticket:
 
 ## 6. Log
 - Append one line per ticket to `.squad/journal/<today>.md`: ticket, executor and run id, result, attempts, and cost if known.
+- Run `node .squad/tools/archive.mjs` on `main` after the board is updated (D-0157): it archives done board rows and done-ticket logs and regenerates the decisions index.
 - Rewrite `.squad/state.md`: phase, what's in flight, next step, waiting-on-humans. Keep it under 60 lines.
 - Commit the `.squad/` and board changes on `main` as `chore(squad): tick <date time>`. If `origin` exists and gate H-01 is done, push `main` and the ticket branches.
 

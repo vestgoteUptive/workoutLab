@@ -207,6 +207,7 @@ Both routes exist (`protected`, tab bar on). This ticket adds no route and edits
 ## Paths you may change
 - `apps/web/src/features/UF-06/**` (the lane: `web-feature:UF-06`).
 - **Listed extras:**
+  - `docs/tickets/T-0307b-progress.md`: this file, for the build, QA and accept logs (added 2026-10-02 by the orchestrator after the H-13 catch-up).
   - `apps/web/src/lib/i18n/flows/uf-06.ts`: this ticket's own flow file and no other (D-0071 §1, D-0075). You may add keys only. The file stays `export const uf06 = {` … a newline, then `} as const;` at column 0.
   - `tests/e2e/uf-06-progress.spec.ts`: a **new** file only (qa lane grant, D-0071 §10).
   - `tests/e2e/shell.spec.ts`: the `/progress/back-squat` (UF-06.2) row of the AC-6 offline describe, moved out of `OTHER_SUB_ROUTES` into its own seeded test that asserts UF-06.2's built content (AC-16), plus the D-0091 paragraph of the comment above that describe (D-0091 §4–§5, granted 2026-10-01).
@@ -243,3 +244,12 @@ None. The screens read the T-0319 `OfflineSession`, `HistorySet`, `LibraryExerci
 - Commits start `T-0307b:` and cite screen IDs (e.g. `T-0307b UF-06.1: calendar from checkinSessions`).
 
 **Bundle claims:** make one only after a fresh `pnpm --filter @workoutlab/web build`, with measured gzip numbers (T-0322). The UF-06 chunk budget is 100 KB.
+
+## Build log (frontend-dev)
+
+### Post-merge catch-up 2026-10-02 (landed on main by the orchestrator)
+- Merges: `4479e0a` (main, ~610 commits; the `routes.phase3.render.test.tsx` conflict is coherent — branch `BACK_SQUAT` fixture plus partial `lib/offline` mock beside main's `LAZY_WAIT_MS`/`LAZY_TEST_MS`, one `vi.mock` per module, non-UF-06 rows unchanged) and `af9d554` (4 squad-only commits incl. the D-0084/D-0088 grants).
+- AC-1…AC-15 were built before the pause; AC-16 (granted 2026-10-01) is new: `/progress/back-squat` leaves `OTHER_SUB_ROUTES` in `tests/e2e/shell.spec.ts` for a seeded offline test (UF-06.2 visible, `Back squat` `<h1>`, `How to` → `/library/back-squat`, URL last) plus an empty-cache contrast landing on UF-06.1. D-0091 paragraph updated.
+- AC-16 fault: `stats.ts` lookup `&& false` → 3/3 red on the UF-06.2 marker (redirect). Reverted.
+- T-0430: `uf-06-progress.spec.ts` imports `./fixtures/guarded-test.js`, no own listeners.
+- Gate at f797a0b: web turbo 4/4 (2765 tests), format, repo-checks 146/146, check-all, e2e 149/149.

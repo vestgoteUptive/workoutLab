@@ -29,12 +29,5 @@ none
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged · commit messages start with `T-0312`.
 
-## Accept log
-- 2026-09-29, product-owner: **accepted**.
-  - AC1: builder ran the filtered command from a clean dist. Before: 1 file failed and 12 tests were skipped. After: 33 files and 260 tests pass. Review+QA reproduced it, and the full workspace passes 19/19 forced.
-  - AC2: covered by `ensure-tokens-css.test.ts` (freshness cases). QA confirmed a fresh CI checkout doesn't rebuild on every run.
-  - AC3: `apps/web/ensure-tokens-css.test.ts` has 8 tests, including one that reproduces the original failure on a temp copy. All 6 planted faults were caught.
-  - AC4: lane is clean (five `apps/web/*` files). No changes to dependencies, `turbo.json` or root `package.json`.
-  - The misleading "never rewrites under turbo" comment was corrected in 1f73274 (orchestrator).
-  - Principles are unaffected (tooling only).
-  - Follow-ups: atomic write in `packages/design-tokens/scripts/build-css.mjs` (design lane). One README line on the filtered test command (infra lane).
+## Build / accept log
+Archived in `docs/tickets/log/T-0312.md` (D-0157).

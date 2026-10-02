@@ -82,21 +82,4 @@ Each new test title starts with `T-0310a ACn`.
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` is green · the contract change is linked to D-0135 · commit messages start with `T-0310a` and cite UF-11.4 (e.g. `T-0310a UF-11.4: DELETE /account in openapi (D-0135)`).
 
 ## Build / accept log
-
-### 2026-10-02 build (data-modeler, branch t/T-0310a-openapi-delete-account, base 29edb15)
-- `api/openapi.yaml`: D-0135 §1 verbatim (tag `account`, `DELETE /account` → `deleteAccount`, responses 204/401/500, `info.description` "four"). Hunks vs the merge base (`git diff -U0 29edb15 -- api/openapi.yaml`): `@@ -6 +6 @@ info:` (three → four), `@@ -22,0 +23,2 @@ tags:` (the `account` tag), `@@ -101,0 +104,16 @@ paths:` (the `/account` path). Nothing else (AC6).
-- `gen:api` regenerated `packages/shared/src/api.gen.ts` (+40 lines: `paths["/account"].delete` and `operations.deleteAccount`). `session-plan.schema.gen.ts` and `session-plan.validate.gen.ts` came out byte-identical (AC5).
-- `packages/shared/test/openapi.test.ts`: AC2 now expects the four operations; the AC5 map adds `"DELETE /account": ["401", "500"]`. No other existing test edited.
-- New `packages/shared/test/t0310a-delete-account.test.ts` (11 tests, AC1, AC2, AC3, AC5, AC6).
-- **Red on unfixed code:** with `api/openapi.yaml` and `api.gen.ts` at the base, `vitest run test/t0310a-delete-account.test.ts test/openapi.test.ts` → 12 failed | 10 passed (all 11 T-0310a tests plus the updated openapi AC2; `spec.paths["/account"]` undefined).
-- **Green:** `flock /tmp/workoutlab-tests.lock npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` → 19/19 tasks (shared 238, engine 573, web 2115, landing 115, exercises 206, design-tokens 74). `-w format:check` clean, `node .github/scripts/check-all.mjs` exit 0, `npx -y deno@2 check */index.ts` (supabase/functions) passes.
-- `docs/data-model.md`, `supabase/**`: no diff vs the merge base. `node supabase/scripts/vendor.mjs --check` fails as expected on `_shared/vendor/shared/api.gen.d.ts`. The orchestrator regenerates it at merge (D-0053 §1, ticket Coordination); outside this ticket's paths.
-
-### 2026-10-02 accept (product-owner, HEAD 6380308): done
-- AC1: `t0310a` AC1 tests (3) pin the single `delete` method, `deleteAccount`, `tags: [account]`, the summary verbatim (UF-11.4, NFR-PRIV-5), and no `requestBody`, `parameters` or op-level `security`. The global `bearerAuth` applies, and the top-level `account` tag exists. Red on the base: 12 failed (build log).
-- AC2: four tests check the keys exactly `204/401/500`, that 204 has a description and no `content`, the 401/500 `$ref`s, and that there is no 400/403/404.
-- AC3: two tests check the cascade, D-0020 and repeat-call-401/never-404 wording, and that `info.description` says "four" and not "three".
-- AC4: `openapi.test.ts` AC2 has the four sorted ops and AC5 has the `DELETE /account` map entry. Those are the only edits to existing tests. Redocly lint, the UF index check, the shared 401 check and AC11 pass unedited in the green `-w` gate (19/19).
-- AC5: `t0310a` AC5 checks the gen path and operation. `types.test.ts` byte-identity passes in the gate. `session-plan.validate.gen.ts` is byte-identical (build log).
-- AC6: three hunks (info, tags, paths), confirmed by the orchestrator's diff review. `t0310a` AC6 pins the ApiError enum and exactly four paths. `docs/data-model.md` and `supabase/**` have no diff.
-- Principles: none affected (contract-only change, linked to D-0135). Open item: the vendor regen at merge belongs to the orchestrator (D-0053 §1). The CI vendor check is red until then.
+Archived in `docs/tickets/log/T-0310a.md` (D-0157).

@@ -72,9 +72,5 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 - **Flow:** `wl-build-web`. Ask review to check that the two web-shell files change only within D-0097 §2–§4.
 - T-0301a's gate is merged. This ticket mustn't import `lib/profile` (T-0301a AC-12 enforces that).
 
-## Accept log
-- **2026-10-01, product-owner (accept): done** at `3a37b2a`.
-  - QA PASS on AC-1–AC-11. Root gate `--force --concurrency=1` 19/19, `check:size` 0, e2e 49/49, web 860/860, 14 planted faults each failed a test.
-  - Review: APPROVE, the web-shell diffs are within D-0097 §2–§4.
-  - **AC-8 deviation accepted.** The AC asks for `userEvent.keyboard`, but `@testing-library/user-event` isn't installed and the ticket forbids new dependencies. The hand-written key driver `__tests__/keyboard.ts` meets the AC's intent: a keyboard-only path using Tab, Enter, Space and the arrow keys. It caught 4 planted DOM/handler faults, including a `div[role=button]` that axe misses. A real-browser Chromium probe confirmed the same path with a visible focus ring. Known gap: jsdom can't see CSS faults such as `display:none` radios. A committed real-browser keyboard spec closes that gap in T-0301d's e2e (follow-up).
-  - Principle 5 holds. UF-01.1 renders without waiting on any fetch. The defaults let the user go Continue → Continue. `startedAtMs` is set at the first UF-01.1 commit and never moves. The path works offline with 0 network calls (232 ms /welcome → schedule in the probe).
+## Build / accept log
+Archived in `docs/tickets/log/T-0301b.md` (D-0157).
