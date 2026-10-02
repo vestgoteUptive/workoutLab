@@ -26,7 +26,9 @@ export class RetryScheduler {
   private scheduleRetry(): void {
     this.cancel();
     this.timer = setTimeout(() => {
-      void this.runNow();
+      // Fire-and-forget (D-0104 §2–§3): a rejecting run is swallowed here and neither changes
+      // the delay nor schedules another retry.
+      this.runNow().catch(() => undefined);
     }, this.delayMs);
     this.delayMs = Math.min(this.delayMs * 2, MAX_DELAY_MS);
   }

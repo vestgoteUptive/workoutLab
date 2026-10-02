@@ -21,7 +21,9 @@ export function AutoSync() {
     const tz = deviceTimeZone();
     const handle = startSync({ tz });
     if (navigator.onLine) {
-      void refreshAll(new Date(), tz);
+      // Best-effort (D-0104 §2): a failed read keeps that table's previous cache rows, the
+      // other refreshes still write theirs, and nothing surfaces as an unhandled rejection.
+      refreshAll(new Date(), tz).catch(() => undefined);
     }
     void handle.flushNow();
     return () => handle.stop();
