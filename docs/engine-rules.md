@@ -194,10 +194,10 @@ Fixture W is R7-E4 (bench-press × 4 main 720 s, inverted-row × 3 555 s, leg-ex
 ## 14. Progression and pre-fill (UF-09.3, UF-09.4, D-0026)
 **Last performance** is the hard sets of this exercise in the most recent session that contains it. `W` is their highest weight. `minReps` and "all at W" use the sets at `W`. `gap` = D − that session's local date. Ranges come from rule 7.2 (low/high). The first match wins:
 1. No history: if this is a swap or shuffle and the slot's previous exercise shares a weight-1.0 area and an equipment item, carry its pre-fill weight (`carry`). Otherwise the weight is null, or 0 for bodyweight (`first_time`). Low reps.
-2. `gap ≥ 21`: `max(inc, floorInc(0.9 W))` (0 when `W = 0`), low reps (`reentry`).
+2. `gap ≥ 21`: `min(W, max(inc, floorInc(0.9 W)))` (0 when `W = 0`), low reps (`reentry`).
 3. `gap ≥ 10`: `W`, low reps (`hold_after_break`).
 4. Every set at W has reps ≥ high: `W + inc`, low reps (`increase`) (bodyweight: 0 at high reps, `increase`).
-5. The last two sessions both at W with `minReps < low`: `max(inc, floorInc(0.9 W))` (0 when `W = 0`), low reps (`deload`).
+5. The last two sessions both at W with `minReps < low`: `min(W, max(inc, floorInc(0.9 W)))` (0 when `W = 0`), low reps (`deload`).
 6. The last session alone with `minReps < low`: `W`, low reps (`hold`).
 7. Otherwise: `W`, `min(high, minReps + 1)` (`add_rep`).
 
@@ -206,7 +206,7 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 **Edge cases (D-0057, D-0062, D-0132):**
 - **Bodyweight (D-0057 §2):** for `externalLoad: false`, `W` is 0 and the weight stays 0 in every branch. Every set with non-null reps counts as "at W", whatever weight was logged (D-0057 §2). Step 4 gives 0 at high reps (`increase`). `floorInc` is never applied.
 - **Usable sets (D-0057 §3, D-0062 §2, §3):** `W` is the highest non-null weight among the session's hard sets, including sets whose reps are null. Sets whose reps are null are ignored for `minReps` and "all at W". If the most recent session containing the exercise has no usable set (no non-null weight on a loaded lift, no non-null reps at `W`, or no non-null `durationS` when timed), step 1 applies. The engine never falls back to an older session. Step 5's second session must be usable too, or step 5 does not match.
-- **Drop floor (D-0057 §4, D-0062 §4):** `inc = incrementKg ?? 2.5`. Steps 2 and 5 never give less than one increment when `W > 0`. A loaded lift logged at 0 kg has `W = 0`, a recorded weight: steps 2, 3, 5, 6 and 7 give 0, and step 4 gives `0 + inc`.
+- **Drop floor (D-0057 §4, D-0062 §4):** `inc = incrementKg ?? 2.5`. Steps 2 and 5 never give less than one increment when `W > 0`. The drop is capped at `W`, so when `0 < W < inc` steps 2 and 5 give `W` (D-0137): bench-press 2 × 6, 6, 6 on 09-01: 2 × 6 (`reentry`), never 2.5. A loaded lift logged at 0 kg has `W = 0`, a recorded weight: steps 2, 3, 5, 6 and 7 give 0, and step 4 gives `0 + inc`.
 - **Carry (D-0062 §1):** step 1 carries only when the previous weight is > 0, the exercise is non-timed with `externalLoad: true`, and the previous exercise is a library row of kind `exercise` sharing a weight-1.0 area and an equipment item (`[]` ≡ `["none"]`, D-0040 §1). The carried weight is rounded to 3 decimals. Otherwise step 1 is `first_time`.
 - **Timed (D-0057 §6, D-0062 §5):** `min(last)` is the minimum non-null `durationS` over that session's hard sets. Weight and reps are null. Every non-first-time result is clamped to [15, 120] s: `gap ≥ 21` → `clamp(max(15, floor5(0.9 × min)))` (`reentry`); `gap` 10–20 → `clamp(min)` (`hold_after_break`); otherwise `clamp(min + 5)`, which is `add_rep` when greater than `min` and `hold` when not. `floor5(x) = floor(round3(x) / 5) × 5`. The first time is `defaultDurationS`, unclamped.
 
@@ -238,3 +238,4 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 7.4 / 12.1 light-lift back-off floor (R7-E16, D-0131) | T-0220 |
 | 14 text: D-0057 §2/§4/§6, D-0062 §1/§2/§4/§5 (D-0132) | T-0221 |
 | 12 rankSwaps signature order `now, tz` (D-0130) | T-0212 |
+| 14 steps 2 and 5 drop capped at `W` (D-0137) | T-0235 |
