@@ -72,3 +72,32 @@ none. The `PLAN_REPLACED` event shape is unchanged (it already carries `atMs`). 
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green · e2e green (it touches `apps/web/src/**`) · contracts unchanged · commit messages start with `T-0414` and cite the screen (e.g. `T-0414 UF-09.9: a swap to fewer sets moves to the first free set or ends the item`).
 
 ## Build / accept log
+
+### Build 2026-10-02 (frontend-dev)
+- `machine.ts` `planReplaced` (D-0140 §1–§5): when the current item is swapped and the set step is
+  in play (`set`/`timed`, or `paused` on one), a clamped `setIndex` that already holds a logged
+  set (any exercise, back-off included) moves to `firstUnloggedSet` of the new item. With no free
+  position, the new `endedBySwap` helper ends the item: `rest` at `setsInItem − 1` with
+  `restFor(newItem)` (timer from `atMs`, or `paused` with `resumePhase: "rest"` and the timer from
+  `pausedAtMs`), or `done` after the last item (`timer: null`; a pause ends there, with
+  `workoutPausedMs += atMs − pausedAtMs`). A free clamp, other phases, and other items keep
+  today's behaviour, and the no-change case still returns the same object. D-0150 §4's timer rules
+  stay: set → timed starts the timed timer (at `pausedAtMs` when paused); leaving `timed` or a new
+  timer drops `timerPausedAtMs` through `focusReducer`'s existing guard. Doc comment names D-0140.
+  Still pure.
+- Tests: `__tests__/machine.session.test.ts` "T-0414 PLAN_REPLACED never leaves the set on a
+  logged position" (AC1, AC1 paused, AC1 pair, AC2 paused, AC2 not paused, AC3 paused, AC3 not
+  paused, AC3 ring-paused, AC4, AC5 ×2, AC6 validity + round trip for all five new states);
+  `__tests__/t0414.store.test.ts` (AC6 `replacePlan` writes the state to the storage stub; AC2
+  RESUME → REST_END through `createFocusStore` → `next` for item 2). Shared fixtures (the
+  `db-bench-press`, `db-row`, `side-plank` rows, a memory storage) in `__tests__/t0414-fixtures.ts`.
+- AC7 (D-0140 §7): T-0410 AC1, AC1 pair, AC2 and AC2 pair keep their titles and every assertion.
+  Their setup now builds the paused state directly with `at("paused", {...})` (AC1 pair:
+  `{ itemIndex: 1, setIndex: 1, resumePhase: "set" }`; AC2 pair: `{ itemIndex: 3, setIndex: 0,
+  resumePhase: "timed" }`; `pausedAtMs: T0 + 1000`), assigned to `replaced` so the assertion lines
+  are untouched. The now unused `pauseAndSwap` helper and its `BEFORE` ctx are removed.
+- Red proof (with `machine.ts` identical to main 344c89a): AC1 (both), AC2 (both, plus the store
+  test), AC3 (all three) and AC4 failed; AC1 pair, AC5 and the machine-level AC6 passed (unchanged
+  behaviour / old states also valid). After the fix all pass.
+- Runs: UF-09 vitest 28 files / 593 tests; web typecheck, lint, test (150 files / 2385 tests);
+  `uf-09-focus` e2e 9 passed; `-w format:check` clean; `check-all` exit 0; `-w typecheck lint test --force --concurrency=1` 19/19 tasks green.

@@ -527,8 +527,16 @@ function movedOnIfLogged(state: FocusState, ctx: FocusCtx, atMs: number): FocusS
   return { ...state, phase: "confirm", timer: autosaveTimer(entry, ctx, atMs) };
 }
 
-/** After `replaceItem` on the current item: the set phase follows the new item (`timed` when its
- *  `repsMin` is null), and `setIndex` stays, kept inside the new item's set count. */
+/**
+ * After `replaceItem` on the current item: the set phase follows the new item (`timed` when its
+ * `repsMin` is null), and `setIndex` stays, kept inside the new item's set count.
+ *
+ * D-0140 (T-0414): while the set step is in play (`set`/`timed`, or paused on one), the current
+ * set never lands on a position that already holds a logged set (of any exercise). A taken
+ * clamped position moves to the first free one; with none left, the swap ends the item as its
+ * last set's save would: `rest` by the new exercise's `type` (from the pause when paused), or
+ * `done` after the last item, which also ends a pause. Other phases are clamped only.
+ */
 function planReplaced(
   state: FocusState,
   ctx: FocusCtx,
@@ -540,7 +548,13 @@ function planReplaced(
   if (!item) return state;
   const entry: Phase = item.repsMin === null ? "timed" : "set";
   const fix = (p: Phase): Phase => (p === "set" || p === "timed" ? entry : p);
-  const setIndex = Math.max(0, Math.min(state.setIndex, setsInItem(item) - 1));
+  const was = state.phase === "paused" ? state.resumePhase : state.phase;
+  let setIndex = Math.max(0, Math.min(state.setIndex, setsInItem(item) - 1));
+  if ((was === "set" || was === "timed") && loggedIndexes(state, itemIndex).has(setIndex)) {
+    const free = firstUnloggedSet(state, ctx, itemIndex);
+    if (free === null) return endedBySwap(state, ctx, item, atMs);
+    setIndex = free;
+  }
   const phase = fix(state.phase);
   const resumePhase = state.resumePhase === null ? null : fix(state.resumePhase);
   if (phase === state.phase && resumePhase === state.resumePhase && setIndex === state.setIndex) {
@@ -548,7 +562,6 @@ function planReplaced(
   }
   // The set step becoming a timed one starts its timer (D-0119 §1); a timed one becoming a reps
   // set has none. While paused, the new timer starts at the pause, so RESUME starts it running.
-  const was = state.phase === "paused" ? state.resumePhase : state.phase;
   const now = phase === "paused" ? resumePhase : phase;
   let timer = state.timer;
   if (was === "set" && now === "timed") {
@@ -559,6 +572,35 @@ function planReplaced(
     );
   } else if (was === "timed" && now === "set") timer = null;
   return { ...state, phase, resumePhase, setIndex, timer };
+}
+
+/** D-0140 §4: every position of the swapped-in item is logged, so the swap ends the item. */
+function endedBySwap(
+  state: FocusState,
+  ctx: FocusCtx,
+  item: SessionPlan["items"][number],
+  atMs: number,
+): FocusState {
+  const setIndex = setsInItem(item) - 1;
+  const pausedAtMs = state.phase === "paused" ? state.pausedAtMs : null;
+  if (state.itemIndex + 1 >= ctx.plan.items.length) {
+    if (pausedAtMs === null) return { ...state, phase: "done", setIndex, timer: null };
+    // `done` can't wait behind the pause (persist.ts rejects `resumePhase: "done"`): it ends here.
+    return {
+      ...state,
+      phase: "done",
+      setIndex,
+      timer: null,
+      resumePhase: null,
+      pausedAtMs: null,
+      workoutPausedMs: state.workoutPausedMs + Math.max(0, atMs - pausedAtMs),
+    };
+  }
+  const restS = restFor(item.exerciseId, ctx.library);
+  if (pausedAtMs === null)
+    return { ...state, phase: "rest", setIndex, timer: timerAt(atMs, restS) };
+  // Paused: the rest starts at the pause, so RESUME leaves the full rest.
+  return { ...state, resumePhase: "rest", setIndex, timer: timerAt(pausedAtMs, restS) };
 }
 
 /** D-0071 §5 `close()` re-sync. A running rest stays. Otherwise the machine goes to the first
