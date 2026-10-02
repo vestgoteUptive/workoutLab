@@ -76,3 +76,43 @@ none (`docs/engine-rules.md` and `api/openapi.yaml` unchanged)
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` is green · contracts unchanged · commit messages start with `T-0211` and cite UF-08.3 (e.g. `T-0211 UF-08.3: pin D-0059 (c) and normalise the AC24 done-set`).
 
 ## Build / accept log
+
+### Build (engine-dev, 2026-10-02)
+- **AC1:** I added three tests in `packages/engine/test/rule-12-swaps.test.ts`. The first covers `barbell-row` (a plain slot) and the second covers `bench-press` (the main slot). Each removes the current item from `LIBRARY` and checks that every `REASONS` entry throws `RangeError` matching `/<id> is not in the library/`, with both `[]` and `balancedHistory`. The third is the contrast case: with the full `LIBRARY`, the same calls don't throw.
+- **AC1 mutation proof (not committed):** I replaced the `cur === undefined` guard on `src/swaps.ts:219` with a comment and ran `vitest run test/rule-12-swaps.test.ts -t "T-0211 AC1"`. Both AC1 tests went red with `AssertionError: expected error to be instance of RangeError`, because the call threw a `TypeError` instead (2 failed | 1 passed | 27 skipped). The contrast test stayed green. I restored the guard with `git checkout src/swaps.ts`.
+- **AC2:** The AC24 done-set now comes from `doneIdsOf(history, LIBRARY)`, which is `normalizeHistory` + `isHardSet`. The test passes over all four `SIMULATED_HISTORIES`.
+  - Observed precondition values:
+    - `w` = inverted-row × 4, back-squat × 3, calf-raise × 2;
+    - `B` = `inverted-row`;
+    - `L` (variety) = barbell-row, db-row, lat-pulldown, seated-cable-row, all at 0.75 and none of them done;
+    - `X` = `barbell-row`.
+  - The variant is built inside the test. It isn't reused, so `fixtures/histories.ts` is unchanged.
+  - Results on the variant:
+    - `doneIdsOf` excludes `X`, and the raw filter includes it;
+    - `suggest` deep-equals `w`, and `rankSwaps` deep-equals `L`;
+    - the invariant holds with `doneIdsOf`;
+    - with the raw filter it fails, and the test asserts that failure explicitly.
+- **AC3:** `git diff --stat main...HEAD -- packages/engine/src` is empty. The only edits to existing lines are the AC24 done-set line and the imports. The engine test count went from 632 to 636: the 4 new T-0211 tests.
+- **AC4 and the other checks, all green:**
+  - `flock … pnpm --filter @workoutlab/engine typecheck`, `lint` and `test` (37 files, 636 tests);
+  - `pnpm -w format:check`;
+  - `node .github/scripts/check-all.mjs`;
+  - `node supabase/scripts/vendor.mjs --check`.
+
+### Accept (product-owner, 2026-10-02): done
+I read `packages/engine/test/rule-12-swaps.test.ts` at 86fe4fe and checked it against every AC. I didn't rerun the tests myself (this session had no shell). The test evidence is the build log plus the orchestrator's QA and review, which relied on the mutation proof and the contrast cases.
+- **AC1:** met.
+  - The test is parameterised over `barbell-row` (a plain slot) and `bench-press` (the main slot).
+  - Each removes the current item from `LIBRARY` and runs across all five `REASONS` with both `[]` and `balancedHistory`.
+  - It asserts `toThrow(RangeError)` and `toThrow(/<id> is not in the library/)` separately, so a `TypeError` can't pass.
+  - The contrast test makes the same calls with the full `LIBRARY` and asserts `not.toThrow()`.
+  - Mutation proof: with the guard removed, the test went red (2 failed, `TypeError`). The guard was restored and isn't committed.
+- **AC2:** met.
+  - `doneIdsOf` is exactly `normalizeHistory` + `isHardSet` from the engine's exports, and the existing AC24 invariant test now uses it over all four `SIMULATED_HISTORIES`.
+  - The tombstone variant follows the AC to the letter: `clientId` `t0211-x`, one `sessionId`, and the timestamps at 2026-09-20 and 2026-09-21 +02:00 with `pending: true`.
+  - `X = neverDone[0]` with `neverDone.length >= 2`, which meets the "followed by at least one more never-done" rule.
+  - The test asserts all four points: the non-vacuity check (the raw filter has `X`, `doneIdsOf` doesn't), `suggest` and `rankSwaps` deep-equal on the variant, the invariant holds with `doneIdsOf`, and it explicitly fails with the raw filter.
+  - The preconditions are asserted, with `w` or `L` in the failure message.
+- **AC3:** met. `src/**` diff is empty. Outside the new T-0211 block, the only edits are the imports, the helpers and the AC24 done-set line. The `returningAfter10Days` concrete list is untouched. The count went from 632 to 636, which is the 4 new T-0211 tests. `SIMULATED_HISTORIES` and `fixtures/histories.ts` are unchanged.
+- **AC4:** met. Engine typecheck, lint and test are green (37 files, 636 tests), and format:check, check-all and vendor --check are green.
+- **Principles:** unaffected. This is a test-only change, and it makes the deterministic-engine guarantee stronger.

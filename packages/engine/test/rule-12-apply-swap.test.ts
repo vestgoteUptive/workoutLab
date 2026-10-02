@@ -1,7 +1,6 @@
 // T-0224 UF-05.1 UF-08.3: rule 12.1 applySwap (D-0071 §7, D-0093, D-0096 §1). AC1–AC11,
 // AC14 and AC15. Every literal below is re-derived from rules 5, 7.1, 7.2, 7.4, 10 and 14 in
 // the comments next to it. AC12 (the simulated 14-day histories) is apply-swap-histories.test.ts.
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,6 +29,7 @@ import {
   sessionOf,
   setsWithReps,
 } from "./fixtures/common.js";
+import { rulesOnMain, t0224GuardOk } from "./rule12-guards.js";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ENGINE_DIR = path.resolve(TEST_DIR, "..");
@@ -712,27 +712,11 @@ describe("rule 12.1 contract text (D-0093 §8, AC14)", () => {
   it("rule-12 rule-13 (AC14) R12-E1…R12-E5 and rule 13 are unchanged against main", () => {
     // The T-0204 guard (t0204-traceability.test.ts, re-scoped under D-0092 §6) compares rule 12
     // up to the R12-E5 line and rule 13 with main; this pins that §12.1 lies outside that slice.
-    let main: string | null = null;
-    for (const ref of ["main", "origin/main"]) {
-      try {
-        main = execFileSync("git", ["show", `${ref}:docs/engine-rules.md`], {
-          cwd: REPO_DIR,
-          encoding: "utf8",
-          stdio: ["ignore", "pipe", "ignore"],
-        });
-        break;
-      } catch {
-        // try the next ref
-      }
-    }
+    const main = rulesOnMain(REPO_DIR);
     if (main === null) return; // shallow CI clone; the T-0204 guard skips the same way
-    const slice = (d: string): string => {
-      const r12 = d.indexOf("\n## 12.");
-      const e5 = d.indexOf("\n- **R12-E5", r12);
-      const r13 = d.indexOf("\n## 13.");
-      return `${d.slice(r12, d.indexOf("\n", e5 + 1))}\n${d.slice(r13, d.indexOf("\n## 14.", r13))}`;
-    };
-    expect(slice(doc)).toBe(slice(main));
+    // D-0130 §2: the rule 12 signature line (fixtures/rule12-signature-d0130.ts) is the one
+    // accepted difference; any other character in the slice still fails.
+    expect(t0224GuardOk(doc, main)).toBe(true);
   });
 });
 

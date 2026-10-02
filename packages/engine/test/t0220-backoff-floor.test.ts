@@ -138,17 +138,11 @@ describe("T-0220 backoffOf helper (D-0131 §1)", () => {
 
 // ---- AC6 ----
 
-const PRE = JSON.parse(
-  readFileSync(path.join(TEST_DIR, "fixtures", "pre-t0220-suggest.json"), "utf8"),
-) as Record<string, Workout>;
-
-/** The workout with every back-off weight blanked, for "equal except the back-off weight". */
-function withoutBackoffWeight(w: Workout): unknown {
-  const copy = JSON.parse(JSON.stringify(w)) as Workout;
-  for (const i of copy.plan.items) if (i.backoff !== null) i.backoff.weightKg = -1;
-  return copy;
-}
-
+// The whole-plan deep-equal against a frozen pre-T-0220 snapshot was a one-time proof that
+// D-0131 changed only the back-off weight. It is recorded in
+// docs/tickets/T-0220-backoff-floor-light-lift.md (build and accept log) and was retired by
+// T-0236. The sweep keeps the invariants that need no old code: the old rule 7.4 formula is
+// computed inline with oldBackoff.
 describe("T-0220 simulated 14-day histories (AC6)", () => {
   it(
     "T-0220 AC6 rule-7 sweep: High energy, budget 15..120, warm-up on/off; only light back-offs change",
@@ -159,16 +153,12 @@ describe("T-0220 simulated 14-day histories (AC6)", () => {
       for (const [hn, h] of SWEEP_HISTORIES) {
         for (const [k, si] of sweepInputs()) {
           const key = `${hn}|${k}`;
-          const pre = PRE[key];
-          expect(pre, key).toBeDefined();
           const w = run(h, si);
-          expect(withoutBackoffWeight(w), key).toStrictEqual(withoutBackoffWeight(pre as Workout));
           cases++;
-          w.plan.items.forEach((i, idx) => {
-            if (i.backoff === null) return;
+          for (const i of w.plan.items) {
+            if (i.backoff === null) continue;
             const pw = i.prefill.weightKg;
             const bw = i.backoff.weightKg;
-            const preBw = (pre as Workout).plan.items[idx]?.backoff?.weightKg;
             if (pw === null) expect(bw, key).toBeNull();
             else if (pw === 0) expect(bw, key).toBe(0);
             else {
@@ -177,14 +167,15 @@ describe("T-0220 simulated 14-day histories (AC6)", () => {
               const inc = exById(i.exerciseId).incrementKg ?? 2.5;
               const old = oldBackoff(pw, inc);
               if (old > 0) expect(bw, key).toBe(old);
+              if (bw !== old) expect(hn, key).toBe("light");
+              if (hn !== "light" && bw === old) standardUnchanged++;
             }
-            if (bw !== preBw) expect(hn, key).toBe("light");
             if (hn === "light" && bw === 2.5) lightRaised++;
-            if (hn !== "light" && bw === preBw) standardUnchanged++;
-          });
+          }
         }
       }
-      expect(cases).toBe(Object.keys(PRE).length);
+      // 6 histories (4 simulated, empty, light) × 44 inputs (budget 15..120 step 5 × warm-up on/off).
+      expect(cases).toBe(264);
       expect(lightRaised).toBeGreaterThan(0);
       expect(standardUnchanged).toBeGreaterThan(0);
     },

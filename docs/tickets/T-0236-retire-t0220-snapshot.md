@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.2, UF-09.3]
 decisions: [D-0131, D-0096, D-0053]
 deps: [T-0220]
-status: todo
+status: ready
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Build flow: wl-build-engine. About ⅛ day. Test-only: `src/**` is unchanged, so there is no vendor regen and no new simulated-history run beyond the rescoped AC6 sweep. Ready once T-0220 merges (it is merging on its branch `t/T-0220-backoff-floor-light-lift`). Engine tickets run one at a time (D-0096 §3): T-0221 → T-0212 → T-0211 → T-0236 → T-0235. It must merge before T-0235, the next engine ticket that changes `suggest` output. -->
 
@@ -61,3 +61,19 @@ none (`docs/engine-rules.md` and `api/openapi.yaml` unchanged)
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green · contracts unchanged · commit messages start with `T-0236` (e.g. `T-0236: retire the T-0220 AC6 frozen snapshot; keep the inline invariants`).
 
 ## Build / accept log
+
+### Build (engine-dev, 2026-10-02)
+- **AC1:** the `T-0220 AC6 …` sweep in `packages/engine/test/t0220-backoff-floor.test.ts` no longer reads the `PRE` snapshot or deep-equals against it. Every former `preBw` use is now `oldBackoff(pw, inc)`, computed inline. The case count is pinned as the literal `264` (6 histories × 44 inputs). The checks are: null/0/`(0, pw]`; equal to the old formula when that is `> 0`; any difference only in `light`; and non-vacuity (a `light` 2.5 kg back-off, and a non-`light` back-off equal to the old formula with `pw > 0`). The title, `SWEEP_TIMEOUT_MS` (30_000) and the loops are unchanged. A comment above the test points to the T-0220 build/accept log for the retired one-time proof. The T-0230 guard (`test-budgets.test.ts`) passes unedited.
+- **AC2 red:** for this run only, `backoffOf` in `src/session.ts` returned `floorInc(0.9 × w, inc)`. `vitest run test/t0220-backoff-floor.test.ts -t AC6` → 1 failed, `AssertionError: light|b15|wuoff: expected 0 to be greater than 0`. Reverted from a byte copy, so `git status packages/engine/src` is clean and nothing was committed.
+- **AC3:** the new `packages/engine/test/t0236-no-t0220-snapshot.test.ts` has 2 cases: the file doesn't exist, and no `.ts` file under `test/` (recursive, excluding itself) contains `pre-t0220-suggest`. **Red on unfixed code:** with main's `t0220-backoff-floor.test.ts` and the fixture restored, both fail: `expected true to be false`, and `expected [ 't0220-backoff-floor.test.ts' ] to deeply equal []`. Restored afterwards.
+- `packages/engine/test/fixtures/pre-t0220-suggest.json` deleted (`git rm`).
+- **AC4:** `git diff --stat main...HEAD -- packages/engine/src` is empty. Engine tests went from 630 (main, 36 files) to 632 (37 files). The only new cases are the 2 AC3 cases, and no other test was edited.
+- **AC5:** `flock … --filter @workoutlab/engine typecheck`, `lint` and `test` are each green (632 passed). `-w format:check` is clean. `node .github/scripts/check-all.mjs` exits 0, and so does `node supabase/scripts/vendor.mjs --check` (no regen needed; src is unchanged).
+
+### Accept (product-owner, 2026-10-02): done
+- **AC1:** met. The sweep at `t0220-backoff-floor.test.ts:146–184` keeps its `T-0220 AC6 … sweep …` title, `SWEEP_TIMEOUT_MS` (30_000) and the `SWEEP_HISTORIES` × `sweepInputs()` loops. It asserts the literal `cases === 264` and null/0/`(0, pw]`. It checks `bw === oldBackoff(pw, inc)` when the old formula is `> 0`, and that any difference (with `pw > 0`) is only in `light`. Both non-vacuity counters are `> 0`. There is no `PRE` read and no deep-equal. The retirement comment above the test cites the T-0220 build/accept log and T-0236. The T-0230 guard was not edited.
+- **AC2:** met, from the builder's red run (`light|b15|wuoff: expected 0 to be greater than 0`). Nothing was committed to `src`.
+- **AC3:** met. `t0236-no-t0220-snapshot.test.ts` has both `T-0236 AC3` cases, plus a non-vacuity check that more than 30 files are scanned. The fixture is absent in the worktree. The only file that mentions `pre-t0220-suggest` is this test, and it builds the name by joining parts. The builder recorded both cases red with main's test and the fixture restored.
+- **AC4:** met. The `src` diff is empty, and the engine count went 630 → 632 (only the 2 AC3 cases).
+- **AC5:** met. The builder reports engine typecheck, lint and test green (632/632), plus format:check, check-all and vendor `--check`.
+- Principles: test-only, with no change to engine behaviour or contracts. The deterministic-engine guard is kept, and D-0131 is still checked on every sweep case.

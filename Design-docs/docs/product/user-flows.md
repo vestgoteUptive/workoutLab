@@ -45,6 +45,10 @@ Shared components: C-01 Body map, C-02 Tab bar.
 
 Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Returning users reach it from "I have an account" on UF-01.1. The UF-01.4 plan is computed on the device and saved after sign-in. There is no guest mode, and the < 60 s is measured from UF-01.1 to UF-01.4.
 
+## UF-02 Today
+
+- **UF-02.1 Today: workout in progress** (D-0139). When this user has an unfinished workout started on this device in the last 12 h, Today shows one card under the header: "Workout in progress", "Started HH:MM · n of N sets" and **Resume workout**, which reopens focus mode where it was left (UF-09). With several, the newest one. "Start workout" stays. An older unfinished workout shows no card (it is stale, D-0111 §7). Works offline.
+
 ## UF-08 Session setup
 
 **Entry:** Start on UF-02.1 or UF-02.2.
