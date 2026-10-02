@@ -2,7 +2,7 @@
 // its ring, and the ring's own pause. One wall-clock timer runs the 3 s "Get in position" and the
 // hold (NFR-TIME-1); the hold is the engine's `prefill.durationS` (principle 3). At 0 the host
 // logs the hold once through the hook (D-0119 §3); this view only shows a failed write's retry.
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { POSITION_S, holdSeconds, timedRemainingS } from "./machine.js";
 import { Ring } from "./ring.js";
@@ -14,6 +14,9 @@ import type { ViewProps } from "./views.js";
 const EASING_KINDS: ReadonlySet<string> = new Set(["hold_after_break", "reentry"]);
 
 const NO_RETRY = () => Promise.resolve();
+
+/** Focus has nowhere to be: the focused element left the DOM (T-0423, NFR-A11Y-1). */
+const focusLost = (active: Element | null) => active === null || active === document.body;
 
 export function TimedSet({
   state,
@@ -35,10 +38,30 @@ export function TimedSet({
   const [retrying, setRetrying] = useState(false);
   const pending = useRef(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const logHoldRef = useRef<HTMLButtonElement>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
+  const running = remaining > 0;
 
+  // Entry focus while the hold runs: the ring toggle. A mount at 0 (a restore, or back from
+  // UF-09.9 / an overlay) has no toggle, and the two layout effects below place focus instead:
+  // the heading, then "Log hold" when the write has already failed (T-0423 rework).
   useEffect(() => {
     toggleRef.current?.focus();
   }, []);
+
+  // At 0 the toggle leaves the DOM; if it had focus, the heading takes it while the hold is saved
+  // (T-0423 AC-2, AC-4 on a mount at 0). A control the user focused elsewhere keeps it.
+  useLayoutEffect(() => {
+    if (!running && focusLost(document.activeElement)) headingRef.current?.focus();
+  }, [running]);
+
+  // A failed write shows "Log hold"; focus moves to it unless the user is in the chrome (AC-3).
+  useLayoutEffect(() => {
+    if (!holdFailed) return;
+    const active = document.activeElement;
+    if (focusLost(active) || viewRef.current?.contains(active)) logHoldRef.current?.focus();
+  }, [holdFailed]);
 
   const retry = () => {
     // One write per tap (NFR-SYNC-1): a second tap while the first is pending does nothing.
@@ -55,8 +78,10 @@ export function TimedSet({
   };
 
   return (
-    <div className="wl-uf09__view">
-      <h1 className="wl-uf09__title">{name}</h1>
+    <div ref={viewRef} className="wl-uf09__view">
+      <h1 ref={headingRef} className="wl-uf09__title" tabIndex={-1}>
+        {name}
+      </h1>
       <p className="wl-uf09__set-line">{en.uf09.setOf(state.setIndex + 1, item.sets)}</p>
       <p className="wl-uf09__load" data-field="target">
         {en.uf09.holdTarget(formatClock(holdS))}
@@ -74,7 +99,7 @@ export function TimedSet({
           {inPosition ? String(shown) : formatClock(shown)}
         </p>
       </Ring>
-      {remaining > 0 ? (
+      {running ? (
         <button
           ref={toggleRef}
           type="button"
@@ -87,6 +112,7 @@ export function TimedSet({
       ) : null}
       {holdFailed ? (
         <button
+          ref={logHoldRef}
           type="button"
           className="wl-uf09__primary wl-uf09__wide"
           data-action="primary"
