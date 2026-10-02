@@ -101,3 +101,18 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
   behaviour / old states also valid). After the fix all pass.
 - Runs: UF-09 vitest 28 files / 593 tests; web typecheck, lint, test (150 files / 2385 tests);
   `uf-09-focus` e2e 9 passed; `-w format:check` clean; `check-all` exit 0; `-w typecheck lint test --force --concurrency=1` 19/19 tasks green.
+
+## Accept log
+- **2026-10-02, product-owner (accept) at 60629a2: done.**
+- **ACs.** Every AC has a passing test titled `T-0414 ACn`. The machine tests are in `__tests__/machine.session.test.ts` ("T-0414 PLAN_REPLACED never leaves the set on a logged position"), and the store tests are in `__tests__/t0414.store.test.ts`.
+  - **AC1:** the gap at (0, 1) is found and SET_RECORDED stamps `(0, 1)` "db-bench-press" with unique positions. The paused case resumes to `set` at 1. The pair (only (0, 0) logged) keeps the clamp at 2. The three existing `PLAN_REPLACED` tests pass unedited.
+  - **AC2:** paused gives `resumePhase` `rest`, `setIndex` 1, timer `{T0 + 1000, 120, 0}`, and `loggedSets` unchanged. RESUME gives `remainingS` 120 and REST_END gives `betweenItems`. Through `createFocusStore` the result is `next` for item 2. Not paused, the timer starts at `T0 + 2000`.
+  - **AC3:** paused gives `done`, timer, `resumePhase` and `pausedAtMs` null, and `workoutPausedMs` 1000. Not paused, `workoutPausedMs` is 0. An extra test covers the ring paused by Pause timer: `timerPausedAtMs` is dropped, which keeps D-0150 §4.
+  - **AC4:** the isolation `db-row` rests 60 s, both paused and not.
+  - **AC5:** `rest`, `next`, `confirm` and paused-on-rest each equal `{ ...start, setIndex: 1 }`. A swap of another item returns the same reference, paused and not.
+  - **AC6:** all five new states pass `isValidFocusState` and survive the write/read round trip. `replacePlan` writes the paused-rest state to the storage stub.
+  - **AC7:** the four T-0410 tests keep their titles and assertions. Their setup builds `at("paused", {...})` with the values the AC gives, and the build log lists them. The review notes that one expect is now trivially true. It is kept, not removed, so this is not a weakened test.
+  - **AC8:** UF-09 has 593 tests, web 2385, and the `uf-09-focus` e2e passes 9/9. The `-w` gate is 19/19, the export pin is unchanged, and the purity tests pass.
+- **Red proof.** AC1, AC2, AC3 (and AC4) failed against main's `machine.ts`, as the ticket requires.
+- **Principles hold.** The reducer is pure and local, so it works offline. Focus mode still shows one step. `persist.ts` and the contracts are unchanged.
+- **Out of scope, moved to follow-ups** (from the review): a swap while paused from `confirm` (D-0140 Consequences), and READY into set 0 after a List-view log. The orchestrator adds these to T-0422 and T-0415/T-0417.
