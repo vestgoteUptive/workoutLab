@@ -47,6 +47,7 @@ The engine never emits a timed pre-fill outside 15..120 s (D-0062 §5 clamp; `fi
 - **Listed extras:**
   - `supabase/functions/_shared/vendor/shared/**`: the output of `node supabase/scripts/vendor.mjs` only.
   - `docs/tickets/T-0222-prefill-duration-range.md`: this file, for the build and accept log.
+  - `packages/engine/test/rule-14-suggest.test.ts`: the T-0205 AC21 openapi bounds regex only, updated to D-0133's `minimum: 15, maximum: 120` (added 2026-10-02 after CI on PR #23).
 
 ## Contract impact
 `api/openapi.yaml`: `PrefillResult.durationS` narrows to 15..120 and its description gains one sentence, under D-0133. The data lane owns this contract. `docs/data-model.md`, `docs/engine-rules.md` and the database are unchanged.
