@@ -107,3 +107,43 @@ Tests for every AC pass, with the red run, the loud-failure run and the planted 
 `pnpm -w typecheck lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web
 test:e2e` green (the whole suite) · `format:check` and `check:repo` green · contracts unchanged ·
 commits start `T-0440` (for example `T-0440: never reuse a server on :4173`).
+
+## Build log
+2026-10-02, qa (wl-build-qa). All runs use `flock /tmp/workoutlab-tests.lock` and, unless noted,
+`TMPDIR=$HOME/.cache/wl-pw-tmp`. `/tmp` was a tmpfs at 44 % during the build.
+
+- **Files.** `tests/e2e/playwright.config.ts` (`reuseExistingServer: false`, a top-level
+  `checkTmpdir()` call that throws its message, and the header comment on both traps),
+  `tests/e2e/fixtures/preflight.ts` (new: `tmpdirProblem`, `checkTmpdir`), and
+  `tests/e2e/e2e-config.spec.ts` (new, imports `test`/`expect` from `./fixtures/guarded-test.js`).
+  `webServer.command`, `retries: 0`, `PORT`, `BASE_URL` and the `VITE_SUPABASE_URL` export are
+  unchanged.
+- **AC-1 red, recorded.** I wrote the spec before changing the config. `test:e2e e2e-config.spec.ts`
+  on the main config gave 2 failed and 7 passed: AC1 (`reuseExistingServer`: Expected `false`,
+  Received `true`, with `CI` unset) and AC4 (no preflight import). After the change, 9 of 9 passed.
+- **AC-2 contrast (main config).** With a stand-in on :4173
+  (`node -e "require('http').createServer((q,s)=>s.end('x')).listen(4173)"`),
+  `test:e2e sw-registration.spec.ts` started no build. It ran both tests against the stand-in, and
+  both failed on `[data-screen-id="UF-01.1"]` not visible: the silent wrong-server run.
+- **AC-2 loud failure (new config).** With the same stand-in, `test:e2e` (the whole suite) exited 1
+  at once with `Error: http://localhost:4173 is already used, make sure that nothing is running on
+  the port/url or set reuseExistingServer:true in config.webServer.` No turbo build started and no
+  test ran.
+- **AC-4 planted fault, recorded and reverted.** I set `TMPFS_MAX_USED_PERCENT` to 0. With
+  `TMPDIR` unset (`/tmp` tmpfs), `test:e2e` stopped at config load
+  (`playwright.config.ts:13`) with `e2e preflight (T-0440, D-0155 §6): the temp dir /tmp is a
+  tmpfs and 44% full (the limit is 0%). … TMPDIR=$HOME/.cache/wl-pw-tmp …`. No build started and no
+  test ran.
+  - **The pair.** With the fault still planted and `TMPDIR=$HOME/.cache/wl-pw-tmp` (ext4), the
+    config loaded and the spec ran. 8 passed, and the AC3 79 % test failed, as it should under a
+    0 % threshold.
+  - I reverted the threshold to 80.
+- **AC-4 repo checks.** `node .github/scripts/check-e2e-wiring.mjs` exited 0, and
+  `node --test .github/scripts/check-e2e-wiring.test.mjs` gave 14 of 14 passed. `.github/**` is
+  unedited.
+- **AC-6 / gate.**
+  - `pnpm --filter @workoutlab/web test:e2e`: 152 passed, with :4173 free.
+  - `pnpm -w typecheck lint test --force --concurrency=1`: 19 of 19 turbo tasks passed.
+  - `pnpm -w test:repo-checks`: 146 of 146 passed.
+  - `pnpm -w format:check`: clean.
+  - `node .github/scripts/check-all.mjs`: exit 0.
