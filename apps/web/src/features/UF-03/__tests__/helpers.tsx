@@ -146,6 +146,49 @@ export async function seedLibraryAndTargets(
   }
 }
 
+/** T-0433: a cached server `sessions` row, as `refreshSessions` writes `sessionCache`. */
+export interface CachedSessionSeed {
+  id?: string;
+  userId?: string;
+  startedAt?: string;
+  endedAt?: string | null;
+  budget?: number;
+  effortRating?: number | null;
+  energy?: string;
+}
+
+export async function seedSessionCache(db: OfflineDb, seed: CachedSessionSeed = {}): Promise<void> {
+  const id = seed.id ?? S1;
+  const userId = seed.userId ?? USER_A;
+  await db.sessionCache.put({
+    key: userScopedKey(userId, id),
+    userId,
+    id,
+    startedAt: seed.startedAt ?? STARTED_AT,
+    endedAt: seed.endedAt === undefined ? ENDED_AT : seed.endedAt,
+    timeBudgetMin: seed.budget ?? 45,
+    effortRating: seed.effortRating === undefined ? null : seed.effortRating,
+    energy: seed.energy ?? "normal",
+  });
+}
+
+/** T-0433: set a queued entry's `pending` and D-0151 `cacheCurrent` flags. `cacheCurrent: false`
+ *  leaves the key out, as an unmarked entry has it. The row and `finished` stay as stored. */
+export async function setQueuedFlags(
+  db: OfflineDb,
+  flags: { pending: boolean; cacheCurrent: boolean },
+  id: string = S1,
+): Promise<void> {
+  const entry = await db.sessions.get(id);
+  if (!entry) throw new Error(`setQueuedFlags: no queued entry ${id}`);
+  const { cacheCurrent: _old, ...rest } = entry;
+  await db.sessions.put({
+    ...rest,
+    pending: flags.pending,
+    ...(flags.cacheCurrent ? { cacheCurrent: true as const } : {}),
+  });
+}
+
 /** A pending (unanswered) plan check-in proposal in the cache (AC-8). */
 export async function seedPendingCheckin(db: OfflineDb, userId = USER_A) {
   const checkin: PlanCheckin = {
@@ -199,6 +242,8 @@ export function renderSummary(
           <Route path="/session/:sessionId/summary" element={<Summary {...props} />} />
           <Route path="/session/:sessionId" element={<span data-testid="session" />} />
           <Route path="/" element={<span data-testid="home" />} />
+          {/* T-0433 AC-4: "See balance" leads here. */}
+          <Route path="/balance" element={<span data-testid="balance" />} />
         </Routes>
       </main>
     </MemoryRouter>,
