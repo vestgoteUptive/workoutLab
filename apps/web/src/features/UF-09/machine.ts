@@ -386,7 +386,7 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
         return state;
       }
       const pausedFor = Math.max(0, event.atMs - state.pausedAtMs);
-      return {
+      const resumed: FocusState = {
         ...state,
         phase: state.resumePhase,
         resumePhase: null,
@@ -398,6 +398,7 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
             ? state.warmupStartedAtMs + pausedFor
             : state.warmupStartedAtMs,
       };
+      return movedOnIfLogged(resumed, ctx, event.atMs);
     }
     case "SET_LOGGED":
       return { ...state, loggedSets: [...state.loggedSets, event.set] };
@@ -433,6 +434,23 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
     default:
       return state;
   }
+}
+
+/**
+ * RESUME onto `set`/`timed` whose current set was logged while paused (T-0304b rework): Done set's
+ * write landed after Pause, so the hook dispatched SET_LOGGED, not SET_RECORDED. The walk goes
+ * where that record would have gone, timed from the resume: `confirm` (with the auto-save, or
+ * none for "ask") after a reps set, `rest`/`done` after a timed one. Otherwise `state` as is.
+ */
+function movedOnIfLogged(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
+  if (state.phase !== "set" && state.phase !== "timed") return state;
+  let entry: LoggedSet | undefined;
+  for (const s of state.loggedSets) {
+    if (s.itemIndex === state.itemIndex && s.setIndex === state.setIndex) entry = s;
+  }
+  if (!entry) return state;
+  if (state.phase === "timed") return afterSet(state, ctx, atMs);
+  return { ...state, phase: "confirm", timer: autosaveTimer(entry, ctx, atMs) };
 }
 
 /** After `replaceItem` on the current item: the set phase follows the new item (`timed` when its

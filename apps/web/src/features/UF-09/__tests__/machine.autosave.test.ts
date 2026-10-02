@@ -155,3 +155,63 @@ describe("AC-4 Pause/Resume carry the auto-save", () => {
     expect(resumed.timer).toEqual({ startedAtMs: T0, durationS: 5, pausedMs: 60_000 });
   });
 });
+
+// T-0304b rework (QA): a set whose write lands while paused arrives as SET_LOGGED, so the walk
+// moves on at RESUME instead of offering the same set again (NFR-SYNC-1).
+describe("RESUME onto a set that was logged while paused", () => {
+  const paused = (patch: Partial<FocusState> = {}): FocusState =>
+    setState(0, { phase: "paused", resumePhase: "set", pausedAtMs: T0, ...patch });
+  const loggedAt = (exerciseId: string, weightKg: number | null, itemIndex = 0): LoggedSet => ({
+    ...rec(exerciseId, weightKg),
+    itemIndex,
+  });
+
+  it("SET_LOGGED at the current set while paused, then RESUME → confirm with the auto-save from resume", () => {
+    const logged = focusReducer(
+      paused(),
+      { type: "SET_LOGGED", set: loggedAt("bench-press", 80), atMs: T0 + 1000 },
+      ctx(),
+    );
+    expect(logged.phase).toBe("paused");
+    const resumed = focusReducer(logged, { type: "RESUME", atMs: T0 + 30_000 }, ctx());
+    expect(resumed).toMatchObject({ phase: "confirm", itemIndex: 0, setIndex: 0 });
+    expect(resumed.timer).toEqual({ startedAtMs: T0 + 30_000, durationS: AUTOSAVE_S, pausedMs: 0 });
+    expect(resumed.loggedSets).toHaveLength(1);
+  });
+
+  it("a null weight on a loaded lift → confirm with no auto-save (ask)", () => {
+    const logged = focusReducer(
+      paused({ itemIndex: 1 }),
+      { type: "SET_LOGGED", set: loggedAt("leg-curl", null, 1), atMs: T0 },
+      ctx(),
+    );
+    const resumed = focusReducer(logged, { type: "RESUME", atMs: T0 + 5000 }, ctx());
+    expect(resumed).toMatchObject({ phase: "confirm", itemIndex: 1, timer: null });
+  });
+
+  it("a timed set logged while paused → RESUME goes where TIMED_RECORDED would (rest from resume)", () => {
+    const plan = planOf([{ ...PU, repsMin: null, repsMax: null, durationS: 30 }, BENCH]);
+    const c: FocusCtx = { plan, library: L2 };
+    const s = setState(0, { phase: "paused", resumePhase: "timed", pausedAtMs: T0 });
+    const logged = focusReducer(
+      s,
+      { type: "SET_LOGGED", set: { ...rec("push-up", null), durationS: 30, reps: null }, atMs: T0 },
+      c,
+    );
+    const resumed = focusReducer(logged, { type: "RESUME", atMs: T0 + 9000 }, c);
+    expect(resumed.phase).toBe("rest");
+    expect(resumed.timer).toMatchObject({ startedAtMs: T0 + 9000, pausedMs: 0 });
+  });
+
+  it("the pair: no set logged while paused → RESUME stays on the same set", () => {
+    const resumed = focusReducer(paused(), { type: "RESUME", atMs: T0 + 30_000 }, ctx());
+    expect(resumed).toMatchObject({ phase: "set", itemIndex: 0, setIndex: 0, timer: null });
+  });
+
+  it("the pair: a different set logged while paused (List view) → RESUME stays on the current set", () => {
+    const other = { ...loggedAt("bench-press", 80), setIndex: 2, clientId: "other" };
+    const logged = focusReducer(paused(), { type: "SET_LOGGED", set: other, atMs: T0 }, ctx());
+    const resumed = focusReducer(logged, { type: "RESUME", atMs: T0 + 30_000 }, ctx());
+    expect(resumed).toMatchObject({ phase: "set", setIndex: 0 });
+  });
+});

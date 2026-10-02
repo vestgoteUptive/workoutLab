@@ -143,29 +143,46 @@ async function storedRow(sessionId: string): Promise<SessionRow> {
 export function createFocusActions(deps: FocusActionDeps): FocusActions {
   const { sessionId, store, storage } = deps;
   let finishing: Promise<void> | null = null;
+  /** In-flight `recordSet` writes by `itemIndex:setIndex` (NFR-SYNC-1, T-0304b rework): a view
+   *  remounted by Pause → Resume has lost its own pending guard, so a second Done set for the
+   *  same set while the first write is pending gets the same promise, not a second row. */
+  const recording = new Map<string, Promise<LoggedSet>>();
+
+  const writeSet = async (input: FocusSetInput): Promise<LoggedSet> => {
+    const queued = await queueRecordSet(input);
+    const set: LoggedSet = {
+      clientId: queued.clientId,
+      itemIndex: input.itemIndex,
+      setIndex: input.setIndex,
+      exerciseId: queued.exerciseId,
+      reps: queued.reps,
+      weightKg: queued.weightKg,
+      durationS: queued.durationS,
+      rir: queued.rir,
+      backoff: queued.backoff,
+    };
+    const state = store.getState();
+    const atMs = Date.now();
+    const current = input.itemIndex === state.itemIndex && input.setIndex === state.setIndex;
+    if (current && state.phase === "set") store.dispatch({ type: "SET_RECORDED", set, atMs });
+    else if (current && state.phase === "timed") {
+      store.dispatch({ type: "TIMED_RECORDED", set, atMs });
+    } else store.dispatch({ type: "SET_LOGGED", set, atMs });
+    return store.getState().loggedSets.find((s) => s.clientId === set.clientId) ?? set;
+  };
 
   return {
-    async recordSet(input) {
-      const queued = await queueRecordSet(input);
-      const set: LoggedSet = {
-        clientId: queued.clientId,
-        itemIndex: input.itemIndex,
-        setIndex: input.setIndex,
-        exerciseId: queued.exerciseId,
-        reps: queued.reps,
-        weightKg: queued.weightKg,
-        durationS: queued.durationS,
-        rir: queued.rir,
-        backoff: queued.backoff,
+    recordSet(input) {
+      const key = `${input.itemIndex}:${input.setIndex}`;
+      const pending = recording.get(key);
+      if (pending) return pending;
+      const run = writeSet(input);
+      recording.set(key, run);
+      const clear = () => {
+        if (recording.get(key) === run) recording.delete(key);
       };
-      const state = store.getState();
-      const atMs = Date.now();
-      const current = input.itemIndex === state.itemIndex && input.setIndex === state.setIndex;
-      if (current && state.phase === "set") store.dispatch({ type: "SET_RECORDED", set, atMs });
-      else if (current && state.phase === "timed") {
-        store.dispatch({ type: "TIMED_RECORDED", set, atMs });
-      } else store.dispatch({ type: "SET_LOGGED", set, atMs });
-      return store.getState().loggedSets.find((s) => s.clientId === set.clientId) ?? set;
+      run.then(clear, clear);
+      return run;
     },
 
     async editSet(clientId, patch) {

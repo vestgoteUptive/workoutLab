@@ -316,3 +316,22 @@ and cite the screen (for example `T-0304b UF-09.4: auto-save after 5 s from the 
   - `pnpm --filter @workoutlab/web typecheck` and `lint`: 0.
   - e2e `uf-09-focus` + `uf-08-setup`: 20/20.
   - `-w format:check`: 0. `node .github/scripts/check-all.mjs`: 0. `check:size`: 0 (the largest lazy chunk is about 8 KB gzip).
+- **2026-10-02, frontend-dev (rework, attempt 2): a set written while paused.**
+  - **The bug (QA, code review).** Tap Done set, then Pause while `recordSet` is pending. The write resolves in `paused`, so the hook dispatches `SET_LOGGED`, not `SET_RECORDED`, and the machine stays on the set. Resume showed "Set 1 of 4" again, and a second Done set wrote a second row at `setIndex` 0.
+  - **Fix, part 1: the reducer (pure).** `RESUME` onto `set` or `timed` checks whether the current `(itemIndex, setIndex)` already has a logged entry (`movedOnIfLogged`). If it does, it goes where the record would have gone, timed from the resume:
+    - a reps set goes to `confirm`, with the auto-save starting at the `RESUME` `atMs` (`null` for a `null` weight on a loaded lift, the D-0118 §2 "ask");
+    - a timed set goes through `afterSet`, to `rest` from the resume or to `done`.
+    - Otherwise `RESUME` is unchanged. Only the paused-write race can produce this state: List view resumes the workout before it logs, and its close re-syncs.
+  - **Fix, part 2: the hook (`session.tsx`).** Pause → Resume remounts UF-09.3, so the view's own pending guard is lost. If the write was still pending, a second Done set would write a second row. `recordSet` now keeps the in-flight write per `itemIndex:setIndex`. A second call for the same set while that write is pending gets the same promise and makes no second `lib/offline` call. Calls for a different set are untouched.
+  - **Tests.**
+    - `machine.autosave.test.ts`, "RESUME onto a set that was logged while paused" (3 cases), plus the pairs: no write, and a different set logged.
+    - `set-loop.test.tsx`, "a Done set write that lands while paused": a deferred write resolved while paused gives 1 `loggedSets` entry and 1 IndexedDB row, UF-09.4, then UF-09.5 after 5 s. A deferred write still pending at Resume, then Done set again, gives 1 write. The pair: Pause and Resume with no write stays on "Set 1 of 4".
+  - **Red on `c5d767f`.** With the new tests and unfixed code, 5 failed: the 3 reducer cases and both set-loop cases. Both pairs passed.
+  - **Each half planted out and run.** Without the reducer move-on, 4 tests are red. Without the hook dedupe, 1 is red (the pending-at-Resume case). Both plants were reverted.
+  - **Not done.** The longer `findBy` timeout in `profile-gate.test.tsx` and `routes.phase3.render.test.tsx` is skipped: neither file is in this ticket's paths.
+  - **Evidence.**
+    - UF-09 vitest: 19 files, 360 tests.
+    - `pnpm --filter @workoutlab/web test`: 125 files, 1914 tests.
+    - typecheck and lint: 0.
+    - e2e `uf-09-focus`: 5/5 on its own preview server (:4173 was free).
+    - `-w format:check`: 0. `check-all.mjs`: 0.

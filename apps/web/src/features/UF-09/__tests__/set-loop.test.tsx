@@ -1,14 +1,22 @@
 // T-0304b AC-7 (ask for a null weight, bodyweight, D-0066 §4, D-0118 §2 §6), AC-8 (in-session
 // pre-fill and the back-off set, D-0066 §6, D-0118 §7) and AC-9 (no rest after the last set,
 // parent AC-B8), through the real views, the real hook and the real queue.
-import { fireEvent, screen } from "@testing-library/react";
+import { act, fireEvent, screen } from "@testing-library/react";
 import type { SessionPlan } from "@workoutlab/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
 import type { LoggedSet } from "../machine.js";
 import { BENCH, CURL, P1, ROW, S1, STARTED_AT_MS, USER_A, planWith } from "./fixtures.js";
-import { advance, freshDb, screenId, seedSession, signIn, useFakeClock } from "./helpers.js";
-import { renderSession } from "./session-helpers.js";
+import {
+  advance,
+  flushReal,
+  freshDb,
+  screenId,
+  seedSession,
+  signIn,
+  useFakeClock,
+} from "./helpers.js";
+import { deferred, renderSession } from "./session-helpers.js";
 import { L2, NBSP, PU, defaultDetail, planOf } from "./set-loop-fixtures.js";
 import {
   autosaveText,
@@ -291,5 +299,87 @@ describe("AC-9 no rest after the last set", () => {
     press("Save");
     await findScreen("UF-09.5");
     expect(storedState()).toMatchObject({ phase: "rest", setIndex: 3 });
+  });
+});
+
+// T-0304b rework (QA): Done set → Pause while recordSet is pending must not let the same set be
+// written twice (NFR-SYNC-1, D-0118 §5).
+describe("a Done set write that lands while paused", () => {
+  type Queued = Awaited<ReturnType<typeof offline.recordSet>>;
+  const benchInput = {
+    sessionId: S1,
+    itemIndex: 0,
+    exerciseId: "bench-press",
+    setIndex: 0,
+    kind: "reps" as const,
+    reps: 6,
+    weightKg: 80,
+    isWarmup: false,
+    backoff: false,
+  };
+
+  async function rowsAt0(): Promise<number> {
+    const rows = await offline.offlineDb().sets.toArray();
+    return rows.filter((r) => r.sessionId === S1 && r.setIndex === 0).length;
+  }
+
+  it("Done set → Pause → the write resolves → Resume: one entry, one row, the screen moved on", async () => {
+    await showSet(P1);
+    const held = deferred<Queued>();
+    recordSpy.mockImplementationOnce(() => held.promise);
+    fireEvent.click(doneButton());
+    press("Pause workout");
+    await flushReal();
+    expect(screenId()).toBe("UF-09.9");
+    const real = await vi.importActual<typeof offline>("../../../lib/offline/index.js");
+    await act(async () => {
+      held.resolve(await real.recordSet(benchInput));
+    });
+    await flushReal();
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    await flushReal();
+    expect(screenId()).toBe("UF-09.4");
+    expect(storedState().loggedSets).toHaveLength(1);
+    expect(await rowsAt0()).toBe(1);
+    // The auto-save runs from Resume, and the walk goes on to the rest.
+    await advance(5_000);
+    expect(screenId()).toBe("UF-09.5");
+    expect(storedState().loggedSets).toHaveLength(1);
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it("Done set → Pause → Resume with the write still pending → Done set again: one write", async () => {
+    await showSet(P1);
+    const held = deferred<Queued>();
+    recordSpy.mockImplementationOnce(() => held.promise);
+    fireEvent.click(doneButton());
+    press("Pause workout");
+    await flushReal();
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    await flushReal();
+    expect(screenId()).toBe("UF-09.3");
+    fireEvent.click(doneButton());
+    await flushReal();
+    expect(recordSpy).toHaveBeenCalledTimes(1);
+    const real = await vi.importActual<typeof offline>("../../../lib/offline/index.js");
+    await act(async () => {
+      held.resolve(await real.recordSet(benchInput));
+    });
+    await findScreen("UF-09.4");
+    expect(storedState().loggedSets).toHaveLength(1);
+    expect(await rowsAt0()).toBe(1);
+  });
+
+  it("the pair: Pause with no pending write, then Resume, stays on the same set", async () => {
+    await showSet(P1);
+    press("Pause workout");
+    await flushReal();
+    expect(screenId()).toBe("UF-09.9");
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    await flushReal();
+    expect(screenId()).toBe("UF-09.3");
+    expect(setLineText()).toBe("Set 1 of 4");
+    expect(storedState().loggedSets).toHaveLength(0);
+    expect(recordSpy).not.toHaveBeenCalled();
   });
 });
