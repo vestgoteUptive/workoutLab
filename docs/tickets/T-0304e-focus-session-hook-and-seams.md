@@ -132,3 +132,46 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - Add this row (lane `web-feature:UF-09`, deps T-0304a, `wl-build-web`).
   - Re-point T-0304b to T-0304e.
   - Optionally re-point T-0306b/T-0305a's UF-09 dep to T-0304e (D-0111 Consequences).
+
+## Build log
+- **2026-10-02, frontend-dev (build).** All ACs have tests in `apps/web/src/features/UF-09/__tests__/`:
+  - AC-1, AC-2: `session.read.test.tsx`.
+  - AC-3, AC-4: `session.writes.test.tsx`.
+  - AC-5, AC-6: `session.finish.test.tsx`.
+  - AC-7, AC-8: `session.rest.test.tsx`.
+  - AC-9: `seams.test.tsx`.
+  - AC-10: `exports-and-lint.test.ts` (the pin is now `["SessionHost", "useFocusSession"]`, plus a `seams.tsx` import check).
+  - The new reducer events: `machine.session.test.ts` (pure, no mutation, same object when an event doesn't apply).
+- **How the tests reach the hook.** The hook is read through a probe that a mocked `views.js` renders inside every machine view (`__tests__/probe.tsx`). The writes are spies over the real `lib/offline` functions (`__tests__/offline-spies.ts`). `store-spy.ts` also keeps the created store, so a test can dispatch `SAVED`/`READY` the way T-0304b's views will. No production test hook was added.
+- **Planted faults.** Each one was applied, run, and reverted:
+  - AC-5/AC-6: `navigate` before `await upsertSession` in `finish()` → the held-write test ("no navigation and the key is kept after 50 ms") and the rejected-write test go red.
+  - AC-9: the forced `"next"` check point removed → the "true from paused" test goes red (the `resolveCheckPoint` spy is called while List view is open).
+  - AC-9: no `PAUSE` when a `keepsClockRunning: false` overlay opens on UF-09.6 → the countdown test goes red.
+  - AC-8: `RESYNC` returning `state` → 4 tests red.
+  - AC-3: `REST_END` back to `setIndex + 1` → "the next set is 2" goes red.
+- **Diff checks** (recorded here, not as tests). `git diff --stat main...HEAD` touches only `apps/web/src/features/UF-09/**`. There are no changes under `apps/web/src/app/**`, `apps/web/src/lib/**` (so `en.ts` is unchanged), `tests/e2e/**`, `api/`, `packages/` or `docs/{data-model,engine-rules}.md`. `flows/uf-09.ts` needed no new keys: seam labels come from the seam entries.
+- **One T-0304a test changed on purpose.** In `host.load.test.tsx`, "host-level: done, …", the `done` step now really finishes S1 (D-0111 §3: "until T-0304e's `finish()` navigates away"). So the stale part of that test uses its own unended session S3. Every assertion is kept.
+- **Defaults that T-0304b–d and the seam tickets can rely on.** All of these are within D-0071 §4–§6 and D-0111, with no new decision.
+  - **`recordSet(input)`.** The input is `RecordSetInput & {itemIndex}`, and the whole object goes to `lib/offline` `recordSet`. It resolves to the stored `LoggedSet` (`.clientId`).
+    - `SET_RECORDED` is dispatched when the phase is `set` and the input is the current item and set. `TIMED_RECORDED` is dispatched for the same match in `timed`.
+    - Anything else is a new `SET_LOGGED`, which updates only `loggedSets`.
+  - **Edits and deletes.** `editSet` and `deleteSet` dispatch the new `SET_EDITED` and `SET_DELETED` events, in any phase.
+  - **`REST_END` follows the live sets.** It goes to the first set index *after* the current one that has no live logged set, otherwise to `betweenItems`. With no out-of-order logs, this is the same as before. A set index below the current one is picked up only by `close()`.
+  - **`startRest`.** It dispatches the new `REST_START`, which works only from `set`, `confirm`, `rest` and `timed`. From any other phase it returns the same state. Rest uses the library `type`, and a missing exercise gets the compound rest.
+  - **`skipRest` and `adjustRest`.** `skipRest` is `REST_END`. `adjustRest` is `REST_ADJUST`. A rest that is adjusted to 0 ends at the next render (T-0304a expiry).
+  - **`currentSetIndex`.** It is `state.setIndex`, except in `rest`. There it is the set the rest leads to: the item's first unlogged set after the current one, or `setsInItem` when no set is left. That is why AC-1 reads 1 after set 0 is saved.
+  - **`replaceItem`.** It rejects with `RangeError` for an index below `state.itemIndex` or past the end. It writes `{...storedRow, plan}`, then calls `store.replacePlan`. The new `PLAN_REPLACED` event makes the current `set`/`timed` (or a paused `resumePhase`) follow the new item's `repsMin`. `setIndex` stays, capped at the new item's set count.
+  - **`close()` (`RESYNC`).** It changes nothing when the phase is `paused`, `done`, or `rest` with a timer. A warm-up with nothing logged is kept. Otherwise it goes to the first item with an unlogged planned set (back-off included), at that set. UF-09.6 or UF-09.8 for that same item, at set 0, is kept. With every set logged it goes to `done`, which finishes. Leaving the warm-up this way records `warmupSpentMs`.
+  - **`finish()`.** It reads the stored row and writes `{...row, ended_at: now}`, then removes the focus key, then navigates. While it is pending, it returns the same promise. A rejected finish can be called again.
+  - **`done`.** The host calls `finish()` from an effect, and a rejection is caught. The done screen stays.
+  - **Overlays.** An overlay replaces the whole host output, including the chrome, and has no `[data-screen-id]`.
+    - A `keepsClockRunning: false` overlay opened from a running screen (UF-09.6) dispatches `PAUSE`, and `RESUME` on close. Opened from UF-09.9, it dispatches neither.
+    - A `keepsClockRunning: true` overlay dispatches `RESUME` if the workout is paused. It forces the check point to `"next"` until close, and `close()` dispatches `RESYNC`. It doesn't return to `paused`.
+  - **`Workout.totalS`.** It is `itemsTotalS + WARMUP_COST_S` for both values of `warmupInBudget`, as the engine builds it (`buildSession` and `applySwap`). An unknown `energy` reads as `"normal"`.
+- **Evidence.**
+  - UF-09 vitest: 14 files, 231 tests.
+  - `pnpm --filter @workoutlab/web test`: 110 files, 1586 tests.
+  - typecheck and lint: 0.
+  - e2e: `uf-09-focus` 4/4, and the whole suite 71/71.
+  - `-w format:check`: 0. `check-all.mjs`: 0.
+  - `check:size` after a fresh build: 0. The UF-09 chunk is about 6.5 KB gzip.
