@@ -74,3 +74,20 @@ Tests for every AC pass, with the red-on-main runs and the planted faults record
 - **Flow:** `wl-build-web`.
 - **Unblocks:** T-0420 (UF-03.3 effort and Save). T-0420's AC-2 "no pick sends `effort_rating: null`" relies on AC-1 here for any later reader of `loadSessions` (UF-06, UF-11).
 - **Parallel:** safe with T-0428, T-0416 and every UF-05 and UF-09 ticket.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** `loadSessions` in `apps/web/src/lib/offline/feature-loaders.ts` now merges per D-0148: a new `cachedFinishIsLater(cachedEnd, queuedEnd)` helper (true when the cached `endedAt` is non-null and the queued one is null, or both `Date.parse` and the cached instant is strictly later; an equal instant or an unparsable side keeps the queue). When it is true the cached finish wins whole (`endedAt` and `effortRating`, §2). Otherwise `endedAt` is the queued value and `effortRating` is `row.effort_rating ?? null` when `Object.hasOwn(row, "effort_rating")`, else the cached value (§3). `energy` keeps its coalesce (§4); a queued-only row is unchanged (§5). The doc comment names D-0148.
+- **Tests.** New `apps/web/src/lib/offline/__tests__/sessions-merge.test.ts` (16 tests), on the `sessions-cache.test.ts` harness:
+  - AC-1: explicit null clears the cached 5; the pairs (a value 2; an absent key keeps 5).
+  - AC-2: cached 10:40/null beats queued 10:31/4; the pair (queued 10:50/4 wins); equal instants with queued null clears 3, and its pair (queued 1); a queued `ended_at: null` with a present rating 2 keeps the cached 10:05/5.
+  - AC-3: `10:40:00+00:00`/2 beats `12:31:00+02:00`/4; the pair (`12:50:00+02:00`/4 wins).
+  - AC-4: queued `"not-a-date"`/4 wins without throwing; the pair (a valid later instant wins).
+  - AC-5: queued-only S9 with explicit null (whole row) and with a rating; cached energy `high` kept when omitted and a present `low` wins; sort by `startedAt` then `id` over merged rows.
+  - `sessions-cache.test.ts` and `offline-loaders.test.ts` are unedited and green (37/37 with the new file).
+- **Red on main** (main's `feature-loaders.ts` swapped in, `sessions-merge` + `sessions-cache` run): 6 red, all in `sessions-merge.test.ts` — AC-1 "explicit null clears" (got 5), AC-2 "cached 10:40 / null beats 10:31 / 4" (got 10:31/4), AC-2 "equal instants: queued null clears 3" (got 3), AC-2 "queued ended_at null with a present rating" (got 2), AC-3 "10:40+00:00 beats 12:31+02:00" (got the queued string), AC-5 "sorts merged rows" (the cached later finish). Every `sessions-cache.test.ts` case stayed green.
+- **Planted faults** (each applied alone to the new code, run, reverted):
+  - F1 `?? previous?.effortRating` restored for a present key → 2 red: AC-1 "explicit null clears", AC-2 "equal instants: queued null clears 3".
+  - F2 `endedAt: row.ended_at ?? previous?.endedAt ?? null` → 3 red: AC-2 "cached 10:40 / null beats 10:31 / 4", AC-3 "10:40+00:00 beats 12:31+02:00", AC-5 sort.
+  - F3 string compare (`cachedEnd > queuedEnd`) → 1 red: AC-3 "10:40+00:00 beats 12:31+02:00".
+  - F4 `effortRating` always from the queue (cached-wins branch ignored) → 4 red: AC-2 "cached 10:40 / null beats 10:31 / 4", AC-2 "queued ended_at null with a present rating", AC-3 "10:40+00:00 beats 12:31+02:00", AC-5 sort.
+- **Runs (under the test lock).** `pnpm --filter @workoutlab/web typecheck` / `lint` green; `pnpm --filter @workoutlab/web test` 161 files, 2525 tests passed; `test:e2e offline.spec.ts` 1 passed; `pnpm -w format:check` clean; `node .github/scripts/check-all.mjs` clean.
