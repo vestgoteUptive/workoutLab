@@ -154,6 +154,23 @@ describe("AC-A5 service worker precache", () => {
   });
 });
 
+// T-0429: the bundle registers the worker (src/lib/pwa/register.ts) with a rejection handler,
+// so vite-plugin-pwa must not inject its own handler-less `registerSW.js` (injectRegister: false).
+describe("T-0429 AC4 no injected service worker registration", () => {
+  it("T-0429 AC4 dist has no registerSW.js but still has sw.js", () => {
+    expect(existsSync(join(outDir, "registerSW.js"))).toBe(false);
+    expect(existsSync(join(outDir, "sw.js"))).toBe(true);
+  });
+
+  it("T-0429 AC4 index.html has no registerSW reference and no inline <script>", () => {
+    expect(indexHtml).not.toContain("registerSW");
+    const scripts = [...indexHtml.matchAll(/<script\b([^>]*)>/gi)].map((m) => m[1]!);
+    expect(scripts.length).toBeGreaterThan(0);
+    const inline = scripts.filter((attrs) => !/\bsrc\s*=/.test(attrs));
+    expect(inline).toEqual([]);
+  });
+});
+
 // D-0144 §2 §4: feature folders with no route of their own, mounted from other flows' chunks
 // through seams (D-0069 §5, D-0071 §7, D-0142 §8). Only a web-shell ticket citing a decision
 // that the feature has no route may add to this list. An entry may be missing from disk.

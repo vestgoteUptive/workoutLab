@@ -21,11 +21,7 @@ import {
   test,
   UNCLAIMED_MESSAGE,
 } from "./fixtures/guarded-test.js";
-import {
-  allowCommentViolations,
-  commentBlockAbove,
-  ownConsoleListeners,
-} from "./fixtures/source-rules.js";
+import { allowCommentViolations, ownConsoleListeners } from "./fixtures/source-rules.js";
 import { mockSupabaseRest, VITE_SUPABASE_URL } from "./fixtures/supabase-mock.js";
 
 const PLANTED_URL = `${VITE_SUPABASE_URL}/rest/v1/planted_unmocked?select=*`;
@@ -141,17 +137,13 @@ test.describe("AC-6 the guard reports exactly the requests no route claimed", ()
     page,
     context,
     supabaseGuard,
-    consoleGuard,
   }) => {
-    // T-0429 (web-shell) removes this allow. T-0425 finding: going offline right after the first
-    // load can beat the service worker's `sw.js` fetch, and vite-plugin-pwa's injected
-    // `navigator.serviceWorker.register()` (injectRegister: "auto") has no rejection handler, so
-    // the app logs an error and throws an unhandled rejection. Racy, so allowed rather than
-    // asserted; drop this once registration catches its failure.
-    consoleGuard.allow(
-      /Failed to register a ServiceWorker|An unknown error occurred when fetching the script/,
-    );
+    // T-0429: no console allow. The bundle's registration (src/lib/pwa/register.ts) catches a
+    // failed `sw.js` fetch, so no unhandled rejection. Chromium still logs its own
+    // "An unknown error occurred when fetching the script." when the fetch fails, which no page
+    // code can catch, so this waits for the worker before going offline instead of racing it.
     await page.goto("/welcome");
+    await page.evaluate(() => navigator.serviceWorker.ready);
     const guard = installSupabaseGuard(context);
     await context.setOffline(true);
 
@@ -517,16 +509,24 @@ test.describe("source assertions", () => {
     expect(read("uf-08-setup.spec.ts").includes("consoleErrors")).toBe(false);
   });
 
-  // T-0430 AC5: the one allow in this file (excluded from the AC3 run above) names its ticket.
-  test("T-0430 AC5 the SW allow in the setOffline test names T-0429 in its comment block", () => {
+  // T-0429 AC3 replaces T-0430 AC5 (which pinned the allow's T-0429 comment): the SW allow is
+  // gone, the test takes no `consoleGuard`, and no spec allows the registration error any more.
+  test("T-0429 AC3 the setOffline test has no consoleGuard, and no spec allows the SW error", () => {
     const lines = read("fixture-guard.spec.ts").split("\n");
     const title = lines.findIndex((line) =>
       line.includes('test("setOffline does not suspend interception'),
     );
     expect(title).toBeGreaterThan(-1);
-    const call = lines.findIndex((line, i) => i > title && line.includes("consoleGuard.allow("));
-    expect(call).toBeGreaterThan(title);
-    expect(commentBlockAbove(lines, call).join("\n")).toContain("T-0429");
+    const end = lines.findIndex((line, i) => i > title && /^  \}\);$/.test(line));
+    expect(end).toBeGreaterThan(title);
+    const body = lines.slice(title, end + 1).join("\n");
+    expect(body).not.toContain("consoleGuard");
+    // Split so this file doesn't carry the very string it checks for.
+    const swError = ["Failed to register", "a ServiceWorker"].join(" ");
+    const files = (readdirSync(__dirname, { recursive: true }) as string[]).filter((name) =>
+      name.endsWith(".ts"),
+    );
+    expect(files.filter((name) => read(name).includes(swError))).toEqual([]);
   });
 
   // AC-9: the fix must be a real fix, not a bigger timeout. If a future edit needs more time,
