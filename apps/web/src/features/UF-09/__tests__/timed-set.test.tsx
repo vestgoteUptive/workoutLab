@@ -1,7 +1,7 @@
 // T-0304c AC-2–AC-5 (UF-09.7 Timed set, parent AC-C2–C4, D-0119 §1–§4, D-0062 §5): the 3 s
 // position and the hold on one wall-clock timer, the hold auto-logged once through the hook, the
 // ring-only pause, and copy that never claims "same as last time".
-import { fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen } from "@testing-library/react";
 import { REST_ISOLATION_S } from "@workoutlab/engine";
 import type { SessionPlan } from "@workoutlab/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -340,7 +340,12 @@ describe("T-0304c AC-4 the ring-only pause in the host", () => {
     const elapsedBefore = session().elapsedS;
     fireEvent.click(pauseTimer);
     await flushReal();
-    await advance(20_000);
+    // T-0424 AC-1: the workout clock runs while the ring is held (principle 2, D-0119 §2).
+    await advance(10_000);
+    expect(session().elapsedS - elapsedBefore).toBe(10);
+    expect(timerText()).toBe("0:30");
+    await advance(10_000);
+    expect(session().elapsedS - elapsedBefore).toBe(20);
     expect(timerText()).toBe("0:30");
     fireEvent.click(screen.getByRole("button", { name: "Resume timer" }));
     await flushReal();
@@ -405,13 +410,19 @@ describe("T-0304c AC-4 the ring-only pause in the host", () => {
     fireEvent.click(screen.getByRole("button", { name: "Pause timer" }));
     await flushReal();
     const before = storedState();
-    document.body.innerHTML = "";
+    // T-0424 AC-2: unmount the first root, so only one host (one store, one timer loop) runs.
+    cleanup();
     await advance(10_000);
     await renderLoaded();
     expect(screenId()).toBe("UF-09.7");
     expect(screen.getByRole("button", { name: "Resume timer" })).toBeInTheDocument();
     expect(timerText()).toBe("0:30");
     expect(storedState()).toEqual(before);
+    const hosts = document.querySelectorAll("[data-screen-id]");
+    expect(hosts).toHaveLength(1);
+    expect(hosts[0]!.getAttribute("data-screen-id")).toBe("UF-09.7");
+    await flushReal(50);
+    expect(recordSpy).toHaveBeenCalledTimes(0);
   });
 
   it("exactly Pause workout and Pause timer while the hold runs", async () => {

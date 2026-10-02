@@ -61,14 +61,5 @@ Tests for every AC pass, or a recorded run for AC-4 · `pnpm -w typecheck lint t
 - **Flow:** `wl-build-web`.
 - **Folded in:** T-0368 is delivered by Part B (AC-5 to AC-8). On accept, T-0368 is closed together with T-0357.
 
-## Build log
-- 2026-10-01, frontend-dev. Part A: `Library({ timeZone? })` resolves the zone once per mount (`useState`) and passes it to `<OfflineStatus timeZone={timeZone}>`; `mountAt(path, { timeZone })`; `pinDeviceTimeZone` deleted. Part B: `Object.hasOwn` in `InlineCredit` and `Attribution`, and `attribution.trim() === ""` counts as absent in both.
-- Tests: AC-1 and AC-2 in `__tests__/offline.test.tsx` (`T-0357 explicit zone …`) and `__tests__/zone-credit-source.test.ts`; AC-5 to AC-8 in `__tests__/credit-hardening.test.tsx`. `routes.ts`, `browse`, `route`, `howto-credit` and `detail` tests are unedited (AC-3, AC-9).
-- AC-4 fault proof (machine zone UTC): with `timeZone={timeZone}` removed, `pnpm --filter @workoutlab/web exec vitest run src/features/UF-04/__tests__/offline.test.tsx src/features/UF-04/__tests__/zone-credit-source.test.ts` fails 4 tests. The first failing assertion is `expected 'Offline · last synced 07:30' to be 'Offline · last synced 09:30'`; the Tokyo case gets `07:30` against `16:30`, and the source check fails too. Reverted.
-- Part B fault proof: on unfixed components, all 8 new AC-5 to AC-8 cases fail (`… · function…`, `Text:  · CC BY-SA 4.0`, a console.error for the function `href`) and the 4 contrast cases pass.
-
-## Accept log
-- 2026-10-01, product-owner: **done** at `2e78e74`. QA PASS: root `pnpm -w typecheck lint test --force --concurrency=1` 19/19; UF-04 green with TZ=Asia/Tokyo, America/New_York and Europe/Stockholm. AC-4 fault turns red on both UTC and Tokyo hosts. Each of the 4 independent Part B faults turns 2 tests red. Review APPROVE, lane clean.
-- AC-1: `offline.test.tsx` covers Stockholm 09:30 and Tokyo 16:30 through `mountAt({timeZone})`, and `pinDeviceTimeZone` and the `Intl` patch are gone. AC-2: the no-prop case plus the `zone-credit-source.test.ts` source check. Under a single host zone the behaviour test alone can't tell the explicit wiring from `OfflineStatus`'s own default, so the source test and AC-4 close that gap. AC-3 and AC-9: `routes.ts` and the existing suites are unedited. AC-5 to AC-8: `credit-hardening.test.tsx`.
-- Principles: not affected. T-0368 is delivered by Part B and closes with this ticket.
-- Low follow-up: the source-test regex `[^>]*>` stops at a `=>` inside JSX attributes. Harden it the next time UF-04 is touched.
+## Build / accept log
+Archived in `docs/tickets/log/T-0357.md` (D-0157).

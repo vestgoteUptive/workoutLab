@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.9, UF-09.8, UF-09.6, UF-03.3]
 decisions: [D-0153, D-0149, D-0120, D-0071, D-0111]
 deps: [T-0304d]
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by product-owner (groom). Follow-up from the T-0304d re-review and accept log ("Open: T-0435"). Build flow: wl-build-web. About ¼ day. Ready: T-0304d is on main. It edits only session.tsx and adds t0435* tests. -->
 
@@ -125,3 +125,6 @@ None. The write order and the store update are device-local (D-0071 §6, D-0153 
   - **Allowed with T-0433.** It is in the UF-03 lane.
   - **Not with T-0415.** Both edit `session.tsx`.
 - **Why it matters before T-0416:** T-0416's UF-03.1 Finish calls `ctx.finish()` from a seam. This ticket makes that path safe when a UF-09.8 write is in flight.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0435.md` (D-0157).
