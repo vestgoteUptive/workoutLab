@@ -1,5 +1,6 @@
 // @vitest-environment node
-// T-0304a AC-10: strings from en.uf09 only, the export set, and the D-0071 §9 import bans.
+// T-0304a AC-10 / T-0304e AC-10: strings from en.uf09 only, the export set, and the D-0071 §9
+// import bans.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { ESLint } from "eslint";
@@ -30,9 +31,9 @@ async function lint(code: string, file = "src/features/UF-09/x.tsx") {
 }
 
 describe("AC-10 exports", () => {
-  it("features/UF-09/index.tsx exports exactly SessionHost", async () => {
+  it("features/UF-09/index.tsx exports exactly SessionHost and useFocusSession (T-0304e)", async () => {
     const mod = await import("../index.js");
-    expect(Object.keys(mod)).toEqual(["SessionHost"]);
+    expect(Object.keys(mod).sort()).toEqual(["SessionHost", "useFocusSession"]);
   });
 });
 

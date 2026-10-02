@@ -2,6 +2,7 @@
 // synchronous: `dispatch` runs the reducer, writes `localStorage`, and only then notifies.
 // When `dispatch` returns, the step is on disk — a kill between paint and an effect can't lose
 // it (NFR-OFF-2). The host reads it with `useSyncExternalStore`.
+import type { SessionPlan } from "@workoutlab/shared";
 import { focusReducer, type FocusCtx, type FocusEvent, type FocusState } from "./machine.js";
 import { writeFocusState, type FocusStorage } from "./persist.js";
 
@@ -14,9 +15,20 @@ export type ResolveCheckPoint = (
 
 export const defaultResolveCheckPoint: ResolveCheckPoint = () => "next";
 
+/** The state and the plan it walks, as one snapshot: a new object whenever either changes. */
+export interface FocusSnapshot {
+  state: FocusState;
+  ctx: FocusCtx;
+}
+
 export interface FocusStore {
   getState(): FocusState;
+  /** For `useSyncExternalStore`: changes when the state or the plan changes (T-0304e). */
+  getSnapshot(): FocusSnapshot;
   dispatch(event: FocusEvent): void;
+  /** `replaceItem` after its write (T-0304e, D-0071 §5): the store walks `plan` from now on, and
+   *  `PLAN_REPLACED` realigns the current step with the new item. */
+  replacePlan(plan: SessionPlan, itemIndex: number, atMs: number): void;
   subscribe(listener: () => void): () => void;
 }
 
@@ -29,13 +41,29 @@ export interface FocusStoreOptions {
 }
 
 export function createFocusStore(options: FocusStoreOptions): FocusStore {
-  const { sessionId, ctx, storage } = options;
+  const { sessionId, storage } = options;
   const resolveCheckPoint = options.resolveCheckPoint ?? defaultResolveCheckPoint;
+  let ctx = options.ctx;
   let state = options.initial;
+  let snapshot: FocusSnapshot = { state, ctx };
   const listeners = new Set<() => void>();
+  const notify = () => {
+    snapshot = { state, ctx };
+    for (const listener of [...listeners]) listener();
+  };
 
   return {
     getState: () => state,
+    getSnapshot: () => snapshot,
+    replacePlan(plan, itemIndex, atMs) {
+      ctx = { ...ctx, plan };
+      const next = focusReducer(state, { type: "PLAN_REPLACED", itemIndex, atMs }, ctx);
+      if (next !== state) {
+        state = next;
+        writeFocusState(storage, sessionId, state);
+      }
+      notify();
+    },
     dispatch(event) {
       let next = focusReducer(state, event, ctx);
       if (next === state) return;
@@ -50,7 +78,7 @@ export function createFocusStore(options: FocusStoreOptions): FocusStore {
       }
       state = next;
       writeFocusState(storage, sessionId, state);
-      for (const listener of [...listeners]) listener();
+      notify();
     },
     subscribe(listener) {
       listeners.add(listener);

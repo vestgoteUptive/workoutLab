@@ -310,8 +310,10 @@ describe("AC-6 screen ids", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(t.endedTitle);
     view.unmount();
 
+    // T-0304e: `done` now finishes S1 (D-0111 §3), so the stale row is its own unended session.
+    await seedSession({ id: "S3" });
     vi.setSystemTime(STARTED_AT_MS + 13 * 60 * 60_000);
-    await renderLoaded();
+    await renderLoaded({ path: "/session/S3" });
     expect(screenIds()).toEqual(["UF-09"]);
     expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(
       /^This workout was started on/,
