@@ -10,13 +10,29 @@
 //
 // Every loader rejection is caught too (D-0108 §3): an empty or failing cache gives the
 // no-plan state, never an uncaught error.
+//
+// T-0302c adds the UF-02.1 preview: each cache read also runs `suggest()` once, with the D-0065 §1
+// inputs (45 min, warm-up in budget, normal energy, nothing pinned, excluded or shuffled) and the
+// cached profile as it is, `goal` included (D-0095). The card renders that `Workout` only.
+//
+// Each cache-read effect run owns its own `cancelled` flag, so a read started for an older
+// `now`/`timeZone` never lands over a newer one. The 3 s cap timer is cleared when the refresh
+// settles and when the screen unmounts.
 import { useEffect, useRef, useState } from "react";
-import { balance, isHardSet, normalizeHistory } from "@workoutlab/engine";
+import {
+  balance,
+  isHardSet,
+  normalizeHistory,
+  suggest,
+  type SessionInput,
+  type Workout,
+} from "@workoutlab/engine";
 import {
   AREAS,
   type AreaTarget,
   type BalanceResult,
   type HistorySet,
+  type EngineProfile,
   type LibraryExercise,
 } from "@workoutlab/shared";
 import { loadEngineHistory } from "../../lib/offline/engine-feed.js";
@@ -31,6 +47,20 @@ import {
 /** D-0071 §8: the online refresh gets 3 s, then the screen stops waiting for it. */
 export const REFRESH_CAP_MS = 3000;
 
+/** D-0065 §1: the time the UF-02.1 preview assumes. UF-08.1 asks for the real one. */
+export const PREVIEW_BUDGET_MIN = 45;
+
+/** D-0065 §1: the preview's `suggest` input, and the only one this screen ever passes. */
+export const PREVIEW_INPUT: SessionInput = {
+  budgetMin: PREVIEW_BUDGET_MIN,
+  warmupInBudget: true,
+  energy: "normal",
+  shuffle: 0,
+  mainLiftId: null,
+  pinnedIds: [],
+  excludeIds: [],
+};
+
 export type TodayState =
   /** Before the first cache read resolves. `lastSyncedAt` isn't known yet either. */
   | { status: "loading" }
@@ -41,6 +71,10 @@ export type TodayState =
       result: BalanceResult;
       /** Whether the loaded history holds any hard set at all (`isHardSet`, AC-7). */
       hasHardSet: boolean;
+      /** The 45-min preview, as `suggest()` returned it; null only if `suggest` threw. */
+      workout: Workout | null;
+      /** The cached library the preview was built from, for the exercise names. */
+      library: readonly LibraryExercise[];
       lastSyncedAt: string | null;
     };
 
@@ -80,11 +114,14 @@ async function readCache(
     if (profile === null || !hasEveryTarget(targets)) {
       return { status: "no-plan", lastSyncedAt: await syncedRead };
     }
-    const result = balance(history, targets, library, now.toISOString(), timeZone);
+    const nowIso = now.toISOString();
+    const result = balance(history, targets, library, nowIso, timeZone);
     return {
       status: "ready",
       result,
       hasHardSet: anyHardSet(history, library),
+      workout: preview(history, targets, profile, library, nowIso, timeZone),
+      library,
       lastSyncedAt: await syncedRead,
     };
   } catch {
@@ -92,36 +129,106 @@ async function readCache(
   }
 }
 
-/** Resolves when `promise` settles or after `ms`, whichever comes first. Never rejects. */
-function settledOrCapped(promise: Promise<unknown>, ms: number): Promise<void> {
-  return new Promise<void>((resolve) => {
-    const timer = setTimeout(resolve, ms);
-    const done = () => {
-      clearTimeout(timer);
-      resolve();
-    };
-    promise.then(done, done);
+/** One `suggest()` over the read. A throw leaves the rest of the screen alone (no card). */
+function preview(
+  history: readonly HistorySet[],
+  targets: readonly AreaTarget[],
+  profile: EngineProfile,
+  library: readonly LibraryExercise[],
+  nowIso: string,
+  timeZone: string,
+): Workout | null {
+  try {
+    return suggest(history, targets, profile, library, PREVIEW_INPUT, nowIso, timeZone);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Resolves `done` when `promise` settles or after `ms`, whichever comes first; never rejects.
+ * `pause()` clears the timer (unmount); `resume()` re-arms it for the time that was left.
+ */
+interface Cap {
+  done: Promise<void>;
+  pause(): void;
+  resume(): void;
+}
+
+function settledOrCapped(promise: Promise<unknown>, ms: number): Cap {
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  let settled = false;
+  let remaining = ms;
+  let armedAt = 0;
+  let resolveDone: () => void = () => {};
+  const done = new Promise<void>((resolve) => {
+    resolveDone = resolve;
   });
+  const clear = () => {
+    if (timer !== null) clearTimeout(timer);
+    timer = null;
+  };
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    clear();
+    resolveDone();
+  };
+  const arm = () => {
+    armedAt = Date.now();
+    timer = setTimeout(finish, Math.max(0, remaining));
+  };
+  arm();
+  promise.then(finish, finish);
+  return {
+    done,
+    pause: () => {
+      if (settled || timer === null) return;
+      clear();
+      remaining -= Date.now() - armedAt;
+    },
+    resume: () => {
+      if (settled || timer !== null) return;
+      arm();
+    },
+  };
 }
 
 export function useToday(now: Date, timeZone: string, signedIn: boolean): TodayState {
   const [state, setState] = useState<TodayState>({ status: "loading" });
   const nowIso = now.toISOString();
-  const live = useRef(true);
-  /** The mount's first cache read; the post-refresh re-read always waits for it. */
-  const firstRead = useRef<Promise<void>>(Promise.resolve());
+  /** Whether the screen is mounted. Only the unmount clears it. */
+  const mounted = useRef(false);
+  /** The clock and tz of the latest cache-read effect run; a re-read for older ones never lands. */
+  const inputs = useRef({ nowIso, timeZone });
+  /** The latest cache read; the post-refresh re-read always waits for it. */
+  const latestRead = useRef<Promise<void>>(Promise.resolve());
   /** D-0113 §2: the refresh starts at most once per mount. */
   const refreshStarted = useRef(false);
+  /** The running refresh's 3 s cap, until it is done. */
+  const cap = useRef<Cap | null>(null);
 
-  // 1. The cache read, on mount. Nothing on the network is awaited before it.
+  // 0. Mount and unmount. The unmount clears the cap timer; a StrictMode remount re-arms it.
   useEffect(() => {
-    live.current = true;
-    const at = new Date(nowIso);
-    firstRead.current = readCache(at, timeZone).then((cached) => {
-      if (live.current) setState(cached);
+    mounted.current = true;
+    cap.current?.resume();
+    return () => {
+      mounted.current = false;
+      cap.current?.pause();
+    };
+  }, []);
+
+  // 1. The cache read, on mount and whenever the clock or tz changes. Nothing on the network is
+  //    awaited before it. Each run owns its `cancelled` flag: an older read never overwrites.
+  useEffect(() => {
+    let cancelled = false;
+    const current = { nowIso, timeZone };
+    inputs.current = current;
+    latestRead.current = readCache(new Date(nowIso), timeZone).then((cached) => {
+      if (!cancelled) setState(cached);
     });
     return () => {
-      live.current = false;
+      cancelled = true;
     };
   }, [nowIso, timeZone]);
 
@@ -130,15 +237,17 @@ export function useToday(now: Date, timeZone: string, signedIn: boolean): TodayS
   useEffect(() => {
     if (refreshStarted.current || !signedIn || !navigator.onLine) return;
     refreshStarted.current = true;
-    const at = new Date(nowIso);
     // Its rejection is handled inside `settledOrCapped` (D-0104).
-    const refreshed = settledOrCapped(refreshAll(at, timeZone), REFRESH_CAP_MS);
+    const capped = settledOrCapped(refreshAll(new Date(nowIso), timeZone), REFRESH_CAP_MS);
+    cap.current = capped;
     void (async () => {
-      await refreshed;
-      await firstRead.current;
-      if (!live.current) return;
-      const fresh = await readCache(at, timeZone);
-      if (live.current) setState(fresh);
+      await capped.done;
+      cap.current = null;
+      await latestRead.current;
+      if (!mounted.current) return;
+      const at = inputs.current;
+      const fresh = await readCache(new Date(at.nowIso), at.timeZone);
+      if (mounted.current && inputs.current === at) setState(fresh);
     })();
   }, [signedIn, nowIso, timeZone]);
 

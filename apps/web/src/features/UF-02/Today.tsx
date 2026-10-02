@@ -1,6 +1,7 @@
 // UF-02.1 Today (T-0302a): the header and date, the compact C-01 as one link to /balance, the
 // attention line, the check-in slot, the zero-history lines, the no-plan state and Start.
-// The 45-min suggestion card is T-0302c (D-0106 §1).
+// The 45-min suggestion card (T-0302c, D-0106 §1) sits between the check-in slot and the
+// lines above Start; it lives in `SuggestionCard.tsx`.
 //
 // Principle 3 — the engine decides, this file renders. The numbers come only from `balance()`
 // (see `use-today.ts`). `needsAttention` and `load` are read as properties, in `result.areas`
@@ -17,6 +18,7 @@ import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import { defaultLocale, defaultTimeZone, formatTodayDate } from "./format.js";
 import { todayCheckinSlot } from "./slots.js";
+import { SuggestionCard, SuggestionCardSkeleton } from "./SuggestionCard.js";
 import { useToday } from "./use-today.js";
 import "./today.css";
 
@@ -129,6 +131,13 @@ export function Today(props: TodayProps = {}) {
             <AttentionLine result={state.result} locale={locale} />
           ) : null}
           <CheckinSlot />
+          {state.status === "ready" ? (
+            state.workout === null ? null : (
+              <SuggestionCard workout={state.workout} library={state.library} locale={locale} />
+            )
+          ) : (
+            <SuggestionCardSkeleton />
+          )}
           {state.status === "ready" ? (
             <EmptyLine result={state.result} hasHardSet={state.hasHardSet} />
           ) : null}
