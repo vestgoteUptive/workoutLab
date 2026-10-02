@@ -401,3 +401,43 @@ example `T-0304d UF-09.8: Trim saves the engine's item list`).
     - `pnpm -w typecheck lint test --force --concurrency=1`: 19/19.
     - uf-09-focus e2e: 10/10.
     - `format:check` and check-all are green.
+
+## Accept log
+### Accept 2026-10-02 (product-owner): done
+Branch `t/T-0304d-time-check-pause-end` at 158e640 (main merged in, D-0149 on main). QA: done
+(the full `-w` gate 19/19, the whole e2e 124/124 under the consoleGuard, more planted faults red,
+break-it probes pass). Review 1 approved; rework 2 fixed the lost-end race; re-review approved.
+- **AC-1:** `time-check.test.tsx` "AC-1 R8-E1 through the engine" runs the real `timeCheck` in a
+  spy: one call with `{elapsedS: 1500, nextItemIndex: 1}` and budget 45, the exact texts and Done-by
+  times, no second call on Pause/Resume, focus on Continue. The `timeCheck` button pin (4) is in
+  `host.chrome.test.tsx` AC-7.
+- **AC-2:** not behind (1454 s, one call, `show: false`) and the pair (1500 s); never mid-item and
+  never after the last item through the production `ruleEightCheckPoint`; 0 calls with a
+  `keepsClockRunning: true` overlay. The planted fault (check on every `REST_END`) turned 6 red.
+- **AC-3:** Trim, Skip next and Continue write exactly what the engine returned (or nothing), as
+  a whole row; pending, rejection, nothing-left → `done` + `finish()`, and Trim hidden are each
+  tested with their pair. The planted fault (`[...doneItems, ...option.items]`) turned 4 red.
+- **AC-4:** elapsed with the pause and the off-budget warm-up (1500, the pair 1660), planned
+  finish 10:49, the sub-second `floor` (planted fault red), clock skew → 0, and a throwing check →
+  UF-09.6 with no alert.
+- **AC-5:** the fresh call at 1530 s, `show: false` → `CONTINUE`, past the end → `done`, and
+  `items.length + 1` rejected.
+- **AC-6 to AC-8:** `paused.test.tsx` covers content (23:10, Left 22 min, Sets 6 / 12, back-off
+  13), stopped timers, Left 0/1 min, actions and focus, seam order with injected entries and the
+  pair, no `a[href]`, every Skip origin, hidden cases, the `close()` re-sync (planted fault red)
+  and its pair, old stored states, the in-place End confirm, Cancel focus, `finish()` order, the
+  pending and rejection paths. `done` with no confirm stays green (T-0304e AC-6).
+- **AC-9:** `store.test.ts` "T-0304d AC-9" asserts storage right after each listed event.
+- **AC-10:** the e2e row "T-0304d AC-10 time check, pause and end, by keyboard" uses
+  `page.clock` with `seedSessionRow(startedAt)`, checks the IndexedDB plan (lateral-raise 2 sets)
+  and `ended_at`, axe 0 serious/critical on UF-09.8 and UF-09.9, and focus. The T-0304a chrome
+  row's UF-09.9 count is updated to 2, and the build log records it.
+- **AC-11:** `exports-and-lint.test.ts` and the `timer.test.ts` tick scan are green and unedited.
+- **Rework (the lost-end race):** `end-race.test.tsx` was red on 9ee34de (the QA probe and the
+  hook path) and is green with its pair. The ended row is always the last write.
+- **Principles:** 1 holds (one step on screen; Skip and End live only on UF-09.9; no links out).
+  2 holds (rule 8 compares against the chosen budget). 3 holds (the UI saves the engine's item
+  list unchanged; no engine change). 4 and 5 are untouched. No contract changed.
+- **Open:** D-0149 stays `revisit`. T-0435 (retry End after a failed finish; apply a landed plan
+  if a seam's `finish()` fails) is filed as a follow-up and doesn't block this ticket, because
+  the failed-finish flag reset is covered by review and the rejection path is tested.
