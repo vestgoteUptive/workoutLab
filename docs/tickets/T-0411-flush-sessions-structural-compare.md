@@ -30,8 +30,9 @@ sent. That is the silent loss T-0385 set out to prevent (D-0053 §7).
     - **`Date`:** both `Date`, and `getTime()` equal (two Invalid Dates are equal).
     - **`Map`:** same size, and entry-wise `sameValue` on key and value in iteration order.
       **`Set`:** same size, and element-wise in iteration order.
-    - **Anything else** (other class instances, typed arrays, functions, symbols, bigint, or
-      mismatched kinds): not equal. The entry stays `pending` and the next flush sends it again.
+    - **Anything else** (other class instances, typed arrays, functions, or mismatched kinds):
+      not equal. Every primitive, bigint and symbol included, compares with `===` (so `1n`
+      equals `1n`, as AC3 says). The entry stays `pending` and the next flush sends it again.
       That is safe, because the upsert is idempotent (`onConflict: 'id'`).
   - It never throws, and it never calls `JSON.stringify`.
   - The rest of `sameQueuedSession` (`pending`, `userId`, `finished`) is unchanged.
@@ -110,3 +111,4 @@ green · e2e green (it touches `apps/web/src/**`) · contracts unchanged · comm
 
 ## Build / accept log
 - 2026-10-02 build (frontend-dev): `flush.ts` drops `canonical`/`sortedKeys` and exports a pure `sameValue(a, b)`, which `sameQueuedSession` now uses for the row compare. Primitives compare with `===` plus `NaN` = `NaN`. Arrays compare in order. Plain objects (detected by tag and prototype shape, so a cross-realm structured clone still counts) compare defined keys in any order. `Date` compares by `getTime` (Invalid = Invalid). `Map`/`Set` compare by size and then entry by entry in iteration order. Anything else is not equal. A try/catch turns any throw (cycle, spoofed `Symbol.toStringTag`) into "different". There is no `JSON.stringify`. New `__tests__/flush.session-compare.test.ts` has 19 tests: 6 AC1, 4 AC2, 7 AC3 cases (checked in both directions) plus a no-throw sweep, and 1 AC5 source test. Red proof: with the new tests and main's `flush.ts`, all 6 AC1 rows fail (`pending: false`, cleared), and the AC3 no-throw test also fails (`sameValue` not exported). Green: web 132 files / 2029 tests, including the T-0385 rework tests unedited; web typecheck and lint clean; e2e `offline.spec.ts` 1/1; `-w format:check` clean; `check-all` exits 0. Note: the scope lists "symbols, bigint" under not equal, but AC3 requires `1n` = `1n`. Following AC3, every primitive (including the same symbol) compares with `===`. Functions are never equal.
+- 2026-10-02 build fix (frontend-dev, after review): the plain-object branch read `rb[k]` through the prototype chain and never checked b's own keys. So `JSON.parse('{"__proto__": {}}')` compared equal to `{z: 5}`, because `rb.__proto__` resolved to `Object.prototype`. It now compares the defined own keys of both sides (`Object.keys` + `Object.hasOwn`, as a key set on b), so a missing key still equals `undefined`. A new AC3 case, "own __proto__ key vs {z: 5}", expects different. Red on be03f3d (1 failed, 19 passed), green after the fix. The Scope line now matches AC3: primitives compare with `===`, so `1n` equals `1n`.

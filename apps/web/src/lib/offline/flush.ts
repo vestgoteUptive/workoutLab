@@ -122,8 +122,11 @@ function isPlainObject(value: object): boolean {
   return proto === null || Object.getPrototypeOf(proto) === null;
 }
 
+/** Own enumerable string keys whose own value isn't `undefined` (a missing key equals
+ *  `undefined`). `Object.keys` lists own keys only, and reading `record[k]` for an own key gets
+ *  the own value, even for a key named "__proto__". */
 function definedKeys(record: Record<string, unknown>): string[] {
-  return Object.keys(record).filter((k) => record[k] !== undefined);
+  return Object.keys(record).filter((k) => Object.hasOwn(record, k) && record[k] !== undefined);
 }
 
 function sameValueUnsafe(a: unknown, b: unknown): boolean {
@@ -166,10 +169,12 @@ function sameValueUnsafe(a: unknown, b: unknown): boolean {
   if (isPlainObject(a) && isPlainObject(b)) {
     const ra = a as Record<string, unknown>;
     const rb = b as Record<string, unknown>;
+    // Own keys only on both sides: a lookup through the prototype chain would let an own
+    // "__proto__" key on one side match `Object.prototype` on the other (T-0411 review).
     const ka = definedKeys(ra);
-    const kb = definedKeys(rb);
-    if (ka.length !== kb.length) return false;
-    return ka.every((k) => rb[k] !== undefined && sameValueUnsafe(ra[k], rb[k]));
+    const kb = new Set(definedKeys(rb));
+    if (ka.length !== kb.size) return false;
+    return ka.every((k) => kb.has(k) && Object.hasOwn(rb, k) && sameValueUnsafe(ra[k], rb[k]));
   }
   // Class instances, typed arrays, anything else: not provably equal, so not equal. The entry
   // stays `pending` and the next flush sends it again (the upsert is idempotent, T-0411).

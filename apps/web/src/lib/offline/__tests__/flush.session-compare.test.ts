@@ -115,6 +115,9 @@ describe("T-0411 AC3 JSON behaviour kept (sameValue unit cases)", () => {
     ["0 and -0", 0, -0, true],
     ["typed arrays are conservative", new Uint8Array([1]), new Uint8Array([1]), false],
     ["bigint primitives", 1n, 1n, true],
+    // An own "__proto__" key (JSON.parse makes these, structured clone keeps them) must be
+    // compared as an own key, never resolved through b's prototype chain.
+    ["own __proto__ key vs {z: 5}", JSON.parse('{"__proto__": {}}'), { z: 5 }, false],
   ];
 
   it.each(cases)("T-0411 AC3 %s", (_n, a, b, expected) => {
