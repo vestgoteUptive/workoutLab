@@ -121,7 +121,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0301a | Profile gate: lib/profile useProfileStatus/recheckProfile; signed-in without a profile → /welcome/save, /welcome/* allowed (D-0064 §9) — web-shell order T-0318 → T-0319 → T-0301a; gate = every protected route + /session/setup (D-0071 §11) | web-shell | T-0300 | done | wl-build-web |
 | T-0301b | UF-01.1–.3: welcome, goal (3), level + 3 equipment profiles; pending-plan record (24 h, planShown) and start time (D-0097, D-0098) | web-feature:UF-01 | T-0300, T-0318, T-0301a | done | wl-build-web |
 | T-0301d | UF-01.4 rhythm steppers + plan card from deriveTargets, timingMs, planShown, hand-off, e2e `uf-01-onboarding.spec.ts` (D-0064, D-0098) | web-feature:UF-01 | T-0301b, T-0201a | done | wl-build-web |
-| T-0301c | UF-01.5 Account (link, code, Google, privacy link) + /welcome/save (profile + 9 targets, existing profile wins, retry) | web-feature:UF-01 | T-0301a, T-0301b, T-0301d, T-0331, T-0378 (serial with T-0377; D-0100, D-0101) | doing | wl-build-web |
+| T-0301c | UF-01.5 Account (link, code, Google, privacy link) + /welcome/save (profile + 9 targets, existing profile wins, retry) | web-feature:UF-01 | T-0301a, T-0301b, T-0301d, T-0331, T-0378 (serial with T-0377; D-0100, D-0101) | done | wl-build-web |
 | T-0302 | UF-02 Today + workout preview (mount compact C-01 from components/body-map as one link to /balance, fed from BalanceResult.areas — T-0300d) | web-feature:UF-02 | T-0300, T-0203b | split → T-0302a, T-0302b (D-0065) | wl-build-web |
 | T-0302a | UF-02.1 Today: compact C-01 link, attention line, 45-min suggestion card, Start → UF-08.1, offline/zero states; lib/i18n/workout.ts formatters + features/UF-02/slots.tsx (todayCheckinSlot) | web-feature:UF-02 | T-0300, T-0203b, T-0318 | todo | wl-build-web |
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302a, T-0303b | todo | wl-build-web |
@@ -221,6 +221,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0378 | Signed-in shell offline hydrate raises an unhandled pageerror when Supabase reads fail (session_sets_live, exercises, area_targets…); catch and degrade, or ensure T-0301c's signed-in e2e mocks them (T-0301d QA) | web-shell | — | done | wl-build-web |
 | T-0379 | Lint-in-vitest tests time out at the 5 s default under machine load (`import-bans.test.ts` AC-11 "features lints clean", `features/UF-10/strings.test.ts` AC-A21 jsx-no-literals): give them an explicit per-test runtime budget or move them to the lint step (T-0331 QA) | web-shell | — | todo | wl-build-web |
 | T-0380 | Rejection guards on remaining fire-and-forget local/auth reads: `OfflineStatus.tsx:45` (`void loadLastSyncedAt().then`), UF-10 `index.tsx:274`, UF-04 `data.ts:40`, UF-01 `index.tsx:120` (exchangeCodeForSession, silent fallback to sign-in) — D-0104 pattern, one test each (T-0378 QA/accept; split per lane at groom) | web-shell | T-0378 | todo | wl-build-web |
+| T-0381 | D-0100 addendum (revisit): a signed-out visitor at /welcome/save with a saveable plan is replace-navigated to /account ("Save your plan"), as shipped in T-0301c | product | T-0301c | todo | wl-spec |
+| T-0382 | UF-01.5 Account a11y: roving tabindex + arrow keys on the Send link / Enter code tabs; mount the role=status live region before its first message (T-0301c review, pre-existing low) | web-feature:UF-01 | T-0301c | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
