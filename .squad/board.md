@@ -150,6 +150,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0447 | Needs a decision (amends D-0119 §7): when one observation crosses several cue thresholds (throttled background tab returns after a rest ended), fire only the lowest crossed cue of each kind, and drop voice cues once remaining is 0? Today 10 s + 0 s tones overlap and '3 2 1' plays after the rest (T-0304g review) | web-feature:UF-09 | T-0304g | todo | wl-build-web |
 | T-0448 | UF-09 device polish: speechSynthesis.cancel() on unmount and PAUSE; prime speechSynthesis inside the host gesture (iOS Safari); resume an AudioContext whose state is 'interrupted', not only 'suspended' (T-0304g review) | web-feature:UF-09 | T-0304g | todo | wl-build-web |
 | T-0449 | OfflineStatus formatTime: use hour '2-digit' if '08:10' is the intended form (D-0084 consequence) (T-0307b review) | web-shell | — | todo | wl-build-web |
+| T-0451 | UF-05 swap overlay: offer a retry after a failed chunk load (React.lazy caches the rejection, so every reopen shows loadFailed until reload); drop the T-0422 boundary 'scope' test that proves nothing; drop the stale 'TR-0043: red until it is resolved' comment in t0422.host.test.tsx (T-0422 re-review and QA) | web-feature:UF-09 | T-0422 | todo | wl-build-web |
+| T-0452 | shell.spec.ts AC-6: the /plan/routines/R1 row of OTHER_SUB_ROUTES is racy now UF-07.1 is built (an unknown id redirects to /plan offline, D-0081 §5); move it to a seeded test asserting built content plus an empty-cache contrast landing on /plan (D-0091 §1/§5) (T-0308a catch-up) | qa | T-0308a | todo | wl-build-qa |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |

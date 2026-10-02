@@ -10,9 +10,7 @@ its own ticket branch and never touches `main`.
 
 ## First checks on resume
 - **T-0308b is done and pushed** (verified on `main`: check-all, -w 19/19, repo-checks 146, e2e 153/153). `main` = `origin/main` at pause.
-- File **T-0451** on the board: "UF-05 swap overlay: a retry after a failed chunk load (React.lazy caches the
-  rejection, so every reopen shows loadFailed until reload); and the T-0422 boundary 'scope' test proves nothing"
-  (lane web-feature:UF-09, dep T-0422, from the T-0422 re-review).
+- T-0451 (swap retry) and T-0452 (shell R1 e2e race) are already on the board.
 - `git -C <worktree> log --oneline -3` and `git status` in each worktree below, to see what the in-flight run left.
 
 ## Tickets in flight at pause (worktrees under `../workoutLab-worktrees/`)
@@ -22,7 +20,7 @@ its own ticket branch and never touches `main`.
 | T-0304g | UF-09 wake lock, cues, reduced motion | Review approved. QA proved every AC and fault (58/58; F1, F3, its own wake-lock fault) but stopped before its gate: it left 3 stray files, which the orchestrator removed (worktree clean at `bcf51a3`) | Run the cached gate (D-0158 §1) in the worktree, commit QA's log, then accept → merge |
 | T-0440 | e2e: no server reuse on :4173, tmpfs preflight | Review approved, **QA passed** (`12ea587`, e2e 152/152) | Accept → merge; then shorten the two traps in `state.md` |
 | T-0307b | UF-06 Progress | Rework 2 done (`b19196e`): AC-10 replace test now fails without `replace` (2/2 red→green); en-GB-only Sep, unused key removed, 44 px min width. Web 2769, repo-checks, e2e uf-06+shell 24/24 | Re-review (`git diff 5976601..b19196e`) → QA (D-0158) → accept → merge |
-| T-0308a | UF-07.1 Routine editor | **Post-merge catch-up running** (main merged, finish ACs, green the gate) | Review → QA → accept → merge |
+| T-0308a | UF-07.1 Routine editor | **Catch-up done** (`ab4cbb7`): all ACs built; e2e spec on guarded-test; gate green, e2e 158/158. Log and self-grant landed on `main` | `git merge main` → review → QA (D-0158) → accept → merge |
 
 If a run's result was lost (the session ended before it reported), its worktree still holds the commits. Read the
 ticket's log section and the last commits, then continue from the step after the last one recorded. Rework or QA
@@ -45,7 +43,7 @@ after T-0422), T-0436 (e2e 501-backstop detection; after T-0422), T-0356, T-0362
 - `pnpm -w typecheck lint test` skips the repo checks; also run `pnpm -w test:repo-checks` (T-0444).
 
 ## Where everything else is
-- Current phase, traps and next free IDs: `.squad/state.md` (next decision **D-0159**, tickets **T-0451+**, TR-0044).
+- Current phase, traps and next free IDs: `.squad/state.md` (next decision **D-0159**, tickets **T-0453+**, TR-0044).
 - Board (open work): `.squad/board.md`; archived rows: `.squad/board-done.md`; decisions: `.squad/decisions/INDEX.md`.
 - Today's journal: `.squad/journal/2026-10-02.md`. Waiting on the human: `.squad/needs-human.md` (only
   deploy-time gates H-14, H-06, H-10 and optional H-05, H-12 remain).
