@@ -202,7 +202,8 @@ test.describe("AC-7 the chrome on a seeded session", () => {
     expect(box!.width).toBeGreaterThanOrEqual(44);
     expect(box!.height).toBeGreaterThanOrEqual(44);
     await expect(page.getByRole("navigation")).toHaveCount(0);
-    await expect(page.getByRole("button")).toHaveCount(1);
+    // T-0304f (D-0118 §12): the built UF-09.1 with a warm-up has Pause, Start now, Skip warm-up.
+    await expect(page.getByRole("button")).toHaveCount(3);
     const results = await new AxeBuilder({ page }).analyze();
     const serious = results.violations.filter(
       (v) => v.impact === "serious" || v.impact === "critical",
@@ -310,5 +311,113 @@ test.describe("T-0304b AC-12 one set offline", () => {
       isWarmup: false,
       backoff: false,
     });
+  });
+});
+
+// T-0304f AC-5 (D-0086, D-0091 §1, NFR-OFF-2): UF-09.1 → Skip warm-up → UF-09.3 → Done set →
+// the auto-save → UF-09.5 → +15 s → Skip rest → UF-09.3 set 2, all offline after a reload; axe on
+// UF-09.1, .5 and .6 (the two-item variant reaches UF-09.6).
+const TWO_SETS_PLAN = {
+  ...PLAN,
+  items: [{ ...PLAN.items[0]!, sets: 2 }],
+};
+
+const TWO_ITEMS_PLAN = {
+  ...PLAN,
+  warmup: [],
+  items: [
+    { ...PLAN.items[0]!, sets: 1 },
+    {
+      exerciseId: "barbell-row",
+      isMain: false,
+      sets: 3,
+      repsMin: 8,
+      repsMax: 12,
+      durationS: null,
+      costS: 555,
+      backoff: null,
+      prefill: { weightKg: 60, reps: 8, durationS: null, kind: "add_rep" },
+      reasons: [],
+    },
+  ],
+};
+
+/** Seeds `plan`, opens it once online, settles the precache, then goes offline and reloads with
+ *  no stored focus state, so UF-09.1 starts afresh. */
+async function openOffline(
+  page: Page,
+  context: { setOffline(offline: boolean): Promise<void> },
+  plan: object,
+): Promise<void> {
+  await page.goto("/");
+  await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+  const id = randomUUID();
+  await seedSessionRow(page, id, plan);
+  await page.goto(`/session/${id}`);
+  await expect(page.locator('[data-screen-id^="UF-09."]')).toBeVisible();
+  await precacheSettled(page);
+  await context.setOffline(true);
+  await page.evaluate((key) => window.localStorage.removeItem(key), `wl-focus:${id}`);
+  await page.reload();
+  await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+}
+
+test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
+  test("UF-09.1 Skip warm-up → UF-09.3 → Done set → UF-09.5 'Next · set 2 of 2' → +15 s → Skip rest → set 2", async ({
+    page,
+    context,
+  }) => {
+    await openOffline(page, context, TWO_SETS_PLAN);
+    const ready = page.locator('[data-screen-id="UF-09.1"]');
+    await expect(ready.getByRole("heading", { level: 1, name: "Get ready" })).toBeVisible();
+    const skipWarmup = ready.getByRole("button", { name: "Skip warm-up" });
+    await expect(skipWarmup).toBeVisible();
+    await skipWarmup.click();
+
+    const current = page.locator('[data-screen-id="UF-09.3"]');
+    await expect(current.getByText("Set 1 of 2")).toBeVisible();
+    await page.getByRole("button", { name: "Done set" }).click();
+    await expect(page.locator('[data-screen-id="UF-09.4"]')).toBeVisible();
+
+    const rest = page.locator('[data-screen-id="UF-09.5"]');
+    await expect(rest.getByText("Next · set 2 of 2")).toBeVisible({ timeout: 10_000 });
+    const timer = rest.getByRole("timer");
+    const before = await timer.textContent();
+    await rest.getByRole("button", { name: "+15 s" }).click();
+    await expect(timer).not.toHaveText(before ?? "");
+    await expect(page.locator('[data-field="announcer"]')).toHaveCount(1);
+    await expectAxeClean(page);
+    await rest.getByRole("button", { name: "Skip rest" }).click();
+    await expect(page.locator('[data-screen-id="UF-09.3"]').getByText("Set 2 of 2")).toBeVisible();
+    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+  });
+
+  test("axe: UF-09.1 (with a warm-up) reports 0 serious or critical violations", async ({
+    page,
+    context,
+  }) => {
+    await openOffline(page, context, TWO_SETS_PLAN);
+    await expect(page.getByRole("button", { name: "Start now" })).toBeFocused();
+    await expectAxeClean(page);
+  });
+
+  test("the two-item variant: Start now → set → rest → Skip rest → UF-09.6, axe clean, I'm ready → UF-09.3", async ({
+    page,
+    context,
+  }) => {
+    await openOffline(page, context, TWO_ITEMS_PLAN);
+    await page.getByRole("button", { name: "Start now" }).click();
+    await page.getByRole("button", { name: "Done set" }).click();
+    const rest = page.locator('[data-screen-id="UF-09.5"]');
+    // The mocked library is empty, so names fall back to the exercise id (D-0118 §8).
+    await expect(rest.getByText("Next · barbell-row")).toBeVisible({ timeout: 10_000 });
+    await rest.getByRole("button", { name: "Skip rest" }).click();
+    const next = page.locator('[data-screen-id="UF-09.6"]');
+    await expect(next.getByRole("heading", { level: 1, name: "barbell-row" })).toBeVisible();
+    await expect(next.getByText("3 × 8–12")).toBeVisible();
+    await expect(next.getByRole("timer")).toHaveText(/^(1:00|0:5\d)$/);
+    await expectAxeClean(page);
+    await next.getByRole("button", { name: "I'm ready" }).click();
+    await expect(page.locator('[data-screen-id="UF-09.3"]').getByText("Set 1 of 3")).toBeVisible();
   });
 });

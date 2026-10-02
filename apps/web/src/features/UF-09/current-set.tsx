@@ -5,31 +5,10 @@
 import { useEffect, useRef, useState } from "react";
 import { formatKg } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
-import { loadExerciseDetail } from "../../lib/offline/index.js";
 import { nextSetPrefill } from "./prefill.js";
 import { useFocusSession } from "./session.js";
+import { useCue } from "./use-cue.js";
 import type { ViewProps } from "./views.js";
-
-/** The cached cue (D-0118 §8): the IndexedDB detail, no refresh. A missing detail, a `null` cue
- *  or a rejected read gives `null`; the read never delays Done set. */
-function useCue(exerciseId: string): string | null {
-  const [cue, setCue] = useState<{ id: string; text: string | null } | null>(null);
-  useEffect(() => {
-    let live = true;
-    Promise.resolve()
-      .then(() => loadExerciseDetail(exerciseId))
-      .then(
-        (detail) => {
-          if (live) setCue({ id: exerciseId, text: detail?.cue ?? null });
-        },
-        () => undefined,
-      );
-    return () => {
-      live = false;
-    };
-  }, [exerciseId]);
-  return cue?.id === exerciseId ? cue.text : null;
-}
 
 export function CurrentSet({ state, ctx, locale }: ViewProps) {
   const session = useFocusSession();

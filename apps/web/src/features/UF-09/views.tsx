@@ -1,15 +1,26 @@
 // The per-state view registry (D-0111 §9). The placeholders are deliberately bare: an <h1>,
 // and `m:ss` for a phase with a timer. T-0304b–d replace them and own their buttons; `paused`
 // has its one button, Resume. T-0304b: UF-09.3 (`set`) and UF-09.4 (`confirm`) are built.
+// T-0304f: UF-09.1 (`getReady`), UF-09.5 (`rest`) and UF-09.6 (`next`) are built.
 import type { ReactElement, ReactNode } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { ConfirmSet } from "./confirm-set.js";
 import { CurrentSet } from "./current-set.js";
-import type { FocusCtx, FocusState, LoggedSet, Phase } from "./machine.js";
+import { GetReady } from "./get-ready.js";
+import type { FocusCtx, FocusEvent, FocusState, LoggedSet, Phase } from "./machine.js";
+import { NextExercise } from "./next-exercise.js";
+import { Rest } from "./rest.js";
 import { orderActions } from "./seams.js";
 import { formatClock, remainingS } from "./timer.js";
 
 export type ViewPhase = Exclude<Phase, "betweenItems" | "done">;
+
+/** A machine event without its `atMs`: the host stamps `Date.now()` when it dispatches. */
+export type ViewEvent = FocusEvent extends infer E
+  ? E extends unknown
+    ? Omit<E, "atMs">
+    : never
+  : never;
 
 /** A seam entry as a button on UF-09.6 / UF-09.9 (T-0304e, D-0071 §4). */
 export interface SeamButton {
@@ -30,6 +41,8 @@ export interface ViewProps {
   /** UF-09.4: the set is saved (`SAVED`), with the edited entry when Save changed it. */
   onSaved: (set?: LoggedSet) => void;
   onResume: () => void;
+  /** Dispatches a machine event now (UF-09.1 Start now / Skip warm-up, UF-09.6 I'm ready). */
+  send: (event: ViewEvent) => void;
   /** The seam entries for this screen: `pause` on UF-09.9, `next` on UF-09.6, else none. */
   seams: readonly SeamButton[];
 }
@@ -100,31 +113,18 @@ function Paused({ onResume, seams }: ViewProps) {
   );
 }
 
-function Next(props: ViewProps) {
-  // T-0304b adds I'm ready ("ready") before the seams.
-  const ids = orderActions([], props.seams, "next");
-  return (
-    <Placeholder {...props} phase="next">
-      {ids.map((id) => {
-        const seam = props.seams.find((s) => s.id === id);
-        return seam ? <SeamButtonView key={id} seam={seam} /> : null;
-      })}
-    </Placeholder>
-  );
-}
-
 const placeholder = (phase: ViewPhase) => {
   const View = (props: ViewProps) => <Placeholder {...props} phase={phase} />;
   return View;
 };
 
 export const VIEWS: Record<ViewPhase, (props: ViewProps) => ReactElement> = {
-  getReady: placeholder("getReady"),
+  getReady: GetReady,
   warmup: placeholder("warmup"),
   set: CurrentSet,
   confirm: ConfirmSet,
-  rest: placeholder("rest"),
-  next: Next,
+  rest: Rest,
+  next: NextExercise,
   timed: placeholder("timed"),
   timeCheck: placeholder("timeCheck"),
   paused: Paused,

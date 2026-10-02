@@ -163,3 +163,33 @@ example `T-0304f UF-09.5: rest ring warns at 10 s`).
 - **Order.** It comes after T-0304b, because the "Next" line uses `nextSetPrefill` and needs the real
   UF-09.3/.4 to reach a rest. It comes before T-0304c (D-0118 §1).
 - **Parallel.** It is parallel-safe by files with every UF-08 ticket and T-0385.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** Every AC has tests in `apps/web/src/features/UF-09/__tests__/`:
+  - AC-1: `get-ready.test.tsx`.
+  - AC-2: `announcer.test.tsx`.
+  - AC-3: `rest.test.tsx`, plus the source checks in `countdown-sources.test.ts`.
+  - AC-4: `next-exercise.test.tsx`.
+  - AC-5: the rows "T-0304f AC-5 get ready, rest and next, offline" appended to `tests/e2e/uf-09-focus.spec.ts`.
+  - AC-6: `exports-and-lint.test.ts` (strings, export pin) and `timer.test.ts` (the T-0304a AC-2 tick scan) are unchanged and green. `countdown-sources.test.ts` also runs the tick scan over the new views and `host.tsx`. The button pins are below.
+- **What was built.**
+  - `get-ready.tsx` (UF-09.1), `rest.tsx` (UF-09.5) and `next-exercise.tsx` (UF-09.6) replace the `getReady`/`rest`/`next` placeholders in `views.tsx`. `ViewProps` gains `send(event)`, which the host stamps with `Date.now()`. The rest buttons go through the hook's `adjustRest`/`skipRest`.
+  - `host.tsx` holds the chrome announcer: one `aria-live="polite"` `data-field="announcer"` element rendered beside the step (not inside it), so it stays mounted across every machine state, the overlay and `done`. A per-mount `observed` record (timer key, seen > 0, seen > 10, said 10) runs in an effect after every render, before the expiry check. `fireExpired` says "Go" only when this mount saw that timer with time left. A Skip, Start now, or a new step clears the region, except right after the "Go" its own expiry set. A paused state neither observes nor speaks (D-0119 §7).
+  - `use-cue.ts` holds the cached-cue hook that `current-set.tsx` had, so UF-09.3 and UF-09.6 share it.
+  - The strings are added to `flows/uf-09.ts`, and the ring, announcer and layout rules to `uf-09.css`.
+- **Planted faults.** Each one was applied, run, and reverted:
+  - AC-2: the announcer moved inside the rest view, so it is gone after the transition → 19 of 20 `announcer.test.tsx` cases red, including the live 120 s rest at `expect(announced()).toBe("Go")` ("expected null to be 'Go'").
+  - AC-3: the warn threshold changed to `remaining < REST_WARN_S` → "at remainingS 11 the ring has data-warn=false; at 10 it is true" red.
+- **Pins updated, not dropped (D-0118 §12).**
+  - `host.chrome.test.tsx` AC-7: `getReady` is `["Pause workout", "Start now", "Skip warm-up"]` (P1, with a warm-up), `rest` is `["Pause workout", "−15 s", "+15 s", "Skip rest"]`, and `next` is `["Pause workout", "I'm ready"]`. A new case pins `getReady` without a warm-up at `["Pause workout", "Start now"]`.
+  - `seams.test.tsx` (T-0304e): UF-09.6 with the module arrays is now `["Pause workout", "I'm ready"]`, and with the injected swap it is `["Pause workout", "I'm ready", "Swap"]`.
+  - `host.expiry.test.tsx` (T-0304a AC-9): the UF-09.1 timer at 4 999 ms reads `"1"`, not `"0:01"`. The built view counts bare seconds 5 → 1, as AC-1 asks.
+  - `tests/e2e/uf-09-focus.spec.ts`, row "AC-7 the chrome on a seeded session": the UF-09.1 button count is 3 (Pause, Start now, Skip warm-up), not 1.
+- **Defaults (within D-0118, no new decision).**
+  - **"0:00" and "GO".** The rest `role="timer"` always reads m:ss, so it reads 0:00 at 0. A sibling label `data-field="go"` reads "GO" at 0, inside the ring. In the host, a rest at 0 ends in the same act, so the AC-3 "−15 s ×9" test records the frames with a `MutationObserver`. It sees "0:00" and "GO", the stored remaining steps 105 … 15, 0 (the 9th press is floored, so it writes nothing), and then UF-09.3 with one `REST_END`. The "GO" pair is also rendered directly with `remainingS` 0 and 1.
+  - **"10 seconds" stays** in the region from the crossing until the next announcement or the next step. It is never re-set, so it is said once. A `+15 s` after the crossing doesn't say it again: the key is the timer's start, which an adjust keeps.
+  - **A rest that reaches 0 through −15 s** ends by expiry, so it says "Go".
+  - **The Next line** on UF-09.5 shows a load line only for a reps set of the same item: kg × reps, "Set weight" + reps for a `null` weight, or reps for bodyweight. Before another item it shows only "Next · {name}". A timed set shows no load line (T-0304c owns the timed copy).
+  - **UF-09.6 kg.** There is no kg element (and no "·") for a `null` pre-fill weight, and none for a bodyweight lift (`externalLoad: false`).
+  - **e2e names.** The e2e library mock is empty, so names fall back to the exercise id ("Next · barbell-row"). Each AC-5 row removes the stored `wl-focus:<id>` before the offline reload, so UF-09.1 starts afresh and isn't expired by the precache wait.
+- **Runs.** These were all green: `pnpm --filter @workoutlab/web typecheck lint test` (135 files, 2032 tests); `test:e2e uf-09-focus uf-08-setup` (23 passed); `-w format:check`; `check:repo`.

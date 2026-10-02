@@ -263,3 +263,129 @@
   outline: 2px solid var(--wl-color-accent);
   outline-offset: 2px;
 }
+
+/* The chrome announcer (T-0304f, D-0118 §10): read by screen readers, never seen. */
+.wl-uf09__announcer {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* UF-09.1 Get ready, UF-09.5 Rest, UF-09.6 Next exercise (T-0304f). */
+.wl-uf09__wide {
+  width: 100%;
+  min-height: 64px;
+  font-size: 20px;
+}
+
+.wl-uf09__first-item,
+.wl-uf09__detail,
+.wl-uf09__next-title,
+.wl-uf09__next-load,
+.wl-uf09__ring-time,
+.wl-uf09__ring-go {
+  margin: 0;
+}
+
+.wl-uf09__first-item {
+  font-family: var(--wl-font-display);
+  font-size: 28px;
+}
+
+.wl-uf09__detail {
+  display: flex;
+  gap: 8px;
+  color: var(--wl-color-text-muted);
+  font-size: 18px;
+}
+
+.wl-uf09__next {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wl-uf09__next-title {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf09__next-load {
+  font-family: var(--wl-font-display);
+  font-size: 28px;
+}
+
+.wl-uf09__next-load p {
+  margin: 0;
+}
+
+.wl-uf09__adjust {
+  display: flex;
+  gap: 12px;
+}
+
+.wl-uf09__adjust .wl-uf09__secondary {
+  min-width: 96px;
+  min-height: 56px;
+}
+
+.wl-uf09__ring {
+  position: relative;
+  width: min(70vw, 280px);
+  aspect-ratio: 1;
+  color: var(--wl-color-accent);
+}
+
+.wl-uf09__ring-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.wl-uf09__ring-track,
+.wl-uf09__ring-fill {
+  fill: none;
+  stroke-width: 6;
+}
+
+.wl-uf09__ring-track {
+  stroke: var(--wl-color-line);
+}
+
+.wl-uf09__ring-fill {
+  stroke: currentColor;
+  stroke-linecap: round;
+}
+
+.wl-uf09__ring-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.wl-uf09__ring-time {
+  color: var(--wl-color-text);
+  font-family: var(--wl-font-display);
+  font-size: 56px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-uf09__ring-go {
+  font-family: var(--wl-font-display);
+  font-size: 32px;
+}
+
+/* At 10 s or less, the ring and its label turn to the warn colour (parent AC-B7). */
+.wl-uf09__ring[data-warn="true"],
+.wl-uf09__ring[data-warn="true"] .wl-uf09__ring-time {
+  color: var(--wl-color-warn);
+}

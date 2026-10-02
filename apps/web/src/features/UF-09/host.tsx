@@ -1,7 +1,7 @@
 // UF-09 SessionHost (T-0304a, D-0111). Principle 1: exactly one task on screen. One
 // `[data-screen-id]` at a time: "UF-09" for the host-level states (loading, not on this
 // device, ended, stale, done), "UF-09.1 … UF-09.9" for the machine states.
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { en } from "../../lib/i18n/en.js";
 import { formatTime, localDate } from "../../lib/format/intl.js";
@@ -34,16 +34,29 @@ const END_EVENT: Partial<Record<Phase, FocusEvent["type"]>> = {
   next: "READY",
 };
 
-/** Dispatches the phase's end event once its wall-clock timer is at 0. It reads the store's
- *  current state, so a second call after the transition finds nothing to end. */
-function fireExpired(store: FocusStore): void {
-  const state = store.getState();
-  const type = END_EVENT[state.phase];
-  if (!type || !state.timer) return;
-  const now = Date.now();
-  if (remainingS(state.timer, now) > 0) return;
-  store.dispatch({ type, atMs: now } as FocusEvent);
+/** The phases whose end by expiry the announcer speaks as "Go" (D-0118 §10). */
+const SAYS_GO: ReadonlySet<Phase> = new Set<Phase>(["getReady", "rest"]);
+/** The rest "10 seconds" threshold (D-0118 §10, NFR-A11Y-4). */
+const SAY_TEN_AT_S = 10;
+
+/** One running timer, as the announcer sees it: a new key is a new timer. A rest adjust keeps
+ *  the key (same start), so "10 seconds" is said at most once per rest. */
+function timerKey(state: FocusState): string | null {
+  if (!state.timer) return null;
+  const { phase, itemIndex, setIndex, warmupIndex, timer } = state;
+  return `${phase}:${itemIndex}:${setIndex}:${warmupIndex}:${timer.startedAtMs}`;
 }
+
+/** What this mount has seen of the running timer (D-0119 §7: only an observed crossing speaks;
+ *  the first render after a mount or a restore never does). */
+interface Observed {
+  key: string | null;
+  sawAboveZero: boolean;
+  sawAboveTen: boolean;
+  saidTen: boolean;
+}
+
+const UNSEEN: Observed = { key: null, sawAboveZero: false, sawAboveTen: false, saidTen: false };
 
 function endsAtMs(state: FocusState): number | null {
   if (!END_EVENT[state.phase] || !state.timer) return null;
@@ -105,12 +118,19 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
     store.getSnapshot,
   );
   useRerenderEverySecond();
+  // One clock read per render: every time on screen this render is derived from it.
+  const nowMs = Date.now();
   const [row, setRow] = useState(initialRow);
   const [overlay, setOverlay] = useState<OpenOverlay | null>(null);
   const overlayRef = useRef<OpenOverlay | null>(null);
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
+  // The chrome announcer (D-0118 §10): one live region that outlives every step, so "Go" is
+  // still in the DOM after the rest view unmounts.
+  const [announcement, setAnnouncement] = useState("");
+  const observed = useRef<Observed>(UNSEEN);
+  const keepGo = useRef(false);
 
   const actions = useMemo(
     () =>
@@ -165,21 +185,68 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
     [gate],
   );
 
+  /** Dispatches the phase's end event once its wall-clock timer is at 0. It reads the store's
+   *  current state, so a second call after the transition finds nothing to end. An end whose
+   *  run-up this mount saw (a render with time left) says "Go"; a restore past it says nothing. */
+  const fireExpired = useCallback(() => {
+    const current = store.getState();
+    const type = END_EVENT[current.phase];
+    if (!type || !current.timer) return;
+    const now = Date.now();
+    if (remainingS(current.timer, now) > 0) return;
+    const seen = observed.current;
+    const sayGo = SAYS_GO.has(current.phase) && seen.key === timerKey(current) && seen.sawAboveZero;
+    if (sayGo) {
+      keepGo.current = true;
+      setAnnouncement(en.uf09.announceGo);
+    }
+    store.dispatch({ type, atMs: now } as FocusEvent);
+    if (sayGo && store.getState() === current) keepGo.current = false;
+  }, [store]);
+
+  // The announcer's eyes, after every render and before the expiry check below. A paused
+  // workout neither observes nor speaks (D-0119 §7); after Resume the same timer carries on.
+  useEffect(() => {
+    if (state.phase === "paused") return;
+    const key = timerKey(state);
+    if (key !== observed.current.key) {
+      observed.current = { ...UNSEEN, key };
+      // A new step clears the region, except right after the "Go" its expiry just said.
+      if (keepGo.current) keepGo.current = false;
+      else setAnnouncement("");
+    }
+    if (!key || !state.timer) return;
+    const seen = observed.current;
+    const left = remainingS(state.timer, nowMs);
+    if (
+      state.phase === "rest" &&
+      seen.sawAboveTen &&
+      !seen.saidTen &&
+      left <= SAY_TEN_AT_S &&
+      left > 0
+    ) {
+      seen.saidTen = true;
+      setAnnouncement(en.uf09.announceTen);
+    }
+    if (left > 0) seen.sawAboveZero = true;
+    if (left > SAY_TEN_AT_S) seen.sawAboveTen = true;
+  });
+
   // After every render — a transition, or the 1 s re-render — a timer that has run out ends,
   // once. Running on every re-render (not only when `state` changes) means a timer that still
   // reads > 0 when the exact timeout fires (the wall clock moved back, or the timeout fired a
   // little early) is caught on a later tick instead of sticking at 0:00 forever.
   useEffect(() => {
-    fireExpired(store);
+    fireExpired();
   });
 
   // The exact moment the running timer reaches 0 (wall-clock maths, not ticks).
   useEffect(() => {
     const endsAt = endsAtMs(state);
     if (endsAt === null) return;
-    const id = setTimeout(() => fireExpired(store), Math.max(0, endsAt - Date.now()));
+    const id = setTimeout(fireExpired, Math.max(0, endsAt - Date.now()));
     return () => clearTimeout(id);
-  }, [store, state]);
+  }, [fireExpired, state]);
 
   // `done` finishes with no confirm (D-0071 §5). `finish()` writes once while pending; a failed
   // write leaves the done screen, the focus key and the route as they are.
@@ -189,7 +256,6 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
   }, [state.phase, actions]);
 
   const workout = useMemo(() => buildWorkout(row, ctx.plan), [row, ctx.plan]);
-  const nowMs = Date.now();
   const session: FocusSession = {
     ...focusReadFields({ sessionId, row, plan: ctx.plan, workout, state, nowMs }),
     ...actions,
@@ -229,6 +295,7 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
           nowMs={nowMs}
           seams={buttons}
           onResume={() => store.dispatch({ type: "RESUME", atMs: Date.now() })}
+          send={(event) => store.dispatch({ ...event, atMs: Date.now() } as FocusEvent)}
           onCancelAutosave={() => store.dispatch({ type: "AUTOSAVE_CANCEL", atMs: Date.now() })}
           onSaved={(set) =>
             store.dispatch(
@@ -239,7 +306,14 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
       </div>
     );
   }
-  return <FocusSessionContext.Provider value={session}>{body}</FocusSessionContext.Provider>;
+  return (
+    <FocusSessionContext.Provider value={session}>
+      {body}
+      <p className="wl-uf09__announcer" data-field="announcer" aria-live="polite">
+        {announcement}
+      </p>
+    </FocusSessionContext.Provider>
+  );
 }
 
 export interface SessionHostProps {
