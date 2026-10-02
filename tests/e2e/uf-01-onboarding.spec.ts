@@ -451,11 +451,14 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
       "Check your email for a link and a 6-digit code.",
     );
 
-    // Space on a tab switches the mode.
+    // ArrowRight on the selected tab switches the mode (T-0382: roving tabindex, so Tab only
+    // reaches the selected tab).
+    const sendTab = page.getByRole("tab", { name: "Send link" });
+    await tabTo(page, sendTab);
+    await page.keyboard.press("ArrowRight");
     const codeTab = page.getByRole("tab", { name: "Enter code" });
-    await tabTo(page, codeTab);
+    await expect(codeTab).toBeFocused();
     await expectVisibleFocus(codeTab);
-    await page.keyboard.press("Space");
     await expect(page.getByLabel("6-digit code")).toBeVisible();
   });
 });

@@ -85,3 +85,6 @@ none
 
 ## Definition of done
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force` green · the e2e spec passes · contracts unchanged · commit messages start with `T-0382` and cite UF-01.5 (e.g. `T-0382 UF-01.5: roving tabindex on the Account tabs, live region mounted early`).
+
+## Build log
+- 2026-10-02, frontend-dev (build), on top of 742d669. Roving tabindex + automatic activation (ArrowLeft/Right wrap, Home/End; Enter/Space/click left to the button) and `<p role="status">` always mounted; `.wl-uf01__status:empty { position: absolute }` takes it out of the 22 px flex gap without hiding it from AT (`margin: 0` alone would leave the gap). Unfixed code (`AccountScreen.tsx` from HEAD, `<Navigate to="/account">` without `replace`): 14 of the new/edited cases fail (AC1–AC4, AC7), all reverted. Green: web `typecheck`, `lint`, `test` (110 files, 1635 tests), `test:e2e uf-01-onboarding` (7/7, incl. both axe checks for AC6), `-w format:check`, `check-all.mjs`.

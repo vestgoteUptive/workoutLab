@@ -487,6 +487,11 @@
   line-height: 1.45;
 }
 
+/* Empty: still in the accessibility tree (T-0382), but out of the flex flow, so no gap. */
+.wl-uf01__status:empty {
+  position: absolute;
+}
+
 .wl-uf01__or {
   margin: 0;
   color: var(--wl-color-text-muted);

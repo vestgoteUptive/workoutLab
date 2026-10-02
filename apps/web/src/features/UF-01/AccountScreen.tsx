@@ -16,6 +16,7 @@ import { readSaveablePlan } from "./pending-plan.js";
 export const PRIVACY_URL = "https://workout.vestgote.com/privacy/";
 
 type Mode = "link" | "code";
+const MODES: readonly Mode[] = ["link", "code"];
 
 const t = en.uf01.account;
 
@@ -113,6 +114,22 @@ export function Account() {
   const offlineNoteId = `${id}-google-offline`;
   const tabId = (m: Mode) => `${id}-tab-${m}`;
   const panelId = `${id}-panel`;
+  const tabRefs = useRef<Partial<Record<Mode, HTMLButtonElement | null>>>({});
+
+  // WAI-ARIA tabs with automatic activation (T-0382, NFR-A11Y-2): arrows move and select,
+  // wrapping; Home/End go to the ends. Enter, Space and click stay the button's own activation.
+  function onTabKeyDown(e: React.KeyboardEvent<HTMLButtonElement>, from: Mode) {
+    const at = MODES.indexOf(from);
+    let next: Mode | undefined;
+    if (e.key === "ArrowRight") next = MODES[(at + 1) % MODES.length];
+    else if (e.key === "ArrowLeft") next = MODES[(at - 1 + MODES.length) % MODES.length];
+    else if (e.key === "Home") next = MODES[0];
+    else if (e.key === "End") next = MODES[MODES.length - 1];
+    if (next === undefined) return;
+    e.preventDefault();
+    setMode(next);
+    tabRefs.current[next]?.focus();
+  }
 
   const emailField = (
     <label className="wl-uf01__field">
@@ -143,16 +160,21 @@ export function Account() {
         <p className="wl-uf01__muted">{saveable ? t.subtitleSave : t.subtitleSignIn}</p>
       </div>
       <div className="wl-uf01__tabs" role="tablist" aria-label={t.modesName}>
-        {(["link", "code"] as const).map((m) => (
+        {MODES.map((m) => (
           <button
             key={m}
+            ref={(el) => {
+              tabRefs.current[m] = el;
+            }}
             id={tabId(m)}
             type="button"
             role="tab"
             className="wl-uf01__tab"
             aria-selected={mode === m}
             aria-controls={panelId}
+            tabIndex={mode === m ? 0 : -1}
             onClick={() => setMode(m)}
+            onKeyDown={(e) => onTabKeyDown(e, m)}
           >
             {m === "link" ? en.auth.sendLinkTab : en.auth.enterCodeTab}
           </button>
@@ -187,11 +209,10 @@ export function Account() {
           </form>
         )}
       </div>
-      {message ? (
-        <p role="status" className="wl-uf01__status">
-          {message}
-        </p>
-      ) : null}
+      {/* Mounted from the first paint and filled in place, so the text is announced (NFR-A11Y-1). */}
+      <p role="status" className="wl-uf01__status">
+        {message}
+      </p>
       <p className="wl-uf01__or" aria-hidden="true">
         {t.or}
       </p>

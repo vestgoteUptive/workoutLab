@@ -5,6 +5,8 @@
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { en } from "../../../lib/i18n/en.js";
 
 const { auth, from } = vi.hoisted(() => ({
@@ -21,6 +23,7 @@ const { auth, from } = vi.hoisted(() => ({
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { auth, from } }));
 
 const { Account, AuthCallback } = await import("../index.js");
+const { press, tabTo } = await import("./keyboard.js");
 
 const KEY = "wl-onboarding";
 const NOW = 100_000_000;
@@ -282,7 +285,7 @@ describe("AC-3 Continue with Google", () => {
     fireEvent.click(google());
     await act(async () => {});
     expect(google()).toHaveAttribute("aria-disabled", "true");
-    expect(screen.queryByRole("status")).toBeNull();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
   it("offline at render: aria-disabled, described by en.auth.offline, and no call", async () => {
@@ -353,5 +356,161 @@ describe("AC-4 an expired link keeps the plan", () => {
     expect(await screen.findByText(en.auth.linkExpired)).toBeInTheDocument();
     expect(auth.exchangeCodeForSession).toHaveBeenCalledWith("used");
     expect(screen.getByText("Your plan is still saved on this device.")).toBeInTheDocument();
+  });
+});
+
+// T-0382 (UF-01.5, NFR-A11Y-1, NFR-A11Y-2): the WAI-ARIA tabs pattern with a roving tabindex and
+// automatic activation, and the role=status live region mounted before its first message.
+describe("T-0382 UF-01.5 tabs and live region", () => {
+  const tabs = () => within(root()).getAllByRole("tab");
+  const sendTab = () => within(root()).getByRole("tab", { name: "Send link" });
+  const codeTab = () => within(root()).getByRole("tab", { name: "Enter code" });
+
+  function expectSelected(selected: HTMLElement, other: HTMLElement): void {
+    expect(selected).toHaveAttribute("aria-selected", "true");
+    expect(selected).toHaveAttribute("tabindex", "0");
+    expect(other).toHaveAttribute("aria-selected", "false");
+    expect(other).toHaveAttribute("tabindex", "-1");
+  }
+
+  it("T-0382 AC1 first render: Send link selected with tabindex 0, Enter code -1", () => {
+    renderAt("/account");
+    expect(tabs().map((t) => t.textContent)).toEqual(["Send link", "Enter code"]);
+    expectSelected(sendTab(), codeTab());
+  });
+
+  it("T-0382 AC1 a click on Enter code swaps them", () => {
+    renderAt("/account");
+    fireEvent.click(codeTab());
+    expectSelected(codeTab(), sendTab());
+    fireEvent.click(sendTab());
+    expectSelected(sendTab(), codeTab());
+  });
+
+  it.each([
+    ["link", "Send link"],
+    ["code", "Enter code"],
+  ] as const)(
+    "T-0382 AC1 with %s selected, Shift+Tab from Email lands on it, then leaves the tablist",
+    async (mode, name) => {
+      renderAt("/account");
+      if (mode === "code") fireEvent.click(codeTab());
+      const selected = within(root()).getByRole("tab", { name });
+      const other = tabs().find((t) => t !== selected)!;
+      await tabTo((el) => el === screen.getByLabelText("Email"));
+      await press("ShiftTab");
+      expect(document.activeElement).toBe(selected);
+      await press("ShiftTab");
+      expect(document.activeElement).not.toBe(other);
+      expect(document.activeElement).not.toBe(selected);
+      expect(within(root()).getByRole("tablist").contains(document.activeElement)).toBe(false);
+    },
+  );
+
+  it("T-0382 AC2 ArrowRight moves focus and selection to Enter code, then wraps", async () => {
+    renderAt("/account");
+    sendTab().focus();
+    await press("ArrowRight");
+    expect(document.activeElement).toBe(codeTab());
+    expectSelected(codeTab(), sendTab());
+    expect(screen.getByLabelText("6-digit code")).toBeInTheDocument();
+    expect(within(root()).getByRole("tabpanel")).toHaveAttribute("aria-labelledby", codeTab().id);
+    await press("ArrowRight");
+    expect(document.activeElement).toBe(sendTab());
+    expectSelected(sendTab(), codeTab());
+    expect(screen.queryByLabelText("6-digit code")).toBeNull();
+    expect(within(root()).getByRole("tabpanel")).toHaveAttribute("aria-labelledby", sendTab().id);
+  });
+
+  it("T-0382 AC2 ArrowLeft from Send link wraps to Enter code, and back", async () => {
+    renderAt("/account");
+    sendTab().focus();
+    await press("ArrowLeft");
+    expect(document.activeElement).toBe(codeTab());
+    expectSelected(codeTab(), sendTab());
+    await press("ArrowLeft");
+    expect(document.activeElement).toBe(sendTab());
+    expectSelected(sendTab(), codeTab());
+  });
+
+  it("T-0382 AC2 End goes to Enter code and Home to Send link (each also from its own end)", () => {
+    renderAt("/account");
+    sendTab().focus();
+    fireEvent.keyDown(sendTab(), { key: "End" });
+    expect(document.activeElement).toBe(codeTab());
+    expectSelected(codeTab(), sendTab());
+    fireEvent.keyDown(codeTab(), { key: "End" });
+    expect(document.activeElement).toBe(codeTab());
+    expectSelected(codeTab(), sendTab());
+    fireEvent.keyDown(codeTab(), { key: "Home" });
+    expect(document.activeElement).toBe(sendTab());
+    expectSelected(sendTab(), codeTab());
+    fireEvent.keyDown(sendTab(), { key: "Home" });
+    expect(document.activeElement).toBe(sendTab());
+    expectSelected(sendTab(), codeTab());
+  });
+
+  it.each(["link", "code"] as const)(
+    "T-0382 AC2 ArrowUp and ArrowDown change nothing (%s selected)",
+    async (mode) => {
+      renderAt("/account");
+      if (mode === "code") fireEvent.click(codeTab());
+      const selected = mode === "link" ? sendTab() : codeTab();
+      const other = mode === "link" ? codeTab() : sendTab();
+      selected.focus();
+      await press("ArrowUp", "ArrowDown");
+      expect(document.activeElement).toBe(selected);
+      expectSelected(selected, other);
+    },
+  );
+
+  it("T-0382 AC2 Enter and Space on the focused tab still select it", async () => {
+    renderAt("/account");
+    codeTab().focus();
+    await press("Space");
+    expectSelected(codeTab(), sendTab());
+    sendTab().focus();
+    await press("Enter");
+    expectSelected(sendTab(), codeTab());
+  });
+
+  it("T-0382 AC3 one empty role=status on first render; the same node gets linkSent", async () => {
+    renderAt("/account");
+    const statuses = screen.getAllByRole("status");
+    expect(statuses).toHaveLength(1);
+    const status = statuses[0]!;
+    expect(status).toBeEmptyDOMElement();
+    expect(status).not.toHaveAttribute("aria-hidden");
+    expect(status).not.toHaveAttribute("hidden");
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "ada@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send link" }));
+    await waitFor(() => expect(status).toHaveTextContent(en.auth.linkSent));
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status.isConnected).toBe(true);
+  });
+
+  it("T-0382 AC3 a successful code verify leaves the same status node empty", async () => {
+    renderAt("/account");
+    const status = screen.getByRole("status");
+    fireEvent.click(codeTab());
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "ada@example.com" } });
+    fireEvent.change(screen.getByLabelText("6-digit code"), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "Verify code" }));
+    await waitFor(() => expect(auth.verifyOtp).toHaveBeenCalledTimes(1));
+    await act(async () => {});
+    expect(screen.getByRole("status")).toBe(status);
+    expect(status).toBeEmptyDOMElement();
+  });
+
+  it("T-0382 AC3 the empty status takes no flex slot and is never hidden from AT (uf-01.css)", () => {
+    const css = readFileSync(resolve(__dirname, "..", "uf-01.css"), "utf8");
+    const empty = /\.wl-uf01__status:empty\s*\{([^}]*)\}/.exec(css);
+    expect(empty).not.toBeNull();
+    expect(empty![1]).toMatch(/position:\s*absolute/);
+    const rules = [...css.matchAll(/([^{}]*\.wl-uf01__status[^{}]*)\{([^}]*)\}/g)];
+    expect(rules.length).toBeGreaterThan(0);
+    for (const [, , body] of rules) {
+      expect(body).not.toMatch(/display:\s*none|visibility:\s*hidden/);
+    }
   });
 });
