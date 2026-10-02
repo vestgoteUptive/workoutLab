@@ -62,8 +62,10 @@ describe("AC-13 import bans (D-0071 §9)", () => {
         result!.messages.filter((m) => m.ruleId === "no-restricted-imports" || m.fatal),
         file,
       ).toEqual([]);
+      // T-0303b: `lib/i18n/workout.ts` is now imported (read-only, D-0109 §7); its ban moved to
+      // the "workout.ts is imported, never re-implemented" test below.
       expect(readFileSync(file, "utf8"), file).not.toMatch(
-        /features\/UF-(02|06|07|10|11)|components\/body-map|lib\/i18n\/workout/,
+        /features\/UF-(02|06|07|10|11)|components\/body-map/,
       );
     }
   });

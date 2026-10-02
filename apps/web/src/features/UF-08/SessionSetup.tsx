@@ -9,14 +9,22 @@
 //
 // The fit line is the real on-device `suggest()` (principle 3), memoised on its inputs: the data
 // object (which `useSetupData` keeps identical while its content is unchanged, D-0107 §3), the
-// minutes, the warm-up toggle and the energy.
+// minutes, the warm-up toggle and the energy. It is only computed while UF-08.1 is on screen.
+//
+// UF-08.2 (T-0303b, D-0109 §1-§2). "Suggest my workout" freezes UF-08.1's `Workout` into the
+// session record `{workout, shuffle: 0, excludeIds: []}`; a later cache re-read never swaps it.
+// Each UF-08.2 action is exactly one `suggest` call with the inputs record
+// `{budgetMin, warmupInBudget, energy, shuffle, mainLiftId, excludeIds}`, where `mainLiftId` is the
+// current plan's (null only when the main item itself is removed). Leaving UF-08.2 for UF-08.1
+// drops the record (the adjustments are discarded); `budgetMin` is shared and stays.
 import { useEffect, useId, useMemo, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { suggest, type Energy, type Workout } from "@workoutlab/engine";
+import { suggest, type Energy, type SessionInput, type Workout } from "@workoutlab/engine";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { formatTime } from "../../lib/format/intl.js";
 import { en } from "../../lib/i18n/en.js";
+import { Ready } from "./Ready.js";
 import { Suggested } from "./Suggested.js";
 import {
   CHIPS,
@@ -56,15 +64,30 @@ function defaultTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
-interface Inputs {
-  budgetMin: number;
-  warmupInBudget: boolean;
-  energy: Energy;
+/** UF-08.1's call is fixed at `shuffle: 0, mainLiftId: null, excludeIds: []` (T-0303a AC-6). */
+function setupInput(budgetMin: number, warmupInBudget: boolean, energy: Energy): SessionInput {
+  return {
+    budgetMin,
+    warmupInBudget,
+    energy,
+    shuffle: 0,
+    mainLiftId: null,
+    pinnedIds: [],
+    excludeIds: [],
+  };
+}
+
+/** UF-08.2's adjustments on top of the shared minutes, warm-up and energy (D-0109 §1). */
+interface Adjusted {
+  /** The `Workout` on UF-08.2: UF-08.1's at hand-off, then each action's `suggest` result. */
+  workout: Workout;
+  shuffle: number;
+  excludeIds: string[];
 }
 
 function runSuggest(
   data: SetupData,
-  inputs: Inputs,
+  input: SessionInput,
   nowIso: string,
   timeZone: string,
 ): Workout | null {
@@ -74,15 +97,7 @@ function runSuggest(
       data.targets,
       data.profile,
       data.library,
-      {
-        budgetMin: inputs.budgetMin,
-        warmupInBudget: inputs.warmupInBudget,
-        energy: inputs.energy,
-        shuffle: 0,
-        mainLiftId: null,
-        pinnedIds: [],
-        excludeIds: [],
-      },
+      input,
       nowIso,
       timeZone,
     );
@@ -111,23 +126,36 @@ export function SessionSetup({ now, locale, timeZone }: SessionSetupProps = {}) 
   const [finishOpen, setFinishOpen] = useState(false);
   const [finishValue, setFinishValue] = useState("");
   const [finishError, setFinishError] = useState(false);
-  const [handedOff, setHandedOff] = useState(false);
+  const [adjusted, setAdjusted] = useState<Adjusted | null>(null);
 
   const { status } = useAuth();
   const state = useSetupData(nowIso, tz, status === "signed-in");
   const data = state.kind === "ready" ? state.data : null;
 
-  const workout = useMemo(
-    () => (data ? runSuggest(data, { budgetMin, warmupInBudget, energy }, nowIso, tz) : null),
-    [data, budgetMin, warmupInBudget, energy, nowIso, tz],
-  );
-  const missing = state.kind === "missing" || (data !== null && workout === null);
-
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const step = params.get("step");
-  const showSuggested = step === "suggested" && handedOff && workout !== null;
-  const stale = step !== null && step !== "time" && !showSuggested;
+  const pastSetup = step === "suggested" || step === "ready";
+  const showSuggested = step === "suggested" && adjusted !== null;
+  const showReady = step === "ready" && adjusted !== null;
+  const stale = step !== null && step !== "time" && !showSuggested && !showReady;
+
+  // D-0109 §1: going back to UF-08.1 discards UF-08.2's adjustments. Keyed on the step changing
+  // (not on `adjusted`), so the Suggest click's own render can't drop the record it just set.
+  useEffect(() => {
+    if (!pastSetup) setAdjusted(null);
+  }, [pastSetup]);
+
+  // Only UF-08.1 shows the fit line, so only UF-08.1 computes it: a time chip on UF-08.2 changes
+  // the shared `budgetMin` and must not cost a second `suggest` call.
+  const workout = useMemo(
+    () =>
+      data && !pastSetup
+        ? runSuggest(data, setupInput(budgetMin, warmupInBudget, energy), nowIso, tz)
+        : null,
+    [data, pastSetup, budgetMin, warmupInBudget, energy, nowIso, tz],
+  );
+  const missing = state.kind === "missing" || (data !== null && !pastSetup && workout === null);
 
   useEffect(() => {
     if (stale) void navigate(SETUP_PATH, { replace: true });
@@ -141,7 +169,59 @@ export function SessionSetup({ now, locale, timeZone }: SessionSetupProps = {}) 
     warmup: useId(),
   };
 
-  if (showSuggested) return <Suggested workout={workout} />;
+  if (showReady) return <Ready workout={adjusted.workout} />;
+
+  if (showSuggested && data !== null) {
+    /** One `suggest` call with the inputs record (D-0109 §2); a rejection keeps the plan. */
+    const resuggest = (change: {
+      budgetMin?: number;
+      shuffle?: number;
+      excludeIds?: string[];
+      mainLiftId?: string | null;
+    }) => {
+      const next = {
+        budgetMin: change.budgetMin ?? budgetMin,
+        shuffle: change.shuffle ?? adjusted.shuffle,
+        excludeIds: change.excludeIds ?? adjusted.excludeIds,
+      };
+      const mainLiftId =
+        change.mainLiftId === undefined ? adjusted.workout.plan.mainLiftId : change.mainLiftId;
+      const result = runSuggest(
+        data,
+        {
+          budgetMin: next.budgetMin,
+          warmupInBudget,
+          energy,
+          shuffle: next.shuffle,
+          mainLiftId,
+          pinnedIds: [],
+          excludeIds: next.excludeIds,
+        },
+        nowIso,
+        tz,
+      );
+      if (result === null) return;
+      if (next.budgetMin !== budgetMin) setBudgetMin(next.budgetMin);
+      setAdjusted({ workout: result, shuffle: next.shuffle, excludeIds: next.excludeIds });
+    };
+    const plan = adjusted.workout.plan;
+    return (
+      <Suggested
+        workout={adjusted.workout}
+        library={data.library}
+        locale={loc}
+        onRemove={(exerciseId) => {
+          const isMain = plan.items.some((i) => i.exerciseId === exerciseId && i.isMain);
+          resuggest({
+            excludeIds: [...adjusted.excludeIds, exerciseId],
+            ...(isMain ? { mainLiftId: null } : {}),
+          });
+        }}
+        onShuffle={() => resuggest({ shuffle: adjusted.shuffle + 1 })}
+        onBudget={(m) => resuggest({ budgetMin: m })}
+      />
+    );
+  }
 
   const stepBy = (delta: number) => {
     const next = clampBudget(budgetMin + delta);
@@ -168,7 +248,8 @@ export function SessionSetup({ now, locale, timeZone }: SessionSetupProps = {}) 
 
   const onSuggest = () => {
     if (workout === null) return;
-    setHandedOff(true);
+    // Frozen here: UF-08.2 starts from exactly this `Workout` (reference-equal, no new call).
+    setAdjusted({ workout, shuffle: 0, excludeIds: [] });
     void navigate(`${SETUP_PATH}?step=suggested`);
   };
 
