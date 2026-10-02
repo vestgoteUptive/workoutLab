@@ -92,11 +92,7 @@ describe("AC-7 reasonLine", () => {
       { code: "area_deficit", area: "back", deficit: 0.145 },
       "Back 15 % below target",
     ],
-    [
-      "days_since null",
-      { code: "days_since", area: "quads", days: null },
-      "Quads not trained yet",
-    ],
+    ["days_since null", { code: "days_since", area: "quads", days: null }, "Quads not trained yet"],
     ["days_since 0", { code: "days_since", area: "quads", days: 0 }, "Quads last trained today"],
     [
       "days_since 1",
@@ -215,9 +211,9 @@ describe("AC-7 strings: literals in workout.ts, area names from en.bodyMap.areas
   /** Every fragment left after taking out area names and numbers is a literal in the file. */
   function fragments(output: string): string[] {
     let rest = output;
-    for (const name of areaNames) rest = rest.split(name).join("\u0000");
+    for (const name of areaNames) rest = rest.split(name).join("¦");
     return rest
-      .split(/\u0000|\d+| · /)
+      .split(/¦|\d+| · /)
       .map((s) => s.trim())
       .filter((s) => s !== "");
   }

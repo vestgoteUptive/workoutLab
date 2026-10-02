@@ -144,8 +144,11 @@ describe("AC-5 import-ban CONTRAST", () => {
 
 describe("T-0302c AC-5 the card's min-height", () => {
   const css = read(join(FEATURE, "today.css"));
-  const rule = (cls: string): string | null =>
-    new RegExp(`(^|\\n)\\.${cls}\\s*\\{([^}]*)\\}`).exec(css)?.[2] ?? null;
+  const ruleIn = (sheet: string, cls: string): string | null =>
+    new RegExp(`(^|\\n)\\.${cls}\\s*\\{([^}]*)\\}`).exec(sheet)?.[2] ?? null;
+  const rule = (cls: string): string | null => ruleIn(css, cls);
+  const minHeightOf = (sheet: string): string | null =>
+    /\bmin-height:\s*(\d+)px;/.exec(ruleIn(sheet, "wl-today-card") ?? "")?.[1] ?? null;
 
   it("the .wl-today-card rule in features/UF-02/*.css has a px min-height", () => {
     const files = readdirSync(FEATURE).filter((n) => n.endsWith(".css"));
@@ -165,7 +168,10 @@ describe("T-0302c AC-5 the card's min-height", () => {
   });
 
   it("CONTRAST: a rule without min-height is caught", () => {
-    expect(".wl-today-card {\n  padding: 16px;\n}").not.toMatch(/\bmin-height:\s*\d+px;/);
+    const body = rule("wl-today-card")!;
+    const withoutMinHeight = css.replace(body, body.replace(/\n\s*min-height: \d+px;/, ""));
+    expect(minHeightOf(css)).not.toBeNull();
+    expect(minHeightOf(withoutMinHeight)).toBeNull();
   });
 });
 

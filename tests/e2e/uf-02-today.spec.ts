@@ -237,3 +237,84 @@ test.describe("AC-12 a11y and target size", () => {
     }
   });
 });
+
+// ---- T-0302c UF-02.1 suggestion card (AC-3, AC-5, AC-9; D-0091 §1, D-0108) ----
+// Appended rows: same `seed`, no fixture edits. The plan is non-empty because both seeded
+// exercises have `equipment: []`, which the default `mockProfilePresent` row matches.
+
+const card = (page: Page) => page.locator('[data-part="card"]');
+const cardRows = (page: Page) => page.locator('[data-part="card-row"]');
+
+/** The loaded card's header and row texts. */
+async function cardTexts(page: Page) {
+  await expect(card(page)).not.toHaveAttribute("aria-busy", "true");
+  await expect(cardRows(page).first()).toBeVisible();
+  return {
+    title: await page.locator('[data-part="card-title"]').innerText(),
+    summary: await page.locator('[data-part="card-summary"]').innerText(),
+    rows: await cardRows(page).allInnerTexts(),
+  };
+}
+
+const ROW = /^.+ [1-4] × (\d+(–\d+)?|\d+ s)$/;
+
+test.describe("T-0302c AC-9 offline card", () => {
+  test("the offline cold start shows the same 45-min card as online", async ({
+    page,
+    context,
+    supabaseGuard,
+  }) => {
+    await seed(page);
+    await expect(tile(page, "quads")).toHaveText("5 / 10");
+    await expect
+      .poll(() => cacheCounts(page))
+      .toEqual({ history: 5, library: 2, targets: 9, profile: 1 });
+    const online = await cardTexts(page);
+    expect(online.title).toBe("Suggested for 45 min");
+    expect(online.rows.length).toBeGreaterThan(0);
+    await waitForPrecache(page);
+
+    await context.setOffline(true);
+    await page.reload();
+
+    await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByText("Suggested for 45 min")).toBeVisible({ timeout: 3000 });
+    const offline = await cardTexts(page);
+    expect(offline).toEqual(online);
+    expect(offline.rows.some((r) => ROW.test(r))).toBe(true);
+    expect(supabaseGuard.unclaimed()).toEqual([]);
+  });
+});
+
+test.describe("T-0302c AC-3/AC-5/AC-9 card layout and a11y", () => {
+  test("See all is ≥ 44 × 44 px and the card is at least its min-height", async ({ page }) => {
+    await seed(page);
+    await cardTexts(page);
+    const seeAll = page.getByRole("link", { name: "See all" });
+    await expect(seeAll).toHaveAttribute("href", "/?view=preview");
+    const box = await seeAll.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    expect(box!.height).toBeGreaterThanOrEqual(44);
+
+    const minHeight = await card(page).evaluate((el) =>
+      Number.parseFloat(getComputedStyle(el).minHeight),
+    );
+    expect(minHeight).toBeGreaterThan(0);
+    const cardBox = await card(page).boundingBox();
+    expect(cardBox).not.toBeNull();
+    expect(cardBox!.height).toBeGreaterThanOrEqual(minHeight);
+  });
+
+  test("axe on / with the card loaded reports 0 serious or critical violations", async ({
+    page,
+  }) => {
+    await seed(page);
+    await cardTexts(page);
+    const results = await new AxeBuilder({ page }).analyze();
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious).toEqual([]);
+  });
+});
