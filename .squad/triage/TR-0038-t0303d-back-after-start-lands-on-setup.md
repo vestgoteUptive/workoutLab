@@ -1,6 +1,6 @@
 ---
 id: TR-0038
-status: open
+status: resolved
 raised_by: frontend-dev (build) on T-0303d
 date: 2026-10-02
 ---
@@ -20,3 +20,13 @@ The setup steps are PUSH navigations inside one route (D-0107 §1). T-0303a pins
 
 ## Interim state on the branch
 Start ships per D-0110 §4 (one REPLACE after the write). The literal Back row is kept under `test.fail(true, "TR-0038: …")`, so the suite stays green and the conflict stays visible. Once TR-0038 is resolved, amend or remove that row.
+
+## Blocking
+T-0303d (accept).
+
+## Resolution
+Resolved 2026-10-02 by triage: [D-0123](../decisions/D-0123-back-after-start-and-back-in-focus-mode.md).
+- **Option 1 for UF-08.** D-0107 §1 (setup PUSHes) and D-0110 §4 (one REPLACE after the write) stand, so T-0303d AC-4/AC-5 are unchanged. D-0110 §4's guarantee is restated: Back from focus mode never lands on `?step=ready`/UF-08.4. It may land on UF-08.1. T-0303d AC-10's Back row is amended to match. The `test.fail` row is replaced by the amended row, which also passes after T-0394.
+- **Options 2 and 3 rejected.** Unwinding needs `history.state.idx` under a declarative `BrowserRouter`, flashes UF-08.1 and changes AC-4/5. Step REPLACEs reverse decided pins. Neither fixes the real issue: Back would still leave a running workout silently, one tap from a second Start.
+- **The real fix goes in UF-09.** Back in a running machine state shows Pause (UF-09.9), through a same-URL history guard (principle 1; this also covers the Android system Back in the standalone PWA). Back on UF-09.9 leaves normally, so nobody is trapped. That is new ticket T-0394 (`web-feature:UF-09`, deps T-0304d, T-0303d).
+- **Second session.** Accepted in v1 (NFR-SYNC-4, no data lost, the old session goes stale after 12 h). A "Resume workout" entry on Today/UF-08.1 goes to product-owner to groom (D-0123 §5).

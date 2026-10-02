@@ -7,6 +7,8 @@ by: product-owner (groom T-0303b/T-0303d/T-0304a)
 area: product
 builds-on: D-0063 §5, D-0065 §6 §7, D-0071 §3 §6, D-0107 §4
 ---
+> **Amended in part by D-0123 (2026-10-02, TR-0038).** §4: the mechanism (one REPLACE after the write) is unchanged, but Back from focus mode may land on UF-08.1 (via `?step=suggested`), never on `?step=ready`/UF-08.4. It does not reach the entry before setup. UF-09 turns Back in a running state into Pause (T-0394).
+
 ## Context
 D-0065 §6–§7 fix what UF-08.4 shows and how Start writes the session: `upsertSession` first, navigation after the IndexedDB write resolves, one session per Start, a new id per Start. Seven points are still open, and each changes a test:
 1. D-0107 §4 reads the clock once, when the setup host mounts. If `started_at` uses that value, every minute the user spends on UF-08.1–.4 is charged to the workout, and the rule 8 time check (UF-09.8) starts behind.
