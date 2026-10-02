@@ -63,17 +63,5 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 - **Flow:** `wl-build-web`.
 - **Parallel:** safe with T-0324, T-0416 and every UF-05 and UF-09 ticket. It shares the UF-03 lane with T-0420 but only adds a new test file. Run it before or after T-0420, never in the same worktree.
 
-## Build log
-- 2026-10-02 frontend-dev: added `apps/web/src/features/UF-03/__tests__/summary.duration.test.tsx` (9 tests: AC-1 ×3, AC-2 ×4, AC-3 ×2), built on `helpers.tsx`/`fixtures.ts`/`mocks.ts`. S1 is seeded with `seedAll`, then its row is rewritten in `offlineDb().sessions` with the case's `started_at`/`ended_at` (`as never`). Every test checks the `unhandledRejection` probe, both inside the test and in `afterEach`. Negative checks wait 50 ms (`waitReal`). No src change: main already passes, so no defect was found. Existing UF-03 files are unedited; AC-4 is covered by the untouched suite (56/56 green, including `exports-and-lint` "exports exactly Summary").
-- Planted faults, each applied alone to `summary-data.ts` and reverted (`git checkout`), running the new file:
-  - `if (!Number.isFinite(durationMs)) return NOT_ON_DEVICE;` removed: 1 red / 8 green. AC-1 bad `started_at` is red, and the screen shows "NaN min" in `[data-part="time"]`. **AC-1 bad `ended_at` stayed green:** `balance` at the unparsable `now` throws into the outer catch, which still gives "isn't on this device".
-  - `Math.max(0, …)` removed: 2 red. AC-2 −5 min shows "Time-5 min" and AC-2 −30 s shows "Time-1 min", both caught by the no "-N min" check.
-  - `Math.floor` → `Math.ceil`: 4 red. The AC-1 pair and the AC-2 ENDED_AT pair read "53 min", AC-2 +59 s reads "1 min", and AC-3 52 min 59 s reads "53 min".
-
-## Accept log
-- 2026-10-02 product-owner: **done**. Branch `t/T-0428-uf03-summary-duration-tests` at 385e375, test-only, no src change.
-  - **AC-1:** the bad `started_at` and bad `ended_at` tests both go through `expectNotOnDevice`. It checks one UF-03.3 wrapper, the copy, the "Go to Today" link with `href="/"`, and after 50 ms no "min"/"NaN" text, no time/exercises/sets parts, no `/balance` link, the path unchanged and the probe empty. The bad `ended_at` test also checks there is no still-running state. The valid pair reads "52 min" and "45 min budget". The planted fault (isFinite removed) turns the `started_at` case red ("NaN min"). The `ended_at` case stays green through the outer catch, which the ticket allows and the build log records.
-  - **AC-2:** −5 min reads "0 min" with the budget, Exercises 2, Sets 7 and one See balance. −30 s reads "0 min", +59 s reads "0 min" and ENDED_AT reads "52 min". Every case checks for no "NaN" and no "-N min". The planted fault (Math.max removed) turns 2 red.
-  - **AC-3:** equal timestamps read "0 min", and 52:59 reads "52 min". The planted fault (floor→ceil) turns 4 red.
-  - **AC-4:** the existing UF-03 suite passes unedited (56/56), including the "exports exactly Summary" pin.
-  - Principles hold: principle 3 is now pinned (the Time figure never reads "NaN min" or "-N min"). Contracts are unchanged. The web suite (2518) and the format and check-all runs are green, per the orchestrator's input.
+## Build / accept log
+Archived in `docs/tickets/log/T-0428.md` (D-0157).
