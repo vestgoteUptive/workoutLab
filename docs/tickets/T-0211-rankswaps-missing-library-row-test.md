@@ -76,3 +76,25 @@ none (`docs/engine-rules.md` and `api/openapi.yaml` unchanged)
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` is green · contracts unchanged · commit messages start with `T-0211` and cite UF-08.3 (e.g. `T-0211 UF-08.3: pin D-0059 (c) and normalise the AC24 done-set`).
 
 ## Build / accept log
+
+### Build (engine-dev, 2026-10-02)
+- **AC1:** I added three tests in `packages/engine/test/rule-12-swaps.test.ts`. The first covers `barbell-row` (a plain slot) and the second covers `bench-press` (the main slot). Each removes the current item from `LIBRARY` and checks that every `REASONS` entry throws `RangeError` matching `/<id> is not in the library/`, with both `[]` and `balancedHistory`. The third is the contrast case: with the full `LIBRARY`, the same calls don't throw.
+- **AC1 mutation proof (not committed):** I replaced the `cur === undefined` guard on `src/swaps.ts:219` with a comment and ran `vitest run test/rule-12-swaps.test.ts -t "T-0211 AC1"`. Both AC1 tests went red with `AssertionError: expected error to be instance of RangeError`, because the call threw a `TypeError` instead (2 failed | 1 passed | 27 skipped). The contrast test stayed green. I restored the guard with `git checkout src/swaps.ts`.
+- **AC2:** The AC24 done-set now comes from `doneIdsOf(history, LIBRARY)`, which is `normalizeHistory` + `isHardSet`. The test passes over all four `SIMULATED_HISTORIES`.
+  - Observed precondition values:
+    - `w` = inverted-row × 4, back-squat × 3, calf-raise × 2;
+    - `B` = `inverted-row`;
+    - `L` (variety) = barbell-row, db-row, lat-pulldown, seated-cable-row, all at 0.75 and none of them done;
+    - `X` = `barbell-row`.
+  - The variant is built inside the test. It isn't reused, so `fixtures/histories.ts` is unchanged.
+  - Results on the variant:
+    - `doneIdsOf` excludes `X`, and the raw filter includes it;
+    - `suggest` deep-equals `w`, and `rankSwaps` deep-equals `L`;
+    - the invariant holds with `doneIdsOf`;
+    - with the raw filter it fails, and the test asserts that failure explicitly.
+- **AC3:** `git diff --stat main...HEAD -- packages/engine/src` is empty. The only edits to existing lines are the AC24 done-set line and the imports. The engine test count went from 632 to 636: the 4 new T-0211 tests.
+- **AC4 and the other checks, all green:**
+  - `flock … pnpm --filter @workoutlab/engine typecheck`, `lint` and `test` (37 files, 636 tests);
+  - `pnpm -w format:check`;
+  - `node .github/scripts/check-all.mjs`;
+  - `node supabase/scripts/vendor.mjs --check`.
