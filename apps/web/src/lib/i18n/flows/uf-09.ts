@@ -68,4 +68,19 @@ export const uf09 = {
   // The chrome announcer (T-0304f, D-0118 §10, NFR-A11Y-4).
   announceTen: "10 seconds",
   announceGo: "Go",
+  // UF-09.2 Warm-up (T-0304c, D-0066 §8, D-0119 §5).
+  warmupMove: (n: number, total: number) => `Move ${n} of ${total}`,
+  restartMove: "Restart",
+  nextMove: "Next move",
+  // UF-09.7 Timed set (T-0304c, D-0119 §1–§4, D-0062 §5).
+  getInPosition: "Get in position",
+  holdPhase: "Hold",
+  holdTarget: (clock: string) => `Hold ${clock}`,
+  easingBackIn: "Easing back in",
+  pauseTimer: "Pause timer",
+  resumeTimer: "Resume timer",
+  logHold: "Log hold",
+  holdError: "Couldn't save. Tap Log hold to try again.",
+  // The chrome announcer, when a hold is logged (D-0118 §10, NFR-A11Y-4).
+  announceDone: "Done",
 } as const;

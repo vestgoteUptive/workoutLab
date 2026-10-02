@@ -7,7 +7,7 @@ import { en } from "../../lib/i18n/en.js";
 import { formatTime, localDate } from "../../lib/format/intl.js";
 import { Chrome } from "./chrome.js";
 import { loadSession, type HostLoad } from "./load.js";
-import type { FocusEvent, FocusState, Phase } from "./machine.js";
+import { holdSeconds, type FocusEvent, type FocusState, type Phase } from "./machine.js";
 import type { FocusStorage } from "./persist.js";
 import { nextSeamActions, pauseSeamActions, type SeamAction } from "./seams.js";
 import {
@@ -25,7 +25,7 @@ import { SCREEN_IDS, VIEWS, type SeamButton, type ViewPhase } from "./views.js";
 import "./uf-09.css";
 
 /** The end event a phase's timer fires at 0 (D-0111 §8, D-0118 §2: the confirm auto-save).
- *  `timed` waits for T-0304c. */
+ *  `timed` has no event here: its end is a write, the auto-log below (D-0119 §3). */
 const END_EVENT: Partial<Record<Phase, FocusEvent["type"]>> = {
   getReady: "COUNTDOWN_END",
   warmup: "WARMUP_NEXT",
@@ -59,7 +59,9 @@ interface Observed {
 const UNSEEN: Observed = { key: null, sawAboveZero: false, sawAboveTen: false, saidTen: false };
 
 function endsAtMs(state: FocusState): number | null {
-  if (!END_EVENT[state.phase] || !state.timer) return null;
+  if (!state.timer) return null;
+  const timedRunning = state.phase === "timed" && state.timerPausedAtMs === null;
+  if (!END_EVENT[state.phase] && !timedRunning) return null;
   return state.timer.startedAtMs + state.timer.pausedMs + state.timer.durationS * 1000;
 }
 
@@ -131,6 +133,11 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
   const [announcement, setAnnouncement] = useState("");
   const observed = useRef<Observed>(UNSEEN);
   const keepGo = useRef(false);
+  // The timed auto-log's in-flight guard (D-0119 §3): the hold (by its timer key) this mount has
+  // already tried to log. Every re-render at 0 finds it and writes nothing; a rejected write is
+  // retried only by "Log hold", never by the next tick.
+  const holdTried = useRef<string | null>(null);
+  const [holdFailed, setHoldFailed] = useState<string | null>(null);
 
   const actions = useMemo(
     () =>
@@ -185,11 +192,83 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
     [gate],
   );
 
+  /** Logs the current hold through the hook (D-0119 §3): `kind: "timed"`, the planned hold
+   *  (not the wall time, so a late restore logs what was planned), at the current position. The
+   *  hook moves the machine (`TIMED_RECORDED`) once the write has resolved. */
+  const logHold = useCallback(
+    (sayDone: boolean): Promise<void> => {
+      const current = store.getState();
+      const item = store.getSnapshot().ctx.plan.items[current.itemIndex];
+      if (current.phase !== "timed" || !item) return Promise.resolve();
+      const key = timerKey(current);
+      return actions
+        .recordSet({
+          sessionId,
+          itemIndex: current.itemIndex,
+          exerciseId: item.exerciseId,
+          setIndex: current.setIndex,
+          kind: "timed",
+          durationS: holdSeconds(item),
+          reps: null,
+          weightKg: null,
+          rir: null,
+          isWarmup: false,
+          backoff: false,
+        })
+        .then(
+          () => {
+            setHoldFailed(null);
+            if (!sayDone) return;
+            // The step has moved on; keep "Done" through the observer's clear of the new step.
+            keepGo.current = observed.current.key !== timerKey(store.getState());
+            setAnnouncement(en.uf09.announceDone);
+          },
+          (error: unknown) => {
+            setHoldFailed(key);
+            throw error;
+          },
+        );
+    },
+    [store, actions, sessionId],
+  );
+
+  /** The auto-log at 0 (D-0119 §3), once per hold per mount, and not while the ring is paused.
+   *  A hold whose position already has a logged set of this exercise isn't logged again: the
+   *  machine moves on as that log did (T-0410: a set of another exercise there is not this one). */
+  const autoLogHold = useCallback(
+    (now: number) => {
+      const current = store.getState();
+      if (current.phase !== "timed" || !current.timer || current.timerPausedAtMs !== null) return;
+      if (remainingS(current.timer, now) > 0) return;
+      const key = timerKey(current);
+      if (holdTried.current === key) return;
+      holdTried.current = key;
+      const exerciseId = store.getSnapshot().ctx.plan.items[current.itemIndex]?.exerciseId;
+      const logged = current.loggedSets.some(
+        (s) =>
+          s.itemIndex === current.itemIndex &&
+          s.setIndex === current.setIndex &&
+          s.exerciseId === exerciseId,
+      );
+      if (logged) {
+        store.dispatch({ type: "HOLD_ALREADY_LOGGED", atMs: now });
+        return;
+      }
+      const seen = observed.current;
+      logHold(seen.key === key && seen.sawAboveZero).catch(() => undefined);
+    },
+    [store, logHold],
+  );
+
   /** Dispatches the phase's end event once its wall-clock timer is at 0. It reads the store's
    *  current state, so a second call after the transition finds nothing to end. An end whose
    *  run-up this mount saw (a render with time left) says "Go"; a restore past it says nothing. */
   const fireExpired = useCallback(() => {
     const current = store.getState();
+    if (current.phase === "timed") {
+      autoLogHold(Date.now());
+      return;
+    }
     const type = END_EVENT[current.phase];
     if (!type || !current.timer) return;
     const now = Date.now();
@@ -202,7 +281,7 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
     }
     store.dispatch({ type, atMs: now } as FocusEvent);
     if (sayGo && store.getState() === current) keepGo.current = false;
-  }, [store]);
+  }, [store, autoLogHold]);
 
   // The announcer's eyes, after every render and before the expiry check below. A paused
   // workout neither observes nor speaks (D-0119 §7); after Resume the same timer carries on.
@@ -294,6 +373,8 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
           locale={locale}
           nowMs={nowMs}
           seams={buttons}
+          holdFailed={holdFailed !== null && holdFailed === timerKey(state)}
+          onLogHold={() => logHold(false)}
           onResume={() => store.dispatch({ type: "RESUME", atMs: Date.now() })}
           send={(event) => store.dispatch({ ...event, atMs: Date.now() } as FocusEvent)}
           onCancelAutosave={() => store.dispatch({ type: "AUTOSAVE_CANCEL", atMs: Date.now() })}
