@@ -13,6 +13,7 @@ import type { BalanceResult } from "@workoutlab/shared";
 import { BodyMap } from "../../components/body-map/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { formatSetCount } from "../../lib/format/number.js";
+import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import { defaultLocale, defaultTimeZone, formatTodayDate } from "./format.js";
 import { todayCheckinSlot } from "./slots.js";
@@ -90,7 +91,9 @@ export function Today(props: TodayProps = {}) {
   const now = props.now ?? mountedAt;
   const timeZone = props.timeZone ?? defaultTimeZone();
   const locale = props.locale ?? defaultLocale();
-  const state = useToday(now, timeZone);
+  // D-0113: the mount refresh runs only for a signed-in session (the AutoSync condition).
+  const { status } = useAuth();
+  const state = useToday(now, timeZone, status === "signed-in");
 
   return (
     <div data-screen-id="UF-02.1" className="wl-today">

@@ -7,6 +7,10 @@ import { recordSet } from "../../../lib/offline/queue.js";
 import { F_TZ, L1, PROFILE, RDL, history, targets } from "./fixtures.js";
 import { freshDb, macrotask, renderToday, seedCache, signIn, signOut, tile } from "./helpers.js";
 
+const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
+vi.mock("../../../lib/auth/auth-context.js", () => ({
+  useAuth: () => ({ status: auth.status, redirectTarget: "/welcome" as const, signOut: vi.fn() }),
+}));
 vi.mock("@workoutlab/engine", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@workoutlab/engine")>();
   return { ...actual, balance: vi.fn(actual.balance) };

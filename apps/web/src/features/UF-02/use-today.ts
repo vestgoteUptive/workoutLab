@@ -3,14 +3,14 @@
 // `/workouts/suggest`). Written in UF-02 after `features/UF-10/use-balance.ts`, because a feature
 // can't deep-import another feature (D-0071 §3).
 //
-// Cache first, network second. The first render comes from IndexedDB. When online, one
-// `refreshAll(now, tz)` starts with the mount and gets 3 s: the screen recomputes from the cache
+// Cache first, network second. The first render comes from IndexedDB. When online and signed in
+// (D-0113), one `refreshAll(now, tz)` starts, at most once per mount, and gets 3 s: the screen recomputes from the cache
 // once the refresh settles or the 3 s are up, whichever comes first, and never again for this
 // mount. A refresh that rejects is swallowed here (D-0104) and leaves the cached render alone.
 //
 // Every loader rejection is caught too (D-0108 §3): an empty or failing cache gives the
 // no-plan state, never an uncaught error.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { balance, isHardSet, normalizeHistory } from "@workoutlab/engine";
 import {
   AREAS,
@@ -104,36 +104,43 @@ function settledOrCapped(promise: Promise<unknown>, ms: number): Promise<void> {
   });
 }
 
-export function useToday(now: Date, timeZone: string): TodayState {
+export function useToday(now: Date, timeZone: string, signedIn: boolean): TodayState {
   const [state, setState] = useState<TodayState>({ status: "loading" });
   const nowIso = now.toISOString();
+  const live = useRef(true);
+  /** The mount's first cache read; the post-refresh re-read always waits for it. */
+  const firstRead = useRef<Promise<void>>(Promise.resolve());
+  /** D-0113 §2: the refresh starts at most once per mount. */
+  const refreshStarted = useRef(false);
 
+  // 1. The cache read, on mount. Nothing on the network is awaited before it.
   useEffect(() => {
-    let live = true;
+    live.current = true;
     const at = new Date(nowIso);
-    // Started with the mount, so the 3 s cap counts from when the screen opened. Its rejection
-    // is handled inside `settledOrCapped` (D-0104).
-    const refreshed = navigator.onLine
-      ? settledOrCapped(refreshAll(at, timeZone), REFRESH_CAP_MS)
-      : null;
-
-    async function run(): Promise<void> {
-      const cached = await readCache(at, timeZone);
-      if (!live) return;
-      setState(cached);
-      if (refreshed === null) return;
-      await refreshed;
-      if (!live) return;
-      const fresh = await readCache(at, timeZone);
-      if (!live) return;
-      setState(fresh);
-    }
-
-    void run();
+    firstRead.current = readCache(at, timeZone).then((cached) => {
+      if (live.current) setState(cached);
+    });
     return () => {
-      live = false;
+      live.current = false;
     };
   }, [nowIso, timeZone]);
+
+  // 2. The refresh (D-0113): only online and signed in, at the first such commit of this mount,
+  //    never again. `stale` and `signed-out` get none. The 3 s cap counts from when it starts.
+  useEffect(() => {
+    if (refreshStarted.current || !signedIn || !navigator.onLine) return;
+    refreshStarted.current = true;
+    const at = new Date(nowIso);
+    // Its rejection is handled inside `settledOrCapped` (D-0104).
+    const refreshed = settledOrCapped(refreshAll(at, timeZone), REFRESH_CAP_MS);
+    void (async () => {
+      await refreshed;
+      await firstRead.current;
+      if (!live.current) return;
+      const fresh = await readCache(at, timeZone);
+      if (live.current) setState(fresh);
+    })();
+  }, [signedIn, nowIso, timeZone]);
 
   return state;
 }

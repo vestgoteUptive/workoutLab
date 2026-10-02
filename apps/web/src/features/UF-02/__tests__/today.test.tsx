@@ -31,6 +31,10 @@ const mocks = vi.hoisted(() => ({
   refreshAll: vi.fn(),
 }));
 
+const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
+vi.mock("../../../lib/auth/auth-context.js", () => ({
+  useAuth: () => ({ status: auth.status, redirectTarget: "/welcome" as const, signOut: vi.fn() }),
+}));
 vi.mock("../../../lib/offline/engine-feed.js", () => ({
   loadEngineHistory: mocks.loadEngineHistory,
 }));
@@ -66,6 +70,7 @@ let online = false;
 
 beforeEach(() => {
   online = false;
+  auth.status = "signed-in";
   vi.spyOn(navigator, "onLine", "get").mockImplementation(() => online);
   balanceSpy.mockReset();
   balanceSpy.mockImplementation(realEngine.balance);
@@ -379,6 +384,47 @@ describe("AC-8 loading and refresh", () => {
     await macrotask();
     expect(mocks.refreshAll).toHaveBeenCalledTimes(0);
     expect(balanceSpy).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([["stale"], ["signed-out"]] as const)(
+    "online but %s: no refreshAll (0 after a 50 ms macrotask), one balance over the cache",
+    async (status) => {
+      online = true;
+      auth.status = status;
+      renderToday(F_TZ);
+      await waitForTiles();
+      await macrotask();
+      expect(tile("chest")).toBe("0 / 20");
+      expect(mocks.refreshAll).toHaveBeenCalledTimes(0);
+      expect(balanceSpy).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it("stale → signed-in during the mount: exactly one refreshAll, never a second", async () => {
+    online = true;
+    auth.status = "stale";
+    const { rerender } = render(<TodayTree {...F_TZ} />);
+    await waitForTiles();
+    await macrotask();
+    expect(mocks.refreshAll).toHaveBeenCalledTimes(0);
+
+    auth.status = "signed-in";
+    rerender(<TodayTree {...F_TZ} />);
+    await waitFor(() => expect(mocks.refreshAll).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(balanceSpy).toHaveBeenCalledTimes(2));
+    await macrotask();
+    rerender(<TodayTree {...F_TZ} />);
+    await macrotask();
+    expect(mocks.refreshAll).toHaveBeenCalledTimes(1);
+
+    // A status that flaps back and forth still gets no second refresh in this mount.
+    auth.status = "stale";
+    rerender(<TodayTree {...F_TZ} />);
+    auth.status = "signed-in";
+    rerender(<TodayTree {...F_TZ} />);
+    await macrotask();
+    expect(mocks.refreshAll).toHaveBeenCalledTimes(1);
+    expect(balanceSpy).toHaveBeenCalledTimes(2);
   });
 
   it("the cap: a hanging refresh recomputes exactly once, at 3 000 ms", async () => {

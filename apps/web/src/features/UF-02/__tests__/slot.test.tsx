@@ -22,6 +22,10 @@ const mocks = vi.hoisted(() => ({
   lastSyncedAt: vi.fn(),
   refreshAll: vi.fn(),
 }));
+const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
+vi.mock("../../../lib/auth/auth-context.js", () => ({
+  useAuth: () => ({ status: auth.status, redirectTarget: "/welcome" as const, signOut: vi.fn() }),
+}));
 vi.mock("../../../lib/offline/engine-feed.js", () => ({
   loadEngineHistory: mocks.loadEngineHistory,
 }));
