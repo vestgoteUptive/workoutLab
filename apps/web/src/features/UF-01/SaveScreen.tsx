@@ -70,6 +70,9 @@ function Saving({ plan, store }: { plan: PendingPlan; store: PendingPlanStore })
   const navigate = useNavigate();
   const recheck = useRecheckProfile();
   const [phase, setPhase] = useState<Phase>(() => (isOnline() ? "saving" : "offline"));
+  // Once an attempt has failed, Retry stays on screen through the next attempt (disabled while it
+  // runs), so a quick second activation lands on the same button and is ignored.
+  const [failedOnce, setFailedOnce] = useState(false);
   // Refs, not state: two Retry activations (or a Retry and an `online` event) in the same tick
   // must still start one attempt, and step 1 must not repeat once it has succeeded.
   const inFlight = useRef(false);
@@ -138,7 +141,10 @@ function Saving({ plan, store }: { plan: PendingPlan; store: PendingPlanStore })
       await finish();
     } catch {
       // D-0100 §4: the pending plan is kept, and Retry (or the next `online`) tries again.
-      if (!done.current) setPhase("error");
+      if (!done.current) {
+        setFailedOnce(true);
+        setPhase("error");
+      }
     } finally {
       inFlight.current = false;
     }
@@ -183,9 +189,16 @@ function Saving({ plan, store }: { plan: PendingPlan; store: PendingPlanStore })
           </p>
         ) : null}
       </div>
-      {phase === "error" ? (
+      {phase === "error" || (phase === "saving" && failedOnce) ? (
         <div className="wl-uf01__actions">
-          <button type="button" className="wl-uf01__primary" onClick={() => void attempt()}>
+          <button
+            type="button"
+            className="wl-uf01__primary"
+            aria-disabled={phase === "error" ? "false" : "true"}
+            onClick={() => {
+              if (phase === "error") void attempt();
+            }}
+          >
             {t.retry}
           </button>
         </div>

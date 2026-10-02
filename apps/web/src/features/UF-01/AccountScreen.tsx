@@ -160,14 +160,14 @@ export function Account() {
       </div>
       <div id={panelId} role="tabpanel" aria-labelledby={tabId(mode)}>
         {mode === "link" ? (
-          <form className="wl-uf01__auth-form" onSubmit={onSendLink}>
+          <form className="wl-uf01__auth-form" noValidate onSubmit={onSendLink}>
             {emailField}
             <button type="submit" className="wl-uf01__primary">
               {en.auth.sendLinkButton}
             </button>
           </form>
         ) : (
-          <form className="wl-uf01__auth-form" onSubmit={onVerifyCode}>
+          <form className="wl-uf01__auth-form" noValidate onSubmit={onVerifyCode}>
             {emailField}
             <label className="wl-uf01__field">
               <span className="wl-uf01__field-label">{en.auth.codeLabel}</span>

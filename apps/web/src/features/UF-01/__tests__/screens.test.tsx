@@ -101,7 +101,7 @@ describe("AC-2 sub-path screen ids (D-0097 §1)", () => {
     ["/welcome/goal", "UF-01.2"],
     ["/welcome/level", "UF-01.3"],
     ["/welcome/schedule", "UF-01.4"],
-    ["/welcome/save", "UF-01.1"],
+    ["/welcome/save", "UF-01.5-save"],
     ["/welcome/xyz", "UF-01.1"],
   ])("%s renders %s and stays put", async (path, id) => {
     mountAt(path);
