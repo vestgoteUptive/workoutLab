@@ -1,12 +1,12 @@
 // T-0204 UF-08.2 UF-08.3 UF-05.1: the D-0056 §1 R12-E1 correction, the public API and
 // purity/traceability for rules 12–13. AC25–AC27.
-import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { muscleMatch, rankSwaps, type SwapCandidate } from "@workoutlab/engine";
 import { R12_E1_LINE } from "./fixtures/r12-e1-d0056.js";
+import { rule12Slice, rulesOnMain, t0204GuardOk } from "./rule12-guards.js";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const ENGINE_DIR = path.resolve(TEST_DIR, "..");
@@ -21,36 +21,6 @@ function walk(dir: string): string[] {
     else out.push(p);
   }
   return out;
-}
-
-/** The rules doc on the first of `main` / `origin/main` that exists, or null (shallow CI). */
-function rulesOnMain(): string | null {
-  for (const ref of ["main", "origin/main"]) {
-    try {
-      return execFileSync("git", ["show", `${ref}:docs/engine-rules.md`], {
-        cwd: REPO_DIR,
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-      });
-    } catch {
-      // try the next ref
-    }
-  }
-  return null;
-}
-
-/**
- * The sections T-0204 guards (D-0092 §6): rule 12 from `## 12.` up to and including the
- * `- **R12-E5` line, and rule 13 from `## 13.` up to `## 14.`.
- */
-function guarded(doc: string): string {
-  const r12 = doc.indexOf("\n## 12.");
-  const e5 = doc.indexOf("\n- **R12-E5", r12);
-  const e5End = doc.indexOf("\n", e5 + 1);
-  const r13 = doc.indexOf("\n## 13.");
-  const r14 = doc.indexOf("\n## 14.", r13);
-  for (const i of [r12, e5, e5End, r13, r14]) expect(i).toBeGreaterThan(-1);
-  return `${doc.slice(r12, e5End)}\n${doc.slice(r13, r14)}`;
 }
 
 describe("T-0204 contract edit (D-0056 §1)", () => {
@@ -84,13 +54,15 @@ describe("T-0204 contract edit (D-0056 §1)", () => {
   });
 
   it("rule-12 (AC25) against main, rule 12 (to R12-E5) and rule 13 differ by at most that one line", () => {
-    const current = guarded(readFileSync(RULES, "utf8"));
-    const main = rulesOnMain();
+    const current = readFileSync(RULES, "utf8");
+    const main = rulesOnMain(REPO_DIR);
     // Shallow CI clones have no main; the fixture test above still pins the line.
     if (main === null) return;
     // D-0092 §6: the guard covers the sections T-0204 owned, not the whole file.
-    const reverted = current.replace(R12_E1_LINE.after, R12_E1_LINE.before);
-    expect([current, reverted]).toContain(guarded(main));
+    expect(() => rule12Slice(current)).not.toThrow();
+    expect(() => rule12Slice(main)).not.toThrow();
+    // D-0056 §1 (R12-E1) and D-0130 §1 (the signature line) are the only accepted edits.
+    expect(t0204GuardOk(current, main)).toBe(true);
   });
 });
 

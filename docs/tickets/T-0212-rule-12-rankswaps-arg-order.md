@@ -70,3 +70,13 @@ Each new test title starts with `T-0212 ACn`.
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` is green · the contract change is linked to D-0130 · commit messages start with `T-0212` and cite UF-08.3 (e.g. `T-0212 UF-08.3: rule 12 rankSwaps argument order (D-0130)`).
 
 ## Build / accept log
+
+### 2026-10-02 build (engine-dev)
+- **Contract edit (D-0130 §1).** `docs/engine-rules.md` rule 12's first line: `history, tz, now)` → `history, now, tz)`, nothing else in rule 12. One Traceability row (`12 rankSwaps signature order now, tz (D-0130) | T-0212`). `git diff main...HEAD -- docs/engine-rules.md` changes exactly two sections: **rule 12** (the signature line) and **Traceability** (one row). Rule 0's `rankSwaps(…)`, R12-E1…R12-E5, §12.1 and rule 13 are untouched.
+- **Fixture.** `packages/engine/test/fixtures/rule12-signature-d0130.ts` holds the full old and new lines (`RULE12_SIGNATURE_LINE.before/after`).
+- **Guards (D-0130 §2).** Both guard comparisons are now pure helpers over `(currentDoc, mainDoc)` in `packages/engine/test/rule12-guards.ts`: `t0204GuardOk` (accepts the D-0056 §1 R12-E1 line and/or the D-0130 line reverted) and `t0224GuardOk` (accepts only the D-0130 line reverted; it never had the R12-E1 allowance). Shared `rule12Slice` (same slice as before, throws on a missing marker) and `rulesOnMain`. Both guard `it`s still compare with `main` and still return early on a shallow clone; the T-0204 `it` keeps its marker checks as `not.toThrow` on both docs.
+- **AC2 (D-0130 §3).** `test/t0212-rankswaps-signature.test.ts` reads the exported `rankSwaps` parameter names from `src/swaps.ts` with `ts.createSourceFile`, asserts `[currentExerciseId, reason, session, profile, library, history, now, tz]` literally, and compares with the doc line's list (`current` → `currentExerciseId`, `reason | null` → `reason`). Unit pair: `tz, now` → mismatches `[6, 7]`; `now, tz` → `[]`.
+- **AC3 unit tests** run on in-memory docs built from today's text with each signature line: branch case, after-merge case, any other character in rule 12 (to R12-E5) or rule 13 fails, the reversed edit fails, the R12-E1 allowance in the T-0204 guard alone and combined, and a missing marker throws.
+- **Red on main.** With `main`'s `docs/engine-rules.md`, AC1 (line equals `fixture.before`), AC2 (mismatch at positions 6 and 7) and AC4 fail (3 failed, 83 passed across the three touched files).
+- **AC5.** `git diff --stat main...HEAD -- packages/engine/src` is empty. No vendor regen; `node supabase/scripts/vendor.mjs --check` passes.
+- **Checks.** Engine `typecheck`, `lint`, `test` (36 files, 630 tests) green; `pnpm -w format:check`, `check-all.mjs` and `vendor.mjs --check` pass.
