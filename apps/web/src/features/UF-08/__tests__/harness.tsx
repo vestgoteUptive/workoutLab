@@ -7,12 +7,7 @@
 import { act, render, screen, type RenderResult } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
 import { vi } from "vitest";
-import type {
-  AreaTarget,
-  EngineProfile,
-  HistorySet,
-  LibraryExercise,
-} from "@workoutlab/engine";
+import type { AreaTarget, EngineProfile, HistorySet, LibraryExercise } from "@workoutlab/engine";
 import * as engineFeed from "../../../lib/offline/engine-feed.js";
 import * as history from "../../../lib/offline/history.js";
 import { SessionSetup, type SessionSetupProps } from "../SessionSetup.js";
@@ -135,8 +130,8 @@ export async function settle(ms = 50): Promise<void> {
 // ---- DOM readers ----
 
 export function screenIds(): string[] {
-  return Array.from(document.querySelectorAll("[data-screen-id]")).map(
-    (el) => el.getAttribute("data-screen-id")!,
+  return Array.from(document.querySelectorAll("[data-screen-id]")).map((el) =>
+    el.getAttribute("data-screen-id")!,
   );
 }
 

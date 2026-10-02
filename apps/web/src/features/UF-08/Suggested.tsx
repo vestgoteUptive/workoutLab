@@ -10,11 +10,7 @@ export interface SuggestedProps {
 
 export function Suggested({ workout }: SuggestedProps) {
   return (
-    <section
-      data-screen-id="UF-08.2"
-      className="wl-uf08"
-      data-items={workout.plan.items.length}
-    >
+    <section data-screen-id="UF-08.2" className="wl-uf08" data-items={workout.plan.items.length}>
       <Link className="wl-uf08__back" to="/session/setup?step=time">
         {en.uf08.back}
       </Link>

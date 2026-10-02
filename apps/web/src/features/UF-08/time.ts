@@ -58,9 +58,7 @@ function todayAt(nowIso: string, hh: number, mm: number, timeZone: string): numb
 }
 
 export type FinishResult =
-  | { kind: "partial" }
-  | { kind: "rejected" }
-  | { kind: "ok"; budgetMin: number };
+  { kind: "partial" } | { kind: "rejected" } | { kind: "ok"; budgetMin: number };
 
 /**
  * Converts a picked finish time to a budget, once (D-0065 §2, D-0107 §6).

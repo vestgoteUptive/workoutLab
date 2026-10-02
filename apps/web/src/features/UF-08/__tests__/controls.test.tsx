@@ -112,9 +112,7 @@ describe("AC-1 host and URLs (D-0107 §1)", () => {
         expect(location()).toEqual({ pathname: "/session/setup", search: "", type: "REPLACE" }),
       );
       expect(screenIds()).toEqual(["UF-08.1"]);
-      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "How long do you have?",
-      );
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("How long do you have?");
     },
   );
 
@@ -140,7 +138,9 @@ describe("AC-2 defaults and stepper (D-0065 §2)", () => {
   it("defaults: 45 min, warm-up on, energy Normal", () => {
     renderSetup();
     expect(minutes()).toBe("45");
-    expect(screen.getByRole("checkbox", { name: "Warm-up counts in this time (3 min)" })).toBeChecked();
+    expect(
+      screen.getByRole("checkbox", { name: "Warm-up counts in this time (3 min)" }),
+    ).toBeChecked();
     expect(screen.getByRole("radio", { name: "Normal" })).toBeChecked();
     expect(screen.getByRole("radio", { name: "Low" })).not.toBeChecked();
     expect(screen.getByRole("radio", { name: "High" })).not.toBeChecked();
@@ -334,25 +334,28 @@ describe("AC-5 energy and the warm-up toggle (D-0024, D-0004)", () => {
   it("a radio group named Energy with Low / Normal / High", () => {
     renderSetup();
     const group = screen.getByRole("radiogroup", { name: "Energy" });
-    expect(within(group).getAllByRole("radio").map((r) => r.getAttribute("value"))).toEqual([
-      "low",
-      "normal",
-      "high",
-    ]);
+    expect(
+      within(group)
+        .getAllByRole("radio")
+        .map((r) => r.getAttribute("value")),
+    ).toEqual(["low", "normal", "high"]);
     for (const name of ["Low", "Normal", "High"]) {
       expect(within(group).getByRole("radio", { name })).toBeInTheDocument();
     }
   });
 
-  it.each(["Low", "Normal", "High"] as const)("only %s's hint shows when it is selected", (name) => {
-    renderSetup();
-    fireEvent.click(screen.getByRole("radio", { name }));
-    expect(screen.getByRole("radio", { name })).toBeChecked();
-    for (const [other, hint] of Object.entries(HINTS)) {
-      if (other === name) expect(screen.getByText(hint)).toBeInTheDocument();
-      else expect(screen.queryByText(hint)).toBeNull();
-    }
-  });
+  it.each(["Low", "Normal", "High"] as const)(
+    "only %s's hint shows when it is selected",
+    (name) => {
+      renderSetup();
+      fireEvent.click(screen.getByRole("radio", { name }));
+      expect(screen.getByRole("radio", { name })).toBeChecked();
+      for (const [other, hint] of Object.entries(HINTS)) {
+        if (other === name) expect(screen.getByText(hint)).toBeInTheDocument();
+        else expect(screen.queryByText(hint)).toBeNull();
+      }
+    },
+  );
 
   it("the toggle is a checkbox, on by default; off → suggest(warmupInBudget: false), on → true", async () => {
     renderSetup();

@@ -87,7 +87,11 @@ describe("AC-6 the call", () => {
   });
 
   it("the 7th argument is the timeZone prop (America/New_York)", async () => {
-    renderSetup({ now: "2026-09-27T12:00:00-04:00", locale: "en-US", timeZone: "America/New_York" });
+    renderSetup({
+      now: "2026-09-27T12:00:00-04:00",
+      locale: "en-US",
+      timeZone: "America/New_York",
+    });
     await loaded();
     expect(spy.mock.calls[0]![6]).toBe("America/New_York");
     expect(spy.mock.calls[0]![5]).toBe("2026-09-27T16:00:00.000Z");
@@ -97,11 +101,7 @@ describe("AC-6 the call", () => {
     ["+", () => fireEvent.click(button("5 minutes more")), { budgetMin: 50 }],
     ["−", () => fireEvent.click(button("5 minutes less")), { budgetMin: 40 }],
     ["chip 30", () => fireEvent.click(chip(30)), { budgetMin: 30 }],
-    [
-      "warm-up off",
-      () => fireEvent.click(screen.getByRole("checkbox")),
-      { warmupInBudget: false },
-    ],
+    ["warm-up off", () => fireEvent.click(screen.getByRole("checkbox")), { warmupInBudget: false }],
     ["Low", () => fireEvent.click(screen.getByRole("radio", { name: "Low" })), { energy: "low" }],
     [
       "finish 13:07",

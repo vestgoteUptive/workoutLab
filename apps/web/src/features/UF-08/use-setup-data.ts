@@ -26,9 +26,7 @@ export interface SetupData {
 }
 
 export type SetupState =
-  | { kind: "loading" }
-  | { kind: "missing" }
-  | { kind: "ready"; data: SetupData };
+  { kind: "loading" } | { kind: "missing" } | { kind: "ready"; data: SetupData };
 
 /** One cache read. Never rejects: a failing loader, no profile or < 9 targets is `missing`. */
 async function readCache(): Promise<SetupState> {

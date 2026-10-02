@@ -118,9 +118,7 @@ test.describe("AC-12 offline cold start (NFR-OFF-3, D-0108 §5)", () => {
   }) => {
     await openSetup(page);
     await expect(page.locator('[data-part="minutes"]')).toHaveText("45");
-    await expect
-      .poll(() => cachedCounts(page))
-      .toEqual({ library: exercises.length, targets: 9 });
+    await expect.poll(() => cachedCounts(page)).toEqual({ library: exercises.length, targets: 9 });
     await precacheSettled(page);
     const online = (await fitLine(page).textContent())!;
     expect(online).toMatch(FIT_PATTERN);

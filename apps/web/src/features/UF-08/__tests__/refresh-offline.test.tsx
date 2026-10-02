@@ -8,8 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { suggest, type Workout } from "@workoutlab/engine";
 import type { HistorySet } from "@workoutlab/shared";
-import { refreshAll } from "../../../lib/offline/history.js";
-import { loadTargets } from "../../../lib/offline/history.js";
+import { loadTargets, refreshAll } from "../../../lib/offline/history.js";
 import { fTargets } from "./fixtures.js";
 import {
   fCache,
@@ -101,7 +100,11 @@ describe("AC-9 same result offline and online", () => {
 
   it("refreshAll gets the now instant and the timeZone prop", async () => {
     setOnline(true);
-    renderSetup({ now: "2026-09-27T12:00:00-04:00", locale: "en-US", timeZone: "America/New_York" });
+    renderSetup({
+      now: "2026-09-27T12:00:00-04:00",
+      locale: "en-US",
+      timeZone: "America/New_York",
+    });
     await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
     const [now, tz] = refresh.mock.calls[0]!;
     expect(now.toISOString()).toBe("2026-09-27T16:00:00.000Z");
