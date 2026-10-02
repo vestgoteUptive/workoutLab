@@ -57,13 +57,49 @@ function todayAt(nowIso: string, hh: number, mm: number, timeZone: string): numb
   return utc;
 }
 
+/**
+ * Every instant at which `hh:mm` occurs on `nowIso`'s local calendar day in `timeZone`, ascending.
+ * Two in a fall-back repeated hour, one on an ordinary day, none in a spring-forward gap.
+ */
+function occurrencesToday(nowIso: string, hh: number, mm: number, timeZone: string): number[] {
+  const today = wallClock(new Date(nowIso).getTime(), timeZone);
+  const naive = Date.UTC(today.y, today.m - 1, today.d, hh, mm, 0);
+  // The zone's offsets either side of the wall time cover both sides of any transition that day.
+  const offsets = new Set(
+    [-1, 0, 1].map((h) => offsetMinutes(naive + h * 12 * 3_600_000, timeZone)),
+  );
+  const found = new Set<number>();
+  for (const off of offsets) {
+    const utc = naive - off * 60_000;
+    const w = wallClock(utc, timeZone);
+    if (w.y === today.y && w.m === today.m && w.d === today.d && w.hh === hh && w.mm === mm) {
+      found.add(utc);
+    }
+  }
+  return [...found].sort((a, b) => a - b);
+}
+
+/**
+ * The instant to measure the budget to (D-0115 §4): the earliest occurrence of `hh:mm` today that
+ * is strictly after `now`, else the last one (which then rejects). A spring-forward gap, where
+ * `hh:mm` doesn't occur, keeps the plain `todayAt` reading.
+ */
+function finishAt(nowIso: string, hh: number, mm: number, timeZone: string): number {
+  const nowMs = new Date(nowIso).getTime();
+  const all = occurrencesToday(nowIso, hh, mm, timeZone);
+  if (all.length === 0) return todayAt(nowIso, hh, mm, timeZone);
+  return all.find((t) => t > nowMs) ?? all[all.length - 1]!;
+}
+
 export type FinishResult =
   { kind: "partial" } | { kind: "rejected" } | { kind: "ok"; budgetMin: number };
 
 /**
  * Converts a picked finish time to a budget, once (D-0065 §2, D-0107 §6).
  * - Anything but a complete `HH:MM` is `partial`: nothing converts, no error.
- * - A time at or before `now` (it would mean tomorrow) is `rejected`.
+ * - A time at or before `now` (it would mean tomorrow) is `rejected`. In a fall-back repeated
+ *   hour the earliest occurrence after `now` counts; both at or before `now` is `rejected`
+ *   (D-0115 §4).
  * - Otherwise `floor((finish − now) / 60 s)`, clamped to 15–120.
  */
 export function finishToBudget(value: string, nowIso: string, timeZone: string): FinishResult {
@@ -72,7 +108,7 @@ export function finishToBudget(value: string, nowIso: string, timeZone: string):
   const hh = Number(match[1]);
   const mm = Number(match[2]);
   if (hh > 23 || mm > 59) return { kind: "partial" };
-  const diffMs = todayAt(nowIso, hh, mm, timeZone) - new Date(nowIso).getTime();
+  const diffMs = finishAt(nowIso, hh, mm, timeZone) - new Date(nowIso).getTime();
   if (diffMs <= 0) return { kind: "rejected" };
   return { kind: "ok", budgetMin: clampBudget(Math.floor(diffMs / 60_000)) };
 }
