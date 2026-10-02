@@ -175,3 +175,101 @@ unchanged · commits start `T-0304g` and cite the screen (for example `T-0304g U
   - **Merge order.** If T-0422 or T-0435 merges first, merge `main` into this branch before QA.
     T-0304h (the e2e from UF-08.4) comes after this ticket.
 - **Parallel with UF-08:** safe by files, because it only imports their index.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** Tests live in `apps/web/src/features/UF-09/__tests__/`. They
+  share the stubs in `t0304g-stubs.ts`, which are restored after every test.
+  - **AC-1:** `t0304g.device.test.tsx` "AC-1" (3 tests). `vi.mock` of `../../UF-08/index.js` wraps
+    the real `readFocusPrefs` in a spy: called once over a full rest, and once more on a second host
+    mount. With nothing stored, `toHaveReturnedWith` all on, and the lock, `AudioContext` and
+    `speak` are all used. With all three false, none of them is. `import-bans.test.ts` AC-10 stays
+    green, with no copy (D-0155 §3).
+  - **AC-2:** `t0304g.device.test.tsx` "AC-2" (14 tests): one `request("screen")`; re-acquire on a
+    "visible" after `release`; no call for "hidden" or for "visible" with a live lock; release at
+    `done` (with the host still mounted, because `finish()` is held) and on unmount; a request that
+    lands after unmount is released; no request in loading, not-on-device, ended or stale;
+    `keepAwake` false; `wakeLock` undefined; a `NotAllowedError` rejection (no
+    `unhandledRejection` or `unhandledrejection`, same screen and timer, no alert).
+  - **AC-3:** `t0304g.cues.test.tsx` "AC-3" (13 tests) and `t0304g.cues-unit.test.ts` (8, the
+    pure detector):
+    - sound on a 120 s rest (1 start at 0:10, 1 at 0), and once only across re-renders;
+    - UF-09.7 (1 start at the hold's 0);
+    - the voice in order on UF-09.5 and UF-09.1, and none on UF-09.6;
+    - restores: 115 s (no 10 tone; 3-2-1 and the 0 tone), 118 s (only "1" and the 0 tone), 125 s
+      (nothing), UF-09.1 at 1 s left (nothing), and restored paused at 5 s with a gesture before
+      Resume (no 10 tone);
+    - paused for 60 s (nothing), then resumed (the tone at 0:10);
+    - sound-only and voice-only.
+  - **AC-4:** `t0304g.cues.test.tsx` "AC-4" (7 tests):
+    - no gesture: no constructor, no start, no `console.error`;
+    - Done set by `tap` (pointerdown + click): 1 constructor, and the tone at 0:10 of the bench
+      rest; a later keydown and pointerdown construct nothing more;
+    - a keydown is a gesture; a gesture outside the host is not;
+    - `AudioContext`, `speechSynthesis` or both missing: no throw, no `console.error`.
+  - **AC-5:** `t0304g.motion.test.tsx` (10 tests) and `t0304g.css.test.ts` (2):
+    - UF-09.2, .5 and .7: "none" under reduce, "stroke-dashoffset 1s linear" for the pair, and
+      "none" with `matchMedia` undefined (no `console.error`);
+    - the `role="timer"` text changes on each of 3 seconds, on UF-09.6 too (no ring there);
+    - the CSS source check, with a check that the parser itself catches a bad rule.
+  - **AC-6:** unchanged and green: `exports-and-lint.test.ts` (the export pin, jsx-no-literals,
+    the D-0071 §9 bans and AC-D11), every existing UF-09 test (no existing test file edited), and
+    `build.test.ts` AC-A6 (in the web gate).
+- **What was built.**
+  - **`device.ts`:** `useFocusDevice(key, state, nowMs)`, called once in `Machine`.
+    - `useState(readFocusPrefs)` reads the prefs once per mount.
+    - The wake lock runs while `keepAwake` is on and the phase isn't `done`. The cleanup releases
+      it, so reaching `done` and unmount both release.
+    - The `AudioContext` is made only on `onGesture`, and only with `sound` on.
+    - Every browser call is guarded, so a missing or rejecting API does nothing.
+  - **`cues.ts`:** `observeCues(track, {key, phase, remainingS})`, pure. The first observation of a
+    key fires nothing, and a cue for t fires on `prev > t ≥ now`, once per key. The thresholds are
+    in `PHASE_CUES`: rest has the tone at 10 and 0 and the voice at 3/2/1; timed has the tone at 0;
+    getReady has the voice at 3/2/1.
+  - **`reduced-motion.ts`:** `useRingTransition()`, a `useSyncExternalStore` over
+    `matchMedia`. No `matchMedia` counts as reduce.
+  - **`host.tsx` (`Machine` only):**
+    - the one hook call;
+    - `device.observe(...)` at the top of `fireExpired`, because the expiry timeout can move the
+      machine on before any render at 0 shows;
+    - a `display: contents` root `div` with `onPointerDownCapture`/`onKeyDownCapture` (create)
+      and `onPointerUpCapture`, which resumes a suspended context, because touch activation comes
+      on pointerup. It draws no box.
+  - **`ring.tsx` and `rest.tsx`:** only the fill's `style={{ transition }}`.
+  - **`uf-09.css`:** the reduce block (`transition: none !important; animation: none
+    !important`). The inline style wins over a normal rule, so `!important` keeps it a real
+    backstop.
+  - **`flows/uf-09.ts`:** `voiceThree`, `voiceTwo` and `voiceOne` ("3", "2", "1").
+- **Red runs.**
+  - **Unfixed code.** `host.tsx`, `ring.tsx`, `rest.tsx` and `uf-09.css` were reverted to `HEAD`,
+    with the new modules left in place but unused: 32 failed and 24 passed of 56. Every positive
+    AC-1 to AC-5 test was red, including the CSS check. Only the pure unit tests, the CSS parser
+    check and the negative pairs were green.
+  - **Planted faults** (each planted, run, then restored):
+    - **F1, the AC-3 fault:** a cue fires on any observation with `remainingS ≤ t`, so it fires on
+      the first observation (a restore). 6 red: the two unit restore tests, remount 118 s (it says
+      "3" and "2"), restored paused at 5 s plus Resume (a 10 tone), remount 125 s, and UF-09.1 at
+      1 s left.
+    - **F3:** no observation in `fireExpired`. 6 red, all the 0-tone tests.
+    - **F4:** the `AudioContext` is made on mount. 3 red (AC-4).
+    - **F5:** no re-acquire on visible. 2 red.
+    - **F6:** no `matchMedia` counts as motion. 3 red (AC-5).
+    - **F7:** no release at `done`. 1 red.
+    - **F8:** the prefs are read on every render. 1 red (AC-1).
+    - **F9:** the rejected request isn't handled. 1 red (AC-2).
+    - **F2 (equivalent):** observing while paused stayed green. A paused state's timer key has
+      phase "paused", which has no cues, so the guard and the key give the same result.
+- **Size (AC-6).** The UF-09 chunk was 14,533 B gzip before and is 15,939 B after. Rollup
+  tree-shakes the UF-08 index import: `focus-prefs` goes to a shared 595-byte `uf-08-*.js` chunk,
+  and `SessionSetup` stays out of UF-09's chunk and its imports. No triage was needed.
+  `check:size` is green.
+- **Gates.**
+  - `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: green, 176
+    files and 2748 tests.
+  - `pnpm -w format:check`: green.
+  - `node .github/scripts/check-all.mjs`: exit 0.
+  - `pnpm --filter @workoutlab/web test:e2e` (`TMPDIR=$HOME/.cache/wl-pw-tmp`): 142 passed.
+- **Notes for review.**
+  - A jump across several thresholds in one observation (a throttled background tab) fires each
+    crossed cue at once. That is the literal D-0119 §7 rule. Whether only the lowest should fire
+    is a product question, filed as a follow-up.
+  - `speechSynthesis` gets no gesture gate, because D-0119 §8 gates sound only.
