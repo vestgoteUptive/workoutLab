@@ -24,10 +24,12 @@ import { useRerenderEverySecond } from "./use-rerender.js";
 import { SCREEN_IDS, VIEWS, type SeamButton, type ViewPhase } from "./views.js";
 import "./uf-09.css";
 
-/** The end event a phase's timer fires at 0 (D-0111 §8). `timed` waits for T-0304c. */
+/** The end event a phase's timer fires at 0 (D-0111 §8, D-0118 §2: the confirm auto-save).
+ *  `timed` waits for T-0304c. */
 const END_EVENT: Partial<Record<Phase, FocusEvent["type"]>> = {
   getReady: "COUNTDOWN_END",
   warmup: "WARMUP_NEXT",
+  confirm: "SAVED",
   rest: "REST_END",
   next: "READY",
 };
@@ -93,9 +95,10 @@ interface MachineProps {
   storage: FocusStorage | null;
   seams: { pause: readonly SeamAction[]; next: readonly SeamAction[] };
   gate: CheckPointGate;
+  locale: string | undefined;
 }
 
-function Machine({ store, sessionId, initialRow, storage, seams, gate }: MachineProps) {
+function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }: MachineProps) {
   const { state, ctx } = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
@@ -218,10 +221,20 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate }: Machine
           />
         )}
         <View
+          // A new step is a new view: its busy state, edits and entry focus start fresh.
+          key={`${phase}:${state.itemIndex}:${state.setIndex}`}
           state={state}
+          ctx={ctx}
+          locale={locale}
           nowMs={nowMs}
           seams={buttons}
           onResume={() => store.dispatch({ type: "RESUME", atMs: Date.now() })}
+          onCancelAutosave={() => store.dispatch({ type: "AUTOSAVE_CANCEL", atMs: Date.now() })}
+          onSaved={(set) =>
+            store.dispatch(
+              set ? { type: "SAVED", set, atMs: Date.now() } : { type: "SAVED", atMs: Date.now() },
+            )
+          }
         />
       </div>
     );
@@ -234,10 +247,13 @@ export interface SessionHostProps {
   resolveCheckPoint?: ResolveCheckPoint;
   /** The seam entries (D-0071 §4). Default: the `seams.tsx` arrays. Tests inject their own. */
   seams?: { pause?: readonly SeamAction[]; next?: readonly SeamAction[] };
+  /** The number locale for kg values (D-0118 §6). Absent: the runtime default, as on the
+   *  Balance screen. Tests pass `"en-GB"`, and `"sv-SE"` for the decimal-comma pair. */
+  locale?: string;
 }
 
 /** `/session/:sessionId` — the UF-09 focus-mode host. */
-export function SessionHost({ resolveCheckPoint, seams }: SessionHostProps = {}) {
+export function SessionHost({ resolveCheckPoint, seams, locale }: SessionHostProps = {}) {
   const { sessionId = "" } = useParams();
   const [load, setLoad] = useState<HostLoad>({ kind: "loading" });
   const resolveRef = useRef(resolveCheckPoint);
@@ -278,6 +294,7 @@ export function SessionHost({ resolveCheckPoint, seams }: SessionHostProps = {})
           storage={load.storage}
           seams={seamLists}
           gate={gate}
+          locale={locale}
         />
       );
   }

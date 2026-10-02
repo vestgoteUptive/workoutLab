@@ -131,3 +131,135 @@
   background: transparent;
   color: var(--wl-color-text);
 }
+
+/* UF-09.3 Current set (T-0304b, D-0118 §9). */
+.wl-uf09__set-line,
+.wl-uf09__load,
+.wl-uf09__cue,
+.wl-uf09__autosave,
+.wl-uf09__status {
+  margin: 0;
+}
+
+.wl-uf09__set-line {
+  color: var(--wl-color-text-muted);
+  font-size: 18px;
+}
+
+.wl-uf09__load {
+  font-family: var(--wl-font-display);
+  font-size: 48px;
+  line-height: 1.1;
+}
+
+.wl-uf09__load p {
+  margin: 0;
+}
+
+.wl-uf09__ask {
+  color: var(--wl-color-warn);
+}
+
+.wl-uf09__cue {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf09__status {
+  min-height: 1.5em;
+  color: var(--wl-color-text-muted);
+}
+
+/* The one big button (UF-09.3, NFR-A11Y-2): 200 px tall, the full width. */
+.wl-uf09__done {
+  width: 100%;
+  min-height: 200px;
+  font-family: var(--wl-font-display);
+  font-size: 40px;
+}
+
+.wl-uf09__primary[data-state="saving"] {
+  background: var(--wl-color-accent-hover);
+}
+
+/* UF-09.4 Confirm set (T-0304b, D-0118 §3–§6). */
+.wl-uf09__field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wl-uf09__stepper {
+  box-sizing: border-box;
+  min-width: 56px;
+  min-height: 56px;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 10px;
+  background: var(--wl-color-surface);
+  color: var(--wl-color-text);
+  font: inherit;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.wl-uf09__value,
+.wl-uf09__input {
+  min-width: 96px;
+  font-family: var(--wl-font-display);
+  font-size: 40px;
+  text-align: center;
+}
+
+.wl-uf09__input {
+  box-sizing: border-box;
+  width: 120px;
+  min-height: 56px;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 10px;
+  background: var(--wl-color-surface);
+  color: var(--wl-color-text);
+}
+
+.wl-uf09__input[aria-invalid="true"] {
+  border-color: var(--wl-color-warn);
+}
+
+.wl-uf09__rir {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.wl-uf09__label {
+  width: 100%;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf09__radio {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.wl-uf09__autosave {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf09__save {
+  width: 100%;
+  min-height: 64px;
+  font-size: 20px;
+}
+
+.wl-uf09__stepper:focus-visible,
+.wl-uf09__input:focus-visible,
+.wl-uf09__radio:focus-within {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}

@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.3, UF-09.4]
 decisions: [D-0015, D-0026, D-0040, D-0057, D-0062, D-0066, D-0071, D-0086, D-0091, D-0103, D-0111, D-0114, D-0115, D-0118]
 deps: [T-0304e]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of docs/tickets/T-0304-focus-mode.md. The parent's T-0304b row is split by D-0118 §1: this ticket keeps UF-09.3/.4 (parent AC-B2–B6, B8); UF-09.1/.5/.6 (B1, B7) move to T-0304f. Build flow: wl-build-web. About ½ day. Becomes ready when T-0304e is done. -->
 
@@ -267,3 +267,93 @@ and cite the screen (for example `T-0304b UF-09.4: auto-save after 5 s from the 
   set through the T-0304a expiry (`REST_END` after 120 s of fake time).
 
 - **From T-0304e QA/accept (2026-10-02):** a double tap on Save in `set` reaches `recordSet` twice; the second call arrives in `confirm`, becomes SET_LOGGED and adds a duplicate `loggedSets` entry for the same setIndex. Guard it in the view (disable while the write is pending) and test both taps. The hook API: views write through `useFocusSession().recordSet/editSet` with `RecordSetInput & {itemIndex}`, which resolves to the stored LoggedSet.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** Every AC has tests in `apps/web/src/features/UF-09/__tests__/`:
+  - AC-1, AC-2, AC-3: `current-set.test.tsx`.
+  - AC-4, AC-5, AC-6: `confirm-set.test.tsx`, plus the reducer cases in `machine.autosave.test.ts`.
+  - AC-7, AC-8, AC-9: `set-loop.test.tsx`. The `nextSetPrefill` table and the weight parsing: `prefill.test.ts`.
+  - AC-10: `apps/web/src/lib/format/number.test.ts` (the `formatKg` cases are unchanged).
+  - AC-11: `exports-and-lint.test.ts` and `timer.test.ts` are unchanged and green. The button pins are below.
+  - AC-12: the row "T-0304b AC-12 one set offline" appended to `tests/e2e/uf-09-focus.spec.ts`.
+- **What was built.**
+  - `current-set.tsx` (UF-09.3) and `confirm-set.tsx` (UF-09.4) replace the `set`/`confirm` placeholders in `views.tsx`.
+  - `prefill.ts` (`nextSetPrefill`) and `weight-input.ts` (`parseWeight`, `stepWeight`) are pure helpers.
+  - `machine.ts` gains `AUTOSAVE_S = 5`, the `confirm` timer on `SET_RECORDED` (`null` for a `null` weight unless the library says `externalLoad: false`), `AUTOSAVE_CANCEL`, and `isBodyweight`.
+  - `host.tsx` gains `confirm → SAVED` in the expiry table and `SessionHost.locale`. Each view is keyed by `phase:itemIndex:setIndex`, so a new step starts with a fresh busy state, fresh edits and the entry focus.
+  - `formatDecimal` is added to `lib/format/number.ts`, and the keys are added to `flows/uf-09.ts`.
+- **Test helpers.** `set-loop-mock.ts` wraps `offline-spies.ts`. It answers `loadLibrary` with L2 (L1 + push-up) and `loadExerciseDetail` with bench-press → "Shoulder blades back", everything else → `null`. `set-loop-fixtures.ts` holds PU and the plans. `set-loop-helpers.tsx` has `findScreen`/`findEl`/`findPath`. These poll on real 10 ms macrotasks, the positive wait (D-0103 §1), because RTL's `findBy` polls with the faked `setTimeout`. Negative asserts use `flushReal` (a real 50 ms macrotask).
+- **Planted faults.** Each one was applied, run, and reverted:
+  - AC-2: `setSaving(true)` moved after an `await` → "synchronous: right after the click …" goes red.
+  - AC-4: `confirm: "SAVED"` removed from the expiry table and replaced by a `setTimeout(5000)` in `ConfirmSet` → 3 red: "restore mid-countdown", "restore expired", "Pause at + 2 000 … in 3 s".
+  - AC-4: a tick-counting countdown (`setInterval` + `setSecondsLeft((n) => n - 1)`) → 4 red: "restore mid-countdown", "Pause … in 3 s", and the T-0304a AC-2 source tests (tick scan, `setInterval` only in the re-render hook).
+  - The T-0304e double-tap note: the `pending` guard removed from Done set and from Save → 3 red: both AC-2 one-write tests and "a double tap on Save with a change: one editSet".
+- **Button pins updated, not dropped (D-0118 §12).** In `host.chrome.test.tsx` AC-7, the "exactly 1 button" check now uses a per-state list:
+  - `set`: `["Pause workout", "Done set"]`.
+  - `confirm` (barbell-row, a loaded lift): `["Pause workout", "Fewer reps", "More reps", "Less weight", "More weight", "Save"]`.
+  - Every other state still expects `["Pause workout"]`.
+  - `set-loop.test.tsx` pins bench-press confirm at 6 buttons + 3 radios, and PU at 4 buttons.
+  - In `seams.test.tsx`, "a screen other than UF-09.6/.9 renders no seam entry" now expects `["Pause workout", "Done set"]` on UF-09.3, and also asserts that no `[data-seam-id]` is present.
+- **Defaults (within D-0118, no new decision).**
+  - **Done set** sends no `rir`. While the write is pending the button has `aria-disabled`, `aria-busy` and `data-state="saving"`, but never `disabled`, so focus stays on it. After a rejection all three are removed.
+  - **UF-09.4 heading.** It is the exercise name (library `name`, else the id), the same as UF-09.3.
+  - **Edits cancel too.** Any edit handler (stepper, typing, RIR) also dispatches `AUTOSAVE_CANCEL`, and so does Save with a change. Each is a no-op after the first. So the auto-save can't fire while `editSet` is pending.
+  - **Missing increment.** A library `incrementKg` of 0 on a loaded lift steps by the 2.5 default, the same as a missing entry.
+  - **"Unchanged"** compares `{reps, weightKg, rir}` with the recorded entry. 6 → 7 → 6 is no change, so there is no `editSet` call.
+  - **Strings.** The steppers' visible text is `−`/`+` (allowed literals), and their names come from `aria-label` (`en.uf09`).
+- **D-0127 (new, revisit; the orchestrator commits it on main).** Offline, the chrome's shell `OfflineStatus` icon (`components/**`, web-shell) has `aria-label` on a role-less span. axe reports this as `aria-prohibited-attr` (serious). The AC-12 axe helper drops exactly that rule on exactly `.wl-offline-status__icon`, and nothing else. Follow-up for web-shell: give the icon `role="img"`.
+- **Diff check** (recorded here, not as a test). The working tree touches only:
+  - `apps/web/src/features/UF-09/**`;
+  - `apps/web/src/lib/format/number.ts` and `number.test.ts`;
+  - `apps/web/src/lib/i18n/flows/uf-09.ts` (keys added);
+  - `tests/e2e/uf-09-focus.spec.ts` (`seedSessionRow` gains an optional `plan` parameter that defaults to `PLAN`, and one row is appended);
+  - this ticket.
+  The D-0127 file isn't on this branch: `check-lane-paths` doesn't grant `.squad/decisions/**` to this lane, so the orchestrator commits it on main.
+  `en.ts`, `formatKg`, `lib/offline/**`, `components/**`, `routes.ts` and `tests/e2e/fixtures/**` are unchanged.
+- **Evidence.**
+  - UF-09 + `lib/format` vitest: 21 files, 368 tests. The 5 new files hold 115 of them.
+  - `pnpm --filter @workoutlab/web test`: 125 files, 1906 tests.
+  - `pnpm --filter @workoutlab/web typecheck` and `lint`: 0.
+  - e2e `uf-09-focus` + `uf-08-setup`: 20/20.
+  - `-w format:check`: 0. `node .github/scripts/check-all.mjs`: 0. `check:size`: 0 (the largest lazy chunk is about 8 KB gzip).
+- **2026-10-02, frontend-dev (rework, attempt 2): a set written while paused.**
+  - **The bug (QA, code review).** Tap Done set, then Pause while `recordSet` is pending. The write resolves in `paused`, so the hook dispatches `SET_LOGGED`, not `SET_RECORDED`, and the machine stays on the set. Resume showed "Set 1 of 4" again, and a second Done set wrote a second row at `setIndex` 0.
+  - **Fix, part 1: the reducer (pure).** `RESUME` onto `set` or `timed` checks whether the current `(itemIndex, setIndex)` already has a logged entry (`movedOnIfLogged`). If it does, it goes where the record would have gone, timed from the resume:
+    - a reps set goes to `confirm`, with the auto-save starting at the `RESUME` `atMs` (`null` for a `null` weight on a loaded lift, the D-0118 §2 "ask");
+    - a timed set goes through `afterSet`, to `rest` from the resume or to `done`.
+    - Otherwise `RESUME` is unchanged. Only the paused-write race can produce this state: List view resumes the workout before it logs, and its close re-syncs.
+  - **Fix, part 2: the hook (`session.tsx`).** Pause → Resume remounts UF-09.3, so the view's own pending guard is lost. If the write was still pending, a second Done set would write a second row. `recordSet` now keeps the in-flight write per `itemIndex:setIndex`. A second call for the same set while that write is pending gets the same promise and makes no second `lib/offline` call. Calls for a different set are untouched.
+  - **Tests.**
+    - `machine.autosave.test.ts`, "RESUME onto a set that was logged while paused" (3 cases), plus the pairs: no write, and a different set logged.
+    - `set-loop.test.tsx`, "a Done set write that lands while paused": a deferred write resolved while paused gives 1 `loggedSets` entry and 1 IndexedDB row, UF-09.4, then UF-09.5 after 5 s. A deferred write still pending at Resume, then Done set again, gives 1 write. The pair: Pause and Resume with no write stays on "Set 1 of 4".
+  - **Red on `c5d767f`.** With the new tests and unfixed code, 5 failed: the 3 reducer cases and both set-loop cases. Both pairs passed.
+  - **Each half planted out and run.** Without the reducer move-on, 4 tests are red. Without the hook dedupe, 1 is red (the pending-at-Resume case). Both plants were reverted.
+  - **Not done.** The longer `findBy` timeout in `profile-gate.test.tsx` and `routes.phase3.render.test.tsx` is skipped: neither file is in this ticket's paths.
+  - **Evidence.**
+    - UF-09 vitest: 19 files, 360 tests.
+    - `pnpm --filter @workoutlab/web test`: 125 files, 1914 tests.
+    - typecheck and lint: 0.
+    - e2e `uf-09-focus`: 5/5 on its own preview server (:4173 was free).
+    - `-w format:check`: 0. `check-all.mjs`: 0.
+
+## Accept log (2026-10-02, product-owner)
+Verdict: **done**. Branch `t/T-0304b-current-set-and-confirm` @ e86a7e8 (c5d767f is QA's merge of main).
+- AC-1 to AC-3 (`current-set.test.tsx`): pre-fill render with the cue / no-cue / no-library / sv-SE pairs, synchronous `data-state="saving"` before any await, one write per set, the exact `recordSet` payload, a fresh-Dexie row check, and the polite rejection with retry. The planted fault (saving state after the await) was red.
+- AC-4 and AC-5 (`confirm-set.test.tsx`, `machine.autosave.test.ts`): a persisted wall-clock `confirm` timer, 4 999 / 5 000 ms edges, restore mid-countdown and restore expired (exactly one `SAVED`), Pause keeps the timer, and touch / keyboard / reload cancels. Programmatic focus doesn't cancel. Pause drops unsaved edits. Reducer no-ops. Both timing faults (component `setTimeout`, tick counting) were red in build and red again when QA re-planted them.
+- AC-6 to AC-9 (`confirm-set.test.tsx`, `set-loop.test.tsx`, `prefill.test.ts`): steppers and floors per `incrementKg`, the typed-weight parse, RIR mapping, `editSet` only on a change, the null-weight "ask" path, bodyweight PU, carry / fallback / back-off and the `nextSetPrefill` table. No UF-09.5 renders after the last set.
+- AC-10: `number.test.ts`, 5 `formatDecimal` rows. The `formatKg` tests are unchanged.
+- AC-11: strings come from `en.uf09`. The export pin and lint bans are green. The button pins are updated per state, not dropped (D-0118 §12, the change is listed in the build log). The tick-counting source test is green.
+- AC-12: the e2e row "T-0304b AC-12 one set offline" covers an offline reload, Done set ≥ 200 × 44 px, the real 5 s auto-save, exactly one IndexedDB row with the AC values, and axe 0 serious/critical. The one excluded rule is D-0127, scoped to the shell's offline icon (T-0407).
+- Rework 2 (the Pause race that QA reproduced): `RESUME` moves on when the current set is already logged, and `recordSet` dedupes in-flight writes per `itemIndex:setIndex`. 5 new tests were red on c5d767f, each half planted out turned tests red, and both pairs pass. Re-review: approved.
+- Principles:
+  - P1: UF-09.3 is one set and one button. UF-09.4 is its confirm.
+  - P3: the engine's `prefill` is rendered as given. `nextSetPrefill` only carries the user's own in-session values. No contract changed.
+  - NFR-OFF-2: the write lands before any transition.
+  - P2, P4 and P5 are untouched.
+- Evidence:
+  - QA on c5d767f: the `-w --force --concurrency=1` gate was green on rerun (the first run's 2 unrelated lazy-route timeouts go to T-0401). Whole e2e 83/83.
+  - Rework at e86a7e8: UF-09 360/360, web 1914, typecheck, lint, format and check-all green, `uf-09-focus` e2e 5/5. The rework only touched the UF-09 reducer, hook and tests. The orchestrator's merge gate reruns the full suite.
+- Follow-ups:
+  1. `movedOnIfLogged` should also require `entry.exerciseId` to equal the current item's exerciseId. Fix it before the UF-09.9 swap UI (T-0304d) can reach it (web-feature:UF-09).
+  2. The `recordSet` dedupe key collapses a List-view log of the same set while a Done set is pending. Include the source or exerciseId in the key, and test both (web-feature:UF-09).
+  3. Already filed: T-0401 (lazy-route timeouts), T-0402 (locale digits, > 2 decimals), T-0407 (offline icon `role="img"`, D-0127).

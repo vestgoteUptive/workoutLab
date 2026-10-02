@@ -1,9 +1,11 @@
-// The per-state view registry (D-0111 §9). These are deliberately bare placeholders: an <h1>,
+// The per-state view registry (D-0111 §9). The placeholders are deliberately bare: an <h1>,
 // and `m:ss` for a phase with a timer. T-0304b–d replace them and own their buttons; `paused`
-// has its one button, Resume.
+// has its one button, Resume. T-0304b: UF-09.3 (`set`) and UF-09.4 (`confirm`) are built.
 import type { ReactElement, ReactNode } from "react";
 import { en } from "../../lib/i18n/en.js";
-import type { FocusState, Phase } from "./machine.js";
+import { ConfirmSet } from "./confirm-set.js";
+import { CurrentSet } from "./current-set.js";
+import type { FocusCtx, FocusState, LoggedSet, Phase } from "./machine.js";
 import { orderActions } from "./seams.js";
 import { formatClock, remainingS } from "./timer.js";
 
@@ -18,7 +20,15 @@ export interface SeamButton {
 
 export interface ViewProps {
   state: FocusState;
+  /** The plan and library the machine walks (names, increments, bodyweight). */
+  ctx: FocusCtx;
+  /** The number locale for kg values (D-0118 §6); `undefined` means the runtime default. */
+  locale: string | undefined;
   nowMs: number;
+  /** UF-09.4: a touch stops the auto-save (`AUTOSAVE_CANCEL`, D-0118 §3). */
+  onCancelAutosave: () => void;
+  /** UF-09.4: the set is saved (`SAVED`), with the edited entry when Save changed it. */
+  onSaved: (set?: LoggedSet) => void;
   onResume: () => void;
   /** The seam entries for this screen: `pause` on UF-09.9, `next` on UF-09.6, else none. */
   seams: readonly SeamButton[];
@@ -111,8 +121,8 @@ const placeholder = (phase: ViewPhase) => {
 export const VIEWS: Record<ViewPhase, (props: ViewProps) => ReactElement> = {
   getReady: placeholder("getReady"),
   warmup: placeholder("warmup"),
-  set: placeholder("set"),
-  confirm: placeholder("confirm"),
+  set: CurrentSet,
+  confirm: ConfirmSet,
   rest: placeholder("rest"),
   next: Next,
   timed: placeholder("timed"),

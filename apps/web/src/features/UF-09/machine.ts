@@ -42,6 +42,8 @@ export const STORED_PHASES: readonly Phase[] = [
 export const GET_READY_S = 5;
 /** UF-09.6 set-up countdown (D-0066 §10). */
 export const NEXT_SETUP_S = 60;
+/** UF-09.4 auto-save after an untouched confirm (D-0118 §2, NFR-TIME-1). */
+export const AUTOSAVE_S = 5;
 
 export type { FocusTimer };
 
@@ -111,7 +113,9 @@ export type FocusEvent =
   /** `replaceItem(itemIndex, …)` after the write, reduced with the NEW plan in `ctx`. */
   | ({ type: "PLAN_REPLACED"; itemIndex: number } & At)
   /** `close()` from a `keepsClockRunning: true` overlay: re-sync from `loggedSets`. */
-  | ({ type: "RESYNC" } & At);
+  | ({ type: "RESYNC" } & At)
+  // T-0304b (D-0118 §2 §3): a touch on UF-09.4 stops the auto-save. Added, none changed.
+  | ({ type: "AUTOSAVE_CANCEL" } & At);
 
 function timerAt(atMs: number, durationS: number): FocusTimer {
   return { startedAtMs: atMs, durationS, pausedMs: 0 };
@@ -218,6 +222,18 @@ function startWarmupMove(state: FocusState, ctx: FocusCtx, index: number, atMs: 
   };
 }
 
+/** A library entry known to be bodyweight (`externalLoad: false`); a missing entry is not. */
+export function isBodyweight(exerciseId: string, library: readonly LibraryExercise[]): boolean {
+  return library.find((e) => e.id === exerciseId)?.externalLoad === false;
+}
+
+/** The confirm auto-save (D-0118 §2): 5 s from the record, except a `null` weight on a lift not
+ *  known to be bodyweight, which means "ask" (D-0066 §4) and waits for Save. */
+function autosaveTimer(set: LoggedSet, ctx: FocusCtx, atMs: number): FocusTimer | null {
+  if (set.weightKg === null && !isBodyweight(set.exerciseId, ctx.library)) return null;
+  return timerAt(atMs, AUTOSAVE_S);
+}
+
 /** After a set is logged and saved: rest, or `done` after the last set of the last item. */
 function afterSet(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
   const item = ctx.plan.items[state.itemIndex]!;
@@ -293,11 +309,12 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
     }
     case "SET_RECORDED": {
       if (state.phase !== "set") return state;
+      const set = stamp(state, ctx, event.set);
       return {
         ...state,
         phase: "confirm",
-        timer: null,
-        loggedSets: [...state.loggedSets, stamp(state, ctx, event.set)],
+        timer: autosaveTimer(set, ctx, event.atMs),
+        loggedSets: [...state.loggedSets, set],
       };
     }
     case "SAVED": {
@@ -369,7 +386,7 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
         return state;
       }
       const pausedFor = Math.max(0, event.atMs - state.pausedAtMs);
-      return {
+      const resumed: FocusState = {
         ...state,
         phase: state.resumePhase,
         resumePhase: null,
@@ -381,6 +398,7 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
             ? state.warmupStartedAtMs + pausedFor
             : state.warmupStartedAtMs,
       };
+      return movedOnIfLogged(resumed, ctx, event.atMs);
     }
     case "SET_LOGGED":
       return { ...state, loggedSets: [...state.loggedSets, event.set] };
@@ -405,6 +423,10 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
         timer: timerAt(event.atMs, restFor(event.exerciseId, ctx.library)),
       };
     }
+    case "AUTOSAVE_CANCEL": {
+      if (state.phase !== "confirm" || state.timer === null) return state;
+      return { ...state, timer: null };
+    }
     case "PLAN_REPLACED":
       return planReplaced(state, ctx, event.itemIndex);
     case "RESYNC":
@@ -412,6 +434,23 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
     default:
       return state;
   }
+}
+
+/**
+ * RESUME onto `set`/`timed` whose current set was logged while paused (T-0304b rework): Done set's
+ * write landed after Pause, so the hook dispatched SET_LOGGED, not SET_RECORDED. The walk goes
+ * where that record would have gone, timed from the resume: `confirm` (with the auto-save, or
+ * none for "ask") after a reps set, `rest`/`done` after a timed one. Otherwise `state` as is.
+ */
+function movedOnIfLogged(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
+  if (state.phase !== "set" && state.phase !== "timed") return state;
+  let entry: LoggedSet | undefined;
+  for (const s of state.loggedSets) {
+    if (s.itemIndex === state.itemIndex && s.setIndex === state.setIndex) entry = s;
+  }
+  if (!entry) return state;
+  if (state.phase === "timed") return afterSet(state, ctx, atMs);
+  return { ...state, phase: "confirm", timer: autosaveTimer(entry, ctx, atMs) };
 }
 
 /** After `replaceItem` on the current item: the set phase follows the new item (`timed` when its
