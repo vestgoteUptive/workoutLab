@@ -105,3 +105,45 @@ Tests for every AC pass, with the red runs and the planted fault recorded · `pn
 lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web test:e2e` green (the
 whole suite) · `check:size`, `format:check` and `check:repo` green · contracts unchanged · commits
 start `T-0429` (for example `T-0429: register the service worker with a rejection handler`).
+
+## Build log (frontend-dev, 2026-10-02)
+- **Files.** `apps/web/src/lib/pwa/register.ts` (new): `registerServiceWorker({prod?, win?})`, a
+  no-op unless `import.meta.env.PROD` and `"serviceWorker" in navigator`; registers `/sw.js`
+  (scope `/`) on `load`, or at once when `readyState` is `complete`; a rejection gives one
+  `console.warn`, never `console.error`. Hand-written, no new dependency. `src/main.tsx` calls it
+  once. `vite.config.ts`: `injectRegister: false` (`registerType: "autoUpdate"`, the manifest and
+  workbox options unchanged). `build.test.ts`: T-0429 AC4 (no `registerSW.js`, `sw.js` still
+  there; `index.html` has no `registerSW` and every `<script>` has a `src`). New
+  `lib/pwa/__tests__/register.test.ts` (5 unit tests). New guarded `tests/e2e/sw-registration.spec.ts`
+  (AC1, AC2). `tests/e2e/fixture-guard.spec.ts`: the allow and the `consoleGuard` parameter are gone
+  from "setOffline does not suspend interception", and T-0430 AC5 (which pinned that allow's
+  T-0429 comment) is replaced by T-0429 AC3 (no `consoleGuard` in the test body; no `.ts` under
+  `tests/e2e/` contains the registration error string, checked by a string built from two parts so
+  the check doesn't match itself). The now-unused `commentBlockAbove` import is dropped.
+- **Red on main (fix not applied, tests added).** AC1: `test:e2e sw-registration.spec.ts` → AC1
+  fails with `consoleGuard.errors()` = `["pageerror: t0429-register-failed"]` (and the same line at
+  the fixture's teardown); AC2 passes (the injected script also registers once). AC4:
+  `vitest run build.test.ts -t T-0429` → 2 of 2 red (`registerSW.js` exists; `index.html`
+  contains `registerSW`).
+- **Planted fault (AC2).** `injectRegister: "auto"` next to the new call: AC2 red, `Expected: 1,
+  Received: 2` (AC1 too: 2 calls and the injected script's unhandled `pageerror`). Reverted.
+- **Finding (AC3), and the build default proposed as D-0161 for the orchestrator.** With the
+  rejection caught, the setOffline test still failed on every run (20/20 at `--repeat-each=20`)
+  with `console.error: An unknown error occurred when fetching the script. (:0)`. That line is
+  Chromium's own message for the failed `sw.js` fetch. The browser logs it, not the page, so no
+  `catch` can stop it; the unhandled rejection, the app's part, is gone. Default: the test now
+  awaits `navigator.serviceWorker.ready` before `setOffline(true)` (the pattern `shell.spec.ts`
+  and `offline.spec.ts` use), so it no longer races the worker install. The interception
+  assertion is unchanged. In real use, a device that goes offline before the first install
+  still gets that one browser line in its own devtools; the next online load registers.
+  Follow-up (e2e fixture owner): decide whether `guarded-test.ts` should exempt that browser line
+  the way it exempts `Failed to load resource:`.
+- **AC3 repeat.** `flock /tmp/workoutlab-tests.lock pnpm --filter @workoutlab/web test:e2e
+  fixture-guard.spec.ts -g setOffline --repeat-each=20` → 40 passed (20 × the setOffline test,
+  20 × the AC3 source check, which matches the grep too).
+- **Runs.** `pnpm --filter @workoutlab/web typecheck` green, `lint` green, `test` 164 files /
+  2560 tests green; `pnpm --filter @workoutlab/web test:e2e` (whole suite) 139 passed, AC5's
+  shell/offline/uf-02/uf-08/uf-09 specs unedited; `pnpm -w exec turbo run typecheck lint test
+  --force --concurrency=1` 19/19 tasks, `test:repo-checks` 146 pass; `check:size` green;
+  `pnpm -w format:check` green; `pnpm check:repo` green. The CSP is unchanged (`script-src
+  'self'`), and the built `index.html` has a single `<script>`, the module entry with a `src`.
