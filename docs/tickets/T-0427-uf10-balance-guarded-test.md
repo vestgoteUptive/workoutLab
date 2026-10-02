@@ -78,3 +78,56 @@ lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web test:
 whole suite) · `format:check` and `check:repo` green · contracts unchanged · commits start
 `T-0427` and cite the screens (for example `T-0427 UF-10.1/UF-10.2: run uf-10-balance under the
 guarded fixture`).
+
+## Build / accept log
+
+### Build (qa, 2026-10-02)
+- **Supabase request inventory (Scope step, before editing).** A throwaway probe copy of the
+  spec, with a `context.on("response")`/`requestfailed` recorder, was deleted after the run.
+  It ran all 7 existing tests. Every test makes the same 10 requests. All are `GET` and all get
+  a `200` from a `mockSupabaseData` route. None reaches the `mockSupabaseAuth` (`/auth/v1/**`)
+  or `mockSupabaseRest` (`/rest/v1/**`) 501 backstop, there is no `/auth/v1` call, and no
+  request failed.
+
+  | Method | Path | Claiming route |
+  | --- | --- | --- |
+  | GET | `/rest/v1/area_targets` | `mockSupabaseData` `area_targets*` |
+  | GET | `/rest/v1/exercise_areas` | `mockSupabaseData` `exercise_areas*` |
+  | GET | `/rest/v1/exercise_variants` | `mockSupabaseData` `exercise_variants*` |
+  | GET | `/rest/v1/exercises` | `mockSupabaseData` `exercises*` |
+  | GET | `/rest/v1/plan_checkins` | `mockSupabaseData` `plan_checkins*` |
+  | GET | `/rest/v1/profiles` | `mockSupabaseData` `profiles*` |
+  | GET | `/rest/v1/routine_items` | `mockSupabaseData` `routine_items*` |
+  | GET | `/rest/v1/routines` | `mockSupabaseData` `routines*` |
+  | GET | `/rest/v1/session_sets_live` | `mockSupabaseData` `session_sets_live*` |
+  | GET | `/rest/v1/sessions` | `mockSupabaseData` `sessions*` |
+
+  **No request was unclaimed, so this spec needs no new mock (AC2).** No `forgetPlantedLeaks()`
+  call was added.
+- **AC1 red run.** The new test `T-0427 AC1 /balance runs under the Supabase and console guards`
+  was added first, with the old `import { expect, test, type Page } from "@playwright/test"`
+  still in place. `flock … pnpm --filter @workoutlab/web test:e2e uf-10-balance` failed with
+  `Test has unknown parameter "supabaseGuard".` and `Test has unknown parameter
+  "consoleGuard".`. An ad-hoc strict `tsc --noEmit` on the spec (no tsconfig covers
+  `tests/e2e`) failed with `TS2339: Property 'supabaseGuard' does not exist …` (118:3) and
+  `… 'consoleGuard' …` (119:3). After the import switch, tsc exits 0 and the test passes.
+- **AC3.** The `problems` array, the `pageerror` listener and the `console` listener are gone
+  from the QA block. Its `request` listener, the 1500 ms settle and `targetReads ≤ 2` stay in
+  both QA tests. Compiled `ownConsoleListeners` reports `uf-10-balance.spec.ts:206` and `:207`
+  on main's version of the spec, and `[]` on this branch.
+  **Planted fault:** `await page.evaluate(() => console.error("t0427-planted"))` was added
+  after the settle in the `/balance` QA test. That test failed at teardown
+  (`fixtures/guarded-test.ts:226`, `assertClean`) with `console error in e2e: 1 line(s) were
+  logged as errors … - console.error: t0427-planted (:0)`. The other 7 tests passed. The
+  fault was reverted from a backup, and grep finds no `t0427-planted`.
+- **AC4.** `T-0425 AC5 uf-10-balance.spec.ts imports test from guarded-test.js, not
+  @playwright/test` now exists and passes. So do `T-0425 AC5 every consoleGuard.allow( …` and
+  `T-0430 AC1 no guarded spec registers its own console or pageerror listener`. **No allows
+  were added.** `fixture-guard.spec.ts` is untouched (T-0429).
+- **AC5.** All existing uf-10 assertions stay, apart from `expect(problems).toEqual([])`, which
+  the `consoleGuard` teardown now enforces (the ticket's Scope removes it). Results:
+  `flock … pnpm --filter @workoutlab/web test:e2e` gave 138 passed (whole suite).
+  `flock … pnpm -w typecheck lint test --force --concurrency=1` gave 19/19 tasks.
+  `test:repo-checks` gave 146 pass. `format:check` and `check:repo` were green.
+- **Follow-up (from Coordination):** every `tests/e2e/*.spec.ts` now imports the fixture. A
+  later qa ticket can assert "every spec is guarded" at the source level.
