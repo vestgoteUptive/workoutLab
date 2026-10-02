@@ -42,7 +42,9 @@ export function OfflineStatus({
 
   useEffect(() => {
     if (lastSyncedAt !== undefined) return;
-    void loadLastSyncedAt().then(setStoredLastSyncedAt);
+    // D-0104 §2 / D-0115 §2 (T-0380a): a rejected IDB read (blocked or closed DB, private mode)
+    // keeps `null`, so the text falls back to "Offline · not synced yet". No console.error.
+    void loadLastSyncedAt().then(setStoredLastSyncedAt, () => undefined);
   }, [lastSyncedAt]);
 
   if (online) return null;
