@@ -407,6 +407,10 @@ verify_jwt = false
 [functions.sessions]
 verify_jwt = false
 
+# D-0135: the function checks the bearer token itself (D-0053 §4 pattern).
+[functions.account]
+verify_jwt = false
+
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
