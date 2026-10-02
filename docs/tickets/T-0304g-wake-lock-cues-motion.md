@@ -2,12 +2,12 @@
 id: T-0304g
 title: UF-09 device features — readFocusPrefs from UF-08 once per mount, screen wake lock with visibilitychange re-acquire, sound and 3-2-1 voice cues only on an observed crossing, the AudioContext on a user gesture, reduced motion on every ring
 lane: web-feature:UF-09
-screens: [UF-09.1, UF-09.5, UF-09.7]
-decisions: [D-0066, D-0071, D-0110, D-0111, D-0118, D-0119]
-deps: [T-0304c, T-0303d]
-status: todo
+screens: [UF-09.1, UF-09.2, UF-09.5, UF-09.7]
+decisions: [D-0066, D-0071, D-0110, D-0111, D-0118, D-0119, D-0155]
+deps: [T-0304c, T-0303d, T-0304d, T-0423]
+status: ready
 ---
-<!-- Groomed 2026-10-02 by product-owner. Child of docs/tickets/T-0304-focus-mode.md (parent AC-C5–C7). Split out of the parent's T-0304c row by D-0118 §1. This is the child that imports readFocusPrefs from features/UF-08/index.tsx, so it waits on T-0303d (doing). Build flow: wl-build-web. About ⅓ day. -->
+<!-- Groomed 2026-10-02 by product-owner; refreshed 2026-10-02 against main after T-0304d, T-0427, T-0429 and T-0431 (T-0423 merging). Child of docs/tickets/T-0304-focus-mode.md (parent AC-C5–C7), split out by D-0118 §1. T-0303d (readFocusPrefs in features/UF-08/index.tsx) and T-0304c/d are on main. It edits host.tsx, so it starts once T-0423 has merged. Build flow: wl-build-web. About ⅓–½ day. -->
 
 ## Why
 A workout happens with the phone on a bench, a metre away. The screen must stay on (NFR-TIME-3).
@@ -23,14 +23,28 @@ None of this adds anything to the screen (principle 1).
   - **Wake lock** (D-0119 §9).
   - **Sound cues** (an `AudioContext` oscillator) and **voice cues** (`speechSynthesis`), on observed
     crossings only (D-0119 §7–§8).
-  - **Reduced motion** on every ring (UF-09.2, .5, .6, .7), through the inline transition plus the
-    `uf-09.css` media rule (D-0119 §10).
+  - **Reduced motion** on the three rings that exist: UF-09.2 and UF-09.7 (`ring.tsx`) and UF-09.5
+    (`rest.tsx`'s own ring). UF-09.6 has no ring (D-0155 §1). It uses the inline transition plus
+    the `uf-09.css` media rule (D-0119 §10). A missing `matchMedia` counts as reduce (D-0155 §2).
+- **Files it edits** (the parallel-safety list; anything else in UF-09 is out):
+  - `host.tsx`: the `Machine` component only. One call to the new device hook, plus the
+    `pointerdown`/`keydown` listener on the host root for the gesture.
+  - `ring.tsx` and `rest.tsx`: the ring fill's inline `style.transition` only. `rest.tsx` may
+    instead render `Ring` (D-0155 §1).
+  - `uf-09.css`: the `@media (prefers-reduced-motion: reduce)` block.
+  - New files, named by the builder, for example `device.ts` (wake lock, prefs, the gesture
+    `AudioContext`), `cues.ts` (a pure crossing detector) and `reduced-motion.ts`.
+  - New tests, only as `__tests__/t0304g*.test.ts(x)`. No existing test file is edited.
+  - `lib/i18n/flows/uf-09.ts`: add keys only (the voice words "3", "2", "1" if they are strings).
 - Out:
+  - `session.tsx`, `machine.ts`, `seams.tsx`, `store.ts`, `persist.ts`, `timed-set.tsx`,
+    `paused.tsx`, `index.tsx` and every existing `__tests__` file. These belong to tickets in flight
+    (see Notes).
   - Writing prefs (UF-08.4, T-0303d).
   - Haptics (no flow asks for them).
   - Any new visible element.
-  - Edits to `features/UF-08/**`, `lib/**`, `en.ts`, `components/**`, `tests/e2e/fixtures/**` and
-    the shell tests.
+  - Edits to `features/UF-08/**`, `lib/**` (apart from the strings file), `en.ts`,
+    `components/**`, `tests/e2e/**` and the shell tests.
   - Any contract change.
 
 ### Edge cases that are in scope
@@ -40,14 +54,16 @@ None of this adds anything to the screen (principle 1).
 - **Zero history:** prefs with nothing stored are all on, T-0303d's default (AC-1).
 - **Returning after 10 days off / reload:** a restore 90 s into a rest makes no stale cue (AC-3).
   The wake lock is requested again after the tab comes back (AC-2).
-- **Missing APIs** (iOS without `wakeLock`, no `speechSynthesis`) never throw (AC-2, AC-4).
+- **Missing APIs** (iOS without `wakeLock`, no `speechSynthesis`, no `AudioContext`, no
+  `matchMedia`) never throw (AC-2, AC-4, AC-5).
 
 ## Acceptance criteria
 **Test setup.**
-- As T-0304b: P1, fake timers, and a mocked `Date.now`.
+- As T-0304b: P1 (`__tests__/fixtures.ts`), fake timers, and a mocked `Date.now`. Mount the real
+  `SessionHost`.
 - Prefs are set through the real `localStorage["wl-focus-prefs"]` value that T-0303d's
   `readFocusPrefs` reads: `{"version":1,"sound":…,"voice":…,"keepAwake":…}`.
-- These are stubbed per test:
+- These are stubbed per test and restored after it:
   - `navigator.wakeLock` (with a sentinel that has `release()` and a `release` event);
   - `window.AudioContext`, with `createOscillator` spies;
   - `window.speechSynthesis.speak` and `SpeechSynthesisUtterance`;
@@ -55,26 +71,28 @@ None of this adds anything to the screen (principle 1).
 - **Test rules:**
   - Both values of every binary condition get a test.
   - Negative asserts wait ≥ 50 ms.
+  - Clean up with `cleanup()`/`unmount()`. No `document.body.innerHTML =` (the T-0424 guard).
   - **AC-3 must fail on unfixed code.** The build log records the planted fault turning it red: a
     cue that fires on any render with `remainingS ≤ t`, which fires on restore.
 
 - **AC-1 (prefs read once, D-0119 §6)**
-  - **The import.** `readFocusPrefs` is imported from `features/UF-08/index.tsx`, and a lint test
-    shows that a deep import of `focus-prefs` fails (D-0071 §9).
+  - **The import.** `readFocusPrefs` is imported from `features/UF-08/index.tsx`. The existing
+    `app/__tests__/import-bans.test.ts` AC-10 (a deep import of `focus-prefs` is an error, the
+    index import is not) stays green. No duplicate test is needed (D-0155 §3).
   - **Once per mount.** Over a full rest it is called once per host mount (a spy through a
     `vi.mock` of the UF-08 index that wraps the real function).
   - **The default.** With no stored value, all three features are on.
   - **The pair.** With all three false, there is no wake-lock request, no `AudioContext`
     construction and no `speak` call over a full rest.
 - **AC-2 (wake lock, NFR-TIME-3, D-0119 §9)**
-  - **Request.** With `keepAwake` true, the machine starting calls `navigator.wakeLock.request
-    ("screen")` once.
+  - **Request.** With `keepAwake` true, the machine starting calls
+    `navigator.wakeLock.request("screen")` once.
   - **Re-acquire.** After the sentinel is released (the stub fires `release`), a `visibilitychange`
     with `document.visibilityState` "visible" calls it again. A `visibilitychange` to "hidden" makes
-    no call.
+    no call. A "visible" with the lock still live makes no call.
   - **Release.** Reaching `done` releases the sentinel, and so does unmount.
-  - **Host-level states.** "This workout isn't on this device" and the ended and stale states make
-    no request.
+  - **Host-level states.** Loading, "This workout isn't on this device", and the ended and stale
+    states make no request.
   - **The pair.** `keepAwake` false makes no request.
   - **Missing or rejected.** `navigator.wakeLock` undefined → no call and no throw. A rejected
     `request` (a `NotAllowedError`) → no unhandled rejection (a listener) and no UI change.
@@ -88,32 +106,38 @@ None of this adds anything to the screen (principle 1).
   - **The pair, restore.** Remounting 115 s into a 120 s rest fires no 10 s tone. It does fire the
     0 tone at 120 s, and the voice "3", "2" and "1" before it (those crossings are observed).
     Remounting at 125 s fires nothing.
-  - **Paused.** Paused at 12 s left, then 60 s of fake time, fires nothing.
+  - **Paused.** Paused at 12 s left, then 60 s of fake time, fires nothing. The pair: resumed, the
+    10 s tone fires at its crossing.
   - **Only the flagged cues.** With `sound` false and `voice` true there are speak calls and no
     oscillator. The other way round, there are oscillators and no speak calls.
 - **AC-4 (sound needs a gesture, D-0119 §8)**
   - **No gesture.** Before any `pointerdown` or `keydown` in the host, no `AudioContext` is
     constructed, and a due tone is skipped with no throw.
   - **After a gesture.** After Done set (a click), the constructor is called once, and the 10 s
-    tone plays.
+    tone plays. A second gesture constructs nothing more.
   - **Missing APIs.** With `window.AudioContext` undefined, or `speechSynthesis` undefined, a full
     rest throws nothing and logs no `console.error`.
-- **AC-5 (reduced motion, NFR-A11Y-5, D-0119 §10)**
-  - **Reduce.** With `matchMedia("(prefers-reduced-motion: reduce)").matches` true, every ring
-    element on UF-09.2, .5, .6 and .7 has `style.transition` "none". The `role="timer"` text still
-    changes each second.
-  - **The pair.** With the preference false it is "stroke-dashoffset 1s linear".
+- **AC-5 (reduced motion, NFR-A11Y-5, D-0119 §10, D-0155 §1–§2)**
+  - **Reduce.** With `matchMedia("(prefers-reduced-motion: reduce)").matches` true, the ring fill
+    on UF-09.2, UF-09.5 and UF-09.7 has `style.transition` "none". Each view's `role="timer"` text
+    still changes each second, and so does UF-09.6's.
+  - **The pair.** With the preference false, it is "stroke-dashoffset 1s linear" on the same three.
+  - **No `matchMedia`.** With `window.matchMedia` undefined, it is "none", with no throw.
   - **CSS backstop.** A source test finds an `@media (prefers-reduced-motion: reduce)` block in
-    `uf-09.css` that sets `transition: none` and `animation: none` on the ring class.
-- **AC-6 (exports, lint, size)**
-  - **Exports.** The export pin is unchanged.
-  - **Lint.** The D-0071 §9 bans are green.
-  - **Size.** `check:size` is green, with the UF-09 chunk ≤ 100 KB gzip. The build log records the
-    UF-09 chunk size before and after the UF-08 index import. If that import pulls `SessionSetup`
-    into the UF-09 chunk (no tree-shaking), the builder raises triage instead of deep-importing.
+    `uf-09.css` that sets `transition: none` and `animation: none` on the ring fill class.
+- **AC-6 (exports, lint, size, nothing else moved)**
+  - **Exports.** The `index.tsx` export pin is unchanged.
+  - **Lint.** The D-0071 §9 bans and AC-D11 (no `components/body-map` import from UF-09) are green.
+  - **Unedited tests.** Every existing UF-09 test passes unedited, including `rest.test.tsx`,
+    `timed-set.test.tsx`, `warmup.test.tsx` and `announcer.test.tsx`.
+  - **Size.** `check:size` is green, with the UF-09 chunk ≤ 100 KB gzip, and `build.test.ts`
+    AC-A6 (route-folder chunks, T-0426) is green. The build log records the UF-09 chunk size before
+    and after the UF-08 index import. If that import pulls `SessionSetup` into the UF-09 chunk (no
+    tree-shaking), the builder raises triage instead of deep-importing.
 
 ## Paths you may change
-- `apps/web/src/features/UF-09/**` (the lane: `web-feature:UF-09`).
+- `apps/web/src/features/UF-09/**` (the lane: `web-feature:UF-09`), limited in practice to the
+  "Files it edits" list in Scope.
 - **Listed extras:**
   - `apps/web/src/lib/i18n/flows/uf-09.ts`: this flow's strings file (D-0071 §1, D-0075); add keys only, multi-line shape (the voice cue words).
   - `docs/tickets/T-0304g-wake-lock-cues-motion.md`: this file, for the build and accept logs.
@@ -127,15 +151,27 @@ and never writes them.
 TIME-3 (AC-2), A11Y-5 (AC-5), the cue part of D-0066 §7 (AC-3).
 
 ## Definition of done
-Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1` green ·
-`pnpm --filter @workoutlab/web test:e2e` green (the whole suite; this ticket adds no e2e row,
-because headless Chromium has no real wake lock or audio output) · `format:check`, `check:repo` and
-`check:size` green · contracts unchanged · commits start `T-0304g` and cite the screen (for example
-`T-0304g UF-09.5: tone at 10 s only on an observed crossing`).
+Tests for every AC pass, with the planted fault recorded · `pnpm -w typecheck lint test --force
+--concurrency=1` green · `pnpm --filter @workoutlab/web test:e2e` green (the whole suite; this
+ticket adds no e2e row, because headless Chromium has no real wake lock or audio output; run with
+`TMPDIR=$HOME/.cache/wl-pw-tmp`) · `format:check`, `check:repo` and `check:size` green · contracts
+unchanged · commits start `T-0304g` and cite the screen (for example `T-0304g UF-09.5: tone at
+10 s only on an observed crossing`).
 
 ## Notes
 - **Flow:** `wl-build-web`.
-- **Deps.** It needs T-0304c (the lane order) and **T-0303d**, for `readFocusPrefs` in the UF-08
-  index. T-0303d is in build now. If it hasn't merged when T-0304c is done, the orchestrator may run
-  T-0304d first (it doesn't need the prefs) and hold this ticket (D-0118 §1).
-- **Parallel.** It is parallel-safe by files with every UF-08 ticket: it only imports their index.
+- **Deps.** T-0304c, T-0303d and T-0304d are on main. T-0423 edits `timed-set.tsx` and `host.tsx`
+  and is merging. Start this ticket from a main that has T-0423.
+- **Parallel (2026-10-02 refresh), by the files above:**
+  - **With T-0422, allowed.** T-0422 edits `seams.tsx`, `machine.ts` (`planReplaced`), the seam
+    pins in existing tests and e2e files. This ticket touches none of them.
+  - **With T-0435, allowed.** T-0435 edits only `session.tsx` and adds `t0435*` tests.
+  - **With T-0424, allowed.** T-0424 edits `timed-set.test.tsx` and adds its hygiene guard. This
+    ticket edits no existing test file, and its new tests follow that guard.
+  - **Not with T-0415.** Both edit `host.tsx`.
+  - **Not with T-0394.** Both edit `host.tsx`.
+  - **With T-0416, allowed by files.** T-0416 edits `seams.tsx` and UF-09 test pins, not
+    `host.tsx`, `ring.tsx`, `rest.tsx` or the CSS.
+  - **Merge order.** If T-0422 or T-0435 merges first, merge `main` into this branch before QA.
+    T-0304h (the e2e from UF-08.4) comes after this ticket.
+- **Parallel with UF-08:** safe by files, because it only imports their index.

@@ -3,11 +3,11 @@ id: T-0416
 title: "UF-03.1 List view, read side: the how-to and list-view seams on UF-09.9, header (elapsed, Focus mode, Finish confirm), set rows from the engine pre-fill, the Previous column, collapsed items; plus the T-0360 cross-screen principle-1 render assertion"
 lane: web-feature:UF-03
 screens: [UF-03.1, UF-09.9, UF-03.3]
-decisions: [D-0142, D-0068, D-0069, D-0071, D-0111, D-0118, D-0120, D-0045, D-0060]
-deps: [T-0304d, T-0419, T-0318, T-0306a]
-status: todo
+decisions: [D-0142, D-0068, D-0069, D-0071, D-0111, D-0118, D-0120, D-0045, D-0060, D-0153, D-0155]
+deps: [T-0304d, T-0419, T-0318, T-0306a, T-0422, T-0433]
+status: ready
 ---
-<!-- Groomed 2026-10-02 by product-owner. First child of the T-0305a board row (D-0142 §1 §3). Build flow: wl-build-web. About ½–⅔ day. It carries T-0360 (the T-0306a QA finding): the session screens now exist, so the cross-screen assertion has a real subject. Ready when T-0304d (the real UF-09.9 and its pins) and T-0419 (the built summary, for the summary half of T-0360) are done. It edits features/UF-09/seams.tsx, so it never runs in parallel with T-0422 or T-0415. -->
+<!-- Groomed 2026-10-02 by product-owner; refreshed 2026-10-02 against main after T-0304d, T-0427, T-0429 and T-0431 (T-0423 merging). First child of the T-0305a board row (D-0142 §1 §3). Build flow: wl-build-web. About ½–⅔ day. It carries T-0360 (the T-0306a QA finding). T-0304d, T-0419, T-0318 and T-0306a are on main. The spec is ready, but the build waits on two in-flight tickets: T-0422 (in build; same seams.tsx, UF-09 pins and uf-09-focus.spec.ts row) and T-0433 (in QA; same lane, web-feature:UF-03, and the same __tests__/helpers.tsx). Start it from a main that has both. -->
 
 ## Why
 - **UF-03.1** is classic set-table logging for users who prefer it. It is reached only from UF-09.9 Paused ("List view"), so it is an opt-in exception to focus mode. It still has no tab bar, no C-01, no Balance and no check-in (principle 1, D-0045 §4).
@@ -20,10 +20,10 @@ status: todo
     - `how-to`: label "How to" (`en.uf03`), `keepsClockRunning: false`. `render(ctx)` gives `<ExerciseHowTo exerciseId={current item's exerciseId} onClose={ctx.close} />` from `features/UF-04/index.tsx`.
     - `list-view`: label "List view", `keepsClockRunning: true`. `render(ctx)` gives `<ListView ctx={ctx} />` from `features/UF-03/index.tsx`.
     - Either may be `lazy()`-loaded (D-0142 §8).
-  - **The UF-09 pins these entries change** (D-0142 §6, a named change listed in the build log):
-    - `seams.test.tsx` AC-9: the arrays hold exactly the ids landed so far;
-    - T-0304d's "with the module arrays" row and the UF-09.9 button counts;
-    - the UF-09.9 count in `tests/e2e/uf-09-focus.spec.ts`.
+  - **The UF-09 pins these entries change** (D-0142 §6, a named change listed in the build log). T-0422 will have moved them once for `swap`. This ticket moves them again, for `how-to` and `list-view` only:
+    - `seams.test.tsx` AC-9: the arrays hold exactly the ids landed so far (`pauseSeamActions`: `swap`, `how-to`, `list-view`; `nextSeamActions`: `swap` only);
+    - its "with the module arrays" rows, `paused.test.tsx` "the pair: with the module arrays …", and the UF-09.9 button counts (each goes up by 2). The UF-09.6 pins (`next-exercise.test.tsx`) don't change, because neither entry goes on UF-09.6;
+    - the UF-09.9 count in `tests/e2e/uf-09-focus.spec.ts`'s seeded-session row: up by 2 from the value on main at build start (3 after T-0422, so 5).
   - **`ListView`**, exported from `features/UF-03/index.tsx`. It types its own `ctx` (D-0142 §5) and renders `[data-screen-id="UF-03.1"]`:
     - **Header:** "Elapsed {m:ss}" from `ctx.elapsedS`, "Focus mode" (`ctx.close()`), and "Finish" with its confirm (`ctx.finish()`).
     - **Current card** (`ctx.currentItemIndex`), expanded: the name, "Target" with `itemSummary(item)` as a sibling element (D-0114 §5), the cue (`loadExerciseDetail`, D-0118 §8), a "How to" button (`ExerciseHowTo`), and the rows (D-0142 §3). Each row has a "Previous" cell, kg and reps (or seconds) fields with the engine pre-fill, and a done toggle that shows the logged state. Clicking it to log is T-0417.
@@ -57,7 +57,7 @@ status: todo
 
 - **AC-1 (seam entries, D-0071 §4)**
   - **The arrays.** `pauseSeamActions` contains `how-to` (`keepsClockRunning: false`) and `list-view` (`keepsClockRunning: true`).
-  - **The order.** UF-09.9 with the module arrays renders, in this order: Resume · (Swap, if T-0422 has landed) · Skip to next exercise · How to · List view · End workout.
+  - **The order.** UF-09.9 with the module arrays renders, in this order: Resume · Swap · Skip to next exercise · How to · List view · End workout (`orderActions`, D-0071 §4; T-0422 is a dep, so Swap is there). When `canSkipItem` is false (paused on the last item), the order is the same without Skip.
   - **The diff.** It touches no `features/UF-09` source file other than `seams.tsx`, and in `features/UF-09/__tests__` it changes only the D-0142 §6 pins (a PR check in the build log).
   - **No import of UF-09.** `features/UF-03` has no import of `features/UF-09` (a source test over every file, including dynamic `import()`).
 - **AC-2 (entry and exit, principle 1)**
@@ -116,4 +116,11 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 ## Notes
 - **Flow:** `wl-build-web`.
 - **Board:** this ticket carries T-0360. The orchestrator can mark T-0360 folded into T-0416.
-- **Parallel:** never with T-0415 or T-0422 (shared UF-09 pins and `seams.tsx`, D-0142 §1).
+- **Parallel (2026-10-02 refresh):**
+  - **Not with T-0433** (in QA). Same lane (`web-feature:UF-03`): both touch `features/UF-03/**`, and T-0433 adds helpers to `__tests__/helpers.tsx`. Start after T-0433 merges. The same holds for T-0439 (UF-03.3 follow-up, still `todo`): one UF-03 ticket at a time.
+  - **Not with T-0422** (in build). Both edit `seams.tsx`, the UF-09 seam pins and the `uf-09-focus.spec.ts` count (D-0142 §1). Start after T-0422 merges.
+  - **Not with T-0415.** Both change UF-09 test pins (D-0142 §1, D-0153). Either order works, but never both at once. T-0417 needs both.
+  - **With T-0304g, allowed by files.** T-0304g edits `host.tsx`, `ring.tsx`, `rest.tsx` and `uf-09.css`, and none of this ticket's files.
+  - **With T-0435 and T-0424, allowed by files.** They edit `session.tsx` and `timed-set.test.tsx`.
+  - **With T-0436 (qa), not at once.** T-0436 may edit `uf-09-focus.spec.ts` to add a mock. Whichever lands second merges `main` first.
+- **E2e runs:** use `TMPDIR=$HOME/.cache/wl-pw-tmp` until T-0440 lands (state.md trap).
