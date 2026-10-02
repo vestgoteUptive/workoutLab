@@ -24,6 +24,13 @@ vi.mock("../../../lib/offline/index.js", (orig) =>
 const NOW = STARTED_AT_MS + 15 * 60_000;
 const KEY = `wl-focus:${S1}`;
 const TIMED_PHASES: Phase[] = ["getReady", "warmup", "rest", "next"];
+/** T-0304a AC-7's "exactly 1 button" per placeholder state, updated (not dropped) as each
+ *  child builds a view (D-0118 §12). T-0304b: `set` is Pause + Done set; `confirm` (barbell-row,
+ *  a loaded lift) is Pause, 2 reps steppers, 2 weight steppers and Save. */
+const BUTTONS: Partial<Record<Phase, string[]>> = {
+  set: ["Pause workout", "Done set"],
+  confirm: ["Pause workout", "Fewer reps", "More reps", "Less weight", "More weight", "Save"],
+};
 const NON_PAUSED: Phase[] = [
   "getReady",
   "warmup",
@@ -85,13 +92,15 @@ function expectNoWayOut(): void {
 
 describe("AC-7 chrome on every machine state except paused", () => {
   it.each(NON_PAUSED)(
-    "%s: Pause workout, 1 + N aria-hidden segments, an index, exactly 1 button",
+    "%s: Pause workout, 1 + N aria-hidden segments, an index, the exact buttons",
     async (phase) => {
       await show(seeded(phase));
       const host = document.querySelector<HTMLElement>("[data-screen-id]")!;
       expect(host.getAttribute("data-screen-id")).toMatch(/^UF-09\.[1-8]$/);
       const buttons = within(host).getAllByRole("button");
-      expect(buttons).toHaveLength(1);
+      const names = BUTTONS[phase] ?? ["Pause workout"];
+      expect(buttons).toHaveLength(names.length);
+      expect(buttons.map((b) => b.getAttribute("aria-label") ?? b.textContent)).toEqual(names);
       expect(buttons[0]).toHaveAccessibleName("Pause workout");
       const bar = document.querySelector(".wl-uf09__progress")!;
       expect(bar).toHaveAttribute("aria-hidden", "true");

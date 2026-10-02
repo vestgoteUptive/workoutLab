@@ -28,3 +28,16 @@ export function formatKg(value: number, locale?: string): string {
   }).format(value);
   return `${number}\u00A0kg`;
 }
+
+/**
+ * A bare decimal for an editable field (D-0118 §6): `formatKg`'s number options (0–2 decimals,
+ * no grouping) with no unit, e.g. the UF-09.4 weight input (77.5 → "77.5", sv-SE "77,5").
+ * An absent `locale` means the runtime default.
+ */
+export function formatDecimal(value: number, locale?: string): string {
+  return new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+    useGrouping: false,
+  }).format(value);
+}

@@ -141,8 +141,9 @@ const PLAN = {
   },
 };
 
-/** Puts one `sessions` row into the app's `wl-offline` database (opened by the app first). */
-async function seedSessionRow(page: Page, id: string): Promise<void> {
+/** Puts one `sessions` row into the app's `wl-offline` database (opened by the app first).
+ *  T-0304b: `plan` defaults to `PLAN`. */
+async function seedSessionRow(page: Page, id: string, plan: object = PLAN): Promise<void> {
   await expect
     .poll(() =>
       page.evaluate(async () =>
@@ -179,7 +180,7 @@ async function seedSessionRow(page: Page, id: string): Promise<void> {
       });
       db.close();
     },
-    { id, userId: FAKE_USER_ID, plan: PLAN },
+    { id, userId: FAKE_USER_ID, plan },
   );
 }
 
@@ -212,5 +213,102 @@ test.describe("AC-7 the chrome on a seeded session", () => {
     await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
     await expect(page.getByRole("button")).toHaveCount(1);
     await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
+  });
+});
+
+// T-0304b AC-12 (D-0086, D-0091 §1, NFR-OFF-2, NFR-A11Y-2): one set logged offline, from UF-09.3
+// through the UF-09.4 auto-save to UF-09.5, with the row in IndexedDB.
+const NO_WARMUP_PLAN = { ...PLAN, warmup: [] };
+
+interface StoredSetRow {
+  sessionId: string;
+  exerciseId: string;
+  setIndex: number;
+  kind: string;
+  reps: number | null;
+  weightKg: number | null;
+  isWarmup: boolean;
+  backoff: boolean;
+}
+
+async function setsFor(page: Page, sessionId: string): Promise<StoredSetRow[]> {
+  return page.evaluate(async (id) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open("wl-offline");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const rows = await new Promise<unknown[]>((resolve, reject) => {
+      const req = db.transaction("sets", "readonly").objectStore("sets").getAll();
+      req.onsuccess = () => resolve(req.result as unknown[]);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return (rows as StoredSetRow[]).filter((r) => r.sessionId === id);
+  }, sessionId);
+}
+
+/** D-0127: offline, the chrome's shell `OfflineStatus` icon puts `aria-label` on a span with no
+ *  role (axe `aria-prohibited-attr`). It is a web-shell component, not a UF-09 view, so this scan
+ *  drops exactly that rule on exactly that node, and nothing else. */
+function isKnownShellIcon(v: { id: string; nodes: { target: unknown[] }[] }): boolean {
+  return (
+    v.id === "aria-prohibited-attr" &&
+    v.nodes.every((n) => n.target.join(" ") === ".wl-offline-status__icon")
+  );
+}
+
+async function expectAxeClean(page: Page): Promise<void> {
+  const results = await new AxeBuilder({ page }).analyze();
+  const serious = results.violations.filter(
+    (v) => (v.impact === "serious" || v.impact === "critical") && !isKnownShellIcon(v),
+  );
+  expect(serious).toEqual([]);
+}
+
+test.describe("T-0304b AC-12 one set offline", () => {
+  test("UF-09.3 Done set (≥ 200 px) → UF-09.4 auto-save after 5 s → UF-09.5; one row in wl-offline.sets", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/");
+    await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+    const id = randomUUID();
+    await seedSessionRow(page, id, NO_WARMUP_PLAN);
+    await page.goto(`/session/${id}`);
+    await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+    await precacheSettled(page);
+    await context.setOffline(true);
+    await page.reload();
+
+    // UF-09.3 after UF-09.1's 5 s: built content, not just a screen id.
+    const current = page.locator('[data-screen-id="UF-09.3"]');
+    await expect(current.getByText("Set 1 of 4")).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+    const done = page.getByRole("button", { name: "Done set" });
+    const box = await done.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.height).toBeGreaterThanOrEqual(200);
+    expect(box!.width).toBeGreaterThanOrEqual(44);
+    await expectAxeClean(page);
+
+    // UF-09.4, then the real 5 s auto-save to UF-09.5.
+    await done.click();
+    const confirm = page.locator('[data-screen-id="UF-09.4"]');
+    await expect(confirm.getByRole("button", { name: "Save" })).toBeVisible();
+    await expectAxeClean(page);
+    await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible({ timeout: 10_000 });
+
+    const rows = await setsFor(page, id);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      exerciseId: "bench-press",
+      setIndex: 0,
+      kind: "reps",
+      reps: 6,
+      weightKg: 80,
+      isWarmup: false,
+      backoff: false,
+    });
   });
 });

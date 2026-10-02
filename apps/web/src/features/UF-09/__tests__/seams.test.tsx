@@ -159,7 +159,9 @@ describe("AC-9 injection", () => {
     seedFocus({ phase: "set" });
     await renderSession({ seams: { pause: [swap], next: [swap] } });
     expect(screenId()).toBe("UF-09.3");
-    expect(buttonNames()).toEqual(["Pause workout"]);
+    // T-0304b (D-0118 §12): the built UF-09.3 adds its own Done set, and still no seam entry.
+    expect(buttonNames()).toEqual(["Pause workout", "Done set"]);
+    expect(document.querySelector("[data-seam-id]")).toBeNull();
   });
 });
 

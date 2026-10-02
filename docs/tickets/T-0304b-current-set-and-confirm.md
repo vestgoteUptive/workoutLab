@@ -267,3 +267,52 @@ and cite the screen (for example `T-0304b UF-09.4: auto-save after 5 s from the 
   set through the T-0304a expiry (`REST_END` after 120 s of fake time).
 
 - **From T-0304e QA/accept (2026-10-02):** a double tap on Save in `set` reaches `recordSet` twice; the second call arrives in `confirm`, becomes SET_LOGGED and adds a duplicate `loggedSets` entry for the same setIndex. Guard it in the view (disable while the write is pending) and test both taps. The hook API: views write through `useFocusSession().recordSet/editSet` with `RecordSetInput & {itemIndex}`, which resolves to the stored LoggedSet.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** Every AC has tests in `apps/web/src/features/UF-09/__tests__/`:
+  - AC-1, AC-2, AC-3: `current-set.test.tsx`.
+  - AC-4, AC-5, AC-6: `confirm-set.test.tsx`, plus the reducer cases in `machine.autosave.test.ts`.
+  - AC-7, AC-8, AC-9: `set-loop.test.tsx`. The `nextSetPrefill` table and the weight parsing: `prefill.test.ts`.
+  - AC-10: `apps/web/src/lib/format/number.test.ts` (the `formatKg` cases are unchanged).
+  - AC-11: `exports-and-lint.test.ts` and `timer.test.ts` are unchanged and green. The button pins are below.
+  - AC-12: the row "T-0304b AC-12 one set offline" appended to `tests/e2e/uf-09-focus.spec.ts`.
+- **What was built.**
+  - `current-set.tsx` (UF-09.3) and `confirm-set.tsx` (UF-09.4) replace the `set`/`confirm` placeholders in `views.tsx`.
+  - `prefill.ts` (`nextSetPrefill`) and `weight-input.ts` (`parseWeight`, `stepWeight`) are pure helpers.
+  - `machine.ts` gains `AUTOSAVE_S = 5`, the `confirm` timer on `SET_RECORDED` (`null` for a `null` weight unless the library says `externalLoad: false`), `AUTOSAVE_CANCEL`, and `isBodyweight`.
+  - `host.tsx` gains `confirm → SAVED` in the expiry table and `SessionHost.locale`. Each view is keyed by `phase:itemIndex:setIndex`, so a new step starts with a fresh busy state, fresh edits and the entry focus.
+  - `formatDecimal` is added to `lib/format/number.ts`, and the keys are added to `flows/uf-09.ts`.
+- **Test helpers.** `set-loop-mock.ts` wraps `offline-spies.ts`. It answers `loadLibrary` with L2 (L1 + push-up) and `loadExerciseDetail` with bench-press → "Shoulder blades back", everything else → `null`. `set-loop-fixtures.ts` holds PU and the plans. `set-loop-helpers.tsx` has `findScreen`/`findEl`/`findPath`. These poll on real 10 ms macrotasks, the positive wait (D-0103 §1), because RTL's `findBy` polls with the faked `setTimeout`. Negative asserts use `flushReal` (a real 50 ms macrotask).
+- **Planted faults.** Each one was applied, run, and reverted:
+  - AC-2: `setSaving(true)` moved after an `await` → "synchronous: right after the click …" goes red.
+  - AC-4: `confirm: "SAVED"` removed from the expiry table and replaced by a `setTimeout(5000)` in `ConfirmSet` → 3 red: "restore mid-countdown", "restore expired", "Pause at + 2 000 … in 3 s".
+  - AC-4: a tick-counting countdown (`setInterval` + `setSecondsLeft((n) => n - 1)`) → 4 red: "restore mid-countdown", "Pause … in 3 s", and the T-0304a AC-2 source tests (tick scan, `setInterval` only in the re-render hook).
+  - The T-0304e double-tap note: the `pending` guard removed from Done set and from Save → 3 red: both AC-2 one-write tests and "a double tap on Save with a change: one editSet".
+- **Button pins updated, not dropped (D-0118 §12).** In `host.chrome.test.tsx` AC-7, the "exactly 1 button" check now uses a per-state list:
+  - `set`: `["Pause workout", "Done set"]`.
+  - `confirm` (barbell-row, a loaded lift): `["Pause workout", "Fewer reps", "More reps", "Less weight", "More weight", "Save"]`.
+  - Every other state still expects `["Pause workout"]`.
+  - `set-loop.test.tsx` pins bench-press confirm at 6 buttons + 3 radios, and PU at 4 buttons.
+  - In `seams.test.tsx`, "a screen other than UF-09.6/.9 renders no seam entry" now expects `["Pause workout", "Done set"]` on UF-09.3, and also asserts that no `[data-seam-id]` is present.
+- **Defaults (within D-0118, no new decision).**
+  - **Done set** sends no `rir`. While the write is pending the button has `aria-disabled`, `aria-busy` and `data-state="saving"`, but never `disabled`, so focus stays on it. After a rejection all three are removed.
+  - **UF-09.4 heading.** It is the exercise name (library `name`, else the id), the same as UF-09.3.
+  - **Edits cancel too.** Any edit handler (stepper, typing, RIR) also dispatches `AUTOSAVE_CANCEL`, and so does Save with a change. Each is a no-op after the first. So the auto-save can't fire while `editSet` is pending.
+  - **Missing increment.** A library `incrementKg` of 0 on a loaded lift steps by the 2.5 default, the same as a missing entry.
+  - **"Unchanged"** compares `{reps, weightKg, rir}` with the recorded entry. 6 → 7 → 6 is no change, so there is no `editSet` call.
+  - **Strings.** The steppers' visible text is `−`/`+` (allowed literals), and their names come from `aria-label` (`en.uf09`).
+- **D-0127 (new, revisit; the orchestrator commits it on main).** Offline, the chrome's shell `OfflineStatus` icon (`components/**`, web-shell) has `aria-label` on a role-less span. axe reports this as `aria-prohibited-attr` (serious). The AC-12 axe helper drops exactly that rule on exactly `.wl-offline-status__icon`, and nothing else. Follow-up for web-shell: give the icon `role="img"`.
+- **Diff check** (recorded here, not as a test). The working tree touches only:
+  - `apps/web/src/features/UF-09/**`;
+  - `apps/web/src/lib/format/number.ts` and `number.test.ts`;
+  - `apps/web/src/lib/i18n/flows/uf-09.ts` (keys added);
+  - `tests/e2e/uf-09-focus.spec.ts` (`seedSessionRow` gains an optional `plan` parameter that defaults to `PLAN`, and one row is appended);
+  - this ticket.
+  The D-0127 file isn't on this branch: `check-lane-paths` doesn't grant `.squad/decisions/**` to this lane, so the orchestrator commits it on main.
+  `en.ts`, `formatKg`, `lib/offline/**`, `components/**`, `routes.ts` and `tests/e2e/fixtures/**` are unchanged.
+- **Evidence.**
+  - UF-09 + `lib/format` vitest: 21 files, 368 tests. The 5 new files hold 115 of them.
+  - `pnpm --filter @workoutlab/web test`: 125 files, 1906 tests.
+  - `pnpm --filter @workoutlab/web typecheck` and `lint`: 0.
+  - e2e `uf-09-focus` + `uf-08-setup`: 20/20.
+  - `-w format:check`: 0. `node .github/scripts/check-all.mjs`: 0. `check:size`: 0 (the largest lazy chunk is about 8 KB gzip).
