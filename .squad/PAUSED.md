@@ -18,7 +18,7 @@ its own ticket branch and never touches `main`.
 ## Tickets in flight at pause (worktrees under `../workoutLab-worktrees/`)
 | Ticket | What | Where it stood | Next step |
 |---|---|---|---|
-| T-0422 | UF-05.1 swap seam on UF-09.9 / UF-09.6 | Build ×3 done, review approved (incl. error boundary), **QA running** | QA verdict → accept → merge (full gate + whole e2e) |
+| T-0422 | UF-05.1 swap seam on UF-09.9 / UF-09.6 | Review approved (×3 builds). **QA passed** (`d453c81`): AC-1..AC-12 + lazy boundary, 6 faults red, uf-05-swap 5/5 on repeat, e2e 155. Its 2 reds were from `main` (AC-B16, stale origin/main), both fixed since | `git merge main` in the worktree → accept → merge (forced gate on `main`). Also drop the stale 'TR-0043: red until it is resolved' comment above the AC-5 load-line test in `t0422.host.test.tsx` |
 | T-0304g | UF-09 wake lock, cues, reduced motion | Review approved. QA proved every AC and fault (58/58; F1, F3, its own wake-lock fault) but stopped before its gate: it left 3 stray files, which the orchestrator removed (worktree clean at `bcf51a3`) | Run the cached gate (D-0158 §1) in the worktree, commit QA's log, then accept → merge |
 | T-0440 | e2e: no server reuse on :4173, tmpfs preflight | Review approved, **QA passed** (`12ea587`, e2e 152/152) | Accept → merge; then shorten the two traps in `state.md` |
 | T-0307b | UF-06 Progress | Rework 2 done (`b19196e`): AC-10 replace test now fails without `replace` (2/2 red→green); en-GB-only Sep, unused key removed, 44 px min width. Web 2769, repo-checks, e2e uf-06+shell 24/24 | Re-review (`git diff 5976601..b19196e`) → QA (D-0158) → accept → merge |
