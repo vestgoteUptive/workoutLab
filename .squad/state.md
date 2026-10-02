@@ -2,16 +2,16 @@
 
 - **Phase:** 3 (App). On main: engine rules 1–14 + D-0092..D-0096 changes; UF-01 onboarding complete (.1–.5); UF-02.1 Today (frame + suggestion card); UF-04 Library; UF-08.1–.2 setup; **UF-09 focus machine (T-0304a)**; UF-10 Balance.
 - **Updated:** 2026-10-02 by orchestrator (no AgentLab on this machine → sub-agents).
-- **`main`:** green at last full verify; pushed. Since then merged with focused checks: T-0384, T-0229 (PR #20), T-0304a (PR #21), T-0380b, T-0303b, T-0379, T-0388. Run a full `--force --concurrency=1` gate + whole e2e at the next quiet window.
-- **In flight:** T-0304e (UF-09 hook + seams), T-0303d (UF-08.4 Ready + Start), T-0380a (OfflineStatus guard), T-0383 (UF-10 D-0113 retrofit).
+- **`main`:** green at last full verify; pushed. Since then merged with focused checks: T-0384, T-0229 (PR #20), T-0304a (PR #21), T-0380b, T-0303b, T-0379, T-0388, T-0380a, T-0383, T-0392. Run a full `--force --concurrency=1` gate + whole e2e at the next quiet window.
+- **In flight:** T-0304e (QA ∥ review), T-0303d (QA ∥ review), T-0228 (QA; review approved; merge via orch/T-0228-merge + vendor regen + draft PR).
 
 ## Blocked on H-13
 T-0307b (UF-06), T-0308a (UF-07), T-0308b (UF-11, review-approved at `17091a5`) were in flight on **another machine**; their branches are on neither this machine nor `origin`. Also waiting on them: T-0356 (D-0090), T-0362, T-0363. Don't restart from scratch unless the human says the work is lost. When the branches appear: fetch, recreate worktrees, `git merge main`, then QA → review → accept.
 
 ## Next
-- UF-09 lane order: T-0304e → T-0304b → T-0304c → T-0304d (groom b/c/d; T-0304c needs T-0303d's readFocusPrefs; T-0304b: UF-09.4 5 s auto-save as persisted timer).
+- UF-09 lane (groomed, D-0118..D-0120): T-0304e → T-0304b → T-0304f → T-0304c → T-0304d; T-0304g after c + T-0303d; T-0304h after d, g, T-0303d; T-0394 (Back → Pause).
 - UF-08: after T-0303d → T-0385 (flush on online enqueue, D-0116) and T-0386 (UF-08.1 hardening) and T-0391 (formatKg in rows.ts).
-- Ready/todo small: T-0390 (widen CSP bundle scan), T-0392 (return-to validation), T-0393 (e2e fixture external_load), T-0389 (24 h time input probe), T-0228 (getsBackoff import cycle), T-0381/T-0382.
+- Ready/todo small: T-0390 (widen CSP bundle scan), T-0396 (return-to normalise), T-0393 (e2e fixture external_load), T-0389 (24 h time input probe), T-0228 (getsBackoff import cycle), T-0381/T-0382.
 - Ungroomed bigger: T-0305a/b (UF-03 list/summary), T-0306b (UF-05 swap — carries parseSessionPlan AC from D-0093 §7), T-0216, T-0308c (blocked via T-0308b/H-13), T-0309 landing, T-0310+ shell.
 
 ## Waiting on humans
@@ -21,7 +21,7 @@ H-13 (push branches); T-0217 tie-break default; H-12 (C-01 on phone); H-05, H-06
 - Sub-agents: build → QA ∥ review → product-owner accept; spec: product-owner → triage check. Spec/content/triage roles have **no shell**: the orchestrator commits their files.
 - Model pins (D-0076): execution roles `claude-sonnet-5-5`, judgement roles `claude-opus-5-5`.
 - Tooling: `npx -y pnpm@10.28.2 …`. Each new worktree needs `install --frozen-lockfile`.
-- Give every parallel run its own decision-ID block. Next free: **D-0118**, **TR-0038**, tickets **T-0394+** (web), **T-0230+** (engine/data), **T-0906+** (CI).
+- Give every parallel run its own decision-ID block. Next free: **D-0124**, **TR-0039**, tickets **T-0397+** (web), **T-0230+** (engine/data), **T-0906+** (CI).
 
 ## Traps (condensed — full history in journals 2026-09-28..10-01)
 - **Never commit a test that asserts `git diff main...HEAD`** (T-0303b review): it fails on other lanes' branches after merge and silently skips in CI (no local `main`). Record diff checks in the ticket build log instead; check-lane-paths enforces lanes.
