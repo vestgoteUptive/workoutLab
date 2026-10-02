@@ -26,10 +26,10 @@ async function lintAs(code: string, file = "src/features/UF-08/x.tsx") {
   return result!.messages;
 }
 
-describe("AC-13 exports", () => {
-  it('index exports exactly ["SessionSetup"]', async () => {
+describe("AC-13 exports (updated by T-0303d AC-9, D-0110 §6)", () => {
+  it('index exports exactly ["SessionSetup", "readFocusPrefs", "writeFocusPrefs"]', async () => {
     const mod = await import("../index.js");
-    expect(Object.keys(mod)).toEqual(["SessionSetup"]);
+    expect(Object.keys(mod).sort()).toEqual(["SessionSetup", "readFocusPrefs", "writeFocusPrefs"]);
   });
 });
 

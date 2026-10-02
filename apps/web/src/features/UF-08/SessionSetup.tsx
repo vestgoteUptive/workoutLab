@@ -45,6 +45,11 @@ const ENERGIES = ["low", "normal", "high"] as const satisfies readonly Energy[];
 export interface SessionSetupProps {
   /** Read once at mount (D-0107 §4). Defaults to the current time. */
   now?: Date | string;
+  /**
+   * UF-08.4's clock (D-0110 §1): read when Ready mounts (done by) and at the Start tap
+   * (`started_at`), so setup time is never charged to the workout. Defaults to `new Date()`.
+   */
+  clock?: () => Date;
   /** Defaults to `navigator.language` when it is a string, else `"en-GB"`. */
   locale?: string;
   /** The `tz` given to `suggest` and `refreshAll`. Defaults to the device's zone. */
@@ -107,7 +112,16 @@ function fitLine(workout: Workout): string {
   return en.uf08.fits(items.length, sets);
 }
 
-export function SessionSetup({ now, locale, timeZone }: SessionSetupProps = {}) {
+function systemClock(): Date {
+  return new Date();
+}
+
+export function SessionSetup({
+  now,
+  clock = systemClock,
+  locale,
+  timeZone,
+}: SessionSetupProps = {}) {
   const [nowIso] = useState(() => new Date(now ?? new Date()).toISOString());
   const [loc] = useState(() => locale ?? defaultLocale());
   const [tz] = useState(() => timeZone ?? defaultTimeZone());
@@ -161,7 +175,9 @@ export function SessionSetup({ now, locale, timeZone }: SessionSetupProps = {}) 
     warmup: useId(),
   };
 
-  if (showReady) return <Ready workout={adjusted.workout} />;
+  if (showReady) {
+    return <Ready workout={adjusted.workout} clock={clock} locale={loc} timeZone={tz} />;
+  }
 
   if (showSuggested && data !== null) {
     /** One `suggest` call with the inputs record (D-0109 §2); a rejection keeps the plan. */
