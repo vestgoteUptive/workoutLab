@@ -307,3 +307,26 @@ frontend-dev, build mode (rework). The branch was review-approved at `17091a5` o
   Landing those three files on `main` as they are on this branch, then merging `main` back in, clears both checks without changing either one. Neither check was weakened to get green.
 
 Gate after the fix: web `typecheck` and `lint` green; web `test` has 2798/2799 passing, and the one failure is AC-B16 above; `format:check` is clean; `check-all` reports only the three findings above; web e2e has 153/153 passing.
+
+## QA log: re-verify after the H-13 catch-up (2026-10-02)
+
+qa-tester, verify mode. Branch `t/T-0308b-plan` at `d287cab` (merge of main `20bf410`, H-13 landed). The tree was clean before and after. `git diff --name-only main...HEAD` lists 20 files, all under "Paths you may change". The three `lane-path-not-owned` files from the catch-up entry are on main now, so AC-B16's path check and `check-all` are both green again.
+
+**Verdict: `done`.** All 16 ACs still map to tests (`apps/web/src/features/UF-11/__tests__/*`, `tests/e2e/uf-11-plan.spec.ts`). Each planted fault below was reverted from a backup copy.
+
+| Fault planted | Covers | Result |
+| --- | --- | --- |
+| Save calls `previewTargets` again with the same input instead of using the shown `preview` (`EditPlanBody.tsx`) | AC-B10 "not a UI recomputation" (gap A) | **red**: 2 failures, the two QA AC-B10 tests (`expected 54 to be 53`) |
+| `ok()` → bare `await step` (`save-plan.ts`) | AC-B12, the `{data, error}` form | **red**: 5 failures, all `AC-B12 … the error form` |
+| `savingRef` guard removed | AC-B12 double submit | **red**: 1 failure, `a double click gives exactly ONE call of each step` |
+| `pinned.current = clock()` on every render, effect deps `[at]` (`use-plan-data.ts`) | render-loop guard (gap C) | **red**: unit 3 failures (`mount-stability.test.tsx`), and e2e 2 failures (`profiles was read 44 / 51 times`, bound ≤ 6) |
+| `console.error("QA planted fault: UF-11.2")` in `PlanContent` (`PlanBody.tsx`) | consoleGuard migration (T-0430) | **red**: 5 e2e failures, including the QA `/plan … logs no console error` test, which fails on its own `expect(consoleGuard.errors()).toEqual([])`. `/plan/edit` stays green, as it should, because the fault is UF-11.2 only. So the consoleGuard change kept the detection. |
+
+Gate (each under `flock /tmp/workoutlab-tests.lock`, pnpm 10.28.2):
+- `-w typecheck lint test --force --concurrency=1`: 19/19 tasks. Web 2799/2799 (AC-B16 green again), engine 655, shared 238, exercises 215, landing 115, design-tokens 74.
+- `-w test:repo-checks`: 146/146.
+- `-w format:check`: clean.
+- `node .github/scripts/check-all.mjs`: exit 0, no findings.
+- Web e2e (`TMPDIR=$HOME/.cache/wl-pw-tmp`): 153/153.
+
+The gate above ran on `d287cab`. **This QA-log commit itself makes AC-B16 red on the branch.** It puts `docs/tickets/T-0308b-plan.md` back into `git diff main...HEAD`, and the allowlist in `__tests__/strings.test.ts:168-172` predates the 2026-10-02 grant of this file in "Paths you may change". `check-all` stays green. Fix it in either of two ways: add `path === "docs/tickets/T-0308b-plan.md"` to that allowlist (UF-11 lane, not QA's), or land this file on main before or with the merge. The test isn't weakened either way. T-0362 and T-0363 stay open as before (non-blocking).
