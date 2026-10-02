@@ -4,6 +4,8 @@ export const uf09 = {
   // Host-level states (D-0111 §3, §7): all render `data-screen-id="UF-09"`.
   loadingTitle: "Workout",
   notOnDeviceTitle: "This workout isn't on this device",
+  // A stored plan that fails parseSessionPlan (D-0138 §3).
+  unreadableTitle: "This workout's plan can't be read",
   endedTitle: "This workout has ended",
   staleTitle: (date: string) => `This workout was started on ${date}`,
   doneTitle: "Workout complete",

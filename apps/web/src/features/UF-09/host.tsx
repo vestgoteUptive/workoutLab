@@ -1,6 +1,6 @@
 // UF-09 SessionHost (T-0304a, D-0111). Principle 1: exactly one task on screen. One
 // `[data-screen-id]` at a time: "UF-09" for the host-level states (loading, not on this
-// device, ended, stale, done), "UF-09.1 … UF-09.9" for the machine states.
+// device, unreadable (D-0138), ended, stale, done), "UF-09.1 … UF-09.9" for the machine states.
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { en } from "../../lib/i18n/en.js";
@@ -355,6 +355,9 @@ export function SessionHost({ resolveCheckPoint, seams, locale }: SessionHostPro
       return <HostLevel title={en.uf09.loadingTitle} withLink={false} />;
     case "notOnDevice":
       return <HostLevel title={en.uf09.notOnDeviceTitle} />;
+    case "unreadable":
+      // D-0138 §3 §4: its own host-level state; nothing is deleted.
+      return <HostLevel title={en.uf09.unreadableTitle} />;
     case "ended":
       return <HostLevel title={en.uf09.endedTitle} />;
     case "stale":
