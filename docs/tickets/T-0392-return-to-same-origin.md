@@ -75,13 +75,4 @@ none
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force` green · contracts unchanged · commit messages start with `T-0392` and cite UF-01.5 (e.g. `T-0392 UF-01.5: return-to accepts same-origin paths only`).
 
 ## Build / accept log
-- 2026-10-02 build (frontend-dev): `consumeReturnTo()` returns the stored value only when `isSafeAppPath()` holds (it is a string, starts with `/`, the second character is not `/` or `\`, there is no `\`, there is no `[\u0000- \u007f]`, and the URL origin matches). Otherwise it returns `"/"`. The key is always removed, and a `getItem` that throws gives `"/"`. `rememberReturnTo` is unchanged. The new `return-to.test.ts` has 27 tests (5 AC1, 19 AC2, 3 AC3).
-- 2026-10-02 QA (orchestrator): with main's `return-to.ts` copied in, 20 of the new tests fail. With the branch restored, `lib/auth` passes 50/50. `check-all` exits 0.
-- 2026-10-02 security review: approve, no blocking findings. One optional Low (return the normalised pathname+search+hash) is tracked as a follow-up and is not in this ticket's scope.
-- 2026-10-02 accept (product-owner): **done**.
-  - AC1: all 5 listed values pass through unchanged, including `/%2F%2Fevil.example`.
-  - AC2: all 15 listed values return `"/"`. The test adds CR, NUL, DEL and a trailing backslash.
-  - AC3: no key gives `"/"`. A throwing `getItem` gives `"/"` and nothing is thrown (two tests).
-  - AC4: every case asserts the key is removed and that a second call returns `"/"`. This includes the throwing-`getItem` case.
-  - AC5: `auth-callback.test.tsx` is in the 50/50 `lib/auth` run, and `auth-callback-reject.test.tsx` is covered by the green `check-all`. Callers are untouched, which matches Scope.
-  - Contracts are unchanged.
+Archived in `docs/tickets/log/T-0392.md` (D-0157).

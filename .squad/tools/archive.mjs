@@ -8,7 +8,8 @@
 //   A ticket whose log is not its last section is skipped and reported, never half-moved.
 // - index: regenerates .squad/decisions/INDEX.md from each decision's front matter.
 // Idempotent: a second run changes nothing.
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync as fsWrite } from "node:fs";
+import { spawnSync } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -166,7 +167,19 @@ function buildIndex() {
   return rows.length;
 }
 
+const written = new Set();
+function writeFileSync(file, text) {
+  written.add(file);
+  fsWrite(file, text);
+}
+
 const mode = process.argv[2] ?? "all";
+process.on("exit", () => {
+  // Leave every file in Prettier style so `-w format:check` stays green after a run.
+  const prettier = path.join(ROOT, "node_modules/.bin/prettier");
+  if (written.size === 0 || !existsSync(prettier)) return;
+  spawnSync(prettier, ["--write", "--log-level", "warn", ...written], { cwd: ROOT, stdio: "inherit" });
+});
 if (mode === "board" || mode === "all") console.log(`board: ${archiveBoard()} rows archived`);
 if (mode === "logs" || mode === "all") {
   const { moved, skipped } = archiveLogs();
