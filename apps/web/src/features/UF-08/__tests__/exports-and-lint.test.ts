@@ -1,6 +1,7 @@
 // @vitest-environment node
 // T-0303a AC-13: strings from `en.uf08` (D-0075 shape), jsx-no-literals, the export set, and the
 // D-0071 §9 import bans. Source scans exclude `__tests__/**`.
+import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { ESLint } from "eslint";
@@ -121,4 +122,64 @@ describe("AC-13 strings", () => {
       expect(readFileSync(file, "utf8"), file).not.toMatch(/\bstyle=/);
     }
   });
+});
+
+// ---- T-0303b AC-11 / AC-13 ----
+
+function branchDiff(): string[] | null {
+  try {
+    const out = execFileSync("git", ["diff", "--name-only", "main...HEAD"], {
+      cwd: WEB_ROOT,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return out.split("\n").filter((l) => l !== "");
+  } catch {
+    // No `main` ref (a shallow CI checkout, or after the merge): the DoD run checks it instead.
+    return null;
+  }
+}
+
+const diff = branchDiff();
+
+describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (D-0109 §7)", () => {
+  it.skipIf(diff === null)("git diff main...HEAD lists neither en.ts nor workout.ts", () => {
+    expect(diff).not.toContain("apps/web/src/lib/i18n/en.ts");
+    expect(diff).not.toContain("apps/web/src/lib/i18n/workout.ts");
+  });
+
+  it("the feature imports only workout.ts's own exports, and only from Suggested.tsx", async () => {
+    const workout = await import("../../../lib/i18n/workout.js");
+    const importers: string[] = [];
+    for (const file of sourceFiles().filter((f) => /\.tsx?$/.test(f))) {
+      const source = readFileSync(file, "utf8");
+      for (const m of source.matchAll(
+        /import \{([^}]*)\} from "\.\.\/\.\.\/lib\/i18n\/workout\.js"/g,
+      )) {
+        importers.push(file.split("/").at(-1)!);
+        for (const name of m[1]!
+          .split(",")
+          .map((n) => n.trim())
+          .filter(Boolean)) {
+          expect(Object.keys(workout), name).toContain(name);
+        }
+      }
+    }
+    expect(importers).toEqual(["Suggested.tsx"]);
+  });
+});
+
+describe("T-0303b AC-13 shell files unchanged (D-0108 §3)", () => {
+  it.skipIf(diff === null)(
+    "git diff main...HEAD lists nothing under app/**, tests/e2e/fixtures/** or the shell specs",
+    () => {
+      const touched = diff!.filter(
+        (f) =>
+          f.startsWith("apps/web/src/app/") ||
+          f.startsWith("tests/e2e/fixtures/") ||
+          /^tests\/e2e\/(offline|auth|shell)\.spec\.ts$/.test(f),
+      );
+      expect(touched).toEqual([]);
+    },
+  );
 });

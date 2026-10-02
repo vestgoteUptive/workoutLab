@@ -92,15 +92,7 @@ function runSuggest(
   timeZone: string,
 ): Workout | null {
   try {
-    return suggest(
-      data.history,
-      data.targets,
-      data.profile,
-      data.library,
-      input,
-      nowIso,
-      timeZone,
-    );
+    return suggest(data.history, data.targets, data.profile, data.library, input, nowIso, timeZone);
   } catch {
     // An engine rejection (an unknown goal, say) is shown as the no-profile state, never thrown.
     return null;
