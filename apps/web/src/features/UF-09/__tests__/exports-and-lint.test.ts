@@ -96,6 +96,13 @@ describe("AC-10 import bans (D-0071 §9)", () => {
     }
   });
 
+  it("T-0304e: seams.tsx imports nothing from features/UF-03, UF-04 or UF-05 yet (no cycles)", () => {
+    const src = readFileSync(join(FEATURE_DIR, "seams.tsx"), "utf8");
+    const imports = [...src.matchAll(/^\s*import[^;]*?from\s+"([^"]+)"/gm)].map((m) => m[1]!);
+    expect(imports.length).toBeGreaterThanOrEqual(1);
+    for (const path of imports) expect(path).not.toMatch(/UF-0[345]/);
+  });
+
   it("contrast: the offline module is allowed", async () => {
     const found = (
       await lint(

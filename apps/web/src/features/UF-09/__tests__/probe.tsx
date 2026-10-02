@@ -34,5 +34,3 @@ export async function probedViews(importOriginal: () => Promise<unknown>): Promi
   ) as ViewsModule["VIEWS"];
   return { ...actual, VIEWS };
 }
-
-

@@ -105,7 +105,13 @@ describe("AC-3 recordSet", () => {
   it("phase timed + the current set → TIMED_RECORDED (rest)", async () => {
     seedFocus({ phase: "timed", itemIndex: 3, setIndex: 0 });
     await renderSession();
-    const input = { ...setInput(3, 0), kind: "timed" as const, reps: null, weightKg: null, durationS: 50 };
+    const input = {
+      ...setInput(3, 0),
+      kind: "timed" as const,
+      reps: null,
+      weightKg: null,
+      durationS: 50,
+    };
     await call(() => session().recordSet(input));
     expect(countOf("TIMED_RECORDED")).toBe(1);
     expect(session().state.phase).toBe("rest");
@@ -146,7 +152,9 @@ describe("AC-3 recordSet", () => {
   it("null weight (zero history) is stored and listed as null", async () => {
     seedFocus({ phase: "set", itemIndex: 2, setIndex: 0 });
     await renderSession();
-    const logged = await call(() => session().recordSet(setInput(2, 0, { weightKg: null, reps: 10 })));
+    const logged = await call(() =>
+      session().recordSet(setInput(2, 0, { weightKg: null, reps: 10 })),
+    );
     expect(session().loggedSets[0]!.weightKg).toBeNull();
     const row = await offline.offlineDb().sets.get(`${USER_A}:${logged.clientId}`);
     expect(row!.weightKg).toBeNull();
@@ -179,27 +187,42 @@ describe("AC-3 editSet / deleteSet", () => {
   });
 
   it.each([
-    ["recordSet", () => recordSpy.mockRejectedValueOnce(new Error("idb")), (s: FocusSession) => s.recordSet(setInput(0, 1))],
-    ["editSet", () => editSpy.mockRejectedValueOnce(new Error("idb")), (s: FocusSession) => s.editSet(s.loggedSets[0]!.clientId, { reps: 5 })],
-    ["deleteSet", () => deleteSpy.mockRejectedValueOnce(new Error("idb")), (s: FocusSession) => s.deleteSet(s.loggedSets[0]!.clientId)],
-  ] as const)("a rejected %s rejects from the hook and leaves loggedSets unchanged", async (_name, reject, run) => {
-    seedFocus({ phase: "set" });
-    await renderSession();
-    await call(() => session().recordSet(setInput(0, 0)));
-    const before = session().loggedSets;
-    const storedBefore = storedFocus();
-    reject();
-    let error: unknown;
-    await act(async () => {
-      await run(session()).catch((e: unknown) => {
-        error = e;
+    [
+      "recordSet",
+      () => recordSpy.mockRejectedValueOnce(new Error("idb")),
+      (s: FocusSession) => s.recordSet(setInput(0, 1)),
+    ],
+    [
+      "editSet",
+      () => editSpy.mockRejectedValueOnce(new Error("idb")),
+      (s: FocusSession) => s.editSet(s.loggedSets[0]!.clientId, { reps: 5 }),
+    ],
+    [
+      "deleteSet",
+      () => deleteSpy.mockRejectedValueOnce(new Error("idb")),
+      (s: FocusSession) => s.deleteSet(s.loggedSets[0]!.clientId),
+    ],
+  ] as const)(
+    "a rejected %s rejects from the hook and leaves loggedSets unchanged",
+    async (_name, reject, run) => {
+      seedFocus({ phase: "set" });
+      await renderSession();
+      await call(() => session().recordSet(setInput(0, 0)));
+      const before = session().loggedSets;
+      const storedBefore = storedFocus();
+      reject();
+      let error: unknown;
+      await act(async () => {
+        await run(session()).catch((e: unknown) => {
+          error = e;
+        });
       });
-    });
-    await flushReal();
-    expect(error).toBeInstanceOf(Error);
-    expect(session().loggedSets).toEqual(before);
-    expect(storedFocus()).toEqual(storedBefore);
-  });
+      await flushReal();
+      expect(error).toBeInstanceOf(Error);
+      expect(session().loggedSets).toEqual(before);
+      expect(storedFocus()).toEqual(storedBefore);
+    },
+  );
 });
 
 describe("AC-3 the next set follows the live sets", () => {
@@ -266,7 +289,13 @@ describe("AC-4 replaceItem", () => {
       plan: { ...plan, items: [plan.items[0], newRow, plan.items[2], plan.items[3]] },
     });
     const written = upsertSpy.mock.calls[0]![0];
-    for (const key of ["started_at", "time_budget_min", "energy", "warmup_in_budget", "ended_at"] as const) {
+    for (const key of [
+      "started_at",
+      "time_budget_min",
+      "energy",
+      "warmup_in_budget",
+      "ended_at",
+    ] as const) {
       expect(written[key], key).toEqual(before[key]);
     }
     expect(written.started_at).toBe(STARTED_AT);

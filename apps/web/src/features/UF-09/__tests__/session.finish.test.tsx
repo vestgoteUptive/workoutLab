@@ -93,7 +93,9 @@ describe("AC-5 finish()", () => {
         return realUpsert(row);
       });
       await call(() => session().finish());
-      order.push(`after key=${window.localStorage.getItem(KEY) !== null} at=${currentLocation.pathname}`);
+      order.push(
+        `after key=${window.localStorage.getItem(KEY) !== null} at=${currentLocation.pathname}`,
+      );
 
       expect(upsertSpy).toHaveBeenCalledTimes(1);
       expect(upsertSpy).toHaveBeenCalledWith({
