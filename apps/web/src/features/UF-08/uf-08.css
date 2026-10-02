@@ -232,6 +232,11 @@
   cursor: pointer;
 }
 
+.wl-uf08__back[aria-disabled="true"] {
+  color: var(--wl-color-text-muted);
+  cursor: not-allowed;
+}
+
 .wl-uf08__primary[aria-disabled="true"] {
   color: var(--wl-color-text-muted);
   background: var(--wl-color-surface-2);
