@@ -100,14 +100,18 @@ UF-02.1 previews the next workout before the user has said how long they have. S
     - `swap {short_on_time}` → "Swapped to save time"
     - every `prefill {kind}` → ""
   - **`itemReasonLine`:** for W-R7E4's bench-press reasons (`main_lift`, `area_deficit {chest, 1}`, `days_since {chest, null}`, `prefill {first_time}`) → "Main lift · Chest 100 % below target" (at most 2, " · "-joined, empties skipped). A list holding only `prefill` gives "".
-  - **`sessionReasonChips`:** gives at most 3 non-empty lines, in order. A list of 4 gives 3.
+  - **`sessionReasonChips`** (D-0106 §4): at most 3 chips, in order, empties skipped.
+    - `area_deficit {chest, 1}` → "Chest", via `areaName`. W-R7E4's `sessionReasons` → `["Chest", "Back", "Quads"]`.
+    - `recovering_skipped {quads}` → "Quads recovering, skipped" (its `reasonLine`).
+    - A list of 4 gives 3.
+    - A list of only `prefill` gives `[]`.
   - **`areaName`:** `areaName("hamstrings")` === `en.bodyMap.areas.hamstrings`.
   - **Strings.** Every string in the module is a literal in that file or in `en.bodyMap.areas`, and `react/jsx-no-literals` is green.
 - **AC-8 (strings and lint)**
   - Every card string comes from `en.uf02` or `workout.ts`.
   - `en.ts` is unchanged, and `flows/uf-02.ts` keeps the D-0075 shape.
   - The T-0302a export pin (`["Today"]`) still holds.
-- **AC-9 (e2e: offline card, D-0091 §1, D-0108)** Rows appended to `tests/e2e/uf-02-today.spec.ts`, reusing T-0302a's seed (relative dates, no fixture edits):
+- **AC-9 (e2e: offline card, D-0091 §1, D-0108)** Rows appended to `tests/e2e/uf-02-today.spec.ts`, reusing T-0302a's seed (relative dates, no fixture edits). Both of its exercises have `equipment: []`, matching the default `mockProfilePresent` row, so the plan is non-empty:
   - **Online.** The spec records the card's header and row texts.
   - **Offline reload.** The offline cold start shows the card with "Suggested for 45 min", and header and rows equal to the recorded online texts. There is at least one row matching `/^.+ [1-4] × (\d+(–\d+)?|\d+ s)$/`.
   - **a11y.** axe on `/` stays 0 serious or critical, and "See all" is ≥ 44 × 44 px.

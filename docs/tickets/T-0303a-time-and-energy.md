@@ -35,7 +35,7 @@ Principle 2: every workout start asks how long the user has. UF-08.1 is where th
   - Calling any Edge Function.
   - `lib/i18n/workout.ts`. This ticket neither reads nor edits it.
   - C-01 or any import of `features/UF-02|06|07|10|11` (D-0071 §9).
-  - Any change to `routes.ts`, `en.ts`, `lib/**`, `components/**`, `tests/e2e/fixtures/**` (D-0108 §2) or the shell tests (D-0108 §3).
+  - Any change to `routes.ts`, `en.ts`, `lib/**` other than `lib/i18n/flows/uf-08.ts`, `components/**`, `tests/e2e/fixtures/**` (D-0108 §2) or the shell tests (D-0108 §3).
   - Any contract change.
 
 ### Edge cases that are in scope
@@ -46,7 +46,12 @@ Principle 2: every workout start asks how long the user has. UF-08.1 is where th
 
 ## Acceptance criteria
 **Test setup.**
-- Vitest + Testing Library in `apps/web/src/features/UF-08/__tests__/`. `lib/offline` loaders are mocked unless an AC says "real" (then `fake-indexeddb`). `now` is an injected prop (D-0107 §4).
+- Vitest + Testing Library in `apps/web/src/features/UF-08/__tests__/`. `lib/offline` loaders are mocked unless an AC says "real" (then `fake-indexeddb`).
+- `now`, `locale` and `timeZone` are injected props on `SessionSetup` (D-0107 §4). `timeZone` is the `tz` passed to `suggest` and `refreshAll`. `locale` and `timeZone` both go to `formatTime` and `OfflineStatus`.
+- **The defaults must not depend on `navigator` beyond `onLine`.** `auth-guard.test.tsx` stubs `navigator` as `{onLine}` only.
+  - `timeZone` defaults to `Intl.DateTimeFormat().resolvedOptions().timeZone`.
+  - `locale` defaults to `"en-GB"`. It may read `navigator.language` only behind a `typeof navigator.language === "string"` guard, and never reads `navigator.languages`.
+  - A test renders `SessionSetup` with `navigator` stubbed as `{onLine: true}` and asserts no throw and "done by 12:45" at F-tz.
 - **F-web**:
   - F-tz: `now = 2026-09-27T12:00:00+02:00`, `Europe/Stockholm`, en-GB.
   - F-targets and F-profile (`docs/engine-rules.md` §0, goal `build_muscle` unless stated).
@@ -84,7 +89,7 @@ Principle 2: every workout start asks how long the user has. UF-08.1 is where th
   - **Energy.** A radio group named "Energy" with Low / Normal / High. The hints are "Fewer sets, same weights." / "Your plan as written." / "Adds a back-off set to the main lift if time allows.", and only the selected option's hint shows.
   - **The toggle.** "Warm-up counts in this time (3 min)" is a switch or checkbox, on by default. Turning it off calls `suggest` with `warmupInBudget: false`, and turning it back on calls it with `true`.
 - **AC-6 (live fit line from `suggest`, principle 3, D-0065 §3, D-0107 §3 §5)**
-  - **The call.** Every input change calls `suggest(history, targets, profile, library, {budgetMin, warmupInBudget, energy, shuffle: 0, mainLiftId: null, pinnedIds: [], excludeIds: []}, now, tz)` exactly once, with `now` as an ISO instant (a spy wrapping the real function). The line renders that call's return.
+  - **The call.** Every input change calls `suggest(history, targets, profile, library, {budgetMin, warmupInBudget, energy, shuffle: 0, mainLiftId: null, pinnedIds: [], excludeIds: []}, now, tz)` exactly once, with `tz` = the `timeZone` prop (a test with `America/New_York` asserts the 7th argument) with `now` as an ISO instant (a spy wrapping the real function). The line renders that call's return.
   - **Real engine, F-web, zero history:**
     - 30 min → "Fits: 3 exercises, 9 sets + warm-up" (R7-E4).
     - 15 min → "Fits: 1 exercise, 4 sets + warm-up" (R7-E2, singular).
@@ -109,8 +114,13 @@ Principle 2: every workout start asks how long the user has. UF-08.1 is where th
     - `navigator.onLine` false, where `refreshAll` has 0 calls after 50 ms.
   - **Queued sets count.** With the real `loadEngineHistory` and 6 queued hard back-squat sets at `now − 24 h`, recorded through `recordSet`, the 30-min `Workout`'s `sessionReasons` contain `recovering_skipped` for quads and for glutes (R7-E3). Without the queued sets, they contain neither.
 - **AC-10 (refresh cap and missing data, D-0071 §8, D-0104, D-0107 §9)**
-  - **The cap.** Online, with `refreshAll` never resolving (fake timers), the fit line renders from the cache before 3 000 ms. After 3 000 ms there is no further `suggest` call caused by the refresh. The planted fault "await `refreshAll` without the cap" must turn this red.
-  - **Refresh with new data.** A refresh that resolves with new cache data makes exactly one more `suggest` call.
+  - **The cap: re-read after the refresh resolves or after 3 s, whichever comes first.** Online, with `refreshAll` never resolving (fake timers):
+    - The fit line renders from the cache before 3 000 ms. At 2 999 ms each loader mock has been read once.
+    - At 3 000 ms each loader is read a second time (mock count 1 → 2).
+    - `suggest` gets no extra call, because the re-read content is deep-equal to the first read. The memo keys on content, not array identity (D-0107 §3): the mocks return new arrays with equal contents.
+    - Another 10 000 ms adds no read and no call.
+    - Each of two planted faults must turn this red: (a) "await `refreshAll` without the cap", which gives no second read at 3 000 ms; (b) "memoise on array identity", which gives an extra `suggest` call at 3 000 ms.
+  - **Refresh with new data.** A refresh that resolves with changed cache data (one more target, or a new set) makes exactly one more `suggest` call.
   - **Rejected refresh.** It renders from the cache with no `role="alert"` and no unhandled rejection.
   - **Missing data.**
     - With no profile, or with 8 targets, the screen shows "Connect to finish setting up your plan" and a link to `/`. The time controls are absent and `suggest` has 0 calls.
@@ -119,9 +129,9 @@ Principle 2: every workout start asks how long the user has. UF-08.1 is where th
 - **AC-11 (offline indicator, D-0107 §8)** Offline, the screen shows an element with `aria-label="Offline"` and no "Offline ·" text. Online, it shows neither.
 - **AC-12 (e2e: offline cold start and a11y, D-0086, D-0091 §1, D-0108)** In `tests/e2e/uf-08-setup.spec.ts`, which imports `test`/`expect` from `fixtures/guarded-test.js`:
   - **Seed.**
-    - Signed in, with `mockSupabaseAuth`, `mockSupabaseRest`, `mockSupabaseData` and `mockProfilePresent`.
+    - Signed in, with `mockSupabaseAuth`, `mockSupabaseRest`, `mockSupabaseData` (its `profile` field = the profile row below) and then `mockProfilePresent(page, profileRow)`.
     - The `exercises` and `exerciseAreas` exports of `fixtures/uf-04-library-data.js` (read-only import).
-    - That file's `profile`, with full equipment.
+    - `profileRow` = that file's `profile` (full equipment) plus `user_id: FAKE_USER_ID`. The full equipment matters: the default `mockProfilePresent` row has `equipment: []`, which would give the R7-E6 push-up plan instead.
     - 9 targets from F-targets.
     - No sets.
   - **Online.** `/session/setup` shows UF-08.1 at 45 min. The spec records the fit line text. Before going offline it waits for the library cache and the precache to settle (the `offline.spec.ts` pattern).

@@ -28,7 +28,11 @@ The parent T-0302 AC-A9 maps `swap {null}` to "Shuffled". Rule 13 (shuffle) adds
    - `restLabel(seconds)`
    - `reasonLine(reason)`: one reason → one string, `""` for `prefill`.
    - `itemReasonLine(reasons)`: the non-empty `reasonLine`s in `reasons` order, at most 2, joined with " · ".
-   - `sessionReasonChips(reasons)`: the non-empty `reasonLine`s, at most 3.
+   - `sessionReasonChips(reasons)`: at most 3 chips, in `sessionReasons` order, empties skipped. This is an orchestrator decision (triage check, 2026-10-02):
+     - `area_deficit {area}` gives `areaName(area)`, so W-R7E4 gives "Chest", "Back", "Quads".
+     - `recovering_skipped {area}` keeps its `reasonLine`, "Quads recovering, skipped". A bare "Quads" chip would read as if quads were trained, the opposite of what happened.
+     - Any other code gives its `reasonLine`.
+     - T-0302c (UF-02.1) and T-0303b (UF-08.2, its AC-B3) both render session chips through this one function, so the two screens agree.
    - `areaName(area)`: reads `en.bodyMap.areas`, so there is no second copy of the area names (the T-0301d AC-10 precedent).
 5. **Swap reason copy.**
    - `swap {null}` → "Swapped". This is a neutral line, because null is the Best-match swap.
@@ -47,7 +51,8 @@ The parent T-0302 AC-A9 maps `swap {null}` to "Shuffled". Rule 13 (shuffle) adds
 
 ## Consequences
 - T-0302a and T-0303a share no file, so they can run in parallel (D-0108). T-0302c can also run in parallel with T-0303a.
-- T-0302 AC-A9's "Shuffled" line is withdrawn. T-0303c AC-C2's "reasonLine's output for `swap {short_on_time}`" reads "Swapped to save time".
+- T-0302 AC-A9's "Shuffled" line is withdrawn.
+- T-0303b AC-B3 renders its session chips with `sessionReasonChips` (§4). "Quads recovering, skipped" stays as written there, and an `area_deficit` chip reads as the bare area name.
 
 ## Revisit when
 - Shuffle starts adding a reason code of its own (rule 13). Then give it its own line.

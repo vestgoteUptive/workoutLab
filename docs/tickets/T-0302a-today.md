@@ -23,7 +23,7 @@ UF-02.1 is the daily entry point (PRD). It shows what's under target in the roll
   - The compact `<BodyMap>` from `components/body-map`.
   - The attention line.
   - `features/UF-02/slots.tsx` (D-0071 §4), rendered in its D-0071 §4 position.
-  - "No workouts yet. Start your first one."
+  - "No workouts yet. Start your first one." and "Nothing logged in the last 14 days. Start a workout to pick up again." (AC-7 says which line shows when).
   - The no-profile state.
   - The primary Start link → `/session/setup`.
   - The e2e spec `tests/e2e/uf-02-today.spec.ts` (new; T-0302c and T-0302b append).
@@ -39,13 +39,19 @@ UF-02.1 is the daily entry point (PRD). It shows what's under target in the roll
 ### Edge cases that are in scope
 - **Offline:** a cold start offline renders from IndexedDB with "Offline · last synced HH:MM" (AC-9, AC-11). Queued sets count (AC-3). Start still works, because UF-08 is offline-capable.
 - **Time running out:** Start is always one tap to UF-08.1 and never starts a session itself (AC-6).
-- **Zero history:** the tiles read 0 / target, and the attention line is replaced by the no-workouts line (AC-7).
+- **Zero history:** the tiles read 0 / target, and "No workouts yet" shows. Rule 5 gives no attention areas here (R5-E4) (AC-7).
+- **Only older sets** (a history, but nothing in the window): the "Nothing logged in the last 14 days" line shows, so the screen is never blank above Start (AC-7).
 - **Returning after 10 days off:** the R5-E1 history gives "Needs attention: Chest, Back, Shoulders +6 more" (AC-4).
 
 ## Acceptance criteria
 **Test setup.**
 - Vitest + Testing Library in `apps/web/src/features/UF-02/__tests__/`. `lib/offline` loaders are mocked unless an AC says "real", in which case it uses `fake-indexeddb`, already global in `vitest.setup.ts`.
-- `now` and `timeZone` are injected props on `Today` (defaults `new Date()` and `Intl…resolvedOptions().timeZone`).
+- `now`, `locale` and `timeZone` are injected props on `Today`. They pass through to the date line, `balance(…, tz)`, `OfflineStatus` (`locale`, `timeZone`) and `refreshAll(now, tz)`.
+- **The defaults must not depend on `navigator` beyond `onLine`.** `auth-guard.test.tsx` stubs `navigator` as `{onLine}` only.
+  - `now` defaults to `new Date()`.
+  - `timeZone` defaults to `Intl.DateTimeFormat().resolvedOptions().timeZone`.
+  - `locale` defaults to `"en-GB"`, the `OfflineStatus` default. It may read `navigator.language` only behind a `typeof navigator.language === "string"` guard, and never reads `navigator.languages`.
+  - A test renders `Today` with `navigator` stubbed as `{onLine: true}` and asserts no throw and the en-GB date line.
 - Fixtures:
   - **F-tz**: `now = 2026-09-27T12:00:00+02:00`, `Europe/Stockholm`, en-GB.
   - **F-targets**: `docs/engine-rules.md` §0.
@@ -92,17 +98,25 @@ UF-02.1 is the daily entry point (PRD). It shows what's under target in the roll
   - **Ready state.** The primary action is a link with the accessible name "Start workout" and `href="/session/setup"`. Clicking it lands on `/session/setup` (location probe).
   - **Offline.** It is present and enabled with `navigator.onLine` false too.
   - **Never starts a session.** The screen never calls `upsertSession` (spy, 0 calls).
-- **AC-7 (zero history)**
-  - Given empty history, F-targets and a profile, with the real engine:
-    - all 9 tiles read "0 / <target>" (chest "0 / 20", calves "0 / 12");
-    - "No workouts yet. Start your first one." shows directly above Start;
-    - there is no attention line, even though the engine marks all 9 areas `needsAttention`.
-  - Given one hard set in history, the no-workouts line is absent and the attention line is present.
+- **AC-7 (zero history, an empty window, and which line shows)** Exactly one of these three conditions decides the line above Start. Each is read from engine output or engine helpers, with no UI arithmetic:
+  - **The attention line** shows iff at least one `result.areas[i].needsAttention` is true (rule 5).
+  - **"No workouts yet. Start your first one."** shows iff the loaded history has no hard set at all: `history.some(isHardSet)` is false, using `isHardSet` from `@workoutlab/engine`.
+  - **"Nothing logged in the last 14 days. Start a workout to pick up again."** shows iff the history has a hard set, but every `result.areas[i].load` is 0 (the window is empty).
+
+  Rule 5 sets `needsAttention` false for every area when the window holds no hard set (R5-E4). So without the second and third lines, both of these cases would show nothing. Tests, with the real engine, F-targets and a profile:
+  - **Empty history.** All 9 tiles read "0 / <target>" (chest "0 / 20", calves "0 / 12"). "No workouts yet. Start your first one." shows directly above Start. There is no attention line and no "Nothing logged…" line.
+  - **Only older sets.** Given 4 hard RDL sets on 2026-09-01 only (before the window 09-14…09-27), all tiles read 0. "Nothing logged in the last 14 days. Start a workout to pick up again." shows directly above Start. There is no attention line and no "No workouts yet" line.
+  - **R5-E1** (4 RDL sets on 09-17, inside the window). The attention line shows, and neither of the other two lines does.
+  - **A balanced history** (no area `needsAttention`, some load > 0). None of the three lines shows. This is the only state with no line, and it is AC-4's 0-attention case.
 - **AC-8 (loading and refresh, D-0071 §8, D-0104)**
   - **Loading.** Before the loaders resolve, C-01 renders with `loading` true (its `aria-busy`), and there is no attention line and no no-workouts line.
   - **Online.** `refreshAll` is called exactly once per mount. After it resolves, `balance` runs once more, and the tiles show the refreshed cache (a loader mock that returns new rows on its second call).
   - **Offline.** `refreshAll` isn't called (0 calls after a 50 ms macrotask).
-  - **The cap.** With `refreshAll` never resolving (fake timers), the cached render is on screen before 3 000 ms, and no second `balance` call happens before 3 000 ms. The planted fault "await `refreshAll` without the cap" must turn this test red.
+  - **The cap: recompute after the refresh resolves or after 3 s, whichever comes first (parent AC-A7).** With `refreshAll` never resolving (fake timers):
+    - The cached render is on screen before 3 000 ms. At 2 999 ms there is exactly 1 `balance` call and 1 read of each loader.
+    - Advancing to 3 000 ms gives exactly one more `balance` call (count 1 → 2) over a second cache read (loader mock counts 1 → 2).
+    - Another 10 000 ms adds no call.
+    - Each of two planted faults must turn this test red: (a) "await `refreshAll` without the cap", which gives no second call at 3 000 ms; (b) "the cap fires but skips the recompute", which also gives no second call.
   - **Rejected refresh.** It keeps the cached render, with no `role="alert"` and no unhandled rejection (a `process.on("unhandledRejection")` spy has 0 calls).
 - **AC-9 (offline status)** With `navigator.onLine` false and `lastSyncedAt` "2026-09-27T08:15:00Z", the header shows "Offline · last synced 10:15". With `lastSyncedAt` null, it shows "Offline · not synced yet". Online, neither text is in the DOM.
 - **AC-10 (no profile or targets)**
@@ -114,7 +128,7 @@ UF-02.1 is the daily entry point (PRD). It shows what's under target in the roll
   - **Seed.**
     - Signed in, with `mockSupabaseAuth`, `mockSupabaseRest`, `mockSupabaseData` and `mockProfilePresent`.
     - 9 targets at 10.
-    - 2 exercises: one compound with `exercise_areas` quads 1.0, one isolation with chest 1.0.
+    - 2 exercises, both with `equipment: []`: one compound with `exercise_areas` quads 1.0, one isolation with chest 1.0. Because both match the default `mockProfilePresent` row (`equipment: []`), T-0302c AC-9 can reuse this seed and get a non-empty plan.
     - 5 hard quads sets (reps 8, weight 60) with `completed_at = Date.now() − 2 days`. No fixed calendar date.
   - **Online.** After one online load, the spec waits for the history and library caches and the precache, as `offline.spec.ts` does. It then goes offline and reloads `/`.
   - **Offline.** Within 3 s, `[data-screen-id="UF-02.1"]` is visible and the text matches `/^Offline · last synced \d{1,2}:\d{2}/`. 9 C-01 tiles are visible, the quads tile reads "5 / 10" and the chest tile "0 / 10" (built content). The attention line is visible and starts "Needs attention:".

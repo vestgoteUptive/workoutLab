@@ -63,7 +63,7 @@ Vitest + Testing Library in `apps/web/src/features/UF-02/**` and `apps/web/src/l
 
 ## Paths you may change
 - `apps/web/src/features/UF-02/**`.
-- Extras (D-0071 §1, §10): `apps/web/src/lib/i18n/flows/uf-02.ts` (created empty by T-0318), `apps/web/src/lib/i18n/workout.ts` (new, created by T-0302a; T-0302b may add keys; never in parallel with T-0303b), `tests/e2e/uf-02-today.spec.ts` (new; T-0302b appends).
+- Extras (D-0071 §1, §10): `apps/web/src/lib/i18n/flows/uf-02.ts` (created empty by T-0318), `apps/web/src/lib/i18n/workout.ts` (new, created by T-0302c per D-0106; T-0302b may add keys; never in parallel with T-0303b or T-0302c), `tests/e2e/uf-02-today.spec.ts` (new; T-0302b appends).
 - `features/UF-02/slots.tsx` is the one UF-02 file T-0308c may edit later. Keep its export stable.
 - Read-only imports: `components/body-map`, `components/offline-status`, `lib/offline`, `lib/format`, `lib/i18n/en.ts` (area names), `@workoutlab/engine`, `@workoutlab/shared`.
 
