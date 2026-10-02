@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.3, UF-09.4, UF-09.7, UF-09.9]
 decisions: [D-0111, D-0118, D-0071, D-0066]
 deps: [T-0304b, T-0304f]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Build flow: wl-build-web. About ¼ day. Follow-up from the T-0304b re-review. Both fixes are in `features/UF-09/machine.ts` and `features/UF-09/session.tsx`, and T-0304f (doing) changes the same machine/session files. So this waits for T-0304f to merge. Ready when T-0304f is done. -->
 
@@ -132,3 +132,20 @@ set`).
   baseline left `timed`) and AC3's `source: "list"` half (`source` reached `lib/offline`). AC3 (no
   source) and AC6 passed on main, as they pin T-0304b behaviour.
 - AC7: no existing UF-09 test or e2e row edited; the export pin is unchanged.
+
+### Accept 2026-10-02 (product-owner): done
+- AC1 and its pair, AC2 and its pair: `__tests__/machine.session.test.ts` "T-0410 AC1/AC2 ..."
+  (4 tests). `movedOnIfLogged` now also matches the current item's `exerciseId`, so RESUME after a
+  swap to fewer sets stays on the new exercise's set (UF-09.3 / UF-09.7). A real log of the new
+  exercise still moves on to UF-09.4.
+- AC3 (no source and `source: "list"`), AC4, AC5, AC6: `__tests__/session.writes.test.tsx`
+  "T-0410 AC3..AC6" (5 tests). The key is `source:itemIndex:setIndex:exerciseId`, and `source` is
+  removed before `lib/offline`.
+- Red proof recorded: AC1, AC2, AC4 and AC5 fail on main. AC7: UF-09 433/433, web 2116 green,
+  uf-09-focus e2e 8/8, no existing test edited, export pin unchanged. Every run was under the lock.
+- Review approved: the reducer is still pure and nothing was weakened. Contracts are unchanged.
+- Principles: one task on screen (principle 1) is restored, since RESUME no longer shows UF-09.4
+  for a set nobody did. The engine and the time budget aren't touched.
+- Out of scope, filed as T-0414 (web-feature:UF-09): `planReplaced`'s `setIndex` clamp can land on
+  a position the old exercise already used, so a later Done set writes a second row at the same
+  (itemIndex, setIndex).
