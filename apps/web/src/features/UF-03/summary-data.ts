@@ -42,6 +42,17 @@ export interface EndedSummary {
   changes: AreaChange[] | null;
   /** The engine's `after.areas` with `coverageStep < 4`, first two; `null` with `changes`. */
   nextUp: AreaBalance["area"][] | null;
+  /** The stored `effort_rating` (1–5), preselecting its chip (D-0142 §4); `null` for none. */
+  effortRating: EffortRating | null;
+}
+
+/** D-0030: the effort rating is 1–5. */
+export type EffortRating = 1 | 2 | 3 | 4 | 5;
+export const EFFORT_RATINGS: readonly EffortRating[] = [1, 2, 3, 4, 5];
+
+/** A stored `effort_rating` as a chip value: anything but an integer 1–5 checks nothing. */
+export function storedEffort(value: unknown): EffortRating | null {
+  return EFFORT_RATINGS.find((r) => r === value) ?? null;
 }
 
 export type SummaryLoad =
@@ -132,6 +143,7 @@ export async function loadSummary(sessionId: string, tz: string): Promise<Summar
         hardSets: hard.length,
         changes,
         nextUp,
+        effortRating: storedEffort(row.effort_rating),
       },
     };
   } catch {
