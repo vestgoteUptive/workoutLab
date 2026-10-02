@@ -678,16 +678,6 @@ function loadedSets(): Record<string, unknown>[] {
   );
 }
 
-/** Console errors and page errors from here on (QA: the kg path logs nothing). */
-function consoleErrors(page: Page): string[] {
-  const errors: string[] = [];
-  page.on("console", (msg) => {
-    if (msg.type() === "error") errors.push(msg.text());
-  });
-  page.on("pageerror", (err) => errors.push(err.message));
-  return errors;
-}
-
 async function seedLoaded(page: Page, sets: unknown[]): Promise<void> {
   await mockSupabaseData(page, {
     sets,
@@ -718,7 +708,6 @@ test.describe("T-0393 UF-08.2 loaded library (D-0044, D-0109 §4)", () => {
   test("T-0393 AC2 zero history: Bodyweight exactly on unloaded rows, and no kg", async ({
     page,
   }) => {
-    const errors = consoleErrors(page);
     await seedLoaded(page, []);
     await openSetup(page);
     await suggestAt30(page);
@@ -732,13 +721,11 @@ test.describe("T-0393 UF-08.2 loaded library (D-0044, D-0109 §4)", () => {
       expect(detail, name).not.toMatch(/kg/);
       expect(detail, name).toMatch(DETAIL_PATTERN);
     }
-    expect(errors).toEqual([]);
   });
 
   test("T-0393 AC3 one session at 42.5 kg × 7: every loaded row shows 42.5 kg", async ({
     page,
   }) => {
-    const errors = consoleErrors(page);
     await seedLoaded(page, loadedSets());
     await openSetup(page);
     await suggestAt30(page);
@@ -759,7 +746,6 @@ test.describe("T-0393 UF-08.2 loaded library (D-0044, D-0109 §4)", () => {
       }
       expect(detail, name).toMatch(DETAIL_PATTERN);
     }
-    expect(errors).toEqual([]);
   });
 
   test("T-0393 AC4 offline rows equal the online ones, kg text included (NFR-OFF-3)", async ({
@@ -867,7 +853,6 @@ test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109
   });
 
   test("T-0412 AC2 UF-08.2 main row is M at 4 × 6–8 · 42.5 kg", async ({ page }) => {
-    const errors = consoleErrors(page);
     await seedLoaded(page, mainSeed());
     await openSetup(page);
     await suggestAt30(page);
@@ -878,13 +863,11 @@ test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109
     expect(loadedByName(name!).external_load).toBe(true);
     expect(detail).toMatch(MAIN_DETAIL);
     for (const [n, d] of rows) expect(d, n).toMatch(DETAIL_PATTERN);
-    expect(errors).toEqual([]);
   });
 
   test("T-0412 AC3 UF-09.3 shows the add_rep pre-fill 42.5 kg × 7 for M's first set", async ({
     page,
   }) => {
-    const errors = consoleErrors(page);
     await seedLoaded(page, mainSeed());
     await openSetup(page);
     await suggestAt30(page);
@@ -900,7 +883,6 @@ test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109
     await expect(current.getByText("Set 1 of 4")).toBeVisible();
     // 7 reps is 14.7 `add_rep`: 14.6 `hold` would show 6, 14.4 `increase` 45 kg.
     await expect(current.locator(".wl-uf09__load")).toHaveText("42.5 kg × 7");
-    expect(errors).toEqual([]);
   });
 
   test("T-0412 AC4 offline rows equal the online ones, main kg text included (NFR-OFF-3)", async ({

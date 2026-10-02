@@ -106,3 +106,47 @@ Tests for every AC pass, with the red runs and the planted fault recorded · `pn
 lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web test:e2e` green (the
 whole suite) · `format:check` and `check:repo` green · contracts unchanged · commits start
 `T-0430` (for example `T-0430: drop uf-08's own console check; harden the allow rules`).
+
+## Build / accept log
+
+### Build (qa, 2026-10-02)
+- `tests/e2e/fixtures/source-rules.ts` (new): `ownConsoleListeners(file, source)` and
+  `allowCommentViolations(file, source)`, both returning `file:line`, plus the two helpers they
+  use, `stripComments` (blanks `//` and `/* */` comments, keeps newlines; skips string, template
+  and regex literals so a `//` in `"http://…"` is not a comment) and `commentBlockAbove(lines, i)`
+  (the contiguous `//` lines directly above; a blank or code line ends it).
+- `tests/e2e/fixtures/guarded-test.ts`: `allow` throws `consoleGuard.allow: <pattern> is a global
+  or sticky pattern; …` when `pattern.global || pattern.sticky`. The doc comment and the
+  `assertClean` message now say "in the comment block above".
+- `tests/e2e/uf-08-setup.spec.ts`: `consoleErrors` and its 4 uses (T-0393 AC2, T-0393 AC3,
+  T-0412 AC2, T-0412 AC3) deleted: the helper, the `const errors = …` lines and the
+  `expect(errors).toEqual([])` lines. Nothing else in those tests changed.
+- `tests/e2e/fixture-guard.spec.ts`: a new `T-0430 source rules and allow flags` block (AC1 and
+  AC3 unit cases, AC4 flag tests). In `source assertions`, the T-0425 AC5 allow test now uses
+  `allowCommentViolations`, and there are new tests for T-0430 AC1 (every guarded spec except
+  this one, expects `[]`), AC2 (no `consoleErrors` in uf-08) and AC5. The comment above the SW
+  allow in "setOffline does not suspend interception" now starts `// T-0429 (web-shell) removes
+  this allow.`
+- **Red on the unfixed code** (new tests in place, `guarded-test.ts` and `uf-08-setup.spec.ts`
+  as on main): `playwright test fixture-guard.spec.ts -g T-0430` gave 3 failed, 7 passed.
+  - AC1: `Expected []`, received `["uf-08-setup.spec.ts:684", "uf-08-setup.spec.ts:687"]`.
+  - AC4: `/x/g`: "Received function did not throw".
+  - AC2 source check: `consoleErrors` found in uf-08-setup.spec.ts.
+  - The AC3 case `const ticket = "T-0429";` above the call is reported by
+    `allowCommentViolations`. The same test shows that the T-0425 inline check (`/T-\d{4}/` on
+    the line above) accepts that line.
+- **AC2 planted fault:** `await page.evaluate(() => console.error("t0430-planted"))` added to
+  T-0393 AC2 after the helper was gone. That run gave 1 failed at teardown
+  (`fixtures/guarded-test.ts:226`, `assertClean`) with `console error in e2e: 1 line(s) were
+  logged as errors … - console.error: t0430-planted (:0)`. Then reverted, and the file was
+  checked as matching the post-change version.
+- **Allows added outside `fixture-guard.spec.ts`: none.** `uf-03-list-summary.spec.ts` (T-0420)
+  does not exist on this branch and was not touched. `uf-10-balance.spec.ts` still has its own
+  listeners (lines 206–207). It is not guarded, so the AC1 run skips it (T-0427).
+- Results: `flock … pnpm --filter @workoutlab/web test:e2e` gave 133 passed (whole suite).
+  `flock … pnpm -w typecheck lint test --force --concurrency=1` gave 19/19 tasks.
+  `test:repo-checks` gave 146 pass. `format:check` and `check:repo` were green.
+- Seen, not changed (outside the scope): `npx eslint tests/e2e` reports
+  `no-irregular-whitespace` at `uf-08-setup.spec.ts:837` (`MAIN_DETAIL`, line 851 on main). It is
+  on main already: the U+00A0 is deliberate (T-0391 AC6), and `tests/e2e` is not in the turbo
+  lint scope.
