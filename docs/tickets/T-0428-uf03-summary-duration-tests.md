@@ -62,3 +62,10 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 ## Notes
 - **Flow:** `wl-build-web`.
 - **Parallel:** safe with T-0324, T-0416 and every UF-05 and UF-09 ticket. It shares the UF-03 lane with T-0420 but only adds a new test file. Run it before or after T-0420, never in the same worktree.
+
+## Build log
+- 2026-10-02 frontend-dev: added `apps/web/src/features/UF-03/__tests__/summary.duration.test.tsx` (9 tests: AC-1 ×3, AC-2 ×4, AC-3 ×2), built on `helpers.tsx`/`fixtures.ts`/`mocks.ts`. S1 is seeded with `seedAll`, then its row is rewritten in `offlineDb().sessions` with the case's `started_at`/`ended_at` (`as never`). Every test checks the `unhandledRejection` probe, both inside the test and in `afterEach`. Negative checks wait 50 ms (`waitReal`). No src change: main already passes, so no defect was found. Existing UF-03 files are unedited; AC-4 is covered by the untouched suite (56/56 green, including `exports-and-lint` "exports exactly Summary").
+- Planted faults, each applied alone to `summary-data.ts` and reverted (`git checkout`), running the new file:
+  - `if (!Number.isFinite(durationMs)) return NOT_ON_DEVICE;` removed: 1 red / 8 green. AC-1 bad `started_at` is red, and the screen shows "NaN min" in `[data-part="time"]`. **AC-1 bad `ended_at` stayed green:** `balance` at the unparsable `now` throws into the outer catch, which still gives "isn't on this device".
+  - `Math.max(0, …)` removed: 2 red. AC-2 −5 min shows "Time-5 min" and AC-2 −30 s shows "Time-1 min", both caught by the no "-N min" check.
+  - `Math.floor` → `Math.ceil`: 4 red. The AC-1 pair and the AC-2 ENDED_AT pair read "53 min", AC-2 +59 s reads "1 min", and AC-3 52 min 59 s reads "53 min".
