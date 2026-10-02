@@ -211,7 +211,23 @@ test.describe("AC-12 a11y (NFR-A11Y-1/2/6)", () => {
 
 // ---- T-0303b UF-08.2 Suggested workout (AC-12; D-0086, D-0091 §1, D-0108, D-0109) ----
 
-const DETAIL_PATTERN = /^[1-4] × (\d+(–\d+)?|\d+ s)( · (Bodyweight|[\d.]+ kg))? · \d+ min$/;
+// T-0391 (D-0124 §2): the weight is `formatKg`'s output, so U+00A0 sits before "kg".
+const DETAIL_PATTERN = /^[1-4] × (\d+(–\d+)?|\d+ s)( · (Bodyweight|[\d.]+\u00A0kg))? · \d+ min$/;
+
+// T-0391 AC6: a table check on the pattern itself; no browser needed.
+test.describe("T-0391 AC6 DETAIL_PATTERN takes U+00A0 before kg, not a plain space", () => {
+  for (const [text, matches] of [
+    ["4 × 6–8 · 80\u00A0kg · 12 min", true],
+    ["4 × 6–8 · 80 kg · 12 min", false],
+    ["4 × 6–8 · 77.5\u00A0kg · 12 min", true],
+    ["3 × 8–12 · Bodyweight · 10 min", true],
+    ["4 × 6–8 · 12 min", true],
+  ] as const) {
+    test(`T-0391 AC6 ${JSON.stringify(text)} ${matches ? "matches" : "does not match"}`, () => {
+      expect(DETAIL_PATTERN.test(text)).toBe(matches);
+    });
+  }
+});
 
 const screenUF082 = (page: Page) => page.locator('[data-screen-id="UF-08.2"]');
 const itemRows = (page: Page) => page.locator('[data-part="item-row"]');

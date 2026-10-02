@@ -11,13 +11,14 @@ import { WARMUP_COST_S, availableS, type Workout, type WorkoutItem } from "@work
 import { en } from "../../lib/i18n/en.js";
 import { itemReasonLine, itemSummary, sessionReasonChips } from "../../lib/i18n/workout.js";
 import { CHIPS } from "./time.js";
-import { exerciseName, isBodyweight, weightText, type LibraryLookup } from "./rows.js";
+import { formatKg } from "../../lib/format/number.js";
+import { exerciseName, isBodyweight, type LibraryLookup } from "./rows.js";
 
 export interface SuggestedProps {
   workout: Workout;
   /** The library the plan was built from: names and `externalLoad` only. */
   library: LibraryLookup;
-  /** For the weight's `Intl.NumberFormat` (D-0109 §4). */
+  /** For every kg value, through `lib/format` `formatKg` (D-0124). */
   locale: string;
   /**
    * Remove one item: the host re-suggests with it in `excludeIds`. Returns whether a new plan
@@ -40,7 +41,7 @@ function itemDetail(item: WorkoutItem, library: LibraryLookup, locale: string): 
   const parts = [itemSummary(item)];
   if (isBodyweight(item.exerciseId, library)) parts.push(en.uf08.bodyweight);
   else if (item.prefill.weightKg !== null) {
-    parts.push(en.uf08.weightKg(weightText(item.prefill.weightKg, locale)));
+    parts.push(formatKg(item.prefill.weightKg, locale));
   }
   parts.push(en.uf08.rowMinutes(minutesOf(item.costS)));
   return en.uf08.rowDetail(parts);
@@ -49,7 +50,7 @@ function itemDetail(item: WorkoutItem, library: LibraryLookup, locale: string): 
 function backoffLine(item: WorkoutItem, locale: string): string | null {
   if (item.backoff === null) return null;
   if (item.backoff.weightKg === null) return en.uf08.backoffSet;
-  return en.uf08.backoff(weightText(item.backoff.weightKg, locale), item.backoff.reps);
+  return en.uf08.backoff(formatKg(item.backoff.weightKg, locale), item.backoff.reps);
 }
 
 /** One bar segment. Its `flex-grow` is data (seconds), so it is set on the node; the over-budget
