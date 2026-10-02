@@ -142,8 +142,13 @@ const PLAN = {
 };
 
 /** Puts one `sessions` row into the app's `wl-offline` database (opened by the app first).
- *  T-0304b: `plan` defaults to `PLAN`. */
-async function seedSessionRow(page: Page, id: string, plan: object = PLAN): Promise<void> {
+ *  T-0304b: `plan` defaults to `PLAN`. T-0304d: `startedAt` defaults to the page's now. */
+async function seedSessionRow(
+  page: Page,
+  id: string,
+  plan: object = PLAN,
+  startedAt?: string,
+): Promise<void> {
   await expect
     .poll(() =>
       page.evaluate(async () =>
@@ -152,7 +157,7 @@ async function seedSessionRow(page: Page, id: string, plan: object = PLAN): Prom
     )
     .toBe(true);
   await page.evaluate(
-    async ({ id, userId, plan }) => {
+    async ({ id, userId, plan, startedAt }) => {
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         const req = indexedDB.open("wl-offline");
         req.onsuccess = () => resolve(req.result);
@@ -165,7 +170,7 @@ async function seedSessionRow(page: Page, id: string, plan: object = PLAN): Prom
           userId,
           row: {
             id,
-            started_at: new Date().toISOString(),
+            started_at: startedAt ?? new Date().toISOString(),
             time_budget_min: 45,
             energy: "normal",
             warmup_in_budget: true,
@@ -180,7 +185,7 @@ async function seedSessionRow(page: Page, id: string, plan: object = PLAN): Prom
       });
       db.close();
     },
-    { id, userId: FAKE_USER_ID, plan },
+    { id, userId: FAKE_USER_ID, plan, startedAt },
   );
 }
 
@@ -209,11 +214,13 @@ test.describe("AC-7 the chrome on a seeded session", () => {
       (v) => v.impact === "serious" || v.impact === "critical",
     );
     expect(serious).toEqual([]);
-    // Pause → UF-09.9 with its one button, Resume.
+    // Pause → UF-09.9. T-0304d (D-0118 §12): the built view on this one-item plan has Resume and
+    // End workout (no item follows, so no Skip to next exercise).
     await pause.click();
     await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
-    await expect(page.getByRole("button")).toHaveCount(1);
+    await expect(page.getByRole("button")).toHaveCount(2);
     await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "End workout" })).toBeVisible();
   });
 });
 
@@ -498,3 +505,163 @@ function id(page: Page): string {
   if (!match) throw new Error(`not on a session URL: ${page.url()}`);
   return match[1]!;
 }
+
+// T-0304d AC-10 (D-0120 §9, D-0086, D-0091 §1, NFR-A11Y-6): UF-09.8 and UF-09.9 by keyboard
+// only. The seed is the P1-R8 items with no warm-up, started 1500 s before the page's frozen
+// clock (`page.clock.pauseAt`), so rule 8 sees exactly R8-E1 at the check: 105 s behind, and Trim
+// cuts lateral-raise from 3 to 2 sets. Every step up to the check is a key press, so no timer has
+// to run; the clock resumes once UF-09.8 shows.
+const area = (a: string) => ({ code: "area_deficit", area: a, deficit: 1 });
+const R8_SEED_PLAN = {
+  ...PLAN,
+  warmup: [],
+  items: [
+    { ...PLAN.items[0]!, reasons: [{ code: "main_lift" }, area("chest")] },
+    { ...TWO_ITEMS_PLAN.items[1]!, reasons: [area("back")] },
+    {
+      exerciseId: "leg-curl",
+      isMain: false,
+      sets: 3,
+      repsMin: 10,
+      repsMax: 15,
+      durationS: null,
+      costS: 375,
+      backoff: null,
+      prefill: { weightKg: 30, reps: 10, durationS: null, kind: "add_rep" },
+      reasons: [area("hamstrings")],
+    },
+    {
+      exerciseId: "lateral-raise",
+      isMain: false,
+      sets: 3,
+      repsMin: 10,
+      repsMax: 15,
+      durationS: null,
+      costS: 375,
+      backoff: null,
+      prefill: { weightKg: 8, reps: 10, durationS: null, kind: "add_rep" },
+      reasons: [area("shoulders")],
+    },
+  ],
+  startDeficits: { ...PLAN.startDeficits, chest: 0.8, back: 0.6, hamstrings: 0.9, shoulders: 0.5 },
+};
+
+interface StoredSessionRow {
+  started_at: string;
+  ended_at: string | null;
+  plan: { items: Array<{ exerciseId: string; sets: number }> };
+}
+
+async function sessionRowFor(page: Page, sessionId: string): Promise<StoredSessionRow> {
+  return page.evaluate(async (id) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open("wl-offline");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const entry = await new Promise<{ row: unknown }>((resolve, reject) => {
+      const req = db.transaction("sessions", "readonly").objectStore("sessions").get(id);
+      req.onsuccess = () => resolve(req.result as { row: unknown });
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return entry.row as StoredSessionRow;
+  }, sessionId);
+}
+
+/** Moves focus with `key` until `target` has it (keyboard only, no clicks). */
+async function keyTo(
+  page: Page,
+  target: ReturnType<Page["locator"]>,
+  key: "Tab" | "Shift+Tab" = "Tab",
+): Promise<void> {
+  for (let i = 0; i < 12; i += 1) {
+    if (await target.evaluate((el) => el === document.activeElement)) return;
+    await page.keyboard.press(key);
+  }
+  await expect(target).toBeFocused();
+}
+
+test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
+  test("UF-09.1 → bench-press × 4 → UF-09.8 Trim → UF-09.6; Pause → UF-09.9 → End workout → UF-03.3", async ({
+    page,
+  }) => {
+    await page.clock.install();
+    await page.goto("/");
+    await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+    const checkAt = (await page.evaluate(() => Date.now())) + 2000;
+    await page.clock.pauseAt(checkAt);
+    const id = randomUUID();
+    const startedAt = new Date(checkAt - 1_500_000).toISOString();
+    await seedSessionRow(page, id, R8_SEED_PLAN, startedAt);
+    await page.goto(`/session/${id}`);
+
+    // UF-09.1 with no warm-up: no Skip warm-up, Start now focused.
+    const ready = page.locator('[data-screen-id="UF-09.1"]');
+    await expect(ready.getByRole("button", { name: "Start now" })).toBeFocused();
+    await expect(ready.getByRole("button", { name: "Skip warm-up" })).toHaveCount(0);
+    await page.keyboard.press("Enter");
+
+    for (let set = 1; set <= 4; set += 1) {
+      const current = page.locator('[data-screen-id="UF-09.3"]');
+      await expect(current.getByText(`Set ${set} of 4`)).toBeVisible();
+      await expect(current.getByRole("button", { name: "Done set" })).toBeFocused();
+      await page.keyboard.press("Enter");
+      const confirm = page.locator('[data-screen-id="UF-09.4"]');
+      await expect(confirm.getByRole("button", { name: "Save" })).toBeFocused();
+      await page.keyboard.press("Enter");
+      const rest = page.locator('[data-screen-id="UF-09.5"]');
+      await expect(rest.getByRole("button", { name: "Skip rest" })).toBeFocused();
+      await page.keyboard.press("Enter");
+    }
+
+    // UF-09.8: R8-E1, built content, focus on Continue, axe clean.
+    const check = page.locator('[data-screen-id="UF-09.8"]');
+    await expect(check.getByRole("heading", { level: 1 })).toHaveText(/min behind/);
+    // The check has been made at the frozen moment; from here the clock may flow (axe needs it).
+    await page.clock.resume();
+    await expect(check.getByText("lateral-raise 3 → 2 sets")).toBeVisible();
+    const trim = check.getByRole("button", { name: "Trim" });
+    await expect(trim).toBeVisible();
+    await expect(check.getByRole("button", { name: "Continue" })).toBeFocused();
+    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+    await expectAxeClean(page);
+    await keyTo(page, trim);
+    await page.keyboard.press("Enter");
+
+    // UF-09.6 barbell-row, on the trimmed plan, saved to IndexedDB.
+    const next = page.locator('[data-screen-id="UF-09.6"]');
+    await expect(next.getByRole("heading", { level: 1, name: "barbell-row" })).toBeVisible();
+    const trimmed = await sessionRowFor(page, id);
+    expect(trimmed.plan.items.map((i) => [i.exerciseId, i.sets])).toEqual([
+      ["bench-press", 4],
+      ["barbell-row", 3],
+      ["leg-curl", 3],
+      ["lateral-raise", 2],
+    ]);
+
+    // Pause → UF-09.9: Resume focused, Skip to next exercise and End workout, axe clean.
+    await keyTo(page, page.getByRole("button", { name: "Pause workout" }), "Shift+Tab");
+    await page.keyboard.press("Enter");
+    const paused = page.locator('[data-screen-id="UF-09.9"]');
+    await expect(paused.getByRole("button", { name: "Resume" })).toBeFocused();
+    await expect(paused.getByRole("button", { name: "Skip to next exercise" })).toBeVisible();
+    const end = paused.getByRole("button", { name: "End workout" });
+    await expect(end).toBeVisible();
+    await expect(page.locator("a[href]")).toHaveCount(0);
+    await expectAxeClean(page);
+
+    // End workout → the confirm in place (Cancel focused) → End workout → UF-03.3.
+    await keyTo(page, end);
+    await page.keyboard.press("Enter");
+    await expect(paused.getByText("End workout? Your sets are saved.")).toBeVisible();
+    await expect(paused.getByRole("button", { name: "Cancel" })).toBeFocused();
+    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+    await keyTo(page, paused.getByRole("button", { name: "End workout" }), "Shift+Tab");
+    await page.keyboard.press("Enter");
+    await expect(page.locator('[data-screen-id="UF-03.3"]')).toBeVisible();
+    const ended = await sessionRowFor(page, id);
+    expect(ended.ended_at).not.toBeNull();
+    expect(ended.started_at).toBe(startedAt);
+  });
+});

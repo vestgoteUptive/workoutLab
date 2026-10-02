@@ -31,6 +31,13 @@ export interface QueuedSession {
   /** `true` while this row still has to be sent. A successful flush sets it to `false` and keeps
    *  the row (for `finished`); only `pending: true` rows are ever sent. */
   pending: boolean;
+  /** D-0151 §1: set (only ever to `true`) by a `refreshSessions` that replaced the session cache
+   *  from a request issued after this entry became `pending: false`, and while the entry stayed
+   *  structurally the same (`row`, `finished`). A marked entry defers to the cached row in
+   *  `loadSessions` (D-0151 §4). Every new queue write (`upsertSession`) and the flush's
+   *  `pending: false` write leave it absent (§3). Optional and non-indexed, so no Dexie version
+   *  bump: an entry written by an older build has no field and reads as unmarked. */
+  cacheCurrent?: true;
 }
 
 export type QueuedSetStatus = "queued" | "rejected";

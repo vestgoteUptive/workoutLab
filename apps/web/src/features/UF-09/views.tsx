@@ -3,17 +3,19 @@
 // has its one button, Resume. T-0304b: UF-09.3 (`set`) and UF-09.4 (`confirm`) are built.
 // T-0304f: UF-09.1 (`getReady`), UF-09.5 (`rest`) and UF-09.6 (`next`) are built.
 // T-0304c: UF-09.2 (`warmup`) and UF-09.7 (`timed`) are built.
-import type { ReactElement, ReactNode } from "react";
-import { en } from "../../lib/i18n/en.js";
+// T-0304d: UF-09.8 (`timeCheck`) and UF-09.9 (`paused`) are built; no placeholder is left.
+import type { ReactElement } from "react";
+import type { WorkoutItem } from "@workoutlab/shared";
 import { ConfirmSet } from "./confirm-set.js";
 import { CurrentSet } from "./current-set.js";
 import { GetReady } from "./get-ready.js";
 import type { FocusCtx, FocusEvent, FocusState, LoggedSet, Phase } from "./machine.js";
 import { NextExercise } from "./next-exercise.js";
+import { Paused } from "./paused.js";
 import { Rest } from "./rest.js";
-import { orderActions } from "./seams.js";
+import type { HeldCheck } from "./time-check.js";
+import { TimeCheck } from "./time-check-view.js";
 import { TimedSet } from "./timed-set.js";
-import { formatClock, remainingS } from "./timer.js";
 import { Warmup } from "./warmup.js";
 
 export type ViewPhase = Exclude<Phase, "betweenItems" | "done">;
@@ -53,19 +55,17 @@ export interface ViewProps {
   /** UF-09.7 "Log hold": logs the current hold again through the hook; rejects on a failed
    *  write. Only the host passes it (the views rendered on their own in tests have no hook). */
   onLogHold?: () => Promise<void>;
-}
-
-function SeamButtonView({ seam }: { seam: SeamButton }) {
-  return (
-    <button
-      type="button"
-      className="wl-uf09__secondary"
-      data-seam-id={seam.id}
-      onClick={seam.onSelect}
-    >
-      {seam.label}
-    </button>
-  );
+  /** UF-09.8: this mount's rule 8 answer (D-0120 §4), or `null` while the host makes it. */
+  check?: HeldCheck | null;
+  /** UF-09.8: a wall-clock moment as the locale's short time in the host's time zone. */
+  formatAt?: (ms: number) => string;
+  /** UF-09.8 Trim / Skip next: writes the engine's whole item list, then moves on (D-0120 §1).
+   *  Rejects, with no change, when the write rejects. */
+  onApplyItems?: (items: WorkoutItem[]) => Promise<void>;
+  /** UF-09.9 "Skip to next exercise" (`SKIP_ITEM`, D-0120 §7). */
+  onSkipItem?: () => void;
+  /** UF-09.9: a UF-09.8 plan write is still pending, so End workout is inert (T-0304d rework). */
+  planWritePending?: boolean;
 }
 
 /** Screen ids of the machine states (D-0111 §3). */
@@ -81,51 +81,6 @@ export const SCREEN_IDS: Record<ViewPhase, string> = {
   paused: "UF-09.9",
 };
 
-function Placeholder({
-  phase,
-  state,
-  nowMs,
-  children,
-}: ViewProps & { phase: ViewPhase; children?: ReactNode }) {
-  return (
-    <div className="wl-uf09__view">
-      <h1 className="wl-uf09__title">{en.uf09.titles[phase]}</h1>
-      {state.timer ? (
-        <p className="wl-uf09__timer" role="timer">
-          {formatClock(remainingS(state.timer, nowMs))}
-        </p>
-      ) : null}
-      {children}
-    </div>
-  );
-}
-
-function Paused({ onResume, seams }: ViewProps) {
-  // T-0304d adds Skip ("skip") and End workout ("end") at their `orderActions` positions.
-  const ids = orderActions(["resume"], seams, "pause");
-  return (
-    <div className="wl-uf09__view">
-      <h1 className="wl-uf09__title">{en.uf09.titles.paused}</h1>
-      {ids.map((id) => {
-        if (id === "resume") {
-          return (
-            <button key={id} type="button" className="wl-uf09__primary" onClick={onResume}>
-              {en.uf09.resume}
-            </button>
-          );
-        }
-        const seam = seams.find((s) => s.id === id);
-        return seam ? <SeamButtonView key={id} seam={seam} /> : null;
-      })}
-    </div>
-  );
-}
-
-const placeholder = (phase: ViewPhase) => {
-  const View = (props: ViewProps) => <Placeholder {...props} phase={phase} />;
-  return View;
-};
-
 export const VIEWS: Record<ViewPhase, (props: ViewProps) => ReactElement> = {
   getReady: GetReady,
   warmup: Warmup,
@@ -134,6 +89,6 @@ export const VIEWS: Record<ViewPhase, (props: ViewProps) => ReactElement> = {
   rest: Rest,
   next: NextExercise,
   timed: TimedSet,
-  timeCheck: placeholder("timeCheck"),
+  timeCheck: TimeCheck,
   paused: Paused,
 };

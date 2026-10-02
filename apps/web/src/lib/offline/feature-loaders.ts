@@ -48,7 +48,8 @@ export async function loadVariants(id: string): Promise<string[]> {
  *  `id` (T-0319 AC-3).
  *
  *  The queued row wins because it is, by definition, the newer local truth: it either hasn't been
- *  sent yet, or it was sent after the cache was filled. Every `QueuedSession` counts, `pending`
+ *  sent yet, or it was sent after the cache was filled (D-0151 below narrows this for a flushed
+ *  entry that a later refresh has caught up with). Every `QueuedSession` counts, `pending`
  *  or not — a flushed row keeps its entry (it carries the D-0053 §7 `finished` marker), and
  *  dropping the non-pending ones would hide a just-finished session until the next refresh.
  *
@@ -61,6 +62,16 @@ export async function loadVariants(id: string): Promise<string[]> {
  *  - Otherwise a PRESENT queued `effort_rating` key wins, explicit `null` included, so a cleared
  *    rating (UF-03.3 Save with no chip) stays cleared; an absent key keeps the cached value (§3).
  *  - `energy` keeps its coalesce (§4); with no cached row the queued row is used as is (§5).
+ *
+ *  D-0151 amends this for two cases:
+ *  - A flushed entry marked `cacheCurrent` (a refresh issued after its flush filled the cache)
+ *    defers to the cached row: `effortRating`, `energy`, `startedAt` and `timeBudgetMin` come
+ *    from the cache, and `endedAt` is still the later instant (§4). Every other entry (pending,
+ *    flushed but unmarked, or from an older build) keeps D-0148, so a T-0420 Save (UF-03.3)
+ *    wins at an equal `ended_at` until a refresh brings its row back (§5).
+ *  - A queued row with no `ended_at` KEY has no say in the finish: `endedAt` is the cached one
+ *    (or `null`), and a present `effort_rating` key still wins (§6). An explicit `ended_at: null`
+ *    keeps D-0148 §2.
  *
  *  Sorted by `startedAt`, then `id`, so the order is total and stable. */
 export async function loadSessions(): Promise<OfflineSession[]> {
@@ -87,8 +98,25 @@ export async function loadSessions(): Promise<OfflineSession[]> {
   for (const entry of queued) {
     const row = entry.row;
     const previous = byId.get(entry.id);
+    // D-0151 §6: an absent `ended_at` key has no say in the finish (the upsert leaves the column
+    // untouched, D-0045 §6). An explicit `null` keeps D-0148 §2.
+    const hasEnd = Object.hasOwn(row, "ended_at");
     const queuedEnd = row.ended_at ?? null;
-    const cachedWins = previous !== undefined && cachedFinishIsLater(previous.endedAt, queuedEnd);
+
+    if (previous !== undefined && entry.pending === false && entry.cacheCurrent === true) {
+      // D-0151 §4: a refresh issued after this entry's flush filled the cache, so the cached row
+      // is the newer server truth. `endedAt` still takes the later instant (D-0148 §1), so a
+      // finish never disappears (D-0053 §7).
+      // An absent queued key reads as `null` here, which gives the cached `endedAt` (§6).
+      const endedAt = cachedFinishIsLater(previous.endedAt, queuedEnd)
+        ? previous.endedAt
+        : queuedEnd;
+      byId.set(entry.id, { ...previous, endedAt });
+      continue;
+    }
+
+    const cachedWins =
+      previous !== undefined && hasEnd && cachedFinishIsLater(previous.endedAt, queuedEnd);
     const effortRating = cachedWins
       ? previous.effortRating
       : Object.hasOwn(row, "effort_rating")
@@ -98,7 +126,8 @@ export async function loadSessions(): Promise<OfflineSession[]> {
       id: entry.id,
       startedAt: row.started_at,
       // D-0148 §1: the later instant of the two, so a finish never disappears (D-0053 §7).
-      endedAt: cachedWins ? previous.endedAt : queuedEnd,
+      // D-0151 §6: with no `ended_at` key, the cached finish (or `null` with no cached row).
+      endedAt: !hasEnd ? (previous?.endedAt ?? null) : cachedWins ? previous.endedAt : queuedEnd,
       timeBudgetMin: row.time_budget_min,
       effortRating,
       energy: row.energy ?? previous?.energy ?? "normal",

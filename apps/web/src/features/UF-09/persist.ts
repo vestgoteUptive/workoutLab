@@ -70,7 +70,11 @@ export function isValidFocusState(v: unknown, sessionId: string, ctx: FocusCtx):
   const s = v as Record<string, unknown>;
   if (s.version !== 1 || s.sessionId !== sessionId || !isPhase(s.phase)) return false;
   const { items, warmup } = ctx.plan;
-  if (!isInt(s.itemIndex) || s.itemIndex < 0 || s.itemIndex >= Math.max(1, items.length)) {
+  // D-0120 §5: a time check (or a pause on one) may sit one past the last item: a kill between
+  // the write that removed every remaining item and PLAN_APPLIED. It restores as `done`.
+  const checkPastEnd = pastEndTimeCheck(s, items.length);
+  const maxItem = checkPastEnd ? items.length + 1 : Math.max(1, items.length);
+  if (!isInt(s.itemIndex) || s.itemIndex < 0 || s.itemIndex >= maxItem) {
     return false;
   }
   const item = items[s.itemIndex];
@@ -97,7 +101,19 @@ export function isValidFocusState(v: unknown, sessionId: string, ctx: FocusCtx):
   // D-0119 §2: a state written before T-0304c has no `timerPausedAtMs` and reads as `null`.
   const ring = s.timerPausedAtMs;
   if (ring !== undefined && ring !== null && !isNum(ring)) return false;
+  // D-0120 §7: a state written before T-0304d has no `skippedItems` and reads as `[]`.
+  const skipped = s.skippedItems;
+  if (skipped !== undefined) {
+    if (!Array.isArray(skipped)) return false;
+    if (!skipped.every((i) => isInt(i) && i >= 0 && i < items.length)) return false;
+  }
   return Array.isArray(s.loggedSets);
+}
+
+/** A stored `timeCheck`, or a pause taken on one, whose `itemIndex` is the plan's length. */
+function pastEndTimeCheck(s: Record<string, unknown>, length: number): boolean {
+  const running = s.phase === "paused" ? s.resumePhase : s.phase;
+  return running === "timeCheck" && s.itemIndex === length;
 }
 
 /**
@@ -123,7 +139,16 @@ export function readFocusState(
     parsed = undefined;
   }
   if (isValidFocusState(parsed, sessionId, ctx)) {
-    return { ...parsed, timerPausedAtMs: parsed.timerPausedAtMs ?? null };
+    const restored: FocusState = {
+      ...parsed,
+      timerPausedAtMs: parsed.timerPausedAtMs ?? null,
+      skippedItems: (parsed.skippedItems as number[] | undefined) ?? [],
+    };
+    if (!pastEndTimeCheck(restored as unknown as Record<string, unknown>, ctx.plan.items.length)) {
+      return restored;
+    }
+    // D-0120 §5: nothing is left after the time check, so the workout is done (and finishes).
+    return { ...restored, phase: "done", resumePhase: null, pausedAtMs: null, timer: null };
   }
   removeFocusState(storage, sessionId);
   return null;

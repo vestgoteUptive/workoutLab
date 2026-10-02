@@ -105,11 +105,12 @@ describe("AC-9 empty registries", () => {
     expect(document.querySelector("[data-seam-id]")).toBeNull();
   });
 
-  it("UF-09.9 with the module arrays: no seam button, only Resume", async () => {
+  // T-0304d (D-0118 §12): the built UF-09.9 adds its own Skip to next exercise and End workout.
+  it("UF-09.9 with the module arrays: no seam button, only the built-in actions", async () => {
     seedFocus({ phase: "paused", resumePhase: "set", pausedAtMs: NOW });
     await renderSession();
     expect(screenId()).toBe("UF-09.9");
-    expect(buttonNames()).toEqual(["Resume"]);
+    expect(buttonNames()).toEqual(["Resume", "Skip to next exercise", "End workout"]);
     expect(document.querySelector("[data-seam-id]")).toBeNull();
   });
 });
@@ -144,10 +145,18 @@ describe("AC-9 orderActions (pure)", () => {
 });
 
 describe("AC-9 injection", () => {
-  it("UF-09.9 renders Resume · Swap · How to · List view in that order", async () => {
+  // T-0304d (D-0118 §12): with the built-ins in their v2 places (D-0120 §6).
+  it("UF-09.9 renders Resume · Swap · Skip · How to · List view · End in that order", async () => {
     seedFocus({ phase: "paused", resumePhase: "set", pausedAtMs: NOW });
     await renderSession({ seams: { pause: [listView, howTo, swap] } });
-    expect(buttonNames()).toEqual(["Resume", "Swap", "How to", "List view"]);
+    expect(buttonNames()).toEqual([
+      "Resume",
+      "Swap",
+      "Skip to next exercise",
+      "How to",
+      "List view",
+      "End workout",
+    ]);
   });
 
   it("UF-09.6 renders the Swap entry", async () => {

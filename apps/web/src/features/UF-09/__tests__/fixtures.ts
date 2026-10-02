@@ -149,3 +149,10 @@ export const P1: SessionPlan = {
 export function planWith(overrides: Partial<SessionPlan>): SessionPlan {
   return { ...P1, ...overrides };
 }
+
+/** T-0304d (D-0120 §4): a restored UF-09.8 re-runs rule 8 and moves on when it no longer shows.
+ *  A `started_at` 1500 s before `nowMs` puts P1 at item 1 60 s behind (1500 + 1260 − 2700), so
+ *  a seeded `timeCheck` on P1 still shows UF-09.8. */
+export function behindStartedAt(nowMs: number): string {
+  return new Date(nowMs - 1_500_000).toISOString();
+}

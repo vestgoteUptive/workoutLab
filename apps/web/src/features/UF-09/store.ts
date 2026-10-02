@@ -29,6 +29,9 @@ export interface FocusStore {
   /** `replaceItem` after its write (T-0304e, D-0071 §5): the store walks `plan` from now on, and
    *  `PLAN_REPLACED` realigns the current step with the new item. */
   replacePlan(plan: SessionPlan, itemIndex: number, atMs: number): void;
+  /** A UF-09.8 option after its write (T-0304d, D-0120 §1): the store walks `plan` (the engine's
+   *  whole item list) from now on, and `PLAN_APPLIED` moves on to UF-09.6, or to `done`. */
+  applyPlan(plan: SessionPlan, atMs: number): void;
   subscribe(listener: () => void): () => void;
 }
 
@@ -58,6 +61,15 @@ export function createFocusStore(options: FocusStoreOptions): FocusStore {
     replacePlan(plan, itemIndex, atMs) {
       ctx = { ...ctx, plan };
       const next = focusReducer(state, { type: "PLAN_REPLACED", itemIndex, atMs }, ctx);
+      if (next !== state) {
+        state = next;
+        writeFocusState(storage, sessionId, state);
+      }
+      notify();
+    },
+    applyPlan(plan, atMs) {
+      ctx = { ...ctx, plan };
+      const next = focusReducer(state, { type: "PLAN_APPLIED", atMs }, ctx);
       if (next !== state) {
         state = next;
         writeFocusState(storage, sessionId, state);

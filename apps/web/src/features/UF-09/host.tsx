@@ -1,7 +1,15 @@
 // UF-09 SessionHost (T-0304a, D-0111). Principle 1: exactly one task on screen. One
 // `[data-screen-id]` at a time: "UF-09" for the host-level states (loading, not on this
 // device, unreadable (D-0138), ended, stale, done), "UF-09.1 … UF-09.9" for the machine states.
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { en } from "../../lib/i18n/en.js";
 import { formatTime, localDate } from "../../lib/format/intl.js";
@@ -14,12 +22,20 @@ import {
   FocusSessionContext,
   buildWorkout,
   createFocusActions,
+  createPlanApply,
+  createSessionWrites,
   focusReadFields,
   type FocusSession,
   type SessionRow,
 } from "./session.js";
-import { defaultResolveCheckPoint, type FocusStore, type ResolveCheckPoint } from "./store.js";
+import type { FocusStore, ResolveCheckPoint } from "./store.js";
 import { remainingS } from "./timer.js";
+import {
+  createCheckHolder,
+  ruleEightCheckPoint,
+  runTimeCheck,
+  type CheckHolder,
+} from "./time-check.js";
 import { useRerenderEverySecond } from "./use-rerender.js";
 import { SCREEN_IDS, VIEWS, type SeamButton, type ViewPhase } from "./views.js";
 import "./uf-09.css";
@@ -78,6 +94,23 @@ function HostLevel({ title, withLink = true }: { title: string; withLink?: boole
   );
 }
 
+/** The runtime's default locale and time zone (D-0120 §2): `formatTime` takes strings. */
+function runtimeLocale(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().locale;
+  } catch {
+    return "en-GB";
+  }
+}
+
+function runtimeTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  } catch {
+    return "UTC";
+  }
+}
+
 function deviceLocale(): string {
   try {
     return navigator.language || "en-GB";
@@ -111,9 +144,16 @@ interface MachineProps {
   seams: { pause: readonly SeamAction[]; next: readonly SeamAction[] };
   gate: CheckPointGate;
   locale: string | undefined;
+  /** The rule 8 answer this mount keeps (D-0120 §4). */
+  checks: CheckHolder;
+  /** The resolved locale and time zone for clock times (D-0120 §2). */
+  timeLocale: string;
+  timeZone: string;
 }
 
-function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }: MachineProps) {
+function Machine(props: MachineProps) {
+  const { store, sessionId, initialRow, storage, seams, gate, locale, checks } = props;
+  const { timeLocale, timeZone } = props;
   const { state, ctx } = useSyncExternalStore(
     store.subscribe,
     store.getSnapshot,
@@ -138,7 +178,11 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
   // retried only by "Log hold", never by the next tick.
   const holdTried = useRef<string | null>(null);
   const [holdFailed, setHoldFailed] = useState<string | null>(null);
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
 
+  // One order for the row writes of this session: finish() waits for a pending plan write, and a
+  // plan write that lands after finish() started moves nothing (T-0304d rework).
+  const writes = useMemo(() => createSessionWrites(), [sessionId, store]);
   const actions = useMemo(
     () =>
       createFocusActions({
@@ -147,9 +191,23 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
         storage,
         onRow: setRow,
         navigate: (to) => void navigateRef.current(to),
+        writes,
       }),
-    [sessionId, store, storage],
+    [sessionId, store, storage, writes],
   );
+
+  // UF-09.9 keeps End workout inert while a UF-09.8 plan write is pending.
+  const [planPending, setPlanPending] = useState(false);
+  const applyItems = useMemo(() => {
+    const apply = createPlanApply({ sessionId, store, onRow: setRow, writes });
+    return (items: Parameters<typeof apply>[0]) => {
+      setPlanPending(true);
+      const run = apply(items);
+      const settle = () => setPlanPending(false);
+      run.then(settle, settle);
+      return run;
+    };
+  }, [sessionId, store, writes]);
 
   const controls = useMemo(() => {
     const show = (next: OpenOverlay | null) => {
@@ -327,6 +385,19 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
     return () => clearTimeout(id);
   }, [fireExpired, state]);
 
+  // UF-09.8 with no answer from this mount (a restore, or an injected check point): one fresh
+  // rule 8 call for now and the stored `itemIndex` (D-0120 §4). If that no longer shows, or it
+  // throws (D-0120 §3), the workout carries on to UF-09.6. A pause on UF-09.8 keeps the answer.
+  useEffect(() => {
+    if (state.phase !== "timeCheck") return;
+    if (checks.held?.itemIndex === state.itemIndex) return;
+    const atMs = Date.now();
+    const held = runTimeCheck(row, ctx.plan, state, state.itemIndex, atMs);
+    checks.held = held;
+    if (held?.result.show) rerender();
+    else store.dispatch({ type: "CONTINUE", atMs });
+  });
+
   // `done` finishes with no confirm (D-0071 §5). `finish()` writes once while pending; a failed
   // write leaves the done screen, the focus key and the route as they are.
   useEffect(() => {
@@ -346,7 +417,18 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
   else if (state.phase === "betweenItems") body = <HostLevel title={en.uf09.loadingTitle} />;
   else if (overlay) {
     // In place of the screen and its actions: the overlay is the one task (principle 1).
-    body = <div className="wl-uf09 wl-uf09--overlay">{overlay.action.render(session)}</div>;
+    // A `keepsClockRunning: false` overlay holds the workout paused: its `resume()` closes it
+    // first, so the clocks never run under an open overlay (T-0304e review, D-0120 §8).
+    const overlaySession: FocusSession = overlay.action.keepsClockRunning
+      ? session
+      : {
+          ...session,
+          resume: () => {
+            controls.close();
+            store.dispatch({ type: "RESUME", atMs: Date.now() });
+          },
+        };
+    body = <div className="wl-uf09 wl-uf09--overlay">{overlay.action.render(overlaySession)}</div>;
   } else {
     const phase: ViewPhase = state.phase;
     const View = VIEWS[phase];
@@ -376,6 +458,13 @@ function Machine({ store, sessionId, initialRow, storage, seams, gate, locale }:
           holdFailed={holdFailed !== null && holdFailed === timerKey(state)}
           onLogHold={() => logHold(false)}
           onResume={() => store.dispatch({ type: "RESUME", atMs: Date.now() })}
+          check={checks.held}
+          formatAt={(ms) =>
+            formatTime(new Date(ms).toISOString(), { locale: timeLocale, timeZone })
+          }
+          onApplyItems={applyItems}
+          planWritePending={planPending}
+          onSkipItem={() => store.dispatch({ type: "SKIP_ITEM", atMs: Date.now() })}
           send={(event) => store.dispatch({ ...event, atMs: Date.now() } as FocusEvent)}
           onCancelAutosave={() => store.dispatch({ type: "AUTOSAVE_CANCEL", atMs: Date.now() })}
           onSaved={(set) =>
@@ -405,15 +494,19 @@ export interface SessionHostProps {
   /** The number locale for kg values (D-0118 §6). Absent: the runtime default, as on the
    *  Balance screen. Tests pass `"en-GB"`, and `"sv-SE"` for the decimal-comma pair. */
   locale?: string;
+  /** The time zone for UF-09.8's clock times (D-0120 §2). Absent: the runtime's. Tests pass
+   *  `"UTC"`. With `locale` absent, the times use the runtime's resolved locale. */
+  timeZone?: string;
 }
 
 /** `/session/:sessionId` — the UF-09 focus-mode host. */
-export function SessionHost({ resolveCheckPoint, seams, locale }: SessionHostProps = {}) {
+export function SessionHost({ resolveCheckPoint, seams, locale, timeZone }: SessionHostProps = {}) {
   const { sessionId = "" } = useParams();
   const [load, setLoad] = useState<HostLoad>({ kind: "loading" });
   const resolveRef = useRef(resolveCheckPoint);
   resolveRef.current = resolveCheckPoint;
   const [gate] = useState<CheckPointGate>(() => ({ forceNext: false }));
+  const [checks] = useState(createCheckHolder);
   const pause = seams?.pause ?? pauseSeamActions;
   const next = seams?.next ?? nextSeamActions;
   const seamLists = useMemo(() => ({ pause, next }), [pause, next]);
@@ -421,15 +514,26 @@ export function SessionHost({ resolveCheckPoint, seams, locale }: SessionHostPro
   useEffect(() => {
     let live = true;
     setLoad({ kind: "loading" });
-    void loadSession(sessionId, (state, ctx, atMs) =>
-      gate.forceNext ? "next" : (resolveRef.current ?? defaultResolveCheckPoint)(state, ctx, atMs),
-    ).then((result) => {
-      if (live) setLoad(result);
+    checks.row = null;
+    checks.held = null;
+    // Rule 8 by default (D-0120 §4); an injected check point replaces it (tests), and an open
+    // `keepsClockRunning: true` overlay forces "next" either way (D-0071 §4, T-0304e).
+    const ruleEight = ruleEightCheckPoint(checks);
+    void loadSession(sessionId, (state, ctx, atMs) => {
+      if (gate.forceNext) return "next";
+      const injected = resolveRef.current;
+      if (!injected) return ruleEight(state, ctx, atMs);
+      checks.held = null;
+      return injected(state, ctx, atMs);
+    }).then((result) => {
+      if (!live) return;
+      if (result.kind === "ready") checks.row = result.row;
+      setLoad(result);
     });
     return () => {
       live = false;
     };
-  }, [sessionId, gate]);
+  }, [sessionId, gate, checks]);
 
   switch (load.kind) {
     case "loading":
@@ -453,6 +557,9 @@ export function SessionHost({ resolveCheckPoint, seams, locale }: SessionHostPro
           seams={seamLists}
           gate={gate}
           locale={locale}
+          checks={checks}
+          timeLocale={locale ?? runtimeLocale()}
+          timeZone={timeZone ?? runtimeTimeZone()}
         />
       );
   }

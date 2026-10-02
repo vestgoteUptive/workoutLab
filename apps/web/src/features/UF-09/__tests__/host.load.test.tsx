@@ -7,7 +7,16 @@ import * as offline from "../../../lib/offline/index.js";
 import { offlineDb as realOfflineDb } from "../../../lib/offline/db.js";
 import { en } from "../../../lib/i18n/en.js";
 import { initialFocusState, type FocusState, type Phase } from "../machine.js";
-import { P1, PLANK, S1, STARTED_AT_MS, USER_A, USER_B, planWith } from "./fixtures.js";
+import {
+  P1,
+  PLANK,
+  S1,
+  STARTED_AT_MS,
+  USER_A,
+  USER_B,
+  behindStartedAt,
+  planWith,
+} from "./fixtures.js";
 import {
   flushReal,
   freshDb,
@@ -288,7 +297,8 @@ describe("AC-6 screen ids", () => {
     ["paused", "UF-09.9"],
   ];
   it.each(STEPS)("a seeded %s state renders %s, alone", async (phase, id) => {
-    await seedSession();
+    // T-0304d (D-0120 §4): a restored time check re-runs rule 8, so this one is behind.
+    await seedSession(phase === "timeCheck" ? { started_at: behindStartedAt(NOW) } : {});
     // T-0304c (D-0119 §1): `timed` carries its position + hold timer too.
     const timer = ["getReady", "warmup", "rest", "next", "timed", "paused"].includes(phase)
       ? { startedAtMs: NOW, durationS: 40, pausedMs: 0 }
