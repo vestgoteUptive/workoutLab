@@ -56,14 +56,5 @@ none (`docs/engine-rules.md` and `api/openapi.yaml` unchanged)
 ## Definition of done
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force` green · contracts unchanged · commit messages start with `T-0228` (e.g. `T-0228 UF-05.1: getsBackoff lives in cost.ts, no session↔swaps cycle`).
 
-## Accept log
-2026-10-02, product-owner (accept), branch `t/T-0228-getsbackoff-to-cost` @ 64b227f. Verdict: **done**.
-- AC1: PASS. `export function getsBackoff` appears only in `src/cost.ts:69` (I re-checked with grep). `swaps.ts` and `session.ts` import it from `./cost.js`, `index.ts:38` re-exports it from `./cost.js`, and `swaps.ts` has no `./session.js` import. The T-0226 AC6 import compiles (typecheck green).
-- AC2: PASS. Review confirms a byte-for-byte move (13 lines out, the same 13 in). `t0226-fits-budget.test.ts` and the other engine tests pass unedited, including the T-0219 snapshot: 547 engine tests pass.
-- AC3: PASS. `test/import-graph.test.ts` covers four things: non-vacuity (≥ 10 edges, `session.ts → swaps.ts` and `swaps.ts → cost.ts` present), no cycle, the hand-built `a → b → a` case, and parser exclusion of `import type`. QA ran the check on the unfixed code: it fails and reports `session.ts → swaps.ts → session.ts`. No other cycle exists in today's `src`, so nothing is excluded. Review cross-checked the regex parser against a TypeScript-AST parser: they agree on all 57 edges.
-- AC4: PASS. Engine typecheck, lint and test are green. The serial gate is 19/19 and repo checks pass.
-- Principles: unaffected (pure move, deterministic engine untouched). Contracts unchanged.
-- Non-blocking:
-  - (a) The regex parser drops an edge when a `;` sits inside a comment in a multi-line import list (review, low).
-  - (b) Two engine property tests time out under the parallel gate. This already happens on the pre-ticket code (QA), so it is not caused by this ticket. Both are filed as follow-ups.
-- Merge: the orchestrator regenerates the vendor copy (`node supabase/scripts/vendor.mjs`, then `--check`, D-0053 §1).
+## Build / accept log
+Archived in `docs/tickets/log/T-0228.md` (D-0157).
