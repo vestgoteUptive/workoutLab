@@ -87,4 +87,49 @@ export const uf08 = {
 
   // --- UF-08.4 placeholder (D-0107 §2 pattern). T-0303d replaces the body. ---
   readyTitle: "Ready",
+
+  // --- UF-08.4 Ready (T-0303d, D-0065 §6-§7, D-0110) ---
+  /**
+   * The summary line (D-0110 §2): "29 min · warm-up + 3 exercises · 9 sets · done by 12:29".
+   * Singular at 1. `doneBy` arrives formatted by `lib/format` `formatTime`. The "warm-up + "
+   * part is left out when the plan has no warm-up moves.
+   */
+  readySummary: (
+    minutes: number,
+    warmup: boolean,
+    exercises: number,
+    sets: number,
+    doneBy: string,
+  ) =>
+    `${minutes} min · ${warmup ? "warm-up + " : ""}${exercises} ${
+      exercises === 1 ? "exercise" : "exercises"
+    } · ${sets} ${sets === 1 ? "set" : "sets"} · done by ${doneBy}`,
+  /** No items, warm-up moves only (D-0110 §2). */
+  readyWarmupOnly: (minutes: number, doneBy: string) =>
+    `${minutes} min · warm-up only · done by ${doneBy}`,
+  /** No items and no warm-up (D-0110 §2). Start still works. */
+  readyNothing: (doneBy: string) => `Nothing planned · done by ${doneBy}`,
+  /** The 4-step explainer's heading. */
+  explainerTitle: "How focus mode works",
+  /** The 4 steps, in order (principle 1). */
+  explainer: [
+    { title: "One thing on screen", body: "The current set, its weight and reps. Nothing else." },
+    {
+      title: "Tap Done after each set",
+      body: "Reps are pre-filled. Only change them if you missed.",
+    },
+    { title: "Rest counts down by itself", body: "Sound and vibration at 10 s and at zero." },
+    {
+      title: "Everything else is behind pause",
+      body: "Swap, skip, list view or end workout.",
+    },
+  ],
+  /** Accessible name of the 3 focus-mode switches (D-0110 §6). */
+  prefsName: "Focus mode settings",
+  prefSound: "Sound cues",
+  prefVoice: "Voice countdown 3-2-1",
+  prefKeepAwake: "Keep screen awake",
+  start: "Start",
+  /** Start's `upsertSession` rejected (D-0110 §3). */
+  startFailed: "Couldn't start the workout. Try again.",
 } as const;

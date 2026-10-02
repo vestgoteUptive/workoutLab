@@ -382,6 +382,71 @@
   cursor: pointer;
 }
 
+/* ---- UF-08.4 Ready (T-0303d, D-0110) ---- */
+.wl-uf08__how {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: wl-uf08-how;
+}
+
+.wl-uf08__how-step {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  column-gap: 12px;
+  align-items: center;
+  counter-increment: wl-uf08-how;
+}
+
+.wl-uf08__how-step::before {
+  content: counter(wl-uf08-how);
+  display: flex;
+  grid-row: span 2;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  color: var(--wl-color-accent);
+  background: var(--wl-color-surface-2);
+  border-radius: 14px;
+  font-family: var(--wl-font-display);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.wl-uf08__how-title {
+  font-weight: 700;
+}
+
+.wl-uf08__how-body {
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+}
+
+.wl-uf08__prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.wl-uf08__pref {
+  cursor: pointer;
+}
+
+/* NFR-A11Y-2: each switch is itself a 44 × 44 target. */
+.wl-uf08__pref .wl-uf08__checkbox {
+  flex-shrink: 0;
+  inline-size: 44px;
+  block-size: 44px;
+  margin: 0;
+}
+
 .wl-uf08__icon:focus-visible,
 .wl-uf08__ghost:focus-visible,
 .wl-uf08__close:focus-visible,
