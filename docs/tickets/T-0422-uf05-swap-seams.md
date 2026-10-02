@@ -3,7 +3,7 @@ id: T-0422
 title: "UF-05.1 mounted in focus mode: the swap seam on UF-09.9 Paused and UF-09.6 Next exercise (seams.tsx), the D-0142 §7 target, apply → ctx.replaceItem persisted offline, the stored plan round-trips through parseSessionPlan; the swap e2e"
 lane: web-feature:UF-05
 screens: [UF-05.1, UF-09.9, UF-09.6, UF-09.3, UF-09.4, UF-09.5]
-decisions: [D-0142, D-0153, D-0160, D-0069, D-0071, D-0093, D-0111, D-0118, D-0120, D-0140, D-0149, D-0086]
+decisions: [D-0142, D-0153, D-0160, D-0069, D-0071, D-0093, D-0111, D-0118, D-0120, D-0140, D-0149, D-0086, D-0156]
 deps: [T-0421, T-0304d, T-0414]
 status: ready
 ---
@@ -27,7 +27,7 @@ status: ready
   - Strings in `flows/uf-05.ts`.
 - Out:
   - The sheet's own behaviour (T-0421), and the List view's Swap (T-0418).
-  - Any UF-09 source file other than `seams.tsx` and the `planReplaced` branch in `machine.ts`. If the host lacks something, that is a follow-up for web-feature:UF-09.
+  - Any UF-09 source file other than `seams.tsx`, the `planReplaced` branch in `machine.ts` and the D-0156 §1 filter in `prefill.ts`. If the host lacks something, that is a follow-up for web-feature:UF-09.
   - A swap from UF-09.3/.4/.5/.7 directly. Those screens stay one task, and Pause is the way in.
   - "Also replace in my routine" (D-0069 §7).
 
@@ -45,13 +45,15 @@ status: ready
 - `target = ctx.currentItemIndex` always (AC-3);
 - `replaceItem` without the third argument (AC-6);
 - a direct `upsertSession` call in the seam (AC-5);
-- the old `confirm` clamp-only branch restored in `planReplaced` (AC-7).
+- the old `confirm` clamp-only branch restored in `planReplaced` (AC-7);
+- the `exerciseId` filter removed from `nextSetPrefill` (AC-5 load line, AC-11);
+- `"Couldn't load alternatives."` restored to `SEAM_SENTINELS["UF-05"]` (`build.test.ts` AC-A6 red), and, on a scratch copy, a side-effect `import "../features/UF-05/index.js"` in `src/app` with the copy sentinel gone (AC-12: §3 still fails on `wl-uf05`).
 
 - **AC-1 (entries and order, D-0071 §4)**
   - **The arrays.** `pauseSeamActions` and `nextSeamActions` each contain one `swap` entry with `keepsClockRunning: false`.
   - **UF-09.9.** The order is Resume · Swap · Skip to next exercise · (How to · List view, if T-0416 has landed) · End workout.
   - **UF-09.6.** The step's buttons are "I'm ready" then "Swap" (with the chrome's "Pause workout").
-  - **The diff** touches `features/UF-09` source only in `seams.tsx` and `machine.ts` `planReplaced`. In `features/UF-09/__tests__` it changes only the D-0142 §6 pins and the T-0414 AC5 `confirm` row (D-0153 §2), and adds `t0422*` files. Record `git diff --stat main...HEAD -- apps/web/src/features/UF-09` in the build log (not in a test).
+  - **The diff** touches `features/UF-09` source only in `seams.tsx`, `machine.ts` `planReplaced` and `prefill.ts` (D-0156 §1). In `features/UF-09/__tests__` it changes only the D-0142 §6 pins and the T-0414 AC5 `confirm` row (D-0153 §2), adds cases to `prefill.test.ts` (D-0156 §1), and adds `t0422*` files. Record `git diff --stat main...HEAD -- apps/web/src/features/UF-09` in the build log (not in a test).
   - **No import of UF-09.** `features/UF-05` has no import of `features/UF-09` (the T-0421 source test still passes).
 - **AC-2 (Swap from UF-09.9)**
   - **Opens.** Paused from barbell-row set 2 (`resumePhase: "set"`, item 1, set index 0 logged), "Swap" shows the dialog "Replace Barbell row" in place of UF-09.9.
@@ -100,6 +102,19 @@ status: ready
   - **After a reload,** the IndexedDB `wl-offline.sessions` row's plan has the new exercise, and UF-09 shows it.
   - **axe** on the open sheet reports 0 serious or critical violations.
   - **Requests.** The guard reports no unclaimed request.
+- **AC-11 (the pre-fill after a swap, D-0156 §1, amends D-0118 §7)** Unit tests in `features/UF-09/__tests__/prefill.test.ts`, calling `nextSetPrefill` directly. Only add cases; the existing cases stay unedited.
+  - **Same exercise carries.** Item 1 is barbell-row (`prefill {weightKg: 60, reps: 8}`). `loggedSets` holds `(1, 0)` barbell-row at 62.5 kg × 7. Set index 1 gives `{weightKg: 62.5, reps: 7}`.
+  - **A swapped exercise doesn't carry.** The plan's item 1 is now db-row (`prefill {weightKg: null, reps: null}`, `repsMin: 8`). The same `(1, 0)` barbell-row entry is in `loggedSets`. Set index 1 gives `{weightKg: null, reps: 8}`. This is red on main.
+  - **Mixed history.** Item 1 is db-row, with `(1, 0)` barbell-row and `(1, 1)` db-row at 20 kg × 10 logged. Set index 2 gives `{weightKg: 20, reps: 10}`.
+  - **Swap back.** Item 1 is barbell-row again, with the `(1, 0)` barbell-row entry. Set index 1 carries `{62.5, 7}`.
+  - **Per-field fallback.** Same exercise, with a saved `weightKg: null` on a loaded lift. The weight falls back to set 1's value and the reps carry, as before.
+  - **Host.** AC-5's load line ("Set weight", "8 reps") passes with the test unedited. AC-7 Host's UF-09.5 "Next" line, after the swap from UF-09.4, does not show barbell-row set 2's weight (an added assertion in the `t0422*` host test).
+  - **Nothing else moved.** Every existing UF-09 test passes unedited. If any existing test other than the TR-0043-labelled one pins a carry across exercises, stop and raise triage. Don't edit it.
+- **AC-12 (the UF-05 sentinel, D-0156 §2, amends D-0144 §3c)**
+  - **The list.** In `apps/web/build.test.ts`, `SEAM_SENTINELS["UF-05"]` is exactly `["wl-uf05"]`. Its comment cites D-0156 and says that flow strings are in the entry by design (D-0071 §1), so copy can't be a sentinel.
+  - **No other edit.** No other line of `build.test.ts` changes: §3a, §3b, the route-folder and accounted-for tests, and the sentinel loop.
+  - **Green.** With T-0422's mount, "AC-A6 … no seam-mounted feature is in the entry chunk" passes.
+  - **Still guards.** The two planted faults in the Test rules are recorded in the build log. They are scratch-only and reverted.
 
 ## Paths you may change
 - `apps/web/src/features/UF-05/**` (the lane: `web-feature:UF-05`).
@@ -113,6 +128,9 @@ status: ready
   - `tests/e2e/uf-05-swap.spec.ts`: a new file (D-0071 §10).
   - `tests/e2e/fixtures/**`: additive exports (D-0071 §10).
   - `apps/web/src/lib/i18n/flows/uf-05.ts`: this flow's strings file (D-0071 §1); add keys.
+  - `apps/web/src/features/UF-09/prefill.ts`: only the D-0156 §1 `exerciseId` filter in `nextSetPrefill` and its doc comment (web-feature:UF-09 lane, granted by D-0156 §3).
+  - `apps/web/src/features/UF-09/__tests__/prefill.test.ts`: added AC-11 cases only.
+  - `apps/web/build.test.ts`: only the `SEAM_SENTINELS["UF-05"]` value and its comment (web-shell lane, granted by D-0156 §3 as a named exception to D-0144 §5).
   - `docs/tickets/T-0422-uf05-swap-seams.md`: this file, for the build and accept logs.
 - Read-only imports (not grants): `features/UF-05/index.tsx` (from `seams.tsx`), `@workoutlab/shared` (`parseSessionPlan`, tests), `lib/offline` (tests), the existing `tests/e2e/fixtures/*` exports.
 
@@ -133,6 +151,10 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
   - **Before T-0394, preferably.** T-0394's "Back closes a seam overlay" (host.tsx) should be tested against this real swap overlay.
 - **T-0303c and T-0418** mount the same `SwapSheet`, not this seam, so they don't depend on this ticket.
 
+- **TR-0043 (2026-10-02), resolved by D-0156:**
+  - D-0156 folds the pre-fill filter and the sentinel change into this ticket (AC-11, AC-12).
+  - This ticket still merges only after T-0423 merges and the `host.chrome.test.tsx` pins are updated (see Parallel).
+  - The new files don't overlap T-0304g (host.tsx, ring.tsx, rest.tsx) or T-0424.
 - **From T-0414 review (2026-10-02):** D-0140 left a swap from `confirm` out of scope. D-0153 §2 now settles it, and it is AC-7.
 
 ## Build log (frontend-dev, 2026-10-02)

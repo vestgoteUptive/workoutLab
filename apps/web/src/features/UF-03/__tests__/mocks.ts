@@ -10,6 +10,7 @@ import { vi } from "vitest";
 type Engine = typeof import("@workoutlab/engine");
 type History = typeof import("../../../lib/offline/history.js");
 type Queue = typeof import("../../../lib/offline/queue.js");
+type FeatureLoaders = typeof import("../../../lib/offline/feature-loaders.js");
 
 export const REFRESH_NAMES = [
   "refreshAll",
@@ -43,4 +44,12 @@ export async function historySpies(importOriginal: () => Promise<unknown>): Prom
 export async function queueSpies(importOriginal: () => Promise<unknown>): Promise<Queue> {
   const actual = (await importOriginal()) as Queue;
   return { ...actual, upsertSession: vi.fn(actual.upsertSession) };
+}
+
+/** T-0433: `loadSessions` is the real one, spied, so a test can stub one call (the no-entry case). */
+export async function featureLoaderSpies(
+  importOriginal: () => Promise<unknown>,
+): Promise<FeatureLoaders> {
+  const actual = (await importOriginal()) as FeatureLoaders;
+  return { ...actual, loadSessions: vi.fn(actual.loadSessions) };
 }

@@ -20,8 +20,10 @@ import {
   currentUserId,
   loadEngineHistory,
   loadLibrary,
+  loadSessions,
   loadTargets,
   offlineDb,
+  type OfflineSession,
 } from "../../lib/offline/index.js";
 
 /** One before → after row: an area whose load changed in this session. */
@@ -42,7 +44,8 @@ export interface EndedSummary {
   changes: AreaChange[] | null;
   /** The engine's `after.areas` with `coverageStep < 4`, first two; `null` with `changes`. */
   nextUp: AreaBalance["area"][] | null;
-  /** The stored `effort_rating` (1–5), preselecting its chip (D-0142 §4); `null` for none. */
+  /** The rating (1–5) preselecting its chip; `null` for none. It is the merged `loadSessions()`
+   *  view's (D-0153 §4, D-0148, D-0151), or the stored row's when the view has no entry. */
   effortRating: EffortRating | null;
 }
 
@@ -53,6 +56,19 @@ export const EFFORT_RATINGS: readonly EffortRating[] = [1, 2, 3, 4, 5];
 /** A stored `effort_rating` as a chip value: anything but an integer 1–5 checks nothing. */
 export function storedEffort(value: unknown): EffortRating | null {
   return EFFORT_RATINGS.find((r) => r === value) ?? null;
+}
+
+/**
+ * The rating UF-03.3 shows and an untouched Save sends (D-0153 §4): the merged `loadSessions()`
+ * view of `sessionId` when it has one, else the raw queued row's `effort_rating`.
+ */
+export function viewEffort(
+  sessions: readonly OfflineSession[],
+  sessionId: string,
+  rawRating: unknown,
+): EffortRating | null {
+  const view = sessions.find((s) => s.id === sessionId);
+  return storedEffort(view === undefined ? rawRating : view.effortRating);
 }
 
 export type SummaryLoad =
@@ -105,10 +121,11 @@ export async function loadSummary(sessionId: string, tz: string): Promise<Summar
     const durationMs = Date.parse(endedAt) - Date.parse(row.started_at);
     if (!Number.isFinite(durationMs)) return NOT_ON_DEVICE;
 
-    const [raw, library, targets] = await Promise.all([
+    const [raw, library, targets, sessions] = await Promise.all([
       loadEngineHistory(),
       loadLibrary(),
       loadTargets(),
+      loadSessions(),
     ]);
     const history = normalizeHistory(raw);
     const byId = new Map(library.map((e) => [e.id, e]));
@@ -143,7 +160,7 @@ export async function loadSummary(sessionId: string, tz: string): Promise<Summar
         hardSets: hard.length,
         changes,
         nextUp,
-        effortRating: storedEffort(row.effort_rating),
+        effortRating: viewEffort(sessions, sessionId, row.effort_rating),
       },
     };
   } catch {
