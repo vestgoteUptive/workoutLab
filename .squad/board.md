@@ -165,7 +165,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0309a | Landing copy: typed content modules in apps/landing/src/content (AC1–7) | design | T-0003 | done | wl-design |
 | T-0309b | Landing build: static Astro page, no JS, tokens, privacy + 404 pages, placeholder removed (AC8–24) | landing | T-0309a | done | wl-build-web |
 | T-0310 | Account settings: JSON export (NFR-PRIV-4) and in-app account deletion (NFR-PRIV-5) | web-shell | T-0300 | split → T-0310a, T-0310b, T-0310c, T-0310d (D-0135, D-0136) | wl-build-web |
-| T-0310a | api/openapi.yaml: DELETE /account (204/401/500, tag account; four server-side functions) + gen:api + openapi test counts; vendor regen at merge (draft PR) (D-0135) | data | T-0102a | ready | wl-build-data |
+| T-0310a | api/openapi.yaml: DELETE /account (204/401/500, tag account; four server-side functions) + gen:api + openapi test counts; vendor regen at merge (draft PR) (D-0135) | data | T-0102a | doing | wl-build-data |
 | T-0310b | Edge Function `account`: DELETE /account → auth.admin.deleteUser for the verified caller; service-role key read only in supabase/functions/account/admin.ts; AC12 ban → one-file allow-list; real-stack ACs (draft PR) (D-0135) | backend | T-0310a | todo | wl-build-backend |
 | T-0310c | lib/account: JSON export (RLS reads paged past max_rows + this device's unsynced queue) and local wipe (this user's rows in all Dexie tables, wl-* storage keys, local sign-out) (D-0136) | web-shell | T-0300, T-0319 | doing | wl-build-web |
 | T-0310d | UF-11.4 Account settings at /plan/account: export + delete with confirm, /welcome notice (D-0136) | web-feature:UF-11 | T-0308b, T-0310b, T-0310c | todo | wl-build-web |
