@@ -144,6 +144,56 @@ describe("AC-7 rest helpers", () => {
     expect(session().rest).toEqual({ remainingS: 270 });
   });
 
+  it("(c) startRest from an unlogged set: currentSetIndex during that rest is the same set, 0", async () => {
+    await seedSession();
+    seedFocus({ phase: "set" });
+    await renderSession();
+    await call(() =>
+      session().recordSet({
+        sessionId: S1,
+        itemIndex: 1,
+        exerciseId: "barbell-row",
+        setIndex: 0,
+        kind: "reps",
+        reps: 8,
+        weightKg: 60,
+        isWarmup: false,
+        backoff: false,
+      }),
+    );
+    act(() => session().startRest("barbell-row"));
+    expect(session().state).toMatchObject({ phase: "rest", itemIndex: 0, setIndex: 0 });
+    expect(session().currentSetIndex).toBe(0);
+    act(() => session().skipRest());
+    expect(session().state).toMatchObject({ phase: "set", itemIndex: 0, setIndex: 0 });
+  });
+
+  it("the review scenario: List view logs row set 0, starts a rest and closes → bench set 0 is offered after the rest", async () => {
+    await seedSession();
+    seedFocus({ phase: "paused", resumePhase: "set", pausedAtMs: NOW });
+    await renderSession({ seams: { pause: [listView] } });
+    const c = await openListView();
+    await call(() =>
+      c.recordSet({
+        sessionId: S1,
+        itemIndex: 1,
+        exerciseId: "barbell-row",
+        setIndex: 0,
+        kind: "reps",
+        reps: 8,
+        weightKg: 60,
+        isWarmup: false,
+        backoff: false,
+      }),
+    );
+    act(() => c.startRest("barbell-row"));
+    act(() => c.close());
+    await flushReal();
+    expect(storedFocus()).toMatchObject({ phase: "rest", itemIndex: 0, setIndex: 0 });
+    await advance(120_000);
+    expect(storedFocus()).toMatchObject({ phase: "set", itemIndex: 0, setIndex: 0 });
+  });
+
   it("skipRest() sets rest to null", async () => {
     await seedSession();
     seedFocus({ phase: "set" });

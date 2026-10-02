@@ -156,10 +156,10 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
     - `SET_RECORDED` is dispatched when the phase is `set` and the input is the current item and set. `TIMED_RECORDED` is dispatched for the same match in `timed`.
     - Anything else is a new `SET_LOGGED`, which updates only `loggedSets`.
   - **Edits and deletes.** `editSet` and `deleteSet` dispatch the new `SET_EDITED` and `SET_DELETED` events, in any phase.
-  - **`REST_END` follows the live sets.** It goes to the first set index *after* the current one that has no live logged set, otherwise to `betweenItems`. With no out-of-order logs, this is the same as before. A set index below the current one is picked up only by `close()`.
+  - **`REST_END` follows the live sets.** It goes to the first set of the current item, from `setIndex` itself on, that has no live logged set (`setAfterRest`), otherwise to `betweenItems`. The search includes `setIndex` since the rework (see below).
   - **`startRest`.** It dispatches the new `REST_START`, which works only from `set`, `confirm`, `rest` and `timed`. From any other phase it returns the same state. Rest uses the library `type`, and a missing exercise gets the compound rest.
   - **`skipRest` and `adjustRest`.** `skipRest` is `REST_END`. `adjustRest` is `REST_ADJUST`. A rest that is adjusted to 0 ends at the next render (T-0304a expiry).
-  - **`currentSetIndex`.** It is `state.setIndex`, except in `rest`. There it is the set the rest leads to: the item's first unlogged set after the current one, or `setsInItem` when no set is left. That is why AC-1 reads 1 after set 0 is saved.
+  - **`currentSetIndex`.** It is `state.setIndex`, except in `rest`. There it is `setAfterRest`, or `setsInItem` when no set is left. After set 0 is saved that is 1 (AC-1). After `startRest` from an unlogged set 0 it is 0.
   - **`replaceItem`.** It rejects with `RangeError` for an index below `state.itemIndex` or past the end. It writes `{...storedRow, plan}`, then calls `store.replacePlan`. The new `PLAN_REPLACED` event makes the current `set`/`timed` (or a paused `resumePhase`) follow the new item's `repsMin`. `setIndex` stays, capped at the new item's set count.
   - **`close()` (`RESYNC`).** It changes nothing when the phase is `paused`, `done`, or `rest` with a timer. A warm-up with nothing logged is kept. Otherwise it goes to the first item with an unlogged planned set (back-off included), at that set. UF-09.6 or UF-09.8 for that same item, at set 0, is kept. With every set logged it goes to `done`, which finishes. Leaving the warm-up this way records `warmupSpentMs`.
   - **`finish()`.** It reads the stored row and writes `{...row, ended_at: now}`, then removes the focus key, then navigates. While it is pending, it returns the same promise. A rejected finish can be called again.
@@ -175,3 +175,14 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - e2e: `uf-09-focus` 4/4, and the whole suite 71/71.
   - `-w format:check`: 0. `check-all.mjs`: 0.
   - `check:size` after a fresh build: 0. The UF-09 chunk is about 6.5 KB gzip.
+- **2026-10-02, frontend-dev (rework, attempt 2).** This fixes a blocking review finding: a rest started with `startRest` from an unlogged `set` or `timed` skipped the current set.
+  - **The bug.** `REST_END` and `currentSetIndex` searched strictly after `setIndex`. The rest started from an unlogged set, so that set was never offered: bench ended with 3 of 4 sets.
+  - **The fix.** Both now use `setAfterRest` in `machine.ts`, the first unlogged set from `setIndex` inclusive. The normal flow is unchanged, because the set just done is logged there.
+  - **New tests.**
+    - `machine.session.test.ts`: (a) `set` → `REST_START` → `REST_END` lands on setIndex 0; (b) the same for `timed`; (d) the normal flow still advances, and a set already logged after the current one is still skipped.
+    - `session.rest.test.tsx`: (c) `currentSetIndex` is 0 during that rest, and the reviewer's List-view scenario (log a row set, `startRest`, `close()`, rest ends) lands on bench setIndex 0.
+  - **Red on 172f2e9.** (a), (b), (c) and the scenario test.
+  - **T-0304a seeds made reachable.** Some T-0304a tests seeded a `rest` (or a `confirm`) with no logged set for its `setIndex`. The real flow can't produce that state. Under the inclusive rule it now means "a rest from an unlogged set". These seeds now include the sets they follow, and no assertion changed:
+    - `host.expiry.test.tsx`: "rest at 120 s", "the wall clock moving back", and the four check-point tests.
+    - `machine.test.ts`: "the last bench-press set → rest → REST_END".
+  - **QA gap closed.** `session.finish.test.tsx` wraps `useNavigate` and asserts that `wl-focus:S1` is already gone at the moment `navigate` is called. Swapping `removeFocusState` and `navigate` turns both AC-5 order tests red. Reverted.

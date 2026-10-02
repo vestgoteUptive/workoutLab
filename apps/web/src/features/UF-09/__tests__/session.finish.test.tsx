@@ -17,6 +17,23 @@ vi.mock("../../../lib/offline/index.js", (orig) =>
 );
 vi.mock("../store.js", (orig) => import("./store-spy.js").then((m) => m.storeSpy(orig)));
 vi.mock("../views.js", (orig) => import("./probe.js").then((m) => m.probedViews(orig)));
+// Records, at the moment `navigate` is called, whether the focus key still exists, so "remove
+// the key, then navigate" is pinned (a re-render happens only after both, so a location probe
+// can't tell the order apart).
+const navCalls = vi.hoisted(() => [] as { to: unknown; keyPresent: boolean }[]);
+vi.mock("react-router", async (orig) => {
+  const actual = (await orig()) as typeof import("react-router");
+  return {
+    ...actual,
+    useNavigate: () => {
+      const navigate = actual.useNavigate();
+      return ((to: Parameters<typeof navigate>[0], options?: Parameters<typeof navigate>[1]) => {
+        navCalls.push({ to, keyPresent: window.localStorage.getItem("wl-focus:S1") !== null });
+        return navigate(to as never, options);
+      }) as typeof navigate;
+    },
+  };
+});
 
 const NOW = STARTED_AT_MS + 40 * 60_000;
 const KEY = `wl-focus:${S1}`;
@@ -56,6 +73,7 @@ beforeEach(() => {
   stores.length = 0;
   probe.current = null;
   currentLocation.pathname = "";
+  navCalls.length = 0;
   upsertSpy.mockClear();
   freshDb();
   useFakeClock(NOW);
@@ -104,6 +122,8 @@ describe("AC-5 finish()", () => {
         ended_at: new Date(NOW).toISOString(),
       });
       expect(upsertSpy.mock.calls[0]![0].started_at).toBe(STARTED_AT);
+      // At the moment navigate is called, the focus key is already gone.
+      expect(navCalls).toEqual([{ to: SUMMARY, keyPresent: false }]);
       expect(order).toEqual([`write key=true at=/session/${S1}`, `after key=false at=${SUMMARY}`]);
       expect((await offline.offlineDb().sessions.get(S1))!.row.ended_at).toBe(
         new Date(NOW).toISOString(),

@@ -15,7 +15,7 @@ import {
   type SessionInsert,
   type SetEdit,
 } from "../../lib/offline/index.js";
-import { firstUnloggedSet, setsInItem, type FocusState, type LoggedSet } from "./machine.js";
+import { setAfterRest, setsInItem, type FocusState, type LoggedSet } from "./machine.js";
 import { removeFocusState, type FocusStorage } from "./persist.js";
 import type { FocusStore } from "./store.js";
 import { elapsedS as elapsedSOf, remainingS } from "./timer.js";
@@ -44,8 +44,9 @@ export interface FocusSession {
   /** `state.itemIndex`. */
   currentItemIndex: number;
   /** The set on screen or up next, 0-based (the back-off set is `item.sets`): `state.setIndex`,
-   *  except in `rest`, where the set just done is behind and this is the one the rest leads to
-   *  (the item's first unlogged set after it, or its set count when none is left). */
+   *  except in `rest`, where it is the set the rest leads to: the item's first unlogged set from
+   *  `state.setIndex` on (the next one after a logged set; the same one after `startRest` from an
+   *  unlogged set), or its set count when none is left. */
   currentSetIndex: number;
   /** The live logged sets of this session, in log order. */
   loggedSets: readonly LoggedSet[];
@@ -248,7 +249,7 @@ function currentSetIndex(state: FocusState, plan: SessionPlan): number {
   const item = plan.items[state.itemIndex];
   if (!item) return state.setIndex;
   const ctx = { plan, library: [] };
-  return firstUnloggedSet(state, ctx, state.itemIndex, state.setIndex) ?? setsInItem(item);
+  return setAfterRest(state, ctx) ?? setsInItem(item);
 }
 
 export interface FocusReadInput {

@@ -94,6 +94,48 @@ describe("REST_END follows the live sets", () => {
   });
 });
 
+describe("REST_START from an unlogged set, then REST_END (rework: the current set is never skipped)", () => {
+  it("(a) set: bench setIndex 0 unlogged, a row set logged out of order → REST_END lands on bench setIndex 0", () => {
+    const s0 = at("set", { setIndex: 0, loggedSets: [set(1, 0)] });
+    const rest = reduce(s0, { type: "REST_START", exerciseId: "barbell-row", atMs: T0 });
+    expect(rest).toMatchObject({ phase: "rest", itemIndex: 0, setIndex: 0 });
+    expect(reduce(rest, { type: "REST_END", atMs: T0 + 120_000 })).toMatchObject({
+      phase: "set",
+      itemIndex: 0,
+      setIndex: 0,
+    });
+  });
+
+  it("(b) timed: plank setIndex 0 unlogged → REST_END lands on plank setIndex 0", () => {
+    const s0 = at("timed", { itemIndex: 3, setIndex: 0 });
+    const rest = reduce(s0, { type: "REST_START", exerciseId: "plank", atMs: T0 });
+    expect(reduce(rest, { type: "REST_END", atMs: T0 + 60_000 })).toMatchObject({
+      phase: "timed",
+      itemIndex: 3,
+      setIndex: 0,
+    });
+  });
+
+  it("(d) the normal flow still advances: set 0 recorded, saved, rest → REST_END → setIndex 1", () => {
+    let s = reduce(at("set"), { type: "SET_RECORDED", set: set(0, 0), atMs: T0 });
+    s = reduce(s, { type: "SAVED", atMs: T0 });
+    expect(s).toMatchObject({ phase: "rest", setIndex: 0 });
+    expect(reduce(s, { type: "REST_END", atMs: T0 + 120_000 })).toMatchObject({
+      phase: "set",
+      setIndex: 1,
+    });
+  });
+
+  it("(d) a set logged after the current one is still skipped: sets 0 and 1 logged, rest at 0 → setIndex 2", () => {
+    const s = at("rest", {
+      setIndex: 0,
+      timer: { startedAtMs: T0, durationS: 120, pausedMs: 0 },
+      loggedSets: [set(0, 0), set(0, 1)],
+    });
+    expect(reduce(s, { type: "REST_END", atMs: T0 }).setIndex).toBe(2);
+  });
+});
+
 describe("REST_START", () => {
   it.each(["set", "confirm", "rest", "timed"] as const)(
     "from %s: a fresh rest by type",

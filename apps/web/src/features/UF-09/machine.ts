@@ -169,6 +169,17 @@ export function firstUnloggedSet(
   return null;
 }
 
+/**
+ * The set a rest leads to (D-0071 §5): the first set of the current item, from `setIndex` itself
+ * on, with no live logged set. In the normal flow `setIndex` is the set just logged, so this is
+ * the next one, and a set already logged from List view is never offered again. A rest started
+ * with `startRest` from an unlogged `set`/`timed` leads back to that same set, so it is never
+ * skipped. `null` when the item has no set left.
+ */
+export function setAfterRest(state: FocusState, ctx: FocusCtx): number | null {
+  return firstUnloggedSet(state, ctx, state.itemIndex, state.setIndex - 1);
+}
+
 /** D-0071 §5: the first item with an unlogged planned set (back-off included), and that set. */
 export function firstIncompleteSet(
   state: FocusState,
@@ -310,9 +321,7 @@ export function focusReducer(state: FocusState, event: FocusEvent, ctx: FocusCtx
     case "REST_END": {
       if (state.phase !== "rest") return state;
       const item = plan.items[state.itemIndex]!;
-      // D-0071 §5: the next set is the first one after this with no live logged set, so a set
-      // already logged from List view is never offered again.
-      const nextSet = firstUnloggedSet(state, ctx, state.itemIndex, state.setIndex);
+      const nextSet = setAfterRest(state, ctx);
       if (nextSet !== null) {
         return {
           ...state,
