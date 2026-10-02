@@ -137,3 +137,25 @@ green · contracts unchanged · commits start `T-0423` and cite the screen (for 
 - **Gates:** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`
   4/4 tasks green (169 files, 2666 tests); `-w format:check` clean; `check-all.mjs` exit 0;
   `test:e2e` whole suite 137 passed (uf-09-focus.spec.ts 10/10).
+
+### QA log (qa-tester, 2026-10-02, HEAD ac669c3)
+- **AC → test** (`__tests__/timed-set.focus.test.tsx`): AC-1 "at mount … 'Pause timer'", "ring
+  paused … 120 s"; AC-2 "focus moves to the <h1> …", "the <h1> is outside the Tab order …", pair
+  "focus on the chrome's 'Pause workout' …"; AC-3 "focus moves to 'Log hold'; a second rejected …",
+  "the <h1> had focus …", pair "focus on 'Pause workout' when the write rejects …"; AC-4 "a remount
+  10 min after …", pair "that write rejects …"; AC-5 "recordSet resolves …", "already logged (3, 0)
+  …"; AC-6 by diff against the merge base 10e9622 (only `timed-set.tsx`, the new test file and this
+  ticket changed; `flows/uf-09.ts` untouched) plus the green gate.
+- **Binary pairs:** running/paused ring (AC-1), view/chrome focus at 0 (AC-2) and at rejection
+  (AC-3), first/second rejection (AC-3), pending/rejected on restore (AC-4), fresh/already-logged
+  (AC-5). All present.
+- **Planted faults in `timed-set.tsx` (each reverted):** F1 no heading focus at 0 (plus no mount
+  fallback): 4 red (AC-2, AC-3 h1, AC-4 ×2). F2 no "Log hold" focus: 3 red (AC-3 ×2, AC-4 pair).
+  F3 ignore the chrome guard: 2 red (both "Pause workout" pairs). F4 drop the `viewRef.contains`
+  branch: 3 red (AC-3 ×2, AC-4 pair). F5 drop only the mount fallback `?? headingRef`: 12 green.
+  The `[running]` layout effect also runs on mount, so it already covers the restore. The fallback
+  is redundant but harmless (a cosmetic note, not a gap).
+- **Gates:** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`
+  4/4 tasks green (169 files, 2666 tests); `test:e2e uf-09-focus` 10 passed; `-w format:check`
+  exit 0; `check-all.mjs` exit 0.
+- **Verdict:** done. No tests added.
