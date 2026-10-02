@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-09.1]
 decisions: [D-0117]
 deps: [T-0229]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Build flow: wl-build-web. About ⅛ day. Follow-up from the T-0229 review. -->
 
@@ -73,3 +73,20 @@ none
 
 ## Definition of done
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force` green · contracts unchanged · commit messages start with `T-0390` and cite UF-09.1 (e.g. `T-0390 UF-09.1: widen the no-eval bundle scan (D-0117 §4c)`).
+
+## Build log
+- 2026-10-02, frontend-dev (build), on top of 742d669.
+  - Today's bundle, before the change: a scratch `vite build` (32 JS assets) scanned with all eight markers gave **0 hits**. No triage needed.
+  - Change: `CODEGEN_MARKERS` (the existing three plus five new regexes) and `codegenHits()` sit next to the `T-0229 AC6` block. The scan test is retitled `T-0390 AC1 AC3 (T-0229 AC6) …` and fails as `asset: marker`. The new `T-0390 AC2` table has 9 flagged and 9 clean samples. No other assertion is touched (AC4).
+  - Red proofs (temporary patch that appended `$PLANT` to the first built chunk, `registerSW.js`, then reverted): `Function('return this')()`, ``Function(`a`,`b`)``, `eval("1")`, `(0,eval)("x")` and `"ajv/dist/compile/index"` each turned AC1 red. The `(0,eval)` run failed with `registerSW.js: \(\s*0\s*,\s*eval\s*\)\s*\(`. A plant of all AC2 clean samples stayed green. With the `eval(` regex removed, AC2 went red on `eval("1")` and `;eval(x)` (2 fail, 16 pass). Restored.
+  - Checks: web typecheck and lint clean, web `test` 110 files / 1639 tests pass, `-w format:check` clean, `check-all.mjs` exit 0.
+
+## Accept log
+- 2026-10-02, product-owner (accept), branch `t/T-0390-bundle-scan-widen` at 8e16cba. Verdict: **done**.
+  - AC1: `CODEGEN_MARKERS` in `apps/web/build.test.ts` holds exactly the eight AC1 patterns (the three old ones plus five new). The planted-fault red proofs on the real built `registerSW.js` cover each new marker. Pass.
+  - AC2: the `T-0390 AC2` table has the 9 flagged and 9 clean samples, character for character as listed. Removing the `eval(` regex turned it red (2 failed). Pass.
+  - AC3: on today's build, 0 hits across 32 JS assets. The assertion is `expect(hits).toEqual([])` over `asset: marker` strings, so a failure names the asset and marker. No allowlist. No triage needed. Pass.
+  - AC4: review confirmed that only the T-0229 AC6 block and the new matcher describe changed, and no existing assertion was weakened. Web 1639/1639 pass, and typecheck, lint, format and check-all are green. Pass.
+  - Principles: unaffected. The change is test-only and touches no contracts.
+  - QA: the orchestrator did QA and relied on the builder's planted-fault proofs. Accepted on that basis because every new marker was proven red on a real build.
+  - Follow-up (web-shell, from review): widen the scan further to cover member-access eval (`globalThis.eval(`), `Function.apply/call`, `Reflect.construct(Function`, `Function(identifier)`, `new Function (` with whitespace, string-argument `setTimeout`/`setInterval`, and anchor the legacy `Function("` marker with the same lookbehind.
