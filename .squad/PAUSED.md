@@ -27,7 +27,7 @@ its own ticket branch and never touches `main`.
 | T-0422 | UF-05.1 swap seam on UF-09.9 / UF-09.6 | Build ×3 done, review approved (incl. error boundary), **QA running** | QA verdict → accept → merge (full gate + whole e2e) |
 | T-0304g | UF-09 wake lock, cues, reduced motion | Review approved. QA proved every AC and fault (58/58; F1, F3, its own wake-lock fault) but stopped before its gate: it left 3 stray files, which the orchestrator removed (worktree clean at `bcf51a3`) | Run the cached gate (D-0158 §1) in the worktree, commit QA's log, then accept → merge |
 | T-0440 | e2e: no server reuse on :4173, tmpfs preflight | Review approved, **QA passed** (`12ea587`, e2e 152/152) | Accept → merge; then shorten the two traps in `state.md` |
-| T-0307b | UF-06 Progress | Review asked for changes (AC-10 test can't fail, + 3 lows); **rework running** | Re-review → QA → accept → merge |
+| T-0307b | UF-06 Progress | Rework 2 done (`b19196e`): AC-10 replace test now fails without `replace` (2/2 red→green); en-GB-only Sep, unused key removed, 44 px min width. Web 2769, repo-checks, e2e uf-06+shell 24/24 | Re-review (`git diff 5976601..b19196e`) → QA (D-0158) → accept → merge |
 | T-0308a | UF-07.1 Routine editor | **Post-merge catch-up running** (main merged, finish ACs, green the gate) | Review → QA → accept → merge |
 
 If a run's result was lost (the session ended before it reported), its worktree still holds the commits. Read the
