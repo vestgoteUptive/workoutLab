@@ -1,26 +1,43 @@
 // T-0228 AC3 (D-0105): the engine's runtime import graph over `src/*.ts` has no cycle.
 // `import type` / `export type` statements are erased at compile time, so they are excluded.
+// T-0231: imports are read from the TypeScript AST, not a regex.
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const SRC_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "src");
 
 type Graph = Record<string, string[]>;
 
-/** Relative runtime imports/re-exports of one source text, as `x.ts` file names. */
+/**
+ * Relative runtime imports/re-exports of one source text, as `x.ts` file names.
+ * T-0231: parsed with the TypeScript compiler API, so comments and strings can't drop or invent an edge.
+ * Counts `import … from`, side-effect `import "./x.js"` and `export … from`; skips `import type` / `export type`.
+ */
 function relativeDeps(source: string): string[] {
   const deps = new Set<string>();
-  const statement = /^(import|export)\b([^;]*?)\bfrom\s+["']([^"']+)["']/gm;
-  for (const m of source.matchAll(statement)) {
-    const [, , head = "", spec = ""] = m;
-    if (/^\s+type\b/.test(head)) continue;
+  const file = ts.createSourceFile(
+    "source.ts",
+    source,
+    ts.ScriptTarget.Latest,
+    false,
+    ts.ScriptKind.TS,
+  );
+  for (const stmt of file.statements) {
+    let specifier: ts.Expression | undefined;
+    if (ts.isImportDeclaration(stmt)) {
+      if (stmt.importClause?.isTypeOnly) continue;
+      specifier = stmt.moduleSpecifier;
+    } else if (ts.isExportDeclaration(stmt)) {
+      if (stmt.isTypeOnly) continue;
+      specifier = stmt.moduleSpecifier;
+    }
+    if (!specifier || !ts.isStringLiteral(specifier)) continue;
+    const spec = specifier.text;
     if (!spec.startsWith("./")) continue;
     deps.add(spec.slice(2).replace(/\.js$/, ".ts"));
-  }
-  for (const m of source.matchAll(/^import\s+["'](\.\/[^"']+)["']/gm)) {
-    deps.add((m[1] ?? "").slice(2).replace(/\.js$/, ".ts"));
   }
   return [...deps].sort();
 }
@@ -92,5 +109,34 @@ describe("T-0228 AC3 import graph", () => {
       'import { f } from "node:fs";',
     ].join("\n");
     expect(relativeDeps(src)).toEqual(["mixed.ts", "re.ts"]);
+  });
+});
+
+describe("T-0231 AC1 relativeDeps parses with the TypeScript compiler API", () => {
+  it("T-0231 AC1 a `;` in a line comment inside a multi-line import list keeps the edge", () => {
+    const src = ["import {", "  a, // first; then b", "  b,", '} from "./semi.js";'].join("\n");
+    expect(relativeDeps(src)).toEqual(["semi.ts"]);
+  });
+
+  it("T-0231 AC1 a `;` in a block comment inside an import list keeps the edge", () => {
+    expect(relativeDeps('import { a /* x; y */ } from "./block.js";')).toEqual(["block.ts"]);
+  });
+
+  it("T-0231 AC1 an import inside a block comment is not an edge", () => {
+    const src = ["/*", 'import { g } from "./ghost.js";', "*/"].join("\n");
+    expect(relativeDeps(src)).toEqual([]);
+  });
+
+  it("T-0231 AC1 a line-commented import is not an edge", () => {
+    expect(relativeDeps('// import { h } from "./line.js";')).toEqual([]);
+  });
+
+  it("T-0231 AC1 strings that look like comments don't hide the next import", () => {
+    const src = ['const u = "http://x/*";', 'import { k } from "./after.js";'].join("\n");
+    expect(relativeDeps(src)).toEqual(["after.ts"]);
+  });
+
+  it("T-0231 AC1 a side-effect import counts", () => {
+    expect(relativeDeps('import "./side.js";')).toEqual(["side.ts"]);
   });
 });
