@@ -4,7 +4,8 @@
 // T-0201b adds rules 7.4 and 8; T-0202 adds rule 9; T-0204 adds rules 12 and 13;
 // T-0205 adds rule 14 (prefill); T-0219 costs timed sets at the planned duration (D-0092);
 // T-0224 adds rule 12.1 applySwap (D-0093); T-0214 makes the rule 7.2 rep slots follow the
-// profile goal (D-0061 §1, D-0095).
+// profile goal (D-0061 §1, D-0095); T-0226 makes rule 12 fitsBudget count the back-off set
+// applySwap re-adds (D-0105).
 
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
@@ -33,6 +34,7 @@ export {
   MAX_ITEMS_PER_AREA,
   REP_SLOTS,
   DEFAULT_GOAL,
+  getsBackoff,
 } from "./session.js";
 export { rankSwaps, muscleMatch } from "./swaps.js";
 export { applySwap } from "./apply-swap.js";

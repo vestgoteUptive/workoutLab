@@ -1,7 +1,7 @@
 // Rule 12 swap ranking (UF-08.3, UF-05.1; D-0025, D-0037 §2, D-0056 §1–§7). Pure: one
 // ranked list the UI renders without re-sorting. Rule 13's shuffle (session.ts) reuses the
 // `variety` ranking through `rankAgainst`.
-import { availableS, isEligible, itemCostS, realEquipment } from "./cost.js";
+import { availableS, isEligible, itemCostS, realEquipment, setCostS } from "./cost.js";
 import {
   indexLibrary,
   isHardSet,
@@ -12,6 +12,7 @@ import {
 } from "./history.js";
 import { recoveringAreas } from "./load.js";
 import { plannedDurationFrom } from "./prefill.js";
+import { getsBackoff } from "./session.js";
 import { localDate } from "./time.js";
 import type {
   Area,
@@ -107,7 +108,7 @@ interface Row {
 /**
  * Rule 12 candidates and sort for replacing `cur` at `slot`, given the ids already in the
  * session (`planIds`, which includes `cur`). Returns the rows in rank order; `fits` decides
- * `fitsBudget` from a candidate's `timeCostS`.
+ * `fitsBudget` from a candidate's `timeCostS` and the candidate itself (D-0105 §1).
  */
 export function rankAgainst(
   ctx: SwapContext,
@@ -115,7 +116,7 @@ export function rankAgainst(
   slot: SwapSlot,
   planIds: ReadonlySet<string>,
   reason: SwapReason | null,
-  fits: (timeCostS: number) => boolean,
+  fits: (timeCostS: number, candidate: LibraryExercise) => boolean,
 ): SwapCandidate[] {
   const curPrimary = new Set(primaryAreas(cur));
   const curEquipment = new Set(realEquipment(cur.equipment));
@@ -187,7 +188,7 @@ export function rankAgainst(
     muscleMatch: r.mm,
     timeCostS: r.timeCostS,
     equipment: [...r.ex.equipment],
-    fitsBudget: fits(r.timeCostS),
+    fitsBudget: fits(r.timeCostS, r.ex),
     bestMatch: i === 0,
   }));
 }
@@ -238,6 +239,13 @@ export function rankSwaps(
     { sets: slot.sets, isMain: slot.isMain },
     planIds,
     reason,
-    (cost) => session.itemsTotalS - slot.costS + cost <= available,
+    // D-0105 §1: on a back-off slot a non-timed candidate also pays the back-off set
+    // applySwap re-adds (D-0093 §2), so fitsBudget is exactly applySwap's budget check.
+    (cost, ex) =>
+      session.itemsTotalS -
+        slot.costS +
+        cost +
+        (getsBackoff(slot.backoff !== null, ex) ? setCostS(ex, ctx.durationOf(ex)) : 0) <=
+      available,
   );
 }
