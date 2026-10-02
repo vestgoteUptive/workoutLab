@@ -635,7 +635,10 @@ function movedOnIfLogged(state: FocusState, ctx: FocusCtx, atMs: number): FocusS
  * set never lands on a position that already holds a logged set (of any exercise). A taken
  * clamped position moves to the first free one; with none left, the swap ends the item as its
  * last set's save would: `rest` by the new exercise's `type` (from the pause when paused), or
- * `done` after the last item, which also ends a pause. Other phases are clamped only.
+ * `done` after the last item, which also ends a pause.
+ *
+ * D-0153 §2 (T-0422, amends D-0140 §1): while UF-09.4 is in play (`confirm`, or paused on it),
+ * the recorded set is saved as recorded (`savedBySwap`). Other phases are clamped only.
  */
 function planReplaced(
   state: FocusState,
@@ -650,6 +653,7 @@ function planReplaced(
   const fix = (p: Phase): Phase => (p === "set" || p === "timed" ? entry : p);
   const was = state.phase === "paused" ? state.resumePhase : state.phase;
   let setIndex = Math.max(0, Math.min(state.setIndex, setsInItem(item) - 1));
+  if (was === "confirm") return savedBySwap({ ...state, setIndex }, ctx, atMs);
   if ((was === "set" || was === "timed") && loggedIndexes(state, itemIndex).has(setIndex)) {
     const free = firstUnloggedSet(state, ctx, itemIndex);
     if (free === null) return endedBySwap(state, ctx, item, atMs);
@@ -672,6 +676,29 @@ function planReplaced(
     );
   } else if (was === "timed" && now === "set") timer = null;
   return { ...state, phase, resumePhase, setIndex, timer };
+}
+
+/**
+ * D-0153 §2: a swap of the current item while UF-09.4 is in play. The recorded entry stays in
+ * `loggedSets` exactly as it is (old `exerciseId` included), and the machine goes where `SAVED`
+ * with no edit goes (`afterSet`), with the NEW item's set count and rest. `state.setIndex` is
+ * already clamped into the new item. Not paused: `rest` from `atMs`, or `done`. Paused: the rest
+ * waits behind the pause from `pausedAtMs` (RESUME leaves the full rest), and `done` ends the
+ * pause (persist.ts rejects `resumePhase: "done"`).
+ */
+function savedBySwap(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
+  if (state.phase !== "paused") return afterSet({ ...state, phase: "confirm" }, ctx, atMs);
+  const pausedAtMs = state.pausedAtMs ?? atMs;
+  const saved = afterSet({ ...state, phase: "confirm" }, ctx, pausedAtMs);
+  if (saved.phase === "done") {
+    return {
+      ...saved,
+      resumePhase: null,
+      pausedAtMs: null,
+      workoutPausedMs: state.workoutPausedMs + Math.max(0, atMs - pausedAtMs),
+    };
+  }
+  return { ...state, resumePhase: "rest", timer: saved.timer };
 }
 
 /** D-0140 §4: every position of the swapped-in item is logged, so the swap ends the item. */
