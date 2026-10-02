@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-08.1, UF-09.3, UF-09.4]
 decisions: [D-0127, D-0045, D-0086, D-0060]
 deps: [T-0304b]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Build flow: wl-build-web. About ⅛ day. Filed on the board as the web-shell row "T-0400". It was renumbered because T-0400 is already the infra Terraform ticket (D-0011, D-0017, ci.yml); the orchestrator updates the board row. Follow-up from T-0304b (D-0127). It becomes ready when T-0304b is done, because the filter it removes lives only on T-0304b's branch. -->
 
@@ -93,3 +93,4 @@ icon role="img"; unfiltered offline axe`).
 
 ## Build / accept log
 - 2026-10-02 frontend-dev (build): icon span gets `role="img"` (keeps `aria-label`, class); T-0407 AC1-AC3 axe/role tests appended to `OfflineStatus.test.tsx` (existing cases unedited); `isKnownShellIcon` and its D-0127 comment deleted from `uf-09-focus.spec.ts`; D-0127 `superseded`. Red proof on unfixed `OfflineStatus.tsx`: AC1 fails with `[{ id: "aria-prohibited-attr", nodes: ['<span aria-label="Offline" class="wl-offline-status__icon"></span>'] }]`; AC3 throws `Unable to find an accessible element with the role "img" and name "Offline"`; e2e T-0304b AC-12 row fails on `aria-prohibited-attr` at `.wl-offline-status__icon` (1 failed). Green: web typecheck/lint/test 2130/2130; e2e `uf-09-focus` + `offline` 9/9 (AC-12 and T-0304f offline axe rows unfiltered); `-w format:check` and `check:repo` clean. No other axe finding surfaced.
+- 2026-10-02 product-owner (accept): **done**. AC1: `T-0407 AC1` axe test on the offline icon with `color-contrast` off and axe-core resolved via `@axe-core/playwright` (D-0060); there is also a probe-soundness test proving axe catches a role-less `aria-label` span. Red proof is recorded above. AC2: text variant offline, plus both variants online, 0 violations. AC3: `getByRole("img", { name: "Offline" })` with no alert, banner or status role and no `[aria-live]`; red on main (throws). AC4: existing cases unedited and web 2130/2130 green. AC5: the spec has no `isKnownShellIcon` or `D-0127` left; the AC-12 rows pass unfiltered (e2e 9/9) and were red with main's component. AC6: D-0127 is `status: superseded` with a T-0407 line. Contracts unchanged. Principle 1 holds: the icon is silent with no live region.
