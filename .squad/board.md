@@ -132,7 +132,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0306b | todo | wl-build-web |
 | T-0303d | UF-08.4 Ready: summary, focus explainer, focus-prefs hand-off, Start → upsertSession then /session/:id | web-feature:UF-08 | T-0303b | todo | wl-build-web |
 | T-0304 | UF-09 Focus mode: state machine, timers, auto-save, time check, pause | web-feature:UF-09 | T-0303, T-0205 | split → T-0304a, T-0304e, T-0304b, T-0304c, T-0304d (D-0066, D-0111) | wl-build-web |
-| T-0304a | UF-09 focus machine (pure reducer, atMs events), session load + restore guards, persisted focus state, host + chrome, wall-clock timer maths (D-0111) | web-feature:UF-09 | T-0300, T-0205, T-0318 | doing | wl-build-web |
+| T-0304a | UF-09 focus machine (pure reducer, atMs events), session load + restore guards, persisted focus state, host + chrome, wall-clock timer maths (D-0111) | web-feature:UF-09 | T-0300, T-0205, T-0318 | doing (merge held on TR-0036) | wl-build-web |
 | T-0304e | UF-09 useFocusSession() + seams.tsx, orderActions, overlay mechanics, done → finish() with whole-row upserts (D-0111, D-0071 §6) | web-feature:UF-09 | T-0304a | todo | wl-build-web |
 | T-0304b | UF-09.1/.3/.4/.5/.6 set loop: Done set writes first, auto-save 5 s, RIR, in-session pre-fill, back-off, rest from engine constants | web-feature:UF-09 | T-0304e | todo | wl-build-web |
 | T-0304c | UF-09.2 warm-up + UF-09.7 timed (prefill.durationS, D-0062 §5 copy), wake lock, cues, reduced motion | web-feature:UF-09 | T-0304b | todo | wl-build-web |
