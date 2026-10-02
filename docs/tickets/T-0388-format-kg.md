@@ -27,7 +27,7 @@ pattern.
 - AC2 Given locale "sv-SE", when `formatKg(82.5, "sv-SE")` and `formatKg(41.25, "de-DE")` are called, then they return "82,5 kg" and "41,25 kg".
 - AC3 Given 1250 with "en-GB", when it is formatted, then the result is "1250 kg" (no grouping, D-0115 §6).
 - AC4 Given no locale, when `formatKg(82.5)` is called, then it equals `formatKg(82.5, new Intl.NumberFormat().resolvedOptions().locale)` (the runtime default, as with `formatSetCount`).
-- AC5 Given the existing `formatSetCount` tests and callers, when the suite runs, then they pass unchanged, and `formatSetCount.length` and `formatKg.length` are both 1.
+- AC5 Given the existing `formatSetCount` tests and callers, when the suite runs, then they pass unchanged, and `formatKg.length === formatSetCount.length` (both take an optional trailing locale; corrected by TR-0037).
 
 ## Paths you may change
 - `apps/web/src/lib/format/**` (the lane: `web-shell`). The edits go only in `apps/web/src/lib/format/number.ts` and a new `apps/web/src/lib/format/number.test.ts`.
