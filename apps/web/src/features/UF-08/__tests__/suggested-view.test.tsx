@@ -3,12 +3,13 @@
 // on injected `Workout`s. `Suggested` is rendered on its own inside a router; the host's actions
 // are covered in suggested-actions.test.tsx.
 import { useState } from "react";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import type { Reason, Workout, WorkoutItem } from "@workoutlab/engine";
+import { en } from "../../../lib/i18n/en.js";
 import { sessionReasonChips } from "../../../lib/i18n/workout.js";
 import { Suggested, type SuggestedProps } from "../Suggested.js";
 import { fLibrary, LOCALE } from "./fixtures.js";
@@ -79,47 +80,58 @@ describe("AC-2 rows render the engine (principle 3, D-0109 §4)", () => {
     );
   });
 
+  it.each([[null, "4 × 6–8 · 12 min"]] as const)(
+    "bench-press prefill.weightKg %s → %s",
+    (weightKg, text) => {
+      show(withItem(0, { prefill: { weightKg, reps: 6, durationS: null, kind: "carry" } }));
+      expect(detail(0)).toBe(text);
+    },
+  );
+
+  // T-0391 (D-0124 §2): the weight part is `formatKg` as it is: U+00A0 before "kg", no grouping,
+  // up to 2 decimals.
   it.each([
-    [80, "4 × 6–8 · 80 kg · 12 min"],
-    [77.5, "4 × 6–8 · 77.5 kg · 12 min"],
-    [null, "4 × 6–8 · 12 min"],
-  ] as const)("bench-press prefill.weightKg %s → %s", (weightKg, text) => {
-    show(withItem(0, { prefill: { weightKg, reps: 6, durationS: null, kind: "carry" } }));
+    [80, "carry", "4 × 6–8 · 80\u00A0kg · 12 min"],
+    [77.5, "carry", "4 × 6–8 · 77.5\u00A0kg · 12 min"],
+    [100, "hold_after_break", "4 × 6–8 · 100\u00A0kg · 12 min"],
+    [0, "carry", "4 × 6–8 · 0\u00A0kg · 12 min"],
+    [1250, "carry", "4 × 6–8 · 1250\u00A0kg · 12 min"],
+    [2.125, "carry", "4 × 6–8 · 2.13\u00A0kg · 12 min"],
+  ] as const)("T-0391 AC1 bench-press prefill.weightKg %s (%s) → %j", (weightKg, kind, text) => {
+    show(withItem(0, { prefill: { weightKg, reps: 6, durationS: null, kind } }));
     expect(detail(0)).toBe(text);
   });
 
-  it("a hold_after_break pre-fill of 100 kg renders as returned", () => {
-    show(
-      withItem(0, {
-        prefill: { weightKg: 100, reps: 6, durationS: null, kind: "hold_after_break" },
-      }),
-    );
-    expect(detail(0)).toBe("4 × 6–8 · 100 kg · 12 min");
-  });
-
-  it("weight 0: externalLoad false reads 'Bodyweight', externalLoad true reads '0 kg'", () => {
+  it("T-0391 AC1 weight 0: externalLoad false reads 'Bodyweight', externalLoad true reads '0 kg'", () => {
     show(withItem(0, { prefill: { weightKg: 0, reps: 6, durationS: null, kind: "carry" } }));
     // bench-press is externalLoad: true; inverted-row (index 1, weight 0) is false.
-    expect(detail(0)).toBe("4 × 6–8 · 0 kg · 12 min");
+    expect(detail(0)).toBe("4 × 6–8 · 0\u00A0kg · 12 min");
     expect(detail(1)).toBe("3 × 8–12 · Bodyweight · 10 min");
   });
 
-  it("the weight follows the locale (sv-SE 77,5)", () => {
-    show(withItem(0, { prefill: { weightKg: 77.5, reps: 6, durationS: null, kind: "carry" } }), {
-      locale: "sv-SE",
-    });
-    expect(detail(0)).toBe("4 × 6–8 · 77,5 kg · 12 min");
-  });
+  it.each([
+    [77.5, "sv-SE", "4 × 6–8 · 77,5\u00A0kg · 12 min"],
+    [1250, "de-DE", "4 × 6–8 · 1250\u00A0kg · 12 min"],
+  ] as const)(
+    "T-0391 AC2 the weight follows the locale: %s in %s → %j",
+    (weightKg, locale, text) => {
+      show(withItem(0, { prefill: { weightKg, reps: 6, durationS: null, kind: "carry" } }), {
+        locale,
+      });
+      expect(detail(0)).toBe(text);
+    },
+  );
 
   it.each([
-    [{ weightKg: 70, reps: 6 }, "+ 1 back-off 70 × 6"],
-    [{ weightKg: null, reps: 6 }, "+ 1 back-off set"],
-    [null, null],
-  ] as const)("back-off %j → %s", (backoff, line) => {
-    show(withItem(0, { backoff }));
+    [{ weightKg: 70, reps: 6 }, LOCALE, "+ 1 back-off 70\u00A0kg × 6"],
+    [{ weightKg: 72.5, reps: 5 }, "sv-SE", "+ 1 back-off 72,5\u00A0kg × 5"],
+    [{ weightKg: null, reps: 6 }, LOCALE, "+ 1 back-off set"],
+    [null, LOCALE, null],
+  ] as const)("T-0391 AC3 back-off %j (%s) → %j", (backoff, locale, line) => {
+    show(withItem(0, { backoff }), { locale });
     const el = part(rows()[0]!, "row-backoff");
     if (line === null) expect(el).toBeNull();
-    else expect(el).toHaveTextContent(new RegExp(`^${line.replace(/[+]/g, "\\+")}$`));
+    else expect(el!.textContent).toBe(line);
     // No other row carries a back-off line.
     expect(document.querySelectorAll('[data-part="row-backoff"]')).toHaveLength(line ? 1 : 0);
   });
@@ -480,5 +492,30 @@ describe("AC-10 names and focus after Remove (D-0109 §6)", () => {
     shuffle.focus();
     fireEvent.click(shuffle);
     expect(shuffle).toHaveFocus();
+  });
+});
+
+describe("T-0391 AC4 one kg helper (D-0114 §3, D-0124 §1 §4)", () => {
+  const featureDir = resolve(__dirname, "..");
+  const sources = readdirSync(featureDir, { withFileTypes: true })
+    .filter((e) => e.isFile() && /\.(tsx?|css)$/.test(e.name))
+    .map((e) => ({ name: e.name, source: readFileSync(resolve(featureDir, e.name), "utf8") }));
+
+  it("T-0391 AC4 Suggested.tsx imports formatKg from ../../lib/format/number.js", () => {
+    const suggested = sources.find((f) => f.name === "Suggested.tsx")!.source;
+    expect(suggested).toMatch(
+      /^import \{[^}]*\bformatKg\b[^}]*\} from "\.\.\/\.\.\/lib\/format\/number\.js";$/m,
+    );
+  });
+
+  it("T-0391 AC4 no UF-08 source formats a weight itself", () => {
+    expect(sources.length).toBeGreaterThan(5);
+    for (const { name, source } of sources) {
+      expect(source, name).not.toMatch(/weightText|Intl\.NumberFormat|en\.uf08\.weightKg/);
+    }
+  });
+
+  it("T-0391 AC4 en.uf08 has no weightKg key", () => {
+    expect(Object.keys(en.uf08)).not.toContain("weightKg");
   });
 });

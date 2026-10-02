@@ -66,9 +66,7 @@ export const uf08 = {
   rowMinutes: (minutes: number) => `${minutes} min`,
   /** The weight part for an exercise without external load (D-0109 §4). */
   bodyweight: "Bodyweight",
-  /** "80 kg". `weight` arrives formatted with `Intl.NumberFormat` (D-0109 §4). */
-  weightKg: (weight: string) => `${weight} kg`,
-  /** "+ 1 back-off 70 × 6". `weight` arrives formatted. */
+  /** "+ 1 back-off 70 kg × 6". `weight` arrives formatted by `lib/format` `formatKg` (D-0124). */
   backoff: (weight: string, reps: number) => `+ 1 back-off ${weight} × ${reps}`,
   /** The back-off line when the engine has no weight for it (D-0057: null means ask). */
   backoffSet: "+ 1 back-off set",
