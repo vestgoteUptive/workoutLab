@@ -82,3 +82,41 @@ describe("positive fixture: a valid source: wger row with a real-form source_url
     expect(ok, JSON.stringify(validate.errors)).toBe(true);
   });
 });
+
+// T-0234 (D-0133, UF-09.7): a timed exercise's default_duration_s is 15..120, because the
+// engine's first_time pre-fill echoes it unclamped. Warm-up moves keep the top-level 5..120.
+describe("T-0234 timed exercise default_duration_s is 15..120 in the schema", () => {
+  const validate = validator();
+  const readJson = (rel: string): Record<string, unknown> =>
+    JSON.parse(readFileSync(resolve(pkgRoot, rel), "utf8")) as Record<string, unknown>;
+
+  it("T-0234 AC1 timed-exercise-duration-below-15.json fails with minimum at /default_duration_s", () => {
+    const ok = validate(readInvalidFixture("timed-exercise-duration-below-15.json"));
+    expect(ok).toBe(false);
+    const hits = (validate.errors ?? []).filter(
+      (e) => e.instancePath === "/default_duration_s" && e.keyword === "minimum",
+    );
+    expect(hits.length, JSON.stringify(validate.errors)).toBeGreaterThan(0);
+  });
+
+  it("T-0234 AC1 warmup-duration-10.json (a warm-up at 10 s) validates with 0 errors", () => {
+    const ok = validate(readJson("test/fixtures/valid/warmup-duration-10.json"));
+    expect(ok, JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it.each([15, 120])("T-0234 AC1 a copy of plank.json at %i s validates", (d) => {
+    const data = { ...readJson("library/plank.json"), default_duration_s: d };
+    const ok = validate(data);
+    expect(ok, JSON.stringify(validate.errors)).toBe(true);
+  });
+
+  it("T-0234 AC1 a copy of plank.json at 121 s fails on maximum", () => {
+    const data = { ...readJson("library/plank.json"), default_duration_s: 121 };
+    const ok = validate(data);
+    expect(ok).toBe(false);
+    const hits = (validate.errors ?? []).filter(
+      (e) => e.instancePath === "/default_duration_s" && e.keyword === "maximum",
+    );
+    expect(hits.length, JSON.stringify(validate.errors)).toBeGreaterThan(0);
+  });
+});
