@@ -132,3 +132,80 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - Add this row (lane `web-feature:UF-09`, deps T-0304a, `wl-build-web`).
   - Re-point T-0304b to T-0304e.
   - Optionally re-point T-0306b/T-0305a's UF-09 dep to T-0304e (D-0111 Consequences).
+
+## Build log
+- **2026-10-02, frontend-dev (build).** All ACs have tests in `apps/web/src/features/UF-09/__tests__/`:
+  - AC-1, AC-2: `session.read.test.tsx`.
+  - AC-3, AC-4: `session.writes.test.tsx`.
+  - AC-5, AC-6: `session.finish.test.tsx`.
+  - AC-7, AC-8: `session.rest.test.tsx`.
+  - AC-9: `seams.test.tsx`.
+  - AC-10: `exports-and-lint.test.ts` (the pin is now `["SessionHost", "useFocusSession"]`, plus a `seams.tsx` import check).
+  - The new reducer events: `machine.session.test.ts` (pure, no mutation, same object when an event doesn't apply).
+- **How the tests reach the hook.** The hook is read through a probe that a mocked `views.js` renders inside every machine view (`__tests__/probe.tsx`). The writes are spies over the real `lib/offline` functions (`__tests__/offline-spies.ts`). `store-spy.ts` also keeps the created store, so a test can dispatch `SAVED`/`READY` the way T-0304b's views will. No production test hook was added.
+- **Planted faults.** Each one was applied, run, and reverted:
+  - AC-5/AC-6: `navigate` before `await upsertSession` in `finish()` → the held-write test ("no navigation and the key is kept after 50 ms") and the rejected-write test go red.
+  - AC-9: the forced `"next"` check point removed → the "true from paused" test goes red (the `resolveCheckPoint` spy is called while List view is open).
+  - AC-9: no `PAUSE` when a `keepsClockRunning: false` overlay opens on UF-09.6 → the countdown test goes red.
+  - AC-8: `RESYNC` returning `state` → 4 tests red.
+  - AC-3: `REST_END` back to `setIndex + 1` → "the next set is 2" goes red.
+- **Diff checks** (recorded here, not as tests). `git diff --stat main...HEAD` touches only `apps/web/src/features/UF-09/**`. There are no changes under `apps/web/src/app/**`, `apps/web/src/lib/**` (so `en.ts` is unchanged), `tests/e2e/**`, `api/`, `packages/` or `docs/{data-model,engine-rules}.md`. `flows/uf-09.ts` needed no new keys: seam labels come from the seam entries.
+- **One T-0304a test changed on purpose.** In `host.load.test.tsx`, "host-level: done, …", the `done` step now really finishes S1 (D-0111 §3: "until T-0304e's `finish()` navigates away"). So the stale part of that test uses its own unended session S3. Every assertion is kept.
+- **Defaults that T-0304b–d and the seam tickets can rely on.** All of these are within D-0071 §4–§6 and D-0111, with no new decision.
+  - **`recordSet(input)`.** The input is `RecordSetInput & {itemIndex}`, and the whole object goes to `lib/offline` `recordSet`. It resolves to the stored `LoggedSet` (`.clientId`).
+    - `SET_RECORDED` is dispatched when the phase is `set` and the input is the current item and set. `TIMED_RECORDED` is dispatched for the same match in `timed`.
+    - Anything else is a new `SET_LOGGED`, which updates only `loggedSets`.
+  - **Edits and deletes.** `editSet` and `deleteSet` dispatch the new `SET_EDITED` and `SET_DELETED` events, in any phase.
+  - **`REST_END` follows the live sets.** It goes to the first set of the current item, from `setIndex` itself on, that has no live logged set (`setAfterRest`), otherwise to `betweenItems`. The search includes `setIndex` since the rework (see below).
+  - **`startRest`.** It dispatches the new `REST_START`, which works only from `set`, `confirm`, `rest` and `timed`. From any other phase it returns the same state. Rest uses the library `type`, and a missing exercise gets the compound rest.
+  - **`skipRest` and `adjustRest`.** `skipRest` is `REST_END`. `adjustRest` is `REST_ADJUST`. A rest that is adjusted to 0 ends at the next render (T-0304a expiry).
+  - **`currentSetIndex`.** It is `state.setIndex`, except in `rest`. There it is `setAfterRest`, or `setsInItem` when no set is left. After set 0 is saved that is 1 (AC-1). After `startRest` from an unlogged set 0 it is 0.
+  - **`replaceItem`.** It rejects with `RangeError` for an index below `state.itemIndex` or past the end. It writes `{...storedRow, plan}`, then calls `store.replacePlan`. The new `PLAN_REPLACED` event makes the current `set`/`timed` (or a paused `resumePhase`) follow the new item's `repsMin`. `setIndex` stays, capped at the new item's set count.
+  - **`close()` (`RESYNC`).** It changes nothing when the phase is `paused`, `done`, or `rest` with a timer. A warm-up with nothing logged is kept. Otherwise it goes to the first item with an unlogged planned set (back-off included), at that set. UF-09.6 or UF-09.8 for that same item, at set 0, is kept. With every set logged it goes to `done`, which finishes. Leaving the warm-up this way records `warmupSpentMs`.
+  - **`finish()`.** It reads the stored row and writes `{...row, ended_at: now}`, then removes the focus key, then navigates. While it is pending, it returns the same promise. A rejected finish can be called again.
+  - **`done`.** The host calls `finish()` from an effect, and a rejection is caught. The done screen stays.
+  - **Overlays.** An overlay replaces the whole host output, including the chrome, and has no `[data-screen-id]`.
+    - A `keepsClockRunning: false` overlay opened from a running screen (UF-09.6) dispatches `PAUSE`, and `RESUME` on close. Opened from UF-09.9, it dispatches neither.
+    - A `keepsClockRunning: true` overlay dispatches `RESUME` if the workout is paused. It forces the check point to `"next"` until close, and `close()` dispatches `RESYNC`. It doesn't return to `paused`.
+  - **`Workout.totalS`.** It is `itemsTotalS + WARMUP_COST_S` for both values of `warmupInBudget`, as the engine builds it (`buildSession` and `applySwap`). An unknown `energy` reads as `"normal"`.
+- **Evidence.**
+  - UF-09 vitest: 14 files, 231 tests.
+  - `pnpm --filter @workoutlab/web test`: 110 files, 1586 tests.
+  - typecheck and lint: 0.
+  - e2e: `uf-09-focus` 4/4, and the whole suite 71/71.
+  - `-w format:check`: 0. `check-all.mjs`: 0.
+  - `check:size` after a fresh build: 0. The UF-09 chunk is about 6.5 KB gzip.
+- **2026-10-02, frontend-dev (rework, attempt 2).** This fixes a blocking review finding: a rest started with `startRest` from an unlogged `set` or `timed` skipped the current set.
+  - **The bug.** `REST_END` and `currentSetIndex` searched strictly after `setIndex`. The rest started from an unlogged set, so that set was never offered: bench ended with 3 of 4 sets.
+  - **The fix.** Both now use `setAfterRest` in `machine.ts`, the first unlogged set from `setIndex` inclusive. The normal flow is unchanged, because the set just done is logged there.
+  - **New tests.**
+    - `machine.session.test.ts`: (a) `set` → `REST_START` → `REST_END` lands on setIndex 0; (b) the same for `timed`; (d) the normal flow still advances, and a set already logged after the current one is still skipped.
+    - `session.rest.test.tsx`: (c) `currentSetIndex` is 0 during that rest, and the reviewer's List-view scenario (log a row set, `startRest`, `close()`, rest ends) lands on bench setIndex 0.
+  - **Red on 172f2e9.** (a), (b), (c) and the scenario test.
+  - **T-0304a seeds made reachable.** Some T-0304a tests seeded a `rest` (or a `confirm`) with no logged set for its `setIndex`. The real flow can't produce that state. Under the inclusive rule it now means "a rest from an unlogged set". These seeds now include the sets they follow, and no assertion changed:
+    - `host.expiry.test.tsx`: "rest at 120 s", "the wall clock moving back", and the four check-point tests.
+    - `machine.test.ts`: "the last bench-press set → rest → REST_END".
+  - **QA gap closed.** `session.finish.test.tsx` wraps `useNavigate` and asserts that `wl-focus:S1` is already gone at the moment `navigate` is called. Swapping `removeFocusState` and `navigate` turns both AC-5 order tests red. Reverted.
+
+## Accept log
+- **2026-10-02, product-owner (accept), attempt 2 at c5e914c: done.**
+- **ACs.** QA on 172f2e9 proved AC-1 through AC-12 with 9 planted faults, and 8 went red. The one that stayed green was the AC-5 order "remove the focus key before navigate". The rework closed it: the finish test now checks that the key is already gone when `navigate` is called, and swapping the two calls turns both AC-5 order tests red. All the planted faults the ticket asks for are in the build log, including AC-6's "navigate before the write".
+- **Review finding, fixed in 7af7b60 and c5e914c.** `REST_START` from an unlogged set skipped that set. `setAfterRest` now searches from the current set inclusive. Tests (a)–(d) and the List-view scenario cover it, and the builder showed them red on 172f2e9. AC-1's `currentSetIndex` = 1 after set 0 is saved still holds, because set 0 is logged at that point. The re-review approved.
+- **T-0304a seeds.** 7 seeds now include the sets they follow, so they model states the real flow can reach. No assertion changed, so no test was weakened. The `host.load.test.tsx` S3 change keeps all its assertions (D-0111 §3).
+- **Evidence (rework).**
+  - UF-09 vitest: 237/237.
+  - web: 1592/1592.
+  - `uf-09-focus` e2e: 4/4.
+  - typecheck, lint, format and check-all: green.
+  - Attempt 1 ran the whole e2e suite (71/71) and `check:size` (UF-09 chunk about 6.5 KB gzip). The rework touched only `features/UF-09/**`.
+- **Principles.**
+  - Principle 1: an overlay replaces the screen. It is the only task and has no `[data-screen-id]`.
+  - Principle 2: the check point is forced to `"next"` only while a `keepsClockRunning` overlay is open.
+  - Principle 3: the reducer events are pure, and rest lengths come from the engine.
+  - No contract changed (AC-11 diff check).
+- **Follow-ups.**
+  - T-0304b: a double tap on Save logs a duplicate set. Guard it in the set loop.
+  - T-0304c: the timed auto-log must pass `itemIndex` (D-0119 §3).
+  - T-0304d: the time-check apply needs its own event, or `replacePlan` needs to be broader.
+  - Minor, UF-09 lane: `ctx.resume()` is exposed to `keepsClockRunning: false` overlays. Either hide it or document it. Also, `replaceItem` builds from the parsed plan rather than the raw stored plan. Confirm this is lossless.
+  - The full DoD run (the whole e2e suite on c5e914c, `typecheck lint test --force`, `check:size`) is confirmed by the PR CI before merge.

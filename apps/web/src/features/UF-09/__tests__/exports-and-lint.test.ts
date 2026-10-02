@@ -1,5 +1,6 @@
 // @vitest-environment node
-// T-0304a AC-10: strings from en.uf09 only, the export set, and the D-0071 §9 import bans.
+// T-0304a AC-10 / T-0304e AC-10: strings from en.uf09 only, the export set, and the D-0071 §9
+// import bans.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { ESLint } from "eslint";
@@ -30,9 +31,9 @@ async function lint(code: string, file = "src/features/UF-09/x.tsx") {
 }
 
 describe("AC-10 exports", () => {
-  it("features/UF-09/index.tsx exports exactly SessionHost", async () => {
+  it("features/UF-09/index.tsx exports exactly SessionHost and useFocusSession (T-0304e)", async () => {
     const mod = await import("../index.js");
-    expect(Object.keys(mod)).toEqual(["SessionHost"]);
+    expect(Object.keys(mod).sort()).toEqual(["SessionHost", "useFocusSession"]);
   });
 });
 
@@ -93,6 +94,13 @@ describe("AC-10 import bans (D-0071 §9)", () => {
       expect(result!.messages, file).toEqual([]);
       expect(src, file).not.toMatch(/components\/body-map|UF-(02|06|07|10|11)/);
     }
+  });
+
+  it("T-0304e: seams.tsx imports nothing from features/UF-03, UF-04 or UF-05 yet (no cycles)", () => {
+    const src = readFileSync(join(FEATURE_DIR, "seams.tsx"), "utf8");
+    const imports = [...src.matchAll(/^\s*import[^;]*?from\s+"([^"]+)"/gm)].map((m) => m[1]!);
+    expect(imports.length).toBeGreaterThanOrEqual(1);
+    for (const path of imports) expect(path).not.toMatch(/UF-0[345]/);
   });
 
   it("contrast: the offline module is allowed", async () => {

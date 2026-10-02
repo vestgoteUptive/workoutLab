@@ -2,7 +2,7 @@
 // wall-clock timer reaches 0; `timed` waits; `betweenItems` is resolved inside the store.
 import { screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { initialFocusState, type FocusState } from "../machine.js";
+import { initialFocusState, type FocusState, type LoggedSet } from "../machine.js";
 import type { ResolveCheckPoint } from "../store.js";
 import { P1, S1, STARTED_AT_MS, USER_A } from "./fixtures.js";
 import {
@@ -39,6 +39,22 @@ afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
+
+/** Bench sets 0…n−1 logged. A seeded rest holds the set it follows, as the real flow does: since
+ *  T-0304e a rest leads to the first unlogged set from `setIndex` on (D-0071 §5). */
+function benchLogged(n: number): LoggedSet[] {
+  return Array.from({ length: n }, (_, setIndex) => ({
+    clientId: `b${setIndex}`,
+    itemIndex: 0,
+    setIndex,
+    exerciseId: "bench-press",
+    reps: 6,
+    weightKg: 80,
+    durationS: null,
+    rir: null,
+    backoff: false,
+  }));
+}
 
 function seed(state: Partial<FocusState>): void {
   window.localStorage.setItem(KEY, JSON.stringify({ ...initialFocusState(S1, P1, NOW), ...state }));
@@ -84,6 +100,7 @@ describe("AC-9 auto-advance", () => {
       itemIndex: 0,
       setIndex: 0,
       timer: { startedAtMs: NOW, durationS: 120, pausedMs: 0 },
+      loggedSets: benchLogged(1),
     });
     await renderLoaded();
     await advance(119_000);
@@ -113,6 +130,7 @@ describe("AC-9 auto-advance", () => {
       itemIndex: 0,
       setIndex: 0,
       timer: { startedAtMs: NOW, durationS: 120, pausedMs: 0 },
+      loggedSets: benchLogged(1),
     });
     await renderLoaded();
     expect(screenId()).toBe("UF-09.5");
@@ -161,6 +179,7 @@ describe("AC-9 the check point", () => {
     itemIndex: 0,
     setIndex: 3,
     timer: { startedAtMs: NOW, durationS: 120, pausedMs: 0 },
+    loggedSets: benchLogged(4),
   });
 
   it("betweenItems is never rendered or seen: the persisted value after REST_END is next; the default gives UF-09.6", async () => {
@@ -213,7 +232,7 @@ describe("AC-9 the check point", () => {
   });
 
   it("a rest that isn't an item's last never calls resolveCheckPoint", async () => {
-    seed({ ...lastBenchRest(), setIndex: 1 });
+    seed({ ...lastBenchRest(), setIndex: 1, loggedSets: benchLogged(2) });
     const spy = vi.fn<ResolveCheckPoint>(() => "timeCheck");
     await renderLoaded({ resolveCheckPoint: spy });
     await advance(120_000);

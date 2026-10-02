@@ -2,7 +2,12 @@
 // the session row and the cached library. No network and no `refresh*` call, so online and
 // offline behave the same and nothing re-times a step mid-workout (D-0111 §11).
 import { parseSessionPlan } from "@workoutlab/shared";
-import { currentUserId, loadLibrary, offlineDb } from "../../lib/offline/index.js";
+import {
+  currentUserId,
+  loadLibrary,
+  offlineDb,
+  type SessionInsert,
+} from "../../lib/offline/index.js";
 import { initialFocusState, type FocusCtx } from "./machine.js";
 import {
   defaultStorage,
@@ -27,6 +32,9 @@ export type HostLoad =
       ctx: FocusCtx;
       startedAtMs: number;
       warmupInBudget: boolean;
+      /** The stored session row as loaded (T-0304e: `useFocusSession().row`). */
+      row: SessionInsert;
+      storage: FocusStorage | null;
     };
 
 export async function loadSession(
@@ -68,6 +76,8 @@ export async function loadSession(
       ctx,
       startedAtMs: Number.isFinite(startedAtMs) ? startedAtMs : Date.now(),
       warmupInBudget: entry.row.warmup_in_budget ?? true,
+      row: entry.row,
+      storage,
     };
   } catch {
     // IndexedDB unavailable, or the read rejected: never an uncaught error (D-0111 §7).

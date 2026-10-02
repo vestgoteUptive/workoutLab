@@ -240,7 +240,12 @@ describe("AC-1 table from P1", () => {
   });
 
   it("the last bench-press set → rest → REST_END → the store resolves betweenItems to next item 1", () => {
-    const last = at("confirm", { setIndex: 3 });
+    // UF-09.4 of bench set 3: sets 0–3 are logged (T-0304e: a rest leads to the first unlogged
+    // set from `setIndex` on, so the seed holds the set being confirmed, as the real flow does).
+    const last = at("confirm", {
+      setIndex: 3,
+      loggedSets: [0, 1, 2, 3].map((k) => logged(0, k, "bench-press")),
+    });
     const rest = run(last, [ev("SAVED", T0)]);
     expect(rest.phase).toBe("rest");
     // The bare reducer lands on the check point…

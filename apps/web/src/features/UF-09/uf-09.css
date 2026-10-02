@@ -22,6 +22,7 @@
 /* NFR-A11Y-2: 44 × 44 CSS px. */
 .wl-uf09__pause,
 .wl-uf09__primary,
+.wl-uf09__secondary,
 .wl-uf09__home {
   display: inline-flex;
   align-items: center;
@@ -52,6 +53,7 @@
 
 .wl-uf09__pause:focus-visible,
 .wl-uf09__primary:focus-visible,
+.wl-uf09__secondary:focus-visible,
 .wl-uf09__home:focus-visible {
   outline: 2px solid var(--wl-color-accent);
   outline-offset: 2px;
@@ -120,4 +122,12 @@
   padding: 0 16px;
   color: var(--wl-color-accent);
   text-decoration: none;
+}
+
+/* A seam entry on UF-09.6 / UF-09.9 (T-0304e): a quiet button under the primary one. */
+.wl-uf09__secondary {
+  padding: 0 16px;
+  border: 1px solid var(--wl-color-line-strong);
+  background: transparent;
+  color: var(--wl-color-text);
 }
