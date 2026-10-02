@@ -127,7 +127,7 @@ start `T-0429` (for example `T-0429: register the service worker with a rejectio
   contains `registerSW`).
 - **Planted fault (AC2).** `injectRegister: "auto"` next to the new call: AC2 red, `Expected: 1,
   Received: 2` (AC1 too: 2 calls and the injected script's unhandled `pageerror`). Reverted.
-- **Finding (AC3), and the build default proposed as D-0161 for the orchestrator.** With the
+- **Finding (AC3), and the build default proposed as D-0154 for the orchestrator.** With the
   rejection caught, the setOffline test still failed on every run (20/20 at `--repeat-each=20`)
   with `console.error: An unknown error occurred when fetching the script. (:0)`. That line is
   Chromium's own message for the failed `sw.js` fetch. The browser logs it, not the page, so no
