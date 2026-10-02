@@ -48,8 +48,9 @@ export function removeFocusState(storage: FocusStorage | null, sessionId: string
   }
 }
 
-/** The phases whose timer ends them (D-0111 §8): they must carry a timer. */
-const TIMER_PHASES: readonly Phase[] = ["getReady", "warmup", "rest", "next"];
+/** The phases whose timer ends them (D-0111 §8): they must carry a timer. T-0304c: `timed`
+ *  ends by its position + hold timer (D-0119 §1), so a stored `timed` with no timer is invalid. */
+const TIMER_PHASES: readonly Phase[] = ["getReady", "warmup", "rest", "next", "timed"];
 
 const isInt = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v);
 const isNum = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
@@ -93,6 +94,9 @@ export function isValidFocusState(v: unknown, sessionId: string, ctx: FocusCtx):
   } else if (s.resumePhase !== null) return false;
   if (!isNum(s.workoutPausedMs) || !isNum(s.warmupSpentMs)) return false;
   if (s.warmupStartedAtMs !== null && !isNum(s.warmupStartedAtMs)) return false;
+  // D-0119 §2: a state written before T-0304c has no `timerPausedAtMs` and reads as `null`.
+  const ring = s.timerPausedAtMs;
+  if (ring !== undefined && ring !== null && !isNum(ring)) return false;
   return Array.isArray(s.loggedSets);
 }
 
@@ -118,7 +122,9 @@ export function readFocusState(
   } catch {
     parsed = undefined;
   }
-  if (isValidFocusState(parsed, sessionId, ctx)) return parsed;
+  if (isValidFocusState(parsed, sessionId, ctx)) {
+    return { ...parsed, timerPausedAtMs: parsed.timerPausedAtMs ?? null };
+  }
   removeFocusState(storage, sessionId);
   return null;
 }
