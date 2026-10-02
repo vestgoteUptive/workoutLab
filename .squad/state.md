@@ -3,7 +3,7 @@
 - **Phase:** 3 (App). On main: engine rules 1–14 + D-0092..D-0096 changes; UF-01 onboarding complete (.1–.5); UF-02.1 Today; UF-04 Library; **UF-08.1–.4 setup complete (Start → /session/:id)**; **UF-09 machine, hook + seams, UF-09.3/.4 set loop (T-0304a, T-0304e, T-0304b)**; UF-10 Balance.
 - **Updated:** 2026-10-02 by orchestrator (no AgentLab on this machine → sub-agents).
 - **`main`:** green 2026-10-02 after T-0304f + T-0397: web 2099/2099, whole e2e 90/90 (T-0304f), UF-08 275 + uf-08 e2e 19/19 (T-0397); pushed.
-- **In flight:** T-0220 (engine build), T-0410 (UF-09 hardening), T-0310c (lib/account). Next: T-0310a after T-0222 (both openapi), T-0221 → T-0212 → T-0211 after T-0220 (engine serial), T-0407 + T-0409 after T-0410 (UF-09 serial), T-0233 after T-0409.
+- **In flight:** T-0220 (engine build), T-0310c (lib/account). Next: T-0310a after T-0222 (both openapi), T-0221 → T-0212 → T-0211 after T-0220 (engine serial), T-0407 + T-0409 after T-0410 (UF-09 serial), T-0233 after T-0409.
 
 ## Blocked on H-13
 T-0307b (UF-06), T-0308a (UF-07), T-0308b (UF-11, review-approved at `17091a5`) were in flight on **another machine**; their branches are on neither this machine nor `origin`. Also waiting on them: T-0356 (D-0090), T-0362, T-0363. Don't restart from scratch unless the human says the work is lost. When the branches appear: fetch, recreate worktrees, `git merge main`, then QA → review → accept.
@@ -21,7 +21,7 @@ H-13 (push branches); H-14 (service-role key for the account function, prod only
 - Sub-agents: build → QA ∥ review → product-owner accept; spec: product-owner → triage check. Spec/content/triage roles have **no shell**: the orchestrator commits their files.
 - Model pins (D-0076): execution roles `claude-sonnet-5-5`, judgement roles `claude-opus-5-5`.
 - Tooling: `npx -y pnpm@10.28.2 …`. Each new worktree needs `install --frozen-lockfile`.
-- Give every parallel run its own decision-ID block. Next free: **D-0137**, **TR-0039**, tickets **T-0414+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0237+** (engine/data), **T-0906+** (CI).
+- Give every parallel run its own decision-ID block. Next free: **D-0137**, **TR-0039**, tickets **T-0415+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0237+** (engine/data), **T-0906+** (CI).
 
 ## Traps (condensed — full history in journals 2026-09-28..10-01)
 - **Never commit a test that asserts `git diff main...HEAD`** (T-0303b review): it fails on other lanes' branches after merge and silently skips in CI (no local `main`). Record diff checks in the ticket build log instead; check-lane-paths enforces lanes.
