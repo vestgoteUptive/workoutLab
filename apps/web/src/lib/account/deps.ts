@@ -21,7 +21,9 @@ export interface AccountClient {
   };
   auth: {
     getSession(): PromiseLike<{
-      data: { session: { access_token?: string | null } | null };
+      data: {
+        session: { access_token?: string | null; user?: { id?: string | null } | null } | null;
+      };
       error: unknown;
     }>;
     signOut(options: { scope: "local" | "global" | "others" }): PromiseLike<{ error: unknown }>;
@@ -73,4 +75,24 @@ export function sessionStorageOf(deps: AccountDeps): Storage | undefined {
   } catch {
     return undefined;
   }
+}
+
+export interface SessionInfo {
+  token: string | null;
+  userId: string | null;
+}
+
+/**
+ * The access token and the user id from **one** `getSession()` result (T-0310c L1). Every
+ * user-scoped step (the DELETE, the wipe, the export's device section) is checked against this
+ * one read, so a tab that switched accounts between render and confirm can't pair user B's
+ * token with user A's local rows. Rejects if `getSession()` rejects.
+ */
+export async function readSession(deps: AccountDeps): Promise<SessionInfo> {
+  const { data } = await clientOf(deps).auth.getSession();
+  const session = data.session;
+  const token =
+    typeof session?.access_token === "string" && session.access_token ? session.access_token : null;
+  const id = session?.user?.id;
+  return { token, userId: typeof id === "string" && id ? id : null };
 }

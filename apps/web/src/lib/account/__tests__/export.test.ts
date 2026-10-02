@@ -287,3 +287,39 @@ describe("T-0310c AC5 10 s for 2 years (NFR-PRIV-4)", () => {
     expect(elapsed).toBeLessThan(10_000);
   }, 15_000);
 });
+
+describe("T-0310c L1 the export's device section is the session user's", () => {
+  it("T-0310c L1 (c) session V, input V on a shared device → only V's queue, V's header", async () => {
+    await db.sessions.bulkPut([
+      queuedSession("u-session-pending", U, true),
+      queuedSession("v-session-pending", V, true),
+    ]);
+    await db.sets.bulkPut([queuedSet(U, "u-set", "queued"), queuedSet(V, "v-set", "queued")]);
+    const fake = pg(twoYears(V, 10), { sessionUserId: V });
+    const result = await exportAccountData(
+      { userId: V, email: "v@test.local", now: NOW },
+      { supabase: fake.client, db },
+    );
+    expect(result.account.userId).toBe(V);
+    expect(result.device.queuedSessions.map((r) => r.id)).toEqual(["v-session-pending"]);
+    expect(result.device.queuedSets.map((s) => s.clientId)).toEqual(["v-set"]);
+    expect(JSON.stringify(result)).not.toContain("u-set");
+  });
+
+  it.each([
+    ["another user (V)", V],
+    ["no session", null],
+  ] as const)(
+    "T-0310c L1 (c) input U, session is %s → export_failed before any request",
+    async (_n, sessionUserId) => {
+      await db.sets.bulkPut([queuedSet(U, "u-set", "queued"), queuedSet(V, "v-set", "queued")]);
+      const where = vi.spyOn(db.sets, "where");
+      const fake = pg(twoYears(U), { sessionUserId });
+      await expect(exportAccountData(input, { supabase: fake.client, db })).rejects.toThrow(
+        new Error("export_failed"),
+      );
+      expect(fake.calls).toEqual([]);
+      expect(where).not.toHaveBeenCalled();
+    },
+  );
+});

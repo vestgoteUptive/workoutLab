@@ -18,6 +18,7 @@ let log: string[];
 let fetchSpy: FetchSpy;
 let signOut: ReturnType<typeof vi.fn>;
 let token: string | null;
+let sessionUser: string | null;
 let status: number;
 
 function client(): AccountClient {
@@ -27,7 +28,11 @@ function client(): AccountClient {
     },
     auth: {
       getSession: async () => ({
-        data: { session: token ? { access_token: token } : null },
+        data: {
+          session: token
+            ? { access_token: token, user: sessionUser ? { id: sessionUser } : null }
+            : null,
+        },
         error: null,
       }),
       signOut,
@@ -40,6 +45,7 @@ let onLine: boolean;
 beforeEach(() => {
   log = [];
   token = "tok-u";
+  sessionUser = U;
   status = 204;
   onLine = true;
   vi.spyOn(navigator, "onLine", "get").mockImplementation(() => onLine);
@@ -237,5 +243,101 @@ describe("T-0310c AC9 order of the steps (D-0136 §4)", () => {
     status = 204;
     expect(await deleteAccountAndSignOut({ userId: U }, deps)).toBe("deleted");
     expect(fetchSpy).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("T-0310c L1 the session user must be the user being deleted", () => {
+  let db: OfflineDb;
+
+  beforeEach(async () => {
+    db = freshOfflineDb();
+    await seedBothUsers(db);
+  });
+
+  const wipe = async (userId: string, deps: Parameters<typeof wipeLocalUserData>[1]) => {
+    log.push(`wipe(${userId})`);
+    await wipeLocalUserData(userId, deps);
+  };
+
+  it.each([
+    ["another user (V)", (): void => void (sessionUser = V)],
+    ["a session with no user id", (): void => void (sessionUser = null)],
+  ] as const)(
+    "T-0310c L1 (a) input U, session is %s → no DELETE, no wipe, no sign-out; failed",
+    async (_n, arrange) => {
+      arrange();
+      window.sessionStorage.setItem("wl-return-to", "/plan");
+      const outcome = await deleteAccountAndSignOut(
+        { userId: U },
+        { supabase: client(), db, wipe },
+      );
+      expect(outcome).toBe("failed");
+      expect(fetchSpy).not.toHaveBeenCalled();
+      expect(log).toEqual([]);
+      expect(signOut).not.toHaveBeenCalled();
+      expect(window.sessionStorage.getItem(ACCOUNT_DELETED_KEY)).toBeNull();
+      expect(window.sessionStorage.getItem("wl-return-to")).toBe("/plan");
+      for (const t of OFFLINE_TABLES) {
+        expect(await countFor(db, t, U), t).toBe(1);
+        expect(await countFor(db, t, V), t).toBe(1);
+      }
+    },
+  );
+
+  it("T-0310c L1 (b) input V, session V → V's account is deleted and only V's rows go", async () => {
+    sessionUser = V;
+    token = "tok-v";
+    const outcome = await deleteAccountAndSignOut({ userId: V }, { supabase: client(), db, wipe });
+    expect(outcome).toBe("deleted");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(fetchSpy.mock.calls[0]![1]?.headers).toEqual({
+      Authorization: "Bearer tok-v",
+      apikey: "anon-k",
+    });
+    expect(log).toEqual(["fetch DELETE", `wipe(${V})`, 'signOut({"scope":"local"})']);
+    for (const t of OFFLINE_TABLES) {
+      expect(await countFor(db, t, V), t).toBe(0);
+      expect(await countFor(db, t, U), t).toBe(1);
+    }
+  });
+
+  it("T-0310c L1 requestAccountDeletion alone (no expected user) still sends for any session", async () => {
+    sessionUser = V;
+    expect(await requestAccountDeletion({ supabase: client() })).toBe("deleted");
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("T-0310c L2 sign-out failing after a 204", () => {
+  const AUTH_KEY = "sb-abc-auth-token";
+
+  it.each([
+    ["rejects", () => signOut.mockRejectedValueOnce(new Error("storage"))],
+    ["resolves with an error", () => signOut.mockResolvedValueOnce({ error: { message: "x" } })],
+  ] as const)(
+    "T-0310c L2 signOut %s → still deleted, and the persisted session keys are removed",
+    async (_n, arrange) => {
+      arrange();
+      window.localStorage.setItem(AUTH_KEY, JSON.stringify({ access_token: "tok-u" }));
+      window.localStorage.setItem(`${AUTH_KEY}-code-verifier`, "v");
+      window.localStorage.setItem("other-app", "keep");
+      const db = freshOfflineDb();
+      await expect(
+        deleteAccountAndSignOut({ userId: U }, { supabase: client(), db }),
+      ).resolves.toBe("deleted");
+      expect(window.localStorage.getItem(AUTH_KEY)).toBeNull();
+      expect(window.localStorage.getItem(`${AUTH_KEY}-code-verifier`)).toBeNull();
+      expect(window.localStorage.getItem("other-app")).toBe("keep");
+    },
+  );
+
+  it("T-0310c L2 a clean signOut leaves the session keys to supabase-js", async () => {
+    window.localStorage.setItem(AUTH_KEY, "{}");
+    const db = freshOfflineDb();
+    expect(await deleteAccountAndSignOut({ userId: U }, { supabase: client(), db })).toBe(
+      "deleted",
+    );
+    // The fake signOut doesn't clear storage; the module didn't either.
+    expect(window.localStorage.getItem(AUTH_KEY)).toBe("{}");
   });
 });

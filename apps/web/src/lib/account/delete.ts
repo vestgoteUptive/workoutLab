@@ -6,7 +6,16 @@
 //
 // `deleteAccountAndSignOut` runs D-0136 §4 steps (1)–(4). Navigation, step (5), is the caller's.
 import { isSupabaseConfigured } from "../auth/client.js";
-import { clientOf, fetchOf, isOnline, sessionStorageOf, type AccountDeps } from "./deps.js";
+import {
+  clientOf,
+  fetchOf,
+  isOnline,
+  localStorageOf,
+  readSession,
+  sessionStorageOf,
+  type AccountDeps,
+  type SessionInfo,
+} from "./deps.js";
 import { wipeLocalUserData } from "./wipe.js";
 
 export type DeletionOutcome = "deleted" | "unauthorized" | "offline" | "failed";
@@ -18,22 +27,30 @@ function env(name: "VITE_SUPABASE_URL" | "VITE_SUPABASE_ANON_KEY"): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-export async function requestAccountDeletion(deps: AccountDeps = {}): Promise<DeletionOutcome> {
+/**
+ * `expectedUserId` (T-0310c L1): when given, the session's user must be that user, or the
+ * request is never sent and the outcome is `"failed"`. A session with no user id can't be
+ * verified, so it fails the check too.
+ */
+async function requestDeletion(
+  deps: AccountDeps,
+  expectedUserId: string | undefined,
+): Promise<DeletionOutcome> {
   if (!isOnline(deps)) return "offline";
   if (!isSupabaseConfigured()) return "failed";
-  let token: string | null | undefined;
+  let session: SessionInfo;
   try {
-    const { data } = await clientOf(deps).auth.getSession();
-    token = data.session?.access_token;
+    session = await readSession(deps);
   } catch {
     return "failed";
   }
-  if (!token) return "unauthorized";
+  if (!session.token) return "unauthorized";
+  if (expectedUserId !== undefined && session.userId !== expectedUserId) return "failed";
   const url = `${env("VITE_SUPABASE_URL").replace(/\/+$/, "")}/functions/v1/account`;
   try {
     const response = await fetchOf(deps)(url, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}`, apikey: env("VITE_SUPABASE_ANON_KEY") },
+      headers: { Authorization: `Bearer ${session.token}`, apikey: env("VITE_SUPABASE_ANON_KEY") },
     });
     if (response.status === 204) return "deleted";
     if (response.status === 401) return "unauthorized";
@@ -41,6 +58,10 @@ export async function requestAccountDeletion(deps: AccountDeps = {}): Promise<De
   } catch {
     return "failed";
   }
+}
+
+export function requestAccountDeletion(deps: AccountDeps = {}): Promise<DeletionOutcome> {
+  return requestDeletion(deps, undefined);
 }
 
 export interface DeleteAccountInput {
@@ -52,12 +73,31 @@ export interface DeleteAccountDeps extends AccountDeps {
   wipe?: (userId: string, deps: AccountDeps) => Promise<void>;
 }
 
+// supabase-js persists the session as `sb-<ref>-auth-token` (+ `-code-verifier`, PKCE).
+const SESSION_KEY_RE = /^sb-.+-auth-token(-code-verifier)?$/;
+
+function removePersistedSession(deps: AccountDeps): void {
+  try {
+    const storage = localStorageOf(deps);
+    if (!storage) return;
+    const keys: string[] = [];
+    for (let i = 0; i < storage.length; i++) {
+      const key = storage.key(i);
+      if (key !== null && SESSION_KEY_RE.test(key)) keys.push(key);
+    }
+    for (const key of keys) storage.removeItem(key);
+  } catch {
+    // Storage unavailable: nothing more this module can do.
+  }
+}
+
 // D-0136 §3: one request per confirm. A second call while one is in flight joins it.
 let inFlight: Promise<DeletionOutcome> | null = null;
 
 async function run(input: DeleteAccountInput, deps: DeleteAccountDeps): Promise<DeletionOutcome> {
-  // (1) DELETE /account.
-  const outcome = await requestAccountDeletion(deps);
+  // (1) DELETE /account, only if the session user is `input.userId` (L1): the token and the
+  // wiped user come from one identity, or nothing is sent and nothing is wiped.
+  const outcome = await requestDeletion(deps, input.userId);
   // On anything but 204: no wipe and no sign-out (D-0136 §4).
   if (outcome !== "deleted") return outcome;
 
@@ -77,11 +117,17 @@ async function run(input: DeleteAccountInput, deps: DeleteAccountDeps): Promise<
   }
 
   // (4) Local sign-out: the server user is gone, so a global one has nothing to revoke.
+  // supabase-js removes the stored session (and fires SIGNED_OUT) even when its revoke call
+  // errors. If signOut throws or returns an error anyway, drop the persisted session keys
+  // ourselves (L2), so the next load starts signed out. The outcome stays "deleted".
+  let signedOut = false;
   try {
-    await clientOf(deps).auth.signOut({ scope: "local" });
+    const { error } = await clientOf(deps).auth.signOut({ scope: "local" });
+    signedOut = !error;
   } catch {
-    // The server account is gone either way; the outcome stays "deleted".
+    signedOut = false;
   }
+  if (!signedOut) removePersistedSession(deps);
   return "deleted";
 }
 

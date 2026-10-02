@@ -41,6 +41,8 @@ export interface Pg {
 export interface PgOptions {
   latencyMs?: number;
   hook?: PgHook;
+  /** The user of the session `auth.getSession()` reports (L1). Default U; `null` = no session. */
+  sessionUserId?: string | null;
 }
 
 function compare(a: unknown, b: unknown): number {
@@ -107,7 +109,13 @@ export function pg(rows: Record<string, Row[]>, options: PgOptions = {}): Pg {
       };
     },
     auth: {
-      getSession: async () => ({ data: { session: null }, error: null }),
+      getSession: async () => {
+        const id = options.sessionUserId === undefined ? U : options.sessionUserId;
+        return {
+          data: { session: id ? { access_token: `tok-${id}`, user: { id } } : null },
+          error: null,
+        };
+      },
       signOut: async () => ({ error: null }),
     },
   } as unknown as AccountClient;

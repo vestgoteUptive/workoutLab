@@ -9,7 +9,7 @@
 // whole export reject with `Error("export_failed")`. No partial file is ever offered.
 import type { Database } from "@workoutlab/shared";
 import type { QueuedSession, QueuedSet } from "../offline/db.js";
-import { clientOf, dbOf, type AccountClient, type AccountDeps } from "./deps.js";
+import { clientOf, dbOf, readSession, type AccountClient, type AccountDeps } from "./deps.js";
 
 type Tables = Database["public"]["Tables"];
 
@@ -102,6 +102,16 @@ export async function exportAccountData(
 ): Promise<AccountExport> {
   const now = input.now ?? (deps.clock ? deps.clock() : new Date());
   const client = clientOf(deps);
+  // L1: the device section is read for the session's user, checked against `input.userId`
+  // before any request, so a tab that switched accounts can't put another user's queue in
+  // this user's file. RLS already scopes the 7 tables to the same session.
+  let sessionUserId: string | null;
+  try {
+    sessionUserId = (await readSession(deps)).userId;
+  } catch {
+    throw exportFailed();
+  }
+  if (!sessionUserId || sessionUserId !== input.userId) throw exportFailed();
   let tableRows: unknown[][];
   let device: AccountExport["device"];
   try {
@@ -109,7 +119,7 @@ export async function exportAccountData(
     // can't surface as an unhandled rejection.
     [tableRows, device] = await Promise.all([
       Promise.all(EXPORT_TABLES.map((t) => readAll(client, t))),
-      readDevice(deps, input.userId),
+      readDevice(deps, sessionUserId),
     ]);
   } catch {
     throw exportFailed();
