@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2]
 decisions: [D-0002, D-0004, D-0040, D-0057, D-0065, D-0071, D-0086, D-0091, D-0103, D-0106, D-0107, D-0108, D-0109]
 deps: [T-0303a, T-0302c]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of docs/tickets/T-0303-session-setup.md (ACs B1–B6 there, refined by D-0109). Build flow: wl-build-web. About ½ day. Becomes ready when T-0303a and T-0302c are done. It only imports lib/i18n/workout.ts (D-0109 §7), so it may run in parallel with T-0302b and with T-0304a (no shared file). -->
 
@@ -168,3 +168,23 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 - **pendingFocus leak fixed (D-0109 §6).** `onRemove` now returns whether a new plan was set; a `false` clears the pending focus, and Shuffle and a time chip clear it too. New tests: view "a Remove that changes nothing leaves no focus pending for Shuffle" / "… for a later time chip", and host "a Remove whose suggest call throws keeps the plan, and a later Shuffle keeps focus on Shuffle". All 3 were red on the old code (focus moved to a Remove button), green after the fix.
 - **Warn colour as a class.** `.wl-uf08__seg--warn { background-color: var(--wl-color-warn) }` in `uf-08.css`; JS writes only `flex-grow`. The AC-7 test attaches `uf-08.css` to the document (Vitest doesn't process CSS imports), and its computed-style asserts hold on both sides of the boundary.
 - **Runs.** web `test` 96 files / 1394 tests green; `typecheck` and `lint` green; `test:e2e` 71 passed.
+
+## Accept log
+- 2026-10-02, product owner, branch at 5703d51 (attempt 2): **done**.
+  - Review attempt 1 asked for 3 changes: the committed `git diff main...HEAD` tests, the importer pin that was too narrow, and the pendingFocus leak after a failed Remove. Rework 1 fixed all three and also moved the warn colour into a CSS class. Each fix has a test that was red on the old code.
+  - QA passed AC-1..AC-13:
+    - The root `--force` gate is green (web 1394 tests).
+    - e2e passed 71/71, the whole suite.
+    - 4 independently planted faults turned tests red: an accessory Remove passing a null `mainLiftId` (AC-5 pair), Back keeping adjustments (AC-8), a `>=` boundary (AC-7 1620/1621), and warm-up-off totals (AC-7).
+    - The bar texts and the R7-E5 rows were re-derived from the engine, not copied from the build output.
+    - Both planted "no extra call" faults went red (build log). This proves the timing asserts in AC-1, AC-5 and AC-6.
+  - AC-11 and AC-13 (`git diff main...HEAD` lists): these are checked at DoD, not as committed tests (review attempt 1). The build log records the diff result: only `features/UF-08/**`, `flows/uf-08.ts`, `tests/e2e/uf-08-setup.spec.ts` and this ticket, with nothing under `app/**`, `tests/e2e/fixtures/**`, `en.ts` or `workout.ts`.
+  - AC-9 and AC-12 (offline): the vitest online/offline deep-equal and fetch-spy asserts pass. The e2e offline row passes. QA's real-browser keyboard probe found online == offline across 5 snapshots, with 0 errors.
+  - Principles hold:
+    - 2: the time chips re-suggest around the kept main lift, and the budget is shared with UF-08.1.
+    - 3: every action is one `suggest()` call, the engine output is rendered unsorted, and the over-budget state comes only from `availableS`.
+    - 1 and 5: not touched.
+    - Contracts are unchanged.
+  - Follow-ups (already filed):
+    - T-0393: the e2e fixture has `external_load` false everywhere, so the e2e never renders a kg weight.
+    - T-0391: switch weight formatting to `formatKg` once T-0388 lands.
