@@ -156,7 +156,8 @@ export interface ConsoleGuard {
   /**
    * Exempts every recorded line matching `pattern`, for this guard only. The fixture builds a
    * fresh guard per test, so an `allow` never carries over to the next test. A spec outside
-   * `fixture-guard.spec.ts` must name the follow-up ticket (`T-NNNN`) on the line above the call.
+   * `fixture-guard.spec.ts` must name the follow-up ticket (`T-NNNN`) in the `//` comment block
+   * directly above the call (T-0430 AC3). Throws on a global or sticky pattern (T-0430 AC4).
    */
   allow(pattern: RegExp): void;
   /** Every recorded line, allowed or not, in arrival order. */
@@ -207,6 +208,15 @@ export function installConsoleGuard(context: BrowserContext): ConsoleGuard {
 
   return {
     allow: (pattern) => {
+      // T-0430 AC4: `unallowed` calls `pattern.test(line)` once per line, and on a `/g` or `/y`
+      // pattern `test` advances `lastIndex`, so the same pattern matches one line and misses the
+      // next identical one. Reject them rather than silently resetting `lastIndex`.
+      if (pattern.global || pattern.sticky) {
+        throw new Error(
+          `consoleGuard.allow: ${String(pattern)} is a global or sticky pattern; drop the g and ` +
+            `y flags (they make RegExp.test stateful, so identical lines match only every other time)`,
+        );
+      }
       allowed.push(pattern);
     },
     errors: () => [...seen],
@@ -216,7 +226,7 @@ export function installConsoleGuard(context: BrowserContext): ConsoleGuard {
       throw new Error(
         `${CONSOLE_ERROR_MESSAGE}: ${lines.length} line(s) were logged as errors. Fix the app ` +
           `code, or — only if the error is expected — exempt it for this test with ` +
-          `\`consoleGuard.allow(/.../)\` and name the follow-up ticket on the line above:\n` +
+          `\`consoleGuard.allow(/.../)\` and name the follow-up ticket in the comment block above it:\n` +
           lines.map((line) => `  - ${line}`).join("\n"),
       );
     },
