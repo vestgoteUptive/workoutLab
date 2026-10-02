@@ -5,7 +5,7 @@ lane: web-feature:UF-03
 screens: [UF-03.3, UF-10.1]
 decisions: [D-0153, D-0148, D-0151, D-0152, D-0142, D-0071, D-0053]
 deps: [T-0420, T-0431]
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by product-owner (groom). Follow-up from the T-0420 review and accept log. Build flow: wl-build-web. About ⅓ day. Ready: T-0420 (EffortSave) and T-0431 (D-0151 cacheCurrent in loadSessions) are on main. -->
 
@@ -111,3 +111,60 @@ None. This is a read of the existing `loadSessions()` view and the existing queu
   - **Not with T-0416, T-0417 or T-0418.** They are the same UF-03 lane and share `__tests__/helpers.tsx`, so run T-0433 before or after them.
   - **Allowed with T-0434** (web-shell `lib/offline`), as long as T-0434 doesn't change what `loadSessions()` returns for these fixtures.
 - **Not in scope, filed as a thought:** when the merged view's `endedAt` is later than the raw row's (another device finished later), UF-03.3 still shows numbers at the raw `ended_at` and Save re-sends it. D-0148 §1 keeps the later finish on the device either way. Raise a follow-up only if it shows up in use.
+
+## Build log (frontend-dev, 2026-10-02)
+- **Files.** `features/UF-03/summary-data.ts`: new `viewEffort(sessions, id, raw)`, which is `storedEffort` of the `loadSessions()` entry's `effortRating`, or of the raw `effort_rating` when there is no entry. `loadSummary` reads `loadSessions()` next to the history, library and targets, and uses it only for `effortRating`. `now` and the numbers are unchanged. `features/UF-03/EffortSave.tsx`: a `touched` ref set by a chip pick. An untouched Save sends `viewEffort(await loadSessions(), id, entry.row.effort_rating)`, with both read at the tap after `sessions.get(id)`. A `mounted` ref guards `navigate("/", {replace: true})` and the `failed` state. Tests: new `__tests__/summary.merged.test.tsx` (15 tests). Additive changes in `__tests__/helpers.tsx`: `seedSessionCache`, `setQueuedFlags` and a `/balance` route in `renderSummary`. Additive in `__tests__/mocks.ts`: `featureLoaderSpies`, which wraps the real `loadSessions` in a spy.
+- **AC → test** (`summary.merged.test.tsx`; every test also asserts after it that no `refresh*` spy was called and the `unhandledRejection` probe is empty):
+  - AC-1: "marked … 'Easy'", "the pair, unmarked … 'Hard'", "the pair, no cached row", "a later cached finish … 'Very hard'", "nothing … no chip".
+  - AC-2: "marked: no pick sends … 2", "tap-time … (1)", "touched … 5", "touched back … 2 … view changed to 1", "no cached row … 3", "no entry (the fallback) … raw 3" (`loadSessions` spy `mockResolvedValueOnce([])` at the tap).
+  - AC-3: "offline, marked, untouched …": `pending: true`, `finished: true`, row `{...row, effort_rating: 2}`, no `cacheCurrent` key, replace (one step back is `/`), `fetch` not called.
+  - AC-4: "left through 'See balance'" (`/balance` after 50 ms, the row holds 4, one step back is the summary), "the pair: staying …" (replace to `/`), "rejected after leaving" (probe empty, `console.error` spy not called, `/balance` stays).
+  - AC-5: `exports-and-lint.test.ts`, `summary.save/states/numbers.test.tsx` and `index.tsx` are unedited and green. `flows/uf-03.ts` is untouched. `grep -rnE "\brefresh[A-Z]\w*" apps/web/src/features/UF-03 | grep -v __tests__` finds nothing (exit 1).
+- **Red on main** (the new test file against the unfixed `summary-data.ts`/`EffortSave.tsx`): 9 of 15 fail.
+  - AC-1: marked `expected ['Hard'] to deeply equal ['Easy']`, later cached finish `['Hard']` vs `['Very hard']`, nothing `['Hard']` vs `[]`.
+  - AC-2: marked `effort_rating: 4` vs expected 2; tap-time `4` vs expected 1; touched back fails on the preselect (`['Hard']` vs `['Easy']`); no entry fails because `loadSessions` is never called at the tap.
+  - AC-3: the queued row has `effort_rating: 4`, expected 2.
+  - AC-4: left through "See balance" `expected '/' to be '/balance'`.
+  - These are green on main by design: the unmarked pair, the no-cached-row pair, touched, the no-cached-row Save, the stay-on-summary pair and rejected-after-leaving.
+- **Planted faults.** Each was applied alone to the fixed code, then `summary.merged` + `summary.save` were run (34 tests) and the fault reverted:
+  - F1, preselect read from the raw row (`storedEffort(row.effort_rating)`): 4 red (AC-1 marked, later cached finish, nothing; AC-2 touched back).
+  - F2, the untouched value taken from mount state (`rating`): 2 red (AC-2 tap-time `4` vs 1; no entry, no tap-time read).
+  - F3, unconditional `navigate`: 1 red (AC-4 left through "See balance", `'/'` vs `'/balance'`).
+  - F4, `touched` ignored (always the view): 13 red (AC-2 touched and touched back, AC-4 both, and 9 in `summary.save`).
+  - F5, the no-entry fallback as `null`: 1 red (AC-2 no entry).
+  - F6, `setState("failed")` without the mounted guard: stays green. React 18+ doesn't warn on a set-state after unmount, so the guard only stops a render that would never show. AC-4's "rejected after leaving" pins what the user would see: no throw, no `console.error`, `/balance` stays.
+- **Runs.**
+  - `flock … turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: 4/4 tasks, 169 test files green.
+  - `pnpm -w format:check`: green.
+  - `node .github/scripts/check-all.mjs`: exit 0.
+  - `pnpm --filter @workoutlab/web test:e2e uf-03`: 2/2. The whole e2e suite: 137 passed.
+- **Defaults (none needed a decision).** A pick back to the preselected value counts as touched, as the ticket's "touched back" says. The tap reads `sessions.get` first and then `loadSessions`, so a gone row still fails before any view read.
+
+## QA log (qa-tester, 2026-10-02)
+- **Start.** Branch `t/T-0433-uf03-summary-rating-merged-view` at `6c00734`, `git status` clean.
+- **Red on main reproduced.** The test file was run against main's `summary-data.ts` and `EffortSave.tsx`, restored afterwards from a backup copy. 9 of 15 fail, the same set and the same assertions as the build log: AC-1 marked `['Hard']` vs `['Easy']`, AC-2 marked and tap-time (the effort_rating deep-equal), AC-4 left through "See balance" `'/'` vs `'/balance'`.
+- **Planted faults reproduced** against HEAD (`summary.merged` + `summary.save`, 34 tests). Each was reverted from a backup, and the tree was clean after each:
+  - F1 `storedEffort(row.effort_rating)`: 4 red.
+  - F2 the untouched value is `rating`: 2 red (tap-time, no entry).
+  - F3 unconditional `navigate`: 1 red (AC-4 left).
+- **QA fault F7** (`viewEffort` takes `sessions[0]`, not the entry with this id): all 90 UF-03 tests stayed green, because S1 was the only `loadSessions()` entry in every fixture. Added "QA: the view entry is S1's, not the first in the list". It caches a session started a day earlier with rating 1, so that session sorts first, and asserts "Easy" is preselected and the untouched Save sends 2. Green on HEAD, red under F7 (`['Very easy']` vs `['Easy']`).
+- **Binary pairs.** marked/unmarked, cached row/none, view entry/none (spy), touched/untouched (plus touched back), mounted/left on resolve, and left on reject. The "mounted on reject" half is T-0420's `summary.save` failure test, unedited. Online/offline: AC-3 is offline, and the online path is the AC-2 tests plus `summary.save`.
+- **AC-5.** No diff against main in `index.tsx`, `flows/`, `summary.save/states/numbers.test.tsx`, `exports-and-lint.test.ts` or the contracts. `grep -rnE "\brefresh[A-Z]\w*" apps/web/src/features/UF-03 | grep -v __tests__` finds nothing.
+- **Runs.**
+  - `flock … turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: 4/4 tasks, 169 files, 2670 tests green.
+  - `-w format:check`: green.
+  - `node .github/scripts/check-all.mjs`: exit 0.
+  - `test:e2e uf-03`: 2/2, run with `TMPDIR=$HOME/.cache/wl-pw-tmp`. Earlier runs with the default TMPDIR failed with `net::ERR_INSUFFICIENT_RESOURCES` at the first `page.goto`. `offline.spec.ts` failed the same way, and so did main's UF-03 sources. Cause: /tmp is a RAM tmpfs at 80%, so these were environment false reds.
+
+## Accept log (product-owner, 2026-10-02)
+- **Verdict: done.** Branch `t/T-0433-uf03-summary-rating-merged-view` at `cf92d52`. Build done, review approve (no blocking findings), QA pass.
+- **D-0153 §4 checked against `EffortSave.tsx` and `summary-data.ts`.** Preselect is `viewEffort` of the `loadSessions()` entry with this id, with the raw-row fallback. An untouched Save reads `sessions.get` and then `loadSessions()` at the tap. A pick (`touched` ref) is sent as picked. The row is `{...entry.row, effort_rating}`, and `now` is unchanged. **§5:** a `mounted` ref guards both `navigate` and `setState("failed")`. The write still lands.
+- **Per AC:**
+  - AC-1: pass. All five cases are tested. Marked, later cached finish and nothing were red on main (reproduced by QA). Planted fault F1 is caught. QA's F7 test pins the entry chosen by id, not `sessions[0]`.
+  - AC-2: pass. All six cases are tested. Marked and tap-time were red on main. F2 (mount state) and F5 (null fallback) are caught.
+  - AC-3: pass. Offline, the row is `pending: true`, `finished: true`, `effort_rating: 2`, there is no `cacheCurrent`, the route is replaced to `/`, and no `fetch` is made.
+  - AC-4: pass. Left, the route stays `/balance` after 50 ms, one step back is the summary, and the row was written. This was red on main, and F3 is caught. The stay pair and rejected-after-leaving are tested. F6 staying green is accepted: the user-visible outcome is pinned by "rejected after leaving".
+  - AC-5: pass. `index.tsx`, `flows/uf-03.ts`, the three summary test files and `exports-and-lint.test.ts` are unedited and green. The `refresh*` grep is empty (recorded twice).
+- **DoD.** Web gate 4/4 (2670 tests). Full e2e 137 at build, and uf-03 2/2 at QA (TMPDIR on disk; the tmpfs false red is an environment issue, not the code). format:check and check-all are green. Contracts are unchanged. Commits are cited as `T-0433`.
+- **Principles.** No change to focus mode, the time budget, the engine or onboarding. Adaptive targets are unaffected.
+- **Follow-ups.** T-0439 (already filed by review): an untouched Save re-queues the raw `ended_at`, which can move the server's finish earlier when another device finished later. It predates this ticket and matches the Notes. The tap-time rating can differ from the chip on screen when the view changes mid-mount. That is D-0153 §4 as decided, so no ticket; revisit only if users report it.
