@@ -125,3 +125,18 @@ None. The write order and the store update are device-local (D-0071 §6, D-0153 
   - **Allowed with T-0433.** It is in the UF-03 lane.
   - **Not with T-0415.** Both edit `session.tsx`.
 - **Why it matters before T-0416:** T-0416's UF-03.1 Finish calls `ctx.finish()` from a seam. This ticket makes that path safe when a UF-09.8 write is in flight.
+
+## Build log (2026-10-02, frontend-dev)
+- **Change** (`features/UF-09/session.tsx` only): `SessionWrites` gets `landed: {row, plan} | null`. `createPlanApply` records a plan write that landed while `writes.finishing` was set. `finish()` wraps its body in try/catch: on success it clears `landed`; on rejection it applies `landed` (`store.applyPlan(plan, Date.now())`, `onRow(row)`), clears it, then rethrows, so the store has moved before the promise rejects (D-0153 §6, D-0149 §1). The existing `run.catch` resets (`finishing = null`, `writes.finishing = false`) are unchanged. No `FocusSession` member changed; `host.tsx` untouched.
+- **Tests:** `__tests__/t0435.end-retry.test.tsx` (8 tests, on the `end-race.test.tsx` setup; the seam is an injected `keepsClockRunning: false` `how-to` overlay whose probe keeps `ctx`; no `document.body.innerHTML`).
+  - AC-1: "AC-1 End again after a failed End" (+ the pair: End succeeds first time, one write).
+  - AC-2 + AC-3: "failed End on a pause from UF-09.8 → Cancel → Resume → Trim → Pause → End → End".
+  - AC-4: "Trim held → Pause → seam ctx.finish() …" (records the store's plan and `wl-focus:S1` at the moment the promise rejects), "reload after the failure", and the three pairs (finish succeeds, plan write rejects too, no plan write pending).
+  - AC-5: `end-race`, `paused`, `time-check`, `exports-and-lint`, `countdown-sources` pass unedited; no key added to `flows/uf-09.ts`.
+- **Red on main (AC-4, the new test file against unchanged `session.tsx`):** 2 failed, 6 passed.
+  - AC-4 main: `expect(finish.planAtSettle).toEqual(trimmed)` got R8_PLAN (`items[3].sets` 3, expected 2).
+  - AC-4 reload: `expect(lastStore().getState()).toMatchObject({resumePhase: "next"})` got `"timeCheck"`.
+- **Planted faults (on main's `session.tsx`, each reverted with `git checkout`):**
+  - No `writes.finishing = false` in `finish()`'s catch: AC-2 red (`findScreen("UF-09.6")` stayed `UF-09.8`; the Trim wrote nothing), plus the AC-4 rows.
+  - No `finishing = null` in `finish()`'s catch: AC-1 red (location stayed `/session/S1`, no second write) and AC-3 red (no summary after the second End), plus the AC-4 rows.
+- **Gates:** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1` 4/4 tasks, 169 files / 2662 tests passed; `pnpm -w format:check` clean; `node .github/scripts/check-all.mjs` exit 0; `test:e2e uf-09` 10 passed.
