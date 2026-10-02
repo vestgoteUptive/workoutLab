@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.2, UF-09.3]
 decisions: [D-0131, D-0096, D-0053]
 deps: [T-0220]
-status: todo
+status: ready
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Build flow: wl-build-engine. About ⅛ day. Test-only: `src/**` is unchanged, so there is no vendor regen and no new simulated-history run beyond the rescoped AC6 sweep. Ready once T-0220 merges (it is merging on its branch `t/T-0220-backoff-floor-light-lift`). Engine tickets run one at a time (D-0096 §3): T-0221 → T-0212 → T-0211 → T-0236 → T-0235. It must merge before T-0235, the next engine ticket that changes `suggest` output. -->
 
