@@ -91,3 +91,18 @@ Tests for every AC pass, with the red-on-main runs and the planted faults record
   - F3 string compare (`cachedEnd > queuedEnd`) → 1 red: AC-3 "10:40+00:00 beats 12:31+02:00".
   - F4 `effortRating` always from the queue (cached-wins branch ignored) → 4 red: AC-2 "cached 10:40 / null beats 10:31 / 4", AC-2 "queued ended_at null with a present rating", AC-3 "10:40+00:00 beats 12:31+02:00", AC-5 sort.
 - **Runs (under the test lock).** `pnpm --filter @workoutlab/web typecheck` / `lint` green; `pnpm --filter @workoutlab/web test` 161 files, 2525 tests passed; `test:e2e offline.spec.ts` 1 passed; `pnpm -w format:check` clean; `node .github/scripts/check-all.mjs` clean.
+
+## Accept log
+- **2026-10-02, product-owner (accept). Verdict: done.** Checked against `cf7a1c4` (the tree was clean). I read `sessions-merge.test.ts` and the `loadSessions` merge (`cachedFinishIsLater`, `Object.hasOwn`) against D-0148 §1–§5.
+  - **AC-1:** the explicit null clears the cached 5; a value of 2 replaces it; an absent key keeps 5. The case is red on main (got 5), and F1 turns it red. Pass.
+  - **AC-2:** cached 10:40/null beats queued 10:31/4; queued 10:50/4 wins; equal instants with a queued null clear 3, and a queued 1 replaces it. Never un-finished: queued `ended_at: null` keeps 10:05/5. These are red on main, and F2 and F4 turn them red. Pass.
+  - **AC-3:** `10:40+00:00` beats `12:31+02:00`, and `12:50+02:00` wins. This is red on main, and F3 turns it red. Pass.
+  - **AC-4:** `"not-a-date"` wins and doesn't throw; a valid later instant wins. Pass.
+  - **AC-5:** a queued-only S9 with a null or a value is unchanged; cached energy `high` is kept when the queue omits it, and a present `low` wins; the sort is by `startedAt`, then `id`. `sessions-cache.test.ts` and `offline-loaders.test.ts` are unedited and green (the per-user split is still covered there). Pass.
+  - **Test rules:** every binary condition has both values tested. The red-on-main run (6 red) and all four planted faults are in the build log.
+  - **Principles and contracts:** no contract changed. The loader is IndexedDB only (offline e2e 1/1). There is no UI change, so focus mode, the time budget and onboarding are not affected. The engine is untouched.
+- **Known gaps, outside this ticket's ACs (T-0431, needs a product decision):**
+  1. At an equal `ended_at`, a flushed queued row (`pending: false`, kept as the D-0053 §7 marker) beats a newer cache row, so a rating cleared on another device comes back on this device until the queue entry is pruned.
+  2. A queued row with no `ended_at` key is treated the same as `ended_at: null`.
+  Neither one blocks T-0420. Its Save (the same `ended_at` with a new or cleared rating) correctly wins under §3.
+- **Unblocks:** T-0420 → `ready`.
