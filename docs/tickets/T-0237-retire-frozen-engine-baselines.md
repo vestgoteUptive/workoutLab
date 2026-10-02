@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.2, UF-08.3, UF-05.1, UF-10.1, UF-11.1]
 decisions: [D-0096, D-0053, D-0092, D-0105]
 deps: [T-0236]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Build flow: wl-build-engine. About ½ day. Test-only: `src/**` is unchanged, so there is no vendor regen. Same pattern as T-0236. Engine tickets run one at a time (D-0096 §3): T-0236 → T-0237 → T-0235. T-0235 changes rule 14's reentry prefill, which the pre-t0204 and pre-t0219 baselines freeze (returningAfter10Days), so T-0235 gains T-0237 as a dep. Ready when T-0236 is done. -->
 
@@ -100,3 +100,13 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
 - **AC3:** the new `test/t0237-no-frozen-baselines.test.ts` has 2 `T-0237 AC3` cases. One checks that none of the 4 fixtures exists. The other checks that no `.ts` under `test/` (recursive, excluding itself, more than 30 files scanned) contains any of the 4 names, which the file builds from parts. **Red on unfixed code:** with main's 5 test files and 4 fixtures restored, both fail: `expected [ 'pre-t0204-suggest', …(3) ] to deeply equal []` and `expected [ …(5) ] to deeply equal []`. The files were restored afterwards.
 - **AC4:** `git diff --stat main...HEAD -- packages/engine/src` is empty. Engine tests went from 636 (37 files) to 631 (38 files): 7 retired and 2 added. The T-0236 guard, the T-0230 budget guard (`test-budgets.test.ts`) and `t0204-traceability.test.ts` pass without edits.
 - **AC5:** engine `typecheck`, `lint` and `test` (631 passed) are each green under `flock`. `-w format:check` is clean. `node .github/scripts/check-all.mjs` exits 0, and so does `node supabase/scripts/vendor.mjs --check` (src is unchanged, so no regen).
+
+### Accept (product-owner, 2026-10-02): done
+Checked at HEAD 58eb3f1 against the build log, the review verdict (approved) and the tree.
+- **AC1:** met. In the tree: rule-13 AC13 pins `n` to `15` (5 HISTORIES × 3) and checks `swapped(w)` = `[]` with items > 0. rule-14 AC16 zero history pins `36`. R7-E14 checks `JSON.stringify(run([], BM))` against `NO_GOAL`, and the R7-E4 `reps` assertions are kept. rule-7 AC10 builds the 5 × 3 × 4 × 2 × 2 grid inline, pins `240` and keeps the 60 s budget. t0219 R7-E13 (AC1) keeps `[45, 375, 45]` and `[1095, 105]`. None of these reads a fixture.
+- **AC2:** met. The build log records that the `goalOf` mutation turned R7-E14 and rule-7 AC10 red (2 failed). The change was reverted and `src` is clean.
+- **AC3:** met. `t0237-no-frozen-baselines.test.ts` has two `T-0237 AC3` cases: one checks that the fixtures don't exist, the other scans `.ts` files recursively (>30 files, excluding itself, names built from parts). No fixture `pre-t0204/0205/0219/0226` is left under `test/fixtures/`. No test file other than the guard contains the names, and the retirement comments cite ticket ids only. The red run on main's files is recorded.
+- **AC4:** met. The diff on `packages/engine/src` is empty. The T-0236 guard, the T-0230 budget guard and the T-0204 AC27 traceability tests pass unedited. All 7 retired titles are listed. The count went from 636 to 631 (7 retired, 2 added).
+- **AC5:** met. Engine typecheck, lint and test (631) are green under flock. check-all and the vendor check exit 0.
+- **Principles:** unaffected. The change is test-only, and the engine stays deterministic with unchanged behaviour.
+- **Accepted gap:** with the snapshot gone, `balance()` and `evaluateCheckin` on a history with timed sets (`timedCoreHistory`) have no guard. The ticket scoped this out on purpose (the snapshot tests were retired as such). The coverage moves to engine follow-up T-0240, which the orchestrator is filing.
