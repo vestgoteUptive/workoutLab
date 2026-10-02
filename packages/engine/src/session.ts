@@ -9,7 +9,7 @@ import {
   LOW_TRIM_FROM_SETS,
   LOW_TRIM_TO_SETS,
 } from "./energy.js";
-import { availableS, isEligible, itemCostS, setCostS } from "./cost.js";
+import { availableS, getsBackoff, isEligible, itemCostS, setCostS } from "./cost.js";
 import {
   indexLibrary,
   normalizeHistory,
@@ -361,19 +361,6 @@ export function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: num
   const w = prefill.weightKg;
   const inc = ex.incrementKg ?? DEFAULT_INCREMENT_KG;
   return { weightKg: w === null ? null : floorInc(BACKOFF_FACTOR * w, inc), reps };
-}
-
-/**
- * Rule 7.4 / 12.1 (D-0093 §2, D-0105 §2): whether `exercise` in a slot gets a back-off set.
- * True exactly when the slot has one (`slotHasBackoff`) and `exercise` is not timed (a timed
- * exercise never gets one, D-0047). The one predicate behind `buildItem` (so `suggest` and
- * `applySwap`) and rule 12's `fitsBudget`, so the two cannot drift.
- */
-export function getsBackoff(
-  slotHasBackoff: boolean,
-  exercise: Pick<LibraryExercise, "timed">,
-): boolean {
-  return slotHasBackoff && !exercise.timed;
 }
 
 /** The shuffled slot's original exercise and its own rule 14 pre-fill weight (D-0056 §11). */

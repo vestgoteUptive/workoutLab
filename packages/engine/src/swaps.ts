@@ -1,7 +1,7 @@
 // Rule 12 swap ranking (UF-08.3, UF-05.1; D-0025, D-0037 §2, D-0056 §1–§7). Pure: one
 // ranked list the UI renders without re-sorting. Rule 13's shuffle (session.ts) reuses the
 // `variety` ranking through `rankAgainst`.
-import { availableS, isEligible, itemCostS, realEquipment, setCostS } from "./cost.js";
+import { availableS, getsBackoff, isEligible, itemCostS, realEquipment, setCostS } from "./cost.js";
 import {
   indexLibrary,
   isHardSet,
@@ -12,7 +12,6 @@ import {
 } from "./history.js";
 import { recoveringAreas } from "./load.js";
 import { plannedDurationFrom } from "./prefill.js";
-import { getsBackoff } from "./session.js";
 import { localDate } from "./time.js";
 import type {
   Area,

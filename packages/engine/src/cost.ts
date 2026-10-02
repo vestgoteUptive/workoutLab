@@ -59,3 +59,16 @@ export function itemCostS(
 export function availableS(budgetMin: number, warmupInBudget: boolean): number {
   return budgetMin * 60 - (warmupInBudget ? WARMUP_COST_S : 0);
 }
+
+/**
+ * Rule 7.4 / 12.1 (D-0093 §2, D-0105 §2): whether `exercise` in a slot gets a back-off set.
+ * True exactly when the slot has one (`slotHasBackoff`) and `exercise` is not timed (a timed
+ * exercise never gets one, D-0047). The one predicate behind `buildItem` (so `suggest` and
+ * `applySwap`) and rule 12's `fitsBudget`, so the two cannot drift.
+ */
+export function getsBackoff(
+  slotHasBackoff: boolean,
+  exercise: Pick<LibraryExercise, "timed">,
+): boolean {
+  return slotHasBackoff && !exercise.timed;
+}
