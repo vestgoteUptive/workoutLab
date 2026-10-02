@@ -7,7 +7,7 @@ decisions: [D-0056, D-0092, D-0093, D-0096, D-0105]
 deps: [T-0224, T-0214]
 status: ready
 ---
-<!-- Written by product-owner 2026-10-02 (groom mode). Build flow: wl-build-engine. About ¼ day. Engine tickets run one at a time (D-0096 §3). T-0214 is in flight on packages/engine/**, so this ticket starts once T-0214 is done and merged: T-0224 → T-0214 → T-0226. -->
+<!-- Written by product-owner 2026-10-02 (groom mode). Build flow: wl-build-engine. About ¼ day. Engine tickets run one at a time (D-0096 §3). T-0214 is merged, so this ticket starts once T-0214 is done and merged: T-0224 → T-0214 → T-0226. -->
 
 ## Why
 Principle 2: the time budget is a first-class input, so a candidate marked "fits" must not push the plan over budget.
@@ -83,7 +83,7 @@ D-0105 fixes the formula. SwapSheet (UF-05.1 from UF-09.9 and UF-09.6, and UF-08
   - **Plans:** for each of `balancedHistory`, `allChestNoLegsHistory`, `returningAfter10DaysHistory`, `offlineMergedHistory`, `timedCoreHistory` and `[]`, at F-input, at `{budgetMin: 15, warmupInBudget: false, energy: "high"}` and at `{budgetMin: 31, warmupInBudget: false, energy: "high"}`:
     - the fresh `w = suggest(…)`;
     - every over-budget plan `o = applySwap(w, k, c, null, …)` for each accessory item `k` and each `rankSwaps` candidate `c` of `k` with `fitsBudget: false`. Cap it at the first two such `c` per `k` to bound runtime.
-  - **Check:** for every plan `p`, every item `j` of `p`, and every candidate `c` of `rankSwaps(p.plan.items[j].exerciseId, r, p, …)` with `r` in `[null, "short_on_time"]`, `c.fitsBudget === (applySwap(p, j, c.exerciseId, r, …).itemsTotalS ≤ avail(p))`.
+  - **Check:** for every plan `p`, every item `j` of `p`, and every candidate `c` of `rankSwaps(p.plan.items[j].exerciseId, r, p, …)` with `r` in `[null, "short_on_time"]`, `c.fitsBudget === (applySwap(p, p.plan.items[j].exerciseId, c.exerciseId, r, …).itemsTotalS ≤ avail(p))`. The sweep also includes AC1's over-budget plan explicitly, and asserts at least one candidate whose `fitsBudget` differs from the pre-D-0105 formula (non-vacuity).
   - **Non-vacuity:**
     - at least one checked `(p, j, c)` has a back-off slot, `p.itemsTotalS > avail(p)`, and `fitsBudget: false`, where the D-0056 §3 formula would give `true`;
     - the test counts these cases and asserts the count is > 0.
@@ -97,7 +97,7 @@ D-0105 fixes the formula. SwapSheet (UF-05.1 from UF-09.9 and UF-09.6, and UF-08
   - If any `suggest` field changes, stop and raise triage.
 - **AC6 (one predicate)**
   - The back-off condition is one exported engine function (unit-tested: `true` for a non-timed candidate on a slot with `backoff`, `false` for a timed candidate or a slot with `backoff: null`).
-  - Both `applySwap`'s build and `rankSwaps`' `fitsBudget` call it. A test asserts this through behaviour: on `W_h`, for every candidate, `applySwap`'s item has a non-null `backoff` exactly when `costS − timeCostS` equals that candidate's `setCostS`.
+  - Both `applySwap`'s build and `rankSwaps`' `fitsBudget` call it. A test asserts this through behaviour: on `W_h`, for every candidate, `applySwap`'s item has a non-null `backoff` exactly when `costS − timeCostS` equals that candidate's `setCostS`; contrast on `W` (main slot with `backoff: null`): no candidate's item gets a back-off and `costS === timeCostS`.
 - **AC7 (the contract text, D-0105 §5)** A Vitest test reads `docs/engine-rules.md` and asserts:
   - a line starting `- **fitsBudget` sits between the `### 12.1 applySwap` heading and `## 13.`, and cites D-0105;
   - a line starting `- **R12-E12` exists in §12.1 and cites D-0105;
