@@ -172,3 +172,57 @@ example `T-0304c UF-09.7: hold from prefill.durationS, auto-logged once`).
 - **Parallel.** It is parallel-safe by files with every UF-08 ticket.
 
 - **From T-0304e review (2026-10-02):** D-0119 §3 shows the timed auto-log calling `recordSet({sessionId, exerciseId, setIndex, …})` without `itemIndex`, but `FocusSetInput` requires it — pass `state.itemIndex`.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** Every AC has tests in `apps/web/src/features/UF-09/__tests__/`:
+  - AC-1: `warmup.test.tsx` (11).
+  - AC-2: `machine.timed.test.ts` (entry timer on READY, SKIP_WARMUP, an empty-warm-up COUNTDOWN_END, REST_END, a set → timed swap and RESYNC; the hold's fallbacks), plus `timed-set.test.tsx` "AC-2" (3, 2, 1 → "Hold 0:50" counting down, the h1 "Plank" / "plank", 50 not 45, the three fallbacks through the view).
+  - AC-3: `timed-set.test.tsx` "AC-3" (at 0, last set → done, pending, restore 10 min later, already logged, another exercise's entry, rejection + Log hold, a second rejection), and `machine.timed.test.ts` "HOLD_ALREADY_LOGGED".
+  - AC-4: `machine.timed.test.ts` "AC-4" (the ring pause, workout pause, both, the RESUME pair, the no-ops, no pause at 0, stored states), and `timed-set.test.tsx` "AC-4" (the same through the host, with `elapsedS` from the hook, restore while ring-paused, the 2-button pin).
+  - AC-5: `timed-set.test.tsx` "AC-5" ("Hold 2:00" with no kind line; "Easing back in" for `hold_after_break` and `reentry`; none for `add_rep`, `first_time` and `increase`; for all 8 kinds, no UF-09.6 or UF-09.7 text matches `/same|last time|as before/i`, with a live-regex check).
+  - AC-6: the row "T-0304c AC-6 warm-up and a timed set, offline" appended to `tests/e2e/uf-09-focus.spec.ts`.
+  - AC-7: `exports-and-lint.test.ts` (strings, jsx-no-literals, D-0071 §9 bans, export pin) and `timer.test.ts` (the T-0304a AC-2 tick scan) are unchanged and green over the new files.
+- **What was built.**
+  - **Views.** `warmup.tsx` (UF-09.2) and `timed-set.tsx` (UF-09.7) replace the `warmup`/`timed` placeholders in `views.tsx`. `ring.tsx` is the shared display-only ring. `ViewProps` gains two optional props, `holdFailed` and `onLogHold`, so the views rendered on their own in older tests need no change.
+  - **`machine.ts`.**
+    - New exports: `POSITION_S = 3`, `DEFAULT_HOLD_S = 45`, `holdSeconds(item)` and `timedRemainingS(state, now)`.
+    - Every way into `timed` gets `{startedAtMs: atMs, durationS: 3 + hold, pausedMs: 0}`.
+    - New state field `timerPausedAtMs`. New events `TIMER_PAUSE`, `TIMER_RESUME` and `HOLD_ALREADY_LOGGED` (D-0142 §2).
+    - `RESUME` skips `timer.pausedMs` while the ring is paused.
+    - A wrapper around the switch drops `timerPausedAtMs` when the state leaves `timed` or gets a new timer.
+  - **`persist.ts`.** `timed` is a timer phase, so a stored `timed` with `timer: null` is invalid (D-0119 §1). A missing `timerPausedAtMs` reads as `null`, and any other non-number is rejected.
+  - **`host.tsx`.**
+    - `fireExpired` routes `timed` to `autoLogHold`. That function runs once per timer key per mount (the `holdTried` ref is the in-flight guard), never while ring-paused, and never for a position that already has a logged set of this exercise. For that case it dispatches `HOLD_ALREADY_LOGGED`.
+    - `logHold` calls the hook's `recordSet` with `itemIndex: state.itemIndex` (the T-0304e review note), `kind: "timed"` and `durationS: holdSeconds(item)`.
+    - On success it announces "Done", but only after a crossing this mount saw. On rejection the view shows the polite error and "Log hold".
+    - The exact-moment timeout also covers a running `timed`.
+    - The T-0410 hook dedupe (`source:itemIndex:setIndex:exerciseId`) is unchanged, and the auto-log uses the default `"focus"` source.
+  - **Strings** are added to `flows/uf-09.ts`.
+- **Planted faults.** Each one was applied, run against `timed-set.test.tsx` + `machine.timed.test.ts`, and reverted:
+  - **AC-3, the auto-log without its in-flight guard** (`if (holdTried.current === key) return;` removed) → 4 red:
+    - "at 0: exactly one recordSet…";
+    - "pending: re-renders over 5 s … no second call (hook or lib/offline)";
+    - "rejection: … no auto retry …";
+    - "a second rejected Log hold …".
+    The re-renders at 0 called the hook's `recordSet` again. The test counts calls through `session-spy.ts`, before the hook's dedupe.
+  - **AC-4, a ring pause that adds to `workoutPausedMs`** (`TIMER_RESUME` also adds `heldFor` to it) → 3 red:
+    - "TIMER_PAUSE at 30 s left … only timer.pausedMs grows";
+    - "Pause timer … elapsedS +20 …";
+    - "both pauses … the time left is the ring-pause value".
+  - **AC-4, the time counted twice** (`RESUME` without the ring-held check) → 2 red: both "both pauses" cases.
+- **Pins and seeds updated, not dropped (D-0118 §12, D-0119 Consequences).**
+  - **The D-0119 hand-off.** `host.expiry.test.tsx`'s T-0304a AC-9 "timed doesn't advance after 600 s" is replaced in place by "timed: after 600 s, no end event, exactly one TIMED_RECORDED, then UF-09.5".
+  - **Button pins.** `host.chrome.test.tsx` AC-7: `warmup` is `["Pause workout", "Restart", "Next move"]` and `timed` is `["Pause workout", "Pause timer"]`. `timed` joins the phases that show a `role="timer"`.
+  - **Seeds.** A stored `timed` now needs its timer (D-0119 §1), so the `timed` seeds in these files gain `timer: {startedAtMs: NOW, durationS: 53, pausedMs: 0}`: `host.chrome.test.tsx`, `host.load.test.tsx` (AC-6 screen ids), `announcer.test.tsx` (AC-2), `session.writes.test.tsx` (2 cases) and `session.finish.test.tsx` (2 cases). No assertion changed.
+- **Defaults (D-0142, `status: revisit`).**
+  - **The AC-6 hold is 15 s, not 5 s.** `PrefillResult.durationS` is 15..120 in the contract, and a 5 s plan renders the D-0138 unreadable state. The row uses `page.clock`.
+  - **An already-logged hold moves on.** It goes to rest or done through `HOLD_ALREADY_LOGGED`, with no second entry, instead of staying at 0:00.
+  - **The auto-log guard matches `exerciseId` too** (T-0410).
+  - **The swap and RESYNC timer rules** follow D-0142 §4. There is no ring pause at 0.
+  - **UF-09.7 has two lines.** The static target reads "Hold {m:ss}". The phase label ("Get in position" / "Hold") and the `role="timer"` countdown sit in the ring.
+- **Runs** (every test command under `flock /tmp/workoutlab-tests.lock`):
+  - `pnpm --filter @workoutlab/web typecheck`: green.
+  - `pnpm -w typecheck lint test --force --concurrency=1 --continue`: 18/19 tasks green, web 148 files and 2346 tests. The one failure is `@workoutlab/engine#test`: `rule-12-apply-swap.test.ts` AC14 and `t0204-traceability.test.ts` AC25. Both compare `docs/engine-rules.md` with `main`, and `main` changed rule 12's signature line (`tz, now` → `now, tz`, T-0212, D-0130) after this branch was cut. This branch doesn't touch that file. It passes once the branch has `main`'s copy.
+  - `test:repo-checks`: 146 pass.
+  - `pnpm --filter @workoutlab/web test:e2e`: the whole suite, 100/100, including the new row.
+  - `-w format:check`, `check:repo` (check-all), and `check:size` (after a build with the e2e mock env): all green.

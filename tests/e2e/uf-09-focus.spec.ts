@@ -411,3 +411,90 @@ test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
     await expect(page.locator('[data-screen-id="UF-09.3"]').getByText("Set 1 of 3")).toBeVisible();
   });
 });
+
+// T-0304c AC-6 (D-0086, D-0091 §1, NFR-OFF-2): UF-09.1 → UF-09.2 → Next move → UF-09.6 → I'm
+// ready → UF-09.7 "Get in position" → "Hold", offline after a reload; the hold auto-logs one
+// `timed` row and the warm-up none. The hold is 15 s, the smallest `prefill.durationS` the
+// SessionPlan contract allows (15..120, D-0062 §5, D-0133): the ticket's 5 s would be an
+// unreadable plan (D-0138), so the page clock runs the hold instead (D-0120 §9, D-0142).
+const TIMED_PLAN = {
+  ...PLAN,
+  mainLiftId: null,
+  warmup: [{ exerciseId: "wu-arm-circle", durationS: 40 }],
+  items: [
+    {
+      exerciseId: "plank",
+      isMain: false,
+      sets: 1,
+      repsMin: null,
+      repsMax: null,
+      durationS: 45,
+      costS: 120,
+      backoff: null,
+      prefill: { weightKg: null, reps: null, durationS: 15, kind: "add_rep" },
+      reasons: [],
+    },
+  ],
+};
+
+interface StoredTimedRow extends StoredSetRow {
+  durationS: number | null;
+}
+
+test.describe("T-0304c AC-6 warm-up and a timed set, offline", () => {
+  test("UF-09.2 Next move → UF-09.6 → UF-09.7 position → hold; one timed row, no warm-up row; axe clean", async ({
+    page,
+    context,
+  }) => {
+    await page.clock.install();
+    await openOffline(page, context, TIMED_PLAN);
+    await page.getByRole("button", { name: "Start now" }).click();
+
+    // UF-09.2: built content (the move's heading; the mocked library is empty, so its id).
+    const warmup = page.locator('[data-screen-id="UF-09.2"]');
+    await expect(warmup.getByRole("heading", { level: 1, name: "wu-arm-circle" })).toBeVisible();
+    await expect(warmup.getByRole("timer")).toHaveText("0:40");
+    await expect(page.getByRole("button", { name: "Next move" })).toBeFocused();
+    await expectAxeClean(page);
+    await page.getByRole("button", { name: "Next move" }).click();
+
+    const next = page.locator('[data-screen-id="UF-09.6"]');
+    await expect(next.getByRole("heading", { level: 1, name: "plank" })).toBeVisible();
+    await next.getByRole("button", { name: "I'm ready" }).click();
+
+    const timed = page.locator('[data-screen-id="UF-09.7"]');
+    // The page clock still flows between steps, so the countdown may have moved on a second.
+    await expect(timed.getByText("Get in position")).toBeVisible();
+    await expect(timed.getByRole("timer")).toHaveText(/^[1-3]$/);
+    await expect(timed.getByText("Hold 0:15")).toBeVisible();
+    await page.clock.runFor(3000);
+    await expect(timed.getByText("Hold", { exact: true })).toBeVisible();
+    await expect(timed.getByRole("timer")).toHaveText(/^0:1[0-5]$/);
+    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+    await expectAxeClean(page);
+
+    // The hold runs out: one auto-log, then done (the last set) and the summary.
+    await page.clock.runFor(15_000);
+    await expect
+      .poll(async () => (await setsFor(page, id(page))).length, { timeout: 10_000 })
+      .toBe(1);
+    const rows = (await setsFor(page, id(page))) as StoredTimedRow[];
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      exerciseId: "plank",
+      setIndex: 0,
+      kind: "timed",
+      durationS: 15,
+      reps: null,
+      isWarmup: false,
+    });
+    expect(rows.filter((r) => r.isWarmup || r.exerciseId.startsWith("wu-"))).toEqual([]);
+  });
+});
+
+/** The session id in the current `/session/<id>…` URL. */
+function id(page: Page): string {
+  const match = /\/session\/([^/]+)/.exec(new URL(page.url()).pathname);
+  if (!match) throw new Error(`not on a session URL: ${page.url()}`);
+  return match[1]!;
+}

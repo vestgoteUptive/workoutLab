@@ -103,7 +103,13 @@ describe("AC-3 recordSet", () => {
   });
 
   it("phase timed + the current set → TIMED_RECORDED (rest)", async () => {
-    seedFocus({ phase: "timed", itemIndex: 3, setIndex: 0 });
+    // T-0304c (D-0119 §1): a stored `timed` carries its position + hold timer.
+    seedFocus({
+      phase: "timed",
+      itemIndex: 3,
+      setIndex: 0,
+      timer: { startedAtMs: NOW, durationS: 53, pausedMs: 0 },
+    });
     await renderSession();
     const input = {
       ...setInput(3, 0),
@@ -142,7 +148,13 @@ describe("AC-3 recordSet", () => {
   });
 
   it("phase timed + a set of another item → no transition", async () => {
-    seedFocus({ phase: "timed", itemIndex: 3, setIndex: 0 });
+    // T-0304c (D-0119 §1): a stored `timed` carries its position + hold timer.
+    seedFocus({
+      phase: "timed",
+      itemIndex: 3,
+      setIndex: 0,
+      timer: { startedAtMs: NOW, durationS: 53, pausedMs: 0 },
+    });
     await renderSession();
     await call(() => session().recordSet(setInput(1, 0)));
     expect(session().state.phase).toBe("timed");
