@@ -452,14 +452,19 @@ describe("AC-6 Save", () => {
 });
 
 /** Mounts a bench-press-only plan whose set 1 is pre-filled at `weightKg`, in `locale`, taps
- *  Done set and lands on UF-09.4 (T-0409). */
-async function toConfirmAt(weightKg: number, locale: string): Promise<void> {
+ *  Done set and lands on UF-09.4 (T-0409). `storedKg` is the weight the queue stores and UF-09
+ *  logs: the pre-fill rounded to 2 decimals (T-0233, D-0129 §4). */
+async function toConfirmAt(
+  weightKg: number,
+  locale: string,
+  storedKg: number = weightKg,
+): Promise<void> {
   const plan = planOf([{ ...BENCH, prefill: { ...BENCH.prefill, weightKg } }]);
   await seedSession({ plan });
   seedFocus(NOW, { phase: "set", itemIndex: 0 }, plan);
   current = await renderSession({ locale });
   await doneSet();
-  expect(storedState().loggedSets[0]).toMatchObject({ weightKg, reps: 6, rir: null });
+  expect(storedState().loggedSets[0]).toMatchObject({ weightKg: storedKg, reps: 6, rir: null });
 }
 
 const touch = () => fireEvent.pointerDown(screen.getByRole("group", { name: "Reps" }));
@@ -507,28 +512,28 @@ describe("T-0409 ar-EG pre-fill (D-0128 §1–§3)", () => {
 });
 
 describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
-  it("T-0409 AC5 82.125 reads 82.13; touch then Save: 0 editSet calls, the entry keeps 82.125", async () => {
-    await toConfirmAt(82.125, "en-GB");
+  it("T-0409 AC5 82.125 reads 82.13; touch then Save: 0 editSet calls, the entry keeps 82.13", async () => {
+    await toConfirmAt(82.125, "en-GB", 82.13);
     expect(weightInput().value).toBe("82.13");
     touch();
     press("Save");
     await findScreen("UF-09.5");
     expect(editSpy).not.toHaveBeenCalled();
-    expect(storedState().loggedSets[0]!.weightKg).toBe(82.125);
+    expect(storedState().loggedSets[0]!.weightKg).toBe(82.13);
   });
 
-  it("T-0409 AC5 reps 6 → 7 then Save: editSet once with weightKg 82.125", async () => {
-    await toConfirmAt(82.125, "en-GB");
+  it("T-0409 AC5 reps 6 → 7 then Save: editSet once with weightKg 82.13", async () => {
+    await toConfirmAt(82.125, "en-GB", 82.13);
     const { clientId } = storedState().loggedSets[0]!;
     press("More reps");
     press("Save");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(1);
-    expect(editSpy).toHaveBeenCalledWith(clientId, { reps: 7, weightKg: 82.125, rir: null });
+    expect(editSpy).toHaveBeenCalledWith(clientId, { reps: 7, weightKg: 82.13, rir: null });
   });
 
   it("T-0409 AC6 typing 82.5 counts: editSet with weightKg 82.5", async () => {
-    await toConfirmAt(82.125, "en-GB");
+    await toConfirmAt(82.125, "en-GB", 82.13);
     typeWeight("82.5");
     press("Save");
     await findScreen("UF-09.5");
@@ -537,7 +542,7 @@ describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
   });
 
   it("T-0409 AC6 More then Less weight is back at 82.13: 0 editSet calls", async () => {
-    await toConfirmAt(82.125, "en-GB");
+    await toConfirmAt(82.125, "en-GB", 82.13);
     press("More weight");
     expect(weightInput().value).toBe("84.63");
     press("Less weight");
@@ -545,11 +550,11 @@ describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
     press("Save");
     await findScreen("UF-09.5");
     expect(editSpy).not.toHaveBeenCalled();
-    expect(storedState().loggedSets[0]!.weightKg).toBe(82.125);
+    expect(storedState().loggedSets[0]!.weightKg).toBe(82.13);
   });
 
   it("T-0409 AC6 the pair: More weight alone counts: editSet with weightKg 84.63", async () => {
-    await toConfirmAt(82.125, "en-GB");
+    await toConfirmAt(82.125, "en-GB", 82.13);
     press("More weight");
     press("Save");
     await findScreen("UF-09.5");
@@ -557,7 +562,7 @@ describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
   });
 
   it("T-0409 AC6 clearing the field saves weightKg null", async () => {
-    await toConfirmAt(82.125, "en-GB");
+    await toConfirmAt(82.125, "en-GB", 82.13);
     typeWeight("");
     press("Save");
     await findScreen("UF-09.5");
