@@ -173,4 +173,4 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - (a) awaiting `refreshAll` without the cap (`refreshAll(…).then(noop, noop)` in place of `settledOrCapped(…)`) failed with "expected vi.fn() to be called 2 times, but got 1 times".
   - (b) a cap that fires but returns before the recompute (a `capped` flag checked after `await refreshed`) failed the same way.
   - The fixed code passes.
-- **AC-14.** `profile-gate.test.tsx` "stale + `missing` on `/` redirects to /welcome/save" goes red, because Today's mount-time refresh adds a second `profiles` read. Raised as TR-0034 and not edited (D-0108 §3).
+- **AC-14.** `profile-gate.test.tsx` "stale + `missing` on `/` redirects to /welcome/save" goes red, because Today's mount-time refresh adds a second `profiles` read. Raised as TR-0034 (the orchestrator commits it on main) and not edited (D-0108 §3).
