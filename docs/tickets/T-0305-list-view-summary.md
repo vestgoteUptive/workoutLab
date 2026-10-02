@@ -5,8 +5,10 @@ lane: split → web-feature:UF-03 (T-0305a, T-0305b)
 screens: [UF-03.1, UF-03.2, UF-03.3, UF-09.9]
 decisions: [D-0013, D-0015, D-0030, D-0034, D-0040, D-0045, D-0053, D-0060, D-0061, D-0066, D-0067, D-0068, D-0069, D-0071]
 deps: [T-0304, T-0306a, T-0306b, T-0318]
-status: split   # → T-0305a, T-0305b; neither is ready until T-0304 (all children) and T-0318 are done
+status: split   # → T-0305a (→ T-0415, T-0416, T-0417, T-0418), T-0305b (→ T-0419, T-0420), D-0142
 ---
+<!-- Re-groomed 2026-10-02 by product-owner (D-0142). The children's ticket files are the build specs: T-0415 (UF-09 host support), T-0416 (UF-03.1 read side, seams, T-0360), T-0417 (logging, e2e), T-0418 (UF-03.2 rest, Swap in the list), T-0419 (UF-03.3 content), T-0420 (effort, Save, e2e). Where a child differs from the ACs below (for example AC-B8's redirect, AC-A2's "W" rows, D-0068 §2's "or now"), the child and D-0142 win. -->
+
 <!-- Groomed 2026-09-29 by product-owner. Build flow: wl-build-web. Split per screen group (D-0067 §1); ACs tagged [a]/[b]. Reconciled with T-0304 by triage 2026-09-29 (TR-0030, D-0071): the list view and how-to are entries in features/UF-09/seams.tsx, session state is useFocusSession() via ctx, finish is ctx.finish(), and the summary save sends the whole row. -->
 
 ## Why

@@ -62,6 +62,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/account": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Delete the caller's account and every row they own (UF-11.4, NFR-PRIV-5)
+     * @description Verifies the bearer token and deletes the caller's `auth.users` row with the Auth admin API (D-0135). The `on delete cascade` foreign keys (D-0020) remove every row the caller owns in the same step. There is no request body; the user id comes only from the verified token. A repeat call with the same token is 401, because the token no longer verifies; it is never 404 and never 403.
+     */
+    delete: operations["deleteAccount"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -431,7 +451,7 @@ export interface components {
       kind: components["schemas"]["PrefillKind"];
     };
     /**
-     * @description Pre-filled load for an item (rule 14, UF-09.3, UF-09.4).
+     * @description Pre-filled load for an item (rule 14, UF-09.3, UF-09.4). A timed `durationS` is within 15..120 s (TIMED_MIN_S..TIMED_MAX_S, D-0062 §5). `first_time` echoes the library `defaultDurationS`, which content keeps within the same range (D-0133).
      * @example {
      *       "weightKg": null,
      *       "reps": 6,
@@ -1541,7 +1561,7 @@ export interface components {
       hardSetCount: number;
     };
     /**
-     * @description A `plan_checkins` row as rule 9 reads it (D-0018, D-0027).
+     * @description A `plan_checkins` row as rule 9 reads it (D-0018, D-0027). `completedPrev` is null for a one-period evaluation (D-0070 §6, D-0094).
      * @example {
      *       "id": "P1",
      *       "periodIndex": 3,
@@ -1555,11 +1575,24 @@ export interface components {
      *       "answer": null,
      *       "answeredAt": null
      *     }
+     * @example {
+     *       "id": "P0",
+     *       "periodIndex": 0,
+     *       "completedPrev": null,
+     *       "completedLast": 0,
+     *       "rhythmMinBefore": 3,
+     *       "rhythmMaxBefore": 4,
+     *       "proposedMin": 2,
+     *       "proposedMax": 3,
+     *       "proposedAt": "2026-10-04T07:00:00Z",
+     *       "answer": null,
+     *       "answeredAt": null
+     *     }
      */
     PlanCheckin: {
       id: string;
       periodIndex: number;
-      completedPrev: number;
+      completedPrev: number | null;
       completedLast: number;
       rhythmMinBefore: number;
       rhythmMaxBefore: number;
@@ -1575,6 +1608,13 @@ export interface components {
      *       "start": "2026-08-30",
      *       "end": "2026-09-12",
      *       "completed": 4,
+     *       "status": "under"
+     *     }
+     * @example {
+     *       "index": 0,
+     *       "start": "2026-09-20",
+     *       "end": "2026-10-03",
+     *       "completed": 0,
      *       "status": "under"
      *     }
      */
@@ -1937,6 +1977,26 @@ export interface operations {
       400: components["responses"]["BadRequest"];
       401: components["responses"]["Unauthorized"];
       404: components["responses"]["NotFound"];
+      500: components["responses"]["Internal"];
+    };
+  };
+  deleteAccount: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Deleted. No body. */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      401: components["responses"]["Unauthorized"];
       500: components["responses"]["Internal"];
     };
   };

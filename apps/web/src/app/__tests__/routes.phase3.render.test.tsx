@@ -44,15 +44,22 @@ vi.mock("../../lib/offline/index.js", async (importOriginal) => {
   };
 });
 
+// T-0408 (D-0096): local budgets on waits for lazy route chunks (the --concurrency=1 gate).
+const LAZY_WAIT_MS = 5_000;
+const LAZY_TEST_MS = 15_000;
+
 async function renderAt(path: string) {
   const view = render(
     <MemoryRouter initialEntries={[path]}>
       <Shell />
     </MemoryRouter>,
   );
-  await waitFor(() => {
-    expect(document.querySelector("[data-screen-id]")).toBeInTheDocument();
-  });
+  await waitFor(
+    () => {
+      expect(document.querySelector("[data-screen-id]")).toBeInTheDocument();
+    },
+    { timeout: LAZY_WAIT_MS },
+  );
   return view;
 }
 
@@ -79,6 +86,7 @@ describe("AC-2 the new stubs render", () => {
       const heading = within(hosts[0] as HTMLElement).getByRole("heading", { level: 1 });
       expect(heading).toHaveTextContent(title);
     },
+    LAZY_TEST_MS,
   );
 
   it.each(NEW_SCREENS)(
@@ -89,6 +97,7 @@ describe("AC-2 the new stubs render", () => {
       if (showTabBar) expect(nav).toBeInTheDocument();
       else expect(nav).not.toBeInTheDocument();
     },
+    LAZY_TEST_MS,
   );
 
   // Guards against a stub whose <h1> happens to read right but hard-codes the string
@@ -133,24 +142,36 @@ describe("AC-3 route ranking", () => {
     ["/library/back-squat", "UF-04.2"],
     ["/progress", "UF-06.1"],
     ["/plan", "UF-11.2"],
-  ])("%s renders %s", async (path, expected) => {
-    await renderAt(path);
-    expect(document.querySelector("[data-screen-id]")!.getAttribute("data-screen-id")).toBe(
-      expected,
-    );
-  });
+  ])(
+    "%s renders %s",
+    async (path, expected) => {
+      await renderAt(path);
+      expect(document.querySelector("[data-screen-id]")!.getAttribute("data-screen-id")).toBe(
+        expected,
+      );
+    },
+    LAZY_TEST_MS,
+  );
 
-  it("/session/setup never renders the summary or the UF-09 host", async () => {
-    await renderAt("/session/setup");
-    expect(document.querySelector('[data-screen-id="UF-03.3"]')).not.toBeInTheDocument();
-    expect(document.querySelector('[data-screen-id="UF-09"]')).not.toBeInTheDocument();
-  });
+  it(
+    "/session/setup never renders the summary or the UF-09 host",
+    async () => {
+      await renderAt("/session/setup");
+      expect(document.querySelector('[data-screen-id="UF-03.3"]')).not.toBeInTheDocument();
+      expect(document.querySelector('[data-screen-id="UF-09"]')).not.toBeInTheDocument();
+    },
+    LAZY_TEST_MS,
+  );
 });
 
 describe("AC-4 C-02 active tab follows the path prefix", () => {
   async function currentTabs(path: string): Promise<string[]> {
     await renderAt(path);
-    const nav = await screen.findByRole("navigation", { name: en.tabBar.nav });
+    const nav = await screen.findByRole(
+      "navigation",
+      { name: en.tabBar.nav },
+      { timeout: LAZY_WAIT_MS },
+    );
     return within(nav)
       .getAllByRole("link")
       .filter((l) => l.getAttribute("aria-current") === "page")
@@ -167,7 +188,11 @@ describe("AC-4 C-02 active tab follows the path prefix", () => {
     ["/balance", [en.tabBar.progress]],
     ["/balance/core", [en.tabBar.progress]],
     ["/plan", [en.tabBar.plan]],
-  ])("%s marks exactly %s current", async (path, expected) => {
-    expect(await currentTabs(path)).toEqual(expected);
-  });
+  ])(
+    "%s marks exactly %s current",
+    async (path, expected) => {
+      expect(await currentTabs(path)).toEqual(expected);
+    },
+    LAZY_TEST_MS,
+  );
 });

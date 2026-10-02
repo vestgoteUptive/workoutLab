@@ -1,0 +1,65 @@
+---
+id: T-0234
+title: "Content: every timed exercise row has default_duration_s in 15..120 (TIMED_MIN_S..TIMED_MAX_S), checked by the schema and a test (D-0133)"
+lane: content
+screens: [UF-09.7, UF-09.3]
+decisions: [D-0133, D-0062, D-0033]
+deps: []
+status: done
+---
+<!-- Written by product-owner 2026-10-02 (groom). Build flow: wl-build-content. About ⅛ day. Follow-up from the T-0222 groom (D-0133 Consequences). The content-curator has no shell: the orchestrator runs the tests for its branch. No engine, data or web change, so it can run alongside the engine queue. -->
+
+## Why
+D-0133 narrowed `PrefillResult.durationS` to 15..120. The engine clamps every timed pre-fill to that range except `first_time`, which echoes the library's `default_duration_s` (D-0062 §5, unclamped). Today every timed exercise row is 20–40 s, but `data/exercises/schema.json` allows 5..120 and `test/timed.test.ts` only checks `≥ 5`. A future row at 10 s would make the engine emit a `first_time` pre-fill that `parseSessionPlan` rejects, and UF-09 couldn't open that workout. This ticket makes the content check carry the range.
+
+Warm-up moves (`kind: "warmup"`) are out: the plan's warm-up entries use a fixed 40 s (D-0040 §2), and `WarmupMove.durationS` keeps its own range (D-0133 §2).
+
+## Scope
+- In:
+  - `data/exercises/schema.json`: one new `allOf` branch. If `kind` is `"exercise"` and `timed` is `true`, then `default_duration_s` has `minimum: 15` (the top-level `maximum: 120` already applies).
+  - `data/exercises/test/timed.test.ts`: the AC2 range check and the AC3 engine-agreement check.
+  - A new invalid fixture `data/exercises/test/fixtures/invalid/timed-exercise-duration-below-15.json`.
+  - A new valid fixture `data/exercises/test/fixtures/valid/warmup-duration-10.json`.
+  - `data/exercises/test/schema.test.ts`: the two fixture cases in AC1.
+- Out:
+  - Any library row's values. They're all in range today.
+  - The top-level `default_duration_s` bounds (5..120), which warm-up moves still use.
+  - `packages/engine/**`, `api/openapi.yaml`, `docs/data-model.md`, `supabase/**`.
+
+## Acceptance criteria
+Each new test title starts with `T-0234 ACn`.
+- **AC1 (the schema)**
+  - `timed-exercise-duration-below-15.json` is a copy of `data/exercises/library/plank.json` with `id` `"t0234-plank-10"` and `default_duration_s: 10`. **Given** the schema validator (`validator()` in `test/helpers.ts`), **When** it validates the fixture, **Then** it fails with an error whose `instancePath` is `/default_duration_s` and whose `keyword` is `minimum`.
+  - **Red on unfixed code:** on `main` the fixture validates with 0 errors, because the schema minimum is 5. Record the red run in the build log.
+  - **Pair:** `warmup-duration-10.json` is a copy of `data/exercises/library/arm-circles.json` (a `kind: "warmup"` row) with `id` `"t0234-arm-circles-10"` and `default_duration_s: 10`. It validates with 0 errors, so warm-ups are unchanged.
+  - A copy of `plank.json` at 15 and at 120 validates (built in memory). At 121 it fails.
+  - The existing "has at least the 6 required invalid fixtures" test and every library-file case pass unedited.
+- **AC2 (the library)** **Given** `loadLibrary()`, **When** the test filters rows with `kind === "exercise"` and `timed === true`, **Then**:
+  - there is at least 1 (non-vacuity; `plank` is one);
+  - every one has `default_duration_s` in `[15, 120]`, and a failure names the row id.
+- **AC3 (agreement with the engine, D-0133 §4)**
+  - The test reads `packages/engine/src/prefill.ts` as text (resolved from the package root, as T-0222 AC3 does from `packages/shared`). It extracts the integers in `export const TIMED_MIN_S = …;` and `export const TIMED_MAX_S = …;`.
+  - They equal the bounds AC2 checks (15 and 120). If either constant is missing, the test fails and names it.
+  - `data/exercises/package.json` gains no dependency.
+- **AC4 (nothing else moves)** Every existing `data/exercises` test passes unedited, including `warmup.test.ts` and the old `≥ 5` check in `timed.test.ts`. `npx -y pnpm@10.28.2 --filter @workoutlab/exercises typecheck lint test` is green.
+
+## Paths you may change
+- `data/exercises/**` (the lane: `content`).
+- **Listed extras:**
+  - `docs/tickets/T-0234-timed-default-duration-range.md`: this file, for the build and accept log.
+
+## Contract impact
+none. `data/exercises/schema.json` is the content lane's own validator. `api/openapi.yaml` and `docs/data-model.md` are unchanged.
+
+## Coordination
+- Files: `data/exercises/schema.json`, `test/timed.test.ts`, `test/schema.test.ts` and the two new fixtures.
+- No other ticket on the board touches `data/exercises/**`.
+- If a later decision clamps `first_time` in the engine, this check becomes belt and braces and stays (D-0133 Consequences).
+
+## Definition of done
+Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green · contracts unchanged · commit messages start with `T-0234` and cite UF-09.7 (e.g. `T-0234 UF-09.7: timed exercise default_duration_s is 15..120 (D-0133)`).
+
+## Build / accept log
+- 2026-10-02 content-curator (build): `schema.json` gains an `allOf` branch (if `kind: "exercise"` and `timed: true`, required in the `if`, then `default_duration_s` `{type: integer, minimum: 15}`; top-level 5..120 unchanged). New fixtures `test/fixtures/invalid/timed-exercise-duration-below-15.json` (plank copy, id `t0234-plank-10`, 10 s) and `test/fixtures/valid/warmup-duration-10.json` (arm-circles copy, id `t0234-arm-circles-10`, 10 s). `test/schema.test.ts` adds the T-0234 AC1 cases (fixture fails `minimum` at `/default_duration_s`; warm-up at 10 passes; plank at 15/120 passes, 121 fails `maximum`). `test/timed.test.ts` adds T-0234 AC2 (non-vacuity, range with row ids in the failure) and AC3 (reads `TIMED_MIN_S`/`TIMED_MAX_S` from `packages/engine/src/prefill.ts` as text; no engine dependency). No library row changed; all timed rows are 20–40 s. The curator has no shell: the orchestrator runs the red run (schema change stashed, AC1 fixture test red with 0 `minimum` errors) and the green run, and records them here.
+- 2026-10-02 orchestrator runs (the content agent has no shell): red with main's schema.json → 1 failed / 101 passed (`T-0234 AC1 timed-exercise-duration-below-15.json fails with minimum at /default_duration_s`); green → exercises typecheck, lint, test 16 files / 215 passed; format:check clean; check-all exit 0.
+- 2026-10-02 product-owner (accept): **done**. AC1: `schema.json` adds an `allOf` branch whose `if` requires both `kind: "exercise"` and `timed: true`, so it can't match vacuously. The fixture is a plank copy (`t0234-plank-10`, 10 s, `kind: exercise`) and fails with `minimum` at `/default_duration_s`. The red run on main's schema was recorded (1 failed). The warm-up pair (`t0234-arm-circles-10`, `kind: warmup`, 10 s) validates. The in-memory plank copies at 15 and 120 pass and 121 fails on `maximum`. The existing fixture-count and library cases are unedited. AC2: a non-vacuity test (plank is included), and the range check lists `id=value` for each out-of-range row. AC3: `TIMED_MIN_S`/`TIMED_MAX_S` are read as text from `packages/engine/src/prefill.ts` (currently 15/120). A missing constant throws an error that names it. A further test confirms there is no `@workoutlab/engine` dependency. AC4: the old `≥ 5` test is unchanged, and exercises typecheck/lint/test are 215/215 green, with check-all exit 0. Principles hold: the engine stays deterministic and unchanged, and UF-09.7 can no longer receive an out-of-range `first_time` pre-fill from content.

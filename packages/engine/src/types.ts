@@ -120,7 +120,10 @@ export interface BalanceResult {
 
 export type Goal = "build_muscle" | "get_stronger" | "general_fitness";
 
-/** D-0037 §6. `suggest` reads `level` and `equipment`; the rest is for rules 4 and 9. */
+/**
+ * D-0037 §6. `suggest` reads `level`, `equipment` and `goal` (rule 7.2 rep slots, D-0061 §1);
+ * the rest is for rules 4 and 9.
+ */
 export interface EngineProfile {
   goal: Goal;
   level: Level;
@@ -131,6 +134,12 @@ export interface EngineProfile {
   onboardedAt: Instant;
   planUpdatedAt: Instant;
 }
+
+/**
+ * The profile `suggest` and `applySwap` take (D-0095 §1): `level` and `equipment`, plus an
+ * optional `goal` that picks the rule 7.2 rep slots. Absent means `build_muscle`.
+ */
+export type SuggestProfile = Pick<EngineProfile, "level" | "equipment"> & { goal?: Goal };
 
 export type Energy = "low" | "normal" | "high";
 

@@ -21,11 +21,13 @@ import {
 import {
   offlineDb,
   setKey,
+  userScopedKey,
   type CachedRoutineItem,
   type CachedSession,
   type ExerciseDetail,
 } from "./db.js";
 import { currentUserId } from "./current-user.js";
+import { sameValue } from "./flush.js";
 
 export const HISTORY_WINDOW_DAYS = 56;
 
@@ -140,7 +142,7 @@ export async function refreshLibrary(): Promise<void> {
   const rows = (exercises ?? []) as Tables<"exercises">[];
   const cached = rows.map((row) => {
     const mapped = toLibraryExercise(row, byExercise.get(row.id) ?? []);
-    return { key: `${userId}:${mapped.id}`, userId, exercise: mapped };
+    return { key: userScopedKey(userId, mapped.id), userId, exercise: mapped };
   });
   const details = rows.map((row) => {
     const detail: ExerciseDetail = {
@@ -154,7 +156,7 @@ export async function refreshLibrary(): Promise<void> {
       sourceUrl: row.source_url,
       variants: [...(variantsByExercise.get(row.id) ?? [])].sort((a, b) => (a < b ? -1 : 1)),
     };
-    return { key: `${userId}:${row.id}`, userId, detail };
+    return { key: userScopedKey(userId, row.id), userId, detail };
   });
 
   await db.transaction("rw", db.libraryCache, db.exerciseDetails, async () => {
@@ -174,6 +176,12 @@ export async function refreshSessions(now: Date, tz: string): Promise<void> {
   const db = offlineDb();
   const windowStart = windowStartInstant(now.toISOString(), tz, HISTORY_WINDOW_DAYS);
 
+  // D-0151 §2: the entries that are already flushed BEFORE the request is issued. Only these can
+  // be marked `cacheCurrent`, because only for them is the server row this select returns at
+  // least as new as what the entry sent. An entry still pending here is never marked, even if a
+  // flush finishes it during the request.
+  const flushedBefore = (await db.sessions.where({ userId }).toArray()).filter((q) => !q.pending);
+
   const { data, error } = await supabase
     .from("sessions")
     .select("id, started_at, ended_at, time_budget_min, effort_rating, energy")
@@ -187,7 +195,7 @@ export async function refreshSessions(now: Date, tz: string): Promise<void> {
     >
   >;
   const cached: CachedSession[] = rows.map((row) => ({
-    key: `${userId}:${row.id}`,
+    key: userScopedKey(userId, row.id),
     userId,
     id: row.id,
     startedAt: row.started_at,
@@ -197,9 +205,36 @@ export async function refreshSessions(now: Date, tz: string): Promise<void> {
     energy: row.energy,
   }));
 
-  await db.transaction("rw", db.sessionCache, async () => {
+  // One transaction for the cache and the marks (D-0151 §2), so a reader never sees a new cache
+  // with marks that belong to another one, and no `upsertSession` or flush lands between the
+  // compare and the put.
+  //
+  // The marks are RECOMPUTED for every entry of this user, not only added (T-0431 rework): a mark
+  // says "the cache that is there now came from a request issued after this entry's flush", and
+  // this transaction replaces the whole cache. So an entry that passes THIS refresh's snapshot
+  // compare is marked, and every other entry loses a mark it may carry. Without the clear, an
+  // older refresh landing after a newer one would leave the newer one's mark on a stale cache,
+  // and the loader would defer to it. A changed entry (re-queued, or re-queued and flushed,
+  // during the request) fails the compare.
+  await db.transaction("rw", db.sessionCache, db.sessions, async () => {
     await db.sessionCache.where({ userId }).delete();
     await db.sessionCache.bulkPut(cached);
+    const snapshots = new Map(flushedBefore.map((q) => [q.id, q]));
+    for (const current of await db.sessions.where({ userId }).toArray()) {
+      const snapshot = snapshots.get(current.id);
+      const passes =
+        snapshot !== undefined &&
+        !current.pending &&
+        current.finished === snapshot.finished &&
+        sameValue(current.row, snapshot.row);
+      if (passes) {
+        if (current.cacheCurrent !== true)
+          await db.sessions.put({ ...current, cacheCurrent: true });
+      } else if (Object.hasOwn(current, "cacheCurrent")) {
+        const { cacheCurrent: _stale, ...unmarked } = current;
+        await db.sessions.put(unmarked);
+      }
+    }
   });
 }
 
@@ -215,7 +250,7 @@ export async function refreshCheckins(): Promise<void> {
 
   const cached = (data ?? []).map((row: Tables<"plan_checkins">) => {
     const checkin = toPlanCheckin(row);
-    return { key: `${userId}:${checkin.id}`, userId, checkin };
+    return { key: userScopedKey(userId, checkin.id), userId, checkin };
   });
 
   await db.transaction("rw", db.checkinCache, async () => {
@@ -252,7 +287,7 @@ export async function refreshRoutines(): Promise<void> {
   const cached = (
     (routines ?? []) as Array<Pick<Tables<"routines">, "id" | "name" | "updated_at">>
   ).map((row) => ({
-    key: `${userId}:${row.id}`,
+    key: userScopedKey(userId, row.id),
     userId,
     id: row.id,
     name: row.name,
@@ -277,7 +312,7 @@ export async function refreshTargets(): Promise<void> {
 
   const cached = (data ?? []).map((row: Tables<"area_targets">) => {
     const mapped = toAreaTarget(row);
-    return { key: `${userId}:${mapped.area}`, userId, target: mapped };
+    return { key: userScopedKey(userId, mapped.area), userId, target: mapped };
   });
 
   await db.transaction("rw", db.targetCache, async () => {

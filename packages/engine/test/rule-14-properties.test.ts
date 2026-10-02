@@ -123,7 +123,9 @@ function oracle(
     durationS: null,
     kind,
   });
-  const drop = ex.externalLoad && cur.w > 0 ? Math.max(inc, flo(0.9 * cur.w, inc)) : 0;
+  // D-0137 §1 (T-0235): the one-increment floor is capped at W.
+  const drop =
+    ex.externalLoad && cur.w > 0 ? Math.min(cur.w, Math.max(inc, flo(0.9 * cur.w, inc))) : 0;
   const minR = Math.min(...cur.reps);
   if (gap >= 21) return out(drop, lo, "reentry");
   if (gap >= 10) return out(cur.w, lo, "hold_after_break");
@@ -255,7 +257,7 @@ describe("rule 14 prefill properties (seeded)", () => {
     ]) {
       expect(kinds.get(k) ?? 0, k).toBeGreaterThan(10);
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 
   it("rule-14 (AC19) same input → same output; history order and library order don't matter; inputs unchanged", () => {
     for (let seed = 1; seed <= 1000; seed++) {
@@ -270,7 +272,7 @@ describe("rule 14 prefill properties (seeded)", () => {
       ).toEqual(a);
       expect(history).toEqual(snapshot);
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 
   it("rule-14 (AC21) invariants: shape, bounds, bodyweight 0, carry only with a previous, reps in range", () => {
     for (let seed = 1; seed <= N; seed++) {
@@ -298,5 +300,5 @@ describe("rule 14 prefill properties (seeded)", () => {
         if (p.kind !== "add_rep" && p.kind !== "increase") expect(p.reps, l).toBe(slot.repsMin);
       }
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 });

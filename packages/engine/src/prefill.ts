@@ -1,4 +1,4 @@
-// Rule 14: progression and pre-fill (UF-09.3, UF-09.4, UF-08.2; D-0026, D-0057, D-0062).
+// Rule 14: progression and pre-fill (UF-09.3, UF-09.4, UF-08.2; D-0026, D-0057, D-0062, D-0137).
 // Pure: `now` and `tz` are inputs, and the history is normalised per rule 0 before use.
 import { DEFAULT_INCREMENT_KG, floorInc } from "./energy.js";
 import { indexLibrary, isHardSet, normalizeHistory, primaryAreas } from "./history.js";
@@ -226,7 +226,9 @@ export function prefillFrom(
   const inc = exercise.incrementKg ?? DEFAULT_INCREMENT_KG;
   const W = cur.w;
   // D-0057 §4: one increment is the floor when W > 0; W = 0 stays 0 (and always for bodyweight).
-  const dropped = loaded && W > 0 ? round3(Math.max(inc, floorInc(DROP_FACTOR * W, inc))) : 0;
+  // D-0137 §1: the floor is capped at W, so a light lift (0 < W < inc) never "drops" heavier.
+  const dropped =
+    loaded && W > 0 ? round3(Math.min(W, Math.max(inc, floorInc(DROP_FACTOR * W, inc)))) : 0;
   const res = (weightKg: number, reps: number, kind: PrefillResult["kind"]): PrefillResult => ({
     weightKg: round3(weightKg),
     reps,
@@ -278,4 +280,36 @@ export function prefill(
     tz,
     previous,
   );
+}
+
+/** Internal `plannedDurationS` over an already-normalised history and today's local date. */
+export function plannedDurationFrom(
+  exercise: LibraryExercise,
+  hard: readonly HistorySet[],
+  lib: ReadonlyMap<string, LibraryExercise>,
+  today: LocalDate,
+  tz: TimeZone,
+): number | null {
+  if (!exercise.timed) return null;
+  // Rule 14's timed branch never reads the slot or `previous` (D-0057 §6, D-0092 §1).
+  return prefillFrom(exercise, { repsMin: null, repsMax: null }, hard, lib, today, tz, null)
+    .durationS;
+}
+
+/**
+ * Rule 7.1 planned duration (D-0092 §1): the work of one set of a timed `exercise`, which is
+ * the rule 14 pre-fill `durationS` over the same `history`, `now` and `tz` (`defaultDurationS`
+ * with no usable history). `null` for a non-timed exercise (or a timed one with no default and
+ * no usable history; rule 7.1 then costs 45 s). Throws `RangeError` on `now` without an offset.
+ */
+export function plannedDurationS(
+  exercise: LibraryExercise,
+  history: readonly HistorySet[],
+  library: readonly LibraryExercise[],
+  now: Instant,
+  tz: TimeZone,
+): number | null {
+  const today = localDate(now, tz);
+  if (!exercise.timed) return null;
+  return plannedDurationFrom(exercise, normalizeHistory(history), indexLibrary(library), today, tz);
 }

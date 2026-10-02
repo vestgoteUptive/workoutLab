@@ -5,8 +5,10 @@ lane: split → web-feature:UF-04 (T-0306a), web-feature:UF-05 (T-0306b)
 screens: [UF-04.1, UF-04.2, UF-04.3, UF-05.1, UF-09.6, UF-09.9]
 decisions: [D-0005, D-0025, D-0034, D-0040, D-0056, D-0057, D-0059, D-0061, D-0062, D-0065, D-0066, D-0067, D-0069, D-0071]
 deps: [T-0300, T-0203b, T-0204, T-0205, T-0224, T-0304, T-0318, T-0319]
-status: split   # → T-0306a (ready after T-0318 + T-0319), T-0306b (after T-0304, T-0224, T-0318)
+status: split   # → T-0306a (done), T-0306b (→ T-0421, T-0422), D-0142
 ---
+<!-- Re-groomed 2026-10-02 by product-owner (D-0142). T-0306b's build specs are T-0421 (the SwapSheet component, with the D-0093 §7 parseSessionPlan round-trip) and T-0422 (the swap seams on UF-09.9/09.6). Where they differ from the [b] ACs below, the children and D-0142 win. -->
+
 <!-- Groomed 2026-09-29 by product-owner. Build flow: wl-build-web. Split per flow (D-0067 §1); ACs tagged [a]/[b]. Reconciled by triage 2026-09-29 (TR-0030, D-0071): SwapSheet takes a Workout and returns the engine applySwap (T-0224) result; the UI builds no swapped item; UF-09 mounts only through seams.tsx and persists through useFocusSession().replaceItem; UF-08.3 (T-0303c) reuses this sheet. -->
 
 ## Why

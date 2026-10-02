@@ -8,8 +8,20 @@
 // A spec that imports `test`/`expect` from this file gets one extra, automatic fixture: any
 // Supabase request that no route claimed fails the test at teardown, naming the method and URL.
 //
+// T-0425 (D-0086 follow-up): a second `auto` fixture, `consoleGuard`, does the same for "logs no
+// error": any `console.error` or uncaught page error (`pageerror`) on any page of the test's
+// context fails the test at teardown, listing every line. A test that expects a specific error
+// exempts it with `consoleGuard.allow(/.../)`, for that test only.
+//
 // Import as: `import { expect, test } from "./fixtures/guarded-test.js";`
-import { test as base, type BrowserContext, expect, type Request } from "@playwright/test";
+import {
+  test as base,
+  type BrowserContext,
+  type ConsoleMessage,
+  expect,
+  type Page,
+  type Request,
+} from "@playwright/test";
 import { VITE_SUPABASE_URL } from "../playwright.config.js";
 
 /** What a spec gets back from `installSupabaseGuard`, so AC-6 can assert on the guard itself. */
@@ -139,6 +151,88 @@ export function installSupabaseGuard(context: BrowserContext): SupabaseGuard {
   };
 }
 
+/** What `installConsoleGuard` (and the `consoleGuard` fixture) hands back. */
+export interface ConsoleGuard {
+  /**
+   * Exempts every recorded line matching `pattern`, for this guard only. The fixture builds a
+   * fresh guard per test, so an `allow` never carries over to the next test. A spec outside
+   * `fixture-guard.spec.ts` must name the follow-up ticket (`T-NNNN`) in the `//` comment block
+   * directly above the call (T-0430 AC3). Throws on a global or sticky pattern (T-0430 AC4).
+   */
+  allow(pattern: RegExp): void;
+  /** Every recorded line, allowed or not, in arrival order. */
+  errors(): string[];
+  /** Throws, listing every recorded line no `allow` pattern matches. A no-op when there are none. */
+  assertClean(): void;
+}
+
+/** The literal every console-guard failure message contains. */
+export const CONSOLE_ERROR_MESSAGE = "console error in e2e";
+
+/**
+ * The one built-in exemption: Chromium's own network-status line, logged as a console error for
+ * every 4xx/5xx response and failed load (the mocks' deliberate 4xx/501 answers, the offline
+ * reloads). Network behaviour belongs to the Supabase guard above, so these are not app errors.
+ * Only `console` lines can match; a `pageerror` is never exempt.
+ */
+const NETWORK_STATUS_PREFIX = "Failed to load resource:";
+
+/**
+ * Records, for every page of `context` (pages opened later included), each `console` message of
+ * type `error` as `"console.error: <text> (<url>:<line>)"` and each `pageerror` (an uncaught
+ * exception or an unhandled promise rejection) as `"pageerror: <message>"`.
+ */
+export function installConsoleGuard(context: BrowserContext): ConsoleGuard {
+  const seen: string[] = [];
+  const allowed: RegExp[] = [];
+
+  const onConsole = (message: ConsoleMessage) => {
+    if (message.type() !== "error") return;
+    const text = message.text();
+    if (text.startsWith(NETWORK_STATUS_PREFIX)) return;
+    const { url, lineNumber } = message.location();
+    seen.push(`console.error: ${text} (${url}:${lineNumber})`);
+  };
+  const onPageError = (error: Error) => {
+    seen.push(`pageerror: ${error.message}`);
+  };
+  const attach = (page: Page) => {
+    page.on("console", onConsole);
+    page.on("pageerror", onPageError);
+  };
+
+  for (const page of context.pages()) attach(page);
+  context.on("page", attach);
+
+  const unallowed = () => seen.filter((line) => !allowed.some((pattern) => pattern.test(line)));
+
+  return {
+    allow: (pattern) => {
+      // T-0430 AC4: `unallowed` calls `pattern.test(line)` once per line, and on a `/g` or `/y`
+      // pattern `test` advances `lastIndex`, so the same pattern matches one line and misses the
+      // next identical one. Reject them rather than silently resetting `lastIndex`.
+      if (pattern.global || pattern.sticky) {
+        throw new Error(
+          `consoleGuard.allow: ${String(pattern)} is a global or sticky pattern; drop the g and ` +
+            `y flags (they make RegExp.test stateful, so identical lines match only every other time)`,
+        );
+      }
+      allowed.push(pattern);
+    },
+    errors: () => [...seen],
+    assertClean: () => {
+      const lines = unallowed();
+      if (lines.length === 0) return;
+      throw new Error(
+        `${CONSOLE_ERROR_MESSAGE}: ${lines.length} line(s) were logged as errors. Fix the app ` +
+          `code, or — only if the error is expected — exempt it for this test with ` +
+          `\`consoleGuard.allow(/.../)\` and name the follow-up ticket in the comment block above it:\n` +
+          lines.map((line) => `  - ${line}`).join("\n"),
+      );
+    },
+  };
+}
+
 /**
  * `test` with the guard attached as an `auto` fixture, so every test in an importing spec is
  * checked without opting in test by test. `expect` is re-exported unchanged, purely so a spec
@@ -147,10 +241,20 @@ export function installSupabaseGuard(context: BrowserContext): SupabaseGuard {
  * The assertion runs *after* the test body, on teardown. A test that already failed still gets
  * its own error reported first; the guard only adds a failure where there wasn't one.
  */
-export const test = base.extend<{ supabaseGuard: SupabaseGuard }>({
+export const test = base.extend<{ supabaseGuard: SupabaseGuard; consoleGuard: ConsoleGuard }>({
   supabaseGuard: [
     async ({ context }, use) => {
       const guard = installSupabaseGuard(context);
+      await use(guard);
+      guard.assertClean();
+    },
+    { auto: true },
+  ],
+  // T-0425: installed on the context before the test body opens any page, so the very first
+  // page's errors are caught too; `context.on("page")` covers pages opened later.
+  consoleGuard: [
+    async ({ context }, use) => {
+      const guard = installConsoleGuard(context);
       await use(guard);
       guard.assertClean();
     },

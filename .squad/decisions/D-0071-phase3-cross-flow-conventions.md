@@ -7,6 +7,8 @@ by: triage (TR-0030)
 area: web
 supersedes: D-0063 §1, §2, §4, §5, §6 and D-0067 §2 (strings, routes, import bans), §4, §5 — in part; the rest of both stays in force
 ---
+> **Amended in part by D-0111 (2026-10-02).** §4: `features/UF-09/seams.tsx` is created by T-0304e (split off T-0304a by D-0111 §1), not T-0304a. The registry rule itself is unchanged.
+
 ## Context
 Two product-owners groomed Phase 3 in parallel (TR-0030). Groom A (T-0301–T-0304) wrote D-0063–D-0066. Groom B (T-0305–T-0308) wrote D-0067–D-0070. Both set cross-flow conventions, and neither saw the other's output. This is where they disagree or duplicate each other:
 

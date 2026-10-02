@@ -1,0 +1,531 @@
+/* UF-01 onboarding (UF-01.1–.4). Colours and fonts come only from @workoutlab/design-tokens
+   (D-0019). Selection state is styled from `:checked`, never inline, and every control keeps a
+   visible `:focus-visible` ring (WCAG 2.4.7). */
+.wl-uf01 {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  min-block-size: 100dvh;
+  padding: 56px 24px 40px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-bg);
+  font-family: var(--wl-font-body);
+}
+
+.wl-uf01--welcome {
+  gap: 24px;
+  padding-block-start: 64px;
+}
+
+.wl-uf01__brand {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.wl-uf01__art {
+  inline-size: 100%;
+  max-inline-size: 342px;
+  block-size: auto;
+  align-self: center;
+}
+
+.wl-uf01__art-disc {
+  fill: var(--wl-color-surface);
+}
+
+.wl-uf01__art-floor {
+  stroke: var(--wl-color-line-strong);
+}
+
+.wl-uf01__art-ink {
+  stroke: var(--wl-color-text);
+}
+
+.wl-uf01__art-accent {
+  stroke: var(--wl-color-accent);
+}
+
+.wl-uf01__art-bar {
+  stroke: var(--wl-color-text-muted);
+}
+
+.wl-uf01__art-plate {
+  fill: var(--wl-color-text-muted);
+}
+
+.wl-uf01__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wl-uf01__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.wl-uf01__title--step {
+  font-size: 40px;
+  line-height: 1;
+}
+
+.wl-uf01__line {
+  display: block;
+}
+
+.wl-uf01__muted {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.wl-uf01__actions,
+.wl-uf01__form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wl-uf01__actions {
+  justify-content: flex-end;
+}
+
+.wl-uf01__form {
+  gap: 22px;
+}
+
+.wl-uf01__form > .wl-uf01__primary {
+  margin-block-start: auto;
+}
+
+.wl-uf01__primary,
+.wl-uf01__ghost {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 54px;
+  padding: 0 16px;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 16px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.wl-uf01__primary {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border: 0;
+  font-weight: 700;
+}
+
+.wl-uf01__primary:hover {
+  background: var(--wl-color-accent-hover);
+}
+
+.wl-uf01__ghost {
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 1px solid var(--wl-color-line-strong);
+  font-weight: 500;
+}
+
+.wl-uf01__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wl-uf01__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  color: var(--wl-color-text);
+}
+
+.wl-uf01__bars {
+  display: flex;
+  flex: 1;
+  gap: 6px;
+}
+
+.wl-uf01__bar {
+  flex: 1;
+  block-size: 4px;
+  border-radius: 2px;
+  background: var(--wl-color-line);
+}
+
+.wl-uf01__bar[data-done="true"] {
+  background: var(--wl-color-accent);
+}
+
+.wl-uf01__progress {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+}
+
+/* Visually hidden, still read (the progress name, the native radios). */
+.wl-uf01__sr,
+.wl-uf01__radio {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.wl-uf01__options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wl-uf01__option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 16px;
+  background: var(--wl-color-surface);
+  cursor: pointer;
+}
+
+.wl-uf01__option:has(:checked) {
+  padding: 15px 17px;
+  border: 2px solid var(--wl-color-accent);
+}
+
+.wl-uf01__option-label {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.wl-uf01__group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.wl-uf01__tag {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wl-uf01__segments {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 14px;
+  background: var(--wl-color-surface);
+}
+
+.wl-uf01__segment {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 48px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wl-uf01__segment:has(:checked) {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  font-weight: 700;
+}
+
+.wl-uf01__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wl-uf01__chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 999px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wl-uf01__chip:has(:checked) {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+  font-weight: 700;
+}
+
+.wl-uf01__primary:focus-visible,
+.wl-uf01__ghost:focus-visible,
+.wl-uf01__back:focus-visible,
+.wl-uf01__option:has(:focus-visible),
+.wl-uf01__segment:has(:focus-visible),
+.wl-uf01__chip:has(:focus-visible) {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+/* UF-01.4 Schedule & plan (T-0301d). */
+.wl-uf01__steppers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.wl-uf01__stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 16px;
+  background: var(--wl-color-surface);
+}
+
+.wl-uf01__stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.wl-uf01__step {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 48px;
+  block-size: 48px;
+  padding: 0;
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.wl-uf01__step[aria-disabled="true"] {
+  color: var(--wl-color-text-muted);
+  border-color: var(--wl-color-line);
+  cursor: not-allowed;
+}
+
+.wl-uf01__stepper-value {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 34px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.wl-uf01__stepper-unit {
+  font-size: 13px;
+  text-align: center;
+}
+
+.wl-uf01__plan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 16px;
+  background: var(--wl-color-surface);
+}
+
+.wl-uf01__tag--accent {
+  color: var(--wl-color-accent);
+}
+
+.wl-uf01__plan-title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.wl-uf01__rhythm {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wl-uf01__targets {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf01__target {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--wl-color-surface-2);
+  font-size: 13px;
+}
+
+.wl-uf01__target-sets {
+  font-weight: 700;
+}
+
+.wl-uf01__step:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+/* UF-01.5 Account and /welcome/save (T-0301c). */
+.wl-uf01__tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 14px;
+  background: var(--wl-color-surface);
+}
+
+.wl-uf01__tab {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 48px;
+  padding: 0 12px;
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wl-uf01__tab[aria-selected="true"] {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  font-weight: 700;
+}
+
+.wl-uf01__auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.wl-uf01__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wl-uf01__field-label {
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.wl-uf01__input {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 54px;
+  padding: 0 16px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 14px;
+  font: inherit;
+  font-size: 16px;
+}
+
+.wl-uf01__status {
+  margin: 0;
+  color: var(--wl-color-text);
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+/* Empty: still in the accessibility tree (T-0382), but out of the flex flow, so no gap. */
+.wl-uf01__status:empty {
+  position: absolute;
+}
+
+.wl-uf01__or {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.wl-uf01__ghost[aria-disabled="true"] {
+  color: var(--wl-color-text-muted);
+  border-color: var(--wl-color-line);
+  cursor: not-allowed;
+}
+
+.wl-uf01__footer {
+  display: flex;
+  justify-content: center;
+  margin: auto 0 0;
+}
+
+.wl-uf01__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: 0 12px;
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+  text-decoration: underline;
+}
+
+.wl-uf01__tab:focus-visible,
+.wl-uf01__input:focus-visible,
+.wl-uf01__link:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}

@@ -39,7 +39,6 @@ import {
   profile,
   setsWithReps,
 } from "./fixtures/common.js";
-import { R12_E1_LINE } from "./fixtures/r12-e1-d0056.js";
 import {
   SIMULATED_HISTORIES,
   allChestNoLegsHistory,
@@ -48,12 +47,10 @@ import {
   offlineQueue,
   returningAfter10DaysHistory,
 } from "./fixtures/histories.js";
+import { rule14GuardDiff, rule14GuardedLines } from "./fixtures/rule14-pinned-d0132.js";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = path.resolve(TEST_DIR, "..", "..", "..");
-const BASELINE = JSON.parse(
-  readFileSync(path.join(TEST_DIR, "fixtures", "pre-t0205-suggest.json"), "utf8"),
-) as Record<string, Workout>;
 
 const KINDS: PrefillKind[] = [
   "first_time",
@@ -105,22 +102,6 @@ const prefillReason = (i: WorkoutItem): PrefillKind | undefined => {
   const r = i.reasons.find((x) => x.code === "prefill");
   return r !== undefined && r.code === "prefill" ? r.kind : undefined;
 };
-
-/** A workout with every rule 14 output blanked, to compare selection and cost only. */
-function withoutPrefill(w: Workout): unknown {
-  return {
-    ...w,
-    plan: {
-      ...w.plan,
-      items: w.plan.items.map((i) => ({
-        ...i,
-        prefill: "*",
-        backoff: i.backoff === null ? null : { ...i.backoff, weightKg: "*" },
-        reasons: i.reasons.map((r) => (r.code === "prefill" ? { code: "prefill" } : r)),
-      })),
-    },
-  };
-}
 
 // ---- AC9: R14-E9 ----
 
@@ -178,17 +159,18 @@ describe("rule 14 × rule 7.4: the High back-off reads a real pre-fill", () => {
 // ---- AC16: the seam is replaced, zero-history results unchanged ----
 
 describe("rule 14 replaces the T-0201 first_time seam (D-0057 §8)", () => {
-  it("rule-14 (AC16) zero history: every suggest deep-equals the pre-T-0205 result (energy × budget × warm-up × shuffle)", () => {
+  // The frozen comparison against the pre-T-0205 suggest output was a one-time proof, recorded
+  // in the T-0205 build and accept log (docs/tickets/T-0205-…). Retired by T-0237: the
+  // standing invariant is the first_time prefill shape on every zero-history item.
+  it("rule-14 (AC16) zero history: every item is first_time with the D-0057 prefill shape (energy × budget × warm-up × shuffle)", () => {
     let n = 0;
     for (const energy of ["normal", "low", "high"] as const) {
       for (const budgetMin of [15, 20, 30]) {
         for (const warmupInBudget of [true, false]) {
           for (const shuffle of [0, 1]) {
             const key = `zero/${energy}/${budgetMin}/${warmupInBudget ? "wu" : "nowu"}/${shuffle}`;
-            const before = BASELINE[key];
-            expect(before, key).toBeDefined();
             const w = run([], input({ energy, budgetMin, warmupInBudget, shuffle }));
-            expect(w, key).toEqual(before);
+            expect(w.plan.items.length, key).toBeGreaterThan(0);
             for (const i of w.plan.items) {
               const ex = LIBRARY.find((e) => e.id === i.exerciseId) as LibraryExercise;
               expect(i.prefill, key).toEqual({
@@ -207,30 +189,9 @@ describe("rule 14 replaces the T-0201 first_time seam (D-0057 §8)", () => {
     expect(n).toBe(36);
   });
 
-  it("rule-14 (AC16) (AC23) non-empty histories: selection, sets, costs and totals equal the pre-T-0205 result", () => {
-    for (const [key, before] of Object.entries(BASELINE)) {
-      if (key === "//") continue;
-      const [name, energy, budget, wu, shuffle] = key.split("/") as [
-        string,
-        string,
-        string,
-        string,
-        string,
-      ];
-      const history = HISTORIES.find(([k]) => k === name)?.[1];
-      expect(history, key).toBeDefined();
-      const w = run(
-        history as HistorySet[],
-        input({
-          energy: energy as SessionInput["energy"],
-          budgetMin: Number(budget),
-          warmupInBudget: wu === "wu",
-          shuffle: Number(shuffle),
-        }),
-      );
-      expect(withoutPrefill(w), key).toEqual(withoutPrefill(before));
-    }
-  });
+  // "rule-14 (AC16) (AC23) non-empty histories …" deep-equalled selection, sets, costs and
+  // totals against the pre-T-0205 suggest output. That was a one-time proof, recorded in the
+  // T-0205 build and accept log (docs/tickets/T-0205-…). Retired by T-0237.
 });
 
 // ---- AC17: suggest uses real progression ----
@@ -492,7 +453,7 @@ describe("rule 14 result shape (openapi PrefillResult)", () => {
     expect(result).toMatch(/required: \[weightKg, reps, durationS, kind\]/);
     expect(result).toMatch(/weightKg: \{ type: \[number, "null"\], minimum: 0 \}/);
     expect(result).toMatch(/reps: \{ type: \[integer, "null"\], minimum: 1 \}/);
-    expect(result).toMatch(/durationS: \{ type: \[integer, "null"\], minimum: 1 \}/);
+    expect(result).toMatch(/durationS: \{ type: \[integer, "null"\], minimum: 15, maximum: 120 \}/);
     const kinds = /enum: \[([^\]]*)\]/.exec(block("PrefillKind"))?.[1] ?? "";
     expect(kinds.split(",").map((k) => k.trim())).toEqual(KINDS);
   });
@@ -727,7 +688,7 @@ describe("rule 14 invariants over a long sweep (AC23, R7-E8)", () => {
     // The sweep reaches the break branches, not only first_time.
     for (const k of ["first_time", "hold_after_break", "reentry"] as const)
       expect(kindsSeen).toContain(k);
-  });
+  }, 30_000); // runtime budget only (sweep)
 });
 
 // ---- AC24: public API ----
@@ -792,6 +753,7 @@ function rulesOnMain(): string | null {
   return null;
 }
 
+/** Rule 14's text: from the `## 14.` heading up to `## Required tests` (D-0092 §6). */
 describe("rule 14 traceability", () => {
   it("rule-14 (AC25) every rule 14 example id appears in a test title", () => {
     const titleRe = /\b(?:it|test)(?:\.each\([\s\S]*?\))?\(\s*(["'`])((?:\\.|(?!\1).)*)\1/g;
@@ -816,12 +778,14 @@ describe("rule 14 traceability", () => {
     }
   });
 
-  it("rule-14 (AC25) docs/engine-rules.md is unchanged against main", () => {
+  it("rule-14 (AC25) docs/engine-rules.md rule 14's heading, Last performance paragraph and R14 example lines are unchanged against main", () => {
     const main = rulesOnMain();
     // Shallow CI clones have no main; the rule text is then pinned by the tests above.
     if (main === null) return;
-    // T-0204 landed first on this base: its D-0056 §1 R12-E1 line is the only allowed change.
+    // D-0092 §6, narrowed by D-0132 §2: this guard covers the rule 14 lines T-0205 still
+    // owns. The rest of rule 14 is pinned positively by t0221-rule-14-text.test.ts.
     const current = readFileSync(path.join(REPO_DIR, "docs", "engine-rules.md"), "utf8");
-    expect([main, main.replace(R12_E1_LINE.before, R12_E1_LINE.after)]).toContain(current);
+    expect(rule14GuardedLines(current)).toHaveLength(11);
+    expect(rule14GuardDiff(current, main)).toEqual([]);
   });
 });

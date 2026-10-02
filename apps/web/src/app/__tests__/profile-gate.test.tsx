@@ -4,7 +4,7 @@
 // `ProfileStatusProvider` the real `App` mounts. `lib/offline` and `supabase.from` are mocked
 // with the `select-spy.ts` pattern. Every assertion is on behaviour: which screen id is on the
 // DOM, which router location settled, which spy was called.
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, useLocation, useNavigate } from "react-router";
 import { useEffect } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -18,6 +18,9 @@ import {
 import { gatedPaths } from "../../lib/profile/gated-routes.js";
 import { routes } from "../routes.js";
 import { createSelectSpy, type SelectSpy } from "../../lib/offline/__tests__/select-spy.js";
+import { freshOfflineDb } from "../../lib/offline/__tests__/test-helpers.js";
+import { seedLibrary } from "../../lib/offline/__tests__/seed-library.js";
+import { toLibraryExercise, type Tables } from "@workoutlab/shared";
 
 const { loadProfile, refreshProfile, uf06Loaders } = vi.hoisted(() => ({
   loadProfile: vi.fn(),
@@ -82,6 +85,10 @@ selectSpy.current = createSelectSpy();
 const spy = selectSpy.current;
 
 const PROFILE_ROW = { id: "u1", goal: "build" };
+
+// T-0408 (D-0096): local budgets on waits for lazy route chunks (the --concurrency=1 gate).
+const LAZY_WAIT_MS = 5_000;
+const LAZY_TEST_MS = 15_000;
 
 let navigateRef: ((path: string) => void) | undefined;
 let locationRef = "";
@@ -163,10 +170,12 @@ beforeEach(() => {
   recheckRef = undefined;
   locationRef = "";
   authStateCallbacks.length = 0;
+  freshOfflineDb();
 });
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  freshOfflineDb();
 });
 
 // ---------------------------------------------------------------------------
@@ -194,6 +203,120 @@ const GATED: ReadonlyArray<readonly [string, string]> = gatedPaths(routes).map((
   const route = routes.find((r) => r.path === pattern)!;
   return [concrete(pattern), route.screenId] as const;
 });
+
+// ---------------------------------------------------------------------------
+// T-0366 (D-0088 §2, D-0091 §1): the AC-6 fixtures for the two built UF-04 screens.
+//
+// UF-04.2 and UF-04.3 render their `data-screen-id` wrapper during the first cache read, then
+// redirect to /library when the exercise isn't cached (D-0079 §3). On an empty cache the AC-6
+// rows could therefore pass on the wrapper alone. These rows seed the library and assert the
+// built content and that the location holds. UF-04 reads `lib/offline/history.js` directly (not
+// the mocked `index.js`), so the seed goes into the real (fake-indexeddb) Dexie cache for `u1`.
+// Online (`present`) the screen runs its own `refreshAll`, which replaces the cache from
+// `supabase.from`; the select spy returns the same exercises, so the refresh writes them back.
+// ---------------------------------------------------------------------------
+
+const USER_ID = "u1"; // the id `seedValidSession()` stores
+
+function exerciseRow(id: string, name: string): Tables<"exercises"> {
+  return {
+    id,
+    name,
+    kind: "exercise",
+    type: "compound",
+    level: "intermediate",
+    equipment: ["barbell"],
+    instructions: ["Brace.", "Drive up."],
+    mistakes: [],
+    cue: "Chest up",
+    source: "workoutlab",
+    license: "LicenseRef-workoutLab",
+    attribution: null,
+    source_url: null,
+    timed: false,
+    increment_kg: 2.5,
+    default_duration_s: null,
+    external_load: true,
+  };
+}
+
+const UF04_EXERCISES = [
+  exerciseRow("back-squat", "Back squat"),
+  exerciseRow("leg-press", "Leg press"),
+];
+const UF04_AREAS = UF04_EXERCISES.flatMap((e) => [
+  { exercise_id: e.id, area_id: "quads", weight: 1 },
+  { exercise_id: e.id, area_id: "glutes", weight: 0.5 },
+]);
+const UF04_VARIANTS = [{ exercise_id: "back-squat", variant_id: "leg-press" }];
+
+interface Uf04Fixture {
+  /** The exercise ids the screen needs in the cache. */
+  exerciseIds: readonly string[];
+  /** Resolves once the built content (not just the wrapper) is on screen. */
+  built: () => Promise<void>;
+  /** Asserts the built content is still on screen. */
+  stillBuilt: () => void;
+}
+
+/** Per route pattern; only the AC-6 `unknown`/`present` rows look this up. */
+const UF04_FIXTURES: Record<string, Uf04Fixture> = {
+  "/library/:exerciseId": {
+    exerciseIds: ["back-squat"],
+    built: async () => {
+      await screen.findByRole("heading", { level: 1, name: "Back squat" });
+    },
+    stillBuilt: () => {
+      expect(screen.getByRole("heading", { level: 1, name: "Back squat" })).toBeInTheDocument();
+    },
+  },
+  "/library/:exerciseId/compare/:otherId": {
+    exerciseIds: ["back-squat", "leg-press"],
+    built: async () => {
+      await screen.findByRole("columnheader", { name: "Back squat" });
+      await screen.findByRole("columnheader", { name: "Leg press" });
+    },
+    stillBuilt: () => {
+      expect(screen.getByRole("columnheader", { name: "Back squat" })).toBeInTheDocument();
+      expect(screen.getByRole("columnheader", { name: "Leg press" })).toBeInTheDocument();
+    },
+  },
+};
+
+/** The fixture for a concrete AC-6 path, found through the pattern it was built from. */
+function uf04FixtureFor(path: string): Uf04Fixture | undefined {
+  const pattern = gatedPaths(routes).find((p) => concrete(p) === path);
+  return pattern === undefined ? undefined : UF04_FIXTURES[pattern];
+}
+
+/** Seeds the Dexie cache for `u1` (both iterations) and, online, the spy rows the refresh reads. */
+async function seedUf04(fixture: Uf04Fixture, online: boolean): Promise<void> {
+  const rows = UF04_EXERCISES.filter((e) => fixture.exerciseIds.includes(e.id));
+  const areasOf = (id: string) => UF04_AREAS.filter((a) => a.exercise_id === id);
+  await seedLibrary(
+    USER_ID,
+    rows.map((row) => toLibraryExercise(row, areasOf(row.id))),
+  );
+  if (online) {
+    spy.setRows("exercises", rows);
+    spy.setRows(
+      "exercise_areas",
+      UF04_AREAS.filter((a) => fixture.exerciseIds.includes(a.exercise_id)),
+    );
+    spy.setRows(
+      "exercise_variants",
+      UF04_VARIANTS.filter(
+        (v) =>
+          fixture.exerciseIds.includes(v.exercise_id) && fixture.exerciseIds.includes(v.variant_id),
+      ),
+    );
+  }
+}
+
+/** One macrotask turn, so a redirect queued behind the cache read (or the refresh) has landed. */
+async function settleTurn(): Promise<void> {
+  await act(() => new Promise((resolve) => setTimeout(resolve, 50)));
+}
 
 describe("the gated set is derived from routes.ts, with an exact expected count", () => {
   it("is the 12 `protected` entries plus /session/setup, and nothing else", () => {
@@ -246,12 +369,18 @@ describe("the gated set is derived from routes.ts, with an exact expected count"
 });
 
 describe("AC-5 signed in + `missing`: every gated route redirects to /welcome/save", () => {
-  it.each(GATED)("%s redirects to /welcome/save", async (path) => {
-    stateMissing();
-    render(<Harness start={path} />);
-    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
-    expect(locationRef).toBe("/welcome/save");
-  });
+  it.each(GATED)(
+    "%s redirects to /welcome/save",
+    async (path) => {
+      stateMissing();
+      render(<Harness start={path} />);
+      await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument(), {
+        timeout: LAZY_WAIT_MS,
+      });
+      expect(locationRef).toBe("/welcome/save");
+    },
+    LAZY_TEST_MS,
+  );
 
   it("visits a non-zero number of paths", () => {
     expect(GATED.length).toBe(13);
@@ -261,22 +390,43 @@ describe("AC-5 signed in + `missing`: every gated route redirects to /welcome/sa
 describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", () => {
   it.each(GATED)("`unknown`: %s renders %s, not /welcome/save", async (path, screenId) => {
     stateUnknown();
+    const uf04 = uf04FixtureFor(path);
+    if (uf04) await seedUf04(uf04, false);
     render(<Harness start={path} />);
     await waitFor(() => expect(screenOf(screenId)).toBeInTheDocument());
+    if (uf04) {
+      // T-0366: the built screen, not the transient wrapper, then a macrotask turn.
+      await uf04.built();
+      await settleTurn();
+      uf04.stillBuilt();
+      expect(screenOf("UF-04.1")).not.toBeInTheDocument();
+    }
     // Settle one more tick, so a late redirect would still be caught.
     await act(async () => {});
     expect(screenOf(screenId)).toBeInTheDocument();
     expect(locationRef).toBe(path);
     expect(screenOf("UF-01.1")).not.toBeInTheDocument();
+    expect(screenOf("UF-01.5-save")).not.toBeInTheDocument();
   });
 
   it.each(GATED)("`present`: %s renders %s, not /welcome/save", async (path, screenId) => {
     statePresent();
+    const uf04 = uf04FixtureFor(path);
+    if (uf04) await seedUf04(uf04, true);
     render(<Harness start={path} />);
     await waitFor(() => expect(screenOf(screenId)).toBeInTheDocument());
+    if (uf04) {
+      // T-0366: the built screen survives the screen's own `refreshAll` against the spy.
+      await uf04.built();
+      await waitFor(() => expect(spy.countFor("exercises")).toBeGreaterThanOrEqual(1));
+      await settleTurn();
+      uf04.stillBuilt();
+      expect(screenOf("UF-04.1")).not.toBeInTheDocument();
+    }
     await act(async () => {});
     expect(locationRef).toBe(path);
     expect(screenOf("UF-01.1")).not.toBeInTheDocument();
+    expect(screenOf("UF-01.5-save")).not.toBeInTheDocument();
   });
 
   // Slow network on a *gated* route: the gate's source never settles, so the status stays at the
@@ -297,22 +447,38 @@ describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", (
       expect(screenOf(screenId)).toBeInTheDocument();
       expect(locationRef).toBe(path);
       expect(screenOf("UF-01.1")).not.toBeInTheDocument();
+      expect(screenOf("UF-01.5-save")).not.toBeInTheDocument();
     },
   );
 });
 
 describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile", () => {
-  it.each(["/welcome/save", "/welcome", "/welcome/goal"])(
-    "signed in + `missing`: %s renders UF-01.1 and stays put",
-    async (path) => {
-      stateMissing();
-      render(<Harness start={path} />);
-      await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
-      await act(async () => {});
-      expect(screenOf("UF-01.1")).toBeInTheDocument();
-      expect(locationRef).toBe(path);
-    },
-  );
+  it.each(["/welcome"])("signed in + `missing`: %s renders UF-01.1 and stays put", async (path) => {
+    stateMissing();
+    render(<Harness start={path} />);
+    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    await act(async () => {});
+    expect(screenOf("UF-01.1")).toBeInTheDocument();
+    expect(locationRef).toBe(path);
+  });
+
+  it("signed in + `missing`: /welcome/save renders UF-01.5-save and stays put", async () => {
+    stateMissing();
+    render(<Harness start="/welcome/save" />);
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
+    await act(async () => {});
+    expect(screenOf("UF-01.5-save")).toBeInTheDocument();
+    expect(locationRef).toBe("/welcome/save");
+  });
+
+  it("signed in + `missing`: /welcome/goal renders UF-01.2 and stays put", async () => {
+    stateMissing();
+    render(<Harness start="/welcome/goal" />);
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    await act(async () => {});
+    expect(screenOf("UF-01.2")).toBeInTheDocument();
+    expect(locationRef).toBe("/welcome/goal");
+  });
 
   // The contrast pair. Without it, a `guest-only` guard disabled outright would pass AC-7.
   it("signed in + `present`: /welcome/goal still redirects to / (UF-02.1)", async () => {
@@ -343,7 +509,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // /welcome → / and then (via the gate on `/`) → /welcome/save. The visible symptom is the
   // intermediate `/` in the location history, so that is what this asserts — not just the end
   // state, which happened to be right.
-  it.each(["/welcome", "/welcome/goal", "/welcome/save"])(
+  it.each(["/welcome"])(
     "%s never passes through `/` on the way (no first-render bounce)",
     async (path) => {
       stateMissing();
@@ -368,6 +534,50 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
     },
   );
 
+  it("/welcome/save never passes through `/` on the way (no first-render bounce)", async () => {
+    stateMissing();
+    const visited: string[] = [];
+    function Recorder() {
+      visited.push(useLocation().pathname);
+      return null;
+    }
+    render(
+      <MemoryRouter initialEntries={["/welcome/save"]}>
+        <AuthProvider>
+          <ProfileStatusProvider>
+            <Recorder />
+            <Shell />
+          </ProfileStatusProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
+    await act(async () => {});
+    expect(new Set(visited)).toEqual(new Set(["/welcome/save"]));
+  });
+
+  it("/welcome/goal never passes through `/` on the way (no first-render bounce)", async () => {
+    stateMissing();
+    const visited: string[] = [];
+    function Recorder() {
+      visited.push(useLocation().pathname);
+      return null;
+    }
+    render(
+      <MemoryRouter initialEntries={["/welcome/goal"]}>
+        <AuthProvider>
+          <ProfileStatusProvider>
+            <Recorder />
+            <Shell />
+          </ProfileStatusProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    await act(async () => {});
+    expect(new Set(visited)).toEqual(new Set(["/welcome/goal"]));
+  });
+
   // The same bounce, reached by a *transition* instead of a cold load — and this is the primary
   // path, not an edge case: D-0045 §5 is the magic link / OTP verify firing `SIGNED_IN` in place
   // while the user sits on `/welcome`, with the onboarding answers in this browser context and
@@ -376,7 +586,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // stand-down saw `resolved && "unknown"`, stood aside, and the user went
   // `/welcome` → `/` → `/welcome/save`. The cold-load tests above cannot catch it, because they
   // never change the auth status after mount.
-  it.each(["/welcome", "/welcome/goal"])(
+  it.each(["/welcome"])(
     "%s does not bounce through `/` when SIGNED_IN fires in place with a missing profile",
     async (path) => {
       vi.stubGlobal("navigator", { onLine: true });
@@ -430,6 +640,57 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
     },
   );
 
+  it("/welcome/goal does not bounce through `/` when SIGNED_IN fires in place with a missing profile", async () => {
+    vi.stubGlobal("navigator", { onLine: true });
+    spy.setRows("profiles", []);
+    // Hold the cache read open, so the window between the auth flip and the gate's answer —
+    // the window the bug lived in — is wide enough to observe.
+    let release: (() => void) | undefined;
+    loadProfile.mockImplementation(
+      () => new Promise<null>((resolve) => (release = () => resolve(null))),
+    );
+
+    const visited: string[] = [];
+    const at = () => visited[visited.length - 1];
+    function Recorder() {
+      visited.push(useLocation().pathname);
+      return null;
+    }
+    // Signed out to begin with: no stored session (`beforeEach` cleared it).
+    render(
+      <MemoryRouter initialEntries={["/welcome/goal"]}>
+        <AuthProvider>
+          <ProfileStatusProvider>
+            <Recorder />
+            <Shell />
+          </ProfileStatusProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    expect(at()).toBe("/welcome/goal");
+
+    // The verify lands: `SIGNED_IN` in place, no reload.
+    await act(async () => {
+      authStateCallbacks.forEach((cb) => cb("SIGNED_IN", { user: { id: "u1" } }));
+    });
+    await act(async () => {});
+    // Still put, and still on UF-01.2: the gate has not answered yet, so `guest-only` waits.
+    expect(at()).toBe("/welcome/goal");
+
+    // Now let the gate resolve, to `missing`.
+    await waitFor(() => expect(release).toBeDefined());
+    await act(async () => {
+      release!();
+      await Promise.resolve();
+    });
+    await act(async () => {});
+
+    expect(screenOf("UF-01.2")).toBeInTheDocument();
+    expect(at()).toBe("/welcome/goal");
+    expect(new Set(visited)).toEqual(new Set(["/welcome/goal"]));
+  });
+
   // The contrast, so the test above cannot pass by the stand-down having been disabled for every
   // transition: the same in-place `SIGNED_IN`, but the gate answers `present`, and T-0300b's
   // `guest-only` redirect must still fire.
@@ -437,7 +698,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
     vi.stubGlobal("navigator", { onLine: true });
     loadProfile.mockResolvedValue(PROFILE_ROW);
     render(<Harness start="/welcome/goal" />);
-    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
     expect(locationRef).toBe("/welcome/goal");
 
     await act(async () => {
@@ -453,7 +714,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // user *on* `/account`, but so would several other bugs, and only the exact target
   // distinguishes "redirected correctly" from "redirected somewhere odd".
   it.each([
-    ["missing", stateMissing, "/welcome/save", "UF-01.1"],
+    ["missing", stateMissing, "/welcome/save", "UF-01.5-save"],
     ["present", statePresent, "/", "UF-02.1"],
     ["unknown", stateUnknown, "/", "UF-02.1"],
   ])(
@@ -465,7 +726,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
       await waitFor(() => expect(locationRef).toBe(expected));
       await act(async () => {});
       expect(locationRef).toBe(expected);
-      expect(screenOf(expectedScreen)).toBeInTheDocument();
+      await waitFor(() => expect(screenOf(expectedScreen)).toBeInTheDocument());
       expect(screenOf("UF-01.5")).not.toBeInTheDocument();
     },
   );
@@ -474,7 +735,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // stand-down must fail *open* — hold the `guest-only` redirect and render `/welcome/*` —
   // rather than leave the route permanently un-standable-down or blank. There is no timeout in
   // the gate, so "never settles" is the worst case, and this pins which way it fails.
-  it.each(["/welcome", "/welcome/goal", "/welcome/save"])(
+  it.each(["/welcome"])(
     "%s renders for a signed-in user whose profile read never settles (fails open)",
     async (path) => {
       seedValidSession();
@@ -488,6 +749,30 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
       expect(locationRef).toBe(path);
     },
   );
+
+  it("/welcome/save renders for a signed-in user whose profile read never settles (fails open)", async () => {
+    seedValidSession();
+    vi.stubGlobal("navigator", { onLine: true });
+    loadProfile.mockReturnValue(new Promise(() => {}));
+    render(<Harness start="/welcome/save" />);
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
+    await act(async () => {});
+    await act(async () => {});
+    expect(screenOf("UF-01.5-save")).toBeInTheDocument();
+    expect(locationRef).toBe("/welcome/save");
+  });
+
+  it("/welcome/goal renders for a signed-in user whose profile read never settles (fails open)", async () => {
+    seedValidSession();
+    vi.stubGlobal("navigator", { onLine: true });
+    loadProfile.mockReturnValue(new Promise(() => {}));
+    render(<Harness start="/welcome/goal" />);
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    await act(async () => {});
+    await act(async () => {});
+    expect(screenOf("UF-01.2")).toBeInTheDocument();
+    expect(locationRef).toBe("/welcome/goal");
+  });
 });
 
 describe("AC-8 /session/:sessionId and its summary are never gated (principle 1)", () => {
@@ -596,7 +881,7 @@ describe("QA: a SIGNED_IN for a different user re-resolves the gate", () => {
     await act(async () => {});
     await act(async () => {});
     expect(locationRef).toBe("/");
-    expect(screenOf("UF-02.1")).toBeInTheDocument();
+    await waitFor(() => expect(screenOf("UF-02.1")).toBeInTheDocument());
   });
 
   // The two cases above are satisfied by re-running the resolution alone, because both end
@@ -650,10 +935,16 @@ describe("AC-9 signed out is unchanged (principle 5) — the AC-B5 table, agains
     },
   );
 
-  it.each(["/welcome", "/welcome/goal"])("signed out: %s renders UF-01.1", async (path) => {
+  it.each(["/welcome"])("signed out: %s renders UF-01.1", async (path) => {
     render(<Harness start={path} />);
     await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
     expect(locationRef).toBe(path);
+  });
+
+  it("signed out: /welcome/goal renders UF-01.2", async () => {
+    render(<Harness start="/welcome/goal" />);
+    await waitFor(() => expect(screenOf("UF-01.2")).toBeInTheDocument());
+    expect(locationRef).toBe("/welcome/goal");
   });
 
   it.each([
@@ -691,7 +982,7 @@ describe("QA: D-0073 §3 — a `stale` session is gated too", () => {
 
     render(<Harness start="/" />);
     await waitFor(() => expect(locationRef).toBe("/welcome/save"));
-    expect(screenOf("UF-01.1")).toBeInTheDocument();
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
     // The mechanism, not just the destination: the gate really did read `profiles` for a
     // `stale` user, rather than the redirect coming from the auth guard.
     expect(spy.countFor("profiles")).toBe(1);
@@ -718,19 +1009,54 @@ describe("QA: D-0073 §3 — a `stale` session is gated too", () => {
 });
 
 describe("AC-10 signed out: the gate costs nothing (principle 5)", () => {
-  it("/welcome renders on the first committed render, with no loader, refresh or select", () => {
+  it("/welcome renders on the first committed render, with no loader, refresh or select", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => new Promise(() => {})),
+    );
+    getSession.mockReturnValue(new Promise(() => {}));
+    // Warm-up (D-0103 §2): the shell renders every route through `React.lazy`, so "the first
+    // committed render" means once this route's chunk is loaded. Load it here, in this test,
+    // with the same route and auth state, so the check never depends on test order.
+    render(<Harness start="/welcome" />);
+    await screen.findByRole("heading", { level: 1, name: "Train with a plan. Log in seconds." });
+    cleanup();
+    // Clear call history only: every implementation (the never-settling `getSession`, the
+    // stubbed `fetch`, the `from` spy) stays. `spy.calls` backs `countFor`, a counter, not a mock.
+    loadProfile.mockClear();
+    refreshProfile.mockClear();
+    spy.from.mockClear();
+    spy.calls.length = 0;
+    render(<Harness start="/welcome" />);
+    // Synchronous: no `await`/`waitFor` before these assertions (the T-0300b AC-B6 pattern).
+    expect(
+      screen
+        .getByRole("heading", { level: 1, name: "Train with a plan. Log in seconds." })
+        .closest('[data-screen-id="UF-01.1"]'),
+    ).toBeInTheDocument();
+    expect(loadProfile).not.toHaveBeenCalled();
+    expect(refreshProfile).not.toHaveBeenCalled();
+    expect(spy.from).not.toHaveBeenCalled();
+    expect(spy.countFor("profiles")).toBe(0);
+  });
+
+  // The order-independent twin (D-0103 §3): no warm-up, so the chunk may be cold. With `fetch`
+  // and `getSession` never settling, UF-01.1 can only appear if nothing waits on the network.
+  it("/welcome renders UF-01.1 without a warm-up, with no loader, refresh or select (twin)", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(() => new Promise(() => {})),
     );
     getSession.mockReturnValue(new Promise(() => {}));
     render(<Harness start="/welcome" />);
-    // Synchronous: no `await`/`waitFor` before these assertions (the T-0300b AC-B6 pattern).
-    expect(screen.getByText("Welcome")).toBeInTheDocument();
     expect(loadProfile).not.toHaveBeenCalled();
     expect(refreshProfile).not.toHaveBeenCalled();
     expect(spy.from).not.toHaveBeenCalled();
-    expect(spy.countFor("profiles")).toBe(0);
+    const heading = await screen.findByRole("heading", {
+      level: 1,
+      name: "Train with a plan. Log in seconds.",
+    });
+    expect(heading.closest('[data-screen-id="UF-01.1"]')).toBeInTheDocument();
   });
 
   it("and still nothing after the tree settles", async () => {
@@ -747,7 +1073,7 @@ describe("AC-11 recheckProfile after a /welcome/save write, with no loop back", 
   it("`missing` on /welcome/save → recheck finds a row → navigating to / lands on UF-02.1", async () => {
     stateMissing();
     render(<Harness start="/welcome/save" />);
-    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
     expect(locationRef).toBe("/welcome/save");
 
     // T-0301c's write lands: the row now exists.

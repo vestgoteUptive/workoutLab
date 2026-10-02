@@ -88,7 +88,7 @@ export const SESSION_PLAN_SCHEMA = {
       properties: {
         weightKg: { type: ["number", "null"], minimum: 0 },
         reps: { type: ["integer", "null"], minimum: 1 },
-        durationS: { type: ["integer", "null"], minimum: 1 },
+        durationS: { type: ["integer", "null"], minimum: 15, maximum: 120 },
         kind: { $ref: "#/$defs/PrefillKind" },
       },
     },

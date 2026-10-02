@@ -9,6 +9,34 @@ import { monotonicEditedAt } from "./clock.js";
 import { offlineDb, setKey, type QueuedSet, type QueuedSession } from "./db.js";
 import { currentUserId, requireUserId } from "./current-user.js";
 import { ensurePersistentStorage } from "./persist.js";
+import { roundWeightKg } from "./weight.js";
+
+// D-0116 §1: each of the four queue writes tells the running sync handle that a row has been
+// committed, so `startSync` can flush soon after an online enqueue. Module-internal on purpose:
+// it is not in `index.ts`'s export list. Only `sync.ts` subscribes.
+type QueueWriteListener = () => void;
+const queueWriteListeners = new Set<QueueWriteListener>();
+
+/** Subscribes to "a queue write has committed". Returns the unsubscribe. `sync.ts` only. */
+export function onQueueWrite(listener: QueueWriteListener): () => void {
+  queueWriteListeners.add(listener);
+  return () => {
+    queueWriteListeners.delete(listener);
+  };
+}
+
+/** Called after the IndexedDB `put` has resolved (committed), never before and never on a
+ *  failed write. A listener never throws into the write: the write's own promise resolves on the
+ *  IDB commit alone and never waits for, or fails because of, a flush (NFR-OFF, D-0116 §1). */
+function notifyQueueWrite(): void {
+  for (const listener of queueWriteListeners) {
+    try {
+      listener();
+    } catch {
+      // A listener's failure is not the write's failure.
+    }
+  }
+}
 
 export interface RecordSetInput {
   sessionId: string;
@@ -40,7 +68,15 @@ function toQueuedSet(row: {
   editedAt: string;
   deletedAt: string | null;
 }): QueuedSet {
-  return { key: setKey(row.userId, row.clientId), status: "queued", ...row };
+  // D-0129 §1: every entry `recordSet`/`editSet`/`deleteSet` writes (and returns) carries the
+  // weight the `numeric(6,2)` column will store, whatever its source (pre-fill, stepper, carry,
+  // or a legacy entry stored before T-0233).
+  return {
+    key: setKey(row.userId, row.clientId),
+    status: "queued",
+    ...row,
+    weightKg: roundWeightKg(row.weightKg),
+  };
 }
 
 /** "Done set" (AC-C1). Resolves a UUID v4 `client_id` only after the IDB write has committed. */
@@ -69,6 +105,7 @@ export async function recordSet(
     deletedAt: null,
   });
   await offlineDb().sets.put(entry);
+  notifyQueueWrite();
   return entry;
 }
 
@@ -172,6 +209,7 @@ export async function editSet(
     deletedAt: null,
   });
   await offlineDb().sets.put(entry);
+  notifyQueueWrite();
   return entry;
 }
 
@@ -203,6 +241,7 @@ export async function deleteSet(
     deletedAt: editedAt,
   });
   await offlineDb().sets.put(entry);
+  notifyQueueWrite();
   return entry;
 }
 
@@ -234,6 +273,7 @@ export async function upsertSession(row: SessionInsert): Promise<QueuedSession> 
     pending: true,
   };
   await db.sessions.put(entry);
+  notifyQueueWrite();
 
   if (row.ended_at != null && !alreadyFinished) {
     await ensurePersistentStorage(userId);

@@ -53,7 +53,9 @@ export default defineConfig(({ command }) => {
       wlIconsPlugin(),
       VitePWA({
         registerType: "autoUpdate",
-        injectRegister: "auto",
+        // T-0429: the bundle registers the worker (src/lib/pwa/register.ts) with a rejection
+        // handler; the injected registerSW.js had none.
+        injectRegister: false,
         manifest: {
           name: "workout LAB",
           short_name: "workout LAB",

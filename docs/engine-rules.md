@@ -6,6 +6,7 @@ Every rule has worked examples (`Rn-Em`). Each example is at least one unit test
 ## Fixtures (used by every example unless it says otherwise)
 - **F-tz:** `tz = Europe/Stockholm`, `now = 2026-09-27T12:00:00+02:00`, so today is D = 2026-09-27.
 - **F-profile:** level `beginner`; equipment `full` = [barbell, rack, bench, dumbbell, cable, machine, pullup-bar]; rhythm 3–4; no priority areas; onboarded and `plan_changed_at` 2026-08-02.
+- **F-goal:** `goal` is `build_muscle` unless an example says otherwise (D-0061 §1, D-0095).
 - **F-targets:** rule 4 with F-profile: chest/back/glutes/quads 20, shoulders/hamstrings 16, arms/core/calves 12.
 - **F-input:** `budgetMin 30, warmupInBudget true, energy normal, shuffle 0`, with no main/pinned/excluded ids.
 - **F-history:** empty.
@@ -41,7 +42,7 @@ Warm-up moves (kind `warmup`, 40 s each): wu-scap-push-up (chest 1, shoulders .5
 Fixed area order: chest, back, shoulders, arms, core, glutes, quads, hamstrings, calves. Levels: beginner < intermediate < advanced.
 
 ## 0. Purity and inputs (D-0024)
-- All engine functions are pure: `suggest(history, targets, profile, library, sessionInput, now, tz)`, `balance(history, targets, library, now, tz)`, `timeCheck(workout, progress)`, `rankSwaps(…)`, `prefill(…)` and `evaluateCheckin(sessions, profile, checkins, now, tz)`. They never read the clock, randomness or globals. `Date.now()`, `new Date()` without arguments and `Math.random()` are banned in `packages/engine/src` (lint rule, T-0200).
+- All engine functions are pure: `suggest(history, targets, profile, library, sessionInput, now, tz)`, `balance(history, targets, library, now, tz)`, `timeCheck(workout, progress)`, `rankSwaps(…)`, `applySwap(workout, current, candidate, reason, history, profile, library, now, tz)`, `prefill(…)` and `evaluateCheckin(sessions, profile, checkins, now, tz)`. They never read the clock, randomness or globals. `Date.now()`, `new Date()` without arguments and `Math.random()` are banned in `packages/engine/src` (lint rule, T-0200).
 - **History** is the server rows ∪ the offline queue (NFR offline). The engine dedupes by `client_id` and keeps the row with the greatest `edited_at`. When two rows have the same `client_id` and `edited_at`, a server row beats a queued row (mirroring the server's no-op), between two queued rows a tombstone beats a live row, and otherwise the first row in input order wins (D-0034). It then drops rows with `deleted_at` set (D-0015). Callers pass at least the last 56 local days.
 - **Eligible exercise:** kind `exercise`, every equipment item ∈ `profile.equipment` (no equipment is always eligible), level ≤ profile level, and not in `excludeIds`.
 - **R0-E1** Given any fixed inputs, When `suggest` runs twice, Then the results are deep-equal.
@@ -84,15 +85,16 @@ An area is **recovering** when the weighted hard sets with `completed_at` in `(n
 
 ## 7. Session building (D-0004, D-0024)
 ### 7.1 Time model
-Set cost = work + rest. Work is 45 s, or the target duration for a timed set. Rest is 120 s for a compound and 60 s for an isolation. Item cost = sets × set cost + 60 s transition. The warm-up costs 4 × 40 s + 20 s = 180 s. `available = budgetMin × 60 − (warmupInBudget ? 180 : 0)`. Σ item costs never exceeds `available`. When `warmupInBudget` is off, the warm-up is still generated but not counted.
+Set cost = work + rest. Work is 45 s for a non-timed set. For a timed set, work is its **planned duration**: the rule 14 pre-fill `durationS` for that exercise over the same history and `now`, which is `defaultDurationS` with no usable history (D-0092). The item's `durationS` is that planned duration (a timed exercise with neither falls back to 45 s). Rest is 120 s for a compound and 60 s for an isolation. Item cost = sets × set cost + 60 s transition. The warm-up costs 4 × 40 s + 20 s = 180 s. `available = budgetMin × 60 − (warmupInBudget ? 180 : 0)`. Σ item costs never exceeds `available`. When `warmupInBudget` is off, the warm-up is still generated but not counted. Every time cost in the engine uses this model: rule 7.2 selection, rule 7.4, rule 12 `timeCostS` and `fitsBudget`, rule 13's fit check and `applySwap`. Rule 8 reads the item `costS`.
 - **R7-E1** back-squat × 4 = 720 s. leg-curl × 3 = 375 s. plank × 2 = 270 s.
+- **R7-E13 (timed set at its planned duration, D-0092)** Given plank logged 3 × 115 s on 2026-09-24 (10:00) and `budgetMin 20`, warm-up off, `pinnedIds ["plank"]` (`available` 1200), Then plank is planned at 120 s (rule 14 `add_rep`, capped). bench-press × 4 (720 s) leaves 480 s, plank × 3 would cost 3 × 180 + 60 = 600 s, so the items are bench-press × 4 and plank × 2 at 120 s (420 s). The item total is 1140 s and `unusedS` is 60. At zero history the same input gives plank × 3 at 45 s (375 s), an item total of 1095 s.
 
 ### 7.2 Main lift and greedy selection
 The projected load starts at the rule-3 load. `r(area) = projectedLoad / target`. An area is **eligible** if it is not recovering, not exhausted, has fewer than 2 items with it as a primary area, and the session has fewer than 8 items. **Candidates** for an area are the eligible exercises with weight 1.0 in that area that are not yet in the session and have no recovering primary area. Candidates are ranked by: (1) not in the most recent session with hard sets first; (2) gap fit `Σ_a w(a) × projectedDeficit(a)` descending, where recovering areas count 0; (3) id ascending.
 1. **Main lift:** `sessionInput.mainLiftId`, if it is eligible. Otherwise take the lowest-`r` eligible area (ties by the fixed order) and its top compound candidate. If that area has no compound, try the next area. Try 4, then 3, then 2 sets. If no compound fits anywhere, `mainLiftId = null`.
 2. **Pinned:** each of `pinnedIds`, in order, at 3 sets, falling back to 2. Skip it if it doesn't fit.
 3. **Greedy:** repeat. Take the lowest-`r` eligible area and try its candidates in rank order at 3 sets, then 2. The first one that fits is added, and projected loads are updated with `sets × w(a)`. If none fits, the area is exhausted. Stop when no area is eligible.
-- **Reps (pre-fill ranges, rule 14):** main lift 6–8, other compounds 8–12, isolation 10–15.
+- **Reps (pre-fill ranges, rule 14) by `profile.goal` (D-0061 §1, D-0095):** `get_stronger` main lift 3–5, other compounds 5–8, isolation 10–15; `build_muscle` main lift 6–8, other compounds 8–12, isolation 10–15; `general_fitness` main lift 8–12, other compounds 10–15, isolation 10–15. A profile without a goal gets `build_muscle`, and an unknown goal is a `RangeError`. The goal changes only these slots, and so rule 14's low/high, the rule 7.4 back-off reps (the goal's main low) and `applySwap`'s slot. Selection, sets and costs never depend on it.
 - **R7-E2 (15 min, zero history)** Given `budgetMin 15`, Then the items are [bench-press × 4], with a total of 900 s. The bench-press, db-bench-press and push-up candidates tie at gap fit 2.0, so id ascending decides.
 - **R7-E3 (recovering skipped)** Given 6 hard back-squat sets at `now − 24 h`, Then the main lift is bench-press, no item has quads or glutes at weight 1.0, and the reasons include `recovering_skipped` for quads and glutes.
 - **R7-E4 (30 min, zero history)** Then the items are bench-press × 4 (main), inverted-row × 3 (gap fit 1.917 beats barbell-row at 1.417), then leg-extension × 2 (glutes is exhausted because back-squat and hip-thrust × 2 = 390 s > 345 s left). The item total is 1545 s, the total with warm-up is 1725 s, and `unusedS` is 75.
@@ -100,6 +102,8 @@ The projected load starts at the rule-3 load. `r(area) = projectedLoad / target`
 - **R7-E6 (no equipment)** Given equipment [] and `budgetMin 15`, Then the items are [push-up × 4 at 6 reps, 0 kg].
 - **R7-E7 (candidate rank)** Given the most recent session contains inverted-row × 3, Then the back ranking is barbell-row, db-row, lat-pulldown, seated-cable-row, straight-arm-pulldown, inverted-row.
 - **R7-E8 (never over)** For every `budgetMin` in 15..120 step 5, with warm-up on and off, over F-history and every simulated history, Then Σ item costs ≤ `available`, there are ≤ 8 items, and no area is the primary area of more than 2 items.
+- **R7-E14 (slots by goal at zero history, D-0095)** For R7-E4 under `get_stronger`, the items, costs and totals are unchanged (bench-press × 4, inverted-row × 3, leg-extension × 2; 1545 s, `unusedS` 75), with reps 3–5, 5–8 and 10–15 and pre-fills null × 3, 0 × 5 and null × 10 (`first_time`). Under `general_fitness` the reps are 8–12, 10–15 and 10–15, with null × 8, 0 × 10 and null × 10.
+- **R7-E15 (one history, three goals, D-0095 §3)** back-squat as the main lift, last on 09-24 at 100 × 8, 8, 8: `build_muscle` (6–8) gives 102.5 × 6 `increase` (R14-E1), `get_stronger` (3–5) gives 102.5 × 3 `increase`, and `general_fitness` (8–12) gives 100 × 9 `add_rep`.
 
 ### 7.3 Warm-up (D-0004)
 There are 4 moves. The area list is the primary areas of the items in session order, deduplicated. Go round-robin over the list. For each area, pick the unused warm-up move with the highest weight for it (ties by id), and skip areas with none left. Stop at 4. Fill with general moves by id, then with any unused move by id.
@@ -107,9 +111,10 @@ There are 4 moves. The area list is the primary areas of the items in session or
 - **R7-E10** For R7-E4, the moves are wu-scap-push-up, wu-band-pull-apart, wu-bodyweight-squat, wu-arm-circle.
 
 ### 7.4 Energy (UF-08.1, D-0024)
-Energy is applied after selection. **Low:** each accessory with 3 sets goes to 2, and the freed time stays unused. The main lift and all weights are unchanged (reason `energy_low_trim`). **High:** if `unusedS ≥` the cost of one main-lift set, the main lift gets 1 back-off set (`backoff: true`) at `floorInc(0.9 × main weight)` with the main reps. Otherwise nothing changes (reason `energy_high_backoff`).
+Energy is applied after selection. **Low:** each accessory with 3 sets goes to 2, and the freed time stays unused. The main lift and all weights are unchanged (reason `energy_low_trim`). **High:** if `unusedS ≥` the cost of one main-lift set, the main lift gets 1 back-off set (`backoff: true`) with the main reps. With `inc = incrementKg ?? 2.5`, its weight is null when the main weight is null, 0 when it is 0, and otherwise `min(main weight, max(inc, floorInc(0.9 × main weight)))` rounded to 3 decimals: one increment instead of 0 kg on a light loaded lift, never above the main weight (D-0131). Otherwise nothing changes (reason `energy_high_backoff`).
 - **R7-E11** For R7-E4 with Low energy, the items are bench-press × 4, inverted-row × 2, leg-extension × 2, and the total with warm-up is 1560 s.
 - **R7-E12** For R7-E4 with High energy, there is no back-off (75 s < 165 s). With `budgetMin 15` and warm-up off, the items are bench-press × 4 + 1 back-off, 885 s.
+- **R7-E16 (light-lift back-off, D-0131)** Given bench-press as the main lift, logged 2.5 × 6, 6, 6 on 09-24, with `budgetMin 15`, warm-up off and High energy, Then bench-press × 4 at 2.5 × 7 (`add_rep`) + back-off 2.5 × 6 (`floorInc(2.25)` is 0, raised to one increment), 885 s. Logged at 2 kg: 2 × 7, back-off 2 × 6 (never above the main weight).
 
 ## 8. Running over time (UF-09.8, D-0024)
 `timeCheck(workout, {elapsedS, nextItemIndex})` runs only between exercises. `elapsedS` excludes paused time, and excludes the warm-up when `warmupInBudget` is off. `remainingS` = Σ the costs of the not-started items. `behindS = elapsedS + remainingS − budgetMin × 60`. UF-09.8 is shown only when `behindS ≥ 60`, with `minutesBehind = ceil(behindS / 60)`. It offers three options:
@@ -128,11 +133,11 @@ Fixture: budget 45 min, warm-up on. The plan is bench-press × 4 (main, chest 0.
 - **Completed session:** a session with ≥ 1 hard set (not warm-up, not tombstoned), dated by the local date of `started_at`. A **planned session** has no row: the plan is `2·rhythmMin – 2·rhythmMax` sessions per period. Suggested but unstarted workouts count for nothing.
 - **Under:** completed < 0.7 × 2·rhythmMin. **Over:** completed > 1.1 × 2·rhythmMax. Anything else is on plan.
 - **Reset:** `resetDate = max(local date of the last checkins.answered_at, local date of `profiles.plan_changed_at` (engine field `planUpdatedAt`, D-0035, D-0041))`. A period is eligible if its end ≥ `resetDate`.
-- **Proposal:** look at the last two ended eligible periods. If both are under, propose (min − 1, max − 1). If both are over, propose (min + 1, max + 1). Clamp to 1–7, keeping min ≤ max. If the result equals the current rhythm, there is no proposal. With fewer than two eligible ended periods, there is no proposal.
-- **Output:** `{periods[{index, start, end, completed, status}], proposal: {direction, rhythmMin, rhythmMax, previewTargets} | null, nextCheckinDate}`. `previewTargets` is rule 4 with the proposed rhythm. `nextCheckinDate` is the day after the current period ends. The engine never changes targets. Only an Accept (UI → API) does.
-- **R9-E1…E11** are UF-11 spec AC1, AC2, AC3, AC4, AC5, AC7 (engine part), AC8, AC11, AC12, AC13 and AC14, with that spec's fixtures. AC6 and AC16 are covered by statelessness and R0-E1.
-- **R9-E12 (mid-period reset)** Given a Keep on 2026-09-30 and P4 = 3, P5 = 2, Then on 2026-10-25 the result proposes 2–3 (P4 ends 10-10 ≥ 09-30, so it is eligible).
-- **R9-E13 (edit plan resets)** Given P2 = 4 and P3 = 3 and `plan_changed_at` 2026-09-20, Then there is no proposal on 2026-09-27 (P2 is not eligible).
+- **Proposal:** Look at the last ended period, if it is eligible. If it is under, propose (min − 1, max − 1). If it is over, propose (min + 1, max + 1). Clamp to 1–7, keeping min ≤ max. If the result equals the current rhythm, there is no proposal. With no eligible ended period, there is no proposal (D-0061 §2, D-0094).
+- **Output:** `{periods[{index, start, end, completed, status}], proposal: {direction, rhythmMin, rhythmMax, previewTargets} | null, nextCheckinDate}`. `periods` holds at most one entry: the last ended period if it is eligible, otherwise none (D-0094). `previewTargets` is rule 4 with the proposed rhythm. `nextCheckinDate` is the day after the current period ends. The engine never changes targets. Only an Accept (UI → API) does.
+- **R9-E1…E11** are UF-11 spec AC1, AC2, AC3, AC4, AC5, AC7 (engine part), AC8, AC11, AC12, AC13 and AC14, with that spec's fixtures, re-derived for one period (D-0094). AC6 and AC16 are covered by statelessness and R0-E1.
+- **R9-E12 (mid-period reset)** Given a Keep on 2026-09-30 and P3 = 3, P4 = 3, Then on 2026-10-11 the result lists P4 alone and proposes 2–3 (P4 ends 10-10 ≥ 09-30, so it is eligible; on 2026-09-30 itself P3 ends 09-26 < 09-30, so there is no proposal; D-0094).
+- **R9-E13 (edit plan resets)** Given P2 = 4 and P3 = 3 and `plan_changed_at` 2026-09-20, Then on 2026-09-27 the result lists P3 alone and proposes 2–3 (P3 ends 09-26 ≥ 09-20, so it is eligible; an edit on 09-27 would leave no eligible period and no proposal; D-0094).
 
 ## 10. Explanation
 Every item carries machine-readable reasons, and the UI or an optional LLM only turns them into words. The codes are: `main_lift`, `area_deficit {area, deficit}`, `days_since {area, days | null}`, `recovering_skipped {area}`, `energy_low_trim`, `energy_high_backoff`, `swap {reason}`, `prefill {kind: first_time|carry|reentry|hold_after_break|increase|deload|hold|add_rep}`. `sessionReasons` (≤ 3) starts with at most 2 `recovering_skipped {area}` entries for the recovering areas in the fixed order, then is filled with `area_deficit` entries for the items' distinct first primary areas, in session order, up to 3 in total (D-0040).
@@ -150,7 +155,7 @@ Every item carries machine-readable reasons, and the UI or an optional LLM only 
 - **R11-E4** Offline: the history includes 3 queued romanian-deadlift sets, so hamstrings +3 and glutes +1.5 (UF-10 AC8).
 
 ## 12. Swap ranking (UF-08.3, UF-05.1, D-0025)
-`rankSwaps(current, reason | null, session, profile, library, history, tz, now)`. **Candidates** are the eligible exercises, not in the session, that share a weight-1.0 area with `current`. The main slot takes compounds only. `muscleMatch = Σ min(w_cur, w_alt) / Σ w_cur`. The alternative keeps the slot's set count. Each result has `{exerciseId, muscleMatch, timeCostS, equipment, fitsBudget, bestMatch}`. Sort keys:
+`rankSwaps(current, reason | null, session, profile, library, history, now, tz)`. **Candidates** are the eligible exercises, not in the session, that share a weight-1.0 area with `current`. The main slot takes compounds only. `muscleMatch = Σ min(w_cur, w_alt) / Σ w_cur`. The alternative keeps the slot's set count. Each result has `{exerciseId, muscleMatch, timeCostS, equipment, fitsBudget, bestMatch}`. Sort keys:
 - none: muscleMatch desc, same type first, not in the last session first, id.
 - `equipment_taken`: drop candidates that share an equipment item with `current` (if that drops all of them, keep all and sort by fewest shared), then muscleMatch desc, id.
 - `discomfort`: no shared equipment first, guided (machine or cable) first, muscleMatch desc, id.
@@ -164,6 +169,23 @@ Fixture: the session is bench-press × 4 (main), barbell-row × 3, leg-extension
 - **R12-E4 (discomfort)** lat-pulldown, seated-cable-row, straight-arm-pulldown, db-row, inverted-row.
 - **R12-E5 (equipment_taken, main slot)** For current bench-press, [push-up] (db-bench-press shares the bench; muscleMatch 0.75).
 
+### 12.1 applySwap (UF-05.1, UF-08.3, D-0071 §7, D-0093)
+`applySwap(workout, current, candidate, reason | null, history, profile, library, now, tz)` returns a new `Workout` with the item `current` replaced by `candidate`, built the way `suggest` builds an item. Let `old` be that item and `new` the candidate.
+- **Item:** same position, `sets` and `isMain` as `old`. The reps are rule 7.2's slot for `new` at `isMain` (null for a timed `new`). `prefill` is rule 14 for `new` with `previous = {old.exerciseId, old.prefill.weightKg}`, so step 1 may `carry`. A timed `new` has `durationS = prefill.durationS`, its planned duration (rule 7.1, D-0092, D-0096 §1); otherwise null. If `old.backoff` is set and `new` is not timed, the back-off is recomputed as the rule 7.4 back-off for `new`: its pre-fill weight and `new`'s inc in the same formula, at `repsMin` (null weight stays null, D-0131); otherwise it is null. `costS = itemCostS(new, sets)` at the planned duration, plus one set cost with a back-off, so without a back-off it equals the candidate's rule 12 `timeCostS`.
+- **Reasons** are rebuilt in the rule 10 order for `new`'s first primary area `A` (fixed order): `main_lift` (if `isMain`), `area_deficit {A, plan.startDeficits[A]}`, `days_since {A, D − lastTrainedDate(A)}` over `history` at `now` (rule 5, so sets logged today count; null if never), `swap {reason}`, `energy_low_trim` (if `old` had it), `energy_high_backoff` (if the new back-off is set), `prefill {kind}`. A second swap of a slot carries one `swap` reason, the newest, and its `previous` is the exercise it replaces.
+- **Workout:** `plan.mainLiftId = new` when `isMain`. `itemsTotalS = Σ costS`, `totalS = itemsTotalS + 180`, `unusedS = max(0, available − itemsTotalS)`. A `fitsBudget: false` candidate may be applied, so `itemsTotalS` may exceed `available`. `plan.version`, `plan.warmup` (not regenerated), `plan.startDeficits`, `budgetMin`, `warmupInBudget`, `energy`, `sessionReasons` and every other item are unchanged. Inputs are never mutated.
+- **Validation (structural only):** `RangeError` when `current` is not an item of the plan; `candidate` is not in `library` or is a warm-up move; `candidate` equals `current` or is already another item; the slot is the main slot and `candidate` is not a compound; `candidate` shares no weight-1.0 area with `current`; `reason` is not a swap reason or null; `now` has no offset. Rule 12's equipment, level, recovery and budget filters are not repeated: the UI offers only `rankSwaps` candidates.
+- **fitsBudget (D-0105):** rule 12's `fitsBudget` for a candidate `c` replacing slot `s` is `itemsTotalS − s.costS + c.timeCostS + extra ≤ available`, with `extra = setCostS(c)` at `c`'s planned duration when `s.backoff` is set and `c` is not timed, and 0 otherwise. This is the condition under which the item above gets a back-off (one shared predicate), so `fitsBudget` equals `applySwap(…).itemsTotalS ≤ available` for every candidate, including on a plan already over budget. `timeCostS` is unchanged (`itemCostS(c, s.sets)`, no back-off set); without a back-off this is the rule 12 value.
+
+Fixture W is R7-E4 (bench-press × 4 main 720 s, inverted-row × 3 555 s, leg-extension × 2 270 s; 1545 s, `unusedS` 75).
+- **R12-E6 (accessory, zero history, D-0093)** W, inverted-row → barbell-row, `variety`: barbell-row × 3, 8–12, 555 s, pre-fill null × 8 `first_time` (inverted-row's weight 0 does not carry), reasons `area_deficit {back, 1}`, `days_since {back, null}`, `swap {variety}`, `prefill {first_time}`. Totals unchanged: 1545 s, 1725 s, `unusedS` 75.
+- **R12-E7 (carry, D-0093)** With lat-pulldown at pre-fill 50 kg, lat-pulldown → seated-cable-row: 50 × 8 `carry` (shares back and cable, R14-E7). barbell-row at 60 kg → db-row: null × 8 `first_time` (no shared equipment).
+- **R12-E8 (main slot, D-0093)** W, bench-press → push-up, `equipment_taken`: push-up × 4, `isMain`, 6–8, 720 s, 0 × 6 `first_time`, reasons start with `main_lift`. `mainLiftId` is push-up; the warm-up is unchanged.
+- **R12-E9 (timed, D-0093, D-0092, D-0096 §1)** bench-press × 4 (main) and dead-bug × 2 at `budgetMin 20`, warm-up off (990 s). Given plank 3 × 115 s on 09-24, dead-bug → plank, `short_on_time`: plank × 2 at 120 s (`add_rep`), 2 × (120 + 60) + 60 = 420 s, `days_since {core, 3}`; 1140 s, 1320 s, `unusedS` 60, equal to plank's `timeCostS`. With no history: 45 s, 270 s, `first_time`.
+- **R12-E10 (back-off, D-0093)** R14-E9 (bench-press 80 × 7, back-off 70 × 6, 885 s), bench-press → db-bench-press: 80 × 6 `carry`, back-off `floorInc(72, 2)` = 72 × 6, 720 + 165 = 885 s, reasons `main_lift`, `area_deficit {chest, 0.85}`, `days_since {chest, 3}`, `swap {null}`, `energy_high_backoff`, `prefill {carry}`; `unusedS` 15.
+- **R12-E11 (over budget, D-0093)** W, leg-extension → back-squat: back-squat × 2, 8–12, 390 s, reasons for glutes (before quads): `area_deficit {glutes, 1}`, `days_since {glutes, null}`. 1665 s > 1620 s, so `totalS` 1845 and `unusedS` 0; rule 12 marks it `fitsBudget: false`, and it is applied anyway.
+- **R12-E12 (fitsBudget on an over-budget back-off slot, D-0105)** R14-E9 at `budgetMin 14`, warm-up off (available 840 < 885 s), current bench-press: db-bench-press and push-up each have `timeCostS` 4 × 165 + 60 = 720 and `fitsBudget: false`, because 885 − 885 + 720 + 165 = 885 > 840; `applySwap` to db-bench-press gives 885 s. At `budgetMin 15` (available 900) both have `fitsBudget: true` (885 ≤ 900).
+
 ## 13. Shuffle (UF-08.2, D-0025)
 `sessionInput.shuffle = n`. Every accessory slot not in `pinnedIds`, in session order, takes entry `n mod len` of `[original, …variety ranking]`, skipping exercises already taken by an earlier slot. If the pick doesn't fit `available` at the slot's set count, the slot keeps the original. The main lift is never shuffled. There is no randomness.
 - **R13-E1** For R7-E4 with n = 1, the items are bench-press, barbell-row × 3, leg-extension × 2 (back-squat × 2 would make 1665 s > 1620 s).
@@ -172,14 +194,22 @@ Fixture: the session is bench-press × 4 (main), barbell-row × 3, leg-extension
 ## 14. Progression and pre-fill (UF-09.3, UF-09.4, D-0026)
 **Last performance** is the hard sets of this exercise in the most recent session that contains it. `W` is their highest weight. `minReps` and "all at W" use the sets at `W`. `gap` = D − that session's local date. Ranges come from rule 7.2 (low/high). The first match wins:
 1. No history: if this is a swap or shuffle and the slot's previous exercise shares a weight-1.0 area and an equipment item, carry its pre-fill weight (`carry`). Otherwise the weight is null, or 0 for bodyweight (`first_time`). Low reps.
-2. `gap ≥ 21`: `floorInc(0.9 W)`, low reps (`reentry`).
+2. `gap ≥ 21`: `min(W, max(inc, floorInc(0.9 W)))` (0 when `W = 0`), low reps (`reentry`).
 3. `gap ≥ 10`: `W`, low reps (`hold_after_break`).
-4. Every set at W has reps ≥ high: `W + inc`, low reps (`increase`).
-5. The last two sessions both at W with `minReps < low`: `floorInc(0.9 W)`, low reps (`deload`).
+4. Every set at W has reps ≥ high: `W + inc`, low reps (`increase`) (bodyweight: 0 at high reps, `increase`).
+5. The last two sessions both at W with `minReps < low`: `min(W, max(inc, floorInc(0.9 W)))` (0 when `W = 0`), low reps (`deload`).
 6. The last session alone with `minReps < low`: `W`, low reps (`hold`).
 7. Otherwise: `W`, `min(high, minReps + 1)` (`add_rep`).
 
 For timed sets, the first time uses `default_duration_s`. After that the duration is `min(last) + 5 s` (≤ 120). When `gap ≥ 10` it stays at `min(last)`, and when `gap ≥ 21` it is `max(15, floor5(0.9 × min))`. `floorInc(x) = floor(round3(x) / inc) × inc`.
+
+**Edge cases (D-0057, D-0062, D-0132):**
+- **Bodyweight (D-0057 §2):** for `externalLoad: false`, `W` is 0 and the weight stays 0 in every branch. Every set with non-null reps counts as "at W", whatever weight was logged (D-0057 §2). Step 4 gives 0 at high reps (`increase`). `floorInc` is never applied.
+- **Usable sets (D-0057 §3, D-0062 §2, §3):** `W` is the highest non-null weight among the session's hard sets, including sets whose reps are null. Sets whose reps are null are ignored for `minReps` and "all at W". If the most recent session containing the exercise has no usable set (no non-null weight on a loaded lift, no non-null reps at `W`, or no non-null `durationS` when timed), step 1 applies. The engine never falls back to an older session. Step 5's second session must be usable too, or step 5 does not match.
+- **Drop floor (D-0057 §4, D-0062 §4):** `inc = incrementKg ?? 2.5`. Steps 2 and 5 never give less than one increment when `W > 0`. The drop is capped at `W`, so when `0 < W < inc` steps 2 and 5 give `W` (D-0137): bench-press 2 × 6, 6, 6 on 09-01: 2 × 6 (`reentry`), never 2.5. A loaded lift logged at 0 kg has `W = 0`, a recorded weight: steps 2, 3, 5, 6 and 7 give 0, and step 4 gives `0 + inc`.
+- **Carry (D-0062 §1):** step 1 carries only when the previous weight is > 0, the exercise is non-timed with `externalLoad: true`, and the previous exercise is a library row of kind `exercise` sharing a weight-1.0 area and an equipment item (`[]` ≡ `["none"]`, D-0040 §1). The carried weight is rounded to 3 decimals. Otherwise step 1 is `first_time`.
+- **Timed (D-0057 §6, D-0062 §5):** `min(last)` is the minimum non-null `durationS` over that session's hard sets. Weight and reps are null. Every non-first-time result is clamped to [15, 120] s: `gap ≥ 21` → `clamp(max(15, floor5(0.9 × min)))` (`reentry`); `gap` 10–20 → `clamp(min)` (`hold_after_break`); otherwise `clamp(min + 5)`, which is `add_rep` when greater than `min` and `hold` when not. `floor5(x) = floor(round3(x) / 5) × 5`. The first time is `defaultDurationS`, unclamped.
+
 - **R14-E1** back-squat as the main lift, last on 09-24 at 100 × 8, 8, 8: 102.5 × 6 (`increase`).
 - **R14-E2** 100 × 8, 7, 6 on 09-24: 100 × 7 (`add_rep`).
 - **R14-E3 (returning after 10 days off)** 100 × 8, 8, 8 on 09-15: 100 × 6 (`hold_after_break`).
@@ -200,3 +230,12 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 0–6, 11 (R0–R6, R11) | T-0200 |
 | 7, 8, 10, 12, 13, 14 | T-0201 (a split is proposed by T-0101) |
 | 9 + simulated suite | T-0202 |
+| 7.1 timed planned duration (R7-E13, D-0092) | T-0219 |
+| 9 one-period check-in (R9-E1…E13 re-derived, D-0061 §2, D-0094) | T-0215 |
+| 12.1 applySwap (R12-E6…E11, D-0071 §7, D-0093, D-0096 §1) | T-0224 |
+| 7.2 rep slots by goal (F-goal, R7-E14, R7-E15, D-0061 §1, D-0095) | T-0214 |
+| 12.1 fitsBudget counts the back-off set (R12-E12, D-0105) | T-0226 |
+| 7.4 / 12.1 light-lift back-off floor (R7-E16, D-0131) | T-0220 |
+| 14 text: D-0057 §2/§4/§6, D-0062 §1/§2/§4/§5 (D-0132) | T-0221 |
+| 12 rankSwaps signature order `now, tz` (D-0130) | T-0212 |
+| 14 steps 2 and 5 drop capped at `W` (D-0137) | T-0235 |

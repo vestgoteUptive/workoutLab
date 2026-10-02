@@ -7,6 +7,7 @@ import { NOW, TZ, USER, seedSpy } from "./l1plus.js";
 
 const spy = createSelectSpy();
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: spy.from } }));
+vi.mock("../../../lib/auth/auth-context.js", () => import("./auth-mock.js"));
 
 const { refreshAll } = await import("../../../lib/offline/history.js");
 const { offlineDb } = await import("../../../lib/offline/index.js");

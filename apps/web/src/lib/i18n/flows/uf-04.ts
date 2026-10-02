@@ -40,6 +40,7 @@ export const uf04 = {
   attributionWorkoutlab: "workoutLab",
   attributionSource: "Source",
   licenseLinks: { "CC-BY-SA-4.0": "https://creativecommons.org/licenses/by-sa/4.0/" },
+  licenseLabels: { "CC-BY-SA-4.0": "CC BY-SA 4.0" },
   compareCaption: "Comparison of two exercises",
   rowPrimary: "Primary",
   rowSecondary: "Secondary",

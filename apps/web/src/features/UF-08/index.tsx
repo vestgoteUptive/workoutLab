@@ -1,10 +1,5 @@
-// UF-08 Session setup stub (T-0300a). The feature ticket builds the designed screen.
-import { en } from "../../lib/i18n/en.js";
-
-export function SessionSetup() {
-  return (
-    <div data-screen-id="UF-08.1">
-      <h1>{en.screens.sessionSetup}</h1>
-    </div>
-  );
-}
+// UF-08 Session setup (T-0303a). Exports the `/session/setup` host (D-0071 §3, D-0107 §1) and the
+// focus-mode prefs UF-09 reads (T-0303d, D-0110 §6).
+export { SessionSetup } from "./SessionSetup.js";
+export { readFocusPrefs, writeFocusPrefs } from "./focus-prefs.js";
+export type { FocusPrefs } from "./focus-prefs.js";

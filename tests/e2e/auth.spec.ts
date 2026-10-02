@@ -86,8 +86,16 @@ test.describe("AC-B2/AC-B4 magic link", () => {
   test("send link, then follow the callback link into the signed-in app", async ({ page }) => {
     await page.goto("/account");
     await page.getByLabel("Email").fill("ada@example.com");
+    // T-0399 AC3 guard: a second status region outside the app root (an offline banner, a toast)
+    // must not break the UF-01.5 assertion, so the locator is scoped to the screen.
+    await page.evaluate(() => {
+      const other = document.createElement("p");
+      other.setAttribute("role", "status");
+      other.textContent = "other";
+      document.body.append(other);
+    });
     await page.getByRole("button", { name: "Send link" }).click();
-    await expect(page.getByRole("status")).toHaveText(
+    await expect(page.locator('[data-screen-id="UF-01.5"]').getByRole("status")).toHaveText(
       "Check your email for a link and a 6-digit code.",
     );
 

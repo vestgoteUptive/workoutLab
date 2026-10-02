@@ -17,6 +17,8 @@ Deno.test("AC15: OPTIONS with an allowed origin returns 204 with CORS headers", 
   const allowedHeaders = res.headers.get("Access-Control-Allow-Headers") ?? "";
   assertMatch(allowedHeaders, /authorization/);
   assertMatch(allowedHeaders, /content-type/);
+  // T-0310b AC5 (D-0135 §4): DELETE /account is preflighted, so DELETE is an allowed method.
+  assertMatch(res.headers.get("Access-Control-Allow-Methods") ?? "", /\bDELETE\b/);
 });
 
 Deno.test(

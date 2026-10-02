@@ -1,7 +1,7 @@
 // Rule 12 swap ranking (UF-08.3, UF-05.1; D-0025, D-0037 §2, D-0056 §1–§7). Pure: one
 // ranked list the UI renders without re-sorting. Rule 13's shuffle (session.ts) reuses the
 // `variety` ranking through `rankAgainst`.
-import { availableS, isEligible, itemCostS, realEquipment } from "./cost.js";
+import { availableS, getsBackoff, isEligible, itemCostS, realEquipment, setCostS } from "./cost.js";
 import {
   indexLibrary,
   isHardSet,
@@ -11,6 +11,7 @@ import {
   weightsOf,
 } from "./history.js";
 import { recoveringAreas } from "./load.js";
+import { plannedDurationFrom } from "./prefill.js";
 import { localDate } from "./time.js";
 import type {
   Area,
@@ -25,7 +26,8 @@ import type {
   Workout,
 } from "./types.js";
 
-const SWAP_REASONS: readonly SwapReason[] = [
+/** The `SwapReason` values (D-0037 §2). */
+export const SWAP_REASONS: readonly SwapReason[] = [
   "equipment_taken",
   "discomfort",
   "variety",
@@ -58,6 +60,8 @@ export interface SwapContext {
   recentIds: ReadonlySet<string>;
   /** Latest local date of a hard set per exercise, over the whole passed history (D-0056 §6). */
   lastDone: ReadonlyMap<string, LocalDate>;
+  /** A timed exercise's planned duration (D-0092 §1), so `timeCostS` uses it (D-0092 §2). */
+  durationOf: (ex: LibraryExercise) => number | null;
 }
 
 /** The slot being replaced (D-0056 §2). */
@@ -103,7 +107,7 @@ interface Row {
 /**
  * Rule 12 candidates and sort for replacing `cur` at `slot`, given the ids already in the
  * session (`planIds`, which includes `cur`). Returns the rows in rank order; `fits` decides
- * `fitsBudget` from a candidate's `timeCostS`.
+ * `fitsBudget` from a candidate's `timeCostS` and the candidate itself (D-0105 §1).
  */
 export function rankAgainst(
   ctx: SwapContext,
@@ -111,7 +115,7 @@ export function rankAgainst(
   slot: SwapSlot,
   planIds: ReadonlySet<string>,
   reason: SwapReason | null,
-  fits: (timeCostS: number) => boolean,
+  fits: (timeCostS: number, candidate: LibraryExercise) => boolean,
 ): SwapCandidate[] {
   const curPrimary = new Set(primaryAreas(cur));
   const curEquipment = new Set(realEquipment(cur.equipment));
@@ -129,7 +133,7 @@ export function rankAgainst(
     .map((ex) => ({
       ex,
       mm: muscleMatch(cur, ex),
-      timeCostS: itemCostS(ex, slot.sets),
+      timeCostS: itemCostS(ex, slot.sets, ctx.durationOf(ex)),
       shared: sharedCount(ex.equipment, curEquipment),
     }));
 
@@ -183,7 +187,7 @@ export function rankAgainst(
     muscleMatch: r.mm,
     timeCostS: r.timeCostS,
     equipment: [...r.ex.equipment],
-    fitsBudget: fits(r.timeCostS),
+    fitsBudget: fits(r.timeCostS, r.ex),
     bestMatch: i === 0,
   }));
 }
@@ -214,14 +218,17 @@ export function rankSwaps(
   const cur = lib.get(currentExerciseId);
   if (cur === undefined) throw new RangeError(`${currentExerciseId} is not in the library`);
 
+  const hard = normalizeHistory(history);
+  const today = localDate(now, tz);
   const ctx: SwapContext = {
     lib,
     pool: [...lib.values()]
       .filter((e) => isEligible(e, profile))
       .sort((a, b) => byIdStr(a.id, b.id)),
     recovering: new Set(recoveringAreas(history, library, now)),
-    recentIds: recentSessionIds(history, library, localDate(now, tz), tz),
+    recentIds: recentSessionIds(history, library, today, tz),
     lastDone: lastDoneDates(history, lib, tz),
+    durationOf: (ex) => plannedDurationFrom(ex, hard, lib, today, tz),
   };
   const planIds = new Set(session.plan.items.map((i) => i.exerciseId));
   const available = availableS(session.budgetMin, session.warmupInBudget);
@@ -231,6 +238,13 @@ export function rankSwaps(
     { sets: slot.sets, isMain: slot.isMain },
     planIds,
     reason,
-    (cost) => session.itemsTotalS - slot.costS + cost <= available,
+    // D-0105 §1: on a back-off slot a non-timed candidate also pays the back-off set
+    // applySwap re-adds (D-0093 §2), so fitsBudget is exactly applySwap's budget check.
+    (cost, ex) =>
+      session.itemsTotalS -
+        slot.costS +
+        cost +
+        (getsBackoff(slot.backoff !== null, ex) ? setCostS(ex, ctx.durationOf(ex)) : 0) <=
+      available,
   );
 }

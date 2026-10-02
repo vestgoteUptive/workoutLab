@@ -1,6 +1,6 @@
 # Data model (v1)
 
-**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`, the engine v1 columns) is migrated in `supabase/migrations/20260928090000_data_model_v1b.sql` (T-0100b, D-0035). `supabase/migrations/20260928120000_priority_areas_lower_bound.sql` (T-0102b, D-0037) tightens `profiles_priority_areas_valid`. Every table below is in the database. The typed view of this schema is `packages/shared/src/database.gen.ts` (D-0037 §10, D-0043).
+**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`, the engine v1 columns) is migrated in `supabase/migrations/20260928090000_data_model_v1b.sql` (T-0100b, D-0035). `supabase/migrations/20260928120000_priority_areas_lower_bound.sql` (T-0102b, D-0037) tightens `profiles_priority_areas_valid`. `supabase/migrations/20261001090000_plan_checkins_one_period.sql` (T-0223, D-0070 §6) lets `plan_checkins` store a one-period check-in. Every table below is in the database. The typed view of this schema is `packages/shared/src/database.gen.ts` (D-0037 §10, D-0043).
 
 Decisions: D-0001 (Supabase), D-0015 (set sync), D-0017 (offline, client ids), D-0018 (check-ins), D-0020 (write rules), D-0021 (shape), D-0024 (session building), D-0026 (progression), D-0027 (check-in reset), D-0029 (`exercises` columns), D-0030 (v1a defaults), D-0034 (engine inputs), D-0035 (v1b defaults), D-0037 (`SessionPlan` v1, array lower bound), D-0044 (`external_load` = NOT `bodyweight`, seed only).
 
@@ -214,9 +214,9 @@ The client inserts a row when a proposal is **first shown** (`answer` null), and
 |---|---|---|---|---|
 | id | uuid | no | `gen_random_uuid()` | PK. |
 | user_id | uuid | no | `auth.uid()` | FK `auth.users(id)` on delete cascade. |
-| period_index | integer | no | | Check `>= 1`. The later of the two evaluated periods (D-0018). |
-| completed_prev | integer | no | | Check `>= 0`. Completed sessions in the earlier period. |
-| completed_last | integer | no | | Check `>= 0`. Completed sessions in the later period. |
+| period_index | integer | no | | Check `>= 0`. The evaluated (last ended) period; 0 is the first period after onboarding (D-0094). |
+| completed_prev | integer | yes | | Check `>= 0`. Null for a one-period evaluation (D-0070 §6). |
+| completed_last | integer | no | | Check `>= 0`. Completed sessions in the evaluated period. |
 | rhythm_min_before | smallint | no | | |
 | rhythm_max_before | smallint | no | | |
 | proposed_min | smallint | no | | |
