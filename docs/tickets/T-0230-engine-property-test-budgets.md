@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.1, UF-10]
 decisions: [D-0096, D-0053]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Build flow: wl-build-engine. About ⅛ day. Follow-up from the T-0228 QA. The timeouts happen on pre-T-0228 code too. Engine tickets run one at a time (D-0096 §3): run this before or after T-0231, never alongside it. Test-only, so no vendor regen is needed (only `src/**` is vendored). -->
 
@@ -34,7 +34,7 @@ Each new test title starts with `T-0230 ACn`.
   - **Given** the four tests named in Scope, **When** the engine suite runs, **Then** each has an explicit timeout of `30_000`.
   - Their bodies are byte-identical to main: the diff in those two files only adds `, 30_000` and the trailing comment, at the four closing `})` lines. Record the diff in the build log. Don't assert it in a test (state.md trap).
 - AC2 (the guard)
-  - **Given** every `packages/engine/test/*.test.ts` file, parsed with the TypeScript compiler API (`ts.createSourceFile`), **When** `test-budgets.test.ts` collects every `it(…)` or `test(…)` call whose first argument is a string or template literal matching `/\b(sweep|seeds?|seeded)\b/i`, **Then** each one has a third argument that is a numeric literal ≥ `30000`.
+  - **Given** every `packages/engine/test/*.test.ts` file, parsed with the TypeScript compiler API (`ts.createSourceFile`), **When** `test-budgets.test.ts` collects every `it(…)` or `test(…)` call whose first argument is a string or template literal matching `/\b(sweep|seeds?|seeded)\b/i`, **Then** each one has a third argument that is ≥ `30000` and is either a numeric literal or an identifier bound by a file-level `const NAME = <numeric literal>` (e.g. `t0219-timed-cost.test.ts` `SWEEP_TIMEOUT_MS = 30_000`). *(Amended at accept, 2026-10-02: the identifier form was added so existing named budgets aren't false offenders.)*
   - On failure it lists each offender as `file:line title`.
   - **Red on unfixed code:** run the guard against main's two test files. It must fail and name exactly the four tests in Scope. Record this in the build log. If it names more, give those the same budget too, and list them in the build log.
   - **Non-vacuity:** the guard asserts that it matched at least 6 calls (the 4 in Scope plus the 2 AC28 template titles), including `rule-7 (AC28) energy … budget sweep` in `rule-7-histories.test.ts`, which already has a budget.
@@ -66,3 +66,10 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
   - Red on unfixed code: on main's test files the guard fails and names 5 tests. Four are the Scope tests (`rule-7-histories.test.ts:113` AC14 budget sweep, `:130` AC14 200 seeded histories, `simulated-histories.test.ts:253` rule-5 … (300 seeds), `:275` rule-0 history order … (200 seeds)). The extra one is `t0219-timed-cost.test.ts:261` "rule-7 rule-14 (AC4) plannedDurationS deep-equals prefill(…) … (seeded)", a 200-case seeded loop. Per AC2 it gets the same budget.
   - AC1 diff (5 lines in total, each `-  });` → `+  }, 30_000); // runtime budget only (sweep)`): rule-7-histories.test.ts L128 and L144, simulated-histories.test.ts L273 and L288, t0219-timed-cost.test.ts L294. No body, seed, range or assertion changed.
   - AC3: engine tests go from 547 on main (32 files) to 552 (33 files), so +5, all from `test-budgets.test.ts`. AC4: engine `typecheck`, `lint` and `test` are green. `-w format:check`, `check-all.mjs` and `vendor.mjs --check` exit 0. `src/**` is untouched, so there is no vendor regen.
+- 2026-10-02 accept (product-owner): **done**. Branch `t/T-0230-engine-test-budgets` @ f747823. Review: approve. QA: the orchestrator relied on the builder's red proof plus the reviewer's static check that the test bodies are byte-identical.
+  - AC1: met. The four Scope tests have `30_000`. The diff is limited to the closing `})` lines (see build entry).
+  - AC2: met, with the amended wording. The guard was red on unfixed code and named 5 offenders: the 4 in Scope plus `t0219-timed-cost.test.ts:261` "(seeded)". AC2's "if it names more" clause covers the fifth, which got the same budget. Non-vacuity, the unit pair and template-literal matching are all tested. The deviation is that the guard also accepts an identifier bound by a file-level `const NAME = <numeric literal>`. Without it, 5 t0219 tests outside Scope that use `SWEEP_TIMEOUT_MS` would be false offenders. I amended the AC2 wording above rather than writing a decision, because this applies the AC's intent and changes no contract.
+  - AC3: met. 547 → 552, +5, all from `test-budgets.test.ts`. No assertion was edited.
+  - AC4: met. Engine typecheck, lint and test are green. format:check, check-all and vendor `--check` are green.
+  - Principles: test-only, and `src/**` is untouched, so the engine stays deterministic (principle 3). No contract changed.
+  - Follow-ups (engine): (1) describe-level titles aren't checked. The `describe` "(seeded)" block at `rule-14-properties.test.ts:234` runs 4000 seeds with no budget: budget it and extend the guard to describe titles. (2) The guard skips concatenated and identifier titles without saying so: fold literal concatenations, and fail on any title it can't resolve.
