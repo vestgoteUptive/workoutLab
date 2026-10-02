@@ -62,8 +62,10 @@ describe("AC-13 import bans (D-0071 §9)", () => {
         result!.messages.filter((m) => m.ruleId === "no-restricted-imports" || m.fatal),
         file,
       ).toEqual([]);
+      // T-0303b: `lib/i18n/workout.ts` is now imported (read-only, D-0109 §7); its ban moved to
+      // the "workout.ts is imported, never re-implemented" test below.
       expect(readFileSync(file, "utf8"), file).not.toMatch(
-        /features\/UF-(02|06|07|10|11)|components\/body-map|lib\/i18n\/workout/,
+        /features\/UF-(02|06|07|10|11)|components\/body-map/,
       );
     }
   });
@@ -118,5 +120,55 @@ describe("AC-13 strings", () => {
     for (const file of sourceFiles().filter((f) => f.endsWith(".tsx"))) {
       expect(readFileSync(file, "utf8"), file).not.toMatch(/\bstyle=/);
     }
+  });
+});
+
+// ---- T-0303b AC-11 ----
+// The "en.ts and workout.ts unchanged" and AC-13 "shell files unchanged" checks are a
+// `git diff --name-only main...HEAD` in the review/DoD run (ticket build log); lanes are enforced
+// by check-lane-paths. Here: workout.ts is imported read-only, from one file, by its own names.
+
+/** UF-08 source files that mention `lib/i18n/workout` in any import form. */
+function workoutImporters(files: { name: string; source: string }[]): string[] {
+  return files.filter((f) => /lib\/i18n\/workout/.test(f.source)).map((f) => f.name);
+}
+
+describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (D-0109 §7)", () => {
+  const files = () =>
+    sourceFiles()
+      .filter((f) => /\.tsx?$/.test(f))
+      .map((f) => ({ name: f.split("/").at(-1)!, source: readFileSync(f, "utf8") }));
+
+  it("only Suggested.tsx mentions lib/i18n/workout, in any import form", () => {
+    expect(workoutImporters(files())).toEqual(["Suggested.tsx"]);
+  });
+
+  it("contrast: a namespace, type-only or extensionless import elsewhere is caught", () => {
+    const base = files();
+    for (const source of [
+      'import * as w from "../../lib/i18n/workout.js";\nexport const X = w;\n',
+      'import type { itemSummary } from "../../lib/i18n/workout";\n',
+      'export { areaName } from "../../lib/i18n/workout.js";\n',
+    ]) {
+      expect(workoutImporters([...base, { name: "Other.tsx", source }]), source).toEqual([
+        "Suggested.tsx",
+        "Other.tsx",
+      ]);
+    }
+  });
+
+  it("Suggested.tsx imports only names workout.ts exports", async () => {
+    const workout = await import("../../../lib/i18n/workout.js");
+    const source = files().find((f) => f.name === "Suggested.tsx")!.source;
+    const imports = [
+      ...source.matchAll(/import \{([^}]*)\} from "\.\.\/\.\.\/lib\/i18n\/workout\.js"/g),
+    ];
+    expect(imports).toHaveLength(1);
+    const names = imports[0]![1]!
+      .split(",")
+      .map((n) => n.trim())
+      .filter(Boolean);
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) expect(Object.keys(workout), name).toContain(name);
   });
 });

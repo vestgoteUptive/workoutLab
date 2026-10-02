@@ -238,6 +238,152 @@
   cursor: not-allowed;
 }
 
+/* ---- UF-08.2 Suggested workout (T-0303b, D-0109) ---- */
+.wl-uf08__why {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf08__why-chip {
+  padding: 6px 10px;
+  color: var(--wl-color-accent-hover);
+  background: var(--wl-color-surface-2);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.wl-uf08__budget {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wl-uf08__bar {
+  display: flex;
+  gap: 2px;
+  block-size: 12px;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+/* flex-grow is each segment's seconds, set on the node (D-0109 §5). */
+.wl-uf08__seg {
+  flex-basis: 0;
+  min-inline-size: 2px;
+  background: var(--wl-color-accent);
+}
+
+.wl-uf08__seg[data-segment="warmup"] {
+  background: var(--wl-color-text-muted);
+}
+
+.wl-uf08__seg[data-segment="unused"] {
+  background: var(--wl-color-surface-2);
+}
+
+/* Over the budget (D-0109 §5): the item segments only. */
+.wl-uf08__seg--warn {
+  background-color: var(--wl-color-warn);
+}
+
+.wl-uf08__budget-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.wl-uf08__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf08__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 10px 12px;
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 14px;
+}
+
+.wl-uf08__row-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-inline-size: 0;
+}
+
+.wl-uf08__row-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wl-uf08__row-detail {
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+}
+
+.wl-uf08__row-reason {
+  margin-top: 2px;
+  color: var(--wl-color-accent-hover);
+  font-size: 12px;
+}
+
+.wl-uf08__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  color: var(--wl-color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.wl-uf08__icon:hover {
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface-2);
+}
+
+.wl-uf08__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.wl-uf08__actions .wl-uf08__primary {
+  flex-grow: 1;
+  margin-top: 0;
+}
+
+.wl-uf08__ghost {
+  min-width: 44px;
+  min-height: 56px;
+  padding: 0 16px;
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wl-uf08__icon:focus-visible,
+.wl-uf08__ghost:focus-visible,
 .wl-uf08__close:focus-visible,
 .wl-uf08__back:focus-visible,
 .wl-uf08__step:focus-visible,

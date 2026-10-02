@@ -49,7 +49,42 @@ export const uf08 = {
   missing: "Connect to finish setting up your plan",
   missingLink: "Back to Today",
 
-  // --- UF-08.2 placeholder (D-0107 §2). T-0303b replaces the body. ---
+  // --- UF-08.2 Suggested workout (T-0303b, D-0065 §4, D-0109) ---
   suggestedTitle: "Your workout",
   back: "Back",
+  /** Accessible name of the session "why" chip list (D-0106 §4). */
+  sessionChipsName: "Why this workout",
+  /** Accessible name of the plan list. */
+  rowsName: "Exercises",
+  /** The warm-up row's title (D-0109 §4). */
+  warmupRow: "Warm-up",
+  /** Joins the warm-up move names. */
+  warmupMoves: (names: readonly string[]) => names.join(", "),
+  /** A row's detail line: the summary, the weight part and the minutes, " · "-joined. */
+  rowDetail: (parts: readonly string[]) => parts.join(" · "),
+  /** "12 min". `minutes` is a whole number of minutes (ceil of the engine's seconds). */
+  rowMinutes: (minutes: number) => `${minutes} min`,
+  /** The weight part for an exercise without external load (D-0109 §4). */
+  bodyweight: "Bodyweight",
+  /** "80 kg". `weight` arrives formatted with `Intl.NumberFormat` (D-0109 §4). */
+  weightKg: (weight: string) => `${weight} kg`,
+  /** "+ 1 back-off 70 × 6". `weight` arrives formatted. */
+  backoff: (weight: string, reps: number) => `+ 1 back-off ${weight} × ${reps}`,
+  /** The back-off line when the engine has no weight for it (D-0057: null means ask). */
+  backoffSet: "+ 1 back-off set",
+  /** "Remove Bench press". */
+  remove: (name: string) => `Remove ${name}`,
+  shuffle: "Shuffle",
+  /** Accessible name of UF-08.2's 20/30/45/60/90 chip group (D-0109 §3). */
+  timeChipsName: "Time",
+  /** Within the budget: "About 29 of 30 min", with " + warm-up" when it doesn't count. */
+  budgetWithin: (minutes: number, budgetMin: number, warmupOutside: boolean) =>
+    `About ${minutes} of ${budgetMin} min${warmupOutside ? " + warm-up" : ""}`,
+  /** Over the budget: "34 min, 4 over", with " + warm-up" when it doesn't count. */
+  budgetOver: (minutes: number, over: number, warmupOutside: boolean) =>
+    `${minutes} min, ${over} over${warmupOutside ? " + warm-up" : ""}`,
+  looksGood: "Looks good",
+
+  // --- UF-08.4 placeholder (D-0107 §2 pattern). T-0303d replaces the body. ---
+  readyTitle: "Ready",
 } as const;

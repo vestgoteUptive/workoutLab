@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2]
 decisions: [D-0002, D-0004, D-0040, D-0057, D-0065, D-0071, D-0086, D-0091, D-0103, D-0106, D-0107, D-0108, D-0109]
 deps: [T-0303a, T-0302c]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of docs/tickets/T-0303-session-setup.md (ACs B1–B6 there, refined by D-0109). Build flow: wl-build-web. About ½ day. Becomes ready when T-0303a and T-0302c are done. It only imports lib/i18n/workout.ts (D-0109 §7), so it may run in parallel with T-0302b and with T-0304a (no shared file). -->
 
@@ -153,3 +153,38 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 - **Parallel.** This ticket is parallel-safe by files with T-0302b and T-0304a. It shares no file with them, because it doesn't list `workout.ts` (D-0109 §7). It must not run with T-0303c or T-0303d, which are the same lane. Verification runs are staggered: one vitest/playwright process per machine (state.md).
 - **Size.** About ½ day. Most of the effort is AC-5/AC-6 (the inputs record) and AC-7 (the bar); the rows are mostly formatter calls.
 - **Timing ACs.** The "no extra call" asserts (AC-1, AC-5, AC-6) must fail on a planted fault: a `useEffect` that re-suggests on mount. The build log records it turning red.
+
+## Build log (2026-10-02, frontend-dev)
+- **Host.** `SessionSetup` keeps `{workout, shuffle, excludeIds}` next to the shared minutes, warm-up and energy (D-0109 §1). "Suggest my workout" freezes UF-08.1's `Workout` into that record; UF-08.1's fit-line memo only runs while UF-08.1 is on screen, so a chip on UF-08.2 is exactly one call and a later 3 s re-read cannot swap the UF-08.2 plan. Every action calls `suggest` once with `mainLiftId` = the current plan's (null only for Remove on the `isMain` item). Leaving `?step=suggested|ready` for UF-08.1 drops the record. A `suggest` rejection on UF-08.2 keeps the current plan and the record unchanged (D-0114 §6a: nothing invented).
+- **View.** `Suggested.tsx` (rows, warm-up row, chips, bar, Time chips, Remove, Shuffle, Looks good), `rows.ts` (name/externalLoad lookups, `Intl.NumberFormat(locale, {maximumFractionDigits: 2})` weight), `Ready.tsx` (UF-08.4 placeholder). Bar segment `flex-grow` and the over-budget `var(--wl-color-warn)` are set on the node from a ref callback (data, not state; the "no `style=`" pin holds). `workout.ts` is imported only (`itemSummary`, `itemReasonLine`, `sessionReasonChips`, 1-arg, D-0114 §5); its outputs are joined as opaque parts through `en.uf08.rowDetail`.
+- **T-0303a pin moved.** `exports-and-lint.test.ts` banned `lib/i18n/workout` imports in feature sources; this ticket must import it, so that regex dropped `workout` and a new test pins that only `Suggested.tsx` mentions it (any import form) and imports only names it exports.
+- **Planted fault 1 (ticket): a re-suggest in a mount `useEffect`** in the host → 13 red: AC-1 "no extra call" (both files), frozen-after-Suggest, AC-5 (all count asserts), AC-6 chip 20 and re-press, AC-8 hand-over identity. Reverted, green.
+- **Planted fault 2: UF-08.2 renders the live UF-08.1 memo** (the T-0303a code path) → "after Suggest: a changed re-read leaves the UF-08.2 plan" red at `shownWorkout() toBe handed`, plus 10 count asserts; its pair "before Suggest: a changed re-read updates the fit line" stays green. Reverted, green.
+- **Runs.** `--filter @workoutlab/web test` 96 files / 1391 tests green; `typecheck`, `lint` green; `test:e2e` 71 passed (whole suite); `-w format:check` clean; `check-all.mjs` exit 0; fresh build + `check:size` exit 0. Load-only flake seen: `app/__tests__/import-bans.test.ts` "features lints clean" hits its 5 s default under a parallel full run (3.5 s isolated, 3.1 s without this ticket's test files); green isolated and on a rerun of the full suite.
+
+## Rework 1 (code review REQUEST-CHANGES)
+- **Git-diff tests removed.** The `branchDiff()` AC-11/AC-13 asserts are gone from `exports-and-lint.test.ts` (they would fail on other lanes after merge and skip without a local `main`). DoD check instead: `git diff --name-only main...HEAD` lists only `features/UF-08/**`, `lib/i18n/flows/uf-08.ts`, `tests/e2e/uf-08-setup.spec.ts` and this ticket. It lists neither `lib/i18n/en.ts` nor `lib/i18n/workout.ts`, and nothing under `apps/web/src/app/**`, `tests/e2e/fixtures/**` or `tests/e2e/{offline,auth,shell}.spec.ts`.
+- **workout.ts importer pin, any form.** Every UF-08 source whose text matches `/lib\/i18n\/workout/` is collected; the list must be `["Suggested.tsx"]`, and its named imports must be workout.ts exports. Proof: a planted `features/UF-08/Other.ts` with `import * as w from "../../lib/i18n/workout.js"` turned the pin red (`['Other.ts', 'Suggested.tsx']`); so did `import type … from "../../lib/i18n/workout"` (no `.js`). Removed, green. An in-test contrast covers the namespace, type-only and re-export forms.
+- **pendingFocus leak fixed (D-0109 §6).** `onRemove` now returns whether a new plan was set; a `false` clears the pending focus, and Shuffle and a time chip clear it too. New tests: view "a Remove that changes nothing leaves no focus pending for Shuffle" / "… for a later time chip", and host "a Remove whose suggest call throws keeps the plan, and a later Shuffle keeps focus on Shuffle". All 3 were red on the old code (focus moved to a Remove button), green after the fix.
+- **Warn colour as a class.** `.wl-uf08__seg--warn { background-color: var(--wl-color-warn) }` in `uf-08.css`; JS writes only `flex-grow`. The AC-7 test attaches `uf-08.css` to the document (Vitest doesn't process CSS imports), and its computed-style asserts hold on both sides of the boundary.
+- **Runs.** web `test` 96 files / 1394 tests green; `typecheck` and `lint` green; `test:e2e` 71 passed.
+
+## Accept log
+- 2026-10-02, product owner, branch at 5703d51 (attempt 2): **done**.
+  - Review attempt 1 asked for 3 changes: the committed `git diff main...HEAD` tests, the importer pin that was too narrow, and the pendingFocus leak after a failed Remove. Rework 1 fixed all three and also moved the warn colour into a CSS class. Each fix has a test that was red on the old code.
+  - QA passed AC-1..AC-13:
+    - The root `--force` gate is green (web 1394 tests).
+    - e2e passed 71/71, the whole suite.
+    - 4 independently planted faults turned tests red: an accessory Remove passing a null `mainLiftId` (AC-5 pair), Back keeping adjustments (AC-8), a `>=` boundary (AC-7 1620/1621), and warm-up-off totals (AC-7).
+    - The bar texts and the R7-E5 rows were re-derived from the engine, not copied from the build output.
+    - Both planted "no extra call" faults went red (build log). This proves the timing asserts in AC-1, AC-5 and AC-6.
+  - AC-11 and AC-13 (`git diff main...HEAD` lists): these are checked at DoD, not as committed tests (review attempt 1). The build log records the diff result: only `features/UF-08/**`, `flows/uf-08.ts`, `tests/e2e/uf-08-setup.spec.ts` and this ticket, with nothing under `app/**`, `tests/e2e/fixtures/**`, `en.ts` or `workout.ts`.
+  - AC-9 and AC-12 (offline): the vitest online/offline deep-equal and fetch-spy asserts pass. The e2e offline row passes. QA's real-browser keyboard probe found online == offline across 5 snapshots, with 0 errors.
+  - Principles hold:
+    - 2: the time chips re-suggest around the kept main lift, and the budget is shared with UF-08.1.
+    - 3: every action is one `suggest()` call, the engine output is rendered unsorted, and the over-budget state comes only from `availableS`.
+    - 1 and 5: not touched.
+    - Contracts are unchanged.
+  - Follow-ups (already filed):
+    - T-0393: the e2e fixture has `external_load` false everywhere, so the e2e never renders a kg weight.
+    - T-0391: switch weight formatting to `formatKg` once T-0388 lands.
