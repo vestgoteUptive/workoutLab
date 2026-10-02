@@ -3,7 +3,7 @@ id: T-0303a
 title: UF-08.1 Time & energy — the /session/setup host and ?step routing, minutes stepper, chips, done-by, finish time, warm-up toggle, energy, and a live fit line from the on-device suggest()
 lane: web-feature:UF-08
 screens: [UF-08.1]
-decisions: [D-0002, D-0004, D-0024, D-0045, D-0063, D-0065, D-0071, D-0086, D-0091, D-0095, D-0103, D-0104, D-0107, D-0108]
+decisions: [D-0002, D-0004, D-0024, D-0045, D-0063, D-0065, D-0071, D-0086, D-0091, D-0095, D-0103, D-0104, D-0107, D-0108, D-0113]
 deps: [T-0300, T-0203b, T-0318]
 status: ready
 ---
@@ -14,7 +14,7 @@ Principle 2: every workout start asks how long the user has. UF-08.1 is where th
 
 ## Scope
 - In:
-  - **The host and loading.** `features/UF-08/SessionSetup.tsx` (the host, replacing the T-0300a stub in `index.tsx`) with the D-0107 §1 step routing. Data loading through `loadEngineHistory`, `loadLibrary`, `loadTargets` and `loadProfile`, plus `refreshAll` when online, capped at 3 s.
+  - **The host and loading.** `features/UF-08/SessionSetup.tsx` (the host, replacing the T-0300a stub in `index.tsx`) with the D-0107 §1 step routing. Data loading through `loadEngineHistory`, `loadLibrary`, `loadTargets` and `loadProfile`, plus `refreshAll` when online **and signed in** (`useAuth().status === "signed-in"`, D-0113), at most once per mount, capped at 3 s.
   - **The UF-08.1 controls:**
     - minutes stepper (±5, 15–120);
     - chips 20/30/45/60/90;
@@ -110,10 +110,14 @@ Principle 2: every workout start asks how long the user has. UF-08.1 is where th
   - **One screen at a time.** At any moment there is exactly one `[data-screen-id]`.
 - **AC-9 (offline = online, NFR-OFF-3)**
   - **Same result both ways.** For the same cached history, library, targets and profile, the rendered fit line and the `Workout` passed on are deep-equal in two runs:
-    - `navigator.onLine` true, with a `refreshAll` that resolves without changing the cache;
+    - `navigator.onLine` true and `status: "signed-in"` (D-0113), with a `refreshAll` that resolves without changing the cache;
     - `navigator.onLine` false, where `refreshAll` has 0 calls after 50 ms.
   - **Queued sets count.** With the real `loadEngineHistory` and 6 queued hard back-squat sets at `now − 24 h`, recorded through `recordSet`, the 30-min `Workout`'s `sessionReasons` contain `recovering_skipped` for quads and for glutes (R7-E3). Without the queued sets, they contain neither.
-- **AC-10 (refresh cap and missing data, D-0071 §8, D-0104, D-0107 §9)**
+- **AC-10 (refresh cap, auth condition and missing data, D-0071 §8, D-0104, D-0107 §9, D-0113)** `useAuth` comes from `lib/auth/auth-context.js` (a read-only import). Tests `vi.mock` it. Unless a case says otherwise, "online" below means `navigator.onLine` true **and** `status: "signed-in"`.
+  - **Auth condition (D-0113 §1–§3).**
+    - Online and signed in: `refreshAll` is called exactly once per mount.
+    - Online but `stale` (and, separately, `signed-out`): 0 `refreshAll` calls after a 50 ms macrotask. The fit line renders from the cache, and each loader is read once.
+    - `stale` → `signed-in` during the mount (re-render with the changed mock): exactly 1 `refreshAll` call, and none after another 50 ms or a second `signed-in` re-render. The planted fault "no once-per-mount flag" must turn this red, and the build log records it.
   - **The cap: re-read after the refresh resolves or after 3 s, whichever comes first.** Online, with `refreshAll` never resolving (fake timers):
     - The fit line renders from the cache before 3 000 ms. At 2 999 ms each loader mock has been read once.
     - At 3 000 ms each loader is read a second time (mock count 1 → 2).
