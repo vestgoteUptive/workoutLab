@@ -42,5 +42,18 @@ export function consumeReturnTo(): string {
   } catch {
     // best-effort only
   }
-  return isSafeAppPath(value) ? value : "/";
+  if (!isSafeAppPath(value)) return "/";
+  return normalise(value);
+}
+
+// T-0396 (UF-01.5): return what the URL parser resolved (dot segments, `%2e%2e`), not the raw
+// string, and check that result again: `/..//evil.example` resolves to `//evil.example`.
+function normalise(value: string): string {
+  try {
+    const u = new URL(value, window.location.origin);
+    const out = u.pathname + u.search + u.hash;
+    return isSafeAppPath(out) ? out : "/";
+  } catch {
+    return "/";
+  }
 }
