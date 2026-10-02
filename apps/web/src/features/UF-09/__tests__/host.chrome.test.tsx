@@ -3,7 +3,7 @@
 import { screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initialFocusState, type FocusState, type Phase } from "../machine.js";
-import { P1, S1, STARTED_AT_MS, USER_A, planWith } from "./fixtures.js";
+import { P1, S1, STARTED_AT_MS, USER_A, behindStartedAt, planWith } from "./fixtures.js";
 import {
   advance,
   flushReal,
@@ -30,7 +30,8 @@ const TIMED_PHASES: Phase[] = ["getReady", "warmup", "rest", "next", "timed"];
  *  a loaded lift) is Pause, 2 reps steppers, 2 weight steppers and Save. T-0304f: `getReady`
  *  (P1, with a warm-up) is Pause, Start now and Skip warm-up; `rest` is Pause, −15 s, +15 s and
  *  Skip rest; `next` (the module's empty seams) is Pause and I'm ready. T-0304c: `warmup` is
- *  Pause, Restart and Next move; `timed` is Pause and Pause timer. */
+ *  Pause, Restart and Next move; `timed` is Pause and Pause timer. T-0304d: `timeCheck` (P1
+ *  60 s behind at item 1) is Pause, Continue, Trim and Skip next. */
 const BUTTONS: Partial<Record<Phase, string[]>> = {
   getReady: ["Pause workout", "Start now", "Skip warm-up"],
   rest: ["Pause workout", "−15 s", "+15 s", "Skip rest"],
@@ -39,6 +40,7 @@ const BUTTONS: Partial<Record<Phase, string[]>> = {
   timed: ["Pause workout", "Pause timer"],
   set: ["Pause workout", "Done set"],
   confirm: ["Pause workout", "Fewer reps", "More reps", "Less weight", "More weight", "Save"],
+  timeCheck: ["Pause workout", "Continue", "Trim", "Skip next"],
 };
 const NON_PAUSED: Phase[] = [
   "getReady",
@@ -79,7 +81,10 @@ function seeded(phase: Phase, patch: Partial<FocusState> = {}): FocusState {
 }
 
 async function show(state: FocusState, plan = P1) {
-  await seedSession({ plan });
+  // T-0304d (D-0120 §4): a restored time check re-runs rule 8, so its session is behind.
+  await seedSession(
+    state.phase === "timeCheck" ? { plan, started_at: behindStartedAt(NOW) } : { plan },
+  );
   window.localStorage.setItem(KEY, JSON.stringify(state));
   return renderLoaded();
 }
@@ -135,15 +140,33 @@ describe("AC-7 chrome on every machine state except paused", () => {
     expectNoWayOut();
   });
 
-  it("paused: exactly 1 button (Resume) and no chrome", async () => {
+  // T-0304d (D-0118 §12): the built UF-09.9 is Resume, Skip to next exercise and End workout.
+  it("paused: exactly 3 buttons (Resume, Skip to next exercise, End workout) and no chrome", async () => {
     await show(seeded("paused"));
     expect(screenId()).toBe("UF-09.9");
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(1);
+    expect(buttons).toHaveLength(3);
+    expect(buttons.map((b) => b.textContent)).toEqual([
+      "Resume",
+      "Skip to next exercise",
+      "End workout",
+    ]);
     expect(buttons[0]).toHaveAccessibleName("Resume");
     expect(document.querySelector(".wl-uf09__chrome")).toBeNull();
     expect(document.querySelector(".wl-uf09__progress")).toBeNull();
     expect(screen.queryByRole("button", { name: "Pause workout" })).not.toBeInTheDocument();
+    expectNoWayOut();
+  });
+});
+
+describe("T-0304d AC-6 the paused button pin with Skip hidden", () => {
+  it("paused on the last item: exactly 2 buttons (Resume, End workout)", async () => {
+    await show(seeded("paused", { itemIndex: 3 }));
+    expect(screenId()).toBe("UF-09.9");
+    expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual([
+      "Resume",
+      "End workout",
+    ]);
     expectNoWayOut();
   });
 });

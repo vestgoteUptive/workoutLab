@@ -84,6 +84,9 @@ export interface FocusState {
   /** UF-09.7's ring-only pause (T-0304c, D-0119 §2): when "Pause timer" was tapped, else `null`.
    *  Only the `timed` timer stops; `workoutPausedMs` (rule 8's elapsed time) doesn't move. */
   timerPausedAtMs: number | null;
+  /** UF-09.9 "Skip to next exercise" (T-0304d, D-0120 §7): the items left unfinished on purpose.
+   *  The plan keeps them; the re-sync treats them as complete. Older stored states read `[]`. */
+  skippedItems: number[];
 }
 
 export interface FocusCtx {
@@ -128,7 +131,14 @@ export type FocusEvent =
   | ({ type: "TIMER_RESUME" } & At)
   /** T-0304c (D-0119 §3): a hold at 0 whose set is already logged (of this exercise, T-0410)
    *  moves on as its TIMED_RECORDED would have, with no second entry. Otherwise a no-op. */
-  | ({ type: "HOLD_ALREADY_LOGGED" } & At);
+  | ({ type: "HOLD_ALREADY_LOGGED" } & At)
+  // T-0304d (D-0120 §1 §7). Added, none changed.
+  /** A time-check option was written (Trim / Skip next), reduced with the NEW plan in `ctx`:
+   *  UF-09.8 goes to UF-09.6 at the same `itemIndex`, or to `done` when nothing is left. */
+  | ({ type: "PLAN_APPLIED" } & At)
+  /** UF-09.9 "Skip to next exercise": ends the pause and leaves the current item (or the
+   *  warm-up). Valid only in `paused`. */
+  | ({ type: "SKIP_ITEM" } & At);
 
 function timerAt(atMs: number, durationS: number): FocusTimer {
   return { startedAtMs: atMs, durationS, pausedMs: 0 };
@@ -151,6 +161,7 @@ export function initialFocusState(sessionId: string, _plan: SessionPlan, atMs: n
     warmupSpentMs: 0,
     loggedSets: [],
     timerPausedAtMs: null,
+    skippedItems: [],
   };
 }
 
@@ -216,12 +227,15 @@ export function setAfterRest(state: FocusState, ctx: FocusCtx): number | null {
   return firstUnloggedSet(state, ctx, state.itemIndex, state.setIndex - 1);
 }
 
-/** D-0071 §5: the first item with an unlogged planned set (back-off included), and that set. */
+/** D-0071 §5: the first item with an unlogged planned set (back-off included), and that set.
+ *  An item skipped on UF-09.9 counts as complete (D-0120 §7). */
 export function firstIncompleteSet(
   state: FocusState,
   ctx: FocusCtx,
 ): { itemIndex: number; setIndex: number } | null {
+  const skipped = state.skippedItems ?? [];
   for (let i = 0; i < ctx.plan.items.length; i += 1) {
+    if (skipped.includes(i)) continue;
     const setIndex = firstUnloggedSet(state, ctx, i);
     if (setIndex !== null) return { itemIndex: i, setIndex };
   }
@@ -409,6 +423,8 @@ function transition(state: FocusState, event: FocusEvent, ctx: FocusCtx): FocusS
     case "CHECK_RESOLVED": {
       if (state.phase !== "betweenItems") return state;
       const itemIndex = state.itemIndex + 1;
+      // Nothing follows (a rest started after the last set): the workout is over.
+      if (itemIndex >= plan.items.length) return { ...state, phase: "done", timer: null };
       if (event.to === "timeCheck") {
         return { ...state, phase: "timeCheck", itemIndex, setIndex: 0, timer: null };
       }
@@ -495,6 +511,10 @@ function transition(state: FocusState, event: FocusEvent, ctx: FocusCtx): FocusS
         timer: { ...state.timer, pausedMs: state.timer.pausedMs + heldFor },
       };
     }
+    case "PLAN_APPLIED":
+      return planApplied(state, ctx, event.atMs);
+    case "SKIP_ITEM":
+      return skipItem(state, ctx, event.atMs);
     case "HOLD_ALREADY_LOGGED":
       return state.phase === "timed" ? movedOnIfLogged(state, ctx, event.atMs) : state;
     case "PLAN_REPLACED":
@@ -504,6 +524,86 @@ function transition(state: FocusState, event: FocusEvent, ctx: FocusCtx): FocusS
     default:
       return state;
   }
+}
+
+/**
+ * D-0120 §1: after a time-check option is written, `ctx.plan` is the engine's whole new item list.
+ * UF-09.8 moves to UF-09.6 (the 60 s set-up) at the same `itemIndex`, or to `done` when the new
+ * list has no item from there on. A pause taken while the write was pending stays: the set-up
+ * then starts at the pause, so RESUME leaves the full 60 s, and `done` ends the pause (persist.ts
+ * rejects `resumePhase: "done"`). Any other phase is a no-op.
+ */
+function planApplied(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
+  const running = state.phase === "paused" ? state.resumePhase : state.phase;
+  if (running !== "timeCheck") return state;
+  const nothingLeft = state.itemIndex >= ctx.plan.items.length;
+  if (state.phase !== "paused") {
+    if (nothingLeft) return { ...state, phase: "done", setIndex: 0, timer: null };
+    return { ...state, phase: "next", setIndex: 0, timer: timerAt(atMs, NEXT_SETUP_S) };
+  }
+  const pausedAtMs = state.pausedAtMs ?? atMs;
+  if (nothingLeft) {
+    return {
+      ...state,
+      phase: "done",
+      setIndex: 0,
+      timer: null,
+      resumePhase: null,
+      pausedAtMs: null,
+      workoutPausedMs: state.workoutPausedMs + Math.max(0, atMs - pausedAtMs),
+    };
+  }
+  return { ...state, resumePhase: "next", setIndex: 0, timer: timerAt(pausedAtMs, NEXT_SETUP_S) };
+}
+
+/** Whether UF-09.9 offers "Skip to next exercise" (D-0120 §7): not in a pause taken on UF-09.8
+ *  (it has its own Skip next), and only when an item follows the current one. In the warm-up the
+ *  current item is item 0, so a one-item plan offers no Skip there either (T-0304d AC-10). */
+export function canSkipItem(state: FocusState, ctx: FocusCtx): boolean {
+  if (state.phase !== "paused" || state.resumePhase === null) return false;
+  if (state.resumePhase === "timeCheck") return false;
+  return state.itemIndex + 1 < ctx.plan.items.length;
+}
+
+/**
+ * D-0120 §7 `SKIP_ITEM`: ends the pause as RESUME does, then leaves what was on screen. From the
+ * warm-up (or UF-09.1) it ends the warm-up as its last move would (`warmupSpentMs` recorded) and
+ * goes to UF-09.6 for item 0, with no time check. From an item's step it marks the item skipped
+ * and goes through `betweenItems`, so the store runs the check point for the item after it. The
+ * plan and the logged sets are unchanged (a recorded set on UF-09.4 stands).
+ */
+function skipItem(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
+  if (!canSkipItem(state, ctx) || state.pausedAtMs === null) return state;
+  const pausedFor = Math.max(0, atMs - state.pausedAtMs);
+  const resumed: FocusState = {
+    ...state,
+    resumePhase: null,
+    pausedAtMs: null,
+    workoutPausedMs: state.workoutPausedMs + pausedFor,
+  };
+  const from = state.resumePhase;
+  if (from === "getReady" || from === "warmup") {
+    const startedAt =
+      from === "warmup" && state.warmupStartedAtMs !== null
+        ? state.warmupStartedAtMs + pausedFor
+        : null;
+    return {
+      ...resumed,
+      phase: "next",
+      itemIndex: 0,
+      setIndex: 0,
+      warmupStartedAtMs: null,
+      warmupSpentMs: startedAt === null ? 0 : Math.max(0, atMs - startedAt),
+      timer: timerAt(atMs, NEXT_SETUP_S),
+    };
+  }
+  const skipped = state.skippedItems ?? [];
+  return {
+    ...resumed,
+    phase: "betweenItems",
+    timer: null,
+    skippedItems: skipped.includes(state.itemIndex) ? skipped : [...skipped, state.itemIndex],
+  };
 }
 
 /**

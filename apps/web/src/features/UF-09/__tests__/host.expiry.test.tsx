@@ -4,7 +4,7 @@ import { screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initialFocusState, type FocusState, type LoggedSet } from "../machine.js";
 import type { ResolveCheckPoint } from "../store.js";
-import { P1, S1, STARTED_AT_MS, USER_A } from "./fixtures.js";
+import { P1, S1, STARTED_AT_MS, USER_A, behindStartedAt } from "./fixtures.js";
 import {
   advance,
   freshDb,
@@ -210,6 +210,9 @@ describe("AC-9 the check point", () => {
   });
 
   it("an injected resolveCheckPoint is called once, with the state at item 0's end; 'timeCheck' gives UF-09.8", async () => {
+    // T-0304d (D-0120 §4): UF-09.8 shows rule 8's answer, made fresh for an injected check
+    // point, so the session is behind at the check (1500 s elapsed; P1 is then 60 s behind).
+    await seedSession({ started_at: behindStartedAt(NOW + 120_000) });
     seed(lastBenchRest());
     const spy = vi.fn<ResolveCheckPoint>(() => "timeCheck");
     await renderLoaded({ resolveCheckPoint: spy });
@@ -220,7 +223,8 @@ describe("AC-9 the check point", () => {
     expect(ctx.plan).toEqual(P1);
     expect(atMs).toBe(NOW + 120_000);
     expect(screenId()).toBe("UF-09.8");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Time check");
+    // T-0304d (D-0118 §12): the built UF-09.8's heading is the minutes behind.
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("1 min behind");
     expect(storedFocus()).toMatchObject({ phase: "timeCheck", itemIndex: 1 });
     // Not called mid-item: a rest inside an item never reaches the check point.
     await advance(600_000);
