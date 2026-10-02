@@ -247,9 +247,7 @@ describe("AC-2 magic link and code (T-0300b reused)", () => {
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "ada@example.com" } });
     fireEvent.change(screen.getByLabelText("6-digit code"), { target: { value: "12345" } });
     fireEvent.click(screen.getByRole("button", { name: "Verify code" }));
-    await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent(en.auth.invalidCode),
-    );
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(en.auth.invalidCode));
     expect(auth.verifyOtp).not.toHaveBeenCalled();
   });
 });
@@ -334,9 +332,7 @@ describe("AC-4 an expired link keeps the plan", () => {
     renderAt("/auth/callback?error_code=otp_expired");
     fireEvent.click(await screen.findByRole("link", { name: "Send a new one" }));
     await waitFor(() => expect(where.current).toBe("/account"));
-    expect(within(root()).getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Save your plan",
-    );
+    expect(within(root()).getByRole("heading", { level: 1 })).toHaveTextContent("Save your plan");
     expect(window.localStorage.getItem(KEY)).toBe(raw);
   });
 

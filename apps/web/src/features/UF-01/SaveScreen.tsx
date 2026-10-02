@@ -96,10 +96,7 @@ function Saving({ plan, store }: { plan: PendingPlan; store: PendingPlanStore })
     setPhase("saving");
     try {
       if (!existenceChecked.current) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("user_id")
-          .maybeSingle();
+        const { data, error } = await supabase.from("profiles").select("user_id").maybeSingle();
         if (error) throw error;
         existenceChecked.current = true;
         if (data) {
