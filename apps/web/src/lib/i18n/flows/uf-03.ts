@@ -32,4 +32,19 @@ export const uf03 = {
   allOnTarget: "Every area is on target",
   /** The one link to UF-10.1, only on an ended session (D-0142 §4). */
   seeBalance: "See balance",
+
+  // UF-03.3 effort and Save (T-0420, D-0030, D-0068 §2 §3). No "tune next week" copy (D-0068 §3).
+  /** The radiogroup's name. */
+  effortName: "How hard was it?",
+  /** The five chips, D-0030's 1–5 scale, in order. */
+  effort: {
+    1: "Very easy",
+    2: "Easy",
+    3: "About right",
+    4: "Hard",
+    5: "Very hard",
+  },
+  save: "Save workout",
+  /** The polite text after a Save that didn't reach IndexedDB. */
+  saveFailed: "Couldn't save. Try again.",
 } as const;

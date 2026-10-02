@@ -78,3 +78,22 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 ## Notes
 - **Flow:** `wl-build-web`.
 - **Lane order (D-0142 §1):** T-0419 → T-0420 → T-0416 → T-0417 → T-0418. If T-0324 is late, the orchestrator may run T-0416 first.
+
+## Build log (frontend-dev, 2026-10-02)
+- **Files.** `features/UF-03/EffortSave.tsx` (new: the radiogroup and "Save workout"); `SummaryContent.tsx` (mounts `EffortSave` on the ended state only, between "Next up" and "See balance"); `summary-data.ts` (`EndedSummary.effortRating`, `EffortRating`, `EFFORT_RATINGS`, `storedEffort`: a stored value that isn't an integer 1–5 checks nothing); `summary.css` (tokens only); `lib/i18n/flows/uf-03.ts` (`effortName`, `effort[1..5]`, `save`, `saveFailed`). Tests: `__tests__/summary.save.test.tsx` (AC-1..AC-6, 19 tests, an `unhandledRejection` probe asserted empty after each test); `__tests__/helpers.tsx` (additive: `SessionSeed.effortRating`, a `before` history argument to `renderSummary`, and `location.navigate` for the back step). New e2e `tests/e2e/uf-03-list-summary.spec.ts` (AC-7, plus AC-6's 44 × 44 boxes), under `fixtures/guarded-test.js`.
+- **Save.** At the tap: `offlineDb().sessions.get(id)`, then `upsertSession({...entry.row, effort_rating})` (the whole stored row, its own `ended_at`; no `/finish`), then `navigate("/", {replace: true})`. A ref guards a second click and the chips while the write is held. A rejection, or a row gone at the tap, shows "Couldn't save. Try again." in an always-present `aria-live="polite"` `<p>` (no `role="alert"`), re-enables Save and keeps the pick. The button label stays "Save workout" while pending (`aria-disabled="true"`).
+- **Both values.** Ended vs still running (chips and Save vs none); none checked vs a pick ("Hard" → 4) vs no pick (`null`, key present); stored 2 ("Easy" checked → "Very hard" sends 5) vs stored null (nothing checked); plan at mount vs a plan written after mount (the new one is sent); write held (summary stays, row unchanged) vs released (`/`, row has 4); `upsertSession` resolving vs rejecting once (then the retry resolves); push vs replace (one step back is `/`, not the summary); zero history vs the full fixture.
+- **Red on T-0419's code** (the `<EffortSave>` line removed from `Ended`): 18 of 19 fail; the one green is AC-1's still-running contrast (no chips there, by design).
+- **Planted faults (each applied alone, `summary.save.test.tsx` run, then reverted):**
+  - partial row `upsertSession({id, ended_at, effort_rating})` → AC-2 a pick / no pick / fresh read red, plus AC-1 zero history and AC-5 (6 red);
+  - `ended_at: new Date().toISOString()` at Save → AC-2 a pick / no pick / fresh read red, plus AC-1 zero history and AC-5 (5 red);
+  - a chip preselected by default (`initialRating ?? 3`) → AC-1 "none checked" red, plus AC-1 zero history, AC-2 no pick and AC-5 stored null (4 red);
+  - `navigate("/")` without `replace` → AC-3 red;
+  - no double-click guard → AC-4 pending red; chips not held while pending → AC-4 pending red;
+  - the row read once and reused (not at the tap) → AC-2 fresh read red;
+  - `role="alert"` on the status → AC-4 rejection red; no `catch` → AC-4 rejection and the gone-row test red;
+  - the stored rating ignored → AC-5 red (both stored-2 and coming back).
+  - e2e: Save sending `effort_rating: null` → AC-7 "after a reload … effort_rating 3" red.
+- **e2e finding.** The first run measured each radio at 44 × 42: the input fills the label's padding box, so the label's border ate 2 px. The chip is now `min-height`/`min-width: 48px` (44 inside a checked chip's 2 px border); the spec checks every radio unchecked and the checked one.
+- **Runs.** `pnpm --filter @workoutlab/web typecheck` green; `lint` green; `test` 163 files / 2553 tests green; `test:e2e uf-03-list-summary offline uf-09-focus` 12/12; `pnpm -w format:check` green; `pnpm check:repo` green.
+- **Build defaults (visible, proposed as D-0152 for the orchestrator):** the effort group and Save sit between "Next up" and "See balance"; Save keeps its label while pending; a session row missing from IndexedDB at the tap is the same "Couldn't save. Try again." rejection.
