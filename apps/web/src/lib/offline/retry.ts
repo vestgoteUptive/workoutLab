@@ -7,6 +7,7 @@ const MAX_DELAY_MS = 300_000;
 export class RetryScheduler {
   private delayMs = INITIAL_DELAY_MS;
   private timer: ReturnType<typeof setTimeout> | null = null;
+  private stopped = false;
 
   constructor(
     private readonly run: () => Promise<"flushed" | "empty" | "blocked-auth" | "network-error">,
@@ -25,12 +26,22 @@ export class RetryScheduler {
 
   private scheduleRetry(): void {
     this.cancel();
+    // A run that was already in flight when `stop()` was called must not re-arm the backoff on a
+    // torn-down handle (T-0385).
+    if (this.stopped) return;
     this.timer = setTimeout(() => {
       // Fire-and-forget (D-0104 §2–§3): a rejecting run is swallowed here and neither changes
       // the delay nor schedules another retry.
       this.runNow().catch(() => undefined);
     }, this.delayMs);
     this.delayMs = Math.min(this.delayMs * 2, MAX_DELAY_MS);
+  }
+
+  /** Cancels the timer for good: a run still in flight that resolves `network-error` afterwards
+   *  schedules no retry. `runNow()` itself still runs if called. */
+  stop(): void {
+    this.stopped = true;
+    this.cancel();
   }
 
   cancel(): void {

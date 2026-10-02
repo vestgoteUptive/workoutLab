@@ -362,8 +362,8 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
 // ---- T-0303d UF-08.4 Ready and Start (AC-10; D-0086, D-0091 §1, D-0108, D-0110, D-0112) ----
 // The spec registers its own `sessions` route after `mockSupabaseData` (the later-registered
 // handler wins) to record what AutoSync upserts. Start itself makes no request (D-0110 §5): the
-// row goes to IndexedDB and is sent at the next AutoSync trigger (a reload, or the `online`
-// event, D-0112 §1-§3).
+// row goes to IndexedDB, and the sync handle flushes it 250 ms later when online (D-0116), or on
+// the `online` event when offline (D-0112 §2).
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const SESSION_URL = /\/session\/([0-9a-f-]{36})$/;
@@ -439,7 +439,7 @@ async function startWorkout(page: Page): Promise<string> {
 }
 
 test.describe("T-0303d AC-10 UF-08.4 online", () => {
-  test("Start → /session/<uuid>, the row is pending in IndexedDB, and the reload sends it once", async ({
+  test("Start → /session/<uuid>, and within 5 s, with no reload, one request sends the row", async ({
     page,
   }) => {
     const writes = await recordSessions(page);
@@ -449,14 +449,16 @@ test.describe("T-0303d AC-10 UF-08.4 online", () => {
     await expect(page.locator('[data-part="summary"]')).toHaveText(
       /^\d+ min · warm-up \+ \d+ exercises? · \d+ sets? · done by \d{1,2}:\d{2}( [AP]M)?$/,
     );
+    // D-0116 §6: the enqueue flush (250 ms after the IDB commit) sends the row. No reload, and
+    // no IndexedDB `pending: true` read, which would race that flush.
+    const tappedAt = Date.now();
     const id = await startWorkout(page);
-    expect(await storedSession(page, id)).toEqual({ pending: true, time_budget_min: 30 });
-
-    // D-0112 §1: the reload mounts AutoSync, whose flushNow() sends the queued row.
-    await page.reload();
     await expect
-      .poll(() => requestsCarrying(writes, id).length, { timeout: 5000 })
+      .poll(() => requestsCarrying(writes, id).length, {
+        timeout: Math.max(1, 5000 - (Date.now() - tappedAt)),
+      })
       .toBeGreaterThanOrEqual(1);
+    expect(Date.now() - tappedAt).toBeLessThan(5000);
     const carrying = requestsCarrying(writes, id);
     expect(carrying).toHaveLength(1);
     expect(carrying[0]!.find((r) => r.id === id)!.time_budget_min).toBe(30);

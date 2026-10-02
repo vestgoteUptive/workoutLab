@@ -8,7 +8,7 @@
 // in IDB, are never retried automatically, and still reach the engine as `pending`. A network
 // `TypeError` schedules a backoff retry (AC-C10); it never touches rejected-vs-queued state.
 import { supabase } from "../auth/client.js";
-import { offlineDb, type QueuedSet } from "./db.js";
+import { offlineDb, type QueuedSession, type QueuedSet } from "./db.js";
 
 const BATCH_SIZE = 100;
 
@@ -89,8 +89,53 @@ async function flushSessions(userId: string): Promise<{ ok: boolean; sentAny: bo
   // Never `bulkDelete` here: deleting the row would destroy the only record that the session was
   // ever finished, and a later `upsertSession({id, ended_at: null})` would then clear the finish
   // server-side (D-0053 §7, silent data loss).
-  await db.sessions.bulkPut(queued.map((q) => ({ ...q, pending: false })));
+  //
+  // Only clear `pending` on an entry that is still the one that was sent (T-0385, the session
+  // counterpart of the sets' AC-C6 guard). `upsertSession` can re-queue the same id while this
+  // request is in flight (a Finish during a D-0116 enqueue flush). Writing the pre-request
+  // snapshot back would overwrite that newer row with the old one and `pending: false`, so the
+  // newer row (and its `finished` marker, D-0053 §7) would never be sent. Read-compare-write in
+  // one rw transaction, so no `upsertSession` can land between the check and the put; a changed
+  // entry stays `pending` and the next flush sends it.
+  await db.transaction("rw", db.sessions, async () => {
+    for (const sent of queued) {
+      const current = await db.sessions.get(sent.id);
+      if (!current || !sameQueuedSession(current, sent)) continue;
+      await db.sessions.put({ ...current, pending: false });
+    }
+  });
   return { ok: true, sentAny: true };
+}
+
+/** The same value with every object's keys sorted (and `undefined` members dropped), so two
+ *  structurally equal rows serialise identically whatever order their keys were written in. */
+function sortedKeys(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortedKeys);
+  if (value !== null && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return Object.fromEntries(
+      Object.keys(record)
+        .filter((k) => record[k] !== undefined)
+        .sort()
+        .map((k) => [k, sortedKeys(record[k])]),
+    );
+  }
+  return value;
+}
+
+function canonical(value: unknown): string {
+  return JSON.stringify(sortedKeys(value));
+}
+
+/** True when the stored entry is still exactly what this flush sent: same row, same `finished`,
+ *  still pending. */
+function sameQueuedSession(current: QueuedSession, sent: QueuedSession): boolean {
+  return (
+    current.pending &&
+    current.userId === sent.userId &&
+    current.finished === sent.finished &&
+    canonical(current.row) === canonical(sent.row)
+  );
 }
 
 /** Sends one batch; on a rejectable error, retries row by row and marks failures `rejected`
