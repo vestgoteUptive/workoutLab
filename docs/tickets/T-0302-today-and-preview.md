@@ -18,9 +18,11 @@ Parent `T-0302` → `split → T-0302a, T-0302b`.
 
 | Child | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|
-| T-0302a | UF-02.1 Today + `lib/i18n/workout.ts` formatters | T-0300, T-0203b, T-0318 | todo | ½ day |
-| T-0302b | UF-02.2 Workout preview (`/?view=preview`) | T-0302a, T-0303b | todo | ¼ day |
+| T-0302a | UF-02.1 Today frame (C-01, attention line, slot, states, Start). Ticket: `docs/tickets/T-0302a-today.md` | T-0300, T-0203b, T-0318 | ready | ½ day |
+| T-0302c | UF-02.1 suggestion card + `lib/i18n/workout.ts` formatters. Ticket: `docs/tickets/T-0302c-suggestion-card.md` | T-0302a | todo | ⅓–½ day |
+| T-0302b | UF-02.2 Workout preview (`/?view=preview`) | T-0302c, T-0303b | todo | ¼ day |
 
+<!-- 2026-10-02 (D-0106): T-0302a was re-split. The card and workout.ts moved to T-0302c. The child ticket files supersede the [a] ACs below where they differ, in particular the swap copy in AC-A9 (D-0106 §5). -->
 T-0302b waits for T-0303b only because both render the reason copy in `lib/i18n/workout.ts`. T-0303b may add keys to that file, and T-0302b reuses them.
 
 ## Scope

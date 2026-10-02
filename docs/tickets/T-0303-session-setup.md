@@ -18,7 +18,7 @@ Parent `T-0303` → `split → T-0303a, T-0303b, T-0303c, T-0303d`. All four are
 | Child | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|
 | T-0303a | UF-08.1 Time & energy + setup data loading + step routing | T-0300, T-0203b, T-0318 | todo | ½ day |
-| T-0303b | UF-08.2 Suggested workout (bar, why, rows, remove, shuffle, time change) | T-0303a, T-0302a | todo | ½ day |
+| T-0303b | UF-08.2 Suggested workout (bar, why, rows, remove, shuffle, time change) | T-0303a, T-0302c (D-0106: workout.ts moved there) | todo | ½ day |
 | T-0303c | UF-08.3 Swap before starting: mounts `SwapSheet` from `features/UF-05` (which calls `rankSwaps` + engine `applySwap`, D-0071 §7) | T-0303b, **T-0306b** (`SwapSheet`, which needs T-0224) | todo | ¼ day |
 | T-0303d | UF-08.4 Ready + focus prefs + start the session | T-0303b | todo | ⅓ day |
 
