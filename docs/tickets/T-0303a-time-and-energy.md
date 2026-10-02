@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.1]
 decisions: [D-0002, D-0004, D-0024, D-0045, D-0063, D-0065, D-0071, D-0086, D-0091, D-0095, D-0103, D-0104, D-0107, D-0108, D-0113]
 deps: [T-0300, T-0203b, T-0318]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of docs/tickets/T-0303-session-setup.md (ACs A1–A8 there, refined by D-0107). Build flow: wl-build-web. About ½ day, the upper end. Runs in parallel with T-0302a and T-0302c (D-0108: no shared file). -->
 
@@ -176,3 +176,21 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 ## Notes
 - **Flow:** `wl-build-web`. Parallel-safe with T-0302a and T-0302c (D-0108 §1). Don't run two vitest processes on the machine at once (state.md); QA and review are staggered.
 - **Size.** This is the upper end of ½ day. Spend the effort on the fit line (AC-6) and the routing (AC-1, AC-8); the finish time (AC-4) is one small pure function plus an input.
+
+## Build log (frontend-dev, 2026-10-02)
+- **Planted faults (each run against `__tests__/refresh-offline.test.tsx` / `loading-handoff.test.tsx`, then reverted with `git checkout`):**
+  - (a) `use-setup-data.ts`: `await settledOrAfter(refresh, REFRESH_CAP_MS)` → `await refresh.catch(() => {})` (uncapped). AC-10 cap test red: `expected [1,1,1,1] to deeply equal [2,2,2,2]` at 3 000 ms.
+  - (b) `merge()`: `deepEqual(prev.data, next.data)` → `prev.data === next.data` (identity memo). AC-10 cap test red: `expected 2 to be 1` (an extra `suggest` call at 3 000 ms).
+  - (c) the `if (!navigator.onLine) return;` guard removed. AC-9 red: `refreshAll` called 1 time offline; AC-8 mount probe red (`[2,2,2,2]`).
+  - (d) the `if (workout === null) return;` guard on Suggest removed. AC-7 red: the location changed while `aria-disabled="true"`.
+- **AC-14:** `git diff --name-only main...HEAD` lists nothing under `apps/web/src/app/**`, `tests/e2e/fixtures/**`, `tests/e2e/{offline,auth,shell}.spec.ts`, `en.ts` or `routes.ts`.
+- **D-0113 follow-up (TR-0035 resolved):** `use-setup-data.ts` now starts the mount refresh only when `navigator.onLine` and `useAuth().status === "signed-in"`, at most once per mount (a `refreshStarted` ref), with the 3 s cap timed from the refresh's start. A read-sequence guard stops an older read from overwriting the post-refresh re-read. Every UF-08 test file mocks `useAuth`. AC-9's online run is signed in. The new AC-10 "auth condition" cases: signed-in → 1 call, no second call on re-render; stale → 0 and signed-out → 0, each read once from the cache; stale → signed-in → 1, still 1 after 50 ms, after a second signed-in render and after a stale/signed-in flap; offline + signed-in → 0.
+  - Planted fault (e), "no once-per-mount flag" (`|| refreshStarted.current` removed): the stale → signed-in case goes red, `expected "vi.fn()" to be called 1 times, but got 2 times`. Faults (a) and (b) were re-proven red on the new hook with the same messages as above. All were reverted.
+  - `profile-gate.test.tsx` is byte-identical to main and green.
+
+## Accept log (product-owner, 2026-10-02)
+- **Verdict: done** (attempt 2, branch at 7b52b06, the D-0113 follow-up after TR-0035).
+- **ACs.** QA PASS on AC-1..AC-14. Root gate `--force` 19/19 (web 1152 tests), e2e 60/60 (AC-12), check:size green. The planted faults (a)–(e) turn the AC-9/AC-10/AC-7 tests red, as the build log records; QA re-planted (b) and (e) and saw them red. QA re-derived the 15-min line from R7-E2 (900 − 180 = 720 s = exactly 4 bench sets). AC-14: nothing changed under `app/**`, `tests/e2e/fixtures/**` or the shell specs.
+- **Principles.** P2: UF-08.1 is the first commit at `/session/setup` and every other step cold-loads back to it (AC-1); the budget, finish time and warm-up toggle feed `budgetMin`/`warmupInBudget` (AC-2, AC-4, AC-5). P3: the fit line and the handed-off `Workout` are the real on-device `suggest()` return with goal and `tz` (AC-6, AC-8). Offline gives the same answer as online (AC-9, AC-12), the refresh is gated on signed-in (D-0113) and capped at 3 s (AC-10). P1: there is one `[data-screen-id]` at a time and no navigation chrome (AC-1, AC-8). P4 and P5 are not touched.
+- **Review.** APPROVE. The findings (deep-equal on Dates/Maps/Sets is unreachable with JSON-shaped data; the UF-08.2 placeholder gets the live memoised `Workout`, already on T-0303b as "freeze at Suggest"; a brief missing-state flash is acceptable per D-0107 §9) are not AC gaps.
+- **Follow-ups (outside the ACs):** a test for the read-sequence guard; the DST fall-back day picking the repeated hour inconsistently in `time.ts`; focus dropping to `<body>` when the finish-time input opens or closes (WCAG 2.4.3); a check that a 24-hour real-browser time input doesn't convert early.

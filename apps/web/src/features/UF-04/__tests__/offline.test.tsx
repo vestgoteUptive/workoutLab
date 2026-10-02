@@ -11,6 +11,7 @@ const SYNCED_AT = new Date("2026-09-27T09:30:00+02:00");
 
 const spy = createSelectSpy();
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: spy.from } }));
+vi.mock("../../../lib/auth/auth-context.js", () => import("./auth-mock.js"));
 
 const { refreshAll } = await import("../../../lib/offline/history.js");
 const { freshOfflineDb, signIn, signOut } =
