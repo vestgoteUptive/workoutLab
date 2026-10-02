@@ -80,6 +80,12 @@ shows a rating that the server doesn't hold.
   Functions. The IndexedDB entry shape is web-shell's own.
 - `syncStatus` and `flushSessions` are unaffected: they read only `pending`.
 
+## Note (2026-10-02, T-0431 review)
+- Each refresh recomputes `cacheCurrent` for every one of the user's session entries inside the
+  same rw transaction that replaces the cache: entries passing that refresh's snapshot compare are
+  marked, every other marked entry is cleared. A mark therefore always describes the cache that is
+  there now; an older refresh landing last clears a newer one's mark.
+
 ## Revisit when
 - The cache rows get a fetch time or a server `updated_at`. A timestamp compare could then
   replace the marker.
