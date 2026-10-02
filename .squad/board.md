@@ -222,9 +222,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | todo | wl-build-web |
 | T-0377 | UF-01.4 timingMs edge: when startedAtMs was null at the first UF-01.4 commit, a later visit (after Back → /welcome) must not compute timingMs from the second start; guard on `planShown` + test (T-0301d review/accept, analytics only) | web-feature:UF-01 | T-0301d | done | wl-build-web |
 | T-0378 | Signed-in shell offline hydrate raises an unhandled pageerror when Supabase reads fail (session_sets_live, exercises, area_targets…); catch and degrade, or ensure T-0301c's signed-in e2e mocks them (T-0301d QA) | web-shell | — | done | wl-build-web |
-| T-0379 | Lint-in-vitest tests time out at the 5 s default under machine load (`import-bans.test.ts` AC-11 "features lints clean", `features/UF-10/strings.test.ts` AC-A21 jsx-no-literals): give them an explicit per-test runtime budget or move them to the lint step (T-0331 QA) | web-shell | — | ready | wl-build-web |
+| T-0379 | Lint-in-vitest tests time out at the 5 s default under machine load (`import-bans.test.ts` AC-11 "features lints clean", `features/UF-10/strings.test.ts` AC-A21 jsx-no-literals): give them an explicit per-test runtime budget or move them to the lint step (T-0331 QA) | web-shell | — | doing | wl-build-web |
 | T-0380 | split → T-0380a (OfflineStatus read guard, web-shell), T-0380b (UF-01 auth callback exchange guard); UF-10/UF-04 sites folded into T-0383/T-0384 | web-shell | T-0378 | split | wl-build-web |
-| T-0380a | OfflineStatus.tsx: rejected loadLastSyncedAt falls back to "Offline · not synced yet" (D-0104 pattern) | web-shell | T-0378 | ready | wl-build-web |
+| T-0380a | OfflineStatus.tsx: rejected loadLastSyncedAt falls back to "Offline · not synced yet" (D-0104 pattern) | web-shell | T-0378 | doing | wl-build-web |
 | T-0380b | UF-01 AuthCallback: rejected exchangeCodeForSession handled like {error} (expired state + /account link) | web-feature:UF-01 | T-0378 | ready | wl-build-web |
 | T-0389 | Real-browser 24-hour `<input type=time>` probe for UF-08.1 (cut from T-0386) | qa | T-0303a | todo | wl-build-qa |
 | T-0390 | Widen the T-0229 AC6 bundle scan: `Function('…')`, ``Function(`…`)``, `eval(`, `(0,eval)(` and the `ajv/dist/compile` marker (D-0117 §4c) (T-0229 review) | web-shell | T-0229 | todo | wl-build-web |
@@ -235,7 +235,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0385 | Flush soon after an online enqueue (upsertSession/recordSet/editSet/deleteSet) — today rows wait for mount/online/auth events; then restore T-0303d AC-10 to the direct form (D-0112 §4) | web-shell | T-0303d (D-0116) | ready | wl-build-web |
 | T-0386 | UF-08.1 hardening (T-0303a QA): test the read-sequence guard in use-setup-data.ts; DST fall-back: pick the earliest occurrence after now in time.ts todayAt (Stockholm 2026-10-25 / New York 2026-11-01 cases); keep focus on open/close of the finish-time input (WCAG 2.4.3); real-browser 24-hour time-input probe | web-feature:UF-08 | T-0303a, T-0303b | ready | wl-build-web |
 | T-0387 | Decide whether `lib/i18n/workout.ts` formatters take a locale / number formatter (raw "63 %", "12 days ago", English-only plurals) before UF-08.2 (T-0303b) and UF-09 depend on the 1-arg signatures; record in D-0106 or a new decision (T-0302c review) | product | T-0302c | done (D-0114) | wl-spec |
-| T-0388 | Locale-aware kg weight helper `formatKg(value, locale?)` in `lib/format/number.ts` (like formatSetCount), before the first UF-09 ticket that shows a weight (D-0114 §3) | web-shell | — | ready | wl-build-web |
+| T-0388 | Locale-aware kg weight helper `formatKg(value, locale?)` in `lib/format/number.ts` (like formatSetCount), before the first UF-09 ticket that shows a weight (D-0114 §3) | web-shell | — | doing | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
