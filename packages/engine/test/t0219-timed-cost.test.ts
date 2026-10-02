@@ -2,15 +2,9 @@
 // duration, the rule 14 pre-fill `durationS` (D-0092 §1–§4), in every engine time path.
 // AC1–AC12 and AC15. AC13/AC14 (the rules text and the re-scoped guards) live in
 // t0219-rules-text.test.ts, rule-14-suggest.test.ts and t0204-traceability.test.ts.
-import { readFileSync } from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   availableS,
-  balance,
-  checkinSessions,
-  evaluateCheckin,
   itemCostS,
   plannedDurationS,
   prefill,
@@ -18,7 +12,6 @@ import {
   setCostS,
   suggest,
   timeCheck,
-  type CheckinEvaluation,
   type HistorySet,
   type LibraryExercise,
   type SessionInput,
@@ -26,7 +19,6 @@ import {
   type Workout,
   type WorkoutItem,
 } from "@workoutlab/engine";
-import { F_CHECKIN, NO_CHECKINS, sessionRefsOf } from "./fixtures/checkin.js";
 import {
   F_PROFILE,
   F_TARGETS,
@@ -34,7 +26,6 @@ import {
   NOW,
   TZ,
   deepFreeze,
-  fSwap,
   input,
   itemsOf,
   sessionOf,
@@ -45,7 +36,6 @@ import { SIMULATED_HISTORIES } from "./fixtures/histories.js";
 import { timedCoreHistory } from "./fixtures/histories-timed.js";
 import { mulberry32 } from "./fixtures/random.js";
 
-const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 /** Runtime budget for the long sweeps (they take seconds under turbo load); not an assertion. */
 const SWEEP_TIMEOUT_MS = 30_000;
 /** Minute by minute where timed costs bite (15…30), then R7-E8's step of 5 up to 120. */
@@ -53,10 +43,6 @@ const SWEEP_BUDGETS = [
   ...Array.from({ length: 16 }, (_, i) => 15 + i),
   ...Array.from({ length: 18 }, (_, i) => 35 + 5 * i),
 ];
-/** Captured from main (ec6782b) before this ticket's change (AC7, AC9). */
-const BASELINE = JSON.parse(
-  readFileSync(path.join(TEST_DIR, "fixtures", "pre-t0219-baseline.json"), "utf8"),
-) as Record<string, unknown>;
 
 const LIB = new Map(LIBRARY.map((e) => [e.id, e]));
 const exOf = (id: string): LibraryExercise => {
@@ -171,7 +157,8 @@ describe("rule 7.1: a timed set costs its planned duration (D-0092)", () => {
     const plank = item(w, "plank");
     expect([plank.durationS, plank.costS, plank.prefill.durationS]).toEqual([45, 375, 45]);
     expect([w.itemsTotalS, w.unusedS]).toEqual([1095, 105]);
-    expect(w).toStrictEqual(BASELINE["suggest/zero/normal/20/nowu/plank"]);
+    // The frozen comparison against the pre-T-0219 suggest output was a one-time proof,
+    // recorded in the T-0219 build and accept log (docs/tickets/T-0219-…). Retired by T-0237.
   });
 
   // ---- AC2: reentry lowers the duration ----
@@ -570,96 +557,11 @@ describe("rule 13 shuffle fits a timed pick at its planned duration (D-0092 §2)
   );
 });
 
-// ---- AC7: zero history is byte-identical ----
-
-describe("zero history (and any history without timed sets) is byte-identical (D-0092 §1)", () => {
-  const ENERGIES = ["normal", "low", "high"] as const;
-  const BUDGETS = [15, 20, 30, 90];
-
-  it(
-    "rule-7 (AC7) suggest at [] over energy × budget × warm-up × pins equals the pre-change snapshot",
-    () => {
-      let n = 0;
-      for (const energy of ENERGIES)
-        for (const budgetMin of BUDGETS)
-          for (const wu of [true, false])
-            for (const pins of PINS) {
-              const key = `suggest/zero/${energy}/${budgetMin}/${wu ? "wu" : "nowu"}/${pins.length ? "plank" : "none"}`;
-              const w = run([], input({ energy, budgetMin, warmupInBudget: wu, pinnedIds: pins }));
-              expect(BASELINE[key], key).toBeDefined();
-              expect(JSON.stringify(w), key).toBe(JSON.stringify(BASELINE[key]));
-              n++;
-            }
-      expect(n).toBe(48);
-    },
-    SWEEP_TIMEOUT_MS,
-  );
-
-  it(
-    "rule-7 (AC7) the simulated histories without timed sets are byte-identical too",
-    () => {
-      for (const name of Object.keys(SIMULATED_HISTORIES) as Array<
-        keyof typeof SIMULATED_HISTORIES
-      >) {
-        for (const energy of ENERGIES)
-          for (const budgetMin of BUDGETS)
-            for (const wu of [true, false])
-              for (const pins of PINS) {
-                const key = `suggest/${name}/${energy}/${budgetMin}/${wu ? "wu" : "nowu"}/${pins.length ? "plank" : "none"}`;
-                const w = run(
-                  SIMULATED_HISTORIES[name],
-                  input({ energy, budgetMin, warmupInBudget: wu, pinnedIds: pins }),
-                );
-                expect(JSON.stringify(w), key).toBe(JSON.stringify(BASELINE[key]));
-              }
-      }
-    },
-    SWEEP_TIMEOUT_MS,
-  );
-
-  it("R12-E1 R12-E2 R12-E3 R12-E4 R12-E5 rule-12 (AC7) rankSwaps over the R12 fixtures equals the pre-change snapshot", () => {
-    const reasons: Array<SwapReason | null> = [
-      null,
-      "equipment_taken",
-      "discomfort",
-      "variety",
-      "short_on_time",
-    ];
-    const cases: Array<[string, string, Workout, HistorySet[]]> = [
-      ["fSwap/barbell-row", "barbell-row", fSwap(), []],
-      ["fSwap/bench-press", "bench-press", fSwap(), []],
-      ["fSwap/leg-extension", "leg-extension", fSwap(), []],
-      [
-        "e3a/barbell-row",
-        "barbell-row",
-        fSwap(),
-        [...setsOn(3, "lat-pulldown", "2026-09-20"), ...setsOn(3, "db-row", "2026-09-10")],
-      ],
-      [
-        "e3b/barbell-row",
-        "barbell-row",
-        fSwap(),
-        [...setsOn(3, "lat-pulldown", "2026-09-20"), ...setsOn(3, "db-row", "2026-08-10")],
-      ],
-      [
-        "e4/lat-pulldown",
-        "lat-pulldown",
-        sessionOf([
-          ["bench-press", 4, true],
-          ["lat-pulldown", 3],
-          ["leg-extension", 2],
-        ]),
-        [],
-      ],
-    ];
-    for (const [key, cur, session, h] of cases)
-      for (const r of reasons) {
-        const k = `rankSwaps/${key}/${String(r)}`;
-        const got = rankSwaps(cur, r, session, F_PROFILE, LIBRARY, h, NOW, TZ);
-        expect(JSON.stringify(got), k).toBe(JSON.stringify(BASELINE[k]));
-      }
-  });
-});
+// ---- AC7: zero history is byte-identical (retired) ----
+// The "zero history (and any history without timed sets) is byte-identical (D-0092 §1)" block
+// (suggest at [], the simulated histories without timed sets, rankSwaps over the R12 fixtures)
+// compared against the pre-T-0219 output. That was a one-time proof, recorded in the T-0219
+// build and accept log (docs/tickets/T-0219-…). Retired by T-0237.
 
 // ---- AC8 + AC9: the simulated 14-day histories, including a timed one ----
 
@@ -674,31 +576,10 @@ describe("simulated 14-day histories with a timed exercise (AC8, AC9)", () => {
       }
   });
 
-  it("rule-11 (AC9) balance is unchanged by this ticket for every history", () => {
-    for (const [name, h] of AC9_HISTORIES) {
-      expect(balance(h, F_TARGETS, LIBRARY, NOW, TZ), name).toStrictEqual(
-        BASELINE[`balance/${name}`],
-      );
-    }
-  });
-
-  it("rule-9 (AC9) evaluateCheckin (F-checkin via checkinSessions) matches the baseline's last ended period for every history", () => {
-    for (const [name, h] of AC9_HISTORIES) {
-      const got = evaluateCheckin(
-        checkinSessions(sessionRefsOf(h), h, LIBRARY),
-        F_CHECKIN,
-        NO_CHECKINS,
-        NOW,
-        TZ,
-      );
-      // T-0215 (D-0061 §2, D-0094 §1): the baseline was captured under two periods; `periods`
-      // now lists only its last entry. Each baseline proposal already followed that last
-      // period alone (under → down 2–3, on_plan → null), so `proposal` is compared as captured.
-      const base = BASELINE[`checkin/${name}`] as CheckinEvaluation;
-      expect(got, name).toStrictEqual({ ...base, periods: base.periods.slice(-1) });
-      expect(got.periods, name).toHaveLength(1);
-    }
-  });
+  // "rule-11 (AC9) balance is unchanged …" and "rule-9 (AC9) evaluateCheckin … matches the
+  // baseline's last ended period …" compared against the pre-T-0219 output. That was a
+  // one-time proof, recorded in the T-0219 build and accept log (docs/tickets/T-0219-…).
+  // Retired by T-0237.
 
   it("rule-7 rule-14 (AC9) timedCoreHistory, plank pinned at F-input: back-squat × 4, plank × 3 at 120 s, calf-raise × 2", () => {
     const w = run(timedCoreHistory, input({ pinnedIds: ["plank"] }));
