@@ -162,9 +162,14 @@ describe("AC-4 seams (T-0304e orderActions)", () => {
     expect(buttonNames()).toEqual(["Pause workout", "I'm ready", "Swap"]);
   });
 
-  it("the pair: with the module arrays only I'm ready is there", async () => {
+  // D-0142 §6 (a named change, T-0422): the module's swap seam follows I'm ready.
+  it("the pair: with the module arrays I'm ready and the module's Swap are there", async () => {
     await afterBench();
-    expect(buttonNames()).toEqual(["Pause workout", "I'm ready"]);
-    expect(document.querySelector("[data-seam-id]")).toBeNull();
+    expect(buttonNames()).toEqual(["Pause workout", "I'm ready", "Swap"]);
+    expect(
+      Array.from(document.querySelectorAll("[data-seam-id]")).map((b) =>
+        b.getAttribute("data-seam-id"),
+      ),
+    ).toEqual(["swap"]);
   });
 });

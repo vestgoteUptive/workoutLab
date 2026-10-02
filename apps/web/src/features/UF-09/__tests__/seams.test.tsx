@@ -90,28 +90,37 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("AC-9 empty registries", () => {
-  it("pauseSeamActions and nextSeamActions are both []", () => {
-    expect(pauseSeamActions).toEqual([]);
-    expect(nextSeamActions).toEqual([]);
+// D-0142 §6 (a named change, T-0422): the arrays hold exactly the ids landed so far.
+describe("AC-9 the module registries", () => {
+  it("pauseSeamActions and nextSeamActions hold exactly swap (T-0422)", () => {
+    expect(pauseSeamActions.map((s) => s.id)).toEqual(["swap"]);
+    expect(nextSeamActions.map((s) => s.id)).toEqual(["swap"]);
   });
 
   // T-0304f (D-0118 §12): the built UF-09.6 adds its own "I'm ready" before any seam.
-  it("UF-09.6 with the module arrays: no seam button, only Pause and I'm ready", async () => {
+  it("UF-09.6 with the module arrays: Pause, I'm ready and the swap seam", async () => {
     seedFocus({ phase: "next", timer: { startedAtMs: NOW, durationS: 60, pausedMs: 0 } });
     await renderSession();
     expect(screenId()).toBe("UF-09.6");
-    expect(buttonNames()).toEqual(["Pause workout", "I'm ready"]);
-    expect(document.querySelector("[data-seam-id]")).toBeNull();
+    expect(buttonNames()).toEqual(["Pause workout", "I'm ready", "Swap"]);
+    expect(
+      Array.from(document.querySelectorAll("[data-seam-id]")).map((b) =>
+        b.getAttribute("data-seam-id"),
+      ),
+    ).toEqual(["swap"]);
   });
 
   // T-0304d (D-0118 §12): the built UF-09.9 adds its own Skip to next exercise and End workout.
-  it("UF-09.9 with the module arrays: no seam button, only the built-in actions", async () => {
+  it("UF-09.9 with the module arrays: the built-in actions and the swap seam", async () => {
     seedFocus({ phase: "paused", resumePhase: "set", pausedAtMs: NOW });
     await renderSession();
     expect(screenId()).toBe("UF-09.9");
-    expect(buttonNames()).toEqual(["Resume", "Skip to next exercise", "End workout"]);
-    expect(document.querySelector("[data-seam-id]")).toBeNull();
+    expect(buttonNames()).toEqual(["Resume", "Swap", "Skip to next exercise", "End workout"]);
+    expect(
+      Array.from(document.querySelectorAll("[data-seam-id]")).map((b) =>
+        b.getAttribute("data-seam-id"),
+      ),
+    ).toEqual(["swap"]);
   });
 });
 
