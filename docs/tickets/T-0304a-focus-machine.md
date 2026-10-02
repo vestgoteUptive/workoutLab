@@ -198,3 +198,48 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - Add T-0304e (lane `web-feature:UF-09`, deps T-0304a).
   - Re-point T-0304b's dep from T-0304a to T-0304e.
 - **Size.** This is the upper end of ½ day. Spend the effort on AC-1 (the table), AC-3/AC-4 (persistence and restore) and AC-9 (expiry). The placeholders are deliberately bare.
+
+## Build log
+- **2026-10-02, frontend-dev (build).** All ACs have tests in `apps/web/src/features/UF-09/__tests__/` and `tests/e2e/uf-09-focus.spec.ts`.
+- **Planted faults.** Each was applied, run, and reverted:
+  - AC-3: the write in `queueMicrotask` → `store.test.ts` 4 red. The write moved into a host `useEffect` → `store.test.ts` 4 red, and `host.restore` "at 600 s" red.
+  - AC-4: a tick-counting countdown (`setLeft((n) => n - 1)`) → `host.restore` 3 red, and the AC-2 source test red.
+  - AC-9: an expiry dispatched twice → `host.expiry` 4 red, and `host.restore` "at 600 s" red.
+  - AC-5: `>=` for the 12 h bound → "exactly 12 h" red. Dropping the `userId` check → the other-user row red.
+- **TR-0036 (open).** In the built app, `parseSessionPlan` (an Ajv runtime compile) is blocked by the CSP (`script-src 'self'`, no `'unsafe-eval'`). Every real row therefore reads as not on this device. The seeded-session e2e row (the AC-7 44 × 44 check) is marked `test.fail` with TR-0036 until that's fixed.
+- **Defaults T-0304b–e can rely on.** All are within D-0111, with no new decision:
+  - `CHECK_RESOLVED` moves `itemIndex` to the next item for both `to: "next"` and `to: "timeCheck"`. In `timeCheck`, `itemIndex` is therefore already the next item (rule 8's `nextItemIndex`). `CONTINUE` goes to `next` with a 60 s timer and the same `itemIndex`.
+  - `RESUME` from a pause taken during `warmup` moves `warmupStartedAtMs` forward by the pause length. `warmupSpentMs = leave − warmupStartedAtMs` then excludes pauses. `warmupStartedAtMs` is `null` outside the warm-up, and `SKIP_WARMUP` leaves `warmupSpentMs` at 0.
+  - If there is no cached library, the host runs with `ctx.library = []`. Every rest is then `REST_COMPOUND_S`, and an exercise missing from the library gets the same.
+  - The reducer stamps each logged entry with `itemIndex`, `setIndex`, `exerciseId` and `backoff = setIndex >= item.sets`, whatever the event carried.
+  - A fresh start writes its initial state once. A restored state isn't rewritten until its first transition.
+  - Expiry is checked after every render and by an exact wall-clock `setTimeout`. Because the check also runs on the 1 s re-render, a timer that still reads more than 0 when the timeout fires (clock moved back) ends on a later tick. Both checks read `store.getState()`, so each end event is dispatched once.
+  - A stored state is rejected in two cases: its phase (or, when paused, its `resumePhase`) is one of `getReady`, `warmup`, `rest` or `next` with `timer: null`; or it is paused with `resumePhase` set to `paused` or `done`.
+- **Rework 2 planted faults:**
+  - The expiry check limited to `[store, state]` changes (the old behaviour) → the clock-moved-back test red.
+  - The timer-required validation removed → 5 stored-state rows red.
+  - The reducer passing the input's `backoff` through → the back-off test red.
+
+## Accept log
+- **2026-10-02, product-owner (accept), attempt 2 at c84334a: done.**
+- **ACs.** QA attempt 1 passed AC-1 through AC-13. Its re-planted faults turned the matching ACs red:
+  - AC-3: a write after dispatch;
+  - AC-4: a tick-counting countdown;
+  - AC-9: a double expiry.
+  - QA also re-derived the rule 8 numbers (1500/1660, `warmupSpentMs` 160 000), confirmed exactly one `[data-screen-id]` over a full P1 walk with a MutationObserver, checked restore at 90/119/600 s, and proved the TR-0036 `test.fail` row wasn't a silent skip.
+- **Review findings, all fixed in 8f5843a:**
+  - **Timer stuck at 0:00.** The end check now also runs on every re-render, and each end event is still dispatched once. The orchestrator re-planted the old behaviour, the clock-moved-back test went red, and it went green again after the revert.
+  - **Persist validation.** A timed phase stored with no timer is rejected (5 rows).
+  - **Back-off test.** The AC-1 back-off test now asserts the stamped value, so it can fail.
+- **TR-0036 closed.** T-0229 (D-0117) was merged into this branch and the `test.fail` marker was removed. The seeded-session chrome row now really passes in a built browser: UF-09.1, Pause ≥ 44 × 44, axe clean.
+- **Evidence.**
+  - `uf-09-focus` e2e: 4/4.
+  - UF-09 + app vitest: 431/431.
+  - `check:repo`: 0.
+- **Principles.**
+  - Principle 1: one screen id at a time, no way out other than Pause.
+  - Principle 3: the reducer is pure and only walks the engine's plan. Rest lengths are imported from the engine.
+  - No contract changed.
+- **Follow-ups.**
+  - QA: the AC-3 walk misses `SKIP_WARMUP`, `CHECK_RESOLVED` → `timeCheck` and `CONTINUE`. Add them to the persistence walk when T-0304d lands.
+  - The full DoD run (whole e2e suite, `typecheck lint test --force`, `check:size`) is confirmed by the PR CI before merge.

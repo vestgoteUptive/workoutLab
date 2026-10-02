@@ -1,10 +1,3 @@
-// UF-09 Focus-mode host stub (T-0300a). The feature ticket builds the one-task-per-screen flow.
-import { en } from "../../lib/i18n/en.js";
-
-export function SessionHost() {
-  return (
-    <div data-screen-id="UF-09">
-      <h1>{en.screens.sessionHost}</h1>
-    </div>
-  );
-}
+// UF-09 Focus mode (T-0304a). The public surface is the host only; T-0304e adds
+// `useFocusSession` (D-0111 §1).
+export { SessionHost } from "./host.js";
