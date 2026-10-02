@@ -21,7 +21,7 @@ H-13 (push branches); H-14 (service-role key for the account function, prod only
 - Sub-agents: build → QA ∥ review → product-owner accept; spec: product-owner → triage check. Spec/content/triage roles have **no shell**: the orchestrator commits their files.
 - Model pins (D-0076): execution roles `claude-sonnet-5-5`, judgement roles `claude-opus-5-5`.
 - Tooling: `npx -y pnpm@10.28.2 …`. Each new worktree needs `install --frozen-lockfile`.
-- Give every parallel run its own decision-ID block. Next free: **D-0153** (D-0151 T-0431 groom, D-0152 reserved for T-0420) (D-0150 used by T-0304c), **TR-0043**, tickets **T-0433+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0241+** (engine/data), **T-0906+** (CI).
+- Give every parallel run its own decision-ID block. Next free: **D-0153** (D-0151 T-0431 groom, D-0152 reserved for T-0420) (D-0150 used by T-0304c), **TR-0043**, tickets **T-0434+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0241+** (engine/data), **T-0906+** (CI).
 
 ## Traps (condensed — full history in journals 2026-09-28..10-01)
 - **Never commit a test that asserts `git diff main...HEAD`** (T-0303b review): it fails on other lanes' branches after merge and silently skips in CI (no local `main`). Record diff checks in the ticket build log instead; check-lane-paths enforces lanes.

@@ -17,3 +17,8 @@ builds-on: D-0142, D-0147, D-0148
 
 ## Revisit when
 - UF-03.3 gets a design pass.
+
+## Amendment (2026-10-02, T-0420 review)
+4. No "clear rating" in v1. Native radios can't be unchecked, so once a rating is picked or stored the
+   user can change it but not clear it. D-0148 §3 / D-0151 still support a clear over the wire if a
+   later design adds one.
