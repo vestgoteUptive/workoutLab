@@ -1,5 +1,5 @@
-// The `/welcome/*` splat (D-0071 §2, D-0097 §1): UF-01.1 at the index and for every unknown
-// sub-path (including `save` until T-0301c), UF-01.2–.4 at `goal`, `level` and `schedule`.
+// The `/welcome/*` splat (D-0071 §2, D-0097 §1, D-0100 §1): UF-01.1 at the index and for every
+// unknown sub-path, UF-01.2–.4 at `goal`, `level` and `schedule`, and `UF-01.5-save` at `save`.
 // UF-01.1 is static, so it is in this chunk and renders on the first commit; the later steps
 // load through `React.lazy` (principle 5).
 //
@@ -26,6 +26,10 @@ const ScheduleScreen = lazy(() =>
   import("./ScheduleScreen.js").then((m) => ({ default: m.ScheduleScreen })),
 );
 
+// `/welcome/save` (T-0301c, D-0100, D-0101): the engine, the Supabase client and the profile
+// recheck, so it is lazy for the same reason.
+const SaveScreen = lazy(() => import("./SaveScreen.js").then((m) => ({ default: m.SaveScreen })));
+
 export function Welcome() {
   return (
     <Suspense fallback={null}>
@@ -34,6 +38,7 @@ export function Welcome() {
         <Route path="goal" element={<GoalScreen store={pendingPlan} />} />
         <Route path="level" element={<LevelScreen store={pendingPlan} />} />
         <Route path="schedule" element={<ScheduleScreen store={pendingPlan} />} />
+        <Route path="save" element={<SaveScreen store={pendingPlan} />} />
         <Route path="*" element={<WelcomeScreen />} />
       </Routes>
     </Suspense>

@@ -341,7 +341,7 @@ describe("AC-5 signed in + `missing`: every gated route redirects to /welcome/sa
   it.each(GATED)("%s redirects to /welcome/save", async (path) => {
     stateMissing();
     render(<Harness start={path} />);
-    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
     expect(locationRef).toBe("/welcome/save");
   });
 
@@ -369,6 +369,7 @@ describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", (
     expect(screenOf(screenId)).toBeInTheDocument();
     expect(locationRef).toBe(path);
     expect(screenOf("UF-01.1")).not.toBeInTheDocument();
+    expect(screenOf("UF-01.5-save")).not.toBeInTheDocument();
   });
 
   it.each(GATED)("`present`: %s renders %s, not /welcome/save", async (path, screenId) => {
@@ -388,6 +389,7 @@ describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", (
     await act(async () => {});
     expect(locationRef).toBe(path);
     expect(screenOf("UF-01.1")).not.toBeInTheDocument();
+    expect(screenOf("UF-01.5-save")).not.toBeInTheDocument();
   });
 
   // Slow network on a *gated* route: the gate's source never settles, so the status stays at the
@@ -408,22 +410,29 @@ describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", (
       expect(screenOf(screenId)).toBeInTheDocument();
       expect(locationRef).toBe(path);
       expect(screenOf("UF-01.1")).not.toBeInTheDocument();
+      expect(screenOf("UF-01.5-save")).not.toBeInTheDocument();
     },
   );
 });
 
 describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile", () => {
-  it.each(["/welcome/save", "/welcome"])(
-    "signed in + `missing`: %s renders UF-01.1 and stays put",
-    async (path) => {
-      stateMissing();
-      render(<Harness start={path} />);
-      await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
-      await act(async () => {});
-      expect(screenOf("UF-01.1")).toBeInTheDocument();
-      expect(locationRef).toBe(path);
-    },
-  );
+  it.each(["/welcome"])("signed in + `missing`: %s renders UF-01.1 and stays put", async (path) => {
+    stateMissing();
+    render(<Harness start={path} />);
+    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    await act(async () => {});
+    expect(screenOf("UF-01.1")).toBeInTheDocument();
+    expect(locationRef).toBe(path);
+  });
+
+  it("signed in + `missing`: /welcome/save renders UF-01.5-save and stays put", async () => {
+    stateMissing();
+    render(<Harness start="/welcome/save" />);
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
+    await act(async () => {});
+    expect(screenOf("UF-01.5-save")).toBeInTheDocument();
+    expect(locationRef).toBe("/welcome/save");
+  });
 
   it("signed in + `missing`: /welcome/goal renders UF-01.2 and stays put", async () => {
     stateMissing();
@@ -463,7 +472,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // /welcome → / and then (via the gate on `/`) → /welcome/save. The visible symptom is the
   // intermediate `/` in the location history, so that is what this asserts — not just the end
   // state, which happened to be right.
-  it.each(["/welcome", "/welcome/save"])(
+  it.each(["/welcome"])(
     "%s never passes through `/` on the way (no first-render bounce)",
     async (path) => {
       stateMissing();
@@ -487,6 +496,28 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
       expect(new Set(visited)).toEqual(new Set([path]));
     },
   );
+
+  it("/welcome/save never passes through `/` on the way (no first-render bounce)", async () => {
+    stateMissing();
+    const visited: string[] = [];
+    function Recorder() {
+      visited.push(useLocation().pathname);
+      return null;
+    }
+    render(
+      <MemoryRouter initialEntries={["/welcome/save"]}>
+        <AuthProvider>
+          <ProfileStatusProvider>
+            <Recorder />
+            <Shell />
+          </ProfileStatusProvider>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
+    await act(async () => {});
+    expect(new Set(visited)).toEqual(new Set(["/welcome/save"]));
+  });
 
   it("/welcome/goal never passes through `/` on the way (no first-render bounce)", async () => {
     stateMissing();
@@ -646,7 +677,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // user *on* `/account`, but so would several other bugs, and only the exact target
   // distinguishes "redirected correctly" from "redirected somewhere odd".
   it.each([
-    ["missing", stateMissing, "/welcome/save", "UF-01.1"],
+    ["missing", stateMissing, "/welcome/save", "UF-01.5-save"],
     ["present", statePresent, "/", "UF-02.1"],
     ["unknown", stateUnknown, "/", "UF-02.1"],
   ])(
@@ -667,7 +698,7 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
   // stand-down must fail *open* — hold the `guest-only` redirect and render `/welcome/*` —
   // rather than leave the route permanently un-standable-down or blank. There is no timeout in
   // the gate, so "never settles" is the worst case, and this pins which way it fails.
-  it.each(["/welcome", "/welcome/save"])(
+  it.each(["/welcome"])(
     "%s renders for a signed-in user whose profile read never settles (fails open)",
     async (path) => {
       seedValidSession();
@@ -681,6 +712,18 @@ describe("AC-7 /welcome/* renders instead of redirecting for a `missing` profile
       expect(locationRef).toBe(path);
     },
   );
+
+  it("/welcome/save renders for a signed-in user whose profile read never settles (fails open)", async () => {
+    seedValidSession();
+    vi.stubGlobal("navigator", { onLine: true });
+    loadProfile.mockReturnValue(new Promise(() => {}));
+    render(<Harness start="/welcome/save" />);
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
+    await act(async () => {});
+    await act(async () => {});
+    expect(screenOf("UF-01.5-save")).toBeInTheDocument();
+    expect(locationRef).toBe("/welcome/save");
+  });
 
   it("/welcome/goal renders for a signed-in user whose profile read never settles (fails open)", async () => {
     seedValidSession();
@@ -902,7 +945,7 @@ describe("QA: D-0073 §3 — a `stale` session is gated too", () => {
 
     render(<Harness start="/" />);
     await waitFor(() => expect(locationRef).toBe("/welcome/save"));
-    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
     // The mechanism, not just the destination: the gate really did read `profiles` for a
     // `stale` user, rather than the redirect coming from the auth guard.
     expect(spy.countFor("profiles")).toBe(1);
@@ -993,7 +1036,7 @@ describe("AC-11 recheckProfile after a /welcome/save write, with no loop back", 
   it("`missing` on /welcome/save → recheck finds a row → navigating to / lands on UF-02.1", async () => {
     stateMissing();
     render(<Harness start="/welcome/save" />);
-    await waitFor(() => expect(screenOf("UF-01.1")).toBeInTheDocument());
+    await waitFor(() => expect(screenOf("UF-01.5-save")).toBeInTheDocument());
     expect(locationRef).toBe("/welcome/save");
 
     // T-0301c's write lands: the row now exists.

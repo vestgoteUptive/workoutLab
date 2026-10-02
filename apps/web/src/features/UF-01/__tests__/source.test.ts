@@ -111,8 +111,9 @@ describe("AC-1 / AC-9 the UF-01.1–.3 static import graphs", () => {
   });
 });
 
-describe("AC-1 UF-01.2, UF-01.3 and UF-01.4 load only through React.lazy", () => {
-  const LAZY = ["GoalScreen", "LevelScreen", "ScheduleScreen"];
+describe("AC-1 UF-01.2, UF-01.3, UF-01.4 and /welcome/save load only through React.lazy", () => {
+  // T-0301c AC-11: `SaveScreen` (UF-01.5-save) joins the list.
+  const LAZY = ["GoalScreen", "LevelScreen", "ScheduleScreen", "SaveScreen"];
 
   it("the splat imports them only as lazy(() => import(…))", () => {
     const source = readFileSync(resolve(FEATURE_DIR, "WelcomeRoutes.tsx"), "utf8");
@@ -159,8 +160,9 @@ describe("AC-1 UF-01.2, UF-01.3 and UF-01.4 load only through React.lazy", () =>
   });
 });
 
-// T-0301d AC-9 (principle 5) and the source half of AC-1 (principle 3).
-describe("T-0301d AC-9 the engine is imported only by UF-01.4, which loads lazily", () => {
+// T-0301d AC-9 (principle 5) and the source half of AC-1 (principle 3). T-0301c AC-11 widens it:
+// `/welcome/save` writes the `deriveTargets` result, so it imports the engine too, and is lazy.
+describe("T-0301d AC-9 the engine is imported only by UF-01.4 and SaveScreen, both lazy", () => {
   const ENGINE = BANNED[0]![1];
   /** Every specifier a file imports, type-only and dynamic included. */
   function allSpecifiers(source: string): string[] {
@@ -171,12 +173,12 @@ describe("T-0301d AC-9 the engine is imported only by UF-01.4, which loads lazil
     return out;
   }
 
-  it("ScheduleScreen.tsx is the only non-test UF-01 file that names @workoutlab/engine", () => {
+  it("ScheduleScreen.tsx and SaveScreen.tsx are the only non-test UF-01 files naming the engine", () => {
     const sources = readdirSync(FEATURE_DIR).filter((f) => /\.tsx?$/.test(f));
     const importers = sources.filter((file) =>
       allSpecifiers(readFileSync(resolve(FEATURE_DIR, file), "utf8")).some((s) => ENGINE.test(s)),
     );
-    expect(importers).toEqual(["ScheduleScreen.tsx"]);
+    expect(importers).toEqual(["SaveScreen.tsx", "ScheduleScreen.tsx"]);
   });
 
   it("the /welcome first chunk (index.tsx's static graph) reaches neither the engine nor UF-01.4", () => {
@@ -184,6 +186,7 @@ describe("T-0301d AC-9 the engine is imported only by UF-01.4, which loads lazil
     expect(graph.filter(({ spec }) => ENGINE.test(spec))).toEqual([]);
     expect(graph.map((e) => e.spec)).not.toContain("./ScheduleScreen.js");
     expect(graph.map((e) => e.spec)).not.toContain("./PlanCard.js");
+    expect(graph.map((e) => e.spec)).not.toContain("./SaveScreen.js");
   });
 
   it("contrast: UF-01.4's own graph does reach the engine (the walk is not vacuous)", () => {
@@ -211,11 +214,14 @@ describe("T-0301d AC-1 the plan card renders the engine's numbers as they are", 
   const schedule = readFileSync(resolve(FEATURE_DIR, "ScheduleScreen.tsx"), "utf8");
   const card = readFileSync(resolve(FEATURE_DIR, "PlanCard.tsx"), "utf8");
 
-  it("deriveTargets is called in exactly one place, with priorityAreas: []", () => {
-    expect(schedule.match(/\bderiveTargets\(/g)).toHaveLength(1);
-    expect(schedule).toMatch(/deriveTargets\(\{[^}]*priorityAreas:\s*\[\][^}]*\}\)/);
+  it("deriveTargets is called once in UF-01.4 and once in SaveScreen, with priorityAreas: []", () => {
+    const save = readFileSync(resolve(FEATURE_DIR, "SaveScreen.tsx"), "utf8");
+    for (const source of [schedule, save]) {
+      expect(source.match(/\bderiveTargets\(/g)).toHaveLength(1);
+      expect(source).toMatch(/deriveTargets\(\{[^}]*priorityAreas:\s*\[\][^}]*\}\)/);
+    }
     const others = readdirSync(FEATURE_DIR)
-      .filter((f) => /\.tsx?$/.test(f) && f !== "ScheduleScreen.tsx")
+      .filter((f) => /\.tsx?$/.test(f) && f !== "ScheduleScreen.tsx" && f !== "SaveScreen.tsx")
       .filter((f) => readFileSync(resolve(FEATURE_DIR, f), "utf8").includes("deriveTargets("));
     expect(others).toEqual([]);
   });
@@ -264,6 +270,7 @@ describe("AC-11 strings (NFR-I18N-1)", () => {
       "LevelScreen.tsx",
       "StepHeader.tsx",
       "ScheduleScreen.tsx",
+      "SaveScreen.tsx",
     ]) {
       const source = readFileSync(resolve(FEATURE_DIR, file), "utf8");
       const enUses = source.match(/(?<![\w./])en\.[a-zA-Z0-9]+/g) ?? [];
@@ -279,5 +286,57 @@ describe("AC-11 strings (NFR-I18N-1)", () => {
     expect(new Set(enUses.map((u) => (u.startsWith("en.uf01") ? "en.uf01" : u)))).toEqual(
       new Set(["en.uf01", "en.bodyMap.areas"]),
     );
+  });
+});
+
+// T-0301c AC-5 (principle 3): `/welcome/save` writes the engine's numbers as they are.
+describe("T-0301c AC-5 SaveScreen does no target arithmetic", () => {
+  const save = readFileSync(resolve(FEATURE_DIR, "SaveScreen.tsx"), "utf8");
+
+  it("each row's sets_per_14d is targets[area], untouched", () => {
+    expect(save).toMatch(/const targets = deriveTargets\(/);
+    expect(save).toMatch(/sets_per_14d:\s*targets\[area\],/);
+    const uses = save.match(/\btargets\b[^,\n]*/g) ?? [];
+    expect(uses.filter((u) => /targets\s*\[area\]\s*[-+*/%]|[-+*/%]\s*targets\b/.test(u))).toEqual(
+      [],
+    );
+  });
+});
+
+// T-0301c AC-10 (D-0100 §5, D-0064 §7): `/welcome/save` never starts the onboarding clock.
+describe("T-0301c AC-10 /welcome/save leaves the start time alone", () => {
+  it("SaveScreen.tsx never names markOnboardingStarted", () => {
+    const save = readFileSync(resolve(FEATURE_DIR, "SaveScreen.tsx"), "utf8");
+    expect(save).not.toContain("markOnboardingStarted");
+  });
+
+  it("the splat's save route renders SaveScreen, not WelcomeScreen", () => {
+    const routes = readFileSync(resolve(FEATURE_DIR, "WelcomeRoutes.tsx"), "utf8");
+    const save = routes.match(/<Route\s+path="save"\s+element=\{<(\w+)[^}]*\}\s*\/>/);
+    expect(save?.[1]).toBe("SaveScreen");
+    // Contrast: the same match on the catch-all finds WelcomeScreen, so the pattern can see it.
+    expect(routes.match(/<Route\s+path="\*"\s+element=\{<(\w+)[^}]*\}\s*\/>/)?.[1]).toBe(
+      "WelcomeScreen",
+    );
+  });
+});
+
+// T-0301c AC-15 (NFR-I18N-1): UF-01.5 reads the auth texts from en.auth and its own from en.uf01.
+describe("T-0301c AC-15 UF-01.5 strings", () => {
+  it("AccountScreen.tsx and index.tsx take copy from en.uf01 and en.auth only (en.screens too)", () => {
+    const account = readFileSync(resolve(FEATURE_DIR, "AccountScreen.tsx"), "utf8");
+    const accountUses = new Set(account.match(/(?<![\w./])en\.[a-zA-Z0-9]+/g) ?? []);
+    expect(accountUses).toEqual(new Set(["en.uf01", "en.auth"]));
+    const index = readFileSync(resolve(FEATURE_DIR, "index.tsx"), "utf8");
+    // `en.screens.authCallback` is T-0300b's existing callback heading.
+    expect(new Set(index.match(/(?<![\w./])en\.[a-zA-Z0-9]+/g) ?? [])).toEqual(
+      new Set(["en.auth", "en.uf01", "en.screens"]),
+    );
+  });
+
+  it("no en.auth text is copied into flows/uf-01.ts", async () => {
+    const { en } = await import("../../../lib/i18n/en.js");
+    const flow = readFileSync(resolve(SRC, "lib/i18n/flows/uf-01.ts"), "utf8");
+    for (const text of Object.values(en.auth)) expect(flow, text).not.toContain(`"${text}"`);
   });
 });

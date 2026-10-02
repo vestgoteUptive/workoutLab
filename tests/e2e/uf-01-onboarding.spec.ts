@@ -265,3 +265,197 @@ test.describe("UF-01 onboarding, AC-7 (principle 5)", () => {
     await expectTargetSizes(page, "UF-01.4");
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// T-0301c AC-14: UF-01.5 Account and `/welcome/save` (D-0064 §8, D-0100). Appended (D-0071 §10).
+// Supabase stays mocked: the routes below are registered in each test body, on top of the
+// `beforeEach` 501 backstops, so the most recently registered handler answers first.
+// ---------------------------------------------------------------------------------------------
+// ES imports are hoisted, so this import is in effect at the top of the module; it sits here
+// because the file above is append-only.
+import {
+  GOOD_CODE,
+  VITE_SUPABASE_URL,
+  injectSession,
+  mockProfileMissing,
+  mockProfilePresent,
+  mockSupabaseEmailAuth,
+} from "./fixtures/supabase-mock.js";
+
+interface Write {
+  table: string;
+  body: unknown;
+  /** The page URL when the write was sent. */
+  at: string;
+}
+
+/** Records every `POST` to `/rest/v1/<table>`, in request order. */
+function recordWrites(page: Page): Write[] {
+  const writes: Write[] = [];
+  page.on("request", (req) => {
+    const m = /\/rest\/v1\/([a-z_]+)/.exec(req.url());
+    if (req.method() === "POST" && m) {
+      writes.push({ table: m[1]!, body: req.postDataJSON(), at: page.url() });
+    }
+  });
+  return writes;
+}
+
+/** `profiles` answers `[]` until a `profiles` POST, then `[row]`; `area_targets` takes POSTs. */
+async function mockNewUserRest(page: Page): Promise<void> {
+  let row: Record<string, unknown> | null = null;
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/area_targets*`, (route) =>
+    route.request().method() === "POST"
+      ? route.fulfill({ status: 201, body: "" })
+      : route.fulfill({ status: 200, json: [] }),
+  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, (route) => {
+    if (route.request().method() === "POST") {
+      row = {
+        user_id: "11111111-1111-4111-8111-111111111111",
+        ...(route.request().postDataJSON() as Record<string, unknown>),
+        onboarded_at: "2026-10-02T00:00:00.000Z",
+        plan_changed_at: "2026-10-02T00:00:00.000Z",
+      };
+      return route.fulfill({ status: 201, body: "" });
+    }
+    return route.fulfill({ status: 200, json: row ? [row] : [] });
+  });
+}
+
+async function onboardToAccount(page: Page): Promise<void> {
+  await page.goto("/welcome");
+  await page.getByRole("link", { name: "Get started" }).click();
+  await expect(page.locator(SCREEN("UF-01.2"))).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.locator(SCREEN("UF-01.3"))).toBeVisible();
+  await page.getByRole("button", { name: "Continue" }).click();
+  await expectPlan(page);
+  await page.getByRole("link", { name: "Save my plan" }).click();
+  await expect(page).toHaveURL(/\/account$/);
+}
+
+async function signInWithCode(page: Page): Promise<void> {
+  await page.getByRole("tab", { name: "Enter code" }).click();
+  await page.getByLabel("Email").fill("ada@example.com");
+  await page.getByLabel("6-digit code").fill(GOOD_CODE);
+  await page.getByRole("button", { name: "Verify code" }).click();
+}
+
+test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
+  test("(a) new user: code sign-in saves the 9 targets, then the profile, and lands on UF-02.1", async ({
+    page,
+  }) => {
+    await mockSupabaseEmailAuth(page);
+    await mockNewUserRest(page);
+    const writes = recordWrites(page);
+
+    await onboardToAccount(page);
+    await expect(page.locator(SCREEN("UF-01.5")).getByRole("heading", { level: 1 })).toHaveText(
+      "Save your plan",
+    );
+    await signInWithCode(page);
+
+    await expect(page.locator(SCREEN("UF-02.1"))).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+
+    // Request order: the targets first, then the profile, both sent from /welcome/save.
+    expect(writes.map((w) => w.table)).toEqual(["area_targets", "profiles"]);
+    expect(writes.every((w) => new URL(w.at).pathname === "/welcome/save")).toBe(true);
+    const rows = writes[0]!.body as Array<Record<string, unknown>>;
+    expect(rows.map((r) => [r.area_id, r.sets_per_14d, r.source])).toEqual([
+      ["chest", 20, "default"],
+      ["back", 20, "default"],
+      ["shoulders", 16, "default"],
+      ["arms", 12, "default"],
+      ["core", 12, "default"],
+      ["glutes", 20, "default"],
+      ["quads", 20, "default"],
+      ["hamstrings", 16, "default"],
+      ["calves", 12, "default"],
+    ]);
+    expect(rows.every((r) => !("user_id" in r))).toBe(true);
+    expect(writes[1]!.body).toMatchObject({
+      goal: "build_muscle",
+      level: "beginner",
+      rhythm_min: 3,
+      rhythm_max: 4,
+      priority_areas: [],
+    });
+    expect(await page.evaluate(() => window.localStorage.getItem("wl-onboarding"))).toBeNull();
+  });
+
+  test("(b) returning user: a code sign-in with a profile lands on UF-02.1 with no write", async ({
+    page,
+  }) => {
+    await mockSupabaseEmailAuth(page);
+    await mockProfilePresent(page);
+    const writes = recordWrites(page);
+
+    await page.goto("/account");
+    await expect(page.locator(SCREEN("UF-01.5")).getByRole("heading", { level: 1 })).toHaveText(
+      "Sign in",
+    );
+    await signInWithCode(page);
+
+    await expect(page.locator(SCREEN("UF-02.1"))).toBeVisible();
+    await expect(page).toHaveURL(/\/$/);
+    expect(writes.filter((w) => w.table === "profiles" || w.table === "area_targets")).toEqual([]);
+  });
+
+  test("(c) axe and target sizes on UF-01.5 with each heading, and on UF-01.5-save's no-plan state", async ({
+    page,
+  }) => {
+    await page.goto("/account");
+    const account = page.locator(SCREEN("UF-01.5"));
+    await expect(account.getByRole("heading", { level: 1 })).toHaveText("Sign in");
+    await expectAxeClean(page, "UF-01.5");
+    // Send link, Enter code, Send link, Continue with Google, Privacy.
+    expect(await expectTargetSizes(page, "UF-01.5")).toBe(5);
+    await page.getByRole("tab", { name: "Enter code" }).click();
+    await expectAxeClean(page, "UF-01.5");
+    await expectTargetSizes(page, "UF-01.5");
+
+    await onboardToAccount(page);
+    await expect(account.getByRole("heading", { level: 1 })).toHaveText("Save your plan");
+    await expectAxeClean(page, "UF-01.5");
+    // Back, the two tabs, Send link, Continue with Google, Privacy.
+    expect(await expectTargetSizes(page, "UF-01.5")).toBe(6);
+
+    // Signed in with no profile and no plan on this device (D-0045 §5): "Set up your plan".
+    await page.evaluate(() => window.localStorage.clear());
+    await injectSession(page);
+    await mockProfileMissing(page);
+    await page.goto("/welcome/save");
+    const save = page.locator(SCREEN("UF-01.5-save"));
+    await expect(save.getByRole("heading", { level: 1 })).toHaveText("Set up your plan");
+    await expectAxeClean(page, "UF-01.5-save");
+    await expectTargetSizes(page, "UF-01.5-save");
+  });
+
+  test("(c) keyboard only: Tab to the email, type it, Tab to Send link, press Enter", async ({
+    page,
+  }) => {
+    await mockSupabaseEmailAuth(page);
+    await page.goto("/account");
+    await expect(page.locator(SCREEN("UF-01.5"))).toBeVisible();
+
+    const email = page.getByLabel("Email");
+    await tabTo(page, email);
+    await page.keyboard.type("ada@example.com");
+    const send = page.getByRole("button", { name: "Send link" });
+    await tabTo(page, send);
+    await expectVisibleFocus(send);
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("status")).toHaveText(
+      "Check your email for a link and a 6-digit code.",
+    );
+
+    // Space on a tab switches the mode.
+    const codeTab = page.getByRole("tab", { name: "Enter code" });
+    await tabTo(page, codeTab);
+    await expectVisibleFocus(codeTab);
+    await page.keyboard.press("Space");
+    await expect(page.getByLabel("6-digit code")).toBeVisible();
+  });
+});
