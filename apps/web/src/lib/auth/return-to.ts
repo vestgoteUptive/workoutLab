@@ -2,6 +2,10 @@
 // `/account` (AC-B7). Session-scoped: a fresh tab has no stale return path.
 const KEY = "wl-return-to";
 
+// ASCII control characters, space and DEL (T-0392).
+// eslint-disable-next-line no-control-regex
+const CONTROL_OR_SPACE = /[\u0000- \u007f]/;
+
 export function rememberReturnTo(path: string): void {
   try {
     window.sessionStorage.setItem(KEY, path);
@@ -10,12 +14,33 @@ export function rememberReturnTo(path: string): void {
   }
 }
 
-export function consumeReturnTo(): string {
+// T-0392 (UF-01.5): only same-origin app paths survive; anything else is "/". Defence in
+// depth against an open redirect (`//evil.example`, `/\evil.example`) or a scheme URL.
+function isSafeAppPath(value: unknown): value is string {
+  if (typeof value !== "string") return false;
+  if (!value.startsWith("/")) return false;
+  if (value[1] === "/" || value[1] === "\\") return false;
+  if (value.includes("\\")) return false;
+  if (CONTROL_OR_SPACE.test(value)) return false;
   try {
-    const value = window.sessionStorage.getItem(KEY);
-    window.sessionStorage.removeItem(KEY);
-    return value ?? "/";
+    const origin = window.location.origin;
+    return new URL(value, origin).origin === origin;
   } catch {
-    return "/";
+    return false;
   }
+}
+
+export function consumeReturnTo(): string {
+  let value: string | null = null;
+  try {
+    value = window.sessionStorage.getItem(KEY);
+  } catch {
+    value = null;
+  }
+  try {
+    window.sessionStorage.removeItem(KEY);
+  } catch {
+    // best-effort only
+  }
+  return isSafeAppPath(value) ? value : "/";
 }
