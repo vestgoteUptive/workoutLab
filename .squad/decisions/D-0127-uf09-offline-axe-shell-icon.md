@@ -1,7 +1,7 @@
 ---
 id: D-0127
 title: "UF-09 offline axe scans (T-0304b AC-12) drop exactly one known shell finding: the OfflineStatus icon's aria-label on a role-less span; web-shell fixes it"
-status: revisit
+status: superseded
 date: 2026-10-02
 by: frontend-dev (T-0304b)
 area: web
@@ -32,3 +32,6 @@ T-0304b's scope, and the finding is not in either UF-09 view.
 ## Revisit when
 - The web-shell follow-up merges. Then remove `isKnownShellIcon` from the spec (the scan becomes
   unfiltered), and this decision becomes `superseded`.
+
+## Superseded
+T-0407 gave the icon `role="img"`; the T-0304b AC-12 scans are unfiltered.
