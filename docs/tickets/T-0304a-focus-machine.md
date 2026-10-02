@@ -219,3 +219,27 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - The expiry check limited to `[store, state]` changes (the old behaviour) → the clock-moved-back test red.
   - The timer-required validation removed → 5 stored-state rows red.
   - The reducer passing the input's `backoff` through → the back-off test red.
+
+## Accept log
+- **2026-10-02, product-owner (accept), attempt 2 at c84334a: done.**
+- **ACs.** QA attempt 1 passed AC-1 through AC-13. Its re-planted faults turned the matching ACs red:
+  - AC-3: a write after dispatch;
+  - AC-4: a tick-counting countdown;
+  - AC-9: a double expiry.
+  - QA also re-derived the rule 8 numbers (1500/1660, `warmupSpentMs` 160 000), confirmed exactly one `[data-screen-id]` over a full P1 walk with a MutationObserver, checked restore at 90/119/600 s, and proved the TR-0036 `test.fail` row wasn't a silent skip.
+- **Review findings, all fixed in 8f5843a:**
+  - **Timer stuck at 0:00.** The end check now also runs on every re-render, and each end event is still dispatched once. The orchestrator re-planted the old behaviour, the clock-moved-back test went red, and it went green again after the revert.
+  - **Persist validation.** A timed phase stored with no timer is rejected (5 rows).
+  - **Back-off test.** The AC-1 back-off test now asserts the stamped value, so it can fail.
+- **TR-0036 closed.** T-0229 (D-0117) was merged into this branch and the `test.fail` marker was removed. The seeded-session chrome row now really passes in a built browser: UF-09.1, Pause ≥ 44 × 44, axe clean.
+- **Evidence.**
+  - `uf-09-focus` e2e: 4/4.
+  - UF-09 + app vitest: 431/431.
+  - `check:repo`: 0.
+- **Principles.**
+  - Principle 1: one screen id at a time, no way out other than Pause.
+  - Principle 3: the reducer is pure and only walks the engine's plan. Rest lengths are imported from the engine.
+  - No contract changed.
+- **Follow-ups.**
+  - QA: the AC-3 walk misses `SKIP_WARMUP`, `CHECK_RESOLVED` → `timeCheck` and `CONTINUE`. Add them to the persistence walk when T-0304d lands.
+  - The full DoD run (whole e2e suite, `typecheck lint test --force`, `check:size`) is confirmed by the PR CI before merge.
