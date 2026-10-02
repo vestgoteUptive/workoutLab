@@ -127,7 +127,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0302c | UF-02.1 suggestion card (45-min suggest() with goal, rows, chips via sessionReasonChips, +N more, See all, empty plan, skeleton) + lib/i18n/workout.ts formatters (D-0106) **Also fold in (T-0302a accept):** widen the AC-2 source ban to multiplicative forms (`load * k < target`); per-run live flag in use-today.ts cache-read effect + clear the 3 s cap timer. | web-feature:UF-02 | T-0302a | doing | wl-build-web |
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203b | split → T-0303a, T-0303b, T-0303c, T-0303d (D-0065) | wl-build-web |
-| T-0303a | UF-08.1 Time & energy: stepper/chips/finish time, done-by, warm-up toggle, energy, live fit line from on-device suggest, ?step routing | web-feature:UF-08 | T-0300, T-0203b, T-0318 | doing | wl-build-web |
+| T-0303a | UF-08.1 Time & energy: stepper/chips/finish time, done-by, warm-up toggle, energy, live fit line from on-device suggest, ?step routing | web-feature:UF-08 | T-0300, T-0203b, T-0318 | done | wl-build-web |
 | T-0303b | UF-08.2 Suggested: budget bar, why chips, rows, remove (excludeIds), shuffle (+1), time change keeps main lift **Also (T-0303a review):** decide/test that the Workout handed to UF-08.2 is frozen at Suggest — a 3 s re-read with changed cache content landing after Suggest must not swap the plan under the user. | web-feature:UF-08 | T-0303a, T-0302c (D-0106 §6) | todo | wl-build-web |
 | T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0306b | todo | wl-build-web |
 | T-0303d | UF-08.4 Ready: summary, focus explainer, focus-prefs hand-off, Start → upsertSession then /session/:id | web-feature:UF-08 | T-0303b | todo | wl-build-web |
@@ -228,6 +228,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0383 | D-0113 retrofit: `features/UF-10/use-balance.ts` mount refreshAll only when online AND signed-in, once per mount; tests stale-online → 0, stale → signed-in → 1 (TR-0035) | web-feature:UF-10 | — | todo | wl-build-web |
 | T-0384 | D-0113 retrofit: `features/UF-04/data.ts` mount refreshAll only when online AND signed-in, once per mount; same tests; LibraryDetail "calls refreshAll once" tests run signed-in (TR-0035) | web-feature:UF-04 | — | todo | wl-build-web |
 | T-0385 | Flush soon after an online enqueue (upsertSession/recordSet/editSet/deleteSet) — today rows wait for mount/online/auth events; then restore T-0303d AC-10 to the direct form (D-0112 §4) | web-shell | — | todo | wl-build-web |
+| T-0386 | UF-08.1 hardening (T-0303a QA): test the read-sequence guard in use-setup-data.ts; DST fall-back: pick the earliest occurrence after now in time.ts todayAt (Stockholm 2026-10-25 / New York 2026-11-01 cases); keep focus on open/close of the finish-time input (WCAG 2.4.3); real-browser 24-hour time-input probe | web-feature:UF-08 | T-0303a | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
