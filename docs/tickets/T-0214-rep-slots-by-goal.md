@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.2, UF-09.3, UF-09.4, UF-01.4]
 decisions: [D-0024, D-0040, D-0057, D-0061, D-0093, D-0095, D-0096]
 deps: [T-0205, T-0224]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-10-01 (groom mode). Build flow: wl-build-engine. About ½ day. Engine tickets run one at a time (D-0096 §3): T-0219 → T-0215 → T-0224 → T-0214. T-0224 is a dep so applySwap is made goal-aware in the same change. -->
 
@@ -135,3 +135,14 @@ The human decided (D-0061 §1) that the onboarding goal must change the workout.
 - `npx -y pnpm@10.28.2 -w typecheck lint test --force` is green.
 - The contract change is linked to D-0095.
 - Commit messages start with `T-0214` and cite UF-08.2 or UF-09.3 (e.g. `T-0214 UF-08.2: rep slots by goal`).
+
+## Accept log
+**2026-10-02, product-owner: accepted (`done`).** Branch at cc1b214.
+
+- **Build.** Rule 7.2's rep slot is now a function of `(exercise, isMain, goal)`, following the D-0061 §1 table: get_stronger 3–5/5–8/10–15, build_muscle unchanged, general_fitness 8–12/10–15/10–15. `goal` is optional on `SuggestProfile` and on `applySwap`'s profile, and defaults to `build_muscle`. An unknown value or `null` throws `RangeError`. Every slot read uses the goal (D-0095 §2): item reps, the rule 14 slot, the High back-off reps, rule 13's shuffled `previous`, and `applySwap`'s rebuilt slot. The engine suite has 528 tests: 478 existing tests, none edited, plus 50 new ones in `test/rule-7-goal-reps.test.ts`. The build_muscle output is byte-identical, including every pre-T-0219 `suggest` snapshot (AC10). `docs/engine-rules.md` changes only in §Fixtures (F-goal), §7.2 Reps with R7-E14/R7-E15, and Traceability. That matches the Listed extras grant.
+- **QA: pass, all 13 ACs.** QA re-derived R7-E14, R7-E15 and the AC4 back-offs by hand. All 3 planted faults went red, and no existing test file was touched. Web tests pass 931/931.
+- **Code review: approve.** `SuggestProfile` narrows the openapi `Profile` without diverging from it. Rejecting `null` matches the not-null `profiles.goal` contract. One nit, not blocking: the internal default-goal parameters could be required.
+- **AC7 strengthening (spec gap, no behaviour change).** The ticket's AC7 fixture (T-0205 AC18's lat-pulldown at 50 × 12 ×3) gives `increase` to 55 under both build_muscle and get_stronger. So it can't tell whether the shuffled slot's `previous` pre-fill reads the goal's slot or build_muscle's. The builder added a second AC7 case: lat-pulldown at 50 × 8 ×3 gives 55 × 5 `increase` at get_stronger 5–8 and 50 × 9 `add_rep` at build_muscle 8–12, and the carry must be 55 × 5 `carry`. QA confirmed that this case is the only test that catches the shuffled-`previous` fault. I accept it as part of AC7. This was my error in the spec, and the practice note below covers it.
+- **Principles hold.** The goal never changes selection, cost, targets or level. AC11 shows identical `[exerciseId, sets, costS]`, `itemsTotalS` and `unusedS` across goals over every simulated 14-day history, with R7-E8's caps holding at 15…120 min. So the time budget (principle 2) and the deterministic engine (principle 3, AC13 purity lint green) are untouched. The onboarding goal (UF-01.2) now actually changes the plan, as D-0061 §1 requires.
+
+**Follow-ups:** T-0227 (backend: `supabase/functions/workouts/core.ts` passes `goal`, D-0095 §5) is already on the board. The orchestrator regenerates the vendored engine at merge (D-0053 §1). Engine, optional: make the internal default-goal parameters required, so that only the public `suggest`/`applySwap` boundary defaults. Product practice: for an AC that checks a value is carried, pick a fixture where the goals give different results.
