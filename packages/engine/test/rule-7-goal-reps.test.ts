@@ -377,6 +377,19 @@ describe("rule 13 shuffle carry reads the goal's slot (D-0095 §2, D-0056 §11)"
     expect(row.prefill).toEqual(pr(55, 5, "carry"));
     expect(row.reasons).toContainEqual({ code: "swap", reason: null });
   });
+
+  it("rule-13 rule-14 (AC7) the carried weight is the original's pre-fill at the goal's slot, not build_muscle's", () => {
+    // lat-pulldown 50 × 8, 8, 8: at get_stronger 5–8 all ≥ 8 → 55 (increase); at
+    // build_muscle 8–12 it would be 50 × 9 (add_rep). The carry must read 55.
+    const h = [...S3("2026-09-20", "lat-pulldown", 50, 8), ...H_CABLE.slice(3)];
+    const p = { ...GS, equipment: CABLE };
+    expect(item(run(h, p), "lat-pulldown").prefill).toEqual(pr(55, 5, "increase"));
+    expect(item(run(h, { ...BM, equipment: CABLE }), "lat-pulldown").prefill).toEqual(
+      pr(50, 9, "add_rep"),
+    );
+    const row = item(run(h, p, input({ shuffle: 1 })), "seated-cable-row");
+    expect(row.prefill).toEqual(pr(55, 5, "carry"));
+  });
 });
 
 // ---- AC8: applySwap reads the goal (D-0093 §2) ----
