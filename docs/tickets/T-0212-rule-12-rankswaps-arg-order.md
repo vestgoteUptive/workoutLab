@@ -80,3 +80,20 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
 - **Red on main.** With `main`'s `docs/engine-rules.md`, AC1 (line equals `fixture.before`), AC2 (mismatch at positions 6 and 7) and AC4 fail (3 failed, 83 passed across the three touched files).
 - **AC5.** `git diff --stat main...HEAD -- packages/engine/src` is empty. No vendor regen; `node supabase/scripts/vendor.mjs --check` passes.
 - **Checks.** Engine `typecheck`, `lint`, `test` (36 files, 630 tests) green; `pnpm -w format:check`, `check-all.mjs` and `vendor.mjs --check` pass.
+
+### 2026-10-02 accept (product-owner): done
+Checked at HEAD 6ae2ca9 against the code and the orchestrator's review and QA.
+- **AC1** passes: `docs/engine-rules.md:158` is the only `` `rankSwaps(current, `` line. It reads `… history, now, tz)` and sits directly under `## 12. Swap ranking`. No line contains `history, tz, now)`. The test `T-0212 AC1 …` pins it to `RULE12_SIGNATURE_LINE.after`, and it fails on main's docs.
+- **AC2** passes: `codeParams` reads the exported `rankSwaps` through `ts.createSourceFile`. It asserts the list `[currentExerciseId, reason, session, profile, library, history, now, tz]` literally, which matches `src/swaps.ts:200-208`. It maps `current` and `reason | null`, and it fails at `[6, 7]` on main. The unit pair covers `tz, now` → `[6, 7]` and `now, tz` → `[]`. Extra tests check that a gained parameter counts as a mismatch, and that the parser uses the AST rather than raw text.
+- **AC3** passes: both guards are pure helpers in `packages/engine/test/rule12-guards.ts` (`t0204GuardOk`, `t0224GuardOk`). The unit tests cover:
+  - the branch case and the after-merge case;
+  - any other change in rule 12 (up to R12-E5), in rule 13 or in the signature itself, which fails;
+  - the reversed edit, which fails;
+  - the R12-E1 allowance, alone and combined, in T-0204 only;
+  - a missing marker, which throws.
+
+  Both guard `it`s still compare with `main` and still return early on a shallow clone. Each keeps its assertions: T-0204 keeps its marker checks as `not.toThrow`. The T-0224 slice now starts at `## 12.`, so it covers the same text as before or more. A later revert of the signature line would pass the guard allowance but fail AC1 and AC2, so the contract stays pinned.
+- **AC4** passes: there is one Traceability row, `12 rankSwaps signature order now, tz (D-0130) | T-0212`. `git diff main...HEAD -- docs/engine-rules.md` touches only rule 12's signature line and Traceability, according to the build log and the orchestrator's diff read.
+- **AC5** passes: `packages/engine/src` is unchanged, according to the build log and orchestrator QA. The only edited existing tests are the two guards.
+- **AC6** passes: engine typecheck, lint and test are green with 630/630, as reported by the build and orchestrator QA. I didn't rerun them in this accept.
+- **Principles:** there is no behaviour change, and the deterministic engine contract is now consistent across doc, code and D-0056 §2. The contract change links to D-0130.
