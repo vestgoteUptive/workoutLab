@@ -154,12 +154,53 @@ describe("AC-A5 service worker precache", () => {
   });
 });
 
-describe("AC-A6 lazy route chunks", () => {
-  it("has one dynamic-entry chunk per route module", () => {
-    const featureDirs = readdirSync(resolve(webRoot, "src/features"));
-    expect(featureDirs.length).toBeGreaterThan(0);
+// D-0144 §2 §4: feature folders with no route of their own, mounted from other flows' chunks
+// through seams (D-0069 §5, D-0071 §7, D-0142 §8). Only a web-shell ticket citing a decision
+// that the feature has no route may add to this list. An entry may be missing from disk.
+const SEAM_MOUNTED_FEATURES: readonly string[] = ["UF-05"];
+
+// D-0144 §3c: strings only the seam-mounted feature carries. For UF-05: the D-0160 §3 copy
+// (D-0144's default), plus the `wl-uf05` class prefix of its JSX and `uf-05.css`. T-0426 adds
+// the prefix because a side-effect import of UF-05 from `src/app` drops the JS but keeps the
+// CSS in the entry, and the copy alone misses that. T-0426 checked that neither string is in
+// the entry graph on main, nor with T-0421's UF-05 and `flows/uf-05.ts` on top (Rollup drops
+// the unread `en.uf05` keys). This also catches UF-05 inlined into a chunk with no `src`.
+const SEAM_SENTINELS: Readonly<Record<string, readonly string[]>> = {
+  "UF-05": ["Couldn't load alternatives.", "wl-uf05"],
+};
+
+/** The folders `src/app/routes.ts` lazy-loads, from its `import("../features/<dir>/index.js")`. */
+function routeFolders(): string[] {
+  const src = readFileSync(resolve(webRoot, "src/app/routes.ts"), "utf8");
+  const dirs = [...src.matchAll(/import\(\s*["']\.\.\/features\/([^/"']+)\/index\.js["']\s*\)/g)];
+  return [...new Set(dirs.map((m) => m[1]!))];
+}
+
+/** The manifest keys the entry reaches through static `imports`, followed transitively. */
+function staticEntryGraph(): ManifestChunk[] {
+  const entryKey = Object.keys(manifest).find((k) => manifest[k]!.isEntry)!;
+  const seen = new Set<string>([entryKey]);
+  const queue = [entryKey];
+  while (queue.length > 0) {
+    for (const next of manifest[queue.shift()!]!.imports ?? []) {
+      if (!seen.has(next)) {
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+  }
+  return [...seen].map((k) => manifest[k]!);
+}
+
+describe("AC-A6 lazy route chunks (D-0144)", () => {
+  const featureDirs = readdirSync(resolve(webRoot, "src/features"));
+  const routeDirs = routeFolders();
+  const seamDirs = SEAM_MOUNTED_FEATURES.filter((dir) => featureDirs.includes(dir));
+
+  it("has one dynamic-entry chunk per route module in routes.ts", () => {
+    expect(routeDirs.length).toBeGreaterThan(0);
     const files = new Set<string>();
-    for (const dir of featureDirs) {
+    for (const dir of routeDirs) {
       const chunk = manifest[`src/features/${dir}/index.tsx`];
       expect(chunk, dir).toBeDefined();
       expect(chunk!.isDynamicEntry).toBe(true);
@@ -167,7 +208,35 @@ describe("AC-A6 lazy route chunks", () => {
       expect(chunk!.file).not.toBe(entry.file);
       files.add(chunk!.file);
     }
-    expect(files.size).toBe(featureDirs.length);
+    expect(files.size).toBe(routeDirs.length);
+  });
+
+  it("every feature folder is a route folder or seam-mounted, never both", () => {
+    expect(featureDirs.length).toBeGreaterThan(0);
+    const unaccounted = featureDirs.filter(
+      (dir) => !routeDirs.includes(dir) && !SEAM_MOUNTED_FEATURES.includes(dir),
+    );
+    expect(unaccounted, "feature folders with no route in routes.ts").toEqual([]);
+    const both = SEAM_MOUNTED_FEATURES.filter((dir) => routeDirs.includes(dir));
+    expect(both, "seam-mounted features that routes.ts also loads").toEqual([]);
+  });
+
+  it("no seam-mounted feature is in the entry chunk", () => {
+    const graph = staticEntryGraph();
+    const texts = graph.flatMap((c) => [c.file, ...(c.css ?? [])]).map((f) => [f, read(f)]);
+    for (const dir of SEAM_MOUNTED_FEATURES) expect(SEAM_SENTINELS[dir], dir).toBeDefined();
+    for (const dir of seamDirs) {
+      expect(entry.dynamicImports ?? [], dir).not.toContain(`src/features/${dir}/index.tsx`);
+      const inGraph = graph.filter((c) => c.src?.startsWith(`src/features/${dir}/`));
+      expect(
+        inGraph.map((c) => c.src),
+        `${dir} sources the entry reaches statically`,
+      ).toEqual([]);
+      const hits = SEAM_SENTINELS[dir]!.flatMap((sentinel) =>
+        texts.filter(([, text]) => text!.includes(sentinel)).map(([f]) => `${f}: ${sentinel}`),
+      );
+      expect(hits, `entry-graph files with a ${dir} sentinel`).toEqual([]);
+    }
   });
 });
 
