@@ -229,7 +229,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0384 | D-0113 retrofit: `features/UF-04/data.ts` mount refreshAll only when online AND signed-in, once per mount; same tests; LibraryDetail "calls refreshAll once" tests run signed-in (TR-0035) | web-feature:UF-04 | — | todo | wl-build-web |
 | T-0385 | Flush soon after an online enqueue (upsertSession/recordSet/editSet/deleteSet) — today rows wait for mount/online/auth events; then restore T-0303d AC-10 to the direct form (D-0112 §4) | web-shell | — | todo | wl-build-web |
 | T-0386 | UF-08.1 hardening (T-0303a QA): test the read-sequence guard in use-setup-data.ts; DST fall-back: pick the earliest occurrence after now in time.ts todayAt (Stockholm 2026-10-25 / New York 2026-11-01 cases); keep focus on open/close of the finish-time input (WCAG 2.4.3); real-browser 24-hour time-input probe | web-feature:UF-08 | T-0303a | todo | wl-build-web |
-| T-0387 | Decide whether `lib/i18n/workout.ts` formatters take a locale / number formatter (raw "63 %", "12 days ago", English-only plurals) before UF-08.2 (T-0303b) and UF-09 depend on the 1-arg signatures; record in D-0106 or a new decision (T-0302c review) | product | T-0302c | doing | wl-spec |
+| T-0387 | Decide whether `lib/i18n/workout.ts` formatters take a locale / number formatter (raw "63 %", "12 days ago", English-only plurals) before UF-08.2 (T-0303b) and UF-09 depend on the 1-arg signatures; record in D-0106 or a new decision (T-0302c review) | product | T-0302c | done (D-0114) | wl-spec |
+| T-0388 | Locale-aware kg weight helper `formatKg(value, locale?)` in `lib/format/number.ts` (like formatSetCount), before the first UF-09 ticket that shows a weight (D-0114 §3) | web-shell | — | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
