@@ -785,3 +785,145 @@ test.describe("T-0393 UF-08.2 loaded library (D-0044, D-0109 §4)", () => {
     expect(await rowTexts(page)).toEqual(online);
   });
 });
+
+// ---- T-0412 UF-08.2 / UF-09.3 a loaded main lift renders its 14.7 add_rep pre-fill ----
+// (D-0071, D-0086, D-0108, D-0044, D-0109, D-0124.) T-0393's seed (FULL-equipment `profileRow`,
+// F-targets, `mockProfilePresent`, `exercisesLoaded`) with `mainSeed` as the history. Every
+// `completed_at` is relative to `Date.now()` (D-0108 §4).
+
+/**
+ * `mainSeed`, derived by hand (engine rules 3, 6, 7.2, 14; F-targets):
+ *
+ * - Session T0412-M, 7 days ago: bench-press 3 × 42.5 kg × 6. Session T0412-R, 3 days ago:
+ *   back-squat × 4, barbell-row × 4, overhead-press × 3, leg-curl × 3, calf-raise × 3,
+ *   plank × 3 (bodyweight, 45 s). Both are inside the 14-day window (rule 3), and both are
+ *   more than 48 h old, so no area is recovering (rule 6).
+ * - Rule 3 loads / targets → r: chest 3/20 = 0.15; back 4/20 = 0.20; shoulders
+ *   (1.5 + 3)/16 = 0.28; arms (1.5 + 2 + 1.5)/12 = 0.42; core (2 + 1.5 + 3)/12 = 0.54;
+ *   glutes 4/20 = 0.20; quads 4/20 = 0.20; hamstrings (2 + 3)/16 = 0.31; calves 3/12 = 0.25.
+ *   Chest has the lowest r, so rule 7.2 step 1 takes chest's top compound candidate.
+ * - Chest compounds: bench-press, db-bench-press, push-up. The most recent session with hard
+ *   sets is T0412-R (rank 1), and none of them is in it, so rank (1) ties. Rank (2) gap fit
+ *   (deficit = 1 − r): bench-press and db-bench-press 0.85 + 0.5 × 0.72 + 0.5 × 0.58 = 1.50;
+ *   push-up 0.85 + 0.5 × 0.58 + 0.5 × 0.46 = 1.37 (plank keeps core's deficit low). Rank (3)
+ *   id ascending: bench-press before db-bench-press. M = bench-press, loaded, 4 sets
+ *   (4 × 165 + 60 = 720 s ≤ 1620 s available at 30 min with the warm-up).
+ * - Rule 14 for M: last performance is T0412-M, W = 42.5, minReps 6, gap 7 < 10 (14.2/14.3 no);
+ *   build_muscle main slot 6–8: 6 < high 8, so no 14.4 `increase`; one session at W, so no
+ *   14.5 `deload`; 6 ≥ low 6, so no 14.6 `hold`; 14.7 `add_rep` → 42.5 × min(8, 6 + 1) = 7.
+ */
+function mainSeed(): Record<string, unknown>[] {
+  const at = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+  const rows: Record<string, unknown>[] = [];
+  const add = (
+    sessionId: string,
+    days: number,
+    exerciseId: string,
+    count: number,
+    set: { reps: number | null; weight_kg: number | null; duration_s: number | null },
+  ) => {
+    const completedAt = at(days);
+    for (let i = 0; i < count; i += 1) {
+      rows.push({
+        client_id: `t0412-${exerciseId}-${i}`,
+        session_id: sessionId,
+        exercise_id: exerciseId,
+        is_warmup: false,
+        completed_at: completedAt,
+        edited_at: completedAt,
+        deleted_at: null,
+        ...set,
+      });
+    }
+  };
+  add("T0412-M", 7, "bench-press", 3, { reps: 6, weight_kg: 42.5, duration_s: null });
+  const lifted = { reps: 10, weight_kg: 40, duration_s: null };
+  add("T0412-R", 3, "back-squat", 4, lifted);
+  add("T0412-R", 3, "barbell-row", 4, lifted);
+  add("T0412-R", 3, "overhead-press", 3, lifted);
+  add("T0412-R", 3, "leg-curl", 3, lifted);
+  add("T0412-R", 3, "calf-raise", 3, lifted);
+  add("T0412-R", 3, "plank", 3, { reps: null, weight_kg: 0, duration_s: 45 });
+  return rows;
+}
+
+const MAIN_NAME = "Bench press";
+const MAIN_DETAIL = /^4 × 6–8 · 42\.5 kg · \d+ min$/;
+
+test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109)", () => {
+  test("T-0412 AC1 mainSeed names a loaded compound M with 3 × 42.5 kg × 6, 3–9 days ago", () => {
+    const m = exercisesLoaded.find((e) => e.name === MAIN_NAME)!;
+    expect(m).toBeDefined();
+    expect(m.id).toBe("bench-press");
+    expect(m.external_load).toBe(true);
+    const mine = mainSeed().filter((s) => s.exercise_id === m.id);
+    expect(mine).toHaveLength(3);
+    for (const s of mine) {
+      expect(s).toMatchObject({ reps: 6, weight_kg: 42.5, is_warmup: false });
+      const days = (Date.now() - Date.parse(s.completed_at as string)) / 86_400_000;
+      expect(days).toBeGreaterThanOrEqual(3);
+      expect(days).toBeLessThanOrEqual(9);
+    }
+  });
+
+  test("T-0412 AC2 UF-08.2 main row is M at 4 × 6–8 · 42.5 kg", async ({ page }) => {
+    const errors = consoleErrors(page);
+    await seedLoaded(page, mainSeed());
+    await openSetup(page);
+    await suggestAt30(page);
+    const rows = await rowTexts(page);
+    expect(rows.length).toBeGreaterThan(0);
+    const [name, detail] = rows[0]!;
+    expect(name).toBe(MAIN_NAME);
+    expect(loadedByName(name!).external_load).toBe(true);
+    expect(detail).toMatch(MAIN_DETAIL);
+    for (const [n, d] of rows) expect(d, n).toMatch(DETAIL_PATTERN);
+    expect(errors).toEqual([]);
+  });
+
+  test("T-0412 AC3 UF-09.3 shows the add_rep pre-fill 42.5 kg × 7 for M's first set", async ({
+    page,
+  }) => {
+    const errors = consoleErrors(page);
+    await seedLoaded(page, mainSeed());
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    await startWorkout(page);
+    await page
+      .locator('[data-screen-id="UF-09.1"]')
+      .getByRole("button", { name: "Skip warm-up" })
+      .click();
+    const current = page.locator('[data-screen-id="UF-09.3"]');
+    await expect(current).toBeVisible();
+    await expect(current.getByRole("heading", { level: 1, name: MAIN_NAME })).toBeVisible();
+    await expect(current.getByText("Set 1 of 4")).toBeVisible();
+    // 7 reps is 14.7 `add_rep`: 14.6 `hold` would show 6, 14.4 `increase` 45 kg.
+    await expect(current.locator(".wl-uf09__load")).toHaveText("42.5 kg × 7");
+    expect(errors).toEqual([]);
+  });
+
+  test("T-0412 AC4 offline rows equal the online ones, main kg text included (NFR-OFF-3)", async ({
+    page,
+    context,
+  }) => {
+    await seedLoaded(page, mainSeed());
+    await openSetup(page);
+    await expect
+      .poll(() => cachedCounts(page))
+      .toEqual({ library: exercisesLoaded.length, targets: 9 });
+    await precacheSettled(page);
+    await suggestAt30(page);
+    const online = await rowTexts(page);
+    expect(online[0]![0]).toBe(MAIN_NAME);
+    expect(online[0]![1]).toMatch(MAIN_DETAIL);
+
+    await context.setOffline(true);
+    await page.goto("/session/setup");
+    await expect(screenUF081(page)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByLabel("Offline")).toBeVisible();
+    await expect(fitLine(page)).toHaveText(FIT_PATTERN);
+    await suggestAt30(page);
+    expect(await rowTexts(page)).toEqual(online);
+  });
+});
