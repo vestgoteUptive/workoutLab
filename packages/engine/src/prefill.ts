@@ -1,4 +1,4 @@
-// Rule 14: progression and pre-fill (UF-09.3, UF-09.4, UF-08.2; D-0026, D-0057, D-0062).
+// Rule 14: progression and pre-fill (UF-09.3, UF-09.4, UF-08.2; D-0026, D-0057, D-0062, D-0137).
 // Pure: `now` and `tz` are inputs, and the history is normalised per rule 0 before use.
 import { DEFAULT_INCREMENT_KG, floorInc } from "./energy.js";
 import { indexLibrary, isHardSet, normalizeHistory, primaryAreas } from "./history.js";
@@ -226,7 +226,9 @@ export function prefillFrom(
   const inc = exercise.incrementKg ?? DEFAULT_INCREMENT_KG;
   const W = cur.w;
   // D-0057 §4: one increment is the floor when W > 0; W = 0 stays 0 (and always for bodyweight).
-  const dropped = loaded && W > 0 ? round3(Math.max(inc, floorInc(DROP_FACTOR * W, inc))) : 0;
+  // D-0137 §1: the floor is capped at W, so a light lift (0 < W < inc) never "drops" heavier.
+  const dropped =
+    loaded && W > 0 ? round3(Math.min(W, Math.max(inc, floorInc(DROP_FACTOR * W, inc)))) : 0;
   const res = (weightKg: number, reps: number, kind: PrefillResult["kind"]): PrefillResult => ({
     weightKg: round3(weightKg),
     reps,
