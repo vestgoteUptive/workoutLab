@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import type { CheckinSession } from "@workoutlab/engine";
+import { formatDayMonth, formatWeekdayDayMonth } from "../format.js";
 import { bestSet, exerciseHistory, monthCalendar, recentExercises } from "../stats.js";
 import { LIBRARY, LOCALE, NOW, TZ, historyH, set } from "./fixtures.js";
 
@@ -222,5 +223,19 @@ describe("AC-8 stats.ts is clock-free and pure", () => {
     );
     const sets = history.slice(0, 3);
     expect(bestSet(sets, lib("back-squat"))).toEqual(bestSet(sets, lib("back-squat")));
+  });
+});
+
+// D-0084 §1: only `en-GB` has "Sept" rewritten to "Sep". Other locales keep their ICU spelling;
+// en-AU writes "Sept" on purpose.
+describe("D-0084 §1 the Sep normalisation is en-GB only", () => {
+  it("en-GB reads Sep", () => {
+    expect(formatDayMonth("2026-09-25", "en-GB")).toBe("25 Sep");
+    expect(formatWeekdayDayMonth("2026-09-25", "en-GB")).toBe("Fri 25 Sep");
+  });
+
+  it("en-AU keeps Sept", () => {
+    expect(formatDayMonth("2026-09-25", "en-AU")).toBe("25 Sept");
+    expect(formatWeekdayDayMonth("2026-09-25", "en-AU")).toMatch(/\bSept$/);
   });
 });

@@ -1,8 +1,8 @@
 // T-0307b: UF-06.1 and UF-06.2 through the real engine over a seeded cache (fake-indexeddb).
 // Every screen renders with `Europe/Stockholm` and `en-GB` overrides (D-0079 §10) and the clock
 // injected; `navigator.onLine` is false unless a test says otherwise.
-import { render, screen, waitFor, within } from "@testing-library/react";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter, Route, Routes, useLocation, useNavigate } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AreaBalance } from "@workoutlab/engine";
 import * as engine from "@workoutlab/engine";
@@ -33,12 +33,18 @@ function setOnline(value: boolean) {
 
 function Probe() {
   const location = useLocation();
-  return <div data-testid="location">{location.pathname}</div>;
+  const navigate = useNavigate();
+  return (
+    <>
+      <div data-testid="location">{location.pathname}</div>
+      <button type="button" data-testid="back" onClick={() => void navigate(-1)} />
+    </>
+  );
 }
 
-function renderAt(path: string, now: Date = NOW) {
+function renderAt(path: string, now: Date = NOW, before: readonly string[] = []) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[...before, path]}>
       <Probe />
       <Routes>
         <Route path="/progress" element={<Progress now={now} timeZone={TZ} locale={LOCALE} />} />
@@ -47,6 +53,7 @@ function renderAt(path: string, now: Date = NOW) {
           element={<ExerciseHistory now={now} timeZone={TZ} locale={LOCALE} />}
         />
         <Route path="/balance" element={<div data-screen-id="UF-10.1" />} />
+        <Route path="/x" element={<div data-screen-id="x" />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -421,13 +428,18 @@ describe("AC-10 other kinds and bad ids", () => {
 
   it.each(["nope", "wu-cat-cow"])("%s redirects to /progress with replace", async (id) => {
     await seed({ history: historyH() });
-    const before = window.history.length;
-    renderAt(`/progress/${id}`);
+    // MemoryRouter never touches `window.history`, so the replace is observed on the router's
+    // own stack: `/x` sits below the bad URL. A replace leaves [/x, /progress], so one Back
+    // lands on `/x`; a push would leave [/x, /progress/<id>, /progress] and Back would bounce
+    // through the bad URL instead.
+    renderAt(`/progress/${id}`, NOW, ["/x"]);
     await waitFor(() =>
       expect(document.querySelector("[data-screen-id='UF-06.1']")).toBeInTheDocument(),
     );
     expect(screen.getByTestId("location")).toHaveTextContent(/^\/progress$/);
-    expect(window.history.length).toBe(before);
+    fireEvent.click(screen.getByTestId("back"));
+    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent(/^\/x$/));
+    expect(document.querySelector("[data-screen-id='x']")).toBeInTheDocument();
   });
 
   it("leg-curl stays on UF-06.2", async () => {

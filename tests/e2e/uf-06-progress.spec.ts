@@ -51,7 +51,9 @@ test.describe("AC-15 UF-06 a11y and keyboard (e2e)", () => {
     expect(await seriousViolations(page)).toEqual([]);
   });
 
-  test("the Balance card and every Recent exercises row are at least 44 x 44", async ({ page }) => {
+  test("the Balance card, every Recent exercises row and How to are at least 44 x 44", async ({
+    page,
+  }) => {
     await open(page, "/progress", historyFixtures());
     const card = page.getByRole("link", { name: "Balance, last 14 days" });
     await expect(card).toBeVisible();
@@ -63,6 +65,15 @@ test.describe("AC-15 UF-06 a11y and keyboard (e2e)", () => {
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
+
+    // UF-06.2's How to link has the same 44 x 44 floor.
+    await page.goto("/progress/back-squat");
+    const howTo = page.getByRole("link", { name: "How to" });
+    await expect(howTo).toBeVisible();
+    const howToBox = await howTo.boundingBox();
+    expect(howToBox).not.toBeNull();
+    expect(howToBox!.width).toBeGreaterThanOrEqual(44);
+    expect(howToBox!.height).toBeGreaterThanOrEqual(44);
   });
 
   test("Tab to the Balance card and Enter opens /balance; Back, then Tab to Back squat and Enter", async ({

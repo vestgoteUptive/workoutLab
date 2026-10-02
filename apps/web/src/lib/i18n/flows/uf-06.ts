@@ -6,7 +6,6 @@ export const uf06 = {
   balanceCaption: "Last 14 days",
   calendarName: "Workouts this month",
   workoutDay: "Workout",
-  today: "Today",
   workoutsThisMonth: (n: number) => (n === 1 ? "1 workout this month" : `${n} workouts this month`),
   recentTitle: "Recent exercises",
   noExercises: "No exercises logged yet",

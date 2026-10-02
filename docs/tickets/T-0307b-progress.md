@@ -253,3 +253,9 @@ None. The screens read the T-0319 `OfflineSession`, `HistorySet`, `LibraryExerci
 - AC-16 fault: `stats.ts` lookup `&& false` → 3/3 red on the UF-06.2 marker (redirect). Reverted.
 - T-0430: `uf-06-progress.spec.ts` imports `./fixtures/guarded-test.js`, no own listeners.
 - Gate at f797a0b: web turbo 4/4 (2765 tests), format, repo-checks 146/146, check-all, e2e 149/149.
+
+### Build, attempt 2 (2026-10-02, code review changes)
+- **MEDIUM, AC-10 replace.** The old check compared `window.history.length`, which MemoryRouter never touches, so it was always true. Now the test starts at `initialEntries={["/x", path]}`. After the redirect it navigates back once and asserts `/x`. Fault proof: a backup copy with `replace` removed from `<Navigate>` failed 2 of 2 (`nope`, `wu-cat-cow`). Restored, 2 of 2 pass.
+- **LOW, D-0084 §1.** `format.ts` rewrites "Sept" to "Sep" only when the formatter's resolved locale is `en-GB`. A test pair pins it: en-GB reads `25 Sep` and `Fri 25 Sep`, en-AU reads `25 Sept`.
+- **LOW.** Removed the unused `uf06.today` key. No test pins the uf06 key set.
+- **LOW.** `.wl-progress__howto` gets `min-inline-size: 44px`. The e2e 44 × 44 test now also measures UF-06.2's `How to`.
