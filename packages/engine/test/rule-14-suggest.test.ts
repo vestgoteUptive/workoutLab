@@ -491,7 +491,7 @@ describe("rule 14 result shape (openapi PrefillResult)", () => {
     expect(result).toMatch(/required: \[weightKg, reps, durationS, kind\]/);
     expect(result).toMatch(/weightKg: \{ type: \[number, "null"\], minimum: 0 \}/);
     expect(result).toMatch(/reps: \{ type: \[integer, "null"\], minimum: 1 \}/);
-    expect(result).toMatch(/durationS: \{ type: \[integer, "null"\], minimum: 1 \}/);
+    expect(result).toMatch(/durationS: \{ type: \[integer, "null"\], minimum: 15, maximum: 120 \}/);
     const kinds = /enum: \[([^\]]*)\]/.exec(block("PrefillKind"))?.[1] ?? "";
     expect(kinds.split(",").map((k) => k.trim())).toEqual(KINDS);
   });

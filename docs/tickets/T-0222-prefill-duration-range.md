@@ -70,3 +70,8 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
 - AC5: no existing fixture holds a timed `prefill.durationS` outside 15..120 (found 45, 45, 50, 120). No existing test was edited.
 - Tests: `flock … pnpm turbo run typecheck lint test --filter=@workoutlab/shared --filter=@workoutlab/web --force --concurrency=1`: 7/7 tasks; shared 227/227, web 2107/2107. `pnpm -w format:check` is clean. `node .github/scripts/check-all.mjs` exits 0. `npx -y deno@2 check` on every `supabase/functions` and `supabase/tests/functions` `.ts` file is clean. `deno test supabase/tests/functions/unit/` passes 96/96. pgTAP and integration tests were not run locally; they run in CI.
 - AC6 CI run URL: pending. The orchestrator opens the draft PR.
+
+### Build, attempt 2 — 2026-10-02 (data-modeler)
+- CI on PR #23 failed in `packages/engine/test/rule-14-suggest.test.ts`: the T-0205 AC21 test still expected `minimum: 1`. Merged `origin/main`, which brings in the Listed-extras grant. Changed only the AC21 `durationS` bounds regex, to `minimum: 15, maximum: 120` (D-0133). The rest of the assertion is unchanged.
+- Red before the edit, against the new yaml: `vitest run test/rule-14-suggest.test.ts -t "exactly these keys"` → 1 failed. Green after → 1 passed.
+- `flock … pnpm -w typecheck lint test --force --concurrency=1`: 19/19 tasks (engine 33 files, shared 9, web 139, exercises 16, design-tokens 7, landing 11). `format:check` is clean. `check-all.mjs` exits 0. `vendor.mjs --check` exits 0.
