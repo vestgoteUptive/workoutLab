@@ -93,3 +93,11 @@ none. `api/openapi.yaml`, `docs/data-model.md` and `docs/engine-rules.md` are un
 - `vendor.mjs --check` is green.
 - Contracts are unchanged.
 - Commit messages start with `T-0227` and cite UF-08.2 (e.g. `T-0227 UF-08.2: workouts/suggest passes profile.goal`).
+
+## Accept log
+- 2026-10-02, product-owner (accept): **done**. Branch `t/T-0227-workouts-goal` at 8e1a800. AC6 names the slug `t/T-0227-workouts-suggest-passes-goal`; the difference is cosmetic.
+  - AC1–AC4: 17 new Deno tests titled `T-0227 ACn` in `supabase/tests/functions/unit/workouts-core.test.ts`, run per goal. 9 of them fail on the unfixed `core.ts`, and QA re-planted the fault and got exactly those 9 red. `suggestProfile` returns `{level, equipment, goal}`, typed `Parameters<typeof suggest>[2]`.
+  - AC5: unit tests 96/96, with existing tests (AC13, AC17–AC23) unedited. `deno check` is clean. The vendor copy already carries `goal`, and no vendor file is in the diff.
+  - AC6: draft PR #18 https://github.com/vestgoteUptive/workoutLab/pull/18. CI run 36945508501 (https://github.com/vestgoteUptive/workoutLab/actions/runs/36945508501) passed typecheck/lint/unit, the supabase db tests (including the Edge Function integration tests), and playwright e2e.
+  - QA: PASS. Review: APPROVE, response contract unchanged. Review's nit: the AC4 returning-user test reuses AC21's history byte for byte, which is what the AC asks for. Not blocking.
+  - Principles: principle 3 (deterministic engine) now holds across server and device: one engine and the same goal slots. Contracts unchanged.
