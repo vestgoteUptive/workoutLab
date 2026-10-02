@@ -136,6 +136,24 @@ export interface FocusActionDeps {
   storage: FocusStorage | null;
   onRow(row: SessionRow): void;
   navigate(to: string): void;
+  /** Orders a UF-09.8 plan write against `finish()` (T-0304d rework). Shared with
+   *  `createPlanApply`; absent, each factory keeps its own and nothing is ordered. */
+  writes?: SessionWrites;
+}
+
+/**
+ * The session-row writes that must not interleave (T-0304d rework, D-0071 §6). `finish()` waits
+ * for a pending plan write before it reads the row, so the ended row is always the last write and
+ * carries every earlier one. A plan write that resolves once `finish()` has started moves nothing,
+ * and one asked for after that writes nothing.
+ */
+export interface SessionWrites {
+  plan: Promise<void> | null;
+  finishing: boolean;
+}
+
+export function createSessionWrites(): SessionWrites {
+  return { plan: null, finishing: false };
 }
 
 async function storedRow(sessionId: string): Promise<SessionRow> {
@@ -147,6 +165,7 @@ async function storedRow(sessionId: string): Promise<SessionRow> {
 /** The write methods and helpers, created once per loaded session. */
 export function createFocusActions(deps: FocusActionDeps): FocusActions {
   const { sessionId, store, storage } = deps;
+  const writes = deps.writes ?? createSessionWrites();
   let finishing: Promise<void> | null = null;
   /** In-flight `recordSet` writes by `source:itemIndex:setIndex:exerciseId` (NFR-SYNC-1, T-0304b
    *  rework, T-0410): a view remounted by Pause → Resume has lost its own pending guard, so a
@@ -237,7 +256,11 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
 
     finish() {
       if (finishing) return finishing;
+      writes.finishing = true;
       const run = (async () => {
+        // A pending plan write lands first, so the row read here already has it.
+        const pendingPlan = writes.plan;
+        if (pendingPlan) await pendingPlan.catch(() => undefined);
         const row = await storedRow(sessionId);
         const written: SessionRow = { ...row, ended_at: new Date(Date.now()).toISOString() };
         await upsertSession(written);
@@ -248,7 +271,9 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
       finishing = run;
       // A failed finish can be tried again; a pending or finished one is never written twice.
       run.catch(() => {
-        if (finishing === run) finishing = null;
+        if (finishing !== run) return;
+        finishing = null;
+        writes.finishing = false;
       });
       return run;
     },
@@ -274,22 +299,31 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
  * list), and only then moves the machine (`applyPlan` → `PLAN_APPLIED`). One write while pending.
  */
 export function createPlanApply(
-  deps: Pick<FocusActionDeps, "sessionId" | "store" | "onRow">,
+  deps: Pick<FocusActionDeps, "sessionId" | "store" | "onRow" | "writes">,
 ): (items: WorkoutItem[]) => Promise<void> {
+  const writes = deps.writes ?? createSessionWrites();
   let applying: Promise<void> | null = null;
+  const ended = () => writes.finishing || deps.store.getState().phase === "done";
   return (items) => {
     if (applying) return applying;
     const run = (async () => {
+      // The workout is ending: no plan write may follow (or race) the ended row.
+      if (ended()) return;
       const row = await storedRow(deps.sessionId);
+      if (ended()) return;
       const plan: SessionPlan = { ...deps.store.getSnapshot().ctx.plan, items };
       const written: SessionRow = { ...row, plan };
       await upsertSession(written);
+      // finish() started while this write was in flight: it waits for it and ends from there.
+      if (ended()) return;
       deps.store.applyPlan(plan, Date.now());
       deps.onRow(written);
     })();
     applying = run;
+    writes.plan = run;
     const clear = () => {
       if (applying === run) applying = null;
+      if (writes.plan === run) writes.plan = null;
     };
     run.then(clear, clear);
     return run;

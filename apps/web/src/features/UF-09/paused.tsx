@@ -15,7 +15,14 @@ export function leftMinutes(budgetMin: number, elapsedS: number): number {
   return Math.ceil(Math.max(0, budgetMin * 60 - elapsedS) / 60);
 }
 
-export function Paused({ state, ctx, onResume, onSkipItem, seams }: ViewProps) {
+export function Paused({
+  state,
+  ctx,
+  onResume,
+  onSkipItem,
+  seams,
+  planWritePending = false,
+}: ViewProps) {
   const session = useFocusSession();
   const [confirming, setConfirming] = useState(false);
   const [ending, setEnding] = useState(false);
@@ -34,7 +41,8 @@ export function Paused({ state, ctx, onResume, onSkipItem, seams }: ViewProps) {
   const elapsedS = session.elapsedS;
 
   const onEnd = () => {
-    if (busy.current) return;
+    // A pending UF-09.8 plan write lands first (T-0304d rework).
+    if (busy.current || planWritePending) return;
     busy.current = true;
     setEnding(true);
     setFailed(false);
@@ -68,7 +76,7 @@ export function Paused({ state, ctx, onResume, onSkipItem, seams }: ViewProps) {
         <button
           type="button"
           className="wl-uf09__primary wl-uf09__wide"
-          aria-disabled={ending ? true : undefined}
+          aria-disabled={ending || planWritePending ? true : undefined}
           aria-busy={ending ? true : undefined}
           onClick={onEnd}
         >
@@ -134,7 +142,10 @@ export function Paused({ state, ctx, onResume, onSkipItem, seams }: ViewProps) {
               type="button"
               className="wl-uf09__secondary wl-uf09__wide"
               data-action="end"
-              onClick={() => setConfirming(true)}
+              aria-disabled={planWritePending ? true : undefined}
+              onClick={() => {
+                if (!planWritePending) setConfirming(true);
+              }}
             >
               {en.uf09.endWorkout}
             </button>

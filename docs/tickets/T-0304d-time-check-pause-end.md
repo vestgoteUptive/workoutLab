@@ -370,3 +370,34 @@ example `T-0304d UF-09.8: Trim saves the engine's item list`).
   - uf-09-focus + uf-08-setup e2e: 38/38. The whole web e2e suite: 101/101.
   - `format:check`, `check:repo` and `check:size` are green.
   - No contract changed.
+- **2026-10-02, frontend-dev (rework, attempt 2): End while a plan write is pending.** QA and
+  review found the same race: Trim or Skip next pending, then Pause, End and confirm, then the
+  write lands. Before the fix, `createPlanApply` still ran `applyPlan` and `onRow`, so
+  `wl-focus:<id>` was written back after `finish()` had removed it. The trimmed plan was written
+  onto the ended row. And because the apply read the row before `finish()` did, a late upsert
+  could write `ended_at` back to null.
+  - **Proved on 9ee34de.** In a throwaway probe of the exact QA sequence, the `wl-focus` key was
+    present again after the end, and the ended row carried lateral-raise at 2 sets.
+    `end-race.test.tsx` has 2 red and 1 green (the pair) on that code.
+  - **Default chosen: both sides.**
+    - (a) While a plan write is pending, UF-09.9's End workout (and the confirm's End workout) is
+      `aria-disabled="true"` and inert. The host passes `planWritePending` to the views.
+    - (a′) `finish()` also waits for a pending plan write before it reads the row, because a
+      seam's `ctx.finish()` bypasses the button. So the ended row is always the last write, and
+      it carries the plan that landed before it.
+    - (b) `createPlanApply` and `finish()` share a `SessionWrites` (`session.tsx`).
+      `createPlanApply` writes nothing once `finish()` has started or the machine is `done`.
+      When its upsert lands after that, it skips `applyPlan` and `onRow`. A failed `finish()`
+      clears the flag, so End can be tried again.
+  - **Tests.** `__tests__/end-race.test.tsx`:
+    - the QA probe: Trim pending → Pause → End is inert (twice, with no write) → the write lands
+      → the machine walks the trim, still paused → End → confirm → ended. `ended_at` is kept, no
+      `wl-focus` key is left, and the ended row is the last write;
+    - the hook path: `ctx.finish()` while the write is pending waits, then ends. `ended_at` is
+      kept, there is no key, and nothing is written after the ended row;
+    - the pair: no pending write → End → confirm ends at once.
+  - **Evidence.**
+    - UF-09 vitest: 666/666.
+    - `pnpm -w typecheck lint test --force --concurrency=1`: 19/19.
+    - uf-09-focus e2e: 10/10.
+    - `format:check` and check-all are green.

@@ -23,6 +23,7 @@ import {
   buildWorkout,
   createFocusActions,
   createPlanApply,
+  createSessionWrites,
   focusReadFields,
   type FocusSession,
   type SessionRow,
@@ -179,6 +180,9 @@ function Machine(props: MachineProps) {
   const [holdFailed, setHoldFailed] = useState<string | null>(null);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
 
+  // One order for the row writes of this session: finish() waits for a pending plan write, and a
+  // plan write that lands after finish() started moves nothing (T-0304d rework).
+  const writes = useMemo(() => createSessionWrites(), [sessionId, store]);
   const actions = useMemo(
     () =>
       createFocusActions({
@@ -187,14 +191,23 @@ function Machine(props: MachineProps) {
         storage,
         onRow: setRow,
         navigate: (to) => void navigateRef.current(to),
+        writes,
       }),
-    [sessionId, store, storage],
+    [sessionId, store, storage, writes],
   );
 
-  const applyItems = useMemo(
-    () => createPlanApply({ sessionId, store, onRow: setRow }),
-    [sessionId, store],
-  );
+  // UF-09.9 keeps End workout inert while a UF-09.8 plan write is pending.
+  const [planPending, setPlanPending] = useState(false);
+  const applyItems = useMemo(() => {
+    const apply = createPlanApply({ sessionId, store, onRow: setRow, writes });
+    return (items: Parameters<typeof apply>[0]) => {
+      setPlanPending(true);
+      const run = apply(items);
+      const settle = () => setPlanPending(false);
+      run.then(settle, settle);
+      return run;
+    };
+  }, [sessionId, store, writes]);
 
   const controls = useMemo(() => {
     const show = (next: OpenOverlay | null) => {
@@ -450,6 +463,7 @@ function Machine(props: MachineProps) {
             formatTime(new Date(ms).toISOString(), { locale: timeLocale, timeZone })
           }
           onApplyItems={applyItems}
+          planWritePending={planPending}
           onSkipItem={() => store.dispatch({ type: "SKIP_ITEM", atMs: Date.now() })}
           send={(event) => store.dispatch({ ...event, atMs: Date.now() } as FocusEvent)}
           onCancelAutosave={() => store.dispatch({ type: "AUTOSAVE_CANCEL", atMs: Date.now() })}
