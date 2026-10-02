@@ -91,3 +91,10 @@ None. The `SessionPlan` v1 shape, the `parseSessionPlan` semantics (D-0043 §4) 
 - Every AC has a passing test. `npx -y pnpm@10.28.2 -w typecheck lint test --force` is green. `vendor.mjs --check` is green. The AC9 run URL is recorded.
 - Contracts are unchanged.
 - Commit messages start with `T-0229` and cite UF-09.1, for example `T-0229 UF-09.1: precompiled SessionPlan validator (D-0117)`.
+
+## Accept log
+- 2026-10-02, attempt 1: QA proved AC1 to AC7. That included re-planting the old runtime compile: AC4 reproduced TR-0036 and AC7 went red. The end-to-end TR-0036 check also passed: with T-0304a merged in scratch, a seeded v1 session renders UF-09.1, and the old source does not. QA failed AC8 and AC9 because the CI Deno type-check rejected the vendored `.d.ts` (TS2339 x2). Verdict: failed (rework).
+- 2026-10-02, attempt 2 (branch at 6ad078f): the generator keeps `validate20` private and exports `validateSessionPlan: (data: unknown) => boolean`. The vendored `.d.ts` is now one line, and a new test guards the export shape. Local `deno check` of `sessions/index.ts` and all function tests is clean, and unit tests pass 96/96. The old `.d.ts` reproduces CI's errors. Review: APPROVE, with follow-up T-0390 (widen the bundle scan to `Function('…')`, `eval(` and the `ajv/dist/compile` marker).
+  - AC9: draft PR #20 https://github.com/vestgoteUptive/workoutLab/pull/20. The latest CI run on the PR head is green: checks (typecheck, lint, unit, check-lane-paths), supabase (`vendor.mjs --check`, db and Deno tests) and playwright e2e (including AC7).
+  - AC8 is closed by that run: vendor check, Deno check and the existing `supabase/tests/**` tests pass unedited.
+  - Verdict: **done**. Contracts are unchanged, and the CSP and `vite.config.ts` are untouched. T-0304a can now rebase and remove its `test.fail` marker (D-0117 §7).
