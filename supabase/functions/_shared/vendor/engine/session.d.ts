@@ -30,6 +30,13 @@ export declare function goalOf(profile: Pick<SuggestProfile, "goal">): Goal;
 export declare function repRange(ex: LibraryExercise, isMain: boolean, goal?: Goal): [number, number] | [null, null];
 /** D-0040 §4: `floorInc(0.9 × prefill weight)` (null stays null) at the main `repsMin`. */
 export declare function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): Backoff;
+/**
+ * Rule 7.4 / 12.1 (D-0093 §2, D-0105 §2): whether `exercise` in a slot gets a back-off set.
+ * True exactly when the slot has one (`slotHasBackoff`) and `exercise` is not timed (a timed
+ * exercise never gets one, D-0047). The one predicate behind `buildItem` (so `suggest` and
+ * `applySwap`) and rule 12's `fitsBudget`, so the two cannot drift.
+ */
+export declare function getsBackoff(slotHasBackoff: boolean, exercise: Pick<LibraryExercise, "timed">): boolean;
 /** The per-area numbers an item's `area_deficit` and `days_since` reasons read (D-0040 §6). */
 export interface ReasonContext {
     deficits: AreaNumbers;

@@ -1,0 +1,2492 @@
+{
+  "balanced|F-input": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "db-bench-press",
+      "warmup": [
+        {
+          "exerciseId": "wu-scap-push-up",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-arm-circle",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "db-bench-press",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 720,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "chest",
+              "deficit": 0
+            },
+            {
+              "code": "days_since",
+              "area": "chest",
+              "days": 0
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "db-row",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 0
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": 0
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "leg-extension",
+          "isMain": false,
+          "sets": 2,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 270,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 10,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "quads",
+              "deficit": 0
+            },
+            {
+              "code": "days_since",
+              "area": "quads",
+              "days": 0
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0,
+        "back": 0,
+        "shoulders": 0,
+        "arms": 0,
+        "core": 0,
+        "glutes": 0,
+        "quads": 0,
+        "hamstrings": 0,
+        "calves": 0
+      }
+    },
+    "budgetMin": 30,
+    "warmupInBudget": true,
+    "energy": "normal",
+    "itemsTotalS": 1545,
+    "totalS": 1725,
+    "unusedS": 75,
+    "sessionReasons": [
+      {
+        "code": "recovering_skipped",
+        "area": "arms"
+      },
+      {
+        "code": "area_deficit",
+        "area": "chest",
+        "deficit": 0
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 0
+      }
+    ]
+  },
+  "balanced|15-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "db-bench-press",
+      "warmup": [
+        {
+          "exerciseId": "wu-scap-push-up",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-arm-circle",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-jumping-jack",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-march-in-place",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "db-bench-press",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": null,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": null,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "chest",
+              "deficit": 0
+            },
+            {
+              "code": "days_since",
+              "area": "chest",
+              "days": 0
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0,
+        "back": 0,
+        "shoulders": 0,
+        "arms": 0,
+        "core": 0,
+        "glutes": 0,
+        "quads": 0,
+        "hamstrings": 0,
+        "calves": 0
+      }
+    },
+    "budgetMin": 15,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 885,
+    "totalS": 1065,
+    "unusedS": 15,
+    "sessionReasons": [
+      {
+        "code": "recovering_skipped",
+        "area": "arms"
+      },
+      {
+        "code": "area_deficit",
+        "area": "chest",
+        "deficit": 0
+      }
+    ]
+  },
+  "balanced|31-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "db-bench-press",
+      "warmup": [
+        {
+          "exerciseId": "wu-scap-push-up",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-arm-circle",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "db-bench-press",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": null,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": null,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "chest",
+              "deficit": 0
+            },
+            {
+              "code": "days_since",
+              "area": "chest",
+              "days": 0
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "db-row",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 0
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": 0
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "leg-extension",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 375,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 10,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "quads",
+              "deficit": 0
+            },
+            {
+              "code": "days_since",
+              "area": "quads",
+              "days": 0
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0,
+        "back": 0,
+        "shoulders": 0,
+        "arms": 0,
+        "core": 0,
+        "glutes": 0,
+        "quads": 0,
+        "hamstrings": 0,
+        "calves": 0
+      }
+    },
+    "budgetMin": 31,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 1815,
+    "totalS": 1995,
+    "unusedS": 45,
+    "sessionReasons": [
+      {
+        "code": "recovering_skipped",
+        "area": "arms"
+      },
+      {
+        "code": "area_deficit",
+        "area": "chest",
+        "deficit": 0
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 0
+      }
+    ]
+  },
+  "allChestNoLegs|F-input": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "inverted-row",
+      "warmup": [
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-cat-cow",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-leg-swing",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "inverted-row",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 720,
+          "backoff": null,
+          "prefill": {
+            "weightKg": 0,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "back-squat",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "glutes",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "glutes",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "calf-raise",
+          "isMain": false,
+          "sets": 2,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 270,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 10,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "calves",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "calves",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0,
+        "back": 1,
+        "shoulders": 0,
+        "arms": 0,
+        "core": 0.25,
+        "glutes": 1,
+        "quads": 1,
+        "hamstrings": 1,
+        "calves": 1
+      }
+    },
+    "budgetMin": 30,
+    "warmupInBudget": true,
+    "energy": "normal",
+    "itemsTotalS": 1545,
+    "totalS": 1725,
+    "unusedS": 75,
+    "sessionReasons": [
+      {
+        "code": "recovering_skipped",
+        "area": "chest"
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "glutes",
+        "deficit": 1
+      }
+    ]
+  },
+  "allChestNoLegs|15-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "inverted-row",
+      "warmup": [
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-cat-cow",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-jumping-jack",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-march-in-place",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "inverted-row",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": 0,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": 0,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": null
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0,
+        "back": 1,
+        "shoulders": 0,
+        "arms": 0,
+        "core": 0.25,
+        "glutes": 1,
+        "quads": 1,
+        "hamstrings": 1,
+        "calves": 1
+      }
+    },
+    "budgetMin": 15,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 885,
+    "totalS": 1065,
+    "unusedS": 15,
+    "sessionReasons": [
+      {
+        "code": "recovering_skipped",
+        "area": "chest"
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      }
+    ]
+  },
+  "allChestNoLegs|31-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "inverted-row",
+      "warmup": [
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-cat-cow",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-leg-swing",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "inverted-row",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": 0,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": 0,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": null
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "back-squat",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "glutes",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "glutes",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "calf-raise",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 375,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 10,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "calves",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "calves",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0,
+        "back": 1,
+        "shoulders": 0,
+        "arms": 0,
+        "core": 0.25,
+        "glutes": 1,
+        "quads": 1,
+        "hamstrings": 1,
+        "calves": 1
+      }
+    },
+    "budgetMin": 31,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 1815,
+    "totalS": 1995,
+    "unusedS": 45,
+    "sessionReasons": [
+      {
+        "code": "recovering_skipped",
+        "area": "chest"
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "glutes",
+        "deficit": 1
+      }
+    ]
+  },
+  "returningAfter10Days|F-input": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "bench-press",
+      "warmup": [
+        {
+          "exerciseId": "wu-scap-push-up",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-arm-circle",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-cat-cow",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "bench-press",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 720,
+          "backoff": null,
+          "prefill": {
+            "weightKg": 50,
+            "reps": 6,
+            "durationS": null,
+            "kind": "hold_after_break"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "chest",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "chest",
+              "days": 15
+            },
+            {
+              "code": "prefill",
+              "kind": "hold_after_break"
+            }
+          ]
+        },
+        {
+          "exerciseId": "inverted-row",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": 0,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": 15
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "calf-raise",
+          "isMain": false,
+          "sets": 2,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 270,
+          "backoff": null,
+          "prefill": {
+            "weightKg": 50,
+            "reps": 10,
+            "durationS": null,
+            "kind": "hold_after_break"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "calves",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "calves",
+              "days": 15
+            },
+            {
+              "code": "prefill",
+              "kind": "hold_after_break"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 1,
+        "back": 1,
+        "shoulders": 1,
+        "arms": 1,
+        "core": 0.875,
+        "glutes": 0.75,
+        "quads": 0.85,
+        "hamstrings": 0.65625,
+        "calves": 1
+      }
+    },
+    "budgetMin": 30,
+    "warmupInBudget": true,
+    "energy": "normal",
+    "itemsTotalS": 1545,
+    "totalS": 1725,
+    "unusedS": 75,
+    "sessionReasons": [
+      {
+        "code": "area_deficit",
+        "area": "chest",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "calves",
+        "deficit": 1
+      }
+    ]
+  },
+  "returningAfter10Days|15-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "bench-press",
+      "warmup": [
+        {
+          "exerciseId": "wu-scap-push-up",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-arm-circle",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-jumping-jack",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-march-in-place",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "bench-press",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": 45,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": 50,
+            "reps": 6,
+            "durationS": null,
+            "kind": "hold_after_break"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "chest",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "chest",
+              "days": 15
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "hold_after_break"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 1,
+        "back": 1,
+        "shoulders": 1,
+        "arms": 1,
+        "core": 0.875,
+        "glutes": 0.75,
+        "quads": 0.85,
+        "hamstrings": 0.65625,
+        "calves": 1
+      }
+    },
+    "budgetMin": 15,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 885,
+    "totalS": 1065,
+    "unusedS": 15,
+    "sessionReasons": [
+      {
+        "code": "area_deficit",
+        "area": "chest",
+        "deficit": 1
+      }
+    ]
+  },
+  "returningAfter10Days|31-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "bench-press",
+      "warmup": [
+        {
+          "exerciseId": "wu-scap-push-up",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-arm-circle",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-cat-cow",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "bench-press",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": 45,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": 50,
+            "reps": 6,
+            "durationS": null,
+            "kind": "hold_after_break"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "chest",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "chest",
+              "days": 15
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "hold_after_break"
+            }
+          ]
+        },
+        {
+          "exerciseId": "inverted-row",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": 0,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": 15
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "calf-raise",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 375,
+          "backoff": null,
+          "prefill": {
+            "weightKg": 50,
+            "reps": 10,
+            "durationS": null,
+            "kind": "hold_after_break"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "calves",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "calves",
+              "days": 15
+            },
+            {
+              "code": "prefill",
+              "kind": "hold_after_break"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 1,
+        "back": 1,
+        "shoulders": 1,
+        "arms": 1,
+        "core": 0.875,
+        "glutes": 0.75,
+        "quads": 0.85,
+        "hamstrings": 0.65625,
+        "calves": 1
+      }
+    },
+    "budgetMin": 31,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 1815,
+    "totalS": 1995,
+    "unusedS": 45,
+    "sessionReasons": [
+      {
+        "code": "area_deficit",
+        "area": "chest",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "calves",
+        "deficit": 1
+      }
+    ]
+  },
+  "offlineMerged|F-input": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "inverted-row",
+      "warmup": [
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-cat-cow",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-leg-swing",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "inverted-row",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 720,
+          "backoff": null,
+          "prefill": {
+            "weightKg": 0,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "back-squat",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "glutes",
+              "deficit": 0.925
+            },
+            {
+              "code": "days_since",
+              "area": "glutes",
+              "days": 0
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "calf-raise",
+          "isMain": false,
+          "sets": 2,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 270,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 10,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "calves",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "calves",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0,
+        "back": 1,
+        "shoulders": 0,
+        "arms": 0,
+        "core": 0.25,
+        "glutes": 0.925,
+        "quads": 1,
+        "hamstrings": 0.8125,
+        "calves": 1
+      }
+    },
+    "budgetMin": 30,
+    "warmupInBudget": true,
+    "energy": "normal",
+    "itemsTotalS": 1545,
+    "totalS": 1725,
+    "unusedS": 75,
+    "sessionReasons": [
+      {
+        "code": "recovering_skipped",
+        "area": "chest"
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "glutes",
+        "deficit": 0.925
+      }
+    ]
+  },
+  "offlineMerged|15-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "inverted-row",
+      "warmup": [
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-cat-cow",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-jumping-jack",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-march-in-place",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "inverted-row",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": 0,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": 0,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": null
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0,
+        "back": 1,
+        "shoulders": 0,
+        "arms": 0,
+        "core": 0.25,
+        "glutes": 0.925,
+        "quads": 1,
+        "hamstrings": 0.8125,
+        "calves": 1
+      }
+    },
+    "budgetMin": 15,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 885,
+    "totalS": 1065,
+    "unusedS": 15,
+    "sessionReasons": [
+      {
+        "code": "recovering_skipped",
+        "area": "chest"
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      }
+    ]
+  },
+  "offlineMerged|31-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "inverted-row",
+      "warmup": [
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-cat-cow",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-leg-swing",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "inverted-row",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": 0,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": 0,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": null
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "back-squat",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "glutes",
+              "deficit": 0.925
+            },
+            {
+              "code": "days_since",
+              "area": "glutes",
+              "days": 0
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "calf-raise",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 375,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 10,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "calves",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "calves",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0,
+        "back": 1,
+        "shoulders": 0,
+        "arms": 0,
+        "core": 0.25,
+        "glutes": 0.925,
+        "quads": 1,
+        "hamstrings": 0.8125,
+        "calves": 1
+      }
+    },
+    "budgetMin": 31,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 1815,
+    "totalS": 1995,
+    "unusedS": 45,
+    "sessionReasons": [
+      {
+        "code": "recovering_skipped",
+        "area": "chest"
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "glutes",
+        "deficit": 0.925
+      }
+    ]
+  },
+  "timedCore|F-input": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "back-squat",
+      "warmup": [
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-leg-swing",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-jumping-jack",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-march-in-place",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "back-squat",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 720,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "glutes",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "glutes",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "calf-raise",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 375,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 10,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "calves",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "calves",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "romanian-deadlift",
+          "isMain": false,
+          "sets": 2,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 390,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "hamstrings",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "hamstrings",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0.4,
+        "back": 0.4,
+        "shoulders": 0.625,
+        "arms": 0,
+        "core": 0,
+        "glutes": 1,
+        "quads": 1,
+        "hamstrings": 1,
+        "calves": 1
+      }
+    },
+    "budgetMin": 30,
+    "warmupInBudget": true,
+    "energy": "normal",
+    "itemsTotalS": 1485,
+    "totalS": 1665,
+    "unusedS": 135,
+    "sessionReasons": [
+      {
+        "code": "area_deficit",
+        "area": "glutes",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "calves",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "hamstrings",
+        "deficit": 1
+      }
+    ]
+  },
+  "timedCore|15-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "back-squat",
+      "warmup": [
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-leg-swing",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-jumping-jack",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-march-in-place",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "back-squat",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": null,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": null,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "glutes",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "glutes",
+              "days": null
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0.4,
+        "back": 0.4,
+        "shoulders": 0.625,
+        "arms": 0,
+        "core": 0,
+        "glutes": 1,
+        "quads": 1,
+        "hamstrings": 1,
+        "calves": 1
+      }
+    },
+    "budgetMin": 15,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 885,
+    "totalS": 1065,
+    "unusedS": 15,
+    "sessionReasons": [
+      {
+        "code": "area_deficit",
+        "area": "glutes",
+        "deficit": 1
+      }
+    ]
+  },
+  "timedCore|31-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "back-squat",
+      "warmup": [
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-leg-swing",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-jumping-jack",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-march-in-place",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "back-squat",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": null,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": null,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "glutes",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "glutes",
+              "days": null
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "calf-raise",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 375,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 10,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "calves",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "calves",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "romanian-deadlift",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "hamstrings",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "hamstrings",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 0.4,
+        "back": 0.4,
+        "shoulders": 0.625,
+        "arms": 0,
+        "core": 0,
+        "glutes": 1,
+        "quads": 1,
+        "hamstrings": 1,
+        "calves": 1
+      }
+    },
+    "budgetMin": 31,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 1815,
+    "totalS": 1995,
+    "unusedS": 45,
+    "sessionReasons": [
+      {
+        "code": "area_deficit",
+        "area": "glutes",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "calves",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "hamstrings",
+        "deficit": 1
+      }
+    ]
+  },
+  "zero|F-input": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "bench-press",
+      "warmup": [
+        {
+          "exerciseId": "wu-scap-push-up",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-arm-circle",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "bench-press",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 720,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "chest",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "chest",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "inverted-row",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": 0,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "leg-extension",
+          "isMain": false,
+          "sets": 2,
+          "repsMin": 10,
+          "repsMax": 15,
+          "durationS": null,
+          "costS": 270,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 10,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "quads",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "quads",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 1,
+        "back": 1,
+        "shoulders": 1,
+        "arms": 1,
+        "core": 1,
+        "glutes": 1,
+        "quads": 1,
+        "hamstrings": 1,
+        "calves": 1
+      }
+    },
+    "budgetMin": 30,
+    "warmupInBudget": true,
+    "energy": "normal",
+    "itemsTotalS": 1545,
+    "totalS": 1725,
+    "unusedS": 75,
+    "sessionReasons": [
+      {
+        "code": "area_deficit",
+        "area": "chest",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "quads",
+        "deficit": 1
+      }
+    ]
+  },
+  "zero|15-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "bench-press",
+      "warmup": [
+        {
+          "exerciseId": "wu-scap-push-up",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-arm-circle",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-jumping-jack",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-march-in-place",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "bench-press",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 885,
+          "backoff": {
+            "weightKg": null,
+            "reps": 6
+          },
+          "prefill": {
+            "weightKg": null,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "chest",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "chest",
+              "days": null
+            },
+            {
+              "code": "energy_high_backoff"
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 1,
+        "back": 1,
+        "shoulders": 1,
+        "arms": 1,
+        "core": 1,
+        "glutes": 1,
+        "quads": 1,
+        "hamstrings": 1,
+        "calves": 1
+      }
+    },
+    "budgetMin": 15,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 885,
+    "totalS": 1065,
+    "unusedS": 15,
+    "sessionReasons": [
+      {
+        "code": "area_deficit",
+        "area": "chest",
+        "deficit": 1
+      }
+    ]
+  },
+  "zero|31-high": {
+    "plan": {
+      "version": 1,
+      "mainLiftId": "bench-press",
+      "warmup": [
+        {
+          "exerciseId": "wu-scap-push-up",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-band-pull-apart",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-bodyweight-squat",
+          "durationS": 40
+        },
+        {
+          "exerciseId": "wu-arm-circle",
+          "durationS": 40
+        }
+      ],
+      "items": [
+        {
+          "exerciseId": "bench-press",
+          "isMain": true,
+          "sets": 4,
+          "repsMin": 6,
+          "repsMax": 8,
+          "durationS": null,
+          "costS": 720,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 6,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "main_lift"
+            },
+            {
+              "code": "area_deficit",
+              "area": "chest",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "chest",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "inverted-row",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": 0,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "back",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "back",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        },
+        {
+          "exerciseId": "back-squat",
+          "isMain": false,
+          "sets": 3,
+          "repsMin": 8,
+          "repsMax": 12,
+          "durationS": null,
+          "costS": 555,
+          "backoff": null,
+          "prefill": {
+            "weightKg": null,
+            "reps": 8,
+            "durationS": null,
+            "kind": "first_time"
+          },
+          "reasons": [
+            {
+              "code": "area_deficit",
+              "area": "glutes",
+              "deficit": 1
+            },
+            {
+              "code": "days_since",
+              "area": "glutes",
+              "days": null
+            },
+            {
+              "code": "prefill",
+              "kind": "first_time"
+            }
+          ]
+        }
+      ],
+      "startDeficits": {
+        "chest": 1,
+        "back": 1,
+        "shoulders": 1,
+        "arms": 1,
+        "core": 1,
+        "glutes": 1,
+        "quads": 1,
+        "hamstrings": 1,
+        "calves": 1
+      }
+    },
+    "budgetMin": 31,
+    "warmupInBudget": false,
+    "energy": "high",
+    "itemsTotalS": 1830,
+    "totalS": 2010,
+    "unusedS": 30,
+    "sessionReasons": [
+      {
+        "code": "area_deficit",
+        "area": "chest",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "back",
+        "deficit": 1
+      },
+      {
+        "code": "area_deficit",
+        "area": "glutes",
+        "deficit": 1
+      }
+    ]
+  }
+}
