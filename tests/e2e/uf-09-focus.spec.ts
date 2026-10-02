@@ -187,11 +187,7 @@ test.describe("AC-7 the chrome on a seeded session", () => {
   test("UF-09.1: one screen id, Pause workout is at least 44 x 44, no navigation, axe clean", async ({
     page,
   }) => {
-    // TR-0036: in the built app `parseSessionPlan` can't compile its Ajv schema, because the CSP
-    // has no 'unsafe-eval' (`script-src 'self'`), so every row reads as an invalid plan and the
-    // host shows "not on this device". Marked as an expected failure so the bug stays visible:
-    // once TR-0036 is fixed this row turns red, and the marker must be removed.
-    test.fail(true, "TR-0036: parseSessionPlan (Ajv runtime compile) is blocked by the CSP");
+    // TR-0036 (fixed by T-0229, D-0117): the seeded row parses under the app's strict CSP.
     await page.goto("/");
     await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
     const id = randomUUID();
