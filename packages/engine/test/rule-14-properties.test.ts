@@ -123,7 +123,9 @@ function oracle(
     durationS: null,
     kind,
   });
-  const drop = ex.externalLoad && cur.w > 0 ? Math.max(inc, flo(0.9 * cur.w, inc)) : 0;
+  // D-0137 §1 (T-0235): the one-increment floor is capped at W.
+  const drop =
+    ex.externalLoad && cur.w > 0 ? Math.min(cur.w, Math.max(inc, flo(0.9 * cur.w, inc))) : 0;
   const minR = Math.min(...cur.reps);
   if (gap >= 21) return out(drop, lo, "reentry");
   if (gap >= 10) return out(cur.w, lo, "hold_after_break");

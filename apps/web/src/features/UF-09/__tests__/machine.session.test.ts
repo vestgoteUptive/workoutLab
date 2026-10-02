@@ -11,7 +11,10 @@ import {
   type FocusState,
   type LoggedSet,
 } from "../machine.js";
+import { isValidFocusState, readFocusState, writeFocusState } from "../persist.js";
+import { remainingS } from "../timer.js";
 import { L1, P1, PLANK, ROW, S1 } from "./fixtures.js";
+import * as F from "./t0414-fixtures.js";
 
 const T0 = 1_000_000;
 const CTX: FocusCtx = { plan: P1, library: L1 };
@@ -309,7 +312,6 @@ describe("T-0410 RESUME after a swap while paused", () => {
     externalLoad: false,
   });
   const LIB: LibraryExercise[] = [...L1, DB_ROW_EX, SIDE_PLANK_EX];
-  const BEFORE: FocusCtx = { plan: P1, library: LIB };
   const DB_ROW = { ...ROW, exerciseId: "db-row", sets: 2 };
   const SIDE_PLANK = { ...PLANK, exerciseId: "side-plank", sets: 1 };
   const swapped = (index: number, item: (typeof P1.items)[number]): FocusCtx => ({
@@ -317,20 +319,18 @@ describe("T-0410 RESUME after a swap while paused", () => {
     library: LIB,
   });
 
-  function pauseAndSwap(start: FocusState, index: number, after: FocusCtx): FocusState {
-    const paused = reduce(start, { type: "PAUSE", atMs: T0 + 1000 }, BEFORE);
-    const replaced = reduce(
-      paused,
-      { type: "PLAN_REPLACED", itemIndex: index, atMs: T0 + 2000 },
-      after,
-    );
-    return replaced;
-  }
-
+  // D-0140 §7 (T-0414 AC7): PLAN_REPLACED no longer leaves the current set on a logged position,
+  // so these tests build that paused state directly (a state a pre-T-0414 build may have stored).
   it("T-0410 AC1 reps: old barbell-row set at the clamped position → RESUME stays on set 1 of db-row", () => {
-    const start = at("set", { itemIndex: 1, setIndex: 2, loggedSets: [set(1, 0), set(1, 1)] });
+    const start = at("paused", {
+      itemIndex: 1,
+      setIndex: 1,
+      resumePhase: "set",
+      pausedAtMs: T0 + 1000,
+      loggedSets: [set(1, 0), set(1, 1)],
+    });
     const after = swapped(1, DB_ROW);
-    const replaced = pauseAndSwap(start, 1, after);
+    const replaced = start;
     expect(replaced).toMatchObject({ phase: "paused", resumePhase: "set", setIndex: 1 });
     const resumed = reduce(replaced, { type: "RESUME", atMs: T0 + 30_000 }, after);
     expect(resumed).toMatchObject({ phase: "set", itemIndex: 1, setIndex: 1 });
@@ -339,9 +339,15 @@ describe("T-0410 RESUME after a swap while paused", () => {
   });
 
   it("T-0410 AC1 pair: a db-row set logged at (1, 1) while paused → RESUME goes to confirm with the auto-save", () => {
-    const start = at("set", { itemIndex: 1, setIndex: 2, loggedSets: [set(1, 0), set(1, 1)] });
+    const start = at("paused", {
+      itemIndex: 1,
+      setIndex: 1,
+      resumePhase: "set",
+      pausedAtMs: T0 + 1000,
+      loggedSets: [set(1, 0), set(1, 1)],
+    });
     const after = swapped(1, DB_ROW);
-    const replaced = pauseAndSwap(start, 1, after);
+    const replaced = start;
     const dbRowSet = set(1, 1, { clientId: "c-db-row", exerciseId: "db-row", weightKg: 30 });
     const logged = reduce(replaced, { type: "SET_LOGGED", set: dbRowSet, atMs: T0 + 3000 }, after);
     const resumed = reduce(logged, { type: "RESUME", atMs: T0 + 30_000 }, after);
@@ -353,18 +359,30 @@ describe("T-0410 RESUME after a swap while paused", () => {
     set(3, 0, { reps: null, weightKg: null, durationS: 50, ...extra });
 
   it("T-0410 AC2 timed: old plank set at the clamped position → RESUME stays in timed at set 0", () => {
-    const start = at("timed", { itemIndex: 3, setIndex: 1, loggedSets: [plankSet()] });
+    const start = at("paused", {
+      itemIndex: 3,
+      setIndex: 0,
+      resumePhase: "timed",
+      pausedAtMs: T0 + 1000,
+      loggedSets: [plankSet()],
+    });
     const after = swapped(3, SIDE_PLANK);
-    const replaced = pauseAndSwap(start, 3, after);
+    const replaced = start;
     expect(replaced).toMatchObject({ phase: "paused", resumePhase: "timed", setIndex: 0 });
     const resumed = reduce(replaced, { type: "RESUME", atMs: T0 + 30_000 }, after);
     expect(resumed).toMatchObject({ phase: "timed", itemIndex: 3, setIndex: 0, timer: null });
   });
 
   it("T-0410 AC2 pair: a side-plank set logged at (3, 0) while paused → RESUME = TIMED_RECORDED at that atMs", () => {
-    const start = at("timed", { itemIndex: 3, setIndex: 1, loggedSets: [plankSet()] });
+    const start = at("paused", {
+      itemIndex: 3,
+      setIndex: 0,
+      resumePhase: "timed",
+      pausedAtMs: T0 + 1000,
+      loggedSets: [plankSet()],
+    });
     const after = swapped(3, SIDE_PLANK);
-    const replaced = pauseAndSwap(start, 3, after);
+    const replaced = start;
     const side = plankSet({ clientId: "c-side", exerciseId: "side-plank" });
     const logged = reduce(replaced, { type: "SET_LOGGED", set: side, atMs: T0 + 3000 }, after);
     const atMs = T0 + 30_000;
@@ -374,5 +392,163 @@ describe("T-0410 RESUME after a swap while paused", () => {
     const recorded = reduce(plainResume, { type: "TIMED_RECORDED", set: side, atMs }, after);
     expect(resumed).toEqual(recorded);
     expect(resumed.phase).not.toBe("timed");
+  });
+});
+
+// T-0414 (UF-09.3, UF-09.5, UF-09.7, UF-09.9, D-0140): after a swap to fewer sets, the current
+// set moves to the first free position, or the swap ends the item. Never two logged sets at one
+// (itemIndex, setIndex).
+describe("T-0414 PLAN_REPLACED never leaves the set on a logged position", () => {
+  const pause = (s: FocusState, ctx: FocusCtx = F.BEFORE) =>
+    reduce(s, { type: "PAUSE", atMs: F.PAUSE_AT }, ctx);
+  const swap = (s: FocusState, itemIndex: number, ctx: FocusCtx) =>
+    reduce(s, { type: "PLAN_REPLACED", itemIndex, atMs: F.SWAP_AT }, ctx);
+
+  const AC1_CTX = F.swapped(0, F.DB_BENCH);
+  const AC1_START = F.at("set", {
+    itemIndex: 0,
+    setIndex: 3,
+    loggedSets: [F.logged(0, 0), F.logged(0, 2)],
+  });
+  const AC2_CTX = F.swapped(1, F.DB_ROW);
+  const AC3_CTX = F.swapped(3, F.SIDE_PLANK);
+  const AC3_START = F.at("timed", {
+    itemIndex: 3,
+    setIndex: 1,
+    timer: { startedAtMs: F.T0, durationS: 53, pausedMs: 0 },
+    loggedSets: [F.logged(3, 0)],
+  });
+
+  it("T-0414 AC1 a gap below the clamp: setIndex goes to the first free position, and SET_RECORDED stamps (0, 1)", () => {
+    const s = swap(AC1_START, 0, AC1_CTX);
+    expect(s).toMatchObject({ phase: "set", itemIndex: 0, setIndex: 1 });
+    const recorded = reduce(
+      s,
+      { type: "SET_RECORDED", set: F.logged(0, 9, { clientId: "c-db" }), atMs: F.SWAP_AT + 1000 },
+      AC1_CTX,
+    );
+    const positions = recorded.loggedSets.map((x) => `${x.itemIndex}:${x.setIndex}`);
+    expect(new Set(positions).size).toBe(positions.length);
+    expect(recorded.loggedSets.at(-1)).toMatchObject({
+      itemIndex: 0,
+      setIndex: 1,
+      exerciseId: "db-bench-press",
+    });
+  });
+
+  it("T-0414 AC1 paused: paused, resumePhase set, setIndex 1; RESUME gives set at 1", () => {
+    const s = swap(pause(AC1_START), 0, AC1_CTX);
+    expect(s).toMatchObject({ phase: "paused", resumePhase: "set", setIndex: 1 });
+    expect(reduce(s, { type: "RESUME", atMs: F.RESUME_AT }, AC1_CTX)).toMatchObject({
+      phase: "set",
+      itemIndex: 0,
+      setIndex: 1,
+    });
+  });
+
+  it("T-0414 AC1 pair: only (0, 0) logged, the clamp lands on free 2 and stays", () => {
+    const start = F.at("set", { itemIndex: 0, setIndex: 3, loggedSets: [F.logged(0, 0)] });
+    expect(swap(start, 0, AC1_CTX)).toMatchObject({ phase: "set", setIndex: 2 });
+  });
+
+  it("T-0414 AC2 no free position, not the last item, paused: resumePhase rest at the last set with the new exercise's rest", () => {
+    const s = swap(pause(F.AC2_START), 1, AC2_CTX);
+    expect(s).toMatchObject({
+      phase: "paused",
+      resumePhase: "rest",
+      pausedAtMs: F.PAUSE_AT,
+      itemIndex: 1,
+      setIndex: 1,
+    });
+    expect(s.timer).toEqual({ startedAtMs: F.PAUSE_AT, durationS: 120, pausedMs: 0 });
+    expect(s.loggedSets).toEqual(F.AC2_START.loggedSets);
+
+    const resumed = reduce(s, { type: "RESUME", atMs: F.RESUME_AT }, AC2_CTX);
+    expect(resumed.phase).toBe("rest");
+    expect(remainingS(resumed.timer!, F.RESUME_AT)).toBe(120);
+    expect(reduce(resumed, { type: "REST_END", atMs: F.RESUME_AT + 120_000 }, AC2_CTX).phase).toBe(
+      "betweenItems",
+    );
+  });
+
+  it("T-0414 AC2 not paused: rest at setIndex 1, the timer from the swap", () => {
+    const s = swap(F.AC2_START, 1, AC2_CTX);
+    expect(s).toMatchObject({ phase: "rest", itemIndex: 1, setIndex: 1, resumePhase: null });
+    expect(s.timer).toEqual({ startedAtMs: F.SWAP_AT, durationS: 120, pausedMs: 0 });
+    expect(s.loggedSets).toEqual(F.AC2_START.loggedSets);
+  });
+
+  it("T-0414 AC3 no free position, the last item, paused: done, and the pause ends at the swap", () => {
+    const s = swap(pause(AC3_START), 3, AC3_CTX);
+    expect(s).toMatchObject({
+      phase: "done",
+      timer: null,
+      resumePhase: null,
+      pausedAtMs: null,
+      workoutPausedMs: 1000,
+      timerPausedAtMs: null,
+    });
+    expect(s.loggedSets).toEqual(AC3_START.loggedSets);
+  });
+
+  it("T-0414 AC3 not paused: done, timer null, workoutPausedMs 0", () => {
+    const s = swap(AC3_START, 3, AC3_CTX);
+    expect(s).toMatchObject({ phase: "done", timer: null, workoutPausedMs: 0 });
+  });
+
+  it("T-0414 AC3 a ring paused by Pause timer: the swap's done drops timerPausedAtMs", () => {
+    const held = reduce(AC3_START, { type: "TIMER_PAUSE", atMs: F.T0 + 500 }, F.BEFORE);
+    expect(held.timerPausedAtMs).toBe(F.T0 + 500);
+    const s = swap(pause(held), 3, AC3_CTX);
+    expect(s).toMatchObject({ phase: "done", timer: null, timerPausedAtMs: null });
+  });
+
+  it("T-0414 AC4 the rest follows the new exercise's type: an isolation db-row rests 60 s", () => {
+    const isoLib = F.LIB.map((e) => (e.id === "db-row" ? { ...e, type: "isolation" as const } : e));
+    const ctx = F.swapped(1, F.DB_ROW, isoLib);
+    expect(swap(pause(F.AC2_START), 1, ctx).timer).toEqual({
+      startedAtMs: F.PAUSE_AT,
+      durationS: 60,
+      pausedMs: 0,
+    });
+    expect(swap(F.AC2_START, 1, ctx).timer).toEqual({
+      startedAtMs: F.SWAP_AT,
+      durationS: 60,
+      pausedMs: 0,
+    });
+  });
+
+  it("T-0414 AC5 rest, next, confirm and paused-on-rest keep the clamp-only result", () => {
+    const timer = { startedAtMs: F.T0, durationS: 120, pausedMs: 0 };
+    const starts: FocusState[] = [
+      { ...F.AC2_START, phase: "rest", timer },
+      { ...F.AC2_START, phase: "next", timer: { ...timer, durationS: 60 } },
+      { ...F.AC2_START, phase: "confirm", timer: { ...timer, durationS: AUTOSAVE_S } },
+      { ...F.AC2_START, phase: "paused", resumePhase: "rest", pausedAtMs: F.PAUSE_AT, timer },
+    ];
+    for (const start of starts) {
+      expect(swap(start, 1, AC2_CTX)).toEqual({ ...start, setIndex: 1 });
+    }
+  });
+
+  it("T-0414 AC5 a PLAN_REPLACED for another item returns the same state", () => {
+    const ctx = F.swapped(0, F.DB_BENCH);
+    for (const s of [F.AC2_START, pause(F.AC2_START)]) expect(swap(s, 0, ctx)).toBe(s);
+  });
+
+  it("T-0414 AC6 every new state is a valid stored state and survives a round trip", () => {
+    const cases: [FocusState, FocusCtx][] = [
+      [swap(pause(AC1_START), 0, AC1_CTX), AC1_CTX],
+      [swap(pause(F.AC2_START), 1, AC2_CTX), AC2_CTX],
+      [swap(F.AC2_START, 1, AC2_CTX), AC2_CTX],
+      [swap(pause(AC3_START), 3, AC3_CTX), AC3_CTX],
+      [swap(AC3_START, 3, AC3_CTX), AC3_CTX],
+    ];
+    for (const [state, ctx] of cases) {
+      expect(isValidFocusState(state, S1, ctx)).toBe(true);
+      const storage = F.memoryStorage();
+      writeFocusState(storage, S1, state);
+      expect(readFocusState(S1, ctx, storage)).toEqual(state);
+    }
   });
 });

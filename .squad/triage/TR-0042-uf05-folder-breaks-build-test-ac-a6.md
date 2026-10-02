@@ -1,6 +1,6 @@
 ---
 id: TR-0042
-status: open
+status: resolved
 raised_by: frontend-dev (build) on T-0421
 date: 2026-10-02
 ---
@@ -21,3 +21,12 @@ T-0421 creates `apps/web/src/features/UF-05/` (D-0142 §1, D-0071 §7). UF-05.1 
 
 ## Interim state on the branch
 T-0421 is complete and committed: all 12 ACs are covered, red on `main`, with the planted faults recorded. The branch must not merge to `main` until option 1 lands (before it, or in the same merge). Otherwise `main`'s web test goes red.
+
+## Blocking
+T-0421 (merge only).
+
+## Resolution
+Resolved by [D-0144](../decisions/D-0144-ac-a6-route-folders-and-seam-mounted-features.md). Option 1, with both parts:
+- AC-A6 checks the folders that `routes.ts` lazy-loads (parsed from its `import("../features/<dir>/index.js")` specifiers). Every folder in `src/features` must be a route folder or on the named list `SEAM_MOUNTED_FEATURES = ["UF-05"]`, so a forgotten route still fails.
+- UF-05 is asserted never in the entry chunk. The entry's `dynamicImports` don't contain it, no statically reachable chunk has a `src` under it, and no entry-graph file contains its sentinel string.
+- It lands as web-shell ticket **T-0426**, before T-0421 merges. It is green on `main` as it stands. T-0421 then rebases and merges with no change. There is no granted extra on T-0421.
