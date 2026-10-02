@@ -17,7 +17,12 @@ import {
   mockSupabaseData,
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
-import { exerciseAreas, exercises, profile } from "./fixtures/uf-04-library-data.js";
+import {
+  exerciseAreas,
+  exercises,
+  exercisesLoaded,
+  profile,
+} from "./fixtures/uf-04-library-data.js";
 import { VITE_SUPABASE_URL } from "./playwright.config.js";
 
 const F_TARGETS: Record<string, number> = {
@@ -575,5 +580,192 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(SESSION_URL);
     await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible();
+  });
+});
+
+// ---- T-0393 UF-08.2 a loaded library renders a kg weight (D-0071 §10, D-0086, D-0108, D-0109) ----
+// Same seed as above (FULL-equipment `profileRow`, F-targets, `mockProfilePresent`), with
+// `exercisesLoaded` in place of `exercises`. Each case re-registers `mockSupabaseData` in its
+// body; the later-registered page route wins over the file's `beforeEach`. The AC1 case only
+// reads the fixture module: it never touches `page` beyond the file-level `beforeEach`.
+
+const LOADED_IDS = [
+  "back-squat",
+  "romanian-deadlift",
+  "hip-thrust",
+  "leg-extension",
+  "leg-curl",
+  "calf-raise",
+  "bench-press",
+  "db-bench-press",
+  "overhead-press",
+  "lateral-raise",
+  "barbell-row",
+  "db-row",
+  "lat-pulldown",
+  "seated-cable-row",
+  "straight-arm-pulldown",
+  "biceps-curl",
+  "goblet-squat",
+  "leg-press",
+];
+const UNLOADED_IDS = [
+  "push-up",
+  "inverted-row",
+  "pull-up",
+  "plank",
+  "dead-bug",
+  "hanging-knee-raise",
+  "wu-scap-push-up",
+  "wu-arm-circle",
+  "wu-band-pull-apart",
+  "wu-cat-cow",
+  "wu-bodyweight-squat",
+  "wu-leg-swing",
+  "wu-jumping-jack",
+  "wu-march-in-place",
+];
+
+/** `exercisesLoaded` by its display `name` (UF-08.2 rows render the library `name`). */
+function loadedByName(name: string): Record<string, unknown> {
+  const row = exercisesLoaded.find((e) => e.name === name);
+  if (!row) throw new Error(`no exercisesLoaded row is named "${name}"`);
+  return row;
+}
+
+// D-0124: T-0391 moves the UF-08.2 weight to `formatKg` (U+00A0 before `kg`). Main today renders
+// a plain space, so the kg literal accepts either separator, and the "no kg" check below looks
+// for `kg` itself rather than " kg", so it cannot pass vacuously after T-0391.
+const KG_42_5 = /42\.5[ \u00A0]kg/;
+const KG_ROW = / · 42\.5[ \u00A0]kg · \d+ min$/;
+
+/**
+ * AC3's history: one session 3 days ago, 3 hard sets of 42.5 kg × 7 for every loaded exercise
+ * (the `uf-02-today.spec.ts` sets-row shape). `completed_at` is relative to `Date.now()`
+ * (D-0108 §4), so it stays inside the 14-day window and outside rule 6's 48 h recovery span.
+ */
+function loadedSets(): Record<string, unknown>[] {
+  const completedAt = new Date(Date.now() - 3 * 86_400_000).toISOString();
+  return LOADED_IDS.flatMap((exerciseId) =>
+    Array.from({ length: 3 }, (_, i) => ({
+      client_id: `t0393-${exerciseId}-${i}`,
+      session_id: "T0393-S1",
+      exercise_id: exerciseId,
+      is_warmup: false,
+      completed_at: completedAt,
+      edited_at: completedAt,
+      deleted_at: null,
+      reps: 7,
+      weight_kg: 42.5,
+      duration_s: null,
+    })),
+  );
+}
+
+/** Console errors and page errors from here on (QA: the kg path logs nothing). */
+function consoleErrors(page: Page): string[] {
+  const errors: string[] = [];
+  page.on("console", (msg) => {
+    if (msg.type() === "error") errors.push(msg.text());
+  });
+  page.on("pageerror", (err) => errors.push(err.message));
+  return errors;
+}
+
+async function seedLoaded(page: Page, sets: unknown[]): Promise<void> {
+  await mockSupabaseData(page, {
+    sets,
+    exercises: exercisesLoaded,
+    exerciseAreas,
+    areaTargets: AREA_TARGETS,
+    profile: profileRow,
+  });
+  await mockProfilePresent(page, profileRow);
+}
+
+test.describe("T-0393 UF-08.2 loaded library (D-0044, D-0109 §4)", () => {
+  test("T-0393 AC1 exercisesLoaded equals exercises apart from external_load", () => {
+    expect(exercisesLoaded.length).toBe(exercises.length);
+    exercisesLoaded.forEach((row, i) => {
+      const { external_load: _loaded, ...rest } = row;
+      const { external_load: _old, ...restOld } = exercises[i]!;
+      expect(rest).toEqual(restOld);
+    });
+    const loaded = exercisesLoaded.filter((e) => e.external_load === true).map((e) => e.id);
+    expect([...loaded].sort()).toEqual([...LOADED_IDS].sort());
+    const unloaded = exercisesLoaded.filter((e) => e.external_load === false).map((e) => e.id);
+    expect([...unloaded].sort()).toEqual([...UNLOADED_IDS].sort());
+    expect(LOADED_IDS.length + UNLOADED_IDS.length).toBe(exercises.length);
+    for (const row of exercises) expect(row.external_load).toBe(false);
+  });
+
+  test("T-0393 AC2 zero history: Bodyweight exactly on unloaded rows, and no kg", async ({
+    page,
+  }) => {
+    const errors = consoleErrors(page);
+    await seedLoaded(page, []);
+    await openSetup(page);
+    await suggestAt30(page);
+    const rows = await rowTexts(page);
+    expect(rows.length).toBeGreaterThan(0);
+    // Rule 14.1: no history gives a loaded exercise a null weight, and a bodyweight one 0.
+    expect(rows.some(([name]) => loadedByName(name!).external_load === true)).toBe(true);
+    for (const [name, detail] of rows) {
+      const bodyweight = loadedByName(name!).external_load === false;
+      expect(detail!.includes("Bodyweight"), `${name}: ${detail}`).toBe(bodyweight);
+      expect(detail, name).not.toMatch(/kg/);
+      expect(detail, name).toMatch(DETAIL_PATTERN);
+    }
+    expect(errors).toEqual([]);
+  });
+
+  test("T-0393 AC3 one session at 42.5 kg × 7: every loaded row shows 42.5 kg", async ({
+    page,
+  }) => {
+    const errors = consoleErrors(page);
+    await seedLoaded(page, loadedSets());
+    await openSetup(page);
+    await suggestAt30(page);
+    const rows = await rowTexts(page);
+    expect(rows.length).toBeGreaterThan(0);
+    // Rule 14 per slot (build_muscle, rule 7.2): main lift 6–8, other compounds 8–12, isolation
+    // 10–15. Gap 3 days < 10, so rules 14.2/14.3 don't apply. 7 < every high (8, 12, 15), so
+    // 14.4 `increase` doesn't apply; one session only, so 14.5 `deload` doesn't. Main lift:
+    // 7 ≥ low 6 → 14.7 `add_rep` (W × 8). Other compound: 7 < low 8 → 14.6 `hold` (W × 8).
+    // Isolation: 7 < low 10 → 14.6 `hold` (W × 10). Every branch keeps W = 42.5.
+    expect(rows.some(([, detail]) => KG_ROW.test(detail!))).toBe(true);
+    for (const [name, detail] of rows) {
+      const loaded = loadedByName(name!).external_load === true;
+      if (loaded) expect(detail, name).toMatch(KG_ROW);
+      else {
+        expect(detail, name).toContain("Bodyweight");
+        expect(detail, name).not.toMatch(KG_42_5);
+      }
+      expect(detail, name).toMatch(DETAIL_PATTERN);
+    }
+    expect(errors).toEqual([]);
+  });
+
+  test("T-0393 AC4 offline rows equal the online ones, kg text included (NFR-OFF-3)", async ({
+    page,
+    context,
+  }) => {
+    await seedLoaded(page, loadedSets());
+    await openSetup(page);
+    await expect
+      .poll(() => cachedCounts(page))
+      .toEqual({ library: exercisesLoaded.length, targets: 9 });
+    await precacheSettled(page);
+    await suggestAt30(page);
+    const online = await rowTexts(page);
+    expect(online.some(([, detail]) => KG_ROW.test(detail!))).toBe(true);
+
+    await context.setOffline(true);
+    await page.goto("/session/setup");
+    await expect(screenUF081(page)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByLabel("Offline")).toBeVisible();
+    await expect(fitLine(page)).toHaveText(FIT_PATTERN);
+    await suggestAt30(page);
+    expect(await rowTexts(page)).toEqual(online);
   });
 });

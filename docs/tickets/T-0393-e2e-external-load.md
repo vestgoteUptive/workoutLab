@@ -71,3 +71,17 @@ none
 
 ## Definition of done
 Tests for every AC pass · the Playwright e2e job is green · `npx -y pnpm@10.28.2 -w typecheck lint test --force` green · commit messages start with `T-0393` and cite UF-08.2 (e.g. `T-0393 UF-08.2: loaded-library fixture and a kg row in e2e`).
+
+## Build log (2026-10-02, qa-tester)
+- **Fixture.** `exercisesLoaded` was added at the end of `tests/e2e/fixtures/uf-04-library-data.ts`. It is `exercises.map` with `external_load = kind === "exercise" && equipment ∩ {barbell, dumbbell, machine, cable} ≠ ∅`. The diff only adds lines (+10 −0), and `exercises`, `exerciseAreas`, `exerciseVariants` and `profile` are byte-identical.
+- **Spec.** A `T-0393` describe block was appended to `uf-08-setup.spec.ts`, and `exercisesLoaded` was added to the existing import (the only changed line). Each case calls `mockSupabaseData` and `mockProfilePresent` again in its body, and the later route wins. The seed rows live in the spec. `completed_at` is `Date.now() − 3 d`.
+- **What main renders today (checked against D-0124).** T-0391 hasn't landed. `en.uf08.weightKg` gives `"42.5 kg"` with a plain space, so the ticket's `/ · 42\.5 kg · \d+ min$/` matches today. The kg regex accepts `[  ]` so that it survives T-0391 (U+00A0). For the same reason, AC2 asserts that a row has no `kg` at all, rather than no `" kg"`, which would pass vacuously after T-0391. `DETAIL_PATTERN` is unchanged (plain space). T-0391 updates it, as D-0124 says.
+- **Observed rows.** AC2 (zero history) gives Bench press `4 × 6–8 · 12 min` (loaded, null weight), Inverted row `3 × 8–12 · Bodyweight · 10 min`, and Leg extension `2 × 10–15 · 5 min` (the R7-E4 plan).
+
+  AC3 gives Push-up `4 × 6–8 · Bodyweight · 12 min`, Calf raise `3 × 10–15 · 42.5 kg · 7 min` and Dead bug `3 × 10–15 · Bodyweight · 7 min`. Rule 7.2 rank (1) ("not in the most recent session") puts the unloaded moves first, so the only loaded row is an isolation (14.6 `hold`, W = 42.5). The main-lift `add_rep` branch is derived in the test comment but not exercised by this seed. No literal had to change.
+- **Red against the old fixture.** I temporarily set `external_load` to `false` for every row of `exercisesLoaded` (the `exercises` values). All 4 T-0393 cases went red: AC1 deep-equal, AC2 "some loaded row", AC3 "some kg row", and AC4 "online has a kg row". Then I reverted.
+- **Console.** AC2 and AC3 assert zero console and page errors.
+- **Runs.**
+  - The full e2e suite passed 87/87 twice, and the T-0393 cases passed `--repeat-each=5` (20/20). AC5: `uf-08-setup`, `uf-04-library` and `shell` passed 42/42 unedited.
+  - `-w typecheck lint test --force` was green (19/19 tasks, web 2010 tests, repo-checks 146 pass).
+  - `-w format:check` was clean, and `check-all.mjs` exited 0.
