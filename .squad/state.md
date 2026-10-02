@@ -24,6 +24,9 @@ H-13 (push branches); T-0217 tie-break default; H-12 (C-01 on phone); H-05, H-06
 - Give every parallel run its own decision-ID block. Next free: **D-0106**, **TR-0034**, tickets **T-0381+** (web), **T-0228+** (engine/data), **T-0906+** (CI).
 
 ## Traps (condensed — full history in journals 2026-09-28..10-01)
+- **Never commit a test that asserts `git diff main...HEAD`** (T-0303b review): it fails on other lanes' branches after merge and silently skips in CI (no local `main`). Record diff checks in the ticket build log instead; check-lane-paths enforces lanes.
+- **Run `npx -y deno@2 check` locally for anything touching supabase/** (T-0229): deno isn't installed but npx works; CI's Deno type-check caught a vendored .d.ts error only in CI.
+- **jsdom has no CSP** (TR-0036): anything that evals/compiles at runtime (Ajv, new Function) passes Vitest but breaks in the built app. Precompile; the bundle scan in build.test.ts guards it.
 - **Grants are read at `merge-base origin/main HEAD`.** Commit ticket files to main AND push before a build, and write grants as `- **Listed extras:**` sub-bullets of backticked paths (prose isn't parsed; a line with "no"/"not"/"except" denies).
 - **One turbo/vitest/playwright process per machine** for verification. Concurrent runs give load-only reds (timeouts in design-tokens eslint-wiring, engine rule-13/14). Never two vitest in the same worktree (stagger QA and review).
 - Verification is `pnpm -w typecheck lint test --force --concurrency=1` plus `format:check`, `check:repo`, `vendor.mjs --check`, `gen-seed.mjs --check`, and **e2e** for anything touching `apps/web/src/**` or `tests/e2e/**` (T-0306a merged without e2e and broke main).
