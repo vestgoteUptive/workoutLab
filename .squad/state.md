@@ -1,18 +1,18 @@
 # State
 
-- **Phase:** 3 (App). On main: engine rules 1–14 + D-0092..D-0096 changes; UF-01 onboarding complete (.1–.5); UF-02.1 Today; UF-04 Library; **UF-08.1–.4 setup complete (Start → /session/:id)**; **UF-09 machine, hook + seams, UF-09.3/.4 set loop (T-0304a, T-0304e, T-0304b)**; UF-10 Balance.
+- **Phase:** 3 (App). On main: engine rules 1–14 incl. D-0131 back-off floor + D-0137 drop cap; UF-01 onboarding; UF-02.1 Today; UF-03.3 summary content (T-0419); UF-04 Library; UF-05.1 SwapSheet component (T-0421, not yet mounted); UF-08.1–.4 setup; UF-09 machine + hook + seams + .1/.2/.3/.4/.5/.6/.7 (T-0304a/e/b/f/c, T-0414); UF-10 Balance; lib/account export + wipe (T-0310c) and DELETE /account Edge Function (T-0310b); e2e consoleGuard (T-0425).
 - **Updated:** 2026-10-02 by orchestrator (no AgentLab on this machine → sub-agents).
-- **`main`:** green 2026-10-02 after T-0304f + T-0397: web 2099/2099, whole e2e 90/90 (T-0304f), UF-08 275 + uf-08 e2e 19/19 (T-0397); pushed.
-- **In flight:** T-0310c (lib/account). Next: T-0310a after T-0222 (both openapi), T-0221 → T-0212 → T-0211 (engine serial; T-0236 before the next suggest-changing engine ticket), T-0407 + T-0409 after T-0410 (UF-09 serial), T-0233 after T-0409.
+- **`main`:** green 2026-10-02 after T-0324: offline + features 1771, e2e subset 10/10; last whole e2e 123/123 (T-0425), last -w gate 19/19 (T-0304c). Pushed.
+- **In flight:** T-0304d (UF-09.8/.9 time check, pause, End — QA ∥ review), T-0420 (UF-03.3 effort + Save), T-0430 (qa: console-guard cleanup), T-0431 (lib/offline flushed row defers, D-0151).
 
 ## Blocked on H-13
 T-0307b (UF-06), T-0308a (UF-07), T-0308b (UF-11, review-approved at `17091a5`) were in flight on **another machine**; their branches are on neither this machine nor `origin`. Also waiting on them: T-0356 (D-0090), T-0362, T-0363. Don't restart from scratch unless the human says the work is lost. When the branches appear: fetch, recreate worktrees, `git merge main`, then QA → review → accept.
 
 ## Next
-- UF-09 lane (D-0118..D-0120): T-0304b → T-0304f → T-0304c → T-0304d; T-0304g after c; T-0304h after d, g; T-0394 after T-0304d. T-0304b/c/d tickets carry T-0304e review notes.
-- UF-08: T-0385 (flush on online enqueue, D-0116), T-0386 (UF-08.1 hardening), then T-0397 (Back while pending; same lane as T-0386), T-0391 (formatKg in rows.ts, needs groom).
-- Ready small: T-0396 (return-to normalise; web-shell lib/** overlaps T-0385/T-0304b), T-0393 (e2e fixture external_load; tests/e2e/** overlaps), T-0231 (after T-0230, engine serial). Todo: T-0389, T-0398 (scan widen 2), T-0399 (UF-01.5 test nits).
-- Ungroomed bigger: T-0305a/b (UF-03 list/summary), T-0306b (UF-05 swap — carries parseSessionPlan AC from D-0093 §7), T-0216, T-0308c (blocked via T-0308b/H-13), T-0309 landing, T-0310+ shell.
+- UF-09: after T-0304d → T-0423 + T-0424 (serial), T-0304g (device features), then T-0304h (e2e from Ready), T-0394 (Back → Pause), T-0415 (List-view host support).
+- UF-03/UF-05 (D-0142): T-0416 → T-0417 → T-0418 after T-0304d/T-0415; T-0422 swap seam after T-0304d.
+- tests/e2e: T-0430 → T-0427 ∥ T-0429 (SW register catch) → T-0432.
+- Engine lane: queue empty (all follow-ups done). Ungroomed: T-0216, T-0309 landing, T-0310d (UF-11.4, blocked via H-13), phase 4 infra.
 
 ## Waiting on humans
 H-13 (push branches); H-14 (service-role key for the account function, prod only); T-0217 tie-break default; H-12 (C-01 on phone); H-05, H-06, H-10 (non-blocking).
