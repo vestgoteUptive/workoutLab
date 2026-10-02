@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-08.4, UF-09]
 decisions: [D-0116, D-0112, D-0104, D-0045]
 deps: [T-0303d]
-status: ready
+status: done
 ---
 ## Why
 On a fully online workout the queued rows sit in IndexedDB until the next app open, `online`
@@ -74,3 +74,23 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
   - (e) A network-error resolving after `stop()` leaves 0 timers and no further flush. Pair: still running, it arms the 2 s retry. Both are also covered at the `RetryScheduler` unit level.
 - **Red proofs.** `flush.ts`, `retry.ts` and `sync.ts` from 270c095: 4 red: (a) ("length of 2 but got 1"), the direct-flush re-queue row, and both (e) rows. Planted fault for (d) (no try/catch around listeners): red. Restored and checked with `cmp`.
 - **Runs.** web `typecheck` and `lint` green. web `test`: 122 files, 1816 tests green. e2e `offline`, `uf-08-setup`, `uf-09-focus`: 20 passed. `-w format:check` clean. `check-all.mjs` exit 0.
+
+## Accept log (2026-10-02, product-owner)
+Verdict: **done**. Branch `t/T-0385-flush-on-online-enqueue` @ 0819430 (build 1 270c095, rework 2 0819430).
+- AC1 and AC2 (`sync.enqueue-flush.test.ts`): no flush at 249 ms, exactly one at 250 ms carrying the row. Three writes at 0/50/100 ms give one flush at 350 ms. The fixed-window and 0 ms debounce faults were red.
+- AC3: `upsertSession` resolves on the IndexedDB commit while `fetch` never settles, and no request has been made by then.
+- AC4: offline gives no flush in 1 s, and `online` then flushes exactly once. The ignore-`onLine` fault was red.
+- AC5: never-started and stopped handles give no flush, with a live-handle positive control. `stop()` at 100 ms cancels the 250 ms debounce. The keep-debounce fault was red.
+- AC6: a hanging flush blocks a second start. On settle exactly one follow-up runs. The no-single-flight fault was red. Rework 2 adds the sessions version: a Finish that lands mid-send is sent by the follow-up and stored `pending: false, finished: true` with the newer `ended_at`. Its pair (no write during the send) gives one request.
+- AC7: `network-error` arms the 2 s `RetryScheduler` retry with no extra flush. A rejecting flush leaves no unhandled rejection and `settled()` resolves. Rework 2 adds no retry after `stop()`, with its still-running pair.
+- AC8: a rejecting IDB write rejects as today and notifies nobody, for sets and sessions. The notify-before-put fault was red.
+- AC9: the existing `lib/offline` tests pass unchanged, including the export-list pin (`index.ts` untouched) and T-0378.
+- AC10 (`uf-08-setup.spec.ts`): the online row has no reload and no `pending: true` read. It asserts exactly one `sessions` request with the id and `time_budget_min` 30 within 5 s of Start. It was red on unfixed code. QA confirmed the diff stays inside the online row and its section comment. The offline and Back rows are unchanged.
+- Scope: `flush.ts` and `retry.ts` (rework 2) are inside the lane path `apps/web/src/lib/offline/**`. `RetryScheduler.stop()` adds a stop flag and leaves the backoff schedule alone, so the "no backoff change" Out item holds. `QueuedSession` is local-only, so there is no Dexie bump and no `docs/data-model.md` change.
+- Principles: P1 adds no UI. P2, P3 and P5 are untouched. P4 is untouched. NFR-OFF-2 holds because the write resolves on commit and never waits on the network. Contracts are unchanged. D-0116 is linked and supersedes D-0112 §1.
+- Evidence:
+  - QA on 270c095: done, all 10 ACs with both values. The faults re-planted red, plus 3 of QA's own. Whole e2e 82/82.
+  - Review 1 failed on the pending-clear race. It was fixed in rework 2, with 4 tests red on 270c095.
+  - Rework 2: web 1816 green, e2e offline + uf-08 + uf-09 20/20. Re-review approved with no blocking findings.
+- Known limit, not blocking: the key-order-independent row compare would canonicalise a Date/Map value to `{}`. Every session field is JSON today. Follow-up filed.
+- Merge gate: QA's whole-e2e run was on 270c095. Run the `-w typecheck lint test` gate and the whole e2e on 0819430 at merge.
