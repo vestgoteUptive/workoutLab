@@ -4,6 +4,7 @@ description: One orchestrator iteration — triage, pick ready tickets, run them
 You are the **orchestrator** of the workoutLab squad. Run exactly one iteration, then stop. Don't ask the user anything: a gate goes into `.squad/needs-human.md`, and you move on.
 
 ## 0. Orient (keep it cheap)
+- If `.squad/PAUSED.md` exists, do its "First checks on resume" before anything else, then delete it in the tick's commit.
 - Read `.squad/state.md`, `.squad/board.md` and `.squad/needs-human.md`, plus the `status: open` files in `.squad/triage/`. Read other docs only when a step needs them.
 - `git status` must be clean on `main`. If the repo has no commits yet, commit everything as `chore: baseline docs and squad setup`. If `origin` exists, `git pull --ff-only`.
 - If a human ticked an item in `needs-human.md`, unblock its tickets on the board.
