@@ -60,3 +60,12 @@ The engine never emits a timed pre-fill outside 15..120 s (D-0062 §5 clamp; `fi
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` is green · `vendor.mjs --check` is green · the AC6 run URL is recorded · the contract change is linked to D-0133 · commit messages start with `T-0222` and cite UF-09.5 (e.g. `T-0222 UF-09.5: PrefillResult.durationS is 15..120 (D-0133)`).
 
 ## Build / accept log
+
+### Build — 2026-10-02 (data-modeler)
+- `api/openapi.yaml`: `PrefillResult.durationS` → `{ type: [integer, "null"], minimum: 15, maximum: 120 }`. The description gains the D-0133 §1 sentence. `git diff main...HEAD -- api/openapi.yaml` is +5 −2, all inside the `PrefillResult` block (description and `durationS` lines only) (AC5).
+- Regenerated with `pnpm --filter @workoutlab/shared gen:api` (`api.gen.ts`, `session-plan.schema.gen.ts`, `session-plan.validate.gen.ts`) and `node supabase/scripts/vendor.mjs` (4 files under `supabase/functions/_shared/vendor/shared/`). None were edited by hand. `vendor.mjs --check` exits 0 (AC6).
+- New `packages/shared/test/t0222-prefill-duration-range.test.ts` (AC1–AC4).
+- **Red on unfixed code:** with only the new test on `main`'s code, 7 of 12 fail: AC1, the AC2 rejects for 14/121/1/600, the AC3 range check (min 1 ≠ 15) and AC4. The 5 that pass are the AC2 accepts (15/45/120/null) and the no-engine-dependency check, which is what a narrowing should keep.
+- AC5: no existing fixture holds a timed `prefill.durationS` outside 15..120 (found 45, 45, 50, 120). No existing test was edited.
+- Tests: `flock … pnpm turbo run typecheck lint test --filter=@workoutlab/shared --filter=@workoutlab/web --force --concurrency=1`: 7/7 tasks; shared 227/227, web 2107/2107. `pnpm -w format:check` is clean. `node .github/scripts/check-all.mjs` exits 0. `npx -y deno@2 check` on every `supabase/functions` and `supabase/tests/functions` `.ts` file is clean. `deno test supabase/tests/functions/unit/` passes 96/96. pgTAP and integration tests were not run locally; they run in CI.
+- AC6 CI run URL: pending. The orchestrator opens the draft PR.

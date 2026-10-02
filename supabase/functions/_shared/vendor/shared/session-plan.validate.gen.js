@@ -94,7 +94,7 @@ const schema31 = {
             properties: {
                 weightKg: { type: ["number", "null"], minimum: 0 },
                 reps: { type: ["integer", "null"], minimum: 1 },
-                durationS: { type: ["integer", "null"], minimum: 1 },
+                durationS: { type: ["integer", "null"], minimum: 15, maximum: 120 },
                 kind: { $ref: "#/$defs/PrefillKind" },
             },
         },
@@ -450,7 +450,7 @@ const schema39 = {
     properties: {
         weightKg: { type: ["number", "null"], minimum: 0 },
         reps: { type: ["integer", "null"], minimum: 1 },
-        durationS: { type: ["integer", "null"], minimum: 1 },
+        durationS: { type: ["integer", "null"], minimum: 15, maximum: 120 },
         kind: { $ref: "#/$defs/PrefillKind" },
     },
 };
@@ -609,17 +609,31 @@ function validate25(data, { instancePath = "", parentData, parentDataProperty, r
                                 }
                                 if (errors === _errs6) {
                                     if (typeof data2 == "number" && isFinite(data2)) {
-                                        if (data2 < 1 || isNaN(data2)) {
+                                        if (data2 > 120 || isNaN(data2)) {
                                             validate25.errors = [
                                                 {
                                                     instancePath: instancePath + "/durationS",
-                                                    schemaPath: "#/properties/durationS/minimum",
-                                                    keyword: "minimum",
-                                                    params: { comparison: ">=", limit: 1 },
-                                                    message: "must be >= 1",
+                                                    schemaPath: "#/properties/durationS/maximum",
+                                                    keyword: "maximum",
+                                                    params: { comparison: "<=", limit: 120 },
+                                                    message: "must be <= 120",
                                                 },
                                             ];
                                             return false;
+                                        }
+                                        else {
+                                            if (data2 < 15 || isNaN(data2)) {
+                                                validate25.errors = [
+                                                    {
+                                                        instancePath: instancePath + "/durationS",
+                                                        schemaPath: "#/properties/durationS/minimum",
+                                                        keyword: "minimum",
+                                                        params: { comparison: ">=", limit: 15 },
+                                                        message: "must be >= 15",
+                                                    },
+                                                ];
+                                                return false;
+                                            }
                                         }
                                     }
                                 }

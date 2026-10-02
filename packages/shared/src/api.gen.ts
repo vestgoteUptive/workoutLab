@@ -431,7 +431,7 @@ export interface components {
       kind: components["schemas"]["PrefillKind"];
     };
     /**
-     * @description Pre-filled load for an item (rule 14, UF-09.3, UF-09.4).
+     * @description Pre-filled load for an item (rule 14, UF-09.3, UF-09.4). A timed `durationS` is within 15..120 s (TIMED_MIN_S..TIMED_MAX_S, D-0062 §5). `first_time` echoes the library `defaultDurationS`, which content keeps within the same range (D-0133).
      * @example {
      *       "weightKg": null,
      *       "reps": 6,
