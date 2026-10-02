@@ -5,7 +5,7 @@ lane: web-feature:UF-03
 screens: [UF-03.3, UF-10.1]
 decisions: [D-0153, D-0148, D-0151, D-0152, D-0142, D-0071, D-0053]
 deps: [T-0420, T-0431]
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by product-owner (groom). Follow-up from the T-0420 review and accept log. Build flow: wl-build-web. About ⅓ day. Ready: T-0420 (EffortSave) and T-0431 (D-0151 cacheCurrent in loadSessions) are on main. -->
 
@@ -155,3 +155,16 @@ None. This is a read of the existing `loadSessions()` view and the existing queu
   - `-w format:check`: green.
   - `node .github/scripts/check-all.mjs`: exit 0.
   - `test:e2e uf-03`: 2/2, run with `TMPDIR=$HOME/.cache/wl-pw-tmp`. Earlier runs with the default TMPDIR failed with `net::ERR_INSUFFICIENT_RESOURCES` at the first `page.goto`. `offline.spec.ts` failed the same way, and so did main's UF-03 sources. Cause: /tmp is a RAM tmpfs at 80%, so these were environment false reds.
+
+## Accept log (product-owner, 2026-10-02)
+- **Verdict: done.** Branch `t/T-0433-uf03-summary-rating-merged-view` at `cf92d52`. Build done, review approve (no blocking findings), QA pass.
+- **D-0153 §4 checked against `EffortSave.tsx` and `summary-data.ts`.** Preselect is `viewEffort` of the `loadSessions()` entry with this id, with the raw-row fallback. An untouched Save reads `sessions.get` and then `loadSessions()` at the tap. A pick (`touched` ref) is sent as picked. The row is `{...entry.row, effort_rating}`, and `now` is unchanged. **§5:** a `mounted` ref guards both `navigate` and `setState("failed")`. The write still lands.
+- **Per AC:**
+  - AC-1: pass. All five cases are tested. Marked, later cached finish and nothing were red on main (reproduced by QA). Planted fault F1 is caught. QA's F7 test pins the entry chosen by id, not `sessions[0]`.
+  - AC-2: pass. All six cases are tested. Marked and tap-time were red on main. F2 (mount state) and F5 (null fallback) are caught.
+  - AC-3: pass. Offline, the row is `pending: true`, `finished: true`, `effort_rating: 2`, there is no `cacheCurrent`, the route is replaced to `/`, and no `fetch` is made.
+  - AC-4: pass. Left, the route stays `/balance` after 50 ms, one step back is the summary, and the row was written. This was red on main, and F3 is caught. The stay pair and rejected-after-leaving are tested. F6 staying green is accepted: the user-visible outcome is pinned by "rejected after leaving".
+  - AC-5: pass. `index.tsx`, `flows/uf-03.ts`, the three summary test files and `exports-and-lint.test.ts` are unedited and green. The `refresh*` grep is empty (recorded twice).
+- **DoD.** Web gate 4/4 (2670 tests). Full e2e 137 at build, and uf-03 2/2 at QA (TMPDIR on disk; the tmpfs false red is an environment issue, not the code). format:check and check-all are green. Contracts are unchanged. Commits are cited as `T-0433`.
+- **Principles.** No change to focus mode, the time budget, the engine or onboarding. Adaptive targets are unaffected.
+- **Follow-ups.** T-0439 (already filed by review): an untouched Save re-queues the raw `ended_at`, which can move the server's finish earlier when another device finished later. It predates this ticket and matches the Notes. The tap-time rating can differ from the chip on screen when the view changes mid-mount. That is D-0153 §4 as decided, so no ticket; revisit only if users report it.
