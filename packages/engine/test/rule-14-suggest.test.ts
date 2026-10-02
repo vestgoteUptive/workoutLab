@@ -47,6 +47,7 @@ import {
   offlineQueue,
   returningAfter10DaysHistory,
 } from "./fixtures/histories.js";
+import { rule14GuardDiff, rule14GuardedLines } from "./fixtures/rule14-pinned-d0132.js";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = path.resolve(TEST_DIR, "..", "..", "..");
@@ -792,14 +793,6 @@ function rulesOnMain(): string | null {
 }
 
 /** Rule 14's text: from the `## 14.` heading up to `## Required tests` (D-0092 §6). */
-function rule14Of(doc: string): string {
-  const start = doc.indexOf("\n## 14.");
-  const end = doc.indexOf("\n## Required tests", start);
-  expect(start).toBeGreaterThan(-1);
-  expect(end).toBeGreaterThan(start);
-  return doc.slice(start, end);
-}
-
 describe("rule 14 traceability", () => {
   it("rule-14 (AC25) every rule 14 example id appears in a test title", () => {
     const titleRe = /\b(?:it|test)(?:\.each\([\s\S]*?\))?\(\s*(["'`])((?:\\.|(?!\1).)*)\1/g;
@@ -824,13 +817,14 @@ describe("rule 14 traceability", () => {
     }
   });
 
-  it("rule-14 (AC25) docs/engine-rules.md rule 14 (## 14. up to ## Required tests) is unchanged against main", () => {
+  it("rule-14 (AC25) docs/engine-rules.md rule 14's heading, Last performance paragraph and R14 example lines are unchanged against main", () => {
     const main = rulesOnMain();
     // Shallow CI clones have no main; the rule text is then pinned by the tests above.
     if (main === null) return;
-    // D-0092 §6: this guard covers the section T-0205 owned, not the whole file, so later
-    // tickets may edit other rules under their own decisions.
+    // D-0092 §6, narrowed by D-0132 §2: this guard covers the rule 14 lines T-0205 still
+    // owns. The rest of rule 14 is pinned positively by t0221-rule-14-text.test.ts.
     const current = readFileSync(path.join(REPO_DIR, "docs", "engine-rules.md"), "utf8");
-    expect(rule14Of(current)).toBe(rule14Of(main));
+    expect(rule14GuardedLines(current)).toHaveLength(11);
+    expect(rule14GuardDiff(current, main)).toEqual([]);
   });
 });
