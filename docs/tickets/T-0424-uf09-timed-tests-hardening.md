@@ -82,3 +82,31 @@ screen (for example `T-0424 UF-09.7: assert elapsedS while the ring is held`).
   one after the other in the lane.
 
 ## Build / accept log
+
+### Build 2026-10-02 (frontend-dev)
+- **Changed (tests only):** `__tests__/timed-set.test.tsx` (two tests in "T-0304c AC-4 the ring-only
+  pause in the host"), new `__tests__/t0424-test-hygiene.test.ts`. No `src/**` change.
+- **AC-1** "Pause timer … elapsedS +20 …": `session().elapsedS − elapsedBefore` is 10 at 10 s and 20 at
+  20 s of fake time while held, `timerText()` "0:30" at both; the post-Resume asserts are unchanged.
+  Red run: scratch edit in `session.tsx`, `pausedAtMs: state.pausedAtMs ?? state.timerPausedAtMs`.
+  The new test failed at the 10 s assert (`expected +0 to be 10`, timed-set.test.tsx:345). Under
+  the same fault, main's version of the test (post-Resume assert only) **passed** (1 passed). That
+  is F6. Reverted; `git diff -- apps/web/src/features/UF-09/session.tsx` was empty afterwards.
+- **AC-2** "restore: a remount while ring-paused …": `cleanup()` replaces the `document.body.innerHTML`
+  reset; added asserts: one `[data-screen-id]` and it is `UF-09.7`, and `recordSpy` has 0 calls after
+  `flushReal(50)`. The existing Resume timer / "0:30" / `storedState()` deep-equal asserts stay.
+  Red runs: (a) `cleanup()` removed from the test, which left two hosts mounted: red with
+  `expected one [data-screen-id], found UF-09.7,UF-09.7` (:417); (b) scratch edit in `host.tsx`,
+  where a ring-paused mount calls `lib/offline.recordSet` directly, behind the machine: only the new
+  `recordSpy` assert went red (`expected "vi.fn()" to be called +0 times, but got 1 times`, :425),
+  5 other AC-4 tests green. Both reverted.
+- **AC-3** guard `T-0424 AC3 …`: reads 34 `*.test.ts(x)` files (itself excluded) and builds the
+  pattern from parts. Red on main's `timed-set.test.tsx`: offenders `["timed-set.test.tsx"]`
+  (t0424-test-hygiene.test.ts:25). The file-count floor is red too: with the filter planted as
+  `.spec.` it read 0 files (`expected 0 to be greater than 20`). Reverted.
+- **AC-4** No other test edited. `git diff --stat main...HEAD -- apps/web/src/features/UF-09
+  ':!apps/web/src/features/UF-09/__tests__'` is empty. UF-09 tests: **679 before (33 files), 681 after
+  (34 files)**.
+- **Gate:** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`: 4/4
+  tasks, 171 files / 2676 tests passed. `-w format:check` clean. `node .github/scripts/check-all.mjs`
+  exit 0. `--filter @workoutlab/web test:e2e uf-09`: 10 passed.
