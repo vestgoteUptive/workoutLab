@@ -2,7 +2,7 @@
 // Source: packages/{pkg}/src. Rerun `node supabase/scripts/vendor.mjs` after an engine or
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
-import { type EngineProfile, type HistorySet, type Instant, type LibraryExercise, type SwapReason, type TimeZone, type Workout } from "./types.js";
+import { type HistorySet, type Instant, type LibraryExercise, type SuggestProfile, type SwapReason, type TimeZone, type Workout } from "./types.js";
 /**
  * Rule 12.1 (UF-05.1, UF-08.3; D-0071 §7, D-0093): `workout` with the item `currentExerciseId`
  * replaced by `candidateId` at the same position, `sets` and `isMain`. The new item has rule
@@ -12,6 +12,7 @@ import { type EngineProfile, type HistorySet, type Instant, type LibraryExercise
  * Totals are recomputed and may exceed the budget (D-0093 §5); `mainLiftId` follows the main
  * slot. The warm-up, `startDeficits`, the session fields and every other item are unchanged.
  * Throws `RangeError` on the D-0093 §6 structural errors. `profile` is the type `suggest`
- * takes; today's rep slots do not read it (T-0214 adds the goal, D-0095).
+ * takes; its `goal` picks the rebuilt rep slot (D-0095 §2; absent means `build_muscle`, an
+ * unknown goal throws `RangeError`).
  */
-export declare function applySwap(workout: Workout, currentExerciseId: string, candidateId: string, reason: SwapReason | null, history: readonly HistorySet[], profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], now: Instant, tz: TimeZone): Workout;
+export declare function applySwap(workout: Workout, currentExerciseId: string, candidateId: string, reason: SwapReason | null, history: readonly HistorySet[], profile: SuggestProfile, library: readonly LibraryExercise[], now: Instant, tz: TimeZone): Workout;

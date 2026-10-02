@@ -8,14 +8,15 @@
 // and in the Deno Edge Function. T-0200 covers rules 0–6 and 11; T-0201a adds rules 7.1–7.3 and 10;
 // T-0201b adds rules 7.4 and 8; T-0202 adds rule 9; T-0204 adds rules 12 and 13;
 // T-0205 adds rule 14 (prefill); T-0219 costs timed sets at the planned duration (D-0092);
-// T-0224 adds rule 12.1 applySwap (D-0093).
+// T-0224 adds rule 12.1 applySwap (D-0093); T-0214 makes the rule 7.2 rep slots follow the
+// profile goal (D-0061 §1, D-0095).
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
 export { localDate, windowOf, addDays, dayDiff, WINDOW_DAYS } from "./time.js";
 export { areaLoads, recoveringAreas, RECOVERY_THRESHOLD, RECOVERY_WINDOW_MS } from "./load.js";
 export { deriveTargets, previewTargets, BASE_TARGETS } from "./targets.js";
 export { balance, deficitOf, coverageStepOf, ATTENTION_DEFICIT, ATTENTION_DAYS, } from "./balance.js";
-export { suggest, isEligible, rankCandidates, itemCostS, setCostS, availableS, WORK_S, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, MAX_ITEMS, MAX_ITEMS_PER_AREA, } from "./session.js";
+export { suggest, isEligible, rankCandidates, itemCostS, setCostS, availableS, WORK_S, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, MAX_ITEMS, MAX_ITEMS_PER_AREA, REP_SLOTS, DEFAULT_GOAL, } from "./session.js";
 export { rankSwaps, muscleMatch } from "./swaps.js";
 export { applySwap } from "./apply-swap.js";
 export { generateWarmup, WARMUP_COST_S, WARMUP_MOVES, WARMUP_MOVE_S } from "./warmup.js";

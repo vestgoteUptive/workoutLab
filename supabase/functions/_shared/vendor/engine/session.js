@@ -171,13 +171,36 @@ function selectGreedy(s) {
             exhausted.add(area);
     }
 }
-/** Rule 7.2 rep ranges; timed items have none (D-0040 §5). Shared with `applySwap` (D-0093 §2). */
-export function repRange(ex, isMain) {
+/** The default goal when a profile has none (D-0095 §1): today's rule 7.2 slots. */
+export const DEFAULT_GOAL = "build_muscle";
+/** Rule 7.2 rep slots by goal (D-0061 §1, D-0095): main lift, other compounds, isolation. */
+export const REP_SLOTS = {
+    get_stronger: { main: [3, 5], compound: [5, 8], isolation: [10, 15] },
+    build_muscle: { main: [6, 8], compound: [8, 12], isolation: [10, 15] },
+    general_fitness: { main: [8, 12], compound: [10, 15], isolation: [10, 15] },
+};
+/**
+ * The goal a profile asks for (D-0095 §1): absent (or undefined) means `build_muscle`; any
+ * value that is not a `Goal` throws `RangeError`.
+ */
+export function goalOf(profile) {
+    const g = profile.goal;
+    if (g === undefined)
+        return DEFAULT_GOAL;
+    if (typeof g === "string" && Object.prototype.hasOwnProperty.call(REP_SLOTS, g))
+        return g;
+    throw new RangeError(`Unknown goal: ${String(g)}`);
+}
+/**
+ * Rule 7.2 rep ranges for `goal` (D-0061 §1, D-0095 §2); timed items have none (D-0040 §5).
+ * Shared with `applySwap` (D-0093 §2). The default goal gives today's 6–8 / 8–12 / 10–15.
+ */
+export function repRange(ex, isMain, goal = DEFAULT_GOAL) {
     if (ex.timed)
         return [null, null];
-    if (isMain)
-        return [6, 8];
-    return ex.type === "compound" ? [8, 12] : [10, 15];
+    const slots = REP_SLOTS[goal];
+    const [lo, hi] = isMain ? slots.main : ex.type === "compound" ? slots.compound : slots.isolation;
+    return [lo, hi];
 }
 /** The planned duration of each exercise over `ctx`, computed once per exercise (D-0092 §1). */
 function durationsOf(ctx) {
@@ -191,12 +214,13 @@ function durationsOf(ctx) {
         return memo.get(ex.id) ?? null;
     };
 }
-function prefillCtxOf(history, library, now, tz) {
+function prefillCtxOf(history, library, now, tz, goal = DEFAULT_GOAL) {
     return {
         hard: normalizeHistory(history),
         lib: indexLibrary(library),
         today: localDate(now, tz),
         tz,
+        goal,
     };
 }
 /** Rule 14 for one slot (D-0057 §7), replacing the D-0040 §4 first-time seam. */
@@ -213,7 +237,7 @@ export function backoffOf(ex, prefill, reps) {
 function previousOf(ctx, p) {
     if (p.previous === undefined)
         return null;
-    const [repsMin, repsMax] = repRange(p.previous, p.isMain);
+    const [repsMin, repsMax] = repRange(p.previous, p.isMain, ctx.goal);
     return {
         exerciseId: p.previous.id,
         weightKg: prefillFor(ctx, p.previous, repsMin, repsMax, null).weightKg,
@@ -226,7 +250,7 @@ function previousOf(ctx, p) {
  */
 export function buildItem(spec, rc) {
     const { exercise, isMain, sets, prefill } = spec;
-    const [repsMin, repsMax] = repRange(exercise, isMain);
+    const [repsMin, repsMax] = repRange(exercise, isMain, spec.goal ?? DEFAULT_GOAL);
     const area = primaryAreas(exercise)[0];
     const backoff = spec.backoff && repsMin !== null ? backoffOf(exercise, prefill, repsMin) : null;
     // Item reason order (D-0040 §6).
@@ -258,7 +282,7 @@ export function buildItem(spec, rc) {
     };
 }
 function toItem(start, ctx, p, durationOf) {
-    const [repsMin, repsMax] = repRange(p.exercise, p.isMain);
+    const [repsMin, repsMax] = repRange(p.exercise, p.isMain, ctx.goal);
     return buildItem({
         exercise: p.exercise,
         isMain: p.isMain,
@@ -268,6 +292,7 @@ function toItem(start, ctx, p, durationOf) {
         swap: p.previous === undefined ? undefined : null,
         lowTrimmed: p.lowTrimmed === true,
         plannedS: durationOf(p.exercise),
+        goal: ctx.goal,
     }, start);
 }
 /**
@@ -380,14 +405,23 @@ export function rankCandidates(area, history, targets, profile, library, session
  * The next workout (UF-08.1, UF-08.4; rules 7, 10). Pure: the same inputs give a
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
  * Selection is main → pinned → greedy → shuffle (rule 13), then energy (rule 7.4, D-0056 §8).
+ * `profile.goal` picks the rule 7.2 rep slots only (D-0061 §1, D-0095); absent means
+ * `build_muscle`, and an unknown goal throws `RangeError`.
  */
 export function suggest(history, targets, profile, library, sessionInput, now, tz) {
     assertBudget(sessionInput.budgetMin);
     assertShuffle(sessionInput.shuffle);
+    const goal = goalOf(profile);
     const available = availableS(sessionInput.budgetMin, sessionInput.warmupInBudget);
     const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, now, tz);
     const lib = indexLibrary(library);
-    const ctx = { hard: normalizeHistory(history), lib, today: localDate(now, tz), tz };
+    const ctx = {
+        hard: normalizeHistory(history),
+        lib,
+        today: localDate(now, tz),
+        tz,
+        goal,
+    };
     const durationOf = durationsOf(ctx);
     const s = newState(start, Math.max(0, available), durationOf);
     selectMain(s, sessionInput.mainLiftId);
