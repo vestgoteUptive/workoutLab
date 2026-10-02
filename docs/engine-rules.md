@@ -155,7 +155,7 @@ Every item carries machine-readable reasons, and the UI or an optional LLM only 
 - **R11-E4** Offline: the history includes 3 queued romanian-deadlift sets, so hamstrings +3 and glutes +1.5 (UF-10 AC8).
 
 ## 12. Swap ranking (UF-08.3, UF-05.1, D-0025)
-`rankSwaps(current, reason | null, session, profile, library, history, tz, now)`. **Candidates** are the eligible exercises, not in the session, that share a weight-1.0 area with `current`. The main slot takes compounds only. `muscleMatch = Σ min(w_cur, w_alt) / Σ w_cur`. The alternative keeps the slot's set count. Each result has `{exerciseId, muscleMatch, timeCostS, equipment, fitsBudget, bestMatch}`. Sort keys:
+`rankSwaps(current, reason | null, session, profile, library, history, now, tz)`. **Candidates** are the eligible exercises, not in the session, that share a weight-1.0 area with `current`. The main slot takes compounds only. `muscleMatch = Σ min(w_cur, w_alt) / Σ w_cur`. The alternative keeps the slot's set count. Each result has `{exerciseId, muscleMatch, timeCostS, equipment, fitsBudget, bestMatch}`. Sort keys:
 - none: muscleMatch desc, same type first, not in the last session first, id.
 - `equipment_taken`: drop candidates that share an equipment item with `current` (if that drops all of them, keep all and sort by fewest shared), then muscleMatch desc, id.
 - `discomfort`: no shared equipment first, guided (machine or cable) first, muscleMatch desc, id.
@@ -237,3 +237,4 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 12.1 fitsBudget counts the back-off set (R12-E12, D-0105) | T-0226 |
 | 7.4 / 12.1 light-lift back-off floor (R7-E16, D-0131) | T-0220 |
 | 14 text: D-0057 §2/§4/§6, D-0062 §1/§2/§4/§5 (D-0132) | T-0221 |
+| 12 rankSwaps signature order `now, tz` (D-0130) | T-0212 |
