@@ -85,3 +85,13 @@ Tests for every AC pass · the Playwright e2e job is green · `npx -y pnpm@10.28
   - The full e2e suite passed 87/87 twice, and the T-0393 cases passed `--repeat-each=5` (20/20). AC5: `uf-08-setup`, `uf-04-library` and `shell` passed 42/42 unedited.
   - `-w typecheck lint test --force` was green (19/19 tasks, web 2010 tests, repo-checks 146 pass).
   - `-w format:check` was clean, and `check-all.mjs` exited 0.
+
+## Accept log (2026-10-02, product-owner)
+Verdict: **done**. Branch `t/T-0393-e2e-external-load` at 3b9fe9a. Review approved; QA 87/87 e2e twice, T-0393 cases 20/20 with `--repeat-each=5`, `-w` gate green, all under the lock.
+- **AC1** (`T-0393 AC1 …`, `uf-08-setup.spec.ts`). Checks length equality, a per-row deep-equal without `external_load`, the 18 loaded ids and the 14 unloaded ids as exact sorted sets (their sum equals `exercises.length`), and that `exercises` is all `false`. Met.
+- **AC2** (`T-0393 AC2 …`). With `sets: []`, "Bodyweight" appears exactly when `external_load` is false (mapped by `name`). At least one loaded row must render. No row contains `kg`, which is stricter than the ticket's " kg" so that it still holds after T-0391 adds U+00A0. Every row matches `DETAIL_PATTERN`, and there are zero console errors. Met.
+- **AC3** (`T-0393 AC3 …`). One session at `Date.now() − 3 d`, 3 × 42.5 kg × 7 per loaded id. Asserts that some row matches `KG_ROW`, every loaded row matches `KG_ROW`, unloaded rows say Bodyweight, and every row matches `DETAIL_PATTERN`. The per-slot rule 14 derivation is in a comment. The observed rows needed no literal changes. Only an isolation (Calf raise, 14.6 `hold`) is loaded in the plan, so the main-lift 14.7 `add_rep` kg path isn't exercised here. That goes to a follow-up, and the AC as written is met.
+- **AC4** (`T-0393 AC4 …`). The online rows include a kg row. Going offline goes through `precacheSettled` and `/session/setup`, then Suggest at 30, and the rows `toEqual` the online ones. Met.
+- **AC5**. `uf-08-setup`, `uf-04-library` and `shell` pass 42/42 unedited. The fixture diff is additive only (+10 −0), and the spec's only changed existing line is the import. Met.
+- **Principles.** This is a test-only change with no app code and no contract change. The engine stays deterministic and is exercised end to end.
+- **Carry-over.** AC2–AC4 assert `DETAIL_PATTERN` (plain space), so T-0391 must widen it when `formatKg` lands (D-0124). T-0391's ticket already records this.
