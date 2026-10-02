@@ -5,7 +5,7 @@ lane: web-shell
 screens: []
 decisions: [D-0001, D-0086]
 deps: [T-0425, T-0430]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. From the T-0425 build and accept logs (the one real finding of the console guard). Build flow: wl-build-web. About ⅓ day. It depends on T-0430 because both edit the same test in tests/e2e/fixture-guard.spec.ts: T-0430 relabels the allow, and this ticket removes it. It can run in parallel with T-0427 (no shared file) and T-0431 (different web-shell paths). Ready when T-0430 is done. -->
 
@@ -170,3 +170,35 @@ start `T-0429` (for example `T-0429: register the service worker with a rejectio
   tasks, 169 files / 2661 tests green. `test:e2e` (whole suite): 142 passed. `check:size` exit 0,
   `-w format:check` exit 0, `node .github/scripts/check-all.mjs` exit 0. The contracts and the AC5
   specs (shell, offline, uf-02, uf-08, uf-09) are unchanged against main.
+
+## Accept log (product-owner, 2026-10-02)
+- **Verdict: done.** Branch `t/T-0429-sw-registration-catches-failure` at 7c113ab. Review approved, QA pass.
+- **AC1 met.** `T-0429 AC1` in `sw-registration.spec.ts` (guarded, no allow) passes. The red run on main
+  (`pageerror: t0429-register-failed`) was recorded by the build and reproduced by QA. QA's extra
+  `.catch`→`.then` fault shows the test depends on the handler itself.
+- **AC2 met.** One registration, scope `/`, `scriptURL` ends in `/sw.js`. The planted fault
+  (`injectRegister: "auto"` restored) gave `Expected: 1, Received: 2` and was reverted.
+- **AC3 met, with D-0154 accepted.** The allow and the `consoleGuard` parameter are gone. No e2e file
+  contains the registration error string (grep empty, plus the `T-0429 AC3` source check). The test
+  passed 20/20 at `--repeat-each=20`, and QA ran 40/40 at 10 repeats. The one change to that test is the
+  `navigator.serviceWorker.ready` await from D-0154 §1. Its interception assertion is unchanged, so
+  nothing was weakened. The line `An unknown error occurred when fetching the script.` is Chromium's own
+  message, and page code can't suppress it. So "logs no error" in the title can only be held for the
+  app's part: no `console.error` from app code and no unhandled rejection. AC1 and the unit test pin that
+  part. We accept that scope. The browser line counts as outside the app's control, which fits
+  NFR-OFF: the user can't act on it, and the next online load registers. T-0437 decides how the
+  fixture treats that line.
+- **T-0430 AC5 replaced.** That test pinned the comment on the allow that this ticket was told to remove.
+  The ticket asked for the removal, and `T-0429 AC3` covers a stronger property in its place. So
+  replacing it is acceptable, not a weakening.
+- **AC4 met.** `build.test.ts -t T-0429`: no `registerSW.js`, no `registerSW` reference, every `<script>`
+  has a `src`, `sw.js` present. Red on main recorded (2 of 2).
+- **AC5 met.** The shell, offline, uf-02, uf-08 and uf-09 specs are unchanged against main and pass in the
+  whole-suite run (142). `check:size` is green.
+- **DoD.** Typecheck, lint and test green (QA 2661 tests; build ran the workspace gate 19/19). Whole e2e,
+  `format:check` and `check-all`/`check:repo` green. Contracts unchanged, CSP unchanged.
+- **Principles.** No workout-flow, engine or onboarding surface is touched. Offline use after install is
+  preserved.
+- **Follow-ups.** T-0437 (e2e fixture owner) decides on exempting Chromium's sw.js fetch line in
+  `guarded-test.ts`, and folds in review's optional idea of widening the AC3 source scan to that second
+  string. The T-0420 lane can drop any allow for this SW error in its UF-03 spec once this lands.
