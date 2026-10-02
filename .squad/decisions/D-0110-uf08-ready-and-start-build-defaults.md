@@ -32,7 +32,7 @@ D-0065 §6–§7 fix what UF-08.4 shows and how Start writes the session: `upser
    - A retry reuses the same id. `upsertSession` replaces by id, so a write that landed before the error was reported never becomes a second session.
    - Leaving the Ready step (Back) drops the id, and the next visit makes a new one. Two setups, or two devices, still give two sessions (NFR-SYNC-4).
 4. **Replace navigation.** After the write resolves, Start calls `navigate("/session/<id>", {replace: true})`. Back from focus mode then goes to the entry before setup (normally `/`), never to a setup step.
-5. **Offline is the same path.** `upsertSession` writes IndexedDB and never waits for the network. The `AutoSync` queue flushes the row later (T-0300c). Start makes no fetch of its own, online or offline.
+5. **Offline is the same path.** `upsertSession` writes IndexedDB and never waits for the network. The `AutoSync` queue flushes the row later (T-0300c). "Later" means the next AutoSync trigger: an app mount or reload, the `online` event, or a `SIGNED_IN`/`TOKEN_REFRESHED` auth event (clarified by D-0112 §3). Start makes no fetch of its own, online or offline.
 6. **`features/UF-08/focus-prefs.ts`:**
    - It exports `readFocusPrefs(): FocusPrefs`, `writeFocusPrefs(prefs: FocusPrefs): void` and `type FocusPrefs = {sound: boolean; voice: boolean; keepAwake: boolean}`.
    - The storage value is `localStorage["wl-focus-prefs"]` = `JSON.stringify({version: 1, sound, voice, keepAwake})`.

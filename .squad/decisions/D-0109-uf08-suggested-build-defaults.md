@@ -6,7 +6,7 @@ date: 2026-10-02
 by: product-owner (groom T-0303b/T-0303d/T-0304a)
 area: product
 builds-on: D-0065 §4, D-0071 §1, D-0106 §4, D-0107 §1 §2 §3 §5
-supersedes: D-0065 §4 (the "30/45/60 around the current value" chip wording only)
+supersedes: D-0065 §4 in part (the "30/45/60 around the current value" chip wording, and "or a stepper change" for UF-08.2, which has no stepper)
 ---
 ## Context
 D-0065 §4 says every UF-08.2 action goes back through `suggest`, and the parent T-0303 AC-B1–B6 give most of the copy. A builder still has to guess at seven things, and each guess changes what a test asserts:

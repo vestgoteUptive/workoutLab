@@ -95,7 +95,11 @@ Principle 1: during a workout the screen shows one task. This ticket builds the 
     - the pair, warm-up in budget: 1660.
     - While paused, it doesn't grow (equal at `pausedAtMs` + 0 and + 60 000).
   - **`warmupSpentMs`.** Enter `warmup` at 5 000, pause at 50 000, resume at 70 000, leave at 185 000 → 160 000.
-  - **No tick counting.** A source test finds, in `features/UF-09/**` (non-test files), no `-= 1`, `--` or `+= 1` on a timer or remaining value. `setInterval` appears only in the host's re-render hook.
+  - **No tick counting.** A source test over the `.ts`/`.tsx` non-test files in `features/UF-09/**` finds no decrement or increment of a timer, remaining or seconds value.
+    - It matches the code patterns: an identifier containing `remaining`, `timer`, `seconds`, `secs` or `countdown` (case-insensitive), followed by `--`, `++`, `-= 1` or `+= 1`, or preceded by `--`/`++`. It also matches a `setState(n => n - 1)`-style updater.
+    - It doesn't grep a bare `--`, which would match CSS custom properties such as `var(--wl-…)` in strings or `.css` files. CSS files are out of its scope.
+    - A planted `remaining--` turns it red.
+    - `setInterval` appears only in the host's re-render hook.
 - **AC-3 (synchronous persistence, D-0111 §6)**
   - **Written before `dispatch` returns.** Right after `store.dispatch(e)` returns, with no `await`, `act` or timer advance in between, `localStorage["wl-focus:S1"]` parses to `{version: 1, …}` deep-equal to `store.getState()`. This holds for every transition in the AC-1 table.
   - **Throwing storage.** With `setItem` throwing, `dispatch` still transitions and doesn't throw.
@@ -110,7 +114,7 @@ Principle 1: during a workout the screen shows one task. This ticket builds the 
     - a row whose `userId` differs from the stubbed user;
     - `row.plan` failing `parseSessionPlan`;
     - `row.plan` null;
-    - `indexedDB` undefined (no uncaught error, no unhandled rejection).
+    - IndexedDB unavailable, with no uncaught error and no unhandled rejection. Dexie captures `indexedDB` at import, and `fake-indexeddb` is loaded globally, so deleting the global in a test proves nothing. The builder simulates this by making `offlineDb()` throw, or `offlineDb().sessions.get` reject (for example `vi.spyOn` or a `vi.mock` of `lib/offline`). Both shapes give the message.
   - **The pair.** A valid row of the stubbed user starts the machine at UF-09.1.
   - **Ended.** A row with `ended_at` set shows "This workout has ended" with a link to `/`, and a stored `wl-focus:S1` is removed. With `ended_at` null, a stored state is restored.
   - **Stale.**
@@ -139,6 +143,7 @@ Principle 1: during a workout the screen shows one task. This ticket builds the 
 - **AC-8 (offline icon, NFR-OFF-6, D-0066 §14)**
   - **Offline.** Offline, the chrome contains an element with `aria-label="Offline"`, and no text "Offline ·", no `role="alert"` and no `banner`.
   - **Online.** Online, there is no such element.
+  - **No mount refresh (D-0111 §11).** Online, after the host mounts with a valid row, the `refreshAll` spy and every `refresh*` spy from `lib/offline` have 0 calls, checked after 50 ms. The machine starts without waiting for the network. Offline, the same holds.
 - **AC-9 (timer expiry and the check point, D-0111 §5 §8)**
   - **Auto-advance.** With fake timers, the host dispatches exactly one end event when `remainingS` reaches 0:
     - `getReady` at 5 s → `warmup` move 0;

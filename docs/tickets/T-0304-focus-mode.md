@@ -3,9 +3,9 @@ id: T-0304
 title: UF-09 Focus mode — state machine and persisted focus state, the set loop with auto-save, warm-up and timed sets, time check and pause, offline end to end
 lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.2, UF-09.3, UF-09.4, UF-09.5, UF-09.6, UF-09.7, UF-09.8, UF-09.9]
-decisions: [D-0002, D-0004, D-0015, D-0017, D-0024, D-0026, D-0045, D-0047, D-0053, D-0057, D-0062, D-0063, D-0065, D-0066, D-0067, D-0071]
-deps: [T-0303d, T-0205, T-0318]
-status: split   # → T-0304a–d; no child is ready until T-0303d and T-0318 are done
+decisions: [D-0002, D-0004, D-0015, D-0017, D-0024, D-0026, D-0045, D-0047, D-0053, D-0057, D-0062, D-0063, D-0065, D-0066, D-0067, D-0071, D-0111]
+deps: [T-0300, T-0205, T-0318]
+status: split   # → T-0304a, T-0304e, T-0304b, T-0304c, T-0304d (D-0111 §1); T-0304a is ready now and waits on no UF-08 ticket
 ---
 <!-- Re-groomed 2026-10-02 by product-owner (D-0111): T-0304a is split into T-0304a (machine + host, A1–A7) and T-0304e (hook + seams, A8–A9); T-0304a no longer waits on T-0303d; run order a → e → b → c → d. -->
 <!-- Groomed 2026-09-29 by product-owner. Split into T-0304a–d (D-0066 Consequences). ACs are tagged [a]–[d]. T-0205 is merged (D-0062). Reconciled by triage 2026-09-29 (TR-0030, D-0071): seam order + keepsClockRunning, How to as a seam, useFocusSession finish()/replaceItem with whole-row upserts, no /session/:id/list route. -->
@@ -16,17 +16,23 @@ Principle 1: during a workout the screen shows one task. UF-09 is the core of th
 **Known engine gap (not a dependency):** rule 7.1 costs timed items at `defaultDurationS`, while `prefill.durationS` can reach 120 s, so a plan with a progressed plank can overrun its budget and the time check under-estimates what is left. T-0219 (engine) fixes the costing. Focus mode renders `prefill.durationS` as the hold time and passes the engine's plan to `timeCheck` unchanged, so no UI change is needed when T-0219 lands (D-0066 §9).
 
 ## Split (the orchestrator edits the board)
-Parent `T-0304` → `split → T-0304a, T-0304b, T-0304c, T-0304d`. All four are in lane web-feature:UF-09, so they run one after another.
+Parent `T-0304` → `split → T-0304a, T-0304e, T-0304b, T-0304c, T-0304d` (D-0111 §1). All five are in lane web-feature:UF-09, so they run one after another, in the order a → e → b → c → d.
 
 | Child | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|
 | T-0304a | Focus machine (pure reducer), session loading, persisted focus state + restore, chrome (pause button, progress bar, index), timer maths, placeholder views (ACs A1–A7; `docs/tickets/T-0304a-focus-machine.md`) | T-0300, T-0205, T-0318 (D-0111 §2: T-0303d dropped) | ready | ½ day |
 | T-0304e | The `useFocusSession()` hook and `seams.tsx` (D-0066 §12), `done` → `finish()` (ACs A8–A9; split off by D-0111 §1; `docs/tickets/T-0304e-focus-session-hook-and-seams.md`) | T-0304a | todo | ½ day |
-| T-0304b | Set loop: UF-09.1 Get ready, .3 Current set, .4 Confirm (auto-save), .5 Rest, .6 Next exercise; back-off; in-session pre-fill | T-0304e (D-0111 §1) | todo | ½ day |
-| T-0304c | UF-09.2 Warm-up, .7 Timed set (D-0062 §5 copy), wake lock, sound + 3-2-1 cues, reduced motion | T-0304b | todo | ½ day |
+| T-0304b | Set loop: UF-09.1 Get ready, .3 Current set, .4 Confirm (auto-save), .5 Rest, .6 Next exercise; back-off; in-session pre-fill. **Groom note:** the UF-09.4 5 s auto-save must be a persisted wall-clock timer (`{startedAtMs, durationS: 5, pausedMs}` in the focus state, cancelled by a touch), not a `setTimeout`, so a reload or a locked phone keeps it right (NFR-TIME-1). D-0111 §4 lists `confirm` as having no timer, and this groom amends that for the auto-save. | T-0304e (D-0111 §1) | todo | ½ day |
+| T-0304c | UF-09.2 Warm-up, .7 Timed set (D-0062 §5 copy), wake lock, sound + 3-2-1 cues, reduced motion | T-0304b; also needs `readFocusPrefs` exported from `features/UF-08/index.tsx`, which T-0303d creates (see below) | todo | ½ day |
 | T-0304d | UF-09.8 Time check, .9 Paused, End → `/session/:id/summary`; offline, reload, two-device and keyboard e2e | T-0304c | todo | ½ day |
 
-T-0304a depends on T-0318 for `lib/i18n/flows/uf-09.ts`, the `/session/:sessionId/summary` route (UF-03.3) and the principle-1 import bans (D-0067 §2). It depends on T-0303d only for the `sessions` row T-0303d creates and the focus-prefs exports from `features/UF-08/index.tsx`. If T-0303d is late, T-0304a can seed a session row in tests. The orchestrator may relax that dependency then.
+T-0304a depends on T-0318 for `lib/i18n/flows/uf-09.ts`, the `/session/:sessionId/summary` route (UF-03.3) and the principle-1 import bans (D-0067 §2). It doesn't depend on T-0303d: it seeds its session rows with the real `upsertSession` (D-0111 §2). T-0304a, T-0304e and T-0304b don't wait on any UF-08 ticket either.
+
+Two later children touch T-0303d's output:
+- T-0304c imports `readFocusPrefs` from `features/UF-08/index.tsx`.
+- T-0304d's e2e (AC-D8, AC-D9) starts sessions through UF-08.4.
+
+In practice T-0303d (about ⅓ day, after T-0303b) lands long before c and d. If it hasn't, the orchestrator holds T-0304c until it has. This needs no board dep: the T-0304c groom checks it.
 
 ## Scope
 - In:

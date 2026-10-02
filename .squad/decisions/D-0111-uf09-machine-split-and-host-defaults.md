@@ -39,7 +39,7 @@ Grooming also found these open points:
      - `warmup`: the move's `durationS`.
      - `rest`: by `type`, as above.
      - `next`: 60 s (D-0066 §10).
-     - `set`, `confirm`, `timeCheck`, `done`: none.
+     - `set`, `confirm`, `timeCheck`, `done`: none in T-0304a. T-0304b adds a persisted 5 s wall-clock auto-save timer to `confirm` (NFR-TIME-1, D-0066 §4), in the same `{startedAtMs, durationS, pausedMs}` shape.
      - `timed`: none in T-0304a. T-0304c adds its 3 s + hold timer.
    - **Events:** `COUNTDOWN_END`, `SKIP_WARMUP`, `WARMUP_NEXT`, `WARMUP_RESTART`, `SET_RECORDED {set}`, `SAVED {set?}`, `REST_END`, `REST_ADJUST {deltaS}`, `CHECK_RESOLVED {to: "next" | "timeCheck"}`, `CONTINUE`, `READY`, `TIMED_RECORDED {set}`, `PAUSE`, `RESUME`. T-0304b–e may add events, but never change these.
    - **Entering an item** (from `SKIP_WARMUP`, a `COUNTDOWN_END` with an empty warm-up, or `READY`) goes to `timed` when the item's `repsMin` is null, else to `set`.
@@ -65,9 +65,15 @@ Grooming also found these open points:
    `timed` has no auto-end until T-0304c, because its end writes a set. Nothing counts ticks (NFR-TIME-1).
 9. **Placeholder views (T-0304a).** Each machine state renders an `<h1>` from `en.uf09` and, for a phase with a timer, an element with `role="timer"` showing `m:ss` of `remainingS`. They render no action buttons, except `paused`, which renders one button, "Resume". T-0304b–d replace them and own their buttons. With the chrome's "Pause workout", every non-paused machine state has exactly one button.
 10. **Chrome copy.** The index reads "Warm-up" in `getReady` and `warmup`, and "{itemIndex + 1} / {N}" otherwise. The progress bar has 1 + N segments (warm-up + one per item, `aria-hidden`), each with `data-state` = `done` | `current` | `upcoming`. The warm-up segment is `done` once `phase` has left `getReady`/`warmup`. With an empty `plan.warmup`, the warm-up segment is still drawn and is `done`.
+11. **No mount refresh in UF-09.** D-0071 §8 and D-0113 have each Phase 3 screen run `refreshAll` (3 s cap) on mount when online. UF-09 is exempt. It loads only from IndexedDB (the session row) and the cached library, and it calls neither `refreshAll` nor any other `refresh*`. The reasons:
+    - **Principle 1.** A refresh landing mid-workout could re-render or re-time the current step. The plan the user started is fixed at Start (D-0065 §7), and only the time check or a swap changes it, through `upsertSession`.
+    - **Offline first (NFR-OFF-2).** Focus mode must behave the same with no network. A 3 s wait before the first set, or a different library mid-session, would make online and offline differ.
+    - **Nothing to gain.** The engine isn't re-run in UF-09 until the time check (rule 8 reads only `plan` and `budgetMin`). The sync of sets is AutoSync's job (T-0300c), not this screen's.
+
+    A test in T-0304a pins this: the `refreshAll`/`refresh*` spies have 0 calls after the host mounts online, checked after 50 ms.
 
 ## Consequences
-- T-0304a encodes §2–§10. T-0304e encodes parent AC-A8/A9 and `done` → `finish()`, on top of §4–§6.
+- T-0304a encodes §2–§11. T-0304e encodes parent AC-A8/A9 and `done` → `finish()`, on top of §4–§6.
 - T-0304b–d build on the event list in §4 and the store in §6, and replace the §9 placeholders.
 - T-0306b and T-0305a still list `features/UF-09/seams.tsx` as their one UF-09 grant. It now comes from T-0304e, not T-0304a. Their board deps (T-0304d, T-0304) are unchanged. The orchestrator may move them to T-0304e, because their tests build `ctx` directly (D-0071 §5).
 - The parent T-0304 table gains T-0304e.

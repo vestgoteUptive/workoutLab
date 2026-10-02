@@ -3,7 +3,7 @@ id: T-0303d
 title: UF-08.4 Ready — summary, the 4-step focus explainer, the focus-prefs module and its index.tsx hand-off, Start → upsertSession (IndexedDB first, offline the same) → /session/<id>
 lane: web-feature:UF-08
 screens: [UF-08.4]
-decisions: [D-0002, D-0004, D-0015, D-0045, D-0053, D-0063, D-0065, D-0071, D-0086, D-0091, D-0103, D-0107, D-0108, D-0109, D-0110]
+decisions: [D-0002, D-0004, D-0015, D-0045, D-0053, D-0063, D-0065, D-0071, D-0086, D-0091, D-0103, D-0107, D-0108, D-0109, D-0110, D-0112]
 deps: [T-0303b]
 status: todo
 ---
@@ -33,7 +33,7 @@ UF-08.4 is the last screen before focus mode. It shows the engine's numbers for 
   - Any contract change.
 
 ### Edge cases that are in scope
-- **Offline:** Start writes IndexedDB and navigates with no network wait, online or offline (AC-6). A session started offline is sent once the device is back online (AC-10).
+- **Offline:** Start writes IndexedDB and navigates with no network wait, online or offline (AC-6). A session started offline is sent once the device is back online. A session started online is sent at the next AutoSync trigger, such as a reload (AC-10, D-0112 §3).
 - **Time running out:** "done by" is computed when Ready opens, and `started_at` is the Start tap, so setup time isn't charged to the workout's rule 8 clock (AC-1, AC-4). An empty plan still starts (AC-7).
 - **Zero history:** the summary renders the zero-history plan's numbers (W-R7E4, AC-1).
 - **Returning after 10 days off:** nothing here depends on history beyond the `Workout` it receives. Two setups started on two devices after a break make two sessions (AC-6).
@@ -99,8 +99,9 @@ UF-08.4 is the last screen before focus mode. It shows the engine's numbers for 
 - **AC-10 (e2e: start online and offline, a11y, D-0086, D-0091 §1, D-0108)** Rows appended to `tests/e2e/uf-08-setup.spec.ts`, reusing T-0303a's in-spec seed, with no fixture edits. The spec registers its own `sessions` route after `mockSupabaseData` to record the upserted rows (the later-registered handler wins).
   - **Online.** `/` → "Start workout" → UF-08.1 (45) → chip 30 → Suggest → UF-08.2 → Looks good → UF-08.4 → Start.
     - The URL becomes `/session/<uuid v4>`, and `[data-screen-id^="UF-09"]` is visible.
-    - IndexedDB `wl-offline.sessions` holds that id (read with `page.evaluate`).
-    - Within 5 s the recorded `sessions` request contains a row with that `id` and `time_budget_min` 30.
+    - IndexedDB `wl-offline.sessions` holds that id with `pending: true` (read with `page.evaluate`).
+    - The spec then reloads the page, which mounts AutoSync and runs its `flushNow()` (D-0112 §1). Within 5 s of the reload, exactly one recorded `sessions` request carries that `id`, with `time_budget_min` 30.
+    - The spec doesn't depend on a send before the reload, and doesn't assert that one is absent. Today no flush runs on enqueue (D-0112 §4).
   - **Offline.** After the precache settles: offline → reload `/session/setup` → Suggest → Looks good → Start.
     - The URL becomes `/session/<uuid>`, IndexedDB holds the row, and no `sessions` request is recorded while offline.
     - Going online then records exactly one `sessions` request carrying that `id`.

@@ -7,6 +7,8 @@ by: product-owner (groom T-0302a/T-0303a)
 area: product
 builds-on: D-0063 §2-§3, D-0065 §2-§3, D-0071 §2 §8, D-0095
 ---
+> **Amended in part by D-0110 (2026-10-02).** §4: `SessionSetup` also takes a `clock` prop. UF-08.1 and UF-08.2 keep the once-read `now`. UF-08.4 reads `clock()` when it opens (for "done by") and again at the Start tap (for `started_at`) (D-0110 §1).
+
 ## Context
 D-0065 §2-§3 and D-0071 §2 fix the UF-08.1 values: 45 min, ±5 within 15-120, chips 20/30/45/60/90, the finish time converted once, the fit line, and `?step=` views where a cold load shows UF-08.1. A builder still has to guess at nine smaller things. Each guess changes what a test asserts:
 - which URL is canonical;
