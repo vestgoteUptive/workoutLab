@@ -62,3 +62,16 @@ none
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0386` and cite screen IDs.
+
+## Build log (2026-10-02, frontend-dev)
+- **AC1 guard** (`__tests__/read-sequence.test.tsx`). The first read's four loaders hang until the test releases them (content A, chest 20). `refreshAll` resolves at once. Every later read serves content B (chest 24). The `suggest` spy's `targets` argument tells A and B apart. After B publishes, releasing A leaves the calls at `["B"]`, and the fit line doesn't change. Contrast row: `refreshAll` is held, A is released first and publishes (`["A"]`), then the refresh settles and B replaces it (`["A", "B"]`). **Planted fault:** with `seq < publishedSeq.current` removed from the check, the guard row turns red with `expected [ 'B', 'A' ] to deeply equal [ 'B' ]`, and the contrast row still passes. Reverted, green.
+- **AC2-AC3 DST** (`time.ts`, `__tests__/time-dst.test.ts`). `occurrencesToday` collects every instant of `hh:mm` on now's local day. It tries the zone offsets at −12 h, 0 and +12 h around the wall time, and keeps only the candidates that format back to the same day and `hh:mm`. `finishAt` picks the earliest instant that is strictly after now. If none is after now, it returns the last one, which then rejects. With no occurrence (a spring-forward gap), `finishAt` falls back to the unchanged `todayAt`, so that behaviour stays as it was (pinned: 2026-03-29 Stockholm, 01:30 CET, "02:30" → 60). Both contrast rows run on the same days, outside the repeated hour. **Planted fault:** on the old `todayAt`, 3 rows are red. The old code took the later instant in Stockholm (00:10Z → 80, 23:30Z → 120) and the earlier instant in New York (05:45Z → rejected).
+- **AC4.** `time.test.ts` and `controls.test.tsx` are unchanged and green.
+- **AC5-AC8 focus** (`SessionSetup.tsx`, `__tests__/finish-focus.test.tsx`). There are refs on the "Finish by" input and the "Set a finish time" button. A `finishWasOpen` ref and one effect keyed on `[finishOpen]` move focus only when `finishOpen` flips: into the input when it opens, to the button when it closes. A rejected or partial value never closes the input, so focus stays put. Mount moves no focus, including under StrictMode, because the ref starts equal to the state. Contrast rows: an unrelated re-render (a chip while the input is open, + while it is closed) leaves focus on the control the user used. **Planted faults:** (a) without the two `.focus()` calls, 8 rows are red (all of AC5-AC7); (b) without the flip check, with the effect running on every render, 4 rows are red (the AC8 mount row, both unrelated re-render rows and the AC5 contrast row). Reverted, green.
+- **AC9.** `exports-and-lint.test.ts` (the import bans, `jsx-no-literals`, the export pin) is unchanged and green. No new strings or exports.
+- **Runs.**
+  - UF-08 folder: 267/267.
+  - web typecheck and lint green.
+  - web `test`: 123 files, 1814 tests, green on 2 of 3 runs. The first run had 1 failure in the untouched `ready-start.test.tsx` "retry: the second tap reuses the same id…" (193 ms, the message wasn't captured). It passed 3/3 in isolation and in both later full runs. Filed as a follow-up.
+  - `uf-08-setup` e2e: 15/15.
+  - `-w format:check` clean; `check-all.mjs` exit 0.

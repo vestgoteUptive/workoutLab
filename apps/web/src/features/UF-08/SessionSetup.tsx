@@ -17,7 +17,7 @@
 // `{budgetMin, warmupInBudget, energy, shuffle, mainLiftId, excludeIds}`, where `mainLiftId` is the
 // current plan's (null only when the main item itself is removed). Leaving UF-08.2 for UF-08.1
 // drops the record (the adjustments are discarded); `budgetMin` is shared and stays.
-import { useEffect, useId, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { suggest, type Energy, type SessionInput, type Workout } from "@workoutlab/engine";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
@@ -133,6 +133,19 @@ export function SessionSetup({
   const [finishValue, setFinishValue] = useState("");
   const [finishError, setFinishError] = useState(false);
   const [adjusted, setAdjusted] = useState<Adjusted | null>(null);
+  const finishInput = useRef<HTMLInputElement>(null);
+  const finishButton = useRef<HTMLButtonElement>(null);
+  const finishWasOpen = useRef(finishOpen);
+
+  // D-0115 §5 (WCAG 2.4.3): opening moves focus into "Finish by"; a conversion that closes it
+  // moves focus back to "Set a finish time". Runs only when `finishOpen` flips, so the first
+  // mount (and any other render) moves no focus. A rejected or partial value keeps it open.
+  useEffect(() => {
+    if (finishWasOpen.current === finishOpen) return;
+    finishWasOpen.current = finishOpen;
+    if (finishOpen) finishInput.current?.focus();
+    else finishButton.current?.focus();
+  }, [finishOpen]);
 
   const { status } = useAuth();
   const state = useSetupData(nowIso, tz, status === "signed-in");
@@ -346,6 +359,7 @@ export function SessionSetup({
                     {en.uf08.finishBy}
                   </label>
                   <input
+                    ref={finishInput}
                     id={ids.finish}
                     type="time"
                     className="wl-uf08__time"
@@ -362,6 +376,7 @@ export function SessionSetup({
                 </>
               ) : (
                 <button
+                  ref={finishButton}
                   type="button"
                   className="wl-uf08__link"
                   onClick={() => {
