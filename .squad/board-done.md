@@ -174,6 +174,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0386 | UF-08.1 hardening (T-0303a QA): test the read-sequence guard in use-setup-data.ts; DST fall-back: pick the earliest occurrence after now in time.ts todayAt (Stockholm 2026-10-25 / New York 2026-11-01 cases); keep focus on open/close of the finish-time input (WCAG 2.4.3); real-browser 24-hour time-input probe | web-feature:UF-08 | T-0303a, T-0303b | done | wl-build-web |
 | T-0387 | Decide whether `lib/i18n/workout.ts` formatters take a locale / number formatter (raw "63 %", "12 days ago", English-only plurals) before UF-08.2 (T-0303b) and UF-09 depend on the 1-arg signatures; record in D-0106 or a new decision (T-0302c review) | product | T-0302c | done (D-0114) | wl-spec |
 | T-0388 | Locale-aware kg weight helper `formatKg(value, locale?)` in `lib/format/number.ts` (like formatSetCount), before the first UF-09 ticket that shows a weight (D-0114 §3) | web-shell | — | done | wl-build-web |
+| T-0450 | Retire the `git diff main...HEAD` lane assertion in UF-11 strings.test.ts AC-B16 (and any other test that asserts on the branch diff; state.md trap, T-0303b): it fails on ticket-doc commits and is redundant with check-lane-paths (T-0308b QA) | web-feature:UF-11 | T-0308b | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |

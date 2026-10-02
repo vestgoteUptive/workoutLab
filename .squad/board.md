@@ -151,7 +151,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0447 | Needs a decision (amends D-0119 §7): when one observation crosses several cue thresholds (throttled background tab returns after a rest ended), fire only the lowest crossed cue of each kind, and drop voice cues once remaining is 0? Today 10 s + 0 s tones overlap and '3 2 1' plays after the rest (T-0304g review) | web-feature:UF-09 | T-0304g | todo | wl-build-web |
 | T-0448 | UF-09 device polish: speechSynthesis.cancel() on unmount and PAUSE; prime speechSynthesis inside the host gesture (iOS Safari); resume an AudioContext whose state is 'interrupted', not only 'suspended' (T-0304g review) | web-feature:UF-09 | T-0304g | todo | wl-build-web |
 | T-0449 | OfflineStatus formatTime: use hour '2-digit' if '08:10' is the intended form (D-0084 consequence) (T-0307b review) | web-shell | — | todo | wl-build-web |
-| T-0450 | Retire the `git diff main...HEAD` lane assertion in UF-11 strings.test.ts AC-B16 (and any other test that asserts on the branch diff; state.md trap, T-0303b): it fails on ticket-doc commits and is redundant with check-lane-paths (T-0308b QA) | web-feature:UF-11 | T-0308b | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
