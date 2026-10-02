@@ -224,7 +224,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0378 | Signed-in shell offline hydrate raises an unhandled pageerror when Supabase reads fail (session_sets_live, exercises, area_targets…); catch and degrade, or ensure T-0301c's signed-in e2e mocks them (T-0301d QA) | web-shell | — | done | wl-build-web |
 | T-0379 | Lint-in-vitest tests time out at the 5 s default under machine load (`import-bans.test.ts` AC-11 "features lints clean", `features/UF-10/strings.test.ts` AC-A21 jsx-no-literals): give them an explicit per-test runtime budget or move them to the lint step (T-0331 QA) | web-shell | — | done | wl-build-web |
 | T-0380 | split → T-0380a (OfflineStatus read guard, web-shell), T-0380b (UF-01 auth callback exchange guard); UF-10/UF-04 sites folded into T-0383/T-0384 | web-shell | T-0378 | split | wl-build-web |
-| T-0380a | OfflineStatus.tsx: rejected loadLastSyncedAt falls back to "Offline · not synced yet" (D-0104 pattern) | web-shell | T-0378 | doing | wl-build-web |
+| T-0380a | OfflineStatus.tsx: rejected loadLastSyncedAt falls back to "Offline · not synced yet" (D-0104 pattern) | web-shell | T-0378 | done | wl-build-web |
 | T-0380b | UF-01 AuthCallback: rejected exchangeCodeForSession handled like {error} (expired state + /account link) | web-feature:UF-01 | T-0378 | done | wl-build-web |
 | T-0389 | Real-browser 24-hour `<input type=time>` probe for UF-08.1 (cut from T-0386) | qa | T-0303a | todo | wl-build-qa |
 | T-0390 | Widen the T-0229 AC6 bundle scan: `Function('…')`, ``Function(`…`)``, `eval(`, `(0,eval)(` and the `ajv/dist/compile` marker (D-0117 §4c) (T-0229 review) | web-shell | T-0229 | todo | wl-build-web |
