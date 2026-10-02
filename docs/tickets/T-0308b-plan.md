@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.2, UF-11.3]
 decisions: [D-0001, D-0002, D-0018, D-0027, D-0034, D-0041, D-0050, D-0061, D-0067, D-0070, D-0071, D-0075, D-0081]
 deps: [T-0318, T-0319, T-0334]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-09-29 (groom mode) from T-0308's [b] ACs, docs/specs/uf-11-plan-checkin.md §UF-11.2/§UF-11.3 and AC15, D-0070 §3/§7, D-0071 §1/§3/§8/§10, D-0075 and D-0081 §1–§3. All three deps are done (T-0334 merged as f057d58). It does NOT depend on T-0215 or T-0223: UF-11.2 reads only `nextCheckinDate` and whether `periods` is empty, and neither changes under one-period evaluation (the next-date formula is independent of COMPARED_PERIODS). Build flow: wl-build-web. About ¾–1 day, at the top of the one-day budget. If the build runs long, the natural split line is UF-11.2 (AC-B1–B6) / UF-11.3 (AC-B7–B14). Runs in parallel with T-0308a, T-0306a, T-0307a and T-0307b (no path overlap). T-0308c follows in the same lane. -->
 
@@ -330,3 +330,14 @@ Gate (each under `flock /tmp/workoutlab-tests.lock`, pnpm 10.28.2):
 - Web e2e (`TMPDIR=$HOME/.cache/wl-pw-tmp`): 153/153.
 
 The gate above ran on `d287cab`. **This QA-log commit itself makes AC-B16 red on the branch.** It puts `docs/tickets/T-0308b-plan.md` back into `git diff main...HEAD`, and the allowlist in `__tests__/strings.test.ts:168-172` predates the 2026-10-02 grant of this file in "Paths you may change". `check-all` stays green. Fix it in either of two ways: add `path === "docs/tickets/T-0308b-plan.md"` to that allowlist (UF-11 lane, not QA's), or land this file on main before or with the merge. The test isn't weakened either way. T-0362 and T-0363 stay open as before (non-blocking).
+
+## Accept log: re-accept after the H-13 catch-up (2026-10-02)
+
+product-owner, accept mode. Branch `t/T-0308b-plan` at `e9aef3a` (main `4867665` merged in). Tree clean at start.
+
+**Verdict: `done`.** The 2026-09-30 accept holds against today's main. All 16 ACs map to passing tests (QA re-verify above), and the only post-merge change is the `consoleGuard` migration in `uf-11-plan.spec.ts` (T-0430). It is fault-proven: a planted `console.error` in UF-11.2 went red. The other four faults (AC-B10 recompute, AC-B12 error form, AC-B12 double submit, render loop in unit and e2e) also went red.
+- Paths: `git diff --name-only main...HEAD` lists 20 files, all in "Paths you may change". No contract file and nothing under `packages/**` is in the diff.
+- Gate (QA, `d287cab`): `-w` 19/19, repo-checks 146/146, format clean, check-all clean, e2e 153/153. AC-B16 was 12/12 after the QA log landed on main. `node .github/scripts/check-all.mjs` re-run here: exit 0, no findings.
+- Principles 3 and 4 still hold (AC-B3 stub, AC-B10, withdraw-last order).
+- Known artefact: this entry puts the ticket file back into `main...HEAD`, so AC-B16's path test goes red on the branch until the file lands on main (the same as the QA log; retiring that pattern is T-0450). It is not a product defect.
+- Residual, non-blocking: T-0362 (ruled above) and T-0363.

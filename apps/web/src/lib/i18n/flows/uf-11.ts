@@ -1,3 +1,69 @@
 // UF-11 strings (D-0071 §1). Owned by the UF-11 feature ticket: it is the only ticket that
-// edits this file, so the Phase 3 feature lanes never collide in `en.ts`. Empty until then.
-export const uf11 = {} as const;
+// edits this file, so the Phase 3 feature lanes never collide in `en.ts`.
+// UF-11.2 Plan and UF-11.3 Edit plan (T-0308b). T-0308c adds the UF-11.1 card copy.
+export const uf11 = {
+  goals: {
+    build_muscle: "Build muscle",
+    get_stronger: "Get stronger",
+    general_fitness: "General fitness",
+  },
+  months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  /** `{d MMM}` from a local `YYYY-MM-DD` date's parts. */
+  day: (dayOfMonth: number, month: string) => `${dayOfMonth} ${month}`,
+  rhythm: (min: number, max: number) =>
+    `${min}–${max} per week · ${2 * min}–${2 * max} per 14 days`,
+  noPriorities: "No priority areas",
+  headings: {
+    goal: "Goal",
+    rhythm: "Rhythm",
+    priorities: "Priority areas",
+    targets: "Targets",
+    checkins: "Last check-ins",
+    routines: "Routines",
+  },
+  sourceLabels: {
+    default: "From your plan",
+    manual: "Set by you",
+  },
+  adapted: (date: string) => `Adapted ${date}`,
+  targetRow: (area: string, sets: number, source: string) => `${area} ${sets} · ${source}`,
+  firstCheckin: (date: string) => `First check-in on ${date}`,
+  nextCheckin: (date: string) => `Next check-in: ${date}`,
+  noCheckins: "No check-ins yet",
+  sessions: (n: number) => `${n} ${n === 1 ? "session" : "sessions"}`,
+  checkinRow: (date: string, sessions: string, change: string, answer: string) =>
+    `${date} · ${sessions} · ${change} per week · ${answer}`,
+  checkinChange: (fromMin: number, fromMax: number, toMin: number, toMax: number) =>
+    `${fromMin}–${fromMax} → ${toMin}–${toMax}`,
+  answers: {
+    accepted: "Accepted",
+    kept: "Kept",
+    withdrawn: "Withdrawn",
+    pending: "Waiting for you",
+  },
+  exercises: (n: number) => `${n} ${n === 1 ? "exercise" : "exercises"}`,
+  routineRow: (name: string, exercises: string) => `${name} · ${exercises}`,
+  noRoutines: "No routines yet",
+  newRoutine: "New routine",
+  editPlan: "Edit plan",
+  loading: "Loading your plan",
+  coldCache: "Your plan isn't on this device yet. Connect to load it.",
+  // UF-11.3
+  goalGroup: "Goal",
+  rhythmGroup: "Sessions per week",
+  minimum: "Minimum",
+  maximum: "Maximum",
+  decreaseMin: "Decrease minimum",
+  increaseMin: "Increase minimum",
+  decreaseMax: "Decrease maximum",
+  increaseMax: "Increase maximum",
+  priorityGroup: "Priority areas",
+  pickUpToThree: "Pick up to 3",
+  previewHeading: "New targets per 14 days",
+  previewRow: (area: string, sets: number) => `${area} ${sets}`,
+  save: "Save",
+  saving: "Saving",
+  connectToSave: "Connect to save",
+  cancel: "Cancel",
+  saveFailed: "Couldn't update your plan. Try again.",
+} as const;
