@@ -132,9 +132,7 @@ export function Ready({ workout, clock, locale, timeZone }: ReadyProps) {
       </div>
 
       <fieldset className="wl-uf08__prefs">
-        <legend className="wl-uf08__label">
-          {en.uf08.prefsName}
-        </legend>
+        <legend className="wl-uf08__label">{en.uf08.prefsName}</legend>
         {PREFS.map(({ key, label }) => (
           <label key={key} className="wl-uf08__toggle wl-uf08__pref" data-pref={key}>
             <span>{label}</span>
