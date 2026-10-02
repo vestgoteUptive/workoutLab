@@ -97,3 +97,49 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 ## Notes
 - **Flow:** `wl-build-web`.
 - **Parallel:** it is parallel-safe with T-0421 (UF-05) and every UF-09 ticket. It is the first ticket in the UF-03 lane (D-0142 §1).
+
+## Build log (frontend-dev, 2026-10-02)
+- **Files.** `features/UF-03/index.tsx` (the wrapper: one `[data-screen-id="UF-03.3"]`, `<h1>{en.screens.sessionSummary}</h1>`, then `SummaryContent`); `SummaryContent.tsx` (the states and the ended view); `summary-data.ts` (`loadSummary`, `areaChanges`, `nextUpAreas`: IndexedDB reads plus `normalizeHistory`, `isHardSet` and two `balance` calls at `now = row.ended_at`); `summary.css` (tokens only); `lib/i18n/flows/uf-03.ts` (`en.uf03`). Tests in `features/UF-03/__tests__/`: `summary.states.test.tsx` (AC-1, AC-2, AC-9 axe), `summary.numbers.test.tsx` (AC-3..AC-6), `summary.isolation.test.tsx` (AC-7, AC-8 render), `exports-and-lint.test.ts` (AC-8 lint, AC-9 exports/strings).
+- **Red on main.** With main's `index.tsx` stub (and the new modules removed) every AC has a red test: 30 of 38 fail (the 8 still green are the lint/export pins that already hold on the stub, e.g. the UF-11 import ban and "exports exactly Summary").
+- **Planted faults (each applied alone to the built code, the UF-03 suite run, then reverted):**
+  - counting every S1 set, not only `isHardSet` ones → AC-3 "Sets 7" red (reads 8), plus the AC-7 numbers checks;
+  - `balance` called with `new Date(Date.now()).toISOString()` instead of `ended_at` (both calls, Time unchanged) → AC-6 remount red (quads' before 4 → 0 at 2026-10-07) and AC-4 "the calls" red;
+  - `<Navigate to="/" replace />` on the not-on-device state → AC-1 red for the unknown id, the other user, the unreadable plan and the rejecting `sessions.get`;
+  - a "See balance" link on the still-running state → AC-2 red.
+- **Both values of each condition.** Known vs unknown id; own vs other `userId`; `ended_at` null vs set; 11:52:40 vs 11:44:59 (52 vs 44 min); warm-up flagged vs not (7 vs 8 sets); S0 present vs removed (quads' before 4 vs 0); next up two areas / one area / every area at step 4; online (no OfflineStatus) vs offline (text shown, same numbers).
+- **Build defaults (now D-0147, from the review; see the rework below):** a `null` plan (parses `ok`) still shows the summary, because no number depends on the plan; only a plan that fails `parseSessionPlan` is "isn't on this device". When `balance` throws (no cached targets yet: `indexTargets` needs all nine), the ended summary shows Time, Exercises, Sets and See balance and omits the before → after rows and Next up. This is what the UF-09 suites hit after `finish()` (they seed no targets). A non-finite `ended_at − started_at` is "isn't on this device". The link on that state reads "Go to Today".
+- **Shell tests unchanged and green.** No file under `app/**`, `lib/**` (except `flows/uf-03.ts`), `components/**`, `features/UF-09/**`, `features/UF-10/**` or `tests/e2e/**` changed. `routes.phase3.render.test.tsx`, `auth-guard.phase3.test.tsx`, `profile-gate.test.tsx` (AC-8), `features/UF-10/__tests__/never-in-workout.test.tsx` and the whole UF-09 suite pass in the full web run. `tests/e2e/shell.spec.ts` (AC-6) and `tests/e2e/uf-09-focus.spec.ts` pass.
+- **Runs.** `pnpm --filter @workoutlab/web typecheck` green; `lint` green; `test` 150 files / 2339 tests green; `test:e2e shell.spec.ts uf-09-focus.spec.ts` 26/26; `pnpm -w format:check` green; `pnpm check:repo` green; `check:size` green.
+- **Not in this ticket:** the summary e2e (T-0420, with Save), effort chips and Save (T-0420).
+
+## Build log, rework attempt 2 (frontend-dev, 2026-10-02)
+- **Base.** `git merge main` brought in D-0147 (the four defaults above), committed as a merge.
+- **Narrowed catch (D-0147 §2).** `summary-data.ts` no longer wraps `balance` in a bare `catch {}`. `coversEveryArea(targets)` (every one of the nine `AREAS` has a cached target) decides whether the two `balance` calls run. When it's false, `changes`/`nextUp` are `null`. Any other throw from `balance` reaches the outer catch, so the screen shows "isn't on this device", never a partial summary.
+- **New tests** in `__tests__/summary.defaults.test.tsx`, each paired, with an `unhandledRejection` probe:
+  - 0 targets and 8 of 9 targets: Time, budget, Exercises, Sets and See balance; no rows, no Next up, no "Every area is on target", no `balance` call. The pair: 9 targets shows rows and Next up.
+  - `balance` throwing once on a nine-target cache: not-on-device, no Time/Sets, no `/balance` link. The pair: the same cache without the throw shows the full summary.
+  - A null plan shows the ended summary. The pair: a plan that fails `parseSessionPlan` shows not-on-device.
+  - Tombstone: S1's `back-squat-3` is live in the cache and re-sent from the queue with `deletedAt` and a later `editedAt`. Sets reads 6 and the quads row is "Quads 4 → 7 / 20". The pair, without the tombstone: Sets 7, "Quads 4 → 8 / 20".
+- **Planted faults (each applied alone, the UF-03 suite run, then reverted):**
+  - missing targets → `return NOT_ON_DEVICE`: both missing-target cases red;
+  - `nextUp` defaulting to `[]` (renders "Every area is on target" with no targets): both missing-target cases red;
+  - the plan check tightened to `!entry.row.plan || …`: the null-plan test red;
+  - `normalizeHistory` skipped (`history = raw`): the tombstone test red (Sets 7), plus AC-3 and AC-4 "the calls";
+  - the bare `catch {}` restored around `balance`: the "not swallowed" test red, plus both missing-target cases (which now pin that `balance` isn't called).
+- **Runs.** UF-03 vitest 47/47; web typecheck and lint green; web test 155 files / 2432 tests green; `-w format:check` green; `check:repo` green.
+
+## Accept log
+- 2026-10-02, product owner, branch `t/T-0419-uf03-summary-content` at 32ef1e0 (main merged in): **done**.
+  - AC-1: `summary.states.test.tsx` "AC-1". The unknown id S9, another user's row, a plan that fails `parseSessionPlan`, and `sessions.get` rejecting each show one wrapper, the `<h1>`, "This workout isn't on this device" and "Go to Today" → `/`. After 50 ms the location is unchanged, with no alert, no banner, no `/balance` link and no unhandled rejection. Each has a contrast case. The loading test pins the first commit to `[H1]` only. The shell tests and the UF-10 never-in-workout test pass with no edit in the full web run, and shell.spec and uf-09-focus e2e pass 26/26. Planted `<Navigate to="/">` went red.
+  - AC-2: "AC-2". With `ended_at` null, the screen shows "still running" and "Back to workout" → `/session/S1`, with no Time, Sets, Exercises or rows, no `/balance` link and no `upsertSession` after 50 ms. The pair (S1 ended) is tested. A planted See balance link went red.
+  - AC-3: `summary.numbers.test.tsx` "AC-3". The screen shows "52 min", "45 min budget", Exercises 2 and Sets 7, and `isHardSet` returned false for the warm-up set. The pairs are 11:44:59 → "44 min" and the warm-up unflagged → 8. The no-judgement regex has a planted contrast. The planted fault "count every set" went red.
+  - AC-4: "AC-4". With a stubbed `balance`, the rows read exactly "Hamstrings 0 → 3 / 16", "Quads 2 → 6 / 20" and "Glutes 1 → 3.5 / 20", with chest left out. On the calls: before has no S1 set, after equals the S1 sets that `normalizeHistory` keeps, and both get `ended_at` and `Europe/Stockholm`. With the real engine, the rows are the changed areas in `after.areas` order, and S0 makes quads' before 4. With zero history, every before reads 0.
+  - AC-5: "AC-5". The screen reads "Next up: Calves, Chest". The pair cases read "Every area is on target" and "Next up: Back".
+  - AC-6: "AC-6". A cold remount at 2026-10-07 gives an identical snapshot, and the contrast shows the device clock would change quads. The planted `Date.now()` fault went red.
+  - AC-7: `summary.isolation.test.tsx` "AC-7". There are 0 `refresh*` calls online and offline, and the numbers equal AC-3's. The OfflineStatus text shows offline and is absent online. With no AuthProvider, the MemoryRouter render shows the numbers. The afterEach asserts no `/functions/v1/` fetch. The UF-09 suite passes unedited. A source scan bans `refresh*(`, `useAuth` and `functions/v1`.
+  - AC-8: "AC-8". The ended summary has exactly one `/balance` link, "See balance". It has no `/library`, `/plan` or `/progress` link, no `nav`, no C-01 and no UF-11 card, even though a pending check-in is in the cache (a contrast test proves it is there). `exports-and-lint.test.ts` shows the UF-11 import reports `no-restricted-imports`, with an allowed-import contrast.
+  - AC-9: `index.tsx` exports exactly `Summary`. `jsx-no-literals` is green over the feature, with a contrast that fires. Every `en.uf03` key the feature reads exists. Axe finds 0 violations in all three states.
+  - D-0147 (status revisit): §1, §2 and the tombstone case are each tested with a pair in `summary.defaults.test.tsx`. Five planted faults went red. §3 (non-finite or negative duration) and §4 (copy) are decided defaults. §4 is covered by the AC-1 link assert. §3 has no direct test (follow-up below).
+  - Review: approved on re-review, with all four rule-5 findings closed. Privacy: another user's row is never shown, tested both ways.
+  - Principles: 1 holds (the summary is after the workout, its only exit is See balance, and it has no check-in). 3 holds: Sets and Exercises come from `isHardSet` over `normalizeHistory`, the rows and Next up from two `balance` calls at `ended_at`, and the UI derives no engine value. 2, 4 and 5 are not touched. Contracts are unchanged.
+  - Follow-up (QA, UF-03 lane, low): a paired test for D-0147 §3, a non-finite `started_at` → not on this device, and a negative duration → "0 min".
