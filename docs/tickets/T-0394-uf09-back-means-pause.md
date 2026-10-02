@@ -73,3 +73,4 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 ## Notes
 - **Chromium's history intervention** may skip a guard entry made without a user activation. That's why the e2e taps once in focus mode before `goBack()`. A cold-restore Back before any tap may still leave; D-0123 §3 accepts that.
 - **Order.** After T-0304d (same lane, and it owns the real UF-09.9 and End) and after T-0303d (its e2e row is the one AC-6 tightens).
+- **From T-0303d review/accept (2026-10-02):** also loosen `startWorkout()` in tests/e2e/uf-08-setup.spec.ts to assert `[data-screen-id^="UF-09"]` instead of UF-09.1, so the UF-08 spec isn't coupled to UF-09's first screen. Make the Back row catch a PUSH navigate.
