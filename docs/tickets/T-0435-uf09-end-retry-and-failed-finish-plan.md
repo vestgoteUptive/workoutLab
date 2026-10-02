@@ -140,3 +140,22 @@ None. The write order and the store update are device-local (D-0071 §6, D-0153 
   - No `writes.finishing = false` in `finish()`'s catch: AC-2 red (`findScreen("UF-09.6")` stayed `UF-09.8`; the Trim wrote nothing), plus the AC-4 rows.
   - No `finishing = null` in `finish()`'s catch: AC-1 red (location stayed `/session/S1`, no second write) and AC-3 red (no summary after the second End), plus the AC-4 rows.
 - **Gates:** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1` 4/4 tasks, 169 files / 2662 tests passed; `pnpm -w format:check` clean; `node .github/scripts/check-all.mjs` exit 0; `test:e2e uf-09` 10 passed.
+
+## QA log (2026-10-02, qa-tester)
+- **Tightened AC-4:** `seamFinish(applyPlan)` also records the store's `applyPlan` call count in the settle handler (`appliesAtSettle` 1), and the test asserts `applyPlan` was called with the trimmed plan at the fake now. The test file still has 8 tests.
+- **Reproduced:**
+  - **Main's `session.tsx`:** 2 failed / 6 passed. AC-4 fails `planAtSettle` (it got R8_PLAN). AC-4 reload fails `resumePhase` (it got `"timeCheck"`).
+  - **No `writes.finishing = false`:** 4 failed. AC-2 stayed on `UF-09.8`; the AC-4 rows and the plan-rejects-too pair failed too.
+  - **No `finishing = null`:** 4 failed. AC-1 and AC-3 stayed on `/session/S1`, and the 2 AC-4 rows failed.
+- **Plants on the branch's `session.tsx`, each reverted:**
+  - Drop the landed apply: AC-4 and AC-4 reload go red.
+  - Apply in a `setTimeout(0)` after the rethrow: AC-4 and AC-4 reload go red.
+  - Drop the `writes.landed` record in `createPlanApply`: AC-4 and AC-4 reload go red.
+  - Apply in `queueMicrotask` after the rethrow: green.
+  - Apply in the internal `run.catch` after the rethrow: green.
+  - Why the last two stay green: both run before any handler a caller can attach to `finish()`'s promise, so no caller can tell them apart from the landed code. The observable contract is that the apply happens before a caller's rejection handler runs, and the test pins exactly that.
+- **Gates:**
+  - Web gate: `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`, 4/4 tasks, 169 files / 2662 tests passed.
+  - e2e: `test:e2e uf-09` 10 passed, with `TMPDIR=$HOME/.cache/wl-pw-tmp`. Earlier runs failed on the environment, not the code: another worktree's unlocked preview was on 4173, and the RAM `/tmp` caused ERR_INSUFFICIENT_RESOURCES.
+  - `-w format:check` clean. `check-all.mjs` exit 0.
+- **Guards:** no `document.body.innerHTML` in `t0435*`. `end-race`, `paused` and `time-check` are unedited (the diff touches only `session.tsx`, the new test and this ticket).

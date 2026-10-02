@@ -146,17 +146,20 @@ async function openSeam() {
   expect(seamCtx.current).not.toBeNull();
 }
 
-/** Calls the seam's `ctx.finish()`; at settle, records what the store held at that moment. */
-function seamFinish() {
+/** Calls the seam's `ctx.finish()`; at settle, records what the store held at that moment and,
+ *  given the store's `applyPlan` spy, how many times it had been called by then. */
+function seamFinish(applyPlan?: { mock: { calls: unknown[] } }) {
   const out: {
     status: "pending" | "resolved" | "rejected";
     planAtSettle: SessionPlan | null;
     focusAtSettle: Record<string, unknown> | null;
-  } = { status: "pending", planAtSettle: null, focusAtSettle: null };
+    appliesAtSettle: number | null;
+  } = { status: "pending", planAtSettle: null, focusAtSettle: null, appliesAtSettle: null };
   const settle = (status: "resolved" | "rejected") => () => {
     out.status = status;
     out.planAtSettle = storePlan();
     out.focusAtSettle = storedFocus();
+    out.appliesAtSettle = applyPlan ? applyPlan.mock.calls.length : null;
   };
   act(() => {
     void seamCtx.current!.finish().then(settle("resolved"), settle("rejected"));
@@ -279,7 +282,7 @@ describe("AC-4 a seam's failed finish applies the plan write it waited for (D-01
     await openSeam();
     const applyPlan = vi.spyOn(lastStore(), "applyPlan");
     rejectNextUpsert();
-    const finish = seamFinish();
+    const finish = seamFinish(applyPlan);
     await flushReal();
     expect(finish.status).toBe("pending");
     expect(upsert).toHaveBeenCalledTimes(1);
@@ -295,7 +298,9 @@ describe("AC-4 a seam's failed finish applies the plan write it waited for (D-01
     // Applied before the promise rejected.
     expect(finish.planAtSettle).toEqual(trimmed);
     expect(finish.focusAtSettle).toMatchObject({ phase: "paused", resumePhase: "next" });
+    expect(finish.appliesAtSettle).toBe(1);
     expect(applyPlan).toHaveBeenCalledTimes(1);
+    expect(applyPlan).toHaveBeenCalledWith(trimmed, at(1500));
     expect(seamCtx.current!.plan).toEqual(stored.plan);
     expect(seamCtx.current!.row).toEqual(stored);
     expect(storedFocus()).toMatchObject({
