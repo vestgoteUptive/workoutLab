@@ -21,7 +21,7 @@ H-13 (push branches); T-0217 tie-break default; H-12 (C-01 on phone); H-05, H-06
 - Sub-agents: build → QA ∥ review → product-owner accept; spec: product-owner → triage check. Spec/content/triage roles have **no shell**: the orchestrator commits their files.
 - Model pins (D-0076): execution roles `claude-sonnet-5-5`, judgement roles `claude-opus-5-5`.
 - Tooling: `npx -y pnpm@10.28.2 …`. Each new worktree needs `install --frozen-lockfile`.
-- Give every parallel run its own decision-ID block. Next free: **D-0125**, **TR-0039**, tickets **T-0400+** (web), **T-0233+** (engine/data), **T-0906+** (CI).
+- Give every parallel run its own decision-ID block. Next free: **D-0125** (D-0127 used; D-0125/6 reserved for parallel runs → next clean **D-0128**), **TR-0039**, tickets **T-0401+** (web), **T-0233+** (engine/data), **T-0906+** (CI).
 
 ## Traps (condensed — full history in journals 2026-09-28..10-01)
 - **Never commit a test that asserts `git diff main...HEAD`** (T-0303b review): it fails on other lanes' branches after merge and silently skips in CI (no local `main`). Record diff checks in the ticket build log instead; check-lane-paths enforces lanes.
