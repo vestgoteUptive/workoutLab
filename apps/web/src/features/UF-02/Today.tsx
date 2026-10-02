@@ -84,7 +84,7 @@ function CheckinSlot() {
 }
 
 export function Today(props: TodayProps = {}) {
-  // Fixed for the life of the mount: a fresh `new Date()` per render would re-run the load
+  // Fixed for the life of the mount: a fresh `new Date()` per render would re-run the cache-read
   // effect on every render (the UF-10 render-loop lesson).
   const [mountedAt] = useState(() => new Date());
   const now = props.now ?? mountedAt;
