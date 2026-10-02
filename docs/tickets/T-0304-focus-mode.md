@@ -7,6 +7,7 @@ decisions: [D-0002, D-0004, D-0015, D-0017, D-0024, D-0026, D-0045, D-0047, D-00
 deps: [T-0303d, T-0205, T-0318]
 status: split   # → T-0304a–d; no child is ready until T-0303d and T-0318 are done
 ---
+<!-- Re-groomed 2026-10-02 by product-owner (D-0111): T-0304a is split into T-0304a (machine + host, A1–A7) and T-0304e (hook + seams, A8–A9); T-0304a no longer waits on T-0303d; run order a → e → b → c → d. -->
 <!-- Groomed 2026-09-29 by product-owner. Split into T-0304a–d (D-0066 Consequences). ACs are tagged [a]–[d]. T-0205 is merged (D-0062). Reconciled by triage 2026-09-29 (TR-0030, D-0071): seam order + keepsClockRunning, How to as a seam, useFocusSession finish()/replaceItem with whole-row upserts, no /session/:id/list route. -->
 
 ## Why
@@ -19,8 +20,9 @@ Parent `T-0304` → `split → T-0304a, T-0304b, T-0304c, T-0304d`. All four are
 
 | Child | Scope | Deps | Status | ~Size |
 |---|---|---|---|---|
-| T-0304a | Focus machine (pure reducer), session loading, persisted focus state + restore, chrome (pause button, progress bar, index), timer maths, placeholder views, the `useFocusSession()` hook and `seams.tsx` (D-0066 §12) | T-0300, T-0205, T-0303d, T-0318 | todo | ½ day |
-| T-0304b | Set loop: UF-09.1 Get ready, .3 Current set, .4 Confirm (auto-save), .5 Rest, .6 Next exercise; back-off; in-session pre-fill | T-0304a | todo | ½ day |
+| T-0304a | Focus machine (pure reducer), session loading, persisted focus state + restore, chrome (pause button, progress bar, index), timer maths, placeholder views (ACs A1–A7; `docs/tickets/T-0304a-focus-machine.md`) | T-0300, T-0205, T-0318 (D-0111 §2: T-0303d dropped) | ready | ½ day |
+| T-0304e | The `useFocusSession()` hook and `seams.tsx` (D-0066 §12), `done` → `finish()` (ACs A8–A9; split off by D-0111 §1; `docs/tickets/T-0304e-focus-session-hook-and-seams.md`) | T-0304a | todo | ½ day |
+| T-0304b | Set loop: UF-09.1 Get ready, .3 Current set, .4 Confirm (auto-save), .5 Rest, .6 Next exercise; back-off; in-session pre-fill | T-0304e (D-0111 §1) | todo | ½ day |
 | T-0304c | UF-09.2 Warm-up, .7 Timed set (D-0062 §5 copy), wake lock, sound + 3-2-1 cues, reduced motion | T-0304b | todo | ½ day |
 | T-0304d | UF-09.8 Time check, .9 Paused, End → `/session/:id/summary`; offline, reload, two-device and keyboard e2e | T-0304c | todo | ½ day |
 

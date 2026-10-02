@@ -7,6 +7,7 @@ decisions: [D-0002, D-0004, D-0017, D-0024, D-0025, D-0040, D-0045, D-0047, D-00
 deps: [T-0300, T-0203b, T-0318]
 status: split   # → T-0303a–d; T-0303a becomes ready when T-0318 is done
 ---
+<!-- Re-groomed 2026-10-02 by product-owner: child files docs/tickets/T-0303b-suggested-workout.md (D-0109: the UF-08.2 chips are 20/30/45/60/90, every re-suggest keeps the main lift, workout.ts imported only) and docs/tickets/T-0303d-ready-and-start.md (D-0110: started_at at the Start tap, id reused on retry, replace navigation). -->
 <!-- Groomed 2026-09-29 by product-owner. Split into T-0303a–d (D-0065 Consequences). ACs are tagged [a]–[d]. Reconciled by triage 2026-09-29 (TR-0030, D-0071 §7): T-0303c mounts the shared SwapSheet (features/UF-05, T-0306b) instead of building a second sheet. -->
 
 ## Why
