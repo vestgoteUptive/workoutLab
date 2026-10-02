@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.9, UF-09.8, UF-09.6, UF-03.3]
 decisions: [D-0153, D-0149, D-0120, D-0071, D-0111]
 deps: [T-0304d]
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by product-owner (groom). Follow-up from the T-0304d re-review and accept log ("Open: T-0435"). Build flow: wl-build-web. About ¼ day. Ready: T-0304d is on main. It edits only session.tsx and adds t0435* tests. -->
 
@@ -159,3 +159,14 @@ None. The write order and the store update are device-local (D-0071 §6, D-0153 
   - e2e: `test:e2e uf-09` 10 passed, with `TMPDIR=$HOME/.cache/wl-pw-tmp`. Earlier runs failed on the environment, not the code: another worktree's unlocked preview was on 4173, and the RAM `/tmp` caused ERR_INSUFFICIENT_RESOURCES.
   - `-w format:check` clean. `check-all.mjs` exit 0.
 - **Guards:** no `document.body.innerHTML` in `t0435*`. `end-race`, `paused` and `time-check` are unedited (the diff touches only `session.tsx`, the new test and this ticket).
+
+## Accept log (2026-10-02, product-owner)
+**Verdict: done** (branch `t/T-0435-uf09-end-retry-failed-finish`, HEAD 7ab305c). Build done, review approve, QA pass.
+- **AC-1 pass.** "the first End rejects … the second writes ended_at" checks 2 calls, the second's `ended_at` = now, the summary, `wl-focus:S1` removed and the stored row. The pair (End succeeds first time, one write) is covered. Red on the planted `finishing = null` fault.
+- **AC-2 pass.** One Trim write with `items[3].sets` 2 and `ended_at` null, UF-09.6 item 1 at 60 s, `session().plan` = stored plan. Red on the planted `writes.finishing = false` fault.
+- **AC-3 pass.** The last write has `ended_at` = now on the trimmed plan, the summary, and nothing written after 50 ms. Red on the `finishing = null` fault.
+- **AC-4 pass.** Red on main (2 failed: `planAtSettle` got R8_PLAN; `resumePhase` got `"timeCheck"`), matching the ticket's predicted red. Asserted at settle: the rejection, the stored row (`ended_at` null, trimmed plan), `session().plan`/`row`, `wl-focus:S1` paused `resumePhase: "next"` item 1 set 0, and Resume → UF-09.6 with 60 s. QA tightened it: `applyPlan` was called once by settle, with the trimmed plan at the fake now. Reload, and all three pairs (finish succeeds: no `PLAN_APPLIED`; plan write rejects too; no plan write pending), are each their own test. QA's two internal-timing plants (microtask, `run.catch`) stay green. Accepted: neither can be observed by a caller, and the contract is "applied before the caller's rejection handler runs".
+- **AC-5 pass.** The export pin, `FocusSession` members, `end-race`/`paused`/`time-check`, the T-0304a tick-counting test and `flows/uf-09.ts` are all unchanged, and they pass.
+- **Principles:** principle 1 (one task on screen) holds: no new UI or copy. Principle 2 (time budget) is strengthened: after a failed finish, the check points use the trimmed plan's costs. The engine is untouched (principle 3). No contract changed.
+- **Gates:** web turbo typecheck/lint/test 4/4 (2662 tests), e2e uf-09 10/10, format:check and check-all green. The change is confined to `apps/web`, so the web-filtered gate stands in for the full `-w` gate. The orchestrator's merge gate runs the full one.
+- **Follow-ups:** T-0438 (stale comments at session.tsx:149-150 and host.tsx:183-184, already filed). Low, no ticket: the AC-4 test attaches its state-capture handler after `ctx.finish()` is called. QA's settle-count assert covers the ordering concern.
