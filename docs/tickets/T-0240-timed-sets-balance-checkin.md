@@ -112,3 +112,15 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
   The file was restored from a byte copy. `git status packages/engine/src` is clean and nothing in `src/` was committed.
 - **AC7:** `git diff --stat main...HEAD -- packages/engine/src` is empty. Engine tests went from 650 (39 files) to 655 (40 files). The T-0230 budget guard, the T-0236 and T-0237 guards and the traceability tests pass without edits. No title uses sweep or seed words.
 - **AC8:** engine `typecheck`, `lint` and `test` are each green under `flock`. `-w format:check`, `node .github/scripts/check-all.mjs` and `node supabase/scripts/vendor.mjs --check` are clean (src is unchanged, so there is no regen).
+
+### Accept (product-owner, 2026-10-02): done
+Checked against `packages/engine/test/t0240-timed-balance-checkin.test.ts` at HEAD 2458158.
+- **AC1:** met. The test pins core `load` 12, `target` 12, `deficit` 0, `coverageStep` 4, the 14-entry `days` array (3 at indexes 6, 8, 10, 12), `lastTrainedDate` 2026-09-26, the single plank contributor, and chest `load` 12 / `deficit` 0.4. It also pins `windowStart`/`windowEnd`. All of these are inline literals.
+- **AC2:** met. The full `BalanceResult` is compared with `toStrictEqual` after the dead-bug to plank remap, covering all 9 areas, their order, the window and `computedAt`. A guard checks that the rewrite really happened.
+- **AC3:** met. Core is 0/0/[] when the planks are warm-ups, and chest is still 12. Together with AC1 this tests both values of `isWarmup` on a timed row.
+- **AC4:** met. 4 sessions in input order with `hardSetCount` 9, and 3 when plank-only.
+- **AC5:** met. The on-plan result is deep-equal to the literal in the spec. The warm-up pair gives `completed` 0, `under` and a non-null `proposal` with direction `down`.
+- **AC6:** met. The build log records the red run: the `isHardSet` mutation turned AC1, AC2, AC4 and AC5 red, and AC3 stayed green, as the ticket expects. It gives the first failure lines, and `src/` is clean.
+- **AC7:** met. The src diff is empty, the count went from 650 to 655, and the guard and traceability tests pass unedited.
+- **AC8:** met. Per the build log and the orchestrator QA, engine typecheck, lint and test are green, and format, check-all and vendor --check are clean.
+- **Principles:** the engine is unchanged, so it stays deterministic. This adds a guard for principle 4 (check-in counts that feed adaptive targets). No contract changed. Review and QA rely on the mutation proof and the inline literals, and that is enough evidence for a test-only ticket.
