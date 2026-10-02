@@ -25,6 +25,9 @@ import {
   signOut,
 } from "./test-helpers.js";
 
+// D-0113 §5: UF-10 reads `useAuth()`; this suite runs signed in (T-0383).
+vi.mock("../../../lib/auth/auth-context.js", () => import("./auth-mock.js"));
+
 /**
  * Records every `supabase.from(table)` the code under test makes (AC-A8: the spy "was never
  * called"). A module mock rather than a `vi.spyOn`, because the real export is a Proxy with no
