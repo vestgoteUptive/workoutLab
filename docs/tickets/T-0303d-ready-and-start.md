@@ -152,3 +152,4 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - `-w typecheck` and `-w lint` green; `-w format:check` clean; `check-all.mjs` exit 0.
   - Fresh build with the e2e env, then `check:size` exit 0.
   - `test:e2e`: 82 passed, the whole suite, including the expected-fail TR-0038 row.
+- **TR-0038 resolved (D-0123 §2).** The `test.fail` row is replaced by the amended AC-10 Back row. After `goBack()` the URL doesn't match `/step=ready/`, UF-08.4 isn't in the DOM after 50 ms, and the single `[data-screen-id]` is `UF-08.1` (today) or starts with `UF-09`. No UF-08 code change. `uf-08-setup` e2e: 15 passed.
