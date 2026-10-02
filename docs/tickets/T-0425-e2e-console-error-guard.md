@@ -131,3 +131,38 @@ on console errors and page errors`).
 - Results: `flock … pnpm --filter @workoutlab/web test:e2e` gave 123 passed, run twice.
   `pnpm -w typecheck lint test --force --concurrency=1` gave 19/19 tasks. `test:repo-checks`
   gave 146 pass. `format:check` and `check:repo` were green.
+
+### Accept (2026-10-02, product-owner): done
+Checked at HEAD 0c4c5f6 against each AC.
+- AC1: the `test.fail` "T-0425 AC1 a console.error fails the test at teardown" asserts nothing, so
+  only the auto fixture can fail it. The paired direct test pins the line format
+  `console.error: t0425-planted (<url>:<line>)` and the thrown message containing
+  `console error in e2e` and `t0425-planted`. Red on base `ba2862f` ("Expected to fail, but passed").
+- AC2: two `test.fail` cases, the thrown `t0425-uncaught` after a 100 ms wait and the
+  `Promise.reject(new Error("t0425-rejected"))`. Both were red on base. A direct test pins
+  `pageerror: <message>` for both. An extra test pins that a `pageerror` is never exempt, even when
+  it starts with `Failed to load resource:`.
+- AC3: warn/info/log pass and aren't recorded (a sentinel proves delivery). The claimed 501 via
+  `mockSupabaseRest` passes, and the test checks that a `Failed to load resource:` line really was
+  logged, so it isn't vacuous. `allow(/t0425-allowed/)` passes. `errors()` lists the line exactly
+  once. The serial pair shows that an allow doesn't carry over: the second test's guard records
+  `t0425-carry` and `assertClean()` throws on it.
+- AC4: the `test.fail` on `context.newPage()` with `t0425-second-page` was red on base.
+- AC5: the source assertion lists every `*.spec.ts` that imports the fixture (10 today), each
+  importing `test` from `./fixtures/guarded-test.js`. It includes the T-0904 three. The
+  `consoleGuard.allow(` line-above check covers every spec except `fixture-guard.spec.ts`.
+- AC6: the whole e2e suite passed 123/123, twice. The build log says no allows were added outside
+  `fixture-guard.spec.ts`. The one real finding (the SW registration rejection when going offline
+  right after the first load) has a narrow allow in the T-0904 offline self-test and is filed as
+  T-0429 (web-shell). `uf-09-focus.spec.ts` is untouched (T-0304d coordination).
+- Mutation: with `guard.assertClean()` commented out, the same 4 `test.fail` cases go red.
+- DoD: the `-w typecheck lint test --force --concurrency=1` gate passed 19/19, and
+  `test:repo-checks` passed 146/146. `format:check` and `check:repo` are green, contracts are
+  unchanged, no app code changed, and the commits start `T-0425`. Review approved.
+- Principles hold. This is test infrastructure only, with no change to the UI, the engine or the
+  contracts.
+- Follow-ups: T-0429 (web-shell: catch the SW registration failure, then drop the allow). T-0430
+  (qa: require the T-NNNN on a comment line, reject `/g` and `/y` allow patterns, and name T-0429
+  in the allow comment in `fixture-guard.spec.ts`, which says "T-0425 finding, follow-up for
+  web-shell" today). Moving `uf-10-balance.spec.ts` onto the guarded fixture is still open from
+  Scope/Out.
