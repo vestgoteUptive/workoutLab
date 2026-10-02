@@ -290,3 +290,27 @@ Each fault was made on a scratch copy and reverted from a backup with `cmp` (no 
 - `check:size`: green.
 - `-w format:check`: green.
 - `node .github/scripts/check-all.mjs`: green.
+
+## Build, attempt 3 (frontend-dev, 2026-10-02): done
+Two code review findings are fixed. Only `features/UF-09/seams.tsx` changed.
+- **MEDIUM: the lazy sheet had no loading step and no error boundary.** `renderSwap` now renders `SwapOverlay`, which wraps the lazy `SwapSheet` like this:
+  - **`SwapBoundary`** is a class error boundary. It catches a rejected import, or an error while the sheet renders.
+  - **The Suspense fallback is `SwapPlaceholder`.** It is a `role="dialog"` with `data-screen-id="UF-05.1"`, labelled `en.uf05.titleFallback`. It shows `en.uf05.loading`, or `en.uf05.loadFailed` from the boundary, and a Close button (`en.uf05.close`) that calls `ctx.close`. Focus moves to Close.
+  - **No new strings.** The keys already exist in `flows/uf-05.ts`.
+  - **Scope.** The boundary wraps only the lazy sheet.
+  - **No chunk warm-up.** The optional step, starting the import when the Swap button renders, isn't done: it needs a host hook outside this grant.
+- **LOW: the target moved after `replaceItem`.** `swapTarget(ctx)` now runs once, in `useState`'s initialiser, when the overlay opens.
+
+### New tests (red before → green after)
+- **`t0422.lazy-reject.test.tsx`** (UF-05 mocked to throw; the stale-chunk 404 case). The rejected import shows "Couldn't load alternatives." with Close focused. Close returns to UF-09.9 with the stored state deep-equal. Red before: there was no dialog, because the error went up to the root.
+- **`t0422.lazy-pending.test.tsx`** (UF-05 mocked to never resolve). "Loading alternatives…" shows with Close focused. Close returns to UF-09.9 with the state unchanged. Red before: there was no dialog, because the fallback was `null`.
+- **`t0422.seams` "the target is stable across a rerender after replaceItem resolves".** After Use, a rerender with item 1 now complete still shows "Replace Barbell row", not "Replace Leg curl". Red before: no dialog named "Replace Barbell row" after the rerender.
+- **`t0422.seams` "the swap boundary doesn't catch an error outside the sheet".** A sibling's error reaches the outer boundary, not the swap fallback. This is a scope guard, so it is green before and after.
+- **Pair (the import resolves, and the sheet renders):** every existing `t0422.host` and `t0422.seams` test, for example AC-2 "opens" and the AC-8 axe tests, plus the e2e `uf-05-swap`.
+
+### Gate (2026-10-02)
+- `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1`: 19/19 tasks; web 2749/2749.
+- `-w test:repo-checks`: 146/146.
+- The whole web `test:e2e` with `TMPDIR=$HOME/.cache/wl-pw-tmp`: 144 passed.
+- `check:size`, `-w format:check` and `check-all`: green.
+- `git diff --stat main...HEAD -- apps/web/src/features/UF-09`: 14 files changed, 1577 insertions(+), 37 deletions(-). The two new files are `t0422.lazy-reject.test.tsx` and `t0422.lazy-pending.test.tsx`.
