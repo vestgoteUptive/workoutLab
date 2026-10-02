@@ -283,3 +283,176 @@ async function assertRejectsWithStatus(
   }
   assert(threw, `expected the call to throw with status ${status}`);
 }
+
+// --- T-0227: POST /workouts/suggest passes profile.goal (D-0095 §5, D-0061 §1) -----------------
+
+type Goal = EngineProfile["goal"];
+const GOALS: readonly Goal[] = ["get_stronger", "build_muscle", "general_fitness"];
+
+/** `G(goal)` from the ticket: fixture user A with only the goal changed. */
+function G(goal: Goal): EngineProfile {
+  return { ...PROFILE_A, goal };
+}
+
+/** D-0061 §1 rep-slot table: [main, other compound, isolation] as [min, max] per goal. */
+const REP_SLOTS: Record<
+  Goal,
+  { main: [number, number]; compound: [number, number]; isolation: [number, number] }
+> = {
+  get_stronger: { main: [3, 5], compound: [5, 8], isolation: [10, 15] },
+  build_muscle: { main: [6, 8], compound: [8, 12], isolation: [10, 15] },
+  general_fitness: { main: [8, 12], compound: [10, 15], isolation: [10, 15] },
+};
+
+const BODY_30 = { sessionInput: SESSION_INPUT_30, tz: TZ };
+
+function goalDeps(goal: Goal, overrides: Partial<EngineInputs> = {}, suggestFn = suggest) {
+  return depsFixture({
+    suggest: suggestFn,
+    loadEngineInputs: async () => inputsFixture({ profile: G(goal), ...overrides }),
+  });
+}
+
+function profileSpy() {
+  const profiles: unknown[] = [];
+  const spy: typeof suggest = (...args) => {
+    profiles.push(args[2]);
+    return suggest(...args);
+  };
+  return { spy, profiles };
+}
+
+for (const goal of GOALS) {
+  Deno.test(
+    `T-0227 AC1: ${goal} main lift and every other item follow the D-0061 §1 rep slots`,
+    async () => {
+      const workout = await suggestWorkoutCore(FAKE_CTX, BODY_30, goalDeps(goal));
+      const types = new Map(libraryFixture().map((e) => [e.id, e.type]));
+      const main = workout.plan.items.find((item) => item.isMain);
+      assert(main !== undefined, "expected an isMain item");
+      assertEquals([main.repsMin, main.repsMax], REP_SLOTS[goal].main);
+      let others = 0;
+      for (const item of workout.plan.items) {
+        if (item.isMain || item.repsMin === null) continue;
+        others++;
+        const role = types.get(item.exerciseId) === "isolation" ? "isolation" : "compound";
+        assertEquals([item.repsMin, item.repsMax], REP_SLOTS[goal][role], item.exerciseId);
+      }
+      assert(others >= 1, "expected at least one non-main, non-timed item");
+    },
+  );
+
+  Deno.test(`T-0227 AC2: ${goal} reaches the engine as the third suggest argument`, async () => {
+    const { spy, profiles } = profileSpy();
+    const workout = await suggestWorkoutCore(FAKE_CTX, BODY_30, goalDeps(goal, {}, spy));
+    assertEquals(profiles, [
+      { level: "intermediate", equipment: ["barbell", "rack", "bench", "dumbbell"], goal },
+    ]);
+    const inputs = inputsFixture({ profile: G(goal) });
+    const direct = suggest(
+      inputs.history,
+      inputs.targets,
+      { level: inputs.profile.level, equipment: inputs.profile.equipment, goal },
+      inputs.library,
+      SESSION_INPUT_30,
+      NOW,
+      TZ,
+    );
+    assertEquals(workout, direct);
+  });
+}
+
+Deno.test("T-0227 AC3: the goal never changes selection, sets or cost", async () => {
+  const shapes = [];
+  for (const goal of GOALS) {
+    const w = await suggestWorkoutCore(FAKE_CTX, BODY_30, goalDeps(goal));
+    shapes.push({
+      items: w.plan.items.map((item) => [item.exerciseId, item.sets, item.costS]),
+      itemsTotalS: w.itemsTotalS,
+      totalS: w.totalS,
+      unusedS: w.unusedS,
+    });
+  }
+  assertEquals(shapes[1], shapes[0]);
+  assertEquals(shapes[2], shapes[0]);
+
+  const buildMuscle = await suggestWorkoutCore(FAKE_CTX, BODY_30, goalDeps("build_muscle"));
+  const inputs = inputsFixture();
+  const noGoal = suggest(
+    inputs.history,
+    inputs.targets,
+    { level: inputs.profile.level, equipment: inputs.profile.equipment },
+    inputs.library,
+    SESSION_INPUT_30,
+    NOW,
+    TZ,
+  );
+  assertEquals(buildMuscle, noGoal);
+});
+
+for (const goal of GOALS) {
+  Deno.test(
+    `T-0227 AC4: ${goal} with zero history prefills the main lift at the goal's low`,
+    async () => {
+      const workout = await suggestWorkoutCore(FAKE_CTX, BODY_30, goalDeps(goal, { history: [] }));
+      assertEquals(workout.plan.version, 1);
+      const main = workout.plan.items.find((item) => item.isMain);
+      assert(main !== undefined, "expected an isMain item");
+      assertEquals(main.prefill.reps, REP_SLOTS[goal].main[0]);
+      assertEquals(main.prefill.kind, "first_time");
+    },
+  );
+
+  Deno.test(
+    `T-0227 AC4: ${goal} returning after 10 days off prefills within the goal's slot`,
+    async () => {
+      const at = new Date(new Date(NOW).getTime() - 10 * 86400000).toISOString();
+      const history = [
+        {
+          clientId: "s1",
+          sessionId: "sess-1",
+          exerciseId: "barbell-bench-press",
+          isWarmup: false,
+          completedAt: at,
+          editedAt: at,
+          deletedAt: null,
+          reps: 8,
+          weightKg: 60,
+          durationS: null,
+        },
+      ];
+      const workout = await suggestWorkoutCore(FAKE_CTX, BODY_30, goalDeps(goal, { history }));
+      assertEquals(workout.plan.version, 1);
+      const main = workout.plan.items.find((item) => item.isMain);
+      assert(main !== undefined, "expected an isMain item");
+      assertEquals([main.repsMin, main.repsMax], REP_SLOTS[goal].main);
+      assert(main.prefill.reps !== null, "expected prefilled reps");
+      assert(
+        main.prefill.reps >= main.repsMin! && main.prefill.reps <= main.repsMax!,
+        `prefill ${main.prefill.reps} outside [${main.repsMin}, ${main.repsMax}]`,
+      );
+    },
+  );
+
+  Deno.test(
+    `T-0227 AC4: ${goal} profile missing is 422 and the engine is never called`,
+    async () => {
+      const { spy, profiles } = profileSpy();
+      const deps = depsFixture({
+        suggest: spy,
+        loadEngineInputs: () => {
+          throw profileMissing();
+        },
+      });
+      await assertRejectsWithStatus(() => suggestWorkoutCore(FAKE_CTX, BODY_30, deps), 422);
+      assertEquals(profiles.length, 0);
+    },
+  );
+
+  Deno.test(`T-0227 AC4: ${goal} two runs are deep-equal`, async () => {
+    const deps = goalDeps(goal);
+    const a = await suggestWorkoutCore(FAKE_CTX, BODY_30, deps);
+    const b = await suggestWorkoutCore(FAKE_CTX, BODY_30, deps);
+    assertEquals(a, b);
+  });
+}
