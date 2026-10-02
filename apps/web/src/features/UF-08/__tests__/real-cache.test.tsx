@@ -22,12 +22,16 @@ let counter = 0;
 
 async function seed(db: OfflineDb): Promise<void> {
   for (const exercise of fLibrary()) {
-    await db.libraryCache.put({ key: userScopedKey(USER, exercise.id), userId: USER, exercise });
+    await db.libraryCache.put({
+      key: userScopedKey(USER, exercise.id),
+      userId: USER,
+      exercise: exercise as never,
+    });
   }
   for (const target of fTargets()) {
     await db.targetCache.put({ key: userScopedKey(USER, target.area), userId: USER, target });
   }
-  await db.profileCache.put({ userId: USER, profile: fProfile() });
+  await db.profileCache.put({ userId: USER, profile: fProfile() as never });
 }
 
 async function queueSquats(n: number): Promise<void> {

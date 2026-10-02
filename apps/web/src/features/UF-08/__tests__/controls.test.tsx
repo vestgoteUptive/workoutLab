@@ -239,7 +239,7 @@ describe("AC-3 done by (NFR-I18N-2)", () => {
         timeZone: "America/New_York",
       });
     expect(doneBy()).toBe(expected);
-    expect(doneBy().replace(/ /g, " ")).toBe("done by 1:30 PM");
+    expect(doneBy().replace(/\u202f/g, " ")).toBe("done by 1:30 PM");
   });
 
   it("tracks the minutes in the same render: 45 → 50 gives 'done by 12:50'", () => {

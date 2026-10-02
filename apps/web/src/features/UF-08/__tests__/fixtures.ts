@@ -1,8 +1,10 @@
 // T-0303a F-web: docs/engine-rules.md §Fixtures as web test data. F-tz, F-targets, F-profile,
 // and a copy of the L1 library plus the eight `wu-*` moves. AC-6's engine values (R7-E2, -E4,
 // -E11, -E12, -E14) are the check that this copy is right.
-import type { AreaTarget, LibraryExercise } from "@workoutlab/shared";
-import type { EngineProfile } from "@workoutlab/engine";
+// Engine types, not the shared contract types: the L1 "bw" rows have `incrementKg: null`, which
+// the engine's `LibraryExercise` allows and the shared one doesn't. The harness casts at the
+// loader-mock boundary.
+import type { AreaTarget, EngineProfile, LibraryExercise } from "@workoutlab/engine";
 
 export const TZ = "Europe/Stockholm";
 export const NOW = "2026-09-27T12:00:00+02:00";

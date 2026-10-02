@@ -7,8 +7,12 @@
 import { act, render, screen, type RenderResult } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
 import { vi } from "vitest";
-import type { AreaTarget, HistorySet, LibraryExercise } from "@workoutlab/shared";
-import type { EngineProfile } from "@workoutlab/engine";
+import type {
+  AreaTarget,
+  EngineProfile,
+  HistorySet,
+  LibraryExercise,
+} from "@workoutlab/engine";
 import * as engineFeed from "../../../lib/offline/engine-feed.js";
 import * as history from "../../../lib/offline/history.js";
 import { SessionSetup, type SessionSetupProps } from "../SessionSetup.js";
@@ -80,9 +84,11 @@ export function fCache(overrides: Partial<CacheContent> = {}): CacheContent {
   };
 }
 
-/** A deep copy: every read returns NEW arrays and objects with equal content (D-0107 §3). */
-function copy<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+/** A deep copy: every read returns NEW arrays and objects with equal content (D-0107 §3).
+ *  Typed loosely on purpose: the fixtures use the engine types (L1 "bw" rows have a `null`
+ *  increment), and the loaders are declared with the shared contract types. */
+function copy(value: unknown): never {
+  return JSON.parse(JSON.stringify(value)) as never;
 }
 
 /**
