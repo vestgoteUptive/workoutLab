@@ -5,14 +5,11 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { findHandBuiltKeySpans, findHandBuiltKeys } from "./key-scan";
 
 /** The offline folder, relative to the package root (vitest runs with cwd = apps/web). */
 const OFFLINE_DIR = resolve(process.cwd(), "src/lib/offline");
 const SEED = join(OFFLINE_DIR, "__tests__", "seed-library.ts");
-
-/** A template literal that opens with `${x}:${…`, e.g. `${userId}:${row.id}`. */
-const KEY_TEMPLATE = /`\$\{\w+\}:\$\{/;
-const KEY_TEMPLATES = new RegExp(KEY_TEMPLATE.source, "g");
 
 function stripComments(source: string): string {
   return source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
@@ -20,6 +17,11 @@ function stripComments(source: string): string {
 
 function code(path: string): string {
   return stripComments(readFileSync(path, "utf8"));
+}
+
+/** T-0372: hand-built keys (templates, member templates, `a + ":" + b`), comments ignored. */
+function keys(path: string): string[] {
+  return findHandBuiltKeys(readFileSync(path, "utf8"));
 }
 
 const sourceFiles = readdirSync(OFFLINE_DIR)
@@ -33,20 +35,22 @@ describe("T-0370 AC-2 one user-scoped key builder", () => {
   });
 
   it("no file but db.ts builds a `${userId}:${…}` key by hand", () => {
-    const offenders = [...sourceFiles.filter((p) => !p.endsWith("/db.ts")), SEED].filter((p) =>
-      KEY_TEMPLATE.test(code(p)),
-    );
+    const offenders = [...sourceFiles.filter((p) => !p.endsWith("/db.ts")), SEED]
+      .map((p) => ({ file: p.slice(OFFLINE_DIR.length + 1), keys: keys(p) }))
+      .filter((o) => o.keys.length > 0);
     expect(offenders).toEqual([]);
   });
 
-  it("db.ts has exactly one such template, inside userScopedKey", () => {
-    const db = code(join(OFFLINE_DIR, "db.ts"));
-    expect(db.match(KEY_TEMPLATES)).toHaveLength(1);
+  it("db.ts has exactly one such key, inside userScopedKey", () => {
+    const db = readFileSync(join(OFFLINE_DIR, "db.ts"), "utf8");
+    const found = findHandBuiltKeySpans(db);
+    expect(found).toHaveLength(1);
     const start = db.indexOf("export function userScopedKey(");
     const end = db.indexOf("export function setKey(");
     expect(start).toBeGreaterThanOrEqual(0);
     expect(end).toBeGreaterThan(start);
-    expect(db.slice(start, end)).toMatch(KEY_TEMPLATE);
+    expect(found[0]!.start).toBeGreaterThan(start);
+    expect(found[0]!.start).toBeLessThan(end);
   });
 
   it.each(["history.ts", "feature-loaders.ts", "__tests__/seed-library.ts"])(
