@@ -9,7 +9,13 @@
 // `now` is the row's `ended_at` (D-0142 §4), never the device clock, so a reload any time later
 // shows the same numbers.
 import { balance, isHardSet, normalizeHistory } from "@workoutlab/engine";
-import { parseSessionPlan, type AreaBalance, type BalanceResult } from "@workoutlab/shared";
+import {
+  AREAS,
+  parseSessionPlan,
+  type AreaBalance,
+  type AreaTarget,
+  type BalanceResult,
+} from "@workoutlab/shared";
 import {
   currentUserId,
   loadEngineHistory,
@@ -32,7 +38,7 @@ export interface EndedSummary {
   budgetMin: number;
   exercises: number;
   hardSets: number;
-  /** `null` when `balance` can't run (no cached targets yet): the stats still show. */
+  /** `null` when the cached targets don't cover all nine areas (D-0147 §2). */
   changes: AreaChange[] | null;
   /** The engine's `after.areas` with `coverageStep < 4`, first two; `null` with `changes`. */
   nextUp: AreaBalance["area"][] | null;
@@ -67,6 +73,11 @@ export function nextUpAreas(after: BalanceResult): AreaBalance["area"][] {
     .map((a) => a.area);
 }
 
+/** True when the cached targets name every one of the nine areas (D-0147 §2). */
+export function coversEveryArea(targets: readonly AreaTarget[]): boolean {
+  return AREAS.every((area) => targets.some((t) => t.area === area));
+}
+
 /**
  * Reads everything UF-03.3 shows for `sessionId`. Never rejects: an unreadable row, another
  * user's row, or IndexedDB failing is "isn't on this device" (D-0142 §4).
@@ -94,9 +105,12 @@ export async function loadSummary(sessionId: string, tz: string): Promise<Summar
       (s) => s.sessionId === sessionId && isHardSet(s, byId.get(s.exerciseId)),
     );
 
+    // D-0147 §2: a cache that doesn't hold a target for all nine areas yet (`balance` needs all
+    // nine) gives the stats without the before → after rows and "Next up". Only that case: any
+    // other error from `balance` reaches the outer catch, never a partial summary.
     let changes: AreaChange[] | null = null;
     let nextUp: AreaBalance["area"][] | null = null;
-    try {
+    if (coversEveryArea(targets)) {
       const before = balance(
         history.filter((s) => s.sessionId !== sessionId),
         targets,
@@ -107,8 +121,6 @@ export async function loadSummary(sessionId: string, tz: string): Promise<Summar
       const after = balance(history, targets, library, endedAt, tz);
       changes = areaChanges(before, after);
       nextUp = nextUpAreas(after);
-    } catch {
-      // `balance` needs all nine targets; a cache that has none yet has no balance to show.
     }
 
     return {

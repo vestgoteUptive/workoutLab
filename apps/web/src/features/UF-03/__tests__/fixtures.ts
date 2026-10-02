@@ -155,6 +155,10 @@ export interface SetSpec {
   weightKg: number;
   completedAt: string;
   isWarmup?: boolean;
+  /** Defaults to `completedAt`. */
+  editedAt?: string;
+  /** Defaults to `null` (a live set). */
+  deletedAt?: string | null;
 }
 
 function series(

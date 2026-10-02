@@ -96,8 +96,8 @@ export async function seedQueued(db: OfflineDb, sets: readonly SetSpec[], userId
       isWarmup: s.isWarmup ?? false,
       backoff: false,
       completedAt: s.completedAt,
-      editedAt: s.completedAt,
-      deletedAt: null,
+      editedAt: s.editedAt ?? s.completedAt,
+      deletedAt: s.deletedAt ?? null,
       status: "queued",
     });
   }
@@ -113,8 +113,8 @@ export async function seedCached(db: OfflineDb, sets: readonly SetSpec[], userId
       exerciseId: s.exerciseId,
       isWarmup: s.isWarmup ?? false,
       completedAt: s.completedAt,
-      editedAt: s.completedAt,
-      deletedAt: null,
+      editedAt: s.editedAt ?? s.completedAt,
+      deletedAt: s.deletedAt ?? null,
       reps: s.reps,
       weightKg: s.weightKg,
       durationS: null,

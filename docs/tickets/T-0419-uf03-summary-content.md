@@ -107,7 +107,23 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
   - `<Navigate to="/" replace />` on the not-on-device state → AC-1 red for the unknown id, the other user, the unreadable plan and the rejecting `sessions.get`;
   - a "See balance" link on the still-running state → AC-2 red.
 - **Both values of each condition.** Known vs unknown id; own vs other `userId`; `ended_at` null vs set; 11:52:40 vs 11:44:59 (52 vs 44 min); warm-up flagged vs not (7 vs 8 sets); S0 present vs removed (quads' before 4 vs 0); next up two areas / one area / every area at step 4; online (no OfflineStatus) vs offline (text shown, same numbers).
-- **Build defaults (no decision needed, within D-0142 §4):** a `null` plan (parses `ok`) still shows the summary, because no number depends on the plan; only a plan that fails `parseSessionPlan` is "isn't on this device". When `balance` throws (no cached targets yet: `indexTargets` needs all nine), the ended summary shows Time, Exercises, Sets and See balance and omits the before → after rows and Next up. This is what the UF-09 suites hit after `finish()` (they seed no targets). A non-finite `ended_at − started_at` is "isn't on this device". The link on that state reads "Go to Today".
+- **Build defaults (now D-0147, from the review; see the rework below):** a `null` plan (parses `ok`) still shows the summary, because no number depends on the plan; only a plan that fails `parseSessionPlan` is "isn't on this device". When `balance` throws (no cached targets yet: `indexTargets` needs all nine), the ended summary shows Time, Exercises, Sets and See balance and omits the before → after rows and Next up. This is what the UF-09 suites hit after `finish()` (they seed no targets). A non-finite `ended_at − started_at` is "isn't on this device". The link on that state reads "Go to Today".
 - **Shell tests unchanged and green.** No file under `app/**`, `lib/**` (except `flows/uf-03.ts`), `components/**`, `features/UF-09/**`, `features/UF-10/**` or `tests/e2e/**` changed. `routes.phase3.render.test.tsx`, `auth-guard.phase3.test.tsx`, `profile-gate.test.tsx` (AC-8), `features/UF-10/__tests__/never-in-workout.test.tsx` and the whole UF-09 suite pass in the full web run. `tests/e2e/shell.spec.ts` (AC-6) and `tests/e2e/uf-09-focus.spec.ts` pass.
 - **Runs.** `pnpm --filter @workoutlab/web typecheck` green; `lint` green; `test` 150 files / 2339 tests green; `test:e2e shell.spec.ts uf-09-focus.spec.ts` 26/26; `pnpm -w format:check` green; `pnpm check:repo` green; `check:size` green.
 - **Not in this ticket:** the summary e2e (T-0420, with Save), effort chips and Save (T-0420).
+
+## Build log, rework attempt 2 (frontend-dev, 2026-10-02)
+- **Base.** `git merge main` brought in D-0147 (the four defaults above), committed as a merge.
+- **Narrowed catch (D-0147 §2).** `summary-data.ts` no longer wraps `balance` in a bare `catch {}`. `coversEveryArea(targets)` (every one of the nine `AREAS` has a cached target) decides whether the two `balance` calls run. When it's false, `changes`/`nextUp` are `null`. Any other throw from `balance` reaches the outer catch, so the screen shows "isn't on this device", never a partial summary.
+- **New tests** in `__tests__/summary.defaults.test.tsx`, each paired, with an `unhandledRejection` probe:
+  - 0 targets and 8 of 9 targets: Time, budget, Exercises, Sets and See balance; no rows, no Next up, no "Every area is on target", no `balance` call. The pair: 9 targets shows rows and Next up.
+  - `balance` throwing once on a nine-target cache: not-on-device, no Time/Sets, no `/balance` link. The pair: the same cache without the throw shows the full summary.
+  - A null plan shows the ended summary. The pair: a plan that fails `parseSessionPlan` shows not-on-device.
+  - Tombstone: S1's `back-squat-3` is live in the cache and re-sent from the queue with `deletedAt` and a later `editedAt`. Sets reads 6 and the quads row is "Quads 4 → 7 / 20". The pair, without the tombstone: Sets 7, "Quads 4 → 8 / 20".
+- **Planted faults (each applied alone, the UF-03 suite run, then reverted):**
+  - missing targets → `return NOT_ON_DEVICE`: both missing-target cases red;
+  - `nextUp` defaulting to `[]` (renders "Every area is on target" with no targets): both missing-target cases red;
+  - the plan check tightened to `!entry.row.plan || …`: the null-plan test red;
+  - `normalizeHistory` skipped (`history = raw`): the tombstone test red (Sets 7), plus AC-3 and AC-4 "the calls";
+  - the bare `catch {}` restored around `balance`: the "not swallowed" test red, plus both missing-target cases (which now pin that `balance` isn't called).
+- **Runs.** UF-03 vitest 47/47; web typecheck and lint green; web test 155 files / 2432 tests green; `-w format:check` green; `check:repo` green.
