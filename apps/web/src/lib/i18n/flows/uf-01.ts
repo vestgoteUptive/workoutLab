@@ -86,4 +86,38 @@ export const uf01 = {
     targetsHeading: "Hard sets per 14 days",
     save: "Save my plan",
   },
+
+  /** UF-01.5 Account (T-0301c). The auth texts themselves are `en.auth.*`, never copied here. */
+  account: {
+    /** The `<h1>` with a saveable pending plan (D-0098 §2). */
+    headingSave: "Save your plan",
+    /** The `<h1>` without one. */
+    headingSignIn: "Sign in",
+    subtitleSave: "Sign in to keep your plan. We'll email you a link and a 6-digit code.",
+    subtitleSignIn: "We'll email you a link and a 6-digit code.",
+    /** Accessible name of the two-tab list. */
+    modesName: "How to sign in",
+    or: "or",
+    google: "Continue with Google",
+    /** D-0064 §10. */
+    privacy: "Privacy",
+  },
+
+  /** `/auth/callback`'s expired state, when a saveable plan is on this device (T-0301c AC-4). */
+  callback: {
+    planKept: "Your plan is still saved on this device.",
+  },
+
+  /** `/welcome/save`, screen `UF-01.5-save` (D-0100). */
+  save: {
+    heading: "Save your plan",
+    saving: "Saving your plan…",
+    offline: "Connect to save your plan",
+    error: "Couldn't save your plan. Try again.",
+    retry: "Retry",
+    /** D-0100 §2: signed in, with no saveable plan on this device. */
+    noPlanHeading: "Set up your plan",
+    noPlanBody: "Your answers aren't on this device. It takes under a minute.",
+    noPlanLink: "Set up my plan",
+  },
 } as const;

@@ -4,9 +4,15 @@
 //
 // Pure local storage: no network, no `lib/offline`, no `lib/profile` (principle 5).
 import type { Goal, Level } from "@workoutlab/shared";
-import { EQUIPMENT_PROFILE_IDS, type EquipmentProfileId } from "./equipment-profiles.js";
+import {
+  EQUIPMENT_PROFILE_IDS,
+  EQUIPMENT_PROFILES,
+  type EquipmentProfileId,
+} from "./equipment-profiles.js";
 
-export { EQUIPMENT_PROFILE_IDS };
+// Re-exported so the lazy `/welcome/save` step reaches the profile arrays through its `store`
+// prop and never value-imports a module the splat's chunk holds (see `WelcomeRoutes.tsx`).
+export { EQUIPMENT_PROFILE_IDS, EQUIPMENT_PROFILES };
 
 export const STORAGE_KEY = "wl-onboarding";
 /** A record older than this is deleted on read (D-0064 §6): `now − savedAtMs > MAX_AGE_MS`. */
@@ -110,6 +116,16 @@ export function readPendingPlan(now: number = Date.now()): PendingPlan | null {
     return null;
   }
   return parsed;
+}
+
+/**
+ * The stored record when it is saveable (D-0098 §2): valid, unexpired and `planShown: true`.
+ * A valid record that isn't saveable is left as it is; an invalid or expired one is deleted by
+ * `readPendingPlan`.
+ */
+export function readSaveablePlan(now: number = Date.now()): PendingPlan | null {
+  const current = readPendingPlan(now);
+  return current?.planShown === true ? current : null;
 }
 
 /** Writes the full record with `savedAtMs = now`. Storage failures are swallowed. */
