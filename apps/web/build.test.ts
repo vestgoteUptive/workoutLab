@@ -214,15 +214,23 @@ describe("AC-A10 CSP", () => {
 
 // D-0117 §4c / T-0390: markers of runtime code generation, which `script-src 'self'` blocks.
 // The lookbehind keeps `isFunction(`, `x.eval(`, `$eval(` and `retrieval(` from matching.
+// T-0398 widens it: member-access eval, Function.apply/call, Reflect.construct(Function,
+// Function(<identifier>), `new  Function (` and string-argument setTimeout/setInterval.
 const CODEGEN_MARKERS: readonly RegExp[] = [
   /new Function\(/,
-  /Function\("/,
+  /(?<![\w$.])Function\(\s*"/,
   /Error compiling schema/,
   /(?<![\w$.])Function\(\s*'/,
   /(?<![\w$.])Function\(\s*`/,
   /(?<![\w$.])eval\(/,
   /\(\s*0\s*,\s*eval\s*\)\s*\(/,
   /ajv\/dist\/compile/,
+  /\b(?:globalThis|window|self|global)\s*(?:\.\s*eval|\[\s*["'`]eval["'`]\s*\])\s*\(/,
+  /(?<![\w$.])Function\s*\.\s*(?:apply|call)\s*\(/,
+  /Reflect\s*\.\s*construct\s*\(\s*Function\b/,
+  /(?<![\w$.])Function\(\s*[A-Za-z_$][\w$]*\s*[,)]/,
+  /new\s+Function\s*\(/,
+  /(?<![\w$])set(?:Timeout|Interval)\s*\(\s*["'`]/,
 ];
 
 /** The marker sources that `text` matches; empty when the text is clean. */
@@ -231,7 +239,7 @@ function codegenHits(text: string): string[] {
 }
 
 describe("T-0229 AC6 no runtime code generation in the bundle (D-0117 §4c)", () => {
-  it("T-0390 AC1 AC3 (T-0229 AC6) no dist JS asset matches a code-generation marker", () => {
+  it("T-0398 AC4 T-0390 AC1 AC3 (T-0229 AC6) no dist JS asset matches a code-generation marker", () => {
     const assets = (readdirSync(outDir, { recursive: true }) as string[])
       .map((f) => f.split("\\").join("/"))
       .filter((f) => f.endsWith(".js"));
@@ -270,6 +278,48 @@ describe("T-0390 AC2 code-generation matcher table (D-0117 §4c)", () => {
   });
 
   it.each(clean)("T-0390 AC2 does not flag %s", (sample) => {
+    expect(codegenHits(sample)).toEqual([]);
+  });
+});
+
+describe("T-0398 AC3 widened code-generation matcher table (D-0117 §4c)", () => {
+  const flagged = [
+    'globalThis.eval("x")',
+    "window.eval(x)",
+    'self["eval"](x)',
+    "globalThis . eval (x)",
+    'Function.apply(null, ["x"])',
+    'Function.call(null, "x")',
+    'Reflect.construct(Function, ["x"])',
+    "Function(src)",
+    "Function(a, b)",
+    "new Function (a)",
+    "new  Function(a)",
+    'Function( "x")',
+    'setTimeout("tick()", 10)',
+    "setInterval('tick()', 5)",
+    "setTimeout(`x`)",
+    'window.setTimeout("x")',
+  ];
+  const clean = [
+    'isFunction("x")',
+    "myFunction(src)",
+    "x.Function(src)",
+    "setTimeout(fn, 10)",
+    "setInterval(() => tick(), 5)",
+    "clearTimeout(id)",
+    "x.evaluate(y)",
+    "globalThis.evaluate(x)",
+    "Function.prototype.apply(x)",
+    "Reflect.construct(Foo, [])",
+    "typeof Function",
+  ];
+
+  it.each(flagged)("T-0398 AC3 flags %s", (sample) => {
+    expect(codegenHits(sample)).not.toEqual([]);
+  });
+
+  it.each(clean)("T-0398 AC3 does not flag %s", (sample) => {
     expect(codegenHits(sample)).toEqual([]);
   });
 });

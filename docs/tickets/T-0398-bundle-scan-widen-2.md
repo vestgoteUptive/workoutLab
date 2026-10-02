@@ -95,3 +95,9 @@ none
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green · contracts unchanged · commit messages start with `T-0398` and cite UF-09.1 (e.g. `T-0398 UF-09.1: widen the no-eval bundle scan again (D-0117 §4c)`).
 
 ## Build / accept log
+- 2026-10-02, frontend-dev (build), on top of 0305d73 (code identical to `main` 8ffa53f).
+  - Today's bundle, before any edit: a scratch `vite build` (33 JS assets) scanned with the full widened table (14 markers) gave **0 hits**. No triage needed.
+  - Change (`apps/web/build.test.ts` only): `/Function\("/` is replaced by `/(?<![\w$.])Function\(\s*"/` (AC1), and the six AC2 regexes are appended as written. The other seven T-0390 markers are untouched. The scan test is retitled `T-0398 AC4 T-0390 AC1 AC3 (T-0229 AC6) …`. The new `T-0398 AC3` describe has the 16 flagged and 11 clean samples. The T-0390 AC2 table is unedited.
+  - Red proof (AC3): with main's `CODEGEN_MARKERS` swapped back in, `-t "AC3 |AC2 "` gave **17 failed** (all 16 flagged plus `isFunction("x")`), 29 passed. The T-0390 AC2 table (18) stayed green. Restored.
+  - Red proof (AC4, temporary plant of `setTimeout("tick()",1);Reflect.construct(Function,[])` into the built `registerSW.js`, then reverted): the scan failed as `registerSW.js: Reflect\s*\.\s*construct…` and `registerSW.js: (?<![\w$])set(?:Timeout|Interval)…`.
+  - Checks (under `flock /tmp/workoutlab-tests.lock`): `build.test.ts` 58/58, web typecheck and lint clean, web `test` 120 files / 1815 tests pass, `-w format:check` clean, `.github/scripts/check-all.mjs` exit 0.
