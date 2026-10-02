@@ -27,9 +27,13 @@ vi.mock("react-router", async (orig) => {
     ...actual,
     useNavigate: () => {
       const navigate = actual.useNavigate();
-      return ((to: Parameters<typeof navigate>[0], options?: Parameters<typeof navigate>[1]) => {
-        navCalls.push({ to, keyPresent: window.localStorage.getItem("wl-focus:S1") !== null });
-        return navigate(to as never, options);
+      const call = navigate as (...args: unknown[]) => unknown;
+      return ((...args: unknown[]) => {
+        navCalls.push({
+          to: args[0],
+          keyPresent: window.localStorage.getItem("wl-focus:S1") !== null,
+        });
+        return call(...args);
       }) as typeof navigate;
     },
   };
