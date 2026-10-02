@@ -9,12 +9,7 @@ its own ticket branch and never touches `main`.
 2. The orchestrator first does the checks below, then deletes this file and goes on as normal.
 
 ## First checks on resume
-- **`main` has a local, unpushed merge of T-0308b** (`dd95964`) plus the T-0450 fix and D-0158.
-  Its verification log is `~/.cache/wl-pw-tmp/verify-main-2.log` (it needs `CHECK_OK`, `Tasks: 19 successful`,
-  `# pass 146` and `N passed` with no `failed`). Green → set T-0308b `done`, push `main`, remove its worktree.
-  Not green or incomplete → rerun the gate on `main`:
-  `flock /tmp/workoutlab-tests.lock npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1`,
-  `… -w test:repo-checks`, and the whole e2e with `TMPDIR=$HOME/.cache/wl-pw-tmp`.
+- **T-0308b is done and pushed** (verified on `main`: check-all, -w 19/19, repo-checks 146, e2e 153/153). `main` = `origin/main` at pause.
 - File **T-0451** on the board: "UF-05 swap overlay: a retry after a failed chunk load (React.lazy caches the
   rejection, so every reopen shows loadFailed until reload); and the T-0422 boundary 'scope' test proves nothing"
   (lane web-feature:UF-09, dep T-0422, from the T-0422 re-review).
@@ -23,7 +18,6 @@ its own ticket branch and never touches `main`.
 ## Tickets in flight at pause (worktrees under `../workoutLab-worktrees/`)
 | Ticket | What | Where it stood | Next step |
 |---|---|---|---|
-| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | Accepted; merged on local `main`. First verify failed only on AC-B16's branch-only `git diff` test → retired on `main` as **T-0450** (`f22e589`); re-verify log `~/.cache/wl-pw-tmp/verify-main-2.log` | See first checks |
 | T-0422 | UF-05.1 swap seam on UF-09.9 / UF-09.6 | Build ×3 done, review approved (incl. error boundary), **QA running** | QA verdict → accept → merge (full gate + whole e2e) |
 | T-0304g | UF-09 wake lock, cues, reduced motion | Review approved. QA proved every AC and fault (58/58; F1, F3, its own wake-lock fault) but stopped before its gate: it left 3 stray files, which the orchestrator removed (worktree clean at `bcf51a3`) | Run the cached gate (D-0158 §1) in the worktree, commit QA's log, then accept → merge |
 | T-0440 | e2e: no server reuse on :4173, tmpfs preflight | Review approved, **QA passed** (`12ea587`, e2e 152/152) | Accept → merge; then shorten the two traps in `state.md` |
