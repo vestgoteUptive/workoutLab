@@ -170,3 +170,5 @@ example `T-0304c UF-09.7: hold from prefill.durationS, auto-logged once`).
 - **Deps.** It needs T-0304f (UF-09.6 is how the walk reaches UF-09.7). It doesn't need T-0303d:
   the prefs moved to T-0304g (D-0118 §1).
 - **Parallel.** It is parallel-safe by files with every UF-08 ticket.
+
+- **From T-0304e review (2026-10-02):** D-0119 §3 shows the timed auto-log calling `recordSet({sessionId, exerciseId, setIndex, …})` without `itemIndex`, but `FocusSetInput` requires it — pass `state.itemIndex`.

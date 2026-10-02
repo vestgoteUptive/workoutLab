@@ -265,3 +265,5 @@ and cite the screen (for example `T-0304b UF-09.4: auto-save after 5 s from the 
   `lib/format/number.ts`. T-0391 only imports `formatKg`. Verification runs are staggered (state.md).
 - **Until T-0304f lands,** UF-09.1 and UF-09.5 are still placeholders. AC-4 and AC-8 reach the next
   set through the T-0304a expiry (`REST_END` after 120 s of fake time).
+
+- **From T-0304e QA/accept (2026-10-02):** a double tap on Save in `set` reaches `recordSet` twice; the second call arrives in `confirm`, becomes SET_LOGGED and adds a duplicate `loggedSets` entry for the same setIndex. Guard it in the view (disable while the write is pending) and test both taps. The hook API: views write through `useFocusSession().recordSet/editSet` with `RecordSetInput & {itemIndex}`, which resolves to the stored LoggedSet.

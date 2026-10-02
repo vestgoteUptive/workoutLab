@@ -263,3 +263,5 @@ example `T-0304d UF-09.8: Trim saves the engine's item list`).
 - **Back.** The browser Back button in a running state goes to Pause (UF-09.9) through a same-URL
   history guard. That is T-0394 (D-0123, deps T-0304d and T-0303d), not this ticket.
 - **Parallel.** It is parallel-safe by files with every UF-08 ticket.
+
+- **From T-0304e review (2026-10-02):** `store.replacePlan(plan, itemIndex)` dispatches PLAN_REPLACED, which returns the same state from `timeCheck` and when itemIndex is past the new end. The time-check apply ("Nothing left → done", and the move to UF-09.6) needs its own reducer event or a broader replacePlan. Also: `ctx.resume()` is handed to `keepsClockRunning: false` overlays; hide or document it when wiring UF-09.9's seams.
