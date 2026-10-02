@@ -8,6 +8,8 @@
 //
 // One session id per visit to this step (D-0110 §3): made on the first tap, reused by a retry
 // after a rejected write, dropped when the step unmounts (Back), so the next visit makes a new one.
+// Back is inert while the write is pending (T-0397); a system Back then unmounts the step, and
+// the `mounted` guard skips the navigate and any state update.
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Workout } from "@workoutlab/engine";
@@ -108,7 +110,16 @@ export function Ready({ workout, clock, locale, timeZone }: ReadyProps) {
   return (
     <section data-screen-id="UF-08.4" className="wl-uf08" data-items={workout.plan.items.length}>
       <div className="wl-uf08__top">
-        <Link className="wl-uf08__back" to={SUGGESTED_HREF}>
+        <Link
+          className="wl-uf08__back"
+          to={SUGGESTED_HREF}
+          aria-disabled={pending ? "true" : undefined}
+          onClick={(e) => {
+            // T-0397: inert while Start's write is pending, so it can't orphan the written row
+            // or let the next visit make a second session (D-0110 §3). It stays a link.
+            if (pending) e.preventDefault();
+          }}
+        >
           {en.uf08.back}
         </Link>
       </div>

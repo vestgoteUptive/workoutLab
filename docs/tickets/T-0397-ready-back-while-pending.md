@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.4, UF-08.2]
 decisions: [D-0065, D-0110, D-0123]
 deps: [T-0303d]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-10-02 (groom). Build flow: wl-build-web. About ⅙ day. Follow-up from the T-0303d review. It stays todo until T-0303d is done (now in QA and review). It becomes ready as written, unless the accepted T-0303d Ready.tsx differs from the branch read here (worktree T-0303d). -->
 
@@ -71,3 +71,12 @@ none
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web test:e2e` green · `format:check` and `check:repo` green · contracts unchanged · commit messages start with `T-0397` and cite UF-08.4 (e.g. `T-0397 UF-08.4: Back is inert while Start is pending`).
 
 ## Build / accept log
+- **Build (2026-10-02, frontend-dev).** Line refs checked against main's `Ready.tsx` (T-0303d merged): unchanged (Back `<Link>` at l.111, `mounted` guard at l.103). Fix: Back gets `aria-disabled="true"` and an `onClick` that calls `preventDefault()` while `pending`; no `aria-disabled` otherwise. `href` stays, so focus order and the 44 × 44 target don't change. `.wl-uf08__back[aria-disabled="true"]` uses `--wl-color-text-muted` + `cursor: not-allowed`. No new strings. Tests: `features/UF-08/__tests__/ready-back-pending.test.tsx`, 8 rows (AC-1 click + Enter; AC-2 before Start + after a rejected write; AC-3 router-navigate-away and full unmount, each with resolve and reject). AC-1's Enter row fires keyDown, click, keyUp, because jsdom has no Enter activation on links (a browser fires `click`). **AC-1 red on unfixed code:** both AC-1 rows failed at the location assert, `- "search": "?step=ready"` / `+ "search": "?step=suggested"`. **AC-3 planted fault** (`if (!mounted.current) return` removed): "router navigates away, then the write resolves" went red at `expect(last().pathname).not.toBe("/session/<id>")` (the navigate went through); restored. Runs: UF-08 vitest 275/275; web `typecheck`, `lint` green; web `test` 134 files / 2043 tests green; `uf-08-setup` e2e 15/15 (AC-4 axe + 44 px rows included); `-w format:check` clean; `check-all.mjs` exit 0.
+- **Accept (2026-10-02, product-owner): done.** Checked at HEAD 2d8a3d6 against each AC.
+  - AC-1: covered by the click and Enter rows. They check the location stays on `?step=ready`, UF-08.4 is still rendered, Back has `aria-disabled="true"` with `href` kept, the resolve REPLACEs to `/session/<the single call's id>`, and `upsertSession` was called once. Red on unfixed code is recorded above.
+  - AC-2: covered by the before-Start row and the after-rejected-write row. The T-0303d AC-8 test passes unedited.
+  - AC-3: four rows (router navigates away or the tree unmounts, each with resolve and reject). Each asserts no `/session/<id>` or navigate, no alert, no `console.error` and no unhandled rejection. The planted-fault red is recorded above.
+  - AC-4: the `uf-08-setup` e2e axe and 44 px rows are green. No new strings, and lint is green.
+  - AC-5: UF-08 vitest 275/275, web 2043 and e2e 15/15, all with existing tests unedited.
+  - Principles: Principle 1 is untouched, and the write-first order (NFR-OFF-2) is kept. The style uses tokens only. There is no contract impact.
+  - Review approved. Middle-click opening a new tab is harmless (D-0123 §2/§4). System or browser Back stays with T-0394, as scoped.
