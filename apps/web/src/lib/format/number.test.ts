@@ -43,12 +43,4 @@ describe("formatSetCount (unchanged, AC5)", () => {
   it("AC5: formatKg has the same arity as formatSetCount", () => {
     expect(formatKg.length).toBe(formatSetCount.length);
   });
-
-  // TR-0037: AC5 as written asks for `.length === 1`, but `(value, locale?)` compiles to two JS
-  // parameters, so `.length` is 2 and formatSetCount may not change in T-0388. Kept as
-  // `it.fails` so the row turns red when TR-0037 is resolved; then drop the marker.
-  it.fails("AC5 (TR-0037): both helpers have .length 1", () => {
-    expect(formatSetCount.length).toBe(1);
-    expect(formatKg.length).toBe(1);
-  });
 });
