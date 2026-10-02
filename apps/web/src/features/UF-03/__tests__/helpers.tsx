@@ -3,7 +3,14 @@
 // supabase-js `localStorage` key `currentUserId()` reads (the T-0304a way), and a router with the
 // real `Summary` and a location probe. No `AuthProvider`: the summary never calls `useAuth()`.
 import { render, type RenderResult } from "@testing-library/react";
-import { MemoryRouter, Route, Routes, useLocation } from "react-router";
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  type NavigateFunction,
+} from "react-router";
 import type { AreaTarget, LibraryExercise, PlanCheckin } from "@workoutlab/shared";
 import {
   resetOfflineDbForTest,
@@ -56,6 +63,8 @@ export interface SessionSeed {
   endedAt?: string | null;
   plan?: unknown;
   budget?: number;
+  /** T-0420: a stored `effort_rating`; absent leaves the key out of the row. */
+  effortRating?: number | null;
 }
 
 export async function seedSession(db: OfflineDb, seed: SessionSeed = {}): Promise<void> {
@@ -73,6 +82,7 @@ export async function seedSession(db: OfflineDb, seed: SessionSeed = {}): Promis
       energy: "normal",
       warmup_in_budget: true,
       plan: (seed.plan === undefined ? PLAN : seed.plan) as never,
+      ...(seed.effortRating === undefined ? {} : { effort_rating: seed.effortRating }),
     },
     finished: endedAt !== null,
     pending: true,
@@ -162,19 +172,26 @@ export async function seedAll(db: OfflineDb, seed: SessionSeed = {}): Promise<vo
   await seedLibraryAndTargets(db);
 }
 
-export const location: { pathname: string } = { pathname: "" };
+export const location: { pathname: string; navigate: NavigateFunction | null } = {
+  pathname: "",
+  navigate: null,
+};
 
 function LocationProbe() {
   location.pathname = useLocation().pathname;
+  // T-0420 AC-3: a test steps back through the history to prove Save replaced its entry.
+  location.navigate = useNavigate();
   return null;
 }
 
 export function renderSummary(
   sessionId: string = S1,
   props: { timeZone?: string; locale?: string } = { timeZone: TZ, locale: LOCALE },
+  /** T-0420: entries below the summary in the history, oldest first. */
+  before: readonly string[] = [],
 ): RenderResult {
   return render(
-    <MemoryRouter initialEntries={[`/session/${sessionId}/summary`]}>
+    <MemoryRouter initialEntries={[...before, `/session/${sessionId}/summary`]}>
       <LocationProbe />
       {/* A landmark for axe's "region" rule, as the OfflineStatus axe test does. */}
       <main>

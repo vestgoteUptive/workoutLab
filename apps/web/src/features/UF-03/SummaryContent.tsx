@@ -1,6 +1,7 @@
 // UF-03.3 Summary content (T-0419, D-0068 §1, D-0142 §4): the three states under the wrapper in
 // `index.tsx`. Loading renders nothing (the wrapper's `<h1>` only); "isn't on this device" and
-// "still running" never redirect; only an ended session shows the numbers and "See balance".
+// "still running" never redirect; only an ended session shows the numbers, "See balance" and
+// (T-0420) the effort chips and "Save workout".
 //
 // No mount refresh (D-0142 §4, the D-0111 §11 exemption): this reads IndexedDB once per
 // session id and never calls `refresh*` or `useAuth()`, so it renders with no `AuthProvider`.
@@ -10,6 +11,7 @@ import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js"
 import { formatSetCount } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { areaName } from "../../lib/i18n/workout.js";
+import { EffortSave } from "./EffortSave.js";
 import { loadSummary, type EndedSummary, type SummaryLoad } from "./summary-data.js";
 import "./summary.css";
 
@@ -64,15 +66,17 @@ export function SummaryContent({ timeZone, locale }: SummaryProps) {
         </div>
       );
     case "ended":
-      return <Ended summary={state.summary} timeZone={tz} locale={locale} />;
+      return <Ended sessionId={sessionId} summary={state.summary} timeZone={tz} locale={locale} />;
   }
 }
 
 function Ended({
+  sessionId,
   summary,
   timeZone,
   locale,
 }: {
+  sessionId: string;
   summary: EndedSummary;
   timeZone: string;
   locale: string | undefined;
@@ -122,6 +126,8 @@ function Ended({
             : en.uf03.nextUp(nextUp.map(areaName).join(en.uf03.nextUpSeparator))}
         </p>
       ) : null}
+
+      <EffortSave sessionId={sessionId} initialRating={summary.effortRating} />
 
       <Link to="/balance" className="wl-uf03-summary__link">
         {en.uf03.seeBalance}
