@@ -3,26 +3,10 @@
 // shared change; CI fails on drift (`vendor.mjs --check`).
 /// <reference types="./session-plan.d.ts" />
 
-// parseSessionPlan(): reads `sessions.plan` (jsonb) as a SessionPlan v1 without ever throwing
-// (T-0102 AC17, D-0037 §7, D-0043). The device may read a plan written by an older or newer app
-// version, offline, so every failure is a value, not an exception.
-import { Ajv2020 } from "ajv/dist/2020.js";
-import { SESSION_PLAN_SCHEMA } from "./session-plan.schema.gen.js";
-// `null` = the compile failed once; it is not retried on every call (the schema is static).
-let validator;
-function validate(value) {
-    if (validator === undefined) {
-        try {
-            validator = new Ajv2020({ strict: true, allErrors: false, allowUnionTypes: true }).compile(SESSION_PLAN_SCHEMA);
-        }
-        catch {
-            validator = null;
-        }
-    }
-    if (validator === null)
-        throw new Error("SessionPlan schema failed to compile");
-    return validator(value);
-}
+import { validate as generatedValidate } from "./session-plan.validate.gen.js";
+// Precompiled by gen:api from SESSION_PLAN_SCHEMA (Ajv standalone, D-0117): nothing compiles code
+// at runtime, so this runs under the PWA's CSP (`script-src 'self'`, no 'unsafe-eval').
+const validate = generatedValidate;
 /**
  * Parses the `sessions.plan` column.
  * - `null` (no stored plan) → `{ok: true, plan: null}`.
@@ -48,7 +32,7 @@ export function parseSessionPlan(json) {
             : { ok: false, error: "invalid" };
     }
     catch {
-        // A hostile getter or a schema compile failure must not crash the workout screen.
+        // A hostile getter must not crash the workout screen.
         return { ok: false, error: "invalid" };
     }
 }

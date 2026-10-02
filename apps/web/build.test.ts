@@ -212,6 +212,21 @@ describe("AC-A10 CSP", () => {
   );
 });
 
+describe("T-0229 AC6 no runtime code generation in the bundle (D-0117 §4c)", () => {
+  it('T-0229 AC6 no dist JS asset contains new Function(, Function(" or Error compiling schema', () => {
+    const markers = ["new Function(", 'Function("', "Error compiling schema"];
+    const assets = (readdirSync(outDir, { recursive: true }) as string[])
+      .map((f) => f.split("\\").join("/"))
+      .filter((f) => f.endsWith(".js"));
+    expect(assets.length).toBeGreaterThan(0);
+    const hits = assets.flatMap((asset) => {
+      const text = read(asset);
+      return markers.filter((m) => text.includes(m)).map((m) => `${asset}: ${m}`);
+    });
+    expect(hits).toEqual([]);
+  });
+});
+
 describe("AC-A11 bundle budget", () => {
   it("check:size passes on the real build", () => {
     const res = spawnSync(
