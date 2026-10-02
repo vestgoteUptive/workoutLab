@@ -211,7 +211,7 @@ export type Database = {
                     answer: string | null;
                     answered_at: string | null;
                     completed_last: number;
-                    completed_prev: number;
+                    completed_prev: number | null;
                     id: string;
                     period_index: number;
                     proposed_at: string;
@@ -225,7 +225,7 @@ export type Database = {
                     answer?: string | null;
                     answered_at?: string | null;
                     completed_last: number;
-                    completed_prev: number;
+                    completed_prev?: number | null;
                     id?: string;
                     period_index: number;
                     proposed_at: string;
@@ -239,7 +239,7 @@ export type Database = {
                     answer?: string | null;
                     answered_at?: string | null;
                     completed_last?: number;
-                    completed_prev?: number;
+                    completed_prev?: number | null;
                     id?: string;
                     period_index?: number;
                     proposed_at?: string;

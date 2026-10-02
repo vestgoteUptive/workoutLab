@@ -55,6 +55,8 @@ export const en = {
     exerciseHistory: "Exercise history",
     editPlan: "Edit plan",
     routineEditor: "Edit routine",
+    // T-0310c (D-0136 §1): UF-11.4's <h1>. The screen itself is T-0310d.
+    accountSettings: "Account settings",
   },
   auth: {
     emailLabel: "Email",
@@ -71,6 +73,13 @@ export const en = {
     unknown: "Something went wrong. Try again.",
     linkExpired: "This link has expired. Send a new one.",
     sendNewLink: "Send a new one",
+  },
+  // T-0310c (D-0136 §6): the shell's one-time notice after an account deletion (NFR-PRIV-5).
+  accountDeleted: {
+    done: "Your account and all your data are deleted.",
+    partial:
+      "Your account is deleted. Some data may still be on this device: clear this site's data in your browser settings.",
+    dismiss: "Dismiss",
   },
   offline: {
     ariaLabel: "Offline",

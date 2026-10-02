@@ -10,6 +10,9 @@ import { Balance } from "../index.js";
 import { LIBRARY, defaultTargets } from "./fixtures.js";
 import { freshDb, rowAreas, seedCache, signIn, signOut } from "./test-helpers.js";
 
+// D-0113 §5: UF-10 reads `useAuth()`; this suite runs signed in (T-0383).
+vi.mock("../../../lib/auth/auth-context.js", () => import("./auth-mock.js"));
+
 beforeEach(() => {
   signIn();
   vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);

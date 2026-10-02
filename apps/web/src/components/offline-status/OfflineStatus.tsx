@@ -1,7 +1,8 @@
 // C offline status (AC-C19, NFR-OFF-6, D-0045 §9). `text` reads "Offline · last synced HH:MM" or
-// "Offline · not synced yet"; online it renders nothing. `icon` is an `aria-label="Offline"`
-// element with no text, and never a `banner`/`role="alert"` (principle 1: it must not interrupt
-// UF-09).
+// "Offline · not synced yet"; online it renders nothing. `icon` is a `role="img"` span named
+// `aria-label="Offline"` with no text (T-0407: `aria-label` on a role-less span is axe
+// `aria-prohibited-attr`, D-0127 superseded). It is never a `banner`/`alert`/`status` or a live
+// region (principle 1: it must not interrupt UF-09).
 import { useEffect, useState } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { formatTime } from "../../lib/format/intl.js";
@@ -42,7 +43,9 @@ export function OfflineStatus({
 
   useEffect(() => {
     if (lastSyncedAt !== undefined) return;
-    void loadLastSyncedAt().then(setStoredLastSyncedAt);
+    // D-0104 §2 / D-0115 §2 (T-0380a): a rejected IDB read (blocked or closed DB, private mode)
+    // keeps `null`, so the text falls back to "Offline · not synced yet". No console.error.
+    void loadLastSyncedAt().then(setStoredLastSyncedAt, () => undefined);
   }, [lastSyncedAt]);
 
   if (online) return null;
@@ -53,7 +56,9 @@ export function OfflineStatus({
     : en.offline.notSyncedYet;
 
   if (variant === "icon") {
-    return <span aria-label={en.offline.ariaLabel} className="wl-offline-status__icon" />;
+    return (
+      <span role="img" aria-label={en.offline.ariaLabel} className="wl-offline-status__icon" />
+    );
   }
   return <span className="wl-offline-status__text">{text}</span>;
 }

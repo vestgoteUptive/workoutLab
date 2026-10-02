@@ -6,7 +6,7 @@
 // the screen prints what it was given rather than what it could have worked out.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react";
 import type { AreaBalance } from "@workoutlab/shared";
 import { en } from "../../../lib/i18n/en.js";
@@ -34,6 +34,9 @@ import {
   rowFill,
   rowValue,
 } from "./test-helpers.js";
+
+// D-0113 §5: UF-10 reads `useAuth()`; this suite runs signed in (T-0383).
+vi.mock("../../../lib/auth/auth-context.js", () => import("./auth-mock.js"));
 
 const at = { now: new Date(NOW), timeZone: TZ, locale: LOCALE };
 

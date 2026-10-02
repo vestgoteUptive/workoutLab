@@ -37,7 +37,17 @@ and no third-party images in v1.
 4. **Enums.** `type`: `compound | isolation`. `level`: `beginner | intermediate | advanced`.
    Area weights: `1` (primary) or `0.5` (secondary), and only for the 9 areas in `CLAUDE.md`.
 5. **Equipment vocabulary.** `none`, `dumbbell`, `bench`, `barbell`, `rack`, `cable`,
-   `machine`, `pull-up-bar`, `kettlebell`, `band`. `none` appears only on its own.
+   `machine`, `pullup-bar`, `kettlebell`, `band`. `none` appears only on its own.
+
+   *Amended 2026-10-01 (T-0358):* the key is **`pullup-bar`** (no hyphen between "pull" and
+   "up"). This prose said `pull-up-bar` until D-0033 §1 adopted `pullup-bar`. The prose was
+   never updated, but the implementation was: `data/exercises/schema.json` (enum),
+   `data/exercises/src/profiles.ts`, the library rows, `supabase/seed.sql`, `docs/engine-rules.md`
+   and the `api/openapi.yaml:752` example (generated into `packages/shared/src/api.gen.ts`).
+   **The contracts and the shipped vocabulary are authoritative over decision prose.** If prose
+   and contract disagree, fix the prose. Never "correct" working code to match the prose. A wrong
+   key doesn't error: it silently filters exercises out of every profile (D-0040 §1 does no
+   aliasing, and the content schema rejects `pull-up-bar`).
 6. **Equipment profiles.** These are the three options behind UF-01.3:
    - `bodyweight` = {none}
    - `dumbbells` = {none, dumbbell, bench}
@@ -69,3 +79,5 @@ and no third-party images in v1.
 
 ## Amended
 Amended 2026-09-29 by D-0061 (human review). Read it together with this file.
+Point 5 amended 2026-10-01 by T-0358: equipment key spelling aligned with D-0033 §1 and the
+contracts (`pullup-bar`). This is a prose-only correction with no behaviour change.

@@ -124,9 +124,9 @@ export const DOWN_2_3: CheckinProposal = {
 /** AC1's sessions: P0 = P1 = 7, P2 = 4, P3 = 3. */
 export const AC1_SESSIONS: CheckinSession[] = sessionsFor({ 2: 4, 3: 3 });
 
-/** AC1's expected result on 2026-09-27. */
+/** AC1's expected result on 2026-09-27: one period, P3 (D-0061 §2, D-0094 §1; T-0215 AC1). */
 export const AC1_RESULT: CheckinEvaluation = {
-  periods: [per(2, 4, "under"), per(3, 3, "under")],
+  periods: [per(3, 3, "under")],
   proposal: DOWN_2_3,
   nextCheckinDate: "2026-10-11",
 };

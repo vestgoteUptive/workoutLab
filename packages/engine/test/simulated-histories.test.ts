@@ -270,7 +270,7 @@ describe("seeded properties of balance()", () => {
         throw new Error(`seed ${seed}: ${(err as Error).message}`);
       }
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 
   it("rule-0 history order never changes balance() for distinct edited_at values (200 seeds)", () => {
     for (let seed = 1; seed <= 200; seed++) {
@@ -285,5 +285,5 @@ describe("seeded properties of balance()", () => {
         balance(history, F_TARGETS, LIBRARY, NOW, TZ),
       );
     }
-  });
+  }, 30_000); // runtime budget only (sweep)
 });

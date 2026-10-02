@@ -6,6 +6,11 @@ date: 2026-09-29
 by: product-owner (T-0302/T-0303 groom)
 area: product
 ---
+> **Amended in part by D-0109, D-0110 (2026-10-02).**
+> - §4: the UF-08.2 time chips are UF-08.1's five (20/30/45/60/90), not "30/45/60 around the current value". UF-08.2 has no stepper. Every UF-08.2 re-suggest keeps the current main lift, except Remove on the main item (D-0109 §2–§3).
+> - §6: "done by" uses a clock read when UF-08.4 opens (D-0110 §1).
+> - §7: `started_at` is the Start tap, the id is made once per Ready visit and reused on retry, and the navigation is a replace (D-0110 §1, §3, §4).
+>
 > **Amended in part by D-0071 (2026-09-29).** §5: `applySwap` semantics are fixed in D-0071 §7, and UF-08.3 mounts the shared `SwapSheet` from `features/UF-05` instead of building its own sheet. Consequences: T-0308c mounts `CheckinCard` through `features/UF-02/slots.tsx`, not by editing `Today.tsx` (D-0071 §4).
 
 ## Context

@@ -3,13 +3,12 @@
 // `suggest()` for UF-08.1 / UF-08.3 / UF-08.4 (D-0024, D-0037 §6–§7, D-0040, D-0042, D-0047).
 import { balance } from "./balance.js";
 import {
-  BACKOFF_FACTOR,
+  backoffWeightKg,
   DEFAULT_INCREMENT_KG,
-  floorInc,
   LOW_TRIM_FROM_SETS,
   LOW_TRIM_TO_SETS,
 } from "./energy.js";
-import { availableS, isEligible, itemCostS, setCostS } from "./cost.js";
+import { availableS, getsBackoff, isEligible, itemCostS, setCostS } from "./cost.js";
 import {
   indexLibrary,
   normalizeHistory,
@@ -17,7 +16,7 @@ import {
   recentSessionIds,
   weightsOf,
 } from "./history.js";
-import { prefillFrom, type PrefillPrevious } from "./prefill.js";
+import { plannedDurationFrom, prefillFrom, type PrefillPrevious } from "./prefill.js";
 import { lastDoneDates, rankAgainst, type SwapContext } from "./swaps.js";
 import { dayDiff, localDate } from "./time.js";
 import {
@@ -27,6 +26,7 @@ import {
   type AreaTarget,
   type Backoff,
   type EngineProfile,
+  type Goal,
   type HistorySet,
   type Instant,
   type LibraryExercise,
@@ -34,6 +34,8 @@ import {
   type PrefillResult,
   type Reason,
   type SessionInput,
+  type SuggestProfile,
+  type SwapReason,
   type TimeZone,
   type Workout,
   type WorkoutItem,
@@ -92,8 +94,13 @@ interface Picked {
   previous?: LibraryExercise;
 }
 
+/** A timed exercise's planned duration (D-0092 §1); null for a non-timed one. */
+type DurationOf = (ex: LibraryExercise) => number | null;
+
 interface State {
   start: Start;
+  /** Rule 7.1 work of a timed set: the planned duration, used by every time cost (D-0092 §2). */
+  durationOf: DurationOf;
   projected: AreaNumbers;
   picked: Picked[];
   primaryCount: Record<Area, number>;
@@ -142,11 +149,24 @@ function buildStart(
   };
 }
 
-function newState(start: Start, available: number): State {
+function newState(start: Start, available: number, durationOf: DurationOf): State {
   const primaryCount = {} as Record<Area, number>;
   for (const a of AREAS) primaryCount[a] = 0;
-  return { start, projected: { ...start.loads }, picked: [], primaryCount, remainingS: available };
+  return {
+    start,
+    durationOf,
+    projected: { ...start.loads },
+    picked: [],
+    primaryCount,
+    remainingS: available,
+  };
 }
+
+/** `itemCostS` at the planned duration (D-0092 §2). */
+const costOf = (s: State, ex: LibraryExercise, sets: number): number =>
+  itemCostS(ex, sets, s.durationOf(ex));
+/** `setCostS` at the planned duration (D-0092 §2). */
+const setCostOf = (s: State, ex: LibraryExercise): number => setCostS(ex, s.durationOf(ex));
 
 const ratio = (s: State, a: Area): number => s.projected[a] / s.start.targets[a];
 
@@ -185,7 +205,7 @@ function candidates(s: State, area: Area): LibraryExercise[] {
 /** Adds `ex` at the first set count in `tries` that fits; true when added. */
 function tryAdd(s: State, ex: LibraryExercise, tries: readonly number[], isMain: boolean): boolean {
   for (const sets of tries) {
-    const cost = itemCostS(ex, sets);
+    const cost = costOf(s, ex, sets);
     if (cost > s.remainingS) continue;
     s.picked.push({ exercise: ex, sets, isMain });
     s.remainingS -= cost;
@@ -241,11 +261,49 @@ function selectGreedy(s: State): void {
   }
 }
 
-/** Rule 7.2 rep ranges; timed items have none (D-0040 §5). */
-function repRange(ex: LibraryExercise, isMain: boolean): [number, number] | [null, null] {
+/** The default goal when a profile has none (D-0095 §1): today's rule 7.2 slots. */
+export const DEFAULT_GOAL: Goal = "build_muscle";
+
+/** Rule 7.2 rep slots by goal (D-0061 §1, D-0095): main lift, other compounds, isolation. */
+export const REP_SLOTS: Readonly<
+  Record<
+    Goal,
+    Readonly<{
+      main: readonly [number, number];
+      compound: readonly [number, number];
+      isolation: readonly [number, number];
+    }>
+  >
+> = {
+  get_stronger: { main: [3, 5], compound: [5, 8], isolation: [10, 15] },
+  build_muscle: { main: [6, 8], compound: [8, 12], isolation: [10, 15] },
+  general_fitness: { main: [8, 12], compound: [10, 15], isolation: [10, 15] },
+};
+
+/**
+ * The goal a profile asks for (D-0095 §1): absent (or undefined) means `build_muscle`; any
+ * value that is not a `Goal` throws `RangeError`.
+ */
+export function goalOf(profile: Pick<SuggestProfile, "goal">): Goal {
+  const g: unknown = profile.goal;
+  if (g === undefined) return DEFAULT_GOAL;
+  if (typeof g === "string" && Object.prototype.hasOwnProperty.call(REP_SLOTS, g)) return g as Goal;
+  throw new RangeError(`Unknown goal: ${String(g)}`);
+}
+
+/**
+ * Rule 7.2 rep ranges for `goal` (D-0061 §1, D-0095 §2); timed items have none (D-0040 §5).
+ * Shared with `applySwap` (D-0093 §2). The default goal gives today's 6–8 / 8–12 / 10–15.
+ */
+export function repRange(
+  ex: LibraryExercise,
+  isMain: boolean,
+  goal: Goal = DEFAULT_GOAL,
+): [number, number] | [null, null] {
   if (ex.timed) return [null, null];
-  if (isMain) return [6, 8];
-  return ex.type === "compound" ? [8, 12] : [10, 15];
+  const slots = REP_SLOTS[goal];
+  const [lo, hi] = isMain ? slots.main : ex.type === "compound" ? slots.compound : slots.isolation;
+  return [lo, hi];
 }
 
 /** What rule 14 needs from `suggest` (D-0057 §7): the normalised history and today. */
@@ -254,6 +312,36 @@ interface PrefillCtx {
   lib: ReadonlyMap<string, LibraryExercise>;
   today: LocalDate;
   tz: TimeZone;
+  /** The profile's goal, which picks the rule 7.2 rep slots (D-0095 §2). */
+  goal: Goal;
+}
+
+/** The planned duration of each exercise over `ctx`, computed once per exercise (D-0092 §1). */
+function durationsOf(ctx: PrefillCtx): DurationOf {
+  const memo = new Map<string, number | null>();
+  return (ex) => {
+    if (!ex.timed) return null;
+    if (!memo.has(ex.id)) {
+      memo.set(ex.id, plannedDurationFrom(ex, ctx.hard, ctx.lib, ctx.today, ctx.tz));
+    }
+    return memo.get(ex.id) ?? null;
+  };
+}
+
+function prefillCtxOf(
+  history: readonly HistorySet[],
+  library: readonly LibraryExercise[],
+  now: Instant,
+  tz: TimeZone,
+  goal: Goal = DEFAULT_GOAL,
+): PrefillCtx {
+  return {
+    hard: normalizeHistory(history),
+    lib: indexLibrary(library),
+    today: localDate(now, tz),
+    tz,
+    goal,
+  };
 }
 
 /** Rule 14 for one slot (D-0057 §7), replacing the D-0040 §4 first-time seam. */
@@ -267,50 +355,105 @@ function prefillFor(
   return prefillFrom(ex, { repsMin, repsMax }, ctx.hard, ctx.lib, ctx.today, ctx.tz, previous);
 }
 
-/** D-0040 §4: `floorInc(0.9 × prefill weight)` (null stays null) at the main `repsMin`. */
-function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): Backoff {
-  const w = prefill.weightKg;
+/**
+ * The one rule 7.4 back-off (D-0040 §4, D-0131 §2), used by `suggest` and by `applySwap`'s rule
+ * 12.1 recompute: `backoffWeightKg(prefill weight, inc)` at the main `repsMin`.
+ */
+export function backoffOf(ex: LibraryExercise, prefill: PrefillResult, reps: number): Backoff {
   const inc = ex.incrementKg ?? DEFAULT_INCREMENT_KG;
-  return { weightKg: w === null ? null : floorInc(BACKOFF_FACTOR * w, inc), reps };
+  return { weightKg: backoffWeightKg(prefill.weightKg, inc), reps };
 }
 
 /** The shuffled slot's original exercise and its own rule 14 pre-fill weight (D-0056 §11). */
 function previousOf(ctx: PrefillCtx, p: Picked): PrefillPrevious | null {
   if (p.previous === undefined) return null;
-  const [repsMin, repsMax] = repRange(p.previous, p.isMain);
+  const [repsMin, repsMax] = repRange(p.previous, p.isMain, ctx.goal);
   return {
     exerciseId: p.previous.id,
     weightKg: prefillFor(ctx, p.previous, repsMin, repsMax, null).weightKg,
   };
 }
 
-function toItem(start: Start, ctx: PrefillCtx, p: Picked): WorkoutItem {
-  const [repsMin, repsMax] = repRange(p.exercise, p.isMain);
-  const prefill = prefillFor(ctx, p.exercise, repsMin, repsMax, previousOf(ctx, p));
-  const area = primaryAreas(p.exercise)[0] as Area;
+/** The per-area numbers an item's `area_deficit` and `days_since` reasons read (D-0040 §6). */
+export interface ReasonContext {
+  deficits: AreaNumbers;
+  daysSince: Record<Area, number | null>;
+}
+
+/** One slot as `suggest` and `applySwap` build it (D-0093 §2–§3). */
+export interface ItemSpec {
+  exercise: LibraryExercise;
+  isMain: boolean;
+  sets: number;
+  /** The rule 14 pre-fill at `repRange(exercise, isMain, goal)`. */
+  prefill: PrefillResult;
+  /** Rule 7.4 High: the slot has a back-off set (a timed exercise never gets one, D-0047). */
+  backoff: boolean;
+  /** `swap {reason}` when the slot was swapped or shuffled; `undefined` adds no swap reason. */
+  swap: SwapReason | null | undefined;
+  /** Rule 7.4 Low: trimmed from 3 to 2 sets. */
+  lowTrimmed: boolean;
+  /** The exercise's planned duration (D-0092 §1); null for a non-timed exercise. */
+  plannedS: number | null;
+  /** The profile's goal for the rule 7.2 rep slot (D-0095 §2); absent means `build_muscle`. */
+  goal?: Goal;
+}
+
+/**
+ * The one item builder behind `suggest` and `applySwap` (D-0093 §2–§3): the rule 7.2 rep slot,
+ * the back-off, the planned-duration cost (D-0092) and the reasons in the D-0040 §6 order for
+ * the exercise's first primary area.
+ */
+export function buildItem(spec: ItemSpec, rc: ReasonContext): WorkoutItem {
+  const { exercise, isMain, sets, prefill } = spec;
+  const [repsMin, repsMax] = repRange(exercise, isMain, spec.goal ?? DEFAULT_GOAL);
+  const area = primaryAreas(exercise)[0] as Area;
   const backoff =
-    p.backoff === true && repsMin !== null ? backoffOf(p.exercise, prefill, repsMin) : null;
+    getsBackoff(spec.backoff, exercise) && repsMin !== null
+      ? backoffOf(exercise, prefill, repsMin)
+      : null;
   // Item reason order (D-0040 §6).
   const reasons: Reason[] = [];
-  if (p.isMain) reasons.push({ code: "main_lift" });
-  reasons.push({ code: "area_deficit", area, deficit: start.deficits[area] });
-  reasons.push({ code: "days_since", area, days: start.daysSince[area] });
-  if (p.previous !== undefined) reasons.push({ code: "swap", reason: null });
-  if (p.lowTrimmed === true) reasons.push({ code: "energy_low_trim" });
+  if (isMain) reasons.push({ code: "main_lift" });
+  reasons.push({ code: "area_deficit", area, deficit: rc.deficits[area] });
+  reasons.push({ code: "days_since", area, days: rc.daysSince[area] });
+  if (spec.swap !== undefined) reasons.push({ code: "swap", reason: spec.swap });
+  if (spec.lowTrimmed) reasons.push({ code: "energy_low_trim" });
   if (backoff !== null) reasons.push({ code: "energy_high_backoff" });
   reasons.push({ code: "prefill", kind: prefill.kind });
   return {
-    exerciseId: p.exercise.id,
-    isMain: p.isMain,
-    sets: p.sets,
+    exerciseId: exercise.id,
+    isMain,
+    sets,
     repsMin,
     repsMax,
-    durationS: p.exercise.timed ? p.exercise.defaultDurationS : null,
-    costS: itemCostS(p.exercise, p.sets) + (backoff === null ? 0 : setCostS(p.exercise)),
+    // D-0092 §3: a timed item's duration is its planned duration, which is the pre-fill's.
+    durationS: exercise.timed ? prefill.durationS : null,
+    costS:
+      itemCostS(exercise, sets, spec.plannedS) +
+      (backoff === null ? 0 : setCostS(exercise, spec.plannedS)),
     backoff,
     prefill,
     reasons,
   };
+}
+
+function toItem(start: Start, ctx: PrefillCtx, p: Picked, durationOf: DurationOf): WorkoutItem {
+  const [repsMin, repsMax] = repRange(p.exercise, p.isMain, ctx.goal);
+  return buildItem(
+    {
+      exercise: p.exercise,
+      isMain: p.isMain,
+      sets: p.sets,
+      prefill: prefillFor(ctx, p.exercise, repsMin, repsMax, previousOf(ctx, p)),
+      backoff: p.backoff === true,
+      swap: p.previous === undefined ? undefined : null,
+      lowTrimmed: p.lowTrimmed === true,
+      plannedS: durationOf(p.exercise),
+      goal: ctx.goal,
+    },
+    start,
+  );
 }
 
 /**
@@ -330,8 +473,8 @@ function applyShuffle(s: State, n: number, pinnedIds: readonly string[], ctx: Sw
     if (idx === 0) continue;
     const pick = ctx.lib.get((ranking[idx - 1] as { exerciseId: string }).exerciseId);
     if (pick === undefined) continue;
-    const oldCost = itemCostS(p.exercise, p.sets);
-    const newCost = itemCostS(pick, p.sets);
+    const oldCost = costOf(s, p.exercise, p.sets);
+    const newCost = costOf(s, pick, p.sets);
     if (s.remainingS + oldCost - newCost < 0) continue;
     const oldPrimary = primaryAreas(p.exercise);
     const newPrimary = primaryAreas(pick);
@@ -366,14 +509,14 @@ function applyEnergy(s: State, energy: SessionInput["energy"]): void {
   if (energy === "low") {
     for (const p of s.picked) {
       if (p.isMain || p.sets !== LOW_TRIM_FROM_SETS) continue;
-      s.remainingS += (p.sets - LOW_TRIM_TO_SETS) * setCostS(p.exercise);
+      s.remainingS += (p.sets - LOW_TRIM_TO_SETS) * setCostOf(s, p.exercise);
       p.sets = LOW_TRIM_TO_SETS;
       p.lowTrimmed = true;
     }
   } else if (energy === "high") {
     const main = s.picked.find((p) => p.isMain);
     if (main === undefined || main.exercise.timed) return;
-    const cost = setCostS(main.exercise);
+    const cost = setCostOf(s, main.exercise);
     if (s.remainingS < cost) return;
     main.backoff = true;
     s.remainingS -= cost;
@@ -413,18 +556,21 @@ export function rankCandidates(
   tz: TimeZone,
 ): string[] {
   const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, now, tz);
-  return candidates(newState(start, 0), area).map((e) => e.id);
+  const durationOf = durationsOf(prefillCtxOf(history, library, now, tz));
+  return candidates(newState(start, 0, durationOf), area).map((e) => e.id);
 }
 
 /**
  * The next workout (UF-08.1, UF-08.4; rules 7, 10). Pure: the same inputs give a
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
  * Selection is main → pinned → greedy → shuffle (rule 13), then energy (rule 7.4, D-0056 §8).
+ * `profile.goal` picks the rule 7.2 rep slots only (D-0061 §1, D-0095); absent means
+ * `build_muscle`, and an unknown goal throws `RangeError`.
  */
 export function suggest(
   history: readonly HistorySet[],
   targets: readonly AreaTarget[],
-  profile: Pick<EngineProfile, "level" | "equipment">,
+  profile: SuggestProfile,
   library: readonly LibraryExercise[],
   sessionInput: SessionInput,
   now: Instant,
@@ -432,25 +578,34 @@ export function suggest(
 ): Workout {
   assertBudget(sessionInput.budgetMin);
   assertShuffle(sessionInput.shuffle);
+  const goal = goalOf(profile);
   const available = availableS(sessionInput.budgetMin, sessionInput.warmupInBudget);
   const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, now, tz);
-  const s = newState(start, Math.max(0, available));
+  const lib = indexLibrary(library);
+  const ctx: PrefillCtx = {
+    hard: normalizeHistory(history),
+    lib,
+    today: localDate(now, tz),
+    tz,
+    goal,
+  };
+  const durationOf = durationsOf(ctx);
+  const s = newState(start, Math.max(0, available), durationOf);
 
   selectMain(s, sessionInput.mainLiftId);
   selectPinned(s, sessionInput.pinnedIds);
   selectGreedy(s);
-  const lib = indexLibrary(library);
   applyShuffle(s, sessionInput.shuffle, sessionInput.pinnedIds, {
     lib,
     pool: start.pool,
     recovering: start.recovering,
     recentIds: start.recentIds,
     lastDone: lastDoneDates(history, lib, tz),
+    durationOf,
   });
   applyEnergy(s, sessionInput.energy);
 
-  const ctx: PrefillCtx = { hard: normalizeHistory(history), lib, today: localDate(now, tz), tz };
-  const items = s.picked.map((p) => toItem(start, ctx, p));
+  const items = s.picked.map((p) => toItem(start, ctx, p, durationOf));
   const itemsTotalS = items.reduce((sum, i) => sum + i.costS, 0);
   const main = items.find((i) => i.isMain);
   return {

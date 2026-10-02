@@ -1,7 +1,9 @@
 // T-0204 UF-08.3 UF-05.1: rule 12 swap ranking (rankSwaps, muscleMatch). AC1–AC12, AC24.
 import { describe, expect, it } from "vitest";
 import {
+  isHardSet,
   muscleMatch,
+  normalizeHistory,
   rankSwaps,
   suggest,
   type EngineProfile,
@@ -29,7 +31,12 @@ import {
   setsOn,
   shift,
 } from "./fixtures/common.js";
-import { SIMULATED_HISTORIES, returningAfter10DaysHistory } from "./fixtures/histories.js";
+import {
+  SIMULATED_HISTORIES,
+  balancedHistory,
+  offlineMergedHistory,
+  returningAfter10DaysHistory,
+} from "./fixtures/histories.js";
 
 const LIB = new Map(LIBRARY.map((e) => [e.id, e]));
 const exOf = (id: string): LibraryExercise => {
@@ -69,6 +76,32 @@ function rank(
 }
 
 const ids = (list: readonly SwapCandidate[]): string[] => list.map((c) => c.exerciseId);
+
+/** T-0211 AC2: the exercises with a hard set after rule 0 (D-0034, D-0015), as the engine sees them. */
+function doneIdsOf(
+  history: readonly HistorySet[],
+  library: readonly LibraryExercise[],
+): Set<string> {
+  const lib = new Map(library.map((e) => [e.id, e]));
+  return new Set(
+    normalizeHistory(history)
+      .filter((s) => isHardSet(s, lib.get(s.exerciseId)))
+      .map((s) => s.exerciseId),
+  );
+}
+
+/** The pre-T-0211 done-set: raw rows, no clientId dedupe. */
+function rawDoneIdsOf(history: readonly HistorySet[]): Set<string> {
+  return new Set(
+    history.filter((s) => s.deletedAt === null && !s.isWarmup).map((s) => s.exerciseId),
+  );
+}
+
+/** The AC24 variety invariant: once a done candidate appears, every later one is done too. */
+function varietyHolds(list: readonly SwapCandidate[], doneIds: ReadonlySet<string>): boolean {
+  const firstDone = list.findIndex((c) => doneIds.has(c.exerciseId));
+  return firstDone === -1 || list.slice(firstDone).every((c) => doneIds.has(c.exerciseId));
+}
 
 /** AC12: shape, value ranges, exclusions and bestMatch for one ranked list. */
 function checkShape(list: readonly SwapCandidate[], session: Workout, current: string): void {
@@ -451,9 +484,7 @@ describe("rule 12 over the simulated 14-day histories", () => {
   it("rule-12 (AC24) rankSwaps holds the AC12 invariants for every suggested item and reason", () => {
     for (const [name, history] of Object.entries(SIMULATED_HISTORIES)) {
       const w = suggest(history, F_TARGETS, F_PROFILE, LIBRARY, input(), NOW, TZ);
-      const doneIds = new Set(
-        history.filter((s) => s.deletedAt === null && !s.isWarmup).map((s) => s.exerciseId),
-      );
+      const doneIds = doneIdsOf(history, LIBRARY);
       for (const item of w.plan.items) {
         for (const reason of REASONS) {
           const list = rank(item.exerciseId, reason, { session: w, history });
@@ -502,5 +533,89 @@ describe("rule 12 over the simulated 14-day histories", () => {
     expect(
       ids(rank("bench-press", "variety", { session: w, history: returningAfter10DaysHistory })),
     ).toEqual(["db-bench-press", "push-up"]);
+  });
+});
+
+describe("T-0211 rankSwaps: a plan item missing from the library, and the normalised done-set", () => {
+  const missing = (id: string): LibraryExercise[] => LIBRARY.filter((e) => e.id !== id);
+
+  for (const [current, label] of [
+    ["barbell-row", "a plain slot"],
+    ["bench-press", "the main slot"],
+  ] as const) {
+    it(`T-0211 AC1 rule-12 (D-0059 c) ${label}: ${current} missing from the library throws RangeError for every reason`, () => {
+      const session = fSwap();
+      const library = missing(current);
+      const message = new RegExp(`${current} is not in the library`);
+      for (const history of [[], balancedHistory]) {
+        for (const reason of REASONS) {
+          const call = (): SwapCandidate[] =>
+            rankSwaps(current, reason, session, F_PROFILE, library, history, NOW, TZ);
+          expect(call).toThrow(RangeError);
+          expect(call).toThrow(message);
+        }
+      }
+    });
+  }
+
+  it("T-0211 AC1 rule-12 (D-0059 c) contrast: with the full library the same calls don't throw", () => {
+    const session = fSwap();
+    for (const current of ["barbell-row", "bench-press"]) {
+      for (const history of [[], balancedHistory]) {
+        for (const reason of REASONS) {
+          expect(() =>
+            rankSwaps(current, reason, session, F_PROFILE, LIBRARY, history, NOW, TZ),
+          ).not.toThrow();
+        }
+      }
+    }
+  });
+
+  it("T-0211 AC2 rule-12 (AC24) a tombstoned newest version is not done: doneIdsOf holds, the raw filter fails", () => {
+    const w = suggest(offlineMergedHistory, F_TARGETS, F_PROFILE, LIBRARY, input(), NOW, TZ);
+    const back = w.plan.items.find((i) => exOf(i.exerciseId).areas.back === 1);
+    // Precondition: w has a back item.
+    expect(back, JSON.stringify(itemsOf(w))).toBeDefined();
+    if (back === undefined) return;
+    const B = back.exerciseId;
+    const L = rankSwaps(B, "variety", w, F_PROFILE, LIBRARY, offlineMergedHistory, NOW, TZ);
+    const done = doneIdsOf(offlineMergedHistory, LIBRARY);
+    const neverDone = ids(L).filter((id) => !done.has(id));
+    // Precondition: L has at least two never-done candidates.
+    expect(neverDone.length, JSON.stringify(ids(L))).toBeGreaterThanOrEqual(2);
+    const X = neverDone[0] as string;
+
+    const live: HistorySet = {
+      clientId: "t0211-x",
+      sessionId: "t0211-s",
+      exerciseId: X,
+      isWarmup: false,
+      completedAt: "2026-09-20T10:00:00+02:00",
+      editedAt: "2026-09-20T10:00:00+02:00",
+      deletedAt: null,
+      reps: 8,
+      weightKg: 50,
+      durationS: null,
+    };
+    const tombstone: HistorySet = {
+      ...live,
+      pending: true,
+      editedAt: "2026-09-21T10:00:00+02:00",
+      deletedAt: "2026-09-21T10:00:00+02:00",
+    };
+    const variant = [...offlineMergedHistory, live, tombstone];
+
+    // Non-vacuity: the two done-set definitions differ on this input.
+    expect(doneIdsOf(variant, LIBRARY).has(X)).toBe(false);
+    expect(rawDoneIdsOf(variant).has(X)).toBe(true);
+
+    // The engine normalises the tombstone away.
+    expect(suggest(variant, F_TARGETS, F_PROFILE, LIBRARY, input(), NOW, TZ)).toEqual(w);
+    const list = rankSwaps(B, "variety", w, F_PROFILE, LIBRARY, variant, NOW, TZ);
+    expect(list).toEqual(L);
+
+    expect(varietyHolds(list, doneIdsOf(variant, LIBRARY))).toBe(true);
+    // With the raw filter X reads as done, yet a never-done candidate follows it.
+    expect(varietyHolds(list, rawDoneIdsOf(variant))).toBe(false);
   });
 });

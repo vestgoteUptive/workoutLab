@@ -8,7 +8,7 @@
 // in IDB, are never retried automatically, and still reach the engine as `pending`. A network
 // `TypeError` schedules a backoff retry (AC-C10); it never touches rejected-vs-queued state.
 import { supabase } from "../auth/client.js";
-import { offlineDb, type QueuedSet } from "./db.js";
+import { offlineDb, type QueuedSession, type QueuedSet } from "./db.js";
 
 const BATCH_SIZE = 100;
 
@@ -89,8 +89,120 @@ async function flushSessions(userId: string): Promise<{ ok: boolean; sentAny: bo
   // Never `bulkDelete` here: deleting the row would destroy the only record that the session was
   // ever finished, and a later `upsertSession({id, ended_at: null})` would then clear the finish
   // server-side (D-0053 §7, silent data loss).
-  await db.sessions.bulkPut(queued.map((q) => ({ ...q, pending: false })));
+  //
+  // Only clear `pending` on an entry that is still the one that was sent (T-0385, the session
+  // counterpart of the sets' AC-C6 guard). `upsertSession` can re-queue the same id while this
+  // request is in flight (a Finish during a D-0116 enqueue flush). Writing the pre-request
+  // snapshot back would overwrite that newer row with the old one and `pending: false`, so the
+  // newer row (and its `finished` marker, D-0053 §7) would never be sent. Read-compare-write in
+  // one rw transaction, so no `upsertSession` can land between the check and the put; a changed
+  // entry stays `pending` and the next flush sends it.
+  await db.transaction("rw", db.sessions, async () => {
+    for (const sent of queued) {
+      const current = await db.sessions.get(sent.id);
+      if (!current || !sameQueuedSession(current, sent)) continue;
+      await db.sessions.put({ ...current, pending: false });
+    }
+  });
   return { ok: true, sentAny: true };
+}
+
+const objectToString = Object.prototype.toString;
+
+function tagOf(value: object): string {
+  return objectToString.call(value);
+}
+
+/** A plain object: `{}`-like, prototype `Object.prototype` or `null`. Checked by shape rather
+ *  than identity, so an object cloned in another realm (IndexedDB's structured clone) still
+ *  counts. */
+function isPlainObject(value: object): boolean {
+  if (tagOf(value) !== "[object Object]") return false;
+  const proto: unknown = Object.getPrototypeOf(value);
+  return proto === null || Object.getPrototypeOf(proto) === null;
+}
+
+/** Own enumerable string keys whose own value isn't `undefined` (a missing key equals
+ *  `undefined`). `Object.keys` lists own keys only, and reading `record[k]` for an own key gets
+ *  the own value, even for a key named "__proto__". */
+function definedKeys(record: Record<string, unknown>): string[] {
+  return Object.keys(record).filter((k) => Object.hasOwn(record, k) && record[k] !== undefined);
+}
+
+function sameValueUnsafe(a: unknown, b: unknown): boolean {
+  if (a === b) return typeof a !== "function";
+  if (typeof a === "number" && typeof b === "number") return Number.isNaN(a) && Number.isNaN(b);
+  if (a === null || b === null || typeof a !== "object" || typeof b !== "object") return false;
+
+  if (Array.isArray(a) || Array.isArray(b)) {
+    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) if (!sameValueUnsafe(a[i], b[i])) return false;
+    return true;
+  }
+
+  const tag = tagOf(a);
+  if (tag !== tagOf(b)) return false;
+
+  if (tag === "[object Date]") {
+    const ta = Date.prototype.getTime.call(a);
+    const tb = Date.prototype.getTime.call(b);
+    return ta === tb || (Number.isNaN(ta) && Number.isNaN(tb));
+  }
+  if (tag === "[object Map]") {
+    const ma = a as Map<unknown, unknown>;
+    const mb = b as Map<unknown, unknown>;
+    const sizeA = Reflect.get(Map.prototype, "size", ma) as number;
+    if (sizeA !== (Reflect.get(Map.prototype, "size", mb) as number)) return false;
+    const ea = [...Map.prototype.entries.call(ma)];
+    const eb = [...Map.prototype.entries.call(mb)];
+    return ea.every(([k, v], i) => sameValueUnsafe(k, eb[i]![0]) && sameValueUnsafe(v, eb[i]![1]));
+  }
+  if (tag === "[object Set]") {
+    const sa = a as Set<unknown>;
+    const sb = b as Set<unknown>;
+    const sizeA = Reflect.get(Set.prototype, "size", sa) as number;
+    if (sizeA !== (Reflect.get(Set.prototype, "size", sb) as number)) return false;
+    const va = [...Set.prototype.values.call(sa)];
+    const vb = [...Set.prototype.values.call(sb)];
+    return va.every((v, i) => sameValueUnsafe(v, vb[i]));
+  }
+  if (isPlainObject(a) && isPlainObject(b)) {
+    const ra = a as Record<string, unknown>;
+    const rb = b as Record<string, unknown>;
+    // Own keys only on both sides: a lookup through the prototype chain would let an own
+    // "__proto__" key on one side match `Object.prototype` on the other (T-0411 review).
+    const ka = definedKeys(ra);
+    const kb = new Set(definedKeys(rb));
+    if (ka.length !== kb.size) return false;
+    return ka.every((k) => kb.has(k) && Object.hasOwn(rb, k) && sameValueUnsafe(ra[k], rb[k]));
+  }
+  // Class instances, typed arrays, anything else: not provably equal, so not equal. The entry
+  // stays `pending` and the next flush sends it again (the upsert is idempotent, T-0411).
+  return false;
+}
+
+/** Structural equality for queued rows (T-0411). Unlike a JSON compare it tells apart values
+ *  JSON flattens (`Date`, `Map`, `Set`, `NaN`, `±Infinity`). Primitives compare with `===`
+ *  plus `NaN` equals `NaN` (so `0` equals `-0`); plain objects ignore key order and treat a
+ *  missing key as `undefined`. Anything it can't prove equal is different. Never throws (a cycle
+ *  or a spoofed tag compares as different). */
+export function sameValue(a: unknown, b: unknown): boolean {
+  try {
+    return sameValueUnsafe(a, b);
+  } catch {
+    return false;
+  }
+}
+
+/** True when the stored entry is still exactly what this flush sent: same row, same `finished`,
+ *  still pending. */
+function sameQueuedSession(current: QueuedSession, sent: QueuedSession): boolean {
+  return (
+    current.pending &&
+    current.userId === sent.userId &&
+    current.finished === sent.finished &&
+    sameValue(current.row, sent.row)
+  );
 }
 
 /** Sends one batch; on a rejectable error, retries row by row and marks failures `rejected`

@@ -2,7 +2,8 @@
 // mocked through `page.route`. Sets are dated relative to the real clock so they sit inside
 // the rolling 14-day window whenever the spec runs.
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures/guarded-test.js";
 import {
   injectSession,
   mockSupabaseAuth,
@@ -110,6 +111,20 @@ test.beforeEach(async ({ page }) => {
   await mockSupabaseRest(page);
 });
 
+// T-0427 AC1: this spec runs under both auto guards (D-0086 Supabase guard, T-0425 console
+// guard). Before T-0427 it imported `test` from `@playwright/test`, so neither fixture existed
+// here and an unmocked request or a React error on UF-10.1 went green.
+test("T-0427 AC1 /balance runs under the Supabase and console guards", async ({
+  page,
+  supabaseGuard,
+  consoleGuard,
+}) => {
+  await openBalance(page, "mixed");
+  await expect(page.locator('[data-screen-id="UF-10.1"]')).toBeVisible();
+  expect(supabaseGuard.unclaimed()).toEqual([]);
+  expect(consoleGuard.errors()).toEqual([]);
+});
+
 test.describe("AC-A16 real keyboard navigates exactly once", () => {
   test("Enter on the hamstrings button pushes one entry; Space on calves pushes one entry", async ({
     page,
@@ -199,14 +214,11 @@ test.describe("AC-A17 axe (NFR-A11Y-1)", () => {
   }
 });
 
+// T-0427: console errors and page errors are checked by the `consoleGuard` auto fixture at
+// teardown (T-0425), so these tests only keep the render-loop check.
 test.describe("QA: console errors and render-loop guard on the real route", () => {
   for (const path of ["/balance", "/balance/hamstrings"]) {
     test(`${path} logs no console error / page error and does not loop`, async ({ page }) => {
-      const problems: string[] = [];
-      page.on("pageerror", (e) => problems.push(`pageerror: ${e.message}`));
-      page.on("console", (m) => {
-        if (m.type() === "error") problems.push(`console.error: ${m.text()}`);
-      });
       let targetReads = 0;
       page.on("request", (r) => {
         if (r.url().includes("/rest/v1/area_targets")) targetReads += 1;
@@ -216,7 +228,6 @@ test.describe("QA: console errors and render-loop guard on the real route", () =
       await page.waitForTimeout(1500);
       // one refresh per mount; a per-render `new Date()` loop would issue dozens.
       expect(targetReads).toBeLessThanOrEqual(2);
-      expect(problems).toEqual([]);
     });
   }
 });

@@ -1,0 +1,468 @@
+/* UF-08 Session setup styling. Colours and fonts come only from @workoutlab/design-tokens
+   (D-0019). State (pressed chips, the checked energy, aria-disabled) is styled from attributes
+   here, never inline, so the :focus-visible ring is never overridden (WCAG 2.4.7). Every
+   control is at least 44 × 44 px (NFR-A11Y-2). */
+.wl-uf08 {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-block-size: 100dvh;
+  padding: 16px 20px 24px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-bg);
+  font-family: var(--wl-font-body);
+}
+
+.wl-uf08__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wl-uf08__close,
+.wl-uf08__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--wl-color-text);
+  text-decoration: none;
+}
+
+.wl-uf08__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.wl-uf08__card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 16px;
+}
+
+.wl-uf08__stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wl-uf08__step {
+  min-width: 56px;
+  min-height: 56px;
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 16px;
+  font: inherit;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.wl-uf08__step[aria-disabled="true"] {
+  color: var(--wl-color-text-muted);
+  cursor: not-allowed;
+}
+
+.wl-uf08__value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.wl-uf08__minutes {
+  font-family: var(--wl-font-display);
+  font-size: 104px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.wl-uf08__unit,
+.wl-uf08__done-by,
+.wl-uf08__hint {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf08__chips {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.wl-uf08__chip {
+  min-width: 44px;
+  min-height: 44px;
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wl-uf08__chip[aria-pressed="true"] {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+  font-weight: 700;
+}
+
+.wl-uf08__finish {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.wl-uf08__time {
+  min-height: 44px;
+  padding: 4px 12px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+  font: inherit;
+  color-scheme: dark;
+}
+
+.wl-uf08__error {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--wl-color-warn);
+}
+
+.wl-uf08__link {
+  min-height: 44px;
+  padding: 0;
+  color: var(--wl-color-accent);
+  background: transparent;
+  border: 0;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.wl-uf08__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+}
+
+.wl-uf08__checkbox {
+  inline-size: 28px;
+  block-size: 28px;
+  accent-color: var(--wl-color-accent);
+}
+
+.wl-uf08__label {
+  margin: 0 0 8px;
+  color: var(--wl-color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wl-uf08__energy-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.wl-uf08__energy-option {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.wl-uf08__energy-option input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.wl-uf08__energy-option:has(input:checked) {
+  border: 2px solid var(--wl-color-accent);
+  font-weight: 700;
+}
+
+.wl-uf08__hint {
+  margin: 8px 0 0;
+}
+
+.wl-uf08__fit {
+  margin: 0;
+  padding: 16px 20px;
+  font-weight: 700;
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 16px;
+}
+
+.wl-uf08__primary {
+  min-height: 56px;
+  margin-top: auto;
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border: 0;
+  border-radius: 16px;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wl-uf08__back[aria-disabled="true"] {
+  color: var(--wl-color-text-muted);
+  cursor: not-allowed;
+}
+
+.wl-uf08__primary[aria-disabled="true"] {
+  color: var(--wl-color-text-muted);
+  background: var(--wl-color-surface-2);
+  cursor: not-allowed;
+}
+
+/* ---- UF-08.2 Suggested workout (T-0303b, D-0109) ---- */
+.wl-uf08__why {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf08__why-chip {
+  padding: 6px 10px;
+  color: var(--wl-color-accent-hover);
+  background: var(--wl-color-surface-2);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.wl-uf08__budget {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wl-uf08__bar {
+  display: flex;
+  gap: 2px;
+  block-size: 12px;
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+/* flex-grow is each segment's seconds, set on the node (D-0109 §5). */
+.wl-uf08__seg {
+  flex-basis: 0;
+  min-inline-size: 2px;
+  background: var(--wl-color-accent);
+}
+
+.wl-uf08__seg[data-segment="warmup"] {
+  background: var(--wl-color-text-muted);
+}
+
+.wl-uf08__seg[data-segment="unused"] {
+  background: var(--wl-color-surface-2);
+}
+
+/* Over the budget (D-0109 §5): the item segments only. */
+.wl-uf08__seg--warn {
+  background-color: var(--wl-color-warn);
+}
+
+.wl-uf08__budget-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.wl-uf08__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf08__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 10px 12px;
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 14px;
+}
+
+.wl-uf08__row-body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  min-inline-size: 0;
+}
+
+.wl-uf08__row-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wl-uf08__row-detail {
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+}
+
+.wl-uf08__row-reason {
+  margin-top: 2px;
+  color: var(--wl-color-accent-hover);
+  font-size: 12px;
+}
+
+.wl-uf08__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  color: var(--wl-color-text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.wl-uf08__icon:hover {
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface-2);
+}
+
+.wl-uf08__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.wl-uf08__actions .wl-uf08__primary {
+  flex-grow: 1;
+  margin-top: 0;
+}
+
+.wl-uf08__ghost {
+  min-width: 44px;
+  min-height: 56px;
+  padding: 0 16px;
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ---- UF-08.4 Ready (T-0303d, D-0110) ---- */
+.wl-uf08__how {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: wl-uf08-how;
+}
+
+.wl-uf08__how-step {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  column-gap: 12px;
+  align-items: center;
+  counter-increment: wl-uf08-how;
+}
+
+.wl-uf08__how-step::before {
+  content: counter(wl-uf08-how);
+  display: flex;
+  grid-row: span 2;
+  align-items: center;
+  justify-content: center;
+  inline-size: 44px;
+  block-size: 44px;
+  color: var(--wl-color-accent);
+  background: var(--wl-color-surface-2);
+  border-radius: 14px;
+  font-family: var(--wl-font-display);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.wl-uf08__how-title {
+  font-weight: 700;
+}
+
+.wl-uf08__how-body {
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+}
+
+.wl-uf08__prefs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.wl-uf08__pref {
+  cursor: pointer;
+}
+
+/* NFR-A11Y-2: each switch is itself a 44 × 44 target. */
+.wl-uf08__pref .wl-uf08__checkbox {
+  flex-shrink: 0;
+  inline-size: 44px;
+  block-size: 44px;
+  margin: 0;
+}
+
+.wl-uf08__icon:focus-visible,
+.wl-uf08__ghost:focus-visible,
+.wl-uf08__close:focus-visible,
+.wl-uf08__back:focus-visible,
+.wl-uf08__step:focus-visible,
+.wl-uf08__chip:focus-visible,
+.wl-uf08__link:focus-visible,
+.wl-uf08__time:focus-visible,
+.wl-uf08__checkbox:focus-visible,
+.wl-uf08__primary:focus-visible,
+.wl-uf08__energy-option:has(input:focus-visible) {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}

@@ -3,7 +3,7 @@ info:
   title: workoutLab Edge Functions
   version: 1.0.0
   description: >-
-    The three server-side functions of workoutLab (D-0001, D-0037). Plain CRUD (profile, exercises,
+    The four server-side functions of workoutLab (D-0001, D-0037). Plain CRUD (profile, exercises,
     sessions, sets) goes through supabase-js + RLS and is typed by the generated DB types in
     packages/shared. Engine-only shapes that the device computes offline (check-in, swaps, time
     check, pre-fill and the engine inputs) are path-less components marked `x-engine-function`.
@@ -20,6 +20,8 @@ security:
 tags:
   - name: engine
     description: Deterministic engine run server-side (docs/engine-rules.md).
+  - name: account
+    description: The caller's own account (NFR-PRIV-4, NFR-PRIV-5).
 paths:
   /workouts/suggest:
     post:
@@ -98,6 +100,22 @@ paths:
         "400": { $ref: "#/components/responses/BadRequest" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/Internal" }
+  /account:
+    delete:
+      operationId: deleteAccount
+      tags: [account]
+      summary: Delete the caller's account and every row they own (UF-11.4, NFR-PRIV-5)
+      description: >-
+        Verifies the bearer token and deletes the caller's `auth.users` row with the Auth admin
+        API (D-0135). The `on delete cascade` foreign keys (D-0020) remove every row the caller
+        owns in the same step. There is no request body; the user id comes only from the verified
+        token. A repeat call with the same token is 401, because the token no longer verifies; it
+        is never 404 and never 403.
+      responses:
+        "204":
+          description: Deleted. No body.
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "500": { $ref: "#/components/responses/Internal" }
 components:
   securitySchemes:
@@ -418,7 +436,10 @@ components:
 
     # ---------- workout and session plan (rules 7, 13, 14; D-0024, D-0035) ----------
     PrefillResult:
-      description: Pre-filled load for an item (rule 14, UF-09.3, UF-09.4).
+      description: >-
+        Pre-filled load for an item (rule 14, UF-09.3, UF-09.4). A timed `durationS` is within
+        15..120 s (TIMED_MIN_S..TIMED_MAX_S, D-0062 §5). `first_time` echoes the library
+        `defaultDurationS`, which content keeps within the same range (D-0133).
       x-engine-function: prefill
       type: object
       additionalProperties: false
@@ -426,7 +447,7 @@ components:
       properties:
         weightKg: { type: [number, "null"], minimum: 0 }
         reps: { type: [integer, "null"], minimum: 1 }
-        durationS: { type: [integer, "null"], minimum: 1 }
+        durationS: { type: [integer, "null"], minimum: 15, maximum: 120 }
         kind: { $ref: "#/components/schemas/PrefillKind" }
       examples:
         - { weightKg: null, reps: 6, durationS: null, kind: first_time }
@@ -762,15 +783,16 @@ components:
         hardSetCount: { type: integer, minimum: 0 }
       examples: [{ id: S1, startedAt: "2026-09-20T10:00:00Z", hardSetCount: 9 }]
     PlanCheckin:
-      description: A `plan_checkins` row as rule 9 reads it (D-0018, D-0027).
+      description: A `plan_checkins` row as rule 9 reads it (D-0018, D-0027). `completedPrev` is null for a one-period evaluation (D-0070 §6, D-0094).
       x-engine-function: evaluateCheckin
       type: object
       additionalProperties: false
       required: [id, periodIndex, completedPrev, completedLast, rhythmMinBefore, rhythmMaxBefore, proposedMin, proposedMax, proposedAt, answer, answeredAt]
       properties:
         id: { type: string, minLength: 1 }
-        periodIndex: { type: integer, minimum: 1 }
-        completedPrev: { type: integer, minimum: 0 }
+        periodIndex: { type: integer, minimum: 0 }
+        completedPrev:
+          anyOf: [{ type: integer, minimum: 0 }, { type: "null" }]
         completedLast: { type: integer, minimum: 0 }
         rhythmMinBefore: { type: integer, minimum: 1, maximum: 7 }
         rhythmMaxBefore: { type: integer, minimum: 1, maximum: 7 }
@@ -783,6 +805,7 @@ components:
           anyOf: [{ $ref: "#/components/schemas/Instant" }, { type: "null" }]
       examples:
         - { id: P1, periodIndex: 3, completedPrev: 4, completedLast: 3, rhythmMinBefore: 3, rhythmMaxBefore: 4, proposedMin: 2, proposedMax: 3, proposedAt: "2026-09-27T09:00:00Z", answer: null, answeredAt: null }
+        - { id: P0, periodIndex: 0, completedPrev: null, completedLast: 0, rhythmMinBefore: 3, rhythmMaxBefore: 4, proposedMin: 2, proposedMax: 3, proposedAt: "2026-10-04T07:00:00Z", answer: null, answeredAt: null }
 
     # ---------- check-in (rule 9, UF-11) ----------
     CheckinPeriod:
@@ -790,12 +813,14 @@ components:
       additionalProperties: false
       required: [index, start, end, completed, status]
       properties:
-        index: { type: integer, minimum: 1 }
+        index: { type: integer, minimum: 0 }
         start: { $ref: "#/components/schemas/LocalDate" }
         end: { $ref: "#/components/schemas/LocalDate" }
         completed: { type: integer, minimum: 0 }
         status: { type: string, enum: [under, on_plan, over] }
-      examples: [{ index: 2, start: "2026-08-30", end: "2026-09-12", completed: 4, status: under }]
+      examples:
+        - { index: 2, start: "2026-08-30", end: "2026-09-12", completed: 4, status: under }
+        - { index: 0, start: "2026-09-20", end: "2026-10-03", completed: 0, status: under }
     PreviewTarget:
       type: object
       additionalProperties: false

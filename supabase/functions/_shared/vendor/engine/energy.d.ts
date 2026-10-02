@@ -4,7 +4,7 @@
 
 /** Default weight increment in kg when the library row has none (D-0026). */
 export declare const DEFAULT_INCREMENT_KG = 2.5;
-/** The back-off weight is `floorInc(BACKOFF_FACTOR × main weight)` (rule 7.4). */
+/** The back-off weight starts from `floorInc(BACKOFF_FACTOR × main weight)` (rule 7.4, D-0131). */
 export declare const BACKOFF_FACTOR = 0.9;
 /** Low energy trims accessories from this many sets … */
 export declare const LOW_TRIM_FROM_SETS = 3;
@@ -16,3 +16,9 @@ export declare const LOW_TRIM_TO_SETS = 2;
  * the result is rounded to 3 decimals so it prints as the weight a person would load.
  */
 export declare function floorInc(x: number, inc?: number): number;
+/**
+ * Rule 7.4 back-off weight (D-0131 §1): null stays null, 0 stays 0, and a positive main weight
+ * `w` gives `min(w, max(inc, floorInc(0.9 × w, inc)))`, rounded to 3 decimals. The floor of one
+ * increment replaces the old 0 kg on a light loaded lift; the cap keeps it at or below `w`.
+ */
+export declare function backoffWeightKg(w: number | null, inc?: number): number | null;

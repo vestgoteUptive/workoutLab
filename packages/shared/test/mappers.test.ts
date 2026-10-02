@@ -218,7 +218,13 @@ describe("AC18 toPlanCheckin (engine reads only answeredAt, D-0041 §2)", () => 
       answer: null,
       answered_at: null,
     });
-    expect(c).toMatchObject({ periodIndex: 3, proposedMin: 2, answer: null, answeredAt: null });
+    expect(c).toMatchObject({
+      periodIndex: 3,
+      completedPrev: 4,
+      proposedMin: 2,
+      answer: null,
+      answeredAt: null,
+    });
     expect(isValid("PlanCheckin", c)).toBe(true);
   });
 });

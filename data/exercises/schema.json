@@ -158,6 +158,21 @@
       }
     },
     {
+      "$comment": "T-0234 (D-0133): a timed exercise's default_duration_s is 15..120 (TIMED_MIN_S..TIMED_MAX_S), because first_time echoes it unclamped. Warm-ups keep 5..120.",
+      "if": {
+        "properties": {
+          "kind": { "const": "exercise" },
+          "timed": { "const": true }
+        },
+        "required": ["kind", "timed"]
+      },
+      "then": {
+        "properties": {
+          "default_duration_s": { "type": "integer", "minimum": 15 }
+        }
+      }
+    },
+    {
       "if": { "properties": { "timed": { "const": false } } },
       "then": {
         "not": {

@@ -12,15 +12,17 @@ export declare const OVER_FACTOR_X10 = 22;
 /** Proposed rhythms are clamped to 1–7 sessions per week (rule 9). */
 export declare const RHYTHM_FLOOR = 1;
 export declare const RHYTHM_CEILING = 7;
-/** At most this many periods are listed and compared (D-0041 §4). */
-export declare const COMPARED_PERIODS = 2;
+/** At most this many periods are listed and compared: the last ended one (D-0061 §2, D-0094 §1). */
+export declare const COMPARED_PERIODS = 1;
 /** Rule 9 status of one period, in exact integer arithmetic (D-0041 §5). */
 export declare function periodStatus(completed: number, rhythmMin: number, rhythmMax: number): CheckinStatus;
 /**
- * Rule 9. `periods` are the last ≤ 2 ended eligible periods in ascending index (D-0041 §4).
- * A proposal needs two of them with the same non-`on_plan` status; it moves the rhythm by
- * ±1, clamped to 1–7, and is null when the clamp leaves the rhythm unchanged. The result
- * doesn't depend on the order of `sessions` or `checkins` (D-0041 §2).
+ * Rule 9. `periods` holds at most one entry: the last ended period (index `currentIndex − 1`)
+ * if its end ≥ `resetDate`, otherwise none (D-0094 §1). Eligibility only grows with the end
+ * date, so there is no earlier period to fall back to. If that period is `under` or `over`,
+ * the proposal moves the rhythm by ±1, clamped to 1–7, and is null when the clamp leaves the
+ * rhythm unchanged (D-0061 §2, D-0094 §2). The result doesn't depend on the order of
+ * `sessions` or `checkins` (D-0041 §2).
  */
 export declare function evaluateCheckin(sessions: readonly CheckinSession[], profile: CheckinProfile, checkins: readonly CheckinAnswer[], now: Instant, tz: TimeZone): CheckinEvaluation;
 /**

@@ -9,6 +9,8 @@ import { describe, expect, it } from "vitest";
 
 const WEB_ROOT = process.cwd();
 const eslint = new ESLint({ cwd: WEB_ROOT });
+/** D-0115 §1: per-test budget for the whole-tree ESLint run; the global testTimeout stays 5 s. */
+const LINT_BUDGET_MS = 30_000;
 
 /** Lints `code` as if it were the file at `relPath`; returns the `no-restricted-imports` messages. */
 async function restricted(relPath: string, code: string) {
@@ -184,7 +186,7 @@ describe("AC-10 a cross-feature import must go through the target's index (D-007
 });
 
 describe("AC-11 the current tree has no violating import", () => {
-  it("apps/web/src/features lints clean", async () => {
+  it("apps/web/src/features lints clean", { timeout: LINT_BUDGET_MS }, async () => {
     const results = await eslint.lintFiles([resolve(WEB_ROOT, "src/features")]);
     const violations = results.flatMap((r) =>
       r.messages

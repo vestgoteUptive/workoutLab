@@ -35,7 +35,7 @@ export function preflightResponse(
   const cors = corsHeaders(origin, env);
   const headers = new Headers(cors);
   if (Object.keys(cors).length > 0) {
-    headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    headers.set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
     headers.set(
       "Access-Control-Allow-Headers",
       "authorization, content-type, apikey, x-client-info",
