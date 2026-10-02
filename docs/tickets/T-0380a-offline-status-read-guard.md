@@ -33,3 +33,12 @@ none
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0380a` and cite screen IDs.
+
+## Accept log
+- 2026-10-02 product-owner (accept), branch at 593a2d3: **done**.
+  - Diff: one line in `OfflineStatus.tsx` (`loadLastSyncedAt().then(setStoredLastSyncedAt, () => undefined)` plus a D-0104 §2 / D-0115 §2 comment), and a new `__tests__/OfflineStatus.read-guard.test.tsx`. Stays in the web-shell lane. No copy or UI change. Contracts unchanged.
+  - AC1: the read-guard test covers the text variant. It uses a rejected `new Error("idb closed")`, a real 50 ms macrotask, and checks "Offline · not synced yet", 0 `unhandledRejection` events and no `console.error`. Pass.
+  - AC2: the read-guard test covers the icon variant. `aria-label="Offline"` is present and 0 unhandled rejections. Pass.
+  - AC3: the existing `OfflineStatus.test.tsx` is unchanged and green, and the read-guard test adds a resolving read check ("Offline · last synced 14:05"). Pass.
+  - Evidence from the orchestrator: putting the old line back turns 2 tests red, and reverting gives 12/12. Web 1351 green. UF-04/08/09/10 consumers 373 green. check:repo 0.
+  - Principles: no change to focus mode, the time budget, the engine, targets or onboarding.
