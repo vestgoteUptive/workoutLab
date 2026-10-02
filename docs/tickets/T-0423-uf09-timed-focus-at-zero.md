@@ -106,3 +106,34 @@ green · contracts unchanged · commits start `T-0423` and cite the screen (for 
   `role="timer"` element, that is an acceptable swap; record it in the build log.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-02)
+- **Change (`timed-set.tsx` only, no host change, no new strings or buttons):** the `<h1>` gets
+  `tabIndex={-1}` and a ref. On mount, focus goes to the ring toggle, or to the `<h1>` when the hold
+  has already ended (a restore). A layout effect on the `remaining > 0` edge moves focus to the
+  `<h1>` when the toggle has left the DOM and `document.activeElement` is the body or `null`. A
+  layout effect on the existing `holdFailed` prop moves focus to "Log hold" when focus is lost or
+  inside the UF-09.7 view (which includes the `<h1>`). A chrome control ("Pause workout") keeps
+  focus in both cases. The heading is the target during the write, as the product default says (not
+  the `role="timer"` element).
+- **Tests:** new `__tests__/timed-set.focus.test.tsx` (12 tests). AC-1: mount focus on "Pause
+  timer"; ring paused → "Resume timer" after 120 s. AC-2: at 0 with a held write → `<h1>` "Plank",
+  `tabindex="-1"`, never the body over 5 × 1 s, buttons `["Pause workout"]`; `tabindex=-1` while
+  running; pair "Pause workout" keeps focus. AC-3: reject → "Log hold"; second rejected Log hold
+  keeps it; `<h1>` → "Log hold" on a held rejection; pair "Pause workout" keeps focus with Log hold
+  rendered. AC-4: remount 10 min after the end → `<h1>` while pending; reject → "Log hold". AC-5:
+  resolve → UF-09.5 "Skip rest" focused; already-logged (3, 0) → same. AC-6: `timed-set.test.tsx`,
+  `host.chrome.test.tsx`, `exports-and-lint.test.ts` unedited and green; `flows/uf-09.ts` untouched.
+- **Red run on unfixed `timed-set.tsx`** (`npx vitest run …/timed-set.focus.test.tsx`): 6 failed,
+  6 passed (the pairs pass).
+  - AC-2 "focus moves to the <h1> 'Plank' (tabindex -1) and never falls to the body":
+    `Expected the element to have attribute:` (tabindex).
+  - AC-2 "the <h1> is outside the Tab order while the hold runs too": same.
+  - AC-3 "focus moves to 'Log hold'; a second rejected Log hold keeps it there":
+    `AssertionError: expected <body><div>…(2)</div></body> to be <button …>`.
+  - AC-3 "the <h1> had focus during the pending write…": `expected <body>… to be <h1 …>`.
+  - AC-4 "a remount 10 min after the hold ended…": `expected <body>… to be <h1 …>`.
+  - AC-4 "the pair: that write rejects…": `expected <body>… to be <h1 …>`.
+- **Gates:** `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1`
+  4/4 tasks green (169 files, 2666 tests); `-w format:check` clean; `check-all.mjs` exit 0;
+  `test:e2e` whole suite 137 passed (uf-09-focus.spec.ts 10/10).
