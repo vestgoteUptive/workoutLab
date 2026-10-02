@@ -314,3 +314,32 @@ Two code review findings are fixed. Only `features/UF-09/seams.tsx` changed.
 - The whole web `test:e2e` with `TMPDIR=$HOME/.cache/wl-pw-tmp`: 144 passed.
 - `check:size`, `-w format:check` and `check-all`: green.
 - `git diff --stat main...HEAD -- apps/web/src/features/UF-09`: 14 files changed, 1577 insertions(+), 37 deletions(-). The two new files are `t0422.lazy-reject.test.tsx` and `t0422.lazy-pending.test.tsx`.
+
+## QA / accept log (qa-tester, 2026-10-02): done
+- **Start.** Clean at f74116b; `git merge main` → e0e5f5f, then main moved again → merged to 41e60d2 (clean). `git diff --stat main...HEAD`: 19 files, all in the grant.
+- **AC → test:**
+  - AC-1: `t0422.seams` AC-1; `seams.test` AC-9; `paused.test`/`next-exercise.test` module-array pairs; `host.chrome.test` pins; UF-05 `exports-and-lint`.
+  - AC-2: `t0422.host` AC-2 (opens, 10 min paused, Cancel, reload, no `a[href]`).
+  - AC-3: `t0422.host` AC-3 (finished/pair/skipped/none left); `t0422.seams` `swapTarget` (pure, both values).
+  - AC-4: `t0422.host` AC-4 (opens, 90 s stopped → 0:50, the pair runs, apply → new name, runs on).
+  - AC-5: `t0422.host` AC-5 (one 3-arg `replaceItem`, one row write, plan valid, Set 2 of 3, Set weight/8 reps, db-row at setIndex 1, remount).
+  - AC-6: `t0422.host` AC-6 (push-up main) + non-main pair.
+  - AC-7: `t0422.machine` (paused, running, fewer sets, last item, another item = same object); `t0422.host` AC-7 host + host pair.
+  - AC-8: `t0422.host` AC-8 axe over UF-09.9 and UF-09.6; jsx-no-literals in `exports-and-lint`.
+  - AC-9: UF-09/UF-05 export pins and the T-0304a AC-2 tick test pass unedited.
+  - AC-10: `tests/e2e/uf-05-swap.spec.ts` (offline, keyboard, ≥ 44 px, reload from `wl-offline.sessions`, axe, guard); `--repeat-each=5`: 5/5.
+  - AC-11: `prefill.test` "T-0422 AC-11" (5 cases); AC-5 load line; AC-7 host "no 60 kg".
+  - AC-12: `build.test` AC-A6 green; diff touches only the `SEAM_SENTINELS["UF-05"]` value and comment.
+  - Attempt 3: `t0422.lazy-reject`, `t0422.lazy-pending`, `t0422.seams` stable target and boundary scope.
+- **Planted faults** (scratch backup, `cp` restore, `cmp` ok, tree clean after):
+  - F1 `target = currentItemIndex`: 4 red (AC-3 finished/skipped, AC-7 host pair, seams render).
+  - F2 no `mainLiftId`: 4 red (AC-5 call, AC-6 both, seams Use).
+  - F3 confirm clamp-only: 9 red (8 `t0422.machine`, AC-7 host).
+  - F4 prefill filter removed: 3 red (AC-11 swapped, AC-5 load line, AC-7 host).
+  - F5 copy sentinel restored: AC-A6 red.
+  - F6 `SwapBoundary` removed: `t0422.lazy-reject` red, `lazy-pending` green (the pair).
+- **Gate at 41e60d2:**
+  - `-w typecheck lint test --force --concurrency=1 --continue`: 18/19 tasks; web 2851/2852. The one red is UF-11 `strings.test.ts` AC-B16 (`git diff main...HEAD` pinned to T-0308b's paths). It came in from main, fails on every non-UF-11 branch and on main itself (empty diff), and is filed as T-0450. Not this ticket's.
+  - landing `ac21` and 3 of the repo-checks (check-all on the real repo) are red only because the local `origin/main` (4867665) is behind `main`, so check-lane-paths counts T-0308b's merged files. In a scratch clone with `origin/main` = ad1d5db: `check-all` exit 0 and repo-checks 146/146.
+  - Whole web e2e: 155 passed. `check:size`, `format:check`: green.
+- **Nit (no gate):** the `t0422.host` AC-5 load-line comment still says "TR-0043: red until it is resolved". The test stays unedited per AC-11.
