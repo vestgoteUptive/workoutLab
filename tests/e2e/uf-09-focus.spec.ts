@@ -249,20 +249,10 @@ async function setsFor(page: Page, sessionId: string): Promise<StoredSetRow[]> {
   }, sessionId);
 }
 
-/** D-0127: offline, the chrome's shell `OfflineStatus` icon puts `aria-label` on a span with no
- *  role (axe `aria-prohibited-attr`). It is a web-shell component, not a UF-09 view, so this scan
- *  drops exactly that rule on exactly that node, and nothing else. */
-function isKnownShellIcon(v: { id: string; nodes: { target: unknown[] }[] }): boolean {
-  return (
-    v.id === "aria-prohibited-attr" &&
-    v.nodes.every((n) => n.target.join(" ") === ".wl-offline-status__icon")
-  );
-}
-
 async function expectAxeClean(page: Page): Promise<void> {
   const results = await new AxeBuilder({ page }).analyze();
   const serious = results.violations.filter(
-    (v) => (v.impact === "serious" || v.impact === "critical") && !isKnownShellIcon(v),
+    (v) => v.impact === "serious" || v.impact === "critical",
   );
   expect(serious).toEqual([]);
 }
