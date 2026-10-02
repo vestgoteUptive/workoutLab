@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-10.1, UF-10.2]
 decisions: [D-0086, D-0091]
 deps: [T-0425, T-0430]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. From T-0425 Scope/Out ("its Supabase routes have to be checked first"). Build flow: wl-build-qa. About ¼ day. No app code changes. It depends on T-0430: that is the qa-lane order in tests/e2e/**, and T-0430's rules (no own console listener, T-NNNN in the comment block above an allow) then apply to this spec. It touches only uf-10-balance.spec.ts, so it can run in parallel with T-0429. Ready when T-0430 is done. -->
 
@@ -153,3 +153,36 @@ QA reran every claim on HEAD 033f7b5 and reverted each probe. `git status` was c
 - **Note (not a gap).** A request that hits the spec's own `mockSupabaseRest` 501 backstop counts
   as claimed, so the guard doesn't enforce the build log's "none reached the backstop". The
   existing behaviour assertions would catch a missing data mock.
+
+### Accept (product-owner, 2026-10-02): done
+Checked on HEAD 34c22d8 against the build log, the QA verdict (pass), the review verdict (approve,
+no blocking findings), and a read of `tests/e2e/uf-10-balance.spec.ts`.
+- **AC1: met.** `T-0427 AC1 /balance runs under the Supabase and console guards` (spec :117) takes
+  `page`, `supabaseGuard` and `consoleGuard`, opens `/balance` on `mixed`, waits for
+  `[data-screen-id="UF-10.1"]`, and asserts `unclaimed()` and `errors()` both equal `[]`. Build
+  and QA both recorded the red run on the old import (`Test has unknown parameter
+  "supabaseGuard"` / `"consoleGuard"`, plus TS2339). The QA fetch probe shows the `unclaimed()`
+  assertion is live.
+- **AC2: met.** The build log lists all 10 requests (all `GET`, all claimed by `mockSupabaseData`,
+  none at the 501 backstop, no `/auth/v1`). No mock was needed, and there is no
+  `forgetPlantedLeaks()`. All tests pass under both guards.
+- **AC3: met.** No `page.on("console"` or `page.on("pageerror"` remains (`ownConsoleListeners`
+  reports `[]`). Both QA tests keep the `request` listener, the 1500 ms settle and
+  `targetReads ≤ 2` (spec :222-230). Build and QA both recorded the planted fault
+  (`console error in e2e … t0427-planted` at teardown) and its revert.
+- **AC4: met.** `T-0425 AC5 uf-10-balance.spec.ts imports test from guarded-test.js, not
+  @playwright/test`, the allow-comment check and `T-0430 AC1` all pass (46/46 in
+  `fixture-guard.spec.ts`, which wasn't edited). No `consoleGuard.allow(` was added.
+- **AC5: met.** Whole `test:e2e` suite: 138 passed (build and QA). Every existing uf-10 assertion
+  stays, except `expect(problems).toEqual([])`. The Scope removes it on purpose, and the
+  `consoleGuard` teardown now enforces it (the planted fault proves that).
+- **DoD.** `pnpm -w typecheck lint test --force --concurrency=1` 19/19, `format:check`,
+  `check:repo` / `check-all` and `test:repo-checks` (146) green. Contracts unchanged. No app code
+  touched.
+- **Principles.** Test-only change. No effect on focus mode, the time budget, engine determinism,
+  adaptive targets or onboarding.
+- **Follow-ups.** (1) qa: make hits on the `mockSupabaseRest` / `mockSupabaseAuth` 501 backstop
+  detectable in guarded specs. Today a backstop hit counts as claimed, and `consoleGuard` exempts
+  `Failed to load resource`, so a missing data mock gets past both guards (inherited from T-0425,
+  found by review and QA). (2) "Every spec imports guarded-test" is already filed as T-0432. No
+  new ticket needed for that.
