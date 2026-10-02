@@ -123,7 +123,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0301d | UF-01.4 rhythm steppers + plan card from deriveTargets, timingMs, planShown, hand-off, e2e `uf-01-onboarding.spec.ts` (D-0064, D-0098) | web-feature:UF-01 | T-0301b, T-0201a | done | wl-build-web |
 | T-0301c | UF-01.5 Account (link, code, Google, privacy link) + /welcome/save (profile + 9 targets, existing profile wins, retry) | web-feature:UF-01 | T-0301a, T-0301b, T-0301d, T-0331, T-0378 (serial with T-0377; D-0100, D-0101) | done | wl-build-web |
 | T-0302 | UF-02 Today + workout preview (mount compact C-01 from components/body-map as one link to /balance, fed from BalanceResult.areas — T-0300d) | web-feature:UF-02 | T-0300, T-0203b | split → T-0302a, T-0302b (D-0065) | wl-build-web |
-| T-0302a | UF-02.1 Today frame: header/date, OfflineStatus, compact C-01, attention line, zero-history / nothing-in-window lines, features/UF-02/slots.tsx (todayCheckinSlot), Start → UF-08.1, refresh cap, offline e2e (D-0106) | web-feature:UF-02 | T-0300, T-0203b, T-0318 | triage:TR-0035 | wl-build-web |
+| T-0302a | UF-02.1 Today frame: header/date, OfflineStatus, compact C-01, attention line, zero-history / nothing-in-window lines, features/UF-02/slots.tsx (todayCheckinSlot), Start → UF-08.1, refresh cap, offline e2e (D-0106) | web-feature:UF-02 | T-0300, T-0203b, T-0318 | doing | wl-build-web |
 | T-0302c | UF-02.1 suggestion card (45-min suggest() with goal, rows, chips via sessionReasonChips, +N more, See all, empty plan, skeleton) + lib/i18n/workout.ts formatters (D-0106) | web-feature:UF-02 | T-0302a | todo | wl-build-web |
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c, T-0303b (D-0106 §6) | todo | wl-build-web |
 | T-0303 | UF-08 Session setup (time, energy, suggested, swap, ready) | web-feature:UF-08 | T-0300, T-0203b | split → T-0303a, T-0303b, T-0303c, T-0303d (D-0065) | wl-build-web |
@@ -224,6 +224,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0380 | Rejection guards on remaining fire-and-forget local/auth reads: `OfflineStatus.tsx:45` (`void loadLastSyncedAt().then`), UF-10 `index.tsx:274`, UF-04 `data.ts:40`, UF-01 `index.tsx:120` (exchangeCodeForSession, silent fallback to sign-in) — D-0104 pattern, one test each (T-0378 QA/accept; split per lane at groom) | web-shell | T-0378 | todo | wl-build-web |
 | T-0381 | D-0100 addendum (revisit): a signed-out visitor at /welcome/save with a saveable plan is replace-navigated to /account ("Save your plan"), as shipped in T-0301c | product | T-0301c | todo | wl-spec |
 | T-0382 | UF-01.5 Account a11y: roving tabindex + arrow keys on the Send link / Enter code tabs; mount the role=status live region before its first message (T-0301c review, pre-existing low) | web-feature:UF-01 | T-0301c | todo | wl-build-web |
+| T-0383 | D-0113 retrofit: `features/UF-10/use-balance.ts` mount refreshAll only when online AND signed-in, once per mount; tests stale-online → 0, stale → signed-in → 1 (TR-0035) | web-feature:UF-10 | — | todo | wl-build-web |
+| T-0384 | D-0113 retrofit: `features/UF-04/data.ts` mount refreshAll only when online AND signed-in, once per mount; same tests; LibraryDetail "calls refreshAll once" tests run signed-in (TR-0035) | web-feature:UF-04 | — | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
