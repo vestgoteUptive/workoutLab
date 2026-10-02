@@ -188,3 +188,22 @@ Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force -
   - Tests (+10): `delete.test.ts` has "T-0310c L1 (a)" ×2 (session V and session with no user id, both for input U), "(b)" (session V, input V: one DELETE with `Bearer tok-v`, only V's rows wiped), "requestAccountDeletion alone" and L2 ×3. `export.test.ts` has "T-0310c L1 (c)" ×3 (session V on a shared device gives only V's queue; session V or no session for input U gives `export_failed`, zero PostgREST calls and no `db.sets.where`). The `pg` fixture's `getSession` now reports a session for U by default (`sessionUserId` option), so AC1–AC5 run with a matching session.
   - **Red on 864877d** (the new tests over the old `delete.ts`/`export.ts`/`deps.ts`): 6 of 61 failed. L1 (a) ×2: the old code sent the DELETE and wiped. L1 (c) mismatch ×2: the old code exported. L2 ×2: the old code left the session keys.
   - Runs: `lib/account` vitest 61/61; web `typecheck` and `lint` green; web `test` 145 files / 2,177 green; `-w format:check` clean; `check-all.mjs` exit 0.
+- **Accept (2026-10-02, product-owner): done.** I checked `lib/account/{delete,deps}.ts`, `AccountDeletedNotice.tsx` and the six test files at 6855748, against the build and rework logs and the QA and security verdicts.
+  - **Every AC has tests titled `T-0310c ACn`:**
+    - AC1–AC5 are in `export.test.ts`. AC4 covers the three listed failures, a Dexie failure, "no 4th page", and the export-then-download flow, which never calls `createObjectURL` or `click`. AC5 asserts elapsed time ≥ 150 ms and < 10,000 ms, with a 15 s timeout.
+    - AC6 is in `download.test.ts`.
+    - AC7 and AC9 are in `delete.test.ts`.
+    - AC8 is in `wipe.test.ts`.
+    - AC10 is in `AccountDeletedNotice.test.tsx`.
+    - AC11 and AC12 are in `boundaries.test.ts`.
+  - **Red and planted faults.** Build 1 recorded every AC red on main and four planted faults caught. QA proved all 12 ACs both ways and caught 25 planted faults. A two-user Dexie probe found no cross-user leak.
+  - **Rework 2 (L1, L2).** It keeps the public API and the AC7 behaviour of `requestAccountDeletion()`. `deleteAccountAndSignOut` checks the session user against `input.userId` before any request, and returns `"failed"` before any fetch, wipe, `setItem` or sign-out. The export rejects `export_failed` before any read. Six new tests were red on 864877d. The security re-review closed L1 with no new leak.
+  - **Two in-scope choices, both acceptable:**
+    - The unconfigured-env check runs before the session check. Every path still makes zero fetch calls.
+    - A user mismatch gives `"failed"`, not `"unauthorized"`.
+  - **Scope holds.** `App.tsx` gets one line and an import, and `en.ts` gets keys only. There are no `lib/offline` behaviour changes and no Workbox change. Contracts are unchanged: the call matches D-0135 §1.
+  - **Principles.**
+    - Principle 5: the notice reads `sessionStorage` synchronously, imports only react, auth-context and en, and AC-C20 still passes.
+    - Principles 1–4 are unaffected: this ticket adds no workout screen and doesn't touch the engine or targets.
+  - **Runs.** Web 2,177 green; whole e2e 90/90 per QA on build 1; `check:size` 153.1 KB initial against a 200 KB budget.
+  - **Outstanding DoD.** The orchestrator runs the full `-w typecheck lint test --force --concurrency=1` and `check:size` on main at merge. The `location.replace` fallback for a throwing `signOut` is already a note on T-0310d.
