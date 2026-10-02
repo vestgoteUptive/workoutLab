@@ -2,6 +2,7 @@
 // and C-01 (T-0300d) land in their own tickets; this shell never imports their features.
 import { Suspense, lazy, useMemo, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router";
+import { AccountDeletedNotice } from "../components/account-deleted-notice/AccountDeletedNotice.js";
 import { TabBar } from "../components/tab-bar/TabBar.js";
 import { AuthProvider, useAuth } from "../lib/auth/auth-context.js";
 import { RedirectIfSignedIn, RequireAuth, RequireAuthOnceForSession } from "../lib/auth/guards.js";
@@ -69,6 +70,7 @@ export function Shell() {
 
   return (
     <>
+      <AccountDeletedNotice />
       <Routes>
         {routes.map((route) => {
           const Component = lazyComponents.get(route.path)!;
