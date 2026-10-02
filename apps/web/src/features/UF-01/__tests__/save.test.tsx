@@ -7,7 +7,14 @@
 // because no UF-01 file may import `lib/offline` (T-0301a AC-10). `lib/profile` is mocked with a
 // hoisted recheck spy and never imported (D-0101 §3).
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
+import {
+  MemoryRouter,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useNavigationType,
+} from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as engine from "@workoutlab/engine";
 
@@ -565,5 +572,36 @@ describe("AC-10 the start time is untouched (D-0100 §5, D-0064 §7)", () => {
     mount("/welcome");
     await settle();
     expect(JSON.parse(window.localStorage.getItem(KEY)!).startedAtMs).toBe(1_000_000);
+  });
+});
+
+// T-0382 AC7 (D-0100 §6, T-0381): the signed-out redirect to `/account` replaces `/welcome/save`,
+// so Back from `/account` returns to `/welcome/schedule`, never to the redirecting save step.
+describe("T-0382 AC7 the signed-out redirect replaces /welcome/save (D-0100 §6)", () => {
+  it("T-0382 AC7 navigate(-1) from /account lands on /welcome/schedule, not /welcome/save", async () => {
+    const back = { current: (() => {}) as (delta: number) => void };
+    function AccountProbe() {
+      const navigate = useNavigate();
+      back.current = (delta) => void navigate(delta);
+      return <div data-screen-id="UF-01.5" />;
+    }
+    store(PLAN);
+    render(
+      <MemoryRouter initialEntries={["/welcome/schedule", "/welcome/save"]} initialIndex={1}>
+        <AuthProvider>
+          <Probe />
+          <Routes>
+            <Route path="/welcome/*" element={<Welcome />} />
+            <Route path="/account" element={<AccountProbe />} />
+          </Routes>
+        </AuthProvider>
+      </MemoryRouter>,
+    );
+    await waitFor(() => expect(where.current).toBe("/account"));
+    expect(where.action).toBe("REPLACE");
+    act(() => back.current(-1));
+    await waitFor(() => expect(where.action).toBe("POP"));
+    expect(where.current).toBe("/welcome/schedule");
+    expect(where.current).not.toBe("/welcome/save");
   });
 });
