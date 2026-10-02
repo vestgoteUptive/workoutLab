@@ -4,7 +4,6 @@
 // These are source-level assertions on purpose. A rendering test cannot tell a string read from
 // `en` apart from a hard-coded literal that happens to match, and it cannot see a stray import
 // into another lane's directory at all.
-import { execFileSync } from "node:child_process";
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -12,7 +11,6 @@ import { en } from "../../../lib/i18n/en.js";
 import { uf11 } from "../../../lib/i18n/flows/uf-11.js";
 
 const FEATURE_DIR = resolve(__dirname, "..");
-const REPO_ROOT = resolve(__dirname, "../../../../../..");
 const FLOW_FILE = resolve(__dirname, "../../../lib/i18n/flows/uf-11.ts");
 
 /** Every source file this feature ships (tests excluded). */
@@ -155,24 +153,9 @@ describe("AC-B16 no second string catalogue", () => {
 });
 
 describe("AC-B16 the lane boundary (D-0071 §1, enforced by check:repo since T-0320)", () => {
-  it("git diff main...HEAD lists no path outside `Paths you may change`", () => {
-    // Three dots. Two dots would also list everything that landed on main after the fork, which
-    // on T-0309b looked like a 100+ file lane violation and was not (`.squad/state.md`).
-    const out = execFileSync("git", ["diff", "--name-only", "main...HEAD"], {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-    });
-    const changed = out.split("\n").filter(Boolean);
-    expect(changed.length).toBeGreaterThan(0);
-    for (const path of changed) {
-      const allowed =
-        path.startsWith("apps/web/src/features/UF-11/") ||
-        path === "apps/web/src/lib/i18n/flows/uf-11.ts" ||
-        path === "tests/e2e/uf-11-plan.spec.ts" ||
-        path === "tests/e2e/fixtures/uf-11-plan.ts";
-      expect(allowed, `${path} is outside this ticket's Paths you may change`).toBe(true);
-    }
-  });
+  // The `git diff main...HEAD` lane assertion that stood here was retired by T-0450: it could only
+  // pass on the ticket branch (it is empty on `main` after the merge) and it duplicated
+  // `.github/scripts/check-lane-paths.mjs`, which check:repo runs on every branch (state.md trap).
 
   it("no source file imports another feature's directory, or reaches into lib/offline internals", () => {
     for (const file of sourceFiles()) {
