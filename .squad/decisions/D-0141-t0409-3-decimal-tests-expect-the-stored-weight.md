@@ -1,5 +1,5 @@
 ---
-id: D-0139
+id: D-0141
 title: "The T-0409 3-decimal UF-09.4 tests expect the stored 82.13 everywhere they read the logged weight, not only in the two AC5 lines T-0233 named"
 status: revisit
 date: 2026-10-02
