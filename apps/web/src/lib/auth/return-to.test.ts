@@ -80,3 +80,44 @@ describe("consumeReturnTo", () => {
     expect(consumeReturnTo()).toBe("/");
   });
 });
+
+// T-0396 (UF-01.5): consumeReturnTo() returns the URL-normalised pathname+search+hash,
+// re-checked with isSafeAppPath(), else "/".
+const NORMALISED: Array<[string, string]> = [
+  ["/a/../library", "/library"],
+  ["/library/./week", "/library/week"],
+  ["/library/..", "/"],
+  ["/%2e%2e/library", "/library"],
+  ["/session/../session/setup?step=ready#x", "/session/setup?step=ready#x"],
+];
+
+const NORMALISES_UNSAFE = [
+  "/..//evil.example",
+  "/.//evil.example",
+  "/a/..//evil.example/library",
+  "/%2e%2e//evil.example",
+];
+
+describe("consumeReturnTo normalisation (T-0396)", () => {
+  it.each(NORMALISED)("T-0396 AC1 normalises %j → %j (AC4: key consumed)", (value, expected) => {
+    window.sessionStorage.setItem(KEY, value);
+    expect(consumeReturnTo()).toBe(expected);
+    expect(window.sessionStorage.getItem(KEY)).toBeNull();
+    expect(consumeReturnTo()).toBe("/");
+  });
+
+  it.each(NORMALISES_UNSAFE)(
+    'T-0396 AC2 %j normalises to unsafe → "/" (AC4: key consumed)',
+    (value) => {
+      window.sessionStorage.setItem(KEY, value);
+      expect(consumeReturnTo()).toBe("/");
+      expect(window.sessionStorage.getItem(KEY)).toBeNull();
+      expect(consumeReturnTo()).toBe("/");
+    },
+  );
+
+  it.each(SAFE)("T-0396 AC3 already-normal %j is returned exactly as stored", (value) => {
+    window.sessionStorage.setItem(KEY, value);
+    expect(consumeReturnTo()).toBe(value);
+  });
+});
