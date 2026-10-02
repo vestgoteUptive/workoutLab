@@ -190,7 +190,7 @@ unchanged · commits start `T-0304g` and cite the screen (for example `T-0304g U
     lands after unmount is released; no request in loading, not-on-device, ended or stale;
     `keepAwake` false; `wakeLock` undefined; a `NotAllowedError` rejection (no
     `unhandledRejection` or `unhandledrejection`, same screen and timer, no alert).
-  - **AC-3:** `t0304g.cues.test.tsx` "AC-3" (13 tests) and `t0304g.cues-unit.test.ts` (8, the
+  - **AC-3:** `t0304g.cues.test.tsx` "AC-3" (14 tests) and `t0304g.cues-unit.test.ts` (8, the
     pure detector):
     - sound on a 120 s rest (1 start at 0:10, 1 at 0), and once only across re-renders;
     - UF-09.7 (1 start at the hold's 0);
