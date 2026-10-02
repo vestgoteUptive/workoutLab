@@ -18,7 +18,8 @@ asked that they be recorded as a decision, since a build log can't settle visibl
    workout isn't on this device".
 2. When the cached targets don't hold all nine areas, an ended summary shows Time, budget,
    Exercises, Sets and "See balance", and leaves out the before → after rows and "Next up". Any
-   other error while computing the summary is not swallowed.
+   other error while computing the summary gives "This workout isn't on this device" (the D-0142 §4
+   unreadable state), never a partial summary. (Amended 2026-10-02 at the T-0419 re-review.)
 3. A row whose `ended_at − started_at` isn't a finite number is unreadable, so it shows "This
    workout isn't on this device". A negative duration reads 0 min.
 4. The link on the not-on-device state reads "Go to Today" and points to `/`.

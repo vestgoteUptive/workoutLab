@@ -267,7 +267,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0416 | UF-03.1 List view read side: set table, how-to + list-view seams, Finish, the T-0360 cross-screen principle-1 assertion (D-0142) | web-feature:UF-03 | T-0304d, T-0419 | todo | wl-build-web |
 | T-0417 | UF-03.1 List view logging: check / edit / uncheck / + Add set, reload, NFR-OFF-2 List view e2e (D-0142) | web-feature:UF-03 | T-0416, T-0415, T-0420 | todo | wl-build-web |
 | T-0418 | UF-03.2 rest bar + rest view, Swap button in the list (D-0142) | web-feature:UF-03 | T-0417, T-0421, T-0414 | todo | wl-build-web |
-| T-0419 | UF-03.3 Summary content and states (unknown id → not on device; ended_at null → still running; now = ended_at; no mount refresh) (D-0142) | web-feature:UF-03 | T-0318, T-0319 | doing (rework 2) | wl-build-web |
+| T-0419 | UF-03.3 Summary content and states (unknown id → not on device; ended_at null → still running; now = ended_at; no mount refresh) (D-0142) | web-feature:UF-03 | T-0318, T-0319 | done | wl-build-web |
 | T-0420 | UF-03.3 effort 1–5 + Save through the queue (whole row, no /finish), uf-03-list-summary e2e (D-0142) | web-feature:UF-03 | T-0419, T-0324 | todo | wl-build-web |
 | T-0421 | UF-05.1 SwapSheet: rankSwaps in engine order, Use → applySwap, D-0093 §7 parseSessionPlan round-trip (D-0142) | web-feature:UF-05 | T-0224, T-0226, T-0318 | blocked:T-0426 | wl-build-web |
 | T-0422 | UF-05 swap seam on UF-09.9/09.6, persisted via replaceItem, uf-05-swap e2e (D-0142) | web-feature:UF-05 | T-0421, T-0304d, T-0414 | todo | wl-build-web |
@@ -276,6 +276,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0425 | e2e: fail specs on console errors / pageerror in the guarded-test fixture (today checked by hand per ticket) (T-0304c QA) | qa | — | doing | wl-build-qa |
 | T-0426 | apps/web build.test AC-A6: route folders from routes.ts + SEAM_MOUNTED_FEATURES=["UF-05"], and UF-05 never in the entry chunk (TR-0042, D-0144) — merges before T-0421 | web-shell | — | done | wl-build-web |
 | T-0427 | Move uf-10-balance.spec.ts onto the guarded-test fixture (it imports @playwright/test today; check its Supabase routes first) (T-0425 groom) | qa | T-0425 | todo | wl-build-qa |
+| T-0428 | UF-03.3: paired test for D-0147 §3 (non-finite started_at/ended_at → 'isn't on this device'; a negative duration reads '0 min') (T-0419 accept) | web-feature:UF-03 | T-0419 | todo | wl-build-web |
 | T-0381 | D-0100 addendum (revisit): a signed-out visitor at /welcome/save with a saveable plan is replace-navigated to /account ("Save your plan"), as shipped in T-0301c | product | T-0301c | done (D-0100 §6) | wl-spec |
 | T-0382 | UF-01.5 Account a11y: roving tabindex + arrow keys on the Send link / Enter code tabs; mount the role=status live region before its first message (T-0301c review, pre-existing low) | web-feature:UF-01 | T-0301c | done | wl-build-web |
 | T-0383 | D-0113 retrofit: `features/UF-10/use-balance.ts` mount refreshAll only when online AND signed-in, once per mount; tests stale-online → 0, stale → signed-in → 1 (TR-0035) | web-feature:UF-10 | — | done | wl-build-web |
