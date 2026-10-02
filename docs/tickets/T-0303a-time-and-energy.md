@@ -172,3 +172,12 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
 ## Notes
 - **Flow:** `wl-build-web`. Parallel-safe with T-0302a and T-0302c (D-0108 §1). Don't run two vitest processes on the machine at once (state.md); QA and review are staggered.
 - **Size.** This is the upper end of ½ day. Spend the effort on the fit line (AC-6) and the routing (AC-1, AC-8); the finish time (AC-4) is one small pure function plus an input.
+
+## Build log (frontend-dev, 2026-10-02)
+- **Planted faults (each run against `__tests__/refresh-offline.test.tsx` / `loading-handoff.test.tsx`, then reverted with `git checkout`):**
+  - (a) `use-setup-data.ts`: `await settledOrAfter(refresh, REFRESH_CAP_MS)` → `await refresh.catch(() => {})` (uncapped). AC-10 cap test red: `expected [1,1,1,1] to deeply equal [2,2,2,2]` at 3 000 ms.
+  - (b) `merge()`: `deepEqual(prev.data, next.data)` → `prev.data === next.data` (identity memo). AC-10 cap test red: `expected 2 to be 1` (an extra `suggest` call at 3 000 ms).
+  - (c) the `if (!navigator.onLine) return;` guard removed. AC-9 red: `refreshAll` called 1 time offline; AC-8 mount probe red (`[2,2,2,2]`).
+  - (d) the `if (workout === null) return;` guard on Suggest removed. AC-7 red: the location changed while `aria-disabled="true"`.
+- **AC-14:** `git diff --name-only main...HEAD` lists nothing under `apps/web/src/app/**`, `tests/e2e/fixtures/**`, `tests/e2e/{offline,auth,shell}.spec.ts`, `en.ts` or `routes.ts`.
+- **TR-0035 (orchestrator heads-up):** no shell test trips. The stale-session profile-gate cases only visit `/`. The UF-08.1 mount refresh is gated on `navigator.onLine` only, the same as UF-10's. If D-0113 rules "online AND signed-in", UF-08 needs the same one-line gate plus a stale-online `refreshAll` = 0 test (follow-up).
