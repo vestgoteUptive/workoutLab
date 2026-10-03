@@ -92,3 +92,4 @@ and `check-all` green · contracts unchanged · commits start `T-0466`.
 ## Build / accept log
 - 2026-10-03 devops: added `isOwnTicketFile` (shared with `readTicketAtBase`), allowed before shared rules; tests in `check-lane-paths.t0466.test.mjs`. AC-1..4 -> the four `T-0466 AC-n` tests; AC-5 -> existing 159 repo-check tests pass unedited.
 - Red on unfixed code: AC-1, AC-3, AC-4 fail (`lane-path-not-owned` on the ticket file). Planted fault (`startsWith(ticketId)`, no `-`) turned AC-2 red; restored from backup copy.
+- 2026-10-03 QA: HEAD a33ef62, clean. Repro: main's script -> AC-1/3/4 red (1 pass, 3 fail); no-dash predicate -> AC-2 red; own fault (any docs/tickets/ file allowed) -> AC-2 red; all restored from backup. `-w test:repo-checks` 159/159, check-all exit 0. Real-branch scratch commit (own file + T-0465 file): check-all flagged only T-0465 `lane-path-not-owned`; scratch reset. Verdict: done, AC-1..5 proven.
