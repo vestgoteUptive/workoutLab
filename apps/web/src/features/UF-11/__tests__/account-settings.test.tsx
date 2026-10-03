@@ -14,6 +14,25 @@ import {
   useTimeZone,
 } from "./test-helpers.js";
 
+// Records every `navigate(to, options)` call so AC-D7's "history replace" assertion checks the
+// actual call shape, rather than relying on `window.history.back()` to drive MemoryRouter (it
+// doesn't: a prior version of this test stayed green even with `replace` removed from the code).
+const navCalls = vi.hoisted((): { to: unknown; options: unknown }[] => []);
+vi.mock("react-router", async (orig) => {
+  const actual = (await orig()) as typeof import("react-router");
+  return {
+    ...actual,
+    useNavigate: () => {
+      const navigate = actual.useNavigate();
+      const call = navigate as (...args: unknown[]) => unknown;
+      return ((...args: unknown[]) => {
+        navCalls.push({ to: args[0], options: args[1] });
+        return call(...args);
+      }) as typeof navigate;
+    },
+  };
+});
+
 const account = vi.hoisted(() => ({
   exportAccountData: vi.fn(),
   downloadAccountExport: vi.fn(),
@@ -89,6 +108,7 @@ beforeEach(() => {
   };
   Object.values(account).forEach((f) => f.mockReset());
   replaceSpy.mockReset();
+  navCalls.length = 0;
   Object.defineProperty(window, "location", {
     value: { ...realLocation, replace: replaceSpy },
     configurable: true,
@@ -132,6 +152,19 @@ describe("T-0310d AC-D3 email", () => {
     );
     mount();
     expect(screen.queryByText(/Signed in as/)).toBeNull();
+  });
+
+  it("T-0310d AC-D3 contrast: a stale *-auth-token for another user shows no email", () => {
+    window.localStorage.setItem(
+      "sb-stale-auth-token",
+      JSON.stringify({
+        access_token: "t",
+        user: { id: "22222222-2222-4222-8222-222222222222", email: "other@test.local" },
+      }),
+    );
+    mount();
+    expect(screen.queryByText(/Signed in as/)).toBeNull();
+    expect(screen.queryByText("other@test.local")).toBeNull();
   });
 });
 
@@ -277,9 +310,10 @@ describe("T-0310d AC-D7 delete outcomes", () => {
     mount();
     confirmDelete();
     await waitFor(() => expect(where()).toBe("/welcome"));
-    act(() => window.history.back());
-    // MemoryRouter history: /plan/account was replaced, so one entry back is /plan.
-    expect(where()).not.toBe("/plan/account");
+    // Assert the actual navigate call shape: `window.history.back()` doesn't drive MemoryRouter,
+    // so this used to hold even with `replace` dropped from the code.
+    expect(navCalls).toHaveLength(1);
+    expect(navCalls[0]).toEqual({ to: "/welcome", options: { replace: true } });
   });
 
   it("T-0310d AC-D7 deleted while still signed-in does a full load to /welcome", async () => {

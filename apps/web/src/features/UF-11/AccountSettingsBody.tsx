@@ -31,8 +31,14 @@ function useOnline(): boolean {
   return online;
 }
 
-/** The signed-in email from the session supabase-js persisted, read without awaiting. */
-function storedEmail(): string | null {
+/**
+ * The signed-in email from the session supabase-js persisted, read without awaiting. Only a
+ * token whose `user.id` matches the current session's `userId` is trusted: a stale `*-auth-token`
+ * key left by another project ref or a previously signed-out user must not surface (and must not
+ * end up in the export payload) as this user's email.
+ */
+function storedEmail(userId: string | null): string | null {
+  if (userId === null) return null;
   try {
     for (let i = 0; i < window.localStorage.length; i++) {
       const key = window.localStorage.key(i);
@@ -40,10 +46,12 @@ function storedEmail(): string | null {
       const raw = window.localStorage.getItem(key);
       if (!raw) continue;
       const parsed = JSON.parse(raw) as {
-        currentSession?: { user?: { email?: unknown } | null };
-        user?: { email?: unknown } | null;
+        currentSession?: { user?: { id?: unknown; email?: unknown } | null };
+        user?: { id?: unknown; email?: unknown } | null;
       };
-      const email = (parsed.currentSession ?? parsed).user?.email;
+      const user = (parsed.currentSession ?? parsed).user;
+      if (user?.id !== userId) continue;
+      const email = user.email;
       if (typeof email === "string" && email) return email;
     }
   } catch {
@@ -58,8 +66,8 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   const auth = useAuth();
   const navigate = useNavigate();
   const online = useOnline();
-  const [email] = useState(storedEmail);
   const userId = auth.userId;
+  const [email] = useState(() => storedEmail(userId));
 
   const statusRef = useRef(auth.status);
   statusRef.current = auth.status;
