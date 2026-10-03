@@ -48,7 +48,9 @@ test("T-0441 AC5: one vitest run in packages/shared leaves nothing in a fresh TM
       ["vitest", "run", "test/session-plan.test.ts"],
       {
         cwd: path.join(repoRoot, "packages", "shared"),
-        env: { ...process.env, TMPDIR: scratch },
+        // Node (and tools like vite) may write their own `node-compile-cache` into TMPDIR, as on
+        // the GitHub runner. That is not a vitest leak, so switch it off to keep the count exact.
+        env: { ...process.env, TMPDIR: scratch, NODE_DISABLE_COMPILE_CACHE: "1" },
         encoding: "utf8",
       },
     );

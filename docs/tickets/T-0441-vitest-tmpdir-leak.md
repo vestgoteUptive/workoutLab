@@ -163,3 +163,6 @@ fault recorded. The cached gate is green (`npx -y pnpm@10.28.2 -w typecheck lint
 - Check: `listVitestPackages` exported; the real-repo test asserts >= 6 packages scanned; comments are stripped before matching (new `comment-only` fixture test).
 - `turbo.json`: `vitest.tmp.ts` added to `globalDependencies`.
 - Gate: cached `-w typecheck lint test --concurrency=1` green (19 tasks), `-w test:repo-checks` 155/155, format:check and check-all exit 0. `vite build` of apps/web with a scratch TMPDIR: no `vitest-tmp` created, scratch TMPDIR not redirected.
+
+### Build, attempt 3 (devops, CI fix)
+- CI failure: the AC5 test saw `node-compile-cache` in the scratch TMPDIR (Node's own compile cache on the runner, not a vitest leak). Fix: the spawned child gets `NODE_DISABLE_COMPILE_CACHE=1`. Repro with `NODE_OPTIONS=--require <file calling module.enableCompileCache()>`: red before (`actual ['node-compile-cache']`), green after.
