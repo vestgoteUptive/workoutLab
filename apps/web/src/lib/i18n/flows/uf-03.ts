@@ -98,4 +98,16 @@ export const uf03 = {
   seamLoading: "Loading\u2026",
   seamLoadFailed: "Couldn't load this view.",
   seamClose: "Close",
+  // UF-03.2 rest bar and rest view (T-0418, D-0142 §3). The bar's visible text uses "·"; its
+  // accessible name (AC-4) spells out "show rest" with a comma, so the two never collide.
+  /** "Rest · 2:00 left" (the bar's visible text and the rest view's clock line). */
+  restBar: (clock: string) => `Rest · ${clock} left`,
+  /** "Rest, 2:00 left, show rest" (the bar's `aria-label`, AC-4). */
+  restBarName: (clock: string) => `Rest, ${clock} left, show rest`,
+  /** The rest view's accessible name (UF-03.2). */
+  restViewName: "Rest",
+  restLess: "−15 s",
+  restMore: "+15 s",
+  skipRest: "Skip",
+  backToList: "Back to list",
 } as const;

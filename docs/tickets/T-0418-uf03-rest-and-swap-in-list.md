@@ -122,3 +122,49 @@ needed) · contracts unchanged · commits start `T-0418` and cite the screen (fo
 - **T-0305a is done** when T-0415, T-0416, T-0417, T-0418 and T-0478 are.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-03; start: git clean, HEAD e3e090e)
+- **Built:** `ListView.tsx` — `ListViewCtx` gains `rest`/`startRest`/`adjustRest`/`skipRest`
+  (structurally typed, D-0142 §5); `SetRow.onToggle`'s check branch calls `ctx.startRest` once a
+  check resolves, unless `allPlannedSetsLogged` (a local pure helper, counts the just-written set
+  so it never depends on the write's own closure catching up); `RestBar` (the "Rest · m:ss left"
+  button, named "Rest, m:ss left, show rest"); `RestView` (UF-03.2, replaces the whole screen, one
+  `[data-screen-id]`); AC-5 focus via `restClose` ("back" | "next") read by an effect once
+  `restOpen` goes false, and a second effect that closes the view itself when `ctx.rest` goes null
+  (the host's own REST_END). No own timer: the host's 1 s re-render feeds `ctx.rest` straight into
+  the bar/view. `list-view.css` and `flows/uf-03.ts` get the new classes/strings (`restBar`,
+  `restBarName`, `restViewName`, `restLess`, `restMore`, `skipRest`, `backToList`). `T-0478` (Swap
+  in the list, out of scope here) is left untouched.
+- **Also touched (T-0417's own tests, same lane):** `list-helpers.tsx` (`makeCtx` gains the four
+  new fields/spies); `list-view.logging.host.test.tsx` and `list-view.addset.host.test.tsx` — a
+  check from the List view now starts a rest by design (T-0418 AC-1), so three flows that
+  previously asserted "Focus mode" landed back on a `set` step now skip the rest (through the bar)
+  first; one test's "without moving the machine" assertion for `phase` is corrected to assert
+  `phase: "rest"` (itemIndex/setIndex still untouched, matching D-0142 §2's "the log itself never
+  moves the machine").
+- **New files:** `rest.test.tsx` (AC-1..AC-5, real `SessionHost` for the wall-clock/host behaviour,
+  `makeCtx` unit style for the two a11y and two "(spy)" edit/uncheck cases); `rest-tick-scan.ts` +
+  `rest-sources.test.ts` (AC-1's required UF-03 copy of the T-0304a tick-counting scanner, plus a
+  `setInterval`/`setTimeout` literal scan, since a UF-03 test may not deep-import
+  `features/UF-09/__tests__`).
+- **AC → test:** AC-1 `rest.test.tsx` "T-0418 AC-1" (start/wall-clock/offline/expiry/edit/uncheck)
+  + `rest-sources.test.ts` (no own timer) · AC-2 "T-0418 AC-2" (both halves of the pair) · AC-3
+  "T-0418 AC-3" (open, adjust, Skip, Back to list, announcer) · AC-4 "T-0418 AC-4 a11y" (button
+  names, axe on UF-03.1 with the bar and on UF-03.2) · AC-5 "T-0418 AC-5 focus" (Back to list, Skip
+  with rows open, Skip with the card done, the rest view's own auto-close on expiry).
+- **Red on main** (HEAD `e3e090e`'s `ListView.tsx`/`list-helpers.tsx`, swapped in via `cp` and
+  restored the same way): 17 of 22 new tests failed (every AC-1/AC-3/AC-4/AC-5 case; the remaining
+  5 are either source-scan tests with no `ListView.tsx` dependency, or negative asserts that are
+  vacuously true with the feature absent, e.g. "the bar is gone" when no bar exists at all —
+  covered by AC-1's positive "Start" case and AC-2's "pair" case turning red in the same run).
+- **Planted faults (each on a `cp` backup, restored by `cp`):**
+  - a `setInterval` added inside `RestBar` → `rest-sources.test.ts`'s own-timer scan red (AC-1).
+  - `startRest` called unconditionally (the `allPlannedSetsLogged` guard removed) → AC-2's
+    "checking row 3 starts no rest" red.
+  - the focus-after-close effect gutted to a no-op → all 4 AC-5 tests red (focus stayed on `body`
+    after Skip/Back to list/the view's own close).
+- **Gate:** `-w typecheck lint test --concurrency=1` 3437 passed · `test:repo-checks` 159 passed ·
+  `format:check` clean (after one `prettier --write`) · `check-all.mjs` exit 0 · e2e
+  `uf-03-list-summary.spec.ts` + `uf-09-focus.spec.ts`: 16 passed.
+- **Contracts:** unchanged. **Out of scope kept out:** no Swap button, no `features/UF-09` file
+  touched, no List-view `aria-live` region of its own.

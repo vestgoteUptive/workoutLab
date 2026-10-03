@@ -148,3 +148,55 @@
 .wl-uf03-list__table input[aria-disabled="true"] {
   opacity: 0.5;
 }
+
+/* UF-03.2 rest bar and rest view (T-0418). */
+.wl-uf03-rest__bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px solid var(--wl-color-line-strong);
+  background: var(--wl-color-surface);
+  color: var(--wl-color-text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.wl-uf03-rest__bar:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-uf03-rest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  font-family: var(--wl-font-body);
+  color: var(--wl-color-text);
+  background: var(--wl-color-bg);
+}
+
+.wl-uf03-rest__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 28px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.wl-uf03-rest__clock {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 40px;
+}
+
+.wl-uf03-rest__adjust {
+  display: flex;
+  gap: 8px;
+}
