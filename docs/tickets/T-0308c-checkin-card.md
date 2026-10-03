@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.1]
 decisions: [D-0018, D-0061, D-0070, D-0071, D-0075, D-0158, D-0166, D-0168]
 deps: [T-0308b, T-0215, T-0223, T-0302a]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner. First of three children of the T-0308c board row (D-0168
 §5): this ticket (read side), T-0470 (writes: first-shown insert, Accept, Keep), T-0471 (mounts on
@@ -121,3 +121,73 @@ UF-11.1.
   flows v2 still say "two 14-day periods in a row"; D-0061 §2 and D-0070 §5 changed it to one.
 
 ## Build / accept log
+
+### Build (frontend-dev, 2026-10-03)
+**Start:** `git status` clean, HEAD `af4bfcf` (main), branch `t/T-0308c-checkin-card`.
+
+**Changed:** new `features/UF-11/CheckinCard.tsx`, `use-checkin-data.ts`,
+`__tests__/checkin-card.test.tsx`; edited `format.ts` (+`formatCalendarDay`, locale-aware,
+`en-GB` "Sept"→"Sep" fix, same note as UF-10's), `index.tsx` (+`CheckinCard` export),
+`lib/i18n/flows/uf-11.ts` (+`checkin.*` keys), `__tests__/strings.test.ts` (export pin now
+`[AccountSettings, CheckinCard, EditPlan, Plan]`; allowlist +6 structural literals from the new
+files). No contract touched.
+
+**Design notes.** `useCheckinData` reads the cache ONCE (`loadProfile`, `loadSessions`,
+`loadEngineHistory`, `loadLibrary`, `loadCheckins`, no `loadTargets`, no `refreshAll`) and calls
+`evaluatePlanCheckin` (T-0308b's one evaluation helper). "Current" in the before→after list is
+the engine's own `previewTargets` for the CURRENT profile rhythm/priorities (never a stored
+target or UI arithmetic), so both sides of the list are engine output. `CheckinCard` is exported
+from `index.tsx` but mounted nowhere (T-0471); clicking Accept/Keep makes no supabase call
+(T-0470).
+
+**AC → test map** (`apps/web/src/features/UF-11/__tests__/checkin-card.test.tsx`, all titled
+`T-0308c AC-n`):
+- AC-1 → "down, through the real engine" (real engine + real IndexedDB feed, P2=7/P3=3 seeded).
+- AC-2 → "copy rules, stubbed evaluation" (stubbed `evaluatePlanCheckin` via a module mock toggle).
+- AC-3 → "preview" (9-row before→after order).
+- AC-4 → "no card, both values" (4 cases: on-plan P3=5, zero history/just-onboarded, rejected
+  `loadCheckins`, missing profile — each asserts no `console.error`).
+- AC-5 → "up, floor and ceiling" (5 cases: 3-4/P3=10, 1-2/P3=0 floor, 1-1/P3=0 clamp-null, 6-7/P3=16
+  ceiling, 7-7 clamp-null).
+- AC-6 → "offline, both values" (disabled buttons + connect line; online/offline toggle, same DOM
+  node by reference).
+- AC-7 → "no writes, exports, strings" (no `supabase.from` call on click; export pin).
+
+**Red on main.** Stashed all changes (`git stash -u`), confirmed `CheckinCard.tsx` absent from
+the worktree, ran a standalone import-and-assert test against `features/UF-11/index.tsx` on
+main: failed (`expected undefined to be defined`), confirming no `CheckinCard` export exists on
+main. Restored with `git stash pop`.
+
+**Planted fault (AC-2).** Backed up `CheckinCard.tsx` (`cp`), changed `evaluation.periods[...length
+- 1]` to `evaluation.periods[0]` (read the first period instead of the last). Ran AC-2: failed
+(wrong completed count, wrong proposal numbers — "4" instead of "1", "4–5" style text absent).
+Restored `CheckinCard.tsx` from the backup copy; re-ran the full `checkin-card.test.tsx`: 15/15
+green.
+
+**Other red runs hit and fixed while building** (not faults on finished code, found while
+writing the feature itself): (1) `en-GB` `Intl.DateTimeFormat` month:"short" prints "Sept" for
+September — fixed with the same `formatToParts` + 3-letter clip UF-10's `format.ts` already
+documents. (2) `vi.doMock` + `vi.resetModules` handed a freshly re-imported `CheckinCard` a new
+`lib/offline/db.js` module instance with its own `db` singleton, invisible to the
+already-seeded cache from the test file's original import — switched AC-2/AC-4's stubs to
+always-installed `vi.mock` toggles (the `offline.test.tsx` pattern) instead. (3) seeding 16
+one-per-day sessions overran the 14-day period window — seeding now wraps extra sessions onto
+the same days. (4) a naive "zero history" case (old `onboardedAt`, 0 sessions) actually yields an
+ended, under-target period with a real proposal, not "no card" — the AC-4 case now onboards on
+`now`'s own day so no period has ended yet.
+
+**Gate (cached, one run before handback):**
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` → green,
+  243 test files / 3367 tests passed.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks` → green, 159/159.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w format:check` → green (one prettier --write
+  pass needed first, on the 3 new/edited files).
+- `scripts/locked.sh heavy node .github/scripts/check-all.mjs` → exit 0.
+- `uf-11-plan.spec.ts` e2e (`playwright test`, `TMPDIR=$HOME/.cache/wl-pw-tmp`) → green, 10/10,
+  unmodified (nothing visible changed, D-0158). Not the whole web e2e suite.
+
+**Lane check:** `git status --short` lists only `features/UF-11/**` and
+`lib/i18n/flows/uf-11.ts` (the granted extra). No contract file touched.
+
+**Verdict: done.** All 7 ACs pass with tests; red-on-main and the planted fault are both proven
+and recorded above; full gate green.

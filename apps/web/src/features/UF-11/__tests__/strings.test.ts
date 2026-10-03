@@ -45,9 +45,10 @@ describe("AC-B16 the flow file", () => {
 });
 
 describe("AC-B16 exports (D-0071 §3)", () => {
-  it("index.tsx exports exactly AccountSettings, EditPlan and Plan", async () => {
+  it("index.tsx exports exactly AccountSettings, CheckinCard, EditPlan and Plan", async () => {
+    // T-0308c adds `CheckinCard` (D-0168 §5): exported, mounted nowhere yet (T-0471).
     const mod = await import("../index.js");
-    expect(Object.keys(mod).sort()).toEqual(["AccountSettings", "EditPlan", "Plan"]);
+    expect(Object.keys(mod).sort()).toEqual(["AccountSettings", "CheckinCard", "EditPlan", "Plan"]);
   });
 
   it("the check-in evaluation is NOT exported from index.tsx — it stays module-private", async () => {
@@ -132,6 +133,14 @@ describe("AC-B16 no second string catalogue", () => {
       "update",
       "online",
       "offline",
+      // T-0308c CheckinCard: structural values, not copy.
+      "checkin-card",
+      "down",
+      "none",
+      "en-GB",
+      "numeric",
+      "short",
+      "month",
     ]);
     const uiWords = Object.values(uf11).filter((v) => typeof v === "string") as string[];
     for (const file of sourceFiles()) {

@@ -67,6 +67,38 @@ export const uf11 = {
   cancel: "Cancel",
   saveFailed: "Couldn't update your plan. Try again.",
   accountLink: "Account",
+  // UF-11.1 CheckinCard (T-0308c, D-0070 §5/§7)
+  checkin: {
+    down: (
+      n: number,
+      from: string,
+      to: string,
+      planMin: number,
+      planMax: number,
+      newMin: number,
+      newMax: number,
+    ) =>
+      `${
+        n === 1 ? `You trained 1 time` : `You trained ${n} times`
+      } in your last 14-day period (${from}–${to}). Your plan is ${planMin}–${planMax}. Switch to ${newMin}–${newMax} per week?`,
+    up: (
+      n: number,
+      from: string,
+      to: string,
+      planMin: number,
+      planMax: number,
+      newMin: number,
+      newMax: number,
+    ) =>
+      `${
+        n === 1 ? `You trained 1 time` : `You trained ${n} times`
+      } in your last 14-day period (${from}–${to}). Your plan is ${planMin}–${planMax}. Step up to ${newMin}–${newMax} per week?`,
+    previewRow: (area: string, current: number, next: number) => `${area} ${current} → ${next}`,
+    accept: "Accept",
+    keep: "Keep current",
+    connectToUpdate: "Connect to update your plan",
+    cardName: "Check-in",
+  },
   // UF-11.4 Account settings (T-0310d, D-0136 §8)
   account: {
     signedInAs: (email: string) => `Signed in as ${email}`,
