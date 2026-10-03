@@ -311,3 +311,42 @@ behaviour; red-on-main and both the builder's and QA's planted faults reproduce 
 clean; the three fixes hold up to independent verification; e2e unmodified and green; offline
 behaviour and console-error checks confirmed; branch behind main but cleanly mergeable, no
 action needed from QA.
+
+### Accept (product-owner, 2026-10-03)
+**Verdict: done.**
+
+Checked the build, review and QA logs above against the 7 ACs and against D-0168 §5 (the split
+that created this ticket):
+- **AC-1–AC-7:** each has a named test in `checkin-card.test.tsx`, confirmed present in the
+  AC→test map recorded independently by both the builder and QA (15/15 green). QA re-verified the
+  three build-time fixes against external evidence (a direct `Intl.DateTimeFormat` run for the
+  en-GB month clip, the `offline.test.tsx` mock shape for the `vi.mock` toggle, and the engine's
+  real `PERIOD_DAYS = 14` window in `packages/engine/src/checkin.ts` for the session-seeding
+  wrap), not just internal consistency — satisfies "every AC has a passing test" to the standard
+  this project holds for engine-adjacent UI.
+- **Scope/D-0168 §5:** confirmed directly — `features/UF-11/index.tsx` exports `CheckinCard`
+  (`export { CheckinCard };`), and `features/UF-02/slots.tsx` only mentions it in a comment with
+  `todayCheckinSlot` still `null` on this branch. No write path exists yet (clicking Accept/Keep
+  makes no `supabase.from` call, AC-7) and nothing mounts the card, so `main` after merge still
+  shows no button that does nothing — the reason this ticket was split off T-0470/T-0471 holds.
+- **Contracts:** `api/openapi.yaml`, `docs/data-model.md`, `docs/engine-rules.md` and
+  `packages/design-tokens/src/tokens.json` are all empty-diff (confirmed via `git diff
+  main...HEAD --stat`), matching "Contract impact: None."
+- **Principle 3 (deterministic engine):** `evaluateCheckin(` appears exactly once outside
+  `packages/engine` (in `checkin-evaluation.ts`, T-0308b's wrapper) per both the review and QA
+  source scans; the card's copy and before→after preview are the engine's own
+  `evaluation.proposal`/`previewTargets`, never UI arithmetic.
+- **Lane:** `git diff main...HEAD --stat` touches only `apps/web/src/features/UF-11/**` plus the
+  two listed extras (`lib/i18n/flows/uf-11.ts`, this ticket file). No out-of-lane file changed.
+- **Non-negotiable principles:** one task on screen (not applicable — nothing mounted yet), time
+  budget (not applicable to this screen), deterministic engine (held, above), adaptive targets
+  (this is exactly UF-11.1's purpose — the card surfaces the engine's adaptive proposal, never
+  silently per principle 4), onboarding under 60s (untouched). All hold.
+- **Gate:** build log recorded one green run of the full gate (`typecheck lint test`,
+  `test:repo-checks`, `format:check`, `check-all.mjs`) plus `uf-11-plan.spec.ts` e2e (10/10,
+  unmodified); QA independently reran the e2e spec and got the same result. Per CLAUDE.md and
+  D-0169 §2, not re-run here — the orchestrator runs the forced full gate on `main` after merge.
+  Branch is behind `main` by unrelated commits with zero merge conflicts (`git merge-tree`,
+  confirmed in the QA log), correctly left unmerged for the orchestrator.
+
+No missing ACs, no principle violation, no contract drift. **done.**
