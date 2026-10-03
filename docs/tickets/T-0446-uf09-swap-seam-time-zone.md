@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-05.1, UF-09.9, UF-09.6]
 decisions: [D-0164, D-0120, D-0071, D-0142, D-0160]
 deps: [T-0422, T-0394, T-0451]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0422 review. Split by lane (D-0164 §8): the app-wide route-chunk boundary is T-0459 (web-shell). Build flow: wl-build-web. About ¼ day. The spec is ready; the build waits for T-0394 (host.tsx, session.tsx) and T-0451 (seams.tsx). Start from a main that has both. -->
 
@@ -95,3 +95,10 @@ the host's zone`).
 - Red: the three src files reverted to main -> 5/5 t0446 red (TZ=Pacific/Auckland). Green with TZ=Pacific/Auckland and TZ=UTC (5/5 each).
 - Own fault: host.tsx passes the runtime zone instead of `timeZone` -> "pair: UTC passes UTC" red (1/5; the Auckland cases only go red under TZ=UTC). Restored from backup.
 - e2e uf-09-focus + uf-05-swap: 13 passed. No full gate (branch unchanged since builder gate).
+
+### Accept log (2026-10-03, product-owner, HEAD a73b4ee)
+- Diff read against main: `session.tsx` (`FocusSession.timeZone`, omitted from `FocusActions`), `host.tsx` (one line), `seams.tsx` (`timeZone={ctx.timeZone}`), new `t0446.swap-zone.test.tsx`, `seams.test.tsx` AC-9 key list (the one listed test change). UF-03 and UF-05: no diff.
+- AC-1: `t0446 AC-1` prop case + runtime-zone pair, red on main (recorded). Met.
+- AC-2: `t0446 AC-2` UF-09.9 Auckland, UF-09.6 Auckland, UTC pair; recording stub as specified; red on main (recorded). Met.
+- AC-3: UF-09 suite 900 green, check:size green, e2e 13/13, changed test file listed. Met.
+- Principles: engine untouched (principle 3 strengthened: one zone for focus mode); one task on screen unchanged. Contracts unchanged. Verdict: done.
