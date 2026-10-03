@@ -212,6 +212,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0421 | done | wl-build-web |
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | done | wl-build-web |
 | T-0458 | UF-03.1 List view e2e: the Playwright spec T-0416 deferred, incl. NFR-OFF-2 List view logging (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | done | wl-build-web |
+| T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
