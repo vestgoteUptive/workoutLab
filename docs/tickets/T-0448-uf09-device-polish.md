@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.5, UF-09.9]
 decisions: [D-0164, D-0119, D-0161, D-0155, D-0066]
 deps: [T-0304g]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0304g review. Build flow: wl-build-web. About ⅓ day. T-0304g and T-0447 are on main. All of it is in features/UF-09/device.ts, so it can run beside T-0394 and T-0451. -->
 
@@ -120,3 +120,26 @@ UF-09.9: cancel speech on Pause`).
   tap. Record it in the accept log if a device is at hand, as T-0304g did.
 
 ## Build / accept log
+
+### Build log (frontend-dev, base 56ab6a9, tree clean)
+- Changed `device.ts` (cancel on unmount and first observed `paused` after a non-paused phase, voice only; prime once per mount on `onActivation`; `resumeIfIdle` for suspended or interrupted, also on `onGesture` once the context exists). Additive stub exports in `t0304g-stubs.ts` (`contexts`, `cancel`, `utterances`, utterance `volume`). Tests: `__tests__/t0448.device.test.tsx` (30).
+- AC→test: AC-1 `AC-1 cancel on Pause` (voice on/off pair, UF-09.8, running rest, restore into paused); AC-2 `AC-2 cancel on unmount` (on/off); AC-3 `AC-3 the iOS prime` (first/second, order, voice off, pointerdown/keydown, remount); AC-4 `AC-4 resume…` (4 states × pointerUp / 10 s tone / keyDown); AC-5 `AC-5 missing or broken APIs` (6 variants); AC-6 diff touches only `device.ts`, `t0448*`, stubs.
+- Red on unfixed code (device.ts from HEAD): 9 failed of 30 (AC-1 Pause, AC-2 unmount, AC-3 prime x3, AC-4 interrupted x3 + suspended keyDown); the negative rows and "suspended" pointerUp/tone rows pass on main by design (existing behaviour).
+- Planted faults (backup copy, restored by cp): cancel on every observation: 2 red; resume suspended only: 3 red; prime on gesture: 1 red; unguarded cancel: 4 red.
+- Gate: typecheck, lint (one eslint-disable comment removed after a red lint run), test (19/19), test:repo-checks, format:check, check-all all green; `uf-09-focus` e2e 10 passed. AC-6: diff is `device.ts`, `t0448.device.test.tsx`, additive `t0304g-stubs.ts`, this ticket.
+
+### Build, attempt 2
+- AC-1 map fix: the "Not paused" rows are the UF-09.8 time check, a running rest, and a List view (keepsClockRunning seam) opened from UF-09.9 after the Pause (1 cancel, still 1 after a tick and after close), plus a restore into paused. The earlier note that the List view had no test was wrong after this change.
+- AC-5 now runs a full rest to UF-09.3 in each of the 6 variants.
+- Planted fault (backup copy, restored by cp): cancel on the paused→running change: red on the List view row and the Pause/Resume/Pause row. Green after restore (31/31).
+
+### QA (attempt 2, after `git merge origin/main`, HEAD 38b8455, tree clean)
+- AC→test: all six in `t0448.device.test.tsx` (31) as in the build log; AC-1 List view row now present; AC-6 diff is `device.ts`, `t0448*`, additive stubs.
+- Red from backups: unfixed device.ts 10 red of 31 (the 9 plus the List view row, which asserts the Pause cancel); cancel on paused→running 2 red (List view, Pause/Resume/Pause); resume suspended only 3 red; own fault (prime on every pointerUp) 2 red; own fault (resume anything not running) 3 red (closed rows). All restored by cp.
+- Runs: UF-09 folder 54 files / 868 tests green; `uf-09` e2e 10 passed; cached typecheck+lint+test 19/19, test:repo-checks, check-all green.
+- Verdict: done.
+
+### Accept (product-owner, HEAD 1f2e919, tree clean)
+- AC-1 `AC-1 cancel on Pause`: voice on 1 then 2 / off 0, steady over 60 s paused; UF-09.8, running rest, List view and restore rows make no cancel. AC-2 `AC-2 cancel on unmount` on/off. AC-3 `AC-3 the iOS prime`: once, `""`/volume 0, order `["","3","2","1"]`, voice off, not on pointerdown/keydown, remount. AC-4: 4 states x pointerUp / 10 s tone / keyDown, constructor count 1. AC-5: 6 variants, full rest to UF-09.3, no unhandled rejection. AC-6: diff is `device.ts`, `t0448.device.test.tsx`, additive `t0304g-stubs.ts`, this ticket; no host.tsx change.
+- Red on unfixed code 10/31 plus planted faults (build and QA). D-0164 §5 holds; principle 1 (quiet when paused) strengthened. Gate green per QA. Manual iPhone check: no device at hand.
+- Verdict: done.
