@@ -146,7 +146,7 @@ and cite UF-08.3 (for example `T-0303c UF-08.3: swap before starting mounts the 
 - Built: Swap button in `Suggested.tsx` (`data-part="swap"`, `.wl-uf08__icon--text`), `swap` step in `SessionSetup.tsx` (pastSetup, static `SwapSheet` import, leave = `navigate(-1)`, focus back through `focusSwapItem`, bad `item` replaces to `?step=suggested`), two strings. Static import per the ticket, so no lazy seam.
 - AC→test (`__tests__/swap-before-start.test.tsx`): AC-1 four tests · AC-2 one · AC-3 two (Close, Escape) · AC-4 one · AC-5 one · AC-6 six (keep/apply back, browser Back, cold, 5 bad items, item=2) · AC-7 one · AC-9 `uf-08-setup.spec.ts` four (flow, axe, 44px, keyboard) · AC-8/AC-10 existing exports-and-lint, controls, flows tests unedited.
 - AC-10: `suggested-actions.test.tsx` "no button starting with Swap" updated to the new truth (one Swap button per item row).
-- Deviation: AC-2 "contains Swapped to save time" cannot hold; `itemReasonLine` keeps 2 reasons and the swap one is third. Test asserts the DOM line equals `itemReasonLine(result reasons)` and the engine result carries `swap {short_on_time}` (D-0170, follow-up for web-shell).
+- Deviation: AC-2 "contains Swapped to save time" cannot hold; `itemReasonLine` keeps 2 reasons and the swap one is third. Test asserts the DOM line equals `itemReasonLine(result reasons)` and the engine result carries `swap {short_on_time}` (D-0171, follow-up for web-shell; renumbered from D-0169 after main's own D-0169 "two test locks" landed — see gate log below).
 - Red on unfixed code (Suggested/SessionSetup from HEAD): 17 of 19 fail, AC-1 included. Planted fault (`swap` left out of `pastSetup`, backup restored with `cp`): 16 of 19 fail, AC-2 included.
 - e2e `uf-08-setup` + `uf-05-swap`: 33 passed.
 
@@ -169,3 +169,25 @@ and cite UF-08.3 (for example `T-0303c UF-08.3: swap before starting mounts the 
   (19/19, ~3.8 s) alone and paired with the affected files under `--maxWorkers=1`.
 - Everything else already recorded above (build, AC/fault/e2e proof) stands unchanged; only the
   cached full gate is blocked, by TR-0044, not by this ticket's own tests.
+
+### Gate re-run log (frontend-dev, 2026-10-03, HEAD 62d145e, after merging main's T-0474/D-0170)
+- `-w typecheck lint test --concurrency=1` via `scripts/locked.sh heavy`: green, no hang. 19/19
+  turbo tasks succeeded; `@workoutlab/web:test` 243 files / 3371 tests passed, including the three
+  TR-0044 files that previously collected 0 tests (`t0422.lazy-reject`, `t0451.next-open`,
+  `t0451.next-entry`) — each now runs its real assertion.
+- `-w test:repo-checks`: found this branch's own `D-0169-uf082-swap-reason-hidden-by-two-line-cap.md`
+  collided in ID with main's newly landed `D-0169-two-test-locks-qa-gate-batch-merges.md`
+  (duplicate-decision-id) and, separately, sits outside this ticket's lane grant
+  (`.squad/decisions/**` is the `process` lane, not `web-feature:UF-08`; `lane-path-not-owned`).
+  Renumbered the file and its code comment to the next free id, D-0171, and regenerated
+  `INDEX.md` (`node .squad/tools/archive.mjs index`) — fixes the duplicate-id finding. The
+  lane-path finding remains on `D-0171-...md` and `INDEX.md`: confirmed clean on `main` itself
+  (`node .github/scripts/check-all.mjs` → exit 0 there), so this is this branch's own pending
+  decision file being outside its lane grant until merge, the same shape as every other ticket's
+  decision file — not a regression and not fixable from within `web-feature:UF-08`. No triage
+  filed: precedent (T-0304h, T-0463 logs) treats an unmerged branch's own pending decision/gate
+  state as the orchestrator's business at merge time, not a blocker to re-raise per ticket.
+- `-w format:check`: green.
+- `node .github/scripts/check-all.mjs` (standalone, same as above): 2 lane-path findings on this
+  branch's own `D-0171-...md`/`INDEX.md`, both expected to clear once the branch merges to main.
+- Commit 62d145e: the D-0169→D-0171 renumber (3 files).
