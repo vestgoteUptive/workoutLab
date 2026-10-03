@@ -117,6 +117,8 @@ NFR-PRIV-4 and NFR-PRIV-5 have to be reachable in the app: "export" and "delete"
   - `apps/web/src/lib/i18n/flows/uf-11.ts`: new `account` keys, in the D-0075 shape.
   - `apps/web/src/app/routes.ts`: the one `/plan/account` row, directly after `/plan/edit`.
   - `apps/web/src/app/__tests__/routes.phase3.test.ts`: the one `/plan/account` row in its expected list.
+  - `apps/web/src/app/__tests__/profile-gate.test.tsx`: only the protected-route count, for the new `/plan/account` row (review, 2026-10-03).
+  - `apps/web/src/lib/profile/__tests__/profile-gate-decision.test.tsx`: same, only the count (review, 2026-10-03).
   - `docs/tickets/T-0310d-uf11-account-settings-screen.md`: this file, for the build and accept log.
 
 ## Contract impact
