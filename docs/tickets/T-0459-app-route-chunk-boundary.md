@@ -103,3 +103,11 @@ contracts unchanged · commits start `T-0459`.
   the seam zone.
 
 ## Build / accept log
+
+### Build log (web-dev, 2026-10-03)
+- Start: `git status` clean, HEAD a6f3e9d. Added `app/RouteBoundary.tsx` (class boundary, `role="alert"` + Reload), `en.routeError`, and one `<RouteBoundary key={route.path}>` per route in `Shell` (guard → gate → boundary → Suspense → lazy). The `key` is needed: React Router reuses the element slot, so without it the failed state follows the user to the next route.
+- Tests: `app/__tests__/route-boundary.test.tsx` (fresh module graph per test: `React.lazy` caches a rejection for good).
+- AC→test: AC-1 "AC-1: a rejecting chunk…" + "AC-1 pair"; AC-2 "AC-2: another route renders…"; AC-3 "signed out" (0 load calls) and "mid-workout" (no nav, no redirect after sign-out); AC-4 "a component that throws…"; AC-5 axe 0 violations, Reload `tabIndex` 0 and focusable (jsdom has no Tab handling, no user-event installed), plus unedited `profile-gate.source`, `import-bans`, `App.test`, `routes.phase3.render`, `profile-gate`.
+- Red on unfixed `App.tsx` (HEAD copy): AC-1, AC-3 mid-workout, AC-4, AC-5 failed (no alert); AC-2 and the AC-1 pair failed too (lazy cache leak, then no alert). Green after the fix: 7/7.
+- Planted fault (on a backup copy, restored with `cp`): one boundary around `<Routes>` instead of per route: AC-2 red, the other 6 green. Without the `key` AC-2 was also red (first fixed run).
+- Gate: `-w typecheck lint test` all green except one flaky `UF-07/t0453.focus` (passes alone, 10/10; T-0460/T-0461 territory, not this ticket). `test:repo-checks` 155 pass, `format:check`, `check-all`, `check:size` green. Whole web e2e: 190 passed.

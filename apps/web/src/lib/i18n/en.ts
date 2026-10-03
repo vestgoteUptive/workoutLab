@@ -81,6 +81,11 @@ export const en = {
       "Your account is deleted. Some data may still be on this device: clear this site's data in your browser settings.",
     dismiss: "Dismiss",
   },
+  // T-0459 (D-0164 §7): the shell's fallback when a route's chunk fails to load.
+  routeError: {
+    message: "Couldn't load this screen.",
+    reload: "Reload",
+  },
   offline: {
     ariaLabel: "Offline",
     notSyncedYet: "Offline · not synced yet",

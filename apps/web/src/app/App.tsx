@@ -9,6 +9,7 @@ import { RedirectIfSignedIn, RequireAuth, RequireAuthOnceForSession } from "../l
 import { ProfileGate } from "../lib/profile/ProfileGate.js";
 import { isGatedPath } from "../lib/profile/gated-routes.js";
 import { ProfileStatusProvider } from "../lib/profile/profile-context.js";
+import { RouteBoundary } from "./RouteBoundary.js";
 import { isArea, routes, type RouteConfig } from "./routes.js";
 import "../components/tab-bar/tab-bar.css";
 
@@ -82,12 +83,21 @@ export function Shell() {
             ) : (
               <Component />
             );
+          // The route's own error boundary (D-0164 §7) sits inside the guard and gate and outside
+          // Suspense: a failed chunk load shows "Couldn't load this screen." for this route only. The
+          // key matters: React Router reuses the element slot across routes, so without it the
+          // failed state would follow the user to the next route.
           // The guard sits *outside* Suspense: a guard decided once at mount (`session`,
           // AC-B7) must not be re-run when Suspense unwinds and retries this subtree once
           // the lazy chunk resolves, which would reset its captured decision.
           const element = applyGuard(
             route.guard,
-            applyProfileGate(route, <Suspense fallback={null}>{lazyElement}</Suspense>),
+            applyProfileGate(
+              route,
+              <RouteBoundary key={route.path}>
+                <Suspense fallback={null}>{lazyElement}</Suspense>
+              </RouteBoundary>,
+            ),
           );
           return <Route key={route.path} path={route.path} element={element} />;
         })}
