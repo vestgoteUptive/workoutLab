@@ -5,7 +5,7 @@ lane: infra
 screens: []
 decisions: [D-0159, D-0158, D-0157]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written 2026-10-03 by product-owner (groom). Build flow: wl-build-infra. About ⅓–½ day: one diagnosis, the same small change in six vitest packages, one check and its tests. If AC-1 shows the cause is not what D-0159 assumes and the fix needs more than config or scripts, stop after AC-1, log the finding, and return `needs-triage` instead of growing the ticket. No app code, no contract change. -->
 
@@ -172,3 +172,13 @@ fault recorded. The cached gate is green (`npx -y pnpm@10.28.2 -w typecheck lint
 - Parallel `vite build` + `vitest run src/features/UF-09` (689 tests): the build did not touch the test's vitest-tmp; the folder was removed at run end. A standalone `vite build` still uses TMPDIR (workbox), by design (vitest only).
 - Faults (cp-restored): VITEST guard removed → the helper's no-VITEST test red; redirect removed from packages/engine → check-vitest-tmp real-repo test red.
 - `-w test:repo-checks` 155/155, check-all 0. CI on PR #28 was red only on AC-5 (`node-compile-cache` on the runner) → fixed in 412d52f (child env `NODE_DISABLE_COMPILE_CACHE=1`).
+
+## Accept log (product-owner, 2026-10-03, HEAD 9ab0230)
+- Verdict: **done**. Diff vs origin/main is 20 files, all inside `## Paths you may change`; no compile-cache files remain (`packages/shared/1`, `1/` gone). No contract touched.
+- AC-1: counts, sizes and the vitest code lines are in the build log; cause matches D-0159 Context.
+- AC-2: six packages plus a single-file run leave `S` empty, with counts the same as AC-1. The in-run `vitest-tmp` listing is logged. QA confirmed this, including a parallel build plus test.
+- AC-3: `git check-ignore` passes for all six `node_modules/.vite/vitest-tmp` paths (rechecked at accept).
+- AC-4: tests `T-0441 AC4` (no-config, no-cleanup, fixed, non-vitest, comment-only, real repo ≥6). Red on main: 6 findings. Wired into `check-all.mjs`.
+- AC-5: test `T-0441 AC5` (mkdtemp TMPDIR plus the redirected folder; the child gets `NODE_DISABLE_COMPILE_CACHE=1`). The planted fault turned both AC-4 and AC-5 red. CI on PR #28 is green.
+- D-0159 §5 (vitest only): `T-0441 rework` helper tests, plus the QA fault.
+- AC-6: the orchestrator follow-up is in the build log and below.
