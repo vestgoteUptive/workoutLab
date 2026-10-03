@@ -318,3 +318,69 @@ test.describe("T-0302c AC-3/AC-5/AC-9 card layout and a11y", () => {
     expect(serious).toEqual([]);
   });
 });
+
+// ---- T-0302b UF-02.2 Workout preview (/?view=preview, AC-7) ----
+// Appended rows: same `seed`, no fixture edits.
+
+const previewRoot = (page: Page) => page.locator('[data-screen-id="UF-02.2"]');
+const previewRows = (page: Page) => page.locator('[data-part="preview-row"]');
+
+test.describe("T-0302b AC-7 preview e2e and a11y", () => {
+  test("See all opens UF-02.2 with matching row count and first row", async ({ page }) => {
+    await seed(page);
+    const before = await cardTexts(page);
+    // The card's row is "{name} {sets × reps}"; the first word(s) before the digit are the name.
+    const firstName = before.rows[0]!.match(/^(.+?)\s+\d/)![1];
+    await page.getByRole("link", { name: "See all" }).click();
+    await expect(previewRoot(page)).toBeVisible();
+    await expect(previewRows(page).first()).toBeVisible();
+    const rows = await previewRows(page).allInnerTexts();
+    expect(rows.length).toBe(before.rows.length);
+    expect(rows[0]).toContain(firstName!);
+  });
+
+  test("axe on /?view=preview reports 0 serious or critical violations", async ({ page }) => {
+    await seed(page);
+    await page.goto("/?view=preview");
+    await expect(previewRows(page).first()).toBeVisible();
+    const results = await new AxeBuilder({ page }).analyze();
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious).toEqual([]);
+  });
+
+  test("Back and Start workout are each at least 44 x 44 px", async ({ page }) => {
+    await seed(page);
+    await page.goto("/?view=preview");
+    await expect(previewRows(page).first()).toBeVisible();
+    for (const locator of [
+      page.getByRole("link", { name: "Back" }),
+      page.getByRole("link", { name: "Start workout" }),
+    ]) {
+      const box = await locator.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test("offline, a reload of /?view=preview shows the same rows (D-0091 §1)", async ({
+    page,
+    context,
+  }) => {
+    await seed(page);
+    await page.goto("/?view=preview");
+    await expect(previewRows(page).first()).toBeVisible();
+    const online = await previewRows(page).allInnerTexts();
+    await waitForPrecache(page);
+
+    await context.setOffline(true);
+    await page.reload();
+
+    await expect(previewRoot(page)).toBeVisible({ timeout: 3000 });
+    await expect(previewRows(page).first()).toBeVisible({ timeout: 3000 });
+    const offline = await previewRows(page).allInnerTexts();
+    expect(offline).toEqual(online);
+  });
+});

@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import type { AreaTarget, EngineProfile, LibraryExercise } from "@workoutlab/shared";
 import { resetOfflineDbForTest, userScopedKey, type OfflineDb } from "../../../lib/offline/db.js";
 import { Today, type TodayProps } from "../Today.js";
+import { Today as TodaySwitch } from "../index.js";
 import type { HistorySet } from "@workoutlab/shared";
 
 export const TEST_USER = "22222222-2222-4222-8222-222222222222";
@@ -87,6 +88,29 @@ export function TodayTree(props: TodayProps) {
 
 export function renderToday(props: TodayProps = {}): RenderResult {
   return render(<TodayTree {...props} />);
+}
+
+/** T-0302b: the `index.tsx` switch at `/`, so `?view=preview` can render `WorkoutPreview` and a
+ * browser Back from it can land on UF-02.1 again, exactly as the shell's one route does. */
+export function SwitchTree(props: TodayProps & { initialEntries?: string[] }) {
+  const { initialEntries = ["/"], ...rest } = props;
+  return (
+    <MemoryRouter initialEntries={initialEntries}>
+      <LocationProbe />
+      <Routes>
+        <Route path="/" element={<TodaySwitch {...rest} />} />
+        <Route path="*" element={<span data-testid="elsewhere" />} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+export function renderSwitch(props: TodayProps & { initialEntries?: string[] } = {}): RenderResult {
+  return render(<SwitchTree {...props} />);
+}
+
+export function previewScreenRoot(): HTMLElement | null {
+  return document.querySelector('[data-screen-id="UF-02.2"]');
 }
 
 export function location(): string {

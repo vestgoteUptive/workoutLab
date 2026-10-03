@@ -147,3 +147,195 @@ commits start `T-0302b` and cite UF-02.2 (for example `T-0302b UF-02.2: workout 
   doesn't touch.
 
 ## Build / accept log
+
+### Build (frontend-dev, 2026-10-03)
+Start: `git status` clean, HEAD `af4bfcf` on `t/T-0302b-workout-preview`.
+
+**Change.** `features/UF-02/index.tsx` becomes a small switch on `useSearchParams().get("view")`:
+`"preview"` renders new `WorkoutPreview` (`Preview.tsx` + `preview.css`), everything else renders
+`Today` unedited (`Today.tsx`/`slots.tsx` untouched, confirmed by `git diff --stat`). Added
+`en.uf02.preview.*` keys (multi-line) to `flows/uf-02.ts`. Added `L1_WITH_WARMUP`/`WARMUP_L1`/
+`W_R7E4_WITH_WARMUP` fixtures and `SwitchTree`/`renderSwitch`/`previewScreenRoot` test helpers.
+Weight part, back-off line and rest-seconds lookup are read-only copies of UF-08.2's own logic
+(D-0124); equipment labels and separators are read-only from `en.uf04` (D-0079 §5); no deep
+cross-feature import (UF-08/UF-04 code itself is never imported, only `en.*` strings).
+
+**AC → test map** (`__tests__/preview.test.tsx` unless noted):
+- AC-1 → `"T-0302b AC-1 route"` (6 tests: screen swap, Back href, browser Back via
+  `createMemoryRouter`, C-02/pathname, no-view and unknown-view fall through to UF-02.1).
+- AC-2 → `"T-0302b AC-2 W-R7E4 as it is"` (6 tests: chips incl. `warmupInBudget` false, warm-up
+  row incl. "not counted", row order/detail/reason, reversed fixture).
+- AC-3 → `"T-0302b AC-3 weight part"` (5 tests: 80 kg, null weight never "0 kg"/"null",
+  externalLoad-false Bodyweight at weightKg 0, timed item, back-off line + sets-chip +1).
+- AC-4 → `"T-0302b AC-4 links"` (3 tests: library links, Start href, no Swap/Remove/Edit/Shuffle).
+- AC-5 → `"T-0302b AC-5 states"` (5 tests: loading skeleton, workout null, empty items, no-plan,
+  one `suggest` call with `PREVIEW_INPUT`).
+- AC-6 → `"T-0302b AC-6 offline"` (1 test: `navigator.onLine=false`, content renders, `fetch` spy
+  not called).
+- AC-7 → `tests/e2e/uf-02-today.spec.ts` `"T-0302b AC-7 preview e2e and a11y"` (4 Playwright
+  tests: See-all row-count/first-row match, axe 0 serious/critical, Back/Start ≥44×44, offline
+  reload shows the same rows).
+- AC-8 → `"T-0302b AC-8 exports and boundaries"` plus the unedited `source.test.ts` AC-13 check
+  (index.tsx exports exactly `Today`); `jsx-no-literals` green (`eslint` exit 0 on the new/changed
+  files); `flows/uf-02.ts` kept its multi-line shape; `Today.tsx`/`slots.tsx` diff is empty; all
+  111 pre-existing UF-02 tests pass unedited (138 total after adding `preview.test.tsx`'s 27).
+
+**Red-on-main proof.** Reverted `index.tsx` to `git show HEAD:...` (the export-only version) with
+every other T-0302b file left in place, ran `preview.test.tsx -t AC-1`: 4 of 6 AC-1 tests fail
+(the core "`/?view=preview` renders UF-02.2, not UF-02.1" case among them). Restored the fixed
+`index.tsx` from the pre-revert copy; full suite green again (138/138).
+
+**Planted-fault proof.** Backed up `Preview.tsx`, sorted the `<ol>` rows by `exerciseId` before
+render (the fault). `preview.test.tsx -t reversed` (AC-2's reversed-fixture row) failed as
+expected (26 other tests in the file still skipped/passed, isolated to that one). Restored
+`Preview.tsx` from the backup copy (`cp`, not `git checkout`); full suite green again.
+
+**Gate (cached, via `scripts/locked.sh heavy`).**
+`npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`: 19/19 tasks, 243 test files / 3381
+tests passed, 0 failed (run twice — once before, once after a `prettier --write` pass on 3 new/
+changed files; both green). `npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 node:test
+assertions passed. `npx -y pnpm@10.28.2 -w format:check`: clean after the prettier fix.
+`node .github/scripts/check-all.mjs`: exit 0. `check:size` (fresh `VITE_SUPABASE_URL`/
+`VITE_SUPABASE_ANON_KEY` build): exit 0; the UF-02 route chunk (`index-BJB6FTSj.js`, static
+import of `Preview.tsx`) is 11.12 kB / 3.48 kB gzip, well under the 100 KB gzip lazy-chunk budget.
+e2e: `playwright test uf-02-today.spec.ts` — 10/10 passed (6 pre-existing + 4 new T-0302b rows).
+
+**Contracts.** Unchanged. No decision needed; D-0168 §3's defaults covered every open point
+(which `Workout`, equipment-label source, rest-length rule).
+
+Files changed: `features/UF-02/index.tsx`, `features/UF-02/Preview.tsx` (new),
+`features/UF-02/preview.css` (new), `features/UF-02/__tests__/preview.test.tsx` (new),
+`features/UF-02/__tests__/fixtures.ts`, `features/UF-02/__tests__/helpers.tsx`,
+`lib/i18n/flows/uf-02.ts`, `tests/e2e/uf-02-today.spec.ts`.
+
+### Code review (code-reviewer, 2026-10-03)
+**Verdict: approve.**
+
+Checked against `git diff main...HEAD` (HEAD `a6e5242`):
+- **Lane/paths.** Every changed path matches "Paths you may change": `features/UF-02/**` (new
+  `Preview.tsx`, `preview.css`, `__tests__/preview.test.tsx`, edits to `index.tsx`,
+  `__tests__/fixtures.ts`, `__tests__/helpers.tsx`) plus the listed extras
+  (`lib/i18n/flows/uf-02.ts`, `tests/e2e/uf-02-today.spec.ts`, this ticket file).
+  `git diff main...HEAD --stat -- Today.tsx slots.tsx` is empty — confirmed genuinely untouched,
+  matching the build log's claim.
+- **Contracts.** `git diff main...HEAD --name-only` has no hit on `engine-rules|data-model|openapi|
+  design-tokens`. None touched; none needed (D-0168 §3 pre-decided the open points).
+- **D-0168 §3 defaults, followed not reinterpreted.** `Preview.tsx` imports `useToday` and
+  `PREVIEW_INPUT` from `./use-today.js` — the same hook and input `Today.tsx` itself calls
+  (`Today.tsx:98`, `use-today.ts:142`), so it is the same cache/clock → same `Workout`, one
+  `suggest` call per mount, never a second input. Equipment labels come from `en.uf04.equipment`
+  (read-only; `flows/uf-04.ts` diff is empty). Rest seconds: `restSecondsFor` looks up
+  `REST_COMPOUND_S`/`REST_ISOLATION_S` imported straight from `@workoutlab/engine`
+  (`packages/engine/src/cost.ts`: 120/60), mirroring UF-09 `machine.ts`'s `restFor` exactly,
+  including the same "missing library row reads as compound" fallback.
+- **Principle 3 (deterministic engine).** `Preview.tsx` only renders `workout.plan.items` in plan
+  order — no sort, filter or pick of exercises. `equipmentUnion`/`setsCount` are display-only
+  reductions over the engine's own output (dedupe for the chip, a count for the chip), not
+  selection logic. Confirmed with the planted-fault proof in the build log (sorting rows by id
+  broke the reversed-fixture test) and verified independently: `scripts/locked.sh small` rerun of
+  `preview.test.tsx` is 27/27 green, and the full `UF-02` folder is 138/138 green (111
+  pre-existing + 27 new), matching the log's numbers exactly.
+- **Tests.** AC→test map in the build log is accurate; each AC has a corresponding titled test
+  block. Red-on-main and planted-fault proofs are both present and described with enough detail
+  to be credible (revert method, which tests failed, restore method). No test skipped or weakened.
+- **Security/NFRs.** No new table, no Edge Function, no secret. Not applicable here beyond what's
+  already covered by AC-6/AC-7 (offline, a11y) in the ticket.
+
+No findings. Nothing in this diff needs a follow-up or triage.
+
+### QA (qa-tester, 2026-10-03)
+**Verdict: done.** Start: `git status` clean, HEAD `b38fdc1` on `t/T-0302b-workout-preview`.
+
+**Behind-main check.** Branch is 13 behind / 2 ahead of main. `git merge --no-commit --no-ff main`
+in a scratch clone completes with zero conflicts (all upstream changes are UF-08/squad-journal
+files, disjoint from this ticket's UF-02 paths). Clean behind-main per D-0169 §2: no action needed
+from QA; left for the orchestrator's forced gate on `main`.
+
+**AC → test map, verified independently** (all in `preview.test.tsx` unless noted): AC-1 → 6
+"T-0302b AC-1 route" tests; AC-2 → 6 "AC-2" tests (chip math re-derived by hand: 1725s→29min,
+1545s→26min, 9 sets, all match); AC-3 → 5 "AC-3" tests; AC-4 → 3 "AC-4" tests; AC-5 → 5 "AC-5"
+tests; AC-6 → 1 "AC-6" test; AC-7 → 4 appended Playwright rows in `uf-02-today.spec.ts`; AC-8 →
+1 "AC-8" test + diff-stat check. Every AC has a test that would fail without the feature (shown by
+the red-on-main and planted-fault reproductions below) — none is a tautology.
+
+**Red-on-main reproduced.** Backed up the fixed `index.tsx`, replaced it with `git show
+main:.../index.tsx` (export-only), ran `scripts/locked.sh small npx vitest run
+src/features/UF-02/__tests__/preview.test.tsx -t AC-1` from `apps/web`: 4 of 6 AC-1 tests failed,
+2 passed — matches the build log exactly. Restored from the backup copy (`cp`); AC-1 tests green
+again.
+
+**Planted-fault (builder's) reproduced.** Backed up `Preview.tsx`, sorted the `<ol>` rows by
+`exerciseId` before render. `scripts/locked.sh small npx vitest run .../preview.test.tsx -t
+reversed`: the reversed-fixture test failed exactly as the build log describes (1 failed, 26
+skipped). Restored from the backup copy; 27/27 green again.
+
+**Planted fault (QA's own).** Backed up `Preview.tsx`, flipped `weightPart`'s guard from
+`exercise?.externalLoad === false` to `=== true` (inverts Bodyweight vs. real-weight display).
+`scripts/locked.sh small npx vitest run .../preview.test.tsx -t AC-3`: 2 of 5 AC-3 tests failed
+(bench-press's 80 kg case now showed "Bodyweight"; inverted-row's externalLoad-false case now
+showed "0 kg"), proving AC-3's tests are meaningful. Restored from the backup copy; 27/27 green.
+
+**Full preview + folder reruns.** `scripts/locked.sh small npx vitest run
+src/features/UF-02/__tests__/preview.test.tsx`: 27/27. `scripts/locked.sh small npx vitest run
+src/features/UF-02`: 138/138 (111 pre-existing unedited + 27 new), matching the build log.
+
+**e2e.** `scripts/locked.sh heavy npx playwright test --config ../../tests/e2e/playwright.config.ts
+uf-02-today.spec.ts` from `apps/web`: 10/10 passed, including all 4 new "T-0302b AC-7" rows
+(row-count/first-row match, axe 0 serious/critical, Back/Start ≥44×44, offline reload shows same
+rows). Every test in this spec runs through the shared `consoleGuard` auto-fixture
+(`fixtures/guarded-test.ts`), which fails a test on any `console.error` or `pageerror` — all 10
+passed, so console output is clean, confirmed without a separate check.
+
+**Untouched-files claim.** `git diff main...HEAD --stat -- Today.tsx slots.tsx
+apps/web/src/features/UF-02/Today.tsx apps/web/src/features/UF-02/slots.tsx` is empty: both files
+are genuinely untouched, confirming the build and review logs.
+
+**Edge cases.** Zero history / brand-new user: covered by AC-5's `no-plan` test (`loadProfile`
+resolves `null`) and AC-3's null-`weightKg` test (never "0 kg"/"null"). Offline: AC-6 (unit, fetch
+spy) and AC-7's last row (real reload with `context.setOffline(true)`) both green. Going back
+mid-flow: AC-1's `createMemoryRouter` browser-Back test lands back on UF-02.1. Timers-crossing-zero
+and a live 15-minute countdown don't apply to this static preview screen (no timer renders here;
+Start simply links to UF-08.1, which owns the budget question) — nothing in this ticket's scope is
+left unexercised by that gap.
+
+**Lint/boundaries.** `scripts/locked.sh small npx eslint src/features/UF-02/Preview.tsx
+src/features/UF-02/index.tsx src/lib/i18n/flows/uf-02.ts`: clean, exit 0. `uf-02.ts` diff is
+added-keys-only, multi-line, matching the ticket's listed key names exactly. Did not rerun the full
+gate (qa-tester role, D-0158): targeted reruns only.
+
+No gaps found. `git status` clean at the end; HEAD unchanged (`b38fdc1`).
+
+### Accept (product-owner, 2026-10-03)
+**Verdict: done.** Start: `git status` clean, HEAD `c345223` on `t/T-0302b-workout-preview`.
+
+Checked the build/review/QA logs above against the 8 ACs and `CLAUDE.md`'s definition of done.
+Independently re-verified the two load-bearing boundary claims rather than trusting the logs alone:
+`git diff main...HEAD --stat -- .../Today.tsx .../slots.tsx` is empty (genuinely untouched, third
+confirmation after build and QA); `git diff main...HEAD --name-only` has no hit on
+`engine-rules|data-model|openapi|design-tokens` (contracts unchanged, matching "Contract impact:
+None"). Full diff stat (9 files, `Preview.tsx`/`preview.css`/`preview.test.tsx` new, `fixtures.ts`/
+`helpers.tsx`/`uf-02.ts`/`uf-02-today.spec.ts` appended, `index.tsx` a 15-line switch) matches
+every path in "Paths you may change" with no extras.
+
+Every AC has at least one test cited in the build log's AC→test map, re-verified by QA
+independently with its own fault (the `externalLoad` guard flip on AC-3) on top of reproducing
+both the red-on-main and the builder's planted-fault proofs — three independent demonstrations
+that the tests are meaningful, not tautological. e2e 10/10 including the 4 new AC-7 rows (row
+count/first row, axe 0 serious/critical, Back/Start ≥44×44, offline reload same rows). Full UF-02
+vitest 138/138 (111 pre-existing unedited + 27 new). Lint/boundaries clean, `uf-02.ts` kept its
+added-keys-only multi-line shape. Principle 3 (deterministic engine) and principle 1/2 (one task
+on screen, time budget) hold: `Preview.tsx` only renders `workout.plan.items` in plan order, Start
+always goes to `/session/setup` (UF-08.1) which asks the time question; no Swap/Remove/Edit/Shuffle
+control exists on this screen (AC-4).
+
+Branch is ahead 3 / behind 13 of main at accept time (drift since QA's 13/2 check, from unrelated
+merges landing on main); re-confirmed disjoint via the unchanged `git diff --name-only` path list
+above (still only UF-02 lane paths + listed extras) — no new conflict risk introduced. Left
+unmerged per D-0169 §2: the orchestrator runs the forced full gate on `main` after merge. Did not
+run the full gate or push, per this role's instructions.
+
+Verdict: **done**. All 8 ACs have passing, independently-reproduced tests; contracts unchanged;
+`Today.tsx`/`slots.tsx` untouched; commits cite `T-0302b` and UF-02.2 throughout. No follow-ups
+beyond what QA already logged (none).
+
+`git status` clean at the end; HEAD unchanged (`c345223`).
