@@ -85,6 +85,8 @@ mandatory: the assertion enumerates the directory, so the list can't go stale.
 
 ## Paths you may change
 `tests/e2e/**` (qa).
+- **Listed extras:**
+  - `docs/tickets/T-0356-e2e-guard-glob.md`: this file, for the build, QA and accept logs (added 2026-10-03 by the orchestrator).
 
 ## Contract impact
 none. D-0090 amends D-0086 (process, not a contract).
