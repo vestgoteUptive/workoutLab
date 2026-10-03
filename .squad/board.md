@@ -136,7 +136,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | todo | wl-build-web |
 | T-0467 | check-lane-paths doc nit: add the one-line D-0167 §1 own-ticket-file note to the file header and the listedPathsFromTicket doc comment; AC-3 test should also assert the finding points at the ticket path (T-0466 review/accept) | infra | T-0466 | todo | wl-build-infra |
 | T-0469 | UF-11.4 Account settings e2e (split from T-0310d, D-0168; fixtures D-0172 §6) | web-feature:UF-11 | T-0310d | doing | wl-build-web |
-| T-0470 | UF-11.1 CheckinCard writes: Accept/Keep, first-shown insert, second device, offline (split from T-0308c, D-0168; D-0172 §1–§2) | web-feature:UF-11 | T-0308c | doing | wl-build-web |
 | T-0471 | UF-11.1 CheckinCard mounts on UF-11.2 + UF-02.1 (slots.tsx) and e2e (split from T-0308c, D-0168) | web-feature:UF-11 | T-0470 | todo | wl-build-web |
 | T-0472 | UF-03.1: after a reload, unchecking a logged added row removes the row and drops focus to body — keep the row or move focus to '+ Add set' (T-0457 review) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
 | T-0473 | UF-03.1 AC-6: add a vitest that pressing + Add set on a timed item moves focus to the new row's seconds field (untested; T-0457 accept) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
