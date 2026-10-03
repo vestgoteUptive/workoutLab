@@ -1,5 +1,5 @@
 ---
-id: D-0169
+id: D-0171
 title: "T-0303c AC-2 asserts the row's reason line equals itemReasonLine(result reasons), not that it contains 'Swapped to save time': the two-reason cap hides the swap reason"
 status: revisit
 date: 2026-10-03

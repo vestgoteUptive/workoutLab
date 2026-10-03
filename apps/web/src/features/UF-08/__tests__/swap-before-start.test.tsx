@@ -290,7 +290,7 @@ describe("AC-2 apply renders the engine result", () => {
     const reason = document
       .querySelectorAll('[data-part="item-row"]')[1]!
       .querySelector('[data-part="row-reason"]')!.textContent!;
-    // D-0169: the two-reason cap in `itemReasonLine` cuts the swap line; the engine still has it.
+    // D-0171: the two-reason cap in `itemReasonLine` cuts the swap line; the engine still has it.
     expect(applied!.plan.items[1]!.reasons).toContainEqual({
       code: "swap",
       reason: "short_on_time",
