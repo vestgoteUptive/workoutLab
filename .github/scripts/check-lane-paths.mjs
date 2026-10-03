@@ -33,6 +33,17 @@ const LINT_CONFIG = "apps/web/eslint.config.mjs";
 const ROUTES = "apps/web/src/app/routes.ts";
 const FLOW_FILE_RE = /^apps\/web\/src\/lib\/i18n\/flows\/uf-([0-9a-z]+)\.ts$/;
 
+/**
+ * T-0466 / D-0167 §1: a ticket's own file (a direct child `docs/tickets/<id>-*.md`) is always its
+ * own, with no Listed-extras line. Shared with `readTicketAtBase` so the two cannot drift.
+ */
+export function isOwnTicketFile(filePath, ticketId) {
+  if (!filePath || !ticketId) return false;
+  const dir = path.posix.dirname(filePath);
+  const base = path.posix.basename(filePath);
+  return dir === "docs/tickets" && base.startsWith(`${ticketId}-`) && base.endsWith(".md");
+}
+
 const BRANCH_RE = /^t\/(T-\d{4}[a-z]?)-.+$/;
 
 /**
@@ -280,7 +291,7 @@ export function laneFromTicket(ticketText) {
 }
 
 /**
- * The rule (AC-5 … AC-8). Pure: every input is a string or an array, so the test suite never
+ * The rule (AC-5 … AC-8). A ticket's own `docs/tickets/<id>-*.md` is always allowed (D-0167 §1). Pure: every input is a string or an array, so the test suite never
  * shells out to git and never depends on the branch the runner happens to be on.
  *
  * @param {object} input
@@ -325,6 +336,7 @@ export function checkLanePaths({
 
   for (const filePath of changed) {
     if (!filePath) continue;
+    if (isOwnTicketFile(filePath, ticketId)) continue; // D-0167 §1: the ticket's own file, always
     if (matchesAny(filePath, listed)) continue; // the D-0071 §1 listed-extra escape hatch
     const shared = SHARED_RULES.find((r) => r.test(filePath, ctx));
     if (shared) {
@@ -448,7 +460,7 @@ export function resolveChangedPaths(git) {
 function readTicketAtBase(git, base, ticketId) {
   try {
     const names = git(["ls-tree", "--name-only", base, "docs/tickets/"]).split("\n").map((l) => l.trim());
-    const relPath = names.find((n) => path.posix.basename(n).startsWith(`${ticketId}-`) && n.endsWith(".md"));
+    const relPath = names.find((n) => isOwnTicketFile(n, ticketId));
     if (!relPath) return null;
     return { relPath, text: git(["show", `${base}:${relPath}`]) };
   } catch {

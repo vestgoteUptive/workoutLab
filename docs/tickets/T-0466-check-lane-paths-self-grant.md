@@ -5,7 +5,7 @@ lane: infra
 screens: []
 decisions: [D-0167, D-0074, D-0071, D-0157]
 deps: []
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner. Build flow: wl-build-infra. About ¼ day. It changes .github/scripts, so it needs a draft PR (orchestrator). -->
 
@@ -90,3 +90,4 @@ and `check-all` green · contracts unchanged · commits start `T-0466`.
   `apps/web/**`). Its tests are `node --test` repo checks, so it needs no e2e run.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0466.md` (D-0157).

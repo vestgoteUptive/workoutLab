@@ -4,7 +4,7 @@
 // import UF-09, D-0142 §5), plus IndexedDB; no `refresh*` (D-0111 §11), so it renders offline.
 // Principle 3: the rows show the engine's pre-fill (`item.prefill`, `item.backoff`); "Previous" is
 // display data only. Logging from the rows is T-0417.
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import type { LibraryExercise, SessionPlan, WorkoutItem } from "@workoutlab/shared";
 import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
@@ -12,7 +12,27 @@ import { itemSummary, restLabel } from "../../lib/i18n/workout.js";
 import { loadExerciseDetail } from "../../lib/offline/index.js";
 import { ExerciseHowTo } from "../UF-04/index.js";
 import { loadListData, previousSets, type ListData } from "./list-data.js";
+import { parseCount, parseWeight } from "./weight-parse.js";
 import "./list-view.css";
+
+/** What a check sends to `ctx.recordSet` (the real `FocusSetInput`, `source: "list"`). */
+export interface ListSetInput {
+  sessionId: string;
+  exerciseId: string;
+  setIndex: number;
+  kind: "reps" | "timed";
+  reps: number | null;
+  weightKg: number | null;
+  durationS: number | null;
+  rir: null;
+  isWarmup: false;
+  backoff: boolean;
+  itemIndex: number;
+  source: "list";
+}
+
+/** One field of a done row, changed (the real `SetEdit` accepts it). */
+export type ListSetEdit = { weightKg: number } | { reps: number } | { durationS: number };
 
 /** The part of `useFocusSession()` the List view reads (D-0142 §5): its own type, so UF-03 has no
  *  import of UF-09. The real value is assignable to it. */
@@ -20,6 +40,7 @@ export interface ListViewCtx {
   sessionId: string;
   plan: SessionPlan;
   loggedSets: readonly {
+    clientId: string;
     itemIndex: number;
     setIndex: number;
     exerciseId: string;
@@ -29,6 +50,10 @@ export interface ListViewCtx {
   }[];
   currentItemIndex: number;
   elapsedS: number;
+  /** Every List-view write goes through these three (D-0071 §5), never `lib/offline`. */
+  recordSet(input: ListSetInput): Promise<unknown>;
+  editSet(clientId: string, patch: ListSetEdit): Promise<void>;
+  deleteSet(clientId: string): Promise<void>;
   close(): void;
   finish(): Promise<void>;
 }
@@ -79,6 +104,217 @@ interface CardProps {
   onHowTo(): void;
 }
 
+type Draft = { weight: string | null; reps: string | null; seconds: string | null };
+const NO_DRAFT: Draft = { weight: null, reps: null, seconds: null };
+
+interface RowProps {
+  ctx: ListViewCtx;
+  item: WorkoutItem;
+  index: number;
+  i: number;
+  backoff: boolean;
+  timed: boolean;
+  showKg: boolean;
+  locale: string | undefined;
+  prevText: string;
+}
+
+/** One set row: check → `ctx.recordSet`, edit → `ctx.editSet` once on blur/Enter, uncheck →
+ *  `ctx.deleteSet` (a tombstone). Every write goes through `ctx` (D-0071 §5). The row shows as
+ *  done only after the write resolves. */
+function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText }: RowProps) {
+  const n = i + 1;
+  const hintId = useId();
+  const countHintId = useId();
+  const [draft, setDraft] = useState<Draft>(NO_DRAFT);
+  const [pending, setPending] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const busy = useRef(false);
+  const logged = ctx.loggedSets.find(
+    (s) => s.itemIndex === index && s.setIndex === i && s.exerciseId === item.exerciseId,
+  );
+  const baseWeight = logged
+    ? logged.weightKg
+    : backoff
+      ? item.backoff!.weightKg
+      : item.prefill.weightKg;
+  const baseReps = logged
+    ? logged.reps
+    : backoff
+      ? item.backoff!.reps
+      : (item.prefill.reps ?? item.repsMin);
+  const baseSeconds = logged ? logged.durationS : (item.prefill.durationS ?? item.durationS);
+  const weightText = draft.weight ?? (baseWeight === null ? "" : formatDecimal(baseWeight, locale));
+  const repsText = draft.reps ?? (baseReps === null ? "" : `${baseReps}`);
+  const secondsText = draft.seconds ?? (baseSeconds === null ? "" : `${baseSeconds}`);
+
+  // An untouched field stands for its exact value (D-0128 §4); typed text is parsed.
+  let weightKg: number | null = baseWeight;
+  let weightInvalid = false;
+  if (showKg && draft.weight !== null) {
+    const parsed = parseWeight(draft.weight);
+    // Text equal to the opening text stands for the exact value (82.125 stays, D-0128 §4).
+    if (baseWeight !== null && draft.weight.trim() === formatDecimal(baseWeight, locale)) {
+      weightKg = baseWeight;
+    } else if (parsed.ok) weightKg = parsed.value;
+    else weightInvalid = true;
+  }
+  // A loaded lift needs a weight (empty is valid only on a bodyweight item, which has no field).
+  if (showKg && weightKg === null) weightInvalid = true;
+  // Reps or seconds: whole numbers only, never silently replaced by the pre-fill.
+  const countText = timed ? secondsText : repsText;
+  const countInvalid = parseCount(countText) === null;
+  const blocked = !logged && (weightInvalid || countInvalid);
+
+  const run = (write: () => Promise<unknown>) => {
+    busy.current = true;
+    setPending(true);
+    setFailed(false);
+    write().then(
+      () => {
+        busy.current = false;
+        setPending(false);
+        setDraft(NO_DRAFT);
+      },
+      () => {
+        busy.current = false;
+        setPending(false);
+        setDraft(NO_DRAFT);
+        setFailed(true);
+      },
+    );
+  };
+
+  const onToggle = () => {
+    if (busy.current) return;
+    if (logged) {
+      run(() => ctx.deleteSet(logged.clientId));
+      return;
+    }
+    if (blocked) return;
+    const reps = draft.reps === null ? baseReps : parseCount(draft.reps);
+    const seconds = draft.seconds === null ? baseSeconds : parseCount(draft.seconds);
+    run(() =>
+      ctx.recordSet({
+        sessionId: ctx.sessionId,
+        exerciseId: item.exerciseId,
+        setIndex: i,
+        kind: timed ? "timed" : "reps",
+        reps: timed ? null : reps,
+        weightKg: timed ? null : weightKg,
+        durationS: timed ? seconds : null,
+        rir: null,
+        isWarmup: false,
+        backoff,
+        itemIndex: index,
+        source: "list",
+      }),
+    );
+  };
+
+  /** Blur or Enter on a done row's field: one `editSet`, only when the parsed value changed. */
+  const commit = (field: keyof Draft) => {
+    const text = draft[field];
+    if (text === null || !logged || busy.current) return;
+    const keep = () => setDraft(NO_DRAFT);
+    if (field === "weight") {
+      const parsed = parseWeight(text);
+      if (!parsed.ok || parsed.value === null) return keep();
+      if (parsed.value === logged.weightKg || text.trim() === weightTextOf(logged.weightKg)) {
+        return keep();
+      }
+      const kg = parsed.value;
+      run(() => ctx.editSet(logged.clientId, { weightKg: kg }));
+      return;
+    }
+    const value = parseCount(text);
+    const current = field === "reps" ? logged.reps : logged.durationS;
+    if (value === null || value === current) return keep();
+    run(() =>
+      ctx.editSet(logged.clientId, field === "reps" ? { reps: value } : { durationS: value }),
+    );
+  };
+  const weightTextOf = (v: number | null) => (v === null ? "" : formatDecimal(v, locale));
+
+  const fieldProps = (field: keyof Draft) => ({
+    onChange: (e: ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setDraft((d) => ({ ...d, [field]: value }));
+    },
+    onBlur: () => commit(field),
+    onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") commit(field);
+    },
+  });
+
+  return (
+    <tr data-part="set-row" data-set-index={i} data-logged={logged ? "" : undefined}>
+      <th scope="row">{backoff ? uf03.backoffRow : n}</th>
+      <td data-part="previous">{prevText}</td>
+      {showKg ? (
+        <td>
+          <input
+            type="text"
+            inputMode="decimal"
+            aria-label={uf03.weightLabel(n)}
+            aria-describedby={!logged && weightInvalid ? hintId : undefined}
+            value={weightText}
+            {...fieldProps("weight")}
+          />
+          <span id={hintId} className="wl-uf03-list__hint" aria-live="polite">
+            {!logged && weightInvalid ? uf03.weightHint(formatDecimal(82.5, locale)) : null}
+          </span>
+        </td>
+      ) : null}
+      <td>
+        {timed ? (
+          <>
+            <input
+              type="text"
+              inputMode="numeric"
+              aria-label={uf03.secondsLabel(n)}
+              aria-describedby={!logged && countInvalid ? countHintId : undefined}
+              value={secondsText}
+              {...fieldProps("seconds")}
+            />
+            <span className="wl-uf03-list__unit">{uf03.secondsUnit}</span>
+            <span id={countHintId} className="wl-uf03-list__hint" aria-live="polite">
+              {!logged && countInvalid ? uf03.secondsHint : null}
+            </span>
+          </>
+        ) : (
+          <>
+            <input
+              type="text"
+              inputMode="numeric"
+              aria-label={uf03.repsLabel(n)}
+              aria-describedby={!logged && countInvalid ? countHintId : undefined}
+              value={repsText}
+              {...fieldProps("reps")}
+            />
+            <span id={countHintId} className="wl-uf03-list__hint" aria-live="polite">
+              {!logged && countInvalid ? uf03.repsHint : null}
+            </span>
+          </>
+        )}
+      </td>
+      <td>
+        <input
+          type="checkbox"
+          checked={logged !== undefined}
+          aria-label={logged ? uf03.markNotDone(n) : uf03.markDone(n)}
+          aria-disabled={blocked ? true : undefined}
+          aria-busy={pending ? true : undefined}
+          onChange={onToggle}
+        />
+        <span className="wl-uf03-list__hint" aria-live="polite" data-part="row-status">
+          {failed ? uf03.rowSaveFailed : null}
+        </span>
+      </td>
+    </tr>
+  );
+}
+
 function Rows({ ctx, data, index, locale }: Omit<CardProps, "current" | "onHowTo">) {
   const item = ctx.plan.items[index]!;
   const exercise = data.library.find((e) => e.id === item.exerciseId);
@@ -99,22 +335,6 @@ function Rows({ ctx, data, index, locale }: Omit<CardProps, "current" | "onHowTo
       </thead>
       <tbody>
         {rows.map((i) => {
-          const backoff = item.backoff !== null && i >= item.sets;
-          const n = i + 1;
-          const logged = ctx.loggedSets.find(
-            (s) => s.itemIndex === index && s.setIndex === i && s.exerciseId === item.exerciseId,
-          );
-          const weight = logged
-            ? logged.weightKg
-            : backoff
-              ? item.backoff!.weightKg
-              : item.prefill.weightKg;
-          const reps = logged
-            ? logged.reps
-            : backoff
-              ? item.backoff!.reps
-              : (item.prefill.reps ?? item.repsMin);
-          const seconds = logged ? logged.durationS : (item.prefill.durationS ?? item.durationS);
           const prev = previous[i];
           let prevText: string = uf03.noPrevious;
           if (prev) {
@@ -128,56 +348,18 @@ function Rows({ ctx, data, index, locale }: Omit<CardProps, "current" | "onHowTo
             }
           }
           return (
-            <tr
+            <SetRow
               key={i}
-              data-part="set-row"
-              data-set-index={i}
-              data-logged={logged ? "" : undefined}
-            >
-              <th scope="row">{backoff ? uf03.backoffRow : n}</th>
-              <td data-part="previous">{prevText}</td>
-              {showKg ? (
-                <td>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    readOnly
-                    aria-label={uf03.weightLabel(n)}
-                    value={weight === null ? "" : formatDecimal(weight, locale)}
-                  />
-                </td>
-              ) : null}
-              <td>
-                {timed ? (
-                  <>
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      readOnly
-                      aria-label={uf03.secondsLabel(n)}
-                      value={seconds === null ? "" : `${seconds}`}
-                    />
-                    <span className="wl-uf03-list__unit">{uf03.secondsUnit}</span>
-                  </>
-                ) : (
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    readOnly
-                    aria-label={uf03.repsLabel(n)}
-                    value={reps === null ? "" : `${reps}`}
-                  />
-                )}
-              </td>
-              <td>
-                <input
-                  type="checkbox"
-                  readOnly
-                  checked={logged !== undefined}
-                  aria-label={logged ? uf03.markNotDone(n) : uf03.markDone(n)}
-                />
-              </td>
-            </tr>
+              ctx={ctx}
+              item={item}
+              index={index}
+              i={i}
+              backoff={item.backoff !== null && i >= item.sets}
+              timed={timed}
+              showKg={showKg}
+              locale={locale}
+              prevText={prevText}
+            />
           );
         })}
       </tbody>

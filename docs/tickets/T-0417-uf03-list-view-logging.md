@@ -5,7 +5,7 @@ lane: web-feature:UF-03
 screens: [UF-03.1, UF-09.9, UF-09.3]
 decisions: [D-0142, D-0164, D-0015, D-0045, D-0066, D-0071, D-0118, D-0128, D-0153]
 deps: [T-0416, T-0415, T-0420]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner; re-groomed 2026-10-03 against main after T-0415, T-0416 and T-0420 merged. Split by D-0164 §1: "+ Add set" is T-0457 and the List view e2e is T-0458. Build flow: wl-build-web. About ½ day. -->
 
@@ -161,3 +161,4 @@ start `T-0417` and cite the screen (for example `T-0417 UF-03.1: check records t
 - **E2e runs:** use `TMPDIR=$HOME/.cache/wl-pw-tmp` if the T-0440 preflight asks for it.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0417.md` (D-0157).
