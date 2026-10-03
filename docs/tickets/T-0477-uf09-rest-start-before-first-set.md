@@ -102,7 +102,7 @@ must fail on main's code. The build log records that red and the planted fault b
 - **AC-3 (host: List view during the warm-up).** Given P1 seeded and a focus state on `warmup`
   (`warmupIndex: 0`, warm-up timer 40 s started at NOW, `warmupStartedAtMs: NOW`), paused, with the
   List view opened from UF-09.9, when `advance(20_000)`, then
-  `ctx.recordSet(benchInput(0), { source: "list" })` resolves and `ctx.startRest("bench-press")`
+  `ctx.recordSet({ ...benchInput(0), source: "list" })` resolves and `ctx.startRest("bench-press")`
   is called:
   - `ctx.rest.remainingS` is 120, and `storedFocus()` has `phase: "rest"`,
     `warmupSpentMs: 20_000`, `warmupStartedAtMs: null`;
