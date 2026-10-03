@@ -121,3 +121,73 @@ screen (for example `T-0468 UF-09.3: ten offline sets survive a closed page`).
   message (`TMPDIR=$HOME/.cache/wl-pw-tmp`).
 
 ## Build / accept log
+
+### Build (frontend-dev, 2026-10-03)
+Branch `t/T-0468-uf09-offline-e2e`, HEAD `af4bfcf` at start, tree clean. Added one new file,
+`tests/e2e/uf-09-offline.spec.ts`; no `features/UF-09/**` fix was needed (no row exposed an app
+bug). Set-count builder (scratch `packages/engine/src/__tests__/zzz-probe.test.ts`, run then
+deleted, repo clean before/after): at zero history with this spec's library/profile fixtures, the
+"45 minutes" chip gives 5 items / 15 sets (bench-press×4, inverted-row×3, back-squat×3,
+calf-raise×3, leg-curl×2), none timed — used for AC-1 (≥ 11 required). "30 minutes" (1 set) is
+enough for AC-2/AC-3.
+
+Two defaults picked (not contract changes, recorded for traceability rather than as new D-NNNNs
+since they only affect this spec's own helpers):
+- **Offline-safe navigation into a lazy route.** A click-driven SPA transition into a never-yet-
+  loaded `React.lazy` chunk, made while `context.setOffline(true)`, failed with "Unable to preload
+  CSS for …" even once the workbox precache held the asset and even after visiting the route once
+  online earlier (every lazy mount re-inserts its own `<link>`, not just the first). Fixed by
+  having `openHome`/`startFromReady` reach UF-08.1 only through `page.goto("/session/setup")`
+  (the `uf-08-setup.spec.ts` offline row's own pattern: hard navigation online, then the same hard
+  navigation again once offline) — never a click from `/`. UF-09's own chunk load (Start →
+  `/session/<id>`, also offline) was not affected by this in practice.
+- **A test-controlled `networkGate` for `recordWrites`.** `context.setOffline(true)` does not
+  stop a mocked `page.route` handler from fulfilling (D-0086 §4's own finding). `AutoSync`'s
+  mount-time `handle.flushNow()` (`apps/web/src/lib/offline/AutoSync.tsx`) runs unconditionally,
+  with no `navigator.onLine` guard, so the "close and reopen" row's fresh second page was flushing
+  the whole 10-set queue through the mock before the test ever called `setOffline(false)` —
+  observed as the reopened page losing all 10 `wl-offline.sets` rows. `recordWrites` now takes a
+  `{online: boolean}` gate and aborts a write (`route.abort("internetdisconnected")`) while it is
+  false, flipped to `true` only when the test itself goes online — so a recorded "send" always
+  matches what a real offline device would have done.
+
+**AC → test map** (`tests/e2e/uf-09-offline.spec.ts`):
+- AC-1 → `T-0468 AC-1 start, 10 sets, a closed page, reopen, then flush on reconnect` — offline
+  start with the 45-minute chip (≥ 11 planned sets asserted from the stored plan), 10 sets through
+  Done set/Save with one real 5 s auto-save, close-and-reopen same `data-screen-id`/heading, exactly
+  10 distinct-`clientId` non-warmup `wl-offline.sets` rows in plan order, no `sessions`/
+  `session_sets` request while offline, then online within 10 s: the session row lands, then 10
+  `session_sets` rows, session write before any set write.
+- AC-2 → `T-0468 AC-2 both offline, each logs a set, both online: two sessions, no merge` — two
+  `browser.newContext()`s, each with its own `installSupabaseGuard`, each offline + 1 set, both
+  online: exactly 2 distinct `sessions` ids across both recorders, each context's `session_sets`
+  rows carry only its own session id, neither guard reports an unclaimed request.
+- AC-3 → `T-0468 AC-3 every assert point above holds one [data-screen-id] and no navigation` —
+  one `[data-screen-id]` and zero `navigation` landmarks after Start and after 3 logged sets,
+  offline.
+
+**Red proof** (each fault on a backup copy under `/tmp`, restored with `cp`; `git status` clean
+before and after all three):
+- AC-1 (IndexedDB count): `features/UF-09/session.tsx` `writeSet` — every 10th call fabricates a
+  `clientId`/queued row instead of calling `queueRecordSet`, so that row never reaches
+  `wl-offline.sets`. Red: `sets` has length 9, not 10 (caught exactly at the `toHaveLength(10)`
+  assert).
+- AC-1 (close-and-reopen): `features/UF-09/load.ts` — `readFocusState`'s result is discarded
+  (`const stored = null`), so a restore always falls back to `initialFocusState` (UF-09.1). Red:
+  the `data-screen-id` match on the reopened page fails ("element(s) not found").
+- AC-2 (two-ids, fault lives in the test): both `pageA` and `contextB` get an
+  `addInitScript`-planted `crypto.randomUUID` returning the same fixed UUID. Red:
+  `expect(idA).not.toBe(idB)` fails with both equal to the fixed id.
+
+**Gate.** `scripts/locked.sh heavy env CI=1 npx -y pnpm@10.28.2 exec playwright test --config
+tests/e2e/playwright.config.ts tests/e2e/uf-09-offline.spec.ts` green (3/3), repeated
+(`--repeat-each=2 --workers=1`, 6/6) with no flake; `tests/e2e/offline.spec.ts`,
+`tests/e2e/uf-09-ready.spec.ts` (T-0304h) and `tests/e2e/fixture-guard.spec.ts` stay green
+(74/74) — not touched by this ticket, so only confirmed, not gated on. Full gate, once, Turbo
+cache on: `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` green (3352 tests, 242
+files); `-w test:repo-checks` green (159); `-w format:check` green (after one `prettier --write`
+on the new spec); `node .github/scripts/check-all.mjs` green. No contract touched. `tests/e2e/**`
+is outside the pnpm workspace (`pnpm-workspace.yaml`) so it is not part of `-w typecheck`/`lint`;
+confirmed the new file alone has zero `tsc --noEmit` errors under `apps/web`'s compiler options
+(ad hoc scratch tsconfig, not committed) — the directory's only automated checks are Playwright
+itself and `fixture-guard.spec.ts`'s source-rule scan, both green.
