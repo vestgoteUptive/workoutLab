@@ -91,3 +91,51 @@ green 3 runs in a row (no flake) · commits start `T-0458` and cite UF-03.1.
 - **E2e runs:** `TMPDIR=$HOME/.cache/wl-pw-tmp` if the T-0440 preflight asks for it.
 
 ## Build / accept log
+
+**2026-10-03, frontend-dev.** Added `seedRunningSession`, `liveSets`, `openSessionOffline`,
+`openListView`, `tabTo` and the `T-0458 UF-03.1 List view, offline (NFR-OFF-2)` describe block to
+`tests/e2e/uf-03-list-summary.spec.ts` (two tests). `RUNNING_PLAN` gives back-squat an `add_rep`
+pre-fill (100 kg × 6) so an unlogged row's toggle isn't blocked for a missing weight; `PLAN` (the
+T-0420 rows) is untouched.
+
+AC→test map:
+- AC-1 (offline keyboard logging, UF-03.1) → "AC-1/AC-2: Pause, List view, three rows checked by
+  keyboard, Finish, Save, reload" (rows 1–3 toggled by Tab+Space, one `[data-screen-id]`, row 4
+  unchecked).
+- AC-2 (Finish → UF-03.3 → Save → reload) → the same test: confirm Finish, effort 3 by keyboard,
+  Save → `/`, reload, `liveSets` reads exactly 3 live back-squat sets (100 kg × 6, setIndex 0–2),
+  `storedSession` reads `effort_rating: 3` and a non-null `ended_at`.
+- AC-3 (a11y) → "AC-3: axe clean, every row toggle and field at least 44 x 44, Focus mode returns
+  to a step screen" (axe 0 serious/critical, every row toggle and kg/reps field's `boundingBox()`,
+  "Focus mode" → `UF-09.3`, one `[data-screen-id]`).
+- AC-4 (the guard) → both tests use `fixtures/guarded-test.js`'s `test`/`expect` (unclaimed
+  Supabase request or console error fails at teardown); AC-1/AC-2 also asserts
+  `supabaseGuard.unclaimed()` and zero `/functions/v1/` calls directly.
+
+Red proof (on `main` before T-0417, commit `633a835`, via a throwaway `git worktree` at that
+commit with only this spec file copied over): `playwright test uf-03-list-summary.spec.ts -g
+T-0458` → 2 failed. AC-1's test failed at its first check, `getByRole("checkbox", { name: "Mark
+set 1 not done" })` never found — the pre-T-0417 `ListView`'s checkbox is read-only, no
+`ctx.recordSet`.
+
+AC-3 then found a real fault on the built code: the row toggle's `boundingBox()` was 28 × 28
+(`.wl-uf03-list__table input[type="checkbox"]` was `width: 28px; height: 28px`). Fixed in
+`apps/web/src/features/UF-03/list-view.css` to `44px`/`44px` (NFR-A11Y-2) — the only in-lane fix
+AC-3 named.
+
+Planted fault (AC-2, on a `cp` backup of `ListView.tsx`, restored the same way): `onToggle`
+rewired to flip a local `faultDone` state and never call `ctx.recordSet`, with `checked`/
+`aria-label` following `faultDone`. Re-ran "AC-1/AC-2 …" → 1 failed: `liveSets` after the reload
+returned `[]` instead of the 3 back-squat sets — exactly the "set count after the reload is 0"
+the ticket names. Restored via `cp` from the backup; `git status` clean after.
+
+Gate (D-0158, Turbo cache on): `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` → 19/19
+tasks green (`@workoutlab/web:test` 242 files / 3352 tests passed). `-w test:repo-checks` →
+159/159 passed. `-w format:check` → prettier flagged the new spec rows once; fixed with `prettier
+--write` and re-verified clean. `node .github/scripts/check-all.mjs` → exit 0, no findings.
+
+E2e: `playwright test uf-03-list-summary.spec.ts uf-09-focus.spec.ts` (`TMPDIR=$HOME/.cache/wl-pw-tmp`)
+green 3 runs in a row, 16/16 each time, no flake.
+
+Status: done. Files: `tests/e2e/uf-03-list-summary.spec.ts`,
+`apps/web/src/features/UF-03/list-view.css`, this ticket file.
