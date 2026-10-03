@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.5, UF-09.9]
 decisions: [D-0164, D-0119, D-0161, D-0155, D-0066]
 deps: [T-0304g]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0304g review. Build flow: wl-build-web. About ⅓ day. T-0304g and T-0447 are on main. All of it is in features/UF-09/device.ts, so it can run beside T-0394 and T-0451. -->
 
@@ -137,4 +137,9 @@ UF-09.9: cancel speech on Pause`).
 - AC→test: all six in `t0448.device.test.tsx` (31) as in the build log; AC-1 List view row now present; AC-6 diff is `device.ts`, `t0448*`, additive stubs.
 - Red from backups: unfixed device.ts 10 red of 31 (the 9 plus the List view row, which asserts the Pause cancel); cancel on paused→running 2 red (List view, Pause/Resume/Pause); resume suspended only 3 red; own fault (prime on every pointerUp) 2 red; own fault (resume anything not running) 3 red (closed rows). All restored by cp.
 - Runs: UF-09 folder 54 files / 868 tests green; `uf-09` e2e 10 passed; cached typecheck+lint+test 19/19, test:repo-checks, check-all green.
+- Verdict: done.
+
+### Accept (product-owner, HEAD 1f2e919, tree clean)
+- AC-1 `AC-1 cancel on Pause`: voice on 1 then 2 / off 0, steady over 60 s paused; UF-09.8, running rest, List view and restore rows make no cancel. AC-2 `AC-2 cancel on unmount` on/off. AC-3 `AC-3 the iOS prime`: once, `""`/volume 0, order `["","3","2","1"]`, voice off, not on pointerdown/keydown, remount. AC-4: 4 states x pointerUp / 10 s tone / keyDown, constructor count 1. AC-5: 6 variants, full rest to UF-09.3, no unhandled rejection. AC-6: diff is `device.ts`, `t0448.device.test.tsx`, additive `t0304g-stubs.ts`, this ticket; no host.tsx change.
+- Red on unfixed code 10/31 plus planted faults (build and QA). D-0164 §5 holds; principle 1 (quiet when paused) strengthened. Gate green per QA. Manual iPhone check: no device at hand.
 - Verdict: done.
