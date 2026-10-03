@@ -113,3 +113,9 @@ Tests for every AC pass, with the red runs recorded · the cached gate (D-0158):
 - Red on unfixed code (host.tsx/session.tsx from HEAD, no back-guard.ts): vitest t0394: 16 failed / 8 passed (AC-1 machine-state, 5 AC-2 states + same-as-button + timer, AC-3 pair, 3 AC-4, AC-5 End, 3 AC-8); e2e: 3 failed (two new AC-6 rows, tightened T-0303d row). Restored from backup copy.
 - Green: vitest UF-09 all pass; e2e uf-09-focus + uf-08-setup 40 passed.
 - Gate: typecheck/lint/test (3097 web tests) green, test:repo-checks 146 pass, format:check and check-all green, whole web e2e 180 passed.
+
+### QA log (2026-10-03, after `git merge origin/main`, HEAD d8cf577, clean)
+- Red on unfixed (host/session from main, stub back-guard): vitest t0394 16 failed / 8 passed; e2e uf-09-focus + uf-08-setup 3 failed (AC-6 Start→Back, offline, T-0303d row).
+- Planted (backups, restored by `cp`): arm on every render → vitest 1 failed, e2e 3 failed (Back stays on guard); Back-while-paused does not leave → vitest 3 failed, e2e 1 failed (one more Back still on the URL); own fault, drop `pushGuard()` after the Back pause/close → vitest 7 failed.
+- Green: UF-09 vitest folder 55 files / 861 tests; e2e uf-09-focus + uf-08-setup 40 passed.
+- Gate after merge: typecheck, lint green; web test failed once on the ESLint-based `jsx-no-literals` rows (UF-09, UF-01, 6-7 s timeouts under load; each passes alone) and 214 files / 3161 tests passed on rerun. `test:repo-checks` 3 fail and `check-all` fails: `lane-path-not-owned` for `.squad/decisions/D-0163-...md` (lane `web-feature:UF-09` has no grant for that path on main). Needs the orchestrator/PO (grant or land the decision on main); not a code gap.
