@@ -205,6 +205,10 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0417 | UF-03.1 List view logging: check / edit / uncheck / + Add set, reload, NFR-OFF-2 List view e2e (D-0142) | web-feature:UF-03 | T-0416, T-0415, T-0420 | done | wl-build-web |
 | T-0465 | RouteBoundary polish (T-0459 review): move focus to Reload when the fallback mounts; a render error on /library/:exerciseId keeps the fallback across ids until reload (key is the route pattern) — consider keying on location for render errors | web-shell | T-0459 | done | wl-build-web |
 | T-0457 | UF-03.1 List view: + Add set (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | done | wl-build-web |
+| T-0304h | UF-09 e2e from UF-08.4: reload mid-rest/pause (NFR-TIME-2), 10-set offline workout (NFR-OFF-2), two devices (NFR-SYNC-4), keyboard + axe loop (NFR-A11Y-1/6) | web-feature:UF-09 | T-0304d, T-0304g, T-0303d | done | wl-build-web |
+| T-0310d | UF-11.4 Account settings at /plan/account: export + delete with confirm, /welcome notice (D-0136) | web-feature:UF-11 | T-0308b, T-0310b, T-0310c | done | wl-build-web |
+| T-0463 | UF-09 seams: retry a failed chunk load for the how-to (UF-04) and list-view (UF-03.1) seams too — reuse retryableLazy and onRetry/onFailed, set chrome.retryLabel; add a test that a parent re-render of SwapOverlay neither re-imports nor remounts the sheet (QA fault F3 survived) (T-0451 follow-up) | web-feature:UF-09 | T-0451, T-0446 | done | wl-build-web |
+| T-0474 | UF-09 device.ts reads focus prefs from the new UF-08 leaf entry `index.prefs.ts`, so focus mode no longer evaluates SessionSetup; must merge before T-0303c (TR-0044, D-0170) | web-feature:UF-09 | — | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
