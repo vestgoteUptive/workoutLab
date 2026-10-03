@@ -89,3 +89,9 @@ the host's zone`).
 - AC-1 -> `t0446 AC-1` (prop; pair: runtime zone). AC-2 -> `t0446 AC-2` (UF-09.9 Auckland; UF-09.6 Auckland; pair UTC). AC-3 -> existing UF-09 suite green; UF-03/UF-05 no diff.
 - Red on unfixed code (src stashed, new test file kept): 5/5 failed (ctx.timeZone undefined; stub timeZone undefined).
 - Gate: typecheck+lint+test (concurrency 1), test:repo-checks, format:check, check-all, check:size green; e2e uf-09-focus + uf-05-swap 13/13 green.
+
+### QA log (HEAD b06b50b, clean tree)
+- AC-1 -> `t0446 AC-1` (prop + runtime-zone pair). AC-2 -> `t0446 AC-2` (UF-09.9, UF-09.6, UTC pair). AC-3 -> UF-09 folder 60 files / 900 tests green; UF-03/UF-05 no diff.
+- Red: the three src files reverted to main -> 5/5 t0446 red (TZ=Pacific/Auckland). Green with TZ=Pacific/Auckland and TZ=UTC (5/5 each).
+- Own fault: host.tsx passes the runtime zone instead of `timeZone` -> "pair: UTC passes UTC" red (1/5; the Auckland cases only go red under TZ=UTC). Restored from backup.
+- e2e uf-09-focus + uf-05-swap: 13 passed. No full gate (branch unchanged since builder gate).
