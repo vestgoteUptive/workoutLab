@@ -265,31 +265,42 @@ const EMPTY_NAMES: ReadonlyMap<string, string> = new Map();
 /**
  * Exercise id → library name for UF-10.2's contributor rows, read from the `lib/offline` cache.
  * With `override` supplied (a test, or a caller that already has the library) nothing is read
- * from IndexedDB at all.
+ * from IndexedDB at all, and the read counts as already settled (T-0354 AC-5).
+ *
+ * `settled` is `false` only while a real `loadLibrary()` read is still in flight. It flips to
+ * `true` once that read resolves OR rejects, so a contributor row never renders with the raw
+ * `exerciseId` while a name is still on its way (T-0354 AC-1; D-0174 §5). A read that never
+ * settles leaves `settled` `false` for the life of the mount (AC-4).
  */
-function useExerciseNames(
-  override: ReadonlyMap<string, string> | undefined,
-): ReadonlyMap<string, string> {
+function useExerciseNames(override: ReadonlyMap<string, string> | undefined): {
+  names: ReadonlyMap<string, string>;
+  settled: boolean;
+} {
   const [loaded, setLoaded] = useState<ReadonlyMap<string, string>>(EMPTY_NAMES);
+  const [settled, setSettled] = useState(override !== undefined);
 
   useEffect(() => {
     if (override !== undefined) return;
     let live = true;
     // D-0104 / D-0115 §2: a rejected read keeps the empty map, so contributor rows fall back to
-    // the exercise id.
+    // the exercise id. Either way, the read has settled, and the rows may render.
     loadLibrary().then(
       (library) => {
         if (!live) return;
         setLoaded(new Map(library.map((e) => [e.id, e.name])));
+        setSettled(true);
       },
-      () => undefined,
+      () => {
+        if (!live) return;
+        setSettled(true);
+      },
     );
     return () => {
       live = false;
     };
   }, [override]);
 
-  return override ?? loaded;
+  return { names: override ?? loaded, settled: override !== undefined || settled };
 }
 
 /** UF-10.2 Area detail. */
@@ -297,7 +308,7 @@ export function BalanceDetail(props: BalanceScreenProps = {}) {
   const { area: areaParam } = useParams();
   const { result, lastSyncedAt, timeZone } = useResult(props);
   const locale = props.locale;
-  const names = useExerciseNames(props.exerciseNames);
+  const { names, settled } = useExerciseNames(props.exerciseNames);
 
   const area = useMemo(
     () => result?.areas.find((a) => a.area === (areaParam as Area)) ?? null,
@@ -361,7 +372,7 @@ export function BalanceDetail(props: BalanceScreenProps = {}) {
       <h2 className="wl-balance-detail__heading">{en.uf10.contributorsHeading}</h2>
       {area.contributors.length === 0 ? (
         <p className="wl-balance__empty">{en.uf10.contributorsEmpty}</p>
-      ) : (
+      ) : settled ? (
         <ul className="wl-balance-detail__contributors">
           {area.contributors.map((c) => (
             <ContributorRow
@@ -372,7 +383,7 @@ export function BalanceDetail(props: BalanceScreenProps = {}) {
             />
           ))}
         </ul>
-      )}
+      ) : null}
 
       <Link to="/session/setup" className="wl-balance__cta">
         {en.uf10.startWorkout}
