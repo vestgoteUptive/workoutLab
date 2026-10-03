@@ -32,3 +32,12 @@ status: doing
 - Same root cause covers `t0453.focus.test.tsx` (the T-0459 gate flake): its new-routine tests click "Add exercise" then `getByRole('Add Plank')` synchronously, which raced the library read. With the form gated on the library, they are deterministic.
 - Folder: 10 consecutive green runs (82/82) with the fix. Forced `turbo run test --filter=@workoutlab/web --force`: green. Typecheck green.
 - 2026-10-03 merge of main (after T-0454): conflict in use-routine-editor.ts resolved keeping T-0454's libraryLoaded plus the T-0461 ready gate; UF-07 folder 3/3 green (98 tests, incl. t0454).
+
+## QA log (HEAD 78581fb, clean tree)
+- Red run: reverted the gate in use-routine-editor.ts (state `isNew`, no setReady in new path) on a backup copy: editing.test.tsx 1 failed / 19 passed (the "form waits for the library" test). Restored from copy.
+- Own faults: (1) `useState(true)` ready from the start: same test red (1/20). (2) new path `setReady(true); setLibrary([])` (clobbers library): 7/20 red. Both restored.
+- UF-07 folder 10x under flock: 10/10 green, 98/98 (incl. t0453.focus, t0454, t0454.a11y).
+- Forced `turbo run test --filter=@workoutlab/web --force --concurrency=1`: 2 successful tasks, 0 cached.
+- e2e uf-07-routines (web config, TMPDIR set): 6/6 passed.
+- check-all exit 0; `-w test:repo-checks` 155/155 pass.
+- Verdict: done.
