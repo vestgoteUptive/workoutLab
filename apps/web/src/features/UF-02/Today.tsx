@@ -2,6 +2,8 @@
 // attention line, the check-in slot, the zero-history lines, the no-plan state and Start.
 // The 45-min suggestion card (T-0302c, D-0106 §1) sits between the check-in slot and the
 // lines above Start; it lives in `SuggestionCard.tsx`.
+// T-0395 (D-0139 §3 §4): the "Resume workout" slot sits right after the header, before the
+// compact C-01 (or the no-plan line), in every Today state.
 //
 // Principle 3 — the engine decides, this file renders. The numbers come only from `balance()`
 // (see `use-today.ts`). `needsAttention` and `load` are read as properties, in `result.areas`
@@ -17,7 +19,7 @@ import { formatSetCount } from "../../lib/format/number.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import { defaultLocale, defaultTimeZone, formatTodayDate } from "./format.js";
-import { todayCheckinSlot } from "./slots.js";
+import { todayCheckinSlot, todayResumeSlot } from "./slots.js";
 import { SuggestionCard, SuggestionCardSkeleton } from "./SuggestionCard.js";
 import { useToday } from "./use-today.js";
 import "./today.css";
@@ -86,6 +88,18 @@ function CheckinSlot() {
   );
 }
 
+/** T-0395: the Today "Resume workout" card. A test that mocks `slots.js` without
+ *  `todayResumeSlot` (an older mock) reads it as `undefined`, treated the same as `null`. */
+function ResumeSlot({ now, locale, timeZone }: TodayProps) {
+  const Slot = todayResumeSlot;
+  if (!Slot) return null;
+  return (
+    <Suspense fallback={null}>
+      <Slot now={now} locale={locale} timeZone={timeZone} />
+    </Suspense>
+  );
+}
+
 export function Today(props: TodayProps = {}) {
   // Fixed for the life of the mount: a fresh `new Date()` per render would re-run the cache-read
   // effect on every render (the UF-10 render-loop lesson).
@@ -115,6 +129,8 @@ export function Today(props: TodayProps = {}) {
           </span>
         )}
       </div>
+
+      <ResumeSlot now={now} locale={locale} timeZone={timeZone} />
 
       {state.status === "no-plan" ? (
         <p className="wl-today__no-plan" data-part="no-plan">

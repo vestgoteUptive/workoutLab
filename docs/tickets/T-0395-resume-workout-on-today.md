@@ -77,3 +77,28 @@ none. It reads the existing IndexedDB `sessions` table and the D-0111 §6 `wl-fo
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green, each test command inside `flock /tmp/workoutlab-tests.lock` · because the ticket edits two feature folders (UF-09 and UF-02), the whole web e2e green once (D-0158) · contracts unchanged · commit messages start with `T-0395` and cite the screen (e.g. `T-0395 UF-02.1: Resume workout card for an unfinished session`).
 
 ## Build / accept log
+Built by frontend-dev, 2026-10-03.
+
+**Files:** `features/UF-09/resume.ts` (`findResumable`), `features/UF-09/resume-card.tsx` (`ResumeCard`), `features/UF-09/index.tsx` (+`ResumeCard`), `features/UF-09/uf-09.css` (`.wl-resume-card*`), `lib/i18n/flows/uf-09.ts` (+3 strings), `features/UF-02/slots.tsx` (+`todayResumeSlot`), `features/UF-02/Today.tsx` (mounts `ResumeSlot` after the header, before C-01/no-plan), `tests/e2e/uf-02-today.spec.ts` (+AC9 row). Tests: `features/UF-09/__tests__/resume.test.ts`, `features/UF-09/__tests__/resume-card.test.tsx`, `features/UF-02/__tests__/resume-slot.test.tsx`, plus edits to `features/UF-09/__tests__/exports-and-lint.test.ts` (export pin) and `features/UF-02/__tests__/slot.test.tsx` (mock gains `todayResumeSlot: null`, per the ticket's own fallback note).
+
+**AC→test map:**
+- AC1 → `resume.test.ts` "T-0395 AC1 the card's data" + `resume-card.test.tsx` "T-0395 AC1 the card" (rendered title/line/link).
+- AC2 → `resume.test.ts` "T-0395 AC2 when it shows" (7 exclusion cases + the exact-12h inclusive case).
+- AC3 → `resume.test.ts` + `resume-card.test.tsx` "T-0395 AC3 the newest wins" (newer wins; a tie goes to the smaller id).
+- AC4 → `resume.test.ts` "T-0395 AC4 the sets count" (non-JSON, no-array, and a back-off item giving total 13).
+- AC5 → `resume.test.ts` + `resume-card.test.tsx` "T-0395 AC5" (offline/no-fetch; `sessions.where` throws; `storage.getItem` throws — null, no unhandled rejection, no console.error).
+- AC6 → `features/UF-02/__tests__/resume-slot.test.tsx` (ready/loading/no-plan states, DOM order, Start unaffected, no-regression case).
+- AC7 → `resume-card.test.tsx` "T-0395 AC7" (click Resume workout restores the real `SessionHost` on the stored phase/item/set; Back-means-Pause then Back returns to Today).
+- AC8 → `exports-and-lint.test.ts` "AC-10 exports" (updated to `["ResumeCard", "SessionHost", "useFocusSession"]`).
+- AC9 → `tests/e2e/uf-02-today.spec.ts` "T-0395 AC9 resume on a cold start" (UF-08.4 Start → Done set → auto-save → `page.goto("/")` → card → Resume → same step; axe clean).
+- AC10 → full `UF-02/__tests__` and `UF-09/__tests__` suites green (113 + 935 tests), export-pin line the only edited existing test.
+
+**Red on main:** stashed the working tree (`git stash -u`) back to HEAD (`af4bfcf`, = main) and confirmed directly: no `apps/web/src/features/UF-09/resume-card.tsx`, no `ResumeCard` in `index.tsx`'s exports, no `data-part="resume"` in `Today.tsx`. Restored the stash (`git stash pop`), diff matched exactly.
+
+**Planted faults** (on `resume.ts`, via a backup copy + `cp` restore, never `git checkout`):
+1. `nowMs - startedAtMs > STALE_AFTER_MS` → `>=`: caught by AC2's "exactly 12h before now" case (expected `s1`, got `undefined`).
+2. Tie-break `entry.id < best.id` → `entry.id > best.id`: caught by AC3's "a tie at 09:30 goes to the smaller id" case (expected `s1`, got `s2`).
+
+**Coordination:** `features/UF-02/__tests__/slot.test.tsx`'s mock of `../slots.js` now also returns `todayResumeSlot: null` (the ticket's second option, not Today's `undefined` fallback) — chosen because `vi.mock`'s static-export validation throws when a named import the real module has isn't on the mock's returned object, so `Today.tsx`'s `import { todayCheckinSlot, todayResumeSlot }` would otherwise fail to resolve in that one file. `Today.tsx`'s `ResumeSlot` still falls back to `null` for a falsy slot either way (`if (!Slot) return null`), so a future mock that omits the key entirely (as this ticket's coordination note anticipated) still works.
+
+**Gate (cached, no `--force`):** `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` — 19/19 tasks, 3378 tests, green. `-w test:repo-checks` — 159/159, green. `-w format:check` — green (one file needed a `prettier --write`, re-verified). `node .github/scripts/check-all.mjs` — exit 0. Full web e2e (`playwright test`, D-0158: two feature folders touched) — 203/203 green, including the new AC9 row.
