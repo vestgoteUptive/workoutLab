@@ -5,7 +5,7 @@ lane: qa
 screens: []
 decisions: [D-0155, D-0045]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by product-owner (groom). From the 2026-10-02 journal: 53 false reds on main after T-0429 from a reused :4173, and 84 false reds from a full /tmp tmpfs (state.md traps). Build flow: wl-build-qa. About ¼ day. No app code changes. Parallel-safe with T-0436 by files. -->
 
@@ -155,3 +155,14 @@ commits start `T-0440` (for example `T-0440: never reuse a server on :4173`).
 - **AC-3/AC-5.** Both are covered by spec tests, and they pass.
 - **AC-4.** With the threshold planted at 0 and `TMPDIR` unset, the run stopped at `playwright.config.ts:13` with the preflight message (48 %) and ran no test. The pair (`TMPDIR` on disk) loaded the config: 8 passed, and the 79 % test failed, as it should. I restored the file from a backup. `check-e2e-wiring` exited 0, and its tests gave 14 of 14.
 - **Gate.** e2e 152/152 passed. `typecheck lint test --force --concurrency=1`: 19/19. `test:repo-checks`: 146/146. `format:check` was clean, and `check-all` exited 0. Verdict: pass.
+
+## Accept log
+2026-10-03, product-owner (accept). Branch at 85bc83d (main merged). Verdict: **done**.
+- AC-1 → `T-0440 AC1 never reuses a server…` (literal `false`, `--strictPort`, port 4173). Red on main's config, recorded in the build and QA logs.
+- AC-2 → manual and recorded: loud exit 1 with `is already used` and no build (build log with the node stand-in, QA log with a python one). The main-config contrast is in the build log.
+- AC-3 → the five `T-0440 AC3` tests (80 %, 79 %, ext4 at 95 %, blocks 0, statfs throws), plus a pass-through test.
+- AC-4 → `T-0440 AC4 …top level, outside defineConfig`. Planted threshold 0 stopped the run at config load and the on-disk `TMPDIR` pair loaded the config (both recorded). `check-e2e-wiring` 0 and 14/14, `.github/**` unedited.
+- AC-5 → `T-0440 AC5 nothing else in the config moved`.
+- AC-6 → e2e 152/152 with :4173 free (QA).
+- D-0155 §5–§6 hold: no `TMPDIR` set by the config, no build-id check, and the header comment documents both traps. No contract changed, and no app code changed.
+- Follow-up still open: `apps/landing/browser/playwright.config.ts` has the same `reuseExistingServer` line (landing lane).
