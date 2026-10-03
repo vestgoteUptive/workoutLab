@@ -139,3 +139,41 @@ green 3 runs in a row, 16/16 each time, no flake.
 
 Status: done. Files: `tests/e2e/uf-03-list-summary.spec.ts`,
 `apps/web/src/features/UF-03/list-view.css`, this ticket file.
+
+## Code review log
+
+**2026-10-03, code-reviewer.** Approve.
+
+- Lane/paths: diff touches exactly `apps/web/src/features/UF-03/list-view.css` (lane
+  `web-feature:UF-03`), `tests/e2e/uf-03-list-summary.spec.ts` and this ticket file — the three
+  paths the ticket grants. No edit under `tests/e2e/fixtures/**`. Contract impact: none, confirmed
+  (no `docs/data-model.md`, `api/openapi.yaml`, `docs/engine-rules.md` or design-tokens touched).
+- CSS fix: scoped to the single existing selector
+  `.wl-uf03-list__table input[type="checkbox"]` (only one such rule in the file); `28px`→`44px`
+  on width/height plus `box-sizing: border-box` (matching the sibling `input[type="text"]` rule's
+  pattern). No other selector, padding or table rule changed — row/column spacing in
+  `list-view.css` is untouched.
+- `RUNNING_PLAN`: built as `{...PLAN, items: PLAN.items.map(...)}`, a derived copy; the diff shows
+  exactly one removed line (the file-header comment, expanded) and no other edit to `PLAN`,
+  `s1Sets`, or any T-0420 row/helper — additive only, confirmed by `git diff` showing no `-` lines
+  inside the fixture bodies. Verified back-squat is `external_load: true` in the exercise fixture
+  and `PLAN`'s own prefill is `kind: "first_time"` / `weightKg: null`, which `ListView.tsx`'s
+  `blocked = !logged && (weightInvalid || countInvalid)` would indeed block (confirmed in
+  `ListView.tsx:201`); `add_rep` with `weightKg: 100` is a schema-valid prefill kind
+  (`packages/shared/src/session-plan.schema.gen.ts`) and avoids that block. Reasoning in the build
+  log matches the code.
+- AC-4: `guarded-test.ts`'s `supabaseGuard`/`consoleGuard` are `auto: true` fixtures, so
+  `assertClean()` already runs at teardown for every test in the file, T-0458's two included —
+  this is real coverage, not something the new rows had to add. The extra
+  `expect(supabaseGuard.unclaimed()).toEqual([])` plus `expect(functionCalls).toEqual([])` in
+  AC-1/AC-2 is a genuine, non-vacuous mid-test assertion (checks the list is empty before
+  teardown, and that zero `/functions/v1/` calls happened) — not a duplicate of the teardown, and
+  specific to this spec's offline claim.
+- Reran targeted: `scripts/locked.sh heavy npx playwright test ... uf-03-list-summary.spec.ts -g
+  T-0458` → 2/2 passed. Full pair `uf-03-list-summary.spec.ts uf-09-focus.spec.ts` → 16/16 passed,
+  matching the logged 3-in-a-row claim. `prettier --check` on both changed files: clean.
+  `633a835` (the red-proof's base commit) exists in history.
+- No findings. Build log's AC→test map, red proof and planted-fault proof all check out against
+  the code and current test run.
+
+Verdict: **approve**.
