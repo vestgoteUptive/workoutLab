@@ -207,3 +207,38 @@ Files changed: `features/UF-02/index.tsx`, `features/UF-02/Preview.tsx` (new),
 `features/UF-02/preview.css` (new), `features/UF-02/__tests__/preview.test.tsx` (new),
 `features/UF-02/__tests__/fixtures.ts`, `features/UF-02/__tests__/helpers.tsx`,
 `lib/i18n/flows/uf-02.ts`, `tests/e2e/uf-02-today.spec.ts`.
+
+### Code review (code-reviewer, 2026-10-03)
+**Verdict: approve.**
+
+Checked against `git diff main...HEAD` (HEAD `a6e5242`):
+- **Lane/paths.** Every changed path matches "Paths you may change": `features/UF-02/**` (new
+  `Preview.tsx`, `preview.css`, `__tests__/preview.test.tsx`, edits to `index.tsx`,
+  `__tests__/fixtures.ts`, `__tests__/helpers.tsx`) plus the listed extras
+  (`lib/i18n/flows/uf-02.ts`, `tests/e2e/uf-02-today.spec.ts`, this ticket file).
+  `git diff main...HEAD --stat -- Today.tsx slots.tsx` is empty — confirmed genuinely untouched,
+  matching the build log's claim.
+- **Contracts.** `git diff main...HEAD --name-only` has no hit on `engine-rules|data-model|openapi|
+  design-tokens`. None touched; none needed (D-0168 §3 pre-decided the open points).
+- **D-0168 §3 defaults, followed not reinterpreted.** `Preview.tsx` imports `useToday` and
+  `PREVIEW_INPUT` from `./use-today.js` — the same hook and input `Today.tsx` itself calls
+  (`Today.tsx:98`, `use-today.ts:142`), so it is the same cache/clock → same `Workout`, one
+  `suggest` call per mount, never a second input. Equipment labels come from `en.uf04.equipment`
+  (read-only; `flows/uf-04.ts` diff is empty). Rest seconds: `restSecondsFor` looks up
+  `REST_COMPOUND_S`/`REST_ISOLATION_S` imported straight from `@workoutlab/engine`
+  (`packages/engine/src/cost.ts`: 120/60), mirroring UF-09 `machine.ts`'s `restFor` exactly,
+  including the same "missing library row reads as compound" fallback.
+- **Principle 3 (deterministic engine).** `Preview.tsx` only renders `workout.plan.items` in plan
+  order — no sort, filter or pick of exercises. `equipmentUnion`/`setsCount` are display-only
+  reductions over the engine's own output (dedupe for the chip, a count for the chip), not
+  selection logic. Confirmed with the planted-fault proof in the build log (sorting rows by id
+  broke the reversed-fixture test) and verified independently: `scripts/locked.sh small` rerun of
+  `preview.test.tsx` is 27/27 green, and the full `UF-02` folder is 138/138 green (111
+  pre-existing + 27 new), matching the log's numbers exactly.
+- **Tests.** AC→test map in the build log is accurate; each AC has a corresponding titled test
+  block. Red-on-main and planted-fault proofs are both present and described with enough detail
+  to be credible (revert method, which tests failed, restore method). No test skipped or weakened.
+- **Security/NFRs.** No new table, no Edge Function, no secret. Not applicable here beyond what's
+  already covered by AC-6/AC-7 (offline, a11y) in the ticket.
+
+No findings. Nothing in this diff needs a follow-up or triage.
