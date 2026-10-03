@@ -182,6 +182,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0452 | shell.spec.ts AC-6: the /plan/routines/R1 row of OTHER_SUB_ROUTES is racy now UF-07.1 is built (an unknown id redirects to /plan offline, D-0081 §5); move it to a seeded test asserting built content plus an empty-cache contrast landing on /plan (D-0091 §1/§5) (T-0308a catch-up) | qa | T-0308a | folded→T-0308a AC-A16 | wl-build-qa |
 | T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319, T-0334 | done | wl-build-web |
 | T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | done | wl-build-web |
+| T-0438 | UF-09 comment drift after T-0435: the SessionWrites docblock (session.tsx:149-150) and host.tsx:183-184 still say a plan write landing after finish() started 'moves nothing'; since D-0153 §6 a failed finish applies it (T-0435 review) | web-feature:UF-09 | T-0435 | folded→T-0394 AC-8 | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
