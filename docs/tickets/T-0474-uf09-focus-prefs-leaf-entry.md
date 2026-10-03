@@ -31,7 +31,9 @@ leaf entry, `features/UF-08/index.prefs.ts`. UF-09 imports that instead. Behavio
   - `features/UF-08/index.tsx`, `SessionSetup.tsx`, `focus-prefs.ts`, or any other existing UF-08
     file.
   - `apps/web/eslint.config.mjs` and `app/__tests__/import-bans.test.ts` (web-shell, T-0475).
-  - Any existing UF-09 test (T-0463 AC-5 pins `t0422.*` and `t0451.*` as unedited).
+  - Any existing UF-09 test (T-0463 AC-5 pins `t0422.*` and `t0451.*` as unedited), **except**
+    `t0304g.device.test.tsx`'s `import * as uf08` and `vi.mock` specifiers, which AC-4 below
+    retargets (TR-0045).
 
 ## Acceptance criteria
 Each new test title starts with `T-0474 AC-n`.
@@ -51,8 +53,12 @@ Each new test title starts with `T-0474 AC-n`.
   `/UF-08\/focus-prefs/`. Contrast: the same lint over a one-line `import { readFocusPrefs } from
   "../UF-08/focus-prefs.js"` at `src/features/UF-09/x.ts` reports it.
 - **AC-4 (no regression)** Every existing `features/UF-09/__tests__/*` and
-  `features/UF-08/__tests__/*` test passes unedited, including the device and prefs tests from
-  T-0304g and T-0303d.
+  `features/UF-08/__tests__/*` test passes, including the device and prefs tests from T-0304g and
+  T-0303d. **Named exception (TR-0045):** `t0304g.device.test.tsx`'s `import * as uf08 from
+  "../../UF-08/index.js"` and its `vi.mock("../../UF-08/index.js", …)` both retarget to
+  `../UF-08/index.prefs.js`. No other line in that file changes, and the same `readFocusPrefs`
+  call counts and return values are asserted as before — the mock must observe the same specifier
+  `device.ts` now imports, nothing else.
 
 **Planted fault.** On a backup copy of `device.ts`, put the import back to `../UF-08/index.js`.
 AC-1 must fail, then restore from the copy (`cp`). Record it.
