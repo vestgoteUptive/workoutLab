@@ -30,9 +30,9 @@ describe("T-0474 AC-3 device.ts imports the UF-08 leaf entry, not a deep import 
   it("ESLint.lintText over device.ts's real source reports no no-restricted-imports", async () => {
     const source = readFileSync(devicePath, "utf8");
     const [result] = await eslint.lintText(source, { filePath: devicePath });
-    expect(
-      result!.messages.filter((m) => m.ruleId === "no-restricted-imports" || m.fatal),
-    ).toEqual([]);
+    expect(result!.messages.filter((m) => m.ruleId === "no-restricted-imports" || m.fatal)).toEqual(
+      [],
+    );
   });
 
   it("device.ts's source matches neither UF-08/index.js nor UF-08/focus-prefs", () => {
