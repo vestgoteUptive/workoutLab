@@ -5,7 +5,7 @@ lane: infra
 screens: []
 decisions: [D-0159, D-0158, D-0157]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written 2026-10-03 by product-owner (groom). Build flow: wl-build-infra. About ⅓–½ day: one diagnosis, the same small change in six vitest packages, one check and its tests. If AC-1 shows the cause is not what D-0159 assumes and the fix needs more than config or scripts, stop after AC-1, log the finding, and return `needs-triage` instead of growing the ticket. No app code, no contract change. -->
 
@@ -146,3 +146,4 @@ fault recorded. The cached gate is green (`npx -y pnpm@10.28.2 -w typecheck lint
 `node .github/scripts/check-all.mjs` (D-0158 §1). Contracts are unchanged. Commits start `T-0441`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0441.md` (D-0157).
