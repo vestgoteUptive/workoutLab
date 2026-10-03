@@ -178,3 +178,33 @@ payload-shape diffs (`equipment` missing `"none"`). Restored the component from 
 - e2e: not run — `uf-11-plan.spec.ts` exercises UF-11.2/UF-11.3 only, unaffected by this ticket's UF-11.4-only change; `uf-11-account.spec.ts` does not exist yet (T-0469 still `ready`, not merged), so the DoD's conditional clause doesn't apply.
 
 Contracts unchanged. Commits start `T-0216` and cite UF-11.4.
+
+**frontend-dev, 2026-10-03 (gate rerun).** T-0479 landed on `main` (fixed the
+`profile-gate.test.tsx` mock shape noted above as a `web-shell` follow-up) and was merged into
+this branch at `2474cf9`. Rerunning the full gate (`typecheck lint test --concurrency=1`) still
+showed one failure: an **unhandled rejection** (not a per-test assertion failure) —
+`TypeError: stored is not iterable` from `fromStored` in `EquipmentSection.tsx:47`, raised while
+`src/app/__tests__/profile-gate.test.tsx`'s AC-6 `/plan/account` cases were running. Its
+`PROFILE_ROW` fixture (`{ id: "u1", goal: "build" }`) has no `equipment` key, and `fromStored`
+iterated `p.equipment` unconditionally, so mounting `EquipmentSection` on that fixture threw.
+`profiles.equipment` is `not null default '{}'` in the real schema (`docs/data-model.md`), so this
+is a defensive-code gap in my own file, not a contract issue or `web-shell`'s mock to fix — the
+mock fix (T-0479) was necessary but not sufficient. Fixed: `fromStored` now takes
+`readonly string[] | null | undefined` and iterates `stored ?? []`. One file changed
+(`EquipmentSection.tsx`, +5/-2), committed as `b5990a0`.
+
+Reran after the fix: `scripts/locked.sh small npx vitest run src/app/__tests__/profile-gate.test.tsx
+src/features/UF-11/__tests__/equipment-section.test.tsx` → 2 files / 109 tests green, no unhandled
+errors. Then the full gate again:
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`: **19/19 tasks
+  green**, 250 test files / 3475 tests, no unhandled errors (the former AC-6 `/plan/account` finding
+  is gone).
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 green.
+- `npx -y pnpm@10.28.2 -w format:check`: green (one `prettier --write` needed on `EquipmentSection.tsx`
+  after the fix, then green).
+- `node .github/scripts/check-all.mjs`: exit 0.
+- Reran `typecheck lint test` once more after the prettier reformat to be sure: still 19/19, 250/3475.
+
+Gate fully green. No contract change. The earlier `web-shell` follow-up note above is now historical
+(T-0479 fixed the mock; this entry fixed the component's own gap it uncovered) — left in place since
+it documents the finding accurately for the commit that filed it.
