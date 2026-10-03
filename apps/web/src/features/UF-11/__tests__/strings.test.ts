@@ -95,6 +95,9 @@ describe("AC-B16 no second string catalogue", () => {
       "user_id,area_id",
       "answer",
       "user_id",
+      // T-0470: the row's query column and Postgres' unique-violation code (D-0172 §2), not copy.
+      "period_index",
+      "23505",
       "area_targets",
       "profiles",
       "plan_checkins",

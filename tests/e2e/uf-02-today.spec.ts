@@ -21,6 +21,11 @@ import {
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
 import { expect, test } from "./fixtures/guarded-test.js";
+import {
+  exerciseAreas as setupExerciseAreas,
+  exercises as setupExercises,
+  profile as setupProfile,
+} from "./fixtures/uf-04-library-data.js";
 
 const AREAS = [
   "chest",
@@ -382,5 +387,87 @@ test.describe("T-0302b AC-7 preview e2e and a11y", () => {
     await expect(previewRows(page).first()).toBeVisible({ timeout: 3000 });
     const offline = await previewRows(page).allInnerTexts();
     expect(offline).toEqual(online);
+  });
+});
+
+// ---- T-0395 AC9 "Resume workout" on a cold start (D-0139) ----
+// The real flow from `/`: Start workout → UF-08.1 → Suggest → Looks good → Start → UF-09.3 →
+// Done set → the auto-save (UF-09.4) → UF-09.5, then `page.goto("/")` as a fresh load would see
+// it (the app never navigates there itself). The describe's own mocks give the planner a full
+// library and equipment, as `uf-09-focus.spec.ts`'s `startFromHome` does.
+test.describe("T-0395 AC9 resume on a cold start", () => {
+  test("Today shows the in-progress card; Resume workout reopens the session on its step; axe clean", async ({
+    page,
+  }) => {
+    const profileRow = { ...setupProfile, user_id: FAKE_USER_ID };
+    await mockSupabaseData(page, {
+      sets: [],
+      exercises: setupExercises,
+      exerciseAreas: setupExerciseAreas,
+      areaTargets: AREAS.map((area_id) => ({
+        area_id,
+        sets_per_14d: 16,
+        source: "default",
+        updated_at: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+      })),
+      profile: profileRow,
+    });
+    await mockProfilePresent(page, profileRow);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+    await page.getByRole("link", { name: "Start workout" }).click();
+    await expect(page.locator('[data-screen-id="UF-08.1"]')).toBeVisible();
+    await page.getByRole("button", { name: "30 minutes" }).click();
+    await page.getByRole("button", { name: "Suggest my workout" }).click();
+    await page.getByRole("button", { name: "Looks good" }).click();
+    await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
+    await page.getByRole("button", { name: "Start" }).click();
+
+    await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible({ timeout: 10_000 });
+    const sessionUrl = page.url();
+    // A planned warm-up (UF-09.1 Skip warm-up, or UF-09.2's moves, or UF-09.6's "I'm ready" once
+    // the warm-up ends): either way, straight to the first set. Each button may take a moment to
+    // mount (the countdown, or a move's wall-clock timer), so each wait is itself a short poll.
+    const skipWarmup = page.getByRole("button", { name: "Skip warm-up" });
+    const nextMove = page.getByRole("button", { name: "Next move" });
+    const imReady = page.getByRole("button", { name: "I'm ready" });
+    const current = page.locator('[data-screen-id="UF-09.3"]');
+    const waitAndClick = (locator: ReturnType<Page["getByRole"]>) =>
+      locator
+        .waitFor({ state: "visible", timeout: 2000 })
+        .then(() => locator.click())
+        .then(() => true)
+        .catch(() => false);
+    for (let i = 0; i < 8; i += 1) {
+      if (await current.isVisible()) break;
+      if (await waitAndClick(skipWarmup)) continue;
+      if (await waitAndClick(nextMove)) continue;
+      if (await waitAndClick(imReady)) continue;
+    }
+    await expect(current).toBeVisible({ timeout: 10_000 });
+    await page.getByRole("button", { name: "Done set" }).click();
+    await expect(page.locator('[data-screen-id="UF-09.4"]')).toBeVisible();
+    // The real 5 s auto-save to UF-09.5 (D-0118 §2): one set now logged.
+    await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible({ timeout: 10_000 });
+
+    // The cold start: a fresh load of Today, as the app never does on its own.
+    await page.goto("/");
+    const resume = page.locator('[data-part="resume"]');
+    await expect(resume).toBeVisible();
+    await expect(resume.getByRole("heading", { name: "Workout in progress" })).toBeVisible();
+    // The preview's locale may format the clock as "18:53" or "6:53 PM" (NFR-I18N-2): either way.
+    await expect(resume.getByText(/^Started .+ · 1 of \d+ sets$/)).toBeVisible();
+    const results = await new AxeBuilder({ page }).analyze();
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious).toEqual([]);
+
+    const link = resume.getByRole("link", { name: "Resume workout" });
+    await expect(link).toHaveAttribute("href", new URL(sessionUrl).pathname);
+    await link.click();
+    await expect(page).toHaveURL(sessionUrl);
+    await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible({ timeout: 10_000 });
   });
 });

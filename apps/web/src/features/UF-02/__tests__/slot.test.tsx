@@ -10,10 +10,14 @@ import { aboveStart, part, renderToday, tile } from "./helpers.js";
 
 const slot = vi.hoisted(() => ({ current: null as ComponentType | null }));
 
+// T-0395: `todayResumeSlot` is mocked to `null` here too, so Today's import of it from this
+// mocked module resolves (not `undefined`, which this file's own `AC-5 null` cases would
+// otherwise conflate with "no resumable session" for the wrong reason).
 vi.mock("../slots.js", () => ({
   get todayCheckinSlot() {
     return slot.current;
   },
+  todayResumeSlot: null,
 }));
 
 const mocks = vi.hoisted(() => ({

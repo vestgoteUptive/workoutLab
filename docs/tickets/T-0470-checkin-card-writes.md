@@ -129,3 +129,4 @@ Tests for every AC pass, with the red run and the planted fault recorded · whil
   `fixtures.ts` and leaves both files as they are.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0470.md` (D-0157).

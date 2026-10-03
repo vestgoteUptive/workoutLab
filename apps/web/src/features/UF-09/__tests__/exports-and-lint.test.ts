@@ -31,9 +31,9 @@ async function lint(code: string, file = "src/features/UF-09/x.tsx") {
 }
 
 describe("AC-10 exports", () => {
-  it("features/UF-09/index.tsx exports exactly SessionHost and useFocusSession (T-0304e)", async () => {
+  it("features/UF-09/index.tsx exports exactly ResumeCard, SessionHost and useFocusSession (T-0395 AC8)", async () => {
     const mod = await import("../index.js");
-    expect(Object.keys(mod).sort()).toEqual(["SessionHost", "useFocusSession"]);
+    expect(Object.keys(mod).sort()).toEqual(["ResumeCard", "SessionHost", "useFocusSession"]);
   });
 });
 
