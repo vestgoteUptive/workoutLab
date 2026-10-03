@@ -53,7 +53,10 @@ const { loadProfile, refreshProfile, uf06Loaders } = vi.hoisted(() => ({
     refreshAll: vi.fn(async () => undefined),
   },
 }));
-vi.mock("../../lib/offline/index.js", () => ({ loadProfile, refreshProfile, ...uf06Loaders }));
+vi.mock("../../lib/offline/index.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../lib/offline/index.js")>();
+  return { ...actual, loadProfile, refreshProfile, ...uf06Loaders };
+});
 
 const { selectSpy, onAuthStateChange, getSession, signOut, authStateCallbacks } = vi.hoisted(() => {
   const authStateCallbacks: Array<(event: string, session: unknown) => void> = [];
