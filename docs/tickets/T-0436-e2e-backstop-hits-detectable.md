@@ -5,7 +5,7 @@ lane: qa
 screens: []
 decisions: [D-0086, D-0155, D-0072]
 deps: [T-0427, T-0422]
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by product-owner (groom). Follow-up (1) from the T-0427 accept log, found by T-0427 review and QA, inherited from T-0425. Build flow: wl-build-qa. About ½ day, depending on the inventory (see the split rule in AC-5). No app code changes. It waits for T-0422 (in build), which adds tests/e2e/uf-05-swap.spec.ts and additive tests/e2e/fixtures/** exports: the inventory has to include that spec, and the two tickets would share fixture files. -->
 
@@ -180,3 +180,11 @@ whole suite, run under the test lock with `TMPDIR=$HOME/.cache/wl-pw-tmp` until 
 - Reproduced: AC-6 plant (`routines*` route renamed) -> uf-10 T-0427 AC1 red with `supabase backstop hit` and `GET .../rest/v1/routines?select=id,name,updated_at`. Main's guard (guarded-test.ts from 02d7516~1) -> fixture-guard 11 failed / 51 passed (`backstopHits`/`allowBackstop is not a function`). QA fault: `x-wl-e2e-backstop` header on the real `exercises*` mock -> fixture-guard + uf-10 8 failed (real mock counted as hit). All restored from backup; tree clean.
 - Whole web e2e after merge: 183 passed. Cached `-w typecheck lint test` exit 0, `test:repo-checks` 146 pass / 0 fail, check-all 0, format:check clean.
 - Verdict: done, all AC proven.
+
+- 2026-10-03 product-owner (accept). HEAD 7c20cc8, tree clean. AC-1..AC-4 and AC-7 each have
+  `T-0436 ACn` tests in `fixture-guard.spec.ts`. AC-5: the auto-fixture `test.fail()` test, the
+  inventory table (22 hits, all fixed with mocks, no product `allowBackstop`, no split needed) and
+  the whole e2e (183). AC-6: the plant was red with the detector and green on main's guard. Reds
+  are recorded: main's guard gave 11 failed, and the QA header fault gave 8 failed. The D-0155 §4
+  inversion is the only assertion changed. No `apps/**` or contract diff. Principles unaffected
+  (test infra only). Review follow-ups are filed as T-0455. Verdict: **done**.
