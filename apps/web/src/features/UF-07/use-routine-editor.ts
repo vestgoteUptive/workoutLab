@@ -78,6 +78,8 @@ export function useRoutineEditor(routineId: string | undefined) {
 
   const [ready, setReady] = useState(isNew);
   const [library, setLibrary] = useState<LibraryExercise[]>([]);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [loadedName, setLoadedName] = useState("");
   const [name, setName] = useState("");
   const [items, setItems] = useState<string[]>([]);
@@ -101,6 +103,7 @@ export function useRoutineEditor(routineId: string | undefined) {
       const lib = await attempt(() => loadLibrary(), [] as LibraryExercise[]);
       if (cancelled) return;
       setLibrary(lib);
+      setLibraryLoaded(true);
       if (routineId === undefined) return;
 
       // A cache that can't be read at all (`null`) is not "unknown routine": stay put, and
@@ -110,12 +113,20 @@ export function useRoutineEditor(routineId: string | undefined) {
         return routines === null ? null : (routines.find((r) => r.id === routineId) ?? undefined);
       };
       let found = await read();
-      if (cancelled || found === null) return;
+      if (cancelled) return;
+      if (found === null) {
+        setLoadFailed(true);
+        return;
+      }
       if (!found && navigator.onLine) {
         await refreshCapped();
         if (cancelled) return;
         found = await read();
-        if (cancelled || found === null) return;
+        if (cancelled) return;
+        if (found === null) {
+          setLoadFailed(true);
+          return;
+        }
       }
       if (!found) {
         navigate(PLAN_PATH, { replace: true });
@@ -141,6 +152,9 @@ export function useRoutineEditor(routineId: string | undefined) {
       .filter((e) => q === "" || e.name.toLowerCase().includes(q))
       .sort((a, b) => a.name.localeCompare(b.name, "en"));
   }, [library, query]);
+
+  // D-0164 §3: no exercise rows at all (unread, empty, or only warm-ups) is not "no match".
+  const libraryEmpty = libraryLoaded && !library.some((e) => e.kind === "exercise");
 
   const trimmed = name.trim();
   const nameValid = trimmed.length >= 1 && trimmed.length <= MAX_NAME;
@@ -252,6 +266,8 @@ export function useRoutineEditor(routineId: string | undefined) {
 
   return {
     ready,
+    loadFailed,
+    libraryEmpty,
     isNew,
     online,
     name,

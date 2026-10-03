@@ -32,4 +32,4 @@ None.
 T-0454 is done.
 
 ## Build / accept log
-Archived in `docs/tickets/log/T-0456.md` (D-0157).
+Delivered by T-0454 (AC-4, AC-5, AC-6). Archived in `docs/tickets/log/T-0456.md` (D-0157).
