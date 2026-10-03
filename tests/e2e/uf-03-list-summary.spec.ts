@@ -426,7 +426,9 @@ test.describe("T-0420 AC-7 UF-03.3 summary, offline (NFR-OFF-2)", () => {
 /** T-0458: every live (`deletedAt` null) set for S1. */
 async function liveSets(
   page: Page,
-): Promise<{ exerciseId: string; setIndex: number; weightKg: number | null; reps: number | null }[]> {
+): Promise<
+  { exerciseId: string; setIndex: number; weightKg: number | null; reps: number | null }[]
+> {
   return page.evaluate(async (id) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const req = indexedDB.open("wl-offline");
@@ -594,9 +596,7 @@ test.describe("T-0458 UF-03.1 List view, offline (NFR-OFF-2)", () => {
       expect(box!.width, `toggle ${i} width`).toBeGreaterThanOrEqual(44);
       expect(box!.height, `toggle ${i} height`).toBeGreaterThanOrEqual(44);
     }
-    const fields = page.locator(
-      '[data-part="set-row"] input[type="text"]',
-    );
+    const fields = page.locator('[data-part="set-row"] input[type="text"]');
     const fieldCount = await fields.count();
     expect(fieldCount).toBeGreaterThan(0);
     for (let i = 0; i < fieldCount; i += 1) {
