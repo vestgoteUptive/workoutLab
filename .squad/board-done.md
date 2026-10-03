@@ -201,6 +201,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0459 | web-shell: app-wide error boundary for lazy route chunks (a stale-deploy chunk 404 blanks the app; App.tsx has none) (split from T-0446, D-0164) | web-shell | T-0422 | done | wl-build-web |
 | T-0461 | UF-07.1 picker: investigate (PRIORITY: UF-07 folder still flaky — 2/7 runs failed one test during T-0454 QA) a transient empty exercise list right after the picker opens (CI on 56ab6a9 rendered Search + Done with no rows and no no-match line, after rows had appeared) — a library refresh replacing the list? If users can see it, fix; else document (T-0460 follow-up) | web-feature:UF-07 | — | done | wl-build-web |
 | T-0446 | UF-09: pass the host's timeZone through FocusSession to the UF-05 swap seam (SwapSheet ranks with deviceZone() today) (T-0422 review; app-wide chunk boundary split to T-0459, D-0164) | web-feature:UF-09 | T-0394, T-0451 | done | wl-build-web |
+| T-0466 | check-lane-paths: always allow a ticket to edit its own docs/tickets/<id>-*.md (build/QA/accept logs) without a Listed-extras line — T-0356, T-0307b and T-0308a all tripped on a missing self-grant (2026-10-03) | infra | — | done | wl-build-infra |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |

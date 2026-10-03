@@ -90,7 +90,4 @@ and `check-all` green · contracts unchanged · commits start `T-0466`.
   `apps/web/**`). Its tests are `node --test` repo checks, so it needs no e2e run.
 
 ## Build / accept log
-- 2026-10-03 devops: added `isOwnTicketFile` (shared with `readTicketAtBase`), allowed before shared rules; tests in `check-lane-paths.t0466.test.mjs`. AC-1..4 -> the four `T-0466 AC-n` tests; AC-5 -> existing 159 repo-check tests pass unedited.
-- Red on unfixed code: AC-1, AC-3, AC-4 fail (`lane-path-not-owned` on the ticket file). Planted fault (`startsWith(ticketId)`, no `-`) turned AC-2 red; restored from backup copy.
-- 2026-10-03 QA: HEAD a33ef62, clean. Repro: main's script -> AC-1/3/4 red (1 pass, 3 fail); no-dash predicate -> AC-2 red; own fault (any docs/tickets/ file allowed) -> AC-2 red; all restored from backup. `-w test:repo-checks` 159/159, check-all exit 0. Real-branch scratch commit (own file + T-0465 file): check-all flagged only T-0465 `lane-path-not-owned`; scratch reset. Verdict: done, AC-1..5 proven.
-- 2026-10-03 product-owner accept (HEAD 014530a, PR #29 CI green): AC-1 own file `[]` incl. `T-0307b` -> pass; AC-2 all six listed paths (plus `T-04661-x.md`, `sub/`) one `lane-path-not-owned` -> pass; AC-3 one `lane-unknown` -> pass; AC-4 `runCheck` stub: none / exactly `shared-i18n-en-edited` -> pass; AC-5 159/159 unedited, check-all exit 0 -> pass. Predicate shared with `readTicketAtBase`. Gap (not an AC, review nit): the file-header and `listedPathsFromTicket` doc one-liners are missing; follow-up. Verdict: done.
+Archived in `docs/tickets/log/T-0466.md` (D-0157).

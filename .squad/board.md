@@ -140,7 +140,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0463 | UF-09 seams: retry a failed chunk load for the how-to (UF-04) and list-view (UF-03.1) seams too — reuse retryableLazy and onRetry/onFailed, set chrome.retryLabel; add a test that a parent re-render of SwapOverlay neither re-imports nor remounts the sheet (QA fault F3 survived) (T-0451 follow-up) | web-feature:UF-09 | T-0451, T-0446 | doing | wl-build-web |
 | T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | todo | wl-build-web |
 | T-0465 | RouteBoundary polish (T-0459 review): move focus to Reload when the fallback mounts; a render error on /library/:exerciseId keeps the fallback across ids until reload (key is the route pattern) — consider keying on location for render errors | web-shell | T-0459 | doing | wl-build-web |
-| T-0466 | check-lane-paths: always allow a ticket to edit its own docs/tickets/<id>-*.md (build/QA/accept logs) without a Listed-extras line — T-0356, T-0307b and T-0308a all tripped on a missing self-grant (2026-10-03) | infra | — | doing | wl-build-infra |
 | T-0467 | check-lane-paths doc nit: add the one-line D-0167 §1 own-ticket-file note to the file header and the listedPathsFromTicket doc comment; AC-3 test should also assert the finding points at the ticket path (T-0466 review/accept) | infra | T-0466 | todo | wl-build-infra |
 
 ## Phase 4 — Ship
