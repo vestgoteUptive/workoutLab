@@ -193,3 +193,11 @@ None. The writes use `routines {id, name}` and `routine_items {routine_id, posit
 - Fix: `uf-07-routines.spec.ts` imports `./fixtures/guarded-test.js`, no own listeners (T-0904/T-0430).
 - Reds seen: e2e `shell.spec.ts` AC-6 `/plan/routines/R1` once (D-0091 race now that UF-07.1 is built, T-0452); UF-11 AC-B16 diff test (retired on main by T-0450).
 - Gate at ab4cbb7: web turbo `--force` green, repo-checks 146/146 and check-all 0 (fresh clone), format clean, e2e 158/158.
+
+## QA log (qa-tester, HEAD 2841d40, tree clean)
+- AC→test: A1/A2/A3/A5-trim/A7-sets/A8/A10/A13 `__tests__/save.test.tsx`; A4/A5/A6/A7-ui/A12 `editing.test.tsx` + `keyboard.test.tsx`; A9/A11 `offline.test.tsx`; A15 `shell.test.tsx` (exports, sync h1) + lint/flows.test; A14 e2e `uf-07-routines.spec.ts` (axe x2, 44px, keyboard move) + A1 e2e create.
+- Baseline `vitest run src/features/UF-07`: 5 files, 71/71.
+- Planted faults (backup copy, restored by cp): offline save allowed → A9 2 red; drop focus retention → A4 3 red; no redirect on unknown id → A11 5 red (+1); `gte(position, n+1)` → A1/A3 3 red; name not trimmed → A5 1 red.
+- e2e `uf-07-routines` + `shell.spec`: 21 pass, 1 red = shell AC-6 `/plan/routines/R1` offline (known T-0452 race, unknown id redirects).
+- Gate (main merged): typecheck/lint/test turbo 19/19 cached green; repo-checks 146/146; check-all rc 0.
+- Verdict: done.
