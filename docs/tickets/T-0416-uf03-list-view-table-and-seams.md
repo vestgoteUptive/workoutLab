@@ -154,3 +154,7 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 - Tests (new, `UF-09/__tests__/t0416.{list-view,how-to}-{reject,pending}.test.tsx`): rejected import → error placeholder, Close; pending import → loading placeholder, Close. how-to returns to UF-09.9 with the stored state deep-equal. list-view returns to UF-09.3 with logged sets unchanged, because opening it resumes the machine (D-0071 §4, AC-2), the same landing as "Focus mode". Resolved pair: `list-view.host.test.tsx` AC-2/AC-6.
 - Red before (f6fd696 seams.tsx): 4/4 new tests red. Green after: 4/4.
 - Gate (attempt 2): cached `-w typecheck lint test --concurrency=1` 19/19, `test:repo-checks` 0 fail, `format:check`, `check-all`, `test:e2e` green. One red first: a UF-09 source scan bans `en.uf04` in seams.tsx, so the how-to label reads `uf03.howToAction`.
+
+**QA (qa-tester, 2026-10-03).** `git merge main` (6a94e6a), `git status` clean. Verdict: done.
+- **Faults, each from a backup copy, restored with `cp`:** library link in the card, `principle-1` 2 red (AC-8); Previous as the kg pre-fill, `list-view` 1 red (AC-3); warm-up counted in Previous, `list-view` 3 red (AC-4); `SeamBoundary` removed, `t0416.*-reject` 2 red (AC-1/6). Own faults on AC-8: a `/balance` link in the card, 1 red; a `<nav>` in the card, 1 red.
+- **Runs:** UF-03 + UF-09 vitest 62 files / 956 passed; `test:e2e uf-09` 10 passed; gate `-w typecheck lint test --concurrency=1` 19/19; `test:repo-checks` 0 fail; check-all exit 0.
