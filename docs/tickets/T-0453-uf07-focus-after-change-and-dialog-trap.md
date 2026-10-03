@@ -104,24 +104,4 @@ needed) · contracts unchanged · commits start `T-0453` and cite UF-07.1.
   which is why AC-5 proves the behaviour in Chromium.
 
 ## Build / accept log
-- Built from clean main f9a5b69. `use-routine-editor.ts` records an `afterChange` intent on remove/add; `EditorForm.tsx` applies it in a layout effect (remove -> Remove at the same index or last, else search or Add exercise; add -> search), puts `inert` on the four form parts while the confirm is open, and cycles Tab/Shift+Tab over the dialog's enabled buttons.
-- Tests: `__tests__/t0453.focus.test.tsx`. AC-1 four tests (middle, last, only row picker closed/open); AC-2 two (Added, 8-item limit); AC-3 three (cycle, inert pair, Escape); AC-4 one (offline, `offline` event fired); AC-5 e2e row in `uf-07-routines.spec.ts`; AC-6 no existing test edited, all 81 UF-07 tests pass.
-- Red on unfixed code: new tests run before the fix failed 9 of 10 (focus on body / no inert / Tab not trapped; the 10th, the Escape pair, is the unchanged behaviour).
-- Planted faults (backup copy, restored by `cp`): inert removed -> inert test red; trap removed -> cycle test red; Add focus skipped -> both AC-2 tests red.
-- e2e `uf-07-routines`: 5 passed in Chromium.
-
-## QA log
-- QA at HEAD 3c7fa1c, clean tree, branch unchanged since the builder's gate (no full gate rerun, D-0158).
-- AC map: AC-1 t0453 AC-1 x4; AC-2 t0453 AC-2 x2; AC-3 t0453 AC-3 x3; AC-4 t0453 AC-4; AC-5 e2e row "delete confirm traps Tab..." (Chromium); AC-6 no existing UF-07 test edited, 81/81 pass.
-- Faults (backup copy, restored by cp): inert removed -> inert test red; trap removed -> cycle test red; Add focus skipped -> both AC-2 tests red; own fault (Remove focuses previous row) -> AC-1 middle-row red.
-- UF-07 vitest 6 files / 81 passed; e2e uf-07-routines 5 passed (Chromium).
-
-## Accept log
-- Accepted 2026-10-03 at HEAD ba24bb9 (clean). Verdict: **done**.
-- AC-1 (D-0162 §4 Remove): middle, last, empty with the picker closed or open, plus the live region. Each is checked in t0453 AC-1 (4 tests) and the e2e keyboard Remove.
-- AC-2 (§4 Add): Added + search focus, and the 8-item limit, in t0453 AC-2 (2 tests).
-- AC-3 (§5): the Tab/Shift+Tab cycle, inert on the 4 parts and not on the dialog's ancestors, cleared on Keep or Escape with focus returned. Covered by t0453 AC-3 (3 tests) and in Chromium by e2e (3 Tabs, a click+type on Name leaves the value unchanged).
-- AC-4: offline Tab and Shift+Tab stay on Keep routine, in t0453 AC-4.
-- AC-6: only a new test file was added, 81/81 UF-07 tests pass, and no string literals were added.
-- Red on main: 9/10 (Escape is the unchanged pair). Faults: builder 3, QA 1.
-- Contracts unchanged; no native dialog (§5). Review approved. Follow-up T-0456 (Delete loses focus to body when going offline) is outside these ACs.
+Archived in `docs/tickets/log/T-0453.md` (D-0157).

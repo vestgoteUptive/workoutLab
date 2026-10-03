@@ -186,6 +186,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0415 | UF-09 host support for the List view: source "list" always gives SET_LOGGED; REST_END on a finished last item gives done; done waits while a keepsClockRunning overlay is open (D-0142) | web-feature:UF-09 | T-0304d, T-0414 | done | wl-build-web |
 | T-0436 | e2e: make a hit on the mockSupabaseRest/mockSupabaseAuth 501 backstop detectable in guarded specs (record backstop hits in supabaseGuard, or stop exempting 'Failed to load resource' 501 lines in consoleGuard), so a missing data mock fails again (T-0427 review/accept) | qa | T-0427 | done | wl-build-qa |
 | T-0416 | UF-03.1 List view read side: set table, how-to + list-view seams, Finish, the T-0360 cross-screen principle-1 assertion (D-0142) | web-feature:UF-03 | T-0304d, T-0419 | done | wl-build-web |
+| T-0453 | UF-07.1 a11y: focus falls to body after Remove and after a picker Add (the button becomes the disabled 'Added' one, or every Add disables at 8 items) — move focus to a neighbour or the search field; the confirm dialog says aria-modal but traps no focus and leaves the form interactive (T-0308a review) | web-feature:UF-07 | T-0308a | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
