@@ -76,7 +76,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 3 — App
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | doing | wl-build-web |
 | T-0476 | UF-08.3 polish (D-0171, accept follow-up): a swap's "Swapped to save time" reason is proven only at the data layer — itemReasonLine's two-reason cap hides it from the UI; let it surface, or lift the cap by one | web-shell | T-0303c | todo | wl-build-web |
 | T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | doing | wl-build-web |
 | T-0216 | Account settings: "Edit equipment" checklist of the 10 vocabulary items, writing profiles.equipment[] (D-0061 §3; UF-01.3 keeps the 3 profiles) | web-feature:UF-11 | T-0310d | todo | wl-build-web |
@@ -131,7 +130,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0445 | Flake: UF-08 `ready-start.test.tsx` 'retry: the second tap…' failed once in a full -w gate (T-0422 rework, 2026-10-02), then passed 3× alone and in a rerun. Reproduce under load (--repeat / concurrency), find the timing assumption, fix with a real wait | web-feature:UF-08 | — | todo | wl-build-web |
 | T-0449 | OfflineStatus formatTime: use hour '2-digit' if '08:10' is the intended form (D-0084 consequence) (T-0307b review) | web-shell | — | todo | wl-build-web |
 | T-0455 | e2e guard polish (T-0436 review): check backstop hits after in-flight requests settle in the supabaseGuard auto fixture (a late read is missed today); source-rules match any `.allowBackstop(`/`.allow(` receiver, not only the guard names; make the test.fail() backstop tests assert the failure is a backstop hit ; guard-source-check should also flag `export … from` and dynamic `import("@playwright/test")` value use (T-0356 review) | qa | T-0436 | todo | wl-build-qa |
-| T-0458 | UF-03.1 List view e2e: the Playwright spec T-0416 deferred, incl. NFR-OFF-2 List view logging (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | doing | wl-build-web |
 | T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | todo | wl-build-web |
 | T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | todo | wl-build-web |
 | T-0467 | check-lane-paths doc nit: add the one-line D-0167 §1 own-ticket-file note to the file header and the listedPathsFromTicket doc comment; AC-3 test should also assert the finding points at the ticket path (T-0466 review/accept) | infra | T-0466 | todo | wl-build-infra |
