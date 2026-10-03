@@ -3,10 +3,17 @@ id: T-0478
 title: "UF-03.1 Swap button on the List view's current card: SwapSheet (with the host's time zone) → ctx.replaceItem, rows after a swap, focus back to Swap"
 lane: web-feature:UF-03
 screens: [UF-03.1, UF-05.1]
-decisions: [D-0142, D-0069, D-0071, D-0093, D-0140, D-0157, D-0158, D-0169, D-0172]
+decisions: [D-0142, D-0069, D-0071, D-0093, D-0140, D-0157, D-0158, D-0169, D-0172, D-0175]
 deps: [T-0418, T-0421, T-0414]
-status: todo
+status: ready
 ---
+<!-- Re-checked 2026-10-03 by product-owner (groom, D-0175 §5) against main 7ea4276: all three
+deps are done, and the assumptions hold. `FocusSession` has `workout`, `timeZone` and
+`replaceItem`. `SwapSheetProps` has `timeZone?`. UF-08 already imports `features/UF-05/index.js`.
+`ListViewCtx` has `rest`/`startRest`/`adjustRest`/`skipRest` from T-0418 and still lacks
+`workout`/`timeZone`/`replaceItem`. Never in parallel with T-0483, which also edits
+`__tests__/list-helpers.tsx`. -->
+
 <!-- Split out of T-0418 on 2026-10-03 by product-owner (D-0157 §7, D-0172). It mounts the SwapSheet
 component (T-0421) directly, not through a seam, and persists through ctx.replaceItem, whose
 free-position rule is T-0414's (D-0140). Build flow: wl-build-web. About ⅓ day. Becomes ready when
@@ -100,6 +107,7 @@ example `T-0478 UF-03.1: swap from the list`).
 
 ## Notes
 - **Flow:** `wl-build-web`.
-- **Parallel.** After T-0418 (both edit `ListView.tsx`). T-0464, T-0472, T-0473 wait for it too.
+- **Parallel.** T-0418 is done, so this can start. Same lane as T-0483, T-0464, T-0472 and
+  T-0473: run them one at a time. T-0483 also edits `__tests__/list-helpers.tsx`.
 
 ## Build / accept log
