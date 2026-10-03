@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-10.1]
 decisions: [D-0086, D-0090]
 deps: [T-0904, T-0307b, T-0308a, T-0308b]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-10-01 (groom mode, run T-0358). Build flow: wl-build-qa. About ½ day. Deps T-0307b/T-0308a/T-0308b are added by D-0090 §3 (D-0086's own "Revisit when" timing); the board row lists only T-0904, so the orchestrator should add them. -->
 
@@ -85,9 +85,14 @@ mandatory: the assertion enumerates the directory, so the list can't go stale.
 
 ## Paths you may change
 `tests/e2e/**` (qa).
+- **Listed extras:**
+  - `docs/tickets/T-0356-e2e-guard-glob.md`: this file, for the build, QA and accept logs (added 2026-10-03 by the orchestrator).
 
 ## Contract impact
 none. D-0090 amends D-0086 (process, not a contract).
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · e2e green · contracts unchanged or decision linked · commit messages start with `T-0356` and cite D-0090.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0356.md` (D-0157).

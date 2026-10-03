@@ -79,9 +79,17 @@ export interface FakeOscillator {
   stop: Mock;
 }
 
+export interface FakeContext {
+  state: string;
+  resume: Mock;
+  close: Mock;
+}
+
 export interface AudioStub {
   ctor: Mock;
   oscillators: FakeOscillator[];
+  /** Every context made so far (T-0448): set `state` to drive `resume`. */
+  contexts: FakeContext[];
   /** Every oscillator `start` call so far. */
   starts: () => number;
 }
@@ -89,12 +97,14 @@ export interface AudioStub {
 export function stubAudio(): AudioStub {
   const ctor = vi.fn();
   const oscillators: FakeOscillator[] = [];
+  const contexts: FakeContext[] = [];
   class FakeAudioContext {
     state = "running";
     currentTime = 0;
     destination = {};
     constructor() {
       ctor();
+      contexts.push(this);
     }
     createOscillator = vi.fn(() => {
       const osc: FakeOscillator = {
@@ -113,6 +123,7 @@ export function stubAudio(): AudioStub {
   define(window, "AudioContext", FakeAudioContext);
   return {
     ctor,
+    contexts,
     oscillators,
     starts: () => oscillators.reduce((n, o) => n + o.start.mock.calls.length, 0),
   };
@@ -125,18 +136,29 @@ export function hideAudio(): void {
 
 export interface SpeechStub {
   speak: Mock;
+  /** `speechSynthesis.cancel` (T-0448). */
+  cancel: Mock;
+  /** The utterances spoken so far (T-0448). */
+  utterances: () => Array<{ text: string; volume: number }>;
   /** The words spoken so far, in order. */
   words: () => string[];
 }
 
 export function stubSpeech(): SpeechStub {
   const speak = vi.fn();
+  const cancel = vi.fn();
   class FakeUtterance {
+    volume = 1;
     constructor(public text: string) {}
   }
-  define(window, "speechSynthesis", { speak, cancel: vi.fn() });
+  define(window, "speechSynthesis", { speak, cancel });
   define(window, "SpeechSynthesisUtterance", FakeUtterance);
-  return { speak, words: () => speak.mock.calls.map((c) => (c[0] as FakeUtterance).text) };
+  return {
+    speak,
+    cancel,
+    utterances: () => speak.mock.calls.map((c) => c[0] as FakeUtterance),
+    words: () => speak.mock.calls.map((c) => (c[0] as FakeUtterance).text),
+  };
 }
 
 export function hideSpeech(): void {
