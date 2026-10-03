@@ -193,6 +193,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0441 | Vitest leaks a /tmp/<21-char id>/{client,ssr} module-transform dir per run (about 120/h, 12 MB each; 3 GB on 2026-10-02 filled the /tmp tmpfs quota → EDQUOT and Chromium ERR_INSUFFICIENT_RESOURCES). Find the source (vitest version / config), clean it up or point it at a repo cache dir, and add a check | infra | — | done | wl-build-infra |
 | T-0451 | UF-05 swap overlay: offer a retry after a failed chunk load (React.lazy caches the rejection, so every reopen shows loadFailed until reload); drop the T-0422 boundary 'scope' test that proves nothing; drop the stale 'TR-0043: red until it is resolved' comment in t0422.host.test.tsx (T-0422 re-review and QA) | web-feature:UF-09 | T-0422 | done | wl-build-web |
 | T-0454 | UF-07.1: an unreadable cache (loadRoutines throws) leaves only the <h1> with no way out on a route without a tab bar — show a message and a link back to /plan; with an empty library cache the picker reads 'No exercises match ""' (T-0308a review) | web-feature:UF-07 | T-0308a | done | wl-build-web |
+| T-0448 | UF-09 device polish: speechSynthesis.cancel() on unmount and PAUSE; prime speechSynthesis inside the host gesture (iOS Safari); resume an AudioContext whose state is 'interrupted', not only 'suspended' (T-0304g review) | web-feature:UF-09 | T-0304g | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
