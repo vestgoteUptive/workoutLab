@@ -210,3 +210,46 @@ Status: done. No contract change. No new i18n keys (the failure line reuses
   → 3 files, 43/43 passed.
 
 No findings. Verdict: **approve**.
+
+## QA
+
+**2026-10-03, qa.** Done.
+
+- Verified all 6 ACs with real tests, not just reading the build log: reproduced the builder's
+  red-on-main (14/18 failing against the pre-T-0470 `CheckinCard.tsx`) and the AC-2 order planted
+  fault (steps 1/2 swapped) exactly as logged.
+- Added an independent planted fault: inverted the second-device branch logic in
+  `selectAnsweredElsewhere` (null-answer and set-answer outcomes swapped). AC-1b's two assertions
+  (unanswered → card stays/no write; answered → card hides + `refreshAll` once) caught it cleanly.
+- `uf-11-plan.spec.ts` e2e: 10/10 passed. Covers UF-11.2/.3 only, not CheckinCard writes
+  themselves — expected, since the card is mounted nowhere yet (T-0471).
+- Branch state: 8 commits behind `main`, zero file overlap; `git merge-tree` confirms a clean
+  merge. Correctly left unmerged per D-0169 §2 (orchestrator merges after accept).
+
+No findings. Verdict: **done**.
+
+## Accept
+
+**2026-10-03, product-owner.** Done.
+
+- All 6 ACs (AC-1, AC-1b, AC-2, AC-3, AC-4, AC-5) have passing tests with a clear AC→test map
+  (`describe("T-0470 AC-n ...")` per build log), independently confirmed present in
+  `checkin-writes.test.tsx`.
+- Read `checkin-writes.ts`: the first-shown insert payload (including `completed_prev: null`,
+  D-0172 §1), the 23505 second-device fallback (`selectAnsweredElsewhere`: null answer → card
+  stays silently; set answer → `refreshAll` once, no alert/`console.error` either way, D-0172 §2),
+  and the Accept order (`area_targets` upsert → `profiles` update → `plan_checkins` answer update,
+  each gated on the previous step's success, D-0070 §3) all match the ticket text and the review
+  findings verbatim.
+- Red-on-main and both planted faults (builder's AC-2 order swap, QA's independent AC-1b branch
+  inversion) are recorded and were genuinely caught, not just asserted.
+- Contracts unchanged (confirmed by builder and reviewer's empty `git diff` on the 4 contract
+  files); no contract-change proposal needed.
+- Full gate, repo-checks, format:check and `check-all.mjs` all green per the build log; this is a
+  half-day-scoped ticket per its own estimate and D-0157 §7, so no split was needed.
+- Branch 8 commits behind `main` with zero file overlap (merge-tree clean) is expected under
+  D-0169 §2 — the orchestrator merges after accept, not this role.
+- `uf-11-plan.spec.ts` not covering the CheckinCard mount itself is correctly out of scope here;
+  T-0471 (mounting) is the next ticket in this lane per the ticket's own Notes section.
+
+Verdict: **done**. All ACs have passing tests, no contract drift, no principle violated.
