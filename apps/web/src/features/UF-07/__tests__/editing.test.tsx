@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { R, R2, putRoutine, renderEditor, seed } from "./harness.js";
-import { spy } from "./spies.js";
+import { offline, spy } from "./spies.js";
 
 vi.mock("../../../lib/auth/client.js", async () => (await import("./spies.js")).mockedClient());
 vi.mock("../../../lib/offline/index.js", async (importActual) =>
@@ -230,5 +230,23 @@ describe("AC-A12 an item missing from the library", () => {
     await waitFor(() => expect(spy.calls).toHaveLength(3));
     const rows = spy.calls[2]!.payload as Array<{ position: number; exercise_id: string }>;
     expect(rows[1]).toMatchObject({ position: 1, exercise_id: "retired-exercise" });
+  });
+});
+
+describe("T-0461 the form waits for the library", () => {
+  it("a new routine shows no form (so no empty picker) until the library has loaded", async () => {
+    let release!: () => void;
+    offline.gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    renderEditor("/plan/routines/new");
+    await waitFor(() => expect(offline.loadLibraryCalls).toBe(1));
+    expect(screen.queryByLabelText(NAME)).not.toBeInTheDocument();
+    release();
+    await screen.findByLabelText(NAME);
+    fireEvent.click(screen.getByRole("button", { name: "Add exercise" }));
+    // The rows are there on the first render of the picker: no empty-list moment.
+    expect(addButtons().length).toBeGreaterThan(0);
+    expect(screen.queryByText(/^No exercises match/)).not.toBeInTheDocument();
   });
 });

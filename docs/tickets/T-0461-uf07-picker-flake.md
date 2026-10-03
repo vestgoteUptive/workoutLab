@@ -1,3 +1,14 @@
+---
+id: T-0461
+title: "UF-07.1: a new routine's form waits for the library read (no empty-picker flash; fixes the UF-07 test flake)"
+lane: web-feature:UF-07
+screens: [UF-07.1]
+decisions: [D-0081, D-0164]
+deps: [T-0308a, T-0454]
+status: done
+---
+<!-- Written by the builder during the T-0460 follow-up investigation; front matter and paths added by the orchestrator 2026-10-03. -->
+
 # T-0461 UF-07.1: picker flake in the UF-07 vitest folder
 
 ## Findings
@@ -12,6 +23,10 @@
 - New test `T-0461 the form waits for the library` (editing.test.tsx): gated `loadLibrary`; form absent until released; picker has rows on first render and no no-match line. Red on the old hook (1 failed / 19 passed), green after.
 - Runs: see the build log below.
 
+## Paths you may change
+- `apps/web/src/features/UF-07/**` (the lane: `web-feature:UF-07`).
+- **Listed extras:**
+  - `docs/tickets/T-0461-uf07-picker-flake.md`: this file, for the build, QA and accept logs.
+
 ## Build / accept log
-- Same root cause covers `t0453.focus.test.tsx` (the T-0459 gate flake): its new-routine tests click "Add exercise" then `getByRole('Add Plank')` synchronously, which raced the library read. With the form gated on the library, they are deterministic.
-- Folder: 10 consecutive green runs (82/82) with the fix. Forced `turbo run test --filter=@workoutlab/web --force`: green. Typecheck green.
+Archived in `docs/tickets/log/T-0461.md` (D-0157).

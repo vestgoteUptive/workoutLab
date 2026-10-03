@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-05.1, UF-09.9, UF-09.6]
 decisions: [D-0164, D-0120, D-0071, D-0142, D-0160]
 deps: [T-0422, T-0394, T-0451]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0422 review. Split by lane (D-0164 §8): the app-wide route-chunk boundary is T-0459 (web-shell). Build flow: wl-build-web. About ¼ day. The spec is ready; the build waits for T-0394 (host.tsx, session.tsx) and T-0451 (seams.tsx). Start from a main that has both. -->
 
@@ -83,3 +83,4 @@ the host's zone`).
     the real host; the added field doesn't change `ListViewCtx`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0446.md` (D-0157).

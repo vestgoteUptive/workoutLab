@@ -4,6 +4,7 @@ title: "UF-03.1 a done row's invalid kg reverts on blur; uncheck stays available
 status: revisit
 date: 2026-10-03
 by: frontend-dev (T-0417 rework)
+amends: D-0128 §4
 area: web
 builds-on: D-0118 §6, D-0128 §4, D-0142 §3
 ---

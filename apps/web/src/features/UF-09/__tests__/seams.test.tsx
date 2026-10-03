@@ -213,6 +213,7 @@ describe("AC-9 overlay in place of the screen", () => {
     expect(keys).toEqual(
       [
         "sessionId",
+        "timeZone",
         "row",
         "plan",
         "workout",

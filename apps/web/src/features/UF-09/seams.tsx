@@ -235,6 +235,7 @@ function SwapOverlay({ ctx }: { ctx: FocusSession }) {
         <SwapSheet
           workout={ctx.workout}
           itemIndex={target}
+          timeZone={ctx.timeZone}
           onApply={async (result) => {
             await ctx.replaceItem(target, result.plan.items[target]!, result.plan.mainLiftId);
             ctx.close();
