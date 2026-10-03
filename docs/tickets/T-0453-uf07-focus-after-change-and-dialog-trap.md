@@ -5,7 +5,7 @@ lane: web-feature:UF-07
 screens: [UF-07.1]
 decisions: [D-0162, D-0081, D-0070, D-0071]
 deps: [T-0308a]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0308a review and accept (WCAG 2.4.3). Build flow: wl-build-web. About ⅓ day. Start it from a main that has T-0308a (merging now). -->
 
@@ -115,3 +115,13 @@ needed) · contracts unchanged · commits start `T-0453` and cite UF-07.1.
 - AC map: AC-1 t0453 AC-1 x4; AC-2 t0453 AC-2 x2; AC-3 t0453 AC-3 x3; AC-4 t0453 AC-4; AC-5 e2e row "delete confirm traps Tab..." (Chromium); AC-6 no existing UF-07 test edited, 81/81 pass.
 - Faults (backup copy, restored by cp): inert removed -> inert test red; trap removed -> cycle test red; Add focus skipped -> both AC-2 tests red; own fault (Remove focuses previous row) -> AC-1 middle-row red.
 - UF-07 vitest 6 files / 81 passed; e2e uf-07-routines 5 passed (Chromium).
+
+## Accept log
+- Accepted 2026-10-03 at HEAD ba24bb9 (clean). Verdict: **done**.
+- AC-1 (D-0162 §4 Remove): middle, last, empty with the picker closed or open, plus the live region. Each is checked in t0453 AC-1 (4 tests) and the e2e keyboard Remove.
+- AC-2 (§4 Add): Added + search focus, and the 8-item limit, in t0453 AC-2 (2 tests).
+- AC-3 (§5): the Tab/Shift+Tab cycle, inert on the 4 parts and not on the dialog's ancestors, cleared on Keep or Escape with focus returned. Covered by t0453 AC-3 (3 tests) and in Chromium by e2e (3 Tabs, a click+type on Name leaves the value unchanged).
+- AC-4: offline Tab and Shift+Tab stay on Keep routine, in t0453 AC-4.
+- AC-6: only a new test file was added, 81/81 UF-07 tests pass, and no string literals were added.
+- Red on main: 9/10 (Escape is the unchanged pair). Faults: builder 3, QA 1.
+- Contracts unchanged; no native dialog (§5). Review approved. Follow-up T-0456 (Delete loses focus to body when going offline) is outside these ACs.
