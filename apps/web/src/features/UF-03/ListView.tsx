@@ -117,12 +117,34 @@ interface RowProps {
   showKg: boolean;
   locale: string | undefined;
   prevText: string;
+  /** An added row's opening values (the last row's, D-0142 §3); null for a planned row. */
+  seed: Seed | null;
+  /** Focus the first field on mount (a row just added by "+ Add set"). */
+  focusOnMount: boolean;
+}
+
+interface Seed {
+  weightKg: number | null;
+  reps: number | null;
+  durationS: number | null;
 }
 
 /** One set row: check → `ctx.recordSet`, edit → `ctx.editSet` once on blur/Enter, uncheck →
  *  `ctx.deleteSet` (a tombstone). Every write goes through `ctx` (D-0071 §5). The row shows as
  *  done only after the write resolves. */
-function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText }: RowProps) {
+function SetRow({
+  ctx,
+  item,
+  index,
+  i,
+  backoff,
+  timed,
+  showKg,
+  locale,
+  prevText,
+  seed,
+  focusOnMount,
+}: RowProps) {
   const n = i + 1;
   const hintId = useId();
   const countHintId = useId();
@@ -130,20 +152,32 @@ function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText 
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const busy = useRef(false);
+  const firstField = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (focusOnMount) firstField.current?.focus();
+  }, [focusOnMount]);
   const logged = ctx.loggedSets.find(
     (s) => s.itemIndex === index && s.setIndex === i && s.exerciseId === item.exerciseId,
   );
   const baseWeight = logged
     ? logged.weightKg
-    : backoff
-      ? item.backoff!.weightKg
-      : item.prefill.weightKg;
+    : seed
+      ? seed.weightKg
+      : backoff
+        ? item.backoff!.weightKg
+        : item.prefill.weightKg;
   const baseReps = logged
     ? logged.reps
-    : backoff
-      ? item.backoff!.reps
-      : (item.prefill.reps ?? item.repsMin);
-  const baseSeconds = logged ? logged.durationS : (item.prefill.durationS ?? item.durationS);
+    : seed
+      ? seed.reps
+      : backoff
+        ? item.backoff!.reps
+        : (item.prefill.reps ?? item.repsMin);
+  const baseSeconds = logged
+    ? logged.durationS
+    : seed
+      ? seed.durationS
+      : (item.prefill.durationS ?? item.durationS);
   const weightText = draft.weight ?? (baseWeight === null ? "" : formatDecimal(baseWeight, locale));
   const repsText = draft.reps ?? (baseReps === null ? "" : `${baseReps}`);
   const secondsText = draft.seconds ?? (baseSeconds === null ? "" : `${baseSeconds}`);
@@ -256,6 +290,7 @@ function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText 
           <input
             type="text"
             inputMode="decimal"
+            ref={firstField}
             aria-label={uf03.weightLabel(n)}
             aria-describedby={!logged && weightInvalid ? hintId : undefined}
             value={weightText}
@@ -272,6 +307,7 @@ function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText 
             <input
               type="text"
               inputMode="numeric"
+              ref={showKg ? undefined : firstField}
               aria-label={uf03.secondsLabel(n)}
               aria-describedby={!logged && countInvalid ? countHintId : undefined}
               value={secondsText}
@@ -287,6 +323,7 @@ function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText 
             <input
               type="text"
               inputMode="numeric"
+              ref={showKg ? undefined : firstField}
               aria-label={uf03.repsLabel(n)}
               aria-describedby={!logged && countInvalid ? countHintId : undefined}
               value={repsText}
@@ -321,49 +358,90 @@ function Rows({ ctx, data, index, locale }: Omit<CardProps, "current" | "onHowTo
   const timed = isTimed(item, exercise);
   const showKg = !timed && exercise?.externalLoad !== false;
   const previous = previousSets(data, item.exerciseId, ctx.sessionId);
-  const rows: number[] = Array.from({ length: setCount(item) }, (_, i) => i);
+  const planned = setCount(item);
+  const [added, setAdded] = useState<Record<number, Seed>>({});
+  const [fresh, setFresh] = useState<number | null>(null);
+  const loggedHere = ctx.loggedSets.filter(
+    (s) => s.itemIndex === index && s.exerciseId === item.exerciseId,
+  );
+  // Planned positions, then every logged set above them and every added row (D-0142 §3).
+  const rows: number[] = Array.from(
+    new Set([
+      ...Array.from({ length: planned }, (_, i) => i),
+      ...loggedHere.filter((s) => s.setIndex >= planned).map((s) => s.setIndex),
+      ...Object.keys(added).map(Number),
+    ]),
+  ).sort((a, b) => a - b);
+  const lastIndex = rows[rows.length - 1] ?? -1;
+  /** The values a row opens with: its logged values, else its seed, else the engine pre-fill. */
+  const valuesOf = (i: number): Seed => {
+    const done = loggedHere.find((s) => s.setIndex === i);
+    if (done) return { weightKg: done.weightKg, reps: done.reps, durationS: done.durationS };
+    const seed = added[i];
+    if (seed) return seed;
+    if (item.backoff !== null && i >= item.sets && i < planned) {
+      return { weightKg: item.backoff.weightKg, reps: item.backoff.reps, durationS: null };
+    }
+    return {
+      weightKg: item.prefill.weightKg,
+      reps: item.prefill.reps ?? item.repsMin,
+      durationS: item.prefill.durationS ?? item.durationS,
+    };
+  };
+  const addSet = () => {
+    const next = 1 + Math.max(planned - 1, ...loggedHere.map((s) => s.setIndex), lastIndex);
+    setAdded((a) => ({ ...a, [next]: valuesOf(lastIndex) }));
+    setFresh(next);
+  };
   return (
-    <table className="wl-uf03-list__table">
-      <thead>
-        <tr>
-          <th scope="col">{uf03.colSet}</th>
-          <th scope="col">{uf03.colPrevious}</th>
-          {showKg ? <th scope="col">{uf03.colWeight}</th> : null}
-          <th scope="col">{timed ? uf03.colSeconds : uf03.colReps}</th>
-          <th scope="col">{uf03.colDone}</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((i) => {
-          const prev = previous[i];
-          let prevText: string = uf03.noPrevious;
-          if (prev) {
-            if (timed) {
-              if (prev.durationS !== null) prevText = uf03.previousSeconds(prev.durationS);
-            } else if (prev.reps !== null) {
-              prevText =
-                showKg && prev.weightKg !== null
-                  ? uf03.previousLoad(formatDecimal(prev.weightKg, locale), prev.reps)
-                  : uf03.previousReps(prev.reps);
+    <>
+      <table className="wl-uf03-list__table">
+        <thead>
+          <tr>
+            <th scope="col">{uf03.colSet}</th>
+            <th scope="col">{uf03.colPrevious}</th>
+            {showKg ? <th scope="col">{uf03.colWeight}</th> : null}
+            <th scope="col">{timed ? uf03.colSeconds : uf03.colReps}</th>
+            <th scope="col">{uf03.colDone}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((i) => {
+            const prev = previous[i];
+            let prevText: string = uf03.noPrevious;
+            if (prev) {
+              if (timed) {
+                if (prev.durationS !== null) prevText = uf03.previousSeconds(prev.durationS);
+              } else if (prev.reps !== null) {
+                prevText =
+                  showKg && prev.weightKg !== null
+                    ? uf03.previousLoad(formatDecimal(prev.weightKg, locale), prev.reps)
+                    : uf03.previousReps(prev.reps);
+              }
             }
-          }
-          return (
-            <SetRow
-              key={i}
-              ctx={ctx}
-              item={item}
-              index={index}
-              i={i}
-              backoff={item.backoff !== null && i >= item.sets}
-              timed={timed}
-              showKg={showKg}
-              locale={locale}
-              prevText={prevText}
-            />
-          );
-        })}
-      </tbody>
-    </table>
+            return (
+              <SetRow
+                key={i}
+                ctx={ctx}
+                item={item}
+                index={index}
+                i={i}
+                backoff={item.backoff !== null && i >= item.sets && i < planned}
+                timed={timed}
+                showKg={showKg}
+                locale={locale}
+                prevText={prevText}
+                seed={added[i] ?? null}
+                focusOnMount={fresh === i}
+              />
+            );
+          })}
+        </tbody>
+      </table>
+      <button type="button" className="wl-uf03-list__button" onClick={addSet}>
+        {uf03.addSet}
+      </button>
+    </>
   );
 }
 
