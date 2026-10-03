@@ -245,16 +245,25 @@ export function firstIncompleteSet(
 /** The phases from which `startRest` starts a rest: around a set, never mid-countdown. */
 const REST_STARTABLE: ReadonlySet<Phase> = new Set<Phase>(["set", "confirm", "rest", "timed"]);
 
-/** Entering item `itemIndex`: `timed` when its `repsMin` is null, else `set`; `done` past the end. */
+/**
+ * Entering item `itemIndex` (D-0153 §1): `timed` when its `repsMin` is null, else `set`, at the
+ * item's first free set (a List-view log can have filled set 0). With no free set: `done` on the
+ * last item, `betweenItems` on any other. `done` past the end.
+ */
 function enterItem(state: FocusState, ctx: FocusCtx, itemIndex: number, atMs: number): FocusState {
   const item = ctx.plan.items[itemIndex];
   if (!item) return { ...state, phase: "done", timer: null };
+  const free = firstUnloggedSet(state, ctx, itemIndex);
+  if (free === null) {
+    const last = itemIndex + 1 >= ctx.plan.items.length;
+    return { ...state, phase: last ? "done" : "betweenItems", itemIndex, timer: null };
+  }
   const timed = item.repsMin === null;
   return {
     ...state,
     phase: timed ? "timed" : "set",
     itemIndex,
-    setIndex: 0,
+    setIndex: free,
     timer: timed ? timedTimer(ctx, itemIndex, atMs) : null,
   };
 }
@@ -408,7 +417,9 @@ function transition(state: FocusState, event: FocusEvent, ctx: FocusCtx): FocusS
           timer: timed ? timedTimer(ctx, state.itemIndex, event.atMs) : null,
         };
       }
-      return { ...state, phase: "betweenItems", timer: null };
+      // D-0153 §3: no free set on the last item ends the workout, there is no check point after it.
+      const lastItem = state.itemIndex + 1 >= plan.items.length;
+      return { ...state, phase: lastItem ? "done" : "betweenItems", timer: null };
     }
     case "REST_ADJUST": {
       if (state.phase !== "rest" || !state.timer) return state;

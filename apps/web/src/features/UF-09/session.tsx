@@ -180,7 +180,10 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
    *  different set and writes its own row. */
   const recording = new Map<string, Promise<LoggedSet>>();
 
-  const writeSet = async (input: Omit<FocusSetInput, "source">): Promise<LoggedSet> => {
+  const writeSet = async (
+    input: Omit<FocusSetInput, "source">,
+    source: "focus" | "list",
+  ): Promise<LoggedSet> => {
     const queued = await queueRecordSet(input);
     const set: LoggedSet = {
       clientId: queued.clientId,
@@ -196,7 +199,9 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
     const state = store.getState();
     const atMs = Date.now();
     const current = input.itemIndex === state.itemIndex && input.setIndex === state.setIndex;
-    if (current && state.phase === "set") store.dispatch({ type: "SET_RECORDED", set, atMs });
+    // D-0142 §2: a List-view log never moves the focus machine (no confirm, no hold end, no done).
+    if (source === "list") store.dispatch({ type: "SET_LOGGED", set, atMs });
+    else if (current && state.phase === "set") store.dispatch({ type: "SET_RECORDED", set, atMs });
     else if (current && state.phase === "timed") {
       store.dispatch({ type: "TIMED_RECORDED", set, atMs });
     } else store.dispatch({ type: "SET_LOGGED", set, atMs });
@@ -208,7 +213,7 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
       const key = `${source}:${input.itemIndex}:${input.setIndex}:${input.exerciseId}`;
       const pending = recording.get(key);
       if (pending) return pending;
-      const run = writeSet(input);
+      const run = writeSet(input, source);
       recording.set(key, run);
       const clear = () => {
         if (recording.get(key) === run) recording.delete(key);
