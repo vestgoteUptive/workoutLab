@@ -106,3 +106,33 @@ contracts unchanged · commits start `T-0479`.
   rerun green) all hold. Full gate not rerun (QA does not rerun the builder's gate per role rules);
   builder's recorded 19/19 + repo-checks + format:check + check-all.mjs green stands.
 - Status: done (QA).
+
+## Accept log
+
+- 2026-10-03, product-owner. `git status` clean, HEAD `2efcf52`. Confirmed branch/lane: `t/T-0479-profile-gate-mock-gap`.
+- **Diff check**: `git diff a58183e^ a58183e -- apps/web/src/app/__tests__/profile-gate.test.tsx` shows
+  exactly the scoped change — `vi.mock("../../lib/offline/index.js", …)` switched from a fixed
+  literal to the `importOriginal` pattern (`const actual = await importOriginal<typeof
+  import(...)>(); return { ...actual, loadProfile, refreshProfile, ...uf06Loaders };`), +4/-1 lines,
+  no assertion touched. Byte-compared against `auth-guard.phase3.test.tsx`'s own mock block — identical
+  shape. Matches the ticket's "In" scope exactly; nothing outside it touched.
+- **Independent rerun**: `scripts/locked.sh small npx -y pnpm@10.28.2 --filter @workoutlab/web exec
+  vitest run src/app/__tests__/profile-gate.test.tsx --no-file-parallelism` green 92/92 (AC-2).
+  `scripts/locked.sh small npx -y pnpm@10.28.2 --filter @workoutlab/web exec vitest run
+  src/app/__tests__ src/lib/profile/__tests__ --no-file-parallelism` green, 11 files, 290/290 (AC-3;
+  same unrelated jsdom/axe-core canvas stderr noise builder/QA both noted, not a failure).
+- **AC-1**: red-on-main reproduced independently by both builder and QA via a direct module probe
+  (T-0216's `EquipmentSection.tsx` isn't merged into this worktree or `main` yet, so the probe at the
+  mock-export level is the faithful repro) — accepted as sufficient evidence; both probes hit vitest's
+  own `No "currentUserId" export is defined on the … mock` error, matching T-0216's real failure mode.
+- **Non-negotiable principles**: no contract touched (data-model, openapi, engine-rules, design
+  tokens untouched); no engine/UI behaviour change — this is test-harness-only, so the five product
+  principles (one-task-on-screen, time-budget input, deterministic engine, adaptive targets, <60s
+  onboarding) are not implicated.
+- **Unmerged-branch state**: branch behind `main` by several commits, but QA's `git merge-tree`
+  check showed a clean auto-merge (no `CONFLICT`, only non-overlapping lines in shared bookkeeping
+  files) — correctly left unmerged per D-0169 §2; the orchestrator's forced full gate on `main` after
+  merge will cover the combination. Not rerunning the full gate here per this role's own instructions
+  (orchestrator's job after merge).
+- **Verdict**: AC-1, AC-2, AC-3 all hold with a passing test/reproduction each. Definition of done met
+  for this ticket's scope. **done**.
