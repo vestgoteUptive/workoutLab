@@ -105,3 +105,11 @@ Tests for every AC pass, with the red runs recorded · the cached gate (D-0158):
   - **With T-0453, allowed** (UF-07).
   - **Not with T-0448** if that one adds a PAUSE hook in `host.tsx`. Today it is `device.ts` only.
 - **T-0438** is closed by this ticket (D-0162 §2). The orchestrator marks the T-0438 row done when T-0394 merges.
+
+## Build / accept log
+- Resumed after a usage-limit death; HEAD f9a5b69, partial work kept (host.tsx, session.tsx, back-guard.ts, t0394 tests, D-0163).
+- Fix found by the e2e: the router's own popstate render ran an "arm on every render" effect before our listener, so the guard was pushed first and Back did nothing. Now armed on mount only; each handled Back re-pushes it. Prettier + eslint-disable removed.
+- AC→test: AC-1 `t0394.back.test.tsx` (AC-1 block, 6 tests); AC-2 (AC-2 block: 5 states, same-as-button, timer stops); AC-3 (pair + from-button); AC-4 (3 overlay rows with pairs); AC-5 (End REPLACE, unmount listener); AC-6 `uf-09-focus.spec.ts` "T-0394 AC-6" (online, offline) + tightened `uf-08-setup.spec.ts` Back row and `startWorkout()`; AC-7 existing lint/import-ban tests, diff touches none of the banned paths; AC-8 `t0394.comments.test.ts`. D-0163 records the paused-Back skip.
+- Red on unfixed code (host.tsx/session.tsx from HEAD, no back-guard.ts): vitest t0394: 16 failed / 8 passed (AC-1 machine-state, 5 AC-2 states + same-as-button + timer, AC-3 pair, 3 AC-4, AC-5 End, 3 AC-8); e2e: 3 failed (two new AC-6 rows, tightened T-0303d row). Restored from backup copy.
+- Green: vitest UF-09 all pass; e2e uf-09-focus + uf-08-setup 40 passed.
+- Gate: typecheck/lint/test (3097 web tests) green, test:repo-checks 146 pass, format:check and check-all green, whole web e2e 180 passed.

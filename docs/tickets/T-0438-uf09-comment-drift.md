@@ -37,3 +37,6 @@ T-0394 is done with AC-8 passing.
 ## Notes
 - **Why it's folded:** T-0415 (in QA) edits both files, and T-0394 is already serial after it and
   edits `host.tsx`. A separate two-comment branch would only add a merge in the same files.
+
+## Log
+- Delivered by T-0394 (AC-8, D-0162 §2): both comments rewritten, source test `t0394.comments.test.ts`.
