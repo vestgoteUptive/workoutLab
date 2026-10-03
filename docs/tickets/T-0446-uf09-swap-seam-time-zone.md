@@ -83,3 +83,8 @@ the host's zone`).
     the real host; the added field doesn't change `ListViewCtx`.
 
 ## Build / accept log
+
+- 2026-10-03 build (resumed after usage limit): merged origin/main (clean; T-0451 retryableLazy kept). HEAD before work 1d15328, tree clean.
+- Changed: `session.tsx` (`FocusSession.timeZone`, omitted from `FocusActions`), `host.tsx` (passes `timeZone`), `seams.tsx` (`SwapSheet timeZone={ctx.timeZone}`), new `__tests__/t0446.swap-zone.test.tsx`. Existing-test change: `seams.test.tsx` AC-9 key list gains `"timeZone"` (only file typecheck/tests asked for).
+- AC-1 -> `t0446 AC-1` (prop; pair: runtime zone). AC-2 -> `t0446 AC-2` (UF-09.9 Auckland; UF-09.6 Auckland; pair UTC). AC-3 -> existing UF-09 suite green; UF-03/UF-05 no diff.
+- Red on unfixed code (src stashed, new test file kept): 5/5 failed (ctx.timeZone undefined; stub timeZone undefined).

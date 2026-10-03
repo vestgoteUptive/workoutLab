@@ -455,6 +455,7 @@ function Machine(props: MachineProps) {
   const workout = useMemo(() => buildWorkout(row, ctx.plan), [row, ctx.plan]);
   const session: FocusSession = {
     ...focusReadFields({ sessionId, row, plan: ctx.plan, workout, state, nowMs }),
+    timeZone,
     ...actions,
     close: controls.close,
   };

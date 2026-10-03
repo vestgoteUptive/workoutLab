@@ -35,6 +35,8 @@ export type FocusSetInput = RecordSetInput & { itemIndex: number; source?: "focu
 export interface FocusSession {
   /** The `sessions.id` in the route. */
   sessionId: string;
+  /** The host's resolved time zone (the `timeZone` prop, else the runtime zone; D-0120 §2). */
+  timeZone: string;
   /** The stored session row, updated after `replaceItem` and `finish` write it. */
   row: SessionRow;
   /** The plan being walked (`row.plan`, parsed); changes only through `replaceItem`. */
@@ -120,6 +122,7 @@ export function buildWorkout(row: SessionRow, plan: SessionPlan): Workout {
 export type FocusActions = Omit<
   FocusSession,
   | "sessionId"
+  | "timeZone"
   | "row"
   | "plan"
   | "workout"
