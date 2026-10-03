@@ -149,3 +149,16 @@ All three faults restored; `git status` and a full resume-file diff confirmed cl
 
 **Verdict: done.** All 10 ACs map to tests that would fail without the feature (proven by reproducing red-on-main and 3 planted faults), AC10 (no regression) reconfirmed at 1077/1077, and the full web e2e is green at 213/213 on the current, correctly-merged branch.
 
+## Accept log
+product-owner, 2026-10-03. `git status` clean, HEAD `16bf55a` on `t/T-0395-resume-workout`.
+
+- AC→test map (build/review/QA) checked against the actual AC text, not just titles: all 10 ACs (card content AC1, exclusion conditions incl. the 12h-inclusive boundary AC2, newest-wins + tie-break AC3, sets-count incl. non-JSON/no-array/back-off AC4, offline/failure-is-silent AC5, Today DOM order across all three states AC6, Resume→host round-trip + Back AC7, export pin AC8, e2e cold-start + axe AC9, no-regression AC10) map to tests whose bodies assert the AC, not a weaker proxy.
+- Confirmed independently: `features/UF-09/resume.ts`, `resume-card.tsx` and both test files exist on the branch; `exports-and-lint.test.ts`'s pin reads exactly `["ResumeCard", "SessionHost", "useFocusSession"]`, matching AC8.
+- Re-verified the branch-behind-main claim against the current repo state (local `main` has moved further, to `b208fdd`, than QA's `f83403e`): `git diff --stat` from this branch's merge-base (`62e8f36`) to current `main` touches only `UF-11/**`, `.squad/**` and unrelated tickets' `docs/tickets/**` — zero overlap with this ticket's files. `git merge-tree main HEAD` returns a single tree (no conflict markers). Correctly left unmerged per D-0169 §2; safe for the orchestrator to merge as-is.
+- Confirmed no contract file (`docs/data-model.md`, `api/openapi.yaml`, `docs/engine-rules.md`, `packages/design-tokens/src/tokens.json`) is touched by this branch.
+- Confirmed the changed-file set vs. the merge-base (14 files) matches the ticket's "Paths you may change" exactly, plus this ticket file for the logs.
+- Did not re-run the full gate or e2e (orchestrator's job post-merge, per task instructions); relied on the build and QA logs' own green runs (gate green pre-merge, typecheck/lint + full e2e 213/213 green post-merge, each under `scripts/locked.sh`).
+- Non-negotiable principles: unaffected. No engine, time-budget, focus-mode or onboarding change; Resume is a UF-09.9-consistent PUSH that doesn't alter Start or the single-task-on-screen flow.
+
+**Verdict: done.**
+
