@@ -85,6 +85,10 @@ export const uf03 = {
   secondsLabel: (n: number) => `Set ${n} seconds`,
   markDone: (n: number) => `Mark set ${n} done`,
   markNotDone: (n: number) => `Mark set ${n} not done`,
+  /** T-0417: the polite hint under an invalid kg ("Enter a weight like 82.5"). */
+  weightHint: (example: string) => `Enter a weight like ${example}`,
+  /** The polite text after a check, edit or uncheck that didn't reach IndexedDB. */
+  rowSaveFailed: "Couldn't save. Tap again.",
   /** The UF-09 seam placeholder for the List view and the how-to (D-0142 §8). */
   seamLoading: "Loading\u2026",
   seamLoadFailed: "Couldn't load this view.",

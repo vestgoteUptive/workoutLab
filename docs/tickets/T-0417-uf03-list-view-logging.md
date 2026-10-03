@@ -161,3 +161,11 @@ start `T-0417` and cite the screen (for example `T-0417 UF-03.1: check records t
 - **E2e runs:** use `TMPDIR=$HOME/.cache/wl-pw-tmp` if the T-0440 preflight asks for it.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-03; start: git clean, HEAD 56ab6a9)
+- **Built:** `ListView.tsx` (`SetRow`: check → `ctx.recordSet` source list, edit → `ctx.editSet` once on blur/Enter, uncheck → `ctx.deleteSet`, pending/rejection per row), `weight-parse.ts` (D-0118 §6 + D-0128), strings in `flows/uf-03.ts`, css. `ListViewCtx` gains `recordSet/editSet/deleteSet` and `clientId`, typed locally. No default needed: an invalid kg on a *done* row reverts on blur and doesn't disable its uncheck (the hint/disable applies to unlogged rows).
+- **AC → test:** AC-1 `list-view.logging.test.tsx` "AC-1" + `list-view.logging.host.test.tsx` "AC-1 integration" · AC-2 "AC-2 edit" · AC-3 "AC-3" + host "tombstone" (no `.delete()` through a Proxy on the client) · AC-4 `exports-and-lint.test.ts` "T-0417 AC-4" · AC-5 "AC-5" + `weight-parse.test.ts` · AC-6 host "AC-6 reload" · AC-7 host "AC-7" · AC-8 logging test "AC-8 a11y" + the existing jsx-no-literals test.
+- **Red on unfixed** (HEAD `ListView.tsx`, new tests): 28 of 30 failed (logging + host files). `weight-parse` was red by missing module.
+- **Planted faults (each restored from a `cp` backup):** row checked while pending → AC-1 pending test red; `editSet` per keystroke → 4 AC-2 tests red; direct `recordSet` import in `ListView.tsx` → AC-4 source test red; kg check skipped → 3 AC-5/AC-8 tests red.
+- **Test bug found:** the AC-7 host test returned early because two cards both showed "Mark set 1 not done"; it now waits for the second one (was flaky 1 in 3).
+- **Gate:** `-w typecheck lint test --concurrency=1` green (after one TS narrowing fix), `test:repo-checks`, `format:check`, `check-all`, `check:size` (built with dummy VITE_SUPABASE_*) green; e2e `uf-03-list-summary` + `uf-09-focus`: 12 passed.

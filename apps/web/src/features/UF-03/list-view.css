@@ -136,3 +136,13 @@
   margin-left: 4px;
   color: var(--wl-color-text-muted);
 }
+
+.wl-uf03-list__hint {
+  display: block;
+  font-size: 12px;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf03-list__table input[aria-disabled="true"] {
+  opacity: 0.5;
+}
