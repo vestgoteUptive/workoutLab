@@ -5,7 +5,7 @@ lane: web-feature:UF-05
 screens: [UF-05.1, UF-09.9, UF-09.6, UF-09.3, UF-09.4, UF-09.5]
 decisions: [D-0142, D-0153, D-0160, D-0069, D-0071, D-0093, D-0111, D-0118, D-0120, D-0140, D-0149, D-0086, D-0156]
 deps: [T-0421, T-0304d, T-0414]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Second child of the T-0306b board row (D-0142 §1 §6 §7). Re-checked against main after T-0421 and T-0304d merged (2026-10-02 groom). SwapSheet's props are `{workout, itemIndex, onApply(result: Workout), onClose, timeZone?}`. seams.tsx still has both arrays `[]`, and ORDER already places `swap`. AC-7 now carries the D-0153 §2 confirm rule, which adds one listed extra in machine.ts. Build flow: wl-build-web. About ⅔ day. It edits features/UF-09/seams.tsx and machine.ts, so it never runs in parallel with T-0415 or T-0416. -->
 
@@ -343,3 +343,12 @@ Two code review findings are fixed. Only `features/UF-09/seams.tsx` changed.
   - landing `ac21` and 3 of the repo-checks (check-all on the real repo) are red only because the local `origin/main` (4867665) is behind `main`, so check-lane-paths counts T-0308b's merged files. In a scratch clone with `origin/main` = ad1d5db: `check-all` exit 0 and repo-checks 146/146.
   - Whole web e2e: 155 passed. `check:size`, `format:check`: green.
 - **Nit (no gate):** the `t0422.host` AC-5 load-line comment still says "TR-0043: red until it is resolved". The test stays unedited per AC-11.
+
+## Accept log (product-owner, 2026-10-03): done
+- **Start.** The worktree was clean at f53ed72 (main merged in). `git diff --stat main...HEAD`: 19 files. Every one is in the lane or in a listed extra; `host.chrome.test.tsx` holds only the D-0142 §6 button-count pins.
+- **ACs.** AC-1 to AC-12 each map to a passing test (QA log above, d453c81). Six planted faults went red. `uf-05-swap` passed 5/5 with `--repeat-each=5`.
+- **D-0153 §2.** `planReplaced` returns the same state for another item. For `confirm` (or paused on it), `savedBySwap` keeps the recorded entry as is and goes through `afterSet` with the new item. Paused: the rest starts at `pausedAtMs`. `done` ends the pause.
+- **D-0156.** The `nextSetPrefill` filter adds only `exerciseId === item.exerciseId`. `SEAM_SENTINELS["UF-05"]` is `["wl-uf05"]`.
+- **Principles.** 1: Swap is only on UF-09.9 and UF-09.6, never on the set screens, and the sheet replaces the screen. 3: the options come from the real `rankSwaps`/`applySwap`.
+- **QA's reds were on main and are fixed:** T-0450, plus a stale `origin/main`.
+- **Follow-ups (already filed):** T-0446, T-0451.
