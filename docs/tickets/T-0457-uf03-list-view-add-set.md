@@ -96,3 +96,9 @@ and `check-all` green · `uf-03-list-summary.spec.ts` green · contracts unchang
 - Planted fault (index `item.sets + added count`, backup copy restored by `cp`): AC-3 "with a back-off" and "logged set above plan -> 7" went red (2 failed, 8 passed); restored, green.
 - `vitest run src/features/UF-03`: 16 files, 202 tests green.
 - Gate: typecheck/lint/test (turbo, 19 tasks) green, test:repo-checks 0 fail, format:check, check-all green; `uf-03-list-summary` e2e 2 passed (via apps/web test:e2e).
+
+### QA log (2026-10-03, after `git merge origin/main`, HEAD 6f04a69)
+- AC→test: AC-1/2/3/5/6 → `list-view.addset.test.tsx` (9 rows); AC-4 → `list-view.addset.host.test.tsx`. All map to a meaningful assertion.
+- Red: T-0417's ListView.tsx (68a1d5b, from backup) → 10 failed (every AC red). Planted `index = item.sets + added` → 9 failed incl. AC-3 back-off and "logged above plan -> 7". Own faults: added row not copying last values (kg kept, reps 1) → 6 failed (AC-1/2/3/4); focus move removed (`setFresh` dropped) → 2 failed (AC-6). Each restored by `cp`; base 10 passed.
+- Runs: `vitest run src/features/UF-03` 16 files, 202 passed. e2e uf-03-list-summary + uf-09-focus: 14 passed. Merge changed the branch, so cached `-w typecheck lint test --concurrency=1` green (16/19 cached), `-w test:repo-checks` 0, check-all 0.
+- Verdict: done.
