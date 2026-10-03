@@ -107,3 +107,14 @@ screen (for example `T-0463 UF-09.9: retry the how-to and List view seams`).
 - **Board:** add T-0446 to the row's deps (orchestrator).
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-03)
+Start: `git status` clean, HEAD 6cc2f2a. `seams.tsx`: `ListView` and `ExerciseHowTo` are `retryableLazy` loaders; `useSeamRetry(loader)` (key on an attempt counter, `onRetry`, `onFailed = loader.reset`) is shared by the three overlays; `howToChrome` and `listViewChrome` set `retryLabel: uf09.seamRetry`; `uf-09.ts` gains `seamRetry: "Try again"`. Tests: `__tests__/t0463*` (one successful load per file; no `session-helpers`/`set-loop-helpers`, they import UF-03 which is mocked).
+- AC-1 how-to: `t0463.how-to.offline` (labels, order, focus on Close, fails again, Close, no unhandled, console.error boundary-only), `t0463.how-to.recovers` (loader +1, stub shows `exerciseId`).
+- AC-2 List view: `t0463.list-view.offline` (placeholder `data-screen-id=UF-03.1` failed and again, not paused, 5 s moves elapsed to 20:05 on Pause after Close), `t0463.list-view.recovers`.
+- AC-3: `t0463.how-to.next-open`, `t0463.list-view.next-open`.
+- AC-4 (F3): `t0463.{swap,how-to,list-view}.rerender`: calls and mounts stay 1 and no Loading placeholder appears.
+- AC-5: t0416/t0422/t0451/seams/t0446 unedited, all green in the full web run.
+- Red on unfixed (main `seams.tsx`): 6 of 9 red (offline, recovers, next-open for both seams: no Try again button, loader not called again); the 3 rerender tests pass there, as expected.
+- Planted faults (backup copy, restored with `cp`): `<loader>.reset()` in the render body of `SwapOverlay`, `HowToOverlay` and `ListViewOverlay` each turn its `rerender` test red. A first version of the test (mounts and calls only) did NOT catch them: a resolved lazy of a cached module resolves to the same component type, so React keeps the fiber and the module factory isn't re-run. The test therefore also watches for the Suspense fallback ("Loading") with a MutationObserver, after advancing the fake clock past React's 300 ms fallback throttle.
+- Gate: `-w typecheck lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check`, `check-all` green (one lint red first: unused imports in the new tests, fixed); `build` + `check:size` green; e2e `uf-09-focus`, `uf-05-swap`, `uf-03-list-summary` 15/15.
