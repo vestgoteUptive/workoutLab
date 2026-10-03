@@ -221,6 +221,8 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0216 | UF-11.4 Equipment section: checklist of the 9 real items, "none" always first, saved online to profiles.equipment (D-0061 §3, D-0168 §6, D-0172 §7) | web-feature:UF-11 | T-0310d | done | wl-build-web |
 | T-0346 | UF-07.1: refresh a cached routine on mount (online + signed-in), replace only an untouched draft; reset loadFailed and the draft when routineId changes in place (D-0174 §4, amends D-0081 §5) | web-feature:UF-07 | T-0308a, T-0454 | done | wl-build-web |
 | T-0353 | UF-10 e2e: reach C-01 buttons with real Tab presses rather than `locator.focus()` (AC-A16 wording), plus a `boundingBox()` ≥ 44×44 check on a balance row (AC-A14) (T-0307a accept; D-0174 §6; e2e-only, serial with T-0354) | web-feature:UF-10 | T-0307a | done | wl-build-web |
+| T-0354 | UF-10.2: contributor rows render once the names read settles (resolved or rejected), so the raw `exerciseId` never flashes (T-0307a accept; D-0174 §5; serial with T-0353) | web-feature:UF-10 | T-0307a | done | wl-build-web |
+| T-0480 | guarded-test.ts detector 2: an already-fulfilled request can still fire requestfailed/ERR_ABORTED right before a hard navigation (D-0173, T-0469 AC-2 build finding) | qa | — | done | wl-build-qa |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
@@ -232,3 +234,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0311 | Flaky T-0300c offline sync-trigger tests: AC-C9 'online' event + stop() listener fail intermittently in the full suite (reproduced on stock main, 3 of 5 runs; pass 6/6 isolated). Real timing bug in the merged offline-sync triggers, not machine noise | web-shell | T-0300c | done | wl-build-web |
 | T-0902 | Dev server crashes `supabaseUrl is required`: VITE_SUPABASE_URL/ANON_KEY set nowhere for dev + the lazy-client deferral is defeated at render (auth-context.tsx:70), so AC-A5 fails in real dev while tests pass | web-shell | T-0300b | done | wl-build-web |
 | T-0901 | CI e2e job: run Playwright with the tests/e2e config; webServer builds via turbo (^build) — diagnosis docs/ci/CI-T-0901-* | infra (+ tests/e2e/playwright.config.ts) | T-0300b | done | wl-build-infra (draft PR) |
+| T-0906 | CI e2e green again. The T-0458 UF-03.1 List view offline test aborts Supabase writes while offline, so the mount flush can't drain the queued sets before the test reads them (diagnosis: docs/ci/CI-T-0906-uf03-list-view-offline-flush-race.md) | qa | T-0458 | done | wl-build-qa |
