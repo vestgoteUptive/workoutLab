@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.4, UF-01.3]
 decisions: [D-0022, D-0040, D-0061, D-0064, D-0070, D-0075, D-0079, D-0113, D-0136, D-0158, D-0168, D-0169, D-0172]
 deps: [T-0310d]
-status: ready
+status: done
 ---
 <!-- Re-groomed 2026-10-03 against main f83403e (T-0310d merged): ready. D-0172 §7 names the real
 file (AccountSettingsBody.tsx renders the new EquipmentSection), §8 keeps it apart from T-0470. -->
@@ -139,3 +139,72 @@ commits start `T-0216` and cite UF-11.4.
 - **Product follow-up:** add "Equipment" to the UF-11.4 line in user flows v2.
 
 ## Build / accept log
+
+**frontend-dev, 2026-10-03.** Built `features/UF-11/EquipmentSection.tsx` (new), mounted in
+`AccountSettingsBody.tsx` between "Signed in as" and "Your data"; strings added as
+`en.uf11.account.equipment.*` in `lib/i18n/flows/uf-11.ts` (last key of `account`, per D-0172 §8).
+Tests: `features/UF-11/__tests__/equipment-section.test.tsx` (new, 17 tests) +
+`__tests__/equipment-helpers.tsx` (new). Extended the existing `__tests__/strings.test.ts`
+allowlist for the 9 vocabulary keys, the save-state literals and `"checkbox"` (all structural,
+not copy).
+
+AC → test map (all in `equipment-section.test.tsx`, each prefixed `T-0216 AC-n`):
+- AC-1 → 3 tests (9 checkboxes/order/checked state; DOM order with/without email).
+- AC-2 → 1 test (tick/untick, one `profiles.update`, `.eq("user_id", U)`, one `refreshAll`, Saved, Save re-disabled).
+- AC-3 → 2 tests (untick-all → `["none"]`; tick-all-9 → full D-0064 §3 array).
+- AC-4 → 1 test (stored `trx` survives, no 10th box, appended after known items).
+- AC-5 → 4 tests (disabled/enabled/disabled; offline + Connect to save + no call; online event re-enables, same node; pending save swallows second click).
+- AC-6 → 2 tests (reject and resolved-`{error}` both show the failure, draft kept, Save re-enabled, retry succeeds, `refreshAll` not called on failure).
+- AC-7 → 1 test (real `lib/offline` cache + `fake-indexeddb`; `isEligible` over push-up/bench-press before and after a save, through `loadProfile()`).
+- AC-8 → 3 tests (offline cold cache message, no boxes; online refresh fills the cache; an in-progress tick survives a refresh that resolves under it).
+- AC-9 → covered by `strings.test.ts` (existing suite, now green with the ticket's additions) plus the existing `account-settings.boundaries.test.ts` (unchanged, still green: no dexie import, no `offlineDb(` call, exports pin unchanged).
+
+**Red-on-main proof.** Temporarily restored `AccountSettingsBody.tsx` to `HEAD` (pre-ticket) and
+removed `EquipmentSection.tsx`; ran AC-1's 3 tests: all 3 failed ("Unable to find role=group"/no
+such group), exactly as the ticket predicts. Restored both files from backup (`cp`, verified
+byte-identical with `diff` after restore) and reran: 17/17 green.
+
+**Planted-fault proof.** On a backup copy of `EquipmentSection.tsx`, dropped the leading `"none"`
+from `toSaved` (comment-marked). Ran AC-2/AC-3 (3 tests): all 3 failed with the expected
+payload-shape diffs (`equipment` missing `"none"`). Restored the component from the backup
+(`cp`), reran the full file: 17/17 green.
+
+**Full gate (cached, D-0158/D-0169):**
+- `scripts/locked.sh small npx vitest run src/features/UF-11` (apps/web): 12 files / 162 tests green, repeatedly during the build.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`: typecheck and lint green across all 6 packages; test: 245/246 files, 3430/3432 tests green. The 2 failures are pre-existing and **out of this lane**: `apps/web/src/app/__tests__/profile-gate.test.tsx` (`web-shell`, AC-6, `/plan/account` only) hand-rolls its `lib/offline/index.js` mock as a fixed object (`{ loadProfile, refreshProfile, ...uf06Loaders }`) with no `currentUserId`/`refreshAll`, unlike the two sibling harnesses in the same directory (`auth-guard.phase3.test.tsx`, `routes.phase3.render.test.tsx`) which both spread `...actual` from `importOriginal()`. `EquipmentSection` calling `currentUserId()` on mount throws inside that mock and the route's error boundary renders "Couldn't load this screen." Filed as a follow-up for `web-shell` (one-line fix: mirror the other two harnesses' `importOriginal` pattern, or add `currentUserId`/`refreshAll` to the literal object). Confirmed via `git diff` that nothing in `apps/web/src/app/**` was touched by this ticket.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 green.
+- `npx -y pnpm@10.28.2 -w format:check`: green (after one `prettier --write` on the new test file).
+- `node .github/scripts/check-all.mjs`: green (exit 0).
+- e2e: not run — `uf-11-plan.spec.ts` exercises UF-11.2/UF-11.3 only, unaffected by this ticket's UF-11.4-only change; `uf-11-account.spec.ts` does not exist yet (T-0469 still `ready`, not merged), so the DoD's conditional clause doesn't apply.
+
+Contracts unchanged. Commits start `T-0216` and cite UF-11.4.
+
+**frontend-dev, 2026-10-03 (gate rerun).** T-0479 landed on `main` (fixed the
+`profile-gate.test.tsx` mock shape noted above as a `web-shell` follow-up) and was merged into
+this branch at `2474cf9`. Rerunning the full gate (`typecheck lint test --concurrency=1`) still
+showed one failure: an **unhandled rejection** (not a per-test assertion failure) —
+`TypeError: stored is not iterable` from `fromStored` in `EquipmentSection.tsx:47`, raised while
+`src/app/__tests__/profile-gate.test.tsx`'s AC-6 `/plan/account` cases were running. Its
+`PROFILE_ROW` fixture (`{ id: "u1", goal: "build" }`) has no `equipment` key, and `fromStored`
+iterated `p.equipment` unconditionally, so mounting `EquipmentSection` on that fixture threw.
+`profiles.equipment` is `not null default '{}'` in the real schema (`docs/data-model.md`), so this
+is a defensive-code gap in my own file, not a contract issue or `web-shell`'s mock to fix — the
+mock fix (T-0479) was necessary but not sufficient. Fixed: `fromStored` now takes
+`readonly string[] | null | undefined` and iterates `stored ?? []`. One file changed
+(`EquipmentSection.tsx`, +5/-2), committed as `b5990a0`.
+
+Reran after the fix: `scripts/locked.sh small npx vitest run src/app/__tests__/profile-gate.test.tsx
+src/features/UF-11/__tests__/equipment-section.test.tsx` → 2 files / 109 tests green, no unhandled
+errors. Then the full gate again:
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`: **19/19 tasks
+  green**, 250 test files / 3475 tests, no unhandled errors (the former AC-6 `/plan/account` finding
+  is gone).
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 green.
+- `npx -y pnpm@10.28.2 -w format:check`: green (one `prettier --write` needed on `EquipmentSection.tsx`
+  after the fix, then green).
+- `node .github/scripts/check-all.mjs`: exit 0.
+- Reran `typecheck lint test` once more after the prettier reformat to be sure: still 19/19, 250/3475.
+
+Gate fully green. No contract change. The earlier `web-shell` follow-up note above is now historical
+(T-0479 fixed the mock; this entry fixed the component's own gap it uncovered) — left in place since
+it documents the finding accurately for the commit that filed it.
