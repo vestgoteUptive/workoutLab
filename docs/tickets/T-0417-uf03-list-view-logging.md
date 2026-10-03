@@ -5,7 +5,7 @@ lane: web-feature:UF-03
 screens: [UF-03.1, UF-09.9, UF-09.3]
 decisions: [D-0142, D-0164, D-0015, D-0045, D-0066, D-0071, D-0118, D-0128, D-0153]
 deps: [T-0416, T-0415, T-0420]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner; re-groomed 2026-10-03 against main after T-0415, T-0416 and T-0420 merged. Split by D-0164 §1: "+ Add set" is T-0457 and the List view e2e is T-0458. Build flow: wl-build-web. About ½ day. -->
 
@@ -180,3 +180,10 @@ start `T-0417` and cite the screen (for example `T-0417 UF-03.1: check records t
 - **Red/faults (each restored from `cp`):** main's `ListView.tsx` → many red (axe, 0/82.5/82,5, -5, 82.555 …); editSet per keystroke → 5 red (AC-2); direct `lib/offline` `recordSet` import → AC-4 red; reps validation reverted (attempt 2) → 2 red; own: uncheck no longer calls `deleteSet` → 4 red (tombstone, busy, rejection, D-0165).
 - **Runs:** UF-03 vitest folder 192 passed; e2e uf-03-list-summary + uf-09-focus 14 passed; `-w test` web 3280 passed on rerun (first cached run had one web failure under load).
 - **GAP:** `check-all` and `test:repo-checks` (AC21) red: `.squad/decisions/D-0165-list-view-done-row-invalid-kg.md` is outside lane `web-feature:UF-03`'s grant on main. Needs the orchestrator to land D-0165 on main (or add it to the ticket's paths on main).
+
+### Accept log (product-owner, 2026-10-03; git clean, HEAD 7300eb9, D-0165 on main)
+- **Verdict: done.** AC-1..AC-8 each map to a named passing test (QA: UF-03 192, e2e uf-03 + uf-09 14). Every AC was red on main's `ListView.tsx`, and the four required planted faults turned red (build and QA).
+- **Decisions hold:** D-0142 §3/§5 (local ctx types, no UF-09 import, list logs leave the machine alone: AC-1 integration); D-0164 §1 split respected ("+ Add set" and e2e left to T-0457/T-0458); D-0165 (done-row invalid kg reverts, uncheck stays enabled) pinned by a test; D-0015 tombstone with no `.delete()`.
+- **Principle 1:** UF-03.1 opens only from UF-09.9 Pause; AC-7 returns to a single UF-09.3 step.
+- QA's only gap (D-0165 outside the lane grant) is resolved now that D-0165 is on main; `check-all` exit 0.
+- Follow-up: T-0464 (uncheck during an in-flight edit).
