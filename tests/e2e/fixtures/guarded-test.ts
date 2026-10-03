@@ -141,11 +141,47 @@ export function installSupabaseGuard(context: BrowserContext): SupabaseGuard {
   // (`mockSupabaseData`, `mockSupabaseRest`) claim their requests, exactly like the online ones.
   // The ticket's expectation that offline requests "never reach any route" does not hold; this
   // exemption covers the *navigation* case, where `page.reload()` while offline fails for real.
+  //
+  // T-0480 (D-0173): `routed` alone does not cover every legitimate mock. It is only populated by
+  // *this* context route (line 103 above) — the catch-all a request reaches after falling through
+  // every page route. A request a spec's own `page.route` answers directly with `route.fulfill`
+  // never reaches the context route at all, so it is never added to `routed`. Measured (a
+  // temporary log, removed before this diff): T-0469 AC-2's real DELETE + real local-sign-out
+  // mocks are exactly this case — both page-routed, both fulfilled 204, `routed` empty and
+  // genuinely never touched for either entry — and yet Chromium still reports both as
+  // `requestfailed: net::ERR_ABORTED`, because `AccountSettingsBody.onDelete`'s correct hard
+  // `window.location.replace("/welcome")` (D-0136 §4) tears the frame down a tick after those
+  // responses already resolved in-page. So neither of the ticket's two hypotheses was it: the key
+  // matched fine, and `routed` wasn't stale — `routed` was simply never the right thing to check
+  // for a page-fulfilled request in the first place.
+  //
+  // The fix: `fulfilledResponses` below records every Supabase response's entry, from *any* route
+  // (context or page, any status) — not only the context catch-all's. An entry in it means some
+  // route actually fulfilled this exact request with a real HTTP response, which is the one
+  // property this detector needs to stay a safety net without re-introducing the regression the
+  // comment above the `requestfinished` probe already measured: `requestfinished` itself fires for
+  // every route-fulfilled request too, with no way to tell a legitimate mock from a leak by that
+  // event alone (that is *why* this detector keys on `requestfailed`, not `requestfinished`). A
+  // `response` event is different: it never fires for a `route.continue()` passthrough to the
+  // fixture's unresolvable host, because DNS fails before any response exists (confirmed with the
+  // same temporary log: the planted `route.continue()` leak in `fixture-guard.spec.ts` never fires
+  // `response` at all). So this exemption only ever suppresses a request that was genuinely
+  // answered by some route, never a real leak — AC-4 and AC-7 below are the regression tests for
+  // that distinction. Do not widen this to `requestfinished` or to "no failure text"; both would
+  // exempt a `route.continue()` leak too and silently defeat this detector (see the top of this
+  // comment block).
+  const fulfilledResponses = new Set<string>();
+  context.on("response", (response) => {
+    if (!response.url().startsWith(VITE_SUPABASE_URL)) return;
+    const request = response.request();
+    fulfilledResponses.add(`${request.method()} ${request.url()}`);
+  });
   const OFFLINE_FAILURES = ["net::ERR_INTERNET_DISCONNECTED", "net::ERR_NETWORK_CHANGED"];
   context.on("requestfailed", (request: Request) => {
     if (!request.url().startsWith(VITE_SUPABASE_URL)) return;
     const entry = `${request.method()} ${request.url()}`;
     if (routed.has(entry)) return;
+    if (fulfilledResponses.has(entry)) return;
     const failure = request.failure()?.errorText ?? "";
     if (OFFLINE_FAILURES.some((text) => failure.includes(text))) return;
     record(entry);
@@ -179,6 +215,7 @@ export function installSupabaseGuard(context: BrowserContext): SupabaseGuard {
       seen.length = 0;
       backstop.length = 0;
       routed.clear();
+      fulfilledResponses.clear();
     },
     assertClean: () => {
       const hits = unallowedBackstop();
