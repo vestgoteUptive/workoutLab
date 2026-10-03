@@ -166,3 +166,9 @@ fault recorded. The cached gate is green (`npx -y pnpm@10.28.2 -w typecheck lint
 
 ### Build, attempt 3 (devops, CI fix)
 - CI failure: the AC5 test saw `node-compile-cache` in the scratch TMPDIR (Node's own compile cache on the runner, not a vitest leak). Fix: the spawned child gets `NODE_DISABLE_COMPILE_CACHE=1`. Repro with `NODE_OPTIONS=--require <file calling module.enableCompileCache()>`: red before (`actual ['node-compile-cache']`), green after.
+
+## QA log (qa-tester at 880e8cd; recorded by the orchestrator 2026-10-03, the QA commit did not land)
+- AC-2 pass: fresh scratch TMPDIR, `vitest run` in apps/web (2800 tests) and packages/engine green; the scratch dir held only Node's `node-compile-cache`, no nanoid dirs; `node_modules/.vite/vitest-tmp` gone afterwards in both packages.
+- Parallel `vite build` + `vitest run src/features/UF-09` (689 tests): the build did not touch the test's vitest-tmp; the folder was removed at run end. A standalone `vite build` still uses TMPDIR (workbox), by design (vitest only).
+- Faults (cp-restored): VITEST guard removed → the helper's no-VITEST test red; redirect removed from packages/engine → check-vitest-tmp real-repo test red.
+- `-w test:repo-checks` 155/155, check-all 0. CI on PR #28 was red only on AC-5 (`node-compile-cache` on the runner) → fixed in 412d52f (child env `NODE_DISABLE_COMPILE_CACHE=1`).
