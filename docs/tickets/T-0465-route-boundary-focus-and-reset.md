@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-04.2]
 decisions: [D-0167, D-0164, D-0111, D-0144]
 deps: [T-0459]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0459 review. Build flow: wl-build-web. About ¼ day. T-0459 is in QA: start from a main that has it. It touches app/App.tsx, so it runs the whole web e2e. -->
 
@@ -98,3 +98,4 @@ contracts unchanged · commits start `T-0465`.
 - QA (HEAD 1144a9a, `git merge origin/main`: already up to date, tree clean, no gate rerun): AC-1/AC-2/AC-3/AC-4 map to tests 1-2 / 3-4 / 5 / 6 of `route-boundary.t0465.test.tsx` (6/6 green).
 - QA red runs from backups: main's RouteBoundary+App 3/6 red (AC-1, AC-2, AC-2 pair); `key={location.pathname}` AC-3 red (1/6); own faults: dropping the getDerivedStateFromProps reset AC-2 red (1/6), dropping the focus ref 3/6 red (AC-1, AC-2, pair). All restored from copies.
 - QA whole web e2e (TMPDIR=$HOME/.cache/wl-pw-tmp, flock): 196 passed.
+- Accept (product-owner, HEAD 8877de7): **done**. AC-1 (focus at first render and after a tab click, plus the normal-route pair), AC-2 (bad→good→bad reset, plus the chunk pair: one alert, load ≤ once per navigation), AC-3 (mounts 1 across ids) and AC-4 (axe 0; listed suites unedited, as the diff only touches `App.tsx`, `RouteBoundary.tsx` and the new test; check:size green) each have a passing test. D-0167 §5 holds: `key={route.path}` kept, `resetKey={location.pathname}` inside the guard and profile gate, so no remount and no guard re-run. Red runs on main and the pathname-key fault are recorded by build and QA.
