@@ -191,3 +191,123 @@ ended, under-target period with a real proposal, not "no card" — the AC-4 case
 
 **Verdict: done.** All 7 ACs pass with tests; red-on-main and the planted fault are both proven
 and recorded above; full gate green.
+
+### Code review (code-reviewer, 2026-10-03)
+**Verdict: approve.**
+
+Checked against the diff `git diff main...HEAD` (8 files, +651/-6):
+- **Lane:** every changed path is under `apps/web/src/features/UF-11/**` or the two granted
+  extras (`lib/i18n/flows/uf-11.ts`, this ticket file). `apps/web/src/features/UF-02/slots.tsx`
+  mentions `CheckinCard` in a comment but is untouched by this branch (`git diff` on it is
+  empty) and `todayCheckinSlot` is still hardcoded `null` on main — confirms the D-0168 §5 split
+  is honored: `CheckinCard` is exported from `index.tsx` (and now also re-exported, per the
+  updated header comment) but mounted nowhere.
+- **Contracts:** none touched (`api/openapi.yaml`, `docs/data-model.md`, `docs/engine-rules.md`,
+  `packages/design-tokens/src/tokens.json` all empty-diff). Matches "Contract impact: None."
+- **Reuse, not reimplementation:** `evaluateCheckin(` appears exactly once outside
+  `packages/engine`, inside `checkin-evaluation.ts` (T-0308b's wrapper); `use-checkin-data.ts`
+  and `use-plan-data.ts` both call `evaluatePlanCheckin` from that one file. No copy of the rule.
+- **Three noted fixes, verified:**
+  1. `formatCalendarDay` in `features/UF-11/format.ts` uses the identical `formatToParts` +
+     `shortMonth` (`/^[A-Za-z]{4,}$/` clip to 3 letters) as UF-10's `format.ts`
+     (`formatDayMonth`/`formatPartsDayMonth`/`shortMonth`). Same established pattern, re-derived
+     rather than imported because UF-11's own lane-boundary test
+     (`strings.test.ts` "no source file imports another feature's directory") forbids a
+     cross-feature import — legitimate, not a new one-off hack.
+  2. The `vi.mock` toggle in `checkin-card.test.tsx` (always-installed mock + `importOriginal`
+     passthrough + a mutable `{ current }` toggle) is the same shape as `offline.test.tsx`'s
+     `refreshAll` mock. Consistent with the existing UF-11 test pattern, not a new mechanism.
+  3. The 16-sessions-in-14-days fix is contained to the test file's own `sessionsFrom` helper
+     (`dayOffset = i % 14`, wraps extra sessions onto the same day via an hour offset).
+     `packages/engine`, `checkin-evaluation.ts` and `use-plan-data.ts` are all untouched
+     (empty diff) — the fix never touched production code.
+- **Strings/export pin:** `strings.test.ts` changes are additive only — 7 new structural
+  allowlist entries, all justified as structural/prop values (`checkin-card`, `down`, `none`,
+  `en-GB`, `numeric`, `short`, `month`); the export pin test now expects `CheckinCard` alongside
+  the pre-existing names. No existing assertion weakened or removed.
+- **Targeted rerun:** `scripts/locked.sh small` run of `checkin-card.test.tsx`,
+  `strings.test.ts`, `offline.test.tsx` together → 3 files / 33 tests passed.
+
+No findings. Static review plus a targeted vitest rerun; did not re-run the full gate (already
+green per the build log, cached, one run before handback).
+
+### QA (qa-tester, 2026-10-03)
+**Verdict: done.**
+
+**Branch/main:** HEAD `f2adadc` on `t/T-0308c-checkin-card`, behind `main` (`d111f4f`) by several
+unrelated commits (T-0303c/T-0474/squad ticks). `git merge-tree --write-tree HEAD main` produced a
+tree hash with no conflict markers — clean, non-conflicting behind-main, so per D-0168/qa-tester
+§1 this needs no action from QA; the orchestrator's forced gate on `main` after merge covers it.
+Did not merge `main` into the branch.
+
+**AC → test map, independently checked against `checkin-card.test.tsx` (15/15 green):**
+AC-1→"down, through the real engine" · AC-2→"copy rules, stubbed evaluation" ·
+AC-3→"preview" · AC-4→4 cases ("on plan", "zero history", "rejected loadCheckins",
+"missing profile") · AC-5→5 cases (floor/ceiling × up/clamp-null) · AC-6→"offline, both values"
+· AC-7→"no writes" + "exports exactly". Every AC has a test that would fail without the real
+engine behaviour behind it (confirmed by reading `checkin.ts`'s `proposalFor`/`clampRhythm`
+against AC-5's floor/ceiling cases, and `CardBody`'s direction branch against AC-1/AC-2).
+
+**Red-on-main, reproduced independently:** copied `checkin-card.test.tsx` into the separate
+`main` worktree (`/home/henrik/dev/uptive/private/workoutLab`, HEAD `d111f4f`, clean) — import
+of `../CheckinCard.js` fails to resolve (file doesn't exist on `main`), confirming no
+`CheckinCard` export exists there. Temp file removed immediately after.
+
+**Builder's planted fault, reproduced:** backed up `CheckinCard.tsx` (`cp`), changed
+`evaluation.periods[evaluation.periods.length - 1]` to `evaluation.periods[0]` (first period
+instead of last): AC-2 fails (wrong count, wrong proposal numbers). Restored from the backup
+copy; full file back to 15/15.
+
+**QA's own planted fault:** backed up `CheckinCard.tsx` again, swapped the direction branch
+(`proposal.direction === "down"` → `=== "up"` while still calling `u.down(...)` on the true
+branch): 4 tests fail (AC-1 and 3 of AC-5's cases — "Step up"/"Switch to" copy no longer matches
+direction). Restored from the backup copy; full file back to 15/15.
+
+**Three build-time fixes, checked against independent evidence, not just internal consistency:**
+1. `en-GB` month clip — ran `Intl.DateTimeFormat("en-GB", {month:"short"}, tz: Europe/Stockholm)`
+   for all 12 months directly in `node`: only September prints "Sept"; `formatCalendarDay`'s
+   `shortMonth` regex (`/^[A-Za-z]{4,}$/` → slice 3) clips exactly that case and no other. Also
+   confirmed `UF-10/format.ts`'s `shortMonth`/`formatPartsDayMonth` use the byte-identical regex
+   and clip — a genuinely shared, re-derived pattern, not a one-off.
+2. `vi.mock` toggle pattern — confirmed `offline.test.tsx` uses the identical shape
+   (always-installed `vi.mock` + `importOriginal` passthrough + mutable `{ current }` toggle),
+   not merely a similar-sounding one.
+3. Test-seeding overrun fix — ran `sessionsFrom`'s wrap arithmetic standalone in `node` for
+   `n=16` from `2026-09-13`: all 16 timestamps fall inside `[2026-09-13, 2026-09-27)`, matching
+   the engine's real `PERIOD_DAYS = 14` window in `packages/engine/src/checkin.ts`. Sound, not
+   just self-consistent.
+
+**Other checks:** `evaluateCheckin(` appears exactly once outside `packages/engine` (in
+`checkin-evaluation.ts`) — no copy. `index.tsx` exports exactly
+`["AccountSettings", "CheckinCard", "EditPlan", "Plan"]`. `eslint` on the 4 touched/added source
+files (`CheckinCard.tsx`, `use-checkin-data.ts`, `format.ts`, `index.tsx`) is clean (no
+`jsx-no-literals` violations). `tsc --noEmit` on `apps/web` is clean. `git diff main...HEAD
+--stat` matches the logged "8 files, +651/-6" exactly, all inside the lane/extras.
+
+**Try-to-break-it, ad-hoc (not committed):** a scratch test rendering `CheckinCard`, then
+unmounting immediately (before the async cache read resolves) — simulates a slow network /
+navigate-away mid-load. No crash, no act() warning surfaced, card correctly shows nothing while
+pending. Removed after confirming (not part of the ticket's deliverable).
+
+**Offline (AC-6):** confirmed independently — `navigator.onLine=false` disables both buttons and
+shows the connect line; `online`/`offline` events toggle without remount (same DOM node by
+reference, as recorded).
+
+**e2e:** `git diff main...HEAD -- tests/e2e/` is empty — `uf-11-plan.spec.ts` is byte-unmodified.
+Started local Supabase (`supabase start`) and ran `scripts/locked.sh heavy npx playwright test
+--config tests/e2e/playwright.config.ts uf-11-plan.spec.ts` (`TMPDIR=$HOME/.cache/wl-pw-tmp`):
+10/10 green, including the "no console error / page error, no render loop" cases for both
+`/plan` and `/plan/edit`. No `CheckinCard`-specific e2e exists yet, correctly: it isn't mounted
+anywhere on this branch (T-0471's job), so there's nothing to probe in the DOM at `/plan` or
+`/plan/edit` for this ticket. Did not run the whole web e2e suite (D-0158: only one feature
+folder touched, no router/SW/fixtures changes).
+
+**Not re-run:** the full `pnpm -w typecheck lint test` / repo-checks / format:check / check-all
+gate (already green per the build and review logs; qa-tester doesn't rerun the builder's full
+gate, §1).
+
+**Verdict: done.** All 7 ACs are proven by tests that would fail without the real feature
+behaviour; red-on-main and both the builder's and QA's planted faults reproduce and are restored
+clean; the three fixes hold up to independent verification; e2e unmodified and green; offline
+behaviour and console-error checks confirmed; branch behind main but cleanly mergeable, no
+action needed from QA.
