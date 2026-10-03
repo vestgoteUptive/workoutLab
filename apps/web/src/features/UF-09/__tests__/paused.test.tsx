@@ -161,11 +161,18 @@ describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
     expect(field("left")).toBe("Left 1 min");
   });
 
-  // D-0142 §6 (a named change, T-0422): the module's swap seam sits after Resume.
-  it("actions: Resume (primary, focused), Swap, Skip to next exercise, End workout; no a[href]", async () => {
+  // D-0142 §6 (a named change, T-0422, T-0416): the module's swap seam sits after Resume.
+  it("actions: Resume (primary, focused), Swap, Skip to next exercise, How to, List view, End workout; no a[href]", async () => {
     await restAt(1390);
     await click("Pause workout");
-    expect(names()).toEqual(["Resume", "Swap", "Skip to next exercise", "End workout"]);
+    expect(names()).toEqual([
+      "Resume",
+      "Swap",
+      "Skip to next exercise",
+      "How to",
+      "List view",
+      "End workout",
+    ]);
     const resume = screen.getByRole("button", { name: "Resume" });
     expect(resume).toHaveAttribute("data-action", "primary");
     expect(document.activeElement).toBe(resume);
@@ -194,15 +201,23 @@ describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
     ]);
   });
 
-  // D-0142 §6 (a named change, T-0422): the module arrays now hold swap, and nothing else yet.
-  it("the pair: with the module arrays there is Swap, and no How to or List view", async () => {
+  // D-0142 §6 (a named change, T-0422, then T-0416): the module arrays hold swap, how-to and
+  // list-view.
+  it("the pair: with the module arrays there are Swap, How to and List view", async () => {
     await pausedAt(600, { resumePhase: "set", itemIndex: 1 });
-    expect(names()).toEqual(["Resume", "Swap", "Skip to next exercise", "End workout"]);
+    expect(names()).toEqual([
+      "Resume",
+      "Swap",
+      "Skip to next exercise",
+      "How to",
+      "List view",
+      "End workout",
+    ]);
     expect(
       Array.from(document.querySelectorAll("[data-seam-id]")).map((b) =>
         b.getAttribute("data-seam-id"),
       ),
-    ).toEqual(["swap"]);
+    ).toEqual(["swap", "how-to", "list-view"]);
   });
 });
 
@@ -289,17 +304,17 @@ describe("AC-7 Skip to next exercise (D-0120 §7)", () => {
     expect(upsert).not.toHaveBeenCalled();
   });
 
-  // D-0142 §6 (a named change, T-0422): the module's swap seam stays; only Skip is hidden.
+  // D-0142 §6 (a named change, T-0422, T-0416): the module's swap seam stays; only Skip is hidden.
   it("hidden on the last item (End is the way out)", async () => {
     await pausedAt(600, { resumePhase: "set", itemIndex: 3 });
-    expect(names()).toEqual(["Resume", "Swap", "End workout"]);
+    expect(names()).toEqual(["Resume", "Swap", "How to", "List view", "End workout"]);
   });
 
   it("hidden in a pause taken on UF-09.8", async () => {
     await pausedAt(1500, { resumePhase: "timeCheck", itemIndex: 1 });
     expect(screen.queryByRole("button", { name: "Skip to next exercise" })).toBeNull();
-    // D-0142 §6 (a named change, T-0422): the module's swap seam stays.
-    expect(names()).toEqual(["Resume", "Swap", "End workout"]);
+    // D-0142 §6 (a named change, T-0422, T-0416): the module's swap seam stays.
+    expect(names()).toEqual(["Resume", "Swap", "How to", "List view", "End workout"]);
   });
 
   it("re-sync: after skipping item 0 with 2 of 4 sets, close() from a keepsClockRunning: true overlay lands on item 1", async () => {
@@ -385,8 +400,15 @@ describe("AC-8 End workout (D-0120 §8)", () => {
     expect(names()).toEqual(["End workout", "Cancel"]);
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
     await click("Cancel");
-    // D-0142 §6 (a named change, T-0422): the module's swap seam is back with the actions.
-    expect(names()).toEqual(["Resume", "Swap", "Skip to next exercise", "End workout"]);
+    // D-0142 §6 (a named change, T-0422, T-0416): the module's swap seam is back with the actions.
+    expect(names()).toEqual([
+      "Resume",
+      "Swap",
+      "Skip to next exercise",
+      "How to",
+      "List view",
+      "End workout",
+    ]);
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Resume" }));
     await flushReal();
     expect(upsert).not.toHaveBeenCalled();

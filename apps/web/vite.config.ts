@@ -4,6 +4,10 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import type { Plugin } from "vite";
 import { wlIconsPlugin } from "./scripts/gen-icons.mjs";
+import { cleanupVitestTmp, redirectVitestTmp } from "../../vitest.tmp";
+
+// D-0159: keep vitest's module-transform temp dirs out of /tmp and remove them at run end.
+cleanupVitestTmp(redirectVitestTmp(import.meta.url));
 
 // See scripts/gen-icons.mjs for why this is a `require()` of the raw JSON, not an
 // `import` of the @workoutlab/design-tokens package: Vite loads this config file

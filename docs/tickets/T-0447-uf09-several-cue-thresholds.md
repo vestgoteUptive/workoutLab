@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.5, UF-09.1, UF-09.7]
 decisions: [D-0161, D-0119, D-0155, D-0066]
 deps: [T-0304g]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner against main (T-0304g merged). Build flow: wl-build-web. About ¼ day. One source file: cues.ts. -->
 
@@ -87,3 +87,6 @@ commits start `T-0447` and cite UF-09.5.
 - **Parallel:** safe with T-0415, T-0416, T-0394, T-0451 and T-0453. None of them edits `cues.ts`.
   **Not with T-0448** if that one moves cue logic out of `device.ts`. Today T-0448 is `device.ts`
   only, so they're safe together too.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0447.md` (D-0157).

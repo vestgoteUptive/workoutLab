@@ -47,4 +47,46 @@ export const uf03 = {
   save: "Save workout",
   /** The polite text after a Save that didn't reach IndexedDB. */
   saveFailed: "Couldn't save. Try again.",
+  // UF-03.1 List view (T-0416, D-0142 §3). The two UF-09.9 seam labels live here (D-0071 §4).
+  howToAction: "How to",
+  listViewAction: "List view",
+  /** The screen's accessible name (no visible title: the header is the one task bar). */
+  listViewName: "List view",
+  /** "Elapsed 23:10". */
+  elapsed: (clock: string) => `Elapsed ${clock}`,
+  focusMode: "Focus mode",
+  finish: "Finish",
+  finishQuestion: "Finish workout?",
+  keepGoing: "Keep going",
+  finishError: "Couldn't finish. Try again.",
+  /** The target line: a label, then `itemSummary` as its own element. */
+  targetLabel: "Target",
+  /** The table's column headings. */
+  colSet: "Set",
+  colPrevious: "Previous",
+  colWeight: "kg",
+  colReps: "Reps",
+  colSeconds: "Seconds",
+  colDone: "Done",
+  backoffRow: "Back-off",
+  /** The unit after a seconds field. */
+  secondsUnit: "s",
+  /** A "Previous" cell with nothing to show. */
+  noPrevious: "\u2014",
+  /** "97.5 × 8" (weight text from `formatKg`'s number; reps). */
+  previousLoad: (kg: string, reps: number) => `${kg} \u00D7 ${reps}`,
+  previousReps: (reps: number) => `${reps}`,
+  previousSeconds: (s: number) => `${s} s`,
+  /** "0 / 3 sets" on a collapsed card. */
+  cardSets: (done: number, sets: number) => `${done} / ${sets} sets`,
+  /** The fields' names; `n` is the 1-based set number. */
+  weightLabel: (n: number) => `Set ${n} weight in kg`,
+  repsLabel: (n: number) => `Set ${n} reps`,
+  secondsLabel: (n: number) => `Set ${n} seconds`,
+  markDone: (n: number) => `Mark set ${n} done`,
+  markNotDone: (n: number) => `Mark set ${n} not done`,
+  /** The UF-09 seam placeholder for the List view and the how-to (D-0142 §8). */
+  seamLoading: "Loading\u2026",
+  seamLoadFailed: "Couldn't load this view.",
+  seamClose: "Close",
 } as const;

@@ -5,7 +5,7 @@ lane: web-feature:UF-07
 screens: [UF-07.1]
 decisions: [D-0162, D-0081, D-0070, D-0071]
 deps: [T-0308a]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0308a review and accept (WCAG 2.4.3). Build flow: wl-build-web. About ⅓ day. Start it from a main that has T-0308a (merging now). -->
 
@@ -102,3 +102,6 @@ needed) · contracts unchanged · commits start `T-0453` and cite UF-07.1.
 - **Start after T-0308a merges.** It is the dep, and it is merging now.
 - React 19 renders the boolean `inert` prop. jsdom 25 keeps the attribute but doesn't enforce it,
   which is why AC-5 proves the behaviour in Chromium.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0453.md` (D-0157).

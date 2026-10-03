@@ -143,6 +143,34 @@ test("UF-07.1 a real-keyboard move (Tab, Enter) reorders the rows and keeps focu
   await expect(up).toBeFocused();
 });
 
+test("UF-07.1 the delete confirm traps Tab and inerts the form; focus survives a Remove (T-0453)", async ({
+  page,
+}) => {
+  await openSignedIn(page, `/plan/routines/${ROUTINE_ID}`);
+  await expect(page.getByText("3. Leg curl (machine)")).toBeVisible();
+  await page.getByRole("button", { name: "Delete routine" }).click();
+  const dialog = page.locator('[role="dialog"]');
+  await expect(dialog).toBeVisible();
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press("Tab");
+    expect(await dialog.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+  }
+  const field = page.getByLabel("Name");
+  const before = await field.inputValue();
+  const box = (await field.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await page.keyboard.type("x");
+  await expect(field).toHaveValue(before);
+  await page.getByRole("button", { name: "Keep routine" }).click();
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Delete routine" })).toBeFocused();
+  await page.getByRole("button", { name: "Remove Leg curl (machine)" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("button", { name: "Remove Romanian deadlift (barbell)" }),
+  ).toBeFocused();
+});
+
 test.describe("AC-A14 a11y", () => {
   async function audit(page: Page) {
     const results = await new AxeBuilder({ page }).analyze();

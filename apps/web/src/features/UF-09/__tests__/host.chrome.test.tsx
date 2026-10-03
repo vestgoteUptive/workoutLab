@@ -142,16 +142,18 @@ describe("AC-7 chrome on every machine state except paused", () => {
   });
 
   // T-0304d (D-0118 §12): the built UF-09.9 is Resume, Skip to next exercise and End workout.
-  // D-0142 §6 (a named change, T-0422): plus the module's Swap seam after Resume.
-  it("paused: exactly 4 buttons (Resume, Swap, Skip to next exercise, End workout) and no chrome", async () => {
+  // D-0142 §6 (a named change, T-0422, T-0416): plus the module's Swap, How to and List view seams.
+  it("paused: exactly 6 buttons (Resume, Swap, Skip to next exercise, How to, List view, End workout) and no chrome", async () => {
     await show(seeded("paused"));
     expect(screenId()).toBe("UF-09.9");
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(4);
+    expect(buttons).toHaveLength(6);
     expect(buttons.map((b) => b.textContent)).toEqual([
       "Resume",
       "Swap",
       "Skip to next exercise",
+      "How to",
+      "List view",
       "End workout",
     ]);
     expect(buttons[0]).toHaveAccessibleName("Resume");
@@ -163,13 +165,15 @@ describe("AC-7 chrome on every machine state except paused", () => {
 });
 
 describe("T-0304d AC-6 the paused button pin with Skip hidden", () => {
-  // D-0142 §6 (a named change, T-0422): plus the module's Swap seam.
-  it("paused on the last item: exactly 3 buttons (Resume, Swap, End workout)", async () => {
+  // D-0142 §6 (a named change, T-0422, T-0416): plus the module's Swap, How to and List view.
+  it("paused on the last item: exactly 5 buttons (Resume, Swap, How to, List view, End workout)", async () => {
     await show(seeded("paused", { itemIndex: 3 }));
     expect(screenId()).toBe("UF-09.9");
     expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual([
       "Resume",
       "Swap",
+      "How to",
+      "List view",
       "End workout",
     ]);
     expectNoWayOut();

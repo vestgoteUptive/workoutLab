@@ -5,7 +5,7 @@ lane: qa
 screens: []
 decisions: [D-0086, D-0155, D-0072]
 deps: [T-0427, T-0422]
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by product-owner (groom). Follow-up (1) from the T-0427 accept log, found by T-0427 review and QA, inherited from T-0425. Build flow: wl-build-qa. About ½ day, depending on the inventory (see the split rule in AC-5). No app code changes. It waits for T-0422 (in build), which adds tests/e2e/uf-05-swap.spec.ts and additive tests/e2e/fixtures/** exports: the inventory has to include that spec, and the two tickets would share fixture files. -->
 
@@ -132,3 +132,6 @@ lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web test:
 whole suite, run under the test lock with `TMPDIR=$HOME/.cache/wl-pw-tmp` until T-0440 lands) ·
 `format:check` and `check:repo` green · contracts unchanged · commits start `T-0436` (for example
 `T-0436: report hits on the 501 backstop in supabaseGuard`).
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0436.md` (D-0157).

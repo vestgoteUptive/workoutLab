@@ -23,6 +23,7 @@ import {
   type Request,
 } from "@playwright/test";
 import { VITE_SUPABASE_URL } from "../playwright.config.js";
+import { BACKSTOP_HEADER } from "./supabase-mock.js";
 
 /** What a spec gets back from `installSupabaseGuard`, so AC-6 can assert on the guard itself. */
 export interface SupabaseGuard {
@@ -30,6 +31,17 @@ export interface SupabaseGuard {
   unclaimed(): string[];
   /** Throws, listing every unclaimed request, if there was one. A no-op when there were none. */
   assertClean(): void;
+  /**
+   * T-0436 (D-0155 §4): every request a 501 catch-all (`mockSupabaseRest` / `mockSupabaseAuth`)
+   * answered, as `"<METHOD> <URL>"`, in arrival order, allowed or not.
+   */
+  backstopHits(): string[];
+  /**
+   * Exempts every backstop hit matching `pattern`, for this guard only (one test). A spec outside
+   * `fixture-guard.spec.ts` must name the ticket (`T-NNNN`) in the `//` comment block directly
+   * above the call. Throws on a global or sticky pattern, like `consoleGuard.allow`.
+   */
+  allowBackstop(pattern: RegExp): void;
   /**
    * Clears the record, so a test that *deliberately* leaks doesn't fail its own teardown.
    *
@@ -42,6 +54,9 @@ export interface SupabaseGuard {
 
 /** The literal every guard failure message contains, so a spec can assert on it by name. */
 export const UNCLAIMED_MESSAGE = "unclaimed supabase request";
+
+/** The literal a backstop-hit failure message contains (T-0436, D-0155 §4). */
+export const BACKSTOP_MESSAGE = "supabase backstop hit";
 
 /**
  * Registers the last-resort Supabase route on `context` and returns the recorder.
@@ -61,7 +76,9 @@ export const UNCLAIMED_MESSAGE = "unclaimed supabase request";
  * consulted *before* this one answers it with `route.fulfill` or `route.abort`, whichever file
  * registered that route. The 501 catch-alls (`mockSupabaseAuth`, `mockSupabaseRest`) count as
  * claims — they keep the request off the network, which is the property being enforced — so this
- * guard does **not** replace them. A handler that calls `route.continue()` lets the request reach
+ * guard does **not** replace them. D-0155 §4 amends that: such an answer carries the
+ * `x-wl-e2e-backstop` header, and is *reported* (`backstopHits()`, `assertClean()`) unless the
+ * test acknowledges it with `allowBackstop(/…/)`. A handler that calls `route.continue()` lets the request reach
  * the network, so it is *not* a claim and the guard reports it. A request that failed only
  * because the context is offline is exempt — but note `context.setOffline(true)` does **not**
  * suspend interception, so an *unmocked* request made while offline is still claimed by this
@@ -70,6 +87,8 @@ export const UNCLAIMED_MESSAGE = "unclaimed supabase request";
 export function installSupabaseGuard(context: BrowserContext): SupabaseGuard {
   const routed = new Set<string>();
   const seen: string[] = [];
+  const backstop: string[] = [];
+  const allowedBackstop: RegExp[] = [];
   const record = (entry: string) => {
     if (!seen.includes(entry)) seen.push(entry);
   };
@@ -132,21 +151,58 @@ export function installSupabaseGuard(context: BrowserContext): SupabaseGuard {
     record(entry);
   });
 
+  // Detector 3 (T-0436, D-0155 §4): answers from the mocks' 501 catch-alls, marked by header.
+  context.on("response", (response) => {
+    if (!response.url().startsWith(VITE_SUPABASE_URL)) return;
+    if (!(BACKSTOP_HEADER in response.headers())) return;
+    const request = response.request();
+    const entry = `${request.method()} ${request.url()}`;
+    if (!backstop.includes(entry)) backstop.push(entry);
+  });
+
+  const unallowedBackstop = () =>
+    backstop.filter((entry) => !allowedBackstop.some((pattern) => pattern.test(entry)));
+
   return {
     unclaimed: () => [...seen],
+    backstopHits: () => [...backstop],
+    allowBackstop: (pattern) => {
+      if (pattern.global || pattern.sticky) {
+        throw new Error(
+          `supabaseGuard.allowBackstop: ${String(pattern)} is a global or sticky pattern; drop ` +
+            `the g and y flags (they make RegExp.test stateful)`,
+        );
+      }
+      allowedBackstop.push(pattern);
+    },
     forgetPlantedLeaks: () => {
       seen.length = 0;
+      backstop.length = 0;
       routed.clear();
     },
     assertClean: () => {
-      if (seen.length === 0) return;
-      throw new Error(
-        `${UNCLAIMED_MESSAGE}: ${seen.length} Supabase request(s) were not claimed by any ` +
-          `route — they either reached the last-resort guard or went to the real network. ` +
-          `Mock them in this spec (see fixtures/supabase-mock.ts — mockSupabaseRest / ` +
-          `mockProfilePresent / mockProfileMissing):\n` +
-          seen.map((entry) => `  - ${entry}`).join("\n"),
-      );
+      const hits = unallowedBackstop();
+      const parts: string[] = [];
+      if (seen.length > 0) {
+        parts.push(
+          `${UNCLAIMED_MESSAGE}: ${seen.length} Supabase request(s) were not claimed by any ` +
+            `route — they either reached the last-resort guard or went to the real network. ` +
+            `Mock them in this spec (see fixtures/supabase-mock.ts — mockSupabaseRest / ` +
+            `mockProfilePresent / mockProfileMissing):\n` +
+            seen.map((entry) => `  - ${entry}`).join("\n"),
+        );
+      }
+      if (hits.length > 0) {
+        parts.push(
+          `${BACKSTOP_MESSAGE}: ${hits.length} Supabase request(s) were answered by the 501 ` +
+            `catch-all, so no mock covers them. Mock them (fixtures/supabase-mock.ts — ` +
+            `mockSupabaseData / mockProfilePresent / mockProfileMissing), or, if the test is ` +
+            `about the error path, \`supabaseGuard.allowBackstop(/.../)\` with a T-NNNN in the ` +
+            `comment block above:\n` +
+            hits.map((entry) => `  - ${entry}`).join("\n"),
+        );
+      }
+      if (parts.length > 0) throw new Error(parts.join("\n"));
     },
   };
 }

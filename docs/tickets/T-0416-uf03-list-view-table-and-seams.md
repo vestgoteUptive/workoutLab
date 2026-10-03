@@ -5,7 +5,7 @@ lane: web-feature:UF-03
 screens: [UF-03.1, UF-09.9, UF-03.3]
 decisions: [D-0142, D-0068, D-0069, D-0071, D-0111, D-0118, D-0120, D-0045, D-0060, D-0153, D-0155]
 deps: [T-0304d, T-0419, T-0318, T-0306a, T-0422, T-0433]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner; refreshed 2026-10-02 against main after T-0304d, T-0427, T-0429 and T-0431 (T-0423 merging). First child of the T-0305a board row (D-0142 §1 §3). Build flow: wl-build-web. About ½–⅔ day. It carries T-0360 (the T-0306a QA finding). T-0304d, T-0419, T-0318 and T-0306a are on main. The spec is ready, but the build waits on two in-flight tickets: T-0422 (in build; same seams.tsx, UF-09 pins and uf-09-focus.spec.ts row) and T-0433 (in QA; same lane, web-feature:UF-03, and the same __tests__/helpers.tsx). Start it from a main that has both. -->
 
@@ -124,3 +124,6 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
   - **With T-0435 and T-0424, allowed by files.** They edit `session.tsx` and `timed-set.test.tsx`.
   - **With T-0436 (qa), not at once.** T-0436 may edit `uf-09-focus.spec.ts` to add a mock. Whichever lands second merges `main` first.
 - **E2e runs:** use `TMPDIR=$HOME/.cache/wl-pw-tmp` until T-0440 lands (state.md trap).
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0416.md` (D-0157).
