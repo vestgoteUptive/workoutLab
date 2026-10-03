@@ -286,3 +286,25 @@ fixed here, to keep this run to verification only.
 regression suite and flake-repeat both green; branch cleanly mergeable (no action required of
 QA). One coverage gap (console errors on AC-2's second context) raised as a follow-up, not a
 blocker.
+
+### Fix (frontend-dev, 2026-10-03)
+Fixed QA's gap: `tests/e2e/uf-09-offline.spec.ts` AC-2 now calls `installConsoleGuard(contextB)`
+right after `installSupabaseGuard(contextB)`, and asserts `consoleGuardB.assertClean()` at
+teardown alongside `guardA.assertClean()`/`guardB.assertClean()` — the same pattern the auto
+`consoleGuard` fixture already applies to the fixture's own `context`/`page`. Header comment
+updated to say why `contextB` needs its own guard.
+
+**Probe reproduced, then reverted.** Backup at `cp tests/e2e/uf-09-offline.spec.ts
+/tmp/.../uf-09-offline.spec.ts.bak` before planting; restored with `cp` after, `git status` clean
+both times; `git diff` after restore shows only the intended fix (+16/-1).
+- Planted QA's probe (a deliberate `pageB.evaluate(() => console.error(...))` right before AC-2
+  goes offline): red, `scripts/locked.sh heavy … test:e2e -- uf-09-offline.spec.ts -g "AC-2"` → 1
+  failed at `fixtures/guarded-test.ts:282` (`assertClean`), naming
+  `console.error: T-0468 QA probe: deliberate console.error on pageB` — confirms the new
+  `consoleGuardB` now catches exactly what QA's probe demonstrated slipped through before.
+- Restored from the backup (probe removed, fix intact, confirmed via `grep` for `QA probe` /
+  `installConsoleGuard` / `consoleGuardB`): green, same command → 206/206 passed.
+
+**Gate.** `scripts/locked.sh heavy … test:e2e -- uf-09-offline.spec.ts -g "AC-2"` (which runs the
+whole configured spec list, not just the grep match) green twice in a row on the restored file:
+206/206 passed. No other file changed; no regression expected or seen elsewhere in that run.

@@ -12,8 +12,21 @@
 // inverted-row × 3, back-squat × 3, calf-raise × 3, leg-curl × 2 — recorded here as the build log
 // also states), none of them timed, so 10 sets crosses two item boundaries (UF-09.6 "I'm ready"
 // shown twice) with 5 left over. AC-2 uses the default "30 minutes" chip (1 set is enough there).
+//
+// AC-2's second context (`contextB`/`pageB`) is not the test's own `context`, so the guarded-test
+// fixture's auto `consoleGuard` — installed only on the fixture's own `context` — never sees it
+// (found by QA: a deliberate `console.error` on `pageB` still let AC-2 pass). AC-2 installs its own
+// `installConsoleGuard(contextB)` and asserts it clean at teardown, the same pattern its own
+// `installSupabaseGuard(contextB)` line already uses one line below.
 import type { Page } from "@playwright/test";
-import { expect, installSupabaseGuard, test, type SupabaseGuard } from "./fixtures/guarded-test.js";
+import {
+  expect,
+  installConsoleGuard,
+  installSupabaseGuard,
+  test,
+  type ConsoleGuard,
+  type SupabaseGuard,
+} from "./fixtures/guarded-test.js";
 import {
   injectSession,
   mockProfilePresent,
@@ -417,6 +430,7 @@ test.describe("T-0468 AC-2 two offline devices make two sessions (NFR-SYNC-4)", 
 
     const contextB = await browser.newContext();
     const guardB: SupabaseGuard = installSupabaseGuard(contextB);
+    const consoleGuardB: ConsoleGuard = installConsoleGuard(contextB);
     const pageB = await contextB.newPage();
     await mockAll(pageB);
     const gateB = networkGate();
@@ -496,6 +510,7 @@ test.describe("T-0468 AC-2 two offline devices make two sessions (NFR-SYNC-4)", 
 
     guardA.assertClean();
     guardB.assertClean();
+    consoleGuardB.assertClean();
 
     await pageB.close();
     await contextB.close();
