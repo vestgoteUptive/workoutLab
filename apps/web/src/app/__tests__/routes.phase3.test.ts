@@ -29,6 +29,7 @@ const NEW_ROUTES: readonly Shape[] = [
   },
   { path: "/progress/:exerciseId", screenId: "UF-06.2", showTabBar: true, guard: "protected" },
   { path: "/plan/edit", screenId: "UF-11.3", showTabBar: false, guard: "protected" },
+  { path: "/plan/account", screenId: "UF-11.4", showTabBar: false, guard: "protected" },
   { path: "/plan/routines/new", screenId: "UF-07.1", showTabBar: false, guard: "protected" },
   {
     path: "/plan/routines/:routineId",
@@ -70,7 +71,7 @@ describe("AC-1 route table", () => {
     expect(shape(found[0]!)).toEqual(expected);
   });
 
-  it("holds exactly the pre-existing entries plus the 6 new ones, and nothing else", () => {
+  it("holds exactly the pre-existing entries plus the 7 new ones, and nothing else", () => {
     expect(routes.map(shape)).toEqual(
       expect.arrayContaining([...PRE_EXISTING_ROUTES, ...NEW_ROUTES]),
     );
@@ -107,6 +108,7 @@ describe("AC-1 each new load() is a dynamic import of the feature index", () => 
     ["/library/:exerciseId/compare/:otherId", "UF-04", "Compare"],
     ["/progress/:exerciseId", "UF-06", "ExerciseHistory"],
     ["/plan/edit", "UF-11", "EditPlan"],
+    ["/plan/account", "UF-11", "AccountSettings"],
     ["/plan/routines/new", "UF-07", "RoutineEditor"],
     ["/plan/routines/:routineId", "UF-07", "RoutineEditor"],
   ];

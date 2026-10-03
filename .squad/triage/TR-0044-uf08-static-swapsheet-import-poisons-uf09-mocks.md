@@ -1,6 +1,6 @@
 ---
 id: TR-0044
-status: open
+status: resolved
 raised_by: frontend-dev (gate) on T-0303c
 date: 2026-10-03
 ---
@@ -85,4 +85,22 @@ that import line, nothing else, turns the previously-green `t0422.lazy-reject.te
   should check this triage first).
 
 ## Resolution
-(pending — triage agent to pick an option and record a decision)
+Resolved by [D-0170](../decisions/D-0170-feature-leaf-entry-uf08-prefs.md) (amends D-0071 §3). Triage, 2026-10-03.
+
+- **Option 1's direction is right, but its form fails lint.** `../UF-08/focus-prefs.js` is a deep
+  import that D-0071 §3/§9 bans. `apps/web/eslint.config.mjs` `INDEX_ONLY_PATTERN` enforces the
+  ban, and `app/__tests__/import-bans.test.ts` ("UF-09 deep-importing UF-08/focus-prefs.js reports
+  no-restricted-imports") pins it.
+- **Decision.** A feature may publish a side-effect-free leaf entry, `index.<topic>.ts`, that holds
+  only pure functions and types and has its keys pinned. UF-08 gets `index.prefs.ts`
+  (`readFocusPrefs`, `writeFocusPrefs`, `FocusPrefs`). `UF-09/device.ts` imports it, so focus mode
+  no longer evaluates `SessionSetup.tsx`. The lint rule already accepts `index.prefs.js`, so no
+  web-shell change is needed. `UF-08/index.tsx` is unchanged, and T-0303c AC-8 still holds.
+- **Options 2 and 3 are rejected.** See D-0170 §5.
+- **Follow-up: T-0474** (web-feature:UF-09, ready), with two new UF-08 files as listed extras. It
+  has a red-on-main regression test: a throwing mock of `UF-08/SessionSetup.js` stops `device.ts`
+  from importing.
+- **T-0303c needs no rework.** It stays blocked on merge only. Once T-0474 is on `main`, T-0303c
+  merges `main` into its branch and reruns the cached gate.
+- **Optional web-shell polish: T-0475.** Add a contrast row for the leaf entry, and tighten the
+  regex so only `index.js` and `index.<lower>.js` pass.

@@ -1,12 +1,12 @@
 # State
 
-- **Phase:** 3 (App). On main: engine rules 1–14 incl. D-0131 back-off floor + D-0137 drop cap; UF-01 onboarding; UF-02.1 Today; UF-03.3 summary content (T-0419); UF-04 Library; UF-05.1 SwapSheet component (T-0421, not yet mounted); UF-08.1–.4 setup; UF-09 machine + hook + seams + .1–.9 (T-0304a/e/b/f/c/d, T-0414); lib/offline cacheCurrent (T-0431, D-0151); UF-10 Balance; lib/account export + wipe (T-0310c) and DELETE /account Edge Function (T-0310b); e2e consoleGuard (T-0425).
-- **Updated:** 2026-10-02 by orchestrator (no AgentLab on this machine → sub-agents).
-- **`main`:** green 2026-10-02 after T-0304d (-w gate 19/19, whole e2e 137/137) and T-0431 (web gate 4/4, e2e offline+uf-03+uf-09 13/13).
-- **In flight (2026-10-03):** T-0394 (review), T-0451, T-0417, T-0448, T-0454 (builds). Ready next: T-0457/T-0458 (after T-0417), T-0446 (after T-0394, T-0451), T-0459, T-0362, T-0395, T-0356.
+- **Phase:** 3 (App). On main: engine rules 1–14 incl. D-0131 back-off floor + D-0137 drop cap; UF-01 onboarding; UF-02.1 Today; UF-03.1 List view incl. + Add set (T-0457); UF-03.3 summary content (T-0419); UF-04 Library; UF-05.1 SwapSheet component (T-0421, not yet mounted); UF-06 Progress (T-0307b); UF-07.1 Routine editor (T-0308a); UF-08.1–.4 setup; UF-09 machine + hook + seams + .1–.9 incl. the e2e-from-Ready spec (T-0304a/e/b/f/c/d, T-0414, T-0304h); UF-10 Balance; UF-11.2/.3 Plan + Edit plan (T-0308b); lib/offline cacheCurrent (T-0431, D-0151); lib/account export + wipe (T-0310c) and DELETE /account Edge Function (T-0310b); e2e consoleGuard (T-0425).
+- **Updated:** 2026-10-03 pm by orchestrator, after a machine reboot (RAM upgrade, 15→19 GiB) and D-0169 (two test locks via `scripts/locked.sh`, QA no-gate/no-merge, batched merges, model-per-run).
+- **`main`:** green 2026-10-03 after T-0304h's merge (`041cfa7`, pushed at `373ca3b`): -w gate 19/19, repo-checks clean.
+- **In flight (2026-10-03 pm, resumed after the reboot):** T-0303c build (UF-08.3 swap, rerunning its gate), T-0463 QA (seam retry, fresh start), T-0310d rework (UF-11.4 account — review found a test that can't fail and a stale-session-key email bug; lane grant already fixed on main). Ready next: T-0302b, T-0308c, T-0395, T-0458, T-0468. Phase 3 nearly done; phase 4 (infra/launch) not started. Groom: D-0168 (2026-10-03, still valid — nothing merged since has touched UF-02/08/11).
 
-## H-13 resolved (2026-10-02)
-T-0307b (UF-06), T-0308a (UF-07), T-0308b (UF-11, review-approved at `17091a5`) were in flight on **another machine**; their branches are on neither this machine nor `origin`. Also waiting on them: T-0356 (D-0090), T-0362, T-0363. Don't restart from scratch unless the human says the work is lost. When the branches appear: fetch, recreate worktrees, `git merge main`, then QA → review → accept.
+## H-13 fully resolved (2026-10-02–03)
+T-0307b, T-0308a and T-0308b all merged and are `done` on the board. T-0356, T-0362, T-0363 (which were waiting on them) are unblocked.
 
 ## Next
 - UF-09: T-0415 after T-0422 (and not with T-0304g: host.tsx); T-0394 after T-0304g; T-0438 comments after T-0304g; T-0304h e2e, T-0304g (device features), then T-0304h (e2e from Ready), T-0394 (Back → Pause), T-0415 (List-view host support).
@@ -21,7 +21,7 @@ H-13 (push branches); H-14 (service-role key for the account function, prod only
 - Sub-agents: build → QA ∥ review → product-owner accept; spec: product-owner → triage check. Spec/content/triage roles have **no shell**: the orchestrator commits their files.
 - Model pins (D-0076): execution roles `claude-sonnet-5-5`, judgement roles `claude-opus-5-5`.
 - Tooling: `npx -y pnpm@10.28.2 …`. Each new worktree needs `install --frozen-lockfile`.
-- Give every parallel run its own decision-ID block. Next free: **D-0168** (D-0165 reserved by T-0417), D-0152 reserved for T-0420) (D-0150 used by T-0304c), **TR-0044**, tickets **T-0468+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0241+** (engine/data), **T-0906+** (CI).
+- Give every parallel run its own decision-ID block. Next free: **D-0171** (D-0169 used: two test locks; D-0170 reserved by T-0303c: swap reason-line wording) (D-0165 reserved by T-0417), D-0152 reserved for T-0420) (D-0150 used by T-0304c), **TR-0044**, tickets **T-0474+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0241+** (engine/data), **T-0906+** (CI).
 
 ## Traps (condensed — full history in journals 2026-09-28..10-01)
 - **Never commit a test that asserts `git diff main...HEAD`** (T-0303b review): it fails on other lanes' branches after merge and silently skips in CI (no local `main`). Record diff checks in the ticket build log instead; check-lane-paths enforces lanes.

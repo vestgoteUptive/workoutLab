@@ -66,4 +66,28 @@ export const uf11 = {
   connectToSave: "Connect to save",
   cancel: "Cancel",
   saveFailed: "Couldn't update your plan. Try again.",
+  accountLink: "Account",
+  // UF-11.4 Account settings (T-0310d, D-0136 §8)
+  account: {
+    signedInAs: (email: string) => `Signed in as ${email}`,
+    dataHeading: "Your data",
+    dataBody: "Download everything we store for you as one JSON file.",
+    exportButton: "Export my data",
+    exporting: "Preparing your file…",
+    exportFailed: "Couldn't export your data. Try again.",
+    connectToExport: "Connect to export your data.",
+    signOut: "Sign out",
+    deleteHeading: "Delete account",
+    deleteWarning:
+      "This deletes your account and every workout, set, routine and plan, on our servers and on this device. It can't be undone. Export your data first if you want a copy.",
+    deleteOpen: "Delete account…",
+    confirmLabel: "Type delete to confirm",
+    confirmWord: "delete",
+    deleteConfirm: "Delete my account",
+    cancel: "Cancel",
+    deleting: "Deleting…",
+    connectToDelete: "Connect to delete your account.",
+    unauthorized: "Your sign-in has expired. Sign in again, then delete your account.",
+    deleteFailed: "Couldn't delete your account. Try again.",
+  },
 } as const;

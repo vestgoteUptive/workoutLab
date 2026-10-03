@@ -1,10 +1,11 @@
 // UF-09 device features (T-0304g, NFR-TIME-3, D-0066 §7, D-0119 §6–§9). The user sets these on
-// UF-08.4 (T-0303d); focus mode only reads them, once per machine mount, through the UF-08 index
-// (D-0071 §3). None of this adds anything to the screen (principle 1). Every browser API here may
-// be missing (iOS without `wakeLock`, no `speechSynthesis`, no `AudioContext`) and never throws.
+// UF-08.4 (T-0303d); focus mode only reads them, once per machine mount, through the UF-08 leaf
+// entry (D-0170). None of this adds anything to the screen (principle 1). Every browser API here
+// may be missing (iOS without `wakeLock`, no `speechSynthesis`, no `AudioContext`) and never
+// throws.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { en } from "../../lib/i18n/en.js";
-import { readFocusPrefs, type FocusPrefs } from "../UF-08/index.js";
+import { readFocusPrefs, type FocusPrefs } from "../UF-08/index.prefs.js";
 import { NO_TRACK, observeCues, type Cue, type CueTrack } from "./cues.js";
 import { timedRemainingS, type FocusState } from "./machine.js";
 import { remainingS } from "./timer.js";

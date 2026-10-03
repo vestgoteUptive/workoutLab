@@ -88,3 +88,4 @@ and `check-all` green · `uf-03-list-summary.spec.ts` green · contracts unchang
   D-0164 §1). Allowed by files with T-0394, T-0451, T-0446, T-0448, T-0454 and T-0459.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0457.md` (D-0157).

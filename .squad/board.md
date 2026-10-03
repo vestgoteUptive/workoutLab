@@ -76,12 +76,12 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 3 — App
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | todo | wl-build-web |
-| T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0421 | todo | wl-build-web |
-| T-0304h | UF-09 e2e from UF-08.4: reload mid-rest/pause (NFR-TIME-2), 10-set offline workout (NFR-OFF-2), two devices (NFR-SYNC-4), keyboard + axe loop (NFR-A11Y-1/6) | web-feature:UF-09 | T-0304d, T-0304g, T-0303d | todo | wl-build-web |
-| T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | todo | wl-build-web |
-| T-0310d | UF-11.4 Account settings at /plan/account: export + delete with confirm, /welcome notice (D-0136) | web-feature:UF-11 | T-0308b, T-0310b, T-0310c | todo | wl-build-web |
-| T-0216 | Account settings: "Edit equipment" checklist of the 10 vocabulary items, writing profiles.equipment[] (D-0061 §3; UF-01.3 keeps the 3 profiles) | web-feature:UF-01 | T-0300, T-0301 | todo | wl-build-web |
+| T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | ready | wl-build-web |
+| T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0421, T-0474 (merge only: gate, TR-0044 → D-0170) | doing | wl-build-web |
+| T-0304h | UF-09 e2e from UF-08.4: reload mid-rest/pause (NFR-TIME-2), 10-set offline workout (NFR-OFF-2), two devices (NFR-SYNC-4), keyboard + axe loop (NFR-A11Y-1/6) | web-feature:UF-09 | T-0304d, T-0304g, T-0303d | doing | wl-build-web |
+| T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | ready | wl-build-web |
+| T-0310d | UF-11.4 Account settings at /plan/account: export + delete with confirm, /welcome notice (D-0136) | web-feature:UF-11 | T-0308b, T-0310b, T-0310c | doing | wl-build-web |
+| T-0216 | Account settings: "Edit equipment" checklist of the 10 vocabulary items, writing profiles.equipment[] (D-0061 §3; UF-01.3 keeps the 3 profiles) | web-feature:UF-11 | T-0310d | todo | wl-build-web |
 | T-0313 | AC-D11 hardening: dynamic `import()` of components/body-map from UF-03/08/09 bypasses no-restricted-imports; add a no-restricted-syntax rule on ImportExpression + test — T-0300d follow-up Also cover the D-0071 §9 patterns (UF-02/06/07/10/11 from UF-03/04/05/08/09; deep feature imports). | web-shell | T-0300d | todo | wl-build-web |
 | T-0314 | Add axe-core (or vitest-axe) as a direct devDependency of apps/web and point the AC-D10 helper at it (today it resolves through @axe-core/playwright, D-0060 §7) — T-0300d follow-up | infra | T-0300d | todo | wl-build-infra |
 | T-0315 | Design a C-01 body silhouette to replace the D-0060 tile grid (after the H-12 device review) | design | T-0300d | todo | wl-design |
@@ -122,7 +122,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0374 | T-0219 AC6 ticket wording: F-input never shuffles plank into a slot; require the forced-core exclude list + minute-grid oldCost sweep as accepted (docs only) | product | T-0219 | todo | wl-spec |
 | T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | todo | wl-build-web |
 | T-0389 | Real-browser 24-hour `<input type=time>` probe for UF-08.1 (cut from T-0386); also a Playwright check of the D-0115 §5 finish-time focus order (T-0386 QA) | qa | T-0303a | todo | wl-build-qa |
-| T-0395 | "Resume workout" entry on Today (UF-02.1) and/or UF-08.1 for an unfinished, non-stale session on this device — a PWA cold start never reaches the D-0111 §7 restore (D-0123 §4–§5); needs a user-flows v2 addition + decision | web-feature:UF-09 | T-0304e, T-0302a (D-0139) | ready | wl-build-web |
+| T-0395 | "Resume workout" entry on Today (UF-02.1) and/or UF-08.1 for an unfinished, non-stale session on this device — a PWA cold start never reaches the D-0111 §7 restore (D-0123 §4–§5) | web-feature:UF-09 | T-0304e, T-0302a (D-0139) | ready | wl-build-web |
 | T-0418 | UF-03.2 rest bar + rest view, Swap button in the list (D-0142) | web-feature:UF-03 | T-0417, T-0421, T-0414 | todo | wl-build-web |
 | T-0434 | cacheCurrent marking, low priority: an identical re-save flushed during an in-flight refresh can still be marked against a select read before that flush — close with a per-entry flush counter if it ever matters (T-0431 review) | web-shell | T-0431 | todo | wl-build-web |
 | T-0437 | e2e: decide whether fixtures/guarded-test.ts should exempt Chromium's own 'An unknown error occurred when fetching the script.' console line (logged by the browser when sw.js can't be fetched, not catchable by page code) the way it exempts 'Failed to load resource:' (T-0429 build, D-0154 §3) | qa | T-0429 | todo | wl-build-qa |
@@ -133,13 +133,19 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0445 | Flake: UF-08 `ready-start.test.tsx` 'retry: the second tap…' failed once in a full -w gate (T-0422 rework, 2026-10-02), then passed 3× alone and in a rerun. Reproduce under load (--repeat / concurrency), find the timing assumption, fix with a real wait | web-feature:UF-08 | — | todo | wl-build-web |
 | T-0449 | OfflineStatus formatTime: use hour '2-digit' if '08:10' is the intended form (D-0084 consequence) (T-0307b review) | web-shell | — | todo | wl-build-web |
 | T-0455 | e2e guard polish (T-0436 review): check backstop hits after in-flight requests settle in the supabaseGuard auto fixture (a late read is missed today); source-rules match any `.allowBackstop(`/`.allow(` receiver, not only the guard names; make the test.fail() backstop tests assert the failure is a backstop hit ; guard-source-check should also flag `export … from` and dynamic `import("@playwright/test")` value use (T-0356 review) | qa | T-0436 | todo | wl-build-qa |
-| T-0457 | UF-03.1 List view: + Add set (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | doing | wl-build-web |
 | T-0458 | UF-03.1 List view e2e: the Playwright spec T-0416 deferred, incl. NFR-OFF-2 List view logging (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | ready | wl-build-web |
 | T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | todo | wl-build-web |
 | T-0463 | UF-09 seams: retry a failed chunk load for the how-to (UF-04) and list-view (UF-03.1) seams too — reuse retryableLazy and onRetry/onFailed, set chrome.retryLabel; add a test that a parent re-render of SwapOverlay neither re-imports nor remounts the sheet (QA fault F3 survived) (T-0451 follow-up) | web-feature:UF-09 | T-0451, T-0446 | doing | wl-build-web |
 | T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | todo | wl-build-web |
-| T-0465 | RouteBoundary polish (T-0459 review): move focus to Reload when the fallback mounts; a render error on /library/:exerciseId keeps the fallback across ids until reload (key is the route pattern) — consider keying on location for render errors | web-shell | T-0459 | doing | wl-build-web |
 | T-0467 | check-lane-paths doc nit: add the one-line D-0167 §1 own-ticket-file note to the file header and the listedPathsFromTicket doc comment; AC-3 test should also assert the finding points at the ticket path (T-0466 review/accept) | infra | T-0466 | todo | wl-build-infra |
+| T-0468 | UF-09 e2e: 10-set offline workout (NFR-OFF-2) and two devices (NFR-SYNC-4) (split from T-0304h, D-0168) | web-feature:UF-09 | T-0304d | ready | wl-build-web |
+| T-0469 | UF-11.4 Account settings e2e (split from T-0310d, D-0168) | web-feature:UF-11 | T-0310d | todo | wl-build-web |
+| T-0470 | UF-11.1 CheckinCard writes: Accept/Keep, first-shown insert, offline (split from T-0308c, D-0168) | web-feature:UF-11 | T-0308c | todo | wl-build-web |
+| T-0471 | UF-11.1 CheckinCard mounts on UF-11.2 + UF-02.1 (slots.tsx) and e2e (split from T-0308c, D-0168) | web-feature:UF-11 | T-0470 | todo | wl-build-web |
+| T-0472 | UF-03.1: after a reload, unchecking a logged added row removes the row and drops focus to body — keep the row or move focus to '+ Add set' (T-0457 review) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
+| T-0473 | UF-03.1 AC-6: add a vitest that pressing + Add set on a timed item moves focus to the new row's seconds field (untested; T-0457 accept) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
+| T-0474 | UF-09 device.ts reads focus prefs from the new UF-08 leaf entry `index.prefs.ts`, so focus mode no longer evaluates SessionSetup; must merge before T-0303c (TR-0044, D-0170) | web-feature:UF-09 | — | ready | wl-build-web |
+| T-0475 | import-bans polish (D-0170, optional): add a contrast row showing `../UF-08/index.prefs.js` is allowed; tighten INDEX_ONLY_PATTERN so only `index.js` / `index.<lower>.js` pass (not `index-x.js`); keep T-0313's dynamic-import pattern consistent | web-shell | T-0474 | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |

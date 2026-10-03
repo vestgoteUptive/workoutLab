@@ -203,6 +203,8 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0446 | UF-09: pass the host's timeZone through FocusSession to the UF-05 swap seam (SwapSheet ranks with deviceZone() today) (T-0422 review; app-wide chunk boundary split to T-0459, D-0164) | web-feature:UF-09 | T-0394, T-0451 | done | wl-build-web |
 | T-0466 | check-lane-paths: always allow a ticket to edit its own docs/tickets/<id>-*.md (build/QA/accept logs) without a Listed-extras line — T-0356, T-0307b and T-0308a all tripped on a missing self-grant (2026-10-03) | infra | — | done | wl-build-infra |
 | T-0417 | UF-03.1 List view logging: check / edit / uncheck / + Add set, reload, NFR-OFF-2 List view e2e (D-0142) | web-feature:UF-03 | T-0416, T-0415, T-0420 | done | wl-build-web |
+| T-0465 | RouteBoundary polish (T-0459 review): move focus to Reload when the fallback mounts; a render error on /library/:exerciseId keeps the fallback across ids until reload (key is the route pattern) — consider keying on location for render errors | web-shell | T-0459 | done | wl-build-web |
+| T-0457 | UF-03.1 List view: + Add set (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |

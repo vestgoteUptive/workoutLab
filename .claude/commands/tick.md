@@ -52,11 +52,15 @@ Take the flow from the board's Flow column. Input: `{ repoPath: <absolute worktr
   4. `product-owner` in accept mode, given all three results.
   (D-0157 §8: review catches real bugs at 20–35k tokens; QA run before a rework has to be partly redone.)
   For `wl-spec`: `product-owner` (spec), then `triage` (check).
+  **Model (D-0169 §4):** pass `model: "sonnet"` for QA, accept, follow-up builds and small polish
+  tickets. Keep the role's own model (Opus) for code review, triage, groom, spec, engine/data-model
+  work, new feature builds, and any rerun after a failure (§5 below still applies on top of this).
 
 ## 5. Review and merge (your own judgement, Opus)
 For each finished ticket:
 - For tickets that touch `.github/**`, `supabase/**` or a CI-fix row, and for any ticket whose ACs need the real Supabase stack: push the branch and open a draft PR (`gh pr create --draft`). Merge only once all its checks are green.
-- If accept is `done`: check `git diff --stat main...` against the lane's paths and the contract rule (no gate in the worktree, D-0158 §5). If it passes, `git merge --no-ff t/T-NNNN-*` on `main`, then run the forced full gate there: `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1`, `-w test:repo-checks`, check-all and the whole e2e with `TMPDIR=$HOME/.cache/wl-pw-tmp`, all under `flock`. Push only when green. If `main` breaks, `git merge --abort` or revert, and treat the ticket as failed. On success, set the board to `done` and remove the worktree.
+- If accept is `done`: check `git diff --stat main...` against the lane's paths and the contract rule (no gate in the worktree, D-0158 §5). If it passes, queue it for a batched merge below rather than merging it alone.
+- **Batched merge (D-0169 §3).** Once every ticket due to merge this tick has been checked, merge them onto `main` one at a time (`git merge --no-ff t/T-NNNN-*`), then run the forced full gate once for the whole batch, each command via `scripts/locked.sh heavy …` (never a bare `flock`): `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1`, `-w test:repo-checks`, check-all, and the whole e2e with `TMPDIR=$HOME/.cache/wl-pw-tmp`. Push only when green. If it's red, reset to the pre-batch commit and merge-and-gate the tickets one at a time to find which one broke it; treat only that one as failed, and re-batch the rest. On success, set every merged ticket's board row to `done` and remove its worktree.
 - If the status is `failed`: rerun the build with `task` set to the combined QA, review and accept notes. On the 2nd failure of a Sonnet role, rerun as a sub-agent with `model: "opus"`. On the 3rd failure, raise a `TR-*` and set the board to `triage:TR-NNNN`.
 - If the status is `needs-triage`: set the board to `triage:<id>`. It gets picked up next tick.
 - If the status is `blocked`: add or confirm the H-item in `needs-human.md`, set the board to `blocked:H-xx`, and remove the worktree (keep the branch).

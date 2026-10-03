@@ -7,7 +7,6 @@
 import {
   Component,
   Suspense,
-  lazy,
   useEffect,
   useReducer,
   useRef,
@@ -31,7 +30,7 @@ export interface SeamAction {
 }
 
 // A seam's label is its own flow's string (D-0071 §4); this file is that flow's grant in UF-09.
-const { uf05, uf03 } = en;
+const { uf05, uf03, uf09 } = en;
 
 // UF-05.1 is loaded on first open (D-0142 §8): a dynamic import of the flow's `index`.
 // A failed load is retried in-page (T-0451, D-0162 §3): see `retryableLazy`.
@@ -40,8 +39,11 @@ const swapSheet = retryableLazy(() =>
 );
 
 // UF-03.1 and the how-to are loaded on first open too (D-0142 §8; T-0416).
-const ListView = lazy(() => import("../UF-03/index.js").then((m) => ({ default: m.ListView })));
-const ExerciseHowTo = lazy(() =>
+// They retry like the swap seam (T-0463, D-0167 §2).
+const listViewLazy = retryableLazy(() =>
+  import("../UF-03/index.js").then((m) => ({ default: m.ListView })),
+);
+const howToLazy = retryableLazy(() =>
   import("../UF-04/index.js").then((m) => ({ default: m.ExerciseHowTo })),
 );
 
@@ -90,12 +92,14 @@ const listViewChrome: SeamChrome = {
   closeLabel: uf03.seamClose,
   loading: uf03.seamLoading,
   loadFailed: uf03.seamLoadFailed,
+  retryLabel: uf09.seamRetry,
 };
 const howToChrome: SeamChrome = {
   label: uf03.howToAction,
   closeLabel: uf03.seamClose,
   loading: uf03.seamLoading,
   loadFailed: uf03.seamLoadFailed,
+  retryLabel: uf09.seamRetry,
 };
 
 /**
@@ -184,6 +188,14 @@ class SeamBoundary extends Component<BoundaryProps, { failed: boolean }> {
   }
 }
 
+/** "Try again" for a retryable lazy seam: the lazy is reset only when the boundary catches
+ *  (`onFailed`), never on render, so a parent re-render neither re-imports nor remounts the view
+ *  (D-0167 §4). `retry` bumps the key, which remounts the boundary and imports again. */
+function useSeamRetry(loader: { reset(): void }) {
+  const [attempt, retry] = useReducer((n: number) => n + 1, 0);
+  return { key: attempt, onRetry: retry, onFailed: loader.reset };
+}
+
 /** A lazy seam view inside the shared boundary and a loading placeholder with Close. */
 function LazySeam({
   ctx,
@@ -221,16 +233,10 @@ function SwapOverlay({ ctx }: { ctx: FocusSession }) {
   const [target] = useState(() => swapTarget(ctx));
   // "Try again" remounts the boundary and the lazy sheet; the lazy was already made again when
   // the failure was caught, so the remount imports again (T-0451).
-  const [attempt, retry] = useReducer((n: number) => n + 1, 0);
+  const { key, onRetry, onFailed } = useSeamRetry(swapSheet);
   const SwapSheet = swapSheet.Component;
   return (
-    <LazySeam
-      key={attempt}
-      ctx={ctx}
-      chrome={swapChrome}
-      onFailed={swapSheet.reset}
-      onRetry={retry}
-    >
+    <LazySeam key={key} ctx={ctx} chrome={swapChrome} onFailed={onFailed} onRetry={onRetry}>
       <>
         <SwapSheet
           workout={ctx.workout}
@@ -263,8 +269,10 @@ const swap: SeamAction = {
  *  placeholder has Close (D-0142 §8). */
 function HowToOverlay({ ctx }: { ctx: FocusSession }) {
   const exerciseId = ctx.plan.items[ctx.currentItemIndex]?.exerciseId ?? "";
+  const { key, onRetry, onFailed } = useSeamRetry(howToLazy);
+  const ExerciseHowTo = howToLazy.Component;
   return (
-    <LazySeam ctx={ctx} chrome={howToChrome}>
+    <LazySeam key={key} ctx={ctx} chrome={howToChrome} onFailed={onFailed} onRetry={onRetry}>
       <ExerciseHowTo exerciseId={exerciseId} onClose={ctx.close} />
     </LazySeam>
   );
@@ -278,15 +286,21 @@ const howTo: SeamAction = {
   keepsClockRunning: false,
 };
 
+function ListViewOverlay({ ctx }: { ctx: FocusSession }) {
+  const { key, onRetry, onFailed } = useSeamRetry(listViewLazy);
+  const ListView = listViewLazy.Component;
+  return (
+    <LazySeam key={key} ctx={ctx} chrome={listViewChrome} onFailed={onFailed} onRetry={onRetry}>
+      <ListView ctx={ctx} />
+    </LazySeam>
+  );
+}
+
 /** UF-03.1 List view (T-0416): the clocks keep running and the check point stays `"next"`. */
 const listView: SeamAction = {
   id: "list-view",
   label: uf03.listViewAction,
-  render: (ctx) => (
-    <LazySeam ctx={ctx} chrome={listViewChrome}>
-      <ListView ctx={ctx} />
-    </LazySeam>
-  ),
+  render: (ctx) => <ListViewOverlay ctx={ctx} />,
   keepsClockRunning: true,
 };
 

@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-04.2]
 decisions: [D-0167, D-0164, D-0111, D-0144]
 deps: [T-0459]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0459 review. Build flow: wl-build-web. About ¼ day. T-0459 is in QA: start from a main that has it. It touches app/App.tsx, so it runs the whole web e2e. -->
 
@@ -90,3 +90,4 @@ contracts unchanged · commits start `T-0465`.
     e2e run shares the machine's test lock with every other e2e run.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0465.md` (D-0157).
