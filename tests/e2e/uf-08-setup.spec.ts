@@ -910,3 +910,119 @@ test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109
     expect(await rowTexts(page)).toEqual(online);
   });
 });
+
+// ---- T-0303c UF-08.3 Swap before starting (AC-9) ----
+
+const screenUF051 = (page: Page) => page.locator('[data-screen-id="UF-05.1"]');
+
+/** The plan's exercise ids in the app's own `wl-offline.sessions` entry for `id`. */
+async function storedPlanIds(page: Page, id: string): Promise<string[]> {
+  return page.evaluate(async (key: string) => {
+    const req = indexedDB.open("wl-offline");
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const entry = await new Promise<{ row: { plan: { items: { exerciseId: string }[] } } }>(
+      (resolve, reject) => {
+        const get = db.transaction("sessions", "readonly").objectStore("sessions").get(key);
+        get.onsuccess = () => resolve(get.result as never);
+        get.onerror = () => reject(get.error);
+      },
+    );
+    db.close();
+    return entry.row.plan.items.map((i) => i.exerciseId);
+  }, id);
+}
+
+test.describe("T-0303c AC-9 UF-08.3 swap before starting", () => {
+  test("Swap the second item, apply the first candidate, then start with the new exercise", async ({
+    page,
+  }) => {
+    await recordSessions(page);
+    await openSetup(page);
+    await suggestAt30(page);
+    const before = await rowNames(page).allTextContents();
+    expect(before.length).toBeGreaterThanOrEqual(2);
+
+    await page.getByRole("button", { name: `Swap ${before[1]!}` }).click();
+    await expect(page).toHaveURL(/\/session\/setup\?step=swap&item=1$/);
+    await expect(screenUF051(page)).toBeVisible();
+    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+
+    await page.getByRole("radio", { name: "Variety" }).check();
+    const use = page.getByRole("button", { name: /^Use / });
+    await expect(use).toBeVisible();
+    const picked = (await use.textContent())!.replace(/^Use /, "");
+    await use.click();
+
+    await expect(screenUF082(page)).toBeVisible();
+    await expect(page).toHaveURL(/\/session\/setup\?step=suggested$/);
+    const after = await rowNames(page).allTextContents();
+    expect(after[1]).toBe(picked);
+    expect(after[1]).not.toBe(before[1]);
+    expect(after[0]).toBe(before[0]);
+
+    await toReady(page);
+    const id = await startWorkout(page);
+    const ids = await storedPlanIds(page, id);
+    expect(ids).toHaveLength(after.length);
+    expect(ids[1]).toBe(picked.toLowerCase().replace(/[ ]/g, "-"));
+  });
+
+  test("axe reports 0 serious or critical violations on the sheet", async ({ page }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await page.locator('[data-part="swap"]').nth(1).click();
+    await expect(screenUF051(page)).toBeVisible();
+    await expect(page.getByRole("radiogroup", { name: "Replacement" })).toBeVisible();
+    const results = await new AxeBuilder({ page }).analyze();
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious).toEqual([]);
+  });
+
+  test("every Swap button is at least 44 x 44 px", async ({ page }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const buttons = page.locator('[data-part="swap"]');
+    const count = await buttons.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i += 1) {
+      const box = await buttons.nth(i).boundingBox();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test("keyboard only: Swap, a reason chip, Use", async ({ page }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const before = await rowNames(page).allTextContents();
+    async function tabTo(locator: ReturnType<Page["getByRole"]>, label: string): Promise<void> {
+      for (let i = 0; i < 40; i += 1) {
+        if (await locator.evaluate((el) => el === document.activeElement)) return;
+        await page.keyboard.press("Tab");
+      }
+      throw new Error(`Tab never reached ${label}`);
+    }
+    await page.locator("body").focus();
+    await tabTo(page.locator('[data-part="swap"]').nth(1), "Swap");
+    await page.keyboard.press("Enter");
+    await expect(screenUF051(page)).toBeVisible();
+    // A radio group is one tab stop (the checked chip); arrows move within it.
+    await tabTo(page.getByRole("radio", { name: "Best match", exact: true }), "Best match");
+    const variety = page.getByRole("radio", { name: "Variety" });
+    for (let i = 0; i < 3; i += 1) await page.keyboard.press("ArrowRight");
+    await expect(variety).toBeChecked();
+    const use = page.getByRole("button", { name: /^Use / });
+    await expect(use).toBeVisible();
+    const picked = (await use.textContent())!.replace(/^Use /, "");
+    await tabTo(use, "Use");
+    await page.keyboard.press("Enter");
+    await expect(screenUF082(page)).toBeVisible();
+    expect((await rowNames(page).allTextContents())[1]).toBe(picked);
+    expect(picked).not.toBe(before[1]);
+  });
+});

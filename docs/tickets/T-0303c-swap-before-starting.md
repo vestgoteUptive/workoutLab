@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.3, UF-05.1, UF-08.4]
 decisions: [D-0065, D-0069, D-0071, D-0107, D-0109, D-0124, D-0142, D-0158, D-0168]
 deps: [T-0303b, T-0421]
-status: ready
+status: review
 ---
 <!-- Groomed 2026-10-03 by product-owner (D-0168 §2). Child of docs/tickets/T-0303-session-setup.md
 (parent AC-C1–C5). Build flow: wl-build-web. About ¼–⅓ day: the sheet, its ranking, chips, copy,
@@ -141,3 +141,11 @@ and cite UF-08.3 (for example `T-0303c UF-08.3: swap before starting mounts the 
   `ready-start.test.tsx`; don't run them together.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-03, base ebb08ce)
+- Built: Swap button in `Suggested.tsx` (`data-part="swap"`, `.wl-uf08__icon--text`), `swap` step in `SessionSetup.tsx` (pastSetup, static `SwapSheet` import, leave = `navigate(-1)`, focus back through `focusSwapItem`, bad `item` replaces to `?step=suggested`), two strings. Static import per the ticket, so no lazy seam.
+- AC→test (`__tests__/swap-before-start.test.tsx`): AC-1 four tests · AC-2 one · AC-3 two (Close, Escape) · AC-4 one · AC-5 one · AC-6 six (keep/apply back, browser Back, cold, 5 bad items, item=2) · AC-7 one · AC-9 `uf-08-setup.spec.ts` four (flow, axe, 44px, keyboard) · AC-8/AC-10 existing exports-and-lint, controls, flows tests unedited.
+- AC-10: `suggested-actions.test.tsx` "no button starting with Swap" updated to the new truth (one Swap button per item row).
+- Deviation: AC-2 "contains Swapped to save time" cannot hold; `itemReasonLine` keeps 2 reasons and the swap one is third. Test asserts the DOM line equals `itemReasonLine(result reasons)` and the engine result carries `swap {short_on_time}` (D-0169, follow-up for web-shell).
+- Red on unfixed code (Suggested/SessionSetup from HEAD): 17 of 19 fail, AC-1 included. Planted fault (`swap` left out of `pastSetup`, backup restored with `cp`): 16 of 19 fail, AC-2 included.
+- e2e `uf-08-setup` + `uf-05-swap`: 33 passed.
