@@ -143,6 +143,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0469 | UF-11.4 Account settings e2e (split from T-0310d, D-0168) | web-feature:UF-11 | T-0310d | todo | wl-build-web |
 | T-0470 | UF-11.1 CheckinCard writes: Accept/Keep, first-shown insert, offline (split from T-0308c, D-0168) | web-feature:UF-11 | T-0308c | todo | wl-build-web |
 | T-0471 | UF-11.1 CheckinCard mounts on UF-11.2 + UF-02.1 (slots.tsx) and e2e (split from T-0308c, D-0168) | web-feature:UF-11 | T-0470 | todo | wl-build-web |
+| T-0472 | UF-03.1: after a reload, unchecking a logged added row removes the row and drops focus to body — keep the row or move focus to '+ Add set' (T-0457 review) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
