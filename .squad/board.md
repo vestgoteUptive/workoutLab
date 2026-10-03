@@ -78,7 +78,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 |---|---|---|---|---|---|
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | todo | wl-build-web |
 | T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0421 | todo | wl-build-web |
-| T-0304g | UF-09 device features: readFocusPrefs, wake lock + visibilitychange re-acquire, sound/voice cues on observed crossings, AudioContext on gesture, reduced motion (D-0118) | web-feature:UF-09 | T-0304c, T-0303d | doing | wl-build-web |
 | T-0304h | UF-09 e2e from UF-08.4: reload mid-rest/pause (NFR-TIME-2), 10-set offline workout (NFR-OFF-2), two devices (NFR-SYNC-4), keyboard + axe loop (NFR-A11Y-1/6) | web-feature:UF-09 | T-0304d, T-0304g, T-0303d | todo | wl-build-web |
 | T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | doing | wl-build-web |
