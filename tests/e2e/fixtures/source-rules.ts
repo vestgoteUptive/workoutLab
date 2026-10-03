@@ -6,8 +6,9 @@
 /** The pattern an own console listener matches (T-0430 AC1), checked on code only. */
 const OWN_LISTENER = /\.on\(\s*["'](console|pageerror)["']/;
 
-/** The call AC3 checks, and the ticket reference its comment block must carry. */
-const ALLOW_CALL = "consoleGuard.allow(";
+/** The calls AC3 checks (T-0436 adds `allowBackstop`), and the ticket reference their comment
+ *  block must carry. */
+const ALLOW_CALLS = ["consoleGuard.allow(", "supabaseGuard.allowBackstop("];
 const TICKET_REF = /T-\d{4}/;
 
 /** Characters after which a `/` starts a regex literal rather than a division. */
@@ -114,7 +115,8 @@ export function commentBlockAbove(lines: readonly string[], index: number): stri
 }
 
 /**
- * T-0430 AC3: every line containing `consoleGuard.allow(` whose comment block directly above
+ * T-0430 AC3 (+ T-0436 AC-7): every line containing `consoleGuard.allow(` or
+ * `supabaseGuard.allowBackstop(` whose comment block directly above
  * (see `commentBlockAbove`) has no line matching `T-\d{4}`. Replaces the T-0425 check, which
  * looked only at the single line above and accepted any code there that held the text.
  */
@@ -122,7 +124,7 @@ export function allowCommentViolations(file: string, source: string): string[] {
   const lines = source.split("\n");
   const found: string[] = [];
   lines.forEach((line, index) => {
-    if (!line.includes(ALLOW_CALL)) return;
+    if (!ALLOW_CALLS.some((call) => line.includes(call))) return;
     const block = commentBlockAbove(lines, index);
     if (!block.some((comment) => TICKET_REF.test(comment))) found.push(`${file}:${index + 1}`);
   });

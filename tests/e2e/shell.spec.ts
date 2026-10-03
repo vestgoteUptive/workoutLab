@@ -15,6 +15,7 @@ import {
   mockProfilePresent,
   mockSupabaseAuth,
   mockSupabaseData,
+  mockSupabaseEmptyReads,
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
 import {
@@ -35,6 +36,8 @@ test.beforeEach(async ({ page }) => {
   // selects, and any call a test doesn't expect must fail loudly rather than reach the network.
   await mockSupabaseAuth(page);
   await mockSupabaseRest(page);
+  // T-0436: AutoSync's reads resolve as `200 []`, so none of them is a backstop hit.
+  await mockSupabaseEmptyReads(page);
   // Registered after the catch-all so it wins for `profiles*`. Every signed-in test here wants
   // `present`: these are the signed-in shell routes, and a `missing` profile would send them to
   // `/welcome/save` (D-0064 §9) instead of rendering the tab bar the assertions look for. The
@@ -155,8 +158,15 @@ test.describe("AC-6 the Phase 3 sub-route chunks are precached (offline)", () =>
   // (the 501 shadowing `profiles*`) still applies to the stub rows. `/progress/back-squat`
   // (UF-06.2) is still the stub on main; T-0307b takes it out of the loop and seeds it the
   // same way (D-0091 §4–§5).
+  //
+  // T-0436 (D-0155 §4): re-registering the backstop shadows the outer reads, so each one it
+  // answered was a backstop hit. They are re-mocked here after it: `200 []` for AutoSync's reads
+  // and `present` for the profile gate. That supersedes the `unknown` gate state the T-0904 note
+  // above describes; `session`-guarded and stub routes behave the same with `present`.
   test.beforeEach(async ({ page }) => {
     await mockSupabaseRest(page);
+    await mockSupabaseEmptyReads(page);
+    await mockProfilePresent(page);
   });
 
   test("[data-screen-id=UF-03.3] renders offline after one online load of /session/S1/summary", async ({

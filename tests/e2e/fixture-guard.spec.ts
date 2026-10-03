@@ -14,6 +14,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  BACKSTOP_MESSAGE,
   CONSOLE_ERROR_MESSAGE,
   expect,
   installConsoleGuard,
@@ -22,7 +23,13 @@ import {
   UNCLAIMED_MESSAGE,
 } from "./fixtures/guarded-test.js";
 import { allowCommentViolations, ownConsoleListeners } from "./fixtures/source-rules.js";
-import { mockSupabaseRest, VITE_SUPABASE_URL } from "./fixtures/supabase-mock.js";
+import {
+  mockProfilePresent,
+  mockSupabaseAuth,
+  mockSupabaseEmailAuth,
+  mockSupabaseRest,
+  VITE_SUPABASE_URL,
+} from "./fixtures/supabase-mock.js";
 
 const PLANTED_URL = `${VITE_SUPABASE_URL}/rest/v1/planted_unmocked?select=*`;
 
@@ -76,15 +83,26 @@ test.describe("AC-6 the guard reports exactly the requests no route claimed", ()
     expect(() => guard.assertClean()).not.toThrow();
   });
 
-  test("a request claimed by the 501 backstop is not reported", async ({ page, context }) => {
+  // T-0436 (D-0155 §4) inverts the D-0086 §2 test "a request claimed by the 501 backstop is not
+  // reported": the request still stays off the network (501, not in `unclaimed()`), but it is now
+  // a backstop hit, and `allowBackstop` exempts it.
+  test("a request claimed by the 501 backstop is reported as a hit, and allowBackstop exempts it", async ({
+    page,
+    context,
+    supabaseGuard,
+  }) => {
+    // T-0436: the auto guard sees this hit too (it listens on the context), so it acknowledges it.
+    supabaseGuard.allowBackstop(/\/rest\/v1\/anything/);
     await page.goto("/welcome");
     const guard = installSupabaseGuard(context);
     await mockSupabaseRest(page);
 
-    // The backstop keeps it off the network, which is the property being enforced, so a 501 is
-    // a claim. This is what keeps `offline.spec.ts` and shell's AC-6 block green under the guard.
     expect(await fetchStatus(page, `${VITE_SUPABASE_URL}/rest/v1/anything?select=*`)).toBe(501);
     expect(guard.unclaimed()).toEqual([]);
+    expect(guard.backstopHits()).toEqual([`GET ${VITE_SUPABASE_URL}/rest/v1/anything?select=*`]);
+    expect(() => guard.assertClean()).toThrow(BACKSTOP_MESSAGE);
+    guard.allowBackstop(/\/rest\/v1\/anything/);
+    expect(() => guard.assertClean()).not.toThrow();
   });
 
   test("route.fallback() is not a claim: the request is reported", async ({ page, context }) => {
@@ -280,7 +298,13 @@ test.describe("T-0425 the console guard fails a test on a console error or page 
     expect(guard.errors()[0]).toContain("t0425-sentinel");
   });
 
-  test("T-0425 AC3 a claimed 501 (Failed to load resource) passes", async ({ page, context }) => {
+  test("T-0425 AC3 a claimed 501 (Failed to load resource) passes", async ({
+    page,
+    context,
+    supabaseGuard,
+  }) => {
+    // T-0436: this test wants the backstop hit (its subject is the browser's 501 console line).
+    supabaseGuard.allowBackstop(/\/rest\/v1\/anything/);
     await page.goto("/welcome");
     const guard = installConsoleGuard(context);
     await mockSupabaseRest(page);
@@ -367,6 +391,146 @@ test.describe("T-0425 the console guard fails a test on a console error or page 
     await expect
       .poll(() => guard.errors())
       .toEqual(["pageerror: Failed to load resource: t0425-prefixed"]);
+  });
+});
+
+// T-0436 (D-0155 §4): a hit on the mocks' 501 catch-all is reported, unless the test allows it.
+// Like AC-6, the tests drive `installSupabaseGuard` on their own context. The auto guard listens on
+// the same context, so each planted hit is also acknowledged on it (`supabaseGuard.allowBackstop`).
+const ANYTHING = `${VITE_SUPABASE_URL}/rest/v1/anything?select=*`;
+
+async function post(page: import("@playwright/test").Page, url: string): Promise<number> {
+  return page.evaluate(async (target) => (await fetch(target, { method: "POST" })).status, url);
+}
+
+test.describe("T-0436 backstop hits", () => {
+  test("T-0436 AC1 a REST backstop hit is reported", async ({ page, context, supabaseGuard }) => {
+    // T-0436: planted on purpose.
+    supabaseGuard.allowBackstop(/\/rest\/v1\/anything/);
+    await page.goto("/welcome");
+    const guard = installSupabaseGuard(context);
+    await mockSupabaseRest(page);
+
+    expect(await fetchStatus(page, ANYTHING)).toBe(501);
+    expect(guard.backstopHits()).toEqual([`GET ${ANYTHING}`]);
+    expect(guard.unclaimed()).toEqual([]);
+    expect(() => guard.assertClean()).toThrow(BACKSTOP_MESSAGE);
+    expect(() => guard.assertClean()).toThrow(ANYTHING);
+  });
+
+  test("T-0436 AC2 an auth backstop hit is reported, and so is a non-PKCE /token grant", async ({
+    page,
+    context,
+    supabaseGuard,
+  }) => {
+    // T-0436: planted on purpose.
+    supabaseGuard.allowBackstop(/\/auth\/v1\//);
+    await page.goto("/welcome");
+    const guard = installSupabaseGuard(context);
+    await mockSupabaseAuth(page);
+    const logout = `${VITE_SUPABASE_URL}/auth/v1/logout`;
+    expect(await post(page, logout)).toBe(501);
+    expect(guard.backstopHits()).toEqual([`POST ${logout}`]);
+
+    await mockSupabaseEmailAuth(page);
+    const token = `${VITE_SUPABASE_URL}/auth/v1/token?grant_type=password`;
+    expect(await post(page, token)).toBe(501);
+    expect(guard.backstopHits()).toEqual([`POST ${logout}`, `POST ${token}`]);
+    expect(guard.unclaimed()).toEqual([]);
+  });
+
+  test("T-0436 AC3 a real mock is not a hit", async ({ page, context }) => {
+    await page.goto("/welcome");
+    const guard = installSupabaseGuard(context);
+    await mockSupabaseRest(page);
+    await page.route(`${VITE_SUPABASE_URL}/rest/v1/served*`, (route) =>
+      route.fulfill({ status: 200, json: [] }),
+    );
+    await mockProfilePresent(page);
+
+    expect(await fetchStatus(page, `${VITE_SUPABASE_URL}/rest/v1/served?select=*`)).toBe(200);
+    expect(await fetchStatus(page, `${VITE_SUPABASE_URL}/rest/v1/profiles?select=*`)).toBe(200);
+    expect(guard.backstopHits()).toEqual([]);
+    expect(() => guard.assertClean()).not.toThrow();
+  });
+
+  test("T-0436 AC4 allowBackstop exempts only what matches, and keeps listing the hit", async ({
+    page,
+    context,
+    supabaseGuard,
+  }) => {
+    // T-0436: planted on purpose.
+    supabaseGuard.allowBackstop(/\/rest\/v1\/(anything|other)/);
+    await page.goto("/welcome");
+    const guard = installSupabaseGuard(context);
+    await mockSupabaseRest(page);
+    guard.allowBackstop(/\/rest\/v1\/anything/);
+
+    await fetchStatus(page, ANYTHING);
+    expect(guard.backstopHits()).toEqual([`GET ${ANYTHING}`]);
+    expect(() => guard.assertClean()).not.toThrow();
+
+    const other = `${VITE_SUPABASE_URL}/rest/v1/other?select=*`;
+    await fetchStatus(page, other);
+    expect(() => guard.assertClean()).toThrow(other);
+    expect(() => guard.assertClean()).not.toThrow(ANYTHING + "\n");
+    let message = "";
+    try {
+      guard.assertClean();
+    } catch (error) {
+      message = (error as Error).message;
+    }
+    expect(message).not.toContain("anything");
+  });
+
+  // An allow never carries over: the first test allows the hit, the second makes the same hit with
+  // no allow and must fail at teardown.
+  test("T-0436 AC4 an allow, first test: allowed, passes", async ({ page, supabaseGuard }) => {
+    // T-0436: planted on purpose.
+    supabaseGuard.allowBackstop(/\/rest\/v1\/anything/);
+    await page.goto("/welcome");
+    await mockSupabaseRest(page);
+    await fetchStatus(page, ANYTHING);
+  });
+
+  test("T-0436 AC4 an allow, second test: the same hit with no allow fails", async ({ page }) => {
+    test.fail();
+    await page.goto("/welcome");
+    await mockSupabaseRest(page);
+    await fetchStatus(page, ANYTHING);
+  });
+
+  test("T-0436 AC4 allowBackstop rejects g and y flags, accepts i", ({ supabaseGuard }) => {
+    expect(() => supabaseGuard.allowBackstop(/x/g)).toThrow(/global or sticky/);
+    expect(() => supabaseGuard.allowBackstop(/x/y)).toThrow(/global or sticky/);
+    expect(() => supabaseGuard.allowBackstop(/x/i)).not.toThrow();
+  });
+
+  test("T-0436 AC5 the auto fixture fails a test that hits the backstop", async ({ page }) => {
+    test.fail();
+    await page.goto("/welcome");
+    await mockSupabaseRest(page);
+    await fetchStatus(page, ANYTHING);
+  });
+
+  test("T-0436 AC5 forgetPlantedLeaks also clears the backstop list", async ({
+    page,
+    supabaseGuard,
+  }) => {
+    await page.goto("/welcome");
+    await mockSupabaseRest(page);
+    await fetchStatus(page, ANYTHING);
+    await expect.poll(() => supabaseGuard.backstopHits().length).toBe(1);
+    supabaseGuard.forgetPlantedLeaks();
+    expect(supabaseGuard.backstopHits()).toEqual([]);
+  });
+
+  test("T-0436 AC7 the comment rule covers allowBackstop", () => {
+    const F = "x.spec.ts";
+    const call = "supabaseGuard.allowBackstop(/x/);";
+    expect(allowCommentViolations(F, `// T-0436 wanted\n${call}`)).toEqual([]);
+    expect(allowCommentViolations(F, call)).toEqual([`${F}:1`]);
+    expect(allowCommentViolations(F, `// no ticket\n${call}`)).toEqual([`${F}:2`]);
   });
 });
 
@@ -488,6 +652,13 @@ test.describe("source assertions", () => {
   // T-0430 AC3 tightens this: the T-NNNN must sit in the `//` comment block directly above the
   // call (any line of it), not merely somewhere in the code line above.
   test("T-0425 AC5 every consoleGuard.allow( outside this file names a T-NNNN in the comment block above", () => {
+    const missing = specs
+      .filter((name) => name !== "fixture-guard.spec.ts")
+      .flatMap((spec) => allowCommentViolations(spec, read(spec)));
+    expect(missing).toEqual([]);
+  });
+
+  test("T-0436 AC7 every supabaseGuard.allowBackstop( outside this file names a T-NNNN above", () => {
     const missing = specs
       .filter((name) => name !== "fixture-guard.spec.ts")
       .flatMap((spec) => allowCommentViolations(spec, read(spec)));

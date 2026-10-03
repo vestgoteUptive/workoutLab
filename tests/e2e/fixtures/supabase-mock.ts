@@ -8,10 +8,18 @@ import { VITE_SUPABASE_URL } from "../playwright.config.js";
 
 export { VITE_SUPABASE_URL };
 
+/** T-0436 (D-0155 §4): the header both 501 catch-alls set, so `installSupabaseGuard` can tell a
+ *  backstop answer from a real mock's. The status, body and route patterns are unchanged. */
+export const BACKSTOP_HEADER = "x-wl-e2e-backstop";
+
 /** Fails any Supabase auth call that a spec didn't expect, instead of hitting the network. */
 export async function mockSupabaseAuth(page: Page): Promise<void> {
   await page.route(`${VITE_SUPABASE_URL}/auth/v1/**`, (route) =>
-    route.fulfill({ status: 501, body: "unmocked supabase auth call in e2e" }),
+    route.fulfill({
+      status: 501,
+      headers: { [BACKSTOP_HEADER]: "auth" },
+      body: "unmocked supabase auth call in e2e",
+    }),
   );
 }
 
@@ -21,7 +29,11 @@ export async function mockSupabaseAuth(page: Page): Promise<void> {
  *  so this catch-all has to be the *first* registered to end up as the last-matched backstop. */
 export async function mockSupabaseRest(page: Page): Promise<void> {
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/**`, (route) =>
-    route.fulfill({ status: 501, body: "unmocked supabase rest call in e2e" }),
+    route.fulfill({
+      status: 501,
+      headers: { [BACKSTOP_HEADER]: "rest" },
+      body: "unmocked supabase rest call in e2e",
+    }),
   );
 }
 
@@ -292,4 +304,29 @@ export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): P
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/routine_items*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.routineItems ?? [] }),
   );
+}
+
+/**
+ * T-0436 (D-0155 §4): answers the reads the signed-in shell's AutoSync fires (everything
+ * `mockSupabaseData` serves except `profiles*`, which a spec states with `mockProfilePresent` /
+ * `mockProfileMissing`) with `200 []`, for a spec that doesn't care about the cached data. Without
+ * it each of those reads is a hit on the 501 backstop. Register it **after** `mockSupabaseRest`.
+ */
+export async function mockSupabaseEmptyReads(page: Page): Promise<void> {
+  for (const table of [
+    "sessions",
+    "session_sets",
+    "exercises",
+    "exercise_areas",
+    "area_targets",
+    "session_sets_live",
+    "exercise_variants",
+    "plan_checkins",
+    "routines",
+    "routine_items",
+  ]) {
+    await page.route(`${VITE_SUPABASE_URL}/rest/v1/${table}*`, (route) =>
+      route.fulfill({ status: 200, json: [] }),
+    );
+  }
 }

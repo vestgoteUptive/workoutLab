@@ -132,3 +132,46 @@ lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web test:
 whole suite, run under the test lock with `TMPDIR=$HOME/.cache/wl-pw-tmp` until T-0440 lands) ·
 `format:check` and `check:repo` green · contracts unchanged · commits start `T-0436` (for example
 `T-0436: report hits on the 501 backstop in supabaseGuard`).
+
+## Build / accept log
+
+- 2026-10-03 qa (wl-build-qa). Branch off main 94ebcfd, clean start. Marking: the `x-wl-e2e-backstop`
+  header (`rest` | `auth`) on both 501 catch-alls; the guard reads it from the context `response`
+  event (measured to work; no registry needed). Added `mockSupabaseEmptyReads` (200 [] for the ten
+  AutoSync tables, no profiles) in `fixtures/supabase-mock.ts`.
+- **Inventory** (detector landed first, whole suite run, 22 failing tests, 143 passing; every hit
+  a GET read, no writes). Specs not listed (offline, uf-02/03/04/05/08/09/10/11, csp-session-plan,
+  sw-registration, e2e-config) had zero hits, including `uf-05-swap.spec.ts`.
+
+  | spec | tests | hits | resolution |
+  | --- | --- | --- | --- |
+  | auth.spec.ts | 4 (AC-B5 signed-in x2, B2/B4, B3) | the ten AutoSync reads (+ profiles where the test overrode it) | mock: `mockSupabaseEmptyReads` in `beforeEach` |
+  | shell.spec.ts | 13 (A7 tab bar, A13 axe x5, AC-6 offline x7) | AutoSync reads; the AC-6 describe's re-registered backstop also shadowed `profiles*` | mock: `mockSupabaseEmptyReads` in outer `beforeEach`; AC-6 describe re-mocks reads + `mockProfilePresent` (gate is `present`, no longer `unknown`; tests unaffected) |
+  | uf-01-onboarding.spec.ts | 3 (UF-01.5 AC-14 a/b/c) | AutoSync reads | mock: `mockSupabaseEmptyReads` in `beforeEach` |
+  | fixture-guard.spec.ts | 2 (AC-6 backstop test, T-0425 AC3) | `/rest/v1/anything` (planted on purpose) | first inverted per D-0155 §4; second `allowBackstop` |
+
+  No `allowBackstop` in any product spec; no `forgetPlantedLeaks`, no new `consoleGuard.allow`
+  outside `fixture-guard.spec.ts`. No split needed (about 1 h of mocks).
+- **AC -> test** (all in `fixture-guard.spec.ts` unless noted): AC-1 `T-0436 AC1 a REST backstop hit
+  is reported`; AC-2 `T-0436 AC2 an auth backstop hit ...` (logout + non-PKCE /token); AC-3 `T-0436
+  AC3 a real mock is not a hit`; AC-4 four tests (`exempts only what matches`, first/second test pair
+  with `test.fail()`, `rejects g and y flags, accepts i`); AC-5 `the auto fixture fails a test that
+  hits the backstop` (test.fail) + `forgetPlantedLeaks also clears the backstop list` + the whole
+  suite below; AC-6 planted fault below; AC-7 `T-0436 AC7 the comment rule covers allowBackstop` +
+  `every supabaseGuard.allowBackstop( outside this file names a T-NNNN above`. D-0155 §4 inversion:
+  `a request claimed by the 501 backstop is reported as a hit, and allowBackstop exempts it`.
+- **Red on main guard** (guarded-test.ts at HEAD, no header): `fixture-guard.spec.ts` 11 failed /
+  50 passed: `backstopHits is not a function` (AC-1/2/3/4/5), and both `test.fail()` tests ("passed
+  unexpectedly").
+- **Planted fault (AC-6):** `routines*` removed from `mockSupabaseData`. With the detector,
+  `uf-10-balance.spec.ts` T-0427 AC1 fails with `supabase backstop hit` and `GET .../rest/v1/routines?select=...`
+  (2 consecutive runs; 6 other tests in the file fail too). On main's guard the file is 8/8 green
+  (the contrast). First attempt: T-0427 AC1 stayed green with the detector, because the routines read
+  was still in flight at teardown. Fixed by adding `await page.waitForLoadState("networkidle")` to
+  that test (assertion added, none removed). Restored from backup; `uf-10-balance` 8/8.
+- **Gate:** whole web e2e (`TMPDIR=$HOME/.cache/wl-pw-tmp`, under flock) 176 passed;
+  `-w typecheck lint test --concurrency=1` exit 0 (turbo-cached); `-w test:repo-checks`, `check-all.mjs`,
+  `-w format:check` green.
+- Known limit (follow-up): the check runs at teardown, so a read still in flight after a test's last
+  assertion can be missed (as the uf-10 first attempt showed). A generic settle in the auto fixture
+  costs about 0.5 s per test; not done here.
