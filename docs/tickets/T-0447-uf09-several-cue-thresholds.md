@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.5, UF-09.1, UF-09.7]
 decisions: [D-0161, D-0119, D-0155, D-0066]
 deps: [T-0304g]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner against main (T-0304g merged). Build flow: wl-build-web. About ¼ day. One source file: cues.ts. -->
 
@@ -87,3 +87,15 @@ commits start `T-0447` and cite UF-09.5.
 - **Parallel:** safe with T-0415, T-0416, T-0394, T-0451 and T-0453. None of them edits `cues.ts`.
   **Not with T-0448** if that one moves cue logic out of `device.ts`. Today T-0448 is `device.ts`
   only, so they're safe together too.
+
+## Build / accept log
+- Build (wl-build-web), from clean `main` HEAD f9a5b69. `cues.ts`: `observeCues` keeps the lowest crossed cue per kind, no voice at `remainingS <= 0`, and records every crossed threshold in `fired` (D-0161 §1-§4). Docblock cites D-0161. New tests `t0447.cues-unit.test.ts`, `t0447.cues.test.tsx`; no existing test edited.
+- AC-1 -> `t0447.cues-unit.test.ts` (one test per row: 12->0, 12->2->1->0, 4->1, 2->0, get ready 5->0, timed 12->0 pin, crossed counts as fired + 0->17->9->2->0, the pair 12..0). AC-2 -> `t0447.cues.test.tsx`: `vi.setSystemTime(+jump-1 s)` then one 1 s timer flush, with `observeCues` wrapped by `vi.mock("../cues.js")`; React re-renders more than once per flush, so the test asserts the distinct observed `remainingS` values are `[0]` / `[2]` (no step in between). Jump to end: 1 oscillator, 0 `speak`. Jump to 2 s: 1 oscillator, `["2"]`. Pair: 2 oscillators, `["3","2","1"]` (also pinned unedited in `t0304g.cues.test.tsx`). AC-3 -> existing suites green.
+- Red on unfixed `cues.ts` (HEAD): unit `12 to 0` got `["sound@10","voice@3",...]`; `12 to 2 to 1 to 0`, `4 to 1` (`["voice@3","voice@2","voice@1"]`), `2 to 0` (`["voice@1","sound@0"]`), `get ready 5 to 0` (`["voice@3","voice@2","voice@1"]`) all red. Host: `+15 s` red (`expected 2 to be 1` oscillators), `+10 s` red (`["3","2"]` vs `["2"]`). The pin, the "crossed counts" and the pair tests pass on both.
+- Planted faults (on a backup copy, restored with `cp`): (1) `fired` records only the played cues -> "crossed counts as fired" red; (2) voice allowed at 0 -> `12 to 0`, `2 to 0`, `get ready 5 to 0` red.
+- Gate (D-0158, cached): typecheck, lint, test (19 tasks), test:repo-checks, format:check, check-all all green. No web e2e (one feature folder).
+- QA (HEAD 45217fd, clean tree; branch unchanged since the builder's gate, so no full gate). AC-1 -> `t0447.cues-unit.test.ts`; AC-2 -> `t0447.cues.test.tsx`; AC-3 -> UF-09 folder green, no existing test edited, `cues.ts` only.
+- Red runs from backups (`vitest run t0447`, restored with `cp`): main's `cues.ts` -> 5 unit (12->0, 12->2->1->0, 4->1, 2->0, get ready 5->0) + 2 host (+10 s, +15 s) red. `fired` records only played cues -> "crossed counts as fired" red (1). Voice allowed at 0 -> 12->0, 2->0, get ready 5->0 and host +15 s red (4). QA fault: highest crossed cue instead of lowest -> 12->0, 12->2->1->0, 4->1 and host +10 s red (4).
+- Results: UF-09 vitest folder 49 files / 833 tests green; `test:e2e uf-09` 10 passed.
+- Verdict: done.
+- Accept (product-owner, HEAD 0e93945; `git diff main...HEAD`: `cues.ts`, two new `t0447*` tests, this file). `observeCues` matches D-0161 §1 (lowest per kind), §2 (no voice at `remainingS <= 0`), §3 (all crossed into `fired`), §4 (filtered from `PHASE_CUES` order), §5 (pair unchanged). AC-1: one unit test per row, values as specified, five rows red on main. AC-2: host +15 s (1 tone, 0 speak) and +10 s (1 tone, `["2"]`) red on main, pair green; one observation shown via the `observeCues` spy. AC-3: no existing test file edited, UF-09 folder 833 green, gate green. Principles hold (pure, deterministic cue rule; one clear signal per step). Verdict: done.
