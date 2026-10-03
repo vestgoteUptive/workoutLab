@@ -90,11 +90,15 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// D-0142 §6 (a named change, T-0422): the arrays hold exactly the ids landed so far.
+// D-0142 §6 (a named change, T-0422, then T-0416): the arrays hold exactly the ids landed so far.
 describe("AC-9 the module registries", () => {
-  it("pauseSeamActions and nextSeamActions hold exactly swap (T-0422)", () => {
-    expect(pauseSeamActions.map((s) => s.id)).toEqual(["swap"]);
+  it("pauseSeamActions holds swap, how-to, list-view; nextSeamActions holds swap (T-0416)", () => {
+    expect(pauseSeamActions.map((s) => s.id)).toEqual(["swap", "how-to", "list-view"]);
     expect(nextSeamActions.map((s) => s.id)).toEqual(["swap"]);
+    // T-0416 AC-1: how-to holds the workout paused, list-view keeps the clocks running.
+    const flag = (id: string) => pauseSeamActions.find((s) => s.id === id)?.keepsClockRunning;
+    expect(flag("how-to")).toBe(false);
+    expect(flag("list-view")).toBe(true);
   });
 
   // T-0304f (D-0118 §12): the built UF-09.6 adds its own "I'm ready" before any seam.
@@ -111,16 +115,23 @@ describe("AC-9 the module registries", () => {
   });
 
   // T-0304d (D-0118 §12): the built UF-09.9 adds its own Skip to next exercise and End workout.
-  it("UF-09.9 with the module arrays: the built-in actions and the swap seam", async () => {
+  it("UF-09.9 with the module arrays: the built-in actions and the three seams", async () => {
     seedFocus({ phase: "paused", resumePhase: "set", pausedAtMs: NOW });
     await renderSession();
     expect(screenId()).toBe("UF-09.9");
-    expect(buttonNames()).toEqual(["Resume", "Swap", "Skip to next exercise", "End workout"]);
+    expect(buttonNames()).toEqual([
+      "Resume",
+      "Swap",
+      "Skip to next exercise",
+      "How to",
+      "List view",
+      "End workout",
+    ]);
     expect(
       Array.from(document.querySelectorAll("[data-seam-id]")).map((b) =>
         b.getAttribute("data-seam-id"),
       ),
-    ).toEqual(["swap"]);
+    ).toEqual(["swap", "how-to", "list-view"]);
   });
 });
 

@@ -29,9 +29,24 @@ function sourceFiles(): string[] {
 }
 
 describe("AC-9 exports", () => {
-  it("features/UF-03/index.tsx exports exactly Summary", async () => {
+  it("features/UF-03/index.tsx exports exactly Summary and ListView (T-0416)", async () => {
     const mod = await import("../index.js");
-    expect(Object.keys(mod).sort()).toEqual(["Summary"]);
+    expect(Object.keys(mod).sort()).toEqual(["ListView", "Summary"]);
+  });
+
+  it("no features/UF-03 source file imports features/UF-09, static or dynamic (D-0142 §5)", () => {
+    const files = sourceFiles().filter((f) => /\.tsx?$/.test(f));
+    expect(files.length).toBeGreaterThanOrEqual(5);
+    for (const file of files) {
+      const source = readFileSync(file, "utf8");
+      expect(source, file).not.toMatch(/(?:from|import)\s*\(?\s*["'][^"']*\/UF-09\//);
+    }
+    // CONTRAST: the pattern does match both forms.
+    const pattern = /(?:from|import)\s*\(?\s*["'][^"']*\/UF-09\//;
+    const staticForm = 'import { x } from "../UF-09/host.js";';
+    expect(pattern.test(staticForm)).toBe(true);
+    const dynamicForm = 'const m = await import("../UF-09/host.js");';
+    expect(pattern.test(dynamicForm)).toBe(true);
   });
 });
 
