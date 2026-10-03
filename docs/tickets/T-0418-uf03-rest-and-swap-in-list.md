@@ -168,3 +168,42 @@ needed) · contracts unchanged · commits start `T-0418` and cite the screen (fo
   `uf-03-list-summary.spec.ts` + `uf-09-focus.spec.ts`: 16 passed.
 - **Contracts:** unchanged. **Out of scope kept out:** no Swap button, no `features/UF-09` file
   touched, no List-view `aria-live` region of its own.
+
+### Review log (code-reviewer, 2026-10-03; HEAD dcff4f8)
+- **Lane:** all changed paths are `apps/web/src/features/UF-03/**` plus the ticket's two listed
+  extras (`lib/i18n/flows/uf-03.ts`, this file). No other path touched. **Contracts:** none of
+  `data-model.md`/`openapi.yaml`/`engine-rules.md`/`tokens.json` appear in the diff, matching
+  "Contract impact: None."
+- **D-0142 §2 invariant, verified in the diff (not just the log's claim):** `SetRow`'s check
+  handler calls `run(write, onDone)`; `onDone` fires only after `ctx.recordSet(...)`'s promise
+  resolves, and it is the *only* place `ctx.startRest` is called — a separate, explicit call, not
+  something `recordSet` triggers as a side effect. Confirmed at the host too: `UF-09/session.tsx`
+  `recordSet` and `startRest` dispatch different store actions (`startRest` → `REST_START`); that
+  file has no diff in this ticket, so the separation predates T-0418 and the new call site just
+  invokes it after the write settles.
+- **The 3 modified T-0417 tests:**
+  - `list-view.logging.host.test.tsx`'s "without moving the machine" test: changed from asserting
+    `phase`/`itemIndex`/`setIndex` all unchanged to asserting `itemIndex`/`setIndex` unchanged and
+    `phase` now `"rest"`. This is a stronger, more specific assertion, not a deletion — it still
+    proves position doesn't move and additionally pins the new phase precisely, consistent with
+    D-0142 §2 (log doesn't move the machine; the separate `startRest` call does).
+  - The AC-6 reload test and the two AC-7 focus-mode tests: no assertions touched or removed; each
+    only adds two `fireEvent.click`s (open the rest bar, Skip) to dismiss the new mandatory rest
+    state before the pre-existing reload/mode-switch assertions run. Nothing weakened.
+- **Shape match:** `ListViewCtx` gains `rest`/`startRest`/`adjustRest`/`skipRest`, structurally
+  typed (no `features/UF-09` import, confirmed — `ListView.tsx`'s only shared import is
+  `@workoutlab/shared`/`lib/*`). `seams.tsx` (pre-existing, unmodified here) already passes the
+  real `FocusSession` as `ctx` into `<ListView ctx={ctx} />`; `FocusSession` (unmodified,
+  `UF-09/session.tsx`) already has all four with matching signatures from T-0414/T-0415, so `tsc`
+  does prove the shapes match without this ticket needing to touch `seams.tsx`. The rest view
+  (`RestView`) replaces the whole screen behind one `[data-screen-id="UF-03.2"]` and renders no
+  timer/countdown of its own (confirmed: no `setInterval`/`setTimeout` in the diff; `rest-sources.
+  test.ts`'s source scan also checks this) — host-driven, matching D-0142 and principle 3.
+  No new `aria-live` region (grep of the diff for `aria-live` returns nothing new).
+- **T-0478 scope:** no Swap button, no `swap` string/logic anywhere in `ListView.tsx` or
+  `flows/uf-03.ts`'s diff — genuinely untouched, consistent with D-0172 §9's split.
+- **Ran:** `scripts/locked.sh small npx -y pnpm@10.28.2 --filter @workoutlab/web exec vitest run`
+  on `rest.test.tsx`, `rest-sources.test.ts`, `list-view.logging.host.test.tsx`,
+  `list-view.addset.host.test.tsx` — 4 files, 27 tests, all passed.
+- **Verdict: approve.** No lane, contract, correctness or principle issues found; the three
+  modified T-0417 tests are strengthened/adapted, not weakened.
