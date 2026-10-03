@@ -155,6 +155,7 @@ Both routes already exist (`/plan/routines/new` and `/plan/routines/:routineId` 
 ## Paths you may change
 - `apps/web/src/features/UF-07/**` (the lane: `web-feature:UF-07`).
 - **Listed extras:**
+  - `docs/tickets/T-0308a-routine-editor.md`: this file, for the build, QA and accept logs (added 2026-10-02 by the orchestrator after the H-13 catch-up).
   - `apps/web/src/lib/i18n/flows/uf-07.ts`: this ticket's own flow file, and no other (D-0071 §1, D-0075). Add keys only. The `export const uf07 = {…} as const;` shape stays, written multi-line.
   - `tests/e2e/uf-07-routines.spec.ts`: a new file only (D-0071 §10).
   - `tests/e2e/fixtures/uf-07-routines.ts`: an optional new file holding this spec's fixture data, passed to the existing `mockSupabaseData(page, fixtures)`. A spec-local `page.route` is fine for capturing writes.
@@ -184,3 +185,11 @@ None. The writes use `routines {id, name}` and `routine_items {routine_id, posit
 - No file outside "Paths you may change" is touched. Check your own `git diff --name-only` before you hand back. T-0320's `check-lane-paths` reads this section's backticked paths once it lands.
 - Commits start `T-0308a:` and cite the screen id (e.g. `T-0308a UF-07.1: stable id across save retries`).
 - Make no bundle-size claim unless you ran a fresh `pnpm --filter @workoutlab/web build` and report measured gzip numbers (T-0322).
+
+## Build log (frontend-dev)
+
+### Post-merge catch-up 2026-10-02 (landed on main by the orchestrator)
+- Merged main (ad1d5db, 7c2abc1); only `.squad/board.md` conflicted (took main's). AC-A1…A15 were already built and tested.
+- Fix: `uf-07-routines.spec.ts` imports `./fixtures/guarded-test.js`, no own listeners (T-0904/T-0430).
+- Reds seen: e2e `shell.spec.ts` AC-6 `/plan/routines/R1` once (D-0091 race now that UF-07.1 is built, T-0452); UF-11 AC-B16 diff test (retired on main by T-0450).
+- Gate at ab4cbb7: web turbo `--force` green, repo-checks 146/146 and check-all 0 (fresh clone), format clean, e2e 158/158.

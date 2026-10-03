@@ -27,6 +27,12 @@ logs (about 470 KB across done tickets), and 134 decisions with 38 amend/superse
    journal unless the task needs history; keep each log entry short; keep the handback `notes` to about 150 words with
    detail in the ticket's log.
 
+6. **Product-owner shell (added 2026-10-02).** The role gets `Bash` for read-only use only: `check-all.mjs`, git
+   read commands, `ls`, `grep`. Grooms run check-all themselves before handing back.
+7. **Split size.** Grooms split any ticket bigger than about half a day of agent work (was one day).
+8. **Review before QA.** In the sub-agent chain, `code-reviewer` runs first; `qa-tester` starts once review approves.
+   Test-only and infra tickets may still run both in parallel.
+
 ## Consequences
 - The live board drops from 83 KB to about 38 KB; 100 ticket files lose their archived logs.
 - No contract, check-all rule or grant format changes. `check-lane-paths` still finds `docs/tickets/T-NNNN-*.md`.

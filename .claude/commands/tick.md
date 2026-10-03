@@ -4,6 +4,7 @@ description: One orchestrator iteration — triage, pick ready tickets, run them
 You are the **orchestrator** of the workoutLab squad. Run exactly one iteration, then stop. Don't ask the user anything: a gate goes into `.squad/needs-human.md`, and you move on.
 
 ## 0. Orient (keep it cheap)
+- If `.squad/PAUSED.md` exists, do its "First checks on resume" before anything else, then delete it in the tick's commit.
 - Read `.squad/state.md`, `.squad/board.md` and `.squad/needs-human.md`, plus the `status: open` files in `.squad/triage/`. Read other docs only when a step needs them.
 - `git status` must be clean on `main`. If the repo has no commits yet, commit everything as `chore: baseline docs and squad setup`. If `origin` exists, `git pull --ff-only`.
 - If a human ticked an item in `needs-human.md`, unblock its tickets on the board.
@@ -46,14 +47,16 @@ Take the flow from the board's Flow column. Input: `{ repoPath: <absolute worktr
 - **AgentLab:** call `start_run` with `flowId`, `input` and `folder: <worktree path>`. Then call `get_run` with `waitSeconds: 600`, repeating until the run finishes. Record the run id.
 - **Sub-agents:** chain the same steps with the Agent tool, using `subagent_type` = the role name, the same input in the prompt, and `run_in_background` for parallel tickets:
   1. build (the lane's role)
-  2. `qa-tester` and `code-reviewer` in parallel
-  3. `product-owner` in accept mode, given all three results.
+  2. `code-reviewer` first (static, cheap). If it requests changes, send them back to the builder before any QA run.
+  3. `qa-tester` once review approves (for a test-only or infra ticket, review and QA may run in parallel).
+  4. `product-owner` in accept mode, given all three results.
+  (D-0157 §8: review catches real bugs at 20–35k tokens; QA run before a rework has to be partly redone.)
   For `wl-spec`: `product-owner` (spec), then `triage` (check).
 
 ## 5. Review and merge (your own judgement, Opus)
 For each finished ticket:
 - For tickets that touch `.github/**`, `supabase/**` or a CI-fix row, and for any ticket whose ACs need the real Supabase stack: push the branch and open a draft PR (`gh pr create --draft`). Merge only once all its checks are green.
-- If accept is `done`: in the worktree, run `pnpm -w typecheck lint test` (or the package-level equivalent before T-0002 exists). Check `git diff --stat main...` against the lane's paths and the contract rule. If it passes, `git merge --no-ff t/T-NNNN-*` on `main`, then run the tests on `main` again. If `main` breaks, `git merge --abort` or revert, and treat the ticket as failed. On success, set the board to `done` and remove the worktree.
+- If accept is `done`: check `git diff --stat main...` against the lane's paths and the contract rule (no gate in the worktree, D-0158 §5). If it passes, `git merge --no-ff t/T-NNNN-*` on `main`, then run the forced full gate there: `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1`, `-w test:repo-checks`, check-all and the whole e2e with `TMPDIR=$HOME/.cache/wl-pw-tmp`, all under `flock`. Push only when green. If `main` breaks, `git merge --abort` or revert, and treat the ticket as failed. On success, set the board to `done` and remove the worktree.
 - If the status is `failed`: rerun the build with `task` set to the combined QA, review and accept notes. On the 2nd failure of a Sonnet role, rerun as a sub-agent with `model: "opus"`. On the 3rd failure, raise a `TR-*` and set the board to `triage:TR-NNNN`.
 - If the status is `needs-triage`: set the board to `triage:<id>`. It gets picked up next tick.
 - If the status is `blocked`: add or confirm the H-item in `needs-human.md`, set the board to `blocked:H-xx`, and remove the worktree (keep the branch).

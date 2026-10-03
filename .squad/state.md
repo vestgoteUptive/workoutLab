@@ -1,5 +1,7 @@
 # State
 
+> **PAUSED 2026-10-02 — read `.squad/PAUSED.md` first** (in-flight runs, the unpushed T-0308b merge, how to resume).
+
 - **Phase:** 3 (App). On main: engine rules 1–14 incl. D-0131 back-off floor + D-0137 drop cap; UF-01 onboarding; UF-02.1 Today; UF-03.3 summary content (T-0419); UF-04 Library; UF-05.1 SwapSheet component (T-0421, not yet mounted); UF-08.1–.4 setup; UF-09 machine + hook + seams + .1–.9 (T-0304a/e/b/f/c/d, T-0414); lib/offline cacheCurrent (T-0431, D-0151); UF-10 Balance; lib/account export + wipe (T-0310c) and DELETE /account Edge Function (T-0310b); e2e consoleGuard (T-0425).
 - **Updated:** 2026-10-02 by orchestrator (no AgentLab on this machine → sub-agents).
 - **`main`:** green 2026-10-02 after T-0304d (-w gate 19/19, whole e2e 137/137) and T-0431 (web gate 4/4, e2e offline+uf-03+uf-09 13/13).
@@ -21,7 +23,7 @@ H-13 (push branches); H-14 (service-role key for the account function, prod only
 - Sub-agents: build → QA ∥ review → product-owner accept; spec: product-owner → triage check. Spec/content/triage roles have **no shell**: the orchestrator commits their files.
 - Model pins (D-0076): execution roles `claude-sonnet-5-5`, judgement roles `claude-opus-5-5`.
 - Tooling: `npx -y pnpm@10.28.2 …`. Each new worktree needs `install --frozen-lockfile`.
-- Give every parallel run its own decision-ID block. Next free: **D-0158** (D-0160 taken), D-0152 reserved for T-0420) (D-0150 used by T-0304c), **TR-0044**, tickets **T-0447+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0241+** (engine/data), **T-0906+** (CI).
+- Give every parallel run its own decision-ID block. Next free: **D-0159** (D-0160 taken), D-0152 reserved for T-0420) (D-0150 used by T-0304c), **TR-0044**, tickets **T-0453+** (web — T-0400..T-0406 are phase-4 infra, check before numbering), **T-0241+** (engine/data), **T-0906+** (CI).
 
 ## Traps (condensed — full history in journals 2026-09-28..10-01)
 - **Never commit a test that asserts `git diff main...HEAD`** (T-0303b review): it fails on other lanes' branches after merge and silently skips in CI (no local `main`). Record diff checks in the ticket build log instead; check-lane-paths enforces lanes.

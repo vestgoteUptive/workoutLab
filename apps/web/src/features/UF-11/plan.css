@@ -1,0 +1,102 @@
+/* UF-11.2 / UF-11.3 styling. Colours come only from @workoutlab/design-tokens (D-0019); no hex,
+   no new fonts. Inline styles are avoided so the :focus-visible ring below always shows. */
+.wl-plan__section {
+  margin-block: 16px;
+}
+
+.wl-plan__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wl-plan__list li {
+  padding-block: 6px;
+  border-bottom: 1px solid var(--wl-color-line);
+}
+
+.wl-plan__link,
+.wl-plan__button,
+.wl-plan__radio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 8px 16px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.wl-plan__button--primary,
+.wl-plan__link--primary {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+}
+
+.wl-plan__button:disabled {
+  color: var(--wl-color-text-muted);
+  background: var(--wl-color-surface-2);
+  border-color: var(--wl-color-line);
+  cursor: not-allowed;
+}
+
+.wl-plan__chip[aria-pressed="true"],
+.wl-plan__radio[data-checked="true"] {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+}
+
+.wl-plan__link:focus-visible,
+.wl-plan__button:focus-visible,
+.wl-plan__radio:has(input:focus-visible) {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+/* The native radio covers its 44 px label, so the hit target and the measured box agree. */
+.wl-plan__radio {
+  position: relative;
+  margin-inline-end: 8px;
+}
+
+.wl-plan__radio input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.wl-plan__stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block: 8px;
+}
+
+.wl-plan__stepper > span {
+  min-inline-size: 5rem;
+}
+
+.wl-plan__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wl-plan__actions {
+  display: flex;
+  gap: 8px;
+  margin-block: 16px;
+}
