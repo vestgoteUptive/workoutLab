@@ -259,3 +259,9 @@ None. The screens read the T-0319 `OfflineSession`, `HistorySet`, `LibraryExerci
 - **LOW, D-0084 §1.** `format.ts` rewrites "Sept" to "Sep" only when the formatter's resolved locale is `en-GB`. A test pair pins it: en-GB reads `25 Sep` and `Fri 25 Sep`, en-AU reads `25 Sept`.
 - **LOW.** Removed the unused `uf06.today` key. No test pins the uf06 key set.
 - **LOW.** `.wl-progress__howto` gets `min-inline-size: 44px`. The e2e 44 × 44 test now also measures UF-06.2's `How to`.
+
+### QA log (2026-10-03, HEAD f14ce8e, clean tree)
+- Faults from backup copies, each restored with `cp`: AC-10 `replace` removed -> screens.test 2 red (nope, wu-cat-cow); Sep rewrite for all locales -> stats.test `en-AU keeps Sept` red; AC-16 lookup `&& false` -> shell.spec :259 red (1 failed, 18 passed); own: `hardSetCount < 0` -> 5 red (AC-1), calendar lead without `+6 %7` -> 4 red (AC-1/AC-6).
+- Baseline `vitest run features/UF-06` 69/69. e2e `uf-06-progress` + `shell` 24/24.
+- Cached gate after the main merge: typecheck lint test 19/19 (16 cached), test:repo-checks exit 0, check-all exit 0.
+- AC-1..AC-16 each map to a named test (screens/stats/online/lane/real-route unit tests; AC-15 uf-06-progress.spec; AC-16 shell.spec). Verdict: done.
