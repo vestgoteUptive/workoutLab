@@ -191,3 +191,98 @@ is outside the pnpm workspace (`pnpm-workspace.yaml`) so it is not part of `-w t
 confirmed the new file alone has zero `tsc --noEmit` errors under `apps/web`'s compiler options
 (ad hoc scratch tsconfig, not committed) — the directory's only automated checks are Playwright
 itself and `fixture-guard.spec.ts`'s source-rule scan, both green.
+
+### Code review (code-reviewer, 2026-10-03)
+Static review only, `git diff main...HEAD`. Verdict: **approve**.
+
+- **Lane/paths.** `git diff main...HEAD --name-only` is exactly the two granted extras
+  (`tests/e2e/uf-09-offline.spec.ts`, this ticket file); `git diff main...HEAD --name-only --
+  apps/ packages/` is empty — no `features/UF-09/**` fix landed, matching the build log's "no row
+  exposed an app bug". No contract path touched; `Contract impact: None` holds.
+- **AC coverage.** Each of AC-1/AC-2/AC-3 has one named test matching its text (≥ 11 planned
+  sets from the stored plan, 10 sets with distinct `clientId`s/no-warmup/plan order, no request
+  while offline, online-within-10s with session-before-set ordering; two contexts/two session
+  ids/no cross-session set/guard clean; one `[data-screen-id]` and zero navigation landmarks at
+  every point). No `.skip`/`.only`/`xit` in the spec.
+- **Planted faults are real.** Spot-checked the two app-code fault sites the log describes:
+  `features/UF-09/session.tsx` calls `queueRecordSet` (aliased `recordSet`) per logged set, and
+  `features/UF-09/load.ts` resolves `stored = readFocusState(...)` before falling back to
+  `initialFocusState` — both match the described fault shape (skip the queue call /
+  discard the stored read). The third fault is in the test's own `addInitScript`, as the ticket
+  allows.
+- **Finding 1 (hard nav instead of click into a lazy route offline).** Checked
+  `tests/e2e/uf-08-setup.spec.ts`: it already uses the identical `page.goto("/session/setup")`
+  reload pattern for its own offline row, so this is a pre-existing, already-accepted Playwright
+  workaround for a Chromium/Workbox dynamic-`import()`-CSS quirk, not a new one invented to hide
+  a bug. No AC here exercises a first-time click into a never-loaded chunk while offline as a
+  product scenario (every row goes offline only after `precacheSettled`, then reaches
+  `/session/setup` by reload) — genuinely a test-navigation-method artifact, not a product bug.
+- **Finding 2 (`networkGate` around `AutoSync.flushNow()`).** Confirmed in
+  `apps/web/src/lib/offline/AutoSync.tsx`: `void handle.flushNow()` runs unconditionally, no
+  `navigator.onLine` guard. But `flush.ts`/`retry.ts` show the real-network path is already safe:
+  a real `fetch` failure (offline, or merely slow/flaky) throws/rejects as a `TypeError`, which
+  `flush.ts` catches and reports as `"network-error"`, which `RetryScheduler` backs off on — it
+  never "fails noisily" in production. The only thing genuinely missing is an early
+  `navigator.onLine` short-circuit to skip a doomed immediate attempt; that's an optimization, not
+  a correctness gap, and the existing backoff path already covers a flaky-but-not-literally-
+  offline connection. `context.setOffline` not blocking a mocked `page.route` is a Playwright-only
+  interaction (no real network layer underneath a mock) — the gate is a faithful test-only stand-
+  in, not evidence of a missing production guard. No follow-up needed; agree this stays
+  unfixed-in-app-code per D-0168 §1 ("test-only unless a row finds a bug" — none found).
+- **Gate/flake.** Build log records `--repeat-each=2 --workers=1` 6/6 green (double run, no
+  flake), full `typecheck lint test`/`test:repo-checks`/`format:check`/`check-all.mjs` green, all
+  via `scripts/locked.sh`. Taken as logged; not independently re-run (static review).
+
+No findings requiring changes.
+
+### QA accept log (qa-tester, 2026-10-03)
+`git status` clean except this file's own prior unstaged review-log entry; HEAD `113e4b8e`.
+Branch-behind-main: `git merge-tree <merge-base> HEAD main` — zero conflict markers; `comm -12` of
+files changed on `main` since merge-base vs. files changed on this branch is empty (no overlap).
+Clean, non-conflicting behind-main; left unmerged per D-0169 §2, no action taken.
+
+**AC → test map, re-verified:** AC-1 → `T-0468 AC-1 start, 10 sets, a closed page, reopen, then
+flush on reconnect`; AC-2 → `T-0468 AC-2 both offline, each logs a set, both online: two sessions,
+no merge`; AC-3 → `T-0468 AC-3 every assert point above holds one [data-screen-id] and no
+navigation`. Each test fails without its feature (see red runs below) and passes on `main`'s code.
+
+**Red runs reproduced (each on a backup copy under `/tmp`, restored with `cp`, `git status` clean
+before/after each):**
+- AC-1 IndexedDB count (`features/UF-09/session.tsx` `writeSet`, every 10th call fabricates a row
+  instead of calling `queueRecordSet`): red at `toHaveLength(10)`, received length 9. Matches build
+  log.
+- AC-1 close-and-reopen (`features/UF-09/load.ts`, stored focus state discarded): red at the
+  reopened page's `data-screen-id` locator, "element(s) not found" (`[data-screen-id="UF-09.5"]`
+  timeout). Matches build log.
+- AC-2 two-ids (test-only fault, `crypto.randomUUID` fixed via `addInitScript` on both contexts):
+  red at `expect(idA).not.toBe(idB)`, both equal to the fixed id. Matches build log.
+- **QA's own fault** (`features/UF-09/chrome.tsx`): added a stray `<nav aria-label="qa-fault-
+  stray-nav" />` to the focus chrome. Red at AC-3's `expectOneScreen`:
+  `getByRole("navigation")` count 1, expected 0 — caught by the same assert AC-3 names.
+
+**Flake check.** `scripts/locked.sh heavy … playwright test tests/e2e/uf-09-offline.spec.ts
+--repeat-each=2 --workers=1` → 6/6 green. Single run (no repeat) → 3/3 green, 18.8s, after every
+fault restore, confirming byte-identical restores.
+
+**Regression suite.** `scripts/locked.sh heavy … playwright test tests/e2e/offline.spec.ts
+tests/e2e/uf-09-ready.spec.ts tests/e2e/fixture-guard.spec.ts` → 74/74 green, matching the build
+log.
+
+**Gap found (not a named AC, but within "check for console errors"): AC-2's second
+`browser.newContext()` (`contextB`/`pageB`) never gets `installConsoleGuard(contextB)` — only
+`installSupabaseGuard(contextB)` is installed explicitly; the suite's auto `consoleGuard` fixture
+only covers the fixture-provided first `context`/`page` (`contextA`/`pageA`). Demonstrated: a
+probe that makes `pageB` emit a deliberate `console.error` via `addInitScript` still passes AC-2
+(1 passed) — confirmed, then reverted (`cp` restore, `git status` clean). `fixture-guard.spec.ts`'s
+source-rule scan (`ownConsoleListeners`) only flags a spec installing its *own* console/pageerror
+listener; it does not flag a second context that installs none at all, so nothing else in the
+repo catches this. Not a product bug and doesn't falsify AC-1/AC-2/AC-3 as written, so this does
+not fail the ticket's own ACs, but a console error unique to the two-device code path would go
+completely unnoticed by this spec. Flagged as a follow-up for the builder (same lane, same file,
+one line: `installConsoleGuard(contextB)` + `guard.assertClean()` at AC-2's teardown) rather than
+fixed here, to keep this run to verification only.
+
+**Verdict: done.** Every AC has a named test that fails without its feature and passes with it;
+regression suite and flake-repeat both green; branch cleanly mergeable (no action required of
+QA). One coverage gap (console errors on AC-2's second context) raised as a follow-up, not a
+blocker.
