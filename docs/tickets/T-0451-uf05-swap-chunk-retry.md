@@ -105,3 +105,11 @@ Tests for every AC pass, with the red runs recorded · the cached gate (D-0158):
   - **Not with any other ticket that lists `flows/uf-05.ts`** (D-0071 §1).
   - **Safe with T-0415**, T-0394 (`host.tsx`, `session.tsx` and `uf-09-focus.spec.ts`; this ticket
     touches none of them), T-0447 and T-0453.
+
+## Build / accept log
+- Build (frontend-dev, from main 04ebafa, T-0416 merged). Scope: swap seam only, as the ticket says. `lazy-retry.ts` `retryableLazy(load)` → `{ Component, reset }`; `seams.tsx`: `SeamBoundary` gets optional `onRetry`/`onFailed` (`componentDidCatch` → `swapSheet.reset()`, so the next open imports again), `SeamPlaceholder` shows "Try again" (`chrome.retryLabel`, only swap sets it) before Close, `SwapOverlay` remounts `LazySeam` by `key` on retry. how-to and list-view keep their bare `lazy` and failure state without retry: follow-up filed in the handback. `uf05.retry` added.
+- AC→test: AC-1 `t0451.next-open.test.tsx`; AC-2 recovers + fails again (offline, no unhandled rejection, only React's boundary console.error) `t0451.try-again.test.tsx`; AC-3 UF-09.6 entry `t0451.next-entry.test.tsx`, pending/reject/AC-A6/import pin unedited and green; AC-4 vacuous test removed from `t0422.seams.test.tsx` (diff: that test and the now-unused `import { Component, type ReactNode }` line on line 4, nothing else), TR-0043 comment in `t0422.host.test.tsx` replaced citing D-0156; AC-5 `en.uf05.retry`, eslint (jsx-no-literals) green.
+- Spec files are split because a resolved `React.lazy` stays resolved per module: each file has at most one test that ends in a successful load.
+- Red on unfixed `seams.tsx` (HEAD copy, `retry` key present): 4 of 4 t0451 tests red (no Try again button; second open still "Couldn't load alternatives.", loader called once).
+- Planted faults (backup copy, restored with cp): (F1) drop `onFailed={swapSheet.reset}` → 4 of 4 red; (F2) drop `key={attempt}` (Try again doesn't remount) → both try-again tests red.
+- Mid-gate red: `timer.test.ts` "no tick counting" matched `setAttempt((n) => n + 1)`; switched to `useReducer`. Green after.

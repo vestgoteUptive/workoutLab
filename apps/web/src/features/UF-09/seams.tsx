@@ -4,8 +4,18 @@
 // - T-0305a (T-0416) adds `how-to` and `list-view` to `pauseSeamActions`.
 // An entry's overlay replaces the current screen while it is open (principle 1). It gets the
 // session through `ctx` and never imports UF-09, so there are no import cycles.
-import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Component,
+  Suspense,
+  lazy,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { en } from "../../lib/i18n/en.js";
+import { retryableLazy } from "./lazy-retry.js";
 import { setsInItem } from "./machine.js";
 import type { FocusSession } from "./session.js";
 
@@ -24,7 +34,10 @@ export interface SeamAction {
 const { uf05, uf03 } = en;
 
 // UF-05.1 is loaded on first open (D-0142 §8): a dynamic import of the flow's `index`.
-const SwapSheet = lazy(() => import("../UF-05/index.js").then((m) => ({ default: m.SwapSheet })));
+// A failed load is retried in-page (T-0451, D-0162 §3): see `retryableLazy`.
+const swapSheet = retryableLazy(() =>
+  import("../UF-05/index.js").then((m) => ({ default: m.SwapSheet })),
+);
 
 // UF-03.1 and the how-to are loaded on first open too (D-0142 §8; T-0416).
 const ListView = lazy(() => import("../UF-03/index.js").then((m) => ({ default: m.ListView })));
@@ -59,6 +72,8 @@ interface SeamChrome {
   closeLabel: string;
   loading: string;
   loadFailed: string;
+  /** The "Try again" label; set only for a seam whose lazy view can be retried (T-0451). */
+  retryLabel?: string;
 }
 
 const swapChrome: SeamChrome = {
@@ -67,6 +82,7 @@ const swapChrome: SeamChrome = {
   closeLabel: uf05.close,
   loading: uf05.loading,
   loadFailed: uf05.loadFailed,
+  retryLabel: uf05.retry,
 };
 const listViewChrome: SeamChrome = {
   label: uf03.listViewName,
@@ -91,10 +107,12 @@ function SeamPlaceholder({
   message,
   chrome,
   onClose,
+  onRetry,
 }: {
   message: string;
   chrome: SeamChrome;
   onClose: () => void;
+  onRetry?: () => void;
 }) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -111,6 +129,11 @@ function SeamPlaceholder({
       <p className="wl-uf09__status" role="status">
         {message}
       </p>
+      {onRetry && chrome.retryLabel ? (
+        <button type="button" className="wl-uf09__secondary wl-uf09__wide" onClick={onRetry}>
+          {chrome.retryLabel}
+        </button>
+      ) : null}
       <button
         ref={closeRef}
         type="button"
@@ -126,6 +149,10 @@ function SeamPlaceholder({
 interface BoundaryProps {
   onClose: () => void;
   chrome: SeamChrome;
+  /** Shows "Try again" in the failure state (swap only, T-0451). */
+  onRetry?: () => void;
+  /** Called once when the boundary catches (swap resets its lazy here, so the next open retries). */
+  onFailed?: () => void;
   children: ReactNode;
 }
 
@@ -138,6 +165,10 @@ class SeamBoundary extends Component<BoundaryProps, { failed: boolean }> {
     return { failed: true };
   }
 
+  override componentDidCatch(): void {
+    this.props.onFailed?.();
+  }
+
   override render(): ReactNode {
     if (this.state.failed) {
       return (
@@ -145,6 +176,7 @@ class SeamBoundary extends Component<BoundaryProps, { failed: boolean }> {
           message={this.props.chrome.loadFailed}
           chrome={this.props.chrome}
           onClose={this.props.onClose}
+          {...(this.props.onRetry ? { onRetry: this.props.onRetry } : {})}
         />
       );
     }
@@ -156,14 +188,23 @@ class SeamBoundary extends Component<BoundaryProps, { failed: boolean }> {
 function LazySeam({
   ctx,
   chrome,
+  onRetry,
+  onFailed,
   children,
 }: {
   ctx: FocusSession;
   chrome: SeamChrome;
+  onRetry?: () => void;
+  onFailed?: () => void;
   children: ReactNode;
 }) {
   return (
-    <SeamBoundary onClose={ctx.close} chrome={chrome}>
+    <SeamBoundary
+      onClose={ctx.close}
+      chrome={chrome}
+      {...(onRetry ? { onRetry } : {})}
+      {...(onFailed ? { onFailed } : {})}
+    >
       <Suspense
         fallback={<SeamPlaceholder message={chrome.loading} chrome={chrome} onClose={ctx.close} />}
       >
@@ -178,8 +219,18 @@ function LazySeam({
  *  D-0071 §6) and then closes; a rejected write leaves the sheet open with its notice. */
 function SwapOverlay({ ctx }: { ctx: FocusSession }) {
   const [target] = useState(() => swapTarget(ctx));
+  // "Try again" remounts the boundary and the lazy sheet; the lazy was already made again when
+  // the failure was caught, so the remount imports again (T-0451).
+  const [attempt, retry] = useReducer((n: number) => n + 1, 0);
+  const SwapSheet = swapSheet.Component;
   return (
-    <LazySeam ctx={ctx} chrome={swapChrome}>
+    <LazySeam
+      key={attempt}
+      ctx={ctx}
+      chrome={swapChrome}
+      onFailed={swapSheet.reset}
+      onRetry={retry}
+    >
       <>
         <SwapSheet
           workout={ctx.workout}
