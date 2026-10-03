@@ -145,6 +145,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0457 | UF-03.1 List view: + Add set (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | ready | wl-build-web |
 | T-0458 | UF-03.1 List view e2e: the Playwright spec T-0416 deferred, incl. NFR-OFF-2 List view logging (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | ready | wl-build-web |
 | T-0459 | web-shell: app-wide error boundary for lazy route chunks (a stale-deploy chunk 404 blanks the app; App.tsx has none) (split from T-0446, D-0164) | web-shell | T-0422 | ready | wl-build-web |
+| T-0461 | UF-07.1 picker: investigate a transient empty exercise list right after the picker opens (CI on 56ab6a9 rendered Search + Done with no rows and no no-match line, after rows had appeared) — a library refresh replacing the list? If users can see it, fix; else document (T-0460 follow-up) | web-feature:UF-07 | — | todo | wl-build-web |
+| T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
