@@ -134,3 +134,11 @@ Every AC has a passing test · `npx -y pnpm@10.28.2 -w typecheck lint test --con
 ## Build / accept log
 
 - **From T-0310c rework 2 (2026-10-02):** after `deleteAccountAndSignOut` returns "deleted", navigate with `window.location.replace("/welcome")` if `useAuth().status` isn't yet signed-out. If `signOut` threw before supabase-js cleared its in-memory session, the guest-only /welcome route would otherwise bounce the user back to /.
+
+### Build log (frontend-dev, 2026-10-03)
+- Start: worktree clean, HEAD ebb08ce. Added `AccountSettingsBody.tsx` + `AccountSettings` export, `Account` link in `PlanBody`, route row, `en.uf11.account.*`/`accountLink`. Email is read synchronously from the persisted supabase session (`useAuth` has no email), so the h1 and host render with no await. No Dexie/service-role use; `lib/account` only via `index.js`.
+- AC→test (all `T-0310d AC-Dn` titles): D1 `account-settings.route.test.tsx` (+ `routes.phase3.test.ts` row); D2 same file; D3-D8 `account-settings.test.tsx`; D10 `account-settings.boundaries.test.ts` + `strings.test.ts` (exports pin now `AccountSettings, EditPlan, Plan`; allow-list gained UF-11.4, /plan/account, /welcome, signed-out, off, unauthorized, failed, deleted). AC-D9 is T-0469.
+- Red on unfixed code (route/link/index reverted to HEAD): AC-D1 (3 tests) and AC-D2 (2 tests) fail; the signed-out contrast passes trivially. Planted fault (backup copy, restored with cp): confirm check `startsWith("delete")` instead of trim+lowercase: AC-D6 rows `"  DELETE "`, `"deleted"`, `"delete it"` fail.
+- Out-of-list edits needed to keep the gate green (a new protected route changes pinned counts): `app/__tests__/profile-gate.test.tsx` (13 to 14 gated, 12 to 13 protected, `/plan/account` in the list) and `lib/profile/__tests__/profile-gate-decision.test.tsx` (counts only). No test weakened. `routes.phase3.render`, `auth-guard.phase3`, `App.test` unedited and green.
+- Gate: `-w typecheck lint test --concurrency=1` green (19/19), `format:check` green, `check-all` green.
+- Gate cont.: `-w test:repo-checks` green; whole web e2e green (196 passed); `git diff --name-only main...HEAD` lists the ticket paths plus the two profile-gate test files noted above.

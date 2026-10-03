@@ -120,6 +120,14 @@ export const routes: readonly RouteConfig[] = [
     load: () => import("../features/UF-11/index.js").then((m) => ({ default: m.EditPlan })),
   },
   {
+    // Account settings (export, sign out, delete): one tap from /plan, no tab (D-0136 §1).
+    path: "/plan/account",
+    screenId: "UF-11.4",
+    showTabBar: false,
+    guard: "protected",
+    load: () => import("../features/UF-11/index.js").then((m) => ({ default: m.AccountSettings })),
+  },
+  {
     // Before `/plan/routines/:routineId`, so `new` never reads as a routine id here or in
     // `matchesShellRoute` (react-router ranks the static segment higher on its own).
     path: "/plan/routines/new",

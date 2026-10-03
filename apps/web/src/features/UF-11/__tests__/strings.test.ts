@@ -45,9 +45,9 @@ describe("AC-B16 the flow file", () => {
 });
 
 describe("AC-B16 exports (D-0071 §3)", () => {
-  it("index.tsx exports exactly Plan and EditPlan", async () => {
+  it("index.tsx exports exactly AccountSettings, EditPlan and Plan", async () => {
     const mod = await import("../index.js");
-    expect(Object.keys(mod).sort()).toEqual(["EditPlan", "Plan"]);
+    expect(Object.keys(mod).sort()).toEqual(["AccountSettings", "EditPlan", "Plan"]);
   });
 
   it("the check-in evaluation is NOT exported from index.tsx — it stays module-private", async () => {
@@ -106,6 +106,15 @@ describe("AC-B16 no second string catalogue", () => {
       "button",
       "UF-11.2",
       "UF-11.3",
+      "UF-11.4",
+      "/plan/account",
+      "/welcome",
+      "signed-out",
+      "off",
+      "unauthorized",
+      "failed",
+      "deleted",
+      "string",
       "/plan",
       "/plan/edit",
       "/plan/routines/new",

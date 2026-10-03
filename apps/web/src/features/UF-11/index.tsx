@@ -2,6 +2,7 @@
 // and `EditPlan` (D-0071 §3); T-0308c adds `CheckinCard`. Each screen renders its host and <h1>
 // itself, on the first render in every state (loading, cold cache, no user id).
 import { en } from "../../lib/i18n/en.js";
+import { AccountSettingsBody } from "./AccountSettingsBody.js";
 import { EditPlanBody } from "./EditPlanBody.js";
 import { PlanBody } from "./PlanBody.js";
 import { systemClock, type Clock } from "./use-plan-data.js";
@@ -24,6 +25,15 @@ export function EditPlan({ now = systemClock }: PlanScreenProps = {}) {
     <div data-screen-id="UF-11.3">
       <h1>{en.screens.editPlan}</h1>
       <EditPlanBody clock={now} />
+    </div>
+  );
+}
+
+export function AccountSettings({ now = systemClock }: PlanScreenProps = {}) {
+  return (
+    <div data-screen-id="UF-11.4">
+      <h1>{en.screens.accountSettings}</h1>
+      <AccountSettingsBody clock={now} />
     </div>
   );
 }
