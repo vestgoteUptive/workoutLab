@@ -121,5 +121,16 @@ export const uf11 = {
     connectToDelete: "Connect to delete your account.",
     unauthorized: "Your sign-in has expired. Sign in again, then delete your account.",
     deleteFailed: "Couldn't delete your account. Try again.",
+    // T-0216 UF-11.4 Equipment section (D-0061 §3, D-0168 §6).
+    equipment: {
+      legend: "Your equipment",
+      hint: "We only suggest exercises you can do with what you tick.",
+      save: "Save",
+      saving: "Saving",
+      saved: "Saved",
+      connectToSave: "Connect to save",
+      saveFailed: "Couldn't save your equipment. Try again.",
+      coldCache: "Your equipment isn't on this device yet.",
+    },
   },
 } as const;

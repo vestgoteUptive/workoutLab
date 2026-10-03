@@ -141,6 +141,24 @@ describe("AC-B16 no second string catalogue", () => {
       "numeric",
       "short",
       "month",
+      // T-0216 EquipmentSection: the D-0064 §3 vocabulary keys, used to index `en.uf04.equipment`
+      // and to build the saved `profiles.equipment` array — not copy (the copy itself is the
+      // `en.uf04.equipment` label each key looks up).
+      "dumbbell",
+      "bench",
+      "barbell",
+      "rack",
+      "cable",
+      "machine",
+      "pullup-bar",
+      "kettlebell",
+      "band",
+      // T-0216 EquipmentSection's save-state machine: prop/state values, not copy.
+      "idle",
+      "saving",
+      "saved",
+      // Attribute value, not copy (mirrors the existing "radio"/"text" entries above).
+      "checkbox",
     ]);
     const uiWords = Object.values(uf11).filter((v) => typeof v === "string") as string[];
     for (const file of sourceFiles()) {
