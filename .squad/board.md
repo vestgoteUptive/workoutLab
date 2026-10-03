@@ -114,8 +114,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0374 | T-0219 AC6 ticket wording: F-input never shuffles plank into a slot; require the forced-core exclude list + minute-grid oldCost sweep as accepted (docs only) | product | T-0219 | todo | wl-spec |
 | T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | todo | wl-build-web |
 | T-0389 | Real-browser 24-hour `<input type=time>` probe for UF-08.1 (cut from T-0386); also a Playwright check of the D-0115 §5 finish-time focus order (T-0386 QA) | qa | T-0303a | todo | wl-build-qa |
-| T-0478 | UF-03.1 Swap button on the List view's current card → SwapSheet → ctx.replaceItem (split from T-0418, D-0172 §9) | web-feature:UF-03 | T-0418, T-0421, T-0414 | ready | wl-build-web |
-| T-0477 | UF-09 host: `REST_START` starts a rest from `getReady`, `warmup` and `next` while a `keepsClockRunning` overlay (the List view) is open, ending the warm-up like RESYNC does (D-0175 §1, amends D-0172 §5) | web-feature:UF-09 | T-0418 | ready | wl-build-web |
+| T-0478 | UF-03.1 Swap button on the List view's current card → SwapSheet → ctx.replaceItem (split from T-0418, D-0172 §9) | web-feature:UF-03 | T-0418, T-0421, T-0414 | doing | wl-build-web |
+| T-0477 | UF-09 host: `REST_START` starts a rest from `getReady`, `warmup` and `next` while a `keepsClockRunning` overlay (the List view) is open, ending the warm-up like RESYNC does (D-0175 §1, amends D-0172 §5) | web-feature:UF-09 | T-0418 | doing | wl-build-web |
 | T-0434 | cacheCurrent marking, low priority: an identical re-save flushed during an in-flight refresh can still be marked against a select read before that flush — close with a per-entry flush counter if it ever matters (T-0431 review) | web-shell | T-0431 | todo | wl-build-web |
 | T-0437 | e2e: decide whether fixtures/guarded-test.ts should exempt Chromium's own 'An unknown error occurred when fetching the script.' console line (logged by the browser when sw.js can't be fetched, not catchable by page code) the way it exempts 'Failed to load resource:' (T-0429 build, D-0154 §3) | qa | T-0429 | todo | wl-build-qa |
 | T-0439 | Needs a decision (amends D-0153 §4): UF-03.3 untouched Save re-queues the raw ended_at as pending:true; when the merged view's endedAt is later (another device finished later), the next flush moves the server finish earlier. Send max(raw, view.endedAt), or leave ended_at out of the re-send? Also: an untouched Save can send a rating different from the chip on screen if the view changed between mount and tap (T-0433 review) | web-feature:UF-03 | T-0433 | todo | wl-build-web |
@@ -154,7 +154,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0483 | rest.test.tsx: drive the host's 1s re-render with a faked setInterval instead of racing it with waitFor (the "Go" announcer CI flake, D-0175 §2) | web-feature:UF-03 | — | ready | wl-build-web |
-| T-0484 | Shared `goOffline(page, context)` e2e fixture: context offline plus a Supabase write-abort gate in one call; UF-03/UF-09 offline specs move to it (D-0175 §3) | qa | T-0906 | ready | wl-build-qa |
+| T-0484 | Shared `goOffline(page, context)` e2e fixture: context offline plus a Supabase write-abort gate in one call; UF-03/UF-09 offline specs move to it (D-0175 §3) | qa | T-0906 | doing | wl-build-qa |
 | T-0485 | AutoSync: skip the mount flushNow() while navigator.onLine is false, like refreshAll beside it — hardening only, no e2e may rely on it (D-0175 §4; waits for T-0484, which removes the e2e dependency on this flush) | web-shell | T-0484 | ready | wl-build-web |
 
 ## Phase 5 — Iterate
