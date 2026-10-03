@@ -75,3 +75,11 @@ None.
   after the other, in either order.
 
 ## Build / accept log
+
+- Build (T-0353, base 591ceec, clean at start; resumed after a spend-limit stop, only the spec was uncommitted). Only `tests/e2e/uf-10-balance.spec.ts` changed.
+- AC-1 -> "T-0353 AC-1 Tab reaches the hamstrings button then the calves button; Enter and Space each navigate exactly once" (`tabTo` helper, cap 40, body focused first, `toBeEnabled()` before Tab). AC-2 -> "T-0353 AC-2 zero|mixed fixture: the first row is at least 44 x 44" (mixed also checks the first attention row).
+- Grep `\.focus()` in the spec: lines 153 and 168 (`page.locator("body").focus()`) and 232 (attention-row test, out of scope). No `.focus()` on the hamstrings or calves buttons.
+- AC-3 fault 1 (backup copy, restored by cp): `.wl-balance__row` `min-height: 20px` alone did NOT fail AC-2, because the row's padding and content already make it taller than 44. Added `height: 20px; overflow: hidden`: both AC-2 tests failed (height 20 < 44). Restored.
+- AC-3 fault 2: `tabIndex={-1}` on the hamstrings button in `BodyMap.tsx` (backup copy): AC-1 failed with "Tab never reached the hamstrings button within 40 presses". Restored.
+- Green: `scripts/locked.sh heavy pnpm exec playwright test -c tests/e2e/playwright.config.ts uf-10-balance --repeat-each=3`: 30 passed. Only an e2e spec changed, so the -w gate was skipped (D-0158); format:check and check-all below.
+- format:check and check-all.mjs green after prettier --write on the spec.

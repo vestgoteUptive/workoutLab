@@ -128,8 +128,23 @@ test("T-0427 AC1 /balance runs under the Supabase and console guards", async ({
   expect(consoleGuard.errors()).toEqual([]);
 });
 
+// T-0353 AC-1: reaches the C-01 buttons with real Tab presses, not `locator.focus()`. Neither
+// path below calls `.focus()` on the hamstrings or calves button — grepped by hand for the
+// build log, since a reviewer can't easily grep a running test.
+async function tabTo(
+  page: Page,
+  locator: ReturnType<Page["locator"]>,
+  label: string,
+): Promise<void> {
+  for (let i = 0; i < 40; i += 1) {
+    if (await locator.evaluate((el) => el === document.activeElement)) return;
+    await page.keyboard.press("Tab");
+  }
+  throw new Error(`T-0353 AC-1: Tab never reached ${label} within 40 presses`);
+}
+
 test.describe("AC-A16 real keyboard navigates exactly once", () => {
-  test("Enter on the hamstrings button pushes one entry; Space on calves pushes one entry", async ({
+  test("T-0353 AC-1 Tab reaches the hamstrings button then the calves button; Enter and Space each navigate exactly once", async ({
     page,
   }) => {
     await openBalance(page, "mixed");
@@ -137,9 +152,10 @@ test.describe("AC-A16 real keyboard navigates exactly once", () => {
 
     const hamstrings = page.locator('[data-variant="full"] button[data-area="hamstrings"]');
     // The map buttons are disabled while the cache read is in flight ("Hamstrings, loading");
-    // focus() on a disabled button is a no-op, which made this spec flaky on a cold start.
+    // Tab skips a disabled button entirely, which made this spec flaky on a cold start.
     await expect(hamstrings).toBeEnabled();
-    await hamstrings.focus();
+    await page.locator("body").focus();
+    await tabTo(page, hamstrings, "the hamstrings button");
     await expect(hamstrings).toBeFocused();
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/balance\/hamstrings$/);
@@ -153,7 +169,8 @@ test.describe("AC-A16 real keyboard navigates exactly once", () => {
 
     const calves = page.locator('[data-variant="full"] button[data-area="calves"]');
     await expect(calves).toBeEnabled();
-    await calves.focus();
+    await page.locator("body").focus();
+    await tabTo(page, calves, "the calves button");
     await expect(calves).toBeFocused();
     await page.keyboard.press("Space");
     await expect(page).toHaveURL(/\/balance\/calves$/);
@@ -165,6 +182,31 @@ test.describe("AC-A16 real keyboard navigates exactly once", () => {
     await expect(page).toHaveURL(/\/balance$/);
     await expect(page.locator('[data-screen-id="UF-10.1"]')).toBeVisible();
   });
+});
+
+test.describe("AC-A14 row touch target is at least 44 x 44 in a real layout", () => {
+  for (const fixture of ["zero", "mixed"] as const) {
+    test(`T-0353 AC-2 ${fixture} fixture: the first row is at least 44 x 44`, async ({ page }) => {
+      await openBalance(page, fixture);
+      await expect(page.locator('[data-screen-id="UF-10.1"]')).toBeVisible();
+
+      const firstRow = page.locator('[data-part="row"]').first();
+      await expect(firstRow).toBeVisible();
+      const box = await firstRow.boundingBox();
+      expect(box).not.toBeNull();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+
+      if (fixture === "mixed") {
+        const attentionRow = page.locator('[data-part="row"][data-attention="true"]').first();
+        await expect(attentionRow).toBeVisible();
+        const attentionBox = await attentionRow.boundingBox();
+        expect(attentionBox).not.toBeNull();
+        expect(attentionBox!.width).toBeGreaterThanOrEqual(44);
+        expect(attentionBox!.height).toBeGreaterThanOrEqual(44);
+      }
+    });
+  }
 });
 
 test.describe("keyboard focus on an attention row (WCAG 2.4.7)", () => {
