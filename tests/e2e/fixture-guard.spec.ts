@@ -147,6 +147,27 @@ test.describe("AC-6 the guard reports exactly the requests no route claimed", ()
     supabaseGuard.forgetPlantedLeaks();
   });
 
+  // T-0480 (D-0173): a request a spec's own `page.route` fulfilled with a real response is not a
+  // leak, even if Chromium then reports it `requestfailed: net::ERR_ABORTED` because a hard
+  // navigation tore the frame down. It asserts nothing itself: the `auto` guard's teardown is
+  // what fails it if the exemption is missing (red without the `fulfilledResponses` check).
+  // The `route.continue()` test above is the other half: a real leak never gets a response.
+  test("T-0480 a page-fulfilled request aborted by a hard navigation is not reported", async ({
+    page,
+  }) => {
+    await page.goto("/welcome");
+    const url = `${VITE_SUPABASE_URL}/functions/v1/fulfilled_then_nav`;
+    await page.route(url, (route) => route.fulfill({ status: 204 }));
+    await page.evaluate(async (u) => {
+      const first = fetch(u, { method: "DELETE" });
+      const second = fetch(u, { method: "POST" });
+      await first;
+      void second;
+      window.location.replace("/welcome");
+    }, url);
+    await page.waitForLoadState("load");
+  });
+
   // AC-8 background. The ticket expected offline requests to bypass routing entirely; measured,
   // they do not — `setOffline(true)` leaves interception fully active, so an *unmocked* Supabase
   // fetch made while offline is still caught by the guard's route and still reported. Pinned
