@@ -548,9 +548,8 @@ describe("T-0422 AC-5 apply persisted offline (D-0071 §5 §6, D-0093 §7)", () 
     expect(recordSet.mock.calls[0]![0]).toMatchObject({ exerciseId: "db-row", setIndex: 1 });
   });
 
-  // TR-0043: red until it is resolved. `nextSetPrefill` (D-0118 §7) carries set 1's logged
-  // barbell-row 60 kg × 8 onto db-row set 2, so UF-09.3 reads "60 kg × 8", not the engine's
-  // `first_time` pre-fill. The fix is in features/UF-09/prefill.ts, outside this ticket's paths.
+  // D-0156 resolved TR-0043: after Resume, UF-09.3 shows the engine's `first_time` pre-fill, not
+  // `nextSetPrefill`'s carry-over of set 1's logged 60 kg × 8 (D-0118 §7).
   it("after Resume, the load line is the engine's first_time pre-fill: 'Set weight', '8 reps' (D-0118 §9)", async () => {
     await pausedOnRowSet2();
     await render();

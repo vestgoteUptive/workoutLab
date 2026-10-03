@@ -5,7 +5,7 @@ lane: web-feature:UF-07
 screens: [UF-07.1]
 decisions: [D-0164, D-0162, D-0081, D-0070, D-0071]
 deps: [T-0308a, T-0453]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0308a and T-0453 reviews. T-0456 folds into it (D-0164 §2): both edit EditorForm.tsx. Build flow: wl-build-web. About ⅓–½ day. T-0308a and T-0453 are on main. -->
 
@@ -127,3 +127,4 @@ isn't needed) · contracts unchanged · commits start `T-0454` and cite UF-07.1.
   stays on Delete, not Keep routine). AC-6 proves the Chromium case, where focus falls to `<body>`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0454.md` (D-0157).

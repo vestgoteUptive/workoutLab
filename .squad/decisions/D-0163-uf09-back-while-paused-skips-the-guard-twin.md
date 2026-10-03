@@ -4,6 +4,7 @@ title: "UF-09 Back while paused skips the same-URL entry under the guard so one 
 status: revisit
 date: 2026-10-03
 by: frontend-dev (T-0394)
+amends: D-0123
 area: web
 builds-on: D-0123 §3, D-0162 §1
 ---
