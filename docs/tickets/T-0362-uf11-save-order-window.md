@@ -36,5 +36,4 @@ it would need, are in D-0166 Revisit / Consequences.
 D-0166 filed · `check-all` green · the board row moves to `done` (orchestrator).
 
 ## Build / accept log
-- 2026-10-03 product-owner: closed with D-0166 (no change in v1; the idempotent retry heals the
-  split; one transactional write waits for a partial-failure report). Nothing to build.
+Archived in `docs/tickets/log/T-0362.md` (D-0157).
