@@ -322,7 +322,9 @@ describe("T-0415 AC-5 host: entering an item at its first free set", () => {
     expect(setLineText()).toBe("Set 2 of 3");
     fireEvent.click(doneButton());
     await flushReal();
-    const calls = recordSpy.mock.calls.map(([i]) => i).filter((i) => i.itemIndex === 1);
+    const calls = recordSpy.mock.calls
+      .map(([i]) => i)
+      .filter((i) => i.exerciseId === "barbell-row");
     expect(calls.map((i) => i.setIndex)).toEqual([0, 1]);
     const s = storedFocus() as unknown as FocusState;
     const keys = s.loggedSets.map((l) => `${l.itemIndex}:${l.setIndex}`);

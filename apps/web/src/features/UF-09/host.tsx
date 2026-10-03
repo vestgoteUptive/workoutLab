@@ -438,7 +438,8 @@ function Machine(props: MachineProps) {
         };
     body = <div className="wl-uf09 wl-uf09--overlay">{overlay.action.render(overlaySession)}</div>;
   } else {
-    const phase: ViewPhase = state.phase;
+    // `done` only reaches here under a List-view overlay, which the branch above renders.
+    const phase = state.phase as ViewPhase;
     const View = VIEWS[phase];
     const entries = phase === "paused" ? seams.pause : phase === "next" ? seams.next : [];
     const buttons: SeamButton[] = entries.map((action) => ({
