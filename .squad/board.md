@@ -77,7 +77,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | ready | wl-build-web |
-| T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0421 | doing | wl-build-web |
+| T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0421, T-0474 (merge only: gate, TR-0044 → D-0170) | doing | wl-build-web |
 | T-0304h | UF-09 e2e from UF-08.4: reload mid-rest/pause (NFR-TIME-2), 10-set offline workout (NFR-OFF-2), two devices (NFR-SYNC-4), keyboard + axe loop (NFR-A11Y-1/6) | web-feature:UF-09 | T-0304d, T-0304g, T-0303d | doing | wl-build-web |
 | T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | ready | wl-build-web |
 | T-0310d | UF-11.4 Account settings at /plan/account: export + delete with confirm, /welcome notice (D-0136) | web-feature:UF-11 | T-0308b, T-0310b, T-0310c | doing | wl-build-web |
@@ -144,6 +144,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0471 | UF-11.1 CheckinCard mounts on UF-11.2 + UF-02.1 (slots.tsx) and e2e (split from T-0308c, D-0168) | web-feature:UF-11 | T-0470 | todo | wl-build-web |
 | T-0472 | UF-03.1: after a reload, unchecking a logged added row removes the row and drops focus to body — keep the row or move focus to '+ Add set' (T-0457 review) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
 | T-0473 | UF-03.1 AC-6: add a vitest that pressing + Add set on a timed item moves focus to the new row's seconds field (untested; T-0457 accept) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
+| T-0474 | UF-09 device.ts reads focus prefs from the new UF-08 leaf entry `index.prefs.ts`, so focus mode no longer evaluates SessionSetup; must merge before T-0303c (TR-0044, D-0170) | web-feature:UF-09 | — | ready | wl-build-web |
+| T-0475 | import-bans polish (D-0170, optional): add a contrast row showing `../UF-08/index.prefs.js` is allowed; tighten INDEX_ONLY_PATTERN so only `index.js` / `index.<lower>.js` pass (not `index-x.js`); keep T-0313's dynamic-import pattern consistent | web-shell | T-0474 | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
