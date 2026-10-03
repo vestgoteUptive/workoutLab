@@ -435,3 +435,11 @@
 .wl-uf09__question {
   font-size: 18px;
 }
+
+/* T-0304g (NFR-A11Y-5, D-0119 §10): the backstop for the ring fill's inline transition. */
+@media (prefers-reduced-motion: reduce) {
+  .wl-uf09__ring-fill {
+    transition: none !important;
+    animation: none !important;
+  }
+}
