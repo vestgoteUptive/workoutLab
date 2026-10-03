@@ -29,6 +29,27 @@ vi.mock("../../../lib/offline/AutoSync.js", () => ({ AutoSync: () => null }));
 
 import { App } from "../../../app/App.js";
 
+// T-0486: a mock of `useAuth` itself, so `status` can be driven directly and synchronously,
+// matching AC-1's wording exactly ("mount `AccountDeletedNotice` with `status` starting at
+// something other than `signed-out`... then change `status` to `signed-out`") without routing
+// through the auth state machine or a real SPA navigation. Only active while `mockAuth.active`
+// is set (the new describe block below); otherwise this delegates to the real `useAuth`, so the
+// `App`-based tests above (which rely on the real `AuthProvider` context) are unaffected.
+const mockAuth: { active: boolean; status: "signed-out" | "signed-in" | "stale" } = {
+  active: false,
+  status: "signed-in",
+};
+vi.mock("../../../lib/auth/auth-context.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../../lib/auth/auth-context.js")>();
+  return {
+    ...actual,
+    useAuth: (...args: Parameters<typeof actual.useAuth>) =>
+      mockAuth.active ? { status: mockAuth.status } : actual.useAuth(...args),
+  };
+});
+
+import { AccountDeletedNotice } from "../AccountDeletedNotice.js";
+
 const KEY = "wl-account-deleted";
 const DONE = "Your account and all your data are deleted.";
 const PARTIAL =
@@ -163,4 +184,130 @@ describe("T-0310c AC10 the account-deleted notice", () => {
     expect(parseFloat(cs.minWidth)).toBeGreaterThanOrEqual(44);
     expect(parseFloat(cs.minHeight)).toBeGreaterThanOrEqual(44);
   });
+});
+
+// T-0486: the hard-navigation race (docs/tickets/T-0486-account-deleted-notice-race.md).
+// `AccountDeletedNotice` is mounted directly (not through `App`), with `useAuth()` mocked, so
+// `status` can be driven without any real navigation or auth event plumbing — exactly the
+// repro AC-1 asks for. `at()` (declared above) drives `window.location.pathname` via
+// `history.replaceState`, exactly as `BrowserRouter` does under a real `navigate()` call, with
+// no document reload — matching the component's own plain DOM read.
+describe("T-0486 the hard-navigation race", () => {
+  beforeEach(() => {
+    mockAuth.active = true;
+    mockAuth.status = "signed-in";
+    at("/");
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    mockAuth.active = false;
+    vi.useRealTimers();
+  });
+
+  it(
+    "T-0486 AC-1 root cause / AC-2 fix: the reactive status->signed-out effect must not " +
+      "consume the key when no SPA navigation follows (that would empty storage before a hard " +
+      "navigation's unload ever happens, so the next page's mount-time read would find " +
+      "nothing) — against the pre-fix code, this fails: the key was removed here",
+    () => {
+      // Mount while signed in, still on "/" (no key yet): the mount-time peek() sees nothing,
+      // same as the real page before a delete happens in this session.
+      const view = render(<AccountDeletedNotice />);
+      expect(screen.queryByText(DONE)).not.toBeInTheDocument();
+
+      // What `deleteAccountAndSignOut` does: set the key, then sign out (fires SIGNED_OUT,
+      // which this page's `useAuth()` surfaces as `status` becoming "signed-out"). The
+      // hard-navigate branch never changes the SPA route — it reloads the document instead —
+      // so the pathname stays "/": that is exactly the repro.
+      window.sessionStorage.setItem(KEY, "1");
+      act(() => {
+        mockAuth.status = "signed-out";
+        view.rerender(<AccountDeletedNotice />);
+      });
+      // Run the deferred-consume timer all the way out: even then, with the pathname still
+      // "/" (no SPA navigation happened), the key must not have been consumed.
+      act(() => {
+        vi.runAllTimers();
+      });
+
+      // The notice may still show on this (about-to-be-replaced) page, but the key must survive
+      // in storage: with no SPA navigation and no unmount, a hard navigation hasn't unloaded the
+      // document yet, so the *next* page's own mount-time read must still find the key.
+      expect(window.sessionStorage.getItem(KEY)).toBe("1");
+    },
+  );
+
+  it(
+    "T-0486 AC-2 SPA-navigate case: status flips to signed-out and the URL becomes " +
+      "/welcome (as AccountSettingsBody's own branch does) shows the notice and consumes the key",
+    () => {
+      const view = render(<AccountDeletedNotice />);
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+
+      window.sessionStorage.setItem(KEY, "1");
+      act(() => {
+        mockAuth.status = "signed-out";
+        at("/welcome");
+        view.rerender(<AccountDeletedNotice />);
+      });
+
+      // The same mounted instance (never unmounted by an SPA navigate) now shows the notice
+      // immediately (the peek, same tick).
+      expect(screen.getByRole("status")).toHaveTextContent(DONE);
+
+      // The consume is deferred one tick past this commit's other effects (T-0486); once that
+      // runs, a later reload of /welcome in the same tab shows nothing.
+      act(() => {
+        vi.runAllTimers();
+      });
+      expect(window.sessionStorage.getItem(KEY)).toBeNull();
+    },
+  );
+
+  it(
+    "T-0486 AC-2 hard-navigate case: after status flips to signed-out on the old page (URL " +
+      "unchanged, no unload happened), the key is still in storage for the next page's " +
+      "mount-time read, exactly as a real hard navigation's fresh document load would do",
+    () => {
+      const view = render(<AccountDeletedNotice />);
+      window.sessionStorage.setItem(KEY, "1");
+
+      act(() => {
+        mockAuth.status = "signed-out";
+        view.rerender(<AccountDeletedNotice />);
+      });
+      // The old page's instance may show the notice too (harmless; the document is about to
+      // unload) but must not have removed the key. A real hard navigation would unload (and so
+      // unmount this instance, cancelling its pending timer) right about here — simulated by
+      // `cleanup()` below, before the timer ever gets a chance to run.
+      expect(window.sessionStorage.getItem(KEY)).toBe("1");
+      cleanup();
+
+      // The "next page" mount-time read (a fresh instance, as a hard navigation would produce)
+      // still sees and consumes the key.
+      at("/welcome");
+      render(<AccountDeletedNotice />);
+      expect(screen.getByRole("status")).toHaveTextContent(DONE);
+      expect(window.sessionStorage.getItem(KEY)).toBeNull();
+    },
+  );
+
+  it(
+    "T-0486 AC-2 a second old-page re-render after signed-out (still no SPA navigation) " +
+      "doesn't re-show or touch storage",
+    () => {
+      const view = render(<AccountDeletedNotice />);
+      window.sessionStorage.setItem(KEY, "1");
+      act(() => {
+        mockAuth.status = "signed-out";
+        view.rerender(<AccountDeletedNotice />);
+      });
+      view.rerender(<AccountDeletedNotice />);
+      act(() => {
+        vi.runAllTimers();
+      });
+      expect(window.sessionStorage.getItem(KEY)).toBe("1");
+    },
+  );
 });

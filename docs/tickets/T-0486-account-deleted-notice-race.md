@@ -103,4 +103,82 @@ Every AC has a passing test. `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typ
   rebased onto T-0480 and this ticket.
 
 ## Build / accept log
-(empty)
+
+2026-10-03 web-shell build (T-0486). Branch `t/T-0486-account-notice-race`, worktree clean at
+start (HEAD = main `ed2a5e7`).
+
+**AC-1 (repro, red first).** Added `T-0486 the hard-navigation race` describe block to
+`AccountDeletedNotice.test.tsx`: mocks `useAuth` directly (gated by `mockAuth.active`, so the
+existing `App`-based AC10 tests still use the real `AuthProvider`), mounts `AccountDeletedNotice`
+alone, drives `status` via `mockAuth.status` + `rerender`, drives the URL via the file's existing
+`at()` helper (`history.replaceState`, no reload). First run against unfixed code: AC-1 test red
+as expected (`sessionStorage.getItem(KEY)` was `null` after the status flip to `signed-out` with
+no navigation — confirms the race: `npx vitest run .../AccountDeletedNotice.test.tsx` → 5 failed /
+8 passed, all 5 failures in the new T-0486 describe block, for the right reason (key removed /
+notice not shown) once an unrelated test-setup bug (see below) was fixed.
+
+**Root cause, more precisely than the ticket's framing.** Two distinct reactive paths land on
+`/welcome` while `AccountDeletedNotice` stays mounted: (a) `AccountSettingsBody`'s own
+`navigate("/welcome", { replace: true })`, and (b) `RequireAuth`'s own `<Navigate>` redirect when
+`status` flips to `signed-out` on a protected route (not mentioned in the ticket, but it's the
+exact path the pre-existing "T-0310c AC10 same page" test exercises). Both are real
+`react-router` `<Navigate>` components whose actual `history` call happens in a `useEffect` of
+their own — same commit as `AccountDeletedNotice`'s own effect, but *after* it in flush order
+(`AccountDeletedNotice` is rendered before `<Routes>` in `Shell`). So a same-tick
+`window.location.pathname` check in `AccountDeletedNotice`'s effect is unreliable (confirmed by a
+first fix attempt using exactly that, which broke the pre-existing "same page" test — recorded as
+an interim red run below, not a fault).
+
+**Fix (AC-2).** `AccountDeletedNotice.tsx`: the reactive `status === "signed-out"` path now (1)
+`peek()`s only (read-only) to update `kind` immediately, same tick, so the notice still shows
+right away in both SPA cases, and (2) schedules a `setTimeout(0)` that *consumes* (removes from
+storage) only if `window.location.pathname` is `"/welcome"` by the time it fires. The timeout
+runs after every effect in the commit has flushed (including any `<Navigate>`'s), so it reliably
+sees a same-commit SPA redirect's URL, whichever of the two paths produced it. The hard-navigate
+branch never touches the SPA route — it reloads the document, unmounting this instance (and
+cancelling the pending timeout via the effect's cleanup) well before the timeout could ever fire
+against a stale `/welcome` read. The mount-time read is unchanged: still a synchronous,
+unconditional `consume()`, so a hard navigation's new page still reads and clears the key the same
+tick as before.
+
+Rejected alternative: importing `useLocation` from `react-router` directly (cleaner code, but
+`src/lib/account/__tests__/boundaries.test.ts` (T-0310c AC11, outside this ticket's scope to
+touch) asserts this file's exact static-import list — `react-router` is not in it. Caught by the
+full gate's `test` step; reverted in favour of a plain `window.location.pathname` DOM read, which
+needs no new import.
+
+**AC-3 (no regression).** Every pre-existing test in the file passes unedited, including the
+"T-0310c AC10 same page: signed in on /, key set, SIGNED_OUT → the notice appears" test, which
+exercises the `RequireAuth`-redirect SPA path end-to-end through the real `App` and was the one
+test that caught the first (same-tick) fix attempt's flaw.
+
+**AC-4 (fault proof).** Backed up the fixed `AccountDeletedNotice.tsx` to the scratchpad twice (one
+per fix iteration), edited the live file in place to restore the old unconditional reactive
+`consume()` (removing the `peek`/deferred-`consume` split), ran `AC-1` alone: failed
+(`sessionStorage` was `null`, expected `"1"`), confirming the fault is caught. Restored the fixed
+file from the scratchpad backup (`cp`, not `git checkout`) both times; `git diff` showed no
+uncommitted drift afterwards.
+
+**Tests run** (`apps/web`, via `scripts/locked.sh small npx vitest run
+src/components/account-deleted-notice/__tests__/AccountDeletedNotice.test.tsx`):
+- Red (AC-1, pre-fix): 5 failed / 8 passed (first run before fixing an unrelated mock-scoping bug
+  in the new tests themselves) → after fixing that, 1 failed (AC-1 only, as intended) / 12 passed.
+- First fix attempt (same-tick `window.location.pathname`, no `setTimeout`): broke the pre-existing
+  "same page" AC10 test (1 failed / 12 passed) — diagnosed as the effect-ordering issue above, not
+  used in the final fix.
+- Final fix: 13 / 13 passed.
+- AC-4 fault run: 1 failed (AC-1) / 12 skipped (ran `-t "T-0486 AC-1"` only), as required.
+- Full `apps/web` suite after the final fix and restore: 253 files / 3513 tests passed (via
+  `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`), confirming
+  `lib/account/__tests__/boundaries.test.ts`'s import-boundary test (T-0310c AC11) is unaffected by
+  the final (no-new-import) fix.
+- `npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 passed.
+- `npx -y pnpm@10.28.2 -w format:check`: clean.
+- `node .github/scripts/check-all.mjs`: clean (no output, exit 0).
+
+**e2e**: not required (jsdom-only change). `tests/e2e/uf-11-account.spec.ts` does not exist in this
+worktree (T-0469 is a separate, not-yet-merged lane), so the optional `--repeat-each=5` confidence
+check from the Definition of done could not be run here; left for T-0469 to confirm once rebased
+onto this ticket, per its own note above.
+
+Commits: `T-0486 UF-01.1/UF-11.4: ...` (component fix + tests), citing both screen IDs.
