@@ -126,7 +126,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0389 | Real-browser 24-hour `<input type=time>` probe for UF-08.1 (cut from T-0386); also a Playwright check of the D-0115 §5 finish-time focus order (T-0386 QA) | qa | T-0303a | todo | wl-build-qa |
 | T-0394 | UF-09 Back means Pause: same-URL history guard turns Back in a running state into UF-09.9; Back while paused leaves; Back closes a seam overlay; tighten the T-0303d Back row (D-0123) | web-feature:UF-09 | T-0304d, T-0303d, T-0415 | doing | wl-build-web |
 | T-0395 | "Resume workout" entry on Today (UF-02.1) and/or UF-08.1 for an unfinished, non-stale session on this device — a PWA cold start never reaches the D-0111 §7 restore (D-0123 §4–§5); needs a user-flows v2 addition + decision | web-feature:UF-09 | T-0304e, T-0302a (D-0139) | ready | wl-build-web |
-| T-0416 | UF-03.1 List view read side: set table, how-to + list-view seams, Finish, the T-0360 cross-screen principle-1 assertion (D-0142) | web-feature:UF-03 | T-0304d, T-0419 | doing | wl-build-web |
 | T-0417 | UF-03.1 List view logging: check / edit / uncheck / + Add set, reload, NFR-OFF-2 List view e2e (D-0142) | web-feature:UF-03 | T-0416, T-0415, T-0420 | todo | wl-build-web |
 | T-0418 | UF-03.2 rest bar + rest view, Swap button in the list (D-0142) | web-feature:UF-03 | T-0417, T-0421, T-0414 | todo | wl-build-web |
 | T-0432 | After T-0427: a source check in fixture-guard.spec.ts that every tests/e2e/*.spec.ts imports the guarded fixture (T-0427 groom) | qa | T-0427 | todo | wl-build-qa |
