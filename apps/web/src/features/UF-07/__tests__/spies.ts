@@ -1,5 +1,6 @@
 // The Supabase spy and `lib/offline` wrappers for UF-07.1 tests. Kept free of product imports so
 // a `vi.mock` factory can load it without a cycle.
+import { useSyncExternalStore } from "react";
 import { vi } from "vitest";
 
 export interface SpyCall {
@@ -117,6 +118,31 @@ export async function mockedOffline(
       await offline.gate;
       if (offline.throwLibrary) throw new DOMException("UnknownError", "UnknownError");
       return actual.loadLibrary();
+    },
+  };
+}
+
+/** A controllable `useAuth` status (T-0346): signed-in by default; `setAuth` re-renders readers. */
+type MockAuthStatus = "signed-in" | "stale" | "signed-out";
+let authStatus: MockAuthStatus = "signed-in";
+const authListeners = new Set<() => void>();
+export function setAuth(next: MockAuthStatus): void {
+  authStatus = next;
+  authListeners.forEach((listener) => listener());
+}
+
+export async function mockedAuth() {
+  return {
+    AuthProvider: ({ children }: { children: unknown }) => children,
+    useAuth: () => {
+      const status = useSyncExternalStore(
+        (listener) => {
+          authListeners.add(listener);
+          return () => authListeners.delete(listener);
+        },
+        () => authStatus,
+      );
+      return { status, redirectTarget: "/welcome", signOut: async (): Promise<void> => {} };
     },
   };
 }

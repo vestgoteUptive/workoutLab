@@ -6,6 +6,7 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { R, R2, UUID_V4, itemRow, putRoutine, renderEditor, seed } from "./harness.js";
 import { offline, spy } from "./spies.js";
 
+vi.mock("../../../lib/auth/auth-context.js", async () => (await import("./spies.js")).mockedAuth());
 vi.mock("../../../lib/auth/client.js", async () => (await import("./spies.js")).mockedClient());
 vi.mock("../../../lib/offline/index.js", async (importActual) =>
   (await import("./spies.js")).mockedOffline(importActual),
@@ -166,7 +167,8 @@ describe("AC-A8 delete", () => {
     expect(spy.calls).toHaveLength(1);
     expect(spy.calls[0]).toMatchObject({ table: "routines", method: "delete" });
     expect(spy.calls[0]!.filters).toEqual([["eq", "id", R]]);
-    expect(offline.refreshRoutines).toHaveBeenCalledTimes(1);
+    // The D-0174 §4 mount refresh plus the one after the delete.
+    expect(offline.refreshRoutines).toHaveBeenCalledTimes(2);
     for (const table of ["session_sets", "sessions", "routine_items"]) {
       expect(spy.tables).not.toContain(table);
     }
@@ -221,7 +223,8 @@ describe("AC-A10 errors", () => {
     expect(screen.getByLabelText(NAME)).toHaveValue("Lower B");
     expect(screen.getByText("2. Leg curl (machine)")).toBeInTheDocument();
     expect(location()).toHaveTextContent(`/plan/routines/${R}`);
-    expect(offline.refreshRoutines).not.toHaveBeenCalled();
+    // Only the D-0174 §4 mount refresh; a failed save refreshes nothing.
+    expect(offline.refreshRoutines).toHaveBeenCalledTimes(1);
   });
 
   it.each(modes)("(%s) routines.delete fails: message, dialog closed, no move", async (mode) => {
@@ -268,7 +271,8 @@ describe("AC-A13 cancel and double submit", () => {
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     await waitFor(() => expect(location().textContent).toBe("/plan"));
     expect(spy.calls).toHaveLength(0);
-    expect(offline.refreshRoutines).not.toHaveBeenCalled();
+    // Only the D-0174 §4 mount refresh.
+    expect(offline.refreshRoutines).toHaveBeenCalledTimes(1);
   });
 
   it("a double click on Save produces exactly one routines.upsert", async () => {

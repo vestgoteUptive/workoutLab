@@ -7,6 +7,7 @@ import { offlineDb } from "../../../lib/offline/db.js";
 import { R, renderEditor, seed } from "./harness.js";
 import { offline } from "./spies.js";
 
+vi.mock("../../../lib/auth/auth-context.js", async () => (await import("./spies.js")).mockedAuth());
 vi.mock("../../../lib/auth/client.js", async () => (await import("./spies.js")).mockedClient());
 vi.mock("../../../lib/offline/index.js", async (importActual) =>
   (await import("./spies.js")).mockedOffline(importActual),
