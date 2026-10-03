@@ -95,3 +95,6 @@ contracts unchanged · commits start `T-0465`.
 - Red on unfixed (main with T-0459): AC-1 (focus on body), AC-2 (fallback stuck on /library/good), AC-2 pair (focus) failed 3/6.
 - Planted fault: `key={location.pathname}` on the boundary turned AC-3 red (1 failed, 5 passed); restored from backup copy.
 - Gate: typecheck/lint/test (19 tasks), test:repo-checks, format:check, check-all, check:size green; whole web e2e 196 passed.
+- QA (HEAD 1144a9a, `git merge origin/main`: already up to date, tree clean, no gate rerun): AC-1/AC-2/AC-3/AC-4 map to tests 1-2 / 3-4 / 5 / 6 of `route-boundary.t0465.test.tsx` (6/6 green).
+- QA red runs from backups: main's RouteBoundary+App 3/6 red (AC-1, AC-2, AC-2 pair); `key={location.pathname}` AC-3 red (1/6); own faults: dropping the getDerivedStateFromProps reset AC-2 red (1/6), dropping the focus ref 3/6 red (AC-1, AC-2, pair). All restored from copies.
+- QA whole web e2e (TMPDIR=$HOME/.cache/wl-pw-tmp, flock): 196 passed.
