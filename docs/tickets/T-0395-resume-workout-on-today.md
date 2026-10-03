@@ -117,3 +117,35 @@ Verdict: **approve**.
 - `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint --concurrency=1` — 13/13 tasks green.
 - `scripts/locked.sh heavy npx playwright test --config ../../tests/e2e/playwright.config.ts` (from `apps/web`) — full web e2e, 213/213 green, including T-0395's AC9 row, T-0302b's 4 preview rows, and T-0458's offline list-view rows (`uf-03-list-summary.spec.ts`).
 
+## QA accept log
+QA, 2026-10-03. `git status` clean, HEAD `a22e770` (merge commit `6c98cb9` + log commit `a22e770`, both already on branch). Checked branch-behind-main: local `main` is one commit ahead (`f83403e`, T-0308c UF-11 CheckinCard only); `git merge-tree main HEAD` reports no conflict and the diff touches only `UF-11/**` — clean, no action needed per D-0169 §2.
+
+**AC→test map, re-verified by reading the test bodies (not just titles):**
+- AC1 → `resume.test.ts` "AC1 the card's data" (done 3/total 12 exact object) + `resume-card.test.tsx` "AC1 the card" (title/line/link text and href, and the no-session → no `[data-part=resume]` case). Both real assertions, not vacuous.
+- AC2 → `resume.test.ts` "AC2 when it shows", 8 cases: each of the 7 exclusions plus the exact-12h-inclusive case, each a real `null` vs `sessionId` assertion.
+- AC3 → `resume.test.ts` + `resume-card.test.tsx` "AC3 the newest wins": newer wins, and a same-timestamp tie resolves to the smaller id.
+- AC4 → `resume.test.ts` "AC4 the sets count": non-JSON value, no-array value, and a backoff item (total 13) — all three real.
+- AC5 → `resume.test.ts` + `resume-card.test.tsx` "AC5": offline/no-fetch is the same successful result as AC1; `sessions.where` throrwing and `storage.getItem` throwing both resolve `null` with no unhandled rejection and no `console.error` (checked with real spies, not mocked away).
+- AC6 → `resume-slot.test.tsx`: DOM order (resume after header/date, before C-01), persists in `loading` and `no-plan` states, Start link still present, and a true no-regression case (no resumable session → identical DOM to pre-ticket UF-02 tests).
+- AC7 → `resume-card.test.tsx` "AC7": a real click renders the real `SessionHost` restored to the stored phase (rest, with a live timer role) and item/set; Back → Pause (UF-09.9) → Back → Today, matching D-0123 §3.
+- AC8 → `exports-and-lint.test.ts` "AC-10 exports": imports the real module, asserts the exact export set — would fail on a stray or missing export.
+- AC9 → `uf-02-today.spec.ts` "T-0395 AC9", reran standalone (`-g "T-0395"`): 1/1 passed in 12.1s, through the guarded-test fixture (fails on any `console.error` or `pageerror`), with its own axe assertion — all green.
+- AC10 → reran the full `UF-09/__tests__` + `UF-02/__tests__` suites together: 80 files / 1077 tests, all green (no edits beyond the recorded export-pin line).
+
+**Red-on-main, reproduced independently** (not just inspected): built a detached worktree at local `main` (`f83403e`), symlinked `node_modules` (identical `pnpm-lock.yaml`), copied over `resume.test.ts` and `resume-slot.test.tsx` unedited.
+- `resume.test.ts` against main: fails to even resolve (`Failed to resolve import "../resume.js"`) — confirms `resume.ts` doesn't exist on main.
+- `resume-slot.test.tsx` against main: 2/4 fail (the two asserting the card mounts: "ready" and "no-plan" cases, each timing out waiting for `[data-part=resume]`); the two asserting no card correctly pass on main, as expected. Matches the ticket's red-proof claim exactly.
+Worktree removed after use; no effect on the ticket branch.
+
+**Planted faults, each on a backup copy of `resume.ts` via `cp`, restored by `cp` from backup (never `git checkout`), one `scripts/locked.sh small npx vitest run` per fault:**
+1. (builder's) staleness `>` → `>=`: AC2's "exactly 12h before now: it is s1 (inclusive)" fails (`expected undefined to be 's1'`). Reproduced exactly as recorded.
+2. (builder's) tie-break `entry.id < best.id` → `entry.id > best.id`: AC3's "a tie at 09:30 goes to the smaller id" fails (`expected 's2' to be 's1'`). Reproduced exactly as recorded.
+3. (QA's own) `ended_at` exclusion `row.ended_at != null` → `row.ended_at == null` (inverted): 9/17 tests fail across AC1, AC2 ("ended_at set" case, now inverted the wrong way), AC3, AC4 and AC5 — a broad, meaningful catch, not a no-op. (A first attempt — inverting `parsed.ok || parsed.plan === null` to `&&` — caught nothing, since the discriminated union makes the two operators equivalent here; discarded in favour of the `ended_at` fault, which is a real catch.)
+All three faults restored; `git status` and a full resume-file diff confirmed clean after each restore and at the end.
+
+**Full web e2e**, rerun on the current (post-merge) HEAD: `scripts/locked.sh heavy npx playwright test --config ../../tests/e2e/playwright.config.ts` — 213/213 green, same count the builder recorded post-merge. AC9 also reran standalone, green, axe-clean, no console/page errors (guarded-test fixture).
+
+**Break-it checks:** zero history — `findResumable` has no dependency on engine/profile/history loaders at all (reads only `offlineDb().sessions` and `localStorage`), so this is a non-issue by construction, consistent with every `resume.test.ts` case already running with no seeded history. Going back mid-flow — covered by AC7's Back → Pause → Back → Today assertions. Slow network / fetch — AC5 proves `fetch` is never called (IndexedDB/localStorage only). 15-minute budget and timers crossing zero are session mechanics unchanged by this ticket (Resume restores existing state via the unmodified D-0111 §7 path); not applicable to a card that only links back in. Offline set logging after Resume uses the existing, unmodified UF-09 host — out of this ticket's scope and covered elsewhere (T-0304b etc.), not a gap here.
+
+**Verdict: done.** All 10 ACs map to tests that would fail without the feature (proven by reproducing red-on-main and 3 planted faults), AC10 (no regression) reconfirmed at 1077/1077, and the full web e2e is green at 213/213 on the current, correctly-merged branch.
+
