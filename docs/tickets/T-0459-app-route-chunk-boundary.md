@@ -111,3 +111,8 @@ contracts unchanged · commits start `T-0459`.
 - Red on unfixed `App.tsx` (HEAD copy): AC-1, AC-3 mid-workout, AC-4, AC-5 failed (no alert); AC-2 and the AC-1 pair failed too (lazy cache leak, then no alert). Green after the fix: 7/7.
 - Planted fault (on a backup copy, restored with `cp`): one boundary around `<Routes>` instead of per route: AC-2 red, the other 6 green. Without the `key` AC-2 was also red (first fixed run).
 - Gate: `-w typecheck lint test` all green except one flaky `UF-07/t0453.focus` (passes alone, 10/10; T-0460/T-0461 territory, not this ticket). `test:repo-checks` 155 pass, `format:check`, `check-all`, `check:size` green. Whole web e2e: 190 passed.
+
+### QA log (after `git merge origin/main`, HEAD 6e5dfb3, tree clean)
+- AC→test: AC-1 "AC-1…" + pair; AC-2 "AC-2 another route…"; AC-3 signed-out + mid-workout; AC-4 "a component that throws…"; AC-5 axe/Tab test + unedited source/import-ban tests. All 7 green.
+- Unfixed App.tsx (origin/main copy): 5 red / 2 green (AC-1, AC-2, AC-3 mid-workout, AC-4, AC-5 axe). Single boundary around `<Routes>`: AC-2 red, 6 green. QA fault: `key={route.path}` dropped: AC-2 red, 6 green. All restored with `cp`.
+- Gate after merge: typecheck lint test 19/19 (16 cached), test:repo-checks fail 0, check-all exit 0. Whole web e2e: 193 passed.
