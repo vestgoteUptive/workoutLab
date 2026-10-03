@@ -157,7 +157,10 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0906 | CI: tests/e2e/uf-03-list-summary.spec.ts T-0458 AC-1/AC-2 fails deterministically on CI (2 consecutive runs), passed locally when T-0458 merged (offline reload reads back 0 sets, not 3) | qa | — | doing | wl-ci-investigate |
+| T-0906 | CI: tests/e2e/uf-03-list-summary.spec.ts T-0458 AC-1/AC-2 flaky (race, not regression): offline mocks still fulfill writes, AutoSync's mount flush wins the race with the test's `sets` read about half the time on CI. Fix: abort Supabase writes once offline (uf-09-offline pattern), assert zero fulfilled writes (diagnosis: docs/ci/CI-T-0906-uf03-list-view-offline-flush-race.md) | qa | — | doing (spec being written) | wl-build-qa |
+| T-0483 | rest.test.tsx T-0418 AC-3 "Go" announcer test races a real 1s setInterval against waitFor's 1000ms default with zero margin; fake setInterval/setTimeout too and advance explicitly instead of raising the timeout (T-0906 CI diagnosis, separate root cause from T-0906 itself) | web-feature:UF-03 | — | todo | wl-build-web |
+| T-0484 | Shared `goOffline(page, context)` e2e fixture: sets the context offline AND aborts Supabase write routes, so no offline spec can silently let mocks fulfill writes past the offline point; audit uf-09-focus.spec.ts's `setsFor` reads for the same exposure (T-0906 CI diagnosis follow-up) | qa | T-0906 | todo | wl-build-qa |
+| T-0485 | Optional hardening: AutoSync's mount `flushNow()` should check `navigator.onLine` before attempting the flush, same as `refreshAll` beside it — saves a doomed request + backoff timer on real offline devices; must not be relied on to fix any e2e test (that's T-0906/T-0484's job) (T-0906 CI diagnosis follow-up) | web-shell | — | todo | wl-build-web |
 
 ## Phase 5 — Iterate
 The product-owner adds tickets from `revisit` decisions, triage outcomes and QA findings, using the `wl-idea` flow.
