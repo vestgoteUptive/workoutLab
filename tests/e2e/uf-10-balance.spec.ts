@@ -121,6 +121,9 @@ test("T-0427 AC1 /balance runs under the Supabase and console guards", async ({
 }) => {
   await openBalance(page, "mixed");
   await expect(page.locator('[data-screen-id="UF-10.1"]')).toBeVisible();
+  // T-0436: AutoSync's reads can still be in flight when the screen first shows; the backstop
+  // check runs at teardown, so let the network settle or a late hit would go unseen.
+  await page.waitForLoadState("networkidle");
   expect(supabaseGuard.unclaimed()).toEqual([]);
   expect(consoleGuard.errors()).toEqual([]);
 });

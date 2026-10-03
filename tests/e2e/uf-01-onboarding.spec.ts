@@ -9,7 +9,11 @@
 // focus is visible.
 import AxeBuilder from "@axe-core/playwright";
 import type { Locator, Page } from "@playwright/test";
-import { mockSupabaseAuth, mockSupabaseRest } from "./fixtures/supabase-mock.js";
+import {
+  mockSupabaseAuth,
+  mockSupabaseEmptyReads,
+  mockSupabaseRest,
+} from "./fixtures/supabase-mock.js";
 import { expect, test } from "./fixtures/guarded-test.js";
 
 const SCREEN = (id: string) => `[data-screen-id="${id}"]`;
@@ -19,6 +23,8 @@ test.use({ viewport: { width: 360, height: 640 } });
 test.beforeEach(async ({ page }) => {
   await mockSupabaseRest(page);
   await mockSupabaseAuth(page);
+  // T-0436: AutoSync's reads in the signed-in tests below resolve as `200 []`, not the backstop.
+  await mockSupabaseEmptyReads(page);
 });
 
 interface Record {

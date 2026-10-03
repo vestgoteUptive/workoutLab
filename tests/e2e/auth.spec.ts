@@ -16,6 +16,7 @@ import {
   mockProfileMissing,
   mockProfilePresent,
   mockSupabaseEmailAuth,
+  mockSupabaseEmptyReads,
   mockSupabaseRest,
   pendingPkceFlowId,
 } from "./fixtures/supabase-mock.js";
@@ -29,6 +30,8 @@ import { expect, test } from "./fixtures/guarded-test.js";
 // branch it is named for. AC-2's `waitForResponse` on a 200 is what catches that.
 test.beforeEach(async ({ page }) => {
   await mockSupabaseRest(page);
+  // T-0436: the signed-in app's AutoSync reads resolve as `200 []` instead of the 501 backstop.
+  await mockSupabaseEmptyReads(page);
   await mockSupabaseEmailAuth(page);
   await mockProfilePresent(page);
 });
