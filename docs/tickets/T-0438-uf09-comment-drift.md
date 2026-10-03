@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.8, UF-09.9]
 decisions: [D-0153, D-0162]
 deps: [T-0435, T-0394]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner. Folded into T-0394 (D-0162 §2): no separate branch or build. The work and its test are T-0394 AC-8. The orchestrator marks this row done when T-0394 merges. -->
 
@@ -37,3 +37,7 @@ T-0394 is done with AC-8 passing.
 ## Notes
 - **Why it's folded:** T-0415 (in QA) edits both files, and T-0394 is already serial after it and
   edits `host.tsx`. A separate two-comment branch would only add a merge in the same files.
+
+## Log
+- Delivered by T-0394 (AC-8, D-0162 §2): both comments rewritten, source test `t0394.comments.test.ts`.
+- Accepted with T-0394 (2026-10-03, product-owner): AC-1 = T-0394 AC-8, passing.
