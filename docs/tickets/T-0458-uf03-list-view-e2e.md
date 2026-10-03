@@ -223,3 +223,40 @@ reviewer's recorded gate run.
 Verdict: **done**. Every AC maps to a real, non-vacuous test; red proof and an independent planted
 fault both reproduce; checkbox fix verified via a genuine `boundingBox()` regression check, not a
 visual/CSS-string check.
+
+## Accept log
+
+**2026-10-03, product-owner.** Read the build, review and QA logs in full; confirmed each AC
+against the current code at HEAD `7777cb6`, not just the logs.
+
+- `git status` clean; diff vs `main` (`af4bfcf`) scoped to exactly the three granted paths —
+  `apps/web/src/features/UF-03/list-view.css`, `tests/e2e/uf-03-list-summary.spec.ts` and this
+  ticket file (confirmed with `git diff main --stat` on those paths: +379/−3, no other file). The
+  wider worktree-vs-main diff (board/journal/decisions bookkeeping, other tickets' logs) is the
+  additive, non-conflicting divergence QA already cleared per D-0169 §2 — correctly left unmerged.
+- `list-view.css` read directly: `.wl-uf03-list__table input[type="checkbox"]` is `width: 44px;
+  height: 44px; box-sizing: border-box`, with a comment citing T-0458/NFR-A11Y-2 — matches the
+  build log's claim and AC-3's 44×44 floor.
+- AC-1/AC-2: red proof reproduced independently by both the builder (pre-T-0417, `633a835`) and QA
+  (fresh worktree, same commit) with the same root cause (read-only checkbox, no `ctx.recordSet`).
+  Two independent planted faults (builder's `faultDone` rewrite, QA's checkbox-size revert) each
+  caught by a real, distinct assertion (`liveSets` count after reload; `boundingBox()` width) —
+  not vacuous.
+- AC-3: the 44×44 checkbox bug was a genuine a11y defect caught by this ticket's own test, fixed
+  in-lane, and independently re-regressed and re-caught by QA. Axe and the Focus-mode round-trip
+  assertions are named in both the build and QA AC→test maps against the running code.
+- AC-4: reviewer confirmed the guard assertions are real (not a duplicate of the auto-teardown
+  check) and QA confirmed the same; both the unclaimed-request/console-error teardown and the
+  mid-test `supabaseGuard.unclaimed()`/zero-functions-calls checks are present for both new tests.
+- Gate: build log shows `-w typecheck lint test --concurrency=1` (19/19 tasks, 3352 tests),
+  `-w test:repo-checks` (159/159), `-w format:check` (fixed and reverified) and `check-all` all
+  green; e2e (`uf-03-list-summary.spec.ts` + `uf-09-focus.spec.ts`) 16/16 across 3 runs, no flake,
+  reconfirmed independently by both the reviewer (targeted rerun) and QA (full 3-run repeat with
+  their own planted fault interleaved). No `.only`/`.skip` in the spec.
+- No contract touched; no decision needed beyond the ones already cited (D-0164, D-0142, D-0071,
+  D-0086, D-0155).
+
+Verdict: **done**. Every AC (AC-1 through AC-4) has at least one passing, non-vacuous test, proven
+red before the fix and confirmed by two independent planted-fault regressions; the gate is green;
+the diff is scoped to the granted paths; CLAUDE.md's definition of done is met. Not merging or
+pushing — left for the orchestrator per D-0169 §2 and this ticket's own instruction.
