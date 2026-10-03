@@ -120,3 +120,9 @@ UF-09.9: cancel speech on Pause`).
   tap. Record it in the accept log if a device is at hand, as T-0304g did.
 
 ## Build / accept log
+
+### Build log (frontend-dev, base 56ab6a9, tree clean)
+- Changed `device.ts` (cancel on unmount and first observed `paused` after a non-paused phase, voice only; prime once per mount on `onActivation`; `resumeIfIdle` for suspended or interrupted, also on `onGesture` once the context exists). Additive stub exports in `t0304g-stubs.ts` (`contexts`, `cancel`, `utterances`, utterance `volume`). Tests: `__tests__/t0448.device.test.tsx` (30).
+- AC→test: AC-1 `AC-1 cancel on Pause` (voice on/off pair, UF-09.8, running rest, restore into paused); AC-2 `AC-2 cancel on unmount` (on/off); AC-3 `AC-3 the iOS prime` (first/second, order, voice off, pointerdown/keydown, remount); AC-4 `AC-4 resume…` (4 states × pointerUp / 10 s tone / keyDown); AC-5 `AC-5 missing or broken APIs` (6 variants); AC-6 diff touches only `device.ts`, `t0448*`, stubs.
+- Red on unfixed code (device.ts from HEAD): 9 failed of 30 (AC-1 Pause, AC-2 unmount, AC-3 prime x3, AC-4 interrupted x3 + suspended keyDown); the negative rows and "suspended" pointerUp/tone rows pass on main by design (existing behaviour).
+- Planted faults (backup copy, restored by cp): cancel on every observation: 2 red; resume suspended only: 3 red; prime on gesture: 1 red; unguarded cancel: 4 red.
