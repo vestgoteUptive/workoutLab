@@ -191,3 +191,50 @@ and cite UF-08.3 (for example `T-0303c UF-08.3: swap before starting mounts the 
 - `node .github/scripts/check-all.mjs` (standalone, same as above): 2 lane-path findings on this
   branch's own `D-0171-...md`/`INDEX.md`, both expected to clear once the branch merges to main.
 - Commit 62d145e: the D-0169→D-0171 renumber (3 files).
+
+### Review log (code-reviewer, 2026-10-03, HEAD a7294b1)
+- Verdict: **approve**.
+- Static import confirmed: `SessionSetup.tsx` imports `SwapSheet` from `../UF-05/index.js` at
+  module top level (no `React.lazy`), matching the ticket's explicit Scope › In.
+- History: `leave()` in `SessionSetup.tsx` calls `navigate(-1)` for both Keep and Apply (Apply
+  first sets `adjusted.workout = applied`), popping the `?step=swap` entry and landing back on the
+  existing `?step=suggested` entry rather than pushing a new one — one further Back reaches
+  UF-08.1, never re-opens the sheet. Confirmed by AC-6 tests (`swap-before-start.test.tsx`
+  "Keep then one back lands on UF-08.1; the same after Apply", "browser Back while the sheet is
+  open is Keep").
+- Focus: `leave()` sets `focusSwapItem`, threaded through `Suggested` as a prop; its mount-only
+  effect queries `[data-part="swap"]` buttons and focuses index `focusSwapItem`, then clears the
+  request via `onSwapFocused`. AC-3 test confirms `Swap Barbell row` has focus after Close and
+  after Escape.
+- Bad URLs: `parseItem` rejects non-digit, negative (via regex `^\d+$`, so `-1` fails to match) and
+  out-of-range values; `badSwap` drives a `replace: true` navigate to `?step=suggested` when a
+  `Workout` exists; `stale` (unchanged logic, now excluding `showSwap`) replaces to
+  `/session/setup` on a cold load with no `Workout`. AC-6 tests cover both paths (cold load, and
+  `x`/`-1`/`3`/missing/`1.5` with a `Workout` present), plus `item=2` opening the sheet. Verified
+  green with a targeted rerun (below).
+- Deviation (AC-2 "Swapped to save time" can't literally hold): disclosed, not silently dropped.
+  `itemReasonLine`'s two-reason cap does cut the swap line from the rendered row; the test instead
+  asserts DOM-equality with `itemReasonLine(result reasons)` *and* separately asserts the engine
+  result still carries `reasons` containing `{code: "swap", reason: "short_on_time"}` — so the
+  underlying data is proven present even though the cap hides it from the user. Filed as D-0171,
+  a real, lane-correct (`area: web`) follow-up for `web-shell` naming the actual fix (let
+  `itemReasonLine` surface a swap reason or lift the cap by one). Not a leftover artifact.
+- D-0170→D-0171 renumber: confirmed via `git diff main...HEAD -- .squad/decisions/INDEX.md` that
+  D-0171's entry is the swap-reason-cap content (not a stray duplicate), and `main` already carries
+  a later commit (6748da4) that reserves the next free ids after this exact renumber — consistent
+  with the ticket's account of a numbering collision caught and fixed correctly.
+- Lane-path findings: ran `node .github/scripts/check-all.mjs` on `main` directly (HEAD 6748da4,
+  clean tree) → exit 0, no findings. Confirms the two `lane-path-not-owned` hits on this branch's
+  own pending `D-0171-...md`/`INDEX.md` are solely an artifact of the unmerged decision file
+  sitting under `.squad/decisions/**` (process lane) before merge, not a real violation introduced
+  by this ticket's `web-feature:UF-08` changes.
+- TR-0044/TR-0045 cross-lane gate hang: correctly out of scope for this review; already resolved on
+  main by T-0474/D-0170 and merged into this branch (571750e). The re-run gate log after that merge
+  is green (19/19 turbo tasks, 243 files / 3371 tests).
+- Targeted rerun: `scripts/locked.sh small npx vitest run
+  src/features/UF-08/__tests__/swap-before-start.test.tsx
+  src/features/UF-08/__tests__/suggested-actions.test.tsx` (run from `apps/web`) → 2 files, 46
+  tests, all passed.
+- No lane or contract violations found: all changed paths are inside `web-feature:UF-08`'s owned
+  paths or the ticket's three listed extras (`lib/i18n/flows/uf-08.ts` additive keys,
+  `tests/e2e/uf-08-setup.spec.ts` appended rows, this ticket file). No contract file touched.
