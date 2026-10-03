@@ -3,9 +3,9 @@ id: T-0394
 title: "UF-09 Back means Pause: a same-URL history guard turns Back in a running machine state into UF-09.9; Back while paused leaves; Back with a seam overlay open ends paused on UF-09.9; tighten the T-0303d Back row; plus the T-0438 comment fix"
 lane: web-feature:UF-09
 screens: [UF-09.9, UF-09.1, UF-09.2, UF-09.3, UF-09.4, UF-09.5, UF-09.6, UF-09.7, UF-09.8]
-decisions: [D-0066, D-0071, D-0086, D-0091, D-0103, D-0108, D-0110, D-0111, D-0123, D-0153, D-0162]
+decisions: [D-0066, D-0071, D-0086, D-0091, D-0103, D-0108, D-0110, D-0111, D-0123, D-0153, D-0162, D-0163]
 deps: [T-0304d, T-0303d, T-0415]
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by triage (TR-0038, D-0123 §3). Re-groomed 2026-10-03 by product-owner against main (T-0304g, T-0422, T-0435 merged; T-0415 in QA): Back with an overlay open is now exact (D-0162 §1), and T-0438 is folded in (D-0162 §2, AC-8). Build flow: wl-build-web. About ⅓ day. The spec is ready; the build waits for T-0415, which edits host.tsx and session.tsx. Start from a main that has it. -->
 
@@ -119,3 +119,10 @@ Tests for every AC pass, with the red runs recorded · the cached gate (D-0158):
 - Planted (backups, restored by `cp`): arm on every render → vitest 1 failed, e2e 3 failed (Back stays on guard); Back-while-paused does not leave → vitest 3 failed, e2e 1 failed (one more Back still on the URL); own fault, drop `pushGuard()` after the Back pause/close → vitest 7 failed.
 - Green: UF-09 vitest folder 55 files / 861 tests; e2e uf-09-focus + uf-08-setup 40 passed.
 - Gate after merge: typecheck, lint green; web test failed once on the ESLint-based `jsx-no-literals` rows (UF-09, UF-01, 6-7 s timeouts under load; each passes alone) and 214 files / 3161 tests passed on rerun. `test:repo-checks` 3 fail and `check-all` fails: `lane-path-not-owned` for `.squad/decisions/D-0163-...md` (lane `web-feature:UF-09` has no grant for that path on main). Needs the orchestrator/PO (grant or land the decision on main); not a code gap.
+
+### Accept log (2026-10-03, product-owner, HEAD b966107, clean, main merged)
+- Verdict: **done**. AC-1..AC-5 map to the `t0394.back.test.tsx` blocks (both values of each binary condition, host-level pair, overlay pairs, End REPLACE, unmount); AC-6 the two `uf-09-focus` rows (online, offline) plus the tightened `uf-08-setup` Back row and `startWorkout()`; AC-7 lint/import bans green, `git diff main...HEAD` touches no banned path; AC-8 `t0394.comments.test.ts`. Red on unfixed recorded by build and QA (16 vitest, 3 e2e); QA planted 3 faults, all red.
+- D-0163 (on main, amends D-0123 §3): a Back while paused calls `history.back()` once more so one Back leaves; matches AC-3 and the e2e row. Principle 1 holds: leaving a running workout now always goes through UF-09.9.
+- AC-8 note: the remaining "moves nothing" at `session.tsx:61` is the unrelated, correct `recordSet` List-view comment; the test is scoped to the plan-write sentence, which is the AC's intent.
+- T-0438 delivered by AC-8 (status set done in its file). Follow-ups in T-0462 (second Back cycle on Chromium, host-level test tightening).
+- check-all green.
