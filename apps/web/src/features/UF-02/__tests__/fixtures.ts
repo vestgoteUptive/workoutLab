@@ -288,3 +288,37 @@ export const W_R7E4: Workout = {
   ...W_R7E4_BASE,
   plan: { ...W_R7E4_BASE.plan, mainLiftId: "bench-press" },
 };
+
+// ---- T-0302b: UF-02.2 preview, a warm-up row over W-R7E4 ----
+
+/** Four `kind: "warmup"` library rows, for the preview's warm-up row (T-0302b). */
+export const WARMUP_L1: LibraryExercise[] = [
+  "arm-circle",
+  "leg-swing",
+  "cat-cow",
+  "jumping-jack",
+].map((id) => ({
+  id,
+  name: displayName(id),
+  kind: "warmup",
+  type: "isolation",
+  level: "beginner",
+  equipment: [],
+  areas: {},
+  timed: true,
+  defaultDurationS: 40,
+  incrementKg: 0,
+  externalLoad: false,
+}));
+
+/** The L1 library plus the four warm-up moves (T-0302b AC-2). */
+export const L1_WITH_WARMUP: LibraryExercise[] = [...L1, ...WARMUP_L1];
+
+/** `plan.warmup`: the four `WARMUP_L1` ids, each `WARMUP_MOVE_S` (40 s). */
+export const W_R7E4_WARMUP = WARMUP_L1.map((e) => ({ exerciseId: e.id, durationS: 40 }));
+
+/** W-R7E4 with a warm-up set (T-0302b AC-2): `totalS` includes it (1725 = 1545 + 180). */
+export const W_R7E4_WITH_WARMUP: Workout = {
+  ...W_R7E4,
+  plan: { ...W_R7E4.plan, warmup: W_R7E4_WARMUP },
+};

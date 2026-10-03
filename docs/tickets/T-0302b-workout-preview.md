@@ -147,3 +147,4 @@ commits start `T-0302b` and cite UF-02.2 (for example `T-0302b UF-02.2: workout 
   doesn't touch.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0302b.md` (D-0157).

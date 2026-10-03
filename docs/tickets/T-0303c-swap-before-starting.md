@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.3, UF-05.1, UF-08.4]
 decisions: [D-0065, D-0069, D-0071, D-0107, D-0109, D-0124, D-0142, D-0158, D-0168]
 deps: [T-0303b, T-0421]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner (D-0168 §2). Child of docs/tickets/T-0303-session-setup.md
 (parent AC-C1–C5). Build flow: wl-build-web. About ¼–⅓ day: the sheet, its ranking, chips, copy,
@@ -141,3 +141,4 @@ and cite UF-08.3 (for example `T-0303c UF-08.3: swap before starting mounts the 
   `ready-start.test.tsx`; don't run them together.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0303c.md` (D-0157).

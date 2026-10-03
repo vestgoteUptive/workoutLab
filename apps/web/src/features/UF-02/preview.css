@@ -1,0 +1,133 @@
+/* UF-02.2 Workout preview (T-0302b). Colours and fonts come only from @workoutlab/design-tokens
+ * (D-0019): there is no raw hex in this file. */
+
+.wl-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  font-family: var(--wl-font-body);
+  color: var(--wl-color-text);
+}
+
+.wl-preview__top {
+  display: flex;
+}
+
+/* NFR-A11Y-2: 44 × 44 CSS px. */
+.wl-preview__back {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 4px;
+  color: var(--wl-color-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wl-preview__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 28px;
+  line-height: 1.1;
+  color: var(--wl-color-text);
+}
+
+.wl-preview__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-preview__chip {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--wl-color-line-strong);
+  color: var(--wl-color-text);
+  font-size: 13px;
+}
+
+.wl-preview__row,
+.wl-preview__row--warmup {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--wl-color-line);
+}
+
+.wl-preview__row-name {
+  color: var(--wl-color-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wl-preview__row-detail {
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+}
+
+.wl-preview__row-backoff,
+.wl-preview__row-reason {
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+}
+
+.wl-preview__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-preview__empty,
+.wl-preview__no-plan {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  line-height: 1.4;
+}
+
+.wl-preview__skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-preview__bar {
+  display: block;
+  height: 16px;
+  border-radius: 6px;
+  background: var(--wl-color-surface-2);
+}
+
+.wl-preview__bar--short {
+  width: 60%;
+}
+
+/* NFR-A11Y-2: 44 × 44 CSS px. */
+.wl-preview__start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 54px;
+  padding: 0 16px;
+  border-radius: 14px;
+  background: var(--wl-color-accent);
+  color: var(--wl-color-on-accent);
+  font-weight: 700;
+  font-size: 16px;
+  text-decoration: none;
+}
+
+.wl-preview__start:hover {
+  background: var(--wl-color-accent-hover);
+}
