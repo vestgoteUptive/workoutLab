@@ -20,6 +20,11 @@ import {
   mockSupabaseData,
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
+import {
+  exerciseAreas as setupExerciseAreas,
+  exercises as setupExercises,
+  profile as setupProfile,
+} from "./fixtures/uf-04-library-data.js";
 
 const NOT_ON_DEVICE = "This workout isn't on this device";
 
@@ -665,5 +670,75 @@ test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
     const ended = await sessionRowFor(page, id);
     expect(ended.ended_at).not.toBeNull();
     expect(ended.started_at).toBe(startedAt);
+  });
+});
+
+// T-0394 AC-6 (D-0123 §3, D-0086, D-0091 §1): Back means Pause. The real flow from `/`: Start
+// workout → UF-08.1 → Suggest → Looks good → Start → UF-09. The describe's own mocks (registered
+// after the file's `beforeEach`, so they win) give the planner a library and full equipment.
+const SETUP_URL = /\/session\/[0-9a-f-]{36}$/;
+
+async function startFromHome(page: Page): Promise<void> {
+  const profileRow = { ...setupProfile, user_id: FAKE_USER_ID };
+  await mockSupabaseData(page, {
+    sets: [],
+    exercises: setupExercises,
+    exerciseAreas: setupExerciseAreas,
+    areaTargets: [
+      "chest",
+      "back",
+      "shoulders",
+      "arms",
+      "core",
+      "glutes",
+      "quads",
+      "hamstrings",
+      "calves",
+    ].map((area_id) => ({
+      area_id,
+      sets_per_14d: 16,
+      source: "default",
+      updated_at: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+    })),
+    profile: profileRow,
+  });
+  await mockProfilePresent(page, profileRow);
+  await page.goto("/");
+  await page.getByRole("link", { name: "Start workout" }).click();
+  await expect(page.locator('[data-screen-id="UF-08.1"]')).toBeVisible();
+  await page.getByRole("button", { name: "30 minutes" }).click();
+  await page.getByRole("button", { name: "Suggest my workout" }).click();
+  await page.getByRole("button", { name: "Looks good" }).click();
+  await page.getByRole("button", { name: "Start" }).click();
+  await expect(page).toHaveURL(SETUP_URL);
+  const screen = page.locator('[data-screen-id^="UF-09"]');
+  await expect(screen).toBeVisible();
+  // A user activation after the guard is armed, so Chromium keeps the entry (D-0123 §3 note).
+  await page.waitForFunction(() => history.state?.wlFocusGuard === true);
+  const before = await screen.getAttribute("data-screen-id");
+  await page.mouse.click(5, 300);
+  await expect(page.locator(`[data-screen-id="${before}"]`)).toBeVisible();
+}
+
+test.describe("T-0394 AC-6 Back means Pause", () => {
+  test("Start → Back shows UF-09.9 on the same URL; one more Back leaves", async ({ page }) => {
+    await startFromHome(page);
+    const url = page.url();
+    await page.goBack();
+    await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
+    expect(page.url()).toBe(url);
+    await page.goBack();
+    await expect(page).not.toHaveURL(SETUP_URL);
+    await expect(page.locator('[data-screen-id="UF-08.4"]')).toHaveCount(0);
+  });
+
+  test("offline the same", async ({ page, context }) => {
+    await startFromHome(page);
+    await precacheSettled(page);
+    await context.setOffline(true);
+    await page.mouse.click(5, 300);
+    await page.goBack();
+    await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
+    await expect(page).toHaveURL(SETUP_URL);
   });
 });

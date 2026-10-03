@@ -5,7 +5,7 @@ lane: web-shell
 screens: []
 decisions: [D-0164, D-0045, D-0111, D-0144, D-0162]
 deps: [T-0422]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0422 review. Split from T-0446 by lane (D-0164 §8). Build flow: wl-build-web. About ⅓ day. It touches app/App.tsx, so it runs the whole web e2e. -->
 
@@ -103,3 +103,4 @@ contracts unchanged · commits start `T-0459`.
   the seam zone.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0459.md` (D-0157).

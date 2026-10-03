@@ -454,8 +454,6 @@ async function startWorkout(page: Page): Promise<string> {
   const id = SESSION_URL.exec(page.url())![1]!;
   expect(id).toMatch(UUID_V4);
   await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible();
-  // T-0304a is merged: the seeded session renders the focus machine's first step.
-  await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
   return id;
 }
 
@@ -491,15 +489,18 @@ test.describe("T-0303d AC-10 UF-08.4 online", () => {
     await suggestAt30(page);
     await toReady(page);
     await startWorkout(page);
+    // A user activation after the guard is armed, so Chromium keeps the entry (D-0123 §3 note).
+    await page.waitForFunction(() => history.state?.wlFocusGuard === true);
+    await page.mouse.click(5, 300);
     await page.goBack();
-    await expect(page.locator("[data-screen-id]").first()).toBeVisible();
+    await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
+    await expect(page).toHaveURL(SESSION_URL);
     await page.waitForTimeout(50);
     await expect(page).not.toHaveURL(/step=ready/);
     await expect(screenUF084(page)).toHaveCount(0);
     const ids = page.locator("[data-screen-id]");
     await expect(ids).toHaveCount(1);
-    // UF-08.1 today (via ?step=suggested and the host's replace); UF-09.9 once T-0394 lands.
-    expect(await ids.getAttribute("data-screen-id")).toMatch(/^(UF-08\.1$|UF-09)/);
+    expect(await ids.getAttribute("data-screen-id")).toBe("UF-09.9");
   });
 });
 

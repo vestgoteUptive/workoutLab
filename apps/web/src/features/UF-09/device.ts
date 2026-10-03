@@ -55,9 +55,45 @@ function audioContextCtor(): AudioContextCtor | null {
   }
 }
 
+/** iOS leaves a context `"interrupted"` after a call or Siri; `"suspended"` is the autoplay state
+ *  (D-0164 §5). Both are resumed; `"running"` and `"closed"` are left alone. */
+function resumeIfIdle(ctx: AudioContext): void {
+  try {
+    const state = ctx.state as string;
+    if (state === "suspended" || state === "interrupted") quietly(() => ctx.resume());
+  } catch {
+    // A broken context does nothing.
+  }
+}
+
+/** Stops queued and speaking utterances (D-0164 §5). Never throws. */
+function cancelSpeech(): void {
+  try {
+    const synth = window.speechSynthesis;
+    if (synth && typeof synth.cancel === "function") synth.cancel();
+  } catch {
+    // No voice on this device.
+  }
+}
+
+/** iOS Safari speaks nothing until `speak()` has run inside a user activation (D-0164 §5): one
+ *  silent empty utterance unlocks the timer-driven countdown. */
+function primeSpeech(): void {
+  try {
+    const synth = window.speechSynthesis;
+    const Utterance = window.SpeechSynthesisUtterance;
+    if (!synth || typeof Utterance !== "function") return;
+    const utterance = new Utterance("");
+    utterance.volume = 0;
+    synth.speak(utterance);
+  } catch {
+    // No voice on this device.
+  }
+}
+
 function playTone(ctx: AudioContext): void {
   try {
-    if (ctx.state === "suspended") quietly(() => ctx.resume());
+    resumeIfIdle(ctx);
     const osc = ctx.createOscillator();
     osc.frequency.value = TONE_HZ;
     if (typeof ctx.createGain === "function") {
@@ -177,6 +213,8 @@ export function useFocusDevice(key: string | null, state: FocusState, nowMs: num
   const [prefs] = useState<FocusPrefs>(readFocusPrefs);
   const audio = useRef<AudioContext | null>(null);
   const track = useRef<CueTrack>(NO_TRACK);
+  const lastPhase = useRef<FocusState["phase"] | null>(null);
+  const primed = useRef(false);
 
   useWakeLock(prefs.keepAwake && state.phase !== "done");
 
@@ -185,7 +223,9 @@ export function useFocusDevice(key: string | null, state: FocusState, nowMs: num
       const ctx = audio.current;
       audio.current = null;
       if (ctx) quietly(() => ctx.close());
+      if (prefs.voice) cancelSpeech();
     },
+    // prefs are read once per mount (D-0119 §6)
     [],
   );
 
@@ -207,7 +247,11 @@ export function useFocusDevice(key: string | null, state: FocusState, nowMs: num
   const device = useMemo<FocusDevice>(
     () => ({
       onGesture() {
-        if (!prefs.sound || audio.current) return;
+        if (!prefs.sound) return;
+        if (audio.current) {
+          resumeIfIdle(audio.current);
+          return;
+        }
         const Ctor = audioContextCtor();
         if (!Ctor) return;
         try {
@@ -217,12 +261,20 @@ export function useFocusDevice(key: string | null, state: FocusState, nowMs: num
         }
       },
       onActivation() {
-        const ctx = audio.current;
-        if (ctx?.state === "suspended") quietly(() => ctx.resume());
+        if (prefs.voice && !primed.current) {
+          primed.current = true;
+          primeSpeech();
+        }
+        if (audio.current) resumeIfIdle(audio.current);
       },
       observe(timerKey, current, atMs) {
         // A paused workout neither observes nor fires (D-0119 §7); Resume carries on.
-        if (current.phase === "paused") return;
+        const before = lastPhase.current;
+        lastPhase.current = current.phase;
+        if (current.phase === "paused") {
+          if (prefs.voice && before !== null && before !== "paused") cancelSpeech();
+          return;
+        }
         const left = secondsLeft(current, atMs);
         const next = observeCues(track.current, {
           key: left === null ? null : timerKey,

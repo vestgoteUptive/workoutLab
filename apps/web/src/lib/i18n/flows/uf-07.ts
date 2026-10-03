@@ -24,6 +24,10 @@ export const uf07 = {
   alreadyAdded: "Added",
   limitReached: "Up to 8 exercises",
   noMatch: (query: string) => `No exercises match "${query}"`,
+  loadFailed: "Couldn't read your routines on this device.",
+  backToPlan: "Back to Plan",
+  libraryEmpty:
+    "The exercise library isn't on this device yet. Go online, then open this screen again.",
   progression:
     "Double progression. When every set reaches the top of its rep range, the weight goes up next time. After a long break or two short sessions in a row, it steps back.",
   save: "Save",

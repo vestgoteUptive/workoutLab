@@ -171,6 +171,24 @@ test("UF-07.1 the delete confirm traps Tab and inerts the form; focus survives a
   ).toBeFocused();
 });
 
+test("UF-07.1 going offline with focus on Delete moves focus to Keep routine (T-0454)", async ({
+  page,
+  context,
+}) => {
+  await openSignedIn(page, `/plan/routines/${ROUTINE_ID}`);
+  await expect(page.getByText("3. Leg curl (machine)")).toBeVisible();
+  await page.getByRole("button", { name: "Delete routine" }).click();
+  await page.keyboard.press("Shift+Tab");
+  await expect(page.getByRole("button", { name: "Delete", exact: true })).toBeFocused();
+  await context.setOffline(true);
+  const keep = page.getByRole("button", { name: "Keep routine" });
+  await expect(keep).toBeFocused();
+  for (let i = 0; i < 3; i++) {
+    await page.keyboard.press("Tab");
+    await expect(keep).toBeFocused();
+  }
+});
+
 test.describe("AC-A14 a11y", () => {
   async function audit(page: Page) {
     const results = await new AxeBuilder({ page }).analyze();

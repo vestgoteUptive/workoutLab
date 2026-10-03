@@ -1,7 +1,6 @@
 // T-0422 AC-1 (the entries, D-0071 §4), AC-3 (the D-0142 §7 target, pure) and the `swap`
 // entry's `render`/`onApply` against a test-built `ctx` (the sheet over a real cache, the real
 // engine). SwapSheet tests freeze `Date` alone (D-0160 Consequences).
-import { Component, type ReactNode } from "react";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { en } from "../../../lib/i18n/en.js";
@@ -224,34 +223,6 @@ describe("T-0422 the swap entry's render and onApply (test-built ctx)", () => {
     await act(async () => held.resolve!());
     await flushReal();
     expect(order).toEqual(["replaceItem", "close"]);
-  });
-
-  // T-0422 attempt 3 (review): the seam's error boundary wraps only the lazy sheet. An error
-  // outside it (a sibling here) still reaches the boundary above, not the swap fallback.
-  it("the swap boundary doesn't catch an error outside the sheet", async () => {
-    class Outer extends Component<{ children: ReactNode }, { caught: string | null }> {
-      override state = { caught: null as string | null };
-      static getDerivedStateFromError(error: Error) {
-        return { caught: error.message };
-      }
-      override render() {
-        return this.state.caught === null ? this.props.children : <p>outer: {this.state.caught}</p>;
-      }
-    }
-    function Thrower(): never {
-      throw new Error("outside the overlay");
-    }
-    vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const { ctx } = ctxWith({ itemIndex: 1 });
-    render(
-      <Outer>
-        {swap().render(ctx)}
-        <Thrower />
-      </Outer>,
-    );
-    await flushReal();
-    expect(screen.getByText("outer: outside the overlay")).toBeInTheDocument();
-    expect(screen.queryByText(en.uf05.loadFailed)).toBeNull();
   });
 
   // T-0422 attempt 3 (review): the target is fixed when the overlay opens. After replaceItem

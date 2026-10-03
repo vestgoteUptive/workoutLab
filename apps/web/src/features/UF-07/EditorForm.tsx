@@ -12,6 +12,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
   const addRef = useRef<HTMLButtonElement | null>(null);
   const keepRef = useRef<HTMLButtonElement | null>(null);
   const deleteRef = useRef<HTMLButtonElement | null>(null);
+  const confirmBtnRef = useRef<HTMLButtonElement | null>(null);
   const wasPickerOpen = useRef(false);
   const wasConfirmOpen = useRef(false);
 
@@ -26,6 +27,17 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
     else if (wasConfirmOpen.current) deleteRef.current?.focus();
     wasConfirmOpen.current = confirmOpen;
   }, [confirmOpen]);
+
+  // D-0164 §4: Delete goes disabled offline. A disabled button can't keep focus (Chromium drops
+  // it to <body>, where the Tab trap never sees the key), so it moves to Keep routine.
+  const { online } = editor;
+  useLayoutEffect(() => {
+    if (!confirmOpen || online) return;
+    const at = document.activeElement;
+    if (at === confirmBtnRef.current || at === document.body || at === null) {
+      keepRef.current?.focus();
+    }
+  }, [confirmOpen, online]);
 
   // D-0162 §4: the button that was pressed has left the DOM or gone disabled, so focus is put
   // on a control that is still there. The `items` dependency is the re-render after the change.
@@ -55,8 +67,14 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
     ).filter((b) => !b.disabled);
     if (enabled.length === 0) return;
     const at = enabled.indexOf(document.activeElement as HTMLButtonElement);
-    const step = event.shiftKey ? -1 : 1;
-    enabled[(at + step + enabled.length) % enabled.length]?.focus();
+    // From no enabled button (the dialog itself, or <body>): Tab -> first, Shift+Tab -> last.
+    const next =
+      at === -1
+        ? event.shiftKey
+          ? enabled.length - 1
+          : 0
+        : (at + (event.shiftKey ? -1 : 1) + enabled.length) % enabled.length;
+    enabled[next]?.focus();
   };
 
   const onSubmit = (event: FormEvent) => {
@@ -153,7 +171,9 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
               }}
             />
             {editor.full ? <p className="wl-routine-editor__hint">{t.limitReached}</p> : null}
-            {editor.pickerRows.length === 0 ? (
+            {editor.libraryEmpty ? (
+              <p className="wl-routine-editor__hint">{t.libraryEmpty}</p>
+            ) : editor.pickerRows.length === 0 ? (
               <p className="wl-routine-editor__hint">{t.noMatch(editor.query.trim())}</p>
             ) : (
               <ul className="wl-routine-editor__matches">
@@ -226,6 +246,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
         <div
           role="dialog"
           aria-modal="true"
+          tabIndex={-1}
           aria-labelledby="wl-routine-delete-title"
           className="wl-routine-editor__dialog"
           onKeyDown={(event) => {
@@ -235,6 +256,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
         >
           <h2 id="wl-routine-delete-title">{t.deleteTitle(editor.loadedName)}</h2>
           <button
+            ref={confirmBtnRef}
             type="button"
             data-variant="danger"
             disabled={!editor.online}
