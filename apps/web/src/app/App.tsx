@@ -94,7 +94,7 @@ export function Shell() {
             route.guard,
             applyProfileGate(
               route,
-              <RouteBoundary key={route.path}>
+              <RouteBoundary key={route.path} resetKey={location.pathname}>
                 <Suspense fallback={null}>{lazyElement}</Suspense>
               </RouteBoundary>,
             ),

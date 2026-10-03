@@ -30,15 +30,33 @@ const buttonStyle: CSSProperties = {
   cursor: "pointer",
 };
 
-interface State {
-  failed: boolean;
+interface Props {
+  children: ReactNode;
+  /** When this changes (the pathname), a failed boundary clears and tries its children again. */
+  resetKey?: string;
 }
 
-export class RouteBoundary extends Component<{ children: ReactNode }, State> {
-  override state: State = { failed: false };
+interface State {
+  failed: boolean;
+  resetKey: string | undefined;
+}
 
-  static getDerivedStateFromError(): State {
+// The fallback's one action takes focus when it mounts, so a keyboard or screen-reader user
+// does not have to hunt for it (D-0167 §5).
+const focusOnMount = (el: HTMLButtonElement | null): void => el?.focus();
+
+export class RouteBoundary extends Component<Props, State> {
+  override state: State = { failed: false, resetKey: this.props.resetKey };
+
+  static getDerivedStateFromError(): Partial<State> {
     return { failed: true };
+  }
+
+  // D-0167 §5: a render error on one /library/:id must not stick across ids. The boundary stays
+  // keyed by route pattern (a working route keeps its instance); only its failed state resets.
+  static getDerivedStateFromProps(props: Props, state: State): Partial<State> | null {
+    if (props.resetKey === state.resetKey) return null;
+    return { resetKey: props.resetKey, failed: false };
   }
 
   override componentDidCatch(_error: Error, _info: ErrorInfo): void {
@@ -50,7 +68,12 @@ export class RouteBoundary extends Component<{ children: ReactNode }, State> {
     return (
       <div role="alert" style={boxStyle}>
         <p style={{ margin: 0 }}>{en.routeError.message}</p>
-        <button type="button" style={buttonStyle} onClick={() => window.location.reload()}>
+        <button
+          type="button"
+          style={buttonStyle}
+          ref={focusOnMount}
+          onClick={() => window.location.reload()}
+        >
           {en.routeError.reload}
         </button>
       </div>

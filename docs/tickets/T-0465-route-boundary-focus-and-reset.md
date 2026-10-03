@@ -90,3 +90,8 @@ contracts unchanged · commits start `T-0465`.
     e2e run shares the machine's test lock with every other e2e run.
 
 ## Build / accept log
+- Build: `RouteBoundary` takes `resetKey` (getDerivedStateFromProps clears `failed` on change) and focuses Reload through a ref callback; `App.tsx` passes `resetKey={location.pathname}`, key stays `route.path`. Tests: `app/__tests__/route-boundary.t0465.test.tsx`.
+- AC→test: AC-1 focus + pair (first two tests), AC-2 + chunk pair (3rd/4th), AC-3 (5th), AC-4 axe (6th); T-0459 and the other listed suites run unedited in the gate.
+- Red on unfixed (main with T-0459): AC-1 (focus on body), AC-2 (fallback stuck on /library/good), AC-2 pair (focus) failed 3/6.
+- Planted fault: `key={location.pathname}` on the boundary turned AC-3 red (1 failed, 5 passed); restored from backup copy.
+- Gate: typecheck/lint/test (19 tasks), test:repo-checks, format:check, check-all, check:size green; whole web e2e 196 passed.
