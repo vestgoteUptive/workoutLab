@@ -133,7 +133,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0445 | Flake: UF-08 `ready-start.test.tsx` 'retry: the second tap…' failed once in a full -w gate (T-0422 rework, 2026-10-02), then passed 3× alone and in a rerun. Reproduce under load (--repeat / concurrency), find the timing assumption, fix with a real wait | web-feature:UF-08 | — | todo | wl-build-web |
 | T-0449 | OfflineStatus formatTime: use hour '2-digit' if '08:10' is the intended form (D-0084 consequence) (T-0307b review) | web-shell | — | todo | wl-build-web |
 | T-0455 | e2e guard polish (T-0436 review): check backstop hits after in-flight requests settle in the supabaseGuard auto fixture (a late read is missed today); source-rules match any `.allowBackstop(`/`.allow(` receiver, not only the guard names; make the test.fail() backstop tests assert the failure is a backstop hit ; guard-source-check should also flag `export … from` and dynamic `import("@playwright/test")` value use (T-0356 review) | qa | T-0436 | todo | wl-build-qa |
-| T-0457 | UF-03.1 List view: + Add set (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | doing | wl-build-web |
 | T-0458 | UF-03.1 List view e2e: the Playwright spec T-0416 deferred, incl. NFR-OFF-2 List view logging (split from T-0417, D-0164) | web-feature:UF-03 | T-0417 | ready | wl-build-web |
 | T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | todo | wl-build-web |
 | T-0463 | UF-09 seams: retry a failed chunk load for the how-to (UF-04) and list-view (UF-03.1) seams too — reuse retryableLazy and onRetry/onFailed, set chrome.retryLabel; add a test that a parent re-render of SwapOverlay neither re-imports nor remounts the sheet (QA fault F3 survived) (T-0451 follow-up) | web-feature:UF-09 | T-0451, T-0446 | doing | wl-build-web |
@@ -144,6 +143,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0470 | UF-11.1 CheckinCard writes: Accept/Keep, first-shown insert, offline (split from T-0308c, D-0168) | web-feature:UF-11 | T-0308c | todo | wl-build-web |
 | T-0471 | UF-11.1 CheckinCard mounts on UF-11.2 + UF-02.1 (slots.tsx) and e2e (split from T-0308c, D-0168) | web-feature:UF-11 | T-0470 | todo | wl-build-web |
 | T-0472 | UF-03.1: after a reload, unchecking a logged added row removes the row and drops focus to body — keep the row or move focus to '+ Add set' (T-0457 review) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
+| T-0473 | UF-03.1 AC-6: add a vitest that pressing + Add set on a timed item moves focus to the new row's seconds field (untested; T-0457 accept) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
