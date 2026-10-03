@@ -77,7 +77,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | doing | wl-build-web |
-| T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0421 | doing | wl-build-web |
+| T-0476 | UF-08.3 polish (D-0171, accept follow-up): a swap's "Swapped to save time" reason is proven only at the data layer — itemReasonLine's two-reason cap hides it from the UI; let it surface, or lift the cap by one | web-shell | T-0303c | todo | wl-build-web |
 | T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | doing | wl-build-web |
 | T-0216 | Account settings: "Edit equipment" checklist of the 10 vocabulary items, writing profiles.equipment[] (D-0061 §3; UF-01.3 keeps the 3 profiles) | web-feature:UF-11 | T-0310d | todo | wl-build-web |
 | T-0313 | AC-D11 hardening: dynamic `import()` of components/body-map from UF-03/08/09 bypasses no-restricted-imports; add a no-restricted-syntax rule on ImportExpression + test — T-0300d follow-up Also cover the D-0071 §9 patterns (UF-02/06/07/10/11 from UF-03/04/05/08/09; deep feature imports). | web-shell | T-0300d | todo | wl-build-web |

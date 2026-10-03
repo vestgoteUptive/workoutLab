@@ -209,6 +209,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0310d | UF-11.4 Account settings at /plan/account: export + delete with confirm, /welcome notice (D-0136) | web-feature:UF-11 | T-0308b, T-0310b, T-0310c | done | wl-build-web |
 | T-0463 | UF-09 seams: retry a failed chunk load for the how-to (UF-04) and list-view (UF-03.1) seams too — reuse retryableLazy and onRetry/onFailed, set chrome.retryLabel; add a test that a parent re-render of SwapOverlay neither re-imports nor remounts the sheet (QA fault F3 survived) (T-0451 follow-up) | web-feature:UF-09 | T-0451, T-0446 | done | wl-build-web |
 | T-0474 | UF-09 device.ts reads focus prefs from the new UF-08 leaf entry `index.prefs.ts`, so focus mode no longer evaluates SessionSetup; must merge before T-0303c (TR-0044, D-0170) | web-feature:UF-09 | — | done | wl-build-web |
+| T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0421 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
