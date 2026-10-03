@@ -136,3 +136,8 @@ the screen (for example `T-0304h UF-09.5: rest survives a reload`).
 - AC-1 -> "T-0304h AC-1 mid-rest" and "mid-pause", each online and offline (4 tests; rest ±1.2 s of the wall clock, pause ±1 s). AC-2 -> "T-0304h AC-2 the walk" (Tab/Enter/Space only; focus on every primary, targets ≥ 44 (Done set ≥ 200), axe on 09.1/.2/.6/.3/.4/.5/.9, session row `ended_at` + `started_at` in IndexedDB). AC-3 -> `expectOneScreen` (one `[data-screen-id]`, no navigation) at every step in all rows.
 - Planted faults (backup copy, restored with `cp`, each red alone): persist.ts restore resets the timer start -> mid-rest red (3.1 s off); timer.ts `elapsedS` ignores `pausedAtMs` -> mid-pause red (3 s growth); get-ready.tsx without the initial focus -> the walk red at "Start now" `toBeFocused`; host.tsx extra `data-screen-id` on UF-09.9 -> the walk red at the count assert. (A first stacked run was discarded; faults re-run one at a time.)
 - Results: new spec 5/5, `--repeat-each=3` 15/15; whole web e2e 202/202.
+
+### QA log (2026-10-03, HEAD b3689f4, tree clean before and after)
+- AC-1 -> "T-0304h AC-1 mid-rest"/"mid-pause" x online/offline. AC-2 -> "T-0304h AC-2 the walk" (focus, 44 px, axe, session row). AC-3 -> `expectOneScreen` at every step.
+- Faults, each alone, restored with `cp`: persist.ts restore resets timer start -> 2 failed (mid-rest, 3.1 s off); second `data-screen-id` on UF-09.9 -> 3 failed (count 2); own: no initial focus on UF-09.6 "I'm ready" -> walk red (`toBeFocused`, inactive).
+- Green: spec `--repeat-each=5` 25/25; whole web e2e 202/202; cached gate (typecheck lint test) green; `test:repo-checks` 159/0; format:check clean; check-all rc 0.
