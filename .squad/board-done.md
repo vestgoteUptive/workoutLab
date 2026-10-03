@@ -193,6 +193,9 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0441 | Vitest leaks a /tmp/<21-char id>/{client,ssr} module-transform dir per run (about 120/h, 12 MB each; 3 GB on 2026-10-02 filled the /tmp tmpfs quota → EDQUOT and Chromium ERR_INSUFFICIENT_RESOURCES). Find the source (vitest version / config), clean it up or point it at a repo cache dir, and add a check | infra | — | done | wl-build-infra |
 | T-0451 | UF-05 swap overlay: offer a retry after a failed chunk load (React.lazy caches the rejection, so every reopen shows loadFailed until reload); drop the T-0422 boundary 'scope' test that proves nothing; drop the stale 'TR-0043: red until it is resolved' comment in t0422.host.test.tsx (T-0422 re-review and QA) | web-feature:UF-09 | T-0422 | done | wl-build-web |
 | T-0454 | UF-07.1: an unreadable cache (loadRoutines throws) leaves only the <h1> with no way out on a route without a tab bar — show a message and a link back to /plan; with an empty library cache the picker reads 'No exercises match ""' (T-0308a review) | web-feature:UF-07 | T-0308a | done | wl-build-web |
+| T-0448 | UF-09 device polish: speechSynthesis.cancel() on unmount and PAUSE; prime speechSynthesis inside the host gesture (iOS Safari); resume an AudioContext whose state is 'interrupted', not only 'suspended' (T-0304g review) | web-feature:UF-09 | T-0304g | done | wl-build-web |
+| T-0394 | UF-09 Back means Pause: same-URL history guard turns Back in a running state into UF-09.9; Back while paused leaves; Back closes a seam overlay; tighten the T-0303d Back row (D-0123) | web-feature:UF-09 | T-0304d, T-0303d, T-0415 | done | wl-build-web |
+| T-0432 | After T-0427: a source check in fixture-guard.spec.ts that every tests/e2e/*.spec.ts imports the guarded fixture (T-0427 groom) | qa | T-0427 | folded→T-0356 | wl-build-qa |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |

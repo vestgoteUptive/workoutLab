@@ -146,8 +146,9 @@ export interface FocusActionDeps {
 /**
  * The session-row writes that must not interleave (T-0304d rework, D-0071 §6). `finish()` waits
  * for a pending plan write before it reads the row, so the ended row is always the last write and
- * carries every earlier one. A plan write that resolves once `finish()` has started moves nothing,
- * and one asked for after that writes nothing.
+ * carries every earlier one. A plan write that resolves once `finish()` has started is held in
+ * `landed`: a failed finish applies it, a finish that succeeds drops it (D-0153 §6). One asked
+ * for after that writes nothing.
  */
 export interface SessionWrites {
   plan: Promise<void> | null;
