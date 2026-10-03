@@ -127,3 +127,16 @@ isn't needed) · contracts unchanged · commits start `T-0454` and cite UF-07.1.
   stays on Delete, not Keep routine). AC-6 proves the Chromium case, where focus falls to `<body>`.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-03)
+Start: tree clean, HEAD 56ab6a9. Changed `use-routine-editor.ts` (`loadFailed`, `libraryEmpty`), `index.tsx`, `EditorForm.tsx` (focus effect, `tabIndex=-1`, trap from no button, empty-library copy), `uf-07.ts` (3 keys), one e2e row.
+AC→test (`__tests__/t0454.test.tsx`, `t0454.a11y.test.tsx`, e2e row in `uf-07-routines.spec.ts`):
+- AC-1: "AC-1 unreadable cache" (online, offline, after refresh, two pairs).
+- AC-2: "AC-2 /new ignores a throwing routines read".
+- AC-3: "AC-3 empty library" (empty, throwing, warm-ups only, pair "zzz").
+- AC-4: "AC-4 offline with focus on Delete" (+ pair).
+- AC-5: "AC-5 Tab from no button" (online, offline).
+- AC-6: e2e "going offline with focus on Delete moves focus to Keep routine (T-0454)"; 6/6 green in Chromium.
+- AC-7: "AC-7 axe" (2 tests); no existing UF-07 test edited; all 97 UF-07 tests green.
+Red on unfixed code (product files restored from HEAD, tests kept): 10 of 16 failed: AC-1 x3 (no alert/link), AC-3 x3 (`No exercises match ""`), AC-4 (focus left on Delete), AC-5 online (Shift+Tab landed wrong), both axe tests. The 6 passing were the pairs and AC-2 and AC-5 offline.
+Planted faults (backup in scratchpad, restored by `cp`): focus effect disabled -> AC-4 red; `libraryEmpty` = `library.length === 0` -> warm-ups-only red. Both caught.
