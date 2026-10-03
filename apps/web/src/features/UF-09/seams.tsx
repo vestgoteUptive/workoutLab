@@ -1,7 +1,7 @@
 // UF-09 seam registry (T-0304e, D-0071 §4, D-0111 §1). Other flows show their UI inside focus
 // mode only through these two arrays; each seam ticket's one UF-09 grant is this file:
 // - T-0306b adds `swap` to both arrays (T-0422, D-0142 §7 §8);
-// - T-0305a adds `how-to` and `list-view` to `pauseSeamActions`.
+// - T-0305a (T-0416) adds `how-to` and `list-view` to `pauseSeamActions`.
 // An entry's overlay replaces the current screen while it is open (principle 1). It gets the
 // session through `ctx` and never imports UF-09, so there are no import cycles.
 import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
@@ -21,10 +21,16 @@ export interface SeamAction {
 }
 
 // A seam's label is its own flow's string (D-0071 §4); this file is that flow's grant in UF-09.
-const { uf05 } = en;
+const { uf05, uf03 } = en;
 
 // UF-05.1 is loaded on first open (D-0142 §8): a dynamic import of the flow's `index`.
 const SwapSheet = lazy(() => import("../UF-05/index.js").then((m) => ({ default: m.SwapSheet })));
+
+// UF-03.1 and the how-to are loaded on first open too (D-0142 §8; T-0416).
+const ListView = lazy(() => import("../UF-03/index.js").then((m) => ({ default: m.ListView })));
+const ExerciseHowTo = lazy(() =>
+  import("../UF-04/index.js").then((m) => ({ default: m.ExerciseHowTo })),
+);
 
 type SwapTargetInput = Pick<FocusSession, "plan" | "loggedSets" | "currentItemIndex" | "state">;
 
@@ -133,8 +139,39 @@ const swap: SeamAction = {
   keepsClockRunning: false,
 };
 
-/** Rendered on UF-09.9 Paused. T-0305a adds `how-to` and `list-view`. */
-export const pauseSeamActions: SeamAction[] = [swap];
+/** The how-to dialog for the current item's exercise (T-0416, D-0071 §4). While it loads the
+ *  overlay is empty (a cached chunk, no network read of its own). */
+function HowToOverlay({ ctx }: { ctx: FocusSession }) {
+  const exerciseId = ctx.plan.items[ctx.currentItemIndex]?.exerciseId ?? "";
+  return (
+    <Suspense fallback={null}>
+      <ExerciseHowTo exerciseId={exerciseId} onClose={ctx.close} />
+    </Suspense>
+  );
+}
+
+/** UF-04's how-to over the paused workout: the workout stays paused (D-0071 §4). */
+const howTo: SeamAction = {
+  id: "how-to",
+  label: uf03.howToAction,
+  render: (ctx) => <HowToOverlay ctx={ctx} />,
+  keepsClockRunning: false,
+};
+
+/** UF-03.1 List view (T-0416): the clocks keep running and the check point stays `"next"`. */
+const listView: SeamAction = {
+  id: "list-view",
+  label: uf03.listViewAction,
+  render: (ctx) => (
+    <Suspense fallback={null}>
+      <ListView ctx={ctx} />
+    </Suspense>
+  ),
+  keepsClockRunning: true,
+};
+
+/** Rendered on UF-09.9 Paused. */
+export const pauseSeamActions: SeamAction[] = [swap, howTo, listView];
 
 /** Rendered on UF-09.6 Next exercise. */
 export const nextSeamActions: SeamAction[] = [swap];

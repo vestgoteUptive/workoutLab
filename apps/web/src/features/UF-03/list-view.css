@@ -1,0 +1,138 @@
+/* UF-03.1 List view (T-0416). Colours and fonts come only from @workoutlab/design-tokens
+ * (D-0019): there is no raw hex in this file. */
+
+.wl-uf03-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  font-family: var(--wl-font-body);
+  color: var(--wl-color-text);
+  background: var(--wl-color-bg);
+}
+
+.wl-uf03-list__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 28px;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.wl-uf03-list__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.wl-uf03-list__header p {
+  margin: 0;
+  flex: 1 1 100%;
+}
+
+.wl-uf03-list__button,
+.wl-uf03-list__primary,
+.wl-uf03-list__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  font: inherit;
+  cursor: pointer;
+  border: 1px solid var(--wl-color-line-strong);
+  background: transparent;
+  color: var(--wl-color-text);
+}
+
+.wl-uf03-list__primary {
+  border: 0;
+  background: var(--wl-color-accent);
+  color: var(--wl-color-on-accent);
+}
+
+.wl-uf03-list__button:focus-visible,
+.wl-uf03-list__primary:focus-visible,
+.wl-uf03-list__toggle:focus-visible,
+.wl-uf03-list input:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-uf03-list__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 12px;
+  background: var(--wl-color-surface);
+}
+
+.wl-uf03-list__name {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 22px;
+}
+
+.wl-uf03-list__toggle {
+  width: 100%;
+  justify-content: space-between;
+  border: 0;
+  padding: 0;
+  font: inherit;
+}
+
+.wl-uf03-list__target,
+.wl-uf03-list__cue {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf03-list__status {
+  color: var(--wl-color-warn);
+}
+
+.wl-uf03-list__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.wl-uf03-list__table th,
+.wl-uf03-list__table td {
+  padding: 4px;
+  text-align: left;
+  color: var(--wl-color-text);
+}
+
+.wl-uf03-list__table thead th {
+  color: var(--wl-color-text-muted);
+  font-weight: 500;
+}
+
+.wl-uf03-list__table input[type="text"] {
+  box-sizing: border-box;
+  width: 64px;
+  min-height: 44px;
+  padding: 0 8px;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+  background: var(--wl-color-surface-2);
+  color: var(--wl-color-text);
+  font: inherit;
+}
+
+.wl-uf03-list__table input[type="checkbox"] {
+  width: 28px;
+  height: 28px;
+  accent-color: var(--wl-color-accent);
+}
+
+.wl-uf03-list__unit {
+  margin-left: 4px;
+  color: var(--wl-color-text-muted);
+}

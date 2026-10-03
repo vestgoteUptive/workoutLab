@@ -124,3 +124,27 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
   - **With T-0435 and T-0424, allowed by files.** They edit `session.tsx` and `timed-set.test.tsx`.
   - **With T-0436 (qa), not at once.** T-0436 may edit `uf-09-focus.spec.ts` to add a mock. Whichever lands second merges `main` first.
 - **E2e runs:** use `TMPDIR=$HOME/.cache/wl-pw-tmp` until T-0440 lands (state.md trap).
+
+## Build / accept log
+
+**Build (frontend-dev, 2026-10-03).** Start: `git status` clean, HEAD 94ebcfd (main with T-0422 and T-0433).
+- **Code:** `features/UF-03/ListView.tsx`, `list-data.ts`, `list-view.css`; `ListView` exported from `index.tsx`; strings in `flows/uf-03.ts`; `seams.tsx` gets `how-to` (keepsClockRunning false) and `list-view` (true), both `lazy()`. Rows read `item.prefill` / `item.backoff` and `ctx.loggedSets`; Previous is display only (`previousSets`: engine `normalizeHistory` + `isHardSet`, latest session, tie to smaller sessionId, own session excluded). The set fields and toggles are read-only (logging is T-0417).
+- **D-0142 §6 named pin changes (UF-09 only):** `seams.test.tsx` AC-9 arrays (and the keepsClockRunning flags, `pauseSeamActions` swap, how-to, list-view; `nextSeamActions` swap) and its UF-09.9 module-arrays row; `paused.test.tsx` the AC-6 actions row, the AC-7 two "Skip hidden" rows, the AC-8 Cancel row, and "the pair" row (each +How to, List view); `host.chrome.test.tsx` the two paused button pins (4 → 6, 3 → 5); `tests/e2e/uf-09-focus.spec.ts` UF-09.9 button count 3 → 5. `next-exercise.test.tsx` (UF-09.6) unchanged.
+- **AC → test:**
+  - AC-1 → `list-view.host.test.tsx` (order, without Skip, keepsClockRunning flags), `seams.test.tsx`/`paused.test.tsx` pins, `exports-and-lint.test.ts` (no UF-09 import, static or dynamic, with contrast). The "diff touches only seams.tsx" PR check: `git diff --stat main -- apps/web/src/features/UF-09` lists `seams.tsx` plus the pin tests above only.
+  - AC-2 → `list-view.host.test.tsx` (entry: one screen id UF-03.1, location S1, stored phase left paused; exit: UF-09.3 "Set 2 of 4"; time check never shown), `list-view.test.tsx` + host (0 refresh calls after 50 ms).
+  - AC-3 → `list-view.test.tsx` AC-3 (7 tests: rows from prefill, Target pair, no W, back-off and its pair, logged rows, timed and bodyweight, sv-SE "97,5", cue).
+  - AC-4 → `list-view.test.tsx` AC-4 (S0 + warm-up, most recent, tie, none and back-off "—", own session, bodyweight "12", timed "45 s").
+  - AC-5 → `list-view.test.tsx` AC-5 (0 / 3, 1 / 3, at most one expanded, aria-expanded).
+  - AC-6 → `list-view.host.test.tsx` (from UF-09.9: dialog name, state deep-equal after 10 min, Close returns; leg-curl case), `list-view.test.tsx` (from the List view, focus back on the button).
+  - AC-7 → `list-view.test.tsx` (elapsed 23:10 / 0:59, Focus mode, confirm + Keep going, single call while pending, rejection polite and retry), `list-view.host.test.tsx` (Finish → UF-03.3 at `/session/S1/summary`, `ended_at` set).
+  - AC-8 → `principle-1.test.tsx` (Shell: UF-09.9, List view, How-to; summary one `/balance` link; planted-link contrast; `/library` row contrast).
+  - AC-9 → `exports-and-lint.test.ts` (exports, jsx-no-literals, en.uf03 keys, no hex), `list-view.test.tsx` (labels, axe on the expanded card and on the Finish confirm).
+- **Red on unfixed (HEAD seams.tsx + index.tsx, no ListView):** 20 tests red over `list-view.host`, `principle-1` (2), `exports-and-lint` (1), `seams.test` (2), `paused.test` (5). The `list-view.test.tsx` ACs need the new `ListView`, so they are red on T-0419's code by construction.
+- **Planted faults (backup copies in scratch, restored with `cp`):**
+  - `<a href="/library/back-squat">` in the card → `principle-1.test.tsx` 2 red (AC-8).
+  - Previous used as the kg pre-fill → `list-view.test.tsx` 1 red (AC-3).
+  - S0 warm-up counted in Previous (no `isHardSet`) → `list-view.test.tsx` 3 red (AC-4).
+- **Not added:** a Playwright happy-path spec for the List view (the logging path is T-0417; the read side is covered by the host tests). Follow-up for QA if wanted.
+- **T-0415 note (orchestrator):** the List view reads only `ctx` and renders over any machine state; a unit test covers a ctx whose current item is past the plan (host `betweenItems` still shows its loading body ahead of the overlay, as on main; host.tsx untouched).
+- **Gate (D-0158):** `-w typecheck lint test --concurrency=1` 19/19 (web 2890 tests), `test:repo-checks` 0 fail, `format:check`, `check-all` green. Whole web e2e (the seam pins touch `uf-09-focus.spec.ts`): 165 passed with `TMPDIR=$HOME/.cache/wl-pw-tmp`. First gate runs were red on a deep UF-09 import in my test helper (D-0071 §3) and on `host.chrome` pins and literal-assert placeholders; fixed, not weakened.
