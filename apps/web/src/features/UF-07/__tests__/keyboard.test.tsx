@@ -146,7 +146,7 @@ describe("the load effect is pinned at mount (render-loop guard)", () => {
     await screen.findByText("1. Barbell back squat");
     await settle(120);
     const after = { lib: offline.loadLibraryCalls, routines: offline.loadRoutinesCalls };
-    expect(after).toEqual({ lib: 1, routines: 1 });
+    expect(after).toEqual({ lib: 1, routines: 2 }); // mount read + the D-0174 §4 post-refresh read;
 
     // Force re-renders from the outside, the way a parent or a resize would. A `new Date()` on
     // the render path gives the effect a new dep on each one, so the loaders run again.
@@ -158,8 +158,8 @@ describe("the load effect is pinned at mount (render-loop guard)", () => {
     }
     expect(offline.loadLibraryCalls).toBe(after.lib);
     expect(offline.loadRoutinesCalls).toBe(after.routines);
-    // A loop would also drive the refresh and the redirect.
-    expect(offline.refreshRoutines).not.toHaveBeenCalled();
+    // A loop would also drive more refreshes and the redirect; D-0174 §4 allows the one.
+    expect(offline.refreshRoutines).toHaveBeenCalledTimes(1);
     expect(screen.getByLabelText("Name")).toHaveValue("Lower A5");
   });
 

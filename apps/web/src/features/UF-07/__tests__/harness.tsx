@@ -8,7 +8,7 @@ import type { LibraryExercise } from "@workoutlab/shared";
 import { offlineDb } from "../../../lib/offline/db.js";
 import { freshOfflineDb, signIn } from "../../../lib/offline/__tests__/test-helpers.js";
 import { RoutineEditor } from "../index.js";
-import { offline, setOnline, spy } from "./spies.js";
+import { offline, setAuth, setOnline, spy } from "./spies.js";
 
 export const USER = "33333333-3333-4333-8333-333333333333";
 export const R = "22222222-2222-4222-8222-222222222222";
@@ -67,6 +67,7 @@ export async function seed(opts: { routines?: boolean } = {}) {
   spy.reset();
   offline.reset();
   setOnline(true);
+  setAuth("signed-in");
   freshOfflineDb();
   signIn(USER);
   await offlineDb().libraryCache.bulkPut(
