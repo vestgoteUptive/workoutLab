@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.2, UF-11.3]
 decisions: [D-0001, D-0002, D-0018, D-0027, D-0034, D-0041, D-0050, D-0061, D-0067, D-0070, D-0071, D-0075, D-0081]
 deps: [T-0318, T-0319, T-0334]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-09-29 (groom mode) from T-0308's [b] ACs, docs/specs/uf-11-plan-checkin.md §UF-11.2/§UF-11.3 and AC15, D-0070 §3/§7, D-0071 §1/§3/§8/§10, D-0075 and D-0081 §1–§3. All three deps are done (T-0334 merged as f057d58). It does NOT depend on T-0215 or T-0223: UF-11.2 reads only `nextCheckinDate` and whether `periods` is empty, and neither changes under one-period evaluation (the next-date formula is independent of COMPARED_PERIODS). Build flow: wl-build-web. About ¾–1 day, at the top of the one-day budget. If the build runs long, the natural split line is UF-11.2 (AC-B1–B6) / UF-11.3 (AC-B7–B14). Runs in parallel with T-0308a, T-0306a, T-0307a and T-0307b (no path overlap). T-0308c follows in the same lane. -->
 
@@ -240,60 +240,6 @@ T-0223's `period_index >= 0` / nullable `completed_prev` affect only T-0308c's i
 - Commits start `T-0308b:` and cite the screen ids (e.g. `T-0308b UF-11.3: save writes targets before profile`).
 - Make no bundle-size claim unless you ran a fresh `pnpm --filter @workoutlab/web build` and report the measured gzip numbers (T-0322).
 
-## Accept log
-
-**Verdict: `done` (accepted 2026-09-30, product-owner, accept mode).** All 16 ACs met, Definition of done confirmed, no rework required. Read against the branch `t/T-0308b-plan` (20 files in its three-dot diff, all in lane).
-
-### AC-by-AC
-
-| AC | Verdict | Evidence |
-| --- | --- | --- |
-| AC-B1 plan summary | met | `__tests__/plan.render.test.tsx:52-122` — 9 rows in fixed order, plus all three contrasts (reverse-order cache, stored-order priorities with `Build muscle`/`No priority areas` asserted **absent**, rhythm 1–1). |
-| AC-B2 target source | met | `plan.render.test.tsx:123-153`. The `adapted` case is the real false-green trap: `2026-09-26T22:30:00Z` is 00:30 local on 27 Sep, and `format.ts` builds the date from `YYYY-MM-DD` parts via `localDate(iso, tz)` rather than `new Date(ymd)`. Review confirmed no sibling instances of the UTC bug. |
-| AC-B3 first/next check-in | met | `plan.render.test.tsx:154-268`. All six through-the-engine cases (incl. 10-days-off and the 11 Oct roll), the stubbed `2026-12-24` case that a self-computing UI would fail, and the `America/Los_Angeles` contrast that catches instant-vs-local-date. `PlanBody.tsx:26-27` reads only `periods.length` and `nextCheckinDate`: the UI never counts periods (principle 3). |
-| AC-B4 last 3 check-ins | met | `plan.render.test.tsx:270-310` — exactly 3 newest-first regardless of insertion order, `16 Aug` absent, the `Accepted` single-row case, and the empty case with no row element. |
-| AC-B5 routines list | met | `plan.render.test.tsx:311-368`, including the exact singular (`Upper B · 1 exercise`) and `New routine` surviving the empty case. |
-| AC-B6 cache first / offline / cold cache | met | `__tests__/offline.test.tsx:65-180`. Cache-first uses the real pass-through `refreshAll` with a never-resolving `fetch` and still contrasts that the refresh **was** called; offline asserts `supabase.from` never called and `Edit plan` still a link; cold cache covers both routes. `offline.test.tsx:150-180` also pins the shell contract: host + `<h1>` on the first render, and `/plan` survives a supabase client with no `from`. |
-| AC-B7 initial state / Save disabled while unchanged | met | `__tests__/edit-plan.test.tsx:129-180`. The set-comparison contrast is present in **both** directions: same set re-ordered keeps Save disabled, and a different set of the same size enables it — so `differs()` cannot be trivially satisfied. |
-| AC-B8 priorities, preview, ≤ 3 limit | met | `edit-plan.test.tsx:182-269`. Fixed order is derived from `AREAS` (`:214`) so it cannot drift, and is contrasted against tap order. The 4th tap asserts no `previewTargets` call ever received 4 areas, and the hint is pinned as polite `role="status"`, not an alert. Priority-order note: the ticket's inline correction stands — `["back","arms","hamstrings"]` is right; no code change was made or needed. |
-| AC-B9 rhythm steppers | met | `edit-plan.test.tsx:271-361`, including the 20-press seeded fuzz that re-asserts the invariant *and* the doubling of the 14-day half after every press, plus real Tab/Enter/Space activation. |
-| AC-B10 engine numbers verbatim (principle 3) | met, **after QA** | Shipped `edit-plan.test.tsx:363-400` proved only the stale-preview half; its call-count contrast passes under a value-identical recompute. QA added `:408-418` (no extra `previewTargets` call at save time) and `:420-443` (a per-call-divergent engine probe: the written value must identify the last *render-time* call). See "Unfalsifiable as delivered" below. |
-| AC-B11 Save order and exact payloads | met | `__tests__/save-plan.test.tsx:126-221`. Exact ordered call list, the 9-row key set, `onConflict`, the four-key `profiles` payload with the key set asserted (no `level`/`equipment`/`plan_changed_at`), `eq(user_id)`, `is(answer, null)` with the injected `now`, and the contrast that no `insert`/`delete`/`select` and no `sessions`/`session_sets`/`routines` call occurs. |
-| AC-B12 partial failure and double submit | met | `save-plan.test.tsx:232-379`, every case run in **both** failure forms via `describe.each(["reject","error"])`. This is load-bearing, not ceremony: planting `ok()` → bare `await step` gives exactly 5 failures, all from the `error` form, and supabase-js resolves `{data,error}` on 4xx/5xx — a throw-only suite would have shipped that green. Each case asserts *observable* state (which tables were written, which were not, draft intact, location, `refreshAll` not reached), not merely that a message appeared. The retry case pins the D-0081 §2 baseline: Save stays enabled and re-runs from (1). Verified independently: moving the withdraw to step (1) → 12 failures. |
-| AC-B13 offline | met | `save-plan.test.tsx:385-450`. The `online` event enables Save without a remount (`useOnline` is a listener, not a mount-time read), and the offline/online preview rows are compared row-for-row *and* pinned to real engine values (`Back 29`, `Chest 23`), so a placeholder could not pass. |
-| AC-B14 cancel | met | `save-plan.test.tsx:456-504` — no spy call at all, reopening shows the F values, and one tap navigates (no confirm). |
-| AC-B15 a11y (e2e) | met | `tests/e2e/uf-11-plan.spec.ts:37-173`. Axe scoped to the screen host but gated on real content (`:45`) so an empty screen cannot trivially pass; the 44 px check measures a native radio by its `<label>`; real-keyboard Space on the `Back` chip; the Edit/Cancel round trip asserts the *old* screen id is gone (`toHaveCount(0)`), not just that the new one appeared. |
-| AC-B16 strings, exports, lane boundary | met | `__tests__/strings.test.ts`. Goes beyond the AC: `en.uf11` is pinned by reference, the D-0075 flow-shape regex is duplicated locally so a failure points here rather than at the shared test, exports pinned to exactly `["EditPlan","Plan"]`, both `<h1>` literals verified inside their own function bodies (the shell-test contract), a **shadow-catalogue** scan with a justified allowlist, an import-boundary scan (no other feature, no `lib/offline` internals, no Dexie, no `offlineDb(`, no `functions.invoke`, no `fetch`), a raw-colour/font scan on `plan.css`, and the three-dot `git diff` path check. |
-
-### Definition of done
-- Every AC has a passing test: **confirmed** (table above).
-- Full web suite on the branch **857/857**; web 787 → 792, e2e 51 → 53.
-- Contracts unchanged: `savePlan` writes exactly `area_targets {area_id, sets_per_14d, source}`, `profiles {goal, rhythm_min, rhythm_max, priority_areas}` and `plan_checkins {answer, answered_at}` as in `docs/data-model.md`; no Edge Function, no engine or token change. `checkin-evaluation.ts` is the single module-private evaluation, as Scope required, and is deliberately *not* exported (`strings.test.ts:55-62`) so T-0308c reuses it.
-- Paths: all 20 files in lane. `check:repo`'s three `lane-path-not-owned` findings are the **known false positive** (files arrived via `git merge main`; the check derives paths from a stale `origin/main` because a push is blocked by a GitHub account issue). Filed as **T-0364**. Not counted against this ticket.
-- Bundle: measured on a fresh build — entry **144.7 KB / 200 KB**, UF-11 chunk **3.9 KB / 100 KB** (T-0322 satisfied: a real build, not a claim).
-- Principles held: one-task-on-screen is not implicated (UF-11 is out of `/session/*`, enforced by the T-0318 import ban); **principle 3** is pinned by AC-B3's stubbed date, AC-B10's three tests and the verified hard fault where the UI calls the engine then does its own rule-4 arithmetic (**12 failures**); **principle 4** is the whole point of the target-source labels and the withdraw-last ordering; D-0018's clamp filter is pinned.
-
-### Unfalsifiable as delivered — recorded per the accept brief
-Three of this ticket's own requirements had **no test that could fail** when the build handed back, each proven by a fault that passed the shipped suite **96/96**. The coverage came from **QA, not the build**:
-- **AC-B10** ("not a UI recomputation") was half-proven: the contrast was call-count based, so a Save recomputing `previewTargets` with the same input returned the same value and passed — while the test's own comment claimed both halves. Independently reproduced: the value-identical recompute now fails exactly QA's two new tests and nothing else.
-- **Scope/D-0081 §2** ("a later refresh never overwrites the draft/baseline") was untested — no test had ever mutated the cached profile under a mounted `EditPlan`. Two *real* faults passed 96/96: a per-render baseline (**Save would go dead the moment another device's plan landed**) and a remount-per-refresh (**would discard a half-finished edit mid-typing**). Now closed by `edit-plan.test.tsx:456-543`, which lands another device's plan through a real `refreshAll` seam and asserts the draft, the baseline in both directions, and non-remount via surviving transient hint state.
-- **The render-loop guard** was jsdom-only; QA added the e2e mirror (`uf-11-plan.spec.ts:239-267`), which counts real `/rest/v1/profiles` requests — 51 instead of 4 under the fault.
-
-Context, weighed explicitly: the interrupted run left **9 production files with no tests at all**, and they were not reviewed until after the fact. That is a process failure worth naming, and it is exactly how the three holes above survived. It is **not** grounds to reject this ticket: the implementation needed no change (code review read all 9 files as new code and found no must-fix and no hollow assertions), the resumed build found and fixed one real defect (the T-0307a trap in `use-plan-data.ts` — clock read at read time and a ref assigned during render, now pinned at mount and guarded by `__tests__/mount-stability.test.tsx`, which deliberately passes **no** `now` and a fresh clock identity per render), and all three gaps are now closed and fault-proven. The lesson belongs in the process, not in a rework loop on green, fault-proven code.
-
-Residual, non-blocking: **T-0362** (ruled below), **T-0363** (`savingRef` never resets on success — safe only because `navigate()` unmounts; a latent footgun if a future ticket keeps the component mounted).
-
-### Ruling on T-0362 (product question, not just a filed row)
-**The window is acceptable for v1 as-is. T-0362 blocks nothing.**
-
-The exposure is real but bounded and correctly chosen. On "(1) ok, (2) fails" the user's `area_targets` hold the new preview numbers labelled `From your plan` while `profiles` still holds the old goal/rhythm/priorities, so UF-11.2 briefly shows targets that don't match the inputs they were derived from. Three reasons that is the right trade for v1:
-
-1. **The reverse order is strictly worse for principle 4.** If `profiles` were written first and the targets failed, the plan inputs would change while the numbers stayed old — still labelled `From your plan`, i.e. claiming to be derived from inputs they were *not* derived from, with no user-visible trace. The shipped order keeps the wrong-looking state on the side the user can see and fix.
-2. **Step (3) never runs.** The withdraw-last order means a partial failure can never record an answer against a plan that didn't change — verified by test (moving the withdraw first → 12 failures). That is the invariant D-0070 §3 exists to protect, and it holds.
-3. **The window is short and self-announcing.** The user sees `Couldn't update your plan. Try again.`, stays on `/plan/edit` with the draft intact, and the retry is stateless: it re-runs from (1) and converges. There is no silent state and no data loss. Targets are advisory inputs to a suggestion, not a log of what the user did, so a brief mismatch mis-suggests at worst — it never corrupts history.
-
-The code follows D-0070 §3 exactly and its tests pin the split state honestly rather than papering over it, which is the right behaviour for a documented non-atomic sequence. D-0070's own "Revisit when" already names the trigger: **"Partial-failure reports appear. Then move the Accept writes into one Edge Function or RPC."** T-0362 is that follow-up and inherits that trigger — it is **not** a prerequisite for T-0308c or any other Phase 3 ticket. T-0362 should stay open at low priority, keep `lane: data` or `api` (it needs an RPC/Edge Function, which T-0308b's lane does not own), and be pulled forward only if telemetry or a user report shows the window actually biting. No decision change is needed: D-0070 is already `status: revisit` and anticipates exactly this.
-
 ## Post-merge catch-up 2026-10-02
 
 frontend-dev, build mode (rework). The branch was review-approved at `17091a5` on another machine, then `main` (about 610 commits ahead) was merged in as `5c4f216`, with `.squad/*` conflicts resolved to main's side. Accepted behaviour is unchanged. No product file under `apps/web/src/features/UF-11/**` and no flow file needed an edit.
@@ -307,3 +253,6 @@ frontend-dev, build mode (rework). The branch was review-approved at `17091a5` o
   Landing those three files on `main` as they are on this branch, then merging `main` back in, clears both checks without changing either one. Neither check was weakened to get green.
 
 Gate after the fix: web `typecheck` and `lint` green; web `test` has 2798/2799 passing, and the one failure is AC-B16 above; `format:check` is clean; `check-all` reports only the three findings above; web e2e has 153/153 passing.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0308b.md` (D-0157).
