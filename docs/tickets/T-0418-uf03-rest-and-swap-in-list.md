@@ -255,3 +255,60 @@ needed) · contracts unchanged · commits start `T-0418` and cite the screen (fo
 - **Verdict: done.** All 5 ACs proven, both red-on-main and all 3 recorded faults reproduced
   independently, one new fault planted and caught, e2e green with no console errors, D-0142 §2
   invariant independently verified in code and by a dedicated fault. No gaps found.
+
+### Accept log (product-owner, 2026-10-03; start: git clean, HEAD d61f8c5)
+- **AC → verdict, read against the build/review/QA logs and the files themselves (not just the
+  claims):**
+  - **AC-1** (rest bar, NFR-TIME-1) — `rest.test.tsx` "T-0418 AC-1" covers start at
+    `REST_COMPOUND_S`/`REST_ISOLATION_S` (checked values 120/60 against the engine export), the
+    wall-clock read with `Date.now` advanced 90 s and no timer tick (incl. `navigator.onLine =
+    false`), expiry at 0, and the two "(spy)" no-rest cases (edit, uncheck). `rest-sources.test.ts`
+    (read: exists, is the required UF-03-local copy of the T-0304a scan) proves no own
+    `setInterval`/`setTimeout`. **Met.**
+  - **AC-2** (no rest after the session's last planned set, D-0142 §3) — `rest.test.tsx` "T-0418
+    AC-2" has both halves of the required pair (row 3 starts none, row 2 starts one), read in full
+    above; confirmed `allPlannedSetsLogged` is a separate pure helper gating the one
+    `ctx.startRest` call site in `ListView.tsx`. **Met.**
+  - **AC-3** (rest view UF-03.2) — "T-0418 AC-3" covers Open (one `[data-screen-id="UF-03.2"]` with
+    all five controls), Adjust (+15 s/−15 s from 0:30), Skip (back to UF-03.1, no bar), Back to list
+    (back to UF-03.1, bar still running) and the announcer case (reads "10 seconds" at ≤10 s and
+    "Go" at expiry, plus the assertion that every `[aria-live]` other than the host's own announcer
+    field sits inside UF-03.1/UF-03.2, i.e. UF-03 owns none of its own). **Met.**
+  - **AC-4** (a11y) — "T-0418 AC-4 a11y" names the bar exactly `"Rest, {m:ss} left, show rest"` and
+    checks all four rest-view buttons are named, with `axeViolations()` asserted `[]` on both
+    UF-03.1 (bar shown) and UF-03.2. **Met.**
+  - **AC-5** (focus, D-0172 §3) — "T-0418 AC-5 focus" has all three cases named in the AC (Back to
+    list → the rest bar; Skip with rows open → the first unchecked checkbox; Skip with the card done
+    → Finish) plus the view's own auto-close-on-expiry case the AC also names. Each asserts
+    `document.activeElement` directly against the real DOM node, not a proxy. **Met.**
+  - **D-0142 §2 invariant** (log never moves the machine; `startRest` fires only after the write's
+    own resolve, never on reject) — verified independently in the diff (one call site, gated by
+    `allPlannedSetsLogged`, fired from `onDone` after `ctx.recordSet(...)` resolves) and by QA's own
+    dedicated fault (reject branch wired to also call `onDone`) turning a scratch probe red. Not
+    just asserted by the log; read and reproduced.
+- **Scope discipline.** Diff confined to `apps/web/src/features/UF-03/**` plus the two listed
+  extras (`lib/i18n/flows/uf-03.ts`, this ticket file); no `features/UF-09` file touched; no Swap
+  button or `swap` string anywhere (T-0478's scope, correctly left out, consistent with D-0172 §9's
+  split); no List-view `aria-live` of its own. Contracts: none of `data-model.md`/`openapi.yaml`/
+  `engine-rules.md`/`tokens.json` in the diff, matching "Contract impact: None."
+- **The 3 modified T-0417 tests, re-read directly (not taken on trust):** diffed
+  `list-view.logging.host.test.tsx` and `list-view.addset.host.test.tsx` against pre-ticket HEAD
+  (`e3e090e`). The "without moving the machine" test now asserts `itemIndex`/`setIndex` unchanged
+  (unchanged assertion, D-0142 §2) **and** a new `expect(after["phase"]).toBe("rest")` — strictly
+  more specific, not weaker. The other three touched tests (the AC-6 reload test and the two AC-7
+  focus-mode tests) only insert two `fireEvent.click`s each (open the bar, Skip) before their
+  pre-existing assertions, to dismiss the new mandatory rest state first; zero assertions removed
+  or loosened in any of the four hunks. Confirms the review and QA logs' claim.
+- **Build/test evidence re-checked:** `node .github/scripts/check-all.mjs` run fresh from this
+  worktree at HEAD `d61f8c5` — exit 0, consistent with the build log's claim. `rest.test.tsx` read
+  in full: every AC's required cases and both halves of every binary-condition pair (Test rules)
+  are present, titled `"T-0418 AC-n"` as required. Per D-0169 §2 this accept pass does not itself
+  run the heavy gate or the e2e suite (shell is read-only in this role; QA already ran and the build
+  log independently matches); the orchestrator's forced full gate runs on `main` after merge.
+- **Branch state.** Behind `main` (QA: `origin/main` has T-0468/T-0470/T-0479/D-0173 on top);
+  `git merge-tree` reported clean behind-main by QA, so correctly left unmerged per D-0169 §2 for
+  the orchestrator to combine and force-gate.
+- **Verdict: done.** All 5 ACs have a passing, correctly-targeted test; the D-0142 §2 invariant
+  holds in code and under a dedicated fault; the three modified T-0417 tests are strengthened, not
+  weakened; scope and contracts are clean; `check-all.mjs` is green. No missing AC, no principle
+  violation.
