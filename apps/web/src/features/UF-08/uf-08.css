@@ -358,6 +358,14 @@
   cursor: pointer;
 }
 
+.wl-uf08__icon--text {
+  inline-size: auto;
+  min-inline-size: 44px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 0.875rem;
+}
+
 .wl-uf08__icon:hover {
   color: var(--wl-color-text);
   background: var(--wl-color-surface-2);

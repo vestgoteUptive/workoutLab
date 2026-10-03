@@ -24,6 +24,7 @@ import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js"
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { formatTime } from "../../lib/format/intl.js";
 import { en } from "../../lib/i18n/en.js";
+import { SwapSheet } from "../UF-05/index.js";
 import { Ready } from "./Ready.js";
 import { Suggested } from "./Suggested.js";
 import {
@@ -112,6 +113,13 @@ function fitLine(workout: Workout): string {
   return en.uf08.fits(items.length, sets);
 }
 
+/** `item` as a whole number in `[0, count)`, else null. */
+function parseItem(raw: string | null, count: number): number | null {
+  if (raw === null || !/^\d+$/.test(raw)) return null;
+  const n = Number(raw);
+  return n < count ? n : null;
+}
+
 function systemClock(): Date {
   return new Date();
 }
@@ -154,10 +162,15 @@ export function SessionSetup({
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const step = params.get("step");
-  const pastSetup = step === "suggested" || step === "ready";
-  const showSuggested = step === "suggested" && adjusted !== null;
+  const pastSetup = step === "suggested" || step === "ready" || step === "swap";
+  // UF-08.3 (T-0303c): `?step=swap&item=n` with a current `Workout` and an item in range.
+  const swapItem = parseItem(params.get("item"), adjusted?.workout.plan.items.length ?? 0);
+  const showSwap = step === "swap" && adjusted !== null && swapItem !== null;
+  const badSwap = step === "swap" && adjusted !== null && swapItem === null;
+  const showSuggested = (step === "suggested" || badSwap) && adjusted !== null;
   const showReady = step === "ready" && adjusted !== null;
-  const stale = step !== null && step !== "time" && !showSuggested && !showReady;
+  const stale = step !== null && step !== "time" && !showSuggested && !showReady && !showSwap;
+  const [focusSwapItem, setFocusSwapItem] = useState<number | null>(null);
 
   // D-0109 §1: going back to UF-08.1 discards UF-08.2's adjustments. Keyed on the step changing
   // (not on `adjusted`), so the Suggest click's own render can't drop the record it just set.
@@ -177,6 +190,10 @@ export function SessionSetup({
   const missing = state.kind === "missing" || (data !== null && !pastSetup && workout === null);
 
   useEffect(() => {
+    if (badSwap) void navigate(`${SETUP_PATH}?step=suggested`, { replace: true });
+  }, [badSwap, navigate]);
+
+  useEffect(() => {
     if (stale) void navigate(SETUP_PATH, { replace: true });
   }, [stale, navigate]);
 
@@ -190,6 +207,23 @@ export function SessionSetup({
 
   if (showReady) {
     return <Ready workout={adjusted.workout} clock={clock} locale={loc} timeZone={tz} />;
+  }
+
+  if (showSwap) {
+    const leave = (applied: Workout | null) => {
+      if (applied !== null) setAdjusted({ ...adjusted, workout: applied });
+      setFocusSwapItem(swapItem);
+      void navigate(-1);
+    };
+    return (
+      <SwapSheet
+        workout={adjusted.workout}
+        itemIndex={swapItem}
+        timeZone={tz}
+        onApply={(result) => leave(result)}
+        onClose={() => leave(null)}
+      />
+    );
   }
 
   if (showSuggested && data !== null) {
@@ -241,6 +275,8 @@ export function SessionSetup({
         }}
         onShuffle={() => resuggest({ shuffle: adjusted.shuffle + 1 })}
         onBudget={(m) => resuggest({ budgetMin: m })}
+        focusSwapItem={focusSwapItem}
+        onSwapFocused={() => setFocusSwapItem(null)}
       />
     );
   }

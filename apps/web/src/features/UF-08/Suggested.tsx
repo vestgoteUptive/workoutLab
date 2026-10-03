@@ -29,6 +29,10 @@ export interface SuggestedProps {
   onShuffle: () => void;
   /** The host re-suggests at `budgetMin`. Only called for a chip that isn't the active one. */
   onBudget: (budgetMin: number) => void;
+  /** The item row whose Swap button takes focus on mount (after leaving UF-08.3, T-0303c). */
+  focusSwapItem?: number | null;
+  /** Called once that focus has moved. */
+  onSwapFocused?: () => void;
 }
 
 const READY_HREF = "/session/setup?step=ready";
@@ -103,6 +107,8 @@ export function Suggested({
   onRemove,
   onShuffle,
   onBudget,
+  focusSwapItem = null,
+  onSwapFocused,
 }: SuggestedProps) {
   const navigate = useNavigate();
   const listRef = useRef<HTMLOListElement>(null);
@@ -113,6 +119,15 @@ export function Suggested({
   const chips = useMemo(() => sessionReasonChips(workout.sessionReasons), [workout.sessionReasons]);
   const items = workout.plan.items;
   const warmupNames = workout.plan.warmup.map((w) => exerciseName(w.exerciseId, library));
+
+  // UF-08.3 → UF-08.2 (Keep or Apply): focus returns to the Swap button of the row it came from.
+  useEffect(() => {
+    if (focusSwapItem === null) return;
+    const buttons = listRef.current?.querySelectorAll<HTMLButtonElement>('[data-part="swap"]');
+    buttons?.[focusSwapItem]?.focus();
+    onSwapFocused?.();
+    // Mount only: the host clears the request through `onSwapFocused`.
+  }, []);
 
   useEffect(() => {
     const index = pendingFocus.current;
@@ -214,6 +229,18 @@ export function Suggested({
                     </span>
                   ) : null}
                 </div>
+                <button
+                  type="button"
+                  className="wl-uf08__icon wl-uf08__icon--text"
+                  data-part="swap"
+                  aria-label={en.uf08.swapItem(name)}
+                  onClick={() => {
+                    pendingFocus.current = null;
+                    void navigate(`/session/setup?step=swap&item=${index}`);
+                  }}
+                >
+                  {en.uf08.swap}
+                </button>
                 <button
                   type="button"
                   className="wl-uf08__icon"

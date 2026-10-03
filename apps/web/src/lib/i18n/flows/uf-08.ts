@@ -73,6 +73,10 @@ export const uf08 = {
   /** "Remove Bench press". */
   remove: (name: string) => `Remove ${name}`,
   shuffle: "Shuffle",
+  // --- UF-08.3 Swap before starting (T-0303c, D-0071 §7) ---
+  swap: "Swap",
+  /** "Swap Barbell row". */
+  swapItem: (name: string) => `Swap ${name}`,
   /** Accessible name of UF-08.2's 20/30/45/60/90 chip group (D-0109 §3). */
   timeChipsName: "Time",
   /** Within the budget: "About 29 of 30 min", with " + warm-up" when it doesn't count. */

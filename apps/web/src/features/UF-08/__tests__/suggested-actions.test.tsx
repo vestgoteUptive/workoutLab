@@ -386,9 +386,11 @@ describe("AC-8 hand-off out and Back (D-0107 §1)", () => {
     expect(screenIds()).toEqual(["UF-08.1"]);
   });
 
-  it("no button whose name starts with 'Swap'", async () => {
+  it("T-0303c: one 'Swap {name}' button per item row, none on the warm-up row", async () => {
     await toSuggested();
-    expect(screen.queryAllByRole("button", { name: /^Swap/ })).toEqual([]);
+    expect(
+      screen.getAllByRole("button", { name: /^Swap/ }).map((b) => b.getAttribute("aria-label")),
+    ).toEqual(["Swap Bench press", "Swap Inverted row", "Swap Leg extension"]);
   });
 });
 
