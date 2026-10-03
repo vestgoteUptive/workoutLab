@@ -157,6 +157,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
+| T-0906 | CI: tests/e2e/uf-03-list-summary.spec.ts T-0458 AC-1/AC-2 fails deterministically on CI (2 consecutive runs), passed locally when T-0458 merged (offline reload reads back 0 sets, not 3) | qa | — | doing | wl-ci-investigate |
 
 ## Phase 5 — Iterate
 The product-owner adds tickets from `revisit` decisions, triage outcomes and QA findings, using the `wl-idea` flow.
