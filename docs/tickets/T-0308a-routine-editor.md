@@ -156,6 +156,7 @@ Both routes already exist (`/plan/routines/new` and `/plan/routines/:routineId` 
 - `apps/web/src/features/UF-07/**` (the lane: `web-feature:UF-07`).
 - **Listed extras:**
   - `docs/tickets/T-0308a-routine-editor.md`: this file, for the build, QA and accept logs (added 2026-10-02 by the orchestrator after the H-13 catch-up).
+  - `tests/e2e/shell.spec.ts`: only the `/plan/routines/R1` (UF-07.1) row of the AC-6 offline describe, moved out of `OTHER_SUB_ROUTES` into its own seeded test that asserts UF-07.1's built content, plus an empty-cache contrast that lands on `/plan`, and the D-0091 paragraph of the comment above that describe (D-0091 §1/§5; folds in T-0452; added 2026-10-03 after the row failed 5/5 on main once UF-07.1 was built).
   - `apps/web/src/lib/i18n/flows/uf-07.ts`: this ticket's own flow file, and no other (D-0071 §1, D-0075). Add keys only. The `export const uf07 = {…} as const;` shape stays, written multi-line.
   - `tests/e2e/uf-07-routines.spec.ts`: a new file only (D-0071 §10).
   - `tests/e2e/fixtures/uf-07-routines.ts`: an optional new file holding this spec's fixture data, passed to the existing `mockSupabaseData(page, fixtures)`. A spec-local `page.route` is fine for capturing writes.
@@ -207,3 +208,6 @@ None. The writes use `routines {id, name}` and `routine_items {routine_id, posit
 - T-0453 judged against AC-A4/A14: A4 pins focus only for the move buttons, and A14 pins axe 0 serious/critical, 44 px and the keyboard move. Focus after Remove/Add and the dialog focus trap aren't in any AC, so they're fine as a follow-up. They are real WCAG 2.4.3 gaps, so T-0453 should be groomed next for UF-07. T-0454 (unreadable cache, empty-library copy) is out of AC scope too.
 - The shell AC-6 e2e red is T-0452 (a D-0091 race), not this ticket.
 - Verdict: done.
+
+## Rework note (orchestrator, 2026-10-03)
+- AC-A16 (new): `tests/e2e/shell.spec.ts` AC-6 `/plan/routines/R1` assumed a stub. With UF-07.1 built, an unknown id redirects to `/plan` offline (D-0081 §5), so the row failed 5/5 on main after the merge, which was undone. Move the row out of `OTHER_SUB_ROUTES` into a seeded offline test that asserts UF-07.1's built content (seed a routine R1 via one online visit), plus an empty-cache contrast landing on `/plan`; update the D-0091 paragraph (same pattern as T-0307b AC-16). Prove it with a planted fault.

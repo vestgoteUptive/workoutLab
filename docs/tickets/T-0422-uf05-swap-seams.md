@@ -5,7 +5,7 @@ lane: web-feature:UF-05
 screens: [UF-05.1, UF-09.9, UF-09.6, UF-09.3, UF-09.4, UF-09.5]
 decisions: [D-0142, D-0153, D-0160, D-0069, D-0071, D-0093, D-0111, D-0118, D-0120, D-0140, D-0149, D-0086, D-0156]
 deps: [T-0421, T-0304d, T-0414]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Second child of the T-0306b board row (D-0142 §1 §6 §7). Re-checked against main after T-0421 and T-0304d merged (2026-10-02 groom). SwapSheet's props are `{workout, itemIndex, onApply(result: Workout), onClose, timeZone?}`. seams.tsx still has both arrays `[]`, and ORDER already places `swap`. AC-7 now carries the D-0153 §2 confirm rule, which adds one listed extra in machine.ts. Build flow: wl-build-web. About ⅔ day. It edits features/UF-09/seams.tsx and machine.ts, so it never runs in parallel with T-0415 or T-0416. -->
 
@@ -156,3 +156,6 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
   - This ticket still merges only after T-0423 merges and the `host.chrome.test.tsx` pins are updated (see Parallel).
   - The new files don't overlap T-0304g (host.tsx, ring.tsx, rest.tsx) or T-0424.
 - **From T-0414 review (2026-10-02):** D-0140 left a swap from `confirm` out of scope. D-0153 §2 now settles it, and it is AC-7.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0422.md` (D-0157).

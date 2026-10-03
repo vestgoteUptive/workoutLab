@@ -5,7 +5,7 @@ lane: qa
 screens: []
 decisions: [D-0155, D-0045]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by product-owner (groom). From the 2026-10-02 journal: 53 false reds on main after T-0429 from a reused :4173, and 84 false reds from a full /tmp tmpfs (state.md traps). Build flow: wl-build-qa. About ¼ day. No app code changes. Parallel-safe with T-0436 by files. -->
 
@@ -107,3 +107,6 @@ Tests for every AC pass, with the red run, the loud-failure run and the planted 
 `pnpm -w typecheck lint test --force --concurrency=1` green · `pnpm --filter @workoutlab/web
 test:e2e` green (the whole suite) · `format:check` and `check:repo` green · contracts unchanged ·
 commits start `T-0440` (for example `T-0440: never reuse a server on :4173`).
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0440.md` (D-0157).

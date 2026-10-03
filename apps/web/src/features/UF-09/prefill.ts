@@ -13,7 +13,9 @@ export interface SetPrefill {
  * - set 1: `item.prefill`, with a `null` `prefill.reps` falling back to `item.repsMin`;
  * - the back-off set (index `item.sets`, when the item has one): `backoff.weightKg` / `.reps`;
  * - set k > 1: each of weight and reps from the saved entry for set k − 1, each falling back on
- *   its own to the set 1 value when the saved one is `null` (or there is none).
+ *   its own to the set 1 value when the saved one is `null` (or there is none). Only an entry of
+ *   the item's current exercise carries (D-0156 §1, amends D-0118 §7): after a swap, the old
+ *   exercise's set is not this exercise's set, so set 1's (the engine's) values apply.
  */
 export function nextSetPrefill(
   plan: SessionPlan,
@@ -33,7 +35,13 @@ export function nextSetPrefill(
   }
   let previous: LoggedSet | undefined;
   for (const s of loggedSets) {
-    if (s.itemIndex === itemIndex && s.setIndex === setIndex - 1) previous = s;
+    if (
+      s.itemIndex === itemIndex &&
+      s.setIndex === setIndex - 1 &&
+      s.exerciseId === item.exerciseId
+    ) {
+      previous = s;
+    }
   }
   return {
     weightKg: previous?.weightKg ?? first.weightKg,

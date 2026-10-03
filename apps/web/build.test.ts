@@ -176,14 +176,14 @@ describe("T-0429 AC4 no injected service worker registration", () => {
 // that the feature has no route may add to this list. An entry may be missing from disk.
 const SEAM_MOUNTED_FEATURES: readonly string[] = ["UF-05"];
 
-// D-0144 §3c: strings only the seam-mounted feature carries. For UF-05: the D-0160 §3 copy
-// (D-0144's default), plus the `wl-uf05` class prefix of its JSX and `uf-05.css`. T-0426 adds
-// the prefix because a side-effect import of UF-05 from `src/app` drops the JS but keeps the
-// CSS in the entry, and the copy alone misses that. T-0426 checked that neither string is in
-// the entry graph on main, nor with T-0421's UF-05 and `flows/uf-05.ts` on top (Rollup drops
-// the unread `en.uf05` keys). This also catches UF-05 inlined into a chunk with no `src`.
+// D-0144 §3c, amended by D-0156 §2: strings only the seam-mounted feature's own code and CSS
+// carry. For UF-05 that is the `wl-uf05` class prefix of its JSX and `uf-05.css`. Flow strings are
+// in the entry by design (D-0071 §1: `flows/uf-NN.ts` are composed into the `en` catalogue the
+// shell uses, and Rollup keeps every key a lazy chunk reads), so copy can't be a sentinel. The
+// prefix still catches a side-effect import of UF-05 from `src/app` (the CSS lands in the entry)
+// and UF-05 inlined into a chunk with no `src`.
 const SEAM_SENTINELS: Readonly<Record<string, readonly string[]>> = {
-  "UF-05": ["Couldn't load alternatives.", "wl-uf05"],
+  "UF-05": ["wl-uf05"],
 };
 
 /** The folders `src/app/routes.ts` lazy-loads, from its `import("../features/<dir>/index.js")`. */

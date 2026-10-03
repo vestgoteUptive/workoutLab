@@ -8,6 +8,7 @@ import { formatKg } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { isBodyweight, setAfterRest } from "./machine.js";
 import { nextSetPrefill } from "./prefill.js";
+import { useRingTransition } from "./reduced-motion.js";
 import { useFocusSession } from "./session.js";
 import { formatClock, remainingS } from "./timer.js";
 import type { ViewProps } from "./views.js";
@@ -67,6 +68,8 @@ export function Rest({ state, ctx, locale, nowMs }: ViewProps) {
   const fraction = timer && timer.durationS > 0 ? Math.min(1, remaining / timer.durationS) : 0;
   const warn = remaining <= REST_WARN_S;
   const next = nextLine({ state, ctx, locale });
+  // T-0304g (NFR-A11Y-5, D-0119 §10): no sweep under reduced motion; the label still counts.
+  const transition = useRingTransition();
 
   useEffect(() => {
     skipRef.current?.focus();
@@ -85,6 +88,7 @@ export function Rest({ state, ctx, locale, nowMs }: ViewProps) {
             r={RING_R}
             strokeDasharray={RING_C}
             strokeDashoffset={RING_C * (1 - fraction)}
+            style={{ transition }}
           />
         </svg>
         <div className="wl-uf09__ring-label">

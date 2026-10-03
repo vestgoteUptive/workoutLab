@@ -518,12 +518,12 @@ describe("T-0414 PLAN_REPLACED never leaves the set on a logged position", () =>
     });
   });
 
-  it("T-0414 AC5 rest, next, confirm and paused-on-rest keep the clamp-only result", () => {
+  // D-0153 §2 (a named change, T-0422): the `confirm` row moved to t0422.machine.test.ts.
+  it("T-0414 AC5 rest, next and paused-on-rest keep the clamp-only result", () => {
     const timer = { startedAtMs: F.T0, durationS: 120, pausedMs: 0 };
     const starts: FocusState[] = [
       { ...F.AC2_START, phase: "rest", timer },
       { ...F.AC2_START, phase: "next", timer: { ...timer, durationS: 60 } },
-      { ...F.AC2_START, phase: "confirm", timer: { ...timer, durationS: AUTOSAVE_S } },
       { ...F.AC2_START, phase: "paused", resumePhase: "rest", pausedAtMs: F.PAUSE_AT, timer },
     ];
     for (const start of starts) {
