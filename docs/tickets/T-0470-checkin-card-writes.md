@@ -177,3 +177,36 @@ covers UF-11.2/.3 only; the card is still mounted nowhere per T-0471).
 
 Status: done. No contract change. No new i18n keys (the failure line reuses
 `en.uf11.saveFailed`, as the ticket allowed).
+
+## Review
+
+**2026-10-03, code-reviewer.** Approve.
+
+- Lane: all 6 changed app files under `apps/web/src/features/UF-11/**`; `uf-11.ts` untouched (no
+  new i18n keys needed, as logged). No contract diff (`git diff main...HEAD` on `api/openapi.yaml`,
+  `docs/data-model.md`, `docs/engine-rules.md`, `tokens.json` is empty).
+- `checkin-card.test.tsx`: the removed assertion ("Accept/Keep makes no supabase.from call") is a
+  legitimate removal — its premise (no writes) is exactly what this ticket changes by design. The
+  new behaviour is covered in `checkin-writes.test.tsx` AC-2/AC-3/AC-5. The exports check
+  ("index.tsx exports exactly ...") is kept verbatim.
+- Accept order in `checkin-writes.ts` (`acceptProposal`): area_targets upsert → profiles update →
+  plan_checkins answer update, matching D-0070 §3 and reaffirmed unchanged by D-0166. The planted
+  fault (swap steps 1/2) is genuinely caught: `checkin-writes.test.tsx`'s AC-2 `tablesInOrder()`
+  assertion pins the exact call order, so a swap fails that assertion (and the per-call payload
+  assertions tied to `spy.calls[0]`/`[1]`).
+  AC-1's `completed_prev: null` and AC-1b's second-device/answered-row case both match D-0172 §1/§2
+  verbatim.
+- Second-device 23505 path (`selectAnsweredElsewhere` in `checkin-writes.ts`): a real
+  conflict-resolution branch, not error-swallowing — it performs a genuine
+  `.select("answer").eq("period_index", …)` and branches on the row's `answer`
+  (null → card stays, no write; set → card hides + `refreshAll()` once), tested on both outcomes
+  in AC-1b with no alert/`console.error` either way.
+- `strings.test.ts`'s two new allowlist entries (`period_index`, `23505`) are structural: a DB
+  filter column and Postgres' unique-violation code respectively, not user-visible copy. Appended
+  with a comment, no reordering.
+- Re-ran targeted suite: `scripts/locked.sh small npx pnpm --filter @workoutlab/web exec vitest run
+  src/features/UF-11/__tests__/checkin-writes.test.tsx
+  src/features/UF-11/__tests__/checkin-card.test.tsx src/features/UF-11/__tests__/strings.test.ts`
+  → 3 files, 43/43 passed.
+
+No findings. Verdict: **approve**.
