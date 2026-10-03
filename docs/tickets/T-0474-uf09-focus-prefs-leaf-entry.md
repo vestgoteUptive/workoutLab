@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09, UF-08.4]
 decisions: [D-0170, D-0071, D-0119, D-0158, D-0169]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written 2026-10-03 by triage (TR-0044 → D-0170). Build flow: wl-build-web. About an hour. -->
 
@@ -142,3 +142,43 @@ committed, since the gate cannot go green). `device.ts` currently imports `../UF
 (the intended fix, not the planted-fault state). No commit made on this branch yet. Full gate
 (`-w typecheck lint test`, etc.) not run, since the known AC-4 failure would make that run
 meaningless; re-run it once TR-0045 resolves.
+
+### 2026-10-03 frontend-dev — resumed after TR-0045 resolution, done
+Resumed on `main` merged into this branch (HEAD `e1a7a83` at the time), carrying forward T-0474's
+four already-committed files unchanged. Applied TR-0045's recommended option 1 exactly, in
+`t0304g.device.test.tsx`: retargeted only the `import * as uf08` specifier (line 8) and the
+`vi.mock(...)` call's specifier plus its `typeof import(...)` type-cast argument (same statement,
+same specifier) from `../../UF-08/index.js` to `../../UF-08/index.prefs.js`. No other line in the
+file changed — confirmed via `git diff` (3 insertions, 3 deletions, exactly those two statements).
+Same `readFocusPrefs` function, same call counts and return values asserted as before; this is the
+named exception T-0474's AC-4 and Out-of-scope line now carry (TR-0045 Resolution).
+
+AC-4 → test map (this session): `t0304g.device.test.tsx` run alone — 17 passed, 0 failed (all
+three previously-failing "AC-1 the prefs are read once per mount" tests pass again, same
+assertions). Full `features/UF-09/__tests__` + `features/UF-08/__tests__` run — 80 files, 1189
+tests, all passed: no other regression.
+
+Commands run:
+- `scripts/locked.sh small npx vitest run src/features/UF-09/__tests__/t0304g.device.test.tsx`
+  (run from `apps/web`) → 1 file, 17 passed.
+- `scripts/locked.sh heavy npx vitest run src/features/UF-09/__tests__ src/features/UF-08/__tests__`
+  (run from `apps/web`) → 80 files, 1189 passed.
+- Committed the two-line retarget (`abde17f`): `T-0474: retarget t0304g.device.test.tsx's mock to
+  UF-08 leaf entry (TR-0045)`.
+- Full cached gate: `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test
+  --concurrency=1` → 19/19 tasks successful, 16 cached; web test run (233 files, 3343 tests)
+  passed; typecheck passed.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks` → 159/159 passed.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w format:check` → found one pre-existing
+  formatting issue in `t0474.prefs-leaf.test.ts` (a long `expect(...).toEqual([])` chain from the
+  earlier session, unrelated to this session's edit). Fixed with `npx prettier --write` (3
+  lines, no logic change), reran the file's test (4 passed), reran `format:check` (clean),
+  committed (`1e4a9ec`).
+- `scripts/locked.sh heavy node .github/scripts/check-all.mjs` → exit 0.
+- Reran the full gate once more after the format fix (cache-aware): `scripts/locked.sh heavy npx
+  -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` → 19/19 tasks successful, 16 cached
+  (web test + typecheck served from Turbo cache keyed off the formatted file), landing suite
+  (115 tests) ran fresh and passed.
+
+**Verdict: done.** Every AC has a passing test (AC-1/AC-2/AC-3 unchanged from the earlier session;
+AC-4 now green with the named TR-0045 exception). Full gate green. No contract changed.
