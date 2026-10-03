@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09, UF-09.3, UF-09.6, UF-09.9, UF-03.1]
 decisions: [D-0142, D-0153, D-0149, D-0071, D-0111, D-0118, D-0120, D-0140]
 deps: [T-0304d, T-0414]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of the T-0305a board row (D-0142 §1 §2). Re-checked against main after T-0304d merged (2026-10-02 groom, D-0153): AC-2 is rescoped because D-0149 §4 already ends the workout at the store level, and AC-5 adds the T-0414 review item (D-0153 §1). Build flow: wl-build-web. About ⅓ day. It is the only UF-09 change the List view needs. Ready: T-0304d and T-0414 are done. -->
 
@@ -144,3 +144,4 @@ None. `SET_LOGGED`, `REST_END`, `enterItem` and the overlay rule are device-loca
 - Red reproduced (machine/session/host from merge-base): 12 of 24 red (AC-1 reps+timed, AC-2 reducer+store, AC-3, AC-4 list reload, AC-5 x6), same set as the build log. Restored with cp.
 - Own faults (one run each, restored with cp): enterItem ignores logged sets -> 6 red (AC-5 reducer x5 + host); done effect ignores listOpen -> 1 red (AC-3 "stored state null, expected done"); REST_END last item -> betweenItems -> 2 red (AC-2 reducer, resolver called 1x not 0).
 - Verdict: done. No full gate (branch unchanged since the builder's green cached gate).
+- Accept (product-owner, HEAD e477bf8, clean): branch diff limited to `UF-09/{host,machine,session}` + two `t0415*` tests + this ticket; `seams.tsx`, `persist.ts`, `lib/offline` untouched. AC-1 (reps, pair, timed via it.each both sources, close re-sync), AC-2 (reducer, store 0 resolver calls, both pairs), AC-3 (waits, close finishes once, overlay finish once, no-overlay pair, keepsClockRunning:false paused 10 min), AC-4 (3), AC-5 (machine 6 + host), AC-6 (existing suite unedited, 822 green) each have a passing test; required reds recorded by build and reproduced by QA. Principle 1 holds: under the List view `done` keeps rendering the one overlay, no host screen appears behind it. Review approve, QA pass. Verdict: done.
