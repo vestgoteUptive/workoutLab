@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09, UF-09.3, UF-09.6, UF-09.9, UF-03.1]
 decisions: [D-0142, D-0153, D-0149, D-0071, D-0111, D-0118, D-0120, D-0140]
 deps: [T-0304d, T-0414]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of the T-0305a board row (D-0142 §1 §2). Re-checked against main after T-0304d merged (2026-10-02 groom, D-0153): AC-2 is rescoped because D-0149 §4 already ends the workout at the store level, and AC-5 adds the T-0414 review item (D-0153 §1). Build flow: wl-build-web. About ⅓ day. It is the only UF-09 change the List view needs. Ready: T-0304d and T-0414 are done. -->
 
@@ -135,3 +135,13 @@ None. `SET_LOGGED`, `REST_END`, `enterItem` and the overlay rule are device-loca
   - **Not with T-0394.** Both edit `host.tsx`.
   - **With T-0433, allowed.** It is in the UF-03 lane and shares no file.
 - **From T-0414 review (2026-10-02):** READY/next could enter `set` at set index 0 even when a List-view log had already filled that position. This is now AC-5 (D-0153 §1).
+
+## Build / accept log
+- Build (frontend-dev): `machine.ts` (REST_END last item -> done; `enterItem` at first free set, done/betweenItems when none), `session.tsx` (`source: "list"` always SET_LOGGED), `host.tsx` (`listOpen`: done renders the overlay and the done effect waits; close re-runs it). New `t0415.machine.test.ts`, `t0415.host.test.tsx` (24 tests). No existing test edited, `seams.tsx` untouched.
+- AC->test: AC-1 host "AC-1" (4 tests incl. pairs, timed, close re-sync); AC-2 machine "AC-2" (4); AC-3 host "AC-3" (5); AC-4 host "AC-4" (3); AC-5 machine "AC-5" (6) + host "AC-5"; AC-6 existing UF-09 suite unchanged.
+- Red on unfixed code (machine/session/host from HEAD): 12 of 24 failed: AC-1 reps (phase confirm, not set), AC-1 timed, AC-2 reducer (betweenItems) and store (resolver called 1x, expected 0), AC-3 (stored state null, not done), AC-4 reload after list log, AC-5 reducer x5 (setIndex 0 not 1; no done/betweenItems) and host. All 12 green with the fix.
+- QA (qa-tester, HEAD ed5a19a, clean): UF-09 vitest folder 47 files / 822 tests green; `test:e2e uf-09` 10/10 green. AC->test as in the build entry (AC-1..5 each have a reducer/host test plus the pair; AC-6 = existing suite unedited, green).
+- Red reproduced (machine/session/host from merge-base): 12 of 24 red (AC-1 reps+timed, AC-2 reducer+store, AC-3, AC-4 list reload, AC-5 x6), same set as the build log. Restored with cp.
+- Own faults (one run each, restored with cp): enterItem ignores logged sets -> 6 red (AC-5 reducer x5 + host); done effect ignores listOpen -> 1 red (AC-3 "stored state null, expected done"); REST_END last item -> betweenItems -> 2 red (AC-2 reducer, resolver called 1x not 0).
+- Verdict: done. No full gate (branch unchanged since the builder's green cached gate).
+- Accept (product-owner, HEAD e477bf8, clean): branch diff limited to `UF-09/{host,machine,session}` + two `t0415*` tests + this ticket; `seams.tsx`, `persist.ts`, `lib/offline` untouched. AC-1 (reps, pair, timed via it.each both sources, close re-sync), AC-2 (reducer, store 0 resolver calls, both pairs), AC-3 (waits, close finishes once, overlay finish once, no-overlay pair, keepsClockRunning:false paused 10 min), AC-4 (3), AC-5 (machine 6 + host), AC-6 (existing suite unedited, 822 green) each have a passing test; required reds recorded by build and reproduced by QA. Principle 1 holds: under the List view `done` keeps rendering the one overlay, no host screen appears behind it. Review approve, QA pass. Verdict: done.
