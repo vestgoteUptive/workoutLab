@@ -135,3 +135,8 @@ None. `SET_LOGGED`, `REST_END`, `enterItem` and the overlay rule are device-loca
   - **Not with T-0394.** Both edit `host.tsx`.
   - **With T-0433, allowed.** It is in the UF-03 lane and shares no file.
 - **From T-0414 review (2026-10-02):** READY/next could enter `set` at set index 0 even when a List-view log had already filled that position. This is now AC-5 (D-0153 §1).
+
+## Build / accept log
+- Build (frontend-dev): `machine.ts` (REST_END last item -> done; `enterItem` at first free set, done/betweenItems when none), `session.tsx` (`source: "list"` always SET_LOGGED), `host.tsx` (`listOpen`: done renders the overlay and the done effect waits; close re-runs it). New `t0415.machine.test.ts`, `t0415.host.test.tsx` (24 tests). No existing test edited, `seams.tsx` untouched.
+- AC->test: AC-1 host "AC-1" (4 tests incl. pairs, timed, close re-sync); AC-2 machine "AC-2" (4); AC-3 host "AC-3" (5); AC-4 host "AC-4" (3); AC-5 machine "AC-5" (6) + host "AC-5"; AC-6 existing UF-09 suite unchanged.
+- Red on unfixed code (machine/session/host from HEAD): 12 of 24 failed: AC-1 reps (phase confirm, not set), AC-1 timed, AC-2 reducer (betweenItems) and store (resolver called 1x, expected 0), AC-3 (stored state null, not done), AC-4 reload after list log, AC-5 reducer x5 (setIndex 0 not 1; no done/betweenItems) and host. All 12 green with the fix.
