@@ -41,10 +41,13 @@ function toSaved(checked: ReadonlySet<string>, unknown: readonly string[]): stri
   return ["none", ...ITEMS.filter((i) => checked.has(i)), ...unknown];
 }
 
-function fromStored(stored: readonly string[]): { checked: Set<Item>; unknown: string[] } {
+function fromStored(stored: readonly string[] | null | undefined): {
+  checked: Set<Item>;
+  unknown: string[];
+} {
   const checked = new Set<Item>();
   const unknown: string[] = [];
-  for (const raw of stored) {
+  for (const raw of stored ?? []) {
     if (raw === "none") continue;
     if ((ITEMS as readonly string[]).includes(raw)) checked.add(raw as Item);
     else unknown.push(raw);
