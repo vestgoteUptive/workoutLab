@@ -91,3 +91,9 @@ none. D-0090 amends D-0086 (process, not a contract).
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · e2e green · contracts unchanged or decision linked · commit messages start with `T-0356` and cite D-0090.
+
+## Build / accept log
+- Main already had a glob (T-0425 AC5) and uf-10 already guarded (T-0427), but the glob kept only specs that already import guarded-test.js, so a spec importing `test` from `@playwright/test` was never checked. Done now: `fixtures/guard-source-check.ts` (`unguardedReason`, `listSpecs`, `unguardedSpecs`; import rules anchored to line start, comments stripped); `fixture-guard.spec.ts` one test per `*.spec.ts` plus aggregate. Backstop/allow rules (D-0155 §4) untouched.
+- AC→test: AC1 per-file `T-0356 AC1 <spec>` tests, no hard-coded names; AC2 `T-0356 AC2`; AC3 `T-0356 AC3`; AC4 `T-0356 AC4`; AC5 `T-0356 AC5`; AC6/AC7 already by T-0427 (uf-10 migrated; fault: scratch spec).
+- Faults: scratch `zz-scratch.spec.ts` with `import { expect, test } from "@playwright/test"` → AC1 per-file and AC5 red naming the file; `test as base` variant → AC5 red. Removed.
+- Results: fixture-guard 66 pass; whole e2e 194 pass; typecheck/lint/test cached green; test:repo-checks, format:check, check-all green.
