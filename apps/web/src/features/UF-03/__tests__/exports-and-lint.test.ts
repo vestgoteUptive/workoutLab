@@ -50,6 +50,51 @@ describe("AC-9 exports", () => {
   });
 });
 
+describe("T-0417 AC-4 every write goes through ctx (D-0071 §5)", () => {
+  /** The names a source file imports from a `lib/offline` module, static or dynamic. */
+  const WRITERS = ["recordSet", "editSet", "deleteSet"];
+  const code = (file: string) =>
+    readFileSync(file, "utf8")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
+  const offlineImports = (source: string): string[] => {
+    const out: string[] = [];
+    for (const m of source.matchAll(
+      /import\s*(?:type\s*)?\{([^}]*)\}\s*from\s*["'][^"']*lib\/offline[^"']*["']/g,
+    )) {
+      out.push(...m[1]!.split(",").map((n) => n.trim().split(/\s+as\s+/)[0]!));
+    }
+    // A dynamic import() of a lib/offline module can't be told apart by name: flag the module.
+    if (/import\(\s*["'][^"']*lib\/offline[^"']*["']\s*\)/.test(source)) out.push("*dynamic*");
+    return out;
+  };
+
+  it("no features/UF-03 file imports recordSet, editSet or deleteSet from lib/offline", () => {
+    for (const file of sourceFiles().filter((f) => /\.tsx?$/.test(f))) {
+      const names = offlineImports(code(file));
+      for (const w of WRITERS) expect(names, `${file} ${w}`).not.toContain(w);
+      expect(names, `${file} dynamic`).not.toContain("*dynamic*");
+    }
+  });
+
+  it("upsertSession is imported by exactly one module: EffortSave.tsx (T-0420)", () => {
+    const importers = sourceFiles()
+      .filter((f) => /\.tsx?$/.test(f))
+      .filter((f) => offlineImports(code(f)).includes("upsertSession"))
+      .map((f) => f.split("/").pop());
+    expect(importers).toEqual(["EffortSave.tsx"]);
+  });
+
+  it("CONTRAST: the scan does catch a planted static and a dynamic import", () => {
+    expect(
+      offlineImports('import { recordSet as r } from "../../lib/offline/index.js";'),
+    ).toContain("recordSet");
+    expect(offlineImports('const m = await import("../../lib/offline/queue.js");')).toContain(
+      "*dynamic*",
+    );
+  });
+});
+
 describe("AC-8 import bans (principle 1, the T-0318 rule)", () => {
   it("a features/UF-03 file importing features/UF-11/index.js reports no-restricted-imports", async () => {
     const found = (

@@ -31,6 +31,9 @@ export function withItem(plan: SessionPlan, index: number, patch: Partial<Workou
 export type SpiedCtx = ListViewCtx & {
   close: ReturnType<typeof vi.fn<() => void>>;
   finish: ReturnType<typeof vi.fn<() => Promise<void>>>;
+  recordSet: ReturnType<typeof vi.fn<ListViewCtx["recordSet"]>>;
+  editSet: ReturnType<typeof vi.fn<ListViewCtx["editSet"]>>;
+  deleteSet: ReturnType<typeof vi.fn<ListViewCtx["deleteSet"]>>;
 };
 
 export function makeCtx(over: Partial<ListViewCtx> = {}): SpiedCtx {
@@ -43,6 +46,9 @@ export function makeCtx(over: Partial<ListViewCtx> = {}): SpiedCtx {
     ...over,
     close: vi.fn<() => void>(),
     finish: vi.fn<() => Promise<void>>(async () => undefined),
+    recordSet: vi.fn<ListViewCtx["recordSet"]>(async () => ({})),
+    editSet: vi.fn<ListViewCtx["editSet"]>(async () => undefined),
+    deleteSet: vi.fn<ListViewCtx["deleteSet"]>(async () => undefined),
   } as SpiedCtx;
 }
 
@@ -53,7 +59,15 @@ export function logged(
   reps: number,
   kg: number,
 ) {
-  return { itemIndex, setIndex, exerciseId, reps, weightKg: kg, durationS: null };
+  return {
+    clientId: `c-${itemIndex}-${setIndex}`,
+    itemIndex,
+    setIndex,
+    exerciseId,
+    reps,
+    weightKg: kg,
+    durationS: null,
+  };
 }
 
 interface Axe {

@@ -5,7 +5,7 @@ lane: web-feature:UF-03
 screens: [UF-03.1, UF-09.9, UF-09.3]
 decisions: [D-0142, D-0164, D-0015, D-0045, D-0066, D-0071, D-0118, D-0128, D-0153]
 deps: [T-0416, T-0415, T-0420]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner; re-groomed 2026-10-03 against main after T-0415, T-0416 and T-0420 merged. Split by D-0164 §1: "+ Add set" is T-0457 and the List view e2e is T-0458. Build flow: wl-build-web. About ½ day. -->
 
@@ -161,3 +161,29 @@ start `T-0417` and cite the screen (for example `T-0417 UF-03.1: check records t
 - **E2e runs:** use `TMPDIR=$HOME/.cache/wl-pw-tmp` if the T-0440 preflight asks for it.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-03; start: git clean, HEAD 56ab6a9)
+- **Built:** `ListView.tsx` (`SetRow`: check → `ctx.recordSet` source list, edit → `ctx.editSet` once on blur/Enter, uncheck → `ctx.deleteSet`, pending/rejection per row), `weight-parse.ts` (D-0118 §6 + D-0128), strings in `flows/uf-03.ts`, css. `ListViewCtx` gains `recordSet/editSet/deleteSet` and `clientId`, typed locally. No default needed: an invalid kg on a *done* row reverts on blur and doesn't disable its uncheck (the hint/disable applies to unlogged rows).
+- **AC → test:** AC-1 `list-view.logging.test.tsx` "AC-1" + `list-view.logging.host.test.tsx` "AC-1 integration" · AC-2 "AC-2 edit" · AC-3 "AC-3" + host "tombstone" (no `.delete()` through a Proxy on the client) · AC-4 `exports-and-lint.test.ts` "T-0417 AC-4" · AC-5 "AC-5" + `weight-parse.test.ts` · AC-6 host "AC-6 reload" · AC-7 host "AC-7" · AC-8 logging test "AC-8 a11y" + the existing jsx-no-literals test.
+- **Red on unfixed** (HEAD `ListView.tsx`, new tests): 28 of 30 failed (logging + host files). `weight-parse` was red by missing module.
+- **Planted faults (each restored from a `cp` backup):** row checked while pending → AC-1 pending test red; `editSet` per keystroke → 4 AC-2 tests red; direct `recordSet` import in `ListView.tsx` → AC-4 source test red; kg check skipped → 3 AC-5/AC-8 tests red.
+- **Test bug found:** the AC-7 host test returned early because two cards both showed "Mark set 1 not done"; it now waits for the second one (was flaky 1 in 3).
+- **Gate:** `-w typecheck lint test --concurrency=1` green (after one TS narrowing fix), `test:repo-checks`, `format:check`, `check-all`, `check:size` (built with dummy VITE_SUPABASE_*) green; e2e `uf-03-list-summary` + `uf-09-focus`: 12 passed.
+
+### Build, attempt 2 (frontend-dev, 2026-10-03; HEAD 4db5910)
+- **Fixed:** (1) invalid or empty reps/seconds on an unlogged row now disables the check with a polite hint ("Enter reps as a whole number like 8" / seconds) and writes nothing, instead of recording the pre-fill; (2) the D-0128 §4 opening-text rule now applies to unlogged kg too (82.13 typed back stays 82.125); (3) D-0165 records that a done row's invalid kg reverts on blur and keeps uncheck enabled (pinned by a test).
+- **Red on attempt-1 code:** reps, seconds and opening-text tests failed (3 of 4 "rework" tests); the D-0165 test passes there by design (it pins existing behaviour). Note: the opening-text test must change the text first, because `fireEvent.change` to the identical value fires nothing.
+- **Gate:** UF-03 vitest folder 192 passed; cached gate, repo-checks, format, check-all and the uf-03/uf-09 e2e: see the handback.
+
+### QA log (qa-tester, 2026-10-03; git clean, HEAD 7f1bdf6 after `git merge origin/main`)
+- **AC → test:** AC-1 logging "AC-1" + host "AC-1 integration" · AC-2 "AC-2 edit" · AC-3 "AC-3" + host tombstone · AC-4 `exports-and-lint` "T-0417 AC-4" · AC-5 "AC-5" + `weight-parse.test.ts` · AC-6 host reload · AC-7 host AC-7 · AC-8 axe + jsx-no-literals. All proven.
+- **Red/faults (each restored from `cp`):** main's `ListView.tsx` → many red (axe, 0/82.5/82,5, -5, 82.555 …); editSet per keystroke → 5 red (AC-2); direct `lib/offline` `recordSet` import → AC-4 red; reps validation reverted (attempt 2) → 2 red; own: uncheck no longer calls `deleteSet` → 4 red (tombstone, busy, rejection, D-0165).
+- **Runs:** UF-03 vitest folder 192 passed; e2e uf-03-list-summary + uf-09-focus 14 passed; `-w test` web 3280 passed on rerun (first cached run had one web failure under load).
+- **GAP:** `check-all` and `test:repo-checks` (AC21) red: `.squad/decisions/D-0165-list-view-done-row-invalid-kg.md` is outside lane `web-feature:UF-03`'s grant on main. Needs the orchestrator to land D-0165 on main (or add it to the ticket's paths on main).
+
+### Accept log (product-owner, 2026-10-03; git clean, HEAD 7300eb9, D-0165 on main)
+- **Verdict: done.** AC-1..AC-8 each map to a named passing test (QA: UF-03 192, e2e uf-03 + uf-09 14). Every AC was red on main's `ListView.tsx`, and the four required planted faults turned red (build and QA).
+- **Decisions hold:** D-0142 §3/§5 (local ctx types, no UF-09 import, list logs leave the machine alone: AC-1 integration); D-0164 §1 split respected ("+ Add set" and e2e left to T-0457/T-0458); D-0165 (done-row invalid kg reverts, uncheck stays enabled) pinned by a test; D-0015 tombstone with no `.delete()`.
+- **Principle 1:** UF-03.1 opens only from UF-09.9 Pause; AC-7 returns to a single UF-09.3 step.
+- QA's only gap (D-0165 outside the lane grant) is resolved now that D-0165 is on main; `check-all` exit 0.
+- Follow-up: T-0464 (uncheck during an in-flight edit).
