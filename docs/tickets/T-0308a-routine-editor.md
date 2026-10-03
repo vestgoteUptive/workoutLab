@@ -211,3 +211,9 @@ None. The writes use `routines {id, name}` and `routine_items {routine_id, posit
 
 ## Rework note (orchestrator, 2026-10-03)
 - AC-A16 (new): `tests/e2e/shell.spec.ts` AC-6 `/plan/routines/R1` assumed a stub. With UF-07.1 built, an unknown id redirects to `/plan` offline (D-0081 §5), so the row failed 5/5 on main after the merge, which was undone. Move the row out of `OTHER_SUB_ROUTES` into a seeded offline test that asserts UF-07.1's built content (seed a routine R1 via one online visit), plus an empty-cache contrast landing on `/plan`; update the D-0091 paragraph (same pattern as T-0307b AC-16). Prove it with a planted fault.
+
+## Rework AC-A16 (web-feature, 2026-10-03)
+- Merged main (T-0450, T-0307b, T-0308a ticket grant). `shell.spec.ts` AC-6: `/plan/routines/R1` left `OTHER_SUB_ROUTES`; new seeded test (online visit seeds R1, cold offline goto, asserts screen id, Name value `Lower A`, `1. Back squat`, `Connect to save`, Save disabled, URL last) plus an empty-cache contrast landing on `/plan` (UF-11.2). D-0091 comment paragraph updated. Loop body and other rows untouched.
+- Planted fault (backup copy, restored by cp): `use-routine-editor.ts:108` lookup `r.id === routineId + "x"` -> the seeded test red (Name value), contrast stays green.
+- Stability: `shell.spec.ts --repeat-each=5` 100/100.
+- Gate: see handback.
