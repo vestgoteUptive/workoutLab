@@ -182,3 +182,37 @@ Commands run:
 
 **Verdict: done.** Every AC has a passing test (AC-1/AC-2/AC-3 unchanged from the earlier session;
 AC-4 now green with the named TR-0045 exception). Full gate green. No contract changed.
+
+### 2026-10-03 qa-tester — verified, done
+Branch not behind `main` (merge-base = `main` HEAD `b9e4a47`); no merge needed. AC→test map
+confirmed by reading each test: AC-1/AC-3 → `t0474.prefs-leaf.test.ts`; AC-2 →
+`index-prefs.test.ts` + unedited `exports-and-lint.test.ts`; AC-4 → full `UF-09`/`UF-08`
+`__tests__` run incl. retargeted `t0304g.device.test.tsx`. Confirmed scope: `git diff main
+--name-only` lists exactly the 6 files the ticket/TR-0045 permit.
+
+Reproduced recorded red-on-main / planted fault: backed up `device.ts` (`cp`), reverted its import
+to `../UF-08/index.js`, ran `scripts/locked.sh small npx vitest run
+src/features/UF-09/__tests__/t0474.prefs-leaf.test.ts` → 2 failed (AC-1 "SessionSetup evaluated",
+AC-3 regex scan), 2 passed — matches the log exactly. Restored from backup (`cp`).
+
+Own planted fault (per task): fresh backup of `device.ts`, same import revert to
+`../UF-08/index.js` (breaks the real decoupling), ran `scripts/locked.sh small npx vitest run
+src/features/UF-09/__tests__/t0304g.device.test.tsx` → 3 failed (the same three "AC-1 the prefs
+are read once per mount" tests TR-0045 documents, "Number of calls: 0"), 14 passed. This proves
+TR-0045's retargeted mock in `t0304g.device.test.tsx` watches the live specifier `device.ts`
+actually imports, not a vacuously-passing stale mock. Restored from backup (`cp`); `git status`
+clean afterward.
+
+Green re-runs: `scripts/locked.sh small npx vitest run t0474.prefs-leaf.test.ts
+index-prefs.test.ts exports-and-lint.test.ts focus-prefs.test.ts t0304g.device.test.tsx` → 5
+files, 57 passed. `scripts/locked.sh heavy npx vitest run src/features/UF-09/__tests__
+src/features/UF-08/__tests__` → 80 files, 1189 passed (matches the builder's recorded count
+exactly).
+
+No e2e run: this ticket owns no screen and changes no UI-visible behaviour (an internal import
+path swap, AC-1–AC-4 fully proven at unit level); existing UF-09 e2e specs
+(`uf-09-focus.spec.ts`, `uf-09-ready.spec.ts`) are owned by other tickets and untouched by this
+diff. Per D-0158/qa-tester §1, did not rerun the full `-w` gate or merge `main`.
+
+**Verdict: done.** Every AC maps to a real, passing test; the TR-0045 exception is proven to be a
+live, behaviour-preserving retarget, not a vacuous pass. No gaps found.
