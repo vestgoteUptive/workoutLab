@@ -3,9 +3,9 @@ id: T-0308a
 title: UF-07.1 Routine editor — name plus an ordered list of 1–8 distinct exercises (search picker, move up/down, remove), read-only progression card, online-only Save/Delete in the D-0070 §2 order
 lane: web-feature:UF-07
 screens: [UF-07.1]
-decisions: [D-0001, D-0002, D-0020, D-0021, D-0045, D-0063, D-0067, D-0070, D-0071, D-0075, D-0081]
+decisions: [D-0001, D-0002, D-0020, D-0021, D-0045, D-0063, D-0067, D-0070, D-0071, D-0075, D-0081, D-0091]
 deps: [T-0318, T-0319, T-0334]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-09-29 (groom mode) from T-0308's [a] ACs, D-0070 §1–§2, D-0071 §1/§3/§8/§10, D-0075 and D-0081 §4–§6. All three deps are done (T-0334 merged as f057d58). Build flow: wl-build-web. About ½ day. Runs in parallel with T-0308b, T-0306a, T-0307a and T-0307b (no path overlap). -->
 
@@ -187,13 +187,20 @@ None. The writes use `routines {id, name}` and `routine_items {routine_id, posit
 - Commits start `T-0308a:` and cite the screen id (e.g. `T-0308a UF-07.1: stable id across save retries`).
 - Make no bundle-size claim unless you ran a fresh `pnpm --filter @workoutlab/web build` and report measured gzip numbers (T-0322).
 
-## Build log (frontend-dev)
-
-### Post-merge catch-up 2026-10-02 (landed on main by the orchestrator)
-- Merged main (ad1d5db, 7c2abc1); only `.squad/board.md` conflicted (took main's). AC-A1…A15 were already built and tested.
-- Fix: `uf-07-routines.spec.ts` imports `./fixtures/guarded-test.js`, no own listeners (T-0904/T-0430).
-- Reds seen: e2e `shell.spec.ts` AC-6 `/plan/routines/R1` once (D-0091 race now that UF-07.1 is built, T-0452); UF-11 AC-B16 diff test (retired on main by T-0450).
-- Gate at ab4cbb7: web turbo `--force` green, repo-checks 146/146 and check-all 0 (fresh clone), format clean, e2e 158/158.
-
 ## Rework note (orchestrator, 2026-10-03)
 - AC-A16 (new): `tests/e2e/shell.spec.ts` AC-6 `/plan/routines/R1` assumed a stub. With UF-07.1 built, an unknown id redirects to `/plan` offline (D-0081 §5), so the row failed 5/5 on main after the merge, which was undone. Move the row out of `OTHER_SUB_ROUTES` into a seeded offline test that asserts UF-07.1's built content (seed a routine R1 via one online visit), plus an empty-cache contrast landing on `/plan`; update the D-0091 paragraph (same pattern as T-0307b AC-16). Prove it with a planted fault.
+
+## Rework AC-A16 (web-feature, 2026-10-03)
+- Merged main (T-0450, T-0307b, T-0308a ticket grant). `shell.spec.ts` AC-6: `/plan/routines/R1` left `OTHER_SUB_ROUTES`; new seeded test (online visit seeds R1, cold offline goto, asserts screen id, Name value `Lower A`, `1. Back squat`, `Connect to save`, Save disabled, URL last) plus an empty-cache contrast landing on `/plan` (UF-11.2). D-0091 comment paragraph updated. Loop body and other rows untouched.
+- Planted fault (backup copy, restored by cp): `use-routine-editor.ts:108` lookup `r.id === routineId + "x"` -> the seeded test red (Name value), contrast stays green.
+- Stability: `shell.spec.ts --repeat-each=5` 100/100.
+- Gate: see handback.
+
+## Re-accept log (product-owner, HEAD e63ed47, tree clean, 2026-10-03)
+- AC-A16 → `shell.spec.ts` AC-6 "/plan/routines/R1 renders UF-07.1 offline with a cached routine". It seeds through `mockSupabaseData` and one online visit (D-0091 §1) and asserts built content: Name `Lower A`, `1. Back squat`, `Connect to save`, Save disabled, with the URL check last (§2). Its pair is "…lands on /plan offline with an empty cache", the §3 contrast (UF-11.2). The row is out of `OTHER_SUB_ROUTES`, the loop body and other rows are unchanged, and the comment edit stays inside the D-0091 paragraph (§5 grant via Paths). The planted fault turned it red. Repeat-each=5 100/100, whole e2e 178, cached gate 19/19, repo-checks 146, check-all rc 0 (rerun here).
+- The review note is accepted as non-blocking. The fault also trips the online seed step, so it doesn't isolate the offline cache read. The offline content assertions still pin that read: a cache-only failure would pass the online step and fail offline.
+- A1–A15: UF-07 source, tests, i18n flow and the e2e spec/fixture are byte-identical to the accept at bf901aa (`git diff --stat` is empty), so the QA map above still holds.
+- Verdict: done.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0308a.md` (D-0157).

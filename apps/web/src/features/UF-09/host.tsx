@@ -405,10 +405,13 @@ function Machine(props: MachineProps) {
 
   // `done` finishes with no confirm (D-0071 §5). `finish()` writes once while pending; a failed
   // write leaves the done screen, the focus key and the route as they are.
+  const listOpen = overlay?.action.keepsClockRunning === true;
   useEffect(() => {
     if (state.phase !== "done") return;
+    // D-0142 §2: under an open List view `done` waits; closing it re-runs this effect.
+    if (listOpen) return;
     actions.finish().catch(() => undefined);
-  }, [state.phase, actions]);
+  }, [state.phase, actions, listOpen]);
 
   const workout = useMemo(() => buildWorkout(row, ctx.plan), [row, ctx.plan]);
   const session: FocusSession = {
@@ -418,7 +421,7 @@ function Machine(props: MachineProps) {
   };
 
   let body;
-  if (state.phase === "done") body = <HostLevel title={en.uf09.doneTitle} />;
+  if (state.phase === "done" && !listOpen) body = <HostLevel title={en.uf09.doneTitle} />;
   else if (state.phase === "betweenItems") body = <HostLevel title={en.uf09.loadingTitle} />;
   else if (overlay) {
     // In place of the screen and its actions: the overlay is the one task (principle 1).
@@ -435,7 +438,8 @@ function Machine(props: MachineProps) {
         };
     body = <div className="wl-uf09 wl-uf09--overlay">{overlay.action.render(overlaySession)}</div>;
   } else {
-    const phase: ViewPhase = state.phase;
+    // `done` only reaches here under a List-view overlay, which the branch above renders.
+    const phase = state.phase as ViewPhase;
     const View = VIEWS[phase];
     const entries = phase === "paused" ? seams.pause : phase === "next" ? seams.next : [];
     const buttons: SeamButton[] = entries.map((action) => ({
