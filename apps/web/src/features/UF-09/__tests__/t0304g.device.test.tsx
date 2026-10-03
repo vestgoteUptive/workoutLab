@@ -5,7 +5,7 @@
 import { act, cleanup, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
-import * as uf08 from "../../UF-08/index.js";
+import * as uf08 from "../../UF-08/index.prefs.js";
 import { STARTED_AT_MS, USER_A } from "./fixtures.js";
 import {
   advance,
@@ -38,8 +38,8 @@ vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./set-loop-mock.js").then((m) => m.setLoopMock(orig)),
 );
 // A spy that wraps the real T-0303d reader, so the stored value is what it reads.
-vi.mock("../../UF-08/index.js", async (orig) => {
-  const real = (await orig()) as typeof import("../../UF-08/index.js");
+vi.mock("../../UF-08/index.prefs.js", async (orig) => {
+  const real = (await orig()) as typeof import("../../UF-08/index.prefs.js");
   return { ...real, readFocusPrefs: vi.fn(real.readFocusPrefs) };
 });
 
