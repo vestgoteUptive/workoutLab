@@ -207,3 +207,51 @@ needed) · contracts unchanged · commits start `T-0418` and cite the screen (fo
   `list-view.addset.host.test.tsx` — 4 files, 27 tests, all passed.
 - **Verdict: approve.** No lane, contract, correctness or principle issues found; the three
   modified T-0417 tests are strengthened/adapted, not weakened.
+
+### QA log (qa-tester, 2026-10-03; start: git clean, HEAD 1d28123)
+- **Branch vs main:** behind (`origin/main` has T-0468/T-0470/T-0479/D-0173 on top); `git
+  merge-tree` of the merge-base against HEAD and `origin/main` produced no conflict markers —
+  clean behind-main, so per D-0169 §2/qa-tester §1 no merge needed from QA; the orchestrator's
+  forced gate on `main` covers the combination.
+- **AC → test (verified by reading titles, not just names):** AC-1 `rest.test.tsx` "T-0418 AC-1"
+  (compound/isolation start, wall-clock incl. offline, expiry, no-own-timer via
+  `rest-sources.test.ts`, edit/uncheck spy) · AC-2 "T-0418 AC-2" both halves of the pair · AC-3
+  "T-0418 AC-3" open/adjust/Skip/Back to list/announcer · AC-4 "T-0418 AC-4 a11y" named buttons +
+  axe 0 violations on UF-03.1 (bar shown) and UF-03.2 · AC-5 "T-0418 AC-5 focus" Back-to-list,
+  Skip with rows open, Skip with card done → Finish, rest view's own auto-close on expiry. No gaps.
+- **Reproduced red-on-main independently:** swapped main's (`e3e090e`) `ListView.tsx` and
+  `list-helpers.tsx` in via `cp` backup, ran the new test files — 17/22 red, matching the build
+  log exactly (same 5 vacuously-true survivors); restored via `cp`, tree clean.
+- **Reproduced all 3 recorded planted faults** (each on a `cp` backup of `ListView.tsx`,
+  restored by `cp`): own `setInterval` in `RestBar` → `rest-sources.test.ts`'s scan red (AC-1) ·
+  `allPlannedSetsLogged` guard removed → AC-2's "row 3 starts no rest" red, pair test unaffected
+  as expected · AC-5's focus-after-close effect gutted to a no-op → all 4 AC-5 tests red. All
+  three matched the log's description exactly.
+- **D-0142 §2 invariant, own planted fault:** confirmed in code (as the review did) that
+  `startRest` fires only from the write's *resolve* branch, never the reject branch. Wrote a
+  scratch test (`qa-fault.test.tsx`, removed after) asserting a rejected `ctx.recordSet` starts
+  no rest — green on real code. Then planted a fault making the `run()` helper's reject branch
+  also call `onDone`, i.e. `startRest` would fire even on a failed write — the same probe went
+  red (`startRest` called once). This independently confirms the invariant is real, not vacuous:
+  a regression that fired `startRest` regardless of write outcome would be caught. Restored via
+  `cp`; scratch test deleted; tree clean.
+- **Modified T-0417 tests re-checked:** `list-view.logging.host.test.tsx`'s "without moving the
+  machine" test still asserts `itemIndex`/`setIndex` unchanged (D-0142 §2) and additionally pins
+  `phase` to `"rest"` — a strengthening, confirmed by reading the assertions directly, not just
+  the log's claim.
+- **e2e:** `scripts/locked.sh heavy` playwright run of `uf-03-list-summary.spec.ts` +
+  `uf-09-focus.spec.ts` (TMPDIR set per T-0440) — 16/16 passed, matching the build log. Both specs
+  use the shared `guarded-test` fixture (D-0086/T-0425), which fails on any console error or
+  unclaimed Supabase request; all 16 green, so no console errors. Offline coverage present and
+  passing throughout (NFR-OFF-2 reload/offline scenarios in both specs, including the rest flow
+  at UF-09.5 Skip rest). Going-back-mid-flow covered by the T-0394 "Back means Pause" cases
+  (both online and offline), which passed with the rest-bearing host unchanged.
+- **Try-to-break-it:** zero history and a 15-minute budget don't interact with rest length or
+  timing (ticket's own "Edge cases in scope" — rest length comes from the library `type`, not
+  history or budget), so no separate probe needed. Timers crossing zero: AC-1 expiry and AC-5
+  auto-close both exercise `Date.now` crossing the rest's end exactly. Backgrounded/slow network:
+  AC-1's wall-clock case advances `Date.now` 90 s with no timer ticks and with
+  `navigator.onLine = false`, matching a backgrounded or offline tab.
+- **Verdict: done.** All 5 ACs proven, both red-on-main and all 3 recorded faults reproduced
+  independently, one new fault planted and caught, e2e green with no console errors, D-0142 §2
+  invariant independently verified in code and by a dedicated fault. No gaps found.
