@@ -5,7 +5,7 @@ lane: web-feature:UF-06
 screens: [UF-06.1, UF-06.2]
 decisions: [D-0002, D-0003, D-0013, D-0034, D-0040, D-0045, D-0067, D-0068, D-0071, D-0075, D-0079, D-0091]
 deps: [T-0318, T-0319, T-0334]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-09-29 (groom mode) from T-0307's [b] ACs, D-0068 §5–§6, D-0071 §3/§8/§9/§10, D-0075 and D-0079 §7–§10, over the merged T-0318/T-0319/T-0334. Build flow: wl-build-web. About ¾ day, so not split. If a build runs long, cut along this line: T-0307b1 = `stats.ts` plus UF-06.1 (AC-1…AC-8, AC-12…AC-14), T-0307b2 = UF-06.2 (AC-9…AC-11), with AC-15's e2e split by page. Runs in parallel with T-0306a, T-0307a, T-0308a and T-0308b (no path overlap). -->
 
@@ -265,3 +265,11 @@ None. The screens read the T-0319 `OfflineSession`, `HistorySet`, `LibraryExerci
 - Baseline `vitest run features/UF-06` 69/69. e2e `uf-06-progress` + `shell` 24/24.
 - Cached gate after the main merge: typecheck lint test 19/19 (16 cached), test:repo-checks exit 0, check-all exit 0.
 - AC-1..AC-16 each map to a named test (screens/stats/online/lane/real-route unit tests; AC-15 uf-06-progress.spec; AC-16 shell.spec). Verdict: done.
+
+### Accept log (product-owner, 2026-10-03, HEAD dc3d750, clean tree)
+- AC-1..AC-16: QA map plus faults (AC-10 replace, en-AU Sept, AC-16 lookup, AC-1/AC-6 own) cover each AC. Re-review approved; AC-10 now observes the router stack (`/x` below the bad URL, `<Navigate replace>`), so it is no longer vacuous.
+- D-0068 §5: no record/PR/1RM/volume/streak text in `features/UF-06` or `flows/uf-06.ts`; AC-11 matcher has its non-vacuous probe. D-0079 §8 units and §9 order are pinned by AC-2/AC-3/AC-9. D-0084 §1 Sep is en-GB only. D-0088: the three shell test files change only `/progress` rows.
+- `git diff --name-only main...HEAD`: every path is in "Paths you may change". Principles 1 (AC-13) and 3 (AC-1/AC-4/AC-5) hold.
+- Cached gate 19/19, repo-checks 146/146, e2e 24/24 (QA); check-all exit 0 (re-run here).
+- Follow-up: D-0084 is not listed in `.squad/decisions/INDEX.md` (process lane).
+- Verdict: done.
