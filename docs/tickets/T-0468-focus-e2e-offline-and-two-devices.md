@@ -308,3 +308,37 @@ both times; `git diff` after restore shows only the intended fix (+16/-1).
 **Gate.** `scripts/locked.sh heavy … test:e2e -- uf-09-offline.spec.ts -g "AC-2"` (which runs the
 whole configured spec list, not just the grep match) green twice in a row on the restored file:
 206/206 passed. No other file changed; no regression expected or seen elsewhere in that run.
+
+### Accept (product-owner, 2026-10-03)
+`git status` clean, HEAD `7c54df4`. `git diff main...HEAD --name-only` is exactly the two granted
+paths (`tests/e2e/uf-09-offline.spec.ts`, this ticket file) — no contract touched, no
+`features/UF-09/**` app-code change, matching "test-only" per D-0168.
+
+**AC-1.** Named test present; both planted-fault red proofs (IndexedDB 10th-row fabrication,
+discarded restored focus state) reproduced by QA with matching failure messages, green on main's
+code. Done.
+
+**AC-2.** Named test present; test-only fixed-UUID fault reproduced red by QA, green restored.
+QA's own gap — `contextB` had no console guard, demonstrated with a working probe (a deliberate
+`console.error` on `pageB` still passed AC-2) — is directly closed by `7c54df4`:
+`installConsoleGuard(contextB)` installed right after the existing `installSupabaseGuard(contextB)`,
+`consoleGuardB.assertClean()` added at teardown. The fix re-ran QA's exact probe on a backup copy:
+red at `assertClean`, naming the planted `console.error` (confirming the new guard now catches
+what previously slipped through), then restored and green, 206/206 twice. Diff matches the
+described shape exactly (`git show 7c54df4`). Done.
+
+**AC-3.** Named test present, QA confirmed one `[data-screen-id]`/zero navigation landmarks at
+every point, including through the fix (no change to AC-3's test or assertions). Done.
+
+**Definition of done.** Spec green twice with no flake (build and QA both ran
+`--repeat-each=2 --workers=1`; fix reran the full spec twice, 206/206 both times); regression
+specs (`offline.spec.ts`, `uf-09-ready.spec.ts`, `fixture-guard.spec.ts`) green 74/74 per QA, untouched
+by the fix; full gate (`typecheck lint test`, `test:repo-checks`, `format:check`, `check-all.mjs`)
+green per build log, not re-run here (not required for accept; orchestrator forces the full gate on
+`main` after merge). Contracts unchanged. Lane/paths respected — diff is exactly the two granted
+extras. Commits start `T-0468` and cite screens. No `.skip`/`.only` (code review). Every AC has a
+named test that fails without its feature and passes with it, including the fix's own AC-2 gap,
+proven with QA's own probe as both the red and the green case.
+
+**Verdict: done.** No missing ACs, no principle violation, no open follow-up blocking accept. QA's
+console-guard follow-up is resolved by this fix, not merely noted.
