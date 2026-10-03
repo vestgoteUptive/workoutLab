@@ -118,7 +118,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0374 | T-0219 AC6 ticket wording: F-input never shuffles plank into a slot; require the forced-core exclude list + minute-grid oldCost sweep as accepted (docs only) | product | T-0219 | todo | wl-spec |
 | T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | todo | wl-build-web |
 | T-0389 | Real-browser 24-hour `<input type=time>` probe for UF-08.1 (cut from T-0386); also a Playwright check of the D-0115 §5 finish-time focus order (T-0386 QA) | qa | T-0303a | todo | wl-build-qa |
-| T-0395 | "Resume workout" entry on Today (UF-02.1) and/or UF-08.1 for an unfinished, non-stale session on this device — a PWA cold start never reaches the D-0111 §7 restore (D-0123 §4–§5) | web-feature:UF-09 | T-0304e, T-0302a (D-0139) | doing | wl-build-web |
 | T-0418 | UF-03.2 rest bar + rest view on the host's wall-clock rest, focus targets (D-0142, D-0172 §9: Swap split to T-0478) | web-feature:UF-03 | T-0417, T-0414 | doing | wl-build-web |
 | T-0478 | UF-03.1 Swap button on the List view's current card → SwapSheet → ctx.replaceItem (split from T-0418, D-0172 §9) | web-feature:UF-03 | T-0418, T-0421, T-0414 | todo | wl-build-web |
 | T-0477 | UF-09 host: let `REST_START` start a rest from `getReady`/`warmup` while a `keepsClockRunning` overlay (the List view) is open, so a set checked in the list before the first focus-mode set gets a rest (D-0172 §5) | web-feature:UF-09 | T-0418 | todo | wl-build-web |
@@ -136,7 +135,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0467 | check-lane-paths doc nit: add the one-line D-0167 §1 own-ticket-file note to the file header and the listedPathsFromTicket doc comment; AC-3 test should also assert the finding points at the ticket path (T-0466 review/accept) | infra | T-0466 | todo | wl-build-infra |
 | T-0468 | UF-09 e2e: 10-set offline workout (NFR-OFF-2) and two devices (NFR-SYNC-4) (split from T-0304h, D-0168) | web-feature:UF-09 | T-0304d | doing | wl-build-web |
 | T-0469 | UF-11.4 Account settings e2e (split from T-0310d, D-0168; fixtures D-0172 §6) | web-feature:UF-11 | T-0310d | doing | wl-build-web |
-| T-0470 | UF-11.1 CheckinCard writes: Accept/Keep, first-shown insert, second device, offline (split from T-0308c, D-0168; D-0172 §1–§2) | web-feature:UF-11 | T-0308c | ready | wl-build-web |
+| T-0470 | UF-11.1 CheckinCard writes: Accept/Keep, first-shown insert, second device, offline (split from T-0308c, D-0168; D-0172 §1–§2) | web-feature:UF-11 | T-0308c | doing | wl-build-web |
 | T-0471 | UF-11.1 CheckinCard mounts on UF-11.2 + UF-02.1 (slots.tsx) and e2e (split from T-0308c, D-0168) | web-feature:UF-11 | T-0470 | todo | wl-build-web |
 | T-0472 | UF-03.1: after a reload, unchecking a logged added row removes the row and drops focus to body — keep the row or move focus to '+ Add set' (T-0457 review) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
 | T-0473 | UF-03.1 AC-6: add a vitest that pressing + Add set on a timed item moves focus to the new row's seconds field (untested; T-0457 accept) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
