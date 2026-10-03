@@ -225,7 +225,7 @@ export function useFocusDevice(key: string | null, state: FocusState, nowMs: num
       if (ctx) quietly(() => ctx.close());
       if (prefs.voice) cancelSpeech();
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- prefs are read once per mount
+    // prefs are read once per mount (D-0119 §6)
     [],
   );
 

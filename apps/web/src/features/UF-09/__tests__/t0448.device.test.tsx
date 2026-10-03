@@ -75,23 +75,26 @@ describe("AC-1 cancel on Pause", () => {
   it.each([
     [true, 1, 2],
     [false, 0, 0],
-  ])("voice %s: cancel calls after Pause = %i, after Resume + Pause = %i", async (voice, one, two) => {
-    prefs({ voice });
-    const speech = stubSpeech();
-    seedRest(NOW - 116_000);
-    await render();
-    await press("Pause workout");
-    expect(screenId()).toBe("UF-09.9");
-    expect(speech.cancel).toHaveBeenCalledTimes(one);
-    for (let i = 0; i < 60; i += 1) tick();
-    await quiet();
-    expect(speech.cancel).toHaveBeenCalledTimes(one);
-    await press("Resume");
-    expect(screenId()).toBe("UF-09.5");
-    expect(speech.cancel).toHaveBeenCalledTimes(one);
-    await press("Pause workout");
-    expect(speech.cancel).toHaveBeenCalledTimes(two);
-  });
+  ])(
+    "voice %s: cancel calls after Pause = %i, after Resume + Pause = %i",
+    async (voice, one, two) => {
+      prefs({ voice });
+      const speech = stubSpeech();
+      seedRest(NOW - 116_000);
+      await render();
+      await press("Pause workout");
+      expect(screenId()).toBe("UF-09.9");
+      expect(speech.cancel).toHaveBeenCalledTimes(one);
+      for (let i = 0; i < 60; i += 1) tick();
+      await quiet();
+      expect(speech.cancel).toHaveBeenCalledTimes(one);
+      await press("Resume");
+      expect(screenId()).toBe("UF-09.5");
+      expect(speech.cancel).toHaveBeenCalledTimes(one);
+      await press("Pause workout");
+      expect(speech.cancel).toHaveBeenCalledTimes(two);
+    },
+  );
 
   it("the time check (UF-09.8) is not paused: no cancel", async () => {
     prefs({ voice: true });
