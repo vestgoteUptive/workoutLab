@@ -127,3 +127,8 @@ UF-09.9: cancel speech on Pause`).
 - Red on unfixed code (device.ts from HEAD): 9 failed of 30 (AC-1 Pause, AC-2 unmount, AC-3 prime x3, AC-4 interrupted x3 + suspended keyDown); the negative rows and "suspended" pointerUp/tone rows pass on main by design (existing behaviour).
 - Planted faults (backup copy, restored by cp): cancel on every observation: 2 red; resume suspended only: 3 red; prime on gesture: 1 red; unguarded cancel: 4 red.
 - Gate: typecheck, lint (one eslint-disable comment removed after a red lint run), test (19/19), test:repo-checks, format:check, check-all all green; `uf-09-focus` e2e 10 passed. AC-6: diff is `device.ts`, `t0448.device.test.tsx`, additive `t0304g-stubs.ts`, this ticket.
+
+### Build, attempt 2
+- AC-1 map fix: the "Not paused" rows are the UF-09.8 time check, a running rest, and a List view (keepsClockRunning seam) opened from UF-09.9 after the Pause (1 cancel, still 1 after a tick and after close), plus a restore into paused. The earlier note that the List view had no test was wrong after this change.
+- AC-5 now runs a full rest to UF-09.3 in each of the 6 variants.
+- Planted fault (backup copy, restored by cp): cancel on the paused→running change: red on the List view row and the Pause/Resume/Pause row. Green after restore (31/31).

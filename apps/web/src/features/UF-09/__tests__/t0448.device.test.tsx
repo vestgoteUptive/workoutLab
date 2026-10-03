@@ -18,6 +18,8 @@ import {
   useFakeClock,
 } from "./helpers.js";
 import { renderSession } from "./session-helpers.js";
+import type { SeamAction } from "../seams.js";
+import type { FocusSession } from "../session.js";
 import { L2, defaultDetail } from "./set-loop-fixtures.js";
 import { seedFocus } from "./set-loop-helpers.js";
 import { seedRest } from "./countdown-helpers.js";
@@ -116,6 +118,34 @@ describe("AC-1 cancel on Pause", () => {
     for (let i = 0; i < 30; i += 1) tick();
     await quiet();
     expect(speech.cancel).not.toHaveBeenCalled();
+  });
+
+  it("the List view (keepsClockRunning) from UF-09.9: no cancel beyond the Pause, open or closed", async () => {
+    prefs({ voice: true });
+    const speech = stubSpeech();
+    let ctx: FocusSession | null = null;
+    const listView: SeamAction = {
+      id: "list-view",
+      label: "List view",
+      keepsClockRunning: true,
+      render: (c) => {
+        ctx = c;
+        return <p data-testid="list-overlay" />;
+      },
+    };
+    seedRest(NOW - 116_000);
+    await renderSession({ locale: "en-GB", seams: { pause: [listView] } });
+    await press("Pause workout");
+    expect(screenId()).toBe("UF-09.9");
+    expect(speech.cancel).toHaveBeenCalledTimes(1);
+    await press("List view");
+    expect(screen.getByTestId("list-overlay")).toBeTruthy();
+    tick();
+    await quiet();
+    expect(speech.cancel).toHaveBeenCalledTimes(1);
+    act(() => ctx!.close());
+    await quiet();
+    expect(speech.cancel).toHaveBeenCalledTimes(1);
   });
 
   it("a restore into paused makes no cancel", async () => {
@@ -330,6 +360,9 @@ describe("AC-5 missing or broken APIs never throw", () => {
     expect(timerText()).toBe("0:04");
     tick();
     expect(timerText()).toBe("0:03");
+    for (let i = 0; i < 2; i += 1) tick();
+    await advance(1000);
+    expect(screenId()).toBe("UF-09.3");
     await quiet();
     cleanup();
     expect(rejections).not.toHaveBeenCalled();
