@@ -245,31 +245,5 @@ None. The screens read the T-0319 `OfflineSession`, `HistorySet`, `LibraryExerci
 
 **Bundle claims:** make one only after a fresh `pnpm --filter @workoutlab/web build`, with measured gzip numbers (T-0322). The UF-06 chunk budget is 100 KB.
 
-## Build log (frontend-dev)
-
-### Post-merge catch-up 2026-10-02 (landed on main by the orchestrator)
-- Merges: `4479e0a` (main, ~610 commits; the `routes.phase3.render.test.tsx` conflict is coherent — branch `BACK_SQUAT` fixture plus partial `lib/offline` mock beside main's `LAZY_WAIT_MS`/`LAZY_TEST_MS`, one `vi.mock` per module, non-UF-06 rows unchanged) and `af9d554` (4 squad-only commits incl. the D-0084/D-0088 grants).
-- AC-1…AC-15 were built before the pause; AC-16 (granted 2026-10-01) is new: `/progress/back-squat` leaves `OTHER_SUB_ROUTES` in `tests/e2e/shell.spec.ts` for a seeded offline test (UF-06.2 visible, `Back squat` `<h1>`, `How to` → `/library/back-squat`, URL last) plus an empty-cache contrast landing on UF-06.1. D-0091 paragraph updated.
-- AC-16 fault: `stats.ts` lookup `&& false` → 3/3 red on the UF-06.2 marker (redirect). Reverted.
-- T-0430: `uf-06-progress.spec.ts` imports `./fixtures/guarded-test.js`, no own listeners.
-- Gate at f797a0b: web turbo 4/4 (2765 tests), format, repo-checks 146/146, check-all, e2e 149/149.
-
-### Build, attempt 2 (2026-10-02, code review changes)
-- **MEDIUM, AC-10 replace.** The old check compared `window.history.length`, which MemoryRouter never touches, so it was always true. Now the test starts at `initialEntries={["/x", path]}`. After the redirect it navigates back once and asserts `/x`. Fault proof: a backup copy with `replace` removed from `<Navigate>` failed 2 of 2 (`nope`, `wu-cat-cow`). Restored, 2 of 2 pass.
-- **LOW, D-0084 §1.** `format.ts` rewrites "Sept" to "Sep" only when the formatter's resolved locale is `en-GB`. A test pair pins it: en-GB reads `25 Sep` and `Fri 25 Sep`, en-AU reads `25 Sept`.
-- **LOW.** Removed the unused `uf06.today` key. No test pins the uf06 key set.
-- **LOW.** `.wl-progress__howto` gets `min-inline-size: 44px`. The e2e 44 × 44 test now also measures UF-06.2's `How to`.
-
-### QA log (2026-10-03, HEAD f14ce8e, clean tree)
-- Faults from backup copies, each restored with `cp`: AC-10 `replace` removed -> screens.test 2 red (nope, wu-cat-cow); Sep rewrite for all locales -> stats.test `en-AU keeps Sept` red; AC-16 lookup `&& false` -> shell.spec :259 red (1 failed, 18 passed); own: `hardSetCount < 0` -> 5 red (AC-1), calendar lead without `+6 %7` -> 4 red (AC-1/AC-6).
-- Baseline `vitest run features/UF-06` 69/69. e2e `uf-06-progress` + `shell` 24/24.
-- Cached gate after the main merge: typecheck lint test 19/19 (16 cached), test:repo-checks exit 0, check-all exit 0.
-- AC-1..AC-16 each map to a named test (screens/stats/online/lane/real-route unit tests; AC-15 uf-06-progress.spec; AC-16 shell.spec). Verdict: done.
-
-### Accept log (product-owner, 2026-10-03, HEAD dc3d750, clean tree)
-- AC-1..AC-16: QA map plus faults (AC-10 replace, en-AU Sept, AC-16 lookup, AC-1/AC-6 own) cover each AC. Re-review approved; AC-10 now observes the router stack (`/x` below the bad URL, `<Navigate replace>`), so it is no longer vacuous.
-- D-0068 §5: no record/PR/1RM/volume/streak text in `features/UF-06` or `flows/uf-06.ts`; AC-11 matcher has its non-vacuous probe. D-0079 §8 units and §9 order are pinned by AC-2/AC-3/AC-9. D-0084 §1 Sep is en-GB only. D-0088: the three shell test files change only `/progress` rows.
-- `git diff --name-only main...HEAD`: every path is in "Paths you may change". Principles 1 (AC-13) and 3 (AC-1/AC-4/AC-5) hold.
-- Cached gate 19/19, repo-checks 146/146, e2e 24/24 (QA); check-all exit 0 (re-run here).
-- Follow-up: D-0084 is not listed in `.squad/decisions/INDEX.md` (process lane).
-- Verdict: done.
+## Build / accept log
+Archived in `docs/tickets/log/T-0307b.md` (D-0157).
