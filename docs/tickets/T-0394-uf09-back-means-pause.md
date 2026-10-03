@@ -3,9 +3,9 @@ id: T-0394
 title: "UF-09 Back means Pause: a same-URL history guard turns Back in a running machine state into UF-09.9; Back while paused leaves; Back with a seam overlay open ends paused on UF-09.9; tighten the T-0303d Back row; plus the T-0438 comment fix"
 lane: web-feature:UF-09
 screens: [UF-09.9, UF-09.1, UF-09.2, UF-09.3, UF-09.4, UF-09.5, UF-09.6, UF-09.7, UF-09.8]
-decisions: [D-0066, D-0071, D-0086, D-0091, D-0103, D-0108, D-0110, D-0111, D-0123, D-0153, D-0162]
+decisions: [D-0066, D-0071, D-0086, D-0091, D-0103, D-0108, D-0110, D-0111, D-0123, D-0153, D-0162, D-0163]
 deps: [T-0304d, T-0303d, T-0415]
-status: ready
+status: done
 ---
 <!-- Written 2026-10-02 by triage (TR-0038, D-0123 §3). Re-groomed 2026-10-03 by product-owner against main (T-0304g, T-0422, T-0435 merged; T-0415 in QA): Back with an overlay open is now exact (D-0162 §1), and T-0438 is folded in (D-0162 §2, AC-8). Build flow: wl-build-web. About ⅓ day. The spec is ready; the build waits for T-0415, which edits host.tsx and session.tsx. Start from a main that has it. -->
 
@@ -105,3 +105,6 @@ Tests for every AC pass, with the red runs recorded · the cached gate (D-0158):
   - **With T-0453, allowed** (UF-07).
   - **Not with T-0448** if that one adds a PAUSE hook in `host.tsx`. Today it is `device.ts` only.
 - **T-0438** is closed by this ticket (D-0162 §2). The orchestrator marks the T-0438 row done when T-0394 merges.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0394.md` (D-0157).

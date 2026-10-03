@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-05.1, UF-09.9, UF-09.6]
 decisions: [D-0162, D-0142, D-0144, D-0156, D-0160, D-0071]
 deps: [T-0422, T-0416]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0422 re-review and QA. Build flow: wl-build-web. About ¼ day. The spec is ready; the build waits for T-0416 (in build), which also edits seams.tsx. Start from a main that has it. -->
 
@@ -105,3 +105,6 @@ Tests for every AC pass, with the red runs recorded · the cached gate (D-0158):
   - **Not with any other ticket that lists `flows/uf-05.ts`** (D-0071 §1).
   - **Safe with T-0415**, T-0394 (`host.tsx`, `session.tsx` and `uf-09-focus.spec.ts`; this ticket
     touches none of them), T-0447 and T-0453.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0451.md` (D-0157).

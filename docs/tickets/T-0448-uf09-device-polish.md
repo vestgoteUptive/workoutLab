@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.5, UF-09.9]
 decisions: [D-0164, D-0119, D-0161, D-0155, D-0066]
 deps: [T-0304g]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0304g review. Build flow: wl-build-web. About ⅓ day. T-0304g and T-0447 are on main. All of it is in features/UF-09/device.ts, so it can run beside T-0394 and T-0451. -->
 
@@ -120,3 +120,4 @@ UF-09.9: cancel speech on Pause`).
   tap. Record it in the accept log if a device is at hand, as T-0304g did.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0448.md` (D-0157).

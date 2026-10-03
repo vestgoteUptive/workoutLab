@@ -38,6 +38,7 @@ export const uf05 = {
   loading: "Loading alternatives…",
   empty: "No alternatives fit your equipment",
   loadFailed: "Couldn't load alternatives.",
+  retry: "Try again",
   saveFailed: "Couldn't save the swap. Try again.",
   swapFailed: "Couldn't swap to that exercise.",
 } as const;

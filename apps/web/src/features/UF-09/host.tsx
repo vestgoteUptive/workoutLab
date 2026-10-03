@@ -13,6 +13,7 @@ import {
 import { Link, useNavigate, useParams } from "react-router";
 import { en } from "../../lib/i18n/en.js";
 import { formatTime, localDate } from "../../lib/format/intl.js";
+import { guardOnTop, pushGuard, useBackGuard } from "./back-guard.js";
 import { Chrome } from "./chrome.js";
 import { loadSession, type HostLoad } from "./load.js";
 import { holdSeconds, type FocusEvent, type FocusState, type Phase } from "./machine.js";
@@ -83,11 +84,14 @@ function endsAtMs(state: FocusState): number | null {
 }
 
 function HostLevel({ title, withLink = true }: { title: string; withLink?: boolean }) {
+  // `done` sits on the guard entry; leaving replaces it (T-0394 AC-5). Host-level states that
+  // never armed a guard find none on top.
+  const replace = guardOnTop();
   return (
     <div data-screen-id="UF-09" className="wl-uf09 wl-uf09--host">
       <h1 className="wl-uf09__title">{title}</h1>
       {withLink ? (
-        <Link to="/" className="wl-uf09__home">
+        <Link to="/" replace={replace} className="wl-uf09__home">
           {en.uf09.homeLink}
         </Link>
       ) : null}
@@ -184,7 +188,8 @@ function Machine(props: MachineProps) {
   const [, rerender] = useReducer((n: number) => n + 1, 0);
 
   // One order for the row writes of this session: finish() waits for a pending plan write, and a
-  // plan write that lands after finish() started moves nothing (T-0304d rework).
+  // plan write that lands after finish() started is held in `landed`: a failed finish applies
+  // it, a finish that succeeds drops it (D-0153 §6).
   const writes = useMemo(() => createSessionWrites(), [sessionId, store]);
   const actions = useMemo(
     () =>
@@ -193,7 +198,8 @@ function Machine(props: MachineProps) {
         store,
         storage,
         onRow: setRow,
-        navigate: (to) => void navigateRef.current(to),
+        // The guard entry is replaced, not stacked on (T-0394 AC-5).
+        navigate: (to) => void navigateRef.current(to, { replace: guardOnTop() }),
         writes,
       }),
     [sessionId, store, storage, writes],
@@ -242,8 +248,41 @@ function Machine(props: MachineProps) {
           store.dispatch({ type: "RESUME", atMs });
         }
       },
+      /** Back with an overlay open (D-0162 §1): ends paused on UF-09.9, never on the screen below. */
+      closeForBack() {
+        const open = overlayRef.current;
+        if (!open) return;
+        show(null);
+        const atMs = Date.now();
+        if (open.action.keepsClockRunning) {
+          gate.forceNext = false;
+          store.dispatch({ type: "RESYNC", atMs });
+          store.dispatch({ type: "PAUSE", atMs });
+        }
+        // `keepsClockRunning: false`: already paused; closing without its RESUME keeps it so.
+      },
     };
   }, [store, gate]);
+
+  // Back means Pause (T-0394, D-0123 §3). Armed on mount in every machine state; each Back pushes it
+  // again. Never in `done` or `betweenItems`.
+  const machineState = state.phase !== "done" && state.phase !== "betweenItems";
+  useBackGuard(sessionId, machineState, () => {
+    if (overlayRef.current) {
+      controls.closeForBack();
+    } else {
+      const phase = store.getState().phase;
+      // Paused: leaving is a decision already taken. The Back landed on the session entry under
+      // the guard (same URL), so one more step back leaves for real (D-0163 §1, AC-3).
+      if (phase === "paused") {
+        window.history.back();
+        return;
+      }
+      if (phase === "done" || phase === "betweenItems") return;
+      store.dispatch({ type: "PAUSE", atMs: Date.now() });
+    }
+    pushGuard();
+  });
 
   // Leaving the host with a List-view overlay open must not leave the check point forced.
   useEffect(
