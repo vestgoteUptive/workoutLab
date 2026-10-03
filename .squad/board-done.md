@@ -218,6 +218,9 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0470 | UF-11.1 CheckinCard writes: Accept/Keep, first-shown insert, second device, offline (split from T-0308c, D-0168; D-0172 §1–§2) | web-feature:UF-11 | T-0308c | done | wl-build-web |
 | T-0479 | profile-gate.test.tsx's lib/offline mock is a fixed literal, missing currentUserId/refreshAll — switch to the sibling importOriginal pattern (T-0216 build finding) | web-shell | — | done | wl-build-web |
 | T-0418 | UF-03.2 rest bar + rest view on the host's wall-clock rest, focus targets (D-0142, D-0172 §9: Swap split to T-0478) | web-feature:UF-03 | T-0417, T-0414 | done | wl-build-web |
+| T-0216 | UF-11.4 Equipment section: checklist of the 9 real items, "none" always first, saved online to profiles.equipment (D-0061 §3, D-0168 §6, D-0172 §7) | web-feature:UF-11 | T-0310d | done | wl-build-web |
+| T-0346 | UF-07.1: refresh a cached routine on mount (online + signed-in), replace only an untouched draft; reset loadFailed and the draft when routineId changes in place (D-0174 §4, amends D-0081 §5) | web-feature:UF-07 | T-0308a, T-0454 | done | wl-build-web |
+| T-0353 | UF-10 e2e: reach C-01 buttons with real Tab presses rather than `locator.focus()` (AC-A16 wording), plus a `boundingBox()` ≥ 44×44 check on a balance row (AC-A14) (T-0307a accept; D-0174 §6; e2e-only, serial with T-0354) | web-feature:UF-10 | T-0307a | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
