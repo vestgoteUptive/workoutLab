@@ -125,6 +125,7 @@ interface RowProps {
 function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText }: RowProps) {
   const n = i + 1;
   const hintId = useId();
+  const countHintId = useId();
   const [draft, setDraft] = useState<Draft>(NO_DRAFT);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -152,12 +153,18 @@ function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText 
   let weightInvalid = false;
   if (showKg && draft.weight !== null) {
     const parsed = parseWeight(draft.weight);
-    if (parsed.ok) weightKg = parsed.value;
+    // Text equal to the opening text stands for the exact value (82.125 stays, D-0128 §4).
+    if (baseWeight !== null && draft.weight.trim() === formatDecimal(baseWeight, locale)) {
+      weightKg = baseWeight;
+    } else if (parsed.ok) weightKg = parsed.value;
     else weightInvalid = true;
   }
   // A loaded lift needs a weight (empty is valid only on a bodyweight item, which has no field).
   if (showKg && weightKg === null) weightInvalid = true;
-  const blocked = !logged && weightInvalid;
+  // Reps or seconds: whole numbers only, never silently replaced by the pre-fill.
+  const countText = timed ? secondsText : repsText;
+  const countInvalid = parseCount(countText) === null;
+  const blocked = !logged && (weightInvalid || countInvalid);
 
   const run = (write: () => Promise<unknown>) => {
     busy.current = true;
@@ -185,9 +192,8 @@ function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText 
       return;
     }
     if (blocked) return;
-    const reps = draft.reps === null ? baseReps : (parseCount(draft.reps) ?? baseReps);
-    const seconds =
-      draft.seconds === null ? baseSeconds : (parseCount(draft.seconds) ?? baseSeconds);
+    const reps = draft.reps === null ? baseReps : parseCount(draft.reps);
+    const seconds = draft.seconds === null ? baseSeconds : parseCount(draft.seconds);
     run(() =>
       ctx.recordSet({
         sessionId: ctx.sessionId,
@@ -251,12 +257,12 @@ function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText 
             type="text"
             inputMode="decimal"
             aria-label={uf03.weightLabel(n)}
-            aria-describedby={blocked ? hintId : undefined}
+            aria-describedby={!logged && weightInvalid ? hintId : undefined}
             value={weightText}
             {...fieldProps("weight")}
           />
           <span id={hintId} className="wl-uf03-list__hint" aria-live="polite">
-            {blocked ? uf03.weightHint(formatDecimal(82.5, locale)) : null}
+            {!logged && weightInvalid ? uf03.weightHint(formatDecimal(82.5, locale)) : null}
           </span>
         </td>
       ) : null}
@@ -267,19 +273,29 @@ function SetRow({ ctx, item, index, i, backoff, timed, showKg, locale, prevText 
               type="text"
               inputMode="numeric"
               aria-label={uf03.secondsLabel(n)}
+              aria-describedby={!logged && countInvalid ? countHintId : undefined}
               value={secondsText}
               {...fieldProps("seconds")}
             />
             <span className="wl-uf03-list__unit">{uf03.secondsUnit}</span>
+            <span id={countHintId} className="wl-uf03-list__hint" aria-live="polite">
+              {!logged && countInvalid ? uf03.secondsHint : null}
+            </span>
           </>
         ) : (
-          <input
-            type="text"
-            inputMode="numeric"
-            aria-label={uf03.repsLabel(n)}
-            value={repsText}
-            {...fieldProps("reps")}
-          />
+          <>
+            <input
+              type="text"
+              inputMode="numeric"
+              aria-label={uf03.repsLabel(n)}
+              aria-describedby={!logged && countInvalid ? countHintId : undefined}
+              value={repsText}
+              {...fieldProps("reps")}
+            />
+            <span id={countHintId} className="wl-uf03-list__hint" aria-live="polite">
+              {!logged && countInvalid ? uf03.repsHint : null}
+            </span>
+          </>
         )}
       </td>
       <td>

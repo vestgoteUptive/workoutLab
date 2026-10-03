@@ -376,6 +376,80 @@ describe("AC-5 the weight field and zero history", () => {
   });
 });
 
+describe("rework: no value the user didn't enter", () => {
+  it("cleared or invalid reps disables the check with a hint and writes nothing", async () => {
+    const ctx = await mount();
+    for (const text of ["", "abc", "-1", "6.5"]) {
+      type("Set 1 reps", text);
+      expect(toggle("Mark set 1 done").getAttribute("aria-disabled")).toBe("true");
+      expect(screen.getByText("Enter reps as a whole number like 8")).toBeTruthy();
+      expect(field("Set 1 reps").getAttribute("aria-describedby")).not.toBeNull();
+      fireEvent.click(toggle("Mark set 1 done"));
+      await settle();
+    }
+    expect(ctx.recordSet).not.toHaveBeenCalled();
+    type("Set 1 reps", "7");
+    expect(toggle("Mark set 1 done").getAttribute("aria-disabled")).toBeNull();
+    fireEvent.click(toggle("Mark set 1 done"));
+    await settle();
+    expect(ctx.recordSet).toHaveBeenCalledWith(expect.objectContaining({ reps: 7 }));
+  });
+
+  it("cleared seconds on a timed row disables the check and writes nothing", async () => {
+    const timedItem = {
+      ...LIST_PLAN.items[0]!,
+      exerciseId: "plank",
+      repsMin: null,
+      repsMax: null,
+      durationS: 45,
+      prefill: { weightKg: null, reps: null, durationS: 45, kind: "first_time" as const },
+    };
+    const plan = { ...LIST_PLAN, items: [timedItem, ...LIST_PLAN.items.slice(1)] };
+    const ctx = await mount(makeCtx({ plan }), undefined, [...L1, PLANK]);
+    type("Set 1 seconds", "");
+    expect(toggle("Mark set 1 done").getAttribute("aria-disabled")).toBe("true");
+    expect(screen.getByText("Enter seconds as a whole number like 45")).toBeTruthy();
+    fireEvent.click(toggle("Mark set 1 done"));
+    await settle();
+    expect(ctx.recordSet).not.toHaveBeenCalled();
+  });
+
+  it("an unlogged kg touched back to its opening text records the exact pre-fill", async () => {
+    const plan = withItem(LIST_PLAN, 0, {
+      prefill: { weightKg: 82.125, reps: 6, durationS: null, kind: "hold" },
+    });
+    const ctx = await mount(makeCtx({ plan }));
+    type("Set 1 weight in kg", "82.1");
+    type("Set 1 weight in kg", "82.13");
+    fireEvent.blur(field("Set 1 weight in kg"));
+    fireEvent.click(toggle("Mark set 1 done"));
+    await settle();
+    expect(ctx.recordSet).toHaveBeenCalledWith(expect.objectContaining({ weightKg: 82.125 }));
+    cleanup();
+    const ctx2 = await mount(makeCtx({ plan }));
+    type("Set 1 weight in kg", "82.14");
+    fireEvent.click(toggle("Mark set 1 done"));
+    await settle();
+    expect(ctx2.recordSet).toHaveBeenCalledWith(expect.objectContaining({ weightKg: 82.14 }));
+  });
+
+  it("D-0165: an invalid or empty kg on a done row reverts on blur, no call, uncheck stays enabled", async () => {
+    const ctx = makeCtx({ loggedSets: [logged(0, 0, "back-squat", 6, 100)] });
+    await mount(ctx);
+    for (const text of ["abc", ""]) {
+      type("Set 1 weight in kg", text);
+      fireEvent.blur(field("Set 1 weight in kg"));
+      await settle();
+      expect(field("Set 1 weight in kg").value).toBe("100");
+    }
+    expect(ctx.editSet).not.toHaveBeenCalled();
+    expect(toggle("Mark set 1 not done").getAttribute("aria-disabled")).toBeNull();
+    fireEvent.click(toggle("Mark set 1 not done"));
+    await settle();
+    expect(ctx.deleteSet).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("AC-8 a11y", () => {
   it("0 axe violations with one row pending and one row showing the hint", async () => {
     const ctx = makeCtx({

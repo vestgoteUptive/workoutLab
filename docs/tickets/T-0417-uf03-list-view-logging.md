@@ -169,3 +169,8 @@ start `T-0417` and cite the screen (for example `T-0417 UF-03.1: check records t
 - **Planted faults (each restored from a `cp` backup):** row checked while pending → AC-1 pending test red; `editSet` per keystroke → 4 AC-2 tests red; direct `recordSet` import in `ListView.tsx` → AC-4 source test red; kg check skipped → 3 AC-5/AC-8 tests red.
 - **Test bug found:** the AC-7 host test returned early because two cards both showed "Mark set 1 not done"; it now waits for the second one (was flaky 1 in 3).
 - **Gate:** `-w typecheck lint test --concurrency=1` green (after one TS narrowing fix), `test:repo-checks`, `format:check`, `check-all`, `check:size` (built with dummy VITE_SUPABASE_*) green; e2e `uf-03-list-summary` + `uf-09-focus`: 12 passed.
+
+### Build, attempt 2 (frontend-dev, 2026-10-03; HEAD 4db5910)
+- **Fixed:** (1) invalid or empty reps/seconds on an unlogged row now disables the check with a polite hint ("Enter reps as a whole number like 8" / seconds) and writes nothing, instead of recording the pre-fill; (2) the D-0128 §4 opening-text rule now applies to unlogged kg too (82.13 typed back stays 82.125); (3) D-0165 records that a done row's invalid kg reverts on blur and keeps uncheck enabled (pinned by a test).
+- **Red on attempt-1 code:** reps, seconds and opening-text tests failed (3 of 4 "rework" tests); the D-0165 test passes there by design (it pins existing behaviour). Note: the opening-text test must change the text first, because `fireEvent.change` to the identical value fires nothing.
+- **Gate:** UF-03 vitest folder 192 passed; cached gate, repo-checks, format, check-all and the uf-03/uf-09 e2e: see the handback.
