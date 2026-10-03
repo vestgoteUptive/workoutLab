@@ -11,7 +11,8 @@
 // fixture fails a test that logs an error (red on code without the guard: "expected to fail, but
 // passed"), and tests that drive `installConsoleGuard` directly pin the message, the exemptions
 // and the per-test scope of `allow`.
-import { readdirSync, readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   BACKSTOP_MESSAGE,
@@ -22,6 +23,7 @@ import {
   test,
   UNCLAIMED_MESSAGE,
 } from "./fixtures/guarded-test.js";
+import { listSpecs, unguardedReason, unguardedSpecs } from "./fixtures/guard-source-check.js";
 import { allowCommentViolations, ownConsoleListeners } from "./fixtures/source-rules.js";
 import {
   mockProfilePresent,
@@ -622,32 +624,71 @@ test.describe("source assertions", () => {
 
   // AC-5 (T-0904), widened by T-0425 AC5: every spec that imports the fixture takes `test` from
   // it, so both auto guards run on every one of its tests.
-  const specs = readdirSync(__dirname).filter((name) => name.endsWith(".spec.ts"));
-  const guarded = specs.filter((name) => read(name).includes('from "./fixtures/guarded-test.js"'));
+  const specs = listSpecs(__dirname);
 
-  test("T-0425 AC5 the guarded spec list covers the T-0904 three and more", () => {
-    for (const spec of ["auth.spec.ts", "shell.spec.ts", "offline.spec.ts"]) {
-      expect(guarded).toContain(spec);
-    }
-    expect(guarded.length).toBeGreaterThan(3);
-  });
-
-  for (const spec of guarded) {
-    test(`T-0425 AC5 ${spec} imports test from guarded-test.js, not @playwright/test`, () => {
-      const source = read(spec);
-      const fromFixture = source.match(
-        /import\s*\{([^}]*)\}\s*from\s*"\.\/fixtures\/guarded-test\.js"/s,
-      );
-      expect(fromFixture?.[1]).toMatch(/(^|[\s,])test([\s,]|$)/);
-      // A type-only import from `@playwright/test` is fine; importing `test` from it is not,
-      // because that silently bypasses the auto fixtures.
-      for (const bindings of source.matchAll(
-        /import\s*\{([^}]*)\}\s*from\s*"@playwright\/test"/gs,
-      )) {
-        expect(bindings[1]).not.toMatch(/(^|[\s,])test([\s,]|$)/);
-      }
+  // T-0356 (D-0090): one test per `tests/e2e/*.spec.ts`, from a glob, so a new spec that imports
+  // `test` from `@playwright/test` (or skips the guarded import) is reported without an edit here.
+  for (const spec of specs) {
+    test(`T-0356 AC1 ${spec} imports test/expect from guarded-test.js`, () => {
+      expect(unguardedReason(read(spec))).toBeNull();
     });
   }
+
+  test("T-0356 AC5 no spec in tests/e2e opts out of the guard", () => {
+    const bad = unguardedSpecs(__dirname);
+    expect(bad.map((entry) => `${entry.file}: ${entry.reason}`)).toEqual([]);
+    expect(specs.length).toBeGreaterThan(3);
+  });
+
+  test("T-0356 AC2 listSpecs lists *.spec.ts directly in the directory, sorted, no recursion", () => {
+    const dir = mkdtempSync(join(tmpdir(), "wl-guard-"));
+    try {
+      writeFileSync(join(dir, "b.spec.ts"), "");
+      writeFileSync(join(dir, "a.spec.ts"), "");
+      writeFileSync(join(dir, "d.ts"), "");
+      mkdirSync(join(dir, "fixtures"));
+      writeFileSync(join(dir, "fixtures", "c.spec.ts"), "");
+      expect(listSpecs(dir)).toEqual(["a.spec.ts", "b.spec.ts"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("T-0356 AC3 unguardedSpecs flags a scratch spec that imports test from @playwright/test", () => {
+    const dir = mkdtempSync(join(tmpdir(), "wl-guard-"));
+    try {
+      const good = 'import { expect, test } from "./fixtures/guarded-test.js";\n';
+      writeFileSync(join(dir, "a.spec.ts"), good);
+      writeFileSync(join(dir, "b.spec.ts"), 'import { expect, test } from "@playwright/test";\n');
+      const flagged = unguardedSpecs(dir);
+      expect(flagged).toHaveLength(1);
+      expect(flagged[0]!.file).toBe("b.spec.ts");
+      expect(flagged[0]!.reason).not.toBe("");
+      writeFileSync(
+        join(dir, "b.spec.ts"),
+        'import { test } from "./fixtures/guarded-test.js";\nimport { expect, test } from "@playwright/test";\n',
+      );
+      expect(unguardedSpecs(dir).map((entry) => entry.file)).toEqual(["b.spec.ts"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  test("T-0356 AC4 unguardedReason allows the guarded forms and rejects the bypasses", () => {
+    const a = 'import { expect, test } from "./fixtures/guarded-test.js";\n';
+    expect(unguardedReason(a)).toBeNull();
+    expect(unguardedReason(a + 'import { type Page } from "@playwright/test";')).toBeNull();
+    expect(unguardedReason(a + 'import type { Page, Route } from "@playwright/test";')).toBeNull();
+    expect(unguardedReason(a + 'import AxeBuilder from "@axe-core/playwright";')).toBeNull();
+    expect(unguardedReason('import { expect } from "@playwright/test";')).not.toBeNull();
+    expect(unguardedReason(a + 'import { test as base } from "@playwright/test";')).not.toBeNull();
+    expect(
+      unguardedReason(a + 'import {\n  expect,\n  test,\n} from "@playwright/test";'),
+    ).not.toBeNull();
+    expect(unguardedReason(a + 'import * as pw from "@playwright/test";')).not.toBeNull();
+    // A commented-out bypass is not a bypass.
+    expect(unguardedReason(a + '// import { test } from "@playwright/test";')).toBeNull();
+  });
 
   // T-0430 AC3 tightens this: the T-NNNN must sit in the `//` comment block directly above the
   // call (any line of it), not merely somewhere in the code line above.
@@ -669,7 +710,7 @@ test.describe("source assertions", () => {
   // or page error, so a guarded spec carrying its own listener is a duplicate that drifts. This
   // file is the one exception: it tests the guard, and T-0425 AC3 needs to see the raw lines.
   test("T-0430 AC1 no guarded spec registers its own console or pageerror listener", () => {
-    const found = guarded
+    const found = specs
       .filter((name) => name !== "fixture-guard.spec.ts")
       .flatMap((spec) => ownConsoleListeners(spec, read(spec)));
     expect(found).toEqual([]);
