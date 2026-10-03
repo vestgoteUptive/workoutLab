@@ -109,3 +109,9 @@ needed) · contracts unchanged · commits start `T-0453` and cite UF-07.1.
 - Red on unfixed code: new tests run before the fix failed 9 of 10 (focus on body / no inert / Tab not trapped; the 10th, the Escape pair, is the unchanged behaviour).
 - Planted faults (backup copy, restored by `cp`): inert removed -> inert test red; trap removed -> cycle test red; Add focus skipped -> both AC-2 tests red.
 - e2e `uf-07-routines`: 5 passed in Chromium.
+
+## QA log
+- QA at HEAD 3c7fa1c, clean tree, branch unchanged since the builder's gate (no full gate rerun, D-0158).
+- AC map: AC-1 t0453 AC-1 x4; AC-2 t0453 AC-2 x2; AC-3 t0453 AC-3 x3; AC-4 t0453 AC-4; AC-5 e2e row "delete confirm traps Tab..." (Chromium); AC-6 no existing UF-07 test edited, 81/81 pass.
+- Faults (backup copy, restored by cp): inert removed -> inert test red; trap removed -> cycle test red; Add focus skipped -> both AC-2 tests red; own fault (Remove focuses previous row) -> AC-1 middle-row red.
+- UF-07 vitest 6 files / 81 passed; e2e uf-07-routines 5 passed (Chromium).
