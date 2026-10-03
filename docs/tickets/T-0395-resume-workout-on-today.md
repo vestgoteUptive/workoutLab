@@ -3,7 +3,7 @@ id: T-0395
 title: "UF-02.1 Resume workout: a UF-09 ResumeCard on Today for the newest unfinished, non-stale session on this device, mounted via features/UF-02/slots.tsx"
 lane: web-feature:UF-09
 screens: [UF-02.1, UF-09, UF-09.9]
-decisions: [D-0139, D-0123, D-0111, D-0071, D-0106]
+decisions: [D-0139, D-0123, D-0111, D-0071, D-0106, D-0158, D-0168]
 deps: [T-0304e, T-0302a]
 status: ready
 ---
@@ -66,13 +66,14 @@ Each new test title starts with `T-0395 ACn`. `now` = `2026-10-02T10:00:00Z`, `t
 none. It reads the existing IndexedDB `sessions` table and the D-0111 §6 `wl-focus:<id>` key. No schema, API, engine or token change.
 
 ## Coordination
-- Product half done in the groom: D-0139, and the "UF-02 Today" section in `Design-docs/docs/product/user-flows.md`.
-- Board (orchestrator): move T-0395 to lane `web-feature:UF-09`, flow `wl-build-web`, status `ready`.
-- UF-09 lane: T-0304c (doing) and T-0414 change `machine.ts`. This ticket adds new files plus `index.tsx` and the export-pin test, so it can merge in any order with them, but the lane runs one at a time.
-- T-0308c (UF-11, todo) also edits `features/UF-02/slots.tsx` and `Today.tsx`. Run them one after the other. Whichever lands second rebases its slot next to the other's.
+- Product half done in the groom: D-0139, and the "UF-02 Today" section in `Design-docs/docs/product/user-flows.md`. **No human input is needed** (D-0168 §7): the board row's "needs a user-flows v2 addition + decision" is satisfied.
+- Re-checked against main 2026-10-03 (D-0168 §7): T-0304c, T-0414 and T-0394 are on main. The UF-09 lane tickets that may run now are T-0304h, T-0468 and T-0463; this ticket shares `features/UF-09/index.tsx` and `__tests__/exports-and-lint.test.ts` only with whichever of them adds an export (none plans to), so it can run beside them; the second to merge rebases.
+- `features/UF-02/__tests__/slot.test.tsx` mocks `../slots.js` with only `todayCheckinSlot`. A new `todayResumeSlot` export reads as `undefined` there, so Today must treat a missing slot like `null` (or the mock gains the key; `features/UF-02/__tests__/**` is granted). Say which in the build log.
+- T-0471 (the check-in card mount, todo) also edits `features/UF-02/slots.tsx`. Run them one after the other; the second keeps the other's export.
+- T-0302b (UF-02.2) appends to `tests/e2e/uf-02-today.spec.ts` too, but doesn't edit `Today.tsx` (D-0168 §3). Parallel is fine; the second to merge keeps both appended blocks.
 - T-0394 (Back → Pause) is unaffected: Resume is a PUSH to `/session/<id>`, and the guard arms there as on any load.
 
 ## Definition of done
-Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green · e2e green · contracts unchanged · commit messages start with `T-0395` and cite the screen (e.g. `T-0395 UF-02.1: Resume workout card for an unfinished session`).
+Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green, each test command inside `flock /tmp/workoutlab-tests.lock` · because the ticket edits two feature folders (UF-09 and UF-02), the whole web e2e green once (D-0158) · contracts unchanged · commit messages start with `T-0395` and cite the screen (e.g. `T-0395 UF-02.1: Resume workout card for an unfinished session`).
 
 ## Build / accept log
