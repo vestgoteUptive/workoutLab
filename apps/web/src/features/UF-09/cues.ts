@@ -3,6 +3,9 @@
 // `remainingS > t` and this one sees `remainingS ≤ t`. The first observation of a timer (a mount,
 // a restore, a new step) fires nothing, and each (timer, threshold) fires at most once. The host
 // never observes a paused workout, so a pause fires nothing either.
+// D-0161 (T-0447): when one observation crosses several thresholds (a throttled tab coming back),
+// only the lowest crossed cue of each kind fires, no voice cue fires at 0, and every crossed
+// threshold still counts as fired.
 import type { Phase } from "./machine.js";
 
 export type CueKind = "sound" | "voice";
@@ -56,15 +59,19 @@ export function observeCues(track: CueTrack, seen: Observation): { track: CueTra
     return { track: { key: seen.key, lastS: seen.remainingS, fired: [] }, fire: [] };
   }
   const prev = track.lastS;
-  const fire = (PHASE_CUES[seen.phase] ?? []).filter(
+  const crossed = (PHASE_CUES[seen.phase] ?? []).filter(
     (cue) => prev > cue.atS && seen.remainingS <= cue.atS && !track.fired.includes(cue.atS),
   );
-  if (fire.length === 0 && prev === seen.remainingS) return { track, fire };
+  // The lowest crossed cue of each kind (the list is high to low); no voice once the timer is at 0.
+  const lowest = (kind: CueKind) => crossed.filter((c) => c.kind === kind).at(-1);
+  const keep = [lowest("sound"), seen.remainingS > 0 ? lowest("voice") : undefined];
+  const fire = crossed.filter((c) => keep.includes(c));
+  if (crossed.length === 0 && prev === seen.remainingS) return { track, fire };
   return {
     track: {
       key: track.key,
       lastS: seen.remainingS,
-      fired: fire.length === 0 ? track.fired : [...track.fired, ...fire.map((c) => c.atS)],
+      fired: crossed.length === 0 ? track.fired : [...track.fired, ...crossed.map((c) => c.atS)],
     },
     fire,
   };
