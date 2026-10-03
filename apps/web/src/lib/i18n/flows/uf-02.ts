@@ -33,4 +33,21 @@ export const uf02 = {
   nothingSuggested: "Nothing suggested yet",
   /** The skeleton's accessible name while the first read is pending. */
   cardLoading: "Loading the suggestion",
+  // T-0302b: UF-02.2 Workout preview (/?view=preview). The engine's `suggest()` output in full.
+  preview: {
+    title: "Suggested for 45 min",
+    back: "Back",
+    /** `n` arrives already formatted. */
+    minutes: (n: string) => `~${n} min`,
+    /** `n` arrives already formatted. */
+    sets: (n: string) => `${n} sets`,
+    warmup: "Warm-up",
+    /** `n` arrives already formatted. */
+    warmupMinutes: (n: string) => `${n} min`,
+    warmupNotCounted: "not counted",
+    /** `label` is `restLabel`'s "m:ss". */
+    rest: (label: string) => `rest ${label}`,
+    /** The `<ol>`'s accessible name. */
+    listName: "Suggested exercises",
+  },
 } as const;

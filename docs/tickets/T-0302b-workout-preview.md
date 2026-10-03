@@ -147,3 +147,63 @@ commits start `T-0302b` and cite UF-02.2 (for example `T-0302b UF-02.2: workout 
   doesn't touch.
 
 ## Build / accept log
+
+### Build (frontend-dev, 2026-10-03)
+Start: `git status` clean, HEAD `af4bfcf` on `t/T-0302b-workout-preview`.
+
+**Change.** `features/UF-02/index.tsx` becomes a small switch on `useSearchParams().get("view")`:
+`"preview"` renders new `WorkoutPreview` (`Preview.tsx` + `preview.css`), everything else renders
+`Today` unedited (`Today.tsx`/`slots.tsx` untouched, confirmed by `git diff --stat`). Added
+`en.uf02.preview.*` keys (multi-line) to `flows/uf-02.ts`. Added `L1_WITH_WARMUP`/`WARMUP_L1`/
+`W_R7E4_WITH_WARMUP` fixtures and `SwitchTree`/`renderSwitch`/`previewScreenRoot` test helpers.
+Weight part, back-off line and rest-seconds lookup are read-only copies of UF-08.2's own logic
+(D-0124); equipment labels and separators are read-only from `en.uf04` (D-0079 §5); no deep
+cross-feature import (UF-08/UF-04 code itself is never imported, only `en.*` strings).
+
+**AC → test map** (`__tests__/preview.test.tsx` unless noted):
+- AC-1 → `"T-0302b AC-1 route"` (6 tests: screen swap, Back href, browser Back via
+  `createMemoryRouter`, C-02/pathname, no-view and unknown-view fall through to UF-02.1).
+- AC-2 → `"T-0302b AC-2 W-R7E4 as it is"` (6 tests: chips incl. `warmupInBudget` false, warm-up
+  row incl. "not counted", row order/detail/reason, reversed fixture).
+- AC-3 → `"T-0302b AC-3 weight part"` (5 tests: 80 kg, null weight never "0 kg"/"null",
+  externalLoad-false Bodyweight at weightKg 0, timed item, back-off line + sets-chip +1).
+- AC-4 → `"T-0302b AC-4 links"` (3 tests: library links, Start href, no Swap/Remove/Edit/Shuffle).
+- AC-5 → `"T-0302b AC-5 states"` (5 tests: loading skeleton, workout null, empty items, no-plan,
+  one `suggest` call with `PREVIEW_INPUT`).
+- AC-6 → `"T-0302b AC-6 offline"` (1 test: `navigator.onLine=false`, content renders, `fetch` spy
+  not called).
+- AC-7 → `tests/e2e/uf-02-today.spec.ts` `"T-0302b AC-7 preview e2e and a11y"` (4 Playwright
+  tests: See-all row-count/first-row match, axe 0 serious/critical, Back/Start ≥44×44, offline
+  reload shows the same rows).
+- AC-8 → `"T-0302b AC-8 exports and boundaries"` plus the unedited `source.test.ts` AC-13 check
+  (index.tsx exports exactly `Today`); `jsx-no-literals` green (`eslint` exit 0 on the new/changed
+  files); `flows/uf-02.ts` kept its multi-line shape; `Today.tsx`/`slots.tsx` diff is empty; all
+  111 pre-existing UF-02 tests pass unedited (138 total after adding `preview.test.tsx`'s 27).
+
+**Red-on-main proof.** Reverted `index.tsx` to `git show HEAD:...` (the export-only version) with
+every other T-0302b file left in place, ran `preview.test.tsx -t AC-1`: 4 of 6 AC-1 tests fail
+(the core "`/?view=preview` renders UF-02.2, not UF-02.1" case among them). Restored the fixed
+`index.tsx` from the pre-revert copy; full suite green again (138/138).
+
+**Planted-fault proof.** Backed up `Preview.tsx`, sorted the `<ol>` rows by `exerciseId` before
+render (the fault). `preview.test.tsx -t reversed` (AC-2's reversed-fixture row) failed as
+expected (26 other tests in the file still skipped/passed, isolated to that one). Restored
+`Preview.tsx` from the backup copy (`cp`, not `git checkout`); full suite green again.
+
+**Gate (cached, via `scripts/locked.sh heavy`).**
+`npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`: 19/19 tasks, 243 test files / 3381
+tests passed, 0 failed (run twice — once before, once after a `prettier --write` pass on 3 new/
+changed files; both green). `npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 node:test
+assertions passed. `npx -y pnpm@10.28.2 -w format:check`: clean after the prettier fix.
+`node .github/scripts/check-all.mjs`: exit 0. `check:size` (fresh `VITE_SUPABASE_URL`/
+`VITE_SUPABASE_ANON_KEY` build): exit 0; the UF-02 route chunk (`index-BJB6FTSj.js`, static
+import of `Preview.tsx`) is 11.12 kB / 3.48 kB gzip, well under the 100 KB gzip lazy-chunk budget.
+e2e: `playwright test uf-02-today.spec.ts` — 10/10 passed (6 pre-existing + 4 new T-0302b rows).
+
+**Contracts.** Unchanged. No decision needed; D-0168 §3's defaults covered every open point
+(which `Workout`, equipment-label source, rest-length rule).
+
+Files changed: `features/UF-02/index.tsx`, `features/UF-02/Preview.tsx` (new),
+`features/UF-02/preview.css` (new), `features/UF-02/__tests__/preview.test.tsx` (new),
+`features/UF-02/__tests__/fixtures.ts`, `features/UF-02/__tests__/helpers.tsx`,
+`lib/i18n/flows/uf-02.ts`, `tests/e2e/uf-02-today.spec.ts`.
