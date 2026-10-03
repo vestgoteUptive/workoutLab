@@ -217,6 +217,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0468 | UF-09 e2e: 10-set offline workout (NFR-OFF-2) and two devices (NFR-SYNC-4) (split from T-0304h, D-0168) | web-feature:UF-09 | T-0304d | done | wl-build-web |
 | T-0470 | UF-11.1 CheckinCard writes: Accept/Keep, first-shown insert, second device, offline (split from T-0308c, D-0168; D-0172 §1–§2) | web-feature:UF-11 | T-0308c | done | wl-build-web |
 | T-0479 | profile-gate.test.tsx's lib/offline mock is a fixed literal, missing currentUserId/refreshAll — switch to the sibling importOriginal pattern (T-0216 build finding) | web-shell | — | done | wl-build-web |
+| T-0418 | UF-03.2 rest bar + rest view on the host's wall-clock rest, focus targets (D-0142, D-0172 §9: Swap split to T-0478) | web-feature:UF-03 | T-0417, T-0414 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |

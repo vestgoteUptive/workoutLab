@@ -118,7 +118,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0374 | T-0219 AC6 ticket wording: F-input never shuffles plank into a slot; require the forced-core exclude list + minute-grid oldCost sweep as accepted (docs only) | product | T-0219 | todo | wl-spec |
 | T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | todo | wl-build-web |
 | T-0389 | Real-browser 24-hour `<input type=time>` probe for UF-08.1 (cut from T-0386); also a Playwright check of the D-0115 §5 finish-time focus order (T-0386 QA) | qa | T-0303a | todo | wl-build-qa |
-| T-0418 | UF-03.2 rest bar + rest view on the host's wall-clock rest, focus targets (D-0142, D-0172 §9: Swap split to T-0478) | web-feature:UF-03 | T-0417, T-0414 | doing | wl-build-web |
 | T-0478 | UF-03.1 Swap button on the List view's current card → SwapSheet → ctx.replaceItem (split from T-0418, D-0172 §9) | web-feature:UF-03 | T-0418, T-0421, T-0414 | todo | wl-build-web |
 | T-0477 | UF-09 host: let `REST_START` start a rest from `getReady`/`warmup` while a `keepsClockRunning` overlay (the List view) is open, so a set checked in the list before the first focus-mode set gets a rest (D-0172 §5) | web-feature:UF-09 | T-0418 | todo | wl-build-web |
 | T-0480 | guarded-test.ts detector 2: an already-fulfilled request can still fire requestfailed/ERR_ABORTED right before a hard navigation (D-0173, T-0469 AC-2 build finding) | qa | — | doing | wl-build-qa |
