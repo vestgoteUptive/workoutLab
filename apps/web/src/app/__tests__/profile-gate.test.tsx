@@ -22,11 +22,38 @@ import { freshOfflineDb } from "../../lib/offline/__tests__/test-helpers.js";
 import { seedLibrary } from "../../lib/offline/__tests__/seed-library.js";
 import { toLibraryExercise, type Tables } from "@workoutlab/shared";
 
-const { loadProfile, refreshProfile } = vi.hoisted(() => ({
+const { loadProfile, refreshProfile, uf06Loaders } = vi.hoisted(() => ({
   loadProfile: vi.fn(),
   refreshProfile: vi.fn(),
+  // UF-06.2 (`/progress/:exerciseId`) reads the T-0319 loaders and redirects to `/progress`
+  // when its id is not a known exercise (D-0079 §4). The gate cases below assert that a
+  // *gated* route still renders, so the library must contain `back-squat`; an empty library
+  // would make the screen redirect for its own reasons and stop testing the gate at all
+  // (D-0088 §2: keep the guarantee, seed the fixture). `refreshAll` is a no-op so nothing
+  // here depends on the network.
+  uf06Loaders: {
+    loadSessions: vi.fn(async () => []),
+    loadEngineHistory: vi.fn(async () => []),
+    loadLibrary: vi.fn(async () => [
+      {
+        id: "back-squat",
+        name: "Back squat",
+        kind: "exercise",
+        type: "compound",
+        level: "beginner",
+        equipment: [],
+        areas: { quads: 1 },
+        timed: false,
+        defaultDurationS: null,
+        incrementKg: 2.5,
+        externalLoad: true,
+      },
+    ]),
+    loadTargets: vi.fn(async () => []),
+    refreshAll: vi.fn(async () => undefined),
+  },
 }));
-vi.mock("../../lib/offline/index.js", () => ({ loadProfile, refreshProfile }));
+vi.mock("../../lib/offline/index.js", () => ({ loadProfile, refreshProfile, ...uf06Loaders }));
 
 const { selectSpy, onAuthStateChange, getSession, signOut, authStateCallbacks } = vi.hoisted(() => {
   const authStateCallbacks: Array<(event: string, session: unknown) => void> = [];
