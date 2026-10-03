@@ -65,3 +65,44 @@ contracts unchanged · commits start `T-0479`.
   test:repo-checks` green — 159/159. `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w format:check`
   green. `node .github/scripts/check-all.mjs` exit 0.
 - Status: done.
+
+## QA accept log
+
+- 2026-10-03, qa-tester. `git status` clean, HEAD `a58183e`. Branch is behind `main` (missing
+  T-0418/T-0469/T-0470/T-0468-merge/etc., several commits) but `git merge-tree
+  $(git merge-base HEAD main) HEAD main` auto-merges clean (no `CONFLICT` marker; the only touched
+  shared files are `.squad/board.md`, `.squad/journal/2026-10-03.md`, `.squad/state.md`,
+  `docs/tickets/T-0468-...md`, all non-overlapping line ranges) — per QA §1, no action needed; the
+  orchestrator's forced gate on `main` after merge covers the combination.
+- **Diff review**: confirmed the only code diff is `profile-gate.test.tsx`'s `vi.mock(…)` call
+  (fixed literal → `importOriginal`, spreading `...actual`), byte-identical in shape to
+  `auth-guard.phase3.test.tsx`'s own mock (lines 56-59 of each match exactly). No assertion line
+  touched — specifier-shape-only, as claimed.
+- **Reran recorded results**: `scripts/locked.sh small npx -y pnpm@10.28.2 --filter
+  @workoutlab/web exec vitest run src/app/__tests__/profile-gate.test.tsx --no-file-parallelism`
+  green 92/92 (AC-2). `scripts/locked.sh small npx -y pnpm@10.28.2 --filter @workoutlab/web exec
+  vitest run src/app/__tests__ src/lib/profile/__tests__ --no-file-parallelism` green, 11 files,
+  290/290 (AC-3; same unrelated jsdom/axe-core canvas stderr noise builder noted).
+- **No e2e spec touches this** (`screens: []`; grep of `tests/e2e/` for
+  `profile-gate|EquipmentSection|currentUserId` empty) — none run, correctly.
+- **Own planted fault (AC-1 independently reproduced)**: confirmed `EquipmentSection.tsx` (T-0216)
+  doesn't exist in this worktree or on `main` (not merged yet), so, like the builder, reproduced
+  the gap at the mock-export level rather than through T-0216's component. Added a scratch probe
+  `src/app/__tests__/__t0479-qa-probe.test.tsx` (deleted after, `git status` clean) with two cases:
+  (1) a fixed-literal `vi.doMock` of `lib/offline/index.js` exporting only `loadProfile`/
+  `refreshProfile`, then import and read `currentUserId` off the mocked module — red,
+  `scripts/locked.sh small npx -y pnpm@10.28.2 --filter @workoutlab/web exec vitest run
+  src/app/__tests__/__t0479-qa-probe.test.tsx --no-file-parallelism`: `[vitest] No "currentUserId"
+  export is defined on the "../../lib/offline/index.js" mock`, matching T-0216's real failure
+  mode exactly; (2) the same probe using the `importOriginal` pattern — green, `currentUserId`
+  resolves to a real function. Confirms the fix is load-bearing, not cosmetic.
+  Separately: tried reverting just `profile-gate.test.tsx`'s own mock to the fixed literal (backup
+  via `cp`, restored via `cp`) and rerunning the file alone — stayed green (92/92), because no
+  case in that file itself calls `currentUserId`/`refreshAll` directly; the file only breaks once
+  T-0216's component (which does call it) is mounted on `/plan/account`, consistent with the
+  ticket's own "T-0216's EquipmentSection.tsx isn't built in this worktree" note. The probe above
+  is the faithful fault, not this one.
+- **Verdict**: AC-1 (red reproduced, own fault), AC-2 (fixed, rerun green), AC-3 (no regression,
+  rerun green) all hold. Full gate not rerun (QA does not rerun the builder's gate per role rules);
+  builder's recorded 19/19 + repo-checks + format:check + check-all.mjs green stands.
+- Status: done (QA).
