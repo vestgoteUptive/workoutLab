@@ -304,3 +304,38 @@ added-keys-only, multi-line, matching the ticket's listed key names exactly. Did
 gate (qa-tester role, D-0158): targeted reruns only.
 
 No gaps found. `git status` clean at the end; HEAD unchanged (`b38fdc1`).
+
+### Accept (product-owner, 2026-10-03)
+**Verdict: done.** Start: `git status` clean, HEAD `c345223` on `t/T-0302b-workout-preview`.
+
+Checked the build/review/QA logs above against the 8 ACs and `CLAUDE.md`'s definition of done.
+Independently re-verified the two load-bearing boundary claims rather than trusting the logs alone:
+`git diff main...HEAD --stat -- .../Today.tsx .../slots.tsx` is empty (genuinely untouched, third
+confirmation after build and QA); `git diff main...HEAD --name-only` has no hit on
+`engine-rules|data-model|openapi|design-tokens` (contracts unchanged, matching "Contract impact:
+None"). Full diff stat (9 files, `Preview.tsx`/`preview.css`/`preview.test.tsx` new, `fixtures.ts`/
+`helpers.tsx`/`uf-02.ts`/`uf-02-today.spec.ts` appended, `index.tsx` a 15-line switch) matches
+every path in "Paths you may change" with no extras.
+
+Every AC has at least one test cited in the build log's AC→test map, re-verified by QA
+independently with its own fault (the `externalLoad` guard flip on AC-3) on top of reproducing
+both the red-on-main and the builder's planted-fault proofs — three independent demonstrations
+that the tests are meaningful, not tautological. e2e 10/10 including the 4 new AC-7 rows (row
+count/first row, axe 0 serious/critical, Back/Start ≥44×44, offline reload same rows). Full UF-02
+vitest 138/138 (111 pre-existing unedited + 27 new). Lint/boundaries clean, `uf-02.ts` kept its
+added-keys-only multi-line shape. Principle 3 (deterministic engine) and principle 1/2 (one task
+on screen, time budget) hold: `Preview.tsx` only renders `workout.plan.items` in plan order, Start
+always goes to `/session/setup` (UF-08.1) which asks the time question; no Swap/Remove/Edit/Shuffle
+control exists on this screen (AC-4).
+
+Branch is ahead 3 / behind 13 of main at accept time (drift since QA's 13/2 check, from unrelated
+merges landing on main); re-confirmed disjoint via the unchanged `git diff --name-only` path list
+above (still only UF-02 lane paths + listed extras) — no new conflict risk introduced. Left
+unmerged per D-0169 §2: the orchestrator runs the forced full gate on `main` after merge. Did not
+run the full gate or push, per this role's instructions.
+
+Verdict: **done**. All 8 ACs have passing, independently-reproduced tests; contracts unchanged;
+`Today.tsx`/`slots.tsx` untouched; commits cite `T-0302b` and UF-02.2 throughout. No follow-ups
+beyond what QA already logged (none).
+
+`git status` clean at the end; HEAD unchanged (`c345223`).
