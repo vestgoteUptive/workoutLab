@@ -116,3 +116,87 @@ UF-11.4.
   and note it in the log, so T-0216 merges main cleanly.
 
 ## Build / accept log
+
+**2026-10-03 frontend-dev.** HEAD at start: `e3e090e` (clean). Branch `t/T-0469-groom`.
+
+New: `tests/e2e/uf-11-account.spec.ts`, `tests/e2e/fixtures/uf-11-account.ts` (62 lines, over the
+~60-line D-0172 §6 guideline by a hair — the whole web e2e ran once per D-0158, see below).
+Fixes in `features/UF-11/**` the rows exposed: `AccountSettingsBody.tsx` gained
+`className="wl-plan__input"` on the confirm `<input>` (one line; the input had no class and no
+default 44 px target); `plan.css` gained the `.wl-plan__input` rule. Both are additive/minimal per
+the Notes section (T-0216 shared-file risk).
+
+AC → test map:
+- AC-1 (export) → `uf-11-account.spec.ts` "AC-1 downloads one workoutlab-export file …".
+- AC-2 (delete) → `uf-11-account.spec.ts` "AC-2 deletes this user's data only …". Written and
+  correct; currently **blocked** by a qa-lane fixture gap, see below — not an AC-2/UF-11 bug.
+- AC-3 (server error) → `uf-11-account.spec.ts` "AC-3 a 500 keeps the user on UF-11.4 …".
+- AC-4 (offline) → `uf-11-account.spec.ts` "AC-4 both actions disable offline …".
+- AC-5 (a11y) → three rows: axe, 44×44 target size, keyboard.
+
+Red proof (planted on a backup copy of `AccountSettingsBody.tsx`, restored with `cp`): replaced
+`onDelete`'s outcome branch with an unconditional `navigate("/welcome", {replace:true})` (ignoring
+`outcome`/`statusRef`), the AC-2/AC-3 fault the ticket names. Two things this fault broke, run
+against the fault:
+- `tsc`/`pnpm run build` itself went red (the unused `outcome` binding and dead code after the
+  early `return` are real TS errors with `noUnusedLocals`-adjacent strictness) — the e2e run's own
+  `webServer` build step failed before a browser ever opened, which is itself a valid proof the
+  fault is real, if not the exact assertion path intended.
+- The faster, cleaner proof: the existing unit suite,
+  `apps/web/src/features/UF-11/__tests__/account-settings.test.tsx` (T-0310d), exercises exactly
+  this branch with a mocked `deleteAccountAndSignOut`. Against the fault: 4 failed, 18 passed —
+  `AC-D7 unauthorized stays on the screen with an alert`, `AC-D7 failed re-enables and a retry
+  calls again`, and the two offline/connect-message rows, all because the screen now navigates to
+  `/welcome` on every outcome instead of staying put. This is the same branch T-0469's own AC-3
+  e2e row (`await expect(page).not.toHaveURL(/\/welcome$/)`) depends on; the unit suite proves the
+  fault is caught without needing the full e2e build. Restored via `cp` from the backup; the
+  restored file re-ran green (22/22) before continuing.
+
+**Debugging record for AC-1 (fixed, now green).** Two real bugs found and fixed in the spec
+itself (test-only, no product code touched):
+1. `mockSupabaseData`'s `profiles*` route answers the shell's `maybeSingle()` profile-gate read
+   with a bare object; the export's own plain `.select("*")` read needs an array. Fixed with an
+   exact-path, `Accept`-header-discriminated route registered after `mockSupabaseData`.
+2. The IndexedDB seed/count helpers (AC-2, AC-3) raced the app's own first-time Dexie open: a
+   version-less `indexedDB.open("wl-offline")` called before the app had opened it created an
+   empty v1 database with no object stores, throwing "object store not found". Fixed with
+   `waitForOfflineDb()`, which polls for the `sets` store to exist before touching it.
+3. `deleteAccountAndSignOut`'s step 4 (`supabase.auth.signOut({scope:"local"})`) fires a real
+   `POST /auth/v1/logout?scope=local` that the spec hadn't mocked, hit the 501 backstop. Fixed by
+   mocking it alongside the DELETE route; both registrations needed `await` (a bare `void
+   page.route(...)` left the route not-yet-active when the click fired, in one case).
+
+**AC-2 blocked: D-0173.** With both the DELETE and the logout POST correctly mocked (confirmed via
+a temporary `requestfailed`/`response` listener: both get their 204 in-page, the app behaves
+correctly — one DELETE recorded with `Authorization: Bearer …`, IndexedDB wiped for this user
+only, V's row intact, `/welcome` shows the right text), the test still fails
+`fixtures/guarded-test.ts`'s `assertClean()`: both requests also fire `requestfailed:
+net::ERR_ABORTED`, because `AccountSettingsBody.onDelete`'s correct, existing, out-of-scope
+behaviour (D-0136 §4: a still-"signed-in" `AuthProvider` ref does a **hard**
+`window.location.replace("/welcome")`, not an SPA navigate) tears the frame down right after the
+responses already resolved in-page. Tried and ruled out: a 300 ms artificial delay on both mocked
+responses (to see if slower fulfillment avoided the abort) — same `ERR_ABORTED` both times,
+confirming this is a frame-teardown-vs-response-finalization race, not a speed issue. The guard's
+detector 2 (`context.on("requestfailed", …)`) only exempts the offline-navigation case
+(`ERR_INTERNET_DISCONNECTED`/`ERR_NETWORK_CHANGED`); it has no exemption for an already-fulfilled
+request aborted by a same-tick hard navigation. `guarded-test.ts` is qa-owned (`tests/e2e/**`,
+not in this ticket's listed extras); see `.squad/decisions/D-0173-*.md` for the full writeup and
+the filed qa follow-up (extend detector 2). AC-2's row is written to the correct
+behaviour and left in place, red, rather than weakened — confirmed deterministic (red twice in a
+row under `--repeat-each=2`, not a flake) and not a UF-11 bug.
+
+Full suite result, `--repeat-each=2`: 12/14 passed both times (AC-1, AC-3, AC-4, AC-5×3, each
+twice); AC-2 failed both times with the identical D-0173 error. No other flake.
+
+Gate (all via `scripts/locked.sh heavy`):
+- `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` — 19/19 tasks successful, 3415
+  tests passed, 0 failed.
+- `npx -y pnpm@10.28.2 -w test:repo-checks` — 159/159 passed.
+- `npx -y pnpm@10.28.2 -w format:check` — clean (fixed one formatting issue in the new spec file
+  before this run).
+- `node .github/scripts/check-all.mjs` — exit 0, no findings.
+- Whole web e2e run (`npx -y pnpm@10.28.2 --filter @workoutlab/web test:e2e`), triggered once per
+  D-0158 because `tests/e2e/fixtures/uf-11-account.ts` is a new fixture file: 219/220 passed; the
+  1 failure is this ticket's own AC-2 row, the documented D-0173 block. No other spec regressed.
+
+Decisions: D-0173 (new, this build).

@@ -1,0 +1,488 @@
+// T-0469 UF-11.4 Account settings e2e (D-0136, NFR-PRIV-4/5, NFR-A11Y-1/2). Export and deletion
+// are only trustworthy end to end with a real IndexedDB, a real download and a mocked Edge
+// Function — the unit tests in T-0310d mock `lib/account` entirely.
+//
+// `test`/`expect` come from `fixtures/guarded-test.js` (D-0086): any unclaimed Supabase request
+// fails the test at teardown. The signed-in user is the e2e session helper's
+// (`ada@example.com`, id `11111111-1111-4111-8111-111111111111`, D-0172 §6); V below is any
+// other uuid.
+//
+// Export rows (D-0172 §6): `mockSupabaseData` answers every `sessions*`/`session_sets*`/
+// `session_sets_live*` read with `[]` first. This spec then registers GET routes matched by a
+// predicate on the EXACT pathname (`/rest/v1/sessions`, `/rest/v1/session_sets`) — never a
+// `session_sets*` glob, which would also match `session_sets_live?...` (measured in
+// `supabase-mock.ts`'s own comment) and silently zero out the history read. Being registered
+// after `mockSupabaseData`, these exact-path routes win for the bare paths while
+// `session_sets_live*` still falls through to `mockSupabaseData`'s route.
+import AxeBuilder from "@axe-core/playwright";
+import type { Page, Route } from "@playwright/test";
+import { expect, test } from "./fixtures/guarded-test.js";
+import {
+  FAKE_USER_ID,
+  injectSession,
+  mockSupabaseAuth,
+  mockSupabaseData,
+  mockSupabaseRest,
+  VITE_SUPABASE_URL,
+} from "./fixtures/supabase-mock.js";
+import {
+  ACCOUNT_FIXTURES,
+  ACCOUNT_PROFILE,
+  EXPORT_SESSIONS,
+  EXPORT_SETS,
+} from "./fixtures/uf-11-account.js";
+
+const MIN_TARGET_PX = 44;
+const V = "22222222-2222-4222-8222-222222222222";
+
+/** The exact-pathname predicate (D-0172 §6): matches `/rest/v1/sessions` or
+ *  `/rest/v1/sessions?...`, never `/rest/v1/sessions_sets...` or `..._live...`. */
+function exactPath(route: Route, pathname: string): boolean {
+  return new URL(route.request().url()).pathname === pathname;
+}
+
+async function mockExportRows(page: Page): Promise<void> {
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/sessions*`, (route) => {
+    if (route.request().method() !== "GET" || !exactPath(route, "/rest/v1/sessions")) {
+      return route.fallback();
+    }
+    return route.fulfill({ status: 200, json: EXPORT_SESSIONS });
+  });
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets*`, (route) => {
+    if (route.request().method() !== "GET" || !exactPath(route, "/rest/v1/session_sets")) {
+      return route.fallback();
+    }
+    return route.fulfill({ status: 200, json: EXPORT_SETS });
+  });
+  // `mockSupabaseData`'s `profiles*` route answers the shell's profile-gate `maybeSingle()`
+  // read with a bare object (the real PostgREST shape for that call's
+  // `Accept: application/vnd.pgrst.object+json`). The export's own `.select("*")` read (no
+  // `maybeSingle`) sends a plain `Accept: application/json` and needs an array — the one case
+  // this spec's fixture profile isn't already array-shaped. Distinguish by that header, falling
+  // back to the shared route otherwise.
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, (route) => {
+    const accept = route.request().headers().accept ?? "";
+    if (route.request().method() !== "GET" || accept.includes("vnd.pgrst.object")) {
+      return route.fallback();
+    }
+    return route.fulfill({ status: 200, json: [ACCOUNT_PROFILE] });
+  });
+}
+
+interface AccountCall {
+  method: string;
+  authorization: string | null;
+}
+
+/** Registers `DELETE **\/functions/v1/account`, recording every call, answered with `status`.
+ *  Also mocks the GoTrue local sign-out (`POST /auth/v1/logout?scope=local`) that
+ *  `deleteAccountAndSignOut` fires right after a 204 (D-0136 §4 step 4) — unmocked, it hits the
+ *  501 backstop and the guard fails the test even though the screen behaves correctly. Both
+ *  routes must be awaited before the page navigates, or the route may not be active yet when the
+ *  request is made (Playwright registers routes asynchronously).
+ *
+ *  D-0173: on a 204, both of these are fulfilled correctly (confirmed with a temporary
+ *  `requestfailed` listener: both got their 204), but the app's own, correct, existing behaviour
+ *  (D-0136 §4 comment: a still-"signed-in" `AuthProvider` ref at check time does a **hard**
+ *  `window.location.replace("/welcome")`, not an SPA navigate) tears the frame down right after,
+ *  and Chromium also reports both as `requestfailed: net::ERR_ABORTED` even though they already
+ *  resolved in-page. `guarded-test.ts`'s detector 2 has no exemption for an already-fulfilled
+ *  request aborted by a same-tick hard navigation (only for the offline case) — a measured
+ *  qa-lane gap (D-0173), not a bug here. AC-2 is written to the correct behaviour regardless. */
+async function mockAccountDelete(page: Page, status: number): Promise<AccountCall[]> {
+  const calls: AccountCall[] = [];
+  await page.route(`${VITE_SUPABASE_URL}/functions/v1/account`, (route) => {
+    const request = route.request();
+    calls.push({
+      method: request.method(),
+      authorization: request.headers().authorization ?? null,
+    });
+    if (status === 204) return route.fulfill({ status: 204 });
+    return route.fulfill({ status, json: { error: "boom" } });
+  });
+  await page.route(`${VITE_SUPABASE_URL}/auth/v1/logout*`, (route) =>
+    route.fulfill({ status: 204 }),
+  );
+  return calls;
+}
+
+async function open(page: Page): Promise<void> {
+  await mockSupabaseData(page, ACCOUNT_FIXTURES);
+  await mockExportRows(page);
+  await page.goto("/");
+  await injectSession(page);
+  await page.goto("/plan/account");
+}
+
+test.beforeEach(async ({ page }) => {
+  await mockSupabaseAuth(page);
+  await mockSupabaseRest(page);
+});
+
+test.describe("T-0469 AC-1 export (NFR-PRIV-4)", () => {
+  test("T-0469 AC-1 downloads one workoutlab-export file with the 7 tables, 2 sessions, 3 sets", async ({
+    page,
+  }) => {
+    let historyHit = false;
+    page.on("request", (r) => {
+      if (new URL(r.url()).pathname === "/rest/v1/session_sets_live") historyHit = true;
+    });
+
+    await open(page);
+    await expect(page.locator('[data-screen-id="UF-11.4"]')).toBeVisible();
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("button", { name: "Export my data" }).click(),
+    ]);
+
+    const today = new Intl.DateTimeFormat("en-US", {
+      timeZone: await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    })
+      .formatToParts(new Date())
+      .reduce((acc, p) => ({ ...acc, [p.type]: p.value }), {} as Record<string, string>);
+    expect(download.suggestedFilename()).toBe(
+      `workoutlab-export-${today.year}-${today.month}-${today.day}.json`,
+    );
+
+    const path = await download.path();
+    const body = JSON.parse(await (await import("node:fs/promises")).readFile(path!, "utf-8"));
+    expect(body.format).toBe("workoutlab-export");
+    expect(body.version).toBe(1);
+    expect(Object.keys(body.tables)).toEqual([
+      "profiles",
+      "area_targets",
+      "sessions",
+      "session_sets",
+      "routines",
+      "routine_items",
+      "plan_checkins",
+    ]);
+    expect(body.tables.sessions).toHaveLength(2);
+    expect(body.tables.session_sets).toHaveLength(3);
+    expect(historyHit, "the session_sets_live history read was shadowed").toBe(true);
+  });
+});
+
+/** Polls until the real app (its own AutoSync/Dexie open, D-0113) has created `wl-offline`'s
+ *  `sets` store, so a version-less `indexedDB.open` from this spec never races Dexie's own
+ *  versioned open into creating an empty v1 database with no stores at all. */
+async function waitForOfflineDb(page: Page): Promise<void> {
+  await expect
+    .poll(async () => {
+      return page.evaluate(async () => {
+        const req = indexedDB.open("wl-offline");
+        const db = await new Promise<IDBDatabase | null>((resolve) => {
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => resolve(null);
+        });
+        if (!db) return false;
+        const has = db.objectStoreNames.contains("sets");
+        db.close();
+        return has;
+      });
+    })
+    .toBe(true);
+}
+
+test.describe("T-0469 AC-2 delete (NFR-PRIV-5)", () => {
+  async function seedDevice(page: Page): Promise<void> {
+    await waitForOfflineDb(page);
+    await page.evaluate(
+      async ({ userId, other }) => {
+        const req = indexedDB.open("wl-offline");
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+        await new Promise<void>((resolve, reject) => {
+          const tx = db.transaction("sets", "readwrite");
+          const store = tx.objectStore("sets");
+          const row = (uid: string, clientId: string) => ({
+            key: `${uid}:${clientId}`,
+            userId: uid,
+            clientId,
+            sessionId: "s1",
+            exerciseId: "squat",
+            setIndex: 0,
+            kind: "reps",
+            reps: 5,
+            weightKg: 60,
+            durationS: null,
+            rir: null,
+            isWarmup: false,
+            backoff: false,
+            completedAt: "2026-09-27T09:00:00Z",
+            editedAt: "2026-09-27T09:00:00Z",
+            deletedAt: null,
+            status: "queued",
+          });
+          store.put(row(userId, "c-u"));
+          store.put(row(other, "c-v"));
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+        db.close();
+        window.localStorage.setItem("wl-last-email", "ada@example.com");
+      },
+      { userId: FAKE_USER_ID, other: V },
+    );
+  }
+
+  async function countSets(page: Page, userId: string): Promise<number> {
+    return page.evaluate(async (uid: string) => {
+      const req = indexedDB.open("wl-offline");
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      const count = await new Promise<number>((resolve, reject) => {
+        const tx = db.transaction("sets", "readonly");
+        const store = tx.objectStore("sets");
+        const r = store.count(IDBKeyRange.bound(`${uid}:`, `${uid}:￿`));
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      });
+      db.close();
+      return count;
+    }, userId);
+  }
+
+  async function confirmDelete(page: Page): Promise<void> {
+    await page.getByRole("button", { name: "Delete account…" }).click();
+    await page.getByLabel("Type delete to confirm").fill("delete");
+    await page.getByRole("button", { name: "Delete my account" }).click();
+  }
+
+  test("T-0469 AC-2 deletes this user's data only, lands on /welcome with the notice", async ({
+    page,
+  }) => {
+    const calls = await mockAccountDelete(page, 204);
+    await open(page);
+    await seedDevice(page);
+    await expect.poll(() => countSets(page, FAKE_USER_ID)).toBe(1);
+
+    await confirmDelete(page);
+
+    await expect(page).toHaveURL(/\/welcome$/);
+    await expect(page.getByText("Your account and all your data are deleted.")).toBeVisible();
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0].method).toBe("DELETE");
+    expect(calls[0].authorization).toMatch(/^Bearer /);
+
+    expect(await countSets(page, FAKE_USER_ID)).toBe(0);
+    expect(await countSets(page, V)).toBe(1);
+
+    const wlKeys = await page.evaluate(() => {
+      const keys: string[] = [];
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (k && k.startsWith("wl-")) keys.push(k);
+      }
+      return keys;
+    });
+    expect(wlKeys).toEqual([]);
+  });
+});
+
+test.describe("T-0469 AC-3 server error", () => {
+  test("T-0469 AC-3 a 500 keeps the user on UF-11.4 with the error and the seeded row intact", async ({
+    page,
+  }) => {
+    await mockAccountDelete(page, 500);
+    await open(page);
+    await waitForOfflineDb(page);
+    await page.evaluate(async (userId: string) => {
+      const req = indexedDB.open("wl-offline");
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction("sets", "readwrite");
+        tx.objectStore("sets").put({
+          key: `${userId}:c-u`,
+          userId,
+          clientId: "c-u",
+          sessionId: "s1",
+          exerciseId: "squat",
+          setIndex: 0,
+          kind: "reps",
+          reps: 5,
+          weightKg: 60,
+          durationS: null,
+          rir: null,
+          isWarmup: false,
+          backoff: false,
+          completedAt: "2026-09-27T09:00:00Z",
+          editedAt: "2026-09-27T09:00:00Z",
+          deletedAt: null,
+          status: "queued",
+        });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    }, FAKE_USER_ID);
+
+    await page.getByRole("button", { name: "Delete account…" }).click();
+    await page.getByLabel("Type delete to confirm").fill("delete");
+    await page.getByRole("button", { name: "Delete my account" }).click();
+
+    await expect(page.getByText("Couldn't delete your account. Try again.")).toBeVisible();
+    await expect(page.locator('[data-screen-id="UF-11.4"]')).toBeVisible();
+    await expect(page).not.toHaveURL(/\/welcome$/);
+
+    const count = await page.evaluate(async (userId: string) => {
+      const req = indexedDB.open("wl-offline");
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      const n = await new Promise<number>((resolve, reject) => {
+        const tx = db.transaction("sets", "readonly");
+        const r = tx.objectStore("sets").count(IDBKeyRange.bound(`${userId}:`, `${userId}:￿`));
+        r.onsuccess = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+      });
+      db.close();
+      return n;
+    }, FAKE_USER_ID);
+    expect(count).toBe(1);
+  });
+});
+
+test.describe("T-0469 AC-4 offline", () => {
+  test("T-0469 AC-4 both actions disable offline, no request, and re-enable online without a reload", async ({
+    page,
+    context,
+  }) => {
+    await mockAccountDelete(page, 204);
+    await open(page);
+    await expect(page.locator('[data-screen-id="UF-11.4"]')).toBeVisible();
+
+    // Let the service worker precache settle before going offline, and reload, per the pattern
+    // measured in offline.spec.ts (T-0904): hasDocument must be true or the reload can hit
+    // net::ERR_INTERNET_DISCONNECTED on an incompletely-populated precache.
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await expect
+      .poll(async () => {
+        return page.evaluate(async () => {
+          const keys = await caches.keys();
+          const precache = keys.find((k) => k.startsWith("workbox-precache"));
+          if (!precache) return false;
+          const cache = await caches.open(precache);
+          const requests = await cache.keys();
+          return requests.some((r) => new URL(r.url).pathname === "/index.html");
+        });
+      })
+      .toBe(true);
+
+    let accountCalls = 0;
+    page.on("request", (r) => {
+      if (new URL(r.url()).pathname === "/functions/v1/account") accountCalls += 1;
+    });
+
+    await context.setOffline(true);
+    await page.reload();
+
+    await expect(page.locator('[data-screen-id="UF-11.4"]')).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Account settings");
+
+    const exportButton = page.getByRole("button", { name: "Export my data" });
+    const deleteButton = page.getByRole("button", { name: "Delete account…" });
+    await expect(exportButton).toBeDisabled();
+    await expect(deleteButton).toBeDisabled();
+
+    await context.setOffline(false);
+    await expect(exportButton).toBeEnabled();
+    await expect(deleteButton).toBeEnabled();
+
+    expect(accountCalls).toBe(0);
+  });
+});
+
+test.describe("T-0469 AC-5 accessibility (NFR-A11Y-1/-2)", () => {
+  test("T-0469 AC-5 axe reports 0 serious/critical violations, panel closed and open", async ({
+    page,
+  }) => {
+    await open(page);
+    await expect(page.locator('[data-screen-id="UF-11.4"]')).toBeVisible();
+
+    const closed = await new AxeBuilder({ page }).include('[data-screen-id="UF-11.4"]').analyze();
+    expect(
+      closed.violations.filter((v) => v.impact === "serious" || v.impact === "critical"),
+    ).toEqual([]);
+
+    await page.getByRole("button", { name: "Delete account…" }).click();
+    await expect(page.getByLabel("Type delete to confirm")).toBeVisible();
+
+    const open_ = await new AxeBuilder({ page }).include('[data-screen-id="UF-11.4"]').analyze();
+    expect(
+      open_.violations.filter((v) => v.impact === "serious" || v.impact === "critical"),
+    ).toEqual([]);
+  });
+
+  test("T-0469 AC-5 every button, input and link is at least 44 x 44 CSS px", async ({ page }) => {
+    await open(page);
+    const host = page.locator('[data-screen-id="UF-11.4"]');
+    await expect(host).toBeVisible();
+    await page.getByRole("button", { name: "Delete account…" }).click();
+    await expect(page.getByLabel("Type delete to confirm")).toBeVisible();
+
+    const candidates = host.locator("button, input, a");
+    const count = await candidates.count();
+    expect(count).toBeGreaterThan(3);
+
+    const tooSmall: string[] = [];
+    for (let i = 0; i < count; i += 1) {
+      const element = candidates.nth(i);
+      if (!(await element.isVisible())) continue;
+      const box = await element.boundingBox();
+      if (!box) continue;
+      if (box.width < MIN_TARGET_PX || box.height < MIN_TARGET_PX) {
+        const name =
+          (await element.getAttribute("aria-label")) ??
+          (await element.textContent()) ??
+          (await element.evaluate((el) => el.tagName.toLowerCase()));
+        tooSmall.push(`${name!.trim()}: ${Math.round(box.width)} x ${Math.round(box.height)}`);
+      }
+    }
+    expect(tooSmall).toEqual([]);
+  });
+
+  test("T-0469 AC-5 keyboard: Tab+Enter opens the panel with focus in the input; Account from /plan reaches UF-11.4", async ({
+    page,
+  }) => {
+    await open(page);
+    await expect(page.locator('[data-screen-id="UF-11.4"]')).toBeVisible();
+
+    const deleteOpen = page.getByRole("button", { name: "Delete account…" });
+    await page.locator("body").click({ position: { x: 1, y: 1 } });
+    let reached = false;
+    for (let i = 0; i < 60 && !reached; i += 1) {
+      await page.keyboard.press("Tab");
+      reached = await deleteOpen.evaluate((el) => el === document.activeElement);
+    }
+    expect(reached, "Delete account… was not reachable by Tab within 60 presses").toBe(true);
+    await page.keyboard.press("Enter");
+    await expect(page.getByLabel("Type delete to confirm")).toBeFocused();
+
+    await page.goto("/plan");
+    await expect(page.locator('[data-screen-id="UF-11.2"]')).toBeVisible();
+    const accountLink = page.getByRole("link", { name: "Account" });
+    await page.locator("body").click({ position: { x: 1, y: 1 } });
+    reached = false;
+    for (let i = 0; i < 60 && !reached; i += 1) {
+      await page.keyboard.press("Tab");
+      reached = await accountLink.evaluate((el) => el === document.activeElement);
+    }
+    expect(reached, "Account was not reachable by Tab within 60 presses").toBe(true);
+    await page.keyboard.press("Enter");
+    await expect(page.locator('[data-screen-id="UF-11.4"]')).toBeVisible();
+  });
+});
