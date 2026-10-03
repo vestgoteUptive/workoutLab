@@ -175,3 +175,8 @@ whole suite, run under the test lock with `TMPDIR=$HOME/.cache/wl-pw-tmp` until 
 - Known limit (follow-up): the check runs at teardown, so a read still in flight after a test's last
   assertion can be missed (as the uf-10 first attempt showed). A generic settle in the auto fixture
   costs about 0.5 s per test; not done here.
+
+- 2026-10-03 qa (verify). Clean at 02d7516; `git merge main` conflicted in `shell.spec.ts` (comment only; kept main's UF-06.2 wording plus the T-0436 block), merge commit e1e38f8. Main added `uf-06-progress.spec.ts`: zero backstop hits.
+- Reproduced: AC-6 plant (`routines*` route renamed) -> uf-10 T-0427 AC1 red with `supabase backstop hit` and `GET .../rest/v1/routines?select=id,name,updated_at`. Main's guard (guarded-test.ts from 02d7516~1) -> fixture-guard 11 failed / 51 passed (`backstopHits`/`allowBackstop is not a function`). QA fault: `x-wl-e2e-backstop` header on the real `exercises*` mock -> fixture-guard + uf-10 8 failed (real mock counted as hit). All restored from backup; tree clean.
+- Whole web e2e after merge: 183 passed. Cached `-w typecheck lint test` exit 0, `test:repo-checks` 146 pass / 0 fail, check-all 0, format:check clean.
+- Verdict: done, all AC proven.
