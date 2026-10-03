@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.2, UF-09.5, UF-09.7]
 decisions: [D-0066, D-0071, D-0110, D-0111, D-0118, D-0119, D-0155]
 deps: [T-0304c, T-0303d, T-0304d, T-0423]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner; refreshed 2026-10-02 against main after T-0304d, T-0427, T-0429 and T-0431 (T-0423 merging). Child of docs/tickets/T-0304-focus-mode.md (parent AC-C5–C7), split out by D-0118 §1. T-0303d (readFocusPrefs in features/UF-08/index.tsx) and T-0304c/d are on main. It edits host.tsx, so it starts once T-0423 has merged. Build flow: wl-build-web. About ⅓–½ day. -->
 
@@ -278,3 +278,9 @@ unchanged · commits start `T-0304g` and cite the screen (for example `T-0304g U
 - Every AC maps to tests: AC-1 t0304g.device 'AC-1' (3); AC-2 t0304g.device 'AC-2' (14); AC-3 t0304g.cues 'AC-3' (14) + t0304g.cues-unit (8); AC-4 t0304g.cues 'AC-4' (7); AC-5 t0304g.motion (10) + t0304g.css (2); AC-6 existing UF-09 tests, exports-and-lint, build.test AC-A6.
 - Red on unfixed code (host/ring/rest/css from the merge base): 34 red, 24 green (every positive AC-1..AC-5 test red). F1 (cue on any render ≤ t): 6 red. F3 (no observation in fireExpired): 6 red. QA fault `useWakeLock(prefs.keepAwake)` (lock held at done): 'release: reaching done' red. Binary pairs present.
 - QA stopped before its gate (it left 3 stray untracked UF-03 copies, removed by the orchestrator). Cached gate (D-0158 §1) run by the orchestrator at 7c3c155 (main merged): -w 19/19, repo-checks 146/146, format clean, check-all 0, whole e2e 153/153.
+
+## Accept log (product-owner, 2026-10-03)
+- **Verdict: done.** HEAD c6711a6 (main merged), tree clean. Diff stays inside the "Files it edits" list: `host.tsx` (`Machine` only: one hook call, the observe in `fireExpired`, a `display: contents` gesture root), the fill `style.transition` in `ring.tsx`/`rest.tsx`, the CSS reduce block, three i18n keys, new `device.ts`/`cues.ts`/`reduced-motion.ts`, new `t0304g*` tests only.
+- AC-1 → t0304g.device "AC-1" (once per mount, default all on, all-off pair) + import-bans AC-10. AC-2 → t0304g.device "AC-2" (14). AC-3 → t0304g.cues "AC-3" (14) + cues-unit (8); planted F1 red (6). AC-4 → t0304g.cues "AC-4" (7). AC-5 → t0304g.motion (10) + t0304g.css (2), D-0155 §1–§2 honoured (three rings, missing matchMedia = reduce). AC-6 → exports-and-lint, unedited UF-09 tests, build AC-A6, check:size (UF-09 chunk 15.9 KB gzip, SessionSetup tree-shaken).
+- Principle 1 holds: no new visible element (the root draws no box; cues are audio only). Red on unfixed code: 34 (QA). Cached gate (orchestrator): -w 19/19, repo-checks 146, format, check-all 0, e2e 153/153.
+- Follow-ups already filed: T-0447 (several thresholds crossed at once), T-0448 (speech cancel, iOS voice priming, 'interrupted' AudioContext).
