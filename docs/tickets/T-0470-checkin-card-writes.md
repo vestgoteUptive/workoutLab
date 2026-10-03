@@ -129,3 +129,127 @@ Tests for every AC pass, with the red run and the planted fault recorded · whil
   `fixtures.ts` and leaves both files as they are.
 
 ## Build / accept log
+
+**2026-10-03, frontend-dev.** Confirmed the ticket text already carries both D-0172 groom fixes
+before building: AC-1's `completed_prev: null` (D-0172 §1) and AC-1b's second-device/23505 case
+with both answer values (D-0172 §2). Built `checkin-writes.ts` (`insertIfFirstShown`,
+`acceptProposal`, `keepCurrent`) and wired `CheckinCard.tsx`'s two buttons and the first-shown
+effect to it; added `__tests__/checkin-writes-helpers.tsx` (own file, D-0172 §8: `seedPeriods`
+and a `createWritesSpy` with one-shot 23505/answer-row/gate controls that `test-helpers.tsx`'s
+plain spy can't express) and `__tests__/checkin-writes.test.tsx`.
+
+AC→test map (`checkin-writes.test.tsx`, each title starts "T-0470 AC-n"):
+- AC-1 → `describe("T-0470 AC-1 first-shown insert")`, 7 cases (payload, one/two-period stubs,
+  cached row, offline→online, no proposal, no user id).
+- AC-1b → `describe("T-0470 AC-1b second device")`, 2 cases (unanswered stays, answered hides +
+  refreshAll).
+- AC-2 → `describe("T-0470 AC-2 Accept")`, 4 cases (order/payloads, step-1 fail, step-2 fail +
+  retry, rejected refreshAll).
+- AC-3 → `describe("T-0470 AC-3 Keep current")`, 2 cases.
+- AC-4 → `describe("T-0470 AC-4 never silent")`, 5 fake-day mounts, one case.
+- AC-5 → `describe("T-0470 AC-5 double tap")`, 2 cases (Accept, Keep).
+
+Red-on-main proof: swapped `CheckinCard.tsx` for `git show HEAD:...` (pre-T-0470, read-only) and
+ran `checkin-writes.test.tsx` — 14/18 failed (every AC-1.. AC-5 case that needs a write), 4 passed
+(the no-proposal/no-user-id/cached-row negative cases, which assert "no insert" and are true on
+main too). Restored the file from a backup copy (`cp`, not `git checkout`) afterwards.
+
+Planted fault: swapped steps (1) and (2) in `acceptProposal` (area_targets upsert vs profiles
+update) on a backup copy — AC-2's 3 order-dependent assertions failed as expected, the other 15
+tests stayed green. Restored from the backup copy.
+
+Also fixed along the way: `strings.test.ts`'s bare-literal scan caught `"profile"` (a type
+indexed-access, not copy) and `"object"`/needed two new structural allowlist entries
+(`"period_index"`, `"23505"`, D-0172 §2) — added with a comment, no existing entries reordered.
+`checkin-card.test.tsx`'s old T-0308c AC-7 "no supabase.from call on Accept/Keep" assertion is
+now false by design (this ticket adds those writes); removed that one assertion, kept its exports
+check, noted why in a comment pointing at this ticket's own AC-2/AC-3/AC-5 coverage.
+
+Gate: `scripts/locked.sh small npx vitest run apps/web/src/features/UF-11/` → 162/162 green
+(after the fault/red-proof detours, re-verified green each time) · `scripts/locked.sh heavy npx
+-y pnpm@10.28.2 --filter @workoutlab/web typecheck` and `lint` → clean · cached full gate
+`scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` → 19/19 tasks
+successful, 3458 tests passed · `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`
+→ 159/159 · `-w format:check` → clean (ran `prettier --write` once on the 4 new/changed files
+first) · `node .github/scripts/check-all.mjs` → exit 0 · `scripts/locked.sh heavy npx -y
+pnpm@10.28.2 --filter @workoutlab/web test:e2e uf-11-plan.spec.ts` → 10/10 passed (this spec
+covers UF-11.2/.3 only; the card is still mounted nowhere per T-0471).
+
+Status: done. No contract change. No new i18n keys (the failure line reuses
+`en.uf11.saveFailed`, as the ticket allowed).
+
+## Review
+
+**2026-10-03, code-reviewer.** Approve.
+
+- Lane: all 6 changed app files under `apps/web/src/features/UF-11/**`; `uf-11.ts` untouched (no
+  new i18n keys needed, as logged). No contract diff (`git diff main...HEAD` on `api/openapi.yaml`,
+  `docs/data-model.md`, `docs/engine-rules.md`, `tokens.json` is empty).
+- `checkin-card.test.tsx`: the removed assertion ("Accept/Keep makes no supabase.from call") is a
+  legitimate removal — its premise (no writes) is exactly what this ticket changes by design. The
+  new behaviour is covered in `checkin-writes.test.tsx` AC-2/AC-3/AC-5. The exports check
+  ("index.tsx exports exactly ...") is kept verbatim.
+- Accept order in `checkin-writes.ts` (`acceptProposal`): area_targets upsert → profiles update →
+  plan_checkins answer update, matching D-0070 §3 and reaffirmed unchanged by D-0166. The planted
+  fault (swap steps 1/2) is genuinely caught: `checkin-writes.test.tsx`'s AC-2 `tablesInOrder()`
+  assertion pins the exact call order, so a swap fails that assertion (and the per-call payload
+  assertions tied to `spy.calls[0]`/`[1]`).
+  AC-1's `completed_prev: null` and AC-1b's second-device/answered-row case both match D-0172 §1/§2
+  verbatim.
+- Second-device 23505 path (`selectAnsweredElsewhere` in `checkin-writes.ts`): a real
+  conflict-resolution branch, not error-swallowing — it performs a genuine
+  `.select("answer").eq("period_index", …)` and branches on the row's `answer`
+  (null → card stays, no write; set → card hides + `refreshAll()` once), tested on both outcomes
+  in AC-1b with no alert/`console.error` either way.
+- `strings.test.ts`'s two new allowlist entries (`period_index`, `23505`) are structural: a DB
+  filter column and Postgres' unique-violation code respectively, not user-visible copy. Appended
+  with a comment, no reordering.
+- Re-ran targeted suite: `scripts/locked.sh small npx pnpm --filter @workoutlab/web exec vitest run
+  src/features/UF-11/__tests__/checkin-writes.test.tsx
+  src/features/UF-11/__tests__/checkin-card.test.tsx src/features/UF-11/__tests__/strings.test.ts`
+  → 3 files, 43/43 passed.
+
+No findings. Verdict: **approve**.
+
+## QA
+
+**2026-10-03, qa.** Done.
+
+- Verified all 6 ACs with real tests, not just reading the build log: reproduced the builder's
+  red-on-main (14/18 failing against the pre-T-0470 `CheckinCard.tsx`) and the AC-2 order planted
+  fault (steps 1/2 swapped) exactly as logged.
+- Added an independent planted fault: inverted the second-device branch logic in
+  `selectAnsweredElsewhere` (null-answer and set-answer outcomes swapped). AC-1b's two assertions
+  (unanswered → card stays/no write; answered → card hides + `refreshAll` once) caught it cleanly.
+- `uf-11-plan.spec.ts` e2e: 10/10 passed. Covers UF-11.2/.3 only, not CheckinCard writes
+  themselves — expected, since the card is mounted nowhere yet (T-0471).
+- Branch state: 8 commits behind `main`, zero file overlap; `git merge-tree` confirms a clean
+  merge. Correctly left unmerged per D-0169 §2 (orchestrator merges after accept).
+
+No findings. Verdict: **done**.
+
+## Accept
+
+**2026-10-03, product-owner.** Done.
+
+- All 6 ACs (AC-1, AC-1b, AC-2, AC-3, AC-4, AC-5) have passing tests with a clear AC→test map
+  (`describe("T-0470 AC-n ...")` per build log), independently confirmed present in
+  `checkin-writes.test.tsx`.
+- Read `checkin-writes.ts`: the first-shown insert payload (including `completed_prev: null`,
+  D-0172 §1), the 23505 second-device fallback (`selectAnsweredElsewhere`: null answer → card
+  stays silently; set answer → `refreshAll` once, no alert/`console.error` either way, D-0172 §2),
+  and the Accept order (`area_targets` upsert → `profiles` update → `plan_checkins` answer update,
+  each gated on the previous step's success, D-0070 §3) all match the ticket text and the review
+  findings verbatim.
+- Red-on-main and both planted faults (builder's AC-2 order swap, QA's independent AC-1b branch
+  inversion) are recorded and were genuinely caught, not just asserted.
+- Contracts unchanged (confirmed by builder and reviewer's empty `git diff` on the 4 contract
+  files); no contract-change proposal needed.
+- Full gate, repo-checks, format:check and `check-all.mjs` all green per the build log; this is a
+  half-day-scoped ticket per its own estimate and D-0157 §7, so no split was needed.
+- Branch 8 commits behind `main` with zero file overlap (merge-tree clean) is expected under
+  D-0169 §2 — the orchestrator merges after accept, not this role.
+- `uf-11-plan.spec.ts` not covering the CheckinCard mount itself is correctly out of scope here;
+  T-0471 (mounting) is the next ticket in this lane per the ticket's own Notes section.
+
+Verdict: **done**. All ACs have passing tests, no contract drift, no principle violated.
