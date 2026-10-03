@@ -60,9 +60,11 @@ leaves these open points, each of which changes what a test asserts:
      the URL with `?step=suggested`.
    - "Always use this in <routine>" stays cut (D-0069 §7).
 3. **UF-02.2 renders Today's 45-min preview.**
-   - `/?view=preview` renders from the same `useToday` state as the UF-02.1 card: the same
-     `Workout` and library, **no second `suggest` call** (principle 3: one engine answer per
-     screen state, D-0065 §1). The heading carries the assumption: "Suggested for 45 min".
+   - `/?view=preview` renders from the same `useToday` hook and `PREVIEW_INPUT` as the UF-02.1
+     card, so for the same cache and clock it shows the same `Workout` (principle 3, D-0065 §1):
+     one `suggest` call per mount, never a second input. The `features/UF-02/index.tsx` export
+     `Today` becomes a small switch on `view`, so `Today.tsx` isn't edited (it stays free for
+     T-0395). The heading carries the assumption: "Suggested for 45 min".
    - States mirror the card: loading → a skeleton; `workout` null or `plan.items` `[]` → "Nothing
      suggested yet" with Start still enabled; no profile → the same no-plan line as Today.
    - Rest per row = `REST_COMPOUND_S` for a library `type` `compound`, else `REST_ISOLATION_S`
