@@ -79,7 +79,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0302b | UF-02.2 Workout preview at /?view=preview (engine order, reasons, pre-fill weight, links to UF-04.2) | web-feature:UF-02 | T-0302c (D-0109 §7) | todo | wl-build-web |
 | T-0303c | UF-08.3 Swap before starting: mounts the shared SwapSheet (features/UF-05) | web-feature:UF-08 | T-0303b, T-0421 | todo | wl-build-web |
 | T-0304h | UF-09 e2e from UF-08.4: reload mid-rest/pause (NFR-TIME-2), 10-set offline workout (NFR-OFF-2), two devices (NFR-SYNC-4), keyboard + axe loop (NFR-A11Y-1/6) | web-feature:UF-09 | T-0304d, T-0304g, T-0303d | todo | wl-build-web |
-| T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | todo | wl-build-web |
 | T-0310d | UF-11.4 Account settings at /plan/account: export + delete with confirm, /welcome notice (D-0136) | web-feature:UF-11 | T-0308b, T-0310b, T-0310c | todo | wl-build-web |
 | T-0216 | Account settings: "Edit equipment" checklist of the 10 vocabulary items, writing profiles.equipment[] (D-0061 §3; UF-01.3 keeps the 3 profiles) | web-feature:UF-01 | T-0300, T-0301 | todo | wl-build-web |
@@ -149,6 +148,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0451 | UF-05 swap overlay: offer a retry after a failed chunk load (React.lazy caches the rejection, so every reopen shows loadFailed until reload); drop the T-0422 boundary 'scope' test that proves nothing; drop the stale 'TR-0043: red until it is resolved' comment in t0422.host.test.tsx (T-0422 re-review and QA) | web-feature:UF-09 | T-0422 | todo | wl-build-web |
 | T-0453 | UF-07.1 a11y: focus falls to body after Remove and after a picker Add (the button becomes the disabled 'Added' one, or every Add disables at 8 items) — move focus to a neighbour or the search field; the confirm dialog says aria-modal but traps no focus and leaves the form interactive (T-0308a review) | web-feature:UF-07 | T-0308a | todo | wl-build-web |
 | T-0454 | UF-07.1: an unreadable cache (loadRoutines throws) leaves only the <h1> with no way out on a route without a tab bar — show a message and a link back to /plan; with an empty library cache the picker reads 'No exercises match ""' (T-0308a review) | web-feature:UF-07 | T-0308a | todo | wl-build-web |
+| T-0455 | e2e guard polish (T-0436 review): check backstop hits after in-flight requests settle in the supabaseGuard auto fixture (a late read is missed today); source-rules match any `.allowBackstop(`/`.allow(` receiver, not only the guard names; make the test.fail() backstop tests assert the failure is a backstop hit | qa | T-0436 | todo | wl-build-qa |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
