@@ -168,3 +168,17 @@ Every AC has a passing test · `npx -y pnpm@10.28.2 -w typecheck lint test --con
 - Scope: `git show --stat 29a02ae` touches only the two source files plus this log, matching the rework log exactly. `git diff main...HEAD` is still the 13 files from the original build (plus this entry); nothing outside the two findings changed.
 - Targeted: `npx vitest run src/features/UF-11/__tests__/account-settings.test.tsx` → 22/22 green (via `scripts/locked.sh small`). Did not rerun the full gate (rework agent already ran it green; no code changed since).
 - Verdict: both findings are genuinely fixed, with planted-fault proof reproduced independently. No regression found. Approve.
+
+### QA (2026-10-03) — done
+- Reproduced the builder's AC-D1/AC-D2 red-on-main proof, the review's vacuous-history-replace fault and the builder's AC-D6 confirm-check fault; all three go red as recorded. Added one more: dropping the `trim()` on the typed-confirm check (accepting `" delete "` with no trim) — an AC-D6 row fails as expected, and it was restored from the backup copy.
+- All ACs D1-D8, D10 map to real tests: 41 tests across the 4 `account-settings*`/`strings` test files, 297 green across the wider touched surface.
+- Verdict: done.
+
+### Accept (product-owner, 2026-10-03) — done
+- Start: worktree clean, HEAD c250103.
+- Re-ran `node .github/scripts/check-all.mjs`: exit 0. Re-ran `node .github/scripts/check-lane-paths.mjs` directly: exit 0. `git diff --stat main...HEAD` touches exactly the ticket's "Paths you may change" (13 files), including the two review-granted profile-gate test files, now on main.
+- Independently reran the 4 named test files (`scripts/locked.sh small npx vitest run account-settings.test.tsx account-settings.route.test.tsx account-settings.boundaries.test.ts strings.test.ts` from `apps/web`): 41/41 green, matching QA's count exactly.
+- AC→evidence check: D1 (route + first render, signed-in and signed-out) in `account-settings.route.test.tsx` + `routes.phase3.test.ts` row; D2 (UF-11.2 link, seeded and cold-cache) same file; D3 (email, incl. stale-token contrast added in rework) through D8 (sign-out keeps queue) in `account-settings.test.tsx`; D10 (strings/exports/boundaries) in `account-settings.boundaries.test.ts` + `strings.test.ts`. AC-D9 correctly out of scope (T-0469, D-0168 §4).
+- Both review findings (stale-session-key email leak; vacuous history-replace assertion) were real bugs, fixed with planted-fault proof reproduced independently at rework, re-review and QA. No test was weakened to get there; the fix to AC-D7's assertion made it stricter (asserts the actual `navigate` call args instead of a `window.history.back()` no-op).
+- Branch ahead 5 / behind 2 of main, zero real conflicts (disjoint generated `.agentlab` json only) — correctly left unmerged per D-0169 §2; the orchestrator runs the forced full gate on `main` after merge, not this step.
+- Verdict: **done**. Every AC (D1-D8, D10) has a passing, independently-reproduced test; D9 is a deliberate, already-ticketed deferral, not a gap. Contracts unchanged. Lane paths and diff scope are clean. Definition of done is met for this ticket's scope.
