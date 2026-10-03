@@ -5,7 +5,7 @@ lane: web-feature:UF-03
 screens: [UF-03.1, UF-09.9, UF-03.3]
 decisions: [D-0142, D-0068, D-0069, D-0071, D-0111, D-0118, D-0120, D-0045, D-0060, D-0153, D-0155]
 deps: [T-0304d, T-0419, T-0318, T-0306a, T-0422, T-0433]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner; refreshed 2026-10-02 against main after T-0304d, T-0427, T-0429 and T-0431 (T-0423 merging). First child of the T-0305a board row (D-0142 §1 §3). Build flow: wl-build-web. About ½–⅔ day. It carries T-0360 (the T-0306a QA finding). T-0304d, T-0419, T-0318 and T-0306a are on main. The spec is ready, but the build waits on two in-flight tickets: T-0422 (in build; same seams.tsx, UF-09 pins and uf-09-focus.spec.ts row) and T-0433 (in QA; same lane, web-feature:UF-03, and the same __tests__/helpers.tsx). Start it from a main that has both. -->
 
@@ -158,3 +158,10 @@ Tests for every AC pass, with the planted faults recorded · `pnpm -w typecheck 
 **QA (qa-tester, 2026-10-03).** `git merge main` (6a94e6a), `git status` clean. Verdict: done.
 - **Faults, each from a backup copy, restored with `cp`:** library link in the card, `principle-1` 2 red (AC-8); Previous as the kg pre-fill, `list-view` 1 red (AC-3); warm-up counted in Previous, `list-view` 3 red (AC-4); `SeamBoundary` removed, `t0416.*-reject` 2 red (AC-1/6). Own faults on AC-8: a `/balance` link in the card, 1 red; a `<nav>` in the card, 1 red.
 - **Runs:** UF-03 + UF-09 vitest 62 files / 956 passed; `test:e2e uf-09` 10 passed; gate `-w typecheck lint test --concurrency=1` 19/19; `test:repo-checks` 0 fail; check-all exit 0.
+
+**Accept (product-owner, 2026-10-03).** HEAD b391d06 (main merged), clean. Verdict: done.
+- AC-1..AC-9 each map to passing tests (build AC map; QA 956 UF-03/UF-09 vitest, e2e uf-09 10/10, cached gate 19/19, repo-checks and check-all green). Required planted faults (AC-8 library link, AC-3 Previous as kg, AC-4 warm-up) recorded red by build and QA.
+- AC-1 diff check: `features/UF-09` source change is `seams.tsx` only; `features/UF-03` has no UF-09 import. Beyond the §6 pins, four new `UF-09/__tests__/t0416.*` files cover the review-requested SeamBoundary; accepted under the `__tests__/*.test.tsx` grant.
+- Accepted deviation: Close on a failed list-view load lands on UF-09.3, the same landing as "Focus mode", because opening it resumes the machine (D-0071 §4, AC-2).
+- Principles: 1 holds (AC-8 render assertion with contrasts, one screen id, no nav/C-01); 3 holds (rows from `item.prefill`, Previous display only, D-0068 §4).
+- Gap: no Playwright spec for the List view; it lands with logging in T-0417. Orchestrator: mark T-0360 folded into T-0416.
