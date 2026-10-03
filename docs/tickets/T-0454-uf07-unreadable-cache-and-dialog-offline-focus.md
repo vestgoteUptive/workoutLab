@@ -5,7 +5,7 @@ lane: web-feature:UF-07
 screens: [UF-07.1]
 decisions: [D-0164, D-0162, D-0081, D-0070, D-0071]
 deps: [T-0308a, T-0453]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0308a and T-0453 reviews. T-0456 folds into it (D-0164 §2): both edit EditorForm.tsx. Build flow: wl-build-web. About ⅓–½ day. T-0308a and T-0453 are on main. -->
 
@@ -143,3 +143,6 @@ Planted faults (backup in scratchpad, restored by `cp`): focus effect disabled -
 
 ### QA log (qa-tester, 2026-10-03)
 Merged origin/main (HEAD f7d8133, tree clean before QA). Reproduced from backups (restored by `cp`): unfixed sources -> 10 of 16 red (AC-1 x3, AC-3 x3, AC-4, AC-5 online, axe x2); focus effect disabled -> AC-4 red; `libraryEmpty = library.length === 0` -> warm-ups-only red. Own fault (first-read failure redirects to /plan instead of the message) -> 3 red (AC-1 online/offline, axe). UF-07 folder x7: 97/97 in 5 runs, 2 early runs had 1 unidentified failure (not reproduced in 5 later runs; T-0460 area). uf-07-routines e2e 6/6. Cached gate (typecheck, lint, test), test:repo-checks (155/0), check-all green.
+
+### Accept log (product-owner, 2026-10-03)
+Verdict: **done**. HEAD ee7b502. AC-1..AC-7 each map to a test in `t0454.test.tsx`, `t0454.a11y.test.tsx` or the appended e2e row; both values of each binary condition are covered; AC-1/3/4/5 red on unfixed code (build + QA). AC-7: diff adds only `t0454*` files; no existing UF-07 test edited; strings in `en.uf07` (3 keys). Scope held: no retry button, no redirect on failure, no fixture edits, contracts unchanged. Principles unaffected (UF-07.1 is outside focus mode; engine untouched). Review nit (no `loadFailed` reset on in-place `routineId` change) has no in-app path; it goes with T-0346. The UF-07 folder flake (2 of 7 runs) is T-0461's, not this ticket's.
