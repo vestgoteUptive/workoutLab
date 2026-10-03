@@ -50,12 +50,52 @@ export function swapTarget(ctx: SwapTargetInput): number {
   return ctx.currentItemIndex;
 }
 
+/** What a lazy seam's overlay is named and closed by (its own flow's strings, D-0071 §4). */
+interface SeamChrome {
+  /** The dialog's accessible name. */
+  label: string;
+  /** The `data-screen-id` the overlay carries, when the seam is a screen (UF-05.1, UF-03.1). */
+  screenId?: string;
+  closeLabel: string;
+  loading: string;
+  loadFailed: string;
+}
+
+const swapChrome: SeamChrome = {
+  label: uf05.titleFallback,
+  screenId: "UF-05.1",
+  closeLabel: uf05.close,
+  loading: uf05.loading,
+  loadFailed: uf05.loadFailed,
+};
+const listViewChrome: SeamChrome = {
+  label: uf03.listViewName,
+  screenId: "UF-03.1",
+  closeLabel: uf03.seamClose,
+  loading: uf03.seamLoading,
+  loadFailed: uf03.seamLoadFailed,
+};
+const howToChrome: SeamChrome = {
+  label: uf03.howToAction,
+  closeLabel: uf03.seamClose,
+  loading: uf03.seamLoading,
+  loadFailed: uf03.seamLoadFailed,
+};
+
 /**
- * What the overlay shows while the UF-05 chunk is loading, or after it failed to load: still one
- * task on screen (UF-05.1), with a way back to where Swap was tapped (`ctx.close`). Focus moves
- * to Close, so a keyboard user is never stranded on an empty overlay.
+ * What a seam's overlay shows while its chunk is loading, or after it failed to load: still one
+ * task on screen, with a way back to where the seam was tapped (`ctx.close`). Focus moves to
+ * Close, so a keyboard user is never stranded on an empty overlay.
  */
-function SwapPlaceholder({ message, onClose }: { message: string; onClose: () => void }) {
+function SeamPlaceholder({
+  message,
+  chrome,
+  onClose,
+}: {
+  message: string;
+  chrome: SeamChrome;
+  onClose: () => void;
+}) {
   const closeRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     closeRef.current?.focus();
@@ -64,9 +104,9 @@ function SwapPlaceholder({ message, onClose }: { message: string; onClose: () =>
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={uf05.titleFallback}
+      aria-label={chrome.label}
       className="wl-uf09__view"
-      data-screen-id="UF-05.1"
+      {...(chrome.screenId ? { "data-screen-id": chrome.screenId } : {})}
     >
       <p className="wl-uf09__status" role="status">
         {message}
@@ -77,7 +117,7 @@ function SwapPlaceholder({ message, onClose }: { message: string; onClose: () =>
         className="wl-uf09__secondary wl-uf09__wide"
         onClick={onClose}
       >
-        {uf05.close}
+        {chrome.closeLabel}
       </button>
     </div>
   );
@@ -85,12 +125,13 @@ function SwapPlaceholder({ message, onClose }: { message: string; onClose: () =>
 
 interface BoundaryProps {
   onClose: () => void;
+  chrome: SeamChrome;
   children: ReactNode;
 }
 
-/** Catches a rejected UF-05 import (a stale deploy's 404 chunk) and any render error inside the
- *  sheet, so the host stays mounted. It wraps only the lazy sheet, nothing outside the overlay. */
-class SwapBoundary extends Component<BoundaryProps, { failed: boolean }> {
+/** Catches a rejected seam import (a stale deploy's 404 chunk) and any render error inside the
+ *  overlay, so the host stays mounted. It wraps only the lazy view, nothing outside the overlay. */
+class SeamBoundary extends Component<BoundaryProps, { failed: boolean }> {
   override state = { failed: false };
 
   static getDerivedStateFromError(): { failed: boolean } {
@@ -99,10 +140,37 @@ class SwapBoundary extends Component<BoundaryProps, { failed: boolean }> {
 
   override render(): ReactNode {
     if (this.state.failed) {
-      return <SwapPlaceholder message={uf05.loadFailed} onClose={this.props.onClose} />;
+      return (
+        <SeamPlaceholder
+          message={this.props.chrome.loadFailed}
+          chrome={this.props.chrome}
+          onClose={this.props.onClose}
+        />
+      );
     }
     return this.props.children;
   }
+}
+
+/** A lazy seam view inside the shared boundary and a loading placeholder with Close. */
+function LazySeam({
+  ctx,
+  chrome,
+  children,
+}: {
+  ctx: FocusSession;
+  chrome: SeamChrome;
+  children: ReactNode;
+}) {
+  return (
+    <SeamBoundary onClose={ctx.close} chrome={chrome}>
+      <Suspense
+        fallback={<SeamPlaceholder message={chrome.loading} chrome={chrome} onClose={ctx.close} />}
+      >
+        {children}
+      </Suspense>
+    </SeamBoundary>
+  );
 }
 
 /** The UF-05.1 sheet over the D-0142 §7 target, fixed when the overlay opens (a re-render after
@@ -111,8 +179,8 @@ class SwapBoundary extends Component<BoundaryProps, { failed: boolean }> {
 function SwapOverlay({ ctx }: { ctx: FocusSession }) {
   const [target] = useState(() => swapTarget(ctx));
   return (
-    <SwapBoundary onClose={ctx.close}>
-      <Suspense fallback={<SwapPlaceholder message={uf05.loading} onClose={ctx.close} />}>
+    <LazySeam ctx={ctx} chrome={swapChrome}>
+      <>
         <SwapSheet
           workout={ctx.workout}
           itemIndex={target}
@@ -122,8 +190,8 @@ function SwapOverlay({ ctx }: { ctx: FocusSession }) {
           }}
           onClose={ctx.close}
         />
-      </Suspense>
-    </SwapBoundary>
+      </>
+    </LazySeam>
   );
 }
 
@@ -140,13 +208,13 @@ const swap: SeamAction = {
 };
 
 /** The how-to dialog for the current item's exercise (T-0416, D-0071 §4). While it loads the
- *  overlay is empty (a cached chunk, no network read of its own). */
+ *  placeholder has Close (D-0142 §8). */
 function HowToOverlay({ ctx }: { ctx: FocusSession }) {
   const exerciseId = ctx.plan.items[ctx.currentItemIndex]?.exerciseId ?? "";
   return (
-    <Suspense fallback={null}>
+    <LazySeam ctx={ctx} chrome={howToChrome}>
       <ExerciseHowTo exerciseId={exerciseId} onClose={ctx.close} />
-    </Suspense>
+    </LazySeam>
   );
 }
 
@@ -163,9 +231,9 @@ const listView: SeamAction = {
   id: "list-view",
   label: uf03.listViewAction,
   render: (ctx) => (
-    <Suspense fallback={null}>
+    <LazySeam ctx={ctx} chrome={listViewChrome}>
       <ListView ctx={ctx} />
-    </Suspense>
+    </LazySeam>
   ),
   keepsClockRunning: true,
 };

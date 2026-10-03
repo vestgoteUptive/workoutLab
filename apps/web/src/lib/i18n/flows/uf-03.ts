@@ -85,4 +85,8 @@ export const uf03 = {
   secondsLabel: (n: number) => `Set ${n} seconds`,
   markDone: (n: number) => `Mark set ${n} done`,
   markNotDone: (n: number) => `Mark set ${n} not done`,
+  /** The UF-09 seam placeholder for the List view and the how-to (D-0142 §8). */
+  seamLoading: "Loading\u2026",
+  seamLoadFailed: "Couldn't load this view.",
+  seamClose: "Close",
 } as const;
