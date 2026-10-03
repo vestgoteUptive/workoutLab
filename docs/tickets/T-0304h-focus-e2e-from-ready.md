@@ -95,6 +95,7 @@ is on main, so they are green there. Prove each can fail, and record the red run
 ## Paths you may change
 - `apps/web/src/features/UF-09/**` (the lane: `web-feature:UF-09`), for fixes these rows expose.
 - **Listed extras:**
+  - `tests/e2e/uf-09-ready.spec.ts`: a **new** spec for this ticket's rows instead of appending to uf-09-focus.spec.ts, to keep clear of T-0462 (orchestrator amendment 2026-10-03, from the build and review).
   - `tests/e2e/uf-09-focus.spec.ts`
   - `apps/web/src/lib/i18n/flows/uf-09.ts`
   - `docs/tickets/T-0304h-focus-e2e-from-ready.md`
