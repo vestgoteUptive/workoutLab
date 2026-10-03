@@ -20,7 +20,17 @@ async function ready(path: string) {
   if (path.endsWith(R) || path.endsWith(R2)) await screen.findByText(/^1\. /);
 }
 
-const openPicker = () => fireEvent.click(screen.getByRole("button", { name: "Add exercise" }));
+// T-0460: the picker's exercise list renders after an async library read. Wait until it has
+// rendered (an Add button, or the no-match line) so no test reads the list mid-load.
+const openPicker = async () => {
+  fireEvent.click(screen.getByRole("button", { name: "Add exercise" }));
+  await waitFor(() =>
+    expect(
+      screen.queryAllByRole("button", { name: /^Add (?!exercise$)/ }).length > 0 ||
+        screen.queryByText(/^No exercises match/) !== null,
+    ).toBe(true),
+  );
+};
 const search = (value: string) =>
   fireEvent.change(screen.getByLabelText("Search exercises"), { target: { value } });
 const addButtons = () => screen.queryAllByRole("button", { name: /^Add (?!exercise$)/ });
@@ -80,14 +90,14 @@ describe("AC-A5 limits", () => {
     await ready("/plan/routines/new");
     fireEvent.change(screen.getByLabelText(NAME), { target: { value: "Legs" } });
     expect(SAVE()).toBeDisabled();
-    openPicker();
+    await openPicker();
     fireEvent.click(screen.getByRole("button", { name: "Add Plank" }));
     expect(SAVE()).toBeEnabled();
   });
 
   it("an exercise already in the list shows a disabled Added and adds nothing", async () => {
     await ready(`/plan/routines/${R}`);
-    openPicker();
+    await openPicker();
     const row = screen.getByText("Leg curl (machine)", { selector: "ul span" }).closest("li")!;
     const added = within(row).getByRole("button", { name: "Added" });
     expect(added).toBeDisabled();
@@ -108,7 +118,7 @@ describe("AC-A5 limits", () => {
     ];
     await putRoutine(R2, "Full", eight);
     await ready(`/plan/routines/${R2}`);
-    openPicker();
+    await openPicker();
     expect(screen.getByText("Up to 8 exercises")).toBeInTheDocument();
     expect(addButtons().length).toBeGreaterThan(0);
     for (const button of addButtons()) expect(button).toBeDisabled();
@@ -126,7 +136,7 @@ describe("AC-A6 picker scope and search", () => {
 
   it("empty query: every exercise in localeCompare order, no warmups", async () => {
     await ready("/plan/routines/new");
-    openPicker();
+    await openPicker();
     const names = rowNames();
     expect(names).toEqual([...names].sort((a, b) => a!.localeCompare(b!, "en")));
     expect(names).toHaveLength(10);
@@ -136,14 +146,14 @@ describe("AC-A6 picker scope and search", () => {
 
   it("SQUAT lists the three squats, case-insensitively, in order", async () => {
     await ready("/plan/routines/new");
-    openPicker();
+    await openPicker();
     search("SQUAT");
     expect(rowNames()).toEqual(["Barbell back squat", "Barbell front squat", "Goblet squat"]);
   });
 
   it("a lowercase query matches capitalised names", async () => {
     await ready("/plan/routines/new");
-    openPicker();
+    await openPicker();
     search("  barbell ");
     expect(rowNames()).toEqual([
       "Barbell back squat",
@@ -154,7 +164,7 @@ describe("AC-A6 picker scope and search", () => {
 
   it("zzz shows the empty message and no Add buttons", async () => {
     await ready("/plan/routines/new");
-    openPicker();
+    await openPicker();
     search("zzz");
     expect(screen.getByText('No exercises match "zzz"')).toBeInTheDocument();
     expect(addButtons()).toHaveLength(0);
@@ -162,7 +172,7 @@ describe("AC-A6 picker scope and search", () => {
 
   it("stays open after an Add, and Done closes it", async () => {
     await ready("/plan/routines/new");
-    openPicker();
+    await openPicker();
     fireEvent.click(screen.getByRole("button", { name: "Add Plank" }));
     expect(screen.getByLabelText("Search exercises")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
@@ -173,7 +183,7 @@ describe("AC-A6 picker scope and search", () => {
 describe("AC-A7 no sets/reps/progression editing", () => {
   it("has no number input, select, spinbutton or sets/reps/progression control", async () => {
     await ready(`/plan/routines/${R}`);
-    openPicker();
+    await openPicker();
     expect(document.querySelector("input[type=number]")).toBeNull();
     expect(document.querySelector("select")).toBeNull();
     expect(screen.queryAllByRole("spinbutton")).toHaveLength(0);
