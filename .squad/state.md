@@ -1,11 +1,9 @@
 # State
 
-> **PAUSED 2026-10-02 — read `.squad/PAUSED.md` first** (in-flight runs, the unpushed T-0308b merge, how to resume).
-
 - **Phase:** 3 (App). On main: engine rules 1–14 incl. D-0131 back-off floor + D-0137 drop cap; UF-01 onboarding; UF-02.1 Today; UF-03.3 summary content (T-0419); UF-04 Library; UF-05.1 SwapSheet component (T-0421, not yet mounted); UF-08.1–.4 setup; UF-09 machine + hook + seams + .1–.9 (T-0304a/e/b/f/c/d, T-0414); lib/offline cacheCurrent (T-0431, D-0151); UF-10 Balance; lib/account export + wipe (T-0310c) and DELETE /account Edge Function (T-0310b); e2e consoleGuard (T-0425).
 - **Updated:** 2026-10-02 by orchestrator (no AgentLab on this machine → sub-agents).
 - **`main`:** green 2026-10-02 after T-0304d (-w gate 19/19, whole e2e 137/137) and T-0431 (web gate 4/4, e2e offline+uf-03+uf-09 13/13).
-- **In flight:** T-0422 (UF-05 swap seams), T-0424 (UF-09 timed tests), T-0440 (e2e no server reuse + tmp preflight), T-0304g (UF-09 device features) — all builds. Merged today: T-0304d, T-0431, T-0427, T-0429, T-0423, T-0433, T-0435.
+- **In flight (resumed 2026-10-03):** T-0440 accept, T-0422 accept, T-0307b re-review, T-0308a review, T-0441 groom; T-0304g cached gate (orchestrator) then accept.
 
 ## H-13 resolved (2026-10-02)
 T-0307b (UF-06), T-0308a (UF-07), T-0308b (UF-11, review-approved at `17091a5`) were in flight on **another machine**; their branches are on neither this machine nor `origin`. Also waiting on them: T-0356 (D-0090), T-0362, T-0363. Don't restart from scratch unless the human says the work is lost. When the branches appear: fetch, recreate worktrees, `git merge main`, then QA → review → accept.
