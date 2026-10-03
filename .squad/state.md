@@ -36,7 +36,7 @@ H-13 (push branches); H-14 (service-role key for the account function, prod only
 - Binary-condition ACs: the other value needs a test too. Timing tests: prove they fail on unfixed code; use a 50 ms macrotask, not microtask flushes.
 - Require a clean `git status` + stated HEAD before review/QA. Confirm a planted fault actually landed.
 - A contract change (openapi, data-model, engine-rules) must run the whole `-w` gate: other packages pin contract text (T-0222: engine AC21 regex).
-- **`/tmp` is a RAM tmpfs here.** e2e now stops at config load if it is ≥80% full and names the fix (`TMPDIR=$HOME/.cache/wl-pw-tmp`), and a busy :4173 stops the run at once (T-0440). Vitest's temp-dir leak: T-0441.
+- **`/tmp` is a RAM tmpfs here.** Vitest no longer leaks into it (T-0441, D-0159); e2e stops at config load if it is ≥80% full and names the fix (T-0440).
 - **`pnpm -w typecheck lint test` skips `test:repo-checks`** (args go to the root `typecheck` script). Run `pnpm -w test:repo-checks` too until T-0444 lands.
 - **A merge-and-verify script must stop when `git merge` fails** (`… && echo MERGED || exit 1`). On 2026-10-03 a T-0436 merge conflicted and the gate ran on the half-merged tree.
 - Never push main while a merge on it is still being verified (T-0310c slip, 2026-10-02).
