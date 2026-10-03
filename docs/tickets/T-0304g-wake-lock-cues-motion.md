@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.2, UF-09.5, UF-09.7]
 decisions: [D-0066, D-0071, D-0110, D-0111, D-0118, D-0119, D-0155]
 deps: [T-0304c, T-0303d, T-0304d, T-0423]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner; refreshed 2026-10-02 against main after T-0304d, T-0427, T-0429 and T-0431 (T-0423 merging). Child of docs/tickets/T-0304-focus-mode.md (parent AC-C5–C7), split out by D-0118 §1. T-0303d (readFocusPrefs in features/UF-08/index.tsx) and T-0304c/d are on main. It edits host.tsx, so it starts once T-0423 has merged. Build flow: wl-build-web. About ⅓–½ day. -->
 
@@ -175,3 +175,6 @@ unchanged · commits start `T-0304g` and cite the screen (for example `T-0304g U
   - **Merge order.** If T-0422 or T-0435 merges first, merge `main` into this branch before QA.
     T-0304h (the e2e from UF-08.4) comes after this ticket.
 - **Parallel with UF-08:** safe by files, because it only imports their index.
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0304g.md` (D-0157).

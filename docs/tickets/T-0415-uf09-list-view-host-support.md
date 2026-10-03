@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09, UF-09.3, UF-09.6, UF-09.9, UF-03.1]
 decisions: [D-0142, D-0153, D-0149, D-0071, D-0111, D-0118, D-0120, D-0140]
 deps: [T-0304d, T-0414]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-02 by product-owner. Child of the T-0305a board row (D-0142 §1 §2). Re-checked against main after T-0304d merged (2026-10-02 groom, D-0153): AC-2 is rescoped because D-0149 §4 already ends the workout at the store level, and AC-5 adds the T-0414 review item (D-0153 §1). Build flow: wl-build-web. About ⅓ day. It is the only UF-09 change the List view needs. Ready: T-0304d and T-0414 are done. -->
 
@@ -135,3 +135,6 @@ None. `SET_LOGGED`, `REST_END`, `enterItem` and the overlay rule are device-loca
   - **Not with T-0394.** Both edit `host.tsx`.
   - **With T-0433, allowed.** It is in the UF-03 lane and shares no file.
 - **From T-0414 review (2026-10-02):** READY/next could enter `set` at set index 0 even when a List-view log had already filled that position. This is now AC-5 (D-0153 §1).
+
+## Build / accept log
+Archived in `docs/tickets/log/T-0415.md` (D-0157).

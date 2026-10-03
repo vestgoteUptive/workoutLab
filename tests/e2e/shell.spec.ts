@@ -152,9 +152,14 @@ test.describe("AC-6 the Phase 3 sub-route chunks are precached (offline)", () =>
   // first poll lands before the redirect. So UF-04.3 has its own seeded test plus an
   // empty-cache contrast, and the loop asserts the URL is unchanged after render, which turns
   // the next built screen that redirects into a deterministic failure. The T-0904 note above
-  // (the 501 shadowing `profiles*`) still applies to the stub rows. `/progress/back-squat`
-  // (UF-06.2) is still the stub on main; T-0307b takes it out of the loop and seeds it the
-  // same way (D-0091 §4–§5).
+  // (the 501 shadowing `profiles*`) still applies to the stub rows. That URL check only
+  // narrows the redirect race for the stub rows; it does not close it, so built screens get
+  // their own seeded tests that assert content a stub never renders. UF-06.2
+  // (`/progress/back-squat`) is now one of them: T-0307b took it out of the loop, seeded it
+  // the same way and added the empty-cache contrast (D-0091 §4–§5). UF-07.1 with an id
+  // (`/plan/routines/R1`) is another: it redirects an unknown id to `/plan` offline (D-0081 §5),
+  // so T-0308a AC-A16 moved that row out of the loop into a seeded test that asserts the
+  // routine's name in the editor, plus an empty-cache contrast that lands on `/plan`.
   test.beforeEach(async ({ page }) => {
     await mockSupabaseRest(page);
   });
@@ -198,10 +203,8 @@ test.describe("AC-6 the Phase 3 sub-route chunks are precached (offline)", () =>
   const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const OTHER_SUB_ROUTES = [
-    ["/progress/back-squat", "UF-06.2"],
     ["/plan/edit", "UF-11.3"],
     ["/plan/routines/new", "UF-07.1"],
-    ["/plan/routines/R1", "UF-07.1"],
   ] as const;
 
   for (const [path, screenId] of OTHER_SUB_ROUTES) {
@@ -250,6 +253,112 @@ test.describe("AC-6 the Phase 3 sub-route chunks are precached (offline)", () =>
     await expect(page.locator('[data-screen-id="UF-04.3"]')).toBeVisible({ timeout: 3000 });
     await expect(page.getByRole("columnheader", { name: "Leg press" })).toBeVisible();
     await expect(page).toHaveURL(/\/library\/back-squat\/compare\/leg-press$/);
+  });
+
+  // T-0307b AC-16 (D-0091 §1, §4): UF-06.2 is built, so it leaves the stub loop. With the
+  // library cached by one online visit, a cold offline deep-link renders the real screen. The
+  // content assertions are the guard; the URL check after them only confirms it stayed.
+  test("/progress/back-squat renders UF-06.2 offline with a cached library", async ({
+    page,
+    context,
+  }) => {
+    // Registered after this describe's 501 backstop, so it wins for every table it serves.
+    await mockSupabaseData(page, {
+      sets: [],
+      exercises,
+      exerciseAreas,
+      exerciseVariants,
+      areaTargets: [],
+      profile,
+    });
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/library");
+    await expect(page.locator('[data-field="name"]').first()).toBeVisible();
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+    await page.goto("/progress/back-squat");
+
+    await expect(page.locator('[data-screen-id="UF-06.2"]')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("heading", { level: 1, name: "Back squat" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "How to" })).toHaveAttribute(
+      "href",
+      "/library/back-squat",
+    );
+    await expect(page.getByRole("link", { name: "How to" })).toBeVisible();
+    await expect(page).toHaveURL(/\/progress\/back-squat$/);
+  });
+
+  // T-0307b AC-16 (D-0079 §4): the contrast. With nothing cached, `back-squat` is unknown, so
+  // the same offline deep-link redirects to UF-06.1. This pins the redirect instead of racing it.
+  test("/progress/back-squat lands on UF-06.1 offline with an empty cache", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+    await page.goto("/progress/back-squat");
+
+    await expect(page).toHaveURL(/\/progress$/);
+    await expect(page.locator('[data-screen-id="UF-06.1"]')).toBeVisible({ timeout: 3000 });
+  });
+
+  // T-0308a AC-A16 (D-0091 §1, D-0081 §5): UF-07.1 with a routine id is built, so it leaves the
+  // stub loop. One online visit seeds routine R1 into the cache, then a cold offline deep-link
+  // renders the editor with that routine. The content assertions are the guard; the URL check
+  // comes last and only confirms the screen stayed.
+  test("/plan/routines/R1 renders UF-07.1 offline with a cached routine", async ({
+    page,
+    context,
+  }) => {
+    await mockSupabaseData(page, {
+      sets: [],
+      exercises,
+      exerciseAreas,
+      exerciseVariants,
+      areaTargets: [],
+      profile,
+      routines: [{ id: "R1", name: "Lower A", updated_at: "2026-09-20T10:00:00.000Z" }],
+      routineItems: [{ routine_id: "R1", position: 0, exercise_id: "back-squat" }],
+    });
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/plan/routines/R1");
+    await expect(page.getByLabel("Name")).toHaveValue("Lower A");
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+    await page.goto("/plan/routines/R1");
+
+    await expect(page.locator('[data-screen-id="UF-07.1"]')).toBeVisible({ timeout: 3000 });
+    await expect(page.getByLabel("Name")).toHaveValue("Lower A");
+    await expect(page.getByText("1. Back squat")).toBeVisible();
+    await expect(page.getByText("Connect to save")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save" })).toBeDisabled();
+    await expect(page).toHaveURL(/\/plan\/routines\/R1$/);
+  });
+
+  // T-0308a AC-A16 (D-0081 §5): the contrast. With nothing cached, `R1` is unknown, so the same
+  // offline deep-link redirects to /plan. This pins the redirect instead of racing it.
+  test("/plan/routines/R1 lands on /plan offline with an empty cache", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    await context.setOffline(true);
+    await page.goto("/plan/routines/R1");
+
+    await expect(page).toHaveURL(/\/plan$/);
+    await expect(page.locator('[data-screen-id="UF-11.2"]')).toBeVisible({ timeout: 3000 });
   });
 
   // T-0905 AC-2 (D-0091 §3, D-0079 §3): the contrast. With nothing cached, the same offline
