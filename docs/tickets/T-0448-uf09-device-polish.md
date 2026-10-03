@@ -132,3 +132,9 @@ UF-09.9: cancel speech on Pause`).
 - AC-1 map fix: the "Not paused" rows are the UF-09.8 time check, a running rest, and a List view (keepsClockRunning seam) opened from UF-09.9 after the Pause (1 cancel, still 1 after a tick and after close), plus a restore into paused. The earlier note that the List view had no test was wrong after this change.
 - AC-5 now runs a full rest to UF-09.3 in each of the 6 variants.
 - Planted fault (backup copy, restored by cp): cancel on the paused→running change: red on the List view row and the Pause/Resume/Pause row. Green after restore (31/31).
+
+### QA (attempt 2, after `git merge origin/main`, HEAD 38b8455, tree clean)
+- AC→test: all six in `t0448.device.test.tsx` (31) as in the build log; AC-1 List view row now present; AC-6 diff is `device.ts`, `t0448*`, additive stubs.
+- Red from backups: unfixed device.ts 10 red of 31 (the 9 plus the List view row, which asserts the Pause cancel); cancel on paused→running 2 red (List view, Pause/Resume/Pause); resume suspended only 3 red; own fault (prime on every pointerUp) 2 red; own fault (resume anything not running) 3 red (closed rows). All restored by cp.
+- Runs: UF-09 folder 54 files / 868 tests green; `uf-09` e2e 10 passed; cached typecheck+lint+test 19/19, test:repo-checks, check-all green.
+- Verdict: done.
