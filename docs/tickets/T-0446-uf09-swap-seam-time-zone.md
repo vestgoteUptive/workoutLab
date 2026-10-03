@@ -88,3 +88,4 @@ the host's zone`).
 - Changed: `session.tsx` (`FocusSession.timeZone`, omitted from `FocusActions`), `host.tsx` (passes `timeZone`), `seams.tsx` (`SwapSheet timeZone={ctx.timeZone}`), new `__tests__/t0446.swap-zone.test.tsx`. Existing-test change: `seams.test.tsx` AC-9 key list gains `"timeZone"` (only file typecheck/tests asked for).
 - AC-1 -> `t0446 AC-1` (prop; pair: runtime zone). AC-2 -> `t0446 AC-2` (UF-09.9 Auckland; UF-09.6 Auckland; pair UTC). AC-3 -> existing UF-09 suite green; UF-03/UF-05 no diff.
 - Red on unfixed code (src stashed, new test file kept): 5/5 failed (ctx.timeZone undefined; stub timeZone undefined).
+- Gate: typecheck+lint+test (concurrency 1), test:repo-checks, format:check, check-all, check:size green; e2e uf-09-focus + uf-05-swap 13/13 green.
