@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-10.1]
 decisions: [D-0086, D-0090]
 deps: [T-0904, T-0307b, T-0308a, T-0308b]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-10-01 (groom mode, run T-0358). Build flow: wl-build-qa. About ½ day. Deps T-0307b/T-0308a/T-0308b are added by D-0090 §3 (D-0086's own "Revisit when" timing); the board row lists only T-0904, so the orchestrator should add them. -->
 
@@ -100,3 +100,4 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · e2e green · c
 - Faults: scratch `zz-scratch.spec.ts` with `import { expect, test } from "@playwright/test"` → AC1 per-file and AC5 red naming the file; `test as base` variant → AC5 red. Removed.
 - Results: fixture-guard 66 pass; whole e2e 194 pass; typecheck/lint/test cached green; test:repo-checks, format:check, check-all green.
 - QA (HEAD de1c548): fault runs on scratch `zz-scratch.spec.ts` (removed), `playwright test fixture-guard`: plain `import { expect, test } from "@playwright/test"` -> AC1 per-file + AC5 red (2 failed, names the file); `test as base` -> red; multi-line `import {\n test,\n} from "@playwright/test"` -> red; `import type { Page }` beside guarded import -> green (67 pass). Whole e2e 194 pass. format:check green. check-all and test:repo-checks RED (3 tests): `lane-path-not-owned` on this ticket file (qa lane's paths are `tests/e2e/**` only; build log edit trips it). Fix: orchestrator adds the ticket path to Paths on main, or the log moves to docs/tickets/log. AC1-AC5 mapped to `T-0356 AC<n>` tests; AC6/AC7 by T-0427.
+- Accept (product-owner, 2026-10-03, HEAD 5d6c6e2): **done**. AC1 per-file `T-0356 AC1 <spec>` from `listSpecs`, no hard-coded names in import-rule tests; AC2-AC5 `T-0356 AC<n>` tests match the ticket's concrete inputs (AC4 also covers namespace import and a commented-out bypass); AC6 met on main by T-0427 (uf-10 imports from guarded-test.js, no timeout added here); AC7 fault proof done on a scratch spec rather than by reverting uf-10:5. The check is a glob, so it is the same path and accepted as equivalent; T-0427 holds the uf-10-specific fault. AC8: planted-leak tests and the "auth.spec.ts raises no timeout" test untouched; whole e2e 194 and the gate green per build/QA. Delivers T-0432 ("every spec imports the guarded fixture"); `export … from` and dynamic import go to T-0455.
