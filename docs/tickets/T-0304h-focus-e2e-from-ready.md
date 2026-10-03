@@ -129,3 +129,9 @@ the screen (for example `T-0304h UF-09.5: rest survives a reload`).
   T-0462 (Back second cycle) also appends to `uf-09-focus.spec.ts`: don't run them together.
 
 ## Build / accept log
+
+### Build log (2026-10-03, QA/e2e)
+- Rows are in a new file `tests/e2e/uf-09-ready.spec.ts` (orchestrator instruction: parallel T-0462 appends to `uf-09-focus.spec.ts`); `uf-09-focus.spec.ts` is untouched. No UF-09 product code changed; no unit tests needed.
+- AC-1 -> "T-0304h AC-1 mid-rest" and "mid-pause", each online and offline (4 tests; rest ±1.2 s of the wall clock, pause ±1 s). AC-2 -> "T-0304h AC-2 the walk" (Tab/Enter/Space only; focus on every primary, targets ≥ 44 (Done set ≥ 200), axe on 09.1/.2/.6/.3/.4/.5/.9, session row `ended_at` + `started_at` in IndexedDB). AC-3 -> `expectOneScreen` (one `[data-screen-id]`, no navigation) at every step in all rows.
+- Planted faults (backup copy, restored with `cp`, each red alone): persist.ts restore resets the timer start -> mid-rest red (3.1 s off); timer.ts `elapsedS` ignores `pausedAtMs` -> mid-pause red (3 s growth); get-ready.tsx without the initial focus -> the walk red at "Start now" `toBeFocused`; host.tsx extra `data-screen-id` on UF-09.9 -> the walk red at the count assert. (A first stacked run was discarded; faults re-run one at a time.)
+- Results: new spec 5/5, `--repeat-each=3` 15/15; whole web e2e 202/202.
