@@ -35,7 +35,8 @@ const TIMED_PHASES: Phase[] = ["getReady", "warmup", "rest", "next", "timed"];
 const BUTTONS: Partial<Record<Phase, string[]>> = {
   getReady: ["Pause workout", "Start now", "Skip warm-up"],
   rest: ["Pause workout", "−15 s", "+15 s", "Skip rest"],
-  next: ["Pause workout", "I'm ready"],
+  // D-0142 §6 (a named change, T-0422): the module's swap seam follows I'm ready.
+  next: ["Pause workout", "I'm ready", "Swap"],
   warmup: ["Pause workout", "Restart", "Next move"],
   timed: ["Pause workout", "Pause timer"],
   set: ["Pause workout", "Done set"],
@@ -141,13 +142,15 @@ describe("AC-7 chrome on every machine state except paused", () => {
   });
 
   // T-0304d (D-0118 §12): the built UF-09.9 is Resume, Skip to next exercise and End workout.
-  it("paused: exactly 3 buttons (Resume, Skip to next exercise, End workout) and no chrome", async () => {
+  // D-0142 §6 (a named change, T-0422): plus the module's Swap seam after Resume.
+  it("paused: exactly 4 buttons (Resume, Swap, Skip to next exercise, End workout) and no chrome", async () => {
     await show(seeded("paused"));
     expect(screenId()).toBe("UF-09.9");
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(3);
+    expect(buttons).toHaveLength(4);
     expect(buttons.map((b) => b.textContent)).toEqual([
       "Resume",
+      "Swap",
       "Skip to next exercise",
       "End workout",
     ]);
@@ -160,11 +163,13 @@ describe("AC-7 chrome on every machine state except paused", () => {
 });
 
 describe("T-0304d AC-6 the paused button pin with Skip hidden", () => {
-  it("paused on the last item: exactly 2 buttons (Resume, End workout)", async () => {
+  // D-0142 §6 (a named change, T-0422): plus the module's Swap seam.
+  it("paused on the last item: exactly 3 buttons (Resume, Swap, End workout)", async () => {
     await show(seeded("paused", { itemIndex: 3 }));
     expect(screenId()).toBe("UF-09.9");
     expect(screen.getAllByRole("button").map((b) => b.textContent)).toEqual([
       "Resume",
+      "Swap",
       "End workout",
     ]);
     expectNoWayOut();

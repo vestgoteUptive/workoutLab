@@ -7,7 +7,7 @@ import type { SessionPlan } from "@workoutlab/shared";
 import type { LoggedSet } from "../machine.js";
 import { nextSetPrefill } from "../prefill.js";
 import { parseWeight, stepWeight } from "../weight-input.js";
-import { BENCH, CURL, P1 } from "./fixtures.js";
+import { BENCH, CURL, P1, ROW } from "./fixtures.js";
 
 function logged(setIndex: number, reps: number | null, weightKg: number | null): LoggedSet {
   return {
@@ -185,4 +185,65 @@ describe("T-0409 parseWeight reads native digits (D-0128 §1–§3)", () => {
       expect(parseWeight(formatDecimal(v, locale))).toEqual({ ok: true, value: v });
     },
   );
+});
+
+// T-0422 AC-11 (D-0156 §1, amends D-0118 §7): only an entry of the item's current exercise
+// carries into the next set, so a swap starts the new exercise from its engine pre-fill.
+describe("T-0422 AC-11 nextSetPrefill after a swap", () => {
+  const rowSet = (setIndex: number, exerciseId: string, weightKg: number | null, reps: number) =>
+    ({
+      clientId: `r-${exerciseId}-${setIndex}`,
+      itemIndex: 1,
+      setIndex,
+      exerciseId,
+      reps,
+      weightKg,
+      durationS: null,
+      rir: null,
+      backoff: false,
+    }) satisfies LoggedSet;
+  const DB_ROW = {
+    ...ROW,
+    exerciseId: "db-row",
+    prefill: { weightKg: null, reps: null, durationS: null, kind: "first_time" as const },
+  };
+  const withItem1 = (item: typeof ROW): SessionPlan => ({
+    ...P1,
+    items: P1.items.map((it, k) => (k === 1 ? item : it)),
+  });
+  const SWAPPED = withItem1(DB_ROW);
+
+  it("same exercise carries: barbell-row (1, 0) at 62.5 × 7 gives set index 1 {62.5, 7}", () => {
+    expect(nextSetPrefill(P1, 1, 1, [rowSet(0, "barbell-row", 62.5, 7)])).toEqual({
+      weightKg: 62.5,
+      reps: 7,
+    });
+  });
+
+  it("a swapped exercise doesn't carry: db-row set index 1 after barbell-row (1, 0) gives {null, 8}", () => {
+    expect(nextSetPrefill(SWAPPED, 1, 1, [rowSet(0, "barbell-row", 62.5, 7)])).toEqual({
+      weightKg: null,
+      reps: 8,
+    });
+  });
+
+  it("mixed history: barbell-row (1, 0) and db-row (1, 1) at 20 × 10 give db-row set index 2 {20, 10}", () => {
+    const sets = [rowSet(0, "barbell-row", 62.5, 7), rowSet(1, "db-row", 20, 10)];
+    expect(nextSetPrefill(SWAPPED, 1, 2, sets)).toEqual({ weightKg: 20, reps: 10 });
+  });
+
+  it("swap back: item 1 is barbell-row again, and (1, 0) barbell-row carries {62.5, 7}", () => {
+    const back = withItem1({ ...ROW });
+    expect(nextSetPrefill(back, 1, 1, [rowSet(0, "barbell-row", 62.5, 7)])).toEqual({
+      weightKg: 62.5,
+      reps: 7,
+    });
+  });
+
+  it("per-field fallback: a saved null weight on the same lift falls back to set 1's, the reps carry", () => {
+    expect(nextSetPrefill(P1, 1, 1, [rowSet(0, "barbell-row", null, 7)])).toEqual({
+      weightKg: 60,
+      reps: 7,
+    });
+  });
 });

@@ -3,6 +3,8 @@
 // The equipment labels are a copy of `flows/uf-04.ts` (D-0079 §5 allows it; T-0341 moves them
 // to a shared module later).
 export const uf05 = {
+  /** The seam button on UF-09.9 Paused and UF-09.6 Next exercise (T-0422, D-0071 §4). */
+  swapAction: "Swap",
   title: (name: string) => `Replace ${name}`,
   titleFallback: "Replace exercise",
   chipsLabel: "Reason",
