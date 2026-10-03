@@ -216,3 +216,37 @@ diff. Per D-0158/qa-tester §1, did not rerun the full `-w` gate or merge `main`
 
 **Verdict: done.** Every AC maps to a real, passing test; the TR-0045 exception is proven to be a
 live, behaviour-preserving retarget, not a vacuous pass. No gaps found.
+
+### 2026-10-03 code-reviewer — approve
+Reviewed `t/T-0474-uf09-focus-prefs-leaf-entry` (HEAD `402e811`) against this ticket, D-0170 and
+TR-0045's resolution. Static review plus a targeted rerun.
+
+- **Lane/scope:** changed paths are `UF-08/index.prefs.ts` (new), `UF-08/__tests__/index-prefs.test.ts`
+  (new), `UF-09/device.ts`, `UF-09/__tests__/t0474.prefs-leaf.test.ts` (new) and
+  `UF-09/__tests__/t0304g.device.test.tsx` — exactly the ticket's "Paths you may change" plus the
+  TR-0045-named exception. `UF-08/index.tsx` has zero diff against `main` (`git diff main...HEAD --
+  apps/web/src/features/UF-08/index.tsx` is empty): T-0303c's AC-8 export set
+  `["SessionSetup", "readFocusPrefs", "writeFocusPrefs"]` still holds, confirmed live by
+  `exports-and-lint.test.ts`'s own AC-13 export test, run unedited.
+- **index.prefs.ts is a genuine leaf entry (D-0170 §1):** five lines, two re-export statements from
+  `./focus-prefs.js`, no component, no other feature, nothing from `src/app`. `focus-prefs.ts`
+  itself (read) has no runtime imports at all (only a type-only comment, confirmed by its own header),
+  so the leaf entry pulls in nothing beyond that one file — side-effect-free end to end.
+- **t0304g.device.test.tsx retarget is specifier-only:** diffed against `main` — 3 insertions/3
+  deletions, exactly the `import * as uf08` specifier (line 8) and the `vi.mock(...)` call's
+  specifier plus its `typeof import(...)` cast (same statement). No assertion, call-count or
+  return-value line changed. Matches TR-0045's resolution exactly.
+- **New pin test is real:** `index-prefs.test.ts`'s `Object.keys(mod).sort()` assertion would fail
+  on an added/removed/renamed export; its second test (`toBe` identity against `focus-prefs.js`'s
+  functions) would fail if the leaf re-exported a wrapper instead of the same function object.
+- **Targeted rerun** (after restoring one line of accidental uncommitted worktree drift on
+  `device.ts` back to HEAD's committed state, via `git checkout -- device.ts`, unrelated to this
+  review's verdict): `scripts/locked.sh small npx vitest run
+  src/features/UF-09/__tests__/t0474.prefs-leaf.test.ts
+  src/features/UF-08/__tests__/index-prefs.test.ts
+  src/features/UF-09/__tests__/t0304g.device.test.tsx
+  src/features/UF-08/__tests__/exports-and-lint.test.ts` (run from `apps/web`) → 4 files, 41 tests,
+  all passed.
+
+No lane, contract, correctness, principle, test-weakening or RLS/security issue found. **Verdict:
+approve.**
