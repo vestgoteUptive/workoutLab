@@ -126,9 +126,11 @@
   font: inherit;
 }
 
+/* T-0458 (NFR-A11Y-2): 44 x 44, not 28 x 28 — the row toggle is a real tap target. */
 .wl-uf03-list__table input[type="checkbox"] {
-  width: 28px;
-  height: 28px;
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
   accent-color: var(--wl-color-accent);
 }
 

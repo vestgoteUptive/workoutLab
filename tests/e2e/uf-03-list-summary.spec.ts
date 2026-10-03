@@ -1,5 +1,7 @@
 // UF-03 List view / Summary e2e (D-0071 §10). T-0420 creates it with the UF-03.3 summary rows
-// (AC-7, NFR-OFF-2); T-0417 appends the UF-03.1 List view rows.
+// (AC-7, NFR-OFF-2); T-0417 appends the UF-03.1 List view rows. T-0458 adds the Playwright spec
+// T-0416 deferred: a seeded running S1, offline Pause → List view, three sets checked by
+// keyboard, Finish → UF-03.3 → Save, the stored sets and session after a reload, axe and 44 px.
 //
 // Runs against `vite preview` with Supabase mocked through `page.route`. `test`/`expect` come
 // from `fixtures/guarded-test.js` (D-0086, T-0425): an unclaimed Supabase request or a console
@@ -91,6 +93,18 @@ const PLAN = {
     reasons: [],
   })),
   startDeficits: Object.fromEntries(AREAS.map((a) => [a, 1])),
+};
+
+/** T-0458: the running session's plan. Same shape as `PLAN`, but back-squat's pre-fill is
+ *  100 kg × 6 (an `add_rep` kind, not `first_time`), so an unlogged row's toggle isn't blocked
+ *  for a missing weight. */
+const RUNNING_PLAN = {
+  ...PLAN,
+  items: PLAN.items.map((item) =>
+    item.exerciseId === "back-squat"
+      ? { ...item, prefill: { weightKg: 100, reps: 6, durationS: null, kind: "add_rep" } }
+      : item,
+  ),
 };
 
 /** S1's sets: back-squat 100 × 6 × 4 and romanian-deadlift 80 × 8 × 3, 7 hard sets. */
@@ -239,6 +253,45 @@ async function seedEndedSession(page: Page): Promise<void> {
   );
 }
 
+/** T-0458: puts a running S1 row (`ended_at: null`) into the app's `wl-offline` database (the
+ *  `uf-09-focus.spec.ts` `seedSessionRow` pattern), with no sets logged yet. `startedAt` defaults
+ *  to the page's now (T-0304d), so UF-09's 12 h stale check (D-0111 §7) never trips it. */
+async function seedRunningSession(page: Page): Promise<void> {
+  await openDb(page);
+  await page.evaluate(
+    async ({ id, userId, plan }) => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const req = indexedDB.open("wl-offline");
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction("sessions", "readwrite");
+        tx.objectStore("sessions").put({
+          id,
+          userId,
+          row: {
+            id,
+            user_id: userId,
+            started_at: new Date().toISOString(),
+            ended_at: null,
+            time_budget_min: 45,
+            energy: "normal",
+            warmup_in_budget: true,
+            plan,
+          },
+          finished: false,
+          pending: false,
+        });
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    },
+    { id: S1, userId: FAKE_USER_ID, plan: RUNNING_PLAN },
+  );
+}
+
 async function storedSession(page: Page): Promise<StoredSessionRow | null> {
   return page.evaluate(async (id) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -367,5 +420,194 @@ test.describe("T-0420 AC-7 UF-03.3 summary, offline (NFR-OFF-2)", () => {
       (v) => v.impact === "serious" || v.impact === "critical",
     );
     expect(serious).toEqual([]);
+  });
+});
+
+/** T-0458: every live (`deletedAt` null) set for S1. */
+async function liveSets(
+  page: Page,
+): Promise<{ exerciseId: string; setIndex: number; weightKg: number | null; reps: number | null }[]> {
+  return page.evaluate(async (id) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open("wl-offline");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const rows = await new Promise<
+      {
+        sessionId: string;
+        exerciseId: string;
+        setIndex: number;
+        weightKg: number | null;
+        reps: number | null;
+        deletedAt: string | null;
+      }[]
+    >((resolve, reject) => {
+      const req = db.transaction("sets", "readonly").objectStore("sets").getAll();
+      req.onsuccess = () => resolve(req.result as never);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return rows
+      .filter((r) => r.sessionId === id && r.deletedAt === null)
+      .map((r) => ({
+        exerciseId: r.exerciseId,
+        setIndex: r.setIndex,
+        weightKg: r.weightKg,
+        reps: r.reps,
+      }));
+  }, S1);
+}
+
+/** T-0458: signed in, caches filled, precache settled, offline, running S1 seeded, on UF-09.1. */
+async function openSessionOffline(page: Page, context: import("@playwright/test").BrowserContext) {
+  await page.goto("/");
+  await injectSession(page);
+  await page.goto("/");
+  await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+  await cachesFilled(page);
+  await precacheSettled(page);
+  await context.setOffline(true);
+  await seedRunningSession(page);
+  await page.goto(`/session/${S1}`);
+  await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+}
+
+/** T-0458: from UF-09.1, Pause → "List view" → `[data-screen-id="UF-03.1"]`. */
+async function openListView(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Pause workout" }).click();
+  await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
+  await page.getByRole("button", { name: "List view" }).click();
+  await expect(page.locator('[data-screen-id="UF-03.1"]')).toBeVisible();
+}
+
+/** T-0458: Tabs from the current focus until `locator` is focused, or fails after `max` tabs. */
+async function tabTo(page: Page, locator: ReturnType<Page["locator"]>, max = 40): Promise<void> {
+  for (let i = 0; i < max; i += 1) {
+    if (await locator.evaluate((el) => el === document.activeElement)) return;
+    await page.keyboard.press("Tab");
+  }
+  await expect(locator).toBeFocused();
+}
+
+test.describe("T-0458 UF-03.1 List view, offline (NFR-OFF-2)", () => {
+  test("AC-1/AC-2: Pause, List view, three rows checked by keyboard, Finish, Save, reload", async ({
+    page,
+    context,
+    supabaseGuard,
+  }) => {
+    const functionCalls: string[] = [];
+    page.on("request", (r) => {
+      if (r.url().includes("/functions/v1/")) functionCalls.push(`${r.method()} ${r.url()}`);
+    });
+
+    await openSessionOffline(page, context);
+    await openListView(page);
+    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+
+    const row1 = page.getByRole("checkbox", { name: "Mark set 1 done" });
+    const row2 = page.getByRole("checkbox", { name: "Mark set 2 done" });
+    const row3 = page.getByRole("checkbox", { name: "Mark set 3 done" });
+    const row4 = page.getByRole("checkbox", { name: "Mark set 4 done" });
+
+    await tabTo(page, row1);
+    await page.keyboard.press("Space");
+    await expect(page.getByRole("checkbox", { name: "Mark set 1 not done" })).toBeChecked();
+
+    await tabTo(page, row2);
+    await page.keyboard.press("Space");
+    await expect(page.getByRole("checkbox", { name: "Mark set 2 not done" })).toBeChecked();
+
+    await tabTo(page, row3);
+    await page.keyboard.press("Space");
+    await expect(page.getByRole("checkbox", { name: "Mark set 3 not done" })).toBeChecked();
+
+    await expect(row4).not.toBeChecked();
+
+    // AC-2: Finish → the confirm's Finish → UF-03.3 → Save → "/" → reload.
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
+    await page.getByRole("button", { name: "Finish", exact: true }).click();
+    await expect(page.locator('[data-screen-id="UF-03.3"]')).toBeVisible();
+    await expect(page).toHaveURL(new RegExp(`/session/${S1}/summary$`));
+
+    const group = page.getByRole("radiogroup", { name: "How hard was it?" });
+    let inGroup = false;
+    for (let i = 0; i < 30 && !inGroup; i += 1) {
+      await page.keyboard.press("Tab");
+      inGroup = await group.evaluate((el) => el.contains(document.activeElement));
+    }
+    expect(inGroup).toBe(true);
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("ArrowRight");
+    await expect(group.getByRole("radio", { name: "About right" })).toBeChecked();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("button", { name: "Save workout" })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/$/);
+
+    await page.reload();
+    await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible({ timeout: 10_000 });
+
+    const sets = await liveSets(page);
+    const squatSets = sets
+      .filter((s) => s.exerciseId === "back-squat")
+      .sort((a, b) => a.setIndex - b.setIndex);
+    expect(squatSets).toEqual([
+      { exerciseId: "back-squat", setIndex: 0, weightKg: 100, reps: 6 },
+      { exerciseId: "back-squat", setIndex: 1, weightKg: 100, reps: 6 },
+      { exerciseId: "back-squat", setIndex: 2, weightKg: 100, reps: 6 },
+    ]);
+
+    const row = await storedSession(page);
+    expect(row?.effort_rating).toBe(3);
+    expect(row?.ended_at).not.toBeNull();
+
+    expect(functionCalls).toEqual([]);
+    expect(supabaseGuard.unclaimed()).toEqual([]);
+  });
+
+  test("AC-3: axe clean, every row toggle and field at least 44 x 44, Focus mode returns to a step screen", async ({
+    page,
+    context,
+  }) => {
+    await openSessionOffline(page, context);
+    await openListView(page);
+
+    // The current card (back-squat) is already expanded; check row 1 so one row is done.
+    const row1 = page.getByRole("checkbox", { name: "Mark set 1 done" });
+    await tabTo(page, row1);
+    await page.keyboard.press("Space");
+    await expect(page.getByRole("checkbox", { name: "Mark set 1 not done" })).toBeChecked();
+
+    const results = await new AxeBuilder({ page }).analyze();
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious).toEqual([]);
+
+    const toggles = page.locator('[data-part="set-row"] input[type="checkbox"]');
+    const toggleCount = await toggles.count();
+    expect(toggleCount).toBeGreaterThan(0);
+    for (let i = 0; i < toggleCount; i += 1) {
+      const box = await toggles.nth(i).boundingBox();
+      expect(box, `toggle ${i}`).not.toBeNull();
+      expect(box!.width, `toggle ${i} width`).toBeGreaterThanOrEqual(44);
+      expect(box!.height, `toggle ${i} height`).toBeGreaterThanOrEqual(44);
+    }
+    const fields = page.locator(
+      '[data-part="set-row"] input[type="text"]',
+    );
+    const fieldCount = await fields.count();
+    expect(fieldCount).toBeGreaterThan(0);
+    for (let i = 0; i < fieldCount; i += 1) {
+      const box = await fields.nth(i).boundingBox();
+      expect(box, `field ${i}`).not.toBeNull();
+      expect(box!.width, `field ${i} width`).toBeGreaterThanOrEqual(44);
+      expect(box!.height, `field ${i} height`).toBeGreaterThanOrEqual(44);
+    }
+
+    await page.getByRole("button", { name: "Focus mode" }).click();
+    await expect(page.locator('[data-screen-id="UF-09.3"]')).toBeVisible();
+    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
   });
 });
