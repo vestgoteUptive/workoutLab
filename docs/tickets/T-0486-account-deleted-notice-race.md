@@ -258,3 +258,84 @@ No contract or scope change: still only `AccountDeletedNotice.tsx` and its own t
 file's new `BrowserRouter`/`Routes`/`RequireAuth` imports are test-only (this file isn't subject to
 the component's own import-boundary test), so `lib/account/__tests__/boundaries.test.ts` (T-0310c
 AC11) stays green, as confirmed in the full-gate run above.
+
+---
+
+**Second rework (same day), after a second round of code review — the `pagehide`/`beforeunload`
+pre-unload veto is itself disqualified.** Orchestrator independently fact-checked this round
+before sending it back (not just relaying review). Two findings:
+
+1. **`beforeunload` does not fire on iOS Safari at all** (not "sometimes" — WebKit on iOS simply
+   doesn't implement it, by design, to protect bfcache eligibility, and this PWA's actual target
+   platform is iOS Safari). My `leaving` ref was set by *either* `pagehide` or `beforeunload`, but
+   on iOS only `pagehide` would ever ask — and `pagehide` is not a *pre*-unload signal; it fires
+   as part of the unload itself.
+2. Consequently, the previous fix's own comments overclaimed what `pagehide` actually does: a
+   zero-delay timer scheduled *before* `pagehide` fires cannot be vetoed by a `pagehide` that
+   fires *after* the timer already ran. Checked more carefully: in jsdom (and realistically, in
+   same-process browser behaviour too, since `location.replace(...)` and a zero-delay
+   `setTimeout` both get macrotask-queued), there is no ordering guarantee that makes the
+   pre-unload-veto framing correct even on Chromium/Firefox. Both "detect impending unload before
+   consuming" attempts (pathname-based, then event-based) share the same flaw: they try to
+   predict the future (is this document about to unload?) using a signal that is either absent
+   (iOS `beforeunload`) or too late (`pagehide` relative to an already-scheduled timer).
+
+Review also flagged, independent of the above: the previous "AC-4-style discriminator" test's
+title overclaimed what it proved (it would also pass against the already-rejected pathname
+variant), and a `leaving`-style sticky flag that's set by `pagehide`/`beforeunload` without ever
+being cleared would permanently break a later SPA-navigate consume if a non-unload `pagehide`
+fired first (e.g. backgrounding) — both symptoms of the same "detect-before-acting" design flaw.
+
+**New fix (per the reviewer's suggested direction, endorsed by the orchestrator): stop detecting,
+make the consume idempotent after the fact.** `AccountDeletedNotice.tsx`:
+- The reactive `status === "signed-out"` path now consumes **immediately and synchronously**,
+  exactly like the mount-time read and exactly like the pre-T-0486 code. No deferral, no timer,
+  no attempt to guess whether a navigation is imminent.
+- A new `pendingRestore` ref holds the consumed value for as long as the notice is showing and
+  not dismissed.
+- A `pagehide` listener (registered once per mount; `pagehide` only, not `beforeunload` — the
+  iOS-incompatible half is simply gone) writes the value *back* into `sessionStorage` if
+  `pendingRestore` is still set when the document actually starts going away. `pagehide` reliably
+  fires on every real navigation away from a page, including iOS Safari; the previous fix's
+  mistake was relying on it as a pre-emptive veto rather than this: a same-tick, after-the-fact
+  correction once the real unload is actually happening.
+- Dismiss now clears `pendingRestore` **and** re-consumes (removes) the key from storage, not
+  just local component state — needed because a `pagehide` that fires without an actual unload
+  (the tab merely backgrounded, bfcache-eligible) can already have written the key back while the
+  notice is still showing; without this, Dismiss would stop meaning "gone for good" in that case.
+  Caught by a test I wrote for exactly this scenario, which failed against my own first draft of
+  this fix before I added the re-consume to Dismiss.
+- The hard-navigate branch's own `location.replace(...)` call is what triggers `pagehide` in the
+  first place, so by the time any new document's JS runs, the write-back has already completed —
+  there's no race to lose here, because nothing is trying to run-before anything else.
+
+**Test rework.** Replaced the `firePagehide()`-as-pre-unload-veto framing in the `T-0486 the
+hard-navigation race` describe block with tests that exercise consume-then-restore: AC-1 now
+shows the consume happening synchronously in the same commit as the status flip (no timers, no
+`vi.useFakeTimers()` needed anywhere in this describe block any more); the hard-navigate test
+shows the key already consumed, then restored by `firePagehide()`, then re-consumed by a fresh
+mount simulating the next page; a new Dismiss-before-pagehide test proves a dismissed notice is
+never resurrected; a new "pagehide without an actual unload" test (the backgrounding scenario)
+proves the restored key is harmless and Dismiss still clears it afterwards (this is the test that
+caught the Dismiss gap above); a new "second pagehide after re-consume" test proves no
+double-write. Renamed the discriminator test to accurately describe what it proves (a fix that
+never writes the key back on pagehide loses it on an actual hard navigation) rather than naming a
+specific rejected variant.
+
+**Fault proof.** Planted the exact pre-T-0486 / this-ticket's-AC-4 fault (no `pagehide` listener
+at all, i.e. a bare unconditional reactive `consume()` with nothing to restore it): 3 tests failed
+(hard-navigate, second-pagehide-after-reconsume, and the renamed discriminator) — confirms these
+tests actually require the write-back, not just the synchronous consume. Backed up the real fix
+to the scratchpad first (`cp`), planted the fault in place, ran, restored from the scratchpad
+backup (`cp`); `git diff` clean afterwards.
+
+**Tests run (second rework):**
+- `scripts/locked.sh small npx vitest run .../AccountDeletedNotice.test.tsx`: 18/18 passed against
+  the write-back fix (added 2 new tests: Dismiss-before-pagehide, and pagehide-without-unload).
+- Same file against the no-write-back fault: 3 failed / 14 passed, as above.
+- Full gate: `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`
+  → 253 files / 3517 tests passed (both packages' typecheck/lint/test, 19/19 tasks). `-w
+  test:repo-checks`: 159/159. `-w format:check`: clean. `node .github/scripts/check-all.mjs`:
+  clean, exit 0.
+
+No contract or scope change: still only `AccountDeletedNotice.tsx` and its own test file.
