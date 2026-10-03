@@ -443,3 +443,49 @@
     animation: none !important;
   }
 }
+
+/* T-0395 (D-0139 §3): the Today "Resume workout" card, mounted through UF-02's slot. */
+.wl-resume-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--wl-color-line);
+  border-radius: 14px;
+  background: var(--wl-color-surface);
+}
+
+.wl-resume-card__title {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-size: 20px;
+  line-height: 1.2;
+  color: var(--wl-color-text);
+}
+
+.wl-resume-card__line {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+}
+
+.wl-resume-card__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: var(--wl-color-accent);
+  color: var(--wl-color-on-accent);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wl-resume-card__action:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
