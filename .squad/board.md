@@ -77,7 +77,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0476 | UF-08.3 polish (D-0171, accept follow-up): a swap's "Swapped to save time" reason is proven only at the data layer — itemReasonLine's two-reason cap hides it from the UI; let it surface, or lift the cap by one | web-shell | T-0303c | todo | wl-build-web |
-| T-0216 | UF-11.4 Equipment section: checklist of the 9 real items, "none" always first, saved online to profiles.equipment (D-0061 §3, D-0168 §6, D-0172 §7) | web-feature:UF-11 | T-0310d | doing | wl-build-web |
+| T-0216 | UF-11.4 Equipment section: checklist of the 9 real items, "none" always first, saved online to profiles.equipment (D-0061 §3, D-0168 §6, D-0172 §7) | web-feature:UF-11 | T-0310d | done | wl-build-web |
 | T-0313 | AC-D11 hardening: dynamic `import()` of components/body-map from UF-03/08/09 bypasses no-restricted-imports; add a no-restricted-syntax rule on ImportExpression + test — T-0300d follow-up Also cover the D-0071 §9 patterns (UF-02/06/07/10/11 from UF-03/04/05/08/09; deep feature imports). | web-shell | T-0300d | todo | wl-build-web |
 | T-0314 | Add axe-core (or vitest-axe) as a direct devDependency of apps/web and point the AC-D10 helper at it (today it resolves through @axe-core/playwright, D-0060 §7) — T-0300d follow-up | infra | T-0300d | todo | wl-build-infra |
 | T-0315 | Design a C-01 body silhouette to replace the D-0060 tile grid (after the H-12 device review) | design | T-0300d | todo | wl-design |
