@@ -140,3 +140,6 @@ AC→test (`__tests__/t0454.test.tsx`, `t0454.a11y.test.tsx`, e2e row in `uf-07-
 - AC-7: "AC-7 axe" (2 tests); no existing UF-07 test edited; all 97 UF-07 tests green.
 Red on unfixed code (product files restored from HEAD, tests kept): 10 of 16 failed: AC-1 x3 (no alert/link), AC-3 x3 (`No exercises match ""`), AC-4 (focus left on Delete), AC-5 online (Shift+Tab landed wrong), both axe tests. The 6 passing were the pairs and AC-2 and AC-5 offline.
 Planted faults (backup in scratchpad, restored by `cp`): focus effect disabled -> AC-4 red; `libraryEmpty` = `library.length === 0` -> warm-ups-only red. Both caught.
+
+### QA log (qa-tester, 2026-10-03)
+Merged origin/main (HEAD f7d8133, tree clean before QA). Reproduced from backups (restored by `cp`): unfixed sources -> 10 of 16 red (AC-1 x3, AC-3 x3, AC-4, AC-5 online, axe x2); focus effect disabled -> AC-4 red; `libraryEmpty = library.length === 0` -> warm-ups-only red. Own fault (first-read failure redirects to /plan instead of the message) -> 3 red (AC-1 online/offline, axe). UF-07 folder x7: 97/97 in 5 runs, 2 early runs had 1 unidentified failure (not reproduced in 5 later runs; T-0460 area). uf-07-routines e2e 6/6. Cached gate (typecheck, lint, test), test:repo-checks (155/0), check-all green.
