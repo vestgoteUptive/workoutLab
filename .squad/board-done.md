@@ -177,6 +177,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0450 | Retire the `git diff main...HEAD` lane assertion in UF-11 strings.test.ts AC-B16 (and any other test that asserts on the branch diff; state.md trap, T-0303b): it fails on ticket-doc commits and is redundant with check-lane-paths (T-0308b QA) | web-feature:UF-11 | T-0308b | done | wl-build-web |
 | T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | done | wl-build-web |
 | T-0440 | e2e: tests/e2e/playwright.config.ts has reuseExistingServer: !CI, so a local run silently reuses another worktree's vite preview on :4173 and fails with 'Failed to fetch dynamically imported module' (53 false reds on main 2026-10-02 after T-0429). Make it fail loudly instead (reuseExistingServer false + strictPort, or check the served build id) | qa | — | done | wl-build-qa |
+| T-0422 | UF-05 swap seam on UF-09.9/09.6, persisted via replaceItem, uf-05-swap e2e (D-0142) | web-feature:UF-05 | T-0421, T-0304d, T-0414 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
