@@ -1,4 +1,8 @@
 import { defineConfig } from "vitest/config";
+import { cleanupVitestTmp, redirectVitestTmp } from "../../vitest.tmp";
+
+// D-0159: keep vitest's module-transform temp dirs out of /tmp and remove them at run end.
+cleanupVitestTmp(redirectVitestTmp(import.meta.url));
 
 // AC24: `pnpm test` stays offline and browser-free. Real browser checks
 // (axe, Playwright, Lighthouse) live in browser/** and run only via

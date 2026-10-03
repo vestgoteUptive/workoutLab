@@ -173,7 +173,9 @@ describe("AC-A6 picker scope and search", () => {
   it("stays open after an Add, and Done closes it", async () => {
     await ready("/plan/routines/new");
     await openPicker();
-    fireEvent.click(screen.getByRole("button", { name: "Add Plank" }));
+    // T-0460: CI showed the picker list empty for a moment after it first rendered (T-0461), so
+    // wait for this exact row rather than for any row.
+    fireEvent.click(await screen.findByRole("button", { name: "Add Plank" }));
     expect(screen.getByLabelText("Search exercises")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Done" }));
     expect(screen.queryByLabelText("Search exercises")).not.toBeInTheDocument();
