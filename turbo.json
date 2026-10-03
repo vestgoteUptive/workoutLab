@@ -3,6 +3,7 @@
   "ui": "stream",
   "globalDependencies": [
     "tsconfig.base.json",
+    "vitest.tmp.ts",
     "eslint.config.mjs",
     ".prettierrc.json",
     "packages/design-tokens/eslint-plugin/**",
