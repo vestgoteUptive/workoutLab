@@ -1,7 +1,7 @@
 // The form of UF-07.1: name, ordered list, in-screen picker (D-0081 §6), the read-only
 // progression card, and Save / Cancel / Delete. State styling lives in routine-editor.css,
 // keyed on data attributes and `:disabled`, so nothing here overrides the focus ring.
-import { useEffect, useRef, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, type FormEvent, type KeyboardEvent } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { type RoutineEditorState } from "./use-routine-editor.js";
@@ -27,6 +27,38 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
     wasConfirmOpen.current = confirmOpen;
   }, [confirmOpen]);
 
+  // D-0162 §4: the button that was pressed has left the DOM or gone disabled, so focus is put
+  // on a control that is still there. The `items` dependency is the re-render after the change.
+  const { items, afterChange } = editor;
+  useLayoutEffect(() => {
+    const change = afterChange.current;
+    if (!change) return;
+    afterChange.current = null;
+    if (change.kind === "add") {
+      searchRef.current?.focus();
+      return;
+    }
+    const removes = Array.from(
+      editor.listRef.current?.querySelectorAll<HTMLButtonElement>("button[data-action='remove']") ??
+        [],
+    );
+    const target = removes[Math.min(change.index, removes.length - 1)];
+    (target ?? searchRef.current ?? addRef.current)?.focus();
+  }, [items, afterChange, editor.listRef]);
+
+  // D-0162 §5: Tab and Shift+Tab cycle the dialog's enabled buttons.
+  const trapTab = (event: KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "Tab") return;
+    event.preventDefault();
+    const enabled = Array.from(
+      event.currentTarget.querySelectorAll<HTMLButtonElement>("button"),
+    ).filter((b) => !b.disabled);
+    if (enabled.length === 0) return;
+    const at = enabled.indexOf(document.activeElement as HTMLButtonElement);
+    const step = event.shiftKey ? -1 : 1;
+    enabled[(at + step + enabled.length) % enabled.length]?.focus();
+  };
+
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
     void editor.save();
@@ -43,7 +75,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
       onSubmit={onSubmit}
       noValidate
     >
-      <div className="wl-routine-editor__field">
+      <div className="wl-routine-editor__field" inert={confirmOpen}>
         <label htmlFor="wl-routine-name">{t.nameLabel}</label>
         <input
           id="wl-routine-name"
@@ -61,7 +93,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
         )}
       </div>
 
-      <section aria-labelledby="wl-routine-exercises">
+      <section aria-labelledby="wl-routine-exercises" inert={confirmOpen}>
         <h2 id="wl-routine-exercises">{t.exercisesHeading}</h2>
         {editor.items.length === 0 ? (
           <p className="wl-routine-editor__hint">{t.emptyList}</p>
@@ -92,6 +124,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
                 </button>
                 <button
                   type="button"
+                  data-action="remove"
                   aria-label={t.remove(label)}
                   onClick={() => editor.remove(index)}
                 >
@@ -156,7 +189,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
         )}
       </section>
 
-      <div className="wl-routine-editor__card" data-card="progression">
+      <div className="wl-routine-editor__card" data-card="progression" inert={confirmOpen}>
         <p>{t.progression}</p>
       </div>
 
@@ -169,7 +202,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
       <OfflineStatus variant="text" />
       {editor.online ? null : <p className="wl-routine-editor__hint">{t.connectToSave}</p>}
 
-      <div className="wl-routine-editor__actions">
+      <div className="wl-routine-editor__actions" inert={confirmOpen}>
         <button type="submit" data-variant="primary" disabled={!editor.canSave}>
           {t.save}
         </button>
@@ -197,6 +230,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
           className="wl-routine-editor__dialog"
           onKeyDown={(event) => {
             if (event.key === "Escape") editor.setConfirmOpen(false);
+            else trapTab(event);
           }}
         >
           <h2 id="wl-routine-delete-title">{t.deleteTitle(editor.loadedName)}</h2>

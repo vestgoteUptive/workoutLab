@@ -102,3 +102,10 @@ needed) · contracts unchanged · commits start `T-0453` and cite UF-07.1.
 - **Start after T-0308a merges.** It is the dep, and it is merging now.
 - React 19 renders the boolean `inert` prop. jsdom 25 keeps the attribute but doesn't enforce it,
   which is why AC-5 proves the behaviour in Chromium.
+
+## Build / accept log
+- Built from clean main f9a5b69. `use-routine-editor.ts` records an `afterChange` intent on remove/add; `EditorForm.tsx` applies it in a layout effect (remove -> Remove at the same index or last, else search or Add exercise; add -> search), puts `inert` on the four form parts while the confirm is open, and cycles Tab/Shift+Tab over the dialog's enabled buttons.
+- Tests: `__tests__/t0453.focus.test.tsx`. AC-1 four tests (middle, last, only row picker closed/open); AC-2 two (Added, 8-item limit); AC-3 three (cycle, inert pair, Escape); AC-4 one (offline, `offline` event fired); AC-5 e2e row in `uf-07-routines.spec.ts`; AC-6 no existing test edited, all 81 UF-07 tests pass.
+- Red on unfixed code: new tests run before the fix failed 9 of 10 (focus on body / no inert / Tab not trapped; the 10th, the Escape pair, is the unchanged behaviour).
+- Planted faults (backup copy, restored by `cp`): inert removed -> inert test red; trap removed -> cycle test red; Add focus skipped -> both AC-2 tests red.
+- e2e `uf-07-routines`: 5 passed in Chromium.

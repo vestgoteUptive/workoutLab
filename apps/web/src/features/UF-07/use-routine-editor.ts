@@ -90,6 +90,8 @@ export function useRoutineEditor(routineId: string | undefined) {
   const busy = useRef(false);
   const pendingFocus = useRef<{ exerciseId: string; dir: FocusDir } | null>(null);
   const listRef = useRef<HTMLOListElement | null>(null);
+  // Where focus goes once the list has re-rendered after a Remove or a picker Add (D-0162 §4).
+  const afterChange = useRef<{ kind: "remove"; index: number } | { kind: "add" } | null>(null);
 
   // Load once per route id. The draft is initialised from the first read that finds the routine
   // and a later refresh never overwrites it (D-0081 §5).
@@ -174,12 +176,14 @@ export function useRoutineEditor(routineId: string | undefined) {
 
   const remove = (index: number) => {
     const exerciseId = items[index]!;
+    afterChange.current = { kind: "remove", index };
     setItems(items.filter((_, i) => i !== index));
     setAnnouncement(en.uf07.removed(nameOf(exerciseId)));
   };
 
   const add = (exerciseId: string) => {
     if (items.includes(exerciseId) || items.length >= MAX_ITEMS) return;
+    afterChange.current = { kind: "add" };
     setItems([...items, exerciseId]);
     setAnnouncement(en.uf07.added(nameOf(exerciseId)));
   };
@@ -259,6 +263,7 @@ export function useRoutineEditor(routineId: string | undefined) {
     nameOf,
     known: (exerciseId: string) => names.has(exerciseId),
     listRef,
+    afterChange,
     pickerOpen,
     setPickerOpen,
     query,
