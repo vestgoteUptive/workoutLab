@@ -92,6 +92,8 @@ export const uf03 = {
   secondsHint: "Enter seconds as a whole number like 45",
   /** The polite text after a check, edit or uncheck that didn't reach IndexedDB. */
   rowSaveFailed: "Couldn't save. Tap again.",
+  /** T-0457: adds one more row after the last (D-0142 §3). */
+  addSet: "+ Add set",
   /** The UF-09 seam placeholder for the List view and the how-to (D-0142 §8). */
   seamLoading: "Loading\u2026",
   seamLoadFailed: "Couldn't load this view.",

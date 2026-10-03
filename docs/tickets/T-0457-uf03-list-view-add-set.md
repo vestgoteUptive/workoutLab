@@ -88,3 +88,11 @@ and `check-all` green · `uf-03-list-summary.spec.ts` green · contracts unchang
   D-0164 §1). Allowed by files with T-0394, T-0451, T-0446, T-0448, T-0454 and T-0459.
 
 ## Build / accept log
+
+### Build log (frontend-dev)
+- Added "+ Add set" in `ListView.tsx` (Rows: planned ∪ logged-above-plan ∪ added; index `1 + max(planned-1, logged max, last row)`; seed = last row's values; focus on mount) and `addSet` in `flows/uf-03.ts`.
+- AC→test: AC-1..3, 5, 6 → `__tests__/list-view.addset.test.tsx`; AC-4 → `__tests__/list-view.addset.host.test.tsx` (real host, reload).
+- Red on unfixed code (T-0417's ListView.tsx restored from HEAD): all 10 new tests failed (no "+ Add set").
+- Planted fault (index `item.sets + added count`, backup copy restored by `cp`): AC-3 "with a back-off" and "logged set above plan -> 7" went red (2 failed, 8 passed); restored, green.
+- `vitest run src/features/UF-03`: 16 files, 202 tests green.
+- Gate: typecheck/lint/test (turbo, 19 tasks) green, test:repo-checks 0 fail, format:check, check-all green; `uf-03-list-summary` e2e 2 passed (via apps/web test:e2e).
