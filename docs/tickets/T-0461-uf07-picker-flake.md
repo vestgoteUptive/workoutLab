@@ -5,7 +5,7 @@ lane: web-feature:UF-07
 screens: [UF-07.1]
 decisions: [D-0081, D-0164]
 deps: [T-0308a, T-0454]
-status: doing
+status: done
 ---
 <!-- Written by the builder during the T-0460 follow-up investigation; front matter and paths added by the orchestrator 2026-10-03. -->
 
@@ -41,3 +41,8 @@ status: doing
 - e2e uf-07-routines (web config, TMPDIR set): 6/6 passed.
 - check-all exit 0; `-w test:repo-checks` 155/155 pass.
 - Verdict: done.
+
+## Accept log (HEAD 5dab95c)
+- Findings → Fix: `ready` now starts false and flips only after `attempt(loadLibrary, [])` settles, so a failed read still yields an empty library (offline unchanged). The D-0081 §4 stable id and §6 picker scope are untouched, and T-0454 libraryLoaded is kept.
+- Proof → test: "T-0461 the form waits for the library" (editing.test.tsx) is red on the old hook (build and QA) and red under 2 QA faults. UF-07 folder 10/10 green (98). Forced web test green. e2e uf-07-routines 6/6. check-all 0. repo-checks 155.
+- Principles hold (no focus-mode, engine or contract change). Verdict: done.
