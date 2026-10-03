@@ -91,3 +91,172 @@ green 3 runs in a row (no flake) · commits start `T-0458` and cite UF-03.1.
 - **E2e runs:** `TMPDIR=$HOME/.cache/wl-pw-tmp` if the T-0440 preflight asks for it.
 
 ## Build / accept log
+
+**2026-10-03, frontend-dev.** Added `seedRunningSession`, `liveSets`, `openSessionOffline`,
+`openListView`, `tabTo` and the `T-0458 UF-03.1 List view, offline (NFR-OFF-2)` describe block to
+`tests/e2e/uf-03-list-summary.spec.ts` (two tests). `RUNNING_PLAN` gives back-squat an `add_rep`
+pre-fill (100 kg × 6) so an unlogged row's toggle isn't blocked for a missing weight; `PLAN` (the
+T-0420 rows) is untouched.
+
+AC→test map:
+- AC-1 (offline keyboard logging, UF-03.1) → "AC-1/AC-2: Pause, List view, three rows checked by
+  keyboard, Finish, Save, reload" (rows 1–3 toggled by Tab+Space, one `[data-screen-id]`, row 4
+  unchecked).
+- AC-2 (Finish → UF-03.3 → Save → reload) → the same test: confirm Finish, effort 3 by keyboard,
+  Save → `/`, reload, `liveSets` reads exactly 3 live back-squat sets (100 kg × 6, setIndex 0–2),
+  `storedSession` reads `effort_rating: 3` and a non-null `ended_at`.
+- AC-3 (a11y) → "AC-3: axe clean, every row toggle and field at least 44 x 44, Focus mode returns
+  to a step screen" (axe 0 serious/critical, every row toggle and kg/reps field's `boundingBox()`,
+  "Focus mode" → `UF-09.3`, one `[data-screen-id]`).
+- AC-4 (the guard) → both tests use `fixtures/guarded-test.js`'s `test`/`expect` (unclaimed
+  Supabase request or console error fails at teardown); AC-1/AC-2 also asserts
+  `supabaseGuard.unclaimed()` and zero `/functions/v1/` calls directly.
+
+Red proof (on `main` before T-0417, commit `633a835`, via a throwaway `git worktree` at that
+commit with only this spec file copied over): `playwright test uf-03-list-summary.spec.ts -g
+T-0458` → 2 failed. AC-1's test failed at its first check, `getByRole("checkbox", { name: "Mark
+set 1 not done" })` never found — the pre-T-0417 `ListView`'s checkbox is read-only, no
+`ctx.recordSet`.
+
+AC-3 then found a real fault on the built code: the row toggle's `boundingBox()` was 28 × 28
+(`.wl-uf03-list__table input[type="checkbox"]` was `width: 28px; height: 28px`). Fixed in
+`apps/web/src/features/UF-03/list-view.css` to `44px`/`44px` (NFR-A11Y-2) — the only in-lane fix
+AC-3 named.
+
+Planted fault (AC-2, on a `cp` backup of `ListView.tsx`, restored the same way): `onToggle`
+rewired to flip a local `faultDone` state and never call `ctx.recordSet`, with `checked`/
+`aria-label` following `faultDone`. Re-ran "AC-1/AC-2 …" → 1 failed: `liveSets` after the reload
+returned `[]` instead of the 3 back-squat sets — exactly the "set count after the reload is 0"
+the ticket names. Restored via `cp` from the backup; `git status` clean after.
+
+Gate (D-0158, Turbo cache on): `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` → 19/19
+tasks green (`@workoutlab/web:test` 242 files / 3352 tests passed). `-w test:repo-checks` →
+159/159 passed. `-w format:check` → prettier flagged the new spec rows once; fixed with `prettier
+--write` and re-verified clean. `node .github/scripts/check-all.mjs` → exit 0, no findings.
+
+E2e: `playwright test uf-03-list-summary.spec.ts uf-09-focus.spec.ts` (`TMPDIR=$HOME/.cache/wl-pw-tmp`)
+green 3 runs in a row, 16/16 each time, no flake.
+
+Status: done. Files: `tests/e2e/uf-03-list-summary.spec.ts`,
+`apps/web/src/features/UF-03/list-view.css`, this ticket file.
+
+## Code review log
+
+**2026-10-03, code-reviewer.** Approve.
+
+- Lane/paths: diff touches exactly `apps/web/src/features/UF-03/list-view.css` (lane
+  `web-feature:UF-03`), `tests/e2e/uf-03-list-summary.spec.ts` and this ticket file — the three
+  paths the ticket grants. No edit under `tests/e2e/fixtures/**`. Contract impact: none, confirmed
+  (no `docs/data-model.md`, `api/openapi.yaml`, `docs/engine-rules.md` or design-tokens touched).
+- CSS fix: scoped to the single existing selector
+  `.wl-uf03-list__table input[type="checkbox"]` (only one such rule in the file); `28px`→`44px`
+  on width/height plus `box-sizing: border-box` (matching the sibling `input[type="text"]` rule's
+  pattern). No other selector, padding or table rule changed — row/column spacing in
+  `list-view.css` is untouched.
+- `RUNNING_PLAN`: built as `{...PLAN, items: PLAN.items.map(...)}`, a derived copy; the diff shows
+  exactly one removed line (the file-header comment, expanded) and no other edit to `PLAN`,
+  `s1Sets`, or any T-0420 row/helper — additive only, confirmed by `git diff` showing no `-` lines
+  inside the fixture bodies. Verified back-squat is `external_load: true` in the exercise fixture
+  and `PLAN`'s own prefill is `kind: "first_time"` / `weightKg: null`, which `ListView.tsx`'s
+  `blocked = !logged && (weightInvalid || countInvalid)` would indeed block (confirmed in
+  `ListView.tsx:201`); `add_rep` with `weightKg: 100` is a schema-valid prefill kind
+  (`packages/shared/src/session-plan.schema.gen.ts`) and avoids that block. Reasoning in the build
+  log matches the code.
+- AC-4: `guarded-test.ts`'s `supabaseGuard`/`consoleGuard` are `auto: true` fixtures, so
+  `assertClean()` already runs at teardown for every test in the file, T-0458's two included —
+  this is real coverage, not something the new rows had to add. The extra
+  `expect(supabaseGuard.unclaimed()).toEqual([])` plus `expect(functionCalls).toEqual([])` in
+  AC-1/AC-2 is a genuine, non-vacuous mid-test assertion (checks the list is empty before
+  teardown, and that zero `/functions/v1/` calls happened) — not a duplicate of the teardown, and
+  specific to this spec's offline claim.
+- Reran targeted: `scripts/locked.sh heavy npx playwright test ... uf-03-list-summary.spec.ts -g
+  T-0458` → 2/2 passed. Full pair `uf-03-list-summary.spec.ts uf-09-focus.spec.ts` → 16/16 passed,
+  matching the logged 3-in-a-row claim. `prettier --check` on both changed files: clean.
+  `633a835` (the red-proof's base commit) exists in history.
+- No findings. Build log's AC→test map, red proof and planted-fault proof all check out against
+  the code and current test run.
+
+Verdict: **approve**.
+
+## QA log
+
+**2026-10-03, qa-tester.** `git status` clean at `d2944c4` throughout. Branch behind `main`
+(`af4bfcf`): `git merge-tree` shows only `.squad/board*.md`/`journal`/`decisions/INDEX.md`
+additive diffs, zero conflict markers — clean, no action per D-0169 §2.
+
+AC→test map (independently confirmed against the running code, not just the build log):
+- AC-1 (offline keyboard logging) → "AC-1/AC-2 …": rows 1–3 toggled by Tab+Space read "Mark set N
+  not done", row 4 stays "Mark set 4 done", one `[data-screen-id="UF-03.1"]`.
+- AC-2 (Finish → UF-03.3 → Save → reload) → same test: confirm Finish, effort 3 by keyboard, Save
+  → `/`, reload, `liveSets` = exactly 3 live back-squat sets (100 kg × 6, setIndex 0–2),
+  `storedSession.effort_rating` 3, non-null `ended_at`.
+- AC-3 (a11y) → "AC-3 …": axe 0 serious/critical, every row toggle/field `boundingBox()` ≥ 44×44
+  (a real pixel measurement, not a CSS-value read), "Focus mode" → `UF-09.3`, one `[data-screen-id]`.
+- AC-4 (guard) → both tests via `guarded-test.ts`'s auto `supabaseGuard`/`consoleGuard`
+  (unclaimed request or `console.error`/`pageerror` fails teardown); AC-1/AC-2 also asserts
+  `supabaseGuard.unclaimed()` and zero `/functions/v1/` calls mid-test.
+
+Reproduced the build's red proof independently: fresh `git worktree` at `633a835` (pre-T-0417),
+deps installed, this spec copied in, `scripts/locked.sh heavy npx playwright test … -g T-0458` →
+2 failed, same root cause (`getByRole("checkbox", { name: "Mark set 1 not done" })` never found —
+read-only pre-fix checkbox). Worktree removed after.
+
+Planted my own fault (distinct from the build's AC-2 one, on a `cp` backup of `list-view.css`,
+restored the same way): reverted the checkbox rule back to `width: 28px; height: 28px`. Reran
+AC-3 alone (`scripts/locked.sh heavy … -g "AC-3"`) → 1 failed: `toggle 0 width` received 28,
+expected ≥ 44 — a real `boundingBox()` measurement, confirming the 44×44 check is load-bearing and
+not vacuous. Restored via `cp`; `git status`/`git diff --stat` clean after.
+
+E2e (`scripts/locked.sh heavy npx playwright test … uf-03-list-summary.spec.ts uf-09-focus.spec.ts`,
+`TMPDIR=$HOME/.cache/wl-pw-tmp`): 16/16 green, 3 runs in a row (2 before the fault, 1 after
+restore), no flake. Console/offline: `consoleGuard` auto-asserts zero `console.error`/`pageerror`
+across all 16 tests each run; the whole flow runs under `context.setOffline(true)` per the spec's
+own setup.
+
+Scope check: diff against `main` touches only `apps/web/src/features/UF-03/list-view.css`,
+`tests/e2e/uf-03-list-summary.spec.ts` and this ticket file — the three granted paths. No
+`.only`/`.skip` in the spec.
+
+Did not rerun the full `-w` gate or merge `main` (D-0158, D-0169 §2); relied on the builder's and
+reviewer's recorded gate run.
+
+Verdict: **done**. Every AC maps to a real, non-vacuous test; red proof and an independent planted
+fault both reproduce; checkbox fix verified via a genuine `boundingBox()` regression check, not a
+visual/CSS-string check.
+
+## Accept log
+
+**2026-10-03, product-owner.** Read the build, review and QA logs in full; confirmed each AC
+against the current code at HEAD `7777cb6`, not just the logs.
+
+- `git status` clean; diff vs `main` (`af4bfcf`) scoped to exactly the three granted paths —
+  `apps/web/src/features/UF-03/list-view.css`, `tests/e2e/uf-03-list-summary.spec.ts` and this
+  ticket file (confirmed with `git diff main --stat` on those paths: +379/−3, no other file). The
+  wider worktree-vs-main diff (board/journal/decisions bookkeeping, other tickets' logs) is the
+  additive, non-conflicting divergence QA already cleared per D-0169 §2 — correctly left unmerged.
+- `list-view.css` read directly: `.wl-uf03-list__table input[type="checkbox"]` is `width: 44px;
+  height: 44px; box-sizing: border-box`, with a comment citing T-0458/NFR-A11Y-2 — matches the
+  build log's claim and AC-3's 44×44 floor.
+- AC-1/AC-2: red proof reproduced independently by both the builder (pre-T-0417, `633a835`) and QA
+  (fresh worktree, same commit) with the same root cause (read-only checkbox, no `ctx.recordSet`).
+  Two independent planted faults (builder's `faultDone` rewrite, QA's checkbox-size revert) each
+  caught by a real, distinct assertion (`liveSets` count after reload; `boundingBox()` width) —
+  not vacuous.
+- AC-3: the 44×44 checkbox bug was a genuine a11y defect caught by this ticket's own test, fixed
+  in-lane, and independently re-regressed and re-caught by QA. Axe and the Focus-mode round-trip
+  assertions are named in both the build and QA AC→test maps against the running code.
+- AC-4: reviewer confirmed the guard assertions are real (not a duplicate of the auto-teardown
+  check) and QA confirmed the same; both the unclaimed-request/console-error teardown and the
+  mid-test `supabaseGuard.unclaimed()`/zero-functions-calls checks are present for both new tests.
+- Gate: build log shows `-w typecheck lint test --concurrency=1` (19/19 tasks, 3352 tests),
+  `-w test:repo-checks` (159/159), `-w format:check` (fixed and reverified) and `check-all` all
+  green; e2e (`uf-03-list-summary.spec.ts` + `uf-09-focus.spec.ts`) 16/16 across 3 runs, no flake,
+  reconfirmed independently by both the reviewer (targeted rerun) and QA (full 3-run repeat with
+  their own planted fault interleaved). No `.only`/`.skip` in the spec.
+- No contract touched; no decision needed beyond the ones already cited (D-0164, D-0142, D-0071,
+  D-0086, D-0155).
+
+Verdict: **done**. Every AC (AC-1 through AC-4) has at least one passing, non-vacuous test, proven
+red before the fix and confirmed by two independent planted-fault regressions; the gate is green;
+the diff is scoped to the granted paths; CLAUDE.md's definition of done is met. Not merging or
+pushing — left for the orchestrator per D-0169 §2 and this ticket's own instruction.
