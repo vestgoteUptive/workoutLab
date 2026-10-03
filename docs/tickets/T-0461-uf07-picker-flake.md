@@ -29,20 +29,4 @@ status: done
   - `docs/tickets/T-0461-uf07-picker-flake.md`: this file, for the build, QA and accept logs.
 
 ## Build / accept log
-- Same root cause covers `t0453.focus.test.tsx` (the T-0459 gate flake): its new-routine tests click "Add exercise" then `getByRole('Add Plank')` synchronously, which raced the library read. With the form gated on the library, they are deterministic.
-- Folder: 10 consecutive green runs (82/82) with the fix. Forced `turbo run test --filter=@workoutlab/web --force`: green. Typecheck green.
-- 2026-10-03 merge of main (after T-0454): conflict in use-routine-editor.ts resolved keeping T-0454's libraryLoaded plus the T-0461 ready gate; UF-07 folder 3/3 green (98 tests, incl. t0454).
-
-## QA log (HEAD 78581fb, clean tree)
-- Red run: reverted the gate in use-routine-editor.ts (state `isNew`, no setReady in new path) on a backup copy: editing.test.tsx 1 failed / 19 passed (the "form waits for the library" test). Restored from copy.
-- Own faults: (1) `useState(true)` ready from the start: same test red (1/20). (2) new path `setReady(true); setLibrary([])` (clobbers library): 7/20 red. Both restored.
-- UF-07 folder 10x under flock: 10/10 green, 98/98 (incl. t0453.focus, t0454, t0454.a11y).
-- Forced `turbo run test --filter=@workoutlab/web --force --concurrency=1`: 2 successful tasks, 0 cached.
-- e2e uf-07-routines (web config, TMPDIR set): 6/6 passed.
-- check-all exit 0; `-w test:repo-checks` 155/155 pass.
-- Verdict: done.
-
-## Accept log (HEAD 5dab95c)
-- Findings → Fix: `ready` now starts false and flips only after `attempt(loadLibrary, [])` settles, so a failed read still yields an empty library (offline unchanged). The D-0081 §4 stable id and §6 picker scope are untouched, and T-0454 libraryLoaded is kept.
-- Proof → test: "T-0461 the form waits for the library" (editing.test.tsx) is red on the old hook (build and QA) and red under 2 QA faults. UF-07 folder 10/10 green (98). Forced web test green. e2e uf-07-routines 6/6. check-all 0. repo-checks 155.
-- Principles hold (no focus-mode, engine or contract change). Verdict: done.
+Archived in `docs/tickets/log/T-0461.md` (D-0157).
