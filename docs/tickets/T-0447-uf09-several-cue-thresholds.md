@@ -94,3 +94,7 @@ commits start `T-0447` and cite UF-09.5.
 - Red on unfixed `cues.ts` (HEAD): unit `12 to 0` got `["sound@10","voice@3",...]`; `12 to 2 to 1 to 0`, `4 to 1` (`["voice@3","voice@2","voice@1"]`), `2 to 0` (`["voice@1","sound@0"]`), `get ready 5 to 0` (`["voice@3","voice@2","voice@1"]`) all red. Host: `+15 s` red (`expected 2 to be 1` oscillators), `+10 s` red (`["3","2"]` vs `["2"]`). The pin, the "crossed counts" and the pair tests pass on both.
 - Planted faults (on a backup copy, restored with `cp`): (1) `fired` records only the played cues -> "crossed counts as fired" red; (2) voice allowed at 0 -> `12 to 0`, `2 to 0`, `get ready 5 to 0` red.
 - Gate (D-0158, cached): typecheck, lint, test (19 tasks), test:repo-checks, format:check, check-all all green. No web e2e (one feature folder).
+- QA (HEAD 45217fd, clean tree; branch unchanged since the builder's gate, so no full gate). AC-1 -> `t0447.cues-unit.test.ts`; AC-2 -> `t0447.cues.test.tsx`; AC-3 -> UF-09 folder green, no existing test edited, `cues.ts` only.
+- Red runs from backups (`vitest run t0447`, restored with `cp`): main's `cues.ts` -> 5 unit (12->0, 12->2->1->0, 4->1, 2->0, get ready 5->0) + 2 host (+10 s, +15 s) red. `fired` records only played cues -> "crossed counts as fired" red (1). Voice allowed at 0 -> 12->0, 2->0, get ready 5->0 and host +15 s red (4). QA fault: highest crossed cue instead of lowest -> 12->0, 12->2->1->0, 4->1 and host +10 s red (4).
+- Results: UF-09 vitest folder 49 files / 833 tests green; `test:e2e uf-09` 10 passed.
+- Verdict: done.
