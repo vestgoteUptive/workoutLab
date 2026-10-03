@@ -82,7 +82,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0304h | UF-09 e2e from UF-08.4: reload mid-rest/pause (NFR-TIME-2), 10-set offline workout (NFR-OFF-2), two devices (NFR-SYNC-4), keyboard + axe loop (NFR-A11Y-1/6) | web-feature:UF-09 | T-0304d, T-0304g, T-0303d | todo | wl-build-web |
 | T-0307b | UF-06.1/.2 Progress: calendar, Balance card, recent exercises, exercise history (no PRs/1RM/streaks in v1, D-0068) | web-feature:UF-06 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0308a | UF-07.1 Routine editor (ordered exercise list, online-only save) | web-feature:UF-07 | T-0318, T-0319, T-0334 | doing | wl-build-web |
-| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | doing | wl-build-web |
 | T-0308c | UF-11.1 CheckinCard: one-period copy, first-shown insert, Accept/Keep, offline; on UF-11.2 + UF-02.1 (UF-02.1 mount via features/UF-02/slots.tsx) | web-feature:UF-11 | T-0308b, T-0215, T-0223, T-0302a | todo | wl-build-web |
 | T-0310d | UF-11.4 Account settings at /plan/account: export + delete with confirm, /welcome notice (D-0136) | web-feature:UF-11 | T-0308b, T-0310b, T-0310c | todo | wl-build-web |
 | T-0216 | Account settings: "Edit equipment" checklist of the 10 vocabulary items, writing profiles.equipment[] (D-0061 §3; UF-01.3 keeps the 3 profiles) | web-feature:UF-01 | T-0300, T-0301 | todo | wl-build-web |
@@ -151,6 +150,8 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0447 | Needs a decision (amends D-0119 §7): when one observation crosses several cue thresholds (throttled background tab returns after a rest ended), fire only the lowest crossed cue of each kind, and drop voice cues once remaining is 0? Today 10 s + 0 s tones overlap and '3 2 1' plays after the rest (T-0304g review) | web-feature:UF-09 | T-0304g | todo | wl-build-web |
 | T-0448 | UF-09 device polish: speechSynthesis.cancel() on unmount and PAUSE; prime speechSynthesis inside the host gesture (iOS Safari); resume an AudioContext whose state is 'interrupted', not only 'suspended' (T-0304g review) | web-feature:UF-09 | T-0304g | todo | wl-build-web |
 | T-0449 | OfflineStatus formatTime: use hour '2-digit' if '08:10' is the intended form (D-0084 consequence) (T-0307b review) | web-shell | — | todo | wl-build-web |
+| T-0451 | UF-05 swap overlay: offer a retry after a failed chunk load (React.lazy caches the rejection, so every reopen shows loadFailed until reload); drop the T-0422 boundary 'scope' test that proves nothing; drop the stale 'TR-0043: red until it is resolved' comment in t0422.host.test.tsx (T-0422 re-review and QA) | web-feature:UF-09 | T-0422 | todo | wl-build-web |
+| T-0452 | shell.spec.ts AC-6: the /plan/routines/R1 row of OTHER_SUB_ROUTES is racy now UF-07.1 is built (an unknown id redirects to /plan offline, D-0081 §5); move it to a seeded test asserting built content plus an empty-cache contrast landing on /plan (D-0091 §1/§5) (T-0308a catch-up) | qa | T-0308a | todo | wl-build-qa |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |

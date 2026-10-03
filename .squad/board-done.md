@@ -175,6 +175,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0387 | Decide whether `lib/i18n/workout.ts` formatters take a locale / number formatter (raw "63 %", "12 days ago", English-only plurals) before UF-08.2 (T-0303b) and UF-09 depend on the 1-arg signatures; record in D-0106 or a new decision (T-0302c review) | product | T-0302c | done (D-0114) | wl-spec |
 | T-0388 | Locale-aware kg weight helper `formatKg(value, locale?)` in `lib/format/number.ts` (like formatSetCount), before the first UF-09 ticket that shows a weight (D-0114 §3) | web-shell | — | done | wl-build-web |
 | T-0450 | Retire the `git diff main...HEAD` lane assertion in UF-11 strings.test.ts AC-B16 (and any other test that asserts on the branch diff; state.md trap, T-0303b): it fails on ticket-doc commits and is redundant with check-lane-paths (T-0308b QA) | web-feature:UF-11 | T-0308b | done | wl-build-web |
+| T-0308b | UF-11.2 Plan + UF-11.3 Edit plan | web-feature:UF-11 | T-0318, T-0319, T-0334 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
