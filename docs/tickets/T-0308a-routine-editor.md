@@ -5,7 +5,7 @@ lane: web-feature:UF-07
 screens: [UF-07.1]
 decisions: [D-0001, D-0002, D-0020, D-0021, D-0045, D-0063, D-0067, D-0070, D-0071, D-0075, D-0081]
 deps: [T-0318, T-0319, T-0334]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-09-29 (groom mode) from T-0308's [a] ACs, D-0070 §1–§2, D-0071 §1/§3/§8/§10, D-0075 and D-0081 §4–§6. All three deps are done (T-0334 merged as f057d58). Build flow: wl-build-web. About ½ day. Runs in parallel with T-0308b, T-0306a, T-0307a and T-0307b (no path overlap). -->
 
@@ -200,4 +200,10 @@ None. The writes use `routines {id, name}` and `routine_items {routine_id, posit
 - Planted faults (backup copy, restored by cp): offline save allowed → A9 2 red; drop focus retention → A4 3 red; no redirect on unknown id → A11 5 red (+1); `gte(position, n+1)` → A1/A3 3 red; name not trimmed → A5 1 red.
 - e2e `uf-07-routines` + `shell.spec`: 21 pass, 1 red = shell AC-6 `/plan/routines/R1` offline (known T-0452 race, unknown id redirects).
 - Gate (main merged): typecheck/lint/test turbo 19/19 cached green; repo-checks 146/146; check-all rc 0.
+- Verdict: done.
+
+## Accept log (product-owner, HEAD bf901aa, tree clean)
+- AC→test: every AC A1–A15 has a passing test (QA map above). Planted faults turned A1/A3/A4/A5/A9/A11 red. Diff paths are all inside "Paths you may change". Contracts unchanged. D-0070 §1–§2 (name + 1–8 items, fixed columns, three-step server-wins save, online-only) and D-0081 §4–§6 (one id per mount, refresh then redirect, picker scope/order, Cancel with no confirm) hold.
+- T-0453 judged against AC-A4/A14: A4 pins focus only for the move buttons, and A14 pins axe 0 serious/critical, 44 px and the keyboard move. Focus after Remove/Add and the dialog focus trap aren't in any AC, so they're fine as a follow-up. They are real WCAG 2.4.3 gaps, so T-0453 should be groomed next for UF-07. T-0454 (unreadable cache, empty-library copy) is out of AC scope too.
+- The shell AC-6 e2e red is T-0452 (a D-0091 race), not this ticket.
 - Verdict: done.
