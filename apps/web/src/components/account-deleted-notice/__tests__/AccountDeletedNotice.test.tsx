@@ -310,4 +310,69 @@ describe("T-0486 the hard-navigation race", () => {
       expect(window.sessionStorage.getItem(KEY)).toBe("1");
     },
   );
+
+  // QA (T-0486): the builder's own notes flagged this as the subtle remaining case — not a
+  // redirect landing on /welcome, but the user already sitting on /welcome (e.g. they opened
+  // account settings in a second tab/window that itself navigated there some other way, or a
+  // dev reloaded into /welcome then triggered delete some other way) when SIGNED_OUT fires.
+  // Unlike the SPA-navigate test above, `at("/welcome")` here happens *before* the status flip,
+  // in no `act()` at all — there is no redirect to wait on, because there isn't one.
+  it(
+    "T-0486 AC-2 QA: already sitting on /welcome (no redirect) when status flips to " +
+      "signed-out shows the notice and still consumes the key",
+    () => {
+      at("/welcome");
+      const view = render(<AccountDeletedNotice />);
+      expect(screen.queryByRole("status")).not.toBeInTheDocument();
+
+      window.sessionStorage.setItem(KEY, "1");
+      act(() => {
+        mockAuth.status = "signed-out";
+        view.rerender(<AccountDeletedNotice />);
+      });
+      expect(screen.getByRole("status")).toHaveTextContent(DONE);
+
+      act(() => {
+        vi.runAllTimers();
+      });
+      expect(window.sessionStorage.getItem(KEY)).toBeNull();
+    },
+  );
+
+  // QA (T-0486): two signed-out transitions in quick succession while already on /welcome
+  // (e.g. a duplicate SIGNED_OUT event, or two renders landing in the same macrotask before the
+  // first deferred timer fires) must not double-consume, crash, or warn — and the notice must
+  // still show and the key still end up cleared exactly once.
+  it(
+    "T-0486 AC-2 QA: two quick signed-out re-renders on /welcome don't crash, warn, or " +
+      "double-consume",
+    () => {
+      const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      try {
+        at("/welcome");
+        const view = render(<AccountDeletedNotice />);
+        window.sessionStorage.setItem(KEY, "1");
+
+        act(() => {
+          mockAuth.status = "signed-out";
+          view.rerender(<AccountDeletedNotice />);
+          // A second, synchronous transition before any timer has flushed — e.g. a duplicate
+          // auth event, or React batching two state updates into the same commit's effects.
+          mockAuth.status = "stale";
+          view.rerender(<AccountDeletedNotice />);
+          mockAuth.status = "signed-out";
+          view.rerender(<AccountDeletedNotice />);
+        });
+        expect(screen.getByRole("status")).toHaveTextContent(DONE);
+
+        act(() => {
+          vi.runAllTimers();
+        });
+        expect(window.sessionStorage.getItem(KEY)).toBeNull();
+      } finally {
+        expect(errorSpy).not.toHaveBeenCalled();
+        errorSpy.mockRestore();
+      }
+    },
+  );
 });
