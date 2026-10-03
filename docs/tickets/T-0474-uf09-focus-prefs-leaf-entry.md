@@ -250,3 +250,28 @@ TR-0045's resolution. Static review plus a targeted rerun.
 
 No lane, contract, correctness, principle, test-weakening or RLS/security issue found. **Verdict:
 approve.**
+
+### 2026-10-03 product-owner — accept, done
+Checked the delivered diff (`git diff main --stat`, 6 files: the 4 ticket-listed paths, the
+TR-0045-named exception `t0304g.device.test.tsx`, and this ticket file) against the ACs.
+
+- AC-1 → `t0474.prefs-leaf.test.ts`'s "resolves and exports useFocusDevice even when
+  SessionSetup.js throws" test; red-on-main and planted-fault proof recorded by both build
+  sessions and reproduced independently by QA.
+- AC-2 → `index-prefs.test.ts` (both tests, incl. `toBe` identity against `focus-prefs.js`) plus
+  unedited `exports-and-lint.test.ts` staying green, confirming `index.tsx`'s export set and
+  T-0303c's AC-8 are unaffected.
+- AC-3 → `t0474.prefs-leaf.test.ts`'s AC-3 describe block (real-source lint, regex scan, contrast
+  case).
+- AC-4 → full `UF-09`/`UF-08` `__tests__` run (80 files, 1189 tests) green, including the
+  TR-0045-named, specifier-only retarget in `t0304g.device.test.tsx` (3+/3- lines, no assertion
+  changed) — proven non-vacuous by QA's own planted fault (3 failures when the retarget is
+  reverted).
+
+Gate: full cached `-w typecheck lint test`, `-w test:repo-checks`, `-w format:check` and
+`check-all.mjs` all green (builder's session, after the TR-0045 fix and a prettier fix both
+landed). No contract touched. TR-0045 resolved via D-0170's own named exception, not a
+work-around — review and QA both independently confirmed the retarget is specifier-only.
+
+**Verdict: done.** Every AC has a passing, non-vacuous test; gate green; no contract drift;
+lane/scope match the grant exactly.
