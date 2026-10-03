@@ -76,7 +76,7 @@ export function useRoutineEditor(routineId: string | undefined) {
   const [newId] = useState(() => crypto.randomUUID());
   const id = routineId ?? newId;
 
-  const [ready, setReady] = useState(isNew);
+  const [ready, setReady] = useState(false);
   const [library, setLibrary] = useState<LibraryExercise[]>([]);
   const [loadedName, setLoadedName] = useState("");
   const [name, setName] = useState("");
@@ -101,7 +101,12 @@ export function useRoutineEditor(routineId: string | undefined) {
       const lib = await attempt(() => loadLibrary(), [] as LibraryExercise[]);
       if (cancelled) return;
       setLibrary(lib);
-      if (routineId === undefined) return;
+      if (routineId === undefined) {
+        // T-0461: a new routine's form waits for the library too, so the picker never opens on
+        // an empty list that flashes "No exercises match" before the rows arrive.
+        setReady(true);
+        return;
+      }
 
       // A cache that can't be read at all (`null`) is not "unknown routine": stay put, and
       // redirect only when a read succeeded and the id really isn't there.
