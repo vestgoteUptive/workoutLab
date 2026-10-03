@@ -177,3 +177,49 @@ Status: done. Files: `tests/e2e/uf-03-list-summary.spec.ts`,
   the code and current test run.
 
 Verdict: **approve**.
+
+## QA log
+
+**2026-10-03, qa-tester.** `git status` clean at `d2944c4` throughout. Branch behind `main`
+(`af4bfcf`): `git merge-tree` shows only `.squad/board*.md`/`journal`/`decisions/INDEX.md`
+additive diffs, zero conflict markers — clean, no action per D-0169 §2.
+
+AC→test map (independently confirmed against the running code, not just the build log):
+- AC-1 (offline keyboard logging) → "AC-1/AC-2 …": rows 1–3 toggled by Tab+Space read "Mark set N
+  not done", row 4 stays "Mark set 4 done", one `[data-screen-id="UF-03.1"]`.
+- AC-2 (Finish → UF-03.3 → Save → reload) → same test: confirm Finish, effort 3 by keyboard, Save
+  → `/`, reload, `liveSets` = exactly 3 live back-squat sets (100 kg × 6, setIndex 0–2),
+  `storedSession.effort_rating` 3, non-null `ended_at`.
+- AC-3 (a11y) → "AC-3 …": axe 0 serious/critical, every row toggle/field `boundingBox()` ≥ 44×44
+  (a real pixel measurement, not a CSS-value read), "Focus mode" → `UF-09.3`, one `[data-screen-id]`.
+- AC-4 (guard) → both tests via `guarded-test.ts`'s auto `supabaseGuard`/`consoleGuard`
+  (unclaimed request or `console.error`/`pageerror` fails teardown); AC-1/AC-2 also asserts
+  `supabaseGuard.unclaimed()` and zero `/functions/v1/` calls mid-test.
+
+Reproduced the build's red proof independently: fresh `git worktree` at `633a835` (pre-T-0417),
+deps installed, this spec copied in, `scripts/locked.sh heavy npx playwright test … -g T-0458` →
+2 failed, same root cause (`getByRole("checkbox", { name: "Mark set 1 not done" })` never found —
+read-only pre-fix checkbox). Worktree removed after.
+
+Planted my own fault (distinct from the build's AC-2 one, on a `cp` backup of `list-view.css`,
+restored the same way): reverted the checkbox rule back to `width: 28px; height: 28px`. Reran
+AC-3 alone (`scripts/locked.sh heavy … -g "AC-3"`) → 1 failed: `toggle 0 width` received 28,
+expected ≥ 44 — a real `boundingBox()` measurement, confirming the 44×44 check is load-bearing and
+not vacuous. Restored via `cp`; `git status`/`git diff --stat` clean after.
+
+E2e (`scripts/locked.sh heavy npx playwright test … uf-03-list-summary.spec.ts uf-09-focus.spec.ts`,
+`TMPDIR=$HOME/.cache/wl-pw-tmp`): 16/16 green, 3 runs in a row (2 before the fault, 1 after
+restore), no flake. Console/offline: `consoleGuard` auto-asserts zero `console.error`/`pageerror`
+across all 16 tests each run; the whole flow runs under `context.setOffline(true)` per the spec's
+own setup.
+
+Scope check: diff against `main` touches only `apps/web/src/features/UF-03/list-view.css`,
+`tests/e2e/uf-03-list-summary.spec.ts` and this ticket file — the three granted paths. No
+`.only`/`.skip` in the spec.
+
+Did not rerun the full `-w` gate or merge `main` (D-0158, D-0169 §2); relied on the builder's and
+reviewer's recorded gate run.
+
+Verdict: **done**. Every AC maps to a real, non-vacuous test; red proof and an independent planted
+fault both reproduce; checkbox fix verified via a genuine `boundingBox()` regression check, not a
+visual/CSS-string check.
