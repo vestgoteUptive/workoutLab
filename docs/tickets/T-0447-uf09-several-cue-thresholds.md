@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.5, UF-09.1, UF-09.7]
 decisions: [D-0161, D-0119, D-0155, D-0066]
 deps: [T-0304g]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner against main (T-0304g merged). Build flow: wl-build-web. About ¼ day. One source file: cues.ts. -->
 
@@ -98,3 +98,4 @@ commits start `T-0447` and cite UF-09.5.
 - Red runs from backups (`vitest run t0447`, restored with `cp`): main's `cues.ts` -> 5 unit (12->0, 12->2->1->0, 4->1, 2->0, get ready 5->0) + 2 host (+10 s, +15 s) red. `fired` records only played cues -> "crossed counts as fired" red (1). Voice allowed at 0 -> 12->0, 2->0, get ready 5->0 and host +15 s red (4). QA fault: highest crossed cue instead of lowest -> 12->0, 12->2->1->0, 4->1 and host +10 s red (4).
 - Results: UF-09 vitest folder 49 files / 833 tests green; `test:e2e uf-09` 10 passed.
 - Verdict: done.
+- Accept (product-owner, HEAD 0e93945; `git diff main...HEAD`: `cues.ts`, two new `t0447*` tests, this file). `observeCues` matches D-0161 §1 (lowest per kind), §2 (no voice at `remainingS <= 0`), §3 (all crossed into `fired`), §4 (filtered from `PHASE_CUES` order), §5 (pair unchanged). AC-1: one unit test per row, values as specified, five rows red on main. AC-2: host +15 s (1 tone, 0 speak) and +10 s (1 tone, `["2"]`) red on main, pair green; one observation shown via the `observeCues` spy. AC-3: no existing test file edited, UF-09 folder 833 green, gate green. Principles hold (pure, deterministic cue rule; one clear signal per step). Verdict: done.
