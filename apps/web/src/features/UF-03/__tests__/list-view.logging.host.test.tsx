@@ -87,7 +87,7 @@ async function check(name: string, done: string) {
 }
 
 describe("AC-1 integration and AC-3 tombstone", () => {
-  it("a check offline queues the set and stores it in focus state without moving the machine", async () => {
+  it("a check offline queues the set and stores it in focus state, moving only the rest (T-0418)", async () => {
     await openList();
     const before = storedFocus()!;
     await check("Mark set 1 done", "Mark set 1 not done");
@@ -104,7 +104,9 @@ describe("AC-1 integration and AC-3 tombstone", () => {
     });
     const after = storedFocus()!;
     expect((after.loggedSets as unknown[]).length).toBe(1);
-    for (const key of ["phase", "itemIndex", "setIndex"]) expect(after[key]).toEqual(before[key]);
+    // D-0142 §2: the log itself never moves the machine; T-0418 AC-1 starts a rest after it.
+    for (const key of ["itemIndex", "setIndex"]) expect(after[key]).toEqual(before[key]);
+    expect(after["phase"]).toBe("rest");
   });
 
   it("an uncheck is a tombstone in the queue and no Supabase delete runs", async () => {
@@ -125,6 +127,10 @@ describe("AC-6 reload", () => {
     await openList();
     await check("Mark set 1 done", "Mark set 1 not done");
     await check("Mark set 2 done", "Mark set 2 not done");
+    // T-0418: each check started a rest bar; skip it through the bar before leaving the list,
+    // so the reload below lands back on a set step (not the rest it would restore otherwise).
+    fireEvent.click(await screen.findByRole("button", { name: /^Rest,/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     cleanup();
     renderHost();
     await findEl(() => document.querySelector('[data-screen-id="UF-09.3"]'));
@@ -154,6 +160,9 @@ describe("AC-7 back to focus mode", () => {
   it("rows 1-3 -> 'Set 4 of 4'; all 4 and RDL row 1 -> RDL 'Set 2 of 3'; focus logs the first free position", async () => {
     await openList();
     for (const n of [1, 2, 3]) await check(`Mark set ${n} done`, `Mark set ${n} not done`);
+    // T-0418: the third check started a rest; skip it so Focus mode lands on the next set.
+    fireEvent.click(await screen.findByRole("button", { name: /^Rest,/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     fireEvent.click(screen.getByRole("button", { name: "Focus mode" }));
     await findEl(() => document.querySelector('[data-screen-id="UF-09.3"]'));
     expect(setLine()).toBe("Set 4 of 4");
@@ -169,6 +178,9 @@ describe("AC-7 back to focus mode", () => {
     await waitFor(() =>
       expect(screen.getAllByRole("checkbox", { name: "Mark set 1 not done" })).toHaveLength(2),
     );
+    // T-0418: checking RDL row 1 (the current position) also started a rest; skip it too.
+    fireEvent.click(await screen.findByRole("button", { name: /^Rest,/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     fireEvent.click(screen.getByRole("button", { name: "Focus mode" }));
     await findEl(() => document.querySelector('[data-screen-id="UF-09.3"]'));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Romanian deadlift");

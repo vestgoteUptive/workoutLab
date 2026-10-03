@@ -4,7 +4,15 @@
 // import UF-09, D-0142 §5), plus IndexedDB; no `refresh*` (D-0111 §11), so it renders offline.
 // Principle 3: the rows show the engine's pre-fill (`item.prefill`, `item.backoff`); "Previous" is
 // display data only. Logging from the rows is T-0417.
-import { useEffect, useId, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type RefObject,
+} from "react";
 import type { LibraryExercise, SessionPlan, WorkoutItem } from "@workoutlab/shared";
 import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
@@ -50,10 +58,18 @@ export interface ListViewCtx {
   }[];
   currentItemIndex: number;
   elapsedS: number;
+  /** The running rest (the host's wall clock), or `null` outside a rest (UF-03.2, T-0418). */
+  rest: { remainingS: number } | null;
   /** Every List-view write goes through these three (D-0071 §5), never `lib/offline`. */
   recordSet(input: ListSetInput): Promise<unknown>;
   editSet(clientId: string, patch: ListSetEdit): Promise<void>;
   deleteSet(clientId: string): Promise<void>;
+  /** Starts a wall-clock rest for `exerciseId` (T-0418, D-0142 §3). */
+  startRest(exerciseId: string): void;
+  /** Moves the running rest by `deltaS` seconds, floored at 0, with no cap (T-0418). */
+  adjustRest(deltaS: number): void;
+  /** Ends the running rest now (T-0418). */
+  skipRest(): void;
   close(): void;
   finish(): Promise<void>;
 }
@@ -93,6 +109,33 @@ function isTimed(item: WorkoutItem, exercise: LibraryExercise | undefined): bool
 /** Sets in a card: the planned ones plus the back-off set. */
 function setCount(item: WorkoutItem): number {
   return item.sets + (item.backoff ? 1 : 0);
+}
+
+/** D-0142 §3: true once every planned set (back-off included) of every item has a live logged
+ *  set. A rest never starts after the session's last planned set (T-0418 AC-2). `justLogged`, a
+ *  position just checked whose write has resolved, counts as logged even before `ctx` (a possibly
+ *  stale closure, D-0071 §5) carries it. */
+function allPlannedSetsLogged(
+  ctx: ListViewCtx,
+  justLogged: { itemIndex: number; setIndex: number; exerciseId: string } | null = null,
+): boolean {
+  return ctx.plan.items.every((item, itemIndex) => {
+    const planned = setCount(item);
+    const logged = new Set(
+      ctx.loggedSets
+        .filter((s) => s.itemIndex === itemIndex && s.exerciseId === item.exerciseId)
+        .map((s) => s.setIndex),
+    );
+    if (
+      justLogged &&
+      justLogged.itemIndex === itemIndex &&
+      justLogged.exerciseId === item.exerciseId
+    ) {
+      logged.add(justLogged.setIndex);
+    }
+    for (let i = 0; i < planned; i += 1) if (!logged.has(i)) return false;
+    return true;
+  });
 }
 
 interface CardProps {
@@ -200,7 +243,7 @@ function SetRow({
   const countInvalid = parseCount(countText) === null;
   const blocked = !logged && (weightInvalid || countInvalid);
 
-  const run = (write: () => Promise<unknown>) => {
+  const run = (write: () => Promise<unknown>, onDone?: () => void) => {
     busy.current = true;
     setPending(true);
     setFailed(false);
@@ -209,6 +252,7 @@ function SetRow({
         busy.current = false;
         setPending(false);
         setDraft(NO_DRAFT);
+        onDone?.();
       },
       () => {
         busy.current = false;
@@ -228,21 +272,29 @@ function SetRow({
     if (blocked) return;
     const reps = draft.reps === null ? baseReps : parseCount(draft.reps);
     const seconds = draft.seconds === null ? baseSeconds : parseCount(draft.seconds);
-    run(() =>
-      ctx.recordSet({
-        sessionId: ctx.sessionId,
-        exerciseId: item.exerciseId,
-        setIndex: i,
-        kind: timed ? "timed" : "reps",
-        reps: timed ? null : reps,
-        weightKg: timed ? null : weightKg,
-        durationS: timed ? seconds : null,
-        rir: null,
-        isWarmup: false,
-        backoff,
-        itemIndex: index,
-        source: "list",
-      }),
+    run(
+      () =>
+        ctx.recordSet({
+          sessionId: ctx.sessionId,
+          exerciseId: item.exerciseId,
+          setIndex: i,
+          kind: timed ? "timed" : "reps",
+          reps: timed ? null : reps,
+          weightKg: timed ? null : weightKg,
+          durationS: timed ? seconds : null,
+          rir: null,
+          isWarmup: false,
+          backoff,
+          itemIndex: index,
+          source: "list",
+        }),
+      // T-0418 AC-1/AC-2: a rest starts after a check resolves, unless no planned set of the
+      // session is left unlogged, counting this just-checked set whether or not this closure's
+      // `ctx` has caught up with it yet.
+      () => {
+        const just = { itemIndex: index, setIndex: i, exerciseId: item.exerciseId };
+        if (!allPlannedSetsLogged(ctx, just)) ctx.startRest(item.exerciseId);
+      },
     );
   };
 
@@ -472,6 +524,80 @@ function Cue({ exerciseId }: { exerciseId: string }) {
   ) : null;
 }
 
+/** UF-03.2's "Rest · {m:ss} left" bar (T-0418 AC-1, AC-4): a button that opens the rest view.
+ *  Its text and name read `ctx.rest` directly — the host re-renders this component every second
+ *  (D-0111 §8), so the bar needs no timer of its own. */
+function RestBar({
+  rest,
+  onOpen,
+  openRef,
+}: {
+  rest: { remainingS: number };
+  onOpen: () => void;
+  openRef: RefObject<HTMLButtonElement | null>;
+}) {
+  const clock = restLabel(rest.remainingS);
+  return (
+    <button
+      ref={openRef}
+      type="button"
+      className="wl-uf03-rest__bar"
+      data-part="rest-bar"
+      aria-label={uf03.restBarName(clock)}
+      onClick={onOpen}
+    >
+      {uf03.restBar(clock)}
+    </button>
+  );
+}
+
+/** UF-03.2 (T-0418 AC-3): the bar expanded into its own screen, replacing the table while open
+ *  (one `[data-screen-id]`, principle 1). No rest length or countdown of its own (principle 3,
+ *  AC-1): `ctx.rest` and the host's REST_END/announcer own the clock and "10 seconds" / "Go".
+ */
+function RestView({
+  ctx,
+  rest,
+  onSkip,
+  onBack,
+  skipRef,
+}: {
+  ctx: ListViewCtx;
+  rest: { remainingS: number };
+  onSkip: () => void;
+  onBack: () => void;
+  skipRef: RefObject<HTMLButtonElement | null>;
+}) {
+  const clock = restLabel(rest.remainingS);
+  return (
+    <div
+      className="wl-uf03-rest"
+      data-screen-id="UF-03.2"
+      role="region"
+      aria-label={uf03.restViewName}
+    >
+      <h1 className="wl-uf03-rest__title">{uf03.restViewName}</h1>
+      <p className="wl-uf03-rest__clock" data-part="rest-clock">
+        {uf03.restBar(clock)}
+      </p>
+      <div className="wl-uf03-rest__adjust">
+        <button type="button" className="wl-uf03-list__button" onClick={() => ctx.adjustRest(-15)}>
+          {uf03.restLess}
+        </button>
+        <button type="button" className="wl-uf03-list__button" onClick={() => ctx.adjustRest(15)}>
+          {uf03.restMore}
+        </button>
+      </div>
+      <button ref={skipRef} type="button" className="wl-uf03-list__primary" onClick={onSkip}>
+        {uf03.skipRest}
+      </button>
+      <button type="button" className="wl-uf03-list__button" onClick={onBack}>
+        {uf03.backToList}
+      </button>
+    </div>
+  );
+}
+
 export function ListView({ ctx, locale }: ListViewProps) {
   const [data, setData] = useState<ListData | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
@@ -479,8 +605,16 @@ export function ListView({ ctx, locale }: ListViewProps) {
   const [confirming, setConfirming] = useState(false);
   const [finishing, setFinishing] = useState(false);
   const [failed, setFailed] = useState(false);
+  // T-0418 AC-3/AC-5: the rest view is open only while this is true. `restClose` says where
+  // focus goes once it (or the effect below) closes it: "back" to the bar, "next" to the
+  // current card's first unchecked row (else Finish).
+  const [restOpen, setRestOpen] = useState(false);
+  const restClose = useRef<"back" | "next">("next");
   const busy = useRef(false);
   const keepRef = useRef<HTMLButtonElement>(null);
+  const restBarRef = useRef<HTMLButtonElement>(null);
+  const restSkipRef = useRef<HTMLButtonElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const headingId = useId();
 
   useEffect(() => {
@@ -496,6 +630,47 @@ export function ListView({ ctx, locale }: ListViewProps) {
   useEffect(() => {
     if (confirming) keepRef.current?.focus();
   }, [confirming]);
+
+  useEffect(() => {
+    if (restOpen) restSkipRef.current?.focus();
+  }, [restOpen]);
+
+  // T-0418 AC-5: once the rest view has left the DOM (`restOpen` false), focus moves to the
+  // bar ("back") or the next step ("next"), read from the live DOM after this render has
+  // committed the List view back in — the rows a moment ago didn't exist yet.
+  useEffect(() => {
+    if (restOpen) return;
+    const root = rootRef.current;
+    if (!root) return;
+    if (restClose.current === "back") {
+      restBarRef.current?.focus();
+      return;
+    }
+    const card = root.querySelector<HTMLElement>('[data-part="card"][data-current]');
+    const unchecked = card?.querySelector<HTMLInputElement>('input[type="checkbox"]:not(:checked)');
+    if (unchecked) unchecked.focus();
+    else root.querySelector<HTMLButtonElement>('[data-part="finish-open"]')?.focus();
+  }, [restOpen]);
+
+  // T-0418 AC-5: the rest view closes itself once the rest it was open for has ended — the host
+  // still owns REST_END (principle 3) — and focus moves to the next step, as Skip would.
+  useEffect(() => {
+    if (restOpen && ctx.rest === null) {
+      restClose.current = "next";
+      setRestOpen(false);
+    }
+  }, [restOpen, ctx.rest]);
+
+  const onSkipRest = () => {
+    ctx.skipRest();
+    restClose.current = "next";
+    setRestOpen(false);
+  };
+
+  const onBackToList = () => {
+    restClose.current = "back";
+    setRestOpen(false);
+  };
 
   const onFinish = () => {
     if (busy.current) return;
@@ -515,8 +690,22 @@ export function ListView({ ctx, locale }: ListViewProps) {
 
   const currentItem = ctx.plan.items[ctx.currentItemIndex];
 
+  // T-0418 AC-3: the rest view replaces the table while open — one `[data-screen-id]`.
+  if (restOpen && ctx.rest) {
+    return (
+      <RestView
+        ctx={ctx}
+        rest={ctx.rest}
+        onSkip={onSkipRest}
+        onBack={onBackToList}
+        skipRef={restSkipRef}
+      />
+    );
+  }
+
   return (
     <div
+      ref={rootRef}
       className="wl-uf03-list"
       data-screen-id="UF-03.1"
       role="region"
@@ -525,6 +714,9 @@ export function ListView({ ctx, locale }: ListViewProps) {
       <h1 id={headingId} className="wl-uf03-list__title">
         {uf03.listViewName}
       </h1>
+      {ctx.rest ? (
+        <RestBar rest={ctx.rest} onOpen={() => setRestOpen(true)} openRef={restBarRef} />
+      ) : null}
       {confirming ? (
         <div className="wl-uf03-list__header" data-part="finish-confirm">
           <p>{uf03.finishQuestion}</p>
@@ -562,6 +754,7 @@ export function ListView({ ctx, locale }: ListViewProps) {
           <button
             type="button"
             className="wl-uf03-list__primary"
+            data-part="finish-open"
             onClick={() => setConfirming(true)}
           >
             {uf03.finish}

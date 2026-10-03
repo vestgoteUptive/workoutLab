@@ -34,6 +34,9 @@ export type SpiedCtx = ListViewCtx & {
   recordSet: ReturnType<typeof vi.fn<ListViewCtx["recordSet"]>>;
   editSet: ReturnType<typeof vi.fn<ListViewCtx["editSet"]>>;
   deleteSet: ReturnType<typeof vi.fn<ListViewCtx["deleteSet"]>>;
+  startRest: ReturnType<typeof vi.fn<ListViewCtx["startRest"]>>;
+  adjustRest: ReturnType<typeof vi.fn<ListViewCtx["adjustRest"]>>;
+  skipRest: ReturnType<typeof vi.fn<ListViewCtx["skipRest"]>>;
 };
 
 export function makeCtx(over: Partial<ListViewCtx> = {}): SpiedCtx {
@@ -43,12 +46,16 @@ export function makeCtx(over: Partial<ListViewCtx> = {}): SpiedCtx {
     loggedSets: [],
     currentItemIndex: 0,
     elapsedS: 600,
+    rest: null,
     ...over,
     close: vi.fn<() => void>(),
     finish: vi.fn<() => Promise<void>>(async () => undefined),
     recordSet: vi.fn<ListViewCtx["recordSet"]>(async () => ({})),
     editSet: vi.fn<ListViewCtx["editSet"]>(async () => undefined),
     deleteSet: vi.fn<ListViewCtx["deleteSet"]>(async () => undefined),
+    startRest: vi.fn<ListViewCtx["startRest"]>(),
+    adjustRest: vi.fn<ListViewCtx["adjustRest"]>(),
+    skipRest: vi.fn<ListViewCtx["skipRest"]>(),
   } as SpiedCtx;
 }
 

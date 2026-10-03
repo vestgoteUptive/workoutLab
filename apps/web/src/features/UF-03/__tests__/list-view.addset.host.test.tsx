@@ -51,6 +51,10 @@ describe("AC-4 reload", () => {
     await screen.findByRole("checkbox", { name: "Mark set 5 not done" });
     fireEvent.click(addButton());
     await screen.findByRole("checkbox", { name: "Mark set 6 done" });
+    // T-0418: checking row 5 started a rest (sets 1-4 are still unlogged); skip it before the
+    // reload below, so it restores on a set step rather than the rest.
+    fireEvent.click(await screen.findByRole("button", { name: /^Rest,/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
 
     cleanup();
     renderHost();
