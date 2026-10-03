@@ -29,6 +29,7 @@ import {
   type SessionRow,
 } from "./session.js";
 import type { FocusStore, ResolveCheckPoint } from "./store.js";
+import { useFocusDevice } from "./device.js";
 import { remainingS } from "./timer.js";
 import {
   createCheckHolder,
@@ -162,6 +163,8 @@ function Machine(props: MachineProps) {
   useRerenderEverySecond();
   // One clock read per render: every time on screen this render is derived from it.
   const nowMs = Date.now();
+  // T-0304g (D-0119 §6–§9): the prefs read once, the wake lock, and the cues on observed crossings.
+  const device = useFocusDevice(timerKey(state), state, nowMs);
   const [row, setRow] = useState(initialRow);
   const [overlay, setOverlay] = useState<OpenOverlay | null>(null);
   const overlayRef = useRef<OpenOverlay | null>(null);
@@ -323,6 +326,8 @@ function Machine(props: MachineProps) {
    *  run-up this mount saw (a render with time left) says "Go"; a restore past it says nothing. */
   const fireExpired = useCallback(() => {
     const current = store.getState();
+    // The end itself is an observation: a tone at 0 when this mount saw the run-up (D-0119 §7).
+    device.observe(timerKey(current), current, Date.now());
     if (current.phase === "timed") {
       autoLogHold(Date.now());
       return;
@@ -339,7 +344,7 @@ function Machine(props: MachineProps) {
     }
     store.dispatch({ type, atMs: now } as FocusEvent);
     if (sayGo && store.getState() === current) keepGo.current = false;
-  }, [store, autoLogHold]);
+  }, [store, autoLogHold, device]);
 
   // The announcer's eyes, after every render and before the expiry check below. A paused
   // workout neither observes nor speaks (D-0119 §7); after Resume the same timer carries on.
@@ -478,10 +483,19 @@ function Machine(props: MachineProps) {
   }
   return (
     <FocusSessionContext.Provider value={session}>
-      {body}
-      <p className="wl-uf09__announcer" data-field="announcer" aria-live="polite">
-        {announcement}
-      </p>
+      {/* The host root, for the gesture that creates the AudioContext (D-0119 §8). It draws no
+          box of its own (`display: contents`), so the layout is the steps' alone. */}
+      <div
+        style={{ display: "contents" }}
+        onPointerDownCapture={device.onGesture}
+        onKeyDownCapture={device.onGesture}
+        onPointerUpCapture={device.onActivation}
+      >
+        {body}
+        <p className="wl-uf09__announcer" data-field="announcer" aria-live="polite">
+          {announcement}
+        </p>
+      </div>
     </FocusSessionContext.Provider>
   );
 }
