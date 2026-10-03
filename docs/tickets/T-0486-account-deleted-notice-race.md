@@ -182,3 +182,79 @@ check from the Definition of done could not be run here; left for T-0469 to conf
 onto this ticket, per its own note above.
 
 Commits: `T-0486 UF-01.1/UF-11.4: ...` (component fix + tests), citing both screen IDs.
+
+---
+
+**Rework (same day), after code review requested changes — disqualifying flaw found.** QA
+(commit `fa0eddd`) had already added two edge-case tests on top of the above fix (already-on-
+`/welcome` with no redirect, and rapid re-renders), both passing. Code review then found that the
+pathname-gate fix above is **defeated** by the exact topology it was meant to handle: `/plan/account`
+(where `AccountSettingsBody.onDelete` lives, routes.ts) is `guard: "protected"`, wrapped in the
+real `RequireAuth` (`lib/auth/guards.tsx`), which is itself *live* — the instant `status` becomes
+`"signed-out"`, it renders `<Navigate to={redirectTarget} replace />` **on both the SPA-navigate
+and the hard-navigate delete branches alike**, because `RequireAuth` has no way to know which
+branch `AccountSettingsBody` is about to take. So on the hard-navigate branch, `RequireAuth`'s own
+redirect still flips `window.location.pathname` to `/welcome` via the History API, before
+`window.location.replace(...)` has actually unloaded the document — the pathname gate reads
+"/welcome" and wrongly consumes anyway. Same bug, delayed one tick. My test harness (a bare
+`AccountDeletedNotice` plus a hand-driven `at()` pathname helper) never modelled `RequireAuth`
+actually running, so it couldn't have caught this — exactly the reviewer's point.
+
+Reviewer's suggested direction: a real "unload is imminent" signal (`beforeunload`/`pagehide`)
+instead of inferring it from pathname, since `location.replace(...)` dispatches these
+synchronously before any of this component's deferred work runs.
+
+**New fix.** `AccountDeletedNotice.tsx`: added a `pagehide`/`beforeunload` listener (registered
+once per mount, into a `leaving` ref). The reactive path still `peek()`s immediately (unchanged)
+and still defers the actual `consume()` via `setTimeout(0)`, but the timer's gate is now
+`!leaving.current`, not a pathname check. `pagehide`/`beforeunload` fire synchronously as part of
+`location.replace(...)`'s own call, strictly before this deferred timer can run, so the hard-
+navigate branch's timer always sees `leaving.current === true` (and skips the consume) regardless
+of what `RequireAuth` did to the SPA route in the meantime; the SPA-navigate and live-guard-
+redirect cases never fire these events, so their timers always consume as before.
+
+**Test rework.** Replaced the simplified `AccountDeletedNotice`-only harness in the `T-0486 the
+hard-navigation race` describe block with a `Harness` component that renders `AccountDeletedNotice`
+as a sibling of a real `<Routes>` tree containing `/plan/account` wrapped in the **real**
+`RequireAuth` (imported from `lib/auth/guards.js`, not a stand-in) and a `/welcome` route — the
+same shape as `Shell` (`App.tsx`). Used `BrowserRouter`, not `MemoryRouter`: a first draft of this
+harness used `MemoryRouter`, which keeps its own in-memory history and never touches
+`window.location` — it would have silently continued to pass against *both* the rejected
+pathname-gated variant and the real fix, defeating the point of the rework. Caught this myself
+before re-running the AC-4-style check: the rejected variant passed AC-1 against the
+`MemoryRouter` harness, which shouldn't have been possible, and the root cause was exactly that
+`window.location.pathname` was never actually changing. Switched to `BrowserRouter`; re-ran, and
+the rejected variant then correctly failed 3 tests (AC-1, hard-navigate, second-re-render).
+
+Added `firePagehide()` (dispatches a real `pagehide` `Event` on `window`) and a new explicit
+discriminator test ("a fix that defers via timer but gates on pathname instead of pagehide... this
+test only passes against the pagehide-gated fix"), plus reworked AC-1 and the hard-navigate test to
+render through `Harness`, let `RequireAuth`'s redirect actually land on `/welcome`, and only then
+fire `pagehide` — modelling the exact sequence the reviewer described. The two QA tests (already-
+on-`/welcome`, rapid re-renders) needed no changes: they don't involve a guard redirect and still
+pass unedited.
+
+**Fault proofs (rerun against the new fix).**
+- Planted the rejected pathname-gated variant (backup/restore via `cp`, scratchpad): AC-1, the
+  hard-navigate test, and the second-re-render test all failed (3 failed / 13 passed) — confirms
+  the new tests actually discriminate the exact flaw review found, not just the original bug.
+  Restored from the scratchpad backup; `git diff` clean afterwards.
+- Planted the ticket's own AC-4 fault (full revert to the pre-T-0486 unconditional reactive
+  `consume()`): same 3 tests failed (3 failed / 13 passed). Restored from the scratchpad backup;
+  `git diff` clean afterwards.
+
+**Tests run (rework):**
+- `scripts/locked.sh small npx vitest run .../AccountDeletedNotice.test.tsx`: 16/16 passed against
+  the pagehide-based fix (13 pre-existing T-0486 + QA tests, plus the new discriminator; all pass).
+- Same file against the rejected pathname-gated variant: 3 failed / 13 passed, as above.
+- Same file against the ticket's full-revert fault: 3 failed / 13 passed, as above.
+- Full gate after restoring the real fix: `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w
+  typecheck lint test --concurrency=1` → 253 files / 3516 tests passed (3 more than the earlier
+  entry's 3513, from the discriminator test plus the two QA tests this log's earlier entry
+  predates). `-w test:repo-checks`: 159/159. `-w format:check`: clean. `node
+  .github/scripts/check-all.mjs`: clean, exit 0.
+
+No contract or scope change: still only `AccountDeletedNotice.tsx` and its own test file. The test
+file's new `BrowserRouter`/`Routes`/`RequireAuth` imports are test-only (this file isn't subject to
+the component's own import-boundary test), so `lib/account/__tests__/boundaries.test.ts` (T-0310c
+AC11) stays green, as confirmed in the full-gate run above.

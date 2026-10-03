@@ -35,19 +35,30 @@ import { App } from "../../../app/App.js";
 // through the auth state machine or a real SPA navigation. Only active while `mockAuth.active`
 // is set (the new describe block below); otherwise this delegates to the real `useAuth`, so the
 // `App`-based tests above (which rely on the real `AuthProvider` context) are unaffected.
-const mockAuth: { active: boolean; status: "signed-out" | "signed-in" | "stale" } = {
+// `redirectTarget` is read by the real `RequireAuth` guard used below, to model `/plan/account`'s
+// actual topology (`guard: "protected"`, routes.ts) rather than a simplified harness.
+const mockAuth: {
+  active: boolean;
+  status: "signed-out" | "signed-in" | "stale";
+  redirectTarget: "/welcome" | "/account";
+} = {
   active: false,
   status: "signed-in",
+  redirectTarget: "/welcome",
 };
 vi.mock("../../../lib/auth/auth-context.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../lib/auth/auth-context.js")>();
   return {
     ...actual,
     useAuth: (...args: Parameters<typeof actual.useAuth>) =>
-      mockAuth.active ? { status: mockAuth.status } : actual.useAuth(...args),
+      mockAuth.active
+        ? { status: mockAuth.status, redirectTarget: mockAuth.redirectTarget }
+        : actual.useAuth(...args),
   };
 });
 
+import { BrowserRouter, Route, Routes } from "react-router";
+import { RequireAuth } from "../../../lib/auth/guards.js";
 import { AccountDeletedNotice } from "../AccountDeletedNotice.js";
 
 const KEY = "wl-account-deleted";
@@ -187,16 +198,52 @@ describe("T-0310c AC10 the account-deleted notice", () => {
 });
 
 // T-0486: the hard-navigation race (docs/tickets/T-0486-account-deleted-notice-race.md).
-// `AccountDeletedNotice` is mounted directly (not through `App`), with `useAuth()` mocked, so
-// `status` can be driven without any real navigation or auth event plumbing — exactly the
-// repro AC-1 asks for. `at()` (declared above) drives `window.location.pathname` via
-// `history.replaceState`, exactly as `BrowserRouter` does under a real `navigate()` call, with
-// no document reload — matching the component's own plain DOM read.
+//
+// `Harness` models the *real* topology that defeated an earlier (rejected in review) version of
+// this fix: `/plan/account` is `guard: "protected"` (routes.ts), wrapped in the real `RequireAuth`
+// (not a stand-in), which is itself a *live* guard — it renders `<Navigate to={redirectTarget}
+// replace />` the instant `status` becomes `"signed-out"`, on *both* the SPA-navigate and the
+// hard-navigate delete branches alike, via a genuine client-side (History API) redirect to
+// `/welcome`. `AccountDeletedNotice` sits beside the guarded route, exactly as it does in
+// `Shell` (`App.tsx`): a sibling of `<Routes>`, never inside the guard itself, and never
+// remounted by any client-side route change.
+//
+// `useAuth()` is mocked (not the auth state machine), so `status` can be driven directly and
+// synchronously; `RequireAuth` picks up the same mock. `firePagehide()` simulates the one signal
+// the fix actually keys on: a hard navigation's `location.replace(...)` dispatching `pagehide`
+// synchronously before this component's deferred work runs. The SPA-navigate and live-guard-
+// redirect cases never call it — exactly as a real SPA transition never fires `pagehide`.
+//
+// `BrowserRouter`, not `MemoryRouter`: the real app uses `BrowserRouter` (`App.tsx`), which
+// drives `window.location`/`window.history` directly — the same `window.location.pathname` an
+// earlier (rejected) fix attempt read. A `MemoryRouter` here would keep its own in-memory
+// history, never touching `window.location`, which would silently stop this test file from
+// being able to tell that rejected variant apart from the real fix (caught: an early draft of
+// this rework used `MemoryRouter` and passed against *both* variants).
+function Harness() {
+  return (
+    <BrowserRouter>
+      <AccountDeletedNotice />
+      <Routes>
+        <Route path="/plan/account" element={<RequireAuth>{null}</RequireAuth>} />
+        <Route path="/welcome" element={<p>welcome-route</p>} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+function firePagehide() {
+  window.dispatchEvent(new Event("pagehide"));
+}
+
 describe("T-0486 the hard-navigation race", () => {
   beforeEach(() => {
     mockAuth.active = true;
     mockAuth.status = "signed-in";
-    at("/");
+    mockAuth.redirectTarget = "/welcome";
+    // `/plan/account`'s own real path (routes.ts): where `AccountSettingsBody`'s delete flow
+    // actually lives, and where `RequireAuth` actually redirects from.
+    at("/plan/account");
     vi.useFakeTimers();
   });
 
@@ -206,58 +253,68 @@ describe("T-0486 the hard-navigation race", () => {
   });
 
   it(
-    "T-0486 AC-1 root cause / AC-2 fix: the reactive status->signed-out effect must not " +
-      "consume the key when no SPA navigation follows (that would empty storage before a hard " +
-      "navigation's unload ever happens, so the next page's mount-time read would find " +
-      "nothing) — against the pre-fix code, this fails: the key was removed here",
+    "T-0486 AC-1 root cause: on the real /plan/account topology, RequireAuth's own live " +
+      "<Navigate> redirects to /welcome (an SPA, History-API change) on the hard-navigate " +
+      "branch too, purely from the same status flip this component also watches — so a " +
+      "pathname-only gate (an earlier, rejected fix attempt) is fooled into consuming the key " +
+      "before the real unload happens",
     () => {
-      // Mount while signed in, still on "/" (no key yet): the mount-time peek() sees nothing,
-      // same as the real page before a delete happens in this session.
-      const view = render(<AccountDeletedNotice />);
+      const view = render(<Harness />);
       expect(screen.queryByText(DONE)).not.toBeInTheDocument();
 
       // What `deleteAccountAndSignOut` does: set the key, then sign out (fires SIGNED_OUT,
-      // which this page's `useAuth()` surfaces as `status` becoming "signed-out"). The
-      // hard-navigate branch never changes the SPA route — it reloads the document instead —
-      // so the pathname stays "/": that is exactly the repro.
+      // surfaced here as `status` becoming "signed-out"). `AccountSettingsBody` chooses the
+      // hard-navigate branch when `statusRef.current !== "signed-out"` at that point — it then
+      // calls `window.location.replace("/welcome")`, which this harness models with
+      // `firePagehide()` below, simulating the real browser's synchronous unload signal.
       window.sessionStorage.setItem(KEY, "1");
       act(() => {
         mockAuth.status = "signed-out";
-        view.rerender(<AccountDeletedNotice />);
+        view.rerender(<Harness />);
       });
-      // Run the deferred-consume timer all the way out: even then, with the pathname still
-      // "/" (no SPA navigation happened), the key must not have been consumed.
+
+      // RequireAuth's own effect has, by now, redirected the SPA route to /welcome — exactly
+      // the behaviour that defeated the rejected pathname-only fix.
+      expect(screen.getByText("welcome-route")).toBeInTheDocument();
+
+      // The real hard navigation's `location.replace(...)` call happens synchronously, right
+      // after `deleteAccountAndSignOut` resolves in `onDelete` — before this component's
+      // deferred timer runs. That dispatches `pagehide` first.
+      act(() => {
+        firePagehide();
+      });
       act(() => {
         vi.runAllTimers();
       });
 
-      // The notice may still show on this (about-to-be-replaced) page, but the key must survive
-      // in storage: with no SPA navigation and no unmount, a hard navigation hasn't unloaded the
-      // document yet, so the *next* page's own mount-time read must still find the key.
+      // The key must survive: a hard navigation is actually under way (signalled by
+      // `pagehide`), regardless of what the SPA route now reads as.
       expect(window.sessionStorage.getItem(KEY)).toBe("1");
     },
   );
 
   it(
-    "T-0486 AC-2 SPA-navigate case: status flips to signed-out and the URL becomes " +
-      "/welcome (as AccountSettingsBody's own branch does) shows the notice and consumes the key",
+    "T-0486 AC-2 SPA-navigate case: status flips to signed-out, RequireAuth's own redirect " +
+      "lands on /welcome, and no pagehide ever fires (no real navigation happens) — shows the " +
+      "notice and consumes the key",
     () => {
-      const view = render(<AccountDeletedNotice />);
+      const view = render(<Harness />);
       expect(screen.queryByRole("status")).not.toBeInTheDocument();
 
       window.sessionStorage.setItem(KEY, "1");
       act(() => {
         mockAuth.status = "signed-out";
-        at("/welcome");
-        view.rerender(<AccountDeletedNotice />);
+        view.rerender(<Harness />);
       });
+      expect(screen.getByText("welcome-route")).toBeInTheDocument();
 
       // The same mounted instance (never unmounted by an SPA navigate) now shows the notice
       // immediately (the peek, same tick).
       expect(screen.getByRole("status")).toHaveTextContent(DONE);
 
       // The consume is deferred one tick past this commit's other effects (T-0486); once that
-      // runs, a later reload of /welcome in the same tab shows nothing.
+      // runs, with no pagehide ever having fired, a later reload of /welcome in the same tab
+      // shows nothing.
       act(() => {
         vi.runAllTimers();
       });
@@ -266,22 +323,29 @@ describe("T-0486 the hard-navigation race", () => {
   );
 
   it(
-    "T-0486 AC-2 hard-navigate case: after status flips to signed-out on the old page (URL " +
-      "unchanged, no unload happened), the key is still in storage for the next page's " +
-      "mount-time read, exactly as a real hard navigation's fresh document load would do",
+    "T-0486 AC-2 hard-navigate case: pagehide fires (the real unload beginning) before the " +
+      "deferred timer runs, so the key is still in storage for the next page's mount-time " +
+      "read, exactly as a real hard navigation's fresh document load would do",
     () => {
-      const view = render(<AccountDeletedNotice />);
+      const view = render(<Harness />);
       window.sessionStorage.setItem(KEY, "1");
 
       act(() => {
         mockAuth.status = "signed-out";
-        view.rerender(<AccountDeletedNotice />);
+        view.rerender(<Harness />);
       });
       // The old page's instance may show the notice too (harmless; the document is about to
-      // unload) but must not have removed the key. A real hard navigation would unload (and so
-      // unmount this instance, cancelling its pending timer) right about here — simulated by
-      // `cleanup()` below, before the timer ever gets a chance to run.
+      // unload) but must not have removed the key once the unload signal arrives.
+      act(() => {
+        firePagehide();
+      });
+      act(() => {
+        vi.runAllTimers();
+      });
       expect(window.sessionStorage.getItem(KEY)).toBe("1");
+
+      // A real hard navigation unloads the document (and so unmounts this instance) around
+      // here — simulated by `cleanup()`.
       cleanup();
 
       // The "next page" mount-time read (a fresh instance, as a hard navigation would produce)
@@ -294,16 +358,19 @@ describe("T-0486 the hard-navigation race", () => {
   );
 
   it(
-    "T-0486 AC-2 a second old-page re-render after signed-out (still no SPA navigation) " +
-      "doesn't re-show or touch storage",
+    "T-0486 AC-2 a second old-page re-render after pagehide (still no real unload in this " +
+      "test) doesn't re-show or touch storage",
     () => {
-      const view = render(<AccountDeletedNotice />);
+      const view = render(<Harness />);
       window.sessionStorage.setItem(KEY, "1");
       act(() => {
         mockAuth.status = "signed-out";
-        view.rerender(<AccountDeletedNotice />);
+        view.rerender(<Harness />);
       });
-      view.rerender(<AccountDeletedNotice />);
+      act(() => {
+        firePagehide();
+      });
+      view.rerender(<Harness />);
       act(() => {
         vi.runAllTimers();
       });
@@ -314,12 +381,11 @@ describe("T-0486 the hard-navigation race", () => {
   // QA (T-0486): the builder's own notes flagged this as the subtle remaining case — not a
   // redirect landing on /welcome, but the user already sitting on /welcome (e.g. they opened
   // account settings in a second tab/window that itself navigated there some other way, or a
-  // dev reloaded into /welcome then triggered delete some other way) when SIGNED_OUT fires.
-  // Unlike the SPA-navigate test above, `at("/welcome")` here happens *before* the status flip,
-  // in no `act()` at all — there is no redirect to wait on, because there isn't one.
+  // dev reloaded into /welcome then triggered delete some other way) when SIGNED_OUT fires, and
+  // no pagehide ever fires (no real navigation happens).
   it(
-    "T-0486 AC-2 QA: already sitting on /welcome (no redirect) when status flips to " +
-      "signed-out shows the notice and still consumes the key",
+    "T-0486 AC-2 QA: already sitting on /welcome (no redirect, no pagehide) when status flips " +
+      "to signed-out shows the notice and still consumes the key",
     () => {
       at("/welcome");
       const view = render(<AccountDeletedNotice />);
@@ -373,6 +439,28 @@ describe("T-0486 the hard-navigation race", () => {
         expect(errorSpy).not.toHaveBeenCalled();
         errorSpy.mockRestore();
       }
+    },
+  );
+
+  it(
+    "T-0486 AC-4-style discriminator: a fix that defers via timer but gates on pathname " +
+      "instead of pagehide (the earlier, rejected version) would wrongly consume here — this " +
+      "test only passes against the pagehide-gated fix",
+    () => {
+      const view = render(<Harness />);
+      window.sessionStorage.setItem(KEY, "1");
+      act(() => {
+        mockAuth.status = "signed-out";
+        view.rerender(<Harness />);
+      });
+      // RequireAuth's redirect has already landed on /welcome by this point — a pathname-only
+      // gate would see "/welcome" and consume. pagehide is what actually distinguishes this
+      // (still no real navigation) from the hard-navigate test above.
+      expect(screen.getByText("welcome-route")).toBeInTheDocument();
+      act(() => {
+        vi.runAllTimers();
+      });
+      expect(window.sessionStorage.getItem(KEY)).toBeNull();
     },
   );
 });

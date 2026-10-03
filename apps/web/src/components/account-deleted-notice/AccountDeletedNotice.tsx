@@ -15,26 +15,30 @@
 // there, the *next* page's own mount-time read (a fresh instance, a fresh `peek()`) would
 // sometimes find nothing (T-0486).
 //
-// The two real cases need different handling, and `status` alone can't tell them apart — but
-// the URL can: the SPA-navigate branch specifically calls `navigate("/welcome", { replace:
-// true })` while staying mounted in the same document (this component lives in `App.tsx`,
-// outside the route tree, and is never remounted by a client-side route change). So can a route
-// guard's own redirect (`RequireAuth`'s `<Navigate>`), which also lands on `/welcome` while this
-// instance stays mounted. Either way, React Router's `BrowserRouter` drives the actual URL
-// change through the History API from a `useEffect` of its own (`<Navigate>`'s), so
-// `window.location.pathname` is not guaranteed to already be "/welcome" in *this* component's
-// own effect for the same commit — effects run in tree order, and this component sits before
-// the route tree in `Shell`. A `setTimeout` of zero, scheduled from this effect, runs after
-// every effect from this commit (including any `<Navigate>`'s) has flushed, so by then the URL
-// reflects any same-commit SPA redirect. The hard-navigate branch never changes the SPA route at
-// all — it reloads the document (a real navigation), which unmounts this instance (cancelling
-// the pending timeout) well before that timeout could ever fire with a stale "/welcome" read. So:
-// consume only once, after that delay, if `status` is (still) `"signed-out"` *and*
-// `window.location.pathname` is (by then) `"/welcome"` — a combination the hard-navigate branch
-// can never produce before this instance is torn down. A fresh mount (a hard navigation, or the
-// first load) still consumes unconditionally and synchronously, exactly as before. A plain DOM
-// read, not `react-router`'s `useLocation()`, keeps this file's import boundary (T-0310c AC11)
-// unchanged.
+// `status` alone can't tell apart the two reactive cases: `/plan/account` (where the delete
+// flow lives) is `guard: "protected"` (routes.ts), so `RequireAuth` wraps it, and `RequireAuth`
+// is itself *live* — the instant `status` becomes `"signed-out"`, it renders
+// `<Navigate to={redirectTarget} replace />`, an SPA (History API) redirect to `/welcome`, on
+// *both* the SPA-navigate and the hard-navigate delete branches alike (it doesn't know which
+// branch `AccountSettingsBody` is about to take). So a same- or later-tick check of
+// `window.location.pathname` is not a reliable signal either: `RequireAuth`'s own redirect can
+// make it read "/welcome" even on the hard-navigate branch, before `window.location.replace`
+// has actually unloaded the document (confirmed: an earlier version of this fix used exactly
+// that pathname check and was correctly rejected in review for this reason).
+//
+// The one signal that actually distinguishes "a real navigation is unloading this document" is
+// the browser's own `pagehide` event (with `beforeunload` as a same-tick backstop):
+// `location.replace(...)` dispatches these synchronously, before any of this component's
+// deferred work runs, on every browser that matters here. So: the reactive path `peek()`s
+// (read-only) to show the notice immediately, then schedules a `setTimeout(0)` that *consumes*
+// (removes from storage) unless a `pagehide`/`beforeunload` listener (registered once, for the
+// lifetime of this mount) has already flagged that this document is on its way out. The
+// SPA-navigate and the live-guard-redirect cases never fire `pagehide`, so their deferred
+// consume always runs; the hard-navigate case always fires it first, so its deferred consume
+// never does — the pending timer from that effect run also never matters, because the real
+// unload destroys this component (and its timer) shortly after anyway. A fresh mount (a hard
+// navigation, or the first load) still consumes unconditionally and synchronously, exactly as
+// before, since there's nothing left on that page to race.
 //
 // Imports only react, auth-context and the catalogue: no `lib/account`, no `lib/offline`, and
 // no stylesheet, so the inline styles below use design-token CSS variables only.
@@ -100,6 +104,21 @@ export function AccountDeletedNotice() {
   // double-invoked initializer still sees it.
   const [kind, setKind] = useState<NoticeKind | null>(peek);
   const mounted = useRef(false);
+  // Set by `pagehide`/`beforeunload`, which a hard navigation's `location.replace(...)` fires
+  // synchronously, before this component's own deferred work below runs.
+  const leaving = useRef(false);
+
+  useEffect(() => {
+    const onLeaving = () => {
+      leaving.current = true;
+    };
+    window.addEventListener("pagehide", onLeaving);
+    window.addEventListener("beforeunload", onLeaving);
+    return () => {
+      window.removeEventListener("pagehide", onLeaving);
+      window.removeEventListener("beforeunload", onLeaving);
+    };
+  }, []);
 
   useEffect(() => {
     const first = !mounted.current;
@@ -117,12 +136,12 @@ export function AccountDeletedNotice() {
     // notice shows immediately, same tick, for every reactive case.
     const seen = peek();
     if (seen) setKind(seen);
-    // Defer the *consume* past this commit's other effects (notably any `<Navigate>` the router
-    // renders alongside this one), so `window.location.pathname` reflects a same-commit SPA
-    // redirect by the time this runs. A hard navigation unmounts this instance first, which
-    // cancels the timeout before it can ever fire against a stale "/welcome" read.
+    // Defer the *consume* past this commit's other effects (notably `RequireAuth`'s own
+    // `<Navigate>`, which can render reactively on this very status change too). A hard
+    // navigation fires `pagehide`/`beforeunload` before this timer runs, flipping `leaving` —
+    // the only reliable "this document is actually going away" signal available here.
     const timer = window.setTimeout(() => {
-      if (window.location.pathname === "/welcome") consume();
+      if (!leaving.current) consume();
     }, 0);
     return () => window.clearTimeout(timer);
   }, [status]);
