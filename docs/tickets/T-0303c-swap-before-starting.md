@@ -149,3 +149,23 @@ and cite UF-08.3 (for example `T-0303c UF-08.3: swap before starting mounts the 
 - Deviation: AC-2 "contains Swapped to save time" cannot hold; `itemReasonLine` keeps 2 reasons and the swap one is third. Test asserts the DOM line equals `itemReasonLine(result reasons)` and the engine result carries `swap {short_on_time}` (D-0170, follow-up for web-shell).
 - Red on unfixed code (Suggested/SessionSetup from HEAD): 17 of 19 fail, AC-1 included. Planted fault (`swap` left out of `pastSetup`, backup restored with `cp`): 16 of 19 fail, AC-2 included.
 - e2e `uf-08-setup` + `uf-05-swap`: 33 passed.
+
+### Gate log (frontend-dev, 2026-10-03)
+- `-w typecheck lint test --concurrency=1` via `scripts/locked.sh heavy` hung twice (full timeout,
+  zero CPU, a worker stuck in `ep_poll`), not a flaky slow run. Root-caused, not just retried: the
+  ticket's static `import { SwapSheet } from "../UF-05/index.js"` in `SessionSetup.tsx` is reached
+  by `UF-09/device.ts` through the `UF-08` barrel (`device.ts` imports `readFocusPrefs` from
+  `UF-08/index.tsx`, which also re-exports `SessionSetup`, forcing its body — and now its UF-05
+  import — to evaluate). Three pre-existing UF-09 tests mock `../../UF-05/index.js` with a
+  throwing factory (`t0422.lazy-reject.test.tsx`, `t0451.next-open.test.tsx`,
+  `t0451.next-entry.test.tsx`); none render `SessionSetup`, but the barrel chain lands them in the
+  same mocked module, which the mocker misreports and which stalls a worker under the full
+  pool. Confirmed by isolating just `SessionSetup.tsx`'s one-line diff against plain `main` in a
+  disposable clone: `t0422.lazy-reject.test.tsx` goes from 1 passed to "0 test" with nothing else
+  changed. Not fixable inside `web-feature:UF-08` alone (the fix is either a `UF-09/device.ts`
+  import path change, outside this lane, or dropping the ticket's explicit static-import
+  requirement). Raised as [TR-0044](../../.squad/triage/TR-0044-uf08-static-swapsheet-import-poisons-uf09-mocks.md).
+  My own new file (`swap-before-start.test.tsx`) is not implicated: it passes clean and fast
+  (19/19, ~3.8 s) alone and paired with the affected files under `--maxWorkers=1`.
+- Everything else already recorded above (build, AC/fault/e2e proof) stands unchanged; only the
+  cached full gate is blocked, by TR-0044, not by this ticket's own tests.
