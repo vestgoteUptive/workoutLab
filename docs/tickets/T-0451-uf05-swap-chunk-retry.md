@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-05.1, UF-09.9, UF-09.6]
 decisions: [D-0162, D-0142, D-0144, D-0156, D-0160, D-0071]
 deps: [T-0422, T-0416]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0422 re-review and QA. Build flow: wl-build-web. About ¼ day. The spec is ready; the build waits for T-0416 (in build), which also edits seams.tsx. Start from a main that has it. -->
 
@@ -116,3 +116,4 @@ Tests for every AC pass, with the red runs recorded · the cached gate (D-0158):
 - QA (merged origin/main -> 1cf88d5; clean tree). AC-1 t0451.next-open; AC-2 t0451.try-again (recovers, fails again); AC-3 t0451.next-entry + unedited t0422 pending/reject, AC-A6, import pin (in full gate); AC-4 diff vs main (one test + unused import removed; TR-0043 comment replaced); AC-5 en.uf05.retry, lint green.
 - Reproduced from backup: unfixed seams.tsx 4/4 red; F1 no reset 4/4 red; F2 no key 2/4 red (both try-again). Own faults: F3 `swapSheet.reset()` on every SwapOverlay render -> 4/4 GREEN (survives; gap, follow-up: a test that a parent re-render does not re-import or remount the sheet); F4 auto-retry without a tap (setState failed:false in componentDidCatch) -> 4/4 red.
 - Gate after merge (cached): typecheck lint test 19/19 ok, test:repo-checks 155 pass, check-all ok. e2e uf-05-swap + uf-09-focus: 11 passed.
+- Accept (product-owner, HEAD 35bfa45): **done**. AC-1 t0451.next-open; AC-2 t0451.try-again (order "Try again","Close", focus on Close, `wl-focus` unchanged, offline re-fail with no unhandled rejection and only boundary logs); AC-3 t0451.next-entry + unedited t0422 pending/reject, AC-A6, import pin in the cached gate; AC-4 diff vs main checked (one test + its unused import removed, TR-0043 comment cites D-0156); AC-5 `en.uf05.retry`, lint green. D-0162 §3 (retry on tap and on next open, no auto-retry, importer unchanged per D-0144) holds; principles intact. QA's surviving fault F3 (reset on every render) is not an AC gap: follow-up T-0463. how-to/list-view retry stays out of scope (follow-up from build).
