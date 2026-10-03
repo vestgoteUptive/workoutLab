@@ -5,7 +5,7 @@ lane: web-shell
 screens: []
 decisions: [D-0164, D-0045, D-0111, D-0144, D-0162]
 deps: [T-0422]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner from the T-0422 review. Split from T-0446 by lane (D-0164 §8). Build flow: wl-build-web. About ⅓ day. It touches app/App.tsx, so it runs the whole web e2e. -->
 
@@ -116,3 +116,9 @@ contracts unchanged · commits start `T-0459`.
 - AC→test: AC-1 "AC-1…" + pair; AC-2 "AC-2 another route…"; AC-3 signed-out + mid-workout; AC-4 "a component that throws…"; AC-5 axe/Tab test + unedited source/import-ban tests. All 7 green.
 - Unfixed App.tsx (origin/main copy): 5 red / 2 green (AC-1, AC-2, AC-3 mid-workout, AC-4, AC-5 axe). Single boundary around `<Routes>`: AC-2 red, 6 green. QA fault: `key={route.path}` dropped: AC-2 red, 6 green. All restored with `cp`.
 - Gate after merge: typecheck lint test 19/19 (16 cached), test:repo-checks fail 0, check-all exit 0. Whole web e2e: 193 passed.
+
+### Accept log (product-owner, 2026-10-03)
+- Verdict: **done**. Every AC is tested in `app/__tests__/route-boundary.test.tsx` and checked against D-0164 §7 (no amendment in INDEX): guard → gate → `RouteBoundary key={route.path}` → Suspense; one boundary per route; Reload calls `window.location.reload()` and nothing reloads automatically; strings are in `en.routeError`.
+- AC-1 alert + one Reload, no screen ID, reload ×1, plus the pair; AC-2 Library renders UF-04.1, back on /progress the fallback shows again; AC-3 signed out (0 load calls) + mid-workout (no nav, no redirect after sign-out); AC-4 a render throw; AC-5 axe 0, Reload focusable at tabIndex 0 (jsdom can't press Tab; accepted), unedited source and import-ban tests.
+- Red runs (5/7 on unfixed App.tsx), the planted single-boundary fault and QA's dropped-`key` fault are all recorded. Gate 19/19, repo-checks 0 fail, whole e2e 193. Principles hold. Follow-ups: T-0465.
+
