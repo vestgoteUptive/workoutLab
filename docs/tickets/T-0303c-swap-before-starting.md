@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.3, UF-05.1, UF-08.4]
 decisions: [D-0065, D-0069, D-0071, D-0107, D-0109, D-0124, D-0142, D-0158, D-0168]
 deps: [T-0303b, T-0421]
-status: review
+status: done
 ---
 <!-- Groomed 2026-10-03 by product-owner (D-0168 §2). Child of docs/tickets/T-0303-session-setup.md
 (parent AC-C1–C5). Build flow: wl-build-web. About ¼–⅓ day: the sheet, its ranking, chips, copy,
@@ -238,3 +238,45 @@ and cite UF-08.3 (for example `T-0303c UF-08.3: swap before starting mounts the 
 - No lane or contract violations found: all changed paths are inside `web-feature:UF-08`'s owned
   paths or the ticket's three listed extras (`lib/i18n/flows/uf-08.ts` additive keys,
   `tests/e2e/uf-08-setup.spec.ts` appended rows, this ticket file). No contract file touched.
+
+### QA log (qa, 2026-10-03, HEAD f325afe)
+- Verdict: **done**. All 10 ACs proven: reproduced the builder's red-on-main (AC-1) and the
+  planted-fault (`swap` left out of `pastSetup`, AC-2) proofs independently; added one new fault of
+  its own (`navigate(-1)` → push, i.e. the reviewed Apply/Keep history pop swapped for a push) and
+  confirmed it breaks AC-6's "one back lands on UF-08.1" assertion, restoring from a backup copy.
+- e2e: `uf-08-setup.spec.ts` + `uf-05-swap.spec.ts`, 33/33, including AC-9's flow, axe (0
+  serious/critical on the sheet), 44 × 44 px (every `Swap` button) and keyboard-only rows.
+- Branch is ahead 7 / behind 2 of `main` — squad bookkeeping only (the D-0169→D-0170→D-0171
+  decision-file renumbers and the `chore(squad)` commits on `main` in between); confirmed
+  non-conflicting with a dry-run merge check. Correctly left unmerged per D-0169 §2 (orchestrator
+  merges after accept).
+
+### Accept log (product-owner, 2026-10-03, HEAD f325afe)
+- Verdict: **done**.
+- AC→evidence: AC-1 mount (red-on-main reproduced by QA; `swap-before-start.test.tsx` 4 tests) ·
+  AC-2 apply renders engine result (QA reproduced the planted-fault red; D-0171 follow-up disclosed
+  and lane-correct for the `itemReasonLine` two-reason cap) · AC-3 keep (Close + Escape, focus
+  back on `Swap Barbell row`) · AC-4 over budget after swap · AC-5 start writes the swapped plan ·
+  AC-6 history/bad URLs (QA's own new fault — push vs pop — caught by this AC's test) · AC-7
+  offline (no `fetch`) · AC-8 exports/import boundaries — confirmed directly: `UF-08/index.tsx`
+  exports exactly `SessionSetup`, `readFocusPrefs`, `writeFocusPrefs`; `SessionSetup.tsx`'s only
+  UF-05 import is `../UF-05/index.js` · AC-9 e2e (flow + axe + 44px + keyboard, 33/33, confirmed by
+  reading `uf-08-setup.spec.ts`'s `T-0303c AC-9` describe block) · AC-10 no regression (one
+  pre-existing assertion in `suggested-actions.test.tsx` updated to the new truth, noted in the
+  build log).
+- Gate: green on re-run (19/19 turbo tasks; `@workoutlab/web:test` 3371 tests) after merging main's
+  T-0474/D-0170 fix for the unrelated TR-0044/TR-0045 cross-lane hang; `test:repo-checks` and
+  `format:check` green.
+- Ran `node .github/scripts/check-all.mjs` directly on this branch: the same two
+  `lane-path-not-owned` findings already recorded in the gate re-run and review logs, both on this
+  branch's own pending `D-0171-...md`/`INDEX.md` under `.squad/decisions/**` (the `process` lane).
+  Confirmed by decision-index inspection that D-0171 is a legitimate, non-duplicate, correctly
+  indexed `revisit` follow-up (not a contract change, not this ticket's lane). These findings are a
+  pre-merge artifact only — `main` itself is clean — and clear once the orchestrator merges; not a
+  defect of `web-feature:UF-08`'s changes and not grounds to withhold accept.
+- No contract file touched (confirmed: no diff under `api/openapi.yaml`, `docs/data-model.md`,
+  `docs/engine-rules.md`, `packages/design-tokens/src/tokens.json`). Principle 3 (deterministic
+  engine) upheld: the sheet calls the engine's `applySwap`/`rankSwaps`, UF-08 only renders what
+  comes back, no LLM or ad hoc exercise selection added.
+- Branch left unmerged (ahead 7 / behind 2 of `main`) per D-0169 §2; this is squad bookkeeping, not
+  an accept blocker.
