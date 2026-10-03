@@ -3,10 +3,13 @@ id: T-0216
 title: "UF-11.4 Equipment section: a checklist of the 9 real equipment items on Account settings, saved online to profiles.equipment (\"none\" always first), so suggestions match what the user actually has"
 lane: web-feature:UF-11
 screens: [UF-11.4, UF-01.3]
-decisions: [D-0022, D-0040, D-0061, D-0064, D-0070, D-0075, D-0079, D-0113, D-0136, D-0158, D-0168]
+decisions: [D-0022, D-0040, D-0061, D-0064, D-0070, D-0075, D-0079, D-0113, D-0136, D-0158, D-0168, D-0169, D-0172]
 deps: [T-0310d]
-status: todo
+status: ready
 ---
+<!-- Re-groomed 2026-10-03 against main f83403e (T-0310d merged): ready. D-0172 §7 names the real
+file (AccountSettingsBody.tsx renders the new EquipmentSection), §8 keeps it apart from T-0470. -->
+
 <!-- Groomed 2026-10-03 by product-owner (D-0168 §6). The board row said lane web-feature:UF-01 with
 deps T-0300, T-0301; D-0168 §6 moves it to web-feature:UF-11 (the section lives on UF-11.4) with
 dep T-0310d, which creates AccountSettings. Build flow: wl-build-web. About ⅓–½ day. Becomes ready
@@ -21,8 +24,11 @@ schema or engine change.
 
 ## Scope
 - In:
-  - **An "Equipment" section on UF-11.4** (`AccountSettings`, T-0310d), after "Signed in as" and
-    before "Your data" (D-0168 §6). For example `EquipmentSection.tsx` in `features/UF-11`.
+  - **An "Equipment" section on UF-11.4**: a new `features/UF-11/EquipmentSection.tsx`, rendered
+    by `AccountSettingsBody.tsx` (T-0310d) after the "Signed in as" line and before the "Your
+    data" section (D-0168 §6, D-0172 §7). With no stored email there is no "Signed in as" line
+    and the section is the first thing after the `<h1>`. `index.tsx` is unchanged.
+    - Online state: `useOnline` from `use-plan-data.ts` (as `CheckinCard` does).
     - A `fieldset` with `legend` "Your equipment" and a hint "We only suggest exercises you can do
       with what you tick." Then 9 checkboxes in this order: dumbbell, bench, barbell, rack, cable,
       machine, pullup-bar, kettlebell, band (the D-0064 §3 vocabulary without `none`), labelled
@@ -32,8 +38,8 @@ schema or engine change.
       already changed a box (D-0113: once per mount, signed-in only).
     - **Save** (online only): one `supabase.from("profiles").update({equipment}).eq("user_id",
       userId)`, where `equipment = ["none", ...checked in the order above, ...unknown stored
-      items in their stored order]`. A rejection or a non-null `error` is a failure. On success:
-      `refreshAll()` (its rejection is ignored), then "Saved" (`role="status"`), and the saved list
+      items in their stored order]`, `userId` = `currentUserId()`. A rejection or a non-null
+      `error` is a failure. On success: `refreshAll(now, tz)` (its rejection is ignored), then "Saved" (`role="status"`), and the saved list
       becomes the new baseline.
     - Save is disabled while the draft equals the baseline, while saving, and offline ("Connect to
       save", the UF-11 offline line); `online`/`offline` events toggle it without a remount.
@@ -63,9 +69,10 @@ supabase spy, and `fake-indexeddb` for the real cache in AC-7. Each new test tit
 - **AC-1 (the section, red on main)** **Given** a cached profile with `equipment` `["none",
   "dumbbell", "bench"]`, **Then** UF-11.4 shows the "Your equipment" group with exactly 9 checkboxes
   named, in order, Dumbbell, Bench, Barbell, Rack, Cable, Machine, Pull-up bar, Kettlebell, Band;
-  Dumbbell and Bench are checked, the rest aren't; no checkbox is named "none" or "Bodyweight". The
-  section sits after "Signed in as" and before "Your data" in DOM order. **Red:** on main (after
-  T-0310d) there is no such group.
+  Dumbbell and Bench are checked, the rest aren't; no checkbox is named "none" or "Bodyweight". With
+  a stored email the section sits after "Signed in as" and before the "Your data" heading in DOM
+  order; with none, it is the next element after the `<h1>`. **Red:** on main there is no such
+  group.
 - **AC-2 (save writes the list)** Tick Barbell and Rack, untick Bench, Save: exactly one call,
   `profiles.update({equipment: ["none", "dumbbell", "barbell", "rack"]})` with `.eq("user_id", U)`;
   then `refreshAll` once; then "Saved". Save is disabled again (the new baseline).
@@ -104,8 +111,8 @@ the leading `"none"`): AC-2 and AC-3 must fail. Record both in the build log.
 - **Listed extras:**
   - `apps/web/src/lib/i18n/flows/uf-11.ts`
   - `docs/tickets/T-0216-edit-equipment.md`
-- Notes on the extras: added keys only (D-0071 §1, D-0075); this ticket file is for the build and
-  accept logs.
+- Notes on the extras: added keys only (D-0071 §1, D-0075), as one `equipment: {…}` block appended
+  as the last key of `account: {…}` (D-0172 §8); this ticket file is for the build and accept logs.
 - Read-only imports (not grants): `lib/i18n/en.ts` (`en.uf04.equipment`), `lib/offline`
   (`loadProfile`, `refreshProfile`, `refreshAll`, `currentUserId`), `lib/auth/client.js`.
 
@@ -114,16 +121,21 @@ None. `profiles.equipment` is an existing `text[]` with no DB check (D-0021); th
 filters on it.
 
 ## Definition of done
-Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`,
-`-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green, each test
-command inside `flock /tmp/workoutlab-tests.lock` · `uf-11-account.spec.ts` (if T-0469 has merged)
-and `uf-11-plan.spec.ts` green · contracts unchanged · commits start `T-0216` and cite UF-11.4.
+Tests for every AC pass, with the red run and the planted fault recorded · while working,
+`scripts/locked.sh small npx vitest run <files>` · once before hand-back (D-0158, D-0169):
+`scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`,
+`scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`, `-w format:check`,
+`node .github/scripts/check-all.mjs`, and `scripts/locked.sh heavy` on the web `test:e2e` for
+`uf-11-plan.spec.ts` (plus `uf-11-account.spec.ts` if T-0469 has merged) · contracts unchanged ·
+commits start `T-0216` and cite UF-11.4.
 
 ## Notes
-- **Board (orchestrator):** lane → `web-feature:UF-11`, deps → `T-0310d`.
-- **Parallel.** After T-0310d. Not beside T-0469 if that one is fixing `AccountSettings.tsx`; not
-  beside T-0308c/T-0470/T-0471 only if they touch the same file (they normally don't: the card isn't
-  on UF-11.4). Parallel-safe with every non-UF-11 ticket.
+- **Parallel** (D-0172 §8). May run beside T-0470 and T-0469: separate strings blocks, separate
+  helper files. If a T-0469 fix lands in `AccountSettingsBody.tsx` first, merge main before
+  hand-back.
+- **Test helpers:** new helpers go in a new file of this ticket's own,
+  `__tests__/equipment-helpers.tsx`, which imports from the UF-11 `test-helpers.tsx` and
+  `fixtures.ts` and leaves both files as they are.
 - **Product follow-up:** add "Equipment" to the UF-11.4 line in user flows v2.
 
 ## Build / accept log

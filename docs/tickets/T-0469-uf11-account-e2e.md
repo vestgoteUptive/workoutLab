@@ -3,10 +3,14 @@ id: T-0469
 title: "UF-11.4 Account settings e2e: export downloads one JSON file, delete calls DELETE /account then wipes only this user's device data and lands on /welcome, a 500 keeps everything, axe + targets + keyboard (NFR-PRIV-4/5, NFR-A11Y-1/2)"
 lane: web-feature:UF-11
 screens: [UF-11.4, UF-11.2, UF-01.1]
-decisions: [D-0135, D-0136, D-0071, D-0086, D-0091, D-0158, D-0168]
+decisions: [D-0135, D-0136, D-0071, D-0086, D-0091, D-0158, D-0168, D-0169, D-0172]
 deps: [T-0310d]
-status: todo
+status: ready
 ---
+<!-- Re-groomed 2026-10-03 against main f83403e (T-0310d merged): ready. D-0172 §6 fixes the
+signed-in user to the e2e session helper's, and the export rows to an exact-path route so the
+`session_sets_live` history read isn't shadowed. -->
+
 <!-- Written by product-owner 2026-10-03 (groom, D-0168 §4). Split out of T-0310d (its former AC-D9).
 Build flow: wl-build-web. About ⅓ day. Becomes ready when T-0310d is done. Test-only unless a row
 finds a bug in features/UF-11. -->
@@ -19,9 +23,15 @@ that a server error wipes nothing.
 
 ## Scope
 - In:
-  - A new spec `tests/e2e/uf-11-account.spec.ts`, using the existing `mockSupabaseData` plus
-    `page.route("**/functions/v1/account", …)`. Optional fixture data in a new
-    `tests/e2e/fixtures/uf-11-account.ts`.
+  - A new spec `tests/e2e/uf-11-account.spec.ts`, using the existing `injectSession`,
+    `mockSupabaseAuth` and `mockSupabaseData` (the `uf-11-plan.ts` fixture may be imported
+    read-only) plus `page.route("**/functions/v1/account", …)`.
+  - **Export rows** (D-0172 §6): `mockSupabaseData` answers every `sessions*`/`session_sets*` read
+    with `[]`. Register, after it, GET routes matched by a predicate on the **exact** pathname
+    (`/rest/v1/sessions`, `/rest/v1/session_sets`), never a `session_sets*` glob (it would shadow
+    `session_sets_live*`, the history read). They answer 2 sessions and 3 sets of U.
+  - Fixture data in the spec (D-0071 §10). A new `tests/e2e/fixtures/uf-11-account.ts` is
+    allowed only if the data passes ~60 lines; it then triggers the whole web e2e once (D-0158).
   - Fixes in `features/UF-11/**` that these rows expose, each with a unit test.
 - Out:
   - `lib/account`, the Edge Function, `lib/offline`: a bug there is a follow-up for its lane, not a
@@ -37,13 +47,17 @@ that a server error wipes nothing.
 - **Time running out / returning after 10 days off:** not applicable to this screen.
 
 ## Acceptance criteria
-Preview build, `test`/`expect` from `fixtures/guarded-test.js` (D-0086), signed in as user U
-(`u@test.local`) with `mockSupabaseData` (a profile, 9 targets, 2 sessions, 3 sets). Each test title
-starts with `T-0469 AC-n`.
+Preview build, `test`/`expect` from `fixtures/guarded-test.js` (D-0086), signed in as user U = the
+`injectSession` user (`ada@example.com`, id `11111111-1111-4111-8111-111111111111`, D-0172 §6);
+V is any other uuid. `mockSupabaseData` (a profile, 9 targets) plus the exact-path export routes
+(2 sessions, 3 sets). Each test title starts with `T-0469 AC-n`.
 
 - **AC-1 (export, NFR-PRIV-4)** `page.waitForEvent("download")` after `Export my data` gives a file
-  named `workoutlab-export-YYYY-MM-DD.json`. Its JSON has `format: "workoutlab-export"`,
-  `version: 1`, the 7 `tables` keys and 3 `session_sets`.
+  named `workoutlab-export-YYYY-MM-DD.json` (today's local date in the browser's zone). Its JSON
+  has `format: "workoutlab-export"`, `version: 1`, exactly the 7 `tables` keys (`profiles`,
+  `area_targets`, `sessions`, `session_sets`, `routines`, `routine_items`, `plan_checkins`), 2
+  `sessions` and 3 `session_sets`. The base `session_sets_live` route was still hit (the history
+  read wasn't shadowed).
 - **AC-2 (delete, NFR-PRIV-5)**
   - Before confirming, seed IndexedDB `wl-offline` (through `page.evaluate`, after the app has
     opened it) with one `sets` row for U and one for user V, and set `localStorage["wl-last-email"]`.
@@ -52,7 +66,9 @@ starts with `T-0469 AC-n`.
     - the request had method `DELETE` and `Authorization: Bearer …`;
     - the page lands on `/welcome` and shows `Your account and all your data are deleted.`;
     - `wl-offline.sets` has 0 rows for U and still has V's row;
-    - `localStorage` has no key starting with `wl-`.
+    - `localStorage` has no key starting with `wl-` (the one-time notice flag
+      `wl-account-deleted` lives in `sessionStorage`, set after the wipe; it isn't asserted
+      absent).
 - **AC-3 (server error)** The route answers 500. The page stays on `[data-screen-id="UF-11.4"]` with
   `Couldn't delete your account. Try again.`, and U's seeded row is still in `wl-offline.sets`.
 - **AC-4 (offline)** After the precache settles, the context goes offline and reloads
@@ -86,14 +102,17 @@ None. The rows observe the D-0135 `DELETE /account` call that `lib/account` alre
 PRIV-4 and PRIV-5 end-to-end (AC-1–AC-3), A11Y-1/2 on UF-11.4 (AC-5).
 
 ## Definition of done
-Tests for every AC pass, twice in a row with no flake · because this adds a file under
-`tests/e2e/fixtures/**`, the whole web e2e green once (D-0158) · `npx -y pnpm@10.28.2 -w typecheck
-lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check` and `node
-.github/scripts/check-all.mjs` green, each test command inside `flock /tmp/workoutlab-tests.lock` ·
-contracts unchanged · commits start `T-0469` and cite UF-11.4.
+Tests for every AC pass, twice in a row with no flake (`scripts/locked.sh heavy` on the web
+`test:e2e` for `uf-11-account.spec.ts`, `--repeat-each=2`) · the whole web e2e once **only if** a
+file under `tests/e2e/fixtures/**` was added (D-0158) · once before hand-back (D-0169):
+`scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`,
+`scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`, `-w format:check` and
+`node .github/scripts/check-all.mjs` · contracts unchanged · commits start `T-0469` and cite
+UF-11.4.
 
 ## Notes
-- **Parallel.** After T-0310d. Same lane as T-0216, T-0308c, T-0470, T-0471; it shares no source
-  file with them unless a fix lands in `AccountSettings.tsx` (then not beside T-0216).
+- **Parallel** (D-0172 §8). May run beside T-0216 and T-0470. A fix in `AccountSettingsBody.tsx`
+  is the only shared-file risk (T-0216 renders its section from there): keep such a fix minimal
+  and note it in the log, so T-0216 merges main cleanly.
 
 ## Build / accept log
