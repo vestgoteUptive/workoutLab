@@ -242,3 +242,65 @@ Checked against `git diff main...HEAD` (HEAD `a6e5242`):
   already covered by AC-6/AC-7 (offline, a11y) in the ticket.
 
 No findings. Nothing in this diff needs a follow-up or triage.
+
+### QA (qa-tester, 2026-10-03)
+**Verdict: done.** Start: `git status` clean, HEAD `b38fdc1` on `t/T-0302b-workout-preview`.
+
+**Behind-main check.** Branch is 13 behind / 2 ahead of main. `git merge --no-commit --no-ff main`
+in a scratch clone completes with zero conflicts (all upstream changes are UF-08/squad-journal
+files, disjoint from this ticket's UF-02 paths). Clean behind-main per D-0169 §2: no action needed
+from QA; left for the orchestrator's forced gate on `main`.
+
+**AC → test map, verified independently** (all in `preview.test.tsx` unless noted): AC-1 → 6
+"T-0302b AC-1 route" tests; AC-2 → 6 "AC-2" tests (chip math re-derived by hand: 1725s→29min,
+1545s→26min, 9 sets, all match); AC-3 → 5 "AC-3" tests; AC-4 → 3 "AC-4" tests; AC-5 → 5 "AC-5"
+tests; AC-6 → 1 "AC-6" test; AC-7 → 4 appended Playwright rows in `uf-02-today.spec.ts`; AC-8 →
+1 "AC-8" test + diff-stat check. Every AC has a test that would fail without the feature (shown by
+the red-on-main and planted-fault reproductions below) — none is a tautology.
+
+**Red-on-main reproduced.** Backed up the fixed `index.tsx`, replaced it with `git show
+main:.../index.tsx` (export-only), ran `scripts/locked.sh small npx vitest run
+src/features/UF-02/__tests__/preview.test.tsx -t AC-1` from `apps/web`: 4 of 6 AC-1 tests failed,
+2 passed — matches the build log exactly. Restored from the backup copy (`cp`); AC-1 tests green
+again.
+
+**Planted-fault (builder's) reproduced.** Backed up `Preview.tsx`, sorted the `<ol>` rows by
+`exerciseId` before render. `scripts/locked.sh small npx vitest run .../preview.test.tsx -t
+reversed`: the reversed-fixture test failed exactly as the build log describes (1 failed, 26
+skipped). Restored from the backup copy; 27/27 green again.
+
+**Planted fault (QA's own).** Backed up `Preview.tsx`, flipped `weightPart`'s guard from
+`exercise?.externalLoad === false` to `=== true` (inverts Bodyweight vs. real-weight display).
+`scripts/locked.sh small npx vitest run .../preview.test.tsx -t AC-3`: 2 of 5 AC-3 tests failed
+(bench-press's 80 kg case now showed "Bodyweight"; inverted-row's externalLoad-false case now
+showed "0 kg"), proving AC-3's tests are meaningful. Restored from the backup copy; 27/27 green.
+
+**Full preview + folder reruns.** `scripts/locked.sh small npx vitest run
+src/features/UF-02/__tests__/preview.test.tsx`: 27/27. `scripts/locked.sh small npx vitest run
+src/features/UF-02`: 138/138 (111 pre-existing unedited + 27 new), matching the build log.
+
+**e2e.** `scripts/locked.sh heavy npx playwright test --config ../../tests/e2e/playwright.config.ts
+uf-02-today.spec.ts` from `apps/web`: 10/10 passed, including all 4 new "T-0302b AC-7" rows
+(row-count/first-row match, axe 0 serious/critical, Back/Start ≥44×44, offline reload shows same
+rows). Every test in this spec runs through the shared `consoleGuard` auto-fixture
+(`fixtures/guarded-test.ts`), which fails a test on any `console.error` or `pageerror` — all 10
+passed, so console output is clean, confirmed without a separate check.
+
+**Untouched-files claim.** `git diff main...HEAD --stat -- Today.tsx slots.tsx
+apps/web/src/features/UF-02/Today.tsx apps/web/src/features/UF-02/slots.tsx` is empty: both files
+are genuinely untouched, confirming the build and review logs.
+
+**Edge cases.** Zero history / brand-new user: covered by AC-5's `no-plan` test (`loadProfile`
+resolves `null`) and AC-3's null-`weightKg` test (never "0 kg"/"null"). Offline: AC-6 (unit, fetch
+spy) and AC-7's last row (real reload with `context.setOffline(true)`) both green. Going back
+mid-flow: AC-1's `createMemoryRouter` browser-Back test lands back on UF-02.1. Timers-crossing-zero
+and a live 15-minute countdown don't apply to this static preview screen (no timer renders here;
+Start simply links to UF-08.1, which owns the budget question) — nothing in this ticket's scope is
+left unexercised by that gap.
+
+**Lint/boundaries.** `scripts/locked.sh small npx eslint src/features/UF-02/Preview.tsx
+src/features/UF-02/index.tsx src/lib/i18n/flows/uf-02.ts`: clean, exit 0. `uf-02.ts` diff is
+added-keys-only, multi-line, matching the ticket's listed key names exactly. Did not rerun the full
+gate (qa-tester role, D-0158): targeted reruns only.
+
+No gaps found. `git status` clean at the end; HEAD unchanged (`b38fdc1`).
