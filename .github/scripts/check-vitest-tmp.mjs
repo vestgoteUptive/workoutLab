@@ -15,6 +15,18 @@ const CONFIG_NAMES = ["vitest.config", "vite.config"].flatMap((n) =>
   ["ts", "mts", "js", "mjs"].map((e) => `${n}.${e}`),
 );
 
+/** The packages under `root` whose `test` script runs vitest. */
+export function listVitestPackages(root = REPO_ROOT) {
+  return listPackages(root).filter(({ pkgJson }) => {
+    try {
+      const script = JSON.parse(readFileSync(pkgJson, "utf8")).scripts?.test;
+      return typeof script === "string" && /\bvitest\b/.test(script);
+    } catch {
+      return false;
+    }
+  });
+}
+
 function listPackages(root) {
   const out = [];
   for (const parent of PACKAGE_PARENTS) {
@@ -47,7 +59,12 @@ export async function runCheck(root = REPO_ROOT) {
     if (typeof testScript !== "string" || !/\bvitest\b/.test(testScript)) continue;
     const rel = `${dir}/package.json`;
     const configs = CONFIG_NAMES.map((n) => path.join(root, dir, n)).filter((p) => existsSync(p));
-    const text = configs.map((p) => readFileSync(p, "utf8")).join("\n");
+    // A call that only appears in a comment does not count.
+    const text = configs
+      .map((p) => readFileSync(p, "utf8"))
+      .join("\n")
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/^\s*\/\/.*$/gm, "");
     const missing = [];
     if (!/\bredirectVitestTmp\s*\(/.test(text)) missing.push("the TMPDIR redirect (redirectVitestTmp)");
     if (!/\bcleanupVitestTmp\s*\(/.test(text)) missing.push("the end-of-run cleanup (cleanupVitestTmp)");

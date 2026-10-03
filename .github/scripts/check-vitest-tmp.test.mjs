@@ -5,7 +5,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { runCheck } from "./check-vitest-tmp.mjs";
+import { listVitestPackages, runCheck } from "./check-vitest-tmp.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const fixture = (name) => path.join(here, "fixtures", "vitest-tmp", name);
@@ -36,6 +36,7 @@ test("T-0441 AC4: a package whose test script is not vitest is ignored", async (
 });
 
 test("T-0441 AC4: the real repo has no finding", async () => {
+  assert.ok(listVitestPackages(repoRoot).length >= 6, "expected at least 6 vitest packages to be scanned");
   assert.deepEqual(await runCheck(repoRoot), []);
 });
 
@@ -59,4 +60,42 @@ test("T-0441 AC5: one vitest run in packages/shared leaves nothing in a fresh TM
   } finally {
     rmSync(scratch, { recursive: true, force: true });
   }
+});
+
+test("T-0441 AC4: a call that appears only in a comment is flagged", async () => {
+  const findings = await runCheck(fixture("comment-only"));
+  assert.equal(findings.length, 1);
+  assert.match(findings[0].message, /redirectVitestTmp/);
+  assert.match(findings[0].message, /cleanupVitestTmp/);
+});
+
+function runHelper(env) {
+  const code = `
+    const mod = await import(${JSON.stringify(path.join(repoRoot, "vitest.tmp.ts"))});
+    const { redirectVitestTmp, cleanupVitestTmp } = mod.redirectVitestTmp ? mod : mod.default;
+    const before = process.env.TMPDIR ?? "";
+    const dir = redirectVitestTmp(${JSON.stringify("file://" + path.join(repoRoot, "packages/shared/vitest.config.ts"))});
+    cleanupVitestTmp(dir);
+    console.log(JSON.stringify({ changed: (process.env.TMPDIR ?? "") !== before, exit: process.listenerCount("exit"), tmp: process.env.TMPDIR }));
+  `;
+  const base = { ...process.env };
+  delete base.VITEST;
+  delete base.WL_VITEST_TMP_DIR;
+  const r = spawnSync(process.execPath, ["--import", "tsx", "--input-type=module", "-e", code], { cwd: path.join(repoRoot, "packages", "shared"), env: { ...base, ...env }, encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  return JSON.parse(r.stdout);
+}
+
+test("T-0441 rework: without VITEST=true the helper leaves TMPDIR alone and registers no exit handler", () => {
+  const out = runHelper({});
+  assert.equal(out.changed, false);
+  assert.equal(out.exit, 0);
+});
+
+test("T-0441 rework: with VITEST=true the helper redirects TMPDIR into the package and registers cleanup", () => {
+  const out = runHelper({ VITEST: "true" });
+  assert.equal(out.changed, true);
+  assert.ok(out.tmp.endsWith(path.join("packages", "shared", "node_modules", ".vite", "vitest-tmp")));
+  assert.equal(out.exit, 1);
+  assert.equal(existsSync(out.tmp), false, "the helper's own exit handler removes the folder");
 });

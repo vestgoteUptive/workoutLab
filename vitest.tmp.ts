@@ -12,6 +12,9 @@ let owner = false;
 
 /** Point `os.tmpdir()` (and the forked workers' `TMPDIR`) at `<package>/node_modules/.vite/vitest-tmp`. */
 export function redirectVitestTmp(configUrl: string): string {
+  // D-0159 §5: vitest only. `vite dev`, `build` and `preview` load the same config and must not
+  // redirect TMPDIR or own (and delete) the folder. Vitest sets VITEST=true before it loads the config.
+  if (process.env.VITEST !== "true") return "";
   // A child process (for example the `vite build` that apps/web's build test spawns) loads the same
   // config and inherits this variable. It must neither re-redirect nor clean up the parent's folder.
   const inherited = process.env[ENV_KEY];
