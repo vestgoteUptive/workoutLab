@@ -113,3 +113,7 @@ Built by frontend-dev, 2026-10-03.
 
 Verdict: **approve**.
 
+**Merge main (frontend-dev, 2026-10-03):** branch had fallen behind `origin/main` (T-0458 and T-0302b both merged after the code review above). `git merge origin/main` produced exactly one conflict, in `tests/e2e/uf-02-today.spec.ts` — T-0302b's appended `T-0302b AC-7 preview e2e and a11y` describe block vs. this ticket's appended `T-0395 AC9 resume on a cold start` describe block, both anchored at the same end-of-file point (as the ticket's own coordination note anticipated: "the second to merge keeps both appended blocks"). T-0458 added no block to this file (its e2e rows are in `tests/e2e/uf-03-list-summary.spec.ts`, which merged clean). Resolved by keeping both full describe blocks intact and in sequence — T-0302b's block first (matching `origin/main`'s order), then this ticket's AC9 block appended after it, each test body made whole again (the merge had split my AC9 test's trailing assertions into a second conflict hunk after T-0302b's axe block; reassembled them in original order). No block dropped or rewritten; no other file had a real conflict (37 files changed, all auto-merged). Merge commit `6c98cb9`.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint --concurrency=1` — 13/13 tasks green.
+- `scripts/locked.sh heavy npx playwright test --config ../../tests/e2e/playwright.config.ts` (from `apps/web`) — full web e2e, 213/213 green, including T-0395's AC9 row, T-0302b's 4 preview rows, and T-0458's offline list-view rows (`uf-03-list-summary.spec.ts`).
+
