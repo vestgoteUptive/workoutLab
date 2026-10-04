@@ -700,8 +700,11 @@ test.describe("T-0458 UF-03.1 List view, offline (NFR-OFF-2)", () => {
       expect(box!.height, `field ${i} height`).toBeGreaterThanOrEqual(44);
     }
 
+    // T-0487 (D-0175 §1, following T-0477): checking row 1 while still in the getReady/warmup
+    // window now correctly starts a rest (REST_START is no longer a no-op there), so Focus mode
+    // returns to the running rest screen (UF-09.5), not the old step screen (UF-09.3).
     await page.getByRole("button", { name: "Focus mode" }).click();
-    await expect(page.locator('[data-screen-id="UF-09.3"]')).toBeVisible();
+    await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible();
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
   });
 });
