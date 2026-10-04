@@ -118,3 +118,10 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 commit messages start with `T-0449` and cite UF-02.1.
 
 ## Build / accept log
+
+- 2026-10-04 build (HEAD c5af22a, clean at start). Added 3 cases to `OfflineStatus.test.tsx` (test-only; no runtime change).
+- AC1/AC2/AC3 -> `T-0449 AC1/AC2/AC3` cases. AC4 -> below.
+- Green on unfixed code: `scripts/locked.sh small npx vitest run src/components/offline-status/__tests__/OfflineStatus.test.tsx` (apps/web): 18/18 pass.
+- Fault A (`hour: "numeric"`, cp backup, landed: diff 1+/1-): red = AC1 (`8:10`) and the T-0355 default-locale 08:10 case; AC2, AC3 green. Restored with cp, diff empty.
+- Fault B (`hour: "2-digit"`, same method): red = AC3 only (`08:05 AM`); AC1, AC2 green. Restored with cp, diff empty.
+- Gate: typecheck, lint, test, test:repo-checks, format:check, check-all green.
