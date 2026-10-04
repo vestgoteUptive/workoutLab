@@ -5,7 +5,7 @@ lane: infra
 screens: []
 decisions: [D-0167, D-0074, D-0157, D-0158]
 deps: [T-0466]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-04 by product-owner. Build flow: wl-build-infra. About ⅛ day. It changes .github/scripts, so it needs a draft PR (orchestrator). -->
 
@@ -114,3 +114,8 @@ and `check-all` green · contracts unchanged · commits start `T-0467`.
 - PASS all ACs. AC-1: `grep -n D-0167` hit line 12 in header above first import (line 23), before the limits block; diff has no `-` line in the limits block. AC-3: hit line 178 inside the `listedPathsFromTicket` JSDoc. AC-4: diff stat is the two scripts plus this file; every changed line in `check-lane-paths.mjs` is a comment; `test:repo-checks` 159/159 on branch and on main; `check-all` exit 0.
 - AC-2 own fault (backup cp, line 334 `path: resolvedTicketPath` -> `` `docs/tickets/${ticketId}.md` ``): `T-0466 AC-3` red on the path assertion only (3 pass 1 fail; expected `...self-grant.md`, actual `docs/tickets/T-0466.md`). Restored with cp: 4/4 pass, diff vs main back to 7+/3- in the script.
 - 2026-10-04 orchestrator: rewrapped header line 12 (101 → two lines under 100 cols, review nit). No wording change. check-lane-paths tests and check-all re-run green.
+
+### Accept (product-owner, 2026-10-04)
+- Verdict: **done**. HEAD 970c5e1, git clean, base a5e3207. Diff = 3 files (AC-4); every `.mjs` change is a comment; the 970c5e1 rewrap is comment-only and closes the review nit.
+- AC-1: header note lines 12-13, above the limits block, limits untouched. AC-2: `T-0466 AC-3` passes `ticketPath: OWN`, asserts `f[0].path === OWN`; red run on a cp backup recorded by build and QA. AC-3: JSDoc cites D-0167 §1 and `isOwnTicketFile`. AC-4: repo-checks 159/159 on main and branch; `check-all` exit 0 re-run at accept.
+- DoD: cached gate green (build log), contracts unchanged, commits start `T-0467`. Needs a draft PR for CI (`.github/scripts`).
