@@ -88,10 +88,11 @@
 }
 
 .wl-plan__radio input {
+  /* T-0469 (NFR-A11Y-2): `inset: 0` sizes against the label's padding box (inside its 1px
+     border), so a 44px border-box label gave a 42px hit target. `-1px` on every side extends the
+     input out to the label's border-box, restoring the full 44px the comment above promises. */
   position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
+  inset: -1px;
   margin: 0;
   opacity: 0;
   cursor: pointer;

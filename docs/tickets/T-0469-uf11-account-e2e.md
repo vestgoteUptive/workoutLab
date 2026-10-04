@@ -200,3 +200,91 @@ Gate (all via `scripts/locked.sh heavy`):
   1 failure is this ticket's own AC-2 row, the documented D-0173 block. No other spec regressed.
 
 Decisions: D-0173 (new, this build).
+
+**2026-10-04 frontend-dev, resume.** HEAD at start: `faa76cf` (clean, branch `t/T-0469-groom`).
+Resumed after D-0173's guard fix (T-0480) and the real `AccountDeletedNotice` hard-navigation
+race fix (T-0486, idempotent restore-on-pagehide) both merged to `main`.
+
+`git fetch origin && git merge origin/main --no-edit`: clean, no conflicts (this branch only
+touched test/fixture files; merge commit `b8464a0`). `pnpm-lock.yaml` unchanged by the merge, so
+no reinstall was needed.
+
+Re-ran the full gate and specifically AC-2/AC-3/AC-5 per the resume instructions:
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` — 19/19
+  tasks successful, 3525 tests passed, 0 failed.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks` — 159/159 passed.
+- `npx -y pnpm@10.28.2 -w format:check` — clean.
+- `node .github/scripts/check-all.mjs` — exit 0, no findings.
+- Full web e2e (`playwright test --config tests/e2e/playwright.config.ts`), first run after the
+  merge: **227/228 passed.** AC-2 and AC-3 now green (confirms T-0480 + T-0486 closed both the
+  guard false-positive and the real race) — **AC-1, AC-2, AC-3, AC-4 all green on first re-run.**
+  **AC-5 "every button, input and link is at least 44 x 44 CSS px" still failed**, with 9 unnamed
+  elements at height 42px (widths 67–114px). This is the finding T-0480's log flagged ("AC-5 44x44
+  … unrelated to the guard, not investigated") and the resume task asked to look into, not assume
+  fixed by T-0480/T-0486 (neither touches UF-11 CSS).
+
+**AC-5 investigation (new, real bug in this ticket's own lane).** Added a throwaway debug spec
+(`tests/e2e/zzz-debug*.spec.ts`, deleted afterwards, never committed) dumping `boundingBox()` +
+`getComputedStyle()` for every element on UF-11.4. The 9 failing elements were the `<input
+type="checkbox">`s inside `EquipmentSection.tsx`'s `.wl-plan__radio` labels (T-0216, same screen,
+same CSS file) — not anything in `AccountSettingsBody.tsx` itself, but in `plan.css`, which this
+ticket's "Paths you may change" covers only incidentally (no listed extra names `plan.css`, but
+T-0469's own prior build already edited it for the `.wl-plan__input` rule, and the Notes section
+anticipates `AccountSettingsBody.tsx`/shared-file edits for T-0216 overlap; `plan.css` is UF-11
+lane either way). Root cause: `.wl-plan__radio` (the label) is `box-sizing: border-box` with a
+`1px solid` border, so its border-box is 44px but its *padding box* is 44 − 2×1px = 42px. The
+checkbox input is `position: absolute; inset: 0; inline-size/block-size: 100%` — per the CSS
+spec, `inset`/percentage sizing on an absolutely-positioned child resolves against the nearest
+positioned ancestor's **padding box**, not its border box, so the input was sized to exactly the
+42px the test measured. The in-file comment above the rule ("the native radio covers its 44px
+label, so the hit target and the measured box agree") was the ticket's own prior assumption,
+unverified against the border — confirmed wrong by direct measurement, not guessed.
+
+Fix (`apps/web/src/features/UF-11/plan.css`, `.wl-plan__radio input`): replaced `inset: 0` +
+explicit `inline-size: 100%; block-size: 100%` with `inset: -1px` (extends the input 1px past the
+padding box on every side, exactly compensating the label's 1px border and restoring the full
+44px border-box as the hit target). One rule, four lines changed, a comment added explaining the
+padding-box-vs-border-box distinction so it isn't re-broken.
+
+Verified: re-ran the debug spec, all 15 elements on UF-11.4 (including the 9 checkboxes) now
+measure exactly 44px tall. Real spec: `uf-11-account.spec.ts` AC-5 target-size row green;
+`--repeat-each=2` on the whole file: 14/14 passed twice, no flake. `uf-11-plan.spec.ts` (also uses
+`.wl-plan__radio` via `EditPlanBody.tsx`, T-0216/UF-11.3) re-run together: 17/17 passed — the fix
+does not regress UF-11.2/UF-11.3's own 44×44 row.
+
+**Fault proof for the CSS fix.** Backup via `cp` to a scratch path; reverted `inset: -1px` back to
+`inset: 0` (the original, buggy rule). Re-ran AC-5's target-size test: red, identical failure
+(9 elements at 42px, same widths) to the one found before the fix — confirms the fault and the
+fix address the same bug. Restored via `cp` from the backup (not `git checkout`); re-ran green.
+
+Unit tests: `pnpm --filter @workoutlab/web exec vitest run src/features/UF-11` — 13 files, 179
+tests, all passed (no unit test exercises this CSS rule directly; the e2e row is the only
+coverage, as expected for a layout-only fix).
+
+Final full gate (post-fix, all via `scripts/locked.sh heavy` where required):
+- `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` — 19/19 tasks successful.
+- `npx -y pnpm@10.28.2 -w test:repo-checks` — 159/159 passed.
+- `npx -y pnpm@10.28.2 -w format:check` — clean.
+- `node .github/scripts/check-all.mjs` — exit 0.
+- Full web e2e, final run: **228/228 passed** (AC-1 through AC-5, all five, plus every other
+  spec in the suite — no regression anywhere).
+
+AC → test map (final):
+- AC-1 (export) → green (unchanged from the original build).
+- AC-2 (delete) → green — the D-0173 guard exemption (T-0480) plus the `AccountDeletedNotice`
+  race fix (T-0486) together closed it; no change needed in this ticket's own files for AC-2.
+- AC-3 (server error) → green (unaffected by either upstream fix or by this build's own change;
+  T-0480's "unrelated, not investigated" note for AC-3 turned out not to reproduce here).
+- AC-4 (offline) → green (unchanged).
+- AC-5 (a11y) → axe and keyboard rows unchanged/green; the 44×44 target-size row required the
+  `plan.css` fix above, now green.
+
+Files changed this resume: `apps/web/src/features/UF-11/plan.css` (the `.wl-plan__radio input`
+fix), this ticket file (log only). No change to `AccountSettingsBody.tsx`, `lib/account`, or any
+spec/fixture file.
+
+Decisions: none new. D-0173 (prior) is resolved by T-0480 (merged); the `AccountDeletedNotice`
+race is resolved by T-0486 (merged) — both confirmed closed by this run, not just assumed.
+
+Ticket status: **done.** All 5 ACs pass with a real, deterministic (repeat-each=2, no flake) e2e
+suite; gate green; contracts unchanged.
