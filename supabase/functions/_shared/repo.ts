@@ -210,7 +210,14 @@ export async function writeSessionFinish(
  * guard against `max_rows`, applied here too — a very long session's set count is unbounded).
  * Kept ordered by `client_id` for a stable, exhaustive page walk. Tombstoned sets are excluded at
  * the query level: `isHardSet` would drop them anyway (rule 2), but the summary's `hardSets` and
- * `exerciseCount` only need live rows, so filtering here keeps the payload smaller. */
+ * `exerciseCount` only need live rows, so filtering here keeps the payload smaller.
+ *
+ * `client_id` must be unique across the rows the query can see, or the `.range()` walk could skip
+ * or repeat rows. It is unique per user only: `(user_id, client_id)` is the unique key. There is no
+ * `user_id` filter here; the caller's-JWT client and the `session_sets_select` RLS policy scope the
+ * rows to the caller. The composite FK `session_sets_session_fk` (session_id, user_id) is a second
+ * guard: all sets of one `session_id` share one `user_id`. A service-role (RLS-bypassing) client
+ * must add `.eq("user_id", ctx.userId)`, as `loadHistoryWindow` does. */
 export async function loadSessionSets(ctx: AuthContext, sessionId: string): Promise<HistorySet[]> {
   const rows = await pageAll(
     ctx.supabase

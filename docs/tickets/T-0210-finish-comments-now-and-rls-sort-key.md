@@ -131,3 +131,12 @@ tier for a comment-only change).
   `loadSessionSets` for defence in depth, to match `loadHistoryWindow`.
 
 ## Build / accept log
+
+- 2026-10-04 build (backend). Comment-only edits: `sessions/core.ts` header rewritten (names `FinishDeps`, stored `ended_at`, no `now`); `_shared/repo.ts` `loadSessionSets` JSDoc extended by 7 lines (a-e). No code, test or contract change.
+- AC-1: `grep -cw now` on lines 1-6 = `0`; `grep -cE 'FinishDeps|deps'` = `1`.
+- AC-2: block printed by `sed -n '/^\/\*\* All of the caller/,/^export async function loadSessionSets/p'`; counts: `client_id` 3, `(user_id, client_id)` 1, `session_sets_select` 1, `RLS` 2, `session_sets_session_fk` 1, `.eq("user_id"` 1.
+- AC-3: `grep -ciE 'globally unique|only.{0,12}RLS|RLS.{0,12}only'` on the block = `0`.
+- AC-4: name-only diff lists the two files plus this ticket; both grep pipelines print nothing (output recorded in the handback).
+- AC-5: `npx -y deno@2 check --config supabase/tests/functions/deno.json supabase/functions/sessions/index.ts` exit 0.
+- AC-6: NOT RUNNABLE in this sandbox. `deno test` fails on the import `https://deno.land/std@0.224.0/assert/mod.ts` because the agent proxy answers 403 to CONNECT for deno.land:443. The failure is identical on the stashed (main) tree, so no pass counts could be logged. `git diff main...HEAD -- supabase/tests/` is empty. CI must run the unit suite.
+- AC-7: `-w format:check` green; `check-all.mjs` result in the handback.
