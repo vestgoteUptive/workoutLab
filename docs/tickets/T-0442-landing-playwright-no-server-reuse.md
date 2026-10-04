@@ -106,3 +106,11 @@ commits start `T-0442` (for example `T-0442: landing playwright never reuses a s
   block a parallel web e2e run.
 
 ## Build / accept log
+
+### Build log (frontend-dev, base a5e3207, tree clean)
+- Changed `apps/landing/browser/playwright.config.ts` (`reuseExistingServer: false`, one header-comment line); new `apps/landing/test/t0442-playwright-config.test.ts` (5 tests). Real `@playwright/test` imports fine under vitest; no mock used. Needed `npm run build` in packages/design-tokens first (fresh worktree; global setup runs Astro builds).
+- AC→test: AC1 = "never reuses a server with CI unset", "... CI=1", "source holds a literal false"; AC2 = "nothing else moved (CI unset)", "forbidOnly still follows CI"; AC3 = manual run below; AC4 = full landing suite + gate.
+- Red run on unfixed code (test file, old config): 2 failed / 3 passed. AC1 CI-unset case red (true) and the source assertion red; CI=1 case green.
+- Planted fault (backup `cp`, restored with `cp`): `reuseExistingServer: !!process.env.CI` -> 2 failed / 3 passed. Note the ticket text had the cases inverted: `!!CI` is false when unset, so the CI=1 case goes red (true) and the unset case stays green; the source assertion goes red too. Restored; diff shows only the intended change.
+- AC3 manual: stand-in http server on :4322, `scripts/locked.sh heavy npx playwright test --config browser/playwright.config.ts` from apps/landing -> exit 1, output `Error: http://localhost:4322 is already used, make sure that nothing is running on the port/url or ...`; no test ran. Stand-in killed. Contrast on main (specs run against the stand-in) not re-run; follows from the old `!process.env.CI` being true locally.
+- Gate: typecheck lint test --concurrency=1, test:repo-checks, format:check, check-all.mjs all green. (First lint run failed only because my AC3 run left apps/landing/playwright-report/; removed, rerun green.)

@@ -4,6 +4,8 @@ import { defineConfig, devices } from "@playwright/test";
 // built dist/ (the package.json test:browser script builds first), never
 // against `astro dev`. 390×844 is the default viewport for every AC unless a
 // spec sets its own (AC19's 320×640 and 1440×900 cases).
+// The port is never reused, so a busy :4322 stops the run with Playwright's
+// "is already used" error (T-0442, D-0155 §5).
 const PORT = 4322;
 const BASE_URL = `http://localhost:${PORT}`;
 
@@ -29,7 +31,7 @@ export default defineConfig({
     command: `astro preview --port ${PORT}`,
     cwd: "..",
     url: BASE_URL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 60_000,
   },
 });
