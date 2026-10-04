@@ -117,4 +117,8 @@ export const uf03 = {
   /** A logged row of an exercise the card has since swapped away from (T-0478 AC-2): the row
    *  keeps its values and shows this tag with the old exercise's library name. */
   swapTag: (exercise: string) => exercise,
+  /** The sheet's own chunk fails to load (D-0162 §3: "a failed UF-05 import doesn't stick").
+   *  Shown in place of the sheet, with a way to try again or give up without reloading. */
+  swapLoadFailed: "Couldn't load alternatives.",
+  swapRetry: "Try again",
 } as const;

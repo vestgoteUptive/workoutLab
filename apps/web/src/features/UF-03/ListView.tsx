@@ -5,12 +5,14 @@
 // Principle 3: the rows show the engine's pre-fill (`item.prefill`, `item.backoff`); "Previous" is
 // display data only. Logging from the rows is T-0417.
 import {
-  lazy,
+  Component,
   Suspense,
   useEffect,
   useId,
+  useReducer,
   useRef,
   useState,
+  type ReactNode,
   type ChangeEvent,
   type KeyboardEvent,
   type RefObject,
@@ -21,17 +23,58 @@ import { en } from "../../lib/i18n/en.js";
 import { itemSummary, restLabel } from "../../lib/i18n/workout.js";
 import { loadExerciseDetail } from "../../lib/offline/index.js";
 import { ExerciseHowTo } from "../UF-04/index.js";
+import { retryableLazy } from "./lazy-retry.js";
 import { loadListData, previousSets, type ListData } from "./list-data.js";
 import { parseCount, parseWeight } from "./weight-parse.js";
 import "./list-view.css";
 
-// T-0478: `React.lazy`, not a static import. `ListView` is reachable through `UF-03/index.js`'s
-// static `export { ListView }`; a static import of `SwapSheet` here would force `UF-05/index.js`
-// to resolve just from importing `UF-03/index.js`'s `Summary` (the way UF-09's own tests do),
-// defeating every "the chunk is slow/fails" UF-09 test for the unrelated UF-05 seam. The sheet
-// still mounts directly on the card (no seam chrome, no retry UI): `Suspense`'s fallback is `null`
-// while it loads, matching the near-instant local import() in practice.
-const SwapSheet = lazy(() => import("../UF-05/index.js").then((m) => ({ default: m.SwapSheet })));
+const { uf03 } = en;
+
+// T-0478: `React.lazy` through a `retryableLazy` wrapper, not a static import and not a plain
+// `lazy()`. `ListView` is reachable through `UF-03/index.js`'s static `export { ListView }`; a
+// static import of `SwapSheet` here would force `UF-05/index.js` to resolve just from importing
+// `UF-03/index.js`'s `Summary` (the way UF-09's own tests do), defeating every "the chunk is
+// slow/fails" UF-09 test for the unrelated UF-05 seam. A plain `lazy()` caches a rejected import
+// for the page's life (D-0162 §3 exists for exactly this): `swapSheetLoader.reset()` on a caught
+// failure makes a fresh lazy, so the *next* Swap tap imports again, not just "Try again" in place.
+const swapSheetLoader = retryableLazy(() =>
+  import("../UF-05/index.js").then((m) => ({ default: m.SwapSheet })),
+);
+
+/** A failed `SwapSheet` import (T-0478, D-0162 §3): the card's swap area shows this in place of
+ *  the sheet, with "Try again" (imports again) and "Close" (back to the rows, a fresh Swap tap
+ *  gets a fresh attempt either way — `reset()` already ran when the boundary caught it). */
+class SwapLoadBoundary extends Component<
+  { onClose(): void; onRetry(): void; children: ReactNode },
+  { failed: boolean }
+> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError(): { failed: boolean } {
+    return { failed: true };
+  }
+
+  override componentDidCatch(): void {
+    swapSheetLoader.reset();
+  }
+
+  override render(): ReactNode {
+    if (this.state.failed) {
+      return (
+        <div role="status" className="wl-uf03-list__status">
+          <p>{uf03.swapLoadFailed}</p>
+          <button type="button" className="wl-uf03-list__button" onClick={this.props.onRetry}>
+            {uf03.swapRetry}
+          </button>
+          <button type="button" className="wl-uf03-list__button" onClick={this.props.onClose}>
+            {uf03.seamClose}
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /** What a check sends to `ctx.recordSet` (the real `FocusSetInput`, `source: "list"`). */
 export interface ListSetInput {
@@ -97,8 +140,6 @@ export interface ListViewProps {
   /** Pinned by tests; the runtime default otherwise. */
   locale?: string | undefined;
 }
-
-const { uf03 } = en;
 
 /** The cached cue, read once per exercise; a missing detail or a rejected read gives `null`. */
 function useCue(exerciseId: string): string | null {
@@ -562,6 +603,14 @@ function Rows({
   );
 }
 
+/** T-0478, D-0162 §3: "Try again" remounts the boundary and the lazy sheet under a fresh key —
+ *  the lazy was already made again by the boundary's own `componentDidCatch` (`swapSheetLoader.
+ *  reset()`), so the remount imports again rather than replaying the cached rejection. */
+function useSwapRetry() {
+  const [attempt, retry] = useReducer((n: number) => n + 1, 0);
+  return { key: attempt, onRetry: retry };
+}
+
 function Card({ ctx, data, index, locale, current, onHowTo, name, swapRef }: CardProps) {
   const item = ctx.plan.items[index]!;
   const [swapping, setSwapping] = useState(false);
@@ -573,6 +622,9 @@ function Card({ ctx, data, index, locale, current, onHowTo, name, swapRef }: Car
     if (wasSwapping.current && !swapping) swapRef.current?.focus();
     wasSwapping.current = swapping;
   }, [swapping, swapRef]);
+  const { key: retryKey, onRetry } = useSwapRetry();
+  const SwapSheet = swapSheetLoader.Component;
+  const closeSwap = () => setSwapping(false);
   return (
     <>
       <p className="wl-uf03-list__target">
@@ -588,18 +640,20 @@ function Card({ ctx, data, index, locale, current, onHowTo, name, swapRef }: Car
         <SwapButton name={name} swapRef={swapRef} onOpen={() => setSwapping(true)} />
       ) : null}
       {current && swapping ? (
-        <Suspense fallback={null}>
-          <SwapSheet
-            workout={ctx.workout}
-            itemIndex={index}
-            timeZone={ctx.timeZone}
-            onApply={async (result) => {
-              await ctx.replaceItem(index, result.plan.items[index]!, result.plan.mainLiftId);
-              setSwapping(false);
-            }}
-            onClose={() => setSwapping(false)}
-          />
-        </Suspense>
+        <SwapLoadBoundary key={retryKey} onClose={closeSwap} onRetry={onRetry}>
+          <Suspense fallback={null}>
+            <SwapSheet
+              workout={ctx.workout}
+              itemIndex={index}
+              timeZone={ctx.timeZone}
+              onApply={async (result) => {
+                await ctx.replaceItem(index, result.plan.items[index]!, result.plan.mainLiftId);
+                setSwapping(false);
+              }}
+              onClose={closeSwap}
+            />
+          </Suspense>
+        </SwapLoadBoundary>
       ) : (
         <Rows ctx={ctx} data={data} index={index} locale={locale} />
       )}

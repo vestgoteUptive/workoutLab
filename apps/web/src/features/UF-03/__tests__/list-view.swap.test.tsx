@@ -7,7 +7,15 @@ import type { Workout } from "@workoutlab/shared";
 import { ListView } from "../index.js";
 import { L1, NOW } from "./fixtures.js";
 import { freshDb, seedLibraryAndTargets, signIn, signOut, waitReal } from "./helpers.js";
-import { axeViolations, logged, makeCtx, settle, type SpiedCtx } from "./list-helpers.js";
+import {
+  LIST_PLAN,
+  axeViolations,
+  logged,
+  makeCtx,
+  settle,
+  withItem,
+  type SpiedCtx,
+} from "./list-helpers.js";
 
 interface SwapPropsCall {
   workout: Workout;
@@ -165,19 +173,24 @@ describe("T-0478 AC-1 Swap from the list", () => {
     expect(screen.getByRole("heading", { level: 2, name: "Back squat" })).toBeTruthy();
   });
 
-  it("during a rest: opening and cancelling the sheet leaves ctx.rest untouched", async () => {
+  it("during a rest: the bar stays visible throughout, and ListView never calls skipRest/adjustRest", async () => {
+    // `RestBar` is rendered at the top of `ListView`, unconditionally on `ctx.rest` (D-0142 §3):
+    // opening or closing the swap sheet never touches it. This unit test can only prove ListView
+    // itself doesn't call the host's rest-mutating methods; the bar's clock surviving a real
+    // Cancel, through a real running rest, is list-view.swap.host.test.tsx's own "during a rest"
+    // test (a mocked `ctx.rest` object here is never written back to by anything, mocked or real,
+    // so asserting its identity/value proves nothing about the real interaction).
     const ctx = makeCtx({ rest: { remainingS: 90 } });
     await mount(ctx);
     expect(screen.getByRole("button", { name: /^Rest,/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Swap Back squat" }));
     await screen.findByRole("dialog", { name: "Replace exercise" });
+    expect(screen.getByRole("button", { name: /^Rest,/ })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     await settle();
-    // The rest bar is gone only because `expanded`'s card swap closed; ctx.rest itself (the
-    // host's own state) is never touched by ListView — `skipRest`/`adjustRest` are never called.
+    expect(screen.getByRole("button", { name: /^Rest,/ })).toBeTruthy();
     expect(ctx.skipRest).not.toHaveBeenCalled();
     expect(ctx.adjustRest).not.toHaveBeenCalled();
-    expect(ctx.rest).toEqual({ remainingS: 90 });
   });
 });
 
@@ -208,12 +221,16 @@ describe("T-0478 AC-3 focus and a11y", () => {
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Swap Back squat" }));
   });
 
-  it("CONTRAST: a stale focus target (removed from the DOM) would fail the assertion above", () => {
-    const button = document.createElement("button");
-    document.body.append(button);
-    button.focus();
-    button.remove();
-    expect(document.activeElement).not.toBe(button);
+  it("CONTRAST: opening the sheet (no Cancel, no Apply) never moves focus to the Swap button", async () => {
+    // Proves the assertions above are about the close path specifically (the `wasSwapping` edge
+    // in `Card`, T-0478 AC-3), not some unconditional "Swap always ends up focused" default.
+    const ctx = makeCtx();
+    await mount(ctx);
+    const swapButton = screen.getByRole<HTMLButtonElement>("button", { name: "Swap Back squat" });
+    swapButton.blur();
+    fireEvent.click(swapButton);
+    await screen.findByRole("dialog", { name: "Replace exercise" });
+    expect(document.activeElement).not.toBe(swapButton);
   });
 
   it("axe finds 0 violations on UF-03.1 with the Swap button showing", async () => {
@@ -223,8 +240,26 @@ describe("T-0478 AC-3 focus and a11y", () => {
   });
 });
 
-describe("T-0478 rows after a swap (unit side)", () => {
-  it("a row logged under an exerciseId the card no longer shows keeps its values and a tag", async () => {
+describe("T-0478 AC-2 rows after a swap (unit side)", () => {
+  it("a row logged under back-squat, with the card now showing hip-thrust, keeps its values and a tag", async () => {
+    // `ctx.plan` as it reads right after a swap (`item.exerciseId` is the new exercise); the two
+    // logged sets carry their own, older `exerciseId` — exactly what `ctx.replaceItem` leaves
+    // behind (it never rewrites a `loggedSets` entry, only `plan.items[index]`).
+    const ctx = makeCtx({
+      plan: withItem(LIST_PLAN, 0, { exerciseId: "hip-thrust" }),
+      loggedSets: [logged(0, 0, "back-squat", 6, 100), logged(0, 1, "back-squat", 6, 100)],
+    });
+    await mount(ctx);
+    const row1 = document.querySelector('[data-set-index="0"]')!;
+    const row2 = document.querySelector('[data-set-index="1"]')!;
+    expect(row1.querySelector('[data-part="tag"]')).toHaveTextContent("Back squat");
+    expect(row2.querySelector('[data-part="tag"]')).toHaveTextContent("Back squat");
+    expect(
+      screen.getByRole<HTMLInputElement>("textbox", { name: "Set 1 weight in kg" }).value,
+    ).toBe("100");
+  });
+
+  it("CONTRAST: a row logged under the card's own current exerciseId shows no tag", async () => {
     const ctx = makeCtx({
       loggedSets: [logged(0, 0, "back-squat", 6, 100), logged(0, 1, "back-squat", 6, 100)],
     });
@@ -233,8 +268,5 @@ describe("T-0478 rows after a swap (unit side)", () => {
     const row2 = document.querySelector('[data-set-index="1"]')!;
     expect(row1.querySelector('[data-part="tag"]')).toBeNull();
     expect(row2.querySelector('[data-part="tag"]')).toBeNull();
-    expect(
-      screen.getByRole<HTMLInputElement>("textbox", { name: "Set 1 weight in kg" }).value,
-    ).toBe("100");
   });
 });
