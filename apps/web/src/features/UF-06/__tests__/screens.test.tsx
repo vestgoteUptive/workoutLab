@@ -492,9 +492,7 @@ describe("AC-12 offline: queued sets count, and the screen renders before the ne
     const first = renderAt("/progress");
     await waitFor(() => expect(recentRows()).toHaveLength(4));
     expect(rowParts(recentRows()[0]!)).toEqual(["Back squat", "27 Sep", "110 kg × 3"]);
-    // OfflineStatus formats with `hour: "numeric"`, which this ICU renders as "8:10" for en-GB (the
-    // ticket wrote "08:10"). The component is read-only for this lane, so either spelling passes.
-    expect(await screen.findByText(/^Offline · last synced 0?8:10$/)).toBeInTheDocument();
+    expect(await screen.findByText("Offline · last synced 08:10")).toBeInTheDocument();
     first.unmount();
 
     renderAt("/progress/back-squat");
