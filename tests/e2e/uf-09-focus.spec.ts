@@ -12,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { goOffline } from "./fixtures/offline.js";
 import {
   FAKE_USER_ID,
   injectSession,
@@ -283,7 +284,7 @@ test.describe("T-0304b AC-12 one set offline", () => {
     await page.goto(`/session/${id}`);
     await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
     await precacheSettled(page);
-    await context.setOffline(true);
+    const gate = await goOffline(page, context);
     await page.reload();
 
     // UF-09.3 after UF-09.1's 5 s: built content, not just a screen id.
@@ -305,6 +306,7 @@ test.describe("T-0304b AC-12 one set offline", () => {
     await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible({ timeout: 10_000 });
 
     const rows = await setsFor(page, id);
+    expect(gate.writesFulfilledOffline()).toBe(0);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       exerciseId: "bench-press",
@@ -347,12 +349,13 @@ const TWO_ITEMS_PLAN = {
 };
 
 /** Seeds `plan`, opens it once online, settles the precache, then goes offline and reloads with
- *  no stored focus state, so UF-09.1 starts afresh. */
+ *  no stored focus state, so UF-09.1 starts afresh. Returns the gate; most callers ignore it
+ *  (T-0484, D-0175 §3) — only the `setsFor` rows below assert on it. */
 async function openOffline(
   page: Page,
-  context: { setOffline(offline: boolean): Promise<void> },
+  context: import("@playwright/test").BrowserContext,
   plan: object,
-): Promise<void> {
+): Promise<import("./fixtures/offline.js").OfflineGate> {
   await page.goto("/");
   await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
   const id = randomUUID();
@@ -360,10 +363,11 @@ async function openOffline(
   await page.goto(`/session/${id}`);
   await expect(page.locator('[data-screen-id^="UF-09."]')).toBeVisible();
   await precacheSettled(page);
-  await context.setOffline(true);
+  const gate = await goOffline(page, context);
   await page.evaluate((key) => window.localStorage.removeItem(key), `wl-focus:${id}`);
   await page.reload();
   await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+  return gate;
 }
 
 test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
@@ -461,7 +465,7 @@ test.describe("T-0304c AC-6 warm-up and a timed set, offline", () => {
     context,
   }) => {
     await page.clock.install();
-    await openOffline(page, context, TIMED_PLAN);
+    const gate = await openOffline(page, context, TIMED_PLAN);
     await page.getByRole("button", { name: "Start now" }).click();
 
     // UF-09.2: built content (the move's heading; the mocked library is empty, so its id).
@@ -492,7 +496,9 @@ test.describe("T-0304c AC-6 warm-up and a timed set, offline", () => {
     await expect
       .poll(async () => (await setsFor(page, id(page))).length, { timeout: 10_000 })
       .toBe(1);
+    expect(gate.writesFulfilledOffline()).toBe(0);
     const rows = (await setsFor(page, id(page))) as StoredTimedRow[];
+    expect(gate.writesFulfilledOffline()).toBe(0);
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       exerciseId: "plank",
