@@ -142,3 +142,9 @@ start `T-0475`.
 - **Origin:** D-0170 "Consequences" (web-shell, optional, low priority) and the T-0474 review.
 
 ## Build / accept log
+
+- 2026-10-04 build (web-shell, HEAD 35290e5, tree clean at start). `INDEX_ONLY_PATTERN` now `${FEATURE_PREFIX}[Uu][Ff]-\d\d/(?!FEATURE_ENTRY_SOURCE)` with `caseSensitive: true`; `FEATURE_ENTRY_SOURCE = "index(\.[a-z]+)?\.js$"` is the single entry rule (T-0313 reuses it); comments and message updated. New describe `T-0475 feature entries (D-0170 §1)` appended to import-bans.test.ts.
+- AC map: AC-1 five allowed rows; AC-2 two plain-index rows; AC-3 eight rows (exactly one, severity 2, `D-0071 §3`); AC-4 `focus-prefs.js` and `uf-08/focus-prefs.js` rows plus the unedited existing tests (AC-11 tree lint included).
+- Red on unfixed code (tests added first, old regex): 8 failed / 77 passed, exactly the 8 AC-3 rows (0 errors each); AC-1/2/4 rows pass on main by design.
+- F1 (old regex `UF-\\d\\d/(?!index\\b)`, no caseSensitive): 8 AC-3 rows red. F2 (new regex, `caseSensitive` dropped): `index.Prefs.js` and `Index.js` rows red (2). F3 (`[Uu][Ff]` narrowed to `UF`): `../uf-08/focus-prefs.js` row red (1). Each on a cp backup, restored with cp, confirmed with cmp; the landed fault shown by the expected red rows.
+- Gate: web typecheck, lint green; t0474 + UF-03 exports-and-lint tests 17/17; web `vitest run` once exited 1 inside pnpm (no failing test captured, tail only; likely load-related, 259 files in parallel) and passed on rerun 259 files / 3600 tests; `-w test:repo-checks`, `-w format:check`, `check-all` green.
