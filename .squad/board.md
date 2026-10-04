@@ -63,7 +63,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 |---|---|---|---|---|---|
 | T-0206 | Page the exercises/exercise_areas library reads through pageAll (or guard as the library nears PostgREST max_rows = 1000) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
 | T-0209 | Close the non-atomic read-modify-write race on concurrent finishes (conditional update or trigger) — T-0203c review follow-up | backend | T-0203c | todo | wl-build-backend |
-| T-0210 | Stale comment sessions/core.ts:1-4 (injected `now` no longer taken); document loadSessionSets' RLS dependency for sort-key uniqueness | backend | T-0203c | todo | wl-build-backend |
+| T-0210 | Stale comment sessions/core.ts:1-4 (injected `now` no longer taken); document loadSessionSets' RLS dependency for sort-key uniqueness | backend | T-0203c | doing | wl-build-backend |
 | T-0207 | Attach x-request-id to OPTIONS preflight responses (D-0053 §5 says every response) — T-0203b review follow-up | backend | T-0203b | todo | wl-build-backend |
 | T-0213 | api/openapi.yaml SwapCandidate/SwapCandidateList examples: db-row muscleMatch 0.667 → 1.0 (D-0056 §1), and align `packages/shared/test/schemas.test.ts` R12-E1 entries (board line 57) — T-0204 follow-up | data | T-0204 | todo | wl-spec |
 | T-0217 | Needs a decision (amends D-0058): tie-break for two different ratings at the same winning endedAt. Default proposal: the higher rating wins (order-independent), which changes AC29's correction meaning; alternative: document last-arrival-wins as an exception. Then a unit test with two ratings at one endedAt — T-0208 follow-up | backend | T-0208 | todo | wl-triage → wl-build-backend |
