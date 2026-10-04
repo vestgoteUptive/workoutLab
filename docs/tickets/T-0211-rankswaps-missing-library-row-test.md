@@ -57,7 +57,7 @@ Two T-0204 review gaps in `packages/engine/test/rule-12-swaps.test.ts`:
   - `git diff --stat main...HEAD -- packages/engine/src` is empty. Record it in the build log.
   - Every existing engine test passes. No assertion other than the AC24 done-set line is edited.
   - The engine test count rises only by the new T-0211 tests.
-- **AC4** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck lint test` is green.
+- **AC4** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/engine lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).

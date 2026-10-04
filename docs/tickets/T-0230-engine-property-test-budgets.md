@@ -43,7 +43,7 @@ Each new test title starts with `T-0230 ACn`.
     - `it("a sweep", () => {}, 30_000)` is not.
   - The template-literal titles in `rule-7-histories.test.ts` (`` `rule-7 (AC28) energy ${energy}: …` ``) are matched on their literal text.
 - AC3 (no behaviour change) Every existing engine test passes, with no assertion edited. The engine test count rises only by the new `test-budgets.test.ts` cases.
-- AC4 `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck lint test` is green.
+- AC4 `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/engine lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).

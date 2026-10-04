@@ -38,7 +38,7 @@ T-0226 added `getsBackoff` to `packages/engine/src/session.ts`, and `swaps.ts` i
   - Non-vacuity: the test asserts the graph has at least 10 edges, and that it contains the edges `session.ts → swaps.ts` and `swaps.ts → cost.ts`.
   - A unit case runs the same DFS function on a hand-built two-node cycle `{a: [b], b: [a]}` and reports it.
   - If AC3 finds another cycle on today's `src`, fix it only when that is a pure move like this one. Otherwise record the cycle in the result as a follow-up and exclude only that pair, with a comment that names the follow-up.
-- AC4 `pnpm --filter @workoutlab/engine typecheck lint test` is green.
+- AC4 `pnpm --filter @workoutlab/engine typecheck`, `pnpm --filter @workoutlab/engine lint` and `pnpm --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).

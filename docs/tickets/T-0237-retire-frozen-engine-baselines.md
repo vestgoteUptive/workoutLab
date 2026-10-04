@@ -59,7 +59,7 @@ New test titles start with `T-0237 ACn`. Rescoped tests keep their rule/AC prefi
   - no `.ts` file under `packages/engine/test/` (recursively) contains any of the strings `pre-t0204-suggest`, `pre-t0205-suggest`, `pre-t0219-baseline`, `pre-t0226-suggest`, apart from this test file itself.
   - On `main` both fail. Record the red run in the build log.
 - **AC4 (no behaviour change)** `git diff --stat main...HEAD -- packages/engine/src` is empty (record it). The T-0236 guard (`t0236-no-t0220-snapshot.test.ts`), the T-0230 budget guard and the traceability tests (`t0204-traceability.test.ts` AC27: R12-E1…R12-E5 still start titles in `rule-12-swaps.test.ts`) pass unedited. The build log lists each retired test by title and the engine test count before and after.
-- **AC5** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck lint test` is green.
+- **AC5** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/engine lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).

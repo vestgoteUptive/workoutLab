@@ -74,7 +74,7 @@ Test titles start with `T-0240 ACn`. Setup: `timedCoreHistory` (4 sessions at 18
 - **AC7 (no behaviour change)** `git diff --stat main...HEAD -- packages/engine/src` is empty
   (record it). The T-0230 budget guard, the T-0236 and T-0237 guards and the traceability tests
   pass unedited. The build log states the engine test count before and after.
-- **AC8** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck lint test` is green.
+- **AC8** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/engine lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).

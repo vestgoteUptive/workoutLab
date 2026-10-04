@@ -41,7 +41,7 @@ Each new test title starts with `T-0234 ACn`.
   - The test reads `packages/engine/src/prefill.ts` as text (resolved from the package root, as T-0222 AC3 does from `packages/shared`). It extracts the integers in `export const TIMED_MIN_S = …;` and `export const TIMED_MAX_S = …;`.
   - They equal the bounds AC2 checks (15 and 120). If either constant is missing, the test fails and names it.
   - `data/exercises/package.json` gains no dependency.
-- **AC4 (nothing else moves)** Every existing `data/exercises` test passes unedited, including `warmup.test.ts` and the old `≥ 5` check in `timed.test.ts`. `npx -y pnpm@10.28.2 --filter @workoutlab/exercises typecheck lint test` is green.
+- **AC4 (nothing else moves)** Every existing `data/exercises` test passes unedited, including `warmup.test.ts` and the old `≥ 5` check in `timed.test.ts`. `npx -y pnpm@10.28.2 --filter @workoutlab/exercises typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/exercises lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/exercises test` are green.
 
 ## Paths you may change
 - `data/exercises/**` (the lane: `content`).

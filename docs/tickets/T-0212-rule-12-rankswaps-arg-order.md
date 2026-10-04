@@ -49,7 +49,7 @@ Each new test title starts with `T-0212 ACn`.
 
   Per D-0096 §2, add no "every other section unchanged" test. Run `git diff main...HEAD -- docs/engine-rules.md` and list the changed sections in the result and the commit message. Expected: the rule 12 signature line and Traceability.
 - **AC5 (no behaviour change)** `git diff --stat main...HEAD -- packages/engine/src` is empty (record it in the build log). Every existing engine test passes. The only edited tests are the two guards (AC3).
-- **AC6** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck lint test` is green.
+- **AC6** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/engine lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).

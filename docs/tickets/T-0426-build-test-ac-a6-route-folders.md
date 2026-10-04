@@ -39,8 +39,8 @@ check. D-0144 decides the new rule.
    `routes.ts` fails.
 3. **AC3** No other assertion in `build.test.ts` changes; the T-0390/T-0398 codegen scan and the
    other AC-A* cases are untouched.
-4. **AC4** `pnpm --filter @workoutlab/web typecheck lint test`, `-w format:check` and check-all are
-   green.
+4. **AC4** `pnpm --filter @workoutlab/web typecheck`, `pnpm --filter @workoutlab/web lint`,
+   `pnpm --filter @workoutlab/web test`, `-w format:check` and check-all are green.
 
 ## Paths you may change
 - `apps/web/*.*` (the lane: `web-shell`).
