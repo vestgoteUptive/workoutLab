@@ -24,8 +24,13 @@ export function AutoSync() {
       // Best-effort (D-0104 §2): a failed read keeps that table's previous cache rows, the
       // other refreshes still write theirs, and nothing surfaces as an unhandled rejection.
       refreshAll(new Date(), tz).catch(() => undefined);
+      // A mount flush can only succeed while online: offline, the fetch throws, `flush()`
+      // returns `network-error`, and `RetryScheduler` arms a backoff timer for nothing (D-0045
+      // §6). The `online` listener `startSync` just registered covers the return of the network,
+      // and so does the enqueue path (`sync.ts`'s `if (stopped || !navigator.onLine) return`),
+      // so skipping it here loses no coverage (D-0116).
+      void handle.flushNow();
     }
-    void handle.flushNow();
     return () => handle.stop();
   }, [signedIn]);
 
