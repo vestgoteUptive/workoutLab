@@ -127,7 +127,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0482 | UF-02.1: Today reflects a check-in Accept without a remount (C-01 targets, suggestion) — needs a slot callback or a cache-change signal; ungroomed (D-0174 §2) | web-feature:UF-02 | T-0471 | todo | wl-build-web |
 | T-0472 | UF-03.1: after a reload, unchecking a logged added row removes the row and drops focus to body — keep the row or move focus to '+ Add set' (T-0457 review) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
 | T-0473 | UF-03.1 AC-6: add a vitest that pressing + Add set on a timed item moves focus to the new row's seconds field (untested; T-0457 accept) | web-feature:UF-03 | T-0457 | todo | wl-build-web |
-| T-0475 | import-bans polish (D-0170, optional): add a contrast row showing `../UF-08/index.prefs.js` is allowed; tighten INDEX_ONLY_PATTERN so only `index.js` / `index.<lower>.js` pass (not `index-x.js`); keep T-0313's dynamic-import pattern consistent | web-shell | T-0474 | todo | wl-build-web |
+| T-0475 | import-bans polish (D-0170, optional): add a contrast row showing `../UF-08/index.prefs.js` is allowed; tighten INDEX_ONLY_PATTERN so only `index.js` / `index.<lower>.js` pass (not `index-x.js`); keep T-0313's dynamic-import pattern consistent | web-shell | T-0474 | doing | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
