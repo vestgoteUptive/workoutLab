@@ -6,7 +6,8 @@ import { resolve } from "node:path";
 import { act, render, type RenderResult } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation } from "react-router";
 import { vi } from "vitest";
-import type { SessionPlan, WorkoutItem } from "@workoutlab/shared";
+import { WARMUP_COST_S, availableS } from "@workoutlab/engine";
+import type { SessionPlan, Workout, WorkoutItem } from "@workoutlab/shared";
 import { SessionHost } from "../../UF-09/index.js";
 import { Summary } from "../index.js";
 import type { ListViewCtx } from "../ListView.js";
@@ -28,6 +29,29 @@ export function withItem(plan: SessionPlan, index: number, patch: Partial<Workou
   return { ...plan, items };
 }
 
+/** T-0478: the `Workout` LIST_PLAN's stored row would build (D-0069 §5, the real
+ *  `UF-09/session.js` `buildWorkout`'s own arithmetic — recomputed here, not imported, since a
+ *  UF-03 test file never imports a UF-09 module other than its public `index.js`, D-0142 §5). A
+ *  test that needs a particular `ctx.plan` passes its own `workout` too. */
+const LIST_BUDGET_MIN = 45;
+const LIST_WARMUP_IN_BUDGET = true;
+const listItemsTotalS = (plan: SessionPlan): number =>
+  plan.items.reduce((sum, item) => sum + item.costS, 0);
+
+export const LIST_WORKOUT: Workout = {
+  plan: LIST_PLAN,
+  budgetMin: LIST_BUDGET_MIN,
+  warmupInBudget: LIST_WARMUP_IN_BUDGET,
+  energy: "normal",
+  itemsTotalS: listItemsTotalS(LIST_PLAN),
+  totalS: listItemsTotalS(LIST_PLAN) + WARMUP_COST_S,
+  unusedS: Math.max(
+    0,
+    availableS(LIST_BUDGET_MIN, LIST_WARMUP_IN_BUDGET) - listItemsTotalS(LIST_PLAN),
+  ),
+  sessionReasons: [],
+};
+
 export type SpiedCtx = ListViewCtx & {
   close: ReturnType<typeof vi.fn<() => void>>;
   finish: ReturnType<typeof vi.fn<() => Promise<void>>>;
@@ -37,17 +61,19 @@ export type SpiedCtx = ListViewCtx & {
   startRest: ReturnType<typeof vi.fn<ListViewCtx["startRest"]>>;
   adjustRest: ReturnType<typeof vi.fn<ListViewCtx["adjustRest"]>>;
   skipRest: ReturnType<typeof vi.fn<ListViewCtx["skipRest"]>>;
+  replaceItem: ReturnType<typeof vi.fn<ListViewCtx["replaceItem"]>>;
 };
 
 export function makeCtx(over: Partial<ListViewCtx> = {}): SpiedCtx {
   return {
     sessionId: S1,
     plan: LIST_PLAN,
+    workout: LIST_WORKOUT,
+    timeZone: "America/New_York",
     loggedSets: [],
     currentItemIndex: 0,
     elapsedS: 600,
     rest: null,
-    ...over,
     close: vi.fn<() => void>(),
     finish: vi.fn<() => Promise<void>>(async () => undefined),
     recordSet: vi.fn<ListViewCtx["recordSet"]>(async () => ({})),
@@ -56,6 +82,10 @@ export function makeCtx(over: Partial<ListViewCtx> = {}): SpiedCtx {
     startRest: vi.fn<ListViewCtx["startRest"]>(),
     adjustRest: vi.fn<ListViewCtx["adjustRest"]>(),
     skipRest: vi.fn<ListViewCtx["skipRest"]>(),
+    replaceItem: vi.fn<ListViewCtx["replaceItem"]>(async () => undefined),
+    // `over` last: a test's own spy (for example a rejecting `replaceItem`) must win over the
+    // defaults above, not be silently discarded by them (T-0478).
+    ...over,
   } as SpiedCtx;
 }
 

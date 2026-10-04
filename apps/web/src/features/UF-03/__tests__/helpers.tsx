@@ -11,7 +11,7 @@ import {
   useNavigate,
   type NavigateFunction,
 } from "react-router";
-import type { AreaTarget, LibraryExercise, PlanCheckin } from "@workoutlab/shared";
+import type { AreaTarget, EngineProfile, LibraryExercise, PlanCheckin } from "@workoutlab/shared";
 import {
   resetOfflineDbForTest,
   setKey,
@@ -144,6 +144,30 @@ export async function seedLibraryAndTargets(
   for (const target of targets) {
     await db.targetCache.put({ key: userScopedKey(userId, target.area), userId, target });
   }
+}
+
+/** T-0478: the F-profile shape (D-0037 §6), the way `refreshProfile` writes `profileCache`.
+ *  `SwapSheet`'s own `loadProfile()` read needs this row before `rankSwaps`/`applySwap` run. */
+export function engineProfile(over: Partial<EngineProfile> = {}): EngineProfile {
+  return {
+    goal: "build_muscle",
+    level: "beginner",
+    equipment: ["barbell", "rack", "bench", "dumbbell", "cable", "machine", "pullup-bar"],
+    rhythmMin: 3,
+    rhythmMax: 4,
+    priorityAreas: [],
+    onboardedAt: "2026-08-02T10:00:00Z",
+    planUpdatedAt: "2026-08-02T10:00:00Z",
+    ...over,
+  };
+}
+
+export async function seedProfile(
+  db: OfflineDb,
+  profile: EngineProfile = engineProfile(),
+  userId = USER_A,
+): Promise<void> {
+  await db.profileCache.put({ userId, profile });
 }
 
 /** T-0433: a cached server `sessions` row, as `refreshSessions` writes `sessionCache`. */

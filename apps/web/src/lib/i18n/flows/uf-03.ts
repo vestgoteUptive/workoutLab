@@ -110,4 +110,11 @@ export const uf03 = {
   restMore: "+15 s",
   skipRest: "Skip",
   backToList: "Back to list",
+  // UF-03.1 Swap (T-0478, D-0071 §7). The visible label is plain "Swap"; the accessible name
+  // names the exercise, so two cards' buttons are never confused by assistive tech.
+  swap: "Swap",
+  swapName: (exercise: string) => `Swap ${exercise}`,
+  /** A logged row of an exercise the card has since swapped away from (T-0478 AC-2): the row
+   *  keeps its values and shows this tag with the old exercise's library name. */
+  swapTag: (exercise: string) => exercise,
 } as const;

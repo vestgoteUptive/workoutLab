@@ -114,6 +114,14 @@
   font-weight: 500;
 }
 
+/* T-0478 AC-2: the old exercise's name on a row logged before a swap. */
+.wl-uf03-list__tag {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--wl-color-text-muted);
+}
+
 .wl-uf03-list__table input[type="text"] {
   box-sizing: border-box;
   width: 64px;

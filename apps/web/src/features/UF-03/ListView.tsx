@@ -5,6 +5,8 @@
 // Principle 3: the rows show the engine's pre-fill (`item.prefill`, `item.backoff`); "Previous" is
 // display data only. Logging from the rows is T-0417.
 import {
+  lazy,
+  Suspense,
   useEffect,
   useId,
   useRef,
@@ -13,7 +15,7 @@ import {
   type KeyboardEvent,
   type RefObject,
 } from "react";
-import type { LibraryExercise, SessionPlan, WorkoutItem } from "@workoutlab/shared";
+import type { LibraryExercise, SessionPlan, Workout, WorkoutItem } from "@workoutlab/shared";
 import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { itemSummary, restLabel } from "../../lib/i18n/workout.js";
@@ -22,6 +24,14 @@ import { ExerciseHowTo } from "../UF-04/index.js";
 import { loadListData, previousSets, type ListData } from "./list-data.js";
 import { parseCount, parseWeight } from "./weight-parse.js";
 import "./list-view.css";
+
+// T-0478: `React.lazy`, not a static import. `ListView` is reachable through `UF-03/index.js`'s
+// static `export { ListView }`; a static import of `SwapSheet` here would force `UF-05/index.js`
+// to resolve just from importing `UF-03/index.js`'s `Summary` (the way UF-09's own tests do),
+// defeating every "the chunk is slow/fails" UF-09 test for the unrelated UF-05 seam. The sheet
+// still mounts directly on the card (no seam chrome, no retry UI): `Suspense`'s fallback is `null`
+// while it loads, matching the near-instant local import() in practice.
+const SwapSheet = lazy(() => import("../UF-05/index.js").then((m) => ({ default: m.SwapSheet })));
 
 /** What a check sends to `ctx.recordSet` (the real `FocusSetInput`, `source: "list"`). */
 export interface ListSetInput {
@@ -47,6 +57,11 @@ export type ListSetEdit = { weightKg: number } | { reps: number } | { durationS:
 export interface ListViewCtx {
   sessionId: string;
   plan: SessionPlan;
+  /** The D-0069 §5 `Workout` the sheet ranks against (T-0478); reference-stable across a render
+   *  that doesn't change the plan. */
+  workout: Workout;
+  /** The host's resolved time zone (T-0478), passed to `SwapSheet` unchanged. */
+  timeZone: string;
   loggedSets: readonly {
     clientId: string;
     itemIndex: number;
@@ -70,6 +85,9 @@ export interface ListViewCtx {
   adjustRest(deltaS: number): void;
   /** Ends the running rest now (T-0418). */
   skipRest(): void;
+  /** Replaces item `index` (the current one or a later one, else `RangeError`) and writes
+   *  `{...row, plan}`; `mainLiftId`, when given, becomes `plan.mainLiftId` (T-0478, D-0071 §6). */
+  replaceItem(index: number, item: WorkoutItem, mainLiftId?: string | null): Promise<void>;
   close(): void;
   finish(): Promise<void>;
 }
@@ -114,7 +132,8 @@ function setCount(item: WorkoutItem): number {
 /** D-0142 §3: true once every planned set (back-off included) of every item has a live logged
  *  set. A rest never starts after the session's last planned set (T-0418 AC-2). `justLogged`, a
  *  position just checked whose write has resolved, counts as logged even before `ctx` (a possibly
- *  stale closure, D-0071 §5) carries it. */
+ *  stale closure, D-0071 §5) carries it. T-0478: a position counts once logged under any
+ *  exerciseId — a set logged before a swap (D-0140's free-position rule) still fills its slot. */
 function allPlannedSetsLogged(
   ctx: ListViewCtx,
   justLogged: { itemIndex: number; setIndex: number; exerciseId: string } | null = null,
@@ -122,15 +141,9 @@ function allPlannedSetsLogged(
   return ctx.plan.items.every((item, itemIndex) => {
     const planned = setCount(item);
     const logged = new Set(
-      ctx.loggedSets
-        .filter((s) => s.itemIndex === itemIndex && s.exerciseId === item.exerciseId)
-        .map((s) => s.setIndex),
+      ctx.loggedSets.filter((s) => s.itemIndex === itemIndex).map((s) => s.setIndex),
     );
-    if (
-      justLogged &&
-      justLogged.itemIndex === itemIndex &&
-      justLogged.exerciseId === item.exerciseId
-    ) {
+    if (justLogged && justLogged.itemIndex === itemIndex) {
       logged.add(justLogged.setIndex);
     }
     for (let i = 0; i < planned; i += 1) if (!logged.has(i)) return false;
@@ -145,6 +158,34 @@ interface CardProps {
   locale: string | undefined;
   current: boolean;
   onHowTo(): void;
+  /** The exercise name on screen now (T-0478): the Swap button's accessible name reads the old
+   *  one before Apply, the new one after (AC-3). */
+  name: string;
+  swapRef: RefObject<HTMLButtonElement | null>;
+}
+
+/** T-0478 AC-1: the current card's "Swap" button, named for the exercise on screen so two cards'
+ *  buttons are never confused by assistive tech. */
+function SwapButton({
+  name,
+  swapRef,
+  onOpen,
+}: {
+  name: string;
+  swapRef: RefObject<HTMLButtonElement | null>;
+  onOpen(): void;
+}) {
+  return (
+    <button
+      ref={swapRef}
+      type="button"
+      className="wl-uf03-list__button"
+      aria-label={uf03.swapName(name)}
+      onClick={onOpen}
+    >
+      {uf03.swap}
+    </button>
+  );
 }
 
 type Draft = { weight: string | null; reps: string | null; seconds: string | null };
@@ -164,6 +205,9 @@ interface RowProps {
   seed: Seed | null;
   /** Focus the first field on mount (a row just added by "+ Add set"). */
   focusOnMount: boolean;
+  /** T-0478 AC-2: the logged exercise's library name, shown as a tag, when a row was logged
+   *  before a swap and the card now shows a different exercise. `null` otherwise. */
+  tagName: string | null;
 }
 
 interface Seed {
@@ -187,6 +231,7 @@ function SetRow({
   prevText,
   seed,
   focusOnMount,
+  tagName,
 }: RowProps) {
   const n = i + 1;
   const hintId = useId();
@@ -199,9 +244,9 @@ function SetRow({
   useEffect(() => {
     if (focusOnMount) firstField.current?.focus();
   }, [focusOnMount]);
-  const logged = ctx.loggedSets.find(
-    (s) => s.itemIndex === index && s.setIndex === i && s.exerciseId === item.exerciseId,
-  );
+  // T-0478 AC-2: a row's own logged `exerciseId` wins over the card's current `item.exerciseId`
+  // (keyed by `itemIndex`/`setIndex` alone), so a set logged before a swap stays shown.
+  const logged = ctx.loggedSets.find((s) => s.itemIndex === index && s.setIndex === i);
   const baseWeight = logged
     ? logged.weightKg
     : seed
@@ -335,7 +380,14 @@ function SetRow({
 
   return (
     <tr data-part="set-row" data-set-index={i} data-logged={logged ? "" : undefined}>
-      <th scope="row">{backoff ? uf03.backoffRow : n}</th>
+      <th scope="row">
+        {backoff ? uf03.backoffRow : n}
+        {tagName === null ? null : (
+          <span className="wl-uf03-list__tag" data-part="tag">
+            {uf03.swapTag(tagName)}
+          </span>
+        )}
+      </th>
       <td data-part="previous">{prevText}</td>
       {showKg ? (
         <td>
@@ -404,7 +456,12 @@ function SetRow({
   );
 }
 
-function Rows({ ctx, data, index, locale }: Omit<CardProps, "current" | "onHowTo">) {
+function Rows({
+  ctx,
+  data,
+  index,
+  locale,
+}: Omit<CardProps, "current" | "onHowTo" | "name" | "swapRef">) {
   const item = ctx.plan.items[index]!;
   const exercise = data.library.find((e) => e.id === item.exerciseId);
   const timed = isTimed(item, exercise);
@@ -413,9 +470,9 @@ function Rows({ ctx, data, index, locale }: Omit<CardProps, "current" | "onHowTo
   const planned = setCount(item);
   const [added, setAdded] = useState<Record<number, Seed>>({});
   const [fresh, setFresh] = useState<number | null>(null);
-  const loggedHere = ctx.loggedSets.filter(
-    (s) => s.itemIndex === index && s.exerciseId === item.exerciseId,
-  );
+  // T-0478 AC-2: a logged row stays keyed by `itemIndex` alone, never by `item.exerciseId`, so a
+  // set logged before a swap keeps showing after it (`item.exerciseId` is now the new exercise).
+  const loggedHere = ctx.loggedSets.filter((s) => s.itemIndex === index);
   // Planned positions, then every logged set above them and every added row (D-0142 §3).
   const rows: number[] = Array.from(
     new Set([
@@ -471,6 +528,13 @@ function Rows({ ctx, data, index, locale }: Omit<CardProps, "current" | "onHowTo
                     : uf03.previousReps(prev.reps);
               }
             }
+            // T-0478 AC-2: a row logged under a different exerciseId than the card's current one
+            // (a set done before a swap) shows that exercise's library name as a tag.
+            const done = loggedHere.find((s) => s.setIndex === i);
+            const tagName =
+              done && done.exerciseId !== item.exerciseId
+                ? (data.library.find((e) => e.id === done.exerciseId)?.name ?? done.exerciseId)
+                : null;
             return (
               <SetRow
                 key={i}
@@ -483,6 +547,7 @@ function Rows({ ctx, data, index, locale }: Omit<CardProps, "current" | "onHowTo
                 showKg={showKg}
                 locale={locale}
                 prevText={prevText}
+                tagName={tagName}
                 seed={added[i] ?? null}
                 focusOnMount={fresh === i}
               />
@@ -497,20 +562,47 @@ function Rows({ ctx, data, index, locale }: Omit<CardProps, "current" | "onHowTo
   );
 }
 
-function Card({ ctx, data, index, locale, current, onHowTo }: CardProps) {
+function Card({ ctx, data, index, locale, current, onHowTo, name, swapRef }: CardProps) {
   const item = ctx.plan.items[index]!;
+  const [swapping, setSwapping] = useState(false);
+  if (!current && swapping) setSwapping(false);
+  // T-0478 AC-3: focus returns to the Swap button after Cancel or a resolved Apply closes the
+  // sheet (D-0172 §3). A mount that never opened the sheet (swapping always false) never fires.
+  const wasSwapping = useRef(false);
+  useEffect(() => {
+    if (wasSwapping.current && !swapping) swapRef.current?.focus();
+    wasSwapping.current = swapping;
+  }, [swapping, swapRef]);
   return (
     <>
       <p className="wl-uf03-list__target">
         <span>{uf03.targetLabel}</span> <span data-part="target">{itemSummary(item)}</span>
       </p>
-      {current ? <Cue exerciseId={item.exerciseId} /> : null}
-      {current ? (
+      {current && !swapping ? <Cue exerciseId={item.exerciseId} /> : null}
+      {current && !swapping ? (
         <button type="button" className="wl-uf03-list__button" onClick={onHowTo}>
           {uf03.howToAction}
         </button>
       ) : null}
-      <Rows ctx={ctx} data={data} index={index} locale={locale} />
+      {current ? (
+        <SwapButton name={name} swapRef={swapRef} onOpen={() => setSwapping(true)} />
+      ) : null}
+      {current && swapping ? (
+        <Suspense fallback={null}>
+          <SwapSheet
+            workout={ctx.workout}
+            itemIndex={index}
+            timeZone={ctx.timeZone}
+            onApply={async (result) => {
+              await ctx.replaceItem(index, result.plan.items[index]!, result.plan.mainLiftId);
+              setSwapping(false);
+            }}
+            onClose={() => setSwapping(false)}
+          />
+        </Suspense>
+      ) : (
+        <Rows ctx={ctx} data={data} index={index} locale={locale} />
+      )}
     </>
   );
 }
@@ -614,6 +706,7 @@ export function ListView({ ctx, locale }: ListViewProps) {
   const keepRef = useRef<HTMLButtonElement>(null);
   const restBarRef = useRef<HTMLButtonElement>(null);
   const restSkipRef = useRef<HTMLButtonElement>(null);
+  const swapRef = useRef<HTMLButtonElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const headingId = useId();
 
@@ -768,9 +861,9 @@ export function ListView({ ctx, locale }: ListViewProps) {
             const open = current || expanded === index;
             const name =
               data.library.find((e) => e.id === item.exerciseId)?.name ?? item.exerciseId;
-            const done = ctx.loggedSets.filter(
-              (s) => s.itemIndex === index && s.exerciseId === item.exerciseId,
-            ).length;
+            // T-0478: counts every logged set at this position, including one logged under an
+            // exercise the card has since swapped away from (consistent with `Rows`).
+            const done = ctx.loggedSets.filter((s) => s.itemIndex === index).length;
             return (
               <section
                 key={index}
@@ -801,6 +894,8 @@ export function ListView({ ctx, locale }: ListViewProps) {
                     locale={locale}
                     current={current}
                     onHowTo={() => setHowTo(true)}
+                    name={name}
+                    swapRef={swapRef}
                   />
                 ) : null}
               </section>
