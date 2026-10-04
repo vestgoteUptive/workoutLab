@@ -242,8 +242,17 @@ export function firstIncompleteSet(
   return null;
 }
 
-/** The phases from which `startRest` starts a rest: around a set, never mid-countdown. */
-const REST_STARTABLE: ReadonlySet<Phase> = new Set<Phase>(["set", "confirm", "rest", "timed"]);
+/** The phases from which `startRest` starts a rest: around a set, or before the first set of an
+ *  item under the List view (D-0175 §1). */
+const REST_STARTABLE: ReadonlySet<Phase> = new Set<Phase>([
+  "set",
+  "confirm",
+  "rest",
+  "timed",
+  "getReady",
+  "warmup",
+  "next",
+]);
 
 /**
  * Entering item `itemIndex` (D-0153 §1): `timed` when its `repsMin` is null, else `set`, at the
@@ -497,11 +506,24 @@ function transition(state: FocusState, event: FocusEvent, ctx: FocusCtx): FocusS
     }
     case "REST_START": {
       if (!REST_STARTABLE.has(state.phase)) return state;
-      return {
+      const rest: FocusState = {
         ...state,
         phase: "rest",
         timer: timerAt(event.atMs, restFor(event.exerciseId, ctx.library)),
       };
+      // D-0175 §1: a rest started before the first set of an item ends the warm-up (or the
+      // getReady countdown) it interrupted, exactly as its own end would have.
+      if (state.phase === "getReady") {
+        return { ...rest, warmupSpentMs: 0, warmupStartedAtMs: null };
+      }
+      if (state.phase === "warmup") {
+        const spent =
+          state.warmupStartedAtMs === null
+            ? state.warmupSpentMs
+            : Math.max(0, event.atMs - state.warmupStartedAtMs);
+        return { ...rest, warmupSpentMs: spent, warmupStartedAtMs: null };
+      }
+      return rest;
     }
     case "AUTOSAVE_CANCEL": {
       if (state.phase !== "confirm" || state.timer === null) return state;

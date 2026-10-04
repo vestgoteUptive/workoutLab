@@ -165,3 +165,40 @@ unchanged. Commits start `T-0477` and cite the screens, for example
   the host side.
 
 ## Build / accept log
+- **machine.ts** (D-0175 §1): `REST_STARTABLE` gains `getReady`, `warmup`, `next`; `REST_START`
+  zeroes `warmupSpentMs`/`warmupStartedAtMs` from `getReady`, computes `warmupSpentMs` from
+  `warmupStartedAtMs` (or keeps it) from `warmup`, and leaves warm-up fields untouched from `next`.
+- **AC→test map:** AC-1/AC-2 → `machine.session.test.ts` (`T-0477 AC-1 …`, `T-0477 AC-2 …`, plus
+  the updated `REST_START › from %s: the same state` it.each losing `getReady`/`warmup`/`next` and
+  gaining `betweenItems`). AC-3/AC-4 → `t0477.host.test.tsx` (new, T-0415 seam pattern). AC-5 →
+  `countdown-sources.test.ts` (`T-0477 AC-5 …`, a raw-source scan for `type`/`case "REST_START"`
+  with comments stripped but strings kept, since the needle is itself a string literal).
+- **Red on main's code (AC-6):** restored main's `machine.ts` via `git show main:… >` and reran
+  `machine.session.test.ts` + `t0477.host.test.tsx`: 11 of 57 failed (the new AC-1 getReady/warmup/
+  next rows and AC-3's `warmupSpentMs`/`phase` assertions), confirming every new test is live
+  before the fix. Restored the fixed file from a `cp` backup, reran: 57/57 green.
+- **Planted fault (AC-6):** backed up `machine.ts` with `cp`, replaced the `warmup` branch's
+  `warmupSpentMs`/`warmupStartedAtMs` computation with a no-op (`return rest;`), reran the same two
+  files: 3 of 57 failed — `T-0477 AC-1 … from warmup: …` and the two AC-3/AC-4 host assertions that
+  check `warmupSpentMs: 20_000` after a warm-up `REST_START`. Restored the exact file from the `cp`
+  backup (never `git checkout`), reran: 57/57 green again.
+- Fixed a pre-existing gap in the host test's AC-3 "contrast" case: `timeCheck` isn't itself a
+  pause overlay, so the test now clicks "Pause workout" before opening the List view seam (matches
+  how every other AC-3/AC-4 case reaches the overlay from a `paused` seed).
+- **Whole-feature regression:** `scripts/locked.sh small npx vitest run src/features/UF-09`
+  (apps/web): 73 files / 949 tests green.
+- **Full gate** (D-0158, D-0169), run once before hand-back:
+  - `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`: green
+    (255 test files / 3539 tests, typecheck and lint both clean).
+  - `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`: green (159/159).
+  - `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w format:check`: one file needed `prettier
+    --write` (`countdown-sources.test.ts`, the new AC-5 block); reran clean after.
+  - `node .github/scripts/check-all.mjs`: exit 0.
+  - `TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx -y pnpm@10.28.2 exec playwright
+    test --config tests/e2e/playwright.config.ts uf-09-focus.spec.ts uf-09-ready.spec.ts
+    uf-03-list-summary.spec.ts`: 20/21 passed. The one failure is the predicted one (Notes,
+    "e2e watch"): `uf-03-list-summary.spec.ts` T-0458 AC-3 checks a row while the session is still
+    in the getReady/warm-up window, which now starts a rest (D-0175 §1, by design), so "Focus
+    mode" lands on UF-09.5 instead of the UF-09.3 the spec still expects. Per the ticket's Notes,
+    the spec is not edited here — filed as a qa follow-up below.
+- Contracts unchanged.
