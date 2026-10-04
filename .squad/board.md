@@ -151,6 +151,8 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 | T-0491 | UF-06 `__tests__/screens.test.tsx:497`: tighten `/^Offline · last synced 0?8:10$/` to the literal `08:10` and drop the stale `hour: "numeric"` comment (T-0449 groom/accept follow-up) | web-feature:UF-06 | T-0449 | todo | wl-build-web |
 | T-0492 | UF-11 `__tests__/offline.test.tsx:112`: tighten `/^0?8:10$/` to `08:10` and drop the stale "renders 8:10" comment — after T-0471 merges (shared UF-11 lane) (T-0449 follow-up) | web-feature:UF-11 | T-0449, T-0471 | todo | wl-build-web |
 | T-0493 | Annotate D-0084's Consequences bullet as resolved by T-0355 (D-0045 §9) and pinned by T-0449 (T-0449 follow-up) | product | T-0449 | todo | product-owner |
+| T-0494 | UF-03's SwapLoadBoundary failure state (lazy-retry.ts) has no axe/console check — add one, mirroring the existing AC-3 a11y test's shape but mounted in the failed-import state (T-0478 QA finding) | web-feature:UF-03 | T-0478 | todo | wl-build-web |
+| T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo | wl-build-web |
 
 ## Phase 5 — Iterate
 The product-owner adds tickets from `revisit` decisions, triage outcomes and QA findings, using the `wl-idea` flow.
