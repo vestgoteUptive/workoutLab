@@ -111,3 +111,136 @@ example `T-0478 UF-03.1: swap from the list`).
   T-0473: run them one at a time. T-0483 also edits `__tests__/list-helpers.tsx`.
 
 ## Build / accept log
+
+**2026-10-04, web-feature:UF-03.** Resumed after a session interruption mid-edit; `ListView.tsx`,
+`__tests__/list-helpers.tsx` and `lib/i18n/flows/uf-03.ts` already had the Swap button, `ctx`
+fields and `onApply`/`onClose` wiring from the earlier session. Finished:
+- Fixed `loggedHere`/`SetRow`'s `logged` lookup and the collapsed card's "done" count to key by
+  `itemIndex` alone, not `itemIndex` + `item.exerciseId` (a logged row of the pre-swap exercise
+  was being dropped once `item.exerciseId` became the new one). Added the "tag" (old exercise's
+  library name) on a row logged under a different exerciseId than the card's current one, plus
+  `uf03.swapTag` and `.wl-uf03-list__tag` CSS.
+- Added focus-restore (`swapRef.current.focus()`) after the sheet closes (Cancel or a resolved
+  Apply): `Card` tracks `wasSwapping` across renders (AC-3).
+- Found the `SwapSheet` import had to be `React.lazy`, not static (`ListView.tsx` is reachable
+  through `UF-03/index.js`'s static `export { ListView }`, which `UF-09`'s own test helper
+  `session-helpers.tsx` imports statically for `Summary`; a static `SwapSheet` import there forced
+  `UF-05/index.js` to resolve just from importing `Summary`, breaking/hanging six UF-09 tests that
+  mock `UF-05/index.js` to reject or hang, simulating a slow/failed chunk for UF-09's own swap
+  seam). Confirmed red on main's `ListView.tsx` (`t0422.lazy-pending.test.tsx` genuinely hangs,
+  `t0422.lazy-reject.test.tsx` throws) before the fix, green after, with `<Suspense fallback=
+  {null}>` around the sheet (no seam chrome, matching "mounts the sheet directly").
+- Fixed `makeCtx()` in `list-helpers.tsx`: `over` was spread *before* the hardcoded fn spies, so a
+  test's own override of `replaceItem` (or any other spy) was silently discarded. Moved `...over`
+  last. Re-ran the full UF-03 suite after the fix (244 tests, all green) to confirm no other test
+  relied on the old order.
+- Wrote `list-view.swap.test.tsx` (mocked `SwapSheet`, AC-1 + AC-3) and
+  `list-view.swap.host.test.tsx` (real host/engine, AC-2 + AC-3's real-name check).
+
+**AC → test map.**
+- AC-1 opens/itemIndex/timeZone/other-cards: `list-view.swap.test.tsx` "opens SwapSheet…", "the
+  other cards have no Swap button".
+- AC-1 Apply/no-other-write: "Apply calls ctx.replaceItem… exactly once…", CONTRAST scan for
+  `upsertSession`.
+- AC-1 Cancel: "Cancel (onClose) returns to UF-03.1 with no replaceItem call".
+- AC-1 rejection: "rejection: the sheet stays open and the card still shows back-squat".
+- AC-1 during a rest: "during a rest: opening and cancelling the sheet leaves ctx.rest untouched".
+- AC-2 (real engine/host, all in `list-view.swap.host.test.tsx`): candidate's name shown; rows 3-4
+  pre-fill (the real `carry` prefill for this fixture, not `first_time` — back-squat's own 100 kg
+  prefill carries to hip-thrust since they share glutes at weight 1.0 and barbell equipment, rule
+  14 step 1); rows 1-2 keep values + tag + exerciseId in IndexedDB; row 3 check records at
+  setIndex 2; `parseSessionPlan` + other-fields-unchanged; offline + remount.
+- AC-3 focus/a11y: "after Cancel…", "after a resolved Apply… (still addressable)" (unit, frozen
+  ctx.plan) plus the host test's "focus lands on the Swap button, now named 'Swap Hip thrust'"
+  (real name change); axe 0 violations.
+
+**Red runs recorded.**
+- Every new AC-1/AC-3 test, run against a temporary revert of the `Rows`/`SetRow`/`Card` changes:
+  red (tag/keying and focus-restore are new behaviour).
+- `t0422.lazy-pending.test.tsx` / `t0422.lazy-reject.test.tsx` / `t0451.*` / `t0446.swap-zone` /
+  `t0463.swap.rerender`: red (hang or throw) on the static-`SwapSheet`-import version of
+  `ListView.tsx`; green after switching to `React.lazy`.
+- Planted fault (ticket-required, AC-1): a second `ctx.replaceItem(...)` call inside `onApply`
+  after the first, on a backup copy, restored with `cp` after. Turned exactly "Apply calls
+  ctx.replaceItem… exactly once…" red (`expected … called 1 times, but got 2 times`); every other
+  test in the file stayed green. Repeated after the lazy-loading fix with the same result.
+
+**Gate (2026-10-04).**
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`: 19/19
+  tasks green (3544 web tests, 256 files).
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 green.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w format:check`: green (after a prettier pass on
+  the two new test files).
+- `scripts/locked.sh heavy node .github/scripts/check-all.mjs`: green.
+- `check:size` on a fresh build (`VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` set for the build
+  step only): green; the build log notes UF-03 pulling in UF-05 is now a lazy chunk, not an eager
+  one.
+- `TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx -y pnpm@10.28.2 exec playwright test
+  --config tests/e2e/playwright.config.ts` (full suite, since the `SwapSheet` lazy-loading change
+  touches `apps/web/src/**` beyond one feature folder): 220/220 green, `uf-03-list-summary.spec.ts`
+  and `uf-09-focus.spec.ts` included.
+
+Contracts unchanged. No decision needed: the `React.lazy` fix is an implementation detail inside
+`ListView.tsx`, not a contract or cross-lane change (`UF-09`'s files are untouched).
+
+**2026-10-04, review rework (two blocking findings, four non-blocking).**
+- **Blocking 1 — unfalsifiable "during a rest" unit test.** `list-view.swap.test.tsx`'s
+  `expect(ctx.rest).toEqual({remainingS: 90})` checked the literal object passed into `makeCtx`,
+  which nothing (mocked or real) ever writes back to — it could not fail. Fixed in two places:
+  the unit test now asserts the rest bar is visible before opening, while the dialog is open, and
+  after Close (`RestBar` renders unconditionally on `ctx.rest`, outside the swapped card, so this
+  is a real assertion about the DOM, not the mock's own state), plus keeps the legitimate
+  `skipRest`/`adjustRest` not-called checks. A new host-level test
+  (`list-view.swap.host.test.tsx`, "AC-1 during a rest, real host") seeds a real paused-mid-rest
+  focus state (`resumePhase: "rest"`, a live timer), opens Swap from the real List view, cancels,
+  and asserts the real rest bar's clock text is unchanged after — the genuine end-to-end case the
+  AC asks for. Planted fault (`onClose` also calling `ctx.skipRest()`): both the unit and the host
+  test go red; restored with `cp`.
+- **Blocking 2 — a failed SwapSheet import stuck (D-0162 §3).** The plain `lazy()` added to fix
+  the UF-09 test collision cached a rejected import for the page's life, contradicting D-0162 §3
+  ("a failed UF-05 import doesn't stick") — a gap introduced as a side effect of that fix, never
+  decided. Fixed by copying UF-09's own `retryableLazy`/boundary pattern into UF-03 (a new
+  `features/UF-03/lazy-retry.ts`, since UF-03 never imports a UF-09 module, D-0142 §5): a local
+  `SwapLoadBoundary` class component catches a failed import, resets the lazy in
+  `componentDidCatch`, and shows "Couldn't load alternatives." with "Try again" (remounts under a
+  fresh `useReducer` key, matching UF-09's `useSeamRetry`) and "Close" (back to the rows; the next
+  Swap tap gets a fresh attempt either way, since the reset already ran). Two new strings,
+  `uf03.swapLoadFailed`/`swapRetry`. New test file `list-view.swap-retry.test.tsx` (4 tests,
+  mocking `../../UF-05/index.js` to throw/hang/recover, T-0451's own pattern): shows the failure
+  state with no `UF-05.1` dialog underneath (distinguishing it from `SwapSheet`'s own unrelated
+  internal data-load failure, which coincidentally shares the same message text but has no "Try
+  again" and no dialog `data-screen-id`); Close then Swap again imports again (a higher
+  `loader.calls`, not the cached rejection); Try again imports again and fails cleanly with no
+  unhandled rejection; Try again after the chunk becomes reachable shows the real sheet. Planted
+  fault (`componentDidCatch` not calling `reset()`): 3 of the 4 new tests go red (the one that
+  never retries stays green, as it should); restored with `cp`.
+- **Non-blocking, addressed:**
+  - AC-1's "rejection... text (T-0421)" is now its own host test
+    ("AC-1 rejection, real host and real SwapSheet"): deletes the session's IndexedDB row so the
+    real `ctx.replaceItem` rejects, and asserts the real `SwapSheet`'s own `saveFailed` notice text
+    ("Couldn't save the swap. Try again.") shows, not a List-view-owned message.
+  - AC-2's "keep exerciseId back-squat in IndexedDB" now reads the real `db.sets` queue table
+    (seeded via a new `seedQueuedBackSquat()` helper in the host test, since the ticket's
+    `LOGGED_BACK_SQUAT` fixture was previously only ever written to the persisted focus-state
+    JSON, never queued) instead of substituting the focus state for "IndexedDB". The "checking row
+    3" test now checks both: the focus state's `itemIndex` grouping (a UI idea with no `itemIndex`
+    column in `db.sets`, D-0045 §6) and the real queued row's `exerciseId`/`setIndex`/`weightKg`.
+  - The "rows after a swap (unit side)" test's title and assertion were contradictory (it built a
+    `ctx.plan` whose current item was still back-squat, so the "no tag" it asserted was correct but
+    proved nothing about a post-swap row). Rebuilt with `withItem(LIST_PLAN, 0, {exerciseId:
+    "hip-thrust"})` against `loggedSets` still saying `back-squat`, genuinely reproducing "the card
+    now shows a different exercise than a row's own logged one"; added the missing "T-0478 AC-2"
+    title prefix and a CONTRAST test for the same-exerciseId (no tag) case.
+  - The "CONTRAST: a stale focus target" test asserted nothing about `ListView`. Replaced with a
+    real contrast through the component: opening the sheet (no Cancel, no Apply) never moves focus
+    to the Swap button, proving the focus-restore assertions above are about the close path
+    specifically, not an unconditional default.
+- Re-ran the full UF-03 + UF-09 suite after each change (1178 → 1181 → 1185 tests as new tests were
+  added, all green); one single flaky failure in the pre-existing, untouched `rest.test.tsx`
+  (a real-timer announcer test) under heavy concurrent system load, confirmed not a regression by
+  re-running the same file in isolation 4 times (19/19 every time) and the full suite once more
+  clean (93 files, 1185 tests).
+
+**Gate, re-run after the rework.** `-w typecheck lint test --concurrency=1`: 19/19 tasks, 257 files,
+3551 tests green. `-w test:repo-checks`: 159/159. `-w format:check`: green. `check-all.mjs`: green.
+`check:size` on a fresh build: green. Full e2e: 220/220 green.

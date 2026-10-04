@@ -110,4 +110,15 @@ export const uf03 = {
   restMore: "+15 s",
   skipRest: "Skip",
   backToList: "Back to list",
+  // UF-03.1 Swap (T-0478, D-0071 §7). The visible label is plain "Swap"; the accessible name
+  // names the exercise, so two cards' buttons are never confused by assistive tech.
+  swap: "Swap",
+  swapName: (exercise: string) => `Swap ${exercise}`,
+  /** A logged row of an exercise the card has since swapped away from (T-0478 AC-2): the row
+   *  keeps its values and shows this tag with the old exercise's library name. */
+  swapTag: (exercise: string) => exercise,
+  /** The sheet's own chunk fails to load (D-0162 §3: "a failed UF-05 import doesn't stick").
+   *  Shown in place of the sheet, with a way to try again or give up without reloading. */
+  swapLoadFailed: "Couldn't load alternatives.",
+  swapRetry: "Try again",
 } as const;
