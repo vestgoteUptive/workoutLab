@@ -91,43 +91,4 @@ None.
   other, in either order.
 
 ## Build / accept log
-- **Build (2026-10-03, web-feature:UF-10).** `useExerciseNames` (`features/UF-10/index.tsx`) now
-  returns `{ names, settled }`: `settled` starts `true` only when `exerciseNames` is overridden,
-  else `false` until the real `loadLibrary()` read resolves or rejects (both paths call
-  `setSettled(true)`). `BalanceDetail`'s contributors block: heading always renders; empty line
-  renders at once when `contributors.length === 0`; otherwise the `<ul>` renders only when
-  `settled`, else nothing (no skeleton, per scope). New test file
-  `features/UF-10/__tests__/contributors-settle.test.tsx`, 7 tests, one per ticket AC (AC-3 and
-  AC-4 split into two each): deferred-promise control of a `vi.spyOn(history, "loadLibrary")`
-  stub, hamstrings fixture with contributors `rdl` (6 sets) / `nordic` (2 sets), no
-  `exerciseNames` override except the AC-5 test.
-  - AC→test map: AC-1 → "renders the heading and figures before the read settles…"; AC-2 →
-    "falls back to the ids after a real macrotask…"; AC-3 → the two "empty library…" tests; AC-4 →
-    "leaves no contributor row…" and "an area with 0 contributors…"; AC-5 → "renders the rows on
-    the first render and never calls loadLibrary".
-  - **Red proof.** Checked out `main`'s `index.tsx` over the fix (backup restored via `cp`, not
-    `git checkout`): AC-1, AC-2 and AC-4 fail (3 failed, 4 passed) — "expected … length of +0 but
-    got 2" each time, matching "a row is present before the read resolves". Restored the fix from
-    the backup copy (diff confirmed identical to the pre-fault file).
-  - **Planted fault.** On a backup copy, `useState(override !== undefined)` →
-    `useState(true) // T-0354 planted fault` (treats "settled" as `true` from the start). Same 3
-    tests red (AC-1, AC-2, AC-4), as the ticket requires for AC-1. Restored from the backup copy.
-  - Fixed an unused-import lint hit in the new test file (`beforeEach` imported but unused);
-    `never-in-workout.lint.test.ts` caught it, now green.
-  - One prettier reformat of the new test file (`format:check` flagged it, `--write` fixed it,
-    re-ran green).
-- **Tests run.**
-  - `scripts/locked.sh small npx vitest run src/features/UF-10/__tests__/contributors-settle.test.tsx`
-    (from `apps/web`): 7/7 pass.
-  - `scripts/locked.sh small npx vitest run src/features/UF-10` (from `apps/web`): 10 files,
-    130/130 pass.
-  - `TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx -y pnpm@10.28.2 exec playwright
-    test --config tests/e2e/playwright.config.ts uf-10-balance.spec.ts`: 10/10 pass.
-  - `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`:
-    254 test files / 3516 tests pass, typecheck and lint green, 19/19 tasks, exit 0.
-  - `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 pass.
-  - `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w format:check`: green (after the one reformat
-    above).
-  - `scripts/locked.sh heavy node .github/scripts/check-all.mjs`: exit 0, no findings.
-- **Contracts.** Unchanged. **Decisions.** None new; built to D-0174 §5 and D-0104/D-0115 §2 as
-  specced. **Status.** done.
+Archived in `docs/tickets/log/T-0354.md` (D-0157).
