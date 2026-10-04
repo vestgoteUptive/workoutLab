@@ -225,6 +225,8 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0480 | guarded-test.ts detector 2: an already-fulfilled request can still fire requestfailed/ERR_ABORTED right before a hard navigation (D-0173, T-0469 AC-2 build finding) | qa | — | done | wl-build-qa |
 | T-0442 | apps/landing/browser/playwright.config.ts has the same reuseExistingServer: !CI; make it false like T-0440 (D-0155 §5) | landing | T-0440 | done | wl-build-web |
 | T-0467 | check-lane-paths doc nit: add the one-line D-0167 §1 own-ticket-file note to the file header and the listedPathsFromTicket doc comment; AC-3 test should also assert the finding points at the ticket path (T-0466 review/accept) | infra | T-0466 | done | wl-build-infra |
+| T-0361 | `apps/web/src/features/UF-04/__tests__/exports-and-lint.test.ts` hardening (T-0306a QA, both minor and non-blocking): `:67` matches `/offlineDb\(/`, so a bare unused `import { offlineDb }` slips through — literal-correct per the AC and the realistic misuse (actually calling it) *is* caught, and `no-unused-vars` would flag the bare import anyway; and `sourceFiles()` at `:24-28` is non-recursive, which is fine while UF-04 is flat (11 files) but would silently miss a future subdirectory | web-feature:UF-04 | T-0306a | done | wl-build-web |
+| T-0449 | OfflineStatus formatTime: use hour '2-digit' if '08:10' is the intended form (D-0084 consequence) (T-0307b review) | web-shell | — | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
