@@ -53,7 +53,7 @@ stub that holds `"Desktop Chrome"`; the build log says which was used. Read the 
 **Test rules.** Both values of the binary condition (`CI` set, `CI` unset) get a test. **AC-1 must
 fail on `main`** (with `CI` unset it is `true`); the build log records that red run. It also
 records one planted fault, on a backup copy restored with `cp`: `reuseExistingServer: !!process.env.CI`
-turns the AC-1 unset case red while the CI case stays green, and the source assertion goes red too.
+turns the AC-1 CI=1 case red while the unset case stays green (corrected 2026-10-04 by the orchestrator; build, review and QA all found the original text inverted), and the source assertion goes red too.
 
 - **AC-1 (no reuse, the pair; red on main)**
   - Given `CI` unset (`vi.stubEnv("CI", undefined)` or an empty value the config treats as unset),
@@ -114,3 +114,15 @@ commits start `T-0442` (for example `T-0442: landing playwright never reuses a s
 - Planted fault (backup `cp`, restored with `cp`): `reuseExistingServer: !!process.env.CI` -> 2 failed / 3 passed. Note the ticket text had the cases inverted: `!!CI` is false when unset, so the CI=1 case goes red (true) and the unset case stays green; the source assertion goes red too. Restored; diff shows only the intended change.
 - AC3 manual: stand-in http server on :4322, `scripts/locked.sh heavy npx playwright test --config browser/playwright.config.ts` from apps/landing -> exit 1, output `Error: http://localhost:4322 is already used, make sure that nothing is running on the port/url or ...`; no test ran. Stand-in killed. Contrast on main (specs run against the stand-in) not re-run; follows from the old `!process.env.CI` being true locally.
 - Gate: typecheck lint test --concurrency=1, test:repo-checks, format:check, check-all.mjs all green. (First lint run failed only because my AC3 run left apps/landing/playwright-report/; removed, rerun green.)
+
+### Code review (code-reviewer, HEAD 9aa62fb, base a5e3207, tree clean) — approve
+- Lane: 3 paths, all `apps/landing/**` or this ticket file. Contracts untouched.
+- Config: only `reuseExistingServer: false` + the header line; PORT, BASE_URL export, command, cwd, url, timeout, retries, forbidOnly, viewport, chromium project unchanged. Test covers both CI values, the source literal, single-object webServer and every AC-2 pin; opens no port/browser (AC24 holds).
+- Confirmed the builder's note: the ticket's planted-fault text is inverted. `!!process.env.CI` is false with CI unset (unset case green) and true with CI=1 (CI case red); the source assertion goes red in both readings. Builder's recorded result is the correct one.
+- Minor, non-blocking: AC-3's contrast run on main was argued rather than re-run (old `!process.env.CI` is true locally, so reuse follows directly).
+
+### QA verdict (qa-tester, HEAD 9aa62fb, tree clean at start) - done
+- New test file 5/5 green. On main's config: 2 failed / 3 passed (AC1 CI-unset got `true`; source literal assertion red).
+- Planted `!!process.env.CI` (cp backup/restore, grep confirmed it landed): 2 failed / 3 passed. The CI=1 case and the source assertion go red; the unset case stays green. The builder is right, the ticket text is inverted. Own fault (`timeout` 60_000 -> 30_000 plus a trailing comment on the literal): AC2 "nothing else moved" and the source assertion go red. Config restored with cp, no diff vs HEAD.
+- AC3: stand-in on :4322, `locked.sh heavy playwright test` on the branch config: exit 1, "http://localhost:4322 is already used ...", no test ran. Contrast on main's config: the six browser specs were scheduled and ran against the stand-in. Stand-in killed; playwright-report/ and test-results/ removed.
+- AC4: landing typecheck 0 errors, lint exit 0, test 12 files / 120 tests pass. No existing landing test is edited (only the new file is added under test/). Note `pnpm --filter ... typecheck lint test` as one line runs only typecheck (pnpm passes the rest as args), so each script was run separately.
