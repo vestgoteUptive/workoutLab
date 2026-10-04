@@ -5,7 +5,7 @@ lane: web-feature:UF-04
 screens: [UF-04.1, UF-04.2, UF-04.3]
 decisions: [D-0067, D-0071, D-0157, D-0158]
 deps: [T-0306a]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-04 by product-owner. Build flow: wl-build-web. About ⅛ day. Test-only, inside one feature folder: no production code, no e2e (D-0158 tiers: the whole web e2e is not needed, since nothing outside `features/UF-04/__tests__/` changes). No path overlap with in-flight T-0478 (UF-03), T-0471 (UF-11) or parallel T-0449 (components/offline-status). -->
 
@@ -110,3 +110,7 @@ None.
 - `@workoutlab/web` typecheck and lint: both exit 0.
 - Note: builder full-gate line still absent (D-0158).
 - 2026-10-04 orchestrator: gate line from the build report (D-0158, cached): `-w typecheck` 7/7, `-w lint` 6/6, `-w test --concurrency=1` 7/7, `-w test:repo-checks`, `-w format:check` and `check-all` all exit 0, each via `scripts/locked.sh`. The forced full gate runs on main after merge.
+
+### Accept (product-owner, HEAD db2ce9f)
+- Verdict: **done**. AC-1 → `it.each` "AC-1 reports exactly one violation" (4 cases); AC-2 → `it.each` "AC-2 no false positive" (3 cases); AC-3 → "AC-3 walk is recursive…" (exact sorted set, `__tests__` nested skipped, `testsupport` kept, `.md` ignored); AC-4 → "AC-4 wired end to end" (bad/clean pair); AC-5 → all five AC-16 scans call recursive `sourceFiles()`, assertions unchanged, production diff empty.
+- Planted faults 1 and 2 red then green in build and re-done by QA. Fixtures in mkdtemp, removed in afterEach. Gate line present (D-0158). `check-all` exit 0 at acceptance. Principles unaffected (test-only).
