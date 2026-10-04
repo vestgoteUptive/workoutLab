@@ -232,6 +232,9 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0469 | UF-11.4 Account settings e2e (split from T-0310d, D-0168; fixtures D-0172 §6) | web-feature:UF-11 | T-0310d, T-0486 | done | wl-build-web |
 | T-0486 | AccountDeletedNotice: hard-navigation delete path can consume `wl-account-deleted` on the old page before /welcome reads it — real race, not a test artifact (T-0480 build finding) | web-shell | T-0480 | done | wl-build-web |
 | T-0439 | Needs a decision (amends D-0153 §4): UF-03.3 untouched Save re-queues the raw ended_at as pending:true; when the merged view's endedAt is later (another device finished later), the next flush moves the server finish earlier. Send max(raw, view.endedAt), or leave ended_at out of the re-send? Also: an untouched Save can send a rating different from the chip on screen if the view changed between mount and tap (T-0433 review) | web-feature:UF-03 | T-0433 | won't fix (D-0179) | — |
+| T-0210 | Stale comment sessions/core.ts:1-4 (injected `now` no longer taken); document loadSessionSets' RLS dependency for sort-key uniqueness | backend | T-0203c | done | wl-build-backend |
+| T-0317 | README: one line that `pnpm --filter @workoutlab/web test` builds the tokens CSS via pretest, and a direct vitest call needs `node apps/web/ensure-tokens-css.mjs` first — T-0312 follow-up | infra | T-0312 | done | wl-build-infra |
+| T-0475 | import-bans polish (D-0170, optional): add a contrast row showing `../UF-08/index.prefs.js` is allowed; tighten INDEX_ONLY_PATTERN so only `index.js` / `index.<lower>.js` pass (not `index-x.js`); keep T-0313's dynamic-import pattern consistent | web-shell | T-0474 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
