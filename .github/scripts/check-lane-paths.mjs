@@ -9,7 +9,8 @@
 // specifier, and editing a shared file is not an import. The T-0318 import bans stay the
 // right tool for cross-feature imports; they are not the tool for this.
 //
-// A ticket's own `docs/tickets/<id>-*.md` is always allowed, with no Listed-extras line (D-0167 §1).
+// A ticket's own `docs/tickets/<id>-*.md` is always allowed, with no Listed-extras line
+// (D-0167 §1).
 //
 // WHAT THIS DOES NOT COVER (D-0074 §2 — these four limits, verbatim):
 //   1. it needs a `t/T-NNNN-slug` branch and does nothing on `main` or a detached HEAD;
