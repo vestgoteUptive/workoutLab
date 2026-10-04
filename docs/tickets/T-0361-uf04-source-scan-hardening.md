@@ -98,3 +98,15 @@ None.
 - AC-1/AC-2/AC-3/AC-4: the T-0361 describe (19 tests green). AC-5: existing AC-16 tests run over the recursive walk with assertions unchanged (`files.length > 5`, `keys.size > 20` kept); `git diff --stat main -- apps/web/src/features/UF-04 ':!apps/web/src/features/UF-04/__tests__'` is empty.
 - Planted fault 1 (pattern back to `/offlineDb\(/`, backup copy restored with cp): red, 3 failed (AC-1 bare import, AC-1 `const db = offlineDb;`, AC-4); restored, green.
 - Planted fault 2 (walk made non-recursive): red, 2 failed (AC-3, AC-4); restored, green.
+
+### Code review (code-reviewer, HEAD fd67583)
+- Verdict: **approve**. Lane clean (only the test file + this ticket). No contract or production change (`git diff --stat main...HEAD -- apps/web/src/features/UF-04 ':!…/__tests__'` empty). All five existing AC-16 scans use the recursive `sourceFiles()`; assertions unchanged (`> 5`, `> 20` kept). `\bofflineDb\b` does not match `resetOfflineDbForTest` or `offlineDbName`. Fixtures in mkdtemp, removed in afterEach. AC-1..AC-5 each map to a test; both planted faults logged.
+- Non-blocking: the build log has no full-gate result line (D-0158); add it before merge.
+
+### QA (qa-tester, HEAD fd67583)
+- Verdict: **done**, AC-1..AC-5 proven. Baseline UF-04 file: 19/19 green.
+- Fault 1 (pattern back to `/offlineDb\(/`, cp backup/restore): 3 red (AC-1 bare import, AC-1 `const db = offlineDb;`, AC-4). Fault 2 (non-recursive walk): 2 red (AC-3, AC-4). Both restored with cp (cmp identical), 19/19 green.
+- AC-5: `git diff --stat c5af22a -- features/UF-04 ':!…/__tests__'` empty; AC-16 assertion lines unedited in diff. No `/tmp/t0361-*` leftovers, nothing written into src/features/UF-04.
+- `@workoutlab/web` typecheck and lint: both exit 0.
+- Note: builder full-gate line still absent (D-0158).
+- 2026-10-04 orchestrator: gate line from the build report (D-0158, cached): `-w typecheck` 7/7, `-w lint` 6/6, `-w test --concurrency=1` 7/7, `-w test:repo-checks`, `-w format:check` and `check-all` all exit 0, each via `scripts/locked.sh`. The forced full gate runs on main after merge.
