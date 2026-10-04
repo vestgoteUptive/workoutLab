@@ -11,21 +11,36 @@ import react from "eslint-plugin-react";
  * (`../../features/UF-11/index.js`). `FEATURE_PREFIX` is that shared head: a path boundary,
  * then an optional `features/` segment.
  *
- * The dynamic-`import()` form of each of these is T-0313's job; `no-restricted-imports`
+ * The dynamic-`import()` form of each of these is T-0313's job (it reuses
+ * `FEATURE_ENTRY_SOURCE` for the entry rule); `no-restricted-imports`
  * covers static `import` and `export … from` only.
  */
 const FEATURE_PREFIX = "(^|/)(features/)?";
 
 /**
- * A cross-feature import must name the target's `index` (D-0071 §3):
- * `features/UF-08/index.js` is fine, `features/UF-08/focus-prefs.js` is not. A feature's own
- * modules are reached as `./focus-prefs.js` or `./sub/x.js`, which has no `UF-NN/` segment,
- * so own-folder imports are never matched.
+ * The one place that says what a feature entry is (D-0170 §1, D-0071 §3): after the
+ * `UF-NN/` segment the specifier is exactly `index.js` or a leaf entry `index.<topic>.js`,
+ * `<topic>` being lower-case letters only. T-0313's `ImportExpression` rule reuses this
+ * source and allows `index.<topic>.js` the same way. It is matched case-sensitively.
+ */
+const FEATURE_ENTRY_SOURCE = "index(\\.[a-z]+)?\\.js$";
+
+/**
+ * A cross-feature import must name the target's entry (D-0071 §3, D-0170 §1):
+ * `features/UF-08/index.js` and `features/UF-08/index.prefs.js` are fine,
+ * `features/UF-08/focus-prefs.js`, `index-x.js`, `index.Prefs.js` and `index/x.js` are not.
+ * A feature's own modules are reached as `./focus-prefs.js` or `./sub/x.js`, which has no
+ * `UF-NN/` segment, so own-folder imports are never matched.
+ *
+ * ESLint compiles `regex` with the `i` flag unless `caseSensitive: true`, so the entry name
+ * would silently accept `Index.js`. The `UF` token is spelled `[Uu][Ff]` to keep a
+ * lower-case `uf-08/` banned, as before.
  */
 const INDEX_ONLY_PATTERN = {
-  regex: `${FEATURE_PREFIX}UF-\\d\\d/(?!index\\b)`,
+  regex: `${FEATURE_PREFIX}[Uu][Ff]-\\d\\d/(?!${FEATURE_ENTRY_SOURCE})`,
+  caseSensitive: true,
   message:
-    "Import another feature only through its index (`../UF-NN/index.js`): deep imports are banned (D-0071 §3).",
+    "Import another feature only through its entry (`../UF-NN/index.js` or `index.<topic>.js`): deep imports are banned (D-0071 §3, D-0170 §1).",
 };
 
 const BODY_MAP_PATTERN = {

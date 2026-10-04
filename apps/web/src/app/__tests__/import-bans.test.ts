@@ -196,3 +196,58 @@ describe("AC-11 the current tree has no violating import", () => {
     expect(violations).toEqual([]);
   });
 });
+
+describe("T-0475 feature entries (D-0170 §1)", () => {
+  const importLine = (spec: string) => `import { X } from "${spec}";\nexport const Y = X;\n`;
+  const UF09 = "src/features/UF-09/x.ts";
+  const UF09_SUB = "src/features/UF-09/sub/x.ts";
+  const UF02 = "src/features/UF-02/x.ts";
+
+  describe("AC-1 a leaf entry index.<topic>.js is allowed", () => {
+    it.each([
+      [UF09, importLine("../UF-08/index.prefs.js")],
+      [UF09_SUB, importLine("../../UF-08/index.prefs.js")],
+      [UF09_SUB, importLine("../../features/UF-08/index.prefs.js")],
+      [UF09, 'export { readFocusPrefs } from "../UF-08/index.prefs.js";\n'],
+      [UF02, importLine("../UF-06/index.prefs.js")],
+    ])("%s reports nothing for %j", async (path, code) => {
+      expect(await restricted(path, code)).toHaveLength(0);
+    });
+  });
+
+  describe("AC-2 the plain index is still allowed", () => {
+    it.each([
+      [UF09, importLine("../UF-08/index.js")],
+      [UF02, importLine("../UF-06/index.js")],
+    ])("%s reports nothing for %j", async (path, code) => {
+      expect(await restricted(path, code)).toHaveLength(0);
+    });
+  });
+
+  describe("AC-3 a name that is not an entry is banned", () => {
+    it.each([
+      [UF09, "../UF-08/index-x.js"],
+      [UF09, "../UF-08/index.Prefs.js"],
+      [UF09, "../UF-08/Index.js"],
+      [UF09, "../UF-08/index.prefs.extra.js"],
+      [UF09, "../UF-08/index.prefs2.js"],
+      [UF09, "../UF-08/index/focus-prefs.js"],
+      [UF09, "../UF-08/index"],
+      [UF02, "../UF-06/index-x.js"],
+    ])("%s importing %s reports exactly one D-0071 §3 error", async (path, spec) => {
+      const errors = await restricted(path, importLine(spec));
+      expect(errors).toHaveLength(1);
+      expect(errors[0]!.severity).toBe(2);
+      expect(errors[0]!.message).toContain("D-0071 §3");
+    });
+  });
+
+  describe("AC-4 existing bans unchanged", () => {
+    it.each(["../UF-08/focus-prefs.js", "../uf-08/focus-prefs.js"])(
+      "UF-09 importing %s is still banned",
+      async (spec) => {
+        expect((await restricted(UF09, importLine(spec))).length).toBeGreaterThanOrEqual(1);
+      },
+    );
+  });
+});
