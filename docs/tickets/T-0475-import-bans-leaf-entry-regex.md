@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-08, UF-09]
 decisions: [D-0170, D-0071, D-0074, D-0167, D-0158, D-0178, D-0169]
 deps: [T-0474]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-04 by product-owner. Build flow: wl-build-web. About 1-2 hours. D-0178 tier: small. Skip QA, but keep the code review: it changes a regex in shared lint config. -->
 
@@ -148,3 +148,5 @@ start `T-0475`.
 - Red on unfixed code (tests added first, old regex): 8 failed / 77 passed, exactly the 8 AC-3 rows (0 errors each); AC-1/2/4 rows pass on main by design.
 - F1 (old regex `UF-\\d\\d/(?!index\\b)`, no caseSensitive): 8 AC-3 rows red. F2 (new regex, `caseSensitive` dropped): `index.Prefs.js` and `Index.js` rows red (2). F3 (`[Uu][Ff]` narrowed to `UF`): `../uf-08/focus-prefs.js` row red (1). Each on a cp backup, restored with cp, confirmed with cmp; the landed fault shown by the expected red rows.
 - Gate: web typecheck, lint green; t0474 + UF-03 exports-and-lint tests 17/17; web `vitest run` once exited 1 inside pnpm (no failing test captured, tail only; likely load-related, 259 files in parallel) and passed on rerun 259 files / 3600 tests; `-w test:repo-checks`, `-w format:check`, `check-all` green.
+- 2026-10-04 code review (HEAD daded60, tree clean): **approve**. Lane OK (eslint.config.mjs, import-bans.test.ts, ticket; all listed); no contract touched; existing tests unedited (diff is append-only). Hand-checked the built regex `(^|/)(features/)?[Uu][Ff]-\d\d/(?!index(\.[a-z]+)?\.js$)` with flags `u` (caseSensitive): allowed `index.js`, `index.prefs.js`, `features/UF-08/index.prefs.js`, `../UF-08` (bare); banned `index-x.js`, `index.Prefs.js`, `Index.js`, `INDEX.js`, `index/focus-prefs.js`, `index`, `index.prefs.extra.js`, `index.prefs2.js`, `index.ts`, `../uf-08/focus-prefs.js`, `../Uf-08/x.js`. `FEATURE_ENTRY_SOURCE` composes cleanly inside the lookahead (`$` anchors the whole specifier, no `m` flag). Body-map / out-of-workout rows untouched and still case-insensitive. All 26 static/dynamic cross-feature specifiers under src/features evaluated old vs new: zero changed verdicts (the 4 banned ones are deliberate lintText fixtures, banned before too). The flaky web run: the diff adds no runtime code, only 17 more lintText calls on a shared ESLint instance; not a plausible cause.
+- 2026-10-04 orchestrator accept (D-0178: small, code review kept, QA skipped): review approved with no findings after hand-checking 24 specifiers against the built regex and diffing old vs new over all 26 cross-feature specifiers (zero verdict changes). Builder's one unidentified flaky `-F web test` run passed on rerun and the diff adds no runtime code; the full web suite passed 259 files / 3600 tests. Status → done. The forced gate runs on main at the batch merge.
