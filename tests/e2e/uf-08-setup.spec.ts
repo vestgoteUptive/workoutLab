@@ -9,6 +9,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { goOffline } from "./fixtures/offline.js";
 import {
   FAKE_USER_ID,
   injectSession,
@@ -514,7 +515,11 @@ test.describe("T-0303d AC-10 UF-08.4 offline (NFR-OFF-2)", () => {
     await expect.poll(() => cachedCounts(page)).toEqual({ library: exercises.length, targets: 9 });
     await precacheSettled(page);
 
-    await context.setOffline(true);
+    // `goOffline` is registered after `recordSessions` (T-0484, D-0175 §3), so its write-abort
+    // gate is the last handler on `sessions*` and wins while armed; the gate also goes offline
+    // itself, so there is no window where the context is offline but `recordSessions` could still
+    // fulfill a write.
+    const gate = await goOffline(page, context);
     await page.goto("/session/setup");
     await expect(screenUF081(page)).toBeVisible({ timeout: 3000 });
     await expect(fitLine(page)).toHaveText(FIT_PATTERN);
@@ -523,9 +528,9 @@ test.describe("T-0303d AC-10 UF-08.4 offline (NFR-OFF-2)", () => {
     await toReady(page);
     const id = await startWorkout(page);
     expect(await storedSession(page, id)).toEqual({ pending: true, time_budget_min: 45 });
-    expect(writes).toEqual([]);
+    expect(gate.writesFulfilledOffline()).toBe(0);
 
-    await context.setOffline(false);
+    await gate.goOnline();
     await expect.poll(() => requestsCarrying(writes, id).length, { timeout: 5000 }).toBe(1);
     expect(requestsCarrying(writes, id)).toHaveLength(1);
   });
