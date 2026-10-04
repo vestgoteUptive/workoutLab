@@ -5,7 +5,7 @@ lane: landing
 screens: []
 decisions: [D-0155, D-0046]
 deps: [T-0440]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-04 by product-owner. Build flow: wl-build-web. About ⅛ day. One config line, one header-comment line and one vitest file. No app code changes. -->
 
@@ -126,3 +126,11 @@ commits start `T-0442` (for example `T-0442: landing playwright never reuses a s
 - Planted `!!process.env.CI` (cp backup/restore, grep confirmed it landed): 2 failed / 3 passed. The CI=1 case and the source assertion go red; the unset case stays green. The builder is right, the ticket text is inverted. Own fault (`timeout` 60_000 -> 30_000 plus a trailing comment on the literal): AC2 "nothing else moved" and the source assertion go red. Config restored with cp, no diff vs HEAD.
 - AC3: stand-in on :4322, `locked.sh heavy playwright test` on the branch config: exit 1, "http://localhost:4322 is already used ...", no test ran. Contrast on main's config: the six browser specs were scheduled and ran against the stand-in. Stand-in killed; playwright-report/ and test-results/ removed.
 - AC4: landing typecheck 0 errors, lint exit 0, test 12 files / 120 tests pass. No existing landing test is edited (only the new file is added under test/). Note `pnpm --filter ... typecheck lint test` as one line runs only typecheck (pnpm passes the rest as args), so each script was run separately.
+
+### Accept (product-owner, HEAD 64e480d, base a5e3207, tree clean) - done
+- AC1: 3 vitest cases (CI unset, CI=1, source literal + no `process.env`; both load cases assert single-object `webServer`). Red on main recorded by build and QA (unset case + source). Planted `!!process.env.CI` recorded twice (CI=1 case + source red), matching the corrected Test rules.
+- AC2: "nothing else moved" + "forbidOnly still follows CI" pin every listed literal; QA's own `timeout` fault turned it red.
+- AC3: loud failure recorded (exit 1, "is already used", no test ran); QA ran the main contrast (specs ran against the stand-in).
+- AC4: landing 12 files / 120 tests green, no existing test edited; offline (no port/browser).
+- DoD: cached gate, repo-checks, format:check green per build; check-all.mjs re-run here, exit 0. Contracts untouched; lane paths only; commits prefixed T-0442. Principles unaffected (test infra only).
+- Follow-up: the ticket template idiom `pnpm --filter X typecheck lint test` runs only typecheck; future tickets should list each script separately.
