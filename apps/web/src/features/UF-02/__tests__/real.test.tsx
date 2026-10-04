@@ -2,11 +2,18 @@
 // cached server rows plus sets queued through `recordSet` (principle 3, NFR-OFF-3, R11-E4).
 // `balance` and `loadEngineHistory` are spies that call the real functions, to count them.
 // T-0302c AC-1: `suggest` is one too, so the card's preview is pinned to the device as well.
+//
+// T-0471 (D-0177): the slot is mocked to `null`. This file seeds a real profile and signs in, so
+// the real `CheckinCard` would otherwise mount, read `loadEngineHistory()` a second time (which
+// this file counts exactly), and run its own online-only write effect against the real,
+// test-configured `lib/auth/client.js` — none of which this file is about.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { waitFor } from "@testing-library/react";
 import { recordSet } from "../../../lib/offline/queue.js";
 import { F_TZ, L1, PROFILE, RDL, history, targets } from "./fixtures.js";
 import { freshDb, macrotask, renderToday, seedCache, signIn, signOut, tile } from "./helpers.js";
+
+vi.mock("../slots.js", () => ({ todayCheckinSlot: null, todayResumeSlot: null }));
 
 const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
 vi.mock("../../../lib/auth/auth-context.js", () => ({

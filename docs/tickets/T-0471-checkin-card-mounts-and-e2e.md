@@ -131,3 +131,103 @@ None.
   of them edits `features/UF-11/index.tsx`. T-0481 follows this ticket.
 
 ## Build / accept log
+- **2026-10-04 (frontend-dev, resumed session).** Resumed mid-build after a usage-limit reset.
+  `slots.tsx`, `index.tsx`, `source.test.ts`, `checkin-mount.test.tsx`, the e2e appends and D-0177
+  (three UF-02-lane mock fixes) were already in place from the interrupted session; verified and
+  continued from there.
+- **AC→test map.** AC-1/AC-2/AC-3 → `features/UF-11/__tests__/checkin-mount.test.tsx` (new).
+  AC-1 clock-pin → `mount-stability.test.tsx`, `plan.render.test.tsx` (both updated for the
+  `CheckinCard` mount's `lib/auth/client.js` hazard, D-0177-adjacent but inside this ticket's own
+  UF-11 files). AC-4 → `tests/e2e/uf-11-plan.spec.ts` (a)-(d), appended. AC-5 → `source.test.ts`'s
+  two changed pins + the new `slots.tsx` pin. AC-6 → `check:size` plus a planted static import
+  (below).
+- **D-0177 (three UF-02 files, carried over from the interrupted session).** Confirmed still
+  applied: `today.test.tsx`, `reads.test.tsx`, `real.test.tsx` each got the one-line
+  `vi.mock("../slots.js", () => ({ todayCheckinSlot: null, todayResumeSlot: null }))`. Ran
+  `scripts/locked.sh small npx -y pnpm@10.28.2 --filter @workoutlab/web exec vitest run
+  src/features/UF-02/__tests__/{today,reads,real,source}.test.{tsx,ts}`: 81/81 pass (the 6
+  previously-red cases are green again).
+- **D-0177 extended to a fourth file, found by this session.** The full `-w test` gate (run once,
+  per D-0158, before hand-back) turned up a fourth break the ticket's own `slots.tsx` change
+  causes: `UF-02/__tests__/resume-slot.test.tsx` (T-0395 AC6, the `todayResumeSlot`/`ResumeCard`
+  mount) — red: `(UF-02) ready: [data-part=resume] sits after the header...` timed out (5000 ms)
+  because the real `CheckinCard` now mounts there too (its own `PROFILE` fixture yields a genuine
+  proposal) and replaced the resume card's own markup. Unlike the other three files, this one's
+  own subject IS a `slots.js` export (`todayResumeSlot`), so D-0177's blanket
+  `{ todayCheckinSlot: null, todayResumeSlot: null }` factory would have silenced the very thing
+  under test. Fixed with a partial mock instead: `vi.mock("../slots.js", async (importOriginal)
+  => ({ ...(await importOriginal()), todayCheckinSlot: null }))`, keeping `todayResumeSlot` real.
+  D-0177 updated (title, Context, Decision, Consequences, Revisit) to record this fourth file and
+  its different fix shape. `scripts/locked.sh small npx -y pnpm@10.28.2 --filter @workoutlab/web
+  exec vitest run src/features/UF-02/__tests__/resume-slot.test.tsx`: red before (1 failed/3
+  passed, 5000 ms timeout), green after (4/4).
+- **AC-5 planted fault (slots.tsx).** Backed up `slots.tsx` (`cp`), replaced the lazy import with
+  a static `import { CheckinCard } from "../UF-11/index.js"; export const todayCheckinSlot =
+  CheckinCard;`. `source.test.ts` → 2 failed / 27 passed (both new AC-5 pins fail: `typeof
+  todayCheckinSlot` is `"function"` not `"object"`, and the "exactly one UF-11 reference, the
+  dynamic lazy import" pin no longer matches). Restored from the backup (`cp`, not `git
+  checkout`); reran → 29/29 green.
+- **AC-6 (size).** Fresh `pnpm --filter @workoutlab/web build` (`VITE_SUPABASE_URL=
+  https://abc.supabase.co`, the fixed e2e-config value, D-0071/T-0901 convention; `check:size`
+  doesn't care which value, only that the build succeeds): `check:size` green (exit 0). Measured:
+  UF-02 chunk (`src/features/UF-02/index.tsx` → `index-B-7iDNmA.js`) 12.3 kB / gzip ~3.9 kB; UF-11
+  chunk (`src/features/UF-11/index.tsx` → `index-DFsiv_Jq.js`) 24.65 kB / gzip ~7.82 kB; 58
+  precache entries. Grepped the built UF-02 chunk for `CheckinCard`/`insertIfFirstShown`: the only
+  hit is the lazy `import().then(e=>({default:e.CheckinCard}))` property access — zero hits for
+  `insertIfFirstShown` (the card's write logic), confirming the card's own code isn't inlined.
+  Planted the same static import as the AC-5 fault, rebuilt: the manifest's `src/features/UF-02/
+  index.tsx` entry now lists `_CheckinCard-DTwks17o.js` as a direct **static** import (not a lazy
+  one), i.e. the card's code chunk is now eagerly pulled into the UF-02 entry's own dependency
+  graph (59 precache entries, one more than clean); the UF-02 chunk's own code also gained a
+  `CheckinCard`/`insertIfFirstShown` hit. Restored `slots.tsx` from the backup, rebuilt clean: back
+  to 58 precache entries, `check:size` green again.
+- **A second, genuine bug found by the full e2e run (not a planted fault).** `uf-11-plan.spec.ts`
+  AC-4(b) and (c) were red on the first full e2e pass:
+  - **(c)** Accept/Keep current's `boundingBox()` height was 21 px, not ≥ 44: `CheckinCard.tsx`'s
+    two `<button>`s had no `className`, so they got the browser default height — `plan.css`
+    already has `.wl-plan__button`/`.wl-plan__button--primary` (44×44 min) but `CheckinCard.tsx`
+    never used them (a latent gap since the card was never actually mounted/visible before this
+    ticket). Fixed by adding `className="wl-plan__button wl-plan__button--primary"` to Accept and
+    `className="wl-plan__button"` to Keep current, in `CheckinCard.tsx`.
+  - **(b)** `/plan` never showed the card at all (confirmed reproducible in isolation, not flaky).
+    Root cause: `CheckinCard`'s own hook (`use-checkin-data.ts`) does exactly one, un-refreshed
+    cache read by design ("never `refreshAll`... the screens that mount it keep the data fresh").
+    `Plan`'s own `usePlanData` DOES its own `refreshAll` (cold read, refresh, re-read) — but on a
+    genuine first visit to `/plan` (no earlier visit to warm the cache), `CheckinCard` and `Plan`
+    mount as independent siblings with no ordering between their two effects, so the card's single
+    read can run against a still-cold cache and lose the race, resolving to "no card" with nothing
+    to retry it. AC-4(a)/(c)/(d) didn't catch this because they all navigate to `/` twice (the
+    first visit's own `refreshAll` warms the cache before the second mount reads it); AC-4(b)
+    visits `/plan` once, exposing the real race. Traced with request/response/console logging on a
+    scratch copy of the spec (removed before commit) and a temporary `evaluateCheckin` probe under
+    `packages/engine/test/` (removed before commit) that confirmed the engine's own proposal is
+    correct and non-null for the fixture — the bug is in the mount-site race, not the engine or
+    the fixture. First attempted fix (a retry inside `use-checkin-data.ts` mirroring
+    `use-plan-data.ts`'s read-refresh-reread shape) was reverted: it would have called the real,
+    unmocked `refreshAll` inside `checkin-card.test.tsx`'s existing "no card" unit tests (which only
+    wait 50 ms before asserting absence), leaving a dangling `refreshAll` promise and a 3 s timer
+    running past each test's own teardown — a cross-test hazard, not a fix. Reverted that file to
+    its committed version (`git checkout HEAD --`, safe: it was unmodified by this ticket). Fixed
+    at the mount site instead (squarely `index.tsx`/`PlanBody.tsx`, both already touched by this
+    ticket's own AC-1): `Plan` now owns the one `usePlanData` call (moved up from `PlanBody`, which
+    takes the resulting `PlanState` as a prop instead of calling the hook itself) and gates
+    `CheckinCard`'s mount on `state.phase !== "loading"` — so the card's single read never starts
+    before Plan's own cache-warming refresh has had its first pass. No extra `usePlanData` call,
+    no doubled network reads. `scripts/locked.sh small … vitest run src/features/UF-11`: 184/184
+    green after; `src/features/UF-02`: 143/143 green (unaffected).
+- **Gate (final, full).** `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test
+  --concurrency=1`: 256 test files / 3545 tests, typecheck and lint green. `-w test:repo-checks`:
+  159/159. `-w format:check`: green (after one `prettier --write` each on `checkin-mount.test.tsx`
+  and `CheckinCard.tsx`, both auto-fixed, re-verified). `node .github/scripts/check-all.mjs`: exit
+  0. Fresh build + `check:size`: green, 58 precache entries.
+- **e2e (full suite).** `TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx -y
+  pnpm@10.28.2 exec playwright test --config tests/e2e/playwright.config.ts`: first full run 234
+  passed / 2 failed (AC-4b, AC-4c, both genuine bugs above, not flakes — reproduced in isolation).
+  After the two fixes: 236/236 green, including every AC-3/AC-4 case and the whole existing suite
+  (no regression elsewhere).
+- **Verdict.** All ACs pass with the fixes above. Two deviations from the ticket's literal "paths
+  you may change" list, both flagged for orchestrator/QA ratification: (1) D-0177's now-four
+  UF-02-lane test files (one new beyond the interrupted session's three); (2) `CheckinCard.tsx`
+  and `PlanBody.tsx` changes that go beyond "mount only" — a button-class fix and a
+  cache-warm-ordering fix, both exposed only by this ticket's own new coverage (no prior test,
+  unit or e2e, ever exercised the card visible in a real browser or from a genuinely cold cache).

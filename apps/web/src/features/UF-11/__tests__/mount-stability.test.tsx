@@ -12,8 +12,26 @@ import { cleanup, render, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { EditPlan, Plan } from "../index.js";
 import { profileF, targetsF } from "./fixtures.js";
-import { freshDb, listRows, seedCache, signIn, signOut, useTimeZone } from "./test-helpers.js";
+import {
+  createFromSpy,
+  freshDb,
+  listRows,
+  seedCache,
+  signIn,
+  signOut,
+  useTimeZone,
+} from "./test-helpers.js";
 import { en } from "../../../lib/i18n/en.js";
+
+// T-0471: `Plan` now also mounts `CheckinCard`, whose `insertIfFirstShown` effect is a no-op here
+// (every test below is offline), but the real `lib/auth/client.js` is still mocked, as every other
+// UF-11 file that mounts `Plan` with a proposal-bearing profile does — a real unconfigured-or-not
+// client's background session refresh is a cross-test hazard (`plan.render.test.tsx`'s own note).
+const checkinSpy = createFromSpy();
+vi.mock("../../../lib/auth/client.js", () => ({
+  supabase: { from: (table: string) => checkinSpy.from(table) },
+  isSupabaseConfigured: () => true,
+}));
 
 // `loadProfile` is counted THROUGH the mocked index, the module the feature actually imports.
 // Spying on `lib/offline/history.js` would count nothing: the `...actual` spread below binds the
@@ -37,6 +55,7 @@ const u = en.uf11;
 
 beforeEach(() => {
   signIn();
+  checkinSpy.reset();
   useTimeZone("Europe/Stockholm");
   loadProfileCalls.n = 0;
   // Offline, so the refresh path is out of the picture and any repeat read is a real loop.

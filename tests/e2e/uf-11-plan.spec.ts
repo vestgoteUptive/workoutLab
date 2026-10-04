@@ -9,6 +9,10 @@
 // assertion passes.
 //
 // T-0308c appends its UF-11.1 card cases to this file (D-0071 §10).
+// T-0471 appends the card's mounts (UF-11.2 / UF-02.1, D-0071 §10): AC-3 (never on
+// `/session/*`), AC-4 (Today's Accept write order, Plan showing the card, axe + target size,
+// offline after one online load). `UF11_FIXTURES.sets` is `[]`, so the card's "step down from
+// 3-4" proposal is independent of the run date (D-0174 §3) — no assertion here depends on it.
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
@@ -21,6 +25,7 @@ import {
 import { ROUTINE_A_ID, UF11_FIXTURES } from "./fixtures/uf-11-plan.js";
 
 const MIN_TARGET_PX = 44;
+const CHECKIN_CARD = '[data-part="checkin-card"]';
 
 async function open(page: Page, path: "/plan" | "/plan/edit"): Promise<void> {
   await mockSupabaseData(page, UF11_FIXTURES);
@@ -269,4 +274,149 @@ test.describe("QA: console errors and the render-loop guard on the real route", 
       expect(consoleGuard.errors()).toEqual([]);
     });
   }
+});
+
+test.describe("T-0471 AC-3: the card never shows during a workout, only on / and /plan", () => {
+  test("no checkin-card on /session/setup, /session/S1 or /session/S1/summary; present on /", async ({
+    page,
+  }) => {
+    await mockSupabaseData(page, UF11_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+
+    await page.goto("/session/setup");
+    await expect(page.locator('[data-screen-id="UF-08.1"]')).toBeVisible();
+    await expect(page.locator(CHECKIN_CARD)).toHaveCount(0);
+    await expect(page.getByText("Accept", { exact: true })).toHaveCount(0);
+    await expect(page.getByText("Keep current", { exact: true })).toHaveCount(0);
+
+    await page.goto("/session/S1");
+    await expect(page.locator('[data-screen-id="UF-09"]')).toBeVisible();
+    await expect(page.locator(CHECKIN_CARD)).toHaveCount(0);
+
+    await page.goto("/session/S1/summary");
+    await expect(page.locator('[data-screen-id="UF-03.3"]')).toBeVisible();
+    await expect(page.locator(CHECKIN_CARD)).toHaveCount(0);
+
+    await page.goto("/");
+    await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+    await expect(page.locator(CHECKIN_CARD)).toBeVisible();
+  });
+});
+
+test.describe("T-0471 AC-4 CheckinCard on Today and Plan", () => {
+  test("(a) / shows the card; Accept writes area_targets, profiles, plan_checkins (in that order, after the tap), then the card disappears", async ({
+    page,
+  }) => {
+    const afterTapWrites: { method: string; pathname: string }[] = [];
+    let tapped = false;
+    page.on("request", (r) => {
+      const method = r.method();
+      if (method === "GET" || method === "HEAD") return;
+      if (!tapped) return; // the first-shown insert fires before the tap; not counted (AC-4a).
+      const pathname = new URL(r.url()).pathname;
+      if (pathname.startsWith("/rest/v1/")) {
+        afterTapWrites.push({ method, pathname: pathname.replace("/rest/v1/", "") });
+      }
+    });
+
+    await mockSupabaseData(page, UF11_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+
+    const card = page.locator(CHECKIN_CARD);
+    await expect(card).toBeVisible();
+    const accept = page.getByRole("button", { name: "Accept" });
+    await expect(accept).toBeVisible();
+
+    tapped = true;
+    await accept.click();
+
+    await expect(card).toHaveCount(0);
+    expect(afterTapWrites.map((w) => `${w.method} ${w.pathname}`)).toEqual([
+      "POST area_targets",
+      "PATCH profiles",
+      "PATCH plan_checkins",
+    ]);
+  });
+
+  test("(b) /plan shows the card before any tap", async ({ page }) => {
+    await mockSupabaseData(page, UF11_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/plan");
+
+    await expect(page.locator('[data-screen-id="UF-11.2"]')).toBeVisible();
+    await expect(page.locator(CHECKIN_CARD)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Accept" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Keep current" })).toBeVisible();
+  });
+
+  test("(c) / with the card: 0 serious/critical axe violations; Accept and Keep current are at least 44x44", async ({
+    page,
+  }) => {
+    await mockSupabaseData(page, UF11_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+
+    const card = page.locator(CHECKIN_CARD);
+    await expect(card).toBeVisible();
+
+    const results = await new AxeBuilder({ page }).include(CHECKIN_CARD).analyze();
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(
+      serious.map((v) => `${v.id} (${v.impact}): ${v.nodes.length} node(s)`),
+      JSON.stringify(serious, null, 2),
+    ).toEqual([]);
+
+    for (const name of ["Accept", "Keep current"]) {
+      const box = await page.getByRole("button", { name }).boundingBox();
+      expect(box, `${name} has no bounding box`).not.toBeNull();
+      expect(box!.width, `${name} width`).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+      expect(box!.height, `${name} height`).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+    }
+  });
+
+  test("(d) offline after one online load: a reload of / shows the card with both buttons disabled", async ({
+    page,
+    context,
+  }) => {
+    await mockSupabaseData(page, UF11_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+
+    await expect(page.locator(CHECKIN_CARD)).toBeVisible();
+
+    // T-0904: wait for the service worker's precache to settle before going offline
+    // (offline.spec.ts / uf-02-today.spec.ts's own guard against the same race).
+    await page.evaluate(() => navigator.serviceWorker.ready);
+    await expect
+      .poll(
+        async () =>
+          page.evaluate(async () => {
+            const keys = await caches.keys();
+            const precache = keys.find((k) => k.startsWith("workbox-precache"));
+            if (!precache) return { hasDocument: false };
+            const requests = await (await caches.open(precache)).keys();
+            return { hasDocument: requests.some((r) => new URL(r.url).pathname === "/index.html") };
+          }),
+        { message: "the workbox precache never finished populating before going offline" },
+      )
+      .toMatchObject({ hasDocument: true });
+
+    await context.setOffline(true);
+    await page.reload();
+
+    const card = page.locator(CHECKIN_CARD);
+    await expect(card).toBeVisible({ timeout: 3000 });
+    await expect(page.getByRole("button", { name: "Accept" })).toBeDisabled();
+    await expect(page.getByRole("button", { name: "Keep current" })).toBeDisabled();
+    // D-0091 §1: assert the built content, not a translation key or placeholder.
+    await expect(card).toContainText("Connect to update your plan");
+  });
 });

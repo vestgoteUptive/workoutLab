@@ -1,11 +1,15 @@
 // UF-11.2 Plan body. The screen host and its <h1> live in `index.tsx`, so they are in the DOM on
 // the first render in every state (loading, cold cache, no user id).
+//
+// T-0471: `index.tsx` owns the one `usePlanData` call now (not this file), so `Plan` can gate
+// `CheckinCard`'s mount on the same state this body renders from — see that file's own comment
+// for why (a cold-cache race `CheckinCard`'s own single read could otherwise lose).
 import { Link } from "react-router";
 import { AREAS, type AreaTarget } from "@workoutlab/shared";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
 import { formatInstantDay, formatLocalDay } from "./format.js";
-import { usePlanData, type Clock, type PlanData } from "./use-plan-data.js";
+import type { PlanData, PlanState } from "./use-plan-data.js";
 import "./plan.css";
 
 const u = en.uf11;
@@ -104,8 +108,7 @@ function PlanContent({ data }: { data: PlanData }) {
   );
 }
 
-export function PlanBody({ clock }: { clock: Clock }) {
-  const state = usePlanData(clock);
+export function PlanBody({ state }: { state: PlanState }) {
   return (
     <>
       <OfflineStatus variant="text" />
