@@ -153,7 +153,7 @@ describe("REST_START", () => {
     },
   );
 
-  it.each(["getReady", "warmup", "next", "timeCheck", "paused", "done"] as const)(
+  it.each(["timeCheck", "betweenItems", "paused", "done"] as const)(
     "from %s: the same state",
     (phase) => {
       const s = at(phase);
@@ -164,6 +164,106 @@ describe("REST_START", () => {
   it("an exercise missing from the library gets the compound rest", () => {
     const s = reduce(at("set"), { type: "REST_START", exerciseId: "mystery", atMs: T0 });
     expect(s.timer!.durationS).toBe(120);
+  });
+});
+
+describe("T-0477 AC-1 REST_START from getReady, warmup and next (D-0175 §1)", () => {
+  it("from getReady: rest by type, warm-up fields reset, position unchanged", () => {
+    const s0 = at("getReady", { loggedSets: [set(0, 0)] });
+    const s = reduce(s0, { type: "REST_START", exerciseId: "bench-press", atMs: T0 });
+    expect(s).toMatchObject({
+      phase: "rest",
+      timer: { startedAtMs: T0, durationS: 120, pausedMs: 0 },
+      warmupSpentMs: 0,
+      warmupStartedAtMs: null,
+      itemIndex: 0,
+      setIndex: 0,
+    });
+    expect(s.loggedSets).toBe(s0.loggedSets);
+    expect(s.skippedItems).toBe(s0.skippedItems);
+  });
+
+  it("from warmup: warmupSpentMs computed from warmupStartedAtMs, warmupIndex kept", () => {
+    const s0 = at("warmup", { warmupStartedAtMs: T0 - 90_000, warmupIndex: 2 });
+    const s = reduce(s0, { type: "REST_START", exerciseId: "leg-curl", atMs: T0 });
+    expect(s).toMatchObject({
+      phase: "rest",
+      timer: { durationS: 60 },
+      warmupSpentMs: 90_000,
+      warmupStartedAtMs: null,
+      warmupIndex: 2,
+    });
+  });
+
+  it("pair: from warmup with warmupStartedAtMs null, warmupSpentMs stays as it is", () => {
+    const s0 = at("warmup", { warmupStartedAtMs: null, warmupSpentMs: 5_000, warmupIndex: 2 });
+    const s = reduce(s0, { type: "REST_START", exerciseId: "leg-curl", atMs: T0 });
+    expect(s).toMatchObject({ warmupSpentMs: 5_000, warmupStartedAtMs: null });
+  });
+
+  it("from next: rest by type, itemIndex kept, warm-up fields unchanged", () => {
+    const s0 = at("next", {
+      itemIndex: 1,
+      warmupSpentMs: 120_000,
+      warmupStartedAtMs: null,
+    });
+    const s = reduce(s0, { type: "REST_START", exerciseId: "barbell-row", atMs: T0 });
+    expect(s).toMatchObject({
+      phase: "rest",
+      timer: { durationS: 120 },
+      itemIndex: 1,
+      warmupSpentMs: 120_000,
+      warmupStartedAtMs: null,
+    });
+  });
+});
+
+describe("T-0477 AC-2 REST_END after a getReady/warmup/next REST_START", () => {
+  it("from the getReady case: bench set 0 logged → set, itemIndex 0, setIndex 1", () => {
+    const rest = reduce(at("getReady", { loggedSets: [set(0, 0)] }), {
+      type: "REST_START",
+      exerciseId: "bench-press",
+      atMs: T0,
+    });
+    expect(reduce(rest, { type: "REST_END", atMs: T0 + 120_000 })).toMatchObject({
+      phase: "set",
+      itemIndex: 0,
+      setIndex: 1,
+    });
+  });
+
+  it("from a warmup case: leg-curl (item 2) set 0 logged → set, itemIndex 0, setIndex 0", () => {
+    const rest = reduce(at("warmup", { loggedSets: [set(2, 0)] }), {
+      type: "REST_START",
+      exerciseId: "leg-curl",
+      atMs: T0,
+    });
+    expect(reduce(rest, { type: "REST_END", atMs: T0 + 60_000 })).toMatchObject({
+      phase: "set",
+      itemIndex: 0,
+      setIndex: 0,
+    });
+  });
+
+  it("from the next case: barbell-row (item 1) set 0 logged → set, itemIndex 1, setIndex 1", () => {
+    const rest = reduce(at("next", { itemIndex: 1, loggedSets: [set(1, 0)] }), {
+      type: "REST_START",
+      exerciseId: "barbell-row",
+      atMs: T0,
+    });
+    expect(reduce(rest, { type: "REST_END", atMs: T0 + 120_000 })).toMatchObject({
+      phase: "set",
+      itemIndex: 1,
+      setIndex: 1,
+    });
+  });
+
+  it("from getReady with all four bench sets logged → betweenItems", () => {
+    const rest = reduce(
+      at("getReady", { loggedSets: [set(0, 0), set(0, 1), set(0, 2), set(0, 3)] }),
+      { type: "REST_START", exerciseId: "bench-press", atMs: T0 },
+    );
+    expect(reduce(rest, { type: "REST_END", atMs: T0 + 120_000 }).phase).toBe("betweenItems");
   });
 });
 
