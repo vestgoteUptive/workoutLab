@@ -286,5 +286,86 @@ spec/fixture file.
 Decisions: none new. D-0173 (prior) is resolved by T-0480 (merged); the `AccountDeletedNotice`
 race is resolved by T-0486 (merged) — both confirmed closed by this run, not just assumed.
 
-Ticket status: **done.** All 5 ACs pass with a real, deterministic (repeat-each=2, no flake) e2e
-suite; gate green; contracts unchanged.
+**2026-10-04 frontend-dev, code review response.** Reviewer requested changes before approval:
+(1) AC-2/AC-3 never went red, so nothing proved they'd catch a real regression; (2) a stale
+comment at `uf-11-account.spec.ts:84-91` still described the D-0173 guard gap as unfixed, though
+T-0480 closed it; (3) `textContent ?? fallback` on an `<input>` never falls through (empty string
+isn't null/undefined), so a failing checkbox's error line prints no name. Reviewer independently
+confirmed the `inset: -1px` CSS fix itself traces correctly and is not in question.
+
+Item 2 and item 3: fixed directly in `tests/e2e/uf-11-account.spec.ts` (comment now says T-0480
+fixed the gap, cites the `fulfilledResponses` mechanism by name; the 44×44 name-lookup now treats
+`label?.trim() || tagName` so a blank string falls through same as null/undefined). Both are
+comment/debuggability-only; no assertion changed.
+
+Item 1 (the real work): planted a fault for AC-2 and a fault for AC-3 in
+`AccountSettingsBody.tsx` (backed up via `cp` first, restored via `cp` after each), each run
+through the real e2e build, not a unit test:
+- **AC-2 fault, attempt 1** (remove the `navigate`/`location.replace` calls on a successful
+  delete): passed unexpectedly. Investigation found why: `apps/web/src/lib/auth/guards.js`'s
+  `RequireAuth` guard independently redirects to `/welcome` on its own `SIGNED_OUT` reaction,
+  masking the removed call — a real defense-in-depth redirect, not a test gap. Discarded; a fault
+  this narrow can't prove AC-2 on its own.
+- **AC-2 fault, attempt 2** (skip the `deleteAccountAndSignOut` call entirely; `outcome =
+  "deleted"` without ever sending the request): **red**, deterministically — `getByText("Your
+  account and all your data are deleted.")` never became visible (the notice flag is set inside
+  `deleteAccountAndSignOut` step 3, which the fault skips, so even though the auth guard still
+  redirects to `/welcome`, the notice text is correctly absent). Restored via `cp`; re-ran green
+  (`1 passed`).
+- **AC-3 fault** (`outcome === "deleted"` widened to `outcome === "deleted" || outcome ===
+  "failed"`, so the 500 case also navigates): compiles clean (`tsc --noEmit`, 0 errors — the
+  narrower boolean-literal version tried first didn't type-check, since TS still checks the
+  unreachable `setDeleteError(outcome)` against the full `DeletionOutcome` union; the
+  `||`-widened condition keeps real narrowing and compiles). **Red**, deterministically — the page
+  navigated to `/welcome` and `"Couldn't delete your account. Try again."` never appeared.
+  Restored via `cp`; re-ran green.
+
+Both fault proofs are logged here in full (not just "red, restored") per the proof-hygiene rule.
+
+**A genuine, pre-existing flake found and triaged, not caused by this build.** While re-running
+the full `uf-11-account.spec.ts` (`--repeat-each=2`) and the whole project e2e suite to confirm
+green after restoring both files, AC-3 failed twice (out of four full/`--repeat-each=2` runs) on
+`expect(count).toBe(1)` (received `0`) — with the file at its clean, committed state, no fault
+planted. Investigated rather than dismissed: traced to `AutoSync`'s background `flushNow()`
+(fires on every signed-in page mount, including `/plan/account`) racing the spec's own seeded
+`status: "queued"` IndexedDB row against `tests/e2e/fixtures/supabase-mock.ts`'s shared
+`mockSupabaseData`, whose `sessions*`/`session_sets*` routes answer **every HTTP method**
+(including the flush's own `upsert` POST) with `200, json: []` — no GET-only guard. A successful
+(mocked) upsert makes `flushSets`/`removeSyncedIfNotReedited` delete the row from IndexedDB,
+independent of anything the test's own UI flow does. Confirmed directly (not by elimination): a
+local, uncommitted experimental patch to `supabase-mock.ts` (501 instead of 200 for a non-GET,
+with a temporary `console.log`) showed the POST actually firing 3 of 5 times under
+`--repeat-each=5`, and with the guard in place all 5/5 passed; reverted via `cp`, confirmed no
+diff against HEAD. `supabase-mock.ts` is qa-owned (`tests/e2e/**`), not in this ticket's listed
+extras. Filed `.squad/decisions/D-0176-e2e-autosync-flush-deletes-seeded-queued-rows.md` (status
+`revisit`) with the full trace and a qa follow-up (add a method check to those two routes,
+mirroring `mockExportRows`'s own pattern in this same spec file). AC-3's row is left exactly as
+written — it is correct and already caught the real fault above; the flake is a shared-fixture
+gap outside this ticket's lane, not a reason to loosen the row.
+
+Final verification after all of the above (file state identical to the pre-review commit plus the
+two in-lane spec fixes):
+- `uf-11-account.spec.ts --repeat-each=2 --workers=1` (serial, isolates from the AutoSync-flush
+  race's load-sensitivity): **14/14 passed, twice.**
+- `uf-11-account.spec.ts --repeat-each=2` (default/parallel workers, re-run after the flake):
+  **14/14 passed.**
+- Full project e2e suite, two runs: **228/228** and **227/228** (the one failure being the D-0176
+  flake described above, same assertion both times it occurred across this session).
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`: 19/19
+  tasks successful, 3525 tests passed (full-turbo cache hit — confirms the spec-only diff doesn't
+  change any cached task's inputs unexpectedly).
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 passed.
+- `npx -y pnpm@10.28.2 -w format:check`: clean.
+- `node .github/scripts/check-all.mjs`: exit 0.
+
+Files changed this round: `tests/e2e/uf-11-account.spec.ts` (comment fix + name-fallback fix,
+both requested by review), `.squad/decisions/D-0176-*.md` (new), this ticket file (log only). No
+product code changed in this round (the `plan.css` fix from the prior entry is unchanged and
+still in place).
+
+Decisions: D-0176 (new, `revisit`) — AutoSync-flush-vs-seeded-row e2e race, qa follow-up filed.
+
+Ticket status: **ready for re-review.** AC-1–AC-5 each have a genuine, demonstrated
+red-then-green e2e proof (AC-2/AC-3 added this round; AC-1/AC-4/AC-5 already had one from the
+original build); the one open item is D-0176, a shared-fixture flake outside this ticket's lane,
+documented and handed off rather than patched out of scope.

@@ -81,14 +81,15 @@ interface AccountCall {
  *  routes must be awaited before the page navigates, or the route may not be active yet when the
  *  request is made (Playwright registers routes asynchronously).
  *
- *  D-0173: on a 204, both of these are fulfilled correctly (confirmed with a temporary
- *  `requestfailed` listener: both got their 204), but the app's own, correct, existing behaviour
- *  (D-0136 §4 comment: a still-"signed-in" `AuthProvider` ref at check time does a **hard**
- *  `window.location.replace("/welcome")`, not an SPA navigate) tears the frame down right after,
- *  and Chromium also reports both as `requestfailed: net::ERR_ABORTED` even though they already
- *  resolved in-page. `guarded-test.ts`'s detector 2 has no exemption for an already-fulfilled
- *  request aborted by a same-tick hard navigation (only for the offline case) — a measured
- *  qa-lane gap (D-0173), not a bug here. AC-2 is written to the correct behaviour regardless. */
+ *  D-0173 (fixed by T-0480, merged to main): on a 204, both of these are fulfilled correctly
+ *  (confirmed with a temporary `requestfailed` listener: both got their 204), but the app's own,
+ *  correct, existing behaviour (D-0136 §4 comment: a still-"signed-in" `AuthProvider` ref at
+ *  check time does a **hard** `window.location.replace("/welcome")`, not an SPA navigate) tears
+ *  the frame down right after, and Chromium also reports both as `requestfailed:
+ *  net::ERR_ABORTED` even though they already resolved in-page. `guarded-test.ts`'s detector 2
+ *  now exempts an already-fulfilled request aborted by a same-tick hard navigation (T-0480 added
+ *  a `fulfilledResponses` set checked before reporting `requestfailed`), so this no longer fails
+ *  the guard. AC-2 is written to the correct behaviour either way. */
 async function mockAccountDelete(page: Page, status: number): Promise<AccountCall[]> {
   const calls: AccountCall[] = [];
   await page.route(`${VITE_SUPABASE_URL}/functions/v1/account`, (route) => {
@@ -445,11 +446,12 @@ test.describe("T-0469 AC-5 accessibility (NFR-A11Y-1/-2)", () => {
       const box = await element.boundingBox();
       if (!box) continue;
       if (box.width < MIN_TARGET_PX || box.height < MIN_TARGET_PX) {
-        const name =
-          (await element.getAttribute("aria-label")) ??
-          (await element.textContent()) ??
-          (await element.evaluate((el) => el.tagName.toLowerCase()));
-        tooSmall.push(`${name!.trim()}: ${Math.round(box.width)} x ${Math.round(box.height)}`);
+        // `textContent` on an <input> (e.g. the checkboxes here) is "" , not null/undefined, so
+        // `??` alone never falls through to the tag-name branch — a failing checkbox would print
+        // with no name. Treat a blank string the same as null/undefined.
+        const label = (await element.getAttribute("aria-label")) || (await element.textContent());
+        const name = label?.trim() || (await element.evaluate((el) => el.tagName.toLowerCase()));
+        tooSmall.push(`${name}: ${Math.round(box.width)} x ${Math.round(box.height)}`);
       }
     }
     expect(tooSmall).toEqual([]);
