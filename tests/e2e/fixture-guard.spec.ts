@@ -682,6 +682,18 @@ test.describe("T-0484 goOffline fixture", () => {
     await mockSupabaseRest(page);
     await mockSupabaseData(page, EMPTY_FIXTURES);
     await mockProfilePresent(page);
+    // Registered *after* mockSupabaseData (T-0489, D-0176): mockSupabaseData's own
+    // session_sets* route is GET-only and aborts any other method by default. This test
+    // deliberately drives a real post-goOnline write, so — like uf-09-offline.spec.ts's
+    // recordWrites and uf-08-setup.spec.ts's recordSessions — it registers its own
+    // method-aware route, which wins because Playwright runs the most-recently-registered
+    // matching handler first.
+    await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets*`, (route) => {
+      if (route.request().method() === "GET") {
+        return route.fulfill({ status: 200, json: [] });
+      }
+      return route.fulfill({ status: 200, json: {} });
+    });
     await page.goto("/");
     await page.evaluate(() => navigator.serviceWorker.ready);
 
