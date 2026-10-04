@@ -42,6 +42,42 @@ describe("OfflineStatus (AC-C19)", () => {
     expect(line?.textContent).toBe("Offline · last synced 08:10");
   });
 
+  // T-0449: binary pair pinning D-0045 §9 `timeStyle: "short"` (not `hour: "numeric"`/`"2-digit"`).
+  function syncedText(
+    lastSyncedAt: string,
+    locale: string,
+    timeZone: string,
+  ): string | null | undefined {
+    setOnline(false);
+    render(
+      <OfflineStatus
+        variant="text"
+        lastSyncedAt={lastSyncedAt}
+        locale={locale}
+        timeZone={timeZone}
+      />,
+    );
+    return document.querySelector(".wl-offline-status__text")?.textContent;
+  }
+
+  it("T-0449 AC1: single-digit hour is zero-padded in en-GB", () => {
+    expect(syncedText("2026-09-27T06:10:00Z", "en-GB", "Europe/Stockholm")).toBe(
+      "Offline · last synced 08:10",
+    );
+  });
+
+  it("T-0449 AC2: two-digit hour renders as is in en-GB", () => {
+    expect(syncedText("2026-09-27T16:05:00Z", "en-GB", "Europe/Stockholm")).toBe(
+      "Offline · last synced 18:05",
+    );
+  });
+
+  it("T-0449 AC3: 12-hour locale is not forced to two digits", () => {
+    expect(syncedText("2026-09-28T12:05:00Z", "en-US", "America/New_York")).toBe(
+      "Offline · last synced 8:05 AM",
+    );
+  });
+
   it('text variant reads "Offline · not synced yet" when nothing has synced', () => {
     setOnline(false);
     render(<OfflineStatus variant="text" lastSyncedAt={null} />);
