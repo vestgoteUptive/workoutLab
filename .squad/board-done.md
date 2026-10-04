@@ -223,6 +223,8 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0353 | UF-10 e2e: reach C-01 buttons with real Tab presses rather than `locator.focus()` (AC-A16 wording), plus a `boundingBox()` ≥ 44×44 check on a balance row (AC-A14) (T-0307a accept; D-0174 §6; e2e-only, serial with T-0354) | web-feature:UF-10 | T-0307a | done | wl-build-web |
 | T-0354 | UF-10.2: contributor rows render once the names read settles (resolved or rejected), so the raw `exerciseId` never flashes (T-0307a accept; D-0174 §5; serial with T-0353) | web-feature:UF-10 | T-0307a | done | wl-build-web |
 | T-0480 | guarded-test.ts detector 2: an already-fulfilled request can still fire requestfailed/ERR_ABORTED right before a hard navigation (D-0173, T-0469 AC-2 build finding) | qa | — | done | wl-build-qa |
+| T-0442 | apps/landing/browser/playwright.config.ts has the same reuseExistingServer: !CI; make it false like T-0440 (D-0155 §5) | landing | T-0440 | done | wl-build-web |
+| T-0467 | check-lane-paths doc nit: add the one-line D-0167 §1 own-ticket-file note to the file header and the listedPathsFromTicket doc comment; AC-3 test should also assert the finding points at the ticket path (T-0466 review/accept) | infra | T-0466 | done | wl-build-infra |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
