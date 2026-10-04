@@ -158,7 +158,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 | T-0484 | Shared `goOffline(page, context)` e2e fixture: context offline plus a Supabase write-abort gate in one call; UF-03/UF-09 offline specs move to it (D-0175 §3) | qa | T-0906 | done | wl-build-qa |
 | T-0485 | AutoSync: skip the mount flushNow() while navigator.onLine is false, like refreshAll beside it — hardening only, no e2e may rely on it (D-0175 §4; waits for T-0484, which removes the e2e dependency on this flush) | web-shell | T-0484 | done | wl-build-web |
 | T-0488 | tests/e2e/uf-08-setup.spec.ts T-0303d AC-10 UF-08.4 offline: recordSessions's route fulfills with 201 regardless of offline state; migrate onto the shared goOffline fixture (T-0484 build finding) | qa | T-0484 | doing | wl-build-qa |
-| T-0489 | tests/e2e/fixtures/supabase-mock.ts: mockSupabaseData's sessions*/session_sets* routes answer every HTTP method with 200 — add a method check so AutoSync's flush can't race a spec's seeded IndexedDB rows (D-0176, T-0469 build finding) | qa | — | doing | wl-build-qa |
+| T-0489 | tests/e2e/fixtures/supabase-mock.ts: mockSupabaseData's sessions*/session_sets* routes answer every HTTP method with 200 — add a method check so AutoSync's flush can't race a spec's seeded IndexedDB rows (D-0176, T-0469 build finding) | qa | — | done | wl-build-qa |
 
 ## Phase 5 — Iterate
 The product-owner adds tickets from `revisit` decisions, triage outcomes and QA findings, using the `wl-idea` flow.
