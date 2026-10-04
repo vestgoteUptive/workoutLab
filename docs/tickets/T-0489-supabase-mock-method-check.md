@@ -154,3 +154,14 @@ test:repo-checks` — 159/159 passed. `pnpm -w format:check` — clean. `node
 .github/scripts/check-all.mjs` — exit 0.
 
 **Files changed:** `tests/e2e/fixtures/supabase-mock.ts` only, plus this log.
+
+### Orchestrator follow-up (2026-10-04)
+Fixed the `fixture-guard.spec.ts` AC-3 gap directly rather than filing a separate ticket, since the
+builder had already fully diagnosed it and the fix is exactly the pattern the ticket's own doc
+comment names: the test now registers its own method-aware `session_sets*` route (GET passthrough,
+non-GET fulfilled) *after* `mockSupabaseData`, before calling `goOffline` — the same shape
+`uf-09-offline.spec.ts`'s `recordWrites` and `uf-08-setup.spec.ts`'s `recordSessions` already use.
+`goOffline`'s own route (registered later still) wins during the armed window and counts the
+abort; after `goOnline()` disarms it, `goOffline`'s handler falls back to this local route, which
+fulfills with 200 as the test expects. Verified: `-g "AC-3 goOnline"` passes in isolation, and the
+full e2e suite is now **231/231**, confirming AC-4 fully met. No other spec needed a change.
