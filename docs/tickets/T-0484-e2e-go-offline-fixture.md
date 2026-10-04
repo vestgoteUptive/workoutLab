@@ -212,3 +212,108 @@ cite the screens, for example `T-0484 UF-03.1: goOffline fixture for offline spe
   - one row per exposed site from AC-7.
 
 ## Build / accept log
+
+**Build (2026-10-04).** `goOffline(page, context)` added in `tests/e2e/fixtures/offline.ts`:
+arms a `page.route` write-abort gate on `${VITE_SUPABASE_URL}/rest/v1/**` (non-GET/HEAD aborts
+with `internetdisconnected`, GET/HEAD and the disarmed state fall through), then calls
+`context.setOffline(true)`, in that order. `writesFulfilledOffline()`/`writesAbortedOffline()`
+count only while armed; `goOnline()` disarms then goes online. Self-tests (AC-1/AC-2/AC-3) added
+to `fixture-guard.spec.ts`, driving every write from `page.evaluate(() => fetch(...))` so the
+proof doesn't depend on any app flush. `uf-03-list-summary.spec.ts`'s `openSessionOffline` /
+`openSummaryOffline` and `uf-09-focus.spec.ts`'s T-0304b AC-12 row and `openOffline` now call
+`goOffline`; `installWriteAbortGate`/`writeCounters`/`WRITE_URL_PATTERNS` deleted. Every
+`setsFor`/`liveSets` read is followed by `expect(gate.writesFulfilledOffline()).toBe(0)`.
+`uf-09-offline.spec.ts`'s `NetworkGate` comment reworded (code unchanged) so it's true with or
+without T-0485.
+
+**AC → test map.**
+- AC-1, AC-2, AC-3 → `fixture-guard.spec.ts` `describe("T-0484 goOffline fixture")`, one test each.
+- AC-4 → `uf-03-list-summary.spec.ts`: `installWriteAbortGate`/`writeCounters`/`WRITE_URL_PATTERNS`
+  removed (grep-verified empty); `openSessionOffline`/`openSummaryOffline` call `goOffline`; the
+  T-0458 AC-1/AC-2 and T-0420 AC-7 tests assert `writesFulfilledOffline() === 0`, no attempt count.
+- AC-5 → `uf-09-focus.spec.ts`: T-0304b AC-12 and `openOffline` call `goOffline`; each `setsFor`
+  read (T-0304b AC-12, the TIMED_PLAN test's poll and its `rows` read) asserts
+  `writesFulfilledOffline() === 0`.
+- AC-6 → two fault runs below (gate-off, T-0485-compatibility).
+- AC-7 → the audit table below.
+- AC-8 → the stability and full-e2e runs below; no `timeout:` touched;
+  `playwright.config.ts`/`guarded-test.ts`/`supabase-mock.ts` untouched (not in `git status`);
+  every touched spec still imports from `./fixtures/guarded-test.js` (unchanged import lines).
+
+**Red runs / faults (AC-6).**
+1. Gate off: `offline.ts`'s armed branch changed `route.abort(...)` → `route.fallback()`
+   (backup/restore via `cp`, not committed). `scripts/locked.sh heavy npx playwright test
+   --config tests/e2e/playwright.config.ts fixture-guard.spec.ts -g "AC-1 writes abort"
+   --repeat-each=3 --workers=1`: 3/3 failed, first failing assertion
+   `expect(sessionSets.threwTypeError).toBe(true)` (fixture-guard.spec.ts:629). Same backup,
+   `… uf-03-list-summary.spec.ts -g "AC-1/AC-2" --repeat-each=3 --workers=1`: 3/3 failed, first
+   failing assertion `expect(gate.writesFulfilledOffline()).toBe(0)` (received 1,
+   uf-03-list-summary.spec.ts:579) — on `main`, AutoSync's mount flush is fulfilled by the mock.
+   Restored from the `cp` backup; `route.abort("internetdisconnected")` confirmed back in place.
+2. T-0485 compatibility: `AutoSync.tsx`'s `void handle.flushNow();` wrapped in
+   `if (navigator.onLine) { … }` (backup/restore via `cp`, not committed).
+   `scripts/locked.sh heavy npx playwright test --config tests/e2e/playwright.config.ts
+   uf-03-list-summary.spec.ts uf-09-focus.spec.ts uf-09-offline.spec.ts`: 19 passed. Restored from
+   backup; `git diff main -- apps/` confirmed empty afterwards.
+
+**AC-7 audit.** Every `context.setOffline(true)`/`contextA/B.setOffline(true)` site in
+`tests/e2e/*.spec.ts` (29 sites, 10 files — `uf-03-list-summary.spec.ts` has none left post-
+migration):
+
+| File:line | What it asserts after going offline | Verdict |
+|---|---|---|
+| shell.spec.ts:56 | screen-id visibility | not exposed |
+| shell.spec.ts:190 | screen-id visibility | not exposed |
+| shell.spec.ts:207 | screen-id visibility | not exposed |
+| shell.spec.ts:230 | screen-id visibility, URL | not exposed |
+| shell.spec.ts:260 | screen-id, column header, URL | not exposed |
+| shell.spec.ts:290 | screen-id, heading, link href, URL | not exposed |
+| shell.spec.ts:314 | redirect URL, screen-id | not exposed |
+| shell.spec.ts:345 | screen-id, field values, URL | not exposed |
+| shell.spec.ts:367 | redirect URL, screen-id | not exposed |
+| shell.spec.ts:385 | redirect URL, screen-id | not exposed |
+| offline.spec.ts:175 | `historyCache`/`libraryCache` IDB counts (reference caches, not the write queue) | not exposed |
+| uf-02-today.spec.ts:186 | C-01 target tiles, screen-id, text | not exposed |
+| uf-02-today.spec.ts:282 | suggestion card text equality | not exposed |
+| uf-02-today.spec.ts:383 | preview row text equality | not exposed |
+| uf-05-swap.spec.ts:366 | UF-09/UF-05 headings and sheet content, no IDB/write read | not exposed |
+| uf-07-routines.spec.ts:183 | keyboard focus only | not exposed |
+| uf-08-setup.spec.ts:132 | fit-line text, screen-id | not exposed |
+| uf-08-setup.spec.ts:293 | row text equality | not exposed |
+| **uf-08-setup.spec.ts:517** | `storedSession` (`wl-offline.sessions` row) **and** `recordSessions`'s write array, right after an offline Start | **exposed** — `recordSessions`'s route (registered before `setOffline(true)`) fulfills every write with 201 regardless of offline state (the same hazard T-0906 hit): `expect(writes).toEqual([])` only holds because nothing happens to attempt a write in the gap, not because the route refuses one. A write attempt there would both pass the mock and leave `storedSession` looking "sent" while actually offline. |
+| uf-08-setup.spec.ts:766 | row text equality | not exposed |
+| uf-08-setup.spec.ts:904 | row text/detail equality | not exposed |
+| uf-09-focus.spec.ts:103 | not-on-device text | not exposed |
+| uf-09-focus.spec.ts:744 (T-0394 AC-6) | screen-id, URL (no `wl-offline` read, no write-count assertion) | not exposed |
+| uf-09-offline.spec.ts:339, 441, 448, 527 | `recordWrites`/`networkGate` (out of scope; already models offline correctly, D-0175 §3) | not exposed (by design) |
+| fixture-guard.spec.ts:191 | `supabaseGuard.unclaimed()` for an unmocked **GET** (a read, not a write) | not exposed |
+
+**`uf-09-focus.spec.ts`'s `setsFor` row (AC-7 Notes).** Confirms the product-owner finding: not
+exposed before this ticket (`seedSessionRow` writes `pending: false`, the set under test is logged
+after the reload, the enqueue flush is `navigator.onLine`-guarded, no `online` event fires). Now
+gated anyway (AC-5) against a future auth-event flush.
+
+**Stability / full suite (AC-8).**
+- `scripts/locked.sh heavy npx playwright test --config tests/e2e/playwright.config.ts
+  uf-03-list-summary.spec.ts uf-09-focus.spec.ts --repeat-each=5 --workers=2`: 80 passed, 0 failed.
+  (The `fixture-guard.spec.ts -g "T-0484"` self-tests separately verified at 3/3 and, combined
+  with the two spec files above in one `-g "T-0484"`-filtered run, 15/15 — see below.)
+- `scripts/locked.sh heavy npx playwright test --config tests/e2e/playwright.config.ts
+  fixture-guard.spec.ts -g "T-0484" uf-03-list-summary.spec.ts uf-09-focus.spec.ts
+  --repeat-each=5 --workers=2`: 15 passed (the `-g` filter applied repo-wide, so only the 3
+  self-tests × 5 ran; the dedicated run above covers the other two files at the same repeat count).
+- Full web e2e (`tests/e2e/fixtures/**` changed): `scripts/locked.sh heavy npx playwright test
+  --config tests/e2e/playwright.config.ts` (TMPDIR set per T-0440): **223 passed, 0 failed.**
+
+**Full gate.**
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`: 19/19 turbo
+  tasks green (254 test files, 3525 tests passed).
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks`: 159/159 passed.
+- `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w format:check`: failed once on
+  `fixture-guard.spec.ts` (an unwrapped `postJson` call), fixed with `prettier --write` on the
+  touched files (whitespace only, re-verified against the ticket's assertions), then green.
+- `scripts/locked.sh heavy node .github/scripts/check-all.mjs`: exit 0.
+
+Contracts unchanged. `git diff main -- apps/ packages/` empty. Branch diverges from `main` only in
+`.squad/**` bookkeeping (board/journal/state), which merges cleanly (`git merge-tree` reported no
+conflict markers) — no action needed before merge per the orchestrator's forced gate on `main`.

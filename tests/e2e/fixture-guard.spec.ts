@@ -24,10 +24,12 @@ import {
   UNCLAIMED_MESSAGE,
 } from "./fixtures/guarded-test.js";
 import { listSpecs, unguardedReason, unguardedSpecs } from "./fixtures/guard-source-check.js";
+import { goOffline } from "./fixtures/offline.js";
 import { allowCommentViolations, ownConsoleListeners } from "./fixtures/source-rules.js";
 import {
   mockProfilePresent,
   mockSupabaseAuth,
+  mockSupabaseData,
   mockSupabaseEmailAuth,
   mockSupabaseRest,
   VITE_SUPABASE_URL,
@@ -554,6 +556,150 @@ test.describe("T-0436 backstop hits", () => {
     expect(allowCommentViolations(F, `// T-0436 wanted\n${call}`)).toEqual([]);
     expect(allowCommentViolations(F, call)).toEqual([`${F}:1`]);
     expect(allowCommentViolations(F, `// no ticket\n${call}`)).toEqual([`${F}:2`]);
+  });
+});
+
+// T-0484 (D-0175 §3): the `goOffline` fixture's own tests. `page.evaluate(() => fetch(...))`
+// drives every write directly from page context — a probe no product change can take away,
+// unlike T-0906's original proof, which relied on AutoSync's mount flush as the write attempt
+// (see offline.ts's header comment and T-0484's "Why the self-test forces its own write").
+test.describe("T-0484 goOffline fixture", () => {
+  const EMPTY_FIXTURES = {
+    sets: [],
+    exercises: [],
+    exerciseAreas: [],
+    areaTargets: [],
+    profile: {
+      goal: "build_muscle",
+      level: "beginner",
+      equipment: [],
+      rhythm_min: 3,
+      rhythm_max: 4,
+      priority_areas: [],
+      onboarded_at: "2026-09-01T00:00:00.000Z",
+      plan_changed_at: "2026-09-01T00:00:00.000Z",
+    },
+  };
+
+  async function postJson(
+    page: import("@playwright/test").Page,
+    url: string,
+  ): Promise<{ ok: boolean; status: number; threwTypeError: boolean }> {
+    return page.evaluate(async (target) => {
+      try {
+        const res = await fetch(target, { method: "POST", body: "{}" });
+        return { ok: res.ok, status: res.status, threwTypeError: false };
+      } catch (error) {
+        return { ok: false, status: 0, threwTypeError: error instanceof TypeError };
+      }
+    }, url);
+  }
+
+  async function patchJson(
+    page: import("@playwright/test").Page,
+    url: string,
+  ): Promise<{ threwTypeError: boolean }> {
+    return page.evaluate(async (target) => {
+      try {
+        await fetch(target, { method: "PATCH", body: "{}" });
+        return { threwTypeError: false };
+      } catch (error) {
+        return { threwTypeError: error instanceof TypeError };
+      }
+    }, url);
+  }
+
+  test("AC-1 writes abort, reads pass, navigator.onLine is false", async ({ page, context }) => {
+    await mockSupabaseAuth(page);
+    await mockSupabaseRest(page);
+    await mockSupabaseData(page, EMPTY_FIXTURES);
+    await mockProfilePresent(page);
+    await page.goto("/");
+    // T-0429: wait for the service worker before going offline, or Chromium logs its own
+    // "An unknown error occurred when fetching the script." when the SW's own fetch fails mid
+    // registration (the same race `fixture-guard.spec.ts`'s other `setOffline` test avoids).
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    const gate = await goOffline(page, context);
+
+    const sessionSets = await postJson(page, `${VITE_SUPABASE_URL}/rest/v1/session_sets`);
+    expect(sessionSets.threwTypeError).toBe(true);
+    expect(gate.writesAbortedOffline()).toBe(1);
+    expect(gate.writesFulfilledOffline()).toBe(0);
+
+    const sessionPatch = await patchJson(page, `${VITE_SUPABASE_URL}/rest/v1/sessions?id=eq.x`);
+    expect(sessionPatch.threwTypeError).toBe(true);
+    expect(gate.writesAbortedOffline()).toBe(2);
+    expect(gate.writesFulfilledOffline()).toBe(0);
+
+    const checkin = await postJson(page, `${VITE_SUPABASE_URL}/rest/v1/plan_checkins`);
+    expect(checkin.threwTypeError).toBe(true);
+    expect(gate.writesAbortedOffline()).toBe(3);
+    expect(gate.writesFulfilledOffline()).toBe(0);
+
+    const read = await page.evaluate(async (url) => {
+      const res = await fetch(url);
+      return { status: res.status, body: (await res.json()) as unknown };
+    }, `${VITE_SUPABASE_URL}/rest/v1/exercises`);
+    expect(read.status).toBe(200);
+    expect(read.body).toEqual(EMPTY_FIXTURES.exercises);
+
+    expect(await page.evaluate(() => navigator.onLine)).toBe(false);
+  });
+
+  test("AC-2 a spec route registered after goOffline shadows the gate", async ({
+    page,
+    context,
+  }) => {
+    await mockSupabaseAuth(page);
+    await mockSupabaseRest(page);
+    await mockSupabaseData(page, EMPTY_FIXTURES);
+    await mockProfilePresent(page);
+    await page.goto("/");
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    const gate = await goOffline(page, context);
+
+    // Registered *after* goOffline: the most-recently-registered handler runs first, so this
+    // shadows the gate exactly as the doc comment warns.
+    await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets*`, (route) =>
+      route.fulfill({ status: 201, json: {} }),
+    );
+
+    const result = await postJson(page, `${VITE_SUPABASE_URL}/rest/v1/session_sets`);
+    expect(result.threwTypeError).toBe(false);
+    expect(result.status).toBe(201);
+    // `requestfinished` fires asynchronously after the response already resolved in page context
+    // (the `fetch` above), so the counter can lag the assertion by a tick.
+    await expect.poll(() => gate.writesFulfilledOffline()).toBe(1);
+  });
+
+  test("AC-3 goOnline disarms then goes online; counters frozen, the same POST now resolves", async ({
+    page,
+    context,
+  }) => {
+    await mockSupabaseAuth(page);
+    await mockSupabaseRest(page);
+    await mockSupabaseData(page, EMPTY_FIXTURES);
+    await mockProfilePresent(page);
+    await page.goto("/");
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    const gate = await goOffline(page, context);
+    const url = `${VITE_SUPABASE_URL}/rest/v1/session_sets`;
+    await postJson(page, url);
+    expect(gate.writesAbortedOffline()).toBe(1);
+    expect(gate.writesFulfilledOffline()).toBe(0);
+
+    await gate.goOnline();
+    expect(await page.evaluate(() => navigator.onLine)).toBe(true);
+
+    const result = await postJson(page, url);
+    expect(result.threwTypeError).toBe(false);
+    expect(result.status).toBe(200);
+    // Nothing counted after disarm: still the pre-goOnline counts.
+    expect(gate.writesAbortedOffline()).toBe(1);
+    expect(gate.writesFulfilledOffline()).toBe(0);
   });
 });
 

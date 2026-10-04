@@ -10,13 +10,14 @@
 // The seed puts one ended `sessions` row and its queued sets straight into the app's own
 // `wl-offline` database (the `uf-09-focus.spec.ts` pattern, in the `QueuedSession`/`QueuedSet`
 // shapes of `lib/offline/db.ts`), after the app has opened it and filled the library and target
-// caches. `context.setOffline(true)` does not stop `page.route` interception (T-0906), so
-// AutoSync's mount flush still runs after a reload regardless of being "offline" in the test. The
-// T-0458 AC-1/AC-2 test below therefore installs its own write-abort gate on the Supabase write
-// routes once offline, and waits for the refused flush attempt before it reads the queued sets.
+// caches. Both offline helpers below go offline through `goOffline` (T-0484, D-0175 §3), which
+// arms a write-abort gate on the Supabase write routes before the context goes offline, so no
+// write made afterwards — including AutoSync's mount flush after a reload — can be fulfilled by
+// the mock. Reads keep falling through to `mockSupabaseData` unchanged.
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { goOffline } from "./fixtures/offline.js";
 import {
   FAKE_USER_ID,
   injectSession,
@@ -24,7 +25,6 @@ import {
   mockSupabaseAuth,
   mockSupabaseData,
   mockSupabaseRest,
-  VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
 
 const AREAS = [
@@ -337,18 +337,22 @@ test.beforeEach(async ({ page }) => {
 });
 
 /** Signed in, caches filled, precache settled, offline, S1 seeded, on its summary. */
-async function openSummaryOffline(page: Page, context: import("@playwright/test").BrowserContext) {
+async function openSummaryOffline(
+  page: Page,
+  context: import("@playwright/test").BrowserContext,
+): Promise<import("./fixtures/offline.js").OfflineGate> {
   await page.goto("/");
   await injectSession(page);
   await page.goto("/");
   await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
   await cachesFilled(page);
   await precacheSettled(page);
-  await context.setOffline(true);
+  const gate = await goOffline(page, context);
   await seedEndedSession(page);
   await page.goto(`/session/${S1}/summary`);
   await expect(page.locator('[data-screen-id="UF-03.3"]')).toBeVisible();
   await expect(page.locator('[data-part="ended"]')).toBeVisible({ timeout: 10_000 });
+  return gate;
 }
 
 test.describe("T-0420 AC-7 UF-03.3 summary, offline (NFR-OFF-2)", () => {
@@ -362,7 +366,7 @@ test.describe("T-0420 AC-7 UF-03.3 summary, offline (NFR-OFF-2)", () => {
       if (r.url().includes("/functions/v1/")) functionCalls.push(`${r.method()} ${r.url()}`);
     });
 
-    await openSummaryOffline(page, context);
+    const gate = await openSummaryOffline(page, context);
     const summary = page.locator('[data-screen-id="UF-03.3"]');
     await expect(summary.locator('[data-part="time"]')).toHaveText("52 min");
     await expect(summary.locator(".wl-uf03-summary__stat").filter({ hasText: "Sets" })).toHaveText(
@@ -409,6 +413,7 @@ test.describe("T-0420 AC-7 UF-03.3 summary, offline (NFR-OFF-2)", () => {
     await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible({ timeout: 10_000 });
     const row = await storedSession(page);
     expect(row).toMatchObject({ effort_rating: 3, started_at: STARTED_AT, ended_at: ENDED_AT });
+    expect(gate.writesFulfilledOffline()).toBe(0);
 
     expect(functionCalls).toEqual([]);
     expect(supabaseGuard.unclaimed()).toEqual([]);
@@ -465,98 +470,23 @@ async function liveSets(
   }, S1);
 }
 
-const WRITE_URL_PATTERNS = [
-  `${VITE_SUPABASE_URL}/rest/v1/sessions*`,
-  `${VITE_SUPABASE_URL}/rest/v1/session_sets*`,
-];
-
-/** T-0906: live counters of non-`GET` writes to the `sessions`/`session_sets` routes, counted
- *  independently of the write-abort gate below so that removing the gate (AC-3 fault 1) makes
- *  `fulfilledWhileOffline` go non-zero rather than leaving the counters trivially green. Only
- *  requests made once `armedAt()` has been called are counted (the test arms it right after
- *  `context.setOffline(true)`, which is also when the gate goes offline), so the online warm-up
- *  traffic in `beforeEach`/`openSessionOffline` never pollutes the counts. */
-function writeCounters(page: Page): {
-  arm: () => void;
-  attemptsSinceArmed: () => number;
-  fulfilledSinceArmed: () => number;
-} {
-  let armed = false;
-  let attempts = 0;
-  let fulfilled = 0;
-  const isWriteUrl = (url: string) =>
-    url.startsWith(`${VITE_SUPABASE_URL}/rest/v1/sessions`) ||
-    url.startsWith(`${VITE_SUPABASE_URL}/rest/v1/session_sets`);
-  page.on("request", (request) => {
-    if (!armed || request.method() === "GET" || !isWriteUrl(request.url())) return;
-    attempts += 1;
-  });
-  page.on("requestfinished", (request) => {
-    if (!armed || request.method() === "GET" || !isWriteUrl(request.url())) return;
-    fulfilled += 1;
-  });
-  return {
-    arm: () => {
-      armed = true;
-    },
-    attemptsSinceArmed: () => attempts,
-    fulfilledSinceArmed: () => fulfilled,
-  };
-}
-
-/** T-0906: once installed, aborts every non-`GET` write to the `sessions`/`session_sets` routes
- *  while `goOffline()` has been called, modelled on `recordWrites` in `uf-09-offline.spec.ts`
- *  (T-0468). Registered after `beforeEach`'s `mockSupabaseData`, so it wins (the last-registered
- *  `page.route` handler runs first) and the mount flush that follows a reload gets a real
- *  `net::ERR_INTERNET_DISCONNECTED` instead of a mocked 201. A `GET` always falls through
- *  unchanged, so `mockSupabaseData` keeps answering reads. While online (before `goOffline()`),
- *  a non-`GET` write also falls through unchanged, so the warm-up behaves exactly as it did
- *  before this gate existed. */
-async function installWriteAbortGate(page: Page): Promise<{ goOffline: () => void }> {
-  let offline = false;
-  for (const pattern of WRITE_URL_PATTERNS) {
-    await page.route(pattern, async (route) => {
-      const request = route.request();
-      if (request.method() === "GET") {
-        await route.fallback();
-        return;
-      }
-      if (!offline) {
-        await route.fallback();
-        return;
-      }
-      await route.abort("internetdisconnected");
-    });
-  }
-  return {
-    goOffline: () => {
-      offline = true;
-    },
-  };
-}
-
-/** T-0458/T-0906: signed in, caches filled, precache settled, offline (with the write-abort gate
- *  armed in the same step as `context.setOffline(true)`, before the seed and the session
- *  navigation that follow), running S1 seeded, on UF-09.1. */
+/** T-0458: signed in, caches filled, precache settled, offline (through `goOffline`, armed before
+ *  the seed and the session navigation that follow, T-0484), running S1 seeded, on UF-09.1. */
 async function openSessionOffline(
   page: Page,
   context: import("@playwright/test").BrowserContext,
-): Promise<ReturnType<typeof writeCounters>> {
+): Promise<import("./fixtures/offline.js").OfflineGate> {
   await page.goto("/");
   await injectSession(page);
   await page.goto("/");
   await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
   await cachesFilled(page);
   await precacheSettled(page);
-  const gate = await installWriteAbortGate(page);
-  const counters = writeCounters(page);
-  await context.setOffline(true);
-  gate.goOffline();
-  counters.arm();
+  const gate = await goOffline(page, context);
   await seedRunningSession(page);
   await page.goto(`/session/${S1}`);
   await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
-  return counters;
+  return gate;
 }
 
 /** T-0458: from UF-09.1, Pause → "List view" → `[data-screen-id="UF-03.1"]`. */
@@ -587,7 +517,7 @@ test.describe("T-0458 UF-03.1 List view, offline (NFR-OFF-2)", () => {
       if (r.url().includes("/functions/v1/")) functionCalls.push(`${r.method()} ${r.url()}`);
     });
 
-    const counters = await openSessionOffline(page, context);
+    const gate = await openSessionOffline(page, context);
     await openListView(page);
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
 
@@ -633,16 +563,9 @@ test.describe("T-0458 UF-03.1 List view, offline (NFR-OFF-2)", () => {
 
     await page.reload();
     await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible({ timeout: 10_000 });
-
-    // AC-1: order the `sets` read after the refused mount-flush attempt instead of racing it
-    // (T-0906). `context.setOffline(true)` does not stop `page.route`, so AutoSync's mount flush
-    // still fires after this reload; the write-abort gate from `openSessionOffline` must have
-    // already refused it by the time this poll settles.
-    await expect.poll(() => counters.attemptsSinceArmed()).toBeGreaterThanOrEqual(1);
-    const fulfilledWhileOffline = counters.fulfilledSinceArmed();
-    const abortedWhileOffline = counters.attemptsSinceArmed() - fulfilledWhileOffline;
-    expect(fulfilledWhileOffline).toBe(0);
-    expect(abortedWhileOffline).toBeGreaterThanOrEqual(1);
+    // While writes are refused, the queue can't drain, so the read below needs no ordering
+    // against any app flush (T-0484, D-0175 §3) — unlike T-0906's original proof.
+    expect(gate.writesFulfilledOffline()).toBe(0);
 
     const sets = await liveSets(page);
     const squatSets = sets
@@ -653,6 +576,7 @@ test.describe("T-0458 UF-03.1 List view, offline (NFR-OFF-2)", () => {
       { exerciseId: "back-squat", setIndex: 1, weightKg: 100, reps: 6 },
       { exerciseId: "back-squat", setIndex: 2, weightKg: 100, reps: 6 },
     ]);
+    expect(gate.writesFulfilledOffline()).toBe(0);
 
     const row = await storedSession(page);
     expect(row?.effort_rating).toBe(3);

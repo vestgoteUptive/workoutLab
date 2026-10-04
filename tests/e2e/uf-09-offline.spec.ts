@@ -221,9 +221,9 @@ interface SetWrite {
  *  **not** stop a mocked `page.route` handler from fulfilling (measured, see `offline.spec.ts`'s
  *  header comment and D-0086 §4): the mock would otherwise "send" a write while genuinely
  *  offline, which is exactly wrong for a spec whose point is a request that must not go out
- *  until reconnect — in particular, `AutoSync`'s mount-time `handle.flushNow()` runs
- *  unconditionally (`apps/web/src/lib/offline/AutoSync.tsx`), with no `navigator.onLine` guard, so
- *  a freshly-mounted page (the "close and reopen" row's second page) would otherwise flush the
+ *  until reconnect — in particular, an app flush (the mount flush, an auth-event or `online`
+ *  flush) may run while the context is offline (`apps/web/src/lib/offline/AutoSync.tsx`), so a
+ *  freshly-mounted page (the "close and reopen" row's second page) would otherwise flush the
  *  whole queue through the mock before the test ever calls `setOffline(false)`. `recordWrites`
  *  below answers a write with a network error while `online` is false, so the recorded writes
  *  only ever reflect what a real device would actually have sent. */
