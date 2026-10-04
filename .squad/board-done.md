@@ -231,6 +231,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0487 | tests/e2e/uf-03-list-summary.spec.ts T-0458 AC-3: Focus mode now correctly returns to UF-09.5 (a rest), not UF-09.3, after T-0477 (T-0477 build finding, pre-authorized follow-up) | qa | T-0477 | done | wl-build-qa |
 | T-0469 | UF-11.4 Account settings e2e (split from T-0310d, D-0168; fixtures D-0172 §6) | web-feature:UF-11 | T-0310d, T-0486 | done | wl-build-web |
 | T-0486 | AccountDeletedNotice: hard-navigation delete path can consume `wl-account-deleted` on the old page before /welcome reads it — real race, not a test artifact (T-0480 build finding) | web-shell | T-0480 | done | wl-build-web |
+| T-0439 | Needs a decision (amends D-0153 §4): UF-03.3 untouched Save re-queues the raw ended_at as pending:true; when the merged view's endedAt is later (another device finished later), the next flush moves the server finish earlier. Send max(raw, view.endedAt), or leave ended_at out of the re-send? Also: an untouched Save can send a rating different from the chip on screen if the view changed between mount and tap (T-0433 review) | web-feature:UF-03 | T-0433 | won't fix (D-0179) | — |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
