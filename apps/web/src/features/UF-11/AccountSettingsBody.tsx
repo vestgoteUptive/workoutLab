@@ -177,6 +177,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
               {a.confirmLabel}
               <input
                 ref={inputRef}
+                className="wl-plan__input"
                 type="text"
                 value={typed}
                 autoComplete="off"

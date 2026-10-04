@@ -48,6 +48,25 @@
   cursor: not-allowed;
 }
 
+/* T-0469 (NFR-A11Y-2): a bare text input has no default 44 px hit target. */
+.wl-plan__input {
+  box-sizing: border-box;
+  display: block;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 8px 12px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.wl-plan__input:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
 .wl-plan__chip[aria-pressed="true"],
 .wl-plan__radio[data-checked="true"] {
   color: var(--wl-color-on-accent);
@@ -69,10 +88,11 @@
 }
 
 .wl-plan__radio input {
+  /* T-0469 (NFR-A11Y-2): `inset: 0` sizes against the label's padding box (inside its 1px
+     border), so a 44px border-box label gave a 42px hit target. `-1px` on every side extends the
+     input out to the label's border-box, restoring the full 44px the comment above promises. */
   position: absolute;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
+  inset: -1px;
   margin: 0;
   opacity: 0;
   cursor: pointer;
