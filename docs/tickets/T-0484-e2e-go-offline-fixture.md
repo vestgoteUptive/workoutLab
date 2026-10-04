@@ -317,3 +317,24 @@ gated anyway (AC-5) against a future auth-event flush.
 Contracts unchanged. `git diff main -- apps/ packages/` empty. Branch diverges from `main` only in
 `.squad/**` bookkeeping (board/journal/state), which merges cleanly (`git merge-tree` reported no
 conflict markers) — no action needed before merge per the orchestrator's forced gate on `main`.
+
+**Draft PR CI finding (pre-existing, not this ticket's regression).** PR #31
+(https://github.com/vestgoteUptive/workoutLab/pull/31), run 37170723322, `playwright e2e` job
+failed twice (initial run and one rerun) on the same test:
+`uf-03-list-summary.spec.ts` `T-0458 UF-03.1 List view, offline` `AC-3: axe clean, every row
+toggle and field at least 44 x 44, Focus mode returns to a step screen`, line 628,
+`expect(page.locator('[data-screen-id="UF-09.3"]')).toBeVisible()`. The error-context snapshot
+shows the host actually on UF-09.5 (Rest, "Next · set 2 of 4", a running `1:55` timer) when
+"Focus mode" is clicked — this test's "Mark set 1 done" checkbox toggle starts a rest (T-0418
+AC-1/AC-2, `ListView.tsx`), and `REST_START` racing while the List-view overlay is open is
+T-0477's exact subject ("UF-09 host: `REST_START` starts a rest from `getReady`, `warmup` and
+`next` while a `keepsClockRunning` overlay (the List view) is open"). Confirmed **not** a T-0484
+regression: `main` at `daee68f` (run 37170586890, unrelated to this branch) fails identically at
+the same assertion with the same symptom; the test body here is byte-identical to `main`'s (only
+`openSessionOffline`'s internal gate mechanism changed). Reproduced locally 20/20 green with
+`--workers=1` and 5/5 green with `--workers=2` (`AutoSync`/offline-gate related tests otherwise
+pass every time locally) — the race needs CI's tighter CPU contention to surface, which is also
+why it's intermittent in CI itself (fails, reruns, may pass). Filed as a follow-up for T-0477's
+lane (web-feature:UF-09) rather than fixed here: outside this ticket's scope (`apps/**` is not in
+"Paths you may change") and outside this ticket's subject (offline-gate fidelity, not List-view
+rest timing).
