@@ -1,10 +1,11 @@
 // @vitest-environment node
 // T-0306a AC-16: the export set, the import bans, no direct IndexedDB access, jsx-no-literals
 // and the string module shape. Source scans exclude `__tests__/**`.
-import { readdirSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, relative, resolve } from "node:path";
 import { ESLint } from "eslint";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { en } from "../../../lib/i18n/en.js";
 
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: vi.fn() } }));
@@ -21,10 +22,24 @@ async function messages(code: string) {
   return result!.messages;
 }
 
-function sourceFiles(): string[] {
-  return readdirSync(FEATURE_DIR, { withFileTypes: true })
-    .filter((e) => e.isFile() && /\.(tsx?|css)$/.test(e.name))
-    .map((e) => resolve(FEATURE_DIR, e.name));
+/** Recursive walk; skips any directory named `__tests__` at any depth. */
+function sourceFiles(root: string = FEATURE_DIR): string[] {
+  const out: string[] = [];
+  for (const e of readdirSync(root, { withFileTypes: true })) {
+    const full = resolve(root, e.name);
+    if (e.isDirectory()) {
+      if (e.name !== "__tests__") out.push(...sourceFiles(full));
+    } else if (e.isFile() && /\.(tsx?|css)$/.test(e.name)) out.push(full);
+  }
+  return out;
+}
+
+/** Direct IndexedDB access: the bare `offlineDb` identifier or a dexie import. */
+function idbViolations(source: string): string[] {
+  const found: string[] = [];
+  if (/\bofflineDb\b/.test(source)) found.push("offlineDb");
+  if (/from ["']dexie["']/.test(source)) found.push("dexie");
+  return found;
 }
 
 describe("AC-16 exports", () => {
@@ -59,13 +74,11 @@ describe("AC-16 import bans (D-0071 §9)", () => {
 });
 
 describe("AC-16 no direct IndexedDB access outside tests (D-0067 §5)", () => {
-  it("no offlineDb( and no dexie import in the feature", () => {
+  it("no offlineDb identifier and no dexie import in the feature", () => {
     const files = sourceFiles().filter((f) => /\.tsx?$/.test(f));
     expect(files.length).toBeGreaterThan(5);
     for (const file of files) {
-      const source = readFileSync(file, "utf8");
-      expect(source, file).not.toMatch(/offlineDb\(/);
-      expect(source, file).not.toMatch(/from ["']dexie["']/);
+      expect(idbViolations(readFileSync(file, "utf8")), file).toEqual([]);
     }
   });
 });
@@ -108,5 +121,73 @@ describe("AC-16 strings", () => {
     for (const file of sourceFiles()) {
       expect(readFileSync(file, "utf8"), file).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     }
+  });
+});
+
+describe("T-0361 source-scan hardening", () => {
+  const dirs: string[] = [];
+  afterEach(() => {
+    for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true });
+  });
+  function fixture(files: Record<string, string>): string {
+    const root = mkdtempSync(join(tmpdir(), "t0361-"));
+    dirs.push(root);
+    for (const [name, body] of Object.entries(files)) {
+      const full = join(root, name);
+      mkdirSync(dirname(full), { recursive: true });
+      writeFileSync(full, body);
+    }
+    return root;
+  }
+  const rel = (root: string, files: string[]) => files.map((f) => relative(root, f)).sort();
+  const scan = (root: string) =>
+    sourceFiles(root)
+      .filter((f) => /\.tsx?$/.test(f))
+      .filter((f) => idbViolations(readFileSync(f, "utf8")).length > 0)
+      .map((f) => relative(root, f));
+
+  it.each([
+    'import { offlineDb } from "../../lib/offline/index.js";\nexport const X = 1;\n',
+    "const db = offlineDb;\n",
+    "offlineDb();\n",
+    'import x from "dexie";\n',
+  ])("AC-1 reports exactly one violation for %s", (src) => {
+    expect(idbViolations(src)).toHaveLength(1);
+  });
+
+  it.each([
+    'import { resetOfflineDbForTest } from "x";',
+    'import { loadLibrary } from "../../lib/offline/index.js";',
+    "const offlineDbName = 1;",
+  ])("AC-2 no false positive for %s", (src) => {
+    expect(idbViolations(src)).toEqual([]);
+  });
+
+  it("AC-3 walk is recursive, skips __tests__ at any depth, keeps testsupport", () => {
+    const root = fixture({
+      "top.tsx": "",
+      "sub/nested.tsx": "",
+      "sub/deeper/style.css": "",
+      "sub/README.md": "",
+      "sub/testsupport/helper.ts": "",
+      "__tests__/t.ts": "",
+      "sub/__tests__/u.ts": "",
+    });
+    expect(rel(root, sourceFiles(root))).toEqual([
+      "sub/deeper/style.css",
+      "sub/nested.tsx",
+      "sub/testsupport/helper.ts",
+      "top.tsx",
+    ]);
+  });
+
+  it("AC-4 wired end to end: nested violation is named; clean root reports none", () => {
+    const bad = fixture({
+      "top.tsx": "export const A = 1;\n",
+      "sub/nested.tsx": 'import { offlineDb } from "../../lib/offline/index.js";\n',
+    });
+    expect(scan(bad)).toEqual(["sub/nested.tsx"]);
+    const clean = fixture({ "top.tsx": "export const A = 1;\n" });
+    expect(scan(clean)).toEqual([]);
   });
 });
