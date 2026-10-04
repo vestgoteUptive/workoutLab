@@ -143,3 +143,47 @@ Commits start `T-0483` and cite the screen, for example
   `list-helpers.tsx` (`makeCtx`). Run them one after another, in either order.
 
 ## Build / accept log
+- 2026-10-04 frontend-dev. Added `useTickClock()`/`tick(ms = 1000)` to `list-helpers.tsx`:
+  `useTickClock` fakes `Date`, `setInterval`, `clearInterval` (`setTimeout` stays real); `tick`
+  does `vi.advanceTimersByTime(ms)` inside `act`, then snaps `Date` back to the instant the test
+  set with `vi.setSystemTime` (vitest's fake clock advances `Date` together with a fired fake
+  interval, since they share one clock — snapping back keeps the semantics of "a real tick only
+  samples the wall clock, it never moves it"), then `settle()`. Discovered this snap-back step by
+  probing `vi.advanceTimersByTime` directly (off-by-one-second failures otherwise, see red runs).
+- Five tests in `rest.test.tsx` call `useTickClock()` before `openList`, and replace their
+  tick-waiting `settle(1100)` / `findEl(…, 200)` / `waitFor` with `await tick()`:
+  1. AC-1 "the wall clock: Date advanced 90 s…" — `settle(1100)` → `tick()`.
+  2. AC-1 "expiry: at 0 the bar is gone" — `settle(1100)` → `tick()`.
+  3. AC-3 "at 0:30, +15 s reads 0:45…" — `settle(1100)` → `tick()`.
+  4. AC-3 "the chrome announcer speaks '10 seconds'…": all three `vi.setSystemTime` calls now
+     have `tick()` right after (lines ~288, ~292); the two `waitFor`s around the first became
+     plain `expect` per AC-1's spec; the third's `waitFor` also became `expect`.
+  5. AC-5 "…Date advanced past the end, it closes and focus lands on…" — `findEl(…, 200)` →
+     `tick()` + a plain `expect` that UF-03.1 is present; the focus `waitFor` after it is
+     unchanged (not tick-dependent).
+- AC→test map: AC-1 → announcer test (`expect`, not `waitFor`, both assertions); AC-2 → the four
+  other tick tests above; AC-3 → `grep` for `settle([0-9]`/`findEl(.*,\s*[0-9]` in `rest.test.tsx`
+  found nothing after the edit; AC-4 → the two faults below; AC-5 → 10 consecutive green runs plus
+  the announcer test's own duration.
+- Red run (AC-4.1): restored the pre-fix `rest.test.tsx` from `git show HEAD:…` and bumped
+  `RERENDER_MS` to 1100 in `UF-09/use-rerender.ts` (edited directly, restored with `cp` from a
+  backup copy taken before the edit). The announcer test failed:
+  `expected "Go" to be "10 seconds"` at the old file's "Go" `waitFor` (its real tick now lands
+  >1000 ms after `setSystemTime`, past `waitFor`'s default timeout) — the same failure mode as CI
+  run 37152271297, job 111288462504. Restored both files from the backups;
+  `git diff main -- apps/web/src/features/UF-09` is empty.
+- Planted fault (AC-4.2): removed the `tick()` after the second `vi.setSystemTime` in the
+  announcer test (fixed file). Failed on 3/3 runs, always `expected "Go" to be "10 seconds"`.
+  Restored from a backup copy of the fixed file.
+- `scripts/locked.sh small npx vitest run src/features/UF-03/__tests__/rest.test.tsx` (from
+  `apps/web`): 19/19 passed, 10 runs in a row (AC-5). The announcer test's own duration on one run:
+  247 ms (well under 1 s, against CI's 2105 ms). Also ran the whole `src/features/UF-03`
+  directory unedited: 21 files, 250/250 passed.
+- Gate (once, before hand-back): `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint
+  test --concurrency=1` — 19/19 tasks green, 3583/3583 web tests passed. `scripts/locked.sh heavy
+  npx -y pnpm@10.28.2 -w test:repo-checks` — 159/159 passed. `-w format:check` — clean.
+  `node .github/scripts/check-all.mjs` — exit 0. No e2e run: test-only change, no product code,
+  no contract impact (per ticket DoD).
+- Files touched: `apps/web/src/features/UF-03/__tests__/list-helpers.tsx` (two helpers appended),
+  `apps/web/src/features/UF-03/__tests__/rest.test.tsx` (five tests + header comment + imports),
+  this ticket file.

@@ -11,7 +11,7 @@ import type { SessionPlan, Workout, WorkoutItem } from "@workoutlab/shared";
 import { SessionHost } from "../../UF-09/index.js";
 import { Summary } from "../index.js";
 import type { ListViewCtx } from "../ListView.js";
-import { PLAN, S1 } from "./fixtures.js";
+import { NOW, PLAN, S1 } from "./fixtures.js";
 import { waitReal } from "./helpers.js";
 
 /** S1 with the engine's pre-fill (ticket §Test setup): back-squat 100 × 6, RDL 80 × 8. */
@@ -128,6 +128,36 @@ export async function settle(ms = 50): Promise<void> {
   await act(async () => {
     await waitReal(ms);
   });
+}
+
+/** T-0483: installs a fake `setInterval`/`clearInterval` alongside `Date` (`beforeEach` already
+ *  faked `Date` alone), so the host's own `useRerenderEverySecond` (UF-09, `RERENDER_MS = 1000`)
+ *  ticks on command instead of racing `waitFor`'s real-time default. Call this before `openList`:
+ *  the host creates its interval at mount, so faking it later has no effect. `setTimeout` stays
+ *  real — `waitReal`/`findEl`/`settle` and `waitFor`'s own timeout depend on it, as does
+ *  fake-indexeddb's `setImmediate` (D-0175 §2, D-0071 §4: UF-03 may not import the UF-09 test
+ *  helpers that also fake `setTimeout`). */
+export function useTickClock(): void {
+  vi.useFakeTimers({ toFake: ["Date", "setInterval", "clearInterval"], now: new Date(NOW) });
+}
+
+/** Fires the host's faked interval once (default 1000 ms, `RERENDER_MS`) inside `act`, then
+ *  lets the real 50 ms macrotask settle so the resulting state/effects land. Use after a
+ *  `vi.setSystemTime` call, in place of a `waitFor`/`settle(1100)`/`findEl(…, 200)` that was only
+ *  waiting for the host's real tick.
+ *
+ *  `vi.advanceTimersByTime` moves the faked `Date` along with the faked interval (they share one
+ *  fake clock), so firing the interval would otherwise push `Date` another `ms` past whatever the
+ *  preceding `setSystemTime` set — wrong, since the test already set the instant the host should
+ *  observe. `tick()` restores `Date` to that instant right after the interval fires: a real tick
+ *  never moves the wall clock either, it only samples it (`use-rerender.ts`). */
+export async function tick(ms = 1000): Promise<void> {
+  const atMs = Date.now();
+  act(() => {
+    vi.advanceTimersByTime(ms);
+    vi.setSystemTime(atMs);
+  });
+  await settle();
 }
 
 /** Polls on real macrotasks until `find()` returns an element. */

@@ -1,7 +1,10 @@
 // T-0418 UF-03.2 rest bar and rest view on the host's wall-clock rest (D-0142 §3, D-0172 §3 §5),
 // through the real `SessionHost` with the real seams and the real `lib/offline` over
-// fake-indexeddb. `Date` is faked; timers stay real so the host's own 1 s re-render, IndexedDB and
-// the lazy List-view chunk settle. Each title starts with "T-0418 AC-n" (ticket Test rules).
+// fake-indexeddb. `Date` is faked; timers stay real so IndexedDB and the lazy List-view chunk
+// settle. The five tests that wait on the host's own 1 s re-render (`useRerenderEverySecond`)
+// instead install `useTickClock()` before `openList` and drive that tick with `tick()`
+// (T-0483, D-0175 §2): `setInterval`/`clearInterval` are faked there too, `setTimeout` never is.
+// Each title starts with "T-0418 AC-n" (ticket Test rules).
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { REST_COMPOUND_S, REST_ISOLATION_S } from "@workoutlab/engine";
@@ -27,6 +30,8 @@ import {
   screenIds,
   settle,
   storedFocus,
+  tick,
+  useTickClock,
   withItem,
   writeFocus,
 } from "./list-helpers.js";
@@ -94,20 +99,23 @@ describe("T-0418 AC-1 rest bar (NFR-TIME-1)", () => {
   });
 
   it("the wall clock: Date advanced 90 s with no timer tick shows 0:30, same offline", async () => {
+    useTickClock();
     await openList();
     await check("Mark set 2 done", "Mark set 2 not done");
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     vi.setSystemTime(nowMs + 90_000);
-    // The host's own real 1 s re-render interval (not a UF-03 timer, AC-1) is what picks this up.
-    await settle(1100);
+    // The host's own 1 s re-render interval (not a UF-03 timer, AC-1) is what picks this up —
+    // driven here by the faked `setInterval`, not raced with a real one (T-0483).
+    await tick();
     expect(restBarText()).toBe("Rest · 0:30 left");
   });
 
   it("expiry: at 0 the bar is gone", async () => {
+    useTickClock();
     await openList();
     await check("Mark set 2 done", "Mark set 2 not done");
     vi.setSystemTime(nowMs + 120_000);
-    await settle(1100);
+    await tick();
     expect(document.querySelector('[data-part="rest-bar"]')).toBeNull();
   });
 
@@ -234,10 +242,11 @@ describe("T-0418 AC-3 rest view (UF-03.2)", () => {
   });
 
   it("at 0:30, +15 s reads 0:45 and −15 s reads 0:30", async () => {
+    useTickClock();
     await openList();
     await check("Mark set 2 done", "Mark set 2 not done");
     vi.setSystemTime(nowMs + 90_000);
-    await settle(1100);
+    await tick();
     fireEvent.click(await screen.findByRole("button", { name: /^Rest,/ }));
     await findEl(() => document.querySelector('[data-screen-id="UF-03.2"]'));
     expect(document.querySelector('[data-part="rest-clock"]')).toHaveTextContent("0:30");
@@ -272,14 +281,17 @@ describe("T-0418 AC-3 rest view (UF-03.2)", () => {
   });
 
   it("the chrome announcer speaks '10 seconds' at <= 10 s and 'Go' at expiry, with no own aria-live", async () => {
+    useTickClock();
     await openList();
     await check("Mark set 2 done", "Mark set 2 not done");
     const announcer = () => document.querySelector('[data-field="announcer"]')?.textContent ?? "";
     vi.setSystemTime(nowMs + 111_000);
-    await waitFor(() => expect(restBarText()).toBe("Rest · 0:09 left"));
-    await waitFor(() => expect(announcer()).toBe("10 seconds"));
+    await tick();
+    expect(restBarText()).toBe("Rest · 0:09 left");
+    expect(announcer()).toBe("10 seconds");
     vi.setSystemTime(nowMs + 120_000);
-    await waitFor(() => expect(announcer()).toBe("Go"));
+    await tick();
+    expect(announcer()).toBe("Go");
     // UF-03 renders no aria-live region of its own: the only one is the host's.
     expect(document.querySelectorAll("[aria-live]").length).toBeGreaterThanOrEqual(1);
     for (const el of document.querySelectorAll("[aria-live]")) {
@@ -348,13 +360,16 @@ describe("T-0418 AC-5 focus (D-0172 §3)", () => {
   });
 
   it("with the rest view open and Date advanced past the end, it closes and focus lands on the first unchecked checkbox", async () => {
+    useTickClock();
     await openList();
     await check("Mark set 2 done", "Mark set 2 not done");
     fireEvent.click(await screen.findByRole("button", { name: /^Rest,/ }));
     await findEl(() => document.querySelector('[data-screen-id="UF-03.2"]'));
     vi.setSystemTime(nowMs + 120_000);
-    // The host's own real 1 s re-render interval surfaces REST_END; give it more than one tick.
-    await findEl(() => document.querySelector('[data-screen-id="UF-03.1"]'), 200);
+    // The host's own 1 s re-render interval surfaces REST_END, driven here by the faked
+    // `setInterval` (T-0483) rather than raced with a real one.
+    await tick();
+    expect(document.querySelector('[data-screen-id="UF-03.1"]')).toBeTruthy();
     await waitFor(() =>
       expect(document.activeElement).toBe(
         screen.getByRole("checkbox", { name: "Mark set 3 done" }),
