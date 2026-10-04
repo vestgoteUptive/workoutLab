@@ -1,7 +1,7 @@
 // POST /sessions/{id}/finish handler core (D-0037 §9, D-0053 §7–§8, AC24–AC33). Pure apart from
-// the injected `deps`, so a unit test can fix `now` (only used as the fallback `updatedAt` when a
-// fresh session has never had a target computed — the summary itself uses the *stored* `ended_at`,
-// never the server clock, so a repeat finish is deep-equal, D-0053 §8) and spy on `balance`.
+// the injected `deps` (`FinishDeps`), so a unit test can stub the repo calls and spy on `balance`.
+// The summary uses the *stored* `ended_at`, never the server clock, so a repeat finish is
+// deep-equal (D-0053 §8).
 import { balance, isHardSet } from "@workoutlab/engine";
 import type {
   Area,
