@@ -82,7 +82,20 @@ Principle 2: the time budget is a first-class input, and R7-E8 promises Σ item 
   - hanging-knee-raise has `timeCostS` 270.
   - plank has `timeCostS` 420 and `fitsBudget` true (990 − 270 + 420 = 1140 ≤ 1200).
   - With `budgetMin 18` (`available` 1080), plank has `fitsBudget` false (1140 > 1080). At zero history plank has `timeCostS` 270 and `fitsBudget` true at both budgets.
-- **AC6 (rule 13 shuffle fit)** Over every `shuffle` in 0…6 with AC1's history and `pinnedIds []`, each shuffled timed slot is accepted only when its planned-duration cost fits. Assert Σ `costS` ≤ `available` and that each timed item satisfies AC8's identity. If no shuffle at F-input puts plank in a slot, the test says so and uses `excludeIds: ["dead-bug", "hanging-knee-raise"]` to force core onto plank.
+- **AC6 (rule 13 shuffle fit)** Each shuffled timed slot is accepted only when its
+  planned-duration cost fits (D-0092 §2). Every case asserts Σ `costS` ≤ `available` and AC8's
+  identity for each timed item.
+  - At F-input (AC1's history, `pinnedIds []`), no `shuffle` in 0…6 puts plank in a slot (rule
+    7.2 never reaches core there), and every plan fits.
+  - Core is forced with `excludeIds` = every library exercise except bench-press, dead-bug,
+    hanging-knee-raise and plank. (`["dead-bug", "hanging-knee-raise"]` does not open a core
+    slot.) At 20 min a shuffle onto plank × 3 at 120 s does not fit and dead-bug stays; at
+    22 min it fits exactly for shuffles 2 and 5 (plank × 3, 120 s, `costS` 600, `unusedS` 0).
+  - Shuffling a timed item out frees only its planned cost: a planned-35 s plank (345 s) is
+    not replaced by a 375 s pick at 18 min; a planned-120 s plank × 2 (420 s) is, and High
+    energy then adds the bench-press back-off at 20 and 21 min.
+  - R7-E8 sweep with the forced core slot: four histories × `budgetMin` 15…30 step 1 and
+    35…120 step 5 × warm-up on/off × `shuffle` 0…6 × energy never goes over (5712 runs).
 - **AC7 (zero history is byte-identical, D-0092 §1)**
   - Given `[]` and F-input over `energy` normal, low and high, `budgetMin` 15, 20, 30 and 90, `warmupInBudget` on and off, and `pinnedIds` `[]` and `["plank"]`: every `suggest` result deep-equals the pre-change result. Capture it from `main` before the change as a committed JSON snapshot, the way T-0205 captured `pre-t0205-suggest.json`.
   - `rankSwaps` over the R12-E1…R12-E5 fixtures deep-equals today's results.
