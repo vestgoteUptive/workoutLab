@@ -40,9 +40,16 @@ test("T-0466 AC-2: nothing but the own file is allowed", () => {
 });
 
 test("T-0466 AC-3: unknown lane still reports lane-unknown, not lane-path-not-owned", () => {
-  const f = run("T-0466", [OWN], "web-featur:UF-10");
+  const f = checkLanePaths({
+    ticketId: "T-0466",
+    ticketText: ticketText("web-featur:UF-10"),
+    ownershipText: ownership,
+    changed: [OWN],
+    ticketPath: OWN,
+  }).findings;
   assert.equal(f.length, 1);
   assert.equal(f[0].rule, "lane-unknown");
+  assert.equal(f[0].path, OWN);
 });
 
 test("T-0466 AC-4: wired through runCheck; own file does not widen grants", async () => {

@@ -9,6 +9,8 @@
 // specifier, and editing a shared file is not an import. The T-0318 import bans stay the
 // right tool for cross-feature imports; they are not the tool for this.
 //
+// A ticket's own `docs/tickets/<id>-*.md` is always allowed, with no Listed-extras line (D-0167 §1).
+//
 // WHAT THIS DOES NOT COVER (D-0074 §2 — these four limits, verbatim):
 //   1. it needs a `t/T-NNNN-slug` branch and does nothing on `main` or a detached HEAD;
 //   2. it needs a committed diff — uncommitted working-tree edits are invisible;
@@ -172,7 +174,8 @@ const plainOf = (text) => text.replace(/`[^`]*`/g, " ").replace(/[*_]/g, "");
  * section (stops at the next `##`). Fails closed (see NEGATION_RE): a path after any negation on
  * its line, or anywhere on a whole-line denial, is not granted, and a top-level bullet that
  * opens with a negation also silences its sub-bullets. Sub-bullets under a grant bullet are
- * kept (the "Listed extras:" shape).
+ * kept (the "Listed extras:" shape). The ticket's own file need not be listed: `checkLanePaths`
+ * allows it before this list is consulted (D-0167 §1, `isOwnTicketFile`).
  */
 export function listedPathsFromTicket(ticketText) {
   const lines = toLines(ticketText ?? "");
@@ -291,8 +294,9 @@ export function laneFromTicket(ticketText) {
 }
 
 /**
- * The rule (AC-5 … AC-8). A ticket's own `docs/tickets/<id>-*.md` is always allowed (D-0167 §1). Pure: every input is a string or an array, so the test suite never
- * shells out to git and never depends on the branch the runner happens to be on.
+ * The rule (AC-5 … AC-8). A ticket's own `docs/tickets/<id>-*.md` is always allowed (D-0167 §1).
+ * Pure: every input is a string or an array, so the test suite never shells out to git and
+ * never depends on the branch the runner happens to be on.
  *
  * @param {object} input
  * @param {string|null} input.ticketId      from `ticketIdFromBranch`; `null` no-ops (limit 1)

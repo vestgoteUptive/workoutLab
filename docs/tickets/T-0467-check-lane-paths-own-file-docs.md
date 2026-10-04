@@ -97,3 +97,9 @@ and `check-all` green · contracts unchanged · commits start `T-0467`.
 - No new decision: this is doc and test hygiene under D-0167 §1.
 
 ## Build / accept log
+
+### Build log (infra, 2026-10-04)
+- Start: git clean, HEAD a5e3207. Comments only in `check-lane-paths.mjs` (header line before the limits block, `listedPathsFromTicket` JSDoc line, `checkLanePaths` JSDoc first line rewrapped); T-0466 AC-3 test now passes `ticketPath: OWN` and asserts `f[0].path`.
+- AC-1: `grep -n D-0167` hit at line 12 (header, above first import); no `-` lines in the limits block; T-0320 AC-11 tests pass unedited. AC-3: hit at line 178 inside the JSDoc. AC-2: `T-0466 AC-3` test. AC-4: diff is the two scripts plus this file; repo-checks 159/159 on main and on branch.
+- Red run (planted fault on cp backup, `path: resolvedTicketPath` -> `docs/tickets/${ticketId}.md`): `T-0466 AC-3` fails on the path assertion only (expected `...T-0466-check-lane-paths-self-grant.md`, actual `docs/tickets/T-0466.md`), 3 pass 1 fail. Restored with cp: 4/4 pass.
+- Gate: `-w typecheck lint test --concurrency=1` green (19/19), `test:repo-checks` 159 pass, `format:check` clean, `check-all` exit 0.
