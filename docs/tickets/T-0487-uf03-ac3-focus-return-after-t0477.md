@@ -58,25 +58,4 @@ suite (this touches `tests/e2e/**`). Commits start `T-0487` and cite UF-03.1/UF-
   one row.
 
 ## Build / accept log
-- Changed `tests/e2e/uf-03-list-summary.spec.ts` AC-3's final assertion block (lines ~703-705)
-  from `UF-09.3` to `UF-09.5`, kept `toHaveCount(1)`, added a one-line comment citing T-0487/D-0175
-  §1/T-0477. No other test in the file touched; setup/row-check steps untouched.
-- AC-1 -> AC-3's fixed assertion (UF-09.5), proven by
-  `TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx playwright test --config
-  tests/e2e/playwright.config.ts tests/e2e/uf-03-list-summary.spec.ts -g "AC-3"`: 1 passed.
-- AC-2 -> unchanged axe/44x44 assertions in the same test still run and pass (same command above;
-  the test body before the final block was not touched).
-- AC-3 (fault proof) -> backup copy made with `cp`, assertion reverted to `UF-09.3` on the working
-  file, same `-g "AC-3"` command run again: 1 failed (`expect(locator).toBeVisible() failed`,
-  `[data-screen-id="UF-09.3"]` not found, timeout) against current main-equivalent code -- confirms
-  the change is load-bearing. Restored the working file from the backup with `cp`; diff afterward
-  showed only the intended 4-line change.
-- Full gate: `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test
-  --concurrency=1` -> 255 test files / 3539 tests passed (full turbo, 19/19 tasks cached+run
-  green). `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks` -> 159/159 passed.
-  `npx -y pnpm@10.28.2 -w format:check` -> clean. `node .github/scripts/check-all.mjs` -> exit 0,
-  no findings.
-- Full e2e: `TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx -y pnpm@10.28.2 exec
-  playwright test --config tests/e2e/playwright.config.ts` -> 220/220 passed (1.6m), including the
-  fixed AC-3 test. This is the full count T-0477 left at 219/220.
-- No other spec showed assumptions about the old getReady/warmup no-op; nothing further reported.
+Archived in `docs/tickets/log/T-0487.md` (D-0157).
