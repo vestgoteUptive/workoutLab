@@ -92,3 +92,9 @@ No e2e: test-only change inside one feature folder.
 None.
 
 ## Build / accept log
+
+### Build log (frontend-dev)
+- Changed only `exports-and-lint.test.ts`: recursive `sourceFiles(root)` (skips `__tests__` at any depth), `idbViolations()` with `/\bofflineDb\b/` + dexie check, new `T-0361` describe using mkdtemp fixtures removed in afterEach.
+- AC-1/AC-2/AC-3/AC-4: the T-0361 describe (19 tests green). AC-5: existing AC-16 tests run over the recursive walk with assertions unchanged (`files.length > 5`, `keys.size > 20` kept); `git diff --stat main -- apps/web/src/features/UF-04 ':!apps/web/src/features/UF-04/__tests__'` is empty.
+- Planted fault 1 (pattern back to `/offlineDb\(/`, backup copy restored with cp): red, 3 failed (AC-1 bare import, AC-1 `const db = offlineDb;`, AC-4); restored, green.
+- Planted fault 2 (walk made non-recursive): red, 2 failed (AC-3, AC-4); restored, green.
