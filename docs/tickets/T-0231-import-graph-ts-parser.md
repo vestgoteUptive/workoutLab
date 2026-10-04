@@ -47,7 +47,7 @@ Each new test title starts with `T-0231 ACn`.
 - AC2 (the live graph is unchanged)
   - **Given** today's `src/*.ts`, **When** `buildGraph()` runs with the new parser, **Then** the existing T-0228 AC3 tests pass unedited: at least 10 edges, `session.ts → swaps.ts` and `swaps.ts → cost.ts` present, and no cycle.
   - The build log records the edge count before and after. Both are expected to be 57. Any difference must be explained edge by edge.
-- AC3 `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck lint test` is green.
+- AC3 `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/engine lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).

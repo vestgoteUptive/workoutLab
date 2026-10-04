@@ -82,7 +82,7 @@ Each new test title starts with `T-0232 ACn`.
   `rule-14-properties.test.ts` titles above, so it now asserts at least 9 matched calls.
 - AC8 (no behaviour change) Every existing engine test passes, and no assertion has been edited. The
   engine test count rises only by the new `test-budgets.test.ts` cases.
-- AC9 `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck lint test` is green.
+- AC9 `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/engine lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).

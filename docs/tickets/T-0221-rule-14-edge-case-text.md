@@ -60,7 +60,7 @@ Each new test title starts with `T-0221 ACn`. "Rule 14" means the text from `\n#
 
   Per D-0096 §2, add no "every other section unchanged" test. Run `git diff main...HEAD -- docs/engine-rules.md` and list the changed sections in the result and the commit message. Expected: rule 14 (steps 2, 4, 5 and the new block) and Traceability.
 - **AC7 (no behaviour change)** `packages/engine/src/**` is byte-identical to `main` (`git diff --stat main...HEAD -- packages/engine/src` is empty; record it in the build log). Every existing engine test passes. The only edited test is the T-0205 guard (AC4).
-- **AC8** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck lint test` is green.
+- **AC8** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/engine lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).
