@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-02.1, UF-09]
 decisions: [D-0045, D-0084]
 deps: []
-status: ready
+status: done
 groomed: 2026-10-04
 ---
 <!-- Written by product-owner 2026-10-04 (groom mode). Build flow: wl-build-web. About 30-45 minutes of work. Test-only: no runtime file changes. -->
@@ -127,3 +127,4 @@ commit messages start with `T-0449` and cite UF-02.1.
 - Gate: typecheck, lint, test, test:repo-checks, format:check, check-all green.
 - 2026-10-04 review (HEAD 967dc6d): approve. Lane ok (web-shell test file + own ticket log). Diff is test-only; existing cases byte-identical. AC1-AC3 pass explicit locale+timeZone, assert full textContent with `toBe`; instants verified against DST (CEST +2, EDT -4); host-TZ independent (checked under TZ=Pacific/Kiritimati). AC3 plain-space literal is ICU-robust because `formatTime` normalises U+202F/U+00A0. Faults A/B logged and discriminate as specified (A also reds the T-0355 default-locale case, expected). Product call matches D-0045 §9; D-0084 Consequences bullet is stale (process follow-up). No findings.
 - 2026-10-04 QA (HEAD 967dc6d): PASS. Only the test file changed under apps/web; OfflineStatus.tsx untouched; main is an ancestor (not behind). Green 18/18 under default TZ, TZ=America/Los_Angeles and TZ=UTC. Fault A (numeric, landed 1+/1-): red = AC1 + default-locale 08:10 case (`8:10`), AC2/AC3 green. Fault B (2-digit): red = AC3 only (`08:05 AM`). Both restored with cp, diff empty. Web typecheck and lint green (separate locked runs). No e2e (test-only).
+- 2026-10-04 accept (HEAD 5a8dddd, clean; base c5af22a): DONE. AC1/AC2/AC3 -> `T-0449 AC1/AC2/AC3` in `OfflineStatus.test.tsx`, full-text `toBe`, explicit locale+timeZone, green 18/18 (QA: default TZ, America/Los_Angeles, UTC). AC4 -> build log, faults A/B re-done by QA, discriminate as specified, restored with cp. Test-only diff; runtime, contracts unchanged; existing cases byte-identical. Commits start `T-0449` and cite UF-02.1. Principles unaffected; product call matches D-0045 §9. Process note: builder disclosed one unlocked `pnpm -w typecheck` before the locked gate (D-0169 deviation, no effect on result; gate re-passed under lock). Follow-ups to file: UF-06 `screens.test.tsx:497` literal 08:10; UF-11 `offline.test.tsx:112` after T-0471; process D-0084 Consequences annotation.
