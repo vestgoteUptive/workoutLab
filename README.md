@@ -47,6 +47,10 @@ If either is missing, `dev` still starts and the shell paints — auth is disabl
 signed out, and the console carries one warning naming both variables (T-0902). A production
 `build` still fails loudly, because the CSP `connect-src` is derived from the URL.
 
+## Running the web tests
+
+`pnpm --filter @workoutlab/web test` builds `packages/design-tokens/dist/tokens.css` when it is missing or stale, through the `pretest` hook. A direct vitest call (for example `npx vitest run <files>` in `apps/web`) skips `pretest`, so run `node apps/web/ensure-tokens-css.mjs` from the repo root first (it does nothing when the CSS is up to date).
+
 ## Getting started with Claude Code
 
 The project is built by an agent squad. Start with `.squad/README.md`.

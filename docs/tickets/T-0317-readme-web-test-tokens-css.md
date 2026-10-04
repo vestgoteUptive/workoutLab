@@ -5,7 +5,7 @@ lane: infra
 screens: []
 decisions: [D-0001, D-0157, D-0178]
 deps: [T-0312]
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-04 by product-owner. Build flow: wl-build-infra. Docs only, size: small (about ½ hour). D-0178 tier: skip review and QA. No draft PR: it doesn't touch .github/**. -->
 
@@ -86,3 +86,12 @@ no code or contract change, so the `-w typecheck lint test` gate and e2e are not
   as a `landing`-lane ticket (a landing `pretest`), with its README line added when that lands.
 
 ## Build / accept log
+
+### Build (infra, 2026-10-04)
+Added `## Running the web tests` (one paragraph) after `## Running the web app` in `README.md`. Docs only.
+- AC-1: `grep -nF 'pnpm --filter @workoutlab/web test' README.md` -> line 52, same line names `pretest` and `tokens.css`.
+- AC-2: `grep -nF 'node apps/web/ensure-tokens-css.mjs' README.md` -> exactly one line (52), same paragraph, "run ... first" before a direct vitest call.
+- AC-3: checked `apps/web/package.json:12: "pretest": "node ensure-tokens-css.mjs",` and `ensure-tokens-css.mjs`: `if (existsSync(cssPath) && statSync(cssPath).mtimeMs >= newestMtime(inputs)) { return { built: false ...` (inputs = tokens.json + scripts/), else runs the tokens `build`. Script run from repo root: exit 0. README says "does nothing when up to date", not "always rebuilds".
+- AC-4: `git diff --stat`: README.md only, 4 insertions, 0 deletions (plus this ticket file in the commit).
+- AC-5: `-w format:check` pass; `node .github/scripts/check-all.mjs` exit 0; `-w test:repo-checks` 159 pass / 0 fail.
+- 2026-10-04 orchestrator accept (D-0178: docs-only, no review/QA): read the README diff (+4 lines, no deletions), both commands verified against `apps/web/package.json` pretest and `ensure-tokens-css.mjs`. Status → done. Follow-up filed on the board: landing pretest/README line for fresh worktrees.
