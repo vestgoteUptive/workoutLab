@@ -241,24 +241,50 @@ export interface OfflineFixtures {
  * Mocks the PostgREST endpoints `lib/offline/*` calls (AC-C20, D-0045 §7): `session_sets_live`,
  * `exercises`, `exercise_areas`, `area_targets`, `profiles`, the four tables Dexie v2 added
  * (`exercise_variants`, `plan_checkins`, `routines`, `routine_items` — T-0319, D-0072), and the
- * `sessions`/`session_sets` upsert targets (accepted no-ops, since this spec doesn't queue
- * anything to flush). Registered after `mockSupabaseAuth`'s 501 catch-all in `beforeEach`,
- * which — being registered first — is
- * Playwright's last-matched fallback for anything none of these claim (see that function's
- * comment): a request to an endpoint this spec doesn't expect still fails loudly instead of
- * reaching the network.
+ * `sessions`/`session_sets` read targets (an empty cached-read shape; a spec that needs that read
+ * to return rows overrides the route itself, as `uf-11-account.spec.ts`'s `mockExportRows` does).
+ * Registered after `mockSupabaseAuth`'s 501 catch-all in `beforeEach`, which — being registered
+ * first — is Playwright's last-matched fallback for anything none of these claim (see that
+ * function's comment): a request to an endpoint this spec doesn't expect still fails loudly
+ * instead of reaching the network.
+ *
+ * `sessions*`/`session_sets*` are GET-only (D-0176, T-0489): a non-GET (a real upsert, most
+ * often `AutoSync`'s unconditional mount-time `flushNow()`, which fires on every signed-in page
+ * load including ones a spec didn't expect to flush anything) is aborted instead of being
+ * fulfilled with a fake success. A spec that *does* intend to drive a real sessions/session_sets
+ * write (an online UF-09 flow) registers its own method-aware route *after* `mockSupabaseData`,
+ * exactly as `uf-09-offline.spec.ts`'s `recordWrites` and `uf-08-setup.spec.ts`'s
+ * `recordSessions` already do; being registered later, that route wins — Playwright runs the
+ * most-recently-registered matching handler first, so a non-GET request from such a spec never
+ * reaches this handler at all. Only a non-GET with no spec-local route hits the abort below.
+ *
+ * Aborts, rather than `route.fallback()`-ing to `mockSupabaseRest`'s 501 catch-all: that catch-all
+ * is answered with `route.fulfill`, which `tests/e2e/fixtures/guarded-test.ts`'s Supabase guard
+ * reports as an unexpected "backstop hit" and fails the test — correct for a request a spec
+ * actively made and should have mocked, wrong for a background flush most specs never intended to
+ * trigger at all (measured: that is exactly what happened on a first version of this fix, turning
+ * AC-2/AC-3 from "flaky" to "reliably failed on the unrelated backstop-hit guard"). `route.abort
+ * ("internetdisconnected")` instead mirrors `fixtures/offline.ts`'s `goOffline` write-abort gate:
+ * the browser's `fetch` rejects with a `TypeError`, which `flush.ts` (`flush()`'s `catch`) reads as
+ * `"network-error"` without throwing and leaves the row queued — the same "write never happened"
+ * outcome offline specs already rely on — and `guarded-test.ts`'s own `requestfailed` detector
+ * explicitly exempts `net::ERR_INTERNET_DISCONNECTED` (D-0086 §4's offline exemption), so this
+ * abort is not reported as a leak either. GET keeps today's behaviour unconditionally.
+ *
+ * `session_sets*` (below) also glob-matches `session_sets_live?...` — Playwright runs the
+ * most-recently-registered matching handler first, so the `session_sets_live*` route below must
+ * be registered *after* `session_sets*`, or the latter's `json: []` always wins and AC-C20's
+ * cached history count is silently 0.
  */
 export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): Promise<void> {
-  // `session_sets*` (below) also glob-matches `session_sets_live?...` — Playwright runs the
-  // most-recently-registered matching handler first, so the `session_sets_live*` route below
-  // must be registered *after* `session_sets*`, or the latter's `json: []` always wins and
-  // AC-C20's cached history count is silently 0.
-  await page.route(`${VITE_SUPABASE_URL}/rest/v1/sessions*`, (route) =>
-    route.fulfill({ status: 200, json: [] }),
-  );
-  await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets*`, (route) =>
-    route.fulfill({ status: 200, json: [] }),
-  );
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/sessions*`, (route) => {
+    if (route.request().method() !== "GET") return route.abort("internetdisconnected");
+    return route.fulfill({ status: 200, json: [] });
+  });
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/session_sets*`, (route) => {
+    if (route.request().method() !== "GET") return route.abort("internetdisconnected");
+    return route.fulfill({ status: 200, json: [] });
+  });
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/exercises*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.exercises }),
   );

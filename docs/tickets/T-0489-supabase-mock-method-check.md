@@ -85,4 +85,72 @@ full e2e suite (this is a shared fixture touching many specs — don't skip e2e)
   investigation shows it's the exact same root cause and fixing it here is trivially in scope.
 
 ## Build / accept log
-(empty)
+
+**Fix (AC-1).** `tests/e2e/fixtures/supabase-mock.ts`'s `mockSupabaseData`: `sessions*`/
+`session_sets*` routes now check `route.request().method()`. GET keeps today's `200 []`. Any
+other method calls `route.abort("internetdisconnected")`, not `route.fallback()` — a first version
+fell back to `mockSupabaseRest`'s 501 catch-all, which is answered with `route.fulfill` and is
+reported as an unexpected "backstop hit" by `guarded-test.ts`'s Supabase guard (measured: it turned
+AC-2/AC-3 from "flaky" to "reliably failed on an unrelated guard"). Aborting instead mirrors
+`fixtures/offline.ts`'s `goOffline` write-abort gate: the browser's `fetch` rejects with a
+`TypeError`, `flush.ts` treats the failed upsert as "not sent" (row stays `queued`), and
+`guarded-test.ts`'s own `requestfailed` detector already exempts
+`net::ERR_INTERNET_DISCONNECTED`. A spec that registers its own method-aware route for these
+tables after calling `mockSupabaseData` (`uf-09-offline.spec.ts`'s `recordWrites`,
+`uf-08-setup.spec.ts`'s `recordSessions`, `uf-11-account.spec.ts`'s `mockExportRows`) is
+unaffected: Playwright runs the most-recently-registered matching handler first, so that route
+claims the request before this one ever sees it.
+
+**AC-2 audit.** Checked every other route `mockSupabaseData` (and `mockSupabaseEmptyReads`,
+`mockProfilePresent`/`mockProfileMissing`) registers: `exercises*`, `exercise_areas*`,
+`area_targets*`, `profiles*`, `session_sets_live*`, `exercise_variants*`, `plan_checkins*`,
+`routines*`, `routine_items*`. All share the same unconditional-200-any-method shape, but none
+share `sessions*`/`session_sets*`'s risk profile: the app only writes to them from a direct,
+in-test user action (`uf-07-routines.spec.ts`'s routine save/delete, `UF-11`'s check-in/equipment
+saves), never from an unconditional background mount-time call race-prone against a spec's own
+seeded assertion. Every spec that drives one of those writes already registers its own
+method-aware local route (confirmed for `routines*`/`routine_items*` in
+`uf-07-routines.spec.ts`'s `captureWrites`); no spec asserts on a write to any of these tables
+silently succeeding through `mockSupabaseData`'s own fulfilled-200 default. Finding: **none found**
+beyond `sessions*`/`session_sets*` — no further change made, per scope.
+
+**AC-5 fault proof (done before AC-3, same mechanism).** Backed up the fixed file
+(`cp` to scratch), edited `mockSupabaseData` on the live file to drop the method check (restoring
+exact pre-fix any-method-200 `sessions*`/`session_sets*`, a fault of this ticket's own authorship),
+ran `TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx -y pnpm@10.28.2 exec playwright test
+--config tests/e2e/playwright.config.ts -g "AC-3 server error" --repeat-each=10 --workers=4`:
+**1 failed / 9 passed** — `expect(count).toBe(1)` got `0` at `uf-11-account.spec.ts:356`, the
+exact assertion and failure mode D-0176 recorded. Restored the fixed file from the scratch backup
+with `cp` (not `git checkout`).
+
+**AC-3 re-verification (D-0176's "Revisit when").** Same command for both
+`"T-0469 AC-2 delete|T-0469 AC-3 server error"`, `--repeat-each=10 --workers=4`, on the fixed code:
+first pass (machine otherwise idle) **20/20 passed**; second pass run while two other worktrees
+(T-0478, T-0488) had heavy `pnpm -w typecheck lint test` / e2e jobs running concurrently (the exact
+load condition D-0176 named) — **20/20 passed**. Full `uf-11-account.spec.ts`, `--repeat-each=3`:
+**21/21 passed**.
+
+**AC-4 regression — one finding, reported per "Not yours: any spec file."**
+`tests/e2e/fixture-guard.spec.ts`'s own `T-0484 goOffline fixture` describe, test
+`"AC-3 goOnline disarms then goes online; counters frozen, the same POST now resolves"`
+(line 677), fails on the fixed fixture: after `gate.goOnline()` disarms the write-abort gate, the
+test posts directly to `session_sets` from page context and asserts `result.status === 200`,
+relying on `mockSupabaseData`'s *old* any-method-200 shape as the thing that proves "the same POST
+now resolves." With the method check in place that POST is aborted instead, so `result.status` is
+never set the way the assertion expects. This is T-0484's own self-test (D-0175 §3), a spec file,
+not `supabase-mock.ts` — out of this ticket's "Paths you may change." Reported here rather than
+fixed; needs a qa-lane follow-up to update that one assertion (e.g. assert the write is no longer
+aborted/fulfilled-offline after `goOnline`, without depending on a fake 200 from the shared
+fixture). Every other spec importing `mockSupabaseData` was unaffected: full e2e suite
+**230/231 passed**, the 1 failure being this exact, already-explained case.
+
+**Full e2e suite** (`TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx -y pnpm@10.28.2 exec
+playwright test --config tests/e2e/playwright.config.ts`): 230 passed, 1 failed (the
+`fixture-guard.spec.ts` finding above, not a new flake — deterministic on every run).
+
+**Full gate:** `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test
+--concurrency=1` — 255 test files / 3539 tests passed, typecheck/lint clean (cache hit). `pnpm -w
+test:repo-checks` — 159/159 passed. `pnpm -w format:check` — clean. `node
+.github/scripts/check-all.mjs` — exit 0.
+
+**Files changed:** `tests/e2e/fixtures/supabase-mock.ts` only, plus this log.
