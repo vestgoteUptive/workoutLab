@@ -146,7 +146,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0483 | rest.test.tsx: drive the host's 1s re-render with a faked setInterval instead of racing it with waitFor (the "Go" announcer CI flake, D-0175 §2) | web-feature:UF-03 | — | ready | wl-build-web |
+| T-0483 | rest.test.tsx: drive the host's 1s re-render with a faked setInterval instead of racing it with waitFor (the "Go" announcer CI flake, D-0175 §2) | web-feature:UF-03 | — | doing | wl-build-web |
 | T-0490 | Ticket grooming: stop writing `pnpm --filter <pkg> typecheck lint test` as one command in DoD/AC text — pnpm runs only `typecheck` and passes the rest as args; write one command per script (T-0442 QA/accept finding) | product | — | todo | product-owner |
 | T-0491 | UF-06 `__tests__/screens.test.tsx:497`: tighten `/^Offline · last synced 0?8:10$/` to the literal `08:10` and drop the stale `hour: "numeric"` comment (T-0449 groom/accept follow-up) | web-feature:UF-06 | T-0449 | todo | wl-build-web |
 | T-0492 | UF-11 `__tests__/offline.test.tsx:112`: tighten `/^0?8:10$/` to `08:10` and drop the stale "renders 8:10" comment — after T-0471 merges (shared UF-11 lane) (T-0449 follow-up) | web-feature:UF-11 | T-0449, T-0471 | todo | wl-build-web |
