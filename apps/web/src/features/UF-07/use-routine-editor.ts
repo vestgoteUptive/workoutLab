@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { useNavigate } from "react-router";
 import type { LibraryExercise } from "@workoutlab/shared";
 import { supabase } from "../../lib/auth/client.js";
+import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import { loadLibrary, loadRoutines, refreshRoutines } from "../../lib/offline/index.js";
 
@@ -70,6 +71,7 @@ export function useRoutineEditor(routineId: string | undefined) {
     [],
   );
   const online = useOnline();
+  const { status: authStatus } = useAuth();
   const isNew = routineId === undefined;
 
   // D-0081 §4: one id per mount, reused by every Save attempt.
@@ -81,6 +83,10 @@ export function useRoutineEditor(routineId: string | undefined) {
   const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadedName, setLoadedName] = useState("");
+  // The loaded snapshot's item ids, kept alongside `loadedName` so a later refresh (D-0174 §4)
+  // can tell an untouched draft from a touched one, and so Save still compares against what was
+  // actually loaded rather than the current draft.
+  const [loadedItems, setLoadedItems] = useState<string[]>([]);
   const [name, setName] = useState("");
   const [items, setItems] = useState<string[]>([]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -94,11 +100,30 @@ export function useRoutineEditor(routineId: string | undefined) {
   const listRef = useRef<HTMLOListElement | null>(null);
   // Where focus goes once the list has re-rendered after a Remove or a picker Add (D-0162 §4).
   const afterChange = useRef<{ kind: "remove"; index: number } | { kind: "add" } | null>(null);
+  // D-0174 §4: one mount refresh total, whichever path takes it (the unknown-id refresh below,
+  // or the known-id refresh effect further down). Reset whenever `routineId` changes in place.
+  const refreshStarted = useRef(false);
+  // Latest draft and loaded snapshot, read by the refresh effect without becoming one of its
+  // dependencies (so typing doesn't restart or cancel an in-flight refresh).
+  const latest = useRef({ name, items, loadedName, loadedItems });
+  useEffect(() => {
+    latest.current = { name, items, loadedName, loadedItems };
+  });
 
-  // Load once per route id. The draft is initialised from the first read that finds the routine
-  // and a later refresh never overwrites it (D-0081 §5).
+  // Load once per route id. The draft is initialised from the first read that finds the routine.
+  // A later refresh may still replace an *untouched* draft (D-0174 §4, amending D-0081 §5); see
+  // the refresh effect below.
   useEffect(() => {
     let cancelled = false;
+    // AC-6: `routineId` changed in place (no unmount). Clear the previous id's outcome before
+    // the new read, so a stale `loadFailed` alert or a stale `ready` form never survives it.
+    refreshStarted.current = false;
+    setLoadFailed(false);
+    setReady(false);
+    setLoadedName("");
+    setLoadedItems([]);
+    setName("");
+    setItems([]);
     void (async () => {
       const lib = await attempt(() => loadLibrary(), [] as LibraryExercise[]);
       if (cancelled) return;
@@ -123,7 +148,19 @@ export function useRoutineEditor(routineId: string | undefined) {
         setLoadFailed(true);
         return;
       }
-      if (!found && navigator.onLine) {
+      if (found) {
+        // The id is already cached: render it now. The known-id refresh effect below starts
+        // this mount's one refresh once online and signed in (D-0174 §4); this branch leaves
+        // `refreshStarted` alone so that effect, not this one, is the one that sets it.
+        setLoadedName(found.name);
+        setLoadedItems(found.items.map((item) => item.exerciseId));
+        setName(found.name);
+        setItems(found.items.map((item) => item.exerciseId));
+        setReady(true);
+        return;
+      }
+      if (navigator.onLine) {
+        refreshStarted.current = true;
         await refreshCapped();
         if (cancelled) return;
         found = await read();
@@ -138,6 +175,7 @@ export function useRoutineEditor(routineId: string | undefined) {
         return;
       }
       setLoadedName(found.name);
+      setLoadedItems(found.items.map((item) => item.exerciseId));
       setName(found.name);
       setItems(found.items.map((item) => item.exerciseId));
       setReady(true);
@@ -146,6 +184,53 @@ export function useRoutineEditor(routineId: string | undefined) {
       cancelled = true;
     };
   }, [routineId, navigate]);
+
+  // D-0174 §4: for a cached routine, refresh once more on mount so a deep link on a device with
+  // a stale cache picks up another device's newer (or deleted) row. Starts only online and
+  // signed in (D-0113 §1-§3), at most once per mount — shared with the unknown-id branch above
+  // through `refreshStarted`. Never runs for `/plan/routines/new`.
+  useEffect(() => {
+    if (isNew || !ready || refreshStarted.current) return;
+    if (!online || authStatus !== "signed-in") return;
+    refreshStarted.current = true;
+    let cancelled = false;
+    void (async () => {
+      // `refreshCapped` never rejects and never hangs past the cap (D-0081 §5, D-0071 §8): a
+      // rejected or capped refresh falls straight through to "changes nothing" below.
+      await refreshCapped();
+      if (cancelled) return;
+      const routines = await attempt(() => loadRoutines(), null);
+      if (cancelled || routines === null) return;
+      const fresh = routines.find((r) => r.id === routineId);
+      const {
+        name: draftName,
+        items: draftItems,
+        loadedName: ln,
+        loadedItems: li,
+      } = latest.current;
+      const untouched =
+        draftName === ln &&
+        draftItems.length === li.length &&
+        draftItems.every((v, i) => v === li[i]);
+      if (!fresh) {
+        if (untouched) navigate(PLAN_PATH, { replace: true });
+        return;
+      }
+      if (!untouched) return;
+      const freshItems = fresh.items.map((item) => item.exerciseId);
+      setLoadedName(fresh.name);
+      setLoadedItems(freshItems);
+      setName(fresh.name);
+      setItems(freshItems);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // `online` and `authStatus` are read here so the effect restarts when either turns true
+    // partway through the mount (a stale -> signed-in session, D-0113 §2). `ready` gates the
+    // refresh until the first cache read has painted the untouched draft it will compare
+    // against.
+  }, [routineId, isNew, ready, online, authStatus, navigate]);
 
   const names = useMemo(() => new Map(library.map((e) => [e.id, e.name])), [library]);
   const nameOf = useCallback((exerciseId: string) => names.get(exerciseId) ?? exerciseId, [names]);

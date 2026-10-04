@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.4, UF-01.3]
 decisions: [D-0022, D-0040, D-0061, D-0064, D-0070, D-0075, D-0079, D-0113, D-0136, D-0158, D-0168, D-0169, D-0172]
 deps: [T-0310d]
-status: ready
+status: done
 ---
 <!-- Re-groomed 2026-10-03 against main f83403e (T-0310d merged): ready. D-0172 §7 names the real
 file (AccountSettingsBody.tsx renders the new EquipmentSection), §8 keeps it apart from T-0470. -->
@@ -139,3 +139,4 @@ commits start `T-0216` and cite UF-11.4.
 - **Product follow-up:** add "Equipment" to the UF-11.4 line in user flows v2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0216.md` (D-0157).

@@ -10,6 +10,7 @@ import {
 } from "../../lib/account/index.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
+import { EquipmentSection } from "./EquipmentSection.js";
 import { resolveTimeZone } from "./format.js";
 import type { Clock } from "./use-plan-data.js";
 import "./plan.css";
@@ -147,6 +148,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   return (
     <>
       {email ? <p>{a.signedInAs(email)}</p> : null}
+      <EquipmentSection clock={clock} />
       <section className="wl-plan__section">
         <h2>{a.dataHeading}</h2>
         <p>{a.dataBody}</p>

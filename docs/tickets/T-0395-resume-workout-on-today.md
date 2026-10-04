@@ -77,3 +77,4 @@ none. It reads the existing IndexedDB `sessions` table and the D-0111 §6 `wl-fo
 Tests for every AC pass · `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green, each test command inside `flock /tmp/workoutlab-tests.lock` · because the ticket edits two feature folders (UF-09 and UF-02), the whole web e2e green once (D-0158) · contracts unchanged · commit messages start with `T-0395` and cite the screen (e.g. `T-0395 UF-02.1: Resume workout card for an unfinished session`).
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0395.md` (D-0157).

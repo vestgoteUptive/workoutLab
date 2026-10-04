@@ -303,19 +303,12 @@ describe("T-0308c AC-6 offline, both values", () => {
   });
 });
 
-describe("T-0308c AC-7 no writes, exports, strings", () => {
-  it("clicking Accept or Keep current online makes no supabase.from call", async () => {
-    vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
-    await seedPeriods({ rhythmMin: 3, rhythmMax: 4, p2: 7, p3: 3 });
-    renderCard();
-
-    const accept = await screen.findByRole("button", { name: u.accept });
-    const keep = screen.getByRole("button", { name: u.keep });
-    fireEvent.click(accept);
-    fireEvent.click(keep);
-    await new Promise((r) => setTimeout(r, 20));
-    expect(spy.from).not.toHaveBeenCalled();
-  });
+describe("T-0308c AC-7 exports, strings", () => {
+  // T-0308c's own version of this describe block also asserted that clicking Accept or Keep made
+  // no `supabase.from` call at all: this ticket (T-0470, read-only) shipped before the writes
+  // existed. T-0470 adds them (`checkin-writes.test.tsx` AC-2/AC-3/AC-5), so that assertion is
+  // gone from here, not weakened — the first-shown insert and the two buttons' writes are this
+  // file's own fixture's concern now, covered in the sibling spec.
 
   it("index.tsx exports exactly CheckinCard, EditPlan and Plan (plus AccountSettings)", async () => {
     const mod = await import("../index.js");

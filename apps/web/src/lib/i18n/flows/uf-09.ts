@@ -110,4 +110,9 @@ export const uf09 = {
   endQuestion: "End workout? Your sets are saved.",
   cancel: "Cancel",
   endError: "Couldn't end the workout. Try again.",
+  // T-0395 UF-02.1: the Today "Resume workout" card (D-0139 §3).
+  resumeTitle: "Workout in progress",
+  resumeLine: (time: string, done: number, total: number) =>
+    `Started ${time} · ${done} of ${total} sets`,
+  resumeAction: "Resume workout",
 } as const;

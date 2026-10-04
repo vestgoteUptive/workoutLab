@@ -121,3 +121,4 @@ screen (for example `T-0468 UF-09.3: ten offline sets survive a closed page`).
   message (`TMPDIR=$HOME/.cache/wl-pw-tmp`).
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0468.md` (D-0157).

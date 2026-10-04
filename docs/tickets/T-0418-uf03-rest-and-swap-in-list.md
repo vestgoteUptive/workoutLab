@@ -122,3 +122,4 @@ needed) · contracts unchanged · commits start `T-0418` and cite the screen (fo
 - **T-0305a is done** when T-0415, T-0416, T-0417, T-0418 and T-0478 are.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0418.md` (D-0157).

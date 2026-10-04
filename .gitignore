@@ -4,6 +4,7 @@ dist/
 .astro/
 .output/
 .vite/
+.vitest/
 *.tsbuildinfo
 .DS_Store
 .env

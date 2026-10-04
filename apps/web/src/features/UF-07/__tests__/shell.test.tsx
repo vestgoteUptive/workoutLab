@@ -78,9 +78,10 @@ describe("mount through the real route", () => {
     expect(await screen.findByText("1. Barbell back squat")).toBeInTheDocument();
     expect(screen.getByLabelText("Name")).toHaveValue("Lower A");
     await new Promise((resolve) => setTimeout(resolve, 50));
-    expect(offline.loadRoutinesCalls).toBe(1);
+    // D-0174 §4: the mount read plus one post-refresh read; one refresh, no more.
+    expect(offline.loadRoutinesCalls).toBe(2);
     expect(offline.loadLibraryCalls).toBe(1);
-    expect(offline.refreshRoutines).not.toHaveBeenCalled();
+    expect(offline.refreshRoutines).toHaveBeenCalledTimes(1);
   });
 
   it("/plan/routines/new renders an empty editor through the shell", async () => {

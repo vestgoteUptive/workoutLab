@@ -5,6 +5,7 @@ import { offlineDb } from "../../../lib/offline/db.js";
 import { R, USER, renderEditor, seed } from "./harness.js";
 import { offline, setOnline, spy } from "./spies.js";
 
+vi.mock("../../../lib/auth/auth-context.js", async () => (await import("./spies.js")).mockedAuth());
 vi.mock("../../../lib/auth/client.js", async () => (await import("./spies.js")).mockedClient());
 vi.mock("../../../lib/offline/index.js", async (importActual) =>
   (await import("./spies.js")).mockedOffline(importActual),
@@ -102,10 +103,11 @@ describe("AC-A11 unknown routine id", () => {
     expect(offline.refreshRoutines).toHaveBeenCalledTimes(1);
   });
 
-  it("a known routine is rendered without any refresh", async () => {
+  // D-0174 §4 supersedes the old "no refresh for a known id" rule: a cached id now refreshes once.
+  it("a known routine is rendered from the cache, then refreshed once (D-0174 §4)", async () => {
     renderEditor(`/plan/routines/${R}`);
     await screen.findByText("1. Barbell back squat");
-    expect(offline.refreshRoutines).not.toHaveBeenCalled();
+    await waitFor(() => expect(offline.refreshRoutines).toHaveBeenCalledTimes(1));
   });
 
   it("a refresh that rejects still ends in the redirect", async () => {
