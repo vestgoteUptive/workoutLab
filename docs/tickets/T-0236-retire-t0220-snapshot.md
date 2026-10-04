@@ -41,7 +41,7 @@ Each new test title starts with `T-0236 ACn`. The rescoped AC6 test keeps its `T
   - no file under `packages/engine/test/` (`.ts`, recursively) contains the string `pre-t0220-suggest`, apart from this test file itself.
   - **Red on unfixed code:** on `main` after T-0220 merges, both fail. Record the red run in the build log.
 - **AC4 (no behaviour change)** `git diff --stat main...HEAD -- packages/engine/src` is empty (record it in the build log). Every other engine test passes with no edit. The engine test count changes only by the new AC3 cases.
-- **AC5** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck lint test` is green.
+- **AC5** `npx -y pnpm@10.28.2 --filter @workoutlab/engine typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/engine lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/engine test` are green.
 
 ## Paths you may change
 - `packages/engine/**` (the lane: `engine`).

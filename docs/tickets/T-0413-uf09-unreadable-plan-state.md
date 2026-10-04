@@ -44,7 +44,7 @@ Rows are seeded with the real `upsertSession` over `fake-indexeddb`, as the exis
 - **AC4 (only that case moves, D-0138 §2)** The existing "AC-5 not on this device" tests for no row, another user's row, `plan: null`, IndexedDB unavailable and a rejected read pass unedited.
 - **AC5 (nothing is deleted, D-0138 §4)** **Given** AC1's row and a stored `wl-focus:<S1>` value, **When** it renders, **Then** `localStorage` still holds the same `wl-focus:<S1>` string, and `offlineDb().sessions.get(S1)` still returns the row.
 - **AC6 (order, D-0138 §6)** **Given** a row with a corrupt plan and `ended_at` set, **Then** the AC1 state renders, not "This workout has ended". A stale started-at with a corrupt plan also renders the AC1 state.
-- **AC7** `npx -y pnpm@10.28.2 --filter @workoutlab/web typecheck lint test` is green, and every other UF-09 test passes unedited.
+- **AC7** `npx -y pnpm@10.28.2 --filter @workoutlab/web typecheck`, `npx -y pnpm@10.28.2 --filter @workoutlab/web lint` and `npx -y pnpm@10.28.2 --filter @workoutlab/web test` are green, and every other UF-09 test passes unedited.
 
 ## Paths you may change
 - `apps/web/src/features/UF-09/**` (the lane: `web-feature:UF-09`).

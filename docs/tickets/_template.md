@@ -27,3 +27,7 @@ none | <contract> — needs D-NNNN
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-NNNN` and cite screen IDs.
+
+Per-package commands: write one command per script — `pnpm --filter <pkg> typecheck`, then a
+separate `… lint`, then a separate `… test`. Listing several script names after one `--filter`
+runs only the first; pnpm passes the rest to it as plain CLI arguments, so they never run.

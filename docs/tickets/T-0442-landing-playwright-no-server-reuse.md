@@ -78,7 +78,8 @@ turns the AC-1 CI=1 case red while the unset case stays green (corrected 2026-10
   Stop the stand-in afterwards.
 - **AC-4 (unchanged surface)** Every existing `apps/landing/test/*.test.ts` passes unedited
   (AC24's "`pnpm test` stays offline and browser-free" included: the new test opens no browser and
-  no port). `pnpm --filter @workoutlab/landing typecheck lint test` is green.
+  no port). `pnpm --filter @workoutlab/landing typecheck`, `pnpm --filter @workoutlab/landing lint` and
+  `pnpm --filter @workoutlab/landing test` are green.
 
 ## Paths you may change
 - `apps/landing/**` (the lane: `landing`). In practice `apps/landing/browser/playwright.config.ts`
