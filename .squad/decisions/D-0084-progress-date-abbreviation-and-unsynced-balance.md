@@ -16,6 +16,11 @@ Building UF-06 against D-0079 turned up three points the ticket does not settle.
 
 ## Consequences
 - Follow-up (web-shell): `OfflineStatus` formats with `hour: "numeric"`, which renders `8:10` for `en-GB` on this ICU. T-0307b AC-12 wrote `08:10`. The test accepts both spellings. If `08:10` is wanted, `formatTime` needs `hour: "2-digit"` (lane: web-shell).
+  - **Resolved (2026-10-04).** T-0355 made `formatTime` use `timeStyle: "short"`, as D-0045 §9
+    decides, so `en-GB` renders `08:10` and `en-US` keeps `8:05 AM`. Do **not** switch to
+    `hour: "2-digit"`: it renders `08:05 AM` in `en-US`. T-0449 pins this in
+    `components/offline-status/__tests__/OfflineStatus.test.tsx`; T-0491 (UF-06) and T-0492
+    (UF-11) tighten the feature tests to the literal `08:10`.
 
 ## Revisit when
 - The design system fixes a date format, or `formatTime` changes.

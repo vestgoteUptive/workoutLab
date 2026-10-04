@@ -64,3 +64,18 @@ AC1-AC3 hold and are recorded in the log · `node .github/scripts/check-all.mjs`
 contracts unchanged · commit message starts `T-0493` and cites UF-06.1.
 
 ## Build / accept log
+- 2026-10-04 (build): Added one indented sub-bullet under D-0084's existing `OfflineStatus`
+  Consequences bullet, worded exactly per Scope: names T-0355, D-0045 §9, T-0449,
+  `timeStyle: "short"`, and explicitly rejects `hour: "2-digit"`. Original bullet text, front
+  matter, title, Context, Decision §1-§3 and "Revisit when" untouched; `.squad/decisions/INDEX.md`
+  untouched.
+- AC1: `grep -c "T-0355\|T-0449"` on the D-0084 file = 2 (≥ 2, pass). `git diff` vs. parent
+  commit `bd9c02d` shows only `+` lines (no `-` lines) — pass.
+- AC2: `git diff bd9c02d --stat` lists only the D-0084 file (plus this ticket file's own log
+  entry, written after); `.squad/decisions/INDEX.md` unchanged — pass.
+- AC3: `node .github/scripts/check-all.mjs` exit 0 — pass.
+- Note: build was briefly disrupted by a dispatch collision (T-0493 and T-0490 both told to work
+  directly in the shared main checkout without a worktree); the content edit itself was correct
+  throughout and was recovered intact onto this isolated worktree (`t/T-0493-d0084-note` off
+  `bd9c02d`) with no loss or mixing with T-0490's changes. See `.squad/state.md` for the
+  incident note.
