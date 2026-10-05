@@ -19,3 +19,13 @@ infra/terraform/.terraform/
 infra/terraform/*.tfstate*
 infra/terraform/plans/
 dist.aside-*
+
+# Terraform (T-0400/T-0401, D-0184): state, plans and var files never committed
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan
+infra/terraform/plans/
+crash.log
