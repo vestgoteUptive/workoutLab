@@ -272,3 +272,9 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0496 | check-all.mjs: fail when a ticket file's AC/DoD text names a `pnpm --filter <pkg>` command with more than one script (the exact anti-pattern T-0490 fixes) — so it can't come back (T-0490 groom follow-up) | infra | T-0490 | done | wl-build-infra |
 | T-0497 | backend: add `.eq("user_id", ctx.userId)` to `loadSessionSets` (`_shared/repo.ts`) to match `loadHistoryWindow` — defence in depth if a service-role client is ever used (T-0210 follow-up; behaviour change, own ticket; don't run alongside T-0209/T-0218, same files) | backend | T-0210 | done | wl-build-backend |
 | T-0498 | landing: a fresh worktree's landing tests need `packages/design-tokens` built first (global-setup runs `astro build`; Layout.astro imports tokens.css) — add a landing `pretest` like web's, or a README line (T-0317 groom follow-up) | landing | T-0317 | done | wl-build-web |
+
+## Phase 4 — Ship
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0400 | Terraform: import prod Supabase project `supabase_project` only, zero-change (D-0185: auth settings stay hand-managed, not in Terraform); plan-then-stop gate (D-0184) | infra | T-0203a | done | wl-build-infra |
+| T-0401 | Terraform: Cloudflare Pages projects, custom domains, the two CNAMEs only (D-0010); plan-then-stop (D-0184) | infra | T-0309 | done | wl-build-infra |
