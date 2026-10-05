@@ -1,0 +1,4 @@
+[
+  { "id": "id-1", "type": "MX", "name": "mail.example.test", "content": "mx.example.test", "proxied": false, "ttl": 300, "priority": 10, "modified_on": "2026-01-01T00:00:00.000000Z" },
+  { "id": "id-2", "type": "A", "name": "www.example.test", "content": "192.0.2.1", "proxied": true, "ttl": 1, "modified_on": "2026-02-02T00:00:00.000000Z" }
+]
