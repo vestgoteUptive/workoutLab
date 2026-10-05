@@ -209,3 +209,14 @@ None. The copy restates NFR-PRIV-1…7 and the D-0188 behaviour. D-0188 §5 amen
 - The security reviewer re-checks P6-a against the final copy (D-0188 Consequences).
 
 ## Build / accept log
+
+### Build 2026-10-05 (designer, branch `t/T-0502-privacy-notice-gdpr`, from `36cb41c`, clean)
+- **Changed:** `types.ts` (nine `PrivacySectionId`s in D-0188 §5 order, H-10 note gone); `privacy.ts` (v2 copy, new header citing D-0188 + `docs/security/privacy.md`, `updated: 2026-10-05`); `content.test.ts` (AC5 order → nine ids, T-0502 AC-1…AC-10).
+- **Fact sources:** Supabase eu-west-1/Ireland and Resend eu-west-1: `docs/security/privacy.md:40-49`. Cloudflare edge, sees IP + URL, no user data stored there: :50-58. Session IP/user agent (P2-b): :131. Backups 7 days on Pro (P5-b): :278. Supabase logs IP/sub/email, 1 day Free / 7 days Pro (P7-b): :388-391. Google name/picture dropped, sign-in records deleted with the account: D-0188 §1-2 (**true in prod only at H-23**). Plan → Account: `uf-11.ts:69` `accountLink`, export and delete in `features/UF-11/AccountSettingsBody.tsx`.
+- **Narrowed on purpose:** the spec says "our providers' logs … up to 7 days". The repo only establishes that retention for Supabase (P7-b), not Cloudflare, so the copy says "our database provider's logs". Not stated, for H-22 to decide: Resend is a US company and the transfer safeguards (SCCs) depend on H-21.
+- **AC→test** (all in `apps/landing/src/content/content.test.ts`, `describe("T-0502 …")`): AC-1 `T-0502 AC-1 (order)`; AC-2 `AC-2 (controller)`; AC-3 `AC-3 (legal basis)`; AC-4 `AC-4 (processors)`; AC-5 `AC-5 (retention)`; AC-6 `AC-6 (export and delete path)`; AC-7 `AC-7 (rights)`; AC-8 `AC-8 (no false only)`; AC-9 `AC-9 (placeholders are pinned)`, pre-H-22 form; AC-10 `AC-10 (stale notes gone)`.
+- **Red on unfixed copy:** new tests on the old `privacy.ts`/`types.ts` → 11 failed (AC5 order, AC-1…AC-10).
+- **Planted fault:** `{{HUMAN:CONTROLLER_NAME}}` → `{{HUMAN:CONTROLLER}}` on a backup copy → AC-9 failed (and AC-2), 87 passed. Restored with `cp`, green again.
+- **Gate:** `locked.sh small npx vitest run src/content/content.test.ts` 89/89; `--filter @workoutlab/landing test` 13 files / 143 tests (incl. AC14's built page); `-w typecheck lint test --concurrency=1` 19/19 tasks; `-w test:repo-checks` 261 pass / 0 fail; `-w format:check` clean; `check-all.mjs` exit 0.
+- **Release order:** the Google sentence and the "sign-in records deleted with your account" sentence are true in prod only after H-23 (T-0503 and T-0504 released). H-06 (landing prod deploy) must wait for H-23 (D-0188 §4).
+- **Open:** markers left: `{{HUMAN:CONTROLLER_NAME}}`, `{{HUMAN:CONTROLLER_ADDRESS}}`, `{{HUMAN:SUPERVISORY_AUTHORITY}}`. Previews show them as visible text, which is intended. Status → `review (needs H-22)`. The fill-in pass, H-21 and H-22 are still needed.
