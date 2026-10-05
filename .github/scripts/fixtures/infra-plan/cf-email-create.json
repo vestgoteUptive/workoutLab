@@ -1,0 +1,141 @@
+{
+  "format_version": "1.2",
+  "resource_changes": [
+    {
+      "address": "module.app.cloudflare_pages_project.this",
+      "type": "cloudflare_pages_project",
+      "change": {
+        "actions": [
+          "no-op"
+        ],
+        "after": {
+          "name": "workoutlab-web"
+        }
+      }
+    },
+    {
+      "address": "module.app.cloudflare_pages_domain.this",
+      "type": "cloudflare_pages_domain",
+      "change": {
+        "actions": [
+          "no-op"
+        ],
+        "after": {
+          "name": "app.workout.vestgote.com"
+        }
+      }
+    },
+    {
+      "address": "module.app.cloudflare_dns_record.this",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": [
+          "no-op"
+        ],
+        "after": {
+          "name": "app.workout.vestgote.com"
+        }
+      }
+    },
+    {
+      "address": "module.landing.cloudflare_pages_project.this",
+      "type": "cloudflare_pages_project",
+      "change": {
+        "actions": [
+          "no-op"
+        ],
+        "after": {
+          "name": "workoutlab-landing"
+        }
+      }
+    },
+    {
+      "address": "module.landing.cloudflare_pages_domain.this",
+      "type": "cloudflare_pages_domain",
+      "change": {
+        "actions": [
+          "no-op"
+        ],
+        "after": {
+          "name": "workout.vestgote.com"
+        }
+      }
+    },
+    {
+      "address": "module.landing.cloudflare_dns_record.this",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": [
+          "no-op"
+        ],
+        "after": {
+          "name": "workout.vestgote.com"
+        }
+      }
+    },
+    {
+      "address": "cloudflare_dns_record.resend_send",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "send.workout.vestgote.com",
+          "type": "CNAME",
+          "content": "send.forge.rmta.net",
+          "proxied": false,
+          "ttl": 3600
+        }
+      }
+    },
+    {
+      "address": "cloudflare_dns_record.resend_rsend",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "rsend.workout.vestgote.com",
+          "type": "CNAME",
+          "content": "rsend-euw1.forge.rmta.net",
+          "proxied": false,
+          "ttl": 3600
+        }
+      }
+    },
+    {
+      "address": "cloudflare_dns_record.resend_dkim",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "resend._domainkey.workout.vestgote.com",
+          "type": "TXT",
+          "content": "\"p=MIGf...\"",
+          "proxied": false,
+          "ttl": 3600
+        }
+      }
+    },
+    {
+      "address": "cloudflare_dns_record.dmarc",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "_dmarc.workout.vestgote.com",
+          "type": "TXT",
+          "content": "\"v=DMARC1; p=none;\"",
+          "proxied": false,
+          "ttl": 3600
+        }
+      }
+    }
+  ]
+}

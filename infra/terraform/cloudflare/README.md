@@ -1,10 +1,27 @@
-# infra/terraform/cloudflare (T-0401)
+# infra/terraform/cloudflare (T-0401, T-0404a)
 
 Two Pages projects (`workoutlab-web`, `workoutlab-landing`), their Pages custom domains and the
-two CNAMEs. Nothing else on the `vestgote.com` zone. Local state (gitignored).
+two CNAMEs, plus the four Resend email records below. Nothing else on the `vestgote.com` zone.
+Local state (gitignored).
 
 Discovery on 2026-10-05 found no existing Pages project and no record on either hostname, so
 everything is created (no `import {}` blocks needed).
+
+## Email records (T-0404a, D-0187)
+`email.tf` holds the Resend sending-domain records (region eu-west-1), all DNS only:
+
+| Address | Name | Type | Content |
+|---|---|---|---|
+| `cloudflare_dns_record.resend_send` | `send.workout.vestgote.com` | CNAME | `send.forge.rmta.net` |
+| `cloudflare_dns_record.resend_rsend` | `rsend.workout.vestgote.com` | CNAME | `rsend-euw1.forge.rmta.net` |
+| `cloudflare_dns_record.resend_dkim` | `resend._domainkey.workout.vestgote.com` | TXT | DKIM public key |
+| `cloudflare_dns_record.dmarc` | `_dmarc.workout.vestgote.com` | TXT | `v=DMARC1; p=none;` |
+
+The first three already existed (Resend auto-configure), so they come in through `import {}`
+blocks, with the live TTL 3600 and quoted TXT, so the import is a no-op. DMARC is never on the apex
+`_dmarc.vestgote.com`. The scope check allows exactly these four. Expected run A plan:
+`Plan: 3 to import, 1 to add, 0 to change, 0 to destroy.` with the six T-0401 resources unchanged.
+Plan and apply from the checkout that holds T-0401's `terraform.tfstate`.
 
 ## Run A (plan only)
 ```sh
