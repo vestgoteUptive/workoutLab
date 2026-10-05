@@ -13,6 +13,7 @@
     "lint:fix": "turbo run lint -- --fix",
     "test": "turbo run test && pnpm test:repo-checks",
     "test:repo-checks": "node --test \".github/scripts/*.test.mjs\"",
+    "check:size": "pnpm --filter @workoutlab/web check:size",
     "check:repo": "node .github/scripts/check-all.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
