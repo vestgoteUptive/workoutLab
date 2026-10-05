@@ -195,3 +195,33 @@ None. No recurring cost: Cloudflare Free, two Pages projects, free per-domain ce
 - **Unblocks:** T-0402 (deploys), T-0404 (Resend records under `workout.vestgote.com`).
 
 ## Build / accept log
+
+### Run A (2026-10-05, builder; HEAD a7f0017), plan only, then stopped
+- Terraform v1.16.5 was already on PATH (~/.local/bin, installed by another build); nothing installed here. Provider cloudflare/cloudflare pinned `= 5.27.0`, `required_version = "= 1.16.5"`, `.terraform.lock.hcl` committed.
+- Discovery (GET only): Pages projects in the account: **0**. DNS records on `workout.vestgote.com`: **none**; on `app.workout.vestgote.com`: **none**. So nothing imported, all six resources created fresh (no `import {}` blocks).
+- Zone baseline (excluding the two hostnames): **count 26**, sha256 `0fd3771fd57998b81dc0b30f13d3f7e8582d2876b87e02bc8b0b8c86a9c4037d`. (Zone total was also 26.) Re-take after run B and compare.
+- `terraform init`, `fmt -check -recursive`, `validate`: ok.
+- AC-1: `T-0401 AC-1` tests green on real config; planted faults (hostname `vestgote.com`, `cloudflare_zone_setting`, token-like literal) go red inside the tests, on temp copies.
+- AC-2: 5 fixtures `cf-*.json`, tests green (`node --test .github/scripts/check-infra-scope-cloudflare.test.mjs`: 9 pass).
+- AC-3: plan check on `terraform show -json`: exit 0. `grep -cF "$CLOUDFLARE_API_TOKEN"` in show -json: **0**. Summary: `Plan: 6 to add, 0 to change, 0 to destroy.` (add 6 + import 0 = 6). Full `terraform show` (account/zone IDs masked here):
+
+```
+  # module.app.cloudflare_dns_record.this will be created: CNAME app.workout.vestgote.com -> workoutlab-web.pages.dev, proxied=true, ttl=1, zone_id=<ZONE_ID>
+  # module.app.cloudflare_pages_domain.this will be created: name app.workout.vestgote.com, project_name workoutlab-web, account_id=<ACCOUNT_ID>
+  # module.app.cloudflare_pages_project.this will be created: name workoutlab-web, production_branch main, account_id=<ACCOUNT_ID>
+  # module.landing.cloudflare_dns_record.this will be created: CNAME workout.vestgote.com -> workoutlab-landing.pages.dev, proxied=true, ttl=1
+  # module.landing.cloudflare_pages_domain.this will be created: name workout.vestgote.com, project_name workoutlab-landing
+  # module.landing.cloudflare_pages_project.this will be created: name workoutlab-landing, production_branch main
+Plan: 6 to add, 0 to change, 0 to destroy.
+```
+  (Condensed to the set attributes; every other attribute is `(known after apply)`. The raw plan is in the gitignored `infra/terraform/plans/cloudflare.tfplan`.)
+- Risk for run B: the Pages API may refuse a custom domain on a project with no deployment (edge case above); Terraform orders domain after project, so a failure would leave the two projects created and the domain/CNAME missing.
+- Not run: apply, import, state, any write call to the Cloudflare API. STOPPED: plan ready for human review.
+
+### Run B (2026-10-05, human-approved H-16) - done
+- Applied by the human from their own terminal (the session's permission mode blocks `terraform apply` for agents); the orchestrator verified afterwards with read-only GETs.
+- **AC-4:** `terraform apply ../plans/cloudflare.tfplan` -> `Apply complete! Resources: 6 added, 0 changed, 0 destroyed.` Following `terraform plan -detailed-exitcode` -> exit 0.
+- **AC-4 (zone untouched):** other-record count after apply = **26** (same as run A). The re-taken SHA-256 (`92ab4340…ecf4ad`) differs from run A's (`0fd3771f…c4037d`), but run A's exact line format/sort wasn't recorded, so the hashes aren't comparable. Proven directly instead: the newest `modified_on` among the 26 other records is `2026-03-16T20:29:12Z`, and 0 of them were modified on 2026-10-05. The only records modified today are the two owned CNAMEs (`app.workout.vestgote.com -> workoutlab-web.pages.dev`, `workout.vestgote.com -> workoutlab-landing.pages.dev`, proxied, 18:26:09Z). **Follow-up:** commit the baseline computation as a script so future runs hash identically.
+- **AC-5:** both Pages domains `status=active`, `certificate_authority=google` (active on the 2nd 60 s poll). `openssl s_client -verify_return_error`: `Verify return code: 0 (ok)` for both, host in SAN. `curl`: `ssl_verify_result=0` for both; HTTP `522` recorded, not asserted (nothing deployed before T-0402).
+- **AC-6:** two Pages projects on the Free plan, no paid product. `docs/infra-costs.md` needs no change.
+- Status: done.

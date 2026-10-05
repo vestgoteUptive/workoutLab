@@ -1,0 +1,77 @@
+{
+  "format_version": "1.2",
+  "resource_changes": [
+    {
+      "address": "module.app.cloudflare_pages_project.this",
+      "type": "cloudflare_pages_project",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "workoutlab-web"
+        }
+      }
+    },
+    {
+      "address": "module.app.cloudflare_pages_domain.this",
+      "type": "cloudflare_pages_domain",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "app.workout.vestgote.com"
+        }
+      }
+    },
+    {
+      "address": "module.app.cloudflare_dns_record.this",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "app.workout.vestgote.com"
+        }
+      }
+    },
+    {
+      "address": "module.landing.cloudflare_pages_project.this",
+      "type": "cloudflare_pages_project",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "workoutlab-landing"
+        }
+      }
+    },
+    {
+      "address": "module.landing.cloudflare_pages_domain.this",
+      "type": "cloudflare_pages_domain",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "workout.vestgote.com"
+        }
+      }
+    },
+    {
+      "address": "module.landing.cloudflare_dns_record.this",
+      "type": "cloudflare_dns_record",
+      "change": {
+        "actions": [
+          "create"
+        ],
+        "after": {
+          "name": "vestgote.com"
+        }
+      }
+    }
+  ]
+}
