@@ -121,3 +121,8 @@ None.
   comments included. Word new comments around that.
 
 ## Build / accept log
+
+- 2026-10-05 build (frontend-dev). Start: clean, branch t/T-0482-today-reread-checkin. `slots.tsx` slot type inline `ComponentType<{ onAnswered?: () => void }>`; `use-today.ts` 4th arg `revision = 0` in effect 1's deps only; `Today.tsx` holds `revision`, `CheckinSlot` passes `onAnswered`.
+- AC→test (`__tests__/checkin-answered.test.tsx`): AC-1 tile 0/20→0/14, same root and C-01 nodes; AC-2 suggestion text equals fresh mount; AC-3a refreshAll once, loadTargets +1; AC-3b pending refresh then resolve, stays 0/14 after 50 ms; AC-4 real slot over stubbed UF-11 index gets function `onAnswered`, call moves tile; AC-5 existing UF-02 suites (148 tests) pass unedited, Preview.tsx untouched.
+- Red proof: before the change all 5 new tests failed. Planted fault (`revision` dropped from effect 1 deps, on a backup copy): all 5 failed; restored with `cp`.
+- Gate: -w typecheck lint test --concurrency=1 green (265 files, 3636 tests); test:repo-checks, format:check, check-all.mjs green; e2e uf-02-today.spec.ts 12/12 (run from apps/web with --config ../../tests/e2e/playwright.config.ts).
