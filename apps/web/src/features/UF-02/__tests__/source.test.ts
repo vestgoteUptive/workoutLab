@@ -1,7 +1,11 @@
-// T-0302a source and shape pins: AC-2 (no coverage/attention arithmetic), AC-5 (the slot is
-// null here, and no UF-11 import), AC-13 (catalogue reads, exports).
+// T-0302a source and shape pins: AC-2 (no coverage/attention arithmetic), AC-5 (the slot, and no
+// UF-11 import outside `slots.tsx`), AC-13 (catalogue reads, exports).
 // T-0302c widens the AC-2 ban to multiplicative attention arithmetic (`load * k < target`), and
 // adds its own AC-5 (the card's min-height) and AC-8 (the card's strings) pins.
+// T-0471 (D-0174 §1) changes two of this file's AC-5 assertions: `todayCheckinSlot` now lazily
+// loads `CheckinCard` from `features/UF-11/index.js`, and the "no UF-11 import" scan skips
+// `slots.tsx`, which gets its own pin (exactly one UF-11 reference, the dynamic import, no static
+// or side-effect import).
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -111,18 +115,32 @@ describe("AC-2 source: no coverageStep or needsAttention computation", () => {
 });
 
 describe("AC-5 slot", () => {
-  it("todayCheckinSlot is null in this ticket", async () => {
+  it("T-0471 AC-5: todayCheckinSlot lazily loads CheckinCard from features/UF-11/index.js", async () => {
     const { todayCheckinSlot } = await import("../slots.js");
-    expect(todayCheckinSlot).toBeNull();
+    expect(todayCheckinSlot).not.toBeNull();
+    // A lazy component is an object (a `LazyExoticComponent`), not a plain function: this also
+    // rules out a static import assigned straight to the export.
+    expect(typeof todayCheckinSlot).toBe("object");
   });
 
-  it("no file in features/UF-02 imports features/UF-11", () => {
+  it("no file in features/UF-02 (other than slots.tsx) imports features/UF-11", () => {
     for (const path of sourceFiles()) {
+      if (relative(FEATURE, path) === "slots.tsx") continue;
       const src = read(path);
       expect(src, relative(FEATURE, path)).not.toMatch(/\bfrom\s+["'][^"']*UF-11/);
       expect(src, relative(FEATURE, path)).not.toMatch(/\bimport\s*\(\s*["'][^"']*UF-11/);
       expect(src, relative(FEATURE, path)).not.toMatch(/\bimport\s+["'][^"']*UF-11/);
     }
+  });
+
+  it("T-0471 AC-5: slots.tsx has exactly one UF-11 reference, the dynamic lazy import", () => {
+    const src = read(join(FEATURE, "slots.tsx"));
+    const refs = [...src.matchAll(/UF-11/g)];
+    expect(refs).toHaveLength(1);
+    expect(src).toMatch(/lazy\(\(\)\s*=>\s*\n?\s*import\(["']\.\.\/UF-11\/index\.js["']\)/);
+    // No static or side-effect import form anywhere in the file.
+    expect(src).not.toMatch(/\bfrom\s+["'][^"']*UF-11/);
+    expect(src).not.toMatch(/^\s*import\s+["'][^"']*UF-11/m);
   });
 });
 

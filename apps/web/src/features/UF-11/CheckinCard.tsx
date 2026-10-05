@@ -202,10 +202,15 @@ function CardReady({
           </li>
         ))}
       </ul>
-      <button type="button" disabled={buttonsDisabled} onClick={onAccept}>
+      <button
+        type="button"
+        className="wl-plan__button wl-plan__button--primary"
+        disabled={buttonsDisabled}
+        onClick={onAccept}
+      >
         {u.accept}
       </button>
-      <button type="button" disabled={buttonsDisabled} onClick={onKeep}>
+      <button type="button" className="wl-plan__button" disabled={buttonsDisabled} onClick={onKeep}>
         {u.keep}
       </button>
       {write.failed ? <p role="alert">{en.uf11.saveFailed}</p> : null}

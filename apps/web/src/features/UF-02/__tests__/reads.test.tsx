@@ -1,12 +1,18 @@
 // T-0302c fold-in from the T-0302a accept: `use-today.ts` gives each cache-read effect run its own
 // cancelled flag (a read for an older `now`/`timeZone` never overwrites a newer one), and clears
 // the 3 s refresh cap timer when the refresh settles and when the screen unmounts.
+//
+// T-0471 (D-0177): the slot is mocked to `null`, as in `today.test.tsx` — this file's own
+// `loadEngineHistory`/`loadProfile` call-count assertions would otherwise also count `CheckinCard`'s
+// own reads of the same (real) profile fixture.
 import { StrictMode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render, waitFor } from "@testing-library/react";
 import type { HistorySet } from "@workoutlab/shared";
 import { F_TZ, L1, PROFILE, history, targets } from "./fixtures.js";
 import { TodayTree, macrotask, tile } from "./helpers.js";
+
+vi.mock("../slots.js", () => ({ todayCheckinSlot: null, todayResumeSlot: null }));
 
 const mocks = vi.hoisted(() => ({
   loadEngineHistory: vi.fn(),

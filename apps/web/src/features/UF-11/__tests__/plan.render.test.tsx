@@ -4,12 +4,19 @@
 // `refreshAll`/`refreshRoutines` are resolved stubs here (per the ticket's test-surface note): the
 // real ones `select` from `sessions`, `routines` and more, which would contradict AC-B6's
 // "`from` never called" and AC-B11's exact call list. AC-B6's cache-first case uses the real one.
+//
+// T-0471 mounts `CheckinCard` above `PlanBody`; fixture F always has a proposal, so the card's own
+// `insertIfFirstShown` effect fires here too. `lib/auth/client.js` is mocked to the same spy
+// `checkin-card.test.tsx` uses: with no mock, `supabase.from` is the real (test-mode-configured)
+// client, whose background session auto-refresh against `localStorage`'s `sb-abc-auth-token` key
+// races this file's own `signIn`/`signOut` between tests (found running this file red on main).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, screen, waitFor } from "@testing-library/react";
 import { AREAS } from "@workoutlab/shared";
 import { en } from "../../../lib/i18n/en.js";
 import { K1, K2, K3, K4, KEPT_13_SEP, NOW, TZ, profileF, targetsF } from "./fixtures.js";
 import {
+  createFromSpy,
   freshDb,
   listRows,
   renderPlan,
@@ -28,10 +35,17 @@ vi.mock("../../../lib/offline/index.js", async (importOriginal) => {
   };
 });
 
+const checkinSpy = createFromSpy();
+vi.mock("../../../lib/auth/client.js", () => ({
+  supabase: { from: (table: string) => checkinSpy.from(table) },
+  isSupabaseConfigured: () => true,
+}));
+
 const u = en.uf11;
 
 beforeEach(() => {
   signIn();
+  checkinSpy.reset();
   // Fixture F's tz. Every "local date" AC turns on this, so it is set for every test.
   useTimeZone(TZ);
   vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);

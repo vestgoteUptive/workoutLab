@@ -1,6 +1,13 @@
 // T-0302a UF-02.1 with the `lib/offline` loaders mocked (AC-1, AC-2, AC-4, AC-6, AC-7, AC-8,
 // AC-9, AC-10, AC-12 first paint). `balance` and `BodyMap` are spies that call the real ones,
 // so "the real engine" holds unless a test stubs a `BalanceResult` on purpose.
+//
+// T-0471 (D-0177): `todayCheckinSlot` is now a real lazy `CheckinCard` (D-0174 §1). This file's
+// own profile/history fixtures, read by the real `evaluatePlanCheckin` the card runs, produce a
+// genuine step-down proposal, which would otherwise render the card where several tests here
+// expect the attention line, C-01 or a steady `loadProfile` call count. None of that is this
+// file's concern (it belongs to `slot.test.tsx` and UF-11's own tests), so the slot is mocked
+// back to `null` here, the same shape `slot.test.tsx`'s own "AC-5 null" cases use.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { BalanceResult } from "@workoutlab/shared";
@@ -21,6 +28,8 @@ import {
   targets,
 } from "./fixtures.js";
 import { TodayTree, aboveStart, location, macrotask, part, renderToday, tile } from "./helpers.js";
+
+vi.mock("../slots.js", () => ({ todayCheckinSlot: null, todayResumeSlot: null }));
 
 const mocks = vi.hoisted(() => ({
   loadEngineHistory: vi.fn(),

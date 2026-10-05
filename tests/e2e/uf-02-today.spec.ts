@@ -26,6 +26,7 @@ import {
   exercises as setupExercises,
   profile as setupProfile,
 } from "./fixtures/uf-04-library-data.js";
+import { UF11_FIXTURES } from "./fixtures/uf-11-plan.js";
 
 const AREAS = [
   "chest",
@@ -469,5 +470,40 @@ test.describe("T-0395 AC9 resume on a cold start", () => {
     await link.click();
     await expect(page).toHaveURL(sessionUrl);
     await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible({ timeout: 10_000 });
+  });
+});
+
+// T-0471 follow-up (QA fault injection): every AC-4 case in `uf-11-plan.spec.ts` that shows the
+// card does `goto("/")` (signed out, no session yet, nothing loads) → `injectSession` → exactly
+// ONE authenticated `goto`. AC-4(b)'s single authenticated visit to `/plan` is what caught Plan's
+// own cold-cache race (build log); every other AC-4 case (and every Today case elsewhere in this
+// file) does a second authenticated `goto("/")` after the first one lands, which warms the cache
+// before the assertions run and would hide this exact race. This test keeps the one
+// unauthenticated `goto` (needed only so `injectSession`'s `page.evaluate` has a `window` to write
+// `localStorage` into — the app behind it renders signed-out and reads no data) and then makes
+// exactly one authenticated navigation: on a genuinely cold cache, `CheckinCard`'s own single,
+// un-refreshed read (`use-checkin-data.ts`) could otherwise resolve before `useToday()`'s own
+// cache-warming `refreshAll` commits its fresh read, mounting the card over stale/empty data while
+// the rest of Today is still in its own loading/skeletal state. `Today.tsx`'s `CheckinSlot` now
+// gates on `state.status !== "loading"`, the `useToday()` analogue of
+// `features/UF-11/index.tsx`'s `state.phase !== "loading"` gate on `usePlanData`.
+test.describe("T-0471 AC-2 follow-up: CheckinCard never mounts ahead of Today's own data", () => {
+  test("a single authenticated, cold-cache visit to / never shows the card before Today's own content is ready", async ({
+    page,
+  }) => {
+    await mockSupabaseData(page, UF11_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+
+    // The one and only authenticated navigation, against a genuinely cold cache.
+    await page.goto("/");
+
+    await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+    // Today's own content reaches its ready state (C-01, in `data-component="C-01"`)...
+    await expect(page.locator('[data-component="C-01"]')).toBeVisible();
+    // ...and only then, if at all, does the card ever appear — never ahead of it. By the time
+    // Today is ready, `UF11_FIXTURES`'s proposal (step down from 3-4, D-0174 §3) is live in the
+    // cache, so the card does show; the ordering, not just its eventual presence, is the point.
+    await expect(page.locator('[data-part="checkin-card"]')).toBeVisible();
   });
 });

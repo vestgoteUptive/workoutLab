@@ -3,11 +3,23 @@
 // Today state. The `lib/offline` loaders are mocked as in `today.test.tsx`; `offlineDb` and
 // `localStorage` stay real, so a session seeded with the real `upsertSession` is read by the
 // real `findResumable` (T-0395) the slot's `ResumeCard` calls.
+//
+// T-0471 (D-0177): only `todayCheckinSlot` is mocked to `null`; `todayResumeSlot` keeps its real
+// value, since this file's own subject is the real `ResumeCard` through that slot. This file's
+// own `PROFILE` fixture, read by the real `evaluatePlanCheckin` the real `CheckinCard` now runs
+// on mount, yields a genuine proposal, which would otherwise render the check-in card where every
+// test here expects (or counts past) the resume card, C-01 or the no-plan line (a fourth file
+// needing this fix, per D-0177's own "revisit when").
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor } from "@testing-library/react";
 import type { SessionPlan } from "@workoutlab/shared";
 import { F_TZ, PROFILE, targets } from "./fixtures.js";
 import { TEST_USER, freshDb, part, renderToday, signIn, signOut } from "./helpers.js";
+
+vi.mock("../slots.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../slots.js")>();
+  return { ...actual, todayCheckinSlot: null };
+});
 
 const mocks = vi.hoisted(() => ({
   loadEngineHistory: vi.fn(),
