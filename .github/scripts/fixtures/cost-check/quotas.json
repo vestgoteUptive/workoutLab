@@ -1,0 +1,6 @@
+{
+  "metrics": {
+    "db_size_mb": { "quota": 500, "source": "https://example.test/q", "checked": "2026-10-05", "where": "dashboard" },
+    "resend_daily_sends": { "quota": 100, "manual": true, "source": "https://example.test/r", "checked": "2026-10-05", "where": "Resend dashboard > Emails" }
+  }
+}
