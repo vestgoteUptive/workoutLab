@@ -155,3 +155,4 @@ Built 2026-10-05 from clean `t/T-0343-uf10-midnight-rollover` at d3b749a (status
 - Planted fault 1 (visibilitychange listener dropped, restored from backup via `cp`): AC-3 fails.
 - Planted fault 2 (`now` set on every tick): AC-4 fails.
 - Green with the fix: 7/7.
+- Gate: `-w typecheck lint test --concurrency=1` green (19/19 tasks); `-w test:repo-checks` 167 pass/0 fail; `-w format:check` clean; `check-all.mjs` rc 0; `playwright test --config tests/e2e/playwright.config.ts uf-10-balance` 10/10 (a first run without `--config` failed on a missing baseURL, not a code fault).
