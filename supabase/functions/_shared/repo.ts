@@ -212,12 +212,13 @@ export async function writeSessionFinish(
  * the query level: `isHardSet` would drop them anyway (rule 2), but the summary's `hardSets` and
  * `exerciseCount` only need live rows, so filtering here keeps the payload smaller.
  *
- * `client_id` must be unique across the rows the query can see, or the `.range()` walk could skip
- * or repeat rows. It is unique per user only: `(user_id, client_id)` is the unique key. There is no
- * `user_id` filter here; the caller's-JWT client and the `session_sets_select` RLS policy scope the
- * rows to the caller. The composite FK `session_sets_session_fk` (session_id, user_id) is a second
- * guard: all sets of one `session_id` share one `user_id`. A service-role (RLS-bypassing) client
- * must add `.eq("user_id", ctx.userId)`, as `loadHistoryWindow` does. */
+ * `client_id` is unique per user only: `(user_id, client_id)` is the unique key. The query filters
+ * on `user_id` itself (T-0497), so that per-user uniqueness makes `client_id` a unique order key
+ * for the `.range()` walk regardless of the client (JWT or service-role) — the filter doesn't rely
+ * on anything else to be correct. The caller's-JWT client and the `session_sets_select` RLS policy
+ * are a second guard, scoping the rows to the caller independently. The composite FK
+ * `session_sets_session_fk` (session_id, user_id) is a third: all sets of one `session_id` share
+ * one `user_id`. */
 export async function loadSessionSets(ctx: AuthContext, sessionId: string): Promise<HistorySet[]> {
   const rows = await pageAll(
     ctx.supabase
@@ -225,6 +226,7 @@ export async function loadSessionSets(ctx: AuthContext, sessionId: string): Prom
       .select(
         "client_id, session_id, exercise_id, is_warmup, completed_at, edited_at, deleted_at, reps, weight_kg, duration_s",
       )
+      .eq("user_id", ctx.userId)
       .eq("session_id", sessionId)
       .is("deleted_at", null)
       .order("client_id", { ascending: true }),
