@@ -1,0 +1,45 @@
+{
+  "_note": "Free-plan quotas the cost guard compares against (T-0405, D-0012). quota null = reported only. manual = no read-only API exposes it.",
+  "metrics": {
+    "supabase_api_requests": {
+      "quota": null,
+      "source": "https://supabase.com/pricing",
+      "checked": "2026-10-05",
+      "where": "Management API usage.api-requests-count (no request cap on Free)"
+    },
+    "supabase_db_size_mb": {
+      "quota": 500,
+      "manual": true,
+      "source": "https://supabase.com/pricing",
+      "checked": "2026-10-05",
+      "where": "Supabase dashboard > Reports > Database (no read-only GET for size)"
+    },
+    "supabase_egress_gb": {
+      "quota": 5,
+      "manual": true,
+      "source": "https://supabase.com/pricing",
+      "checked": "2026-10-05",
+      "where": "Supabase dashboard > Organization > Usage"
+    },
+    "cloudflare_pages_builds_month": {
+      "quota": 500,
+      "source": "https://developers.cloudflare.com/pages/platform/limits/",
+      "checked": "2026-10-05",
+      "where": "Cloudflare dashboard > Workers & Pages"
+    },
+    "resend_daily_sends": {
+      "quota": 100,
+      "manual": true,
+      "source": "https://resend.com/pricing",
+      "checked": "2026-10-05",
+      "where": "Resend dashboard > Emails"
+    },
+    "github_actions_minutes": {
+      "quota": 2000,
+      "manual": true,
+      "source": "https://docs.github.com/en/billing/managing-billing-for-your-products/managing-billing-for-github-actions/about-billing-for-github-actions",
+      "checked": "2026-10-05",
+      "where": "GitHub > Settings > Billing > Usage"
+    }
+  }
+}
