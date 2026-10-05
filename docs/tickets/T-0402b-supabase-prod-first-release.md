@@ -164,3 +164,10 @@ recurring cost: prod stays on Free (Edge Functions and the database are within t
 - **Unblocks:** T-0402c.
 
 ## Build / accept log
+
+### Run A (builder, 2026-10-05)
+- Wrote `infra/scripts/supabase-prod-release.sh` (plan default, `apply` needs `CONFIRM_PROD_RELEASE=<ref>`, CLI pinned 2.118.0, password and host masked via sed), `infra/deploy/supabase-release.md`, `.github/scripts/supabase-prod-release.test.mjs`.
+- AC-1..AC-4 [static]: node:test titles `T-0402b AC-1..4`, all pass. AC-2 planted fault (copy of script with the confirm check removed) is detected: the copy makes CLI calls where the real script makes zero.
+- Plan mode NOT run: `PROD_DB_URL` (DB password) isn't available to the agent; the human supplies it. No write call, no prod call of any kind was made. AC-5 (plan output) is the human's, to be pasted here.
+- AC-6, AC-7: pending the human's apply (H-19) and a read-only verify run. No cost change (Free plan), `docs/infra-costs.md` unchanged.
+- Gate: `-w test:repo-checks` 198/198, `-w format:check`, `check-all.mjs` green. Nothing under apps/, packages/, supabase/ touched.
