@@ -549,3 +549,30 @@ Plan: 2 to import, 0 to add, 1 to change, 0 to destroy.
 ### Triage (2026-10-05) - TR-0046 resolved by D-0185
 - Re-scoped: `supabase_project` only, and `supabase_settings` is out of Terraform. This is structural: every settings section is a single JSON attribute that import fills in full. ACs are updated above (AC-2, AC-3, AC-5 `1 to import`, AC-6).
 - Next run A: delete the stale `infra/terraform/plans/supabase-prod.tfplan` first, drop the settings resource, its import and the auth/google variables, then redo steps 1-6.
+
+### Run A, second attempt (2026-10-05, HEAD 4f2a150, D-0185 scope) - plan ready for human review
+- Removed `supabase_settings`, its import block, and all auth variables (module + root). Deleted the stale saved plan first. Config is now `supabase_project` only (prevent_destroy, ignore_changes database_password). Description text of the placeholder variable reworded so AC-2's no-"secret"-literal check stays strict.
+- Added check-infra-plan-supabase.mjs, test, six fixtures under fixtures/infra-plan/, supabase-prod/README.md.
+- `terraform init`, `fmt -check -recursive`, `validate`: green. Env from .env.local, TF_VAR_supabase_org_id only.
+- **AC-5: `Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.`** Scope check on the plan JSON exits 0 (single resource, action no-op, importing set).
+- **AC-4:** grep -cF client secret = 0, access token = 0 in `terraform show -json`. database_password is `null` and marked sensitive; the only "not-managed-by-terraform" hits are the variable's own default.
+- AC-1/AC-2/AC-3 tests: `node --test .github/scripts/check-infra-plan-supabase.test.mjs` 11/11 pass. Planted faults (on temp copies, tests red as expected): instance_size added to module copy -> AC-2 red; supabase_settings resource added -> AC-2 red.
+- Nothing under apps/ or packages/ changed, so the -w typecheck/lint/test gate and e2e are not needed (D-0178).
+- No apply, no `terraform import`, no `terraform state`, no write call to the Management API (only terraform's read-only refresh/import-read during plan). Plan saved (gitignored) at infra/terraform/plans/supabase-prod.tfplan; run B applies that file only.
+
+Full `terraform show` text:
+```
+
+Terraform will perform the following actions:
+
+  # module.prod.supabase_project.this will be imported
+    resource "supabase_project" "this" {
+        id                      = "csgjsdwuxqtuqpuazzpz"
+        legacy_api_keys_enabled = true
+        name                    = "workoutLab"
+        organization_id         = "vrqyhqpxhpqahsxlmxuj"
+        region                  = "eu-west-1"
+    }
+
+Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
+```
