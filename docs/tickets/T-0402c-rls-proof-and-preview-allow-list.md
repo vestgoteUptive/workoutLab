@@ -232,3 +232,9 @@ D-0185 §4, with the expected file updated in the same ticket. No cost.
 - AC-5 preview (no `--apply`, GET only): before `uri_allow_list = http://localhost:3000/**,https://app.workout.vestgote.com/**,http://localhost:5173/**`; after `… ,http://localhost:5173/**,https://*.workoutlab-web.pages.dev/**`; `others_sha256=da44ef3ec521e183b28b1639e865a83f3e183eca28b69420b6472be3717de69b` (stable over two GETs).
 - AC-6 before apply (updated expected file): drift check exit 1, exactly `uri_allow_list: missing [https://*.workoutlab-web.pages.dev/**]`.
 - Waiting on the human: the PATCH (`CONFIRM_PROD_AUTH=csgjsdwuxqtuqpuazzpz node infra/scripts/auth-patch.mjs --add-to-list 'uri_allow_list=https://*.workoutlab-web.pages.dev/**' --apply`), then verify run: AC-5 after-view, AC-6 exit 0, AC-7.
+
+### Run B (human-approved, 2026-10-05) - done
+- Preview (human, read-only): `uri_allow_list` before = the 3 D-0011 entries; after = the same + `https://*.workoutlab-web.pages.dev/**`; `others_sha256=da44ef3e…de69b` (equal to run A).
+- Apply (human): `CONFIRM_PROD_AUTH=… auth-patch.mjs … --apply` — keys-only PATCH of `uri_allow_list` (D-0185 §4).
+- Orchestrator verification (read-only): `auth-drift-check.mjs` against the updated `infra/auth/expected-auth.json` → matches (6 keys), exit 0; re-running the preview → "no change: the live config already holds every requested value", `others_sha256` unchanged (no other auth setting moved).
+- Status: done. Previews at `*.workoutlab-web.pages.dev` can now complete sign-in against prod; RLS was proven first (run A).
