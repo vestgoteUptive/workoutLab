@@ -1,0 +1,18 @@
+{
+  "format_version": "1.2",
+  "resource_changes": [
+    {
+      "address": "module.prod.supabase_project.this",
+      "type": "supabase_project",
+      "mode": "managed",
+      "change": {
+        "actions": [
+          "update"
+        ],
+        "importing": {
+          "id": "csgjsdwuxqtuqpuazzpz"
+        }
+      }
+    }
+  ]
+}

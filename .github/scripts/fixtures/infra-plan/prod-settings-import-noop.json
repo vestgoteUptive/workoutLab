@@ -1,0 +1,31 @@
+{
+  "format_version": "1.2",
+  "resource_changes": [
+    {
+      "address": "module.prod.supabase_project.this",
+      "type": "supabase_project",
+      "mode": "managed",
+      "change": {
+        "actions": [
+          "no-op"
+        ],
+        "importing": {
+          "id": "csgjsdwuxqtuqpuazzpz"
+        }
+      }
+    },
+    {
+      "address": "module.prod.supabase_settings.this",
+      "type": "supabase_settings",
+      "mode": "managed",
+      "change": {
+        "actions": [
+          "no-op"
+        ],
+        "importing": {
+          "id": "csgjsdwuxqtuqpuazzpz"
+        }
+      }
+    }
+  ]
+}
