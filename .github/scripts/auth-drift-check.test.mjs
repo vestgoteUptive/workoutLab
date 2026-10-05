@@ -68,9 +68,9 @@ test("T-0500 AC-3 allow-list order does not count", async () => {
 });
 
 test("T-0500 AC-4 drift and errors", async () => {
-  const site = await exec({ ...full, site_url: "https://app.workout.vestgote.com" });
+  const site = await exec({ ...full, site_url: "http://localhost:3000" });
   assert.equal(site.code, 1);
-  assert.ok(site.text.includes("site_url: expected http://localhost:3000, live https://app.workout.vestgote.com"));
+  assert.ok(site.text.includes("site_url: expected https://app.workout.vestgote.com, live http://localhost:3000"));
   const id = await exec(full, { e: { ...env, GOOGLE_OAUTH_CLIENT_ID: "other" } });
   assert.equal(id.code, 1);
   assert.ok(id.text.includes("external_google_client_id_matches"));
