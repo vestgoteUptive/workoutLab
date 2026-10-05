@@ -124,7 +124,12 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0404a | Resend DNS under `*.workout.vestgote.com` (send. SPF+MX, resend._domainkey DKIM, _dmarc p=none) via Terraform in the cloudflare root; plan-then-stop, human apply; zone baseline via T-0501 (D-0186 §3) | infra | T-0401, T-0501 | doing | wl-build-infra |
 | T-0404b | Resend as Supabase SMTP + branded magic-link/confirm-signup templates (link + 6-digit code) via human-run keys-only PATCH, expected file extended (UF-01.5; D-0185 §4, D-0186 §3) | infra | T-0404a, T-0402c, T-0500 | todo | wl-build-infra |
 | T-0403 | Release check: security review, e2e happy path, go/no-go | qa | T-0301…T-0309, T-0402a, T-0402b, T-0402c, T-0404b | todo (needs H-06) | wl-release |
-| T-0406 | Privacy requirements NFR-PRIV-* in docs/security (EU region, minimisation, export, deletion, notice, no PII in logs) | security | T-0001 | doing | security-reviewer (sub-agent) |
+| T-0502 | Privacy notice: add the GDPR Art. 13 items (controller, legal basis, processors Supabase/Resend/Cloudflare/Google, retention of backups and platform logs, user rights and the right to complain, the Plan -> Account path); human re-approves the copy (T-0406 P6-a; before H-06) | design | T-0406 | todo | wl-design |
+| T-0503 | Account deletion also removes the user's auth.audit_log_entries (email + IP, no FK, survive the cascade), or disable auth audit logging; Deno integration assertion (T-0406 P5-a; before H-06) | backend | T-0406 | todo | wl-build-backend |
+| T-0504 | Google sign-in stores name and avatar in auth.users/auth.identities: strip them (pgTAP) or disclose in the notice (T-0406 P2-a; before H-06) | data | T-0406 | todo | wl-build-data |
+| T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | todo | wl-build-backend |
+| T-0506 | Record eu-west-1 as the prod region (decision + NFR-PRIV-1 wording; the spec names eu-north-1/eu-central-1) (T-0406 P1-a) | product | T-0406 | todo | wl-spec |
+| T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | todo | wl-build-infra |
 
 ## CI fixes (any phase)
 Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `docs/ci/CI-T-09NN-*.md`. Built with the owning lane's flow; merged only after a green draft-PR run.
