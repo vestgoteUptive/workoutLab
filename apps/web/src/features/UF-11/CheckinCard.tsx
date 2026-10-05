@@ -25,6 +25,9 @@ export interface CheckinCardProps {
   now?: Clock;
   timeZone?: string;
   locale?: string;
+  /** T-0481: called once after a successful Accept/Keep, once that write's `refreshAll` has
+   *  settled. Never on a failed write, a card hidden by another device, or offline. */
+  onAnswered?: () => void;
 }
 
 type WriteState = { pending: boolean; failed: boolean };
@@ -35,12 +38,14 @@ function CardBody({
   locale,
   timeZone,
   now,
+  onAnswered,
 }: {
   data: CheckinCardData;
   online: boolean;
   locale: string;
   timeZone: string;
   now: Date;
+  onAnswered: (() => void) | undefined;
 }) {
   const { profile, evaluation } = data;
   const proposal = evaluation.proposal;
@@ -63,6 +68,7 @@ function CardBody({
       locale={locale}
       timeZone={timeZone}
       now={now}
+      onAnswered={onAnswered}
     />
   );
 }
@@ -79,6 +85,7 @@ function CardReady({
   locale,
   timeZone,
   now,
+  onAnswered,
 }: {
   profile: EngineProfile;
   evaluation: CheckinEvaluation;
@@ -91,6 +98,7 @@ function CardReady({
   locale: string;
   timeZone: string;
   now: Date;
+  onAnswered: (() => void) | undefined;
 }) {
   // Hidden only by a second device's already-answered row (D-0172 §2): Accept/Keep hide this
   // same render via their own navigation away (T-0471 unmounts on hide), so this flag only ever
@@ -131,6 +139,7 @@ function CardReady({
       return;
     }
     setHiddenElsewhere(true);
+    onAnswered?.();
   }
 
   function onAccept() {
@@ -223,6 +232,7 @@ export function CheckinCard({
   now = systemClock,
   timeZone,
   locale = "en-GB",
+  onAnswered,
 }: CheckinCardProps = {}) {
   const tz = timeZone ?? resolveTimeZone();
   const state = useCheckinData(now, tz);
@@ -240,6 +250,7 @@ export function CheckinCard({
       locale={locale}
       timeZone={tz}
       now={pinnedNow.current}
+      onAnswered={onAnswered}
     />
   );
 }
