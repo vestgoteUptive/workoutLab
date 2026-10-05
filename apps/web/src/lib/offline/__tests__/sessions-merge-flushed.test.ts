@@ -12,9 +12,8 @@ import { createSelectSpy } from "./select-spy.js";
 const spy = createSelectSpy();
 const upsert = vi.fn(async () => ({ error: null, status: 201 }));
 // The select spy plus an `upsert` stub, so the real `flush` can write the `pending: false` entry.
-const selectFrom = spy.from as unknown as (table: string) => object;
 vi.mock("../../auth/client.js", () => ({
-  supabase: { from: (table: string) => ({ ...selectFrom(table), upsert }) },
+  supabase: { from: (table: string) => ({ ...spy.from(table), upsert }) },
 }));
 
 const { refreshSessions } = await import("../history.js");

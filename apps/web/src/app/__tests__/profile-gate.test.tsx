@@ -76,12 +76,7 @@ const { selectSpy, onAuthStateChange, getSession, signOut, authStateCallbacks } 
 vi.mock("../../lib/auth/client.js", () => ({
   supabase: {
     auth: { onAuthStateChange, getSession, signOut },
-    // `SelectSpy.from` is typed `ReturnType<typeof vi.fn>`, which `tsc` widens to
-    // `Mock<Procedure | Constructable>` and therefore does not treat as callable. The cast is
-    // on the *call*, so the holder keeps the real `SelectSpy` type and `setRows`/`countFor`
-    // stay checked. (Tightening `select-spy.ts` itself belongs to T-0319's file, not this
-    // ticket — see the follow-up in the result.)
-    from: (table: string) => (selectSpy.current!.from as (t: string) => unknown)(table),
+    from: (table: string) => selectSpy.current!.from(table),
   },
 }));
 selectSpy.current = createSelectSpy();
