@@ -100,7 +100,8 @@ AC-2: axeViolations() returns [] when Try again fails again"; AC-3 → "T-0494 A
 calls match the expected lines; console.warn unused"; AC-5 → unedited run of the file's four
 T-0478 tests + `list-view.swap.test.tsx` (20/20 passed together).
 
-**AC-4 fault proof, and a finding worth recording (D-0181).** Backed up `ListView.tsx`
+**AC-4 fault proof, and a finding (no decision filed — `.squad/decisions/**` is the `process`
+lane's path, not `web-feature:UF-03`'s; see follow-up below instead).** Backed up `ListView.tsx`
 (`cp`), added `aria-hidden="true"` to `SwapLoadBoundary`'s `role="status"` div, reran AC-1/AC-2:
 red, as the ticket asks — but via AC-1's own `getByRole("status")` / `getByRole("button", …)`
 assertions (which Testing Library's role queries refuse to find once `aria-hidden` hides the
@@ -110,11 +111,10 @@ never in `results.violations`, in jsdom — axe-core's `aria-hidden-focus` rule 
 `isModalOpen()`, which needs real layout (`elementsFromPoint`) jsdom doesn't implement, so the
 check returns "can't tell" rather than "fails" no matter the markup (tried hidden ancestor div,
 hidden button itself, and a concurrently-rendered real `[aria-modal=true]` dialog — all stayed
-`incomplete`). Filed as D-0181 (revisit): no change to the shared `axeViolations()` helper (used
-by several other passing tests; broadening it to fail on `incomplete` is a different lane's
-helper and a bigger blast radius than this ticket). Restored `ListView.tsx` with `cp`; AC-1 green
-again (confirmed `git diff --stat` on `ListView.tsx` is empty post-restore). Both runs recorded
-below.
+`incomplete`). No change made to the shared `axeViolations()` helper (used by several other
+passing tests; broadening it to fail on `incomplete` is a different lane's helper and a bigger
+blast radius than this ticket). Restored `ListView.tsx` with `cp`; AC-1 green again (confirmed
+`git diff --stat` on `ListView.tsx` is empty post-restore). Both runs recorded below.
 
 Red run (fault planted): `list-view.swap-retry.test.tsx -t "T-0494"` → 2 failed (AC-1, AC-2) | 1
 passed (AC-3, which doesn't touch the hidden buttons) | 4 skipped.
