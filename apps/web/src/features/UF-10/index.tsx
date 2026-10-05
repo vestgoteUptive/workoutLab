@@ -21,6 +21,7 @@ import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js"
 import { en } from "../../lib/i18n/en.js";
 import { formatSetCount } from "../../lib/format/number.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
+import { localDate } from "../../lib/format/intl.js";
 import { loadLibrary } from "../../lib/offline/history.js";
 import {
   barWidth,
@@ -53,12 +54,35 @@ function useResult(props: BalanceScreenProps): {
   lastSyncedAt: string | null;
   timeZone: string;
 } {
-  // Fixed for the life of the mount. A fresh `new Date()` per render would change the hook's
-  // `nowIso` dependency on every render and re-run the load effect forever (a render loop
-  // that froze the page in the e2e). The window rolls on the next mount, as AC-A6 pins.
-  const [mountedAt] = useState(() => new Date());
+  // Held in state, not read per render: a fresh `new Date()` per render would change the hook's
+  // `nowIso` dependency on every render and re-run the load effect forever (a render loop that
+  // froze the page in the e2e). It only moves when the local calendar day changes (T-0343).
+  const [mountedAt, setMountedAt] = useState(() => new Date());
+  const seam = props.now !== undefined;
   const now = props.now ?? mountedAt;
   const timeZone = props.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // T-0343: roll the 14-day window at local midnight on a mounted screen. Not for the `now` seam.
+  useEffect(() => {
+    if (seam) return;
+    const check = () => {
+      setMountedAt((prev) => {
+        const current = new Date();
+        return localDate(current.toISOString(), timeZone) ===
+          localDate(prev.toISOString(), timeZone)
+          ? prev
+          : current;
+      });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    const id = setInterval(check, 60_000);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [seam, timeZone]);
   // D-0113 §1: the mount refresh is gated on the auth status, read here and passed down.
   const { status } = useAuth();
   // `exactOptionalPropertyTypes`: spread the seams in only when they were actually supplied,

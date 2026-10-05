@@ -147,3 +147,11 @@ None. The engine is unchanged; this only changes when the screen calls it.
   (web-shell): no shared files.
 
 ## Build / accept log
+
+Built 2026-10-05 from clean `t/T-0343-uf10-midnight-rollover` at d3b749a (status clean).
+- Change: `features/UF-10/index.tsx` `useResult` holds `now` in state; with no `now` prop a 60 s `setInterval` and a visible `visibilitychange` call a check that moves `now` only when `localDate(…, timeZone)` differs. Cleanup clears both. `balance.css` header comment fixed (fold-in). `use-balance.ts` untouched.
+- Tests: `__tests__/midnight-rollover.test.tsx`, one `T-0343 AC-n` test per AC (AC-1..AC-7, same numbering).
+- Red on main (index.tsx stashed): AC-1, AC-2, AC-3, AC-5 fail (4 failed, 3 passed; AC-4/6/7 pass trivially there as no-op ACs).
+- Planted fault 1 (visibilitychange listener dropped, restored from backup via `cp`): AC-3 fails.
+- Planted fault 2 (`now` set on every tick): AC-4 fails.
+- Green with the fix: 7/7.
