@@ -208,3 +208,10 @@ change it. No recurring cost: the Resend free tier (D-0012).
   red. F4 template view verbatim: AC-4 red. F5 `smtp_pass_set` always true: AC-3 red. F6 main's
   drift-check (unfixed): 8 red.
 - **Status:** blocked on the human's apply (D-0185 §4); then AC-5 live + AC-6.
+
+### Run B (human-approved, 2026-10-05) - done
+- Preview (human, read-only): 11 keys change exactly as reviewed (SMTP host/port/user/pass `<unset>`→`<set>`, admin email `no-reply@workout.vestgote.com`, sender `workoutLab`, `rate_limit_email_sent` 2→10, both subjects, both template bodies len 2252 / 2290 with the file hashes); `others_sha256=07598261…3c02`.
+- Apply (human): PATCH sent. The script's immediate read-back still showed the old values and reported 11 mismatches — **eventual consistency**: a read-only preview seconds later showed all 11 at the new values, template hashes equal to the committed files.
+- Orchestrator verification (read-only): `auth-drift-check.mjs` → matches expected (17 keys), exit 0. `others_sha256` moved to `e25e1586…b825`; a diff of the live config against T-0400's full snapshot (152 keys) shows **0** non-intended changes, and `smtp_max_frequency` was already 60. So the moved key is one outside both the snapshot and the drift set (server-managed or empty this morning); not identifiable without a pre-apply full snapshot. Low risk: every security-relevant key is verified. Follow-up T-0509 (snapshot before apply + delayed read-back retry).
+- AC-6 (human mail test against the prod app) waits until a prod/preview deploy exists (T-0402a live ACs / T-0402d).
+- Status: done (AC-6 pending deploy).
