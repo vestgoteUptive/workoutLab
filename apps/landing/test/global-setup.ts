@@ -26,6 +26,7 @@
 // over the whole package: compiled CSS resolves the token vars down to real hex
 // values, so build output scanned as if it were source would report every
 // palette entry as a raw-colour violation.
+import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -55,6 +56,22 @@ async function buildInto(outDir: string, publicAppUrl: string | undefined): Prom
 }
 
 export default async function setup({ provide }: TestProject): Promise<() => void> {
+  // T-0498: `src/layouts/Layout.astro` imports `@workoutlab/design-tokens/tokens.css`,
+  // exported from the gitignored, generated `dist/tokens.css`. `turbo run test` builds that
+  // first (`dependsOn: ["^build"]`), but a fresh worktree's `pnpm --filter @workoutlab/landing
+  // test`, or any direct `npx vitest run` in `apps/landing`, does not — so the Astro builds
+  // below would fail on an unresolved import. Ensuring the CSS here, before either build
+  // below runs, covers both entry points (unlike a `pretest` script, which a direct vitest
+  // invocation skips).
+  const ensureScript = join(landingRoot, "..", "web", "ensure-tokens-css.mjs");
+  const ensureResult = spawnSync(process.execPath, [ensureScript], { stdio: "inherit" });
+  if (ensureResult.status !== 0) {
+    throw new Error(
+      `@workoutlab/design-tokens: ensure-tokens-css failed (exit ${ensureResult.status}); ` +
+        "run `node apps/web/ensure-tokens-css.mjs` and fix the build before re-running tests.",
+    );
+  }
+
   // Held under `dist/` so the dirs are gitignored and invisible to the colour
   // guard, but in a `.vitest-` subdir of their own so a concurrent `astro build`
   // writing the real `dist/` never collides with them.

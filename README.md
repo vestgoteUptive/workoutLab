@@ -49,7 +49,7 @@ signed out, and the console carries one warning naming both variables (T-0902). 
 
 ## Running the web tests
 
-`pnpm --filter @workoutlab/web test` builds `packages/design-tokens/dist/tokens.css` when it is missing or stale, through the `pretest` hook. A direct vitest call (for example `npx vitest run <files>` in `apps/web`) skips `pretest`, so run `node apps/web/ensure-tokens-css.mjs` from the repo root first (it does nothing when the CSS is up to date).
+`pnpm --filter @workoutlab/web test` builds `packages/design-tokens/dist/tokens.css` when it is missing or stale, through the `pretest` hook. A direct vitest call (for example `npx vitest run <files>` in `apps/web`) skips `pretest`, so run `node apps/web/ensure-tokens-css.mjs` from the repo root first (it does nothing when the CSS is up to date). `apps/landing`'s tests build that same CSS themselves, in Vitest's global setup (`apps/landing/test/global-setup.ts`), so both `pnpm --filter @workoutlab/landing test` and a direct `npx vitest run` in `apps/landing` cover it with no extra step.
 
 ## Getting started with Claude Code
 
