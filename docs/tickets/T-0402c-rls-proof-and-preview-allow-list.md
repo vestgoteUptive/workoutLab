@@ -216,25 +216,4 @@ D-0185 §4, with the expected file updated in the same ticket. No cost.
 - **Unblocks:** T-0402d, and T-0404b, which reuses `auth-patch.mjs`.
 
 ## Build / accept log
-
-### Run A — build (devops, 2026-10-05)
-- Start: `git status` clean, HEAD `3cca5a8` on `t/T-0402c-rls-proof-preview-allow-list`. Local Supabase via podman (`DOCKER_HOST=unix:///run/user/1000/podman/podman.sock`; `supabase/snippets/` created, untracked). No `psql` on the machine: `rls-fingerprint.sh` falls back to `psql` inside the local `supabase/postgres:17.11.0.002` image (podman/docker, `--network host`, URL passed by env, never argv).
-- Changed: `015_rls_every_table.test.sql` (12 catalog asserts), `rls-coverage.test.mjs` + fixtures, `rls-fingerprint.{sql,sh}`, `auth-patch.mjs` + test + fixture, `expected-auth.json` (+ preview entry), `infra/deploy/README.md` (preview risk). In-lane knock-on: T-0500's `fixtures/auth-drift/full.json` gains the preview entry and its AC-3 test's "missing"/"extra" literals are re-pointed (same intent: "extra" now uses `https://other.example.test/**`).
-- Library tables: **both** hold today — `anon`/`authenticated` have no INSERT/UPDATE/DELETE/TRUNCATE privilege, and the only policies are SELECT. 015 asserts both.
-- Dynamic `.from(table)` in `apps/web/src/lib/account/export.ts`: the coverage test resolves an identifier only when it is typed `T` with `type T = (typeof C)[number]` and `C` is an `as const` string-literal array in the same file (`EXPORT_TABLES`, the 7 owned tables). Anything else fails as dynamic. Default chosen to keep `apps/` untouched; needs a decision record (orchestrator).
-- AC-1 → 015 (12/12 ok; suite 15 files, 547 tests PASS). AC-2 → `rls-coverage.test.mjs` (found 12: account, area_targets, exercise_areas, exercise_variants, exercises, plan_checkins, profiles, routine_items, routines, session_sets, session_sets_live, sessions). AC-3 → `auth-patch.test.mjs` tests 1–7, 9. AC-6 (logic) → `auth-patch.test.mjs` "AC-6".
-- Fault AC-1: `create table public.tmp_owned (user_id uuid)` on local → 015 red, 3/12: `have: tmp_owned` (RLS), `tmp_owned:DELETE, INSERT, SELECT, UPDATE` (no owner policy), `tmp_owned:…TRUNCATE…` (anon privileges). Extra fault: `create policy tmp_open on public.profiles for select to authenticated using (true)` → 015 test 9 red `have: profiles.tmp_open`. Restored with `supabase db reset` → PASS.
-- Fault AC-2: fixture `.from("new_table")` → 1 problem naming `new_table` (fixture `query.test.ts` skipped); fixture `.from(tableVar)` → `dynamic table name: …dynamic/src/query.ts:3: .from(tableVar)`; unknown function `admin` and a definer-view migration fixture both reported.
-- Fault AC-3 (backup copy, restored with `cp`, `cmp` clean): full config as PATCH body → 3 red; secrets printed raw → sentinel test red; confirm lock removed → zero-calls test red; others-hash check removed → test 5 red.
-- AC-4 local (after `db reset`): `lines=85 sha256=6515379c46b90cf3654fe854918912c262611dc2851d32e4794f53d32e86a0e1`.
-- AC-4 prod (agent, read-only: PGOPTIONS read-only + `begin transaction read only`, `PROD_DB_URL` from `.env.local`, nothing echoed): `lines=85 sha256=6515379c46b90cf3654fe854918912c262611dc2851d32e4794f53d32e86a0e1` — **equal**.
-- AC-4 anon probes (prod REST, anon key read from the Management API in-process, never printed): profiles, area_targets, sessions, session_sets, routines, routine_items, plan_checkins, session_sets_live → all `401 42501`, no rows. Control: exercises → 200, 1 row.
-- AC-5 preview (no `--apply`, GET only): before `uri_allow_list = http://localhost:3000/**,https://app.workout.vestgote.com/**,http://localhost:5173/**`; after `… ,http://localhost:5173/**,https://*.workoutlab-web.pages.dev/**`; `others_sha256=da44ef3ec521e183b28b1639e865a83f3e183eca28b69420b6472be3717de69b` (stable over two GETs).
-- AC-6 before apply (updated expected file): drift check exit 1, exactly `uri_allow_list: missing [https://*.workoutlab-web.pages.dev/**]`.
-- Waiting on the human: the PATCH (`CONFIRM_PROD_AUTH=csgjsdwuxqtuqpuazzpz node infra/scripts/auth-patch.mjs --add-to-list 'uri_allow_list=https://*.workoutlab-web.pages.dev/**' --apply`), then verify run: AC-5 after-view, AC-6 exit 0, AC-7.
-
-### Run B (human-approved, 2026-10-05) - done
-- Preview (human, read-only): `uri_allow_list` before = the 3 D-0011 entries; after = the same + `https://*.workoutlab-web.pages.dev/**`; `others_sha256=da44ef3e…de69b` (equal to run A).
-- Apply (human): `CONFIRM_PROD_AUTH=… auth-patch.mjs … --apply` — keys-only PATCH of `uri_allow_list` (D-0185 §4).
-- Orchestrator verification (read-only): `auth-drift-check.mjs` against the updated `infra/auth/expected-auth.json` → matches (6 keys), exit 0; re-running the preview → "no change: the live config already holds every requested value", `others_sha256` unchanged (no other auth setting moved).
-- Status: done. Previews at `*.workoutlab-web.pages.dev` can now complete sign-in against prod; RLS was proven first (run A).
+Archived in `docs/tickets/log/T-0402c.md` (D-0157).
