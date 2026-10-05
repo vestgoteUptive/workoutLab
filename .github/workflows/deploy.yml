@@ -1,0 +1,112 @@
+name: deploy
+
+# T-0402a (D-0184 §5, D-0186 §1). Only CI deploys; agents never run wrangler.
+# - preview: every pushed non-main branch, behind the repo variable PREVIEWS_ENABLED.
+#   Previews point at the prod Supabase project (no staging, D-0184 §5), see infra/deploy/README.md.
+# - production: follows a green `CI` run on main, behind PROD_DEPLOY_ENABLED. That variable stays
+#   unset until the first prod deploy at gate H-06 (T-0402d).
+
+on:
+  push:
+    branches-ignore: [main]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  WRANGLER_VERSION: "4.147.0"
+
+jobs:
+  preview:
+    name: preview (branch deploy)
+    if: github.event_name == 'push' && vars.PREVIEWS_ENABLED == 'true' && github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build web
+        run: pnpm --filter @workoutlab/web build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      - name: Deploy web preview
+        id: web
+        run: |
+          set -euo pipefail
+          npx -y wrangler@${WRANGLER_VERSION} pages deploy apps/web/dist --project-name workoutlab-web --branch "$BRANCH" 2>&1 | tee web-deploy.log
+          # Pages lower-cases, rewrites and truncates the branch, so read the alias from the output.
+          alias_url="$(grep -Eo 'https://[A-Za-z0-9.-]+\.workoutlab-web\.pages\.dev' web-deploy.log | tail -n 1)"
+          if [ -z "$alias_url" ]; then echo "no alias URL found in wrangler output" >&2; exit 1; fi
+          echo "alias_url=$alias_url" >> "$GITHUB_OUTPUT"
+        env:
+          BRANCH: ${{ github.ref_name }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Build landing (CTA points at this branch's app)
+        run: pnpm --filter @workoutlab/landing build
+        env:
+          PUBLIC_APP_URL: ${{ steps.web.outputs.alias_url }}
+      - name: Deploy landing preview
+        id: landing
+        run: |
+          set -euo pipefail
+          npx -y wrangler@${WRANGLER_VERSION} pages deploy apps/landing/dist --project-name workoutlab-landing --branch "$BRANCH" 2>&1 | tee landing-deploy.log
+          alias_url="$(grep -Eo 'https://[A-Za-z0-9.-]+\.workoutlab-landing\.pages\.dev' landing-deploy.log | tail -n 1)"
+          if [ -z "$alias_url" ]; then echo "no alias URL found in wrangler output" >&2; exit 1; fi
+          echo "alias_url=$alias_url" >> "$GITHUB_OUTPUT"
+        env:
+          BRANCH: ${{ github.ref_name }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Summary
+        run: |
+          {
+            echo "### Preview deployed"
+            echo "- web: ${{ steps.web.outputs.alias_url }}"
+            echo "- landing: ${{ steps.landing.outputs.alias_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  production:
+    name: production (main, off until H-06)
+    if: github.event.workflow_run.conclusion == 'success' && vars.PROD_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build web
+        run: pnpm --filter @workoutlab/web build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+      # PUBLIC_APP_URL stays unset: the landing CTA defaults to the prod app (T-0309).
+      - name: Build landing
+        run: pnpm --filter @workoutlab/landing build
+      - name: Deploy web and landing to production
+        run: |
+          set -euo pipefail
+          npx -y wrangler@${WRANGLER_VERSION} pages deploy apps/web/dist --project-name workoutlab-web --branch main
+          npx -y wrangler@${WRANGLER_VERSION} pages deploy apps/landing/dist --project-name workoutlab-landing --branch main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}

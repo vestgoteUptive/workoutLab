@@ -168,14 +168,3 @@ jobs:
           name: playwright-report
           path: playwright-report
           if-no-files-found: warn
-
-  # Deploy jobs run only on `main`, and only once T-0403's release gate (H-06, first
-  # production deploy approval) is recorded done in .squad/needs-human.md. Until T-0400–
-  # T-0402 exist, there is nothing to deploy; the jobs are added alongside those tickets.
-  deploy:
-    name: deploy (staging/prod)
-    if: github.ref == 'refs/heads/main'
-    needs: [checks, supabase, e2e]
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "Deploy pipeline lands with T-0402, gated on H-06."
