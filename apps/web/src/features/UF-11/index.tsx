@@ -14,6 +14,7 @@
 // already as fresh as Plan's own content is by the time the card's single read runs — the exact
 // guarantee `use-checkin-data.ts`'s comment already assumes ("the screens that mount it keep the
 // data fresh"), now actually true before the card reads, not just after.
+import { useState } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { AccountSettingsBody } from "./AccountSettingsBody.js";
 import { CheckinCard } from "./CheckinCard.js";
@@ -28,11 +29,15 @@ interface PlanScreenProps {
 }
 
 export function Plan({ now = systemClock }: PlanScreenProps = {}) {
-  const state = usePlanData(now);
+  // T-0481: bumped by the card's `onAnswered`; `usePlanData` re-reads the cache once per bump.
+  const [revision, setRevision] = useState(0);
+  const state = usePlanData(now, revision);
   return (
     <div data-screen-id="UF-11.2">
       <h1>{en.screens.plan}</h1>
-      {state.phase !== "loading" ? <CheckinCard now={now} /> : null}
+      {state.phase !== "loading" ? (
+        <CheckinCard now={now} onAnswered={() => setRevision((r) => r + 1)} />
+      ) : null}
       <PlanBody state={state} />
     </div>
   );

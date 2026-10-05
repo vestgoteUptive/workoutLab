@@ -58,7 +58,7 @@ async function read(clock: Clock, tz: string): Promise<PlanData | null> {
   return { profile, targets, checkins, routines, evaluation, tz };
 }
 
-export function usePlanData(clock: Clock): PlanState {
+export function usePlanData(clock: Clock, revision = 0): PlanState {
   const [state, setState] = useState<PlanState>({ phase: "loading" });
   // `now` is PINNED at mount: both the clock function and the instant it returns. T-0307a's e2e
   // found the alternative the hard way — a `now` read per render changed the effect's dependency
@@ -107,6 +107,24 @@ export function usePlanData(clock: Clock): PlanState {
       clearTimeout(timer);
     };
   }, []);
+
+  // T-0481: when `revision` changes after mount, ONE cache-only read (no `refreshAll`: the card
+  // that bumped it just ran one). It only ever upgrades to `ready`; a null or rejected read
+  // leaves the state as it was. The newest revision wins; unmount cancels.
+  const firstRevision = useRef(revision);
+  useEffect(() => {
+    if (revision === firstRevision.current) return;
+    let cancelled = false;
+    void read(() => at, resolveTimeZone())
+      .catch(() => null)
+      .then((data) => {
+        if (cancelled || !data) return;
+        setState({ phase: "ready", data });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [revision, at]);
 
   return state;
 }
