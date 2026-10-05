@@ -1,6 +1,7 @@
 /* UF-10 Balance (T-0307a). Colours and fonts come only from @workoutlab/design-tokens
- * (D-0019): there is no raw hex in this file. The coverage fill and the attention outline are
- * set inline, from the engine's `coverageStep`/`needsAttention` — never from `load / target`. */
+ * (D-0019): there is no raw hex in this file. The coverage fill and the attention outline
+ * come from the engine's `coverageStep`/`needsAttention` — never from `load / target`. The fill
+ * is set inline; the attention outline is set in CSS (data-attention). */
 
 .wl-balance {
   display: flex;
