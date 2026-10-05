@@ -9,6 +9,7 @@ import { runCheck as runStaleWording } from "./check-stale-wording.mjs";
 import { runCheck as runE2eWiring } from "./check-e2e-wiring.mjs";
 import { runCheck as runLanePaths } from "./check-lane-paths.mjs";
 import { runCheck as runVitestTmp } from "./check-vitest-tmp.mjs";
+import { runCheck as runFilterChain } from "./check-ticket-filter-chain.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const REPO_ROOT = path.resolve(path.dirname(__filename), "..", "..");
@@ -31,6 +32,7 @@ export async function runAll({ branch } = {}) {
     ...(await runE2eWiring()),
     ...(await runLanePaths(REPO_ROOT, { branch })),
     ...(await runVitestTmp(REPO_ROOT)),
+    ...(await runFilterChain(REPO_ROOT)),
   ];
   return { ok: findings.length === 0, fatal: null, findings };
 }

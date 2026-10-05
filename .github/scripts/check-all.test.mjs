@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, mkdirSync, rmdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { runAll } from "./check-all.mjs";
@@ -9,25 +9,52 @@ import { runAll } from "./check-all.mjs";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..");
 
-test("AC21: pnpm check:repo exits 0 on the real repo", () => {
-  execFileSync("node", [path.join(__dirname, "check-all.mjs")], {
-    cwd: REPO_ROOT,
-    stdio: "pipe",
+// T-0496's check-ticket-filter-chain.test.mjs briefly writes a scratch ticket file into the real
+// docs/tickets/ for its own AC-5 planted-fault proof, in a sibling process (`node --test` runs
+// *.test.mjs files as separate processes). Take the same lock here so this file's real-repo
+// reads never interleave with that mutation.
+const REAL_REPO_LOCK_DIR = path.join(REPO_ROOT, ".t0496-real-repo.lock");
+
+async function withRealRepoLock(fn) {
+  for (;;) {
+    try {
+      mkdirSync(REAL_REPO_LOCK_DIR);
+      break;
+    } catch (err) {
+      if (err.code !== "EEXIST") throw err;
+      await new Promise((r) => setTimeout(r, 20));
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    rmdirSync(REAL_REPO_LOCK_DIR);
+  }
+}
+
+test("AC21: pnpm check:repo exits 0 on the real repo", async () => {
+  await withRealRepoLock(() => {
+    execFileSync("node", [path.join(__dirname, "check-all.mjs")], {
+      cwd: REPO_ROOT,
+      stdio: "pipe",
+    });
   });
 });
 
 test("AC21 (direct): runAll() finds nothing on the real repo", async () => {
-  const { ok, findings, fatal } = await runAll();
-  assert.equal(fatal, null);
-  if (!ok) {
-    console.error("check-all findings on real repo:\n", findings);
-  }
-  assert.deepEqual(findings, []);
+  await withRealRepoLock(async () => {
+    const { ok, findings, fatal } = await runAll();
+    assert.equal(fatal, null);
+    if (!ok) {
+      console.error("check-all findings on real repo:\n", findings);
+    }
+    assert.deepEqual(findings, []);
+  });
 });
 
 // T-0320 AC-10: every sub-check is imported *and* spread into runAll's findings. A source
 // assertion, because an import with no call site would leave the check silently inert.
-test("T-0320 AC-10: runAll imports and calls all six sub-checks", () => {
+test("T-0320 AC-10: runAll imports and calls all eight sub-checks", () => {
   const src = readFileSync(path.join(__dirname, "check-all.mjs"), "utf8");
   const SUBCHECKS = [
     ["check-screen-ids.mjs", "runScreenIds"],
@@ -36,6 +63,8 @@ test("T-0320 AC-10: runAll imports and calls all six sub-checks", () => {
     ["check-stale-wording.mjs", "runStaleWording"],
     ["check-e2e-wiring.mjs", "runE2eWiring"],
     ["check-lane-paths.mjs", "runLanePaths"],
+    ["check-vitest-tmp.mjs", "runVitestTmp"],
+    ["check-ticket-filter-chain.mjs", "runFilterChain"],
   ];
   for (const [file, alias] of SUBCHECKS) {
     assert.match(
