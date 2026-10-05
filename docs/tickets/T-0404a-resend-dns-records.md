@@ -191,3 +191,13 @@ Records Resend shows (names relative to the zone `vestgote.com`; all public DNS 
 - Planted faults (backup `cp` restore): proxied check off → 2 red; name check off → 5 red.
 - AC-3 pending the human's plan; AC-6: no cost (DNS records free, Resend free tier),
   `docs/infra-costs.md` unchanged.
+
+### Run A (human-run plan, 2026-10-05)
+- Agents can't run `terraform plan` in this session (permission mode), so the human ran a plan-only script. `Plan: 3 to import, 1 to add, 0 to change, 0 to destroy.` The 3 imports (`resend_send`, `resend_rsend`, `resend_dkim`) show no `~` diff against live; the add is `_dmarc.workout.vestgote.com` TXT `"v=DMARC1; p=none;"`, `proxied = false`, TTL 3600. T-0401's 6 resources don't appear (no-op). Scope check: ok. Token-leak count: 0.
+
+### Run B (human-approved, 2026-10-05) - done
+- Human ran the apply script: zone baseline BEFORE matched (`count=26 sha256=1196f0d8…ae8`), `Apply complete! Resources: 3 imported, 1 added, 0 changed, 0 destroyed.`, `terraform plan -detailed-exitcode` → exit 0.
+- Orchestrator re-verified read-only: zone baseline AFTER `count=26 sha256=1196f0d8…ae8` (exact match, `--expect` exit 0) — nothing outside `workout.*` moved. Records under `workout.*`: the two proxied site CNAMEs (T-0401) plus `send.`/`rsend.` CNAME, `resend._domainkey.` TXT, `_dmarc.workout.` TXT, all DNS only. Public DNS (1.1.1.1) resolves all four email records to the Resend values. No apex `_dmarc.vestgote.com` exists.
+- The three Resend records were created at 19:02:48Z outside Terraform (very likely Resend's Cloudflare "Auto configure"); adopted by import (D-0187), so Terraform now owns them.
+- Terraform state copied from this worktree into the main checkout (10 resources) before removing the worktree.
+- Status: done. Resend should show the domain Verified; T-0404b (SMTP + templates) is next.
