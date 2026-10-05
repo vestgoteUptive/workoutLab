@@ -117,7 +117,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | todo | wl-build-web |
 | T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | todo | wl-build-web |
 | T-0499 | UF-11 offline.test.tsx: the cache-first test's real refreshAll leaks supabase.from calls into the next test (false AC-B6 offline failure, pre-existing, 3/15 on main); mount-stability.test.tsx has a related baseline-count race since T-0471 (T-0481 review finding) | web-feature:UF-11 | — | todo | wl-build-web |
-| T-0482 | UF-02.1: Today reflects a check-in Accept without a remount (C-01 targets, suggestion): slot `onAnswered` → `useToday(…, revision)` cache-only re-read (D-0181 §2) | web-feature:UF-02 | T-0481 | doing | wl-build-web |
+| T-0482 | UF-02.1: Today reflects a check-in Accept without a remount (C-01 targets, suggestion): slot `onAnswered` → `useToday(…, revision)` cache-only re-read (D-0181 §2) | web-feature:UF-02 | T-0481 | done | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
