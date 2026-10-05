@@ -5,7 +5,7 @@ lane: design
 screens: [UF-01.5, UF-11.4]
 decisions: [D-0188, D-0046, D-0017, D-0135]
 deps: [T-0406]
-status: ready
+status: review (needs H-21, copy re-approval)
 groomed: 2026-10-05
 ---
 <!-- Groomed 2026-10-05 by product-owner against main ccbae43 (D-0188 §5). Build flow:
@@ -220,3 +220,10 @@ None. The copy restates NFR-PRIV-1…7 and the D-0188 behaviour. D-0188 §5 amen
 - **Gate:** `locked.sh small npx vitest run src/content/content.test.ts` 89/89; `--filter @workoutlab/landing test` 13 files / 143 tests (incl. AC14's built page); `-w typecheck lint test --concurrency=1` 19/19 tasks; `-w test:repo-checks` 261 pass / 0 fail; `-w format:check` clean; `check-all.mjs` exit 0.
 - **Release order:** the Google sentence and the "sign-in records deleted with your account" sentence are true in prod only after H-23 (T-0503 and T-0504 released). H-06 (landing prod deploy) must wait for H-23 (D-0188 §4).
 - **Open:** markers left: `{{HUMAN:CONTROLLER_NAME}}`, `{{HUMAN:CONTROLLER_ADDRESS}}`, `{{HUMAN:SUPERVISORY_AUTHORITY}}`. Previews show them as visible text, which is intended. Status → `review (needs H-22)`. The fill-in pass, H-21 and H-22 are still needed.
+
+### Fill-in pass (H-22) 2026-10-05 (designer, branch `t/T-0502-privacy-notice-gdpr`, from `3fe30ee`, clean)
+- **Facts supplied at H-22:** controller `Henrik` (first name only, as given, no surname added); no postal address — the controller's contact detail is `privacy@workout.vestgote.com` instead; supervisory authority `Integritetsskyddsmyndigheten (IMY), imy.se` (Sweden). Legal bases (6(1)(b) contract, 6(1)(f) legitimate interest) and the Art. 9 call (training logs are fitness data, not health data) confirmed as written — no copy change needed for those.
+- **Changed:** `privacy.ts` — `who-we-are` restructured to name + contact email, no "address" wording (`{{HUMAN:CONTROLLER_NAME}}`/`{{HUMAN:CONTROLLER_ADDRESS}}` replaced); `your-rights` names IMY in place of `{{HUMAN:SUPERVISORY_AUTHORITY}}`; `where` gets one added sentence disclosing Resend is a US company, processes mail in its EU region (eu-west-1), and that any US transfer is covered by the EU Standard Contractual Clauses in its DPA (closes the gap the build pass flagged as "not stated, for H-22 to decide"); header comment rewritten, no stale markers. `updated` was already `2026-10-05`, so no change needed there. No change to `types.ts`: `PrivacyNotice`/`PrivacySection` never had a dedicated address field — the address was only placeholder text inside the `who-we-are` body — so no type/field restructuring was required.
+- **Tests (`content.test.ts`):** AC-2 now asserts `/\bHenrik\b/`, `/privacy@workout\.vestgote\.com/`, `/controller/i` and *not* `/address/i`; AC-7 asserts `Integritetsskyddsmyndigheten` and `IMY` in place of the marker check; AC-9 rewritten per the ticket's follow-up to assert `[]` across **both** `privacy` and `landing` strings (was: the three-marker pinned set, privacy only). `landing.ts` held no markers to begin with, so AC-9 passes unchanged on that side.
+- **Gate (each via `scripts/locked.sh heavy`):** `npx -y pnpm@10.28.2 --filter @workoutlab/landing test` → 13 files / 143 tests passed (incl. AC14's built `/privacy/` page, which renders the new copy with no markers); `-w test:repo-checks` → 261/261 pass; `-w format:check` → clean; `node .github/scripts/check-all.mjs` → exit 0.
+- **Status:** no `{{HUMAN:…}}` marker remains anywhere in `apps/landing/src/content/**` (AC-9 holds `[]`). Moved frontmatter `status` to `review (needs H-21, copy re-approval)`: H-21 (Supabase/Resend DPA click-throughs) is a separate, still-open gate this pass didn't touch, and the full notice text is handed back below for the human's final sign-off per the ticket's "Open: ... H-21 and H-22 are still needed" note.

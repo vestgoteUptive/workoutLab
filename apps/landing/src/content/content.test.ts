@@ -204,11 +204,12 @@ describe("T-0502 privacy notice v2 (GDPR Art. 13)", () => {
     expect(p.updated >= "2026-10-05").toBe(true);
   });
 
-  it("T-0502 AC-2 (controller) names the controller and its address", () => {
+  it("T-0502 AC-2 (controller) names the controller and a contact detail, no address", () => {
     const text = section("who-we-are");
-    expect(text).toContain("{{HUMAN:CONTROLLER_NAME}}");
-    expect(text).toContain("{{HUMAN:CONTROLLER_ADDRESS}}");
+    expect(text).toMatch(/\bHenrik\b/);
     expect(text).toMatch(/controller/i);
+    expect(text).toMatch(/privacy@workout\.vestgote\.com/);
+    expect(text).not.toMatch(/address/i);
   });
 
   it("T-0502 AC-3 (legal basis) states contract and legitimate interest", () => {
@@ -259,7 +260,8 @@ describe("T-0502 privacy notice v2 (GDPR Art. 13)", () => {
       expect(text).toMatch(re);
     }
     expect(text).toMatch(/complain/i);
-    expect(text).toContain("{{HUMAN:SUPERVISORY_AUTHORITY}}");
+    expect(text).toMatch(/Integritetsskyddsmyndigheten/);
+    expect(text).toMatch(/IMY/);
   });
 
   it("T-0502 AC-8 (no false only) names the email provider and Google", () => {
@@ -270,16 +272,12 @@ describe("T-0502 privacy notice v2 (GDPR Art. 13)", () => {
     expect(text).toMatch(/Google/);
   });
 
-  it("T-0502 AC-9 (placeholders are pinned) holds exactly the three H-22 markers", () => {
+  it("T-0502 AC-9 (H-22 fill-in) no {{HUMAN:…}} marker remains, in privacy or landing", () => {
     const strings: [string, string][] = [];
     collectStrings(privacy, "privacy", strings);
+    collectStrings(landing, "landing", strings);
     const markers = strings.flatMap(([, v]) => v.match(/\{\{HUMAN:[A-Z_]+\}\}/g) ?? []);
-    // Before H-22. The fill-in pass flips this to [] and adds the same check on `landing`.
-    expect([...new Set(markers)].sort()).toEqual([
-      "{{HUMAN:CONTROLLER_ADDRESS}}",
-      "{{HUMAN:CONTROLLER_NAME}}",
-      "{{HUMAN:SUPERVISORY_AUTHORITY}}",
-    ]);
+    expect([...new Set(markers)].sort()).toEqual([]);
   });
 
   it("T-0502 AC-10 (stale notes gone) privacy.ts and types.ts drop the H-10 note", () => {
