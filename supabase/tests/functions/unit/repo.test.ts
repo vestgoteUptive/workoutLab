@@ -7,6 +7,7 @@ import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.t
 import type { AuthContext } from "../../../functions/_shared/auth.ts";
 import {
   HISTORY_PAGE_SIZE,
+  loadSessionSets,
   pageAll,
   writeSessionFinish,
   type RangeQuery,
@@ -162,3 +163,147 @@ Deno.test(
     assertEquals(threw, true);
   },
 );
+
+// ---- T-0497: loadSessionSets filters on user_id explicitly, like loadHistoryWindow -------------
+
+interface FakeSetRow {
+  client_id: string;
+  session_id: string;
+  exercise_id: string;
+  is_warmup: boolean;
+  completed_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
+  reps: number | null;
+  weight_kg: number | null;
+  duration_s: number | null;
+}
+
+function fakeSetRow(
+  userId: string,
+  clientId: string,
+  sessionId: string,
+): FakeSetRow & {
+  user_id: string;
+} {
+  return {
+    user_id: userId,
+    client_id: clientId,
+    session_id: sessionId,
+    exercise_id: "e1",
+    is_warmup: false,
+    completed_at: "2026-09-28T07:00:00Z",
+    edited_at: null,
+    deleted_at: null,
+    reps: 8,
+    weight_kg: 40,
+    duration_s: null,
+  };
+}
+
+/** A fake supabase-js client for `session_sets` that records every `.eq()`/`.is()`/`.order()`
+ * call, then — like a service-role client bypassing RLS — serves `.range()` against the *full*
+ * `allRows` set filtered by those recorded calls (not scoped to one user ahead of time). This is
+ * what proves `loadSessionSets`'s own `.eq("user_id", …)` call does the scoping, not RLS. */
+function fakeSessionSetsClient(allRows: (FakeSetRow & { user_id: string })[]) {
+  const eqCalls: Array<[string, unknown]> = [];
+  const isCalls: Array<[string, unknown]> = [];
+  const orderCalls: Array<[string, { ascending: boolean }]> = [];
+  let rangeCalls = 0;
+
+  function filteredRows(): (FakeSetRow & { user_id: string })[] {
+    let rows = allRows;
+    for (const [column, value] of eqCalls) {
+      rows = rows.filter((row) => (row as unknown as Record<string, unknown>)[column] === value);
+    }
+    for (const [column, value] of isCalls) {
+      rows = rows.filter((row) => (row as unknown as Record<string, unknown>)[column] === value);
+    }
+    for (const [column, { ascending }] of orderCalls) {
+      rows = [...rows].sort((a, b) => {
+        const av = (a as unknown as Record<string, unknown>)[column] as string;
+        const bv = (b as unknown as Record<string, unknown>)[column] as string;
+        return ascending ? (av < bv ? -1 : av > bv ? 1 : 0) : av < bv ? 1 : av > bv ? -1 : 0;
+      });
+    }
+    return rows;
+  }
+
+  const chain = {
+    eq(column: string, value: unknown) {
+      eqCalls.push([column, value]);
+      return chain;
+    },
+    is(column: string, value: unknown) {
+      isCalls.push([column, value]);
+      return chain;
+    },
+    order(column: string, opts: { ascending: boolean }) {
+      orderCalls.push([column, opts]);
+      return chain;
+    },
+    range(from: number, to: number) {
+      rangeCalls++;
+      const rows = filteredRows();
+      return Promise.resolve({ data: rows.slice(from, to + 1), error: null });
+    },
+  };
+  const client = {
+    from: () => ({
+      select: () => chain,
+    }),
+  };
+  return {
+    ctx: (userId: string): AuthContext => ({ userId, supabase: client as never }),
+    eqCalls,
+    isCalls,
+    orderCalls,
+    get rangeCalls() {
+      return rangeCalls;
+    },
+  };
+}
+
+Deno.test(
+  "T-0497 AC-1: loadSessionSets filters on user_id, session_id and live rows, ordered by client_id ascending",
+  async () => {
+    const fake = fakeSessionSetsClient([fakeSetRow("u1", "a1", "S1")]);
+    await loadSessionSets(fake.ctx("u1"), "S1");
+
+    assert(fake.eqCalls.some(([col, val]) => col === "user_id" && val === "u1"));
+    assert(fake.eqCalls.some(([col, val]) => col === "session_id" && val === "S1"));
+    assert(fake.isCalls.some(([col, val]) => col === "deleted_at" && val === null));
+    assertEquals(fake.orderCalls, [["client_id", { ascending: true }]]);
+  },
+);
+
+Deno.test(
+  "T-0497 AC-2: other users' rows are excluded even when the client would (service-role-style) return them",
+  async () => {
+    // u1 has a1, a2 on S1; u2 also has S1 rows, including a clashing client_id "a1".
+    const fake = fakeSessionSetsClient([
+      fakeSetRow("u1", "a1", "S1"),
+      fakeSetRow("u1", "a2", "S1"),
+      fakeSetRow("u2", "a1", "S1"),
+      fakeSetRow("u2", "b1", "S1"),
+    ]);
+    const result = await loadSessionSets(fake.ctx("u1"), "S1");
+
+    assertEquals(result.length, 2);
+    assertEquals(result.map((r) => r.clientId).sort(), ["a1", "a2"]);
+  },
+);
+
+Deno.test("T-0497 AC-3: paging still exhausts for the caller's rows only", async () => {
+  const u1Rows = Array.from({ length: 1001 }, (_, i) =>
+    fakeSetRow("u1", `u1-${String(i).padStart(4, "0")}`, "S1"),
+  );
+  const u2Rows = Array.from({ length: 5 }, (_, i) =>
+    fakeSetRow("u2", `u2-${String(i).padStart(4, "0")}`, "S1"),
+  );
+  const fake = fakeSessionSetsClient([...u1Rows, ...u2Rows]);
+  const result = await loadSessionSets(fake.ctx("u1"), "S1");
+
+  assertEquals(result.length, 1001);
+  assertEquals(fake.rangeCalls, 2);
+});

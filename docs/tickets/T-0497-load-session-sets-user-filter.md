@@ -103,3 +103,43 @@ AC-1..AC-6 hold and are recorded · the Deno unit dir green · `npx -y pnpm@10.2
   picked, wait.
 
 ## Build / accept log
+- 2026-10-05, backend-dev. Added `.eq("user_id", ctx.userId)` to `loadSessionSets`'s query
+  (`supabase/functions/_shared/repo.ts`), ordered first as in `loadHistoryWindow`. Rewrote the
+  JSDoc paragraph above it: drops "There is no `user_id` filter here" and "must add
+  `.eq(\"user_id\"…)`"; now says the query filters on `user_id` itself, making RLS
+  (`session_sets_select`) and the FK `session_sets_session_fk` a second and third guard, with
+  `(user_id, client_id)` uniqueness still backing the `.range()` walk.
+- AC→test map: AC-1 → "T-0497 AC-1" (recorded `.eq`/`.is`/`.order` calls). AC-2 → "T-0497 AC-2"
+  (fake with clashing `client_id` `a1` across u1/u2 on shared `session_id`, filters applied before
+  `.range()` slicing — exactly 2 rows, `["a1","a2"]`, back for u1). AC-3 → "T-0497 AC-3" (1001 live
+  rows for u1 + 5 for u2 on the same session; 1001 returned, 2 `.range()` calls). AC-5 → `sed -n`
+  excerpt below. AC-6 → `git diff main...HEAD -- supabase/tests/` touches only `repo.test.ts`.
+- Fault proof (AC-4): backed up `repo.ts` with `cp` to the scratchpad, removed the `.eq("user_id",
+  ctx.userId)` line, reran
+  `deno test --config supabase/tests/functions/deno.json --allow-net --allow-env --allow-read supabase/tests/functions/unit/`.
+  Red: AC-1 failed (assertion on the recorded `user_id` eq call), AC-2 failed — actual 4 vs
+  expected 2 (ticket's own "3 or 4 sets" prediction), AC-3 also failed (1006 vs 1001, extra rows
+  from u2 leaking in) as a bonus signal. Restored with `cp` from the backup; reran the same command
+  green — 118 passed, 0 failed.
+- AC-5 excerpt (`sed -n '215,221p' supabase/functions/_shared/repo.ts` after the fix):
+  ```
+   * `client_id` is unique per user only: `(user_id, client_id)` is the unique key. The query filters
+   * on `user_id` itself (T-0497), so that per-user uniqueness makes `client_id` a unique order key
+   * for the `.range()` walk regardless of the client (JWT or service-role) — the filter doesn't rely
+   * on anything else to be correct. The caller's-JWT client and the `session_sets_select` RLS policy
+   * are a second guard, scoping the rows to the caller independently. The composite FK
+   * `session_sets_session_fk` (session_id, user_id) is a third: all sets of one `session_id` share
+   * one `user_id`. */
+  ```
+  Contains `(user_id, client_id)`, `session_sets_select`, `session_sets_session_fk`; contains
+  neither `must add` nor `There is no`.
+- Final green run: unit dir 118 passed / 0 failed (up from 115; 3 new T-0497 tests). `deno check
+  --config supabase/tests/functions/deno.json supabase/functions/_shared/repo.ts` clean (the
+  import-map-less `deno check` on the bare file errors on `@workoutlab/shared` etc. regardless of
+  this change — not a regression, just needs the config).
+- Gate: `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` — 19
+  tasks successful (exit 0). `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w test:repo-checks` —
+  159 passed, 0 failed. `format:check` — one warning on the new test file, fixed with `prettier
+  --write`, reran green; Deno tests re-run green after the format fix (118/118). `node
+  .github/scripts/check-all.mjs` — exit 0.
+- No e2e run: no `apps/web/src` or `tests/e2e` change.
