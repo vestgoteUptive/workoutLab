@@ -1,0 +1,16 @@
+{
+  "site_url": "http://localhost:3000",
+  "uri_allow_list": "http://localhost:3000/**,https://app.workout.vestgote.com/**,http://localhost:5173/**",
+  "external_google_enabled": true,
+  "external_email_enabled": true,
+  "external_google_client_id": "fixture-client-id-12345.apps.googleusercontent.com",
+  "external_google_secret": "SENTINEL-GOOGLE",
+  "smtp_pass": "SENTINEL-SMTP",
+  "smtp_host": "SENTINEL-HOST",
+  "hook_custom_access_token_secrets": "SENTINEL-HOOK",
+  "sms_twilio_auth_token": "SENTINEL-TWILIO",
+  "mailer_otp_length": 6,
+  "jwt_exp": 3600,
+  "rate_limit_email_sent": 2,
+  "security_captcha_enabled": false
+}
