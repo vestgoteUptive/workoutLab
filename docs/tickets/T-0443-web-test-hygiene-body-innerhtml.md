@@ -100,3 +100,9 @@ None.
 - Small enough for D-0178's skip-review path, if the orchestrator wants it.
 
 ## Build / accept log
+
+- Built on branch from ccac74d. Added `app/__tests__/test-hygiene.source.test.ts`; replaced the resets in UF-08 (`cleanup()`) and UF-01 (`button.remove()` plus a `childElementCount === 0` assert in the same `afterEach`; a second `afterEach` would run first under Vitest's stack order).
+- AC-1: guard test, walk read 477 files (>400). Red on unfixed code: offenders were exactly `features/UF-01/__tests__/keyboard.test.ts` and `features/UF-08/__tests__/suggested-actions.test.tsx` (first draft also matched itself via a comment containing the literal text; reworded). Green after the fixes.
+- AC-2: planted `document.body.innerHTML = "";` in `lib/account/__tests__/boundaries.test.ts` and `document.body.innerHTML="";` in `components/account-deleted-notice/__tests__/AccountDeletedNotice.test.tsx`; the guard failed naming each. Restored with `cp` from backup; git status clean of both.
+- AC-3: `suggested-actions.test.tsx` passes (assertions untouched). AC-4: `keyboard.test.ts` passes with the childElementCount assert.
+- Gate: typecheck lint test (19/19), test:repo-checks (167 pass), format:check, check-all.mjs green. No e2e (test-only).
