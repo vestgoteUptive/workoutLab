@@ -40,10 +40,7 @@ vi.mock("../../auth/client.js", () => ({
         ? {
             select: () => ({ maybeSingle: () => Promise.reject(new TypeError("Failed to fetch")) }),
           }
-        : // `SelectSpy.from` is `ReturnType<typeof vi.fn>`, which `tsc` widens to
-          // `Mock<Procedure | Constructable>` and does not treat as callable; the cast is on the
-          // call, so `setRows`/`countFor` on the holder stay type-checked.
-          (selectSpy.current!.from as (t: string) => unknown)(table),
+        : selectSpy.current!.from(table),
   },
 }));
 selectSpy.current = createSelectSpy();

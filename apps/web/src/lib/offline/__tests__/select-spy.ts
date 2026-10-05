@@ -4,7 +4,7 @@
 //
 // It counts calls per table, which is how AC-2 ("the `exercises` table is selected once per
 // refresh") and AC-5 ("no Supabase call is awaited") are asserted.
-import { vi } from "vitest";
+import { vi, type Mock } from "vitest";
 
 export interface SelectCall {
   table: string;
@@ -12,8 +12,20 @@ export interface SelectCall {
   gte?: [string, string];
 }
 
+/** What `select(columns)` returns: awaitable, or chained through `gte` / `maybeSingle`. */
+export interface SelectQuery {
+  gte: (col: string, value: string) => Promise<{ data: unknown; error: unknown }>;
+  maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+  then: (resolve: (v: { data: unknown; error: unknown }) => void) => void;
+}
+
+/** What `from(table)` returns. */
+export interface SelectFrom {
+  select: (columns: string) => SelectQuery;
+}
+
 export interface SelectSpy {
-  from: ReturnType<typeof vi.fn>;
+  from: Mock<(table: string) => SelectFrom>;
   calls: SelectCall[];
   /** Sets the rows `select()` resolves for one table. */
   setRows: (table: string, rows: unknown[]) => void;
@@ -38,7 +50,7 @@ export function createSelectSpy(): SelectSpy {
   const holds = new Map<string, Promise<void>>();
   const openers = new Map<string, Array<() => void>>();
 
-  function makeQuery(table: string, columns: string) {
+  function makeQuery(table: string, columns: string): SelectQuery {
     const call: SelectCall = { table, columns };
     calls.push(call);
     const failure = failures.get(table);
