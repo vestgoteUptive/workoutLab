@@ -24,10 +24,11 @@ export function anonClient(): SupabaseClient {
 
 let counter = 0;
 
-/** Creates a confirmed test user via the admin API and returns their id + a signed-in access
- * token (used as the bearer token against the functions under test). */
+/** Creates a confirmed test user via the admin API and returns their id, email and a signed-in
+ * access token (used as the bearer token against the functions under test). */
 export async function createTestUser(): Promise<{
   userId: string;
+  email: string;
   accessToken: string;
   client: SupabaseClient;
 }> {
@@ -57,7 +58,12 @@ export async function createTestUser(): Promise<{
     global: { headers: { Authorization: `Bearer ${signedIn.session.access_token}` } },
   });
 
-  return { userId: created.user.id, accessToken: signedIn.session.access_token, client };
+  return {
+    userId: created.user.id,
+    email,
+    accessToken: signedIn.session.access_token,
+    client,
+  };
 }
 
 export const AREAS = [

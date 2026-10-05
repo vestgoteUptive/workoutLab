@@ -5,7 +5,13 @@
 // in test code only, to provision users and to count rows past RLS.
 import { assert, assertEquals } from "https://deno.land/std@0.224.0/assert/mod.ts";
 import type { SupabaseClient } from "npm:@supabase/supabase-js@2.58.0";
-import { adminClient, callFunction, createTestUser, seedFullProfile } from "./helpers.ts";
+import {
+  adminClient,
+  callFunction,
+  createTestUser,
+  requireEnv,
+  seedFullProfile,
+} from "./helpers.ts";
 
 const OWNED_TABLES = [
   "profiles",
@@ -194,6 +200,79 @@ Deno.test("T-0310b AC9: a user with no profile and no rows is deleted (204)", as
   assertEquals(await res.text(), "");
   await assertUserGone(c.userId);
 });
+
+// --- T-0503 AC-3: the auth audit log is purged too (D-0188 §1) ---------------------------------
+
+/** Runs one scalar `select` against the local database with psql (PostgREST doesn't expose
+ * `auth`), the way seed-roundtrip.test.ts does. Values are passed as psql variables and quoted
+ * by psql (`:'name'`), never spliced into the SQL text; the script goes in on stdin. */
+async function psqlScalar(sql: string, vars: Record<string, string>): Promise<string> {
+  const args = [requireEnv("DB_URL"), "-X", "-q", "-t", "-A", "-v", "ON_ERROR_STOP=1"];
+  for (const [name, value] of Object.entries(vars)) args.push("-v", `${name}=${value}`);
+  const child = new Deno.Command("psql", {
+    args,
+    stdin: "piped",
+    stdout: "piped",
+    stderr: "piped",
+  }).spawn();
+  const writer = child.stdin.getWriter();
+  await writer.write(new TextEncoder().encode(`${sql}\n`));
+  await writer.close();
+  const { code, stdout, stderr } = await child.output();
+  if (code !== 0) throw new Error(`psql exited ${code}: ${new TextDecoder().decode(stderr)}`);
+  return new TextDecoder().decode(stdout).trim();
+}
+
+async function countAuditById(userId: string): Promise<number> {
+  return Number(
+    await psqlScalar(
+      "select count(*) from auth.audit_log_entries where payload->>'actor_id' = :'uid';",
+      { uid: userId },
+    ),
+  );
+}
+
+/** Any audit row that mentions the user's id or email anywhere in the payload. A substring match
+ * is fine here (only in the test): the test emails and ids are unique. */
+async function countAuditMentions(userId: string, email: string): Promise<number> {
+  return Number(
+    await psqlScalar(
+      "select count(*) from auth.audit_log_entries" +
+        " where payload::text like '%' || :'uid' || '%'" +
+        " or payload::text ilike '%' || :'email' || '%';",
+      { uid: userId, email },
+    ),
+  );
+}
+
+Deno.test(
+  "T-0503 AC-3: DELETE /account also removes every auth.audit_log_entries row naming A; B's rows stay",
+  async () => {
+    const a = await createTestUser();
+    const b = await createTestUser();
+
+    // Precondition: GoTrue logs to Postgres locally (each createTestUser signs in with a password).
+    const aBefore = await countAuditById(a.userId);
+    assert(
+      aBefore >= 1,
+      "precondition: no audit row with actor_id = A; Postgres audit logging is off, test is void",
+    );
+    const bBefore = await countAuditById(b.userId);
+    assert(bBefore >= 1, "precondition: B has a login audit row");
+
+    const res = await deleteAccount(a.accessToken);
+    assertEquals(res.status, 204);
+    await res.body?.cancel();
+    await assertUserGone(a.userId);
+
+    assertEquals(
+      await countAuditMentions(a.userId, a.email),
+      0,
+      "no audit row mentions A's id or email",
+    );
+    assertEquals(await countAuditById(b.userId), bBefore, "B's login rows are unchanged");
+  },
+);
 
 // --- AC10: 2 years of data within 10 s -----------------------------------------------------------
 

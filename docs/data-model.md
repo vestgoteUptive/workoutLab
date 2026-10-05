@@ -1,12 +1,12 @@
 # Data model (v1)
 
-**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`, the engine v1 columns) is migrated in `supabase/migrations/20260928090000_data_model_v1b.sql` (T-0100b, D-0035). `supabase/migrations/20260928120000_priority_areas_lower_bound.sql` (T-0102b, D-0037) tightens `profiles_priority_areas_valid`. `supabase/migrations/20261001090000_plan_checkins_one_period.sql` (T-0223, D-0070 §6) lets `plan_checkins` store a one-period check-in. Every table below is in the database. The typed view of this schema is `packages/shared/src/database.gen.ts` (D-0037 §10, D-0043).
+**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`, the engine v1 columns) is migrated in `supabase/migrations/20260928090000_data_model_v1b.sql` (T-0100b, D-0035). `supabase/migrations/20260928120000_priority_areas_lower_bound.sql` (T-0102b, D-0037) tightens `profiles_priority_areas_valid`. `supabase/migrations/20261001090000_plan_checkins_one_period.sql` (T-0223, D-0070 §6) lets `plan_checkins` store a one-period check-in. `supabase/migrations/20261005120000_purge_auth_audit_on_user_delete.sql` (T-0503, D-0188 §1) adds the auth audit purge trigger (see "Auth schema triggers"). Every table below is in the database. The typed view of this schema is `packages/shared/src/database.gen.ts` (D-0037 §10, D-0043).
 
 Decisions: D-0001 (Supabase), D-0015 (set sync), D-0017 (offline, client ids), D-0018 (check-ins), D-0020 (write rules), D-0021 (shape), D-0024 (session building), D-0026 (progression), D-0027 (check-in reset), D-0029 (`exercises` columns), D-0030 (v1a defaults), D-0034 (engine inputs), D-0035 (v1b defaults), D-0037 (`SessionPlan` v1, array lower bound), D-0044 (`external_load` = NOT `bodyweight`, seed only).
 
 ## Conventions
 - **Users** are `auth.users` (D-0021). There is no `public.users`. Email lives only in `auth.users` (NFR-PRIV-2).
-- **Ownership (D-0020).** Every user-owned table has `user_id uuid not null default auth.uid() references auth.users(id) on delete cascade`. Deleting the auth user deletes all of that user's rows (NFR-PRIV-5).
+- **Ownership (D-0020).** Every user-owned table has `user_id uuid not null default auth.uid() references auth.users(id) on delete cascade`. Deleting the auth user deletes all of that user's rows (NFR-PRIV-5). The same delete also purges that user's `auth.audit_log_entries` rows, in the same transaction (see "Auth schema triggers", D-0188).
 - **RLS on every public table.** User-owned tables have four policies for role `authenticated` (select, insert, update, delete), each on `(select auth.uid()) = user_id` (`using` and, for insert/update, `with check`). `anon` has no privileges on them. Library tables have one `select` policy for `anon, authenticated` with `using (true)`. Neither role can insert, update or delete them; the seed runs as `postgres` (D-0021).
 - **Child rows** reference their parent with a composite FK on `(parent_id, user_id)`, so a user cannot attach a row to someone else's parent, even though FK checks bypass RLS (D-0020).
 - **Offline rows (D-0017, D-0020).** `sessions.id` and `session_sets.client_id` are UUIDs generated on the device. Checks on `sessions` and `session_sets` reject only impossible values. None compare against `now()`, and none tie duration to budget.
@@ -16,6 +16,14 @@ Decisions: D-0001 (Supabase), D-0015 (set sync), D-0017 (offline, client ids), D
 - **No server-side 14-day load view** (D-0021). The engine computes load from `session_sets_live` on the device and in Edge Functions. The only SQL load is the aggregate metric `analytics.areas_on_target_day28`, which uses UTC dates and is not shown in any product UI (D-0021).
 
 Column tables use `null` = `yes` (nullable) or `no` (not null).
+
+## Auth schema triggers (D-0188)
+- **`auth_users_purge_audit`** is an `after delete on auth.users for each row` trigger running `private.purge_auth_audit_for_user()` (T-0503, D-0188 §1, amends D-0135 §5). Supabase Auth's `auth.audit_log_entries` rows hold the user's email (in `payload`) and IP, and have no FK to `auth.users`, so the D-0020 cascade can't reach them. The trigger deletes every row where any of these exact matches holds (never a substring match):
+  - `payload->>'actor_id' = old.id::text`;
+  - `payload->'traits'->>'user_id' = old.id::text`;
+  - `payload->>'actor_username' = old.email` (only when `old.email` is not null);
+  - `payload->'traits'->>'user_email' = old.email` (only when `old.email` is not null).
+- The function is `security invoker` with `search_path = ''`. It runs as whoever deletes the user: `supabase_auth_admin` (GoTrue, which gets usage on `private` and execute on the function) or `postgres`. `anon` and `authenticated` have no execute on it. GoTrue's own `user_deleted` entry is written in the same transaction before the row goes, so it is removed too.
 
 ## Library (read-only for clients)
 
