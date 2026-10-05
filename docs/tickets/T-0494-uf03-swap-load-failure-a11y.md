@@ -79,3 +79,47 @@ start `T-0494 UF-03.1:`.
   next commit.
 
 ## Build / accept log
+
+**2026-10-05 frontend-dev.** Added `T-0494 AC-1/AC-2/AC-3` tests to `list-view.swap-retry.test.tsx`
+(reusing `mount()`/`openSwap()`/`makeCtx` and `axeViolations` from `list-helpers.js`). No
+`ListView.tsx` change: the normal-path axe test found no real violation on unfixed `main`
+(AC-1/AC-2 pass with `axeViolations()` returning `[]`).
+
+Placement note: the three new tests had to be inserted **before** the file's existing "recovers"
+test (last of the T-0478 AC-1 block), not after it as a new top-level `describe`. Once "recovers"
+succeeds, `swapSheetLoader`'s underlying `lazy()` (`retryableLazy`, `componentDidCatch` calls
+`reset()` only on a caught failure, never on success) stays resolved to the real module for the
+rest of the file — a later mount would show the real `SwapSheet` dialog regardless of
+`loader.failing`. Confirmed by running the new tests appended after "recovers" first: 3/3 failed
+trying to find "Couldn't load alternatives." because the real dialog rendered instead. Moved them
+immediately before "recovers" (same `describe`, same module-load order) — 7/7 green. The four
+existing T-0478 tests are unedited (AC-5), only relocated relative to new tests.
+
+AC→test map: AC-1 → "T-0494 AC-1: axeViolations() returns [], role=status, …"; AC-2 → "T-0494
+AC-2: axeViolations() returns [] when Try again fails again"; AC-3 → "T-0494 AC-3: console.error
+calls match the expected lines; console.warn unused"; AC-5 → unedited run of the file's four
+T-0478 tests + `list-view.swap.test.tsx` (20/20 passed together).
+
+**AC-4 fault proof, and a finding (no decision filed — `.squad/decisions/**` is the `process`
+lane's path, not `web-feature:UF-03`'s; see follow-up below instead).** Backed up `ListView.tsx`
+(`cp`), added `aria-hidden="true"` to `SwapLoadBoundary`'s `role="status"` div, reran AC-1/AC-2:
+red, as the ticket asks — but via AC-1's own `getByRole("status")` / `getByRole("button", …)`
+assertions (which Testing Library's role queries refuse to find once `aria-hidden` hides the
+subtree), not via `axeViolations()`. Measured directly (not assumed): `axeViolations()` stayed
+`[]` throughout; the finding appears only in axe's `results.incomplete` as `aria-hidden-focus`,
+never in `results.violations`, in jsdom — axe-core's `aria-hidden-focus` rule depends on
+`isModalOpen()`, which needs real layout (`elementsFromPoint`) jsdom doesn't implement, so the
+check returns "can't tell" rather than "fails" no matter the markup (tried hidden ancestor div,
+hidden button itself, and a concurrently-rendered real `[aria-modal=true]` dialog — all stayed
+`incomplete`). No change made to the shared `axeViolations()` helper (used by several other
+passing tests; broadening it to fail on `incomplete` is a different lane's helper and a bigger
+blast radius than this ticket). Restored `ListView.tsx` with `cp`; AC-1 green again (confirmed
+`git diff --stat` on `ListView.tsx` is empty post-restore). Both runs recorded below.
+
+Red run (fault planted): `list-view.swap-retry.test.tsx -t "T-0494"` → 2 failed (AC-1, AC-2) | 1
+passed (AC-3, which doesn't touch the hidden buttons) | 4 skipped.
+Green run (restored): full file → 7 passed (7).
+
+Gate: `-w typecheck lint test --concurrency=1` green, `-w test:repo-checks` green, `-w
+format:check` green, `node .github/scripts/check-all.mjs` green (see summary below for exact
+counts). No e2e run: test-only diff, `ListView.tsx` unchanged (per DoD).

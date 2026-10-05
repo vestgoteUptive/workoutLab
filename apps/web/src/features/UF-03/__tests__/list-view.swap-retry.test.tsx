@@ -14,7 +14,7 @@ import {
   signOut,
   waitReal,
 } from "./helpers.js";
-import { makeCtx, settle, type SpiedCtx } from "./list-helpers.js";
+import { axeViolations, makeCtx, settle, type SpiedCtx } from "./list-helpers.js";
 
 const loader = vi.hoisted(() => ({ calls: 0, failing: true }));
 
@@ -101,6 +101,44 @@ describe("T-0478 AC-1 a failed SwapSheet import doesn't stick (D-0162 §3)", () 
     for (const args of vi.mocked(console.error).mock.calls) {
       expect(args.map(String).join(" ")).toMatch(/Failed to fetch|error occurred|SwapLoadBoundary/);
     }
+  });
+
+  // T-0494: the failure state itself (QA follow-up on T-0478's AC-3, which only covered the
+  // normal card) — axe on the "Couldn't load alternatives." region, axe again after a failed
+  // retry, and a check that the only console.error calls between mount and the failure text are
+  // the expected boundary/import lines (D-0162 §3, D-0178: small, self-proven diff). These run
+  // before "recovers" below: once that test's successful import resolves, `swapSheetLoader`'s
+  // underlying `lazy()` is cached permanently (`reset()` only runs on a caught failure, not on
+  // success), so a later mount in this file would show the real sheet regardless of `loader.
+  // failing` — AC-1..AC-3 need the module still in its "every import fails" state.
+  it("T-0494 AC-1: axeViolations() returns [], role=status, and named Try again / Close buttons", async () => {
+    await mount();
+    await openSwap();
+    const region = screen.getByRole("status");
+    expect(region.textContent).toContain("Couldn't load alternatives.");
+    expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Close" })).toBeTruthy();
+    const violations = await axeViolations();
+    expect(violations).toEqual([]);
+  });
+
+  it("T-0494 AC-2: axeViolations() returns [] when Try again fails again", async () => {
+    await mount();
+    await openSwap();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await screen.findByText("Couldn't load alternatives.");
+    const violations = await axeViolations();
+    expect(violations).toEqual([]);
+  });
+
+  it("T-0494 AC-3: console.error calls match the expected lines; console.warn unused", async () => {
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await mount();
+    await openSwap();
+    for (const args of vi.mocked(console.error).mock.calls) {
+      expect(args.map(String).join(" ")).toMatch(/Failed to fetch|error occurred|SwapLoadBoundary/);
+    }
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it("recovers: Try again after the chunk is reachable again shows the real sheet", async () => {
