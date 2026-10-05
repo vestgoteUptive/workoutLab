@@ -8,13 +8,26 @@ import path from "node:path";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const SPEC_PATH = path.join(here, "../auth/expected-auth.json");
+export const TEMPLATES_DIR = path.join(here, "../auth/templates");
 
-// Derived values: name -> (raw, env) => boolean. Add entries here (e.g. smtp_pass_set).
+// T-0404b: a live template matches its committed file after trailing whitespace is trimmed.
+// Only the boolean leaves this module; the template text is never printed.
+const templateMatches = (key, file) => (raw) => {
+  const live = raw[key];
+  if (typeof live !== "string") return false;
+  return live.trimEnd() === readFileSync(path.join(TEMPLATES_DIR, file), "utf8").trimEnd();
+};
+
+// Derived values: name -> (raw, env) => boolean. Add entries here.
 export const DERIVED = {
   external_google_client_id_matches: (raw, env) =>
     typeof env.GOOGLE_OAUTH_CLIENT_ID === "string" &&
     env.GOOGLE_OAUTH_CLIENT_ID !== "" &&
     raw.external_google_client_id === env.GOOGLE_OAUTH_CLIENT_ID,
+  // T-0404b: the SMTP password as a boolean only (non-empty string).
+  smtp_pass_set: (raw) => typeof raw.smtp_pass === "string" && raw.smtp_pass !== "",
+  mailer_templates_magic_link_matches: templateMatches("mailer_templates_magic_link_content", "magic-link.html"),
+  mailer_templates_confirmation_matches: templateMatches("mailer_templates_confirmation_content", "confirmation.html"),
 };
 
 const ABSENT = "<absent>";
@@ -46,7 +59,9 @@ export function diff(filtered, spec) {
       if (missing.length) lines.push(`${k}: missing [${missing.join(", ")}]`);
       if (extra.length) lines.push(`${k}: extra [${extra.join(", ")}]`);
     } else if (live !== exp) {
-      lines.push(`${k}: expected ${show(exp)}, live ${show(live)}`);
+      // T-0404b: name the type when only it differs (e.g. smtp_port "465" vs 465).
+      const type = live != null && typeof live !== typeof exp ? ` (live is a ${typeof live})` : "";
+      lines.push(`${k}: expected ${show(exp)}, live ${show(live)}${type}`);
     }
   }
   return lines;

@@ -3,6 +3,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { Buffer } from "node:buffer";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { run, SPEC_PATH } from "../../infra/scripts/auth-patch.mjs";
@@ -143,7 +145,9 @@ test("T-0402c AC-3 --set coerces to the live type and bad input makes no call", 
 });
 
 test("T-0402c AC-6 drift check: exactly one difference before the apply, none after", async () => {
-  const live = liveConfig();
+  // T-0404b moved the SMTP keys into the expected file, so this live config holds them as
+  // T-0404b leaves them; the allow-list entry stays the only difference.
+  const live = { ...liveConfig(), ...smtpApplied() };
   const env = { SUPABASE_ACCESS_TOKEN: "tok-SENTINEL", GOOGLE_OAUTH_CLIENT_ID: live.external_google_client_id };
   const drift = async (cfg) => {
     const out = [];
@@ -164,4 +168,157 @@ test("T-0402c AC-3 the script source PATCHes only the auth config endpoint", () 
   const src = readFileSync(path.join(here, "../../infra/scripts/auth-patch.mjs"), "utf8");
   for (const m of ['"POST"', '"PUT"', '"DELETE"']) assert.ok(!src.includes(m), m);
   assert.equal(src.match(/method: "PATCH"/g)?.length, 1);
+});
+
+// ---- T-0404b (UF-01.5): SMTP + templates through the same keys-only PATCH ----
+const repoRoot = path.join(here, "../..");
+const readme = readFileSync(path.join(repoRoot, "infra/auth/README.md"), "utf8");
+const tpl = (f) => readFileSync(path.join(repoRoot, "infra/auth/templates", f), "utf8");
+const RESEND_SENTINEL = "re_SENTINEL_RESEND_0123456789";
+
+/** The sh blocks after the T-0404b marker in infra/auth/README.md, as argv after auth-patch.mjs. */
+function readmeCommands() {
+  const tail = readme.slice(readme.indexOf("<!-- T-0404b args"));
+  return [...tail.matchAll(/```sh\n([\s\S]*?)```/g)].slice(0, 2).map((m) => {
+    const line = m[1].replace(/\\\n\s*/g, " ").trim();
+    const [prefix, args] = line.split("node infra/scripts/auth-patch.mjs");
+    return { prefix: prefix.trim(), argv: args.trim().split(/\s+/) };
+  });
+}
+
+/** Prod as read on 2026-10-05 (null SMTP keys, default subjects/templates), plus filler. */
+function prodLike() {
+  return {
+    ...liveConfig(),
+    smtp_host: null,
+    smtp_port: null,
+    smtp_user: null,
+    smtp_pass: null,
+    smtp_admin_email: null,
+    smtp_sender_name: null,
+    rate_limit_email_sent: 2,
+    mailer_autoconfirm: false,
+    mailer_subjects_magic_link: "Your sign-in link",
+    mailer_subjects_confirmation: "Confirm your email address",
+    mailer_templates_magic_link_content: "<h2>Magic Link</h2><p><a href=\"{{ .ConfirmationURL }}\">Log In</a></p>",
+    mailer_templates_confirmation_content: "<h2>Confirm your signup</h2><p><a href=\"{{ .ConfirmationURL }}\">Confirm</a></p>",
+  };
+}
+
+/** The 11 keys as the T-0404b apply leaves them. */
+function smtpApplied() {
+  return {
+    smtp_host: "smtp.resend.com",
+    smtp_port: "465",
+    smtp_user: "resend",
+    smtp_pass: RESEND_SENTINEL,
+    smtp_admin_email: "no-reply@workout.vestgote.com",
+    smtp_sender_name: "workoutLab",
+    rate_limit_email_sent: 10,
+    mailer_subjects_magic_link: tpl("magic-link.subject.txt"),
+    mailer_templates_magic_link_content: tpl("magic-link.html"),
+    mailer_subjects_confirmation: tpl("confirmation.subject.txt"),
+    mailer_templates_confirmation_content: tpl("confirmation.html"),
+  };
+}
+const ELEVEN = Object.keys(smtpApplied()).sort();
+const execAt = (argv, opts) => execT(argv, opts);
+async function execT(argv, { env, server }) {
+  const out = [];
+  const err = [];
+  const code = await run({ argv, env, fetchImpl: server.fetchImpl, stdout: (x) => out.push(x), stderr: (x) => err.push(x), spec, cwd: repoRoot });
+  return { code, out: out.join("\n"), err: err.join("\n"), all: [...out, ...err].join("\n"), server };
+}
+
+test("T-0404b AC-2 the README's preview and apply lines are the same argument list", () => {
+  const [preview, apply] = readmeCommands();
+  assert.equal(preview.prefix, "set -a; . .env.local; set +a;");
+  assert.equal(apply.prefix, `set -a; . .env.local; set +a; CONFIRM_PROD_AUTH=${REF}`);
+  assert.deepEqual(apply.argv, [...preview.argv, "--apply"]);
+  assert.ok(!preview.argv.includes("--apply"));
+});
+
+test("T-0404b AC-2 --apply with the README arguments PATCHes exactly the 11 keys, smtp_pass from env", async () => {
+  const [, apply] = readmeCommands();
+  const env = { ...ENV, CONFIRM_PROD_AUTH: REF, RESEND_API_KEY: RESEND_SENTINEL };
+  const r = await execAt(apply.argv, { env, server: fakeServer(prodLike()) });
+  assert.equal(r.code, 0, r.all);
+  const w = nonGet(r.server);
+  assert.equal(w.length, 1);
+  const body = JSON.parse(w[0].body);
+  assert.deepEqual(Object.keys(body).sort(), ELEVEN);
+  assert.equal(body.smtp_pass, RESEND_SENTINEL);
+  assert.equal(body.smtp_port, "465", "the API types smtp_port as a string");
+  assert.equal(body.rate_limit_email_sent, 10);
+  assert.equal(body.smtp_sender_name, "workoutLab");
+  for (const [k, f] of [
+    ["mailer_subjects_magic_link", "magic-link.subject.txt"],
+    ["mailer_templates_magic_link_content", "magic-link.html"],
+    ["mailer_subjects_confirmation", "confirmation.subject.txt"],
+    ["mailer_templates_confirmation_content", "confirmation.html"],
+  ]) {
+    assert.equal(Buffer.compare(Buffer.from(body[k], "utf8"), readFileSync(path.join(repoRoot, "infra/auth/templates", f))), 0, `${k} is ${f} byte for byte`);
+  }
+  for (const s of [RESEND_SENTINEL, "re_SENTINEL", ...SENTINELS]) assert.ok(!r.all.includes(s), `leaked ${s}`);
+  const [before, after] = hashes(r.out);
+  assert.ok(before && before === after, "others_sha256 unchanged");
+});
+
+test("T-0404b AC-4 preview masks RESEND_API_KEY, shows templates as len+sha256, sends nothing", async () => {
+  const [preview] = readmeCommands();
+  const env = { ...ENV, RESEND_API_KEY: RESEND_SENTINEL };
+  const r = await execAt(preview.argv, { env, server: fakeServer(prodLike()) });
+  assert.equal(r.code, 0, r.all);
+  assert.equal(nonGet(r.server).length, 0);
+  for (const s of [RESEND_SENTINEL, "re_SENTINEL", ...SENTINELS]) assert.ok(!r.all.includes(s), `leaked ${s}`);
+  const [beforeView, afterView] = r.out.split("after:");
+  assert.ok(beforeView.includes("  smtp_pass = <unset>") && afterView.includes("  smtp_pass = <set>"));
+  const html = tpl("magic-link.html");
+  const sha = createHash("sha256").update(html).digest("hex");
+  assert.ok(afterView.includes(`  mailer_templates_magic_link_content = len=${html.length} sha256=${sha}`));
+  assert.ok(!r.all.includes("{{ .Token }}"), "template text is not printed");
+  assert.ok(afterView.includes("  smtp_port = 465") && afterView.includes("  mailer_subjects_confirmation = Confirm your workoutLab account"));
+  assert.equal(hashes(r.out).length, 1);
+  assert.ok(r.out.includes("dry run: nothing sent"));
+});
+
+test("T-0404b AC-5 after the apply the extended drift check exits 0", async () => {
+  const [, apply] = readmeCommands();
+  // T-0402c's allow-list entry is already live on prod.
+  const server = fakeServer({ ...prodLike(), uri_allow_list: `${LIVE_LIST},${PREVIEW}` });
+  const env = { ...ENV, CONFIRM_PROD_AUTH: REF, RESEND_API_KEY: RESEND_SENTINEL };
+  assert.equal((await execAt(apply.argv, { env, server })).code, 0);
+  const out = [];
+  const code = await driftRun({
+    fetchImpl: async () => ({ status: 200, json: async () => server.state() }),
+    env: { ...ENV, GOOGLE_OAUTH_CLIENT_ID: fixture.external_google_client_id },
+    stdout: (x) => out.push(x),
+    spec,
+  });
+  assert.equal(code, 0, out.join("\n"));
+});
+
+test("T-0404b AC-2 a masked secret read back still passes; a dropped one fails the after-check", async () => {
+  const [, apply] = readmeCommands();
+  const env = { ...ENV, CONFIRM_PROD_AUTH: REF, RESEND_API_KEY: RESEND_SENTINEL };
+  const masked = await execAt(apply.argv, { env, server: fakeServer(prodLike(), { alsoChange: { smtp_pass: "******" } }) });
+  assert.equal(masked.code, 0, masked.all);
+  const dropped = await execAt(apply.argv, { env, server: fakeServer(prodLike(), { alsoChange: { smtp_pass: null } }) });
+  assert.equal(dropped.code, 1);
+  assert.ok(dropped.err.includes("mismatch: smtp_pass"));
+  const port = await execAt(apply.argv, { env, server: fakeServer(prodLike(), { alsoChange: { smtp_port: 465 } }) });
+  assert.equal(port.code, 1, "a type change by the server shows as a mismatch");
+  assert.ok(port.err.includes("mismatch: smtp_port"));
+});
+
+test("T-0404b AC-2 --set-from-file: secret keys refused, missing file refused, zero calls", async () => {
+  for (const argv of [
+    ["--set-from-file", "smtp_pass=infra/auth/templates/magic-link.html"],
+    ["--set-from-file", "mailer_templates_magic_link_content=infra/auth/templates/nope.html"],
+    ["--set-from-file", "mailer_templates_magic_link_content="],
+  ]) {
+    const r = await execAt(argv, { env: ENV, server: fakeServer(prodLike()) });
+    assert.equal(r.code, 2, argv.join(" "));
+    assert.equal(r.server.calls.length, 0);
+  }
 });

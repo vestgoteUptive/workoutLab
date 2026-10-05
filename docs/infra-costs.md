@@ -10,7 +10,7 @@ Claude / AgentLab usage for building the app is **not** infra and is not counted
 | Supabase prod `csgjsdwuxqtuqpuazzpz` | 0 (Free) | **25** (Pro) | 25–35 | Pro includes 10 USD compute, which covers the Micro instance. Spend cap stays **on**. |
 | Cloudflare Pages × 2 (landing, app) | 0 | 0 | 0 | Free: 500 builds/mo, unlimited bandwidth, free per-domain certs (D-0010). |
 | Cloudflare DNS / zone vestgote.com | 0 | 0 | 0 | Already owned; the domain renewal isn't attributed to this app. |
-| Transactional email (magic links) | 0 | 0 | 0–20 | Supabase's default mailer allows only 2 emails/hour, so it can't be used in production. Plan: Resend free tier (≈3,000/mo, 100/day; verify). Paid tier if exceeded. |
+| Transactional email (magic links) | 0 | 0 | 0–20 | Resend free, live (T-0404b): auth mail over SMTP from `no-reply@workout.vestgote.com`. Free tier limits 3,000 mails/month and 100/day, one domain. Supabase `rate_limit_email_sent` = 10/hour project-wide keeps a busy day under the daily cap. Paid tier (20) only if exceeded. |
 | GitHub (repo + Actions) | 0 | 0 | 0–4 | Free private-repo minutes. Keep e2e lean; cache pnpm and the Supabase images. |
 | Google OAuth | 0 | 0 | 0 | Free. Moving from testing mode to production needs verification, which is free but has to be filed (gate 6). |
 | Error monitoring (Sentry) | 0 | 0 | 0 | Free developer tier; optional. |
