@@ -117,9 +117,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0400 | Terraform: import prod Supabase project (D-0011), create staging, codify auth config | infra | T-0203a | todo | wl-build-infra |
-| T-0401 | Terraform: Cloudflare Pages projects, custom domains, DNS (D-0010) | infra | T-0309 | todo | wl-build-infra |
-| T-0402 | Deploy pipelines: branch previews → staging, `main` → prod | infra | T-0400, T-0401 | todo | wl-build-infra |
+| T-0400 | Terraform: import prod Supabase project (D-0011) with a zero-change plan, codify its auth config; plan-then-stop gate (D-0184) | infra | T-0203a | ready | wl-build-infra |
+| T-0401 | Terraform: Cloudflare Pages projects, custom domains, the two CNAMEs only (D-0010); plan-then-stop (D-0184) | infra | T-0309 | ready | wl-build-infra |
+| T-0402 | Deploy pipelines: branch previews → prod (no staging, D-0184 §5), `main` → prod; adds the preview redirect pattern to prod's allow-list as its own reviewed plan step, and must prove RLS scopes a preview tester to their own rows first (D-0184 §6) | infra | T-0400, T-0401 | todo | wl-build-infra |
 | T-0404 | Custom SMTP: Resend as Supabase auth mailer, DNS records for `workout.vestgote.com`, branded magic-link template (D-0012) | infra | T-0401 | todo | wl-build-infra |
 | T-0405 | Cost guard: Supabase spend cap verified on, usage alerts at 80 % of quotas, `docs/infra-costs.md` updated from real usage monthly | infra | T-0400 | todo | wl-build-infra |
 | T-0403 | Release check: security review, e2e happy path, go/no-go | qa | T-0301…T-0309, T-0402, T-0404 | todo (needs H-06) | wl-release |
