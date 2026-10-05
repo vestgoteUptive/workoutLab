@@ -14,6 +14,7 @@
 //
 // WHAT THIS DOES NOT COVER (D-0074 §2 — these four limits, verbatim):
 //   1. it needs a `t/T-NNNN-slug` branch and does nothing on `main` or a detached HEAD;
+//      with no diff base it skips off CI, but fails in CI (`no-diff-base-in-ci`, T-0337);
 //   2. it needs a committed diff — uncommitted working-tree edits are invisible;
 //   3. it cannot see a *runtime* violation, only a *file* edit, so a feature reaching a
 //      shared value some other way (a dynamic `import()`, the `offlineDb()` barrel of
@@ -429,13 +430,33 @@ function resolveBranch(overrideBranch, { env = process.env, git } = {}) {
  * uses whatever ref already exists: `origin/main`, else `main`, else nothing (a no-op note).
  */
 export function resolveChangedPaths(git) {
-  let base = null;
-  for (const ref of ["origin/main", "main"]) {
+  // T-0336: take the merge base NEAREST HEAD. A stale `origin/main` must not beat a newer local
+  // `main` (the orchestrator commits on `main` and pushes later).
+  const mergeBase = (ref) => {
     try {
-      base = git(["merge-base", ref, "HEAD"]).trim();
-      if (base) break;
+      return git(["merge-base", ref, "HEAD"]).trim() || null;
     } catch {
-      base = null;
+      return null;
+    }
+  };
+  const originBase = mergeBase("origin/main");
+  const mainBase = mergeBase("main");
+  let base = originBase ?? mainBase;
+  if (originBase && mainBase && originBase !== mainBase) {
+    try {
+      // A local `main` sitting ON the branch tip (merged or fast-forwarded) is not a fork point:
+      // its base is HEAD itself and the diff would be empty. Keep origin/main's base then.
+      let head = null;
+      try {
+        head = git(["rev-parse", "HEAD"]).trim();
+      } catch {
+        head = null;
+      }
+      if (head && head === mainBase) throw new Error("main is at HEAD");
+      git(["merge-base", "--is-ancestor", originBase, mainBase]);
+      base = mainBase; // exit 0: main's base is the descendant
+    } catch {
+      base = originBase; // diverged or odd history: keep origin/main's base
     }
   }
   if (!base) {
@@ -493,6 +514,18 @@ export async function runCheck(root = REPO_ROOT, { branch, git, env = process.en
 
   const { changed, note: diffNote, base } = resolveChangedPaths(runGit);
   if (changed == null) {
+    // T-0337: in CI a missing diff base is a failure, not a silent pass. Off CI it stays a note.
+    if (/^(true|1)$/i.test(env.CI ?? "")) {
+      return [
+        ...ciFindings,
+        {
+          path: ".github/workflows/ci.yml",
+          line: 1,
+          rule: "no-diff-base-in-ci",
+          message: `${diffNote}. The lane-path check did nothing on this PR; the checkout needs \`fetch-depth: 0\` or a \`git fetch origin main\``,
+        },
+      ];
+    }
     console.log(`check-lane-paths: ${diffNote}`);
     return ciFindings;
   }
