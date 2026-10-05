@@ -125,13 +125,4 @@ None. No cost.
 - **Unblocks:** T-0404a (its run A and run B take the baseline with this script).
 
 ## Build / accept log
-
-### Build log (devops, 2026-10-05, base 6950954, tree clean)
-- Added `infra/scripts/zone-baseline.mjs`, test + `two-records.json` fixture, README run A/B now call the script.
-- AC->test: AC-1..AC-5 = `.github/scripts/zone-baseline.test.mjs` titles `T-0501 AC-n` (6/6 pass). AC-1 hash computed by hand with `sha256sum` over the two spelled-out lines.
-- Planted fault: `.sort()` removed in a temp copy; the test `AC-2 planted fault` shows reversed input then gives a different hash (sort is what makes AC-2 pass).
-- AC-6 live, read-only, 60 s apart, both identical (new reference baseline, D-0186 §5):
-  `count=26 sha256=1196f0d86c86ddebbcf58460013c811d663e7fc470130a4e9e2b3b4a66839ae8`
-  `count=26 sha256=1196f0d86c86ddebbcf58460013c811d663e7fc470130a4e9e2b3b4a66839ae8`
-- No apps/ or packages/ change, so no `-w typecheck lint test` or e2e (D-0178).
-
+Archived in `docs/tickets/log/T-0501.md` (D-0157).

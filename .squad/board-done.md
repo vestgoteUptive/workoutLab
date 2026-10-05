@@ -278,3 +278,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 |---|---|---|---|---|---|
 | T-0400 | Terraform: import prod Supabase project `supabase_project` only, zero-change (D-0185: auth settings stay hand-managed, not in Terraform); plan-then-stop gate (D-0184) | infra | T-0203a | done | wl-build-infra |
 | T-0401 | Terraform: Cloudflare Pages projects, custom domains, the two CNAMEs only (D-0010); plan-then-stop (D-0184) | infra | T-0309 | done | wl-build-infra |
+| T-0501 | Commit the Cloudflare zone-baseline computation as a script (exact line format + sort), so run-A/run-B hashes are comparable; T-0401 run B had to fall back to modified_on (T-0401 follow-up, D-0186 §5) | infra | T-0401 | done | wl-build-infra |
