@@ -155,3 +155,39 @@ Records Resend shows (names relative to the zone `vestgote.com`; all public DNS 
 1. **Layout differs from this ticket's assumption** (edge case "Resend shows a different record layout"). It's no longer `send` MX + `send` TXT SPF; it's two **CNAME**s (`send.`, `rsend.`) plus the DKIM TXT. Mirror what Resend shows: resources for `send.workout.vestgote.com` (CNAME), `rsend.workout.vestgote.com` (CNAME), `resend._domainkey.workout.vestgote.com` (TXT), all `proxied = false`. Narrow the scope check to exactly these names and types `CNAME`/`TXT`; no MX.
 2. **DMARC goes at `_dmarc.workout.vestgote.com`, never the apex.** Resend's `_dmarc` name means `_dmarc.vestgote.com`, which is outside gate 4 and would set mail policy for the whole shared zone. Use `_dmarc.workout.vestgote.com` TXT `v=DMARC1; p=none;`. The scope check must reject `_dmarc.vestgote.com`.
 3. The human must **not** use Resend's Cloudflare "Auto configure" (it would create these records outside Terraform). Discovery (GET) still checks whether any of the four names already exists; if one does, follow the existing edge case.
+
+### Run A (devops, 2026-10-05, base 91df46f, worktree clean at start) — partial: plan not run
+- **Discovery (GET only, `dns_records?name=`):** `send.workout.vestgote.com` CNAME
+  `send.forge.rmta.net` (id `9dcf42e7…`), `rsend.workout.vestgote.com` CNAME
+  `rsend-euw1.forge.rmta.net` (id `8676a02f…`), `resend._domainkey.workout.vestgote.com` TXT
+  (quoted DKIM key, equal to H-20) (id `428f3ef4…`) **already exist**. All proxied=false, TTL 3600,
+  no comment/tags, created in the same second 2026-10-05T19:02:48Z (Resend auto-configure, despite
+  correction 3). `_dmarc.workout.vestgote.com`: none. `_dmarc.vestgote.com` (apex): none.
+- **Edge case applied (D-0187):** content equal, so `import {}` blocks for the three (executed by
+  the human's apply; no `terraform import` CLI), mirroring the live TTL 3600 and quoted TXT; DMARC
+  created as `"v=DMARC1; p=none;"`, TTL 3600. Expected plan: `3 to import, 1 to add, 0 to change,
+  0 to destroy`.
+- **Zone baseline A** (`node infra/scripts/zone-baseline.mjs`): `count=26
+  sha256=1196f0d86c86ddebbcf58460013c811d663e7fc470130a4e9e2b3b4a66839ae8`.
+- **Terraform not run:** the agent session's permission classifier denied the
+  `init`/`fmt`/`validate`/`plan` command. No terraform command ran, and nothing was applied or
+  imported. No write call was made. The human runs the README run A block from here (the worktree
+  holds T-0401's copied state): `terraform init && terraform fmt -check -recursive .. && terraform
+  validate`, `terraform plan -out=../plans/cloudflare.tfplan`, `terraform show
+  ../plans/cloudflare.tfplan` (paste here), `terraform show -json ../plans/cloudflare.tfplan | node
+  ../../../.github/scripts/check-infra-scope-cloudflare.mjs --plan` (expect ok), and `terraform show
+  -json ../plans/cloudflare.tfplan | grep -cF "$CLOUDFLARE_API_TOKEN"` (expect 0). If any of the six
+  T-0401 resources or an imported record shows update/destroy, don't apply: triage.
+- **Scope check:** exactly four email addresses/names (`send.`/`rsend.` CNAME, `resend._domainkey.`
+  and `_dmarc.` TXT under workout.), `proxied = false`, import blocks only onto them; apex rejected.
+- AC-1 → `T-0404a AC-1 real config…`, `…TXT on workout.vestgote.com`, `…name = vestgote.com`,
+  `…apex _dmarc.vestgote.com`, `…proxied = true`, `…MX on send.`, `…import block onto a module
+  address` (all copies of the real config).
+- AC-2 → `cf-email-create` (0), `cf-email-import` (0), `cf-email-wrong-name` (1),
+  `cf-email-apex-dmarc` (1), `cf-email-proxied` (1), inline update/wrong-type (1), T-0401 fixtures
+  unchanged.
+- Red on unfixed code: new tests vs old checker failed (no `EMAIL_RECORDS`); old checker exits 1
+  on all five new fixtures, including the two good ones.
+- Planted faults (backup `cp` restore): proxied check off → 2 red; name check off → 5 red.
+- AC-3 pending the human's plan; AC-6: no cost (DNS records free, Resend free tier),
+  `docs/infra-costs.md` unchanged.

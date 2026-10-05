@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { checkStatic, checkPlan } from "./check-infra-scope-cloudflare.mjs";
+import { checkStatic, checkPlan, EMAIL_RECORDS } from "./check-infra-scope-cloudflare.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, "../..");
@@ -79,4 +79,93 @@ test("T-0401 AC-2 an address outside the six exits 1", () => {
   const r = runPlan("cf-extra-address.json");
   assert.equal(r.status, 1);
   assert.match(r.stderr, /cloudflare_dns_record\.extra/);
+});
+
+// T-0404a: Resend email records outside the module (layout from H-20: two CNAMEs + DKIM TXT,
+// DMARC under workout. and never the apex).
+function emailCopy(edit) {
+  const [cf, mod] = copyConfig();
+  const f = path.join(cf, "email.tf");
+  writeFileSync(f, edit(readFileSync(f, "utf8")));
+  return checkStatic([cf, mod]);
+}
+
+test("T-0404a AC-1 real config passes and every email record is in the four-name set", () => {
+  assert.deepEqual(checkStatic(real), []);
+  const text = readFileSync(path.join(real[0], "email.tf"), "utf8");
+  const names = [...text.matchAll(/^\s*name\s*=\s*"([^"]+)"/gm)].map((m) => m[1]).sort();
+  assert.deepEqual(names, [...EMAIL_RECORDS.map((r) => r.name)].sort());
+  assert.equal([...text.matchAll(/^\s*proxied\s*=\s*false\s*$/gm)].length, 4);
+});
+
+test("T-0404a AC-1 a TXT on workout.vestgote.com goes red", () => {
+  const p = emailCopy((t) => t.replace('"_dmarc.workout.vestgote.com"', '"workout.vestgote.com"'));
+  assert.ok(p.some((x) => x.includes('"workout.vestgote.com"')), p.join("\n"));
+});
+
+test("T-0404a AC-1 name = vestgote.com goes red", () => {
+  const p = emailCopy((t) => t.replace('"send.workout.vestgote.com"', '"vestgote.com"'));
+  assert.ok(p.some((x) => x.includes('"vestgote.com"')), p.join("\n"));
+});
+
+test("T-0404a AC-1 DMARC on the apex _dmarc.vestgote.com goes red", () => {
+  const p = emailCopy((t) => t.replace('"_dmarc.workout.vestgote.com"', '"_dmarc.vestgote.com"'));
+  assert.ok(p.some((x) => x.includes('"_dmarc.vestgote.com"')), p.join("\n"));
+});
+
+test("T-0404a AC-1 proxied = true on a sending CNAME goes red", () => {
+  const p = emailCopy((t) => t.replace(/(name {4}= "send\.workout\.vestgote\.com"[\s\S]*?proxied = )false/, "$1true"));
+  assert.ok(p.some((x) => x.includes("proxied")), p.join("\n"));
+});
+
+test("T-0404a AC-1 a wrong type (MX on send.) goes red", () => {
+  const p = emailCopy((t) => t.replace(/(name {4}= "send\.workout\.vestgote\.com"\n\s*type {4}= )"CNAME"/, '$1"MX"'));
+  assert.ok(p.some((x) => x.includes("MX")), p.join("\n"));
+});
+
+test("T-0404a AC-1 an import block onto a module address goes red", () => {
+  const p = emailCopy((t) => t.replace("to = cloudflare_dns_record.resend_send", "to = module.app.cloudflare_dns_record.this"));
+  assert.ok(p.some((x) => x.includes("import")), p.join("\n"));
+});
+
+test("T-0404a AC-2 four email creates on top of six no-ops pass", () => {
+  const r = runPlan("cf-email-create.json");
+  assert.equal(r.status, 0, r.stderr);
+});
+
+test("T-0404a AC-2 three no-op imports plus one create pass", () => {
+  const r = runPlan("cf-email-import.json");
+  assert.equal(r.status, 0, r.stderr);
+});
+
+test("T-0404a AC-2 a TXT on vestgote.com exits 1 and names the address", () => {
+  const r = runPlan("cf-email-wrong-name.json");
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /cloudflare_dns_record\.dmarc/);
+});
+
+test("T-0404a AC-2 DMARC on the apex exits 1 and names the address", () => {
+  const r = runPlan("cf-email-apex-dmarc.json");
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /cloudflare_dns_record\.dmarc.*_dmarc\.vestgote\.com/);
+});
+
+test("T-0404a AC-2 a proxied email record exits 1 and names the address", () => {
+  const r = runPlan("cf-email-proxied.json");
+  assert.equal(r.status, 1);
+  assert.match(r.stderr, /cloudflare_dns_record\.resend_send.*proxied/);
+});
+
+test("T-0404a AC-2 an update on an imported email record or a wrong type exits 1", () => {
+  const plan = JSON.parse(readFileSync(fx("cf-email-import.json"), "utf8"));
+  const dkim = plan.resource_changes.find((r) => r.address === "cloudflare_dns_record.resend_dkim");
+  dkim.change.actions = ["update"];
+  plan.resource_changes.find((r) => r.address === "cloudflare_dns_record.resend_send").change.after.type = "MX";
+  const p = checkPlan(plan);
+  assert.ok(p.some((x) => x.includes("resend_dkim") && x.includes("updates")), p.join("\n"));
+  assert.ok(p.some((x) => x.includes("resend_send") && x.includes("MX")), p.join("\n"));
+});
+
+test("T-0404a AC-2 the six T-0401 creates without email records still pass", () => {
+  assert.deepEqual(checkPlan(JSON.parse(readFileSync(fx("cf-create.json"), "utf8"))), []);
 });
