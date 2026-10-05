@@ -246,6 +246,9 @@ interface RowProps {
   seed: Seed | null;
   /** Focus the first field on mount (a row just added by "+ Add set"). */
   focusOnMount: boolean;
+  /** T-0472: called before an above-plan row is unchecked, so `Rows` keeps it (with these values)
+   *  once the tombstone removes it from `ctx.loggedSets`. `null` for a planned row. */
+  keepRow: ((seed: Seed) => void) | null;
   /** T-0478 AC-2: the logged exercise's library name, shown as a tag, when a row was logged
    *  before a swap and the card now shows a different exercise. `null` otherwise. */
   tagName: string | null;
@@ -272,6 +275,7 @@ function SetRow({
   prevText,
   seed,
   focusOnMount,
+  keepRow,
   tagName,
 }: RowProps) {
   const n = i + 1;
@@ -352,6 +356,7 @@ function SetRow({
   const onToggle = () => {
     if (busy.current) return;
     if (logged) {
+      keepRow?.({ weightKg: logged.weightKg, reps: logged.reps, durationS: logged.durationS });
       run(() => ctx.deleteSet(logged.clientId));
       return;
     }
@@ -591,6 +596,7 @@ function Rows({
                 tagName={tagName}
                 seed={added[i] ?? null}
                 focusOnMount={fresh === i}
+                keepRow={i >= planned ? (seed) => setAdded((a) => ({ ...a, [i]: seed })) : null}
               />
             );
           })}

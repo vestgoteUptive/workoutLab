@@ -1,8 +1,8 @@
 // T-0457 AC-4: an added, logged set survives a reload of the real `SessionHost`; an added,
 // unlogged row does not. Real `lib/offline` over fake-indexeddb; `Date` faked, timers real.
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { offlineDb } from "../../../lib/offline/db.js";
+import { OfflineDb, offlineDb } from "../../../lib/offline/db.js";
 import { L1, NOW, S1 } from "./fixtures.js";
 import {
   freshDb,
@@ -71,5 +71,20 @@ describe("AC-4 reload", () => {
     ).toBe("100");
     expect(screen.getByRole<HTMLInputElement>("textbox", { name: "Set 5 reps" }).value).toBe("6");
     expect(screen.queryByRole("checkbox", { name: /Mark set 6/ })).toBeNull();
+
+    // T-0472 AC-3: unchecking the reloaded row 5 keeps it (unchecked, focus kept, values kept).
+    row5.focus();
+    fireEvent.click(row5);
+    const back = await screen.findByRole<HTMLInputElement>("checkbox", {
+      name: "Mark set 5 done",
+    });
+    expect(document.activeElement).toBe(back);
+    expect(
+      screen.getByRole<HTMLInputElement>("textbox", { name: "Set 5 weight in kg" }).value,
+    ).toBe("100");
+    await waitFor(async () => {
+      const sets = await new OfflineDb(offlineDb().name).sets.toArray();
+      expect(sets.find((s) => s.setIndex === 4)?.deletedAt).not.toBeNull();
+    });
   });
 });
