@@ -194,7 +194,12 @@ function settledOrCapped(promise: Promise<unknown>, ms: number): Cap {
   };
 }
 
-export function useToday(now: Date, timeZone: string, signedIn: boolean): TodayState {
+/**
+ * T-0482: `revision` is bumped by the screen when the check-in card reports an answer. A bump
+ * re-runs the cache read (effect 1) and nothing else: the state stays at its last value until the
+ * read lands, and the D-0113 refresh is not started again.
+ */
+export function useToday(now: Date, timeZone: string, signedIn: boolean, revision = 0): TodayState {
   const [state, setState] = useState<TodayState>({ status: "loading" });
   const nowIso = now.toISOString();
   /** Whether the screen is mounted. Only the unmount clears it. */
@@ -230,7 +235,7 @@ export function useToday(now: Date, timeZone: string, signedIn: boolean): TodayS
     return () => {
       cancelled = true;
     };
-  }, [nowIso, timeZone]);
+  }, [nowIso, timeZone, revision]);
 
   // 2. The refresh (D-0113): only online and signed in, at the first such commit of this mount,
   //    never again. `stale` and `signed-out` get none. The 3 s cap counts from when it starts.

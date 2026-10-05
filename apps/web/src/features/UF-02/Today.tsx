@@ -85,12 +85,12 @@ function EmptyLine({ result, hasHardSet }: { result: BalanceResult; hasHardSet: 
 // had, just with `TodayState.status` ("loading" | "no-plan" | "ready") standing in for
 // `usePlanData`'s own phase enum. Today's own render already withholds its OfflineStatus, C-01 and
 // suggestion-card content while `status === "loading"`; the card now waits for that same point.
-function CheckinSlot({ ready }: { ready: boolean }) {
+function CheckinSlot({ ready, onAnswered }: { ready: boolean; onAnswered: () => void }) {
   const Slot = todayCheckinSlot;
   if (Slot === null || !ready) return null;
   return (
     <Suspense fallback={null}>
-      <Slot />
+      <Slot onAnswered={onAnswered} />
     </Suspense>
   );
 }
@@ -116,7 +116,9 @@ export function Today(props: TodayProps = {}) {
   const locale = props.locale ?? defaultLocale();
   // D-0113: the mount refresh runs only for a signed-in session (the AutoSync condition).
   const { status } = useAuth();
-  const state = useToday(now, timeZone, status === "signed-in");
+  // T-0482: bumped when the check-in card reports an answer; re-reads the cache (new targets).
+  const [revision, setRevision] = useState(0);
+  const state = useToday(now, timeZone, status === "signed-in", revision);
 
   return (
     <div data-screen-id="UF-02.1" className="wl-today">
@@ -153,7 +155,10 @@ export function Today(props: TodayProps = {}) {
           {state.status === "ready" ? (
             <AttentionLine result={state.result} locale={locale} />
           ) : null}
-          <CheckinSlot ready={state.status !== "loading"} />
+          <CheckinSlot
+            ready={state.status !== "loading"}
+            onAnswered={() => setRevision((r) => r + 1)}
+          />
           {state.status === "ready" ? (
             state.workout === null ? null : (
               <SuggestionCard workout={state.workout} library={state.library} locale={locale} />
