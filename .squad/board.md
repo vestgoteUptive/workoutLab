@@ -117,14 +117,16 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0400 | Terraform: import prod Supabase project `supabase_project` only, zero-change (D-0185: auth settings stay hand-managed, not in Terraform); plan-then-stop gate (D-0184) | infra | T-0203a | done | wl-build-infra |
-| T-0401 | Terraform: Cloudflare Pages projects, custom domains, the two CNAMEs only (D-0010); plan-then-stop (D-0184) | infra | T-0309 | done | wl-build-infra |
-| T-0402 | Deploy pipelines: branch previews → prod (no staging, D-0184 §5), `main` → prod; adds the preview redirect pattern to prod's allow-list as its own reviewed plan step, and must prove RLS scopes a preview tester to their own rows first (D-0184 §6) | infra | T-0400, T-0401 | todo | wl-build-infra |
-| T-0500 | Read-only prod auth drift check: GET /config/auth, filter to the D-0011 keys before printing, diff against a committed secret-free expected file (allow-list order-insensitive), exit 1 on drift, never write (D-0185 §3) | infra | T-0400 | todo | wl-build-infra |
-| T-0501 | Commit the Cloudflare zone-baseline computation as a script (exact line format + sort), so run-A/run-B hashes are comparable; T-0401 run B had to fall back to modified_on (T-0401 follow-up) | infra | T-0401 | todo | wl-build-infra |
-| T-0404 | Custom SMTP: Resend as Supabase auth mailer, DNS records for `workout.vestgote.com`, branded magic-link template (D-0012) | infra | T-0401 | todo | wl-build-infra |
-| T-0405 | Cost guard: Supabase spend cap verified on, usage alerts at 80 % of quotas, `docs/infra-costs.md` updated from real usage monthly | infra | T-0400 | todo | wl-build-infra |
-| T-0403 | Release check: security review, e2e happy path, go/no-go | qa | T-0301…T-0309, T-0402, T-0404 | todo (needs H-06) | wl-release |
+| T-0402a | Deploy pipeline: `deploy.yml` wrangler direct upload of web + landing; branch previews behind `PREVIEWS_ENABLED` (signed-out until T-0402c), `main`→prod job wired but off until H-06; removes ci.yml's placeholder (D-0186 §1). Live AC needs H-18 | infra | T-0401 | ready | wl-build-infra |
+| T-0402b | First prod Supabase release (migrations + library seed + 4 Edge Functions) as a human-run script with a read-only plan mode; gate 3 for the Supabase surface (H-19, raised at run-A handback), folds H-14's check (D-0186 §1–2) | infra | T-0400 | ready | wl-build-infra |
+| T-0402c | RLS proof (pgTAP every-table + app coverage + local/prod policy fingerprint + anon probes), then human-run keys-only PATCH adding `https://*.workoutlab-web.pages.dev/**` to prod's allow-list, expected file updated (D-0184 §6, D-0185 §4) | infra | T-0402a, T-0402b, T-0500 | todo | wl-build-infra |
+| T-0402d | Go-live at H-06: Free→Pro with spend cap on (gate 2), `site_url` → app host via keys-only PATCH, `PROD_DEPLOY_ENABLED`, first prod deploys verified (D-0186 §1) | infra | T-0402a, T-0402b, T-0402c, T-0403 | todo (needs H-06) | wl-build-infra |
+| T-0500 | Read-only prod auth drift check: GET /config/auth, filter to the D-0011 keys before printing, diff against a committed secret-free expected file (allow-list order-insensitive), exit 1 on drift, never write (D-0185 §3) | infra | T-0400 | ready | wl-build-infra |
+| T-0501 | Commit the Cloudflare zone-baseline computation as a script (exact line format + sort), so run-A/run-B hashes are comparable; T-0401 run B had to fall back to modified_on (T-0401 follow-up, D-0186 §5) | infra | T-0401 | ready | wl-build-infra |
+| T-0404a | Resend DNS under `*.workout.vestgote.com` (send. SPF+MX, resend._domainkey DKIM, _dmarc p=none) via Terraform in the cloudflare root; plan-then-stop, human apply; zone baseline via T-0501 (D-0186 §3) | infra | T-0401, T-0501 | todo (needs H-20) | wl-build-infra |
+| T-0404b | Resend as Supabase SMTP + branded magic-link/confirm-signup templates (link + 6-digit code) via human-run keys-only PATCH, expected file extended (UF-01.5; D-0185 §4, D-0186 §3) | infra | T-0404a, T-0402c, T-0500 | todo | wl-build-infra |
+| T-0405 | Cost guard: read-only `cost-check.mjs` flags any quota ≥ 80 % (exit 2) and an unexpected plan change; monthly actuals table in `docs/infra-costs.md`, stale staging row removed; spend-cap check moved to T-0402d (D-0186 §6) | infra | T-0400 | ready | wl-build-infra |
+| T-0403 | Release check: security review, e2e happy path, go/no-go | qa | T-0301…T-0309, T-0402a, T-0402b, T-0402c, T-0404b | todo (needs H-06) | wl-release |
 | T-0406 | Privacy requirements NFR-PRIV-* in docs/security (EU region, minimisation, export, deletion, notice, no PII in logs) | security | T-0001 | todo | security-reviewer (sub-agent) |
 
 ## CI fixes (any phase)
