@@ -138,13 +138,4 @@ None.
   `main` only matters on a laptop; CI's checkout has no local `main`.
 
 ## Build / accept log
-
-### Build log (infra, 2026-10-05, base 85109ff, tree clean at start)
-- Changed `check-lane-paths.mjs`: `resolveChangedPaths` takes the merge base nearest HEAD (`--is-ancestor` only when the two differ); `runCheck` returns `no-diff-base-in-ci` when `changed` is null and `CI` is `true`/`1`; header limit 1 updated.
-- Tests: new `check-lane-paths.t0336.test.mjs`. AC-1..AC-6 map to the tests titled `T-0336 AC-n` (AC-5 covers all its bullets in one test).
-- Red on unfixed code (original script, new test file): AC-1, AC-4, AC-5, AC-6 failed; AC-2, AC-3 passed.
-- Planted fault (backup copy, restored with `cp`): differing-bases branch always picks origin base. AC-1 and AC-4 failed, AC-2 passed.
-- Deviation inside the ticket's intent: the existing test `QA git: origin/main is preferred over a stale local main` (must pass unmodified) puts local `main` ON the branch tip. The plain "nearest" rule would pick main's base = HEAD and give an empty diff. So when the differing case finds `main`'s base equals `HEAD`, origin/main's base is kept (one extra `rev-parse HEAD`, only in the differing case; a throw there is ignored). AC-1..3 unaffected.
-- `node --test .github/scripts/check-lane-paths*.test.mjs`: 110 pass, 0 fail.
-- No file under apps/ or packages/ changed, so `-w typecheck lint test` and e2e were not run (D-0178). Gate: test:repo-checks, format:check, check-all.mjs, see commit.
-- Gate: -w typecheck lint test --concurrency=1 green (19/19, cached; nothing under apps/packages changed), test:repo-checks, format:check, check-all.mjs green.
+Archived in `docs/tickets/log/T-0336.md` (D-0157).
