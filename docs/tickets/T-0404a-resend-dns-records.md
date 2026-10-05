@@ -143,3 +143,15 @@ None. No cost (D-0012: the Resend free tier, and DNS records are free).
 - **Unblocks:** T-0404b.
 
 ## Build / accept log
+
+### Discovery input from H-20 (2026-10-05, human, Resend dashboard, region eu-west-1)
+Records Resend shows (names relative to the zone `vestgote.com`; all public DNS values):
+- **DKIM** TXT `resend._domainkey.workout` = `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDhGPl45UgyJOGUVSp76YLZQ6fFwMkEUuo5P1j5Czqr179a+nxf13qAwOdlRr1XQ58xvVfKLgXiAE/WR8wHyFElNGU3SytI8Luutg7/H8T+hwFf9cL4smm9Rj3suEwrDKiUQTe9fcl3D9maU4RsBx2BVnvTyRPVitDrSze9+yho7wIDAQAB`, TTL auto.
+- **SPF / sending** CNAME `send.workout` -> `send.forge.rmta.net`, DNS only (not proxied), TTL auto.
+- **SPF / sending** CNAME `rsend.workout` -> `rsend-euw1.forge.rmta.net`, DNS only (not proxied), TTL auto.
+- **DMARC (optional)** TXT shown by Resend with name `_dmarc` (= the apex `_dmarc.vestgote.com`) = `v=DMARC1; p=none;`.
+
+**Orchestrator corrections to the spec (apply in run A, record in the log):**
+1. **Layout differs from this ticket's assumption** (edge case "Resend shows a different record layout"). It's no longer `send` MX + `send` TXT SPF; it's two **CNAME**s (`send.`, `rsend.`) plus the DKIM TXT. Mirror what Resend shows: resources for `send.workout.vestgote.com` (CNAME), `rsend.workout.vestgote.com` (CNAME), `resend._domainkey.workout.vestgote.com` (TXT), all `proxied = false`. Narrow the scope check to exactly these names and types `CNAME`/`TXT`; no MX.
+2. **DMARC goes at `_dmarc.workout.vestgote.com`, never the apex.** Resend's `_dmarc` name means `_dmarc.vestgote.com`, which is outside gate 4 and would set mail policy for the whole shared zone. Use `_dmarc.workout.vestgote.com` TXT `v=DMARC1; p=none;`. The scope check must reject `_dmarc.vestgote.com`.
+3. The human must **not** use Resend's Cloudflare "Auto configure" (it would create these records outside Terraform). Discovery (GET) still checks whether any of the four names already exists; if one does, follow the existing edge case.
