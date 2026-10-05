@@ -194,3 +194,4 @@ with `pnpm --filter @workoutlab/shared gen:db` and an empty `git diff`.
   check.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0503.md` (D-0157).

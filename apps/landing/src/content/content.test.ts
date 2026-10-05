@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { landing } from "./landing";
@@ -8,6 +10,19 @@ import type { Feature, FeatureId, LandingContent, PrivacyNotice } from "./types"
 // `astro check` fail if either module drifts from src/content/types.ts (AC7).
 const l: LandingContent = landing;
 const p: PrivacyNotice = privacy;
+
+// T-0502 (D-0188 §5): the Art. 13 notice sections, in render order.
+const SECTION_ORDER = [
+  "who-we-are",
+  "what-we-store",
+  "why",
+  "where",
+  "how-long",
+  "export-and-delete",
+  "your-rights",
+  "no-tracking",
+  "contact",
+];
 
 const len = (s: string): number => [...s].length;
 
@@ -99,17 +114,10 @@ describe("AC4 privacy summary and footer", () => {
 });
 
 describe("AC5 privacy notice (NFR-PRIV-6)", () => {
-  it("has title, ISO updated date and the six sections in order", () => {
+  it("has title, ISO updated date and the nine sections in order (T-0502)", () => {
     expect(p.title).toBe("Privacy");
     expect(p.updated).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(p.sections.map((s) => s.id)).toEqual([
-      "what-we-store",
-      "why",
-      "where",
-      "export-and-delete",
-      "no-tracking",
-      "contact",
-    ]);
+    expect(p.sections.map((s) => s.id)).toEqual(SECTION_ORDER);
     for (const s of p.sections) {
       expect(s.heading.trim().length, s.id).toBeGreaterThan(0);
       expect(s.body.trim().length, s.id).toBeGreaterThan(0);
@@ -183,5 +191,101 @@ describe("AC7 404 copy", () => {
     expect(l.notFound.body.trim().length).toBeGreaterThan(0);
     expect(l.notFound.homeLinkLabel.trim().length).toBeGreaterThan(0);
     expect(len(l.notFound.homeLinkLabel)).toBeLessThanOrEqual(24);
+  });
+});
+
+// T-0502: privacy notice v2 with the GDPR Art. 13 items (UF-01.5, D-0188 §5,
+// docs/security/privacy.md P6-a). Facts the repo doesn't hold are pinned markers
+// that the human replaces at H-22.
+describe("T-0502 privacy notice v2 (GDPR Art. 13)", () => {
+  it("T-0502 AC-1 (order) has the nine sections in order and a current ISO date", () => {
+    expect(p.sections.map((s) => s.id)).toEqual(SECTION_ORDER);
+    expect(p.updated).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(p.updated >= "2026-10-05").toBe(true);
+  });
+
+  it("T-0502 AC-2 (controller) names the controller and a contact detail, no address", () => {
+    const text = section("who-we-are");
+    expect(text).toMatch(/\bHenrik\b/);
+    expect(text).toMatch(/controller/i);
+    expect(text).toMatch(/privacy@workout\.vestgote\.com/);
+    expect(text).not.toMatch(/address/i);
+  });
+
+  it("T-0502 AC-3 (legal basis) states contract and legitimate interest", () => {
+    const text = section("why");
+    expect(text).toMatch(/6\(1\)\(b\)/);
+    expect(text).toMatch(/contract/i);
+    expect(text).toMatch(/6\(1\)\(f\)/);
+    expect(text).toMatch(/legitimate interest/i);
+    expect(text).toMatch(/no outside tools/i);
+  });
+
+  it("T-0502 AC-4 (processors) names every processor and where it runs", () => {
+    const text = section("where");
+    for (const re of [/Supabase/, /Ireland/, /Resend/, /Cloudflare/, /Google/, /\bEU\b/]) {
+      expect(text).toMatch(re);
+    }
+    expect(text).toMatch(/IP address/i);
+  });
+
+  it("T-0502 AC-5 (retention) states retention, backups, logs and sign-in data", () => {
+    const howLong = section("how-long");
+    expect(howLong).toMatch(/until you delete/i);
+    expect(howLong).toMatch(/backup/i);
+    expect(howLong).toMatch(/7 days/);
+    expect(howLong).toMatch(/log/i);
+    expect(howLong).toMatch(/IP address/i);
+
+    const stored = section("what-we-store");
+    expect(stored).toMatch(/IP address/i);
+    expect(stored).toMatch(/browser|user agent/i);
+    expect(stored).toMatch(/Google/);
+    expect(stored).toMatch(/name/);
+    expect(stored).toMatch(/picture/);
+    expect(stored).toMatch(/(don't|do not) keep|drop/i);
+  });
+
+  it("T-0502 AC-6 (export and delete path) names Plan → Account and the backups", () => {
+    const text = section("export-and-delete");
+    expect(text).toMatch(/Plan → Account/);
+    expect(text).toMatch(/JSON/);
+    expect(text).toMatch(/delete/i);
+    expect(text).toMatch(/backup/i);
+  });
+
+  it("T-0502 AC-7 (rights) lists the rights and the right to complain", () => {
+    const text = section("your-rights");
+    for (const re of [/access/i, /correct/i, /delet/i, /portab|copy/i, /restrict/i, /object/i]) {
+      expect(text).toMatch(re);
+    }
+    expect(text).toMatch(/complain/i);
+    expect(text).toMatch(/Integritetsskyddsmyndigheten/);
+    expect(text).toMatch(/IMY/);
+  });
+
+  it("T-0502 AC-8 (no false only) names the email provider and Google", () => {
+    const text = section("no-tracking");
+    expect(text).toMatch(/no third-party analytics/i);
+    expect(text).not.toMatch(/only to our own servers and our database provider/i);
+    expect(text).toMatch(/email provider/i);
+    expect(text).toMatch(/Google/);
+  });
+
+  it("T-0502 AC-9 (H-22 fill-in) no {{HUMAN:…}} marker remains, in privacy or landing", () => {
+    const strings: [string, string][] = [];
+    collectStrings(privacy, "privacy", strings);
+    collectStrings(landing, "landing", strings);
+    const markers = strings.flatMap(([, v]) => v.match(/\{\{HUMAN:[A-Z_]+\}\}/g) ?? []);
+    expect([...new Set(markers)].sort()).toEqual([]);
+  });
+
+  it("T-0502 AC-10 (stale notes gone) privacy.ts and types.ts drop the H-10 note", () => {
+    // Built by concatenation so a repo grep for the note doesn't hit this file.
+    const stale = ["pending human gate", "H-10"].join(" ");
+    for (const file of ["./privacy.ts", "./types.ts"]) {
+      const text = readFileSync(fileURLToPath(new URL(file, import.meta.url)), "utf8");
+      expect(text, file).not.toContain(stale);
+    }
   });
 });

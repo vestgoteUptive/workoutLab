@@ -5,7 +5,7 @@ lane: design
 screens: [UF-01.5, UF-11.4]
 decisions: [D-0188, D-0046, D-0017, D-0135]
 deps: [T-0406]
-status: ready
+status: review (needs H-21, copy re-approval)
 groomed: 2026-10-05
 ---
 <!-- Groomed 2026-10-05 by product-owner against main ccbae43 (D-0188 §5). Build flow:
@@ -209,3 +209,4 @@ None. The copy restates NFR-PRIV-1…7 and the D-0188 behaviour. D-0188 §5 amen
 - The security reviewer re-checks P6-a against the final copy (D-0188 Consequences).
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0502.md` (D-0157).
