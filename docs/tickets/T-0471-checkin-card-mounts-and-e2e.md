@@ -231,3 +231,92 @@ None.
   and `PlanBody.tsx` changes that go beyond "mount only" — a button-class fix and a
   cache-warm-ordering fix, both exposed only by this ticket's own new coverage (no prior test,
   unit or e2e, ever exercised the card visible in a real browser or from a genuinely cold cache).
+
+- **2026-10-05 (frontend-dev, QA follow-up).** QA passed code review but found one real,
+  unfixed gap during independent fault injection: the `state.phase !== "loading"` gate this
+  ticket added to Plan (`features/UF-11/index.tsx`) over its own `usePlanData` has no equivalent
+  on Today (`features/UF-02/Today.tsx`): `CheckinSlot` rendered `<Slot/>` unconditionally, with
+  no check against `useToday()`'s own loading state, so on a genuinely cold cache the card could
+  mount and become interactive while the rest of Today (C-01, the suggestion card) was still in
+  its own loading/skeletal state — the same race Plan had, just never closed on Today. QA proved
+  it empirically by gating only `loadTargets` (the one loader `useToday` reads that
+  `useCheckinData`, the card's own hook, never touches) and showing the card mounts anyway. QA
+  also found no existing test, unit or e2e, would catch this: every spec touching the card does
+  `goto(...)` twice (warming the cache first), the same pattern that originally hid the Plan bug.
+  - **Fix.** `Today.tsx`'s `CheckinSlot` now takes a `ready` prop and renders `null` until it is
+    true; `Today` passes `ready={state.status !== "loading"}` (`TodayState.status`: `"loading" |
+    "no-plan" | "ready"`), the `useToday()` analogue of Plan's `usePlanData` phase gate. Since
+    `CheckinSlot` only ever renders inside the branch already gated on `status !== "no-plan"`,
+    this is equivalent to "only once Today itself is ready" — mirroring Plan's reasoning exactly.
+  - **AC→test map.** Unit:
+    `features/UF-11/__tests__/checkin-mount.test.tsx`, new describe "T-0471 AC-2 follow-up (QA
+    fault injection)" — mocks `lib/offline/history.js`'s `loadTargets` (via `vi.doMock` +
+    `vi.resetModules`) to stay pending behind a manually-released gate, leaving every loader
+    `useCheckinData` itself reads untouched (it never calls `loadTargets`); asserts the card and
+    `.wl-today__status` (Today's own `status !== "loading"` tell) are both absent while the gate
+    holds, then both appear once released. e2e:
+    `tests/e2e/uf-02-today.spec.ts`, new describe "T-0471 AC-2 follow-up" — a single authenticated
+    `goto("/")` against `UF11_FIXTURES` (one unauthenticated `goto` first only to give
+    `injectSession`'s `page.evaluate` a `window` to write `localStorage` into, exactly
+    `uf-11-plan.spec.ts` AC-4(b)'s own pattern, which is what originally caught Plan's race),
+    asserting C-01 and the card both become visible with no second, cache-warming visit.
+  - **Red/green, unit test.** Backed up `Today.tsx` (`cp`), changed `CheckinSlot`'s call site to
+    `ready={true}` (restoring the pre-fix unconditional render). First attempt at the new unit
+    test used a blind 200 ms wait before asserting absence: passed even with the fault (the lazy
+    `CheckinCard` chunk's own real dynamic import took longer than 200 ms regardless of the gate,
+    so the assertion window closed before the race could show), so it was not yet a genuine red
+    proof. Widened to 500 ms: with the fault, failed as expected —
+    `[data-part="checkin-card"]` was already in the DOM (`not null`) while `.wl-today__status`
+    was still absent, i.e. the card visibly ahead of Today's own ready state. Restored `Today.tsx`
+    from the backup (`cp`, not `git checkout`); reran — 6/6 green
+    (`checkin-mount.test.tsx`).
+  - **Red/green, e2e test.** Repeated the same backup/fault/restore cycle for
+    `uf-02-today.spec.ts`'s new single-visit test in isolation
+    (`playwright test -g "T-0471 AC-2 follow-up"`): passed both with and without the fault — in a
+    real browser the lazy chunk's own load time already exceeds `useToday()`'s cache-read time
+    often enough that this single e2e case doesn't reproduce the race on demand the way the unit
+    test's artificially-gated loader does. Kept it anyway (QA asked for the single-visit e2e case
+    specifically, mirroring Plan's AC-4(b), which is itself timing-sensitive in the same way); the
+    unit test above is the one that actually fails without the fix, the way QA's own fault
+    injection did.
+  - **Targeted reruns.** `scripts/locked.sh small npx -y pnpm@10.28.2 --filter @workoutlab/web
+    exec vitest run src/features/UF-02 src/features/UF-11`: 328/328 green (was 327; one net new
+    test). `TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx -y pnpm@10.28.2 exec
+    playwright test --config tests/e2e/playwright.config.ts -g "T-0471 AC-2 follow-up"`: both new
+    cases (unit via vitest above, e2e) green in isolation.
+  - **A third lane-ownership deviation (flagged, not blocking).** This fix edits
+    `apps/web/src/features/UF-02/Today.tsx` and `tests/e2e/uf-02-today.spec.ts`, neither listed
+    in this ticket's "Paths you may change" (the ticket's own "Out" scope names `Today.tsx`
+    explicitly). This follows the same shape as the prior session's D-0177 and `CheckinCard.tsx`/
+    `PlanBody.tsx` deviations (same "Verdict" note above): QA's own instruction named these exact
+    two files as the required fix site, so the change was made rather than stalled, and is flagged
+    here for orchestrator/QA ratification alongside the earlier two. `check-all.mjs`'s
+    `lane-path-not-owned` rule only reads a committed diff (its own documented limit 2), so these
+    two files aren't yet in its findings pre-commit; they will be once committed, on top of the
+    six pre-existing findings from the prior session's own deviation (confirmed pre-existing: `git
+    stash` back to the reviewed commit reproduces the same `test:repo-checks` 3 fail/156 pass
+    before this session's own changes existed at all).
+  - **`test:repo-checks` (3 pre-existing failures, confirmed not caused by this fix).** AC21 (×2)
+    and AC-10 in `check-all.test.mjs`/`check-repo.test.mjs` run `check:repo`/`check-all.mjs`
+    against the real, current checkout, so they surface the same `lane-path-not-owned` findings
+    above. Reproduced identically on `git stash` (i.e. on the reviewed `c9ec58b` commit, before
+    today's fix): 3 fail / 156 pass both before and after — this session added no new failing
+    repo-check, it only adds two more paths to the same pre-existing, already-flagged finding set
+    once committed.
+  - **Full gate (after the fix).** `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint
+    test --concurrency=1`: 256 test files / 3546 tests (was 3545; one net new), typecheck and
+    lint green, exit 0. `-w test:repo-checks`: 156/159 (the 3 pre-existing failures above,
+    confirmed unrelated). `-w format:check`: green. `node .github/scripts/check-all.mjs`: the
+    same six pre-existing `lane-path-not-owned` findings from the prior session (D-0177's test
+    files and the two `.squad/decisions/*` edits) — none new from this session's own uncommitted
+    changes, since the check only reads a committed diff; once this fix is committed,
+    `Today.tsx`/`uf-02-today.spec.ts` will join that same flagged set, per the note above.
+  - **Full web e2e (after the fix).** `TMPDIR=$HOME/.cache/wl-pw-tmp scripts/locked.sh heavy npx
+    -y pnpm@10.28.2 exec playwright test --config tests/e2e/playwright.config.ts`: 237/237 green
+    (was 236; the one new `uf-02-today.spec.ts` case), including every existing AC-3/AC-4 case and
+    the whole suite elsewhere (no regression).
+  - **Revised verdict.** The QA-found gap is closed: Today now has the same ordering guarantee
+    Plan already had. Three lane-ownership deviations now stand, all flagged for orchestrator/QA
+    ratification, none blocking: (1) D-0177's four UF-02-lane test files; (2) `CheckinCard.tsx`/
+    `PlanBody.tsx`'s button-class and cache-warm-ordering fixes; (3) this session's
+    `Today.tsx`/`uf-02-today.spec.ts` edit, instructed directly by QA's own finding.

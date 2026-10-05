@@ -193,6 +193,62 @@ describe("T-0471 AC-2 UF-02.1: CheckinCard through the real slots.js, red on mai
   });
 });
 
+describe("T-0471 AC-2 follow-up (QA fault injection): the card never mounts before Today's own data is ready", () => {
+  it("delaying only Today's own loadTargets (not any loader CheckinCard itself reads) still keeps the card unmounted until Today leaves 'loading'", async () => {
+    // `useToday` imports `loadTargets` straight from `lib/offline/history.js`; `useCheckinData`
+    // (the card's own hook, `use-checkin-data.ts`) never calls `loadTargets` at all — it reads
+    // `loadProfile`/`loadSessions`/`loadEngineHistory`/`loadLibrary`/`loadCheckins` through
+    // `lib/offline/index.js`. Delaying only `loadTargets` here therefore slows Today's own cache
+    // read (`use-today.ts`'s `Promise.all`) without touching any loader the card's read depends
+    // on, isolating the ordering guarantee the same way QA's own fault injection did: if
+    // `Today.tsx`'s `CheckinSlot` gate were removed, the card (fast) would mount and become
+    // interactive while Today's own state (artificially slow) is still "loading".
+    const real = await vi.importActual<typeof import("../../../lib/offline/history.js")>(
+      "../../../lib/offline/history.js",
+    );
+    let releaseTargets: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      releaseTargets = resolve;
+    });
+    vi.doMock("../../../lib/offline/history.js", () => ({
+      ...real,
+      loadTargets: async () => {
+        await gate;
+        return real.loadTargets();
+      },
+    }));
+
+    vi.resetModules();
+    const { Today } = await import("../../UF-02/index.js");
+    await seedAc1Proposal();
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <Routes>
+          <Route path="/" element={<Today now={NOW} timeZone={TZ} locale="en-GB" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    // `loadTargets` is still gated, so Today's own cache read can't resolve. Wait long enough
+    // for the card's own (fast, ungated) read and its lazy chunk to settle on their own — if the
+    // gate in `CheckinSlot` were ever removed, the card would mount here, well before
+    // `loadTargets` (and so Today's own state) ever does. `.wl-today__status` (`Today.tsx`'s
+    // `OfflineStatus` wrapper) only renders once `state.status !== "loading"` — the same state
+    // value `CheckinSlot`'s own gate reads — so this is a direct check of Today's own state, not
+    // an inference from timing.
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    expect(document.querySelector('[data-part="checkin-card"]')).toBeNull();
+    expect(document.querySelector(".wl-today__status")).toBeNull();
+
+    releaseTargets();
+
+    await waitFor(() => expect(document.querySelector(".wl-today__status")).not.toBeNull());
+    await waitFor(() =>
+      expect(document.querySelector('[data-part="checkin-card"]')).not.toBeNull(),
+    );
+  });
+});
+
 describe("T-0471 AC-3: the mount mechanism never reaches a workout flow", () => {
   it("UF-02 is the only registry that loads CheckinCard; UF-03/UF-08/UF-09 are covered by the existing import-ban pins (app/__tests__/import-bans.test.ts), unedited by this ticket", async () => {
     const { todayCheckinSlot } = await import("../../UF-02/slots.js");

@@ -78,9 +78,16 @@ function EmptyLine({ result, hasHardSet }: { result: BalanceResult; hasHardSet: 
   return null;
 }
 
-function CheckinSlot() {
+// T-0471 (QA finding, follow-up): mirrors `features/UF-11/index.tsx`'s own
+// `state.phase !== "loading"` gate on `usePlanData`. `useToday()`'s single, un-refreshed
+// `CheckinCard` read (`use-checkin-data.ts`, by design) can otherwise lose a race against
+// `useToday()`'s own cache-warming `refreshAll` on a genuinely cold cache — the same hazard Plan
+// had, just with `TodayState.status` ("loading" | "no-plan" | "ready") standing in for
+// `usePlanData`'s own phase enum. Today's own render already withholds its OfflineStatus, C-01 and
+// suggestion-card content while `status === "loading"`; the card now waits for that same point.
+function CheckinSlot({ ready }: { ready: boolean }) {
   const Slot = todayCheckinSlot;
-  if (Slot === null) return null;
+  if (Slot === null || !ready) return null;
   return (
     <Suspense fallback={null}>
       <Slot />
@@ -146,7 +153,7 @@ export function Today(props: TodayProps = {}) {
           {state.status === "ready" ? (
             <AttentionLine result={state.result} locale={locale} />
           ) : null}
-          <CheckinSlot />
+          <CheckinSlot ready={state.status !== "loading"} />
           {state.status === "ready" ? (
             state.workout === null ? null : (
               <SuggestionCard workout={state.workout} library={state.library} locale={locale} />
