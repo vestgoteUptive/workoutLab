@@ -5,19 +5,27 @@
 // Changes:  --add-to-list <key>=<entry>   append to a comma list, live order kept
 //           --set <key>=<value>           value coerced to the live value's type
 //           --set-from-env <key>=<ENV>    value read from env var ENV; never printed
+//           --set-from-file <key>=<path>  value is the file's contents, verbatim (T-0404b templates)
 // Keys matching SECRET_KEY must use --set-from-env, and their values show only as <set>/<unset>.
+// Long values (*_content, the mail templates) show as len=<n> sha256=<hex>. Keys the Management
+// API types as strings while they read back as null (STRING_KEYS, e.g. smtp_port) stay strings.
+// The after-check compares a secret key by set-ness only, as the preview shows it.
 // The preview prints the changed keys' before/after and others_sha256 (a hash of the live config
 // with the changed keys removed). --apply sends one PATCH holding only the changed keys, GETs
 // again, and fails (exit 1) when others_sha256 moved or the after-view differs from the plan.
 // Error bodies are never printed. Reused by T-0404b and T-0402d.
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { readFileSync as fsReadFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const SPEC_PATH = path.join(here, "../auth/expected-auth.json");
 export const SECRET_KEY = /secret|pass|key|token/i;
+export const LONG_KEY = /_content$/;
+// UpdateAuthConfigBody types these as strings (api.supabase.com/api/v1-json); live reads null
+// before the first set, so the coercion can't learn the type from the live value.
+export const STRING_KEYS = new Set(["smtp_port"]);
 const API = "https://api.supabase.com/v1/projects";
 
 export class UsageError extends Error {}
@@ -33,7 +41,7 @@ export function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--apply") apply = true;
-    else if (a === "--add-to-list" || a === "--set" || a === "--set-from-env") {
+    else if (a === "--add-to-list" || a === "--set" || a === "--set-from-env" || a === "--set-from-file") {
       const [key, value] = pair(a, argv[++i]);
       if (a === "--add-to-list") {
         if (!value || value.includes(",")) throw new UsageError(`${a} ${key}: one non-empty entry, no commas`);
@@ -41,6 +49,10 @@ export function parseArgs(argv) {
       } else if (a === "--set") {
         if (SECRET_KEY.test(key)) throw new UsageError(`--set ${key}: secret keys need --set-from-env ${key}=<ENV>`);
         changes.push({ kind: "set", key, raw: value });
+      } else if (a === "--set-from-file") {
+        if (SECRET_KEY.test(key)) throw new UsageError(`--set-from-file ${key}: secret keys need --set-from-env ${key}=<ENV>`);
+        if (!value) throw new UsageError(`--set-from-file ${key}: needs a path`);
+        changes.push({ kind: "file", key, path: value });
       } else {
         if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(value)) throw new UsageError(`--set-from-env ${key}: bad env var name`);
         changes.push({ kind: "env", key, env: value });
@@ -56,6 +68,7 @@ export function parseArgs(argv) {
 const split = (s) => String(s ?? "").split(",").map((x) => x.trim()).filter(Boolean);
 
 function coerce(raw, live, key) {
+  if (STRING_KEYS.has(key)) return raw;
   if (typeof live === "boolean" || (live == null && (raw === "true" || raw === "false"))) {
     if (raw !== "true" && raw !== "false") throw new UsageError(`--set ${key}: expected true or false`);
     return raw === "true";
@@ -80,6 +93,9 @@ export function buildPatch(live, changes, env) {
     } else if (c.kind === "set") {
       const v = coerce(c.raw, live[c.key], c.key);
       if (live[c.key] !== v) body[c.key] = v;
+    } else if (c.kind === "file") {
+      if (typeof c.value !== "string") throw new UsageError(`--set-from-file ${c.key}: file not read`);
+      if (live[c.key] !== c.value) body[c.key] = c.value;
     } else {
       const v = env[c.env];
       if (typeof v !== "string" || v === "") throw new UsageError(`--set-from-env ${c.key}: ${c.env} is not set`);
@@ -104,8 +120,15 @@ export function othersHash(raw, keys) {
   return createHash("sha256").update(canonical(rest)).digest("hex");
 }
 
-const showValue = (key, v) =>
-  SECRET_KEY.test(key) ? (v == null || v === "" ? "<unset>" : "<set>") : v === undefined ? "<absent>" : typeof v === "string" ? v : JSON.stringify(v);
+const isSet = (v) => !(v == null || v === "");
+const sha256 = (s) => createHash("sha256").update(s).digest("hex");
+
+export function showValue(key, v) {
+  if (SECRET_KEY.test(key)) return isSet(v) ? "<set>" : "<unset>";
+  if (v === undefined) return "<absent>";
+  if (LONG_KEY.test(key) && typeof v === "string") return `len=${v.length} sha256=${sha256(v)}`;
+  return typeof v === "string" ? v : JSON.stringify(v);
+}
 
 function view(cfg, keys) {
   return keys.map((k) => `  ${k} = ${showValue(k, cfg[k])}`);
@@ -115,6 +138,8 @@ export async function run({
   argv = [],
   env = process.env,
   fetchImpl = fetch,
+  readFile = (p) => fsReadFileSync(p, "utf8"),
+  cwd = process.cwd(),
   stdout = (s) => process.stdout.write(s + "\n"),
   stderr = (s) => process.stderr.write(s + "\n"),
   spec,
@@ -127,7 +152,16 @@ export async function run({
     stderr(`usage error: ${e.message}`);
     return 2;
   }
-  spec ??= JSON.parse(readFileSync(SPEC_PATH, "utf8"));
+  for (const c of parsed.changes) {
+    if (c.kind !== "file") continue;
+    try {
+      c.value = readFile(path.resolve(cwd, c.path));
+    } catch {
+      stderr(`usage error: --set-from-file ${c.key}: cannot read ${c.path}`);
+      return 2;
+    }
+  }
+  spec ??= JSON.parse(fsReadFileSync(SPEC_PATH, "utf8"));
   const ref = spec.project_ref;
   // The apply lock comes before any call, so a refusal makes zero requests.
   if (parsed.apply && env.CONFIRM_PROD_AUTH !== ref) {
@@ -211,7 +245,8 @@ export async function run({
 
   let ok = true;
   for (const k of keys) {
-    if (canonical(after[k]) !== canonical(planned[k])) {
+    const same = SECRET_KEY.test(k) ? isSet(after[k]) === isSet(planned[k]) : canonical(after[k]) === canonical(planned[k]);
+    if (!same) {
       stderr(`mismatch: ${k} live differs from the reviewed after-view`);
       ok = false;
     }

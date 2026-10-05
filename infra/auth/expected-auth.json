@@ -5,9 +5,22 @@
     "uri_allow_list",
     "external_google_enabled",
     "external_email_enabled",
-    "mailer_otp_length"
+    "mailer_otp_length",
+    "smtp_host",
+    "smtp_port",
+    "smtp_user",
+    "smtp_admin_email",
+    "smtp_sender_name",
+    "rate_limit_email_sent",
+    "mailer_subjects_magic_link",
+    "mailer_subjects_confirmation"
   ],
-  "derived": ["external_google_client_id_matches"],
+  "derived": [
+    "external_google_client_id_matches",
+    "smtp_pass_set",
+    "mailer_templates_magic_link_matches",
+    "mailer_templates_confirmation_matches"
+  ],
   "unordered_lists": ["uri_allow_list"],
   "expected": {
     "site_url": "http://localhost:3000",
@@ -15,6 +28,17 @@
     "external_google_enabled": true,
     "external_email_enabled": true,
     "mailer_otp_length": 6,
-    "external_google_client_id_matches": true
+    "smtp_host": "smtp.resend.com",
+    "smtp_port": "465",
+    "smtp_user": "resend",
+    "smtp_admin_email": "no-reply@workout.vestgote.com",
+    "smtp_sender_name": "workoutLab",
+    "rate_limit_email_sent": 10,
+    "mailer_subjects_magic_link": "Your workoutLab sign-in link",
+    "mailer_subjects_confirmation": "Confirm your workoutLab account",
+    "external_google_client_id_matches": true,
+    "smtp_pass_set": true,
+    "mailer_templates_magic_link_matches": true,
+    "mailer_templates_confirmation_matches": true
   }
 }

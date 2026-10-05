@@ -7,7 +7,15 @@ import { run, SPEC_PATH } from "../../infra/scripts/auth-drift-check.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const scriptPath = path.join(here, "../../infra/scripts/auth-drift-check.mjs");
-const full = JSON.parse(readFileSync(path.join(here, "fixtures/auth-drift/full.json"), "utf8"));
+const templates = path.join(here, "../../infra/auth/templates");
+const MAGIC = readFileSync(path.join(templates, "magic-link.html"), "utf8");
+const CONFIRM = readFileSync(path.join(templates, "confirmation.html"), "utf8");
+// T-0404b: the live templates equal the committed files (Supabase may drop the trailing newline).
+const full = {
+  ...JSON.parse(readFileSync(path.join(here, "fixtures/auth-drift/full.json"), "utf8")),
+  mailer_templates_magic_link_content: MAGIC.trimEnd(),
+  mailer_templates_confirmation_content: CONFIRM,
+};
 const spec = JSON.parse(readFileSync(SPEC_PATH, "utf8"));
 const env = { SUPABASE_ACCESS_TOKEN: "tok-x", GOOGLE_OAUTH_CLIENT_ID: full.external_google_client_id };
 
@@ -93,4 +101,48 @@ function checkSpec(s) {
 
 test("T-0500 AC-5 planted fault: smtp_pass in keys is rejected", () => {
   assert.throws(() => checkSpec({ ...spec, keys: [...spec.keys, "smtp_pass"] }));
+});
+
+test("T-0404b AC-3 derived SMTP values: all true and exit 0 when the templates match and smtp_pass is set", async () => {
+  const r = await exec(full, { argv: ["--print"] });
+  const printed = JSON.parse(r.text);
+  for (const d of ["smtp_pass_set", "mailer_templates_magic_link_matches", "mailer_templates_confirmation_matches"]) {
+    assert.equal(printed[d], true, d);
+  }
+  assert.ok(!r.text.includes("SENTINEL-SMTP") && !r.text.includes("{{ .Token }}"), "no secret or template text printed");
+  assert.equal((await exec(full)).code, 0);
+  const padded = await exec({ ...full, mailer_templates_confirmation_content: CONFIRM + "  \n\n" });
+  assert.equal(padded.code, 0, "trailing whitespace does not count");
+});
+
+test("T-0404b AC-3 one changed template character: that _matches is false, exit 1", async () => {
+  for (const [key, derived, src] of [
+    ["mailer_templates_magic_link_content", "mailer_templates_magic_link_matches", MAGIC],
+    ["mailer_templates_confirmation_content", "mailer_templates_confirmation_matches", CONFIRM],
+  ]) {
+    const changed = src.replace("workoutLab", "workoutLaB");
+    assert.notEqual(changed, src);
+    const r = await exec({ ...full, [key]: changed });
+    assert.equal(r.code, 1);
+    assert.deepEqual(r.text.split("\n"), [`${derived}: expected true, live false`]);
+    const gone = await exec({ ...full, [key]: null });
+    assert.equal(gone.code, 1, `${key} null`);
+  }
+});
+
+test("T-0404b AC-3 smtp_pass empty or null: smtp_pass_set expected true, live false", async () => {
+  for (const v of ["", null, undefined]) {
+    const raw = { ...full, smtp_pass: v };
+    if (v === undefined) delete raw.smtp_pass;
+    const r = await exec(raw);
+    assert.equal(r.code, 1);
+    assert.deepEqual(r.text.split("\n"), ["smtp_pass_set: expected true, live false"]);
+  }
+});
+
+test("T-0404b AC-3 SMTP keys drift by value, port compared as the API's string", async () => {
+  const r = await exec({ ...full, smtp_port: 465, smtp_host: "smtp.other.test" });
+  assert.equal(r.code, 1);
+  assert.ok(r.text.includes("smtp_port: expected 465, live 465 (live is a number)"), r.text);
+  assert.ok(r.text.includes("smtp_host: expected smtp.resend.com, live smtp.other.test"));
 });

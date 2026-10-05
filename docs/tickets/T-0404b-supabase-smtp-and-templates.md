@@ -170,3 +170,48 @@ change it. No recurring cost: the Resend free tier (D-0012).
   template change plus another human-run PATCH.
 
 ## Build / accept log
+
+### Run A, 2026-10-05 (devops; worktree from b75b54a, clean)
+- **Changed:** `infra/auth/templates/` (magic-link + confirmation HTML and subjects: table
+  layout, inline styles, token colours, link + `{{ .Token }}`, no images or URLs);
+  `auth-patch.mjs` gains `--set-from-file` (verbatim; secret keys refused), keeps `smtp_port` a
+  string (`STRING_KEYS`: the Management API types it as a string and prod reads `null`), shows
+  `*_content` as `len= sha256=`, and compares a secret in the after-check by set-ness only (in
+  case the API masks it on read). `auth-drift-check.mjs` gains `smtp_pass_set` and the two
+  `mailer_templates_*_matches` (trimEnd compare), and names the type when only the type differs.
+  `expected-auth.json` +8 keys +3 derived. README has the exact preview/apply lines.
+  `.prettierignore` skips `infra/auth/templates/` (Prettier rewrote the font quotes to `&quot;`
+  and lowercased the hex; the files are sent byte for byte). `docs/infra-costs.md` email row.
+- **Live, read-only:** `mailer_autoconfirm` = `false` (new users get the confirmation mail);
+  prod SMTP keys all `null`, `smtp_pass` `<unset>`, `rate_limit_email_sent` 2, `mailer_otp_length` 6.
+- **AC-4 preview (GET only, exit 0):** before → after: `smtp_host` null → smtp.resend.com;
+  `smtp_port` null → 465; `smtp_user` null → resend; `smtp_pass` `<unset>` → `<set>`;
+  `smtp_admin_email` null → no-reply@workout.vestgote.com; `smtp_sender_name` null → workoutLab;
+  `rate_limit_email_sent` 2 → 10; `mailer_subjects_magic_link` "Your sign-in link" → "Your
+  workoutLab sign-in link"; `mailer_templates_magic_link_content` len=173 sha256=87cf15e1… →
+  len=2252 sha256=98fb4f8cda3092900c5cd6b7529368dee3fac612b9e56aded8042f91dd3ff2b3;
+  `mailer_subjects_confirmation` "Confirm your email address" → "Confirm your workoutLab account";
+  `mailer_templates_confirmation_content` len=184 sha256=c495b241… → len=2290
+  sha256=f7f654c32cd6bff79257bc96b151ab3a031bab0be527bb00630d5ef9d13fce51;
+  `others_sha256=07598261b03d88b425c265eff1cac2c23ee45a9bab916b45bf00fd8bb7ab3c02`.
+  Live drift check now exits 1 on exactly the 11 pending items (expected until the human applies).
+- **AC→test:** AC-1 `auth-templates.test.mjs` "AC-1 each template…", "AC-1 each subject…",
+  "AC-1 planted faults…"; AC-2 `auth-patch.test.mjs` "AC-2 the README's…", "AC-2 --apply with
+  the README arguments…", "AC-2 a masked secret…", "AC-2 --set-from-file…"; AC-3
+  `auth-drift-check.test.mjs` four "T-0404b AC-3" tests (T-0500 AC-5 still green); AC-4 static
+  half "AC-4 preview masks RESEND_API_KEY…" + the live preview above; AC-5 static half "AC-5
+  after the apply the extended drift check exits 0"; AC-7 `auth-templates.test.mjs` "AC-7…".
+  T-0402c AC-6 test now starts from a live config holding the T-0404b keys (its single
+  allow-list difference is unchanged).
+- **Red / faults (all restored by `cp` from backups):** F1 `#F2EFE8`→`#FFFFFF` in magic-link.html:
+  2 red. F2 `{{ .Token }}` removed: 2 red. F3 main's auth-patch.mjs (unfixed): 4 T-0404b tests
+  red. F4 template view verbatim: AC-4 red. F5 `smtp_pass_set` always true: AC-3 red. F6 main's
+  drift-check (unfixed): 8 red.
+- **Status:** blocked on the human's apply (D-0185 §4); then AC-5 live + AC-6.
+
+### Run B (human-approved, 2026-10-05) - done
+- Preview (human, read-only): 11 keys change exactly as reviewed (SMTP host/port/user/pass `<unset>`→`<set>`, admin email `no-reply@workout.vestgote.com`, sender `workoutLab`, `rate_limit_email_sent` 2→10, both subjects, both template bodies len 2252 / 2290 with the file hashes); `others_sha256=07598261…3c02`.
+- Apply (human): PATCH sent. The script's immediate read-back still showed the old values and reported 11 mismatches — **eventual consistency**: a read-only preview seconds later showed all 11 at the new values, template hashes equal to the committed files.
+- Orchestrator verification (read-only): `auth-drift-check.mjs` → matches expected (17 keys), exit 0. `others_sha256` moved to `e25e1586…b825`; a diff of the live config against T-0400's full snapshot (152 keys) shows **0** non-intended changes, and `smtp_max_frequency` was already 60. So the moved key is one outside both the snapshot and the drift set (server-managed or empty this morning); not identifiable without a pre-apply full snapshot. Low risk: every security-relevant key is verified. Follow-up T-0509 (snapshot before apply + delayed read-back retry).
+- AC-6 (human mail test against the prod app) waits until a prod/preview deploy exists (T-0402a live ACs / T-0402d).
+- Status: done (AC-6 pending deploy).
