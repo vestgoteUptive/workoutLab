@@ -25,12 +25,12 @@ function liveConfig() {
 
 /** A fake Management API: GET returns the state, PATCH merges the body (and `alsoChange`). */
 function fakeServer(initial, { patchStatus = 200, alsoChange } = {}) {
-  let state = structuredClone(initial);
+  let state = JSON.parse(JSON.stringify(initial));
   const calls = [];
   const fetchImpl = async (url, init = {}) => {
     const method = init.method ?? "GET";
     calls.push({ url, method, body: init.body, headers: init.headers });
-    if (method === "GET") return { status: 200, json: async () => structuredClone(state) };
+    if (method === "GET") return { status: 200, json: async () => JSON.parse(JSON.stringify(state)) };
     if (method === "PATCH") {
       if (patchStatus >= 200 && patchStatus < 300) state = { ...state, ...JSON.parse(init.body), ...(alsoChange ?? {}) };
       return { status: patchStatus, json: async () => ({ message: "SENTINEL-BODY" }) };
