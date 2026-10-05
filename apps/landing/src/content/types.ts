@@ -82,9 +82,17 @@ export interface LandingContent {
   readonly notFound: NotFound;
 }
 
-/** Privacy notice section ids, in the order they render (AC5). */
+/** Privacy notice section ids, in the order they render (AC5; T-0502, D-0188 §5). */
 export type PrivacySectionId =
-  "what-we-store" | "why" | "where" | "export-and-delete" | "no-tracking" | "contact";
+  | "who-we-are"
+  | "what-we-store"
+  | "why"
+  | "where"
+  | "how-long"
+  | "export-and-delete"
+  | "your-rights"
+  | "no-tracking"
+  | "contact";
 
 export interface PrivacySection {
   readonly id: PrivacySectionId;
@@ -102,6 +110,6 @@ export interface PrivacyNotice {
   /** Short line under the title. */
   readonly intro: string;
   readonly sections: readonly PrivacySection[];
-  /** Rendered as a `mailto:` link in the contact section. Mailbox pending human gate H-10. */
+  /** Rendered as a `mailto:` link in the contact section. */
   readonly contactEmail: string;
 }
