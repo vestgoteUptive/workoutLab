@@ -122,21 +122,4 @@ None.
   `use-plan-data.ts` or `index.tsx`.
 
 ## Build / accept log
-
-- 2026-10-05 build (frontend-dev). Branch base e014da3, tree clean. Added `onAnswered` to
-  `CheckinCard`, a `revision` arg to `usePlanData` (one cache-only re-read, no `refreshAll`), and
-  `Plan` wiring. New `__tests__/checkin-reread.test.tsx` (9 tests); diff only in
-  `features/UF-11/**`, `EditPlanBody.tsx` untouched.
-- AC map: AC-1 two tests (Plan body 2-3 / chest 14 / card gone; call-log order refresh:settled
-  before onAnswered, once); AC-2 three tests (Keep once, Plan Keep 3-4, rejected refresh once +
-  card stays gone after 50 ms); AC-3 three tests (area_targets fails, 23505 hide, offline);
-  AC-4 one test (2 `refreshAll` calls, same rhythm `<p>` node); AC-5 `edit-plan.test.tsx` and
-  `mount-stability.test.tsx` pass unedited.
-- Red on main (tests written before the code): 5 of 9 failed (AC-1 x2, AC-2 x2, AC-4); the AC-3
-  no-call tests are green by construction.
-- Planted fault (backup copy, restored with `cp`): `onAnswered?.()` before `refreshAll`. AC-1
-  ordering test and the AC-2 rejected-refresh test failed (2 red); restored, 9 green.
-- Gate: `-w typecheck lint test --concurrency=1` once failed in `@workoutlab/web#test` (cause not
-  captured; did not reproduce); web test rerun 261 files / 3619 tests green. UF-11 folder run
-  ~12 times: one transient failure, not reproduced, not identified. `test:repo-checks`,
-  `format:check`, `check-all.mjs` green. `tests/e2e/uf-11-plan.spec.ts` 15 passed.
+Archived in `docs/tickets/log/T-0481.md` (D-0157).

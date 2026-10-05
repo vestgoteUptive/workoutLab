@@ -238,6 +238,11 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0374 | T-0219 AC6 ticket wording: F-input never shuffles plank into a slot; require the forced-core exclude list + minute-grid oldCost sweep as accepted (docs only) | product | T-0219 | done | wl-spec |
 | T-0478 | UF-03.1 Swap button on the List view's current card → SwapSheet → ctx.replaceItem (split from T-0418, D-0172 §9) | web-feature:UF-03 | T-0418, T-0421, T-0414 | done | wl-build-web |
 | T-0471 | UF-11.1 CheckinCard mounts on UF-11.2 + UF-02.1 (slots.tsx) and e2e (split from T-0308c, D-0168; two UF-02 pins, whole web e2e, D-0174 §1 §3) | web-feature:UF-11 | T-0470 | done | wl-build-web |
+| T-0343 | UF-10 midnight rollover: a Balance screen left open across local midnight keeps a stale 14-day window until remount (T-0307a build) | web-feature:UF-10 | T-0307a | done | wl-build-web |
+| T-0443 | Test hygiene beyond UF-09: replace `document.body.innerHTML =` resets with cleanup() in UF-01 keyboard.test.ts:7 and UF-08 suggested-actions.test.tsx:416, and consider a repo-wide guard with a `/document\.body\.innerHTML\s*=(?!=)/` pattern (T-0424 review) | web-shell | T-0424 | done | wl-build-web |
+| T-0481 | UF-11.2 re-reads the plan after the card's Accept/Keep: CheckinCard `onAnswered` → `usePlanData(clock, revision)` cache-only re-read in `Plan` (split from T-0471, D-0174 §2; re-groomed D-0181 §1) | web-feature:UF-11 | T-0471 | done | wl-build-web |
+| T-0472 | UF-03.1: after a reload, unchecking a logged added row removes the row and drops focus to body — keep the row or move focus to '+ Add set' (T-0457 review; folds in T-0473, D-0182 §2) | web-feature:UF-03 | T-0457 | done | wl-build-web |
+| T-0473 | UF-03.1 AC-6: add a vitest that pressing + Add set on a timed item moves focus to the new row's seconds field (untested; T-0457 accept) | web-feature:UF-03 | T-0457 | folded → T-0472 (D-0182 §2) | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |

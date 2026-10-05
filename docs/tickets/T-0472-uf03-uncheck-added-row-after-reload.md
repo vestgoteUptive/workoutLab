@@ -142,11 +142,4 @@ None.
 - T-0473 is closed as folded into this ticket (D-0182 §2).
 
 ## Build / accept log
-
-### Build log (frontend-dev, 2026-10-05, from main d3b749a, clean)
-- Change: `ListView.tsx` `SetRow` gets `keepRow` (null for planned rows); `Rows` passes it for `i >= planned`, so unchecking records the row's logged values in `added` before `ctx.deleteSet`. Same keyed `SetRow`, no remount. New `__tests__/list-view.uncheck-added.test.tsx`; AC-3 extends `list-view.addset.host.test.tsx`.
-- AC map: AC-1/2/4/5 in `list-view.uncheck-added.test.tsx` (titles `T-0472 AC-n`); AC-3 in `list-view.addset.host.test.tsx` AC-4 flow (real SessionHost, offline, tombstone via `sets.deletedAt`).
-- Red on unfixed ListView: AC-1, AC-2 and the AC-3 host flow fail; AC-4/AC-5 pass (AC-4 behaviour unchanged, AC-5 green on main as specced).
-- Planted faults (backup copy, restored with cp): remount key `${i}-l/u` fails AC-1 (same node/focus); removing `ref={showKg ? undefined : firstField}` from the seconds input fails AC-5.
-- Gate: `-w typecheck lint test --concurrency=1` green (19/19); `test:repo-checks`, `format:check` (after prettier --write), `check-all.mjs` green; `tests/e2e/uf-03-list-summary.spec.ts` 4/4 green (via `--config tests/e2e/playwright.config.ts`; a first run without the config failed on baseURL only).
-- Paths: only `features/UF-03/**` and this ticket file. No deviation.
+Archived in `docs/tickets/log/T-0472.md` (D-0157).

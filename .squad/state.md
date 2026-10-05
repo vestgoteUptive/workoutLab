@@ -1,19 +1,28 @@
 # State
 
 - **Phase:** 3 (App). On main: engine rules 1–14 incl. D-0131 back-off floor + D-0137 drop cap; UF-01 onboarding; UF-02.1 Today; UF-03.1 List view incl. + Add set (T-0457); UF-03.3 summary content (T-0419); UF-04 Library; UF-05.1 SwapSheet component (T-0421, not yet mounted); UF-06 Progress (T-0307b); UF-07.1 Routine editor (T-0308a); UF-08.1–.4 setup; UF-09 machine + hook + seams + .1–.9 incl. the e2e-from-Ready spec and seam retry for how-to/list-view (T-0304a/e/b/f/c/d, T-0414, T-0304h, T-0463); UF-09's focus prefs now read through a UF-08 leaf entry, `index.prefs.ts` (T-0474, D-0170); UF-10 Balance; UF-11.2/.3/.4 Plan + Edit plan + Account settings (T-0308b, T-0310d); lib/offline cacheCurrent (T-0431, D-0151); lib/account export + wipe (T-0310c) and DELETE /account Edge Function (T-0310b); e2e consoleGuard (T-0425).
-- **Updated:** 2026-10-05 01:45 by orchestrator. A parallel claude.ai cloud session (user-run) has been working the same repo concurrently since 2026-10-04 evening, picking off low-hanging tickets directly — expect `git pull`/push to occasionally diverge; rebase cleanly (same-commit ancestor each time so far), never force-push.
-- **`main`:** T-0471 merged, re-verified fresh (19/19 tasks green) and pushed (`e014da3`). 232 tickets archived done. Board is at 1 `ready` (none — T-0481 just picked), 1 `doing` (T-0481), 1 `blocked:T-0481` (T-0482).
-- **In flight (2026-10-05 01:45):** T-0481 build (UF-11.2 plan re-read after check-in Accept/Keep, small tier per D-0178). 1 run.
-- **Resolved recently:** T-0471 fully landed (CheckinCard mounts on Plan+Today, both cold-cache gates, 44×44 touch fix); D-0177 amended to `decided`, ratifying 5 lane deviations total (4 UF-02 test mocks + Today.tsx's own gate). CI's "supabase db tests" failure on main was a Docker-pull rate limit, not a regression — rerun once. D-0181 landed (T-0481/T-0482 re-groomed: a `revision`-bump cache re-read replaces the stale key-remount design T-0174 §2 specified before T-0471 lifted `usePlanData` out of `PlanBody`).
+- **Updated:** 2026-10-05 02:15 by orchestrator. User asked to finish phase 3 before starting phase 4. A parallel claude.ai cloud session (user-run) has been working the same repo concurrently since 2026-10-04 evening — expect `git pull`/push to occasionally diverge; rebase cleanly (same-commit ancestor each time so far), never force-push.
+- **`main`:** T-0343, T-0472, T-0481, T-0443 merged and pushed (`8aa94b0`), full gate green (237/237 e2e). T-0482 unblocked (`ready`). Board: phase 3 still has ~35 `todo` rows, almost all low-priority review/QA follow-ups — see Next below for the real picture (the old one here was stale).
+- **In flight (2026-10-05 02:15):** none.
+- **Resolved recently:** T-0481 approved after a code-review found its flagged flake (two pre-existing races in `offline.test.tsx`/`mount-stability.test.tsx`) predates it and only changes the odds, not the cause. Filed **T-0499** for the actual fix rather than patch it hastily — a first attempt (await the real `refreshAll` directly) surfaced the test's own spy helper doesn't support every chain the real call needs, so it needs a proper pass, not a quick inline change. T-0343 (UF-10 midnight rollover), T-0472 (UF-03 uncheck-added-row, folds T-0473) and T-0443 (web-shell innerHTML hygiene) all built clean (D-0178 small-tier fast path, no review/QA needed).
 
 ## H-13 fully resolved (2026-10-02–03)
 T-0307b, T-0308a and T-0308b all merged and are `done` on the board. T-0356, T-0362, T-0363 (which were waiting on them) are unblocked.
 
-## Next
-- UF-09: T-0415 after T-0422 (and not with T-0304g: host.tsx); T-0394 after T-0304g; T-0438 comments after T-0304g; T-0304h e2e, T-0304g (device features), then T-0304h (e2e from Ready), T-0394 (Back → Pause), T-0415 (List-view host support).
-- UF-03/UF-05 (D-0142): T-0416 → T-0417 → T-0418 after T-0304d/T-0415; T-0422 swap seam after T-0304d.
-- tests/e2e: T-0430 → T-0427 ∥ T-0429 (SW register catch) → T-0432.
-- Engine lane: queue empty (all follow-ups done). Ungroomed: T-0216, T-0309 landing, T-0310d (UF-11.4, blocked via H-13), phase 4 infra.
+## Next — finishing phase 3 (user asked: don't start phase 4 yet)
+- Phase 3 board (`.squad/board.md` lines ~78-125) has ~35 `todo` rows left after this tick's 4
+  merges, almost all low-priority review/QA follow-ups (marked optional/cosmetic/nice-to-have),
+  plus a `check-lane-paths` cluster (T-0336-0340, T-0347-0348, all `infra`, T-0320 follow-ups)
+  and a UF-01 `ProfileGate`/guard cluster (T-0328-0333, `web-shell`, T-0301a follow-ups).
+  T-0482 (UF-02, `ready`, depends on now-done T-0481) and T-0499 (UF-11 test flake fix, `todo`,
+  needs grooming) are the only non-backlog items.
+- This "Next" section was stale for most of 2026-10-05 (named tickets T-0304g/h, T-0394, T-0415,
+  T-0416-418, T-0422, T-0430/427/429/432, T-0216, T-0310d as pending — all were already `done`).
+  Verify against the board directly each tick rather than trusting this list blindly; it drifts.
+- Approach: groom 2-3 self-contained `todo` rows per tick (D-0182 is the template — read the row,
+  confirm deps are `done`, check lane non-overlap, write a real spec grounded in current code),
+  build them at the small tier (D-0178) when they qualify, batch-merge. At ~35 rows this is
+  several more ticks of the same pattern before phase 3 can close.
 
 ## Waiting on humans
 H-13 (push branches); H-14 (service-role key for the account function, prod only); T-0217 tie-break default; H-12 (C-01 on phone); H-05, H-06, H-10 (non-blocking).
