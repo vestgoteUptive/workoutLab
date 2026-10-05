@@ -217,3 +217,11 @@ Plan: 6 to add, 0 to change, 0 to destroy.
   (Condensed to the set attributes; every other attribute is `(known after apply)`. The raw plan is in the gitignored `infra/terraform/plans/cloudflare.tfplan`.)
 - Risk for run B: the Pages API may refuse a custom domain on a project with no deployment (edge case above); Terraform orders domain after project, so a failure would leave the two projects created and the domain/CNAME missing.
 - Not run: apply, import, state, any write call to the Cloudflare API. STOPPED: plan ready for human review.
+
+### Run B (2026-10-05, human-approved H-16) - done
+- Applied by the human from their own terminal (the session's permission mode blocks `terraform apply` for agents); the orchestrator verified afterwards with read-only GETs.
+- **AC-4:** `terraform apply ../plans/cloudflare.tfplan` -> `Apply complete! Resources: 6 added, 0 changed, 0 destroyed.` Following `terraform plan -detailed-exitcode` -> exit 0.
+- **AC-4 (zone untouched):** other-record count after apply = **26** (same as run A). The re-taken SHA-256 (`92ab4340…ecf4ad`) differs from run A's (`0fd3771f…c4037d`), but run A's exact line format/sort wasn't recorded, so the hashes aren't comparable. Proven directly instead: the newest `modified_on` among the 26 other records is `2026-03-16T20:29:12Z`, and 0 of them were modified on 2026-10-05. The only records modified today are the two owned CNAMEs (`app.workout.vestgote.com -> workoutlab-web.pages.dev`, `workout.vestgote.com -> workoutlab-landing.pages.dev`, proxied, 18:26:09Z). **Follow-up:** commit the baseline computation as a script so future runs hash identically.
+- **AC-5:** both Pages domains `status=active`, `certificate_authority=google` (active on the 2nd 60 s poll). `openssl s_client -verify_return_error`: `Verify return code: 0 (ok)` for both, host in SAN. `curl`: `ssl_verify_result=0` for both; HTTP `522` recorded, not asserted (nothing deployed before T-0402).
+- **AC-6:** two Pages projects on the Free plan, no paid product. `docs/infra-costs.md` needs no change.
+- Status: done.
