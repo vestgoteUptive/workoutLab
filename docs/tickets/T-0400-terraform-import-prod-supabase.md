@@ -576,3 +576,10 @@ Terraform will perform the following actions:
 
 Plan: 1 to import, 0 to add, 0 to change, 0 to destroy.
 ```
+
+### Run B (2026-10-05, human-approved H-17) - done
+- Applied by the human from their own terminal (the session's permission mode blocks `terraform apply` for agents); the orchestrator verified afterwards.
+- **AC-6:** `terraform apply ../plans/supabase-prod.tfplan` -> `Apply complete! Resources: 1 imported, 0 added, 0 changed, 0 destroyed.` Following `terraform plan -detailed-exitcode` -> exit 0 (no changes).
+- **AC-6 (auth untouched):** filtered read-only GETs after apply equal run A exactly: project `workoutLab`, `eu-west-1`, `ACTIVE_HEALTHY`, org match true; `site_url` `http://localhost:3000`, Google enabled, client ID matches, allow-list `http://localhost:3000/**,https://app.workout.vestgote.com/**,http://localhost:5173/**` (live order, unchanged).
+- **AC-7:** org plan `free`. No cost added; `docs/infra-costs.md` needs no change.
+- Status: done.
