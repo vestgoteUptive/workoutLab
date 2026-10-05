@@ -28,9 +28,23 @@ The `production` job follows a green `CI` run on `main` and also needs `PROD_DEP
 
 ## Preview risk (D-0184 §5)
 
-There is no staging. Branch previews point at the **prod Supabase project**. A signed-in tester on
-a preview would read and write real prod data, with only RLS limiting them to their own rows.
-Two things keep this shut until it is proven safe: previews start signed-out by construction, and
-prod's redirect allow-list does not contain the preview pattern, so Supabase sends any sign-in
-from a preview back to `site_url`. Adding that pattern is T-0402c, after RLS is proven on prod
-(D-0184 §6, D-0186 §1). Until T-0402b pushes the schema, a preview loads but cannot read a plan.
+There is no staging. Branch previews point at the **prod Supabase project**, and sign-in works on
+them: prod's redirect allow-list holds `https://*.workoutlab-web.pages.dev/**` (T-0402c, applied by
+the human-run `infra/scripts/auth-patch.mjs`, D-0185 §4). Supabase's `*` matches one host label,
+so it covers both `<hash>.workoutlab-web.pages.dev` and `<branch-alias>.workoutlab-web.pages.dev`.
+The landing host is not on the list (D-0186 §1).
+
+**The risk:** a tester signed in on a preview reads and writes **real prod data**. Only row-level
+security keeps them inside their own rows, and a preview runs branch code that has not been
+reviewed against prod. T-0402c proved RLS before the door opened (D-0184 §6):
+
+- `supabase/tests/database/015_rls_every_table.test.sql`: every `public` table has RLS, owned
+  tables have owner-scoped policies for all four commands, library tables are read-only, views are
+  `security_invoker`, and `analytics`/`private` are closed to `anon` and `authenticated`.
+- `.github/scripts/rls-coverage.test.mjs`: every table, view and function the web app reaches is
+  covered by those tests or by `002_rls_owner.test.sql`'s two-user isolation asserts.
+- `infra/scripts/rls-fingerprint.sh`: prod's policies, grants and RLS flags hash the same as local.
+
+Before a migration that adds a table or changes a policy reaches prod, re-run the fingerprint on
+both sides. To close the door again, run `auth-patch.mjs --set uri_allow_list=<the list without it>`
+(reviewed, keys-only) and update `infra/auth/expected-auth.json` in the same change.
