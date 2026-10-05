@@ -237,6 +237,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0475 | import-bans polish (D-0170, optional): add a contrast row showing `../UF-08/index.prefs.js` is allowed; tighten INDEX_ONLY_PATTERN so only `index.js` / `index.<lower>.js` pass (not `index-x.js`); keep T-0313's dynamic-import pattern consistent | web-shell | T-0474 | done | wl-build-web |
 | T-0374 | T-0219 AC6 ticket wording: F-input never shuffles plank into a slot; require the forced-core exclude list + minute-grid oldCost sweep as accepted (docs only) | product | T-0219 | done | wl-spec |
 | T-0478 | UF-03.1 Swap button on the List view's current card → SwapSheet → ctx.replaceItem (split from T-0418, D-0172 §9) | web-feature:UF-03 | T-0418, T-0421, T-0414 | done | wl-build-web |
+| T-0471 | UF-11.1 CheckinCard mounts on UF-11.2 + UF-02.1 (slots.tsx) and e2e (split from T-0308c, D-0168; two UF-02 pins, whole web e2e, D-0174 §1 §3) | web-feature:UF-11 | T-0470 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
