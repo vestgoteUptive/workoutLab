@@ -164,16 +164,4 @@ recurring cost: prod stays on Free (Edge Functions and the database are within t
 - **Unblocks:** T-0402c.
 
 ## Build / accept log
-
-### Run A (builder, 2026-10-05)
-- Wrote `infra/scripts/supabase-prod-release.sh` (plan default, `apply` needs `CONFIRM_PROD_RELEASE=<ref>`, CLI pinned 2.118.0, password and host masked via sed), `infra/deploy/supabase-release.md`, `.github/scripts/supabase-prod-release.test.mjs`.
-- AC-1..AC-4 [static]: node:test titles `T-0402b AC-1..4`, all pass. AC-2 planted fault (copy of script with the confirm check removed) is detected: the copy makes CLI calls where the real script makes zero.
-- Plan mode NOT run: `PROD_DB_URL` (DB password) isn't available to the agent; the human supplies it. No write call, no prod call of any kind was made. AC-5 (plan output) is the human's, to be pasted here.
-- AC-6, AC-7: pending the human's apply (H-19) and a read-only verify run. No cost change (Free plan), `docs/infra-costs.md` unchanged.
-- Gate: `-w test:repo-checks` 198/198, `-w format:check`, `check-all.mjs` green. Nothing under apps/, packages/, supabase/ touched.
-
-### Run B (2026-10-05, human-approved H-19) - done
-- **Plan (human, read-only):** 4 migrations pending (`20260927210000_data_model_v1a`, `20260928090000_data_model_v1b`, `20260928120000_priority_areas_lower_bound`, `20261001090000_plan_checkins_one_period`), seed `supabase/seed.sql`, remote history empty, functions `(none)`. Orchestrator checked `seed.sql` beforehand: only `exercises` (78), `exercise_areas` (137), `exercise_variants` (162); no user/auth rows.
-- **Apply (human):** all 4 migrations applied, seed applied, `workouts`/`balance`/`sessions`/`account` deployed. Plan after apply: remote history equals local, "Remote database is up to date", all 4 functions `ACTIVE`, `apply complete; nothing pending`. The `rootless netns: kill network process: permission denied` lines are local podman cleanup noise after bundling; each deploy succeeded.
-- **Read-only verification (orchestrator):** REST counts with the anon key: exercises 78, exercise_areas 137, exercise_variants 162 (= seed). `profiles`, `sessions`, `session_sets`, `routines`, `plan_checkins`, `area_targets`: anon read → 401. Function secrets present (names only): `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_DB_URL`, `SUPABASE_JWKS`, `SUPABASE_PUBLISHABLE_KEYS`, `SUPABASE_SECRET_KEYS` → **H-14 satisfied**. All four functions have `verify_jwt = false` by design and enforce auth in code: `POST /workouts/suggest`, `GET /balance`, `POST /sessions/{id}/finish`, `DELETE /account` (no token and a garbage token) all → 401. Auth drift check: matches expected (6 keys), exit 0.
-- Status: done.
+Archived in `docs/tickets/log/T-0402b.md` (D-0157).
