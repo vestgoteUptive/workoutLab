@@ -85,29 +85,4 @@ unchanged · commits start `T-0491` and cite UF-06.1 (e.g.
 `T-0491 UF-06.1: assert the literal offline time 08:10`).
 
 ## Build / accept log
-
-2026-10-04 frontend-dev:
-- Edited `apps/web/src/features/UF-06/__tests__/screens.test.tsx` (AC-12 case): deleted the
-  2-line `hour: "numeric"` comment and replaced the `/^Offline · last synced 0?8:10$/` regex
-  with `screen.findByText("Offline · last synced 08:10")`. Diff: 1 file, +1/-3.
-- AC1: `grep -n '0?8:10\|hour: "numeric"' apps/web/src/features/UF-06/__tests__/screens.test.tsx`
-  prints nothing (exit 1, no matches). Green run (unfixed code):
-  `scripts/locked.sh small npx vitest run src/features/UF-06/__tests__/screens.test.tsx` ->
-  1 file, 29/29 passed.
-- AC2 (planted-fault proof): `cp` backup of `OfflineStatus.tsx`; planted the T-0449 Fault A
-  (`formatTime(effective, { locale, timeZone })` -> `new Intl.DateTimeFormat(locale, { timeZone,
-  hour: "numeric", minute: "2-digit" }).format(new Date(effective))`). Re-ran the same vitest
-  command -> red, 1 failed / 28 passed, failure on line 495 (`findByText("Offline · last synced
-  08:10")` times out; DOM showed `8:10`), confirming the old regex would have passed this fault
-  but the literal catches it. Restored via `cp` from the backup; `git diff --stat
-  apps/web/src/components/offline-status/OfflineStatus.tsx` empty. Re-ran vitest post-restore ->
-  green again, 29/29 passed.
-- AC3: `git diff apps/web/src/features/UF-06/__tests__/screens.test.tsx` shows exactly the 3-line
-  change (2 comment lines removed, 1 regex line replaced); all other cases in the file untouched
-  and passing (29/29 total, same as before the edit aside from the tightened assertion).
-- Commit: `91ceb13 T-0491 UF-06.1: assert the literal offline time 08:10`.
-- Full gate (post-commit): `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test
-  --concurrency=1` -> 19/19 tasks successful (16 cached), web test 259 files / 3583 tests passed,
-  typecheck/lint clean, exit 0. `pnpm -w test:repo-checks` -> 159/159 pass. `pnpm -w
-  format:check` -> all files match Prettier style. `node .github/scripts/check-all.mjs` -> exit
-  0. Contracts unchanged.
+Archived in `docs/tickets/log/T-0491.md` (D-0157).

@@ -1,9 +1,9 @@
 ---
 id: D-0177
-title: "T-0471's slots.tsx mount breaks four UF-02 unit test files not in its listed extras: mock the check-in slot to null in each, the same shape slot.test.tsx already uses"
-status: revisit
+title: "T-0471's slots.tsx mount breaks four UF-02 unit test files not in its listed extras: mock the check-in slot to null in each, the same shape slot.test.tsx already uses; amended to ratify a fifth UF-02 deviation (Today.tsx's own cold-cache gate)"
+status: decided
 date: 2026-10-04
-by: frontend-dev (T-0471, web-feature:UF-11)
+by: frontend-dev (T-0471, web-feature:UF-11); amended 2026-10-05 by orchestrator
 area: web
 builds-on: D-0174 §3
 ---
@@ -61,8 +61,36 @@ approved change causes.
   workspace surfaced it. The ticket's own instruction to run the full gate once before hand-back
   (D-0158) is what caught this.
 
+## Amendment (2026-10-05, orchestrator): ratifying Today.tsx's own cold-cache gate
+QA's review of T-0471's rework round found a fifth, real gap in the same family: Today's
+`CheckinSlot` mounted the real `CheckinCard` as soon as `todayCheckinSlot` resolved, with no gate
+on `useToday()`'s own cache-warming `refreshAll` finishing first — the same cold-cache race
+Plan's `usePlanData` gate (this same ticket, earlier round) was built to close, just unguarded on
+the Today side. This was in T-0471's own AC-2 scope (both mount points), not a new ticket's worth
+of finding, so it was sent back for a targeted fix rather than accepted with a known gap.
+
+The fix adds a `ready` prop to `CheckinSlot` (`apps/web/src/features/UF-02/Today.tsx`), gated on
+`state.status !== "loading"` — mirroring `UF-11/index.tsx`'s own `state.phase !== "loading"` gate
+on `usePlanData`, with `TodayState.status` standing in for the Plan side's phase enum. Today's
+render already withheld its OfflineStatus, C-01 and suggestion-card content while `status ===
+"loading"`; the check-in card now waits for that same point instead of racing the cache warm-up.
+A fault-proof unit test in `UF-11/__tests__/checkin-mount.test.tsx` and the new case in
+`tests/e2e/uf-02-today.spec.ts` cover it; both review and QA independently converged on the gate
+being correct and the new e2e case being decorative (it re-confirms the gate, not load-bearing on
+its own — the unit test is the fault proof).
+
+`Today.tsx` is not one of T-0471's listed extra paths either (same `web-feature:UF-02` vs.
+`web-feature:UF-11` lane mismatch as the original four files), so this is the same kind of
+deviation D-0177 already covers, at the same narrow-fix standard: one gate, mirroring an existing
+pattern, with no assertion elsewhere changed. Ratified alongside the original four for the same
+reason — the fix is squarely inside the ticket's own AC-2, found only because the full gate (not
+the targeted one) ran, and widening it into a separate ticket would just be process overhead.
+
+Status moves from `revisit` to `decided`: both deviations (the four test-mock files, and now
+`Today.tsx` + its e2e case) are ratified as how T-0471 landed, not open questions.
+
 ## Revisit when
-- A product-owner groom wants this folded into T-0471's or a follow-up's listed extras instead of
-  standing as a decision.
-- A fifth UF-02 test file is found to need the same mock later: fold the convention into
-  `helpers.tsx` instead of repeating the block a fifth time.
+- A fifth-in-the-original-sense UF-02 test file is found to need the same `slots.js` mock later:
+  fold the convention into `helpers.tsx` instead of repeating the block again.
+- A sixth mount point surfaces the same cold-cache race: consider lifting the `status !==
+  "loading"` / `phase !== "loading"` gate into a shared hook instead of repeating it per screen.

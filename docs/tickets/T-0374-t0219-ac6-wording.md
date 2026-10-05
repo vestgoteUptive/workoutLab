@@ -75,15 +75,4 @@ AC1-AC4 hold and are recorded in the log · `node .github/scripts/check-all.mjs`
 unchanged · commit message starts `T-0374` and cites UF-08.2.
 
 ## Build / accept log
-- Replaced T-0219's AC6 bullet exactly as scoped. AC1: each named value traced to its `it` in
-  `packages/engine/test/t0219-timed-cost.test.ts` — no-plank-at-F-input → "rule-13 (AC6) AC1's
-  history, no pins: no shuffle 0…6 puts plank in a slot"; the exclude list and 20/22 min cases →
-  "a shuffle onto plank at 120 s that doesn't fit leaves the original (20 min)" and "at 22 min the
-  shuffle onto plank fits exactly"; the free-up cases and R7-E8 sweep per the test file's
-  remaining `it`s in that describe block (confirmed `CORE_ONLY` = library minus bench-press,
-  dead-bug, hanging-knee-raise, plank, matching the ticket's wording exactly).
-- AC2: `grep -c 'excludeIds: \["dead-bug", "hanging-knee-raise"\]' docs/tickets/T-0219-*.md` → 0.
-- AC3: `git diff --stat` lists only `T-0219-timed-cost-at-prefill-duration.md` (14 insertions, 1
-  deletion — the AC6 bullet only).
-- AC4: `node .github/scripts/check-all.mjs` — pending final run before commit.
-- Status: done.
+Archived in `docs/tickets/log/T-0374.md` (D-0157).
