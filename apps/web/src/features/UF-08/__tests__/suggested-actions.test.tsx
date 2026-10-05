@@ -5,7 +5,7 @@
 // The "no extra call" asserts must fail on the planted fault named in the ticket: a `useEffect`
 // that re-suggests on mount (build log in the ticket's accept log).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { suggest, type SessionInput, type Workout } from "@workoutlab/engine";
 import { refreshAll } from "../../../lib/offline/history.js";
 import { Ready } from "../Ready.js";
@@ -415,7 +415,7 @@ describe("AC-9 offline = online (NFR-OFF-3, D-0071 §8)", () => {
 
   it("the same sequence gives deep-equal rows and Workouts, with no fetch either way", async () => {
     const offline = await run(false);
-    document.body.innerHTML = "";
+    cleanup();
     vi.clearAllMocks();
     refresh.mockImplementation(async () => {});
     serveCache();

@@ -3,13 +3,18 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { press } from "./keyboard.js";
 
+let button: HTMLButtonElement | undefined;
+
 afterEach(() => {
-  document.body.innerHTML = "";
+  button?.remove();
+  button = undefined;
+  // T-0443 AC-4: nothing is left behind on the body.
+  expect(document.body.childElementCount).toBe(0);
 });
 
 describe("keyboard.ts press()", () => {
   it("T-0399 AC1 Home then End dispatch keydown and keyup on the focused button, focus unchanged", async () => {
-    const button = document.createElement("button");
+    button = document.createElement("button");
     button.type = "button";
     button.textContent = "tab";
     document.body.append(button);
