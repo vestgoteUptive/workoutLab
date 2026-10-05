@@ -151,6 +151,12 @@ export function check(dir = defaultDir) {
       errs.push("AC-2: production if lacks conclusion == 'success'");
     if (norm(pr.if).indexOf("vars.PROD_DEPLOY_ENABLED == 'true'") < 0)
       errs.push("AC-2: production if lacks PROD_DEPLOY_ENABLED");
+    // workflow_run's `branches` filter matches the head branch NAME, which a fork PR can also
+    // call `main`; prod must only follow a push to this repository.
+    if (norm(pr.if).indexOf("github.event.workflow_run.event == 'push'") < 0)
+      errs.push("AC-2: production if lacks workflow_run.event == 'push'");
+    if (norm(pr.if).indexOf("github.event.workflow_run.head_repository.full_name == github.repository") < 0)
+      errs.push("AC-2: production if lacks the same-repository check");
     if (/--branch\s+(?!main\b)/.test(deploys(pr).map((d) => d.line).join("\n")))
       errs.push("AC-2: production must deploy with --branch main");
   }

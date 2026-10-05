@@ -50,6 +50,15 @@ test("T-0402a AC-2 planted fault: production if without PROD_DEPLOY_ENABLED goes
   assert.ok(has(errs, "AC-2"), errs.join("\n"));
 });
 
+test("T-0402a AC-2 production that could follow a fork's `main` goes red (orchestrator review)", () => {
+  const noPush = mutated((s) => s.replace(" && github.event.workflow_run.event == 'push'", ""));
+  assert.ok(noPush.some((e) => e.includes("event == 'push'")), noPush.join("\n"));
+  const noRepo = mutated((s) =>
+    s.replace(" && github.event.workflow_run.head_repository.full_name == github.repository", ""),
+  );
+  assert.ok(noRepo.some((e) => e.includes("same-repository")), noRepo.join("\n"));
+});
+
 test("T-0402a AC-2 production without success conclusion or wrong trigger goes red", () => {
   assert.ok(has(mutated((s) => s.replace("github.event.workflow_run.conclusion == 'success' && ", "")), "AC-2"));
   assert.ok(has(mutated((s) => s.replace("branches: [main]\n\npermissions", "branches: [dev]\n\npermissions")), "AC-2"));

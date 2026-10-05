@@ -82,7 +82,9 @@ jobs:
 
   production:
     name: production (main, off until H-06)
-    if: github.event.workflow_run.conclusion == 'success' && vars.PROD_DEPLOY_ENABLED == 'true'
+    # `branches: [main]` above matches the triggering run's head branch NAME, which a fork PR can
+    # also call `main`. Only deploy a push to this repository's own main.
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
