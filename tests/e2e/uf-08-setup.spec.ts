@@ -279,6 +279,22 @@ test.describe("T-0303b AC-12 UF-08.2 online", () => {
   });
 });
 
+test.describe("T-0521 AC7 UF-08.2 Remove does not refill (GitHub #33)", () => {
+  test("removing the last accessory drops one row and no new exercise appears", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const before = await rowNames(page).allTextContents();
+    expect(before.length).toBeGreaterThan(1);
+    const last = before.at(-1)!;
+    await page.getByRole("button", { name: `Remove ${last}` }).click();
+    await expect(itemRows(page)).toHaveCount(before.length - 1);
+    const after = await rowNames(page).allTextContents();
+    expect(after).toEqual(before.slice(0, -1));
+  });
+});
+
 test.describe("T-0303b AC-12 UF-08.2 offline (NFR-OFF-3)", () => {
   test("offline rows equal the online ones for the same inputs; Remove works offline", async ({
     page,
