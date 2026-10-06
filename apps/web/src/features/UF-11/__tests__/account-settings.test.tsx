@@ -39,6 +39,8 @@ const account = vi.hoisted(() => ({
   deleteAccountAndSignOut: vi.fn(),
   wipeLocalUserData: vi.fn(),
   requestAccountDeletion: vi.fn(),
+  signOutAndClearDevice: vi.fn(),
+  hasUnsyncedWork: vi.fn(),
 }));
 vi.mock("../../../lib/account/index.js", () => account);
 
@@ -107,6 +109,8 @@ beforeEach(() => {
     signOut: vi.fn(async () => undefined),
   };
   Object.values(account).forEach((f) => f.mockReset());
+  account.hasUnsyncedWork.mockResolvedValue(false);
+  account.signOutAndClearDevice.mockResolvedValue(undefined);
   replaceSpy.mockReset();
   navCalls.length = 0;
   Object.defineProperty(window, "location", {
@@ -354,7 +358,7 @@ describe("T-0310d AC-D7 delete outcomes", () => {
 });
 
 describe("T-0310d AC-D8 sign out keeps the queue", () => {
-  it("T-0310d AC-D8 calls signOut once and leaves the queued set and the wipe alone", async () => {
+  it("T-0310d AC-D8 calls signOutAndClearDevice once and leaves the queued set and the wipe alone", async () => {
     const db = freshDb();
     await db.sets.put({
       key: `${TEST_USER}:c1`,
@@ -377,9 +381,83 @@ describe("T-0310d AC-D8 sign out keeps the queue", () => {
     } as never);
     mount();
     fireEvent.click(screen.getByRole("button", { name: a.signOut }));
-    expect(auth.value.signOut).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(account.signOutAndClearDevice).toHaveBeenCalledTimes(1));
     expect(await db.sets.count()).toBe(1);
     expect(account.wipeLocalUserData).not.toHaveBeenCalled();
     expect(account.deleteAccountAndSignOut).not.toHaveBeenCalled();
+  });
+});
+
+function signOutButton() {
+  return screen.getByRole("button", { name: a.signOut });
+}
+
+describe("T-0529 AC-3 / AC-4 sign out, nothing unsynced", () => {
+  it("T-0529 AC-3 one call, Signing out…, then /welcome via the router", async () => {
+    const d = deferred<void>();
+    account.signOutAndClearDevice.mockReturnValue(d.promise);
+    auth.value.status = "signed-out";
+    mount();
+    fireEvent.click(signOutButton());
+    const busy = await screen.findByRole("button", { name: a.signingOut });
+    expect(busy).toBeDisabled();
+    fireEvent.click(busy);
+    expect(account.signOutAndClearDevice).toHaveBeenCalledTimes(1);
+    expect(account.signOutAndClearDevice).toHaveBeenCalledWith({ userId: TEST_USER });
+    expect(screen.queryByText(a.unsyncedWarning)).toBeNull();
+    expect(auth.value.signOut).not.toHaveBeenCalled();
+    await act(async () => d.resolve());
+    await waitFor(() => expect(where()).toBe("/welcome"));
+    expect(replaceSpy).not.toHaveBeenCalled();
+  });
+
+  it("T-0529 AC-4 a status still signed-in hard-navigates to /welcome", async () => {
+    account.signOutAndClearDevice.mockResolvedValue(undefined);
+    mount();
+    fireEvent.click(signOutButton());
+    await waitFor(() => expect(replaceSpy).toHaveBeenCalledTimes(1));
+    expect(replaceSpy).toHaveBeenCalledWith("/welcome");
+    expect(where()).toBe("/plan/account");
+  });
+});
+
+describe("T-0529 AC-5 unsynced confirm", () => {
+  it("T-0529 AC-5 confirm, focus, Cancel, then Sign out anyway once", async () => {
+    account.hasUnsyncedWork.mockResolvedValue(true);
+    account.signOutAndClearDevice.mockResolvedValue(undefined);
+    auth.value.status = "signed-out";
+    mount();
+    fireEvent.click(signOutButton());
+    const anyway = await screen.findByRole("button", { name: a.signOutAnyway });
+    expect(screen.getByText(a.unsyncedWarning)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: a.cancel })).toBeInTheDocument();
+    expect(anyway).toHaveFocus();
+    expect(account.hasUnsyncedWork).toHaveBeenCalledWith(TEST_USER);
+    expect(account.signOutAndClearDevice).not.toHaveBeenCalled();
+
+    fireEvent.click(screen.getByRole("button", { name: a.cancel }));
+    await waitFor(() => expect(signOutButton()).toHaveFocus());
+    expect(screen.queryByText(a.unsyncedWarning)).toBeNull();
+    expect(account.signOutAndClearDevice).not.toHaveBeenCalled();
+
+    fireEvent.click(signOutButton());
+    const again = await screen.findByRole("button", { name: a.signOutAnyway });
+    fireEvent.click(again);
+    fireEvent.click(again);
+    await waitFor(() => expect(where()).toBe("/welcome"));
+    expect(account.signOutAndClearDevice).toHaveBeenCalledTimes(1);
+    expect(account.signOutAndClearDevice).toHaveBeenCalledWith({ userId: TEST_USER });
+  });
+
+  it("T-0529 AC-5 works offline: Sign out stays enabled and the flow completes", async () => {
+    setOnline(false);
+    account.hasUnsyncedWork.mockResolvedValue(true);
+    auth.value.status = "signed-out";
+    mount();
+    expect(signOutButton()).toBeEnabled();
+    fireEvent.click(signOutButton());
+    fireEvent.click(await screen.findByRole("button", { name: a.signOutAnyway }));
+    await waitFor(() => expect(where()).toBe("/welcome"));
+    expect(account.signOutAndClearDevice).toHaveBeenCalledTimes(1);
   });
 });

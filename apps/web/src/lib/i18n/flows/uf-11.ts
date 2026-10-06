@@ -66,7 +66,7 @@ export const uf11 = {
   connectToSave: "Connect to save",
   cancel: "Cancel",
   saveFailed: "Couldn't update your plan. Try again.",
-  accountLink: "Account",
+  accountLink: "Account and sign out",
   // UF-11.1 CheckinCard (T-0308c, D-0070 §5/§7)
   checkin: {
     down: (
@@ -109,6 +109,10 @@ export const uf11 = {
     exportFailed: "Couldn't export your data. Try again.",
     connectToExport: "Connect to export your data.",
     signOut: "Sign out",
+    signingOut: "Signing out…",
+    unsyncedWarning:
+      "Some workouts haven't synced yet. They stay on this device and upload the next time you sign in here.",
+    signOutAnyway: "Sign out anyway",
     deleteHeading: "Delete account",
     deleteWarning:
       "This deletes your account and every workout, set, routine and plan, on our servers and on this device. It can't be undone. Export your data first if you want a copy.",

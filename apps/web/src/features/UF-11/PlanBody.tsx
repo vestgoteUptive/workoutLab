@@ -114,9 +114,6 @@ export function PlanBody({ state }: { state: PlanState }) {
       <OfflineStatus variant="text" />
       {state.phase === "ready" ? <PlanContent data={state.data} /> : null}
       {state.phase === "cold" ? <p>{u.coldCache}</p> : null}
-      <Link className="wl-plan__link" to="/plan/account">
-        {u.accountLink}
-      </Link>
     </>
   );
 }

@@ -133,3 +133,11 @@ None.
   viewport check holds either way.
 
 ## Build / accept log
+
+### Build log (web-feature:UF-11)
+- Start: main clean, HEAD bf05071. Built: `Plan` header (`.wl-plan__header`, h1 then `Account and sign out` link), bottom link removed, UF-11.4 Sign out section first (email + button), confirm via `hasUnsyncedWork`, `signOutAndClearDevice` once (ref guard), `Signing out…`, `/welcome` by router or `window.location.replace`. Copy keys added in `lib/i18n/flows/uf-11.ts`.
+- AC to test: AC-1 `plan-header.test.tsx` (loading/cold/ready); AC-2 `equipment-section.test.tsx` (needs the profile cache for the Equipment group); AC-3/4/5 `account-settings.test.tsx` (T-0529 describes; AC-D8 updated); AC-6/7/8 `tests/e2e/uf-11-account.spec.ts`.
+- Red on main (source files restored from HEAD, new i18n kept): 11 unit tests failed (AC-1 x3, AC-2, AC-3, AC-4, AC-5 x2, AC-D8, and the two pinned order tests). Not re-run for AC-7's scroll check on main.
+- Planted faults (backup copy, `cp` restore): (a) link rendered only when ready -> AC-1 fails 3/3; (b) `hasUnsyncedWork` skipped -> AC-5 fails 2/2.
+- Gate: `-w typecheck lint test --concurrency=1` green (web 273 files / 3711 tests), `test:repo-checks`, `format:check`, `check-all.mjs` green. e2e `uf-11-account` + `uf-11-plan`: 25/25 passed.
+- Deviations: (1) AC-7 key check ignores `wl-onboarding`, which UF-01 writes itself on /welcome after sign-out. (2) `equipment-section.test.tsx` "next element after the h1" updated for the Sign out section now sitting between (follows changed order). (3) AC-2 lives in `equipment-section.test.tsx`, which already mocks the offline cache. (4) A rejected `signOutAndClearDevice`/`hasUnsyncedWork` is treated as best effort (still navigates / no confirm).
