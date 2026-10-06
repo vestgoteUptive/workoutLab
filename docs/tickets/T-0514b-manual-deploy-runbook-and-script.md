@@ -171,3 +171,11 @@ None.
   human's `.env.local`.
 
 ## Build / accept log
+
+### Build log (infra, 2026-10-06)
+- Added `infra/scripts/deploy-prod.sh` (from the human's go-live script; repo-relative, URL from expected-auth.json, key from `PROD_SUPABASE_PUBLISHABLE_KEY` and checked, VITE_ values only on build commands, Node scan, curl -sI + DEPLOY_COMPLETE), `infra/scripts/bundle-secret-scan.mjs`, README section. Test-only overrides `DEPLOY_DIST_ROOT`, `DEPLOY_ENV_FILE` documented in the script header. The scan treats a missing dist dir as exit 2. The reference copy was deleted, not committed.
+- Red on unfixed code: scan module and script did not exist on main (imports/spawns fail).
+- AC→test: AC-1 `bundle-secret-scan.test.mjs` "finds the four kinds"; AC-2 same file "quiet on a clean bundle" (+ missing dir); AC-3/4/5/6/7 same-numbered tests in `deploy-prod.test.mjs`. Lint: `repo-scripts-lint.test.mjs` picks up the new `.mjs` automatically (12 pass).
+- AC-8 planted faults (backup copies, restored with cp): dropped `.mjs` rule → AC-1 fails; removed scan call from script → AC-4 and AC-6 fail.
+- Gates: `node --test` new tests + lint test 12/12; `-w test:repo-checks` 287/287; `-w format:check` clean; `check-all.mjs` exit 0.
+- For the human: H-24 / the next redeploy can use `bash infra/scripts/deploy-prod.sh [deploy]` instead of the worktrees copy.
