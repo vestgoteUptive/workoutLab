@@ -67,7 +67,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0213 | api/openapi.yaml SwapCandidate/SwapCandidateList examples: db-row muscleMatch 0.667 → 1.0 (D-0056 §1), and align `packages/shared/test/schemas.test.ts` R12-E1 entries (board line 57) — T-0204 follow-up | data | T-0204 | todo | wl-spec |
 | T-0217 | Needs a decision (amends D-0058): tie-break for two different ratings at the same winning endedAt. Default proposal: the higher rating wins (order-independent), which changes AC29's correction meaning; alternative: document last-arrival-wins as an exception. Then a unit test with two ratings at one endedAt — T-0208 follow-up | backend | T-0208 | todo | wl-triage → wl-build-backend |
 | T-0218 | Sub-millisecond endedAt: core.ts instantMs truncates to ms while the Instant pattern accepts any fraction and Postgres stores µs, so finishes < 1 ms apart are order-dependent. Default: compare at µs precision (SQL or a µs parse), no contract change — T-0208 follow-up | backend | T-0208 | todo | wl-build-backend |
-| T-0238 | Per-user rate limit for the Edge Functions (DELETE /account and the other three): damage is self-limited today, but add a limit with the planned function rate-limit work; and when a function deploy pipeline is added, make sure it applies each `[functions.*] verify_jwt` from supabase/config.toml deliberately (T-0310b security review, low) | backend | T-0310b | todo | wl-build-backend |
 | T-0239 | Close the remaining AC6 service-role fence gaps (T-0310b re-review, LOW): ban bare `toObject` and restrict `env` in _shared/cors.ts to `env.get("ALLOWED_ORIGINS")`/call args; token/AST-based Deno-use check instead of regex comment stripping; ban `\u` identifier escapes, `self`/`window`/`Reflect`, `Function(` with or without new, `new Worker(`, data:/blob: specifiers; a positive fixture each | backend | T-0310b | todo | wl-build-backend |
 
 **T-0204 and T-0205 must not run in parallel:** both change `packages/engine/src/session.ts`. One engine worktree at a time; whichever lands second rebases.
@@ -118,19 +117,18 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0402a | Deploy pipeline: `deploy.yml` wrangler direct upload of web + landing; branch previews behind `PREVIEWS_ENABLED` (signed-out until T-0402c), `main`→prod job wired but off until H-06; removes ci.yml's placeholder (D-0186 §1). Live AC needs H-18 | infra | T-0401 | blocked:H-18 (merged; live ACs only) | wl-build-infra |
-| T-0508 | eslint: give infra/scripts/*.mjs node globals (process/fetch are no-undef, incl. auth-drift-check.mjs); fix the unused 'mailer_otp_length' in auth-drift-check.test.mjs; note rls-coverage's accepted .from(ident) form (same-file `as const` array) in infra/deploy/README.md (T-0402c follow-ups) | infra | T-0402c | todo | wl-build-infra |
+| T-0508 | eslint: give infra/scripts/*.mjs node globals (process/fetch are no-undef, incl. auth-drift-check.mjs); fix the unused 'mailer_otp_length' in auth-drift-check.test.mjs; note rls-coverage's accepted .from(ident) form (same-file `as const` array) in infra/deploy/README.md (T-0402c follow-ups) | infra | T-0402c | ready (groomed 2026-10-06, D-0190; first in the infra chain) | wl-build-infra |
 | T-0402d | Go-live at H-06: Free→Pro with spend cap on (gate 2), `site_url` → app host via keys-only PATCH, `PROD_DEPLOY_ENABLED`, first prod deploys verified (D-0186 §1) | infra | T-0402a, T-0402b, T-0402c, T-0403 | live (AC-6 human sign-in pending) | wl-build-infra |
-| T-0509 | auth-patch.mjs hardening: save a full filtered snapshot of the live auth config before --apply (so any others_sha256 move can be diffed), and retry the post-apply read-back with backoff (Supabase is eventually consistent; T-0404b's first read-back showed stale values) (T-0404b follow-up) | infra | T-0404b | todo | wl-build-infra |
-| T-0403 | Release check: security review, e2e happy path, go/no-go | qa | T-0301…T-0309, T-0402a, T-0402b, T-0402c, T-0404b | done (GO with conditions, docs/security/go-live-review.md) | wl-release |
-| T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | todo | wl-build-web |
-| T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | todo | wl-build-web |
-| T-0512 | Bump astro past GHSA-26w7-cxv4-gfx2 and the other critical/high advisories (build-time only; static output unaffected) (F-2) | landing | T-0403 | todo | wl-build-web |
-| T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) | backend | T-0403 | todo | wl-build-backend |
-| T-0514 | web build fails if VITE_SUPABASE_ANON_KEY looks like sb_secret_ or a service_role JWT; manual-deploy runbook in infra/deploy/README.md (F-4/F-7) | web-shell | T-0403 | todo | wl-build-web |
-| T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; consider dropping localhost entries from the prod auth allow-list (F-6) | backend | T-0403 | todo | wl-build-backend |
-| T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | todo | wl-build-backend |
-| T-0506 | Record eu-west-1 as the prod region (decision + NFR-PRIV-1 wording; the spec names eu-north-1/eu-central-1) (T-0406 P1-a) | product | T-0406 | todo | wl-spec |
-| T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | todo | wl-build-infra |
+| T-0509 | auth-patch.mjs hardening: save a full filtered snapshot of the live auth config before --apply (so any others_sha256 move can be diffed), and retry the post-apply read-back with backoff (Supabase is eventually consistent; T-0404b's first read-back showed stale values) (T-0404b follow-up) | infra | T-0404b, T-0508 | todo (groomed 2026-10-06; after T-0508) | wl-build-infra |
+| T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | ready (groomed 2026-10-06, D-0190 §2; **highest priority**; live AC needs H-24) | wl-build-web |
+| T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | ready (groomed 2026-10-06, D-0190 §2; live AC needs H-24) | wl-build-web |
+| T-0512 | Bump astro past GHSA-26w7-cxv4-gfx2 and the other critical/high advisories (build-time only; static output unaffected) (F-2) | landing | T-0511 | todo (groomed 2026-10-06; after T-0511) | wl-build-web |
+| T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | ready (groomed 2026-10-06; lane moved from backend) | wl-build-infra |
+| T-0514a | web build fails if VITE_SUPABASE_ANON_KEY is an sb_secret_ key or a service_role JWT, never printing it (F-4; split from T-0514, D-0190 §5) | web-shell | T-0510 | todo (groomed 2026-10-06; after T-0510) | wl-build-web |
+| T-0514b | Manual-deploy runbook in infra/deploy/README.md + infra/scripts/deploy-prod.sh (the human's go-live script, repo-relative) + tested Node bundle-secret-scan.mjs (F-4/F-7; split from T-0514, D-0190 §5) | infra | T-0508 | todo (groomed 2026-10-06; after T-0508) | wl-build-infra |
+| T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | todo (groomed 2026-10-06; after T-0509, T-0514b; live AC needs H-25; lane moved from backend) | wl-build-infra |
+| T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | ready (groomed 2026-10-06) | wl-build-backend |
+| T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | ready (groomed 2026-10-06, D-0190 §1) | wl-build-infra |
 
 ## CI fixes (any phase)
 Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `docs/ci/CI-T-09NN-*.md`. Built with the owning lane's flow; merged only after a green draft-PR run.
@@ -142,3 +140,14 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 ## Phase 5 — Iterate
 The product-owner adds tickets from `revisit` decisions, triage outcomes and QA findings, using the `wl-idea` flow.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0516 | UF-08.1 engine `SessionInput.avoidAreas` (rule 6.1, treated like recovering); GitHub #33 (D-0191) | engine | — | ready | wl-build-engine |
+| T-0519 | UF-08.2 engine `removeItem` — Remove drops without refill (rule 12.2); GitHub #33 (D-0191). After T-0516 (same package + engine-rules) | engine | T-0516 | todo | wl-build-engine |
+| T-0520 | UF-08.1 "Skip today" area chips → `avoidAreas` in fit line, Suggest and UF-08.2 re-suggests; "Skipping today" line; GitHub #33 (D-0191) | web-feature:UF-08 | T-0516 | todo | wl-build-web |
+| T-0521 | UF-08.2 Remove calls `removeItem` (no refill), id kept in `excludeIds`, "No exercises left" copy; GitHub #33 (D-0191) | web-feature:UF-08 | T-0519, T-0520 | todo | wl-build-web |
+| T-0517 | openapi SessionInput optional `avoidAreas` + regenerate api.gen.ts (D-0191 §3) — off the user path | data | T-0516 | todo | wl-build-data |
+| T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | todo | wl-build-backend |
+| T-0522 | Library breadth: nine bodyweight-only exercises (one per area), original text; no ExerciseDB content; GitHub #32 (D-0192) | content | — | todo (needs H-26) | wl-build-content |
+| T-0523 | Regenerate supabase/seed.sql for T-0522; prod apply is a human release at merge (D-0192) | backend | T-0522 | todo (needs H-26) | wl-build-backend |

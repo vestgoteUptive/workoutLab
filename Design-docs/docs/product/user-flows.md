@@ -57,11 +57,13 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
   - Minutes stepper (±5, 15–120) and quick chips 20/30/45/60/90. Shows "done by HH:MM".
   - Toggle: warm-up counts in the time budget (default on).
   - Energy: Low / Normal / High. Low trims accessory sets, keeps main-lift weights. High may add a back-off set.
+  - Skip today (D-0191, GitHub #33): optional toggle chips for the nine areas, none pressed by default, for this workout only. Skipped areas reach the engine as `avoidAreas` (rule 6.1) and stay out of the plan.
   - Live fit line: "Lower A fits: N exercises, M sets".
 - **UF-08.2 Suggested workout**
   - Time-budget bar: one segment per item, proportional to estimated minutes; unused time shown as empty; turns orange if over.
   - "Why" chips for the whole session (e.g. days since last trained, area below target).
-  - Per exercise: sets × reps · weight · minutes · one-line reason; swap and remove actions. Warm-up is not removable.
+  - Per exercise: sets × reps · weight · minutes · one-line reason; swap and remove actions. Warm-up is not removable. Remove drops the item without refilling its time (engine `removeItem`, D-0191 §4).
+  - "Skipping today: …" line when areas were skipped on UF-08.1.
   - Shuffle picks alternates for non-main exercises.
   - Changing time rebuilds the list (main lift kept, accessories trimmed or added).
 - **UF-08.3 Swap before starting**

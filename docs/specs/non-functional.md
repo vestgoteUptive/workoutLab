@@ -57,7 +57,7 @@ Reference device: a mid-range Android (Moto G Power class), Chrome, "Fast 4G" th
 ## Privacy / GDPR
 | ID | Requirement | Check | Owner ticket |
 |---|---|---|---|
-| NFR-PRIV-1 | Data is hosted in an EU region (default Supabase `eu-north-1` Stockholm, else `eu-central-1`). | Terraform plan asserts the region. | T-0400 |
+| NFR-PRIV-1 | Data is hosted in an EU region. Prod is Supabase `eu-west-1` (Ireland) (D-0190 §1). | A static test asserts that the region in `infra/terraform/supabase-prod/main.tf` is `eu-*` (T-0507); the Terraform import (T-0400) recorded `eu-west-1` with zero changes. | T-0400, T-0507 |
 | NFR-PRIV-2 | Data minimisation: we collect email, training data and plan settings only. No DOB, sex, body weight, heart rate or location coordinates (`sessions.location` is a label such as "gym" or "home"). | Schema review in T-0100, plus a security review. | T-0100 |
 | NFR-PRIV-3 | RLS: a user can read and write only their own rows. `exercises` and `areas` are read-only for everyone. | pgTAP: user A can't select, update or delete user B's rows. | T-0100 |
 | NFR-PRIV-4 | Export in-app: one JSON file with every row the user owns, delivered within 10 s for 2 years of data. | Edge function or client test with a seed of 5,000 sets. | T-0310c, T-0310d (D-0136) |
