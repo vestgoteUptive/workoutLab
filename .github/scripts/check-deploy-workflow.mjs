@@ -161,6 +161,15 @@ export function check(dir = defaultDir) {
       errs.push("AC-2: production must deploy with --branch main");
   }
 
+  // T-0907: tokens.css is generated and gitignored, so every job builds design-tokens before web.
+  for (const [name, job] of [["preview", pv], ["production", pr]]) {
+    if (!job) continue;
+    const runs = (job.steps ?? []).map((s) => s.run ?? "");
+    const tok = runs.findIndex((r) => /--filter\s+@workoutlab\/design-tokens\s+build/.test(r));
+    const web = runs.findIndex((r) => /--filter\s+@workoutlab\/web\s+build/.test(r));
+    if (tok < 0 || web < 0 || tok > web) errs.push(`T-0907: ${name} must build design-tokens before web`);
+  }
+
   // AC-3
   const secrets = [...raw.matchAll(/secrets\.([A-Za-z0-9_]+)/g)].map((m) => m[1]);
   for (const s of secrets) if (s !== "CLOUDFLARE_PAGES_TOKEN") errs.push(`AC-3: unexpected secret ${s}`);

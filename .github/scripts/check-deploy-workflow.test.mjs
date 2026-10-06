@@ -78,3 +78,9 @@ test("T-0402a AC-4 placeholder deploy job in ci.yml or lost jobs go red", () => 
   assert.ok(has(mutated((s) => s + "\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo hi\n", "ci.yml"), "AC-4"));
   assert.ok(has(mutated((s) => s.replace("name: CI", "name: Checks"), "ci.yml"), "AC-4"));
 });
+
+test("T-0907 planted fault: dropping the design-tokens build goes red for both jobs", () => {
+  const errs = mutated((s) => s.replaceAll("run: pnpm --filter @workoutlab/design-tokens build", "run: echo skipped"));
+  assert.ok(errs.includes("T-0907: preview must build design-tokens before web"), errs.join("\n"));
+  assert.ok(errs.includes("T-0907: production must build design-tokens before web"), errs.join("\n"));
+});
