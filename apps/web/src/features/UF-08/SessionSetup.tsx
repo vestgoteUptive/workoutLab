@@ -19,7 +19,14 @@
 // drops the record (the adjustments are discarded); `budgetMin` is shared and stays.
 import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { suggest, type Energy, type SessionInput, type Workout } from "@workoutlab/engine";
+import {
+  AREAS,
+  suggest,
+  type Area,
+  type Energy,
+  type SessionInput,
+  type Workout,
+} from "@workoutlab/engine";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { formatTime } from "../../lib/format/intl.js";
@@ -71,7 +78,12 @@ function defaultTimeZone(): string {
 }
 
 /** UF-08.1's call is fixed at `shuffle: 0, mainLiftId: null, excludeIds: []` (T-0303a AC-6). */
-function setupInput(budgetMin: number, warmupInBudget: boolean, energy: Energy): SessionInput {
+function setupInput(
+  budgetMin: number,
+  warmupInBudget: boolean,
+  energy: Energy,
+  avoidAreas: readonly Area[],
+): SessionInput {
   return {
     budgetMin,
     warmupInBudget,
@@ -80,6 +92,8 @@ function setupInput(budgetMin: number, warmupInBudget: boolean, energy: Energy):
     mainLiftId: null,
     pinnedIds: [],
     excludeIds: [],
+    // T-0520 (D-0191): the engine does the skipping (rule 6.1); absent when nothing is skipped.
+    ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
   };
 }
 
@@ -137,6 +151,9 @@ export function SessionSetup({
   const [budgetMin, setBudgetMin] = useState(DEFAULT_BUDGET);
   const [warmupInBudget, setWarmupInBudget] = useState(true);
   const [energy, setEnergy] = useState<Energy>("normal");
+  // "Skip today" (T-0520, D-0191 §1): held in this host, so Back keeps it and a remount clears it.
+  const [avoid, setAvoid] = useState<ReadonlySet<Area>>(() => new Set());
+  const avoidAreas = useMemo(() => AREAS.filter((a) => avoid.has(a)), [avoid]);
   const [finishOpen, setFinishOpen] = useState(false);
   const [finishValue, setFinishValue] = useState("");
   const [finishError, setFinishError] = useState(false);
@@ -183,9 +200,9 @@ export function SessionSetup({
   const workout = useMemo(
     () =>
       data && !pastSetup
-        ? runSuggest(data, setupInput(budgetMin, warmupInBudget, energy), nowIso, tz)
+        ? runSuggest(data, setupInput(budgetMin, warmupInBudget, energy, avoidAreas), nowIso, tz)
         : null,
-    [data, pastSetup, budgetMin, warmupInBudget, energy, nowIso, tz],
+    [data, pastSetup, budgetMin, warmupInBudget, energy, avoidAreas, nowIso, tz],
   );
   const missing = state.kind === "missing" || (data !== null && !pastSetup && workout === null);
 
@@ -199,6 +216,8 @@ export function SessionSetup({
 
   const ids = {
     energy: useId(),
+    skip: useId(),
+    skipHint: useId(),
     hint: useId(),
     finish: useId(),
     finishError: useId(),
@@ -251,6 +270,7 @@ export function SessionSetup({
           mainLiftId,
           pinnedIds: [],
           excludeIds: next.excludeIds,
+          ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
         },
         nowIso,
         tz,
@@ -266,6 +286,7 @@ export function SessionSetup({
         workout={adjusted.workout}
         library={data.library}
         locale={loc}
+        avoidAreas={avoidAreas}
         onRemove={(exerciseId) => {
           const isMain = plan.items.some((i) => i.exerciseId === exerciseId && i.isMain);
           return resuggest({
@@ -464,6 +485,40 @@ export function SessionSetup({
             <p id={ids.hint} className="wl-uf08__hint">
               {en.uf08.energyHint[energy]}
             </p>
+          </div>
+
+          <div
+            role="group"
+            aria-labelledby={ids.skip}
+            aria-describedby={ids.skipHint}
+            className="wl-uf08__skip"
+          >
+            <p id={ids.skip} className="wl-uf08__label">
+              {en.uf08.skipName}
+            </p>
+            <p id={ids.skipHint} className="wl-uf08__hint">
+              {en.uf08.skipHint}
+            </p>
+            <div className="wl-uf08__skip-chips">
+              {AREAS.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  className="wl-uf08__skip-chip"
+                  data-area={a}
+                  aria-pressed={avoid.has(a) ? "true" : "false"}
+                  onClick={() =>
+                    setAvoid((prev) => {
+                      const next = new Set(prev);
+                      if (!next.delete(a)) next.add(a);
+                      return next;
+                    })
+                  }
+                >
+                  {en.bodyMap.areas[a]}
+                </button>
+              ))}
+            </div>
           </div>
 
           <p className="wl-uf08__fit" data-part="fit-line" aria-live="polite">
