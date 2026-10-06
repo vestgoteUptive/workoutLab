@@ -138,7 +138,7 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | merged (reaches prod with the next function release) | wl-build-backend |
-| T-0523 | Regenerate supabase/seed.sql for T-0522; prod apply is a human release at merge (D-0192) | backend | T-0522 | ready | wl-build-backend |
+| T-0523 | Regenerate supabase/seed.sql for T-0522; prod apply is a human release at merge (D-0192) | backend | T-0522 | doing | wl-build-backend |
 | T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | ready | wl-build-web |
-| T-0529 | UF-11.2 "Account and sign out" header link; UF-11.4 Sign out under the email, unsynced confirm, Signing out…, lands on /welcome; GitHub #35 part 2 (D-0195) | web-feature:UF-11 | T-0528 | ready | wl-build-web |
-| T-0530 | Sign-out must cancel or await an in-flight cache refresh so it can't write the user's rows back after the clear (T-0528 review follow-up, D-0195) | web-shell | T-0528 | ready | wl-build-web |
+| T-0529 | UF-11.2 "Account and sign out" header link; UF-11.4 Sign out under the email, unsynced confirm, Signing out…, lands on /welcome; GitHub #35 part 2 (D-0195) | web-feature:UF-11 | T-0528 | doing | wl-build-web |
+| T-0530 | Sign-out must cancel or await an in-flight cache refresh so it can't write the user's rows back after the clear (T-0528 review follow-up, D-0195) | web-shell | T-0528 | doing | wl-build-web |
