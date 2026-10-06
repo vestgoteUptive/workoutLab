@@ -19,6 +19,13 @@ Each criterion becomes at least one automated test. Write them as Given / When /
 - AC1 Given … When … Then …
 - AC2 …
 
+Checklist (D-0197 §7):
+- An AC that names one value of a binary condition (online/offline, empty/non-empty,
+  first launch/returning, signed in/out) gets a sibling AC for the other value, or a line saying
+  why the other value cannot happen.
+- A migration or upgrade AC's fixture carries every terminal row state (tombstoned `deletedAt`,
+  `status: "rejected"`), not only the happy path.
+
 ## Paths you may change
 <from the lane; list any extras explicitly>
 
