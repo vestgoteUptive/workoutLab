@@ -123,7 +123,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | merged (live AC-5 needs H-24 redeploy) | wl-build-web |
 | T-0512 | Bump astro past GHSA-26w7-cxv4-gfx2 and the other critical/high advisories (build-time only; static output unaffected) (F-2) | landing | T-0511 | doing | wl-build-web |
 | T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | ready (groomed 2026-10-06; lane moved from backend) | wl-build-infra |
-| T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | doing | wl-build-infra |
+| T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | blocked:H-25 (run A done, branch not merged until applied) | wl-build-infra |
 | T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | ready (groomed 2026-10-06) | wl-build-backend |
 
 ## CI fixes (any phase)
