@@ -8,7 +8,7 @@ Every rule has worked examples (`Rn-Em`). Each example is at least one unit test
 - **F-profile:** level `beginner`; equipment `full` = [barbell, rack, bench, dumbbell, cable, machine, pullup-bar]; rhythm 3–4; no priority areas; onboarded and `plan_changed_at` 2026-08-02.
 - **F-goal:** `goal` is `build_muscle` unless an example says otherwise (D-0061 §1, D-0095).
 - **F-targets:** rule 4 with F-profile: chest/back/glutes/quads 20, shoulders/hamstrings 16, arms/core/calves 12.
-- **F-input:** `budgetMin 30, warmupInBudget true, energy normal, shuffle 0`, with no main/pinned/excluded ids.
+- **F-input:** `budgetMin 30, warmupInBudget true, energy normal, shuffle 0`, with no main/pinned/excluded ids, no avoided areas.
 - **F-history:** empty.
 - **L1 library.** "bw" means bodyweight, so the pre-filled weight is 0. Level is `beginner` unless stated. The increment is in kg.
 
@@ -44,6 +44,7 @@ Fixed area order: chest, back, shoulders, arms, core, glutes, quads, hamstrings,
 ## 0. Purity and inputs (D-0024)
 - All engine functions are pure: `suggest(history, targets, profile, library, sessionInput, now, tz)`, `balance(history, targets, library, now, tz)`, `timeCheck(workout, progress)`, `rankSwaps(…)`, `applySwap(workout, current, candidate, reason, history, profile, library, now, tz)`, `prefill(…)` and `evaluateCheckin(sessions, profile, checkins, now, tz)`. They never read the clock, randomness or globals. `Date.now()`, `new Date()` without arguments and `Math.random()` are banned in `packages/engine/src` (lint rule, T-0200).
 - **History** is the server rows ∪ the offline queue (NFR offline). The engine dedupes by `client_id` and keeps the row with the greatest `edited_at`. When two rows have the same `client_id` and `edited_at`, a server row beats a queued row (mirroring the server's no-op), between two queued rows a tombstone beats a live row, and otherwise the first row in input order wins (D-0034). It then drops rows with `deleted_at` set (D-0015). Callers pass at least the last 56 local days.
+- **Session input** (`sessionInput`, D-0037 §7): `budgetMin`, `warmupInBudget`, `energy`, `shuffle`, `mainLiftId`, `pinnedIds`, `excludeIds` and the optional `avoidAreas` (rule 6.1, D-0191 §2; absent means `[]`).
 - **Eligible exercise:** kind `exercise`, every equipment item ∈ `profile.equipment` (no equipment is always eligible), level ≤ profile level, and not in `excludeIds`.
 - **R0-E1** Given any fixed inputs, When `suggest` runs twice, Then the results are deep-equal.
 - **R0-E2** Given two rows with `client_id` c1 (the 10:00 edit has reps 8, the 10:05 edit has reps 6) and a row c2 whose newest version has `deleted_at` set, When history is normalised, Then c1 has reps 6 and c2 is absent.
@@ -83,6 +84,19 @@ An area is **recovering** when the weighted hard sets with `completed_at` in `(n
 - **R6-E1** Given 6 hard back-squat sets at `now − 47 h`, Then quads and glutes are recovering and hamstrings (3) is not.
 - **R6-E2** Given the same sets at `now − 49 h`, Then nothing is recovering.
 
+### 6.1 Avoided areas (UF-08.1 "Skip today", D-0191 §2)
+`sessionInput.avoidAreas: readonly Area[]` is optional, and absent means `[]`. An unknown area is a `RangeError`, and duplicates are ignored. An avoided area is treated like a recovering area **for selection only**:
+- it is never an eligible area in rule 7.2;
+- no main lift or candidate with an avoided area at weight 1.0 is selected, and a `mainLiftId` with an avoided primary area is ignored (rule 7.2 falls back to the lowest-`r` eligible area);
+- its projected deficit counts 0 in gap fit;
+- a rule 13 shuffle pick with an avoided primary area is skipped, and the slot keeps its original (the variety ranking itself is unchanged).
+
+Weight-0.5 areas are not filtered (as in rule 6). Avoided areas add no reason code, and they don't change balance, targets, recovery, `startDeficits`, check-ins or `rankSwaps` / `applySwap`. The warm-up (rule 7.3) follows the items' areas as before. `avoidAreas: []` gives a result deep-equal to an absent `avoidAreas`. With all nine areas avoided, `items` is `[]`, `mainLiftId` is null and `itemsTotalS` is 0.
+- **R6-E3 (legs skipped, zero history)** Given the R7-E4 inputs with `avoidAreas` [glutes, quads, hamstrings, calves], Then the items are bench-press × 4 (main, 720 s), inverted-row × 3 (555 s), then lateral-raise × 2 (270 s): with 345 s left, shoulders (r 0.125) ties core and comes first in the fixed order, overhead-press × 2 (390 s) doesn't fit, and lateral-raise × 3 (375 s) doesn't either. The item total is 1545 s, the total with warm-up is 1725 s, and `unusedS` is 75. The warm-up is wu-scap-push-up, wu-band-pull-apart, wu-arm-circle, wu-cat-cow.
+- **R6-E4 (gap fit counts an avoided area 0)** Given the R7-E4 inputs with `avoidAreas` [core], Then the second item is barbell-row × 3, not inverted-row: inverted-row's 1.917 beats barbell-row's 1.417 only through its core .5, so with core counted 0 both are 1.417 and id ascending picks barbell-row. The items are bench-press × 4, barbell-row × 3, leg-extension × 2 (1545 s, `unusedS` 75).
+- **R6-E5 (sore, not recovering, D-0193)** Given R6-E2's sets (nothing is recovering) and `avoidAreas` [quads, glutes] at `budgetMin 45` or `75`, Then no item has quads or glutes at weight 1.0. With `avoidAreas` [] at `budgetMin 75` the items include leg-extension × 3 (at 45 the other seven areas, all at load 0, fill the plan first).
+- **R6-E6 (main lift ignored)** Given `mainLiftId` bench-press and `avoidAreas` [chest] at `budgetMin 30`, Then bench-press is not an item and the main lift is inverted-row × 4 (back is the next lowest-`r` area).
+
 ## 7. Session building (D-0004, D-0024)
 ### 7.1 Time model
 Set cost = work + rest. Work is 45 s for a non-timed set. For a timed set, work is its **planned duration**: the rule 14 pre-fill `durationS` for that exercise over the same history and `now`, which is `defaultDurationS` with no usable history (D-0092). The item's `durationS` is that planned duration (a timed exercise with neither falls back to 45 s). Rest is 120 s for a compound and 60 s for an isolation. Item cost = sets × set cost + 60 s transition. The warm-up costs 4 × 40 s + 20 s = 180 s. `available = budgetMin × 60 − (warmupInBudget ? 180 : 0)`. Σ item costs never exceeds `available`. When `warmupInBudget` is off, the warm-up is still generated but not counted. Every time cost in the engine uses this model: rule 7.2 selection, rule 7.4, rule 12 `timeCostS` and `fitsBudget`, rule 13's fit check and `applySwap`. Rule 8 reads the item `costS`.
@@ -90,7 +104,7 @@ Set cost = work + rest. Work is 45 s for a non-timed set. For a timed set, work 
 - **R7-E13 (timed set at its planned duration, D-0092)** Given plank logged 3 × 115 s on 2026-09-24 (10:00) and `budgetMin 20`, warm-up off, `pinnedIds ["plank"]` (`available` 1200), Then plank is planned at 120 s (rule 14 `add_rep`, capped). bench-press × 4 (720 s) leaves 480 s, plank × 3 would cost 3 × 180 + 60 = 600 s, so the items are bench-press × 4 and plank × 2 at 120 s (420 s). The item total is 1140 s and `unusedS` is 60. At zero history the same input gives plank × 3 at 45 s (375 s), an item total of 1095 s.
 
 ### 7.2 Main lift and greedy selection
-The projected load starts at the rule-3 load. `r(area) = projectedLoad / target`. An area is **eligible** if it is not recovering, not exhausted, has fewer than 2 items with it as a primary area, and the session has fewer than 8 items. **Candidates** for an area are the eligible exercises with weight 1.0 in that area that are not yet in the session and have no recovering primary area. Candidates are ranked by: (1) not in the most recent session with hard sets first; (2) gap fit `Σ_a w(a) × projectedDeficit(a)` descending, where recovering areas count 0; (3) id ascending.
+The projected load starts at the rule-3 load. `r(area) = projectedLoad / target`. An area is **eligible** if it is not recovering, not avoided (rule 6.1), not exhausted, has fewer than 2 items with it as a primary area, and the session has fewer than 8 items. **Candidates** for an area are the eligible exercises with weight 1.0 in that area that are not yet in the session and have no recovering or avoided primary area. Candidates are ranked by: (1) not in the most recent session with hard sets first; (2) gap fit `Σ_a w(a) × projectedDeficit(a)` descending, where recovering and avoided areas count 0; (3) id ascending.
 1. **Main lift:** `sessionInput.mainLiftId`, if it is eligible. Otherwise take the lowest-`r` eligible area (ties by the fixed order) and its top compound candidate. If that area has no compound, try the next area. Try 4, then 3, then 2 sets. If no compound fits anywhere, `mainLiftId = null`.
 2. **Pinned:** each of `pinnedIds`, in order, at 3 sets, falling back to 2. Skip it if it doesn't fit.
 3. **Greedy:** repeat. Take the lowest-`r` eligible area and try its candidates in rank order at 3 sets, then 2. The first one that fits is added, and projected loads are updated with `sets × w(a)`. If none fits, the area is exhausted. Stop when no area is eligible.
@@ -239,3 +253,4 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 14 text: D-0057 §2/§4/§6, D-0062 §1/§2/§4/§5 (D-0132) | T-0221 |
 | 12 rankSwaps signature order `now, tz` (D-0130) | T-0212 |
 | 14 steps 2 and 5 drop capped at `W` (D-0137) | T-0235 |
+| 6.1 avoided areas (R6-E3…E6, D-0191 §2) | T-0516 |
