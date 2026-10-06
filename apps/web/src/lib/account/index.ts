@@ -7,3 +7,4 @@ export { exportFileName, downloadAccountExport } from "./download.js";
 export { requestAccountDeletion, deleteAccountAndSignOut, ACCOUNT_DELETED_KEY } from "./delete.js";
 export type { DeletionOutcome } from "./delete.js";
 export { wipeLocalUserData } from "./wipe.js";
+export { signOutAndClearDevice, hasUnsyncedWork } from "./sign-out.js";
