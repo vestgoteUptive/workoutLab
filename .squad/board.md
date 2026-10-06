@@ -140,7 +140,7 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | merged (reaches prod with the next function release) | wl-build-backend |
-| T-0522 | Library breadth: nine bodyweight-only exercises (one per area), original text; no ExerciseDB content; GitHub #32 (D-0192) | content | — | ready | wl-build-content |
+| T-0522 | Library breadth: nine bodyweight-only exercises (one per area), original text; no ExerciseDB content; GitHub #32 (D-0192) | content | — | doing | wl-build-content |
 | T-0523 | Regenerate supabase/seed.sql for T-0522; prod apply is a human release at merge (D-0192) | backend | T-0522 | todo | wl-build-backend |
 | T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | ready | wl-build-web |
 | T-0527 | C-02 tab bar fixed to the viewport bottom, safe-area padded, spacer + scroll padding so nothing hides under it; viewport-fit=cover; GitHub #36 (D-0196) | web-shell | — | doing | wl-build-web |
