@@ -297,6 +297,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0514a | web build fails if VITE_SUPABASE_ANON_KEY is an sb_secret_ key or a service_role JWT, never printing it (F-4; split from T-0514, D-0190 §5) | web-shell | T-0510 | done | wl-build-web |
 | T-0514b | Manual-deploy runbook in infra/deploy/README.md + infra/scripts/deploy-prod.sh (the human's go-live script, repo-relative) + tested Node bundle-secret-scan.mjs (F-4/F-7; split from T-0514, D-0190 §5) | infra | T-0508 | done | wl-build-infra |
 | T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | done | wl-build-infra |
+| T-0524 | Flaky repo-check: .github/scripts/supabase-prod-release.test.mjs 'T-0402b AC-1 plan is the default and read-only' intermittently exits 141 (SIGPIPE, a pipe closed early); seen twice on 2026-10-06 (T-0516 build, T-0508 merge gate) | infra | T-0402b | done | wl-build-infra |
 
 ## Phase 5 — Iterate
 | ID | Title | Lane | Deps | Status | Flow |
