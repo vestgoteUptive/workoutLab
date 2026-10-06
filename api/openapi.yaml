@@ -317,8 +317,16 @@ components:
         excludeIds:
           type: array
           items: { $ref: "#/components/schemas/ExerciseId" }
+        avoidAreas:
+          description: >-
+            UF-08.1 "Skip today" (rule 6.1, D-0191). Areas the user wants to avoid in this workout
+            only; each is treated like a recovering area for selection. Optional: absent means [].
+          type: array
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/Area" }
       examples:
         - &sessionInput30 { budgetMin: 30, warmupInBudget: true, energy: normal, shuffle: 0, mainLiftId: null, pinnedIds: [], excludeIds: [] }
+        - { budgetMin: 30, warmupInBudget: true, energy: normal, shuffle: 0, mainLiftId: null, pinnedIds: [], excludeIds: [], avoidAreas: [quads, glutes] }
     SuggestRequest:
       description: Body of POST /workouts/suggest. The server supplies `now` (D-0037 §9).
       type: object

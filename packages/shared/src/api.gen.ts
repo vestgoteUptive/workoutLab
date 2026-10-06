@@ -280,6 +280,19 @@ export interface components {
      *       "pinnedIds": [],
      *       "excludeIds": []
      *     }
+     * @example {
+     *       "budgetMin": 30,
+     *       "warmupInBudget": true,
+     *       "energy": "normal",
+     *       "shuffle": 0,
+     *       "mainLiftId": null,
+     *       "pinnedIds": [],
+     *       "excludeIds": [],
+     *       "avoidAreas": [
+     *         "quads",
+     *         "glutes"
+     *       ]
+     *     }
      */
     SessionInput: {
       budgetMin: number;
@@ -289,6 +302,8 @@ export interface components {
       mainLiftId: components["schemas"]["ExerciseId"] | null;
       pinnedIds: components["schemas"]["ExerciseId"][];
       excludeIds: components["schemas"]["ExerciseId"][];
+      /** @description UF-08.1 "Skip today" (rule 6.1, D-0191). Areas the user wants to avoid in this workout only; each is treated like a recovering area for selection. Optional: absent means []. */
+      avoidAreas?: components["schemas"]["Area"][];
     };
     /**
      * @description Body of POST /workouts/suggest. The server supplies `now` (D-0037 §9).
