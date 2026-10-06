@@ -14,7 +14,7 @@
   ],
   "cue": "Rise onto the toes, lower slowly",
   "mistakes": ["Bouncing at the bottom.", "Rolling the ankles outward."],
-  "variants": ["single-leg-calf-raise", "calf-raise-hold"],
+  "variants": ["single-leg-calf-raise", "calf-raise-hold", "ankle-hops"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

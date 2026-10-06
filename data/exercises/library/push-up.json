@@ -15,7 +15,7 @@
   ],
   "cue": "Straight line, chest to the floor",
   "mistakes": ["Letting the hips sag.", "Only lowering halfway."],
-  "variants": ["incline-push-up", "wide-push-up", "decline-push-up"],
+  "variants": ["incline-push-up", "wide-push-up", "decline-push-up", "archer-push-up"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

@@ -14,7 +14,7 @@
   ],
   "cue": "Walk out, legs long, walk back",
   "mistakes": ["Letting the hips pike up too high.", "Bending the knees a lot to escape the stretch."],
-  "variants": ["single-leg-deadlift", "good-morning-bodyweight"],
+  "variants": ["single-leg-deadlift", "good-morning-bodyweight", "sliding-leg-curl"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

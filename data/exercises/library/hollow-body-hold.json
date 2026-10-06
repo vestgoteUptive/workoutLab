@@ -1,0 +1,22 @@
+{
+  "id": "hollow-body-hold",
+  "name": "Hollow body hold",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "core": 1 },
+  "instructions": [
+    "Lie on your back with your arms overhead and legs straight.",
+    "Press your lower back into the floor and lift your shoulders and legs a few inches.",
+    "Hold the shape, breathing steadily."
+  ],
+  "cue": "Lower back glued to the floor",
+  "mistakes": ["Letting the lower back arch off the floor.", "Holding the breath."],
+  "variants": ["plank", "dead-bug"],
+  "timed": true,
+  "default_duration_s": 20,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

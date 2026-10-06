@@ -14,7 +14,7 @@
   ],
   "cue": "Small alternating kicks, chest stays lifted",
   "mistakes": ["Kicking too high and too fast.", "Craning the neck up."],
-  "variants": ["superman", "bird-dog", "reverse-plank-hold"],
+  "variants": ["superman", "bird-dog", "reverse-plank-hold", "prone-y-raise"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

@@ -1,0 +1,22 @@
+{
+  "id": "ankle-hops",
+  "name": "Ankle hops",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "calves": 1 },
+  "instructions": [
+    "Stand tall with your feet together and knees slightly soft.",
+    "Hop in place, pushing off the balls of your feet with straight legs.",
+    "Land softly and spring straight into the next hop."
+  ],
+  "cue": "Stiff legs, quick light hops",
+  "mistakes": ["Bending the knees to jump.", "Landing flat and heavy on the heels."],
+  "variants": ["calf-raise", "single-leg-calf-raise"],
+  "timed": true,
+  "default_duration_s": 30,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -15,7 +15,7 @@
   ],
   "cue": "Hands wide, chest leads the way down",
   "mistakes": ["Letting the elbows lock out hard at the top.", "Sagging the lower back."],
-  "variants": ["incline-push-up", "push-up", "decline-push-up"],
+  "variants": ["incline-push-up", "push-up", "decline-push-up", "archer-push-up"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

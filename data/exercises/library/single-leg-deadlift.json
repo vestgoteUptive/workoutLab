@@ -15,7 +15,7 @@
   ],
   "cue": "Hinge at the hips, back leg lifts",
   "mistakes": ["Rounding the lower back.", "Rotating the hips open."],
-  "variants": ["good-morning-bodyweight", "hamstring-walkout"],
+  "variants": ["good-morning-bodyweight", "hamstring-walkout", "sliding-leg-curl"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

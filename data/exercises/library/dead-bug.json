@@ -14,7 +14,7 @@
   ],
   "cue": "Flat back, opposite arm and leg",
   "mistakes": ["Letting the lower back arch off the floor.", "Moving too fast to keep control."],
-  "variants": ["plank", "side-plank"],
+  "variants": ["plank", "side-plank", "hollow-body-hold"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

@@ -14,7 +14,7 @@
   ],
   "cue": "Straight line, breathe steadily",
   "mistakes": ["Letting the hips sag.", "Piking the hips up high."],
-  "variants": ["side-plank", "dead-bug"],
+  "variants": ["side-plank", "dead-bug", "hollow-body-hold"],
   "timed": true,
   "default_duration_s": 30,
   "source": "workoutlab",

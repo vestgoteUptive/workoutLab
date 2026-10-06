@@ -1,0 +1,21 @@
+{
+  "id": "donkey-kick",
+  "name": "Donkey kick",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "glutes": 1 },
+  "instructions": [
+    "Start on hands and knees with a flat back.",
+    "Keeping one knee bent, press that foot up toward the ceiling.",
+    "Lower with control and repeat, then switch legs."
+  ],
+  "cue": "Press the heel to the ceiling, back flat",
+  "mistakes": ["Arching the lower back to lift higher.", "Swinging the leg with momentum."],
+  "variants": ["fire-hydrant", "glute-bridge"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -15,7 +15,7 @@
   ],
   "cue": "Sit back, chest up, drive through the feet",
   "mistakes": ["Letting the knees cave inward.", "Rounding the lower back."],
-  "variants": ["split-squat", "wall-sit"],
+  "variants": ["split-squat", "wall-sit", "reverse-lunge"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
