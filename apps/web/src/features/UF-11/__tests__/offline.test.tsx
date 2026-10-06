@@ -23,6 +23,8 @@ import {
 
 const refreshAllSpy = vi.fn(async () => undefined);
 const realRefreshAll = { current: false };
+/** Every real `refreshAll` promise the mock started, so a test can drain them (T-0499). */
+const realRefreshRuns: Promise<unknown>[] = [];
 
 vi.mock("../../../lib/offline/index.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../lib/offline/index.js")>();
@@ -32,12 +34,15 @@ vi.mock("../../../lib/offline/index.js", async (importOriginal) => {
     refreshAll: (...args: Parameters<typeof actual.refreshAll>) => {
       void refreshAllSpy();
       // AC-B6's cache-first case wants the real one, so the "before the refresh" claim is real.
-      return realRefreshAll.current ? actual.refreshAll(...args) : Promise.resolve();
+      if (!realRefreshAll.current) return Promise.resolve();
+      const run = actual.refreshAll(...args);
+      realRefreshRuns.push(run.catch(() => undefined));
+      return run;
     },
   };
 });
 
-const spy = createFromSpy();
+const spy = createFromSpy({ emptyReads: true });
 vi.mock("../../../lib/auth/client.js", () => ({
   supabase: { from: (table: string) => spy.from(table) },
   isSupabaseConfigured: () => true,
@@ -55,8 +60,11 @@ beforeEach(() => {
   realRefreshAll.current = false;
 });
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
+  // T-0499: drain any real refresh this test started BEFORE the next test's `spy.reset()`, so no
+  // straggling `supabase.from` call (or cache write) lands in a later test.
+  await Promise.all(realRefreshRuns.splice(0));
   signOut();
   realRefreshAll.current = false;
   vi.restoreAllMocks();
@@ -81,6 +89,10 @@ describe("AC-B6 cache first", () => {
     // Contrast: the refresh WAS started. Without this, a hook that simply never refreshed
     // would pass the assertion above.
     await waitFor(() => expect(refreshAllSpy).toHaveBeenCalled());
+    // The real refresh is not just started but actually ran (it reached supabase through the
+    // spy) and then finishes; nothing of it outlives this test.
+    await Promise.all(realRefreshRuns.splice(0));
+    expect(spy.from).toHaveBeenCalled();
     vi.unstubAllGlobals();
   });
 });
