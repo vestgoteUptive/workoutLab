@@ -61,8 +61,8 @@ describe("vite.config.ts build guard (T-0902 AC5)", () => {
   });
 
   it("does not guard dev: only `build` is gated", () => {
-    const guards = config.match(/command === "build"/g) ?? [];
-    expect(guards.length).toBe(2);
+    const guards = config.match(/command === "build"/g) ?? []; // url, anon key, T-0514a secret-key guard
+    expect(guards.length).toBe(3);
     expect(config).not.toContain('command === "serve" && !supabaseUrl');
   });
 });
