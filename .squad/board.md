@@ -117,11 +117,11 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0402a | Deploy pipeline: `deploy.yml` wrangler direct upload of web + landing; branch previews behind `PREVIEWS_ENABLED` (signed-out until T-0402c), `main`→prod job wired but off until H-06; removes ci.yml's placeholder (D-0186 §1). Live AC needs H-18 | infra | T-0401 | blocked:H-18 (merged; live ACs only) | wl-build-infra |
-| T-0508 | eslint: give infra/scripts/*.mjs node globals (process/fetch are no-undef, incl. auth-drift-check.mjs); fix the unused 'mailer_otp_length' in auth-drift-check.test.mjs; note rls-coverage's accepted .from(ident) form (same-file `as const` array) in infra/deploy/README.md (T-0402c follow-ups) | infra | T-0402c | ready (groomed 2026-10-06, D-0190; first in the infra chain) | wl-build-infra |
+| T-0508 | eslint: give infra/scripts/*.mjs node globals (process/fetch are no-undef, incl. auth-drift-check.mjs); fix the unused 'mailer_otp_length' in auth-drift-check.test.mjs; note rls-coverage's accepted .from(ident) form (same-file `as const` array) in infra/deploy/README.md (T-0402c follow-ups) | infra | T-0402c | doing | wl-build-infra |
 | T-0402d | Go-live at H-06: Free→Pro with spend cap on (gate 2), `site_url` → app host via keys-only PATCH, `PROD_DEPLOY_ENABLED`, first prod deploys verified (D-0186 §1) | infra | T-0402a, T-0402b, T-0402c, T-0403 | live (AC-6 human sign-in pending) | wl-build-infra |
 | T-0509 | auth-patch.mjs hardening: save a full filtered snapshot of the live auth config before --apply (so any others_sha256 move can be diffed), and retry the post-apply read-back with backoff (Supabase is eventually consistent; T-0404b's first read-back showed stale values) (T-0404b follow-up) | infra | T-0404b, T-0508 | todo (groomed 2026-10-06; after T-0508) | wl-build-infra |
-| T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | ready (groomed 2026-10-06, D-0190 §2; **highest priority**; live AC needs H-24) | wl-build-web |
-| T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | ready (groomed 2026-10-06, D-0190 §2; live AC needs H-24) | wl-build-web |
+| T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | doing | wl-build-web |
+| T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | doing | wl-build-web |
 | T-0512 | Bump astro past GHSA-26w7-cxv4-gfx2 and the other critical/high advisories (build-time only; static output unaffected) (F-2) | landing | T-0511 | todo (groomed 2026-10-06; after T-0511) | wl-build-web |
 | T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | ready (groomed 2026-10-06; lane moved from backend) | wl-build-infra |
 | T-0514a | web build fails if VITE_SUPABASE_ANON_KEY is an sb_secret_ key or a service_role JWT, never printing it (F-4; split from T-0514, D-0190 §5) | web-shell | T-0510 | todo (groomed 2026-10-06; after T-0510) | wl-build-web |
@@ -143,7 +143,7 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0516 | UF-08.1 engine `SessionInput.avoidAreas` (rule 6.1, treated like recovering); GitHub #33 (D-0191) | engine | — | ready | wl-build-engine |
+| T-0516 | UF-08.1 engine `SessionInput.avoidAreas` (rule 6.1, treated like recovering); GitHub #33 (D-0191) | engine | — | doing | wl-build-engine |
 | T-0519 | UF-08.2 engine `removeItem` — Remove drops without refill (rule 12.2); GitHub #33 (D-0191). After T-0516 (same package + engine-rules) | engine | T-0516 | todo | wl-build-engine |
 | T-0520 | UF-08.1 "Skip today" area chips → `avoidAreas` in fit line, Suggest and UF-08.2 re-suggests; "Skipping today" line; GitHub #33 (D-0191) | web-feature:UF-08 | T-0516 | todo | wl-build-web |
 | T-0521 | UF-08.2 Remove calls `removeItem` (no refill), id kept in `excludeIds`, "No exercises left" copy; GitHub #33 (D-0191) | web-feature:UF-08 | T-0519, T-0520 | todo | wl-build-web |
