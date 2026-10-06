@@ -1,0 +1,142 @@
+{
+  "plan": {
+    "version": 1,
+    "mainLiftId": "lat-pulldown",
+    "warmup": [],
+    "items": [
+      {
+        "exerciseId": "lat-pulldown",
+        "isMain": true,
+        "sets": 4,
+        "repsMin": 6,
+        "repsMax": 8,
+        "durationS": null,
+        "costS": 720,
+        "backoff": null,
+        "prefill": {
+          "weightKg": null,
+          "reps": 6,
+          "durationS": null,
+          "kind": "first_time"
+        },
+        "reasons": [
+          {
+            "code": "main_lift"
+          },
+          {
+            "code": "area_deficit",
+            "area": "back",
+            "deficit": 0.85
+          },
+          {
+            "code": "days_since",
+            "area": "back",
+            "days": 1
+          },
+          {
+            "code": "prefill",
+            "kind": "first_time"
+          }
+        ]
+      },
+      {
+        "exerciseId": "leg-curl",
+        "isMain": false,
+        "sets": 3,
+        "repsMin": 10,
+        "repsMax": 15,
+        "durationS": null,
+        "costS": 375,
+        "backoff": null,
+        "prefill": {
+          "weightKg": null,
+          "reps": 10,
+          "durationS": null,
+          "kind": "first_time"
+        },
+        "reasons": [
+          {
+            "code": "area_deficit",
+            "area": "hamstrings",
+            "deficit": 0.90625
+          },
+          {
+            "code": "days_since",
+            "area": "hamstrings",
+            "days": 3
+          },
+          {
+            "code": "prefill",
+            "kind": "first_time"
+          }
+        ]
+      },
+      {
+        "exerciseId": "calf-raise",
+        "isMain": false,
+        "sets": 3,
+        "repsMin": 10,
+        "repsMax": 15,
+        "durationS": null,
+        "costS": 375,
+        "backoff": null,
+        "prefill": {
+          "weightKg": 20,
+          "reps": 10,
+          "durationS": null,
+          "kind": "hold_after_break"
+        },
+        "reasons": [
+          {
+            "code": "area_deficit",
+            "area": "calves",
+            "deficit": 0.8333333333333334
+          },
+          {
+            "code": "days_since",
+            "area": "calves",
+            "days": 12
+          },
+          {
+            "code": "prefill",
+            "kind": "hold_after_break"
+          }
+        ]
+      }
+    ],
+    "startDeficits": {
+      "chest": 0.75,
+      "back": 0.85,
+      "shoulders": 0.71875,
+      "arms": 0.4166666666666667,
+      "core": 0.7916666666666666,
+      "glutes": 0.75,
+      "quads": 0.85,
+      "hamstrings": 0.90625,
+      "calves": 0.8333333333333334
+    }
+  },
+  "budgetMin": 30,
+  "warmupInBudget": true,
+  "energy": "normal",
+  "itemsTotalS": 1470,
+  "totalS": 1650,
+  "unusedS": 150,
+  "sessionReasons": [
+    {
+      "code": "area_deficit",
+      "area": "back",
+      "deficit": 0.85
+    },
+    {
+      "code": "area_deficit",
+      "area": "hamstrings",
+      "deficit": 0.90625
+    },
+    {
+      "code": "area_deficit",
+      "area": "calves",
+      "deficit": 0.8333333333333334
+    }
+  ]
+}
