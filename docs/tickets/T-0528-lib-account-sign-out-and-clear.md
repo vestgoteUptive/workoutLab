@@ -130,3 +130,16 @@ None (no schema, API or engine change; the Dexie schema is unchanged).
 - Red run on main: not recorded as a separate run; the functions did not exist (import of `signOutAndClearDevice` is undefined there).
 - Planted faults (backup copy, restored with `cp`): (a) `sessions` cleared → AC-1 fails; (b) `signOut({})` → AC-2 fails; (c) rejected counted unsynced → AC-4 fails. Restored: 10/10 green.
 - Gate: `-w typecheck lint test --concurrency=1` green, `test:repo-checks`, `format:check`, `check-all.mjs` green. No e2e (no screen change).
+
+### QA (2026-10-06, HEAD cc5d0ba, tree clean; merge-tree with main is conflict-free)
+- Green: `scripts/locked.sh small npx vitest run src/lib/account` (apps/web) 7 files, 74/74. No e2e (no screen change).
+- Red on main: with `sign-out.ts` absent (main's lib/account), `sign-out.test.ts` fails at import: 1 file failed, no tests. Restored.
+- QA faults (backup copy, restored with `cp`; each run 74 tests):
+  - V's rows deleted (`userId` `notEqual`) → AC-1, AC-3, AC-5 (x2) fail (plus wipe/delete tests).
+  - `sessionStorage` not cleared → AC-1 and AC-5 (Dexie reject) fail.
+  - non-`wl-` key removed (prefix check dropped) → AC-1 and AC-5 fail (plus wipe tests).
+  - Dexie failure path rethrows instead of `cleared:false` → AC-5 (rejecting Dexie) fails, only that test.
+  - `wipe.ts` skips the `sets` table → wipe AC8, delete AC9 and L1(b) fail (AC-6 guards the wipe).
+- AC→test: AC-1..AC-5 in `sign-out.test.ts` (each meaningful, shown red by the faults above and the builder's three); AC-6 `wipe`/`delete`/`boundaries` tests green.
+- Note: `boundaries.test.ts` export-list edit (7 → 9) is a legitimate consequence of the new exports.
+- Verdict: pass.
