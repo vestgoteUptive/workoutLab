@@ -115,3 +115,11 @@ None. No colour or font changes; `tokens.json` untouched.
   pointer events": fix it in the spec by scrolling, not by hiding the bar.
 
 ## Build / accept log
+
+### Build log (web-shell, 2026-10-06)
+- Changed: `tab-bar.css` (fixed bar, `--wl-tab-bar-block-size: 60px` on `:root`, spacer rule, `html:has(.wl-tab-bar)` scroll padding), `TabBar.tsx` (aria-hidden spacer before the nav), `index.html` (`viewport-fit=cover`), tests.
+- AC-1/2/3: `tests/e2e/shell.spec.ts` "T-0527 AC-1..3" (AC-1 and AC-3 mock the library so `/library` is long at 360x400, with the scrollHeight precondition asserted; AC-2 `/progress` at 360x900). AC-4: existing AC-A7 tests unchanged, green. AC-5/6: `apps/web/src/components/tab-bar/__tests__/tab-bar-fixed.test.tsx`.
+- Planted faults (backup copies, restored with `cp`): remove `position: fixed` -> AC-6 unit, AC-1 and AC-2 e2e red (nav bottom off by 779 / 2717 px); remove spacer -> AC-5 unit and AC-3 e2e red; drop `viewport-fit=cover` -> AC-6 viewport red. First AC-1/AC-3 e2e run was red for a real reason (empty mock library, precondition failed); fixed by mocking the library data.
+- Deviation: the "red on main" run was done as planted faults rather than a checkout of main; AC-3 under the no-`position: fixed` fault passes (bar in flow), which is expected.
+- e2e: shell.spec.ts (23), uf-02-today, uf-11-plan, uf-11-account: all green. Full suite not run.
+- Gate: `-w typecheck lint test --concurrency=1` 19/19 green; `format:check` green after prettier. test:repo-checks and check-all not run (not asked).

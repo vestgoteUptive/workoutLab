@@ -92,6 +92,90 @@ test.describe("AC-A7 tab bar (e2e, 360x640)", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/plan$/);
   });
+
+  // T-0527 (D-0196): the bar is fixed to the viewport bottom.
+  async function navBox(page: import("@playwright/test").Page) {
+    const box = await page.getByRole("navigation", { name: "Main" }).boundingBox();
+    expect(box).not.toBeNull();
+    return box!;
+  }
+  const innerHeight = (page: import("@playwright/test").Page) =>
+    page.evaluate(() => window.innerHeight);
+
+  async function openLongLibrary(page: import("@playwright/test").Page) {
+    await mockSupabaseData(page, {
+      sets: [],
+      exercises,
+      exerciseAreas,
+      exerciseVariants,
+      areaTargets: [],
+      profile,
+    });
+    await page.goto("/");
+    await injectSession(page);
+    await page.setViewportSize({ width: 360, height: 400 });
+    await page.goto("/library");
+    await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
+    // Precondition so the test can't pass vacuously.
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight))
+      .toBeGreaterThan(200);
+  }
+
+  test("T-0527 AC-1 the bar sits at the viewport bottom on a long screen, top and bottom", async ({
+    page,
+  }) => {
+    await openLongLibrary(page);
+    for (const y of [0, 100000]) {
+      await page.evaluate((to) => window.scrollTo(0, to), y);
+      const h = await innerHeight(page);
+      const box = await navBox(page);
+      expect(Math.abs(box.y + box.height - h)).toBeLessThanOrEqual(1);
+      expect(box.y).toBeGreaterThan(h - 120);
+    }
+  });
+
+  test("T-0527 AC-2 the bar sits at the viewport bottom on a short screen", async ({ page }) => {
+    await page.goto("/");
+    await injectSession(page);
+    await page.setViewportSize({ width: 360, height: 900 });
+    await page.goto("/progress");
+    await expect(page.getByRole("navigation", { name: "Main" })).toBeVisible();
+    const fits = await page.evaluate(
+      () => document.documentElement.scrollHeight <= window.innerHeight,
+    );
+    expect(fits).toBe(true);
+    const h = await innerHeight(page);
+    const box = await navBox(page);
+    expect(Math.abs(box.y + box.height - h)).toBeLessThanOrEqual(1);
+  });
+
+  test("T-0527 AC-3 the last content element is never under the bar", async ({ page }) => {
+    await openLongLibrary(page);
+    const lastSel = await page.evaluate(() => {
+      const nav = document.querySelector("nav.wl-tab-bar");
+      const all = Array.from(
+        document.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input, select"),
+      ).filter((el) => !nav?.contains(el) && el.getClientRects().length > 0);
+      const last = all[all.length - 1]!;
+      last.setAttribute("data-t0527-last", "1");
+      return "[data-t0527-last]";
+    });
+    const last = page.locator(lastSel);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    let nav = await navBox(page);
+    let box = (await last.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(nav.y + 0.5);
+
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await last.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    await expect(last).toBeFocused();
+    nav = await navBox(page);
+    box = (await last.boundingBox())!;
+    expect(box.y + box.height).toBeLessThanOrEqual(nav.y + 0.5);
+  });
 });
 
 test.describe("AC-A10 CSP origins (e2e)", () => {

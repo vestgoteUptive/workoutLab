@@ -1,5 +1,26 @@
 /* C-02 Tab bar styling. Colours come only from @workoutlab/design-tokens (D-0019). */
+:root {
+  /* D-0196 §3: the one size shared by the bar, its spacer and the scroll padding. */
+  --wl-tab-bar-block-size: 60px;
+}
+
+html:has(.wl-tab-bar) {
+  scroll-padding-block-end: calc(var(--wl-tab-bar-block-size) + env(safe-area-inset-bottom, 0px));
+}
+
+.wl-tab-bar__spacer {
+  block-size: calc(var(--wl-tab-bar-block-size) + env(safe-area-inset-bottom, 0px));
+}
+
 .wl-tab-bar {
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  z-index: 5;
+  box-sizing: border-box;
+  min-block-size: var(--wl-tab-bar-block-size);
+  padding-block-end: env(safe-area-inset-bottom, 0px);
+  padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
   display: flex;
   justify-content: space-around;
   align-items: stretch;
