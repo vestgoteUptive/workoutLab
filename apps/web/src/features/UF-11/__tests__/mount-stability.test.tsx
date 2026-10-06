@@ -115,7 +115,19 @@ describe("mounting with no `now` prop (the real router path)", () => {
       </MemoryRouter>,
     );
     await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
-    const afterFirstLoad = loadProfileCalls.n;
+    // `CheckinCard` (T-0471) reads the profile too; wait until the mount's own reads have
+    // settled (count stable across a quiet window) so the baseline is not taken mid-flight.
+    let afterFirstLoad = -1;
+    await waitFor(
+      () => {
+        const seen = loadProfileCalls.n;
+        const stable = seen === afterFirstLoad;
+        afterFirstLoad = seen;
+        expect(stable).toBe(true);
+      },
+      { interval: 100 },
+    );
+    expect(afterFirstLoad).toBeGreaterThanOrEqual(1);
     for (let i = 0; i < 10; i += 1) {
       rerender(
         <MemoryRouter initialEntries={["/plan"]}>

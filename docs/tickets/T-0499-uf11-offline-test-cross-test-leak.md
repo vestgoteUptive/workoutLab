@@ -95,3 +95,9 @@ changing `use-plan-data.ts`/`use-checkin-data.ts`, since that would re-open T-04
 scope). Commit messages start `T-0499` and cite UF-11.2.
 
 ## Build / accept log
+
+- 2026-10-06 build (frontend-dev). Before (HEAD b676718, offline+mount-stability files together, 15 runs): 4/15 failed, all `expected vi.fn() to not be called at all, but actually been called 2 times` (AC-B6 offline). Not reproduced for mount-stability in 15 runs, but its baseline race is closed anyway.
+- Fix (tests only): (1) `createFromSpy` builder gains `.gte/.lte/.order/.limit/.maybeSingle`; new opt-in `{ emptyReads: true }` makes reads resolve with no rows so a real `refreshAll` completes. Opt-in because making it default let the real refresh in `checkin-mount.test.tsx` overwrite its seeded cache (2 tests red, run once and recorded). (2) offline.test.tsx: mock records each real `refreshAll` promise; the cache-first test awaits them and asserts `spy.from` was reached (real refresh genuinely ran), `afterEach` drains them before the next test. (3) mount-stability: baseline waits for `loadProfileCalls.n` to be stable across polls instead of reading it right after the rows render.
+- AC-1/2/3: offline+mount-stability together, 30 consecutive runs, 0 failures; 10 runs under 4 busy loops (8 cores), 0; 10 runs under 12 busy loops, 0. Whole `src/features/UF-11`: 194/194.
+- AC-4: assertions untouched, one added (`spy.from` called in cache-first).
+- Note: runs were done in a clean `git worktree` copy because a sibling agent (T-0528) wrote uncommitted `lib/account/{index,wipe}.ts` edits into this worktree mid-task (importing a missing `sign-out.js`), breaking every import of lib/account; they are not part of this commit.

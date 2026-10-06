@@ -245,7 +245,7 @@ export interface SupabaseFromSpy {
  *  builder is what resolves it, so `.eq`/`.is` chain before the await, exactly as in the product
  *  code. A step "fails" either by rejecting or by resolving with a non-null `error` — supabase-js
  *  does the latter on a 4xx/5xx and never throws (AC-B12 runs both forms). */
-export function createFromSpy(): SupabaseFromSpy {
+export function createFromSpy(opts: { emptyReads?: boolean } = {}): SupabaseFromSpy {
   const calls: SpyCall[] = [];
   const failures = new Map<string, "reject" | "error">();
 
@@ -266,9 +266,34 @@ export function createFromSpy(): SupabaseFromSpy {
           status: 403,
         });
       }
-      return Promise.resolve({ data: payload, error: null, status: 200 });
+      // Opt-in (`createFromSpy({ emptyReads: true })`): a read resolves with no rows instead of
+      // echoing its column list, so a REAL refresh runs to completion (offline.test.tsx).
+      const data = method === "select" && opts.emptyReads ? [] : payload;
+      return Promise.resolve({ data, error: null, status: 200 });
     };
+    // T-0499: every read-modifier the real refresh path chains (`lib/offline/history.ts`:
+    // `.gte`, `.maybeSingle`), so a real `refreshAll` runs to completion instead of dying on a
+    // silent TypeError.
     const chain = {
+      gte(_column: string, _value: unknown) {
+        return chain;
+      },
+      lte(_column: string, _value: unknown) {
+        return chain;
+      },
+      order(_column: string, _options?: unknown) {
+        return chain;
+      },
+      limit(_n: number) {
+        return chain;
+      },
+      maybeSingle() {
+        return Promise.resolve({
+          data: opts.emptyReads ? null : payload,
+          error: null,
+          status: 200,
+        });
+      },
       eq(column: string, value: unknown) {
         call.filters.push({ op: "eq", column, value });
         return chain;
