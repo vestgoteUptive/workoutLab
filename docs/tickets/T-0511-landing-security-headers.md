@@ -108,3 +108,11 @@ None.
   `public/_headers` to the landing's ignore list if one of them complains.
 
 ## Build / accept log
+
+### Build log (2026-10-06, builder)
+- Start: git clean, HEAD c0c2bae. Added `apps/landing/public/_headers` (six headers, `/*`) and `test/t0511-headers.test.ts`.
+- Origins from the built output: only same-origin `/_astro/*.css` and `/favicon.svg`; no fonts, no remote images, no `@import`/external `url()` (asserted in AC-3). The CTA link to `app.workout.vestgote.com` is navigation, not governed by CSP.
+- AC-1/AC-2/AC-3 -> the three `T-0511 AC-n` tests. Red on main: `dist/_headers` absent, so AC-1/AC-2 fail by construction (file missing).
+- Planted fault 1 (AC-4): `frame-ancestors 'none'` -> `*` in `_headers`: AC-1 red. Restored with `cp`.
+- Planted fault 2 (AC-3): `<p style="color:inherit">` in `index.astro`: AC-3 red. Restored with `cp`.
+- AC-5 (live curl) pending H-24 redeploy.
