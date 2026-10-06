@@ -8,6 +8,4 @@
 - AC-2: script and its `pipefail`/masking are unchanged; T-0402b and T-0513 tests stay green.
 
 ## Build / accept log
-- Red on unfixed code: 11 failures in 100 runs (8 busy-loop CPU hogs running).
-- Fix: `cat >/dev/null` first in the curl stub (test file only).
-- After: 0 failures in 100 runs under the same load.
+Archived in `docs/tickets/log/T-0524.md` (D-0157).
