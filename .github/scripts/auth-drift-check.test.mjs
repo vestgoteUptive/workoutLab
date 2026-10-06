@@ -74,7 +74,7 @@ test("T-0500 AC-4 drift and errors", async () => {
   const id = await exec(full, { e: { ...env, GOOGLE_OAUTH_CLIENT_ID: "other" } });
   assert.equal(id.code, 1);
   assert.ok(id.text.includes("external_google_client_id_matches"));
-  const { mailer_otp_length, ...rest } = full;
+  const { mailer_otp_length: _omitted, ...rest } = full;
   const absent = await exec(rest);
   assert.equal(absent.code, 1);
   assert.ok(absent.text.includes("live <absent>"));
