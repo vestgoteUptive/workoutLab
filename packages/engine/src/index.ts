@@ -23,6 +23,7 @@ export {
   suggest,
   isEligible,
   rankCandidates,
+  avoidedAreas,
   itemCostS,
   setCostS,
   availableS,
