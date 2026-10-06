@@ -155,3 +155,12 @@ None. Design tokens are untouched; the theme-color meta stays as it is.
   about 330 characters is well inside that.
 
 ## Build / accept log
+
+### Build log (web-build, 2026-10-06)
+- New `apps/web/security-headers.mjs` (+ `.d.mts`): `cspDirectives` is the one CSP source; `cspMetaContent` (minus frame-ancestors) and `headersFile` derive from it. `vite.config.ts` meta plugin uses them and emits `dist/_headers` in `generateBundle`.
+- Origins: only `'self'` and the Supabase origin from `VITE_SUPABASE_URL` (REST, auth, functions). Code scan found no other fetch/img/script/font origin; Google OAuth, privacy/CC links are top-level navigations, export is `blob:` download.
+- AC→test (`apps/web/build.test.ts`, "T-0510 security headers"): AC-1 complete CSP in `_headers`; AC-2 meta = header minus frame-ancestors + `cspDirectives` unit; AC-3 other five headers exact; AC-4 sw.js precache has no `_headers`; AC-5 static scan (no base/object/embed/cross-origin form action). AC-A10 unchanged and green.
+- Red on main: `dist/_headers` absent (AC-1/3 cannot pass without the plugin).
+- Planted faults (backups restored with `cp`): drop `object-src 'none'` -> AC-1 and AC-2 unit red; meta keeps frame-ancestors -> AC-2 meta red; `<form action="https://evil.example">` in a component -> AC-5 red.
+- Gates: `-w typecheck lint test --concurrency=1` green; `test:repo-checks` 275 pass; `format:check` and `check-all.mjs` green; full e2e (orchestrator's instruction, stricter than the ticket DoD) 237 passed, no console errors.
+- AC-7 (live curl, H-24 sign-ins with no CSP violation): pending H-24.
