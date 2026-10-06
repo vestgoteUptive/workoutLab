@@ -20,6 +20,9 @@ infra/terraform/*.tfstate*
 infra/terraform/plans/
 dist.aside-*
 
+# T-0509: filtered auth-config snapshots from auth-patch.mjs --apply
+infra/auth/.snapshots/
+
 # Terraform (T-0400/T-0401, D-0184): state, plans and var files never committed
 **/.terraform/
 *.tfstate

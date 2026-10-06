@@ -14,13 +14,23 @@
 // with the changed keys removed). --apply sends one PATCH holding only the changed keys, GETs
 // again, and fails (exit 1) when others_sha256 moved or the after-view differs from the plan.
 // Error bodies are never printed. Reused by T-0404b and T-0402d.
+// T-0509: with --apply, a filtered snapshot of the WHOLE live config is written before the PATCH
+// (infra/auth/.snapshots/<ref>-<UTC yyyymmddThhmmssZ>-before.json, mode 0600, gitignored) and
+// another after the final read-back (-after.json). Filter = the preview's: secret-looking keys
+// become <set>/<unset>, *_content keys len=<n> sha256=<hex>, the rest verbatim. If the before
+// file can't be written the script prints "cannot write snapshot; nothing sent" and sends no
+// PATCH. Preview mode writes nothing. The config API is eventually consistent, so after a 2xx
+// PATCH the read-back is retried (up to 5 GETs, 1 s, 2 s, 4 s, 8 s apart) until every changed key
+// matches the reviewed after-view; others_sha256 is judged on that read.
 import { createHash } from "node:crypto";
-import { readFileSync as fsReadFileSync } from "node:fs";
+import { readFileSync as fsReadFileSync, writeFileSync as fsWriteFileSync, mkdirSync as fsMkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 export const SPEC_PATH = path.join(here, "../auth/expected-auth.json");
+export const SNAPSHOT_DIR = path.join(here, "../auth/.snapshots");
+export const READBACK_TRIES = 5;
 export const SECRET_KEY = /secret|pass|key|token/i;
 export const LONG_KEY = /_content$/;
 // UpdateAuthConfigBody types these as strings (api.supabase.com/api/v1-json); live reads null
@@ -130,6 +140,17 @@ export function showValue(key, v) {
   return typeof v === "string" ? v : JSON.stringify(v);
 }
 
+/** The whole config, filtered like the preview: no secret or template body survives. */
+export function snapshotOf(cfg) {
+  const out = {};
+  for (const [k, v] of Object.entries(cfg)) {
+    out[k] = SECRET_KEY.test(k) || (LONG_KEY.test(k) && typeof v === "string") ? showValue(k, v) : v;
+  }
+  return out;
+}
+
+const stamp = (d) => d.toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+
 function view(cfg, keys) {
   return keys.map((k) => `  ${k} = ${showValue(k, cfg[k])}`);
 }
@@ -140,6 +161,10 @@ export async function run({
   fetchImpl = fetch,
   readFile = (p) => fsReadFileSync(p, "utf8"),
   cwd = process.cwd(),
+  sleep = (ms) => new Promise((r) => setTimeout(r, ms)),
+  writeFile = (p, data, opts) => fsWriteFileSync(p, data, opts),
+  mkdir = (p, opts) => fsMkdirSync(p, opts),
+  now = () => new Date(),
   stdout = (s) => process.stdout.write(s + "\n"),
   stderr = (s) => process.stderr.write(s + "\n"),
   spec,
@@ -215,6 +240,20 @@ export async function run({
     return 0;
   }
 
+  const when = stamp(now());
+  const snap = (kind, cfg) => {
+    const file = path.join(SNAPSHOT_DIR, `${ref}-${when}-${kind}.json`);
+    mkdir(SNAPSHOT_DIR, { recursive: true });
+    writeFile(file, JSON.stringify(snapshotOf(cfg), null, 2) + "\n", { mode: 0o600 });
+    return file;
+  };
+  try {
+    stdout(`snapshot: ${snap("before", before)}`);
+  } catch {
+    stderr("error: cannot write snapshot; nothing sent");
+    return 1;
+  }
+
   let res;
   try {
     res = await fetchImpl(url, {
@@ -231,13 +270,32 @@ export async function run({
     return 1;
   }
 
+  const matches = (cfg, k) => (SECRET_KEY.test(k) ? isSet(cfg[k]) === isSet(planned[k]) : canonical(cfg[k]) === canonical(planned[k]));
   let after;
-  try {
-    after = await get();
-  } catch (e) {
-    stderr(`error: ${e.message} after PATCH; run auth-drift-check.mjs`);
+  let lastError;
+  let tries = 0;
+  let settled = false;
+  while (tries < READBACK_TRIES && !settled) {
+    if (tries > 0) await sleep(1000 * 2 ** (tries - 1));
+    tries++;
+    try {
+      after = await get();
+      lastError = undefined;
+      settled = keys.every((k) => matches(after, k));
+    } catch (e) {
+      lastError = e;
+    }
+  }
+  if (lastError || !after) {
+    stderr(`error: ${(lastError ?? new Error("GET failed")).message} after PATCH; run auth-drift-check.mjs`);
     return 1;
   }
+  try {
+    stdout(`snapshot: ${snap("after", after)}`);
+  } catch {
+    stderr("warning: cannot write the after-snapshot");
+  }
+  if (settled) stdout(`read-back settled after ${tries} tries`);
   const othersAfter = othersHash(after, keys);
   stdout("applied; live after:");
   for (const l of view(after, keys)) stdout(l);
@@ -245,8 +303,7 @@ export async function run({
 
   let ok = true;
   for (const k of keys) {
-    const same = SECRET_KEY.test(k) ? isSet(after[k]) === isSet(planned[k]) : canonical(after[k]) === canonical(planned[k]);
-    if (!same) {
+    if (!matches(after, k)) {
       stderr(`mismatch: ${k} live differs from the reviewed after-view`);
       ok = false;
     }
