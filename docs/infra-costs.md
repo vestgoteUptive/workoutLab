@@ -36,3 +36,8 @@ The orchestrator runs `node infra/scripts/cost-check.mjs` (read-only) monthly an
 | Month | Supabase plan | Usage peaks (% of quota) | Cloudflare | Resend | Total USD | Checked by |
 |---|---|---|---|---|---|---|
 | 2026-10 | Free, project ACTIVE_HEALTHY | Pages builds 0/500 (0%); db size, egress and Resend by hand | 2 Pages projects, 0 deployments | not checked (by hand) | 0 | T-0405 live run 2026-10-05 |
+
+## Edge Function abuse (D-0190 §3)
+D-0190 §3 accepts the missing per-user rate limit on the Edge Functions while we are on Free: a limiter inside a function can't protect the invocation quota, because the invocation is counted before the code runs. The cost guard lists `supabase_function_invocations` (500,000 a month on Free) as a by-hand check; an alert on this metric, or a surge seen in the dashboard, is the trigger to revisit.
+
+Abuse by one account: ban the user in Supabase dashboard → Authentication → Users; their JWT stops working at expiry (≤ 1 h).

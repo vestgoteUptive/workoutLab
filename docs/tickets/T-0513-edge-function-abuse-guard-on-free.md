@@ -118,3 +118,11 @@ None. D-0190 §3 records the accepted risk.
 - T-0238 closes as folded into this ticket (D-0190 §5).
 
 ## Build / accept log
+
+### Build log (infra, 2026-10-06, branch t/T-0513-edge-function-abuse-guard, from a33b58b)
+- Changed: `quotas.json` gets `supabase_function_invocations` (500,000, manual, checked 2026-10-06; supabase.com/pricing re-read, "Invocations: 500,000 included"). No Management API GET known for the count, so manual, `cost-check.mjs` untouched. `docs/infra-costs.md` gets an "Edge Function abuse (D-0190 §3)" section (accepted risk, alert = revisit trigger, ban-user runbook line). One test each in `cost-check.test.mjs` and `supabase-prod-release.test.mjs`.
+- AC-1 -> `T-0513 AC-1 quota row ...`; AC-2 (manual branch) -> `T-0513 AC-2 invocations are reported by hand ...`; AC-3 -> `T-0513 AC-3 functions deploy takes verify_jwt from supabase/config.toml`.
+- Red on unfixed quotas.json: AC-1 and AC-2 fail (2 fail).
+- Planted faults (backup copy, restored with cp): `--no-verify-jwt` on the deploy line -> AC-3 fails; fifth function `extra` in FUNCTIONS -> AC-3 fails (and T-0402b AC-2 too).
+- AC-4: NOT run. The auto-mode permission classifier denied the read-only GET of the prod functions list ("Production Reads"). Left for the user/orchestrator to run or to allow; expected `workouts/balance/sessions/account` verify_jwt=false, ACTIVE.
+- T-0238 folds into this ticket (D-0190 §5).
