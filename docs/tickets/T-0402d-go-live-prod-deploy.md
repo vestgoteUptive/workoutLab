@@ -120,3 +120,4 @@ already budgeted in D-0012 and `docs/infra-costs.md`. It's gate 2, approved thro
 - Headers served: only `x-content-type-options: nosniff`, `referrer-policy` (no HSTS/CSP/frame-ancestors) → T-0510/T-0511.
 - **AC-6 (human sign-in on prod, email + Google)**: pending.
 - `PROD_DEPLOY_ENABLED` not set: CI-driven prod deploys stay off until runners work (then set it, T-0402a live ACs).
+- **AC-6 (Google part), 2026-10-06:** human signed in with Google on `https://app.workout.vestgote.com`; prod has 1 user (provider google) with only `email, email_verified, iss, phone_verified, provider_id, sub` in both auth tables (T-0504 strip works), profile row created. Email/magic-link sign-in on prod not yet confirmed by the human.
