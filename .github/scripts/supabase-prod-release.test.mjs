@@ -115,3 +115,22 @@ test('T-0402b AC-4 ref matches terraform import ID', () => {
   assert.equal(sh, id);
   assert.ok(existsSync(SCRIPT));
 });
+
+test('T-0513 AC-3 functions deploy takes verify_jwt from supabase/config.toml', () => {
+  const src = readFileSync(SCRIPT, 'utf8');
+  const deploys = src.split('\n').filter((l) => /functions deploy/.test(l) && !/^\s*#/.test(l));
+  assert.ok(deploys.length >= 1, 'no deploy command found');
+  for (const l of deploys) assert.doesNotMatch(l, /--(no-)?verify-jwt/, l);
+  const cdIdx = src.indexOf('cd "$repo_root"');
+  assert.ok(cdIdx > 0 && cdIdx < src.indexOf('functions deploy'), 'must cd to repo root before deploying');
+  assert.ok(existsSync(join(root, 'supabase/config.toml')), 'repo root holds supabase/config.toml');
+  assert.match(src, /^repo_root="\$\(cd "\$here\/\.\.\/\.\." && pwd\)"/m);
+  const fns = src.match(/^FUNCTIONS=\(([^)]*)\)/m)[1].trim().split(/\s+/);
+  assert.ok(fns.length >= 1);
+  const toml = readFileSync(join(root, 'supabase/config.toml'), 'utf8');
+  for (const f of fns) {
+    const m = toml.match(new RegExp(`^\\[functions\\.${f}\\]\\s*\\n((?:(?!\\[)[^\\n]*\\n?)*)`, 'm'));
+    assert.ok(m, `no [functions.${f}] table`);
+    assert.match(m[1], /^verify_jwt\s*=\s*false\s*$/m, `${f} verify_jwt`);
+  }
+});
