@@ -152,3 +152,13 @@ with the expected file updated in the same ticket, and it costs nothing.
 - Once previews are turned on (H-18), D-0190's revisit trigger decides preview CORS.
 
 ## Build / accept log
+
+### Run A (infra, 2026-10-06)
+Start: clean tree, HEAD 9425bed.
+- Built `infra/scripts/cors-probe.mjs`, `infra/scripts/prod-origins.sh` (plan default; apply needs `CONFIRM_PROD_AUTH=csgjsdwuxqtuqpuazzpz`, checked before any call; apply order: secrets set, auth-patch --apply, sleep 10, cors-probe, auth-drift-check). Narrowed `expected.uri_allow_list`; README notes. A wildcard `*` counts as reflected by the probe. Test fixture `fixtures/auth-drift/full.json` and drift-test AC-3 updated; two auth-patch tests (T-0402c AC-6, T-0404b AC-5) replay the old prod, so they use a `legacySpec` with the old list.
+- AC-1: `cors-probe.test.mjs` (20 bare OPTIONS, exit 0; reflected localhost:5173 exit 1 with table; app host not echoed exit 1). AC-2: `prod-origins.test.mjs` (plan read-only, refusal with zero calls, apply order). AC-3: `prod-origins.test.mjs` AC-3 plus git diff shows only `uri_allow_list` changed in the expected file.
+- Red runs on unfixed code: auth-patch.test.mjs T-0402c AC-6 and T-0404b AC-5 failed (2) after the expected-file change, fixed with `legacySpec`.
+- AC-4 (live, read-only): `node infra/scripts/cors-probe.mjs` exit 1; for all four functions `localhost:5173` and `localhost:3000` reflected, app host reflected, `probe.workoutlab-web.pages.dev` and `evil.example` not reflected (no gateway wildcard). The auth drift check and the plan's auth preview and `secrets list` were NOT run live: no `SUPABASE_ACCESS_TOKEN` in the agent environment. Expected live drift today: `uri_allow_list: extra [http://localhost:3000/**, http://localhost:5173/**]` only (the intended H-25 signal).
+- AC-6 planted faults: probe accepting reflected localhost -> cors-probe AC-1 second case failed (1 fail); lock check removed in a copy of the script -> the zero-call assertion would fail (test `planted fault` asserts calls > 0). Both restored from backup copies.
+- Gates: `node --test` cors-probe, prod-origins, auth-patch, auth-drift-check: 42 pass; `-w test:repo-checks` 304 pass; `-w format:check` clean; `check-all.mjs` exit 0. No supabase/functions changes, so no Deno tests.
+- H-25 (human): `SUPABASE_ACCESS_TOKEN=... bash infra/scripts/prod-origins.sh` to preview, then `CONFIRM_PROD_AUTH=csgjsdwuxqtuqpuazzpz SUPABASE_ACCESS_TOKEN=... bash infra/scripts/prod-origins.sh apply`. Then run B: AC-5.

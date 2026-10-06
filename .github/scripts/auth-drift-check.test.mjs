@@ -58,9 +58,9 @@ test("T-0500 AC-2 GET only, one call", async () => {
 
 test("T-0500 AC-3 allow-list order does not count", async () => {
   assert.equal((await exec(full)).code, 0);
-  const miss = await exec(withList("http://localhost:3000/**,https://*.workoutlab-web.pages.dev/**,https://app.workout.vestgote.com/**"));
+  const miss = await exec(withList("https://*.workoutlab-web.pages.dev/**"));
   assert.equal(miss.code, 1);
-  assert.ok(miss.text.includes("missing [http://localhost:5173/**]"));
+  assert.ok(miss.text.includes("missing [https://app.workout.vestgote.com/**]"));
   // T-0402c: the preview pattern is now expected, so "extra" uses an entry nobody expects.
   const extra = await exec(withList(full.uri_allow_list + ",https://other.example.test/**"));
   assert.equal(extra.code, 1);

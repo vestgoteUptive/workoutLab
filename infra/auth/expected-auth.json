@@ -24,7 +24,7 @@
   "unordered_lists": ["uri_allow_list"],
   "expected": {
     "site_url": "https://app.workout.vestgote.com",
-    "uri_allow_list": "http://localhost:3000/**,http://localhost:5173/**,https://app.workout.vestgote.com/**,https://*.workoutlab-web.pages.dev/**",
+    "uri_allow_list": "https://app.workout.vestgote.com/**,https://*.workoutlab-web.pages.dev/**",
     "external_google_enabled": true,
     "external_email_enabled": true,
     "mailer_otp_length": 6,

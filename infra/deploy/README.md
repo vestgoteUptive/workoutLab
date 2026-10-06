@@ -47,7 +47,9 @@ reviewed against prod. T-0402c proved RLS before the door opened (D-0184 §6):
 - `infra/scripts/rls-fingerprint.sh`: prod's policies, grants and RLS flags hash the same as local.
 
 Before a migration that adds a table or changes a policy reaches prod, re-run the fingerprint on
-both sides. To close the door again, run `auth-patch.mjs --set uri_allow_list=<the list without it>`
+both sides. Previews cannot call Edge Functions: prod's `ALLOWED_ORIGINS` is the app host only
+(CORS, D-0190 §4); sign-in and plain CRUD still work. The two localhost entries are gone from the
+allow-list (T-0515); `infra/scripts/prod-origins.sh` plans and applies that change (H-25). To close the door again, run `auth-patch.mjs --set uri_allow_list=<the list without it>`
 (reviewed, keys-only) and update `infra/auth/expected-auth.json` in the same change.
 
 **rls-coverage and dynamic `.from(x)`:** the rls-coverage check resolves `.from(x)` only when `x`
