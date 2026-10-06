@@ -24,7 +24,9 @@ function setup() {
     'npx',
     `echo "npx $*" >> "${log}"\ncase "$*" in *dry-run*) printf "Would push:\\n 20260927210000_a.sql\\n 20260928090000_b.sql\\n SENTINEL-PW db-host.example.com\\n";; *) echo "args: $* SENTINEL-PW";; esac`,
   );
-  stub('curl', `echo "curl $*" >> "${log}"\necho '[]'`);
+  // Drain stdin like real `curl -K -` does: the script pipes the auth header in, and a stub that
+  // exits first makes printf die of SIGPIPE, which pipefail turns into exit 141 (T-0524).
+  stub('curl', `cat >/dev/null\necho "curl $*" >> "${log}"\necho '[]'`);
   return { dir, log };
 }
 
