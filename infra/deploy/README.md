@@ -48,3 +48,8 @@ reviewed against prod. T-0402c proved RLS before the door opened (D-0184 §6):
 Before a migration that adds a table or changes a policy reaches prod, re-run the fingerprint on
 both sides. To close the door again, run `auth-patch.mjs --set uri_allow_list=<the list without it>`
 (reviewed, keys-only) and update `infra/auth/expected-auth.json` in the same change.
+
+**rls-coverage and dynamic `.from(x)`:** the rls-coverage check resolves `.from(x)` only when `x`
+is typed `(typeof C)[number]` and `C` is an `as const` string-literal array in the same file
+(today: `EXPORT_TABLES` in `apps/web/src/lib/account/export.ts`). Any other dynamic form fails as
+unresolved, on purpose (D-0190 §6).
