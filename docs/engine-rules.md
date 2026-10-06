@@ -200,6 +200,20 @@ Fixture W is R7-E4 (bench-press × 4 main 720 s, inverted-row × 3 555 s, leg-ex
 - **R12-E11 (over budget, D-0093)** W, leg-extension → back-squat: back-squat × 2, 8–12, 390 s, reasons for glutes (before quads): `area_deficit {glutes, 1}`, `days_since {glutes, null}`. 1665 s > 1620 s, so `totalS` 1845 and `unusedS` 0; rule 12 marks it `fitsBudget: false`, and it is applied anyway.
 - **R12-E12 (fitsBudget on an over-budget back-off slot, D-0105)** R14-E9 at `budgetMin 14`, warm-up off (available 840 < 885 s), current bench-press: db-bench-press and push-up each have `timeCostS` 4 × 165 + 60 = 720 and `fitsBudget: false`, because 885 − 885 + 720 + 165 = 885 > 840; `applySwap` to db-bench-press gives 885 s. At `budgetMin 15` (available 900) both have `fitsBudget: true` (885 ≤ 900).
 
+### 12.2 removeItem (UF-08.2, D-0191 §4)
+`removeItem(workout, exerciseId)` returns a new `Workout` without the item `exerciseId`, and **nothing takes its place**: the freed time stays unused (D-0191 §4 amends D-0065 §4). It needs no history, library or clock.
+- **Items:** the item is dropped. The other items keep their order and are unchanged. `plan.mainLiftId` becomes null when the removed item was the main lift; no other item is promoted and every remaining `isMain` stays as it was.
+- **Workout:** `itemsTotalS = Σ costS` over the remaining items, `totalS = itemsTotalS + 180`, `unusedS = max(0, available − itemsTotalS)` (rule 7.1). A plan that was over budget (R12-E11) can come back under it. `plan.version`, `plan.warmup` (not regenerated, as in `applySwap`), `plan.startDeficits`, `budgetMin`, `warmupInBudget` and `energy` are unchanged.
+- **Session reasons:** `sessionReasons` loses the `area_deficit` entries whose area is no remaining item's first primary area. An item's first primary area is the area of its own `area_deficit` reason (rule 10, as rule 8 reads it). `recovering_skipped` entries stay, the order is kept, and nothing is added, even when the rule 10 cap of 3 had left an area out.
+- **Validation:** `RangeError` when `exerciseId` is not an item of the plan (a warm-up move id included). Inputs are never mutated.
+- UF-08.2 Remove calls `removeItem` (no `suggest` call) and still appends the id to `excludeIds`, so a later re-suggest (Shuffle, a time chip) never brings it back; that re-suggest may refill the freed time.
+
+Fixture W is R7-E4 (as in 12.1; `available` 1620).
+- **R12-E13 (accessory)** W, remove leg-extension: bench-press × 4 (main) and inverted-row × 3, both unchanged. `itemsTotalS` 1275, `totalS` 1455, `unusedS` 345, `mainLiftId` bench-press. `sessionReasons` goes from `area_deficit` chest, back, quads to chest, back.
+- **R12-E14 (main lift)** W, remove bench-press: inverted-row × 3 and leg-extension × 2, both with `isMain` false. `mainLiftId` null, `itemsTotalS` 825, `totalS` 1005, `unusedS` 795.
+- **R12-E15 (last item)** R7-E2 (bench-press × 4, `budgetMin 15`, warm-up on, `available` 720), remove bench-press: `items` [], `itemsTotalS` 0, `totalS` 180, `unusedS` 720, `mainLiftId` null. On R7-E3, removing any item keeps `recovering_skipped {quads}`.
+- **R12-E16 (over budget)** W after R12-E11 (leg-extension → back-squat × 2, 1665 s, `unusedS` 0), remove inverted-row: `itemsTotalS` 1110, `totalS` 1290, `unusedS` 510.
+
 ## 13. Shuffle (UF-08.2, D-0025)
 `sessionInput.shuffle = n`. Every accessory slot not in `pinnedIds`, in session order, takes entry `n mod len` of `[original, …variety ranking]`, skipping exercises already taken by an earlier slot. If the pick doesn't fit `available` at the slot's set count, the slot keeps the original. The main lift is never shuffled. There is no randomness.
 - **R13-E1** For R7-E4 with n = 1, the items are bench-press, barbell-row × 3, leg-extension × 2 (back-squat × 2 would make 1665 s > 1620 s).
@@ -254,3 +268,4 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 12 rankSwaps signature order `now, tz` (D-0130) | T-0212 |
 | 14 steps 2 and 5 drop capped at `W` (D-0137) | T-0235 |
 | 6.1 avoided areas (R6-E3…E6, D-0191 §2) | T-0516 |
+| 12.2 removeItem (R12-E13…E16, D-0191 §4) | T-0519 |

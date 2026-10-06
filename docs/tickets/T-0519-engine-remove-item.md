@@ -65,3 +65,22 @@ separate `… lint`, then a separate `… test`. Listing several script names af
 runs only the first; pnpm passes the rest to it as plain CLI arguments, so they never run.
 
 ## Build / accept log
+- 2026-10-06 engine-dev (build). Start: branch `t/T-0519-engine-remove-item` clean at f5b7025 (main's T-0516 merge).
+  Changed: new `packages/engine/src/remove-item.ts` `removeItem(workout, exerciseId): Workout`, exported from the
+  index; `copyItem` in `apply-swap.ts` exported (shared, not re-exported from the package); `docs/engine-rules.md`
+  rule 12.2 + R12-E13…E16 + traceability row (D-0191 §4). An item's first primary area is read from its own
+  `area_deficit` reason (rule 10, as rule 8 `timeCheck` does), since `removeItem` takes no library.
+  Tests: `packages/engine/test/rule-12-2-remove-item.test.ts`.
+  AC1 → R12-E13 (AC1). AC2 → R12-E14 (AC2). AC3 → (AC3) no refill. AC4 → (AC4) unchanged fields.
+  AC5 → R12-E13 (AC5) + (AC5) cap. AC6 → R12-E15 (AC6). AC7 → R12-E16 (AC7) + (AC7) still over budget.
+  AC8 → (AC8) RangeError + (AC8) pure/deep-frozen. Simulated 14-day histories (zero + 4, budgets 15/30/90, warm-up
+  on/off, 3 energies, every item then drain to empty) + seeded property run (60 seeds) + contract-text check.
+  Red on unfixed code: export removed from index → 13/15 failed. Planted-fault test in-suite: the old Remove
+  (re-suggest with `excludeIds`) fails the no-refill check. Planted faults in src (backup `cp`, restored):
+  F1 refill slot with another exercise 9 failed; F2 refill same exercise fewer sets 10; F3 mainLiftId kept 4;
+  F4 reasons not pruned 3; F5 totals not recomputed 6; F6 unusedS unclamped first survived → added the
+  still-over-budget test → 1 failed; F7 warm-up reference shared 1.
+  First gate run: engine `test-budgets` (T-0230) flagged the seeded test without a 30 s budget → added
+  `SWEEP_TIMEOUT_MS`; web `UF-11/offline.test.tsx` AC-B6 failed once (flaky: 1 of 3 isolated reruns red,
+  2 green; untouched by this change). Gate: `-w typecheck lint test --concurrency=1` green (engine 684, web 3651),
+  `-w test:repo-checks` 278/278, `-w format:check` clean, `check-all.mjs` exit 0.
