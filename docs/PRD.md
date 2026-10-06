@@ -56,7 +56,7 @@ Each item is answered by a default in `docs/gaps.md` §D, revisited in Phase 5 t
 | Guest mode before the account? | No, but the account step comes after the plan preview. | D-0014 |
 | Hard stop (clock time) instead of minutes on UF-08.1? | Both. A finish time converts to minutes at start. | owner product-owner, T-0303 |
 | Carry weights over between variants on a swap? | Yes, when the variant shares a primary area and equipment type; otherwise use history or leave blank. | owner product-owner, T-0306 |
-| Project name, platforms, commercial intent? | "workout LAB by Uptive". PWA only, free in v1. | owner product-owner, T-0309 |
+| Project name, platforms, commercial intent? | "workout LAB" (no company byline, D-0194; was "workout LAB by Uptive"). PWA only, free in v1. | owner product-owner, T-0309, T-0526 |
 | Swap ranking by reason, energy modifiers, weight progression and pre-fill, shuffle, main-lift concept (gap B4)? | Engine rules v1: rules 7–14 in `docs/engine-rules.md`, each with worked examples. | T-0101, D-0024, D-0025, D-0026, D-0027 |
 
 ## Open questions
