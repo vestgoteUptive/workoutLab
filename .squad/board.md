@@ -144,7 +144,7 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0516 | UF-08.1 engine `SessionInput.avoidAreas` (rule 6.1, treated like recovering); GitHub #33 (D-0191) | engine | — | done | wl-build-engine |
-| T-0519 | UF-08.2 engine `removeItem` — Remove drops without refill (rule 12.2); GitHub #33 (D-0191). After T-0516 (same package + engine-rules) | engine | T-0516 | doing | wl-build-engine |
+| T-0519 | UF-08.2 engine `removeItem` — Remove drops without refill (rule 12.2); GitHub #33 (D-0191). After T-0516 (same package + engine-rules) | engine | T-0516 | done | wl-build-engine |
 | T-0520 | UF-08.1 "Skip today" area chips → `avoidAreas` in fit line, Suggest and UF-08.2 re-suggests; "Skipping today" line; GitHub #33 (D-0191) | web-feature:UF-08 | T-0516 | doing | wl-build-web |
 | T-0521 | UF-08.2 Remove calls `removeItem` (no refill), id kept in `excludeIds`, "No exercises left" copy; GitHub #33 (D-0191) | web-feature:UF-08 | T-0519, T-0520 | todo | wl-build-web |
 | T-0517 | openapi SessionInput optional `avoidAreas` + regenerate api.gen.ts (D-0191 §3) — off the user path | data | T-0516 | ready | wl-build-data |
