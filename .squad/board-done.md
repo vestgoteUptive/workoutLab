@@ -311,3 +311,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0517 | openapi SessionInput optional `avoidAreas` + regenerate api.gen.ts (D-0191 §3) — off the user path | data | T-0516 | done | wl-build-data |
 | T-0527 | C-02 tab bar fixed to the viewport bottom, safe-area padded, spacer + scroll padding so nothing hides under it; viewport-fit=cover; GitHub #36 (D-0196) | web-shell | — | done | wl-build-web |
 | T-0528 | lib/account signOutAndClearDevice (local-scope sign-out, clear this user's caches + wl- keys, keep queue) and hasUnsyncedWork; GitHub #35 part 1 (D-0195) | web-shell | — | done | wl-build-web |
+| T-0522 | Library breadth: nine bodyweight-only exercises (one per area), original text; no ExerciseDB content; GitHub #32 (D-0192) | content | — | done | wl-build-content |
