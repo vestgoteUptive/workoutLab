@@ -1,8 +1,9 @@
 // UF-08.2 Suggested workout (T-0303b, D-0065 §4, D-0109). Principle 3: everything on this screen
 // is the engine's `Workout`, rendered as it is. The rows are `plan.items` in plan order with the
 // engine's sets, reps, pre-fill and reasons; the bar is the engine's seconds; the chips are
-// `sessionReasonChips(sessionReasons)`. Remove, Shuffle and a time chip never edit the plan here:
-// each asks the host to re-run `suggest()` once with new inputs (D-0109 §1-§2).
+// `sessionReasonChips(sessionReasons)`. Shuffle and a time chip never edit the plan here: each asks the
+// host to re-run `suggest()` once with new inputs (D-0109 §1-§2). Remove asks the host for the
+// engine's `removeItem` (T-0521, D-0191 §4): no suggest call, no refill.
 //
 // The `workout` prop is the host's current `Workout`; nothing on this screen calls `suggest`.
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -28,9 +29,11 @@ export interface SuggestedProps {
   locale: string;
   /** The areas skipped today (T-0520, D-0191), in the fixed order. Shown as one line; no control. */
   avoidAreas?: readonly Area[];
+  /** The plan is empty because Remove took its last row (T-0521): "No exercises left". */
+  emptiedByRemove?: boolean;
   /**
-   * Remove one item: the host re-suggests with it in `excludeIds`. Returns whether a new plan
-   * was set (false when `suggest` rejected and the plan stayed as it was).
+   * Remove one item: the host calls the engine's `removeItem` (nothing refills the slot) and adds
+   * the id to `excludeIds`. Returns whether a new plan was set (false when it was rejected).
    */
   onRemove: (exerciseId: string) => boolean;
   /** The host re-suggests with `shuffle + 1`. */
@@ -113,6 +116,7 @@ export function Suggested({
   library,
   locale,
   avoidAreas = [],
+  emptiedByRemove = false,
   onRemove,
   onShuffle,
   onBudget,
@@ -216,7 +220,7 @@ export function Suggested({
 
       {items.length === 0 ? (
         <p className="wl-uf08__fit" data-part="nothing-fits">
-          {en.uf08.nothingFits(workout.budgetMin)}
+          {emptiedByRemove ? en.uf08.noneLeft : en.uf08.nothingFits(workout.budgetMin)}
         </p>
       ) : (
         <ol className="wl-uf08__rows" ref={listRef} aria-label={en.uf08.rowsName}>

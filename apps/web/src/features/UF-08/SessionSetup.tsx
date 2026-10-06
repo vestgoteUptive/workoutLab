@@ -13,7 +13,7 @@
 //
 // UF-08.2 (T-0303b, D-0109 §1-§2). "Suggest my workout" freezes UF-08.1's `Workout` into the
 // session record `{workout, shuffle: 0, excludeIds: []}`; a later cache re-read never swaps it.
-// Each UF-08.2 action is exactly one `suggest` call with the inputs record
+// Shuffle and a time chip are exactly one `suggest` call each (Remove is the engine's `removeItem`, T-0521) with the inputs record
 // `{budgetMin, warmupInBudget, energy, shuffle, mainLiftId, excludeIds}`, where `mainLiftId` is the
 // current plan's (null only when the main item itself is removed). Leaving UF-08.2 for UF-08.1
 // drops the record (the adjustments are discarded); `budgetMin` is shared and stays.
@@ -21,6 +21,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from "r
 import { Link, useNavigate, useSearchParams } from "react-router";
 import {
   AREAS,
+  removeItem,
   suggest,
   type Area,
   type Energy,
@@ -103,6 +104,8 @@ interface Adjusted {
   workout: Workout;
   shuffle: number;
   excludeIds: string[];
+  /** True while the plan is empty because Remove took the last row (T-0521, D-0191 §5). */
+  emptiedByRemove: boolean;
 }
 
 function runSuggest(
@@ -277,22 +280,37 @@ export function SessionSetup({
       );
       if (result === null) return false;
       if (next.budgetMin !== budgetMin) setBudgetMin(next.budgetMin);
-      setAdjusted({ workout: result, shuffle: next.shuffle, excludeIds: next.excludeIds });
+      setAdjusted({
+        workout: result,
+        shuffle: next.shuffle,
+        excludeIds: next.excludeIds,
+        emptiedByRemove: false,
+      });
       return true;
     };
-    const plan = adjusted.workout.plan;
     return (
       <Suggested
         workout={adjusted.workout}
         library={data.library}
         locale={loc}
         avoidAreas={avoidAreas}
+        emptiedByRemove={adjusted.emptiedByRemove}
         onRemove={(exerciseId) => {
-          const isMain = plan.items.some((i) => i.exerciseId === exerciseId && i.isMain);
-          return resuggest({
+          // T-0521 (D-0191 §4): no `suggest` call. The engine drops the row and refills nothing;
+          // the id joins `excludeIds`, so a later Shuffle or time chip can't bring it back.
+          let next: Workout;
+          try {
+            next = removeItem(adjusted.workout, exerciseId);
+          } catch {
+            return false;
+          }
+          setAdjusted({
+            ...adjusted,
+            workout: next,
             excludeIds: [...adjusted.excludeIds, exerciseId],
-            ...(isMain ? { mainLiftId: null } : {}),
+            emptiedByRemove: next.plan.items.length === 0,
           });
+          return true;
         }}
         onShuffle={() => resuggest({ shuffle: adjusted.shuffle + 1 })}
         onBudget={(m) => resuggest({ budgetMin: m })}
@@ -328,7 +346,7 @@ export function SessionSetup({
   const onSuggest = () => {
     if (workout === null) return;
     // Frozen here: UF-08.2 starts from exactly this `Workout` (reference-equal, no new call).
-    setAdjusted({ workout, shuffle: 0, excludeIds: [] });
+    setAdjusted({ workout, shuffle: 0, excludeIds: [], emptiedByRemove: false });
     void navigate(`${SETUP_PATH}?step=suggested`);
   };
 
