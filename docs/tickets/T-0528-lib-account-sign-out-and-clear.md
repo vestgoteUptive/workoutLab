@@ -122,3 +122,11 @@ None (no schema, API or engine change; the Dexie schema is unchanged).
 - **Parallel:** web-shell lane, as is T-0527 (no shared files). T-0529 waits for this one.
 
 ## Build / accept log
+
+### Build (web-shell, 2026-10-06)
+- Added `lib/account/sign-out.ts` (`signOutAndClearDevice`, `hasUnsyncedWork`) and `local-data.ts` (shared `deleteUserRows`/`removePrefixedKeys`, now used by `wipe.ts`); exported from `index.ts`.
+- AC→test: AC-1..AC-5 in `__tests__/sign-out.test.ts` (AC-5 has three tests, AC-4 four); AC-6: `wipe`/`delete` tests unchanged and green.
+- Deviation: `boundaries.test.ts` pins the exact export list of `index.ts`; it had to change (7 → 9 exports) for the two new exports. Only that list and its title changed.
+- Red run on main: not recorded as a separate run; the functions did not exist (import of `signOutAndClearDevice` is undefined there).
+- Planted faults (backup copy, restored with `cp`): (a) `sessions` cleared → AC-1 fails; (b) `signOut({})` → AC-2 fails; (c) rejected counted unsynced → AC-4 fails. Restored: 10/10 green.
+- Gate: `-w typecheck lint test --concurrency=1` green, `test:repo-checks`, `format:check`, `check-all.mjs` green. No e2e (no screen change).
