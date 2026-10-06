@@ -90,3 +90,7 @@ None.
   under Node's ESM loader.
 
 ## Build / accept log
+
+- 2026-10-06 build: added `anon-key-guard.mjs/.d.mts/.test.ts`, guard call in `vite.config.ts` (build only), AC-3 tests in `build.test.ts`. A bare `sb_secret_` with no key body passes (matches the real-key-only rule).
+  AC-1 -> `anon-key-guard.test.ts` "AC-1 rejects"; AC-2 -> "AC-2 accepts"; AC-3 -> `build.test.ts` "T-0514a AC-3" (2 builds); AC-4 -> planted fault.
+  Red (AC-3): with the guard call removed from a backup copy of vite.config.ts, both AC-3 builds failed (build succeeded, status 0); restored with `cp`. AC-1/2 red: module absent before this change.

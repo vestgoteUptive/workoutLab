@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import type { Plugin } from "vite";
 import { wlIconsPlugin } from "./scripts/gen-icons.mjs";
+import { assertPublicAnonKey } from "./anon-key-guard.mjs";
 import { cspMetaContent, headersFile } from "./security-headers.mjs";
 import { cleanupVitestTmp, redirectVitestTmp } from "../../vitest.tmp";
 
@@ -53,6 +54,7 @@ export default defineConfig(({ command }) => {
       "@workoutlab/web build requires VITE_SUPABASE_ANON_KEY (AC-A10, NFR-AN-1): set it before building.",
     );
   }
+  if (command === "build") assertPublicAnonKey(process.env.VITE_SUPABASE_ANON_KEY!);
   const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : undefined;
 
   return {

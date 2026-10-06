@@ -297,6 +297,32 @@ describe("AC-A10 CSP", () => {
     },
     BUILD_TIMEOUT,
   );
+
+  const b64 = (o: object) => Buffer.from(JSON.stringify(o)).toString("base64url");
+  const servicePayload = b64({ role: "service_role", iss: "supabase" });
+  it.each([
+    ["an sb_secret_ key", "sb_secret_" + "A".repeat(32), "A".repeat(8)],
+    [
+      "a service_role JWT",
+      `${b64({ alg: "HS256", typ: "JWT" })}.${servicePayload}.sig`,
+      servicePayload,
+    ],
+  ])(
+    "T-0514a AC-3 a build with %s in VITE_SUPABASE_ANON_KEY fails without printing it",
+    (_name, key, body) => {
+      const failDir = mkdtempSync(join(tmpdir(), "wl-web-build-secretkey-"));
+      try {
+        const res = runViteBuild(failDir, SUPABASE_URL, key);
+        const out = `${res.stdout}\n${res.stderr}`;
+        expect(res.status).not.toBe(0);
+        expect(out).toContain("VITE_SUPABASE_ANON_KEY");
+        expect(out).not.toContain(body);
+      } finally {
+        rmSync(failDir, { recursive: true, force: true });
+      }
+    },
+    BUILD_TIMEOUT,
+  );
 });
 
 // D-0117 §4c / T-0390: markers of runtime code generation, which `script-src 'self'` blocks.
