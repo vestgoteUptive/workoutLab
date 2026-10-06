@@ -22,6 +22,9 @@ export async function signOutAndClearDevice(
   } catch {
     // Still clear the device.
   }
+  // Bumped again: a refresh started while `signOut` was awaited (an `online` event, an
+  // `onSynced` refetch) captured the first new generation while the user was still signed in.
+  invalidateCacheWrites();
   let cleared = true;
   try {
     const db = dbOf(deps);
