@@ -117,7 +117,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0402a | Deploy pipeline: `deploy.yml` wrangler direct upload of web + landing; branch previews behind `PREVIEWS_ENABLED` (signed-out until T-0402c), `main`→prod job wired but off until H-06; removes ci.yml's placeholder (D-0186 §1). Live AC needs H-18 | infra | T-0401 | blocked:H-18 (merged; live ACs only) | wl-build-infra |
-| T-0524 | Flaky repo-check: .github/scripts/supabase-prod-release.test.mjs 'T-0402b AC-1 plan is the default and read-only' intermittently exits 141 (SIGPIPE, a pipe closed early); seen twice on 2026-10-06 (T-0516 build, T-0508 merge gate) | infra | T-0402b | todo | wl-build-infra |
+| T-0524 | Flaky repo-check: .github/scripts/supabase-prod-release.test.mjs 'T-0402b AC-1 plan is the default and read-only' intermittently exits 141 (SIGPIPE, a pipe closed early); seen twice on 2026-10-06 (T-0516 build, T-0508 merge gate) | infra | T-0402b | doing | wl-build-infra |
 | T-0402d | Go-live at H-06: Free→Pro with spend cap on (gate 2), `site_url` → app host via keys-only PATCH, `PROD_DEPLOY_ENABLED`, first prod deploys verified (D-0186 §1) | infra | T-0402a, T-0402b, T-0402c, T-0403 | live (AC-6 human sign-in pending) | wl-build-infra |
 | T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | merged (live AC-7 needs H-24 redeploy) | wl-build-web |
 | T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | merged (live AC-5 needs H-24 redeploy) | wl-build-web |
@@ -140,6 +140,6 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | ready | wl-build-backend |
+| T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | doing | wl-build-backend |
 | T-0522 | Library breadth: nine bodyweight-only exercises (one per area), original text; no ExerciseDB content; GitHub #32 (D-0192) | content | — | todo (needs H-26) | wl-build-content |
 | T-0523 | Regenerate supabase/seed.sql for T-0522; prod apply is a human release at merge (D-0192) | backend | T-0522 | todo (needs H-26) | wl-build-backend |
