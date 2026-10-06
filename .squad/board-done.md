@@ -293,3 +293,15 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0403 | Release check: security review, e2e happy path, go/no-go | qa | T-0301…T-0309, T-0402a, T-0402b, T-0402c, T-0404b | done (GO with conditions, docs/security/go-live-review.md) | wl-release |
 | T-0506 | Record eu-west-1 as the prod region (decision + NFR-PRIV-1 wording; the spec names eu-north-1/eu-central-1) (T-0406 P1-a) | product | T-0406 | done (2026-10-06 groom: D-0190 §1 + docs/specs/non-functional.md NFR-PRIV-1; test half is T-0507) | wl-spec |
 | T-0508 | eslint: give infra/scripts/*.mjs node globals (process/fetch are no-undef, incl. auth-drift-check.mjs); fix the unused 'mailer_otp_length' in auth-drift-check.test.mjs; note rls-coverage's accepted .from(ident) form (same-file `as const` array) in infra/deploy/README.md (T-0402c follow-ups) | infra | T-0402c | done | wl-build-infra |
+| T-0509 | auth-patch.mjs hardening: save a full filtered snapshot of the live auth config before --apply (so any others_sha256 move can be diffed), and retry the post-apply read-back with backoff (Supabase is eventually consistent; T-0404b's first read-back showed stale values) (T-0404b follow-up) | infra | T-0404b, T-0508 | done | wl-build-infra |
+| T-0514a | web build fails if VITE_SUPABASE_ANON_KEY is an sb_secret_ key or a service_role JWT, never printing it (F-4; split from T-0514, D-0190 §5) | web-shell | T-0510 | done | wl-build-web |
+| T-0514b | Manual-deploy runbook in infra/deploy/README.md + infra/scripts/deploy-prod.sh (the human's go-live script, repo-relative) + tested Node bundle-secret-scan.mjs (F-4/F-7; split from T-0514, D-0190 §5) | infra | T-0508 | done | wl-build-infra |
+| T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | done | wl-build-infra |
+
+## Phase 5 — Iterate
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0516 | UF-08.1 engine `SessionInput.avoidAreas` (rule 6.1, treated like recovering); GitHub #33 (D-0191) | engine | — | done | wl-build-engine |
+| T-0519 | UF-08.2 engine `removeItem` — Remove drops without refill (rule 12.2); GitHub #33 (D-0191). After T-0516 (same package + engine-rules) | engine | T-0516 | done | wl-build-engine |
+| T-0520 | UF-08.1 "Skip today" area chips → `avoidAreas` in fit line, Suggest and UF-08.2 re-suggests; "Skipping today" line; GitHub #33 (D-0191) | web-feature:UF-08 | T-0516 | done | wl-build-web |
+| T-0521 | UF-08.2 Remove calls `removeItem` (no refill), id kept in `excludeIds`, "No exercises left" copy; GitHub #33 (D-0191) | web-feature:UF-08 | T-0519, T-0520 | done (merged; live after H-24 redeploy) | wl-build-web |

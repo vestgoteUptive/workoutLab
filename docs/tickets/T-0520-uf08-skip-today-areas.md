@@ -76,10 +76,4 @@ none (uses T-0516's engine input).
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0520` and cite UF-08.1 / UF-08.2.
 
 ## Build / accept log
-
-## Build / accept log (recorded by the orchestrator from the builder's hand-back, 2026-10-06)
-- UF-08.1 gets a "Skip today" group: helper "Sore or busy? Skipped areas stay out of this workout." and nine area toggle chips (3-column grid, ≥44 px), below Energy and above the fit line; time stepper, chips and Energy stay first in DOM/tab order.
-- Pressed chips → `SessionInput.avoidAreas` (fixed area order regardless of tap order) for the fit line, Suggest (hand-over, no extra suggest call) and every UF-08.2 re-suggest (shuffle, time chips). The key is omitted when none are pressed. State lives in the host: Back keeps chips pressed; a fresh `/session/setup` mount starts empty. All nine pressed → "Nothing fits in 30 min".
-- UF-08.2 shows "Skipping today: …" under the why chips (no control).
-- Tests: AC1–AC10 in `__tests__/skip-today.test.tsx` (13 new), AC11 the new e2e case in `tests/e2e/uf-08-setup.spec.ts` (axe clean, chips ≥44×44, no skipped-area primary row). Planted fault (drop the avoidAreas spread) → 8 of 13 red, restored.
-- Gates: UF-08 vitest 317/317; `-w typecheck lint test` 19/19 (web 3664); e2e uf-08-setup 33/33; repo-checks 278/0 (one T-0524 flake on first run); format, check-all green.
+Archived in `docs/tickets/log/T-0520.md` (D-0157).

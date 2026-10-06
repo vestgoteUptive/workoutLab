@@ -119,16 +119,12 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0402a | Deploy pipeline: `deploy.yml` wrangler direct upload of web + landing; branch previews behind `PREVIEWS_ENABLED` (signed-out until T-0402c), `main`→prod job wired but off until H-06; removes ci.yml's placeholder (D-0186 §1). Live AC needs H-18 | infra | T-0401 | blocked:H-18 (merged; live ACs only) | wl-build-infra |
 | T-0524 | Flaky repo-check: .github/scripts/supabase-prod-release.test.mjs 'T-0402b AC-1 plan is the default and read-only' intermittently exits 141 (SIGPIPE, a pipe closed early); seen twice on 2026-10-06 (T-0516 build, T-0508 merge gate) | infra | T-0402b | todo | wl-build-infra |
 | T-0402d | Go-live at H-06: Free→Pro with spend cap on (gate 2), `site_url` → app host via keys-only PATCH, `PROD_DEPLOY_ENABLED`, first prod deploys verified (D-0186 §1) | infra | T-0402a, T-0402b, T-0402c, T-0403 | live (AC-6 human sign-in pending) | wl-build-infra |
-| T-0509 | auth-patch.mjs hardening: save a full filtered snapshot of the live auth config before --apply (so any others_sha256 move can be diffed), and retry the post-apply read-back with backoff (Supabase is eventually consistent; T-0404b's first read-back showed stale values) (T-0404b follow-up) | infra | T-0404b, T-0508 | done | wl-build-infra |
 | T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | merged (live AC-7 needs H-24 redeploy) | wl-build-web |
 | T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | merged (live AC-5 needs H-24 redeploy) | wl-build-web |
 | T-0512 | Bump astro past GHSA-26w7-cxv4-gfx2 and the other critical/high advisories (build-time only; static output unaffected) (F-2) | landing | T-0511 | doing | wl-build-web |
 | T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | ready (groomed 2026-10-06; lane moved from backend) | wl-build-infra |
-| T-0514a | web build fails if VITE_SUPABASE_ANON_KEY is an sb_secret_ key or a service_role JWT, never printing it (F-4; split from T-0514, D-0190 §5) | web-shell | T-0510 | done | wl-build-web |
-| T-0514b | Manual-deploy runbook in infra/deploy/README.md + infra/scripts/deploy-prod.sh (the human's go-live script, repo-relative) + tested Node bundle-secret-scan.mjs (F-4/F-7; split from T-0514, D-0190 §5) | infra | T-0508 | done | wl-build-infra |
 | T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | doing | wl-build-infra |
 | T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | ready (groomed 2026-10-06) | wl-build-backend |
-| T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | doing | wl-build-infra |
 
 ## CI fixes (any phase)
 Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `docs/ci/CI-T-09NN-*.md`. Built with the owning lane's flow; merged only after a green draft-PR run.
@@ -143,10 +139,6 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0516 | UF-08.1 engine `SessionInput.avoidAreas` (rule 6.1, treated like recovering); GitHub #33 (D-0191) | engine | — | done | wl-build-engine |
-| T-0519 | UF-08.2 engine `removeItem` — Remove drops without refill (rule 12.2); GitHub #33 (D-0191). After T-0516 (same package + engine-rules) | engine | T-0516 | done | wl-build-engine |
-| T-0520 | UF-08.1 "Skip today" area chips → `avoidAreas` in fit line, Suggest and UF-08.2 re-suggests; "Skipping today" line; GitHub #33 (D-0191) | web-feature:UF-08 | T-0516 | done | wl-build-web |
-| T-0521 | UF-08.2 Remove calls `removeItem` (no refill), id kept in `excludeIds`, "No exercises left" copy; GitHub #33 (D-0191) | web-feature:UF-08 | T-0519, T-0520 | doing | wl-build-web |
 | T-0517 | openapi SessionInput optional `avoidAreas` + regenerate api.gen.ts (D-0191 §3) — off the user path | data | T-0516 | ready | wl-build-data |
 | T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | todo | wl-build-backend |
 | T-0522 | Library breadth: nine bodyweight-only exercises (one per area), original text; no ExerciseDB content; GitHub #32 (D-0192) | content | — | todo (needs H-26) | wl-build-content |

@@ -101,7 +101,4 @@ None.
   and T-0514b (`infra/deploy/README.md`) wait for it.
 
 ## Build / accept log
-- Built on c0c2bae. Red on unfixed config: repo-scripts-lint AC-1 failed with `no-undef` in infra/scripts/{auth-drift-check:72,106,107; auth-patch:139..; cost-check:40..} and the unused `mailer_otp_length`.
-- AC-1/2/5: `.github/scripts/repo-scripts-lint.test.mjs`. AC-4: existing script tests green in test:repo-checks (278 pass). `eslint` is loaded by dynamic import because check-all AC23 allows only node: static imports.
-- AC-3 planted fault: original eslint.config.mjs restored over the new block, AC-1 and AC-2 failed (2 fail); restored with cp.
-- Gate: typecheck/lint/test 18/19 green; web `ready-start` AC-5 retry flaked under load, passes in isolation (UF-08 304/304) and on main. test:repo-checks, format:check, check-all green.
+Archived in `docs/tickets/log/T-0508.md` (D-0157).

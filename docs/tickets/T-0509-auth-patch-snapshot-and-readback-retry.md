@@ -123,9 +123,4 @@ None.
   local and gitignored, and the human can delete it after review.
 
 ## Build / accept log
-
-- 2026-10-06 build (infra). Branch base c308672 (main). `auth-patch.mjs`: filtered before/after snapshots (`infra/auth/.snapshots/<ref>-<ts>-before|after.json`, 0600, `snapshotOf` reuses `showValue`), `cannot write snapshot; nothing sent` exit 1 before PATCH, read-back retry (5 GETs, sleeps 1/2/4/8 s, `read-back settled after n tries`), injectable `sleep`/`writeFile`/`mkdir`/`now`; CLI flags unchanged. `.gitignore` entry added. Test helpers `exec`/`execT` now inject in-memory IO (existing test bodies untouched).
-- AC→test: AC-1..AC-7 = `T-0509 AC-1`..`AC-7` in `.github/scripts/auth-patch.test.mjs` (AC-5 has two tests).
-- Red on main's script: 6 of the new tests fail (AC-1, AC-2, AC-4, AC-5 x2, AC-6); AC-3, AC-7 pass trivially (nothing written / ignore rule is new in tree).
-- AC-8 planted faults (backup copy, restored with cp): snapshot write moved after PATCH → AC-1, AC-2 fail; READBACK_TRIES=1 → AC-4, AC-5 x2, AC-6 fail.
-- Gate: auth-patch tests 23/23, test:repo-checks green, format:check green, check-all.mjs exit 0 (.gitignore entry sits above the Terraform block, which T-0400 AC-1 requires to end the file).
+Archived in `docs/tickets/log/T-0509.md` (D-0157).
