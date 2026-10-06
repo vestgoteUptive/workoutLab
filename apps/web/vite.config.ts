@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 import type { Plugin } from "vite";
 import { wlIconsPlugin } from "./scripts/gen-icons.mjs";
+import { cspMetaContent, headersFile } from "./security-headers.mjs";
 import { cleanupVitestTmp, redirectVitestTmp } from "../../vitest.tmp";
 
 // D-0159: keep vitest's module-transform temp dirs out of /tmp and remove them at run end.
@@ -20,18 +21,22 @@ const bg: string = tokensJson.color.bg!;
 /** Injects the theme-color meta tag and the CSP meta tag at build time only (AC-A2 §body css
  * comes from tokens.css; AC-A3 theme-color; AC-A10 CSP). Neither literal ever lives in the
  * source `index.html` (AC-A4): this only rewrites the emitted `dist/index.html`. */
-function buildMetaPlugin(connectSrc: string): Plugin {
+function buildMetaPlugin(supabaseOrigin: string | undefined): Plugin {
   return {
     name: "wl-build-meta",
     apply: "build",
     transformIndexHtml(html) {
-      const csp = `default-src 'self'; connect-src ${connectSrc}; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'`;
+      const csp = cspMetaContent(supabaseOrigin);
       return html.replace(
         "</head>",
         `  <meta name="theme-color" content="${bg}" />\n` +
           `  <meta http-equiv="Content-Security-Policy" content="${csp}" />\n` +
           `</head>`,
       );
+    },
+    // T-0510: Cloudflare Pages reads dist/_headers (HSTS, full CSP with frame-ancestors, ...).
+    generateBundle() {
+      this.emitFile({ type: "asset", fileName: "_headers", source: headersFile(supabaseOrigin) });
     },
   };
 }
@@ -48,7 +53,7 @@ export default defineConfig(({ command }) => {
       "@workoutlab/web build requires VITE_SUPABASE_ANON_KEY (AC-A10, NFR-AN-1): set it before building.",
     );
   }
-  const connectSrc = supabaseUrl ? `'self' ${new URL(supabaseUrl).origin}` : "'self'";
+  const supabaseOrigin = supabaseUrl ? new URL(supabaseUrl).origin : undefined;
 
   return {
     plugins: [
@@ -83,7 +88,7 @@ export default defineConfig(({ command }) => {
           globPatterns: ["**/*.{js,css,html,webmanifest,png}"],
         },
       }),
-      buildMetaPlugin(connectSrc),
+      buildMetaPlugin(supabaseOrigin),
     ],
     build: {
       manifest: true,

@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer, type ViteDevServer } from "vite";
 import { tokens } from "@workoutlab/design-tokens";
+import { cspDirectives } from "./security-headers.mjs";
 
 const webRoot = dirname(fileURLToPath(import.meta.url));
 const viteBin = resolve(webRoot, "node_modules/vite/bin/vite.js");
@@ -458,4 +459,134 @@ describe("D-0045 §8 icons in dev", () => {
     },
     BUILD_TIMEOUT,
   );
+});
+
+// T-0510 (D-0190 §2): dist/_headers, one CSP source for header and meta.
+/** Parses the `/*` block of a Cloudflare `_headers` file; names are lower-cased. */
+function parseHeaders(text: string): Map<string, string> {
+  const lines = text.split("\n");
+  const start = lines.findIndex((l) => l.trim() === "/*");
+  if (start < 0) throw new Error("no /* block in _headers");
+  const out = new Map<string, string>();
+  for (const l of lines.slice(start + 1)) {
+    if (!/^\s+\S/.test(l)) break;
+    const i = l.indexOf(":");
+    out.set(l.slice(0, i).trim().toLowerCase(), l.slice(i + 1).trim());
+  }
+  return out;
+}
+const directiveSet = (csp: string) =>
+  csp
+    .split(";")
+    .map((d) => d.trim())
+    .filter(Boolean);
+const FULL_CSP = [
+  "default-src 'self'",
+  `connect-src 'self' ${SUPABASE_URL}`,
+  "img-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+];
+
+describe("T-0510 security headers", () => {
+  it("T-0510 AC-1 dist/_headers has a /* block with the complete CSP", () => {
+    const h = parseHeaders(read("_headers"));
+    const csp = h.get("content-security-policy")!;
+    expect(directiveSet(csp).sort()).toEqual([...FULL_CSP].sort());
+    expect(csp).not.toContain("unsafe-eval");
+    expect(csp).not.toContain("*");
+    expect(csp).not.toContain("wss:");
+  });
+
+  it("T-0510 AC-2 meta CSP is the header CSP minus frame-ancestors", () => {
+    const meta = /<meta http-equiv="Content-Security-Policy" content="([^"]+)"/.exec(
+      indexHtml,
+    )?.[1];
+    const header = parseHeaders(read("_headers")).get("content-security-policy")!;
+    expect(directiveSet(meta!).sort()).toEqual(
+      directiveSet(header)
+        .filter((d) => !d.startsWith("frame-ancestors"))
+        .sort(),
+    );
+    expect(meta).not.toContain("frame-ancestors");
+  });
+
+  it("T-0510 AC-2 cspDirectives returns the nine directives in order", () => {
+    expect(cspDirectives("https://x.supabase.co")).toEqual([
+      "default-src 'self'",
+      "connect-src 'self' https://x.supabase.co",
+      "img-src 'self' data:",
+      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ]);
+  });
+
+  it("T-0510 AC-3 the other five headers are exact", () => {
+    const h = parseHeaders(read("_headers"));
+    expect([...h.keys()].sort()).toEqual(
+      [
+        "content-security-policy",
+        "permissions-policy",
+        "referrer-policy",
+        "strict-transport-security",
+        "x-content-type-options",
+        "x-frame-options",
+      ].sort(),
+    );
+    expect(h.get("strict-transport-security")).toBe("max-age=31536000");
+    expect(h.get("x-frame-options")).toBe("DENY");
+    expect(h.get("x-content-type-options")).toBe("nosniff");
+    expect(h.get("referrer-policy")).toBe("strict-origin-when-cross-origin");
+    const items = h
+      .get("permissions-policy")!
+      .split(",")
+      .map((i) => i.trim());
+    expect(items.sort()).toEqual(
+      [
+        "camera=()",
+        "microphone=()",
+        "geolocation=()",
+        "payment=()",
+        "usb=()",
+        "screen-wake-lock=(self)",
+      ].sort(),
+    );
+  });
+
+  it("T-0510 AC-4 _headers is not precached", () => {
+    const sw = read("sw.js");
+    const urls = [...sw.matchAll(/url:"([^"]+)"/g)].map((m) => m[1]!);
+    expect(urls.length).toBeGreaterThan(0);
+    expect(urls.filter((u) => u.includes("_headers"))).toEqual([]);
+    expect(urls).toContain("index.html");
+  });
+
+  it("T-0510 AC-5 the app has nothing the new directives would block", () => {
+    const files: string[] = [resolve(webRoot, "index.html")];
+    const walk = (dir: string) => {
+      for (const e of readdirSync(dir, { withFileTypes: true })) {
+        const p = join(dir, e.name);
+        if (e.isDirectory()) walk(p);
+        else if (/\.tsx?$/.test(e.name) && !/\.(test|spec)\.tsx?$/.test(e.name)) files.push(p);
+      }
+    };
+    walk(resolve(webRoot, "src"));
+    const bad: string[] = [];
+    for (const f of files) {
+      const src = readFileSync(f, "utf8");
+      if (/<(base|object|embed)\b/i.test(src)) bad.push(`${f}: base/object/embed`);
+      if (/<form\b[^>]*\baction\s*=\s*\{?\s*["'`]?\s*https?:/i.test(src)) {
+        bad.push(`${f}: cross-origin form action`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
 });
