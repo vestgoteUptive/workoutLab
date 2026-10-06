@@ -5,7 +5,7 @@ lane: design
 screens: [UF-01.5, UF-11.4]
 decisions: [D-0188, D-0046, D-0017, D-0135]
 deps: [T-0406]
-status: review (needs H-21, copy re-approval)
+status: done
 groomed: 2026-10-05
 ---
 <!-- Groomed 2026-10-05 by product-owner against main ccbae43 (D-0188 §5). Build flow:
