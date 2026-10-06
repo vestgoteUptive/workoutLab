@@ -125,7 +125,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0525 | One vite/vitest variant across the workspace: after T-0512 (astro 7 → vite 8), engine/shared/exercises/design-tokens resolve vitest against vite 8 while web+landing pin vite 6; the shared vitest config imports through hoisting. Add an explicit vite pin per package or a root-level override so there is one vitest variant (T-0512 build finding) | infra | T-0512 | todo | wl-build-infra |
 | T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | merged (AC-4 live verify_jwt read pending: blocked for agents) | wl-build-infra |
 | T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | blocked:H-25 (run A done, branch not merged until applied) | wl-build-infra |
-| T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | doing | wl-build-backend |
+| T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | merged (fresh-reset pgTAP run pending: db reset blocked for agents) | wl-build-backend |
 
 ## CI fixes (any phase)
 Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `docs/ci/CI-T-09NN-*.md`. Built with the owning lane's flow; merged only after a green draft-PR run.
