@@ -10,17 +10,19 @@
 // T-0205 adds rule 14 (prefill); T-0219 costs timed sets at the planned duration (D-0092);
 // T-0224 adds rule 12.1 applySwap (D-0093); T-0214 makes the rule 7.2 rep slots follow the
 // profile goal (D-0061 §1, D-0095); T-0226 makes rule 12 fitsBudget count the back-off set
-// applySwap re-adds (D-0105).
+// applySwap re-adds (D-0105); T-0516 adds rule 6.1 avoidAreas and T-0519 rule 12.2 removeItem
+// (D-0191).
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
 export { localDate, windowOf, addDays, dayDiff, WINDOW_DAYS } from "./time.js";
 export { areaLoads, recoveringAreas, RECOVERY_THRESHOLD, RECOVERY_WINDOW_MS } from "./load.js";
 export { deriveTargets, previewTargets, BASE_TARGETS } from "./targets.js";
 export { balance, deficitOf, coverageStepOf, ATTENTION_DEFICIT, ATTENTION_DAYS, } from "./balance.js";
-export { suggest, isEligible, rankCandidates, itemCostS, setCostS, availableS, WORK_S, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, MAX_ITEMS, MAX_ITEMS_PER_AREA, REP_SLOTS, DEFAULT_GOAL, } from "./session.js";
+export { suggest, isEligible, rankCandidates, avoidedAreas, itemCostS, setCostS, availableS, WORK_S, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, MAX_ITEMS, MAX_ITEMS_PER_AREA, REP_SLOTS, DEFAULT_GOAL, } from "./session.js";
 export { getsBackoff } from "./cost.js";
 export { rankSwaps, muscleMatch } from "./swaps.js";
 export { applySwap } from "./apply-swap.js";
+export { removeItem } from "./remove-item.js";
 export { generateWarmup, WARMUP_COST_S, WARMUP_MOVES, WARMUP_MOVE_S } from "./warmup.js";
 export { floorInc, DEFAULT_INCREMENT_KG, BACKOFF_FACTOR, LOW_TRIM_FROM_SETS, LOW_TRIM_TO_SETS, } from "./energy.js";
 export { prefill, plannedDurationS, floor5, REENTRY_GAP_DAYS, HOLD_GAP_DAYS, TIMED_STEP_S, TIMED_MAX_S, TIMED_MIN_S, } from "./prefill.js";

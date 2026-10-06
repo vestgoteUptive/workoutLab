@@ -15,7 +15,8 @@ import { SWAP_REASONS } from "./swaps.js";
 import { dayDiff, instantMs, localDate } from "./time.js";
 import { AREAS, } from "./types.js";
 import { WARMUP_COST_S } from "./warmup.js";
-function copyItem(i) {
+/** A deep copy of one plan item (shared with rule 12.2 `removeItem`). */
+export function copyItem(i) {
     return {
         exerciseId: i.exerciseId,
         isMain: i.isMain,

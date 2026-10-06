@@ -123,6 +123,12 @@ export interface SessionInput {
     mainLiftId: string | null;
     pinnedIds: readonly string[];
     excludeIds: readonly string[];
+    /**
+     * Rule 6.1 (UF-08.1 "Skip today", D-0191 §2): areas this workout leaves out, treated like a
+     * recovering area for selection only. Absent means `[]`; an unknown area is a `RangeError`
+     * and duplicates are ignored.
+     */
+    avoidAreas?: readonly Area[];
 }
 export type PrefillKind = "first_time" | "carry" | "reentry" | "hold_after_break" | "increase" | "deload" | "hold" | "add_rep";
 export type SwapReason = "equipment_taken" | "discomfort" | "variety" | "short_on_time";
