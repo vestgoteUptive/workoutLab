@@ -146,3 +146,4 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 | T-0527 | C-02 tab bar fixed to the viewport bottom, safe-area padded, spacer + scroll padding so nothing hides under it; viewport-fit=cover; GitHub #36 (D-0196) | web-shell | — | doing | wl-build-web |
 | T-0528 | lib/account signOutAndClearDevice (local-scope sign-out, clear this user's caches + wl- keys, keep queue) and hasUnsyncedWork; GitHub #35 part 1 (D-0195) | web-shell | — | doing | wl-build-web |
 | T-0529 | UF-11.2 "Account and sign out" header link; UF-11.4 Sign out under the email, unsynced confirm, Signing out…, lands on /welcome; GitHub #35 part 2 (D-0195) | web-feature:UF-11 | T-0528 | todo | wl-build-web |
+| T-0530 | Sign-out must cancel or await an in-flight cache refresh so it can't write the user's rows back after the clear (T-0528 review follow-up, D-0195) | web-shell | T-0528 | ready | wl-build-web |
