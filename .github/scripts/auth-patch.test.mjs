@@ -13,6 +13,8 @@ import { run as driftRun } from "../../infra/scripts/auth-drift-check.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const spec = JSON.parse(readFileSync(SPEC_PATH, "utf8"));
+// T-0515: these scenarios replay the pre-narrowing prod (T-0402c/T-0404b); the live expected list is now narrower.
+const legacySpec = { ...spec, expected: { ...spec.expected, uri_allow_list: `${"http://localhost:3000/**,http://localhost:5173/**,"}https://app.workout.vestgote.com/**,https://*.workoutlab-web.pages.dev/**` } };
 const REF = spec.project_ref;
 const PREVIEW = "https://*.workoutlab-web.pages.dev/**";
 const LIVE_LIST = "http://localhost:3000/**,https://app.workout.vestgote.com/**,http://localhost:5173/**";
@@ -184,7 +186,7 @@ test("T-0402c AC-6 drift check: exactly one difference before the apply, none af
   const env = { SUPABASE_ACCESS_TOKEN: "tok-SENTINEL", GOOGLE_OAUTH_CLIENT_ID: live.external_google_client_id };
   const drift = async (cfg) => {
     const out = [];
-    const code = await driftRun({ fetchImpl: async () => ({ status: 200, json: async () => cfg }), env, stdout: (s) => out.push(s), spec });
+    const code = await driftRun({ fetchImpl: async () => ({ status: 200, json: async () => cfg }), env, stdout: (s) => out.push(s), spec: legacySpec });
     return { code, out };
   };
   const before = await drift(live);
@@ -326,7 +328,7 @@ test("T-0404b AC-5 after the apply the extended drift check exits 0", async () =
     fetchImpl: async () => ({ status: 200, json: async () => server.state() }),
     env: { ...ENV, GOOGLE_OAUTH_CLIENT_ID: fixture.external_google_client_id },
     stdout: (x) => out.push(x),
-    spec,
+    spec: legacySpec,
   });
   assert.equal(code, 0, out.join("\n"));
 });
