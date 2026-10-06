@@ -111,7 +111,7 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0455 | e2e guard polish (T-0436 review): check backstop hits after in-flight requests settle in the supabaseGuard auto fixture (a late read is missed today); source-rules match any `.allowBackstop(`/`.allow(` receiver, not only the guard names; make the test.fail() backstop tests assert the failure is a backstop hit ; guard-source-check should also flag `export … from` and dynamic `import("@playwright/test")` value use (T-0356 review) | qa | T-0436 | todo | wl-build-qa |
 | T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | todo | wl-build-web |
 | T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | todo | wl-build-web |
-| T-0499 | UF-11 offline.test.tsx: the cache-first test's real refreshAll leaks supabase.from calls into the next test (false AC-B6 offline failure, pre-existing, 3/15 on main); mount-stability.test.tsx has a related baseline-count race since T-0471 (T-0481 review finding) | web-feature:UF-11 | — | todo | wl-build-web |
+| T-0499 | UF-11 offline.test.tsx: the cache-first test's real refreshAll leaks supabase.from calls into the next test (false AC-B6 offline failure, pre-existing, 3/15 on main); mount-stability.test.tsx has a related baseline-count race since T-0471 (T-0481 review finding) | web-feature:UF-11 | — | doing (blocks green CI → automatic deploys) | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -140,6 +140,10 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | doing | wl-build-backend |
+| T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | merged (reaches prod with the next function release) | wl-build-backend |
 | T-0522 | Library breadth: nine bodyweight-only exercises (one per area), original text; no ExerciseDB content; GitHub #32 (D-0192) | content | — | todo (needs H-26) | wl-build-content |
 | T-0523 | Regenerate supabase/seed.sql for T-0522; prod apply is a human release at merge (D-0192) | backend | T-0522 | todo (needs H-26) | wl-build-backend |
+| T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | ready | wl-build-web |
+| T-0527 | C-02 tab bar fixed to the viewport bottom, safe-area padded, spacer + scroll padding so nothing hides under it; viewport-fit=cover; GitHub #36 (D-0196) | web-shell | — | ready | wl-build-web |
+| T-0528 | lib/account signOutAndClearDevice (local-scope sign-out, clear this user's caches + wl- keys, keep queue) and hasUnsyncedWork; GitHub #35 part 1 (D-0195) | web-shell | — | ready | wl-build-web |
+| T-0529 | UF-11.2 "Account and sign out" header link; UF-11.4 Sign out under the email, unsynced confirm, Signing out…, lands on /welcome; GitHub #35 part 2 (D-0195) | web-feature:UF-11 | T-0528 | todo | wl-build-web |
