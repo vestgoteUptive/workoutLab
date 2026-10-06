@@ -111,7 +111,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0455 | e2e guard polish (T-0436 review): check backstop hits after in-flight requests settle in the supabaseGuard auto fixture (a late read is missed today); source-rules match any `.allowBackstop(`/`.allow(` receiver, not only the guard names; make the test.fail() backstop tests assert the failure is a backstop hit ; guard-source-check should also flag `export … from` and dynamic `import("@playwright/test")` value use (T-0356 review) | qa | T-0436 | todo | wl-build-qa |
 | T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | todo | wl-build-web |
 | T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | todo | wl-build-web |
-| T-0499 | UF-11 offline.test.tsx: the cache-first test's real refreshAll leaks supabase.from calls into the next test (false AC-B6 offline failure, pre-existing, 3/15 on main); mount-stability.test.tsx has a related baseline-count race since T-0471 (T-0481 review finding) | web-feature:UF-11 | — | doing (blocks green CI → automatic deploys) | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -123,7 +122,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0512 | Bump astro past GHSA-26w7-cxv4-gfx2 and the other critical/high advisories (build-time only; static output unaffected) (F-2) | landing | T-0511 | built (astro 5→7); merge after the H-24 redeploy | wl-build-web |
 | T-0525 | One vite/vitest variant across the workspace: after T-0512 (astro 7 → vite 8), engine/shared/exercises/design-tokens resolve vitest against vite 8 while web+landing pin vite 6; the shared vitest config imports through hoisting. Add an explicit vite pin per package or a root-level override so there is one vitest variant (T-0512 build finding) | infra | T-0512 | todo | wl-build-infra |
 | T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | merged (AC-4 live verify_jwt read pending: blocked for agents) | wl-build-infra |
-| T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | blocked:H-25 (run A done, branch not merged until applied) | wl-build-infra |
 | T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | merged (fresh-reset pgTAP run pending: db reset blocked for agents) | wl-build-backend |
 
 ## CI fixes (any phase)
@@ -143,7 +141,5 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 | T-0522 | Library breadth: nine bodyweight-only exercises (one per area), original text; no ExerciseDB content; GitHub #32 (D-0192) | content | — | doing | wl-build-content |
 | T-0523 | Regenerate supabase/seed.sql for T-0522; prod apply is a human release at merge (D-0192) | backend | T-0522 | todo | wl-build-backend |
 | T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | ready | wl-build-web |
-| T-0527 | C-02 tab bar fixed to the viewport bottom, safe-area padded, spacer + scroll padding so nothing hides under it; viewport-fit=cover; GitHub #36 (D-0196) | web-shell | — | doing | wl-build-web |
-| T-0528 | lib/account signOutAndClearDevice (local-scope sign-out, clear this user's caches + wl- keys, keep queue) and hasUnsyncedWork; GitHub #35 part 1 (D-0195) | web-shell | — | doing | wl-build-web |
 | T-0529 | UF-11.2 "Account and sign out" header link; UF-11.4 Sign out under the email, unsynced confirm, Signing out…, lands on /welcome; GitHub #35 part 2 (D-0195) | web-feature:UF-11 | T-0528 | todo | wl-build-web |
 | T-0530 | Sign-out must cancel or await an in-flight cache refresh so it can't write the user's rows back after the clear (T-0528 review follow-up, D-0195) | web-shell | T-0528 | ready | wl-build-web |

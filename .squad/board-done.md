@@ -249,6 +249,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0336 | check-lane-paths: pick the diff base nearest HEAD — a stale `origin/main` behind local `main` makes a UF-10-only branch report `.squad/board.md: lane-path-not-owned` (loud, not silent; CI unaffected) — T-0320 review; folds in T-0337 (D-0183 §1) | infra | T-0320 | done | wl-build-infra |
 | T-0337 | check-lane-paths: fail loudly when `CI=true` on a ticket branch and no merge base resolves (today exit 0 with a note, per AC-8) — T-0320 review | infra | T-0320 | folded → T-0336 (D-0183 §1) | wl-build-infra |
 | T-0482 | UF-02.1: Today reflects a check-in Accept without a remount (C-01 targets, suggestion): slot `onAnswered` → `useToday(…, revision)` cache-only re-read (D-0181 §2) | web-feature:UF-02 | T-0481 | done | wl-build-web |
+| T-0499 | UF-11 offline.test.tsx: the cache-first test's real refreshAll leaks supabase.from calls into the next test (false AC-B6 offline failure, pre-existing, 3/15 on main); mount-stability.test.tsx has a related baseline-count race since T-0471 (T-0481 review finding) | web-feature:UF-11 | — | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
@@ -298,6 +299,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0514b | Manual-deploy runbook in infra/deploy/README.md + infra/scripts/deploy-prod.sh (the human's go-live script, repo-relative) + tested Node bundle-secret-scan.mjs (F-4/F-7; split from T-0514, D-0190 §5) | infra | T-0508 | done | wl-build-infra |
 | T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | done | wl-build-infra |
 | T-0524 | Flaky repo-check: .github/scripts/supabase-prod-release.test.mjs 'T-0402b AC-1 plan is the default and read-only' intermittently exits 141 (SIGPIPE, a pipe closed early); seen twice on 2026-10-06 (T-0516 build, T-0508 merge gate) | infra | T-0402b | done | wl-build-infra |
+| T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | done | wl-build-infra |
 
 ## Phase 5 — Iterate
 | ID | Title | Lane | Deps | Status | Flow |
@@ -307,3 +309,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0520 | UF-08.1 "Skip today" area chips → `avoidAreas` in fit line, Suggest and UF-08.2 re-suggests; "Skipping today" line; GitHub #33 (D-0191) | web-feature:UF-08 | T-0516 | done | wl-build-web |
 | T-0521 | UF-08.2 Remove calls `removeItem` (no refill), id kept in `excludeIds`, "No exercises left" copy; GitHub #33 (D-0191) | web-feature:UF-08 | T-0519, T-0520 | done (merged; live after H-24 redeploy) | wl-build-web |
 | T-0517 | openapi SessionInput optional `avoidAreas` + regenerate api.gen.ts (D-0191 §3) — off the user path | data | T-0516 | done | wl-build-data |
+| T-0527 | C-02 tab bar fixed to the viewport bottom, safe-area padded, spacer + scroll padding so nothing hides under it; viewport-fit=cover; GitHub #36 (D-0196) | web-shell | — | done | wl-build-web |
+| T-0528 | lib/account signOutAndClearDevice (local-scope sign-out, clear this user's caches + wl- keys, keep queue) and hasUnsyncedWork; GitHub #35 part 1 (D-0195) | web-shell | — | done | wl-build-web |
