@@ -2,6 +2,7 @@
 // `wl-` key. The queue (`sessions`, `sets`) stays whole: D-0045 §6, NFR-OFF-4.
 import type { Table } from "dexie";
 import { clientOf, dbOf, localStorageOf, sessionStorageOf, type AccountDeps } from "./deps.js";
+import { invalidateCacheWrites } from "../offline/cache-generation.js";
 import { deleteUserRows, removePrefixedKeys } from "./local-data.js";
 
 const QUEUE_TABLES = new Set(["sessions", "sets"]);
@@ -12,6 +13,9 @@ export async function signOutAndClearDevice(
   { userId }: { userId: string },
   deps: AccountDeps = {},
 ): Promise<{ cleared: boolean }> {
+  // T-0530: a cache refresh already in flight must drop its rows instead of writing them after the
+  // clear below. Bumped first, so nothing that settles from here on can write.
+  invalidateCacheWrites();
   try {
     // An `{ error }` (offline) is ignored: supabase-js has removed the local session anyway.
     await clientOf(deps).auth.signOut({ scope: "local" });
