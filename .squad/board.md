@@ -126,9 +126,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 | T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | ready (groomed 2026-10-06; lane moved from backend) | wl-build-infra |
 | T-0514a | web build fails if VITE_SUPABASE_ANON_KEY is an sb_secret_ key or a service_role JWT, never printing it (F-4; split from T-0514, D-0190 §5) | web-shell | T-0510 | done | wl-build-web |
 | T-0514b | Manual-deploy runbook in infra/deploy/README.md + infra/scripts/deploy-prod.sh (the human's go-live script, repo-relative) + tested Node bundle-secret-scan.mjs (F-4/F-7; split from T-0514, D-0190 §5) | infra | T-0508 | done | wl-build-infra |
-| T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | ready | wl-build-infra |
+| T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | doing | wl-build-infra |
 | T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | ready (groomed 2026-10-06) | wl-build-backend |
-| T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | ready (groomed 2026-10-06, D-0190 §1) | wl-build-infra |
+| T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | doing | wl-build-infra |
 
 ## CI fixes (any phase)
 Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `docs/ci/CI-T-09NN-*.md`. Built with the owning lane's flow; merged only after a green draft-PR run.
