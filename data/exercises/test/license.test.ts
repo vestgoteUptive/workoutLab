@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadLibrary } from "../src/index.js";
-import { readInvalidFixture, validator } from "./helpers.js";
+import { readInvalidFixture, readLibraryRaw, validator } from "./helpers.js";
 
 const lib = loadLibrary();
 
@@ -23,6 +23,13 @@ describe("AC7 per-file licence (D-0005, D-0022 §7)", () => {
 
   it("every row has one of the two known source values", () => {
     for (const e of lib) expect(["wger", "workoutlab"]).toContain(e.source);
+  });
+
+  it("T-0522 AC4 no library row mentions ExerciseDB in any case (D-0192)", () => {
+    const hits = readLibraryRaw()
+      .filter(({ text }) => /exercisedb|exercise-db|exercise db/i.test(text))
+      .map(({ file }) => file);
+    expect(hits).toEqual([]);
   });
 
   it("fixture: source wger with license MIT fails the schema at /license with const", () => {

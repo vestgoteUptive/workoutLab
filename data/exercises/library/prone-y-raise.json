@@ -1,0 +1,21 @@
+{
+  "id": "prone-y-raise",
+  "name": "Prone Y raise",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "back": 1 },
+  "instructions": [
+    "Lie face down with your arms reaching forward and apart, making a Y shape.",
+    "Turn your thumbs up and lift your arms off the floor.",
+    "Pause briefly, then lower your arms with control."
+  ],
+  "cue": "Thumbs up, lift the arms in a Y",
+  "mistakes": ["Lifting with the neck instead of the upper back.", "Letting the arms drop fast."],
+  "variants": ["prone-swimmers", "superman"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

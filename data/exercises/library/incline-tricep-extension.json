@@ -1,0 +1,21 @@
+{
+  "id": "incline-tricep-extension",
+  "name": "Incline tricep extension",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "arms": 1 },
+  "instructions": [
+    "Place your hands on a wall or sturdy counter, narrower than shoulders, and step your feet back.",
+    "Keep your body straight and bend only your elbows, lowering your forehead toward your hands.",
+    "Press your forearms down to straighten your arms."
+  ],
+  "cue": "Elbows stay put, only the forearms move",
+  "mistakes": ["Letting the elbows flare out.", "Sagging at the hips."],
+  "variants": ["diamond-push-up", "kneeling-diamond-push-up"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

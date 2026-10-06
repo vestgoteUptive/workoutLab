@@ -15,7 +15,7 @@
   ],
   "cue": "One foot, rise and lower slowly",
   "mistakes": ["Using the wall to push instead of balance.", "Rushing the lowering phase."],
-  "variants": ["calf-raise", "calf-raise-hold"],
+  "variants": ["calf-raise", "calf-raise-hold", "ankle-hops"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

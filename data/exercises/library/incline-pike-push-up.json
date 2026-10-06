@@ -14,7 +14,7 @@
   ],
   "cue": "Pike shape, head to your hands",
   "mistakes": ["Rounding the lower back.", "Rushing the descent."],
-  "variants": ["pike-push-up", "wall-handstand-hold"],
+  "variants": ["pike-push-up", "wall-handstand-hold", "plank-shoulder-tap"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

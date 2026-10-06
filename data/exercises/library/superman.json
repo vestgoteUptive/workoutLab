@@ -14,7 +14,7 @@
   ],
   "cue": "Lift chest, arms and legs together",
   "mistakes": ["Yanking the head back.", "Only lifting the arms."],
-  "variants": ["bird-dog", "prone-swimmers", "reverse-plank-hold"],
+  "variants": ["bird-dog", "prone-swimmers", "reverse-plank-hold", "prone-y-raise"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

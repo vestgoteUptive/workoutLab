@@ -14,7 +14,7 @@
   ],
   "cue": "Push heels down, lift the hips",
   "mistakes": ["Arching the lower back at the top.", "Letting the knees fall inward."],
-  "variants": ["hip-thrust-bodyweight", "fire-hydrant"],
+  "variants": ["hip-thrust-bodyweight", "fire-hydrant", "donkey-kick"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

@@ -20,6 +20,54 @@ describe("AC11 every area is fillable in every required profile", () => {
   }
 });
 
+// T-0522 AC2 (D-0192 §3): bodyweight-only (`equipment: ["none"]`) breadth, one new row per area.
+// Exact counts: main fa4171e had chest 4, back 4 and 3 for every other area; each gained one.
+describe("T-0522 AC2 bodyweight-only primary count per area", () => {
+  const EXPECTED: Record<string, number> = {
+    chest: 5,
+    back: 5,
+    shoulders: 4,
+    arms: 4,
+    core: 4,
+    glutes: 4,
+    quads: 4,
+    hamstrings: 4,
+    calves: 4,
+  };
+  for (const area of AREAS) {
+    it(`${area}: ${EXPECTED[area]} exercises with equipment ["none"] at weight 1`, () => {
+      const count = exercises.filter(
+        (e) => e.equipment.length === 1 && e.equipment[0] === "none" && e.areas[area] === 1,
+      ).length;
+      expect(count).toBe(EXPECTED[area]);
+    });
+  }
+
+  it("T-0522 AC1 the library has 87 rows", () => {
+    expect(loadLibrary()).toHaveLength(87);
+  });
+
+  it("T-0522 AC5 at least two of the nine new rows are beginner and one is timed", () => {
+    const nine = [
+      "archer-push-up",
+      "prone-y-raise",
+      "plank-shoulder-tap",
+      "incline-tricep-extension",
+      "hollow-body-hold",
+      "donkey-kick",
+      "reverse-lunge",
+      "sliding-leg-curl",
+      "ankle-hops",
+    ];
+    const rows = nine.map((id) => exercises.find((e) => e.id === id));
+    for (const [i, r] of rows.entries()) expect(r, nine[i]).toBeDefined();
+    expect(rows.filter((r) => r?.level === "beginner").length).toBeGreaterThanOrEqual(2);
+    expect(rows.some((r) => r?.timed === true && typeof r.default_duration_s === "number")).toBe(
+      true,
+    );
+  });
+});
+
 describe("AC12 zero history, new beginner (UF-01.4)", () => {
   for (const profile of REQUIRED_PROFILES) {
     for (const area of AREAS) {
