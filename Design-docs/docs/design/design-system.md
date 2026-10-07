@@ -47,12 +47,23 @@ Dark, high-contrast, athletic. Big condensed numbers for anything read mid-set.
 
 - Display: **Big Shoulders Display** 700/800, uppercase for titles, numbers and timers. Token `--wl-font-display`: `"Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif`.
 - Body: **DM Sans** 400/500/700. Token `--wl-font-body`: `"DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
-- Fonts will be self-hosted (woff2), with no third-party font CDN, for offline use and privacy (D-0019). Until then, the stacks fall back to system fonts.
-- Labels: DM Sans 700, 11–12 px, uppercase, 0.08–0.1em tracking.
-- Focus mode numbers: 104–180 px.
+- Fonts are self-hosted (woff2), with no third-party font CDN, for offline use and privacy (D-0019): one variable `latin` file per family, `font-display: swap`, preloaded and precached. Spec: `docs/specs/visual-foundation.md` §1. Until that ships, the stacks fall back to system fonts.
+- Scale (spec: `docs/specs/visual-foundation.md` §3; sizes in `rem` in code):
+
+| Role | Font | Size / line height | Weight | Case |
+|---|---|---|---|---|
+| Page title `h1` | display | 32–40 px (`clamp`) / 1.0 | 800 | uppercase |
+| Section title `h2` | display | 24 px / 1.1 | 800 | uppercase |
+| Card label | body | 12 px / 1.33, 0.08em tracking, `text-muted` | 700 | uppercase |
+| Stat number | display | 28 px (34 px hero) / 1.0 | 800 | — |
+| Body | body | 16 px / 1.5 | 400 (500/700 for emphasis) | — |
+| Secondary | body | 14 px / 1.4, `text-muted` | 400 | — |
+| Caption | body | 13 px (never under 12) / 1.3, `text-muted` | 500 | — |
+| Focus mode numbers | display | 104–180 px | 800 | — |
 
 ## Layout & touch
 
-- Phone frame 390 × 844. Page padding 20–24 px. Card radius 16 px, buttons 14–18 px.
+- Phone frame 390 × 844. Page gutter 20 px (`.wl-page`, never under 16 px, wider when the safe-area inset is), content max width 640 px centred, 16 px between cards. Focus mode (UF-09) is full-bleed and sets its own padding. Spec: `docs/specs/visual-foundation.md` §2.
+- Card: `surface`, 1 px `line` border, radius 16 px, padding 16 px. Buttons radius 14 px: primary `accent` 54 px tall, secondary `surface-2` + `line-strong` 48 px. Text inputs and checkbox boxes use a `text-muted` boundary (3:1 non-text contrast); `line-strong` is decorative only (1.5:1).
 - Touch targets ≥ 44 px; primary buttons 54–64 px tall; Done set 200 px round.
 - Icons: 2 px stroke line icons. No emoji.
