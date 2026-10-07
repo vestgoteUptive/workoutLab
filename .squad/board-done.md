@@ -294,6 +294,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0496 | check-all.mjs: fail when a ticket file's AC/DoD text names a `pnpm --filter <pkg>` command with more than one script (the exact anti-pattern T-0490 fixes) — so it can't come back (T-0490 groom follow-up) | infra | T-0490 | done | wl-build-infra |
 | T-0497 | backend: add `.eq("user_id", ctx.userId)` to `loadSessionSets` (`_shared/repo.ts`) to match `loadHistoryWindow` — defence in depth if a service-role client is ever used (T-0210 follow-up; behaviour change, own ticket; don't run alongside T-0209/T-0218, same files) | backend | T-0210 | done | wl-build-backend |
 | T-0498 | landing: a fresh worktree's landing tests need `packages/design-tokens` built first (global-setup runs `astro build`; Layout.astro imports tokens.css) — add a landing `pretest` like web's, or a README line (T-0317 groom follow-up) | landing | T-0317 | done | wl-build-web |
+| T-0492 | UF-11 `__tests__/offline.test.tsx:112`: tighten `/^0?8:10$/` to `08:10` and drop the stale "renders 8:10" comment — after T-0471 merges (shared UF-11 lane) (T-0449 follow-up) | web-feature:UF-11 | T-0449, T-0471 | done | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |

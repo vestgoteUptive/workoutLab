@@ -42,3 +42,4 @@ AC-1..AC-3 hold · the UF-11 test folder green · `pnpm -w typecheck lint test` 
 `-w test:repo-checks` · commits start with `T-0492`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0492.md` (D-0157).
