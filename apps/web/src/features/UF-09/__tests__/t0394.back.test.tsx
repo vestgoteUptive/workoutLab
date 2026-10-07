@@ -142,14 +142,20 @@ describe("T-0394 AC-1 the guard is armed", () => {
   });
 
   it.each([
-    ["not on this device", async () => {}, "UF-09"],
-    ["ended", async () => seedSession({ ended_at: "2026-09-27T11:00:00.000Z" }), "UF-09"],
+    ["not on this device", async () => {}, "UF-09", /isn't on this device/],
+    [
+      "ended",
+      async () => seedSession({ ended_at: "2026-09-27T11:00:00.000Z" }),
+      "UF-09",
+      /has ended/,
+    ],
     [
       "stale",
       async () => seedSession({ started_at: new Date(NOW - 20 * 3600_000).toISOString() }),
       "UF-09",
+      /was started on/,
     ],
-  ])("host-level %s: no guard", async (name, setup, id) => {
+  ])("host-level %s: no guard", async (name, setup, id, title) => {
     if (name === "not on this device") window.history.replaceState(null, "", "/session/NOPE");
     else {
       window.localStorage.removeItem("wl-focus:S1");
@@ -159,6 +165,8 @@ describe("T-0394 AC-1 the guard is armed", () => {
     await renderAt();
     await flushReal();
     expect(screenId()).toBe(id);
+    // Only this state's own title passes (T-0462 AC-4): the three share one screen id.
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toMatch(title);
     expect(window.history.length).toBe(len);
     expect(guard()).not.toBe(true);
   });
