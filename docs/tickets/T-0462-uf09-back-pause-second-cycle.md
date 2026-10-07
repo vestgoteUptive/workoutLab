@@ -65,3 +65,9 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green plus `-w test:rep
 `uf-09-focus.spec.ts` green · commits start with `T-0462` and cite UF-09.9.
 
 ## Build / accept log
+
+### Build log (frontend-dev, e2e only; AC-4 vitest rows not done in this pass)
+- Added two rows to the T-0394 AC-6 describe in `tests/e2e/uf-09-focus.spec.ts`: AC-1/AC-2 (three Back→Resume→Back cycles, then one more Back leaves) and AC-3 (offline cycle).
+- Result: green on the unchanged guard; no bug found, no production change. `--repeat-each=5` on the new rows: 10/10. Whole spec: 14/14. `page.goBack()` is used; it may not apply Chromium's skippable-entry rule exactly like the Back button (limitation recorded; Alt+ArrowLeft not tried).
+- Planted fault (pushGuard skipped from its 3rd call, backup restored by `cp`): AC-1/AC-2 row red, AC-3 (one cycle) stays green as expected.
+- format:check and check-all green. Unit gate not run (no production change).
