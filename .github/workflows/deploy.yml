@@ -17,9 +17,10 @@ on:
 permissions:
   contents: read
 
+# M2 (T-0543): only previews (push) may be cancelled; a workflow_run (release + deploy) never is.
 concurrency:
   group: deploy-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'push' }}
 
 env:
   NODE_VERSION: "22"
@@ -94,7 +95,7 @@ jobs:
     needs: release
     # `branches: [main]` above matches the triggering run's head branch NAME, which a fork PR can
     # also call `main`. Only deploy a push to this repository's own main.
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true'
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -132,16 +133,30 @@ jobs:
   # and only on the guard, backup and release steps (check-deploy-workflow.mjs enforces it).
   release:
     name: release (prod Supabase, before the deploy)
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true'
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
+    # M5: both secrets live in this GitHub Environment (main only, no reviewers), not in repo secrets.
+    environment: production
     concurrency:
       group: prod-release
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
-      - uses: actions/setup-node@v4
+      # L1: never release a SHA that is not the current tip of main (re-runs, a `main` tag).
+      - name: Require head_sha is the tip of main
+        run: |
+          set -euo pipefail
+          git fetch --depth=1 origin main
+          tip="$(git rev-parse FETCH_HEAD)"
+          if [ "$tip" != "$HEAD_SHA" ]; then
+            echo "head_sha $HEAD_SHA is not the tip of main ($tip); not releasing" >&2
+            exit 1
+          fi
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: ${{ env.NODE_VERSION }}
       - name: Install postgres client and age (pinned)
@@ -156,6 +171,12 @@ jobs:
           echo "$RUNNER_TEMP/age-bin" >> "$GITHUB_PATH"
           "/usr/lib/postgresql/${PG_CLIENT_MAJOR}/bin/pg_dump" --version
           echo "/usr/lib/postgresql/${PG_CLIENT_MAJOR}/bin" >> "$GITHUB_PATH"
+      # L3: fetch the pinned CLI into the npx cache before any secret is in an environment.
+      - name: Prefetch supabase CLI (no secrets)
+        run: |
+          set -euo pipefail
+          v="$(sed -n 's/^CLI_VERSION="\(.*\)"/\1/p' infra/scripts/supabase-prod-release.sh)"
+          npx -y "supabase@$v" --version
       - name: Destructive-migration guard
         run: |
           set -euo pipefail
@@ -170,10 +191,10 @@ jobs:
           GITHUB_SHA_RELEASED: ${{ github.event.workflow_run.head_sha }}
           PROD_DB_URL: ${{ secrets.PROD_DB_URL }}
       - name: Upload encrypted backup (7 days)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: prod-backup-${{ github.event.workflow_run.head_sha }}
-          path: ${{ runner.temp }}/backup/backup-*.sql.age
+          path: ${{ runner.temp }}/backup/*.sql.age
           retention-days: 7
           if-no-files-found: error
       - name: Release plan

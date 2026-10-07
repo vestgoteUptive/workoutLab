@@ -111,6 +111,10 @@ export function check(dir = defaultDir) {
   const pv = jobs.preview;
   const pr = jobs.production;
 
+  // T-0543 M2: a workflow_run (release/deploy) must never be cancelled; only push (previews) may.
+  if (norm(wf.concurrency?.["cancel-in-progress"]) !== "${{ github.event_name == 'push' }}")
+    errs.push("T-0543 M2: workflow cancel-in-progress must be ${{ github.event_name == 'push' }}");
+
   // AC-1
   if (!pv) errs.push("AC-1: no preview job");
   else {
@@ -205,6 +209,18 @@ export function check(dir = defaultDir) {
     if (rl.concurrency?.group !== "prod-release") errs.push("T-0543 AC-1: release concurrency group must be prod-release");
     if (String(rl.concurrency?.["cancel-in-progress"]) !== "false")
       errs.push("T-0543 AC-1: release cancel-in-progress must be false");
+    if (rl.environment !== "production") errs.push("T-0543 M5: release must run in environment: production");
+    if (!norm(rl.if).includes("github.event.workflow_run.head_branch == 'main'"))
+      errs.push("T-0543 L1: release if lacks head_branch == 'main'");
+    for (const st of rl.steps ?? [])
+      if (st.uses && !/@[0-9a-f]{40}(\s|$)/.test(st.uses))
+        errs.push(`T-0543 L3: release action not pinned by SHA: ${st.uses}`);
+    const co = (rl.steps ?? []).find((st) => /^actions\/checkout@/.test(st.uses ?? ""));
+    if (!co || norm(co.with?.ref) !== "${{ github.event.workflow_run.head_sha }}")
+      errs.push("T-0543 L5: release checkout ref must be github.event.workflow_run.head_sha");
+    const tipIdx = (rl.steps ?? []).findIndex((st) => /origin main/.test(String(st.run ?? "")) && /HEAD_SHA/.test(String(st.run ?? "")));
+    const gIdx = (rl.steps ?? []).findIndex((st) => /migration-guard\.mjs/.test(String(st.run ?? "")));
+    if (tipIdx < 0 || (gIdx >= 0 && tipIdx > gIdx)) errs.push("T-0543 L1: release must check head_sha is the tip of main before the guard");
     if (rl.needs) errs.push("T-0543 AC-1: release must not wait on other jobs");
     const steps = rl.steps ?? [];
     const runs = steps.map((s) => String(s.run ?? ""));
@@ -221,6 +237,8 @@ export function check(dir = defaultDir) {
     if (order.every((v) => v >= 0) && order.some((v, i) => i && v <= order[i - 1]))
       errs.push("T-0543 AC-2: release steps must run guard, backup, upload, plan, apply in that order");
     const up = steps[at.upload];
+    if (up && !/^[^\n]*\/\*\.sql\.age$/.test(String(up.with?.path ?? "").trim()))
+      errs.push("T-0543 L5: backup upload path must be only *.sql.age");
     if (up && String(up.with?.["retention-days"]) !== "7") errs.push("T-0543 AC-4: backup upload needs retention-days: 7");
     const applyStep = steps[at.apply];
     if (applyStep && !/^\$\{\{\s*vars\.SUPABASE_PROD_REF\s*\}\}$/.test(String(applyStep.env?.CONFIRM_PROD_RELEASE ?? "")))

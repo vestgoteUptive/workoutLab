@@ -42,3 +42,8 @@ None to the API or the data model. Process change named by D-0201.
 - AC-7: `infra/README.md`, `docs/security/prod-backups.md`.
 - Tools: postgresql-client-17 (prod major 17 per supabase/config.toml) from PGDG; age 1.2.1 with sha256 pinned (hash computed by me from the GitHub download over TLS; owner may verify against upstream).
 - Gate: node --test on changed scripts green; test:repo-checks 342/342; format:check clean; check-all clean; check-deploy-workflow passed.
+
+### Rework log (security review, docs/security/T-0543-review.md)
+- M1 guard loose-matches `<digits>_*.sql` in the plan and fails on any non-conforming name (plan or disk); naming repo check = test over supabase/migrations. M2 workflow `cancel-in-progress: ${{ github.event_name == 'push' }}` + checker rule. M3 `redact_rows` in both scripts + tests. M4 string/dollar-quote-aware `scan()`, header only from real comments; red tests incl. `$$`. M5 `environment: production` + checker rule + README.
+- L1 tip-of-main step and `head_branch == 'main'` in both `if`s; L2 pg_dump uses PG* env (urldecoded), test; L3 release actions pinned by SHA, CLI prefetched before secrets; L4 seed scan (real seed passes); L5 checker rules for upload path and checkout ref. Planted-fault tests added for each rule.
+- Gate: see commit; node --test changed tests, test:repo-checks, format:check, check-all, check-deploy-workflow all green.

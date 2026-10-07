@@ -23,7 +23,7 @@ function run({ recipient, pgFailSchema = "", ageFail = false, args } = {}) {
   };
   stub(
     "pg_dump",
-    `echo "pg_dump $*" >> "${log}"\ncase "$*" in *--schema=${pgFailSchema || "NONE"}*) echo "permission denied SENTINEL-PW db-host.example.com" >&2; exit 1;; esac\necho "PLAINTEXT-DUMP-ROW"`,
+    `echo "pg_dump $*" >> "${log}"\necho "env $PGUSER $PGHOST $PGPORT $PGDATABASE pw=$PGPASSWORD" >> "${log}"\ncase "$*" in *--schema=${pgFailSchema || "NONE"}*) printf "permission denied SENTINEL-PW db-host.example.com\\nDETAIL:  Key (email)=(a@b.c) is duplicated.\\nFailing row contains (1, secret).\\n" >&2; exit 1;; esac\necho "PLAINTEXT-DUMP-ROW"`,
   );
   // Stub age: record args, write "ENC:" + stdin to the -o file; never to stdout.
   stub(
@@ -90,4 +90,21 @@ test("T-0543 AC-4 failing public dump or failing age fails the script", () => {
 
 test("T-0543 AC-4 bad sha is rejected", () => {
   assert.equal(run({ recipient: KEY + "\n", args: ["/tmp/x", "../../etc"] }).status, 2);
+});
+
+test("T-0543 L2 the password and host reach pg_dump only through PG* env, never argv", () => {
+  const r = run({ recipient: KEY + "\n" });
+  assert.equal(r.status, 0, r.stderr);
+  const argv = r.calls.filter((c) => c.startsWith("pg_dump"));
+  assert.ok(argv.length >= 1 && argv.every((c) => !/SENTINEL|db-host|postgresql:/.test(c)), argv.join("\n"));
+  assert.ok(r.calls.includes("env postgres.x db-host.example.com 5432 postgres pw=SENTINEL-PW"), r.calls.join("\n"));
+});
+
+test("T-0543 M3 DETAIL / Failing row / Key (..)=(..) lines are redacted from failure output", () => {
+  const r = run({ recipient: KEY + "\n", pgFailSchema: "public" });
+  const out = r.stdout + r.stderr;
+  assert.equal(r.status, 1);
+  assert.doesNotMatch(out, /a@b\.c|secret|SENTINEL-PW|db-host/);
+  assert.match(out, /DETAIL: <redacted>/);
+  assert.match(out, /Failing row contains <redacted>/);
 });

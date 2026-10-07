@@ -30,8 +30,12 @@ function setup() {
   return { dir, log };
 }
 
-function run(args, env = {}, script = SCRIPT) {
+function run(args, env = {}, script = SCRIPT, stubs = {}) {
   const { dir, log } = setup();
+  for (const [n, body] of Object.entries(stubs)) {
+    writeFileSync(join(dir, n), `#!/bin/sh\necho "${n} $*" >> "${log}"\n${body}\n`);
+    chmodSync(join(dir, n), 0o755);
+  }
   const r = spawnSync('bash', [script, ...args], {
     encoding: 'utf8',
     env: {
@@ -143,4 +147,17 @@ test('T-0543 AC-6 apply never waits on a prompt (--yes) and plan stays read-only
   assert.match(push, /--yes/);
   const plan = run([]);
   assert.ok(plan.calls.every((c) => !/--yes/.test(c)));
+});
+
+test('T-0543 M3 DETAIL, Failing row and Key lines from the CLI are redacted', () => {
+  const { dir } = setup();
+  const r = run(['apply'], { CONFIRM_PROD_RELEASE: REF }, SCRIPT, {
+    npx: `case "$*" in *"db push"*--yes*) printf "ERROR: duplicate key (SQLSTATE 23505)\\nDETAIL:  Key (email)=(a@b.c) already exists.\\nFailing row contains (1, secret-row).\\n"; exit 1;; *) echo ok;; esac`,
+  });
+  const out = r.stdout + r.stderr;
+  assert.equal(r.status, 1);
+  assert.doesNotMatch(out, /a@b\.c|secret-row/);
+  assert.match(out, /DETAIL: <redacted>/);
+  assert.match(out, /Failing row contains <redacted>/);
+  assert.ok(dir);
 });

@@ -28,7 +28,13 @@ hostport="${rest#*@}"
 db_pass="${userinfo#*:}"
 db_host="${hostport%%[:/]*}"
 esc() { printf '%s' "$1" | sed 's/[][\.*^$/&|]/\\&/g'; }
-mask() {
+# M3 (T-0543): the repo is public, so its logs are too. Postgres DETAIL lines carry row values.
+redact_rows() {
+  sed -e 's/^\([[:space:]]*DETAIL:\).*/\1 <redacted>/' \
+    -e 's/Failing row contains.*/Failing row contains <redacted>/' \
+    -e 's/Key (.*)=(.*/Key (<redacted>)=(<redacted>)/'
+}
+mask_secrets() {
   local p h
   p="$(esc "$db_pass")"
   h="$(esc "$db_host")"
@@ -36,11 +42,23 @@ mask() {
   elif [ -n "$db_pass" ]; then sed -e "s|$p|***|g"
   else cat; fi
 }
+mask() { redact_rows | mask_secrets; }
+
+# L2: connection settings and the password go through the environment, never argv.
+urldecode() { printf '%b' "${1//%/\\x}"; }
+db_user="$(urldecode "${userinfo%%:*}")"
+PGPASSWORD="$(urldecode "$db_pass")"
+PGHOST="$db_host"
+db_rest="${hostport#*:}"
+if [ "$db_rest" = "$hostport" ]; then PGPORT=5432; else PGPORT="${db_rest%%/*}"; fi
+PGDATABASE="${hostport#*/}"
+PGDATABASE="${PGDATABASE%%\?*}"
+export PGUSER="$db_user" PGPASSWORD PGHOST PGPORT PGDATABASE
 
 dump() { # <schema> <outfile>; stderr is masked, stdout (the dump) goes only into age
   local schema="$1" file="$2" err
   err="$(mktemp)"
-  if pg_dump --dbname="$PROD_DB_URL" --schema="$schema" --no-owner --no-privileges 2>"$err" |
+  if pg_dump --schema="$schema" --no-owner --no-privileges 2>"$err" |
     age -R "$recipient" -o "$file"; then
     mask <"$err" >&2
     rm -f "$err"

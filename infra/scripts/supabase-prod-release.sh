@@ -43,7 +43,13 @@ hostport="${rest#*@}"
 db_pass="${userinfo#*:}"
 db_host="${hostport%%[:/]*}"
 esc() { printf '%s' "$1" | sed 's/[][\.*^$/&|]/\\&/g'; }
-mask() {
+# M3 (T-0543): the repo is public, so its logs are too. Postgres DETAIL lines carry row values.
+redact_rows() {
+  sed -e 's/^\([[:space:]]*DETAIL:\).*/\1 <redacted>/' \
+    -e 's/Failing row contains.*/Failing row contains <redacted>/' \
+    -e 's/Key (.*)=(.*/Key (<redacted>)=(<redacted>)/'
+}
+mask_secrets() {
   local p h
   p="$(esc "$db_pass")"
   h="$(esc "$db_host")"
@@ -53,6 +59,7 @@ mask() {
     sed -e "s|$p|***|g"
   else cat; fi
 }
+mask() { redact_rows | mask_secrets; }
 
 sb() { npx -y "supabase@$CLI_VERSION" "$@" 2>&1 | mask; }
 

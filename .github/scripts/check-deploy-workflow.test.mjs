@@ -97,7 +97,7 @@ test("T-0543 AC-5 planted fault: a release secret used in the production job is 
 });
 
 test("T-0543 AC-5 secrets on a non-release step of the release job, or job-level env, are red", () => {
-  const onCheckout = mutated((s) => s.replace("      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ env.NODE_VERSION }}\n      - name: Install", "      - uses: actions/setup-node@v4\n        with:\n          node-version: ${{ env.NODE_VERSION }}\n          token: ${{ secrets.PROD_DB_URL }}\n      - name: Install"));
+  const onCheckout = mutated((s) => s.replace("      - name: Install postgres client", "      - name: Leak\n        run: echo hi\n        env:\n          X: ${{ secrets.PROD_DB_URL }}\n      - name: Install postgres client"));
   assert.ok(t0543(onCheckout, "must not use secrets"), onCheckout.join("\n"));
   const jobEnv = mutated((s) => s.replace("    concurrency:\n      group: prod-release", "    env:\n      X: ${{ secrets.PROD_DB_URL }}\n    concurrency:\n      group: prod-release"));
   assert.ok(t0543(jobEnv, "job-level env"), jobEnv.join("\n"));
@@ -137,4 +137,33 @@ test("T-0543 AC-5 inline supabase CLI use and a literal prod ref are red", () =>
 test("T-0543 AC-4 upload retention other than 7 days is red", () => {
   const errs = mutated((s) => s.replace("retention-days: 7", "retention-days: 90"));
   assert.ok(t0543(errs, "retention-days: 7"), errs.join("\n"));
+});
+
+test("T-0543 M2 planted fault: workflow-level cancel-in-progress true is red", () => {
+  const errs = mutated((s) => s.replace("cancel-in-progress: ${{ github.event_name == 'push' }}", "cancel-in-progress: true"));
+  assert.ok(t0543(errs, "M2"), errs.join("\n"));
+});
+
+test("T-0543 M5 planted fault: release without environment: production is red", () => {
+  assert.ok(t0543(mutated((s) => s.replace("    environment: production\n", "")), "M5"));
+  assert.ok(t0543(mutated((s) => s.replace("environment: production", "environment: staging")), "M5"));
+});
+
+test("T-0543 L1 release if without head_branch, or without the tip-of-main check, is red", () => {
+  const errs = mutated((s) => s.replaceAll(" && github.event.workflow_run.head_branch == 'main'", ""));
+  assert.ok(t0543(errs, "head_branch"), errs.join("\n"));
+  const tip = mutated((s) => s.replace("git fetch --depth=1 origin main", "git fetch --depth=1 origin dev"));
+  assert.ok(t0543(tip, "tip of main"), tip.join("\n"));
+});
+
+test("T-0543 L3 release action pinned by tag instead of SHA is red", () => {
+  const errs = mutated((s) => s.replace(/actions\/upload-artifact@[0-9a-f]{40}/, "actions/upload-artifact@v4"));
+  assert.ok(t0543(errs, "not pinned by SHA"), errs.join("\n"));
+});
+
+test("T-0543 L5 upload path widened, or checkout ref changed, is red", () => {
+  const wide = mutated((s) => s.replace("backup/*.sql.age", "backup/*"));
+  assert.ok(t0543(wide, "only *.sql.age"), wide.join("\n"));
+  const ref = mutated((s) => s.replace(/(release:[\s\S]*?ref: )\$\{\{ github\.event\.workflow_run\.head_sha \}\}/, "$1main"));
+  assert.ok(t0543(ref, "checkout ref"), ref.join("\n"));
 });

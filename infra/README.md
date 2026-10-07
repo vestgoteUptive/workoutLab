@@ -15,10 +15,19 @@ Steps, in order; any failure stops the job:
    Fails while the recipient file is the placeholder (H-28).
 3. **Plan**, then **apply** (`supabase-prod-release.sh`, `CONFIRM_PROD_RELEASE` from `vars.SUPABASE_PROD_REF`).
 
-Settings: secrets `SUPABASE_ACCESS_TOKEN`, `PROD_DB_URL` (session pooler string); variable
-`SUPABASE_PROD_REF`. Tools are installed in the job: `postgresql-client-17` (matches prod) and
+Settings: the secrets `SUPABASE_ACCESS_TOKEN` and `PROD_DB_URL` (session pooler string) live in the
+GitHub **Environment `production`** (deployment branches: `main` only; no required reviewers, so it
+stays fully automatic), not in repository secrets; the `release` job declares
+`environment: production`. The variable `SUPABASE_PROD_REF` is a repository variable. Tools are installed in the job: `postgresql-client-17` (matches prod) and
 `age` 1.2.1 (sha256-pinned in `deploy.yml`). `check-deploy-workflow.mjs` keeps the two secrets in
 the release job only.
+
+Safety rules built into the job: it releases only when `head_sha` is the current tip of `main`;
+the workflow never cancels a `workflow_run` run mid-apply; actions are pinned by SHA; the guard
+refuses unrecognised migration file names and also checks `supabase/seed.sql` (no DROP, TRUNCATE
+or DELETE FROM); `DETAIL:`, `Failing row` and `Key (..)=(..)` lines are redacted from logs because
+the repo is public. A failed release can leave prod on the new schema with older functions, so
+migrations must stay expand/contract (backward compatible).
 
 ### Restore from a backup
 
