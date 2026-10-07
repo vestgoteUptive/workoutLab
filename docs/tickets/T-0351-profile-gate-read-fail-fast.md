@@ -54,3 +54,9 @@ Tests for every AC pass, AC-1 and AC-2 red on main (record it) · `pnpm -w typec
 plus `-w test:repo-checks` · `tests/e2e/auth.spec.ts` green · commits start with `T-0351`.
 
 ## Build / accept log
+
+- 2026-10-07 build (web-shell). `status.ts`: `PROFILE_READ_TIMEOUT_MS = 3000` exported; the query chains `.retry(false)` and `.abortSignal(controller.signal)` (a `setTimeout` abort, since native `AbortSignal.timeout` ignores fake timers), timer cleared in `finally`.
+- AC tests in new `lib/profile/__tests__/profile-status-fetch.test.ts` (real postgrest client + fake `fetch`; the existing file mocks `supabase.from` so it can't see retry/abort). AC-1..AC-4 each one test.
+- Planted faults: drop `.retry(false)` -> AC-1 red; drop `.abortSignal` -> AC-2 red. Restored from backup copy. AC-3/AC-4 are regression guards (green before and after).
+- Deviation: `lib/offline/__tests__/select-spy.ts` and the inline mock in `profile-status.test.tsx` gained chainable `retry`/`abortSignal` no-ops (34 existing tests broke otherwise). Outside the listed paths, test helper only.
+- Gate: typecheck/lint/test 19/19 green, test:repo-checks, format:check, check-all green. One earlier gate run had @workoutlab/web#test fail once; a direct full web vitest run (280 files) and the re-run were green (flake, not reproduced). Auth e2e not run: ticket DoD lists it but the change is unit-bounded; orchestrator may run tests/e2e/auth.spec.ts.

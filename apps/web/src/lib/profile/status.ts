@@ -29,6 +29,9 @@ export interface ProfileResolution {
   shouldRefreshCache: boolean;
 }
 
+/** D-0197 §6: the gate's `profiles` read is abandoned after this long (an abort is `unknown`). */
+export const PROFILE_READ_TIMEOUT_MS = 3000;
+
 const UNKNOWN: ProfileResolution = { status: "unknown", shouldRefreshCache: false };
 
 function isOnline(): boolean {
@@ -61,14 +64,25 @@ export async function resolveProfileStatus(): Promise<ProfileResolution> {
 
   if (!isOnline()) return UNKNOWN;
 
+  // `AbortSignal.timeout` is native and ignores fake timers, so the bound is a plain timer.
+  const abort = new AbortController();
+  const timer = setTimeout(() => abort.abort(), PROFILE_READ_TIMEOUT_MS);
   try {
     const { supabase } = await import("../auth/client.js");
-    const { data, error } = await supabase.from("profiles").select("*").maybeSingle();
+    // No postgrest-js retry (a throwing fetch would otherwise hold the gate ~7 s) and a bounded read.
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .retry(false)
+      .abortSignal(abort.signal)
+      .maybeSingle();
     if (error) return UNKNOWN;
     return data
       ? { status: "present", shouldRefreshCache: true }
       : { status: "missing", shouldRefreshCache: false };
   } catch {
     return UNKNOWN;
+  } finally {
+    clearTimeout(timer);
   }
 }
