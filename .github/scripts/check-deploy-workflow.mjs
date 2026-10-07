@@ -218,9 +218,9 @@ export function check(dir = defaultDir) {
     const co = (rl.steps ?? []).find((st) => /^actions\/checkout@/.test(st.uses ?? ""));
     if (!co || norm(co.with?.ref) !== "${{ github.event.workflow_run.head_sha }}")
       errs.push("T-0543 L5: release checkout ref must be github.event.workflow_run.head_sha");
-    const tipIdx = (rl.steps ?? []).findIndex((st) => /origin main/.test(String(st.run ?? "")) && /HEAD_SHA/.test(String(st.run ?? "")));
+    const tipIdx = (rl.steps ?? []).findIndex((st) => /origin refs\/heads\/main\b/.test(String(st.run ?? "")) && /HEAD_SHA/.test(String(st.run ?? "")));
     const gIdx = (rl.steps ?? []).findIndex((st) => /migration-guard\.mjs/.test(String(st.run ?? "")));
-    if (tipIdx < 0 || (gIdx >= 0 && tipIdx > gIdx)) errs.push("T-0543 L1: release must check head_sha is the tip of main before the guard");
+    if (tipIdx < 0 || (gIdx >= 0 && tipIdx > gIdx)) errs.push("T-0543 N2: release must check head_sha is the tip of main (git fetch origin refs/heads/main, HEAD_SHA) before the guard");
     if (rl.needs) errs.push("T-0543 AC-1: release must not wait on other jobs");
     const steps = rl.steps ?? [];
     const runs = steps.map((s) => String(s.run ?? ""));

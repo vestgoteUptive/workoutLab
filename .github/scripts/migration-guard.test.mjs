@@ -113,9 +113,20 @@ test("T-0543 M4 red: -- or /* inside a string literal cannot hide a destructive 
   }
 });
 
-test("T-0543 M4 green: destructive words inside strings and identifiers are not code", () => {
-  const sql = "insert into t values ('please drop it; truncate', 'delete from x');\nselect \"drop\" from t;";
-  assert.deepEqual(run({ [N]: sql }).problems, []);
+test("T-0543 M4 green: destructive words in quoted identifiers are not code", () => {
+  assert.deepEqual(run({ [N]: 'select "drop" from t;' }).problems, []);
+});
+
+test("T-0543 N1 red: dynamic SQL inside string literals is still scanned", () => {
+  for (const sql of [
+    "do $$ begin execute 'drop table public.sets'; end $$;",
+    "do $$ begin execute format('truncate %I', t); end $$;",
+    "do $$ begin execute 'x'; perform 'select 1'; execute $q$drop table a$q$; end $$;",
+    "do $f$ declare t text; begin execute format('drop policy %I on x', t); end $f$;",
+    "select run('drop table x');",
+  ]) {
+    assert.equal(run({ [N]: sql }).problems.length, 1, sql);
+  }
 });
 
 test("T-0543 M4 the allow header must be a real comment, not text in a string", () => {

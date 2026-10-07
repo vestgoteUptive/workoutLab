@@ -13,7 +13,7 @@ const REAL_RECIPIENT = join(root, "infra/backup/age-recipient.txt");
 const KEY = "age1" + "q".repeat(58);
 const URL_ = "postgresql://postgres.x:SENTINEL-PW@db-host.example.com:5432/postgres";
 
-function run({ recipient, pgFailSchema = "", ageFail = false, args } = {}) {
+function run({ recipient, pgFailSchema = "", ageFail = false, args, url = URL_ } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "bk-"));
   const log = join(dir, "calls.log");
   writeFileSync(log, "");
@@ -23,7 +23,7 @@ function run({ recipient, pgFailSchema = "", ageFail = false, args } = {}) {
   };
   stub(
     "pg_dump",
-    `echo "pg_dump $*" >> "${log}"\necho "env $PGUSER $PGHOST $PGPORT $PGDATABASE pw=$PGPASSWORD" >> "${log}"\ncase "$*" in *--schema=${pgFailSchema || "NONE"}*) printf "permission denied SENTINEL-PW db-host.example.com\\nDETAIL:  Key (email)=(a@b.c) is duplicated.\\nFailing row contains (1, secret).\\n" >&2; exit 1;; esac\necho "PLAINTEXT-DUMP-ROW"`,
+    `echo "pg_dump $*" >> "${log}"\necho "env $PGUSER $PGHOST $PGPORT $PGDATABASE pw=$PGPASSWORD ssl=$PGSSLMODE" >> "${log}"\ncase "$*" in *--schema=${pgFailSchema || "NONE"}*) printf "permission denied SENTINEL-PW db-host.example.com DECODED@PW\\nERROR: invalid input syntax for type integer: \\"secret-val\\" (SQLSTATE 22P02)\\nERROR: raised secret-raise2\\nDETAIL:  Key (email)=(a@b.c) is duplicated.\\nFailing row contains (1, secret).\\n" >&2; exit 1;; esac\necho "PLAINTEXT-DUMP-ROW"`,
   );
   // Stub age: record args, write "ENC:" + stdin to the -o file; never to stdout.
   stub(
@@ -35,7 +35,7 @@ function run({ recipient, pgFailSchema = "", ageFail = false, args } = {}) {
   const outDir = join(dir, "out");
   const r = spawnSync("bash", [SCRIPT, ...(args ?? [outDir, "abc123"])], {
     encoding: "utf8",
-    env: { PATH: `${dir}:${process.env.PATH}`, HOME: dir, PROD_DB_URL: URL_, AGE_RECIPIENT_FILE: rfile },
+    env: { PATH: `${dir}:${process.env.PATH}`, HOME: dir, PROD_DB_URL: url, AGE_RECIPIENT_FILE: rfile },
   });
   return { ...r, outDir, calls: readFileSync(log, "utf8").split("\n").filter(Boolean) };
 }
@@ -97,7 +97,7 @@ test("T-0543 L2 the password and host reach pg_dump only through PG* env, never 
   assert.equal(r.status, 0, r.stderr);
   const argv = r.calls.filter((c) => c.startsWith("pg_dump"));
   assert.ok(argv.length >= 1 && argv.every((c) => !/SENTINEL|db-host|postgresql:/.test(c)), argv.join("\n"));
-  assert.ok(r.calls.includes("env postgres.x db-host.example.com 5432 postgres pw=SENTINEL-PW"), r.calls.join("\n"));
+  assert.ok(r.calls.includes("env postgres.x db-host.example.com 5432 postgres pw=SENTINEL-PW ssl=require"), r.calls.join("\n"));
 });
 
 test("T-0543 M3 DETAIL / Failing row / Key (..)=(..) lines are redacted from failure output", () => {
@@ -107,4 +107,17 @@ test("T-0543 M3 DETAIL / Failing row / Key (..)=(..) lines are redacted from fai
   assert.doesNotMatch(out, /a@b\.c|secret|SENTINEL-PW|db-host/);
   assert.match(out, /DETAIL: <redacted>/);
   assert.match(out, /Failing row contains <redacted>/);
+});
+
+test("T-0543 N4 TLS is required, and the decoded password is masked as well as the encoded one", () => {
+  const r = run({ recipient: KEY + "\n", pgFailSchema: "public", url: "postgresql://u:DECODED%40PW@db-host.example.com:5432/postgres" });
+  assert.doesNotMatch(r.stdout + r.stderr, /DECODED@PW|DECODED%40PW/);
+  assert.ok(r.calls.some((c) => /ssl=require$/.test(c)), r.calls.join("\n"));
+});
+
+test("T-0543 N3 values in the main error line and RAISE messages are redacted, DETAIL case-insensitively", () => {
+  const r = run({ recipient: KEY + "\n", pgFailSchema: "public" });
+  const out = r.stdout + r.stderr;
+  assert.doesNotMatch(out, /secret-val|secret-raise/);
+  assert.match(out, /SQLSTATE 22P02/);
 });

@@ -152,7 +152,7 @@ test("T-0543 M5 planted fault: release without environment: production is red", 
 test("T-0543 L1 release if without head_branch, or without the tip-of-main check, is red", () => {
   const errs = mutated((s) => s.replaceAll(" && github.event.workflow_run.head_branch == 'main'", ""));
   assert.ok(t0543(errs, "head_branch"), errs.join("\n"));
-  const tip = mutated((s) => s.replace("git fetch --depth=1 origin main", "git fetch --depth=1 origin dev"));
+  const tip = mutated((s) => s.replace("git fetch --depth=1 origin refs/heads/main", "git fetch --depth=1 origin dev"));
   assert.ok(t0543(tip, "tip of main"), tip.join("\n"));
 });
 
@@ -166,4 +166,9 @@ test("T-0543 L5 upload path widened, or checkout ref changed, is red", () => {
   assert.ok(t0543(wide, "only *.sql.age"), wide.join("\n"));
   const ref = mutated((s) => s.replace(/(release:[\s\S]*?ref: )\$\{\{ github\.event\.workflow_run\.head_sha \}\}/, "$1main"));
   assert.ok(t0543(ref, "checkout ref"), ref.join("\n"));
+});
+
+test("T-0543 N2 planted fault: fetching plain `main` (a tag can shadow it) is red", () => {
+  const errs = mutated((s) => s.replace("git fetch --depth=1 origin refs/heads/main", "git fetch --depth=1 origin main"));
+  assert.ok(t0543(errs, "N2"), errs.join("\n"));
 });

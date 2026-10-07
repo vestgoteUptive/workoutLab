@@ -47,3 +47,7 @@ None to the API or the data model. Process change named by D-0201.
 - M1 guard loose-matches `<digits>_*.sql` in the plan and fails on any non-conforming name (plan or disk); naming repo check = test over supabase/migrations. M2 workflow `cancel-in-progress: ${{ github.event_name == 'push' }}` + checker rule. M3 `redact_rows` in both scripts + tests. M4 string/dollar-quote-aware `scan()`, header only from real comments; red tests incl. `$$`. M5 `environment: production` + checker rule + README.
 - L1 tip-of-main step and `head_branch == 'main'` in both `if`s; L2 pg_dump uses PG* env (urldecoded), test; L3 release actions pinned by SHA, CLI prefetched before secrets; L4 seed scan (real seed passes); L5 checker rules for upload path and checkout ref. Planted-fault tests added for each rule.
 - Gate: see commit; node --test changed tests, test:repo-checks, format:check, check-all, check-deploy-workflow all green.
+
+### Rework 2 log (re-review N1-N4)
+- N1 `scan(sql, keepStrings)`: migrations keep string-literal contents (EXECUTE 'drop...', format(), DO blocks red tests); the seed still blanks strings. N2 `git fetch origin refs/heads/main` + checker rule/test. N3 redact_rows: case-insensitive DETAIL, `ERROR:` messages redacted (SQLSTATE kept), `invalid input syntax` values; tests in both script test files. N4 `PGSSLMODE=require`, decoded password masked; tests.
+- Gate: node --test on changed tests, test:repo-checks, format:check, check-all, check-deploy-workflow green.

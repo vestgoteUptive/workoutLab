@@ -45,7 +45,11 @@ db_host="${hostport%%[:/]*}"
 esc() { printf '%s' "$1" | sed 's/[][\.*^$/&|]/\\&/g'; }
 # M3 (T-0543): the repo is public, so its logs are too. Postgres DETAIL lines carry row values.
 redact_rows() {
-  sed -e 's/^\([[:space:]]*DETAIL:\).*/\1 <redacted>/' \
+  sed -e 's/^\([[:space:]]*[Dd][Ee][Tt][Aa][Ii][Ll]:\).*/\1 <redacted>/' \
+    -e 's/\(ERROR:\).*\((SQLSTATE [0-9A-Z]*)\).*/\1 <redacted> \2/' \
+    -e t \
+    -e 's/^\([[:space:]]*ERROR:\).*/\1 <redacted>/' \
+    -e 's/\(invalid input syntax[^:]*:\).*/\1 <redacted>/' \
     -e 's/Failing row contains.*/Failing row contains <redacted>/' \
     -e 's/Key (.*)=(.*/Key (<redacted>)=(<redacted>)/'
 }

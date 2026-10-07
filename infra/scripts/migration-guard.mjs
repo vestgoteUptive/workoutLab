@@ -23,11 +23,11 @@ const NAME_STRICT = /^\d{14}_[A-Za-z0-9_]+\.sql$/;
 
 /**
  * String-aware scan (T-0543 M4). Returns { code, comments }: `code` is the SQL with comments,
- * string literals and quoted identifiers blanked out; dollar-quoted bodies are kept as code
+ * quoted identifiers (and string literals unless `keepStrings`) blanked out; dollar-quoted bodies are kept as code
  * (scanned recursively), since DO blocks and function bodies are SQL. `comments` holds the text
  * of every `--` line comment, which is where the allow header must be.
  */
-export function scan(sql) {
+export function scan(sql, keepStrings = false) {
   let code = "";
   const comments = [];
   let i = 0;
@@ -66,7 +66,9 @@ export function scan(sql) {
         else if (sql[j] === "'") break;
         else j++;
       }
-      code += " ";
+      // N1: dynamic SQL (EXECUTE 'drop ...', format('truncate %I')) lives in strings, so
+      // migrations keep literal contents; only the seed (prose in strings) blanks them.
+      code += keepStrings ? " " + sql.slice(i + 1, j) + " " : " ";
       i = j + 1;
     } else if (c === '"') {
       let j = i + 1;
@@ -82,7 +84,7 @@ export function scan(sql) {
       }
       const end = sql.indexOf(m[0], i + m[0].length);
       const bodyEnd = end < 0 ? n : end;
-      const inner = scan(sql.slice(i + m[0].length, bodyEnd));
+      const inner = scan(sql.slice(i + m[0].length, bodyEnd), keepStrings);
       code += " " + inner.code + " ";
       comments.push(...inner.comments);
       i = end < 0 ? n : end + m[0].length;
@@ -115,7 +117,7 @@ export function decisionDecided(id, decisionsDir) {
 
 /** Returns problems for one migration's SQL. */
 export function checkSql(name, sql, decisionsDir) {
-  const { code, comments } = scan(sql);
+  const { code, comments } = scan(sql, true);
   const hits = PATTERNS.filter(([, re]) => re.test(code)).map(([n]) => n);
   if (!hits.length) return [];
   const h = comments.map((c) => HEADER.exec(c)).find(Boolean);

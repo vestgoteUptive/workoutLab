@@ -152,11 +152,11 @@ test('T-0543 AC-6 apply never waits on a prompt (--yes) and plan stays read-only
 test('T-0543 M3 DETAIL, Failing row and Key lines from the CLI are redacted', () => {
   const { dir } = setup();
   const r = run(['apply'], { CONFIRM_PROD_RELEASE: REF }, SCRIPT, {
-    npx: `case "$*" in *"db push"*--yes*) printf "ERROR: duplicate key (SQLSTATE 23505)\\nDETAIL:  Key (email)=(a@b.c) already exists.\\nFailing row contains (1, secret-row).\\n"; exit 1;; *) echo ok;; esac`,
+    npx: `case "$*" in *"db push"*--yes*) printf "ERROR: duplicate key (SQLSTATE 23505)\\nDETAIL:  Key (email)=(a@b.c) already exists.\\nFailing row contains (1, secret-row).\\ndetail: lower-secret\\nERROR: invalid input syntax for type integer: \\"ERRVAL\\" (SQLSTATE 22P02)\\n"; exit 1;; *) echo ok;; esac`,
   });
   const out = r.stdout + r.stderr;
   assert.equal(r.status, 1);
-  assert.doesNotMatch(out, /a@b\.c|secret-row/);
+  assert.doesNotMatch(out, /a@b\.c|secret-row|lower-secret|ERRVAL/);
   assert.match(out, /DETAIL: <redacted>/);
   assert.match(out, /Failing row contains <redacted>/);
   assert.ok(dir);

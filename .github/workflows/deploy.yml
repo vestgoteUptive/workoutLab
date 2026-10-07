@@ -148,7 +148,7 @@ jobs:
       - name: Require head_sha is the tip of main
         run: |
           set -euo pipefail
-          git fetch --depth=1 origin main
+          git fetch --depth=1 origin refs/heads/main
           tip="$(git rev-parse FETCH_HEAD)"
           if [ "$tip" != "$HEAD_SHA" ]; then
             echo "head_sha $HEAD_SHA is not the tip of main ($tip); not releasing" >&2

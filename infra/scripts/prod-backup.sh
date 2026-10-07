@@ -27,20 +27,26 @@ userinfo="${rest%%@*}"
 hostport="${rest#*@}"
 db_pass="${userinfo#*:}"
 db_host="${hostport%%[:/]*}"
+# N4: mask_secrets also masks the decoded password (PGPASSWORD), not only its URL-encoded form.
 esc() { printf '%s' "$1" | sed 's/[][\.*^$/&|]/\\&/g'; }
 # M3 (T-0543): the repo is public, so its logs are too. Postgres DETAIL lines carry row values.
 redact_rows() {
-  sed -e 's/^\([[:space:]]*DETAIL:\).*/\1 <redacted>/' \
+  sed -e 's/^\([[:space:]]*[Dd][Ee][Tt][Aa][Ii][Ll]:\).*/\1 <redacted>/' \
+    -e 's/\(ERROR:\).*\((SQLSTATE [0-9A-Z]*)\).*/\1 <redacted> \2/' \
+    -e t \
+    -e 's/^\([[:space:]]*ERROR:\).*/\1 <redacted>/' \
+    -e 's/\(invalid input syntax[^:]*:\).*/\1 <redacted>/' \
     -e 's/Failing row contains.*/Failing row contains <redacted>/' \
     -e 's/Key (.*)=(.*/Key (<redacted>)=(<redacted>)/'
 }
 mask_secrets() {
-  local p h
-  p="$(esc "$db_pass")"
-  h="$(esc "$db_host")"
-  if [ -n "$db_pass" ] && [ -n "$db_host" ]; then sed -e "s|$p|***|g" -e "s|$h|<host>|g"
-  elif [ -n "$db_pass" ]; then sed -e "s|$p|***|g"
-  else cat; fi
+  local -a ex=()
+  local v
+  for v in "$db_pass" "${PGPASSWORD:-}"; do
+    [ -n "$v" ] && ex+=(-e "s|$(esc "$v")|***|g")
+  done
+  [ -n "$db_host" ] && ex+=(-e "s|$(esc "$db_host")|<host>|g")
+  if [ "${#ex[@]}" -gt 0 ]; then sed "${ex[@]}"; else cat; fi
 }
 mask() { redact_rows | mask_secrets; }
 
@@ -53,7 +59,8 @@ db_rest="${hostport#*:}"
 if [ "$db_rest" = "$hostport" ]; then PGPORT=5432; else PGPORT="${db_rest%%/*}"; fi
 PGDATABASE="${hostport#*/}"
 PGDATABASE="${PGDATABASE%%\?*}"
-export PGUSER="$db_user" PGPASSWORD PGHOST PGPORT PGDATABASE
+PGSSLMODE=require # N4: the URL query string is not parsed, so force TLS here
+export PGSSLMODE PGUSER="$db_user" PGPASSWORD PGHOST PGPORT PGDATABASE
 
 dump() { # <schema> <outfile>; stderr is masked, stdout (the dump) goes only into age
   local schema="$1" file="$2" err
