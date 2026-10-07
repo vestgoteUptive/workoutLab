@@ -129,7 +129,7 @@ User request "exclude exercises and manage the list" (spec `docs/specs/excluded-
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0534 | Engine rule 0.1 part 2: excludedOutAreas; R0-E3…E5, R7-E17…E20; 3 simulated histories; fast-check properties; vendor regen | engine | T-0533 | ready | wl-build-engine |
+| T-0534 | Engine rule 0.1 part 2: excludedOutAreas; R0-E3…E5, R7-E17…E20; 3 simulated histories; fast-check properties; vendor regen | engine | T-0533 | doing | wl-build-engine |
 | T-0535 | excluded_exercises table (trigger, PK, index, 4 owner policies, anon revoked, exercises FK cascade); data-model.md; database.gen.ts; pgTAP 001/007/018/019; export.ts EXPORT_TABLES/ORDER_KEYS; e2e mock. Merge locally, hold push until H-27 | data | — | doing | wl-build-data |
 | T-0536 | Device cache: Dexie v3 table keyed by userId, refreshAll read, exclude/include writes after server confirm, missing-table tolerance, union helper, useOnline. After H-27 | web-shell | T-0535 | todo | wl-build-web |
 | T-0537 | Shared C-03 Checkbox and ExcludedAreasNotice components + shared copy in en.ts | web-shell | T-0532 | doing | wl-build-web |
