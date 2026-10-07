@@ -27,6 +27,7 @@ import {
   type ExerciseDetail,
 } from "./db.js";
 import { currentUserId } from "./current-user.js";
+import { cacheGeneration, cacheWriteAllowed } from "./cache-generation.js";
 import { sameValue } from "./flush.js";
 
 export const HISTORY_WINDOW_DAYS = 56;
@@ -35,6 +36,7 @@ export const HISTORY_WINDOW_DAYS = 56;
 export async function refreshHistory(now: Date, tz: string): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
+  const gen = cacheGeneration();
   const db = offlineDb();
   const nowIso = now.toISOString();
   const windowStart = windowStartInstant(nowIso, tz, HISTORY_WINDOW_DAYS);
@@ -81,6 +83,7 @@ export async function refreshHistory(now: Date, tz: string): Promise<void> {
   });
 
   await db.transaction("rw", db.historyCache, db.syncMeta, async () => {
+    if (!cacheWriteAllowed(gen)) return;
     await db.historyCache.where({ userId }).delete();
     await db.historyCache.bulkPut(cached);
     const meta = await db.syncMeta.get(userId);
@@ -106,6 +109,7 @@ export async function refreshHistory(now: Date, tz: string): Promise<void> {
 export async function refreshLibrary(): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
+  const gen = cacheGeneration();
   const db = offlineDb();
 
   const [
@@ -160,6 +164,7 @@ export async function refreshLibrary(): Promise<void> {
   });
 
   await db.transaction("rw", db.libraryCache, db.exerciseDetails, async () => {
+    if (!cacheWriteAllowed(gen)) return;
     await db.libraryCache.where({ userId }).delete();
     await db.libraryCache.bulkPut(cached);
     await db.exerciseDetails.where({ userId }).delete();
@@ -173,6 +178,7 @@ export async function refreshLibrary(): Promise<void> {
 export async function refreshSessions(now: Date, tz: string): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
+  const gen = cacheGeneration();
   const db = offlineDb();
   const windowStart = windowStartInstant(now.toISOString(), tz, HISTORY_WINDOW_DAYS);
 
@@ -217,6 +223,7 @@ export async function refreshSessions(now: Date, tz: string): Promise<void> {
   // and the loader would defer to it. A changed entry (re-queued, or re-queued and flushed,
   // during the request) fails the compare.
   await db.transaction("rw", db.sessionCache, db.sessions, async () => {
+    if (!cacheWriteAllowed(gen)) return;
     await db.sessionCache.where({ userId }).delete();
     await db.sessionCache.bulkPut(cached);
     const snapshots = new Map(flushedBefore.map((q) => [q.id, q]));
@@ -243,6 +250,7 @@ export async function refreshSessions(now: Date, tz: string): Promise<void> {
 export async function refreshCheckins(): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
+  const gen = cacheGeneration();
   const db = offlineDb();
 
   const { data, error } = await supabase.from("plan_checkins").select("*");
@@ -254,6 +262,7 @@ export async function refreshCheckins(): Promise<void> {
   });
 
   await db.transaction("rw", db.checkinCache, async () => {
+    if (!cacheWriteAllowed(gen)) return;
     await db.checkinCache.where({ userId }).delete();
     await db.checkinCache.bulkPut(cached);
   });
@@ -263,6 +272,7 @@ export async function refreshCheckins(): Promise<void> {
 export async function refreshRoutines(): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
+  const gen = cacheGeneration();
   const db = offlineDb();
 
   const [{ data: routines, error: routinesError }, { data: itemRows, error: itemsError }] =
@@ -296,6 +306,7 @@ export async function refreshRoutines(): Promise<void> {
   }));
 
   await db.transaction("rw", db.routineCache, async () => {
+    if (!cacheWriteAllowed(gen)) return;
     await db.routineCache.where({ userId }).delete();
     await db.routineCache.bulkPut(cached);
   });
@@ -305,6 +316,7 @@ export async function refreshRoutines(): Promise<void> {
 export async function refreshTargets(): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
+  const gen = cacheGeneration();
   const db = offlineDb();
 
   const { data, error } = await supabase.from("area_targets").select("*");
@@ -316,6 +328,7 @@ export async function refreshTargets(): Promise<void> {
   });
 
   await db.transaction("rw", db.targetCache, async () => {
+    if (!cacheWriteAllowed(gen)) return;
     await db.targetCache.where({ userId }).delete();
     await db.targetCache.bulkPut(cached);
   });
@@ -325,6 +338,7 @@ export async function refreshTargets(): Promise<void> {
 export async function refreshProfile(): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
+  const gen = cacheGeneration();
   const db = offlineDb();
 
   const { data, error } = await supabase.from("profiles").select("*").maybeSingle();
@@ -332,6 +346,7 @@ export async function refreshProfile(): Promise<void> {
   if (!data) return;
 
   const mapped = toEngineProfile(data as Tables<"profiles">);
+  if (!cacheWriteAllowed(gen)) return;
   await db.profileCache.put({ userId, profile: mapped });
 }
 
