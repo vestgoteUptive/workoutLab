@@ -47,7 +47,7 @@ Dark, high-contrast, athletic. Big condensed numbers for anything read mid-set.
 
 - Display: **Big Shoulders Display** 700/800, uppercase for titles, numbers and timers. Token `--wl-font-display`: `"Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif`.
 - Body: **DM Sans** 400/500/700. Token `--wl-font-body`: `"DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif`.
-- Fonts are self-hosted (woff2), with no third-party font CDN, for offline use and privacy (D-0019): one variable `latin` file per family, `font-display: swap`, preloaded and precached. Spec: `docs/specs/visual-foundation.md` §1. Until that ships, the stacks fall back to system fonts.
+- Fonts are self-hosted (woff2), with no third-party font CDN, for offline use and privacy (D-0019): one variable `latin` file per family, `font-display: swap`, preloaded and precached. Spec: `docs/specs/visual-foundation.md` §1. The faces ship from `@workoutlab/design-tokens/fonts.css` (files and OFL texts in `packages/design-tokens/fonts/`, T-0544).
 - Scale (spec: `docs/specs/visual-foundation.md` §3; sizes in `rem` in code):
 
 | Role | Font | Size / line height | Weight | Case |
