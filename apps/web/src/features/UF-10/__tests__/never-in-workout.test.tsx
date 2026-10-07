@@ -13,7 +13,7 @@
 //
 // The `fatal` filter in `restricted()` guards the negative cases: without it, a parse error
 // would make "reports nothing" pass vacuously (the D-0060 §8 pattern).
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { render, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { Shell } from "../../../app/App.js";
@@ -24,6 +24,17 @@ vi.mock("../../../lib/auth/auth-context.js", () => ({
   AuthProvider: ({ children }: { children: React.ReactNode }) => children,
   useAuth: () => ({ status: "signed-in" as const, redirectTarget: "/welcome", signOut: vi.fn() }),
 }));
+
+// Every route is a lazy chunk (routes.ts). The first render in this file would otherwise pay the
+// cold dynamic import of the UF-09 flow inside waitFor's 1 s budget, which under CPU load is not
+// enough (T-0910). Await the chunks themselves so the render only waits on rendering.
+beforeAll(async () => {
+  await Promise.all([
+    import("../../UF-09/index.js"),
+    import("../../UF-10/index.js"),
+    import("../../UF-01/index.js"),
+  ]);
+}, 60_000);
 
 const SESSION_ROUTES = ["/session/S1", "/session/S1/summary"] as const;
 

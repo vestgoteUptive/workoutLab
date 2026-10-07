@@ -23,3 +23,6 @@ During T-0350's gate and a later UF-10 folder run (2026-10-07), `src/features/UF
 None.
 
 ## Build / accept log
+- Repro (9 `yes` loops, UF-10 folder): 2 of 5 runs red, AC-A12 `/session/S1` (and once `/summary`) failed at never-in-workout.test.tsx:37 (`renderShellAt` waitFor `[data-screen-id]` toBeInTheDocument, `Received: null`). Root cause: first render pays the cold lazy `import()` of the UF-09 chunk inside waitFor's 1 s budget.
+- Fix (test only): `beforeAll` awaits the UF-09/UF-10/UF-01 flow modules, so waitFor only waits on rendering. No timeouts raised.
+- AC-1 done. AC-2 done. AC-3: 10/10 clean under 9 `yes` loops (loops killed), 30/30 clean unloaded (144 tests each); `--filter @workoutlab/web test` 279 files / 3776 tests green; format:check green.
