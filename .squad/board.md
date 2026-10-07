@@ -73,7 +73,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 3 — App
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0476 | UF-08.3 polish (D-0171, accept follow-up): a swap's "Swapped to save time" reason is proven only at the data layer — itemReasonLine's two-reason cap hides it from the UI; let it surface, or lift the cap by one | web-shell | T-0303c | doing | wl-build-web |
 | T-0313 | AC-D11 hardening: dynamic `import()` of components/body-map from UF-03/08/09 bypasses no-restricted-imports; add a no-restricted-syntax rule on ImportExpression + test — T-0300d follow-up Also cover the D-0071 §9 patterns (UF-02/06/07/10/11 from UF-03/04/05/08/09; deep feature imports). | web-shell | T-0300d | todo (parked: lint hardening against our own code; the static bans and e2e cover the real cases) | wl-build-web |
 | T-0314 | Add axe-core (or vitest-axe) as a direct devDependency of apps/web and point the AC-D10 helper at it (today it resolves through @axe-core/playwright, D-0060 §7) — T-0300d follow-up | infra | T-0300d | todo (parked: works today; do it if a lockfile change ever breaks the transitive resolve) | wl-build-infra |
 | T-0315 | Design a C-01 body silhouette to replace the D-0060 tile grid (after the H-12 device review) | design | T-0300d | todo (parked: waits on the H-12 device review) | wl-design |
@@ -120,7 +119,7 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | merged (reaches prod with the next function release) | wl-build-backend |
-| T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | ready | wl-build-web |
+| T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | doing | wl-build-web |
 | T-0531 | Account deletion bumps the cache-generation counter like sign-out, so an in-flight refresh can't rewrite a deleted user's rows (T-0530 review follow-up) | web-shell | T-0530 | doing | wl-build-web |
 
 ### D-0199 excluded exercises
