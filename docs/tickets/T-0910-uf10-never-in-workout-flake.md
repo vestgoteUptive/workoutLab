@@ -23,3 +23,4 @@ During T-0350's gate and a later UF-10 folder run (2026-10-07), `src/features/UF
 None.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0910.md` (D-0157).
