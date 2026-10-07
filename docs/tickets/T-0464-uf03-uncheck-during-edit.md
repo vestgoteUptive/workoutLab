@@ -76,3 +76,9 @@ lint test` green plus `-w test:repo-checks` · the UF-03 e2e spec(s) green · co
 - Red on main (ListView.tsx at HEAD): AC-1, AC-1b, AC-2, AC-5 fail; AC-3/AC-4/AC-6 pass on main (they pin unchanged behaviour). Planted faults (backup copy, restored by cp): second tap doesn't cancel → AC-3 red; no run after reject → AC-2 red; remember toggle during toggle too → AC-4 red.
 - Loop: new test file x20 = 0 failures.
 - Gate: `-w typecheck lint test --concurrency=1` green; test:repo-checks 311 pass; format:check clean; check-all exit 0; e2e `uf-03-list-summary.spec.ts` 4 passed.
+
+### Review round 1 (2026-10-07)
+- Added: keepRow test (above-plan row, 60 → 62.5 kg, uncheck mid-save; kept row shows 62.5); AC-1b and AC-2 now re-render with the set removed and assert the checkbox is unchecked; replay guard (`loggedNow` ref: the remembered toggle runs only while the row is still logged) with its test.
+- Planted faults (backup copy, restored by cp): remove the `...editedPatch.current` spread → keepRow test red ("60" vs "62.5"); remove the guard → replay-guard test red (deleteSet called).
+- Deviation (accepted by reviewer): a failed edit followed by a queued uncheck does not show the failed state, because the delete replaces it; the final state matches the user's last intent.
+- Loop x20: 0 failures. `vitest run src/features/UF-03`: 266 passed. tsc, eslint (UF-03), format:check, check-all clean.

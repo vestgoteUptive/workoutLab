@@ -4,7 +4,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ListView } from "../index.js";
 import { L1, NOW } from "./fixtures.js";
 import { freshDb, seedLibraryAndTargets, signIn, signOut, waitReal } from "./helpers.js";
-import { logged, makeCtx, settle } from "./list-helpers.js";
+import { logged, makeCtx as baseCtx, settle, type SpiedCtx } from "./list-helpers.js";
+import type { RenderResult } from "@testing-library/react";
+
+const makeCtx = (over: Parameters<typeof baseCtx>[0] = {}) =>
+  baseCtx(over) as SpiedCtx & { view: RenderResult };
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"], now: new Date(NOW) });
@@ -35,8 +39,9 @@ async function mount(over: Parameters<typeof makeCtx>[0] = {}) {
   const ctx = makeCtx({ loggedSets: [row], ...over });
   const db = freshDb();
   await seedLibraryAndTargets(db, L1);
-  render(<ListView ctx={ctx} />);
+  const view = render(<ListView ctx={ctx} />);
   await screen.findByRole("button", { name: /Romanian deadlift/ });
+  ctx.view = view;
   return ctx;
 }
 
@@ -83,7 +88,9 @@ describe("T-0464", () => {
       await waitReal(20);
     });
     expect(ctx.deleteSet).toHaveBeenCalledTimes(1);
-    expect(box("Mark set 1 not done").getAttribute("aria-busy")).toBeNull();
+    ctx.view.rerender(<ListView ctx={{ ...ctx, loggedSets: [] }} />);
+    expect(box("Mark set 1 done").checked).toBe(false);
+    expect(box("Mark set 1 done").getAttribute("aria-busy")).toBeNull();
   });
 
   it("AC-2 the edit fails: deleteSet still runs exactly once", async () => {
@@ -97,6 +104,43 @@ describe("T-0464", () => {
     });
     expect(ctx.deleteSet).toHaveBeenCalledTimes(1);
     expect(ctx.deleteSet).toHaveBeenCalledWith("c-row");
+    ctx.view.rerender(<ListView ctx={{ ...ctx, loggedSets: [] }} />);
+    expect(box("Mark set 1 done").checked).toBe(false);
+  });
+
+  it("replay guard: the row was removed meanwhile, so the remembered toggle does nothing", async () => {
+    const edit = deferred();
+    const ctx = await mount({ editSet: vi.fn(() => edit.promise) });
+    await typeAndClick();
+    ctx.view.rerender(<ListView ctx={{ ...ctx, loggedSets: [] }} />);
+    await act(async () => {
+      edit.resolve();
+      await waitReal(20);
+    });
+    expect(ctx.deleteSet).not.toHaveBeenCalled();
+    expect(ctx.recordSet).not.toHaveBeenCalled();
+  });
+
+  it("keepRow: an above-plan row unchecked mid-edit keeps the edited 62.5 kg", async () => {
+    const four = [0, 1, 2, 3].map((s) => logged(0, s, "back-squat", 6, 100));
+    const row5 = { ...logged(0, 4, "back-squat", 5, 60), clientId: "c-5" };
+    const edit = deferred();
+    const ctx = await mount({ loggedSets: [...four, row5], editSet: vi.fn(() => edit.promise) });
+    const field5 = screen.getByRole<HTMLInputElement>("textbox", { name: "Set 5 weight in kg" });
+    field5.focus();
+    fireEvent.change(field5, { target: { value: "62.5" } });
+    fireEvent.blur(field5);
+    fireEvent.click(box("Mark set 5 not done"));
+    await act(async () => {
+      edit.resolve();
+      await waitReal(20);
+    });
+    expect(ctx.deleteSet).toHaveBeenCalledWith("c-5");
+    ctx.view.rerender(<ListView ctx={{ ...ctx, loggedSets: four }} />);
+    expect(box("Mark set 5 done").checked).toBe(false);
+    expect(
+      screen.getByRole<HTMLInputElement>("textbox", { name: "Set 5 weight in kg" }).value,
+    ).toBe("62.5");
   });
 
   it("AC-3 tap, tap: nothing is deleted and the row stays checked", async () => {

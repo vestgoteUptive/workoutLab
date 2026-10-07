@@ -290,6 +290,7 @@ function SetRow({
   const editing = useRef(false);
   const queued = useRef(false);
   const editedPatch = useRef<Partial<Seed>>({});
+  const loggedNow = useRef(false);
   const afterEdit = useRef<() => void>(() => undefined);
   const firstField = useRef<HTMLInputElement>(null);
   useEffect(() => {
@@ -360,7 +361,8 @@ function SetRow({
       }
       if (wasEdit && queued.current) {
         queued.current = false;
-        afterEdit.current();
+        // Replay only while the row is still logged: never turn an uncheck into a record.
+        if (loggedNow.current) afterEdit.current();
       }
     };
     write().then(
@@ -415,6 +417,7 @@ function SetRow({
   };
 
   afterEdit.current = onToggle;
+  loggedNow.current = logged !== undefined;
 
   /** Blur or Enter on a done row's field: one `editSet`, only when the parsed value changed. */
   const commit = (field: keyof Draft) => {
