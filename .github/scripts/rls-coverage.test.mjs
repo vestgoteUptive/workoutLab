@@ -24,6 +24,7 @@ export const FUNCTION_TESTS = {
 const EXPECTED = [
   "account",
   "area_targets",
+  "excluded_exercises",
   "exercise_areas",
   "exercise_variants",
   "exercises",
@@ -141,7 +142,7 @@ const REAL = {
 };
 const names = (f) => [...f.tables, ...f.functions].sort();
 
-test("T-0402c AC-2 the web app reaches exactly the 12 expected names, each covered", () => {
+test("T-0402c AC-2 the web app reaches exactly the 13 expected names, each covered", () => {
   const found = scanSources(path.join(ROOT, "apps/web/src"));
   console.log(`T-0402c AC-2 found ${names(found).length}: ${names(found).join(", ")}`);
   assert.deepEqual(found.dynamic, []);
