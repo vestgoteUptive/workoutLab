@@ -22,7 +22,4 @@ T-0530 added a cache-generation counter that sign-out bumps, so a refresh still 
 None.
 
 ## Build / accept log
-- Build (2026-10-07): `delete.ts` bumps `invalidateCacheWrites()` before the wipe and again after signOut/session-key removal; `wipeLocalUserData` bumps at start and end (covers a separate call). New `__tests__/delete.inflight.test.ts`.
-- AC-1 -> delete.inflight.test.ts (refresh resolving after wipe, refresh started during signOut, wipe alone: all write nothing). AC-2 -> existing account+offline suites green (36 files, 339 tests).
-- Planted fault (all bumps removed, backup copy restored by cp): 3 of 4 tests failed. Loop: 20 x the test file, 20/20 green.
-- Gate: typecheck lint test --concurrency=1 green (first run hit an ENOENT in web test while my loop ran concurrently; rerun clean), format:check green, check-all rc printed above. No e2e.
+Archived in `docs/tickets/log/T-0531.md` (D-0157).

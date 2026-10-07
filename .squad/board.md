@@ -120,7 +120,6 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 |---|---|---|---|---|---|
 | T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | merged (reaches prod with the next function release) | wl-build-backend |
 | T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | doing | wl-build-web |
-| T-0531 | Account deletion bumps the cache-generation counter like sign-out, so an in-flight refresh can't rewrite a deleted user's rows (T-0530 review follow-up) | web-shell | T-0530 | doing | wl-build-web |
 
 ### D-0199 excluded exercises
 User request "exclude exercises and manage the list" (spec `docs/specs/excluded-exercises.md`, D-0199, grooming defaults D-0200). **Release order:** T-0535 merges into the local `main` and `main` is not pushed or deployed until H-27 (prod release of its migration) is done; T-0536, T-0538, T-0539, T-0540, T-0541 merge only after H-27. T-0533 → T-0534 run serially (same engine files). en.ts (T-0537) and routes.ts (T-0540) are shared files.
