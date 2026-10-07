@@ -51,3 +51,4 @@ Every AC has a passing test · `pnpm -w typecheck lint test` green · contracts 
 - AC→test: AC1 Checkbox.test "AC1" (name, toggle, min-height, css tokens, axe x3 states); AC2 "AC2 aria-disabled"; AC3 ExcludedAreasNotice.test "AC3"; AC4 "AC4" (css reads surface-2/line/text-muted, no `warn`); AC5 jsx-no-literals test + lint (all strings via en.ts).
 - Red/fault runs: first run red (comment containing "warn"; an onClick preventDefault left the controlled box checked, removed). Planted faults (backup copies, restored): removed disabled guard, min-height 30, `warn` token in css, wrong "them/it" copy: 4 tests failed as expected.
 - Gate: typecheck/lint green; web test 3742/3743 (account-settings AC-5 flaked under load, 26/26 alone); test:repo-checks 311 pass; format:check and check-all green after prettier --write.
+- Orchestrator fix after review (2026-10-07): disabled row cursor default; disabled hover no longer overrides the checked accent border.

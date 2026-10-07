@@ -55,10 +55,16 @@
 
 .wl-checkbox[data-disabled] {
   color: var(--wl-color-text-muted);
+  cursor: default;
 }
 
-.wl-checkbox[data-disabled] .wl-checkbox__input:hover {
+/* No hover change when disabled; a checked box keeps its accent border (C-03). */
+.wl-checkbox[data-disabled] .wl-checkbox__input:not(:checked):hover {
   border-color: var(--wl-color-text-muted);
+}
+
+.wl-checkbox[data-disabled] .wl-checkbox__input:checked:hover {
+  border-color: var(--wl-color-accent);
 }
 
 .wl-checkbox__label {
