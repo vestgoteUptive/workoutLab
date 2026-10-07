@@ -99,7 +99,7 @@ describe("T-0310d AC-D2 the Account link", () => {
       const db = freshDb();
       await seedCache(db, { profile: profileF(), targets: targetsF() });
       mountAt("/plan");
-      const link = await screen.findByRole("link", { name: "Account" }, WAIT);
+      const link = await screen.findByRole("link", { name: "Account and sign out" }, WAIT);
       expect(link).toHaveAttribute("href", "/plan/account");
       fireEvent.click(link);
       await waitFor(
@@ -118,7 +118,7 @@ describe("T-0310d AC-D2 the Account link", () => {
       try {
         mountAt("/plan");
         await screen.findByText(en.uf11.coldCache, undefined, WAIT);
-        expect(screen.getByRole("link", { name: "Account" })).toHaveAttribute(
+        expect(screen.getByRole("link", { name: "Account and sign out" })).toHaveAttribute(
           "href",
           "/plan/account",
         );

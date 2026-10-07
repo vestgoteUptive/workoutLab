@@ -15,10 +15,12 @@
 // guarantee `use-checkin-data.ts`'s comment already assumes ("the screens that mount it keep the
 // data fresh"), now actually true before the card reads, not just after.
 import { useState } from "react";
+import { Link } from "react-router";
 import { en } from "../../lib/i18n/en.js";
 import { AccountSettingsBody } from "./AccountSettingsBody.js";
 import { CheckinCard } from "./CheckinCard.js";
 import { EditPlanBody } from "./EditPlanBody.js";
+import "./plan.css";
 import { PlanBody } from "./PlanBody.js";
 import { systemClock, usePlanData, type Clock } from "./use-plan-data.js";
 
@@ -34,7 +36,12 @@ export function Plan({ now = systemClock }: PlanScreenProps = {}) {
   const state = usePlanData(now, revision);
   return (
     <div data-screen-id="UF-11.2">
-      <h1>{en.screens.plan}</h1>
+      <div className="wl-plan__header">
+        <h1>{en.screens.plan}</h1>
+        <Link className="wl-plan__link" to="/plan/account">
+          {en.uf11.accountLink}
+        </Link>
+      </div>
       {state.phase !== "loading" ? (
         <CheckinCard now={now} onAnswered={() => setRevision((r) => r + 1)} />
       ) : null}

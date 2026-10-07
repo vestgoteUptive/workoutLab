@@ -145,14 +145,38 @@ describe("T-0216 AC-1 the section", () => {
     }
   });
 
-  it("T-0216 AC-1 with no stored email: the group is the next element after the h1", async () => {
+  it("T-0529 AC-2 email and Sign out share a section, before Equipment, Your data, Delete", async () => {
+    window.localStorage.setItem(
+      "sb-abc-auth-token",
+      JSON.stringify({ access_token: "t", user: { id: TEST_USER, email: "u@test.local" } }),
+    );
+    await mountWithCache(["none"]);
+    const email = screen.getByText("Signed in as u@test.local");
+    const btn = screen.getByRole("button", { name: "Sign out" });
+    const group = equipmentGroup();
+    const data = screen.getByRole("heading", { level: 2, name: "Your data" });
+    const del = screen.getByRole("heading", { level: 2, name: "Delete account" });
+    expect(email.closest(".wl-plan__section")).not.toBeNull();
+    expect(email.closest(".wl-plan__section")).toBe(btn.closest(".wl-plan__section"));
+    const order = [email, btn, group, data, del];
+    for (let i = 0; i < order.length - 1; i++) {
+      expect(
+        order[i]!.compareDocumentPosition(order[i + 1]!) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    }
+  });
+
+  it("T-0216 AC-1 with no stored email: the group follows the Sign out section after the h1", async () => {
     await mountWithCache(["none"]);
     const h1 = screen.getByRole("heading", { level: 1 });
     const host = h1.parentElement!;
     const children = Array.from(host.children);
     const h1Index = children.indexOf(h1);
     const group = equipmentGroup();
-    expect(children[h1Index + 1]).toBe(group);
+    // T-0529 (D-0195 §4): the Sign out section now sits between the h1 and the group.
+    const signOutSection = children[h1Index + 1]!;
+    expect(signOutSection.querySelector("button")?.textContent).toBe("Sign out");
+    expect(children[h1Index + 2]).toBe(group);
   });
 });
 

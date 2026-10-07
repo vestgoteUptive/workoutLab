@@ -7,6 +7,8 @@ import {
   deleteAccountAndSignOut,
   downloadAccountExport,
   exportAccountData,
+  hasUnsyncedWork,
+  signOutAndClearDevice,
 } from "../../lib/account/index.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
@@ -85,6 +87,20 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const openRef = useRef<HTMLButtonElement>(null);
 
+  const [signingOut, setSigningOut] = useState(false);
+  const signingOutRef = useRef(false);
+  const [unsyncedPrompt, setUnsyncedPrompt] = useState(false);
+  const anywayRef = useRef<HTMLButtonElement>(null);
+  const signOutRef = useRef<HTMLButtonElement>(null);
+  const refocusSignOut = useRef(false);
+  useEffect(() => {
+    if (unsyncedPrompt) anywayRef.current?.focus();
+    else if (refocusSignOut.current) {
+      refocusSignOut.current = false;
+      signOutRef.current?.focus();
+    }
+  }, [unsyncedPrompt]);
+
   const refocusOpen = useRef(false);
   useEffect(() => {
     if (confirming) inputRef.current?.focus();
@@ -93,6 +109,40 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
       openRef.current?.focus();
     }
   }, [confirming]);
+
+  async function doSignOut() {
+    if (signingOutRef.current || userId === null) return;
+    signingOutRef.current = true;
+    setSigningOut(true);
+    try {
+      await signOutAndClearDevice({ userId });
+    } catch {
+      // local sign-out is best effort; still leave the account screen
+    }
+    // Same as the delete path: a session still in memory would bounce /welcome back to /.
+    if (statusRef.current === "signed-out") navigate("/welcome", { replace: true });
+    else window.location.replace("/welcome");
+  }
+
+  async function onSignOut() {
+    if (signingOutRef.current || userId === null) return;
+    let unsynced = false;
+    try {
+      unsynced = await hasUnsyncedWork(userId);
+    } catch {
+      unsynced = false;
+    }
+    if (unsynced) {
+      setUnsyncedPrompt(true);
+      return;
+    }
+    await doSignOut();
+  }
+
+  function onSignOutCancel() {
+    setUnsyncedPrompt(false);
+    refocusSignOut.current = true;
+  }
 
   async function onExport() {
     if (exportingRef.current || !online || userId === null) return;
@@ -147,7 +197,41 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
 
   return (
     <>
-      {email ? <p>{a.signedInAs(email)}</p> : null}
+      <section className="wl-plan__section">
+        {email ? <p>{a.signedInAs(email)}</p> : null}
+        {unsyncedPrompt ? (
+          <>
+            <p>{a.unsyncedWarning}</p>
+            <button
+              ref={anywayRef}
+              type="button"
+              className="wl-plan__button"
+              disabled={signingOut}
+              onClick={() => void doSignOut()}
+            >
+              {signingOut ? a.signingOut : a.signOutAnyway}
+            </button>
+            <button
+              type="button"
+              className="wl-plan__button"
+              disabled={signingOut}
+              onClick={onSignOutCancel}
+            >
+              {a.cancel}
+            </button>
+          </>
+        ) : (
+          <button
+            ref={signOutRef}
+            type="button"
+            className="wl-plan__button"
+            disabled={signingOut || userId === null}
+            onClick={() => void onSignOut()}
+          >
+            {signingOut ? a.signingOut : a.signOut}
+          </button>
+        )}
+      </section>
       <EquipmentSection clock={clock} />
       <section className="wl-plan__section">
         <h2>{a.dataHeading}</h2>
@@ -162,11 +246,6 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
         </button>
         {!online ? <p>{a.connectToExport}</p> : null}
         {exportFailed ? <p role="alert">{a.exportFailed}</p> : null}
-      </section>
-      <section className="wl-plan__section">
-        <button type="button" className="wl-plan__button" onClick={() => void auth.signOut()}>
-          {a.signOut}
-        </button>
       </section>
       <section className="wl-plan__section">
         <h2>{a.deleteHeading}</h2>
