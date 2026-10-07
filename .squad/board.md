@@ -125,3 +125,20 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 | T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | ready | wl-build-web |
 | T-0531 | Account deletion bumps the cache-generation counter like sign-out, so an in-flight refresh can't rewrite a deleted user's rows (T-0530 review follow-up) | web-shell | T-0530 | ready | wl-build-web |
 | T-0907 | deploy.yml builds design-tokens before web in preview and production (tokens.css is generated; PR #38 preview failed) | infra | — | doing (PR #39) | wl-build-infra |
+
+### D-0199 excluded exercises
+User request "exclude exercises and manage the list" (spec `docs/specs/excluded-exercises.md`, D-0199, grooming defaults D-0200). **Release order:** T-0535 merges into the local `main` and `main` is not pushed or deployed until H-27 (prod release of its migration) is done; T-0536, T-0538, T-0539, T-0540, T-0541 merge only after H-27. T-0533 → T-0534 run serially (same engine files). en.ts (T-0537) and routes.ts (T-0540) are shared files.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0532 | Design: C-03 checkbox spec; screen specs for UF-11.5, UF-11.2, UF-08.2, UF-08.3/UF-05.1, UF-04.1/UF-04.2; neutral notice pattern | design | — | ready | wl-design |
+| T-0533 | Engine rule 0.1 part 1: rankSwaps 9th param excludeIds = [] at pool level; rule 12 signature line + D-0130 guard fixture + T-0212 AC1/AC2; R12-E17…E19; vendor regen | engine | — | ready | wl-build-engine |
+| T-0534 | Engine rule 0.1 part 2: excludedOutAreas; R0-E3…E5, R7-E17…E20; 3 simulated histories; fast-check properties; vendor regen | engine | T-0533 | todo | wl-build-engine |
+| T-0535 | excluded_exercises table (trigger, PK, index, 4 owner policies, anon revoked, exercises FK cascade); data-model.md; database.gen.ts; pgTAP 001/007/018/019; export.ts EXPORT_TABLES/ORDER_KEYS; e2e mock. Merge locally, hold push until H-27 | data | — | ready | wl-build-data |
+| T-0536 | Device cache: Dexie v3 table keyed by userId, refreshAll read, exclude/include writes after server confirm, missing-table tolerance, union helper, useOnline. After H-27 | web-shell | T-0535 | todo | wl-build-web |
+| T-0537 | Shared C-03 Checkbox and ExcludedAreasNotice components + shared copy in en.ts | web-shell | T-0532 | todo | wl-build-web |
+| T-0538 | UF-08: stored list ∪ visit Removes to every suggest call (incl. fit line, T-0303a AC-6 pin), Removed line Never suggest/Undo, notice, empty state. After H-27 | web-feature:UF-08 | T-0532, T-0534, T-0536, T-0537 | todo | wl-build-web |
+| T-0539 | UF-05.1/UF-08.3 swap sheet: stored list to rankSwaps, "Don't suggest {name} again" checkbox, "No alternatives left" empty state. After H-27 | web-feature:UF-05 | T-0532, T-0533, T-0536, T-0537 | todo | wl-build-web |
+| T-0540 | UF-11.5 Excluded exercises at /plan/excluded + UF-11.2 "Excluded exercises · n" row. After H-27 | web-feature:UF-11 | T-0532, T-0534, T-0536, T-0537 | todo | wl-build-web |
+| T-0541 | UF-04.2 "Don't suggest this"/"Suggest again" + UF-04.1 "Not suggested" tag. After H-27 | web-feature:UF-04 | T-0532, T-0536, T-0537 | todo | wl-build-web |
+| T-0542 | UF-02.1/UF-02.2 PREVIEW_INPUT passes the stored list to suggest | web-feature:UF-02 | T-0536 | todo | wl-build-web |

@@ -37,7 +37,7 @@ biggest gaps within the user's time budget.
 | UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
 | UF-09 Focus mode | .1–.9 (below) | One step at a time | Apple Fitness, NTC |
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
-| UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings | Adaptive targets; edit goal, rhythm, priorities; export or delete your data | Apple Fitness, Freeletics |
+| UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises | Adaptive targets; edit goal, rhythm, priorities; exercises never suggested; export or delete your data | Apple Fitness, Freeletics |
 
 Shared components: C-01 Body map, C-02 Tab bar (fixed to the bottom of the viewport, padded by the safe-area inset; never shown in UF-08/UF-09, D-0196).
 
@@ -64,12 +64,14 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
   - "Why" chips for the whole session (e.g. days since last trained, area below target).
   - Per exercise: sets × reps · weight · minutes · one-line reason; swap and remove actions. Warm-up is not removable. Remove drops the item without refilling its time (engine `removeItem`, D-0191 §4).
   - "Skipping today: …" line when areas were skipped on UF-08.1.
+  - Excluded exercises (D-0199) are never suggested. After a Remove, a "Removed" line lists each item removed on this visit with "Never suggest" (then "{name} won't be suggested · Undo"); no timeout. A neutral notice (not `warn`), "Not suggested: {areas}. Every exercise for them is excluded.", when the stored exclusions leave an area with no exercise (engine `excludedOutAreas`).
   - Shuffle picks alternates for non-main exercises.
   - Changing time rebuilds the list (main lift kept, accessories trimmed or added).
 - **UF-08.3 Swap before starting**
   - Asks why: equipment taken / discomfort / variety / short on time. Reason changes ranking.
   - Each alternative shows muscle match, time cost and equipment; top result marked "Best match".
   - Option "Always use this in <routine>".
+  - Checkbox "Don't suggest {current} again", unchecked, applied on confirm (D-0199). UF-05.1 has the same checkbox. Excluded exercises are never in the list.
 - **UF-08.4 Ready**
   - Summary: duration, exercises, sets, finish time.
   - Explains focus mode in four steps. Settings: sound cues, voice 3-2-1, keep screen awake.
@@ -110,9 +112,10 @@ Full spec and ACs: `docs/specs/uf-10-balance.md` (D-0013). **Entry:** the body m
 Full spec and ACs: `docs/specs/uf-11-plan-checkin.md` (D-0018). Principle: targets adapt, and never silently.
 
 - **UF-11.1 Check-in**: a card on UF-02.1 and UF-11.2 when two 14-day periods in a row were under (< 70 % of the planned minimum) or over (> 110 % of the planned maximum). It proposes rhythm −1 or +1 per week on both bounds, clamped to 1–7, and shows the clamped values (1–2 → "Switch to 1–1 per week?", never "0–1"; 6–7 → "Step up to 7–7 per week?"). No card when the clamped rhythm equals the current one (1–1 under, 7–7 over). It previews the new targets. Accept / Keep current. Never shown on UF-03, UF-08 or UF-09. Offline: the actions are disabled.
-- **UF-11.2 Plan**: goal, rhythm, priority areas, per-area targets with source, next check-in date, the last 3 check-ins.
+- **UF-11.2 Plan**: goal, rhythm, priority areas, an "Excluded exercises · n" row (→ UF-11.5), per-area targets with source, next check-in date, the last 3 check-ins.
 - **UF-11.3 Edit plan**: goal, rhythm (1–7 per week), up to 3 priority areas. Save re-derives the targets and resets the check-in streak.
 - **UF-11.4 Account settings** (D-0136, D-0195): reached from an "Account and sign out" link in UF-11.2's header, never from UF-03, UF-08 or UF-09. It shows the signed-in email with "Sign out" right under it, the equipment section, "Export my data" (one JSON file with every row the user owns, NFR-PRIV-4), and "Delete account" (NFR-PRIV-5). Sign out ends this device's session only, clears this user's cached data and the app's stored keys on the device, and keeps unsynced workouts (with a confirm when there are any) so they upload at the next sign-in. Deletion is confirmed by typing "delete". It removes the account and every owned row on the server (D-0135), then this user's data on the device, then signs out. Offline: export and delete are disabled.
+- **UF-11.5 Excluded exercises** (D-0199, spec `docs/specs/excluded-exercises.md`): reached from the UF-11.2 row, never from UF-03, UF-08 or UF-09. The user's "never suggest" list: never picked by the engine or offered as a swap, still shown in the library and history, and past sets still count. A search field over the library (kind `exercise`). Empty query: the excluded exercises by name, each with primary areas, "Excluded {d MMM}" and Include again. With a query: the matches, each with Exclude or Include again. A standing neutral notice (the same one as UF-08.2, not `warn`) when exclusions leave an area with no exercise: "Not suggested: {areas}. Every exercise for them is excluded." Exercises are also excluded from UF-04.2 ("Don't suggest this"), UF-08.2 (after Remove) and the UF-08.3 / UF-05.1 swap checkbox. Offline: the list still applies, and every control that changes it is disabled with "Connect to change excluded exercises".
 
 ## Open questions
 
