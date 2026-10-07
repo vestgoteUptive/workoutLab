@@ -1,0 +1,2 @@
+# Owner's age recipient (H-28, D-0201 §4). Public key only; the private key stays with the owner.
+age1h4as4n5vtjdspgf7cmz5qz2evame0fw8a284v03gt3jy9lykgd7q6nk5g8

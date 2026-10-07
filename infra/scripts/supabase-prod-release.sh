@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# T-0402b: first prod Supabase release, human-run (D-0186 §2, gate 3, H-19).
+# T-0402b: prod Supabase release; human-run or run by CI (D-0201). Gate 3, H-19.
 #   bash infra/scripts/supabase-prod-release.sh          # plan: read-only (default)
 #   CONFIRM_PROD_RELEASE=<ref> bash infra/scripts/supabase-prod-release.sh apply
 # Inputs from the environment only: SUPABASE_ACCESS_TOKEN, PROD_DB_URL (session pooler string).
@@ -43,7 +43,17 @@ hostport="${rest#*@}"
 db_pass="${userinfo#*:}"
 db_host="${hostport%%[:/]*}"
 esc() { printf '%s' "$1" | sed 's/[][\.*^$/&|]/\\&/g'; }
-mask() {
+# M3 (T-0543): the repo is public, so its logs are too. Postgres DETAIL lines carry row values.
+redact_rows() {
+  sed -e 's/^\([[:space:]]*[Dd][Ee][Tt][Aa][Ii][Ll]:\).*/\1 <redacted>/' \
+    -e 's/\(ERROR:\).*\((SQLSTATE [0-9A-Z]*)\).*/\1 <redacted> \2/' \
+    -e t \
+    -e 's/^\([[:space:]]*ERROR:\).*/\1 <redacted>/' \
+    -e 's/\(invalid input syntax[^:]*:\).*/\1 <redacted>/' \
+    -e 's/Failing row contains.*/Failing row contains <redacted>/' \
+    -e 's/Key (.*)=(.*/Key (<redacted>)=(<redacted>)/'
+}
+mask_secrets() {
   local p h
   p="$(esc "$db_pass")"
   h="$(esc "$db_host")"
@@ -53,6 +63,7 @@ mask() {
     sed -e "s|$p|***|g"
   else cat; fi
 }
+mask() { redact_rows | mask_secrets; }
 
 sb() { npx -y "supabase@$CLI_VERSION" "$@" 2>&1 | mask; }
 
@@ -80,7 +91,8 @@ if [ "$mode" = "plan" ]; then
 fi
 
 echo "== apply: db push =="
-sb db push --db-url "$PROD_DB_URL" --include-seed
+# --yes: no TTY in CI, so never wait on the CLI prompt (T-0543). The confirm lock above is the gate.
+sb db push --db-url "$PROD_DB_URL" --include-seed --yes
 for f in "${FUNCTIONS[@]}"; do
   echo "== deploy $f =="
   sb functions deploy "$f" --project-ref "$PROD_REF"

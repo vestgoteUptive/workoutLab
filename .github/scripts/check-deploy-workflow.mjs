@@ -11,6 +11,8 @@ const defaultDir = path.resolve(here, "..", "workflows");
 
 // Built by concatenation so this file doesn't contain the ref itself.
 const PROD_REF = ["csgjsdwuxqtuqpu", "azzpz"].join("");
+// T-0543 (D-0201 §5): the only secrets besides the Pages token, allowed only in jobs.release.
+const RELEASE_SECRETS = ["SUPABASE_ACCESS_TOKEN", "PROD_DB_URL"];
 const BANNED = [
   ["prod project ref", new RegExp(PROD_REF)],
   ["service_role", /service_role/],
@@ -109,6 +111,10 @@ export function check(dir = defaultDir) {
   const pv = jobs.preview;
   const pr = jobs.production;
 
+  // T-0543 M2: a workflow_run (release/deploy) must never be cancelled; only push (previews) may.
+  if (norm(wf.concurrency?.["cancel-in-progress"]) !== "${{ github.event_name == 'push' }}")
+    errs.push("T-0543 M2: workflow cancel-in-progress must be ${{ github.event_name == 'push' }}");
+
   // AC-1
   if (!pv) errs.push("AC-1: no preview job");
   else {
@@ -172,7 +178,8 @@ export function check(dir = defaultDir) {
 
   // AC-3
   const secrets = [...raw.matchAll(/secrets\.([A-Za-z0-9_]+)/g)].map((m) => m[1]);
-  for (const s of secrets) if (s !== "CLOUDFLARE_PAGES_TOKEN") errs.push(`AC-3: unexpected secret ${s}`);
+  for (const s of secrets)
+    if (s !== "CLOUDFLARE_PAGES_TOKEN" && !RELEASE_SECRETS.includes(s)) errs.push(`AC-3: unexpected secret ${s}`);
   if (!secrets.includes("CLOUDFLARE_PAGES_TOKEN")) errs.push("AC-3: secrets.CLOUDFLARE_PAGES_TOKEN not used");
   for (const v of ["VITE_SUPABASE_URL", "VITE_SUPABASE_ANON_KEY"])
     if (!raw.includes(`${v}: \${{ vars.${v} }}`)) errs.push(`AC-3: ${v} must come from vars.${v}`);
@@ -191,6 +198,71 @@ export function check(dir = defaultDir) {
     for (const s of job.steps ?? [])
       if (s.env?.CLOUDFLARE_API_TOKEN && !/pages\s+deploy/.test(s.run ?? ""))
         errs.push("AC-3: CLOUDFLARE_API_TOKEN set on a non-deploy step");
+
+  // T-0543 (D-0201): the automatic prod Supabase release.
+  const rl = jobs.release;
+  if (!rl) errs.push("T-0543 AC-1: no release job");
+  else {
+    if (pr && norm(rl.if) !== norm(pr.if)) errs.push("T-0543 AC-1: release if must equal production if");
+    const needs = [].concat(pr?.needs ?? []);
+    if (!needs.includes("release")) errs.push("T-0543 AC-1: production must need release");
+    if (rl.concurrency?.group !== "prod-release") errs.push("T-0543 AC-1: release concurrency group must be prod-release");
+    if (String(rl.concurrency?.["cancel-in-progress"]) !== "false")
+      errs.push("T-0543 AC-1: release cancel-in-progress must be false");
+    if (rl.environment !== "production") errs.push("T-0543 M5: release must run in environment: production");
+    if (!norm(rl.if).includes("github.event.workflow_run.head_branch == 'main'"))
+      errs.push("T-0543 L1: release if lacks head_branch == 'main'");
+    for (const st of rl.steps ?? [])
+      if (st.uses && !/@[0-9a-f]{40}(\s|$)/.test(st.uses))
+        errs.push(`T-0543 L3: release action not pinned by SHA: ${st.uses}`);
+    const co = (rl.steps ?? []).find((st) => /^actions\/checkout@/.test(st.uses ?? ""));
+    if (!co || norm(co.with?.ref) !== "${{ github.event.workflow_run.head_sha }}")
+      errs.push("T-0543 L5: release checkout ref must be github.event.workflow_run.head_sha");
+    const tipIdx = (rl.steps ?? []).findIndex((st) => /origin refs\/heads\/main\b/.test(String(st.run ?? "")) && /HEAD_SHA/.test(String(st.run ?? "")));
+    const gIdx = (rl.steps ?? []).findIndex((st) => /migration-guard\.mjs/.test(String(st.run ?? "")));
+    if (tipIdx < 0 || (gIdx >= 0 && tipIdx > gIdx)) errs.push("T-0543 N2: release must check head_sha is the tip of main (git fetch origin refs/heads/main, HEAD_SHA) before the guard");
+    if (rl.needs) errs.push("T-0543 AC-1: release must not wait on other jobs");
+    const steps = rl.steps ?? [];
+    const runs = steps.map((s) => String(s.run ?? ""));
+    const idx = (re) => runs.findIndex((r) => re.test(r));
+    const at = {
+      guard: idx(/infra\/scripts\/migration-guard\.mjs/),
+      backup: idx(/infra\/scripts\/prod-backup\.sh/),
+      upload: steps.findIndex((s) => /^actions\/upload-artifact@/.test(s.uses ?? "")),
+      plan: idx(/^\s*bash infra\/scripts\/supabase-prod-release\.sh plan\s*$/),
+      apply: idx(/^\s*bash infra\/scripts\/supabase-prod-release\.sh apply\s*$/),
+    };
+    for (const [k, v] of Object.entries(at)) if (v < 0) errs.push(`T-0543 AC-2: release has no ${k} step`);
+    const order = ["guard", "backup", "upload", "plan", "apply"].map((k) => at[k]);
+    if (order.every((v) => v >= 0) && order.some((v, i) => i && v <= order[i - 1]))
+      errs.push("T-0543 AC-2: release steps must run guard, backup, upload, plan, apply in that order");
+    const up = steps[at.upload];
+    if (up && !/^[^\n]*\/\*\.sql\.age$/.test(String(up.with?.path ?? "").trim()))
+      errs.push("T-0543 L5: backup upload path must be only *.sql.age");
+    if (up && String(up.with?.["retention-days"]) !== "7") errs.push("T-0543 AC-4: backup upload needs retention-days: 7");
+    const applyStep = steps[at.apply];
+    if (applyStep && !/^\$\{\{\s*vars\.SUPABASE_PROD_REF\s*\}\}$/.test(String(applyStep.env?.CONFIRM_PROD_RELEASE ?? "")))
+      errs.push("T-0543 AC-2: apply must set CONFIRM_PROD_RELEASE from vars.SUPABASE_PROD_REF");
+    // Secrets: step-level env on the guard, backup, plan and apply steps only.
+    if (JSON.stringify(rl.env ?? {}).includes("secrets.")) errs.push("T-0543 AC-5: release job-level env must not hold secrets");
+    const allowed = new Set([at.guard, at.backup, at.plan, at.apply]);
+    steps.forEach((s, i) => {
+      if (/secrets\./.test(JSON.stringify(s)) && !allowed.has(i))
+        errs.push(`T-0543 AC-5: release step "${s.name ?? i}" must not use secrets`);
+    });
+  }
+  for (const [name, job] of Object.entries(jobs)) {
+    if (name === "release") continue;
+    const txt = JSON.stringify(job);
+    for (const sec of RELEASE_SECRETS)
+      if (txt.includes(`secrets.${sec}`)) errs.push(`T-0543 AC-5: secrets.${sec} used outside the release job (${name})`);
+  }
+  if (JSON.stringify(wf.env ?? {}).includes("secrets.")) errs.push("T-0543 AC-5: workflow-level env must not hold secrets");
+  // The Supabase CLI is only ever driven by the release script, never inline.
+  for (const [name, job] of Object.entries(jobs))
+    for (const s of job.steps ?? [])
+      if (/\bsupabase\b/.test(String(s.run ?? "")) && !/infra\/scripts\/supabase-prod-release\.sh/.test(String(s.run)))
+        errs.push(`T-0543 AC-5: inline supabase CLI use in ${name}`);
 
   // AC-4
   const ci = parse(readFileSync(path.join(dir, "ci.yml"), "utf8"));
