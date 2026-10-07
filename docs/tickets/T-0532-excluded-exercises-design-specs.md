@@ -54,3 +54,4 @@ None. No token changes (D-0199 §10).
 Every AC has a passing test or a check-all pass · `pnpm -w typecheck lint test` green · `node .github/scripts/check-all.mjs` green · `tokens.json` unchanged · commits start with `T-0532:` and cite the screen IDs.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0532.md` (D-0157).

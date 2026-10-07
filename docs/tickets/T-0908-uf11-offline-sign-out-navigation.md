@@ -27,3 +27,4 @@ CI on main went red at `b3e9d30` (run 37600741398). The failing test is `tests/e
 None.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0908.md` (D-0157).

@@ -55,3 +55,4 @@ Checklist (D-0197 §7): `excludeIds` empty and non-empty both tested (AC1). No m
 Every AC has a passing test · `pnpm -w typecheck lint test` green · `vendor.mjs --check` green · contract change linked to D-0199 · commits start with `T-0533:` and cite UF-05.1 / UF-08.3.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0533.md` (D-0157).

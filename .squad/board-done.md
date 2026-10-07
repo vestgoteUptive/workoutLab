@@ -266,6 +266,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0349 | lib/offline: an online refresh that returns empty data wipes the cache (T-0307a QA) — decide whether an empty server answer should replace a non-empty cache | web-shell | — | done (closed: D-0197 §2, an authenticated empty answer replaces the cache; the queue holds unsynced work and an expired token gets an error, not []; no code change) | wl-build-web |
 | T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | done (closed: optional; the keyboard helper works, and a new dependency plus decision for one test file isn't worth it) | wl-build-web |
 | T-0444 | DoD gate gap: `pnpm -w typecheck lint test` runs `turbo run typecheck lint test` (args appended to the root `typecheck` script), so the root `test` script's `&& pnpm test:repo-checks` never runs. Make the documented gate run repo-checks (e.g. a root `gate` script) and update the DoD text, agents/roles/_common.md and the tick skill (T-0440 build) | infra | — | done (closed: worked around in the docs; agents/roles/_common.md and .claude/commands/tick.md run `-w test:repo-checks` as its own step, and CI runs it as its own step) | wl-build-infra |
+| T-0445 | Flake: UF-08 `ready-start.test.tsx` 'retry: the second tap…' failed once in a full -w gate (T-0422 rework, 2026-10-02), then passed 3× alone and in a rerun. Reproduce under load (--repeat / concurrency), find the timing assumption, fix with a real wait | web-feature:UF-08 | — | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
@@ -331,3 +332,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0523 | Regenerate supabase/seed.sql for T-0522; prod apply is a human release at merge (D-0192) | backend | T-0522 | done (prod apply: human release) | wl-build-backend |
 | T-0529 | UF-11.2 "Account and sign out" header link; UF-11.4 Sign out under the email, unsynced confirm, Signing out…, lands on /welcome; GitHub #35 part 2 (D-0195) | web-feature:UF-11 | T-0528 | done | wl-build-web |
 | T-0530 | Sign-out must cancel or await an in-flight cache refresh so it can't write the user's rows back after the clear (T-0528 review follow-up, D-0195) | web-shell | T-0528 | done | wl-build-web |
+| T-0532 | Design: C-03 checkbox spec; screen specs for UF-11.5, UF-11.2, UF-08.2, UF-08.3/UF-05.1, UF-04.1/UF-04.2; neutral notice pattern | design | — | done | wl-design |
+| T-0907 | deploy.yml builds design-tokens before web in preview and production (tokens.css is generated; PR #38 preview failed) | infra | — | done | wl-build-infra |
+| T-0908 | UF-11.4 offline sign-out reaches /welcome without racing a full page load (CI fix, PR #40) | web-feature:UF-11 | T-0529 | done | wl-build-web |
+| T-0533 | Engine rule 0.1 part 1: rankSwaps 9th param excludeIds = [] at pool level; rule 12 signature line + D-0130 guard fixture + T-0212 AC1/AC2; R12-E17…E19; vendor regen | engine | — | done | wl-build-engine |

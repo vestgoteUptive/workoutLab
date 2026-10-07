@@ -55,3 +55,4 @@ AC-1 and AC-2 evidence recorded · AC-4's 30 runs green · `pnpm -w typecheck li
 `-w test:repo-checks` · commits start with `T-0445` and cite UF-08.4.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0445.md` (D-0157).

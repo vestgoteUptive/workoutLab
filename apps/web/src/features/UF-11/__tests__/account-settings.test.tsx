@@ -73,8 +73,8 @@ function setOnline(value: boolean) {
   Object.defineProperty(navigator, "onLine", { value, configurable: true });
 }
 
-function mount() {
-  return render(
+function tree() {
+  return (
     <MemoryRouter initialEntries={["/plan", "/plan/account"]} initialIndex={1}>
       <Where />
       <Routes>
@@ -82,8 +82,12 @@ function mount() {
         <Route path="/plan" element={<span data-testid="plan" />} />
         <Route path="/welcome" element={<span data-testid="welcome" />} />
       </Routes>
-    </MemoryRouter>,
+    </MemoryRouter>
   );
+}
+
+function mount() {
+  return render(tree());
 }
 
 function deferred<T>() {
@@ -419,6 +423,65 @@ describe("T-0529 AC-3 / AC-4 sign out, nothing unsynced", () => {
     await waitFor(() => expect(replaceSpy).toHaveBeenCalledTimes(1), WAIT);
     expect(replaceSpy).toHaveBeenCalledWith("/welcome");
     expect(where()).toBe("/plan/account");
+  });
+});
+
+describe("T-0908 AC-1 / AC-3 bounded wait for signed-out", () => {
+  it("T-0908 AC-3 status already flipped before the call returns: in-app, no wait", async () => {
+    account.signOutAndClearDevice.mockResolvedValue(undefined);
+    auth.value = { ...auth.value, status: "signed-out" };
+    mount();
+    fireEvent.click(signOutButton());
+    await waitFor(() => expect(where()).toBe("/welcome"), WAIT);
+    expect(replaceSpy).not.toHaveBeenCalled();
+  });
+
+  it("T-0908 AC-3 status flips after the call returns, within the bound: in-app", async () => {
+    account.signOutAndClearDevice.mockResolvedValue(undefined);
+    const view = mount();
+    fireEvent.click(signOutButton());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 300));
+    });
+    expect(where()).toBe("/plan/account");
+    auth.value = { ...auth.value, status: "signed-out" };
+    view.rerender(tree());
+    await waitFor(() => expect(where()).toBe("/welcome"), WAIT);
+    expect(replaceSpy).not.toHaveBeenCalled();
+  });
+
+  it("T-0908 AC-3 never flips while online: full load after the bound", async () => {
+    account.signOutAndClearDevice.mockResolvedValue(undefined);
+    mount();
+    fireEvent.click(signOutButton());
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 1000));
+    });
+    expect(replaceSpy).not.toHaveBeenCalled();
+    await waitFor(() => expect(replaceSpy).toHaveBeenCalledWith("/welcome"), WAIT);
+    expect(where()).toBe("/plan/account");
+  });
+
+  it("T-0908 AC-3 never flips while offline: in-app navigation, no full load", async () => {
+    account.signOutAndClearDevice.mockResolvedValue(undefined);
+    setOnline(false);
+    mount();
+    fireEvent.click(signOutButton());
+    await waitFor(() => expect(where()).toBe("/welcome"), WAIT);
+    expect(replaceSpy).not.toHaveBeenCalled();
+    expect(navCalls.at(-1)).toEqual({ to: "/welcome", options: { replace: true } });
+  });
+
+  it("T-0908 AC-2 delete shares the helper: flips late in-app; never flips offline in-app", async () => {
+    account.deleteAccountAndSignOut.mockResolvedValue("deleted");
+    mount();
+    fireEvent.change(openConfirm(), { target: { value: "delete" } });
+    fireEvent.click(screen.getByRole("button", { name: a.deleteConfirm }));
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 300));
+    });
+    expect(replaceSpy).not.toHaveBeenCalled();
+    await waitFor(() => expect(replaceSpy).toHaveBeenCalledWith("/welcome"), WAIT);
   });
 });
 

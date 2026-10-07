@@ -317,14 +317,19 @@ describe("AC-5 a failed write (D-0110 §3)", () => {
       fireEvent.click(startButton());
       await screen.findByRole("alert", undefined, { timeout: LAZY_WAIT_MS });
       fireEvent.click(startButton());
-      await waitFor(() => expect(screen.getByTestId("focus")).toBeInTheDocument(), {
-        timeout: LAZY_WAIT_MS,
-      });
+      // NavLog records in a passive effect that can land after the focus route is in the DOM, so
+      // the one wait covers both the route and the committed location.
+      await waitFor(
+        () => {
+          expect(screen.getByTestId("focus")).toBeInTheDocument();
+          expect(navLog).toHaveLength(before + 1);
+        },
+        { timeout: LAZY_WAIT_MS },
+      );
       expect(upsert).toHaveBeenCalledTimes(2);
       const [first, second] = upsert.mock.calls.map((c) => c[0].id);
       expect(first).toMatch(UUID_V4);
       expect(second).toBe(first);
-      expect(navLog).toHaveLength(before + 1);
       expect(last()).toEqual({ pathname: `/session/${first}`, search: "", type: "REPLACE" });
     },
     LAZY_TEST_MS,
