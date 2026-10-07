@@ -285,6 +285,12 @@ function SetRow({
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const busy = useRef(false);
+  // T-0464: while an edit (`ctx.editSet`) is in flight, one toggle may be remembered (a second
+  // cancels it) and runs once the edit settles. A toggle during a toggle is still dropped.
+  const editing = useRef(false);
+  const queued = useRef(false);
+  const editedPatch = useRef<Partial<Seed>>({});
+  const afterEdit = useRef<() => void>(() => undefined);
   const firstField = useRef<HTMLInputElement>(null);
   useEffect(() => {
     if (focusOnMount) firstField.current?.focus();
@@ -333,30 +339,49 @@ function SetRow({
   const countInvalid = parseCount(countText) === null;
   const blocked = !logged && (weightInvalid || countInvalid);
 
-  const run = (write: () => Promise<unknown>, onDone?: () => void) => {
+  const run = (write: () => Promise<unknown>, onDone?: () => void, edit?: Partial<Seed>) => {
     busy.current = true;
+    editing.current = edit !== undefined;
+    if (edit) editedPatch.current = {};
     setPending(true);
     setFailed(false);
-    write().then(
-      () => {
-        busy.current = false;
+    const settled = (ok: boolean) => {
+      busy.current = false;
+      const wasEdit = editing.current;
+      editing.current = false;
+      if (ok && edit) editedPatch.current = edit;
+      setDraft(NO_DRAFT);
+      if (ok) {
         setPending(false);
-        setDraft(NO_DRAFT);
         onDone?.();
-      },
-      () => {
-        busy.current = false;
+      } else {
         setPending(false);
-        setDraft(NO_DRAFT);
         setFailed(true);
-      },
+      }
+      if (wasEdit && queued.current) {
+        queued.current = false;
+        afterEdit.current();
+      }
+    };
+    write().then(
+      () => settled(true),
+      () => settled(false),
     );
   };
 
   const onToggle = () => {
-    if (busy.current) return;
+    if (busy.current) {
+      if (editing.current) queued.current = !queued.current;
+      return;
+    }
     if (logged) {
-      keepRow?.({ weightKg: logged.weightKg, reps: logged.reps, durationS: logged.durationS });
+      keepRow?.({
+        weightKg: logged.weightKg,
+        reps: logged.reps,
+        durationS: logged.durationS,
+        ...editedPatch.current,
+      });
+      editedPatch.current = {};
       run(() => ctx.deleteSet(logged.clientId));
       return;
     }
@@ -389,6 +414,8 @@ function SetRow({
     );
   };
 
+  afterEdit.current = onToggle;
+
   /** Blur or Enter on a done row's field: one `editSet`, only when the parsed value changed. */
   const commit = (field: keyof Draft) => {
     const text = draft[field];
@@ -401,15 +428,14 @@ function SetRow({
         return keep();
       }
       const kg = parsed.value;
-      run(() => ctx.editSet(logged.clientId, { weightKg: kg }));
+      run(() => ctx.editSet(logged.clientId, { weightKg: kg }), undefined, { weightKg: kg });
       return;
     }
     const value = parseCount(text);
     const current = field === "reps" ? logged.reps : logged.durationS;
     if (value === null || value === current) return keep();
-    run(() =>
-      ctx.editSet(logged.clientId, field === "reps" ? { reps: value } : { durationS: value }),
-    );
+    const patch = field === "reps" ? { reps: value } : { durationS: value };
+    run(() => ctx.editSet(logged.clientId, patch), undefined, patch);
   };
   const weightTextOf = (v: number | null) => (v === null ? "" : formatDecimal(v, locale));
 

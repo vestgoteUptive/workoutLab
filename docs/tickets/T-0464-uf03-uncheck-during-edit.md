@@ -69,3 +69,10 @@ lint test` green plus `-w test:repo-checks` · the UF-03 e2e spec(s) green · co
 `T-0464` and cite UF-03.1.
 
 ## Build / accept log
+
+### Build log (2026-10-07, base ec3c73a, tree clean)
+- `SetRow` (`ListView.tsx`): `run` takes an `edit` marker; a toggle during an in-flight edit sets `queued` (a second tap flips it back); on edit settle (resolve or reject) the remembered toggle runs through the latest `onToggle`; `keepRow` gets the edited values. Toggle-during-toggle still dropped.
+- Tests: `__tests__/list-view.uncheck-edit.test.tsx`. AC-1 → "AC-1"/"AC-1b", AC-2, AC-3, AC-4, AC-5, AC-6 (one test each).
+- Red on main (ListView.tsx at HEAD): AC-1, AC-1b, AC-2, AC-5 fail; AC-3/AC-4/AC-6 pass on main (they pin unchanged behaviour). Planted faults (backup copy, restored by cp): second tap doesn't cancel → AC-3 red; no run after reject → AC-2 red; remember toggle during toggle too → AC-4 red.
+- Loop: new test file x20 = 0 failures.
+- Gate: `-w typecheck lint test --concurrency=1` green; test:repo-checks 311 pass; format:check clean; check-all exit 0; e2e `uf-03-list-summary.spec.ts` 4 passed.
