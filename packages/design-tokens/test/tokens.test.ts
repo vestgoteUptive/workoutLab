@@ -104,6 +104,15 @@ describe("AC5 text and outline contrast (NFR-A11Y-1)", () => {
   it.each([["bg"], ["surface-2"]] as const)("warn outline on %s ≥ 3.0", (bgName) => {
     expect(contrast(c.warn, c[bgName])).toBeGreaterThanOrEqual(3.0);
   });
+  it.each([["bg"], ["surface"], ["surface-2"]] as const)(
+    "C-03 checkbox border text-muted on %s ≥ 3.0",
+    (bgName) => {
+      expect(contrast(c["text-muted"], c[bgName])).toBeGreaterThanOrEqual(3.0);
+    },
+  );
+  it("line-strong cannot draw the C-03 border on surface (planted pair)", () => {
+    expect(contrast(c["line-strong"], c.surface)).toBeLessThan(3.0);
+  });
 });
 
 describe("AC6 C-01 legend data (D-0013/D-0019)", () => {

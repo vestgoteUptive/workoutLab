@@ -41,6 +41,7 @@ Dark, high-contrast, athletic. Big condensed numbers for anything read mid-set.
 | `text-muted` on `bg` / `bg-focus` / `surface` | 7.5 / 7.8 / 6.8 | 4.5 |
 | `on-accent` on `accent` / `accent-hover` | 14.9 / 16.5 | 4.5 |
 | `warn` outline on `bg` / `surface-2` | 8.0 / 6.2 | 3.0 |
+| `text-muted` checkbox border (C-03) on `bg` / `surface` / `surface-2` | 7.5 / 6.8 / 5.8 | 3.0 |
 
 ## Type
 
