@@ -59,6 +59,7 @@ Checklist (D-0197 §7): empty and non-empty export both covered (AC7). The migra
 - `apps/web/src/lib/account/__tests__/**`
 - `tests/e2e/fixtures/supabase-mock.ts`
 - `tests/e2e/uf-11-account.spec.ts`
+- `.github/scripts/rls-coverage.test.mjs` (EXPECTED gains `excluded_exercises`; orchestrator grant 2026-10-07)
 
 ## Contract impact
 `docs/data-model.md`: new table `excluded_exercises` and the cascade note. Named by D-0199 §4. `api/openapi.yaml` unchanged.
