@@ -23,3 +23,8 @@ T-0537's full gate (2026-10-07) had one web failure, `src/features/UF-11/__tests
 None.
 
 ## Build / accept log
+- Root cause: the failing assertion was `expect(anyway).toHaveFocus()` (AC-5 test 1, right after `findByRole(signOutAnyway)`). Focus moves in a passive `useEffect` on `unsyncedPrompt`; `findBy` can resolve on the commit before that effect flushes, so the synchronous focus assert raced. Not a timeout, and not T-0908's `leaveToWelcome` (status is already signed-out there, so it never polls).
+- Repro (before fix): 1/30 clean runs of `src/features/UF-11` (assertion above), and 2/30 clean + 4/10 under 16 `yes` loops in an earlier batch (log not captured; the 1/30 was). A first attempt (raising the file's testTimeout) was reverted: not the cause.
+- Fix: `await waitFor(() => expect(anyway).toHaveFocus(), WAIT)` in `account-settings.test.tsx`.
+- Proof: 30/30 clean, 10/10 under 16 `yes` loops (killed afterwards), full web run: see below.
+- Full web vitest run: 3668 passed; only build.test.ts errors (tokens.css not built; bare vitest skips the pnpm pretest, unrelated). format:check clean.

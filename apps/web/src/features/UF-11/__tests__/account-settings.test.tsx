@@ -495,7 +495,9 @@ describe("T-0529 AC-5 unsynced confirm", () => {
     const anyway = await screen.findByRole("button", { name: a.signOutAnyway }, WAIT);
     expect(screen.getByText(a.unsyncedWarning)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: a.cancel })).toBeInTheDocument();
-    expect(anyway).toHaveFocus();
+    // T-0909: focus is moved in a passive effect (useEffect on `unsyncedPrompt`), which can flush
+    // after the commit that `findBy` already observed; asserting it synchronously flaked under load.
+    await waitFor(() => expect(anyway).toHaveFocus(), WAIT);
     expect(account.hasUnsyncedWork).toHaveBeenCalledWith(TEST_USER);
     expect(account.signOutAndClearDevice).not.toHaveBeenCalled();
 
