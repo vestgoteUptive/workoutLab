@@ -62,9 +62,4 @@ None. `tokens.json` is unchanged (D-0203 §1, AC6).
 Every AC has a passing test · `pnpm --filter @workoutlab/design-tokens typecheck` green · `pnpm --filter @workoutlab/design-tokens lint` green · `pnpm --filter @workoutlab/design-tokens test` green · the cached full gate green · contracts unchanged · commits start with `T-0544:`.
 
 ## Build / accept log
-
-### 2026-10-07 designer build
-- Start: clean, HEAD 7b57f2b. Fonts: `@fontsource-variable/big-shoulders-display@5.3.0` / `@fontsource-variable/dm-sans@5.3.0` (`npm pack`, `latin-wght-normal`), 35 504 + 36 932 = 72 436 bytes; OFL texts from `google/fonts` at pinned commits; RFN none declared; D-0204 §6 fallback not needed. URLs, sha256, sizes in `fonts/SOURCES.md`. `tokens.json` unchanged (`git diff main` empty, AC6).
-- AC1 → `fonts.test.ts` "AC1: two @font-face…" + "remote/data:/local() fails"; AC2 → "AC2: DM Sans 400 600 fails on 700" (fixture); AC3 → "AC3: both woff2…" + "RFN check"; AC4 → "AC4: one changed hex digit…" (fixture); AC5 → "AC5 exports resolve" (2 tests, package self-reference via `createRequire`); AC6 → existing `tokens.test.ts`/`css.test.ts` pass unchanged.
-- Planted faults (backup copies, restored with `cp`): DM Sans `font-weight: 400 600` in `src/fonts.css` → red "DM Sans: font-weight 400 600 covers 700"; last hex digit of DM Sans sha256 in `SOURCES.md` 3→4 → red "dm-sans-latin-wght.woff2 sha256 matches SOURCES.md". Restored → 8/8 green.
-- Gate: package typecheck/lint green, package test 92/92; `-w typecheck lint test --concurrency=1` 19/19 tasks; `test:repo-checks` 311 pass; `format:check` clean; `check-all` rc 0.
+Archived in `docs/tickets/log/T-0544.md` (D-0157).

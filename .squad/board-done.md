@@ -353,3 +353,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | done | wl-build-web |
 | T-0909 | UF-11 account-settings T-0529 AC-5 flakes under full-suite load (T-0537 gate) | web-feature:UF-11 | T-0529 | done | wl-build-web |
 | T-0910 | UF-10 never-in-workout AC-A12 flakes under load | web-feature:UF-10 | — | done | wl-build-web |
+| T-0544 | Self-hosted variable latin woff2 (Big Shoulders Display, DM Sans) in design-tokens: fonts/, OFL texts, SOURCES.md sha256, fonts.css export; F-1/F-2 | design | — | done | wl-design |

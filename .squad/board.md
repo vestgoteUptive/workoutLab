@@ -131,11 +131,10 @@ GitHub #37 (Plan is confusing) and #45 (Account looks bad). Specs: `docs/specs/v
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0552 | **High priority.** PWA applies new builds: update check on load and resume; reload only on a route change to, or resume on, a tab screen; never on /session/* or mid-form; never on first install (D-0204 §3–§4) | web-shell | — | doing | wl-build-web |
-| T-0544 | Self-hosted variable latin woff2 (Big Shoulders Display, DM Sans) in design-tokens: fonts/, OFL texts, SOURCES.md sha256, fonts.css export; F-1/F-2 | design | — | doing | wl-design |
 | T-0546 | Global type scale (body/h1/h2, rem) + .wl-page/.wl-card/.wl-row/.wl-label/button/input classes in main.css; T-1, T-4, G-1 on the tab screens; full e2e + visual check | web-shell | — | doing | wl-build-web |
 | T-0551 | User flows v2 UF-11.2/UF-11.4 text + uf-11-plan-checkin.md UF-11.2 section to the D-0203 layout | product | — | ready | wl-spec |
-| T-0545 | Web loads the fonts: import fonts.css, preload both woff2, woff2 in Workbox globPatterns; F-3 build test, F-4/F-5 Playwright (online, offline); full e2e | web-shell | T-0544 | todo | wl-build-web |
-| T-0547 | Landing fonts.css + preload; `font-src 'self'` in _headers and the t0511 test (security sign-off); re-run T-0309 AC23 | landing | T-0544 | todo | wl-build-web |
+| T-0545 | Web loads the fonts: import fonts.css, preload both woff2, woff2 in Workbox globPatterns; F-3 build test, F-4/F-5 Playwright (online, offline); full e2e | web-shell | T-0544 | doing | wl-build-web |
+| T-0547 | Landing fonts.css + preload; `font-src 'self'` in _headers and the t0511 test (security sign-off); re-run T-0309 AC23 | landing | T-0544 | doing | wl-build-web |
 | T-0548 | UF-11.2 part 1: .wl-page on /plan and /plan/edit, header + purpose line, "Your plan" card with Edit plan, Targets tile grid (no "From your plan"), "See this period in Balance"; copy-test updates logged | web-feature:UF-11 | T-0546 | todo | wl-build-web |
 | T-0549 | UF-11.2 part 2: check-in card restyle, Check-ins and Routines cards, one accent action, loading/cold-cache states | web-feature:UF-11 | T-0548 | todo | wl-build-web |
 | T-0550 | UF-11.4 rework: back link to Plan, .wl-page, cards in D-0195 order, C-03 equipment, Delete card last with line-strong edge, text-muted input border | web-feature:UF-11 | T-0546, T-0549 | todo | wl-build-web |
