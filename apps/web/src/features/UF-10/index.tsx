@@ -51,6 +51,7 @@ export interface BalanceScreenProps {
 
 function useResult(props: BalanceScreenProps): {
   result: BalanceResult | null;
+  settled: boolean;
   lastSyncedAt: string | null;
   timeZone: string;
 } {
@@ -97,6 +98,7 @@ function useResult(props: BalanceScreenProps): {
   });
   return {
     result: props.result ?? state.result,
+    settled: props.result !== undefined || state.settled,
     lastSyncedAt: props.lastSyncedAt !== undefined ? props.lastSyncedAt : state.lastSyncedAt,
     timeZone,
   };
@@ -151,8 +153,9 @@ function AreaRow({ area, locale }: { area: AreaBalance; locale: string | undefin
 
 /** UF-10.1 All areas. */
 export function Balance(props: BalanceScreenProps = {}) {
-  const { result, lastSyncedAt, timeZone } = useResult(props);
+  const { result, settled, lastSyncedAt, timeZone } = useResult(props);
   const locale = props.locale;
+  const noData = result === null && settled;
   const areas = result?.areas ?? [];
   // `every`, not a recomputation: the empty state is "no hard set anywhere in the window", which
   // is what all nine areas reading load 0 means. The engine still owns each area's numbers.
@@ -183,12 +186,18 @@ export function Balance(props: BalanceScreenProps = {}) {
 
       {/* The one C-01 region on this screen, fed `result.areas` — the same array the rows
           below render, so the map and the rows can never disagree (AC-A15). */}
-      <BodyMap
-        variant="full"
-        areas={areas}
-        loading={result === null}
-        {...(locale !== undefined ? { locale } : {})}
-      />
+      {noData ? (
+        <p role="status" className="wl-balance__empty">
+          {en.uf10.noData}
+        </p>
+      ) : (
+        <BodyMap
+          variant="full"
+          areas={areas}
+          loading={result === null}
+          {...(locale !== undefined ? { locale } : {})}
+        />
+      )}
 
       {nothingLogged ? <p className="wl-balance__empty">{en.uf10.emptyState}</p> : null}
 
@@ -330,7 +339,7 @@ function useExerciseNames(override: ReadonlyMap<string, string> | undefined): {
 /** UF-10.2 Area detail. */
 export function BalanceDetail(props: BalanceScreenProps = {}) {
   const { area: areaParam } = useParams();
-  const { result, lastSyncedAt, timeZone } = useResult(props);
+  const { result, settled: balanceSettled, lastSyncedAt, timeZone } = useResult(props);
   const locale = props.locale;
   const { names, settled } = useExerciseNames(props.exerciseNames);
 
@@ -343,6 +352,11 @@ export function BalanceDetail(props: BalanceScreenProps = {}) {
     return (
       <div data-screen-id="UF-10.2" className="wl-balance">
         <h1 className="wl-balance-detail__headline">{en.screens.balanceDetail}</h1>
+        {!result && balanceSettled ? (
+          <p role="status" className="wl-balance__empty">
+            {en.uf10.noData}
+          </p>
+        ) : null}
       </div>
     );
   }

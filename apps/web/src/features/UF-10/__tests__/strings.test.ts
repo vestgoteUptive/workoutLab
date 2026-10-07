@@ -35,6 +35,10 @@ describe("AC-A21 the strings live in this ticket's own flow file", () => {
     expect(Object.keys(uf10).length).toBeGreaterThan(0);
   });
 
+  it("AC-7 (T-0350): noData is the exact D-0197 §3 string", () => {
+    expect(uf10.noData).toBe("No balance on this device yet. Connect to the internet to load it.");
+  });
+
   it("en.uf10 is reference-equal to the flows/uf-10.ts export", () => {
     expect(en.uf10).toBe(uf10);
   });
