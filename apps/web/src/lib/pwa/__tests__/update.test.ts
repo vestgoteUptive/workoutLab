@@ -4,9 +4,14 @@ import { isSafeToReload, notifyRouteChange, startUpdateChecks } from "../update.
 
 function setup(opts: { controller?: boolean; path?: string; update?: () => Promise<void> } = {}) {
   const update = vi.fn(opts.update ?? (() => Promise.resolve()));
+  const registration = Object.assign(new EventTarget(), {
+    update,
+    waiting: null as unknown,
+    installing: null as unknown,
+  });
   const container = Object.assign(new EventTarget(), {
     controller: opts.controller === false ? null : {},
-    ready: Promise.resolve({ update }),
+    ready: Promise.resolve(registration),
   });
   const doc = Object.assign(new EventTarget(), { visibilityState: "visible" });
   const location = { pathname: opts.path ?? "/", reload: vi.fn() };
@@ -15,6 +20,7 @@ function setup(opts: { controller?: boolean; path?: string; update?: () => Promi
     update,
     reload: location.reload,
     start: (prod = true) => startUpdateChecks({ prod, win: win as never }),
+    registration,
     update_: () => container.dispatchEvent(new Event("controllerchange")),
     show: async (state: "visible" | "hidden" = "visible") => {
       doc.visibilityState = state;
@@ -132,6 +138,38 @@ describe("T-0552 update checks", () => {
     f.update_();
     f.go("/plan");
     expect(f.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("AC12 a waiting worker is told to skip waiting; its activation (no controllerchange) marks the update pending", async () => {
+    const t = setup({ path: "/plan/edit" });
+    const worker = Object.assign(new EventTarget(), { state: "installing", postMessage: vi.fn() });
+    t.start();
+    await flush();
+    t.registration.installing = worker;
+    t.registration.dispatchEvent(new Event("updatefound"));
+    worker.state = "installed";
+    worker.dispatchEvent(new Event("statechange"));
+    expect(worker.postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
+    t.go("/plan");
+    expect(t.reload).not.toHaveBeenCalled();
+    worker.state = "activated";
+    worker.dispatchEvent(new Event("statechange"));
+    t.go("/library");
+    expect(t.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("AC12 on a first install a new worker is neither activated nor reloaded for", async () => {
+    const t = setup({ controller: false });
+    const worker = Object.assign(new EventTarget(), { state: "installed", postMessage: vi.fn() });
+    t.start();
+    await flush();
+    t.registration.installing = worker;
+    t.registration.dispatchEvent(new Event("updatefound"));
+    worker.state = "activated";
+    worker.dispatchEvent(new Event("statechange"));
+    t.go("/library");
+    expect(worker.postMessage).not.toHaveBeenCalled();
+    expect(t.reload).not.toHaveBeenCalled();
   });
 
   it("AC7 no update, no reload", async () => {

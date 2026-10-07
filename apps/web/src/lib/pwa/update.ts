@@ -3,7 +3,10 @@
 // reloads, and an installed iOS PWA is rarely reloaded. This module checks for a new worker on
 // load and whenever the app becomes visible, notes when one took control over a page that already
 // had a controller (the first install claiming the page is not an update), and reloads once, only
-// at a safe moment: never during a workout (principle 1), mid-form or during auth/onboarding.
+// at a safe moment. The built worker does NOT skip waiting by itself (it only does so on a
+// SKIP_WAITING message, which nothing sends since T-0429 dropped registerSW.js) and does not claim
+// clients, so this module also activates a waiting worker and treats its activation as "pending".
+// At a safe moment: never during a workout (principle 1), mid-form or during auth/onboarding.
 
 const SAFE_EXACT: ReadonlySet<string> = new Set(["/", "/plan"]);
 const SAFE_PREFIXES: readonly string[] = ["/library", "/progress", "/balance"];
@@ -52,16 +55,40 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
     win.location.reload();
   };
 
+  const markPending = (): void => {
+    if (hadController) pending = true;
+  };
+
+  // A new worker waits after install: ask it to take over, and once it is active a reload loads it.
+  const adopt = (worker: ServiceWorker | null | undefined): void => {
+    if (!worker || !hadController) return;
+    const onState = (): void => {
+      if (worker.state === "installed") worker.postMessage({ type: "SKIP_WAITING" });
+      else if (worker.state === "activated") markPending();
+    };
+    worker.addEventListener("statechange", onState);
+    onState();
+  };
+
+  let watched: ServiceWorkerRegistration | undefined;
+  const watch = (registration: ServiceWorkerRegistration): void => {
+    if (watched === registration || typeof registration.addEventListener !== "function") return;
+    watched = registration;
+    adopt(registration.waiting);
+    registration.addEventListener("updatefound", () => adopt(registration.installing));
+  };
+
   const check = (): void => {
     // `ready` resolves once a worker is active; offline or blocked, the check is simply skipped.
     void Promise.resolve(container.ready)
-      .then((registration) => registration.update())
+      .then((registration) => {
+        watch(registration);
+        return registration.update();
+      })
       .catch(() => undefined);
   };
 
-  container.addEventListener("controllerchange", () => {
-    if (hadController) pending = true;
-  });
+  container.addEventListener("controllerchange", markPending);
   win.document.addEventListener("visibilitychange", () => {
     if (win.document.visibilityState !== "visible") return;
     check();
