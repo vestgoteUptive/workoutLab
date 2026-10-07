@@ -1,5 +1,5 @@
 /**
- * Content types for the "workout LAB by Uptive" landing (T-0309a, D-0046 §3).
+ * Content types for the "workout LAB" landing (T-0309a, D-0046 §3).
  *
  * Copy lives in plain typed modules, not Astro content collections. Pages in
  * T-0309b import `landing` and `privacy` and render them; they never inline copy.
@@ -15,12 +15,10 @@ export type FeatureId = "balance" | "time-budget" | "focus" | "adaptive";
 export interface Brand {
   /** Wordmark, set in the display font at weight 800. */
   readonly name: string;
-  /** Shown after the wordmark in the body font, `text-muted`. */
-  readonly byline: string;
 }
 
 export interface Meta {
-  /** `<title>`; starts with "workout LAB by Uptive", at most 60 characters. */
+  /** `<title>`; starts with "workout LAB", at most 60 characters. */
   readonly title: string;
   /** `<meta name="description">`; 50–160 characters. */
   readonly description: string;
@@ -55,7 +53,7 @@ export interface PrivacySummary {
 }
 
 export interface Footer {
-  /** Legal line; names Uptive. */
+  /** Legal line; names the product. */
   readonly legal: string;
   /** Text of the footer link to the app; 2–24 characters. */
   readonly appLinkLabel: string;
