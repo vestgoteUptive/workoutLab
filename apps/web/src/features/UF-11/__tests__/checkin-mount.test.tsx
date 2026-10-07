@@ -120,7 +120,8 @@ describe("T-0471 AC-1 UF-11.2: CheckinCard is the first sibling after <h1>, red 
     const h1 = root.querySelector("h1")!;
     expect(h1.textContent).toBe(en.screens.plan);
     const card = document.querySelector('[data-part="checkin-card"]')!;
-    expect(h1.nextElementSibling).toBe(card);
+    // T-0529 (D-0195 §1): the h1 now sits in `.wl-plan__header`; the card follows that header.
+    expect(h1.parentElement!.nextElementSibling).toBe(card);
     expect(card.getAttribute("aria-label")).toBe(uc.cardName);
 
     // PlanBody's own content still renders, after the card.

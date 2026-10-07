@@ -1,0 +1,21 @@
+{
+  "id": "plank-shoulder-tap",
+  "name": "Plank shoulder tap",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "shoulders": 1, "core": 0.5 },
+  "instructions": [
+    "Start in a high plank with your hands under your shoulders and feet wide.",
+    "Lift one hand and tap the opposite shoulder.",
+    "Put the hand back down and tap with the other hand."
+  ],
+  "cue": "Hips still, tap the opposite shoulder",
+  "mistakes": ["Rocking the hips from side to side.", "Rushing the taps."],
+  "variants": ["pike-push-up", "incline-pike-push-up"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

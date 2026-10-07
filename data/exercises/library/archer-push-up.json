@@ -1,0 +1,22 @@
+{
+  "id": "archer-push-up",
+  "name": "Archer push-up",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "advanced",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "chest": 1, "shoulders": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Start in a push-up position with your hands set very wide.",
+    "Shift your weight to one hand and bend that elbow as you lower your chest toward it.",
+    "Keep the other arm long and straight out to the side.",
+    "Push back to the middle, then lower to the other side."
+  ],
+  "cue": "Lower to one hand, other arm stays straight",
+  "mistakes": ["Twisting the hips toward the working arm.", "Bending the straight arm."],
+  "variants": ["push-up", "wide-push-up"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

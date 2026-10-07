@@ -10,6 +10,18 @@ export declare const MAX_ITEMS_PER_AREA = 2;
 /** `budgetMin` bounds (D-0037 §7, D-0040 §7). */
 export declare const BUDGET_MIN = 1;
 export declare const BUDGET_MAX = 480;
+/**
+ * Rule 6.1 (D-0191 §2): the avoided areas of a session input. Absent means none, an unknown
+ * area (or a non-array) is a `RangeError`, and duplicates are ignored.
+ */
+export declare function avoidedAreas(sessionInput: Pick<SessionInput, "avoidAreas">): Set<Area>;
+/**
+ * Rule 0.1 (UF-08.2, UF-11.5, D-0199 §3): the areas, in the fixed order, that have an eligible
+ * weight-1.0 exercise with `excludeIds = []` and none with `excludeIds`. Areas already empty
+ * because of equipment or level are not reported. Unknown ids are ignored, and duplicates and
+ * the order of `excludeIds` don't change the result.
+ */
+export declare function excludedOutAreas(profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], excludeIds: readonly string[]): Area[];
 /** The default goal when a profile has none (D-0095 §1): today's rule 7.2 slots. */
 export declare const DEFAULT_GOAL: Goal;
 /** Rule 7.2 rep slots by goal (D-0061 §1, D-0095): main lift, other compounds, isolation. */
@@ -66,12 +78,13 @@ export declare function buildItem(spec: ItemSpec, rc: ReasonContext): WorkoutIte
  * Rule 7.2 candidate ranking for `area` at session start (R7-E7): the ids of the eligible
  * exercises with weight 1.0 there and no recovering primary area.
  */
-export declare function rankCandidates(area: Area, history: readonly HistorySet[], targets: readonly AreaTarget[], profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], sessionInput: Pick<SessionInput, "excludeIds">, now: Instant, tz: TimeZone): string[];
+export declare function rankCandidates(area: Area, history: readonly HistorySet[], targets: readonly AreaTarget[], profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], sessionInput: Pick<SessionInput, "excludeIds" | "avoidAreas">, now: Instant, tz: TimeZone): string[];
 /**
  * The next workout (UF-08.1, UF-08.4; rules 7, 10). Pure: the same inputs give a
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
  * Selection is main → pinned → greedy → shuffle (rule 13), then energy (rule 7.4, D-0056 §8).
  * `profile.goal` picks the rule 7.2 rep slots only (D-0061 §1, D-0095); absent means
- * `build_muscle`, and an unknown goal throws `RangeError`.
+ * `build_muscle`, and an unknown goal throws `RangeError`. `sessionInput.avoidAreas` (rule 6.1,
+ * D-0191 §2) skips areas like recovering ones for selection only; absent means `[]`.
  */
 export declare function suggest(history: readonly HistorySet[], targets: readonly AreaTarget[], profile: SuggestProfile, library: readonly LibraryExercise[], sessionInput: SessionInput, now: Instant, tz: TimeZone): Workout;

@@ -123,3 +123,4 @@ None.
   local and gitignored, and the human can delete it after review.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0509.md` (D-0157).

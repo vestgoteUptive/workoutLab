@@ -152,3 +152,4 @@ with the expected file updated in the same ticket, and it costs nothing.
 - Once previews are turned on (H-18), D-0190's revisit trigger decides preview CORS.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0515.md` (D-0157).

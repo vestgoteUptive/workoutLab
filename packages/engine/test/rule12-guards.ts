@@ -4,6 +4,7 @@
 import { execFileSync } from "node:child_process";
 import { R12_E1_LINE } from "./fixtures/r12-e1-d0056.js";
 import { RULE12_SIGNATURE_LINE } from "./fixtures/rule12-signature-d0130.js";
+import { RULE12_SIGNATURE_LINE_D0199 } from "./fixtures/rule12-signature-d0199.js";
 
 /** The rules doc on the first of `main` / `origin/main` that exists, or null (shallow CI). */
 export function rulesOnMain(repoDir: string): string | null {
@@ -43,28 +44,35 @@ function revert(s: string, edit: { readonly before: string; readonly after: stri
 }
 
 /**
+ * `slice` and the slice with the signature line reverted: once (D-0199 §3, or D-0130 §1 on a
+ * pre-D-0199 doc) and twice (D-0199 then D-0130), so a main at any of the three signature lines
+ * is accepted. The D-0199 revert comes first: its before line is D-0130's after line.
+ */
+function signatureReverts(slice: string): string[] {
+  const d0199 = revert(slice, RULE12_SIGNATURE_LINE_D0199);
+  return [slice, d0199, revert(slice, RULE12_SIGNATURE_LINE), revert(d0199, RULE12_SIGNATURE_LINE)];
+}
+
+/**
  * The T-0204 guard: against main, rule 12 (to R12-E5) and rule 13 differ by at most the
- * D-0056 §1 R12-E1 line and the D-0130 §1 signature line.
+ * D-0056 §1 R12-E1 line and the signature line (D-0130 §1, D-0199 §3).
  */
 export function t0204GuardOk(currentDoc: string, mainDoc: string): boolean {
   const current = rule12Slice(currentDoc);
   const main = rule12Slice(mainDoc);
-  const e1 = revert(current, R12_E1_LINE);
   const accepted = [
-    current,
-    e1,
-    revert(current, RULE12_SIGNATURE_LINE),
-    revert(e1, RULE12_SIGNATURE_LINE),
+    ...signatureReverts(current),
+    ...signatureReverts(revert(current, R12_E1_LINE)),
   ];
   return accepted.includes(main);
 }
 
 /**
  * The T-0224 guard: against main, R12-E1…R12-E5 and rule 13 are unchanged, except for the
- * D-0130 §1 signature line.
+ * signature line (D-0130 §1, D-0199 §3).
  */
 export function t0224GuardOk(currentDoc: string, mainDoc: string): boolean {
   const current = rule12Slice(currentDoc);
   const main = rule12Slice(mainDoc);
-  return [current, revert(current, RULE12_SIGNATURE_LINE)].includes(main);
+  return signatureReverts(current).includes(main);
 }

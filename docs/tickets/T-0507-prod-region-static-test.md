@@ -67,3 +67,4 @@ None.
 - T-0506 closes as done by this groom (D-0190 §1).
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0507.md` (D-0157).

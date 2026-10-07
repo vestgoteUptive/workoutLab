@@ -23,7 +23,8 @@ import {
 } from "./types.js";
 import { WARMUP_COST_S } from "./warmup.js";
 
-function copyItem(i: WorkoutItem): WorkoutItem {
+/** A deep copy of one plan item (shared with rule 12.2 `removeItem`). */
+export function copyItem(i: WorkoutItem): WorkoutItem {
   return {
     exerciseId: i.exerciseId,
     isMain: i.isMain,

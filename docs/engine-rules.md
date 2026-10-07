@@ -42,12 +42,22 @@ Warm-up moves (kind `warmup`, 40 s each): wu-scap-push-up (chest 1, shoulders .5
 Fixed area order: chest, back, shoulders, arms, core, glutes, quads, hamstrings, calves. Levels: beginner < intermediate < advanced.
 
 ## 0. Purity and inputs (D-0024)
-- All engine functions are pure: `suggest(history, targets, profile, library, sessionInput, now, tz)`, `balance(history, targets, library, now, tz)`, `timeCheck(workout, progress)`, `rankSwaps(…)`, `applySwap(workout, current, candidate, reason, history, profile, library, now, tz)`, `prefill(…)` and `evaluateCheckin(sessions, profile, checkins, now, tz)`. They never read the clock, randomness or globals. `Date.now()`, `new Date()` without arguments and `Math.random()` are banned in `packages/engine/src` (lint rule, T-0200).
+- All engine functions are pure: `suggest(history, targets, profile, library, sessionInput, now, tz)`, `balance(history, targets, library, now, tz)`, `timeCheck(workout, progress)`, `rankSwaps(…, excludeIds = [])`, `excludedOutAreas(profile, library, excludeIds)`, `applySwap(workout, current, candidate, reason, history, profile, library, now, tz)`, `prefill(…)` and `evaluateCheckin(sessions, profile, checkins, now, tz)`. They never read the clock, randomness or globals. `Date.now()`, `new Date()` without arguments and `Math.random()` are banned in `packages/engine/src` (lint rule, T-0200).
 - **History** is the server rows ∪ the offline queue (NFR offline). The engine dedupes by `client_id` and keeps the row with the greatest `edited_at`. When two rows have the same `client_id` and `edited_at`, a server row beats a queued row (mirroring the server's no-op), between two queued rows a tombstone beats a live row, and otherwise the first row in input order wins (D-0034). It then drops rows with `deleted_at` set (D-0015). Callers pass at least the last 56 local days.
 - **Session input** (`sessionInput`, D-0037 §7): `budgetMin`, `warmupInBudget`, `energy`, `shuffle`, `mainLiftId`, `pinnedIds`, `excludeIds` and the optional `avoidAreas` (rule 6.1, D-0191 §2; absent means `[]`).
 - **Eligible exercise:** kind `exercise`, every equipment item ∈ `profile.equipment` (no equipment is always eligible), level ≤ profile level, and not in `excludeIds`.
 - **R0-E1** Given any fixed inputs, When `suggest` runs twice, Then the results are deep-equal.
 - **R0-E2** Given two rows with `client_id` c1 (the 10:00 edit has reps 8, the 10:05 edit has reps 6) and a row c2 whose newest version has `deleted_at` set, When history is normalised, Then c1 has reps 6 and c2 is absent.
+
+### 0.1 Excluded exercises (UF-04.2, UF-05.1, UF-08.3, UF-11.5, D-0199 §3)
+- **`rankSwaps`** takes `excludeIds: readonly string[] = []` as its 9th parameter, after `tz` (rule 12). Candidates are filtered at pool level through the eligibility test above (`isEligible(e, profile, excludeIds)`), **before** ranking and **before** the `equipment_taken` keep-all fallback, so the fallback never brings an excluded exercise back. `[]` gives a result deep-equal to the 8-argument call. An excluded `current` is not an error. Duplicates and unknown ids in `excludeIds` have no effect. `applySwap` takes no exclusion input (its validation stays structural).
+- **No fallback.** The engine never reintroduces an excluded exercise: when every candidate is excluded the list is `[]` (R12-E19).
+- **`suggest`** has no extra code for exclusions: `sessionInput.excludeIds` already drops them from the pool through the eligibility test. So an excluded `mainLiftId` is ignored (rule 7.2 falls back to the lowest-`r` eligible area), an excluded pinned id is skipped, and **exclusion beats a routine pin**. An area whose every candidate is excluded is exhausted (rule 7.2 as written): its time goes to other areas or stays unused. Exclusion is not a history filter: past sets of an excluded exercise still count for load, deficit, recovery, `startDeficits` and the reasons. `applySwap`, `removeItem`, `timeCheck`, `balance`, `evaluateCheckin` and `prefill` take no exclusion input.
+- **`excludedOutAreas(profile: Pick<EngineProfile, "level" | "equipment">, library, excludeIds): Area[]`** (UF-08.2, UF-11.5 notice, D-0199 §3, §8) returns the areas, in the fixed order, that have an eligible weight-1.0 exercise with `excludeIds = []` and none with `excludeIds`. An area already empty because of equipment or level is not reported. Unknown ids and warm-up move ids are ignored (warm-up moves aren't exercises; the warm-up follows rule 7.3), and duplicates and the order of `excludeIds` don't change the result. It is monotone: a superset of `excludeIds` gives a superset of areas.
+- **R0-E3** Given F-profile and `excludeIds` [calf-raise], When `excludedOutAreas` runs, Then the result is [calves] (calf-raise is the only weight-1.0 calves exercise in L1).
+- **R0-E4** Given F-profile and `excludeIds` [bench-press, db-bench-press], Then the result is [] (push-up still covers chest).
+- **R0-E5 (equipment-empty areas are not reported)** Given F-profile with equipment [] and `excludeIds` [push-up], Then the result is [chest]: back has no eligible exercise without equipment, so it is empty already and not reported. Given `excludeIds` [] or [no-such-id], Then the result is [].
+- Examples: R0-E3…E5 (here), R7-E17…E20 (rule 7.2) and R12-E17…E19 (rule 12).
 
 ## 1. Exercise → area mapping
 Each exercise has area weights: primary = 1.0, secondary = 0.5. Every exercise has at least one primary area. Its **primary areas** are the areas with weight 1.0, in the fixed order.
@@ -118,6 +128,10 @@ The projected load starts at the rule-3 load. `r(area) = projectedLoad / target`
 - **R7-E8 (never over)** For every `budgetMin` in 15..120 step 5, with warm-up on and off, over F-history and every simulated history, Then Σ item costs ≤ `available`, there are ≤ 8 items, and no area is the primary area of more than 2 items.
 - **R7-E14 (slots by goal at zero history, D-0095)** For R7-E4 under `get_stronger`, the items, costs and totals are unchanged (bench-press × 4, inverted-row × 3, leg-extension × 2; 1545 s, `unusedS` 75), with reps 3–5, 5–8 and 10–15 and pre-fills null × 3, 0 × 5 and null × 10 (`first_time`). Under `general_fitness` the reps are 8–12, 10–15 and 10–15, with null × 8, 0 × 10 and null × 10.
 - **R7-E15 (one history, three goals, D-0095 §3)** back-squat as the main lift, last on 09-24 at 100 × 8, 8, 8: `build_muscle` (6–8) gives 102.5 × 6 `increase` (R14-E1), `get_stronger` (3–5) gives 102.5 × 3 `increase`, and `general_fitness` (8–12) gives 100 × 9 `add_rep`.
+- **R7-E17 (excluded main-lift candidate, rule 0.1, D-0199 §3)** Given the R7-E4 inputs with `excludeIds` [bench-press], Then the items are db-bench-press × 4 (main), inverted-row × 3, leg-extension × 2. The item total is 1545 s and `unusedS` is 75: db-bench-press is the next chest compound by id once bench-press is gone.
+- **R7-E18 (excluded `mainLiftId` is ignored)** Given the R7-E17 inputs with `mainLiftId` bench-press as well, Then the result is the same as R7-E17.
+- **R7-E19 (exclusion beats a pin)** Given `pinnedIds` [plank] and `excludeIds` [plank], Then plank is not an item, and the result is deep-equal to `pinnedIds` [] with the same `excludeIds`.
+- **R7-E20 (an excluded-out area is exhausted, no fallback)** Given the R7-E4 inputs with `excludeIds` [back-squat, leg-extension], Then quads has no candidate and is exhausted, and the items are bench-press × 4 (main), inverted-row × 3, leg-curl × 2 (romanian-deadlift × 2 = 390 s doesn't fit the 345 s left). The item total is 1545 s, `unusedS` is 75, and no item has quads at weight 1.0.
 
 ### 7.3 Warm-up (D-0004)
 There are 4 moves. The area list is the primary areas of the items in session order, deduplicated. Go round-robin over the list. For each area, pick the unused warm-up move with the highest weight for it (ties by id), and skip areas with none left. Stop at 4. Fill with general moves by id, then with any unused move by id.
@@ -169,7 +183,7 @@ Every item carries machine-readable reasons, and the UI or an optional LLM only 
 - **R11-E4** Offline: the history includes 3 queued romanian-deadlift sets, so hamstrings +3 and glutes +1.5 (UF-10 AC8).
 
 ## 12. Swap ranking (UF-08.3, UF-05.1, D-0025)
-`rankSwaps(current, reason | null, session, profile, library, history, now, tz)`. **Candidates** are the eligible exercises, not in the session, that share a weight-1.0 area with `current`. The main slot takes compounds only. `muscleMatch = Σ min(w_cur, w_alt) / Σ w_cur`. The alternative keeps the slot's set count. Each result has `{exerciseId, muscleMatch, timeCostS, equipment, fitsBudget, bestMatch}`. Sort keys:
+`rankSwaps(current, reason | null, session, profile, library, history, now, tz, excludeIds = [])`. **Candidates** are the eligible exercises, not in the session, that share a weight-1.0 area with `current`. The main slot takes compounds only. `muscleMatch = Σ min(w_cur, w_alt) / Σ w_cur`. The alternative keeps the slot's set count. Each result has `{exerciseId, muscleMatch, timeCostS, equipment, fitsBudget, bestMatch}`. Sort keys:
 - none: muscleMatch desc, same type first, not in the last session first, id.
 - `equipment_taken`: drop candidates that share an equipment item with `current` (if that drops all of them, keep all and sort by fewest shared), then muscleMatch desc, id.
 - `discomfort`: no shared equipment first, guided (machine or cable) first, muscleMatch desc, id.
@@ -182,6 +196,9 @@ Fixture: the session is bench-press × 4 (main), barbell-row × 3, leg-extension
 - **R12-E3 (variety)** Given lat-pulldown last done 09-20 and db-row 09-10, Then inverted-row, seated-cable-row, straight-arm-pulldown, db-row, lat-pulldown.
 - **R12-E4 (discomfort)** lat-pulldown, seated-cable-row, straight-arm-pulldown, db-row, inverted-row.
 - **R12-E5 (equipment_taken, main slot)** For current bench-press, [push-up] (db-bench-press shares the bench; muscleMatch 0.75).
+- **R12-E17 (excludeIds, rule 0.1, D-0199 §3)** With `excludeIds` [db-row], reason none: inverted-row (`bestMatch`), lat-pulldown, seated-cable-row, straight-arm-pulldown. With `excludeIds` [] the result is deep-equal to the 8-argument call. With `excludeIds` [barbell-row] (the current exercise) it does not throw and equals R12-E1.
+- **R12-E18 (excludeIds, pool-level filter)** R12-E5 with `excludeIds` [push-up]: [db-bench-press]. The keep-all fallback runs on the filtered pool.
+- **R12-E19 (excludeIds, no fallback)** R12-E5 with `excludeIds` [push-up, db-bench-press]: `[]`.
 
 ### 12.1 applySwap (UF-05.1, UF-08.3, D-0071 §7, D-0093)
 `applySwap(workout, current, candidate, reason | null, history, profile, library, now, tz)` returns a new `Workout` with the item `current` replaced by `candidate`, built the way `suggest` builds an item. Let `old` be that item and `new` the candidate.
@@ -199,6 +216,20 @@ Fixture W is R7-E4 (bench-press × 4 main 720 s, inverted-row × 3 555 s, leg-ex
 - **R12-E10 (back-off, D-0093)** R14-E9 (bench-press 80 × 7, back-off 70 × 6, 885 s), bench-press → db-bench-press: 80 × 6 `carry`, back-off `floorInc(72, 2)` = 72 × 6, 720 + 165 = 885 s, reasons `main_lift`, `area_deficit {chest, 0.85}`, `days_since {chest, 3}`, `swap {null}`, `energy_high_backoff`, `prefill {carry}`; `unusedS` 15.
 - **R12-E11 (over budget, D-0093)** W, leg-extension → back-squat: back-squat × 2, 8–12, 390 s, reasons for glutes (before quads): `area_deficit {glutes, 1}`, `days_since {glutes, null}`. 1665 s > 1620 s, so `totalS` 1845 and `unusedS` 0; rule 12 marks it `fitsBudget: false`, and it is applied anyway.
 - **R12-E12 (fitsBudget on an over-budget back-off slot, D-0105)** R14-E9 at `budgetMin 14`, warm-up off (available 840 < 885 s), current bench-press: db-bench-press and push-up each have `timeCostS` 4 × 165 + 60 = 720 and `fitsBudget: false`, because 885 − 885 + 720 + 165 = 885 > 840; `applySwap` to db-bench-press gives 885 s. At `budgetMin 15` (available 900) both have `fitsBudget: true` (885 ≤ 900).
+
+### 12.2 removeItem (UF-08.2, D-0191 §4)
+`removeItem(workout, exerciseId)` returns a new `Workout` without the item `exerciseId`, and **nothing takes its place**: the freed time stays unused (D-0191 §4 amends D-0065 §4). It needs no history, library or clock.
+- **Items:** the item is dropped. The other items keep their order and are unchanged. `plan.mainLiftId` becomes null when the removed item was the main lift; no other item is promoted and every remaining `isMain` stays as it was.
+- **Workout:** `itemsTotalS = Σ costS` over the remaining items, `totalS = itemsTotalS + 180`, `unusedS = max(0, available − itemsTotalS)` (rule 7.1). A plan that was over budget (R12-E11) can come back under it. `plan.version`, `plan.warmup` (not regenerated, as in `applySwap`), `plan.startDeficits`, `budgetMin`, `warmupInBudget` and `energy` are unchanged.
+- **Session reasons:** `sessionReasons` loses the `area_deficit` entries whose area is no remaining item's first primary area. An item's first primary area is the area of its own `area_deficit` reason (rule 10, as rule 8 reads it). `recovering_skipped` entries stay, the order is kept, and nothing is added, even when the rule 10 cap of 3 had left an area out.
+- **Validation:** `RangeError` when `exerciseId` is not an item of the plan (a warm-up move id included). Inputs are never mutated.
+- UF-08.2 Remove calls `removeItem` (no `suggest` call) and still appends the id to `excludeIds`, so a later re-suggest (Shuffle, a time chip) never brings it back; that re-suggest may refill the freed time.
+
+Fixture W is R7-E4 (as in 12.1; `available` 1620).
+- **R12-E13 (accessory)** W, remove leg-extension: bench-press × 4 (main) and inverted-row × 3, both unchanged. `itemsTotalS` 1275, `totalS` 1455, `unusedS` 345, `mainLiftId` bench-press. `sessionReasons` goes from `area_deficit` chest, back, quads to chest, back.
+- **R12-E14 (main lift)** W, remove bench-press: inverted-row × 3 and leg-extension × 2, both with `isMain` false. `mainLiftId` null, `itemsTotalS` 825, `totalS` 1005, `unusedS` 795.
+- **R12-E15 (last item)** R7-E2 (bench-press × 4, `budgetMin 15`, warm-up on, `available` 720), remove bench-press: `items` [], `itemsTotalS` 0, `totalS` 180, `unusedS` 720, `mainLiftId` null. On R7-E3, removing any item keeps `recovering_skipped {quads}`.
+- **R12-E16 (over budget)** W after R12-E11 (leg-extension → back-squat × 2, 1665 s, `unusedS` 0), remove inverted-row: `itemsTotalS` 1110, `totalS` 1290, `unusedS` 510.
 
 ## 13. Shuffle (UF-08.2, D-0025)
 `sessionInput.shuffle = n`. Every accessory slot not in `pinnedIds`, in session order, takes entry `n mod len` of `[original, …variety ranking]`, skipping exercises already taken by an earlier slot. If the pick doesn't fit `available` at the slot's set count, the slot keeps the original. The main lift is never shuffled. There is no randomness.
@@ -237,6 +268,7 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 ## Required tests
 - Every `Rn-Em` above is a unit test. R7-E8 is a property test.
 - Simulated 14-day histories (T-0202), each run through `suggest`, `balance` and `evaluateCheckin`: balanced; all-chest-no-legs (legs and back get attention, and the main lift is a compound for the first zero-load area (inverted-row), D-0040); returning after 10 days off (R5-E1, R14-E3); 15-minute budget (R7-E2); 90-minute budget (R7-E8 caps). Plus offline-merged history (R0-E2, R11-E4).
+- With exclusions (rule 0.1, D-0199 §3), at F-input: balanced excluding db-bench-press → push-up × 4, db-row × 3, leg-extension × 2; all-chest-no-legs excluding inverted-row → barbell-row × 4, back-squat × 3, calf-raise × 2; returning after 10 days off excluding bench-press → db-bench-press × 4, inverted-row × 3, calf-raise × 2. All-chest-no-legs with `excludeIds` [db-bench-press] reports the same `startDeficits` as without it (exclusion is not a history filter). Properties: no excluded id in any `suggest` output over budgets 15..120, every energy, warm-up on/off and shuffle 0..6; `suggest` and `excludedOutAreas` are invariant under permutation, duplication and unknown ids in `excludeIds`; `rankSwaps(…, [])` deep-equals the 8-argument call; `excludedOutAreas` is in the fixed order and monotone; no `suggest` item has an excluded-out area at weight 1.0.
 
 ## Traceability
 | Rules / examples | Build ticket |
@@ -254,3 +286,6 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 12 rankSwaps signature order `now, tz` (D-0130) | T-0212 |
 | 14 steps 2 and 5 drop capped at `W` (D-0137) | T-0235 |
 | 6.1 avoided areas (R6-E3…E6, D-0191 §2) | T-0516 |
+| 12.2 removeItem (R12-E13…E16, D-0191 §4) | T-0519 |
+| 0.1 rankSwaps excludeIds (R12-E17…E19, D-0199 §3) | T-0533 |
+| 0.1 excludedOutAreas, suggest with exclusions (R0-E3…E5, R7-E17…E20, D-0199 §3) | T-0534 |

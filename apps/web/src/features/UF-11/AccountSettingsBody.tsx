@@ -7,6 +7,8 @@ import {
   deleteAccountAndSignOut,
   downloadAccountExport,
   exportAccountData,
+  hasUnsyncedWork,
+  signOutAndClearDevice,
 } from "../../lib/account/index.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
@@ -61,6 +63,9 @@ function storedEmail(userId: string | null): string | null {
   return null;
 }
 
+const SIGN_OUT_WAIT_MS = 2000;
+const SIGN_OUT_POLL_MS = 25;
+
 type DeleteError = "unauthorized" | "failed" | "offline" | null;
 
 export function AccountSettingsBody({ clock }: { clock: Clock }) {
@@ -69,6 +74,14 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   const online = useOnline();
   const userId = auth.userId;
   const [email] = useState(() => storedEmail(userId));
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const statusRef = useRef(auth.status);
   statusRef.current = auth.status;
@@ -85,6 +98,20 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const openRef = useRef<HTMLButtonElement>(null);
 
+  const [signingOut, setSigningOut] = useState(false);
+  const signingOutRef = useRef(false);
+  const [unsyncedPrompt, setUnsyncedPrompt] = useState(false);
+  const anywayRef = useRef<HTMLButtonElement>(null);
+  const signOutRef = useRef<HTMLButtonElement>(null);
+  const refocusSignOut = useRef(false);
+  useEffect(() => {
+    if (unsyncedPrompt) anywayRef.current?.focus();
+    else if (refocusSignOut.current) {
+      refocusSignOut.current = false;
+      signOutRef.current?.focus();
+    }
+  }, [unsyncedPrompt]);
+
   const refocusOpen = useRef(false);
   useEffect(() => {
     if (confirming) inputRef.current?.focus();
@@ -93,6 +120,61 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
       openRef.current?.focus();
     }
   }, [confirming]);
+
+  /**
+   * T-0908: shared by sign-out and delete. The auth state's SIGNED_OUT can land just after the
+   * sign-out call resolves, so wait for it (bounded). The guest-only /welcome route bounces a
+   * signed-in status back to /, which is why a still-stale status online gets a full load
+   * (T-0310c rework 2). Offline a full load would hit the browser error page when no service
+   * worker controls the page, so navigate in the app: supabase-js `signOut({scope:"local"})`
+   * removes the stored session and emits SIGNED_OUT without the network, so the status flips
+   * on its own and /welcome does not bounce.
+   */
+  async function leaveToWelcome() {
+    const deadline = Date.now() + SIGN_OUT_WAIT_MS;
+    while (statusRef.current !== "signed-out" && Date.now() < deadline) {
+      await new Promise<void>((resolve) => setTimeout(resolve, SIGN_OUT_POLL_MS));
+    }
+    // The screen was left meanwhile (the user went elsewhere): don't yank them with a navigation.
+    if (!mountedRef.current) return;
+    if (statusRef.current === "signed-out" || !navigator.onLine) {
+      navigate("/welcome", { replace: true });
+    } else {
+      window.location.replace("/welcome");
+    }
+  }
+
+  async function doSignOut() {
+    if (signingOutRef.current || userId === null) return;
+    signingOutRef.current = true;
+    setSigningOut(true);
+    try {
+      await signOutAndClearDevice({ userId });
+    } catch {
+      // local sign-out is best effort; still leave the account screen
+    }
+    await leaveToWelcome();
+  }
+
+  async function onSignOut() {
+    if (signingOutRef.current || userId === null) return;
+    let unsynced = false;
+    try {
+      unsynced = await hasUnsyncedWork(userId);
+    } catch {
+      unsynced = false;
+    }
+    if (unsynced) {
+      setUnsyncedPrompt(true);
+      return;
+    }
+    await doSignOut();
+  }
+
+  function onSignOutCancel() {
+    setUnsyncedPrompt(false);
+    refocusSignOut.current = true;
+  }
 
   async function onExport() {
     if (exportingRef.current || !online || userId === null) return;
@@ -131,10 +213,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
     }
     deletingRef.current = false;
     if (outcome === "deleted") {
-      // If the local sign-out didn't clear the in-memory session, the guest-only /welcome route
-      // would bounce the user back to /: a full load starts signed out (T-0310c rework 2).
-      if (statusRef.current === "signed-out") navigate("/welcome", { replace: true });
-      else window.location.replace("/welcome");
+      await leaveToWelcome();
       return;
     }
     setDeleting(false);
@@ -147,7 +226,41 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
 
   return (
     <>
-      {email ? <p>{a.signedInAs(email)}</p> : null}
+      <section className="wl-plan__section">
+        {email ? <p>{a.signedInAs(email)}</p> : null}
+        {unsyncedPrompt ? (
+          <>
+            <p>{a.unsyncedWarning}</p>
+            <button
+              ref={anywayRef}
+              type="button"
+              className="wl-plan__button"
+              disabled={signingOut}
+              onClick={() => void doSignOut()}
+            >
+              {signingOut ? a.signingOut : a.signOutAnyway}
+            </button>
+            <button
+              type="button"
+              className="wl-plan__button"
+              disabled={signingOut}
+              onClick={onSignOutCancel}
+            >
+              {a.cancel}
+            </button>
+          </>
+        ) : (
+          <button
+            ref={signOutRef}
+            type="button"
+            className="wl-plan__button"
+            disabled={signingOut || userId === null}
+            onClick={() => void onSignOut()}
+          >
+            {signingOut ? a.signingOut : a.signOut}
+          </button>
+        )}
+      </section>
       <EquipmentSection clock={clock} />
       <section className="wl-plan__section">
         <h2>{a.dataHeading}</h2>
@@ -162,11 +275,6 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
         </button>
         {!online ? <p>{a.connectToExport}</p> : null}
         {exportFailed ? <p role="alert">{a.exportFailed}</p> : null}
-      </section>
-      <section className="wl-plan__section">
-        <button type="button" className="wl-plan__button" onClick={() => void auth.signOut()}>
-          {a.signOut}
-        </button>
       </section>
       <section className="wl-plan__section">
         <h2>{a.deleteHeading}</h2>

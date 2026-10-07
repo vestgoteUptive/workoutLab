@@ -24,7 +24,9 @@ function setup() {
     'npx',
     `echo "npx $*" >> "${log}"\ncase "$*" in *dry-run*) printf "Would push:\\n 20260927210000_a.sql\\n 20260928090000_b.sql\\n SENTINEL-PW db-host.example.com\\n";; *) echo "args: $* SENTINEL-PW";; esac`,
   );
-  stub('curl', `echo "curl $*" >> "${log}"\necho '[]'`);
+  // Drain stdin like real `curl -K -` does: the script pipes the auth header in, and a stub that
+  // exits first makes printf die of SIGPIPE, which pipefail turns into exit 141 (T-0524).
+  stub('curl', `cat >/dev/null\necho "curl $*" >> "${log}"\necho '[]'`);
   return { dir, log };
 }
 
@@ -114,4 +116,23 @@ test('T-0402b AC-4 ref matches terraform import ID', () => {
   const id = tf.match(/import\s*\{[^}]*id\s*=\s*"([a-z0-9]+)"/)[1];
   assert.equal(sh, id);
   assert.ok(existsSync(SCRIPT));
+});
+
+test('T-0513 AC-3 functions deploy takes verify_jwt from supabase/config.toml', () => {
+  const src = readFileSync(SCRIPT, 'utf8');
+  const deploys = src.split('\n').filter((l) => /functions deploy/.test(l) && !/^\s*#/.test(l));
+  assert.ok(deploys.length >= 1, 'no deploy command found');
+  for (const l of deploys) assert.doesNotMatch(l, /--(no-)?verify-jwt/, l);
+  const cdIdx = src.indexOf('cd "$repo_root"');
+  assert.ok(cdIdx > 0 && cdIdx < src.indexOf('functions deploy'), 'must cd to repo root before deploying');
+  assert.ok(existsSync(join(root, 'supabase/config.toml')), 'repo root holds supabase/config.toml');
+  assert.match(src, /^repo_root="\$\(cd "\$here\/\.\.\/\.\." && pwd\)"/m);
+  const fns = src.match(/^FUNCTIONS=\(([^)]*)\)/m)[1].trim().split(/\s+/);
+  assert.ok(fns.length >= 1);
+  const toml = readFileSync(join(root, 'supabase/config.toml'), 'utf8');
+  for (const f of fns) {
+    const m = toml.match(new RegExp(`^\\[functions\\.${f}\\]\\s*\\n((?:(?!\\[)[^\\n]*\\n?)*)`, 'm'));
+    assert.ok(m, `no [functions.${f}] table`);
+    assert.match(m[1], /^verify_jwt\s*=\s*false\s*$/m, `${f} verify_jwt`);
+  }
 });

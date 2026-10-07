@@ -1,7 +1,7 @@
 # PRD — workoutLab (v1)
 
 - **Screen IDs:** user flows v2, `Design-docs/docs/product/user-flows.md` (D-0002). `docs/user-flows-v1.md` is history only.
-- **Updated:** 2026-09-27 by product-owner (T-0001)
+- **Updated:** 2026-10-06 by product-owner (excluded exercises, D-0199); first written 2026-09-27 (T-0001)
 
 ## Problem
 Set and rep loggers show what you did, not what you've neglected. Users want to know which body areas need attention, and to get a workout that fits the time they have today.
@@ -29,7 +29,8 @@ Hard sets per body area (chest, back, shoulders, arms, core, glutes, quads, hams
 | UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready | A time-boxed, gap-driven workout with a "why" per exercise. | T-0303 |
 | UF-09 Focus mode | .1 Get ready … .9 Paused | One step at a time: timers, auto-save, time check, pause. | T-0304 |
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why. Spec: `docs/specs/uf-10-balance.md`. | T-0307 |
-| UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan | Adaptive rhythm and targets, and editing goal, rhythm and priorities. Spec: `docs/specs/uf-11-plan-checkin.md`. | T-0308 |
+| UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises | Adaptive rhythm and targets, and editing goal, rhythm and priorities. Spec: `docs/specs/uf-11-plan-checkin.md`. | T-0308 |
+| Excluded exercises | UF-11.5, plus controls on UF-04.2, UF-08.2, UF-08.3, UF-05.1 | A durable "never suggest" list per user: never picked by the engine or offered as a swap, still in the library and history. Spec: `docs/specs/excluded-exercises.md`. | D-0199 (tickets to be filed) |
 
 Shared components: C-01 Body map, C-02 Tab bar (T-0300).
 
@@ -56,7 +57,8 @@ Each item is answered by a default in `docs/gaps.md` §D, revisited in Phase 5 t
 | Guest mode before the account? | No, but the account step comes after the plan preview. | D-0014 |
 | Hard stop (clock time) instead of minutes on UF-08.1? | Both. A finish time converts to minutes at start. | owner product-owner, T-0303 |
 | Carry weights over between variants on a swap? | Yes, when the variant shares a primary area and equipment type; otherwise use history or leave blank. | owner product-owner, T-0306 |
-| Project name, platforms, commercial intent? | "workout LAB by Uptive". PWA only, free in v1. | owner product-owner, T-0309 |
+| Project name, platforms, commercial intent? | "workout LAB" (no company byline, D-0194; was "workout LAB by Uptive"). PWA only, free in v1. | owner product-owner, T-0309, T-0526 |
+| Can a user stop an exercise from ever being suggested? | Yes: excluded exercises (UF-11.5). The list is an engine input (`excludeIds`, `rankSwaps`), exclusion beats a routine pin, and an area left with no exercise gets a neutral notice, never a fallback. Writes are online-only. | D-0199 |
 | Swap ranking by reason, energy modifiers, weight progression and pre-fill, shuffle, main-lift concept (gap B4)? | Engine rules v1: rules 7–14 in `docs/engine-rules.md`, each with worked examples. | T-0101, D-0024, D-0025, D-0026, D-0027 |
 
 ## Open questions

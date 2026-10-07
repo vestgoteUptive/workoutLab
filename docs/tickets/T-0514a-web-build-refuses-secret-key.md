@@ -90,3 +90,4 @@ None.
   under Node's ESM loader.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0514a.md` (D-0157).

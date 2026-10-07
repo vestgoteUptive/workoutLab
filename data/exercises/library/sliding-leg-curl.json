@@ -1,0 +1,22 @@
+{
+  "id": "sliding-leg-curl",
+  "name": "Sliding leg curl",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "hamstrings": 1, "glutes": 0.5 },
+  "instructions": [
+    "Lie on your back on a smooth floor with your heels on a towel or in socks.",
+    "Lift your hips into a bridge.",
+    "Slide your heels away until your legs are almost straight.",
+    "Pull your heels back toward your hips, keeping the hips high."
+  ],
+  "cue": "Hips high, drag the heels in",
+  "mistakes": ["Letting the hips drop as the legs straighten.", "Sliding out too fast."],
+  "variants": ["hamstring-walkout", "single-leg-deadlift"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

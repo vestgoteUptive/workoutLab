@@ -279,6 +279,22 @@ test.describe("T-0303b AC-12 UF-08.2 online", () => {
   });
 });
 
+test.describe("T-0521 AC7 UF-08.2 Remove does not refill (GitHub #33)", () => {
+  test("removing the last accessory drops one row and no new exercise appears", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const before = await rowNames(page).allTextContents();
+    expect(before.length).toBeGreaterThan(1);
+    const last = before.at(-1)!;
+    await page.getByRole("button", { name: `Remove ${last}` }).click();
+    await expect(itemRows(page)).toHaveCount(before.length - 1);
+    const after = await rowNames(page).allTextContents();
+    expect(after).toEqual(before.slice(0, -1));
+  });
+});
+
 test.describe("T-0303b AC-12 UF-08.2 offline (NFR-OFF-3)", () => {
   test("offline rows equal the online ones for the same inputs; Remove works offline", async ({
     page,
@@ -1029,5 +1045,46 @@ test.describe("T-0303c AC-9 UF-08.3 swap before starting", () => {
     await expect(screenUF082(page)).toBeVisible();
     expect((await rowNames(page).allTextContents())[1]).toBe(picked);
     expect(picked).not.toBe(before[1]);
+  });
+});
+
+test.describe("T-0520 UF-08.1 Skip today (D-0191, GitHub #33)", () => {
+  test("Quads and Glutes skipped: no row has them as primary, the line shows, axe is clean", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    const group = page.getByRole("group", { name: "Skip today" });
+    await expect(group.getByRole("button")).toHaveCount(9);
+    await group.getByRole("button", { name: "Quads" }).click();
+    await group.getByRole("button", { name: "Glutes" }).click();
+    await expect(group.getByRole("button", { name: "Quads" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    for (const b of await group.getByRole("button").all()) {
+      const box = (await b.boundingBox())!;
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.height).toBeGreaterThanOrEqual(44);
+    }
+    const serious = (await new AxeBuilder({ page }).analyze()).violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious).toEqual([]);
+
+    await suggestAt30(page);
+    await expect(page.locator('[data-part="skipping"]')).toHaveText(
+      "Skipping today: Glutes, Quads",
+    );
+    const skipped = new Set(
+      exerciseAreas
+        .filter((r) => (r.area_id === "quads" || r.area_id === "glutes") && r.weight === 1)
+        .map((r) => r.exercise_id),
+    );
+    const skippedNames = new Set(
+      exercises.filter((e) => skipped.has(e.id)).map((e) => e.name as string),
+    );
+    const names = await rowNames(page).allTextContents();
+    expect(names.length).toBeGreaterThan(0);
+    for (const n of names) expect(skippedNames.has(n)).toBe(false);
   });
 });

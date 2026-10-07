@@ -62,7 +62,7 @@ describe("T-0310c AC11 import boundaries", () => {
     expect(source).not.toMatch(/import\(/);
   });
 
-  it("T-0310c AC11 lib/account/index.ts has exactly the 7 runtime exports", async () => {
+  it("T-0310c AC11 lib/account/index.ts has exactly the 9 runtime exports (T-0528 adds two)", async () => {
     const mod = await import("../index.js");
     expect(Object.keys(mod).sort()).toEqual(
       [
@@ -71,7 +71,9 @@ describe("T-0310c AC11 import boundaries", () => {
         "downloadAccountExport",
         "exportAccountData",
         "exportFileName",
+        "hasUnsyncedWork",
         "requestAccountDeletion",
+        "signOutAndClearDevice",
         "wipeLocalUserData",
       ].sort(),
     );

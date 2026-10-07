@@ -171,3 +171,4 @@ None.
   human's `.env.local`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0514b.md` (D-0157).

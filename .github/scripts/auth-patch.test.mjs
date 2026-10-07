@@ -7,11 +7,14 @@ import { createHash } from "node:crypto";
 import { Buffer } from "node:buffer";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
 import { run, SPEC_PATH } from "../../infra/scripts/auth-patch.mjs";
 import { run as driftRun } from "../../infra/scripts/auth-drift-check.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const spec = JSON.parse(readFileSync(SPEC_PATH, "utf8"));
+// T-0515: these scenarios replay the pre-narrowing prod (T-0402c/T-0404b); the live expected list is now narrower.
+const legacySpec = { ...spec, expected: { ...spec.expected, uri_allow_list: `${"http://localhost:3000/**,http://localhost:5173/**,"}https://app.workout.vestgote.com/**,https://*.workoutlab-web.pages.dev/**` } };
 const REF = spec.project_ref;
 const PREVIEW = "https://*.workoutlab-web.pages.dev/**";
 const LIVE_LIST = "http://localhost:3000/**,https://app.workout.vestgote.com/**,http://localhost:5173/**";
@@ -26,14 +29,22 @@ function liveConfig() {
 }
 
 /** A fake Management API: GET returns the state, PATCH merges the body (and `alsoChange`). */
-function fakeServer(initial, { patchStatus = 200, alsoChange } = {}) {
+function fakeServer(initial, { patchStatus = 200, alsoChange, readView } = {}) {
   let state = JSON.parse(JSON.stringify(initial));
+  const pre = JSON.parse(JSON.stringify(initial));
+  let patched = false;
+  let reads = 0; // GETs after the PATCH, 1-based
   const calls = [];
   const fetchImpl = async (url, init = {}) => {
     const method = init.method ?? "GET";
     calls.push({ url, method, body: init.body, headers: init.headers });
-    if (method === "GET") return { status: 200, json: async () => JSON.parse(JSON.stringify(state)) };
+    if (method === "GET") {
+      const n = patched ? ++reads : 0;
+      const v = readView && n > 0 ? readView(n, JSON.parse(JSON.stringify(state)), pre) : state;
+      return { status: 200, json: async () => JSON.parse(JSON.stringify(v)) };
+    }
     if (method === "PATCH") {
+      patched = true;
       if (patchStatus >= 200 && patchStatus < 300) state = { ...state, ...JSON.parse(init.body), ...(alsoChange ?? {}) };
       return { status: patchStatus, json: async () => ({ message: "SENTINEL-BODY" }) };
     }
@@ -44,11 +55,35 @@ function fakeServer(initial, { patchStatus = 200, alsoChange } = {}) {
 
 const ENV = { SUPABASE_ACCESS_TOKEN: "tok-SENTINEL" };
 
-async function exec(argv, { env = ENV, server = fakeServer(liveConfig()) } = {}) {
+/** Injected snapshot IO and clock: files are kept in memory, sleeps are recorded, never waited. */
+function fakeIo({ failWrite = false } = {}) {
+  const files = new Map();
+  const events = [];
+  const io = {
+    files,
+    events,
+    sleeps: [],
+    opts: {
+      sleep: async (ms) => {
+        io.sleeps.push(ms);
+      },
+      writeFile: (p, data, o) => {
+        if (failWrite) throw new Error("EACCES");
+        events.push(`write:${path.basename(p)}`);
+        files.set(p, { data, mode: o?.mode });
+      },
+      mkdir: () => {},
+      now: () => new Date("2026-10-06T12:34:56.789Z"),
+    },
+  };
+  return io;
+}
+
+async function exec(argv, { env = ENV, server = fakeServer(liveConfig()), io = fakeIo() } = {}) {
   const out = [];
   const err = [];
-  const code = await run({ argv, env, fetchImpl: server.fetchImpl, stdout: (s) => out.push(s), stderr: (s) => err.push(s), spec });
-  return { code, out: out.join("\n"), err: err.join("\n"), all: [...out, ...err].join("\n"), server };
+  const code = await run({ argv, env, fetchImpl: server.fetchImpl, stdout: (s) => out.push(s), stderr: (s) => err.push(s), spec, ...io.opts });
+  return { code, out: out.join("\n"), err: err.join("\n"), all: [...out, ...err].join("\n"), server, io };
 }
 const nonGet = (s) => s.calls.filter((c) => c.method !== "GET");
 const hashes = (text) => [...text.matchAll(/others_sha256=([0-9a-f]{64})/g)].map((m) => m[1]);
@@ -151,7 +186,7 @@ test("T-0402c AC-6 drift check: exactly one difference before the apply, none af
   const env = { SUPABASE_ACCESS_TOKEN: "tok-SENTINEL", GOOGLE_OAUTH_CLIENT_ID: live.external_google_client_id };
   const drift = async (cfg) => {
     const out = [];
-    const code = await driftRun({ fetchImpl: async () => ({ status: 200, json: async () => cfg }), env, stdout: (s) => out.push(s), spec });
+    const code = await driftRun({ fetchImpl: async () => ({ status: 200, json: async () => cfg }), env, stdout: (s) => out.push(s), spec: legacySpec });
     return { code, out };
   };
   const before = await drift(live);
@@ -223,11 +258,11 @@ function smtpApplied() {
 }
 const ELEVEN = Object.keys(smtpApplied()).sort();
 const execAt = (argv, opts) => execT(argv, opts);
-async function execT(argv, { env, server }) {
+async function execT(argv, { env, server, io = fakeIo() }) {
   const out = [];
   const err = [];
-  const code = await run({ argv, env, fetchImpl: server.fetchImpl, stdout: (x) => out.push(x), stderr: (x) => err.push(x), spec, cwd: repoRoot });
-  return { code, out: out.join("\n"), err: err.join("\n"), all: [...out, ...err].join("\n"), server };
+  const code = await run({ argv, env, fetchImpl: server.fetchImpl, stdout: (x) => out.push(x), stderr: (x) => err.push(x), spec, cwd: repoRoot, ...io.opts });
+  return { code, out: out.join("\n"), err: err.join("\n"), all: [...out, ...err].join("\n"), server, io };
 }
 
 test("T-0404b AC-2 the README's preview and apply lines are the same argument list", () => {
@@ -293,7 +328,7 @@ test("T-0404b AC-5 after the apply the extended drift check exits 0", async () =
     fetchImpl: async () => ({ status: 200, json: async () => server.state() }),
     env: { ...ENV, GOOGLE_OAUTH_CLIENT_ID: fixture.external_google_client_id },
     stdout: (x) => out.push(x),
-    spec,
+    spec: legacySpec,
   });
   assert.equal(code, 0, out.join("\n"));
 });
@@ -321,4 +356,113 @@ test("T-0404b AC-2 --set-from-file: secret keys refused, missing file refused, z
     assert.equal(r.code, 2, argv.join(" "));
     assert.equal(r.server.calls.length, 0);
   }
+});
+
+// ---- T-0509: before/after snapshots and the read-back retry (D-0185 §4) ----
+const APPLY_ENV = { ...ENV, CONFIRM_PROD_AUTH: REF };
+const OTP = ["--set", "rate_limit_email_sent=12", "--apply"];
+const snapCfg = () => ({
+  ...liveConfig(),
+  smtp_pass: "SENTINEL-PASS",
+  mailer_templates_magic_link_content: "<html>SENTINEL-TPL</html>",
+  site_url: "https://app.workout.vestgote.com",
+  rate_limit_email_sent: 10,
+});
+const snapFile = (io, kind) => [...io.files.entries()].find(([p]) => p.endsWith(`-${kind}.json`));
+
+test("T-0509 AC-1 the before-snapshot is written before the PATCH, filtered, mode 0600", async () => {
+  const server = fakeServer(snapCfg());
+  const io = fakeIo();
+  const order = [];
+  const origFetch = server.fetchImpl;
+  server.fetchImpl = async (u, i = {}) => {
+    if (i.method === "PATCH") order.push(`patch(after ${io.events.join("+")})`);
+    return origFetch(u, i);
+  };
+  const r = await exec(OTP, { env: APPLY_ENV, server, io });
+  assert.equal(r.code, 0, r.all);
+  assert.ok(order[0].includes("-before.json"), `snapshot must precede the PATCH: ${order}`);
+  const [file, { data, mode }] = snapFile(io, "before");
+  assert.ok(file.includes(`${REF}-20261006T123456Z-before.json`), file);
+  assert.equal(mode, 0o600);
+  const snap = JSON.parse(data);
+  assert.deepEqual(Object.keys(snap).sort(), Object.keys(snapCfg()).sort());
+  assert.equal(snap.smtp_pass, "<set>");
+  assert.match(snap.mailer_templates_magic_link_content, /^len=\d+ sha256=[0-9a-f]{64}$/);
+  assert.equal(snap.site_url, "https://app.workout.vestgote.com");
+  assert.equal(snap.rate_limit_email_sent, 10, "the before file holds the old value");
+  for (const [, f] of io.files) for (const s of ["SENTINEL-PASS", "SENTINEL-TPL"]) assert.ok(!f.data.includes(s), `leaked ${s}`);
+});
+
+test("T-0509 AC-2 a snapshot write failure means no PATCH", async () => {
+  const r = await exec(OTP, { env: APPLY_ENV, io: fakeIo({ failWrite: true }) });
+  assert.equal(r.code, 1);
+  assert.ok(r.err.includes("cannot write snapshot; nothing sent"), r.err);
+  assert.deepEqual(r.server.calls.map((c) => c.method), ["GET"]);
+});
+
+test("T-0509 AC-3 preview mode writes nothing", async () => {
+  const io = fakeIo();
+  const r = await exec(["--set", "rate_limit_email_sent=12"], { io });
+  assert.equal(r.code, 0);
+  assert.equal(io.files.size, 0);
+  assert.equal(io.events.length, 0);
+});
+
+const staleUntil = (n) => (read, state, pre) => (read < n ? { ...state, rate_limit_email_sent: pre.rate_limit_email_sent } : state);
+
+test("T-0509 AC-4 stale read-backs 1 and 2, fresh on 3: settles, sleeps 1 s then 2 s", async () => {
+  const io = fakeIo();
+  const r = await exec(OTP, { env: APPLY_ENV, server: fakeServer(snapCfg(), { readView: staleUntil(3) }), io });
+  assert.equal(r.code, 0, r.all);
+  assert.ok(r.out.includes("read-back settled after 3 tries"), r.out);
+  assert.deepEqual(io.sleeps, [1000, 2000]);
+  assert.ok(!r.err.includes("mismatch"));
+  assert.equal(JSON.parse(snapFile(io, "after")[1].data).rate_limit_email_sent, 12);
+});
+
+test("T-0509 AC-5 never settles: exit 1, today's mismatch line, sleeps 1, 2, 4, 8 s, snapshots reported", async () => {
+  const io = fakeIo();
+  const r = await exec(OTP, { env: APPLY_ENV, server: fakeServer(snapCfg(), { readView: staleUntil(99) }), io });
+  assert.equal(r.code, 1);
+  assert.ok(r.err.includes("mismatch: rate_limit_email_sent live differs from the reviewed after-view"), r.err);
+  assert.deepEqual(io.sleeps, [1000, 2000, 4000, 8000]);
+  assert.equal(r.server.calls.filter((c) => c.method === "GET").length, 1 + 5);
+  assert.ok(r.out.includes("-before.json") && r.out.includes("-after.json"), "snapshot paths are printed for diagnosis");
+});
+
+test("T-0509 AC-5 a GET error on every try is a stale try; all five failing exits 1", async () => {
+  const io = fakeIo();
+  const server = fakeServer(snapCfg());
+  const base = server.fetchImpl;
+  let patched = false;
+  server.fetchImpl = async (u, i = {}) => {
+    if (i.method === "PATCH") patched = true;
+    if (patched && (i.method ?? "GET") === "GET") return { status: 503, json: async () => ({}) };
+    return base(u, i);
+  };
+  const r = await exec(OTP, { env: APPLY_ENV, server, io });
+  assert.equal(r.code, 1);
+  assert.ok(r.err.includes("GET HTTP 503 after PATCH; run auth-drift-check.mjs"), r.err);
+  assert.deepEqual(io.sleeps, [1000, 2000, 4000, 8000]);
+});
+
+test("T-0509 AC-6 others moved is reported on the settled read, and the after-snapshot shows it", async () => {
+  const io = fakeIo();
+  const readView = (read, state, pre) => {
+    if (read < 2) return { ...state, rate_limit_email_sent: pre.rate_limit_email_sent };
+    return { ...state, mailer_otp_length: 8 };
+  };
+  const r = await exec(OTP, { env: APPLY_ENV, server: fakeServer({ ...snapCfg(), mailer_otp_length: 6 }, { readView }), io });
+  assert.equal(r.code, 1);
+  assert.ok(r.err.includes("others_sha256 changed (keys: mailer_otp_length)"), r.err);
+  assert.ok(!r.err.includes("mismatch"));
+  assert.equal(JSON.parse(snapFile(io, "after")[1].data).mailer_otp_length, 8);
+  assert.deepEqual(io.sleeps, [1000]);
+});
+
+test("T-0509 AC-7 infra/auth/.snapshots/ is gitignored", () => {
+  const repo = path.join(here, "../..");
+  const r = spawnSync("git", ["check-ignore", "infra/auth/.snapshots/x.json"], { cwd: repo });
+  assert.equal(r.status, 0);
 });

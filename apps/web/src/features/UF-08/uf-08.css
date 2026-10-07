@@ -99,7 +99,8 @@
   gap: 8px;
 }
 
-.wl-uf08__chip {
+.wl-uf08__chip,
+.wl-uf08__skip-chip {
   min-width: 44px;
   min-height: 44px;
   color: var(--wl-color-text);
@@ -111,11 +112,33 @@
   cursor: pointer;
 }
 
-.wl-uf08__chip[aria-pressed="true"] {
+.wl-uf08__chip[aria-pressed="true"],
+.wl-uf08__skip-chip[aria-pressed="true"] {
   color: var(--wl-color-on-accent);
   background: var(--wl-color-accent);
   border-color: var(--wl-color-accent);
   font-weight: 700;
+}
+
+.wl-uf08__skip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-uf08__skip .wl-uf08__hint {
+  margin: 0;
+}
+
+.wl-uf08__skip-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.wl-uf08__skipping {
+  margin: 0;
+  color: var(--wl-color-text-muted);
 }
 
 .wl-uf08__finish {
@@ -466,6 +489,7 @@
 .wl-uf08__back:focus-visible,
 .wl-uf08__step:focus-visible,
 .wl-uf08__chip:focus-visible,
+.wl-uf08__skip-chip:focus-visible,
 .wl-uf08__link:focus-visible,
 .wl-uf08__time:focus-visible,
 .wl-uf08__checkbox:focus-visible,

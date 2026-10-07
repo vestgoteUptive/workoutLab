@@ -17,6 +17,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page, Route } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { goOffline } from "./fixtures/offline.js";
 import {
   FAKE_USER_ID,
   injectSession,
@@ -189,69 +190,69 @@ async function waitForOfflineDb(page: Page): Promise<void> {
     .toBe(true);
 }
 
-test.describe("T-0469 AC-2 delete (NFR-PRIV-5)", () => {
-  async function seedDevice(page: Page): Promise<void> {
-    await waitForOfflineDb(page);
-    await page.evaluate(
-      async ({ userId, other }) => {
-        const req = indexedDB.open("wl-offline");
-        const db = await new Promise<IDBDatabase>((resolve, reject) => {
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
-        });
-        await new Promise<void>((resolve, reject) => {
-          const tx = db.transaction("sets", "readwrite");
-          const store = tx.objectStore("sets");
-          const row = (uid: string, clientId: string) => ({
-            key: `${uid}:${clientId}`,
-            userId: uid,
-            clientId,
-            sessionId: "s1",
-            exerciseId: "squat",
-            setIndex: 0,
-            kind: "reps",
-            reps: 5,
-            weightKg: 60,
-            durationS: null,
-            rir: null,
-            isWarmup: false,
-            backoff: false,
-            completedAt: "2026-09-27T09:00:00Z",
-            editedAt: "2026-09-27T09:00:00Z",
-            deletedAt: null,
-            status: "queued",
-          });
-          store.put(row(userId, "c-u"));
-          store.put(row(other, "c-v"));
-          tx.oncomplete = () => resolve();
-          tx.onerror = () => reject(tx.error);
-        });
-        db.close();
-        window.localStorage.setItem("wl-last-email", "ada@example.com");
-      },
-      { userId: FAKE_USER_ID, other: V },
-    );
-  }
-
-  async function countSets(page: Page, userId: string): Promise<number> {
-    return page.evaluate(async (uid: string) => {
+async function seedDevice(page: Page): Promise<void> {
+  await waitForOfflineDb(page);
+  await page.evaluate(
+    async ({ userId, other }) => {
       const req = indexedDB.open("wl-offline");
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);
       });
-      const count = await new Promise<number>((resolve, reject) => {
-        const tx = db.transaction("sets", "readonly");
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction("sets", "readwrite");
         const store = tx.objectStore("sets");
-        const r = store.count(IDBKeyRange.bound(`${uid}:`, `${uid}:￿`));
-        r.onsuccess = () => resolve(r.result);
-        r.onerror = () => reject(r.error);
+        const row = (uid: string, clientId: string) => ({
+          key: `${uid}:${clientId}`,
+          userId: uid,
+          clientId,
+          sessionId: "s1",
+          exerciseId: "squat",
+          setIndex: 0,
+          kind: "reps",
+          reps: 5,
+          weightKg: 60,
+          durationS: null,
+          rir: null,
+          isWarmup: false,
+          backoff: false,
+          completedAt: "2026-09-27T09:00:00Z",
+          editedAt: "2026-09-27T09:00:00Z",
+          deletedAt: null,
+          status: "queued",
+        });
+        store.put(row(userId, "c-u"));
+        store.put(row(other, "c-v"));
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
       });
       db.close();
-      return count;
-    }, userId);
-  }
+      window.localStorage.setItem("wl-last-email", "ada@example.com");
+    },
+    { userId: FAKE_USER_ID, other: V },
+  );
+}
 
+async function countSets(page: Page, userId: string): Promise<number> {
+  return page.evaluate(async (uid: string) => {
+    const req = indexedDB.open("wl-offline");
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const count = await new Promise<number>((resolve, reject) => {
+      const tx = db.transaction("sets", "readonly");
+      const store = tx.objectStore("sets");
+      const r = store.count(IDBKeyRange.bound(`${uid}:`, `${uid}:￿`));
+      r.onsuccess = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+    });
+    db.close();
+    return count;
+  }, userId);
+}
+
+test.describe("T-0469 AC-2 delete (NFR-PRIV-5)", () => {
   async function confirmDelete(page: Page): Promise<void> {
     await page.getByRole("button", { name: "Delete account…" }).click();
     await page.getByLabel("Type delete to confirm").fill("delete");
@@ -476,15 +477,176 @@ test.describe("T-0469 AC-5 accessibility (NFR-A11Y-1/-2)", () => {
 
     await page.goto("/plan");
     await expect(page.locator('[data-screen-id="UF-11.2"]')).toBeVisible();
-    const accountLink = page.getByRole("link", { name: "Account" });
+    const accountLink = page.getByRole("link", { name: "Account and sign out" });
     await page.locator("body").click({ position: { x: 1, y: 1 } });
     reached = false;
     for (let i = 0; i < 60 && !reached; i += 1) {
       await page.keyboard.press("Tab");
       reached = await accountLink.evaluate((el) => el === document.activeElement);
     }
-    expect(reached, "Account was not reachable by Tab within 60 presses").toBe(true);
+    expect(reached, "Account and sign out was not reachable by Tab within 60 presses").toBe(true);
     await page.keyboard.press("Enter");
     await expect(page.locator('[data-screen-id="UF-11.4"]')).toBeVisible();
+  });
+});
+
+async function libraryCacheRows(page: Page, userId: string): Promise<number> {
+  return page.evaluate(async (uid: string) => {
+    const req = indexedDB.open("wl-offline");
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const count = await new Promise<number>((resolve, reject) => {
+      const tx = db.transaction("libraryCache", "readonly");
+      const r = tx.objectStore("libraryCache").index("userId").count(uid);
+      r.onsuccess = () => resolve(r.result);
+      r.onerror = () => reject(r.error);
+    });
+    db.close();
+    return count;
+  }, userId);
+}
+
+async function putLibraryRow(page: Page, userId: string): Promise<void> {
+  await page.evaluate(async (uid: string) => {
+    const req = indexedDB.open("wl-offline");
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction("libraryCache", "readwrite");
+      tx.objectStore("libraryCache").put({ key: `${uid}:squat`, userId: uid, id: "squat" });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+    db.close();
+  }, userId);
+}
+
+async function wlAndAuthKeys(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const keys: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && (k.startsWith("wl-") || k.endsWith("-auth-token"))) keys.push(k);
+    }
+    return keys;
+  });
+}
+
+test.describe("T-0529 findable sign out (D-0195, GitHub #35)", () => {
+  test("T-0529 AC-7 the link is above the fold at 360x640; Sign out lands on /welcome and clears the device", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 360, height: 640 });
+    await page.route(`${VITE_SUPABASE_URL}/auth/v1/logout*`, (route) =>
+      route.fulfill({ status: 204 }),
+    );
+    await mockSupabaseData(page, ACCOUNT_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/plan");
+    await expect(page.locator('[data-screen-id="UF-11.2"]')).toBeVisible();
+    await waitForOfflineDb(page);
+    await putLibraryRow(page, FAKE_USER_ID);
+    await page.evaluate(() => {
+      window.localStorage.setItem("wl-last-email", "ada@example.com");
+      window.localStorage.setItem("wl-onboarding", "T0529-SENTINEL");
+    });
+
+    const link = page.getByRole("link", { name: "Account and sign out" });
+    await expect(link).toBeVisible();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    const box = (await link.boundingBox())!;
+    expect(box.y).toBeGreaterThanOrEqual(0);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.y + box.height).toBeLessThanOrEqual(640);
+    expect(box.x + box.width).toBeLessThanOrEqual(360);
+
+    await link.click();
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page).toHaveURL(/\/welcome$/);
+    await expect(page.locator('[data-screen-id="UF-01.1"]')).toBeVisible();
+    // UF-01 may write a fresh guest draft to `wl-onboarding` once /welcome renders; the
+    // signed-in session's value (the sentinel) must be gone, and every other wl- key too.
+    const left = await wlAndAuthKeys(page);
+    expect(left.filter((k) => k !== "wl-onboarding")).toEqual([]);
+    expect(await page.evaluate(() => window.localStorage.getItem("wl-onboarding"))).not.toBe(
+      "T0529-SENTINEL",
+    );
+    expect(await libraryCacheRows(page, FAKE_USER_ID)).toBe(0);
+  });
+
+  test("T-0529 AC-8 offline with a queued set: confirm, Sign out anyway, /welcome, the set is kept", async ({
+    page,
+    context,
+  }) => {
+    await page.route(`${VITE_SUPABASE_URL}/auth/v1/logout*`, (route) =>
+      route.fulfill({ status: 204 }),
+    );
+    await open(page);
+    await seedDevice(page);
+    await expect.poll(() => countSets(page, FAKE_USER_ID)).toBe(1);
+    await goOffline(page, context);
+
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(
+      page.getByText(
+        "Some workouts haven't synced yet. They stay on this device and upload the next time you sign in here.",
+      ),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Sign out anyway" }).click();
+    await expect(page).toHaveURL(/\/welcome$/);
+    expect(await countSets(page, FAKE_USER_ID)).toBe(1);
+  });
+
+  test.describe("T-0908 AC-4 no service worker controls the page", () => {
+    test.use({ serviceWorkers: "block" });
+
+    test("T-0908 AC-4 offline with a queued set, service worker blocked (CI): confirm, Sign out anyway, /welcome, the set is kept", async ({
+      page,
+      context,
+    }) => {
+      await page.route(`${VITE_SUPABASE_URL}/auth/v1/logout*`, (route) =>
+        route.fulfill({ status: 204 }),
+      );
+      await open(page);
+      await seedDevice(page);
+      await expect.poll(() => countSets(page, FAKE_USER_ID)).toBe(1);
+      await goOffline(page, context);
+
+      await page.getByRole("button", { name: "Sign out", exact: true }).click();
+      await expect(
+        page.getByText(
+          "Some workouts haven't synced yet. They stay on this device and upload the next time you sign in here.",
+        ),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Sign out anyway" }).click();
+      await expect(page).toHaveURL(/\/welcome$/);
+      expect(await countSets(page, FAKE_USER_ID)).toBe(1);
+    });
+  });
+
+  test("T-0529 AC-6 axe: the unsynced confirm on UF-11.4 and UF-11.2 with the header link", async ({
+    page,
+  }) => {
+    await open(page);
+    await seedDevice(page);
+    await expect.poll(() => countSets(page, FAKE_USER_ID)).toBe(1);
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Sign out anyway" })).toBeFocused();
+    const confirm = await new AxeBuilder({ page }).include('[data-screen-id="UF-11.4"]').analyze();
+    expect(
+      confirm.violations.filter((v) => v.impact === "serious" || v.impact === "critical"),
+    ).toEqual([]);
+
+    await page.goto("/plan");
+    await expect(page.getByRole("link", { name: "Account and sign out" })).toBeVisible();
+    const plan = await new AxeBuilder({ page }).include('[data-screen-id="UF-11.2"]').analyze();
+    expect(
+      plan.violations.filter((v) => v.impact === "serious" || v.impact === "critical"),
+    ).toEqual([]);
   });
 });

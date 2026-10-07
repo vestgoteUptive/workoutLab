@@ -120,3 +120,11 @@
   gap: 8px;
   margin-block: 16px;
 }
+
+.wl-plan__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}

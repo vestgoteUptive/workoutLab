@@ -1,7 +1,7 @@
 ---
 id: D-0192
 title: "GitHub #32: don't scrape or call ExerciseDB at run time; no ExerciseDB data or GIFs without written licence terms that allow caching and redistribution (human call, H-26). Improve the library in place instead: original or verified-wger rows, starting with bodyweight breadth (T-0522)"
-status: revisit
+status: decided
 date: 2026-10-06
 by: product-owner (GitHub #32 intake)
 area: content
@@ -68,6 +68,14 @@ knowledge and is **unverified**. The human must check it against the live terms.
 - H-26 for the human (H-24/H-25 are taken by D-0190): confirm §1–§2, or bring ExerciseDB's written terms and a plan or tier
   choice if they want its data or media anyway. If so, the product-owner re-specs from those
   terms.
+
+## Human confirmation (2026-10-06, H-26)
+The human chose option 1: not adopted; grow our own library. Terms checked: the repo's AGPL-3.0
+covers code only. ExerciseDB's Terms of Use make all data and media AscendAPI's property and
+strictly prohibit storing any data, content or media ("real-time data fetching on each request"
+only; no scraping or bulk collection; rights end with the subscription). Source:
+https://exercisedb.notion.site/ExerciseDB-API-Terms-of-Use-226983b728ca8090bf7be79564e4b356.
+§1–§4 stand. T-0522/T-0523 are unblocked.
 
 ## Revisit when
 - The human produces ExerciseDB terms that clearly permit storage and redistribution of named fields

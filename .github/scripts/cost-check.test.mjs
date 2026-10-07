@@ -116,3 +116,19 @@ test("T-0405 AC-5 every quota has a source URL and a checked date", () => {
     assert.match(m.checked ?? "", /^\d{4}-\d{2}-\d{2}$/, name);
   }
 });
+
+test("T-0513 AC-1 quota row for function invocations exists", () => {
+  const m = JSON.parse(readFileSync(QUOTAS_PATH, "utf8")).metrics.supabase_function_invocations;
+  assert.ok(m, "metric missing");
+  assert.ok(Number.isInteger(m.quota) && m.quota > 0);
+  assert.match(m.source, /^https:\/\//);
+  assert.match(m.checked, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test("T-0513 AC-2 invocations are reported by hand, never an error, and the doc names D-0190", () => {
+  const quotas = JSON.parse(readFileSync(QUOTAS_PATH, "utf8"));
+  const r = evaluate({}, quotas);
+  assert.ok(r.rows.some((x) => x.startsWith("supabase_function_invocations check by hand:")));
+  assert.deepEqual(r.alerts, []);
+  assert.match(readFileSync(DOC_PATH, "utf8"), /D-0190/);
+});

@@ -28,20 +28,23 @@ function isActive(to: string, pathname: string): boolean {
 export function TabBar() {
   const { pathname } = useLocation();
   return (
-    <nav aria-label={en.tabBar.nav} className="wl-tab-bar">
-      {TABS.map((tab) => {
-        const active = isActive(tab.to, pathname);
-        return (
-          <Link
-            key={tab.to}
-            to={tab.to}
-            className="wl-tab-bar__link"
-            aria-current={active ? "page" : undefined}
-          >
-            <span>{tab.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+    <>
+      <div className="wl-tab-bar__spacer" aria-hidden="true" />
+      <nav aria-label={en.tabBar.nav} className="wl-tab-bar">
+        {TABS.map((tab) => {
+          const active = isActive(tab.to, pathname);
+          return (
+            <Link
+              key={tab.to}
+              to={tab.to}
+              className="wl-tab-bar__link"
+              aria-current={active ? "page" : undefined}
+            >
+              <span>{tab.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </>
   );
 }

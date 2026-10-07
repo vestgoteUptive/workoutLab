@@ -14,7 +14,7 @@
   ],
   "cue": "Knee bent, lift out to the side",
   "mistakes": ["Rotating the hips to lift higher.", "Rushing the lowering phase."],
-  "variants": ["hip-thrust-bodyweight", "glute-bridge"],
+  "variants": ["hip-thrust-bodyweight", "glute-bridge", "donkey-kick"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

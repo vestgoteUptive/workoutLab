@@ -95,3 +95,4 @@ changing `use-plan-data.ts`/`use-checkin-data.ts`, since that would re-open T-04
 scope). Commit messages start `T-0499` and cite UF-11.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0499.md` (D-0157).

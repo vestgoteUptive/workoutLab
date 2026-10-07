@@ -10,7 +10,7 @@ import { suggest, type SessionInput, type Workout } from "@workoutlab/engine";
 import { refreshAll } from "../../../lib/offline/history.js";
 import { Ready } from "../Ready.js";
 import { Suggested } from "../Suggested.js";
-import { NOW, TZ, fLibrary, fProfile, fTargets } from "./fixtures.js";
+import { fProfile } from "./fixtures.js";
 import {
   fCache,
   fitLine,
@@ -83,11 +83,6 @@ const rowTexts = () =>
     r.querySelector('[data-part="row-detail"]')!.textContent,
   ]);
 const rowNames = () => rowTexts().map(([n]) => n);
-
-/** A direct engine call with the zero-history F-web inputs. */
-function direct(input: SessionInput): Workout {
-  return suggest([], fTargets(), fProfile(), fLibrary(), input, new Date(NOW).toISOString(), TZ);
-}
 
 function input(overrides: Partial<SessionInput> = {}): SessionInput {
   return {
@@ -189,42 +184,23 @@ describe("AC-1 frozen at Suggest (T-0303a review)", () => {
   });
 });
 
-describe("AC-5 Remove and Shuffle go through the engine (D-0065 §4, D-0109 §2)", () => {
-  it("Remove an accessory: one call with excludeIds [inverted-row], rendering its return", async () => {
+describe("AC-5 Shuffle is one engine call; Remove is none (D-0065 §4, D-0109 §2, D-0191 §4)", () => {
+  it("Remove an accessory: no suggest call, the row goes, nothing refills it", async () => {
     const { base } = await toSuggested();
     fireEvent.click(button("Remove Inverted row"));
-    expect(calls()).toBe(base + 1);
-    expect(lastInput()).toEqual(input({ excludeIds: ["inverted-row"] }));
-    expect(shownWorkout()).toBe(lastResult());
-    expect(rowNames()).not.toContain("Inverted row");
+    expect(calls()).toBe(base);
+    expect(rowNames()).toEqual(["Bench press", "Leg extension"]);
     await settle();
-    expect(calls()).toBe(base + 1);
-    // The direct call goes through the same spy, so it comes after the count asserts.
-    expect(shownWorkout()).toEqual(direct(input({ excludeIds: ["inverted-row"] })));
+    expect(calls()).toBe(base);
   });
 
-  it("a second Remove appends to excludeIds in tap order", async () => {
+  it("a second Remove appends to excludeIds in tap order (seen on the next Shuffle)", async () => {
     const { base } = await toSuggested();
     fireEvent.click(button("Remove Inverted row"));
-    const second = rowNames().find((n) => n !== "Bench press")!;
-    const secondId = fLibrary().find((e) => e.name === second)!.id;
-    fireEvent.click(button(`Remove ${second}`));
-    expect(calls()).toBe(base + 2);
-    expect(lastInput().excludeIds).toEqual(["inverted-row", secondId]);
-  });
-
-  it("Remove the main lift passes mainLiftId null; an accessory Remove passes bench-press", async () => {
-    const { base } = await toSuggested();
-    fireEvent.click(button("Remove Bench press"));
-    expect(calls()).toBe(base + 1);
-    expect(lastInput()).toEqual(input({ mainLiftId: null, excludeIds: ["bench-press"] }));
-    expect(rowNames()).not.toContain("Bench press");
-  });
-
-  it("contrast: an accessory Remove passes mainLiftId bench-press", async () => {
-    await toSuggested();
     fireEvent.click(button("Remove Leg extension"));
-    expect(lastInput().mainLiftId).toBe("bench-press");
+    expect(calls()).toBe(base);
+    fireEvent.click(button("Shuffle"));
+    expect(lastInput().excludeIds).toEqual(["inverted-row", "leg-extension"]);
   });
 
   it("Shuffle passes 1, 2, 3 and keeps excludeIds and the current main lift", async () => {
@@ -233,14 +209,15 @@ describe("AC-5 Remove and Shuffle go through the engine (D-0065 §4, D-0109 §2)
     for (const n of [1, 2, 3]) {
       const main = shownWorkout().plan.mainLiftId;
       fireEvent.click(button("Shuffle"));
-      expect(calls()).toBe(base + 1 + n);
+      expect(calls()).toBe(base + n);
       expect(lastInput()).toEqual(
         input({ shuffle: n, mainLiftId: main, excludeIds: ["inverted-row"] }),
       );
       expect(shownWorkout()).toBe(lastResult());
+      expect(rowNames()).not.toContain("Inverted row");
     }
     await settle();
-    expect(calls()).toBe(base + 4);
+    expect(calls()).toBe(base + 3);
   });
 
   it("a Remove or a time chip between Shuffles doesn't reset the count", async () => {
@@ -253,22 +230,30 @@ describe("AC-5 Remove and Shuffle go through the engine (D-0065 §4, D-0109 §2)
     expect(lastInput().shuffle).toBe(2);
     const accessory = rowNames().find((n) => n !== rowNames()[0])!;
     fireEvent.click(button(`Remove ${accessory}`));
-    expect(lastInput().shuffle).toBe(2);
     fireEvent.click(button("Shuffle"));
     expect(lastInput().shuffle).toBe(3);
   });
 
-  it("every action is exactly one call (+1 per tap, +0 after 50 ms)", async () => {
+  it("a time chip after a Remove re-suggests but keeps the removed id excluded (T-0521 choice)", async () => {
     const { base } = await toSuggested();
-    const taps = [
-      () => fireEvent.click(button("Shuffle")),
-      () => fireEvent.click(button("20 minutes")),
-      () => fireEvent.click(button(`Remove ${rowNames().at(-1)!}`)),
+    fireEvent.click(button("Remove Leg extension"));
+    fireEvent.click(button("45 minutes"));
+    expect(calls()).toBe(base + 1);
+    expect(lastInput().excludeIds).toEqual(["leg-extension"]);
+    expect(rowNames()).not.toContain("Leg extension");
+  });
+
+  it("Shuffle and time chips are exactly one call each (+1 per tap, +0 after 50 ms); Remove is 0", async () => {
+    const { base } = await toSuggested();
+    const taps: [() => void, number][] = [
+      [() => fireEvent.click(button("Shuffle")), 1],
+      [() => fireEvent.click(button("20 minutes")), 1],
+      [() => fireEvent.click(button(`Remove ${rowNames().at(-1)!}`)), 0],
     ];
     let expected = base;
-    for (const tap of taps) {
+    for (const [tap, n] of taps) {
       tap();
-      expected += 1;
+      expected += n;
       expect(calls()).toBe(expected);
       await settle();
       expect(calls()).toBe(expected);
@@ -437,24 +422,6 @@ describe("AC-10 focus through the host (D-0109 §6)", () => {
     fireEvent.click(first);
     const name = rowNames()[0]!;
     expect(button(`Remove ${name}`)).toHaveFocus();
-  });
-
-  it("a Remove whose suggest call throws keeps the plan, and a later Shuffle keeps focus on Shuffle", async () => {
-    const { base } = await toSuggested();
-    const before = shownWorkout();
-    spy.mockImplementationOnce(() => {
-      throw new Error("engine rejected");
-    });
-    fireEvent.click(button("Remove Inverted row"));
-    expect(calls()).toBe(base + 1);
-    expect(shownWorkout()).toBe(before);
-    expect(rowNames()).toContain("Inverted row");
-    const shuffle = button("Shuffle");
-    shuffle.focus();
-    fireEvent.click(shuffle);
-    expect(calls()).toBe(base + 2);
-    expect(lastInput()).toEqual(input({ shuffle: 1 }));
-    expect(button("Shuffle")).toHaveFocus();
   });
 
   it("Shuffle keeps focus on Shuffle; a time chip keeps focus on the chip", async () => {

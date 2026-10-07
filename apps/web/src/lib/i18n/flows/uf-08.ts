@@ -32,6 +32,11 @@ export const uf08 = {
     normal: "Your plan as written.",
     high: "Adds a back-off set to the main lift if time allows.",
   },
+  /** "Skip today" group (T-0520, D-0191 §1). */
+  skipName: "Skip today",
+  skipHint: "Sore or busy? Skipped areas stay out of this workout.",
+  /** UF-08.2's line under the why chips; `names` are the en area labels in the fixed order. */
+  skipping: (names: readonly string[]) => `Skipping today: ${names.join(", ")}`,
   /** The fit line before the first `Workout` exists (D-0107 §7). */
   checking: "Checking what fits…",
   /**
@@ -44,6 +49,8 @@ export const uf08 = {
     } + warm-up`,
   /** n = 0 (D-0107 §5). */
   nothingFits: (budgetMin: number) => `Nothing fits in ${budgetMin} min`,
+  /** A plan emptied by Remove (T-0521, D-0191 §5). */
+  noneLeft: "No exercises left. Pick a time to rebuild.",
   suggest: "Suggest my workout",
   /** No profile or fewer than 9 targets in the cache (D-0107 §9). */
   missing: "Connect to finish setting up your plan",

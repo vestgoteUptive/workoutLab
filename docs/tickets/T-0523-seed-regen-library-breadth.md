@@ -41,3 +41,4 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0523`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0523.md` (D-0157).

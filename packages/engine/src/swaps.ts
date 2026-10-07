@@ -195,7 +195,9 @@ export function rankAgainst(
 /**
  * Rule 12 (UF-08.3, UF-05.1): the ranked alternatives for the item `currentExerciseId` in
  * `session` (D-0056 §2). Throws `RangeError` when that id isn't an item of the plan or isn't
- * in `library`, or when `reason` isn't a `SwapReason` or null. `excludeIds` is the caller's.
+ * in `library`, or when `reason` isn't a `SwapReason` or null. `excludeIds` (rule 0.1, D-0199 §3)
+ * is filtered at pool level, before ranking and before the `equipment_taken` keep-all fallback,
+ * so an excluded exercise is never offered; an excluded `current` is not an error.
  */
 export function rankSwaps(
   currentExerciseId: string,
@@ -206,6 +208,7 @@ export function rankSwaps(
   history: readonly HistorySet[],
   now: Instant,
   tz: TimeZone,
+  excludeIds: readonly string[] = [],
 ): SwapCandidate[] {
   if (reason !== null && !SWAP_REASONS.includes(reason)) {
     throw new RangeError(`Unknown swap reason: ${String(reason)}`);
@@ -223,7 +226,7 @@ export function rankSwaps(
   const ctx: SwapContext = {
     lib,
     pool: [...lib.values()]
-      .filter((e) => isEligible(e, profile))
+      .filter((e) => isEligible(e, profile, excludeIds))
       .sort((a, b) => byIdStr(a.id, b.id)),
     recovering: new Set(recoveringAreas(history, library, now)),
     recentIds: recentSessionIds(history, library, today, tz),

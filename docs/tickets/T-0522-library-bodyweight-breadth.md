@@ -57,3 +57,4 @@ none (data rows only; `docs/data-model.md` unchanged).
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0522`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0522.md` (D-0157).

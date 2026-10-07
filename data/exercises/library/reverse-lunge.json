@@ -1,0 +1,22 @@
+{
+  "id": "reverse-lunge",
+  "name": "Reverse lunge",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "quads": 1, "glutes": 0.5, "hamstrings": 0.5 },
+  "instructions": [
+    "Stand tall with your feet hip width apart.",
+    "Step one foot back and lower until both knees are bent about 90 degrees.",
+    "Push through your front foot to stand and bring the back foot in.",
+    "Alternate legs on each rep."
+  ],
+  "cue": "Step back, drop straight down",
+  "mistakes": ["Leaning the chest far forward.", "Letting the front knee cave inward."],
+  "variants": ["split-squat", "bodyweight-squat"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

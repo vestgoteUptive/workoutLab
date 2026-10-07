@@ -38,6 +38,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # tokens.css is generated and gitignored; build it first, as deploy-prod.sh does (T-0907).
+      - name: Build design tokens
+        run: pnpm --filter @workoutlab/design-tokens build
       - name: Build web
         run: pnpm --filter @workoutlab/web build
         env:
@@ -96,6 +99,9 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # tokens.css is generated and gitignored; build it first, as deploy-prod.sh does (T-0907).
+      - name: Build design tokens
+        run: pnpm --filter @workoutlab/design-tokens build
       - name: Build web
         run: pnpm --filter @workoutlab/web build
         env:

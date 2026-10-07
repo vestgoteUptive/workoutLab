@@ -2,7 +2,9 @@
 // Source: packages/{pkg}/src. Rerun `node supabase/scripts/vendor.mjs` after an engine or
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
-import { type HistorySet, type Instant, type LibraryExercise, type SuggestProfile, type SwapReason, type TimeZone, type Workout } from "./types.js";
+import { type HistorySet, type Instant, type LibraryExercise, type SuggestProfile, type SwapReason, type TimeZone, type Workout, type WorkoutItem } from "./types.js";
+/** A deep copy of one plan item (shared with rule 12.2 `removeItem`). */
+export declare function copyItem(i: WorkoutItem): WorkoutItem;
 /**
  * Rule 12.1 (UF-05.1, UF-08.3; D-0071 §7, D-0093): `workout` with the item `currentExerciseId`
  * replaced by `candidateId` at the same position, `sets` and `isMain`. The new item has rule

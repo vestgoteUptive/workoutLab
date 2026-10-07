@@ -22,6 +22,48 @@ export const MAX_ITEMS_PER_AREA = 2;
 /** `budgetMin` bounds (D-0037 §7, D-0040 §7). */
 export const BUDGET_MIN = 1;
 export const BUDGET_MAX = 480;
+/**
+ * Rule 6.1 (D-0191 §2): the avoided areas of a session input. Absent means none, an unknown
+ * area (or a non-array) is a `RangeError`, and duplicates are ignored.
+ */
+export function avoidedAreas(sessionInput) {
+    const raw = sessionInput.avoidAreas;
+    if (raw === undefined)
+        return new Set();
+    if (!Array.isArray(raw)) {
+        throw new RangeError(`avoidAreas must be an array of areas, got ${String(raw)}`);
+    }
+    const out = new Set();
+    for (const a of raw) {
+        if (typeof a !== "string" || !AREAS.includes(a)) {
+            throw new RangeError(`Unknown area in avoidAreas: ${String(a)}`);
+        }
+        out.add(a);
+    }
+    return out;
+}
+/**
+ * Rule 0.1 (UF-08.2, UF-11.5, D-0199 §3): the areas, in the fixed order, that have an eligible
+ * weight-1.0 exercise with `excludeIds = []` and none with `excludeIds`. Areas already empty
+ * because of equipment or level are not reported. Unknown ids are ignored, and duplicates and
+ * the order of `excludeIds` don't change the result.
+ */
+export function excludedOutAreas(profile, library, excludeIds) {
+    const coveredBefore = new Set();
+    const coveredAfter = new Set();
+    for (const e of library) {
+        if (!isEligible(e, profile))
+            continue;
+        const primaries = primaryAreas(e);
+        for (const a of primaries)
+            coveredBefore.add(a);
+        if (excludeIds.includes(e.id))
+            continue;
+        for (const a of primaries)
+            coveredAfter.add(a);
+    }
+    return AREAS.filter((a) => coveredBefore.has(a) && !coveredAfter.has(a));
+}
 function assertBudget(budgetMin) {
     if (!Number.isInteger(budgetMin) || budgetMin < BUDGET_MIN || budgetMin > BUDGET_MAX) {
         throw new RangeError(`budgetMin must be an integer ${BUDGET_MIN}–${BUDGET_MAX}, got ${budgetMin}`);
@@ -30,7 +72,7 @@ function assertBudget(budgetMin) {
 function byId(a, b) {
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
-function buildStart(history, targets, profile, library, excludeIds, now, tz) {
+function buildStart(history, targets, profile, library, excludeIds, avoided, now, tz) {
     const bal = balance(history, targets, library, now, tz);
     const t = {};
     const loads = {};
@@ -57,6 +99,7 @@ function buildStart(history, targets, profile, library, excludeIds, now, tz) {
         deficits,
         daysSince,
         recovering,
+        avoided,
         recentIds: recentSessionIds(history, library, bal.windowEnd, tz),
         pool,
     };
@@ -78,12 +121,14 @@ function newState(start, available, durationOf) {
 const costOf = (s, ex, sets) => itemCostS(ex, sets, s.durationOf(ex));
 /** `setCostS` at the planned duration (D-0092 §2). */
 const setCostOf = (s, ex) => setCostS(ex, s.durationOf(ex));
+/** Rule 6 recovering or rule 6.1 avoided: never selected at weight 1.0, gap fit counts it 0. */
+const skipped = (s, a) => s.start.recovering.has(a) || s.start.avoided.has(a);
 const ratio = (s, a) => s.projected[a] / s.start.targets[a];
-/** `Σ w(a) × projectedDeficit(a)`, recovering areas count 0 (rule 7.2). */
+/** `Σ w(a) × projectedDeficit(a)`, recovering (rule 7.2) and avoided (rule 6.1) areas count 0. */
 function gapFit(s, ex) {
     let sum = 0;
     for (const [a, w] of weightsOf(ex)) {
-        if (s.start.recovering.has(a))
+        if (skipped(s, a))
             continue;
         const t = s.start.targets[a];
         sum += (w * Math.max(0, t - s.projected[a])) / t;
@@ -91,14 +136,14 @@ function gapFit(s, ex) {
     // Rounded so mathematically equal sums built in a different order still tie (D-0042).
     return Math.round(sum * 1e9) / 1e9;
 }
-/** Can `ex` join the session: not taken, no recovering primary area, primary caps free. */
+/** Can `ex` join the session: not taken, no recovering or avoided primary area, caps free. */
 function admissible(s, ex) {
     if (s.picked.length >= MAX_ITEMS)
         return false;
     if (s.picked.some((p) => p.exercise.id === ex.id))
         return false;
     for (const a of primaryAreas(ex)) {
-        if (s.start.recovering.has(a))
+        if (skipped(s, a))
             return false;
         if (s.primaryCount[a] >= MAX_ITEMS_PER_AREA)
             return false;
@@ -131,7 +176,7 @@ function tryAdd(s, ex, tries, isMain) {
 }
 /** Eligible areas for selection, lowest projected ratio first (ties by fixed order). */
 function areasByRatio(s, exhausted) {
-    return AREAS.filter((a) => !s.start.recovering.has(a) && !exhausted.has(a) && s.primaryCount[a] < MAX_ITEMS_PER_AREA)
+    return AREAS.filter((a) => !skipped(s, a) && !exhausted.has(a) && s.primaryCount[a] < MAX_ITEMS_PER_AREA)
         .map((a, i) => ({ a, i, r: ratio(s, a) }))
         .sort((x, y) => x.r - y.r || x.i - y.i)
         .map((x) => x.a);
@@ -304,7 +349,7 @@ function toItem(start, ctx, p, durationOf) {
  * energy. Every accessory slot not in `pinnedIds`, in session order, takes entry `n mod len`
  * of `[original, …variety ranking]`, where the ranking is built against the plan as it
  * stands (so earlier picks are already excluded). A pick that doesn't fit, has a recovering
- * area at weight 1.0 or would put an area over the primary cap leaves the original. `n` is
+ * or avoided (rule 6.1) area at weight 1.0 or would put an area over the primary cap leaves the original. `n` is
  * the only input that varies the result; `n = 0` changes nothing.
  */
 function applyShuffle(s, n, pinnedIds, ctx) {
@@ -325,7 +370,8 @@ function applyShuffle(s, n, pinnedIds, ctx) {
             continue;
         const oldPrimary = primaryAreas(p.exercise);
         const newPrimary = primaryAreas(pick);
-        if (newPrimary.some((a) => s.start.recovering.has(a)))
+        // Rule 6.1: a pick with an avoided primary area leaves the original (D-0191 §2).
+        if (newPrimary.some((a) => skipped(s, a)))
             continue;
         const overCap = newPrimary.some((a) => s.primaryCount[a] - (oldPrimary.includes(a) ? 1 : 0) + 1 > MAX_ITEMS_PER_AREA);
         if (overCap)
@@ -401,7 +447,7 @@ function sessionReasonsOf(start, items) {
  * exercises with weight 1.0 there and no recovering primary area.
  */
 export function rankCandidates(area, history, targets, profile, library, sessionInput, now, tz) {
-    const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, now, tz);
+    const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, avoidedAreas(sessionInput), now, tz);
     const durationOf = durationsOf(prefillCtxOf(history, library, now, tz));
     return candidates(newState(start, 0, durationOf), area).map((e) => e.id);
 }
@@ -410,14 +456,16 @@ export function rankCandidates(area, history, targets, profile, library, session
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
  * Selection is main → pinned → greedy → shuffle (rule 13), then energy (rule 7.4, D-0056 §8).
  * `profile.goal` picks the rule 7.2 rep slots only (D-0061 §1, D-0095); absent means
- * `build_muscle`, and an unknown goal throws `RangeError`.
+ * `build_muscle`, and an unknown goal throws `RangeError`. `sessionInput.avoidAreas` (rule 6.1,
+ * D-0191 §2) skips areas like recovering ones for selection only; absent means `[]`.
  */
 export function suggest(history, targets, profile, library, sessionInput, now, tz) {
     assertBudget(sessionInput.budgetMin);
     assertShuffle(sessionInput.shuffle);
+    const avoided = avoidedAreas(sessionInput);
     const goal = goalOf(profile);
     const available = availableS(sessionInput.budgetMin, sessionInput.warmupInBudget);
-    const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, now, tz);
+    const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, avoided, now, tz);
     const lib = indexLibrary(library);
     const ctx = {
         hard: normalizeHistory(history),

@@ -1,12 +1,14 @@
 // Hand-written request validation (D-0053 §9): every request schema is closed, so an unknown key
 // is 400. Errors throw `ApiErrorResponse` (400 invalid_request) naming the offending field.
 import type {
+  Area,
   Energy,
   FinishRequest,
   Instant,
   SessionInput,
   SuggestRequest,
 } from "@workoutlab/shared";
+import { AREAS } from "@workoutlab/shared";
 import { badRequest } from "./errors.ts";
 
 const ENERGIES: readonly Energy[] = ["low", "normal", "high"];
@@ -79,7 +81,24 @@ const SESSION_INPUT_KEYS = [
   "mainLiftId",
   "pinnedIds",
   "excludeIds",
+  "avoidAreas",
 ] as const;
+
+/** `sessionInput.avoidAreas` (D-0191): optional array of the nine areas; `uniqueItems: true` in
+ * api/openapi.yaml, so a duplicate is 400 even though the engine would ignore it. */
+function validateAvoidAreas(v: unknown): Area[] {
+  const field = "sessionInput.avoidAreas";
+  if (!Array.isArray(v)) throw badRequest(`${field} must be an array of areas`);
+  const seen = new Set<string>();
+  for (const a of v) {
+    if (typeof a !== "string" || !(AREAS as readonly string[]).includes(a)) {
+      throw badRequest(`${field} contains an unknown area`);
+    }
+    if (seen.has(a)) throw badRequest(`${field} must not contain duplicate areas`);
+    seen.add(a);
+  }
+  return v as Area[];
+}
 
 export function validateSessionInput(value: unknown): SessionInput {
   if (!isPlainObject(value)) throw badRequest("sessionInput must be an object");
@@ -110,6 +129,8 @@ export function validateSessionInput(value: unknown): SessionInput {
   const pinned = isExerciseIdArray(pinnedIds, "sessionInput.pinnedIds");
   const excluded = isExerciseIdArray(excludeIds, "sessionInput.excludeIds");
 
+  const avoidAreas = "avoidAreas" in value ? validateAvoidAreas(value.avoidAreas) : undefined;
+
   return {
     budgetMin,
     warmupInBudget,
@@ -118,6 +139,7 @@ export function validateSessionInput(value: unknown): SessionInput {
     mainLiftId: mainLiftId as string | null,
     pinnedIds: pinned,
     excludeIds: excluded,
+    ...(avoidAreas === undefined ? {} : { avoidAreas }),
   };
 }
 

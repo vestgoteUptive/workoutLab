@@ -76,3 +76,4 @@ none (uses T-0516's engine input).
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0520` and cite UF-08.1 / UF-08.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0520.md` (D-0157).

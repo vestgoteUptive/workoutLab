@@ -65,3 +65,4 @@ separate `… lint`, then a separate `… test`. Listing several script names af
 runs only the first; pnpm passes the rest to it as plain CLI arguments, so they never run.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0519.md` (D-0157).

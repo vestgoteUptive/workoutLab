@@ -21,6 +21,13 @@
       "checked": "2026-10-05",
       "where": "Supabase dashboard > Organization > Usage"
     },
+    "supabase_function_invocations": {
+      "quota": 500000,
+      "manual": true,
+      "source": "https://supabase.com/pricing",
+      "checked": "2026-10-06",
+      "where": "Supabase dashboard > Reports > Edge Functions (no read-only GET for the count)"
+    },
     "cloudflare_pages_builds_month": {
       "quota": 500,
       "source": "https://developers.cloudflare.com/pages/platform/limits/",
