@@ -1,0 +1,67 @@
+/* C-03 Checkbox (D-0199). Tokens only; the border is text-muted, never line/line-strong. */
+.wl-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  inline-size: 100%;
+  min-block-size: 44px;
+  box-sizing: border-box;
+  padding-block: 10px;
+  cursor: pointer;
+  color: var(--wl-color-text);
+  font-family: var(--wl-font-body);
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.wl-checkbox__input {
+  appearance: none;
+  flex: none;
+  inline-size: 24px;
+  block-size: 24px;
+  margin: 0;
+  box-sizing: border-box;
+  border: 2px solid var(--wl-color-text-muted);
+  border-radius: 6px;
+  background: transparent;
+  display: grid;
+  place-content: center;
+  cursor: inherit;
+}
+
+.wl-checkbox__input:hover {
+  border-color: var(--wl-color-text);
+}
+
+.wl-checkbox__input:checked {
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+}
+
+.wl-checkbox__input:checked::after {
+  content: "";
+  inline-size: 6px;
+  block-size: 11px;
+  margin-block-start: -2px;
+  border: solid var(--wl-color-on-accent);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.wl-checkbox:has(.wl-checkbox__input:focus-visible) {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-checkbox[data-disabled] {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-checkbox[data-disabled] .wl-checkbox__input:hover {
+  border-color: var(--wl-color-text-muted);
+}
+
+.wl-checkbox__label {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}

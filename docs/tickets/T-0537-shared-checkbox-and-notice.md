@@ -46,3 +46,8 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · contracts unchanged · commits start with `T-0537:` and cite UF-05.1 / UF-08.2 / UF-11.5.
 
 ## Build / accept log
+
+- 2026-10-07 build (frontend-dev), base 6078117 clean. Added `components/checkbox/` (C-03), `components/excluded-areas-notice/`, `en.excluded` + `screens.excludedExercises`. No `@testing-library/user-event` in the repo, so Space is simulated with keyDown/keyUp plus the click a browser sends; axe is run through `@axe-core/playwright`'s axe-core as in BodyMap.a11y (color-contrast off in jsdom).
+- AC→test: AC1 Checkbox.test "AC1" (name, toggle, min-height, css tokens, axe x3 states); AC2 "AC2 aria-disabled"; AC3 ExcludedAreasNotice.test "AC3"; AC4 "AC4" (css reads surface-2/line/text-muted, no `warn`); AC5 jsx-no-literals test + lint (all strings via en.ts).
+- Red/fault runs: first run red (comment containing "warn"; an onClick preventDefault left the controlled box checked, removed). Planted faults (backup copies, restored): removed disabled guard, min-height 30, `warn` token in css, wrong "them/it" copy: 4 tests failed as expected.
+- Gate: typecheck/lint green; web test 3742/3743 (account-settings AC-5 flaked under load, 26/26 alone); test:repo-checks 311 pass; format:check and check-all green after prettier --write.

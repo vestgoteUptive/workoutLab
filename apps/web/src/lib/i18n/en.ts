@@ -57,6 +57,15 @@ export const en = {
     routineEditor: "Edit routine",
     // T-0310c (D-0136 §1): UF-11.4's <h1>. The screen itself is T-0310d.
     accountSettings: "Account settings",
+    // T-0537 (D-0199): UF-11.5's <h1>, used by T-0540.
+    excludedExercises: "Excluded exercises",
+  },
+  // T-0537 (D-0199): strings shared by UF-05.1, UF-08.2, UF-08.3 and UF-11.5.
+  excluded: {
+    noticeOne: (area: string) => `Not suggested: ${area}. Every exercise for it is excluded.`,
+    noticeMany: (areas: string) => `Not suggested: ${areas}. Every exercise for them is excluded.`,
+    connectToChange: "Connect to change excluded exercises",
+    saveFailed: "Couldn't save. Try again.",
   },
   auth: {
     emailLabel: "Email",
