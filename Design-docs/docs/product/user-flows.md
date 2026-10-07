@@ -34,7 +34,7 @@ biggest gaps within the user's time budget.
 | UF-05 Swap (in workout) | .1 Swap sheet | Replace mid-session | Fitbod |
 | UF-06 Progress | .1 Overview · .2 Exercise history | Consistency, volume, strength trend | Hevy, Strong |
 | UF-07 Routine builder | .1 Edit routine | Exercises, sets, progression rule | Liftosaur, Hevy |
-| UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
+| UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready · .5 Add exercise | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
 | UF-09 Focus mode | .1–.9 (below) | One step at a time | Apple Fitness, NTC |
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
 | UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises · .6 Favorite exercises | Adaptive targets; edit goal, rhythm, priorities; exercises never suggested; favorite exercises tried first; export or delete your data | Apple Fitness, Freeletics |
@@ -66,8 +66,10 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
   - "Skipping today: …" line when areas were skipped on UF-08.1.
   - Excluded exercises (D-0199) are never suggested. After a Remove, a "Removed" line lists each item removed on this visit with "Never suggest" (then "{name} won't be suggested · Undo"); no timeout. A neutral notice (not `warn`), "Not suggested: {areas}. Every exercise for them is excluded.", when the stored exclusions leave an area with no exercise (engine `excludedOutAreas`).
   - Favorite exercises (D-0202) are tried first inside the areas the gaps choose (never forced, never past recovery or the time fit). An item whose exercise is a favorite shows a "Favorite" text tag; there is no favorite control here.
-  - Shuffle picks alternates for non-main exercises.
-  - Changing time rebuilds the list (main lift kept, accessories trimmed or added).
+  - Shuffle picks alternates for non-main exercises (never an added one).
+  - Changing time rebuilds the list (main lift and added exercises kept when they fit, accessories trimmed or added). An added exercise that no longer fits is listed: "Doesn't fit in {n} min: {names}."
+  - Add and reorder (D-0205, spec `docs/specs/uf-08-add-and-reorder.md`): "Add exercise" opens UF-08.5. An added item's reason line is "Added by you". A non-main compound row has "Start with this", which makes it the main lift (engine `mainLiftId`) and puts it first. "Reorder" switches the list to Move up / Move down buttons (warm-up stays first; the other controls hide until Done). The order is UI only, survives later re-suggests (surviving items keep their order, a new main lift goes first, new items follow) and is the order the workout runs in. Adds and order last for this visit only.
+- **UF-08.5 Add exercise** (D-0205): a sheet over UF-08.2, the UF-08.3 pattern. A search field over the library (kind `exercise`). Empty query: Favorites (D-0202) first, then "Today's areas" (exercises for the areas of the current items, by area). Each result has Add and, for a compound, "Start with this". A result that can't be added says why: "In this workout", "Excluded …", "Not available with your equipment", "Above your level", "Skipping {Area} today", "{Area} is recovering". Add goes into this visit's `pinnedIds` and the rest of the plan is re-suggested around it; an add that doesn't fit the time is refused with "{name} doesn't fit in {n} min." Works offline.
 - **UF-08.3 Swap before starting**
   - Asks why: equipment taken / discomfort / variety / short on time. Reason changes ranking.
   - Each alternative shows muscle match, time cost and equipment; top result marked "Best match".
@@ -92,7 +94,9 @@ Every screen: pause button, thin progress bar (warm-up + one segment per exercis
 | UF-09.6 | Next exercise | Name, illustration, sets/reps/weight, cue | I'm ready · Swap | set-up countdown 60 s |
 | UF-09.7 | Timed set | Hold name, ring | Pause/resume | 3-s get-in-position, then hold time; auto-logs |
 | UF-09.8 | Time check | Minutes behind, projected finish, 3 options | Continue | only between exercises, only when behind |
-| UF-09.9 | Paused | Elapsed, left, sets done | Resume · swap · skip · how-to · list view · end | all timers stopped |
+| UF-09.9 | Paused | Elapsed, left, sets done | Resume · swap · do later · skip · how-to · list view · end | all timers stopped |
+
+**Do {name} later** (UF-09.9, D-0205): for a busy machine. Moves the current exercise, if none of its sets is logged, to just after the next unfinished one, then resumes at UF-09.6 for that one (or the warm-up/UF-09.1 where it was). Hidden for a partly done exercise, for the last unfinished one and on a pause from UF-09.8. The time check's remaining time is unchanged. Works offline and survives a reload (the order is written to the session's plan).
 
 **Loop per set:** 09.3 → 09.4 → 09.5 → 09.3. **Between exercises:** 09.8 (if behind) → 09.6 → 09.3. **Finish:** UF-03.3 summary.
 
