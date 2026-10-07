@@ -49,3 +49,11 @@ None (no tokens change). A security-header change, signed off in AC7.
 Every AC has a passing test · `pnpm --filter @workoutlab/landing typecheck` green · `pnpm --filter @workoutlab/landing lint` green · `pnpm --filter @workoutlab/landing test` green · `pnpm --filter @workoutlab/landing test:browser` green (AC23) · the cached full gate green · security sign-off recorded · commits start with `T-0547:`.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-07)
+- Changed: Layout.astro (fonts.css import before tokens.css, 2 `?url` preloads), `_headers` (+`font-src 'self'`), t0511 `EXPECTED` + directive set (8) updated as a spec change, not a weakening; new `test/t0547-fonts.test.ts` (AC2, AC3), `browser/fonts.spec.ts` (AC4).
+- CSP before: `default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'`. After: `default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'`.
+- AC1 t0511 AC-1/AC-2 · AC2/AC3 t0547-fonts.test.ts · AC4 browser/fonts.spec.ts (requires loaded faces too: `fonts.check` alone is vacuously true with no @font-face; the first draft passed with fonts.css removed, so strengthened) · AC5 lhci.
+- AC5 (lhci, local Chromium with --no-sandbox): all assertions pass. Median CLS before 0 / after 0 on `/` and `/privacy/`; median LCP `/` 906 ms -> 1359 ms, `/privacy/` 904 -> 1355 ms; perf 1 both.
+- Planted faults (backup + cp restore): font-src removed -> t0511 AC-1 red; preload links removed -> t0547 AC3 red; fonts.css import removed -> t0547 AC2+AC3 red and browser/fonts.spec red. `astro preview` does not serve `_headers`, so the browser run cannot show a CSP violation for AC6; AC1 is the CSP guard.
+- Gate: landing vitest 153 pass (ac21 check-all failed only because origin/main lacks T-0544 paths); full `-w typecheck lint test`, test:repo-checks, format:check green. AC7 security sign-off pending.

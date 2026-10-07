@@ -10,7 +10,7 @@ import { findTags, hasScriptTag } from "./html";
 const EXPECTED: Record<string, string> = {
   "strict-transport-security": "max-age=31536000",
   "content-security-policy":
-    "default-src 'none'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'",
+    "default-src 'none'; style-src 'self'; font-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; object-src 'none'",
   "x-frame-options": "DENY",
   "x-content-type-options": "nosniff",
   "referrer-policy": "strict-origin-when-cross-origin",
@@ -57,6 +57,7 @@ describe("T-0511 landing security headers", () => {
       new Set([
         "default-src 'none'",
         "style-src 'self'",
+        "font-src 'self'",
         "img-src 'self'",
         "base-uri 'none'",
         "form-action 'none'",
@@ -64,7 +65,7 @@ describe("T-0511 landing security headers", () => {
         "object-src 'none'",
       ]),
     );
-    expect(directives).toHaveLength(7);
+    expect(directives).toHaveLength(8);
 
     const hsts = block!.get("strict-transport-security")!;
     expect(hsts).not.toMatch(/includesubdomains/i);
