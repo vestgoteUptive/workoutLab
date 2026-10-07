@@ -16,7 +16,7 @@ describe("AC14 privacy page", () => {
   const html = readDist(defaultDistDir(), "privacy/index.html");
 
   it("exists and titles the page", () => {
-    expect(titleText(html)).toBe("Privacy — workout LAB by Uptive");
+    expect(titleText(html)).toBe("Privacy — workout LAB");
   });
 
   it("has exactly one h1 with the privacy title", () => {

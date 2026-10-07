@@ -34,10 +34,9 @@ describe("AC9 index document", () => {
     expect(h1s[0]!.text).toBe(landing.hero.headline);
   });
 
-  it("shows the brand name and byline in the visible text", () => {
-    const text = bodyText(html);
-    expect(text).toContain("workout LAB");
-    expect(text).toContain("by Uptive");
+  it("shows the brand name in the visible text, with no byline", () => {
+    expect(bodyText(html)).toContain("workout LAB");
+    expect(html).not.toMatch(/brand-byline/);
   });
 
   it("renders every feature title as an h3 and every feature body in the text", () => {
