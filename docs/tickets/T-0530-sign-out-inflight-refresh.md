@@ -23,14 +23,4 @@ status: doing
 None.
 
 ## Build / accept log
-
-### Build log (frontend-dev)
-- Fix: generation counter (`lib/offline/cache-generation.ts`). Each `refresh*` in `history.ts` reads it before its fetch and re-checks it at the start of its write transaction (or right before the single `profileCache.put`); `signOutAndClearDevice` bumps it first. A stale refresh returns quietly (no throw, no write). Chosen over cancel/await: no fetch abort plumbing, no hang if a fetch stalls offline, and the check inside the IDB transaction is ordered against the clear's transaction.
-- AC-1/AC-2 -> `account/__tests__/sign-out.inflight.test.ts` (history transaction path, profile put path, unhandledRejection listener); a post-sign-out refresh still writes (extra test). AC-3 -> `vitest run src/lib/account src/lib/offline`: 35 files, 316 tests green.
-- Planted fault (bump removed from sign-out.ts, restored from backup): 2 of 3 tests fail. Repeat: 20 runs, 0 failures.
-
-### Rework (review)
-- `sign-out.ts` bumps the generation a second time after `auth.signOut` returns, before the clear (a refresh started during the signOut await captured the first new generation while `currentUserId()` was still A). Delete-account path (`wipe.ts`) left alone; coordinator files it as a follow-up.
-- `sign-out.inflight.test.ts` is now `describe.each` over all seven `refresh*` (history, library, sessions, checkins, routines, targets, profile): control write, fetch resolving after the clear, and a refresh started during the signOut await.
-- Planted faults (restored from backup copies): no second bump -> 7 fail (the signOut-window test, all seven); guard removed in refreshHistory, refreshProfile and refreshLibrary -> 2 fail each.
-- 20 repeats of the file: 0 failures. `src/lib/account` + `src/lib/offline`: green. format:check: green.
+Archived in `docs/tickets/log/T-0530.md` (D-0157).

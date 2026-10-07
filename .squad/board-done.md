@@ -329,3 +329,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0528 | lib/account signOutAndClearDevice (local-scope sign-out, clear this user's caches + wl- keys, keep queue) and hasUnsyncedWork; GitHub #35 part 1 (D-0195) | web-shell | — | done | wl-build-web |
 | T-0522 | Library breadth: nine bodyweight-only exercises (one per area), original text; no ExerciseDB content; GitHub #32 (D-0192) | content | — | done | wl-build-content |
 | T-0523 | Regenerate supabase/seed.sql for T-0522; prod apply is a human release at merge (D-0192) | backend | T-0522 | done (prod apply: human release) | wl-build-backend |
+| T-0529 | UF-11.2 "Account and sign out" header link; UF-11.4 Sign out under the email, unsynced confirm, Signing out…, lands on /welcome; GitHub #35 part 2 (D-0195) | web-feature:UF-11 | T-0528 | done | wl-build-web |
+| T-0530 | Sign-out must cancel or await an in-flight cache refresh so it can't write the user's rows back after the clear (T-0528 review follow-up, D-0195) | web-shell | T-0528 | done | wl-build-web |
