@@ -271,6 +271,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0350 | UF-10: with no cache and no network the C-01 map stays in its loading skeleton indefinitely — show an offline/empty state (T-0307a QA, optional) | web-feature:UF-10 | T-0307a | done | wl-build-web |
 | T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | done | wl-build-web |
 | T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | done | wl-build-web |
+| T-0351 | Profile gate read should fail fast: `.retry(false)` or `AbortSignal.timeout` on the profiles query in `lib/profile/status.ts`, so a network that throws yields `unknown` in <1 s instead of postgrest-js's ~7 s backoff holding /welcome open; fake-timer unit test (T-0904 diagnosis) | web-shell | T-0904 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
