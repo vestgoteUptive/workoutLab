@@ -41,11 +41,4 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0523`.
 
 ## Build / accept log
-
-- Build (backend): ran `node supabase/scripts/gen-seed.mjs` (no hand edit); seed.sql +351 lines.
-- AC1: red on pre-regen seed: `node supabase/scripts/gen-seed.mjs --check` exit 1 (prints supabase/seed.sql); after regen exit 0; `node --test supabase/tests/scripts/gen-seed.test.mjs` 8/8 pass.
-- AC2/AC3: need local Supabase; the `supabase` CLI is not installed in this worktree environment, so `supabase db reset` and the DB-backed seed-roundtrip test were NOT run here (not worked around). Library has 87 exercise JSON files = 87 `exercises` rows expected.
-- Human prod apply (after merge; needs SUPABASE_ACCESS_TOKEN and PROD_DB_URL in env):
-  plan: `bash infra/scripts/supabase-prod-release.sh`
-  apply: `CONFIRM_PROD_RELEASE=csgjsdwuxqtuqpuazzpz bash infra/scripts/supabase-prod-release.sh apply`
-  Expected: `exercises` 87 rows (78 + 9 new); `exercise_areas` and `exercise_variants` gain rows for the nine new ids plus the variant ids on 18 existing rows; re-apply is a no-op (idempotent upserts).
+Archived in `docs/tickets/log/T-0523.md` (D-0157).
