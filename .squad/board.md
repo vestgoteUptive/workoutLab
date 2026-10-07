@@ -130,7 +130,7 @@ GitHub #37 (Plan is confusing) and #45 (Account looks bad). Specs: `docs/specs/v
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0552 | **High priority.** PWA applies new builds: update check on load and resume; reload only on a route change to, or resume on, a tab screen; never on /session/* or mid-form; never on first install (D-0204 §3–§4) | web-shell | — | doing | wl-build-web |
+| T-0553 | PWA update guard: rewrite the wl-in-session entry on bfcache restore (T-0552 review) | web-shell | T-0552 | ready | wl-build-web |
 | T-0551 | User flows v2 UF-11.2/UF-11.4 text + uf-11-plan-checkin.md UF-11.2 section to the D-0203 layout | product | — | ready | wl-spec |
 | T-0548 | UF-11.2 part 1: .wl-page on /plan and /plan/edit, header + purpose line, "Your plan" card with Edit plan, Targets tile grid (no "From your plan"), "See this period in Balance"; copy-test updates logged | web-feature:UF-11 | T-0546 | doing | wl-build-web |
 | T-0549 | UF-11.2 part 2: check-in card restyle, Check-ins and Routines cards, one accent action, loading/cold-cache states | web-feature:UF-11 | T-0548 | todo | wl-build-web |

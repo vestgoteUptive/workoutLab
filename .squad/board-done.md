@@ -357,3 +357,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0546 | Global type scale (body/h1/h2, rem) + .wl-page/.wl-card/.wl-row/.wl-label/button/input classes in main.css; T-1, T-4, G-1 on the tab screens; full e2e + visual check | web-shell | — | done | wl-build-web |
 | T-0545 | Web loads the fonts: import fonts.css, preload both woff2, woff2 in Workbox globPatterns; F-3 build test, F-4/F-5 Playwright (online, offline); full e2e | web-shell | T-0544 | done | wl-build-web |
 | T-0547 | Landing fonts.css + preload; `font-src 'self'` in _headers and the t0511 test (security sign-off); re-run T-0309 AC23 | landing | T-0544 | done | wl-build-web |
+| T-0552 | **High priority.** PWA applies new builds: update check on load and resume; reload only on a route change to, or resume on, a tab screen; never on /session/* or mid-form; never on first install (D-0204 §3–§4) | web-shell | — | done | wl-build-web |
