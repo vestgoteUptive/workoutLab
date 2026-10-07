@@ -9,4 +9,205 @@ body {
   background: var(--wl-color-bg);
   color: var(--wl-color-text);
   font-family: var(--wl-font-body);
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+/* Type scale (T-0546, D-0203 §2; docs/specs/visual-foundation.md §3). rem only, so browser
+ * text zoom scales it (WCAG 1.4.4). Spacing comes from .wl-page / .wl-card gaps, never from
+ * heading margins. Uppercase is CSS only: DOM text keeps its catalogue case. */
+h1,
+h2 {
+  margin: 0;
+  font-family: var(--wl-font-display);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: var(--wl-color-text);
+}
+
+h1 {
+  font-size: clamp(2rem, 10vw, 2.5rem);
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+h2 {
+  font-size: 1.5rem;
+  line-height: 1.1;
+}
+
+/* UF-09 focus mode is exempt (principle 1, AC5): its titles keep their pre-T-0546 look. */
+.wl-uf09 h1,
+.wl-uf09 h2 {
+  font-weight: bold;
+  text-transform: none;
+  letter-spacing: normal;
+  overflow-wrap: normal;
+}
+
+h2.wl-label,
+h3.wl-label,
+legend.wl-label,
+.wl-label {
+  font-family: var(--wl-font-body);
+  font-size: 0.75rem;
+  line-height: 1.33;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-stat {
+  font-family: var(--wl-font-display);
+  font-size: 1.75rem;
+  line-height: 1;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color: var(--wl-color-text);
+}
+
+.wl-stat--hero {
+  font-size: 2.125rem;
+}
+
+.wl-muted {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-caption {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  font-weight: 500;
+  color: var(--wl-color-text-muted);
+}
+
+/* Page gutter and max width (spec §2). Screens adopt it one ticket at a time. */
+.wl-page {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 640px;
+  margin-inline: auto;
+  padding-inline: max(20px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-right));
+  padding-block: max(24px, env(safe-area-inset-top)) 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.wl-card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 16px;
+}
+
+/* The whole row is the link. The chevron is a CSS-drawn 2 px stroke, so it needs no
+ * aria-hidden node. */
+.wl-row {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-block-size: 56px;
+  padding-block: 12px;
+  color: var(--wl-color-text);
+  text-align: start;
+  text-decoration: none;
+}
+
+.wl-row::after {
+  content: "";
+  flex: none;
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-inline-end: 2px solid var(--wl-color-text-muted);
+  border-block-end: 2px solid var(--wl-color-text-muted);
+  transform: rotate(-45deg);
+}
+
+.wl-row + .wl-row {
+  border-block-start: 1px solid var(--wl-color-line);
+}
+
+.wl-button--primary,
+.wl-button--secondary,
+.wl-button--text {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--wl-font-body);
+  font-size: 1rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.wl-button--primary,
+.wl-button--secondary {
+  inline-size: 100%;
+  border-radius: 14px;
+}
+
+.wl-button--primary {
+  min-block-size: 54px;
+  padding: 0 16px;
+  font-weight: 700;
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border: 0;
+}
+
+.wl-button--secondary {
+  min-block-size: 48px;
+  padding: 0 16px;
+  font-weight: 500;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line-strong);
+}
+
+.wl-button--text {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: 0 8px;
+  color: var(--wl-color-text);
+  background: none;
+  border: 0;
+  text-decoration: underline;
+}
+
+.wl-button--primary:disabled,
+.wl-button--secondary:disabled {
+  color: var(--wl-color-text-muted);
+  background: var(--wl-color-surface-2);
+  cursor: not-allowed;
+}
+
+.wl-button--primary:focus-visible,
+.wl-button--secondary:focus-visible,
+.wl-button--text:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-input {
+  box-sizing: border-box;
+  min-block-size: 48px;
+  padding: 0 12px;
+  font-family: var(--wl-font-body);
+  font-size: 1rem;
+  color: var(--wl-color-text);
+  background: var(--wl-color-bg);
+  border: 1px solid var(--wl-color-text-muted);
+  border-radius: 12px;
 }

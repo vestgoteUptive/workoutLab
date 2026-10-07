@@ -66,3 +66,13 @@ None. Existing tokens only (D-0203 §2).
 Every AC has a passing test · `pnpm --filter @workoutlab/web typecheck` green · `pnpm --filter @workoutlab/web lint` green · `pnpm --filter @workoutlab/web test` green · the cached full gate green · the full web e2e suite green (global CSS, D-0203 §5) · contracts unchanged · commits start with `T-0546:` and cite the screen IDs.
 
 ## Build / accept log
+
+### T-0546 build log (frontend-dev, 2026-10-07; base 7b57f2b, clean)
+- Built: global body/h1/h2 scale, `.wl-label/.wl-stat/.wl-muted/.wl-caption`, `.wl-page`, `.wl-card`, `.wl-row` (CSS chevron), `.wl-button--primary/secondary/text`, `.wl-input` in `apps/web/src/main.css`. Tokens only. `.wl-uf09 h1/h2` reset in main.css (weight bold, no uppercase/tracking), so UF-09 titles keep their look; no UF-09 file touched.
+- AC1: `apps/web/src/app/__tests__/main-css.test.ts` (8 tests, green). AC2: `h2 { font-size: 24px }` on a backup copy (`WL_MAIN_CSS` override) fails the px test, then restored with cp. AC3/AC4/AC5/AC6: `tests/e2e/visual-foundation.spec.ts` (16 tests).
+- Red runs on unfixed main CSS: AC3 fails (weight 700, size 48/20) before the CSS. Planted faults: removing the `.wl-uf09` reset fails AC5 (800 / uppercase / 0.32px); `h1 { margin-inline-start: -30px }` fails AC4.
+- AC5 constants read on main 7b57f2b: root padding 16px, title 32px / 700 / none / normal, timer 64px. Measured on the Get-ready view (first view of a session), not a set view.
+- AC3 deviation: `/balance` (`.wl-balance__window`, 20 px) and `/welcome` (`.wl-uf01__title`, 48 px) set their own h1 size in feature CSS, so the 32-40 px range is asserted only on `/`, `/progress`, `/plan`; family/weight/uppercase are asserted everywhere. Fix belongs in the UF-10 / UF-01 migration tickets.
+- AC6 touched one existing e2e: `uf-02-today.spec.ts` `cardTexts` read `innerText` of the card title (an h2), which now returns "SUGGESTED FOR 45 MIN"; switched to `textContent` (same catalogue-text assertion). Everything else unedited.
+- Visual check, 390x844, `test-results/visual-foundation/<id>.png` (local run): UF-02.1 ok; UF-04.1 heading ok (fixture shows empty list); UF-06.1 ok, h2s uppercase; UF-10.1 ok (heading 20 px, own size); UF-11.2 heading and h2s render in system font, no gutter yet (T-0548), heading touches the edge; UF-11.4 same (T-0550). Nothing clipped or overlapping.
+- Gate: `-w typecheck lint test --concurrency=1` green; format:check, check-all, test:repo-checks green; full web e2e: 265 tests, 264 first run + the uf-02 fix rerun green (12/12).

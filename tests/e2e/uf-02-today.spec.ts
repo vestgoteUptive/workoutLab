@@ -256,7 +256,9 @@ async function cardTexts(page: Page) {
   await expect(card(page)).not.toHaveAttribute("aria-busy", "true");
   await expect(cardRows(page).first()).toBeVisible();
   return {
-    title: await page.locator('[data-part="card-title"]').innerText(),
+    // textContent, not innerText: the global h2 rule (T-0546) uppercases it with CSS, and
+    // innerText returns the rendered case. The catalogue text is what this asserts.
+    title: (await page.locator('[data-part="card-title"]').textContent()) ?? "",
     summary: await page.locator('[data-part="card-summary"]').innerText(),
     rows: await cardRows(page).allInnerTexts(),
   };
