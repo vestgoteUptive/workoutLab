@@ -59,3 +59,16 @@ Checklist (D-0197 §7): `excludeIds` empty and non-empty both tested (AC4); firs
 Every AC has a passing test · the simulated 14-day history tests pass · `pnpm -w typecheck lint test` green · `vendor.mjs --check` green · contract change linked to D-0199 · commits start with `T-0534:` and cite UF-08.2 / UF-11.5.
 
 ## Build / accept log
+
+### 2026-10-07 engine-dev build
+Start: clean tree, HEAD 1de8e7e (local main with T-0533). Changed: `excludedOutAreas` in `packages/engine/src/session.ts`, exported from the index; `docs/engine-rules.md` rule 0 list, rule 0.1 (suggest consequences, excludedOutAreas, R0-E3…E5), R7-E17…E20 in 7.2, Required tests, Traceability row (D-0199 §3); vendor regenerated. `suggest` unchanged. Tests: `packages/engine/test/t0534-excluded-out-areas.test.ts` (23).
+- AC1 → `R7-E17 … excluding [bench-press]`, `R7-E18 … mainLiftId bench-press`
+- AC2 → `R7-E20 … excluding [back-squat, leg-extension]`
+- AC3 → `R7-E19 … pinnedIds [plank] and excludeIds [plank]`
+- AC4 → `R0-E3`, `R0-E4`, `R0-E5` (×3: equipment-empty, [] / [no-such-id], level-empty + fixed order)
+- AC5 → three `(AC5) <history> excluding …` tests (suggest + balance deficits + evaluateCheckin) and `allChestNoLegs excluding [db-bench-press] still counts its past sets`
+- AC6 → five seeded properties (D-0036 §5, mulberry32): full grid 15..120 × energy × warm-up × shuffle 0..6 over zero + 4 histories; 400 random seeds (histories, profiles, main/pins); invariance (300); fixed order + monotone + definition oracle (500); rankSwaps [] vs 8-arg (150)
+- AC7/AC8 → faults below; `vendor.mjs --check` exit 0; three `(AC8)` traceability tests
+- Faults (backup + `cp` restore, all red): F1 drop the excludeIds filter → 6 red incl. R0-E3; F2 report equipment-empty areas → 4 red incl. R0-E5; F3 input order → order property + R0-E5 order + invariance red; F4 suggest pool ignores excludeIds → 9 red (R7-E17…E20, AC5, AC6); F5 exclusion as a history filter → AC5 "still counts" + invariance red; F6 rankSwaps default `['db-row']` → rankSwaps property red; F7 Traceability row removed → AC8 red; F8 only the first id honoured → 5 red.
+- Note: a warm-up move id in `excludeIds` has no effect (the warm-up follows rule 7.3); found by the property run, written into rule 0.1's excludedOutAreas text, and the "no excluded id" property counts kind-`exercise` ids only.
+- Gate: `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` 19/19 green; `-w test:repo-checks` 311 pass; `-w format:check` clean; `check-all.mjs` exit 0; `vendor.mjs --check` exit 0. No e2e (engine-only).
