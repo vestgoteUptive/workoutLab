@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# T-0402b: first prod Supabase release, human-run (D-0186 §2, gate 3, H-19).
+# T-0402b: prod Supabase release; human-run or run by CI (D-0201). Gate 3, H-19.
 #   bash infra/scripts/supabase-prod-release.sh          # plan: read-only (default)
 #   CONFIRM_PROD_RELEASE=<ref> bash infra/scripts/supabase-prod-release.sh apply
 # Inputs from the environment only: SUPABASE_ACCESS_TOKEN, PROD_DB_URL (session pooler string).
@@ -80,7 +80,8 @@ if [ "$mode" = "plan" ]; then
 fi
 
 echo "== apply: db push =="
-sb db push --db-url "$PROD_DB_URL" --include-seed
+# --yes: no TTY in CI, so never wait on the CLI prompt (T-0543). The confirm lock above is the gate.
+sb db push --db-url "$PROD_DB_URL" --include-seed --yes
 for f in "${FUNCTIONS[@]}"; do
   echo "== deploy $f =="
   sb functions deploy "$f" --project-ref "$PROD_REF"

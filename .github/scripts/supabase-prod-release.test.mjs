@@ -136,3 +136,11 @@ test('T-0513 AC-3 functions deploy takes verify_jwt from supabase/config.toml', 
     assert.match(m[1], /^verify_jwt\s*=\s*false\s*$/m, `${f} verify_jwt`);
   }
 });
+
+test('T-0543 AC-6 apply never waits on a prompt (--yes) and plan stays read-only', () => {
+  const apply = run(['apply'], { CONFIRM_PROD_RELEASE: REF });
+  const push = apply.calls.find((c) => /db push/.test(c) && !/--dry-run/.test(c));
+  assert.match(push, /--yes/);
+  const plan = run([]);
+  assert.ok(plan.calls.every((c) => !/--yes/.test(c)));
+});

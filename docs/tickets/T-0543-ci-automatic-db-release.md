@@ -31,3 +31,14 @@ D-0201. The owner wants database releases to happen on merge to main, fully auto
 None to the API or the data model. Process change named by D-0201.
 
 ## Build / accept log
+
+### Build log (infra)
+- HEAD at start 09f8d3b, tree clean. Built CI code only; no prod contact, no secrets.
+- AC-1/2: `release` job in deploy.yml (after `production` in the file, so first-match mutation tests still hit production; `production` has `needs: release`). Order: guard (runs release script `plan`, then migration-guard) -> backup -> upload -> plan -> apply. Test: check-deploy-workflow.test.mjs (needs, order, cancel, group, if-equality).
+- AC-3: `infra/scripts/migration-guard.mjs`; tests `.github/scripts/migration-guard.test.mjs` (16, each pattern red, header green, missing/non-decided red, comments, none pending, fail-closed). Tests live in .github/scripts because only that dir is run by test:repo-checks.
+- AC-4: `infra/scripts/prod-backup.sh` + `infra/backup/{age-recipient.txt,README.md}` placeholder; tests `prod-backup.test.mjs` with stub pg_dump/age (placeholder refused, no leak, auth skipped, failures).
+- AC-5: checker allows the two secrets only on guard/backup/plan/apply steps of jobs.release; planted-fault tests added (secret in production, secret on other release step, no needs, order, cancel true, wrong group, inline supabase, literal ref, retention).
+- AC-6: release script was already non-interactive except the CLI prompt; added `--yes` to the apply `db push` (test in supabase-prod-release.test.mjs). Existing tests green.
+- AC-7: `infra/README.md`, `docs/security/prod-backups.md`.
+- Tools: postgresql-client-17 (prod major 17 per supabase/config.toml) from PGDG; age 1.2.1 with sha256 pinned (hash computed by me from the GitHub download over TLS; owner may verify against upstream).
+- Gate: node --test on changed scripts green; test:repo-checks 342/342; format:check clean; check-all clean; check-deploy-workflow passed.

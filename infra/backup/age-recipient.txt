@@ -1,0 +1,3 @@
+# PLACEHOLDER (T-0543, D-0201 §4, H-28). The owner replaces this file with the PUBLIC age
+# recipient (one line starting "age1"). prod-backup.sh refuses to run until a real key is here.
+REPLACE_WITH_AGE_PUBLIC_KEY
