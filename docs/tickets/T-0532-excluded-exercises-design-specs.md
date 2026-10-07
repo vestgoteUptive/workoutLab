@@ -54,3 +54,9 @@ None. No token changes (D-0199 §10).
 Every AC has a passing test or a check-all pass · `pnpm -w typecheck lint test` green · `node .github/scripts/check-all.mjs` green · `tokens.json` unchanged · commits start with `T-0532:` and cite the screen IDs.
 
 ## Build / accept log
+
+- 2026-10-07 designer: added `components/c-03-checkbox.md`, `components/neutral-notice.md`, five specs under `screens/`, a contrast row in design-system.md (`text-muted` border 7.5 / 6.8 / 5.8, needs 3.0). Border token is `text-muted`; `line-strong` on `surface` is 1.5:1 and fails. `tokens.json` unchanged.
+- AC1: `tokens.test.ts` C-03 border rows (bg/surface/surface-2 ≥ 3.0) plus the planted pair `line-strong` on `surface` < 3.0. AC2/AC3/AC4/AC5/AC6: `docs.test.ts` "T-0532" block (no `warn`, no hex, notice tokens, both strings in UF-08.2 and UF-11.5, C-03 anatomy, a11y words, no UF-09 control). AC5 screen IDs: `check-all.mjs` green.
+- Planted fault (backup copy, restored): border pair swapped to `line-strong` made the 3 new rows fail. UF-11.2 is exempt from the `aria-disabled` check by design (a nav link, not a write control).
+- Gate: design-tokens package tests 84/84, `format:check` clean, check-all rc=0. Full `-w` gate not run (docs and one package test only).
+- Follow-ups: web-feature:excluded-exercises (T-0537…T-0541) build from these specs.
