@@ -166,7 +166,7 @@ describe("T-0216 AC-1 the section", () => {
     }
   });
 
-  it("T-0216 AC-1 with no stored email: the group is the next element after the h1", async () => {
+  it("T-0216 AC-1 with no stored email: the group follows the Sign out section after the h1", async () => {
     await mountWithCache(["none"]);
     const h1 = screen.getByRole("heading", { level: 1 });
     const host = h1.parentElement!;

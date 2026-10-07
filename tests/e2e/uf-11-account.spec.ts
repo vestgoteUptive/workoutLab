@@ -551,7 +551,10 @@ test.describe("T-0529 findable sign out (D-0195, GitHub #35)", () => {
     await expect(page.locator('[data-screen-id="UF-11.2"]')).toBeVisible();
     await waitForOfflineDb(page);
     await putLibraryRow(page, FAKE_USER_ID);
-    await page.evaluate(() => window.localStorage.setItem("wl-last-email", "ada@example.com"));
+    await page.evaluate(() => {
+      window.localStorage.setItem("wl-last-email", "ada@example.com");
+      window.localStorage.setItem("wl-onboarding", "T0529-SENTINEL");
+    });
 
     const link = page.getByRole("link", { name: "Account and sign out" });
     await expect(link).toBeVisible();
@@ -566,9 +569,13 @@ test.describe("T-0529 findable sign out (D-0195, GitHub #35)", () => {
     await page.getByRole("button", { name: "Sign out" }).click();
     await expect(page).toHaveURL(/\/welcome$/);
     await expect(page.locator('[data-screen-id="UF-01.1"]')).toBeVisible();
-    // `wl-onboarding` is the guest draft UF-01 itself writes once /welcome has rendered; it is
-    // not left over from the signed-out session (the seeded `wl-last-email` is gone).
-    expect((await wlAndAuthKeys(page)).filter((k) => k !== "wl-onboarding")).toEqual([]);
+    // UF-01 may write a fresh guest draft to `wl-onboarding` once /welcome renders; the
+    // signed-in session's value (the sentinel) must be gone, and every other wl- key too.
+    const left = await wlAndAuthKeys(page);
+    expect(left.filter((k) => k !== "wl-onboarding")).toEqual([]);
+    expect(await page.evaluate(() => window.localStorage.getItem("wl-onboarding"))).not.toBe(
+      "T0529-SENTINEL",
+    );
     expect(await libraryCacheRows(page, FAKE_USER_ID)).toBe(0);
   });
 
