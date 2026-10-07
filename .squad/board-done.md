@@ -332,3 +332,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0529 | UF-11.2 "Account and sign out" header link; UF-11.4 Sign out under the email, unsynced confirm, Signing out…, lands on /welcome; GitHub #35 part 2 (D-0195) | web-feature:UF-11 | T-0528 | done | wl-build-web |
 | T-0530 | Sign-out must cancel or await an in-flight cache refresh so it can't write the user's rows back after the clear (T-0528 review follow-up, D-0195) | web-shell | T-0528 | done | wl-build-web |
 | T-0532 | Design: C-03 checkbox spec; screen specs for UF-11.5, UF-11.2, UF-08.2, UF-08.3/UF-05.1, UF-04.1/UF-04.2; neutral notice pattern | design | — | done | wl-design |
+| T-0907 | deploy.yml builds design-tokens before web in preview and production (tokens.css is generated; PR #38 preview failed) | infra | — | done | wl-build-infra |
+| T-0908 | UF-11.4 offline sign-out reaches /welcome without racing a full page load (CI fix, PR #40) | web-feature:UF-11 | T-0529 | done | wl-build-web |

@@ -18,5 +18,4 @@ status: doing
 - AC-4: the PR's preview job is green.
 
 ## Build / accept log
-- Orchestrator build, 2026-10-06. Checker on the unfixed workflow: exit 1, both jobs flagged. Fixed: passes. check-deploy-workflow tests: 11/11.
-- Fresh worktree, no `packages/design-tokens/dist`: tokens, web and landing builds all succeeded.
+Archived in `docs/tickets/log/T-0907.md` (D-0157).
