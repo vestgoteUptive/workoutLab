@@ -1,8 +1,12 @@
-# T-0530: sign-out must not race an in-flight cache refresh
-
-- Lane: web-shell
-- Depends on: T-0528
-- Source: T-0528 code review follow-up (D-0195)
+---
+id: T-0530
+title: Sign-out must not race an in-flight cache refresh
+lane: web-shell
+screens: [UF-11.4]
+decisions: [D-0195]
+deps: [T-0528]
+status: doing
+---
 
 ## Why
 `signOutAndClearDevice` (T-0528) clears this user's cache rows. A cache refresh started before sign-out (`lib/offline/sync.ts`, driven by `onAuthStateChange`) can resolve after the clear and write the user's rows back, so their data stays on the device after sign-out.

@@ -1,8 +1,12 @@
-# T-0531: account deletion must not race an in-flight cache refresh
-
-- Lane: web-shell
-- Depends on: T-0530
-- Source: T-0530 code review (D-0195, D-0136 §5)
+---
+id: T-0531
+title: Account deletion must not race an in-flight cache refresh
+lane: web-shell
+screens: [UF-11.4]
+decisions: [D-0195, D-0136]
+deps: [T-0530]
+status: todo
+---
 
 ## Why
 T-0530 added a cache-generation counter that sign-out bumps, so a refresh still in flight can't write the user's rows back after the clear. `wipe.ts` / `deleteAccountAndSignOut` have the same race but don't bump the counter. A refresh that resolves after the wipe can leave a deleted user's cached rows on the device.
