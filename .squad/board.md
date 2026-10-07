@@ -129,4 +129,3 @@ User request "exclude exercises and manage the list" (spec `docs/specs/excluded-
 | T-0541 | UF-04.2 "Don't suggest this"/"Suggest again" + UF-04.1 "Not suggested" tag. After H-27 | web-feature:UF-04 | T-0532, T-0536, T-0537 | todo | wl-build-web |
 | T-0542 | UF-02.1/UF-02.2 PREVIEW_INPUT passes the stored list to suggest | web-feature:UF-02 | T-0536 | todo | wl-build-web |
 | T-0543 | CI releases prod Supabase automatically before the Pages deploy: migration guard, age-encrypted backup, release script (D-0201) | infra | — | doing | wl-build-infra |
-| T-0910 | UF-10 never-in-workout AC-A12 flakes under load | web-feature:UF-10 | — | doing | wl-build-web |
