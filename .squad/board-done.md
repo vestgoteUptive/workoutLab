@@ -324,6 +324,10 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0524 | Flaky repo-check: .github/scripts/supabase-prod-release.test.mjs 'T-0402b AC-1 plan is the default and read-only' intermittently exits 141 (SIGPIPE, a pipe closed early); seen twice on 2026-10-06 (T-0516 build, T-0508 merge gate) | infra | T-0402b | done | wl-build-infra |
 | T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | done | wl-build-infra |
 | T-0512 | Bump astro past GHSA-26w7-cxv4-gfx2 and the other critical/high advisories (build-time only; static output unaffected) (F-2) | landing | T-0511 | done | wl-build-web |
+| T-0402a | Deploy pipeline: `deploy.yml` wrangler direct upload of web + landing; branch previews behind `PREVIEWS_ENABLED` (signed-out until T-0402c), `main`→prod job wired but off until H-06; removes ci.yml's placeholder (D-0186 §1). Live AC needs H-18 | infra | T-0401 | done (previews live; H-18 superseded) | wl-build-infra |
+| T-0402d | Go-live at H-06: Free→Pro with spend cap on (gate 2), `site_url` → app host via keys-only PATCH, `PROD_DEPLOY_ENABLED`, first prod deploys verified (D-0186 §1) | infra | T-0402a, T-0402b, T-0402c, T-0403 | done (go-live complete; automatic deploys on) | wl-build-infra |
+| T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | done (verified live 2026-10-07) | wl-build-web |
+| T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | done (verified live 2026-10-07) | wl-build-web |
 
 ## Phase 5 — Iterate
 | ID | Title | Lane | Deps | Status | Flow |

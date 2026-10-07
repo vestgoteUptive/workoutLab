@@ -93,10 +93,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0402a | Deploy pipeline: `deploy.yml` wrangler direct upload of web + landing; branch previews behind `PREVIEWS_ENABLED` (signed-out until T-0402c), `main`→prod job wired but off until H-06; removes ci.yml's placeholder (D-0186 §1). Live AC needs H-18 | infra | T-0401 | blocked:H-18 (merged; live ACs only) | wl-build-infra |
-| T-0402d | Go-live at H-06: Free→Pro with spend cap on (gate 2), `site_url` → app host via keys-only PATCH, `PROD_DEPLOY_ENABLED`, first prod deploys verified (D-0186 §1) | infra | T-0402a, T-0402b, T-0402c, T-0403 | live (AC-6 human sign-in pending) | wl-build-infra |
-| T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | merged (live AC-7 needs H-24 redeploy) | wl-build-web |
-| T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | merged (live AC-5 needs H-24 redeploy) | wl-build-web |
 | T-0525 | One vite/vitest variant across the workspace: after T-0512 (astro 7 → vite 8), engine/shared/exercises/design-tokens resolve vitest against vite 8 while web+landing pin vite 6; the shared vitest config imports through hoisting. Add an explicit vite pin per package or a root-level override so there is one vitest variant (T-0512 build finding) | infra | T-0512 | todo (parked: nothing to fix until T-0512 merges after H-24; groom it then) | wl-build-infra |
 | T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | merged (AC-4 live verify_jwt read pending: blocked for agents) | wl-build-infra |
 | T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | merged (fresh-reset pgTAP run pending: db reset blocked for agents) | wl-build-backend |
@@ -124,7 +120,22 @@ User request "exclude exercises and manage the list" (spec `docs/specs/excluded-
 | T-0536 | Device cache: Dexie v3 table keyed by userId, refreshAll read, exclude/include writes after server confirm, missing-table tolerance, union helper, useOnline. After H-27 | web-shell | T-0535 | todo | wl-build-web |
 | T-0538 | UF-08: stored list ∪ visit Removes to every suggest call (incl. fit line, T-0303a AC-6 pin), Removed line Never suggest/Undo, notice, empty state. After H-27 | web-feature:UF-08 | T-0532, T-0534, T-0536, T-0537 | todo | wl-build-web |
 | T-0539 | UF-05.1/UF-08.3 swap sheet: stored list to rankSwaps, "Don't suggest {name} again" checkbox, "No alternatives left" empty state. After H-27 | web-feature:UF-05 | T-0532, T-0533, T-0536, T-0537 | todo | wl-build-web |
-| T-0540 | UF-11.5 Excluded exercises at /plan/excluded + UF-11.2 "Excluded exercises · n" row. After H-27 | web-feature:UF-11 | T-0532, T-0534, T-0536, T-0537 | todo | wl-build-web |
+| T-0540 | UF-11.5 Excluded exercises at /plan/excluded + UF-11.2 "Excluded exercises · n" row (in the T-0548 slot, D-0204 §5). After H-27 | web-feature:UF-11 | T-0532, T-0534, T-0536, T-0537, T-0548 | todo | wl-build-web |
 | T-0541 | UF-04.2 "Don't suggest this"/"Suggest again" + UF-04.1 "Not suggested" tag. After H-27 | web-feature:UF-04 | T-0532, T-0536, T-0537 | todo | wl-build-web |
 | T-0542 | UF-02.1/UF-02.2 PREVIEW_INPUT passes the stored list to suggest | web-feature:UF-02 | T-0536 | todo | wl-build-web |
 | T-0543 | CI releases prod Supabase automatically before the Pages deploy: migration guard, age-encrypted backup, release script (D-0201) | infra | — | security approved (PR #47); merge after H-28 | wl-build-infra |
+
+### GitHub #37/#45 visual foundation (D-0203)
+GitHub #37 (Plan is confusing) and #45 (Account looks bad). Specs: `docs/specs/visual-foundation.md`, `Design-docs/docs/design/screens/UF-11.2.md`, `UF-11.4.md`. Grooming defaults and splits: D-0204. **T-0552 is high priority** (installed apps run stale builds). T-0548 → T-0549 → T-0550 run serially (same UF-11 folder), and T-0540 rebases on T-0548. T-0545 and T-0546 may run in parallel; both run the full web e2e suite.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0552 | **High priority.** PWA applies new builds: update check on load and resume; reload only on a route change to, or resume on, a tab screen; never on /session/* or mid-form; never on first install (D-0204 §3–§4) | web-shell | — | doing | wl-build-web |
+| T-0544 | Self-hosted variable latin woff2 (Big Shoulders Display, DM Sans) in design-tokens: fonts/, OFL texts, SOURCES.md sha256, fonts.css export; F-1/F-2 | design | — | doing | wl-design |
+| T-0546 | Global type scale (body/h1/h2, rem) + .wl-page/.wl-card/.wl-row/.wl-label/button/input classes in main.css; T-1, T-4, G-1 on the tab screens; full e2e + visual check | web-shell | — | doing | wl-build-web |
+| T-0551 | User flows v2 UF-11.2/UF-11.4 text + uf-11-plan-checkin.md UF-11.2 section to the D-0203 layout | product | — | ready | wl-spec |
+| T-0545 | Web loads the fonts: import fonts.css, preload both woff2, woff2 in Workbox globPatterns; F-3 build test, F-4/F-5 Playwright (online, offline); full e2e | web-shell | T-0544 | todo | wl-build-web |
+| T-0547 | Landing fonts.css + preload; `font-src 'self'` in _headers and the t0511 test (security sign-off); re-run T-0309 AC23 | landing | T-0544 | todo | wl-build-web |
+| T-0548 | UF-11.2 part 1: .wl-page on /plan and /plan/edit, header + purpose line, "Your plan" card with Edit plan, Targets tile grid (no "From your plan"), "See this period in Balance"; copy-test updates logged | web-feature:UF-11 | T-0546 | todo | wl-build-web |
+| T-0549 | UF-11.2 part 2: check-in card restyle, Check-ins and Routines cards, one accent action, loading/cold-cache states | web-feature:UF-11 | T-0548 | todo | wl-build-web |
+| T-0550 | UF-11.4 rework: back link to Plan, .wl-page, cards in D-0195 order, C-03 equipment, Delete card last with line-strong edge, text-muted input border | web-feature:UF-11 | T-0546, T-0549 | todo | wl-build-web |
