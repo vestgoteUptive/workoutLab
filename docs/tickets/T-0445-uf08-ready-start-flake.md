@@ -55,3 +55,20 @@ AC-1 and AC-2 evidence recorded · AC-4's 30 runs green · `pnpm -w typecheck li
 `-w test:repo-checks` · commits start with `T-0445` and cite UF-08.4.
 
 ## Build / accept log
+- 2026-10-07 build (frontend-dev), HEAD 84dae08. **Cause:** `NavLog` records locations in a passive
+  effect, which can land after the focus route is in the DOM. The retry test asserted
+  `navLog.length === before + 1` straight after the `focus` wait, so it saw 3 instead of 4. A fast
+  assertion failure (122 ms), not a timeout; the 1 s / 5 s budgets were not the cause. No product race.
+- AC-1 reproduce: unloaded 1 of 20 runs failed; under 12 `yes` loops (8 cores) it failed on run 3
+  with `expected navLog to have a length of 4 but got 3` (ready-start.test.tsx:327). Other loops of
+  60 unloaded and 40 lightly loaded runs were clean, so the rate is low and load-sensitive.
+- AC-2 planted latency (300 ms `upsertSession` + 1500 ms lazy import): not run. The failure was a
+  missing wait on a passive effect, not a latency budget, and the fix is the observable-state wait.
+- Fix (test only): the existing focus `waitFor` in the retry test now also asserts
+  `navLog.length === before + 1`; no new wait or sleep (AC-3), and the T-0408 wait-count guard
+  (`lazy-route-timeouts.test.ts`) stays at 2 waits for this test. A first version that added a third
+  wait turned that guard red; recorded and replaced.
+- AC-4: after the fix, 30 of 30 runs of the whole `src/features/UF-08` folder passed; 40 of 40
+  runs of the file passed under 12 `yes` loops (loops killed, none left).
+- Gate: `scripts/locked.sh heavy pnpm -w typecheck lint test --concurrency=1` green; format:check
+  green. Not run by me: test:repo-checks and check-all.mjs.
