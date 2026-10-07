@@ -602,6 +602,33 @@ test.describe("T-0529 findable sign out (D-0195, GitHub #35)", () => {
     expect(await countSets(page, FAKE_USER_ID)).toBe(1);
   });
 
+  test.describe("T-0908 AC-4 no service worker controls the page", () => {
+    test.use({ serviceWorkers: "block" });
+
+    test("T-0908 AC-4 offline with a queued set, service worker blocked (CI): confirm, Sign out anyway, /welcome, the set is kept", async ({
+      page,
+      context,
+    }) => {
+      await page.route(`${VITE_SUPABASE_URL}/auth/v1/logout*`, (route) =>
+        route.fulfill({ status: 204 }),
+      );
+      await open(page);
+      await seedDevice(page);
+      await expect.poll(() => countSets(page, FAKE_USER_ID)).toBe(1);
+      await goOffline(page, context);
+
+      await page.getByRole("button", { name: "Sign out", exact: true }).click();
+      await expect(
+        page.getByText(
+          "Some workouts haven't synced yet. They stay on this device and upload the next time you sign in here.",
+        ),
+      ).toBeVisible();
+      await page.getByRole("button", { name: "Sign out anyway" }).click();
+      await expect(page).toHaveURL(/\/welcome$/);
+      expect(await countSets(page, FAKE_USER_ID)).toBe(1);
+    });
+  });
+
   test("T-0529 AC-6 axe: the unsynced confirm on UF-11.4 and UF-11.2 with the header link", async ({
     page,
   }) => {

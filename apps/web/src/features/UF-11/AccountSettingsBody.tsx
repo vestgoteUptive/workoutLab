@@ -63,6 +63,9 @@ function storedEmail(userId: string | null): string | null {
   return null;
 }
 
+const SIGN_OUT_WAIT_MS = 2000;
+const SIGN_OUT_POLL_MS = 25;
+
 type DeleteError = "unauthorized" | "failed" | "offline" | null;
 
 export function AccountSettingsBody({ clock }: { clock: Clock }) {
@@ -71,6 +74,14 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   const online = useOnline();
   const userId = auth.userId;
   const [email] = useState(() => storedEmail(userId));
+
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   const statusRef = useRef(auth.status);
   statusRef.current = auth.status;
@@ -110,6 +121,29 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
     }
   }, [confirming]);
 
+  /**
+   * T-0908: shared by sign-out and delete. The auth state's SIGNED_OUT can land just after the
+   * sign-out call resolves, so wait for it (bounded). The guest-only /welcome route bounces a
+   * signed-in status back to /, which is why a still-stale status online gets a full load
+   * (T-0310c rework 2). Offline a full load would hit the browser error page when no service
+   * worker controls the page, so navigate in the app: supabase-js `signOut({scope:"local"})`
+   * removes the stored session and emits SIGNED_OUT without the network, so the status flips
+   * on its own and /welcome does not bounce.
+   */
+  async function leaveToWelcome() {
+    const deadline = Date.now() + SIGN_OUT_WAIT_MS;
+    while (statusRef.current !== "signed-out" && Date.now() < deadline) {
+      await new Promise<void>((resolve) => setTimeout(resolve, SIGN_OUT_POLL_MS));
+    }
+    // The screen was left meanwhile (the user went elsewhere): don't yank them with a navigation.
+    if (!mountedRef.current) return;
+    if (statusRef.current === "signed-out" || !navigator.onLine) {
+      navigate("/welcome", { replace: true });
+    } else {
+      window.location.replace("/welcome");
+    }
+  }
+
   async function doSignOut() {
     if (signingOutRef.current || userId === null) return;
     signingOutRef.current = true;
@@ -119,9 +153,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
     } catch {
       // local sign-out is best effort; still leave the account screen
     }
-    // Same as the delete path: a session still in memory would bounce /welcome back to /.
-    if (statusRef.current === "signed-out") navigate("/welcome", { replace: true });
-    else window.location.replace("/welcome");
+    await leaveToWelcome();
   }
 
   async function onSignOut() {
@@ -181,10 +213,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
     }
     deletingRef.current = false;
     if (outcome === "deleted") {
-      // If the local sign-out didn't clear the in-memory session, the guest-only /welcome route
-      // would bounce the user back to /: a full load starts signed out (T-0310c rework 2).
-      if (statusRef.current === "signed-out") navigate("/welcome", { replace: true });
-      else window.location.replace("/welcome");
+      await leaveToWelcome();
       return;
     }
     setDeleting(false);
