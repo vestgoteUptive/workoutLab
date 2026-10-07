@@ -148,6 +148,39 @@ describe("AC-7 itemReasonLine", () => {
   it("only prefill → empty", () => {
     expect(itemReasonLine([{ code: "prefill", kind: "first_time" }])).toBe("");
   });
+  it("T-0476 AC-1: a swap reason leads, cap stays 2", () => {
+    expect(
+      itemReasonLine([
+        { code: "area_deficit", area: "back", deficit: 1 },
+        { code: "days_since", area: "back", days: null },
+        { code: "swap", reason: "short_on_time" },
+      ]),
+    ).toBe("Swapped to save time · Back 100 % below target");
+  });
+  it.each(["null", "equipment_taken", "discomfort", "variety", "short_on_time"] as const)(
+    "T-0476 AC-2: swap %s leads with exactly 2 parts",
+    (key) => {
+      const swap: Reason = { code: "swap", reason: key === "null" ? null : key };
+      const line = itemReasonLine([
+        { code: "area_deficit", area: "back", deficit: 1 },
+        { code: "days_since", area: "back", days: null },
+        swap,
+      ]);
+      expect(line.startsWith(reasonLine(swap))).toBe(true);
+      expect(line.split(" · ")).toHaveLength(2);
+    },
+  );
+  it("T-0476 AC-3: no swap is unchanged", () => {
+    expect(itemReasonLine(BENCH_REASONS)).toBe("Main lift · Chest 100 % below target");
+  });
+  it("T-0476 AC-4: swap alone, empty prefill skipped", () => {
+    expect(
+      itemReasonLine([
+        { code: "swap", reason: "variety" },
+        { code: "prefill", kind: "first_time" },
+      ]),
+    ).toBe("Swapped for variety");
+  });
 });
 
 describe("AC-7 sessionReasonChips", () => {

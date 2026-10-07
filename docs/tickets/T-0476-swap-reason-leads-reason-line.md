@@ -58,3 +58,7 @@ Tests for every AC pass, AC-1 and AC-5 red on main (record it) · `pnpm -w typec
 plus `-w test:repo-checks` · the UF-08 e2e spec green · commits start with `T-0476` and cite UF-08.3.
 
 ## Build / accept log
+
+- Built: `itemReasonLine` puts the first non-empty swap line first, cap 2. AC-1..4 in `workout.test.ts`, AC-5 in `swap-before-start.test.tsx`.
+- Red on unfixed `workout.ts` (HEAD): 7 failed (AC-1, AC-2 x5, AC-5), 84 passed; with fix 91/91. Planted fault = the unfixed code.
+- Gate: `-w typecheck lint test --concurrency=1` green (19/19), test:repo-checks, format:check, check-all green. e2e `tests/e2e/uf-08-setup.spec.ts`: 7 passed.
