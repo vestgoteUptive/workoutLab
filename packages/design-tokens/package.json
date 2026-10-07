@@ -9,6 +9,8 @@
     ".": "./src/index.ts",
     "./tokens.json": "./src/tokens.json",
     "./tokens.css": "./dist/tokens.css",
+    "./fonts.css": "./src/fonts.css",
+    "./fonts/*": "./fonts/*",
     "./eslint-plugin": "./eslint-plugin/index.js"
   },
   "bin": {
