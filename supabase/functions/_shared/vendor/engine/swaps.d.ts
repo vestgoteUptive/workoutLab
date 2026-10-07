@@ -39,6 +39,8 @@ export declare function rankAgainst(ctx: SwapContext, cur: LibraryExercise, slot
 /**
  * Rule 12 (UF-08.3, UF-05.1): the ranked alternatives for the item `currentExerciseId` in
  * `session` (D-0056 §2). Throws `RangeError` when that id isn't an item of the plan or isn't
- * in `library`, or when `reason` isn't a `SwapReason` or null. `excludeIds` is the caller's.
+ * in `library`, or when `reason` isn't a `SwapReason` or null. `excludeIds` (rule 0.1, D-0199 §3)
+ * is filtered at pool level, before ranking and before the `equipment_taken` keep-all fallback,
+ * so an excluded exercise is never offered; an excluded `current` is not an error.
  */
-export declare function rankSwaps(currentExerciseId: string, reason: SwapReason | null, session: Workout, profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], history: readonly HistorySet[], now: Instant, tz: TimeZone): SwapCandidate[];
+export declare function rankSwaps(currentExerciseId: string, reason: SwapReason | null, session: Workout, profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], history: readonly HistorySet[], now: Instant, tz: TimeZone, excludeIds?: readonly string[]): SwapCandidate[];

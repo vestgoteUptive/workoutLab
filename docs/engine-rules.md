@@ -42,12 +42,17 @@ Warm-up moves (kind `warmup`, 40 s each): wu-scap-push-up (chest 1, shoulders .5
 Fixed area order: chest, back, shoulders, arms, core, glutes, quads, hamstrings, calves. Levels: beginner < intermediate < advanced.
 
 ## 0. Purity and inputs (D-0024)
-- All engine functions are pure: `suggest(history, targets, profile, library, sessionInput, now, tz)`, `balance(history, targets, library, now, tz)`, `timeCheck(workout, progress)`, `rankSwaps(…)`, `applySwap(workout, current, candidate, reason, history, profile, library, now, tz)`, `prefill(…)` and `evaluateCheckin(sessions, profile, checkins, now, tz)`. They never read the clock, randomness or globals. `Date.now()`, `new Date()` without arguments and `Math.random()` are banned in `packages/engine/src` (lint rule, T-0200).
+- All engine functions are pure: `suggest(history, targets, profile, library, sessionInput, now, tz)`, `balance(history, targets, library, now, tz)`, `timeCheck(workout, progress)`, `rankSwaps(…, excludeIds = [])`, `applySwap(workout, current, candidate, reason, history, profile, library, now, tz)`, `prefill(…)` and `evaluateCheckin(sessions, profile, checkins, now, tz)`. They never read the clock, randomness or globals. `Date.now()`, `new Date()` without arguments and `Math.random()` are banned in `packages/engine/src` (lint rule, T-0200).
 - **History** is the server rows ∪ the offline queue (NFR offline). The engine dedupes by `client_id` and keeps the row with the greatest `edited_at`. When two rows have the same `client_id` and `edited_at`, a server row beats a queued row (mirroring the server's no-op), between two queued rows a tombstone beats a live row, and otherwise the first row in input order wins (D-0034). It then drops rows with `deleted_at` set (D-0015). Callers pass at least the last 56 local days.
 - **Session input** (`sessionInput`, D-0037 §7): `budgetMin`, `warmupInBudget`, `energy`, `shuffle`, `mainLiftId`, `pinnedIds`, `excludeIds` and the optional `avoidAreas` (rule 6.1, D-0191 §2; absent means `[]`).
 - **Eligible exercise:** kind `exercise`, every equipment item ∈ `profile.equipment` (no equipment is always eligible), level ≤ profile level, and not in `excludeIds`.
 - **R0-E1** Given any fixed inputs, When `suggest` runs twice, Then the results are deep-equal.
 - **R0-E2** Given two rows with `client_id` c1 (the 10:00 edit has reps 8, the 10:05 edit has reps 6) and a row c2 whose newest version has `deleted_at` set, When history is normalised, Then c1 has reps 6 and c2 is absent.
+
+### 0.1 Excluded exercises (UF-04.2, UF-05.1, UF-08.3, UF-11.5, D-0199 §3)
+- **`rankSwaps`** takes `excludeIds: readonly string[] = []` as its 9th parameter, after `tz` (rule 12). Candidates are filtered at pool level through the eligibility test above (`isEligible(e, profile, excludeIds)`), **before** ranking and **before** the `equipment_taken` keep-all fallback, so the fallback never brings an excluded exercise back. `[]` gives a result deep-equal to the 8-argument call. An excluded `current` is not an error. Duplicates and unknown ids in `excludeIds` have no effect. `applySwap` takes no exclusion input (its validation stays structural).
+- **No fallback.** The engine never reintroduces an excluded exercise: when every candidate is excluded the list is `[]` (R12-E19).
+- Examples: R12-E17…E19 (rule 12).
 
 ## 1. Exercise → area mapping
 Each exercise has area weights: primary = 1.0, secondary = 0.5. Every exercise has at least one primary area. Its **primary areas** are the areas with weight 1.0, in the fixed order.
@@ -169,7 +174,7 @@ Every item carries machine-readable reasons, and the UI or an optional LLM only 
 - **R11-E4** Offline: the history includes 3 queued romanian-deadlift sets, so hamstrings +3 and glutes +1.5 (UF-10 AC8).
 
 ## 12. Swap ranking (UF-08.3, UF-05.1, D-0025)
-`rankSwaps(current, reason | null, session, profile, library, history, now, tz)`. **Candidates** are the eligible exercises, not in the session, that share a weight-1.0 area with `current`. The main slot takes compounds only. `muscleMatch = Σ min(w_cur, w_alt) / Σ w_cur`. The alternative keeps the slot's set count. Each result has `{exerciseId, muscleMatch, timeCostS, equipment, fitsBudget, bestMatch}`. Sort keys:
+`rankSwaps(current, reason | null, session, profile, library, history, now, tz, excludeIds = [])`. **Candidates** are the eligible exercises, not in the session, that share a weight-1.0 area with `current`. The main slot takes compounds only. `muscleMatch = Σ min(w_cur, w_alt) / Σ w_cur`. The alternative keeps the slot's set count. Each result has `{exerciseId, muscleMatch, timeCostS, equipment, fitsBudget, bestMatch}`. Sort keys:
 - none: muscleMatch desc, same type first, not in the last session first, id.
 - `equipment_taken`: drop candidates that share an equipment item with `current` (if that drops all of them, keep all and sort by fewest shared), then muscleMatch desc, id.
 - `discomfort`: no shared equipment first, guided (machine or cable) first, muscleMatch desc, id.
@@ -182,6 +187,9 @@ Fixture: the session is bench-press × 4 (main), barbell-row × 3, leg-extension
 - **R12-E3 (variety)** Given lat-pulldown last done 09-20 and db-row 09-10, Then inverted-row, seated-cable-row, straight-arm-pulldown, db-row, lat-pulldown.
 - **R12-E4 (discomfort)** lat-pulldown, seated-cable-row, straight-arm-pulldown, db-row, inverted-row.
 - **R12-E5 (equipment_taken, main slot)** For current bench-press, [push-up] (db-bench-press shares the bench; muscleMatch 0.75).
+- **R12-E17 (excludeIds, rule 0.1, D-0199 §3)** With `excludeIds` [db-row], reason none: inverted-row (`bestMatch`), lat-pulldown, seated-cable-row, straight-arm-pulldown. With `excludeIds` [] the result is deep-equal to the 8-argument call. With `excludeIds` [barbell-row] (the current exercise) it does not throw and equals R12-E1.
+- **R12-E18 (excludeIds, pool-level filter)** R12-E5 with `excludeIds` [push-up]: [db-bench-press]. The keep-all fallback runs on the filtered pool.
+- **R12-E19 (excludeIds, no fallback)** R12-E5 with `excludeIds` [push-up, db-bench-press]: `[]`.
 
 ### 12.1 applySwap (UF-05.1, UF-08.3, D-0071 §7, D-0093)
 `applySwap(workout, current, candidate, reason | null, history, profile, library, now, tz)` returns a new `Workout` with the item `current` replaced by `candidate`, built the way `suggest` builds an item. Let `old` be that item and `new` the candidate.
@@ -269,3 +277,4 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 14 steps 2 and 5 drop capped at `W` (D-0137) | T-0235 |
 | 6.1 avoided areas (R6-E3…E6, D-0191 §2) | T-0516 |
 | 12.2 removeItem (R12-E13…E16, D-0191 §4) | T-0519 |
+| 0.1 rankSwaps excludeIds (R12-E17…E19, D-0199 §3) | T-0533 |
