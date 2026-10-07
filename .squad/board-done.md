@@ -337,3 +337,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0908 | UF-11.4 offline sign-out reaches /welcome without racing a full page load (CI fix, PR #40) | web-feature:UF-11 | T-0529 | done | wl-build-web |
 | T-0533 | Engine rule 0.1 part 1: rankSwaps 9th param excludeIds = [] at pool level; rule 12 signature line + D-0130 guard fixture + T-0212 AC1/AC2; R12-E17…E19; vendor regen | engine | — | done | wl-build-engine |
 | T-0537 | Shared C-03 Checkbox and ExcludedAreasNotice components + shared copy in en.ts | web-shell | T-0532 | done | wl-build-web |
+| T-0534 | Engine rule 0.1 part 2: excludedOutAreas; R0-E3…E5, R7-E17…E20; 3 simulated histories; fast-check properties; vendor regen | engine | T-0533 | done | wl-build-engine |
