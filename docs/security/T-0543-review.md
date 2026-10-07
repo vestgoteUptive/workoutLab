@@ -89,3 +89,32 @@ They don't enforce:
 - **Fail-closed paths.** A missing dry-run section blocks. A pending file missing locally blocks. A plan error stops the guard step (`pipefail` on `| tee`). The placeholder recipient blocks.
 - **Allow header.** It needs a decision file whose front matter says `status: decided`. CRLF front matter fails closed. The header may sit anywhere, even inside a string, and isn't tied to the migration's subject. Acceptable, because the committer is trusted.
 - **Guard scope.** Within D-0201's scope, case, `ALTER TABLE ... DROP`, multi-statement lines, files without a trailing newline, and `DROP` inside function bodies are all caught; nested comments only cause false positives. `UPDATE` without `WHERE`, `DISABLE ROW LEVEL SECURITY` and dynamic SQL (`'dr'||'op'`) are not caught. These are outside D-0201 §3, and RLS is covered by pgTAP.
+
+## Re-review (2026-10-07, commit 1592041)
+
+Read-only check of the rework. `node --test` on the four changed test files passed 64/64, and `check-deploy-workflow.mjs` passed. I re-ran my probes against the new `scan()` guard.
+
+### Verdict: approve-with-conditions (one new medium, N1)
+
+M1 to M5 are fixed. N1 is a regression introduced by the M4 fix and must be fixed before the job goes live. N2 to N4 are low and non-blocking.
+
+### Status of the original findings
+- **M1, fixed.** The plan regex is now loose, and both plan names and on-disk files must match `^\d{14}_[A-Za-z0-9_]+\.sql$`. `_add-thing.sql`, `2026100712_short.sql` and `_ünïcode.sql` are all refused. A name with a space is cut short by the plan regex, but the on-disk check still refuses it, because the CLI can only push files that exist locally. Residual (low, unchanged): if the pinned CLI ever lists only bare versions in the dry run, nothing is detected. The CLI pin makes that unlikely.
+- **M2, fixed.** `cancel-in-progress: ${{ github.event_name == 'push' }}` is a valid workflow-level expression. For `workflow_run` it evaluates to false, so a running release is never cancelled. GitHub still replaces an older *pending* run with a newer one, which is fine: the newer run supersedes it, and the tip check would fail the older one anyway. The checker enforces the setting.
+- **M3, fixed for the cases I found.** `redact_rows` (both scripts, applied before secret masking) redacts `DETAIL:` lines (indented too), `Failing row contains ...` anywhere on a line, and `Key (..)=(..)` lines. Residual (low, N3): values embedded in the main message line are not redacted, for example `invalid input syntax for type integer: "<value>"` from an `ALTER ... TYPE ... USING`, or a `RAISE EXCEPTION '%', row`. The match is also case-sensitive (`DETAIL`).
+- **M4, fixed.** All three original bypasses are now red (`'--'`, `'/*'`, `'--'` inside `$$`). Also red: an `E'\''` escape, a `"a""--"` identifier, a `$fn$` body, an unterminated `$a$`, `a$b`, nested block comments, and a header inside a string. The header is now only accepted from real `--` comments. **But see N1.**
+- **M5, fixed in code.** The release job declares `environment: production`, the checker enforces it, and the README documents a main-only branch policy with no reviewers. That GitHub setting is applied by the owner. The secrets must be created only as environment secrets, and any repo-level copies deleted, or M5 has no effect. Add this to H-28 or the go-live checklist.
+- **L1, mostly fixed. Acceptable, but see N2.** `head_branch == 'main'` is in both `if`s, and the tip-of-main step runs before the guard and before any secret. A run whose `head_sha` is no longer main's tip goes red, and the newer run releases. That is acceptable and the safer choice: nothing but the current tip ever reaches prod, and re-runs of old SHAs can't roll back. One consequence to note: if the newer commit's CI is red, no release happens at all until main is green again. That is conservative and correct. The red run is noise only, and the error message explains why.
+- **L2, fixed.** `pg_dump` takes `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` and `PGDATABASE` from the environment. Nothing is echoed (plain assignments and exports, no `set -x`). URL decoding works (`p%40ss%25w0rd` becomes `p@ss%w0rd`). See N4 for the remaining details.
+- **L3, fixed.** The release actions are pinned by SHA, which the checker enforces. The CLI is prefetched by `npx` in a step without secrets, so its install and postinstall never see them.
+- **L4, fixed.** The seed is scanned for DROP, TRUNCATE and DELETE FROM. The real seed passes.
+- **L5, fixed.** The checker now has rules for the upload path (`*.sql.age`), the checkout `ref`, the environment, the head-branch check, the tip step before the guard, and SHA pins.
+
+### New findings
+- **N1 (medium). The guard now misses destructive dynamic SQL.** `scan()` blanks every single-quoted literal, so `do $$ begin execute 'drop table public.sets'; end $$;` and `execute format('truncate %I', t)` pass. The pre-rework guard caught them. `EXECUTE format('drop policy ... %I', ...)` is a common migration pattern. Fix: for migrations, keep string-literal contents in the scanned code. Use quote awareness only to find real comments (that keeps M4 fixed). Blank strings only for the seed, where prose like "drop your hips" lives. A `comment on ... is '... drop ...'` then needs the header, which fails safe. Add red tests for both cases.
+- **N2 (low). The tip check can still be fooled by a tag named `main`.** `git fetch --depth=1 origin main` prefers `refs/tags/main` over `refs/heads/main`. I confirmed this locally: with both present, FETCH_HEAD was the tag. So the tag trick from L1 still passes the tip check. It needs write access. Fix: `git fetch --depth=1 origin refs/heads/main`, plus a checker rule for that exact refspec.
+- **N3 (low). Values in main error messages are not redacted** (see M3 above). Consider redacting `invalid input syntax ...: "..."` and matching `DETAIL` case-insensitively.
+- **N4 (low). Parsing in `prod-backup.sh`.**
+  - The `?sslmode=require` query string is dropped, so libpq falls back to `sslmode=prefer`. Set `PGSSLMODE=require`, or `verify-full` with the Supabase CA.
+  - `urldecode` uses `printf %b`, so a literal backslash sequence in the password is interpreted. That only causes an auth failure, so it fails closed.
+  - Masking covers the URL-encoded password. Also mask, or `::add-mask::`, the decoded `PGPASSWORD`.
