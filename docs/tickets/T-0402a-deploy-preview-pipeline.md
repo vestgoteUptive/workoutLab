@@ -201,11 +201,4 @@ log. It stays within the free private-repo minutes, so `docs/infra-costs.md` doe
 - **Unblocks:** T-0402c (needs previews to exist) and T-0402d.
 
 ## Build / accept log
-
-### Build log (infra, 2026-10-05, main 54b7021, tree clean at start)
-- Added `.github/workflows/deploy.yml` (jobs `preview`, `production`), removed the placeholder `deploy` job from `ci.yml` (`git diff main -- .github/workflows/ci.yml`: 11 deletions, 0 additions), added `.github/scripts/check-deploy-workflow.mjs` + `.test.mjs`, `infra/deploy/README.md`. wrangler pinned at 4.147.0 via workflow env `WRANGLER_VERSION`. Alias URLs are grepped from wrangler output (fails the step if none found); branch passed via env `BRANCH` (no shell injection from branch names).
-- Deviation: no `yaml` devDependency. First tried it, but `check-all.test.mjs` AC23 requires `.github/scripts` to import only `node:` built-ins (red run: "check-deploy-workflow.mjs imports yaml"). Reverted `package.json`/`pnpm-lock.yaml` and wrote a small YAML-subset parser inside the checker. No root file changed.
-- AC→test (all in `.github/scripts/check-deploy-workflow.test.mjs`): AC-1 "T-0402a AC-1 ..." (3 tests); AC-2 "T-0402a AC-2 ..." (2); AC-3 "T-0402a AC-3 ..." (1, 7 mutations); AC-4 "T-0402a AC-4 ..." (1); baseline test passes on the real files.
-- Planted faults (recorded): `--branch main` in `preview` -> AC-1 red; `production` `if` without `PROD_DEPLOY_ENABLED` -> AC-2 red. Both made on temp copies in the tests, which assert red.
-- Cost: no recurring cost; about 2-3 extra Actions minutes per pushed branch, within free private-repo minutes. `docs/infra-costs.md` unchanged.
-- Live ACs AC-5, AC-6, AC-7: **pending H-18** (CI token and repo variables not set). Not run; nothing deployed or pushed.
+Archived in `docs/tickets/log/T-0402a.md` (D-0157).

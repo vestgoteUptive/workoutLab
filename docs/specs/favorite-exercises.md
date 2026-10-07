@@ -13,7 +13,7 @@ How the four exercise-level inputs compose:
 | Input | Set where | Effect |
 |---|---|---|
 | `mainLiftId` | explicit choice (routine, later) | is the main lift if eligible |
-| `pinnedIds` | UF-07/UF-08.3 "Always use this in <routine>" | placed whatever the gaps say, if it fits |
+| `pinnedIds` | UF-07/UF-08.3 "Always use this in <routine>"; UF-08.5 Add for one visit (D-0205) | placed whatever the gaps say, if it fits |
 | `favoriteIds` | UF-04.2, UF-11.6 (this spec) | ranked first **inside** an area the gaps chose |
 | `excludeIds` | UF-04.2, UF-08.2, swap sheet, UF-11.5 (D-0199) | never picked; beats all of the above |
 
