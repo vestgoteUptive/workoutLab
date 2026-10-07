@@ -86,9 +86,14 @@ export function reasonLine(reason: Reason): string {
   }
 }
 
-/** An item's reasons as one line: the non-empty lines in order, at most 2, " · "-joined. */
+/**
+ * An item's reasons as one line: the non-empty lines in order, at most 2, " · "-joined. A `swap`
+ * line (the first non-empty one) leads, so a swap is visible inside the cap (D-0197 §1).
+ */
 export function itemReasonLine(reasons: readonly Reason[]): string {
-  return reasons
+  const swap = reasons.find((r) => r.code === "swap" && reasonLine(r) !== "");
+  const ordered = swap ? [swap, ...reasons.filter((r) => r !== swap)] : reasons;
+  return ordered
     .map(reasonLine)
     .filter((line) => line !== "")
     .slice(0, ITEM_REASONS)
