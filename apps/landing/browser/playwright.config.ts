@@ -30,6 +30,10 @@ export default defineConfig({
   webServer: {
     command: `astro preview --port ${PORT}`,
     cwd: "..",
+    // Astro 7 auto-backgrounds `astro preview` when it detects an AI agent
+    // shell, which Playwright reports as the server "exiting early". Setting
+    // this makes it skip that detection and stay in the foreground (T-0512).
+    env: { ASTRO_PREVIEW_BACKGROUND: "1" },
     url: BASE_URL,
     reuseExistingServer: false,
     timeout: 60_000,

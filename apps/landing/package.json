@@ -13,13 +13,14 @@
   },
   "dependencies": {
     "@workoutlab/design-tokens": "workspace:*",
-    "astro": "^5.1.1"
+    "astro": "^7.2.8"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@axe-core/playwright": "^4.13.0",
     "@playwright/test": "^1.63.0",
     "typescript": "^5.7.2",
+    "vite": "^6.4.3",
     "vitest": "^5.0.2"
   }
 }
