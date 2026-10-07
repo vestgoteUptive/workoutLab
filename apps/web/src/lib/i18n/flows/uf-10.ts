@@ -15,6 +15,8 @@ export const uf10 = {
 
   // --- Zero history (AC-A1) ---
   emptyState: "Nothing logged in the last 14 days. Your first workout fills this in.",
+  /** D-0197 §3: no cached targets and no way to load them (T-0350). */
+  noData: "No balance on this device yet. Connect to the internet to load it.",
   startWorkout: "Start workout",
 
   /** The engine's rule-6 tag, on both screens (AC-A11). */
