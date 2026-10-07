@@ -2,7 +2,26 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { isSafeToReload, notifyRouteChange, startUpdateChecks } from "../update.js";
 
-function setup(opts: { controller?: boolean; path?: string; update?: () => Promise<void> } = {}) {
+function fakeStorage(map = new Map<string, string>()) {
+  return {
+    get length() {
+      return map.size;
+    },
+    key: (i: number) => [...map.keys()][i] ?? null,
+    getItem: (k: string) => map.get(k) ?? null,
+    setItem: (k: string, v: string) => void map.set(k, v),
+    removeItem: (k: string) => void map.delete(k),
+  };
+}
+
+function setup(
+  opts: {
+    controller?: boolean;
+    path?: string;
+    update?: () => Promise<void>;
+    storage?: ReturnType<typeof fakeStorage>;
+  } = {},
+) {
   const update = vi.fn(opts.update ?? (() => Promise.resolve()));
   const registration = Object.assign(new EventTarget(), {
     update,
@@ -15,7 +34,12 @@ function setup(opts: { controller?: boolean; path?: string; update?: () => Promi
   });
   const doc = Object.assign(new EventTarget(), { visibilityState: "visible" });
   const location = { pathname: opts.path ?? "/", reload: vi.fn() };
-  const win = { navigator: { serviceWorker: container }, document: doc, location };
+  const win = {
+    navigator: { serviceWorker: container },
+    document: doc,
+    location,
+    localStorage: opts.storage ?? fakeStorage(),
+  };
   return {
     update,
     reload: location.reload,
@@ -140,35 +164,86 @@ describe("T-0552 update checks", () => {
     expect(f.reload).toHaveBeenCalledTimes(1);
   });
 
-  it("AC12 a waiting worker is told to skip waiting; its activation (no controllerchange) marks the update pending", async () => {
-    const t = setup({ path: "/plan/edit" });
-    const worker = Object.assign(new EventTarget(), { state: "installing", postMessage: vi.fn() });
+  function newWorker(state = "installing") {
+    return Object.assign(new EventTarget(), { state, postMessage: vi.fn() });
+  }
+  const install = (t: ReturnType<typeof setup>, w: ReturnType<typeof newWorker>) => {
+    t.registration.installing = w;
+    t.registration.dispatchEvent(new Event("updatefound"));
+    w.state = "installed";
+    w.dispatchEvent(new Event("statechange"));
+  };
+  const SKIP = { type: "SKIP_WAITING" };
+
+  it("AC12 in a workout an installed worker stays waiting on resume; a safe route then activates it", async () => {
+    const t = setup({ path: "/session/S1" });
+    const w = newWorker();
     t.start();
     await flush();
-    t.registration.installing = worker;
-    t.registration.dispatchEvent(new Event("updatefound"));
-    worker.state = "installed";
-    worker.dispatchEvent(new Event("statechange"));
-    expect(worker.postMessage).toHaveBeenCalledWith({ type: "SKIP_WAITING" });
+    install(t, w);
+    await t.show();
+    t.go("/session/S1/summary");
+    await t.show();
+    expect(w.postMessage).not.toHaveBeenCalled();
     t.go("/plan");
+    expect(w.postMessage).toHaveBeenCalledWith(SKIP);
+    expect(w.postMessage).toHaveBeenCalledTimes(1);
     expect(t.reload).not.toHaveBeenCalled();
-    worker.state = "activated";
-    worker.dispatchEvent(new Event("statechange"));
-    t.go("/library");
+    w.state = "activated";
+    w.dispatchEvent(new Event("statechange"));
     expect(t.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("AC12 a worker already waiting at load is not activated on /session/*", async () => {
+    const t = setup({ path: "/session/S1" });
+    t.registration.waiting = newWorker("installed");
+    t.start();
+    await t.show();
+    expect(
+      (t.registration.waiting as ReturnType<typeof newWorker>).postMessage,
+    ).not.toHaveBeenCalled();
+  });
+
+  it("AC12 mid-form is not a safe moment to activate either; leaving it is", async () => {
+    const t = setup({ path: "/plan/edit" });
+    const w = newWorker();
+    t.start();
+    await flush();
+    install(t, w);
+    await t.show();
+    expect(w.postMessage).not.toHaveBeenCalled();
+    t.go("/plan");
+    expect(w.postMessage).toHaveBeenCalledWith(SKIP);
+  });
+
+  it("AC12 with another tab in a workout, a safe tab does not activate; once it leaves, it does", async () => {
+    const storage = fakeStorage();
+    const workout = setup({ path: "/session/S1", storage });
+    workout.start();
+    const other = setup({ path: "/plan", storage });
+    const w = newWorker();
+    other.start();
+    await flush();
+    install(other, w);
+    await other.show();
+    other.go("/library");
+    expect(w.postMessage).not.toHaveBeenCalled();
+    workout.at("/");
+    await workout.show(); // the module-level route hook belongs to the last started tab
+    other.go("/progress");
+    expect(w.postMessage).toHaveBeenCalledWith(SKIP);
   });
 
   it("AC12 on a first install a new worker is neither activated nor reloaded for", async () => {
     const t = setup({ controller: false });
-    const worker = Object.assign(new EventTarget(), { state: "installed", postMessage: vi.fn() });
+    const w = newWorker();
     t.start();
     await flush();
-    t.registration.installing = worker;
-    t.registration.dispatchEvent(new Event("updatefound"));
-    worker.state = "activated";
-    worker.dispatchEvent(new Event("statechange"));
+    install(t, w);
+    w.state = "activated";
+    w.dispatchEvent(new Event("statechange"));
     t.go("/library");
-    expect(worker.postMessage).not.toHaveBeenCalled();
+    expect(w.postMessage).not.toHaveBeenCalled();
     expect(t.reload).not.toHaveBeenCalled();
   });
 

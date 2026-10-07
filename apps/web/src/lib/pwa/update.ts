@@ -5,7 +5,8 @@
 // had a controller (the first install claiming the page is not an update), and reloads once, only
 // at a safe moment. The built worker does NOT skip waiting by itself (it only does so on a
 // SKIP_WAITING message, which nothing sends since T-0429 dropped registerSW.js) and does not claim
-// clients, so this module also activates a waiting worker and treats its activation as "pending".
+// clients, so this module activates the waiting worker itself, but only at a safe moment (D-0206),
+// and treats its activation as "pending".
 // At a safe moment: never during a workout (principle 1), mid-form or during auth/onboarding.
 
 const SAFE_EXACT: ReadonlySet<string> = new Set(["/", "/plan"]);
@@ -22,6 +23,8 @@ interface UpdateWindow {
   readonly navigator: { readonly serviceWorker?: ServiceWorkerContainer };
   readonly document: Pick<Document, "visibilityState" | "addEventListener">;
   readonly location: Pick<Location, "pathname" | "reload">;
+  readonly localStorage?: Pick<Storage, "getItem" | "setItem" | "removeItem" | "key" | "length">;
+  readonly addEventListener?: Window["addEventListener"];
 }
 
 export interface UpdateOptions {
@@ -29,6 +32,14 @@ export interface UpdateOptions {
   readonly prod?: boolean;
   readonly win?: Window | UpdateWindow;
 }
+
+// Activating a new worker runs cleanupOutdatedCaches, so the open build's lazy chunks (Swap, List,
+// How-to) stop loading, offline at the gym. The new worker therefore stays WAITING until a safe
+// moment, and only if no tab of this origin is in a workout. Tabs can't be listed from a page, so
+// each tab keeps a localStorage entry `wl-in-session:<id>` = last-seen time while it is on
+// /session/*, removed when it leaves (or on pagehide); an entry older than the TTL is a crashed tab.
+const IN_SESSION_PREFIX = "wl-in-session:";
+const IN_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
 
 let notify: (pathname: string) => void = () => undefined;
 
@@ -46,8 +57,35 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
   if (!prod || !container) return;
 
   const hadController = container.controller != null;
+  const tabKey = `${IN_SESSION_PREFIX}${Math.random().toString(36).slice(2)}`;
   let pending = false;
   let reloaded = false;
+  let waitingWorker: ServiceWorker | undefined;
+  let activateSent = false;
+
+  const store = win.localStorage;
+  const trackSession = (pathname: string): void => {
+    try {
+      if (pathname === "/session" || pathname.startsWith("/session/"))
+        store?.setItem(tabKey, String(Date.now()));
+      else store?.removeItem(tabKey);
+    } catch {
+      /* storage blocked: treated as no other tab in a session */
+    }
+  };
+  const otherTabInSession = (): boolean => {
+    if (!store) return false;
+    try {
+      for (let i = 0; i < store.length; i++) {
+        const key = store.key(i);
+        if (!key?.startsWith(IN_SESSION_PREFIX) || key === tabKey) continue;
+        if (Date.now() - Number(store.getItem(key)) < IN_SESSION_TTL_MS) return true;
+      }
+    } catch {
+      /* ignore */
+    }
+    return false;
+  };
 
   const applyIfSafe = (pathname: string): void => {
     if (!pending || reloaded || !isSafeToReload(pathname)) return;
@@ -55,16 +93,27 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
     win.location.reload();
   };
 
+  /** Lets the waiting worker take over, at a safe path with no other tab mid-workout. */
+  const activateIfSafe = (pathname: string): void => {
+    if (!waitingWorker || activateSent || !isSafeToReload(pathname) || otherTabInSession()) return;
+    activateSent = true;
+    waitingWorker.postMessage({ type: "SKIP_WAITING" });
+  };
+
   const markPending = (): void => {
     if (hadController) pending = true;
   };
 
-  // A new worker waits after install: ask it to take over, and once it is active a reload loads it.
   const adopt = (worker: ServiceWorker | null | undefined): void => {
     if (!worker || !hadController) return;
     const onState = (): void => {
-      if (worker.state === "installed") worker.postMessage({ type: "SKIP_WAITING" });
-      else if (worker.state === "activated") markPending();
+      if (worker.state === "installed") {
+        waitingWorker = worker;
+        activateIfSafe(win.location.pathname);
+      } else if (worker.state === "activated") {
+        markPending();
+        applyIfSafe(win.location.pathname);
+      }
     };
     worker.addEventListener("statechange", onState);
     onState();
@@ -91,9 +140,23 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
   container.addEventListener("controllerchange", markPending);
   win.document.addEventListener("visibilitychange", () => {
     if (win.document.visibilityState !== "visible") return;
+    trackSession(win.location.pathname);
     check();
+    activateIfSafe(win.location.pathname);
     applyIfSafe(win.location.pathname);
   });
-  notify = applyIfSafe;
+  win.addEventListener?.("pagehide", () => {
+    try {
+      store?.removeItem(tabKey);
+    } catch {
+      /* ignore */
+    }
+  });
+  notify = (pathname) => {
+    trackSession(pathname);
+    activateIfSafe(pathname);
+    applyIfSafe(pathname);
+  };
+  trackSession(win.location.pathname);
   check();
 }
