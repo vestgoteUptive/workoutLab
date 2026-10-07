@@ -110,14 +110,4 @@ already budgeted in D-0012 and `docs/infra-costs.md`. It's gate 2, approved thro
   review.
 
 ## Build / accept log
-
-### Go-live (2026-10-05, human-approved H-06) - live
-- Plan stays **Free** (human decision, D-0189); no Pro upgrade, so AC-2 expects `free`.
-- `site_url` → `https://app.workout.vestgote.com` via human-applied keys-only PATCH; `others_sha256` unchanged; `expected-auth.json` updated; drift check green (17 keys).
-- **Manual deploy** from the human's terminal (`deploy-prod.sh`), because GitHub Actions runners were unavailable — mirrors the CI `production` job. Local gate on main beforehand: unit 19/19, repo-checks 275/0 (after a fixture fix), check-all clean, e2e 237/237. Bundle secret scan: clean (first, over-broad version false-positived on supabase-js's own `startsWith("sb_secret_")`; tightened to real keys only).
-- **AC-4:** production deployments for `workoutlab-web` and `workoutlab-landing` both from `b81ff98` (= `main` head), status `deploy/success`.
-- **AC-5:** `https://app.workout.vestgote.com/` 200, `/auth/callback` 200, `https://workout.vestgote.com/` 200, all `ssl_verify_result=0`; landing `a[data-cta="primary"]` href = `https://app.workout.vestgote.com/`; app bundle references the prod Supabase origin and no localhost.
-- Headers served: only `x-content-type-options: nosniff`, `referrer-policy` (no HSTS/CSP/frame-ancestors) → T-0510/T-0511.
-- **AC-6 (human sign-in on prod, email + Google)**: pending.
-- `PROD_DEPLOY_ENABLED` not set: CI-driven prod deploys stay off until runners work (then set it, T-0402a live ACs).
-- **AC-6 (Google part), 2026-10-06:** human signed in with Google on `https://app.workout.vestgote.com`; prod has 1 user (provider google) with only `email, email_verified, iss, phone_verified, provider_id, sub` in both auth tables (T-0504 strip works), profile row created. Email/magic-link sign-in on prod not yet confirmed by the human.
+Archived in `docs/tickets/log/T-0402d.md` (D-0157).
