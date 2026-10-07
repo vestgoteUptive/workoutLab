@@ -62,3 +62,8 @@ None. `tokens.json` and the web CSP are unchanged.
 Every AC has a passing test · `pnpm --filter @workoutlab/web typecheck` green · `pnpm --filter @workoutlab/web lint` green · `pnpm --filter @workoutlab/web test` green · the cached full gate green · the full web e2e suite green (vite config and service worker change) · contracts unchanged · commits start with `T-0545:` and cite UF-01.1 / UF-11.2.
 
 ## Build / accept log
+
+### Build log (frontend-dev)
+- Changes: main.tsx imports fonts.css before tokens.css; vite.config.ts `buildMetaPlugin.transformIndexHtml` adds one preload link per emitted woff2 (from `ctx.bundle`), `globPatterns` gains `woff2`. CSP and `security-headers.mjs` untouched (optional immutable cache header not done).
+- AC1: `build.test.ts` "T-0545 AC1" (4 tests: 2 woff2, preload tags, sw.js manifest, CSP byte-equal + no remote font host). AC3/AC4/AC5: `tests/e2e/fonts.spec.ts` (online /welcome, /plan; offline /plan reload).
+- AC2 fault: `woff2` removed from globPatterns (backup copy, restored with cp) -> "sw precache manifest lists both woff2 URLs" red. Fault 2: preload without `crossorigin` -> both online e2e tests red (woff2 requested twice). Restored.

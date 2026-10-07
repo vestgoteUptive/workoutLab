@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createServer, type ViteDevServer } from "vite";
 import { tokens } from "@workoutlab/design-tokens";
-import { cspDirectives } from "./security-headers.mjs";
+import { cspDirectives, cspHeaderValue, cspMetaContent } from "./security-headers.mjs";
 
 const webRoot = dirname(fileURLToPath(import.meta.url));
 const viteBin = resolve(webRoot, "node_modules/vite/bin/vite.js");
@@ -152,6 +152,48 @@ describe("AC-A5 service worker precache", () => {
       "icons/icon-512-maskable.png",
     ];
     for (const url of expected) expect(urls, url).toContain(url);
+  });
+});
+
+// T-0545 (D-0203 §1; UF-01.1, UF-11.2): the self-hosted fonts ship, are preloaded and precached.
+describe("T-0545 AC1 self-hosted fonts in the build", () => {
+  const woff2 = () => readdirSync(join(outDir, "assets")).filter((f) => f.endsWith(".woff2"));
+
+  it("ships exactly 2 woff2 files in dist/assets", () => {
+    expect(woff2()).toHaveLength(2);
+  });
+
+  it("index.html preloads each with as=font, type, crossorigin, and the file exists", () => {
+    const links = [...indexHtml.matchAll(/<link rel="preload"[^>]*>/g)]
+      .map((m) => m[0])
+      .filter((t) => t.includes('as="font"'));
+    expect(links).toHaveLength(2);
+    for (const tag of links) {
+      expect(tag).toContain('type="font/woff2"');
+      expect(tag).toMatch(/\scrossorigin/);
+      const href = /href="([^"]+)"/.exec(tag)![1]!;
+      expect(existsSync(join(outDir, href.replace(/^\//, ""))), href).toBe(true);
+    }
+  });
+
+  it("the service worker precache manifest lists both woff2 URLs", () => {
+    const sw = read("sw.js");
+    const urls = new Set([...sw.matchAll(/url:"([^"]+)"/g)].map((m) => m[1]));
+    for (const f of woff2()) expect(urls, f).toContain(`assets/${f}`);
+  });
+
+  it("the CSP meta and _headers line are unchanged and no remote font host appears", () => {
+    expect(indexHtml).toContain(`content="${cspMetaContent(SUPABASE_URL)}"`);
+    expect(read("_headers")).toContain(`Content-Security-Policy: ${cspHeaderValue(SUPABASE_URL)}`);
+    const walk = (d: string): string[] =>
+      readdirSync(d, { withFileTypes: true }).flatMap((e) =>
+        e.isDirectory() ? walk(join(d, e.name)) : [join(d, e.name)],
+      );
+    for (const f of walk(outDir).filter((p) => !p.endsWith(".woff2") && !p.endsWith(".png"))) {
+      const text = readFileSync(f, "utf8");
+      expect(text, f).not.toContain("fonts.googleapis");
+      expect(text, f).not.toContain("fonts.gstatic");
+    }
   });
 });
 
