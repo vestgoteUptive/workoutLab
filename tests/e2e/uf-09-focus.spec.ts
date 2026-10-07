@@ -747,4 +747,44 @@ test.describe("T-0394 AC-6 Back means Pause", () => {
     await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
     await expect(page).toHaveURL(SETUP_URL);
   });
+
+  // T-0462 AC-1..3: the guard survives Resume (second and third Back still pause).
+  async function backResumeCycle(page: Page, url: string): Promise<void> {
+    await page.goBack();
+    await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
+    expect(page.url()).toBe(url);
+    await page.getByRole("button", { name: /resume/i }).click();
+    await expect(
+      page.locator('[data-screen-id^="UF-09"]:not([data-screen-id="UF-09.9"])'),
+    ).toBeVisible();
+    await expect(page.locator('[data-screen-id="UF-09.9"]')).toHaveCount(0);
+    // Resume is a user activation: it is where a Chromium-skippable guard would be re-pushed.
+    await page.mouse.click(5, 300);
+  }
+
+  test("T-0462 AC-1/AC-2 Back → Resume → Back pauses again, three cycles; one more Back leaves", async ({
+    page,
+  }) => {
+    await startFromHome(page);
+    const url = page.url();
+    await backResumeCycle(page, url);
+    await backResumeCycle(page, url);
+    await page.goBack();
+    await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
+    expect(page.url()).toBe(url);
+    await page.goBack();
+    await expect(page).not.toHaveURL(SETUP_URL);
+  });
+
+  test("T-0462 AC-3 second cycle offline", async ({ page, context }) => {
+    await startFromHome(page);
+    await precacheSettled(page);
+    await context.setOffline(true);
+    await page.mouse.click(5, 300);
+    const url = page.url();
+    await backResumeCycle(page, url);
+    await page.goBack();
+    await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
+    await expect(page).toHaveURL(SETUP_URL);
+  });
 });
