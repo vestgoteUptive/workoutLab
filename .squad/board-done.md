@@ -268,6 +268,8 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0444 | DoD gate gap: `pnpm -w typecheck lint test` runs `turbo run typecheck lint test` (args appended to the root `typecheck` script), so the root `test` script's `&& pnpm test:repo-checks` never runs. Make the documented gate run repo-checks (e.g. a root `gate` script) and update the DoD text, agents/roles/_common.md and the tick skill (T-0440 build) | infra | — | done (closed: worked around in the docs; agents/roles/_common.md and .claude/commands/tick.md run `-w test:repo-checks` as its own step, and CI runs it as its own step) | wl-build-infra |
 | T-0445 | Flake: UF-08 `ready-start.test.tsx` 'retry: the second tap…' failed once in a full -w gate (T-0422 rework, 2026-10-02), then passed 3× alone and in a rerun. Reproduce under load (--repeat / concurrency), find the timing assumption, fix with a real wait | web-feature:UF-08 | — | done | wl-build-web |
 | T-0476 | UF-08.3 polish (D-0171, accept follow-up): a swap's "Swapped to save time" reason is proven only at the data layer — itemReasonLine's two-reason cap hides it from the UI; let it surface, or lift the cap by one | web-shell | T-0303c | done | wl-build-web |
+| T-0350 | UF-10: with no cache and no network the C-01 map stays in its loading skeleton indefinitely — show an offline/empty state (T-0307a QA, optional) | web-feature:UF-10 | T-0307a | done | wl-build-web |
+| T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
@@ -341,3 +343,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0537 | Shared C-03 Checkbox and ExcludedAreasNotice components + shared copy in en.ts | web-shell | T-0532 | done | wl-build-web |
 | T-0534 | Engine rule 0.1 part 2: excludedOutAreas; R0-E3…E5, R7-E17…E20; 3 simulated histories; fast-check properties; vendor regen | engine | T-0533 | done | wl-build-engine |
 | T-0531 | Account deletion bumps the cache-generation counter like sign-out, so an in-flight refresh can't rewrite a deleted user's rows (T-0530 review follow-up) | web-shell | T-0530 | done | wl-build-web |
+| T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | done | wl-build-web |
+| T-0909 | UF-11 account-settings T-0529 AC-5 flakes under full-suite load (T-0537 gate) | web-feature:UF-11 | T-0529 | done | wl-build-web |
