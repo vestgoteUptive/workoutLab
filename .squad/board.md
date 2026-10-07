@@ -129,12 +129,12 @@ User request "exclude exercises and manage the list" (spec `docs/specs/excluded-
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0534 | Engine rule 0.1 part 2: excludedOutAreas; R0-E3…E5, R7-E17…E20; 3 simulated histories; fast-check properties; vendor regen | engine | T-0533 | ready | wl-build-engine |
-| T-0535 | excluded_exercises table (trigger, PK, index, 4 owner policies, anon revoked, exercises FK cascade); data-model.md; database.gen.ts; pgTAP 001/007/018/019; export.ts EXPORT_TABLES/ORDER_KEYS; e2e mock. Merge locally, hold push until H-27 | data | — | doing | wl-build-data |
+| T-0534 | Engine rule 0.1 part 2: excludedOutAreas; R0-E3…E5, R7-E17…E20; 3 simulated histories; fast-check properties; vendor regen | engine | T-0533 | doing | wl-build-engine |
+| T-0535 | excluded_exercises table (trigger, PK, index, 4 owner policies, anon revoked, exercises FK cascade); data-model.md; database.gen.ts; pgTAP 001/007/018/019; export.ts EXPORT_TABLES/ORDER_KEYS; e2e mock. Merge locally, hold push until H-27 | data | — | review approved; PR #42 CI; waits H-27 | wl-build-data |
 | T-0536 | Device cache: Dexie v3 table keyed by userId, refreshAll read, exclude/include writes after server confirm, missing-table tolerance, union helper, useOnline. After H-27 | web-shell | T-0535 | todo | wl-build-web |
-| T-0537 | Shared C-03 Checkbox and ExcludedAreasNotice components + shared copy in en.ts | web-shell | T-0532 | doing | wl-build-web |
 | T-0538 | UF-08: stored list ∪ visit Removes to every suggest call (incl. fit line, T-0303a AC-6 pin), Removed line Never suggest/Undo, notice, empty state. After H-27 | web-feature:UF-08 | T-0532, T-0534, T-0536, T-0537 | todo | wl-build-web |
 | T-0539 | UF-05.1/UF-08.3 swap sheet: stored list to rankSwaps, "Don't suggest {name} again" checkbox, "No alternatives left" empty state. After H-27 | web-feature:UF-05 | T-0532, T-0533, T-0536, T-0537 | todo | wl-build-web |
 | T-0540 | UF-11.5 Excluded exercises at /plan/excluded + UF-11.2 "Excluded exercises · n" row. After H-27 | web-feature:UF-11 | T-0532, T-0534, T-0536, T-0537 | todo | wl-build-web |
 | T-0541 | UF-04.2 "Don't suggest this"/"Suggest again" + UF-04.1 "Not suggested" tag. After H-27 | web-feature:UF-04 | T-0532, T-0536, T-0537 | todo | wl-build-web |
 | T-0542 | UF-02.1/UF-02.2 PREVIEW_INPUT passes the stored list to suggest | web-feature:UF-02 | T-0536 | todo | wl-build-web |
+| T-0909 | UF-11 account-settings T-0529 AC-5 flakes under full-suite load (T-0537 gate) | web-feature:UF-11 | T-0529 | doing | wl-build-web |
