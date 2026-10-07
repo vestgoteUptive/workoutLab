@@ -172,7 +172,8 @@ export const AREAS = [
 ];
 
 /** AC1's data set for one user: 5,000 sets (40 tombstoned), 400 sessions, 1 profile, 9 targets,
- *  2 routines with 5 items and 3 check-ins. `setCount` overrides the 5,000. */
+ *  2 routines with 5 items, 3 check-ins and 2 exclusions (T-0535, seeded lateral-raise first).
+ *  `setCount` overrides the 5,000. */
 export function twoYears(userId: string, setCount = 5000): Record<string, Row[]> {
   return {
     profiles: [{ user_id: userId, goal: "balanced", experience: "intermediate" }],
@@ -201,11 +202,16 @@ export function twoYears(userId: string, setCount = 5000): Record<string, Row[]>
       user_id: userId,
       created_at: "2025-06-01T10:00:00.000Z",
     })),
+    excluded_exercises: [
+      { user_id: userId, exercise_id: "lateral-raise", created_at: "2025-06-01T10:00:00.000Z" },
+      { user_id: userId, exercise_id: "bench-press", created_at: "2025-06-02T10:00:00.000Z" },
+    ],
   };
 }
 
 export const EXPORT_TABLE_NAMES = [
   "area_targets",
+  "excluded_exercises",
   "plan_checkins",
   "profiles",
   "routine_items",

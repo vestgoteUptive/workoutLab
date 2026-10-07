@@ -2,6 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { OfflineDb, QueuedSession, QueuedSet } from "../../offline/db.js";
 import { freshOfflineDb } from "../../offline/__tests__/test-helpers.js";
+import { EXPORT_TABLES, ORDER_KEYS, PAGE_SIZE } from "../export.js";
 import { downloadAccountExport, exportAccountData } from "../index.js";
 import { EXPORT_TABLE_NAMES, NOW, TZ, U, V, pg, twoYears, type Row } from "./fixtures.js";
 
@@ -74,7 +75,7 @@ describe("T-0310c AC1 paging past max_rows", () => {
 });
 
 describe("T-0310c AC2 shape (D-0136 §2)", () => {
-  it("T-0310c AC2 top-level keys, header, 7 tables, raw rows, order keys", async () => {
+  it("T-0310c AC2 top-level keys, header, 8 tables (T-0535), raw rows, order keys", async () => {
     const seeded = twoYears(U);
     const fake = pg(seeded);
     const result = await exportAccountData(input, { supabase: fake.client, db });
@@ -101,6 +102,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
       routines: "id",
       routine_items: "id",
       plan_checkins: "id",
+      excluded_exercises: "exercise_id",
     };
     for (const [table, key] of Object.entries(keys)) {
       expect(fake.ordersFor(table).length, table).toBeGreaterThan(0);
@@ -115,16 +117,63 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
     }
   });
 
-  it("T-0310c AC2 zero history: profile + 9 targets, [] for the other five", async () => {
+  it("T-0310c AC2 zero history: profile + 9 targets, [] for the other six", async () => {
     const all = twoYears(U);
     const fake = pg({ profiles: all.profiles!, area_targets: all.area_targets! });
     const result = await exportAccountData(input, { supabase: fake.client, db });
     expect(result.tables.profiles).toHaveLength(1);
     expect(result.tables.area_targets).toHaveLength(9);
-    for (const t of ["sessions", "session_sets", "routines", "routine_items", "plan_checkins"]) {
+    for (const t of [
+      "sessions",
+      "session_sets",
+      "routines",
+      "routine_items",
+      "plan_checkins",
+      "excluded_exercises",
+    ]) {
       expect((result.tables as unknown as Record<string, unknown>)[t], t).toEqual([]);
     }
     expect(result.device).toEqual({ queuedSessions: [], queuedSets: [] });
+  });
+});
+
+describe("T-0535 AC7 excluded_exercises in the export (UF-11.4, D-0199 §5)", () => {
+  it("T-0535 AC7 lists bench-press before lateral-raise, ordered by exercise_id and paged", async () => {
+    const fake = pg(twoYears(U, 10));
+    const result = await exportAccountData(input, { supabase: fake.client, db });
+
+    expect(ORDER_KEYS.excluded_exercises).toBe("exercise_id");
+    expect(fake.ordersFor("excluded_exercises")).toEqual([["exercise_id", { ascending: true }]]);
+    expect(fake.rangesFor("excluded_exercises")).toEqual([[0, PAGE_SIZE - 1]]);
+    const rows = result.tables.excluded_exercises as unknown as Row[];
+    expect(rows.map((r) => r.exercise_id)).toEqual(["bench-press", "lateral-raise"]);
+    expect(rows.every((r) => r.user_id === U)).toBe(true);
+  });
+
+  it("T-0535 AC7 the file has 8 table keys in EXPORT_TABLES order and version 1", async () => {
+    const result = await exportAccountData(input, { supabase: pg(twoYears(U, 10)).client, db });
+    expect(EXPORT_TABLES).toHaveLength(8);
+    expect(Object.keys(result.tables)).toEqual([...EXPORT_TABLES]);
+    expect(Object.keys(result.tables).at(-1)).toBe("excluded_exercises");
+    expect(result.version).toBe(1);
+  });
+
+  it("T-0535 AC7 no exclusions → tables.excluded_exercises is []", async () => {
+    const { excluded_exercises: _drop, ...rest } = twoYears(U, 10);
+    const result = await exportAccountData(input, { supabase: pg(rest).client, db });
+    expect(result.tables.excluded_exercises).toEqual([]);
+  });
+
+  it("T-0535 AC7 an excluded_exercises read error fails the whole export", async () => {
+    const fake = pg(twoYears(U, 10), {
+      hook: (call) =>
+        call.table === "excluded_exercises"
+          ? { data: null, error: { code: "PGRST205", message: "missing table" } }
+          : undefined,
+    });
+    await expect(exportAccountData(input, { supabase: fake.client, db })).rejects.toThrow(
+      new Error("export_failed"),
+    );
   });
 });
 

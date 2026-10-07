@@ -21,6 +21,7 @@ const OWNED_TABLES = [
   "routines",
   "routine_items",
   "plan_checkins",
+  "excluded_exercises",
 ] as const;
 type OwnedTable = (typeof OWNED_TABLES)[number];
 
@@ -102,6 +103,14 @@ async function insertCheckin(client: SupabaseClient): Promise<void> {
   if (error) throw error;
 }
 
+// T-0535 AC5 (D-0199 §4): the "never suggest" list goes with the auth user.
+async function insertExclusions(client: SupabaseClient, ids: string[]): Promise<void> {
+  const { error } = await client
+    .from("excluded_exercises")
+    .insert(ids.map((exercise_id) => ({ exercise_id })));
+  if (error) throw error;
+}
+
 function deleteAccount(accessToken: string): Promise<Response> {
   return callFunction("/account", { method: "DELETE", accessToken });
 }
@@ -114,7 +123,8 @@ Deno.test(
     const a = await createTestUser();
     const b = await createTestUser();
 
-    // A: profile + 9 targets, 2 sessions with 6 sets (1 tombstoned), 1 routine with 2 items, 1 check-in.
+    // A: profile + 9 targets, 2 sessions with 6 sets (1 tombstoned), 1 routine with 2 items, 1 check-in,
+    // 2 exclusions.
     await seedFullProfile(a.client);
     const a1 = await insertSession(a.client, "2026-09-20T09:00:00Z");
     const a2 = await insertSession(a.client, "2026-09-22T09:00:00Z");
@@ -125,6 +135,7 @@ Deno.test(
     if (aSetsError) throw aSetsError;
     await insertRoutine(a.client, 2);
     await insertCheckin(a.client);
+    await insertExclusions(a.client, ["barbell-back-squat", "push-up"]);
 
     // B: one row of each kind (and the 9 targets seedFullProfile writes).
     await seedFullProfile(b.client);
@@ -135,6 +146,7 @@ Deno.test(
     if (bSetError) throw bSetError;
     await insertRoutine(b.client, 1);
     await insertCheckin(b.client);
+    await insertExclusions(b.client, ["push-up"]);
 
     const expectedA = {
       profiles: 1,
@@ -144,6 +156,7 @@ Deno.test(
       routines: 1,
       routine_items: 2,
       plan_checkins: 1,
+      excluded_exercises: 2,
     };
     const expectedB = {
       profiles: 1,
@@ -153,6 +166,7 @@ Deno.test(
       routines: 1,
       routine_items: 1,
       plan_checkins: 1,
+      excluded_exercises: 1,
     };
     assertEquals(await countAll(a.userId), expectedA, "A's fixture is in place");
     assertEquals(await countAll(b.userId), expectedB, "B's fixture is in place");
@@ -170,6 +184,7 @@ Deno.test(
       routines: 0,
       routine_items: 0,
       plan_checkins: 0,
+      excluded_exercises: 0,
     });
     assertEquals(await countAll(b.userId), expectedB, "B's counts are unchanged");
 
