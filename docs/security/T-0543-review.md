@@ -118,3 +118,39 @@ M1 to M5 are fixed. N1 is a regression introduced by the M4 fix and must be fixe
   - The `?sslmode=require` query string is dropped, so libpq falls back to `sslmode=prefer`. Set `PGSSLMODE=require`, or `verify-full` with the Supabase CA.
   - `urldecode` uses `printf %b`, so a literal backslash sequence in the password is interpreted. That only causes an auth failure, so it fails closed.
   - Masking covers the URL-encoded password. Also mask, or `::add-mask::`, the decoded `PGPASSWORD`.
+
+## Re-review 2 (2026-10-07, commit 465a695)
+
+Read-only check of the fixes for N1 to N4. `node --test` on the four changed test files passed 68/68, and `check-deploy-workflow.mjs` passed.
+
+### Verdict: approve
+
+No blocker remains. The residuals below are low or informational and need no follow-up before go-live. One owner action remains from M5: create both secrets only in the `production` Environment (main-only branch policy) and delete any repo-level copies (H-28 or the go-live checklist).
+
+### Checks
+- **N1, fixed.** Migrations now scan the contents of string literals (`scan(sql, true)`), and the seed still blanks them. These are now red:
+  - `execute 'drop table ...'`
+  - `execute format('truncate %I', ...)`
+  - the `pg_policies` loop with `format('DROP POLICY %I ...')`
+  - `execute E'drop table x'`
+
+  The M4 probes are still red (`'--'`, `'/*'`, `'--'` inside `$$`, `"a""--"`, a header inside a string), so comment detection stays quote-aware. The M1 probes are still refused (`_add-thing.sql`, `2026100712_short.sql`). A clean migration passes. The real seed passes. `comment on ... is 'do not drop'` is red, which fails safe because it just needs the header.
+- **N2, fixed.** The tip step fetches `origin refs/heads/main`, which can't be shadowed by a tag. Planted fault: I put `origin main` back in a copy of `deploy.yml`, and the checker reported `T-0543 N2: release must check head_sha is the tip of main ...`.
+- **N3, fixed.**
+  - `ERROR: ... (SQLSTATE x)` becomes `ERROR: <redacted> (SQLSTATE x)`, including mid-line (`failed to push: ERROR: ...`). The sed `t` stops later rules from re-mangling that line.
+  - A line that starts with `ERROR:` and has no SQLSTATE is fully redacted.
+  - `invalid input syntax ...:` is redacted.
+  - `DETAIL` is matched case-insensitively.
+  - Failing-row and `Key (..)=(..)` are redacted as before.
+- **N4, fixed.**
+  - `PGSSLMODE=require` is exported, so TLS is enforced, though without certificate verification.
+  - `mask_secrets` in `prod-backup.sh` masks both the URL-encoded and the decoded password, plus the host.
+  - Nothing echoes `PGPASSWORD`.
+
+### Residuals (low or info, non-blocking)
+- An `ERROR:` in the middle of a line with no SQLSTATE is not redacted, for example `pg_dump: error: query failed: ERROR:  permission denied ...`. `pg_dump` errors carry no row data, and CLI errors carry a SQLSTATE, so this is low.
+- `CONTEXT:` lines are not redacted. `COPY` context can quote a row, but migrations don't `COPY` prod data. Info.
+- Redacting all ERROR text means the cause of a failed prod release has to be read from the SQLSTATE and the statement number. That is an accepted trade-off on a public repo.
+- `PGSSLMODE=verify-full` with the Supabase CA would add server authentication. Info.
+- Obfuscated dynamic SQL (`'dr' || 'op ...'`) still passes. That only matters for a malicious committer, who is outside the guard's threat model (D-0201 §3 targets mistakes). Info.
+- The N2 checker regex `origin refs\/heads\/main\b` would also accept `refs/heads/main-foo`. Trivial. Info.
