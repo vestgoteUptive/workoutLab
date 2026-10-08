@@ -46,3 +46,7 @@ None. No token change (D-0205 §10).
 Every AC has a check-all pass or a reviewed section · `node .github/scripts/check-all.mjs` green · `tokens.json` unchanged · commits start with `T-0572:` and cite UF-08.5 / UF-08.2 / UF-09.9.
 
 ## Build / accept log
+
+- Specs: new `screens/UF-08.5.md`, `screens/UF-09.9.md`; `screens/UF-08.2.md` extended (Add exercise button, Added by you, Start with this, Doesn't fit line, Reorder mode, status line). Start: git clean, HEAD f82c870.
+- AC1 UF-08.5.md (all sections, six reasons, refusal lines); AC2 UF-08.2.md; AC3 UF-09.9.md (between Swap and Skip; hidden cases); AC4 no hex (grep 0), tokens.json untouched; AC5 labels and 44 px stated in each file; AC6 check-all exit 0.
+- Also: format:check pass; design-tokens tests 116/116 pass. No red runs, no planted faults (docs only).
