@@ -322,6 +322,45 @@ test.describe("T-0303b AC-12 UF-08.2 offline (NFR-OFF-3)", () => {
   });
 });
 
+test.describe("T-0581 UF-08.2 how-to sheet from the exercise name", () => {
+  test("opens, axe is clean, 44px target, focus returns, plan unchanged, works offline", async ({
+    page,
+    context,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openSetup(page);
+    await expect.poll(() => cachedCounts(page)).toEqual({ library: exercises.length, targets: 9 });
+    await precacheSettled(page);
+    await suggestAt30(page);
+    const before = await rowTexts(page);
+    const name = before[0]![0]!;
+    const button = page.getByRole("button", { name: `How to do ${name}` });
+    const box = (await button.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+
+    await button.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toBeVisible();
+    await expect(page.getByRole("dialog", { name: `How to: ${name}` })).toBeVisible();
+    const serious = (await new AxeBuilder({ page }).analyze()).violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.html).join(" | ")}`)).toEqual([]);
+    await page.screenshot({ path: testInfo.outputPath("uf08-howto-after.png") });
+
+    await dialog.getByRole("button", { name: /close/i }).click();
+    await expect(dialog).toBeHidden();
+    await expect(button).toBeFocused();
+    expect(await rowTexts(page)).toEqual(before);
+
+    await context.setOffline(true);
+    await button.click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(button).toBeFocused();
+  });
+});
+
 test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
   test("axe reports 0 serious or critical violations on UF-08.2", async ({ page }) => {
     await openSetup(page);

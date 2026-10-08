@@ -29,3 +29,9 @@ None.
 UF-08 is busy with add/reorder (T-0573..T-0577). Run this before T-0573: it's small and independent. Otherwise run it after T-0577.
 
 ## Build / accept log
+- Built from HEAD 065c050 (clean). `Suggested.tsx`: the row name is a `<button data-part="row-name" aria-label="How to {name}">` (44px min-height, own target apart from Swap/Remove) that sets local `howToId` state and renders `UF-04` `ExerciseHowTo` (static import, as UF-03); the sheet restores focus to its opener on unmount. No engine/plan state is touched. String `uf08.howTo`; CSS in `uf-08.css` (tokens only).
+- AC→test: AC-1 and AC-5 name: `__tests__/how-to.test.tsx` (button per row, opens, plan/handlers untouched); AC-2: same file (Close and Escape return focus, order and no scrollTo); AC-3: same file (offline, fetch never called) plus e2e (setOffline then reopen); AC-5 axe with sheet open: unit (axe-core) and `tests/e2e/uf-08-setup.spec.ts` "T-0581" (also 44px, 390px screenshot).
+- Planted faults (backup copy, restored by `cp`): drop aria-label → 6 red; no-op onClick → 5 red; li key changes on close (button remounts) → focus tests red; onShuffle on click → plan-unchanged red; fetch on click → offline red. All green after restore.
+- Red on first gate: `exports-and-lint` AC-13 (my `font-family: inherit` in CSS); fixed with `font: inherit` then size/weight.
+- AC-4 (UF-08.3 swap candidates): not done, optional; SwapSheet lives in UF-05 (outside this lane) so the affordance would need a UF-05 change. Follow-up.
+- Gate: vitest UF-08 352 pass; e2e `uf-08` 36 pass (incl. T-0581 case). Screenshot (390px, sheet open) copied to scratchpad `uf08-howto-after.png`.

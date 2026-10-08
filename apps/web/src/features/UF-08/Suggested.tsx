@@ -6,7 +6,7 @@
 // engine's `removeItem` (T-0521, D-0191 §4): no suggest call, no refill.
 //
 // The `workout` prop is the host's current `Workout`; nothing on this screen calls `suggest`.
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   WARMUP_COST_S,
@@ -20,6 +20,7 @@ import { itemReasonLine, itemSummary, sessionReasonChips } from "../../lib/i18n/
 import { CHIPS } from "./time.js";
 import { formatKg } from "../../lib/format/number.js";
 import { ExcludedAreasNotice } from "../../components/excluded-areas-notice/index.js";
+import { ExerciseHowTo } from "../UF-04/index.js";
 import { RemovedLine } from "./RemovedLine.js";
 import { exerciseName, isBodyweight, type LibraryLookup } from "./rows.js";
 
@@ -145,6 +146,8 @@ export function Suggested({
   const looksGoodRef = useRef<HTMLButtonElement>(null);
   // D-0109 §6: the index of the row whose Remove was used, until the new plan has rendered.
   const pendingFocus = useRef<number | null>(null);
+  // T-0581: the exercise whose how-to sheet is open. UI state only; the plan is never touched.
+  const [howToId, setHowToId] = useState<string | null>(null);
 
   const chips = useMemo(() => sessionReasonChips(workout.sessionReasons), [workout.sessionReasons]);
   const items = workout.plan.items;
@@ -252,9 +255,15 @@ export function Suggested({
             return (
               <li key={item.exerciseId} className="wl-uf08__row" data-part="item-row">
                 <div className="wl-uf08__row-body">
-                  <span className="wl-uf08__row-name" data-part="row-name">
+                  <button
+                    type="button"
+                    className="wl-uf08__row-name wl-uf08__row-name--button"
+                    data-part="row-name"
+                    aria-label={en.uf08.howTo(name)}
+                    onClick={() => setHowToId(item.exerciseId)}
+                  >
                     {name}
-                  </span>
+                  </button>
                   <span className="wl-uf08__row-detail" data-part="row-detail">
                     {itemDetail(item, library, locale)}
                   </span>
@@ -342,6 +351,9 @@ export function Suggested({
           {en.uf08.looksGood}
         </button>
       </div>
+      {howToId !== null ? (
+        <ExerciseHowTo exerciseId={howToId} onClose={() => setHowToId(null)} />
+      ) : null}
     </section>
   );
 }
