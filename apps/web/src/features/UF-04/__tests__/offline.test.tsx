@@ -79,7 +79,9 @@ describe("AC-10 offline", () => {
     // Offline adds exactly one line under the exclude button (T-0541, D-0199 §10); the rest is identical.
     expect({
       ...offlineDetail,
-      text: offlineDetail.text!.replace(en.excluded.connectToChange, ""),
+      text: offlineDetail
+        .text!.replace(en.excluded.connectToChange, "")
+        .replace(en.uf04.connectToChangeFavorites, ""),
     }).toEqual(onlineDetail);
     expect(offlineDetail.hrefs.map(([, href]) => href)).toContain(
       "/library/back-squat/compare/goblet-squat",
