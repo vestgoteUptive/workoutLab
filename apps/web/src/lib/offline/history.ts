@@ -29,6 +29,7 @@ import {
 import { currentUserId } from "./current-user.js";
 import { cacheGeneration, cacheWriteAllowed } from "./cache-generation.js";
 import { sameValue } from "./flush.js";
+import { refreshExcluded } from "./excluded.js";
 
 export const HISTORY_WINDOW_DAYS = 56;
 
@@ -360,6 +361,7 @@ export async function refreshAll(now: Date, tz: string): Promise<void> {
     refreshSessions(now, tz),
     refreshCheckins(),
     refreshRoutines(),
+    refreshExcluded(),
   ]);
 }
 

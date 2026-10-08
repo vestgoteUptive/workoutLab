@@ -63,3 +63,10 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · contracts unchanged · commits start with `T-0536:` and cite the screen IDs.
 
 ## Build / accept log
+
+### Build log (frontend-dev)
+- Added `excludedCache` (Dexie v3, no upgrade fn), `lib/offline/excluded.ts` (refreshExcluded, excludeExercise, includeExercise, excludeIdsFor, loadExcludedIds, ExcludedWriteError), `excluded-hooks.ts` (useExcludedIds, useExcludedRows, useOnline); refreshAll calls refreshExcluded. refreshExcluded never throws (any read error = unknown, cache kept), so a missing table cannot break the other refreshes.
+- AC map: AC1 `upgrade-v2-to-v3.test.ts`; AC2-AC7, AC9 `excluded.test.tsx`; AC8 `wipe.test.ts`/`sign-out.test.ts` (OFFLINE_TABLES now has excludedCache) + `sign-out.inflight.test.ts` (new refreshExcluded case).
+- Existing tests updated for the new surface: verno 2 -> 3 in upgrade-v1-to-v2, the export list in offline-loaders, the table count in wipe.
+- Planted faults (each failed the named test, then restored from backup): error treated as empty (AC4), no generation check (AC8 in-flight), no dedupe/sort (AC7), no ignoreDuplicates (AC6), warm-up guard off (AC6), replace without delete (AC5).
+- Gate: typecheck lint test (19/19, web 3878 tests), test:repo-checks 369 pass, format:check, check-all green.

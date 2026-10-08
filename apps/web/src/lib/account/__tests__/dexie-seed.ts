@@ -15,6 +15,7 @@ export const OFFLINE_TABLES = [
   "sessionCache",
   "checkinCache",
   "routineCache",
+  "excludedCache",
 ];
 
 /** One row for `userId` in every table of `offlineDb()`. U's `sets` row is `rejected`. */

@@ -218,8 +218,23 @@ describe("AC-9 the export surface", () => {
     "loadRoutines",
   ];
 
-  it("exports exactly the v1 surface plus the 3 refreshes and 5 loaders added here", () => {
-    expect(Object.keys(offlineIndex).sort()).toEqual([...V1_EXPORTS, ...T0319_EXPORTS].sort());
+  // T-0536 (D-0199): the excluded-exercises cache, its two online-only writes, the union helper.
+  const T0536_EXPORTS = [
+    "refreshExcluded",
+    "excludeExercise",
+    "includeExercise",
+    "excludeIdsFor",
+    "loadExcludedIds",
+    "ExcludedWriteError",
+    "useExcludedIds",
+    "useExcludedRows",
+    "useOnline",
+  ];
+
+  it("exports exactly the v1 surface plus the 3 refreshes and 5 loaders added here, plus T-0536's", () => {
+    expect(Object.keys(offlineIndex).sort()).toEqual(
+      [...V1_EXPORTS, ...T0319_EXPORTS, ...T0536_EXPORTS].sort(),
+    );
   });
 
   it("keeps every v1 export (nothing removed or renamed by the version bump)", () => {
