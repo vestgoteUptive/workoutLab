@@ -364,3 +364,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0551 | User flows v2 UF-11.2/UF-11.4 text + uf-11-plan-checkin.md UF-11.2 section to the D-0203 layout | product | — | done | wl-spec |
 | T-0553 | PWA update guard: rewrite the wl-in-session entry on bfcache restore (T-0552 review) | web-shell | T-0552 | done | wl-build-web |
 | T-0543 | CI releases prod Supabase automatically before the Pages deploy: migration guard, age-encrypted backup, release script (D-0201) | infra | — | done (first automatic release 2026-10-08, run 37710972038) | wl-build-infra |
+| T-0554 | Prod release applies seed.sql on every apply (psql); CLI --include-seed skips a changed seed, so the T-0523 exercises never reached prod | infra | T-0543 | done | wl-build-infra |

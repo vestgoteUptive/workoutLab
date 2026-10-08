@@ -31,8 +31,4 @@ The first automatic release (run 37710972038, 2026-10-08) deployed the functions
 None.
 
 ## Build / accept log
-
-- Built: shared `infra/scripts/pg-env.sh` (PG* + PGSSLMODE=require, used by prod-backup.sh and the release script); `apply` runs `psql -v ON_ERROR_STOP=1 --single-transaction -f supabase/seed.sql` through mask() after db push, before deploys; failure exits before deploys; plan prints "seed (always)"; mask also covers decoded PGPASSWORD. README + supabase-release.md updated. L4 guard already runs in deploy.yml, unchanged (AC-3); workflow unchanged (AC-5).
-- AC map: AC-1 test "T-0554 AC-1"; AC-2 updated plan assertion; AC-4 three tests (order, failing psql, planted fault); AC-5 check-deploy-workflow; AC-6 README.
-- Planted fault: sed replaced `psql` with `true` in the release script -> 4 T-0554 tests red; restored from backup copy.
-- Gate: node --test (release, backup, deploy-workflow) 47/47; test:repo-checks 366/0; format:check, check-all, check-deploy-workflow green.
+Archived in `docs/tickets/log/T-0554.md` (D-0157).
