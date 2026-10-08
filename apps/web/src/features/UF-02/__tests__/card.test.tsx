@@ -117,6 +117,7 @@ describe("AC-1 the suggest call and the goal (D-0065 §1, D-0095)", () => {
         mainLiftId: null,
         pinnedIds: [],
         excludeIds: [],
+        favoriteIds: [],
       },
       F_TZ.now.toISOString(),
       TZ,
