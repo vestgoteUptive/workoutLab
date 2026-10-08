@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { AREAS, type AreaTarget } from "@workoutlab/shared";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
+import { FavoritesRow } from "./FavoritesRow.js";
 import { ExcludedRow } from "./ExcludedRow.js";
 import { formatInstantDay, formatLocalDay } from "./format.js";
 import type { PlanData, PlanState } from "./use-plan-data.js";
@@ -66,7 +67,7 @@ function PlanContent({ data, checkinPending }: { data: PlanData; checkinPending:
           {u.editPlan}
         </Link>
       </section>
-      {/* The D-0202 favorites row goes directly above this one. */}
+      <FavoritesRow />
       <ExcludedRow />
       <section className="wl-card" aria-labelledby="wl-plan-targets">
         <h2 id="wl-plan-targets" className="wl-label">

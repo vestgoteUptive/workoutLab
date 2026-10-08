@@ -127,7 +127,7 @@ const names = () =>
     .map((li) => li.querySelector(".wl-plan__name")!.textContent);
 
 describe("AC1 row on UF-11.2 and the list", () => {
-  it("shows the count between the Your plan and Targets cards, and the list round-trips", async () => {
+  it("shows the count between the Favorites and Targets cards, and the list round-trips", async () => {
     await seedExcluded(
       ["lateral-raise", "2026-10-01T10:00:00.000Z"],
       ["bench-press", "2026-10-03T10:00:00.000Z"],
@@ -137,7 +137,7 @@ describe("AC1 row on UF-11.2 and the list", () => {
     expect(link).toHaveTextContent("Excluded exercises · 2");
     const cards = [...container.querySelectorAll("section.wl-card")];
     const at = cards.findIndex((c) => c.contains(link));
-    expect(cards[at - 1]).toHaveAccessibleName("Your plan");
+    expect(cards[at - 1]).toHaveTextContent("Favorite exercises");
     expect(cards[at + 1]).toHaveAccessibleName("Targets");
 
     fireEvent.click(link);

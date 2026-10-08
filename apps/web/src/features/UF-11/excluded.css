@@ -122,3 +122,36 @@
   background: var(--wl-color-surface-2);
   border-radius: 12px;
 }
+
+/* T-0569 UF-11.6: the "Favorite" / "Excluded" word tag (the words are the signal, not the pill). */
+.wl-favorites__tag {
+  align-self: flex-start;
+  padding: 2px 8px;
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* A group card holds its rows as plain rows, not nested cards. */
+.wl-favorites section.wl-card .wl-card.wl-excluded__row {
+  padding-inline: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 359px) {
+  .wl-favorites .wl-excluded__row {
+    flex-wrap: wrap;
+  }
+  .wl-favorites .wl-excluded__text {
+    flex-basis: 100%;
+  }
+  .wl-favorites .wl-excluded__button {
+    max-inline-size: none;
+  }
+}
