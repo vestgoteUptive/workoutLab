@@ -143,3 +143,10 @@ Owner request: groom 10 parked tickets and put the ones worth doing at the back 
 | T-0006 | Turbo test hashes cover the repo files package tests read (engine library + engine-rules, shared contracts, web inventory); check-decision-ids flags a slugless D-NNNN.md. Narrowed: pgTAP column drift and D-0032/D-0023 text dropped | infra | T-0004 | todo | wl-build-infra |
 | T-0332 | UF-01.1/UF-01.5: fast mocked-status test of the /welcome/* stand-down in RedirectIfSignedIn, so breaking it fails in ms instead of hanging the routing suite | web-shell | T-0301a | todo | wl-build-web |
 | T-0525 | One vitest variant across the workspace (engine/shared/design-tokens/exercises on vite 8, web/landing on vite 6 today) + a lockfile repo-check | infra | T-0512 | todo | wl-build-infra |
+
+## Cobalt + state colour redesign (D-0208): phase 1, tokens and landing
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0583 | Design tokens: Cobalt state groups, OKLCH coverage ramp, radius and space; self-hosted Familjen Grotesk and Bricolage Grotesque (additive; contract change, --force gate) | design | — | ready | wl-design |
+| T-0584 | Landing page: Cobalt option 1b, plus 404 and Privacy restyle (copy unchanged; security sign-off on _headers) | landing | T-0583 | todo | wl-build-web |
