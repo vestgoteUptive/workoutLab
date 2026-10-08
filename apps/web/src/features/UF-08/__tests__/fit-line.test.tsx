@@ -80,6 +80,7 @@ describe("AC-6 the call", () => {
       mainLiftId: null,
       pinnedIds: [],
       excludeIds: [],
+      favoriteIds: [],
     });
     expect(now).toBe(new Date(NOW).toISOString());
     expect(now).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);

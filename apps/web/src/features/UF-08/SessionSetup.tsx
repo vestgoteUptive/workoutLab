@@ -40,6 +40,7 @@ import { formatTime } from "../../lib/format/intl.js";
 import { en } from "../../lib/i18n/en.js";
 import { excludeExercise, excludeIdsFor, includeExercise } from "../../lib/offline/excluded.js";
 import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js";
+import { favoriteIdsFor } from "../../lib/offline/favorites.js";
 import { useFavoriteList } from "../../lib/offline/favorites-hooks.js";
 import { SwapSheet } from "../UF-05/index.js";
 import { Ready } from "./Ready.js";
@@ -99,6 +100,7 @@ function setupInput(
   energy: Energy,
   avoidAreas: readonly Area[],
   stored: readonly string[],
+  favorites: readonly string[],
   pinnedIds: readonly string[] = [],
 ): SessionInput {
   return {
@@ -109,6 +111,8 @@ function setupInput(
     mainLiftId: null,
     pinnedIds: [...pinnedIds],
     excludeIds: excludeIdsFor(stored, []),
+    // T-0571 (D-0202 §6): the stored favorites rank first within an area.
+    favoriteIds: favoriteIdsFor(favorites),
     // T-0520 (D-0191): the engine does the skipping (rule 6.1); absent when nothing is skipped.
     ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
   };
@@ -226,10 +230,10 @@ export function SessionSetup({
   // the shared `budgetMin` and must not cost a second `suggest` call.
   const workout = useMemo(
     () =>
-      data && !pastSetup && storedLoaded
+      data && !pastSetup && storedLoaded && favoritesLoaded
         ? runSuggest(
             data,
-            setupInput(budgetMin, warmupInBudget, energy, avoidAreas, stored),
+            setupInput(budgetMin, warmupInBudget, energy, avoidAreas, stored, favoriteIds),
             nowIso,
             tz,
           )
@@ -238,11 +242,13 @@ export function SessionSetup({
       data,
       pastSetup,
       storedLoaded,
+      favoritesLoaded,
       budgetMin,
       warmupInBudget,
       energy,
       avoidAreas,
       stored,
+      favoriteIds,
       nowIso,
       tz,
     ],
@@ -258,7 +264,8 @@ export function SessionSetup({
     [data, nowIso],
   );
   const missing =
-    state.kind === "missing" || (data !== null && !pastSetup && storedLoaded && workout === null);
+    state.kind === "missing" ||
+    (data !== null && !pastSetup && storedLoaded && favoritesLoaded && workout === null);
 
   useEffect(() => {
     if (badSwap) void navigate(`${SETUP_PATH}?step=suggested`, { replace: true });
@@ -336,6 +343,7 @@ export function SessionSetup({
           mainLiftId,
           pinnedIds: adjusted.addedIds,
           excludeIds: excludeIdsFor(stored, next.excludeIds),
+          favoriteIds: favoriteIdsFor(favoriteIds),
           ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
         },
         nowIso,
@@ -372,6 +380,7 @@ export function SessionSetup({
           mainLiftId: adjusted.workout.plan.mainLiftId,
           pinnedIds: pinned,
           excludeIds: excludeIdsFor(stored, visit),
+          favoriteIds: favoriteIdsFor(favoriteIds),
           ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
         },
         nowIso,
@@ -429,6 +438,7 @@ export function SessionSetup({
           mainLiftId: id,
           pinnedIds: pinned,
           excludeIds: excludeIdsFor(stored, visit),
+          favoriteIds: favoriteIdsFor(favoriteIds),
           ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
         },
         nowIso,
