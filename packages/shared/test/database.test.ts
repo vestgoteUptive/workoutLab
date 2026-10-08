@@ -105,6 +105,7 @@ describe("AC15 database.gen.ts matches docs/data-model.md v1", () => {
         "routine_items",
         "plan_checkins",
         "excluded_exercises",
+        "favorite_exercises",
       ].sort(),
     );
   });
@@ -190,6 +191,38 @@ describe("T-0535 AC9 excluded_exercises types (D-0199 §4, UF-11.5)", () => {
   it("references exercises through excluded_exercises_exercise_id_fkey", () => {
     expect(readFileSync(GEN_PATH, "utf8")).toContain(
       'foreignKeyName: "excluded_exercises_exercise_id_fkey"',
+    );
+  });
+});
+
+describe("T-0564 AC11 favorite_exercises types (D-0202 §5, UF-11.6)", () => {
+  it("Row has the three columns, all required and non-null", () => {
+    expectTypeOf<Tables<"favorite_exercises">>().toEqualTypeOf<{
+      created_at: string;
+      exercise_id: string;
+      user_id: string;
+    }>();
+  });
+
+  it("Insert needs only exercise_id (user_id defaults to auth.uid(), created_at is server-set)", () => {
+    expectTypeOf<TablesInsert<"favorite_exercises">>().toEqualTypeOf<{
+      created_at?: string;
+      exercise_id: string;
+      user_id?: string;
+    }>();
+  });
+
+  it("Update makes every column optional", () => {
+    expectTypeOf<TablesUpdate<"favorite_exercises">>().toEqualTypeOf<{
+      created_at?: string;
+      exercise_id?: string;
+      user_id?: string;
+    }>();
+  });
+
+  it("references exercises through favorite_exercises_exercise_id_fkey", () => {
+    expect(readFileSync(GEN_PATH, "utf8")).toContain(
+      'foreignKeyName: "favorite_exercises_exercise_id_fkey"',
     );
   });
 });

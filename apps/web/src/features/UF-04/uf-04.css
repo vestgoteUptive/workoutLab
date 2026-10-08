@@ -201,3 +201,82 @@
     border-color: CanvasText;
   }
 }
+
+/* T-0541 (D-0199 §10): "Not suggested" tag (text, never colour only) and the exclude control. */
+.wl-uf04__row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.wl-uf04__tag {
+  display: inline-block;
+  margin: 0;
+  padding: 2px 8px;
+  color: var(--wl-color-text-muted);
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 999px;
+  font-family: var(--wl-font-body);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wl-uf04__tag--large {
+  font-size: 13px;
+}
+
+.wl-uf04__sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.wl-uf04__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-block: 16px;
+}
+
+.wl-uf04__exclude {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  inline-size: 100%;
+}
+
+.wl-uf04__exclude-button {
+  min-block-size: 48px;
+}
+
+.wl-uf04__exclude-button[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wl-uf04__exclude-button:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-uf04__hint,
+.wl-uf04__fail {
+  margin: 0;
+  font-size: 13px;
+}
+
+.wl-uf04__hint {
+  color: var(--wl-color-text-muted);
+}
+
+.wl-uf04__fail {
+  color: var(--wl-color-text);
+}

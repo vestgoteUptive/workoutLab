@@ -28,6 +28,7 @@ const EXPECTED = [
   "exercise_areas",
   "exercise_variants",
   "exercises",
+  "favorite_exercises",
   "plan_checkins",
   "profiles",
   "routine_items",

@@ -51,3 +51,4 @@ Checklist (D-0197 §7): empty and non-empty `favoriteIds` (P1 vs AC1); first lau
 Every AC has a passing test · the simulated 14-day history tests pass · `pnpm -w typecheck lint test` green (`--force`) · vendor check green · commits start with `T-0563:` and cite UF-08.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0563.md` (D-0157).

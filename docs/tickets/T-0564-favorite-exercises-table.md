@@ -61,6 +61,7 @@ Checklist (D-0197 §7): empty and non-empty export (AC8); both mutual-exclusion 
 - `tests/e2e/fixtures/supabase-mock.ts`
 - `tests/e2e/uf-11-account.spec.ts`
 - `.github/scripts/rls-coverage.test.mjs` (EXPECTED gains `favorite_exercises`)
+- `docs/security/**` (security review notes; orchestrator grant 2026-10-08)
 
 ## Contract impact
 `docs/data-model.md`: new table `favorite_exercises` and the two mutual-exclusion triggers (one on `excluded_exercises`). Named by D-0202 §5 (amends D-0199 §4, D-0136 §2).
@@ -72,3 +73,4 @@ Automatic on merge (D-0201): CI runs the guard and releases the migration before
 Every AC has a passing test · pgTAP green on a fresh reset · `pnpm -w typecheck lint test` green (`--force`, contract change) · full web e2e suite green · draft PR checks green (`checks`, `supabase`, `playwright e2e`) · contract change linked to D-0202 · commits start with `T-0564:` and cite UF-11.4 / UF-11.6.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0564.md` (D-0157).

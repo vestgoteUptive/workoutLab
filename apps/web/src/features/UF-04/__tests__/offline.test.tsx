@@ -76,7 +76,11 @@ describe("AC-10 offline", () => {
     view.unmount();
 
     const offlineDetail = await snapshot("/library/back-squat", detailReady);
-    expect(offlineDetail).toEqual(onlineDetail);
+    // Offline adds exactly one line under the exclude button (T-0541, D-0199 §10); the rest is identical.
+    expect({
+      ...offlineDetail,
+      text: offlineDetail.text!.replace(en.excluded.connectToChange, ""),
+    }).toEqual(onlineDetail);
     expect(offlineDetail.hrefs.map(([, href]) => href)).toContain(
       "/library/back-squat/compare/goblet-squat",
     );

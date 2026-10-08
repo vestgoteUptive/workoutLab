@@ -232,6 +232,32 @@ export type Database = {
                 };
                 Relationships: [];
             };
+            favorite_exercises: {
+                Row: {
+                    created_at: string;
+                    exercise_id: string;
+                    user_id: string;
+                };
+                Insert: {
+                    created_at?: string;
+                    exercise_id: string;
+                    user_id?: string;
+                };
+                Update: {
+                    created_at?: string;
+                    exercise_id?: string;
+                    user_id?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "favorite_exercises_exercise_id_fkey";
+                        columns: ["exercise_id"];
+                        isOneToOne: false;
+                        referencedRelation: "exercises";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
             plan_checkins: {
                 Row: {
                     answer: string | null;

@@ -382,3 +382,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0561 | Favorites design: UF-11.6, UF-04.2 toggle, UF-04.1/UF-08.2 tag, UF-11.2 row | design | — | done | wl-design |
 | T-0562 | Engine favorites part 1: optional favoriteIds, rule 0.2, rule 7.2 key (0); R7-E21…E27 checked against the code, then encoded; vendor regen | engine | — | done | wl-build-engine |
 | T-0572 | Design: UF-08.5 sheet, UF-08.2 Add exercise / Added by you / Start with this / Doesn't fit / Reorder mode, UF-09.9 Do {name} later | design | T-0561 | done | wl-design |
+| T-0541 | UF-04.2 "Don't suggest this"/"Suggest again" + UF-04.1 "Not suggested" tag. After H-27 | web-feature:UF-04 | T-0532, T-0536, T-0537 | done | wl-build-web |
+| T-0539 | UF-05.1/UF-08.3 swap sheet: stored list to rankSwaps, "Don't suggest {name} again" checkbox, "No alternatives left" empty state. After H-27 | web-feature:UF-05 | T-0532, T-0533, T-0536, T-0537 | done | wl-build-web |
+| T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | done (AC3 wording: key 0 can't fail R7-E29 at R7-E4 inputs; noted) | wl-build-engine |
+| T-0564 | favorite_exercises table + mutual-exclusion triggers (destructive-approved D-0202 header), data-model, database.gen, pgTAP 001/007/018/020, export 9th key, e2e mock | data | — | done (released automatically) | wl-build-data |
