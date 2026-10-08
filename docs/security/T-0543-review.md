@@ -154,3 +154,31 @@ No blocker remains. The residuals below are low or informational and need no fol
 - `PGSSLMODE=verify-full` with the Supabase CA would add server authentication. Info.
 - Obfuscated dynamic SQL (`'dr' || 'op ...'`) still passes. That only matters for a malicious committer, who is outside the guard's threat model (D-0201 §3 targets mistakes). Info.
 - The N2 checker regex `origin refs\/heads\/main\b` would also accept `refs/heads/main-foo`. Trivial. Info.
+
+## T-0554: seed applied on every release (2026-10-08, ac80d1d plus a merge of main)
+
+Read-only review. `node --test` on the release, backup and guard test files passed 47/47.
+
+### Verdict: approve
+
+### Checks
+- **Secrets in argv.** None: `psql` gets no connection arguments and reads `PG*` from `pg-env.sh`. The CLI's `--db-url` stays the accepted L2 exception.
+- **Secrets in logs.** `psql` stdout and stderr go through `mask`, which redacts rows and masks both the encoded and decoded password and the host. Nothing echoes `PGPASSWORD`.
+- **TLS.** `PGSSLMODE=require` holds: `pg-env.sh` exports it before `psql` and `pg_dump` run.
+- **Failure stops the deploys.** The seed runs as `if ! { psql ... | mask; }` under `pipefail`, then `exit 1`, so a seed failure means no function deploys. The job then fails, so the web deploy doesn't run.
+- **Seed scope.** `--single-transaction` plus `ON_ERROR_STOP` makes the seed all-or-nothing. The seed's own `begin;` (line 5) and `commit;` (last line) wrap the whole file, so the effect is unchanged; psql only warns.
+- **Refactor regressions: none.**
+  - M3: `redact_rows` is unchanged in both scripts.
+  - L2 and N4: the parsing is byte-identical to before, now shared, with `PGSSLMODE` kept. `prod-backup.sh` sources the shared file after `userinfo`, `hostport`, `db_pass` and `db_host` are set.
+
+### Findings (low, non-blocking; one follow-up)
+- **T1 (low). The seed guard is a deny-list and can be bypassed.** `checkSeed` blanks strings, including inside `$$` bodies, and only looks for DROP, TRUNCATE and DELETE FROM. The seed now runs as the pooler `postgres` role on every release, and these all pass:
+  - `do $$ begin execute 'delete from public.sets'; end $$;`
+  - `update public.sets set reps = 0;`
+  - `alter ... type`
+  - `alter ... rename`
+  - an `insert ... on conflict do update` into a user table
+
+  Today the seed is only upserts into `exercises`, `exercise_areas` and `exercise_variants`. Follow-up: switch `checkSeed` to an allow-list, where each statement must be `begin`, `commit`, or `INSERT INTO public.(exercises|exercise_areas|exercise_variants) ... ON CONFLICT`, and fail on anything else.
+- **T2 (low). psql error lines are not redacted.** psql prints `psql:supabase/seed.sql:N: ERROR:  <message>` with no SQLSTATE. That line matches neither ERROR rule, so the message text stays in the public log. `DETAIL`, `Key (..)` and `invalid input syntax` values are still redacted. The seed only touches catalogue tables, so the risk is low. Fix: run `psql -X -v VERBOSITY=sqlstate`, which prints only the SQLSTATE and also skips any runner `.psqlrc`.
+- **Info.** A human-run `apply` re-applies the seed without the guard step that CI runs first. The seed is in git and reviewed.
