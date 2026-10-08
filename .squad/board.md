@@ -133,10 +133,9 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0564 | favorite_exercises table + mutual-exclusion triggers (destructive-approved D-0202 header), data-model, database.gen, pgTAP 001/007/018/020, export 9th key, e2e mock | data | — | doing | wl-build-data |
-| T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | todo | wl-build-data |
+| T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | ready | wl-build-data |
 | T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | todo | wl-build-backend |
-| T-0567 | Device cache: generalise excluded.ts into one list-cache helper; Dexie v4 favoriteCache, refreshAll read, writes after confirm, cross-list drop, hooks | web-shell | T-0564 | todo | wl-build-web |
+| T-0567 | Device cache: generalise excluded.ts into one list-cache helper; Dexie v4 favoriteCache, refreshAll read, writes after confirm, cross-list drop, hooks | web-shell | T-0564 | ready | wl-build-web |
 | T-0568 | UF-04.2 Favorite toggle with move lines + UF-04.1 Favorite tag | web-feature:UF-04 | T-0541, T-0558, T-0561, T-0567 | todo | wl-build-web |
 | T-0569 | UF-11.6 Favorite exercises at /plan/favorites + UF-11.2 row + UF-11.5 move line | web-feature:UF-11 | T-0561, T-0567 | todo | wl-build-web |
 | T-0570 | UF-02.1/UF-02.2 preview passes favoriteIds | web-feature:UF-02 | T-0542, T-0562, T-0567 | todo | wl-build-web |
