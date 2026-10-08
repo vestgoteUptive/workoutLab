@@ -39,7 +39,7 @@ biggest gaps within the user's time budget.
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
 | UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises · .6 Favorite exercises | Adaptive targets; edit goal, rhythm, priorities; exercises never suggested; favorite exercises tried first; export or delete your data | Apple Fitness, Freeletics |
 
-Shared components: C-01 Body map, C-02 Tab bar (fixed to the bottom of the viewport, padded by the safe-area inset; never shown in UF-08/UF-09, D-0196).
+Shared components: C-01 Body map, C-02 Tab bar (fixed to the bottom of the viewport, padded by the safe-area inset; never shown in UF-08/UF-09, D-0196). C-01 is a body figure (front and back, nine regions, D-0207) above a label grid. In `full` (UF-02.1, UF-10.1) the nine labels are the buttons and tapping a region does the same; `compact` is one link. UF-08 and UF-09 show no figure (the D-0060 §8 ban extends to `BodyFigure`).
 
 ## UF-01.5 Account
 
@@ -48,6 +48,10 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
 ## UF-02 Today
 
 - **UF-02.1 Today: workout in progress** (D-0139). When this user has an unfinished workout started on this device in the last 12 h, Today shows one card under the header: "Workout in progress", "Started HH:MM · n of N sets" and **Resume workout**, which reopens focus mode where it was left (UF-09). With several, the newest one. "Start workout" stays. An older unfinished workout shows no card (it is stale, D-0111 §7). Works offline.
+
+## UF-04 Exercise library
+
+- **UF-04.2 Exercise detail** (D-0207): shows a front-and-back body figure with the exercise's primary areas (weight 1.0) solid and secondary areas (weight 0.5) hatched, with visible Primary and Secondary labels and swatches. The figure is not tappable.
 
 ## UF-08 Session setup
 
@@ -105,7 +109,7 @@ Every screen: pause button, thin progress bar (warm-up + one segment per exercis
 Full spec and ACs: `docs/specs/uf-10-balance.md` (D-0013). **Entry:** the body map on UF-02.1, the Balance card on UF-06.1, "See balance" on UF-03.3. Never reachable from UF-08 or UF-09.
 
 - **UF-10.1 All areas**
-  - Header "Last 14 days · date range", C-01 body map, and nine rows: `load / target`, a coverage bar (`coverage-0..4`), a `warn` outline when the area needs attention, and a "Recovering" tag.
+  - Header "Last 14 days · date range", C-01 body map (a body figure above a label grid; the nine labels are the buttons and tapping a region does the same, D-0207), and nine rows: `load / target`, a coverage bar (`coverage-0..4`), a `warn` outline when the area needs attention, and a "Recovering" tag.
   - Order: attention first, then deficit descending, then the fixed area order.
   - Zero history: every area `0 / target`, with "Start workout". Offline: "Offline · last synced HH:MM", recomputed on the device including queued sets.
 - **UF-10.2 Area detail**
