@@ -23,7 +23,4 @@ status: ready
 None.
 
 ## Build / accept log
-- AC-1: no red under 12 `yes` loops (6 AC-3 runs, 6 full-file runs); cause found deterministically instead. Planted delay (3.5 s sleep after renderAt) on unfixed code: `/library/back-squat renders UF-04.2` Expected "UF-04.2", Received "UF-04.1". Cause: UF-04 imports loaders from `history.js`, so the test's `offline/index.js` mock never reached it; empty cache plus real `refreshAll`, then `<Navigate to="/library">` when the 3 s refresh cap ends. Green only if the assertion runs inside 3 s, which a loaded runner misses.
-- AC-2: routes.phase3.render.test.tsx adds a `history.js` mock (loadLibrary seeded with BACK_SQUAT, refreshAll no-op). With the 3.5 s delay planted on fixed code, UF-04.2 passes. No timeouts raised.
-- AC-3: 30/30 clean, 10/10 under 12 `yes` loops (killed); `--filter @workoutlab/web test` 288 files / 3883 tests green; format:check green.
-- Siblings (same file, same cause): `/library/back-squat/compare/leg-press` and `/plan/routines/R1` were red with the planted 3.5 s delay (Received UF-04.2 and UF-11.2) before seeding. Fix: LEG_PRESS added to the `history.js` loadLibrary seed; `loadRoutines` (ROUTINE_R1) and `refreshRoutines` no-op added to the `index.js` mock. All 33 tests green with the planted delay after the fix; 30/30 clean; web test and format:check green (rerun after this change).
+Archived in `docs/tickets/log/T-0911.md` (D-0157).
