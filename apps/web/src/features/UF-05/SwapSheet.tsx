@@ -17,7 +17,11 @@ import {
   type SwapReason,
   type Workout,
 } from "@workoutlab/engine";
+import { Checkbox } from "../../components/checkbox/index.js";
+import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
+import { excludeExercise } from "../../lib/offline/excluded.js";
+import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js";
 import { loadEngineHistory } from "../../lib/offline/engine-feed.js";
 import { loadLibrary, loadProfile } from "../../lib/offline/history.js";
 import { equipmentText, matchText, minutesText } from "./labels.js";
@@ -40,7 +44,7 @@ interface SheetData {
 
 type Load = { status: "loading" } | { status: "failed" } | { status: "ready"; data: SheetData };
 
-type Ranking = { ok: true; candidates: SwapCandidate[] } | { ok: false };
+type Ranking = { ok: true; candidates: SwapCandidate[]; othersExcluded: boolean } | { ok: false };
 
 type Notice = "saveFailed" | "swapFailed" | null;
 
@@ -52,6 +56,16 @@ const REASONS: ReadonlyArray<SwapReason | null> = [
   "variety",
   "short_on_time",
 ];
+
+/** The signed-in user, or null when the sheet is rendered with no auth (then nothing is excluded). */
+function useUserId(): string | null {
+  try {
+    // useContext runs before the throw, so the hook order is stable.
+    return useAuth().userId ?? null;
+  } catch {
+    return null;
+  }
+}
 
 function deviceZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -101,6 +115,13 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
   const tz = timeZone ?? deviceZone();
   const current = workout.plan.items[itemIndex];
 
+  const userId = useUserId();
+  const { ids: stored, loaded: storedLoaded } = useExcludedList(userId);
+  const online = useOnline();
+  const offlineNoteId = useId();
+  const [ticked, setTicked] = useState(false);
+  const [excludeFailed, setExcludeFailed] = useState(false);
+
   const [load, setLoad] = useState<Load>({ status: "loading" });
   const [reason, setReason] = useState<SwapReason | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -114,6 +135,8 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
     setReason(null);
     setSelectedId(null);
     setNotice(null);
+    setTicked(false);
+    setExcludeFailed(false);
   }
   const [pending, setPending] = useState(false);
   const pendingRef = useRef(false);
@@ -137,27 +160,21 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
   }, []);
 
   const ranking = useMemo<Ranking | null>(() => {
-    if (load.status !== "ready" || current === undefined) return null;
+    // Wait for the cache read: "still reading" must not look like an empty list (T-0538).
+    if (load.status !== "ready" || current === undefined || !storedLoaded) return null;
     const { history, profile, library } = load.data;
     try {
-      return {
-        ok: true,
-        candidates: rankSwaps(
-          current.exerciseId,
-          reason,
-          workout,
-          profile,
-          library,
-          history,
-          now,
-          tz,
-        ),
-      };
+      const rank = (exclude: readonly string[]) =>
+        rankSwaps(current.exerciseId, reason, workout, profile, library, history, now, tz, exclude);
+      const candidates = rank(stored);
+      // Nothing left: is that the exclusions, or the equipment? Still engine output.
+      const othersExcluded = candidates.length === 0 && stored.length > 0 && rank([]).length > 0;
+      return { ok: true, candidates, othersExcluded };
     } catch {
       // A plan item the library doesn't know (D-0059 (c)) has nothing to rank against.
       return { ok: false };
     }
-  }, [load, current, reason, workout, now, tz]);
+  }, [load, current, reason, workout, now, tz, stored, storedLoaded]);
 
   // Focus moves in on mount; on unmount it goes back to whatever had it, if that is still there.
   useEffect(() => {
@@ -216,9 +233,44 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
     setNotice(null);
   }
 
+  // A box ticked before the connection dropped is cleared (UF-08.3 spec).
+  useEffect(() => {
+    if (!online) setTicked(false);
+  }, [online]);
+
+  const isWarmup =
+    current !== undefined && library.find((e) => e.id === current.exerciseId)?.kind === "warmup";
+  const canExclude = userId !== null && !isWarmup;
+
   function use(): void {
     if (pendingRef.current || selected === undefined || current === undefined) return;
     if (load.status !== "ready") return;
+    if (ticked && online && canExclude) {
+      // D-0199 §6: the stored list changes only after the server confirms; then the swap.
+      pendingRef.current = true;
+      setPending(true);
+      setExcludeFailed(false);
+      excludeExercise(userId, current.exerciseId).then(
+        () => {
+          pendingRef.current = false;
+          if (!mounted.current) return;
+          setPending(false);
+          apply();
+        },
+        () => {
+          pendingRef.current = false;
+          if (!mounted.current) return;
+          setPending(false);
+          setExcludeFailed(true);
+        },
+      );
+      return;
+    }
+    apply();
+  }
+
+  function apply(): void {
+    if (selected === undefined || current === undefined || load.status !== "ready") return;
     const { history, profile, library: lib } = load.data;
     let result: Workout;
     try {
@@ -304,7 +356,9 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
               ))}
             </div>
             {candidates.length === 0 ? (
-              <p className="wl-uf05__message">{en.uf05.empty}</p>
+              <p className="wl-uf05__message">
+                {ranking.ok && ranking.othersExcluded ? en.uf05.emptyExcluded : en.uf05.empty}
+              </p>
             ) : (
               <>
                 <div
@@ -351,6 +405,22 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
                     </label>
                   ))}
                 </div>
+                {selected === undefined || !canExclude || current === undefined ? null : (
+                  <div className="wl-uf05__exclude">
+                    <Checkbox
+                      label={en.uf05.dontSuggest(nameOf(current.exerciseId))}
+                      checked={ticked}
+                      onChange={setTicked}
+                      ariaDisabled={!online}
+                      {...(online ? {} : { describedBy: offlineNoteId })}
+                    />
+                    {online ? null : (
+                      <p id={offlineNoteId} className="wl-uf05__exclude-note">
+                        {en.excluded.connectToChange}
+                      </p>
+                    )}
+                  </div>
+                )}
                 {selected === undefined ? null : (
                   <button
                     type="button"
@@ -365,6 +435,11 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
             )}
           </>
         )}
+        {excludeFailed ? (
+          <p role="alert" className="wl-uf05__notice">
+            {en.excluded.saveFailed}
+          </p>
+        ) : null}
         <p role="status" aria-live="polite" className="wl-uf05__notice">
           {notice === null ? null : en.uf05[notice]}
         </p>

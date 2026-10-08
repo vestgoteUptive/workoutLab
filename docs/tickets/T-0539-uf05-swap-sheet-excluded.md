@@ -57,3 +57,9 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-05/UF-08/UF-09 swap e2e specs green · contracts unchanged · commits start with `T-0539:` and cite UF-05.1 / UF-08.3.
 
 ## Build / accept log
+
+### Build log (frontend-dev)
+- Clean tree at fb2dd81. SwapSheet reads `useExcludedList` (waits for `loaded`), passes it as rankSwaps' 9th arg, second `rankSwaps(..., [])` call for the empty state, C-03 checkbox above "Use", write via `excludeExercise` before `applySwap`, `role="alert"` on failure, offline aria-disabled + description (ticked box cleared when offline), hidden for warm-ups, no user, and both empty states. "Always use this in <routine>" does not exist in the sheet today (T-0532 not in this code), so the box sits above the confirm button.
+- AC map: AC1-AC2, AC3 (sheet), AC4, AC5, AC6, AC6a, AC7 in `UF-05/__tests__/excluded.test.tsx`; AC3 UF-08.3 host in `UF-08/__tests__/swap-before-start.test.tsx`. AC6a is tested at sheet level (items 1 and 3 equal), not through a UF-09 host. engine.test.tsx updated for the new 9th arg `[]`.
+- Planted faults, each caught: stored list not passed (4 red), no write on tick, write always, apply on failure, checkbox for warm-up, never disabled, empty message, ticked box not cleared offline, not waiting for loaded (2 red).
+- Gate: typecheck/lint/test 19/19 (web 4004 tests); test:repo-checks 369 pass; format:check and check-all ok; e2e uf-05 + uf-09: 23 passed. First gate run failed typecheck (exactOptionalPropertyTypes on describedBy), fixed.
