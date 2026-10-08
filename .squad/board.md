@@ -149,3 +149,4 @@ Owner request: groom 10 parked tickets and put the ones worth doing at the back 
 | T-0006 | Turbo test hashes cover the repo files package tests read (engine library + engine-rules, shared contracts, web inventory); check-decision-ids flags a slugless D-NNNN.md. Narrowed: pgTAP column drift and D-0032/D-0023 text dropped | infra | T-0004 | todo | wl-build-infra |
 | T-0332 | UF-01.1/UF-01.5: fast mocked-status test of the /welcome/* stand-down in RedirectIfSignedIn, so breaking it fails in ms instead of hanging the routing suite | web-shell | T-0301a | todo | wl-build-web |
 | T-0525 | One vitest variant across the workspace (engine/shared/design-tokens/exercises on vite 8, web/landing on vite 6 today) + a lockfile repo-check | infra | T-0512 | todo | wl-build-infra |
+| T-0913 | UF-11.5/11.6 list-cache tests flake under load | web-feature:UF-11 | — | doing | wl-build-web |
