@@ -22,3 +22,7 @@ status: doing
 None.
 
 ## Build / accept log
+
+- T-0913 build: favorites-screen and excluded-screen tests set RTL `asyncUtilTimeout` 4 s (under the 5 s test timeout; waits still return on observable state). Synchronous reads after cache-driven waits (status message, "Excluded exercises, 1" link) now use findBy/waitFor.
+- Red on first attempt (timeout only): 3 of 20 UF-11 runs failed (AC1 "sits directly before the Excluded row", AC3 "Add on an excluded exercise" status text). Fixed by the sync-read changes.
+- AC-2: 20/20 clean UF-11 runs; 10/10 with 8 `yes` loops (killed, 0 left); after merging origin/main `--filter @workoutlab/web test` 307 files / 4149 tests green; format:check green. One earlier package run failed once (before merge, cause not captured; the rerun was green).
