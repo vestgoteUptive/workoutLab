@@ -69,19 +69,4 @@ None.
 Every AC has a passing test · `pnpm --filter @workoutlab/web typecheck` green · `pnpm --filter @workoutlab/web lint` green · `pnpm --filter @workoutlab/web test` green · the cached full gate green · the UF-11 e2e specs green (`uf-11-plan.spec.ts`, `uf-11-account.spec.ts`, plus any new one); the full suite only if the diff leaves the UF-11 folder · contracts unchanged · commits start with `T-0548:` and cite UF-11.2.
 
 ## Build / accept log
-
-### Build log (frontend-dev)
-- Built UF-11.2 blocks 1, 3, 4, 5 (slot comment only) and 6: `.wl-page` on UF-11.2/11.3, header with purpose line and compact account link, "Your plan" card with primary Edit plan, 3x3 tile grid (source shown only when not default, Priority captions, footnote, Balance row). Next-check-in line moved into the Check-ins section. `u.rhythm` kept for UF-11.3; UF-11.2 uses `rhythmPerWeek`/`rhythmPer14`. `sourceLabels.default` and `targetRow` removed.
-- Priority areas now print in fixed area order (spec), not stored order.
-- AC map (new file `__tests__/plan-layout.test.tsx`): AC1 header; AC2 card + None; AC3 sources; AC4 tiles; AC5 Balance link last in card; AC7 UF-11.3 `.wl-page` (unit) and e2e gutter; AC8 offline. AC6/AC7 layout and 44 px and Balance navigation in `tests/e2e/uf-11-plan-layout.spec.ts` (390/360/320/1024, 200% zoom).
-- Spec change (UF-11.2.md), tests edited for copy, none deleted or loosened:
-  - plan.render.test.tsx "shows the goal, rhythm, no priorities and the 9 targets": 9 rows "X n · From your plan" now "X n hard sets"; "3–4 per week · 6–8 per 14 days" now two strings "3–4 per week" and "6–8 sessions per 14 days".
-  - plan.render "contrast: a different goal and priorities...": was stored order "Hamstrings, Back", now fixed order "Back, Hamstrings".
-  - plan.render "contrast: rhythm 1–1": "1–1 per week · 2–2 per 14 days" now "1–1 per week" + "2–2 sessions per 14 days".
-  - plan.render AC-B2 adapted: "Back 20 · Adapted 27 Sep" now "Back 20 hard sets Adapted 27 Sep"; `sourceLabels.default` check now literal "From your plan" absent. manual: "Calves 12 · Set by you" now "Calves 12 hard sets Set by you".
-  - offline.test.tsx cache-first: "Chest 20 · From your plan" now "Chest 20 hard sets".
-  - checkin-reread / checkin-mount / mount-stability: list label `u.headings.targets` now `u.targetsList`; checkin-reread rhythm lookup now dt "Rhythm" then its first span, `u.rhythm(a,b)` now `u.rhythmPerWeek(a,b)`.
-  - strings.test.ts allowlist: added "/balance" and the icon geometry strings (not copy).
-  - tests/e2e/uf-11-plan.spec.ts: list label, rhythm texts, "Chest 20 hard sets", "Hamstrings 16 hard sets".
-- Planted faults (backup copy, restored by cp), each turned the named tests red: default source shown (AC3 x2); priority on every tile (AC2/3/4/8); Balance href wrong (AC5, AC8); hidden " hard sets" removed (AC3/4/8); Edit plan secondary class (AC2); priority order stored (AC2); `.wl-page` and purpose line removed (AC1, AC7).
-- Screenshot: /tmp/claude-1000/-home-henrik-dev-uptive-private-workoutLab/b9c18a03-9bde-4682-9460-947c135cf3b1/scratchpad/plan-after.png
+Archived in `docs/tickets/log/T-0548.md` (D-0157).
