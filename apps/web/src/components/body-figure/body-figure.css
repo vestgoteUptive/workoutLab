@@ -1,0 +1,140 @@
+/* Body figure (T-0556, D-0207). Colours by class and token only; system colours only inside
+   the forced-colors block. Rules follow the designer's preview (#wl-fig-css). No animation. */
+.wl-fig {
+  display: block;
+  width: auto;
+}
+.wl-fig--compact {
+  height: 140px;
+}
+.wl-fig--detail {
+  height: 200px;
+}
+.wl-fig--full {
+  height: 240px;
+}
+.wl-fig path {
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.wl-fig__silhouette {
+  fill: var(--wl-color-surface-2);
+  stroke: var(--wl-color-text-muted);
+  stroke-width: 1.5px;
+}
+.wl-fig__body:not(.wl-fig__silhouette) {
+  fill: var(--wl-color-surface-2);
+  stroke: var(--wl-color-line-strong);
+  stroke-width: 0.75px;
+}
+.wl-fig__region {
+  fill: var(--wl-color-surface-2);
+  stroke: var(--wl-color-text-muted);
+  stroke-width: 1px;
+}
+.wl-fig__seam {
+  fill: none;
+  stroke: var(--wl-color-line-strong);
+  stroke-width: 0.75px;
+  pointer-events: none;
+}
+.wl-fig__seam--on-accent {
+  stroke: var(--wl-color-on-accent);
+}
+.wl-fig__hatch-ground {
+  fill: var(--wl-color-surface-2);
+}
+.wl-fig__hatch-stripe {
+  fill: var(--wl-color-accent);
+}
+.wl-fig__region--none {
+  fill: var(--wl-color-surface-2);
+}
+.wl-fig__region--primary {
+  fill: var(--wl-color-accent);
+}
+/* --wl-fig-hatch is set per instance on the <svg> and points at that instance's own pattern. */
+.wl-fig__region--secondary {
+  fill: var(--wl-fig-hatch);
+}
+.wl-fig__region--step-0 {
+  fill: var(--wl-color-coverage-0);
+}
+.wl-fig__region--step-1 {
+  fill: var(--wl-color-coverage-1);
+}
+.wl-fig__region--step-2 {
+  fill: var(--wl-color-coverage-2);
+}
+.wl-fig__region--step-3 {
+  fill: var(--wl-color-coverage-3);
+}
+.wl-fig__region--step-4 {
+  fill: var(--wl-color-coverage-4);
+}
+/* Attention halo: 1 px region border, then a 1 px surface gap, then 2 px warn. */
+.wl-fig__halo-warn {
+  fill: none;
+  stroke: var(--wl-color-warn);
+  stroke-width: 7px;
+  pointer-events: none;
+}
+.wl-fig__halo-gap {
+  fill: none;
+  stroke: var(--wl-color-surface);
+  stroke-width: 3px;
+  pointer-events: none;
+}
+/* Highlight ring: 2 px accent, offset 2 px from the region border, with a surface gap. */
+.wl-fig__ring {
+  fill: none;
+  stroke: var(--wl-color-accent);
+  stroke-width: 9px;
+  pointer-events: none;
+}
+.wl-fig__ring-gap {
+  fill: none;
+  stroke: var(--wl-color-surface);
+  stroke-width: 5px;
+  pointer-events: none;
+}
+@media (forced-colors: active) {
+  .wl-fig {
+    forced-color-adjust: none;
+  }
+  .wl-fig__silhouette,
+  .wl-fig__body:not(.wl-fig__silhouette),
+  .wl-fig__region,
+  .wl-fig__region[class*="--step-"] {
+    fill: Canvas;
+    stroke: CanvasText;
+  }
+  .wl-fig__region--primary {
+    fill: CanvasText;
+  }
+  .wl-fig__region--secondary {
+    fill: var(--wl-fig-hatch);
+  }
+  .wl-fig__hatch-ground {
+    fill: Canvas;
+  }
+  .wl-fig__hatch-stripe {
+    fill: CanvasText;
+  }
+  .wl-fig__seam,
+  .wl-fig__seam--on-accent {
+    stroke: GrayText;
+  }
+  .wl-fig__halo-warn {
+    stroke: Highlight;
+    stroke-width: 9px;
+  }
+  .wl-fig__halo-gap,
+  .wl-fig__ring-gap {
+    stroke: Canvas;
+  }
+  .wl-fig__ring {
+    stroke: Highlight;
+  }
+}

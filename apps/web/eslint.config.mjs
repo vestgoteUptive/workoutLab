@@ -50,6 +50,17 @@ const BODY_MAP_PATTERN = {
 };
 
 /**
+ * D-0207 §3: the shared BodyFigure joins C-01 in the ban, but only for the flows that render
+ * during a workout and have no figure (UF-03, UF-08, UF-09). UF-04.2 draws it, so UF-04 and
+ * UF-05 are not in this ban. `no-restricted-imports` misses `import()`, so the same source is
+ * also a `no-restricted-syntax` selector.
+ */
+const BODY_FIGURE_SOURCE = "(^|/)components/body-figure(/|$)";
+const BODY_FIGURE_MESSAGE =
+  "The body figure is not allowed in UF-03/UF-08/UF-09 (principle 1: one task on screen during a workout, D-0207 §3, D-0060 §8).";
+const BODY_FIGURE_PATTERN = { regex: BODY_FIGURE_SOURCE, message: BODY_FIGURE_MESSAGE };
+
+/**
  * The flows that never render during a workout. UF-04 and UF-05 are importers in the block
  * below, never targets: the how-to sheet and the swap sheet do mount inside the UF-09 host,
  * so no block needs a self-exception.
@@ -117,6 +128,31 @@ export default [
         "error",
         {
           patterns: [INDEX_ONLY_PATTERN, BODY_MAP_PATTERN, OUT_OF_WORKOUT_FEATURE_PATTERN],
+        },
+      ],
+    },
+  },
+  {
+    // D-0207 §3 / T-0556: UF-03, UF-08 and UF-09 may not import the BodyFigure (static, re-export
+    // or dynamic). Repeats the block above's patterns: flat config replaces, not merges.
+    files: ["src/features/UF-03/**", "src/features/UF-08/**", "src/features/UF-09/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            INDEX_ONLY_PATTERN,
+            BODY_MAP_PATTERN,
+            OUT_OF_WORKOUT_FEATURE_PATTERN,
+            BODY_FIGURE_PATTERN,
+          ],
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "ImportExpression[source.value=/components\\/body-figure(\\/|$)/]",
+          message: BODY_FIGURE_MESSAGE,
         },
       ],
     },

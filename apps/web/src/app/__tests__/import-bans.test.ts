@@ -136,6 +136,67 @@ describe("AC-9 C-01 Body map is not importable during a workout (the AC-D11 rule
   });
 });
 
+describe("T-0556 AC-7 the shared BodyFigure is not importable in UF-03/UF-08/UF-09 (D-0207 §3)", () => {
+  const FIGURE = {
+    index:
+      'import { BodyFigure } from "../../components/body-figure/index.js";\nexport const X = BodyFigure;\n',
+    folder:
+      'import { BodyFigure } from "../../components/body-figure";\nexport const X = BodyFigure;\n',
+    file: 'import { BodyFigure } from "../../components/body-figure/BodyFigure.js";\nexport const X = BodyFigure;\n',
+    reexport: 'export { BodyFigure } from "../../components/body-figure/index.js";\n',
+  };
+  const DYNAMIC = [
+    'export const load = () => import("../../components/body-figure/index.js");\n',
+    'export const load = () => import("../../components/body-figure");\n',
+  ];
+
+  async function errorsFor(path: string, code: string) {
+    const [result] = await eslint.lintText(code, { filePath: resolve(WEB_ROOT, path) });
+    expect(result!.messages.filter((m) => m.fatal)).toEqual([]);
+    return result!.messages.filter(
+      (m) => m.ruleId === "no-restricted-imports" || m.ruleId === "no-restricted-syntax",
+    );
+  }
+
+  for (const flow of ["UF-03", "UF-08", "UF-09"]) {
+    for (const [kind, code] of Object.entries(FIGURE)) {
+      it(`${flow} importing components/body-figure (${kind}) is an error`, async () => {
+        const errors = await errorsFor(`src/features/${flow}/x.tsx`, code);
+        expect(errors).toHaveLength(1);
+        expect(errors[0]!.severity).toBe(2);
+      });
+    }
+    it.each(DYNAMIC)(`${flow} dynamic import() is an error (%#)`, async (code) => {
+      const errors = await errorsFor(`src/features/${flow}/x.ts`, code);
+      expect(errors).toHaveLength(1);
+      expect(errors[0]!.ruleId).toBe("no-restricted-syntax");
+    });
+  }
+
+  it.each(["UF-02", "UF-04", "UF-10"])("%s may import components/body-figure", async (flow) => {
+    for (const code of [...Object.values(FIGURE), ...DYNAMIC]) {
+      expect(await errorsFor(`src/features/${flow}/x.tsx`, code)).toHaveLength(0);
+    }
+  });
+
+  it("UF-09 keeps the other bans (body-map, index-only)", async () => {
+    expect(
+      await errorsFor(
+        "src/features/UF-09/x.tsx",
+        'import { B } from "../../components/body-map";\nexport const X = B;\n',
+      ),
+    ).toHaveLength(1);
+    expect(
+      (
+        await errorsFor(
+          "src/features/UF-09/x.tsx",
+          'import { C } from "../UF-08/focus-prefs.js";\nexport const X = C;\n',
+        )
+      ).length,
+    ).toBeGreaterThanOrEqual(1);
+  });
+});
+
 describe("AC-10 a cross-feature import must go through the target's index (D-0071 §3)", () => {
   it("UF-09 deep-importing UF-08/focus-prefs.js reports no-restricted-imports", async () => {
     const errors = await restricted(
