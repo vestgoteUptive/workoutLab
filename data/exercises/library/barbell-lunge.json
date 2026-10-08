@@ -1,0 +1,23 @@
+{
+  "id": "barbell-lunge",
+  "name": "Barbell lunge",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "advanced",
+  "equipment": ["barbell", "rack"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "quads": 1, "glutes": 0.5, "hamstrings": 0.5, "core": 0.5 },
+  "instructions": [
+    "Set the bar on your upper back and step out of the rack.",
+    "Step one foot forward in a long stride.",
+    "Lower until both knees are bent about 90 degrees.",
+    "Push through the front foot to stand, then switch legs."
+  ],
+  "cue": "Brace tight, drop straight down",
+  "mistakes": ["Letting the bar roll as you lean forward.", "Stepping too short and loading the front knee."],
+  "variants": ["dumbbell-lunge", "bulgarian-split-squat", "forward-lunge"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -16,7 +16,7 @@
   ],
   "cue": "Push hips back, keep the back flat",
   "mistakes": ["Rounding the lower back.", "Letting the dumbbells drift away from the legs."],
-  "variants": ["romanian-deadlift-barbell", "cable-pull-through", "leg-curl-machine", "kettlebell-swing"],
+  "variants": ["romanian-deadlift-barbell", "cable-pull-through", "leg-curl-machine", "kettlebell-swing", "barbell-deadlift"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

@@ -1,0 +1,23 @@
+{
+  "id": "barbell-deadlift",
+  "name": "Barbell deadlift",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "advanced",
+  "equipment": ["barbell"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "hamstrings": 1, "glutes": 1, "back": 0.5, "quads": 0.5 },
+  "instructions": [
+    "Stand with the bar over your mid-foot and feet hip width apart.",
+    "Hinge down, grip the bar just outside your legs, and brace your core.",
+    "Push the floor away, keeping your back flat, until you stand tall.",
+    "Hinge back and lower the bar down your legs to the floor."
+  ],
+  "cue": "Brace, flat back, push the floor away",
+  "mistakes": ["Rounding the lower back off the floor.", "Letting the bar drift away from your legs."],
+  "variants": ["sumo-deadlift", "romanian-deadlift-barbell", "romanian-deadlift-dumbbell", "single-leg-deadlift"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

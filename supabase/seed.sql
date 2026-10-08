@@ -165,7 +165,47 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
+values ('barbell-deadlift', 'Barbell deadlift', 'exercise', 'compound', 'advanced', array['barbell']::text[], array['Stand with the bar over your mid-foot and feet hip width apart.', 'Hinge down, grip the bar just outside your legs, and brace your core.', 'Push the floor away, keeping your back flat, until you stand tall.', 'Hinge back and lower the bar down your legs to the floor.']::text[], array['Rounding the lower back off the floor.', 'Letting the bar drift away from your legs.']::text[], 'Brace, flat back, push the floor away', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, true)
+on conflict (id) do update set
+  name = excluded.name,
+  kind = excluded.kind,
+  type = excluded.type,
+  level = excluded.level,
+  equipment = excluded.equipment,
+  instructions = excluded.instructions,
+  mistakes = excluded.mistakes,
+  cue = excluded.cue,
+  timed = excluded.timed,
+  default_duration_s = excluded.default_duration_s,
+  source = excluded.source,
+  license = excluded.license,
+  attribution = excluded.attribution,
+  source_url = excluded.source_url,
+  increment_kg = excluded.increment_kg,
+  external_load = excluded.external_load;
+
+insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
 values ('barbell-front-squat', 'Barbell front squat', 'exercise', 'compound', 'advanced', array['barbell', 'rack']::text[], array['Rest the bar across the front of your shoulders.', 'Keep your elbows lifted so the bar stays in place.', 'Bend your knees and hips to squat down.', 'Drive back up through your heels to standing.']::text[], array['Letting the elbows drop, which drops the bar.', 'Leaning forward at the bottom.']::text[], 'Elbows up, sit down tall', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, true)
+on conflict (id) do update set
+  name = excluded.name,
+  kind = excluded.kind,
+  type = excluded.type,
+  level = excluded.level,
+  equipment = excluded.equipment,
+  instructions = excluded.instructions,
+  mistakes = excluded.mistakes,
+  cue = excluded.cue,
+  timed = excluded.timed,
+  default_duration_s = excluded.default_duration_s,
+  source = excluded.source,
+  license = excluded.license,
+  attribution = excluded.attribution,
+  source_url = excluded.source_url,
+  increment_kg = excluded.increment_kg,
+  external_load = excluded.external_load;
+
+insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
+values ('barbell-lunge', 'Barbell lunge', 'exercise', 'compound', 'advanced', array['barbell', 'rack']::text[], array['Set the bar on your upper back and step out of the rack.', 'Step one foot forward in a long stride.', 'Lower until both knees are bent about 90 degrees.', 'Push through the front foot to stand, then switch legs.']::text[], array['Letting the bar roll as you lean forward.', 'Stepping too short and loading the front knee.']::text[], 'Brace tight, drop straight down', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, true)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -226,6 +266,26 @@ on conflict (id) do update set
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
 values ('bodyweight-squat', 'Bodyweight squat', 'exercise', 'compound', 'beginner', array['none']::text[], array['Stand with feet shoulder width apart.', 'Bend your knees and hips to lower down, as if sitting into a chair.', 'Keep your chest up and go down until your thighs are about parallel.', 'Push through your feet to stand back up.']::text[], array['Letting the knees cave inward.', 'Rounding the lower back.']::text[], 'Sit back, chest up, drive through the feet', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
+on conflict (id) do update set
+  name = excluded.name,
+  kind = excluded.kind,
+  type = excluded.type,
+  level = excluded.level,
+  equipment = excluded.equipment,
+  instructions = excluded.instructions,
+  mistakes = excluded.mistakes,
+  cue = excluded.cue,
+  timed = excluded.timed,
+  default_duration_s = excluded.default_duration_s,
+  source = excluded.source,
+  license = excluded.license,
+  attribution = excluded.attribution,
+  source_url = excluded.source_url,
+  increment_kg = excluded.increment_kg,
+  external_load = excluded.external_load;
+
+insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
+values ('bulgarian-split-squat', 'Bulgarian split squat', 'exercise', 'compound', 'intermediate', array['bench']::text[], array['Stand a long stride in front of a bench, facing away from it.', 'Rest the top of your back foot on the bench.', 'Bend your front knee to lower your back knee toward the floor.', 'Push through the front foot to stand, then switch legs.']::text[], array['Standing too close to the bench.', 'Letting the front knee cave inward.']::text[], 'Back foot up, drop straight down', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -585,6 +645,26 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
+values ('dumbbell-lunge', 'Dumbbell lunge', 'exercise', 'compound', 'intermediate', array['dumbbell']::text[], array['Hold a dumbbell in each hand, arms down at your sides.', 'Step one foot forward in a long stride.', 'Lower until both knees are bent about 90 degrees.', 'Push through the front foot to stand, then switch legs.']::text[], array['Letting the weights pull your shoulders forward.', 'Letting the front knee cave inward.']::text[], 'Stand tall, drop straight down', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2, true)
+on conflict (id) do update set
+  name = excluded.name,
+  kind = excluded.kind,
+  type = excluded.type,
+  level = excluded.level,
+  equipment = excluded.equipment,
+  instructions = excluded.instructions,
+  mistakes = excluded.mistakes,
+  cue = excluded.cue,
+  timed = excluded.timed,
+  default_duration_s = excluded.default_duration_s,
+  source = excluded.source,
+  license = excluded.license,
+  attribution = excluded.attribution,
+  source_url = excluded.source_url,
+  increment_kg = excluded.increment_kg,
+  external_load = excluded.external_load;
+
+insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
 values ('dumbbell-row', 'Dumbbell row', 'exercise', 'compound', 'beginner', array['dumbbell', 'bench']::text[], array['Rest one knee and one hand on the bench, back flat.', 'Hold a dumbbell in the other hand, arm hanging straight down.', 'Pull the dumbbell up to your hip.', 'Lower it back down with control.']::text[], array['Twisting the torso to pull the weight up.', 'Letting the shoulder shrug instead of the elbow driving back.']::text[], 'Pull the elbow past your hip', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2, true)
 on conflict (id) do update set
   name = excluded.name,
@@ -626,6 +706,26 @@ on conflict (id) do update set
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
 values ('fire-hydrant', 'Fire hydrant', 'exercise', 'isolation', 'beginner', array['none']::text[], array['Start on hands and knees, back flat.', 'Keeping your knee bent, lift one leg out to the side.', 'Lower with control and repeat, then switch sides.']::text[], array['Rotating the hips to lift higher.', 'Rushing the lowering phase.']::text[], 'Knee bent, lift out to the side', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
+on conflict (id) do update set
+  name = excluded.name,
+  kind = excluded.kind,
+  type = excluded.type,
+  level = excluded.level,
+  equipment = excluded.equipment,
+  instructions = excluded.instructions,
+  mistakes = excluded.mistakes,
+  cue = excluded.cue,
+  timed = excluded.timed,
+  default_duration_s = excluded.default_duration_s,
+  source = excluded.source,
+  license = excluded.license,
+  attribution = excluded.attribution,
+  source_url = excluded.source_url,
+  increment_kg = excluded.increment_kg,
+  external_load = excluded.external_load;
+
+insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
+values ('forward-lunge', 'Forward lunge', 'exercise', 'compound', 'beginner', array['none']::text[], array['Stand tall with your feet hip width apart.', 'Step one foot forward in a long stride.', 'Lower until both knees are bent about 90 degrees.', 'Push hard through the front foot to return to standing, then switch legs.']::text[], array['Taking too short a step.', 'Letting the front knee cave inward.']::text[], 'Long step, drop straight down', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -1006,6 +1106,26 @@ on conflict (id) do update set
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
 values ('lat-pulldown', 'Lat pulldown', 'exercise', 'compound', 'beginner', array['cable']::text[], array['Sit down and grip the bar wider than shoulder width.', 'Lean back slightly and pull the bar down to your upper chest.', 'Squeeze your shoulder blades together at the bottom.', 'Let the bar rise back up with control.']::text[], array['Leaning back too far and turning it into a row.', 'Letting the bar bounce back up.']::text[], 'Bar to the upper chest, squeeze', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 5, true)
+on conflict (id) do update set
+  name = excluded.name,
+  kind = excluded.kind,
+  type = excluded.type,
+  level = excluded.level,
+  equipment = excluded.equipment,
+  instructions = excluded.instructions,
+  mistakes = excluded.mistakes,
+  cue = excluded.cue,
+  timed = excluded.timed,
+  default_duration_s = excluded.default_duration_s,
+  source = excluded.source,
+  license = excluded.license,
+  attribution = excluded.attribution,
+  source_url = excluded.source_url,
+  increment_kg = excluded.increment_kg,
+  external_load = excluded.external_load;
+
+insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
+values ('lateral-lunge', 'Lateral lunge', 'exercise', 'compound', 'intermediate', array['none']::text[], array['Stand tall with your feet together.', 'Take a big step out to the side with one foot.', 'Sit your hips back and down over that leg, keeping the other leg straight.', 'Push off the bent leg to return to the middle, then switch sides.']::text[], array['Letting the bent knee cave inward.', 'Lifting the heel of the bent leg.']::text[], 'Step wide, sit back over the leg', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -1645,7 +1765,47 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
+values ('sumo-deadlift', 'Sumo deadlift', 'exercise', 'compound', 'advanced', array['barbell']::text[], array['Stand with a wide stance, toes turned out, and the bar over your mid-foot.', 'Sit your hips down, grip the bar inside your knees, and brace your core.', 'Push the floor apart with your feet until you stand tall.', 'Hinge back and lower the bar down your legs to the floor.']::text[], array['Letting the knees cave in as you pull.', 'Rounding the upper back at the start.']::text[], 'Brace, chest up, spread the floor', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, true)
+on conflict (id) do update set
+  name = excluded.name,
+  kind = excluded.kind,
+  type = excluded.type,
+  level = excluded.level,
+  equipment = excluded.equipment,
+  instructions = excluded.instructions,
+  mistakes = excluded.mistakes,
+  cue = excluded.cue,
+  timed = excluded.timed,
+  default_duration_s = excluded.default_duration_s,
+  source = excluded.source,
+  license = excluded.license,
+  attribution = excluded.attribution,
+  source_url = excluded.source_url,
+  increment_kg = excluded.increment_kg,
+  external_load = excluded.external_load;
+
+insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
 values ('superman', 'Superman hold', 'exercise', 'compound', 'beginner', array['none']::text[], array['Lie face down with arms stretched out in front of you.', 'Lift your arms, chest and legs off the floor together.', 'Hold, then lower back down with control.']::text[], array['Yanking the head back.', 'Only lifting the arms.']::text[], 'Lift chest, arms and legs together', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
+on conflict (id) do update set
+  name = excluded.name,
+  kind = excluded.kind,
+  type = excluded.type,
+  level = excluded.level,
+  equipment = excluded.equipment,
+  instructions = excluded.instructions,
+  mistakes = excluded.mistakes,
+  cue = excluded.cue,
+  timed = excluded.timed,
+  default_duration_s = excluded.default_duration_s,
+  source = excluded.source,
+  license = excluded.license,
+  attribution = excluded.attribution,
+  source_url = excluded.source_url,
+  increment_kg = excluded.increment_kg,
+  external_load = excluded.external_load;
+
+insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
+values ('walking-lunge', 'Walking lunge', 'exercise', 'compound', 'intermediate', array['none']::text[], array['Stand tall with your feet together and clear a path of a few metres.', 'Step forward and lower until both knees are bent about 90 degrees.', 'Push through the front foot and bring the back foot forward past it into the next step.', 'Keep walking, alternating legs on each rep.']::text[], array['Rushing so the knee slams down.', 'Leaning the chest far forward.']::text[], 'Step, drop, and keep walking', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -1800,6 +1960,19 @@ values ('barbell-bicep-curl', 'arms', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('barbell-deadlift', 'back', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('barbell-deadlift', 'glutes', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('barbell-deadlift', 'hamstrings', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('barbell-deadlift', 'quads', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+
+insert into public.exercise_areas (exercise_id, area_id, weight)
 values ('barbell-front-squat', 'core', 0.5)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 insert into public.exercise_areas (exercise_id, area_id, weight)
@@ -1807,6 +1980,19 @@ values ('barbell-front-squat', 'glutes', 0.5)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 insert into public.exercise_areas (exercise_id, area_id, weight)
 values ('barbell-front-squat', 'quads', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('barbell-lunge', 'core', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('barbell-lunge', 'glutes', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('barbell-lunge', 'hamstrings', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('barbell-lunge', 'quads', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
@@ -1834,6 +2020,13 @@ values ('bodyweight-squat', 'hamstrings', 0.5)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 insert into public.exercise_areas (exercise_id, area_id, weight)
 values ('bodyweight-squat', 'quads', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('bulgarian-split-squat', 'glutes', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('bulgarian-split-squat', 'quads', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
@@ -1926,6 +2119,16 @@ values ('dumbbell-fly', 'chest', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('dumbbell-lunge', 'glutes', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('dumbbell-lunge', 'hamstrings', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('dumbbell-lunge', 'quads', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+
+insert into public.exercise_areas (exercise_id, area_id, weight)
 values ('dumbbell-row', 'arms', 0.5)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 insert into public.exercise_areas (exercise_id, area_id, weight)
@@ -1941,6 +2144,16 @@ on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
 values ('fire-hydrant', 'glutes', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('forward-lunge', 'glutes', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('forward-lunge', 'hamstrings', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('forward-lunge', 'quads', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
@@ -2061,6 +2274,13 @@ values ('lat-pulldown', 'arms', 0.5)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 insert into public.exercise_areas (exercise_id, area_id, weight)
 values ('lat-pulldown', 'back', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('lateral-lunge', 'glutes', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('lateral-lunge', 'quads', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
@@ -2260,10 +2480,33 @@ values ('straight-arm-pulldown', 'back', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('sumo-deadlift', 'back', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('sumo-deadlift', 'glutes', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('sumo-deadlift', 'hamstrings', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('sumo-deadlift', 'quads', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+
+insert into public.exercise_areas (exercise_id, area_id, weight)
 values ('superman', 'back', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 insert into public.exercise_areas (exercise_id, area_id, weight)
 values ('superman', 'glutes', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('walking-lunge', 'glutes', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('walking-lunge', 'hamstrings', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('walking-lunge', 'quads', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
@@ -2338,6 +2581,19 @@ values ('barbell-bicep-curl', 'hammer-curl-dumbbell')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
+values ('barbell-deadlift', 'sumo-deadlift')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('barbell-deadlift', 'romanian-deadlift-barbell')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('barbell-deadlift', 'romanian-deadlift-dumbbell')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('barbell-deadlift', 'single-leg-deadlift')
+on conflict (exercise_id, variant_id) do nothing;
+
+insert into public.exercise_variants (exercise_id, variant_id)
 values ('barbell-front-squat', 'barbell-back-squat')
 on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
@@ -2348,6 +2604,16 @@ values ('barbell-front-squat', 'leg-press-machine')
 on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('barbell-front-squat', 'leg-extension-machine')
+on conflict (exercise_id, variant_id) do nothing;
+
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('barbell-lunge', 'dumbbell-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('barbell-lunge', 'bulgarian-split-squat')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('barbell-lunge', 'forward-lunge')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
@@ -2372,6 +2638,16 @@ values ('bodyweight-squat', 'wall-sit')
 on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('bodyweight-squat', 'reverse-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('bulgarian-split-squat', 'split-squat')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('bulgarian-split-squat', 'dumbbell-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('bulgarian-split-squat', 'barbell-lunge')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
@@ -2496,6 +2772,19 @@ values ('dumbbell-fly', 'cable-fly')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
+values ('dumbbell-lunge', 'forward-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('dumbbell-lunge', 'walking-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('dumbbell-lunge', 'barbell-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('dumbbell-lunge', 'bulgarian-split-squat')
+on conflict (exercise_id, variant_id) do nothing;
+
+insert into public.exercise_variants (exercise_id, variant_id)
 values ('dumbbell-row', 'barbell-row')
 on conflict (exercise_id, variant_id) do nothing;
 
@@ -2514,6 +2803,25 @@ values ('fire-hydrant', 'glute-bridge')
 on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('fire-hydrant', 'donkey-kick')
+on conflict (exercise_id, variant_id) do nothing;
+
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('forward-lunge', 'reverse-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('forward-lunge', 'split-squat')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('forward-lunge', 'walking-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('forward-lunge', 'dumbbell-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('forward-lunge', 'lateral-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('forward-lunge', 'barbell-lunge')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
@@ -2648,6 +2956,16 @@ on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('lat-pulldown', 'seated-cable-row')
+on conflict (exercise_id, variant_id) do nothing;
+
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('lateral-lunge', 'reverse-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('lateral-lunge', 'forward-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('lateral-lunge', 'walking-lunge')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
@@ -2812,6 +3130,15 @@ on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('reverse-lunge', 'bodyweight-squat')
 on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('reverse-lunge', 'forward-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('reverse-lunge', 'walking-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('reverse-lunge', 'lateral-lunge')
+on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('reverse-plank-hold', 'superman')
@@ -2835,6 +3162,12 @@ on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('romanian-deadlift-barbell', 'kettlebell-swing')
 on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('romanian-deadlift-barbell', 'barbell-deadlift')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('romanian-deadlift-barbell', 'sumo-deadlift')
+on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('romanian-deadlift-dumbbell', 'romanian-deadlift-barbell')
@@ -2847,6 +3180,9 @@ values ('romanian-deadlift-dumbbell', 'leg-curl-machine')
 on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('romanian-deadlift-dumbbell', 'kettlebell-swing')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('romanian-deadlift-dumbbell', 'barbell-deadlift')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
@@ -2886,6 +3222,9 @@ on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('single-leg-deadlift', 'sliding-leg-curl')
 on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('single-leg-deadlift', 'barbell-deadlift')
+on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('sliding-leg-curl', 'hamstring-walkout')
@@ -2903,6 +3242,12 @@ on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('split-squat', 'reverse-lunge')
 on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('split-squat', 'forward-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('split-squat', 'bulgarian-split-squat')
+on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('standing-calf-raise-machine', 'dumbbell-calf-raise')
@@ -2916,6 +3261,13 @@ values ('straight-arm-pulldown', 'pull-up')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
+values ('sumo-deadlift', 'barbell-deadlift')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('sumo-deadlift', 'romanian-deadlift-barbell')
+on conflict (exercise_id, variant_id) do nothing;
+
+insert into public.exercise_variants (exercise_id, variant_id)
 values ('superman', 'bird-dog')
 on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
@@ -2926,6 +3278,19 @@ values ('superman', 'reverse-plank-hold')
 on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('superman', 'prone-y-raise')
+on conflict (exercise_id, variant_id) do nothing;
+
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('walking-lunge', 'forward-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('walking-lunge', 'dumbbell-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('walking-lunge', 'reverse-lunge')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('walking-lunge', 'lateral-lunge')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)

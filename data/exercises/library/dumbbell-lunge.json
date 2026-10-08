@@ -1,0 +1,23 @@
+{
+  "id": "dumbbell-lunge",
+  "name": "Dumbbell lunge",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["dumbbell"],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": { "quads": 1, "glutes": 0.5, "hamstrings": 0.5 },
+  "instructions": [
+    "Hold a dumbbell in each hand, arms down at your sides.",
+    "Step one foot forward in a long stride.",
+    "Lower until both knees are bent about 90 degrees.",
+    "Push through the front foot to stand, then switch legs."
+  ],
+  "cue": "Stand tall, drop straight down",
+  "mistakes": ["Letting the weights pull your shoulders forward.", "Letting the front knee cave inward."],
+  "variants": ["forward-lunge", "walking-lunge", "barbell-lunge", "bulgarian-split-squat"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

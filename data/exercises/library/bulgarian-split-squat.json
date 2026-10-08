@@ -1,0 +1,22 @@
+{
+  "id": "bulgarian-split-squat",
+  "name": "Bulgarian split squat",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["bench"],
+  "bodyweight": true,
+  "areas": { "quads": 1, "glutes": 0.5 },
+  "instructions": [
+    "Stand a long stride in front of a bench, facing away from it.",
+    "Rest the top of your back foot on the bench.",
+    "Bend your front knee to lower your back knee toward the floor.",
+    "Push through the front foot to stand, then switch legs."
+  ],
+  "cue": "Back foot up, drop straight down",
+  "mistakes": ["Standing too close to the bench.", "Letting the front knee cave inward."],
+  "variants": ["split-squat", "dumbbell-lunge", "barbell-lunge"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

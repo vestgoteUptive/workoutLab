@@ -1,0 +1,22 @@
+{
+  "id": "walking-lunge",
+  "name": "Walking lunge",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "quads": 1, "glutes": 0.5, "hamstrings": 0.5 },
+  "instructions": [
+    "Stand tall with your feet together and clear a path of a few metres.",
+    "Step forward and lower until both knees are bent about 90 degrees.",
+    "Push through the front foot and bring the back foot forward past it into the next step.",
+    "Keep walking, alternating legs on each rep."
+  ],
+  "cue": "Step, drop, and keep walking",
+  "mistakes": ["Rushing so the knee slams down.", "Leaning the chest far forward."],
+  "variants": ["forward-lunge", "dumbbell-lunge", "reverse-lunge", "lateral-lunge"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

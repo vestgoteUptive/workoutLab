@@ -51,3 +51,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the e2e spec for AC-5 green (the full web e2e suite is not needed unless `routes.ts` or fixtures change) · contracts unchanged · commits start with `T-0556:` and cite UF-04.2 / UF-10.1.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0556.md` (D-0157).

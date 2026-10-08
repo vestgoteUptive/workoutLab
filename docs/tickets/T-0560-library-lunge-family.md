@@ -31,3 +31,4 @@ The owner (2026-10-08): "Missing exercise lunges". The library has only `reverse
 None.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0560.md` (D-0157).
