@@ -10,9 +10,22 @@ export const uf11 = {
   months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
   /** `{d MMM}` from a local `YYYY-MM-DD` date's parts. */
   day: (dayOfMonth: number, month: string) => `${dayOfMonth} ${month}`,
+  // UF-11.3 still shows the combined string; UF-11.2 (T-0548) splits it into the two below.
   rhythm: (min: number, max: number) =>
     `${min}–${max} per week · ${2 * min}–${2 * max} per 14 days`,
-  noPriorities: "No priority areas",
+  rhythmPerWeek: (min: number, max: number) => `${min}–${max} per week`,
+  rhythmPer14: (min: number, max: number) => `${2 * min}–${2 * max} sessions per 14 days`,
+  noPriorities: "None",
+  purpose:
+    "Your goal, rhythm and the hard sets each area aims for every 14 days. It adapts to what you actually do.",
+  yourPlan: "Your plan",
+  targetsCaption: "Hard sets per 14 days",
+  targetsList: "Targets, hard sets per 14 days",
+  hardSets: " hard sets",
+  priorityTag: "Priority",
+  tileCaption: (parts: readonly string[]) => parts.join(" · "),
+  targetsNote: "Set from your goal, rhythm and priority areas.",
+  seeInBalance: "See this period in Balance",
   headings: {
     goal: "Goal",
     rhythm: "Rhythm",
@@ -22,11 +35,9 @@ export const uf11 = {
     routines: "Routines",
   },
   sourceLabels: {
-    default: "From your plan",
     manual: "Set by you",
   },
   adapted: (date: string) => `Adapted ${date}`,
-  targetRow: (area: string, sets: number, source: string) => `${area} ${sets} · ${source}`,
   firstCheckin: (date: string) => `First check-in on ${date}`,
   nextCheckin: (date: string) => `Next check-in: ${date}`,
   noCheckins: "No check-ins yet",

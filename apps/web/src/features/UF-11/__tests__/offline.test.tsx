@@ -83,8 +83,8 @@ describe("AC-B6 cache first", () => {
     renderPlan();
 
     // Asserted WITHOUT awaiting the refresh.
-    await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
-    expect(listRows(u.headings.targets)[0]).toBe("Chest 20 · From your plan");
+    await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
+    expect(listRows(u.targetsList)[0]).toBe("Chest 20 hard sets");
 
     // Contrast: the refresh WAS started. Without this, a hook that simply never refreshed
     // would pass the assertion above.
@@ -109,7 +109,7 @@ describe("AC-B6 offline", () => {
     });
     renderPlan();
 
-    await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
+    await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
     // AC-B6 writes the string as `Offline · last synced 08:10`, and that is what ships (T-0449:
     // `formatTime` uses a 2-digit hour). The assertion is on the literal so a regression to `8:10`
     // fails.
@@ -132,7 +132,7 @@ describe("AC-B6 cold cache", () => {
     renderPlan({ at: "/plan" });
 
     await waitFor(() => expect(screen.getByText(u.coldCache)).toBeInTheDocument());
-    expect(listRows(u.headings.targets)).toEqual([]);
+    expect(listRows(u.targetsList)).toEqual([]);
     expect(screen.queryByRole("link", { name: u.editPlan })).not.toBeInTheDocument();
     expect(document.querySelector("[data-screen-id]")!.getAttribute("data-screen-id")).toBe(
       "UF-11.2",
