@@ -57,3 +57,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-05/UF-08/UF-09 swap e2e specs green · contracts unchanged · commits start with `T-0539:` and cite UF-05.1 / UF-08.3.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0539.md` (D-0157).

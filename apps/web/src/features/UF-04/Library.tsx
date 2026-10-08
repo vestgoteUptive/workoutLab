@@ -7,7 +7,9 @@ import { AREAS, type Area } from "@workoutlab/shared";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
+import { useExcludedList } from "../../lib/offline/excluded-hooks.js";
 import { loadLibrary, loadProfile } from "../../lib/offline/history.js";
+import { currentUserId } from "../../lib/offline/current-user.js";
 import { useScreenData } from "./data.js";
 import { areaName, equipmentText, primaryAreaNames, secondaryAreaNames } from "./labels.js";
 import "./uf-04.css";
@@ -39,6 +41,9 @@ export function Library(props: LibraryProps = {}) {
   const [params, setParams] = useSearchParams();
   const { status } = useAuth();
   const { data, pending } = useScreenData(readLibrary, "library", { refresh: true, status });
+  // The tag reads the device cache, so it shows offline too (D-0199 §10).
+  const { ids: excludedIds } = useExcludedList(currentUserId());
+  const excluded = useMemo(() => new Set(excludedIds), [excludedIds]);
 
   const rawQuery = params.get("q") ?? "";
   const areaParam = params.get("area");
@@ -149,8 +154,18 @@ export function Library(props: LibraryProps = {}) {
                 return (
                   <li key={e.id}>
                     <Link to={`/library/${e.id}`} className="wl-uf04__row">
-                      <span data-field="name" className="wl-uf04__row-name">
-                        {e.name}
+                      <span className="wl-uf04__row-head">
+                        <span data-field="name" className="wl-uf04__row-name">
+                          {e.name}
+                        </span>
+                        {excluded.has(e.id) ? (
+                          <>
+                            <span className="wl-uf04__sr">{en.uf04.notSuggestedSr}</span>
+                            <span data-field="not-suggested" className="wl-uf04__tag">
+                              {en.uf04.notSuggested}
+                            </span>
+                          </>
+                        ) : null}
                       </span>
                       <span data-field="primary" className="wl-uf04__row-areas">
                         {primaryAreaNames(e).join(en.uf04.listSeparator)}

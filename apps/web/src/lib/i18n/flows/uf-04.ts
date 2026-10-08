@@ -57,4 +57,14 @@ export const uf04 = {
   howToTitle: "How to",
   howToNamed: (name: string) => `How to: ${name}`,
   close: "Close",
+  // T-0541 (D-0199 §10): exclude / include from the exercise detail, and the library tag.
+  notSuggested: "Not suggested",
+  notSuggestedSr: ", not suggested",
+  dontSuggest: "Don't suggest this",
+  dontSuggestName: (name: string) => `Don't suggest this, ${name}`,
+  suggestAgain: "Suggest again",
+  suggestAgainName: (name: string) => `Suggest again, ${name}`,
+  saving: "Saving…",
+  announceExcluded: (name: string) => `${name} won't be suggested`,
+  announceIncluded: (name: string) => `${name} will be suggested again`,
 } as const;

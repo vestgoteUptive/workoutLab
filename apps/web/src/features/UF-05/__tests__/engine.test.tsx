@@ -98,7 +98,7 @@ describe("AC-1 engine order, reason null (R12-E1)", () => {
     const first = rankSpy.mock.calls[0]!;
     expect(first.slice(0, 2)).toEqual(["barbell-row", null]);
     expect(first[2]).toBe(workout);
-    expect(first.slice(6)).toEqual([NOW_ISO, TZ]);
+    expect(first.slice(6)).toEqual([NOW_ISO, TZ, []]);
 
     const tagged = R12_E1.filter((id) => row(id).querySelector('[data-tag="best-match"]'));
     expect(tagged).toEqual(["db-row"]);

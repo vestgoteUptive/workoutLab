@@ -12,12 +12,14 @@ import {
   availableS,
   generateWarmup,
   itemCostS,
+  rankSwaps,
   suggest,
   type Area,
   type SessionInput,
   type Workout,
 } from "@workoutlab/engine";
 import { parseSessionPlan } from "@workoutlab/shared";
+import { offlineDb, resetOfflineDbForTest, userScopedKey } from "../../../lib/offline/db.js";
 import { upsertSession } from "../../../lib/offline/queue.js";
 import { itemReasonLine } from "../../../lib/i18n/workout.js";
 import { SwapSheet } from "../../UF-05/index.js";
@@ -25,8 +27,13 @@ import { SessionSetup } from "../SessionSetup.js";
 import { fitLine, screenIds, serveCache, setOnline, settle } from "./harness.js";
 import { AREAS, fLibrary } from "./fixtures.js";
 
-const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
-vi.mock("../../../lib/auth/auth-context.js", () => ({ useAuth: () => ({ status: auth.status }) }));
+const auth = vi.hoisted(() => ({
+  status: "signed-in" as "signed-in" | "stale" | "signed-out",
+  userId: null as string | null,
+}));
+vi.mock("../../../lib/auth/auth-context.js", () => ({
+  useAuth: () => ({ status: auth.status, userId: auth.userId }),
+}));
 vi.mock("../../../lib/offline/history.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../../lib/offline/history.js")>();
   return {
@@ -42,7 +49,7 @@ vi.mock("../../../lib/offline/engine-feed.js", () => ({ loadEngineHistory: vi.fn
 vi.mock("../../../lib/offline/queue.js", () => ({ upsertSession: vi.fn() }));
 vi.mock("@workoutlab/engine", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@workoutlab/engine")>();
-  return { ...actual, suggest: vi.fn(actual.suggest) };
+  return { ...actual, suggest: vi.fn(actual.suggest), rankSwaps: vi.fn(actual.rankSwaps) };
 });
 vi.mock("../../UF-05/index.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../UF-05/index.js")>();
@@ -105,6 +112,7 @@ function w5(): Workout {
 }
 
 let applied: Workout | null = null;
+let storedSeeded = false;
 let planItems: "w5" | "empty" = "w5";
 let navigateRef: ReturnType<typeof useNavigate>;
 let trail: string[] = [];
@@ -124,7 +132,7 @@ async function serveW5(): Promise<void> {
       input.energy === "normal" &&
       input.warmupInBudget &&
       input.shuffle === 0 &&
-      input.excludeIds.length === 0;
+      (storedSeeded || input.excludeIds.length === 0);
     return plain ? w5Handed() : actual.suggest(...args);
   });
 }
@@ -196,6 +204,8 @@ async function applyDbRow(): Promise<void> {
 
 beforeEach(async () => {
   auth.status = "signed-in";
+  auth.userId = null;
+  storedSeeded = false;
   planItems = "w5";
   trail = [];
   vi.clearAllMocks();
@@ -437,5 +447,39 @@ describe("AC-7 offline", () => {
     expect(shown()[1]).toBe("Db row");
     expect(fetchSpy).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
+  });
+});
+
+describe("T-0539 AC3 the stored excluded list filters the UF-08.3 swap sheet", () => {
+  async function withStored(ids: string[]): Promise<void> {
+    auth.userId = "A";
+    storedSeeded = true; // UF-08.1 passes the stored list to `suggest`; the test still wants W5.
+    resetOfflineDbForTest(`wl-offline-uf08-swap-excl-${Math.random()}`);
+    for (const exerciseId of ids) {
+      await offlineDb().excludedCache.put({
+        key: userScopedKey("A", exerciseId),
+        userId: "A",
+        exerciseId,
+        createdAt: "2026-10-01T00:00:00Z",
+      });
+    }
+  }
+
+  it("T-0539 AC3 stored [db-row]: the 9th argument is [db-row] and db-row is not a row", async () => {
+    await withStored(["db-row"]);
+    vi.mocked(rankSwaps).mockClear();
+    await toSuggested();
+    await openSwap();
+    expect(vi.mocked(rankSwaps).mock.lastCall![8]).toEqual(["db-row"]);
+    const group = screen.getByRole("radiogroup", { name: "Replacement" });
+    expect(group.querySelector('[data-id="db-row"]')).toBeNull();
+  });
+
+  it("T-0539 AC3 an empty stored list: the 9th argument is []", async () => {
+    await withStored([]);
+    vi.mocked(rankSwaps).mockClear();
+    await toSuggested();
+    await openSwap();
+    expect(vi.mocked(rankSwaps).mock.lastCall![8]).toEqual([]);
   });
 });

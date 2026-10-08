@@ -37,6 +37,8 @@ export const uf05 = {
   close: "Close",
   loading: "Loading alternatives…",
   empty: "No alternatives fit your equipment",
+  emptyExcluded: "No alternatives left. The others are excluded.",
+  dontSuggest: (name: string) => `Don't suggest ${name} again`,
   loadFailed: "Couldn't load alternatives.",
   retry: "Try again",
   saveFailed: "Couldn't save the swap. Try again.",
