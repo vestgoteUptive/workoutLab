@@ -40,4 +40,7 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-02 e2e specs green · contracts unchanged · commits start with `T-0570:` and cite UF-02.1 / UF-02.2.
 
 ## Build / accept log
+<<<<<<< HEAD
 Archived in `docs/tickets/log/T-0570.md` (D-0157).
+=======
+>>>>>>> parent of 522b62f (Merge T-0570 UF-02.1: Today passes favoriteIds (D-0202))

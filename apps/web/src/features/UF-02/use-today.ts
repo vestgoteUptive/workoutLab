@@ -37,8 +37,6 @@ import {
 } from "@workoutlab/shared";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { useExcludedList } from "../../lib/offline/excluded-hooks.js";
-import { favoriteIdsFor } from "../../lib/offline/favorites.js";
-import { useFavoriteList } from "../../lib/offline/favorites-hooks.js";
 import { loadEngineHistory } from "../../lib/offline/engine-feed.js";
 import {
   lastSyncedAt,
@@ -107,7 +105,6 @@ async function readCache(
   now: Date,
   timeZone: string,
   excludeIds: readonly string[],
-  favoriteIds: readonly string[],
 ): Promise<Exclude<TodayState, { status: "loading" }>> {
   const syncedRead = readSynced();
   try {
@@ -126,16 +123,7 @@ async function readCache(
       status: "ready",
       result,
       hasHardSet: anyHardSet(history, library),
-      workout: preview(
-        history,
-        targets,
-        profile,
-        library,
-        nowIso,
-        timeZone,
-        excludeIds,
-        favoriteIds,
-      ),
+      workout: preview(history, targets, profile, library, nowIso, timeZone, excludeIds),
       library,
       lastSyncedAt: await syncedRead,
     };
@@ -153,16 +141,10 @@ function preview(
   nowIso: string,
   timeZone: string,
   excludeIds: readonly string[],
-  favoriteIds: readonly string[],
 ): Workout | null {
   try {
     // T-0542 (D-0199 §5): the stored excluded list is the only field added to PREVIEW_INPUT.
-    // T-0570 (D-0202 §6): and the stored favorites, sorted and deduped.
-    const input: SessionInput = {
-      ...PREVIEW_INPUT,
-      excludeIds: [...excludeIds],
-      favoriteIds: favoriteIdsFor(favoriteIds),
-    };
+    const input: SessionInput = { ...PREVIEW_INPUT, excludeIds: [...excludeIds] };
     return suggest(history, targets, profile, library, input, nowIso, timeZone);
   } catch {
     return null;
@@ -232,11 +214,7 @@ export function useToday(now: Date, timeZone: string, signedIn: boolean, revisio
   const excludedKey = excluded.ids.join(",");
   const excludedRef = useRef<readonly string[]>(excluded.ids);
   excludedRef.current = excluded.ids;
-  const favorites = useFavoriteList(userId);
-  const favoritesKey = favorites.ids.join(",");
-  const favoritesRef = useRef<readonly string[]>(favorites.ids);
-  favoritesRef.current = favorites.ids;
-  const excludedLoaded = excluded.loaded && favorites.loaded;
+  const excludedLoaded = excluded.loaded;
   /** Whether the screen is mounted. Only the unmount clears it. */
   const mounted = useRef(false);
   /** The clock and tz of the latest cache-read effect run; a re-read for older ones never lands. */
@@ -265,18 +243,15 @@ export function useToday(now: Date, timeZone: string, signedIn: boolean, revisio
     let cancelled = false;
     const current = { nowIso, timeZone };
     inputs.current = current;
-    latestRead.current = readCache(
-      new Date(nowIso),
-      timeZone,
-      excludedRef.current,
-      favoritesRef.current,
-    ).then((cached) => {
-      if (!cancelled) setState(cached);
-    });
+    latestRead.current = readCache(new Date(nowIso), timeZone, excludedRef.current).then(
+      (cached) => {
+        if (!cancelled) setState(cached);
+      },
+    );
     return () => {
       cancelled = true;
     };
-  }, [nowIso, timeZone, revision, excludedLoaded, excludedKey, favoritesKey]);
+  }, [nowIso, timeZone, revision, excludedLoaded, excludedKey]);
 
   // 2. The refresh (D-0113): only online and signed in, at the first such commit of this mount,
   //    never again. `stale` and `signed-out` get none. The 3 s cap counts from when it starts.
@@ -292,12 +267,7 @@ export function useToday(now: Date, timeZone: string, signedIn: boolean, revisio
       await latestRead.current;
       if (!mounted.current) return;
       const at = inputs.current;
-      const fresh = await readCache(
-        new Date(at.nowIso),
-        at.timeZone,
-        excludedRef.current,
-        favoritesRef.current,
-      );
+      const fresh = await readCache(new Date(at.nowIso), at.timeZone, excludedRef.current);
       if (mounted.current && inputs.current === at) setState(fresh);
     })();
   }, [signedIn, nowIso, timeZone, excludedLoaded]);
