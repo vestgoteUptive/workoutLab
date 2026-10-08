@@ -310,7 +310,9 @@ describe("AC-D8 zero history + offline", () => {
 
   it("AC-D8: renders the same with no network (no fetch, tokens bundled)", () => {
     const online = renderInRouter(<BodyMap variant="full" areas={zeroFixture} />);
-    const onlineHtml = mapRoot(online.container).outerHTML;
+    // BodyFigure's per-instance hatch id (useId) differs between two renders; nothing else may.
+    const norm = (html: string) => html.replace(/wl-fig-hatch-[^"')#;\s]*/g, "wl-fig-hatch");
+    const onlineHtml = norm(mapRoot(online.container).outerHTML);
     online.unmount();
 
     const fetchSpy = vi.fn(() => Promise.reject(new TypeError("offline")));
@@ -318,7 +320,7 @@ describe("AC-D8 zero history + offline", () => {
     Object.defineProperty(window.navigator, "onLine", { configurable: true, value: false });
     try {
       const offline = renderInRouter(<BodyMap variant="full" areas={zeroFixture} />);
-      expect(mapRoot(offline.container).outerHTML).toBe(onlineHtml);
+      expect(norm(mapRoot(offline.container).outerHTML)).toBe(onlineHtml);
       expect(fetchSpy).not.toHaveBeenCalled();
     } finally {
       Object.defineProperty(window.navigator, "onLine", { configurable: true, value: true });

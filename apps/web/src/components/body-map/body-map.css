@@ -8,17 +8,41 @@
   color: var(--wl-color-text);
 }
 
+/* Silhouette layout (D-0207 §2): BodyFigure above a slim label grid. The grid is 3 columns in
+ * body order and goes to 2 below 300 px container width, or at 200 % text zoom (rem-based, so
+ * the same threshold is 600 px then). */
+.wl-body-map {
+  container-type: inline-size;
+}
+
+.wl-body-map--full {
+  gap: 16px;
+}
+
+.wl-body-map__figure {
+  display: flex;
+  justify-content: center;
+}
+
+.wl-body-map--compact .wl-body-map__figure {
+  margin-bottom: 12px;
+}
+
+.wl-body-map--full .wl-fig [data-area] {
+  cursor: pointer;
+}
+
 .wl-body-map__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-areas:
-    ". shoulders ."
-    "chest back arms"
-    ". core ."
-    "glutes quads hamstrings"
-    ". calves .";
-  gap: 8px;
-  justify-items: center;
+  gap: 4px 8px;
+  justify-items: stretch;
+}
+
+@container (max-width: 18.75rem) {
+  .wl-body-map__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .wl-body-map__link {
@@ -29,19 +53,25 @@
 }
 
 .wl-body-map__area {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  column-gap: 8px;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  justify-items: start;
   box-sizing: border-box;
-  padding: 4px;
+  min-width: 0;
+  padding: 4px 6px;
   margin: 0;
   border: 0;
   border-radius: 10px;
   background: transparent;
   color: var(--wl-color-text);
   font: inherit;
+  text-align: start;
+}
+
+.wl-body-map--compact .wl-body-map__area {
+  min-height: 32px;
 }
 
 /* NFR-A11Y-2: each area button is at least 44 × 44 CSS px (AC-D6). */
@@ -55,6 +85,12 @@ button.wl-body-map__area:disabled {
   cursor: default;
 }
 
+/* Hover on the label, or on its region in the figure (data-hover), shows the hover state. */
+button.wl-body-map__area:hover:not(:disabled),
+button.wl-body-map__area[data-hover="true"] {
+  background: var(--wl-color-surface-2);
+}
+
 /* Focus ring: 2 px accent, offset 2 px. Never warn, which means "needs attention" (AC-D6). */
 .wl-body-map__area:focus-visible,
 .wl-body-map__link:focus-visible {
@@ -62,31 +98,45 @@ button.wl-body-map__area:disabled {
   outline-offset: 2px;
 }
 
+/* The label swatch: 12 x 12 dot in the area's coverage fill, 1 px text-muted border. A warn
+ * ring (2 px outline, set inline) marks needsAttention; it sits outside the border. */
 .wl-body-map__fill {
   display: block;
   box-sizing: border-box;
-  width: 40px;
-  height: 28px;
-  border-radius: 8px;
-}
-
-.wl-body-map--compact .wl-body-map__fill {
-  width: 28px;
-  height: 18px;
+  grid-row: 1 / span 2;
+  width: 12px;
+  height: 12px;
+  border: 1px solid var(--wl-color-text-muted);
+  border-radius: 3px;
 }
 
 .wl-body-map__area-name {
-  font-size: 12px;
+  grid-column: 2;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 14px;
   font-weight: 500;
+  color: var(--wl-color-text);
+}
+
+.wl-body-map--compact .wl-body-map__area-name {
+  font-size: 12px;
   color: var(--wl-color-text-muted);
 }
 
 /* Numeric labels: text on bg, DM Sans 700, at least 12 px (NFR-A11Y-3). */
 .wl-body-map__value {
-  font-size: 12px;
+  grid-column: 2;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 14px;
   font-weight: 700;
   color: var(--wl-color-text);
   font-variant-numeric: tabular-nums;
+}
+
+.wl-body-map--compact .wl-body-map__value {
+  font-size: 12px;
 }
 
 .wl-body-map__legend {
@@ -134,6 +184,24 @@ button.wl-body-map__area:disabled {
   }
   50% {
     opacity: 0.55;
+  }
+}
+
+/* Loading: the figure's regions pulse like the swatches (D-0060 §6); off under reduced motion
+ * (the component only adds the class when motion is allowed). */
+.wl-body-map--pulse .wl-fig__region {
+  animation: wl-body-map-pulse 1.6s ease-in-out infinite;
+}
+
+/* Forced colours: the label dot keeps a visible border; attention is a Highlight ring. */
+@media (forced-colors: active) {
+  .wl-body-map__fill {
+    forced-color-adjust: none;
+    border-color: CanvasText;
+    background-color: Canvas !important;
+  }
+  .wl-body-map__fill[data-attention="true"] {
+    outline-color: Highlight !important;
   }
 }
 
