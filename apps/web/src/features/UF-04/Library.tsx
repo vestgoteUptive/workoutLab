@@ -7,6 +7,7 @@ import { AREAS, type Area } from "@workoutlab/shared";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
+import { useFavoriteIds } from "../../lib/offline/favorites-hooks.js";
 import { useExcludedList } from "../../lib/offline/excluded-hooks.js";
 import { loadLibrary, loadProfile } from "../../lib/offline/history.js";
 import { currentUserId } from "../../lib/offline/current-user.js";
@@ -44,6 +45,9 @@ export function Library(props: LibraryProps = {}) {
   // The tag reads the device cache, so it shows offline too (D-0199 §10).
   const { ids: excludedIds } = useExcludedList(currentUserId());
   const excluded = useMemo(() => new Set(excludedIds), [excludedIds]);
+  // T-0568: the "Favorite" tag; an id in both caches shows only "Not suggested".
+  const favoriteIds = useFavoriteIds(currentUserId());
+  const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
 
   const rawQuery = params.get("q") ?? "";
   const areaParam = params.get("area");
@@ -163,6 +167,13 @@ export function Library(props: LibraryProps = {}) {
                             <span className="wl-uf04__sr">{en.uf04.notSuggestedSr}</span>
                             <span data-field="not-suggested" className="wl-uf04__tag">
                               {en.uf04.notSuggested}
+                            </span>
+                          </>
+                        ) : favorites.has(e.id) ? (
+                          <>
+                            <span className="wl-uf04__sr">{en.uf04.favoriteSr}</span>
+                            <span data-field="favorite" className="wl-uf04__tag">
+                              {en.uf04.favorite}
                             </span>
                           </>
                         ) : null}

@@ -245,12 +245,54 @@
   margin-block: 16px;
 }
 
+.wl-uf04__action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.wl-uf04__favorite {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-block-size: 48px;
+  min-inline-size: 112px;
+  padding: 0 16px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 999px;
+  font-family: var(--wl-font-body);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wl-uf04__favorite[aria-pressed="true"] {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+}
+
+.wl-uf04__favorite[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.wl-uf04__favorite:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
 .wl-uf04__exclude {
+  flex: 1 1 200px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 8px;
-  inline-size: 100%;
+  min-inline-size: 0;
 }
 
 .wl-uf04__exclude-button {
@@ -279,4 +321,11 @@
 
 .wl-uf04__fail {
   color: var(--wl-color-text);
+}
+
+/* D-0202 §8: at 320 px the two controls wrap to full-width rows, Favorite first. */
+@media (max-width: 359px) {
+  .wl-uf04__favorite {
+    flex: 1 1 100%;
+  }
 }

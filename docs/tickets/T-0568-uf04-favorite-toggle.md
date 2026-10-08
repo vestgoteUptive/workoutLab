@@ -54,3 +54,9 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-04 e2e specs green · contracts unchanged · commits start with `T-0568:` and cite UF-04.1 / UF-04.2.
 
 ## Build / accept log
+- Built: `DetailActions.tsx` (Favorite toggle, shared role=status/alert/offline line), `ExcludeControl` takes `onStatus`, UF-04.1 tag in `Library.tsx`, strings in `flows/uf-04.ts`, CSS (side by side at 390, wrapped at 320).
+- AC→test: AC1-AC7 `__tests__/favorite.test.tsx` (AC7 also zero-favorites, axe both states); AC8 `tests/e2e/uf-04-favorites.spec.ts` (AC1, AC3, axe at 320/390). `offline.test.tsx` now also strips the favorites offline line from its identical-text comparison.
+- Warm-ups: not favouritable (detail redirects; `favoriteExercise` refuses, covered in T-0567).
+- Red runs: first e2e at 320 px red (did not wrap), fixed with flex basis plus media rule. AC5 test first passed with the offline guard removed (cache not loaded yet); strengthened to wait for the pressed state.
+- Planted faults (all caught): drop move line (AC3), drop alert (AC6), remove offline guard (AC5), tag shown with excluded (AC7), static aria-pressed (AC1-4, axe).
+- Gate: typecheck lint test green, test:repo-checks, format:check, check-all green; `test:e2e uf-04` 14 passed.

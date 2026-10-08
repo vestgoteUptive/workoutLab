@@ -7,17 +7,27 @@ import { en } from "../../lib/i18n/en.js";
 import { currentUserId } from "../../lib/offline/current-user.js";
 import { excludeExercise, includeExercise } from "../../lib/offline/excluded.js";
 import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js";
+import { useFavoriteList } from "../../lib/offline/favorites-hooks.js";
 
-export function ExcludeControl({ exerciseId, name }: { exerciseId: string; name: string }) {
+export function ExcludeControl({
+  exerciseId,
+  name,
+  onStatus,
+}: {
+  exerciseId: string;
+  name: string;
+  /** The shared status line under the action row (T-0568, D-0202 §9). */
+  onStatus: (message: string) => void;
+}) {
   const userId = currentUserId();
   const online = useOnline();
   const { ids, loaded } = useExcludedList(userId);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [status, setStatus] = useState("");
+  const favorites = useFavoriteList(userId);
   const offlineId = useId();
   const excluded = ids.includes(exerciseId);
-  const disabled = !online || pending || !loaded || userId === null;
+  const disabled = !online || pending || !loaded || !favorites.loaded || userId === null;
 
   async function onClick() {
     if (disabled || userId === null) return;
@@ -26,10 +36,13 @@ export function ExcludeControl({ exerciseId, name }: { exerciseId: string; name:
     try {
       if (excluded) {
         await includeExercise(userId, exerciseId);
-        setStatus(en.uf04.announceIncluded(name));
+        onStatus(en.uf04.announceIncluded(name));
       } else {
+        const wasFavorite = favorites.ids.includes(exerciseId);
         await excludeExercise(userId, exerciseId);
-        setStatus(en.uf04.announceExcluded(name));
+        onStatus(
+          wasFavorite ? en.uf04.announceExcludedMoved(name) : en.uf04.announceExcluded(name),
+        );
       }
     } catch {
       setFailed(true);
@@ -65,9 +78,6 @@ export function ExcludeControl({ exerciseId, name }: { exerciseId: string; name:
           {en.excluded.saveFailed}
         </p>
       ) : null}
-      <p role="status" className="wl-uf04__sr">
-        {status}
-      </p>
     </div>
   );
 }

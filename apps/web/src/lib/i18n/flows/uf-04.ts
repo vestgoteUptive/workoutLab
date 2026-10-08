@@ -67,4 +67,11 @@ export const uf04 = {
   saving: "Saving…",
   announceExcluded: (name: string) => `${name} won't be suggested`,
   announceIncluded: (name: string) => `${name} will be suggested again`,
+  // T-0568 (D-0202 §8, §9): Favorite toggle, tag and move lines.
+  favorite: "Favorite",
+  favoriteName: (name: string) => `Favorite ${name}`,
+  favoriteSr: ", favorite",
+  connectToChangeFavorites: "Connect to change favorites",
+  announceFavoriteMoved: (name: string) => `${name} is a favorite and will be suggested again.`,
+  announceExcludedMoved: (name: string) => `${name} won't be suggested. Removed from favorites.`,
 } as const;
