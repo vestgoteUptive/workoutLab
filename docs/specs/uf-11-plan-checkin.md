@@ -15,7 +15,12 @@
 - Never rendered on UF-08.*, UF-09.* or UF-03.* (principle 1: nothing competes with the workout).
 
 ## UF-11.2 Plan
-- Goal, rhythm (`min–max` per week and "{2·min}–{2·max} per 14 days"), priority areas, and the per-area targets with source ("From your plan" / "Adapted {d MMM}").
+- Layout (D-0203): a header with the title, "Account and sign out" and a purpose line; the check-in card (only while pending); then the cards "Your plan", "Targets", "Check-ins" and "Routines".
+- "Your plan": goal, rhythm (`min–max` per week and "{2·min}–{2·max} per 14 days"), priority areas, and Edit plan; the Favorite (UF-11.6) and Excluded (UF-11.5) rows sit directly under it, in that order.
+- "Targets": a tile grid of the per-area targets. A source caption shows only when it isn't the default: "Adapted {d MMM}" / "Set by you". "From your plan" is no longer shown on Plan (it stays on UF-10.2). A footnote explains the default source once. A "See this period in Balance" link goes to UF-10.1.
+- "Check-ins": a "First check-in" / "Next check-in" caption above the date, and the last 3 check-ins.
+- "Routines": the routine list and New routine.
+- Edit plan is the one primary action, except while a check-in is pending (then Accept is).
 - "Next check-in: {date}" (the day after the current period ends).
 - The last 3 check-ins: period dates, sessions completed, proposal, answer.
 - "Edit plan" → UF-11.3. Entry points: UF-10.1 "Plan" link, and the Today card.

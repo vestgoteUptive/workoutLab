@@ -1,7 +1,8 @@
 /* UF-11.2 / UF-11.3 styling. Colours come only from @workoutlab/design-tokens (D-0019); no hex,
    no new fonts. Inline styles are avoided so the :focus-visible ring below always shows. */
+/* UF-11.2 / UF-11.3 sit in .wl-page (flex column, gap 16), which supplies the spacing. */
 .wl-plan__section {
-  margin-block: 16px;
+  margin: 0;
 }
 
 .wl-plan__list {
@@ -127,4 +128,238 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px 16px;
+}
+
+.wl-plan__header h1 {
+  margin: 0;
+}
+
+.wl-plan__purpose {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-plan__account,
+.wl-plan__linkbtn {
+  gap: 8px;
+  text-decoration: none;
+}
+
+.wl-plan__account {
+  inline-size: auto;
+  min-block-size: 48px;
+}
+
+.wl-plan__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.wl-plan__facts dd {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.wl-plan__tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+}
+
+.wl-plan__tiles li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 12px;
+  min-inline-size: 0;
+  position: relative;
+}
+
+.wl-plan__tiles li.wl-plan__tile--priority {
+  border-color: var(--wl-color-accent);
+}
+
+/* Visually hidden, still read by screen readers. */
+.wl-plan__sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Person icon in the account link: 2 px stroke, no fill (UF-11.2 block 1). */
+.wl-plan__account svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* T-0549 UF-11.2 blocks 2, 7, 8. */
+.wl-plan__preview,
+.wl-plan__history,
+.wl-plan__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wl-plan__preview li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 6px;
+}
+
+.wl-plan__preview li + li,
+.wl-plan__history li + li {
+  border-block-start: 1px solid var(--wl-color-line);
+}
+
+.wl-plan__nums {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-plan__next {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wl-plan__history li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: 10px;
+}
+
+.wl-plan__line {
+  font-weight: 500;
+}
+
+.wl-plan__rowtext {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.wl-plan__name {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.wl-plan__rows .wl-row {
+  border-block-start: 0;
+}
+
+.wl-plan__rows li + li {
+  border-block-start: 1px solid var(--wl-color-line);
+}
+
+.wl-plan__linkbtn svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Neutral notice (components/neutral-notice.md), local copy: no cross-feature import. */
+.wl-plan__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 12px;
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.wl-plan__notice svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+/* T-0550 UF-11.4 Account settings. */
+.wl-account__back {
+  align-self: flex-start;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.wl-account__back svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wl-account__email {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wl-account__fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.wl-account__fieldset legend {
+  padding: 0;
+  margin-block-end: 12px;
+}
+
+.wl-account__equipment {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  column-gap: 12px;
+}
+
+.wl-account__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wl-card--strong {
+  border-color: var(--wl-color-line-strong);
+}
+
+.wl-account__delete {
+  margin-block-start: 16px; /* with the page's 16 px gap: 32 px above the Delete card */
+}
+
+[data-screen-id="UF-11.4"] .wl-card > p {
+  margin: 0;
 }

@@ -3,8 +3,8 @@ id: T-0540
 title: "UF-11.5 Excluded exercises at /plan/excluded (search, Exclude / Include again, empty states, neutral notice) and the UF-11.2 \"Excluded exercises · n\" row"
 lane: web-feature:UF-11
 screens: [UF-11.2, UF-11.5]
-decisions: [D-0199, D-0200, D-0071, D-0197, D-0002]
-deps: [T-0532, T-0534, T-0536, T-0537]
+decisions: [D-0199, D-0200, D-0071, D-0197, D-0002, D-0203, D-0204]
+deps: [T-0532, T-0534, T-0536, T-0537, T-0548]
 status: todo
 ---
 <!-- Written by product-owner 2026-10-07 (groom, D-0199 item h). Flow: wl-build-web (agent frontend-dev). About ½ day. MERGE ONLY AFTER H-27 (D-0199 §11, D-0200 §2): the screen reads and writes excluded_exercises. It edits routes.ts, a shared file (D-0071 §1): never in parallel with another ticket that lists it. Same lane as T-0492/T-0363: run serially. -->
@@ -15,6 +15,7 @@ D-0199 §7: the user manages the list on a new screen UF-11.5, reached only from
 ## Scope
 - In:
   - **UF-11.2 row** under the priority areas: "Excluded exercises · {n}" ("Excluded exercises · none" at 0), a link to `/plan/excluded`, count from `useExcludedIds` (T-0536).
+    - **Placement after the D-0203 rework (D-0204 §5, added 2026-10-07).** T-0548 merges first; rebase on it. The row goes in the slot T-0548 leaves between the "Your plan" card and the Targets card, styled with the shared `.wl-card` + `.wl-row` classes and a chevron, per `Design-docs/docs/design/screens/UF-11.2.md` § "Excluded exercises row". The spec's AC6 ("the row sits between the 'Your plan' card and the 'Targets' card") becomes one more assertion in AC1.
   - **Route** `/plan/excluded` in `apps/web/src/app/routes.ts` (tab bar as `/plan/edit`; `<h1>` `en.screens.excludedExercises`, reserved by T-0537).
   - **UF-11.5** (T-0532 spec): header and the line "These are never suggested or offered as a swap. Your past sets still count."; `refreshExcluded` on mount when online; the notice `ExcludedAreasNotice` with `excludedOutAreas(profile, library, stored)` (T-0534) at the top; a search field "Search exercises" (case-insensitive substring of the name over every cached library row of kind `exercise`, any level or equipment; warm-ups never appear).
     - Empty query: the excluded rows sorted by name then id, each with name, primary areas, "Excluded {d MMM}" and "Include again".

@@ -7,11 +7,14 @@
 // Workbox precache is kept: it holds no user data.
 import type { Table } from "dexie";
 import { deleteUserRows, removePrefixedKeys } from "./local-data.js";
+import { invalidateCacheWrites } from "../offline/cache-generation.js";
 import { dbOf, localStorageOf, sessionStorageOf, type AccountDeps } from "./deps.js";
 
 /** Deletes this user's local data. Rejects if any part failed; the storage keys are still
  *  attempted when the Dexie transaction fails, so as little as possible stays behind. */
 export async function wipeLocalUserData(userId: string, deps: AccountDeps = {}): Promise<void> {
+  // T-0531: refreshes in flight must not write back what this wipe removes.
+  invalidateCacheWrites();
   const db = dbOf(deps);
   let failure: unknown = null;
   try {
@@ -28,5 +31,6 @@ export async function wipeLocalUserData(userId: string, deps: AccountDeps = {}):
   } catch (error) {
     failure ??= error ?? new Error("wipe_failed");
   }
+  invalidateCacheWrites();
   if (failure !== null) throw failure;
 }

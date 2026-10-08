@@ -71,3 +71,4 @@ lint test` green plus `-w test:repo-checks` · the UF-10 e2e spec green · commi
 and cite UF-10.1/UF-10.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0350.md` (D-0157).

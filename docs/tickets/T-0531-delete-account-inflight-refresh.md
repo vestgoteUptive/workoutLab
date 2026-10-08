@@ -22,3 +22,4 @@ T-0530 added a cache-generation counter that sign-out bumps, so a refresh still 
 None.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0531.md` (D-0157).

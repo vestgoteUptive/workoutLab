@@ -69,3 +69,4 @@ lint test` green plus `-w test:repo-checks` · the UF-03 e2e spec(s) green · co
 `T-0464` and cite UF-03.1.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0464.md` (D-0157).

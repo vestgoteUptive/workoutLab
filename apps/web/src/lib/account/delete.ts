@@ -16,6 +16,7 @@ import {
   type AccountDeps,
   type SessionInfo,
 } from "./deps.js";
+import { invalidateCacheWrites } from "../offline/cache-generation.js";
 import { wipeLocalUserData } from "./wipe.js";
 
 export type DeletionOutcome = "deleted" | "unauthorized" | "offline" | "failed";
@@ -101,7 +102,9 @@ async function run(input: DeleteAccountInput, deps: DeleteAccountDeps): Promise<
   // On anything but 204: no wipe and no sign-out (D-0136 §4).
   if (outcome !== "deleted") return outcome;
 
-  // (2) Wipe this user's local data (§5).
+  // (2) Wipe this user's local data (§5). T-0531 (D-0195): a cache refresh already in flight
+  // must drop its rows instead of writing them after the wipe, so the counter is bumped first.
+  invalidateCacheWrites();
   let flag: "1" | "partial" = "1";
   try {
     await (deps.wipe ?? wipeLocalUserData)(input.userId, deps);
@@ -128,6 +131,9 @@ async function run(input: DeleteAccountInput, deps: DeleteAccountDeps): Promise<
     signedOut = false;
   }
   if (!signedOut) removePersistedSession(deps);
+  // Bumped again: a refresh started while the wipe or `signOut` was awaited (user still
+  // signed in) captured the first new generation and must not write either.
+  invalidateCacheWrites();
   return "deleted";
 }
 

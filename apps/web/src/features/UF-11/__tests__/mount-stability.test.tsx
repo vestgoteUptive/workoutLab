@@ -79,7 +79,7 @@ describe("mounting with no `now` prop (the real router path)", () => {
         </Routes>
       </MemoryRouter>,
     );
-    await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
+    await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
     // Let any loop show itself: each iteration is at least one IDB round trip.
     await new Promise((r) => setTimeout(r, 300));
     expect(loadProfileCalls.n).toBeGreaterThanOrEqual(1);
@@ -114,7 +114,7 @@ describe("mounting with no `now` prop (the real router path)", () => {
         </Routes>
       </MemoryRouter>,
     );
-    await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
+    await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
     // `CheckinCard` (T-0471) reads the profile too; wait until the mount's own reads have
     // settled (count stable across a quiet window) so the baseline is not taken mid-flight.
     let afterFirstLoad = -1;

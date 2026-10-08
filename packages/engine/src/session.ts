@@ -80,6 +80,29 @@ export function avoidedAreas(sessionInput: Pick<SessionInput, "avoidAreas">): Se
   return out;
 }
 
+/**
+ * Rule 0.1 (UF-08.2, UF-11.5, D-0199 §3): the areas, in the fixed order, that have an eligible
+ * weight-1.0 exercise with `excludeIds = []` and none with `excludeIds`. Areas already empty
+ * because of equipment or level are not reported. Unknown ids are ignored, and duplicates and
+ * the order of `excludeIds` don't change the result.
+ */
+export function excludedOutAreas(
+  profile: Pick<EngineProfile, "level" | "equipment">,
+  library: readonly LibraryExercise[],
+  excludeIds: readonly string[],
+): Area[] {
+  const coveredBefore = new Set<Area>();
+  const coveredAfter = new Set<Area>();
+  for (const e of library) {
+    if (!isEligible(e, profile)) continue;
+    const primaries = primaryAreas(e);
+    for (const a of primaries) coveredBefore.add(a);
+    if (excludeIds.includes(e.id)) continue;
+    for (const a of primaries) coveredAfter.add(a);
+  }
+  return AREAS.filter((a) => coveredBefore.has(a) && !coveredAfter.has(a));
+}
+
 function assertBudget(budgetMin: number): void {
   if (!Number.isInteger(budgetMin) || budgetMin < BUDGET_MIN || budgetMin > BUDGET_MAX) {
     throw new RangeError(

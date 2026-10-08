@@ -76,7 +76,7 @@ test.describe("AC-B15 accessibility (NFR-A11Y-1/-2)", () => {
       await expect(
         page.locator(
           path === "/plan"
-            ? 'ul[aria-label="Targets"] li'
+            ? 'ul[aria-label="Targets, hard sets per 14 days"] li'
             : 'ul[aria-label="New targets per 14 days"] li',
         ),
       ).toHaveCount(9);
@@ -185,15 +185,16 @@ test.describe("the happy path: the plan renders from the mocked server", () => {
     await expect(page.locator('[data-screen-id="UF-11.2"]')).toBeVisible();
 
     await expect(page.getByText("Build muscle")).toBeVisible();
-    await expect(page.getByText("3–4 per week · 6–8 per 14 days")).toBeVisible();
+    await expect(page.getByText("3–4 per week", { exact: true })).toBeVisible();
+    await expect(page.getByText("6–8 sessions per 14 days")).toBeVisible();
 
-    const targets = page.locator('ul[aria-label="Targets"] li');
+    const targets = page.locator('ul[aria-label="Targets, hard sets per 14 days"] li');
     await expect(targets).toHaveCount(9);
-    await expect(targets.first()).toHaveText("Chest 20 · From your plan");
-    await expect(targets.nth(7)).toHaveText("Hamstrings 16 · From your plan");
+    await expect(targets.first()).toHaveText("Chest 20 hard sets");
+    await expect(targets.nth(7)).toHaveText("Hamstrings 16 hard sets");
 
     // AC-B4's three newest, in order, and the fourth absent.
-    const checkins = page.locator('ul[aria-label="Last check-ins"] li');
+    const checkins = page.locator('ul[aria-label="Check-ins"] li');
     await expect(checkins).toHaveCount(3);
     await expect(checkins.nth(0)).toContainText("Waiting for you");
     await expect(checkins.nth(1)).toContainText("Kept");
@@ -202,10 +203,11 @@ test.describe("the happy path: the plan renders from the mocked server", () => {
 
     const routines = page.locator('ul[aria-label="Routines"] li a');
     await expect(routines).toHaveCount(2);
-    await expect(routines.nth(0)).toHaveText("Lower A · 2 exercises");
+    // T-0549: the row holds the name and the count caption; the link's accessible name joins them.
+    await expect(routines.nth(0)).toHaveAccessibleName("Lower A, 2 exercises");
     await expect(routines.nth(0)).toHaveAttribute("href", `/plan/routines/${ROUTINE_A_ID}`);
     // The singular, asserted exactly.
-    await expect(routines.nth(1)).toHaveText("Upper B · 1 exercise");
+    await expect(routines.nth(1)).toHaveAccessibleName("Upper B, 1 exercise");
     await expect(page.getByRole("link", { name: "New routine" })).toHaveAttribute(
       "href",
       "/plan/routines/new",
@@ -260,7 +262,7 @@ test.describe("QA: console errors and the render-loop guard on the real route", 
       await expect(
         page.locator(
           path === "/plan"
-            ? 'ul[aria-label="Targets"] li'
+            ? 'ul[aria-label="Targets, hard sets per 14 days"] li'
             : 'ul[aria-label="New targets per 14 days"] li',
         ),
       ).toHaveCount(9);

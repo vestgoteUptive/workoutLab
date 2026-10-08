@@ -1,7 +1,7 @@
 # PRD — workoutLab (v1)
 
 - **Screen IDs:** user flows v2, `Design-docs/docs/product/user-flows.md` (D-0002). `docs/user-flows-v1.md` is history only.
-- **Updated:** 2026-10-06 by product-owner (excluded exercises, D-0199); first written 2026-09-27 (T-0001)
+- **Updated:** 2026-10-07 by product-owner (favorite exercises, D-0202, GitHub #46); 2026-10-06 (excluded exercises, D-0199); first written 2026-09-27 (T-0001)
 
 ## Problem
 Set and rep loggers show what you did, not what you've neglected. Users want to know which body areas need attention, and to get a workout that fits the time they have today.
@@ -26,11 +26,13 @@ Hard sets per body area (chest, back, shoulders, arms, core, glutes, quads, hams
 | UF-05 Swap (in workout) | .1 Swap sheet | Replace an exercise mid-session with ranked alternatives. | T-0306 |
 | UF-06 Progress | .1 Overview · .2 Exercise history | Consistency, volume and strength trend. Volume is shown per rolling 14 days. | T-0307 |
 | UF-07 Routine builder | .1 Edit routine | Exercises, sets and progression rule. | T-0308 |
-| UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready | A time-boxed, gap-driven workout with a "why" per exercise. | T-0303 |
+| UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready · .5 Add exercise | A time-boxed, gap-driven workout with a "why" per exercise. | T-0303 |
 | UF-09 Focus mode | .1 Get ready … .9 Paused | One step at a time: timers, auto-save, time check, pause. | T-0304 |
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why. Spec: `docs/specs/uf-10-balance.md`. | T-0307 |
-| UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises | Adaptive rhythm and targets, and editing goal, rhythm and priorities. Spec: `docs/specs/uf-11-plan-checkin.md`. | T-0308 |
-| Excluded exercises | UF-11.5, plus controls on UF-04.2, UF-08.2, UF-08.3, UF-05.1 | A durable "never suggest" list per user: never picked by the engine or offered as a swap, still in the library and history. Spec: `docs/specs/excluded-exercises.md`. | D-0199 (tickets to be filed) |
+| UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises · .6 Favorite exercises | Adaptive rhythm and targets, and editing goal, rhythm and priorities. Spec: `docs/specs/uf-11-plan-checkin.md`. | T-0308 |
+| Excluded exercises | UF-11.5, plus controls on UF-04.2, UF-08.2, UF-08.3, UF-05.1 | A durable "never suggest" list per user: never picked by the engine or offered as a swap, still in the library and history. Spec: `docs/specs/excluded-exercises.md`. | D-0199 (T-0532…T-0542) |
+| Favorite exercises | UF-11.6, plus a toggle on UF-04.2 and a tag on UF-04.1 and UF-08.2 | A durable favorites list per user (GitHub #46): a favorite is tried first inside the areas the gaps choose, never forced and never past recovery, equipment, level or the time fit. Mutually exclusive with excluded exercises. Spec: `docs/specs/favorite-exercises.md`. | D-0202 (tickets to be filed) |
+| Add and reorder exercises | UF-08.5, plus UF-08.2 (Add exercise, Start with this, Reorder) and UF-09.9 (Do {name} later) | Before a workout: search and add exercises (favorites first) for this visit only, pick the one to start with, and reorder; the engine re-suggests the rest within the time budget, and an add that doesn't fit is refused. During a workout: move the current not-started exercise one place later from Pause, for a busy machine. No engine or contract change. Spec: `docs/specs/uf-08-add-and-reorder.md`. | D-0205 (tickets to be filed) |
 
 Shared components: C-01 Body map, C-02 Tab bar (T-0300).
 
@@ -59,6 +61,7 @@ Each item is answered by a default in `docs/gaps.md` §D, revisited in Phase 5 t
 | Carry weights over between variants on a swap? | Yes, when the variant shares a primary area and equipment type; otherwise use history or leave blank. | owner product-owner, T-0306 |
 | Project name, platforms, commercial intent? | "workout LAB" (no company byline, D-0194; was "workout LAB by Uptive"). PWA only, free in v1. | owner product-owner, T-0309, T-0526 |
 | Can a user stop an exercise from ever being suggested? | Yes: excluded exercises (UF-11.5). The list is an engine input (`excludeIds`, `rankSwaps`), exclusion beats a routine pin, and an area left with no exercise gets a neutral notice, never a fallback. Writes are online-only. | D-0199 |
+| Can a user keep favorite exercises, e.g. barbell back squat on leg days? | Yes: favorite exercises (UF-11.6, UF-04.2). A soft preference: one new first ranking key inside an area's candidates (`sessionInput.favoriteIds`), so the gaps still choose the areas and recovery, equipment, level and the time fit still win. Several per area. An exclusion removes a favorite and the reverse; in the engine exclusion wins. | D-0202 |
 | Swap ranking by reason, energy modifiers, weight progression and pre-fill, shuffle, main-lift concept (gap B4)? | Engine rules v1: rules 7–14 in `docs/engine-rules.md`, each with worked examples. | T-0101, D-0024, D-0025, D-0026, D-0027 |
 
 ## Open questions

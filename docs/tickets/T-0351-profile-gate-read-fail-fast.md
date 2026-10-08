@@ -54,3 +54,4 @@ Tests for every AC pass, AC-1 and AC-2 red on main (record it) · `pnpm -w typec
 plus `-w test:repo-checks` · `tests/e2e/auth.spec.ts` green · commits start with `T-0351`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0351.md` (D-0157).

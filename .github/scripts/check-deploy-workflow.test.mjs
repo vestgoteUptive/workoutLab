@@ -84,3 +84,91 @@ test("T-0907 planted fault: dropping the design-tokens build goes red for both j
   assert.ok(errs.includes("T-0907: preview must build design-tokens before web"), errs.join("\n"));
   assert.ok(errs.includes("T-0907: production must build design-tokens before web"), errs.join("\n"));
 });
+
+const t0543 = (errs, frag) => errs.some((e) => e.startsWith("T-0543") && e.includes(frag));
+
+test("T-0543 AC-5 planted fault: a release secret used in the production job is red", () => {
+  const errs = mutated((s) => {
+    const k = "          CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}\n";
+    const i = s.lastIndexOf(k, s.indexOf("  release:"));
+    return s.slice(0, i + k.length) + "          PROD_DB_URL: ${{ secrets.PROD_DB_URL }}\n" + s.slice(i + k.length);
+  });
+  assert.ok(t0543(errs, "used outside the release job (production)"), errs.join("\n"));
+});
+
+test("T-0543 AC-5 secrets on a non-release step of the release job, or job-level env, are red", () => {
+  const onCheckout = mutated((s) => s.replace("      - name: Install postgres client", "      - name: Leak\n        run: echo hi\n        env:\n          X: ${{ secrets.PROD_DB_URL }}\n      - name: Install postgres client"));
+  assert.ok(t0543(onCheckout, "must not use secrets"), onCheckout.join("\n"));
+  const jobEnv = mutated((s) => s.replace("    concurrency:\n      group: prod-release", "    env:\n      X: ${{ secrets.PROD_DB_URL }}\n    concurrency:\n      group: prod-release"));
+  assert.ok(t0543(jobEnv, "job-level env"), jobEnv.join("\n"));
+});
+
+test("T-0543 AC-1 planted fault: production without needs: release is red", () => {
+  const errs = mutated((s) => s.replace("    needs: release\n", ""));
+  assert.ok(t0543(errs, "production must need release"), errs.join("\n"));
+});
+
+test("T-0543 AC-5 planted fault: release steps out of order are red", () => {
+  const errs = mutated((s) => s.replace("run: bash infra/scripts/supabase-prod-release.sh apply", "run: bash infra/scripts/prod-backup.sh x y").replace("run: bash infra/scripts/prod-backup.sh \"$RUNNER_TEMP/backup\" \"$GITHUB_SHA_RELEASED\"", "run: bash infra/scripts/supabase-prod-release.sh apply"));
+  assert.ok(t0543(errs, "in that order") || t0543(errs, "no apply step"), errs.join("\n"));
+});
+
+test("T-0543 AC-5 planted fault: cancel-in-progress true or a wrong group is red", () => {
+  const cancel = mutated((s) => s.replace("group: prod-release\n      cancel-in-progress: false", "group: prod-release\n      cancel-in-progress: true"));
+  assert.ok(t0543(cancel, "cancel-in-progress must be false"), cancel.join("\n"));
+  const group = mutated((s) => s.replace("group: prod-release", "group: other"));
+  assert.ok(t0543(group, "prod-release"), group.join("\n"));
+});
+
+test("T-0543 AC-1 release if differing from production if, or a missing release job, is red", () => {
+  const iff = mutated((s) => s.replace(/(  release:[\s\S]*?) && vars\.PROD_DEPLOY_ENABLED == 'true'/, "$1"));
+  assert.ok(t0543(iff, "release if must equal"), iff.join("\n"));
+});
+
+test("T-0543 AC-5 inline supabase CLI use and a literal prod ref are red", () => {
+  const inline = mutated((s) => s + "      - run: npx -y supabase@2.118.0 db push --db-url x\n");
+  assert.ok(t0543(inline, "inline supabase CLI"), inline.join("\n"));
+  const ref = ["csgjsdwuxqtuqpu", "azzpz"].join("");
+  const lit = mutated((s) => s.replace("CONFIRM_PROD_RELEASE: ${{ vars.SUPABASE_PROD_REF }}", `CONFIRM_PROD_RELEASE: ${ref}`));
+  assert.ok(has(lit, "AC-3: banned pattern prod project ref"), lit.join("\n"));
+  assert.ok(t0543(lit, "CONFIRM_PROD_RELEASE from vars"), lit.join("\n"));
+});
+
+test("T-0543 AC-4 upload retention other than 7 days is red", () => {
+  const errs = mutated((s) => s.replace("retention-days: 7", "retention-days: 90"));
+  assert.ok(t0543(errs, "retention-days: 7"), errs.join("\n"));
+});
+
+test("T-0543 M2 planted fault: workflow-level cancel-in-progress true is red", () => {
+  const errs = mutated((s) => s.replace("cancel-in-progress: ${{ github.event_name == 'push' }}", "cancel-in-progress: true"));
+  assert.ok(t0543(errs, "M2"), errs.join("\n"));
+});
+
+test("T-0543 M5 planted fault: release without environment: production is red", () => {
+  assert.ok(t0543(mutated((s) => s.replace("    environment: production\n", "")), "M5"));
+  assert.ok(t0543(mutated((s) => s.replace("environment: production", "environment: staging")), "M5"));
+});
+
+test("T-0543 L1 release if without head_branch, or without the tip-of-main check, is red", () => {
+  const errs = mutated((s) => s.replaceAll(" && github.event.workflow_run.head_branch == 'main'", ""));
+  assert.ok(t0543(errs, "head_branch"), errs.join("\n"));
+  const tip = mutated((s) => s.replace("git fetch --depth=1 origin refs/heads/main", "git fetch --depth=1 origin dev"));
+  assert.ok(t0543(tip, "tip of main"), tip.join("\n"));
+});
+
+test("T-0543 L3 release action pinned by tag instead of SHA is red", () => {
+  const errs = mutated((s) => s.replace(/actions\/upload-artifact@[0-9a-f]{40}/, "actions/upload-artifact@v4"));
+  assert.ok(t0543(errs, "not pinned by SHA"), errs.join("\n"));
+});
+
+test("T-0543 L5 upload path widened, or checkout ref changed, is red", () => {
+  const wide = mutated((s) => s.replace("backup/*.sql.age", "backup/*"));
+  assert.ok(t0543(wide, "only *.sql.age"), wide.join("\n"));
+  const ref = mutated((s) => s.replace(/(release:[\s\S]*?ref: )\$\{\{ github\.event\.workflow_run\.head_sha \}\}/, "$1main"));
+  assert.ok(t0543(ref, "checkout ref"), ref.join("\n"));
+});
+
+test("T-0543 N2 planted fault: fetching plain `main` (a tag can shadow it) is red", () => {
+  const errs = mutated((s) => s.replace("git fetch --depth=1 origin refs/heads/main", "git fetch --depth=1 origin main"));
+  assert.ok(t0543(errs, "N2"), errs.join("\n"));
+});

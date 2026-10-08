@@ -1,11 +1,12 @@
 // App shell: router (D-0045 §2), C-02 tab bar (§3). Auth (T-0300b), offline queue (T-0300c)
 // and C-01 (T-0300d) land in their own tickets; this shell never imports their features.
-import { Suspense, lazy, useMemo, type ReactNode } from "react";
+import { Suspense, lazy, useEffect, useMemo, type ReactNode } from "react";
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router";
 import { AccountDeletedNotice } from "../components/account-deleted-notice/AccountDeletedNotice.js";
 import { TabBar } from "../components/tab-bar/TabBar.js";
 import { AuthProvider, useAuth } from "../lib/auth/auth-context.js";
 import { RedirectIfSignedIn, RequireAuth, RequireAuthOnceForSession } from "../lib/auth/guards.js";
+import { notifyRouteChange } from "../lib/pwa/update.js";
 import { ProfileGate } from "../lib/profile/ProfileGate.js";
 import { isGatedPath } from "../lib/profile/gated-routes.js";
 import { ProfileStatusProvider } from "../lib/profile/profile-context.js";
@@ -64,6 +65,10 @@ const lazyComponents = new Map(routes.map((route) => [route.path, lazy(route.loa
 
 export function Shell() {
   const location = useLocation();
+  // T-0552: a pending new build is applied on the next route change to a safe path.
+  useEffect(() => {
+    notifyRouteChange(location.pathname);
+  }, [location.pathname]);
   const showTabBar = useMemo(() => {
     const route = routes.find((r) => matchesShellRoute(r.path, location.pathname));
     return route?.showTabBar ?? false;

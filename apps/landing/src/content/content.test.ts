@@ -51,8 +51,8 @@ function collectStrings(value: unknown, path: string, out: [string, string][]): 
 describe("AC1 brand and meta", () => {
   it("names the product and keeps meta within search limits", () => {
     expect(l.brand.name).toBe("workout LAB");
-    expect(l.brand.byline).toBe("by Uptive");
-    expect(l.meta.title.startsWith("workout LAB by Uptive")).toBe(true);
+    expect("byline" in l.brand).toBe(false);
+    expect(l.meta.title).toBe("workout LAB — balanced training");
     expect(len(l.meta.title)).toBeLessThanOrEqual(60);
     expect(len(l.meta.description)).toBeGreaterThanOrEqual(50);
     expect(len(l.meta.description)).toBeLessThanOrEqual(160);
@@ -102,12 +102,12 @@ describe("AC3 features reflect the principles", () => {
 });
 
 describe("AC4 privacy summary and footer", () => {
-  it("summarises privacy and names Uptive", () => {
+  it("summarises privacy and names the product in the legal line", () => {
     expect(l.privacy.heading.trim().length).toBeGreaterThan(0);
     expect(l.privacy.summary).toMatch(/\bEU\b/);
     expect(l.privacy.summary).toMatch(/no third-party (analytics|trackers)/i);
     expect(l.privacy.linkLabel).toBe("Privacy");
-    expect(l.footer.legal).toMatch(/Uptive/);
+    expect(l.footer.legal).toBe("© 2026 workout LAB. Free in this first version.");
     expect(len(l.footer.appLinkLabel)).toBeGreaterThanOrEqual(2);
     expect(len(l.footer.appLinkLabel)).toBeLessThanOrEqual(24);
   });
@@ -160,6 +160,10 @@ describe("AC6 copy hygiene across every string", () => {
   const strings: [string, string][] = [];
   collectStrings(landing, "landing", strings);
   collectStrings(privacy, "privacy", strings);
+
+  it("no string mentions Uptive (T-0526, D-0194)", () => {
+    expect(strings.filter(([, v]) => /uptive/i.test(v)).map(([path]) => path)).toEqual([]);
+  });
 
   it("walks a non-trivial amount of copy", () => {
     expect(strings.length).toBeGreaterThan(30);

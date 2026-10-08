@@ -16,6 +16,9 @@ export interface SelectCall {
 export interface SelectQuery {
   gte: (col: string, value: string) => Promise<{ data: unknown; error: unknown }>;
   maybeSingle: () => Promise<{ data: unknown; error: unknown }>;
+  /** T-0351: the gate read chains these; the spy ignores them. */
+  retry: (enabled: boolean) => SelectQuery;
+  abortSignal: (signal: AbortSignal) => SelectQuery;
   then: (resolve: (v: { data: unknown; error: unknown }) => void) => void;
 }
 
@@ -57,7 +60,9 @@ export function createSelectSpy(): SelectSpy {
     const rows = rowsByTable.get(table) ?? [];
     const result = failure ? { data: null, error: failure } : { data: rows, error: null };
     const gate = holds.get(table) ?? Promise.resolve();
-    return {
+    const query: SelectQuery = {
+      retry: () => query,
+      abortSignal: () => query,
       gte: (col: string, value: string) => {
         call.gte = [col, value];
         return gate.then(() => result);
@@ -66,6 +71,7 @@ export function createSelectSpy(): SelectSpy {
         Promise.resolve(failure ? result : { data: (rows[0] as unknown) ?? null, error: null }),
       then: (resolve: (v: typeof result) => void) => resolve(result),
     };
+    return query;
   }
 
   const from = vi.fn((table: string) => ({

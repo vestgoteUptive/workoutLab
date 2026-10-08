@@ -26,6 +26,9 @@ export interface BalanceState {
   /** `null` until the first cache read resolves. */
   result: BalanceResult | null;
   lastSyncedAt: string | null;
+  /** T-0350: the hook has finished trying to fill the cache. With `result === null` this means
+   *  "no data on this device", not "still loading" (D-0197 §3). */
+  settled: boolean;
 }
 
 /** Computes one `BalanceResult` from the current cache. Throws nothing the caller must handle:
@@ -90,13 +93,16 @@ export function useBalance({
   stub,
   stubLastSyncedAt,
 }: UseBalanceOptions): BalanceState {
-  const [state, setState] = useState<BalanceState>(() => ({
+  const [state, setState] = useState<Omit<BalanceState, "settled">>(() => ({
     result: stub ?? null,
     lastSyncedAt: stubLastSyncedAt ?? null,
   }));
   // True once the first cache read has settled (published, or rejected and swallowed). The
   // refresh waits for it, so the cache rows always paint before the network is touched (AC-A18).
   const [firstReadDone, setFirstReadDone] = useState(false);
+  // T-0350: "idle" until the one refresh starts, "running" while it and its cache re-read are
+  // in flight, "done" after. With the cache read, this decides whether the screen is still loading.
+  const [refreshPhase, setRefreshPhase] = useState<"idle" | "running" | "done">("idle");
   const nowIso = now.toISOString();
   const latest = useRef({ nowIso, timeZone, stubLastSyncedAt });
   useEffect(() => {
@@ -141,6 +147,7 @@ export function useBalance({
     if (stub || !firstReadDone || started.current) return;
     if (status !== "signed-in" || !navigator.onLine) return;
     started.current = true;
+    setRefreshPhase("running");
     const at = new Date(latest.current.nowIso);
     const refresh = Promise.resolve(refreshAll(at, latest.current.timeZone));
     void withCap(refresh, REFRESH_TIMEOUT_MS)
@@ -152,12 +159,19 @@ export function useBalance({
           l.timeZone,
           l.stubLastSyncedAt,
         );
-        if (!mounted.current || fresh === null) return;
-        setState({ result: fresh, lastSyncedAt: freshSynced });
+        if (!mounted.current) return;
+        if (fresh !== null) setState({ result: fresh, lastSyncedAt: freshSynced });
       })
       // D-0104 / D-0115 §2: a rejected re-read keeps the state already published.
-      .catch(() => undefined);
+      .catch(() => undefined)
+      .then(() => {
+        if (mounted.current) setRefreshPhase("done");
+      });
   }, [stub, firstReadDone, status]);
 
-  return state;
+  const refreshPossible = status === "signed-in" && navigator.onLine;
+  const settled =
+    stub !== undefined ||
+    (firstReadDone && (refreshPhase === "done" || (refreshPhase === "idle" && !refreshPossible)));
+  return { ...state, settled };
 }

@@ -96,3 +96,4 @@ None.
   `pnpm-lock.yaml`, so it can run alongside any of the others.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0512.md` (D-0157).

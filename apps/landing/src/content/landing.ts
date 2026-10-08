@@ -8,10 +8,9 @@ import type { LandingContent } from "./types";
 export const landing = {
   brand: {
     name: "workout LAB",
-    byline: "by Uptive",
   },
   meta: {
-    title: "workout LAB by Uptive — balanced training",
+    title: "workout LAB — balanced training",
     description:
       "Tell workout LAB how long you have. It plans a session that keeps every muscle group in balance, then guides you one step at a time. Free.",
   },
@@ -51,7 +50,7 @@ export const landing = {
     linkLabel: "Privacy",
   },
   footer: {
-    legal: "© 2026 Uptive. workout LAB is free in this first version.",
+    legal: "© 2026 workout LAB. Free in this first version.",
     appLinkLabel: "Open the app",
   },
   notFound: {

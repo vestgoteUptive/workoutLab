@@ -10,29 +10,43 @@ export const uf11 = {
   months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
   /** `{d MMM}` from a local `YYYY-MM-DD` date's parts. */
   day: (dayOfMonth: number, month: string) => `${dayOfMonth} ${month}`,
+  // UF-11.3 still shows the combined string; UF-11.2 (T-0548) splits it into the two below.
   rhythm: (min: number, max: number) =>
     `${min}–${max} per week · ${2 * min}–${2 * max} per 14 days`,
-  noPriorities: "No priority areas",
+  rhythmPerWeek: (min: number, max: number) => `${min}–${max} per week`,
+  rhythmPer14: (min: number, max: number) => `${2 * min}–${2 * max} sessions per 14 days`,
+  noPriorities: "None",
+  purpose:
+    "Your goal, rhythm and the hard sets each area aims for every 14 days. It adapts to what you actually do.",
+  yourPlan: "Your plan",
+  targetsCaption: "Hard sets per 14 days",
+  targetsList: "Targets, hard sets per 14 days",
+  hardSets: " hard sets",
+  priorityTag: "Priority",
+  tileCaption: (parts: readonly string[]) => parts.join(" · "),
+  targetsNote: "Set from your goal, rhythm and priority areas.",
+  seeInBalance: "See this period in Balance",
   headings: {
     goal: "Goal",
     rhythm: "Rhythm",
     priorities: "Priority areas",
     targets: "Targets",
-    checkins: "Last check-ins",
+    checkins: "Check-ins",
     routines: "Routines",
   },
   sourceLabels: {
-    default: "From your plan",
     manual: "Set by you",
   },
   adapted: (date: string) => `Adapted ${date}`,
-  targetRow: (area: string, sets: number, source: string) => `${area} ${sets} · ${source}`,
-  firstCheckin: (date: string) => `First check-in on ${date}`,
-  nextCheckin: (date: string) => `Next check-in: ${date}`,
+  // T-0549: the caption and the date are rendered apart (spec block 7).
+  firstCheckin: "First check-in",
+  nextCheckin: "Next check-in",
+  checkinsExplain:
+    "Every 14 days we compare your sessions with your rhythm. If you're under or over two periods in a row, we suggest a new rhythm. Nothing changes until you accept.",
   noCheckins: "No check-ins yet",
   sessions: (n: number) => `${n} ${n === 1 ? "session" : "sessions"}`,
-  checkinRow: (date: string, sessions: string, change: string, answer: string) =>
-    `${date} · ${sessions} · ${change} per week · ${answer}`,
+  checkinLine: (date: string, change: string) => `${date} · ${change} per week`,
+  checkinMeta: (sessions: string, answer: string) => `${sessions} · ${answer}`,
   checkinChange: (fromMin: number, fromMax: number, toMin: number, toMax: number) =>
     `${fromMin}–${fromMax} → ${toMin}–${toMax}`,
   answers: {
@@ -42,7 +56,7 @@ export const uf11 = {
     pending: "Waiting for you",
   },
   exercises: (n: number) => `${n} ${n === 1 ? "exercise" : "exercises"}`,
-  routineRow: (name: string, exercises: string) => `${name} · ${exercises}`,
+  routineName: (name: string, exercises: string) => `${name}, ${exercises}`,
   noRoutines: "No routines yet",
   newRoutine: "New routine",
   editPlan: "Edit plan",
@@ -93,7 +107,7 @@ export const uf11 = {
       `${
         n === 1 ? `You trained 1 time` : `You trained ${n} times`
       } in your last 14-day period (${from}–${to}). Your plan is ${planMin}–${planMax}. Step up to ${newMin}–${newMax} per week?`,
-    previewRow: (area: string, current: number, next: number) => `${area} ${current} → ${next}`,
+    previewNumbers: (current: number, next: number) => `${current} → ${next}`,
     accept: "Accept",
     keep: "Keep current",
     connectToUpdate: "Connect to update your plan",
@@ -102,6 +116,10 @@ export const uf11 = {
   // UF-11.4 Account settings (T-0310d, D-0136 §8)
   account: {
     signedInAs: (email: string) => `Signed in as ${email}`,
+    signedInAsLabel: "Signed in as",
+    accountLabel: "Account",
+    backToPlan: "Back to Plan",
+    deleteCaption: "Permanently removes your account and all your data.",
     dataHeading: "Your data",
     dataBody: "Download everything we store for you as one JSON file.",
     exportButton: "Export my data",

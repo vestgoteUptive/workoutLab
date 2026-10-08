@@ -83,8 +83,8 @@ describe("AC-B6 cache first", () => {
     renderPlan();
 
     // Asserted WITHOUT awaiting the refresh.
-    await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
-    expect(listRows(u.headings.targets)[0]).toBe("Chest 20 · From your plan");
+    await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
+    expect(listRows(u.targetsList)[0]).toBe("Chest 20 hard sets");
 
     // Contrast: the refresh WAS started. Without this, a hook that simply never refreshed
     // would pass the assertion above.
@@ -109,19 +109,14 @@ describe("AC-B6 offline", () => {
     });
     renderPlan();
 
-    await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
-    // AC-B6 writes the string as `Offline · last synced 08:10`. The shipped `OfflineStatus`
-    // formats the hour with `hour: "numeric"` (`lib/format/intl.ts` `formatTime`), so `en-GB`
-    // renders `8:10`, not `08:10`. `components/**` and `lib/**` are not this lane's to change, so
-    // the assertion is on the component's own output for 08:10 local and the discrepancy is a
-    // follow-up. The behaviour under test is UF-11's: the screen renders `<OfflineStatus
-    // variant="text" />` and it reports the 08:10-local sync.
+    await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
+    // AC-B6 writes the string as `Offline · last synced 08:10`, and that is what ships (T-0449:
+    // `formatTime` uses a 2-digit hour). The assertion is on the literal so a regression to `8:10`
+    // fails.
     await waitFor(() =>
-      expect(
-        screen.getByText(en.offline.lastSynced(formatTime("2026-09-27T06:10:00Z", FORMAT_OPTS))),
-      ).toBeInTheDocument(),
+      expect(screen.getByText(en.offline.lastSynced("08:10"))).toBeInTheDocument(),
     );
-    expect(formatTime("2026-09-27T06:10:00Z", FORMAT_OPTS)).toMatch(/^0?8:10$/);
+    expect(formatTime("2026-09-27T06:10:00Z", FORMAT_OPTS)).toBe("08:10");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(spy.from).not.toHaveBeenCalled();
     expect(refreshAllSpy).not.toHaveBeenCalled();
@@ -137,7 +132,7 @@ describe("AC-B6 cold cache", () => {
     renderPlan({ at: "/plan" });
 
     await waitFor(() => expect(screen.getByText(u.coldCache)).toBeInTheDocument());
-    expect(listRows(u.headings.targets)).toEqual([]);
+    expect(listRows(u.targetsList)).toEqual([]);
     expect(screen.queryByRole("link", { name: u.editPlan })).not.toBeInTheDocument();
     expect(document.querySelector("[data-screen-id]")!.getAttribute("data-screen-id")).toBe(
       "UF-11.2",

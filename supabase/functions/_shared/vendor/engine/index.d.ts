@@ -8,7 +8,7 @@ export { localDate, windowOf, addDays, dayDiff, WINDOW_DAYS } from "./time.js";
 export { areaLoads, recoveringAreas, RECOVERY_THRESHOLD, RECOVERY_WINDOW_MS } from "./load.js";
 export { deriveTargets, previewTargets, BASE_TARGETS } from "./targets.js";
 export { balance, deficitOf, coverageStepOf, ATTENTION_DEFICIT, ATTENTION_DAYS, } from "./balance.js";
-export { suggest, isEligible, rankCandidates, avoidedAreas, itemCostS, setCostS, availableS, WORK_S, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, MAX_ITEMS, MAX_ITEMS_PER_AREA, REP_SLOTS, DEFAULT_GOAL, } from "./session.js";
+export { suggest, isEligible, rankCandidates, avoidedAreas, excludedOutAreas, itemCostS, setCostS, availableS, WORK_S, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, MAX_ITEMS, MAX_ITEMS_PER_AREA, REP_SLOTS, DEFAULT_GOAL, } from "./session.js";
 export { getsBackoff } from "./cost.js";
 export { rankSwaps, muscleMatch } from "./swaps.js";
 export { applySwap } from "./apply-swap.js";

@@ -34,25 +34,35 @@ export function Plan({ now = systemClock }: PlanScreenProps = {}) {
   // T-0481: bumped by the card's `onAnswered`; `usePlanData` re-reads the cache once per bump.
   const [revision, setRevision] = useState(0);
   const state = usePlanData(now, revision);
+  const [checkinPending, setCheckinPending] = useState(false);
   return (
-    <div data-screen-id="UF-11.2">
-      <div className="wl-plan__header">
+    <div data-screen-id="UF-11.2" className="wl-page">
+      <header className="wl-plan__header">
         <h1>{en.screens.plan}</h1>
-        <Link className="wl-plan__link" to="/plan/account">
+        <Link className="wl-button--secondary wl-plan__account" to="/plan/account">
+          <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
+            <circle cx={12} cy={8} r={4} />
+            <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
+          </svg>
           {en.uf11.accountLink}
         </Link>
-      </div>
+        <p className="wl-plan__purpose">{en.uf11.purpose}</p>
+      </header>
       {state.phase !== "loading" ? (
-        <CheckinCard now={now} onAnswered={() => setRevision((r) => r + 1)} />
+        <CheckinCard
+          now={now}
+          onAnswered={() => setRevision((r) => r + 1)}
+          onVisibleChange={setCheckinPending}
+        />
       ) : null}
-      <PlanBody state={state} />
+      <PlanBody state={state} checkinPending={checkinPending} />
     </div>
   );
 }
 
 export function EditPlan({ now = systemClock }: PlanScreenProps = {}) {
   return (
-    <div data-screen-id="UF-11.3">
+    <div data-screen-id="UF-11.3" className="wl-page">
       <h1>{en.screens.editPlan}</h1>
       <EditPlanBody clock={now} />
     </div>
@@ -61,7 +71,17 @@ export function EditPlan({ now = systemClock }: PlanScreenProps = {}) {
 
 export function AccountSettings({ now = systemClock }: PlanScreenProps = {}) {
   return (
-    <div data-screen-id="UF-11.4">
+    <div data-screen-id="UF-11.4" className="wl-page">
+      <Link
+        className="wl-button--text wl-account__back"
+        to="/plan"
+        aria-label={en.uf11.account.backToPlan}
+      >
+        <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+        {en.screens.plan}
+      </Link>
       <h1>{en.screens.accountSettings}</h1>
       <AccountSettingsBody clock={now} />
     </div>

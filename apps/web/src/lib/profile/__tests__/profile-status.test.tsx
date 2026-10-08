@@ -38,7 +38,14 @@ vi.mock("../../auth/client.js", () => ({
     from: (table: string) =>
       rejectNext.current
         ? {
-            select: () => ({ maybeSingle: () => Promise.reject(new TypeError("Failed to fetch")) }),
+            select: () => {
+              const q = {
+                retry: () => q,
+                abortSignal: () => q,
+                maybeSingle: () => Promise.reject(new TypeError("Failed to fetch")),
+              };
+              return q;
+            },
           }
         : selectSpy.current!.from(table),
   },

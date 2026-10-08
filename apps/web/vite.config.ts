@@ -26,11 +26,21 @@ function buildMetaPlugin(supabaseOrigin: string | undefined): Plugin {
   return {
     name: "wl-build-meta",
     apply: "build",
-    transformIndexHtml(html) {
+    transformIndexHtml(html, ctx) {
       const csp = cspMetaContent(supabaseOrigin);
+      // T-0545 (D-0203 §1): preload every emitted woff2 (hashed names come from the bundle).
+      // `crossorigin` is required for fonts, else Chromium fetches each file twice.
+      const fontLinks = Object.keys(ctx.bundle ?? {})
+        .filter((f) => f.endsWith(".woff2"))
+        .sort()
+        .map(
+          (f) => `  <link rel="preload" href="/${f}" as="font" type="font/woff2" crossorigin />\n`,
+        )
+        .join("");
       return html.replace(
         "</head>",
-        `  <meta name="theme-color" content="${bg}" />\n` +
+        fontLinks +
+          `  <meta name="theme-color" content="${bg}" />\n` +
           `  <meta http-equiv="Content-Security-Policy" content="${csp}" />\n` +
           `</head>`,
       );
@@ -87,7 +97,7 @@ export default defineConfig(({ command }) => {
         },
         workbox: {
           navigateFallback: "/index.html",
-          globPatterns: ["**/*.{js,css,html,webmanifest,png}"],
+          globPatterns: ["**/*.{js,css,html,webmanifest,png,woff2}"],
         },
       }),
       buildMetaPlugin(supabaseOrigin),

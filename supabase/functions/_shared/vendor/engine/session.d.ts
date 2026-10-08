@@ -15,6 +15,13 @@ export declare const BUDGET_MAX = 480;
  * area (or a non-array) is a `RangeError`, and duplicates are ignored.
  */
 export declare function avoidedAreas(sessionInput: Pick<SessionInput, "avoidAreas">): Set<Area>;
+/**
+ * Rule 0.1 (UF-08.2, UF-11.5, D-0199 §3): the areas, in the fixed order, that have an eligible
+ * weight-1.0 exercise with `excludeIds = []` and none with `excludeIds`. Areas already empty
+ * because of equipment or level are not reported. Unknown ids are ignored, and duplicates and
+ * the order of `excludeIds` don't change the result.
+ */
+export declare function excludedOutAreas(profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], excludeIds: readonly string[]): Area[];
 /** The default goal when a profile has none (D-0095 §1): today's rule 7.2 slots. */
 export declare const DEFAULT_GOAL: Goal;
 /** Rule 7.2 rep slots by goal (D-0061 §1, D-0095): main lift, other compounds, isolation. */

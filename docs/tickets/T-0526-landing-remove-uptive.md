@@ -91,3 +91,4 @@ None.
   merges, since both are in the landing lane.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0526.md` (D-0157).

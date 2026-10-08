@@ -23,3 +23,4 @@ T-0537's full gate (2026-10-07) had one web failure, `src/features/UF-11/__tests
 None.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0909.md` (D-0157).

@@ -75,9 +75,9 @@ function renderPlan() {
 
 const card = () => document.querySelector('[data-part="checkin-card"]');
 const rhythmP = () =>
-  Array.from(document.querySelectorAll("h2"))
+  Array.from(document.querySelectorAll("dt"))
     .find((h) => h.textContent === u.headings.rhythm)!
-    .parentElement!.querySelector("p")!;
+    .nextElementSibling!.querySelector("span")!;
 const nap = (ms = 50) => new Promise((r) => setTimeout(r, ms));
 
 async function waitForCard() {
@@ -106,15 +106,15 @@ describe("T-0481 AC-1 Accept re-reads the plan under the card", () => {
     await seedAc1Proposal();
     mockRefreshes(writeAccepted);
     renderPlan();
-    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythm(3, 4)));
+    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythmPerWeek(3, 4)));
     await waitForCard();
-    expect(listRows(u.headings.targets)[0]).toMatch(/^Chest 20 /);
+    expect(listRows(u.targetsList)[0]).toMatch(/^Chest 20 /);
 
     fireEvent.click(screen.getByRole("button", { name: uc.accept }));
 
     await waitFor(() => expect(card()).toBeNull());
-    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythm(2, 3)));
-    expect(listRows(u.headings.targets)[0]).toMatch(/^Chest 14 /);
+    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythmPerWeek(2, 3)));
+    expect(listRows(u.targetsList)[0]).toMatch(/^Chest 14 /);
   });
 
   it("T-0481 AC-1 onAnswered is called exactly once, after the card's refreshAll settled", async () => {
@@ -159,12 +159,12 @@ describe("T-0481 AC-2 Keep, and a rejected refresh", () => {
     await seedAc1Proposal();
     mockRefreshes(async () => undefined);
     renderPlan();
-    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythm(3, 4)));
+    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythmPerWeek(3, 4)));
     await waitForCard();
     fireEvent.click(screen.getByRole("button", { name: uc.keep }));
     await waitFor(() => expect(card()).toBeNull());
     await nap();
-    expect(rhythmP().textContent).toBe(u.rhythm(3, 4));
+    expect(rhythmP().textContent).toBe(u.rhythmPerWeek(3, 4));
   });
 
   it("T-0481 AC-2 Accept with a rejected refresh: onAnswered still once, rhythm 3-4, card stays gone", async () => {
@@ -173,13 +173,13 @@ describe("T-0481 AC-2 Keep, and a rejected refresh", () => {
       throw new Error("refresh failed");
     });
     renderPlan();
-    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythm(3, 4)));
+    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythmPerWeek(3, 4)));
     await waitForCard();
 
     fireEvent.click(screen.getByRole("button", { name: uc.accept }));
     await waitFor(() => expect(card()).toBeNull());
     await nap();
-    expect(rhythmP().textContent).toBe(u.rhythm(3, 4));
+    expect(rhythmP().textContent).toBe(u.rhythmPerWeek(3, 4));
     expect(card()).toBeNull();
 
     // Same flow on the bare card for the call count.
@@ -247,12 +247,12 @@ describe("T-0481 AC-4 a cache re-read, not a remount", () => {
     await seedAc1Proposal();
     mockRefreshes(writeAccepted);
     renderPlan();
-    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythm(3, 4)));
+    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythmPerWeek(3, 4)));
     await waitForCard();
     const before = rhythmP();
 
     fireEvent.click(screen.getByRole("button", { name: uc.accept }));
-    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythm(2, 3)));
+    await waitFor(() => expect(rhythmP().textContent).toBe(u.rhythmPerWeek(2, 3)));
     await nap();
 
     expect(rhythmP()).toBe(before);

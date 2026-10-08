@@ -267,6 +267,11 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0376 | Optional: add `@testing-library/user-event` to apps/web via a decision, then swap `features/UF-01/__tests__/keyboard.ts` for `userEvent.keyboard` (T-0301b review/accept) | web-shell | T-0301b | done (closed: optional; the keyboard helper works, and a new dependency plus decision for one test file isn't worth it) | wl-build-web |
 | T-0444 | DoD gate gap: `pnpm -w typecheck lint test` runs `turbo run typecheck lint test` (args appended to the root `typecheck` script), so the root `test` script's `&& pnpm test:repo-checks` never runs. Make the documented gate run repo-checks (e.g. a root `gate` script) and update the DoD text, agents/roles/_common.md and the tick skill (T-0440 build) | infra | — | done (closed: worked around in the docs; agents/roles/_common.md and .claude/commands/tick.md run `-w test:repo-checks` as its own step, and CI runs it as its own step) | wl-build-infra |
 | T-0445 | Flake: UF-08 `ready-start.test.tsx` 'retry: the second tap…' failed once in a full -w gate (T-0422 rework, 2026-10-02), then passed 3× alone and in a rerun. Reproduce under load (--repeat / concurrency), find the timing assumption, fix with a real wait | web-feature:UF-08 | — | done | wl-build-web |
+| T-0476 | UF-08.3 polish (D-0171, accept follow-up): a swap's "Swapped to save time" reason is proven only at the data layer — itemReasonLine's two-reason cap hides it from the UI; let it surface, or lift the cap by one | web-shell | T-0303c | done | wl-build-web |
+| T-0350 | UF-10: with no cache and no network the C-01 map stays in its loading skeleton indefinitely — show an offline/empty state (T-0307a QA, optional) | web-feature:UF-10 | T-0307a | done | wl-build-web |
+| T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | done | wl-build-web |
+| T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | done | wl-build-web |
+| T-0351 | Profile gate read should fail fast: `.retry(false)` or `AbortSignal.timeout` on the profiles query in `lib/profile/status.ts`, so a network that throws yields `unknown` in <1 s instead of postgrest-js's ~7 s backoff holding /welcome open; fake-timer unit test (T-0904 diagnosis) | web-shell | T-0904 | done | wl-build-web |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
@@ -291,6 +296,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0496 | check-all.mjs: fail when a ticket file's AC/DoD text names a `pnpm --filter <pkg>` command with more than one script (the exact anti-pattern T-0490 fixes) — so it can't come back (T-0490 groom follow-up) | infra | T-0490 | done | wl-build-infra |
 | T-0497 | backend: add `.eq("user_id", ctx.userId)` to `loadSessionSets` (`_shared/repo.ts`) to match `loadHistoryWindow` — defence in depth if a service-role client is ever used (T-0210 follow-up; behaviour change, own ticket; don't run alongside T-0209/T-0218, same files) | backend | T-0210 | done | wl-build-backend |
 | T-0498 | landing: a fresh worktree's landing tests need `packages/design-tokens` built first (global-setup runs `astro build`; Layout.astro imports tokens.css) — add a landing `pretest` like web's, or a README line (T-0317 groom follow-up) | landing | T-0317 | done | wl-build-web |
+| T-0492 | UF-11 `__tests__/offline.test.tsx:112`: tighten `/^0?8:10$/` to `08:10` and drop the stale "renders 8:10" comment — after T-0471 merges (shared UF-11 lane) (T-0449 follow-up) | web-feature:UF-11 | T-0449, T-0471 | done | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -317,6 +323,11 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0507 | Static test: the region in infra/terraform/supabase-prod/main.tf is an eu-* region (T-0406 P1-b) | infra | T-0406 | done | wl-build-infra |
 | T-0524 | Flaky repo-check: .github/scripts/supabase-prod-release.test.mjs 'T-0402b AC-1 plan is the default and read-only' intermittently exits 141 (SIGPIPE, a pipe closed early); seen twice on 2026-10-06 (T-0516 build, T-0508 merge gate) | infra | T-0402b | done | wl-build-infra |
 | T-0515 | Prod Edge Function ALLOWED_ORIGINS=https://app.workout.vestgote.com; drop localhost from the prod auth allow-list (F-6; D-0190 §4: previews stay off CORS); human-run prod-origins.sh + read-only CORS probe | infra | T-0509, T-0514b | done | wl-build-infra |
+| T-0512 | Bump astro past GHSA-26w7-cxv4-gfx2 and the other critical/high advisories (build-time only; static output unaffected) (F-2) | landing | T-0511 | done | wl-build-web |
+| T-0402a | Deploy pipeline: `deploy.yml` wrangler direct upload of web + landing; branch previews behind `PREVIEWS_ENABLED` (signed-out until T-0402c), `main`→prod job wired but off until H-06; removes ci.yml's placeholder (D-0186 §1). Live AC needs H-18 | infra | T-0401 | done (previews live; H-18 superseded) | wl-build-infra |
+| T-0402d | Go-live at H-06: Free→Pro with spend cap on (gate 2), `site_url` → app host via keys-only PATCH, `PROD_DEPLOY_ENABLED`, first prod deploys verified (D-0186 §1) | infra | T-0402a, T-0402b, T-0402c, T-0403 | done (go-live complete; automatic deploys on) | wl-build-infra |
+| T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | done (verified live 2026-10-07) | wl-build-web |
+| T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | done (verified live 2026-10-07) | wl-build-web |
 
 ## Phase 5 — Iterate
 | ID | Title | Lane | Deps | Status | Flow |
@@ -337,3 +348,20 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0908 | UF-11.4 offline sign-out reaches /welcome without racing a full page load (CI fix, PR #40) | web-feature:UF-11 | T-0529 | done | wl-build-web |
 | T-0533 | Engine rule 0.1 part 1: rankSwaps 9th param excludeIds = [] at pool level; rule 12 signature line + D-0130 guard fixture + T-0212 AC1/AC2; R12-E17…E19; vendor regen | engine | — | done | wl-build-engine |
 | T-0537 | Shared C-03 Checkbox and ExcludedAreasNotice components + shared copy in en.ts | web-shell | T-0532 | done | wl-build-web |
+| T-0534 | Engine rule 0.1 part 2: excludedOutAreas; R0-E3…E5, R7-E17…E20; 3 simulated histories; fast-check properties; vendor regen | engine | T-0533 | done | wl-build-engine |
+| T-0531 | Account deletion bumps the cache-generation counter like sign-out, so an in-flight refresh can't rewrite a deleted user's rows (T-0530 review follow-up) | web-shell | T-0530 | done | wl-build-web |
+| T-0526 | Landing: drop "by Uptive" from header, page titles and footer; product is "workout LAB"; no-Uptive guard test; GitHub #34 (D-0194) | landing | — | done | wl-build-web |
+| T-0909 | UF-11 account-settings T-0529 AC-5 flakes under full-suite load (T-0537 gate) | web-feature:UF-11 | T-0529 | done | wl-build-web |
+| T-0910 | UF-10 never-in-workout AC-A12 flakes under load | web-feature:UF-10 | — | done | wl-build-web |
+| T-0544 | Self-hosted variable latin woff2 (Big Shoulders Display, DM Sans) in design-tokens: fonts/, OFL texts, SOURCES.md sha256, fonts.css export; F-1/F-2 | design | — | done | wl-design |
+| T-0546 | Global type scale (body/h1/h2, rem) + .wl-page/.wl-card/.wl-row/.wl-label/button/input classes in main.css; T-1, T-4, G-1 on the tab screens; full e2e + visual check | web-shell | — | done | wl-build-web |
+| T-0545 | Web loads the fonts: import fonts.css, preload both woff2, woff2 in Workbox globPatterns; F-3 build test, F-4/F-5 Playwright (online, offline); full e2e | web-shell | T-0544 | done | wl-build-web |
+| T-0547 | Landing fonts.css + preload; `font-src 'self'` in _headers and the t0511 test (security sign-off); re-run T-0309 AC23 | landing | T-0544 | done | wl-build-web |
+| T-0552 | **High priority.** PWA applies new builds: update check on load and resume; reload only on a route change to, or resume on, a tab screen; never on /session/* or mid-form; never on first install (D-0204 §3–§4) | web-shell | — | done | wl-build-web |
+| T-0548 | UF-11.2 part 1: .wl-page on /plan and /plan/edit, header + purpose line, "Your plan" card with Edit plan, Targets tile grid (no "From your plan"), "See this period in Balance"; copy-test updates logged | web-feature:UF-11 | T-0546 | done | wl-build-web |
+| T-0549 | UF-11.2 part 2: check-in card restyle, Check-ins and Routines cards, one accent action, loading/cold-cache states | web-feature:UF-11 | T-0548 | done | wl-build-web |
+| T-0550 | UF-11.4 rework: back link to Plan, .wl-page, cards in D-0195 order, C-03 equipment, Delete card last with line-strong edge, text-muted input border | web-feature:UF-11 | T-0546, T-0549 | done | wl-build-web |
+| T-0551 | User flows v2 UF-11.2/UF-11.4 text + uf-11-plan-checkin.md UF-11.2 section to the D-0203 layout | product | — | done | wl-spec |
+| T-0553 | PWA update guard: rewrite the wl-in-session entry on bfcache restore (T-0552 review) | web-shell | T-0552 | done | wl-build-web |
+| T-0543 | CI releases prod Supabase automatically before the Pages deploy: migration guard, age-encrypted backup, release script (D-0201) | infra | — | done (first automatic release 2026-10-08, run 37710972038) | wl-build-infra |
+| T-0554 | Prod release applies seed.sql on every apply (psql); CLI --include-seed skips a changed seed, so the T-0523 exercises never reached prod | infra | T-0543 | done | wl-build-infra |

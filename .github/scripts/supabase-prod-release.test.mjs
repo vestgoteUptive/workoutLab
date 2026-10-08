@@ -27,11 +27,17 @@ function setup() {
   // Drain stdin like real `curl -K -` does: the script pipes the auth header in, and a stub that
   // exits first makes printf die of SIGPIPE, which pipefail turns into exit 141 (T-0524).
   stub('curl', `cat >/dev/null\necho "curl $*" >> "${log}"\necho '[]'`);
+  // T-0554: psql is stubbed, it logs argv and the PG* env it was given. Never real prod.
+  stub('psql', `echo "psql $*" >> "${log}"\necho "psqlenv $PGSSLMODE $PGHOST $PGPORT $PGUSER $PGDATABASE pw=$PGPASSWORD" >> "${log}"\necho "psql out SENTINEL-PW db-host.example.com"`);
   return { dir, log };
 }
 
-function run(args, env = {}, script = SCRIPT) {
+function run(args, env = {}, script = SCRIPT, stubs = {}) {
   const { dir, log } = setup();
+  for (const [n, body] of Object.entries(stubs)) {
+    writeFileSync(join(dir, n), `#!/bin/sh\necho "${n} $*" >> "${log}"\n${body}\n`);
+    chmodSync(join(dir, n), 0o755);
+  }
   const r = spawnSync('bash', [script, ...args], {
     encoding: 'utf8',
     env: {
@@ -62,7 +68,7 @@ test('T-0402b AC-1 plan is the default and read-only', () => {
     assert.doesNotMatch(c, /functions deploy/);
     if (/db push/.test(c)) assert.match(c, /--dry-run/);
   }
-  assert.match(r.stdout, /would apply 2 migrations \+ seed; would deploy: workouts balance sessions account/);
+  assert.match(r.stdout, /would apply 2 migrations \+ seed \(always\); would deploy: workouts balance sessions account/);
 });
 
 test('T-0402b AC-2 apply needs both locks', () => {
@@ -88,6 +94,7 @@ test('T-0402b AC-2 planted fault: removing the confirm check is detected', () =>
   const copy = join(dir, 'infra/scripts');
   spawnSync('mkdir', ['-p', copy, join(dir, 'infra/terraform/supabase-prod')]);
   copyFileSync(join(root, 'infra/terraform/supabase-prod/main.tf'), join(dir, 'infra/terraform/supabase-prod/main.tf'));
+  copyFileSync(join(root, 'infra/scripts/pg-env.sh'), join(copy, 'pg-env.sh'));
   const src = readFileSync(SCRIPT, 'utf8').replace('"${CONFIRM_PROD_RELEASE:-}" != "$PROD_REF"', '"x" != "x"');
   assert.notEqual(src, readFileSync(SCRIPT, 'utf8'));
   writeFileSync(join(copy, 'supabase-prod-release.sh'), src);
@@ -135,4 +142,71 @@ test('T-0513 AC-3 functions deploy takes verify_jwt from supabase/config.toml', 
     assert.ok(m, `no [functions.${f}] table`);
     assert.match(m[1], /^verify_jwt\s*=\s*false\s*$/m, `${f} verify_jwt`);
   }
+});
+
+test('T-0543 AC-6 apply never waits on a prompt (--yes) and plan stays read-only', () => {
+  const apply = run(['apply'], { CONFIRM_PROD_RELEASE: REF });
+  const push = apply.calls.find((c) => /db push/.test(c) && !/--dry-run/.test(c));
+  assert.match(push, /--yes/);
+  const plan = run([]);
+  assert.ok(plan.calls.every((c) => !/--yes/.test(c)));
+});
+
+test('T-0543 M3 DETAIL, Failing row and Key lines from the CLI are redacted', () => {
+  const { dir } = setup();
+  const r = run(['apply'], { CONFIRM_PROD_RELEASE: REF }, SCRIPT, {
+    npx: `case "$*" in *"db push"*--yes*) printf "ERROR: duplicate key (SQLSTATE 23505)\\nDETAIL:  Key (email)=(a@b.c) already exists.\\nFailing row contains (1, secret-row).\\ndetail: lower-secret\\nERROR: invalid input syntax for type integer: \\"ERRVAL\\" (SQLSTATE 22P02)\\n"; exit 1;; *) echo ok;; esac`,
+  });
+  const out = r.stdout + r.stderr;
+  assert.equal(r.status, 1);
+  assert.doesNotMatch(out, /a@b\.c|secret-row|lower-secret|ERRVAL/);
+  assert.match(out, /DETAIL: <redacted>/);
+  assert.match(out, /Failing row contains <redacted>/);
+  assert.ok(dir);
+});
+
+const seedOk = (extra = {}) => run(['apply'], { CONFIRM_PROD_RELEASE: REF, ...extra });
+const idx = (calls, re) => calls.findIndex((c) => re.test(c));
+
+test('T-0554 AC-1 apply runs psql on the seed with the flags, PG env, no password in argv', () => {
+  const r = seedOk(); // the stub always reports 2 pending, so the final status is 1; irrelevant here
+  const psql = r.calls.filter((c) => c.startsWith('psql '));
+  assert.equal(psql.length, 1);
+  assert.equal(psql[0], 'psql -v ON_ERROR_STOP=1 --single-transaction -f supabase/seed.sql');
+  const env = r.calls.find((c) => c.startsWith('psqlenv'));
+  assert.equal(env, 'psqlenv require db-host.example.com 5432 postgres.x postgres pw=SENTINEL-PW');
+  for (const c of r.calls.filter((c) => c.startsWith('psql '))) {
+    assert.doesNotMatch(c, /SENTINEL-PW|db-host\.example\.com|postgresql:\/\/.*psql/);
+  }
+  assert.doesNotMatch(r.stdout + r.stderr, /SENTINEL-PW|db-host\.example\.com/);
+});
+
+test('T-0554 AC-4 order is db push, seed, then functions; plan never runs psql', () => {
+  const r = seedOk();
+  const push = idx(r.calls, /^npx .*db push .*--yes/);
+  const seed = idx(r.calls, /^psql /);
+  const deploy = idx(r.calls, /^npx .*functions deploy/);
+  assert.ok(push >= 0 && push < seed && seed < deploy, JSON.stringify(r.calls));
+  assert.ok(run([]).calls.every((c) => !c.startsWith('psql')));
+});
+
+test('T-0554 AC-4 a failing psql stops the release before any function deploy', () => {
+  const r = run(['apply'], { CONFIRM_PROD_RELEASE: REF }, SCRIPT, { psql: 'exit 3' });
+  assert.notEqual(r.status, 0);
+  assert.equal(r.calls.filter((c) => /functions deploy/.test(c)).length, 0);
+  assert.match(r.stderr, /seed failed/);
+});
+
+test('T-0554 AC-4 planted fault: dropping the seed step is detected', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'fault-'));
+  const copy = join(dir, 'infra/scripts');
+  spawnSync('mkdir', ['-p', copy, join(dir, 'infra/terraform/supabase-prod')]);
+  copyFileSync(join(root, 'infra/terraform/supabase-prod/main.tf'), join(dir, 'infra/terraform/supabase-prod/main.tf'));
+  copyFileSync(join(root, 'infra/scripts/pg-env.sh'), join(copy, 'pg-env.sh'));
+  const orig = readFileSync(SCRIPT, 'utf8');
+  const src = orig.replace('psql -v ON_ERROR_STOP=1', 'true -v ON_ERROR_STOP=1');
+  assert.notEqual(src, orig);
+  writeFileSync(join(copy, 'supabase-prod-release.sh'), src);
+  const r = run(['apply'], { CONFIRM_PROD_RELEASE: REF }, join(copy, 'supabase-prod-release.sh'));
+  assert.equal(r.calls.filter((c) => c.startsWith('psql ')).length, 0, 'fault removes the seed call, AC-1/AC-4 would fail');
 });

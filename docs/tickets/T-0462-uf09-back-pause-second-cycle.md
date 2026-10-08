@@ -65,3 +65,4 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green plus `-w test:rep
 `uf-09-focus.spec.ts` green · commits start with `T-0462` and cite UF-09.9.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0462.md` (D-0157).

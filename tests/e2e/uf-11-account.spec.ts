@@ -444,8 +444,12 @@ test.describe("T-0469 AC-5 accessibility (NFR-A11Y-1/-2)", () => {
 
     const tooSmall: string[] = [];
     for (let i = 0; i < count; i += 1) {
-      const element = candidates.nth(i);
+      let element = candidates.nth(i);
       if (!(await element.isVisible())) continue;
+      // T-0550: the C-03 checkbox's hit target is its 44 px label (24 px box inside it).
+      if ((await element.getAttribute("type")) === "checkbox") {
+        element = element.locator("xpath=ancestor::label[1]");
+      }
       const box = await element.boundingBox();
       if (!box) continue;
       if (box.width < MIN_TARGET_PX || box.height < MIN_TARGET_PX) {
@@ -650,5 +654,97 @@ test.describe("T-0529 findable sign out (D-0195, GitHub #35)", () => {
     expect(
       plan.violations.filter((v) => v.impact === "serious" || v.impact === "critical"),
     ).toEqual([]);
+  });
+});
+
+// T-0550 UF-11.4 rework (D-0203 §4; spec UF-11.4.md AC2, AC6, AC7).
+test.describe("T-0550 UF-11.4 layout, back link and targets", () => {
+  const ROOT = '[data-screen-id="UF-11.4"]';
+
+  async function setEmail(page: Page, email: string): Promise<void> {
+    await page.evaluate((e) => {
+      for (let i = 0; i < window.localStorage.length; i++) {
+        const k = window.localStorage.key(i);
+        if (!k || !k.endsWith("-auth-token")) continue;
+        const t = JSON.parse(window.localStorage.getItem(k)!);
+        (t.currentSession ?? t).user.email = e;
+        window.localStorage.setItem(k, JSON.stringify(t));
+      }
+    }, email);
+  }
+
+  test("T-0550 AC2 the back link lands on Plan", async ({ page }) => {
+    await open(page);
+    await page.getByRole("link", { name: "Back to Plan" }).click();
+    await expect(page.locator('[data-screen-id="UF-11.2"]')).toBeVisible();
+  });
+
+  test("T-0550 AC6 390 x 844: title type and gutter; saves a screenshot", async ({
+    page,
+  }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await open(page);
+    await expect(page.getByRole("group", { name: "Your equipment" })).toBeVisible();
+    const h1 = await page.locator(`${ROOT} h1`).evaluate((el) => {
+      const c = getComputedStyle(el);
+      return { f: c.fontFamily, w: c.fontWeight, t: c.textTransform, s: parseFloat(c.fontSize) };
+    });
+    expect(h1.f.startsWith('"Big Shoulders Display"')).toBe(true);
+    expect(h1.w).toBe("800");
+    expect(h1.t).toBe("uppercase");
+    expect(h1.s).toBeGreaterThanOrEqual(32);
+    expect(h1.s).toBeLessThanOrEqual(40);
+    const pad = await page
+      .locator(ROOT)
+      .evaluate((el) => [getComputedStyle(el).paddingLeft, getComputedStyle(el).paddingRight]);
+    expect(pad).toEqual(["20px", "20px"]);
+    await page.screenshot({ path: testInfo.outputPath("account-390.png"), fullPage: true });
+  });
+
+  test("T-0550 AC6 320 x 640 with a 64-character email: no horizontal scroll, email not clipped", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 320, height: 640 });
+    await open(page);
+    await setEmail(page, `${"a".repeat(52)}@example.com`);
+    await page.goto("/plan/account");
+    const email = page.locator(".wl-account__email");
+    await expect(email).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+    ).toBeLessThanOrEqual(0);
+    expect(await email.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+  });
+
+  test("T-0550 AC7 every target is 44 px and the confirm input border is text-muted", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await open(page);
+    await expect(page.getByRole("group", { name: "Your equipment" })).toBeVisible();
+    await page.getByRole("button", { name: "Delete account…" }).click();
+    const input = page.getByLabel("Type delete to confirm");
+    await expect(input).toBeVisible();
+    const heights = await page
+      .locator(`${ROOT} :is(a, button, input:not([type="checkbox"]), label.wl-checkbox)`)
+      .evaluateAll((els) =>
+        els.map((el) => ({
+          name: el.textContent?.trim() || el.tagName,
+          h: el.getBoundingClientRect().height,
+        })),
+      );
+    expect(heights.length).toBeGreaterThan(10);
+    for (const t of heights) expect(t.h, t.name).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+    const { border, expected } = await input.evaluate((el) => {
+      const probe = document.createElement("i");
+      probe.style.color = getComputedStyle(document.documentElement).getPropertyValue(
+        "--wl-color-text-muted",
+      );
+      document.body.append(probe);
+      const expectedColor = getComputedStyle(probe).color;
+      probe.remove();
+      return { border: getComputedStyle(el).borderTopColor, expected: expectedColor };
+    });
+    expect(border).toBe(expected);
   });
 });

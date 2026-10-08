@@ -256,7 +256,9 @@ async function cardTexts(page: Page) {
   await expect(card(page)).not.toHaveAttribute("aria-busy", "true");
   await expect(cardRows(page).first()).toBeVisible();
   return {
-    title: await page.locator('[data-part="card-title"]').innerText(),
+    // textContent, not innerText: the global h2 rule (T-0546) uppercases it with CSS, and
+    // innerText returns the rendered case. The catalogue text is what this asserts.
+    title: (await page.locator('[data-part="card-title"]').textContent()) ?? "",
     summary: await page.locator('[data-part="card-summary"]').innerText(),
     rows: await cardRows(page).allInnerTexts(),
   };
@@ -505,5 +507,27 @@ test.describe("T-0471 AC-2 follow-up: CheckinCard never mounts ahead of Today's 
     // Today is ready, `UF11_FIXTURES`'s proposal (step down from 3-4, D-0174 §3) is live in the
     // cache, so the card does show; the ordering, not just its eventual presence, is the point.
     await expect(page.locator('[data-part="checkin-card"]')).toBeVisible();
+  });
+});
+
+// T-0549 AC9: the restyled card still sits on UF-02.1 with its label and both buttons.
+test.describe("T-0549 AC9 the restyled check-in card on UF-02.1", () => {
+  test("390 x 844: Check-in label, Accept and Keep current, no horizontal scroll", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockSupabaseData(page, UF11_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+    const card = page.locator('[data-part="checkin-card"]');
+    await expect(card).toBeVisible();
+    await expect(card.getByRole("heading", { name: "Check-in" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Accept" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Keep current" })).toBeVisible();
+    const over = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(over).toBeLessThanOrEqual(0);
   });
 });

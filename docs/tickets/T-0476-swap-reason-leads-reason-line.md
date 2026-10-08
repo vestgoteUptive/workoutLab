@@ -58,3 +58,4 @@ Tests for every AC pass, AC-1 and AC-5 red on main (record it) · `pnpm -w typec
 plus `-w test:repo-checks` · the UF-08 e2e spec green · commits start with `T-0476` and cite UF-08.3.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0476.md` (D-0157).
