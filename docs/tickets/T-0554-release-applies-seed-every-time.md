@@ -25,7 +25,7 @@ The first automatic release (run 37710972038, 2026-10-08) deployed the functions
 - AC-6: README: the seed is applied on every release, and why (CLI seed tracking).
 
 ## Paths you may change
-- `infra/**`, `.github/**`
+- `infra/**`, `.github/**`, `docs/security/**` (security review notes)
 
 ## Contract impact
 None.
