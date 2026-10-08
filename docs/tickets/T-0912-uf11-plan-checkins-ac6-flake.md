@@ -23,3 +23,6 @@ status: ready
 None.
 
 ## Build / accept log
+
+- 2026-10-08 build: reproduced with 10 `yes` loops, AC6 failed 2 of 8 runs (`edit` link lacked `wl-button--secondary`, still primary). Cause: Edit plan flips to secondary one render tick after Accept is disabled and tiles appear (passive-effect cleanup, T-0549 note); the test asserted the class synchronously. Fix: `waitFor` on the class (test only, no timeout change).
+- Proof: 30 AC6 runs under load, 0 fails. Clean whole-file runs: 60 later runs, 0 fails (one earlier batch of 30 showed 2 fails right after killing the loops, cause not captured, probably residual load; two later batches of 30 were clean). Loops killed. `--filter @workoutlab/web test` green, format:check green.

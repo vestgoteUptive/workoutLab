@@ -251,7 +251,8 @@ describe("T-0549 AC6 offline", () => {
     expect(accept).toBeDisabled();
     expect(screen.getByRole("button", { name: u.checkin.keep })).toBeDisabled();
     const edit = screen.getByRole("link", { name: u.editPlan });
-    expect(edit).toHaveClass("wl-button--secondary");
+    // Edit plan flips to secondary one render tick after the card state settles (passive effect).
+    await waitFor(() => expect(edit).toHaveClass("wl-button--secondary"));
     expect(edit).toHaveAttribute("href", "/plan/edit");
     expect(screen.getByRole("link", { name: "Push, 1 exercise" })).toHaveAttribute(
       "href",
