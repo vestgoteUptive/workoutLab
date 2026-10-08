@@ -109,8 +109,10 @@ describe("T-0549 AC2 one primary action", () => {
   it("pending proposal: Accept is the one primary, Edit plan is secondary and still a link", async () => {
     await readyPending();
     const edit = screen.getByRole("link", { name: u.editPlan });
-    expect(edit).toHaveClass("wl-button--secondary");
+    // Edit plan flips one render tick after the card shows (passive effect): wait on the class.
+    await waitFor(() => expect(edit).toHaveClass("wl-button--secondary"));
     expect(edit).not.toHaveClass("wl-button--primary");
+    await waitFor(() => expect(primaries()).toHaveLength(1));
     expect(edit).toHaveAttribute("href", "/plan/edit");
     expect(screen.getByRole("button", { name: u.checkin.accept })).toHaveClass(
       "wl-button--primary",
