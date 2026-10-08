@@ -301,6 +301,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0497 | backend: add `.eq("user_id", ctx.userId)` to `loadSessionSets` (`_shared/repo.ts`) to match `loadHistoryWindow` — defence in depth if a service-role client is ever used (T-0210 follow-up; behaviour change, own ticket; don't run alongside T-0209/T-0218, same files) | backend | T-0210 | done | wl-build-backend |
 | T-0498 | landing: a fresh worktree's landing tests need `packages/design-tokens` built first (global-setup runs `astro build`; Layout.astro imports tokens.css) — add a landing `pretest` like web's, or a README line (T-0317 groom follow-up) | landing | T-0317 | done | wl-build-web |
 | T-0492 | UF-11 `__tests__/offline.test.tsx:112`: tighten `/^0?8:10$/` to `08:10` and drop the stale "renders 8:10" comment — after T-0471 merges (shared UF-11 lane) (T-0449 follow-up) | web-feature:UF-11 | T-0449, T-0471 | done | wl-build-web |
+| T-0914 | UF-02 card.test.tsx mocks ../slots.js (real check-in card raced the no-button assertion; main red since 28719f5), Today forwards now/tz/locale to CheckinSlot | web-feature:UF-02 | — | done | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -408,3 +409,8 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0576 | UF-08.2 Reorder mode + order merge across re-suggests + Start writes display order | web-feature:UF-08 | T-0575 | done (UF-08.4 order list not built; Ready has no list) | wl-build-web |
 | T-0577 | UF-08.5 Favorites section first on the empty query + Favorite tag on rows | web-feature:UF-08 | T-0576, T-0567, T-0561 | done | wl-build-web |
 | T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | done | wl-build-web |
+
+## Cobalt + state colour redesign (D-0208): phase 1, tokens and landing
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0583 | Design tokens: Cobalt state groups, OKLCH coverage ramp, radius and space; self-hosted Familjen Grotesk and Bricolage Grotesque (additive; contract change, --force gate) | design | — | done | wl-design |

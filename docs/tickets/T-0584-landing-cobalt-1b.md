@@ -5,7 +5,7 @@ lane: landing
 screens: []
 decisions: [D-0208, D-0194, T-0309]
 deps: [T-0583]
-status: todo
+status: doing
 ---
 ## Why
 D-0208 §7: the owner chose landing layout **1b** on 2026-10-08. The spec is the "Landing page" section of `Design-docs/docs/design/redesign-cobalt/README.md` on branch `design/redesign-cobalt`. The visual reference is `canvas/Landing Page.dc.html`, option `#1b`; "Now" is the current page, and 1a is rejected. Read them with `git show origin/design/redesign-cobalt:<path>`, and open the canvas in a browser from a scratch copy.
