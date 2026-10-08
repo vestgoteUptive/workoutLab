@@ -28,6 +28,9 @@ export interface CheckinCardProps {
   /** T-0481: called once after a successful Accept/Keep, once that write's `refreshAll` has
    *  settled. Never on a failed write, a card hidden by another device, or offline. */
   onAnswered?: () => void;
+  /** T-0549: true while the card is on screen with a pending proposal, false otherwise (the
+   *  Plan screen switches "Edit plan" to the secondary style meanwhile; one accent per screen). */
+  onVisibleChange?: (visible: boolean) => void;
 }
 
 type WriteState = { pending: boolean; failed: boolean };
@@ -39,6 +42,7 @@ function CardBody({
   timeZone,
   now,
   onAnswered,
+  onVisibleChange,
 }: {
   data: CheckinCardData;
   online: boolean;
@@ -46,6 +50,7 @@ function CardBody({
   timeZone: string;
   now: Date;
   onAnswered: (() => void) | undefined;
+  onVisibleChange: ((visible: boolean) => void) | undefined;
 }) {
   const { profile, evaluation } = data;
   const proposal = evaluation.proposal;
@@ -69,6 +74,7 @@ function CardBody({
       timeZone={timeZone}
       now={now}
       onAnswered={onAnswered}
+      onVisibleChange={onVisibleChange}
     />
   );
 }
@@ -86,6 +92,7 @@ function CardReady({
   timeZone,
   now,
   onAnswered,
+  onVisibleChange,
 }: {
   profile: EngineProfile;
   evaluation: CheckinEvaluation;
@@ -99,6 +106,7 @@ function CardReady({
   timeZone: string;
   now: Date;
   onAnswered: (() => void) | undefined;
+  onVisibleChange: ((visible: boolean) => void) | undefined;
 }) {
   // Hidden only by a second device's already-answered row (D-0172 §2): Accept/Keep hide this
   // same render via their own navigation away (T-0471 unmounts on hide), so this flag only ever
@@ -124,6 +132,13 @@ function CardReady({
     // above reads the cache once), so this effect only re-runs on the online/offline toggle; they
     // are deliberately left out of the dependency list below.
   }, [online, hiddenElsewhere]);
+
+  useEffect(() => {
+    if (hiddenElsewhere) return;
+    onVisibleChange?.(true);
+    return () => onVisibleChange?.(false);
+    // The callback is a state setter in practice; only the visibility drives this.
+  }, [hiddenElsewhere]);
 
   if (hiddenElsewhere) return null;
 
@@ -198,32 +213,39 @@ function CardReady({
   const buttonsDisabled = !online || write.pending;
 
   return (
-    <section data-part="checkin-card" aria-label={u.cardName}>
+    <section data-part="checkin-card" className="wl-card" aria-labelledby="wl-checkin-title">
+      <h2 id="wl-checkin-title" className="wl-label">
+        {u.cardName}
+      </h2>
       <p>{line}</p>
-      <ul aria-label={u.cardName}>
+      <ul className="wl-plan__preview" aria-label={u.cardName}>
         {AREAS.map((area) => (
           <li key={area}>
-            {u.previewRow(
-              en.bodyMap.areas[area],
-              currentByArea.get(area) ?? 0,
-              nextByArea.get(area) ?? 0,
-            )}
+            <span>{en.bodyMap.areas[area]}</span>{" "}
+            <span className="wl-plan__nums">
+              {u.previewNumbers(currentByArea.get(area) ?? 0, nextByArea.get(area) ?? 0)}
+            </span>
           </li>
         ))}
       </ul>
       <button
         type="button"
-        className="wl-plan__button wl-plan__button--primary"
+        className="wl-button--primary"
         disabled={buttonsDisabled}
         onClick={onAccept}
       >
         {u.accept}
       </button>
-      <button type="button" className="wl-plan__button" disabled={buttonsDisabled} onClick={onKeep}>
+      <button
+        type="button"
+        className="wl-button--secondary"
+        disabled={buttonsDisabled}
+        onClick={onKeep}
+      >
         {u.keep}
       </button>
       {write.failed ? <p role="alert">{en.uf11.saveFailed}</p> : null}
-      {!online ? <p>{u.connectToUpdate}</p> : null}
+      {!online ? <p className="wl-muted">{u.connectToUpdate}</p> : null}
     </section>
   );
 }
@@ -233,6 +255,7 @@ export function CheckinCard({
   timeZone,
   locale = "en-GB",
   onAnswered,
+  onVisibleChange,
 }: CheckinCardProps = {}) {
   const tz = timeZone ?? resolveTimeZone();
   const state = useCheckinData(now, tz);
@@ -251,6 +274,7 @@ export function CheckinCard({
       timeZone={tz}
       now={pinnedNow.current}
       onAnswered={onAnswered}
+      onVisibleChange={onVisibleChange}
     />
   );
 }

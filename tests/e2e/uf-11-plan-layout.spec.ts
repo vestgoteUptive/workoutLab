@@ -150,3 +150,32 @@ test("screenshot of /plan at 390 px", async ({ page }) => {
     fullPage: true,
   });
 });
+
+// T-0549 AC7: with a pending check-in and routines, every link and button is at least 44 px tall,
+// and exactly one element carries the primary class (Accept).
+test("390 x 844: pending check-in and routines, every target is 44 px and Accept is the one primary", async ({
+  page,
+}) => {
+  await open(page, 390, 844);
+  await expect(page.getByRole("button", { name: "Accept" })).toBeVisible();
+  await expect(page.locator('[data-screen-id="UF-11.2"] h2')).toHaveText([
+    "Check-in",
+    "Your plan",
+    "Targets",
+    "Check-ins",
+    "Routines",
+  ]);
+  await expect(page.locator('[data-screen-id="UF-11.2"] .wl-button--primary')).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Edit plan" })).toHaveClass(/wl-button--secondary/);
+  const heights = await page
+    .locator('[data-screen-id="UF-11.2"] :is(a, button, [role="button"])')
+    .evaluateAll((els) =>
+      els
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0)
+        .map((r) => r.height),
+    );
+  expect(heights.length).toBeGreaterThan(6);
+  for (const h of heights) expect(h).toBeGreaterThanOrEqual(44);
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
+});

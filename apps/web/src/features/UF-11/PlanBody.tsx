@@ -25,7 +25,7 @@ function answerLabel(answer: "accepted" | "kept" | "withdrawn" | null): string {
   return answer === null ? u.answers.pending : u.answers[answer];
 }
 
-function PlanContent({ data }: { data: PlanData }) {
+function PlanContent({ data, checkinPending }: { data: PlanData; checkinPending: boolean }) {
   const { profile, targets, checkins, routines, evaluation, tz } = data;
   const ordered = [...targets].sort((a, b) => AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
   const isFirst = evaluation.periods.length === 0 && checkins.length === 0;
@@ -58,7 +58,10 @@ function PlanContent({ data }: { data: PlanData }) {
             <dd>{priorityNames.length === 0 ? u.noPriorities : priorityNames.join(", ")}</dd>
           </div>
         </dl>
-        <Link className="wl-button--primary wl-plan__linkbtn" to="/plan/edit">
+        <Link
+          className={`${checkinPending ? "wl-button--secondary" : "wl-button--primary"} wl-plan__linkbtn`}
+          to="/plan/edit"
+        >
           {u.editPlan}
         </Link>
       </section>
@@ -97,47 +100,68 @@ function PlanContent({ data }: { data: PlanData }) {
           {u.seeInBalance}
         </Link>
       </section>
-      <section className="wl-plan__section">
-        <h2>{u.headings.checkins}</h2>
-        <p>{isFirst ? u.firstCheckin(nextDate) : u.nextCheckin(nextDate)}</p>
+      <section className="wl-card" aria-labelledby="wl-plan-checkins">
+        <h2 id="wl-plan-checkins" className="wl-label">
+          {u.headings.checkins}
+        </h2>
+        <div className="wl-plan__next">
+          <span className="wl-caption">{isFirst ? u.firstCheckin : u.nextCheckin}</span>
+          <span className="wl-stat">{nextDate}</span>
+        </div>
+        <p className="wl-muted">{u.checkinsExplain}</p>
         {checkins.length === 0 ? (
-          <p>{u.noCheckins}</p>
+          <p className="wl-caption">{u.noCheckins}</p>
         ) : (
-          <ul className="wl-plan__list" aria-label={u.headings.checkins}>
+          <ul className="wl-plan__history" aria-label={u.headings.checkins}>
             {checkins.slice(0, 3).map((c) => (
               <li key={c.id}>
-                {u.checkinRow(
-                  formatInstantDay(c.proposedAt, tz),
-                  u.sessions(c.completedLast),
-                  u.checkinChange(
-                    c.rhythmMinBefore,
-                    c.rhythmMaxBefore,
-                    c.proposedMin,
-                    c.proposedMax,
-                  ),
-                  answerLabel(c.answer),
-                )}
+                <span className="wl-plan__line">
+                  {u.checkinLine(
+                    formatInstantDay(c.proposedAt, tz),
+                    u.checkinChange(
+                      c.rhythmMinBefore,
+                      c.rhythmMaxBefore,
+                      c.proposedMin,
+                      c.proposedMax,
+                    ),
+                  )}
+                </span>{" "}
+                <span className="wl-caption">
+                  {u.checkinMeta(u.sessions(c.completedLast), answerLabel(c.answer))}
+                </span>
               </li>
             ))}
           </ul>
         )}
       </section>
-      <section className="wl-plan__section">
-        <h2>{u.headings.routines}</h2>
+      <section className="wl-card" aria-labelledby="wl-plan-routines">
+        <h2 id="wl-plan-routines" className="wl-label">
+          {u.headings.routines}
+        </h2>
         {routines.length === 0 ? (
-          <p>{u.noRoutines}</p>
+          <p className="wl-caption">{u.noRoutines}</p>
         ) : (
-          <ul className="wl-plan__list wl-plan__list--links" aria-label={u.headings.routines}>
+          <ul className="wl-plan__rows" aria-label={u.headings.routines}>
             {routines.map((r) => (
               <li key={r.id}>
-                <Link className="wl-plan__link" to={`/plan/routines/${r.id}`}>
-                  {u.routineRow(r.name, u.exercises(r.items.length))}
+                <Link
+                  className="wl-row"
+                  to={`/plan/routines/${r.id}`}
+                  aria-label={u.routineName(r.name, u.exercises(r.items.length))}
+                >
+                  <span className="wl-plan__rowtext">
+                    <span className="wl-plan__name">{r.name}</span>
+                    <span className="wl-caption">{u.exercises(r.items.length)}</span>
+                  </span>
                 </Link>
               </li>
             ))}
           </ul>
         )}
-        <Link className="wl-plan__link" to="/plan/routines/new">
+        <Link className="wl-button--secondary wl-plan__linkbtn" to="/plan/routines/new">
+          <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
           {u.newRoutine}
         </Link>
       </section>
@@ -145,12 +169,33 @@ function PlanContent({ data }: { data: PlanData }) {
   );
 }
 
-export function PlanBody({ state }: { state: PlanState }) {
+export function PlanBody({
+  state,
+  checkinPending = false,
+}: {
+  state: PlanState;
+  checkinPending?: boolean;
+}) {
   return (
     <>
       <OfflineStatus variant="text" />
-      {state.phase === "ready" ? <PlanContent data={state.data} /> : null}
-      {state.phase === "cold" ? <p>{u.coldCache}</p> : null}
+      {state.phase === "loading" ? (
+        <p role="status" className="wl-caption">
+          {u.loading}
+        </p>
+      ) : null}
+      {state.phase === "ready" ? (
+        <PlanContent data={state.data} checkinPending={checkinPending} />
+      ) : null}
+      {state.phase === "cold" ? (
+        <p className="wl-plan__notice">
+          <svg aria-hidden focusable={false} width={20} height={20} viewBox="0 0 24 24">
+            <circle cx={12} cy={12} r={9} />
+            <path d="M12 11v5M12 8h.01" />
+          </svg>
+          <span>{u.coldCache}</span>
+        </p>
+      ) : null}
     </>
   );
 }

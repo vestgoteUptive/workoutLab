@@ -11,7 +11,7 @@
 // client, whose background session auto-refresh against `localStorage`'s `sb-abc-auth-token` key
 // races this file's own `signIn`/`signOut` between tests (found running this file red on main).
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, screen, waitFor } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { AREAS } from "@workoutlab/shared";
 import { en } from "../../../lib/i18n/en.js";
 import { K1, K2, K3, K4, KEPT_13_SEP, NOW, TZ, profileF, targetsF } from "./fixtures.js";
@@ -58,6 +58,13 @@ afterEach(() => {
 });
 
 /** Waits for the target list to be on screen — the signal that the cache read landed. */
+/** T-0549: the caption and the date are separate nodes inside the Check-ins card. */
+function expectNextCheckin(caption: string, date: string) {
+  const card = screen.getByRole("heading", { level: 2, name: u.headings.checkins }).parentElement!;
+  expect(within(card).getByText(caption)).toBeInTheDocument();
+  expect(within(card).getByText(date)).toHaveClass("wl-stat");
+}
+
 async function targetRows(): Promise<string[]> {
   await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
   return listRows(u.targetsList);
@@ -179,7 +186,7 @@ describe("AC-B3 first / next check-in: always the engine's nextCheckinDate (D-00
     });
     renderPlan();
     await targetRows();
-    expect(screen.getByText(u.firstCheckin("4 Oct"))).toBeInTheDocument();
+    expectNextCheckin(u.firstCheckin, "4 Oct");
     expect(document.body.textContent).not.toContain("Next check-in");
   });
 
@@ -188,7 +195,7 @@ describe("AC-B3 first / next check-in: always the engine's nextCheckinDate (D-00
     await seedCache(db, { profile: profileF(), targets: targetsF() });
     renderPlan();
     await targetRows();
-    expect(screen.getByText(u.nextCheckin("11 Oct"))).toBeInTheDocument();
+    expectNextCheckin(u.nextCheckin, "11 Oct");
   });
 
   it("10 days off with no sessions does not move the date: still `11 Oct` on 7 Oct", async () => {
@@ -196,7 +203,7 @@ describe("AC-B3 first / next check-in: always the engine's nextCheckinDate (D-00
     await seedCache(db, { profile: profileF(), targets: targetsF() });
     renderPlan({ now: () => new Date("2026-10-07T10:00:00.000Z") });
     await targetRows();
-    expect(screen.getByText(u.nextCheckin("11 Oct"))).toBeInTheDocument();
+    expectNextCheckin(u.nextCheckin, "11 Oct");
   });
 
   it("on 11 Oct the engine rolls it to `25 Oct`", async () => {
@@ -204,7 +211,7 @@ describe("AC-B3 first / next check-in: always the engine's nextCheckinDate (D-00
     await seedCache(db, { profile: profileF(), targets: targetsF() });
     renderPlan({ now: () => new Date("2026-10-11T10:00:00.000Z") });
     await targetRows();
-    expect(screen.getByText(u.nextCheckin("25 Oct"))).toBeInTheDocument();
+    expectNextCheckin(u.nextCheckin, "25 Oct");
   });
 
   it("just edited (periods empty) with NO check-in rows reads `First check-in on 11 Oct`", async () => {
@@ -215,7 +222,7 @@ describe("AC-B3 first / next check-in: always the engine's nextCheckinDate (D-00
     });
     renderPlan();
     await targetRows();
-    expect(screen.getByText(u.firstCheckin("11 Oct"))).toBeInTheDocument();
+    expectNextCheckin(u.firstCheckin, "11 Oct");
   });
 
   it("just edited (periods empty) but WITH a check-in row reads `Next check-in: 11 Oct` — D-0081 §1", async () => {
@@ -227,7 +234,7 @@ describe("AC-B3 first / next check-in: always the engine's nextCheckinDate (D-00
     });
     renderPlan();
     await targetRows();
-    expect(screen.getByText(u.nextCheckin("11 Oct"))).toBeInTheDocument();
+    expectNextCheckin(u.nextCheckin, "11 Oct");
     expect(document.body.textContent).not.toContain("First check-in");
   });
 });
@@ -246,7 +253,7 @@ describe("AC-B3 stubbed: the UI renders the engine's date verbatim (principle 3)
     await seedCache(db, { profile: profileF(), targets: targetsF() });
     renderPlan();
     await targetRows();
-    expect(screen.getByText(u.nextCheckin("24 Dec"))).toBeInTheDocument();
+    expectNextCheckin(u.nextCheckin, "24 Dec");
     expect(document.body.textContent).not.toContain("11 Oct");
   });
 
@@ -261,7 +268,7 @@ describe("AC-B3 stubbed: the UI renders the engine's date verbatim (principle 3)
     await seedCache(db, { profile: profileF(), targets: targetsF() });
     renderPlan();
     await targetRows();
-    expect(screen.getByText(u.firstCheckin("24 Dec"))).toBeInTheDocument();
+    expectNextCheckin(u.firstCheckin, "24 Dec");
   });
 
   it("contrast: the date is a LOCAL DATE, not an instant — still `24 Dec` in America/Los_Angeles", async () => {
@@ -278,7 +285,7 @@ describe("AC-B3 stubbed: the UI renders the engine's date verbatim (principle 3)
     await seedCache(db, { profile: profileF(), targets: targetsF() });
     renderPlan();
     await targetRows();
-    expect(screen.getByText(u.firstCheckin("24 Dec"))).toBeInTheDocument();
+    expectNextCheckin(u.firstCheckin, "24 Dec");
     expect(document.body.textContent).not.toContain("23 Dec");
   });
 });
@@ -296,9 +303,9 @@ describe("AC-B4 last 3 check-ins", () => {
     await targetRows();
     await waitFor(() => expect(listRows(u.headings.checkins)).toHaveLength(3));
     expect(listRows(u.headings.checkins)).toEqual([
-      "27 Sep · 1 session · 3–4 → 2–3 per week · Waiting for you",
-      "13 Sep · 10 sessions · 3–4 → 4–5 per week · Kept",
-      "30 Aug · 2 sessions · 3–4 → 2–3 per week · Withdrawn",
+      "27 Sep · 3–4 → 2–3 per week 1 session · Waiting for you",
+      "13 Sep · 3–4 → 4–5 per week 10 sessions · Kept",
+      "30 Aug · 3–4 → 2–3 per week 2 sessions · Withdrawn",
     ]);
     expect(document.body.textContent).not.toContain("16 Aug");
   });
@@ -310,7 +317,7 @@ describe("AC-B4 last 3 check-ins", () => {
     await targetRows();
     await waitFor(() => expect(listRows(u.headings.checkins)).toHaveLength(1));
     expect(listRows(u.headings.checkins)).toEqual([
-      "16 Aug · 3 sessions · 4–5 → 3–4 per week · Accepted",
+      "16 Aug · 4–5 → 3–4 per week 3 sessions · Accepted",
     ]);
   });
 
@@ -345,15 +352,12 @@ describe("AC-B5 routines list", () => {
     renderPlan();
     await targetRows();
     await waitFor(() => expect(listRows(u.headings.routines)).toHaveLength(2));
-    expect(listRows(u.headings.routines)).toEqual([
-      "Lower A · 2 exercises",
-      "Upper B · 1 exercise",
-    ]);
-    expect(screen.getByRole("link", { name: "Lower A · 2 exercises" })).toHaveAttribute(
+    expect(listRows(u.headings.routines)).toEqual(["Lower A2 exercises", "Upper B1 exercise"]);
+    expect(screen.getByRole("link", { name: "Lower A, 2 exercises" })).toHaveAttribute(
       "href",
       "/plan/routines/r-lower",
     );
-    expect(screen.getByRole("link", { name: "Upper B · 1 exercise" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Upper B, 1 exercise" })).toHaveAttribute(
       "href",
       "/plan/routines/r-upper",
     );
@@ -413,7 +417,7 @@ describe("the check-in evaluation runs over the real engine feed", () => {
     await targetRows();
     // The date formula is independent of session counts, so the assertion is that nothing threw
     // and the screen still renders the engine's date.
-    expect(screen.getByText(u.nextCheckin("11 Oct"))).toBeInTheDocument();
+    expectNextCheckin(u.nextCheckin, "11 Oct");
     expect(NOW.toISOString()).toBe("2026-09-27T10:00:00.000Z");
   });
 });
