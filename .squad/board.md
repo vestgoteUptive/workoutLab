@@ -138,3 +138,4 @@ GitHub #48 (muscle-group figure like ExerciseDB). Spec `docs/specs/body-map-silh
 | T-0556 | BodyFigure shared component (components/body-figure): hatch pattern, forced colours, import ban | web-shell | T-0315 | doing | wl-build-web |
 | T-0557 | C-01 silhouette layout: figure above a slim label grid, linking, region taps, attention halo; e2e, axe, 320/390, forced colours | web-shell | T-0556 | todo | wl-build-web |
 | T-0558 | UF-04.2 exercise figure card with Primary/Secondary labels; e2e, axe, 320/390, forced colours. Before T-0541 | web-feature:UF-04 | T-0556 | todo | wl-build-web |
+| T-0560 | Library: lunge family (forward, walking, dumbbell, barbell, lateral; Bulgarian split squat if missing); owner request | content | — | doing | wl-build-content |
