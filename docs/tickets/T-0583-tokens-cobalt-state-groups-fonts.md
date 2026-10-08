@@ -43,7 +43,7 @@ D-0208, the Cobalt + state colour redesign. Source: branch `design/redesign-coba
 - AC7: No raw colours outside tokens.json: the colour guard (`no-raw-colour`, `wl-check-colours`) stays green.
 
 ## Paths you may change
-- `packages/design-tokens/**`, `Design-docs/docs/design/design-system.md`
+- `packages/design-tokens/**`, `Design-docs/docs/design/design-system.md`, `.squad/decisions/**`, `.github/scripts/auth-templates.test.mjs` (orchestrator grant: its planted "non-token" colour #FFFFFF is now plan.ink)
 
 ## Contract impact
 `packages/design-tokens/src/tokens.json` is a contract. This is an additive change named by D-0208. Gate: the full `-w typecheck lint test --force` (D-0178 contract rule).

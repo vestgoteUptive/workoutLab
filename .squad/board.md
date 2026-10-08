@@ -128,7 +128,6 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | done | wl-build-web |
 
 ### Add and reorder (D-0205)
 Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D-0205 (no engine, API or data-model change). Items A–G: A = T-0572, B = T-0573 + T-0574 (split for size), C = T-0575, D = T-0576, E = T-0577, F = T-0578, G = T-0579. **UF-08 folder, strictly serial after T-0538 (done):** T-0573 → T-0574 → T-0575 → T-0576 → T-0577 → T-0571 (favorites). T-0572 runs after T-0561 (both edit `screens/UF-08.2.md`). T-0578 (UF-09 machine) has no deps; T-0579 follows it in the same folder.

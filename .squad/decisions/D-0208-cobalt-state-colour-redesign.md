@@ -1,7 +1,7 @@
 ---
 id: D-0208
 title: "Visual redesign: state colour (plan cobalt / lift red / rest teal / paper), no cards, Familjen Grotesk + Bricolage Grotesque; supersedes the Chalk & Iron palette and fonts (D-0019 values, D-0031 stacks, D-0203 card/gutter rules)"
-status: proposed
+status: accepted
 date: 2026-10-08
 by: designer handoff (Design-docs/docs/design/redesign-cobalt/); owner decides Q1–Q4
 supersedes: D-0019 colour values (not its shape rules or colour guard), D-0031 font stacks, D-0203 / visual-foundation §2–§3 card, gutter and heading rules
