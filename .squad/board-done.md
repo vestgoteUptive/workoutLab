@@ -366,3 +366,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0543 | CI releases prod Supabase automatically before the Pages deploy: migration guard, age-encrypted backup, release script (D-0201) | infra | — | done (first automatic release 2026-10-08, run 37710972038) | wl-build-infra |
 | T-0554 | Prod release applies seed.sql on every apply (psql); CLI --include-seed skips a changed seed, so the T-0523 exercises never reached prod | infra | T-0543 | done | wl-build-infra |
 | T-0555 | Seed guard as an allow-list, and psql error lines redacted (T-0554 security T1/T2) | infra | T-0554 | done | wl-build-infra |
+| T-0559 | user-flows.md lines for the UF-04.2 figure and the C-01 silhouette | product | — | done | wl-spec |

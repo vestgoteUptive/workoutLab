@@ -35,5 +35,4 @@ None.
 Every AC checked in the log · `check-all.mjs` green · commits start with `T-0559:`.
 
 ## Build / accept log
-
-- 2026-10-08 build: added UF-04 section with UF-04.2 sentence (AC-1), C-01 line + UF-10.1 body (AC-2), no-figure-in-UF-08/09 sentence (AC-3); spec status set to decided (D-0207). check-all rc=0 (AC-4), format:check green. Grep: `grep -n "D-0207" Design-docs/docs/product/user-flows.md`.
+Archived in `docs/tickets/log/T-0559.md` (D-0157).
