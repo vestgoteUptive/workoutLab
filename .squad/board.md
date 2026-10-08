@@ -130,3 +130,4 @@ GitHub #37 (Plan is confusing) and #45 (Account looks bad). Specs: `docs/specs/v
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0554 | Prod release applies seed.sql on every apply (psql); CLI --include-seed skips a changed seed, so the T-0523 exercises never reached prod | infra | T-0543 | doing | wl-build-infra |
+| T-0555 | Seed guard as an allow-list, and psql error lines redacted (T-0554 security T1/T2) | infra | T-0554 | ready | wl-build-infra |
