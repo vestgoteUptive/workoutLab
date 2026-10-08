@@ -28,12 +28,13 @@ select has_trigger('public', 'excluded_exercises', 'excluded_exercises_after_ins
 select has_function('private', 'favorite_exercises_before_write', 'D1 the before-write function lives in schema private');
 select has_function('private', 'favorite_exercises_after_insert', 'D1 the favorite after-insert function lives in schema private');
 select has_function('private', 'excluded_exercises_after_insert', 'D1 the exclusion after-insert function lives in schema private');
-select results_eq(
-  $$select p.proname::text, p.prosecdef from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-     where n.nspname = 'private' and p.proname in ('favorite_exercises_after_insert', 'excluded_exercises_after_insert')
-     order by p.proname$$,
-  $$values ('excluded_exercises_after_insert'::text, false), ('favorite_exercises_after_insert'::text, false)$$,
-  'D1 both mutual-exclusion functions are security invoker (RLS applies)');
+-- A count, not results_eq: proname::text keeps collation "C", which record comparison against a
+-- default-collation literal can't resolve (CI: "could not determine which collation").
+select is(
+  (select count(*)::int from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+     where n.nspname = 'private' and not p.prosecdef
+       and p.proname in ('favorite_exercises_after_insert', 'excluded_exercises_after_insert')),
+  2, 'D1 both mutual-exclusion functions are security invoker (RLS applies)');
 select is(
   (select count(*)::int from pg_policies where schemaname = 'public' and tablename = 'favorite_exercises'
      and roles = '{authenticated}'
@@ -152,7 +153,7 @@ select is((select count(*)::int from public.favorite_exercises
 -- AC5 as postgres (security review L1): RLS is bypassed, so only the triggers' `user_id =
 -- new.user_id` filter keeps B's row. Under RLS (above) B's rows are hidden either way.
 reset role;
-select is(current_user::text, 'postgres', 'AC5 the next two inserts run as postgres (RLS bypassed)');
+select ok(current_user = 'postgres', 'AC5 the next two inserts run as postgres (RLS bypassed)');
 insert into public.excluded_exercises (user_id, exercise_id) values
   ('00000000-0000-0000-0000-00000000000a', 'fx-deadlift'),
   ('00000000-0000-0000-0000-00000000000b', 'fx-deadlift');
