@@ -5,7 +5,7 @@ lane: design
 screens: []
 decisions: [D-0208, D-0019, D-0031, D-0203, D-0204]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 D-0208, the Cobalt + state colour redesign. Source: branch `design/redesign-cobalt`, files `Design-docs/docs/design/redesign-cobalt/README.md` (sections "Design tokens", "Contrast", "Type") and `tokens.proposed.json`. Read them with `git show origin/design/redesign-cobalt:<path>`; don't copy or edit the handoff folder. This is the foundation for the landing page (T-0584) and, later, the app screens.
@@ -66,3 +66,5 @@ Tests for every AC pass · `pnpm -w typecheck lint test --force --concurrency=1`
   - Planted faults (backup + cp restore, cmp ok): lift.bg #D9472B → 4 red (AC1 ×2, AC4); ramp L·t² in build-css → AC3 red; one sha digit in SOURCES.md → AC5 red; Bricolage weight 200 700 → AC5 red. In-test faults: sRGB ramp, sixth stop, removed @font-face, remote/data: src, doc hex change.
   - Out-of-lane break: `.github/scripts/auth-templates.test.mjs` plants `#FFFFFF` as "not a token". It is one now (plan.ink), so that planted-fault test goes red. Needs an infra one-line fix (follow-up).
   - Gate: `-w typecheck lint test --force --concurrency=1` exit 0 (19/19 tasks); `format:check` exit 0; `check-all.mjs` exit 0; `-w test:repo-checks` exit 1, 368 pass / 1 fail, only `auth-templates.test.mjs` "non-token colour (FFFFFF)". Verified on a cp backup: with `NOT_A_TOKEN = "#" + "1".repeat(6)` it goes 4/4 green (restored, not committed: infra lane).
+
+- 2026-10-08 orchestrator: the auth-templates planted fault now uses #111111 (e38cc54). repo-checks exit 0, check-all exit 0. Code review: approve (no blockers; optional hardening is pinning exact contrast floors). QA skipped by orchestrator judgement: the token tests are unit-only, the reviewer reproduced every ratio, the OKLCH ramp and the sha256 values independently, and no app screen consumes the new variables yet. Accepted.
