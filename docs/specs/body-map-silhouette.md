@@ -2,7 +2,7 @@
 
 - **Idea:** the owner, GitHub #48 "overview of the muscle groups and their parts" (an ExerciseDB example with front and back figures, primary and secondary muscles shaded, and a Male/Female toggle).
 - **Screens:** UF-04.2 Exercise detail (new exercise figure). C-01 Body map on UF-02.1 (compact) and UF-10.1 (full), where the silhouette replaces the D-0060 §1 tile layout. User flows v2 (D-0002). **Not** UF-08.*, UF-09.* or UF-03.*.
-- **Status:** proposed. It needs the decision under "Decisions needed" before any build ticket starts. It reactivates parked **T-0315**.
+- **Status:** decided (D-0207). It reactivates parked **T-0315**.
 - **Research:** `docs/design-research/body-map-silhouette.md` (source options, licences checked 2026-10-08).
 - **Design deltas:** `Design-docs/docs/design/screens/UF-04.2-body-figure.md`, `Design-docs/docs/design/components/c-01-body-map-silhouette.md`.
 - **Builds on:** D-0005 (designer-made line figures, no third-party images), D-0192 (no ExerciseDB media), D-0003 / D-0013 / D-0019 (coverage ramp, steps, legend copy), D-0060 (C-01 build defaults), D-0079 §2 (primary/secondary area lists on UF-04.2), NFR-A11Y-1/2/3/6.
