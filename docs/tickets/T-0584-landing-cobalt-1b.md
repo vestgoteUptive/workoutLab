@@ -5,7 +5,7 @@ lane: landing
 screens: []
 decisions: [D-0208, D-0194, T-0309]
 deps: [T-0583]
-status: doing
+status: done
 ---
 ## Why
 D-0208 §7: the owner chose landing layout **1b** on 2026-10-08. The spec is the "Landing page" section of `Design-docs/docs/design/redesign-cobalt/README.md` on branch `design/redesign-cobalt`. The visual reference is `canvas/Landing Page.dc.html`, option `#1b`; "Now" is the current page, and 1a is rejected. Read them with `git show origin/design/redesign-cobalt:<path>`, and open the canvas in a browser from a scratch copy.
@@ -86,3 +86,5 @@ Every AC has a test, and each is proven by a planted fault where one applies · 
 - Screenshots (AC12): `index-1440`, `index-390`, `privacy-390`, `404-390` via `testInfo.outputPath`; copies and canvas #1b in the scratchpad `t0584-shots/`. Visual review by orchestrator/owner: pending.
 - Review rework: `.feature-card { align-content: start }` (cells 02/03 had an h3 box stretched to 53.8 px, so the h3-to-body gap was about 27.8 px instead of 14); h1 is `8rem` from 1024 (the clamp gave 122.9 px at 1024); skip-link comment fixed. Tests: gap/h3-height at 1280 and 1440, h1 at 1024/1050/1066/1100. Red without the fix (h3 height 53.77 vs 40, 2 failed), green with it.
 - T-0309 AC18 amended: the CTA is reached within 3 Tabs (skip link, header pill, CTA), or by skip link + Tab. Forced by the README header "Open the app" pill, which sits before the hero.
+
+- 2026-10-08 orchestrator: code review requested changes (grid gap), fixed in cc61a4b. Security sign-off: approve (docs/security/T-0584-landing-cobalt-headers.md). QA: pass (planted faults on AC4/6/7/10/11 red; lhci exit 0). AC12 visual review: the 1440 shot matches canvas #1b, with the gap even after the fix; the 390 shot follows the README mobile rules. Accepted.
