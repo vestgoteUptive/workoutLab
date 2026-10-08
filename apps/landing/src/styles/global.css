@@ -46,8 +46,8 @@ a {
   color: inherit;
 }
 
-/* Skip link: visually hidden until focused, so keyboard users reach the CTA in at most two
-   Tab presses (AC18). */
+/* Skip link: visually hidden until focused, so keyboard users reach the CTA with the skip
+   link plus one Tab, or in at most three Tabs (skip link, header pill, CTA; AC18). */
 .skip-link {
   position: absolute;
   top: -40px;
@@ -195,6 +195,10 @@ a {
 }
 
 @media (min-width: 1024px) {
+  .hero h1 {
+    font-size: 8rem;
+  }
+
   .hero {
     grid-template-columns: minmax(0, 1fr) 340px;
     column-gap: 64px;
@@ -271,6 +275,8 @@ a {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
   column-gap: 16px;
+  /* Stretched cells must not spread spare height across the h3 and p rows. */
+  align-content: start;
   padding: 32px 0;
   counter-increment: feature;
 }

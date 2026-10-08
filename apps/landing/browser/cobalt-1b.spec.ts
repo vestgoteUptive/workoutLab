@@ -592,3 +592,33 @@ test.describe("AC12: screenshots for the orchestrator's visual comparison", () =
     });
   }
 });
+
+test.describe("T-0584 review fixes", () => {
+  for (const width of [1280, 1440]) {
+    test(`h3-to-body gap is 14px in all four cells at ${width}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      const gaps = await page.locator(".feature-card").evaluateAll((cards) =>
+        cards.map((c) => {
+          // A stretched row would grow the h3 box (40px at line-height 1), so check both.
+          const h3 = c.querySelector("h3")!.getBoundingClientRect();
+          const p = c.querySelector("p")!.getBoundingClientRect();
+          return { gap: p.top - h3.bottom, h3Height: h3.height };
+        }),
+      );
+      expect(gaps).toHaveLength(4);
+      for (const g of gaps) {
+        expect(Math.abs(g.gap - 14)).toBeLessThanOrEqual(1);
+        expect(Math.abs(g.h3Height - 40)).toBeLessThanOrEqual(1);
+      }
+    });
+  }
+
+  test("h1 is exactly 128px from 1024 up", async ({ page }) => {
+    for (const width of [1024, 1050, 1066, 1100]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto("/");
+      expect((await css(page, "h1", ["font-size"]))["font-size"], `${width}`).toBe("128px");
+    }
+  });
+});
