@@ -40,7 +40,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-02 e2e specs green · contracts unchanged · commits start with `T-0570:` and cite UF-02.1 / UF-02.2.
 
 ## Build / accept log
-
-- 2026-10-08 frontend-dev: `use-today.ts` passes `favoriteIdsFor(useFavoriteList(userId).ids)` next to `excludeIds`; waits for both `loaded`; recomputes on the favorites key. New `__tests__/favorites.test.tsx` (real engine spy + fake-indexeddb): AC1 card/preview/empty, AC2 offline (no fetch), AC3 live update, AC4 exclusion wins. Two existing exact-input assertions (card.test, preview.test) gained `favoriteIds: []` because AC1 requires the key.
-- Planted faults (backup copy, restored): favoriteIds hard-coded `[]` -> AC1 x2 + AC2 red; favoritesKey dropped from deps -> AC3 red; `favorites.loaded` ignored -> AC1 x2 red. AC4 stays green under fault 1 by design (engine rule).
-- Gate: full -w typecheck lint test green on 3rd run (two earlier runs failed on UF-03 swap host / stale-module tests under load; pass alone and in plain vitest, unrelated); format:check ok; check-all ok; uf-02 e2e 13 passed.
+Archived in `docs/tickets/log/T-0570.md` (D-0157).
