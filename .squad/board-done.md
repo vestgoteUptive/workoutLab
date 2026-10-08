@@ -373,3 +373,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0536 | Device cache: Dexie v3 table keyed by userId, refreshAll read, exclude/include writes after server confirm, missing-table tolerance, union helper, useOnline. After H-27 | web-shell | T-0535 | done | wl-build-web |
 | T-0556 | BodyFigure shared component (components/body-figure): hatch pattern, forced colours, import ban | web-shell | T-0315 | done | wl-build-web |
 | T-0560 | Library: lunge family (forward, walking, dumbbell, barbell, lateral; Bulgarian split squat if missing); owner request | content | — | done (released automatically) | wl-build-content |
+| T-0558 | UF-04.2 exercise figure card with Primary/Secondary labels; e2e, axe, 320/390, forced colours. Before T-0541 | web-feature:UF-04 | T-0556 | done | wl-build-web |

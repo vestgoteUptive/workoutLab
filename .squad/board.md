@@ -133,5 +133,4 @@ GitHub #48 (muscle-group figure like ExerciseDB). Spec `docs/specs/body-map-silh
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0557 | C-01 silhouette layout: figure above a slim label grid, linking, region taps, attention halo; e2e, axe, 320/390, forced colours | web-shell | T-0556 | doing | wl-build-web |
-| T-0558 | UF-04.2 exercise figure card with Primary/Secondary labels; e2e, axe, 320/390, forced colours. Before T-0541 | web-feature:UF-04 | T-0556 | doing | wl-build-web |
 | T-0911 | Flaky '/library/back-squat renders UF-04.2' web test blocks CI/release | web-feature:UF-04 | — | doing | wl-build-web |
