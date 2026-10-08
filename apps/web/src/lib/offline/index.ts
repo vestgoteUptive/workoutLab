@@ -36,3 +36,14 @@ export { loadEngineHistory } from "./engine-feed.js";
 export { ensurePersistentStorage } from "./persist.js";
 export { offlineDb, resetOfflineDbForTest, DB_NAME } from "./db.js";
 export { currentUserId } from "./current-user.js";
+// T-0536 (D-0199): the excluded-exercises cache, its two online-only writes and the union helper.
+export {
+  refreshExcluded,
+  excludeExercise,
+  includeExercise,
+  excludeIdsFor,
+  loadExcludedIds,
+  ExcludedWriteError,
+} from "./excluded.js";
+export type { ExcludedWriteReason } from "./excluded.js";
+export { useExcludedIds, useExcludedRows, useOnline } from "./excluded-hooks.js";
