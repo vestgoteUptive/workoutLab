@@ -94,6 +94,9 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
+| T-0914 | UF-02 card.test.tsx mocks ../slots.js (real check-in card raced the no-button assertion; main red since 28719f5), Today forwards now/tz/locale to CheckinSlot | web-feature:UF-02 | — | doing | wl-build-web |
+| T-0915 | lib/pwa/update.ts adopts installing worker in watch(), re-adopts on check() (pwa-update.spec.ts:109 flake) | web-shell | — | todo | wl-build-web |
+| T-0916 | pwa-update.spec.ts:118 lazy-chunk console-guard flake: root-cause it | qa | T-0915 | todo | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
 
 ## Phase 5 — Iterate
@@ -125,7 +128,7 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | doing | wl-build-web |
+| T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | done | wl-build-web |
 
 ### Add and reorder (D-0205)
 Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D-0205 (no engine, API or data-model change). Items A–G: A = T-0572, B = T-0573 + T-0574 (split for size), C = T-0575, D = T-0576, E = T-0577, F = T-0578, G = T-0579. **UF-08 folder, strictly serial after T-0538 (done):** T-0573 → T-0574 → T-0575 → T-0576 → T-0577 → T-0571 (favorites). T-0572 runs after T-0561 (both edit `screens/UF-08.2.md`). T-0578 (UF-09 machine) has no deps; T-0579 follows it in the same folder.
@@ -148,5 +151,5 @@ Owner request: groom 10 parked tickets and put the ones worth doing at the back 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0583 | Design tokens: Cobalt state groups, OKLCH coverage ramp, radius and space; self-hosted Familjen Grotesk and Bricolage Grotesque (additive; contract change, --force gate) | design | — | ready | wl-design |
+| T-0583 | Design tokens: Cobalt state groups, OKLCH coverage ramp, radius and space; self-hosted Familjen Grotesk and Bricolage Grotesque (additive; contract change, --force gate) | design | — | doing | wl-design |
 | T-0584 | Landing page: Cobalt option 1b, plus 404 and Privacy restyle (copy unchanged; security sign-off on _headers) | landing | T-0583 | todo | wl-build-web |
