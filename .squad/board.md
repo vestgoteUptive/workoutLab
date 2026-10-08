@@ -94,7 +94,6 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 |---|---|---|---|---|---|
 | T-0525 | One vite/vitest variant across the workspace: after T-0512 (astro 7 → vite 8), engine/shared/exercises/design-tokens resolve vitest against vite 8 while web+landing pin vite 6; the shared vitest config imports through hoisting. Add an explicit vite pin per package or a root-level override so there is one vitest variant (T-0512 build finding) | infra | T-0512 | todo (parked: nothing to fix until T-0512 merges after H-24; groom it then) | wl-build-infra |
 | T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | merged (AC-4 live verify_jwt read pending: blocked for agents) | wl-build-infra |
-| T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | merged (fresh-reset pgTAP run pending: db reset blocked for agents) | wl-build-backend |
 
 ## CI fixes (any phase)
 Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `docs/ci/CI-T-09NN-*.md`. Built with the owning lane's flow; merged only after a green draft-PR run.
@@ -108,7 +107,6 @@ The product-owner adds tickets from `revisit` decisions, triage outcomes and QA 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | merged (reaches prod with the next function release) | wl-build-backend |
 
 ### D-0199 excluded exercises
 User request "exclude exercises and manage the list" (spec `docs/specs/excluded-exercises.md`, D-0199, grooming defaults D-0200). **Release order:** T-0535 merges into the local `main` and `main` is not pushed or deployed until H-27 (prod release of its migration) is done; T-0536, T-0538, T-0539, T-0540, T-0541 merge only after H-27. T-0533 → T-0534 run serially (same engine files). en.ts (T-0537) and routes.ts (T-0540) are shared files.
@@ -133,7 +131,7 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | doing | wl-build-data |
+| T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | review (PR) | wl-build-data |
 | T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | todo | wl-build-backend |
 | T-0567 | Device cache: generalise excluded.ts into one list-cache helper; Dexie v4 favoriteCache, refreshAll read, writes after confirm, cross-list drop, hooks | web-shell | T-0564 | doing | wl-build-web |
 | T-0568 | UF-04.2 Favorite toggle with move lines + UF-04.1 Favorite tag | web-feature:UF-04 | T-0541, T-0558, T-0561, T-0567 | todo | wl-build-web |
@@ -154,3 +152,4 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 | T-0578 | UF-09 Do this later: canDoLater, permutation, Trim-path plan write, machine event remapping itemIndex/skippedItems, restore realign | web-feature:UF-09 | — | doing | wl-build-web |
 | T-0579 | UF-09.9 "Do {name} later" button, UF-09.6 status, failure alert, e2e offline reload | web-feature:UF-09 | T-0578, T-0572 | todo | wl-build-web |
 | T-0580 | Show the failed-exclusion message on the host screen after the swap sheet closes (T-0539 follow-up) | web-feature:UF-09 | T-0539 | todo | wl-build-web |
+| T-0912 | Flaky UF-11 plan-checkins-routines AC6 under load | web-feature:UF-11 | — | ready | wl-build-web |

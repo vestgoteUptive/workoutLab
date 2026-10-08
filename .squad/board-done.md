@@ -329,6 +329,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0402d | Go-live at H-06: Free→Pro with spend cap on (gate 2), `site_url` → app host via keys-only PATCH, `PROD_DEPLOY_ENABLED`, first prod deploys verified (D-0186 §1) | infra | T-0402a, T-0402b, T-0402c, T-0403 | done (go-live complete; automatic deploys on) | wl-build-infra |
 | T-0510 | Security headers via `_headers` for web: HSTS, CSP as a real header (frame-ancestors 'none', base-uri, form-action, object-src), X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy, plus a build test (go-live review F-1/F-5) | web-shell | T-0403 | done (verified live 2026-10-07) | wl-build-web |
 | T-0511 | Same security headers for the landing site (go-live review F-1) | landing | T-0403 | done (verified live 2026-10-07) | wl-build-web |
+| T-0505 | Drift guard: every public table with a user_id FK to auth.users has ON DELETE CASCADE and is in EXPORT_TABLES (T-0406 P4-a) | backend | T-0406 | done (pgTAP drift guard green on every CI fresh reset) | wl-build-backend |
 
 ## Phase 5 — Iterate
 | ID | Title | Lane | Deps | Status | Flow |
@@ -386,3 +387,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0539 | UF-05.1/UF-08.3 swap sheet: stored list to rankSwaps, "Don't suggest {name} again" checkbox, "No alternatives left" empty state. After H-27 | web-feature:UF-05 | T-0532, T-0533, T-0536, T-0537 | done | wl-build-web |
 | T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | done (AC3 wording: key 0 can't fail R7-E29 at R7-E4 inputs; noted) | wl-build-engine |
 | T-0564 | favorite_exercises table + mutual-exclusion triggers (destructive-approved D-0202 header), data-model, database.gen, pgTAP 001/007/018/020, export 9th key, e2e mock | data | — | done (released automatically) | wl-build-data |
+| T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | done (validator released 2026-10-08) | wl-build-backend |
