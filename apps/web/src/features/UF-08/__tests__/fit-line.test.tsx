@@ -60,6 +60,8 @@ async function loaded(): Promise<void> {
   await waitFor(() => expect(fitLine().textContent).toMatch(/^(Fits|Nothing)/));
 }
 
+// T-0538: with an empty stored list `excludeIds` is `[]`; a non-empty list is pinned in
+// excluded-suggest.test.tsx (AC5).
 describe("AC-6 the call", () => {
   it("passes (history, targets, profile, library, input, now ISO, tz) to the real suggest", async () => {
     renderSetup();

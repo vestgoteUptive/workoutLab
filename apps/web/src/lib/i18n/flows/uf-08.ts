@@ -51,6 +51,14 @@ export const uf08 = {
   nothingFits: (budgetMin: number) => `Nothing fits in ${budgetMin} min`,
   /** A plan emptied by Remove (T-0521, D-0191 §5). */
   noneLeft: "No exercises left. Pick a time to rebuild.",
+  /** T-0538 (D-0199 §2): the Removed line under UF-08.2's list. */
+  removedName: "Removed",
+  neverSuggest: "Never suggest",
+  /** Accessible name, unique per row. */
+  neverSuggestName: (name: string) => `Never suggest ${name}`,
+  wontBeSuggested: (name: string) => `${name} won't be suggested`,
+  undo: "Undo",
+  undoName: (name: string) => `Undo, ${name} won't be suggested`,
   suggest: "Suggest my workout",
   /** No profile or fewer than 9 targets in the cache (D-0107 §9). */
   missing: "Connect to finish setting up your plan",

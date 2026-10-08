@@ -21,6 +21,7 @@ import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from "r
 import { Link, useNavigate, useSearchParams } from "react-router";
 import {
   AREAS,
+  excludedOutAreas,
   removeItem,
   suggest,
   type Area,
@@ -32,6 +33,8 @@ import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js"
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { formatTime } from "../../lib/format/intl.js";
 import { en } from "../../lib/i18n/en.js";
+import { excludeExercise, excludeIdsFor, includeExercise } from "../../lib/offline/excluded.js";
+import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js";
 import { SwapSheet } from "../UF-05/index.js";
 import { Ready } from "./Ready.js";
 import { Suggested } from "./Suggested.js";
@@ -78,12 +81,18 @@ function defaultTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
-/** UF-08.1's call is fixed at `shuffle: 0, mainLiftId: null, excludeIds: []` (T-0303a AC-6). */
+/**
+ * UF-08.1's call is fixed at `shuffle: 0, mainLiftId: null`, with `excludeIds` = the stored list
+ * (T-0538, D-0199 §6; the visit list is empty here). `pinnedIds` is a parameter so the later
+ * add/reorder tickets (D-0205) can thread it through every call without reshaping them.
+ */
 function setupInput(
   budgetMin: number,
   warmupInBudget: boolean,
   energy: Energy,
   avoidAreas: readonly Area[],
+  stored: readonly string[],
+  pinnedIds: readonly string[] = [],
 ): SessionInput {
   return {
     budgetMin,
@@ -91,8 +100,8 @@ function setupInput(
     energy,
     shuffle: 0,
     mainLiftId: null,
-    pinnedIds: [],
-    excludeIds: [],
+    pinnedIds: [...pinnedIds],
+    excludeIds: excludeIdsFor(stored, []),
     // T-0520 (D-0191): the engine does the skipping (rule 6.1); absent when nothing is skipped.
     ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
   };
@@ -175,7 +184,10 @@ export function SessionSetup({
     else finishButton.current?.focus();
   }, [finishOpen]);
 
-  const { status } = useAuth();
+  const { status, userId } = useAuth();
+  // T-0538 (D-0199 §6): the stored list joins every `suggest` call; offline it is the cache.
+  const { ids: stored, loaded: storedLoaded } = useExcludedList(userId);
+  const online = useOnline();
   const state = useSetupData(nowIso, tz, status === "signed-in");
   const data = state.kind === "ready" ? state.data : null;
 
@@ -202,12 +214,34 @@ export function SessionSetup({
   // the shared `budgetMin` and must not cost a second `suggest` call.
   const workout = useMemo(
     () =>
-      data && !pastSetup
-        ? runSuggest(data, setupInput(budgetMin, warmupInBudget, energy, avoidAreas), nowIso, tz)
+      data && !pastSetup && storedLoaded
+        ? runSuggest(
+            data,
+            setupInput(budgetMin, warmupInBudget, energy, avoidAreas, stored),
+            nowIso,
+            tz,
+          )
         : null,
-    [data, pastSetup, budgetMin, warmupInBudget, energy, avoidAreas, nowIso, tz],
+    [
+      data,
+      pastSetup,
+      storedLoaded,
+      budgetMin,
+      warmupInBudget,
+      energy,
+      avoidAreas,
+      stored,
+      nowIso,
+      tz,
+    ],
   );
-  const missing = state.kind === "missing" || (data !== null && !pastSetup && workout === null);
+  // The notice reads the stored list only (D-0199 §8): a Remove on this visit never shows it.
+  const noticeAreas = useMemo(
+    () => (data ? excludedOutAreas(data.profile, data.library, stored) : []),
+    [data, stored],
+  );
+  const missing =
+    state.kind === "missing" || (data !== null && !pastSetup && storedLoaded && workout === null);
 
   useEffect(() => {
     if (badSwap) void navigate(`${SETUP_PATH}?step=suggested`, { replace: true });
@@ -272,7 +306,7 @@ export function SessionSetup({
           shuffle: next.shuffle,
           mainLiftId,
           pinnedIds: [],
-          excludeIds: next.excludeIds,
+          excludeIds: excludeIdsFor(stored, next.excludeIds),
           ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
         },
         nowIso,
@@ -295,6 +329,12 @@ export function SessionSetup({
         locale={loc}
         avoidAreas={avoidAreas}
         emptiedByRemove={adjusted.emptiedByRemove}
+        noticeAreas={noticeAreas}
+        removedIds={adjusted.excludeIds}
+        storedIds={stored}
+        online={online}
+        onExclude={userId ? (id) => excludeExercise(userId, id) : undefined}
+        onInclude={userId ? (id) => includeExercise(userId, id) : undefined}
         onRemove={(exerciseId) => {
           // T-0521 (D-0191 §4): no `suggest` call. The engine drops the row and refills nothing;
           // the id joins `excludeIds`, so a later Shuffle or time chip can't bring it back.
