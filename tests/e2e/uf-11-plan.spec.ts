@@ -194,7 +194,7 @@ test.describe("the happy path: the plan renders from the mocked server", () => {
     await expect(targets.nth(7)).toHaveText("Hamstrings 16 hard sets");
 
     // AC-B4's three newest, in order, and the fourth absent.
-    const checkins = page.locator('ul[aria-label="Last check-ins"] li');
+    const checkins = page.locator('ul[aria-label="Check-ins"] li');
     await expect(checkins).toHaveCount(3);
     await expect(checkins.nth(0)).toContainText("Waiting for you");
     await expect(checkins.nth(1)).toContainText("Kept");
@@ -203,10 +203,11 @@ test.describe("the happy path: the plan renders from the mocked server", () => {
 
     const routines = page.locator('ul[aria-label="Routines"] li a');
     await expect(routines).toHaveCount(2);
-    await expect(routines.nth(0)).toHaveText("Lower A · 2 exercises");
+    // T-0549: the row holds the name and the count caption; the link's accessible name joins them.
+    await expect(routines.nth(0)).toHaveAccessibleName("Lower A, 2 exercises");
     await expect(routines.nth(0)).toHaveAttribute("href", `/plan/routines/${ROUTINE_A_ID}`);
     // The singular, asserted exactly.
-    await expect(routines.nth(1)).toHaveText("Upper B · 1 exercise");
+    await expect(routines.nth(1)).toHaveAccessibleName("Upper B, 1 exercise");
     await expect(page.getByRole("link", { name: "New routine" })).toHaveAttribute(
       "href",
       "/plan/routines/new",

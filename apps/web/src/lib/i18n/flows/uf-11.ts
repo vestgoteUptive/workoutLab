@@ -31,19 +31,22 @@ export const uf11 = {
     rhythm: "Rhythm",
     priorities: "Priority areas",
     targets: "Targets",
-    checkins: "Last check-ins",
+    checkins: "Check-ins",
     routines: "Routines",
   },
   sourceLabels: {
     manual: "Set by you",
   },
   adapted: (date: string) => `Adapted ${date}`,
-  firstCheckin: (date: string) => `First check-in on ${date}`,
-  nextCheckin: (date: string) => `Next check-in: ${date}`,
+  // T-0549: the caption and the date are rendered apart (spec block 7).
+  firstCheckin: "First check-in",
+  nextCheckin: "Next check-in",
+  checkinsExplain:
+    "Every 14 days we compare your sessions with your rhythm. If you're under or over two periods in a row, we suggest a new rhythm. Nothing changes until you accept.",
   noCheckins: "No check-ins yet",
   sessions: (n: number) => `${n} ${n === 1 ? "session" : "sessions"}`,
-  checkinRow: (date: string, sessions: string, change: string, answer: string) =>
-    `${date} · ${sessions} · ${change} per week · ${answer}`,
+  checkinLine: (date: string, change: string) => `${date} · ${change} per week`,
+  checkinMeta: (sessions: string, answer: string) => `${sessions} · ${answer}`,
   checkinChange: (fromMin: number, fromMax: number, toMin: number, toMax: number) =>
     `${fromMin}–${fromMax} → ${toMin}–${toMax}`,
   answers: {
@@ -53,7 +56,7 @@ export const uf11 = {
     pending: "Waiting for you",
   },
   exercises: (n: number) => `${n} ${n === 1 ? "exercise" : "exercises"}`,
-  routineRow: (name: string, exercises: string) => `${name} · ${exercises}`,
+  routineName: (name: string, exercises: string) => `${name}, ${exercises}`,
   noRoutines: "No routines yet",
   newRoutine: "New routine",
   editPlan: "Edit plan",
@@ -104,7 +107,7 @@ export const uf11 = {
       `${
         n === 1 ? `You trained 1 time` : `You trained ${n} times`
       } in your last 14-day period (${from}–${to}). Your plan is ${planMin}–${planMax}. Step up to ${newMin}–${newMax} per week?`,
-    previewRow: (area: string, current: number, next: number) => `${area} ${current} → ${next}`,
+    previewNumbers: (current: number, next: number) => `${current} → ${next}`,
     accept: "Accept",
     keep: "Keep current",
     connectToUpdate: "Connect to update your plan",

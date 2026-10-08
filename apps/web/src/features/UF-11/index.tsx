@@ -34,6 +34,7 @@ export function Plan({ now = systemClock }: PlanScreenProps = {}) {
   // T-0481: bumped by the card's `onAnswered`; `usePlanData` re-reads the cache once per bump.
   const [revision, setRevision] = useState(0);
   const state = usePlanData(now, revision);
+  const [checkinPending, setCheckinPending] = useState(false);
   return (
     <div data-screen-id="UF-11.2" className="wl-page">
       <header className="wl-plan__header">
@@ -48,9 +49,13 @@ export function Plan({ now = systemClock }: PlanScreenProps = {}) {
         <p className="wl-plan__purpose">{en.uf11.purpose}</p>
       </header>
       {state.phase !== "loading" ? (
-        <CheckinCard now={now} onAnswered={() => setRevision((r) => r + 1)} />
+        <CheckinCard
+          now={now}
+          onAnswered={() => setRevision((r) => r + 1)}
+          onVisibleChange={setCheckinPending}
+        />
       ) : null}
-      <PlanBody state={state} />
+      <PlanBody state={state} checkinPending={checkinPending} />
     </div>
   );
 }

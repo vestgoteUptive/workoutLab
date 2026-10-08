@@ -509,3 +509,25 @@ test.describe("T-0471 AC-2 follow-up: CheckinCard never mounts ahead of Today's 
     await expect(page.locator('[data-part="checkin-card"]')).toBeVisible();
   });
 });
+
+// T-0549 AC9: the restyled card still sits on UF-02.1 with its label and both buttons.
+test.describe("T-0549 AC9 the restyled check-in card on UF-02.1", () => {
+  test("390 x 844: Check-in label, Accept and Keep current, no horizontal scroll", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await mockSupabaseData(page, UF11_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+    const card = page.locator('[data-part="checkin-card"]');
+    await expect(card).toBeVisible();
+    await expect(card.getByRole("heading", { name: "Check-in" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Accept" })).toBeVisible();
+    await expect(card.getByRole("button", { name: "Keep current" })).toBeVisible();
+    const over = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(over).toBeLessThanOrEqual(0);
+  });
+});

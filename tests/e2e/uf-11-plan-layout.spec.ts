@@ -143,10 +143,37 @@ test("See this period in Balance opens UF-10.1", async ({ page }) => {
   await expect(page.locator('[data-screen-id="UF-10.1"]')).toBeVisible();
 });
 
-test("screenshot of /plan at 390 px", async ({ page }) => {
+test("screenshot of /plan at 390 px", async ({ page }, testInfo) => {
   await open(page, 390, 844);
-  await page.screenshot({
-    path: "/tmp/claude-1000/-home-henrik-dev-uptive-private-workoutLab/b9c18a03-9bde-4682-9460-947c135cf3b1/scratchpad/plan-after.png",
-    fullPage: true,
-  });
+  // Review artefact only: written to Playwright's per-test output dir, never a machine path.
+  await page.screenshot({ path: testInfo.outputPath("plan-390.png"), fullPage: true });
+});
+
+// T-0549 AC7: with a pending check-in and routines, every link and button is at least 44 px tall,
+// and exactly one element carries the primary class (Accept).
+test("390 x 844: pending check-in and routines, every target is 44 px and Accept is the one primary", async ({
+  page,
+}) => {
+  await open(page, 390, 844);
+  await expect(page.getByRole("button", { name: "Accept" })).toBeVisible();
+  await expect(page.locator('[data-screen-id="UF-11.2"] h2')).toHaveText([
+    "Check-in",
+    "Your plan",
+    "Targets",
+    "Check-ins",
+    "Routines",
+  ]);
+  await expect(page.locator('[data-screen-id="UF-11.2"] .wl-button--primary')).toHaveCount(1);
+  await expect(page.getByRole("link", { name: "Edit plan" })).toHaveClass(/wl-button--secondary/);
+  const heights = await page
+    .locator('[data-screen-id="UF-11.2"] :is(a, button, [role="button"])')
+    .evaluateAll((els) =>
+      els
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0)
+        .map((r) => r.height),
+    );
+  expect(heights.length).toBeGreaterThan(6);
+  for (const h of heights) expect(h).toBeGreaterThanOrEqual(44);
+  expect(await overflowX(page)).toBeLessThanOrEqual(0);
 });

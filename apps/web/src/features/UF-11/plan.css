@@ -208,3 +208,98 @@
   stroke-linecap: round;
   stroke-linejoin: round;
 }
+
+/* T-0549 UF-11.2 blocks 2, 7, 8. */
+.wl-plan__preview,
+.wl-plan__history,
+.wl-plan__rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wl-plan__preview li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-block: 6px;
+}
+
+.wl-plan__preview li + li,
+.wl-plan__history li + li {
+  border-block-start: 1px solid var(--wl-color-line);
+}
+
+.wl-plan__nums {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-plan__next {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wl-plan__history li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: 10px;
+}
+
+.wl-plan__line {
+  font-weight: 500;
+}
+
+.wl-plan__rowtext {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.wl-plan__name {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.wl-plan__rows .wl-row {
+  border-block-start: 0;
+}
+
+.wl-plan__rows li + li {
+  border-block-start: 1px solid var(--wl-color-line);
+}
+
+.wl-plan__linkbtn svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Neutral notice (components/neutral-notice.md), local copy: no cross-feature import. */
+.wl-plan__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 12px;
+  color: var(--wl-color-text-muted);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.wl-plan__notice svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
