@@ -63,3 +63,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · contracts unchanged · commits start with `T-0536:` and cite the screen IDs.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0536.md` (D-0157).

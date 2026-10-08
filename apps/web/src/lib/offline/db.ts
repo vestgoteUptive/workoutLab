@@ -164,6 +164,14 @@ export interface SyncMeta {
   persistRequested: boolean;
 }
 
+/** One cached `excluded_exercises` row (T-0536, D-0199 §5). `key` is `userScopedKey(userId, exerciseId)`. */
+export interface CachedExcluded {
+  key: string;
+  userId: string;
+  exerciseId: string;
+  createdAt: string;
+}
+
 export const DB_NAME = "wl-offline";
 
 export class OfflineDb extends Dexie {
@@ -180,6 +188,8 @@ export class OfflineDb extends Dexie {
   sessionCache!: Table<CachedSession, string>;
   checkinCache!: Table<CachedCheckin, string>;
   routineCache!: Table<CachedRoutine, string>;
+  // Version 3 (T-0536, D-0199 §5): the excluded-exercises cache.
+  excludedCache!: Table<CachedExcluded, string>;
 
   constructor(name: string = DB_NAME) {
     super(name);
@@ -202,6 +212,10 @@ export class OfflineDb extends Dexie {
       sessionCache: "key, userId, startedAt",
       checkinCache: "key, userId",
       routineCache: "key, userId, name",
+    });
+    // Version 3 only adds a store: no `.upgrade()`, so no queued row can change (NFR-OFF-2).
+    this.version(3).stores({
+      excludedCache: "key, userId",
     });
   }
 }

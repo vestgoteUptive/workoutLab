@@ -4,7 +4,7 @@
 - **Screens:** UF-04.2 Exercise detail (new exercise figure). C-01 Body map on UF-02.1 (compact) and UF-10.1 (full), where the silhouette replaces the D-0060 §1 tile layout. User flows v2 (D-0002). **Not** UF-08.*, UF-09.* or UF-03.*.
 - **Status:** decided (D-0207). It reactivates parked **T-0315**.
 - **Research:** `docs/design-research/body-map-silhouette.md` (source options, licences checked 2026-10-08).
-- **Design deltas:** `Design-docs/docs/design/screens/UF-04.2-body-figure.md`, `Design-docs/docs/design/components/c-01-body-map-silhouette.md`.
+- **Design deltas:** `Design-docs/docs/design/screens/UF-04.1-UF-04.2.md (§ UF-04.2 Body figure)`, `Design-docs/docs/design/components/c-01-body-map.md (§ Silhouette layout)`.
 - **Builds on:** D-0005 (designer-made line figures, no third-party images), D-0192 (no ExerciseDB media), D-0003 / D-0013 / D-0019 (coverage ramp, steps, legend copy), D-0060 (C-01 build defaults), D-0079 §2 (primary/secondary area lists on UF-04.2), NFR-A11Y-1/2/3/6.
 - **Principles:** 3, deterministic engine: the figure only *draws* `coverageStep`, `needsAttention` and the exercise's area weights. It computes nothing. 1, one task on screen: the figure never appears on UF-09 (and not on UF-08 in v1). 5, onboarding: nothing added.
 
@@ -83,11 +83,11 @@ Our data stops at 9 areas. **v1 draws sub-muscles as decorative seam lines only.
 
 ### 6.1 UF-04.2 Exercise detail (the owner's example)
 
-The full delta is in `Design-docs/docs/design/screens/UF-04.2-body-figure.md`. In short: a figure card under the tagline, with primary areas solid `accent`, secondary areas `accent` hatched over `surface-2`, and all other areas `surface-2`. The existing "Primary areas" / "Secondary areas" lists (D-0079 §2) stay and become the legend, each with a visible label and a swatch ("Primary" solid, "Secondary" hatched). The figure isn't interactive.
+The full delta is in `Design-docs/docs/design/screens/UF-04.1-UF-04.2.md (§ UF-04.2 Body figure)`. In short: a figure card under the tagline, with primary areas solid `accent`, secondary areas `accent` hatched over `surface-2`, and all other areas `surface-2`. The existing "Primary areas" / "Secondary areas" lists (D-0079 §2) stay and become the legend, each with a visible label and a swatch ("Primary" solid, "Secondary" hatched). The figure isn't interactive.
 
 ### 6.2 C-01 on UF-02.1 and UF-10.1
 
-The full delta is in `Design-docs/docs/design/components/c-01-body-map-silhouette.md`. In short: the figure sits on top, filled by `coverageStep`, with the attention outline. Under it, the D-0060 tiles stay as a compact **label grid**: 3 columns in the D-0060 order, each with a swatch, the area name and `load / target`. In `full` the labels are the 9 buttons (≥ 44 × 44), and the regions forward pointer taps to them. The legend is unchanged. `compact` stays one link. D-0060 §2–§8 still apply.
+The full delta is in `Design-docs/docs/design/components/c-01-body-map.md (§ Silhouette layout)`. In short: the figure sits on top, filled by `coverageStep`, with the attention outline. Under it, the D-0060 tiles stay as a compact **label grid**: 3 columns in the D-0060 order, each with a swatch, the area name and `load / target`. In `full` the labels are the 9 buttons (≥ 44 × 44), and the regions forward pointer taps to them. The legend is unchanged. `compact` stays one link. D-0060 §2–§8 still apply.
 
 ### 6.3 UF-08.2 Suggested workout: not in v1
 

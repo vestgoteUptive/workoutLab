@@ -55,3 +55,4 @@ None. No token, schema, API or engine change. D-0207 is the decision.
 Every AC checked and recorded · `check-figure.mjs` green · `node .github/scripts/check-all.mjs` green · contracts unchanged · commits start with `T-0315:` and cite UF-04.2 / UF-10.1.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0315.md` (D-0157).

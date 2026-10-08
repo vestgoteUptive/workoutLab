@@ -272,6 +272,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0464 | UF-03.1 List view: an uncheck click while a kg edit is in flight (blur starts editSet) is dropped because the row is busy — queue it or re-enable after the edit settles (T-0417 review) | web-feature:UF-03 | T-0417 | done | wl-build-web |
 | T-0462 | UF-09 Back means Pause: e2e for a second cycle (Back → Resume → Back still pauses); Chromium may mark the guard entry skippable when it is re-pushed inside popstate without user activation; also tighten t0394 host-level tests to tell not-on-device / ended / stale apart (T-0394 review) | web-feature:UF-09 | T-0394 | done | wl-build-web |
 | T-0351 | Profile gate read should fail fast: `.retry(false)` or `AbortSignal.timeout` on the profiles query in `lib/profile/status.ts`, so a network that throws yields `unknown` in <1 s instead of postgrest-js's ~7 s backoff holding /welcome open; fake-timer unit test (T-0904 diagnosis) | web-shell | T-0904 | done | wl-build-web |
+| T-0315 | Draw the original body figure (D-0207, GitHub #48): see the "GitHub #48 body figure" section below | design | — | done | wl-design |
 
 ## CI fixes (any phase)
 | ID | Title | Lane | Deps | Status | Flow |
@@ -368,3 +369,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0555 | Seed guard as an allow-list, and psql error lines redacted (T-0554 security T1/T2) | infra | T-0554 | done | wl-build-infra |
 | T-0559 | user-flows.md lines for the UF-04.2 figure and the C-01 silhouette | product | — | done | wl-spec |
 | T-0535 | excluded_exercises table (trigger, PK, index, 4 owner policies, anon revoked, exercises FK cascade); data-model.md; database.gen.ts; pgTAP 001/007/018/019; export.ts EXPORT_TABLES/ORDER_KEYS; e2e mock. Merge locally, hold push until H-27 | data | — | done (migration released automatically) | wl-build-data |
+| T-0315 | Draw the original body figure (front and back, 9 `data-area` regions, no colour attributes), fold the C-01 and UF-04.2 deltas into the design docs (reactivated) | design | — | done | wl-design |
+| T-0536 | Device cache: Dexie v3 table keyed by userId, refreshAll read, exclude/include writes after server confirm, missing-table tolerance, union helper, useOnline. After H-27 | web-shell | T-0535 | done | wl-build-web |
