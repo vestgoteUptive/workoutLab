@@ -44,3 +44,4 @@ None.
 AC1–AC4 hold · `node .github/scripts/check-all.mjs` exits 0 · `pnpm -w format:check` green on the two files · commits start with `T-0551:` and cite UF-11.2 / UF-11.4.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0551.md` (D-0157).
