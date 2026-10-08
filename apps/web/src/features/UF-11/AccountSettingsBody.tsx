@@ -224,17 +224,30 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   const exportDisabled = !online || exporting || userId === null;
   const deleteDisabled = !online || deleting || userId === null;
 
+  const exportCaptionId = "wl-account-export-offline";
+  const deleteCaptionId = "wl-account-delete-offline";
+  const deleteCaptionShown = !online || deleteError === "offline";
+
   return (
     <>
-      <section className="wl-plan__section">
-        {email ? <p>{a.signedInAs(email)}</p> : null}
+      <section className="wl-card" aria-labelledby="wl-account-title">
+        <h2 id="wl-account-title" className="wl-label">
+          {email ? a.signedInAsLabel : a.accountLabel}
+        </h2>
+        {email ? <p className="wl-account__email">{email}</p> : null}
         {unsyncedPrompt ? (
           <>
-            <p>{a.unsyncedWarning}</p>
+            <p className="wl-plan__notice">
+              <svg aria-hidden focusable={false} width={20} height={20} viewBox="0 0 24 24">
+                <circle cx={12} cy={12} r={9} />
+                <path d="M12 11v5M12 8h.01" />
+              </svg>
+              <span>{a.unsyncedWarning}</span>
+            </p>
             <button
               ref={anywayRef}
               type="button"
-              className="wl-plan__button"
+              className="wl-button--secondary"
               disabled={signingOut}
               onClick={() => void doSignOut()}
             >
@@ -242,7 +255,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
             </button>
             <button
               type="button"
-              className="wl-plan__button"
+              className="wl-button--text"
               disabled={signingOut}
               onClick={onSignOutCancel}
             >
@@ -253,39 +266,61 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
           <button
             ref={signOutRef}
             type="button"
-            className="wl-plan__button"
+            className="wl-button--secondary wl-plan__linkbtn"
             disabled={signingOut || userId === null}
             onClick={() => void onSignOut()}
           >
+            <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
+              <path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9" />
+            </svg>
             {signingOut ? a.signingOut : a.signOut}
           </button>
         )}
       </section>
       <EquipmentSection clock={clock} />
-      <section className="wl-plan__section">
-        <h2>{a.dataHeading}</h2>
-        <p>{a.dataBody}</p>
+      <section className="wl-card" aria-labelledby="wl-account-data">
+        <h2 id="wl-account-data" className="wl-label">
+          {a.dataHeading}
+        </h2>
+        <p className="wl-muted">{a.dataBody}</p>
         <button
           type="button"
-          className="wl-plan__button"
+          className="wl-button--secondary wl-plan__linkbtn"
           disabled={exportDisabled}
+          aria-describedby={!online ? exportCaptionId : undefined}
           onClick={() => void onExport()}
         >
+          <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
+            <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />
+          </svg>
           {exporting ? a.exporting : a.exportButton}
         </button>
-        {!online ? <p>{a.connectToExport}</p> : null}
-        {exportFailed ? <p role="alert">{a.exportFailed}</p> : null}
+        {!online ? (
+          <p id={exportCaptionId} className="wl-caption">
+            {a.connectToExport}
+          </p>
+        ) : null}
+        {exportFailed ? (
+          <p role="alert" className="wl-muted">
+            {a.exportFailed}
+          </p>
+        ) : null}
       </section>
-      <section className="wl-plan__section">
-        <h2>{a.deleteHeading}</h2>
+      <section
+        className="wl-card wl-card--strong wl-account__delete"
+        aria-labelledby="wl-account-delete"
+      >
+        <h2 id="wl-account-delete" className="wl-label">
+          {a.deleteHeading}
+        </h2>
         {confirming ? (
           <>
             <p>{a.deleteWarning}</p>
-            <label>
-              {a.confirmLabel}
+            <label className="wl-account__field">
+              <span className="wl-caption">{a.confirmLabel}</span>
               <input
                 ref={inputRef}
-                className="wl-plan__input"
+                className="wl-input"
                 type="text"
                 value={typed}
                 autoComplete="off"
@@ -296,15 +331,21 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
             </label>
             <button
               type="button"
-              className="wl-plan__button"
+              className="wl-button--secondary"
               disabled={!confirmed || deleteDisabled}
+              aria-describedby={deleteCaptionShown ? deleteCaptionId : undefined}
               onClick={() => void onDelete()}
             >
               {deleting ? a.deleting : a.deleteConfirm}
             </button>
+            {deleteCaptionShown ? (
+              <p id={deleteCaptionId} className="wl-caption">
+                {a.connectToDelete}
+              </p>
+            ) : null}
             <button
               type="button"
-              className="wl-plan__button"
+              className="wl-button--text"
               disabled={deleting}
               onClick={onCancel}
             >
@@ -312,19 +353,35 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
             </button>
           </>
         ) : (
-          <button
-            ref={openRef}
-            type="button"
-            className="wl-plan__button"
-            disabled={deleteDisabled}
-            onClick={() => setConfirming(true)}
-          >
-            {a.deleteOpen}
-          </button>
+          <>
+            <p className="wl-muted">{a.deleteCaption}</p>
+            <button
+              ref={openRef}
+              type="button"
+              className="wl-button--secondary"
+              disabled={deleteDisabled}
+              aria-describedby={deleteCaptionShown ? deleteCaptionId : undefined}
+              onClick={() => setConfirming(true)}
+            >
+              {a.deleteOpen}
+            </button>
+            {deleteCaptionShown ? (
+              <p id={deleteCaptionId} className="wl-caption">
+                {a.connectToDelete}
+              </p>
+            ) : null}
+          </>
         )}
-        {!online || deleteError === "offline" ? <p>{a.connectToDelete}</p> : null}
-        {deleteError === "unauthorized" ? <p role="alert">{a.unauthorized}</p> : null}
-        {deleteError === "failed" ? <p role="alert">{a.deleteFailed}</p> : null}
+        {deleteError === "unauthorized" ? (
+          <p role="alert" className="wl-muted">
+            {a.unauthorized}
+          </p>
+        ) : null}
+        {deleteError === "failed" ? (
+          <p role="alert" className="wl-muted">
+            {a.deleteFailed}
+          </p>
+        ) : null}
       </section>
     </>
   );

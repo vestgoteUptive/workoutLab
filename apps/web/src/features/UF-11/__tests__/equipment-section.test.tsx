@@ -133,7 +133,7 @@ describe("T-0216 AC-1 the section", () => {
     );
     await mountWithCache(["none"]);
     const h1 = screen.getByRole("heading", { level: 1 });
-    const signedIn = screen.getByText(/Signed in as/);
+    const signedIn = screen.getByText("Signed in as");
     const group = equipmentGroup();
     const dataHeading = screen.getByRole("heading", { level: 2, name: "Your data" });
     const order = [h1, signedIn, group, dataHeading];
@@ -151,13 +151,13 @@ describe("T-0216 AC-1 the section", () => {
       JSON.stringify({ access_token: "t", user: { id: TEST_USER, email: "u@test.local" } }),
     );
     await mountWithCache(["none"]);
-    const email = screen.getByText("Signed in as u@test.local");
+    const email = screen.getByText("u@test.local");
     const btn = screen.getByRole("button", { name: "Sign out" });
     const group = equipmentGroup();
     const data = screen.getByRole("heading", { level: 2, name: "Your data" });
     const del = screen.getByRole("heading", { level: 2, name: "Delete account" });
-    expect(email.closest(".wl-plan__section")).not.toBeNull();
-    expect(email.closest(".wl-plan__section")).toBe(btn.closest(".wl-plan__section"));
+    expect(email.closest(".wl-card")).not.toBeNull();
+    expect(email.closest(".wl-card")).toBe(btn.closest(".wl-card"));
     const order = [email, btn, group, data, del];
     for (let i = 0; i < order.length - 1; i++) {
       expect(
@@ -172,7 +172,7 @@ describe("T-0216 AC-1 the section", () => {
     const host = h1.parentElement!;
     const children = Array.from(host.children);
     const h1Index = children.indexOf(h1);
-    const group = equipmentGroup();
+    const group = equipmentGroup().closest(".wl-card")!;
     // T-0529 (D-0195 §4): the Sign out section now sits between the h1 and the group.
     const signOutSection = children[h1Index + 1]!;
     expect(signOutSection.querySelector("button")?.textContent).toBe("Sign out");

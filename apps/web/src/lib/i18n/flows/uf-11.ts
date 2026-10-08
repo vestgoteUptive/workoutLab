@@ -116,6 +116,10 @@ export const uf11 = {
   // UF-11.4 Account settings (T-0310d, D-0136 §8)
   account: {
     signedInAs: (email: string) => `Signed in as ${email}`,
+    signedInAsLabel: "Signed in as",
+    accountLabel: "Account",
+    backToPlan: "Back to Plan",
+    deleteCaption: "Permanently removes your account and all your data.",
     dataHeading: "Your data",
     dataBody: "Download everything we store for you as one JSON file.",
     exportButton: "Export my data",

@@ -71,7 +71,17 @@ export function EditPlan({ now = systemClock }: PlanScreenProps = {}) {
 
 export function AccountSettings({ now = systemClock }: PlanScreenProps = {}) {
   return (
-    <div data-screen-id="UF-11.4">
+    <div data-screen-id="UF-11.4" className="wl-page">
+      <Link
+        className="wl-button--text wl-account__back"
+        to="/plan"
+        aria-label={en.uf11.account.backToPlan}
+      >
+        <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+        {en.screens.plan}
+      </Link>
       <h1>{en.screens.accountSettings}</h1>
       <AccountSettingsBody clock={now} />
     </div>

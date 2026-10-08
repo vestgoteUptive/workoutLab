@@ -303,3 +303,63 @@
   stroke-width: 2;
   stroke-linecap: round;
 }
+
+/* T-0550 UF-11.4 Account settings. */
+.wl-account__back {
+  align-self: flex-start;
+  gap: 4px;
+  text-decoration: none;
+}
+
+.wl-account__back svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wl-account__email {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wl-account__fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.wl-account__fieldset legend {
+  padding: 0;
+  margin-block-end: 12px;
+}
+
+.wl-account__equipment {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  column-gap: 12px;
+}
+
+.wl-account__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wl-card--strong {
+  border-color: var(--wl-color-line-strong);
+}
+
+.wl-account__delete {
+  margin-block-start: 16px; /* with the page's 16 px gap: 32 px above the Delete card */
+}
+
+[data-screen-id="UF-11.4"] .wl-card > p {
+  margin: 0;
+}
