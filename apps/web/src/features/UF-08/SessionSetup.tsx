@@ -397,6 +397,43 @@ export function SessionSetup({
         ? en.uf08.noFitCompound(name, budgetMin)
         : en.uf08.noFitIsolation(name, budgetMin);
     };
+    /**
+     * T-0575 (D-0205 §5): one `suggest` call with `mainLiftId = id`. A new pick (not in the plan)
+     * is pinned and leaves this visit's removes; a row already in the plan is not re-pinned (Q9).
+     * Success is the engine's own `plan.mainLiftId === id`; otherwise the plan is unchanged.
+     */
+    const startWith = (id: string): string | null => {
+      const inPlan = adjusted.workout.plan.items.some((i) => i.exerciseId === id);
+      const pinned =
+        inPlan || adjusted.addedIds.includes(id) ? adjusted.addedIds : [...adjusted.addedIds, id];
+      const visit = inPlan ? adjusted.excludeIds : adjusted.excludeIds.filter((e) => e !== id);
+      const result = runSuggest(
+        data,
+        {
+          budgetMin,
+          warmupInBudget,
+          energy,
+          shuffle: adjusted.shuffle,
+          mainLiftId: id,
+          pinnedIds: pinned,
+          excludeIds: excludeIdsFor(stored, visit),
+          ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
+        },
+        nowIso,
+        tz,
+      );
+      if (result !== null && result.plan.mainLiftId === id) {
+        setAdjusted({
+          workout: result,
+          shuffle: adjusted.shuffle,
+          excludeIds: visit,
+          addedIds: pinned,
+          emptiedByRemove: false,
+        });
+        return null;
+      }
+      return en.uf08.noFitStart(data.library.find((e) => e.id === id)?.name ?? id, budgetMin);
+    };
     // UF-08.5 disabled rows, first match wins (D-0205 §3). "In this workout" is the sheet's own.
     const blocked: Record<string, string> = {};
     for (const e of data.library) {
@@ -451,6 +488,7 @@ export function SessionSetup({
         catalog={data.library}
         blocked={blocked}
         onAdd={addExercise}
+        onStartWith={startWith}
       />
     );
   }
