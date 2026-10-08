@@ -30,7 +30,8 @@ function strings(value: unknown): string[] {
 
 function* walk(dir: string): Generator<string> {
   for (const entry of readdirSync(dir)) {
-    if (["node_modules", "dist", ".astro", "playwright-report", "test-results"].includes(entry)) continue;
+    if (["node_modules", "dist", ".astro", "playwright-report", "test-results"].includes(entry))
+      continue;
     const full = join(dir, entry);
     if (statSync(full).isDirectory()) yield* walk(full);
     else yield full;
@@ -71,7 +72,8 @@ describe("T-0584 AC1 copy is unchanged", () => {
     for (const page of ["privacy/index.html", "404.html"]) {
       for (const node of textNodes(readDist(dist, page))) {
         // Privacy section bodies are split into paragraphs by the page.
-        const ok = allowed.has(node) || strings(privacy).some((s) => s.split("\n\n").includes(node));
+        const ok =
+          allowed.has(node) || strings(privacy).some((s) => s.split("\n\n").includes(node));
         expect(ok, `${page}: unexpected text "${node}"`).toBe(true);
       }
     }
@@ -79,7 +81,13 @@ describe("T-0584 AC1 copy is unchanged", () => {
 
   it("keeps the section order, the skip link, one primary CTA and no number text for 01-04", () => {
     const html = readDist(dist, "index.html");
-    const order = ["<header", 'class="hero', 'class="features', 'class="privacy-band', "<footer"].map((m) => html.indexOf(m));
+    const order = [
+      "<header",
+      'class="hero',
+      'class="features',
+      'class="privacy-band',
+      "<footer",
+    ].map((m) => html.indexOf(m));
     expect(order.every((i) => i >= 0)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
     expect(html.indexOf("skip-link")).toBeLessThan(html.indexOf("<header"));
@@ -92,7 +100,9 @@ describe("T-0584 AC1 copy is unchanged", () => {
 
   it("no .astro file adds a text literal (only the existing skip link and titles)", () => {
     for (const file of [...walk(join(landingRoot, "src"))].filter((f) => extname(f) === ".astro")) {
-      const body = readFileSync(file, "utf8").replace(/^---[\s\S]*?---/, "").replaceAll("=>", "");
+      const body = readFileSync(file, "utf8")
+        .replace(/^---[\s\S]*?---/, "")
+        .replaceAll("=>", "");
       for (const m of body.matchAll(/>([^<>{}]+)</g)) {
         const text = m[1]!.trim();
         if (text && text !== SKIP_LINK) expect.fail(`${file}: literal text "${text}"`);
@@ -118,7 +128,17 @@ describe("T-0584 AC2 tokens only, rem font sizes", () => {
 
   it("uses plan, paper tokens and the plan font; nothing from lift/rest or the retired flat palette", () => {
     const src = cssSources.map((f) => readFileSync(f, "utf8")).join("\n");
-    for (const v of ["--wl-color-plan-bg", "--wl-color-plan-ink", "--wl-color-plan-ink-muted", "--wl-color-plan-line", "--wl-color-plan-action", "--wl-color-paper-bg", "--wl-color-paper-ink", "--wl-color-paper-ink-muted", "--wl-font-plan"]) {
+    for (const v of [
+      "--wl-color-plan-bg",
+      "--wl-color-plan-ink",
+      "--wl-color-plan-ink-muted",
+      "--wl-color-plan-line",
+      "--wl-color-plan-action",
+      "--wl-color-paper-bg",
+      "--wl-color-paper-ink",
+      "--wl-color-paper-ink-muted",
+      "--wl-font-plan",
+    ]) {
       expect(src, v).toContain(v);
     }
     expect(src).not.toMatch(/var\(--wl-color-(bg|text|accent|surface|line)\b/);
@@ -155,15 +175,22 @@ describe("T-0584 AC5 hero image", () => {
 
 describe("T-0584 AC8 fonts and CSP", () => {
   it("loads fonts-state.css (Familjen + Bricolage), no old fonts, no CDN", () => {
-    const css = [...walk(defaultDistDir())].filter((f) => extname(f) === ".css").map((f) => readFileSync(f, "utf8")).join("\n");
+    const css = [...walk(defaultDistDir())]
+      .filter((f) => extname(f) === ".css")
+      .map((f) => readFileSync(f, "utf8"))
+      .join("\n");
     expect(css).toContain("Familjen Grotesk");
-    const families = [...css.matchAll(/@font-face\s*\{[^}]*font-family:\s*"?([^;"]+)"?/g)].map((m) => m[1]);
+    const families = [...css.matchAll(/@font-face\s*\{[^}]*font-family:\s*"?([^;"]+)"?/g)].map(
+      (m) => m[1],
+    );
     expect(families.sort()).toEqual(["Bricolage Grotesque", "Familjen Grotesk"]);
     expect(css).not.toMatch(/https?:\/\//);
   });
 
   it("_headers keeps font-src 'self' and no looser directive", () => {
-    const csp = /Content-Security-Policy:\s*(.+)/i.exec(readDist(defaultDistDir(), "_headers"))![1]!;
+    const csp = /Content-Security-Policy:\s*(.+)/i.exec(
+      readDist(defaultDistDir(), "_headers"),
+    )![1]!;
     expect(csp).toContain("font-src 'self'");
     expect(csp).not.toMatch(/\*|https?:|data:|unsafe-/);
   });
