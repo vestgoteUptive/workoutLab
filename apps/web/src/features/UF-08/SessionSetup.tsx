@@ -408,10 +408,8 @@ export function SessionSetup({
       else if (!isEligible(e, { ...data.profile, level: "advanced" }, []))
         blocked[e.id] = en.uf08.reasonEquipment;
       else if (!isEligible(e, data.profile, [])) blocked[e.id] = en.uf08.reasonLevel;
-      else if (skip !== undefined)
-        blocked[e.id] = en.uf08.reasonSkipping(en.bodyMap.areas[skip]);
-      else if (rec !== undefined)
-        blocked[e.id] = en.uf08.reasonRecovering(en.bodyMap.areas[rec]);
+      else if (skip !== undefined) blocked[e.id] = en.uf08.reasonSkipping(en.bodyMap.areas[skip]);
+      else if (rec !== undefined) blocked[e.id] = en.uf08.reasonRecovering(en.bodyMap.areas[rec]);
     }
     return (
       <Suggested

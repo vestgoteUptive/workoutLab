@@ -331,10 +331,7 @@ describe("AC6 re-add", () => {
     stored.ids = ["leg-extension"];
     await toPlan();
     openSheet();
-    expectDisabled(
-      "Leg extension",
-      "Excluded. Include it again in Plan › Excluded exercises.",
-    );
+    expectDisabled("Leg extension", "Excluded. Include it again in Plan › Excluded exercises.");
     expect(sheetStatus()).toBeEmptyDOMElement();
   });
 });

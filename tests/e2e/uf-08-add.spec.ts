@@ -33,11 +33,15 @@ const AREA_TARGETS = AREAS.map((area) => ({
 }));
 const profileRow = { ...profile, user_id: FAKE_USER_ID };
 
-async function toSuggested(page: Page): Promise<void> {
+async function toSuggested(
+  page: Page,
+  extra: { sets?: unknown[]; excludedExercises?: unknown[] } = {},
+): Promise<void> {
   await mockSupabaseAuth(page);
   await mockSupabaseRest(page);
   await mockSupabaseData(page, {
-    sets: [],
+    sets: extra.sets ?? [],
+    ...(extra.excludedExercises ? { excludedExercises: extra.excludedExercises } : {}),
     exercises,
     exerciseAreas,
     areaTargets: AREA_TARGETS,
@@ -105,4 +109,54 @@ test("Add exercise: open, axe, add, Added by you, a shorter time keeps or lists 
   await page.getByRole("button", { name: "30 minutes" }).click();
   await expect(row).toContainText("Added by you");
   await expect(line).toHaveCount(0);
+});
+
+// T-0574 AC8: an Excluded row and a recovering row (6 hard leg-curl sets 24 h ago), then Remove of
+// an added item, in a real browser.
+test("Add exercise: Excluded and recovering rows disabled with their reason; remove an added item", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const at = new Date(Date.now() - 24 * 3_600_000).toISOString();
+  const sets = Array.from({ length: 6 }, (_, i) => ({
+    client_id: `t0574-${i}`,
+    session_id: "T0574-S1",
+    exercise_id: "leg-curl",
+    is_warmup: false,
+    completed_at: at,
+    edited_at: at,
+    deleted_at: null,
+    reps: 10,
+    weight_kg: 30,
+    duration_s: null,
+  }));
+  await toSuggested(page, {
+    sets,
+    excludedExercises: [{ exercise_id: "dead-bug", created_at: new Date().toISOString() }],
+  });
+  await page.getByRole("button", { name: "Add exercise" }).click();
+  const sheet = page.locator('[data-screen-id="UF-08.5"]');
+  await sheet.getByLabel("Search exercises").fill("dead bug");
+  const dead = sheet.locator('[data-part="pick-row"]').filter({ hasText: "Dead bug" });
+  await expect(dead).toContainText("Excluded. Include it again in Plan \u203A Excluded exercises.");
+  await expect(dead.getByRole("button", { name: "Add Dead bug" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  await sheet.getByLabel("Search exercises").fill("leg curl");
+  const curl = sheet.locator('[data-part="pick-row"]').filter({ hasText: "Leg curl" });
+  await expect(curl).toContainText("Hamstrings is recovering");
+  await expect(curl.getByRole("button", { name: "Add Leg curl" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+
+  await sheet.getByLabel("Search exercises").fill("back squat");
+  await sheet.getByRole("button", { name: "Add Back squat" }).click();
+  await expect(sheet).toHaveCount(0);
+  const row = page.locator('[data-part="item-row"]').filter({ hasText: "Back squat" });
+  await expect(row).toContainText("Added by you");
+  await row.getByRole("button", { name: "Remove Back squat" }).click();
+  await expect(row).toHaveCount(0);
+  await expect(page.locator('[data-part="removed-line"]')).toContainText("Back squat");
 });
