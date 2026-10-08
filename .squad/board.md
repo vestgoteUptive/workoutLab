@@ -135,8 +135,7 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0562 | Engine favorites part 1: optional favoriteIds, rule 0.2, rule 7.2 key (0); R7-E21…E27 checked against the code, then encoded; vendor regen | engine | — | doing | wl-build-engine |
-| T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | todo | wl-build-engine |
+| T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | ready | wl-build-engine |
 | T-0564 | favorite_exercises table + mutual-exclusion triggers (destructive-approved D-0202 header), data-model, database.gen, pgTAP 001/007/018/020, export 9th key, e2e mock | data | — | doing | wl-build-data |
 | T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | todo | wl-build-data |
 | T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | todo | wl-build-backend |
@@ -151,7 +150,6 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0572 | Design: UF-08.5 sheet, UF-08.2 Add exercise / Added by you / Start with this / Doesn't fit / Reorder mode, UF-09.9 Do {name} later | design | T-0561 | doing | wl-design |
 | T-0573 | UF-08.5 part 1: sheet, search, Today's areas, In this workout, Add = visit pinnedIds, Added by you, time refusal, chips/Shuffle keep adds + Doesn't fit line, offline | web-feature:UF-08 | T-0538, T-0572 | todo | wl-build-web |
 | T-0574 | UF-08.5 part 2: disabled row states, cap refusals, Remove of an added item, re-add a removed item | web-feature:UF-08 | T-0573 | todo | wl-build-web |
 | T-0575 | UF-08 Start with this (compound only; mainLiftId; new main lift first) | web-feature:UF-08 | T-0574 | todo | wl-build-web |
