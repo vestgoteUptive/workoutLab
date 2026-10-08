@@ -44,12 +44,4 @@ none (implements T-0517's openapi change).
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0518` and cite UF-08.1.
 
 ## Build / accept log
-
-- **Build (backend-dev, 2026-10-06).** Start: `git status` clean, HEAD `7ce4ae7` on `t/T-0518-suggest-validator-avoid-areas`. Deno via `npx -y deno@2`; local podman stack (not reset or stopped); `psql` via a scratch shim (not committed).
-  - `validate.ts`: `avoidAreas` added to the closed key list; optional; must be an array, every entry one of the nine `AREAS` (string, exact case), no duplicates (matches openapi `uniqueItems`, engine would ignore them). 400 `invalid_request` message names `sessionInput.avoidAreas`. Returned only when present, so requests without it produce an identical `SessionInput`. `workouts/core.ts` already forwards the validated object, so no change there.
-  - Vendor refreshed with `node supabase/scripts/vendor.mjs` (`--check` exit 0). Besides `avoidAreas` it also pulled in already-merged engine changes the vendor copy lacked (`remove-item.js`, apply-swap, index exports).
-  - AC2 snapshot taken on unfixed code (before the validator edit) via the real `suggestWorkoutCore`: `supabase/tests/functions/unit/fixtures/suggest-30min-no-avoid.snapshot.json`.
-  - AC→test (`unit/workouts-avoid-areas.test.ts`): AC1 "avoidAreas [quads, glutes] with zero history" (90-min budget; precondition asserts the unfiltered plan does contain a quads/glutes weight-1.0 item); AC2 "equals the pre-change snapshot" (also with `avoidAreas: []`); AC3 two tests (`["legs"]`, wrong case, non-string, and `"quads"`/null/object non-arrays); AC4 duplicates.
-  - Planted faults (backup copy, restored with `cp`): drop the area-membership check -> AC3 unknown-area test red; disable duplicate check -> AC4 red. Both restored, green.
-  - Deno `supabase/tests/functions/` against the local stack: 170 passed, 1 failed = `seed-roundtrip` AC3, only because the shim runs psql inside the container and cannot read the host temp file (`-f`); unrelated to this change. Unit dir 123 passed. AC23-style no-leak tests green.
-  - Gates (via `scripts/locked.sh`): `-w typecheck lint test --concurrency=1` 19/19; `-w test:repo-checks` pass 301 fail 0 (one run had `supabase-prod-release` AC-1 exit 141 SIGPIPE under load; passes alone and on rerun); `-w format:check` clean; `check-all.mjs` exit 0.
+Archived in `docs/tickets/log/T-0518.md` (D-0157).
