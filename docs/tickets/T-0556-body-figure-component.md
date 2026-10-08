@@ -51,10 +51,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the e2e spec for AC-5 green (the full web e2e suite is not needed unless `routes.ts` or fixtures change) · contracts unchanged · commits start with `T-0556:` and cite UF-04.2 / UF-10.1.
 
 ## Build / accept log
-
-### Build log (frontend-dev, 2026-10-08, start: clean, HEAD 2b07083)
-- Built `components/body-figure/` (`BodyFigure.tsx`, `body-figure.css`, `index.ts`): the T-0315 asset is imported once with `?raw`, parsed to a tree and rendered as React elements (no copied shapes, no fetch). Per-instance hatch id from `useId` set as `--wl-fig-hatch` on the svg. Attention = warn + gap halo clones drawn above the other regions; highlight = accent ring + surface gap clone. Class names follow the ticket (`--step-n`, not the preview's `--cov-n`).
-- Ban: `eslint.config.mjs` new block for UF-03/08/09 (`no-restricted-imports` pattern + `no-restricted-syntax` on `ImportExpression`). UF-04/05 stay allowed (UF-04.2 draws the figure).
-- AC to test: AC-1/3/4/6 and edge cases `__tests__/BodyFigure.test.tsx`; AC-2 `__tests__/colours.test.ts`; AC-5 `__e2e__/body-figure.spec.ts` (renders the shipped CSS + asset via `page.setContent` under `forcedColors: "active"`; re-point to a host route once T-0557/T-0558 land); AC-7 `app/__tests__/import-bans.test.ts`; AC-8 not measurable yet (nothing imports the figure): asset 9852 B gzip, CSS 867 B gzip, so about 10.7 kB, inside 12 kB.
-- Planted faults (each red, then restored from backup): drop `data-area` (AC-1/4 red), `aria-hidden=false` (AC-3), step bound `<=5` (red only after adding a step-5 case; that case was added), pointer fires for any target (AC-6), fixed hatch id, hex in css, forced `Highlight` replaced (AC-2), ban pattern removed and dynamic selector broken (AC-7), forced primary fill `Canvas` (e2e red).
-- Gate: typecheck lint test green (19/19), `test:repo-checks` 369 pass (one earlier run ended in ELIFECYCLE, rerun exit 0), `format:check` clean. `check-all` only reports lane-path-not-owned for T-0315/T-0560 files (from the base, not this diff).
+Archived in `docs/tickets/log/T-0556.md` (D-0157).
