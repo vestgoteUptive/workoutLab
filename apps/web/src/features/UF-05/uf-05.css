@@ -175,3 +175,15 @@
   outline: 2px solid var(--wl-color-accent);
   outline-offset: 2px;
 }
+
+.wl-uf05__exclude {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-uf05__exclude-note {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+}
