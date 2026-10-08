@@ -85,12 +85,25 @@ function EmptyLine({ result, hasHardSet }: { result: BalanceResult; hasHardSet: 
 // had, just with `TodayState.status` ("loading" | "no-plan" | "ready") standing in for
 // `usePlanData`'s own phase enum. Today's own render already withholds its OfflineStatus, C-01 and
 // suggestion-card content while `status === "loading"`; the card now waits for that same point.
-function CheckinSlot({ ready, onAnswered }: { ready: boolean; onAnswered: () => void }) {
+function CheckinSlot({
+  ready,
+  onAnswered,
+  now,
+  locale,
+  timeZone,
+}: {
+  ready: boolean;
+  onAnswered: () => void;
+  now: Date;
+  locale: string;
+  timeZone: string;
+}) {
   const Slot = todayCheckinSlot;
   if (Slot === null || !ready) return null;
+  // T-0914: the card's `now` is a clock function; Today's injected instant is forwarded as one.
   return (
     <Suspense fallback={null}>
-      <Slot onAnswered={onAnswered} />
+      <Slot onAnswered={onAnswered} now={() => now} locale={locale} timeZone={timeZone} />
     </Suspense>
   );
 }
@@ -158,6 +171,9 @@ export function Today(props: TodayProps = {}) {
           <CheckinSlot
             ready={state.status !== "loading"}
             onAnswered={() => setRevision((r) => r + 1)}
+            now={now}
+            locale={locale}
+            timeZone={timeZone}
           />
           {state.status === "ready" ? (
             state.workout === null ? null : (

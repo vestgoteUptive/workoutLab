@@ -240,3 +240,27 @@ describe("AC-13 strings and exports", () => {
     expect(Object.keys(mod)).toEqual(["Today"]);
   });
 });
+
+// T-0914 AC3: a UF-02 test that mounts Today (renderToday / renderSwitch / TodayTree / <Today)
+// must mock `../slots.js`, or the real UF-11 check-in card (real clock) joins the DOM and races
+// its assertions. Files whose subject is a slot mock it in their own way and are allow-listed.
+describe("T-0914 AC3 Today tests mock ../slots.js", () => {
+  const TESTS = resolve(__dirname);
+  const ALLOW = new Set(["slot.test.tsx", "resume-slot.test.tsx", "checkin-answered.test.tsx"]);
+  const files = readdirSync(TESTS).filter((n) => /\.test\.tsx$/.test(n));
+  const mounts = (src: string): boolean =>
+    /\b(renderToday|renderSwitch|TodayTree|SwitchTree)\(|<(Today|TodayTree|SwitchTree|TodaySwitch)\b|createMemoryRouter/.test(
+      src,
+    );
+
+  it("finds the Today tests (non-vacuous)", () => {
+    const names = files.filter((n) => mounts(read(join(TESTS, n))));
+    expect(names).toEqual(expect.arrayContaining(["card.test.tsx", "today.test.tsx"]));
+  });
+
+  it.each(files.filter((n) => !ALLOW.has(n)))("%s mocks ../slots.js when it mounts Today", (n) => {
+    const src = read(join(TESTS, n));
+    if (!mounts(src)) return;
+    expect(src).toMatch(/vi\.mock\(\s*["']\.\.\/slots\.js["']/);
+  });
+});

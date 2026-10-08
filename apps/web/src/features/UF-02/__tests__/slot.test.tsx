@@ -44,8 +44,10 @@ vi.mock("../../../lib/offline/history.js", () => ({
 }));
 
 let renders = 0;
-function Injected() {
+let received: { now?: () => Date; locale?: string; timeZone?: string } = {};
+function Injected(props: { now?: () => Date; locale?: string; timeZone?: string }) {
   renders += 1;
+  received = props;
   return <section data-testid="injected" />;
 }
 
@@ -109,6 +111,21 @@ describe("AC-5 injected", () => {
     await waitFor(() => expect(card()).not.toHaveAttribute("aria-busy"));
     expect(part("attention")!.nextElementSibling).toBe(card());
     expect(card()!.nextElementSibling).toBe(part("start"));
+  });
+});
+
+// T-0914 AC2: Today's injected now/timeZone/locale reach the slot component (the UF-11
+// CheckinCard), so its evaluation never reads the system clock.
+describe("T-0914 AC2 clock forwarding", () => {
+  it("the slot receives a clock returning Today's injected instant, plus timeZone and locale", async () => {
+    slot.current = Injected;
+    received = {};
+    renderToday({ ...F_TZ, locale: "sv-SE" });
+    await waitFor(() => expect(injected()).toHaveLength(1));
+    expect(received.now).toBeTypeOf("function");
+    expect(received.now!().getTime()).toBe(F_TZ.now!.getTime());
+    expect(received.timeZone).toBe(F_TZ.timeZone);
+    expect(received.locale).toBe("sv-SE");
   });
 });
 
