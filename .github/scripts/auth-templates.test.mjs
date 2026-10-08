@@ -33,7 +33,7 @@ const tokens = JSON.parse(read(path.join(root, "packages/design-tokens/src/token
 const C = tokens.color;
 const BRAND = [C.bg, C.text, C.accent, C["text-muted"], C["on-accent"]];
 // A colour that is not a token, built so the no-raw-colour lint rule doesn't read it as a use.
-const NOT_A_TOKEN = "#" + "F".repeat(6);
+const NOT_A_TOKEN = "#" + "1".repeat(6);
 
 const count = (s, needle) => s.split(needle).length - 1;
 
@@ -77,7 +77,7 @@ test("T-0404b AC-1 each subject is one line under 78 chars holding workoutLab, a
   }
 });
 
-test("T-0404b AC-1 planted faults: a non-token colour (FFFFFF), a missing {{ .Token }}, a remote image all go red", () => {
+test("T-0404b AC-1 planted faults: a non-token colour (111111), a missing {{ .Token }}, a remote image all go red", () => {
   const html = read(path.join(dir, "magic-link.html"));
   assert.deepEqual(templateProblems(html.replace(C.text, NOT_A_TOKEN)), [`colour ${NOT_A_TOKEN} is not a design token`]);
   assert.deepEqual(templateProblems(html.replace("{{ .Token }}", "")), ["exactly one {{ .Token }}"]);

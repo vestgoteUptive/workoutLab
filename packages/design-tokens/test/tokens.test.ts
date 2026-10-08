@@ -5,7 +5,10 @@ import * as api from "../src/index";
 import { attentionLegend, coverageLegend, coverageTokens, tokens } from "../src/index";
 import { contrast } from "./helpers";
 
-const c = tokens.color;
+// The flat Chalk & Iron colours (string values); the D-0208 groups are nested objects (T-0583).
+const c = Object.fromEntries(
+  Object.entries(tokens.color).filter(([, v]) => typeof v === "string"),
+) as Record<string, string> & typeof tokens.color;
 const DESIGN_SYSTEM = {
   bg: "#121210",
   "bg-focus": "#0B0B0A",
@@ -21,7 +24,14 @@ const DESIGN_SYSTEM = {
 };
 
 describe("AC1 palette matches design system", () => {
-  it("has exactly the 17 colour keys in order", () => {
+  it("has exactly the 17 flat colour keys in order, then the D-0208 groups (T-0583)", () => {
+    expect(Object.keys(tokens.color).slice(17)).toEqual([
+      "plan",
+      "lift",
+      "rest",
+      "paper",
+      "coverage",
+    ]);
     expect(Object.keys(c)).toEqual([
       "bg",
       "bg-focus",

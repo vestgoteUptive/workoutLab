@@ -10,6 +10,7 @@
     "./tokens.json": "./src/tokens.json",
     "./tokens.css": "./dist/tokens.css",
     "./fonts.css": "./src/fonts.css",
+    "./fonts-state.css": "./src/fonts-state.css",
     "./fonts/*": "./fonts/*",
     "./eslint-plugin": "./eslint-plugin/index.js"
   },
