@@ -194,6 +194,7 @@ describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
     expect(names()).toEqual([
       "Resume",
       "Swap",
+      "Do Barbell row later",
       "Skip to next exercise",
       "How to",
       "List view",
@@ -208,6 +209,7 @@ describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
     expect(names()).toEqual([
       "Resume",
       "Swap",
+      "Do Barbell row later",
       "Skip to next exercise",
       "How to",
       "List view",
@@ -404,6 +406,7 @@ describe("AC-8 End workout (D-0120 §8)", () => {
     expect(names()).toEqual([
       "Resume",
       "Swap",
+      "Do Barbell row later",
       "Skip to next exercise",
       "How to",
       "List view",

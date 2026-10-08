@@ -62,6 +62,10 @@ export interface ViewProps {
   /** UF-09.8 Trim / Skip next: writes the engine's whole item list, then moves on (D-0120 §1).
    *  Rejects, with no change, when the write rejects. */
   onApplyItems?: (items: WorkoutItem[]) => Promise<void>;
+  /** UF-09.9 "Do {name} later" moved the item (T-0579): the host shows the UF-09.6 status line. */
+  onMoved?: (name: string) => void;
+  /** UF-09.6: "{name} moved to later." (T-0579), or `null`. */
+  movedName?: string | null;
   /** UF-09.9 "Skip to next exercise" (`SKIP_ITEM`, D-0120 §7). */
   onSkipItem?: () => void;
   /** UF-09.9: a UF-09.8 plan write is still pending, so End workout is inert (T-0304d rework). */
