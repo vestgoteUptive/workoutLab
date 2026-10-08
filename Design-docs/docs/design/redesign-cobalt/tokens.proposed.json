@@ -1,0 +1,76 @@
+{
+  "color": {
+    "plan": {
+      "bg": "#2337C6",
+      "raise": "#3B50DD",
+      "line": "#6676DA",
+      "ink": "#FFFFFF",
+      "ink-muted": "#C9D3FF",
+      "action": "#FFFFFF",
+      "on-action": "#2337C6",
+      "attention": "#FFB3A3",
+      "selected": "#FFFFFF",
+      "on-selected": "#2337C6"
+    },
+    "lift": {
+      "bg": "#CC4225",
+      "bg-deep": "#B33520",
+      "line": "#EE8E7B",
+      "ink": "#FFFFFF",
+      "action": "#FFFFFF",
+      "on-action": "#B33520",
+      "progress-off": "#EE8E7B"
+    },
+    "rest": {
+      "bg": "#3F7A76",
+      "line": "#7FA8A4",
+      "ink": "#FFFFFF",
+      "action": "#FFFFFF",
+      "on-action": "#2C5754",
+      "progress-off": "#7FA8A4"
+    },
+    "paper": {
+      "bg": "#F4F3EE",
+      "line": "#D6D6E4",
+      "ink": "#1A2266",
+      "ink-muted": "#4A5290",
+      "action": "#2337C6",
+      "on-action": "#FFFFFF"
+    },
+    "coverage": {
+      "from": "#3B50DD",
+      "to": "#FFFFFF",
+      "interpolation": "oklch",
+      "steps": 5
+    }
+  },
+  "font": {
+    "plan": {
+      "family": "\"Familjen Grotesk\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "weights": [400, 600, 700]
+    },
+    "session": {
+      "family": "\"Bricolage Grotesque\", system-ui, -apple-system, \"Segoe UI\", sans-serif",
+      "weights": [400, 600, 800]
+    }
+  },
+  "radius": {
+    "pill": 999,
+    "session-button": 22,
+    "sheet": 28,
+    "option": 16,
+    "tile": 12,
+    "input": 12,
+    "segment": 4
+  },
+  "space": {
+    "gutter-plan": 28,
+    "gutter-session": 26,
+    "top-safe": 72,
+    "bottom-safe": 44
+  },
+  "meta": {
+    "states": ["plan", "lift", "rest"],
+    "note": "lift.bg is #CC4225 (not the #D9472B in the mockups) so white text passes 4.5:1."
+  }
+}
