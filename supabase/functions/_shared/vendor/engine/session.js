@@ -72,7 +72,7 @@ function assertBudget(budgetMin) {
 function byId(a, b) {
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
-function buildStart(history, targets, profile, library, excludeIds, avoided, now, tz) {
+function buildStart(history, targets, profile, library, excludeIds, avoided, favoriteIds, now, tz) {
     const bal = balance(history, targets, library, now, tz);
     const t = {};
     const loads = {};
@@ -102,6 +102,7 @@ function buildStart(history, targets, profile, library, excludeIds, avoided, now
         avoided,
         recentIds: recentSessionIds(history, library, bal.windowEnd, tz),
         pool,
+        favorites: new Set(favoriteIds),
     };
 }
 function newState(start, available, durationOf) {
@@ -150,12 +151,21 @@ function admissible(s, ex) {
     }
     return true;
 }
-/** Rule 7.2 candidates for `area`, in rank order: not in the recent session, gap fit, id. */
+/**
+ * Rule 7.2 candidates for `area`, in rank order: (0) favorite (rule 0.2), (1) not in the recent
+ * session, (2) gap fit, (3) id. Key (0) makes the list the stable partition of the list without
+ * favorites, favorites first (D-0202 §3).
+ */
 function candidates(s, area) {
     return s.start.pool
         .filter((e) => e.areas[area] === 1 && admissible(s, e))
-        .map((e) => ({ e, recent: s.start.recentIds.has(e.id) ? 1 : 0, fit: gapFit(s, e) }))
-        .sort((x, y) => x.recent - y.recent || y.fit - x.fit || byId(x.e, y.e))
+        .map((e) => ({
+        e,
+        fav: s.start.favorites.has(e.id) ? 0 : 1,
+        recent: s.start.recentIds.has(e.id) ? 1 : 0,
+        fit: gapFit(s, e),
+    }))
+        .sort((x, y) => x.fav - y.fav || x.recent - y.recent || y.fit - x.fit || byId(x.e, y.e))
         .map((x) => x.e);
 }
 /** Adds `ex` at the first set count in `tries` that fits; true when added. */
@@ -447,7 +457,7 @@ function sessionReasonsOf(start, items) {
  * exercises with weight 1.0 there and no recovering primary area.
  */
 export function rankCandidates(area, history, targets, profile, library, sessionInput, now, tz) {
-    const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, avoidedAreas(sessionInput), now, tz);
+    const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, avoidedAreas(sessionInput), sessionInput.favoriteIds ?? [], now, tz);
     const durationOf = durationsOf(prefillCtxOf(history, library, now, tz));
     return candidates(newState(start, 0, durationOf), area).map((e) => e.id);
 }
@@ -458,6 +468,8 @@ export function rankCandidates(area, history, targets, profile, library, session
  * `profile.goal` picks the rule 7.2 rep slots only (D-0061 §1, D-0095); absent means
  * `build_muscle`, and an unknown goal throws `RangeError`. `sessionInput.avoidAreas` (rule 6.1,
  * D-0191 §2) skips areas like recovering ones for selection only; absent means `[]`.
+ * `sessionInput.favoriteIds` (rule 0.2, D-0202 §3) ranks favorites first among an area's
+ * candidates; absent means `[]`.
  */
 export function suggest(history, targets, profile, library, sessionInput, now, tz) {
     assertBudget(sessionInput.budgetMin);
@@ -465,7 +477,7 @@ export function suggest(history, targets, profile, library, sessionInput, now, t
     const avoided = avoidedAreas(sessionInput);
     const goal = goalOf(profile);
     const available = availableS(sessionInput.budgetMin, sessionInput.warmupInBudget);
-    const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, avoided, now, tz);
+    const start = buildStart(history, targets, profile, library, sessionInput.excludeIds, avoided, sessionInput.favoriteIds ?? [], now, tz);
     const lib = indexLibrary(library);
     const ctx = {
         hard: normalizeHistory(history),

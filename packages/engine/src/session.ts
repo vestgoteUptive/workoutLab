@@ -125,6 +125,8 @@ interface Start {
   recentIds: Set<string>;
   /** Eligible exercises with at least one primary area, id-sorted. */
   pool: LibraryExercise[];
+  /** Rule 0.2 (D-0202 §3): favorite ids, rule 7.2 ranking key (0). */
+  favorites: ReadonlySet<string>;
 }
 
 interface Picked {
@@ -163,6 +165,7 @@ function buildStart(
   library: readonly LibraryExercise[],
   excludeIds: readonly string[],
   avoided: ReadonlySet<Area>,
+  favoriteIds: readonly string[],
   now: Instant,
   tz: TimeZone,
 ): Start {
@@ -193,6 +196,7 @@ function buildStart(
     avoided,
     recentIds: recentSessionIds(history, library, bal.windowEnd, tz),
     pool,
+    favorites: new Set(favoriteIds),
   };
 }
 
@@ -243,12 +247,21 @@ function admissible(s: State, ex: LibraryExercise): boolean {
   return true;
 }
 
-/** Rule 7.2 candidates for `area`, in rank order: not in the recent session, gap fit, id. */
+/**
+ * Rule 7.2 candidates for `area`, in rank order: (0) favorite (rule 0.2), (1) not in the recent
+ * session, (2) gap fit, (3) id. Key (0) makes the list the stable partition of the list without
+ * favorites, favorites first (D-0202 §3).
+ */
 function candidates(s: State, area: Area): LibraryExercise[] {
   return s.start.pool
     .filter((e) => e.areas[area] === 1 && admissible(s, e))
-    .map((e) => ({ e, recent: s.start.recentIds.has(e.id) ? 1 : 0, fit: gapFit(s, e) }))
-    .sort((x, y) => x.recent - y.recent || y.fit - x.fit || byId(x.e, y.e))
+    .map((e) => ({
+      e,
+      fav: s.start.favorites.has(e.id) ? 0 : 1,
+      recent: s.start.recentIds.has(e.id) ? 1 : 0,
+      fit: gapFit(s, e),
+    }))
+    .sort((x, y) => x.fav - y.fav || x.recent - y.recent || y.fit - x.fit || byId(x.e, y.e))
     .map((x) => x.e);
 }
 
@@ -601,7 +614,7 @@ export function rankCandidates(
   targets: readonly AreaTarget[],
   profile: Pick<EngineProfile, "level" | "equipment">,
   library: readonly LibraryExercise[],
-  sessionInput: Pick<SessionInput, "excludeIds" | "avoidAreas">,
+  sessionInput: Pick<SessionInput, "excludeIds" | "avoidAreas" | "favoriteIds">,
   now: Instant,
   tz: TimeZone,
 ): string[] {
@@ -612,6 +625,7 @@ export function rankCandidates(
     library,
     sessionInput.excludeIds,
     avoidedAreas(sessionInput),
+    sessionInput.favoriteIds ?? [],
     now,
     tz,
   );
@@ -626,6 +640,8 @@ export function rankCandidates(
  * `profile.goal` picks the rule 7.2 rep slots only (D-0061 §1, D-0095); absent means
  * `build_muscle`, and an unknown goal throws `RangeError`. `sessionInput.avoidAreas` (rule 6.1,
  * D-0191 §2) skips areas like recovering ones for selection only; absent means `[]`.
+ * `sessionInput.favoriteIds` (rule 0.2, D-0202 §3) ranks favorites first among an area's
+ * candidates; absent means `[]`.
  */
 export function suggest(
   history: readonly HistorySet[],
@@ -648,6 +664,7 @@ export function suggest(
     library,
     sessionInput.excludeIds,
     avoided,
+    sessionInput.favoriteIds ?? [],
     now,
     tz,
   );
