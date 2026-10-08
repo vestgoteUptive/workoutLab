@@ -363,6 +363,7 @@ describe("T-0302b AC-5 states", () => {
       mainLiftId: null,
       pinnedIds: [],
       excludeIds: [],
+      favoriteIds: [],
     });
   });
 });
