@@ -22,6 +22,7 @@ const OWNED_TABLES = [
   "routine_items",
   "plan_checkins",
   "excluded_exercises",
+  "favorite_exercises",
 ] as const;
 type OwnedTable = (typeof OWNED_TABLES)[number];
 
@@ -111,6 +112,14 @@ async function insertExclusions(client: SupabaseClient, ids: string[]): Promise<
   if (error) throw error;
 }
 
+// T-0564 AC7 (D-0202 §5): the favorites list goes with the auth user too.
+async function insertFavorites(client: SupabaseClient, ids: string[]): Promise<void> {
+  const { error } = await client
+    .from("favorite_exercises")
+    .insert(ids.map((exercise_id) => ({ exercise_id })));
+  if (error) throw error;
+}
+
 function deleteAccount(accessToken: string): Promise<Response> {
   return callFunction("/account", { method: "DELETE", accessToken });
 }
@@ -124,7 +133,7 @@ Deno.test(
     const b = await createTestUser();
 
     // A: profile + 9 targets, 2 sessions with 6 sets (1 tombstoned), 1 routine with 2 items, 1 check-in,
-    // 2 exclusions.
+    // 2 exclusions, 2 favorites (other exercises: a favorite removes the same exclusion, D-0202 §5).
     await seedFullProfile(a.client);
     const a1 = await insertSession(a.client, "2026-09-20T09:00:00Z");
     const a2 = await insertSession(a.client, "2026-09-22T09:00:00Z");
@@ -136,6 +145,7 @@ Deno.test(
     await insertRoutine(a.client, 2);
     await insertCheckin(a.client);
     await insertExclusions(a.client, ["barbell-back-squat", "push-up"]);
+    await insertFavorites(a.client, ["barbell-bench-press", "plank"]);
 
     // B: one row of each kind (and the 9 targets seedFullProfile writes).
     await seedFullProfile(b.client);
@@ -147,6 +157,7 @@ Deno.test(
     await insertRoutine(b.client, 1);
     await insertCheckin(b.client);
     await insertExclusions(b.client, ["push-up"]);
+    await insertFavorites(b.client, ["plank"]);
 
     const expectedA = {
       profiles: 1,
@@ -157,6 +168,7 @@ Deno.test(
       routine_items: 2,
       plan_checkins: 1,
       excluded_exercises: 2,
+      favorite_exercises: 2,
     };
     const expectedB = {
       profiles: 1,
@@ -167,6 +179,7 @@ Deno.test(
       routine_items: 1,
       plan_checkins: 1,
       excluded_exercises: 1,
+      favorite_exercises: 1,
     };
     assertEquals(await countAll(a.userId), expectedA, "A's fixture is in place");
     assertEquals(await countAll(b.userId), expectedB, "B's fixture is in place");
@@ -185,6 +198,7 @@ Deno.test(
       routine_items: 0,
       plan_checkins: 0,
       excluded_exercises: 0,
+      favorite_exercises: 0,
     });
     assertEquals(await countAll(b.userId), expectedB, "B's counts are unchanged");
 

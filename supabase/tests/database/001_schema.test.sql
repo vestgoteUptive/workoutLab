@@ -2,7 +2,7 @@
 -- AC24 [a][b] (indexes), AC23 (data minimisation), D-0029 (exercises columns, TR-0003).
 -- The AC1 block is generated from the column tables in docs/data-model.md (parts [a] and [b], T-0100b).
 begin;
-select plan(261);
+select plan(277);
 
 -- AC1 -------------------------------------------------------------------------------------------
 -- areas
@@ -264,6 +264,36 @@ select is(
       and c.confrelid = 'auth.users'::regclass),
   'c',
   'excluded_exercises.user_id FK is ON DELETE CASCADE');
+-- favorite_exercises (T-0564, D-0202 §5)
+select has_table('public', 'favorite_exercises', 'table favorite_exercises exists');
+select columns_are('public', 'favorite_exercises', array['user_id', 'exercise_id', 'created_at'], 'favorite_exercises has exactly the documented columns');
+select col_type_is('public', 'favorite_exercises', 'user_id', 'uuid', 'favorite_exercises.user_id is uuid');
+select col_not_null('public', 'favorite_exercises', 'user_id', 'favorite_exercises.user_id is not null');
+select col_type_is('public', 'favorite_exercises', 'exercise_id', 'text', 'favorite_exercises.exercise_id is text');
+select col_not_null('public', 'favorite_exercises', 'exercise_id', 'favorite_exercises.exercise_id is not null');
+select col_type_is('public', 'favorite_exercises', 'created_at', 'timestamp with time zone', 'favorite_exercises.created_at is timestamp with time zone');
+select col_not_null('public', 'favorite_exercises', 'created_at', 'favorite_exercises.created_at is not null');
+select col_default_is('public', 'favorite_exercises', 'user_id', 'auth.uid()', 'favorite_exercises.user_id defaults to auth.uid()');
+select col_default_is('public', 'favorite_exercises', 'created_at', 'now()', 'favorite_exercises.created_at defaults to now()');
+select col_is_pk('public', 'favorite_exercises', array['user_id', 'exercise_id'], 'favorite_exercises PK (user_id, exercise_id)');
+select has_index('public', 'favorite_exercises', 'favorite_exercises_exercise_id_idx', array['exercise_id'],
+  'index on favorite_exercises (exercise_id)');
+select fk_ok('public', 'favorite_exercises', array['exercise_id'], 'public', 'exercises', array['id'],
+  'favorite_exercises.exercise_id FK to exercises (id)');
+select fk_ok('public', 'favorite_exercises', array['user_id'], 'auth', 'users', array['id'],
+  'favorite_exercises.user_id FK to auth.users (id)');
+select is(
+  (select string_agg(c.confdeltype::text, ',') from pg_catalog.pg_constraint c
+    where c.conrelid = 'public.favorite_exercises'::regclass and c.contype = 'f'
+      and c.confrelid = 'public.exercises'::regclass),
+  'c',
+  'favorite_exercises.exercise_id FK is ON DELETE CASCADE (a favorite is a preference, not history)');
+select is(
+  (select string_agg(c.confdeltype::text, ',') from pg_catalog.pg_constraint c
+    where c.conrelid = 'public.favorite_exercises'::regclass and c.contype = 'f'
+      and c.confrelid = 'auth.users'::regclass),
+  'c',
+  'favorite_exercises.user_id FK is ON DELETE CASCADE');
 select has_view('public', 'session_sets_live', 'view session_sets_live exists');
 select has_view('analytics', 'time_to_first_plan', 'view analytics.time_to_first_plan exists');
 select has_view('analytics', 'finished_within_budget', 'view analytics.finished_within_budget exists');
