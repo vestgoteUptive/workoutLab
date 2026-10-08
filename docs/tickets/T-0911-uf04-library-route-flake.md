@@ -23,3 +23,4 @@ status: ready
 None.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0911.md` (D-0157).

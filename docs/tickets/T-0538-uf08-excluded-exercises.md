@@ -48,6 +48,7 @@ Checklist (D-0197 §7): online/offline (AC1, AC6), empty/non-empty stored list (
 - `apps/web/src/features/UF-08/**` (lane)
 - `apps/web/src/lib/i18n/flows/uf-08.ts` (own flow file)
 - `tests/e2e/uf-08-excluded.spec.ts` (new file)
+- `apps/web/src/lib/offline/excluded-hooks.ts` and its `__tests__` (a `loaded` flag for the review finding; orchestrator grant 2026-10-08)
 
 ## Contract impact
 None.

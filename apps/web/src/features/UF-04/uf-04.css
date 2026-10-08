@@ -140,3 +140,64 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
+/* UF-04.2 figure card (T-0558, D-0207 §3): the figure is a picture; the lists are its legend. */
+.wl-uf04__figure-card {
+  box-sizing: border-box;
+  margin-block: 12px;
+  padding: 16px;
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 16px;
+}
+
+.wl-uf04__figure-card .wl-fig {
+  margin-inline: auto;
+  max-inline-size: 100%;
+}
+
+.wl-uf04__legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block-start: 12px;
+}
+
+.wl-uf04__legend-label {
+  color: var(--wl-color-text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.wl-uf04__swatch {
+  box-sizing: border-box;
+  flex: none;
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 3px;
+}
+
+.wl-uf04__swatch--primary {
+  background: var(--wl-color-accent);
+}
+
+.wl-uf04__swatch--secondary {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--wl-color-accent) 0 1.5px,
+    var(--wl-color-surface-2) 1.5px 5px
+  );
+  border: 1px solid var(--wl-color-text-muted);
+}
+
+@media (forced-colors: active) {
+  .wl-uf04__swatch--primary {
+    background: CanvasText;
+  }
+  .wl-uf04__swatch--secondary {
+    background: repeating-linear-gradient(45deg, CanvasText 0 1.5px, Canvas 1.5px 5px);
+    border-color: CanvasText;
+  }
+}

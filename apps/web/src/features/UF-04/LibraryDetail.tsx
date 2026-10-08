@@ -2,6 +2,8 @@
 // library row alone is enough for the header, so a missing detail never redirects.
 import { Link, Navigate, useParams } from "react-router";
 import type { LibraryExercise } from "@workoutlab/engine";
+import { AREAS, type Area } from "@workoutlab/shared";
+import { BodyFigure, type RegionStyle } from "../../components/body-figure/index.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import type { ExerciseDetail } from "../../lib/offline/db.js";
@@ -52,27 +54,54 @@ export function LibraryDetail() {
   const primary = primaryAreaNames(exercise);
   const secondary = secondaryAreaNames(exercise);
   const detail = data.detail;
+  // The figure is driven by `exercise.areas` only: 1.0 solid, 0.5 hatched, absent neutral.
+  const regions: Partial<Record<Area, RegionStyle>> = {};
+  for (const a of AREAS) {
+    const w = exercise.areas[a];
+    if (w === 1) regions[a] = { fill: "primary" };
+    else if (w === 0.5) regions[a] = { fill: "secondary" };
+  }
+  const hasAreas = primary.length + secondary.length > 0;
 
   return (
     <div data-screen-id="UF-04.2" className="wl-uf04">
       <h1>{exercise.name}</h1>
       <p data-field="tagline">{tagLine(exercise)}</p>
-      <ul className="wl-uf04__pills" aria-label={en.uf04.primaryAreas}>
-        {primary.map((name) => (
-          <li key={name} data-weight="primary" className="wl-uf04__pill">
-            {name}
-          </li>
-        ))}
-      </ul>
-      {secondary.length === 0 ? null : (
-        <ul className="wl-uf04__pills" aria-label={en.uf04.secondaryAreas}>
-          {secondary.map((name) => (
-            <li key={name} data-weight="secondary" className="wl-uf04__pill">
-              {name}
-            </li>
-          ))}
-        </ul>
-      )}
+      {hasAreas ? (
+        <section className="wl-uf04__figure-card" data-field="figure-card">
+          <BodyFigure regions={regions} size="detail" />
+          {primary.length === 0 ? null : (
+            <>
+              <div className="wl-uf04__legend">
+                <span className="wl-uf04__legend-label">{en.uf04.primaryLabel}</span>
+                <span className="wl-uf04__swatch wl-uf04__swatch--primary" aria-hidden="true" />
+              </div>
+              <ul className="wl-uf04__pills" aria-label={en.uf04.primaryAreas}>
+                {primary.map((name) => (
+                  <li key={name} data-weight="primary" className="wl-uf04__pill">
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+          {secondary.length === 0 ? null : (
+            <>
+              <div className="wl-uf04__legend">
+                <span className="wl-uf04__legend-label">{en.uf04.secondaryLabel}</span>
+                <span className="wl-uf04__swatch wl-uf04__swatch--secondary" aria-hidden="true" />
+              </div>
+              <ul className="wl-uf04__pills" aria-label={en.uf04.secondaryAreas}>
+                {secondary.map((name) => (
+                  <li key={name} data-weight="secondary" className="wl-uf04__pill">
+                    {name}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      ) : null}
       {detail === null ? (
         <p>{en.uf04.detailMissing}</p>
       ) : (
