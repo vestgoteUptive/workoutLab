@@ -379,3 +379,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0538 | UF-08: stored list ∪ visit Removes to every suggest call (incl. fit line, T-0303a AC-6 pin), Removed line Never suggest/Undo, notice, empty state. After H-27 | web-feature:UF-08 | T-0532, T-0534, T-0536, T-0537 | done | wl-build-web |
 | T-0540 | UF-11.5 Excluded exercises at /plan/excluded + UF-11.2 "Excluded exercises · n" row (in the T-0548 slot, D-0204 §5). After H-27 | web-feature:UF-11 | T-0532, T-0534, T-0536, T-0537, T-0548 | done | wl-build-web |
 | T-0542 | UF-02.1/UF-02.2 PREVIEW_INPUT passes the stored list to suggest | web-feature:UF-02 | T-0536 | done | wl-build-web |
+| T-0561 | Favorites design: UF-11.6, UF-04.2 toggle, UF-04.1/UF-08.2 tag, UF-11.2 row | design | — | done | wl-design |
