@@ -15,6 +15,8 @@ export class ExcludedWriteError extends Error {
 }
 
 const list = createExerciseList({
+  name: "excluded",
+  oppositeName: "favorites",
   table: () => supabase.from("excluded_exercises"),
   cache: (db) => db.excludedCache,
   opposite: (db) => db.favoriteCache,

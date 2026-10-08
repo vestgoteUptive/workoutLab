@@ -12,7 +12,19 @@ export type ListQuery = ReturnType<typeof supabase.from>;
 
 export type ListWriteReason = "offline" | "warmup" | "server";
 
+// A refresh that started before a confirmed write holds data older than that write; it must not
+// replace the cache. Each confirmed write (and each drop from the other list) bumps the counter of
+// the list it changed, per user; a refresh compares it on commit. Shared by both lists.
+const writeSeq = new Map<string, number>();
+const seqKey = (list: string, userId: string): string => [list, userId].join("/");
+const seqOf = (list: string, userId: string): number => writeSeq.get(seqKey(list, userId)) ?? 0;
+const bumpSeq = (list: string, userId: string): void =>
+  void writeSeq.set(seqKey(list, userId), seqOf(list, userId) + 1);
+
 export interface ExerciseListConfig {
+  /** This list's name, and the other list's, for the write counters. */
+  name: string;
+  oppositeName: string;
   /** The Postgres table (same column shape: `exercise_id`, `created_at`). Each list
    *  passes a literal table name at its own call site, so the RLS-coverage scan (T-0402c) sees it. */
   table: () => ListQuery;
@@ -34,13 +46,6 @@ export interface ExerciseList {
 }
 
 export function createExerciseList(config: ExerciseListConfig): ExerciseList {
-  // A refresh that started before a confirmed write holds data older than that write; it must not
-  // replace the cache. Each confirmed write bumps the user's counter; a refresh compares it on
-  // commit. Opposite-list drops bump nothing here: they only remove rows.
-  const writeSeq = new Map<string, number>();
-  const seqOf = (userId: string): number => writeSeq.get(userId) ?? 0;
-  const bumpSeq = (userId: string): void => void writeSeq.set(userId, seqOf(userId) + 1);
-
   /** Replaces this user's cached rows from the server. An authenticated empty read empties the
    *  cache. Any error (PGRST205, HTTP 404, network, RLS) means "unknown": the cache stays.
    *  Never throws, so a missing table cannot break the other refreshes in `refreshAll`. */
@@ -48,7 +53,7 @@ export function createExerciseList(config: ExerciseListConfig): ExerciseList {
     const userId = currentUserId();
     if (!userId || isOffline()) return;
     const gen = cacheGeneration();
-    const seq = seqOf(userId);
+    const seq = seqOf(config.name, userId);
     const db = offlineDb();
     const table = config.cache(db);
 
@@ -68,7 +73,7 @@ export function createExerciseList(config: ExerciseListConfig): ExerciseList {
       createdAt: r.created_at,
     }));
     await db.transaction("rw", table, async () => {
-      if (!cacheWriteAllowed(gen) || seqOf(userId) !== seq) return;
+      if (!cacheWriteAllowed(gen) || seqOf(config.name, userId) !== seq) return;
       await table.where({ userId }).delete();
       await table.bulkPut(cached);
     });
@@ -104,7 +109,7 @@ export function createExerciseList(config: ExerciseListConfig): ExerciseList {
     } catch (error) {
       throw config.makeError("server", error);
     }
-    bumpSeq(userId);
+    bumpSeq(config.name, userId);
     if (!cacheWriteAllowed(gen)) return;
     const key = userScopedKey(userId, exerciseId);
     const table = config.cache(db);
@@ -117,6 +122,7 @@ export function createExerciseList(config: ExerciseListConfig): ExerciseList {
       }
       // The server trigger removed the opposite row; mirror it after the confirm only.
       await opposite.delete(key);
+      bumpSeq(config.oppositeName, userId);
     });
   }
 
@@ -130,7 +136,7 @@ export function createExerciseList(config: ExerciseListConfig): ExerciseList {
     } catch (error) {
       throw config.makeError("server", error);
     }
-    bumpSeq(userId);
+    bumpSeq(config.name, userId);
     if (!cacheWriteAllowed(gen)) return;
     await config.cache(offlineDb()).delete(userScopedKey(userId, exerciseId));
   }

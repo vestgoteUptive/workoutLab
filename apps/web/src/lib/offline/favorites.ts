@@ -1,6 +1,6 @@
 // T-0567 (D-0202 §6): the favorite-exercises list, on the same helper as the excluded list.
 import { supabase } from "../auth/client.js";
-import { createExerciseList, type ListQuery, type ListWriteReason } from "./exercise-list.js";
+import { createExerciseList, type ListWriteReason } from "./exercise-list.js";
 
 export type FavoriteWriteReason = ListWriteReason;
 
@@ -14,8 +14,9 @@ export class FavoriteWriteError extends Error {
 }
 
 const list = createExerciseList({
-  // Same column shape as `excluded_exercises` (T-0564), so the query type is shared.
-  table: () => supabase.from("favorite_exercises") as unknown as ListQuery,
+  name: "favorites",
+  oppositeName: "excluded",
+  table: () => supabase.from("favorite_exercises"),
   cache: (db) => db.favoriteCache,
   opposite: (db) => db.excludedCache,
   makeError: (reason, cause) => new FavoriteWriteError(reason, cause),

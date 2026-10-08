@@ -6,6 +6,8 @@ type Result = { data: unknown; error: unknown };
 const h = vi.hoisted(() => ({
   readGate: Promise.resolve() as Promise<void>,
   upsertGate: Promise.resolve() as Promise<void>,
+  exReadGate: Promise.resolve() as Promise<void>,
+  exReadResult: { data: [], error: null } as Result,
   reads: [] as string[],
   readResult: { data: [], error: null } as Result | "throw",
   upsertCalls: [] as Array<{ table: string; rows: unknown; options: unknown }>,
@@ -20,6 +22,11 @@ vi.mock("../../auth/client.js", () => ({
       select: () => {
         h.reads.push(table);
         const res = async () => {
+          if (table === "excluded_exercises") {
+            const snap = h.exReadResult;
+            await h.exReadGate;
+            return snap;
+          }
           if (table !== "favorite_exercises") return { data: [], error: null };
           const snapshot = h.readResult;
           await h.readGate;
@@ -87,7 +94,8 @@ beforeEach(() => {
   h.reads.length = 0;
   h.upsertCalls.length = 0;
   h.deleteCalls.length = 0;
-  h.readGate = h.upsertGate = Promise.resolve();
+  h.readGate = h.upsertGate = h.exReadGate = Promise.resolve();
+  h.exReadResult = { data: [], error: null };
   h.readResult = { data: [], error: null };
   h.upsertResult = { data: [], error: null };
   h.deleteResult = { error: null };
@@ -260,6 +268,35 @@ describe("T-0567 AC7 cross-list drop", () => {
     h.upsertResult = { data: null, error: { code: "42501", message: "rls" } };
     await expect(x.excludeExercise(A, "bench-press")).rejects.toThrow();
     expect(await ids()).toEqual(["bench-press"]);
+  });
+});
+
+describe("T-0567 review: a drop from the other list bumps that list's write counter", () => {
+  it("excluded refresh in flight -> favorite confirms -> refresh commits: the id stays out of excluded", async () => {
+    await offlineDb().excludedCache.put(row(A, "back-squat"));
+    const g = gate();
+    h.exReadGate = g.promise;
+    h.exReadResult = server("back-squat");
+    const refresh = x.refreshExcluded();
+    await vi.waitFor(() => expect(h.reads).toContain("excluded_exercises"));
+    await f.favoriteExercise(A, "back-squat");
+    g.open();
+    await refresh;
+    expect(await exIds()).toEqual([]);
+    expect(await ids()).toEqual(["back-squat"]);
+  });
+  it("favorites refresh in flight -> exclude confirms -> refresh commits: the id stays out of favorites", async () => {
+    await offlineDb().favoriteCache.put(row(A, "bench-press"));
+    const g = gate();
+    h.readGate = g.promise;
+    h.readResult = server("bench-press");
+    const refresh = f.refreshFavorites();
+    await vi.waitFor(() => expect(h.reads).toContain("favorite_exercises"));
+    await x.excludeExercise(A, "bench-press");
+    g.open();
+    await refresh;
+    expect(await ids()).toEqual([]);
+    expect(await exIds()).toEqual(["bench-press"]);
   });
 });
 
