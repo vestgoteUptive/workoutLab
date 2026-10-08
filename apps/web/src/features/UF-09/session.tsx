@@ -15,7 +15,13 @@ import {
   type SessionInsert,
   type SetEdit,
 } from "../../lib/offline/index.js";
-import { setAfterRest, setsInItem, type FocusState, type LoggedSet } from "./machine.js";
+import {
+  doLaterOrder,
+  setAfterRest,
+  setsInItem,
+  type FocusState,
+  type LoggedSet,
+} from "./machine.js";
 import { removeFocusState, type FocusStorage } from "./persist.js";
 import type { FocusStore } from "./store.js";
 import { elapsedS as elapsedSOf, remainingS } from "./timer.js";
@@ -27,6 +33,12 @@ export type SessionRow = SessionInsert;
  *  logs it: `"focus"` (the default, UF-09.3/.7) or `"list"` (the UF-09.9 List view, T-0305a).
  *  `source` only keys the in-flight dedupe; it never reaches `lib/offline`. */
 export type FocusSetInput = RecordSetInput & { itemIndex: number; source?: "focus" | "list" };
+
+/** The result of `doLater()` (T-0578): never a rejection, so the UF-09.9 button can show copy. */
+export type DoLaterResult =
+  | { ok: true; name: string }
+  | { ok: false; reason: "unavailable" }
+  | { ok: false; reason: "failed"; error: unknown };
 
 /**
  * The value of `useFocusSession()` (D-0066 §12, D-0071 §5). A seam overlay gets the same value
@@ -73,6 +85,13 @@ export interface FocusSession {
    *  `{...row, plan}`. `mainLiftId`, when given, becomes `plan.mainLiftId`. Logged sets keep
    *  their `exerciseId`. */
   replaceItem(index: number, item: WorkoutItem, mainLiftId?: string | null): Promise<void>;
+  /** UF-09.9 "Do {name} later" (T-0578, D-0205 §9): moves the current, not yet started item to
+   *  just after the next unfinished one. Writes `{...row, plan}` through the device-first queue
+   *  (works offline), and only then moves the machine (`ITEM_DEFERRED`: the pause ends, logged
+   *  sets and skipped items are remapped, UF-09.6 starts for the item now due, or the warm-up
+   *  resumes). `{ok:false}` with nothing changed when it isn't available (`canDoLater`) or the
+   *  write fails. One write while pending. */
+  doLater(): Promise<DoLaterResult>;
   /** Writes `{...row, ended_at: now}`, removes `wl-focus:<id>`, then navigates to
    *  `/session/<id>/summary`. No UI and no confirm; one write while pending. A failed one can
    *  be called again; before it rejects it applies a UF-09.8 plan write it waited for that had
@@ -183,6 +202,7 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
    *  not a second row. Another exercise at that position (after a swap) or a List-view log is a
    *  different set and writes its own row. */
   const recording = new Map<string, Promise<LoggedSet>>();
+  let deferring: Promise<DoLaterResult> | null = null;
 
   const writeSet = async (
     input: Omit<FocusSetInput, "source">,
@@ -267,6 +287,58 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
       await upsertSession(written);
       store.replacePlan(next, index, Date.now());
       deps.onRow(written);
+    },
+
+    doLater() {
+      if (deferring) return deferring;
+      const unavailable: DoLaterResult = { ok: false, reason: "unavailable" };
+      const ended = () => writes.finishing || store.getState().phase === "done";
+      const run = (async (): Promise<DoLaterResult> => {
+        if (ended()) return unavailable;
+        const { state, ctx } = store.getSnapshot();
+        const moved = doLaterOrder(state, ctx.plan);
+        if (!moved) return unavailable;
+        const movedIndex = moved.order.findIndex((to, i) => to > i);
+        const movedId = ctx.plan.items[movedIndex]!.exerciseId;
+        const name = ctx.library.find((e) => e.id === movedId)?.name ?? movedId;
+        const plan: SessionPlan = { ...ctx.plan, items: moved.items };
+        let row: SessionRow;
+        try {
+          row = await storedRow(sessionId);
+          await upsertSession({ ...row, plan });
+        } catch (error) {
+          return { ok: false, reason: "failed", error };
+        }
+        const written: SessionRow = { ...row, plan };
+        const now = store.getState();
+        const same =
+          now.phase === "paused" &&
+          now.pausedAtMs === state.pausedAtMs &&
+          now.resumePhase === state.resumePhase &&
+          now.itemIndex === state.itemIndex &&
+          now.loggedSets === state.loggedSets &&
+          !ended();
+        if (!same) {
+          // The pause ended (or a set was logged) while the write was in flight: the machine
+          // can't follow, so the old order goes back and nothing has changed.
+          try {
+            await upsertSession(row);
+          } catch (error) {
+            return { ok: false, reason: "failed", error };
+          }
+          return unavailable;
+        }
+        store.deferItem(plan, { order: moved.order, current: moved.current, name }, Date.now());
+        deps.onRow(written);
+        return { ok: true, name };
+      })();
+      deferring = run;
+      writes.plan = run.then(() => undefined);
+      const clear = () => {
+        if (deferring === run) deferring = null;
+      };
+      run.then(clear, clear);
+      return run;
     },
 
     finish() {

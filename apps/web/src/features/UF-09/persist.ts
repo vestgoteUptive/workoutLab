@@ -1,6 +1,7 @@
 // UF-09 persisted focus state (T-0304a, NFR-OFF-2, D-0066 §2, D-0111 §6 §7). Device-local
 // `localStorage`, one key per session. Reads validate against the current plan; anything that
 // doesn't fit is removed, so the machine starts fresh instead of rendering a broken step.
+import type { SessionPlan } from "@workoutlab/shared";
 import {
   STORED_PHASES,
   setsInItem,
@@ -13,6 +14,11 @@ export const FOCUS_KEY_PREFIX = "wl-focus:";
 
 export function focusKey(sessionId: string): string {
   return `${FOCUS_KEY_PREFIX}${sessionId}`;
+}
+
+/** Where the skipped items' exercise ids are kept (T-0578), beside the focus state. */
+function skippedKey(sessionId: string): string {
+  return `wl-focus-skipped:${sessionId}`;
 }
 
 /** A storage that can fail: quota, private mode, a disabled `localStorage` getter. */
@@ -32,8 +38,16 @@ export function writeFocusState(
   storage: FocusStorage | null,
   sessionId: string,
   state: FocusState,
+  plan?: SessionPlan,
 ): void {
   try {
+    // T-0578: the skipped items' exercise ids ride along, so a restore against a plan reordered
+    // after this write (a kill between the two) can realign `skippedItems` by exercise.
+    // They live under their own key so the stored state stays exactly the machine state.
+    if (plan && state.skippedItems.length > 0) {
+      const ids = state.skippedItems.map((i) => plan.items[i]?.exerciseId ?? null);
+      storage?.setItem(skippedKey(sessionId), JSON.stringify(ids));
+    } else storage?.removeItem(skippedKey(sessionId));
     storage?.setItem(focusKey(sessionId), JSON.stringify(state));
   } catch {
     // Quota or private mode: the transition still happens.
@@ -43,6 +57,7 @@ export function writeFocusState(
 export function removeFocusState(storage: FocusStorage | null, sessionId: string): void {
   try {
     storage?.removeItem(focusKey(sessionId));
+    storage?.removeItem(skippedKey(sessionId));
   } catch {
     // Nothing to do: a key we can't remove is one we couldn't read either.
   }
@@ -139,10 +154,33 @@ export function readFocusState(
     parsed = undefined;
   }
   if (isValidFocusState(parsed, sessionId, ctx)) {
+    let skippedIds: unknown = null;
+    try {
+      skippedIds = JSON.parse(storage?.getItem(skippedKey(sessionId)) ?? "null");
+    } catch {
+      skippedIds = null;
+    }
+    const rest = parsed;
+    const items = ctx.plan.items;
+    const realign = (index: number, exerciseId: unknown): number => {
+      if (items[index]?.exerciseId === exerciseId) return index;
+      const found = items.findIndex((it) => it.exerciseId === exerciseId);
+      return found >= 0 ? found : index;
+    };
+    const skippedStored = (parsed.skippedItems as number[] | undefined) ?? [];
+    const ids = Array.isArray(skippedIds) && skippedIds.length === skippedStored.length;
     const restored: FocusState = {
-      ...parsed,
+      ...rest,
       timerPausedAtMs: parsed.timerPausedAtMs ?? null,
-      skippedItems: (parsed.skippedItems as number[] | undefined) ?? [],
+      // T-0578: the plan may be reordered after this state was written; realign by exercise id.
+      skippedItems: ids
+        ? skippedStored.map((i, k) => realign(i, (skippedIds as unknown[])[k]))
+        : skippedStored,
+      loggedSets: (parsed.loggedSets as FocusState["loggedSets"]).map((s) =>
+        typeof s === "object" && s !== null
+          ? { ...s, itemIndex: realign(s.itemIndex, s.exerciseId) }
+          : s,
+      ),
     };
     if (!pastEndTimeCheck(restored as unknown as Record<string, unknown>, ctx.plan.items.length)) {
       return restored;

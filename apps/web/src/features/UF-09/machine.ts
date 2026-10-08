@@ -138,7 +138,12 @@ export type FocusEvent =
   | ({ type: "PLAN_APPLIED" } & At)
   /** UF-09.9 "Skip to next exercise": ends the pause and leaves the current item (or the
    *  warm-up). Valid only in `paused`. */
-  | ({ type: "SKIP_ITEM" } & At);
+  | ({ type: "SKIP_ITEM" } & At)
+  // T-0578 (D-0205 §9). Added, none changed.
+  /** UF-09.9 "Do {name} later", reduced with the NEW plan in `ctx` after its write landed:
+   *  `order[old] = new` for every item, `current` the new index of the item to do now. Valid only
+   *  in `paused` (not on a pause taken on UF-09.8). */
+  | ({ type: "ITEM_DEFERRED"; order: readonly number[]; current: number; name: string } & At);
 
 function timerAt(atMs: number, durationS: number): FocusTimer {
   return { startedAtMs: atMs, durationS, pausedMs: 0 };
@@ -548,6 +553,8 @@ function transition(state: FocusState, event: FocusEvent, ctx: FocusCtx): FocusS
       return planApplied(state, ctx, event.atMs);
     case "SKIP_ITEM":
       return skipItem(state, ctx, event.atMs);
+    case "ITEM_DEFERRED":
+      return itemDeferred(state, ctx, event.order, event.current, event.atMs);
     case "HOLD_ALREADY_LOGGED":
       return state.phase === "timed" ? movedOnIfLogged(state, ctx, event.atMs) : state;
     case "PLAN_REPLACED":
@@ -636,6 +643,120 @@ function skipItem(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
     phase: "betweenItems",
     timer: null,
     skippedItems: skipped.includes(state.itemIndex) ? skipped : [...skipped, state.itemIndex],
+  };
+}
+
+/** The item "Do later" acts on: item 0 in `getReady`/`warmup`, else `itemIndex` (T-0578). */
+function deferrableItem(state: FocusState): number {
+  return state.resumePhase === "getReady" || state.resumePhase === "warmup" ? 0 : state.itemIndex;
+}
+
+/** Whether every planned set (back-off included) of item `index` has a logged set. */
+function itemComplete(loggedSets: readonly LoggedSet[], plan: SessionPlan, index: number): boolean {
+  const item = plan.items[index];
+  if (!item) return true;
+  const done = new Set<number>();
+  for (const s of loggedSets) if (s.itemIndex === index) done.add(s.setIndex);
+  return done.size >= setsInItem(item);
+}
+
+/** The first item after `from` that is neither complete nor skipped, or `null`. */
+function nextOpenItem(
+  state: FocusState,
+  plan: SessionPlan,
+  loggedSets: readonly LoggedSet[],
+  from: number,
+): number | null {
+  const skipped = state.skippedItems ?? [];
+  for (let i = from + 1; i < plan.items.length; i += 1) {
+    if (!skipped.includes(i) && !itemComplete(loggedSets, plan, i)) return i;
+  }
+  return null;
+}
+
+/**
+ * T-0578 (D-0205 §9): whether UF-09.9 offers "Do {name} later". Only while paused, not on a pause
+ * taken on UF-09.8; the current item has no logged set (focus or List view) and is not skipped;
+ * and a later item is neither complete nor skipped.
+ */
+export function canDoLater(
+  state: FocusState,
+  plan: SessionPlan,
+  loggedSets: readonly LoggedSet[],
+): boolean {
+  if (state.phase !== "paused" || state.resumePhase === null) return false;
+  if (state.resumePhase === "timeCheck") return false;
+  const current = deferrableItem(state);
+  if (!plan.items[current]) return false;
+  if ((state.skippedItems ?? []).includes(current)) return false;
+  if (loggedSets.some((s) => s.itemIndex === current)) return false;
+  return nextOpenItem(state, plan, loggedSets, current) !== null;
+}
+
+export interface DoLaterOrder {
+  /** The plan's items in the new order. */
+  items: SessionPlan["items"];
+  /** `order[old] = new`, a permutation of the item indexes. */
+  order: number[];
+  /** The new index of the item to do now (the one that was the next open item). */
+  current: number;
+}
+
+/**
+ * The "Do later" permutation: the current item moves to just after the next item that is neither
+ * complete nor skipped. `null` when `canDoLater` is false.
+ */
+export function doLaterOrder(
+  state: FocusState,
+  plan: SessionPlan,
+  loggedSets: readonly LoggedSet[] = state.loggedSets,
+): DoLaterOrder | null {
+  if (!canDoLater(state, plan, loggedSets)) return null;
+  const from = deferrableItem(state);
+  const to = nextOpenItem(state, plan, loggedSets, from)!;
+  const order = plan.items.map((_, i) => i);
+  for (let i = from + 1; i <= to; i += 1) order[i] = i - 1;
+  order[from] = to;
+  const items = plan.items.map((_, n) => plan.items[order.indexOf(n)]!);
+  return { items, order, current: to - 1 };
+}
+
+/**
+ * ITEM_DEFERRED: `ctx.plan` is the new order. Ends the pause as RESUME does, remaps every logged
+ * set and skipped item by `order`, then resumes the warm-up / UF-09.1 where it was, or goes to
+ * UF-09.6 (the 60 s set-up) for the item now due, with no time check.
+ */
+function itemDeferred(
+  state: FocusState,
+  ctx: FocusCtx,
+  order: readonly number[],
+  current: number,
+  atMs: number,
+): FocusState {
+  const n = ctx.plan.items.length;
+  const valid =
+    order.length === n &&
+    [...order].sort((a, b) => a - b).every((v, i) => v === i) &&
+    Number.isInteger(current) &&
+    current >= 0 &&
+    current < n;
+  const paused = state.phase === "paused" && state.resumePhase !== null;
+  if (!valid || !paused || state.resumePhase === "timeCheck") return state;
+  const map = (i: number) => order[i] ?? i;
+  const remapped: FocusState = {
+    ...state,
+    loggedSets: state.loggedSets.map((s) => ({ ...s, itemIndex: map(s.itemIndex) })),
+    skippedItems: (state.skippedItems ?? []).map(map),
+  };
+  const from = state.resumePhase;
+  const resumed = transition(remapped, { type: "RESUME", atMs }, ctx);
+  if (from === "getReady" || from === "warmup") return resumed;
+  return {
+    ...resumed,
+    phase: "next",
+    itemIndex: current,
+    setIndex: 0,
+    timer: timerAt(atMs, NEXT_SETUP_S),
   };
 }
 

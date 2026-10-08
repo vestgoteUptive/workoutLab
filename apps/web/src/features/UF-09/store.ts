@@ -32,6 +32,13 @@ export interface FocusStore {
   /** A UF-09.8 option after its write (T-0304d, D-0120 §1): the store walks `plan` (the engine's
    *  whole item list) from now on, and `PLAN_APPLIED` moves on to UF-09.6, or to `done`. */
   applyPlan(plan: SessionPlan, atMs: number): void;
+  /** UF-09.9 "Do later" after its write (T-0578): the store walks `plan` (the new order) from
+   *  now on, and `ITEM_DEFERRED` remaps the state and moves on. */
+  deferItem(
+    plan: SessionPlan,
+    deferred: { order: readonly number[]; current: number; name: string },
+    atMs: number,
+  ): void;
   subscribe(listener: () => void): () => void;
 }
 
@@ -63,7 +70,7 @@ export function createFocusStore(options: FocusStoreOptions): FocusStore {
       const next = focusReducer(state, { type: "PLAN_REPLACED", itemIndex, atMs }, ctx);
       if (next !== state) {
         state = next;
-        writeFocusState(storage, sessionId, state);
+        writeFocusState(storage, sessionId, state, ctx.plan);
       }
       notify();
     },
@@ -72,7 +79,18 @@ export function createFocusStore(options: FocusStoreOptions): FocusStore {
       const next = focusReducer(state, { type: "PLAN_APPLIED", atMs }, ctx);
       if (next !== state) {
         state = next;
-        writeFocusState(storage, sessionId, state);
+        writeFocusState(storage, sessionId, state, ctx.plan);
+      }
+      notify();
+    },
+    deferItem(plan, deferred, atMs) {
+      const prev = ctx;
+      ctx = { ...ctx, plan };
+      const next = focusReducer(state, { type: "ITEM_DEFERRED", ...deferred, atMs }, ctx);
+      if (next === state) ctx = prev;
+      else {
+        state = next;
+        writeFocusState(storage, sessionId, state, ctx.plan);
       }
       notify();
     },
@@ -89,7 +107,7 @@ export function createFocusStore(options: FocusStoreOptions): FocusStore {
         next = focusReducer(next, { type: "CHECK_RESOLVED", to, atMs: event.atMs }, ctx);
       }
       state = next;
-      writeFocusState(storage, sessionId, state);
+      writeFocusState(storage, sessionId, state, ctx.plan);
       notify();
     },
     subscribe(listener) {
