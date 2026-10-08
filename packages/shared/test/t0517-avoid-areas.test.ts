@@ -25,7 +25,7 @@ describe("AC1 sessionInput30 + avoidAreas [quads, glutes] is valid", () => {
 
   it("the second SessionInput example is exactly that input, and it validates", () => {
     const examples = spec.components.schemas["SessionInput"]?.["examples"] as Obj[];
-    expect(examples).toHaveLength(2);
+    expect(examples).toHaveLength(3);
     expect(examples[1]).toEqual(withAvoid(["quads", "glutes"]));
     expectValid("SessionInput", examples[1]);
   });

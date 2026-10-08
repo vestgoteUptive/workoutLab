@@ -38,3 +38,8 @@ Checklist (D-0197 §7): field present and absent both tested (AC2).
 Every AC has a passing test · `pnpm -w typecheck lint test` green (`--force`, contract change) · contract change linked to D-0202 · commits start with `T-0565:` and cite UF-08.1.
 
 ## Build / accept log
+
+- 2026-10-08 data-modeler: `SessionInput.favoriteIds` added (optional, uniqueItems, items ExerciseId; third example `[back-squat]`). Regenerated api.gen.ts and vendored `api.gen.d.ts` (`vendor.mjs --check` ok). Validator untouched (T-0566).
+- AC→test: AC1 type-level + AC2 absent/present/non-array in `packages/shared/test/t0565-favorite-ids.test.ts`; AC3 gen:api re-run no diff (openapi.test drift green). t0517 example count 2→3.
+- Planted faults: dropping uniqueItems fails "rejects a duplicate"; removing the field from api.gen.ts fails tsc on the AC1 test. Both restored from backup.
+- Gate (`--force`): all green except one web test, `UF-11 plan-checkins-routines` AC6, which failed under load and passes alone, on this branch and on stash (flaky, unrelated). test:repo-checks, format:check and check-all pass.

@@ -324,9 +324,16 @@ components:
           type: array
           uniqueItems: true
           items: { $ref: "#/components/schemas/Area" }
+        favoriteIds:
+          description: >-
+            Favorite exercises (D-0202): ranked first inside an area the gaps chose; absent means [].
+          type: array
+          uniqueItems: true
+          items: { $ref: "#/components/schemas/ExerciseId" }
       examples:
         - &sessionInput30 { budgetMin: 30, warmupInBudget: true, energy: normal, shuffle: 0, mainLiftId: null, pinnedIds: [], excludeIds: [] }
         - { budgetMin: 30, warmupInBudget: true, energy: normal, shuffle: 0, mainLiftId: null, pinnedIds: [], excludeIds: [], avoidAreas: [quads, glutes] }
+        - { budgetMin: 30, warmupInBudget: true, energy: normal, shuffle: 0, mainLiftId: null, pinnedIds: [], excludeIds: [], favoriteIds: [back-squat] }
     SuggestRequest:
       description: Body of POST /workouts/suggest. The server supplies `now` (D-0037 §9).
       type: object
