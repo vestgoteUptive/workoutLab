@@ -143,12 +143,10 @@ test("See this period in Balance opens UF-10.1", async ({ page }) => {
   await expect(page.locator('[data-screen-id="UF-10.1"]')).toBeVisible();
 });
 
-test("screenshot of /plan at 390 px", async ({ page }) => {
+test("screenshot of /plan at 390 px", async ({ page }, testInfo) => {
   await open(page, 390, 844);
-  await page.screenshot({
-    path: "/tmp/claude-1000/-home-henrik-dev-uptive-private-workoutLab/b9c18a03-9bde-4682-9460-947c135cf3b1/scratchpad/plan-after.png",
-    fullPage: true,
-  });
+  // Review artefact only: written to Playwright's per-test output dir, never a machine path.
+  await page.screenshot({ path: testInfo.outputPath("plan-390.png"), fullPage: true });
 });
 
 // T-0549 AC7: with a pending check-in and routines, every link and button is at least 44 px tall,
