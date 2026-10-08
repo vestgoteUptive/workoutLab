@@ -29,6 +29,7 @@ Checklist (D-0197 §7): field present and absent both tested (AC2).
 
 ## Paths you may change
 - `api/openapi.yaml`, `packages/shared/**` (lane)
+- `supabase/functions/_shared/vendor/shared/**` (vendor.mjs regen of api.gen; orchestrator grant 2026-10-08)
 
 ## Contract impact
 `api/openapi.yaml`: optional `SessionInput.favoriteIds`. Named by D-0202 §4.

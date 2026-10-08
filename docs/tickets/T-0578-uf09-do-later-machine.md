@@ -54,3 +54,4 @@ None (`sessions.plan.items` is already rewritten mid-workout; the focus state is
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-09 e2e specs green (unchanged behaviour) · contracts unchanged · commits start with `T-0578:` and cite UF-09.9 / UF-09.6.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0578.md` (D-0157).

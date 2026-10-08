@@ -227,6 +227,7 @@ describe("AC-9 overlay in place of the screen", () => {
         "editSet",
         "deleteSet",
         "replaceItem",
+        "doLater",
         "finish",
         "startRest",
         "adjustRest",

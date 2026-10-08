@@ -54,3 +54,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · contracts unchanged · commits start with `T-0567:` and cite UF-11.6 / UF-08.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0567.md` (D-0157).
