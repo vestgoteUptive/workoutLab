@@ -62,10 +62,13 @@
 }
 
 .wl-excluded__status {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
   margin: 0;
-  min-block-size: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 13px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .wl-excluded__list {
@@ -118,9 +121,4 @@
   min-block-size: 64px;
   background: var(--wl-color-surface-2);
   border-radius: 12px;
-}
-
-.wl-excluded__back {
-  min-block-size: 44px;
-  align-self: flex-start;
 }

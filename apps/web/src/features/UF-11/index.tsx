@@ -93,7 +93,7 @@ export function ExcludedExercises() {
   return (
     <div data-screen-id="UF-11.5" className="wl-page">
       <Link
-        className="wl-button--text wl-excluded__back"
+        className="wl-button--text wl-account__back"
         to="/plan"
         aria-label={en.uf11.excludedScreen.back}
       >

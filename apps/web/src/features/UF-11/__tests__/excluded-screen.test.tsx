@@ -332,3 +332,16 @@ describe("focus after Include again", () => {
     await waitFor(() => expect(screen.getByRole("searchbox")).toHaveFocus());
   });
 });
+
+describe("status region is visually hidden but present", () => {
+  it("has role=status on mount, empty, and its stylesheet clips it", async () => {
+    render(tree("/plan/excluded"));
+    const status = await screen.findByRole("status");
+    expect(status).toBeEmptyDOMElement();
+    expect(status).toHaveClass("wl-excluded__status");
+    const css = readFileSync(resolve(__dirname, "../excluded.css"), "utf8");
+    const rule = css.match(/\.wl-excluded__status \{([^}]*)\}/)![1]!;
+    expect(rule).toContain("clip-path: inset(50%)");
+    expect(rule).toContain("position: absolute");
+  });
+});
