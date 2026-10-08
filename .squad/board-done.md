@@ -393,3 +393,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | done (validator released 2026-10-08) | wl-build-backend |
 | T-0578 | UF-09 Do this later: canDoLater, permutation, Trim-path plan write, machine event remapping itemIndex/skippedItems, restore realign | web-feature:UF-09 | — | done | wl-build-web |
 | T-0567 | Device cache: generalise excluded.ts into one list-cache helper; Dexie v4 favoriteCache, refreshAll read, writes after confirm, cross-list drop, hooks | web-shell | T-0564 | done | wl-build-web |
+| T-0579 | UF-09.9 "Do {name} later" button, UF-09.6 status, failure alert, e2e offline reload | web-feature:UF-09 | T-0578, T-0572 | done | wl-build-web |

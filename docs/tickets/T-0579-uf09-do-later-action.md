@@ -48,9 +48,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-09 e2e specs green · contracts unchanged · commits start with `T-0579:` and cite UF-09.9 / UF-09.6.
 
 ## Build / accept log
-
-### Build log (frontend-dev, 2026-10-08)
-- Built: `later` action in `paused.tsx` (gated by `canDoLater`, between Swap and Skip via `seams.tsx` ORDER), pending state (Resume `aria-disabled`), always-mounted `role="alert"` failure strip, host-carried `movedName` -> `role="status"` line on `next-exercise.tsx`; copy in `uf-09.ts`; css strip. The a11y announcement is the status/alert live regions.
-- AC->test (`__tests__/t0579.do-later.test.tsx`): AC1 2 tests; AC2 warm-up; AC3 4 tests (partly done, last item, from UF-09.8, DOM order); AC4 failure + pending Resume; AC6 axe x2 (region rule off: isolated host has no landmark, as the shell supplies `main`). AC5: `tests/e2e/uf-09-do-later.spec.ts` (offline tap, reload, online upsert order).
-- Planted faults (backup-restored), each red: gate always true (3 fail), Resume not inert (1), failure not shown (1), no status name (2), order swapped (1), e2e `deferItem` removed (1 fail).
-- Gate: typecheck+lint+test green (19/19 tasks); test:repo-checks, format:check, check-all green; e2e uf-09 (23 specs incl. new) green. Existing paused/seams/chrome button-list tests updated for the new button (expected change).
+Archived in `docs/tickets/log/T-0579.md` (D-0157).

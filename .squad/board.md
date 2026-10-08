@@ -142,7 +142,6 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 | T-0575 | UF-08 Start with this (compound only; mainLiftId; new main lift first) | web-feature:UF-08 | T-0574 | todo | wl-build-web |
 | T-0576 | UF-08.2 Reorder mode + order merge across re-suggests + Start writes display order | web-feature:UF-08 | T-0575 | todo | wl-build-web |
 | T-0577 | UF-08.5 Favorites section first on the empty query + Favorite tag on rows | web-feature:UF-08 | T-0576, T-0567, T-0561 | todo | wl-build-web |
-| T-0579 | UF-09.9 "Do {name} later" button, UF-09.6 status, failure alert, e2e offline reload | web-feature:UF-09 | T-0578, T-0572 | doing | wl-build-web |
 | T-0580 | Show the failed-exclusion message on the host screen after the swap sheet closes (T-0539 follow-up) | web-feature:UF-09 | T-0539 | todo | wl-build-web |
 | T-0912 | Flaky UF-11 plan-checkins-routines AC6 under load | web-feature:UF-11 | — | doing | wl-build-web |
 
