@@ -403,3 +403,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | done (released automatically) | wl-build-backend |
 | T-0573 | UF-08.5 part 1: sheet, search, Today's areas, In this workout, Add = visit pinnedIds, Added by you, time refusal, chips/Shuffle keep adds + Doesn't fit line, offline | web-feature:UF-08 | T-0538, T-0572 | done | wl-build-web |
 | T-0913 | UF-11.5/11.6 list-cache tests flake under load | web-feature:UF-11 | — | done | wl-build-web |
+| T-0574 | UF-08.5 part 2: disabled row states, cap refusals, Remove of an added item, re-add a removed item | web-feature:UF-08 | T-0573 | done | wl-build-web |

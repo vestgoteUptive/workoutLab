@@ -51,9 +51,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-08 e2e specs green · contracts unchanged · commits start with `T-0574:` and cite UF-08.5 / UF-08.2.
 
 ## Build / accept log
-
-### Build log (frontend-dev)
-- Row states (`blocked` map in SessionSetup, first match: excluded, equipment, level, skipping, recovering) with `aria-disabled` + `aria-describedby`; caps checked before the time copy; i18n in `uf-08.ts`. Remove/re-add already followed D-0191 (T-0573 review): tests added.
-- AC→test (`__tests__/add-states.test.tsx`): AC1 two tests + first-match test; AC2 it.each; AC3; AC4; AC5; AC6 three tests (incl. stored exclusion shows Excluded, not time refusal); AC7; AC8 `tests/e2e/uf-08-add.spec.ts`.
-- Planted faults, each turned the named tests red, then restored from backup: excluded/level/equip/skip/recovering branches off; each cap off; tap not blocked; describedby dropped; re-add keeps visit excludes; remove keeps pin.
-- uf-08 e2e: 38 passed.
+Archived in `docs/tickets/log/T-0574.md` (D-0157).
