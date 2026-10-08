@@ -9,6 +9,7 @@ import { en } from "../../lib/i18n/en.js";
 import type { ExerciseDetail } from "../../lib/offline/db.js";
 import { loadExerciseDetail, loadVariants } from "../../lib/offline/feature-loaders.js";
 import { loadLibrary } from "../../lib/offline/history.js";
+import { ExcludeControl } from "./ExcludeControl.js";
 import { Attribution } from "./Attribution.js";
 import { useScreenData } from "./data.js";
 import { HowToBody } from "./HowToBody.js";
@@ -134,6 +135,10 @@ export function LibraryDetail() {
           <Attribution detail={detail} />
         </>
       )}
+      <div className="wl-uf04__actions">
+        <ExcludeControl exerciseId={exercise.id} name={exercise.name} />
+        {/* D-0202: the Favorite toggle goes here, beside the button (separate ticket). */}
+      </div>
       <Link to={`/progress/${exercise.id}`} className="wl-uf04__link">
         {en.uf04.myHistory}
       </Link>
