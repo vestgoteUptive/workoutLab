@@ -1,14 +1,18 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 import { landing } from "../content/landing";
 
 // No canonical: a 404 page has no canonical URL of its own (AC7/AC15).
 ---
 
 <Layout title={`${landing.notFound.title} — workout LAB`} description={landing.notFound.body}>
+  <SiteHeader />
   <main id="main" class="not-found wrap">
     <h1>{landing.notFound.title}</h1>
     <p class="body">{landing.notFound.body}</p>
     <p><a class="home-link" href="/">{landing.notFound.homeLinkLabel}</a></p>
   </main>
+  <SiteFooter />
 </Layout>

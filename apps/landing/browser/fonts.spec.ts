@@ -12,12 +12,12 @@ test("fonts render on / with no CSP violation", async ({ page }) => {
     // check() is vacuously true when no @font-face matches, so also require a loaded face.
     const loaded = [...document.fonts].filter((f) => f.status === "loaded").map((f) => f.family);
     return [
-      document.fonts.check('800 40px "Big Shoulders Display"'),
-      document.fonts.check('400 16px "DM Sans"'),
-      loaded.some((f) => f.replace(/"/g, "") === "Big Shoulders Display"),
-      loaded.some((f) => f.replace(/"/g, "") === "DM Sans"),
+      // T-0584: the plan font (fonts-state.css) is the only face the landing uses.
+      document.fonts.check('700 40px "Familjen Grotesk"'),
+      document.fonts.check('400 16px "Familjen Grotesk"'),
+      loaded.some((f) => f.replace(/"/g, "") === "Familjen Grotesk"),
     ];
   });
-  expect(ok).toEqual([true, true, true, true]);
+  expect(ok).toEqual([true, true, true]);
   expect(problems).toEqual([]);
 });

@@ -1,0 +1,12 @@
+---
+import { landing } from "../content/landing";
+import { appUrl } from "../lib/app-url";
+
+// D-0046 §5: resolved once at build time; an invalid PUBLIC_APP_URL fails the build.
+const ctaHref = appUrl(import.meta.env.PUBLIC_APP_URL);
+---
+
+<header class="site-header wrap">
+  <span class="brand-name">{landing.brand.name}</span>
+  <a class="header-cta" href={ctaHref}>{landing.footer.appLinkLabel}</a>
+</header>

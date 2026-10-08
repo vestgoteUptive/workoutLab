@@ -1,0 +1,14 @@
+---
+import { landing } from "../content/landing";
+import { appUrl } from "../lib/app-url";
+
+const ctaHref = appUrl(import.meta.env.PUBLIC_APP_URL);
+---
+
+<footer class="site-footer wrap">
+  <p>{landing.footer.legal}</p>
+  <nav class="footer-links">
+    <a class="footer-privacy" href="/privacy/">{landing.privacy.linkLabel}</a>
+    <a class="footer-app" href={ctaHref}>{landing.footer.appLinkLabel}</a>
+  </nav>
+</footer>

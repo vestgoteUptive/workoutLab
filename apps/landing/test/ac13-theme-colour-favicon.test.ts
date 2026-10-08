@@ -12,9 +12,10 @@ const landingRoot = fileURLToPath(new URL("..", import.meta.url));
 describe("AC13 theme colour and favicon from tokens", () => {
   const html = readDist(defaultDistDir(), "index.html");
 
-  it("sets theme-color from tokens.color.bg", () => {
+  it("sets theme-color from tokens.color.plan.bg (T-0584 AC11)", () => {
     const themeColor = findTags(html, "meta").find((m) => m.attrs.name === "theme-color");
-    expect(themeColor?.attrs.content).toBe(tokens.color.bg);
+    expect(themeColor?.attrs.content).toBe(tokens.color.plan.bg);
+    expect(themeColor?.attrs.content).toMatch(/^#[0-9A-F]{6}$/);
   });
 
   it("links the SVG favicon at /favicon.svg", () => {

@@ -1,13 +1,20 @@
 import { expect, test } from "@playwright/test";
 
-// AC18: Tab reaches the CTA in at most 2 presses (a skip link may come
-// first), and the focused CTA has a visible >= 2px outline.
-test("Tab focuses the CTA within 2 presses, with a visible focus ring", async ({ page }) => {
+// AC18 (updated by T-0584: the 1b header now carries an "Open the app" pill before the hero):
+// Tab reaches the CTA in at most 3 presses (skip link, header pill, CTA), the skip link
+// followed by one Tab lands on the CTA, and the focused CTA has a visible >= 2px outline.
+test("skip link then Tab lands on the CTA", async ({ page }) => {
   await page.goto("/");
   await page.keyboard.press("Tab");
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Tab");
+  await expect(page.locator('[data-cta="primary"]:focus')).toHaveCount(1);
+});
 
+test("Tab focuses the CTA within 3 presses, with a visible focus ring", async ({ page }) => {
+  await page.goto("/");
   let cta = page.locator('[data-cta="primary"]:focus');
-  if ((await cta.count()) === 0) {
+  for (let i = 0; i < 3 && (await cta.count()) === 0; i++) {
     await page.keyboard.press("Tab");
     cta = page.locator('[data-cta="primary"]:focus');
   }

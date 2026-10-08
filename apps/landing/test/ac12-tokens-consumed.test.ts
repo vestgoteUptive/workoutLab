@@ -26,19 +26,21 @@ describe("AC12 tokens consumed", () => {
     .join("\n");
 
   it("carries the token custom properties for bg colour and both fonts", () => {
-    expect(css).toMatch(/--wl-color-bg\s*:/);
-    expect(css).toMatch(/--wl-font-display\s*:/);
-    expect(css).toMatch(/--wl-font-body\s*:/);
+    expect(css).toMatch(/--wl-color-plan-bg\s*:/);
+    expect(css).toMatch(/--wl-color-paper-bg\s*:/);
+    expect(css).toMatch(/--wl-font-plan\s*:/);
   });
 
-  it("styles body from bg/text/body-font tokens", () => {
+  // T-0584 (D-0208): the page is plan.bg / plan.ink in the plan font (Familjen Grotesk).
+  it("styles body from the plan bg/ink/font tokens", () => {
     expect(css).toMatch(
-      /\bbody\s*\{[^}]*background:\s*var\(--wl-color-bg\)\s*;\s*color:\s*var\(--wl-color-text\)\s*;\s*font-family:\s*var\(--wl-font-body\)/,
+      /\bbody\s*\{[^}]*background:\s*var\(--wl-color-plan-bg\)\s*;\s*color:\s*var\(--wl-color-plan-ink\)\s*;\s*font-family:\s*var\(--wl-font-plan\)/,
     );
   });
 
-  it("styles h1 from the display font token", () => {
-    expect(css).toMatch(/\bh1[^{]*\{[^}]*font-family:\s*var\(--wl-font-display\)/);
+  it("headings inherit the plan font (no display font)", () => {
+    expect(css).not.toMatch(/\bh1[^{]*\{[^}]*font-family/);
+    expect(css).not.toMatch(/var\(--wl-font-(display|body)\)/);
   });
 
   it("lint (ESLint + wl-check-colours) exits 0", () => {
