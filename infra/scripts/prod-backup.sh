@@ -34,6 +34,10 @@ redact_rows() {
   sed -e 's/^\([[:space:]]*[Dd][Ee][Tt][Aa][Ii][Ll]:\).*/\1 <redacted>/' \
     -e 's/\(ERROR:\).*\((SQLSTATE [0-9A-Z]*)\).*/\1 <redacted> \2/' \
     -e t \
+    -e 's/^\(psql:.*: ERROR:\)[[:space:]]*\([0-9A-Z]\{5\}\)[[:space:]]*$/\1  \2/' \
+    -e t \
+    -e 's/^\(psql:.*: ERROR:\).*/\1 <redacted>/' \
+    -e t \
     -e 's/^\([[:space:]]*ERROR:\).*/\1 <redacted>/' \
     -e 's/\(invalid input syntax[^:]*:\).*/\1 <redacted>/' \
     -e 's/Failing row contains.*/Failing row contains <redacted>/' \

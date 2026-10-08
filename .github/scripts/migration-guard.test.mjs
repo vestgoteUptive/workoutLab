@@ -168,7 +168,7 @@ test("T-0543 L4 seed: DROP, TRUNCATE and DELETE FROM are red, upserts and prose 
   assert.equal(seed("delete from public.exercises;").length, 1);
   assert.equal(seed("drop table x;").length, 1);
   assert.equal(seed("-- release: destructive-approved D-0300\ndrop table x;").length, 1);
-  assert.deepEqual(seed("insert into t values ('drop sets') on conflict (id) do update set a = 1;"), []);
+  assert.deepEqual(seed("insert into public.exercises values ('drop sets') on conflict (id) do update set a = 1;"), []);
 });
 
 test("T-0543 L4 the real seed passes the seed guard", async () => {
@@ -176,4 +176,33 @@ test("T-0543 L4 the real seed passes the seed guard", async () => {
   const { checkSeed } = await import("../../infra/scripts/migration-guard.mjs");
   const p = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "supabase", "seed.sql");
   assert.deepEqual(checkSeed("seed.sql", rf(p, "utf8")), []);
+});
+
+test("T-0555 AC-1 seed allow-list: DO, UPDATE, ALTER, other-table insert, DELETE are red", () => {
+  const f = fixture({});
+  const seed = (sql) => {
+    const p = path.join(path.dirname(f.migrationsDir), "seed.sql");
+    writeFileSync(p, sql);
+    return guard({ ...f, seedFile: p }).problems;
+  };
+  const ok = "insert into public.exercises (id) values ('a;b') on conflict (id) do update set id = excluded.id;";
+  assert.deepEqual(seed(`-- c\nbegin;\n${ok}\ninsert into public.exercise_areas (a) values (1) on conflict do nothing;\ncommit;`), []);
+  for (const bad of [
+    "do $$ begin execute 'delete from public.sets'; end $$;",
+    "update public.exercises set name = 'x';",
+    "alter type public.t rename value 'a' to 'b';",
+    "insert into public.sets (id) values (1) on conflict (id) do update set id = 2;",
+    "delete from public.exercises where id = 'a';",
+    "insert into public.exercises (id) values (1);",
+    "insert into public.exercises select * from public.sets on conflict (id) do nothing;",
+  ])
+    assert.ok(seed(`begin;\n${ok}\n${bad}\ncommit;`).length >= 1, bad);
+});
+
+test("T-0555 AC-2b GRANT/REVOKE privilege statements are not destructive; TRUNCATE still is", () => {
+  const rev = "revoke truncate, references, trigger on public.excluded_exercises from authenticated;";
+  assert.deepEqual(run({ [N]: `${rev}\ngrant select, insert, update, delete on public.x to authenticated;` }), { problems: [], pending: [N] });
+  assert.equal(run({ [N]: "TRUNCATE public.x;" }).problems.length, 1);
+  assert.equal(run({ [N]: "truncate table x;" }).problems.length, 1);
+  assert.equal(run({ [N]: `${rev}\ntruncate table x;` }).problems.length, 1);
 });
