@@ -182,3 +182,43 @@ Read-only review. `node --test` on the release, backup and guard test files pass
   Today the seed is only upserts into `exercises`, `exercise_areas` and `exercise_variants`. Follow-up: switch `checkSeed` to an allow-list, where each statement must be `begin`, `commit`, or `INSERT INTO public.(exercises|exercise_areas|exercise_variants) ... ON CONFLICT`, and fail on anything else.
 - **T2 (low). psql error lines are not redacted.** psql prints `psql:supabase/seed.sql:N: ERROR:  <message>` with no SQLSTATE. That line matches neither ERROR rule, so the message text stays in the public log. `DETAIL`, `Key (..)` and `invalid input syntax` values are still redacted. The seed only touches catalogue tables, so the risk is low. Fix: run `psql -X -v VERBOSITY=sqlstate`, which prints only the SQLSTATE and also skips any runner `.psqlrc`.
 - **Info.** A human-run `apply` re-applies the seed without the guard step that CI runs first. The seed is in git and reviewed.
+
+## T-0555: seed allow-list, psql redaction, GRANT/REVOKE (2026-10-08, 64d3aac plus a merge of main)
+
+Read-only review. `node --test` on the guard, release and backup test files passed 50/50.
+
+### Verdict: approve
+
+### AC-2b (GRANT/REVOKE not destructive)
+The T-0535 line `revoke truncate, references, trigger on ... from authenticated;` now passes. These all stay red:
+- a REVOKE and a TRUNCATE on one line, with or without a space after the `;`
+- `';grant'` inside a string followed by a real TRUNCATE
+- `delete ... where note = ';grant'`
+- a DO block holding a GRANT and a TRUNCATE, as statements or via `execute '...'`
+- a `/* ; */` block comment before a DROP
+- a GRANT followed by a RENAME
+
+Two inputs pass, and neither is a mistake-level bypass:
+- `revoke ... -- ;\ntruncate x;`: the comment hides the `;`, so Postgres sees one statement, `revoke ... truncate x`. That is a syntax error, so nothing runs.
+- `execute replace(';revoke truncate t', ';revoke ', '')` executes a TRUNCATE. This is deliberate obfuscation, the same class as the `'dr'||'op'` info item, and outside the guard's threat model (D-0201 §3 guards against mistakes).
+
+Hardening (info): split statements on the strings-blanked scan, and match the patterns on the strings-kept scan. A `;` inside a string could then no longer start a GRANT/REVOKE "statement".
+
+### T1, seed allow-list: strict enough
+The real seed passes. These are refused:
+- an INSERT without ON CONFLICT
+- an upsert into a user table
+- a table with a name like `exercises_backup`
+- a DO block
+- UPDATE
+- `set role`
+- an INSERT ... SELECT
+- a CTE containing a DELETE
+- a psql meta-command at the start of a statement
+
+A `;` inside a string is handled, because strings are blanked before splitting.
+
+Residual (info, deliberate-only): a function call in VALUES (`values (public.wipe())`) and a psql meta-command placed after an upsert on the same line (`... do nothing \! cmd`) pass. Optional hardening: reject any backslash outside strings, and any `identifier(` call other than an allow-listed cast or `array`.
+
+### T2, psql redaction: fixed
+With `psql -X -v VERBOSITY=sqlstate`, a line like `psql:...: ERROR:  23505` is kept as-is (SQLSTATE only). Any other `psql:...: ERROR:` line, including one with extra text after the code, becomes `ERROR: <redacted>`. `-X` skips `.psqlrc`. Both scripts carry the same rules.

@@ -117,7 +117,14 @@ export function decisionDecided(id, decisionsDir) {
 
 /** Returns problems for one migration's SQL. */
 export function checkSql(name, sql, decisionsDir) {
-  const { code, comments } = scan(sql, true);
+  const scanned = scan(sql, true);
+  const { comments } = scanned;
+  // T-0555 AC-2b: GRANT/REVOKE statements only change privileges ("revoke truncate ... from x" is
+  // not a TRUNCATE). Drop those whole statements before matching.
+  const code = scanned.code
+    .split(";")
+    .filter((st) => !/^\s*(GRANT|REVOKE)\b/i.test(st))
+    .join(";");
   const hits = PATTERNS.filter(([, re]) => re.test(code)).map(([n]) => n);
   if (!hits.length) return [];
   const h = comments.map((c) => HEADER.exec(c)).find(Boolean);
@@ -127,11 +134,23 @@ export function checkSql(name, sql, decisionsDir) {
   return [];
 }
 
-/** The seed is re-applied on change: no DROP, TRUNCATE or DELETE FROM, and no allow header (L4). */
+/**
+ * T-0555 AC-1: the seed runs as the postgres role on every release, so it is an allow-list.
+ * Only comments, begin, commit and INSERT INTO public.<catalogue table> ... ON CONFLICT ... DO
+ * UPDATE|NOTHING are allowed; any other statement fails closed. Strings are blanked first.
+ */
+const SEED_INSERT =
+  /^insert\s+into\s+public\.(exercises|exercise_areas|exercise_variants)\b[\s\S]*\bon\s+conflict\b[\s\S]*\bdo\s+(update|nothing)\b/i;
 export function checkSeed(name, sql) {
   const { code } = scan(sql);
-  const hits = PATTERNS.filter(([n, re]) => ["DROP", "TRUNCATE", "DELETE FROM"].includes(n) && re.test(code));
-  return hits.length ? [`${name}: seed must be upsert-only (${hits.map(([n]) => n).join(", ")})`] : [];
+  const problems = [];
+  code.split(";").forEach((raw, i) => {
+    const st = raw.trim().replace(/\s+/g, " ");
+    if (!st || /^(begin|commit)$/i.test(st)) return;
+    if (SEED_INSERT.test(st) && !/\b(select|with|returning)\b/i.test(st)) return;
+    problems.push(`${name}: statement ${i + 1} is not allowed in the seed (allow-list: begin, commit, upsert into exercises/exercise_areas/exercise_variants): ${st.slice(0, 60)}`);
+  });
+  return problems;
 }
 
 export function guard({ planText, migrationsDir, decisionsDir, seedFile }) {
