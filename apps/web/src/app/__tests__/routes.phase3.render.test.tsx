@@ -29,6 +29,13 @@ const BACK_SQUAT = {
   externalLoad: true,
 };
 
+/** The second exercise `/library/back-squat/compare/leg-press` needs (UF-04.3 sends an unknown
+ *  `otherId` back to UF-04.2). */
+const LEG_PRESS = { ...BACK_SQUAT, id: "leg-press", name: "Leg press" };
+
+/** The routine `/plan/routines/R1` needs (UF-07.1 sends an unknown id to /plan once refreshed). */
+const ROUTINE_R1 = { id: "R1", name: "Routine one", updatedAt: "2026-10-01T00:00:00Z", items: [] };
+
 // UF-06.2 redirects an unknown exercise id to `/progress` (D-0079 §4), so with the empty cache
 // a stub never touched it would render UF-06.1 and the row below would assert the wrong screen.
 // Seeding keeps the row testing the route (D-0088 §2). Only the UF-06 loaders are overridden.
@@ -40,6 +47,8 @@ vi.mock("../../lib/offline/index.js", async (importOriginal) => {
     loadEngineHistory: vi.fn(async () => []),
     loadLibrary: vi.fn(async () => [BACK_SQUAT]),
     loadTargets: vi.fn(async () => []),
+    loadRoutines: vi.fn(async () => [ROUTINE_R1]),
+    refreshRoutines: vi.fn(async () => undefined),
     refreshAll: vi.fn(async () => undefined),
   };
 });
@@ -52,7 +61,7 @@ vi.mock("../../lib/offline/history.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../../lib/offline/history.js")>();
   return {
     ...actual,
-    loadLibrary: vi.fn(async () => [BACK_SQUAT]),
+    loadLibrary: vi.fn(async () => [BACK_SQUAT, LEG_PRESS]),
     refreshAll: vi.fn(async () => undefined),
   };
 });
