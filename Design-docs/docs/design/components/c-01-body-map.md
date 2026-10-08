@@ -3,6 +3,7 @@
 - **Component:** C-01 Body map (shared, built in T-0300)
 - **Screens:** UF-02.1 Today (compact map, tap opens UF-10.1) and UF-10.1 All areas (full map above the nine rows). Tapping one area opens UF-10.2 for that area.
 - **Decisions:** D-0003 (lime ramp, `warn` outline), D-0013 (steps and window), D-0017 (NFRs), D-0019 (tokens, legend copy)
+- **Proposed change (GitHub #48):** a body silhouette above a label grid, replacing the D-0060 §1 tiles. See `c-01-body-map-silhouette.md` and `docs/specs/body-map-silhouette.md`. It isn't in force until a decision records it.
 - **Tokens:** `@workoutlab/design-tokens`. Use `coverageLegend` and `attentionLegend` for copy and `var(--wl-color-coverage-N)` / `var(--wl-color-warn)` for colour. Don't retype the copy or the colours.
 
 ## Where it appears

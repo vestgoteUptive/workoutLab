@@ -129,4 +129,4 @@ GitHub #37 (Plan is confusing) and #45 (Account looks bad). Specs: `docs/specs/v
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0555 | Seed guard as an allow-list, and psql error lines redacted (T-0554 security T1/T2) | infra | T-0554 | ready | wl-build-infra |
+| T-0555 | Seed guard as an allow-list, and psql error lines redacted (T-0554 security T1/T2) | infra | T-0554 | doing (blocks T-0535: guard false positive on REVOKE TRUNCATE) | wl-build-infra |

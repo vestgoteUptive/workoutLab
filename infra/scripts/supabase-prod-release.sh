@@ -48,6 +48,10 @@ redact_rows() {
   sed -e 's/^\([[:space:]]*[Dd][Ee][Tt][Aa][Ii][Ll]:\).*/\1 <redacted>/' \
     -e 's/\(ERROR:\).*\((SQLSTATE [0-9A-Z]*)\).*/\1 <redacted> \2/' \
     -e t \
+    -e 's/^\(psql:.*: ERROR:\)[[:space:]]*\([0-9A-Z]\{5\}\)[[:space:]]*$/\1  \2/' \
+    -e t \
+    -e 's/^\(psql:.*: ERROR:\).*/\1 <redacted>/' \
+    -e t \
     -e 's/^\([[:space:]]*ERROR:\).*/\1 <redacted>/' \
     -e 's/\(invalid input syntax[^:]*:\).*/\1 <redacted>/' \
     -e 's/Failing row contains.*/Failing row contains <redacted>/' \
@@ -97,9 +101,9 @@ echo "== apply: db push =="
 # --yes: no TTY in CI, so never wait on the CLI prompt (T-0543). The confirm lock above is the gate.
 sb db push --db-url "$PROD_DB_URL" --include-seed --yes
 # T-0554: the CLI skips a changed seed.sql ("Remote database is up to date"), so apply it ourselves.
-# The seed is an idempotent upsert (migration-guard checkSeed forbids DROP/TRUNCATE/DELETE).
+# The seed is an idempotent upsert (migration-guard checkSeed is an allow-list of upserts).
 echo "== apply: seed (always) =="
-if ! { psql -v ON_ERROR_STOP=1 --single-transaction -f supabase/seed.sql 2>&1 | mask; }; then
+if ! { psql -X -v VERBOSITY=sqlstate -v ON_ERROR_STOP=1 --single-transaction -f supabase/seed.sql 2>&1 | mask; }; then
   echo "seed failed; not deploying functions" >&2
   exit 1
 fi

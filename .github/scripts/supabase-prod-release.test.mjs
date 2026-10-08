@@ -172,7 +172,7 @@ test('T-0554 AC-1 apply runs psql on the seed with the flags, PG env, no passwor
   const r = seedOk(); // the stub always reports 2 pending, so the final status is 1; irrelevant here
   const psql = r.calls.filter((c) => c.startsWith('psql '));
   assert.equal(psql.length, 1);
-  assert.equal(psql[0], 'psql -v ON_ERROR_STOP=1 --single-transaction -f supabase/seed.sql');
+  assert.equal(psql[0], 'psql -X -v VERBOSITY=sqlstate -v ON_ERROR_STOP=1 --single-transaction -f supabase/seed.sql');
   const env = r.calls.find((c) => c.startsWith('psqlenv'));
   assert.equal(env, 'psqlenv require db-host.example.com 5432 postgres.x postgres pw=SENTINEL-PW');
   for (const c of r.calls.filter((c) => c.startsWith('psql '))) {
@@ -204,9 +204,20 @@ test('T-0554 AC-4 planted fault: dropping the seed step is detected', () => {
   copyFileSync(join(root, 'infra/terraform/supabase-prod/main.tf'), join(dir, 'infra/terraform/supabase-prod/main.tf'));
   copyFileSync(join(root, 'infra/scripts/pg-env.sh'), join(copy, 'pg-env.sh'));
   const orig = readFileSync(SCRIPT, 'utf8');
-  const src = orig.replace('psql -v ON_ERROR_STOP=1', 'true -v ON_ERROR_STOP=1');
+  const src = orig.replace('psql -X -v VERBOSITY', 'true -X -v VERBOSITY');
   assert.notEqual(src, orig);
   writeFileSync(join(copy, 'supabase-prod-release.sh'), src);
   const r = run(['apply'], { CONFIRM_PROD_RELEASE: REF }, join(copy, 'supabase-prod-release.sh'));
   assert.equal(r.calls.filter((c) => c.startsWith('psql ')).length, 0, 'fault removes the seed call, AC-1/AC-4 would fail');
+});
+
+test('T-0555 AC-2 psql ERROR lines lose the message text but keep the SQLSTATE', () => {
+  const r = run(['apply'], { CONFIRM_PROD_RELEASE: REF }, SCRIPT, {
+    psql: `printf "psql:supabase/seed.sql:12: ERROR:  duplicate key value violates PSQLSECRET\\npsql:supabase/seed.sql:13: ERROR:  23505\\n"; exit 3`,
+  });
+  const out = r.stdout + r.stderr;
+  assert.notEqual(r.status, 0);
+  assert.doesNotMatch(out, /PSQLSECRET|duplicate key value/);
+  assert.match(out, /psql:supabase\/seed\.sql:12: ERROR: <redacted>/);
+  assert.match(out, /psql:supabase\/seed\.sql:13: ERROR:\s+23505/);
 });
