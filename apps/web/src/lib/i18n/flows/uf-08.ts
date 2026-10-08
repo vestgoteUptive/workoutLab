@@ -159,6 +159,9 @@ export const uf08 = {
   searchLabel: "Search exercises",
   clearSearch: "Clear search",
   todaysAreas: "Today's areas",
+  /** T-0577 (D-0205 §2): the stored favorites, first on the empty query, and the row tag. */
+  favoritesHeading: "Favorites",
+  favoriteTag: "Favorite",
   searchToFind: "Search to find an exercise.",
   noMatch: (query: string) => `No exercises match \u201C${query}\u201D.`,
   /** The visible text of a row's Add button; its accessible name is `addName`. */

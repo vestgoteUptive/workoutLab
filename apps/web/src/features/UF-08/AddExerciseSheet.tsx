@@ -20,6 +20,9 @@ export interface AddExerciseSheetProps {
   budgetMin: number;
   /** Exercise id to its disabled-row reason line (T-0574); absent ids can be added. */
   blocked?: Readonly<Record<string, string>>;
+  /** T-0577: stored favorite ids and whether that list has loaded (D-0205 §2, D-0202). */
+  favoriteIds?: readonly string[];
+  favoritesLoaded?: boolean;
   /** Returns null when the exercise was added (the host closes the sheet), else the refusal. */
   onAdd: (exerciseId: string) => string | null;
   /** T-0575: "Start with this" (compounds only). Same contract as `onAdd`. */
@@ -40,6 +43,8 @@ export function AddExerciseSheet({
   items,
   budgetMin,
   blocked = {},
+  favoriteIds = [],
+  favoritesLoaded = true,
   onAdd,
   onStartWith,
   onClose,
@@ -69,7 +74,10 @@ export function AddExerciseSheet({
     [exercises, q],
   );
 
-  // Areas of the current items, fixed order; exercises with weight 1.0 there.
+  const favSet = useMemo(() => new Set(favoriteIds), [favoriteIds]);
+  const favorites = useMemo(() => exercises.filter((e) => favSet.has(e.id)), [exercises, favSet]);
+
+  // Areas of the current items, fixed order; exercises with weight 1.0 there, minus favorites.
   const groups = useMemo(() => {
     const todays = new Set<Area>();
     for (const item of items) {
@@ -78,9 +86,9 @@ export function AddExerciseSheet({
     }
     return AREAS.filter((a) => todays.has(a)).map((area) => ({
       area,
-      rows: exercises.filter((e) => e.areas[area] === 1),
+      rows: exercises.filter((e) => e.areas[area] === 1 && !favSet.has(e.id)),
     }));
-  }, [catalog, exercises, items]);
+  }, [catalog, exercises, items, favSet]);
 
   const appearances = useMemo(() => {
     const count = new Map<string, number>();
@@ -134,10 +142,10 @@ export function AddExerciseSheet({
     if (refusal !== null) setStatus(refusal);
   }
 
-  function row(e: LibraryExercise, areaSuffix?: string) {
+  function row(e: LibraryExercise, areaSuffix?: string, idKey = areaSuffix) {
     const here = inPlan.has(e.id);
     const reason = here ? undefined : blocked[e.id];
-    const reasonId = `${titleId}-why-${e.id}${areaSuffix ? `-${areaSuffix}` : ""}`;
+    const reasonId = `${titleId}-why-${e.id}${idKey ? `-${idKey}` : ""}`;
     const canStart = onStartWith !== undefined && e.type === "compound" && e.id !== mainId;
     const startButton = canStart ? (
       <button
@@ -156,7 +164,14 @@ export function AddExerciseSheet({
     ) : null;
     return (
       <li key={e.id} className="wl-uf08__pick" data-part="pick-row" data-id={e.id}>
-        <span className="wl-uf08__pick-name">{e.name}</span>
+        <span className="wl-uf08__pick-name">
+          {e.name}
+          {favSet.has(e.id) ? (
+            <span className="wl-uf08__fav-tag" data-part="favorite-tag">
+              {en.uf08.favoriteTag}
+            </span>
+          ) : null}
+        </span>
         <span className="wl-uf08__row-detail" data-part="pick-areas">
           {primaryAreas(e).map(areaLabel).join(", ")}
         </span>
@@ -264,23 +279,39 @@ export function AddExerciseSheet({
             ) : (
               <ul className="wl-uf08__picks">{results.map((e) => row(e))}</ul>
             )
-          ) : groups.length === 0 ? (
+          ) : !favoritesLoaded ? null : favorites.length === 0 && groups.length === 0 ? (
             <p className="wl-uf08__sheet-empty">{en.uf08.searchToFind}</p>
           ) : (
             <>
-              <h2 className="wl-uf08__label wl-uf08__sheet-sub">{en.uf08.todaysAreas}</h2>
-              {groups.map((g) => (
-                <section key={g.area} aria-labelledby={`${titleId}-${g.area}`}>
-                  <h2 id={`${titleId}-${g.area}`} className="wl-uf08__label">
-                    {areaLabel(g.area)}
+              {favorites.length > 0 ? (
+                <section aria-labelledby={`${titleId}-favorites`}>
+                  <h2 id={`${titleId}-favorites`} className="wl-uf08__label wl-uf08__sheet-sub">
+                    {en.uf08.favoritesHeading}
                   </h2>
                   <ul className="wl-uf08__picks">
-                    {g.rows.map((e) =>
-                      row(e, (appearances.get(e.id) ?? 0) > 1 ? areaLabel(g.area) : undefined),
-                    )}
+                    {favorites.map((e) => row(e, undefined, "favorites"))}
                   </ul>
                 </section>
-              ))}
+              ) : null}
+              {groups.length > 0 ? (
+                <>
+                  <h2 className="wl-uf08__label wl-uf08__sheet-sub">{en.uf08.todaysAreas}</h2>
+                  {groups.map((g) => (
+                    <section key={g.area} aria-labelledby={`${titleId}-${g.area}`}>
+                      <h2 id={`${titleId}-${g.area}`} className="wl-uf08__label">
+                        {areaLabel(g.area)}
+                      </h2>
+                      <ul className="wl-uf08__picks">
+                        {g.rows.map((e) =>
+                          row(e, (appearances.get(e.id) ?? 0) > 1 ? areaLabel(g.area) : undefined),
+                        )}
+                      </ul>
+                    </section>
+                  ))}
+                </>
+              ) : (
+                <p className="wl-uf08__sheet-empty">{en.uf08.searchToFind}</p>
+              )}
             </>
           )}
         </div>

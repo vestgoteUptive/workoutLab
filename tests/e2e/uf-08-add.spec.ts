@@ -35,13 +35,14 @@ const profileRow = { ...profile, user_id: FAKE_USER_ID };
 
 async function toSuggested(
   page: Page,
-  extra: { sets?: unknown[]; excludedExercises?: unknown[] } = {},
+  extra: { sets?: unknown[]; excludedExercises?: unknown[]; favoriteExercises?: unknown[] } = {},
 ): Promise<void> {
   await mockSupabaseAuth(page);
   await mockSupabaseRest(page);
   await mockSupabaseData(page, {
     sets: extra.sets ?? [],
     ...(extra.excludedExercises ? { excludedExercises: extra.excludedExercises } : {}),
+    ...(extra.favoriteExercises ? { favoriteExercises: extra.favoriteExercises } : {}),
     exercises,
     exerciseAreas,
     areaTargets: AREA_TARGETS,
@@ -192,4 +193,28 @@ test("Start with this: from the sheet, then from a UF-08.2 row", async ({ page }
     await expect(rows.first()).toHaveAttribute("data-main", "true");
     await expect(page.locator('[data-part="status"]')).toHaveText(`${name} is the main lift now.`);
   }
+});
+
+// T-0577 UF-08.5 AC7: the stored favorites come first, tagged, and are not repeated under Today's areas.
+test("Add exercise: Favorites first, tagged, not repeated under Today's areas", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const at = new Date().toISOString();
+  await toSuggested(page, {
+    favoriteExercises: [
+      { exercise_id: "lateral-raise", created_at: at },
+      { exercise_id: "back-squat", created_at: at },
+    ],
+  });
+  await page.getByRole("button", { name: "Add exercise" }).click();
+  const sheet = page.locator('[data-screen-id="UF-08.5"]');
+  await expect(sheet.getByRole("heading", { name: "Favorites" })).toBeVisible();
+  const heads = sheet.getByRole("heading", { level: 2 });
+  await expect(heads.nth(1)).toHaveText("Favorites");
+  await expect(heads.nth(2)).toHaveText("Today's areas");
+  const favNames = sheet.locator("section").first().locator(".wl-uf08__pick-name");
+  await expect(favNames).toHaveText(["Back squatFavorite", "Lateral raiseFavorite"]);
+  await expect(sheet.getByRole("button", { name: /^Add Back squat/ })).toHaveCount(1);
+  await page.screenshot({ path: testInfo.outputPath("uf085-fav.png") });
 });

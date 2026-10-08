@@ -64,6 +64,9 @@ export interface SuggestedProps {
   catalog?: readonly LibraryExercise[];
   /** T-0574: exercise id to the reason its Add is disabled on UF-08.5. */
   blocked?: Readonly<Record<string, string>>;
+  /** T-0577: stored favorite ids for UF-08.5's Favorites section, and whether they have loaded. */
+  favoriteIds?: readonly string[];
+  favoritesLoaded?: boolean;
   /** The host's Add: null when the exercise is now in the plan, else the refusal text. */
   onAdd?: (exerciseId: string) => string | null;
   /** T-0575: "Start with this" (D-0205 §5): null when `id` is now the main lift, else the refusal. */
@@ -160,6 +163,8 @@ export function Suggested({
   addedIds = [],
   catalog,
   blocked,
+  favoriteIds,
+  favoritesLoaded,
   onAdd,
   onStartWith,
   onMove,
@@ -618,6 +623,8 @@ export function Suggested({
           items={items}
           budgetMin={workout.budgetMin}
           {...(blocked !== undefined ? { blocked } : {})}
+          {...(favoriteIds !== undefined ? { favoriteIds } : {})}
+          {...(favoritesLoaded !== undefined ? { favoritesLoaded } : {})}
           onAdd={(id) => {
             if (closing.current) return null;
             const refusal = onAdd(id);

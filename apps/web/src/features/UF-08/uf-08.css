@@ -718,6 +718,16 @@
   font-weight: 700;
 }
 
+.wl-uf08__fav-tag {
+  margin-inline-start: 8px;
+  padding: 2px 8px;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--wl-color-text-muted);
+}
+
 .wl-uf08__pick-add {
   min-block-size: 44px;
   min-inline-size: 96px;
