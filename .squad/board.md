@@ -135,7 +135,7 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0561 | Favorites design: UF-11.6, UF-04.2 toggle, UF-04.1/UF-08.2 tag, UF-11.2 row | design | — | ready | wl-design |
+| T-0561 | Favorites design: UF-11.6, UF-04.2 toggle, UF-04.1/UF-08.2 tag, UF-11.2 row | design | — | doing | wl-design |
 | T-0562 | Engine favorites part 1: optional favoriteIds, rule 0.2, rule 7.2 key (0); R7-E21…E27 checked against the code, then encoded; vendor regen | engine | — | doing | wl-build-engine |
 | T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | todo | wl-build-engine |
 | T-0564 | favorite_exercises table + mutual-exclusion triggers (destructive-approved D-0202 header), data-model, database.gen, pgTAP 001/007/018/020, export 9th key, e2e mock | data | — | doing | wl-build-data |
