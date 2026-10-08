@@ -62,3 +62,4 @@ Checklist (D-0197 §7): `favoriteIds` empty and non-empty both tested (AC8 and A
 Every AC has a passing test · `pnpm -w typecheck lint test` green (`--force`, contract change) · vendor check green · contract change linked to D-0202 · commits start with `T-0562:` and cite UF-08.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0562.md` (D-0157).

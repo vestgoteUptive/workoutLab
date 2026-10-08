@@ -45,3 +45,4 @@ Lands after T-0536, which merges only after H-27 (D-0199 §11, D-0200 §2).
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-02 e2e specs green · contracts unchanged · commits start with `T-0542:` and cite UF-02.1 / UF-02.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0542.md` (D-0157).

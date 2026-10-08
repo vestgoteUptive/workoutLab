@@ -46,3 +46,4 @@ None. No token change (D-0202 §10).
 Every AC has a check-all pass or a reviewed section · `node .github/scripts/check-all.mjs` green · `tokens.json` unchanged · commits start with `T-0561:` and cite UF-11.6 / UF-04.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0561.md` (D-0157).

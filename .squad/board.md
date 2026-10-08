@@ -117,7 +117,6 @@ User request "exclude exercises and manage the list" (spec `docs/specs/excluded-
 |---|---|---|---|---|---|
 | T-0539 | UF-05.1/UF-08.3 swap sheet: stored list to rankSwaps, "Don't suggest {name} again" checkbox, "No alternatives left" empty state. After H-27 | web-feature:UF-05 | T-0532, T-0533, T-0536, T-0537 | doing | wl-build-web |
 | T-0541 | UF-04.2 "Don't suggest this"/"Suggest again" + UF-04.1 "Not suggested" tag. After H-27 | web-feature:UF-04 | T-0532, T-0536, T-0537 | doing | wl-build-web |
-| T-0542 | UF-02.1/UF-02.2 PREVIEW_INPUT passes the stored list to suggest | web-feature:UF-02 | T-0536 | doing | wl-build-web |
 
 ### GitHub #37/#45 visual foundation (D-0203)
 GitHub #37 (Plan is confusing) and #45 (Account looks bad). Specs: `docs/specs/visual-foundation.md`, `Design-docs/docs/design/screens/UF-11.2.md`, `UF-11.4.md`. Grooming defaults and splits: D-0204. **T-0552 is high priority** (installed apps run stale builds). T-0548 → T-0549 → T-0550 run serially (same UF-11 folder), and T-0540 rebases on T-0548. T-0545 and T-0546 may run in parallel; both run the full web e2e suite.
@@ -136,9 +135,7 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0561 | Favorites design: UF-11.6, UF-04.2 toggle, UF-04.1/UF-08.2 tag, UF-11.2 row | design | — | ready | wl-design |
-| T-0562 | Engine favorites part 1: optional favoriteIds, rule 0.2, rule 7.2 key (0); R7-E21…E27 checked against the code, then encoded; vendor regen | engine | — | doing | wl-build-engine |
-| T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | todo | wl-build-engine |
+| T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | ready | wl-build-engine |
 | T-0564 | favorite_exercises table + mutual-exclusion triggers (destructive-approved D-0202 header), data-model, database.gen, pgTAP 001/007/018/020, export 9th key, e2e mock | data | — | doing | wl-build-data |
 | T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | todo | wl-build-data |
 | T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | todo | wl-build-backend |
@@ -153,7 +150,6 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0572 | Design: UF-08.5 sheet, UF-08.2 Add exercise / Added by you / Start with this / Doesn't fit / Reorder mode, UF-09.9 Do {name} later | design | T-0561 | todo | wl-design |
 | T-0573 | UF-08.5 part 1: sheet, search, Today's areas, In this workout, Add = visit pinnedIds, Added by you, time refusal, chips/Shuffle keep adds + Doesn't fit line, offline | web-feature:UF-08 | T-0538, T-0572 | todo | wl-build-web |
 | T-0574 | UF-08.5 part 2: disabled row states, cap refusals, Remove of an added item, re-add a removed item | web-feature:UF-08 | T-0573 | todo | wl-build-web |
 | T-0575 | UF-08 Start with this (compound only; mainLiftId; new main lift first) | web-feature:UF-08 | T-0574 | todo | wl-build-web |
