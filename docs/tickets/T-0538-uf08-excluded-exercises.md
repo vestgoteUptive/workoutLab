@@ -59,3 +59,9 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-08 e2e specs green · contracts unchanged · commits start with `T-0538:` and cite UF-08.1 / UF-08.2.
 
 ## Build / accept log
+
+### Build log (frontend-dev)
+- Built: stored list ∪ visit removes (`excludeIdsFor`) on every UF-08 suggest (first/fit line, Shuffle, chips); `setupInput`/`resuggest` take `pinnedIds` shape for D-0205; `RemovedLine.tsx` (persistent role=status, one button per row so focus stays, aria-disabled offline + one description, role=alert on failure); `ExcludedAreasNotice` from stored list only; strings in `uf-08.ts`.
+- AC→test: AC1–AC8 in `__tests__/excluded-suggest.test.tsx` (AC5 replaces the T-0303a AC-6 pin; fit-line.test.tsx keeps the empty-list pin); AC9 `tests/e2e/uf-08-excluded.spec.ts`. AC8's "15 min" is 45 min (UF-08.1 has no 15 chip; default budget).
+- Planted faults (all caught): resuggest without stored; fit line `[]`; notice from union (first attempt was vacuous: memo deps + a library with two quads exercises; test now uses a library with leg-extension as the only quads move); no aria-disabled; offline writes allowed; key by state (focus lost); no alert; notice dropped; status region conditional.
+- Red run: e2e first failed on an unwaited plan render (spec fixed).

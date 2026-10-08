@@ -19,6 +19,8 @@ import { en } from "../../lib/i18n/en.js";
 import { itemReasonLine, itemSummary, sessionReasonChips } from "../../lib/i18n/workout.js";
 import { CHIPS } from "./time.js";
 import { formatKg } from "../../lib/format/number.js";
+import { ExcludedAreasNotice } from "../../components/excluded-areas-notice/index.js";
+import { RemovedLine } from "./RemovedLine.js";
 import { exerciseName, isBodyweight, type LibraryLookup } from "./rows.js";
 
 export interface SuggestedProps {
@@ -40,6 +42,15 @@ export interface SuggestedProps {
   onShuffle: () => void;
   /** The host re-suggests at `budgetMin`. Only called for a chip that isn't the active one. */
   onBudget: (budgetMin: number) => void;
+  /** Areas the stored list leaves empty (engine `excludedOutAreas`); the neutral notice. */
+  noticeAreas?: readonly Area[];
+  /** Ids removed on this visit, in tap order (the Removed line). */
+  removedIds?: readonly string[];
+  /** The stored exclusions (cache) and the online flag, for the Removed line's controls. */
+  storedIds?: readonly string[];
+  online?: boolean;
+  onExclude?: ((exerciseId: string) => Promise<void>) | undefined;
+  onInclude?: ((exerciseId: string) => Promise<void>) | undefined;
   /** The item row whose Swap button takes focus on mount (after leaving UF-08.3, T-0303c). */
   focusSwapItem?: number | null;
   /** Called once that focus has moved. */
@@ -117,6 +128,12 @@ export function Suggested({
   locale,
   avoidAreas = [],
   emptiedByRemove = false,
+  noticeAreas = [],
+  removedIds = [],
+  storedIds = [],
+  online = true,
+  onExclude,
+  onInclude,
   onRemove,
   onShuffle,
   onBudget,
@@ -180,6 +197,8 @@ export function Suggested({
           {en.uf08.skipping(avoidAreas.map((a) => en.bodyMap.areas[a]))}
         </p>
       ) : null}
+
+      <ExcludedAreasNotice areas={noticeAreas} />
 
       <BudgetBar workout={workout} />
 
@@ -291,6 +310,15 @@ export function Suggested({
           })}
         </ol>
       )}
+
+      <RemovedLine
+        ids={removedIds}
+        library={library}
+        storedIds={storedIds}
+        online={online}
+        onExclude={onExclude}
+        onInclude={onInclude}
+      />
 
       <div className="wl-uf08__actions">
         <button
