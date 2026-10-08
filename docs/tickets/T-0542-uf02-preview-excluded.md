@@ -45,3 +45,7 @@ Lands after T-0536, which merges only after H-27 (D-0199 §11, D-0200 §2).
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-02 e2e specs green · contracts unchanged · commits start with `T-0542:` and cite UF-02.1 / UF-02.2.
 
 ## Build / accept log
+
+- 2026-10-08 build: `useToday` reads `useExcludedList(userId)` and computes nothing until `loaded`; `excludeIds` = stored list, recompute on list change (effect deps). Tests `__tests__/excluded.test.tsx`: AC1 card + preview (list [bench-press], empty = existing tests unchanged), AC2 offline (no fetch), AC3 live [] recompute.
+- Planted faults (backup restored by cp): (a) `excludeIds: []` -> AC1 x2 + AC2 red; (b) drop loaded gate and live deps -> AC1 x2, AC2, AC3 red.
+- Gate: typecheck lint test 19/19 green; format:check, check-all green; uf-02-today e2e 13/13.
