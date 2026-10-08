@@ -402,3 +402,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0570 | UF-02.1/UF-02.2 preview passes favoriteIds | web-feature:UF-02 | T-0542, T-0562, T-0567 | done | wl-build-web |
 | T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | done (released automatically) | wl-build-backend |
 | T-0573 | UF-08.5 part 1: sheet, search, Today's areas, In this workout, Add = visit pinnedIds, Added by you, time refusal, chips/Shuffle keep adds + Doesn't fit line, offline | web-feature:UF-08 | T-0538, T-0572 | done | wl-build-web |
+| T-0913 | UF-11.5/11.6 list-cache tests flake under load | web-feature:UF-11 | — | done | wl-build-web |
