@@ -133,7 +133,6 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | doing | wl-build-engine |
 | T-0564 | favorite_exercises table + mutual-exclusion triggers (destructive-approved D-0202 header), data-model, database.gen, pgTAP 001/007/018/020, export 9th key, e2e mock | data | — | doing | wl-build-data |
 | T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | todo | wl-build-data |
 | T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | todo | wl-build-backend |
