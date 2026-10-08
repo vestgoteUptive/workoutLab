@@ -7,7 +7,7 @@ decisions: [D-0199, D-0200, D-0071]
 deps: [T-0532, T-0536, T-0537]
 status: todo
 ---
-<!-- Written by product-owner 2026-10-07 (groom, D-0199 item i). Flow: wl-build-web (agent frontend-dev). About ¼ day. MERGE ONLY AFTER H-27 (D-0199 §11, D-0200 §2): the button writes excluded_exercises. -->
+<!-- Order (D-0207): T-0558 (UF-04.2 figure card) lands first; rebase on it. Written by product-owner 2026-10-07 (groom, D-0199 item i). Flow: wl-build-web (agent frontend-dev). About ¼ day. MERGE ONLY AFTER H-27 (D-0199 §11, D-0200 §2): the button writes excluded_exercises. -->
 
 ## Why
 D-0199 §2: the exercise detail is the calm place to decide. An excluded exercise stays visible in the library (§1); UF-04.1 marks it with a text tag, never colour only.
