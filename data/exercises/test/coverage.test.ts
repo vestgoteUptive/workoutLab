@@ -43,8 +43,8 @@ describe("T-0522 AC2 bodyweight-only primary count per area", () => {
     });
   }
 
-  it("T-0522 AC1 / T-0560 the library has 93 rows", () => {
-    expect(loadLibrary()).toHaveLength(93);
+  it("T-0522 AC1 / T-0560 the library has 95 rows", () => {
+    expect(loadLibrary()).toHaveLength(95);
   });
 
   it("T-0522 AC5 at least two of the nine new rows are beginner and one is timed", () => {

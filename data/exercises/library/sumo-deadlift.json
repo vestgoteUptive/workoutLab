@@ -1,0 +1,23 @@
+{
+  "id": "sumo-deadlift",
+  "name": "Sumo deadlift",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "advanced",
+  "equipment": ["barbell"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "glutes": 1, "hamstrings": 1, "quads": 0.5, "back": 0.5 },
+  "instructions": [
+    "Stand with a wide stance, toes turned out, and the bar over your mid-foot.",
+    "Sit your hips down, grip the bar inside your knees, and brace your core.",
+    "Push the floor apart with your feet until you stand tall.",
+    "Hinge back and lower the bar down your legs to the floor."
+  ],
+  "cue": "Brace, chest up, spread the floor",
+  "mistakes": ["Letting the knees cave in as you pull.", "Rounding the upper back at the start."],
+  "variants": ["barbell-deadlift", "romanian-deadlift-barbell"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}
