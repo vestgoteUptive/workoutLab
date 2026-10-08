@@ -190,6 +190,14 @@ export const uf08 = {
   mainTag: "Main lift",
   noFitStart: (name: string, minutes: number) =>
     `${name} doesn't fit in ${minutes} min. Pick more time.`,
+  /** Reorder mode (T-0576, D-0205 §7). */
+  reorder: "Reorder",
+  reorderDone: "Done",
+  moveUp: "Move up",
+  moveDown: "Move down",
+  moveUpName: (name: string) => `Move ${name} up`,
+  moveDownName: (name: string) => `Move ${name} down`,
+  moved: (name: string, k: number, n: number) => `${name} moved to ${k} of ${n}.`,
   /** UF-08.2's line for added exercises a re-suggest left out. */
   doesntFit: (minutes: number, names: readonly string[]) =>
     `Doesn't fit in ${minutes} min: ${names.join(", ")}.`,

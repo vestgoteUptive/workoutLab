@@ -734,3 +734,39 @@
   outline: 2px solid var(--wl-color-accent);
   outline-offset: 2px;
 }
+
+/* T-0576 (D-0205 §7): Reorder mode. */
+.wl-uf08__list-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.wl-uf08__list-title {
+  margin: 0;
+  margin-inline-end: auto;
+  font: inherit;
+  font-weight: 600;
+  color: var(--wl-color-text);
+}
+
+.wl-uf08__list-button {
+  min-block-size: 44px;
+}
+
+.wl-uf08__row--reorder {
+  min-block-size: 64px;
+  transition: background-color 150ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-uf08__row--reorder {
+    transition: none;
+  }
+}
+
+.wl-uf08__icon--text:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
