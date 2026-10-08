@@ -44,6 +44,19 @@ vi.mock("../../lib/offline/index.js", async (importOriginal) => {
   };
 });
 
+// T-0911: UF-04 imports its loaders from `history.js` directly, so the barrel mock above never
+// reached it. UF-04.2 then read an empty cache and a real `refreshAll`, and `<Navigate>`d to
+// /library (UF-04.1) when the 3 s refresh cap ended: green only if the assertion ran inside 3 s,
+// which a loaded runner misses. Same seed, at the module UF-04 really imports.
+vi.mock("../../lib/offline/history.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../../lib/offline/history.js")>();
+  return {
+    ...actual,
+    loadLibrary: vi.fn(async () => [BACK_SQUAT]),
+    refreshAll: vi.fn(async () => undefined),
+  };
+});
+
 // T-0408 (D-0096): local budgets on waits for lazy route chunks (the --concurrency=1 gate).
 const LAZY_WAIT_MS = 5_000;
 const LAZY_TEST_MS = 15_000;
