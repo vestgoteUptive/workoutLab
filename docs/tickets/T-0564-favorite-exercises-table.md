@@ -61,6 +61,7 @@ Checklist (D-0197 §7): empty and non-empty export (AC8); both mutual-exclusion 
 - `tests/e2e/fixtures/supabase-mock.ts`
 - `tests/e2e/uf-11-account.spec.ts`
 - `.github/scripts/rls-coverage.test.mjs` (EXPECTED gains `favorite_exercises`)
+- `docs/security/**` (security review notes; orchestrator grant 2026-10-08)
 
 ## Contract impact
 `docs/data-model.md`: new table `favorite_exercises` and the two mutual-exclusion triggers (one on `excluded_exercises`). Named by D-0202 §5 (amends D-0199 §4, D-0136 §2).
