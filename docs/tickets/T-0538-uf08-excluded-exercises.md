@@ -62,7 +62,11 @@ Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-08 
 ## Build / accept log
 
 ### Build log (frontend-dev)
-- Built: stored list ∪ visit removes (`excludeIdsFor`) on every UF-08 suggest (first/fit line, Shuffle, chips); `setupInput`/`resuggest` take `pinnedIds` shape for D-0205; `RemovedLine.tsx` (persistent role=status, one button per row so focus stays, aria-disabled offline + one description, role=alert on failure); `ExcludedAreasNotice` from stored list only; strings in `uf-08.ts`.
+- Built: stored list ∪ visit removes (`excludeIdsFor`) on every UF-08 suggest (first/fit line, Shuffle, chips); only `setupInput` takes a `pinnedIds` parameter for D-0205 (`resuggest` still passes `[]`; threading it is for the add tickets); `RemovedLine.tsx` (persistent role=status, one button per row so focus stays, aria-disabled offline + one description, role=alert on failure); `ExcludedAreasNotice` from stored list only; strings in `uf-08.ts`.
 - AC→test: AC1–AC8 in `__tests__/excluded-suggest.test.tsx` (AC5 replaces the T-0303a AC-6 pin; fit-line.test.tsx keeps the empty-list pin); AC9 `tests/e2e/uf-08-excluded.spec.ts`. AC8's "15 min" is 45 min (UF-08.1 has no 15 chip; default budget).
 - Planted faults (all caught): resuggest without stored; fit line `[]`; notice from union (first attempt was vacuous: memo deps + a library with two quads exercises; test now uses a library with leg-extension as the only quads move); no aria-disabled; offline writes allowed; key by state (focus lost); no alert; notice dropped; status region conditional.
 - Red run: e2e first failed on an unwaited plan render (spec fixed).
+
+### Review fixes (frontend-dev)
+- Fix 1: `useExcludedList` (new, `excluded-hooks.ts`) returns `{ids, loaded}`; UF-08.1's fit line and Suggest wait for it. Test `excluded-loading.test.tsx` (real hooks, deferred Dexie read). Faults: gating removed, `loaded` always true: both fail it.
+- Fix 2: notice under BudgetBar, or under the Skipping line (fault: wrong placement fails). Fix 3: RemovedLine busy until the row flips (+1 s fallback), aria-disabled while busy (fault: busy cleared at once fails the double-tap test). Fix 4: alert is a sibling of the status region (test added; no planted fault run for it).

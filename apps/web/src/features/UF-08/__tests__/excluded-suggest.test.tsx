@@ -46,7 +46,10 @@ vi.mock("../../../lib/offline/excluded.js", async (importOriginal) => {
 vi.mock("../../../lib/offline/excluded-hooks.js", async () => {
   const React = await import("react");
   return {
-    useExcludedIds: () => React.useSyncExternalStore(store.subscribe, store.get),
+    useExcludedList: () => ({
+      ids: React.useSyncExternalStore(store.subscribe, store.get),
+      loaded: true,
+    }),
     useOnline: () => {
       const [on, setOn] = React.useState(() => navigator.onLine !== false);
       React.useEffect(() => {
@@ -305,5 +308,60 @@ describe("AC8 empty state", () => {
     const notice = document.querySelector(".wl-excluded-notice")!;
     expect(notice).toBeInTheDocument();
     expect(notice.compareDocumentPosition(nothing) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
+
+describe("review fixes", () => {
+  it("a fast second tap sends one write: busy until the cache update reaches the screen", async () => {
+    let finish!: () => void;
+    writes.exclude.mockImplementation(
+      (_u, id) =>
+        new Promise<void>((resolve) => {
+          finish = () => {
+            store.set([...store.get(), id]);
+            resolve();
+          };
+        }),
+    );
+    await toSuggested();
+    fireEvent.click(button("Remove Leg extension"));
+    const never = button("Never suggest Leg extension");
+    fireEvent.click(never);
+    expect(never).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(never);
+    expect(writes.exclude).toHaveBeenCalledTimes(1);
+    act(() => finish());
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Undo"));
+    fireEvent.click(document.querySelector('[data-part="undo"]')!);
+    expect(writes.include).toHaveBeenCalledTimes(1);
+  });
+
+  it("the failure alert is a sibling of the status region, not inside it", async () => {
+    writes.exclude.mockRejectedValue(new Error("x"));
+    await toSuggested();
+    fireEvent.click(button("Remove Leg extension"));
+    fireEvent.click(button("Never suggest Leg extension"));
+    const alert = await screen.findByRole("alert");
+    expect(screen.getByRole("status")).not.toContainElement(alert);
+  });
+
+  it("the notice sits under the budget bar, or under the Skipping line when shown", async () => {
+    store.set(["back-squat", "leg-extension"]);
+    await toSuggested();
+    const notice = document.querySelector(".wl-excluded-notice")!;
+    const bar = document.querySelector(".wl-uf08__budget")!;
+    expect(bar.compareDocumentPosition(notice) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("link", { name: "Back" }));
+    await loaded();
+    fireEvent.click(screen.getByRole("button", { name: "Chest" }));
+    fireEvent.click(button("Suggest my workout"));
+    const skipping = document.querySelector('[data-part="skipping"]')!;
+    const notice2 = document.querySelector(".wl-excluded-notice")!;
+    const bar2 = document.querySelector(".wl-uf08__budget")!;
+    expect(
+      skipping.compareDocumentPosition(notice2) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(notice2.compareDocumentPosition(bar2) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

@@ -198,9 +198,11 @@ export function Suggested({
         </p>
       ) : null}
 
-      <ExcludedAreasNotice areas={noticeAreas} />
+      {avoidAreas.length > 0 ? <ExcludedAreasNotice areas={noticeAreas} /> : null}
 
       <BudgetBar workout={workout} />
+
+      {avoidAreas.length === 0 ? <ExcludedAreasNotice areas={noticeAreas} /> : null}
 
       <div className="wl-uf08__chips" role="group" aria-label={en.uf08.timeChipsName}>
         {CHIPS.map((m) => (

@@ -34,7 +34,7 @@ import { useAuth } from "../../lib/auth/auth-context.js";
 import { formatTime } from "../../lib/format/intl.js";
 import { en } from "../../lib/i18n/en.js";
 import { excludeExercise, excludeIdsFor, includeExercise } from "../../lib/offline/excluded.js";
-import { useExcludedIds, useOnline } from "../../lib/offline/excluded-hooks.js";
+import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js";
 import { SwapSheet } from "../UF-05/index.js";
 import { Ready } from "./Ready.js";
 import { Suggested } from "./Suggested.js";
@@ -186,7 +186,7 @@ export function SessionSetup({
 
   const { status, userId } = useAuth();
   // T-0538 (D-0199 §6): the stored list joins every `suggest` call; offline it is the cache.
-  const stored = useExcludedIds(userId);
+  const { ids: stored, loaded: storedLoaded } = useExcludedList(userId);
   const online = useOnline();
   const state = useSetupData(nowIso, tz, status === "signed-in");
   const data = state.kind === "ready" ? state.data : null;
@@ -214,7 +214,7 @@ export function SessionSetup({
   // the shared `budgetMin` and must not cost a second `suggest` call.
   const workout = useMemo(
     () =>
-      data && !pastSetup
+      data && !pastSetup && storedLoaded
         ? runSuggest(
             data,
             setupInput(budgetMin, warmupInBudget, energy, avoidAreas, stored),
@@ -222,14 +222,26 @@ export function SessionSetup({
             tz,
           )
         : null,
-    [data, pastSetup, budgetMin, warmupInBudget, energy, avoidAreas, stored, nowIso, tz],
+    [
+      data,
+      pastSetup,
+      storedLoaded,
+      budgetMin,
+      warmupInBudget,
+      energy,
+      avoidAreas,
+      stored,
+      nowIso,
+      tz,
+    ],
   );
   // The notice reads the stored list only (D-0199 §8): a Remove on this visit never shows it.
   const noticeAreas = useMemo(
     () => (data ? excludedOutAreas(data.profile, data.library, stored) : []),
     [data, stored],
   );
-  const missing = state.kind === "missing" || (data !== null && !pastSetup && workout === null);
+  const missing =
+    state.kind === "missing" || (data !== null && !pastSetup && storedLoaded && workout === null);
 
   useEffect(() => {
     if (badSwap) void navigate(`${SETUP_PATH}?step=suggested`, { replace: true });
