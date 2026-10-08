@@ -77,7 +77,8 @@
   list-style: none;
 }
 
-.wl-excluded__row {
+.wl-card.wl-excluded__row {
+  flex-direction: row;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -86,16 +87,19 @@
   box-sizing: border-box;
 }
 
-.wl-excluded__text {
+.wl-excluded .wl-excluded__text {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1 1 auto;
   min-inline-size: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
-.wl-excluded__button {
+.wl-excluded .wl-excluded__button {
   flex: none;
+  inline-size: auto;
+  max-inline-size: 45%;
   min-block-size: 44px;
   min-inline-size: 96px;
 }
