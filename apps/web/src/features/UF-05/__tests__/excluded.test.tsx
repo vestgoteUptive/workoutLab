@@ -164,8 +164,8 @@ describe("AC5 empty states", () => {
   });
 });
 
-describe("AC6 write failure", () => {
-  it("keeps the sheet open with an alert, then swaps once unticked", async () => {
+describe("AC6 write failure (spec over AC6: the swap still applies)", () => {
+  it("applies the swap, shows the alert, keeps the box ticked", async () => {
     writes.exclude.mockRejectedValue(new Error("server"));
     const { onApply } = mountSheet(w5(), 1);
     await rowIds();
@@ -173,17 +173,28 @@ describe("AC6 write failure", () => {
     fireEvent.click(box);
     fireEvent.click(rowRadio("lat-pulldown"));
     fireEvent.click(useButton("Lat pulldown"));
+    await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toBe("Couldn't save. Try again.");
-    expect(onApply).not.toHaveBeenCalled();
-    expect(screen.getByRole("dialog")).toBeTruthy();
-    expect(box.getAttribute("aria-disabled")).toBeNull();
-    expect(box.checked).toBe(true);
-    expect(useButton("Lat pulldown").getAttribute("aria-disabled")).toBeNull();
-    fireEvent.click(box);
-    fireEvent.click(useButton("Lat pulldown"));
-    await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
     expect(writes.exclude).toHaveBeenCalledTimes(1);
+    expect(box.checked).toBe(true);
+    expect(box.getAttribute("aria-disabled")).toBeNull();
+  });
+
+  it("disables the box and the rows while the write is in flight", async () => {
+    let resolveWrite!: () => void;
+    writes.exclude.mockReturnValue(new Promise<void>((r) => (resolveWrite = r)));
+    const { onApply } = mountSheet(w5(), 1);
+    await rowIds();
+    const box = screen.getByRole("checkbox", { name: BOX }) as HTMLInputElement;
+    fireEvent.click(box);
+    fireEvent.click(rowRadio("lat-pulldown"));
+    fireEvent.click(useButton("Lat pulldown"));
+    await waitFor(() => expect(box.getAttribute("aria-disabled")).toBe("true"));
+    expect(rowRadio("lat-pulldown").disabled).toBe(true);
+    expect(onApply).not.toHaveBeenCalled();
+    await act(async () => resolveWrite());
+    await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
   });
 });
 

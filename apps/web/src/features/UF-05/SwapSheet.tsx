@@ -261,7 +261,10 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
           pendingRef.current = false;
           if (!mounted.current) return;
           setPending(false);
+          // Spec over AC6 (UF-08.3/UF-05.1 "Write fails"): the swap is applied, the exclusion is
+          // not stored, the box stays ticked so a retry works.
           setExcludeFailed(true);
+          apply();
         },
       );
       return;
@@ -373,6 +376,7 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
                         name={`${groupName}-candidate`}
                         value={c.exerciseId}
                         checked={selected?.exerciseId === c.exerciseId}
+                        disabled={pending}
                         onChange={() => {
                           setSelectedId(c.exerciseId);
                           setNotice(null);
@@ -411,7 +415,7 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
                       label={en.uf05.dontSuggest(nameOf(current.exerciseId))}
                       checked={ticked}
                       onChange={setTicked}
-                      ariaDisabled={!online}
+                      ariaDisabled={!online || pending}
                       {...(online ? {} : { describedBy: offlineNoteId })}
                     />
                     {online ? null : (
