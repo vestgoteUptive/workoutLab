@@ -367,3 +367,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0554 | Prod release applies seed.sql on every apply (psql); CLI --include-seed skips a changed seed, so the T-0523 exercises never reached prod | infra | T-0543 | done | wl-build-infra |
 | T-0555 | Seed guard as an allow-list, and psql error lines redacted (T-0554 security T1/T2) | infra | T-0554 | done | wl-build-infra |
 | T-0559 | user-flows.md lines for the UF-04.2 figure and the C-01 silhouette | product | — | done | wl-spec |
+| T-0535 | excluded_exercises table (trigger, PK, index, 4 owner policies, anon revoked, exercises FK cascade); data-model.md; database.gen.ts; pgTAP 001/007/018/019; export.ts EXPORT_TABLES/ORDER_KEYS; e2e mock. Merge locally, hold push until H-27 | data | — | done (migration released automatically) | wl-build-data |
