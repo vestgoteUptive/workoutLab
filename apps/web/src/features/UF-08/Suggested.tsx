@@ -7,11 +7,12 @@
 //
 // The `workout` prop is the host's current `Workout`; nothing on this screen calls `suggest`.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import {
   WARMUP_COST_S,
   availableS,
   type Area,
+  type LibraryExercise,
   type Workout,
   type WorkoutItem,
 } from "@workoutlab/engine";
@@ -21,6 +22,7 @@ import { CHIPS } from "./time.js";
 import { formatKg } from "../../lib/format/number.js";
 import { ExcludedAreasNotice } from "../../components/excluded-areas-notice/index.js";
 import { ExerciseHowTo } from "../UF-04/index.js";
+import { AddExerciseSheet } from "./AddExerciseSheet.js";
 import { RemovedLine } from "./RemovedLine.js";
 import { exerciseName, isBodyweight, type LibraryLookup } from "./rows.js";
 
@@ -56,7 +58,16 @@ export interface SuggestedProps {
   focusSwapItem?: number | null;
   /** Called once that focus has moved. */
   onSwapFocused?: () => void;
+  /** T-0573: ids added on this visit, in add order (D-0205). Their reason line is "Added by you". */
+  addedIds?: readonly string[];
+  /** The full library, for UF-08.5's search. With `onAdd`, shows "Add exercise". */
+  catalog?: readonly LibraryExercise[];
+  /** The host's Add: null when the exercise is now in the plan, else the refusal text. */
+  onAdd?: (exerciseId: string) => string | null;
 }
+
+/** UF-08.5 is open while the current history entry carries this state; the URL never changes. */
+const SHEET_STATE = "wlAddSheet";
 
 const READY_HREF = "/session/setup?step=ready";
 
@@ -140,8 +151,20 @@ export function Suggested({
   onBudget,
   focusSwapItem = null,
   onSwapFocused,
+  addedIds = [],
+  catalog,
+  onAdd,
 }: SuggestedProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+  const sheetOpen =
+    (location.state as Record<string, unknown> | null)?.[SHEET_STATE] === true &&
+    onAdd !== undefined;
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+  // The id just added: focus goes to its row when the sheet has closed.
+  const pendingAddFocus = useRef<string | null>(null);
+  const sheetWasOpen = useRef(false);
+  const [status, setStatus] = useState("");
   const listRef = useRef<HTMLOListElement>(null);
   const looksGoodRef = useRef<HTMLButtonElement>(null);
   // D-0109 §6: the index of the row whose Remove was used, until the new plan has rendered.
@@ -161,6 +184,36 @@ export function Suggested({
     onSwapFocused?.();
     // Mount only: the host clears the request through `onSwapFocused`.
   }, []);
+
+  // Opening pushes an entry with the same URL, so browser Back closes it. When it closes, focus
+  // goes to the new row after an Add, else back to "Add exercise" (UF-08.5.md, States and focus).
+  useEffect(() => {
+    if (sheetWasOpen.current === sheetOpen) return;
+    sheetWasOpen.current = sheetOpen;
+    if (sheetOpen) return;
+    const id = pendingAddFocus.current;
+    pendingAddFocus.current = null;
+    const row =
+      id === null
+        ? null
+        : listRef.current?.querySelector<HTMLElement>(
+            `[data-id="${CSS.escape(id)}"] [data-part="row-name"]`,
+          );
+    (row ?? addButtonRef.current)?.focus();
+  }, [sheetOpen]);
+
+  const notFitting = addedIds.filter((id) => !items.some((i) => i.exerciseId === id));
+  const notFittingText =
+    notFitting.length === 0
+      ? ""
+      : en.uf08.doesntFit(
+          workout.budgetMin,
+          notFitting.map((id) => exerciseName(id, library)),
+        );
+  // The standing line also goes to the status region, so a screen reader hears it appear.
+  useEffect(() => {
+    setStatus(notFittingText);
+  }, [notFittingText]);
 
   useEffect(() => {
     const index = pendingFocus.current;
@@ -250,10 +303,17 @@ export function Suggested({
         <ol className="wl-uf08__rows" ref={listRef} aria-label={en.uf08.rowsName}>
           {items.map((item, index) => {
             const name = exerciseName(item.exerciseId, library);
-            const reason = itemReasonLine(item.reasons);
+            const reason = addedIds.includes(item.exerciseId)
+              ? en.uf08.addedByYou
+              : itemReasonLine(item.reasons);
             const backoff = backoffLine(item, locale);
             return (
-              <li key={item.exerciseId} className="wl-uf08__row" data-part="item-row">
+              <li
+                key={item.exerciseId}
+                className="wl-uf08__row"
+                data-part="item-row"
+                data-id={item.exerciseId}
+              >
                 <div className="wl-uf08__row-body">
                   <button
                     type="button"
@@ -331,6 +391,35 @@ export function Suggested({
         onInclude={onInclude}
       />
 
+      {notFittingText !== "" ? (
+        <p className="wl-uf08__fit" data-part="doesnt-fit">
+          {notFittingText}
+        </p>
+      ) : null}
+      <div role="status" className="wl-uf08__status" data-part="status">
+        {status}
+      </div>
+
+      {onAdd !== undefined ? (
+        <button
+          ref={addButtonRef}
+          type="button"
+          className="wl-uf08__ghost wl-uf08__add"
+          aria-haspopup="dialog"
+          onClick={() => {
+            pendingFocus.current = null;
+            void navigate(`${location.pathname}${location.search}`, {
+              state: { [SHEET_STATE]: true },
+            });
+          }}
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" fill="none" />
+          </svg>
+          {en.uf08.addExercise}
+        </button>
+      ) : null}
+
       <div className="wl-uf08__actions">
         <button
           type="button"
@@ -351,6 +440,23 @@ export function Suggested({
           {en.uf08.looksGood}
         </button>
       </div>
+      {sheetOpen && onAdd !== undefined ? (
+        <AddExerciseSheet
+          catalog={catalog ?? []}
+          items={items}
+          budgetMin={workout.budgetMin}
+          onAdd={(id) => {
+            const refusal = onAdd(id);
+            if (refusal === null) {
+              pendingAddFocus.current = id;
+              setStatus(en.uf08.added(exerciseName(id, library)));
+              void navigate(-1);
+            }
+            return refusal;
+          }}
+          onClose={() => void navigate(-1)}
+        />
+      ) : null}
       {howToId !== null ? (
         <ExerciseHowTo exerciseId={howToId} onClose={() => setHowToId(null)} />
       ) : null}

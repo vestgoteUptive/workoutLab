@@ -113,6 +113,8 @@ interface Adjusted {
   workout: Workout;
   shuffle: number;
   excludeIds: string[];
+  /** T-0573 (D-0205 §1): exercises added on this visit, in add order; the engine's `pinnedIds`. */
+  addedIds: string[];
   /** True while the plan is empty because Remove took the last row (T-0521, D-0191 §5). */
   emptiedByRemove: boolean;
 }
@@ -267,7 +269,16 @@ export function SessionSetup({
 
   if (showSwap) {
     const leave = (applied: Workout | null) => {
-      if (applied !== null) setAdjusted({ ...adjusted, workout: applied });
+      if (applied !== null) {
+        // A swap that replaced an added exercise takes it off the pins; it is no longer in the plan.
+        const had = (id: string) => adjusted.workout.plan.items.some((i) => i.exerciseId === id);
+        const has = (id: string) => applied.plan.items.some((i) => i.exerciseId === id);
+        setAdjusted({
+          ...adjusted,
+          workout: applied,
+          addedIds: adjusted.addedIds.filter((id) => !(had(id) && !has(id))),
+        });
+      }
       setFocusSwapItem(swapItem);
       void navigate(-1);
     };
@@ -305,7 +316,7 @@ export function SessionSetup({
           energy,
           shuffle: next.shuffle,
           mainLiftId,
-          pinnedIds: [],
+          pinnedIds: adjusted.addedIds,
           excludeIds: excludeIdsFor(stored, next.excludeIds),
           ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
         },
@@ -318,9 +329,49 @@ export function SessionSetup({
         workout: result,
         shuffle: next.shuffle,
         excludeIds: next.excludeIds,
+        addedIds: adjusted.addedIds,
         emptiedByRemove: false,
       });
       return true;
+    };
+    /**
+     * T-0573 (D-0205 §1): one `suggest` call pinning `id` after this visit's adds. The engine
+     * silently ignores a pin that does not fit, so the result is checked: null when `id` is in
+     * the new plan (it becomes the plan), else the refusal text and nothing changes.
+     */
+    const addExercise = (id: string): string | null => {
+      const pinned = [...adjusted.addedIds.filter((a) => a !== id), id];
+      const visit = adjusted.excludeIds.filter((e) => e !== id);
+      const result = runSuggest(
+        data,
+        {
+          budgetMin,
+          warmupInBudget,
+          energy,
+          shuffle: adjusted.shuffle,
+          mainLiftId: adjusted.workout.plan.mainLiftId,
+          pinnedIds: pinned,
+          excludeIds: excludeIdsFor(stored, visit),
+          ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
+        },
+        nowIso,
+        tz,
+      );
+      if (result !== null && result.plan.items.some((i) => i.exerciseId === id)) {
+        setAdjusted({
+          workout: result,
+          shuffle: adjusted.shuffle,
+          excludeIds: visit,
+          addedIds: pinned,
+          emptiedByRemove: false,
+        });
+        return null;
+      }
+      const ex = data.library.find((e) => e.id === id);
+      const name = ex?.name ?? id;
+      return ex?.type === "compound"
+        ? en.uf08.noFitCompound(name, budgetMin)
+        : en.uf08.noFitIsolation(name, budgetMin);
     };
     return (
       <Suggested
@@ -348,6 +399,8 @@ export function SessionSetup({
             ...adjusted,
             workout: next,
             excludeIds: [...adjusted.excludeIds, exerciseId],
+            // A removed exercise is no longer a pin (D-0205 §6), or a re-suggest would list it.
+            addedIds: adjusted.addedIds.filter((a) => a !== exerciseId),
             emptiedByRemove: next.plan.items.length === 0,
           });
           return true;
@@ -356,6 +409,9 @@ export function SessionSetup({
         onBudget={(m) => resuggest({ budgetMin: m })}
         focusSwapItem={focusSwapItem}
         onSwapFocused={() => setFocusSwapItem(null)}
+        addedIds={adjusted.addedIds}
+        catalog={data.library}
+        onAdd={addExercise}
       />
     );
   }
@@ -386,7 +442,7 @@ export function SessionSetup({
   const onSuggest = () => {
     if (workout === null) return;
     // Frozen here: UF-08.2 starts from exactly this `Workout` (reference-equal, no new call).
-    setAdjusted({ workout, shuffle: 0, excludeIds: [], emptiedByRemove: false });
+    setAdjusted({ workout, shuffle: 0, excludeIds: [], addedIds: [], emptiedByRemove: false });
     void navigate(`${SETUP_PATH}?step=suggested`);
   };
 

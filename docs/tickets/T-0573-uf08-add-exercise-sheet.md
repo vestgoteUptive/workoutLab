@@ -57,3 +57,11 @@ None (D-0205 §10).
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-08 e2e specs green · contracts unchanged · commits start with `T-0573:` and cite UF-08.5 / UF-08.2.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-08)
+- Start: clean, HEAD 121945d. New `AddExerciseSheet.tsx`; host (`SessionSetup`) holds `addedIds` in the record and passes it as `pinnedIds` to every re-suggest; `Add` is one `suggest` call, result checked for the id, else refusal copy. Sheet open = history entry with state (same URL), so Back/Escape/Close all close it.
+- AC→test (`__tests__/add-exercise.test.tsx`): AC1 open/Escape/Close; AC2 search; AC3 one call inputs; AC4 X1 (itemsTotalS 1545, unusedS 75; engine matched the spec); AC5 15 min refusals (both copies); AC6 chip 20/30 + Shuffle (X4 matched); AC7 all removed; AC8 offline, no fetch; AC9 per visit. AC10 `tests/e2e/uf-08-add.spec.ts` (open, axe empty and non-empty query, add, tag, 20/30 chips).
+- Planted faults (backup copy, restored by cp), each failed one test: pinnedIds `[]` on re-suggest (AC6); skip the in-plan check on Add (AC5); ignore addedIds in the reason line (AC4); drop "In this workout" (AC1); no focus-to-new-row (AC4); keep addedIds across Back (AC9, after strengthening it with the Shuffle pins and no Doesn't-fit line; the first version passed the fault, so it was tightened).
+- Existing test touched: `excluded-suggest.test.tsx` `getByRole("status")` became `removedLine()` (UF-08.2 now has a second role=status per UF-08.2.md); assertions unchanged.
+- Choices: Remove of an added item also drops it from `addedIds` (else the Doesn't-fit line would list it); a UF-08.3 swap of an added item drops the id likewise; sheet "In this workout" rows have no Add button (T-0574 adds the disabled states); a stored-excluded exercise is not re-included (engine refuses, copy says time until T-0574).
+- Gate: `-w typecheck lint test` 19/19 (4142 web tests), format:check, check-all, test:repo-checks green; `test:e2e uf-08` 37/37. Screenshot 390px: scratchpad/uf085-after.png.

@@ -151,4 +151,30 @@ export const uf08 = {
   start: "Start",
   /** Start's `upsertSession` rejected (D-0110 §3). */
   startFailed: "Couldn't start the workout. Try again.",
+
+  // --- UF-08.5 Add exercise (T-0573, D-0205 §1-§4, UF-08.5.md) ---
+  /** The UF-08.2 button and the sheet's title. */
+  addExercise: "Add exercise",
+  addLead: (minutes: number) => `The rest of your workout adjusts to fit ${minutes} min.`,
+  searchLabel: "Search exercises",
+  clearSearch: "Clear search",
+  todaysAreas: "Today's areas",
+  searchToFind: "Search to find an exercise.",
+  noMatch: (query: string) => `No exercises match \u201C${query}\u201D.`,
+  /** The visible text of a row's Add button; its accessible name is `addName`. */
+  add: "Add",
+  /** "Add Back squat", or "Add Back squat, Quads" when the name shows under several areas. */
+  addName: (name: string, area?: string) => (area ? `Add ${name}, ${area}` : `Add ${name}`),
+  inWorkout: "In this workout",
+  /** The status line on UF-08.2 after a successful Add. */
+  added: (name: string) => `${name} added.`,
+  addedByYou: "Added by you",
+  /** The sheet's refusal when the engine left the pin out for time. */
+  noFitCompound: (name: string, minutes: number) =>
+    `${name} doesn't fit in ${minutes} min. Start with it instead, or pick more time.`,
+  noFitIsolation: (name: string, minutes: number) =>
+    `${name} doesn't fit in ${minutes} min. Pick more time.`,
+  /** UF-08.2's line for added exercises a re-suggest left out. */
+  doesntFit: (minutes: number, names: readonly string[]) =>
+    `Doesn't fit in ${minutes} min: ${names.join(", ")}.`,
 } as const;
