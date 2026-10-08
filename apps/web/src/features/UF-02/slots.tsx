@@ -8,9 +8,12 @@
 // C-01 region (or the no-plan line), also inside a `Suspense` with a `null` fallback.
 import { lazy, type ComponentType } from "react";
 
-export const todayCheckinSlot: ComponentType<{ onAnswered?: () => void }> | null = lazy(() =>
-  import("../UF-11/index.js").then((m) => ({ default: m.CheckinCard })),
-);
+export const todayCheckinSlot: ComponentType<{
+  onAnswered?: () => void;
+  now?: () => Date;
+  locale?: string;
+  timeZone?: string;
+}> | null = lazy(() => import("../UF-11/index.js").then((m) => ({ default: m.CheckinCard })));
 
 export const todayResumeSlot: ComponentType<{
   now: Date | undefined;

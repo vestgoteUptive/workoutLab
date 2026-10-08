@@ -24,6 +24,9 @@ import {
 } from "./helpers.js";
 import { Today as TodaySwitch } from "../index.js";
 
+// T-0914: Back from the preview mounts Today; keep the real UF-11 check-in card out of it.
+vi.mock("../slots.js", () => ({ todayCheckinSlot: null, todayResumeSlot: null }));
+
 const mocks = vi.hoisted(() => ({
   loadEngineHistory: vi.fn(),
   loadTargets: vi.fn(),

@@ -20,6 +20,10 @@ import {
 } from "./fixtures.js";
 import { location, macrotask, part, renderToday, tile } from "./helpers.js";
 
+// T-0914: this file is about the suggestion card. The real UF-11 check-in card (real clock, its own
+// Accept / Keep current buttons) raced the "no button" assertion; the slot has its own tests.
+vi.mock("../slots.js", () => ({ todayCheckinSlot: null, todayResumeSlot: null }));
+
 const mocks = vi.hoisted(() => ({
   loadEngineHistory: vi.fn(),
   loadTargets: vi.fn(),
@@ -219,6 +223,7 @@ describe("AC-2 card render (W-R7E4)", () => {
     stubWorkout(W_R7E4);
     renderToday(F_TZ);
     const el = await waitForCard();
+    await macrotask();
     expect(document.querySelectorAll(".wl-today__start")).toHaveLength(1);
     expect(screen.queryAllByRole("button")).toHaveLength(0);
     expect(el.querySelectorAll("a")).toHaveLength(1);
