@@ -49,10 +49,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-08 e2e specs green · contracts unchanged · commits start with `T-0577:` and cite UF-08.5.
 
 ## Build / accept log
-
-### Build log (frontend-dev, 2026-10-08)
-- Built: `AddExerciseSheet` Favorites section (new props `favoriteIds`, `favoritesLoaded`, fed from `SessionSetup` via `useFavoriteList`), "Favorite" tag on every favorite row, favorites removed from Today's areas, sheet body empty until the list loads. Exclusion wins via the existing `blocked` map. i18n `favoritesHeading`/`favoriteTag`; `.wl-uf08__fav-tag` (tokens only).
-- AC→test: AC1 (+recovering, +waits for load), AC2, AC3, AC4, AC5, AC6 in `features/UF-08/__tests__/favorites-section.test.tsx` (8 tests); AC7 in `tests/e2e/uf-08-add.spec.ts`. AC5 queries "a" not "squ": the fixture library has one squat, so "squ" can't show that no other result is tagged.
-- Planted faults (restored from backup): not removing favorites from areas (AC1 red), ignoring `favoritesLoaded` (load test red), tag off (AC1, AC4, AC5 red), hiding the section (5 red), hint without the favorites check (AC3 red).
-- Gate: typecheck lint test --concurrency=1 exit 0; format:check and check-all clean; uf-08 e2e green. Screenshot: /tmp/claude-1000/-home-henrik-dev-uptive-private-workoutLab/b9c18a03-9bde-4682-9460-947c135cf3b1/scratchpad/uf085-fav.png
-- Fix: area groups left empty by Favorites are dropped; test 'an area whose exercises are all favorites' (planted fault: filter off, red). UF-08 vitest 417 pass, format:check and check-all exit 0.
+Archived in `docs/tickets/log/T-0577.md` (D-0157).
