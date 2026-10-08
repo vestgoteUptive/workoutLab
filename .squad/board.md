@@ -130,4 +130,3 @@ GitHub #37 (Plan is confusing) and #45 (Account looks bad). Specs: `docs/specs/v
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0553 | PWA update guard: rewrite the wl-in-session entry on bfcache restore (T-0552 review) | web-shell | T-0552 | doing | wl-build-web |

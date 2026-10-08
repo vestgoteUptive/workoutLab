@@ -23,7 +23,4 @@ T-0552 code review (D-0206). A tab on `/session/*` removes its `wl-in-session:<t
 None.
 
 ## Build / accept log
-
-- Build (frontend-dev): `update.ts` gets a `pageshow` handler that calls `trackSession(pathname)` only when `persisted === true` (writes on /session/*, removes elsewhere). New `__tests__/update-bfcache.test.ts`. AC-1: persisted pageshow after pagehide rewrites entry with fresh timestamp. AC-2: /plan and persisted=false write nothing. AC-3: existing pwa tests green (37/37).
-- Planted fault (handler never fires): AC-1 test red (1 failed, 36 passed); restored from backup copy, green.
-- Gate: `-w typecheck lint test` green, format:check clean, check-all exit 0.
+Archived in `docs/tickets/log/T-0553.md` (D-0157).

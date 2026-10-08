@@ -362,3 +362,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0549 | UF-11.2 part 2: check-in card restyle, Check-ins and Routines cards, one accent action, loading/cold-cache states | web-feature:UF-11 | T-0548 | done | wl-build-web |
 | T-0550 | UF-11.4 rework: back link to Plan, .wl-page, cards in D-0195 order, C-03 equipment, Delete card last with line-strong edge, text-muted input border | web-feature:UF-11 | T-0546, T-0549 | done | wl-build-web |
 | T-0551 | User flows v2 UF-11.2/UF-11.4 text + uf-11-plan-checkin.md UF-11.2 section to the D-0203 layout | product | — | done | wl-spec |
+| T-0553 | PWA update guard: rewrite the wl-in-session entry on bfcache restore (T-0552 review) | web-shell | T-0552 | done | wl-build-web |
