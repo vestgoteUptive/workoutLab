@@ -5,7 +5,7 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { fCache, fitLine, renderSetup, screenIds, serveCache, setOnline } from "./harness.js";
 import { settle } from "./harness.js";
 import type { HistorySet } from "@workoutlab/engine";
-import { NOW } from "./fixtures.js";
+import { NOW, fLibrary } from "./fixtures.js";
 
 const lists = vi.hoisted(() => ({
   fav: [] as string[],
@@ -133,6 +133,18 @@ describe("AC2 no favorites", () => {
     expect(quads.getByText("Back squat")).toBeInTheDocument();
     expect(quads.getByText("Leg extension")).toBeInTheDocument();
     expect(dialog().querySelector('[data-part="favorite-tag"]')).toBeNull();
+  });
+});
+
+describe("an area whose exercises are all favorites", () => {
+  it("has no heading under Today's areas", async () => {
+    lists.fav = fLibrary()
+      .filter((e) => e.kind === "exercise" && e.areas.chest === 1)
+      .map((e) => e.id);
+    expect(lists.fav.length).toBeGreaterThan(0);
+    await toPlan();
+    openSheet();
+    expect(headings()).toEqual(["Add exercise", "Favorites", "Today's areas", "Back", "Quads"]);
   });
 });
 

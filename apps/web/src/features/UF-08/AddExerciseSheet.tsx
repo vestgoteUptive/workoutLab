@@ -84,10 +84,12 @@ export function AddExerciseSheet({
       const lib = catalog.find((e) => e.id === item.exerciseId);
       if (lib !== undefined) for (const a of primaryAreas(lib)) todays.add(a);
     }
-    return AREAS.filter((a) => todays.has(a)).map((area) => ({
-      area,
-      rows: exercises.filter((e) => e.areas[area] === 1 && !favSet.has(e.id)),
-    }));
+    return AREAS.filter((a) => todays.has(a))
+      .map((area) => ({
+        area,
+        rows: exercises.filter((e) => e.areas[area] === 1 && !favSet.has(e.id)),
+      }))
+      .filter((g) => g.rows.length > 0);
   }, [catalog, exercises, items, favSet]);
 
   const appearances = useMemo(() => {
