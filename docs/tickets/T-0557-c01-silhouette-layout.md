@@ -52,12 +52,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the new e2e spec and the existing UF-02 and UF-10 specs green · contracts unchanged · commits start with `T-0557:` and cite UF-02.1 / UF-10.1.
 
 ## Build / accept log
-
-### Build log (frontend-dev, T-0557 C-01)
-- Built: `BodyMap` renders `BodyFigure` above a 3-column label grid (shoulders, chest, back / arms, core, glutes / quads, hamstrings, calves); container query to 2 columns below 18.75rem (so also at 200 % text). Labels are `data-part="label"`; region tap forwards through `onRegionPointer`; label focus/hover sets `highlighted`; region hover sets `data-hover` on its label; compact has no handlers; loading pulses regions via `wl-body-map--pulse`.
-- AC to test: AC-1/2/4/5 `BodyMap.silhouette.test.tsx` (13 tests); AC-3/6/7/8 `tests/e2e/body-map-figure.spec.ts` (real touch/mouse taps, axe on / and /balance zero+data, 320/390/200 % layout, forced colours); AC-9 existing D-0060 tests pass.
-- D-0060 §1 changes to existing tests (meaning kept, superseded layout only): helper `areaEl` now selects `[data-part="label"]` (figure paths also carry `data-area`); qa order test now asserts body order + 3 columns; AC-D8 offline test normalises BodyFigure's per-render `useId` hatch id. `tests/e2e/uf-02-today.spec.ts` lines 195/197 selector narrowed to labels (outside the listed paths; forced by the figure's `data-area` paths).
-- Planted faults (backup copies, restored by cp), each red: attention dropped; no region forwarding; no highlight; no region hover; compact region handler; step ignored; min-height 40; (e2e) no forwarding -> 2 tap tests fail; no container query -> 3 layout tests fail; forced-colours block disabled (body-figure.css copy) -> AC-8 fails; labels unnamed -> 4 axe tests fail.
-- Red run: first full e2e had uf-02 offline cold-start failing (41 `[data-area]` matches); fixed via the selector above. One gate run had a UF-11 vitest flake (passes alone, unrelated); rerun green.
-- Gate: typecheck lint test 19/19; test:repo-checks, format:check, check-all green; full web e2e 301 passed. Screenshot 390 /balance copied to scratchpad/c01-after.png.
-- The ticket did not ask to re-point T-0556's AC-5 spec; left as is.
+Archived in `docs/tickets/log/T-0557.md` (D-0157).

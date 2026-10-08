@@ -132,4 +132,3 @@ GitHub #48 (muscle-group figure like ExerciseDB). Spec `docs/specs/body-map-silh
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0557 | C-01 silhouette layout: figure above a slim label grid, linking, region taps, attention halo; e2e, axe, 320/390, forced colours | web-shell | T-0556 | doing | wl-build-web |
