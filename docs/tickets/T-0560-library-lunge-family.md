@@ -31,3 +31,5 @@ The owner (2026-10-08): "Missing exercise lunges". The library has only `reverse
 None.
 
 ## Build / accept log
+- Orchestrator verification (2026-10-08; the curator had no shell): data/exercises tests 242/242. Planted fault (lateral-lunge removed): 4 failed, restored. gen-seed regenerated, --check ok. Full gate, format, check-all green.
+- Orchestrator verification of the deadlift rows (2026-10-08): data/exercises tests green, seed regenerated and --check ok, format and check-all green.

@@ -15,7 +15,7 @@
   ],
   "cue": "Step back, drop straight down",
   "mistakes": ["Leaning the chest far forward.", "Letting the front knee cave inward."],
-  "variants": ["split-squat", "bodyweight-squat"],
+  "variants": ["split-squat", "bodyweight-squat", "forward-lunge", "walking-lunge", "lateral-lunge"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
