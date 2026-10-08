@@ -21,7 +21,7 @@ bash infra/scripts/supabase-prod-release.sh
 ```
 
 Expected: remote migration history empty, 4 migrations would apply plus the seed, no functions
-deployed, and the line `would apply 4 migrations + seed; would deploy: workouts balance sessions
+deployed, and the line `would apply 4 migrations + seed (always); would deploy: workouts balance sessions
 account`. Paste the masked output into the T-0402b log. If prod already has objects in `public`
 or a history that doesn't match, stop and hand the output to the orchestrator (needs-triage).
 Never run `db reset`, `--force` or `repair` on prod.
@@ -32,7 +32,7 @@ Never run `db reset`, `--force` or `repair` on prod.
 CONFIRM_PROD_RELEASE=csgjsdwuxqtuqpuazzpz bash infra/scripts/supabase-prod-release.sh apply
 ```
 
-It pushes the migrations and seed, deploys `workouts`, `balance`, `sessions`, `account` (each
+It pushes the migrations, applies `supabase/seed.sql` with psql on every run (the CLI skips a changed seed), deploys `workouts`, `balance`, `sessions`, `account` (each
 `verify_jwt` comes from `supabase/config.toml`, all false), then re-runs the plan, which must show
 nothing pending. If it fails halfway, rerun the same command: `db push` skips applied migrations,
 the seed is idempotent and `functions deploy` is repeatable. Don't roll back by hand.

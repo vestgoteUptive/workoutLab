@@ -54,16 +54,19 @@ redact_rows() {
     -e 's/Key (.*)=(.*/Key (<redacted>)=(<redacted>)/'
 }
 mask_secrets() {
-  local p h
-  p="$(esc "$db_pass")"
-  h="$(esc "$db_host")"
-  if [ -n "$db_pass" ] && [ -n "$db_host" ]; then
-    sed -e "s|$p|***|g" -e "s|$h|<host>|g"
-  elif [ -n "$db_pass" ]; then
-    sed -e "s|$p|***|g"
-  else cat; fi
+  local -a ex=()
+  local v
+  for v in "$db_pass" "${PGPASSWORD:-}"; do
+    [ -n "$v" ] && ex+=(-e "s|$(esc "$v")|***|g")
+  done
+  [ -n "$db_host" ] && ex+=(-e "s|$(esc "$db_host")|<host>|g")
+  if [ "${#ex[@]}" -gt 0 ]; then sed "${ex[@]}"; else cat; fi
 }
 mask() { redact_rows | mask_secrets; }
+
+# T-0554: psql reads PG* env vars (PGSSLMODE=require), so no secret is ever in argv.
+# shellcheck source=pg-env.sh
+. "$here/pg-env.sh"
 
 sb() { npx -y "supabase@$CLI_VERSION" "$@" 2>&1 | mask; }
 
@@ -81,7 +84,7 @@ plan() {
   printf 'header = "Authorization: Bearer %s"\n' "$SUPABASE_ACCESS_TOKEN" |
     curl -sS -K - "https://api.supabase.com/v1/projects/$PROD_REF/functions" |
     node -e 'let s="";process.stdin.on("data",d=>s+=d).on("end",()=>{try{const a=JSON.parse(s);if(!Array.isArray(a))throw 0;console.log(a.length?a.map(f=>f.slug+" "+f.status).join("\n"):"(none)")}catch{console.log("(could not read function list)")}})' | mask
-  echo "would apply $n migrations + seed; would deploy: ${FUNCTIONS[*]}"
+  echo "would apply $n migrations + seed (always); would deploy: ${FUNCTIONS[*]}"
   PENDING="$n"
 }
 
@@ -93,6 +96,13 @@ fi
 echo "== apply: db push =="
 # --yes: no TTY in CI, so never wait on the CLI prompt (T-0543). The confirm lock above is the gate.
 sb db push --db-url "$PROD_DB_URL" --include-seed --yes
+# T-0554: the CLI skips a changed seed.sql ("Remote database is up to date"), so apply it ourselves.
+# The seed is an idempotent upsert (migration-guard checkSeed forbids DROP/TRUNCATE/DELETE).
+echo "== apply: seed (always) =="
+if ! { psql -v ON_ERROR_STOP=1 --single-transaction -f supabase/seed.sql 2>&1 | mask; }; then
+  echo "seed failed; not deploying functions" >&2
+  exit 1
+fi
 for f in "${FUNCTIONS[@]}"; do
   echo "== deploy $f =="
   sb functions deploy "$f" --project-ref "$PROD_REF"
