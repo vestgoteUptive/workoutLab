@@ -1,6 +1,6 @@
 ---
 id: T-0560
-title: "Library: the lunge family (forward, walking, dumbbell, barbell, lateral lunge, plus Bulgarian split squat if missing), original text; owner request"
+title: "Library: the lunge family (forward, walking, dumbbell, barbell, lateral lunge, Bulgarian split squat) plus barbell and sumo deadlift; original text; owner requests"
 lane: content
 screens: [UF-04.1, UF-04.2]
 decisions: [D-0192, D-0033, D-0005]
@@ -19,6 +19,7 @@ The owner (2026-10-08): "Missing exercise lunges". The library has only `reverse
   - `barbell-lunge` (barbell, rack)
   - `lateral-lunge` (none)
   - `bulgarian-split-squat` (bench, optional dumbbell): only if no equivalent row exists; check `split-squat`
+- AC-1b: `barbell-deadlift` (conventional) and `sumo-deadlift` (barbell), modelled on `romanian-deadlift-barbell`, with symmetric variant links to the RDL and single-leg deadlift rows (owner 2026-10-08: "Barbell deadlift is also missing").
 - AC-2: variant links are symmetric with `reverse-lunge`, `split-squat` and each other, so the library variant test passes.
 - AC-3: `supabase/seed.sql` is regenerated (`node supabase/scripts/gen-seed.mjs`), and `--check` passes. The release applies it automatically (T-0554).
 - AC-4: the library validators and tests pass. A planted fault (one row removed) fails the count/coverage test.
