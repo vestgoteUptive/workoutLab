@@ -395,3 +395,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0567 | Device cache: generalise excluded.ts into one list-cache helper; Dexie v4 favoriteCache, refreshAll read, writes after confirm, cross-list drop, hooks | web-shell | T-0564 | done | wl-build-web |
 | T-0579 | UF-09.9 "Do {name} later" button, UF-09.6 status, failure alert, e2e offline reload | web-feature:UF-09 | T-0578, T-0572 | done | wl-build-web |
 | T-0912 | Flaky UF-11 plan-checkins-routines AC6 under load | web-feature:UF-11 | — | done | wl-build-web |
+| T-0568 | UF-04.2 Favorite toggle with move lines + UF-04.1 Favorite tag | web-feature:UF-04 | T-0541, T-0558, T-0561, T-0567 | done (note: two offline lines can show on UF-04.2) | wl-build-web |

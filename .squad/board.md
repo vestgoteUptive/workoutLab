@@ -127,7 +127,6 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 |---|---|---|---|---|---|
 | T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | review (PR) | wl-build-data |
 | T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | todo | wl-build-backend |
-| T-0568 | UF-04.2 Favorite toggle with move lines + UF-04.1 Favorite tag | web-feature:UF-04 | T-0541, T-0558, T-0561, T-0567 | doing | wl-build-web |
 | T-0569 | UF-11.6 Favorite exercises at /plan/favorites + UF-11.2 row + UF-11.5 move line | web-feature:UF-11 | T-0561, T-0567 | doing | wl-build-web |
 | T-0570 | UF-02.1/UF-02.2 preview passes favoriteIds | web-feature:UF-02 | T-0542, T-0562, T-0567 | todo | wl-build-web |
 | T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | todo | wl-build-web |
