@@ -50,17 +50,8 @@ mask_secrets() {
 }
 mask() { redact_rows | mask_secrets; }
 
-# L2: connection settings and the password go through the environment, never argv.
-urldecode() { printf '%b' "${1//%/\\x}"; }
-db_user="$(urldecode "${userinfo%%:*}")"
-PGPASSWORD="$(urldecode "$db_pass")"
-PGHOST="$db_host"
-db_rest="${hostport#*:}"
-if [ "$db_rest" = "$hostport" ]; then PGPORT=5432; else PGPORT="${db_rest%%/*}"; fi
-PGDATABASE="${hostport#*/}"
-PGDATABASE="${PGDATABASE%%\?*}"
-PGSSLMODE=require # N4: the URL query string is not parsed, so force TLS here
-export PGSSLMODE PGUSER="$db_user" PGPASSWORD PGHOST PGPORT PGDATABASE
+# shellcheck source=pg-env.sh
+. "$here/pg-env.sh" # L2/N4: PG* env vars, PGSSLMODE=require
 
 dump() { # <schema> <outfile>; stderr is masked, stdout (the dump) goes only into age
   local schema="$1" file="$2" err

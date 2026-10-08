@@ -29,6 +29,12 @@ or DELETE FROM); `DETAIL:`, `Failing row` and `Key (..)=(..)` lines are redacted
 the repo is public. A failed release can leave prod on the new schema with older functions, so
 migrations must stay expand/contract (backward compatible).
 
+The seed is applied on every release (T-0554): the CLI's `db push --include-seed` only seeds a file
+it hasn't applied before and skips a changed `seed.sql` ("Remote database is up to date"). So
+`supabase-prod-release.sh apply` runs `psql -v ON_ERROR_STOP=1 --single-transaction -f
+supabase/seed.sql` after `db push` and before the function deploys, with `PG*` env vars and
+`PGSSLMODE=require` (shared `infra/scripts/pg-env.sh`), never argv. A failing seed stops the release.
+
 ### Restore from a backup
 
 Download the `prod-backup-<sha>` artifact (7 days), then, with your private key:
