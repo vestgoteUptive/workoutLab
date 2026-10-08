@@ -310,8 +310,14 @@ describe("T-0308c AC-7 exports, strings", () => {
   // gone from here, not weakened — the first-shown insert and the two buttons' writes are this
   // file's own fixture's concern now, covered in the sibling spec.
 
-  it("index.tsx exports exactly CheckinCard, EditPlan and Plan (plus AccountSettings)", async () => {
+  it("index.tsx exports exactly CheckinCard, EditPlan and Plan (plus AccountSettings, ExcludedExercises)", async () => {
     const mod = await import("../index.js");
-    expect(Object.keys(mod).sort()).toEqual(["AccountSettings", "CheckinCard", "EditPlan", "Plan"]);
+    expect(Object.keys(mod).sort()).toEqual([
+      "AccountSettings",
+      "CheckinCard",
+      "EditPlan",
+      "ExcludedExercises",
+      "Plan",
+    ]);
   });
 });

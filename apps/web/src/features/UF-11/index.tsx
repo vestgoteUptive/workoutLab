@@ -19,6 +19,7 @@ import { Link } from "react-router";
 import { en } from "../../lib/i18n/en.js";
 import { AccountSettingsBody } from "./AccountSettingsBody.js";
 import { CheckinCard } from "./CheckinCard.js";
+import { ExcludedBody } from "./ExcludedBody.js";
 import { EditPlanBody } from "./EditPlanBody.js";
 import "./plan.css";
 import { PlanBody } from "./PlanBody.js";
@@ -84,6 +85,25 @@ export function AccountSettings({ now = systemClock }: PlanScreenProps = {}) {
       </Link>
       <h1>{en.screens.accountSettings}</h1>
       <AccountSettingsBody clock={now} />
+    </div>
+  );
+}
+
+export function ExcludedExercises() {
+  return (
+    <div data-screen-id="UF-11.5" className="wl-page">
+      <Link
+        className="wl-button--text wl-account__back"
+        to="/plan"
+        aria-label={en.uf11.excludedScreen.back}
+      >
+        <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+        {en.screens.plan}
+      </Link>
+      <h1>{en.screens.excludedExercises}</h1>
+      <ExcludedBody />
     </div>
   );
 }
