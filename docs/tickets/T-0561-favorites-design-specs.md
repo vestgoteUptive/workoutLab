@@ -46,3 +46,8 @@ None. No token change (D-0202 §10).
 Every AC has a check-all pass or a reviewed section · `node .github/scripts/check-all.mjs` green · `tokens.json` unchanged · commits start with `T-0561:` and cite UF-11.6 / UF-04.2.
 
 ## Build / accept log
+
+### Design build 2026-10-08
+- Added `screens/UF-11.6.md`; Favorite sections in `UF-04.1-UF-04.2.md`, `UF-08.2.md`, `UF-11.2.md`. tokens.json untouched; no hex. T-0541 had no committed UI on its branch, so the toggle layout follows the D-0191 chip pattern.
+- AC1 UF-11.6.md; AC2 toggle section; AC3 tags + UF-11.2 row; AC4 no hex/tokens unchanged; AC5 label-uniqueness paragraphs in UF-11.6 and UF-04.2; AC6 check-all rc=0.
+- Results: check-all pass; format:check pass; design-tokens tests 116/116 pass.
