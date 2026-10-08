@@ -62,6 +62,8 @@ export interface SuggestedProps {
   addedIds?: readonly string[];
   /** The full library, for UF-08.5's search. With `onAdd`, shows "Add exercise". */
   catalog?: readonly LibraryExercise[];
+  /** T-0574: exercise id to the reason its Add is disabled on UF-08.5. */
+  blocked?: Readonly<Record<string, string>>;
   /** The host's Add: null when the exercise is now in the plan, else the refusal text. */
   onAdd?: (exerciseId: string) => string | null;
 }
@@ -153,6 +155,7 @@ export function Suggested({
   onSwapFocused,
   addedIds = [],
   catalog,
+  blocked,
   onAdd,
 }: SuggestedProps) {
   const navigate = useNavigate();
@@ -451,6 +454,7 @@ export function Suggested({
           catalog={catalog ?? []}
           items={items}
           budgetMin={workout.budgetMin}
+          {...(blocked !== undefined ? { blocked } : {})}
           onAdd={(id) => {
             if (closing.current) return null;
             const refusal = onAdd(id);

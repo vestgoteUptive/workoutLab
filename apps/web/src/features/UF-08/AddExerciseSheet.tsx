@@ -18,6 +18,8 @@ export interface AddExerciseSheetProps {
   catalog: readonly LibraryExercise[];
   items: readonly WorkoutItem[];
   budgetMin: number;
+  /** Exercise id to its disabled-row reason line (T-0574); absent ids can be added. */
+  blocked?: Readonly<Record<string, string>>;
   /** Returns null when the exercise was added (the host closes the sheet), else the refusal. */
   onAdd: (exerciseId: string) => string | null;
   onClose: () => void;
@@ -35,6 +37,7 @@ export function AddExerciseSheet({
   catalog,
   items,
   budgetMin,
+  blocked = {},
   onAdd,
   onClose,
 }: AddExerciseSheetProps) {
@@ -122,6 +125,8 @@ export function AddExerciseSheet({
 
   function row(e: LibraryExercise, areaSuffix?: string) {
     const here = inPlan.has(e.id);
+    const reason = here ? undefined : blocked[e.id];
+    const reasonId = `${titleId}-why-${e.id}${areaSuffix ? `-${areaSuffix}` : ""}`;
     return (
       <li key={e.id} className="wl-uf08__pick" data-part="pick-row" data-id={e.id}>
         <span className="wl-uf08__pick-name">{e.name}</span>
@@ -133,15 +138,26 @@ export function AddExerciseSheet({
             {en.uf08.inWorkout}
           </span>
         ) : (
-          <button
-            type="button"
-            className="wl-uf08__ghost wl-uf08__pick-add"
-            data-part="pick-add"
-            aria-label={en.uf08.addName(e.name, areaSuffix)}
-            onClick={() => add(e)}
-          >
-            {en.uf08.add}
-          </button>
+          <>
+            {reason !== undefined ? (
+              <span id={reasonId} className="wl-uf08__row-detail" data-part="pick-reason">
+                {reason}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              className="wl-uf08__ghost wl-uf08__pick-add"
+              data-part="pick-add"
+              aria-label={en.uf08.addName(e.name, areaSuffix)}
+              aria-disabled={reason !== undefined ? "true" : undefined}
+              aria-describedby={reason !== undefined ? reasonId : undefined}
+              onClick={() => {
+                if (reason === undefined) add(e);
+              }}
+            >
+              {en.uf08.add}
+            </button>
+          </>
         )}
       </li>
     );

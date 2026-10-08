@@ -21,7 +21,12 @@ import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from "r
 import { Link, useNavigate, useSearchParams } from "react-router";
 import {
   AREAS,
+  MAX_ITEMS,
+  MAX_ITEMS_PER_AREA,
   excludedOutAreas,
+  isEligible,
+  primaryAreas,
+  recoveringAreas,
   removeItem,
   suggest,
   type Area,
@@ -242,6 +247,11 @@ export function SessionSetup({
     () => (data ? excludedOutAreas(data.profile, data.library, stored) : []),
     [data, stored],
   );
+  // UF-08.5 row states 5-6 (T-0574): computed once per data and time, on the device.
+  const recovering = useMemo(
+    () => (data ? recoveringAreas(data.history, data.library, nowIso) : []),
+    [data, nowIso],
+  );
   const missing =
     state.kind === "missing" || (data !== null && !pastSetup && storedLoaded && workout === null);
 
@@ -369,10 +379,38 @@ export function SessionSetup({
       }
       const ex = data.library.find((e) => e.id === id);
       const name = ex?.name ?? id;
+      // Caps (D-0205 §4): main + added already hold 8, or two with the same primary area.
+      const held = new Set(adjusted.addedIds);
+      if (adjusted.workout.plan.mainLiftId !== null) held.add(adjusted.workout.plan.mainLiftId);
+      held.delete(id);
+      if (held.size >= MAX_ITEMS) return en.uf08.capItems(MAX_ITEMS);
+      if (ex !== undefined) {
+        for (const a of primaryAreas(ex)) {
+          const n = [...held].filter((h) => {
+            const lib = data.library.find((l) => l.id === h);
+            return lib !== undefined && primaryAreas(lib).includes(a);
+          }).length;
+          if (n >= MAX_ITEMS_PER_AREA) return en.uf08.capArea(en.bodyMap.areas[a]);
+        }
+      }
       return ex?.type === "compound"
         ? en.uf08.noFitCompound(name, budgetMin)
         : en.uf08.noFitIsolation(name, budgetMin);
     };
+    // UF-08.5 disabled rows, first match wins (D-0205 §3). "In this workout" is the sheet's own.
+    const blocked: Record<string, string> = {};
+    for (const e of data.library) {
+      if (e.kind !== "exercise") continue;
+      const areas = primaryAreas(e);
+      const skip = areas.find((a) => avoidAreas.includes(a));
+      const rec = areas.find((a) => recovering.includes(a));
+      if (stored.includes(e.id)) blocked[e.id] = en.uf08.reasonExcluded;
+      else if (!isEligible(e, { ...data.profile, level: "advanced" }, []))
+        blocked[e.id] = en.uf08.reasonEquipment;
+      else if (!isEligible(e, data.profile, [])) blocked[e.id] = en.uf08.reasonLevel;
+      else if (skip !== undefined) blocked[e.id] = en.uf08.reasonSkipping(en.bodyMap.areas[skip]);
+      else if (rec !== undefined) blocked[e.id] = en.uf08.reasonRecovering(en.bodyMap.areas[rec]);
+    }
     return (
       <Suggested
         workout={adjusted.workout}
@@ -411,6 +449,7 @@ export function SessionSetup({
         onSwapFocused={() => setFocusSwapItem(null)}
         addedIds={adjusted.addedIds}
         catalog={data.library}
+        blocked={blocked}
         onAdd={addExercise}
       />
     );
