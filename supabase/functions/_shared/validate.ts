@@ -82,6 +82,7 @@ const SESSION_INPUT_KEYS = [
   "pinnedIds",
   "excludeIds",
   "avoidAreas",
+  "favoriteIds",
 ] as const;
 
 /** `sessionInput.avoidAreas` (D-0191): optional array of the nine areas; `uniqueItems: true` in
@@ -98,6 +99,15 @@ function validateAvoidAreas(v: unknown): Area[] {
     seen.add(a);
   }
   return v as Area[];
+}
+
+/** `sessionInput.favoriteIds` (D-0202): optional array of exercise ids; `uniqueItems: true` in
+ * api/openapi.yaml, so a duplicate is 400 (T-0565). */
+function validateFavoriteIds(v: unknown): string[] {
+  const field = "sessionInput.favoriteIds";
+  const ids = isExerciseIdArray(v, field);
+  if (new Set(ids).size !== ids.length) throw badRequest(`${field} must not contain duplicates`);
+  return ids;
 }
 
 export function validateSessionInput(value: unknown): SessionInput {
@@ -131,6 +141,8 @@ export function validateSessionInput(value: unknown): SessionInput {
 
   const avoidAreas = "avoidAreas" in value ? validateAvoidAreas(value.avoidAreas) : undefined;
 
+  const favoriteIds = "favoriteIds" in value ? validateFavoriteIds(value.favoriteIds) : undefined;
+
   return {
     budgetMin,
     warmupInBudget,
@@ -140,6 +152,7 @@ export function validateSessionInput(value: unknown): SessionInput {
     pinnedIds: pinned,
     excludeIds: excluded,
     ...(avoidAreas === undefined ? {} : { avoidAreas }),
+    ...(favoriteIds === undefined ? {} : { favoriteIds }),
   };
 }
 

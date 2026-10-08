@@ -39,3 +39,8 @@ None (implements T-0565's openapi change).
 Every AC has a passing test · `pnpm -w typecheck lint test` green · contracts unchanged · commits start with `T-0566:` and cite UF-08.1.
 
 ## Build / accept log
+
+- 2026-10-08 backend-dev: `validate.ts` accepts optional `sessionInput.favoriteIds` (non-empty strings, no duplicates, 400 otherwise); core passes sessionInput through unchanged. Vendor `--check` exit 0 (already current).
+- AC->test (`supabase/tests/functions/unit/workouts-favorite-ids.test.ts`, run with deno -A): AC1 snapshot equality (fixture library, not the R7-E4 live body); AC2 spy sees favoriteIds + push-up enters plan on empty history (fixture library has no db-bench-press); AC3 non-array/[3]/null/[""]/duplicates -> 400 invalid_request; AC4 vendor --check 0.
+- Planted faults (all red, restored from backup): return drops favoriteIds -> 2 AC2 tests fail; duplicate check off -> dup test fails; key not allowed -> 2 AC2 tests fail.
+- Gate: typecheck lint test (19/19), test:repo-checks 369 pass, format:check, check-all green.
