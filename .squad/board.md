@@ -115,9 +115,8 @@ User request "exclude exercises and manage the list" (spec `docs/specs/excluded-
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0539 | UF-05.1/UF-08.3 swap sheet: stored list to rankSwaps, "Don't suggest {name} again" checkbox, "No alternatives left" empty state. After H-27 | web-feature:UF-05 | T-0532, T-0533, T-0536, T-0537 | todo | wl-build-web |
-| T-0541 | UF-04.2 "Don't suggest this"/"Suggest again" + UF-04.1 "Not suggested" tag. After H-27 | web-feature:UF-04 | T-0532, T-0536, T-0537 | todo | wl-build-web |
-| T-0542 | UF-02.1/UF-02.2 PREVIEW_INPUT passes the stored list to suggest | web-feature:UF-02 | T-0536 | todo | wl-build-web |
+| T-0539 | UF-05.1/UF-08.3 swap sheet: stored list to rankSwaps, "Don't suggest {name} again" checkbox, "No alternatives left" empty state. After H-27 | web-feature:UF-05 | T-0532, T-0533, T-0536, T-0537 | doing | wl-build-web |
+| T-0541 | UF-04.2 "Don't suggest this"/"Suggest again" + UF-04.1 "Not suggested" tag. After H-27 | web-feature:UF-04 | T-0532, T-0536, T-0537 | doing | wl-build-web |
 
 ### GitHub #37/#45 visual foundation (D-0203)
 GitHub #37 (Plan is confusing) and #45 (Account looks bad). Specs: `docs/specs/visual-foundation.md`, `Design-docs/docs/design/screens/UF-11.2.md`, `UF-11.4.md`. Grooming defaults and splits: D-0204. **T-0552 is high priority** (installed apps run stale builds). T-0548 → T-0549 → T-0550 run serially (same UF-11 folder), and T-0540 rebases on T-0548. T-0545 and T-0546 may run in parallel; both run the full web e2e suite.
@@ -126,7 +125,35 @@ GitHub #37 (Plan is confusing) and #45 (Account looks bad). Specs: `docs/specs/v
 |---|---|---|---|---|---|
 
 ### GitHub #48 body figure (D-0207)
-GitHub #48 (muscle-group figure like ExerciseDB). Spec `docs/specs/body-map-silhouette.md`, decision D-0207 (original art; supersedes D-0060 §1 only). The e2e, axe, 320/390 screenshots and forced-colours checks are ACs inside T-0557 and T-0558 (no separate qa ticket). **UF-04 order (same folder, never parallel):** T-0558 first, then T-0541, then the D-0202 favorites toggle (not groomed yet; it must depend on T-0558 and T-0541). T-0557 and T-0558 may run in parallel after T-0556.
+GitHub #48 (muscle-group figure like ExerciseDB). Spec `docs/specs/body-map-silhouette.md`, decision D-0207 (original art; supersedes D-0060 §1 only). The e2e, axe, 320/390 screenshots and forced-colours checks are ACs inside T-0557 and T-0558 (no separate qa ticket). **UF-04 order (same folder, never parallel):** T-0558 first, then T-0541, then the D-0202 favorites toggle (T-0568, depends on T-0558 and T-0541). T-0557 and T-0558 may run in parallel after T-0556.
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
+
+### GitHub #46 favorites (D-0202)
+GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decision D-0202 (amends D-0199 §1 §4, D-0136 §2). Reuses the D-0199 pattern (T-0535 table, T-0536 cache generalised by T-0567, T-0540 screen, T-0541 button). **Release is automatic on merge (D-0201):** T-0564's migration carries `-- release: destructive-approved D-0202` for the guard; no human step. Engine T-0562 → T-0563 run serially (same files); T-0562 checks R7-E21…E27 against the code first and raises triage on any mismatch. **UF-04 order:** T-0541 → T-0568. **UF-02 order:** T-0542 → T-0570. **UF-08:** T-0571 is the last ticket of the D-0205 UF-08 chain below. T-0569 edits routes.ts (shared). T-0564 touches `tests/e2e/fixtures/**` (full e2e).
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | doing | wl-build-engine |
+| T-0564 | favorite_exercises table + mutual-exclusion triggers (destructive-approved D-0202 header), data-model, database.gen, pgTAP 001/007/018/020, export 9th key, e2e mock | data | — | doing | wl-build-data |
+| T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | todo | wl-build-data |
+| T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | todo | wl-build-backend |
+| T-0567 | Device cache: generalise excluded.ts into one list-cache helper; Dexie v4 favoriteCache, refreshAll read, writes after confirm, cross-list drop, hooks | web-shell | T-0564 | todo | wl-build-web |
+| T-0568 | UF-04.2 Favorite toggle with move lines + UF-04.1 Favorite tag | web-feature:UF-04 | T-0541, T-0558, T-0561, T-0567 | todo | wl-build-web |
+| T-0569 | UF-11.6 Favorite exercises at /plan/favorites + UF-11.2 row + UF-11.5 move line | web-feature:UF-11 | T-0561, T-0567 | todo | wl-build-web |
+| T-0570 | UF-02.1/UF-02.2 preview passes favoriteIds | web-feature:UF-02 | T-0542, T-0562, T-0567 | todo | wl-build-web |
+| T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | todo | wl-build-web |
+
+### Add and reorder (D-0205)
+Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D-0205 (no engine, API or data-model change). Items A–G: A = T-0572, B = T-0573 + T-0574 (split for size), C = T-0575, D = T-0576, E = T-0577, F = T-0578, G = T-0579. **UF-08 folder, strictly serial after T-0538 (done):** T-0573 → T-0574 → T-0575 → T-0576 → T-0577 → T-0571 (favorites). T-0572 runs after T-0561 (both edit `screens/UF-08.2.md`). T-0578 (UF-09 machine) has no deps; T-0579 follows it in the same folder.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0573 | UF-08.5 part 1: sheet, search, Today's areas, In this workout, Add = visit pinnedIds, Added by you, time refusal, chips/Shuffle keep adds + Doesn't fit line, offline | web-feature:UF-08 | T-0538, T-0572 | todo | wl-build-web |
+| T-0574 | UF-08.5 part 2: disabled row states, cap refusals, Remove of an added item, re-add a removed item | web-feature:UF-08 | T-0573 | todo | wl-build-web |
+| T-0575 | UF-08 Start with this (compound only; mainLiftId; new main lift first) | web-feature:UF-08 | T-0574 | todo | wl-build-web |
+| T-0576 | UF-08.2 Reorder mode + order merge across re-suggests + Start writes display order | web-feature:UF-08 | T-0575 | todo | wl-build-web |
+| T-0577 | UF-08.5 Favorites section first on the empty query + Favorite tag on rows | web-feature:UF-08 | T-0576, T-0567, T-0561 | todo | wl-build-web |
+| T-0578 | UF-09 Do this later: canDoLater, permutation, Trim-path plan write, machine event remapping itemIndex/skippedItems, restore realign | web-feature:UF-09 | — | doing | wl-build-web |
+| T-0579 | UF-09.9 "Do {name} later" button, UF-09.6 status, failure alert, e2e offline reload | web-feature:UF-09 | T-0578, T-0572 | todo | wl-build-web |

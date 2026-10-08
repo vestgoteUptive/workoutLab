@@ -35,6 +35,8 @@ import {
   type EngineProfile,
   type LibraryExercise,
 } from "@workoutlab/shared";
+import { useAuth } from "../../lib/auth/auth-context.js";
+import { useExcludedList } from "../../lib/offline/excluded-hooks.js";
 import { loadEngineHistory } from "../../lib/offline/engine-feed.js";
 import {
   lastSyncedAt,
@@ -102,6 +104,7 @@ async function readSynced(): Promise<string | null> {
 async function readCache(
   now: Date,
   timeZone: string,
+  excludeIds: readonly string[],
 ): Promise<Exclude<TodayState, { status: "loading" }>> {
   const syncedRead = readSynced();
   try {
@@ -120,7 +123,7 @@ async function readCache(
       status: "ready",
       result,
       hasHardSet: anyHardSet(history, library),
-      workout: preview(history, targets, profile, library, nowIso, timeZone),
+      workout: preview(history, targets, profile, library, nowIso, timeZone, excludeIds),
       library,
       lastSyncedAt: await syncedRead,
     };
@@ -137,9 +140,12 @@ function preview(
   library: readonly LibraryExercise[],
   nowIso: string,
   timeZone: string,
+  excludeIds: readonly string[],
 ): Workout | null {
   try {
-    return suggest(history, targets, profile, library, PREVIEW_INPUT, nowIso, timeZone);
+    // T-0542 (D-0199 §5): the stored excluded list is the only field added to PREVIEW_INPUT.
+    const input: SessionInput = { ...PREVIEW_INPUT, excludeIds: [...excludeIds] };
+    return suggest(history, targets, profile, library, input, nowIso, timeZone);
   } catch {
     return null;
   }
@@ -202,6 +208,13 @@ function settledOrCapped(promise: Promise<unknown>, ms: number): Cap {
 export function useToday(now: Date, timeZone: string, signedIn: boolean, revision = 0): TodayState {
   const [state, setState] = useState<TodayState>({ status: "loading" });
   const nowIso = now.toISOString();
+  // T-0542: the stored excluded list (live). Nothing is computed until its first read answers.
+  const { userId } = useAuth();
+  const excluded = useExcludedList(userId);
+  const excludedKey = excluded.ids.join(",");
+  const excludedRef = useRef<readonly string[]>(excluded.ids);
+  excludedRef.current = excluded.ids;
+  const excludedLoaded = excluded.loaded;
   /** Whether the screen is mounted. Only the unmount clears it. */
   const mounted = useRef(false);
   /** The clock and tz of the latest cache-read effect run; a re-read for older ones never lands. */
@@ -226,21 +239,24 @@ export function useToday(now: Date, timeZone: string, signedIn: boolean, revisio
   // 1. The cache read, on mount and whenever the clock or tz changes. Nothing on the network is
   //    awaited before it. Each run owns its `cancelled` flag: an older read never overwrites.
   useEffect(() => {
+    if (!excludedLoaded) return;
     let cancelled = false;
     const current = { nowIso, timeZone };
     inputs.current = current;
-    latestRead.current = readCache(new Date(nowIso), timeZone).then((cached) => {
-      if (!cancelled) setState(cached);
-    });
+    latestRead.current = readCache(new Date(nowIso), timeZone, excludedRef.current).then(
+      (cached) => {
+        if (!cancelled) setState(cached);
+      },
+    );
     return () => {
       cancelled = true;
     };
-  }, [nowIso, timeZone, revision]);
+  }, [nowIso, timeZone, revision, excludedLoaded, excludedKey]);
 
   // 2. The refresh (D-0113): only online and signed in, at the first such commit of this mount,
   //    never again. `stale` and `signed-out` get none. The 3 s cap counts from when it starts.
   useEffect(() => {
-    if (refreshStarted.current || !signedIn || !navigator.onLine) return;
+    if (refreshStarted.current || !signedIn || !navigator.onLine || !excludedLoaded) return;
     refreshStarted.current = true;
     // Its rejection is handled inside `settledOrCapped` (D-0104).
     const capped = settledOrCapped(refreshAll(new Date(nowIso), timeZone), REFRESH_CAP_MS);
@@ -251,10 +267,10 @@ export function useToday(now: Date, timeZone: string, signedIn: boolean, revisio
       await latestRead.current;
       if (!mounted.current) return;
       const at = inputs.current;
-      const fresh = await readCache(new Date(at.nowIso), at.timeZone);
+      const fresh = await readCache(new Date(at.nowIso), at.timeZone, excludedRef.current);
       if (mounted.current && inputs.current === at) setState(fresh);
     })();
-  }, [signedIn, nowIso, timeZone]);
+  }, [signedIn, nowIso, timeZone, excludedLoaded]);
 
   return state;
 }

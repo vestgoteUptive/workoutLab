@@ -78,7 +78,7 @@ export declare function buildItem(spec: ItemSpec, rc: ReasonContext): WorkoutIte
  * Rule 7.2 candidate ranking for `area` at session start (R7-E7): the ids of the eligible
  * exercises with weight 1.0 there and no recovering primary area.
  */
-export declare function rankCandidates(area: Area, history: readonly HistorySet[], targets: readonly AreaTarget[], profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], sessionInput: Pick<SessionInput, "excludeIds" | "avoidAreas">, now: Instant, tz: TimeZone): string[];
+export declare function rankCandidates(area: Area, history: readonly HistorySet[], targets: readonly AreaTarget[], profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], sessionInput: Pick<SessionInput, "excludeIds" | "avoidAreas" | "favoriteIds">, now: Instant, tz: TimeZone): string[];
 /**
  * The next workout (UF-08.1, UF-08.4; rules 7, 10). Pure: the same inputs give a
  * deep-equal result, inputs are never mutated, and history/library order doesn't matter.
@@ -86,5 +86,7 @@ export declare function rankCandidates(area: Area, history: readonly HistorySet[
  * `profile.goal` picks the rule 7.2 rep slots only (D-0061 §1, D-0095); absent means
  * `build_muscle`, and an unknown goal throws `RangeError`. `sessionInput.avoidAreas` (rule 6.1,
  * D-0191 §2) skips areas like recovering ones for selection only; absent means `[]`.
+ * `sessionInput.favoriteIds` (rule 0.2, D-0202 §3) ranks favorites first among an area's
+ * candidates; absent means `[]`.
  */
 export declare function suggest(history: readonly HistorySet[], targets: readonly AreaTarget[], profile: SuggestProfile, library: readonly LibraryExercise[], sessionInput: SessionInput, now: Instant, tz: TimeZone): Workout;
