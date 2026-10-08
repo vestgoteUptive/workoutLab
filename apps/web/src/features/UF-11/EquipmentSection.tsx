@@ -7,6 +7,7 @@
 // `lib/offline` only through its public surface (`loadProfile`, `refreshProfile`, `refreshAll`,
 // `currentUserId`) and `lib/auth/client.js` for the one `profiles.update` write (D-0071 §8).
 import { useEffect, useRef, useState } from "react";
+import { Checkbox } from "../../components/checkbox/index.js";
 import { en } from "../../lib/i18n/en.js";
 import { supabase } from "../../lib/auth/client.js";
 import { currentUserId, loadProfile, refreshAll, refreshProfile } from "../../lib/offline/index.js";
@@ -124,8 +125,8 @@ export function EquipmentSection({ clock }: { clock: Clock }) {
   if (!loaded) return null;
   if (cold) {
     return (
-      <section className="wl-plan__section">
-        <p>{a.coldCache}</p>
+      <section className="wl-card" aria-label={a.legend}>
+        <p className="wl-muted">{a.coldCache}</p>
       </section>
     );
   }
@@ -168,28 +169,45 @@ export function EquipmentSection({ clock }: { clock: Clock }) {
   }
 
   return (
-    <fieldset className="wl-plan__section">
-      <legend>{a.legend}</legend>
-      <p>{a.hint}</p>
-      {ITEMS.map((item) => (
-        <label key={item} className="wl-plan__radio" data-checked={checked.has(item)}>
-          <input type="checkbox" checked={checked.has(item)} onChange={() => toggle(item)} />
-          <span>{itemLabel(item)}</span>
-        </label>
-      ))}
-      <div className="wl-plan__actions">
-        <button
-          type="button"
-          className="wl-plan__button wl-plan__button--primary"
-          disabled={!canSave}
-          onClick={() => void onSave()}
-        >
-          {saveState === "saving" ? a.saving : a.save}
-        </button>
-      </div>
-      {!online ? <p>{a.connectToSave}</p> : null}
-      {saveState === "saved" ? <p role="status">{a.saved}</p> : null}
-      {saveState === "failed" ? <p role="alert">{a.saveFailed}</p> : null}
-    </fieldset>
+    <section className="wl-card">
+      <fieldset className="wl-account__fieldset">
+        <legend className="wl-label">{a.legend}</legend>
+        <p className="wl-muted">{a.hint}</p>
+        <div className="wl-account__equipment">
+          {ITEMS.map((item) => (
+            <Checkbox
+              key={item}
+              label={itemLabel(item)}
+              checked={checked.has(item)}
+              onChange={() => toggle(item)}
+            />
+          ))}
+        </div>
+      </fieldset>
+      <button
+        type="button"
+        className="wl-button--primary"
+        disabled={!canSave}
+        aria-describedby={!online ? "wl-equipment-offline" : undefined}
+        onClick={() => void onSave()}
+      >
+        {saveState === "saving" ? a.saving : a.save}
+      </button>
+      {!online ? (
+        <p id="wl-equipment-offline" className="wl-caption">
+          {a.connectToSave}
+        </p>
+      ) : null}
+      {saveState === "saved" ? (
+        <p role="status" className="wl-muted">
+          {a.saved}
+        </p>
+      ) : null}
+      {saveState === "failed" ? (
+        <p role="alert" className="wl-muted">
+          {a.saveFailed}
+        </p>
+      ) : null}
+    </section>
   );
 }

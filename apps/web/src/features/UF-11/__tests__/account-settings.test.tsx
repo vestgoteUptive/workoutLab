@@ -151,7 +151,8 @@ describe("T-0310d AC-D3 email", () => {
       JSON.stringify({ access_token: "t", user: { id: TEST_USER, email: EMAIL } }),
     );
     mount();
-    expect(screen.getByText(`Signed in as ${EMAIL}`)).toBeInTheDocument();
+    expect(screen.getByText("Signed in as")).toBeInTheDocument();
+    expect(screen.getByText(EMAIL)).toBeInTheDocument();
   });
 
   it("T-0310d AC-D3 contrast: a null email shows no Signed in as line", () => {

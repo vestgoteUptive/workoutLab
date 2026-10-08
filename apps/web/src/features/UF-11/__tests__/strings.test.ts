@@ -127,6 +127,10 @@ describe("AC-B16 no second string catalogue", () => {
       // T-0549: SVG path data of the New routine plus icon and the notice info icon.
       "M12 5v14M5 12h14",
       "M12 11v5M12 8h.01",
+      // T-0550 UF-11.4: back chevron, sign-out and download icon path data (SVG, not copy).
+      "M15 5l-7 7 7 7",
+      "M9 4H5v16h4M16 8l4 4-4 4M20 12H9",
+      "M12 4v11M7 11l5 5 5-5M5 20h14",
       // T-0548 UF-11.2: route path of the "See this period in Balance" link, not copy.
       "/balance",
       "/plan/routines/new",
