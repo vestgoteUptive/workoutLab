@@ -359,3 +359,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0547 | Landing fonts.css + preload; `font-src 'self'` in _headers and the t0511 test (security sign-off); re-run T-0309 AC23 | landing | T-0544 | done | wl-build-web |
 | T-0552 | **High priority.** PWA applies new builds: update check on load and resume; reload only on a route change to, or resume on, a tab screen; never on /session/* or mid-form; never on first install (D-0204 §3–§4) | web-shell | — | done | wl-build-web |
 | T-0548 | UF-11.2 part 1: .wl-page on /plan and /plan/edit, header + purpose line, "Your plan" card with Edit plan, Targets tile grid (no "From your plan"), "See this period in Balance"; copy-test updates logged | web-feature:UF-11 | T-0546 | done | wl-build-web |
+| T-0549 | UF-11.2 part 2: check-in card restyle, Check-ins and Routines cards, one accent action, loading/cold-cache states | web-feature:UF-11 | T-0548 | done | wl-build-web |
