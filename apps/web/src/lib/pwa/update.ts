@@ -152,6 +152,10 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
       /* ignore */
     }
   });
+  // T-0553 (D-0206): pagehide removed the entry; a bfcache restore runs no other hook, so write it back.
+  win.addEventListener?.("pageshow", (event) => {
+    if ((event as PageTransitionEvent).persisted === true) trackSession(win.location.pathname);
+  });
   notify = (pathname) => {
     trackSession(pathname);
     activateIfSafe(pathname);
