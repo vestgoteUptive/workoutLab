@@ -126,7 +126,6 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | ready | wl-build-backend |
-| T-0569 | UF-11.6 Favorite exercises at /plan/favorites + UF-11.2 row + UF-11.5 move line | web-feature:UF-11 | T-0561, T-0567 | doing | wl-build-web |
 | T-0570 | UF-02.1/UF-02.2 preview passes favoriteIds | web-feature:UF-02 | T-0542, T-0562, T-0567 | todo | wl-build-web |
 | T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | todo | wl-build-web |
 
@@ -142,6 +141,7 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 | T-0577 | UF-08.5 Favorites section first on the empty query + Favorite tag on rows | web-feature:UF-08 | T-0576, T-0567, T-0561 | todo | wl-build-web |
 | T-0580 | Show the failed-exclusion message on the host screen after the swap sheet closes (T-0539 follow-up) | web-feature:UF-09 | T-0539 | todo | wl-build-web |
 | T-0581 | UF-08.2: tap an exercise name to open its how-to (reuse ExerciseHowTo); owner request | web-feature:UF-08 | — | doing | wl-build-web |
+| T-0582 | UF-11.5/11.6 re-read when the library cache arrives (cold direct load shows no groups) | web-feature:UF-11 | — | todo | wl-build-web |
 
 ### Groomed from parked (2026-10-08)
 Owner request: groom 10 parked tickets and put the ones worth doing at the back of the backlog. Run after the favorites (D-0202) and add/reorder (D-0205) work. The three touch disjoint files (turbo.json + check-decision-ids; one new web-shell test; package.json/lockfile), so any order works; T-0525 changes the lockfile, so it runs the forced gate.

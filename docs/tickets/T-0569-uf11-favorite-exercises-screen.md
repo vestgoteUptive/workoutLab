@@ -59,11 +59,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-11 e2e specs green (routes.ts changed: run the whole web e2e suite once) · contracts unchanged · commits start with `T-0569:` and cite UF-11.6 / UF-11.2.
 
 ## Build / accept log
-
-### Build log (frontend-dev)
-- Built FavoritesBody/FavoritesRow (UF-11.6, UF-11.2 row above Excluded), UF-11.5 move line, route /plan/favorites, i18n in flows/uf-11.ts. Generalised by reusing excluded.css classes.
-- AC→test: AC1-AC8 in `features/UF-11/__tests__/favorites-screen.test.tsx` (+ 0.5-weight group test, AC9 reachability); AC9 routes in routes.phase3.test.ts; e2e `tests/e2e/uf-11-favorites.spec.ts` (AC1-3, axe with/without favorites, offline load).
-- Planted faults (each failed the named test, restored from backup): weight>=0.5 (caught after adding the 0.5 test), no move line, swapped eligibility, offline not disabled, no role=alert, UF-11.5 no move line, row below Excluded, warm-ups in search, no mount refresh, Remove label without area.
-- Updated count/list tests for the new route: profile-gate (15 protected, 16 gated), profile-gate-decision, index export lists, strings allowlist, excluded-screen AC1 neighbour.
-- Gate: typecheck/lint/test 19/19, repo-checks 369 pass, format:check, check-all ok, uf-11 e2e 44 passed. Screenshot: scratchpad/favorites-after.png.
-- Known gap: a cold direct load of /plan/favorites reads library/profile once at mount (same as UF-11.5), so favorites show only after the library cache is warm.
+Archived in `docs/tickets/log/T-0569.md` (D-0157).
