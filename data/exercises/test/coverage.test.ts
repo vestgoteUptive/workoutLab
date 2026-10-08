@@ -30,7 +30,7 @@ describe("T-0522 AC2 bodyweight-only primary count per area", () => {
     arms: 4,
     core: 4,
     glutes: 4,
-    quads: 4,
+    quads: 7, // +3 in T-0560: forward, walking and lateral lunge
     hamstrings: 4,
     calves: 4,
   };
@@ -43,8 +43,8 @@ describe("T-0522 AC2 bodyweight-only primary count per area", () => {
     });
   }
 
-  it("T-0522 AC1 the library has 87 rows", () => {
-    expect(loadLibrary()).toHaveLength(87);
+  it("T-0522 AC1 / T-0560 the library has 93 rows", () => {
+    expect(loadLibrary()).toHaveLength(93);
   });
 
   it("T-0522 AC5 at least two of the nine new rows are beginner and one is timed", () => {

@@ -1,0 +1,22 @@
+{
+  "id": "forward-lunge",
+  "name": "Forward lunge",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "quads": 1, "glutes": 0.5, "hamstrings": 0.5 },
+  "instructions": [
+    "Stand tall with your feet hip width apart.",
+    "Step one foot forward in a long stride.",
+    "Lower until both knees are bent about 90 degrees.",
+    "Push hard through the front foot to return to standing, then switch legs."
+  ],
+  "cue": "Long step, drop straight down",
+  "mistakes": ["Taking too short a step.", "Letting the front knee cave inward."],
+  "variants": ["reverse-lunge", "split-squat", "walking-lunge", "dumbbell-lunge", "lateral-lunge", "barbell-lunge"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

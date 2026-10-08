@@ -15,7 +15,7 @@
   ],
   "cue": "Long stride, back knee toward the floor",
   "mistakes": ["Letting the front knee cave inward.", "Taking too short a stride."],
-  "variants": ["bodyweight-squat", "wall-sit", "reverse-lunge"],
+  "variants": ["bodyweight-squat", "wall-sit", "reverse-lunge", "forward-lunge", "bulgarian-split-squat"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

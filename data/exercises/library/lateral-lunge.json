@@ -1,0 +1,22 @@
+{
+  "id": "lateral-lunge",
+  "name": "Lateral lunge",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["none"],
+  "bodyweight": true,
+  "areas": { "quads": 1, "glutes": 0.5 },
+  "instructions": [
+    "Stand tall with your feet together.",
+    "Take a big step out to the side with one foot.",
+    "Sit your hips back and down over that leg, keeping the other leg straight.",
+    "Push off the bent leg to return to the middle, then switch sides."
+  ],
+  "cue": "Step wide, sit back over the leg",
+  "mistakes": ["Letting the bent knee cave inward.", "Lifting the heel of the bent leg."],
+  "variants": ["reverse-lunge", "forward-lunge", "walking-lunge"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}
