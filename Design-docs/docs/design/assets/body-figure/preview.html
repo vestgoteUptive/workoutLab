@@ -1,0 +1,317 @@
+<!doctype html>
+<!--
+  Body figure preview (T-0315, D-0207). Serve the repo root over http and open
+  /Design-docs/docs/design/assets/body-figure/preview.html (the page fetches body-figure.svg
+  and the token CSS, so file:// won't work). Build the tokens first:
+  `pnpm --filter @workoutlab/design-tokens build`.
+  Colours come only from var(--wl-color-…) tokens and, under forced colours, system colours.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Body figure preview</title>
+    <link rel="stylesheet" href="../../../../../packages/design-tokens/dist/tokens.css" />
+    <style id="wl-fig-css">
+      /* ---- the figure's own rules (the BodyFigure component, T-0556, copies these) ---- */
+      .wl-fig {
+        display: block;
+        height: var(--wl-fig-h, 200px);
+        width: auto;
+      }
+      .wl-fig path {
+        vector-effect: non-scaling-stroke;
+        stroke-linejoin: round;
+        stroke-linecap: round;
+      }
+      .wl-fig__silhouette {
+        fill: var(--wl-color-surface-2);
+        stroke: var(--wl-color-text-muted);
+        stroke-width: 1.5px;
+      }
+      .wl-fig__body:not(.wl-fig__silhouette) {
+        fill: var(--wl-color-surface-2);
+        stroke: var(--wl-color-line-strong);
+        stroke-width: 0.75px;
+      }
+      .wl-fig__region {
+        fill: var(--wl-color-surface-2);
+        stroke: var(--wl-color-text-muted);
+        stroke-width: 1px;
+      }
+      .wl-fig__seam {
+        fill: none;
+        stroke: var(--wl-color-line-strong);
+        stroke-width: 0.75px;
+      }
+      .wl-fig__seam--on-accent {
+        stroke: var(--wl-color-on-accent);
+      }
+      .wl-fig__hatch-ground {
+        fill: var(--wl-color-surface-2);
+      }
+      .wl-fig__hatch-stripe {
+        fill: var(--wl-color-accent);
+      }
+      .wl-fig__region--primary {
+        fill: var(--wl-color-accent);
+      }
+      /* Each inline copy needs its own pattern id; --wl-fig-hatch points at it. */
+      .wl-fig__region--secondary {
+        fill: var(--wl-fig-hatch, url(#wl-fig-hatch));
+      }
+      .wl-fig__region--cov-0 {
+        fill: var(--wl-color-coverage-0);
+      }
+      .wl-fig__region--cov-1 {
+        fill: var(--wl-color-coverage-1);
+      }
+      .wl-fig__region--cov-2 {
+        fill: var(--wl-color-coverage-2);
+      }
+      .wl-fig__region--cov-3 {
+        fill: var(--wl-color-coverage-3);
+      }
+      .wl-fig__region--cov-4 {
+        fill: var(--wl-color-coverage-4);
+      }
+      /* Attention halo: 1 px region border, then a 1 px surface gap, then 2 px warn. */
+      .wl-fig__halo-warn {
+        fill: none;
+        stroke: var(--wl-color-warn);
+        stroke-width: 7px;
+      }
+      .wl-fig__halo-gap {
+        fill: none;
+        stroke: var(--wl-color-surface);
+        stroke-width: 3px;
+      }
+      @media (forced-colors: active) {
+        .wl-fig {
+          forced-color-adjust: none;
+        }
+        .wl-fig__silhouette,
+        .wl-fig__body:not(.wl-fig__silhouette),
+        .wl-fig__region,
+        .wl-fig__region[class*="--cov-"] {
+          fill: Canvas;
+          stroke: CanvasText;
+        }
+        .wl-fig__region--primary {
+          fill: CanvasText;
+        }
+        .wl-fig__region--secondary {
+          fill: var(--wl-fig-hatch, url(#wl-fig-hatch));
+        }
+        .wl-fig__hatch-ground {
+          fill: Canvas;
+        }
+        .wl-fig__hatch-stripe {
+          fill: CanvasText;
+        }
+        .wl-fig__seam,
+        .wl-fig__seam--on-accent {
+          stroke: GrayText;
+        }
+        .wl-fig__halo-warn {
+          stroke: Highlight;
+          stroke-width: 9px;
+        }
+        .wl-fig__halo-gap {
+          stroke: Canvas;
+        }
+      }
+      /* The same forced-colours rules, simulated so the preview can show them side by side. */
+      .demo.demo--forced {
+        background: Canvas;
+        color: CanvasText;
+      }
+      .demo--forced .wl-fig__silhouette,
+      .demo--forced .wl-fig__body:not(.wl-fig__silhouette),
+      .demo--forced .wl-fig__region,
+      .demo--forced .wl-fig__region[class*="--cov-"] {
+        fill: Canvas;
+        stroke: CanvasText;
+      }
+      .demo--forced .wl-fig__region--primary {
+        fill: CanvasText;
+      }
+      .demo--forced .wl-fig__region--secondary {
+        fill: var(--wl-fig-hatch, url(#wl-fig-hatch));
+      }
+      .demo--forced .wl-fig__hatch-ground {
+        fill: Canvas;
+      }
+      .demo--forced .wl-fig__hatch-stripe {
+        fill: CanvasText;
+      }
+      .demo--forced .wl-fig__seam,
+      .demo--forced .wl-fig__seam--on-accent {
+        stroke: GrayText;
+      }
+      .demo--forced .wl-fig__halo-warn {
+        stroke: Highlight;
+        stroke-width: 9px;
+      }
+      .demo--forced .wl-fig__halo-gap {
+        stroke: Canvas;
+      }
+      .demo--grey .wl-fig {
+        filter: grayscale(1);
+      }
+    </style>
+    <style>
+      /* ---- preview page chrome ---- */
+      body {
+        margin: 0;
+        padding: 24px;
+        background: var(--wl-color-bg);
+        color: var(--wl-color-text);
+        font-family: var(--wl-font-body);
+      }
+      h1,
+      h2 {
+        font-family: var(--wl-font-display);
+        text-transform: uppercase;
+        font-weight: 800;
+        margin: 0 0 12px;
+      }
+      h2 {
+        font-size: 24px;
+        margin-top: 32px;
+      }
+      .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: flex-end;
+      }
+      .demo {
+        background: var(--wl-color-surface);
+        border: 1px solid var(--wl-color-line);
+        border-radius: 16px;
+        padding: 16px;
+      }
+      .demo p {
+        max-width: 240px;
+        margin: 8px 0 0;
+        font-size: 13px;
+        color: var(--wl-color-text-muted);
+      }
+      .demo--forced p {
+        color: CanvasText;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Body figure</h1>
+    <p>T-0315 · D-0207 · C-01 (UF-02.1, UF-10.1) and UF-04.2. Original art.</p>
+
+    <h2>Sizes (no data: every region falls back to surface-2)</h2>
+    <div class="row">
+      <div class="demo" data-h="140"><p>140 px, C-01 compact</p></div>
+      <div class="demo" data-h="200"><p>200 px, UF-04.2</p></div>
+      <div class="demo" data-h="240"><p>240 px, C-01 full</p></div>
+    </div>
+
+    <h2>C-01 coverage</h2>
+    <div class="row">
+      <div class="demo" data-h="140" data-cov="all:0"><p>All coverage-0, 140 px</p></div>
+      <div class="demo" data-h="140" data-cov="all:1"><p>coverage-1</p></div>
+      <div class="demo" data-h="140" data-cov="all:2"><p>coverage-2</p></div>
+      <div class="demo" data-h="140" data-cov="all:3"><p>coverage-3</p></div>
+      <div class="demo" data-h="140" data-cov="all:4"><p>coverage-4</p></div>
+    </div>
+    <div class="row" style="margin-top: 16px">
+      <div
+        class="demo"
+        data-h="240"
+        data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2"
+        data-attention="glutes hamstrings"
+      >
+        <p>Mixed steps, attention on glutes (on coverage-4) and hamstrings. Calves missing → surface-2.</p>
+      </div>
+      <div
+        class="demo demo--forced"
+        data-h="240"
+        data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2"
+        data-attention="glutes hamstrings"
+      >
+        <p>Forced colours</p>
+      </div>
+    </div>
+
+    <h2>UF-04.2 primary / secondary</h2>
+    <div class="row">
+      <div class="demo" data-h="200" data-primary="chest" data-secondary="shoulders">
+        <p>Primary chest, secondary shoulders</p>
+      </div>
+      <div class="demo" data-h="200" data-primary="quads glutes" data-secondary="hamstrings core">
+        <p>Back squat: primary quads, glutes; secondary hamstrings, core</p>
+      </div>
+      <div class="demo" data-h="200" data-primary="back arms">
+        <p>No secondary areas</p>
+      </div>
+      <div
+        class="demo demo--grey"
+        data-h="200"
+        data-primary="quads glutes"
+        data-secondary="hamstrings core"
+      >
+        <p>Greyscale</p>
+      </div>
+      <div
+        class="demo demo--forced"
+        data-h="200"
+        data-primary="quads glutes"
+        data-secondary="hamstrings core"
+      >
+        <p>Forced colours</p>
+      </div>
+    </div>
+
+    <script type="module">
+      const ACCENT_FILLS = /--(primary|cov-3|cov-4)\b/;
+      const svgText = await (await fetch("body-figure.svg")).text();
+      const words = (s) => (s ?? "").split(/\s+/).filter(Boolean);
+      let n = 0;
+      for (const demo of document.querySelectorAll(".demo[data-h]")) {
+        demo.insertAdjacentHTML("afterbegin", svgText);
+        const svg = demo.querySelector("svg");
+        svg.style.setProperty("--wl-fig-h", `${demo.dataset.h}px`);
+        const hatchId = `wl-fig-hatch-${(n += 1)}`;
+        svg.querySelector("#wl-fig-hatch").id = hatchId;
+        svg.style.setProperty("--wl-fig-hatch", `url(#${hatchId})`);
+        const regions = [...svg.querySelectorAll("[data-area]")];
+        const style = {};
+        for (const pair of words(demo.dataset.cov)) {
+          const [area, step] = pair.split(":");
+          if (area === "all") for (const r of regions) style[r.dataset.area] = `cov-${step}`;
+          else style[area] = `cov-${step}`;
+        }
+        for (const a of words(demo.dataset.primary)) style[a] = "primary";
+        for (const a of words(demo.dataset.secondary)) style[a] = "secondary";
+        for (const r of regions) {
+          const s = style[r.dataset.area];
+          if (s) r.classList.add(`wl-fig__region--${s}`);
+        }
+        for (const seam of svg.querySelectorAll("[data-seam]")) {
+          const s = style[seam.dataset.seam];
+          if (s && ACCENT_FILLS.test(`--${s}`)) seam.classList.add("wl-fig__seam--on-accent");
+        }
+        const attention = new Set(words(demo.dataset.attention));
+        for (const r of regions.filter((x) => attention.has(x.dataset.area))) {
+          const firstSeam = r.parentNode.querySelector(".wl-fig__seam");
+          for (const cls of ["wl-fig__halo-warn", "wl-fig__halo-gap"]) {
+            const halo = r.cloneNode();
+            halo.removeAttribute("data-area");
+            halo.setAttribute("class", cls);
+            r.parentNode.insertBefore(halo, firstSeam);
+          }
+          r.parentNode.insertBefore(r, firstSeam);
+        }
+      }
+      document.documentElement.dataset.ready = "true";
+    </script>
+  </body>
+</html>
