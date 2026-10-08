@@ -405,3 +405,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0913 | UF-11.5/11.6 list-cache tests flake under load | web-feature:UF-11 | — | done | wl-build-web |
 | T-0574 | UF-08.5 part 2: disabled row states, cap refusals, Remove of an added item, re-add a removed item | web-feature:UF-08 | T-0573 | done | wl-build-web |
 | T-0575 | UF-08 Start with this (compound only; mainLiftId; new main lift first) | web-feature:UF-08 | T-0574 | done | wl-build-web |
+| T-0576 | UF-08.2 Reorder mode + order merge across re-suggests + Start writes display order | web-feature:UF-08 | T-0575 | done (UF-08.4 order list not built; Ready has no list) | wl-build-web |
