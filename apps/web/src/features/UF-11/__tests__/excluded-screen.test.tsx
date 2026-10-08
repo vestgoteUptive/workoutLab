@@ -4,10 +4,24 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  cleanup,
+  configure,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import type { LibraryExercise } from "@workoutlab/shared";
 import { offlineDb, userScopedKey } from "../../../lib/offline/db.js";
+
+// T-0913: every wait here follows a Dexie write plus a liveQuery re-render, which
+// can pass waitFor's 1 s default on a loaded CI box (seen at 1031 ms). Waits still
+// resolve on observable state as soon as it appears; 4 s (under the 5 s test timeout) is only the failure ceiling.
+configure({ asyncUtilTimeout: 4_000 });
 
 const h = vi.hoisted(() => ({
   refresh: undefined as undefined | (() => Promise<void>),
@@ -185,7 +199,9 @@ describe("AC2 search", () => {
       ).toHaveTextContent("Include again"),
     );
     expect(ex.excludeExercise).toHaveBeenCalledWith(A, "db-bench-press");
-    expect(screen.getByRole("status")).toHaveTextContent("Dumbbell bench press excluded");
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("Dumbbell bench press excluded"),
+    );
   });
 });
 
