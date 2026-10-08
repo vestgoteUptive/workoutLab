@@ -65,3 +65,7 @@ Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-08 
 - Existing test touched: `excluded-suggest.test.tsx` `getByRole("status")` became `removedLine()` (UF-08.2 now has a second role=status per UF-08.2.md); assertions unchanged.
 - Choices: Remove of an added item also drops it from `addedIds` (else the Doesn't-fit line would list it); a UF-08.3 swap of an added item drops the id likewise; sheet "In this workout" rows have no Add button (T-0574 adds the disabled states); a stored-excluded exercise is not re-included (engine refuses, copy says time until T-0574).
 - Gate: `-w typecheck lint test` 19/19 (4142 web tests), format:check, check-all, test:repo-checks green; `test:e2e uf-08` 37/37. Screenshot 390px: scratchpad/uf085-after.png.
+
+### Review fixes (frontend-dev)
+- Merged origin/main. Added tests: browser Back (history pop) closes UF-08.5 (fault: no focus return, red); Remove and swap of an added item drop its pin (faults: keep pins, red each); "X added." cleared by Remove, Shuffle, chip (fault: no clear, red x3); closing is once, double Escape plus Close (fault: no closing ref, red). Area headings are h2.
+- Gate: 18/19 tasks; web test failed only on UF-02 `excluded.test.tsx` "T-0542 AC3 live update" (and once a UF-09 lint timeout), both load flakes (load avg 15, T-0913 pattern); that file passes alone (22/22 with the UF-11 favorites test). format:check, check-all green; uf-08 e2e 37/37.

@@ -1,9 +1,20 @@
 // T-0573 UF-08.5 Add exercise (part 1), AC1-AC9 (docs/tickets/T-0573). Loaders mocked; the real
 // engine runs behind a spy. X1/X4 are the spec's engine examples, checked against `suggest` here.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { suggest, type Workout } from "@workoutlab/engine";
-import { fitLine, renderSetup, screenIds, serveCache, setOnline, settle } from "./harness.js";
+import { render } from "@testing-library/react";
+import { MemoryRouter, Route, Routes, useNavigate, type NavigateFunction } from "react-router";
+import { SessionSetup } from "../SessionSetup.js";
+import {
+  F_TZ_PROPS,
+  fitLine,
+  renderSetup,
+  screenIds,
+  serveCache,
+  setOnline,
+  settle,
+} from "./harness.js";
 
 const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
 vi.mock("../../../lib/auth/auth-context.js", () => ({ useAuth: () => ({ status: auth.status }) }));
@@ -90,7 +101,9 @@ describe("AC1 open, empty query", () => {
     const sheet = within(dialog());
     expect(sheet.getByLabelText("Search exercises")).toHaveFocus();
     expect(sheet.getByText("The rest of your workout adjusts to fit 30 min.")).toBeInTheDocument();
-    const areas = sheet.getAllByRole("heading", { level: 4 }).map((h) => h.textContent);
+    const areas = sheet
+      .getAllByRole("region")
+      .map((r) => within(r).getByRole("heading", { level: 2 }).textContent);
     expect(areas).toEqual(["Chest", "Back", "Quads"]);
     const quads = within(sheet.getByRole("region", { name: "Quads" }));
     expect(quads.getByRole("button", { name: "Add Back squat" })).toBeInTheDocument();
@@ -289,5 +302,103 @@ describe("AC9 per visit", () => {
     spy.mockClear();
     fireEvent.click(button("Shuffle"));
     expect(lastInput().pinnedIds).toEqual([]);
+  });
+});
+
+// ---- Review fixes ----
+let nav: NavigateFunction | null = null;
+function NavProbe() {
+  nav = useNavigate();
+  return null;
+}
+function renderWithNav(): void {
+  render(
+    <MemoryRouter initialEntries={["/session/setup"]}>
+      <NavProbe />
+      <Routes>
+        <Route path="/session/setup" element={<SessionSetup {...F_TZ_PROPS} />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
+async function toPlanWithNav(): Promise<void> {
+  renderWithNav();
+  await loaded();
+  fireEvent.click(button("30 minutes"));
+  await settle();
+  fireEvent.click(button("Suggest my workout"));
+  spy.mockClear();
+}
+
+describe("browser Back closes the sheet", () => {
+  it("a history pop closes UF-08.5, returns focus to Add exercise and stays on UF-08.2", async () => {
+    await toPlanWithNav();
+    openSheet();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await act(async () => {
+      void nav!(-1);
+    });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(button("Add exercise")).toHaveFocus();
+    expect(screenIds()).toEqual(["UF-08.2"]);
+  });
+});
+
+describe("closing is once", () => {
+  it("a second Escape (or an Add after Escape) cannot pop past UF-08.2", async () => {
+    await toPlanWithNav();
+    openSheet();
+    const search = within(dialog()).getByLabelText("Search exercises");
+    const closeButton = within(dialog()).getByRole("button", { name: "Close" });
+    await act(async () => {
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      closeButton.click();
+    });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(search).not.toBeInTheDocument();
+    expect(screenIds()).toEqual(["UF-08.2"]);
+    expect(button("Add exercise")).toHaveFocus();
+  });
+});
+
+describe("an added exercise that leaves the plan leaves the pins", () => {
+  it("Remove of an added item: a later time chip neither brings it back nor lists it", async () => {
+    await toPlan();
+    await addBackSquat();
+    fireEvent.click(button("Remove Back squat"));
+    spy.mockClear();
+    fireEvent.click(button("20 minutes"));
+    expect(lastInput().pinnedIds).toEqual([]);
+    expect(rowNames()).not.toContain("Back squat");
+    expect(document.querySelector('[data-part="doesnt-fit"]')).toBeNull();
+  });
+
+  it("a UF-08.3 swap of an added item takes it off the pins", async () => {
+    await toPlan();
+    await addBackSquat();
+    fireEvent.click(button("Swap Back squat"));
+    const use = await screen.findAllByRole("button", { name: /^Use / });
+    fireEvent.click(use[0]!);
+    await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]));
+    expect(rowNames()).not.toContain("Back squat");
+    spy.mockClear();
+    fireEvent.click(button("20 minutes"));
+    expect(lastInput().pinnedIds).toEqual([]);
+    expect(document.querySelector('[data-part="doesnt-fit"]')).toBeNull();
+  });
+});
+
+describe("the added status does not outlive the next action", () => {
+  it.each([
+    ["Remove", () => fireEvent.click(button("Remove Straight arm pulldown"))],
+    ["Shuffle", () => fireEvent.click(button("Shuffle"))],
+    ["a time chip", () => fireEvent.click(button("45 minutes"))],
+  ])("%s clears 'Back squat added.'", async (_name, action) => {
+    await toPlan();
+    await addBackSquat();
+    expect(pageStatus()).toHaveTextContent("Back squat added.");
+    action();
+    expect(pageStatus().textContent).not.toMatch(/added/);
   });
 });

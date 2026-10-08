@@ -164,6 +164,8 @@ export function Suggested({
   // The id just added: focus goes to its row when the sheet has closed.
   const pendingAddFocus = useRef<string | null>(null);
   const sheetWasOpen = useRef(false);
+  // Set once a close (Escape, Close, Add) has navigated back, so a second one can't pop again.
+  const closing = useRef(false);
   const [status, setStatus] = useState("");
   const listRef = useRef<HTMLOListElement>(null);
   const looksGoodRef = useRef<HTMLButtonElement>(null);
@@ -190,6 +192,7 @@ export function Suggested({
   useEffect(() => {
     if (sheetWasOpen.current === sheetOpen) return;
     sheetWasOpen.current = sheetOpen;
+    closing.current = false;
     if (sheetOpen) return;
     const id = pendingAddFocus.current;
     pendingAddFocus.current = null;
@@ -271,6 +274,7 @@ export function Suggested({
             onClick={() => {
               if (m === workout.budgetMin) return;
               pendingFocus.current = null;
+              setStatus("");
               onBudget(m);
             }}
           >
@@ -357,6 +361,7 @@ export function Suggested({
                   aria-label={en.uf08.remove(name)}
                   onClick={() => {
                     pendingFocus.current = index;
+                    setStatus("");
                     // No new plan → no re-render to move focus for; never leave it pending.
                     if (!onRemove(item.exerciseId)) pendingFocus.current = null;
                   }}
@@ -426,6 +431,7 @@ export function Suggested({
           className="wl-uf08__ghost"
           onClick={() => {
             pendingFocus.current = null;
+            setStatus("");
             onShuffle();
           }}
         >
@@ -446,15 +452,21 @@ export function Suggested({
           items={items}
           budgetMin={workout.budgetMin}
           onAdd={(id) => {
+            if (closing.current) return null;
             const refusal = onAdd(id);
             if (refusal === null) {
+              closing.current = true;
               pendingAddFocus.current = id;
               setStatus(en.uf08.added(exerciseName(id, library)));
               void navigate(-1);
             }
             return refusal;
           }}
-          onClose={() => void navigate(-1)}
+          onClose={() => {
+            if (closing.current) return;
+            closing.current = true;
+            void navigate(-1);
+          }}
         />
       ) : null}
       {howToId !== null ? (

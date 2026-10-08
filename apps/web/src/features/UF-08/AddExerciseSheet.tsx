@@ -221,12 +221,12 @@ export function AddExerciseSheet({
             <p className="wl-uf08__sheet-empty">{en.uf08.searchToFind}</p>
           ) : (
             <>
-              <h3 className="wl-uf08__label wl-uf08__sheet-sub">{en.uf08.todaysAreas}</h3>
+              <h2 className="wl-uf08__label wl-uf08__sheet-sub">{en.uf08.todaysAreas}</h2>
               {groups.map((g) => (
                 <section key={g.area} aria-labelledby={`${titleId}-${g.area}`}>
-                  <h4 id={`${titleId}-${g.area}`} className="wl-uf08__label">
+                  <h2 id={`${titleId}-${g.area}`} className="wl-uf08__label">
                     {areaLabel(g.area)}
-                  </h4>
+                  </h2>
                   <ul className="wl-uf08__picks">
                     {g.rows.map((e) =>
                       row(e, (appearances.get(e.id) ?? 0) > 1 ? areaLabel(g.area) : undefined),
