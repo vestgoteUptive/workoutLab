@@ -45,10 +45,16 @@ describe("AC-B16 the flow file", () => {
 });
 
 describe("AC-B16 exports (D-0071 §3)", () => {
-  it("index.tsx exports exactly AccountSettings, CheckinCard, EditPlan and Plan", async () => {
+  it("index.tsx exports exactly AccountSettings, CheckinCard, EditPlan, ExcludedExercises and Plan", async () => {
     // T-0308c adds `CheckinCard` (D-0168 §5): exported, mounted nowhere yet (T-0471).
     const mod = await import("../index.js");
-    expect(Object.keys(mod).sort()).toEqual(["AccountSettings", "CheckinCard", "EditPlan", "Plan"]);
+    expect(Object.keys(mod).sort()).toEqual([
+      "AccountSettings",
+      "CheckinCard",
+      "EditPlan",
+      "ExcludedExercises",
+      "Plan",
+    ]);
   });
 
   it("the check-in evaluation is NOT exported from index.tsx — it stays module-private", async () => {
@@ -111,6 +117,7 @@ describe("AC-B16 no second string catalogue", () => {
       "UF-11.2",
       "UF-11.3",
       "UF-11.4",
+      "UF-11.5",
       "/plan/account",
       "/welcome",
       "signed-out",
@@ -127,6 +134,9 @@ describe("AC-B16 no second string catalogue", () => {
       // T-0549: SVG path data of the New routine plus icon and the notice info icon.
       "M12 5v14M5 12h14",
       "M12 11v5M12 8h.01",
+      // T-0540 UF-11.5: clear-search icon path data and the route of the UF-11.2 row link.
+      "M6 6l12 12M18 6L6 18",
+      "/plan/excluded",
       // T-0550 UF-11.4: back chevron, sign-out and download icon path data (SVG, not copy).
       "M15 5l-7 7 7 7",
       "M9 4H5v16h4M16 8l4 4-4 4M20 12H9",
@@ -174,6 +184,11 @@ describe("AC-B16 no second string catalogue", () => {
       "saved",
       // Attribute value, not copy (mirrors the existing "radio"/"text" entries above).
       "checkbox",
+      // T-0540 ExcludedBody: `ExerciseKind` value, attribute values; not copy.
+      "exercise",
+      "search",
+      "off",
+      "true",
     ]);
     const uiWords = Object.values(uf11).filter((v) => typeof v === "string") as string[];
     for (const file of sourceFiles()) {

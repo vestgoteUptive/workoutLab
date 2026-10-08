@@ -317,10 +317,10 @@ async function settleTurn(): Promise<void> {
 }
 
 describe("the gated set is derived from routes.ts, with an exact expected count", () => {
-  it("is the 13 `protected` entries plus /session/setup, and nothing else", () => {
+  it("is the 14 `protected` entries plus /session/setup, and nothing else", () => {
     const protectedCount = routes.filter((r) => r.guard === "protected").length;
-    expect(protectedCount).toBe(13);
-    expect(gatedPaths(routes)).toHaveLength(14);
+    expect(protectedCount).toBe(14);
+    expect(gatedPaths(routes)).toHaveLength(15);
     expect(gatedPaths(routes)).toEqual([
       "/",
       "/library",
@@ -333,6 +333,7 @@ describe("the gated set is derived from routes.ts, with an exact expected count"
       "/plan",
       "/plan/edit",
       "/plan/account",
+      "/plan/excluded",
       "/plan/routines/new",
       "/plan/routines/:routineId",
       "/session/setup",
@@ -361,6 +362,7 @@ describe("the gated set is derived from routes.ts, with an exact expected count"
       "/plan",
       "/plan/edit",
       "/plan/account",
+      "/plan/excluded",
       "/plan/routines/new",
       "/plan/routines/R1",
       "/session/setup",
@@ -383,7 +385,7 @@ describe("AC-5 signed in + `missing`: every gated route redirects to /welcome/sa
   );
 
   it("visits a non-zero number of paths", () => {
-    expect(GATED.length).toBe(14);
+    expect(GATED.length).toBe(15);
   });
 });
 

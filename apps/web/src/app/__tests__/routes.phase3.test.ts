@@ -30,6 +30,7 @@ const NEW_ROUTES: readonly Shape[] = [
   { path: "/progress/:exerciseId", screenId: "UF-06.2", showTabBar: true, guard: "protected" },
   { path: "/plan/edit", screenId: "UF-11.3", showTabBar: false, guard: "protected" },
   { path: "/plan/account", screenId: "UF-11.4", showTabBar: false, guard: "protected" },
+  { path: "/plan/excluded", screenId: "UF-11.5", showTabBar: false, guard: "protected" },
   { path: "/plan/routines/new", screenId: "UF-07.1", showTabBar: false, guard: "protected" },
   {
     path: "/plan/routines/:routineId",
@@ -109,6 +110,7 @@ describe("AC-1 each new load() is a dynamic import of the feature index", () => 
     ["/progress/:exerciseId", "UF-06", "ExerciseHistory"],
     ["/plan/edit", "UF-11", "EditPlan"],
     ["/plan/account", "UF-11", "AccountSettings"],
+    ["/plan/excluded", "UF-11", "ExcludedExercises"],
     ["/plan/routines/new", "UF-07", "RoutineEditor"],
     ["/plan/routines/:routineId", "UF-07", "RoutineEditor"],
   ];

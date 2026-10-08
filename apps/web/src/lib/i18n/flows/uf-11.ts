@@ -155,4 +155,33 @@ export const uf11 = {
       coldCache: "Your equipment isn't on this device yet.",
     },
   },
+  // T-0540 UF-11.2 row and UF-11.5 (D-0199 §7-§10).
+  excludedRow: {
+    label: "Excluded exercises",
+    none: "none",
+    count: (n: number) => String(n),
+    separator: " · ",
+    name: (n: number | null) =>
+      n === null ? "Excluded exercises" : `Excluded exercises, ${n === 0 ? "none" : n}`,
+  },
+  excludedScreen: {
+    back: "Back to Plan",
+    lead: "These are never suggested or offered as a swap. Your past sets still count.",
+    searchLabel: "Search exercises",
+    clearSearch: "Clear search",
+    exclude: "Exclude",
+    includeAgain: "Include again",
+    saving: "Saving…",
+    excludedOn: (date: string) => `Excluded ${date}`,
+    excludedPlain: "Excluded",
+    excludeName: (name: string) => `Exclude ${name}`,
+    includeName: (name: string) => `Include ${name} again`,
+    announceExcluded: (name: string) => `${name} excluded`,
+    announceIncluded: (name: string) => `${name} included again`,
+    emptyNone:
+      "No excluded exercises. Search to exclude one, or tap Remove on a suggested workout.",
+    emptyQuery: (q: string) => `No exercises match \u201C${q}\u201D.`,
+    loading: "Loading excluded exercises",
+    list: "Exercises",
+  },
 } as const;

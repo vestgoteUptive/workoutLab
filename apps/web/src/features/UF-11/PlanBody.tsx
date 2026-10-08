@@ -8,6 +8,7 @@ import { Link } from "react-router";
 import { AREAS, type AreaTarget } from "@workoutlab/shared";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
+import { ExcludedRow } from "./ExcludedRow.js";
 import { formatInstantDay, formatLocalDay } from "./format.js";
 import type { PlanData, PlanState } from "./use-plan-data.js";
 import "./plan.css";
@@ -65,8 +66,8 @@ function PlanContent({ data, checkinPending }: { data: PlanData; checkinPending:
           {u.editPlan}
         </Link>
       </section>
-      {/* Slot (UF-11.2 block 5): T-0540 adds the "Excluded exercises" row here, with the D-0202
-          favorites row directly above it. Nothing is rendered yet. */}
+      {/* The D-0202 favorites row goes directly above this one. */}
+      <ExcludedRow />
       <section className="wl-card" aria-labelledby="wl-plan-targets">
         <h2 id="wl-plan-targets" className="wl-label">
           {u.headings.targets}

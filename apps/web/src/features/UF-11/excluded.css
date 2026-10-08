@@ -1,0 +1,122 @@
+/* T-0540 UF-11.5. Colours only from design tokens. */
+.wl-excluded {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wl-excluded__search input {
+  box-sizing: border-box;
+  inline-size: 100%;
+  min-block-size: 48px;
+  padding: 8px 48px 8px 12px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.wl-excluded__field {
+  position: relative;
+}
+
+.wl-excluded__clear {
+  position: absolute;
+  inset-block-start: 2px;
+  inset-inline-end: 2px;
+  inline-size: 44px;
+  block-size: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.wl-excluded__clear svg,
+.wl-excluded__fail svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.wl-excluded input:focus-visible,
+.wl-excluded button:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-excluded__fail {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin: 0;
+  padding: 10px 12px;
+  color: var(--wl-color-text);
+  background: var(--wl-color-surface-2);
+  border-radius: 8px;
+}
+
+.wl-excluded__status {
+  margin: 0;
+  min-block-size: 0;
+  color: var(--wl-color-text-muted);
+  font-size: 13px;
+}
+
+.wl-excluded__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-excluded__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-block-size: 64px;
+  box-sizing: border-box;
+}
+
+.wl-excluded__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
+}
+
+.wl-excluded__button {
+  flex: none;
+  min-block-size: 44px;
+  min-inline-size: 96px;
+}
+
+.wl-excluded__button[aria-disabled="true"] {
+  color: var(--wl-color-text-muted);
+  cursor: not-allowed;
+}
+
+.wl-excluded__empty {
+  text-align: center;
+  padding-block: 24px;
+}
+
+.wl-excluded__skeleton {
+  min-block-size: 64px;
+  background: var(--wl-color-surface-2);
+  border-radius: 12px;
+}
+
+.wl-excluded__back {
+  min-block-size: 44px;
+  align-self: flex-start;
+}
