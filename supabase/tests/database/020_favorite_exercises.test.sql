@@ -2,9 +2,10 @@
 -- mutual exclusion with excluded_exercises. D1 schema objects, AC2 server-set created_at, AC3
 -- isolation (B and anon), AC4 idempotent add/remove, AC5 mutual exclusion in both directions,
 -- AC6 exercise cascade, AC7 auth cascade. User A = ...0a, user B = ...0b.
+-- AC5 runs under RLS and once as postgres (RLS bypassed) for the triggers' user_id filter.
 -- now() is constant inside this single transaction, so "the transaction's now()" is now().
 begin;
-select plan(40);
+select plan(45);
 
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
@@ -13,7 +14,9 @@ insert into public.exercises (id, name, type, level, instructions, source, licen
   ('fx-back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
   ('fx-bench-press', 'Bench press', 'compound', 'intermediate', '{Press}', 'own', 'CC0'),
   ('fx-lateral-raise', 'Lateral raise', 'isolation', 'beginner', '{Raise}', 'own', 'CC0'),
-  ('fx-plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0');
+  ('fx-plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0'),
+  ('fx-deadlift', 'Deadlift', 'compound', 'intermediate', '{Pull}', 'own', 'CC0'),
+  ('fx-row', 'Row', 'compound', 'intermediate', '{Row}', 'own', 'CC0');
 
 -- D1: triggers, their functions, policies, privileges ---------------------------------------------
 select has_trigger('public', 'favorite_exercises', 'favorite_exercises_before_write',
@@ -145,6 +148,36 @@ select is((select count(*)::int from public.favorite_exercises
 select is((select count(*)::int from public.favorite_exercises
   where user_id = '00000000-0000-0000-0000-00000000000b' and exercise_id = 'fx-bench-press'), 1,
   'AC5 B''s bench-press favorite is untouched');
+
+-- AC5 as postgres (security review L1): RLS is bypassed, so only the triggers' `user_id =
+-- new.user_id` filter keeps B's row. Under RLS (above) B's rows are hidden either way.
+reset role;
+select is(current_user::text, 'postgres', 'AC5 the next two inserts run as postgres (RLS bypassed)');
+insert into public.excluded_exercises (user_id, exercise_id) values
+  ('00000000-0000-0000-0000-00000000000a', 'fx-deadlift'),
+  ('00000000-0000-0000-0000-00000000000b', 'fx-deadlift');
+insert into public.favorite_exercises (user_id, exercise_id) values
+  ('00000000-0000-0000-0000-00000000000a', 'fx-deadlift');
+select is((select count(*)::int from public.excluded_exercises
+  where user_id = '00000000-0000-0000-0000-00000000000a' and exercise_id = 'fx-deadlift'), 0,
+  'AC5 postgres: A favoriting deadlift removes A''s deadlift exclusion');
+select is((select count(*)::int from public.excluded_exercises
+  where user_id = '00000000-0000-0000-0000-00000000000b' and exercise_id = 'fx-deadlift'), 1,
+  'AC5 postgres: B''s deadlift exclusion survives A''s favorite');
+insert into public.favorite_exercises (user_id, exercise_id) values
+  ('00000000-0000-0000-0000-00000000000a', 'fx-row'),
+  ('00000000-0000-0000-0000-00000000000b', 'fx-row');
+insert into public.excluded_exercises (user_id, exercise_id) values
+  ('00000000-0000-0000-0000-00000000000a', 'fx-row');
+select is((select count(*)::int from public.favorite_exercises
+  where user_id = '00000000-0000-0000-0000-00000000000a' and exercise_id = 'fx-row'), 0,
+  'AC5 postgres: A excluding row removes A''s row favorite');
+select is((select count(*)::int from public.favorite_exercises
+  where user_id = '00000000-0000-0000-0000-00000000000b' and exercise_id = 'fx-row'), 1,
+  'AC5 postgres: B''s row favorite survives A''s exclusion');
+-- Clear this block's rows so AC6 and AC7 see the same state as before it.
+delete from public.favorite_exercises where exercise_id in ('fx-deadlift', 'fx-row');
+delete from public.excluded_exercises where exercise_id in ('fx-deadlift', 'fx-row');
 
 -- AC6: deleting a library row removes the favorites of it (rolled back with the test) -----------
 -- fx-back-squat has no session_sets or routine_items rows here.
