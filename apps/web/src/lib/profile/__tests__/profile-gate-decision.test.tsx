@@ -81,7 +81,7 @@ describe("only `missing` redirects — the loop guard", () => {
 describe("isGatedPath encodes the D-0071 §11 rule, not a hard-coded list", () => {
   it("every `protected` entry in the real table is gated", () => {
     const protectedRoutes = routes.filter((r) => r.guard === "protected");
-    expect(protectedRoutes).toHaveLength(14);
+    expect(protectedRoutes).toHaveLength(15);
     for (const route of protectedRoutes) {
       expect(isGatedPath(route), route.path).toBe(true);
     }
@@ -106,9 +106,9 @@ describe("isGatedPath encodes the D-0071 §11 rule, not a hard-coded list", () =
     expect(isGatedPath({ path: "/auth/callback", guard: "public" })).toBe(false);
   });
 
-  it("gatedPaths returns 15 entries, in table order", () => {
+  it("gatedPaths returns 16 entries, in table order", () => {
     const gated = gatedPaths(routes);
-    expect(gated).toHaveLength(15);
+    expect(gated).toHaveLength(16);
     const indexIn = (p: string) => routes.findIndex((r) => r.path === p);
     for (let i = 1; i < gated.length; i++) {
       expect(indexIn(gated[i]!)).toBeGreaterThan(indexIn(gated[i - 1]!));

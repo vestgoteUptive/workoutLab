@@ -20,6 +20,7 @@ import { en } from "../../lib/i18n/en.js";
 import { AccountSettingsBody } from "./AccountSettingsBody.js";
 import { CheckinCard } from "./CheckinCard.js";
 import { ExcludedBody } from "./ExcludedBody.js";
+import { FavoritesBody } from "./FavoritesBody.js";
 import { EditPlanBody } from "./EditPlanBody.js";
 import "./plan.css";
 import { PlanBody } from "./PlanBody.js";
@@ -104,6 +105,25 @@ export function ExcludedExercises() {
       </Link>
       <h1>{en.screens.excludedExercises}</h1>
       <ExcludedBody />
+    </div>
+  );
+}
+
+export function FavoriteExercises() {
+  return (
+    <div data-screen-id="UF-11.6" className="wl-page">
+      <Link
+        className="wl-button--text wl-account__back"
+        to="/plan"
+        aria-label={en.uf11.favoritesScreen.back}
+      >
+        <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+        {en.screens.plan}
+      </Link>
+      <h1>{en.uf11.favoritesScreen.title}</h1>
+      <FavoritesBody />
     </div>
   );
 }

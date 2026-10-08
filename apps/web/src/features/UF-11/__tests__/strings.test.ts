@@ -45,7 +45,7 @@ describe("AC-B16 the flow file", () => {
 });
 
 describe("AC-B16 exports (D-0071 §3)", () => {
-  it("index.tsx exports exactly AccountSettings, CheckinCard, EditPlan, ExcludedExercises and Plan", async () => {
+  it("index.tsx exports exactly AccountSettings, CheckinCard, EditPlan, ExcludedExercises, FavoriteExercises and Plan", async () => {
     // T-0308c adds `CheckinCard` (D-0168 §5): exported, mounted nowhere yet (T-0471).
     const mod = await import("../index.js");
     expect(Object.keys(mod).sort()).toEqual([
@@ -53,6 +53,7 @@ describe("AC-B16 exports (D-0071 §3)", () => {
       "CheckinCard",
       "EditPlan",
       "ExcludedExercises",
+      "FavoriteExercises",
       "Plan",
     ]);
   });
@@ -115,6 +116,7 @@ describe("AC-B16 no second string catalogue", () => {
       "radio",
       "button",
       "UF-11.2",
+      "UF-11.6",
       "UF-11.3",
       "UF-11.4",
       "UF-11.5",
@@ -137,6 +139,7 @@ describe("AC-B16 no second string catalogue", () => {
       // T-0540 UF-11.5: clear-search icon path data and the route of the UF-11.2 row link.
       "M6 6l12 12M18 6L6 18",
       "/plan/excluded",
+      "/plan/favorites",
       // T-0550 UF-11.4: back chevron, sign-out and download icon path data (SVG, not copy).
       "M15 5l-7 7 7 7",
       "M9 4H5v16h4M16 8l4 4-4 4M20 12H9",
@@ -184,6 +187,8 @@ describe("AC-B16 no second string catalogue", () => {
       "saved",
       // Attribute value, not copy (mirrors the existing "radio"/"text" entries above).
       "checkbox",
+      // T-0569 FavoritesBody: the `level` value D-0202 §8 uses to ask "unusable at any level"; not copy.
+      "advanced",
       // T-0540 ExcludedBody: `ExerciseKind` value, attribute values; not copy.
       "exercise",
       "search",

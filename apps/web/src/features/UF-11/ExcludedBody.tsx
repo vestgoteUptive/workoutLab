@@ -14,6 +14,7 @@ import {
   refreshExcluded,
 } from "../../lib/offline/excluded.js";
 import { useExcludedRows, useOnline } from "../../lib/offline/excluded-hooks.js";
+import { useFavoriteIds } from "../../lib/offline/favorites-hooks.js";
 import { formatInstantDay, resolveTimeZone } from "./format.js";
 import "./excluded.css";
 
@@ -33,6 +34,7 @@ export function ExcludedBody() {
   const userId = currentUserId();
   const online = useOnline();
   const rows = useExcludedRows(userId);
+  const favoriteIds = useFavoriteIds(userId);
   const [library, setLibrary] = useState<LibraryExercise[]>([]);
   const [profile, setProfile] = useState<EngineProfile | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -113,6 +115,7 @@ export function ExcludedBody() {
     const isExcluded = item.excludedAt !== null;
     setFailed(false);
     setPending((p) => new Set(p).add(item.id));
+    const wasFavorite = !isExcluded && favoriteIds.includes(item.id);
     const idx = items.findIndex((i) => i.id === item.id);
     const next = items[idx + 1] ?? items[idx - 1] ?? null;
     try {
@@ -127,8 +130,13 @@ export function ExcludedBody() {
           : out.length === 1
             ? en.excluded.noticeOne(names)
             : en.excluded.noticeMany(names);
-      const lead = isExcluded ? s.announceIncluded(item.name) : s.announceExcluded(item.name);
-      setStatus(notice ? `${lead}. ${notice}` : lead);
+      // T-0569 (D-0202 §8): excluding a favorite also drops it from favorites; say so.
+      const lead = isExcluded
+        ? s.announceIncluded(item.name)
+        : wasFavorite
+          ? s.announceExcludedMoved(item.name)
+          : s.announceExcluded(item.name);
+      setStatus(notice ? s.withNotice(lead, notice) : lead);
       if (isExcluded && needle === "") focusAfter.current = { id: next?.id ?? null };
     } catch {
       setFailed(true);

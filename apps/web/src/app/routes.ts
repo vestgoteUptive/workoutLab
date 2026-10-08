@@ -137,6 +137,15 @@ export const routes: readonly RouteConfig[] = [
       import("../features/UF-11/index.js").then((m) => ({ default: m.ExcludedExercises })),
   },
   {
+    // T-0569 (D-0202 §8): reached only from the UF-11.2 row; no tab, like /plan/excluded.
+    path: "/plan/favorites",
+    screenId: "UF-11.6",
+    showTabBar: false,
+    guard: "protected",
+    load: () =>
+      import("../features/UF-11/index.js").then((m) => ({ default: m.FavoriteExercises })),
+  },
+  {
     // Before `/plan/routines/:routineId`, so `new` never reads as a routine id here or in
     // `matchesShellRoute` (react-router ranks the static segment higher on its own).
     path: "/plan/routines/new",
