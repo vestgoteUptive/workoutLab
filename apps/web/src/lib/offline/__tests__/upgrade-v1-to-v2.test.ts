@@ -200,7 +200,7 @@ describe("AC-1 v1 → v2 upgrade", () => {
     const db = new OfflineDb(dbName);
     await db.open();
     try {
-      expect(db.verno).toBe(3);
+      expect(db.verno).toBe(4);
 
       // The queued offline sets: the rows NFR-OFF-2 protects.
       const sets = await db.sets.where({ userId: USER }).sortBy("setIndex");
@@ -294,7 +294,7 @@ describe("AC-1 v1 → v2 upgrade", () => {
     const again = new OfflineDb(dbName);
     await again.open();
     try {
-      expect(again.verno).toBe(3);
+      expect(again.verno).toBe(4);
       expect(await again.sets.count()).toBe(4);
       expect(await again.sessionCache.count()).toBe(1);
     } finally {

@@ -231,9 +231,22 @@ describe("AC-9 the export surface", () => {
     "useOnline",
   ];
 
-  it("exports exactly the v1 surface plus the 3 refreshes and 5 loaders added here, plus T-0536's", () => {
+  // T-0567 (D-0202 §6): the favorites cache, on the shared list helper.
+  const T0567_EXPORTS = [
+    "refreshFavorites",
+    "favoriteExercise",
+    "unfavoriteExercise",
+    "favoriteIdsFor",
+    "loadFavoriteIds",
+    "FavoriteWriteError",
+    "useFavoriteIds",
+    "useFavoriteList",
+    "useFavoriteRows",
+  ];
+
+  it("exports exactly the v1 surface plus the 3 refreshes and 5 loaders added here, plus T-0536's and T-0567's", () => {
     expect(Object.keys(offlineIndex).sort()).toEqual(
-      [...V1_EXPORTS, ...T0319_EXPORTS, ...T0536_EXPORTS].sort(),
+      [...V1_EXPORTS, ...T0319_EXPORTS, ...T0536_EXPORTS, ...T0567_EXPORTS].sort(),
     );
   });
 

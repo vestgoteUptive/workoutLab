@@ -165,12 +165,15 @@ export interface SyncMeta {
 }
 
 /** One cached `excluded_exercises` row (T-0536, D-0199 §5). `key` is `userScopedKey(userId, exerciseId)`. */
-export interface CachedExcluded {
+export interface CachedExerciseListRow {
   key: string;
   userId: string;
   exerciseId: string;
   createdAt: string;
 }
+export type CachedExcluded = CachedExerciseListRow;
+/** One cached `favorite_exercises` row (T-0567, D-0202 §6). Same shape as `CachedExcluded`. */
+export type CachedFavorite = CachedExerciseListRow;
 
 export const DB_NAME = "wl-offline";
 
@@ -190,6 +193,8 @@ export class OfflineDb extends Dexie {
   routineCache!: Table<CachedRoutine, string>;
   // Version 3 (T-0536, D-0199 §5): the excluded-exercises cache.
   excludedCache!: Table<CachedExcluded, string>;
+  // Version 4 (T-0567, D-0202 §6): the favorite-exercises cache.
+  favoriteCache!: Table<CachedFavorite, string>;
 
   constructor(name: string = DB_NAME) {
     super(name);
@@ -216,6 +221,10 @@ export class OfflineDb extends Dexie {
     // Version 3 only adds a store: no `.upgrade()`, so no queued row can change (NFR-OFF-2).
     this.version(3).stores({
       excludedCache: "key, userId",
+    });
+    // Version 4 only adds a store: no `.upgrade()`, so no queued row can change (NFR-OFF-2).
+    this.version(4).stores({
+      favoriteCache: "key, userId",
     });
   }
 }

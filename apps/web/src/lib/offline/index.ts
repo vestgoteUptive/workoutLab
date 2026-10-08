@@ -47,3 +47,14 @@ export {
 } from "./excluded.js";
 export type { ExcludedWriteReason } from "./excluded.js";
 export { useExcludedIds, useExcludedRows, useOnline } from "./excluded-hooks.js";
+// T-0567 (D-0202 §6): the favorites cache, on the same helper as the excluded list.
+export {
+  refreshFavorites,
+  favoriteExercise,
+  unfavoriteExercise,
+  favoriteIdsFor,
+  loadFavoriteIds,
+  FavoriteWriteError,
+} from "./favorites.js";
+export type { FavoriteWriteReason } from "./favorites.js";
+export { useFavoriteIds, useFavoriteList, useFavoriteRows } from "./favorites-hooks.js";
