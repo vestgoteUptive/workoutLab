@@ -10,6 +10,8 @@ export const uf04 = {
   noMatchFilters: "No exercises match these filters",
   neverDownloaded: "The exercise library downloads the first time you're online.",
   detailMissing: "Instructions download the next time you're online.",
+  primaryLabel: "Primary",
+  secondaryLabel: "Secondary",
   primaryAreas: "Primary areas",
   secondaryAreas: "Secondary areas",
   equipmentLabel: "Equipment",
