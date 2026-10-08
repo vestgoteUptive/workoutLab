@@ -104,6 +104,7 @@ describe("AC15 database.gen.ts matches docs/data-model.md v1", () => {
         "routines",
         "routine_items",
         "plan_checkins",
+        "excluded_exercises",
       ].sort(),
     );
   });
@@ -158,5 +159,37 @@ describe("AC16 sessions.plan is SessionPlan | null", () => {
     expectTypeOf<Tables<"session_sets">["backoff"]>().toEqualTypeOf<boolean>();
     expectTypeOf<Tables<"session_sets_live">["backoff"]>().toEqualTypeOf<boolean | null>();
     expectTypeOf<Json>().not.toEqualTypeOf<SessionPlan>();
+  });
+});
+
+describe("T-0535 AC9 excluded_exercises types (D-0199 §4, UF-11.5)", () => {
+  it("Row has the three columns, all required and non-null", () => {
+    expectTypeOf<Tables<"excluded_exercises">>().toEqualTypeOf<{
+      created_at: string;
+      exercise_id: string;
+      user_id: string;
+    }>();
+  });
+
+  it("Insert needs only exercise_id (user_id defaults to auth.uid(), created_at is server-set)", () => {
+    expectTypeOf<TablesInsert<"excluded_exercises">>().toEqualTypeOf<{
+      created_at?: string;
+      exercise_id: string;
+      user_id?: string;
+    }>();
+  });
+
+  it("Update makes every column optional", () => {
+    expectTypeOf<TablesUpdate<"excluded_exercises">>().toEqualTypeOf<{
+      created_at?: string;
+      exercise_id?: string;
+      user_id?: string;
+    }>();
+  });
+
+  it("references exercises through excluded_exercises_exercise_id_fkey", () => {
+    expect(readFileSync(GEN_PATH, "utf8")).toContain(
+      'foreignKeyName: "excluded_exercises_exercise_id_fkey"',
+    );
   });
 });

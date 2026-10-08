@@ -35,6 +35,7 @@ const data: AccountExport = {
     routines: [],
     routine_items: [],
     plan_checkins: [],
+    excluded_exercises: [],
   },
   device: { queuedSessions: [], queuedSets: [] },
 };

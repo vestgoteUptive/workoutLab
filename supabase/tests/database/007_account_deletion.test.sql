@@ -1,8 +1,8 @@
 -- T-0100a AC22 [a] account deletion cascades (NFR-PRIV-5). A owns a profile, 9 area_targets,
 -- 2 sessions and 6 session_sets (1 tombstoned); [b] 1 routine with 2 items and 1 plan_checkins row
--- (T-0100b). B owns 1 row in each table.
+-- (T-0100b); 2 excluded_exercises rows (T-0535, D-0199 §4). B owns 1 row in each table.
 begin;
-select plan(11);
+select plan(14);
 
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
@@ -44,6 +44,13 @@ insert into public.plan_checkins (user_id, period_index, completed_prev, complet
   ('00000000-0000-0000-0000-00000000000a', 3, 4, 3, 3, 4, 2, 3, '2026-09-27T07:00Z'),
   ('00000000-0000-0000-0000-00000000000b', 2, 1, 1, 3, 4, 2, 3, '2026-09-27T07:00Z');
 
+insert into public.excluded_exercises (user_id, exercise_id) values
+  ('00000000-0000-0000-0000-00000000000a', 'fx-back-squat'),
+  ('00000000-0000-0000-0000-00000000000a', 'fx-plank'),
+  ('00000000-0000-0000-0000-00000000000b', 'fx-plank');
+select is((select count(*)::int from public.excluded_exercises where user_id = '00000000-0000-0000-0000-00000000000a'), 2,
+  'T-0535 AC5 A has 2 exclusions before the delete');
+
 select results_eq($$select
     (select count(*)::int from public.routines where user_id = '00000000-0000-0000-0000-00000000000a'),
     (select count(*)::int from public.routine_items where user_id = '00000000-0000-0000-0000-00000000000a'),
@@ -57,6 +64,11 @@ select results_eq($$select
   $$values (1, 9, 2, 6)$$, 'A''s fixture is in place');
 
 delete from auth.users where id = '00000000-0000-0000-0000-00000000000a';
+
+select is((select count(*)::int from public.excluded_exercises where user_id = '00000000-0000-0000-0000-00000000000a'), 0,
+  'T-0535 AC5 A has 0 excluded_exercises after the auth delete');
+select is((select count(*)::int from public.excluded_exercises where user_id = '00000000-0000-0000-0000-00000000000b'), 1,
+  'T-0535 AC5 B''s exclusion is unchanged');
 
 select is((select count(*)::int from public.profiles where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 profiles');
 select is((select count(*)::int from public.area_targets where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 area_targets');

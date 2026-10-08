@@ -235,6 +235,9 @@ export interface OfflineFixtures {
   checkins?: unknown[];
   routines?: unknown[];
   routineItems?: unknown[];
+  // T-0535 (D-0199 §4, UF-11.4): the "never suggest" list. The export reads it today; T-0536's
+  // cache will too. Optional, defaulting to `[]`, so no spec hits the 501 backstop.
+  excludedExercises?: unknown[];
 }
 
 /**
@@ -330,6 +333,10 @@ export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): P
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/routine_items*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.routineItems ?? [] }),
   );
+  // T-0535: no other route's glob matches `excluded_exercises?...`, so the order is free here too.
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/excluded_exercises*`, (route) =>
+    route.fulfill({ status: 200, json: fixtures.excludedExercises ?? [] }),
+  );
 }
 
 /**
@@ -350,6 +357,7 @@ export async function mockSupabaseEmptyReads(page: Page): Promise<void> {
     "plan_checkins",
     "routines",
     "routine_items",
+    "excluded_exercises",
   ]) {
     await page.route(`${VITE_SUPABASE_URL}/rest/v1/${table}*`, (route) =>
       route.fulfill({ status: 200, json: [] }),

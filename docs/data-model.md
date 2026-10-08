@@ -1,6 +1,6 @@
 # Data model (v1)
 
-**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`, the engine v1 columns) is migrated in `supabase/migrations/20260928090000_data_model_v1b.sql` (T-0100b, D-0035). `supabase/migrations/20260928120000_priority_areas_lower_bound.sql` (T-0102b, D-0037) tightens `profiles_priority_areas_valid`. `supabase/migrations/20261001090000_plan_checkins_one_period.sql` (T-0223, D-0070 §6) lets `plan_checkins` store a one-period check-in. `supabase/migrations/20261005120000_purge_auth_audit_on_user_delete.sql` (T-0503, D-0188 §1) adds the auth audit purge trigger (see "Auth schema triggers"). `supabase/migrations/20261005130000_strip_auth_profile_claims.sql` (T-0504, D-0188 §2) adds the profile-claim strip triggers and backfills existing rows (same section). Every table below is in the database. The typed view of this schema is `packages/shared/src/database.gen.ts` (D-0037 §10, D-0043).
+**Status:** v1. Part [a] is migrated in `supabase/migrations/20260927210000_data_model_v1a.sql` (T-0100a). Part [b] (`routines`, `routine_items`, `plan_checkins`, schema `analytics`, the engine v1 columns) is migrated in `supabase/migrations/20260928090000_data_model_v1b.sql` (T-0100b, D-0035). `supabase/migrations/20260928120000_priority_areas_lower_bound.sql` (T-0102b, D-0037) tightens `profiles_priority_areas_valid`. `supabase/migrations/20261001090000_plan_checkins_one_period.sql` (T-0223, D-0070 §6) lets `plan_checkins` store a one-period check-in. `supabase/migrations/20261005120000_purge_auth_audit_on_user_delete.sql` (T-0503, D-0188 §1) adds the auth audit purge trigger (see "Auth schema triggers"). `supabase/migrations/20261005130000_strip_auth_profile_claims.sql` (T-0504, D-0188 §2) adds the profile-claim strip triggers and backfills existing rows (same section). `supabase/migrations/20261007120000_excluded_exercises.sql` (T-0535, D-0199 §4) adds `excluded_exercises`. Every table below is in the database. The typed view of this schema is `packages/shared/src/database.gen.ts` (D-0037 §10, D-0043).
 
 Decisions: D-0001 (Supabase), D-0015 (set sync), D-0017 (offline, client ids), D-0018 (check-ins), D-0020 (write rules), D-0021 (shape), D-0024 (session building), D-0026 (progression), D-0027 (check-in reset), D-0029 (`exercises` columns), D-0030 (v1a defaults), D-0034 (engine inputs), D-0035 (v1b defaults), D-0037 (`SessionPlan` v1, array lower bound), D-0044 (`external_load` = NOT `bodyweight`, seed only).
 
@@ -241,6 +241,21 @@ The client inserts a row when a proposal is **first shown** (`answer` null), and
 - Keys: PK `(id)`, unique `plan_checkins_user_id_period_index_key (user_id, period_index)`. Checks: `plan_checkins_rhythm_before_range` and `plan_checkins_proposed_range` (each bound 1–7, min ≤ max); `plan_checkins_answer_pair`: `(answer is null) = (answered_at is null)`.
 - Indexes: the unique `(user_id, period_index)`.
 - RLS: `plan_checkins_select`, `plan_checkins_insert`, `plan_checkins_update`, `plan_checkins_delete` (owner, `authenticated`).
+
+### excluded_exercises (D-0020, D-0199, UF-04.2, UF-08.2, UF-08.3, UF-11.5)
+The user's "never suggest" list (D-0199 §1). One row per excluded exercise; it never expires. The client passes the ids to `suggest` as `excludeIds` and to `rankSwaps`. Adding an existing row is not an error (`upsert … ignoreDuplicates`, i.e. `on conflict (user_id, exercise_id) do nothing`); deleting a missing row changes 0 rows. Not a `profiles` array, so a concurrent add from a second device is never lost (D-0199 §4). Warm-up ids are refused in the client, not here.
+
+| column | type | null | default | notes |
+|---|---|---|---|---|
+| user_id | uuid | no | `auth.uid()` | FK `auth.users(id)` on delete cascade. |
+| exercise_id | text | no | | FK `exercises(id)` **on delete cascade** (see below). |
+| created_at | timestamptz | no | `now()` | Server-set (D-0020, NFR-SYNC-3). |
+
+- Keys: PK `excluded_exercises_pkey (user_id, exercise_id)`. There is no `id` column; the export orders by `exercise_id` (D-0199 §5).
+- Indexes: the PK; `excluded_exercises_exercise_id_idx (exercise_id)`.
+- Trigger `excluded_exercises_before_write` (before insert or update, `private.excluded_exercises_before_write`): insert sets `created_at` := `now()`; update keeps `user_id` and `created_at`. A client value is ignored.
+- RLS: `excluded_exercises_select`, `excluded_exercises_insert`, `excluded_exercises_update`, `excluded_exercises_delete` (owner, `authenticated`). `anon` has no privileges.
+- **Cascade asymmetry (D-0199 §4).** `session_sets.exercise_id` and `routine_items.exercise_id` have no `on delete` action, so a library row with history or in a routine can't be deleted. `excluded_exercises.exercise_id` cascades: an exclusion is a preference, not history, so it goes with its exercise.
 
 ## Schema analytics (D-0021, NFR-AN-2)
 Private: `usage` is revoked from `public`, `anon` and `authenticated` (select gives `42501`), and the schema is not in PostgREST's exposed schemas. The views run with the owner's rights (`security_invoker` off) so they aggregate over all users. Dates are **UTC**. Each view returns exactly one row. Ratios are `numeric` rounded to 3 dp and are `null` when the denominator is 0.
