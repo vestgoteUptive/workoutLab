@@ -41,16 +41,25 @@ export function writeFocusState(
   plan?: SessionPlan,
 ): void {
   try {
-    // T-0578: the skipped items' exercise ids ride along, so a restore against a plan reordered
-    // after this write (a kill between the two) can realign `skippedItems` by exercise.
-    // They live under their own key so the stored state stays exactly the machine state.
+    storage?.setItem(focusKey(sessionId), JSON.stringify(state));
+  } catch {
+    // Quota or private mode: the transition still happens.
+  }
+  // T-0578: the skipped items' exercise ids ride along (own key, so the stored state stays exactly
+  // the machine state), so a restore against a plan reordered after this write can realign
+  // `skippedItems` by exercise. Written after the state; if it can't be, it is removed, because
+  // ids that don't match the state would realign wrongly.
+  try {
     if (plan && state.skippedItems.length > 0) {
       const ids = state.skippedItems.map((i) => plan.items[i]?.exerciseId ?? null);
       storage?.setItem(skippedKey(sessionId), JSON.stringify(ids));
     } else storage?.removeItem(skippedKey(sessionId));
-    storage?.setItem(focusKey(sessionId), JSON.stringify(state));
   } catch {
-    // Quota or private mode: the transition still happens.
+    try {
+      storage?.removeItem(skippedKey(sessionId));
+    } catch {
+      // Nothing more to do.
+    }
   }
 }
 

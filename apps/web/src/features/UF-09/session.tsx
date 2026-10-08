@@ -293,11 +293,12 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
       if (deferring) return deferring;
       const unavailable: DoLaterResult = { ok: false, reason: "unavailable" };
       const ended = () => writes.finishing || store.getState().phase === "done";
+      if (ended()) return Promise.resolve(unavailable);
+      const { state, ctx } = store.getSnapshot();
+      const moved = doLaterOrder(state, ctx.plan);
+      // Nothing to write: a call that can't run never hides a pending plan write from finish().
+      if (!moved) return Promise.resolve(unavailable);
       const run = (async (): Promise<DoLaterResult> => {
-        if (ended()) return unavailable;
-        const { state, ctx } = store.getSnapshot();
-        const moved = doLaterOrder(state, ctx.plan);
-        if (!moved) return unavailable;
         const movedIndex = moved.order.findIndex((to, i) => to > i);
         const movedId = ctx.plan.items[movedIndex]!.exerciseId;
         const name = ctx.library.find((e) => e.id === movedId)?.name ?? movedId;
@@ -317,9 +318,10 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
           now.resumePhase === state.resumePhase &&
           now.itemIndex === state.itemIndex &&
           now.loggedSets === state.loggedSets &&
+          store.getSnapshot().ctx.plan === ctx.plan &&
           !ended();
         if (!same) {
-          // The pause ended (or a set was logged) while the write was in flight: the machine
+          // The pause ended (a set was logged, or the plan changed) while the write was in flight: the machine
           // can't follow, so the old order goes back and nothing has changed.
           try {
             await upsertSession(row);
@@ -333,9 +335,11 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
         return { ok: true, name };
       })();
       deferring = run;
-      writes.plan = run.then(() => undefined);
+      const pendingWrite = run.then(() => undefined);
+      writes.plan = pendingWrite;
       const clear = () => {
         if (deferring === run) deferring = null;
+        if (writes.plan === pendingWrite) writes.plan = null;
       };
       run.then(clear, clear);
       return run;

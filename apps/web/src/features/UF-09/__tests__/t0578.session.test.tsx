@@ -3,12 +3,12 @@
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
-import { S1, STARTED_AT_MS, USER_A } from "./fixtures.js";
+import { S1, USER_A } from "./fixtures.js";
 import { flushReal, freshDb, seedSession, signIn, storedFocus, useFakeClock } from "./helpers.js";
 import { probe, session } from "./probe.js";
 import { call, renderSession } from "./session-helpers.js";
-import { dispatched, stores } from "./store-spy.js";
-import { NOW, PAUSED_NEXT, PLAN_P, paused } from "./t0578-fixtures.js";
+import { dispatched, lastStore, stores } from "./store-spy.js";
+import { NOW, PAUSED_NEXT, PLAN_P, logged, paused } from "./t0578-fixtures.js";
 
 const spy = await vi.hoisted(async () => {
   const m = await import("../../../lib/offline/__tests__/supabase-spy.js");
@@ -159,6 +159,96 @@ describe("AC9 write failure", () => {
     expect(result).toEqual({ ok: false, reason: "unavailable" });
     expect(ids((await storedPlan()).row.plan as typeof PLAN_P)).toEqual(ids(PLAN_P));
     expect(session().plan.items.map((i) => i.exerciseId)).toEqual(ids(PLAN_P));
-    expect(STARTED_AT_MS).toBeGreaterThan(0);
+  });
+
+  /** Holds the next row write open; returns the way to release it. */
+  function holdNextWrite(): () => void {
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const real = upsertSpy.getMockImplementation()!;
+    upsertSpy.mockImplementationOnce(async (r) => {
+      await gate;
+      return real(r);
+    });
+    return release;
+  }
+
+  it("a set logged on the current item mid-write: unavailable, the old order written back", async () => {
+    seedFocus(PAUSED_NEXT);
+    await renderSession();
+    const release = holdNextWrite();
+    const pending = call(() => session().doLater());
+    await flushReal();
+    lastStore().dispatch({ type: "SET_LOGGED", set: logged(1, 0), atMs: NOW });
+    release();
+    expect(await pending).toEqual({ ok: false, reason: "unavailable" });
+    expect(ids((await storedPlan()).row.plan as typeof PLAN_P)).toEqual(ids(PLAN_P));
+    expect(session().plan.items.map((i) => i.exerciseId)).toEqual(ids(PLAN_P));
+    expect(session().state.phase).toBe("paused");
+  });
+
+  it("a swap landing mid-write is not undone: unavailable, the swapped plan is the store's", async () => {
+    seedFocus(PAUSED_NEXT);
+    await renderSession();
+    const release = holdNextWrite();
+    const pending = call(() => session().doLater());
+    await flushReal();
+    const swapped = {
+      ...PLAN_P,
+      items: PLAN_P.items.map((it, k) => (k === 2 ? { ...it, exerciseId: "leg-curl" } : it)),
+    };
+    lastStore().replacePlan(swapped, 2, NOW);
+    release();
+    expect(await pending).toEqual({ ok: false, reason: "unavailable" });
+    expect(session().plan.items.map((i) => i.exerciseId)).toEqual(ids(swapped));
+    expect(session().state.phase).toBe("paused");
+  });
+
+  it("an unavailable call does not replace a pending plan write that finish() waits for", async () => {
+    const { createFocusActions, createSessionWrites } = await import("../session.js");
+    const { createFocusStore } = await import("../store.js");
+    const { CTX_P } = await import("./t0578-fixtures.js");
+    const running = {
+      ...PAUSED_NEXT,
+      phase: "next",
+      resumePhase: null,
+      pausedAtMs: null,
+    } as typeof PAUSED_NEXT;
+    const store = createFocusStore({ sessionId: S1, ctx: CTX_P, initial: running, storage: null });
+    const writes = createSessionWrites();
+    const trim = new Promise<void>(() => undefined);
+    writes.plan = trim;
+    const actions = createFocusActions({
+      sessionId: S1,
+      store,
+      storage: null,
+      onRow: () => undefined,
+      navigate: () => undefined,
+      writes,
+    });
+    expect(await actions.doLater()).toEqual({ ok: false, reason: "unavailable" });
+    expect(writes.plan).toBe(trim);
+  });
+});
+
+describe("the skipped-ids key (restore realign) is removed with the focus state", () => {
+  const SKIPPED = `wl-focus-skipped:${S1}`;
+  it("finish() removes it", async () => {
+    seedFocus(PAUSED_NEXT);
+    window.localStorage.setItem(SKIPPED, '["bench-press"]');
+    await renderSession();
+    window.localStorage.setItem(SKIPPED, '["bench-press"]');
+    await call(() => session().finish());
+    expect(window.localStorage.getItem(SKIPPED)).toBeNull();
+    expect(window.localStorage.getItem(KEY)).toBeNull();
+  });
+
+  it("opening an ended session removes it", async () => {
+    await seedSession({ plan: PLAN_P, ended_at: new Date(NOW - 1000).toISOString() });
+    seedFocus(PAUSED_NEXT);
+    window.localStorage.setItem(SKIPPED, '["bench-press"]');
+    await renderSession();
+    expect(window.localStorage.getItem(SKIPPED)).toBeNull();
+    expect(window.localStorage.getItem(KEY)).toBeNull();
   });
 });
