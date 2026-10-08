@@ -63,3 +63,4 @@ Every AC checked and recorded · `check-figure.mjs` green · `node .github/scrip
 - AC-5 → `check-figure.mjs` (`checkDocs`), run by the same vitest file. AC-6 → `node .github/scripts/check-all.mjs` exit 0; `wl-check-colours` on the asset folder clean (in the test).
 - Red on unfixed docs: `node check-figure.mjs` → 13 AC-5 problems before the doc fold. Planted faults (backup + `cp` restore): fill attr in the real SVG → 2 tests red; "45°" removed from design-system.md → AC-5 red; delta file restored → AC-5 red; checker attr check disabled → 3 cases red; checker per-view check disabled → 2 cases red. All restored, `check-figure: ok`.
 - Not changed: tokens, `apps/**`. `docs/specs/body-map-silhouette.md` still names the deleted delta files (product lane, follow-up).
+- Gate (c0310d4): `scripts/locked.sh heavy npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1` 19/19 green; `-w test:repo-checks` 369 pass / 0 fail; `-w format:check` clean; `check-all` exit 0.
