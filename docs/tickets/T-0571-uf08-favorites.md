@@ -51,3 +51,10 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-08 e2e specs green · contracts unchanged · commits start with `T-0571:` and cite UF-08.1 / UF-08.2.
 
 ## Build / accept log
+
+### Build log (frontend-dev)
+- SessionSetup: `favoriteIds = favoriteIdsFor(list)` on the UF-08.1 fit line, `resuggest` (Shuffle, chips), Add, Start with; fit line/Suggest wait on `favoritesLoaded`. Suggested: "Favorite" tag (`data-part="row-favorite"`) on item rows (warm-up row has none).
+- AC map (`apps/web/src/features/UF-08/__tests__/favorites-suggest.test.tsx`): AC1 three tests + gating test; AC2 two (real engine); AC3, AC4, AC5, AC6, AC7 one each; AC8 `tests/e2e/uf-08-favorites.spec.ts` (AC2 online; AC4 as offline Shuffle after the cache is seeded; the full offline reload is not used).
+- Planted faults (backup copy restored): empty favoriteIds in resuggest, startWith, add (each red); fit line `[]` (3 red); gating dropped (red); tag off (3 red).
+- AC5 note: back-squat is not in the 30 min plan anyway (R7-E21), so it guards only the absence of tag/copy.
+- Gate: -w typecheck lint test exit 0; test:repo-checks, format:check, check-all exit 0; uf-08 e2e 42 passed. Existing tests updated only for the new `favoriteIds: []` input key (fit-line, suggested-actions) and the favorites-section load gating (list unloads after the plan builds).

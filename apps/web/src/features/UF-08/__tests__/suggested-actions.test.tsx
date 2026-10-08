@@ -93,6 +93,7 @@ function input(overrides: Partial<SessionInput> = {}): SessionInput {
     mainLiftId: "bench-press",
     pinnedIds: [],
     excludeIds: [],
+    favoriteIds: [],
     ...overrides,
   };
 }

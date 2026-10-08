@@ -169,6 +169,7 @@ export function Suggested({
   onStartWith,
   onMove,
 }: SuggestedProps) {
+  const favSet = new Set(favoriteIds ?? []);
   const navigate = useNavigate();
   const location = useLocation();
   const sheetOpen =
@@ -428,6 +429,11 @@ export function Suggested({
                     <span className="wl-uf08__row-detail" data-part="row-detail">
                       {itemSummary(item)}
                     </span>
+                    {favSet.has(item.exerciseId) ? (
+                      <span className="wl-uf08__row-reason" data-part="row-favorite">
+                        {en.uf08.favoriteTag}
+                      </span>
+                    ) : null}
                   </div>
                   {index > 0 ? (
                     <button
@@ -483,6 +489,11 @@ export function Suggested({
                   {item.isMain && addedIds.includes(item.exerciseId) ? (
                     <span className="wl-uf08__row-reason" data-part="row-main">
                       {en.uf08.mainTag}
+                    </span>
+                  ) : null}
+                  {favSet.has(item.exerciseId) ? (
+                    <span className="wl-uf08__row-reason" data-part="row-favorite">
+                      {en.uf08.favoriteTag}
                     </span>
                   ) : null}
                   {reason !== "" ? (

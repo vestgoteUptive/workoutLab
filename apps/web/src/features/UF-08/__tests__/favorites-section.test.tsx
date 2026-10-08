@@ -116,8 +116,8 @@ describe("AC1 Favorites first", () => {
 describe("AC1 waits for the favorites list", () => {
   it("shows no sections until loaded", async () => {
     lists.fav = ["back-squat"];
-    lists.favLoaded = false;
     await toPlan();
+    lists.favLoaded = false;
     openSheet();
     expect(headings()).toEqual(["Add exercise"]);
     expect(screen.queryByText("Search to find an exercise.")).toBeNull();
