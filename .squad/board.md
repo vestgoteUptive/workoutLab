@@ -140,7 +140,6 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 | T-0576 | UF-08.2 Reorder mode + order merge across re-suggests + Start writes display order | web-feature:UF-08 | T-0575 | todo | wl-build-web |
 | T-0577 | UF-08.5 Favorites section first on the empty query + Favorite tag on rows | web-feature:UF-08 | T-0576, T-0567, T-0561 | todo | wl-build-web |
 | T-0580 | Show the failed-exclusion message on the host screen after the swap sheet closes (T-0539 follow-up) | web-feature:UF-09 | T-0539 | todo | wl-build-web |
-| T-0581 | UF-08.2: tap an exercise name to open its how-to (reuse ExerciseHowTo); owner request | web-feature:UF-08 | — | doing | wl-build-web |
 | T-0582 | UF-11.5/11.6 re-read when the library cache arrives (cold direct load shows no groups) | web-feature:UF-11 | — | todo | wl-build-web |
 
 ### Groomed from parked (2026-10-08)

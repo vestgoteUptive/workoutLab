@@ -398,3 +398,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0568 | UF-04.2 Favorite toggle with move lines + UF-04.1 Favorite tag | web-feature:UF-04 | T-0541, T-0558, T-0561, T-0567 | done (note: two offline lines can show on UF-04.2) | wl-build-web |
 | T-0565 | openapi SessionInput optional favoriteIds + api.gen.ts — off the user path | data | T-0562, T-0564 | done | wl-build-data |
 | T-0569 | UF-11.6 Favorite exercises at /plan/favorites + UF-11.2 row + UF-11.5 move line | web-feature:UF-11 | T-0561, T-0567 | done | wl-build-web |
+| T-0581 | UF-08.2: tap an exercise name to open its how-to (reuse ExerciseHowTo); owner request | web-feature:UF-08 | — | done (AC-4 swap-candidate how-to not done; optional) | wl-build-web |
