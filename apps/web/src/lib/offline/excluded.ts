@@ -5,6 +5,12 @@ import { offlineDb, userScopedKey, type CachedExcluded } from "./db.js";
 import { currentUserId } from "./current-user.js";
 import { cacheGeneration, cacheWriteAllowed } from "./cache-generation.js";
 
+// A refresh that started before a confirmed write holds data older than that write; it must not
+// replace the cache. Each confirmed write bumps the user's counter; a refresh compares it on commit.
+const writeSeq = new Map<string, number>();
+const seqOf = (userId: string): number => writeSeq.get(userId) ?? 0;
+const bumpSeq = (userId: string): void => void writeSeq.set(userId, seqOf(userId) + 1);
+
 function isOffline(): boolean {
   return typeof navigator !== "undefined" && navigator.onLine === false;
 }
@@ -16,6 +22,7 @@ export async function refreshExcluded(): Promise<void> {
   const userId = currentUserId();
   if (!userId || isOffline()) return;
   const gen = cacheGeneration();
+  const seq = seqOf(userId);
   const db = offlineDb();
 
   let rows: Array<{ exercise_id: string; created_at: string }>;
@@ -36,7 +43,7 @@ export async function refreshExcluded(): Promise<void> {
     createdAt: r.created_at,
   }));
   await db.transaction("rw", db.excludedCache, async () => {
-    if (!cacheWriteAllowed(gen)) return;
+    if (!cacheWriteAllowed(gen) || seqOf(userId) !== seq) return;
     await db.excludedCache.where({ userId }).delete();
     await db.excludedCache.bulkPut(cached);
   });
@@ -83,6 +90,7 @@ export async function excludeExercise(userId: string, exerciseId: string): Promi
   } catch (error) {
     throw new ExcludedWriteError("server", error);
   }
+  bumpSeq(userId);
   if (!cacheWriteAllowed(gen)) return;
   const key = userScopedKey(userId, exerciseId);
   await db.transaction("rw", db.excludedCache, async () => {
@@ -107,6 +115,7 @@ export async function includeExercise(userId: string, exerciseId: string): Promi
   } catch (error) {
     throw new ExcludedWriteError("server", error);
   }
+  bumpSeq(userId);
   if (!cacheWriteAllowed(gen)) return;
   await offlineDb().excludedCache.delete(userScopedKey(userId, exerciseId));
 }

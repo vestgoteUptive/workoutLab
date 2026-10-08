@@ -4,6 +4,9 @@ import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 
 type Result = { data: unknown; error: unknown };
 const h = vi.hoisted(() => ({
+  readGate: Promise.resolve() as Promise<void>,
+  upsertGate: Promise.resolve() as Promise<void>,
+  deleteGate: Promise.resolve() as Promise<void>,
   reads: [] as string[],
   readResult: { data: [], error: null } as { data: unknown; error: unknown } | "throw",
   upsertCalls: [] as Array<{ rows: unknown; options: unknown }>,
@@ -19,8 +22,10 @@ vi.mock("../../auth/client.js", () => ({
         h.reads.push(table);
         const res = async () => {
           if (table !== "excluded_exercises") return { data: [], error: null };
-          if (h.readResult === "throw") throw new TypeError("Failed to fetch");
-          return h.readResult;
+          const snapshot = h.readResult;
+          await h.readGate;
+          if (snapshot === "throw") throw new TypeError("Failed to fetch");
+          return snapshot;
         };
         return {
           gte: () => res(),
@@ -30,11 +35,17 @@ vi.mock("../../auth/client.js", () => ({
       },
       upsert: (rows: unknown, options: unknown) => {
         h.upsertCalls.push({ rows, options });
-        return { select: async () => h.upsertResult };
+        return {
+          select: async () => {
+            await h.upsertGate;
+            return h.upsertResult;
+          },
+        };
       },
       delete: () => ({
         eq: async (col: string, val: string) => {
           h.deleteCalls.push({ col, val });
+          await h.deleteGate;
           return h.deleteResult;
         },
       }),
@@ -44,6 +55,7 @@ vi.mock("../../auth/client.js", () => ({
 
 const x = await import("../excluded.js");
 const { useExcludedIds, useExcludedRows, useOnline } = await import("../excluded-hooks.js");
+const { invalidateCacheWrites } = await import("../cache-generation.js");
 const { refreshAll } = await import("../history.js");
 const { offlineDb, userScopedKey } = await import("../db.js");
 const { freshOfflineDb, signIn, signOut } = await import("./test-helpers.js");
@@ -72,6 +84,7 @@ beforeEach(() => {
   h.reads.length = 0;
   h.upsertCalls.length = 0;
   h.deleteCalls.length = 0;
+  h.readGate = h.upsertGate = h.deleteGate = Promise.resolve();
   h.readResult = { data: [], error: null };
   h.upsertResult = { data: [], error: null };
   h.deleteResult = { error: null };
@@ -182,6 +195,68 @@ describe("T-0536 AC6 writes", () => {
     await expect(x.includeExercise(A, "bench-press")).rejects.toMatchObject({ reason: "offline" });
     expect(h.upsertCalls).toEqual([]);
     expect(h.deleteCalls).toEqual([]);
+  });
+});
+
+function gate(): { promise: Promise<void>; open: () => void } {
+  let open!: () => void;
+  const promise = new Promise<void>((r) => (open = r));
+  return { promise, open };
+}
+
+describe("T-0536 review: a stale refresh must not overwrite a newer confirmed write", () => {
+  it("stale read (without the exclusion) -> exclude confirms -> read resolves: the cache keeps it", async () => {
+    const g = gate();
+    h.readGate = g.promise;
+    h.readResult = server();
+    const refresh = x.refreshExcluded();
+    await vi.waitFor(() => expect(h.reads).toContain("excluded_exercises"));
+    await x.excludeExercise(A, "bench-press");
+    g.open();
+    await refresh;
+    expect(await ids()).toEqual(["bench-press"]);
+  });
+  it("stale read (with the exclusion) -> include confirms -> read resolves: it stays included", async () => {
+    await offlineDb().excludedCache.put(row(A, "bench-press"));
+    const g = gate();
+    h.readGate = g.promise;
+    h.readResult = server("bench-press");
+    const refresh = x.refreshExcluded();
+    await vi.waitFor(() => expect(h.reads).toContain("excluded_exercises"));
+    await x.includeExercise(A, "bench-press");
+    g.open();
+    await refresh;
+    expect(await ids()).toEqual([]);
+  });
+  it("a refresh started after the write still replaces the cache", async () => {
+    await x.excludeExercise(A, "bench-press");
+    h.readResult = server("squat");
+    await x.refreshExcluded();
+    expect(await ids()).toEqual(["squat"]);
+  });
+});
+
+describe("T-0536 review: sign-out between the server reply and the cache write", () => {
+  it("excludeExercise writes nothing to the cache", async () => {
+    const g = gate();
+    h.upsertGate = g.promise;
+    const write = x.excludeExercise(A, "bench-press");
+    await vi.waitFor(() => expect(h.upsertCalls).toHaveLength(1));
+    invalidateCacheWrites();
+    g.open();
+    await write;
+    expect(await ids()).toEqual([]);
+  });
+  it("includeExercise leaves the cache as the clear left it", async () => {
+    await offlineDb().excludedCache.put(row(A, "bench-press"));
+    const g = gate();
+    h.deleteGate = g.promise;
+    const write = x.includeExercise(A, "bench-press");
+    await vi.waitFor(() => expect(h.deleteCalls).toHaveLength(1));
+    invalidateCacheWrites();
+    g.open();
+    await write;
+    expect(await ids()).toEqual(["bench-press"]);
   });
 });
 
