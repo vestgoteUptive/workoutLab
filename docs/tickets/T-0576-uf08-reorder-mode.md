@@ -52,3 +52,12 @@ None (`sessions.plan.items` is already an ordered array, D-0205 §10).
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-08 and UF-09 e2e specs green · contracts unchanged · commits start with `T-0576:` and cite UF-08.2 / UF-08.4.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-08)
+- Start: clean tree, HEAD d4c75ec. Added `order.ts` (permute, mergeOrder), `Adjusted.order`, `onMove` in SessionSetup, Reorder mode in Suggested, `uf08.reorder*`/`moved` strings, CSS.
+- Design: `adjusted.workout.plan.items` is held in display order (so Swap index, Ready and Start's `plan` need no change); `order` is the merge input (null = engine order).
+- Defaults: Reorder button shown only with >= 2 items (screen spec; ticket's "one item still offered" conflicts, the brief and spec win). UF-08.4 Ready has no exercise list today, so "UF-08.4 lists that order" is not built (follow-up). Row move transition is a 150 ms background-color transition, `none` under prefers-reduced-motion (CSS asserted by a test).
+- AC to test (`__tests__/reorder.test.tsx`, 18 tests): AC1 four tests + reduced-motion; AC2 zero suggest and bar; AC3 20 min, 45 min, Shuffle, null; AC4 Start with after 45; AC5 remove, re-add, swap, swap then Shuffle; AC6 Start online and offline (stored plan order, mainLiftId, no fetch); AC7 Back then Suggest. AC8 `tests/e2e/uf-08-reorder.spec.ts` (Reorder, axe in mode, Start, UF-09 shows Leg extension).
+- Planted faults (copies restored with cp), each failed the named test: merge ignores order (AC3 Shuffle), no new-main promote (AC4), move does not permute (7 tests incl. AC1, AC6), no reduced-motion rule (AC1 motion), no entry focus (AC1), remove keeps id in order (AC5 re-add), swap drops order (AC5 swap+Shuffle). The 20/45 min tests did not catch "merge ignores order" alone (engine order already agrees there); Shuffle does.
+- e2e: uf-08-reorder passed.
+- Gate: typecheck lint test (heavy, -w) exit 0; format:check, check-all, test:repo-checks green; e2e uf-08 (all) + uf-09-ready: 45 passed.

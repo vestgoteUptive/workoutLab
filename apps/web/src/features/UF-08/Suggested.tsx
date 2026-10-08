@@ -68,6 +68,8 @@ export interface SuggestedProps {
   onAdd?: (exerciseId: string) => string | null;
   /** T-0575: "Start with this" (D-0205 §5): null when `id` is now the main lift, else the refusal. */
   onStartWith?: (exerciseId: string) => string | null;
+  /** T-0576 (D-0205 §7): move an item one place in the display order; no `suggest` call. */
+  onMove?: (exerciseId: string, delta: -1 | 1) => void;
 }
 
 /** UF-08.5 is open while the current history entry carries this state; the URL never changes. */
@@ -160,6 +162,7 @@ export function Suggested({
   blocked,
   onAdd,
   onStartWith,
+  onMove,
 }: SuggestedProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -175,6 +178,11 @@ export function Suggested({
   // Set once a close (Escape, Close, Add) has navigated back, so a second one can't pop again.
   const closing = useRef(false);
   const [status, setStatus] = useState("");
+  // T-0576: Reorder mode is UI state of this screen; it never outlives it.
+  const [reorder, setReorder] = useState(false);
+  const reorderButtonRef = useRef<HTMLButtonElement>(null);
+  const pendingMoveFocus = useRef<{ id: string; part: "move-up" | "move-down" } | null>(null);
+  const reorderChanged = useRef(false);
   const listRef = useRef<HTMLOListElement>(null);
   const looksGoodRef = useRef<HTMLButtonElement>(null);
   // D-0109 §6: the index of the row whose Remove was used, until the new plan has rendered.
@@ -235,6 +243,30 @@ export function Suggested({
       ?.focus();
   }, [workout]);
 
+  // Focus: entering goes to the first Move control; a move keeps the same button on the moved row,
+  // or the other one where it has disappeared (first row: no Move up, last: no Move down).
+  useEffect(() => {
+    if (!reorderChanged.current) return;
+    reorderChanged.current = false;
+    if (reorder) {
+      listRef.current?.querySelector<HTMLElement>('[data-part^="move-"]')?.focus();
+    } else reorderButtonRef.current?.focus();
+  }, [reorder]);
+
+  useEffect(() => {
+    const pending = pendingMoveFocus.current;
+    if (pending === null) return;
+    pendingMoveFocus.current = null;
+    const row = listRef.current?.querySelector<HTMLElement>(
+      `[data-id="${CSS.escape(pending.id)}"]`,
+    );
+    const other = pending.part === "move-up" ? "move-down" : "move-up";
+    (
+      row?.querySelector<HTMLElement>(`[data-part="${pending.part}"]`) ??
+      row?.querySelector<HTMLElement>(`[data-part="${other}"]`)
+    )?.focus();
+  }, [workout]);
+
   useEffect(() => {
     const index = pendingFocus.current;
     if (index === null) return;
@@ -280,25 +312,62 @@ export function Suggested({
 
       {avoidAreas.length === 0 ? <ExcludedAreasNotice areas={noticeAreas} /> : null}
 
-      <div className="wl-uf08__chips" role="group" aria-label={en.uf08.timeChipsName}>
-        {CHIPS.map((m) => (
-          <button
-            key={m}
-            type="button"
-            className="wl-uf08__chip"
-            aria-label={en.uf08.chipName(String(m))}
-            aria-pressed={workout.budgetMin === m ? "true" : "false"}
-            onClick={() => {
-              if (m === workout.budgetMin) return;
-              pendingFocus.current = null;
-              setStatus("");
-              onBudget(m);
-            }}
-          >
-            {m}
-          </button>
-        ))}
-      </div>
+      {reorder ? null : (
+        <div className="wl-uf08__chips" role="group" aria-label={en.uf08.timeChipsName}>
+          {CHIPS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              className="wl-uf08__chip"
+              aria-label={en.uf08.chipName(String(m))}
+              aria-pressed={workout.budgetMin === m ? "true" : "false"}
+              onClick={() => {
+                if (m === workout.budgetMin) return;
+                pendingFocus.current = null;
+                setStatus("");
+                onBudget(m);
+              }}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {onMove !== undefined && items.length >= 2 ? (
+        <div className="wl-uf08__list-head" data-part="list-head">
+          {reorder ? (
+            <>
+              <h2 className="wl-uf08__list-title">{en.uf08.reorder}</h2>
+              <button
+                type="button"
+                className="wl-uf08__ghost wl-uf08__list-button"
+                data-part="reorder-done"
+                onClick={() => {
+                  reorderChanged.current = true;
+                  setReorder(false);
+                }}
+              >
+                {en.uf08.reorderDone}
+              </button>
+            </>
+          ) : (
+            <button
+              ref={reorderButtonRef}
+              type="button"
+              className="wl-uf08__ghost wl-uf08__list-button"
+              data-part="reorder"
+              onClick={() => {
+                pendingFocus.current = null;
+                reorderChanged.current = true;
+                setReorder(true);
+              }}
+            >
+              {en.uf08.reorder}
+            </button>
+          )}
+        </div>
+      ) : null}
 
       {workout.plan.warmup.length > 0 ? (
         <div className="wl-uf08__row wl-uf08__row--warmup" data-part="warmup-row">
@@ -321,13 +390,65 @@ export function Suggested({
           {emptiedByRemove ? en.uf08.noneLeft : en.uf08.nothingFits(workout.budgetMin)}
         </p>
       ) : (
-        <ol className="wl-uf08__rows" ref={listRef} aria-label={en.uf08.rowsName}>
+        <ol
+          className="wl-uf08__rows"
+          ref={listRef}
+          aria-label={en.uf08.rowsName}
+          data-reorder={reorder ? "true" : undefined}
+        >
           {items.map((item, index) => {
             const name = exerciseName(item.exerciseId, library);
             const reason = addedIds.includes(item.exerciseId)
               ? en.uf08.addedByYou
               : itemReasonLine(item.reasons);
             const backoff = backoffLine(item, locale);
+            if (reorder) {
+              const move = (delta: -1 | 1, part: "move-up" | "move-down") => {
+                pendingMoveFocus.current = { id: item.exerciseId, part };
+                setStatus(en.uf08.moved(name, index + delta + 1, items.length));
+                onMove?.(item.exerciseId, delta);
+              };
+              return (
+                <li
+                  key={item.exerciseId}
+                  className="wl-uf08__row wl-uf08__row--reorder"
+                  data-part="item-row"
+                  data-id={item.exerciseId}
+                  data-main={item.isMain ? "true" : undefined}
+                >
+                  <div className="wl-uf08__row-body">
+                    <span className="wl-uf08__row-name" data-part="row-name">
+                      {name}
+                    </span>
+                    <span className="wl-uf08__row-detail" data-part="row-detail">
+                      {itemSummary(item)}
+                    </span>
+                  </div>
+                  {index > 0 ? (
+                    <button
+                      type="button"
+                      className="wl-uf08__icon wl-uf08__icon--text"
+                      data-part="move-up"
+                      aria-label={en.uf08.moveUpName(name)}
+                      onClick={() => move(-1, "move-up")}
+                    >
+                      {en.uf08.moveUp}
+                    </button>
+                  ) : null}
+                  {index < items.length - 1 ? (
+                    <button
+                      type="button"
+                      className="wl-uf08__icon wl-uf08__icon--text"
+                      data-part="move-down"
+                      aria-label={en.uf08.moveDownName(name)}
+                      onClick={() => move(1, "move-down")}
+                    >
+                      {en.uf08.moveDown}
+                    </button>
+                  ) : null}
+                </li>
+              );
+            }
             return (
               <li
                 key={item.exerciseId}
@@ -448,7 +569,7 @@ export function Suggested({
         {status}
       </div>
 
-      {onAdd !== undefined ? (
+      {onAdd !== undefined && !reorder ? (
         <button
           ref={addButtonRef}
           type="button"
@@ -468,27 +589,29 @@ export function Suggested({
         </button>
       ) : null}
 
-      <div className="wl-uf08__actions">
-        <button
-          type="button"
-          className="wl-uf08__ghost"
-          onClick={() => {
-            pendingFocus.current = null;
-            setStatus("");
-            onShuffle();
-          }}
-        >
-          {en.uf08.shuffle}
-        </button>
-        <button
-          ref={looksGoodRef}
-          type="button"
-          className="wl-uf08__primary"
-          onClick={() => void navigate(READY_HREF)}
-        >
-          {en.uf08.looksGood}
-        </button>
-      </div>
+      {reorder ? null : (
+        <div className="wl-uf08__actions">
+          <button
+            type="button"
+            className="wl-uf08__ghost"
+            onClick={() => {
+              pendingFocus.current = null;
+              setStatus("");
+              onShuffle();
+            }}
+          >
+            {en.uf08.shuffle}
+          </button>
+          <button
+            ref={looksGoodRef}
+            type="button"
+            className="wl-uf08__primary"
+            onClick={() => void navigate(READY_HREF)}
+          >
+            {en.uf08.looksGood}
+          </button>
+        </div>
+      )}
       {sheetOpen && onAdd !== undefined ? (
         <AddExerciseSheet
           catalog={catalog ?? []}

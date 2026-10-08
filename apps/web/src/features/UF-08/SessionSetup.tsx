@@ -42,6 +42,7 @@ import { excludeExercise, excludeIdsFor, includeExercise } from "../../lib/offli
 import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js";
 import { SwapSheet } from "../UF-05/index.js";
 import { Ready } from "./Ready.js";
+import { mergeOrder, permute } from "./order.js";
 import { Suggested } from "./Suggested.js";
 import {
   CHIPS,
@@ -120,6 +121,8 @@ interface Adjusted {
   excludeIds: string[];
   /** T-0573 (D-0205 §1): exercises added on this visit, in add order; the engine's `pinnedIds`. */
   addedIds: string[];
+  /** T-0576 (D-0205 §7): the user's display order of `workout.plan.items`; null = engine order. */
+  order: string[] | null;
   /** True while the plan is empty because Remove took the last row (T-0521, D-0191 §5). */
   emptiedByRemove: boolean;
 }
@@ -283,9 +286,12 @@ export function SessionSetup({
         // A swap that replaced an added exercise takes it off the pins; it is no longer in the plan.
         const had = (id: string) => adjusted.workout.plan.items.some((i) => i.exerciseId === id);
         const has = (id: string) => applied.plan.items.some((i) => i.exerciseId === id);
+        // The swap-in takes the old item's place (SwapSheet replaces in place), so the order
+        // is the new plan's own sequence.
         setAdjusted({
           ...adjusted,
           workout: applied,
+          order: adjusted.order === null ? null : applied.plan.items.map((i) => i.exerciseId),
           addedIds: adjusted.addedIds.filter((id) => !(had(id) && !has(id))),
         });
       }
@@ -335,11 +341,13 @@ export function SessionSetup({
       );
       if (result === null) return false;
       if (next.budgetMin !== budgetMin) setBudgetMin(next.budgetMin);
+      const merged = mergeOrder(adjusted.order, result);
       setAdjusted({
-        workout: result,
+        workout: merged.workout,
         shuffle: next.shuffle,
         excludeIds: next.excludeIds,
         addedIds: adjusted.addedIds,
+        order: merged.order,
         emptiedByRemove: false,
       });
       return true;
@@ -368,11 +376,13 @@ export function SessionSetup({
         tz,
       );
       if (result !== null && result.plan.items.some((i) => i.exerciseId === id)) {
+        const merged = mergeOrder(adjusted.order, result);
         setAdjusted({
-          workout: result,
+          workout: merged.workout,
           shuffle: adjusted.shuffle,
           excludeIds: visit,
           addedIds: pinned,
+          order: merged.order,
           emptiedByRemove: false,
         });
         return null;
@@ -423,11 +433,13 @@ export function SessionSetup({
         tz,
       );
       if (result !== null && result.plan.mainLiftId === id) {
+        const merged = mergeOrder(adjusted.order, result, true);
         setAdjusted({
-          workout: result,
+          workout: merged.workout,
           shuffle: adjusted.shuffle,
           excludeIds: visit,
           addedIds: pinned,
+          order: merged.order,
           emptiedByRemove: false,
         });
         return null;
@@ -473,6 +485,7 @@ export function SessionSetup({
           setAdjusted({
             ...adjusted,
             workout: next,
+            order: adjusted.order?.filter((id) => id !== exerciseId) ?? null,
             excludeIds: [...adjusted.excludeIds, exerciseId],
             // A removed exercise is no longer a pin (D-0205 §6), or a re-suggest would list it.
             addedIds: adjusted.addedIds.filter((a) => a !== exerciseId),
@@ -489,6 +502,19 @@ export function SessionSetup({
         blocked={blocked}
         onAdd={addExercise}
         onStartWith={startWith}
+        onMove={(exerciseId, delta) => {
+          // T-0576: a display permutation only; no `suggest` call, totals unchanged.
+          const ids = adjusted.workout.plan.items.map((i) => i.exerciseId);
+          const from = ids.indexOf(exerciseId);
+          const to = from + delta;
+          if (from < 0 || to < 0 || to >= ids.length) return;
+          ids.splice(to, 0, ...ids.splice(from, 1));
+          setAdjusted({
+            ...adjusted,
+            workout: permute(adjusted.workout, ids),
+            order: ids,
+          });
+        }}
       />
     );
   }
@@ -519,7 +545,14 @@ export function SessionSetup({
   const onSuggest = () => {
     if (workout === null) return;
     // Frozen here: UF-08.2 starts from exactly this `Workout` (reference-equal, no new call).
-    setAdjusted({ workout, shuffle: 0, excludeIds: [], addedIds: [], emptiedByRemove: false });
+    setAdjusted({
+      workout,
+      shuffle: 0,
+      excludeIds: [],
+      addedIds: [],
+      order: null,
+      emptiedByRemove: false,
+    });
     void navigate(`${SETUP_PATH}?step=suggested`);
   };
 
