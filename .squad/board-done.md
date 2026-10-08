@@ -376,3 +376,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0558 | UF-04.2 exercise figure card with Primary/Secondary labels; e2e, axe, 320/390, forced colours. Before T-0541 | web-feature:UF-04 | T-0556 | done | wl-build-web |
 | T-0911 | Flaky '/library/back-squat renders UF-04.2' web test blocks CI/release | web-feature:UF-04 | — | done | wl-build-web |
 | T-0557 | C-01 silhouette layout: figure above a slim label grid, linking, region taps, attention halo; e2e, axe, 320/390, forced colours | web-shell | T-0556 | done | wl-build-web |
+| T-0538 | UF-08: stored list ∪ visit Removes to every suggest call (incl. fit line, T-0303a AC-6 pin), Removed line Never suggest/Undo, notice, empty state. After H-27 | web-feature:UF-08 | T-0532, T-0534, T-0536, T-0537 | done | wl-build-web |

@@ -115,7 +115,6 @@ User request "exclude exercises and manage the list" (spec `docs/specs/excluded-
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0538 | UF-08: stored list ∪ visit Removes to every suggest call (incl. fit line, T-0303a AC-6 pin), Removed line Never suggest/Undo, notice, empty state. After H-27 | web-feature:UF-08 | T-0532, T-0534, T-0536, T-0537 | doing | wl-build-web |
 | T-0539 | UF-05.1/UF-08.3 swap sheet: stored list to rankSwaps, "Don't suggest {name} again" checkbox, "No alternatives left" empty state. After H-27 | web-feature:UF-05 | T-0532, T-0533, T-0536, T-0537 | todo | wl-build-web |
 | T-0540 | UF-11.5 Excluded exercises at /plan/excluded + UF-11.2 "Excluded exercises · n" row (in the T-0548 slot, D-0204 §5). After H-27 | web-feature:UF-11 | T-0532, T-0534, T-0536, T-0537, T-0548 | doing | wl-build-web |
 | T-0541 | UF-04.2 "Don't suggest this"/"Suggest again" + UF-04.1 "Not suggested" tag. After H-27 | web-feature:UF-04 | T-0532, T-0536, T-0537 | todo | wl-build-web |
