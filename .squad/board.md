@@ -143,7 +143,6 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 | T-0576 | UF-08.2 Reorder mode + order merge across re-suggests + Start writes display order | web-feature:UF-08 | T-0575 | todo | wl-build-web |
 | T-0577 | UF-08.5 Favorites section first on the empty query + Favorite tag on rows | web-feature:UF-08 | T-0576, T-0567, T-0561 | todo | wl-build-web |
 | T-0580 | Show the failed-exclusion message on the host screen after the swap sheet closes (T-0539 follow-up) | web-feature:UF-09 | T-0539 | todo | wl-build-web |
-| T-0912 | Flaky UF-11 plan-checkins-routines AC6 under load | web-feature:UF-11 | — | doing | wl-build-web |
 
 ### Groomed from parked (2026-10-08)
 Owner request: groom 10 parked tickets and put the ones worth doing at the back of the backlog. Run after the favorites (D-0202) and add/reorder (D-0205) work. The three touch disjoint files (turbo.json + check-decision-ids; one new web-shell test; package.json/lockfile), so any order works; T-0525 changes the lockfile, so it runs the forced gate.
