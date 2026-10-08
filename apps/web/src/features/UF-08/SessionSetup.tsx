@@ -40,6 +40,7 @@ import { formatTime } from "../../lib/format/intl.js";
 import { en } from "../../lib/i18n/en.js";
 import { excludeExercise, excludeIdsFor, includeExercise } from "../../lib/offline/excluded.js";
 import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js";
+import { useFavoriteList } from "../../lib/offline/favorites-hooks.js";
 import { SwapSheet } from "../UF-05/index.js";
 import { Ready } from "./Ready.js";
 import { mergeOrder, permute } from "./order.js";
@@ -197,6 +198,7 @@ export function SessionSetup({
   const { status, userId } = useAuth();
   // T-0538 (D-0199 §6): the stored list joins every `suggest` call; offline it is the cache.
   const { ids: stored, loaded: storedLoaded } = useExcludedList(userId);
+  const { ids: favoriteIds, loaded: favoritesLoaded } = useFavoriteList(userId);
   const online = useOnline();
   const state = useSetupData(nowIso, tz, status === "signed-in");
   const data = state.kind === "ready" ? state.data : null;
@@ -500,6 +502,8 @@ export function SessionSetup({
         addedIds={adjusted.addedIds}
         catalog={data.library}
         blocked={blocked}
+        favoriteIds={favoriteIds}
+        favoritesLoaded={favoritesLoaded}
         onAdd={addExercise}
         onStartWith={startWith}
         onMove={(exerciseId, delta) => {
