@@ -414,3 +414,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0583 | Design tokens: Cobalt state groups, OKLCH coverage ramp, radius and space; self-hosted Familjen Grotesk and Bricolage Grotesque (additive; contract change, --force gate) | design | — | done | wl-design |
+| T-0584 | Landing page: Cobalt option 1b, plus 404 and Privacy restyle (copy unchanged; security sign-off on _headers) | landing | T-0583 | done | wl-build-web |

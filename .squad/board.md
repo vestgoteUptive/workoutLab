@@ -150,4 +150,5 @@ Owner request: groom 10 parked tickets and put the ones worth doing at the back 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0584 | Landing page: Cobalt option 1b, plus 404 and Privacy restyle (copy unchanged; security sign-off on _headers) | landing | T-0583 | doing | wl-build-web |
+| T-0585 | Landing favicon.svg.ts uses Cobalt tokens (still flat Chalk & Iron bg/accent; T-0584 follow-up) | landing | T-0584 | todo | wl-build-web |
+| T-0586 | Landing Playwright project spreads devices["Desktop Chrome"], so older "390" specs run at 1280; set viewport per project or spec. Also: playwright-report/test-results trip the colour guard, so gitignore or exclude them. Record the T-0309 AC18 amendment (3 Tabs / skip link + Tab) | qa | T-0584 | todo | wl-build-web |
