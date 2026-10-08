@@ -55,3 +55,11 @@ None. No token, schema, API or engine change. D-0207 is the decision.
 Every AC checked and recorded · `check-figure.mjs` green · `node .github/scripts/check-all.mjs` green · contracts unchanged · commits start with `T-0315:` and cite UF-04.2 / UF-10.1.
 
 ## Build / accept log
+
+### 2026-10-08 designer — build (base 8a6b247, clean)
+- Drew an original front/back figure (hand-placed points in `draw-figure.mjs` → `body-figure.svg`, viewBox 0 0 256 290; nothing traced from third-party art). 34 region paths, 9 areas; neutral parts `wl-fig__body`; 26 seams `wl-fig__seam` with `data-seam`. Added `preview.html`, `README.md` (region table), `check-figure.mjs`. Folded both deltas into `c-01-body-map.md` (§ Silhouette layout, D-0060 §1 superseded by D-0207) and `UF-04.1-UF-04.2.md` (§ UF-04.2 Body figure); deleted the delta files; added `design-system.md` § Body figure.
+- AC-1/2/3 → `check-figure.mjs` (`checkSvg`) + `packages/design-tokens/test/body-figure.test.ts` (shipped asset passes; 21 planted-fault cases via stdin, one per rule, incl. XML validity).
+- AC-4 → Playwright screenshot of `preview.html` at 140 px, all coverage-0: 9 areas distinguishable by their 1 px `text-muted` borders (designer review; not CI).
+- AC-5 → `check-figure.mjs` (`checkDocs`), run by the same vitest file. AC-6 → `node .github/scripts/check-all.mjs` exit 0; `wl-check-colours` on the asset folder clean (in the test).
+- Red on unfixed docs: `node check-figure.mjs` → 13 AC-5 problems before the doc fold. Planted faults (backup + `cp` restore): fill attr in the real SVG → 2 tests red; "45°" removed from design-system.md → AC-5 red; delta file restored → AC-5 red; checker attr check disabled → 3 cases red; checker per-view check disabled → 2 cases red. All restored, `check-figure: ok`.
+- Not changed: tokens, `apps/**`. `docs/specs/body-map-silhouette.md` still names the deleted delta files (product lane, follow-up).

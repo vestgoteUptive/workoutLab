@@ -43,6 +43,24 @@ Dark, high-contrast, athletic. Big condensed numbers for anything read mid-set.
 | `warn` outline on `bg` / `surface-2` | 8.0 / 6.2 | 3.0 |
 | `text-muted` checkbox border (C-03) on `bg` / `surface` / `surface-2` | 7.5 / 6.8 / 5.8 | 3.0 |
 
+## Body figure (D-0207)
+
+One original front-and-back figure, `assets/body-figure/body-figure.svg` (`viewBox="0 0 256 290"`, front x 4..124, back x 132..252), drawn in a flat "chalk line" style. It's used by C-01 (`components/c-01-body-map.md`, 140 px compact, 240 px full) and UF-04.2 (`screens/UF-04.1-UF-04.2.md`, 200 px). The asset has no colour of its own: every colour comes from these class rules and the tokens. Preview: `assets/body-figure/preview.html`; region table: `assets/body-figure/README.md`.
+
+| Part (class) | Fill | Stroke |
+|---|---|---|
+| Body outline (`wl-fig__body wl-fig__silhouette`) | `surface-2` | 1.5 px `text-muted` |
+| Region (`wl-fig__region`, `data-area`) | `surface-2` untouched; `coverage-N` (C-01); `accent` primary or the hatch secondary (UF-04.2) | 1 px `text-muted` |
+| Neutral part (`wl-fig__body`: hip flexor, inner thigh, knee, shin, back of knee, achilles) | `surface-2` | 0.75 px `line-strong` (decorative) |
+| Seam (`wl-fig__seam`, `data-seam` = its area) | none | 0.75 px `line-strong`; `on-accent` when its area is `accent`, `coverage-3` or `coverage-4` (decorative) |
+
+- **Strokes** are set in CSS px with `vector-effect: non-scaling-stroke`, so they stay 1.5 px / 1 px / 0.75 px at every size. Round joins and caps.
+- **Hatch** (secondary areas): `<pattern id="wl-fig-hatch">`, `accent` stripes (`wl-fig__hatch-stripe`) on a `surface-2` ground (`wl-fig__hatch-ground`), 5 px period, 1.5 px stripes, 45°. The pattern is in user units (7.25 / 2.2), which is exactly 5 px / 1.5 px at the 200 px UF-04.2 size. Each inline copy of the figure needs its own pattern id.
+- **Attention halo** (C-01): the 1 px `text-muted` region border, then a 1 px `surface` gap, then 2 px `warn`, drawn outside the region and above its neighbours, never touching a lime fill (`warn` on `coverage-4` is 1.9:1).
+- **Contrast:** region border `text-muted` 6.8:1 on `surface`, 5.8:1 on `surface-2` / `coverage-0`, so every region is visible at every step. `accent` on `surface-2` 11.5:1.
+- **Forced colours:** fills `Canvas`, strokes `CanvasText`, primary `CanvasText`, hatch `CanvasText` stripes on `Canvas`, seams `GrayText`, attention 3 px `Highlight`.
+- **Not interactive:** the `<svg>` is `aria-hidden`, has no title, role or tab stop; the text equivalents live next to it (C-01 labels, UF-04.2 lists).
+
 ## Type
 
 - Display: **Big Shoulders Display** 700/800, uppercase for titles, numbers and timers. Token `--wl-font-display`: `"Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif`.
