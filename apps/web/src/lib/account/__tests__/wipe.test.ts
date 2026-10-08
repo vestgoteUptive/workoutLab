@@ -22,7 +22,7 @@ afterEach(() => {
 });
 
 describe("T-0310c AC8 the wipe, two users on one device", () => {
-  it("T-0310c AC8 the table list is the 12 tables of offlineDb() (a new table must be added here)", () => {
+  it("T-0310c AC8 the table list is the 13 tables of offlineDb() (a new table must be added here)", () => {
     expect(db.tables.map((t) => t.name).sort()).toEqual([...OFFLINE_TABLES].sort());
   });
 

@@ -30,6 +30,7 @@ vi.mock("../../auth/client.js", () => ({
 
 const history = await import("../../offline/history.js");
 const excluded = await import("../../offline/excluded.js");
+const favorites = await import("../../offline/favorites.js");
 const { freshOfflineDb, signIn, signOut } = await import("../../offline/__tests__/test-helpers.js");
 const { signOutAndClearDevice } = await import("../index.js");
 
@@ -140,6 +141,14 @@ const CASES: Array<{
     cache: "excludedCache",
     rows: {
       excluded_exercises: [{ exercise_id: "bench-press", created_at: "2026-10-01T10:00:00.000Z" }],
+    },
+  },
+  {
+    name: "refreshFavorites",
+    run: () => favorites.refreshFavorites(),
+    cache: "favoriteCache",
+    rows: {
+      favorite_exercises: [{ exercise_id: "back-squat", created_at: "2026-10-01T10:00:00.000Z" }],
     },
   },
   {

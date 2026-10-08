@@ -54,3 +54,9 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · contracts unchanged · commits start with `T-0567:` and cite UF-11.6 / UF-08.2.
 
 ## Build / accept log
+
+- 2026-10-08 frontend-dev: `lib/offline/exercise-list.ts` (factory: refresh, loadIds, add, remove, write counter, generation guard, opposite-list drop in the same txn) + `exercise-list-hooks.ts` (useLive/loaded). `excluded.ts`/`excluded-hooks.ts` are thin users, exports unchanged; new `favorites.ts`, `favorites-hooks.ts`; Dexie v4 table named `favoriteCache` (ticket name; no `.upgrade()`); `refreshFavorites` in `refreshAll`.
+- Edits to existing tests (all forced by v4 / new exports, no assertion weakened): upgrade-v1-to-v2 and v2-to-v3 `verno` 3 -> 4; offline-loaders export list +T0567; account `dexie-seed` OFFLINE_TABLES +favoriteCache, wipe title 12 -> 13; sign-out.inflight +refreshFavorites case.
+- AC map: AC1 upgrade-v3-to-v4.test.ts; AC2-AC9 favorites.test.tsx (AC8 sign-out/wipe/in-flight also in account tests); AC10 excluded.test.tsx unchanged and green.
+- Planted faults (backup/cp restore), each fails the named tests: no opposite drop (AC7 x2); no write-counter guard / no bump (stale-refresh x2 each, both lists); error empties cache (AC4 x4 per list); no generation guard (inflight tests, both lists); refreshFavorites out of refreshAll (AC3); no sort (AC9); no v4 (AC1); no warm-up refusal (AC6, both lists).
+- Gate (final): -w typecheck lint test --concurrency=1 green (19/19); test:repo-checks 369 pass (the T-0402c RLS scan needs literal table names, so each list passes its own `table()`); format:check and check-all green.
