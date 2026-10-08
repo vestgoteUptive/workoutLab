@@ -125,8 +125,8 @@ GitHub #46 (favorite exercises). Spec `docs/specs/favorite-exercises.md`, decisi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | ready | wl-build-backend |
-| T-0570 | UF-02.1/UF-02.2 preview passes favoriteIds | web-feature:UF-02 | T-0542, T-0562, T-0567 | todo | wl-build-web |
+| T-0566 | POST /workouts/suggest validator accepts favoriteIds; vendor refresh — off the user path | backend | T-0565 | doing | wl-build-backend |
+| T-0570 | UF-02.1/UF-02.2 preview passes favoriteIds | web-feature:UF-02 | T-0542, T-0562, T-0567 | doing | wl-build-web |
 | T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | todo | wl-build-web |
 
 ### Add and reorder (D-0205)
@@ -134,7 +134,7 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0573 | UF-08.5 part 1: sheet, search, Today's areas, In this workout, Add = visit pinnedIds, Added by you, time refusal, chips/Shuffle keep adds + Doesn't fit line, offline | web-feature:UF-08 | T-0538, T-0572 | todo | wl-build-web |
+| T-0573 | UF-08.5 part 1: sheet, search, Today's areas, In this workout, Add = visit pinnedIds, Added by you, time refusal, chips/Shuffle keep adds + Doesn't fit line, offline | web-feature:UF-08 | T-0538, T-0572 | doing | wl-build-web |
 | T-0574 | UF-08.5 part 2: disabled row states, cap refusals, Remove of an added item, re-add a removed item | web-feature:UF-08 | T-0573 | todo | wl-build-web |
 | T-0575 | UF-08 Start with this (compound only; mainLiftId; new main lift first) | web-feature:UF-08 | T-0574 | todo | wl-build-web |
 | T-0576 | UF-08.2 Reorder mode + order merge across re-suggests + Start writes display order | web-feature:UF-08 | T-0575 | todo | wl-build-web |
