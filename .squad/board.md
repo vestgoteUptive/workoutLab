@@ -132,8 +132,7 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0573 | UF-08.5 part 1: sheet, search, Today's areas, In this workout, Add = visit pinnedIds, Added by you, time refusal, chips/Shuffle keep adds + Doesn't fit line, offline | web-feature:UF-08 | T-0538, T-0572 | doing | wl-build-web |
-| T-0574 | UF-08.5 part 2: disabled row states, cap refusals, Remove of an added item, re-add a removed item | web-feature:UF-08 | T-0573 | todo | wl-build-web |
+| T-0574 | UF-08.5 part 2: disabled row states, cap refusals, Remove of an added item, re-add a removed item | web-feature:UF-08 | T-0573 | doing | wl-build-web |
 | T-0575 | UF-08 Start with this (compound only; mainLiftId; new main lift first) | web-feature:UF-08 | T-0574 | todo | wl-build-web |
 | T-0576 | UF-08.2 Reorder mode + order merge across re-suggests + Start writes display order | web-feature:UF-08 | T-0575 | todo | wl-build-web |
 | T-0577 | UF-08.5 Favorites section first on the empty query + Favorite tag on rows | web-feature:UF-08 | T-0576, T-0567, T-0561 | todo | wl-build-web |
