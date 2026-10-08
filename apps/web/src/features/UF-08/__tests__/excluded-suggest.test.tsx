@@ -15,6 +15,10 @@ import {
   settle,
 } from "./harness.js";
 
+// T-0573: UF-08.2 also has its own status line (Add result), so "the" status is the Removed line.
+const removedLine = () =>
+  screen.getAllByRole("status").find((el) => el.matches('[data-part="removed-line"]'))!;
+
 const auth = vi.hoisted(() => ({ userId: "A" as string | null }));
 const store = vi.hoisted(() => {
   let ids: string[] = [];
@@ -130,39 +134,35 @@ async function toSuggested(min = 30): Promise<void> {
 describe("AC1 Never suggest / Undo", () => {
   it("Remove shows the row; Never suggest stores it; Undo includes it; focus stays", async () => {
     await toSuggested();
-    expect(screen.getByRole("status")).toBeInTheDocument();
+    expect(removedLine()).toBeInTheDocument();
     fireEvent.click(button("Remove Leg extension"));
-    const status = screen.getByRole("status");
+    const status = removedLine();
     expect(status).toHaveTextContent("Leg extension · Never suggest");
 
     act(() => button("Never suggest Leg extension").focus());
     fireEvent.click(button("Never suggest Leg extension"));
     await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent(
-        "Leg extension won't be suggested · Undo",
-      ),
+      expect(removedLine()).toHaveTextContent("Leg extension won't be suggested · Undo"),
     );
     expect(writes.exclude).toHaveBeenCalledTimes(1);
     expect(writes.exclude).toHaveBeenCalledWith("A", "leg-extension");
     expect(document.activeElement).toBe(
-      within(screen.getByRole("status")).getByRole("button", {
+      within(removedLine()).getByRole("button", {
         name: "Undo, Leg extension won't be suggested",
       }),
     );
 
     fireEvent.click(document.activeElement!);
-    await waitFor(() =>
-      expect(screen.getByRole("status")).toHaveTextContent("Leg extension · Never suggest"),
-    );
+    await waitFor(() => expect(removedLine()).toHaveTextContent("Leg extension · Never suggest"));
     expect(writes.include).toHaveBeenCalledWith("A", "leg-extension");
     expect(document.activeElement).toBe(button("Never suggest Leg extension"));
   });
 
   it("the status region is the same element before and after (present on mount)", async () => {
     await toSuggested();
-    const before = screen.getByRole("status");
+    const before = removedLine();
     fireEvent.click(button("Remove Leg extension"));
-    expect(screen.getByRole("status")).toBe(before);
+    expect(removedLine()).toBe(before);
   });
 
   it("leave UF-08 and Start again with it still stored: not an item", async () => {
@@ -174,7 +174,7 @@ describe("AC1 Never suggest / Undo", () => {
     await loaded();
     fireEvent.click(button("Suggest my workout"));
     expect(rowNames()).not.toContain("Leg extension");
-    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+    expect(removedLine()).toBeEmptyDOMElement();
   });
 });
 
@@ -287,7 +287,7 @@ describe("AC7 write failure", () => {
     expect(alert).toHaveTextContent("Couldn't save. Try again.");
     const again = button("Never suggest Leg extension");
     expect(again).toHaveAttribute("aria-disabled", "false");
-    expect(screen.getByRole("status")).toHaveTextContent("Leg extension · Never suggest");
+    expect(removedLine()).toHaveTextContent("Leg extension · Never suggest");
   });
 });
 
@@ -331,7 +331,7 @@ describe("review fixes", () => {
     fireEvent.click(never);
     expect(writes.exclude).toHaveBeenCalledTimes(1);
     act(() => finish());
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("Undo"));
+    await waitFor(() => expect(removedLine()).toHaveTextContent("Undo"));
     fireEvent.click(document.querySelector('[data-part="undo"]')!);
     expect(writes.include).toHaveBeenCalledTimes(1);
   });
@@ -342,7 +342,7 @@ describe("review fixes", () => {
     fireEvent.click(button("Remove Leg extension"));
     fireEvent.click(button("Never suggest Leg extension"));
     const alert = await screen.findByRole("alert");
-    expect(screen.getByRole("status")).not.toContainElement(alert);
+    expect(removedLine()).not.toContainElement(alert);
   });
 
   it("the notice sits under the budget bar, or under the Skipping line when shown", async () => {
