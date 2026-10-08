@@ -39,3 +39,4 @@ None (implements T-0565's openapi change).
 Every AC has a passing test · `pnpm -w typecheck lint test` green · contracts unchanged · commits start with `T-0566:` and cite UF-08.1.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0566.md` (D-0157).

@@ -40,4 +40,4 @@ None.
 Every AC has a passing test · `pnpm -w typecheck lint test` green · the UF-02 e2e specs green · contracts unchanged · commits start with `T-0570:` and cite UF-02.1 / UF-02.2.
 
 ## Build / accept log
-- 2026-10-08: merged as 522b62f, then reverted (6978afd): AC3 live-update test failed on main every run ("expected vi.fn() to be called at least once"), and later runs also failed other UF-02 tests. Back to the builder.
+Archived in `docs/tickets/log/T-0570.md` (D-0157).
