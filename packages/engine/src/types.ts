@@ -158,6 +158,12 @@ export interface SessionInput {
    * and duplicates are ignored.
    */
   avoidAreas?: readonly Area[];
+  /**
+   * Rule 0.2 (D-0202 §3): favorite exercise ids, ranked first among an area's rule 7.2
+   * candidates (key 0). A soft preference only: never chooses the area, never bypasses a filter
+   * or the fit check. Absent means `[]`; duplicates, order and unknown ids have no effect.
+   */
+  favoriteIds?: readonly string[];
 }
 
 export type PrefillKind =
