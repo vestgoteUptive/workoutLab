@@ -4,14 +4,49 @@
 import raw from "./tokens.json";
 
 export type Tokens = typeof raw;
-export type ColorName = keyof Tokens["color"];
+type ColorGroup = Tokens["color"];
+/** Flat Chalk & Iron colour names (`--wl-color-<name>`), in use until the app screens migrate. */
+export type ColorName = {
+  [K in keyof ColorGroup]: ColorGroup[K] extends string ? K : never;
+}[keyof ColorGroup];
 export type FontRole = keyof Tokens["font"];
+
+/** D-0208 state groups: each screen root carries `data-wl-state` = one of the session states. */
+export type ColorState = "plan" | "lift" | "rest" | "paper";
+export type SessionState = (typeof raw.meta.states)[number];
+/** `--wl-color-<state>-<name>` names for one state group (D-0208). */
+export type StateColorName<S extends ColorState> = `${S}-${keyof ColorGroup[S] & string}`;
+export type RadiusName = keyof Tokens["radius"];
+export type SpaceName = keyof Tokens["space"];
 
 /** Coverage step as returned by the engine's balance output (`coverageStep`, D-0013). */
 export type CoverageStep = 0 | 1 | 2 | 3 | 4;
 export type CoverageToken = `coverage-${CoverageStep}`;
 
 export const tokens: Tokens = raw;
+
+/** The four D-0208 colour groups, in tokens.json order. */
+export const colorStates = [
+  "plan",
+  "lift",
+  "rest",
+  "paper",
+] as const satisfies readonly ColorState[];
+
+/** Plan coverage step token (`--wl-color-plan-coverage-<n>`, D-0208); same steps as D-0013. */
+export type PlanCoverageToken = `plan-coverage-${CoverageStep}`;
+
+/**
+ * D-0208 coverage ramp tokens, built in OKLCH from `color.coverage.from` to `.to` by
+ * scripts/build-css.mjs. Names only: the UI reads the CSS variables, never computes a colour.
+ */
+export const planCoverageTokens = [
+  "plan-coverage-0",
+  "plan-coverage-1",
+  "plan-coverage-2",
+  "plan-coverage-3",
+  "plan-coverage-4",
+] as const satisfies readonly PlanCoverageToken[];
 
 export const coverageTokens = [
   "coverage-0",

@@ -33,10 +33,13 @@ describe("AC9 CSS output (offline)", () => {
 
   it("has one :root block with every colour and both fonts", () => {
     expect(css.match(/:root\s*\{/g)).toHaveLength(1);
-    for (const [name, hex] of Object.entries(raw.color)) {
+    const flat = Object.entries(raw.color).filter(([, v]) => typeof v === "string");
+    expect(flat).toHaveLength(17);
+    for (const [name, hex] of flat) {
       expect(css).toContain(`--wl-color-${name}: ${hex};`);
     }
-    expect(css.match(/--wl-color-/g)).toHaveLength(17);
+    // 17 flat + 29 D-0208 state colours + 5 plan coverage stops (T-0583).
+    expect(css.match(/--wl-color-/g)).toHaveLength(17 + 29 + 5);
     expect(css).toContain(`--wl-font-display: ${raw.font.display.family};`);
     expect(css).toContain(`--wl-font-body: ${raw.font.body.family};`);
   });

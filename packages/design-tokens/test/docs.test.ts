@@ -39,9 +39,10 @@ describe("AC17 design-system.md doesn't drift", () => {
   for (const m of md.matchAll(/^\|\s*`([a-z0-9-]+)`\s*\|\s*`(#[0-9A-Fa-f]{6})`\s*\|/gm)) {
     rows.set(m[1] as string, m[2] as string);
   }
-  it("has a row for all 17 tokens with the tokens.json hex", () => {
-    expect([...rows.keys()].sort()).toEqual(Object.keys(raw.color).sort());
-    for (const [name, hex] of Object.entries(raw.color)) expect(rows.get(name)).toBe(hex);
+  it("has a row for all 17 flat tokens with the tokens.json hex", () => {
+    const flat = Object.entries(raw.color).filter(([, v]) => typeof v === "string");
+    expect([...rows.keys()].sort()).toEqual(flat.map(([k]) => k).sort());
+    for (const [name, hex] of flat) expect(rows.get(name)).toBe(hex);
   });
 });
 
@@ -105,5 +106,71 @@ describe("T-0532 excluded-exercises design specs (D-0199)", () => {
     for (const f of files.filter((x) => x.startsWith("screens/"))) {
       expect(read(f), f).toMatch(/No UF-09 control is added|Nothing is added to UF-09|not UF-09/);
     }
+  });
+});
+
+describe("T-0583 AC6 design-system.md documents Cobalt + state colour (D-0208)", () => {
+  const md = readFileSync(resolve(designDir, "design-system.md"), "utf8");
+  const states = ["plan", "lift", "rest", "paper"] as const;
+
+  /** Throws when the D-0208 section drifts from tokens.json. */
+  function checkCobaltDoc(text: string): void {
+    expect(text, "section heading").toContain("## Cobalt + state colour (D-0208)");
+    expect(text, "Chalk & Iron kept").toContain(
+      "## Chalk & Iron (D-0019) — in use until the app screens migrate",
+    );
+    const rows = new Map<string, string>();
+    for (const m of text.matchAll(/^\|\s*`([a-z]+\.[a-z0-9-]+)`\s*\|\s*`(#[0-9A-F]{6})`\s*\|/gm)) {
+      rows.set(m[1] as string, m[2] as string);
+    }
+    const expected = states.flatMap((s) =>
+      Object.entries(raw.color[s]).map(([k, v]) => [`${s}.${k}`, v] as const),
+    );
+    expect([...rows.keys()].sort(), "one row per state token").toEqual(
+      expected.map(([k]) => k).sort(),
+    );
+    for (const [k, v] of expected) expect(rows.get(k), `${k} hex`).toBe(v);
+    for (let i = 0; i <= 4; i++) expect(text).toContain(`--wl-color-plan-coverage-${i}`);
+  }
+
+  it("state token table matches tokens.json, coverage ramp named", () => {
+    checkCobaltDoc(md);
+  });
+  it("planted fault: a changed hex in the doc fails", () => {
+    const faulty = md.replace("| `lift.bg` | `#CC4225` |", "| `lift.bg` | `#D9472B` |");
+    expect(faulty).not.toBe(md);
+    expect(() => checkCobaltDoc(faulty)).toThrow(/lift\.bg hex/);
+  });
+  it("has the contrast table with the README values", () => {
+    for (const [pair, ratio] of [
+      ["`plan.ink` (white) on `plan.bg`", "8.6"],
+      ["`plan.ink-muted` on `plan.bg`", "5.9"],
+      ["`plan.ink` (white) on `plan.raise`", "6.2"],
+      ["`lift.ink` (white) on `lift.bg`", "4.8"],
+      ["`rest.ink` (white) on `rest.bg`", "4.9"],
+      ["`lift.on-action` on `lift.action` (white)", "6.1"],
+      ["`rest.on-action` on `rest.action` (white)", "8.1"],
+      ["`paper.ink` on `paper.bg`", "12.9"],
+      ["`paper.ink-muted` on `paper.bg`", "6.5"],
+      ["`plan.attention` on `plan.bg`", "5.0"],
+    ]) {
+      expect(md, pair).toContain(`| ${pair} | ${ratio} | 4.5 |`);
+    }
+  });
+  it("documents the type roles in rem, both families and the no-raw-colours rule", () => {
+    expect(md).toContain("### Type (D-0208)");
+    expect(md).toContain(`Token \`--wl-font-plan\`: \`${raw.font.plan.family}\``);
+    expect(md).toContain(`Token \`--wl-font-session\`: \`${raw.font.session.family}\``);
+    expect(md).toContain("fonts-state.css");
+    for (const role of ["Hero number", "Hero title", "Page title", "Section title", "Button"]) {
+      expect(md).toMatch(new RegExp(`^\\| ${role} \\|[^\\n]*\\d+(?:\\.\\d+)?rem`, "m"));
+    }
+    const typeSection = md.slice(
+      md.indexOf("### Type (D-0208)"),
+      md.indexOf("### Spacing and radius"),
+    );
+    expect(typeSection).not.toMatch(/\d px\s*\|/);
+    expect(md).toContain("**No raw colours.**");
+    expect(md).toContain("`workoutlab/no-raw-colour`, `wl-check-colours`");
   });
 });

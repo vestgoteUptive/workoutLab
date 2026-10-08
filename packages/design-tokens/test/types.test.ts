@@ -30,9 +30,10 @@ describe("AC8 types", () => {
     const missing = tokens.color["coverage-5"];
     expect(missing).toBeUndefined();
   });
-  it("ColorName equals Object.keys(tokens.color)", () => {
+  it("ColorName equals the flat (string-valued) keys of tokens.color", () => {
     expectTypeOf<ColorName>().toEqualTypeOf<(typeof ALL_NAMES)[number]>();
-    expect(Object.keys(tokens.color)).toEqual([...ALL_NAMES]);
+    const flat = Object.entries(tokens.color).filter(([, v]) => typeof v === "string");
+    expect(flat.map(([k]) => k)).toEqual([...ALL_NAMES]);
   });
   it("CoverageStep is 0..4", () => {
     expectTypeOf<CoverageStep>().toEqualTypeOf<0 | 1 | 2 | 3 | 4>();

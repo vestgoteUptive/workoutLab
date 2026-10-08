@@ -1,8 +1,121 @@
-# Design system — "Chalk & Iron"
+# Design system — Cobalt + state colour, and "Chalk & Iron"
 
-Dark, high-contrast, athletic. Big condensed numbers for anything read mid-set.
+**Source of truth:** `packages/design-tokens/src/tokens.json` (`@workoutlab/design-tokens`, D-0019, D-0208). This page mirrors it, and tests in that package fail if the tables below drift.
 
-**Source of truth:** `packages/design-tokens/src/tokens.json` (`@workoutlab/design-tokens`, D-0019). This page mirrors it, and a test in that package fails if the table below drifts. Apps use `var(--wl-color-<token>)` from `dist/tokens.css` or `tokens.color` from the package. Raw colour values anywhere else fail lint (`workoutlab/no-raw-colour`, `wl-check-colours`).
+**No raw colours.** Colours and fonts are defined only in `tokens.json`. Apps use `var(--wl-color-…)` / `var(--wl-font-…)` from `dist/tokens.css`, or `tokens.color` from the package. A raw colour value (hex, `rgb()`, `hsl()`, `oklch()`, …) anywhere else fails lint (`workoutlab/no-raw-colour`, `wl-check-colours`). The hex values on this page are documentation only.
+
+The tokens file holds two palettes side by side (D-0208 rollout, T-0583):
+
+1. **Cobalt + state colour (D-0208)**: the new state groups. New work (the landing page first, T-0584) uses these.
+2. **Chalk & Iron (D-0019)**: the flat keys, **in use until the app screens migrate**. They are retired, with Big Shoulders Display and DM Sans, in a later ticket once the last app screen has moved.
+
+## Cobalt + state colour (D-0208)
+
+One rule: **the background colour shows the session state.** Each screen root carries `data-wl-state="plan|lift|rest"`, and components read generic variables mapped from it (D-0208 §2). Plan is every non-session screen plus mid-session decisions (UF-09.8, UF-09.9, swap sheets); lift is UF-09.2/.3/.4/.7 and UF-03.1; rest, draining to lift, is UF-09.1/.5/.6 and UF-03.2. Paper is a light band for the check-in card, the unsynced notice and blue-over-paper sheets. No cards: structure comes from 1 px hairlines (`line`) and type size; no shadows.
+
+Full handoff: branch `design/redesign-cobalt`, `Design-docs/docs/design/redesign-cobalt/README.md`.
+
+### State colour tokens
+
+CSS variable: `--wl-color-<state>-<name>`, e.g. `plan.ink-muted` is `--wl-color-plan-ink-muted`.
+
+| Token | Hex | Use |
+|---|---|---|
+| `plan.bg` | `#2337C6` | Plan background |
+| `plan.raise` | `#3B50DD` | Target tiles, empty bars, selected row in the routine editor, the filled part of progress |
+| `plan.line` | `#6676DA` | 1 px hairlines, outline chips, segmented control border, tab bar rule (decorative) |
+| `plan.ink` | `#FFFFFF` | Primary text |
+| `plan.ink-muted` | `#C9D3FF` | Secondary text, labels, captions, inactive tab labels, rest-day labels |
+| `plan.action` | `#FFFFFF` | Primary pill button |
+| `plan.on-action` | `#2337C6` | Text on `plan.action` |
+| `plan.attention` | `#FFB3A3` | "Needs attention" outline and label (Balance), below-target bar (Progress) |
+| `plan.selected` | `#FFFFFF` | Selected chip or segment |
+| `plan.on-selected` | `#2337C6` | Text on `plan.selected` |
+| `lift.bg` | `#CC4225` | Lift background (not the mock's `#D9472B`, which gives white 4.3:1) |
+| `lift.bg-deep` | `#B33520` | Top band of a timed or warm-up countdown fill |
+| `lift.line` | `#EE8E7B` | Hairlines (decorative) |
+| `lift.ink` | `#FFFFFF` | Text on lift |
+| `lift.action` | `#FFFFFF` | Done, Save · start rest, Skip, Finish |
+| `lift.on-action` | `#B33520` | Text on `lift.action`; also Skip rest on the red drain |
+| `lift.progress-off` | `#EE8E7B` | Unfinished progress segments (decorative) |
+| `rest.bg` | `#3F7A76` | Rest background |
+| `rest.line` | `#7FA8A4` | Hairlines (decorative) |
+| `rest.ink` | `#FFFFFF` | Text on rest |
+| `rest.action` | `#FFFFFF` | Skip rest |
+| `rest.on-action` | `#2C5754` | Text on `rest.action` |
+| `rest.progress-off` | `#7FA8A4` | Unfinished progress segments (decorative) |
+| `paper.bg` | `#F4F3EE` | Paper band: check-in card, unsynced notice, sheets |
+| `paper.line` | `#D6D6E4` | Hairlines on paper (decorative) |
+| `paper.ink` | `#1A2266` | Text on paper |
+| `paper.ink-muted` | `#4A5290` | Secondary text on paper |
+| `paper.action` | `#2337C6` | Accept (check-in) |
+| `paper.on-action` | `#FFFFFF` | Text on `paper.action` |
+
+### Plan coverage ramp
+
+`color.coverage` is a spec, not a list: `from` `plan.raise`, `to` white, `interpolation: "oklch"`, `steps: 5`. `scripts/build-css.mjs` interpolates it in OKLCH and emits `--wl-color-plan-coverage-0..4` (the `plan-` prefix keeps it apart from the Chalk & Iron `--wl-color-coverage-*`). OKLCH lightness rises strictly from step 0 to step 4. Steps follow D-0013, and the engine picks the step; the UI never computes it.
+
+| Step | CSS variable | Hex (built) |
+|---|---|---|
+| 0 | `--wl-color-plan-coverage-0` | `#3B50DD` (= `plan.raise`) |
+| 1 | `--wl-color-plan-coverage-1` | `#6580EA` |
+| 2 | `--wl-color-plan-coverage-2` | `#95ACF4` |
+| 3 | `--wl-color-plan-coverage-3` | `#C9D6FB` |
+| 4 | `--wl-color-plan-coverage-4` | `#FFFFFF` |
+
+The C-01 body figure recolour for `plan.bg` needs its own design check before it ships (D-0208 Q3).
+
+### Contrast (WCAG 2.2 AA, enforced by tests)
+
+Computed from the tokens by `packages/design-tokens/test/cobalt.test.ts`. A pair passes when its ratio, rounded to one decimal, is at least the measured value below, and every text pair also clears 4.5:1 unrounded (D-0209).
+
+| Pair | Ratio | Needs |
+|---|---|---|
+| `plan.ink` (white) on `plan.bg` | 8.6 | 4.5 |
+| `plan.ink-muted` on `plan.bg` | 5.9 | 4.5 |
+| `plan.ink` (white) on `plan.raise` | 6.2 | 4.5 |
+| `lift.ink` (white) on `lift.bg` | 4.8 | 4.5 |
+| `rest.ink` (white) on `rest.bg` | 4.9 | 4.5 |
+| `lift.on-action` on `lift.action` (white) | 6.1 | 4.5 |
+| `rest.on-action` on `rest.action` (white) | 8.1 | 4.5 |
+| `paper.ink` on `paper.bg` | 12.9 | 4.5 |
+| `paper.ink-muted` on `paper.bg` | 6.5 | 4.5 |
+| `plan.attention` on `plan.bg` | 5.0 | 4.5 |
+
+- `lift.bg` is `#CC4225` because white on the mock's `#D9472B` is 4.3:1; a test plants that value and fails.
+- Lift and rest are almost the same luminance (1.03:1), so they differ by hue only. Every session screen names its state in text ("Lifting", "Rest", "Get ready", "Warm-up"); keep those labels, they are the colour-blind fallback.
+- `line` and `progress-off` colours are decorative (no 3:1 duty). Information never rests on them alone.
+
+### Type (D-0208)
+
+- Plan screens: **Familjen Grotesk** 400/600/700. Token `--wl-font-plan`: `"Familjen Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif`.
+- Session screens (lift, rest): **Bricolage Grotesque** 400/600/800. Token `--wl-font-session`: `"Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif`.
+- Self-hosted under the visual-foundation §1 rules: one variable `latin` woff2 per family, `font-display: swap`, same-origin only, from `@workoutlab/design-tokens/fonts-state.css` (files, OFL texts and sha256 in `packages/design-tokens/fonts/SOURCES.md`, T-0583).
+- No uppercase transforms anywhere; sentence case only. Big titles end with a full stop ("Lower A.", "Progress.").
+- Sizes in `rem` (16 px = 1 rem):
+
+| Role | Plan (Familjen) | Session (Bricolage) |
+|---|---|---|
+| Hero number | — | 9.375rem single-line digits ("100 kg", "×8", "2:29"), 18.75rem single-digit countdowns; 800, line height 0.85, tracking −0.06em |
+| Hero title | 6–7rem, 700, line height 0.88, tracking −0.05em ("Lower A." on Today) | — |
+| Page title | 3.5rem, 700, tracking −0.04em, line height 1 | 2.75rem, 800, tracking −0.03em (exercise name) |
+| Section title | 2.75–3rem, 700, tracking −0.04em | 4rem, 800 (next exercise name) |
+| Stat | 2.125rem, 700, tracking −0.03em | 3.5–4.5rem, 800 |
+| Row title | 1.0625–1.125rem, 600 | 1.0625rem, 800 |
+| Body | 1.0625rem / 1.45 | 1.0625rem / 1.45 |
+| Label / caption | 0.875–0.9375rem, 400, `ink-muted` | 0.9375rem, 600 |
+| Button | 1.375rem, 700 | 1.5rem, 800 |
+| Tab label | 0.875rem, 600 | — |
+
+### Spacing and radius
+
+- Gutters: `--wl-space-gutter-plan` 28 px, `--wl-space-gutter-session` 26 px (replaces the 20 px `.wl-page` gutter once screens migrate; the 640 px max width stays). `--wl-space-top-safe` 72 px and `--wl-space-bottom-safe` 44 px are the 390 × 844 frame values; code uses `env(safe-area-inset-*)` instead.
+- Radius (`--wl-radius-<name>`): `pill` 999 px (pill buttons, chips, segmented controls), `session-button` 22 px, `sheet` 28 px (top corners only), `option` 16 px (selected option rows), `tile` 12 px, `input` 12 px, `segment` 4 px.
+- Touch targets ≥ 44 px. Focus-mode numbers (hero number) stay readable at arm's length.
+
+## Chalk & Iron (D-0019) — in use until the app screens migrate
+
+Dark, high-contrast, athletic. Big condensed numbers for anything read mid-set. The app screens still use these flat tokens and fonts; they are retired in a later ticket (D-0208 rollout).
 
 ## Colour tokens
 
