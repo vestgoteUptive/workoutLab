@@ -125,7 +125,7 @@ describe("T-0471 AC-1 UF-11.2: CheckinCard is the first sibling after <h1>, red 
     expect(card.getAttribute("aria-label")).toBe(uc.cardName);
 
     // PlanBody's own content still renders, after the card.
-    await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
+    await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
   });
 
   it("with P3 = 5 (on plan, no proposal): no card, and the Plan body text matches the no-card render", async () => {
@@ -137,7 +137,7 @@ describe("T-0471 AC-1 UF-11.2: CheckinCard is the first sibling after <h1>, red 
         </Routes>
       </MemoryRouter>,
     );
-    await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
+    await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
     expect(document.querySelector('[data-part="checkin-card"]')).toBeNull();
     expect(document.body.textContent).not.toContain(uc.accept);
   });

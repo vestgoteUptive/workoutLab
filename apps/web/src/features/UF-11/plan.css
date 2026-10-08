@@ -1,7 +1,8 @@
 /* UF-11.2 / UF-11.3 styling. Colours come only from @workoutlab/design-tokens (D-0019); no hex,
    no new fonts. Inline styles are avoided so the :focus-visible ring below always shows. */
+/* UF-11.2 / UF-11.3 sit in .wl-page (flex column, gap 16), which supplies the spacing. */
 .wl-plan__section {
-  margin-block: 16px;
+  margin: 0;
 }
 
 .wl-plan__list {
@@ -127,4 +128,83 @@
   align-items: center;
   justify-content: space-between;
   gap: 8px 16px;
+}
+
+.wl-plan__header h1 {
+  margin: 0;
+}
+
+.wl-plan__purpose {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--wl-color-text-muted);
+}
+
+.wl-plan__account,
+.wl-plan__linkbtn {
+  gap: 8px;
+  text-decoration: none;
+}
+
+.wl-plan__account {
+  inline-size: auto;
+  min-block-size: 48px;
+}
+
+.wl-plan__facts {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+}
+
+.wl-plan__facts dd {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.wl-plan__tiles {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+}
+
+.wl-plan__tiles li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  background: var(--wl-color-surface-2);
+  border: 1px solid var(--wl-color-line);
+  border-radius: 12px;
+  min-inline-size: 0;
+  position: relative;
+}
+
+.wl-plan__tiles li.wl-plan__tile--priority {
+  border-color: var(--wl-color-accent);
+}
+
+/* Visually hidden, still read by screen readers. */
+.wl-plan__sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Person icon in the account link: 2 px stroke, no fill (UF-11.2 block 1). */
+.wl-plan__account svg {
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }

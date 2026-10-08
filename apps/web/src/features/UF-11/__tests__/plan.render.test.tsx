@@ -59,8 +59,8 @@ afterEach(() => {
 
 /** Waits for the target list to be on screen — the signal that the cache read landed. */
 async function targetRows(): Promise<string[]> {
-  await waitFor(() => expect(listRows(u.headings.targets)).toHaveLength(9));
-  return listRows(u.headings.targets);
+  await waitFor(() => expect(listRows(u.targetsList)).toHaveLength(9));
+  return listRows(u.targetsList);
 }
 
 describe("AC-B1 plan summary, through the engine", () => {
@@ -70,18 +70,19 @@ describe("AC-B1 plan summary, through the engine", () => {
     renderPlan();
 
     expect(await targetRows()).toEqual([
-      "Chest 20 · From your plan",
-      "Back 20 · From your plan",
-      "Shoulders 16 · From your plan",
-      "Arms 12 · From your plan",
-      "Core 12 · From your plan",
-      "Glutes 20 · From your plan",
-      "Quads 20 · From your plan",
-      "Hamstrings 16 · From your plan",
-      "Calves 12 · From your plan",
+      "Chest 20 hard sets",
+      "Back 20 hard sets",
+      "Shoulders 16 hard sets",
+      "Arms 12 hard sets",
+      "Core 12 hard sets",
+      "Glutes 20 hard sets",
+      "Quads 20 hard sets",
+      "Hamstrings 16 hard sets",
+      "Calves 12 hard sets",
     ]);
     expect(screen.getByText(u.goals.build_muscle)).toBeInTheDocument();
-    expect(screen.getByText("3–4 per week · 6–8 per 14 days")).toBeInTheDocument();
+    expect(screen.getByText("3–4 per week")).toBeInTheDocument();
+    expect(screen.getByText("6–8 sessions per 14 days")).toBeInTheDocument();
     expect(screen.getByText(u.noPriorities)).toBeInTheDocument();
     expect(document.querySelector("[data-screen-id]")!.getAttribute("data-screen-id")).toBe(
       "UF-11.2",
@@ -106,7 +107,7 @@ describe("AC-B1 plan summary, through the engine", () => {
     ]);
   });
 
-  it("contrast: a different goal and priorities show in STORED order, and the F copy is absent", async () => {
+  it("contrast: a different goal and priorities show in the FIXED area order, and the F copy is absent", async () => {
     const db = freshDb();
     await seedCache(db, {
       profile: profileF({ goal: "get_stronger", priorityAreas: ["hamstrings", "back"] }),
@@ -115,14 +116,14 @@ describe("AC-B1 plan summary, through the engine", () => {
     renderPlan();
     await targetRows();
     expect(screen.getByText(u.goals.get_stronger)).toBeInTheDocument();
-    // Stored order, not sorted: `back` precedes `hamstrings` in AREAS.
-    expect(screen.getByText("Hamstrings, Back")).toBeInTheDocument();
+    // Spec change (UF-11.2.md): fixed area order, not stored order.
+    expect(screen.getByText("Back, Hamstrings")).toBeInTheDocument();
     expect(screen.queryByText(u.goals.build_muscle)).not.toBeInTheDocument();
     expect(screen.queryByText(u.noPriorities)).not.toBeInTheDocument();
-    expect(document.body.textContent).not.toContain("Back, Hamstrings");
+    expect(document.body.textContent).not.toContain("Hamstrings, Back");
   });
 
-  it("contrast: rhythm 1–1 reads `1–1 per week · 2–2 per 14 days`", async () => {
+  it("contrast: rhythm 1–1 reads `1–1 per week` and `2–2 sessions per 14 days`", async () => {
     const db = freshDb();
     await seedCache(db, {
       profile: profileF({ rhythmMin: 1, rhythmMax: 1 }),
@@ -130,7 +131,8 @@ describe("AC-B1 plan summary, through the engine", () => {
     });
     renderPlan();
     await targetRows();
-    expect(screen.getByText("1–1 per week · 2–2 per 14 days")).toBeInTheDocument();
+    expect(screen.getByText("1–1 per week")).toBeInTheDocument();
+    expect(screen.getByText("2–2 sessions per 14 days")).toBeInTheDocument();
   });
 });
 
@@ -144,9 +146,9 @@ describe("AC-B2 target source", () => {
     renderPlan();
     const rows = await targetRows();
     const back = rows[AREAS.indexOf("back")];
-    expect(back).toBe("Back 20 · Adapted 27 Sep");
+    expect(back).toBe("Back 20 hard sets Adapted 27 Sep");
     expect(back).not.toContain("26 Sep");
-    expect(back).not.toContain(u.sourceLabels.default);
+    expect(back).not.toContain("From your plan");
     expect(back).not.toContain(u.sourceLabels.manual);
   });
 
@@ -159,8 +161,8 @@ describe("AC-B2 target source", () => {
     renderPlan();
     const rows = await targetRows();
     const calves = rows[AREAS.indexOf("calves")];
-    expect(calves).toBe("Calves 12 · Set by you");
-    expect(calves).not.toContain(u.sourceLabels.default);
+    expect(calves).toBe("Calves 12 hard sets Set by you");
+    expect(calves).not.toContain("From your plan");
     expect(calves).not.toContain("Adapted");
   });
 });

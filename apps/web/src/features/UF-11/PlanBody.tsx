@@ -14,10 +14,11 @@ import "./plan.css";
 
 const u = en.uf11;
 
-function sourceLabel(target: AreaTarget, tz: string): string {
+/** The tile's source line: none for a default target (UF-11.2 spec block 6). */
+function sourceLabel(target: AreaTarget, tz: string): string | null {
   if (target.source === "adapted") return u.adapted(formatInstantDay(target.updatedAt, tz));
   if (target.source === "manual") return u.sourceLabels.manual;
-  return u.sourceLabels.default;
+  return null;
 }
 
 function answerLabel(answer: "accepted" | "kept" | "withdrawn" | null): string {
@@ -29,37 +30,76 @@ function PlanContent({ data }: { data: PlanData }) {
   const ordered = [...targets].sort((a, b) => AREAS.indexOf(a.area) - AREAS.indexOf(b.area));
   const isFirst = evaluation.periods.length === 0 && checkins.length === 0;
   const nextDate = formatLocalDay(evaluation.nextCheckinDate);
+  const priorityNames = AREAS.filter((a) => profile.priorityAreas.includes(a)).map(
+    (a) => en.bodyMap.areas[a],
+  );
   return (
     <>
-      <section className="wl-plan__section">
-        <h2>{u.headings.goal}</h2>
-        <p>{u.goals[profile.goal]}</p>
+      <section className="wl-card" aria-labelledby="wl-plan-yours">
+        <h2 id="wl-plan-yours" className="wl-label">
+          {u.yourPlan}
+        </h2>
+        <dl className="wl-plan__facts">
+          <div>
+            <dt className="wl-caption">{u.headings.goal}</dt>
+            <dd>{u.goals[profile.goal]}</dd>
+          </div>
+          <div>
+            <dt className="wl-caption">{u.headings.rhythm}</dt>
+            <dd>
+              <span>{u.rhythmPerWeek(profile.rhythmMin, profile.rhythmMax)}</span>{" "}
+              <span className="wl-caption">
+                {u.rhythmPer14(profile.rhythmMin, profile.rhythmMax)}
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt className="wl-caption">{u.headings.priorities}</dt>
+            <dd>{priorityNames.length === 0 ? u.noPriorities : priorityNames.join(", ")}</dd>
+          </div>
+        </dl>
+        <Link className="wl-button--primary wl-plan__linkbtn" to="/plan/edit">
+          {u.editPlan}
+        </Link>
       </section>
-      <section className="wl-plan__section">
-        <h2>{u.headings.rhythm}</h2>
-        <p>{u.rhythm(profile.rhythmMin, profile.rhythmMax)}</p>
-      </section>
-      <section className="wl-plan__section">
-        <h2>{u.headings.priorities}</h2>
-        <p>
-          {profile.priorityAreas.length === 0
-            ? u.noPriorities
-            : profile.priorityAreas.map((a) => en.bodyMap.areas[a]).join(", ")}
-        </p>
-      </section>
-      <section className="wl-plan__section">
-        <h2>{u.headings.targets}</h2>
-        <ul className="wl-plan__list" aria-label={u.headings.targets}>
-          {ordered.map((t) => (
-            <li key={t.area}>
-              {u.targetRow(en.bodyMap.areas[t.area], t.setsPer14d, sourceLabel(t, tz))}
-            </li>
-          ))}
+      {/* Slot (UF-11.2 block 5): T-0540 adds the "Excluded exercises" row here, with the D-0202
+          favorites row directly above it. Nothing is rendered yet. */}
+      <section className="wl-card" aria-labelledby="wl-plan-targets">
+        <h2 id="wl-plan-targets" className="wl-label">
+          {u.headings.targets}
+        </h2>
+        <p className="wl-caption">{u.targetsCaption}</p>
+        <ul className="wl-plan__tiles" aria-label={u.targetsList}>
+          {ordered.map((t) => {
+            const isPriority = profile.priorityAreas.includes(t.area);
+            const caption = u.tileCaption(
+              [isPriority ? u.priorityTag : null, sourceLabel(t, tz)].filter(
+                (x): x is string => x !== null,
+              ),
+            );
+            return (
+              <li key={t.area} className={isPriority ? "wl-plan__tile--priority" : undefined}>
+                <span className="wl-caption">{en.bodyMap.areas[t.area]}</span>{" "}
+                <span className="wl-stat">{t.setsPer14d}</span>
+                <span className="wl-plan__sr">{u.hardSets}</span>
+                {caption ? (
+                  <>
+                    {" "}
+                    <span className="wl-caption">{caption}</span>
+                  </>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
-        <p>{isFirst ? u.firstCheckin(nextDate) : u.nextCheckin(nextDate)}</p>
+        <p className="wl-caption">{u.targetsNote}</p>
+        <Link className="wl-row" to="/balance">
+          {u.seeInBalance}
+        </Link>
       </section>
       <section className="wl-plan__section">
         <h2>{u.headings.checkins}</h2>
+        <p>{isFirst ? u.firstCheckin(nextDate) : u.nextCheckin(nextDate)}</p>
         {checkins.length === 0 ? (
           <p>{u.noCheckins}</p>
         ) : (
@@ -101,9 +141,6 @@ function PlanContent({ data }: { data: PlanData }) {
           {u.newRoutine}
         </Link>
       </section>
-      <Link className="wl-plan__link wl-plan__link--primary" to="/plan/edit">
-        {u.editPlan}
-      </Link>
     </>
   );
 }

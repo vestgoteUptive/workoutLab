@@ -121,6 +121,11 @@ describe("AC-B16 no second string catalogue", () => {
       "string",
       "/plan",
       "/plan/edit",
+      // T-0548 UF-11.2: person-icon geometry (SVG attribute values), not copy.
+      "0 0 24 24",
+      "M4 21c0-4 4-7 8-7s8 3 8 7",
+      // T-0548 UF-11.2: route path of the "See this period in Balance" link, not copy.
+      "/balance",
       "/plan/routines/new",
       "plan save: no signed-in user",
       "-",

@@ -35,13 +35,18 @@ export function Plan({ now = systemClock }: PlanScreenProps = {}) {
   const [revision, setRevision] = useState(0);
   const state = usePlanData(now, revision);
   return (
-    <div data-screen-id="UF-11.2">
-      <div className="wl-plan__header">
+    <div data-screen-id="UF-11.2" className="wl-page">
+      <header className="wl-plan__header">
         <h1>{en.screens.plan}</h1>
-        <Link className="wl-plan__link" to="/plan/account">
+        <Link className="wl-button--secondary wl-plan__account" to="/plan/account">
+          <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
+            <circle cx={12} cy={8} r={4} />
+            <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
+          </svg>
           {en.uf11.accountLink}
         </Link>
-      </div>
+        <p className="wl-plan__purpose">{en.uf11.purpose}</p>
+      </header>
       {state.phase !== "loading" ? (
         <CheckinCard now={now} onAnswered={() => setRevision((r) => r + 1)} />
       ) : null}
@@ -52,7 +57,7 @@ export function Plan({ now = systemClock }: PlanScreenProps = {}) {
 
 export function EditPlan({ now = systemClock }: PlanScreenProps = {}) {
   return (
-    <div data-screen-id="UF-11.3">
+    <div data-screen-id="UF-11.3" className="wl-page">
       <h1>{en.screens.editPlan}</h1>
       <EditPlanBody clock={now} />
     </div>
