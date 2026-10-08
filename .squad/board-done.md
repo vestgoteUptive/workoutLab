@@ -407,3 +407,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0575 | UF-08 Start with this (compound only; mainLiftId; new main lift first) | web-feature:UF-08 | T-0574 | done | wl-build-web |
 | T-0576 | UF-08.2 Reorder mode + order merge across re-suggests + Start writes display order | web-feature:UF-08 | T-0575 | done (UF-08.4 order list not built; Ready has no list) | wl-build-web |
 | T-0577 | UF-08.5 Favorites section first on the empty query + Favorite tag on rows | web-feature:UF-08 | T-0576, T-0567, T-0561 | done | wl-build-web |
+| T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | done | wl-build-web |
