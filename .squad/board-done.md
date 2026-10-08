@@ -388,3 +388,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0563 | Engine favorites part 2: simulated histories R7-E28…E30, fast-check P1–P5, Required tests | engine | T-0562 | done (AC3 wording: key 0 can't fail R7-E29 at R7-E4 inputs; noted) | wl-build-engine |
 | T-0564 | favorite_exercises table + mutual-exclusion triggers (destructive-approved D-0202 header), data-model, database.gen, pgTAP 001/007/018/020, export 9th key, e2e mock | data | — | done (released automatically) | wl-build-data |
 | T-0518 | POST /workouts/suggest validator accepts/passes `avoidAreas`; refresh vendored engine (D-0191 §3) — off the user path | backend | T-0516, T-0517 | done (validator released 2026-10-08) | wl-build-backend |
+| T-0578 | UF-09 Do this later: canDoLater, permutation, Trim-path plan write, machine event remapping itemIndex/skippedItems, restore realign | web-feature:UF-09 | — | done | wl-build-web |
