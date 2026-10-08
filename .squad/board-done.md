@@ -372,3 +372,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0315 | Draw the original body figure (front and back, 9 `data-area` regions, no colour attributes), fold the C-01 and UF-04.2 deltas into the design docs (reactivated) | design | — | done | wl-design |
 | T-0536 | Device cache: Dexie v3 table keyed by userId, refreshAll read, exclude/include writes after server confirm, missing-table tolerance, union helper, useOnline. After H-27 | web-shell | T-0535 | done | wl-build-web |
 | T-0556 | BodyFigure shared component (components/body-figure): hatch pattern, forced colours, import ban | web-shell | T-0315 | done | wl-build-web |
+| T-0560 | Library: lunge family (forward, walking, dumbbell, barbell, lateral; Bulgarian split squat if missing); owner request | content | — | done (released automatically) | wl-build-content |
