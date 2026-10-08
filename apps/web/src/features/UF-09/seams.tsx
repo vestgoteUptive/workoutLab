@@ -314,7 +314,7 @@ export type SeamPlace = "pause" | "next";
 
 /** User flows v2 order, built-ins and seams together (D-0071 §4). */
 const ORDER: Record<SeamPlace, readonly string[]> = {
-  pause: ["resume", "swap", "skip", "how-to", "list-view", "end"],
+  pause: ["resume", "swap", "later", "skip", "how-to", "list-view", "end"],
   next: ["ready", "swap"],
 };
 

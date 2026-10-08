@@ -4,7 +4,7 @@
 // task on screen. Every timer is stopped while this shows (the machine's pause).
 import { useEffect, useRef, useState } from "react";
 import { en } from "../../lib/i18n/en.js";
-import { canSkipItem, setsInItem } from "./machine.js";
+import { canDoLater, canSkipItem, setsInItem } from "./machine.js";
 import { orderActions } from "./seams.js";
 import { useFocusSession } from "./session.js";
 import { formatClock } from "./timer.js";
@@ -20,6 +20,7 @@ export function Paused({
   ctx,
   onResume,
   onSkipItem,
+  onMoved,
   seams,
   planWritePending = false,
 }: ViewProps) {
@@ -27,6 +28,10 @@ export function Paused({
   const [confirming, setConfirming] = useState(false);
   const [ending, setEnding] = useState(false);
   const [failed, setFailed] = useState(false);
+  // T-0579: the pending move (Resume is inert meanwhile) and the item that failed to move.
+  const [moving, setMoving] = useState(false);
+  const [moveFailed, setMoveFailed] = useState<string | null>(null);
+  const moveBusy = useRef(false);
   const busy = useRef(false);
   const resumeRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
@@ -101,12 +106,47 @@ export function Paused({
     );
   }
 
-  const builtIns = ["resume", ...(canSkipItem(state, ctx) ? ["skip"] : []), "end"];
+  const laterAllowed = canDoLater(state, ctx.plan, state.loggedSets);
+  const laterItem =
+    ctx.plan.items[
+      state.resumePhase === "getReady" || state.resumePhase === "warmup" ? 0 : state.itemIndex
+    ];
+  const laterName = laterItem
+    ? (ctx.library.find((e) => e.id === laterItem.exerciseId)?.name ?? laterItem.exerciseId)
+    : "";
+  const onLater = () => {
+    if (moveBusy.current) return;
+    moveBusy.current = true;
+    setMoving(true);
+    setMoveFailed(null);
+    session.doLater().then((result) => {
+      moveBusy.current = false;
+      if (result.ok) {
+        // The pause ends and this view unmounts; the host carries the name to UF-09.6.
+        onMoved?.(result.name);
+        return;
+      }
+      setMoving(false);
+      setMoveFailed(laterName);
+    });
+  };
+
+  const builtIns = [
+    "resume",
+    ...(laterAllowed ? ["later"] : []),
+    ...(canSkipItem(state, ctx) ? ["skip"] : []),
+    "end",
+  ];
   const ids = orderActions(builtIns, seams, "pause");
   return (
     <div className="wl-uf09__view">
       <h1 className="wl-uf09__title">{en.uf09.titles.paused}</h1>
       {numbers}
+      {moveFailed === null ? null : (
+        <p className="wl-uf09__move-error" role="alert" data-field="move-error">
+          {en.uf09.doLaterError(moveFailed)}
+        </p>
+      )}
       {ids.map((id) => {
         if (id === "resume") {
           return (
@@ -116,9 +156,26 @@ export function Paused({
               type="button"
               className="wl-uf09__primary wl-uf09__wide"
               data-action="primary"
-              onClick={onResume}
+              aria-disabled={moving ? true : undefined}
+              onClick={() => {
+                if (!moving) onResume();
+              }}
             >
               {en.uf09.resume}
+            </button>
+          );
+        }
+        if (id === "later") {
+          return (
+            <button
+              key={id}
+              type="button"
+              className="wl-uf09__secondary wl-uf09__wide"
+              data-action="later"
+              aria-busy={moving ? true : undefined}
+              onClick={onLater}
+            >
+              {en.uf09.doLater(laterName)}
             </button>
           );
         }

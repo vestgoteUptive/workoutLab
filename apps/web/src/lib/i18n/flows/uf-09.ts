@@ -106,6 +106,10 @@ export const uf09 = {
   left: (n: number) => (n === 1 ? "Left 1 min" : `Left ${n} min`),
   sets: (logged: number, planned: number) => `Sets ${logged} / ${planned}`,
   skipToNext: "Skip to next exercise",
+  // T-0579 UF-09.9 "Do {name} later" (D-0205 §9, §11) and the UF-09.6 status line.
+  doLater: (name: string) => `Do ${name} later`,
+  doLaterError: (name: string) => `Couldn't move ${name}. Try again.`,
+  movedLater: (name: string) => `${name} moved to later.`,
   endWorkout: "End workout",
   endQuestion: "End workout? Your sets are saved.",
   cancel: "Cancel",

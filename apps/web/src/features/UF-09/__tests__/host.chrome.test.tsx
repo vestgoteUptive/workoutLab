@@ -143,14 +143,15 @@ describe("AC-7 chrome on every machine state except paused", () => {
 
   // T-0304d (D-0118 §12): the built UF-09.9 is Resume, Skip to next exercise and End workout.
   // D-0142 §6 (a named change, T-0422, T-0416): plus the module's Swap, How to and List view seams.
-  it("paused: exactly 6 buttons (Resume, Swap, Skip to next exercise, How to, List view, End workout) and no chrome", async () => {
+  it("paused: exactly 7 buttons (Resume, Swap, Do later, Skip to next exercise, How to, List view, End workout) and no chrome", async () => {
     await show(seeded("paused"));
     expect(screenId()).toBe("UF-09.9");
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(6);
+    expect(buttons).toHaveLength(7);
     expect(buttons.map((b) => b.textContent)).toEqual([
       "Resume",
       "Swap",
+      "Do Barbell row later",
       "Skip to next exercise",
       "How to",
       "List view",

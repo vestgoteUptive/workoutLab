@@ -12,7 +12,15 @@ import { formatClock, remainingS } from "./timer.js";
 import { useCue } from "./use-cue.js";
 import type { ViewProps } from "./views.js";
 
-export function NextExercise({ state, ctx, locale, nowMs, send, seams }: ViewProps) {
+export function NextExercise({
+  state,
+  ctx,
+  locale,
+  nowMs,
+  send,
+  seams,
+  movedName = null,
+}: ViewProps) {
   const item = ctx.plan.items[state.itemIndex]!;
   const name = ctx.library.find((e) => e.id === item.exerciseId)?.name ?? item.exerciseId;
   const weightKg =
@@ -45,6 +53,10 @@ export function NextExercise({ state, ctx, locale, nowMs, send, seams }: ViewPro
           {cue}
         </p>
       ) : null}
+      {/* Present on mount, so the line is announced when it fills (T-0579, D-0205 §11). */}
+      <p className="wl-uf09__status" role="status" data-field="moved">
+        {movedName === null ? null : en.uf09.movedLater(movedName)}
+      </p>
       {state.timer ? (
         <p className="wl-uf09__timer" role="timer">
           {formatClock(remainingS(state.timer, nowMs))}

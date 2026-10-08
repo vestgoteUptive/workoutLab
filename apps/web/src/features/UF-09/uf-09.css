@@ -489,3 +489,11 @@
   outline: 2px solid var(--wl-color-accent);
   outline-offset: 2px;
 }
+
+/* UF-09.9 "Do {name} later" failure strip (T-0579): empty until it fails, no gap. */
+.wl-uf09__move-error {
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--wl-color-surface-2);
+  color: var(--wl-color-text);
+}

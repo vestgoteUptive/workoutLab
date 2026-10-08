@@ -207,6 +207,11 @@ function Machine(props: MachineProps) {
 
   // UF-09.9 keeps End workout inert while a UF-09.8 plan write is pending.
   const [planPending, setPlanPending] = useState(false);
+  // T-0579: the item the last "Do later" moved, for UF-09.6's status line; gone once UF-09.6 is.
+  const [movedLater, setMovedLater] = useState<{ name: string; itemIndex: number } | null>(null);
+  useEffect(() => {
+    if (store.getState().phase !== "next") setMovedLater(null);
+  });
   const applyItems = useMemo(() => {
     const apply = createPlanApply({ sessionId, store, onRow: setRow, writes });
     return (items: Parameters<typeof apply>[0]) => {
@@ -513,6 +518,12 @@ function Machine(props: MachineProps) {
           }
           onApplyItems={applyItems}
           planWritePending={planPending}
+          onMoved={(name) => setMovedLater({ name, itemIndex: store.getState().itemIndex })}
+          movedName={
+            movedLater && state.phase === "next" && state.itemIndex === movedLater.itemIndex
+              ? movedLater.name
+              : null
+          }
           onSkipItem={() => store.dispatch({ type: "SKIP_ITEM", atMs: Date.now() })}
           send={(event) => store.dispatch({ ...event, atMs: Date.now() } as FocusEvent)}
           onCancelAutosave={() => store.dispatch({ type: "AUTOSAVE_CANCEL", atMs: Date.now() })}

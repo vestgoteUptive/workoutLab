@@ -122,6 +122,7 @@ describe("AC-9 the module registries", () => {
     expect(buttonNames()).toEqual([
       "Resume",
       "Swap",
+      "Do Bench press later",
       "Skip to next exercise",
       "How to",
       "List view",
@@ -172,6 +173,7 @@ describe("AC-9 injection", () => {
     expect(buttonNames()).toEqual([
       "Resume",
       "Swap",
+      "Do Bench press later",
       "Skip to next exercise",
       "How to",
       "List view",
