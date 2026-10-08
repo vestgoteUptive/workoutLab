@@ -724,6 +724,10 @@
   margin-top: 6px;
 }
 
+.wl-uf08__pick-add[aria-disabled="true"] {
+  color: var(--wl-color-text-muted);
+}
+
 .wl-uf08__add:focus-visible,
 .wl-uf08__pick-add:focus-visible,
 .wl-uf08__sheet .wl-uf08__icon:focus-visible {

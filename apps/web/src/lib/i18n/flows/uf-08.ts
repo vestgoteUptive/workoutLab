@@ -174,6 +174,15 @@ export const uf08 = {
     `${name} doesn't fit in ${minutes} min. Start with it instead, or pick more time.`,
   noFitIsolation: (name: string, minutes: number) =>
     `${name} doesn't fit in ${minutes} min. Pick more time.`,
+  /** UF-08.5 disabled-row reason lines (T-0574, D-0205 §3); the text is the only signal. */
+  reasonExcluded: "Excluded. Include it again in Plan \u203A Excluded exercises.",
+  reasonEquipment: "Not available with your equipment",
+  reasonLevel: "Above your level",
+  reasonSkipping: (area: string) => `Skipping ${area} today`,
+  reasonRecovering: (area: string) => `${area} is recovering`,
+  /** UF-08.5 cap refusals (D-0205 §4). */
+  capItems: (max: number) => `This workout has ${max} exercises, the most it can hold.`,
+  capArea: (area: string) => `This workout already has two ${area} exercises.`,
   /** UF-08.2's line for added exercises a re-suggest left out. */
   doesntFit: (minutes: number, names: readonly string[]) =>
     `Doesn't fit in ${minutes} min: ${names.join(", ")}.`,
