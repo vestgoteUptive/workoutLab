@@ -66,6 +66,8 @@ export interface SuggestedProps {
   blocked?: Readonly<Record<string, string>>;
   /** The host's Add: null when the exercise is now in the plan, else the refusal text. */
   onAdd?: (exerciseId: string) => string | null;
+  /** T-0575: "Start with this" (D-0205 §5): null when `id` is now the main lift, else the refusal. */
+  onStartWith?: (exerciseId: string) => string | null;
 }
 
 /** UF-08.5 is open while the current history entry carries this state; the URL never changes. */
@@ -157,6 +159,7 @@ export function Suggested({
   catalog,
   blocked,
   onAdd,
+  onStartWith,
 }: SuggestedProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -166,6 +169,8 @@ export function Suggested({
   const addButtonRef = useRef<HTMLButtonElement>(null);
   // The id just added: focus goes to its row when the sheet has closed.
   const pendingAddFocus = useRef<string | null>(null);
+  // T-0575: the row to focus after a row-level "Start with this" (no sheet to close).
+  const pendingStartFocus = useRef<string | null>(null);
   const sheetWasOpen = useRef(false);
   // Set once a close (Escape, Close, Add) has navigated back, so a second one can't pop again.
   const closing = useRef(false);
@@ -220,6 +225,15 @@ export function Suggested({
   useEffect(() => {
     setStatus(notFittingText);
   }, [notFittingText]);
+
+  useEffect(() => {
+    const id = pendingStartFocus.current;
+    if (id === null) return;
+    pendingStartFocus.current = null;
+    listRef.current
+      ?.querySelector<HTMLElement>(`[data-id="${CSS.escape(id)}"] [data-part="row-name"]`)
+      ?.focus();
+  }, [workout]);
 
   useEffect(() => {
     const index = pendingFocus.current;
@@ -320,6 +334,7 @@ export function Suggested({
                 className="wl-uf08__row"
                 data-part="item-row"
                 data-id={item.exerciseId}
+                data-main={item.isMain ? "true" : undefined}
               >
                 <div className="wl-uf08__row-body">
                   <button
@@ -339,12 +354,37 @@ export function Suggested({
                       {backoff}
                     </span>
                   ) : null}
+                  {item.isMain && addedIds.includes(item.exerciseId) ? (
+                    <span className="wl-uf08__row-reason" data-part="row-main">
+                      {en.uf08.mainTag}
+                    </span>
+                  ) : null}
                   {reason !== "" ? (
                     <span className="wl-uf08__row-reason" data-part="row-reason">
                       {reason}
                     </span>
                   ) : null}
                 </div>
+                {onStartWith !== undefined &&
+                !item.isMain &&
+                catalog?.find((l) => l.id === item.exerciseId)?.type === "compound" ? (
+                  <button
+                    type="button"
+                    className="wl-uf08__icon wl-uf08__icon--text"
+                    data-part="start-with"
+                    aria-label={en.uf08.startWithName(name)}
+                    onClick={() => {
+                      pendingFocus.current = null;
+                      const refusal = onStartWith(item.exerciseId);
+                      if (refusal === null) {
+                        pendingStartFocus.current = item.exerciseId;
+                        setStatus(en.uf08.mainNow(name));
+                      } else setStatus(refusal);
+                    }}
+                  >
+                    {en.uf08.startWith}
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   className="wl-uf08__icon wl-uf08__icon--text"
@@ -466,6 +506,21 @@ export function Suggested({
             }
             return refusal;
           }}
+          {...(onStartWith !== undefined
+            ? {
+                onStartWith: (id: string) => {
+                  if (closing.current) return null;
+                  const refusal = onStartWith(id);
+                  if (refusal === null) {
+                    closing.current = true;
+                    pendingAddFocus.current = id;
+                    setStatus(en.uf08.mainNow(exerciseName(id, library)));
+                    void navigate(-1);
+                  }
+                  return refusal;
+                },
+              }
+            : {})}
           onClose={() => {
             if (closing.current) return;
             closing.current = true;

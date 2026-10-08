@@ -160,3 +160,36 @@ test("Add exercise: Excluded and recovering rows disabled with their reason; rem
   await expect(row).toHaveCount(0);
   await expect(page.locator('[data-part="removed-line"]')).toContainText("Back squat");
 });
+
+// T-0575 AC7 (UF-08.5, UF-08.2): "Start with this" from the sheet, then from a row, in a browser.
+test("Start with this: from the sheet, then from a UF-08.2 row", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await toSuggested(page);
+  const rows = page.locator('[data-part="item-row"]');
+
+  await page.getByRole("button", { name: "Add exercise" }).click();
+  const sheet = page.locator('[data-screen-id="UF-08.5"]');
+  await sheet.getByLabel("Search exercises").fill("back squat");
+  await sheet.getByRole("button", { name: "Start with Back squat" }).click();
+  await expect(sheet).toHaveCount(0);
+  await expect(rows.first()).toContainText("Back squat");
+  await expect(rows.first()).toHaveAttribute("data-main", "true");
+  await expect(page.locator('[data-part="status"]')).toHaveText("Back squat is the main lift now.");
+  await expect(page.locator('[data-main="true"]')).toHaveCount(1);
+
+  // A row action on the first other compound row makes it the main lift.
+  const other = page.locator('[data-part="item-row"]:not([data-main="true"])').filter({
+    has: page.locator('[data-part="start-with"]'),
+  });
+  if ((await other.count()) > 0) {
+    const label = (await other
+      .first()
+      .locator('[data-part="start-with"]')
+      .getAttribute("aria-label"))!;
+    const name = label.replace(/^Start with /, "");
+    await other.first().getByRole("button", { name: label }).click();
+    await expect(rows.first()).toContainText(name);
+    await expect(rows.first()).toHaveAttribute("data-main", "true");
+    await expect(page.locator('[data-part="status"]')).toHaveText(`${name} is the main lift now.`);
+  }
+});

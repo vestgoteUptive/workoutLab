@@ -22,6 +22,8 @@ export interface AddExerciseSheetProps {
   blocked?: Readonly<Record<string, string>>;
   /** Returns null when the exercise was added (the host closes the sheet), else the refusal. */
   onAdd: (exerciseId: string) => string | null;
+  /** T-0575: "Start with this" (compounds only). Same contract as `onAdd`. */
+  onStartWith?: (exerciseId: string) => string | null;
   onClose: () => void;
 }
 
@@ -39,6 +41,7 @@ export function AddExerciseSheet({
   budgetMin,
   blocked = {},
   onAdd,
+  onStartWith,
   onClose,
 }: AddExerciseSheetProps) {
   const titleId = useId();
@@ -57,6 +60,8 @@ export function AddExerciseSheet({
     [catalog],
   );
   const inPlan = useMemo(() => new Set(items.map((i) => i.exerciseId)), [items]);
+  // The engine's `isMain`, never the position (T-0575).
+  const mainId = useMemo(() => items.find((i) => i.isMain)?.exerciseId ?? null, [items]);
   const q = query.trim();
 
   const results = useMemo(
@@ -123,10 +128,32 @@ export function AddExerciseSheet({
     if (refusal !== null) setStatus(refusal);
   }
 
+  function startWith(e: LibraryExercise): void {
+    setStatus("");
+    const refusal = onStartWith?.(e.id) ?? null;
+    if (refusal !== null) setStatus(refusal);
+  }
+
   function row(e: LibraryExercise, areaSuffix?: string) {
     const here = inPlan.has(e.id);
     const reason = here ? undefined : blocked[e.id];
     const reasonId = `${titleId}-why-${e.id}${areaSuffix ? `-${areaSuffix}` : ""}`;
+    const canStart = onStartWith !== undefined && e.type === "compound" && e.id !== mainId;
+    const startButton = canStart ? (
+      <button
+        type="button"
+        className="wl-uf08__ghost wl-uf08__pick-add"
+        data-part="pick-start"
+        aria-label={en.uf08.startWithName(e.name)}
+        aria-disabled={!here && reason !== undefined ? "true" : undefined}
+        aria-describedby={!here && reason !== undefined ? reasonId : undefined}
+        onClick={() => {
+          if (here || reason === undefined) startWith(e);
+        }}
+      >
+        {en.uf08.startWith}
+      </button>
+    ) : null;
     return (
       <li key={e.id} className="wl-uf08__pick" data-part="pick-row" data-id={e.id}>
         <span className="wl-uf08__pick-name">{e.name}</span>
@@ -137,6 +164,9 @@ export function AddExerciseSheet({
           <span className="wl-uf08__row-detail" data-part="pick-reason">
             {en.uf08.inWorkout}
           </span>
+        ) : null}
+        {here ? (
+          startButton
         ) : (
           <>
             {reason !== undefined ? (
@@ -157,6 +187,7 @@ export function AddExerciseSheet({
             >
               {en.uf08.add}
             </button>
+            {startButton}
           </>
         )}
       </li>
