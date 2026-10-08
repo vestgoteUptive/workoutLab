@@ -1,16 +1,19 @@
 -- T-0100a RLS tests (NFR-PRIV-3): AC4 [a] owner isolation, AC5 anon sees nothing owned,
 -- AC7 no cross-user attach (D-0020). T-0100b: AC4 [b] for routines, routine_items, plan_checkins.
 -- T-0535 (D-0199 §4): excluded_exercises joins every block (019 covers it in depth).
+-- T-0564 (D-0202 §5): so does favorite_exercises (020 covers it in depth). A favorites a second
+-- exercise, since a favorite of back-squat would remove A's exclusion of it (mutual exclusion).
 -- User A = ...0a, user B = ...0b. A owns 1 row per table, B owns none.
 begin;
-select plan(60);
+select plan(67);
 
 -- Fixture (as postgres) -------------------------------------------------------------------------
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
   ('00000000-0000-0000-0000-00000000000b', 'authenticated', 'authenticated', 'b@test.local');
 insert into public.exercises (id, name, type, level, instructions, source, license) values
-  ('back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0');
+  ('back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
+  ('bench-press', 'Bench press', 'compound', 'intermediate', '{Press}', 'own', 'CC0');
 insert into public.profiles (user_id, goal, level, rhythm_min, rhythm_max) values
   ('00000000-0000-0000-0000-00000000000a', 'build_muscle', 'beginner', 3, 4);
 insert into public.area_targets (user_id, area_id, sets_per_14d) values
@@ -30,6 +33,8 @@ insert into public.plan_checkins (user_id, period_index, completed_prev, complet
   ('00000000-0000-0000-0000-00000000000a', 3, 4, 3, 3, 4, 2, 3, '2026-09-27T07:00Z');
 insert into public.excluded_exercises (user_id, exercise_id) values
   ('00000000-0000-0000-0000-00000000000a', 'back-squat');
+insert into public.favorite_exercises (user_id, exercise_id) values
+  ('00000000-0000-0000-0000-00000000000a', 'bench-press');
 -- sessions has 2 rows for A; S_A2 has no sets (AC7).
 
 -- AC4: B sees, changes and deletes nothing of A's ------------------------------------------------
@@ -44,6 +49,7 @@ select is((select count(*)::int from public.routines), 0, 'B selects 0 routines'
 select is((select count(*)::int from public.routine_items), 0, 'B selects 0 routine_items');
 select is((select count(*)::int from public.plan_checkins), 0, 'B selects 0 plan_checkins');
 select is((select count(*)::int from public.excluded_exercises), 0, 'B selects 0 excluded_exercises');
+select is((select count(*)::int from public.favorite_exercises), 0, 'B selects 0 favorite_exercises');
 
 select results_eq($$with u as (update public.profiles set rhythm_max = 7
   where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from u$$,
@@ -121,6 +127,15 @@ select results_eq($$with d as (delete from public.excluded_exercises
 select throws_ok($$insert into public.excluded_exercises (user_id, exercise_id)
   values ('00000000-0000-0000-0000-00000000000a', 'back-squat')$$,
   '42501', null, 'B cannot insert an excluded_exercise for A');
+select results_eq($$with u as (update public.favorite_exercises set created_at = '2020-01-01Z'
+  where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from u$$,
+  $$values (0)$$, 'B updates 0 of A''s favorite_exercises');
+select results_eq($$with d as (delete from public.favorite_exercises
+  where user_id = '00000000-0000-0000-0000-00000000000a' returning 1) select count(*)::int from d$$,
+  $$values (0)$$, 'B deletes 0 of A''s favorite_exercises');
+select throws_ok($$insert into public.favorite_exercises (user_id, exercise_id)
+  values ('00000000-0000-0000-0000-00000000000a', 'bench-press')$$,
+  '42501', null, 'B cannot insert a favorite_exercise for A');
 
 -- AC7: B cannot attach its own set to A's session (composite FK, D-0020).
 select throws_ok($$insert into public.session_sets (user_id, client_id, session_id, exercise_id, set_index, reps, completed_at, edited_at)
@@ -154,6 +169,7 @@ select is((select count(*)::int from public.routines), 1, 'A selects 1 routine')
 select is((select count(*)::int from public.routine_items), 1, 'A selects 1 routine_item');
 select is((select count(*)::int from public.plan_checkins), 1, 'A selects 1 plan_checkin');
 select is((select count(*)::int from public.excluded_exercises), 1, 'A selects 1 excluded_exercise');
+select is((select count(*)::int from public.favorite_exercises), 1, 'A selects 1 favorite_exercise');
 reset role;
 
 -- AC5: anon has no access to user-owned tables -------------------------------------------------
@@ -168,6 +184,7 @@ select throws_ok('select count(*) from public.routines', '42501', null, 'anon ca
 select throws_ok('select count(*) from public.routine_items', '42501', null, 'anon cannot select routine_items');
 select throws_ok('select count(*) from public.plan_checkins', '42501', null, 'anon cannot select plan_checkins');
 select throws_ok('select count(*) from public.excluded_exercises', '42501', null, 'anon cannot select excluded_exercises');
+select throws_ok('select count(*) from public.favorite_exercises', '42501', null, 'anon cannot select favorite_exercises');
 select throws_ok($$insert into public.profiles (user_id, goal, level, rhythm_min, rhythm_max)
   values ('00000000-0000-0000-0000-00000000000b', 'get_stronger', 'advanced', 5, 6)$$,
   '42501', null, 'anon cannot insert a profile');
@@ -184,6 +201,9 @@ select throws_ok($$insert into public.session_sets (user_id, client_id, session_
 select throws_ok($$insert into public.excluded_exercises (user_id, exercise_id)
   values ('00000000-0000-0000-0000-00000000000b', 'back-squat')$$,
   '42501', null, 'anon cannot insert an excluded_exercise');
+select throws_ok($$insert into public.favorite_exercises (user_id, exercise_id)
+  values ('00000000-0000-0000-0000-00000000000b', 'bench-press')$$,
+  '42501', null, 'anon cannot insert a favorite_exercise');
 reset role;
 
 select * from finish();

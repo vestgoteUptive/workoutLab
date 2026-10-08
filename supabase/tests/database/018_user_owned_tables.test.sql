@@ -11,6 +11,7 @@ insert into owned_list (name) values
 -- OWNED_TABLES:BEGIN
   ('area_targets'),
   ('excluded_exercises'),
+  ('favorite_exercises'),
   ('plan_checkins'),
   ('profiles'),
   ('routine_items'),

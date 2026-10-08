@@ -1,15 +1,19 @@
 -- T-0100a AC22 [a] account deletion cascades (NFR-PRIV-5). A owns a profile, 9 area_targets,
 -- 2 sessions and 6 session_sets (1 tombstoned); [b] 1 routine with 2 items and 1 plan_checkins row
--- (T-0100b); 2 excluded_exercises rows (T-0535, D-0199 §4). B owns 1 row in each table.
+-- (T-0100b); 2 excluded_exercises rows (T-0535, D-0199 §4); 2 favorite_exercises rows on other
+-- exercises (T-0564, D-0202 §5: a favorite of an excluded exercise would remove the exclusion).
+-- B owns 1 row in each table.
 begin;
-select plan(14);
+select plan(17);
 
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
   ('00000000-0000-0000-0000-00000000000b', 'authenticated', 'authenticated', 'b@test.local');
 insert into public.exercises (id, name, type, level, instructions, source, license) values
   ('fx-back-squat', 'Back squat', 'compound', 'intermediate', '{Squat}', 'own', 'CC0'),
-  ('fx-plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0');
+  ('fx-plank', 'Plank', 'isolation', 'beginner', '{Hold}', 'own', 'CC0'),
+  ('fx-bench-press', 'Bench press', 'compound', 'intermediate', '{Press}', 'own', 'CC0'),
+  ('fx-lateral-raise', 'Lateral raise', 'isolation', 'beginner', '{Raise}', 'own', 'CC0');
 
 insert into public.profiles (user_id, goal, level, rhythm_min, rhythm_max) values
   ('00000000-0000-0000-0000-00000000000a', 'build_muscle', 'beginner', 3, 4),
@@ -50,6 +54,12 @@ insert into public.excluded_exercises (user_id, exercise_id) values
   ('00000000-0000-0000-0000-00000000000b', 'fx-plank');
 select is((select count(*)::int from public.excluded_exercises where user_id = '00000000-0000-0000-0000-00000000000a'), 2,
   'T-0535 AC5 A has 2 exclusions before the delete');
+insert into public.favorite_exercises (user_id, exercise_id) values
+  ('00000000-0000-0000-0000-00000000000a', 'fx-bench-press'),
+  ('00000000-0000-0000-0000-00000000000a', 'fx-lateral-raise'),
+  ('00000000-0000-0000-0000-00000000000b', 'fx-lateral-raise');
+select is((select count(*)::int from public.favorite_exercises where user_id = '00000000-0000-0000-0000-00000000000a'), 2,
+  'T-0564 AC7 A has 2 favorites before the delete');
 
 select results_eq($$select
     (select count(*)::int from public.routines where user_id = '00000000-0000-0000-0000-00000000000a'),
@@ -69,6 +79,10 @@ select is((select count(*)::int from public.excluded_exercises where user_id = '
   'T-0535 AC5 A has 0 excluded_exercises after the auth delete');
 select is((select count(*)::int from public.excluded_exercises where user_id = '00000000-0000-0000-0000-00000000000b'), 1,
   'T-0535 AC5 B''s exclusion is unchanged');
+select is((select count(*)::int from public.favorite_exercises where user_id = '00000000-0000-0000-0000-00000000000a'), 0,
+  'T-0564 AC7 A has 0 favorite_exercises after the auth delete');
+select is((select count(*)::int from public.favorite_exercises where user_id = '00000000-0000-0000-0000-00000000000b'), 1,
+  'T-0564 AC7 B''s favorite is unchanged');
 
 select is((select count(*)::int from public.profiles where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 profiles');
 select is((select count(*)::int from public.area_targets where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 area_targets');

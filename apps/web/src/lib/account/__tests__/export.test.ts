@@ -103,6 +103,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
       routine_items: "id",
       plan_checkins: "id",
       excluded_exercises: "exercise_id",
+      favorite_exercises: "exercise_id",
     };
     for (const [table, key] of Object.entries(keys)) {
       expect(fake.ordersFor(table).length, table).toBeGreaterThan(0);
@@ -117,7 +118,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
     }
   });
 
-  it("T-0310c AC2 zero history: profile + 9 targets, [] for the other six", async () => {
+  it("T-0310c AC2 zero history: profile + 9 targets, [] for the other seven", async () => {
     const all = twoYears(U);
     const fake = pg({ profiles: all.profiles!, area_targets: all.area_targets! });
     const result = await exportAccountData(input, { supabase: fake.client, db });
@@ -130,6 +131,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
       "routine_items",
       "plan_checkins",
       "excluded_exercises",
+      "favorite_exercises",
     ]) {
       expect((result.tables as unknown as Record<string, unknown>)[t], t).toEqual([]);
     }
@@ -150,11 +152,11 @@ describe("T-0535 AC7 excluded_exercises in the export (UF-11.4, D-0199 §5)", ()
     expect(rows.every((r) => r.user_id === U)).toBe(true);
   });
 
-  it("T-0535 AC7 the file has 8 table keys in EXPORT_TABLES order and version 1", async () => {
+  it("T-0535 AC7 the file has excluded_exercises after plan_checkins, in EXPORT_TABLES order, version 1", async () => {
     const result = await exportAccountData(input, { supabase: pg(twoYears(U, 10)).client, db });
-    expect(EXPORT_TABLES).toHaveLength(8);
+    // T-0564 (D-0202 §5) added a 9th key after it; T-0564 AC8 below pins the count.
     expect(Object.keys(result.tables)).toEqual([...EXPORT_TABLES]);
-    expect(Object.keys(result.tables).at(-1)).toBe("excluded_exercises");
+    expect(Object.keys(result.tables).indexOf("excluded_exercises")).toBe(7);
     expect(result.version).toBe(1);
   });
 
@@ -168,6 +170,46 @@ describe("T-0535 AC7 excluded_exercises in the export (UF-11.4, D-0199 §5)", ()
     const fake = pg(twoYears(U, 10), {
       hook: (call) =>
         call.table === "excluded_exercises"
+          ? { data: null, error: { code: "PGRST205", message: "missing table" } }
+          : undefined,
+    });
+    await expect(exportAccountData(input, { supabase: fake.client, db })).rejects.toThrow(
+      new Error("export_failed"),
+    );
+  });
+});
+
+describe("T-0564 AC8 favorite_exercises in the export (UF-11.4, D-0202 §5)", () => {
+  it("T-0564 AC8 lists bench-press before lateral-raise, ordered by exercise_id and paged", async () => {
+    const fake = pg(twoYears(U, 10));
+    const result = await exportAccountData(input, { supabase: fake.client, db });
+
+    expect(ORDER_KEYS.favorite_exercises).toBe("exercise_id");
+    expect(fake.ordersFor("favorite_exercises")).toEqual([["exercise_id", { ascending: true }]]);
+    expect(fake.rangesFor("favorite_exercises")).toEqual([[0, PAGE_SIZE - 1]]);
+    const rows = result.tables.favorite_exercises as unknown as Row[];
+    expect(rows.map((r) => r.exercise_id)).toEqual(["bench-press", "lateral-raise"]);
+    expect(rows.every((r) => r.user_id === U)).toBe(true);
+  });
+
+  it("T-0564 AC8 the file has 9 table keys in EXPORT_TABLES order, favorite_exercises last, version 1", async () => {
+    const result = await exportAccountData(input, { supabase: pg(twoYears(U, 10)).client, db });
+    expect(EXPORT_TABLES).toHaveLength(9);
+    expect(Object.keys(result.tables)).toEqual([...EXPORT_TABLES]);
+    expect(Object.keys(result.tables).at(-1)).toBe("favorite_exercises");
+    expect(result.version).toBe(1);
+  });
+
+  it("T-0564 AC8 no favorites → tables.favorite_exercises is []", async () => {
+    const { favorite_exercises: _drop, ...rest } = twoYears(U, 10);
+    const result = await exportAccountData(input, { supabase: pg(rest).client, db });
+    expect(result.tables.favorite_exercises).toEqual([]);
+  });
+
+  it("T-0564 AC8 a favorite_exercises read error fails the whole export", async () => {
+    const fake = pg(twoYears(U, 10), {
+      hook: (call) =>
+        call.table === "favorite_exercises"
           ? { data: null, error: { code: "PGRST205", message: "missing table" } }
           : undefined,
     });
