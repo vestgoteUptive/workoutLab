@@ -91,6 +91,8 @@ export const uf08 = {
   // --- UF-08.3 Swap before starting (T-0303c, D-0071 §7) ---
   swap: "Swap",
   /** "Swap Barbell row". */
+  /** The exercise name on a UF-08.2 row: opens the how-to sheet (T-0581). */
+  howTo: (name: string) => `How to do ${name}`,
   swapItem: (name: string) => `Swap ${name}`,
   /** Accessible name of UF-08.2's 20/30/45/60/90 chip group (D-0109 §3). */
   timeChipsName: "Time",
