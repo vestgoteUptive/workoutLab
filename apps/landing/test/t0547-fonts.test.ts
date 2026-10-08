@@ -31,7 +31,8 @@ describe("T-0547 landing self-hosted fonts", () => {
   it("AC2 exactly two root-relative, existing, first-party @font-face rules", () => {
     const dist = defaultDistDir();
     const faces = fontFaces(dist);
-    expect(faces.map((f) => f.family).sort()).toEqual(["Big Shoulders Display", "DM Sans"]);
+    // T-0584: fonts-state.css (D-0208). Only Familjen Grotesk is used and preloaded here.
+    expect(faces.map((f) => f.family).sort()).toEqual(["Bricolage Grotesque", "Familjen Grotesk"]);
     for (const f of faces) {
       expect(f.url, f.family).toMatch(/^\/(?!\/).+\.woff2$/);
       expect(existsSync(join(dist, f.url)), f.url).toBe(true);
@@ -46,16 +47,16 @@ describe("T-0547 landing self-hosted fonts", () => {
     }
   });
 
-  it("AC3 each page preloads exactly the two fonts the CSS declares", () => {
+  it("AC3 each page preloads exactly the plan font (the only face the pages use)", () => {
     const dist = defaultDistDir();
     const urls = fontFaces(dist)
-      .map((f) => f.url)
-      .sort();
-    expect(urls).toHaveLength(2);
-    for (const page of ["index.html", "privacy/index.html"]) {
+      .filter((f) => f.family === "Familjen Grotesk")
+      .map((f) => f.url);
+    expect(urls).toHaveLength(1);
+    for (const page of ["index.html", "privacy/index.html", "404.html"]) {
       const html = readFileSync(join(dist, page), "utf8");
       const links = findTags(html, "link").filter((l) => l.attrs.rel === "preload");
-      expect(links, page).toHaveLength(2);
+      expect(links, page).toHaveLength(1);
       for (const l of links) {
         expect(l.attrs.as).toBe("font");
         expect(l.attrs.type).toBe("font/woff2");

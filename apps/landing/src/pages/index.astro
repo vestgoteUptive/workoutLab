@@ -1,26 +1,36 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 import { landing } from "../content/landing";
 import { appUrl } from "../lib/app-url";
+import heroSetUrl from "../assets/hero-set.webp?url";
 
 // D-0046 §5: PUBLIC_APP_URL is resolved once, at build time. An invalid value
 // throws here and fails the build (AC10).
+// The hero image is the decorative Set screen (UF-09.3, lift state), exported 2x from the
+// Cobalt canvas option 1b (T-0584 AC5); the hero text carries the meaning.
 const ctaHref = appUrl(import.meta.env.PUBLIC_APP_URL);
 ---
 
 <Layout title={landing.meta.title} description={landing.meta.description} canonicalPath="/">
-  <header class="site-header">
-    <div class="wrap wordmark">
-      <span class="brand-name">{landing.brand.name}</span>
-    </div>
-  </header>
+  <SiteHeader />
 
   <main id="main">
     <section class="hero wrap">
-      <h1>{landing.hero.headline}</h1>
-      <p class="sub">{landing.hero.sub}</p>
-      <a class="cta" data-cta="primary" href={ctaHref}>{landing.hero.ctaLabel}</a>
-      <p class="cta-note">{landing.hero.ctaNote}</p>
+      <div class="hero-copy">
+        <h1>{landing.hero.headline}</h1>
+        <div class="hero-bottom">
+          <p class="sub">{landing.hero.sub}</p>
+          <div class="cta-stack">
+            <a class="cta" data-cta="primary" href={ctaHref}>{landing.hero.ctaLabel}</a>
+            <p class="cta-note">{landing.hero.ctaNote}</p>
+          </div>
+        </div>
+      </div>
+      <div class="hero-phone">
+        <img src={heroSetUrl} width="340" height="640" alt="" aria-hidden="true" decoding="async" />
+      </div>
     </section>
 
     <section class="features wrap">
@@ -37,18 +47,16 @@ const ctaHref = appUrl(import.meta.env.PUBLIC_APP_URL);
       </div>
     </section>
 
-    <section class="privacy-summary wrap">
-      <h2>{landing.privacy.heading}</h2>
-      <p>{landing.privacy.summary}</p>
-      <a href="/privacy/">{landing.privacy.linkLabel}</a>
+    <section class="privacy-band">
+      <div class="privacy-grid wrap">
+        <h2>{landing.privacy.heading}</h2>
+        <div class="privacy-text">
+          <p>{landing.privacy.summary}</p>
+          <a href="/privacy/">{landing.privacy.linkLabel}</a>
+        </div>
+      </div>
     </section>
   </main>
 
-  <footer class="site-footer wrap">
-    <p>{landing.footer.legal}</p>
-    <nav class="footer-links">
-      <a href="/privacy/">{landing.privacy.linkLabel}</a>
-      <a href={ctaHref}>{landing.footer.appLinkLabel}</a>
-    </nav>
-  </footer>
+  <SiteFooter />
 </Layout>

@@ -1,10 +1,9 @@
 ---
-import "@workoutlab/design-tokens/fonts.css";
+import "@workoutlab/design-tokens/fonts-state.css";
 import "@workoutlab/design-tokens/tokens.css";
 import "../styles/global.css";
 import { tokens } from "@workoutlab/design-tokens";
-import displayFontUrl from "@workoutlab/design-tokens/fonts/big-shoulders-display-latin-wght.woff2?url";
-import bodyFontUrl from "@workoutlab/design-tokens/fonts/dm-sans-latin-wght.woff2?url";
+import planFontUrl from "@workoutlab/design-tokens/fonts/familjen-grotesk-latin-wght.woff2?url";
 
 interface Props {
   title: string;
@@ -24,9 +23,8 @@ const canonicalUrl = canonicalPath ? new URL(canonicalPath, Astro.site) : undefi
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content={tokens.color.bg} />
-    <link rel="preload" as="font" type="font/woff2" crossorigin href={displayFontUrl} />
-    <link rel="preload" as="font" type="font/woff2" crossorigin href={bodyFontUrl} />
+    <meta name="theme-color" content={tokens.color.plan.bg} />
+    <link rel="preload" as="font" type="font/woff2" crossorigin href={planFontUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     {canonicalUrl && <link rel="canonical" href={canonicalUrl.toString()} />}
   </head>

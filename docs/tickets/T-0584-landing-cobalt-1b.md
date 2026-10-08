@@ -75,3 +75,10 @@ None. Uses the T-0583 tokens.
 Every AC has a test, and each is proven by a planted fault where one applies · `pnpm -w typecheck lint test --concurrency=1` green · landing `test:browser` and lhci green · `format:check` and `check-all` green · security-reviewer sign-off recorded · commits start with `T-0584`.
 
 ## Build / accept log
+
+### Build log (frontend-dev)
+- Built option 1b: `SiteHeader`/`SiteFooter` components shared by `/`, `/privacy/`, 404; `global.css` rewritten on plan/paper tokens, rem font sizes; `fonts-state.css` + one preload (Familjen; Bricolage is declared but unused so never fetched); `theme-color` = `tokens.color.plan.bg`.
+- AC5 choice: static WebP `src/assets/hero-set.webp` (680x1280, 27 KB), rendered from canvas `#1b` hero phone at DPR 2 (Playwright, local font files), PIL-encoded; CTA arrow and 01-04 are CSS generated content (no text nodes).
+- AC->test: AC1/2/5/8 `test/t0584-cobalt.test.ts`; AC3/4/6/7/9/10/12 and AC5 CLS `browser/cobalt-1b.spec.ts`; AC8 CSP `t0511` (unchanged) + AC8 test; AC11 `ac13` (updated); `ac12`, `t0547` updated deliberately for the new tokens/fonts.
+- Planted faults (all red, restored from backup): px font-size, extra literal in index.astro, img alt text, CSP font-src loosened, h1 clamp max 7.5rem, focus ring colour, transition added.
+- Deviations: headline has no trailing full stop (canvas shows one; copy is from landing.ts); contrast README value 5.9 for ink-muted on plan.bg is 5.85 exactly, test compares at one decimal; hero bottom row is stacked between 1024 and 1199 px (sub text would be ~120 px wide); Bricolage is not preloaded. Security-reviewer sign-off on `_headers` still needed (file unchanged).

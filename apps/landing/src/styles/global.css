@@ -1,10 +1,18 @@
-/* "Chalk & Iron" landing styles (D-0019). Every colour and font comes from
-   @workoutlab/design-tokens/tokens.css (imported separately by the layout, so
-   the built CSS carries no package specifier); no literal appears below
-   (D-0046 §6/§7, enforced by wl-check-colours, AC12). */
+/* Cobalt landing, option 1b (D-0208, T-0584). Every colour and font comes from
+   @workoutlab/design-tokens/tokens.css (imported separately by the layout, so the built CSS
+   carries no package specifier); no colour literal appears below (wl-check-colours).
+   Font sizes are rem (16px = 1rem). The page has no motion, so there is no transition to
+   disable under prefers-reduced-motion. */
 
 :root {
   color-scheme: dark;
+  --pad: 24px;
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --pad: 80px;
+  }
 }
 
 * {
@@ -17,38 +25,36 @@ html {
 
 body {
   margin: 0;
-  background: var(--wl-color-bg);
-  color: var(--wl-color-text);
-  font-family: var(--wl-font-body);
+  background: var(--wl-color-plan-bg);
+  color: var(--wl-color-plan-ink);
+  font-family: var(--wl-font-plan);
   line-height: 1.5;
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--wl-font-display);
-  font-weight: 800;
-  line-height: 1.1;
-  margin: 0 0 0.5em;
+  font-weight: 700;
+  margin: 0;
 }
 
 p {
-  margin: 0 0 1em;
+  margin: 0;
 }
 
 a {
   color: inherit;
 }
 
-/* Skip link: visually hidden until focused, so keyboard users reach the CTA
-   in at most two Tab presses (AC18) without a sighted-user layout change. */
+/* Skip link: visually hidden until focused, so keyboard users reach the CTA in at most two
+   Tab presses (AC18). */
 .skip-link {
   position: absolute;
   top: -40px;
   left: 0;
   padding: 0.5em 1em;
-  background: var(--wl-color-surface);
-  color: var(--wl-color-text);
+  background: var(--wl-color-plan-action);
+  color: var(--wl-color-plan-on-action);
   z-index: 10;
 }
 
@@ -56,171 +62,415 @@ a {
   top: 0;
 }
 
+/* AC7: 2px white ring, 2px offset, on plan.bg; plan.bg ring on the paper band. */
 :focus-visible {
-  outline: 2px solid var(--wl-color-accent);
+  outline: 2px solid var(--wl-color-plan-ink);
   outline-offset: 2px;
 }
 
+.privacy-band :focus-visible {
+  outline-color: var(--wl-color-plan-bg);
+}
+
+/* Content column: 1120px of content, plus the page padding on each side. */
 .wrap {
+  box-sizing: content-box;
   max-width: 1120px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding-inline: var(--pad);
 }
 
+/* Header */
 .site-header {
-  padding: 24px 0 0;
-}
-
-.wordmark {
   display: flex;
-  align-items: baseline;
-  gap: 0.5em;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding-top: 32px;
 }
 
-.wordmark .brand-name {
-  font-family: var(--wl-font-display);
-  font-weight: 800;
-  font-size: clamp(1.5rem, 4vw, 2rem);
+.brand-name {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
+.header-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 12px 22px;
+  border-radius: 999px;
+  background: var(--wl-color-plan-action);
+  color: var(--wl-color-plan-on-action);
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+/* Hero: one column below 1024px, two above. */
 .hero {
-  padding: 48px 0 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding-top: 40px;
+}
+
+.hero-copy {
+  display: flex;
+  flex-direction: column;
 }
 
 .hero h1 {
-  font-size: clamp(2rem, 6vw, 3.25rem);
-  max-width: 18ch;
+  font-size: clamp(3rem, 12vw, 8rem);
+  line-height: 0.86;
+  letter-spacing: -0.055em;
+  text-wrap: balance;
+  overflow-wrap: break-word;
+}
+
+.hero-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: auto;
+  padding-top: 32px;
 }
 
 .hero .sub {
-  color: var(--wl-color-text-muted);
-  max-width: 48ch;
+  color: var(--wl-color-plan-ink-muted);
   font-size: 1.125rem;
+  line-height: 1.4;
+  max-width: 26em;
+  text-wrap: pretty;
+}
+
+.cta-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
 }
 
 .cta {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
+  gap: 40px;
   min-height: 52px;
-  padding: 0 28px;
-  margin-top: 8px;
-  border-radius: 8px;
-  background: var(--wl-color-accent);
-  color: var(--wl-color-on-accent);
-  font-family: var(--wl-font-body);
+  padding: 20px 26px;
+  border-radius: 999px;
+  background: var(--wl-color-plan-action);
+  color: var(--wl-color-plan-on-action);
+  font-size: 1.375rem;
   font-weight: 700;
-  font-size: 1.0625rem;
   text-decoration: none;
-  border: none;
+  white-space: nowrap;
 }
 
-.cta:hover {
-  background: var(--wl-color-accent-hover);
+/* Decorative arrow: generated content, so it is not a text node (AC1). */
+.cta::after {
+  content: "→";
 }
 
 .cta-note {
-  margin: 10px 0 0;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-color-plan-ink-muted);
   font-size: 0.875rem;
+  max-width: 18em;
 }
 
+.hero-phone {
+  justify-self: center;
+  align-self: end;
+  margin-top: 40px;
+  width: 280px;
+  overflow: hidden;
+  border-radius: 40px 40px 0 0;
+}
+
+.hero-phone img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (min-width: 1024px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    column-gap: 64px;
+    padding-top: 64px;
+  }
+
+  .hero-copy {
+    padding-bottom: 80px;
+  }
+
+  .hero-bottom {
+    padding-top: 48px;
+  }
+
+  .hero .sub {
+    font-size: 1.375rem;
+  }
+
+  .cta-stack {
+    align-items: flex-start;
+  }
+
+  .cta {
+    padding: 22px 34px;
+  }
+
+  .hero-phone {
+    width: 340px;
+    height: 640px;
+    margin-top: 0;
+    justify-self: stretch;
+  }
+}
+
+/* Room for sub text beside the CTA only once the left column is wide enough. */
+@media (min-width: 1200px) {
+  .hero-bottom {
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 48px;
+  }
+
+  .hero-bottom .sub {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .cta-stack {
+    flex: none;
+  }
+}
+
+/* How it works */
 .features {
-  padding: 40px 0 56px;
-  border-top: 1px solid var(--wl-color-line);
+  padding-block: 48px;
+  border-top: 1px solid var(--wl-color-plan-line);
 }
 
 .features h2 {
-  font-size: clamp(1.5rem, 4vw, 2rem);
+  color: var(--wl-color-plan-ink-muted);
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .feature-grid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-@media (min-width: 960px) {
-  .feature-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 32px;
+  border-top: 1px solid var(--wl-color-plan-line);
+  counter-reset: feature;
 }
 
 .feature-card {
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 12px;
-  padding: 20px;
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  column-gap: 16px;
+  padding: 32px 0;
+  counter-increment: feature;
+}
+
+.feature-card:not(:last-child) {
+  border-bottom: 1px solid var(--wl-color-plan-line);
+}
+
+/* Decorative 01-04: CSS counters, so the heading text stays the content string (AC3). */
+.feature-card::before {
+  content: counter(feature, decimal-leading-zero);
+  grid-row: 1 / span 2;
+  color: var(--wl-color-plan-ink-muted);
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
 }
 
 .feature-card h3 {
-  font-size: 1.125rem;
-  margin-bottom: 0.4em;
+  grid-column: 2;
+  font-size: 2rem;
+  letter-spacing: -0.03em;
+  line-height: 1;
 }
 
 .feature-card p {
-  color: var(--wl-color-text-muted);
-  margin: 0;
+  grid-column: 2;
+  margin-top: 14px;
+  color: var(--wl-color-plan-ink-muted);
+  font-size: 1.1875rem;
+  line-height: 1.45;
 }
 
-.privacy-summary {
-  padding: 40px 0 56px;
-  border-top: 1px solid var(--wl-color-line);
+@media (min-width: 768px) {
+  .feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .feature-card {
+    padding: 40px 0 40px 48px;
+  }
+
+  .feature-card:not(:last-child) {
+    border-bottom: 0;
+  }
+
+  .feature-card:nth-child(odd) {
+    padding: 40px 48px 40px 0;
+    border-right: 1px solid var(--wl-color-plan-line);
+  }
+
+  .feature-card:nth-child(-n + 2) {
+    border-bottom: 1px solid var(--wl-color-plan-line);
+  }
 }
 
-.privacy-summary h2 {
-  font-size: clamp(1.5rem, 4vw, 1.75rem);
+@media (min-width: 1024px) {
+  .features {
+    padding-block: 80px;
+  }
+
+  .feature-card h3 {
+    font-size: 2.5rem;
+  }
 }
 
-.privacy-summary p {
-  color: var(--wl-color-text-muted);
-  max-width: 60ch;
+/* Privacy band: paper, with plan.bg for the link (AC2). */
+.privacy-band {
+  padding-block: 48px;
+  background: var(--wl-color-paper-bg);
+  color: var(--wl-color-paper-ink);
 }
 
-.privacy-summary a {
-  color: var(--wl-color-accent);
+.privacy-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.privacy-band h2 {
+  font-size: 2.75rem;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+.privacy-text {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.privacy-text p {
+  color: var(--wl-color-paper-ink-muted);
+  font-size: 1.25rem;
+  line-height: 1.45;
+}
+
+.privacy-text a {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  min-height: 44px;
+  min-width: 44px;
+  color: var(--wl-color-plan-bg);
+  font-size: 1.125rem;
+  font-weight: 600;
   text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
+@media (min-width: 1024px) {
+  .privacy-band {
+    padding-block: 72px;
+  }
+
+  .privacy-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 64px;
+  }
+
+  .privacy-band h2 {
+    font-size: 3.5rem;
+  }
+}
+
+/* Footer */
 .site-footer {
-  padding: 24px 0 40px;
-  border-top: 1px solid var(--wl-color-line);
-  color: var(--wl-color-text-muted);
-  font-size: 0.875rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 28px;
+  padding-bottom: 40px;
+  color: var(--wl-color-plan-ink-muted);
+  font-size: 0.9375rem;
 }
 
 .footer-links {
   display: flex;
-  gap: 16px;
-  margin-top: 12px;
-  flex-wrap: wrap;
+  gap: 24px;
 }
 
 .footer-links a {
-  color: var(--wl-color-text-muted);
-  text-decoration: underline;
   display: inline-flex;
   align-items: center;
   min-height: 44px;
+  min-width: 44px;
+  color: var(--wl-color-plan-ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
-.page-body {
-  padding: 48px 0 56px;
+.footer-links .footer-app {
+  color: var(--wl-color-plan-ink);
+  font-weight: 600;
 }
 
-.page-body h1 {
-  font-size: clamp(1.75rem, 5vw, 2.5rem);
+@media (min-width: 1024px) {
+  .site-footer {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+/* Privacy and 404 pages (AC10) */
+.page-body,
+.not-found {
+  padding-top: 48px;
+  padding-bottom: 56px;
+}
+
+.page-body h1,
+.not-found h1 {
+  font-size: 3.5rem;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin-bottom: 24px;
+}
+
+.page-body p,
+.not-found p {
+  max-width: 60ch;
+  margin-bottom: 1em;
+  color: var(--wl-color-plan-ink-muted);
+  font-size: 1.125rem;
+  line-height: 1.5;
 }
 
 .page-body h2 {
-  font-size: 1.25rem;
-  margin-top: 2em;
+  margin: 2em 0 0.5em;
+  font-size: 1.5rem;
+  line-height: 1.2;
 }
 
-.page-body .intro {
-  color: var(--wl-color-text-muted);
+.page-body a,
+.not-found a {
+  color: var(--wl-color-plan-ink);
+  text-decoration: underline;
 }
 
 .page-body .home-link,
@@ -228,15 +478,4 @@ a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: var(--wl-color-accent);
-  text-decoration: underline;
-}
-
-.not-found {
-  padding: 64px 0;
-}
-
-.not-found .body {
-  color: var(--wl-color-text-muted);
-  max-width: 48ch;
 }

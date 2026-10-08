@@ -1,5 +1,7 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 import { landing } from "../content/landing";
 import { privacy } from "../content/privacy";
 
@@ -8,6 +10,7 @@ const description = privacy.intro;
 ---
 
 <Layout title={title} description={description} canonicalPath="/privacy/">
+  <SiteHeader />
   <main id="main" class="page-body wrap">
     <h1>{privacy.title}</h1>
     <p class="intro">{privacy.intro}</p>
@@ -30,4 +33,5 @@ const description = privacy.intro;
 
     <p><a class="home-link" href="/">{landing.notFound.homeLinkLabel}</a></p>
   </main>
+  <SiteFooter />
 </Layout>
