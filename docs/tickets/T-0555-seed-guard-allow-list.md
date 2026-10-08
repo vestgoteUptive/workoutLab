@@ -19,7 +19,7 @@ T-0554 security review (docs/security/T-0543-review.md, section T-0554). The see
 - AC-3: existing release, backup, guard and deploy-workflow tests stay green.
 
 ## Paths you may change
-- `infra/**`, `.github/**`
+- `infra/**`, `.github/**`, `docs/security/**` (security review notes)
 
 ## Contract impact
 None.
