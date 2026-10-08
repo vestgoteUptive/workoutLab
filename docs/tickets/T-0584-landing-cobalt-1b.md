@@ -66,7 +66,7 @@ D-0208 §7: the owner chose landing layout **1b** on 2026-10-08. The spec is the
 - AC12 Playwright screenshots of `/` at **1440** and **390** width, plus `/privacy/` and the 404 page at 390, saved through `testInfo.outputPath`. Compared by eye against canvas `#1b` by the orchestrator and the owner; the review is recorded in the Build log.
 
 ## Paths you may change
-- `apps/landing/**`
+- `apps/landing/**`, `docs/security/T-0584-*.md` (security-reviewer sign-off, AC8)
 
 ## Contract impact
 None. Uses the T-0583 tokens.
