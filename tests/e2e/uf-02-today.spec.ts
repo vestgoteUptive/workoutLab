@@ -192,9 +192,11 @@ test.describe("AC-11 offline cold start (NFR-OFF-1, OFF-6, AN-1)", () => {
     await expect(root.getByText(/^Offline · last synced \d{1,2}:\d{2}/)).toBeVisible({
       timeout: 3000,
     });
-    await expect(page.locator('[data-component="C-01"] [data-area]')).toHaveCount(9);
+    await expect(page.locator('[data-component="C-01"] [data-part="label"]')).toHaveCount(9);
     for (const area of AREAS) {
-      await expect(page.locator(`[data-component="C-01"] [data-area="${area}"]`)).toBeVisible();
+      await expect(
+        page.locator(`[data-component="C-01"] [data-part="label"][data-area="${area}"]`),
+      ).toBeVisible();
     }
     await expect(tile(page, "quads")).toHaveText("5 / 10", { timeout: 3000 });
     await expect(tile(page, "chest")).toHaveText("0 / 10");

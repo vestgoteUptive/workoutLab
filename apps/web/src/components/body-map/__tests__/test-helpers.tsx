@@ -40,8 +40,11 @@ export function mapRoot(container: HTMLElement): HTMLElement {
   return el;
 }
 
+/** The area's label (button in `full`, span in `compact`); the figure's paths are not labels. */
 export function areaEl(container: HTMLElement, area: Area): HTMLElement {
-  const el = mapRoot(container).querySelector<HTMLElement>(`[data-area="${area}"]`);
+  const el = mapRoot(container).querySelector<HTMLElement>(
+    `[data-part="label"][data-area="${area}"]`,
+  );
   if (!el) throw new Error(`area ${area} not rendered`);
   return el;
 }

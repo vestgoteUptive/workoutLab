@@ -82,26 +82,37 @@ describe("AC-D1/D3 data is matched by area id, not position (QA)", () => {
   }
 });
 
-describe("D-0060 §1 area order and placement (QA)", () => {
-  it("D-0060 §1: DOM and tab order follow AREAS, and each tile sits in its own grid area", () => {
+// D-0060 §1 (the tile layout) is superseded by D-0207 §2: the labels sit in a 3-column grid in
+// body order, and DOM order = visual order = tab order. §2–§8 stand.
+const LABEL_ORDER = [
+  "shoulders",
+  "chest",
+  "back",
+  "arms",
+  "core",
+  "glutes",
+  "quads",
+  "hamstrings",
+  "calves",
+];
+
+describe("D-0207 §2 label order and placement (QA)", () => {
+  it("D-0207: DOM and tab order follow the body order; the grid has 3 columns", () => {
     const style = injectBodyMapCss();
     try {
       const { container } = renderInRouter(<BodyMap variant="full" areas={mixedFixture} />);
-      const tiles = Array.from(mapRoot(container).querySelectorAll<HTMLElement>("[data-area]"));
-      expect(tiles.map((t) => t.dataset.area)).toEqual([...AREAS]);
-      expect(screen.getAllByRole("button").map((b) => b.dataset.area)).toEqual([...AREAS]);
-      for (const t of tiles) expect(t.style.gridArea).toBe(t.dataset.area);
+      const tiles = Array.from(
+        mapRoot(container).querySelectorAll<HTMLElement>('[data-part="label"]'),
+      );
+      expect(tiles.map((t) => t.dataset.area)).toEqual(LABEL_ORDER);
+      expect([...LABEL_ORDER].sort()).toEqual([...AREAS].sort());
+      expect(screen.getAllByRole("button").map((b) => b.dataset.area)).toEqual(LABEL_ORDER);
 
       const grid = Array.from((style.sheet as CSSStyleSheet).cssRules).find(
         (r): r is CSSStyleRule =>
           r instanceof CSSStyleRule && r.selectorText === ".wl-body-map__grid",
       )!;
-      const cells = grid.style
-        .getPropertyValue("grid-template-areas")
-        .replace(/"/g, " ")
-        .split(/\s+/)
-        .filter((c) => c && c !== ".");
-      expect([...cells].sort()).toEqual([...AREAS].sort());
+      expect(grid.style.getPropertyValue("grid-template-columns")).toContain("repeat(3");
     } finally {
       style.remove();
     }

@@ -5,10 +5,11 @@
 // the outline from `needsAttention`. This file never reads `load / target` to pick a colour.
 // Colours come only from `var(--wl-color-…)` tokens. Never import this from UF-03/UF-08/UF-09
 // (principle 1, enforced by `no-restricted-imports` in apps/web/eslint.config.mjs).
-import type { CSSProperties, KeyboardEvent } from "react";
+import { useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { attentionLegend, coverageLegend, type ColorName } from "@workoutlab/design-tokens";
 import { AREAS, type Area, type AreaBalance } from "@workoutlab/shared";
+import { BodyFigure, type CoverageStep, type RegionStyle } from "../body-figure/index.js";
 import { en } from "../../lib/i18n/en.js";
 import { formatSetCount } from "../../lib/format/number.js";
 import { usePrefersReducedMotion } from "./use-reduced-motion.js";
@@ -53,10 +54,41 @@ const tokenVar = (name: ColorName): string => `var(--wl-color-${name})`;
 
 const ATTENTION_OUTLINE = `${attentionLegend.widthPx}px solid ${tokenVar(attentionLegend.token)}`;
 
+/** Label-grid order = visual order = tab order (D-0207 §2, c-01 § Silhouette layout). */
+const LABEL_ORDER: readonly Area[] = [
+  "shoulders",
+  "chest",
+  "back",
+  "arms",
+  "core",
+  "glutes",
+  "quads",
+  "hamstrings",
+  "calves",
+];
+
 interface AreaView {
   area: Area;
   name: string;
   data: BodyMapArea | undefined;
+}
+
+/** The figure's per-region style, straight from the engine output (principle 3). */
+function regionStyles(
+  views: readonly AreaView[],
+  loading: boolean,
+): Partial<Record<Area, RegionStyle>> {
+  const out: Partial<Record<Area, RegionStyle>> = {};
+  if (loading) return out;
+  for (const v of views) {
+    if (!v.data) continue;
+    out[v.area] = {
+      // An out-of-range step is passed through; BodyFigure draws it neutral (D-0060 §2).
+      fill: { coverageStep: v.data.coverageStep as CoverageStep },
+      attention: v.data.needsAttention,
+    };
+  }
+  return out;
 }
 
 function fillStyle(view: AreaView, loading: boolean, animate: boolean): CSSProperties {
@@ -159,7 +191,12 @@ function Legend() {
 export function BodyMap({ variant, areas, loading = false, onSelectArea, locale }: BodyMapProps) {
   const navigate = useNavigate();
   const animate = !usePrefersReducedMotion();
-  const views: AreaView[] = AREAS.map((area) => ({
+  // `focused`: the label with keyboard focus; `hovered`: the label under the pointer;
+  // `regionHover`: the area whose figure region is under the pointer (shows on its label).
+  const [focused, setFocused] = useState<Area | undefined>();
+  const [hovered, setHovered] = useState<Area | undefined>();
+  const [regionHover, setRegionHover] = useState<Area | undefined>();
+  const views: AreaView[] = LABEL_ORDER.map((area) => ({
     area,
     name: en.bodyMap.areas[area],
     data: areas?.find((a) => a.area === area),
@@ -182,52 +219,82 @@ export function BodyMap({ variant, areas, loading = false, onSelectArea, locale 
     if (event.key === " ") event.preventDefault();
   };
 
-  const grid =
+  const regionAreaOf = (event: MouseEvent<HTMLElement>): Area | undefined => {
+    const hit = (event.target as Element).closest?.("path[data-area]");
+    const a = hit?.getAttribute("data-area");
+    return AREAS.find((x) => x === a);
+  };
+
+  const regions = regionStyles(views, loading);
+  const figureSize = variant === "full" ? "full" : "compact";
+
+  const labels = views.map((view) =>
     variant === "full" ? (
-      <div className="wl-body-map__grid">
-        {views.map((view) => (
-          <button
-            key={view.area}
-            type="button"
-            className="wl-body-map__area"
-            style={{ gridArea: view.area }}
-            data-area={view.area}
-            aria-label={accessibleName(view, loading, locale)}
-            disabled={loading}
-            onClick={() => select(view.area)}
-            onKeyDown={onKeyDown(view.area)}
-            onKeyUp={onKeyUp}
-          >
-            <AreaContent view={view} loading={loading} animate={animate} locale={locale} />
-          </button>
-        ))}
-      </div>
+      <button
+        key={view.area}
+        type="button"
+        className="wl-body-map__area"
+        data-part="label"
+        data-area={view.area}
+        data-hover={regionHover === view.area ? "true" : undefined}
+        aria-label={accessibleName(view, loading, locale)}
+        disabled={loading}
+        onClick={() => select(view.area)}
+        onKeyDown={onKeyDown(view.area)}
+        onKeyUp={onKeyUp}
+        onFocus={() => setFocused(view.area)}
+        onBlur={() => setFocused((f) => (f === view.area ? undefined : f))}
+        onMouseEnter={() => setHovered(view.area)}
+        onMouseLeave={() => setHovered((h) => (h === view.area ? undefined : h))}
+      >
+        <AreaContent view={view} loading={loading} animate={animate} locale={locale} />
+      </button>
+    ) : (
+      <span key={view.area} className="wl-body-map__area" data-part="label" data-area={view.area}>
+        <AreaContent view={view} loading={loading} animate={animate} locale={locale} />
+      </span>
+    ),
+  );
+
+  const grid = <div className="wl-body-map__grid">{labels}</div>;
+
+  const content =
+    variant === "full" ? (
+      <>
+        {/* Pointer shortcut only: the labels are the controls, so nothing here is focusable. */}
+        <div
+          className="wl-body-map__figure"
+          data-part="figure"
+          onMouseOver={(e) => setRegionHover(regionAreaOf(e))}
+          onMouseLeave={() => setRegionHover(undefined)}
+        >
+          <BodyFigure
+            size={figureSize}
+            regions={regions}
+            {...(!loading && (focused ?? hovered) ? { highlighted: focused ?? hovered! } : {})}
+            {...(loading ? {} : { onRegionPointer: select })}
+          />
+        </div>
+        {grid}
+      </>
     ) : (
       <Link to="/balance" className="wl-body-map__link" aria-label={en.bodyMap.compactLink}>
-        <span className="wl-body-map__grid">
-          {views.map((view) => (
-            <span
-              key={view.area}
-              className="wl-body-map__area"
-              style={{ gridArea: view.area }}
-              data-area={view.area}
-            >
-              <AreaContent view={view} loading={loading} animate={animate} locale={locale} />
-            </span>
-          ))}
+        <span className="wl-body-map__figure" data-part="figure">
+          <BodyFigure size={figureSize} regions={regions} />
         </span>
+        <span className="wl-body-map__grid">{labels}</span>
       </Link>
     );
 
   return (
     <section
-      className={`wl-body-map wl-body-map--${variant}`}
+      className={`wl-body-map wl-body-map--${variant}${loading && animate ? " wl-body-map--pulse" : ""}`}
       data-component="C-01"
       data-variant={variant}
       aria-label={variant === "full" ? en.bodyMap.mapName : undefined}
       aria-busy={loading || undefined}
     >
-      {grid}
+      {content}
       <Legend />
     </section>
   );
