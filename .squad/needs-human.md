@@ -88,3 +88,21 @@ H-35 done by the owner, 2026-10-09 15:58: the paper templates are applied to pro
 H-31 update, 2026-10-09: the owner will provide their own body-figure design suggestions instead of picking from the T-0650 variants. The figure screens (T-0601 UF-02, T-0608 UF-04.2, T-0611 UF-10) wait for that input. Other screens continue.
 
 H-31 resolved by the owner, 2026-10-09: picked body figure v2 (style 1b) and supplied the handoff, now in `Design-docs/docs/design/redesign-cobalt/` (D-0225). T-0660 ships it. The figure screens wait for T-0660, not for owner input.
+
+Promoted mock items (H-34), specced 2026-10-09 in `docs/specs/cobalt-mock-behaviour.md` §3 (D-0217, D-0218, D-0219; tickets T-0631…T-0640). Four new questions, all non-blocking; work proceeds on each default.
+- [ ] **H-36 What counts as a PR (non-blocking)?** The "Latest PR" line on Today needs a definition of a personal record.
+  - **Default:** the heaviest weight, then the most reps at that weight (the same order as "Best set" on Progress); the longest hold for timed exercises; most reps for bodyweight. A set only counts when it beats every earlier workout's sets for that exercise, so your first workout of an exercise is never a PR.
+  - **Alternative:** an estimated 1RM (for example Epley), so 95 kg × 10 can beat 100 kg × 6.
+  - Engine rule 15 (D-0219). Added 2026-10-09.
+- [ ] **H-37 How far back does a PR look, and how long does Today show it (non-blocking)?**
+  - **Default:** a PR is compared with the 8 weeks of history the app keeps on the device (it works offline), and Today shows the newest PR from the last 14 days, the same window as Balance.
+  - **Alternative:** compare with all-time history (needs a server read when online, so offline and online could disagree), or show the newest PR however old.
+  - D-0217 §5, D-0219 §3. Added 2026-10-09.
+- [ ] **H-38 Default bar, plates and units for plate loading (non-blocking).**
+  - **Default:** a 20 kg bar and plates of 25, 20, 15, 10, 5, 2.5 and 1.25 kg, as many pairs as needed; each user can change both on Account settings (UF-11.4). Weights stay in kg only; there is no lb setting. When no exact loading exists (for example 101 kg), the line is left out rather than showing a close one.
+  - **Alternatives:** a count per plate size (home gyms); lb display; showing the closest load.
+  - D-0218. Added 2026-10-09.
+- [ ] **H-39 What the library tags mean (non-blocking).** The mock shows "In plan", "Variant" and "Beginner" on library rows.
+  - **Default:** "In plan" = the exercise is in one of your routines; "Variant" = a listed variation of one of those; "Beginner" = the exercise's level is beginner. One tag per row, after "Not suggested" and "Favorite". Group chips "Upper" and "Legs" join the area chips.
+  - **Alternatives:** "In plan" = in today's suggested workout; "Beginner" only for users whose level is beginner, or not at all.
+  - D-0217 §5. Added 2026-10-09.
