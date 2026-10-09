@@ -13,6 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import type { Workout } from "@workoutlab/engine";
+import { ArrowIcon } from "../../components/icons/index.js";
 import { formatTime } from "../../lib/format/intl.js";
 import { en } from "../../lib/i18n/en.js";
 import { upsertSession, type SessionInsert } from "../../lib/offline/queue.js";
@@ -108,7 +109,12 @@ export function Ready({ workout, clock, locale, timeZone }: ReadyProps) {
   };
 
   return (
-    <section data-screen-id="UF-08.4" className="wl-uf08" data-items={workout.plan.items.length}>
+    <section
+      data-screen-id="UF-08.4"
+      data-wl-state="plan"
+      className="wl-uf08 wl-page"
+      data-items={workout.plan.items.length}
+    >
       <div className="wl-uf08__top">
         <Link
           className="wl-uf08__back"
@@ -128,7 +134,7 @@ export function Ready({ workout, clock, locale, timeZone }: ReadyProps) {
         {summary(workout, readyAt, locale, timeZone)}
       </p>
 
-      <div className="wl-uf08__card">
+      <div className="wl-card wl-uf08__card">
         <h2 className="wl-uf08__label">{en.uf08.explainerTitle}</h2>
         <ol className="wl-uf08__how" data-part="explainer">
           {en.uf08.explainer.map((step) => (
@@ -145,11 +151,10 @@ export function Ready({ workout, clock, locale, timeZone }: ReadyProps) {
       <fieldset className="wl-uf08__prefs">
         <legend className="wl-uf08__label">{en.uf08.prefsName}</legend>
         {PREFS.map(({ key, label }) => (
-          <label key={key} className="wl-uf08__toggle wl-uf08__pref" data-pref={key}>
+          <label key={key} className="wl-toggle wl-uf08__pref" data-pref={key}>
             <span>{label}</span>
             <input
               type="checkbox"
-              className="wl-uf08__checkbox"
               checked={prefs[key]}
               onChange={(e) => toggle(key, e.target.checked)}
             />
@@ -158,18 +163,19 @@ export function Ready({ workout, clock, locale, timeZone }: ReadyProps) {
       </fieldset>
 
       {failed ? (
-        <p role="alert" className="wl-uf08__error" data-part="start-error">
+        <p role="alert" className="wl-input__error wl-uf08__error" data-part="start-error">
           {en.uf08.startFailed}
         </p>
       ) : null}
 
       <button
         type="button"
-        className="wl-uf08__primary"
+        className="wl-button--primary wl-uf08__primary"
         aria-disabled={pending ? "true" : undefined}
         onClick={() => void onStart()}
       >
-        {en.uf08.start}
+        <span>{en.uf08.start}</span>
+        <ArrowIcon />
       </button>
     </section>
   );

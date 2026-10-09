@@ -34,6 +34,7 @@ import {
   type SessionInput,
   type Workout,
 } from "@workoutlab/engine";
+import { ArrowIcon, CrossIcon, TickIcon } from "../../components/icons/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { formatTime } from "../../lib/format/intl.js";
@@ -282,7 +283,7 @@ export function SessionSetup({
     hint: useId(),
     finish: useId(),
     finishError: useId(),
-    warmup: useId(),
+    fit: useId(),
   };
 
   if (showReady) {
@@ -575,12 +576,10 @@ export function SessionSetup({
   const ready = workout !== null;
 
   return (
-    <div data-screen-id="UF-08.1" className="wl-uf08">
+    <div data-screen-id="UF-08.1" data-wl-state="plan" className="wl-uf08 wl-page">
       <div className="wl-uf08__top">
         <Link to="/" className="wl-uf08__close" aria-label={en.uf08.close}>
-          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" focusable="false">
-            <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" fill="none" />
-          </svg>
+          <CrossIcon />
         </Link>
         <OfflineStatus variant="icon" locale={loc} timeZone={tz} />
       </div>
@@ -589,13 +588,13 @@ export function SessionSetup({
       {missing ? (
         <div className="wl-uf08__missing">
           <p>{en.uf08.missing}</p>
-          <Link to="/" className="wl-uf08__link">
+          <Link to="/" className="wl-button--text">
             {en.uf08.missingLink}
           </Link>
         </div>
       ) : (
         <>
-          <div className="wl-uf08__card">
+          <div className="wl-card wl-uf08__card">
             <div className="wl-uf08__stepper">
               <button
                 type="button"
@@ -609,11 +608,11 @@ export function SessionSetup({
                 <span aria-hidden="true">−</span>
               </button>
               <div className="wl-uf08__value">
-                <span className="wl-uf08__minutes" data-part="minutes">
+                <span className="wl-uf08__minutes wl-type-hero" data-part="minutes">
                   {budgetMin}
                 </span>
-                <span className="wl-uf08__unit">{en.uf08.minutesUnit}</span>
-                <span className="wl-uf08__done-by" data-part="done-by">
+                <span className="wl-uf08__unit wl-type-label">{en.uf08.minutesUnit}</span>
+                <span className="wl-uf08__done-by wl-type-label" data-part="done-by">
                   {en.uf08.doneBy(
                     formatTime(finishInstant(nowIso, budgetMin), { locale: loc, timeZone: tz }),
                   )}
@@ -637,7 +636,7 @@ export function SessionSetup({
                 <button
                   key={m}
                   type="button"
-                  className="wl-uf08__chip"
+                  className="wl-chip wl-uf08__chip"
                   aria-label={en.uf08.chipName(String(m))}
                   aria-pressed={budgetMin === m ? "true" : "false"}
                   onClick={() => setBudgetMin(m)}
@@ -650,21 +649,21 @@ export function SessionSetup({
             <div className="wl-uf08__finish">
               {finishOpen ? (
                 <>
-                  <label htmlFor={ids.finish} className="wl-uf08__label">
+                  <label htmlFor={ids.finish} className="wl-uf08__label wl-type-label">
                     {en.uf08.finishBy}
                   </label>
                   <input
                     ref={finishInput}
                     id={ids.finish}
                     type="time"
-                    className="wl-uf08__time"
+                    className="wl-input wl-uf08__time"
                     value={finishValue}
                     onChange={onFinishChange}
                     aria-invalid={finishError ? "true" : "false"}
                     aria-describedby={finishError ? ids.finishError : undefined}
                   />
                   {finishError ? (
-                    <p id={ids.finishError} className="wl-uf08__error">
+                    <p id={ids.finishError} className="wl-input__error wl-uf08__error">
                       {en.uf08.finishRejected}
                     </p>
                   ) : null}
@@ -673,7 +672,7 @@ export function SessionSetup({
                 <button
                   ref={finishButton}
                   type="button"
-                  className="wl-uf08__link"
+                  className="wl-button--text"
                   onClick={() => {
                     setFinishOpen(true);
                     setFinishValue("");
@@ -685,16 +684,14 @@ export function SessionSetup({
               )}
             </div>
 
-            <div className="wl-uf08__toggle">
-              <label htmlFor={ids.warmup}>{en.uf08.warmupToggle}</label>
+            <label className="wl-toggle wl-uf08__toggle">
+              <span>{en.uf08.warmupToggle}</span>
               <input
-                id={ids.warmup}
                 type="checkbox"
-                className="wl-uf08__checkbox"
                 checked={warmupInBudget}
                 onChange={(e) => setWarmupInBudget(e.target.checked)}
               />
-            </div>
+            </label>
           </div>
 
           <div
@@ -706,9 +703,9 @@ export function SessionSetup({
             <p id={ids.energy} className="wl-uf08__label">
               {en.uf08.energyName}
             </p>
-            <div className="wl-uf08__energy-options">
+            <div className="wl-segmented">
               {ENERGIES.map((e) => (
-                <label key={e} className="wl-uf08__energy-option" data-energy={e}>
+                <label key={e} data-energy={e}>
                   <input
                     type="radio"
                     name="wl-uf08-energy"
@@ -742,7 +739,7 @@ export function SessionSetup({
                 <button
                   key={a}
                   type="button"
-                  className="wl-uf08__skip-chip"
+                  className="wl-chip wl-uf08__skip-chip"
                   data-area={a}
                   aria-pressed={avoid.has(a) ? "true" : "false"}
                   onClick={() =>
@@ -753,23 +750,26 @@ export function SessionSetup({
                     })
                   }
                 >
+                  <TickIcon size={16} className="wl-chip__tick" />
                   {en.bodyMap.areas[a]}
                 </button>
               ))}
             </div>
           </div>
 
-          <p className="wl-uf08__fit" data-part="fit-line" aria-live="polite">
+          <p id={ids.fit} className="wl-uf08__fit" data-part="fit-line" aria-live="polite">
             {workout ? fitLine(workout) : en.uf08.checking}
           </p>
 
           <button
             type="button"
-            className="wl-uf08__primary"
+            className="wl-button--primary wl-uf08__primary"
             aria-disabled={ready ? "false" : "true"}
+            aria-describedby={ready ? undefined : ids.fit}
             onClick={onSuggest}
           >
-            {en.uf08.suggest}
+            <span>{en.uf08.suggest}</span>
+            <ArrowIcon />
           </button>
         </>
       )}
