@@ -544,11 +544,11 @@ test.describe("T-0619 AC9 the state caption after an offline reload", () => {
     await logSets(page, 2, 99);
     await page.getByRole("button", { name: "Skip rest" }).click();
     const current = page.locator('[data-screen-id="UF-09.3"]');
-    await expect(current.locator(".wl-uf09__state")).toHaveText(/^Lifting · set 3 of \d+$/);
+    await expect(current.locator(".wl-uf09__state")).toHaveText(/^Lifting · set 3 of 4$/);
 
     await page.goto(`/session/${id}`);
     await expect(current).toBeVisible();
-    await expect(current.locator(".wl-uf09__state")).toHaveText(/^Lifting · set 3 of \d+$/);
+    await expect(current.locator(".wl-uf09__state")).toHaveText(/^Lifting · set 3 of 4$/);
     await expect(current.locator("h1")).toBeVisible();
     await expectOneScreen(page);
   });

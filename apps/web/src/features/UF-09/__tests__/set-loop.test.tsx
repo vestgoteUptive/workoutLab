@@ -221,7 +221,7 @@ describe("AC-8 in-session pre-fill", () => {
 
   const WITH_BACKOFF = planWith({ items: [{ ...BENCH, backoff: { weightKg: 70, reps: 6 } }, ROW] });
 
-  it("back-off: after set 4 the screen shows 'Back-off set' and '70 kg × 6'; Done records setIndex 4, backoff true", async () => {
+  it("back-off: after set 4 the screen shows the back-off caption and '70 kg × 6'; Done records setIndex 4, backoff true", async () => {
     await showSet(WITH_BACKOFF, {
       setIndex: 3,
       loggedSets: [0, 1, 2].map((i) => logged(0, i, WITH_BACKOFF)),
