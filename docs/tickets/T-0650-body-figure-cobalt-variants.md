@@ -5,7 +5,7 @@ lane: design
 screens: [UF-02.1, UF-04.2, UF-10.1]
 decisions: [D-0207, D-0215]
 deps: [T-0614]
-status: ready
+status: done
 ---
 ## Why
 H-31, answered 2026-10-09: the owner says the Cobalt body figure (T-0614 preview) needs changes in all four areas — the low coverage steps are hard to see, the attention ring, the secondary hatch, and the silhouette or shape. There are no further notes, so the owner picks from concrete options.
