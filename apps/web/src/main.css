@@ -508,3 +508,373 @@ legend.wl-label,
     background: none;
   }
 }
+
+/* Shared Cobalt controls (T-0592, D-0208, D-0210 §3, D-0211; components/state-patterns.md).
+ * Every rule below sits under a state root or .wl-paper, so a screen with no data-wl-state keeps
+ * its Chalk & Iron look. They read only the generic --wl-* variables. No transitions: the only
+ * motion is the state cross-fade the root already has. */
+
+/* Button base, shared by every button form. */
+:is([data-wl-state], .wl-paper)
+  :is(
+    .wl-button--primary,
+    .wl-button--secondary,
+    .wl-button--text,
+    .wl-button--session,
+    .wl-button--session-outline
+  ) {
+  box-sizing: border-box;
+  font-family: var(--wl-font);
+  cursor: pointer;
+}
+
+:is([data-wl-state], .wl-paper)
+  :is(
+    .wl-button--primary,
+    .wl-button--secondary,
+    .wl-button--session,
+    .wl-button--session-outline
+  ) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  inline-size: 100%;
+  text-align: start;
+  text-decoration: none;
+}
+
+/* Primary: the label left, an aria-hidden icon right. Last child of a page: pinned to the bottom. */
+:is([data-wl-state], .wl-paper) .wl-button--primary,
+:is([data-wl-state], .wl-paper) .wl-button--session {
+  min-block-size: 44px;
+  padding: 20px 28px;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--wl-on-action);
+  background: var(--wl-action);
+  border: 0;
+  border-radius: var(--wl-radius-pill);
+}
+
+:is([data-wl-state], .wl-paper)
+  :is(.wl-page > .wl-button--primary, .wl-page > .wl-button--session):last-child {
+  margin-block-start: auto;
+}
+
+:is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-button--primary {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+/* Secondary: a 1.5 px ink outline on transparent. Destructive actions use it, there is no danger colour. */
+:is([data-wl-state], .wl-paper) .wl-button--secondary,
+:is([data-wl-state], .wl-paper) .wl-button--session-outline {
+  min-block-size: 48px;
+  padding: 16px 28px;
+  font-size: 1.125rem;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--wl-ink);
+  background: transparent;
+  border: 1.5px solid var(--wl-ink);
+  border-radius: var(--wl-radius-pill);
+}
+
+/* Text button: underlined, 44 x 44 made with padding. */
+:is([data-wl-state], .wl-paper) .wl-button--text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: 0 8px;
+  font-size: 1.0625rem;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--wl-ink);
+  background: none;
+  border: 0;
+  border-radius: var(--wl-radius-tile);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Session button: the primary at session scale, 64 px tall for a gloved thumb. */
+:is([data-wl-state], .wl-paper) :is(.wl-button--session, .wl-button--session-outline) {
+  min-block-size: 64px;
+  padding: 24px 26px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  border-radius: var(--wl-radius-session-button);
+}
+
+:is([data-wl-state], .wl-paper) .wl-button--session-outline {
+  color: var(--wl-ink);
+  background: transparent;
+  border: 1.5px solid var(--wl-ink);
+}
+
+/* Disabled is aria-disabled, never the attribute: the control stays focusable and a line explains why. */
+:is([data-wl-state], .wl-paper)
+  :is(.wl-button--primary, .wl-button--session)[aria-disabled="true"] {
+  color: var(--wl-ink);
+  background: var(--wl-raise);
+  cursor: not-allowed;
+}
+
+/* Lift and rest: --wl-raise there is too close to the ink, so a disabled primary or session
+ * button takes the outline form in --wl-ink (state-patterns "Session button"). */
+:is([data-wl-state="lift"], [data-wl-state="rest"])
+  :is(.wl-button--primary, .wl-button--session)[aria-disabled="true"] {
+  background: transparent;
+  border: 1.5px solid var(--wl-ink);
+  font-weight: 600;
+}
+
+:is([data-wl-state], .wl-paper)
+  :is(.wl-button--secondary, .wl-button--session-outline, .wl-button--text)[aria-disabled="true"] {
+  color: var(--wl-ink-muted);
+  border-color: var(--wl-ink-muted);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  :is([data-wl-state], .wl-paper)
+    :is(.wl-button--primary, .wl-button--session):hover:not([aria-disabled="true"]) {
+    box-shadow: inset 0 0 0 1px var(--wl-on-action);
+  }
+  :is([data-wl-state], .wl-paper)
+    :is(.wl-button--secondary, .wl-button--session-outline):hover:not([aria-disabled="true"]) {
+    box-shadow: inset 0 0 0 0.5px var(--wl-ink);
+  }
+  :is([data-wl-state], .wl-paper) .wl-button--text:hover:not([aria-disabled="true"]) {
+    text-underline-offset: 2px;
+  }
+}
+
+/* Row: a hairline under each, a title, an optional caption and trailing value or icon. The legacy
+ * CSS chevron is dropped: a state screen draws its chevron as an aria-hidden icon. */
+:is([data-wl-state], .wl-paper) .wl-row {
+  min-block-size: 0;
+  padding-block: 12px;
+  color: var(--wl-ink);
+  border-block-end: 1px solid var(--wl-line);
+}
+
+:is([data-wl-state], .wl-paper) .wl-row::after {
+  content: none;
+}
+
+:is([data-wl-state], .wl-paper) .wl-row + .wl-row {
+  border-block-start: 0;
+}
+
+:is([data-wl-state], .wl-paper) :is(a.wl-row, button.wl-row) {
+  min-block-size: 44px;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  :is([data-wl-state], .wl-paper) :is(a.wl-row, button.wl-row):hover {
+    background: var(--wl-raise);
+  }
+  :is([data-wl-state], .wl-paper) :is(a.wl-row, button.wl-row):hover .wl-type-label {
+    color: var(--wl-ink);
+  }
+}
+
+/* Selected option row: a native radio inside the label stays focusable (visually hidden). The
+ * checked one is a block that bleeds past the gutter, so the margin comes from the variables. */
+:is([data-wl-state], .wl-paper) .wl-option {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-block-size: 44px;
+  padding-block: 12px;
+  border-block-end: 1px solid var(--wl-line);
+  color: var(--wl-ink);
+  cursor: pointer;
+}
+
+:is([data-wl-state], .wl-paper) .wl-option > input[type="radio"],
+:is([data-wl-state], .wl-paper) .wl-chip > input,
+:is([data-wl-state], .wl-paper) .wl-segmented input[type="radio"] {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+:is([data-wl-state], .wl-paper) .wl-option:has(input:checked) {
+  margin-inline: calc(-1 * var(--wl-space-option-bleed));
+  padding-inline: var(--wl-space-option-bleed);
+  color: var(--wl-on-selected);
+  background: var(--wl-selected);
+  border-block-end-color: transparent;
+  border-radius: var(--wl-radius-option);
+}
+
+:is([data-wl-state], .wl-paper) .wl-option .wl-option__tick,
+:is([data-wl-state], .wl-paper) .wl-chip .wl-chip__tick {
+  display: none;
+  flex: none;
+}
+
+:is([data-wl-state], .wl-paper) .wl-option:has(input:checked) .wl-option__tick {
+  display: inline-block;
+}
+
+/* Text inside the selected block is --wl-on-selected, captions included: --wl-ink-muted on the
+ * block is 1.5:1. On the hover fill (raise) a caption is --wl-ink, never --wl-ink-muted (4.2). */
+:is([data-wl-state], .wl-paper) .wl-option:has(input:checked) :is(.wl-type-label, .wl-muted) {
+  color: var(--wl-on-selected);
+}
+
+@media (hover: hover) {
+  :is([data-wl-state], .wl-paper) .wl-option:hover:not(:has(input:checked)) {
+    background: var(--wl-raise);
+  }
+  :is([data-wl-state], .wl-paper)
+    .wl-option:hover:not(:has(input:checked))
+    :is(.wl-type-label, .wl-muted) {
+    color: var(--wl-ink);
+  }
+}
+
+/* Segmented control: native radios inside labels, the checked label is a pill. */
+:is([data-wl-state], .wl-paper) .wl-segmented {
+  display: inline-flex;
+  box-sizing: border-box;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--wl-line);
+  border-radius: var(--wl-radius-pill);
+}
+
+:is([data-wl-state], .wl-paper) .wl-segmented > :is(label, button) {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--wl-ink);
+  background: transparent;
+  border: 0;
+  border-radius: var(--wl-radius-pill);
+  cursor: pointer;
+}
+
+:is([data-wl-state], .wl-paper) .wl-segmented > label:has(input:checked),
+:is([data-wl-state], .wl-paper) .wl-segmented > button[aria-pressed="true"] {
+  color: var(--wl-on-selected);
+  background: var(--wl-selected);
+}
+
+@media (hover: hover) {
+  :is([data-wl-state], .wl-paper) .wl-segmented > label:hover:not(:has(input:checked)),
+  :is([data-wl-state], .wl-paper) .wl-segmented > button:hover:not([aria-pressed="true"]) {
+    background: var(--wl-raise);
+  }
+}
+
+/* Chip: a pill; on is a fill plus an aria-hidden tick, so fill is never the only cue. */
+:is([data-wl-state], .wl-paper) .wl-chip {
+  position: relative;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: 8px 14px;
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.3;
+  color: var(--wl-ink);
+  background: transparent;
+  border: 1px solid var(--wl-line);
+  border-radius: var(--wl-radius-pill);
+  cursor: pointer;
+}
+
+:is([data-wl-state], .wl-paper) .wl-chip[aria-pressed="true"],
+:is([data-wl-state], .wl-paper) .wl-chip:has(input:checked) {
+  color: var(--wl-on-selected);
+  background: var(--wl-selected);
+  border-color: var(--wl-selected);
+}
+
+:is([data-wl-state], .wl-paper)
+  :is(.wl-chip[aria-pressed="true"], .wl-chip:has(input:checked))
+  .wl-chip__tick {
+  display: inline-block;
+}
+
+:is([data-wl-state], .wl-paper)
+  :is(.wl-chip[aria-pressed="true"], .wl-chip:has(input:checked))
+  :is(.wl-type-label, .wl-muted) {
+  color: var(--wl-on-selected);
+}
+
+:is([data-wl-state], .wl-paper)
+  .wl-chip[aria-disabled="true"]:not([aria-pressed="true"], :has(input:checked)) {
+  color: var(--wl-ink-muted);
+}
+
+:is([data-wl-state], .wl-paper) .wl-chip[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  :is([data-wl-state], .wl-paper)
+    .wl-chip:hover:not([aria-pressed="true"], :has(input:checked), [aria-disabled="true"]) {
+    background: var(--wl-raise);
+  }
+}
+
+/* Focus: 2 px --wl-focus at a 2 px offset (plan ink, paper ink inside .wl-paper). */
+:is([data-wl-state], .wl-paper)
+  :is(
+    .wl-button--primary,
+    .wl-button--secondary,
+    .wl-button--text,
+    .wl-button--session,
+    .wl-button--session-outline,
+    a.wl-row,
+    button.wl-row,
+    .wl-segmented > button,
+    button.wl-chip
+  ):focus-visible,
+:is([data-wl-state], .wl-paper)
+  :is(.wl-option, .wl-chip, .wl-segmented > label):has(input:focus-visible) {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+/* Under a state a card is not a box: structure comes from hairlines (D-0208 §3). */
+:is([data-wl-state], .wl-paper) .wl-card {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+:is([data-wl-state], .wl-paper) .wl-card + .wl-card {
+  padding-block-start: 16px;
+  border-block-start: 1px solid var(--wl-line);
+}

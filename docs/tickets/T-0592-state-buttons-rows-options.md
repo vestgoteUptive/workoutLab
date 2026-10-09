@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-01.2, UF-08.1, UF-08.3, UF-09.8]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0191, D-0203]
 deps: [T-0589, T-0590]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. main.css is shared: full web e2e suite. Serial after T-0589, before T-0593 (the same file). -->
 ## Why
@@ -81,3 +81,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0592`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0592.md` (D-0157).

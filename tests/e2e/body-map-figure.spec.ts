@@ -67,7 +67,7 @@ function sets(exerciseId: string, n: number, daysAgo: number) {
   }));
 }
 
-type Fixture = "zero" | "data";
+type Fixture = "zero" | "data" | "ramp";
 
 /** Signs in with Supabase mocked, then opens `path`. `data` has calves, quads and hamstrings. */
 async function open(page: Page, fixture: Fixture, path: string): Promise<void> {
@@ -77,7 +77,10 @@ async function open(page: Page, fixture: Fixture, path: string): Promise<void> {
     sets:
       fixture === "data"
         ? [...sets("calf-raise", 6, 2), ...sets("squat", 4, 3), ...sets("rdl", 3, 3)]
-        : [],
+        : fixture === "ramp"
+          ? // targets are 10: calves 12 (step 4), hamstrings 8 (3), quads 5 (2), arms none (0)
+            [...sets("calf-raise", 12, 2), ...sets("rdl", 8, 3), ...sets("squat", 5, 3)]
+          : [],
     exercises: [exercise("calf-raise"), exercise("squat"), exercise("rdl")],
     exerciseAreas: [
       { exercise_id: "calf-raise", area_id: "calves", weight: 1 },
@@ -277,4 +280,122 @@ test.describe("AC-8 (spec AC-13) forced colours", () => {
     await expect(value).toBeVisible();
     await expect(value).toHaveText(/^\d+(\.\d)? \/ \d+(\.\d)?$/);
   });
+});
+
+// T-0615: Cobalt figure colours. A [data-wl-state] scope is put on <html> after load (the screens
+// get their own state in T-0601/T-0608/T-0611); no state is the legacy look (D-0210 §2).
+type RGB = string;
+
+/** Resolves any CSS colour expression to the browser's computed rgb() string. */
+async function resolved(page: Page, value: string): Promise<RGB> {
+  return page.evaluate((v) => {
+    const d = document.createElement("div");
+    d.style.color = v;
+    document.body.append(d);
+    const c = getComputedStyle(d).color;
+    d.remove();
+    return c;
+  }, value);
+}
+
+const setState = (page: Page, state: string | null) =>
+  page.evaluate((st) => {
+    if (st === null) document.documentElement.removeAttribute("data-wl-state");
+    else document.documentElement.setAttribute("data-wl-state", st);
+    document.body.style.background = st === null ? "" : "var(--wl-bg)";
+  }, state);
+
+const paint = (loc: Locator, prop: "fill" | "stroke") =>
+  loc.first().evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), prop);
+
+test.describe("T-0615 AC1 plan colours (UF-10.1)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("step 4 is white, step 0 is plan.raise, silhouette and halo use plan tokens", async ({
+    page,
+  }) => {
+    await open(page, "ramp", "/balance");
+    await ready(page);
+    await setState(page, "plan");
+    const svg = fullMap(page).locator("svg");
+    expect(await paint(svg.locator(".wl-fig__region--step-4"), "fill")).toBe(
+      await resolved(page, "var(--wl-color-plan-coverage-4)"),
+    );
+    expect(await resolved(page, "var(--wl-color-plan-coverage-4)")).toBe("rgb(255, 255, 255)");
+    expect(await paint(svg.locator(".wl-fig__region--step-0"), "fill")).toBe(
+      await resolved(page, "var(--wl-color-plan-raise)"),
+    );
+    const sil = svg.locator(".wl-fig__silhouette");
+    expect(await paint(sil, "fill")).toBe(await resolved(page, "var(--wl-color-plan-raise)"));
+    expect(await paint(sil, "stroke")).toBe(await resolved(page, "var(--wl-color-plan-ink-muted)"));
+    const halo = svg.locator(".wl-fig__halo-warn");
+    expect(await halo.count(), "the fixture has at least one attention area").toBeGreaterThan(0);
+    expect(await paint(halo, "stroke")).toBe(
+      await resolved(page, "var(--wl-color-plan-attention)"),
+    );
+    expect(await paint(svg.locator(".wl-fig__halo-gap"), "stroke")).toBe(
+      await resolved(page, "var(--wl-color-plan-bg)"),
+    );
+  });
+});
+
+test.describe("T-0615 AC2 legacy fallback (no state)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("lime step 4, surface-2 step 0, warn halo, surface gap", async ({ page }) => {
+    await open(page, "ramp", "/balance");
+    await ready(page);
+    expect(await page.evaluate(() => document.documentElement.hasAttribute("data-wl-state"))).toBe(
+      false,
+    );
+    const svg = fullMap(page).locator("svg");
+    expect(await paint(svg.locator(".wl-fig__region--step-4"), "fill")).toBe(
+      await resolved(page, "var(--wl-color-coverage-4)"),
+    );
+    expect(await paint(svg.locator(".wl-fig__region--step-0"), "fill")).toBe(
+      await resolved(page, "var(--wl-color-surface-2)"),
+    );
+    expect(await paint(svg.locator(".wl-fig__halo-warn"), "stroke")).toBe(
+      await resolved(page, "var(--wl-color-warn)"),
+    );
+    expect(await paint(svg.locator(".wl-fig__halo-gap"), "stroke")).toBe(
+      await resolved(page, "var(--wl-color-surface)"),
+    );
+    // The legend swatch for step 4 is the legacy lime too (AC-T0614-2).
+    const sw = await fullMap(page)
+      .locator('[data-part="swatch"]')
+      .nth(4)
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(sw).toBe(await resolved(page, "var(--wl-color-coverage-4)"));
+  });
+});
+
+test.describe("T-0615 AC6 / AC7 contrast and visual in plan", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  for (const [name, path] of [
+    ["full", "/balance"],
+    ["compact", "/"],
+  ] as const) {
+    test(`C-01 ${name}: axe colour-contrast has 0 violations; screenshot`, async ({
+      page,
+    }, testInfo) => {
+      await open(page, "ramp", path);
+      if (path === "/balance") await ready(page);
+      await page.waitForLoadState("networkidle");
+      await setState(page, "plan");
+      const map = page.locator(`[data-component="C-01"][data-variant="${name}"]`);
+      await expect(map).toBeVisible();
+      const results = await new AxeBuilder({ page })
+        .include(`[data-component="C-01"][data-variant="${name}"]`)
+        .withRules(["color-contrast"])
+        .analyze();
+      expect(results.violations).toEqual([]);
+      const value = map.locator('[data-part="value"]').first();
+      expect(await value.evaluate((el) => getComputedStyle(el).color)).toBe(
+        await resolved(page, "var(--wl-color-plan-ink)"),
+      );
+      await map.screenshot({ path: testInfo.outputPath(`c01-${name}-plan.png`) });
+    });
+  }
 });

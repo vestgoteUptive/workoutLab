@@ -118,3 +118,50 @@ test.describe("AC-8 forced colours", () => {
     await expect(page.getByText("Primary", { exact: true })).toBeVisible();
   });
 });
+
+// T-0615 AC3: inside a plan state a primary region is plan.ink and a secondary region is filled
+// with the instance hatch (plan.ink stripes on plan.raise). The state is set on <html> after load.
+test.describe("T-0615 AC3 plan primary and secondary (UF-04.2)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("primary is plan.ink, hatch is ink on raise; no state keeps lime", async ({
+    page,
+  }, testInfo) => {
+    await open(page);
+    const resolved = (v: string) =>
+      page.evaluate((val) => {
+        const d = document.createElement("div");
+        d.style.color = val;
+        document.body.append(d);
+        const c = getComputedStyle(d).color;
+        d.remove();
+        return c;
+      }, v);
+    const fillOf = (sel: string) =>
+      page
+        .locator(sel)
+        .first()
+        .evaluate((el) => getComputedStyle(el).fill);
+
+    const primary = 'svg.wl-fig [data-area="quads"].wl-fig__region--primary';
+    expect(await fillOf(primary)).toBe(await resolved("var(--wl-color-accent)"));
+
+    await page.evaluate(() => {
+      document.documentElement.setAttribute("data-wl-state", "plan");
+      document.body.style.background = "var(--wl-bg)";
+    });
+    expect(await fillOf(primary)).toBe(await resolved("var(--wl-color-plan-ink)"));
+    const secondary = page.locator("svg.wl-fig .wl-fig__region--secondary").first();
+    expect(await secondary.evaluate((el) => getComputedStyle(el).fill)).toMatch(/^url\(/);
+    expect(await fillOf("svg.wl-fig .wl-fig__hatch-stripe")).toBe(
+      await resolved("var(--wl-color-plan-ink)"),
+    );
+    expect(await fillOf("svg.wl-fig .wl-fig__hatch-ground")).toBe(
+      await resolved("var(--wl-color-plan-raise)"),
+    );
+    await page
+      .locator("svg.wl-fig")
+      .first()
+      .screenshot({ path: testInfo.outputPath("uf04-plan.png") });
+  });
+});
