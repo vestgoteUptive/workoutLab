@@ -50,6 +50,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/cobalt-state.spec.ts`, `tests/e2e/visual-foundation.spec.ts` (orchestrator grant: their no-state page `/welcome` now has a state; move them to a still-legacy page or an injected fixture)
 - `apps/web/src/features/UF-01/**` (lane)
 - `tests/e2e/uf-01-onboarding.spec.ts` (listed extra)
 - `docs/tickets/T-0605-uf01-onboarding-cobalt.md` (log only)
