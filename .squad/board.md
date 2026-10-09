@@ -173,8 +173,8 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0589 | data-wl-state scopes + legacy fallback, gutter, state type scale, cross-fade, runtime theme-color | web-shell | T-0587, T-0588 | todo | wl-build-web |
-| T-0590 | Pattern specs: state-patterns.md, C-03, neutral notice, UF-11.2/11.4 wording | design | T-0587 | todo | wl-design |
+| T-0589 | data-wl-state scopes + legacy fallback, gutter, state type scale, cross-fade, runtime theme-color | web-shell | T-0587, T-0588 | doing | wl-build-web |
+| T-0590 | Pattern specs: state-patterns.md, C-03, neutral notice, UF-11.2/11.4 wording | design | T-0587 | doing | wl-design |
 | T-0592 | Shared controls: buttons, row, option row, segmented, chip, icons, focus, unboxed cards | web-shell | T-0589, T-0590 | todo | wl-build-web |
 | T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | todo | wl-build-web |
 | T-0594 | C-02 tab bar look, SessionProgress, drain helper | web-shell | T-0592 | todo | wl-build-web |
@@ -200,7 +200,7 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0614 | Body figure + C-01 cobalt design check, preview, legend fields | design | T-0590 | todo | wl-design |
 | T-0615 | BodyFigure + BodyMap read generic variables | web-shell | T-0614, T-0589 | todo | wl-build-web |
 | T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | todo | wl-build-web |
-| T-0617 | Auth emails on paper (PATCH = H-35) | infra | — | todo | wl-build-infra |
+| T-0617 | Auth emails on paper (PATCH = H-35) | infra | — | doing | wl-build-infra |
 | T-0619 | UF-09 state captions incl. "Lifting · set n of N" (mock behaviour, before the restyle) | web-feature:UF-09 | — | doing | wl-build-web |
 | T-0620 | UF-09 wording: Done, Save · start rest, paused caption + stats (mock copy) | web-feature:UF-09 | T-0598 | todo | wl-build-web |
 | T-0621 | UF-09 status lines: Target hit, done line, Set-up time, First up (mock behaviour) | web-feature:UF-09 | T-0620 | todo | wl-build-web |
