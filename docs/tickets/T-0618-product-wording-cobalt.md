@@ -53,3 +53,5 @@ none (screen IDs unchanged)
 check-all green · `format:check` green · commit messages start with `T-0618` and cite the UF IDs.
 
 ## Build / accept log
+- Build: edited user-flows UF-09 rows, UF-02.1 week row, C-02 tab names; PRD row and gaps A2 now cite D-0208/D-0211; visual-foundation header note.
+- AC2 red run: on HEAD the UF-09 table had 2+ matches for "200 px"/"orange"; after the edit 0. AC3: grep for "lime ramp"/"warn outline" in PRD and gaps gives 0. AC4: diff touches no Flow index row. AC1: check-all exit 0.
