@@ -71,3 +71,10 @@ set -a; . .env.local; set +a; CONFIRM_PROD_AUTH=csgjsdwuxqtuqpuazzpz node infra/
 Afterwards run the drift check (exit 0 expected). If a key was rejected, the tool's after-view and
 the drift check name it: fix the value and rerun the apply; `others_sha256` must stay unchanged.
 To change the wording, edit the template, rerun the preview and the apply.
+
+## Paper-palette templates (T-0617, D-0208): PATCH pending (H-35)
+
+The templates in `templates/` now use the paper tokens (`paper.bg`, `paper.ink`, `paper.ink-muted`,
+`paper.action`, `paper.on-action`), read by `.github/scripts/auth-templates.test.mjs`. Prod still
+sends the old Chalk & Iron mail until the owner runs the keys-only PATCH above (H-35). Until then
+the drift check reports `mailer_templates_*_matches` as changed; that is expected.

@@ -28,10 +28,23 @@ function tokenColours() {
   return out;
 }
 
-// The Chalk & Iron colours the spec names, read from tokens.json (no raw colour literals here).
+// The paper colours the mail uses (D-0208, T-0617), read from tokens.json (no raw colour literals here).
 const tokens = JSON.parse(read(path.join(root, "packages/design-tokens/src/tokens.json")));
 const C = tokens.color;
-const BRAND = [C.bg, C.text, C.accent, C["text-muted"], C["on-accent"]];
+const P = C.paper;
+const BRAND = [P.bg, P.ink, P["ink-muted"], P.action, P["on-action"]];
+// The legacy flat Chalk & Iron colours (string values directly under color), which no template may carry.
+const LEGACY = Object.values(C).filter((v) => typeof v === "string" && /^#[0-9A-Fa-f]{6}$/.test(v));
+
+/** WCAG contrast ratio of two #RRGGBB colours. */
+function contrast(a, b) {
+  const lum = (h) => {
+    const [r, g, bl] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
 // A colour that is not a token, built so the no-raw-colour lint rule doesn't read it as a use.
 const NOT_A_TOKEN = "#" + "1".repeat(6);
 
@@ -67,6 +80,26 @@ test("T-0404b AC-1 each template holds one link, one code, token colours only, n
   }
 });
 
+test("T-0617 AC2 no template carries a legacy flat Chalk & Iron colour", () => {
+  assert.ok(LEGACY.length >= 5, "flat keys were read from tokens.json");
+  for (const t of TEMPLATES) {
+    const html = read(path.join(dir, `${t.name}.html`)).toUpperCase();
+    for (const c of LEGACY) if (!Object.values(P).map((v) => v.toUpperCase()).includes(c.toUpperCase())) assert.ok(!html.includes(c.toUpperCase()), `${t.name} has legacy ${c}`);
+  }
+});
+
+test("T-0617 AC3 contrast: paper.ink on paper.bg >= 12.9 and paper.on-action on paper.action >= 8.6 (one decimal)", () => {
+  const one = (n) => Math.floor(n * 10) / 10;
+  assert.ok(one(contrast(P.ink, P.bg)) >= 12.9, `ink/bg ${contrast(P.ink, P.bg)}`);
+  assert.ok(one(contrast(P["on-action"], P.action)) >= 8.6, `on-action/action ${contrast(P["on-action"], P.action)}`);
+  for (const t of TEMPLATES) {
+    const html = read(path.join(dir, `${t.name}.html`));
+    assert.ok(html.includes(`color: ${P.ink}`) && html.includes(`background-color: ${P.bg}`), `${t.name} text/bg are the tested pair`);
+    assert.ok(html.includes(`background-color: ${P.action}`) && html.includes(`color: ${P["on-action"]}`), `${t.name} button is the tested pair`);
+    assert.ok(new RegExp(`color: ${P.ink};"><font color="${P.ink}">\\{\\{ \\.Token \\}\\}`).test(html), `${t.name} code is paper.ink`);
+  }
+});
+
 test("T-0404b AC-1 each subject is one line under 78 chars holding workoutLab, and is the expected value", () => {
   const spec = JSON.parse(read(path.join(root, "infra/auth/expected-auth.json")));
   for (const t of TEMPLATES) {
@@ -79,7 +112,7 @@ test("T-0404b AC-1 each subject is one line under 78 chars holding workoutLab, a
 
 test("T-0404b AC-1 planted faults: a non-token colour (111111), a missing {{ .Token }}, a remote image all go red", () => {
   const html = read(path.join(dir, "magic-link.html"));
-  assert.deepEqual(templateProblems(html.replace(C.text, NOT_A_TOKEN)), [`colour ${NOT_A_TOKEN} is not a design token`]);
+  assert.deepEqual(templateProblems(html.replace(P.ink, NOT_A_TOKEN)), [`colour ${NOT_A_TOKEN} is not a design token`]);
   assert.deepEqual(templateProblems(html.replace("{{ .Token }}", "")), ["exactly one {{ .Token }}"]);
   assert.ok(templateProblems(html.replace("{{ .Token }}", "{{.Token}}")).includes("exactly one {{ .Token }}"), "spacing is exact");
   assert.ok(templateProblems(html.replace("</body>", '<img src="https://x.test/p.png"></body>')).length >= 2);
