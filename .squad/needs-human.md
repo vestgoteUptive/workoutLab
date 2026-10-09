@@ -36,3 +36,8 @@ Items here block only themselves. Tick the box and add a note when done; the orc
 - [x] **H-32 Cobalt redesign Q4: navigation additions (Balance link from Plan, etc.) still need product sign-off (D-0208)** Default: **unchanged**, the links stay as built (D-0203 §3) until you decide otherwise. Added 2026-10-08.
 
 H-29..H-32 answered by the owner on 2026-10-08: all four defaults confirmed (two fonts, 28/26 gutter, the body figure in its own ticket, nav unchanged).
+
+Owner answers, 2026-10-09 (Cobalt app phase):
+- Start the app redesign now: **yes**.
+- Rollout: **progressive** (each ticket ships on merge; a mixed cobalt/charcoal look is accepted during the migration).
+- New behaviour and copy shown in the mock: **include them** (specced as part of the redesign, not left out).
