@@ -1,7 +1,14 @@
-/* C-02 Tab bar styling. Colours come only from @workoutlab/design-tokens (D-0019). */
+/* C-02 Tab bar styling (T-0594, D-0210 §4). Colours come only from the --wl-* state variables
+ * (the nav sets data-wl-state="plan"), which resolve to @workoutlab/design-tokens (D-0019).
+ * The two sibling component sheets are pulled in here until UF-09 and UF-03.2 import them. */
+@import "../drain/drain.css";
+@import "../session-progress/session-progress.css";
+
 :root {
   /* D-0196 §3: the one size shared by the bar, its spacer and the scroll padding. */
   --wl-tab-bar-block-size: 60px;
+  /* Row height: bar size less 14 px padding twice and the 1 px rule. The link overhangs it. */
+  --wl-tab-bar-row-size: calc(var(--wl-tab-bar-block-size) - 29px);
 }
 
 html:has(.wl-tab-bar) {
@@ -19,13 +26,14 @@ html:has(.wl-tab-bar) {
   z-index: 5;
   box-sizing: border-box;
   min-block-size: var(--wl-tab-bar-block-size);
-  padding-block-end: env(safe-area-inset-bottom, 0px);
-  padding-inline: env(safe-area-inset-left, 0px) env(safe-area-inset-right, 0px);
-  display: flex;
-  justify-content: space-around;
-  align-items: stretch;
-  border-top: 1px solid var(--wl-color-line);
-  background: var(--wl-color-surface);
+  padding-block: 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  padding-inline: calc(12px + env(safe-area-inset-left, 0px))
+    calc(12px + env(safe-area-inset-right, 0px));
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-auto-rows: var(--wl-tab-bar-row-size);
+  align-items: center;
+  border-top: 1px solid var(--wl-line);
 }
 
 .wl-tab-bar__link {
@@ -34,16 +42,22 @@ html:has(.wl-tab-bar) {
   justify-content: center;
   min-width: 44px;
   min-height: 44px;
-  padding: 8px 12px;
-  color: var(--wl-color-text-muted);
+  /* The 44 px hit area overhangs the shorter row into the bar padding (D-0196). */
+  margin-block: calc((var(--wl-tab-bar-row-size) - 44px) / 2);
+  color: var(--wl-ink-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
   text-decoration: none;
+  text-underline-offset: 6px;
+  text-decoration-thickness: 2px;
 }
 
 .wl-tab-bar__link[aria-current="page"] {
-  color: var(--wl-color-accent);
+  color: var(--wl-ink);
+  text-decoration-line: underline;
 }
 
 .wl-tab-bar__link:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
+  outline: 2px solid var(--wl-focus);
   outline-offset: 2px;
 }

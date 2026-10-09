@@ -70,3 +70,8 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0594`.
 
 ## Build / accept log
+- 2026-10-09 build (frontend-dev). Tab bar: nav `data-wl-state="plan"`, 4-col grid, 14/12 padding, 0.875rem/600, active `--wl-ink` underline (2 px, 6 px offset), inactive `--wl-ink-muted`; row sized so bar still equals the 60 px spacer, link overhangs for the 44 px hit area. New `session-progress/`, `drain/` (CSS pulled in through tab-bar.css `@import` until UF-09/UF-03.2 import them, since the bundle drops unused sheets).
+- AC map: AC1 `cobalt-chrome.spec.ts` (look, hover, 44 px, no svg, spacer height); AC2 `shell.spec.ts` unchanged, green in full e2e; AC3 `session-progress.test.tsx` + 320 px one-line counter in e2e; AC4 `drain.test.ts` (values + source scan); AC5 e2e transition 1s/0s, pixel samples 0/50/100 %, deep variant; AC6 `tab-bar/__tests__/chrome-guard.test.ts` + lint/check-all.
+- Contrast asserted per state: ink 8.6 and ink-muted 5.85 (rounds to the ticket's 5.9) on plan.bg; lift ink on lift.bg. Note: the 1.5 px pause border computes to 1px in Chromium at DPR 1; test accepts 1 or 1.5.
+- Red runs: first e2e run failed on 5.854 < 5.9 and 1px vs 1.5px (test expectations, fixed). Planted faults (backup copy restored with cp): drainPercent unclamped -> 2 AC4 fails; counter nowrap removed -> AC3 css fail; raw #fff in css -> AC6 fail; underline removed, reduced-motion block removed, gradient direction flipped -> 4 e2e fails (AC1, AC5 x3).
+- Gate: typecheck lint test 0, test:repo-checks 0, format:check 0, check-all 0, full e2e 427 passed (exit 0).

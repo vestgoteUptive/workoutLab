@@ -30,7 +30,7 @@ export function TabBar() {
   return (
     <>
       <div className="wl-tab-bar__spacer" aria-hidden="true" />
-      <nav aria-label={en.tabBar.nav} className="wl-tab-bar">
+      <nav aria-label={en.tabBar.nav} className="wl-tab-bar" data-wl-state="plan">
         {TABS.map((tab) => {
           const active = isActive(tab.to, pathname);
           return (
