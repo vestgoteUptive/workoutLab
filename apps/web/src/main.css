@@ -14,6 +14,158 @@ body {
   font-weight: 400;
 }
 
+/* State scopes (D-0208 §2, D-0210 §2, D-0211 §2-§3). Components read only the generic --wl-*
+ * variables. :root keeps the Chalk & Iron values, so a screen that sets no data-wl-state looks
+ * exactly as before; a screen root flips to plan, lift or rest by carrying the attribute. */
+:root {
+  --wl-bg: var(--wl-color-bg);
+  --wl-raise: var(--wl-color-surface-2);
+  --wl-ink: var(--wl-color-text);
+  --wl-ink-muted: var(--wl-color-text-muted);
+  --wl-ink-on-raise: var(--wl-color-text-muted);
+  --wl-line: var(--wl-color-line);
+  --wl-action: var(--wl-color-accent);
+  --wl-on-action: var(--wl-color-on-accent);
+  --wl-selected: var(--wl-color-accent);
+  --wl-on-selected: var(--wl-color-on-accent);
+  --wl-attention: var(--wl-color-warn);
+  --wl-progress-off: var(--wl-color-line-strong);
+  --wl-focus: var(--wl-color-accent);
+  --wl-scrim: var(--wl-color-bg);
+  --wl-coverage-0: var(--wl-color-coverage-0);
+  --wl-coverage-1: var(--wl-color-coverage-1);
+  --wl-coverage-2: var(--wl-color-coverage-2);
+  --wl-coverage-3: var(--wl-color-coverage-3);
+  --wl-coverage-4: var(--wl-color-coverage-4);
+  --wl-font: var(--wl-font-body);
+  --wl-gutter: 20px;
+}
+
+[data-wl-state="plan"] {
+  --wl-bg: var(--wl-color-plan-bg);
+  --wl-raise: var(--wl-color-plan-raise);
+  --wl-ink: var(--wl-color-plan-ink);
+  --wl-ink-muted: var(--wl-color-plan-ink-muted);
+  --wl-ink-on-raise: var(--wl-color-plan-ink-on-raise);
+  --wl-line: var(--wl-color-plan-line);
+  --wl-action: var(--wl-color-plan-action);
+  --wl-on-action: var(--wl-color-plan-on-action);
+  --wl-selected: var(--wl-color-plan-selected);
+  --wl-on-selected: var(--wl-color-plan-on-selected);
+  --wl-attention: var(--wl-color-plan-attention);
+  --wl-progress-off: var(--wl-color-plan-raise);
+  --wl-focus: var(--wl-color-plan-ink);
+  --wl-scrim: var(--wl-color-plan-scrim);
+  --wl-coverage-0: var(--wl-color-plan-coverage-0);
+  --wl-coverage-1: var(--wl-color-plan-coverage-1);
+  --wl-coverage-2: var(--wl-color-plan-coverage-2);
+  --wl-coverage-3: var(--wl-color-plan-coverage-3);
+  --wl-coverage-4: var(--wl-color-plan-coverage-4);
+  --wl-font: var(--wl-font-plan);
+  --wl-gutter: var(--wl-space-gutter-plan);
+}
+
+/* lift and rest have no ink-muted, attention, selected or focus key: white carries them and the
+ * words carry the meaning (D-0211 §2). */
+[data-wl-state="lift"] {
+  --wl-bg: var(--wl-color-lift-bg);
+  --wl-raise: var(--wl-color-lift-bg-deep);
+  --wl-ink: var(--wl-color-lift-ink);
+  --wl-ink-muted: var(--wl-color-lift-ink);
+  --wl-ink-on-raise: var(--wl-color-lift-ink);
+  --wl-line: var(--wl-color-lift-line);
+  --wl-action: var(--wl-color-lift-action);
+  --wl-on-action: var(--wl-color-lift-on-action);
+  --wl-selected: var(--wl-color-lift-ink);
+  --wl-on-selected: var(--wl-color-lift-on-action);
+  --wl-attention: var(--wl-color-lift-ink);
+  --wl-progress-off: var(--wl-color-lift-progress-off);
+  --wl-focus: var(--wl-color-lift-ink);
+  --wl-scrim: var(--wl-color-plan-scrim);
+  --wl-font: var(--wl-font-session);
+  --wl-gutter: var(--wl-space-gutter-session);
+}
+
+[data-wl-state="rest"] {
+  --wl-bg: var(--wl-color-rest-bg);
+  --wl-raise: var(--wl-color-rest-line);
+  --wl-ink: var(--wl-color-rest-ink);
+  --wl-ink-muted: var(--wl-color-rest-ink);
+  --wl-ink-on-raise: var(--wl-color-rest-ink);
+  --wl-line: var(--wl-color-rest-line);
+  --wl-action: var(--wl-color-rest-action);
+  --wl-on-action: var(--wl-color-rest-on-action);
+  --wl-selected: var(--wl-color-rest-ink);
+  --wl-on-selected: var(--wl-color-rest-on-action);
+  --wl-attention: var(--wl-color-rest-ink);
+  --wl-progress-off: var(--wl-color-rest-progress-off);
+  --wl-focus: var(--wl-color-rest-ink);
+  --wl-scrim: var(--wl-color-plan-scrim);
+  --wl-font: var(--wl-font-session);
+  --wl-gutter: var(--wl-space-gutter-session);
+}
+
+.wl-paper {
+  --wl-bg: var(--wl-color-paper-bg);
+  --wl-raise: var(--wl-color-paper-line);
+  --wl-ink: var(--wl-color-paper-ink);
+  --wl-ink-muted: var(--wl-color-paper-ink-muted);
+  --wl-ink-on-raise: var(--wl-color-paper-ink);
+  --wl-line: var(--wl-color-paper-line);
+  --wl-action: var(--wl-color-paper-action);
+  --wl-on-action: var(--wl-color-paper-on-action);
+  --wl-selected: var(--wl-color-paper-action);
+  --wl-on-selected: var(--wl-color-paper-on-action);
+  --wl-attention: var(--wl-color-paper-ink);
+  --wl-progress-off: var(--wl-color-paper-line);
+  --wl-focus: var(--wl-color-paper-ink);
+}
+
+/* Below 360 px every state uses the 20 px gutter (D-0211 §3, visual-foundation G-4). Must stay
+ * after the state blocks: same specificity, later wins. */
+@media (max-width: 359.98px) {
+  :root,
+  [data-wl-state] {
+    --wl-gutter: 20px;
+  }
+}
+
+/* A state root paints its own background, ink and font, and cross-fades when the state changes
+ * (D-0208 §2: 200 ms ease-out). */
+[data-wl-state],
+.wl-paper {
+  background-color: var(--wl-bg);
+  color: var(--wl-ink);
+  font-family: var(--wl-font);
+}
+
+[data-wl-state],
+:root {
+  transition: background-color 200ms ease-out;
+}
+
+/* The page behind follows the screen root's state, so overscroll and the gaps around a
+ * max-width page are the state colour. No state: the legacy body background stays. */
+:root:has([data-screen-id][data-wl-state="plan"]) {
+  background-color: var(--wl-color-plan-bg);
+}
+:root:has([data-screen-id][data-wl-state="lift"]) {
+  background-color: var(--wl-color-lift-bg);
+}
+:root:has([data-screen-id][data-wl-state="rest"]) {
+  background-color: var(--wl-color-rest-bg);
+}
+:root:has([data-screen-id][data-wl-state]) body {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-wl-state],
+  :root {
+    transition: none;
+  }
+}
+
 /* Type scale (T-0546, D-0203 §2; docs/specs/visual-foundation.md §3). rem only, so browser
  * text zoom scales it (WCAG 1.4.4). Spacing comes from .wl-page / .wl-card gaps, never from
  * heading margins. Uppercase is CSS only: DOM text keeps its catalogue case. */
@@ -92,7 +244,8 @@ legend.wl-label,
   inline-size: 100%;
   max-inline-size: 640px;
   margin-inline: auto;
-  padding-inline: max(20px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-right));
+  padding-inline: max(var(--wl-gutter), env(safe-area-inset-left))
+    max(var(--wl-gutter), env(safe-area-inset-right));
   padding-block: max(24px, env(safe-area-inset-top)) 32px;
   display: flex;
   flex-direction: column;
@@ -210,4 +363,148 @@ legend.wl-label,
   background: var(--wl-color-bg);
   border: 1px solid var(--wl-color-text-muted);
   border-radius: 12px;
+}
+
+/* State type scale (D-0208, D-0211; handoff README "Type"). Role classes under a state, rem only.
+ * Element defaults use :where() so a role class always wins. No uppercase under a state. */
+[data-wl-state] :where(h1, h2, h3) {
+  margin: 0;
+  font-family: var(--wl-font);
+  text-transform: none;
+  color: var(--wl-ink);
+}
+
+[data-wl-state] .wl-type-hero {
+  font-size: clamp(6rem, 26vw, 7rem);
+  line-height: 0.88;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+
+[data-wl-state] :where(h1),
+[data-wl-state] .wl-type-page-title {
+  font-size: 3.5rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  overflow-wrap: anywhere;
+}
+
+[data-wl-state] .wl-type-section {
+  font-size: 2.75rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+[data-wl-state] .wl-type-stat {
+  font-size: 2.125rem;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+[data-wl-state] :where(h2, h3),
+[data-wl-state] .wl-type-row-title {
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  font-weight: 600;
+  letter-spacing: normal;
+}
+
+[data-wl-state] .wl-type-body {
+  font-size: 1.0625rem;
+  line-height: 1.45;
+}
+
+[data-wl-state] .wl-type-label {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  font-weight: 400;
+  color: var(--wl-ink-muted);
+}
+
+[data-wl-state] .wl-type-button {
+  font-size: 1.375rem;
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+/* Session overrides (lift and rest). */
+[data-wl-state="lift"] :where(h1),
+[data-wl-state="rest"] :where(h1),
+[data-wl-state="lift"] .wl-type-page-title,
+[data-wl-state="rest"] .wl-type-page-title {
+  font-size: 2.75rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+[data-wl-state="lift"] .wl-type-section,
+[data-wl-state="rest"] .wl-type-section {
+  font-size: 4rem;
+  font-weight: 800;
+}
+
+[data-wl-state="lift"] .wl-type-stat,
+[data-wl-state="rest"] .wl-type-stat {
+  font-size: 3.5rem;
+  font-weight: 800;
+}
+
+[data-wl-state="lift"] .wl-type-hero-number,
+[data-wl-state="rest"] .wl-type-hero-number {
+  font-size: 9.375rem;
+  line-height: 0.85;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+[data-wl-state="lift"] .wl-type-countdown,
+[data-wl-state="rest"] .wl-type-countdown {
+  font-size: 18.75rem;
+  line-height: 0.85;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+}
+
+[data-wl-state="lift"] :where(h2, h3),
+[data-wl-state="rest"] :where(h2, h3),
+[data-wl-state="lift"] .wl-type-row-title,
+[data-wl-state="rest"] .wl-type-row-title {
+  font-weight: 800;
+}
+
+[data-wl-state="lift"] .wl-type-label,
+[data-wl-state="rest"] .wl-type-label {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+[data-wl-state="lift"] .wl-type-button,
+[data-wl-state="rest"] .wl-type-button {
+  font-size: 1.5rem;
+  font-weight: 800;
+}
+
+/* The big titles end with a full stop that is decoration, not name: the "." / "" form gives the
+ * pseudo-element empty alt text. Without support a drawn dot stands in, which has no text. */
+.wl-title--stop::after {
+  content: "";
+  display: inline-block;
+  inline-size: 0.12em;
+  block-size: 0.12em;
+  margin-inline-start: 0.04em;
+  background: currentColor;
+}
+
+@supports (content: "." / "") {
+  .wl-title--stop::after {
+    content: "." / "";
+    display: inline;
+    inline-size: auto;
+    block-size: auto;
+    margin-inline-start: 0;
+    background: none;
+  }
 }

@@ -94,6 +94,29 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
   });
 });
 
+// T-0589 AC7: the uppercase transform is the unmigrated default; a state root turns it off.
+test.describe("T-0589 AC7 no uppercase under a state (390 x 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+  test("h1 and h2 are text-transform none inside a state, uppercase outside", async ({ page }) => {
+    await page.goto("/welcome");
+    await expect(page.locator("h1").first()).toBeVisible();
+    const got = await page.evaluate(() => {
+      const host = document.createElement("div");
+      host.innerHTML =
+        '<div data-wl-state="plan"><h1>a</h1><h2>b</h2></div><div><h1>c</h1><h2>d</h2></div>';
+      document.body.appendChild(host);
+      const t = (sel: string) => getComputedStyle(host.querySelector(sel)!).textTransform;
+      return {
+        inH1: t("[data-wl-state] h1"),
+        inH2: t("[data-wl-state] h2"),
+        outH1: t("div:not([data-wl-state]) > h1"),
+        outH2: t("div:not([data-wl-state]) > h2"),
+      };
+    });
+    expect(got).toEqual({ inH1: "none", inH2: "none", outH1: "uppercase", outH2: "uppercase" });
+  });
+});
+
 test.describe("AC6 screenshots for the visual check (390 x 844)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
   const SHOTS = {
