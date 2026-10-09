@@ -1,6 +1,10 @@
 // C-02 Tab bar (D-0045 §3, principle 1). Four tabs, always in this order. Rendered by
 // `App.tsx` only outside `/welcome`, `/account`, `/auth/*` and `/session/*`.
 import { Link, useLocation } from "react-router";
+// Nothing renders SessionProgress or the drain yet (UF-09, UF-03.2); importing them keeps their
+// sheets in the bundle. Drop these two lines once those screens import them.
+import "../drain/index.js";
+import "../session-progress/index.js";
 import { en } from "../../lib/i18n/en.js";
 
 const TABS = [

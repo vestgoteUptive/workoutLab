@@ -150,12 +150,15 @@ test.describe("AC1 tab bar look", () => {
     );
     await page.locator('.wl-tab-bar__link[aria-current="page"]').hover();
     expect((await css(page, ".wl-tab-bar__link:hover", ["color"]))[0]).toBe(rgb(plan.ink!));
+    await page.locator(".wl-tab-bar__link").first().focus();
+    await page.keyboard.press("Shift+Tab");
     await page.keyboard.press("Tab");
-    const focused = await page.evaluate(() => {
-      const el = document.activeElement as HTMLElement | null;
-      return el ? getComputedStyle(el).outlineColor : "";
+    const outline = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement;
+      const cs = getComputedStyle(el);
+      return [el.className, cs.outlineWidth, cs.outlineStyle, cs.outlineColor];
     });
-    expect(focused).not.toBe("");
+    expect(outline).toEqual(["wl-tab-bar__link", "2px", "solid", rgb(plan.ink!)]);
   });
 
   test("the bar is the height of its spacer", async ({ page }) => {
@@ -284,7 +287,7 @@ test.describe("AC5 drain motion and paint", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await inject(page, DRAIN(50, "wl-drain--deep"));
     const [top, bottom] = await pixels(page);
-    expect(top).toBe(rgb(lift.bg!));
-    expect(bottom).toBe(rgb(lift["bg-deep"]!));
+    expect(top).toBe(rgb(lift["bg-deep"]!));
+    expect(bottom).toBe(rgb(lift.bg!));
   });
 });

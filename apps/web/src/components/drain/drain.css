@@ -9,8 +9,8 @@
 .wl-drain {
   background: linear-gradient(
     to top,
-    var(--wl-color-lift-bg) var(--wl-drain),
-    var(--wl-color-rest-bg) var(--wl-drain)
+    var(--wl-color-lift-bg) var(--wl-drain, 0%),
+    var(--wl-color-rest-bg) var(--wl-drain, 0%)
   );
   transition: --wl-drain 1s linear;
 }
@@ -18,8 +18,8 @@
 .wl-drain--deep {
   background: linear-gradient(
     to top,
-    var(--wl-color-lift-bg-deep) var(--wl-drain),
-    var(--wl-color-lift-bg) var(--wl-drain)
+    var(--wl-color-lift-bg) var(--wl-drain, 0%),
+    var(--wl-color-lift-bg-deep) var(--wl-drain, 0%)
   );
 }
 

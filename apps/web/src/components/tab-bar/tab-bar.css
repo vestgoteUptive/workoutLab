@@ -1,8 +1,6 @@
 /* C-02 Tab bar styling (T-0594, D-0210 §4). Colours come only from the --wl-* state variables
  * (the nav sets data-wl-state="plan"), which resolve to @workoutlab/design-tokens (D-0019).
- * The two sibling component sheets are pulled in here until UF-09 and UF-03.2 import them. */
-@import "../drain/drain.css";
-@import "../session-progress/session-progress.css";
+ */
 
 :root {
   /* D-0196 §3: the one size shared by the bar, its spacer and the scroll padding. */

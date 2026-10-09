@@ -1,4 +1,5 @@
 // SessionProgress (T-0594, D-0211): pause button, one segment per step, and the counter.
+import "./session-progress.css";
 import { PauseIcon } from "../icons/index.js";
 
 export interface SessionProgressProps {
