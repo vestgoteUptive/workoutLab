@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-02.1, UF-09.3]
 decisions: [D-0208, D-0213]
 deps: []
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213 §6). Flow: wl-build-qa (agent qa-tester). About ½ day. Every Cobalt screen ticket's "visual compare" AC calls this helper. No fixture or config change, so the full e2e suite isn't needed. -->
 ## Why
@@ -55,3 +55,4 @@ none
 Tests for every AC pass · `npx playwright test tests/e2e/canvas-compare.spec.ts` green with and without `WL_CANVAS_COMPARE=1` · `-w test:repo-checks` (check-e2e-wiring) and check-all green · commit messages start with `T-0591`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0591.md` (D-0157).

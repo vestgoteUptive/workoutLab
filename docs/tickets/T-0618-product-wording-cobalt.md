@@ -5,7 +5,7 @@ lane: product
 screens: [UF-02.1, UF-04.1, UF-09.2, UF-09.3, UF-09.5, UF-09.6, UF-09.7, UF-09.9]
 decisions: [D-0208, D-0210, D-0211, D-0212, D-0002]
 deps: []
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-spec (agent product-owner). About ¼ day, docs only. Screen IDs don't change (D-0002); only description cells and default text do. Spec-first, so the UF-09 tickets are accepted against the new rows. -->
 ## Why
@@ -53,3 +53,4 @@ none (screen IDs unchanged)
 check-all green · `format:check` green · commit messages start with `T-0618` and cite the UF IDs.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0618.md` (D-0157).

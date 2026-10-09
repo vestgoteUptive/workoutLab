@@ -13,6 +13,10 @@ import type { Page } from "@playwright/test";
 
 const DISPLAY = '800 40px "Big Shoulders Display"';
 const BODY = '400 16px "DM Sans"';
+// T-0588 (D-0210): the state pair ships and loads alongside the legacy pair.
+const PLAN = '700 56px "Familjen Grotesk"';
+const SESSION = '800 150px "Bricolage Grotesque"';
+const FAMILIES = ["Big Shoulders Display", "DM Sans", "Familjen Grotesk", "Bricolage Grotesque"];
 const ORIGIN = new URL(BASE_URL).origin;
 
 test.use({ viewport: { width: 390, height: 844 } });
@@ -40,25 +44,29 @@ function watchFonts(page: Page) {
 async function expectFontsLoaded(page: Page) {
   await page.evaluate(() => document.fonts.ready);
   const result = await page.evaluate(
-    async ([display, body]) => {
+    async ([display, body, plan, session, families]) => {
       await document.fonts.load(display!);
       await document.fonts.load(body!);
-      const faces = [...document.fonts].filter(
-        (f) =>
-          f.family.replace(/"/g, "") === "Big Shoulders Display" ||
-          f.family.replace(/"/g, "") === "DM Sans",
+      await document.fonts.load(plan!);
+      await document.fonts.load(session!);
+      const faces = [...document.fonts].filter((f) =>
+        (families as string[]).includes(f.family.replace(/"/g, "")),
       );
       return {
         display: document.fonts.check(display!),
         body: document.fonts.check(body!),
+        plan: document.fonts.check(plan!),
+        session: document.fonts.check(session!),
         statuses: faces.map((f) => f.status),
       };
     },
-    [DISPLAY, BODY],
+    [DISPLAY, BODY, PLAN, SESSION, FAMILIES] as const,
   );
   expect(result.display).toBe(true);
   expect(result.body).toBe(true);
-  expect(result.statuses.length).toBe(2);
+  expect(result.plan).toBe(true);
+  expect(result.session).toBe(true);
+  expect(result.statuses.length).toBe(4);
   expect(result.statuses.every((s) => s === "loaded")).toBe(true);
 }
 
@@ -74,14 +82,14 @@ function expectSameOriginOnce(responses: { url: string; status: number }[]) {
 }
 
 test.describe("T-0545 fonts load online (AC3)", () => {
-  test("UF-01.1 /welcome loads both fonts once, same origin", async ({ page }) => {
+  test("UF-01.1 /welcome loads all four fonts once, same origin", async ({ page }) => {
     const { responses } = watchFonts(page);
     await page.goto("/welcome");
     await expectFontsLoaded(page);
     expectSameOriginOnce(responses);
   });
 
-  test("UF-11.2 /plan loads both fonts once, same origin", async ({ page }) => {
+  test("UF-11.2 /plan loads all four fonts once, same origin", async ({ page }) => {
     await page.goto("/welcome");
     await injectSession(page);
     const { responses } = watchFonts(page);
@@ -91,13 +99,26 @@ test.describe("T-0545 fonts load online (AC3)", () => {
   });
 });
 
+test.describe("T-0588 AC4 no visible change", () => {
+  test("UF-11.2 /plan h1 still uses Big Shoulders Display", async ({ page }) => {
+    await page.goto("/welcome");
+    await injectSession(page);
+    await page.goto("/plan");
+    const family = await page
+      .locator("h1")
+      .first()
+      .evaluate((e) => getComputedStyle(e).fontFamily);
+    expect(family).toMatch(/^"?Big Shoulders Display/);
+  });
+});
+
 test.describe("T-0545 fonts load offline (AC4)", () => {
-  test("UF-11.2 /plan reload offline still has both fonts", async ({ page, context }) => {
+  test("UF-11.2 /plan reload offline still has all four fonts", async ({ page, context }) => {
     await page.goto("/welcome");
     await injectSession(page);
     await page.goto("/plan");
     await page.evaluate(() => navigator.serviceWorker.ready);
-    // The precache must settle (count-stable) and hold both woff2 files.
+    // The precache must settle (count-stable) and hold all four woff2 files.
     await expect
       .poll(async () =>
         page.evaluate(async () => {
@@ -107,7 +128,7 @@ test.describe("T-0545 fonts load offline (AC4)", () => {
           return reqs.filter((r) => r.url.endsWith(".woff2")).length;
         }),
       )
-      .toBe(2);
+      .toBe(4);
 
     await context.setOffline(true);
     const { failed } = watchFonts(page);

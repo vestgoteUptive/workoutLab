@@ -51,6 +51,7 @@ Checklist (D-0197 §7):
 - `apps/web/src/features/UF-09/**` (lane)
 - `apps/web/src/lib/i18n/flows/uf-09.ts` (own flow file)
 - `tests/e2e/uf-09-focus.spec.ts`, `tests/e2e/uf-09-offline.spec.ts` (listed extras)
+- `apps/web/src/features/UF-03/__tests__/list-view.host.test.tsx`, `apps/web/src/features/UF-03/__tests__/list-view.logging.host.test.tsx`, `tests/e2e/uf-05-swap.spec.ts`, `tests/e2e/uf-08-setup.spec.ts` (orchestrator grant: text-only updates forced by removing the old set-line copy)
 - `docs/tickets/T-0619-uf09-state-captions.md` (log only)
 
 ## Contract impact

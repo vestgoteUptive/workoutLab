@@ -1,5 +1,7 @@
 # Visual foundation: fonts, page gutter, heading scale
 
+> **Amended (T-0618):** for screens with a state, the fonts, gutter, type scale and card rules below are amended by D-0208, D-0210 and D-0211. §4 is decided by D-0211 §1.
+
 - **Why:** GitHub #37 (Plan is confusing) and #45 (Account looks horrible). Both screens share three foundation faults that no screen spec can fix alone:
   1. **No design font ships.** No `@font-face` exists anywhere in the repo, so `--wl-font-display` and `--wl-font-body` always resolve to their system fallbacks. Every heading on prod renders in the iOS system font.
   2. **No page gutter on UF-11.** The UF-11 screens (`/plan`, `/plan/edit`, `/plan/account`) have no horizontal padding, so text touches the screen edge. Other screens each set their own `padding: 16px` on their root class. There is no shared rule.

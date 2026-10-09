@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-01.1, UF-11.2, UF-09.3]
 decisions: [D-0208, D-0209, D-0210, D-0203]
 deps: []
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ¼ day. There's no visible change: no screen uses --wl-font-plan/session until T-0589 maps them under [data-wl-state]. Paths are disjoint from T-0915 (lib/pwa). -->
 ## Why
@@ -49,3 +49,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `npx playwright test tests/e2e/fonts.spec.ts tests/e2e/visual-foundation.spec.ts` green · commit messages start with `T-0588`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0588.md` (D-0157).

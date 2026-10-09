@@ -31,6 +31,8 @@ CSS variable: `--wl-color-<state>-<name>`, e.g. `plan.ink-muted` is `--wl-color-
 | `plan.attention` | `#FFB3A3` | "Needs attention" outline and label (Balance), below-target bar (Progress) |
 | `plan.selected` | `#FFFFFF` | Selected chip or segment |
 | `plan.on-selected` | `#2337C6` | Text on `plan.selected` |
+| `plan.ink-on-raise` | `#DDE3FF` | Labels on `plan.raise` tiles (4.9:1; D-0211 §1). Text on `raise` uses `ink` or `ink-on-raise`, never `ink-muted` (4.2:1) |
+| `plan.scrim` | `#0E1652` | Sheet dim, at 45 %: `color-mix(in oklch, var(--wl-color-plan-scrim) 45%, transparent)` (D-0211 §1) |
 | `lift.bg` | `#CC4225` | Lift background (not the mock's `#D9472B`, which gives white 4.3:1) |
 | `lift.bg-deep` | `#B33520` | Top band of a timed or warm-up countdown fill |
 | `lift.line` | `#EE8E7B` | Hairlines (decorative) |
@@ -63,6 +65,8 @@ CSS variable: `--wl-color-<state>-<name>`, e.g. `plan.ink-muted` is `--wl-color-
 | 3 | `--wl-color-plan-coverage-3` | `#C9D6FB` |
 | 4 | `--wl-color-plan-coverage-4` | `#FFFFFF` |
 
+`meta.planCoverage[n].requiresLabel` (D-0211 §1) is true when step n is below 3:1 on `plan.bg`: steps 0 and 1 (1.4 and 2.4) need their numeric label, steps 2–4 (3.9, 6.0, 8.6) don't. The tests recompute every flag from the built ramp.
+
 The C-01 body figure recolour for `plan.bg` needs its own design check before it ships (D-0208 Q3).
 
 ### Contrast (WCAG 2.2 AA, enforced by tests)
@@ -74,6 +78,7 @@ Computed from the tokens by `packages/design-tokens/test/cobalt.test.ts`. A pair
 | `plan.ink` (white) on `plan.bg` | 8.6 | 4.5 |
 | `plan.ink-muted` on `plan.bg` | 5.9 | 4.5 |
 | `plan.ink` (white) on `plan.raise` | 6.2 | 4.5 |
+| `plan.ink-on-raise` on `plan.raise` | 4.9 | 4.5 |
 | `lift.ink` (white) on `lift.bg` | 4.8 | 4.5 |
 | `rest.ink` (white) on `rest.bg` | 4.9 | 4.5 |
 | `lift.on-action` on `lift.action` (white) | 6.1 | 4.5 |
@@ -84,6 +89,7 @@ Computed from the tokens by `packages/design-tokens/test/cobalt.test.ts`. A pair
 
 - `lift.bg` is `#CC4225` because white on the mock's `#D9472B` is 4.3:1; a test plants that value and fails.
 - Lift and rest are almost the same luminance (1.03:1), so they differ by hue only. Every session screen names its state in text ("Lifting", "Rest", "Get ready", "Warm-up"); keep those labels, they are the colour-blind fallback.
+- `plan.ink-muted` on `plan.raise` is 4.2:1 and fails text contrast (a test keeps it failing), so labels on raise tiles use `plan.ink-on-raise` (D-0211 §4).
 - `line` and `progress-off` colours are decorative (no 3:1 duty). Information never rests on them alone.
 
 ### Type (D-0208)
@@ -110,7 +116,8 @@ Computed from the tokens by `packages/design-tokens/test/cobalt.test.ts`. A pair
 ### Spacing and radius
 
 - Gutters: `--wl-space-gutter-plan` 28 px, `--wl-space-gutter-session` 26 px (replaces the 20 px `.wl-page` gutter once screens migrate; the 640 px max width stays). `--wl-space-top-safe` 72 px and `--wl-space-bottom-safe` 44 px are the 390 × 844 frame values; code uses `env(safe-area-inset-*)` instead.
-- Radius (`--wl-radius-<name>`): `pill` 999 px (pill buttons, chips, segmented controls), `session-button` 22 px, `sheet` 28 px (top corners only), `option` 16 px (selected option rows), `tile` 12 px, `input` 12 px, `segment` 4 px.
+- Radius (`--wl-radius-<name>`): `pill` 999 px (pill buttons, chips, segmented controls), `session-button` 22 px, `sheet` 28 px (top corners only), `option` 16 px (selected option rows), `tile` 12 px, `input` 12 px, `segment` 4 px (no app use; D-0211 §1), and `--wl-radius-progress` 2 px for session progress segments (D-0211 §1).
+- Option bleed: `--wl-space-option-bleed` 18 px, how far the selected option row bleeds past the gutter. Negative margins are computed from `--wl-gutter` and this token, never a literal (D-0211 §3).
 - Touch targets ≥ 44 px. Focus-mode numbers (hero number) stay readable at arm's length.
 
 ## Chalk & Iron (D-0019) — in use until the app screens migrate

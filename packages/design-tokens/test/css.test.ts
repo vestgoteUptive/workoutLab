@@ -38,8 +38,8 @@ describe("AC9 CSS output (offline)", () => {
     for (const [name, hex] of flat) {
       expect(css).toContain(`--wl-color-${name}: ${hex};`);
     }
-    // 17 flat + 29 D-0208 state colours + 5 plan coverage stops (T-0583).
-    expect(css.match(/--wl-color-/g)).toHaveLength(17 + 29 + 5);
+    // 17 flat + 31 D-0208 state colours (29 from T-0583, 2 from T-0587) + 5 plan coverage stops.
+    expect(css.match(/--wl-color-/g)).toHaveLength(17 + 31 + 5);
     expect(css).toContain(`--wl-font-display: ${raw.font.display.family};`);
     expect(css).toContain(`--wl-font-body: ${raw.font.body.family};`);
   });

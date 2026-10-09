@@ -5,7 +5,7 @@ lane: design
 screens: []
 decisions: [D-0208, D-0209, D-0210, D-0211]
 deps: []
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-design (agent designer). About ¼ day. Contract change: forced full gate. -->
 ## Why
@@ -61,3 +61,4 @@ Checklist (D-0197 §7):
 Tests for every AC pass · forced full gate green · `-w test:repo-checks`, `format:check` and `check-all` green · commit messages start with `T-0587` and cite D-0211.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0587.md` (D-0157).
