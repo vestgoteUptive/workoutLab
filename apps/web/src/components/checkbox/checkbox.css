@@ -11,7 +11,7 @@
   color: var(--wl-color-text);
   font-family: var(--wl-font-body);
   font-weight: 500;
-  font-size: 15px;
+  font-size: 0.9375rem;
 }
 
 .wl-checkbox__input {
@@ -70,4 +70,52 @@
 .wl-checkbox__label {
   min-inline-size: 0;
   overflow-wrap: anywhere;
+}
+
+/* Cobalt (T-0593, D-0210 §3, D-0211): under a state or paper the box reads the generic variables.
+   A 22 px box with a 1.5 px --wl-ink-muted border, a --wl-selected fill and an --wl-on-selected
+   tick. Outside a state none of this applies, so the legacy look above is untouched. Disabled is
+   aria-disabled (data-disabled), and never changes the checked fill or tick. */
+:is([data-wl-state], .wl-paper) .wl-checkbox {
+  color: var(--wl-ink);
+  font-family: var(--wl-font);
+}
+
+:is([data-wl-state], .wl-paper) .wl-checkbox__input {
+  inline-size: 22px;
+  block-size: 22px;
+  border: 1.5px solid var(--wl-ink-muted);
+  border-radius: 6px;
+}
+
+:is([data-wl-state], .wl-paper) .wl-checkbox__input:hover {
+  border-color: var(--wl-ink);
+}
+
+:is([data-wl-state], .wl-paper) .wl-checkbox__input:checked,
+:is([data-wl-state], .wl-paper) .wl-checkbox__input:checked:hover {
+  background: var(--wl-selected);
+  border-color: var(--wl-selected);
+}
+
+:is([data-wl-state], .wl-paper) .wl-checkbox__input:checked::after {
+  border-color: var(--wl-on-selected);
+}
+
+:is([data-wl-state], .wl-paper) .wl-checkbox:has(.wl-checkbox__input:focus-visible) {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+:is([data-wl-state], .wl-paper) .wl-checkbox[data-disabled] {
+  color: var(--wl-ink-muted);
+}
+
+:is([data-wl-state], .wl-paper) .wl-checkbox[data-disabled] .wl-checkbox__input:not(:checked) {
+  border-color: var(--wl-ink-muted);
+}
+
+:is([data-wl-state], .wl-paper) .wl-checkbox[data-disabled] .wl-checkbox__input:checked {
+  background: var(--wl-selected);
+  border-color: var(--wl-selected);
 }

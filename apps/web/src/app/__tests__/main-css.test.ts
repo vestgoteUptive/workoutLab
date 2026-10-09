@@ -196,7 +196,8 @@ describe("T-0592 AC8 scoping of the shared controls (D-0210 §3)", () => {
     selectors: splitTop(m[1]!.replace(/\s+/g, " ")),
     body: m[2]!,
   }));
-  const NEW = /\.wl-(button--session|button--session-outline|option|segmented|chip)\b/;
+  const NEW =
+    /\.wl-(button--session|button--session-outline|option|segmented|chip|toggle|sheet|sheet__grabber|sheet-scrim|input__error|input__error-icon|paper)\b/;
   const LEGACY = /\.wl-(button--primary|button--secondary|button--text|row|card)\b/;
   const SCOPED =
     /^(:is\((?:\[data-wl-state[^\]]*\]|\.wl-paper)(?:, (?:\[data-wl-state[^\]]*\]|\.wl-paper))*\)|\[data-wl-state[^\]]*\]|\.wl-paper)(?![\w-])/;
@@ -243,5 +244,81 @@ describe("T-0592 AC8 scoping of the shared controls (D-0210 §3)", () => {
         /--wl-color-(bg|text|accent|surface|line|on-accent|warn)\b/,
       );
     }
+  });
+});
+
+// T-0593 AC8: the toggle, input, sheet, scrim and paper rules follow the same scoping rule.
+describe("T-0593 scoping and values of the shared surfaces (D-0210 §3, D-0211 §5)", () => {
+  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const rules = [...stripped.matchAll(/([^{};]+)\{([^{}]*)\}/g)].map((m) => ({
+    selectors: m[1]!
+      .replace(/\s+/g, " ")
+      .trim()
+      .split(/,(?![^(]*\))/)
+      .map((x) => x.trim()),
+    body: m[2]!,
+  }));
+  // A selector matches when it ends with `sel`, so ".wl-input" is not ".wl-input:hover".
+  const bodyOf = (sel: string) =>
+    rules
+      .filter((r) => r.selectors.some((s) => s.endsWith(sel)))
+      .map((r) => r.body)
+      .join("\n");
+  const SCOPED = /^(:is\((\[data-wl-state[^\]]*\]|\.wl-paper)|\[data-wl-state[^\]]*\]|\.wl-paper)/;
+
+  it("every .wl-input rule that reads a state variable starts at a state root or paper", () => {
+    const hits = rules.filter((r) => r.selectors.some((s) => /\.wl-input\b(?!__)/.test(s)));
+    expect(hits.length).toBeGreaterThan(5);
+    const legacy = hits.filter((r) => r.selectors.some((s) => !SCOPED.test(s)));
+    expect(legacy).toHaveLength(1);
+    expect(legacy[0]!.body).toMatch(/border:\s*1px solid var\(--wl-color-text-muted\)/);
+    expect(legacy[0]!.body).not.toMatch(/--wl-(radius|ink|attention|focus)\b/);
+  });
+
+  it("the toggle is 48 x 28 with a 1.5px muted outline and a selected on-state", () => {
+    expect(bodyOf(".wl-toggle > input")).toMatch(/inline-size:\s*48px/);
+    expect(bodyOf(".wl-toggle > input")).toMatch(/block-size:\s*28px/);
+    expect(bodyOf(".wl-toggle > input")).toMatch(/border:\s*1\.5px solid var\(--wl-ink-muted\)/);
+    expect(bodyOf(".wl-toggle > input:checked")).toMatch(/background:\s*var\(--wl-selected\)/);
+    expect(bodyOf(".wl-toggle > input:checked::after")).toMatch(/var\(--wl-on-selected\)/);
+  });
+
+  it("the input error is a 2px attention border; lift and rest show the icon, plan and paper do not", () => {
+    expect(bodyOf('.wl-input[aria-invalid="true"]')).toMatch(
+      /border:\s*2px solid var\(--wl-attention\)/,
+    );
+    expect(bodyOf(".wl-input__error")).toMatch(/color:\s*var\(--wl-attention\)/);
+    expect(bodyOf(".wl-input")).toMatch(/border-radius:\s*var\(--wl-radius-input\)/);
+  });
+
+  it("the sheet, grabber, scrim and paper carry the spec values", () => {
+    const sheet = bodyOf("[data-wl-state].wl-sheet");
+    expect(sheet).toMatch(/inset-block:\s*150px 0/);
+    expect(sheet).toMatch(/border-radius:\s*var\(--wl-radius-sheet\) var\(--wl-radius-sheet\) 0 0/);
+    expect(sheet).toMatch(/transition:\s*none/);
+    expect(bodyOf(".wl-sheet__grabber")).toMatch(/inline-size:\s*40px/);
+    expect(bodyOf(".wl-sheet__grabber")).toMatch(/block-size:\s*4px/);
+    expect(bodyOf(".wl-sheet__grabber")).toMatch(/background:\s*var\(--wl-line\)/);
+    expect(bodyOf(".wl-sheet-scrim")).toMatch(
+      /color-mix\(in oklch, var\(--wl-color-plan-scrim\) 45%, transparent\)/,
+    );
+    const paper = rules.filter(
+      (r) => r.selectors.includes(".wl-paper") && /margin-inline/.test(r.body),
+    );
+    expect(paper).toHaveLength(1);
+    expect(paper[0]!.body).toMatch(/margin-inline:\s*calc\(-1 \* var\(--wl-gutter\)\)/);
+    expect(paper[0]!.body).toMatch(/padding:\s*20px var\(--wl-gutter\)/);
+    expect(paper[0]!.body).toMatch(/border-radius:\s*0/);
+  });
+
+  it("the account-deleted notice keeps the legacy surface and reads raise, ink and tile radius in a state", () => {
+    const rule = (sel: string) => rules.filter((r) => r.selectors.includes(sel)).map((r) => r.body);
+    const base = rule(".wl-account-deleted").join("\n");
+    expect(base).toMatch(/background:\s*var\(--wl-color-surface\)/);
+    expect(base).not.toMatch(/--wl-(raise|ink|radius)/);
+    const scoped = bodyOf(".wl-account-deleted").split("\n").join(" ");
+    expect(scoped).toMatch(/background:\s*var\(--wl-raise\)/);
+    expect(scoped).toMatch(/color:\s*var\(--wl-ink\)/);
+    expect(scoped).toMatch(/border-radius:\s*var\(--wl-radius-tile\)/);
   });
 });

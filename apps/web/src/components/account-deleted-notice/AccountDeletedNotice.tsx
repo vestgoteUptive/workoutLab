@@ -48,9 +48,9 @@
 // way, a `pagehide` that fires after Dismiss (the restore state already cleared) never resurrects
 // a notice the user already dismissed.
 //
-// Imports only react, auth-context and the catalogue: no `lib/account`, no `lib/offline`, and
-// no stylesheet, so the inline styles below use design-token CSS variables only.
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+// Imports only react, auth-context and the catalogue: no `lib/account`, no `lib/offline`, and no
+// stylesheet. Its classes (`wl-account-deleted*`) are styled in `main.css` (T-0593).
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 
@@ -88,32 +88,6 @@ function restore(kind: NoticeKind): void {
     // mount-time read already has nothing to lose here either.
   }
 }
-
-const boxStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  margin: "12px 16px",
-  padding: "8px 8px 8px 16px",
-  background: "var(--wl-color-surface)",
-  color: "var(--wl-color-text)",
-  border: "1px solid var(--wl-color-line-strong)",
-  borderRadius: "8px",
-};
-
-const textStyle: CSSProperties = { flex: "1 1 auto", margin: 0 };
-
-const buttonStyle: CSSProperties = {
-  minWidth: "44px",
-  minHeight: "44px",
-  padding: "0 12px",
-  background: "transparent",
-  color: "var(--wl-color-accent)",
-  border: "1px solid var(--wl-color-line-strong)",
-  borderRadius: "6px",
-  font: "inherit",
-  cursor: "pointer",
-};
 
 export function AccountDeletedNotice() {
   const { status } = useAuth();
@@ -165,13 +139,14 @@ export function AccountDeletedNotice() {
 
   if (!kind) return null;
   return (
-    <div role="status" aria-live="polite" style={boxStyle}>
-      <p style={textStyle}>
+    <div role="status" aria-live="polite" className="wl-account-deleted">
+      <p className="wl-account-deleted__text">
         {kind === "done" ? en.accountDeleted.done : en.accountDeleted.partial}
       </p>
       <button
         type="button"
-        style={buttonStyle}
+        className="wl-account-deleted__button"
+        style={{ minWidth: "44px", minHeight: "44px" }}
         onClick={() => {
           // Clears the restore state *and* removes the key again: a `pagehide` that fired
           // without an actual unload (e.g. the tab merely backgrounded) may already have

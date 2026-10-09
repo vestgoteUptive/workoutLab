@@ -18,3 +18,14 @@
 .wl-offline-status__text {
   color: var(--wl-color-text-muted);
 }
+
+/* Cobalt (T-0593, D-0210 §3): under a state or paper the offline line and its dot read --wl-ink
+   (in plan 8.6:1; --wl-ink-muted would be 5.9, but the line is the one cue that data is stale). */
+:is([data-wl-state], .wl-paper) .wl-offline-status__text {
+  color: var(--wl-ink);
+}
+
+:is([data-wl-state], .wl-paper) .wl-offline-status__icon {
+  background: var(--wl-ink);
+  border-color: var(--wl-ink);
+}
