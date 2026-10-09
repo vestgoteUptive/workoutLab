@@ -5,7 +5,7 @@ lane: web-feature:UF-10
 screens: [UF-10.1]
 decisions: []
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Seen in the T-0615 review: 1 failure in 3 runs of the UF-10 vitest folder, a `waitFor` timeout on a lazy route. This is after T-0910.
