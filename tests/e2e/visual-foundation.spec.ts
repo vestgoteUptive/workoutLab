@@ -175,7 +175,11 @@ test.describe("AC4 gutter and no overflow on screens that already pad (360 x 740
   }
 });
 
-// AC5: values read on `main` at 7b57f2b (before T-0546) and written here as constants.
+// AC5: UF-09.1 keeps the values read on `main` at 7b57f2b (before T-0546), written here as
+// constants, until T-0596 to T-0598 restyle it. T-0595 (D-0208, D-0211) restyles UF-09.3 and
+// UF-09.4 into the lift state, so their sizes are pinned to the Cobalt values instead:
+// the root gutter 26 px (--wl-space-gutter-session) and the session type roles (the 150 px load
+// is pinned in uf-09-focus.spec.ts, where the plan has a known weight).
 const MAIN_UF09 = {
   rootPadding: "16px",
   titleFontSize: "32px",
@@ -185,46 +189,57 @@ const MAIN_UF09 = {
   timerFontSize: "64px",
 };
 
-test.describe("AC5 focus mode is untouched (390 x 844)", () => {
+const LIFT_UF09 = {
+  rootPaddingInline: "26px",
+  titleFontSize: "44px",
+  titleFontWeight: "800",
+  titleTextTransform: "none",
+  heroFontWeight: "800",
+};
+
+async function openFocusMode(page: Page): Promise<void> {
+  const profileRow = { ...profile, user_id: FAKE_USER_ID };
+  const targets = [
+    "chest",
+    "back",
+    "shoulders",
+    "arms",
+    "core",
+    "glutes",
+    "quads",
+    "hamstrings",
+    "calves",
+  ].map((area) => ({
+    area_id: area,
+    sets_per_14d: 12,
+    source: "default",
+    updated_at: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+  }));
+  await mockSupabaseData(page, {
+    sets: [],
+    exercises,
+    exerciseAreas,
+    areaTargets: targets,
+    profile: profileRow,
+  });
+  await mockProfilePresent(page, profileRow);
+  await page.goto("/");
+  await injectSession(page);
+  await page.goto("/");
+  await page.getByRole("link", { name: "Start workout" }).click();
+  await page.getByRole("button", { name: "30 minutes" }).click();
+  await page.getByRole("button", { name: "Suggest my workout" }).click();
+  await page.getByRole("button", { name: "Looks good" }).click();
+  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
+  await expect(page.locator(".wl-uf09__timer")).toBeVisible();
+}
+
+test.describe("AC5 focus mode sizes (390 x 844)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("/session/<id> keeps main's UF-09 sizes", async ({ page }) => {
-    const profileRow = { ...profile, user_id: FAKE_USER_ID };
-    const targets = [
-      "chest",
-      "back",
-      "shoulders",
-      "arms",
-      "core",
-      "glutes",
-      "quads",
-      "hamstrings",
-      "calves",
-    ].map((area) => ({
-      area_id: area,
-      sets_per_14d: 12,
-      source: "default",
-      updated_at: new Date(Date.now() - 30 * 86_400_000).toISOString(),
-    }));
-    await mockSupabaseData(page, {
-      sets: [],
-      exercises,
-      exerciseAreas,
-      areaTargets: targets,
-      profile: profileRow,
-    });
-    await mockProfilePresent(page, profileRow);
-    await page.goto("/");
-    await injectSession(page);
-    await page.goto("/");
-    await page.getByRole("link", { name: "Start workout" }).click();
-    await page.getByRole("button", { name: "30 minutes" }).click();
-    await page.getByRole("button", { name: "Suggest my workout" }).click();
-    await page.getByRole("button", { name: "Looks good" }).click();
-    await page.getByRole("button", { name: "Start", exact: true }).click();
-    await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
-    await expect(page.locator(".wl-uf09__timer")).toBeVisible();
-
+  test("/session/<id> UF-09.1 keeps main's UF-09 sizes", async ({ page }) => {
+    await openFocusMode(page);
     const got = await page.evaluate(() => {
       const root = getComputedStyle(document.querySelector(".wl-uf09")!);
       const title = getComputedStyle(document.querySelector("h1.wl-uf09__title")!);
@@ -239,5 +254,26 @@ test.describe("AC5 focus mode is untouched (390 x 844)", () => {
       };
     });
     expect(got).toEqual(MAIN_UF09);
+  });
+
+  test("/session/<id> UF-09.3 pins the Cobalt lift sizes (T-0595)", async ({ page }) => {
+    await openFocusMode(page);
+    const skip = page.getByRole("button", { name: "Skip warm-up" });
+    if (await skip.count()) await skip.click();
+    else await page.getByRole("button", { name: "Start now" }).click();
+    await expect(page.locator('[data-screen-id="UF-09.3"]')).toBeVisible();
+    const got = await page.evaluate(() => {
+      const root = getComputedStyle(document.querySelector("[data-screen-id]")!);
+      const title = getComputedStyle(document.querySelector("h1")!);
+      const hero = getComputedStyle(document.querySelector(".wl-uf09__load .wl-uf09__hero")!);
+      return {
+        rootPaddingInline: root.paddingLeft,
+        titleFontSize: title.fontSize,
+        titleFontWeight: title.fontWeight,
+        titleTextTransform: title.textTransform,
+        heroFontWeight: hero.fontWeight,
+      };
+    });
+    expect(got).toEqual(LIFT_UF09);
   });
 });

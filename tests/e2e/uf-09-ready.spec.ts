@@ -266,7 +266,8 @@ test.describe("T-0304h AC-2 keyboard only, focus, targets, axe; AC-3 one screen"
     await expect(page.getByRole("button", { name: "Done set" })).toBeFocused();
     await expectTargets(page);
     const done = await page.getByRole("button", { name: "Done set" }).boundingBox();
-    expect(done!.height).toBeGreaterThanOrEqual(200);
+    // T-0595 (D-0208 §2, AC3): the 200 px round button is the 64 px full-width session button.
+    expect(done!.height).toBeGreaterThanOrEqual(64);
     await expectAxeClean(page);
     await page.keyboard.press("Space");
 

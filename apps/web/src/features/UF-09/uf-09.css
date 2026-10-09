@@ -20,7 +20,6 @@
 }
 
 /* NFR-A11Y-2: 44 × 44 CSS px. */
-.wl-uf09__pause,
 .wl-uf09__primary,
 .wl-uf09__secondary,
 .wl-uf09__home {
@@ -35,55 +34,11 @@
   cursor: pointer;
 }
 
-.wl-uf09__pause {
-  padding: 0;
-  border: 1px solid var(--wl-color-line-strong);
-  background: var(--wl-color-surface);
-  color: var(--wl-color-text);
-}
-
-.wl-uf09__pause-icon {
-  display: block;
-  width: 12px;
-  height: 14px;
-  border-left: 4px solid currentColor;
-  border-right: 4px solid currentColor;
-  box-sizing: border-box;
-}
-
-.wl-uf09__pause:focus-visible,
 .wl-uf09__primary:focus-visible,
 .wl-uf09__secondary:focus-visible,
 .wl-uf09__home:focus-visible {
   outline: 2px solid var(--wl-color-accent);
   outline-offset: 2px;
-}
-
-.wl-uf09__progress {
-  display: flex;
-  flex: 1;
-  gap: 4px;
-}
-
-.wl-uf09__segment {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--wl-color-line);
-}
-
-.wl-uf09__segment[data-state="done"] {
-  background: var(--wl-color-text-muted);
-}
-
-.wl-uf09__segment[data-state="current"] {
-  background: var(--wl-color-accent);
-}
-
-.wl-uf09__index {
-  color: var(--wl-color-text-muted);
-  font-size: 14px;
-  white-space: nowrap;
 }
 
 .wl-uf09__view {
@@ -137,7 +92,6 @@
 .wl-uf09__state,
 .wl-uf09__load,
 .wl-uf09__cue,
-.wl-uf09__autosave,
 .wl-uf09__status {
   margin: 0;
 }
@@ -171,99 +125,8 @@
   color: var(--wl-color-text-muted);
 }
 
-/* The one big button (UF-09.3, NFR-A11Y-2): 200 px tall, the full width. */
-.wl-uf09__done {
-  width: 100%;
-  min-height: 200px;
-  font-family: var(--wl-font-display);
-  font-size: 40px;
-}
-
 .wl-uf09__primary[data-state="saving"] {
   background: var(--wl-color-accent-hover);
-}
-
-/* UF-09.4 Confirm set (T-0304b, D-0118 §3–§6). */
-.wl-uf09__field {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.wl-uf09__stepper {
-  box-sizing: border-box;
-  min-width: 56px;
-  min-height: 56px;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 10px;
-  background: var(--wl-color-surface);
-  color: var(--wl-color-text);
-  font: inherit;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.wl-uf09__value,
-.wl-uf09__input {
-  min-width: 96px;
-  font-family: var(--wl-font-display);
-  font-size: 40px;
-  text-align: center;
-}
-
-.wl-uf09__input {
-  box-sizing: border-box;
-  width: 120px;
-  min-height: 56px;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 10px;
-  background: var(--wl-color-surface);
-  color: var(--wl-color-text);
-}
-
-.wl-uf09__input[aria-invalid="true"] {
-  border-color: var(--wl-color-warn);
-}
-
-.wl-uf09__rir {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-}
-
-.wl-uf09__label {
-  width: 100%;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf09__radio {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 44px;
-  padding: 0 12px;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.wl-uf09__autosave {
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf09__save {
-  width: 100%;
-  min-height: 64px;
-  font-size: 20px;
-}
-
-.wl-uf09__stepper:focus-visible,
-.wl-uf09__input:focus-visible,
-.wl-uf09__radio:focus-within {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
 }
 
 /* The chrome announcer (T-0304f, D-0118 §10): read by screen readers, never seen. */
@@ -499,3 +362,181 @@
   background: var(--wl-color-surface-2);
   color: var(--wl-color-text);
 }
+
+/* ---- T-0595 UF-09.3 Current set, UF-09.4 Confirm set: the lift state (D-0208, D-0211, D-0216) ----
+ * Every rule starts at .wl-uf09[data-wl-state="lift"], so it out-ranks the legacy .wl-uf09 rules
+ * above whatever the load order. Colour and font come from the generic --wl-* variables that
+ * main.css maps from the state attribute; sizes are rem. The only motion is the state cross-fade
+ * main.css puts on the root. */
+.wl-uf09[data-wl-state="lift"] {
+  gap: 0;
+  padding: max(env(safe-area-inset-top), 1.5rem) max(var(--wl-gutter), env(safe-area-inset-right))
+    max(env(safe-area-inset-bottom), 1.5rem) max(var(--wl-gutter), env(safe-area-inset-left));
+  color: var(--wl-ink);
+  font-family: var(--wl-font);
+  background: var(--wl-bg);
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__chrome {
+  margin-block-end: 1.5rem;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__chrome > .wl-session-progress {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view {
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  text-align: start;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__state,
+.wl-uf09[data-wl-state="lift"] .wl-uf09__status,
+.wl-uf09[data-wl-state="lift"] .wl-uf09__autosave,
+.wl-uf09[data-wl-state="lift"] .wl-uf09__label,
+.wl-uf09[data-wl-state="lift"] .wl-uf09__cue {
+  margin: 0;
+  color: var(--wl-ink);
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__name {
+  margin-block-start: 0.25rem;
+}
+
+/* UF-09.4 centres its caption and name over the steppers (canvas "In session · log set"). */
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view--confirm .wl-uf09__state,
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view--confirm .wl-uf09__name {
+  text-align: center;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view--confirm .wl-uf09__field:first-of-type {
+  margin-block-start: 1rem;
+}
+
+/* The load: the hero number and its small unit, pinned to the bottom half of the screen. */
+.wl-uf09[data-wl-state="lift"] .wl-uf09__load {
+  display: flex;
+  flex-direction: column;
+  margin: auto 0 0;
+  font-family: var(--wl-font);
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__load p {
+  margin: 0;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__hero {
+  display: block;
+  max-inline-size: 100%;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__hero.wl-type-hero-number {
+  word-spacing: -0.25em;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__unit {
+  font-size: 2.25rem;
+  letter-spacing: 0;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__ask {
+  color: var(--wl-ink);
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__cue {
+  margin-block-start: 0.75rem;
+}
+
+/* The one session primary (Done set, Save): the full-width session button of main.css. */
+.wl-uf09[data-wl-state="lift"] .wl-uf09__done,
+.wl-uf09[data-wl-state="lift"] .wl-uf09__save {
+  margin-block-start: 1.75rem;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__status {
+  min-block-size: 1.5em;
+  margin-block-start: 0.5rem;
+  text-align: center;
+}
+
+/* UF-09.4: reps and weight steppers around a big value. */
+.wl-uf09[data-wl-state="lift"] .wl-uf09__field {
+  display: grid;
+  grid-template-columns: 4rem minmax(0, 1fr) 4rem;
+  align-items: center;
+  gap: 0.5rem;
+  margin-block-start: 0.5rem;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__stepper {
+  inline-size: 4rem;
+  min-inline-size: 4rem;
+  block-size: 4rem;
+  min-block-size: 4rem;
+  padding: 0;
+  justify-content: center;
+  font-size: 1.875rem;
+  line-height: 1;
+  border-radius: var(--wl-radius-pill);
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__value {
+  min-inline-size: 0;
+  text-align: center;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 5rem;
+  padding-inline: 0.5rem;
+  font-size: 4.5rem;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  text-align: center;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__status.wl-input__error {
+  justify-content: center;
+  color: var(--wl-attention);
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__rir {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-block-start: 1.25rem;
+  text-align: center;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__rir .wl-segmented {
+  display: flex;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__rir .wl-segmented > label {
+  flex: 1;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__autosave {
+  margin-block-start: auto;
+  padding-block-start: 1rem;
+  text-align: center;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__autosave + .wl-uf09__save {
+  margin-block-start: 0.5rem;
+}
+
+@media (max-width: 23.75rem) {
+  .wl-uf09[data-wl-state="lift"] .wl-uf09__hero,
+  .wl-uf09[data-wl-state="lift"] .wl-uf09__value {
+    font-size: clamp(5rem, 40vw, 9.375rem);
+  }
+}
+/* ---- end T-0595 ---- */
