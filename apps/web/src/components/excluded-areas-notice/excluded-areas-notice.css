@@ -11,10 +11,24 @@
   color: var(--wl-color-text-muted);
   font-family: var(--wl-font-body);
   font-weight: 400;
-  font-size: 14px;
+  font-size: 0.875rem;
   line-height: 1.4;
 }
 
 .wl-excluded-notice__icon {
   flex: none;
+}
+
+/* Cobalt (T-0593, D-0210 §3): under a state or paper the notice reads the generic variables. White
+   on --wl-raise is 6.2:1 in plan; the icon follows the text colour. Outside a state: unchanged. */
+:is([data-wl-state], .wl-paper) .wl-excluded-notice {
+  background: var(--wl-raise);
+  border: 0;
+  border-radius: var(--wl-radius-tile);
+  color: var(--wl-ink);
+  font-family: var(--wl-font);
+}
+
+:is([data-wl-state], .wl-paper) .wl-excluded-notice__icon {
+  color: var(--wl-ink);
 }

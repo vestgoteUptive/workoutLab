@@ -878,3 +878,232 @@ legend.wl-label,
   padding-block-start: 16px;
   border-block-start: 1px solid var(--wl-line);
 }
+
+/* Shared Cobalt surfaces (T-0593, D-0208, D-0210 §3, D-0211 §5; components/state-patterns.md).
+ * Same rule as above: every selector starts at a state root or .wl-paper, no transitions. */
+
+/* Toggle: a 48 x 28 pill on a native checkbox (role="switch") inside a label. The label row is the
+ * 44 px hit area. Off: a 1.5 px --wl-ink-muted outline and knob. On: a --wl-selected track and an
+ * --wl-on-selected knob. The knob position and the fill both change, and the On/Off word sits
+ * beside it, so colour is never the only cue. */
+:is([data-wl-state], .wl-paper) .wl-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-sizing: border-box;
+  min-block-size: 44px;
+  color: var(--wl-ink);
+  cursor: pointer;
+}
+
+:is([data-wl-state], .wl-paper) .wl-toggle > input {
+  appearance: none;
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  inline-size: 48px;
+  block-size: 28px;
+  margin: 0;
+  background: transparent;
+  border: 1.5px solid var(--wl-ink-muted);
+  border-radius: var(--wl-radius-pill);
+  cursor: inherit;
+}
+
+:is([data-wl-state], .wl-paper) .wl-toggle > input::after {
+  content: "";
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-start: 4px;
+  inline-size: 16px;
+  block-size: 16px;
+  margin-block-start: -8px;
+  background: var(--wl-ink-muted);
+  border-radius: var(--wl-radius-pill);
+}
+
+:is([data-wl-state], .wl-paper) .wl-toggle > input:checked {
+  background: var(--wl-selected);
+  border-color: var(--wl-selected);
+}
+
+:is([data-wl-state], .wl-paper) .wl-toggle > input:checked::after {
+  inset-inline-start: calc(100% - 4px - 16px);
+  background: var(--wl-on-selected);
+}
+
+:is([data-wl-state], .wl-paper) .wl-toggle[aria-disabled="true"],
+:is([data-wl-state], .wl-paper) .wl-toggle:has(> input[aria-disabled="true"]) {
+  color: var(--wl-ink-muted);
+  cursor: not-allowed;
+}
+
+:is([data-wl-state], .wl-paper) .wl-toggle > input:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  :is([data-wl-state], .wl-paper) .wl-toggle > input:not(:checked):hover {
+    border-color: var(--wl-ink);
+  }
+}
+
+/* Input: a 1 px --wl-ink-muted boundary (5.9:1 on plan.bg). Invalid (D-0211 §5): a 2 px
+ * --wl-attention border, which is the plan attention colour in plan and --wl-ink in lift, rest and
+ * paper (their --wl-attention is the ink). Lift and rest also show the aria-hidden icon in
+ * .wl-input__error; the words always carry the error. */
+:is([data-wl-state], .wl-paper) .wl-input {
+  box-sizing: border-box;
+  min-block-size: 48px;
+  padding-inline: 12px;
+  font-family: var(--wl-font);
+  color: var(--wl-ink);
+  background: var(--wl-bg);
+  border: 1px solid var(--wl-ink-muted);
+  border-radius: var(--wl-radius-input);
+}
+
+:is([data-wl-state], .wl-paper) .wl-input[aria-invalid="true"] {
+  padding-inline: 11.5px;
+  border: 2px solid var(--wl-attention);
+}
+
+:is([data-wl-state], .wl-paper) .wl-input[aria-disabled="true"] {
+  color: var(--wl-ink-muted);
+  cursor: not-allowed;
+}
+
+:is([data-wl-state], .wl-paper) .wl-input:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  :is([data-wl-state], .wl-paper)
+    .wl-input:hover:not([aria-invalid="true"], [aria-disabled="true"]) {
+    border-color: var(--wl-ink);
+  }
+}
+
+:is([data-wl-state], .wl-paper) .wl-input__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--wl-attention);
+}
+
+:is([data-wl-state], .wl-paper) .wl-input__error-icon {
+  display: none;
+  flex: none;
+}
+
+/* The icon is a lift and rest cue. A later plan or paper rule hides it again, so a plan sheet
+ * nested in a lift screen keeps the plan form (D-0208 §2). */
+:is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-input__error-icon {
+  display: inline-block;
+}
+
+:is([data-wl-state="plan"], .wl-paper) .wl-input__error-icon {
+  display: none;
+}
+
+/* Sheet: set data-wl-state="plan" on the element itself, even over lift (D-0208 §2). It starts at
+ * y = 150 and has a 28 px radius on the top corners only. It opens and closes with no transition,
+ * so it drops the state root's background cross-fade. */
+[data-wl-state].wl-sheet {
+  position: fixed;
+  inset-block: 150px 0;
+  inset-inline: 0;
+  box-sizing: border-box;
+  max-inline-size: 640px;
+  margin-inline: auto;
+  overflow-y: auto;
+  padding: 0 var(--wl-gutter) 32px;
+  color: var(--wl-ink);
+  background: var(--wl-bg);
+  border-radius: var(--wl-radius-sheet) var(--wl-radius-sheet) 0 0;
+  transition: none;
+  z-index: 2;
+}
+
+[data-wl-state] .wl-sheet__grabber {
+  inline-size: 40px;
+  block-size: 4px;
+  margin: 10px auto 18px;
+  background: var(--wl-line);
+  border-radius: var(--wl-radius-pill);
+}
+
+[data-wl-state] .wl-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in oklch, var(--wl-color-plan-scrim) 45%, transparent);
+  transition: none;
+  z-index: 1;
+}
+
+/* Paper panel: full-bleed past the gutters, 20 px block padding, no radius and no shadow. The
+ * paper variables are set above. */
+.wl-paper {
+  box-sizing: border-box;
+  margin-inline: calc(-1 * var(--wl-gutter));
+  padding: 20px var(--wl-gutter);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Account-deleted notice (D-0136 §6, T-0593). The component may not import a stylesheet
+ * (T-0310c AC11 boundary), so its classes live here. The base rules keep the legacy look for a
+ * screen with no state (D-0210); the scoped ones read the generic variables. */
+.wl-account-deleted {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 16px;
+  padding: 8px 8px 8px 16px;
+  background: var(--wl-color-surface);
+  color: var(--wl-color-text);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 8px;
+}
+
+.wl-account-deleted__text {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+.wl-account-deleted__button {
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 0 12px;
+  background: transparent;
+  color: var(--wl-color-accent);
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+:is([data-wl-state], .wl-paper) .wl-account-deleted {
+  background: var(--wl-raise);
+  color: var(--wl-ink);
+  border: 0;
+  border-radius: var(--wl-radius-tile);
+  font-family: var(--wl-font);
+}
+
+:is([data-wl-state], .wl-paper) .wl-account-deleted__button {
+  color: var(--wl-ink);
+  border: 1.5px solid var(--wl-ink);
+  border-radius: var(--wl-radius-pill);
+}
+
+:is([data-wl-state], .wl-paper) .wl-account-deleted__button:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
