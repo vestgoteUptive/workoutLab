@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-01.2, UF-08.1, UF-08.3, UF-09.8]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0191, D-0203]
 deps: [T-0589, T-0590]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. main.css is shared: full web e2e suite. Serial after T-0589, before T-0593 (the same file). -->
 ## Why
@@ -81,10 +81,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0592`.
 
 ## Build / accept log
-- Build (HEAD 2df82a8, tree clean). `main.css`: every control rule is under `:is([data-wl-state], .wl-paper)`; `components/icons/` has Tick, Arrow, Cross, Pause, Chevron, DragHandle on a shared `Icon` (2 px, currentColor, aria-hidden, focusable=false). Chip and option ticks are always in the markup and CSS shows them only when on. No Chip or Option component: adopting them is a screen ticket.
-- AC to test: AC1 `cobalt-controls.spec.ts` "AC1" (3 tests: /plan primary, /plan/account secondary, bare fixture) + unchanged `main-css.test.ts` primary test. AC2 "AC2 plan buttons", "AC2 lift session button". AC3 "AC3 selected option row" (checked, unchecked, 18 px bleed, arrow keys, role lookups). AC4 "AC4 chip" (aria-pressed and native checkbox, tick present or hidden, 44 x 44). AC5 "AC5 segmented control". AC6 "AC6 keyboard focus" (Tab through 10 controls, plan and paper). AC7 "AC7 no cards". AC8 `main-css.test.ts` "T-0592 AC8" (3 tests). AC9 "AC9 no transition" with and without reduced motion. icons: `components/icons/__tests__/icons.test.tsx`.
-- Note: Chrome computes a 1.5px border as 1px, so AC2/AC5 e2e assert width >= 1px and solid ink; the authored `1.5px solid var(--wl-ink)` is pinned in main-css.test.ts.
-- Planted faults (backup `main.css.bak`, restored with cp): (1) unscoped `.wl-button--primary{border-radius:999px}` -> only the main-css AC8 legacy test red (the "scoped controls" test also went red in that run from the other planted edits), and e2e AC1 red; (2) unscoped `.wl-chip {` -> AC8 "every selector" red; (3) option bleed 0 -> AC3 red; chip tick always shown -> AC4 red; segmented border ink -> AC5 red; `.wl-card` padding 16px/boxed -> AC7 red; session radius 14px -> AC2 lift red; transition on chip -> AC9 red; (4) focus offset 0 -> AC6 red; plan primary radius 14px -> AC2 plan red. First e2e planted run missed AC6 and AC2 plan (my edit hit the legacy rule); redone as run 2 and went red.
-- Gate (HEAD 2df82a8 + change): typecheck lint test exit 0; test:repo-checks 0; format:check 0; check-all.mjs 0; full web e2e 409 passed, exit 0.
-- Rework (review): checked option and pressed chip text (captions too) use `--wl-on-selected`; an unchecked option's hover caption uses `--wl-ink`; disabled primary or session in lift and rest is the outline form; a disabled and pressed chip keeps `--wl-on-selected`. New e2e "review 1" to "review 4" (option caption in plan and paper, hover caption contrast, disabled in rest, disabled+pressed chip, option tick visible or hidden, `.wl-card + .wl-card` divider). Planted fault: removing the four fixes turned review 1 (both tests), 2 and 3 red (4 red); the tick and divider tests guard unchanged behaviour. Restored with cp.
-- Rework gate: typecheck lint test 0 (after widening the AC8 scope regex to accept :is() lists of states), test:repo-checks 0, format:check 0, check-all 0, full web e2e 0 (includes cobalt-controls, visual-foundation).
+Archived in `docs/tickets/log/T-0592.md` (D-0157).

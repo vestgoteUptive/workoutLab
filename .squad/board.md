@@ -174,9 +174,8 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0592 | Shared controls: buttons, row, option row, segmented, chip, icons, focus, unboxed cards | web-shell | T-0589, T-0590 | doing | wl-build-web |
-| T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | todo | wl-build-web |
-| T-0594 | C-02 tab bar look, SessionProgress, drain helper | web-shell | T-0592 | todo | wl-build-web |
+| T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | doing | wl-build-web |
+| T-0594 | C-02 tab bar look, SessionProgress, drain helper | web-shell | T-0592 | doing | wl-build-web |
 | T-0595 | UF-09.3/.4 + chrome in lift | web-feature:UF-09 | T-0593, T-0594, T-0591, T-0619 | todo | wl-build-web |
 | T-0596 | UF-09.2/.7 deep fill | web-feature:UF-09 | T-0595 | todo | wl-build-web |
 | T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | todo | wl-build-web |
