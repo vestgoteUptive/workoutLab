@@ -257,6 +257,44 @@ describe("T-0552 update checks", () => {
     expect(t.reload).not.toHaveBeenCalled();
   });
 
+  it("T-0915 AC1 a worker installing before watch() (no updatefound) reaches waiting; a resume applies it with one reload", async () => {
+    const t = setup();
+    const w = newWorker("installing");
+    t.registration.installing = w;
+    t.start();
+    await flush();
+    w.state = "installed";
+    w.dispatchEvent(new Event("statechange"));
+    expect(w.postMessage).toHaveBeenCalledWith(SKIP);
+    await t.show();
+    w.state = "activated";
+    w.dispatchEvent(new Event("statechange"));
+    await t.show();
+    expect(t.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("T-0915 AC2 a waiting worker found on resume via check() is applied once", async () => {
+    const t = setup({ path: "/session/S1" });
+    const w = newWorker("installed");
+    const listen = vi.spyOn(w, "addEventListener");
+    t.start();
+    await flush();
+    t.registration.waiting = w;
+    await t.show();
+    await t.show();
+    expect(w.postMessage).not.toHaveBeenCalled();
+    t.go("/plan");
+    await t.show();
+    await t.show();
+    expect(w.postMessage).toHaveBeenCalledTimes(1);
+    w.state = "activated";
+    w.dispatchEvent(new Event("statechange"));
+    await t.show();
+    await t.show();
+    expect(t.reload).toHaveBeenCalledTimes(1);
+    expect(listen).toHaveBeenCalledTimes(1);
+  });
+
   it("AC8 does nothing in dev or without serviceWorker support", async () => {
     const t = setup();
     t.start(false);
