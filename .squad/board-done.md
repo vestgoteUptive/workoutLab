@@ -437,3 +437,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | done | wl-build-web |
 | T-0627 | C-01 legend attention swatch: 2 px --wl-attention with a 1 px --wl-bg gap per c-01-body-map.md:78 (BodyMap.tsx:117,192 use outlineOffset 0) (T-0615 review) | web-shell | T-0615 | done | wl-build-web |
 | T-0650 | Body figure Cobalt variants page for the owner pick (H-31: needs changes in low steps, ring, hatch, silhouette); blocks the figure screens T-0601/T-0608/T-0611 | design | T-0614 | done | wl-design |
+| T-0629 | never-in-workout.test.tsx:48 AC-A12 still flaky under load (waitFor on lazy session route), after T-0910 | web-feature:UF-10 | — | done | wl-build-web |
