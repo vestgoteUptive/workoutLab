@@ -98,7 +98,7 @@ describe("AC-2 entry and exit (principle 1)", () => {
     await findEl(() => document.querySelector('[data-screen-id="UF-09.3"]'));
     expect(screenIds()).toEqual(["UF-09.3"]);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Back squat");
-    expect(document.querySelector(".wl-uf09__set-line")).toHaveTextContent("Set 2 of 4");
+    expect(document.querySelector(".wl-uf09__state")).toHaveTextContent("Lifting · set 2 of 4");
   });
 
   it("the List view shows the stored logged set (row 1 checked) and no refresh runs", async () => {

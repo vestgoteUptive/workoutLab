@@ -941,7 +941,7 @@ test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109
     const current = page.locator('[data-screen-id="UF-09.3"]');
     await expect(current).toBeVisible();
     await expect(current.getByRole("heading", { level: 1, name: MAIN_NAME })).toBeVisible();
-    await expect(current.getByText("Set 1 of 4")).toBeVisible();
+    await expect(current.getByText("Lifting · set 1 of 4")).toBeVisible();
     // 7 reps is 14.7 `add_rep`: 14.6 `hold` would show 6, 14.4 `increase` 45 kg.
     await expect(current.locator(".wl-uf09__load")).toHaveText("42.5 kg × 7");
   });

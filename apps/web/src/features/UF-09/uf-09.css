@@ -134,6 +134,7 @@
 
 /* UF-09.3 Current set (T-0304b, D-0118 §9). */
 .wl-uf09__set-line,
+.wl-uf09__state,
 .wl-uf09__load,
 .wl-uf09__cue,
 .wl-uf09__autosave,
@@ -141,7 +142,8 @@
   margin: 0;
 }
 
-.wl-uf09__set-line {
+.wl-uf09__set-line,
+.wl-uf09__state {
   color: var(--wl-color-text-muted);
   font-size: 18px;
 }

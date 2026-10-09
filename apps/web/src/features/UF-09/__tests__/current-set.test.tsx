@@ -29,6 +29,7 @@ import {
   storedState,
 } from "./set-loop-helpers.js";
 import { dispatched, lastStore, stores } from "./store-spy.js";
+import { en } from "../../../lib/i18n/en.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./set-loop-mock.js").then((m) => m.setLoopMock(orig)),
@@ -88,7 +89,7 @@ describe("AC-1 UF-09.3 renders the pre-fill", () => {
   it("P1 bench-press set 1: heading, 'Set 1 of 4', '80 kg × 6', the cue", async () => {
     await showSet();
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Bench press$/);
-    expect(setLineText()).toBe("Set 1 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(1, 4));
     expect(loadText()).toBe(`80${NBSP}kg × 6`);
     expect(await findCue()).toHaveTextContent(new RegExp(`^${BENCH_CUE}$`));
   });

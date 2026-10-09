@@ -37,6 +37,7 @@ export function NextExercise({
 
   return (
     <div className="wl-uf09__view">
+      <p className="wl-uf09__state">{en.uf09.titles.next}</p>
       <h1 className="wl-uf09__title">{name}</h1>
       {/* Two whole formatter outputs as siblings, never joined (D-0118 §11, D-0114 §5). */}
       <p className="wl-uf09__detail" data-field="detail">

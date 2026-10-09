@@ -416,7 +416,7 @@ test.describe("T-0422 AC-10 Swap from UF-09.9, offline", () => {
     await paused.getByRole("button", { name: "Resume" }).focus();
     await page.keyboard.press("Enter");
     await expect(current.getByRole("heading", { level: 1, name: firstName })).toBeVisible();
-    await expect(current.getByText("Set 1 of 4")).toBeVisible();
+    await expect(current.getByText("Lifting · set 1 of 4")).toBeVisible();
 
     // After a reload (still offline): the queued row holds the new exercise, and UF-09 shows it.
     await page.reload();

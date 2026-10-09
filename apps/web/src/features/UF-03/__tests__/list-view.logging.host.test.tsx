@@ -155,7 +155,7 @@ describe("AC-6 reload", () => {
 });
 
 describe("AC-7 back to focus mode", () => {
-  const setLine = () => document.querySelector(".wl-uf09__set-line")?.textContent;
+  const setLine = () => document.querySelector(".wl-uf09__state")?.textContent;
 
   it("rows 1-3 -> 'Set 4 of 4'; all 4 and RDL row 1 -> RDL 'Set 2 of 3'; focus logs the first free position", async () => {
     await openList();
@@ -165,7 +165,7 @@ describe("AC-7 back to focus mode", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Skip" }));
     fireEvent.click(screen.getByRole("button", { name: "Focus mode" }));
     await findEl(() => document.querySelector('[data-screen-id="UF-09.3"]'));
-    expect(setLine()).toBe("Set 4 of 4");
+    expect(setLine()).toBe("Lifting · set 4 of 4");
 
     // Back to the List view through Pause, finish the rest of the card and RDL row 1.
     fireEvent.click(screen.getByRole("button", { name: "Pause workout" }));
@@ -184,7 +184,7 @@ describe("AC-7 back to focus mode", () => {
     fireEvent.click(screen.getByRole("button", { name: "Focus mode" }));
     await findEl(() => document.querySelector('[data-screen-id="UF-09.3"]'));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Romanian deadlift");
-    expect(setLine()).toBe("Set 2 of 3");
+    expect(setLine()).toBe("Lifting · set 2 of 3");
 
     fireEvent.click(screen.getByRole("button", { name: "Done set" }));
     await waitFor(async () => expect((await fresh().sets.toArray()).length).toBe(6));

@@ -31,6 +31,7 @@ import {
 } from "./helpers.js";
 import { renderSession } from "./session-helpers.js";
 import { findEl, findScreen, seedFocus } from "./set-loop-helpers.js";
+import { en } from "../../../lib/i18n/en.js";
 
 // Spies over the REAL `lib/offline` queue writes (every write, the re-exports in
 // `lib/offline/index.js` included, because they are the same module), and a spy on the hook's
@@ -535,7 +536,7 @@ describe("T-0422 AC-5 apply persisted offline (D-0071 §5 §6, D-0093 §7)", () 
     await click("Resume");
     expect(screenId()).toBe("UF-09.3");
     expect(heading()).toBe("Db row");
-    expect(screen.getByText("Set 2 of 3")).toBeInTheDocument();
+    expect(screen.getByText(en.uf09.liftingCaption(2, 3))).toBeInTheDocument();
 
     // Logging: the old set keeps its exercise; the next Done set is db-row at setIndex 1.
     await click("Done set");
@@ -640,7 +641,7 @@ describe("T-0422 AC-7 host: a swap while UF-09.4 is in play (D-0153 §2)", () =>
     await advance(120_000);
     await findScreen("UF-09.3");
     expect(heading()).toBe("Db row");
-    expect(screen.getByText("Set 3 of 3")).toBeInTheDocument();
+    expect(screen.getByText(en.uf09.liftingCaption(3, 3))).toBeInTheDocument();
     await click("Done set");
     await findScreen("UF-09.4");
     expect(recordSet).toHaveBeenCalledTimes(1);

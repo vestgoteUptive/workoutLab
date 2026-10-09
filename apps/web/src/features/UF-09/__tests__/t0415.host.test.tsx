@@ -23,6 +23,7 @@ import { call, currentLocation, renderSession } from "./session-helpers.js";
 import { findPath, findScreen, doneButton, setLineText } from "./set-loop-helpers.js";
 import { countOf, dispatched, stores } from "./store-spy.js";
 import { LIB, logged } from "./t0414-fixtures.js";
+import { en } from "../../../lib/i18n/en.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./offline-spies.js").then((m) => m.offlineSpies(orig)),
@@ -160,7 +161,7 @@ describe("T-0415 AC-1 a List-view set never moves the machine", () => {
     act(() => ctx!.close());
     await flushReal();
     expect(screenIds()).toEqual(["UF-09.3"]);
-    expect(setLineText()).toBe("Set 3 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(3, 4));
   });
 });
 
@@ -319,7 +320,7 @@ describe("T-0415 AC-5 host: entering an item at its first free set", () => {
     expect(storedFocus()).toMatchObject({ phase: "set", itemIndex: 1, setIndex: 1 });
     act(() => ctx!.close());
     await findScreen("UF-09.3");
-    expect(setLineText()).toBe("Set 2 of 3");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(2, 3));
     fireEvent.click(doneButton());
     await flushReal();
     const calls = recordSpy.mock.calls

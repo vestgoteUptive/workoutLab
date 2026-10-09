@@ -33,6 +33,7 @@ import {
   weightInput,
 } from "./set-loop-helpers.js";
 import { dispatched, stores } from "./store-spy.js";
+import { en } from "../../../lib/i18n/en.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./set-loop-mock.js").then((m) => m.setLoopMock(orig)),
@@ -198,7 +199,7 @@ describe("AC-8 in-session pre-fill", () => {
     await findScreen("UF-09.5");
     await advance(120_000);
     expect(screenId()).toBe("UF-09.3");
-    expect(setLineText()).toBe("Set 2 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(2, 4));
     expect(loadText()).toBe(`77.5${NBSP}kg × 5`);
     fireEvent.click(doneButton());
     await findScreen("UF-09.4");
@@ -214,7 +215,7 @@ describe("AC-8 in-session pre-fill", () => {
     await findScreen("UF-09.5");
     expect(storedState().loggedSets[0]).toMatchObject({ reps: 5, weightKg: null });
     await advance(120_000);
-    expect(setLineText()).toBe("Set 2 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(2, 4));
     expect(loadText()).toBe(`80${NBSP}kg × 5`);
   });
 
@@ -225,13 +226,13 @@ describe("AC-8 in-session pre-fill", () => {
       setIndex: 3,
       loggedSets: [0, 1, 2].map((i) => logged(0, i, WITH_BACKOFF)),
     });
-    expect(setLineText()).toBe("Set 4 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(4, 4));
     await doneSet();
     await advance(5_000);
     expect(screenId()).toBe("UF-09.5");
     await advance(120_000);
     expect(screenId()).toBe("UF-09.3");
-    expect(setLineText()).toBe("Back-off set");
+    expect(setLineText()).toBe(en.uf09.liftingBackoff);
     expect(loadText()).toBe(`70${NBSP}kg × 6`);
     fireEvent.click(doneButton());
     await findScreen("UF-09.4");
@@ -252,7 +253,7 @@ describe("AC-8 in-session pre-fill", () => {
     expect(screenId()).toBe("UF-09.5");
     await advance(120_000);
     expect(screenId()).toBe("UF-09.6");
-    expect(screen.queryByText("Back-off set")).not.toBeInTheDocument();
+    expect(screen.queryByText(en.uf09.liftingBackoff)).not.toBeInTheDocument();
   });
 });
 
@@ -378,7 +379,7 @@ describe("a Done set write that lands while paused", () => {
     fireEvent.click(screen.getByRole("button", { name: "Resume" }));
     await flushReal();
     expect(screenId()).toBe("UF-09.3");
-    expect(setLineText()).toBe("Set 1 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(1, 4));
     expect(storedState().loggedSets).toHaveLength(0);
     expect(recordSpy).not.toHaveBeenCalled();
   });

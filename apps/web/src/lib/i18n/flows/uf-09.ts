@@ -30,8 +30,9 @@ export const uf09 = {
   },
   resume: "Resume",
   // UF-09.3 Current set (T-0304b, D-0118 §9).
-  setOf: (n: number, total: number) => `Set ${n} of ${total}`,
-  backoffSet: "Back-off set",
+  // State captions (T-0619, D-0212 §1.2): the text fallback for lift/rest hue.
+  liftingCaption: (n: number, total: number) => `Lifting · set ${n} of ${total}`,
+  liftingBackoff: "Lifting · back-off set",
   load: (weight: string, reps: number) => `${weight} × ${reps}`,
   reps: (n: number) => (n === 1 ? "1 rep" : `${n} reps`),
   setWeight: "Set weight",
@@ -75,10 +76,11 @@ export const uf09 = {
   voiceTwo: "2",
   voiceOne: "1",
   // UF-09.2 Warm-up (T-0304c, D-0066 §8, D-0119 §5).
-  warmupMove: (n: number, total: number) => `Move ${n} of ${total}`,
+  warmupCaption: (n: number, total: number) => `Warm-up · move ${n} of ${total}`,
   restartMove: "Restart",
   nextMove: "Next move",
   // UF-09.7 Timed set (T-0304c, D-0119 §1–§4, D-0062 §5).
+  timedCaption: (n: number, total: number) => `Timed set · ${n} of ${total}`,
   getInPosition: "Get in position",
   holdPhase: "Hold",
   holdTarget: (clock: string) => `Hold ${clock}`,

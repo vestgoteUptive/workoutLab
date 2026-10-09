@@ -24,8 +24,8 @@ export function Warmup({ state, ctx, nowMs, send }: ViewProps) {
 
   return (
     <div className="wl-uf09__view">
-      <p className="wl-uf09__set-line" data-field="move-index">
-        {en.uf09.warmupMove(state.warmupIndex + 1, moves.length)}
+      <p className="wl-uf09__state" data-field="move-index">
+        {en.uf09.warmupCaption(state.warmupIndex + 1, moves.length)}
       </p>
       <h1 className="wl-uf09__title">{name}</h1>
       <Ring fraction={total > 0 ? remaining / total : 0} warn={false}>

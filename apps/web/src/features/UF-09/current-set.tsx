@@ -59,10 +59,10 @@ export function CurrentSet({ state, ctx, locale }: ViewProps) {
 
   return (
     <div className="wl-uf09__view">
-      <h1 className="wl-uf09__title">{exercise?.name ?? item.exerciseId}</h1>
-      <p className="wl-uf09__set-line">
-        {backoff ? en.uf09.backoffSet : en.uf09.setOf(state.setIndex + 1, item.sets)}
+      <p className="wl-uf09__state">
+        {backoff ? en.uf09.liftingBackoff : en.uf09.liftingCaption(state.setIndex + 1, item.sets)}
       </p>
+      <h1 className="wl-uf09__title">{exercise?.name ?? item.exerciseId}</h1>
       {bodyweight ? (
         <p className="wl-uf09__load">{en.uf09.reps(reps)}</p>
       ) : prefill.weightKg === null ? (
