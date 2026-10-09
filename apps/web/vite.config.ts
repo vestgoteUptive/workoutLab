@@ -28,10 +28,15 @@ function buildMetaPlugin(supabaseOrigin: string | undefined): Plugin {
     apply: "build",
     transformIndexHtml(html, ctx) {
       const csp = cspMetaContent(supabaseOrigin);
-      // T-0545 (D-0203 §1): preload every emitted woff2 (hashed names come from the bundle).
+      // T-0545 (D-0203 §1): preload woff2 files (hashed names come from the bundle).
+      // T-0588 (D-0210): only the state pair (Familjen, Bricolage) is preloaded; the legacy pair
+      // is still bundled and precached but loads on demand.
       // `crossorigin` is required for fonts, else Chromium fetches each file twice.
       const fontLinks = Object.keys(ctx.bundle ?? {})
-        .filter((f) => f.endsWith(".woff2"))
+        .filter(
+          (f) =>
+            f.endsWith(".woff2") && /^(?:.*\/)?(?:familjen-grotesk|bricolage-grotesque)/.test(f),
+        )
         .sort()
         .map(
           (f) => `  <link rel="preload" href="/${f}" as="font" type="font/woff2" crossorigin />\n`,
