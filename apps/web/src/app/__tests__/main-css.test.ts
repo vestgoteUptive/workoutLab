@@ -35,6 +35,8 @@ describe("T-0546 AC1 main.css (visual foundation T-4)", () => {
     expect(declarations("body")).toContain("font-family: var(--wl-font-body)");
   });
 
+  // T-0589 (logged): the uppercase pin below is scoped to the global element rules. Under a
+  // [data-wl-state] root the state defaults take over (checked in visual-foundation.spec.ts).
   it("h1 and h2 follow the scale: 800, uppercase, rem sizes, margin 0", () => {
     const h1 = declarations("h1");
     expect(h1).toMatch(/font-size:\s*clamp\(2rem, 10vw, 2\.5rem\)/);
@@ -70,8 +72,10 @@ describe("T-0546 AC1 main.css (visual foundation T-4)", () => {
     const d = declarations(".wl-page");
     expect(d).toMatch(/max-inline-size:\s*640px/);
     expect(d).toMatch(/margin-inline:\s*auto/);
+    // T-0589 (D-0211 §3): the gutter is --wl-gutter (20 px on :root, so unmigrated screens are
+    // unchanged); the safe-area max() stays on both sides.
     expect(d).toMatch(
-      /padding-inline:\s*max\(20px, env\(safe-area-inset-left\)\)\s+max\(20px, env\(safe-area-inset-right\)\)/,
+      /padding-inline:\s*max\(var\(--wl-gutter\), env\(safe-area-inset-left\)\)\s+max\(var\(--wl-gutter\), env\(safe-area-inset-right\)\)/,
     );
   });
 
@@ -97,5 +101,74 @@ describe("T-0546 AC1 main.css (visual foundation T-4)", () => {
     expect(declarations(".wl-button--primary:focus-visible")).toMatch(
       /outline:\s*2px solid var\(--wl-color-accent\)/,
     );
+  });
+});
+
+// T-0589 AC1: :root keeps the Chalk & Iron value of every D-0211 §2 generic variable.
+describe("T-0589 AC1 :root fallback (D-0211 §2)", () => {
+  const LEGACY: Record<string, string> = {
+    "--wl-bg": "var(--wl-color-bg)",
+    "--wl-raise": "var(--wl-color-surface-2)",
+    "--wl-ink": "var(--wl-color-text)",
+    "--wl-ink-muted": "var(--wl-color-text-muted)",
+    "--wl-ink-on-raise": "var(--wl-color-text-muted)",
+    "--wl-line": "var(--wl-color-line)",
+    "--wl-action": "var(--wl-color-accent)",
+    "--wl-on-action": "var(--wl-color-on-accent)",
+    "--wl-selected": "var(--wl-color-accent)",
+    "--wl-on-selected": "var(--wl-color-on-accent)",
+    "--wl-attention": "var(--wl-color-warn)",
+    "--wl-progress-off": "var(--wl-color-line-strong)",
+    "--wl-focus": "var(--wl-color-accent)",
+    "--wl-scrim": "var(--wl-color-bg)",
+    "--wl-coverage-0": "var(--wl-color-coverage-0)",
+    "--wl-coverage-1": "var(--wl-color-coverage-1)",
+    "--wl-coverage-2": "var(--wl-color-coverage-2)",
+    "--wl-coverage-3": "var(--wl-color-coverage-3)",
+    "--wl-coverage-4": "var(--wl-color-coverage-4)",
+    "--wl-font": "var(--wl-font-body)",
+    "--wl-gutter": "20px",
+  };
+
+  it("maps each generic variable on :root to its legacy value", () => {
+    const root = [...css.matchAll(/(?:^|\n):root\s*\{([^}]*)\}/g)].map((m) => m[1]!).join("\n");
+    for (const [name, value] of Object.entries(LEGACY)) {
+      expect(root, name).toContain(`${name}: ${value};`);
+    }
+  });
+
+  it("every state block sets the variables its mapping names, with no raw colour", () => {
+    for (const sel of [
+      '[data-wl-state="plan"]',
+      '[data-wl-state="lift"]',
+      '[data-wl-state="rest"]',
+      ".wl-paper",
+    ]) {
+      const d = declarations(sel);
+      for (const v of [
+        "--wl-bg",
+        "--wl-ink",
+        "--wl-line",
+        "--wl-action",
+        "--wl-on-action",
+        "--wl-focus",
+      ]) {
+        expect(d, `${sel} ${v}`).toContain(`${v}:`);
+      }
+    }
+    expect(declarations('[data-wl-state="plan"]')).toContain("--wl-font: var(--wl-font-plan)");
+    expect(declarations('[data-wl-state="lift"]')).toContain("--wl-font: var(--wl-font-session)");
+  });
+});
+
+describe("T-0589 AC9 type is rem", () => {
+  it("has the state type scale and every font-size is rem or clamp of rem/vw", () => {
+    for (const cls of [".wl-type-hero", ".wl-type-hero-number", ".wl-type-countdown"]) {
+      expect(css).toContain(cls);
+    }
+    expect(declarations("[data-wl-state] .wl-type-hero")).toContain("clamp(6rem, 26vw, 7rem)");
+    const sizes = [...css.matchAll(/font-size:\s*([^;}]+)/g)].map((m) => m[1]!.trim());
+    expect(sizes.length).toBeGreaterThan(20);
+    for (const v of sizes) expect(v).toMatch(/^(\d*\.?\d+rem|clamp\([\d.rem ,vw]+\))$/);
   });
 });

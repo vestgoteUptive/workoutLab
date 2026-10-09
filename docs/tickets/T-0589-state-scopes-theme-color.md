@@ -88,3 +88,10 @@ none (reads tokens; D-0211 names the mapping)
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0589`.
 
 ## Build / accept log
+
+- Build (frontend-dev, base 3fcc5f1, clean). main.css: `:root` legacy fallback, plan/lift/rest/.wl-paper blocks, 20 px narrow gutter, cross-fade + reduced motion, html follows `[data-screen-id][data-wl-state]` (body goes transparent then), state type scale (`:where()` element defaults so role classes always win), `.wl-title--stop` (drawn dot fallback, `"." / ""` under @supports). `app/theme-color.ts` (`useThemeColor`, MutationObserver on body) called once in `Shell`.
+- AC map: AC1/AC9 `__tests__/main-css.test.ts`; AC2-AC5, AC8 `tests/e2e/cobalt-state.spec.ts`; AC6 `app/theme-color.test.tsx`; AC7 `visual-foundation.spec.ts` (new case) .
+- Scoped pins (deliberate): `main-css.test.ts` `.wl-page` padding pin now expects `max(var(--wl-gutter), env(...))` (D-0211 §3; :root keeps 20 px); the h1/h2 uppercase pin is global-rule only, the state case lives in visual-foundation.
+- Defaults chosen where D-0211 is silent: plan `--wl-progress-off` = plan.line; paper `--wl-raise` = paper.line, `--wl-selected` = paper.action; lift/rest `--wl-scrim` = own bg; lift/rest coverage vars inherit the :root legacy ramp.
+- Planted faults (backup copy, restored by cp): plan bg->lift bg, narrow gutter dropped for states, transition 500ms linear, reduced-motion rule dropped for state roots, `content: "."` without alt, text-transform none removed, :root font -> plan, `font-size: 34px`, theme-color lift->rest + reading `[data-wl-state]` instead of `[data-screen-id]`. Vitest: 6 failed (AC1 x2, AC9, AC6 x3); e2e: 7 failed (AC2, AC3 html, AC4 340, AC5 x2, AC7, AC8). All green after restore.
+- Gate: `-w typecheck lint test` exit 0; `test:repo-checks` 0; `format:check` 0; `check-all.mjs` 0. Full e2e: 394 passed, 1 failed (`pwa-update.spec.ts:118` UF-09.1 AC9, poll timeout under load); passes alone (2/2) and the file is untouched by this change.

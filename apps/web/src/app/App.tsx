@@ -11,6 +11,7 @@ import { ProfileGate } from "../lib/profile/ProfileGate.js";
 import { isGatedPath } from "../lib/profile/gated-routes.js";
 import { ProfileStatusProvider } from "../lib/profile/profile-context.js";
 import { RouteBoundary } from "./RouteBoundary.js";
+import { useThemeColor } from "./theme-color.js";
 import { isArea, routes, type RouteConfig } from "./routes.js";
 import "../components/tab-bar/tab-bar.css";
 
@@ -69,6 +70,7 @@ export function Shell() {
   useEffect(() => {
     notifyRouteChange(location.pathname);
   }, [location.pathname]);
+  useThemeColor(location.pathname);
   const showTabBar = useMemo(() => {
     const route = routes.find((r) => matchesShellRoute(r.path, location.pathname));
     return route?.showTabBar ?? false;
