@@ -32,3 +32,6 @@ None.
 check-all green · commits start with `T-0650`.
 
 ## Build / accept log
+- Added section "Variants (H-31)" to preview.html: L0-L4, A0-A4, H0-H4 (with greyscale copies), S0-S4 (0 = Current). Contrast numbers are in each option's caption (WCAG formula on token values). AC1-AC4: the four groups; AC5: IDs plus 390 px and 1280 px screenshots in the scratchpad; AC6: check-figure.mjs exits 0 (no colour literals).
+- Flagged in captions: A3 (tint alone) is 2.22 vs bg and S4 is 2.12 vs bg, both under 3:1.
+- Gate: check-figure 0, check-all 0, format:check 0, design-tokens vitest 0.

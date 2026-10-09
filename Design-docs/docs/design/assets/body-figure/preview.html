@@ -372,6 +372,126 @@
         background: transparent;
       }
     </style>
+    <style id="wl-fig-css-variants">
+      /* ---- Variants (T-0650, H-31): options only, nothing here ships. Plan tokens only. ---- */
+      [data-wl-state="plan"] .wl-fig__halo-edge {
+        display: none;
+        fill: none;
+        stroke: var(--wl-attention);
+        stroke-width: 7px;
+      }
+      /* L1 Hollow zero */
+      [data-wl-state="plan"] .vr-L1 .wl-fig__region--cov-0 {
+        fill: var(--wl-bg);
+        stroke-width: 1.5px;
+      }
+      /* L2 Ink outline on steps 0-2 */
+      [data-wl-state="plan"] .vr-L2 .wl-fig__region--cov-0,
+      [data-wl-state="plan"] .vr-L2 .wl-fig__region--cov-1,
+      [data-wl-state="plan"] .vr-L2 .wl-fig__region--cov-2 {
+        stroke: var(--wl-ink);
+        stroke-width: 1.5px;
+      }
+      /* L3 Dot density on steps 1 and 2 */
+      [data-wl-state="plan"] .vr-L3 .wl-fig__region--cov-1 {
+        fill: var(--vr-d1);
+      }
+      [data-wl-state="plan"] .vr-L3 .wl-fig__region--cov-2 {
+        fill: var(--vr-d2);
+      }
+      /* L4 Dark well */
+      [data-wl-state="plan"] .vr-L4 .wl-fig__region--cov-0 {
+        fill: var(--wl-color-plan-scrim);
+      }
+      /* A1 Thick ring */
+      [data-wl-state="plan"] .vr-A1 .wl-fig__halo-warn {
+        stroke-width: 9px;
+      }
+      /* A2 Dashed ring */
+      [data-wl-state="plan"] .vr-A2 .wl-fig__halo-warn {
+        stroke-width: 8px;
+        stroke-dasharray: 5 3;
+        stroke-linecap: butt;
+      }
+      /* A3 Tint */
+      [data-wl-state="plan"] .vr-A3 .wl-fig__halo-warn,
+      [data-wl-state="plan"] .vr-A4 .wl-fig__halo-warn {
+        stroke-width: 12px;
+        stroke-opacity: 0.5;
+      }
+      [data-wl-state="plan"] .vr-A3 .wl-fig__halo-gap {
+        display: none;
+      }
+      /* A4 Tint and thin ring */
+      [data-wl-state="plan"] .vr-A4 .wl-fig__halo-edge {
+        display: inline;
+      }
+      /* H1 Wide hatch, H2 Dots, H3 Flat half white, H4 Outlined */
+      [data-wl-state="plan"] .vr-H1 .wl-fig__region--secondary {
+        fill: var(--vr-wide);
+      }
+      [data-wl-state="plan"] .vr-H2 .wl-fig__region--secondary {
+        fill: var(--vr-dots);
+      }
+      [data-wl-state="plan"] .vr-H3 .wl-fig__region--secondary {
+        fill: var(--wl-ink);
+        fill-opacity: 0.5;
+      }
+      [data-wl-state="plan"] .vr-H4 .wl-fig__region--secondary {
+        fill: var(--wl-raise);
+        stroke: var(--wl-ink);
+        stroke-width: 2px;
+      }
+      /* S1 Fine line */
+      [data-wl-state="plan"] .vr-S1 .wl-fig__silhouette {
+        stroke-width: 1px;
+      }
+      [data-wl-state="plan"] .vr-S1 .wl-fig__region,
+      [data-wl-state="plan"] .vr-S1 .wl-fig__body:not(.wl-fig__silhouette) {
+        stroke-width: 0.5px;
+      }
+      /* S2 Cut-out */
+      [data-wl-state="plan"] .vr-S2 .wl-fig__body {
+        stroke: none;
+      }
+      [data-wl-state="plan"] .vr-S2 .wl-fig__region,
+      [data-wl-state="plan"] .vr-S2 .wl-fig__seam {
+        stroke: var(--wl-bg);
+        stroke-width: 1.5px;
+      }
+      /* S3 Bold outline */
+      [data-wl-state="plan"] .vr-S3 .wl-fig__silhouette {
+        stroke: var(--wl-ink);
+        stroke-width: 2px;
+      }
+      /* S4 Quiet lines */
+      [data-wl-state="plan"] .vr-S4 .wl-fig__silhouette,
+      [data-wl-state="plan"] .vr-S4 .wl-fig__region {
+        stroke: var(--wl-line);
+      }
+      .vr-g1 {
+        fill: var(--wl-coverage-1);
+      }
+      .vr-g2 {
+        fill: var(--wl-coverage-2);
+      }
+      .variants .opt {
+        border-top: 1px solid var(--wl-line);
+        margin-top: 16px;
+        padding-top: 12px;
+      }
+      .variants .opt .row {
+        gap: 12px 24px;
+      }
+      .variants .demo p strong {
+        color: var(--wl-ink);
+      }
+      .variants .demo[data-current] p strong::after {
+        content: " (Current)";
+        font-weight: 500;
+        color: var(--wl-ink-muted);
+      }
+    </style>
   </head>
   <body>
     <section class="cobalt" data-preview="cobalt" data-wl-state="plan">
@@ -455,6 +575,119 @@
       <p>Forced colours are unchanged: see the legacy section below.</p>
     </section>
 
+    <section class="cobalt variants" data-preview="variants" data-wl-state="plan">
+      <h1>Body figure variants.</h1>
+      <p>
+        T-0650 · H-31 follow-up · D-0207 · D-0215. UF-02.1, UF-10.1 and UF-04.2 on plan.bg, at real
+        size. Every group starts with the current figure. Reply with one ID per group, for example
+        "L2, A1, H3, S1". Nothing here ships until you pick. No option changes the proportions.
+        Ratios are WCAG contrast; "bg" is plan.bg.
+      </p>
+      <div class="opt">
+      <h2>Low steps (L)</h2>
+      <p>Steps 0, 1 and 2 are laid out side by side: chest and quads 0, shoulders, core and hamstrings 1, arms, back and calves 2, glutes 0. Current: step 0 is 1.39 against bg, step 1 is 2.40, steps 0 and 1 are 1.73 apart.</p>
+      <div class="row">
+        <div class="demo" data-h="200" data-vr="L0" data-current data-cov="chest:0 shoulders:1 arms:2 core:1 quads:0 back:2 glutes:0 hamstrings:1 calves:2">
+          <p><strong>L0</strong> Step 0 and step 1 fills on a 1 px ink-muted outline. Fill vs bg: step 0 1.39, step 1 2.40, step 0 vs step 1 1.73. Outline vs bg 5.85.</p>
+        </div>
+        <div class="demo" data-h="200" data-vr="L1" data-cov="chest:0 shoulders:1 arms:2 core:1 quads:0 back:2 glutes:0 hamstrings:1 calves:2">
+          <p><strong>L1</strong> Hollow zero. Step 0 is plan.bg with a 1.5 px ink-muted outline: it reads as empty. Step 0 vs bg 1.00 (outline 5.85), step 1 vs bg 2.40, step 0 vs step 1 2.40.</p>
+        </div>
+        <div class="demo" data-h="200" data-vr="L2" data-cov="chest:0 shoulders:1 arms:2 core:1 quads:0 back:2 glutes:0 hamstrings:1 calves:2">
+          <p><strong>L2</strong> Ink outline. Steps 0 to 2 get a 1.5 px white outline, fills unchanged. Outline vs bg 8.63. Fills as now: 1.39, 2.40, 1.73.</p>
+        </div>
+        <div class="demo" data-h="200" data-vr="L3" data-cov="chest:0 shoulders:1 arms:2 core:1 quads:0 back:2 glutes:0 hamstrings:1 calves:2">
+          <p><strong>L3</strong> Dot density. Step 0 plain, step 1 sparse white dots, step 2 dense dots. Effective fill vs bg: 1.39, 2.78, 4.72. Step 0 vs step 1 2.00, step 1 vs step 2 1.70.</p>
+        </div>
+        <div class="demo" data-h="200" data-vr="L4" data-cov="chest:0 shoulders:1 arms:2 core:1 quads:0 back:2 glutes:0 hamstrings:1 calves:2">
+          <p><strong>L4</strong> Dark well. Step 0 is plan.scrim, darker than bg, so it reads as a hole. Step 0 vs bg 1.94, step 1 vs bg 2.40, step 0 vs step 1 4.64. Outline vs bg 5.85.</p>
+        </div>
+      </div>
+      </div>
+
+      <div class="opt">
+      <h2>Attention ring (A)</h2>
+      <p>Attention on glutes (step 4, white) and core (step 0). Attention colour is plan.attention: 5.03 against bg and 1.72 against a white step-4 fill. The 1 px bg gap keeps it off the fill in every ring option.</p>
+      <div class="row">
+        <div class="demo" data-h="240" data-vr="A0" data-current data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2" data-attention="glutes core">
+          <p><strong>A0</strong> 2 px ring, 1 px bg gap. Ring vs bg 5.03, vs white step 4 1.72.</p>
+        </div>
+        <div class="demo" data-h="240" data-vr="A1" data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2" data-attention="glutes core">
+          <p><strong>A1</strong> Thick ring. 3 px ring, same 1 px gap. Ring vs bg 5.03, vs white 1.72.</p>
+        </div>
+        <div class="demo" data-h="240" data-vr="A2" data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2" data-attention="glutes core">
+          <p><strong>A2</strong> Dashed ring. 2.5 px dashes (5 on, 3 off), same gap. Dash vs bg 5.03, vs white 1.72. The dashes add a shape cue that does not rely on colour.</p>
+        </div>
+        <div class="demo" data-h="240" data-vr="A3" data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2" data-attention="glutes core">
+          <p><strong>A3</strong> Coral tint. No ring: a 50 % attention glow, about 6 px wide, behind the area. Tint vs bg 2.22, vs white step 4 3.88.</p>
+        </div>
+        <div class="demo" data-h="240" data-vr="A4" data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2" data-attention="glutes core">
+          <p><strong>A4</strong> Tint and thin ring. The A3 glow plus a 2 px ring with a gap. Ring vs bg 5.03, vs white 1.72, vs the tint 2.26. Tint vs bg 2.22, vs white 3.88.</p>
+        </div>
+      </div>
+      </div>
+
+      <div class="opt">
+      <h2>Secondary hatch (H)</h2>
+      <p>Primary quads and glutes, secondary hamstrings and core. Each option has a greyscale copy: primary is white (step 4), secondary is a share of white over plan.raise. Ratios are secondary against its plan.raise ground, and against the white primary.</p>
+      <div class="row">
+        <div class="demo" data-h="200" data-vr="H0" data-current data-primary="quads glutes" data-secondary="hamstrings core">
+          <p><strong>H0</strong> Diagonal stripes, 30 % white. Vs ground 1.86, vs primary 3.34.</p>
+        </div>
+        <div class="demo demo--grey" data-h="200" data-vr="H0" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p>Greyscale</p>
+        </div>
+        <div class="demo" data-h="200" data-vr="H1" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p><strong>H1</strong> Wide hatch. Stripes 18 % white, spacing 1.5 times wider. Vs ground 1.45, vs primary 4.28.</p>
+        </div>
+        <div class="demo demo--grey" data-h="200" data-vr="H1" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p>Greyscale</p>
+        </div>
+        <div class="demo" data-h="200" data-vr="H2" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p><strong>H2</strong> Dots. Round dots, 20 % white. Vs ground 1.50, vs primary 4.16.</p>
+        </div>
+        <div class="demo demo--grey" data-h="200" data-vr="H2" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p>Greyscale</p>
+        </div>
+        <div class="demo" data-h="200" data-vr="H3" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p><strong>H3</strong> Flat half white. No pattern: 50 % white fill. Vs ground 2.73, vs primary 2.27.</p>
+        </div>
+        <div class="demo demo--grey" data-h="200" data-vr="H3" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p>Greyscale</p>
+        </div>
+        <div class="demo" data-h="200" data-vr="H4" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p><strong>H4</strong> Outlined. No fill: a 2 px white outline on plan.raise. Outline vs ground 6.22. Primary stays the only solid white.</p>
+        </div>
+        <div class="demo demo--grey" data-h="200" data-vr="H4" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p>Greyscale</p>
+        </div>
+      </div>
+      </div>
+
+      <div class="opt">
+      <h2>Silhouette (S)</h2>
+      <p>Same art and proportions, different line work, shown with a mixed coverage state. Current: 1.5 px ink-muted outline, 5.85 against bg; the fill alone is 1.39 against bg.</p>
+      <div class="row">
+        <div class="demo" data-h="240" data-vr="S0" data-current data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2">
+          <p><strong>S0</strong> 1.5 px ink-muted outline, 1 px region lines. Outline vs bg 5.85.</p>
+        </div>
+        <div class="demo" data-h="240" data-vr="S1" data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2">
+          <p><strong>S1</strong> Fine line. 1 px outline, 0.5 px region lines, ink-muted. Outline vs bg 5.85.</p>
+        </div>
+        <div class="demo" data-h="240" data-vr="S2" data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2">
+          <p><strong>S2</strong> Cut-out. No outline: filled shape, regions split by 1.5 px bg-coloured gaps. Edge is the fill vs bg only: 1.39 (decorative).</p>
+        </div>
+        <div class="demo" data-h="240" data-vr="S3" data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2">
+          <p><strong>S3</strong> Bold outline. 2 px white outline, region lines as now. Outline vs bg 8.63.</p>
+        </div>
+        <div class="demo" data-h="240" data-vr="S4" data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2">
+          <p><strong>S4</strong> Quiet lines. Outline and region lines in plan.line, widths as now. Outline vs bg 2.12 (decorative), vs the step 0 fill 1.53.</p>
+        </div>
+      </div>
+      </div>
+
+    </section>
+
     <section data-preview="legacy">
     <h1>Body figure</h1>
     <p>T-0315 · D-0207 · C-01 (UF-02.1, UF-10.1) and UF-04.2. Original art.</p>
@@ -535,6 +768,17 @@
         const hatchId = `wl-fig-hatch-${(n += 1)}`;
         svg.querySelector("#wl-fig-hatch").id = hatchId;
         svg.style.setProperty("--wl-fig-hatch", `url(#${hatchId})`);
+        svg.classList.add(`vr-${demo.dataset.vr ?? "x"}`);
+        const defs = svg.querySelector("defs");
+        defs.insertAdjacentHTML(
+          "beforeend",
+          `<pattern id="vr-wide-${n}" patternUnits="userSpaceOnUse" width="11" height="11" patternTransform="rotate(45)"><rect class="wl-fig__hatch-ground" width="11" height="11"/><rect class="wl-fig__hatch-stripe" width="2" height="11"/></pattern>
+<pattern id="vr-dots-${n}" patternUnits="userSpaceOnUse" width="6" height="6"><rect class="wl-fig__hatch-ground" width="6" height="6"/><circle class="wl-fig__hatch-stripe" cx="3" cy="3" r="1.5"/></pattern>
+<pattern id="vr-d1-${n}" patternUnits="userSpaceOnUse" width="9" height="9"><rect class="vr-g1" width="9" height="9"/><circle class="wl-fig__hatch-stripe" cx="4.5" cy="4.5" r="1.6"/></pattern>
+<pattern id="vr-d2-${n}" patternUnits="userSpaceOnUse" width="6" height="6"><rect class="vr-g2" width="6" height="6"/><circle class="wl-fig__hatch-stripe" cx="3" cy="3" r="1.6"/></pattern>`,
+        );
+        for (const k of ["wide", "dots", "d1", "d2"])
+          svg.style.setProperty(`--vr-${k}`, `url(#vr-${k}-${n})`);
         const regions = [...svg.querySelectorAll("[data-area]")];
         const style = {};
         for (const pair of words(demo.dataset.cov)) {
@@ -555,7 +799,7 @@
         const attention = new Set(words(demo.dataset.attention));
         for (const r of regions.filter((x) => attention.has(x.dataset.area))) {
           const firstSeam = r.parentNode.querySelector(".wl-fig__seam");
-          for (const cls of ["wl-fig__halo-warn", "wl-fig__halo-gap"]) {
+          for (const cls of ["wl-fig__halo-warn", "wl-fig__halo-edge", "wl-fig__halo-gap"]) {
             const halo = r.cloneNode();
             halo.removeAttribute("data-area");
             halo.setAttribute("class", cls);
