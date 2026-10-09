@@ -113,6 +113,11 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
       onPointerDown={onCancelAutosave}
       onKeyDown={onCancelAutosave}
     >
+      <p className="wl-uf09__state">
+        {state.setIndex >= item.sets
+          ? en.uf09.liftingBackoff
+          : en.uf09.liftingCaption(state.setIndex + 1, item.sets)}
+      </p>
       <h1 className="wl-uf09__title">{exercise?.name ?? item.exerciseId}</h1>
       <div className="wl-uf09__field" role="group" aria-label={en.uf09.repsLabel}>
         <button

@@ -59,7 +59,7 @@ export const repsValue = () => document.querySelector('[data-field="reps"]')?.te
 export const autosaveText = () =>
   document.querySelector('[data-field="autosave"]')?.textContent ?? null;
 export const loadText = () => document.querySelector(".wl-uf09__load")?.textContent ?? null;
-export const setLineText = () => document.querySelector(".wl-uf09__set-line")?.textContent ?? null;
+export const setLineText = () => document.querySelector(".wl-uf09__state")?.textContent ?? null;
 
 /** Clicks a control and lets IndexedDB settle. */
 export async function tap(el: HTMLElement): Promise<void> {

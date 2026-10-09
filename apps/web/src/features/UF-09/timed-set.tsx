@@ -79,10 +79,10 @@ export function TimedSet({
 
   return (
     <div ref={viewRef} className="wl-uf09__view">
+      <p className="wl-uf09__state">{en.uf09.timedCaption(state.setIndex + 1, item.sets)}</p>
       <h1 ref={headingRef} className="wl-uf09__title" tabIndex={-1}>
         {name}
       </h1>
-      <p className="wl-uf09__set-line">{en.uf09.setOf(state.setIndex + 1, item.sets)}</p>
       <p className="wl-uf09__load" data-field="target">
         {en.uf09.holdTarget(formatClock(holdS))}
       </p>

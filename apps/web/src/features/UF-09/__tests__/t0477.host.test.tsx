@@ -23,6 +23,7 @@ import {
 import { call, renderSession } from "./session-helpers.js";
 import { findScreen, setLineText } from "./set-loop-helpers.js";
 import { dispatched, stores } from "./store-spy.js";
+import { en } from "../../../lib/i18n/en.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./offline-spies.js").then((m) => m.offlineSpies(orig)),
@@ -130,7 +131,7 @@ describe("T-0477 AC-3 List view during the warm-up", () => {
 
     await advance(95_000);
     await findScreen("UF-09.3");
-    expect(setLineText()).toBe("Set 2 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(2, 4));
   });
 
   it("pair (getReady): startRest before the 5 s countdown ends gives warmupSpentMs 0, no COUNTDOWN_END phase change", async () => {

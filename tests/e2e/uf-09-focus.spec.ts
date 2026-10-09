@@ -289,7 +289,7 @@ test.describe("T-0304b AC-12 one set offline", () => {
 
     // UF-09.3 after UF-09.1's 5 s: built content, not just a screen id.
     const current = page.locator('[data-screen-id="UF-09.3"]');
-    await expect(current.getByText("Set 1 of 4")).toBeVisible({ timeout: 10_000 });
+    await expect(current.getByText("Lifting · set 1 of 4")).toBeVisible({ timeout: 10_000 });
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
     const done = page.getByRole("button", { name: "Done set" });
     const box = await done.boundingBox();
@@ -383,7 +383,7 @@ test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
     await skipWarmup.click();
 
     const current = page.locator('[data-screen-id="UF-09.3"]');
-    await expect(current.getByText("Set 1 of 2")).toBeVisible();
+    await expect(current.getByText("Lifting · set 1 of 2")).toBeVisible();
     await page.getByRole("button", { name: "Done set" }).click();
     await expect(page.locator('[data-screen-id="UF-09.4"]')).toBeVisible();
 
@@ -396,7 +396,9 @@ test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
     await expect(page.locator('[data-field="announcer"]')).toHaveCount(1);
     await expectAxeClean(page);
     await rest.getByRole("button", { name: "Skip rest" }).click();
-    await expect(page.locator('[data-screen-id="UF-09.3"]').getByText("Set 2 of 2")).toBeVisible();
+    await expect(
+      page.locator('[data-screen-id="UF-09.3"]').getByText("Lifting · set 2 of 2"),
+    ).toBeVisible();
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
   });
 
@@ -426,7 +428,9 @@ test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
     await expect(next.getByRole("timer")).toHaveText(/^(1:00|0:5\d)$/);
     await expectAxeClean(page);
     await next.getByRole("button", { name: "I'm ready" }).click();
-    await expect(page.locator('[data-screen-id="UF-09.3"]').getByText("Set 1 of 3")).toBeVisible();
+    await expect(
+      page.locator('[data-screen-id="UF-09.3"]').getByText("Lifting · set 1 of 3"),
+    ).toBeVisible();
   });
 });
 

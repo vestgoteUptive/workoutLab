@@ -61,3 +61,12 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-09 e2e specs green · commit messages start with `T-0619` and cite the UF-09 IDs.
 
 ## Build / accept log
+
+### Build log (frontend-dev, 2026-10-09; base cb5c5c2, tree clean)
+- Built: `<p class="wl-uf09__state">` first in warmup, current-set, confirm-set, next-exercise (`titles.next`), timed-set; keys `warmupCaption`, `liftingCaption`, `liftingBackoff`, `timedCaption` in `flows/uf-09.ts`. `.wl-uf09__state` shares the old `set-line` CSS rule (no restyle).
+- Removed `setOf`, `backoffSet`, `warmupMove` (uf-09). Grep `setOf|backoffSet|warmupMove` over `apps/web/src` shows only `flows/uf-08.ts` `backoffSet`/`warmupMoves` (separate uf08 keys, untouched).
+- Changed assertions ("Set n of N", "Back-off set", "Move 1 of 4" text): `setLineText` helper now reads `.wl-uf09__state`; get-ready, set-loop (3), t0477.host, t0415.host (2), next-exercise, rest (2), t0422.host (2), warmup, current-set tests now use `en.uf09.*Caption`. e2e: `uf-09-focus.spec.ts` (4), plus `uf-05-swap.spec.ts:419` and `uf-08-setup.spec.ts:944` (outside the ticket's listed paths; text-only edits so they don't break).
+- AC map: AC1-AC4, AC6 `__tests__/t0619.captions.test.tsx`; AC5 + AC6 timed `timed-set.test.tsx` "T-0619 UF-09.7"; AC7 existing principle-1 e2e (green); AC8 UF-09 vitest 76 files green + e2e uf-09-focus/ready/offline/do-later (+uf-05, uf-08) 60 passed; AC9 `uf-09-offline.spec.ts` "T-0619 AC9".
+- Planted faults (backup + cp restore), each red: caption off-by-one (AC1), back-off branch dropped on 09.3 and on 09.4, warm-up index +1, next caption removed, timed total 3, aria-live on caption (AC6). All exit 1.
+- Red on unfixed code: first e2e run used wrong config path (invalid URL), rerun with `-c tests/e2e/playwright.config.ts` green.
+- Gate found 2 UF-03 tests (list-view.host, list-view.logging.host, different lane) reading UF-09.3's old set line; text-only update to the new caption + class (follow-up: none needed).

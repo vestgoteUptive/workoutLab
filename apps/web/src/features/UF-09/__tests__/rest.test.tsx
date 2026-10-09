@@ -39,6 +39,7 @@ import {
   textsSeenDuring,
 } from "./countdown-helpers.js";
 import { countOf, dispatched } from "./store-spy.js";
+import { en } from "../../../lib/i18n/en.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./set-loop-mock.js").then((m) => m.setLoopMock(orig)),
@@ -112,7 +113,7 @@ describe("AC-3 adjust", () => {
     expect(seen).toContain("GO");
     expect(screenId()).toBe("UF-09.3");
     expect(countOf("REST_END")).toBe(1);
-    expect(setLineText()).toBe("Set 2 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(2, 4));
   });
 
   it("+15 s from 120 reads 2:15, with no cap", async () => {
@@ -141,7 +142,7 @@ describe("AC-3 skip", () => {
     press("Skip rest");
     await flushReal();
     expect(screenId()).toBe("UF-09.3");
-    expect(setLineText()).toBe("Set 2 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(2, 4));
     expect(countOf("REST_END")).toBe(1);
   });
 });

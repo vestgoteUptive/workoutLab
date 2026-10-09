@@ -24,6 +24,7 @@ import { L2, NBSP, defaultDetail } from "./set-loop-fixtures.js";
 import { findCue, findScreen, seedFocus, setLineText } from "./set-loop-helpers.js";
 import { seedRest } from "./countdown-helpers.js";
 import { countOf, dispatched } from "./store-spy.js";
+import { en } from "../../../lib/i18n/en.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./set-loop-mock.js").then((m) => m.setLoopMock(orig)),
@@ -139,7 +140,7 @@ describe("AC-4 countdown", () => {
     expect(screenId()).toBe("UF-09.3");
     expect(countOf("READY")).toBe(1);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Barbell row");
-    expect(setLineText()).toBe("Set 1 of 3");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(1, 3));
   });
 
   it("I'm ready does that at once", async () => {

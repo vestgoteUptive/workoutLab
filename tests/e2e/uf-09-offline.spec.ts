@@ -531,3 +531,25 @@ test.describe("T-0468 AC-3 one screen at a time", () => {
     await expectOneScreen(page);
   });
 });
+
+test.describe("T-0619 AC9 the state caption after an offline reload", () => {
+  test("T-0619 AC9 a resumed session shows the caption for the persisted set index", async ({
+    page,
+    context,
+  }) => {
+    await openHome(page);
+    await precacheSettled(page);
+    await context.setOffline(true);
+    const id = await startFromReady(page, "45 minutes");
+    await logSets(page, 2, 99);
+    await page.getByRole("button", { name: "Skip rest" }).click();
+    const current = page.locator('[data-screen-id="UF-09.3"]');
+    await expect(current.locator(".wl-uf09__state")).toHaveText(/^Lifting · set 3 of 4$/);
+
+    await page.goto(`/session/${id}`);
+    await expect(current).toBeVisible();
+    await expect(current.locator(".wl-uf09__state")).toHaveText(/^Lifting · set 3 of 4$/);
+    await expect(current.locator("h1")).toBeVisible();
+    await expectOneScreen(page);
+  });
+});

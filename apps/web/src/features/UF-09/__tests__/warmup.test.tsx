@@ -18,6 +18,7 @@ import {
 } from "./helpers.js";
 import { findCue, findScreen, storedState } from "./set-loop-helpers.js";
 import { SCAP_CUE } from "./warmup-timed-mock.js";
+import { en } from "../../../lib/i18n/en.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./warmup-timed-mock.js").then((m) => m.warmupTimedMock(orig)),
@@ -56,7 +57,9 @@ describe("T-0304c AC-1 move 0 and its pair", () => {
     expect(heading()).toBe("Scap push-up");
     expect(timerText()).toBe("0:40");
     expect((await findCue()).textContent).toBe(SCAP_CUE);
-    expect(document.querySelector('[data-field="move-index"]')!.textContent).toBe("Move 1 of 4");
+    expect(document.querySelector('[data-field="move-index"]')!.textContent).toBe(
+      en.uf09.warmupCaption(1, 4),
+    );
   });
 
   it("the pair: move 1 'Band pull-apart' (detail null) has no cue element", async () => {

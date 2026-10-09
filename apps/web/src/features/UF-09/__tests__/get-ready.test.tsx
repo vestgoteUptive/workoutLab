@@ -19,6 +19,7 @@ import { L2, defaultDetail } from "./set-loop-fixtures.js";
 import { findScreen, setLineText } from "./set-loop-helpers.js";
 import * as offline from "../../../lib/offline/index.js";
 import { countOf, dispatched } from "./store-spy.js";
+import { en } from "../../../lib/i18n/en.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./set-loop-mock.js").then((m) => m.setLoopMock(orig)),
@@ -90,7 +91,7 @@ describe("AC-1 UF-09.1 with a warm-up (P1)", () => {
     expect(countOf("SKIP_WARMUP")).toBe(1);
     expect(countOf("COUNTDOWN_END")).toBe(0);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Bench press");
-    expect(setLineText()).toBe("Set 1 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(1, 4));
     expect(storedFocus()).toMatchObject({ phase: "set", itemIndex: 0, setIndex: 0 });
   });
 
@@ -122,7 +123,7 @@ describe("AC-1 the pair: no warm-up", () => {
     fireEvent.click(screen.getByRole("button", { name: "Start now" }));
     await findScreen("UF-09.3");
     expect(countOf("COUNTDOWN_END")).toBe(1);
-    expect(setLineText()).toBe("Set 1 of 4");
+    expect(setLineText()).toBe(en.uf09.liftingCaption(1, 4));
   });
 
   it("a first exercise missing from the library reads its id (D-0118 §8)", async () => {

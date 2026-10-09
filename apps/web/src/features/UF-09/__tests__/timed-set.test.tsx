@@ -509,3 +509,28 @@ describe("T-0304c AC-5 the copy (D-0062 §5, D-0119 §4)", () => {
     for (const text of real) expect(text).not.toMatch(/same|last time|as before/i);
   });
 });
+
+describe("T-0619 UF-09.7 state caption (AC5, AC6)", () => {
+  const caption = () => document.querySelector(".wl-uf09__state");
+
+  it("set 1 of 2: 'Timed set · 1 of 2' above the h1, the phase line unchanged, not a heading or live", async () => {
+    seedHold();
+    await renderLoaded();
+    expect(caption()!.textContent).toBe(en.uf09.timedCaption(1, 2));
+    expect(caption()!.nextElementSibling).toBe(screen.getByRole("heading", { level: 1 }));
+    expect(caption()!.closest("h1,h2,[aria-live],[role=status],[role=alert]")).toBeNull();
+    expect(phaseText()).toBe("Get in position");
+    expect(heading()).toBe("Plank");
+  });
+
+  it("a 1-set item shows 'Timed set · 1 of 1'", async () => {
+    const plan = planWith({
+      items: [P1.items[0]!, P1.items[1]!, P1.items[2]!, { ...PLANK, sets: 1 }],
+    });
+    await seedSession({ plan });
+    seedHold({}, plan);
+    await renderLoaded();
+    expect(caption()!.textContent).toBe(en.uf09.timedCaption(1, 1));
+    expect(caption()!.textContent).toBe("Timed set · 1 of 1");
+  });
+});
