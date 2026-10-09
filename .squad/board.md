@@ -195,7 +195,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0611 | UF-10.1/.2 in plan, attention #FFB3A3 | web-feature:UF-10 | T-0593, T-0615, T-0591 | todo | wl-build-web |
 | T-0612 | UF-11.1/.2/.3: tiles, check-in paper, G-2 → 28 px | web-feature:UF-11 | T-0593, T-0582, T-0591 | todo | wl-build-web |
 | T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | todo | wl-build-web |
-| T-0615 | BodyFigure + BodyMap read generic variables | web-shell | T-0614, T-0589 | doing | wl-build-web |
 | T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | todo | wl-build-web |
 | T-0620 | UF-09 wording: Done, Save · start rest, paused caption + stats (mock copy) | web-feature:UF-09 | T-0598 | todo | wl-build-web |
 | T-0621 | UF-09 status lines: Target hit, done line, Set-up time, First up (mock behaviour) | web-feature:UF-09 | T-0620 | todo | wl-build-web |
@@ -204,3 +203,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0624 | Web: retire the legacy fallback | web-shell | T-0595…T-0613, T-0615, T-0616 | todo | wl-build-web |
 | T-0625 | Tokens: retire Chalk & Iron keys and fonts (contract) | design | T-0624, T-0617, T-0585, T-0614 | todo | wl-design |
 | T-0626 | Screen restyles: use aria-disabled, not :disabled, on migrated controls (the legacy :disabled rule loses to scoped rules); feature CSS (.wl-plan__rows .wl-row, .wl-card.wl-excluded__row, excluded.css:140) can override the unboxed row and card by load order, so each screen ticket must check it (T-0592 review) | web-shell | T-0592 | todo (a checklist for each screen ticket) | wl-build-web |
+| T-0627 | C-01 legend attention swatch: 2 px --wl-attention with a 1 px --wl-bg gap per c-01-body-map.md:78 (BodyMap.tsx:117,192 use outlineOffset 0) (T-0615 review) | web-shell | T-0615 | todo | wl-build-web |
+| T-0628 | Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
+| T-0629 | never-in-workout.test.tsx:48 AC-A12 still flaky under load (waitFor on lazy session route), after T-0910 | web-feature:UF-10 | — | todo | wl-build-web |

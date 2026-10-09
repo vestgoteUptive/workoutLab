@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-02.1, UF-10.1, UF-04.2]
 decisions: [D-0208, D-0210, D-0211, D-0207, D-0060]
 deps: [T-0614, T-0589]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Restyle only: components/body-figure and components/body-map were built in T-0556/T-0557. A dependency of T-0601, T-0608 and T-0611. Shared components: full web e2e suite. -->
 ## Why
@@ -54,12 +54,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0615` and cite UF-02.1/UF-10.1/UF-04.2.
 
 ## Build / accept log
-
-### Build log (frontend-dev, 2026-10-09, branch base b9c18a0 clean)
-- Design: `body-figure.css` keeps the legacy rules and adds `:where([data-wl-state]) …` rules on the generic `--wl-*` variables (same specificity, so source order wins and the forced-colors block still wins). Reason: the generic variables at `:root` can't reproduce the legacy look exactly (legacy gap is `surface` not `bg`, primary is lime `accent` not `ink`, body stroke is `line-strong` not `line`), and D-0210 §2 says unmigrated screens don't change. `body-map.css` colours moved to generic vars (equal to legacy at `:root`).
-- Legend: `coverageLegend[n].token` = `plan-coverage-N`, `attentionLegend.token` = `plan-attention`. `BodyMap.tokenVar` and UF-10 `tokenVar` draw them as `var(--wl-coverage-N)` / `var(--wl-attention)` (neutral = `var(--wl-raise)`), never `--wl-color-plan-*`.
-- AC-ring: the ring (and its gap) is now emitted after the neutral body parts and before the regions, so the silhouette no longer hides it and the gap doesn't eat into its own region. Trade-off: a neighbouring region painted later still overlaps the ring where they touch (preview painted the ring first of all).
-- AC→test: AC1 `body-map-figure.spec.ts` "T-0615 AC1"; AC2 "AC2 legacy fallback" (+ legend swatch); AC3 `uf-04-figure.spec.ts` "AC3 plan primary and secondary"; AC4 `colours.test.ts` (regex gains `--wl-(raise|ink|ink-muted|line|bg|attention|focus|on-selected|coverage-0..4)`); AC5 existing specs, only colour assertions in BodyMap unit tests moved (`--wl-color-coverage-N` → `--wl-coverage-N`, `--wl-color-warn` → `--wl-attention`, focus → `--wl-focus`); AC6 "AC6 / AC7" axe color-contrast on C-01 full and compact + value colour = plan.ink; AC-T0614-2 `tokens.test.ts` AC6, `BodyMap.test.tsx` "AC-T0614-2", `UF-10/__tests__/legend-vars.test.ts`; AC-ring `BodyFigure.test.tsx` "AC-ring".
-- Planted faults (each restored from a backup copy; all failed as intended): literal `#FFFFFF` in body-figure.css fails colours.test; ring emitted before parts fails AC-ring; `tokenVar` reading `--wl-color-plan-*` fails 25 BodyMap tests incl. the AC-T0614-2 no-plan-var test; plan rules applied outside a state (`:where(html)`) fails AC2 and AC3 e2e; plan rules removed fails AC1 and AC3 e2e; numeric label colour `--wl-raise` fails AC6 e2e.
-- AC7 verdict: app-only 390×844 screenshots (full, compact, UF-04.2 figure) viewed. Cobalt figure, white on-target fill, hatch, salmon halo with bg gap and white focus ring match T-0614's preview; no canvas frame (placeholder box). The e2e puts `data-wl-state="plan"` on `<html>` because screens aren't migrated yet (T-0601/T-0608/T-0611); the UF-04 card keeps its dark surface until then.
-- Existing body-map/uf-04 e2e (labels, taps, 44 px, axe, forced colours) pass unchanged.
+Archived in `docs/tickets/log/T-0615.md` (D-0157).
