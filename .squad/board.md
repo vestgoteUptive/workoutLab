@@ -96,7 +96,6 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 |---|---|---|---|---|---|
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
 | T-0918 | UF-04: defer SKIP_WAITING until the route chunk settles (T-0916 root cause: aborted chunk, failed route for ~1 s) | web-shell | — | doing | wl-build-web |
-| T-0919 | pwa-update.spec.ts:109: adopted worker stuck waiting after SKIP_WAITING (~1%) | qa | T-0918 | todo | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
 
 ## Phase 5 — Iterate
@@ -175,7 +174,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | doing | wl-build-web |
-| T-0594 | C-02 tab bar look, SessionProgress, drain helper | web-shell | T-0592 | doing | wl-build-web |
 | T-0595 | UF-09.3/.4 + chrome in lift | web-feature:UF-09 | T-0593, T-0594, T-0591, T-0619 | todo | wl-build-web |
 | T-0596 | UF-09.2/.7 deep fill | web-feature:UF-09 | T-0595 | todo | wl-build-web |
 | T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | todo | wl-build-web |

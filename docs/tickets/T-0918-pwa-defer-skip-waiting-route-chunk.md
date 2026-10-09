@@ -18,8 +18,10 @@ T-0916 root cause, from the ticket QA log: `notifyRouteChange` → `activateIfSa
 - AC1 Unit: given a route change with a pending lazy import and a waiting worker, SKIP_WAITING is not posted until the import settles. Planted fault: posting immediately fails the test.
 - AC2 Unit: if the import fails, activation still happens once (no stuck update).
 - AC3 `pwa-update.spec.ts:118` passes `--repeat-each=300` with no console-guard failure.
+- AC4 (T-0919 folded in, orchestrator 2026-10-09): the stuck-waiting mode, where SKIP_WAITING is posted but the worker stays waiting and `boot()` stays 1 at :140 and :109, is root-caused and fixed. The whole `pwa-update.spec.ts` passes `--repeat-each=300` with 0 failures, twice.
 
 ## Paths you may change
+- `tests/e2e/pwa-update.spec.ts` (T-0919 folded in)
 - `apps/web/src/lib/pwa/**`, `apps/web/src/app/**` (route-change hook only), `apps/web/src/features/*/lazy-retry.ts` (only if needed)
 
 ## Contract impact
