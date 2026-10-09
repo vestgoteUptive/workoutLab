@@ -2,7 +2,7 @@
 // Build-output checks for T-0300a (AC-A2, AC-A3, AC-A5, AC-A6, AC-A10, AC-A11). One real
 // `vite build` into a temp outDir runs in beforeAll; every assertion reads that output.
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from "node:fs";
 import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
@@ -159,15 +159,19 @@ describe("AC-A5 service worker precache", () => {
 describe("T-0545 AC1 self-hosted fonts in the build", () => {
   const woff2 = () => readdirSync(join(outDir, "assets")).filter((f) => f.endsWith(".woff2"));
 
-  it("ships exactly 2 woff2 files in dist/assets", () => {
-    expect(woff2()).toHaveLength(2);
+  it("T-0588 AC1 ships exactly 4 woff2 files in dist/assets", () => {
+    expect(woff2()).toHaveLength(4);
   });
 
   it("index.html preloads each with as=font, type, crossorigin, and the file exists", () => {
     const links = [...indexHtml.matchAll(/<link rel="preload"[^>]*>/g)]
       .map((m) => m[0])
       .filter((t) => t.includes('as="font"'));
+    // T-0588 (D-0210): only the state pair is preloaded; the legacy pair loads on demand.
     expect(links).toHaveLength(2);
+    const names = links.map((t) => /href="([^"]+)"/.exec(t)![1]!.split("/").pop()!);
+    expect(names.some((n) => n.startsWith("familjen-grotesk"))).toBe(true);
+    expect(names.some((n) => n.startsWith("bricolage-grotesque"))).toBe(true);
     for (const tag of links) {
       expect(tag).toContain('type="font/woff2"');
       expect(tag).toMatch(/\scrossorigin/);
@@ -176,7 +180,7 @@ describe("T-0545 AC1 self-hosted fonts in the build", () => {
     }
   });
 
-  it("the service worker precache manifest lists both woff2 URLs", () => {
+  it("the service worker precache manifest lists all four woff2 URLs", () => {
     const sw = read("sw.js");
     const urls = new Set([...sw.matchAll(/url:"([^"]+)"/g)].map((m) => m[1]));
     for (const f of woff2()) expect(urls, f).toContain(`assets/${f}`);
@@ -194,6 +198,19 @@ describe("T-0545 AC1 self-hosted fonts in the build", () => {
       expect(text, f).not.toContain("fonts.googleapis");
       expect(text, f).not.toContain("fonts.gstatic");
     }
+  });
+});
+
+// T-0588 AC5 (D-0209 §2): the two preloaded files fit the budget (each <= 60 KB, total <= 110 KB).
+describe("T-0588 AC5 preloaded font budget", () => {
+  it("preloaded woff2 files are each <= 60 KB and <= 110 KB together", () => {
+    const hrefs = [...indexHtml.matchAll(/<link rel="preload"[^>]*as="font"[^>]*>/g)].map(
+      (m) => /href="([^"]+)"/.exec(m[0])![1]!,
+    );
+    const sizes = hrefs.map((h) => statSync(join(outDir, h.replace(/^\//, ""))).size);
+    expect(sizes).toHaveLength(2);
+    for (const n of sizes) expect(n).toBeLessThanOrEqual(60 * 1024);
+    expect(sizes.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(110 * 1024);
   });
 });
 

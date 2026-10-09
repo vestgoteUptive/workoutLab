@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@workoutlab/design-tokens/fonts.css";
+import "@workoutlab/design-tokens/fonts-state.css";
 import "@workoutlab/design-tokens/tokens.css";
 import "./main.css";
 import { App } from "./app/App.js";
