@@ -416,3 +416,11 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 |---|---|---|---|---|---|
 | T-0583 | Design tokens: Cobalt state groups, OKLCH coverage ramp, radius and space; self-hosted Familjen Grotesk and Bricolage Grotesque (additive; contract change, --force gate) | design | — | done | wl-design |
 | T-0584 | Landing page: Cobalt option 1b, plus 404 and Privacy restyle (copy unchanged; security sign-off on _headers) | landing | T-0583 | done | wl-build-web |
+
+## Cobalt + state colour redesign: phase 2, app (D-0208)
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0587 | Tokens: plan.ink-on-raise, plan.scrim, radius.progress, space.option-bleed, meta.planCoverage (additive contract) | design | — | done | wl-design |
+| T-0588 | Web app loads the state fonts; preload only Familjen + Bricolage | web-shell | — | done | wl-build-web |
+| T-0591 | e2e helper compareWithCanvas (390 × 844 app vs canvas frame, opt-in) | qa | — | done | wl-build-qa |
+| T-0618 | User flows v2 / PRD / gaps / visual-foundation wording | product | — | done | wl-spec |

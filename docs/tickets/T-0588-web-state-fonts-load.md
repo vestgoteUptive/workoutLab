@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-01.1, UF-11.2, UF-09.3]
 decisions: [D-0208, D-0209, D-0210, D-0203]
 deps: []
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ¼ day. There's no visible change: no screen uses --wl-font-plan/session until T-0589 maps them under [data-wl-state]. Paths are disjoint from T-0915 (lib/pwa). -->
 ## Why
@@ -49,8 +49,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `npx playwright test tests/e2e/fonts.spec.ts tests/e2e/visual-foundation.spec.ts` green · commit messages start with `T-0588`.
 
 ## Build / accept log
-- 2026-10-09 build (frontend-dev). main.tsx imports fonts-state.css; vite.config.ts preloads only familjen-grotesk*/bricolage-grotesque* woff2; globPatterns untouched; `_headers`/CSP untouched.
-- Red on unchanged code: `vitest run build.test.ts` (rewritten F-3) failed 2/75 (4 woff2 expected, preloads) before the change.
-- AC→test: AC1 build.test.ts F-3 (4 woff2, 2 preloads Familjen+Bricolage, precache lists all, CSP/no remote host); AC2/AC3 fonts.spec.ts online/offline (4 families, precache count 4, same-origin 200); AC4 fonts.spec.ts h1 check + visual-foundation.spec.ts unchanged; AC5 build.test.ts budget.
-- Planted faults (backup copy, restored): preload filter removed → preload + budget tests red; main.tsx import removed → 4-woff2, preload, budget red.
-- e2e: `playwright test -c tests/e2e/playwright.config.ts fonts.spec.ts visual-foundation.spec.ts` 20 passed.
+Archived in `docs/tickets/log/T-0588.md` (D-0157).

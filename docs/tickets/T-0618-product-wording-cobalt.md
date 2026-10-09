@@ -5,7 +5,7 @@ lane: product
 screens: [UF-02.1, UF-04.1, UF-09.2, UF-09.3, UF-09.5, UF-09.6, UF-09.7, UF-09.9]
 decisions: [D-0208, D-0210, D-0211, D-0212, D-0002]
 deps: []
-status: ready
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-spec (agent product-owner). About ¼ day, docs only. Screen IDs don't change (D-0002); only description cells and default text do. Spec-first, so the UF-09 tickets are accepted against the new rows. -->
 ## Why
@@ -53,5 +53,4 @@ none (screen IDs unchanged)
 check-all green · `format:check` green · commit messages start with `T-0618` and cite the UF IDs.
 
 ## Build / accept log
-- Build: edited user-flows UF-09 rows, UF-02.1 week row, C-02 tab names; PRD row and gaps A2 now cite D-0208/D-0211; visual-foundation header note.
-- AC2 red run: on HEAD the UF-09 table had 2+ matches for "200 px"/"orange"; after the edit 0. AC3: grep for "lime ramp"/"warn outline" in PRD and gaps gives 0. AC4: diff touches no Flow index row. AC1: check-all exit 0.
+Archived in `docs/tickets/log/T-0618.md` (D-0157).
