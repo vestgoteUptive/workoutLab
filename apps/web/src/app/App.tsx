@@ -6,7 +6,7 @@ import { AccountDeletedNotice } from "../components/account-deleted-notice/Accou
 import { TabBar } from "../components/tab-bar/TabBar.js";
 import { AuthProvider, useAuth } from "../lib/auth/auth-context.js";
 import { RedirectIfSignedIn, RequireAuth, RequireAuthOnceForSession } from "../lib/auth/guards.js";
-import { notifyRouteChange } from "../lib/pwa/update.js";
+import { notifyRouteChange, trackRouteImport } from "../lib/pwa/update.js";
 import { ProfileGate } from "../lib/profile/ProfileGate.js";
 import { isGatedPath } from "../lib/profile/gated-routes.js";
 import { ProfileStatusProvider } from "../lib/profile/profile-context.js";
@@ -62,7 +62,9 @@ function BalanceDetailGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const lazyComponents = new Map(routes.map((route) => [route.path, lazy(route.load)]));
+const lazyComponents = new Map(
+  routes.map((route) => [route.path, lazy(() => trackRouteImport(route.load()))]),
+);
 
 export function Shell() {
   const location = useLocation();
