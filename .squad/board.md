@@ -204,3 +204,4 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0629 | never-in-workout.test.tsx:48 AC-A12 still flaky under load (waitFor on lazy session route), after T-0910 | web-feature:UF-10 | — | doing | wl-build-web |
 | T-0630 | Sheet stacking and portal scope before UF-08.3/UF-05.1 adopt .wl-sheet: z-index under the tab bar, an unstyled scrim when portalled to body; AccountDeletedNotice outside any state root (T-0593 review, D-0216 addendum) | web-shell | T-0593 | todo | wl-build-web |
 | T-0650 | Body figure Cobalt variants page for the owner pick (H-31: needs changes in low steps, ring, hatch, silhouette); blocks the figure screens T-0601/T-0608/T-0611 | design | T-0614 | doing | wl-design |
+| T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
