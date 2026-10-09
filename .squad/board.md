@@ -94,7 +94,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0915 | lib/pwa/update.ts adopts installing worker in watch(), re-adopts on check() (pwa-update.spec.ts:109 flake) | web-shell | — | doing | wl-build-web |
+| T-0915 | lib/pwa/update.ts adopts installing worker in watch(), re-adopts on check() (pwa-update.spec.ts:109 flake) | web-shell | — | done | wl-build-web |
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
 | T-0916 | pwa-update.spec.ts:118 lazy-chunk console-guard flake: root-cause it | qa | T-0915 | todo | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
