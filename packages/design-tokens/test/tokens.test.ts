@@ -128,16 +128,21 @@ describe("AC5 text and outline contrast (NFR-A11Y-1)", () => {
 describe("AC6 C-01 legend data (D-0013/D-0019)", () => {
   it("coverageLegend has the five steps with exact copy", () => {
     expect(coverageLegend).toEqual([
-      { step: 0, token: "coverage-0", label: "None", srLabel: "No hard sets" },
-      { step: 1, token: "coverage-1", label: "Under ⅓", srLabel: "Under one third of target" },
-      { step: 2, token: "coverage-2", label: "Under ⅔", srLabel: "Under two thirds of target" },
-      { step: 3, token: "coverage-3", label: "Under target", srLabel: "Under target" },
-      { step: 4, token: "coverage-4", label: "On target", srLabel: "On target or over" },
+      { step: 0, token: "plan-coverage-0", label: "None", srLabel: "No hard sets" },
+      { step: 1, token: "plan-coverage-1", label: "Under ⅓", srLabel: "Under one third of target" },
+      {
+        step: 2,
+        token: "plan-coverage-2",
+        label: "Under ⅔",
+        srLabel: "Under two thirds of target",
+      },
+      { step: 3, token: "plan-coverage-3", label: "Under target", srLabel: "Under target" },
+      { step: 4, token: "plan-coverage-4", label: "On target", srLabel: "On target or over" },
     ]);
   });
-  it("attentionLegend is the 2 px warn outline", () => {
+  it("attentionLegend is the 2 px plan-attention outline", () => {
     expect(attentionLegend).toEqual({
-      token: "warn",
+      token: "plan-attention",
       style: "outline",
       widthPx: 2,
       label: "Needs attention",

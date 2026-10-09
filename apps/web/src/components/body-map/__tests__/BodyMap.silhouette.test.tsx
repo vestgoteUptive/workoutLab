@@ -52,7 +52,7 @@ describe("AC-1 region styles come straight from coverageStep and needsAttention"
     // Unflagged areas have no attention class.
     for (const p of calves) expect(classes(p)).not.toContain("attention");
     // Label swatch: warn ring, and the accessible name says so.
-    expect(fillOf(container, "back").style.outline).toBe("2px solid var(--wl-color-warn)");
+    expect(fillOf(container, "back").style.outline).toBe("2px solid var(--wl-attention)");
     expect(fillOf(container, "calves").style.outline).toBe("");
     expect(screen.getByRole("button", { name: /^Back,.*, needs attention$/ })).toBeInTheDocument();
     // A missing area (no data at all) is neutral too.

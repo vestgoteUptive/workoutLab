@@ -4,7 +4,7 @@
 // string or a CSS length. None of them re-derives an engine value from another one — there is no
 // `coverageStep` from `load / target`, and no `deficit` from `load` and `target`. AC-A5 and
 // AC-A13 exist to catch exactly that, so keep this file free of engine rules.
-import { coverageLegend, type ColorName } from "@workoutlab/design-tokens";
+import { coverageLegend, type ColorName, type PlanCoverageToken } from "@workoutlab/design-tokens";
 import type { LocalDate } from "@workoutlab/shared";
 
 /**
@@ -14,12 +14,18 @@ import type { LocalDate } from "@workoutlab/shared";
  * Shares the single source of truth, `coverageLegend`, with C-01 — so a stub with
  * `coverageStep: 2` gives the row and the map button the same fill (AC-A15).
  */
-export function fillToken(step: number): ColorName {
+export function fillToken(step: number): ColorName | PlanCoverageToken {
   return coverageLegend.find((e) => e.step === step)?.token ?? "surface-2";
 }
 
-/** `var(--wl-color-…)`; the only way a colour enters UF-10 (no raw hex anywhere). */
-export function tokenVar(name: ColorName): string {
+/**
+ * The CSS colour for a token; the only way a colour enters UF-10 (no raw hex anywhere).
+ * A `plan-coverage-N` legend token is drawn as the generic `var(--wl-coverage-N)` (D-0211 §2), so a
+ * screen without `data-wl-state` keeps the legacy look (D-0210 §2). Never `--wl-color-plan-*`.
+ */
+export function tokenVar(name: ColorName | PlanCoverageToken): string {
+  if (name === "surface-2") return "var(--wl-raise)";
+  if (name.startsWith("plan-coverage-")) return `var(--wl-coverage-${name.slice(-1)})`;
   return `var(--wl-color-${name})`;
 }
 

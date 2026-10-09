@@ -96,7 +96,7 @@ describe("AC-A1 zero history", () => {
       calves: 12,
     })) {
       expect(rowValue(area), area).toBe(`0 / ${target}`);
-      expect(rowFill(area), area).toBe("var(--wl-color-coverage-0)");
+      expect(rowFill(area), area).toBe("var(--wl-coverage-0)");
     }
 
     expect(screen.getByText(en.uf10.emptyState)).toBeInTheDocument();
@@ -195,7 +195,7 @@ describe("AC-A4 coverage steps, including over target", () => {
     renderBalance(at);
     await waitForRows();
     expect(rowValue("quads")).toBe(`${load} / 20`);
-    expect(rowFill("quads")).toBe(`var(--wl-color-${token})`);
+    expect(rowFill("quads")).toBe(`var(--wl-${token})`);
   });
 
   it("at 24 the row reads 24 / 20 and the bar is exactly 100 %, not 120 %", async () => {

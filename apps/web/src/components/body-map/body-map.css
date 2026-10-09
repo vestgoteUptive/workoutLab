@@ -4,8 +4,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  font-family: var(--wl-font-body);
-  color: var(--wl-color-text);
+  font-family: var(--wl-font);
+  color: var(--wl-ink);
 }
 
 /* Silhouette layout (D-0207 §2): BodyFigure above a slim label grid. The grid is 3 columns in
@@ -65,7 +65,7 @@
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: var(--wl-color-text);
+  color: var(--wl-ink);
   font: inherit;
   text-align: start;
 }
@@ -88,13 +88,13 @@ button.wl-body-map__area:disabled {
 /* Hover on the label, or on its region in the figure (data-hover), shows the hover state. */
 button.wl-body-map__area:hover:not(:disabled),
 button.wl-body-map__area[data-hover="true"] {
-  background: var(--wl-color-surface-2);
+  background: var(--wl-raise);
 }
 
 /* Focus ring: 2 px accent, offset 2 px. Never warn, which means "needs attention" (AC-D6). */
 .wl-body-map__area:focus-visible,
 .wl-body-map__link:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
+  outline: 2px solid var(--wl-focus);
   outline-offset: 2px;
 }
 
@@ -106,7 +106,7 @@ button.wl-body-map__area[data-hover="true"] {
   grid-row: 1 / span 2;
   width: 12px;
   height: 12px;
-  border: 1px solid var(--wl-color-text-muted);
+  border: 1px solid var(--wl-ink-muted);
   border-radius: 3px;
 }
 
@@ -116,12 +116,12 @@ button.wl-body-map__area[data-hover="true"] {
   overflow-wrap: anywhere;
   font-size: 14px;
   font-weight: 500;
-  color: var(--wl-color-text);
+  color: var(--wl-ink);
 }
 
 .wl-body-map--compact .wl-body-map__area-name {
   font-size: 12px;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
 }
 
 /* Numeric labels: text on bg, DM Sans 700, at least 12 px (NFR-A11Y-3). */
@@ -131,7 +131,7 @@ button.wl-body-map__area[data-hover="true"] {
   overflow-wrap: anywhere;
   font-size: 14px;
   font-weight: 700;
-  color: var(--wl-color-text);
+  color: var(--wl-ink);
   font-variant-numeric: tabular-nums;
 }
 
@@ -154,7 +154,7 @@ button.wl-body-map__area[data-hover="true"] {
   gap: 6px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
 }
 
 .wl-body-map__swatch {
