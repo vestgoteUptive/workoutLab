@@ -67,7 +67,7 @@ CSS variable: `--wl-color-<state>-<name>`, e.g. `plan.ink-muted` is `--wl-color-
 
 `meta.planCoverage[n].requiresLabel` (D-0211 §1) is true when step n is below 3:1 on `plan.bg`: steps 0 and 1 (1.4 and 2.4) need their numeric label, steps 2–4 (3.9, 6.0, 8.6) don't. The tests recompute every flag from the built ramp.
 
-The C-01 body figure recolour for `plan.bg` needs its own design check before it ships (D-0208 Q3).
+The C-01 body figure recolour for `plan.bg` is specified in § Body figure and needs its own design check before it ships (D-0208 Q3, H-31, T-0614).
 
 ### Contrast (WCAG 2.2 AA, enforced by tests)
 
@@ -165,21 +165,39 @@ Dark, high-contrast, athletic. Big condensed numbers for anything read mid-set. 
 
 ## Body figure (D-0207)
 
-One original front-and-back figure, `assets/body-figure/body-figure.svg` (`viewBox="0 0 256 290"`, front x 4..124, back x 132..252), drawn in a flat "chalk line" style. It's used by C-01 (`components/c-01-body-map.md`, 140 px compact, 240 px full) and UF-04.2 (`screens/UF-04.1-UF-04.2.md`, 200 px). The asset has no colour of its own: every colour comes from these class rules and the tokens. Preview: `assets/body-figure/preview.html`; region table: `assets/body-figure/README.md`.
+One original front-and-back figure, `assets/body-figure/body-figure.svg` (`viewBox="0 0 256 290"`, front x 4..124, back x 132..252), drawn in a flat "chalk line" style. It's used by C-01 (`components/c-01-body-map.md`, 140 px compact, 240 px full) and UF-04.2 (`screens/UF-04.1-UF-04.2.md`, 200 px). The asset has no colour of its own: every colour comes from these class rules and the tokens. Preview: `assets/body-figure/preview.html` (Cobalt section first, then the legacy section until T-0625); region table: `assets/body-figure/README.md`.
+
+**Cobalt recolour (D-0208, D-0211 §2, T-0614).** The class rules read only the generic state variables, so the figure takes the colours of the state it sits in. On `[data-wl-state="plan"]` it is the README "Assets" recolour; on a screen without a state the same variables fall back to the legacy palette (D-0210 §2), so an unmigrated screen doesn't change.
 
 | Part (class) | Fill | Stroke |
 |---|---|---|
-| Body outline (`wl-fig__body wl-fig__silhouette`) | `surface-2` | 1.5 px `text-muted` |
-| Region (`wl-fig__region`, `data-area`) | `surface-2` untouched; `coverage-N` (C-01); `accent` primary or the hatch secondary (UF-04.2) | 1 px `text-muted` |
-| Neutral part (`wl-fig__body`: hip flexor, inner thigh, knee, shin, back of knee, achilles) | `surface-2` | 0.75 px `line-strong` (decorative) |
-| Seam (`wl-fig__seam`, `data-seam` = its area) | none | 0.75 px `line-strong`; `on-accent` when its area is `accent`, `coverage-3` or `coverage-4` (decorative) |
+| Body outline (`wl-fig__body wl-fig__silhouette`) | `--wl-raise` | 1.5 px `--wl-ink-muted` |
+| Region (`wl-fig__region`, `data-area`) | `--wl-raise` untouched; `--wl-coverage-N` (C-01); `--wl-ink` primary or the `--wl-ink` hatch secondary (UF-04.2) | 1 px `--wl-ink-muted` |
+| Neutral part (`wl-fig__body`: hip flexor, inner thigh, knee, shin, back of knee, achilles) | `--wl-raise` | 0.75 px `--wl-line` (decorative) |
+| Seam (`wl-fig__seam`, `data-seam` = its area) | none | 0.75 px `--wl-line`; `--wl-on-selected` when its area is primary, `--wl-coverage-3` or `--wl-coverage-4` (decorative) |
+| Attention halo (`wl-fig__halo-warn`, `wl-fig__halo-gap`) | none | the 1 px region border, then a 1 px `--wl-bg` gap, then 2 px `--wl-attention` |
+| Highlight ring (`wl-fig__ring`, `wl-fig__ring-gap`) | none | a 2 px `--wl-bg` gap, then 2 px `--wl-focus` |
 
 - **Strokes** are set in CSS px with `vector-effect: non-scaling-stroke`, so they stay 1.5 px / 1 px / 0.75 px at every size. Round joins and caps.
-- **Hatch** (secondary areas): `<pattern id="wl-fig-hatch">`, `accent` stripes (`wl-fig__hatch-stripe`) on a `surface-2` ground (`wl-fig__hatch-ground`), 5 px period, 1.5 px stripes, 45°. The pattern is in user units (7.25 / 2.2), which is exactly 5 px / 1.5 px at the 200 px UF-04.2 size. Each inline copy of the figure needs its own pattern id.
-- **Attention halo** (C-01): the 1 px `text-muted` region border, then a 1 px `surface` gap, then 2 px `warn`, drawn outside the region and above its neighbours, never touching a lime fill (`warn` on `coverage-4` is 1.9:1).
-- **Contrast:** region border `text-muted` 6.8:1 on `surface`, 5.8:1 on `surface-2` / `coverage-0`, so every region is visible at every step. `accent` on `surface-2` 11.5:1.
-- **Forced colours:** fills `Canvas`, strokes `CanvasText`, primary `CanvasText`, hatch `CanvasText` stripes on `Canvas`, seams `GrayText`, attention 3 px `Highlight`.
+- **Hatch** (secondary areas): `<pattern id="wl-fig-hatch">`, `--wl-ink` stripes (`wl-fig__hatch-stripe`) on a `--wl-raise` ground (`wl-fig__hatch-ground`), 5 px period, 1.5 px stripes, 45°. The pattern is in user units (7.25 / 2.2), which is exactly 5 px / 1.5 px at the 200 px UF-04.2 size. Each inline copy of the figure needs its own pattern id.
+- **Attention halo** (C-01): drawn outside the region and above its neighbours. The halo stroke is 7 px and the gap stroke 3 px, both centred on the region path, so with the 1 px border on top the visible bands are 1 px border, 1 px `--wl-bg` gap, 2 px `--wl-attention`. The gap exists because `plan.attention` on a white fill (`--wl-coverage-4`, primary) is only 1.7:1; next to `--wl-bg` it is 5.0:1.
+- **Highlight ring** (C-01 label hover or focus): 9 px ring and 5 px gap strokes, drawn under the regions, so the 2 px `--wl-focus` band sits 2 px outside the region border and further out than the attention halo. White ring and salmon halo also differ in colour.
+- **Forced colours:** unchanged. Fills `Canvas`, strokes `CanvasText`, primary `CanvasText`, hatch `CanvasText` stripes on `Canvas`, seams `GrayText`, attention 3 px `Highlight`.
 - **Not interactive:** the `<svg>` is `aria-hidden`, has no title, role or tab stop; the text equivalents live next to it (C-01 labels, UF-04.2 lists).
+
+**Contrast on plan** (computed by `packages/design-tokens/test/body-figure.test.ts`):
+
+| Pair | Ratio | Needs | Use |
+|---|---|---|---|
+| `plan.ink-muted` on `plan.raise` | 4.2 | 3.0 | silhouette and region borders against the body |
+| `plan.ink` (white) on `plan.raise` | 6.2 | 3.0 | primary areas, hatch stripes, `--wl-coverage-4` |
+| `plan.attention` on `plan.bg` | 5.0 | 3.0 | the halo against the gap and the page |
+| `plan.attention` on `plan.raise` | 3.6 | 3.0 | the halo where it crosses the body |
+| `plan.attention` on white | 1.7 | fails | why the `--wl-bg` gap exists |
+| `plan.ink` (white) on `plan.bg` | 8.6 | 3.0 | the highlight ring |
+
+- Every region is visible at every step through its 1 px `--wl-ink-muted` border against the `--wl-raise` body (4.2:1), even where the step fill itself is under 3:1 (steps 0 and 1 on `plan.bg`, which therefore carry their numeric label: `meta.planCoverage`).
+- `--wl-line` and the seams are decorative (`plan.line` on `plan.raise` is 1.5:1); no information rests on them.
 
 ## Type
 

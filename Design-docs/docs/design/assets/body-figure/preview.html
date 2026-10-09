@@ -1,10 +1,12 @@
 <!doctype html>
 <!--
-  Body figure preview (T-0315, D-0207). Serve the repo root over http and open
-  /Design-docs/docs/design/assets/body-figure/preview.html (the page fetches body-figure.svg
-  and the token CSS, so file:// won't work). Build the tokens first:
-  `pnpm --filter @workoutlab/design-tokens build`.
-  Colours come only from var(--wl-color-…) tokens and, under forced colours, system colours.
+  Body figure preview (T-0315, D-0207; Cobalt section T-0614, D-0208, D-0211).
+  Open it with `node Design-docs/docs/design/assets/body-figure/serve-preview.mjs`: that builds the
+  token CSS if needed, serves the repo root and prints the URL. (The page fetches body-figure.svg
+  and the token CSS, so file:// won't work.)
+  Two sections: "cobalt" (the D-0208 recolour, on the generic --wl-* state variables, for the H-31
+  design check) and "legacy" (Chalk & Iron, kept until T-0625). check-figure.mjs checks both.
+  Colours come only from var(--wl-…) tokens and, under forced colours, system colours.
 -->
 <html lang="en">
   <head>
@@ -12,6 +14,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Body figure preview</title>
     <link rel="stylesheet" href="../../../../../packages/design-tokens/dist/tokens.css" />
+    <link rel="stylesheet" href="../../../../../packages/design-tokens/src/fonts-state.css" />
+    <style id="wl-state-plan">
+      /* The D-0211 §2 plan mapping, as apps/web/src/main.css writes it (the slice the figure reads). */
+      [data-wl-state="plan"] {
+        --wl-bg: var(--wl-color-plan-bg);
+        --wl-raise: var(--wl-color-plan-raise);
+        --wl-ink: var(--wl-color-plan-ink);
+        --wl-ink-muted: var(--wl-color-plan-ink-muted);
+        --wl-line: var(--wl-color-plan-line);
+        --wl-on-selected: var(--wl-color-plan-on-selected);
+        --wl-attention: var(--wl-color-plan-attention);
+        --wl-focus: var(--wl-color-plan-ink);
+        --wl-coverage-0: var(--wl-color-plan-coverage-0);
+        --wl-coverage-1: var(--wl-color-plan-coverage-1);
+        --wl-coverage-2: var(--wl-color-plan-coverage-2);
+        --wl-coverage-3: var(--wl-color-plan-coverage-3);
+        --wl-coverage-4: var(--wl-color-plan-coverage-4);
+        --wl-font: var(--wl-font-plan);
+      }
+    </style>
+    <style id="wl-fig-css-cobalt">
+      /* ---- Cobalt figure rules (T-0614): generic state variables only; T-0615 copies these ---- */
+      [data-wl-state="plan"] .wl-fig__silhouette {
+        fill: var(--wl-raise);
+        stroke: var(--wl-ink-muted);
+        stroke-width: 1.5px;
+      }
+      [data-wl-state="plan"] .wl-fig__body:not(.wl-fig__silhouette) {
+        fill: var(--wl-raise);
+        stroke: var(--wl-line);
+        stroke-width: 0.75px;
+      }
+      [data-wl-state="plan"] .wl-fig__region {
+        fill: var(--wl-raise);
+        stroke: var(--wl-ink-muted);
+        stroke-width: 1px;
+      }
+      [data-wl-state="plan"] .wl-fig__seam {
+        fill: none;
+        stroke: var(--wl-line);
+        stroke-width: 0.75px;
+      }
+      [data-wl-state="plan"] .wl-fig__seam--on-accent {
+        stroke: var(--wl-on-selected);
+      }
+      [data-wl-state="plan"] .wl-fig__hatch-ground {
+        fill: var(--wl-raise);
+      }
+      [data-wl-state="plan"] .wl-fig__hatch-stripe {
+        fill: var(--wl-ink);
+      }
+      [data-wl-state="plan"] .wl-fig__region--primary {
+        fill: var(--wl-ink);
+      }
+      [data-wl-state="plan"] .wl-fig__region--secondary {
+        fill: var(--wl-fig-hatch, url(#wl-fig-hatch));
+      }
+      [data-wl-state="plan"] .wl-fig__region--cov-0 {
+        fill: var(--wl-coverage-0);
+      }
+      [data-wl-state="plan"] .wl-fig__region--cov-1 {
+        fill: var(--wl-coverage-1);
+      }
+      [data-wl-state="plan"] .wl-fig__region--cov-2 {
+        fill: var(--wl-coverage-2);
+      }
+      [data-wl-state="plan"] .wl-fig__region--cov-3 {
+        fill: var(--wl-coverage-3);
+      }
+      [data-wl-state="plan"] .wl-fig__region--cov-4 {
+        fill: var(--wl-coverage-4);
+      }
+      /* Attention halo: 1 px region border, then a 1 px bg gap, then 2 px attention. */
+      [data-wl-state="plan"] .wl-fig__halo-warn {
+        fill: none;
+        stroke: var(--wl-attention);
+        stroke-width: 7px;
+      }
+      [data-wl-state="plan"] .wl-fig__halo-gap {
+        fill: none;
+        stroke: var(--wl-bg);
+        stroke-width: 3px;
+      }
+      /* Highlight ring: 2 px focus, 2 px outside the region border, with a bg gap. */
+      [data-wl-state="plan"] .wl-fig__ring {
+        fill: none;
+        stroke: var(--wl-focus);
+        stroke-width: 9px;
+      }
+      [data-wl-state="plan"] .wl-fig__ring-gap {
+        fill: none;
+        stroke: var(--wl-bg);
+        stroke-width: 5px;
+      }
+      /* Forced colours: unchanged (the #wl-fig-css block below applies to both sections). */
+    </style>
     <style id="wl-fig-css">
       /* ---- the figure's own rules (the BodyFigure component, T-0556, copies these) ---- */
       .wl-fig {
@@ -201,9 +299,163 @@
       .demo--forced p {
         color: CanvasText;
       }
+      /* ---- Cobalt section chrome: no cards, hairlines and type only (D-0208) ---- */
+      .cobalt {
+        margin: -24px -24px 0;
+        padding: 32px 28px 40px;
+        background: var(--wl-bg);
+        color: var(--wl-ink);
+        font-family: var(--wl-font);
+      }
+      .cobalt h1,
+      .cobalt h2 {
+        font-family: var(--wl-font);
+        text-transform: none;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+      }
+      .cobalt h1 {
+        font-size: 2.5rem;
+        line-height: 1;
+      }
+      .cobalt h2 {
+        font-size: 1.375rem;
+        margin-top: 32px;
+        padding-top: 16px;
+        border-top: 1px solid var(--wl-line);
+      }
+      .cobalt > p,
+      .cobalt li {
+        color: var(--wl-ink-muted);
+        font-size: 0.9375rem;
+        line-height: 1.45;
+        max-width: 40em;
+      }
+      .cobalt .demo {
+        background: none;
+        border: 0;
+        border-radius: 0;
+        padding: 0;
+      }
+      .cobalt .demo p {
+        color: var(--wl-ink-muted);
+        font-size: 0.875rem;
+        max-width: 212px;
+      }
+      .cobalt .row {
+        gap: 20px 16px;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+        margin: 16px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: var(--wl-ink-muted);
+      }
+      .legend li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .swatch {
+        width: 12px;
+        height: 12px;
+        box-sizing: border-box;
+        border: 1px solid var(--wl-ink-muted);
+      }
+      .swatch--attention {
+        border: 2px solid var(--wl-attention);
+        background: transparent;
+      }
     </style>
   </head>
   <body>
+    <section class="cobalt" data-preview="cobalt" data-wl-state="plan">
+      <h1>Body figure on Cobalt.</h1>
+      <p>
+        T-0614 · D-0208 · D-0211 · design check H-31. C-01 (UF-02.1, UF-10.1) and UF-04.2 on
+        plan.bg. Judge it against the handoff README "Assets":
+      </p>
+      <ul>
+        <li>Silhouette <code>plan.raise</code>, stroke <code>ink-muted</code>.</li>
+        <li>Coverage ramp from <code>plan.raise</code> (step 0) to white (step 4).</li>
+        <li>Primary areas white, secondary areas a white hatch.</li>
+        <li>Attention halo in <code>plan.attention</code>, with a 1 px plan.bg gap.</li>
+      </ul>
+
+      <h2>C-01 coverage, steps 0–4</h2>
+      <div class="row">
+        <div class="demo" data-h="140" data-cov="all:0"><p>Step 0 · None</p></div>
+        <div class="demo" data-h="140" data-cov="all:1"><p>Step 1 · Under ⅓</p></div>
+        <div class="demo" data-h="140" data-cov="all:2"><p>Step 2 · Under ⅔</p></div>
+        <div class="demo" data-h="140" data-cov="all:3"><p>Step 3 · Under target</p></div>
+        <div class="demo" data-h="140" data-cov="all:4"><p>Step 4 · On target</p></div>
+      </div>
+      <ul class="legend" aria-label="Coverage legend">
+        <li><span class="swatch" style="background: var(--wl-coverage-0)"></span>None</li>
+        <li><span class="swatch" style="background: var(--wl-coverage-1)"></span>Under ⅓</li>
+        <li><span class="swatch" style="background: var(--wl-coverage-2)"></span>Under ⅔</li>
+        <li><span class="swatch" style="background: var(--wl-coverage-3)"></span>Under target</li>
+        <li><span class="swatch" style="background: var(--wl-coverage-4)"></span>On target</li>
+        <li><span class="swatch swatch--attention"></span>Needs attention</li>
+      </ul>
+
+      <h2>C-01 full, attention on and off</h2>
+      <div class="row">
+        <div
+          class="demo"
+          data-h="240"
+          data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2"
+          data-attention="glutes core"
+        >
+          <p>
+            Attention on glutes (step 4, white: the plan.bg gap keeps the halo off the fill) and core
+            (step 0). Calves missing → plan.raise.
+          </p>
+        </div>
+        <div
+          class="demo"
+          data-h="240"
+          data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2"
+        >
+          <p>The same steps, attention off.</p>
+        </div>
+        <div
+          class="demo"
+          data-h="240"
+          data-cov="chest:4 back:3 shoulders:2 arms:1 core:0 glutes:4 quads:3 hamstrings:2"
+          data-attention="glutes"
+          data-ring="core"
+        >
+          <p>Highlight ring on core (label hover or focus), next to the glutes halo.</p>
+        </div>
+      </div>
+
+      <h2>UF-04.2 primary and secondary</h2>
+      <div class="row">
+        <div class="demo" data-h="200" data-primary="chest" data-secondary="shoulders">
+          <p>Primary chest, secondary shoulders</p>
+        </div>
+        <div class="demo" data-h="200" data-primary="quads glutes" data-secondary="hamstrings core">
+          <p>Back squat: primary quads, glutes; secondary hamstrings, core</p>
+        </div>
+        <div
+          class="demo demo--grey"
+          data-h="200"
+          data-primary="quads glutes"
+          data-secondary="hamstrings core"
+        >
+          <p>Greyscale: primary and hatch stay apart without hue</p>
+        </div>
+      </div>
+      <p>Forced colours are unchanged: see the legacy section below.</p>
+    </section>
+
+    <section data-preview="legacy">
     <h1>Body figure</h1>
     <p>T-0315 · D-0207 · C-01 (UF-02.1, UF-10.1) and UF-04.2. Original art.</p>
 
@@ -269,6 +521,7 @@
         <p>Forced colours</p>
       </div>
     </div>
+    </section>
 
     <script type="module">
       const ACCENT_FILLS = /--(primary|cov-3|cov-4)\b/;
@@ -309,6 +562,16 @@
             r.parentNode.insertBefore(halo, firstSeam);
           }
           r.parentNode.insertBefore(r, firstSeam);
+        }
+        // Highlight ring: drawn first in its view, under every part (as BodyFigure does).
+        const ring = new Set(words(demo.dataset.ring));
+        for (const r of regions.filter((x) => ring.has(x.dataset.area))) {
+          for (const cls of ["wl-fig__ring-gap", "wl-fig__ring"]) {
+            const halo = r.cloneNode();
+            halo.removeAttribute("data-area");
+            halo.setAttribute("class", cls);
+            r.parentNode.insertBefore(halo, r.parentNode.firstChild);
+          }
         }
       }
       document.documentElement.dataset.ready = "true";

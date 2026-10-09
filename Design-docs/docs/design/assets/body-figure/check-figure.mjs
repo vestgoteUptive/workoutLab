@@ -2,8 +2,10 @@
 // check-figure (T-0315, D-0207): checks body-figure.svg and the docs that describe it.
 // Node only, no dependencies.
 //
-// Usage: node check-figure.mjs              check body-figure.svg (AC-1..3) and the docs (AC-5)
-//        node check-figure.mjs --svg <file>  check one SVG file only ("-" reads stdin)
+// Usage: node check-figure.mjs                  check body-figure.svg (AC-1..3), the docs (AC-5)
+//                                              and both preview.html sections (T-0614)
+//        node check-figure.mjs --svg <file>      check one SVG file only ("-" reads stdin)
+//        node check-figure.mjs --preview <file>  check one preview file only ("-" reads stdin)
 // Exit 0 = clean, 1 = problems found (one per line on stdout).
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
@@ -181,14 +183,93 @@ export function checkDocs(root = REPO) {
   return problems;
 }
 
+/** The generic state variables (D-0211 §2) the Cobalt figure rules may read, plus the hatch id. */
+const COBALT_VARS =
+  /^--wl-(?:bg|raise|ink|ink-muted|line|on-selected|attention|focus|coverage-[0-4]|fig-hatch)$/;
+/** Chalk & Iron names that must not appear in the Cobalt rules. */
+const LEGACY_NAMES = /\b(?:surface-2|surface|accent|warn|text-muted|line-strong|on-accent)\b/;
+const SECTION_DEMOS = {
+  cobalt: [
+    ["C-01 step 0", /data-cov="all:0"/],
+    ["C-01 step 4", /data-cov="all:4"/],
+    ["attention on", /data-cov="[^"]+"\s+data-attention="[^"]+"/],
+    ["attention off", /data-cov="[^"]*\bglutes:4[^"]*"\s*>/],
+    ["UF-04.2 primary", /data-primary="[^"]+"/],
+    ["UF-04.2 secondary", /data-secondary="[^"]+"/],
+    ["highlight ring", /data-ring="[^"]+"/],
+  ],
+  legacy: [
+    ["C-01 step 0", /data-cov="all:0"/],
+    ["C-01 step 4", /data-cov="all:4"/],
+    ["attention", /data-attention="[^"]+"/],
+    ["UF-04.2 primary", /data-primary="[^"]+"/],
+    ["UF-04.2 secondary", /data-secondary="[^"]+"/],
+  ],
+};
+
+/** T-0614 on preview.html: the Cobalt section (generic variables only) and the legacy section. */
+export function checkPreview(html) {
+  const problems = [];
+  const block = (id) => html.match(new RegExp(`<style id="${id}">([\\s\\S]*?)</style>`))?.[1];
+  const sectionOf = (name) =>
+    html.match(new RegExp(`<section[^>]*data-preview="${name}"[^>]*>([\\s\\S]*?)</section>`))?.[1];
+
+  const lit = html.match(COLOUR_RE);
+  if (lit) problems.push(`preview: colour literal "${lit[0]}" in preview.html`);
+
+  const cobaltCss = block("wl-fig-css-cobalt");
+  if (cobaltCss === undefined) problems.push('preview: <style id="wl-fig-css-cobalt"> is missing');
+  else {
+    const rules = cobaltCss.replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const m of rules.matchAll(/var\((--[\w-]+)/g))
+      if (!COBALT_VARS.test(m[1]))
+        problems.push(`preview: Cobalt rule reads ${m[1]}, not a generic state variable`);
+    // Values only: the class names (wl-fig__seam--on-accent, halo-warn) are geometry, not colour.
+    const values = [...rules.matchAll(/\{([^}]*)\}/g)].map((m) => m[1]).join("\n");
+    const legacy = values.match(LEGACY_NAMES);
+    if (legacy) problems.push(`preview: Cobalt rules name the Chalk & Iron "${legacy[0]}"`);
+    for (const sel of rules.matchAll(/([^{}]+)\{/g))
+      for (const part of sel[1].split(","))
+        if (!part.trim().startsWith('[data-wl-state="plan"]'))
+          problems.push(`preview: Cobalt rule "${part.trim()}" is not under [data-wl-state="plan"]`);
+  }
+  const plan = block("wl-state-plan");
+  if (plan === undefined) problems.push('preview: <style id="wl-state-plan"> is missing');
+  else
+    for (const m of plan.matchAll(/(--wl-[\w-]+):\s*var\((--[\w-]+)\)/g))
+      if (!m[2].startsWith("--wl-color-plan-") && m[2] !== "--wl-font-plan")
+        problems.push(`preview: plan mapping ${m[1]} reads ${m[2]}, not a plan token`);
+  if (block("wl-fig-css") === undefined) problems.push('preview: <style id="wl-fig-css"> is missing');
+
+  for (const [name, demos] of Object.entries(SECTION_DEMOS)) {
+    const section = sectionOf(name);
+    if (section === undefined) {
+      problems.push(`preview: no <section data-preview="${name}">`);
+      continue;
+    }
+    for (const [label, re] of demos)
+      if (!re.test(section)) problems.push(`preview: ${name} section has no ${label} demo`);
+  }
+  if (!/<section[^>]*data-preview="cobalt"[^>]*data-wl-state="plan"/.test(html))
+    problems.push('preview: the cobalt section is not data-wl-state="plan"');
+  return problems;
+}
+
 function main(argv) {
   let problems;
   const svgFlag = argv.indexOf("--svg");
+  const previewFlag = argv.indexOf("--preview");
+  const input = (file) => readFileSync(file === "-" || !file ? 0 : file, "utf8");
   if (svgFlag >= 0) {
-    const file = argv[svgFlag + 1];
-    problems = checkSvg(readFileSync(file === "-" || !file ? 0 : file, "utf8"));
+    problems = checkSvg(input(argv[svgFlag + 1]));
+  } else if (previewFlag >= 0) {
+    problems = checkPreview(input(argv[previewFlag + 1]));
   } else {
-    problems = [...checkSvg(readFileSync(join(HERE, "body-figure.svg"), "utf8")), ...checkDocs()];
+    problems = [
+      ...checkSvg(readFileSync(join(HERE, "body-figure.svg"), "utf8")),
+      ...checkDocs(),
+      ...checkPreview(readFileSync(join(HERE, "preview.html"), "utf8")),
+    ];
   }
   for (const p of problems) console.log(p);
   if (problems.length > 0) {

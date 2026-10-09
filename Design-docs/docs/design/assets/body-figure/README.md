@@ -6,8 +6,9 @@ An original, neutral front-and-back body figure for C-01 (UF-02.1, UF-10.1) and 
 |---|---|
 | `body-figure.svg` | The asset. `viewBox="0 0 256 290"`; `<g data-view="front">` (x 4..124) and `<g data-view="back">` (x 132..252). No colour attributes. |
 | `draw-figure.mjs` | Generates `body-figure.svg` from hand-placed points (`node draw-figure.mjs`). Edit the points here, not the SVG. |
-| `check-figure.mjs` | The T-0315 checks: AC-1..AC-3 on the SVG, AC-5 on the docs. `node check-figure.mjs`, or `--svg <file|->` for one SVG. Also run by `packages/design-tokens/test/body-figure.test.ts`. |
-| `preview.html` | Sizes 140/200/240, coverage 0–4, attention halo, primary/secondary/none, greyscale and forced colours. Serve the repo root over http (it fetches the SVG and `packages/design-tokens/dist/tokens.css`; build that first). |
+| `check-figure.mjs` | The T-0315 checks: AC-1..AC-3 on the SVG, AC-5 on the docs, and (T-0614) both preview sections. `node check-figure.mjs`, or `--svg <file|->` / `--preview <file|->` for one file. Also run by `packages/design-tokens/test/body-figure.test.ts` and `body-figure-cobalt.test.ts`. |
+| `preview.html` | Two sections. **Cobalt** (T-0614, D-0208, the H-31 design check): C-01 steps 0–4 with the legend, attention on and off, the highlight ring, UF-04.2 primary/secondary and greyscale, on the generic `--wl-*` variables (`#wl-fig-css-cobalt`). **Legacy** (Chalk & Iron, until T-0625): sizes 140/200/240, coverage 0–4, attention halo, primary/secondary/none, greyscale and forced colours. |
+| `serve-preview.mjs` | `node Design-docs/docs/design/assets/body-figure/serve-preview.mjs` builds the token CSS if it's missing, serves the repo root on 127.0.0.1:5180 and prints the preview URL. |
 
 ## Regions
 
@@ -35,4 +36,4 @@ At 240 px tall (C-01 full) one unit is 0.83 px: a calf is about 15 × 28 px, a f
 
 ## Using it (T-0556)
 
-Inline the SVG (no fetch, works offline), set `aria-hidden="true"`, give the hatch pattern a unique id per instance, and style it with the class rules in `preview.html` (`#wl-fig-css`) and `design-system.md` § Body figure.
+Inline the SVG (no fetch, works offline), set `aria-hidden="true"`, give the hatch pattern a unique id per instance, and style it with the class rules in `preview.html` (`#wl-fig-css-cobalt` on the generic state variables; `#wl-fig-css` is the legacy set) and `design-system.md` § Body figure.
