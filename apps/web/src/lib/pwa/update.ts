@@ -48,12 +48,30 @@ export function notifyRouteChange(pathname: string): void {
   notify(pathname);
 }
 
+// T-0918: posting SKIP_WAITING while a route's lazy chunk is in flight makes Chromium abort that
+// request (net::ERR_ABORTED), so the route fails before the reload. Activation therefore waits
+// until every tracked route import has settled (loaded or failed), then runs once.
+let pendingImports = 0;
+let onImportsSettled: () => void = () => undefined;
+
+/** Wraps a route's lazy `import()`: while it is pending, the waiting worker is not activated. */
+export function trackRouteImport<T>(promise: Promise<T>): Promise<T> {
+  pendingImports++;
+  const settle = (): void => {
+    pendingImports--;
+    if (pendingImports === 0) onImportsSettled();
+  };
+  promise.then(settle, settle);
+  return promise;
+}
+
 /** Starts the update checks; never throws, never rejects, never logs an error. */
 export function startUpdateChecks(options: UpdateOptions = {}): void {
   const prod = options.prod ?? import.meta.env.PROD;
   const win = (options.win ?? window) as UpdateWindow;
   const container = win.navigator.serviceWorker;
   notify = () => undefined;
+  onImportsSettled = () => undefined;
   if (!prod || !container) return;
 
   const hadController = container.controller != null;
@@ -95,7 +113,14 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
 
   /** Lets the waiting worker take over, at a safe path with no other tab mid-workout. */
   const activateIfSafe = (pathname: string): void => {
-    if (!waitingWorker || activateSent || !isSafeToReload(pathname) || otherTabInSession()) return;
+    if (
+      pendingImports > 0 ||
+      !waitingWorker ||
+      activateSent ||
+      !isSafeToReload(pathname) ||
+      otherTabInSession()
+    )
+      return;
     activateSent = true;
     waitingWorker.postMessage({ type: "SKIP_WAITING" });
   };
@@ -167,6 +192,7 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
     activateIfSafe(pathname);
     applyIfSafe(pathname);
   };
+  onImportsSettled = () => activateIfSafe(win.location.pathname);
   trackSession(win.location.pathname);
   check();
 }
