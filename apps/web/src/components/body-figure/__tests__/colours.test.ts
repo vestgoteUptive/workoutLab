@@ -42,7 +42,11 @@ describe("AC-2 tokens only", () => {
     const colourValues = (src: string) =>
       [...src.matchAll(/\b(?:fill|stroke):\s*([^;]+);/g)].map((m) => m[1]!.trim());
     for (const v of colourValues(normal!)) {
-      expect(v).toMatch(/^(none|var\(--wl-color-[\w-]+\)|var\(--wl-fig-hatch\))$/);
+      // T-0615: the generic state variables (D-0211 §2) are allowed next to --wl-color-*; they
+      // are the same tokens resolved per state. A raw #fff still fails LITERAL above.
+      expect(v).toMatch(
+        /^(none|var\(--wl-color-[\w-]+\)|var\(--wl-fig-hatch\)|var\(--wl-(raise|ink|ink-muted|line|bg|attention|focus|on-selected|coverage-[0-4])\))$/,
+      );
     }
     for (const v of colourValues(forced!)) {
       expect(v).toMatch(

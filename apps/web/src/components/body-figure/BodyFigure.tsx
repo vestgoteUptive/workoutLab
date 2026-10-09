@@ -77,6 +77,7 @@ export function BodyFigure({ regions, highlighted, onRegionPointer, size }: Body
 
   function view(v: Node_, vi: number): ReactNode {
     const out: ReactNode[] = [];
+    const parts: ReactNode[] = [];
     const late: ReactNode[] = [];
     const seams: ReactNode[] = [];
     const rings: ReactNode[] = [];
@@ -90,7 +91,7 @@ export function BodyFigure({ regions, highlighted, onRegionPointer, size }: Body
         return;
       }
       if (!area || !isArea(area)) {
-        out.push(path(c, cls, `b${i}`));
+        parts.push(path(c, cls, `b${i}`));
         return;
       }
       const m = mods.get(area)!;
@@ -115,6 +116,9 @@ export function BodyFigure({ regions, highlighted, onRegionPointer, size }: Body
     return createElement(
       "g",
       { key: vi, className: v.attrs.class, "data-view": v.attrs["data-view"] },
+      // Paint order (AC-ring): body parts, then the highlight ring, then the regions, so the
+      // silhouette never hides the ring and the ring's gap never eats into its own region.
+      ...parts,
       ...rings,
       ...out,
       ...late,

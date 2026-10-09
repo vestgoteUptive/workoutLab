@@ -3,11 +3,11 @@
 //
 // Data in, nothing computed (principle 3): the fill comes from the engine's `coverageStep` and
 // the outline from `needsAttention`. This file never reads `load / target` to pick a colour.
-// Colours come only from `var(--wl-color-…)` tokens. Never import this from UF-03/UF-08/UF-09
+// Colours come only from the generic `var(--wl-…)` state variables. Never import this from UF-03/UF-08/UF-09
 // (principle 1, enforced by `no-restricted-imports` in apps/web/eslint.config.mjs).
 import { useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
 import { Link, useNavigate } from "react-router";
-import { attentionLegend, coverageLegend, type ColorName } from "@workoutlab/design-tokens";
+import { attentionLegend, coverageLegend } from "@workoutlab/design-tokens";
 import { AREAS, type Area, type AreaBalance } from "@workoutlab/shared";
 import { BodyFigure, type CoverageStep, type RegionStyle } from "../body-figure/index.js";
 import { en } from "../../lib/i18n/en.js";
@@ -35,9 +35,9 @@ export interface BodyMapProps {
 }
 
 /** The colour token for an engine step. A value outside 0–4 is an engine bug: show it neutral. */
-function fillToken(step: number): ColorName {
+function fillToken(step: number): LegendToken | "neutral" {
   const entry = coverageLegend.find((e) => e.step === step);
-  return entry ? entry.token : "surface-2";
+  return entry ? entry.token : "neutral";
 }
 
 /** A token `srLabel`, lower-cased for use inside a sentence. */
@@ -50,7 +50,19 @@ function stepSrLabel(step: number): string {
   return entry ? inSentence(entry.srLabel) : "";
 }
 
-const tokenVar = (name: ColorName): string => `var(--wl-color-${name})`;
+type LegendToken = (typeof coverageLegend)[number]["token"] | typeof attentionLegend.token;
+
+/**
+ * The generic state variable for a legend token (D-0211 §2, D-0210 §2): `plan-coverage-N` is
+ * `var(--wl-coverage-N)` and `plan-attention` is `var(--wl-attention)`. Never `--wl-color-plan-*`,
+ * which would show the cobalt colour on a screen that has no state. "neutral" is `--wl-raise`.
+ */
+const tokenVar = (name: LegendToken | "neutral"): string =>
+  name === "neutral"
+    ? "var(--wl-raise)"
+    : name === "plan-attention"
+      ? "var(--wl-attention)"
+      : `var(--wl-coverage-${name.slice("plan-coverage-".length)})`;
 
 const ATTENTION_OUTLINE = `${attentionLegend.widthPx}px solid ${tokenVar(attentionLegend.token)}`;
 
@@ -94,7 +106,7 @@ function regionStyles(
 function fillStyle(view: AreaView, loading: boolean, animate: boolean): CSSProperties {
   if (loading || !view.data) {
     return {
-      backgroundColor: tokenVar("surface-2"),
+      backgroundColor: tokenVar("neutral"),
       ...(loading && animate
         ? { animation: "wl-body-map-pulse 1.6s ease-in-out infinite" }
         : undefined),

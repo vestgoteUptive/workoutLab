@@ -99,6 +99,70 @@
   stroke-width: 5px;
   pointer-events: none;
 }
+/* State scopes (T-0615, D-0208 §2, D-0210 §2, D-0211 §2): on a screen that sets data-wl-state the
+   figure reads the generic --wl-* variables (cobalt on plan). The rules above are the legacy
+   look for screens without a state. :where() keeps specificity equal to the legacy rules, so
+   source order decides and the forced-colors block below still wins. */
+:where([data-wl-state]) .wl-fig__silhouette {
+  fill: var(--wl-raise);
+  stroke: var(--wl-ink-muted);
+}
+:where([data-wl-state]) .wl-fig__body:not(.wl-fig__silhouette) {
+  fill: var(--wl-raise);
+  stroke: var(--wl-line);
+}
+:where([data-wl-state]) .wl-fig__region {
+  fill: var(--wl-raise);
+  stroke: var(--wl-ink-muted);
+}
+:where([data-wl-state]) .wl-fig__seam {
+  stroke: var(--wl-line);
+}
+:where([data-wl-state]) .wl-fig__seam--on-accent {
+  stroke: var(--wl-on-selected);
+}
+:where([data-wl-state]) .wl-fig__hatch-ground {
+  fill: var(--wl-raise);
+}
+:where([data-wl-state]) .wl-fig__hatch-stripe {
+  fill: var(--wl-ink);
+}
+:where([data-wl-state]) .wl-fig__region--none {
+  fill: var(--wl-raise);
+}
+:where([data-wl-state]) .wl-fig__region--primary {
+  fill: var(--wl-ink);
+}
+:where([data-wl-state]) .wl-fig__region--secondary {
+  fill: var(--wl-fig-hatch);
+}
+:where([data-wl-state]) .wl-fig__region--step-0 {
+  fill: var(--wl-coverage-0);
+}
+:where([data-wl-state]) .wl-fig__region--step-1 {
+  fill: var(--wl-coverage-1);
+}
+:where([data-wl-state]) .wl-fig__region--step-2 {
+  fill: var(--wl-coverage-2);
+}
+:where([data-wl-state]) .wl-fig__region--step-3 {
+  fill: var(--wl-coverage-3);
+}
+:where([data-wl-state]) .wl-fig__region--step-4 {
+  fill: var(--wl-coverage-4);
+}
+:where([data-wl-state]) .wl-fig__halo-warn {
+  stroke: var(--wl-attention);
+}
+:where([data-wl-state]) .wl-fig__halo-gap {
+  stroke: var(--wl-bg);
+}
+:where([data-wl-state]) .wl-fig__ring {
+  stroke: var(--wl-focus);
+}
+:where([data-wl-state]) .wl-fig__ring-gap {
+  stroke: var(--wl-bg);
+}
 @media (forced-colors: active) {
   .wl-fig {
     forced-color-adjust: none;
