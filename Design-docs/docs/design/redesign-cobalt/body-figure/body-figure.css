@@ -1,0 +1,65 @@
+/* Body figure v2 (redesign-cobalt 1b, D-NNNN). Replaces body-figure.css next to BodyFigure.tsx.
+   Every colour comes from the state scope ([data-wl-state]) via the generic --wl-* variables,
+   so the same figure works on plan (blue), lift (red) and rest (teal). No raw colours. */
+
+.wl-fig {
+  --wl-fig-bg: var(--wl-bg);          /* seam colour = the screen background */
+  --wl-fig-ink: var(--wl-ink);        /* white in every state */
+  --wl-fig-base: color-mix(in srgb, var(--wl-fig-ink) 16%, transparent);
+  --wl-fig-zone: color-mix(in srgb, var(--wl-fig-ink) 32%, transparent);
+  display: block;
+  height: auto;
+  overflow: visible;
+}
+.wl-fig--full { width: 18.5rem; }     /* ≈ 300 px tall */
+.wl-fig--detail { width: 13.5rem; }   /* ≈ 220 px tall */
+.wl-fig--compact { width: 3.75rem; }  /* ≈ 60 px tall, list thumbnails */
+
+/* Silhouette: head, torso + legs, both arms. */
+.wl-fig__body { fill: var(--wl-fig-base); }
+
+/* Regions. The bg-coloured stroke is the seam between zones and against the silhouette. */
+.wl-fig__region {
+  fill: var(--wl-fig-zone);
+  stroke: var(--wl-fig-bg);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
+}
+.wl-fig--compact .wl-fig__region { stroke-width: 4; }
+
+/* Coverage: two colours. White = on target (step 4). Steps 0–3 stay the zone tint.
+   Needs attention = salmon + a ring (non-colour cue), from the attention flag. */
+.wl-fig__region--none,
+.wl-fig__region--step-0,
+.wl-fig__region--step-1,
+.wl-fig__region--step-2,
+.wl-fig__region--step-3 { fill: var(--wl-fig-zone); }
+.wl-fig__region--step-4,
+.wl-fig__region--primary { fill: var(--wl-fig-ink); }
+.wl-fig__region--secondary { fill: var(--wl-fig-hatch); }
+.wl-fig__region--attention { fill: var(--wl-color-plan-attention); }
+
+/* Hatch pattern (secondary). */
+.wl-fig__hatch-bg { fill: var(--wl-fig-base); }
+.wl-fig__hatch-line { fill: var(--wl-fig-ink); }
+
+/* Attention halo (drawn under the region by BodyFigure.tsx). */
+.wl-fig__halo-warn { fill: none; stroke: var(--wl-color-plan-attention); stroke-width: 7; }
+.wl-fig__halo-gap { fill: none; stroke: var(--wl-fig-bg); stroke-width: 3.6; }
+
+/* Highlight ring (area detail). Visible band = between the gap and ring strokes. */
+.wl-fig__ring { fill: none; stroke: var(--wl-fig-ink); stroke-width: 7; }
+.wl-fig__ring-gap { fill: none; stroke: var(--wl-fig-bg); stroke-width: 3.6; }
+
+/* Highlight dims everything else. Needs the two classes added in BodyFigure.tsx
+   (see BodyFigure-changes.md): wl-fig--has-highlight on <svg>, --highlighted on the region. */
+.wl-fig--has-highlight .wl-fig__body { fill: color-mix(in srgb, var(--wl-fig-ink) 12%, transparent); }
+.wl-fig--has-highlight .wl-fig__region { fill: color-mix(in srgb, var(--wl-fig-ink) 20%, transparent); }
+.wl-fig--has-highlight .wl-fig__region--highlighted { fill: var(--wl-fig-ink); }
+
+/* Seams (data-seam paths), if any are added later. */
+.wl-fig__seam { fill: none; stroke: var(--wl-fig-bg); stroke-width: 2.4; }
+
+/* Interactive figure (onboarding priority areas): pointer + focus-visible ring on the
+   control that wraps it; the svg itself stays aria-hidden. */
+.wl-fig[onclick], .wl-fig .wl-fig__region[data-area] { cursor: pointer; }
