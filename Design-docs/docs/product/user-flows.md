@@ -39,7 +39,7 @@ biggest gaps within the user's time budget.
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
 | UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises · .6 Favorite exercises | Adaptive targets; edit goal, rhythm, priorities; exercises never suggested; favorite exercises tried first; export or delete your data | Apple Fitness, Freeletics |
 
-Shared components: C-01 Body map, C-02 Tab bar (fixed to the bottom of the viewport, padded by the safe-area inset; never shown in UF-08/UF-09, D-0196). C-01 is a body figure (front and back, nine regions, D-0207) above a label grid. In `full` (UF-02.1, UF-10.1) the nine labels are the buttons and tapping a region does the same; `compact` is one link. UF-08 and UF-09 show no figure (the D-0060 §8 ban extends to `BodyFigure`).
+Shared components: C-01 Body map, C-02 Tab bar ("Today · Exercises · Progress · Plan", D-0212; fixed to the bottom of the viewport, padded by the safe-area inset; never shown in UF-08/UF-09, D-0196). C-01 is a body figure (front and back, nine regions, D-0207) above a label grid. In `full` (UF-02.1, UF-10.1) the nine labels are the buttons and tapping a region does the same; `compact` is one link. UF-08 and UF-09 show no figure (the D-0060 §8 ban extends to `BodyFigure`).
 
 ## UF-01.5 Account
 
@@ -48,6 +48,7 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
 ## UF-02 Today
 
 - **UF-02.1 Today: workout in progress** (D-0139). When this user has an unfinished workout started on this device in the last 12 h, Today shows one card under the header: "Workout in progress", "Started HH:MM · n of N sets" and **Resume workout**, which reopens focus mode where it was left (UF-09). With several, the newest one. "Start workout" stays. An older unfinished workout shows no card (it is stale, D-0111 §7). Works offline.
+- **UF-02.1 Today: week row and week line** (D-0212, `docs/specs/cobalt-mock-behaviour.md` §1.1). Under the `h1`, a Monday-to-Sunday row of seven day letters (done, rest, upcoming; today underlined) and a week line such as "Sunday — 3 of 3–5 done this week". Computed from the cache and queue, so it works offline.
 
 ## UF-04 Exercise library
 
@@ -91,14 +92,14 @@ Every screen: pause button, thin progress bar (warm-up + one segment per exercis
 | ID | Screen | Shows | Primary action | Timer |
 |---|---|---|---|---|
 | UF-09.1 | Get ready | 5-s countdown, first item | Start now / Skip warm-up | 5 s auto |
-| UF-09.2 | Warm-up | Move name, figure, one cue | Pause · restart · next move | 40 s per move, auto-advance |
-| UF-09.3 | Current set | Exercise, "Set n of N", weight × reps, plate loading, one cue | **Done set** (200 px) | none |
-| UF-09.4 | Confirm set | Pre-filled reps and weight, reps in reserve | Save · start rest | auto-save after 5 s unless touched |
-| UF-09.5 | Rest | Countdown ring, next set only | −15 s · +15 s · Skip | auto-start; orange + cue at 10 s; "GO" at 0 |
-| UF-09.6 | Next exercise | Name, illustration, sets/reps/weight, cue | I'm ready · Swap | set-up countdown 60 s |
-| UF-09.7 | Timed set | Hold name, ring | Pause/resume | 3-s get-in-position, then hold time; auto-logs |
+| UF-09.2 | Warm-up | "Warm-up · move n of N" (D-0212), move name, figure, one cue | Pause · restart · next move | 40 s per move, auto-advance |
+| UF-09.3 | Current set | "Lifting · set n of N" (D-0212), exercise, weight × reps, one cue; plate loading is out of scope (Phase 5, D-0066 §13) | **Done** (full-width session button, D-0208, D-0212) | none |
+| UF-09.4 | Confirm set | Pre-filled reps and weight, reps in reserve | Save · start rest when a rest follows (D-0212) | auto-save after 5 s unless touched |
+| UF-09.5 | Rest | Countdown on the rest-to-lift drain, next set only (D-0208) | −15 s · +15 s · Skip | auto-start; cue at 10 s; "GO" at 0 |
+| UF-09.6 | Next exercise | "Next exercise" caption, done line, name, illustration, sets/reps/weight, cue, "Set-up time" label (D-0212) | I'm ready · Swap | set-up countdown 60 s |
+| UF-09.7 | Timed set | "Timed set · n of N" caption, hold name, deep fill (D-0208, D-0212) | Pause/resume | 3-s get-in-position, then hold time; auto-logs |
 | UF-09.8 | Time check | Minutes behind, projected finish, 3 options | Continue | only between exercises, only when behind |
-| UF-09.9 | Paused | Elapsed, left, sets done | Resume · swap · do later · skip · how-to · list view · end | all timers stopped |
+| UF-09.9 | Paused | "Workout paused · timers stopped" caption (D-0212), elapsed, left, sets done | Resume · swap · do later · skip · how-to · list view · end | all timers stopped |
 
 **Do {name} later** (UF-09.9, D-0205): for a busy machine. Moves the current exercise, if none of its sets is logged, to just after the next unfinished one, then resumes at UF-09.6 for that one (or the warm-up/UF-09.1 where it was). Hidden for a partly done exercise, for the last unfinished one and on a pause from UF-09.8. The time check's remaining time is unchanged. Works offline and survives a reload (the order is written to the session's plan).
 

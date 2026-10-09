@@ -53,7 +53,7 @@ Each item is answered by a default in `docs/gaps.md` §D, revisited in Phase 5 t
 | Question | Answer | Where |
 |---|---|---|
 | Does the warm-up count toward the time budget? | Yes. A toggle on UF-08.1, on by default, about 3 min. | D-0004 |
-| Which hue means "on target"? | A lime ramp `coverage-0..4`. Attention is a `warn` outline. | D-0003, D-0013 |
+| Which hue means "on target"? | Plan coverage ramp `plan.coverage-0..4` (plan.raise → white, OKLCH). Attention is a 2 px `plan.attention` outline with a gap. | D-0003, D-0013, D-0208, D-0211 |
 | Prototype inconsistencies (the plank on UF-09.7, set counts)? | The engine output is the truth; prototype numbers are only illustrative. | D-0002 |
 | Weekly vs 14-day on UF-06.1? | 14 days everywhere. | D-0002 |
 | Guest mode before the account? | No, but the account step comes after the plan preview. | D-0014 |
