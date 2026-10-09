@@ -104,8 +104,11 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
     if (hadController) pending = true;
   };
 
+  // T-0915: check() re-adopts waiting/installing on every call; each worker is adopted once.
+  const adopted = new WeakSet<ServiceWorker>();
   const adopt = (worker: ServiceWorker | null | undefined): void => {
-    if (!worker || !hadController) return;
+    if (!worker || !hadController || adopted.has(worker)) return;
+    adopted.add(worker);
     const onState = (): void => {
       if (worker.state === "installed") {
         waitingWorker = worker;
@@ -124,6 +127,7 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
     if (watched === registration || typeof registration.addEventListener !== "function") return;
     watched = registration;
     adopt(registration.waiting);
+    adopt(registration.installing);
     registration.addEventListener("updatefound", () => adopt(registration.installing));
   };
 
@@ -132,6 +136,8 @@ export function startUpdateChecks(options: UpdateOptions = {}): void {
     void Promise.resolve(container.ready)
       .then((registration) => {
         watch(registration);
+        adopt(registration.waiting);
+        adopt(registration.installing);
         return registration.update();
       })
       .catch(() => undefined);
