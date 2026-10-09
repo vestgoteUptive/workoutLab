@@ -64,10 +64,12 @@ describe("T-0532 excluded-exercises design specs (D-0199)", () => {
       expect(t, f).not.toMatch(/#[0-9A-Fa-f]{6}\b/);
     }
   });
-  it("neutral notice names its tokens and the info icon", () => {
+  it("neutral notice names its Cobalt variables and the info icon (T-0590 AC2)", () => {
     const t = read("components/neutral-notice.md");
-    for (const s of ["surface-2", "line", "text-muted", "info icon", "2 px stroke"])
+    for (const s of ["--wl-raise", "--wl-ink", "info icon", "2 px stroke", "6.2"])
       expect(t).toContain(s);
+    expect(t).not.toMatch(/surface-2|accent|warn/i);
+    expect(t).toContain("reserved for C-01 attention, errors and over time");
   });
   it("UF-08.2 and UF-11.5 carry both notice strings", () => {
     for (const f of ["screens/UF-08.2.md", "screens/UF-11.5.md"]) {
@@ -76,19 +78,22 @@ describe("T-0532 excluded-exercises design specs (D-0199)", () => {
       expect(t, f).toContain("Not suggested: {area}. Every exercise for it is excluded.");
     }
   });
-  it("C-03 spec: native input in label, 24 px box, 44 px row, border token", () => {
+  it("C-03 spec: native input in label, 22 px box, 44 px row, Cobalt tokens (T-0590 AC1)", () => {
     const t = read("components/c-03-checkbox.md");
     for (const s of [
       '<input type="checkbox">',
       "<label>",
-      "24 × 24 px",
+      "22 × 22 px",
       "44 px",
-      "`text-muted`",
+      "`--wl-ink-muted`",
+      "`--wl-selected`",
+      "`--wl-on-selected`",
       "aria-disabled",
       "Focus-visible",
     ]) {
       expect(t).toContain(s);
     }
+    expect(t).not.toMatch(/\baccent\b|on-accent|warn|24 × 24/i);
   });
   it("every screen spec cites D-0199 and its a11y rules", () => {
     for (const f of files.filter((x) => x.startsWith("screens/"))) {
@@ -172,5 +177,117 @@ describe("T-0583 AC6 design-system.md documents Cobalt + state colour (D-0208)",
     expect(typeSection).not.toMatch(/\d px\s*\|/);
     expect(md).toContain("**No raw colours.**");
     expect(md).toContain("`workoutlab/no-raw-colour`, `wl-check-colours`");
+  });
+});
+
+describe("T-0590 state-patterns.md (D-0208, D-0211)", () => {
+  const read = (f: string) => readFileSync(resolve(designDir, f), "utf8");
+  const md = read("components/state-patterns.md");
+  const patterns = [
+    "Primary button",
+    "Secondary button",
+    "Text button",
+    "Session button",
+    "Row",
+    "Selected option row",
+    "Segmented control",
+    "Chip",
+    "Checkbox",
+    "Toggle",
+    "Input",
+    "Sheet",
+    "Paper panel",
+    "Tab bar",
+    "Session progress",
+    "Drain fill",
+  ];
+  const sections = new Map<string, string>();
+  const parts = md.split(/^## /m).slice(1);
+  for (const p of parts) sections.set(p.split("\n")[0] as string, p);
+  const section = (name: string): string => sections.get(name) ?? "";
+
+  it("AC3 has exactly one section per pattern, in order", () => {
+    expect(parts.map((p) => p.split("\n")[0])).toEqual(patterns);
+  });
+  it("AC3 every section names a --wl- variable and no hex", () => {
+    for (const n of patterns) {
+      expect(section(n), n).toMatch(/--wl-[a-z-]+/);
+    }
+    expect(md).not.toMatch(/#[0-9A-Fa-f]{6}\b/);
+  });
+  it("AC3 chip tick is aria-hidden; the selected option row keeps the native radio", () => {
+    expect(section("Chip")).toMatch(/aria-hidden/);
+    expect(section("Selected option row")).toMatch(/native radio stays/);
+  });
+  it("AC3 drain fill and sheet name prefers-reduced-motion", () => {
+    expect(section("Drain fill")).toContain("prefers-reduced-motion");
+    expect(section("Sheet")).toContain("prefers-reduced-motion");
+  });
+  it("AC3 every section with a control names a 44 x 44 target", () => {
+    for (const n of patterns.filter((x) => x !== "Drain fill")) {
+      expect(section(n), n).toMatch(/44 × 44 px/);
+    }
+  });
+  it("carries the pattern rules from the ticket", () => {
+    expect(section("Session button")).toMatch(/at least 64 px tall/);
+    expect(md).toMatch(/Destructive actions[^\n]*secondary outline[^\n]*last/);
+    const sheet = section("Sheet");
+    for (const s of [
+      "plan state even over lift",
+      "radius 28",
+      "40 × 4",
+      "--wl-line",
+      "plan.scrim",
+      "45 %",
+    ])
+      expect(sheet).toContain(s);
+    const paper = section("Paper panel");
+    for (const s of ["Full-bleed", "18–22 px block padding"]) expect(paper).toContain(s);
+    const prog = section("Session progress");
+    for (const s of ["44 px", "4 px high", "radius.progress", "nowrap"]) expect(prog).toContain(s);
+    const tab = section("Tab bar");
+    for (const s of [
+      "Text only",
+      "--wl-ink",
+      "2 px underline",
+      "aria-current",
+      "--wl-ink-muted",
+      "D-0196",
+    ])
+      expect(tab).toContain(s);
+    const input = section("Input");
+    for (const s of ["1 px `--wl-ink-muted` boundary", "`tile`", "D-0211 §5"])
+      expect(input).toContain(s);
+  });
+  it("AC4 uses the D-0211 §4 values and cites ink-muted on plan.bg 5.9 for Input and Checkbox", () => {
+    for (const v of ["8.6", "5.9", "6.2", "4.9", "4.8", "8.1", "12.9", "6.5", "5.0", "6.1"])
+      expect(md).toContain(v);
+    for (const n of ["Input", "Checkbox"])
+      expect(section(n), n).toMatch(/`(plan\.)?(--wl-)?ink-muted` on `plan\.bg` 5\.9/);
+  });
+  it("AC5 UF-11.2 drops the sign-off sentence and cites D-0203 §3 and H-32", () => {
+    const t = read("screens/UF-11.2.md");
+    expect(t).not.toContain("needs product sign-off");
+    expect(t).toContain("D-0203 §3");
+    expect(t).toContain("H-32");
+    expect(t).toContain("plan.ink-on-raise");
+  });
+  it("the plan screens carry the Look line and the prototype note is in place", () => {
+    for (const f of [
+      "UF-11.2",
+      "UF-11.4",
+      "UF-11.5",
+      "UF-11.6",
+      "UF-08.2",
+      "UF-08.5",
+      "UF-08.3-UF-05.1",
+      "UF-09.9",
+    ])
+      expect(read(`screens/${f}.md`), f).toContain(
+        "Cobalt + state colour (D-0208); state `plan`; patterns in `components/state-patterns.md`",
+      );
+    expect(read("prototype/README.md")).toContain(
+      "Chalk & Iron prototypes, superseded for the look by D-0208; still valid for layout order and copy.",
+    );
   });
 });
