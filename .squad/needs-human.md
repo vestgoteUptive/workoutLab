@@ -73,7 +73,7 @@ Phase 2 grooming (2026-10-09, D-0210–D-0213). The parked draft plan had five o
   - **Default:** none of them is built in this phase. Name any you want and the squad specs it as a feature (some need a data or engine decision).
 
   Added 2026-10-09.
-- [ ] **H-35 (ACTIONABLE NOW: T-0617 is on main) After T-0617 merges: apply the paper-style sign-in emails to prod.** **Not actionable yet:** the orchestrator says when T-0617 is on `main`.
+- [x] **H-35 (ACTIONABLE NOW: T-0617 is on main) After T-0617 merges: apply the paper-style sign-in emails to prod.** **Not actionable yet:** the orchestrator says when T-0617 is on `main`.
   - Run the keys-only auth PATCH from `infra/auth/README.md` in your own terminal (D-0185 §4). That's the plan first, then the `CONFIRM_PROD_AUTH=…` apply.
   - **Default until then:** prod keeps sending the old Chalk & Iron mail, which is harmless, and the auth drift check reports the templates as changed.
   - Blocks only the prod email look. T-0625 doesn't wait for it, because the templates in the repo no longer read the old tokens.
@@ -82,3 +82,5 @@ Phase 2 grooming (2026-10-09, D-0210–D-0213). The parked draft plan had five o
 
 H-34 answered by the owner, 2026-10-09: **promote** plate loading ("Each side 25 + 15 kg"), Latest PR on Today, the "Not feeling it? Quick 20-min" link, and library filters and tags into the redesign, as specced features. The other deferred items stay in phase 5.
 H-31 answered by the owner, 2026-10-09: **needs changes**. Details are being collected.
+
+H-35 done by the owner, 2026-10-09 15:58: the paper templates are applied to prod auth. Live hashes match main (magic-link d9ace53…, 2254 B; confirmation d88f6a6…, 2292 B). others_sha256 is unchanged (5fcf831…). The drift check exits 0 (17 keys).
