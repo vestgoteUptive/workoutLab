@@ -28,11 +28,16 @@ vi.mock("../../../lib/auth/auth-context.js", () => ({
 // Every route is a lazy chunk (routes.ts). The first render in this file would otherwise pay the
 // cold dynamic import of the UF-09 flow inside waitFor's 1 s budget, which under CPU load is not
 // enough (T-0910). Await the chunks themselves so the render only waits on rendering.
+// T-0629: the list must cover EVERY chunk a rendered route loads. UF-03 (the summary route) and
+// the signed-in AutoSync chunk were missing, so `/session/S1/summary` still paid a cold import
+// inside waitFor's 1 s budget (reproduced 8/8 with the CPU saturated).
 beforeAll(async () => {
   await Promise.all([
     import("../../UF-09/index.js"),
     import("../../UF-10/index.js"),
     import("../../UF-01/index.js"),
+    import("../../UF-03/index.js"),
+    import("../../../lib/offline/AutoSync.js"),
   ]);
 }, 60_000);
 
