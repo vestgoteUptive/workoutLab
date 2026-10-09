@@ -1,0 +1,83 @@
+---
+id: T-0592
+title: "Shared Cobalt controls in main.css: primary, secondary, text and session buttons, row, selected option row, segmented control, chip with an aria-hidden tick, focus ring, unboxed .wl-card; all under [data-wl-state] so unmigrated screens don't change; components/icons"
+lane: web-shell
+screens: [UF-01.2, UF-08.1, UF-08.3, UF-09.8]
+decisions: [D-0208, D-0210, D-0211, D-0213, D-0191, D-0203]
+deps: [T-0589, T-0590]
+status: todo
+---
+<!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. main.css is shared: full web e2e suite. Serial after T-0589, before T-0593 (the same file). -->
+## Why
+Every screen ticket reuses the same buttons, rows and choice controls (`components/state-patterns.md`, T-0590). They're built once here, reading only the generic variables, and scoped under `[data-wl-state]` (D-0210 §3). A Chalk & Iron screen that uses `.wl-button--primary` today keeps its look until its own ticket adds a state.
+
+## Scope
+- **In** (`apps/web/src/main.css`, every rule under `[data-wl-state]` or `.wl-paper`):
+  - **`.wl-button--primary`:**
+    - full width;
+    - `--wl-action` fill and `--wl-on-action` text;
+    - the button type role (1.375rem/700 in plan, 1.5rem/800 in session);
+    - padding 20 px 28 px, radius `--wl-radius-pill`;
+    - the label left and an icon slot right;
+    - `margin-top: auto` as the last child of a `.wl-page`.
+  - **`.wl-button--secondary`:** a 1.5 px `--wl-ink` outline on transparent, 1.125rem/600, 16 px block padding, pill.
+  - **`.wl-button--text`:** `--wl-ink`, underlined at a 4 px offset, min 44 × 44.
+  - **`.wl-button--session` and `.wl-button--session-outline`:** radius `--wl-radius-session-button`, padding 24 px 26 px, 1.5rem/800, min height 64 px.
+  - **`.wl-row`:**
+    - 12 px block padding and a 1 px `--wl-line` bottom border;
+    - title `.wl-type-row-title`, an optional caption `.wl-type-label`, an optional trailing value or chevron;
+    - min height 44 px when interactive.
+  - **`.wl-option`:** wraps a native `<input type="radio">`, which stays focusable. `:has(input:checked)` gives a `--wl-selected` block with radius `--wl-radius-option`, bleeding `--wl-space-option-bleed` past the gutter, with `--wl-on-selected` text.
+  - **`.wl-segmented`:** a 1 px `--wl-line` border, pill, 4 px inner padding. The selected segment (on native radios or `aria-pressed` buttons) is a `--wl-selected` pill with `--wl-on-selected` text.
+  - **`.wl-chip`:** 8 px × 14 px padding, pill. Off: a 1 px `--wl-line` outline. On (`aria-pressed="true"` or `:checked`): a `--wl-selected` fill, `--wl-on-selected` text, and an `aria-hidden` tick icon before the label. Min hit area 44 × 44 (padding plus an invisible extension).
+  - **`:focus-visible`** on all of these: a 2 px `--wl-focus` outline at a 2 px offset.
+  - **Under a state, `.wl-card`** is unboxed: no fill, border or radius, 0 padding, and a 1 px `--wl-line` divider between sections (D-0208 §3).
+  - **`apps/web/src/components/icons/`:** tick, arrow, cross, pause, chevron and drag-handle SVG components (2 px stroke, `currentColor`, `aria-hidden="true"`, `focusable="false"`).
+- **Out:**
+  - Checkbox, toggle, input, sheet, paper and notices (T-0593).
+  - Tab bar, progress and drain (T-0594).
+  - Adopting any of these in a screen.
+
+## Acceptance criteria
+- **AC1 (unchanged outside a state).** **Given** `/plan` and `/plan/account` (no state yet) **when** loaded **then** the primary and secondary buttons' computed `background-color`, `border-radius` and `font-family` equal main's (`accent`, `14px`, DM Sans), and `main-css.test.ts` ".wl-button--primary is accent on on-accent" passes unchanged.
+- **AC2 (buttons in plan and lift, `tests/e2e/cobalt-controls.spec.ts`).** In an injected `[data-wl-state="plan"]`:
+  - the primary has a `plan.action` background with `plan.on-action` text (8.6:1), `border-radius` ≥ 999px, 22px/700;
+  - the secondary has a 1.5px solid `plan.ink` border on transparent.
+
+  In `lift`: the session button has radius 22px, a min height of 64px, and `lift.on-action` text on white (6.1:1).
+
+  Expected values come from `tokens.json`.
+- **AC3 (selected option row).**
+  - **Given** three `.wl-option` radios with the second checked, in plan **then** the second has a `plan.selected` background, a 16px radius, and its left edge 18 px left of the gutter. The others are transparent.
+  - Arrow keys move the checked radio (native), and `getByRole("radio", { name })` finds each.
+  - **Unchecked:** no block. Both values are tested.
+- **AC4 (chip).**
+  - A pressed chip's accessible name equals its label exactly ("Quads", not "✓ Quads"), and its tick `<svg>` is `aria-hidden="true"`.
+  - Pressed and unpressed differ in background (`plan.selected` vs transparent) **and** in whether the tick is present.
+  - Its hit box is ≥ 44 × 44.
+- **AC5 (segmented control).** The selected segment's background is `plan.selected`, with `plan.on-selected` text (8.6:1). The control's border is 1px `plan.line`, which is decorative: the label text identifies the segment.
+- **AC6 (focus).** Tabbing to each control inside plan shows a 2px solid `plan.ink` outline at a 2px offset. Inside `.wl-paper` the outline is `paper.ink`.
+- **AC7 (no cards under a state).** A `.wl-card` in a plan root has a transparent background, `border-width: 0px` and `border-radius: 0px`. Outside a state it keeps the `surface` fill.
+- **AC8 (scoping, vitest over main.css).**
+  - There is no raw colour and no `px` font size.
+  - Every new selector is under `[data-wl-state]` or `.wl-paper`.
+  - A planted unscoped `.wl-button--primary { border-radius: 999px }` fails (log).
+- **AC9 (motion).** None of these controls has a `transition` other than inheriting the state cross-fade. With reduced motion, the computed `transition-duration` is `0s`.
+
+Checklist (D-0197 §7):
+- Inside and outside a state, checked and unchecked, and pressed and unpressed are all tested.
+- No migration fixture: not applicable.
+
+## Paths you may change
+- `apps/web/src/main.css` (listed extra)
+- `apps/web/src/app/__tests__/main-css.test.ts`, `apps/web/src/components/icons/**` (lane)
+- `tests/e2e/cobalt-controls.spec.ts` (new, listed extra)
+- `docs/tickets/T-0592-state-buttons-rows-options.md` (log only)
+
+## Contract impact
+none
+
+## Definition of done
+Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0592`.
+
+## Build / accept log

@@ -94,7 +94,6 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0915 | lib/pwa/update.ts adopts installing worker in watch(), re-adopts on check() (pwa-update.spec.ts:109 flake) | web-shell | — | done | wl-build-web |
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
 | T-0916 | pwa-update.spec.ts:118 lazy-chunk console-guard flake: root-cause it | qa | T-0915 | todo | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
@@ -152,3 +151,64 @@ Owner request: groom 10 parked tickets and put the ones worth doing at the back 
 |---|---|---|---|---|---|
 | T-0585 | Landing favicon.svg.ts uses Cobalt tokens (still flat Chalk & Iron bg/accent; T-0584 follow-up) | landing | T-0584 | todo | wl-build-web |
 | T-0586 | Landing Playwright project spreads devices["Desktop Chrome"], so older "390" specs run at 1280; set viewport per project or spec. Also: playwright-report/test-results trip the colour guard, so gitignore or exclude them. Record the T-0309 AC18 amendment (3 Tabs / skip link + Tab) | qa | T-0584 | todo | wl-build-web |
+
+## Cobalt + state colour redesign: phase 2, app (D-0208)
+Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships on merge, mixed look accepted, D-0210), and the mock's new behaviour and copy are included as their own tickets (D-0212, spec `docs/specs/cobalt-mock-behaviour.md`). Grooming defaults D-0213, design defaults D-0211, conflicts `docs/design-research/cobalt-state-conflicts.md`.
+
+**Order and shared files:**
+- **`main.css` chain:** T-0589 → T-0592 → T-0593, then T-0624 at the end.
+- **UF-09 folder chain:** T-0619 → T-0595 → T-0596 → T-0597 → T-0598 → T-0620 → T-0621. It never runs in parallel with T-0580.
+- **Other folder chains:**
+  - UF-08: T-0599 → T-0600
+  - UF-03: T-0603 → T-0604
+  - UF-01: T-0605 → T-0606
+  - UF-04: T-0607 → T-0608
+  - UF-11: T-0582 → T-0612 → T-0613
+  - UF-02: T-0601 → T-0623
+- **The figure first:** T-0614 → T-0615 come before the screens that show the figure (T-0601, T-0608, T-0611).
+- **Gates:**
+  - Forced full gate: T-0587 and T-0625.
+  - Full web e2e suite: T-0589, T-0592, T-0593, T-0594, T-0615, T-0616 and T-0624.
+- **Screen tickets:** each has a canvas side-by-side AC (T-0591 helper, `WL_CANVAS_COMPARE=1`).
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0587 | Tokens: plan.ink-on-raise, plan.scrim, radius.progress, space.option-bleed, meta.planCoverage (additive contract) | design | — | ready | wl-design |
+| T-0588 | Web app loads the state fonts; preload only Familjen + Bricolage | web-shell | — | ready | wl-build-web |
+| T-0589 | data-wl-state scopes + legacy fallback, gutter, state type scale, cross-fade, runtime theme-color | web-shell | T-0587, T-0588 | todo | wl-build-web |
+| T-0590 | Pattern specs: state-patterns.md, C-03, neutral notice, UF-11.2/11.4 wording | design | T-0587 | todo | wl-design |
+| T-0591 | e2e helper compareWithCanvas (390 × 844 app vs canvas frame, opt-in) | qa | — | ready | wl-build-qa |
+| T-0592 | Shared controls: buttons, row, option row, segmented, chip, icons, focus, unboxed cards | web-shell | T-0589, T-0590 | todo | wl-build-web |
+| T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | todo | wl-build-web |
+| T-0594 | C-02 tab bar look, SessionProgress, drain helper | web-shell | T-0592 | todo | wl-build-web |
+| T-0595 | UF-09.3/.4 + chrome in lift | web-feature:UF-09 | T-0593, T-0594, T-0591, T-0619 | todo | wl-build-web |
+| T-0596 | UF-09.2/.7 deep fill | web-feature:UF-09 | T-0595 | todo | wl-build-web |
+| T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | todo | wl-build-web |
+| T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
+| T-0599 | UF-08.1/.4 in plan | web-feature:UF-08 | T-0593, T-0591 | todo | wl-build-web |
+| T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
+| T-0601 | UF-02.1/.2 in plan | web-feature:UF-02 | T-0593, T-0594, T-0615, T-0591 | todo | wl-build-web |
+| T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | todo | wl-build-web |
+| T-0603 | UF-03.1/.2 lift + drain | web-feature:UF-03 | T-0593, T-0594, T-0591 | todo | wl-build-web |
+| T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | todo | wl-build-web |
+| T-0605 | UF-01.1–.4 onboarding in plan | web-feature:UF-01 | T-0593, T-0591 | todo | wl-build-web |
+| T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
+| T-0607 | UF-04.1/.3 in plan | web-feature:UF-04 | T-0593, T-0591 | todo | wl-build-web |
+| T-0608 | UF-04.2 + how-to sheet, cobalt figure | web-feature:UF-04 | T-0607, T-0615 | todo | wl-build-web |
+| T-0609 | UF-06.1/.2 in plan | web-feature:UF-06 | T-0593, T-0591 | todo | wl-build-web |
+| T-0610 | UF-07.1 in plan | web-feature:UF-07 | T-0593, T-0591 | todo | wl-build-web |
+| T-0611 | UF-10.1/.2 in plan, attention #FFB3A3 | web-feature:UF-10 | T-0593, T-0615, T-0591 | todo | wl-build-web |
+| T-0612 | UF-11.1/.2/.3: tiles, check-in paper, G-2 → 28 px | web-feature:UF-11 | T-0593, T-0582, T-0591 | todo | wl-build-web |
+| T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | todo | wl-build-web |
+| T-0614 | Body figure + C-01 cobalt design check, preview, legend fields | design | T-0590 | todo | wl-design |
+| T-0615 | BodyFigure + BodyMap read generic variables | web-shell | T-0614, T-0589 | todo | wl-build-web |
+| T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | todo | wl-build-web |
+| T-0617 | Auth emails on paper (PATCH = H-35) | infra | — | todo | wl-build-infra |
+| T-0618 | User flows v2 / PRD / gaps / visual-foundation wording | product | — | ready | wl-spec |
+| T-0619 | UF-09 state captions incl. "Lifting · set n of N" (mock behaviour, before the restyle) | web-feature:UF-09 | — | ready | wl-build-web |
+| T-0620 | UF-09 wording: Done, Save · start rest, paused caption + stats (mock copy) | web-feature:UF-09 | T-0598 | todo | wl-build-web |
+| T-0621 | UF-09 status lines: Target hit, done line, Set-up time, First up (mock behaviour) | web-feature:UF-09 | T-0620 | todo | wl-build-web |
+| T-0622 | "Exercises" for the tab and UF-04.1 title (mock copy) | web-shell | T-0594, T-0607 | todo | wl-build-web |
+| T-0623 | UF-02.1 week row + week line (mock behaviour) | web-feature:UF-02 | T-0601 | todo | wl-build-web |
+| T-0624 | Web: retire the legacy fallback | web-shell | T-0595…T-0613, T-0615, T-0616 | todo | wl-build-web |
+| T-0625 | Tokens: retire Chalk & Iron keys and fonts (contract) | design | T-0624, T-0617, T-0585, T-0614 | todo | wl-design |

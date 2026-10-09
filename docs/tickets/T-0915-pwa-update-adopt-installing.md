@@ -29,7 +29,4 @@ None.
 Gate green · green draft-PR CI · commits start with `T-0915`.
 
 ## Build / accept log
-- Built: `watch()` and every `check()` adopt `waiting`/`installing`, deduped by a WeakSet (`update.ts`).
-- AC1 -> update.test.ts "T-0915 AC1"; AC2 -> "T-0915 AC2" (also asserts one listener attach); AC3 -> pwa-update.spec.ts `--repeat-each=20`: 40 passed, exit 0.
-- Planted faults: dropping `adopt(installing)` fails AC1; dropping the dedupe fails AC2 (first version of AC2 did not catch it, so the listener-count assertion was added). Both restored from a copy.
-- Gate: typecheck/lint/test, format:check, check-all, test:repo-checks all exit 0.
+Archived in `docs/tickets/log/T-0915.md` (D-0157).

@@ -41,3 +41,41 @@ Owner answers, 2026-10-09 (Cobalt app phase):
 - Start the app redesign now: **yes**.
 - Rollout: **progressive** (each ticket ships on merge; a mixed cobalt/charcoal look is accepted during the migration).
 - New behaviour and copy shown in the mock: **include them** (specced as part of the redesign, not left out).
+
+Phase 2 grooming (2026-10-09, D-0210–D-0213). The parked draft plan had five owner questions, numbered H-29 to H-33 in the draft only. None of them is needed now:
+- "Confirm the Cobalt decisions": answered by H-29..H-32 above.
+- "Progressive rollout or an integration branch": answered on 2026-10-09 (progressive), and recorded in D-0210.
+- "Design check of the body figure": answered by H-31. The design check is part of T-0614.
+- "Should the landing page, emails and icon follow?": the landing page is done (T-0584). The emails and icon are tickets T-0617 and T-0616. Its PATCH step is now H-35.
+- "Include the mock's behaviour and copy?": answered on 2026-10-09 (include). D-0212 says what is in and what is out, and H-34 asks only about what's out.
+
+- [ ] **H-34 Cobalt mock: items that are not being built (non-blocking).**
+  - **Being built:** the Today week row, the "Lifting" captions, "Done", "Save · start rest", the paused wording, the status lines and the "Exercises" tab name (D-0212, `docs/specs/cobalt-mock-behaviour.md` §1).
+  - **Rejected,** because each conflicts with a principle, a contract or a decision (§2):
+    - weekly set counts;
+    - the mock's swap reasons;
+    - a 3-point effort;
+    - a progression-rule setting;
+    - a "Lose fat" goal;
+    - a name greeting.
+  - **Deferred** as Phase 5 ideas:
+    - plate loading ("Each side 25 + 15 kg");
+    - "Latest PR" on Today;
+    - the "Not feeling it? Quick 20-min" link;
+    - routine names as titles;
+    - "Always use this in my routine" on a swap;
+    - the minutes for each time-check option;
+    - volume and estimated 1RM on the summary and history;
+    - library filters and tags;
+    - a cue table;
+    - streaks and records on Progress;
+    - session length and a plan preview in onboarding.
+  - **Default:** none of them is built in this phase. Name any you want and the squad specs it as a feature (some need a data or engine decision).
+
+  Added 2026-10-09.
+- [ ] **H-35 After T-0617 merges: apply the paper-style sign-in emails to prod.** **Not actionable yet:** the orchestrator says when T-0617 is on `main`.
+  - Run the keys-only auth PATCH from `infra/auth/README.md` in your own terminal (D-0185 §4). That's the plan first, then the `CONFIRM_PROD_AUTH=…` apply.
+  - **Default until then:** prod keeps sending the old Chalk & Iron mail, which is harmless, and the auth drift check reports the templates as changed.
+  - Blocks only the prod email look. T-0625 doesn't wait for it, because the templates in the repo no longer read the old tokens.
+
+  Added 2026-10-09.
