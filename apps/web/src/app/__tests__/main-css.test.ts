@@ -172,3 +172,76 @@ describe("T-0589 AC9 type is rem", () => {
     for (const v of sizes) expect(v).toMatch(/^(\d*\.?\d+rem|clamp\([\d.rem ,vw]+\))$/);
   });
 });
+
+// T-0592 AC8: the shared Cobalt controls are scoped under a state, and read only generic variables.
+describe("T-0592 AC8 scoping of the shared controls (D-0210 §3)", () => {
+  /** Splits a selector list on commas outside parentheses. */
+  const splitTop = (list: string): string[] => {
+    const out: string[] = [];
+    let depth = 0;
+    let cur = "";
+    for (const ch of list) {
+      if (ch === "(") depth++;
+      if (ch === ")") depth--;
+      if (ch === "," && depth === 0) {
+        out.push(cur.trim());
+        cur = "";
+      } else cur += ch;
+    }
+    out.push(cur.trim());
+    return out;
+  };
+  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const rules = [...stripped.matchAll(/([^{};]+)\{([^{}]*)\}/g)].map((m) => ({
+    selectors: splitTop(m[1]!.replace(/\s+/g, " ")),
+    body: m[2]!,
+  }));
+  const NEW = /\.wl-(button--session|button--session-outline|option|segmented|chip)\b/;
+  const LEGACY = /\.wl-(button--primary|button--secondary|button--text|row|card)\b/;
+  const SCOPED =
+    /^(:is\(\[data-wl-state[^)]*\], \.wl-paper\)|\[data-wl-state[^\]]*\]|\.wl-paper)(?![\w-])/;
+  const unscoped = (s: string) => !SCOPED.test(s) && !s.startsWith("@");
+
+  it("every selector of a new control class starts at a state root or .wl-paper", () => {
+    const hits = rules.flatMap((r) => r.selectors).filter((s) => NEW.test(s));
+    expect(hits.length).toBeGreaterThan(20);
+    expect(hits.filter(unscoped)).toEqual([]);
+  });
+
+  it("the legacy button, row and card rules outside a state keep their old values", () => {
+    const hits = rules.filter((r) => r.selectors.some((s) => LEGACY.test(s) && unscoped(s)));
+    expect(hits.length).toBeGreaterThan(5);
+    for (const r of hits) {
+      const radius = [...r.body.matchAll(/border-radius:\s*([^;]+)/g)].map((m) => m[1]!.trim());
+      for (const v of radius) expect(["14px", "16px"], r.selectors.join()).toContain(v);
+      expect(r.body, r.selectors.join()).not.toMatch(
+        /--wl-(radius|space|action|on-action|ink|raise|line|selected|on-selected|focus)\b/,
+      );
+    }
+  });
+
+  it("scoped controls carry the spec values and read only generic variables", () => {
+    const body = (sel: string) =>
+      rules
+        .filter((r) => r.selectors.some((s) => s.includes(sel) && SCOPED.test(s)))
+        .map((r) => r.body)
+        .join("\n");
+    expect(body(".wl-button--primary")).toMatch(/background:\s*var\(--wl-action\)/);
+    expect(body(".wl-button--primary")).toMatch(/color:\s*var\(--wl-on-action\)/);
+    expect(body(".wl-button--primary")).toMatch(/border-radius:\s*var\(--wl-radius-pill\)/);
+    expect(body(".wl-button--primary")).toMatch(/padding:\s*20px 28px/);
+    expect(body(".wl-button--secondary")).toMatch(/border:\s*1\.5px solid var\(--wl-ink\)/);
+    expect(body(".wl-button--session")).toMatch(/min-block-size:\s*64px/);
+    expect(body(".wl-button--session")).toMatch(/--wl-radius-session-button/);
+    expect(body(".wl-option:has(input:checked)")).toMatch(/--wl-space-option-bleed/);
+    expect(body(".wl-option:has(input:checked)")).toMatch(/--wl-radius-option/);
+    expect(body(".wl-segmented")).toMatch(/border:\s*1px solid var\(--wl-line\)/);
+    expect(body(".wl-chip")).toMatch(/padding:\s*8px 14px/);
+    const own = rules.filter((r) => r.selectors.every((s) => SCOPED.test(s)));
+    for (const r of own) {
+      expect(r.body, r.selectors.join()).not.toMatch(
+        /--wl-color-(bg|text|accent|surface|line|on-accent|warn)\b/,
+      );
+    }
+  });
+});
