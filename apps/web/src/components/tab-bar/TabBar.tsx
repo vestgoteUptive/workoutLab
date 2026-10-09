@@ -1,6 +1,10 @@
 // C-02 Tab bar (D-0045 §3, principle 1). Four tabs, always in this order. Rendered by
 // `App.tsx` only outside `/welcome`, `/account`, `/auth/*` and `/session/*`.
 import { Link, useLocation } from "react-router";
+// Nothing renders SessionProgress or the drain yet (UF-09, UF-03.2); importing them keeps their
+// sheets in the bundle. Drop these two lines once those screens import them.
+import "../drain/index.js";
+import "../session-progress/index.js";
 import { en } from "../../lib/i18n/en.js";
 
 const TABS = [
@@ -30,7 +34,7 @@ export function TabBar() {
   return (
     <>
       <div className="wl-tab-bar__spacer" aria-hidden="true" />
-      <nav aria-label={en.tabBar.nav} className="wl-tab-bar">
+      <nav aria-label={en.tabBar.nav} className="wl-tab-bar" data-wl-state="plan">
         {TABS.map((tab) => {
           const active = isActive(tab.to, pathname);
           return (

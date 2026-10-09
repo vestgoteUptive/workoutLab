@@ -1,0 +1,30 @@
+/* Drain (T-0594, D-0211): the lift colour rises over the rest colour as time passes. The one
+ * allowed motion; 1 s linear steps, instant under reduced motion. Colours are token variables. */
+@property --wl-drain {
+  syntax: "<percentage>";
+  inherits: false;
+  initial-value: 0%;
+}
+
+.wl-drain {
+  background: linear-gradient(
+    to top,
+    var(--wl-color-lift-bg) var(--wl-drain, 0%),
+    var(--wl-color-rest-bg) var(--wl-drain, 0%)
+  );
+  transition: --wl-drain 1s linear;
+}
+
+.wl-drain--deep {
+  background: linear-gradient(
+    to top,
+    var(--wl-color-lift-bg) var(--wl-drain, 0%),
+    var(--wl-color-lift-bg-deep) var(--wl-drain, 0%)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-drain {
+    transition: none;
+  }
+}
