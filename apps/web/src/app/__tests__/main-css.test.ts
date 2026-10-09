@@ -199,7 +199,7 @@ describe("T-0592 AC8 scoping of the shared controls (D-0210 §3)", () => {
   const NEW = /\.wl-(button--session|button--session-outline|option|segmented|chip)\b/;
   const LEGACY = /\.wl-(button--primary|button--secondary|button--text|row|card)\b/;
   const SCOPED =
-    /^(:is\(\[data-wl-state[^)]*\], \.wl-paper\)|\[data-wl-state[^\]]*\]|\.wl-paper)(?![\w-])/;
+    /^(:is\((?:\[data-wl-state[^\]]*\]|\.wl-paper)(?:, (?:\[data-wl-state[^\]]*\]|\.wl-paper))*\)|\[data-wl-state[^\]]*\]|\.wl-paper)(?![\w-])/;
   const unscoped = (s: string) => !SCOPED.test(s) && !s.startsWith("@");
 
   it("every selector of a new control class starts at a state root or .wl-paper", () => {

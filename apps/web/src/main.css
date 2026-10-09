@@ -624,6 +624,15 @@ legend.wl-label,
   cursor: not-allowed;
 }
 
+/* Lift and rest: --wl-raise there is too close to the ink, so a disabled primary or session
+ * button takes the outline form in --wl-ink (state-patterns "Session button"). */
+:is([data-wl-state="lift"], [data-wl-state="rest"])
+  :is(.wl-button--primary, .wl-button--session)[aria-disabled="true"] {
+  background: transparent;
+  border: 1.5px solid var(--wl-ink);
+  font-weight: 600;
+}
+
 :is([data-wl-state], .wl-paper)
   :is(.wl-button--secondary, .wl-button--session-outline, .wl-button--text)[aria-disabled="true"] {
   color: var(--wl-ink-muted);
@@ -723,9 +732,20 @@ legend.wl-label,
   display: inline-block;
 }
 
+/* Text inside the selected block is --wl-on-selected, captions included: --wl-ink-muted on the
+ * block is 1.5:1. On the hover fill (raise) a caption is --wl-ink, never --wl-ink-muted (4.2). */
+:is([data-wl-state], .wl-paper) .wl-option:has(input:checked) :is(.wl-type-label, .wl-muted) {
+  color: var(--wl-on-selected);
+}
+
 @media (hover: hover) {
   :is([data-wl-state], .wl-paper) .wl-option:hover:not(:has(input:checked)) {
     background: var(--wl-raise);
+  }
+  :is([data-wl-state], .wl-paper)
+    .wl-option:hover:not(:has(input:checked))
+    :is(.wl-type-label, .wl-muted) {
+    color: var(--wl-ink);
   }
 }
 
@@ -805,8 +825,18 @@ legend.wl-label,
   display: inline-block;
 }
 
-:is([data-wl-state], .wl-paper) .wl-chip[aria-disabled="true"] {
+:is([data-wl-state], .wl-paper)
+  :is(.wl-chip[aria-pressed="true"], .wl-chip:has(input:checked))
+  :is(.wl-type-label, .wl-muted) {
+  color: var(--wl-on-selected);
+}
+
+:is([data-wl-state], .wl-paper)
+  .wl-chip[aria-disabled="true"]:not([aria-pressed="true"], :has(input:checked)) {
   color: var(--wl-ink-muted);
+}
+
+:is([data-wl-state], .wl-paper) .wl-chip[aria-disabled="true"] {
   cursor: not-allowed;
 }
 

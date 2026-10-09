@@ -363,6 +363,98 @@ test.describe("controls inside a state (390 x 844)", () => {
     ]);
   });
 
+  const optionWithCaption = (scope: string) =>
+    `${scope}<div class="wl-page">
+      <label class="wl-option" id="on"><input type="radio" name="c" checked /><span>Strength<br /><span class="wl-type-label" id="oncap">Heavy</span></span>${TICK}</label>
+      <label class="wl-option" id="off"><input type="radio" name="c" /><span>Fitness<br /><span class="wl-type-label" id="offcap">Light</span></span>${TICK}</label>
+    </div></div>`;
+
+  test("review 1: captions in a checked option are legible, in plan and in paper", async ({
+    page,
+  }) => {
+    await inject(page, optionWithCaption('<div data-wl-state="plan">'));
+    expect((await css(page, "#oncap", ["color"]))[0]).toBe(rgb(plan["on-selected"]!));
+    expect(contrast(plan.selected!, plan["on-selected"]!)).toBeGreaterThan(8.5);
+    await inject(page, optionWithCaption('<div data-wl-state="plan"><div class="wl-paper">'));
+    // The paper block: selected is paper.action, text paper.on-action (white on cobalt).
+    expect((await css(page, "#oncap", ["color"]))[0]).toBe(rgb(paper["on-action"]!));
+    expect((await css(page, "#on", ["background-color"]))[0]).toBe(rgb(paper.action!));
+    expect(contrast(paper.action!, paper["on-action"]!)).toBeGreaterThan(8.5);
+  });
+
+  test("review 1: an option's caption is ink, not ink-muted, on the hover fill", async ({
+    page,
+  }) => {
+    await inject(page, optionWithCaption('<div data-wl-state="plan">'));
+    await page.locator("#off").hover();
+    expect((await css(page, "#off", ["background-color"]))[0]).toBe(rgb(plan.raise!));
+    expect((await css(page, "#offcap", ["color"]))[0]).toBe(rgb(plan.ink!));
+    expect(contrast(plan.raise!, plan.ink!)).toBeGreaterThan(6);
+  });
+
+  test("review 4: the option tick shows when checked and hides when not", async ({ page }) => {
+    await inject(page, optionWithCaption('<div data-wl-state="plan">'));
+    await expect(page.locator("#on svg")).toBeVisible();
+    await expect(page.locator("#off svg")).toBeHidden();
+    await page.getByRole("radio", { name: /Fitness/ }).check({ force: true });
+    await expect(page.locator("#off svg")).toBeVisible();
+    await expect(page.locator("#on svg")).toBeHidden();
+  });
+
+  test("review 4: a card after a card gets a 1px line divider, the first has none", async ({
+    page,
+  }) => {
+    await inject(
+      page,
+      `<div data-wl-state="plan"><div id="c1" class="wl-card">One</div><div id="c2" class="wl-card">Two</div></div>`,
+    );
+    expect(await css(page, "#c1", ["border-top-width"])).toEqual(["0px"]);
+    expect(
+      await css(page, "#c2", ["border-top-width", "border-top-style", "border-top-color"]),
+    ).toEqual(["1px", "solid", rgb(plan.line!)]);
+  });
+
+  test("review 2: a disabled session or primary button is the outline form in rest", async ({
+    page,
+  }) => {
+    const rest = group("rest");
+    await inject(
+      page,
+      `<div data-wl-state="rest"><button id="s" class="wl-button--session" aria-disabled="true">Skip</button>
+        <button id="p" class="wl-button--primary" aria-disabled="true">Next</button></div>`,
+    );
+    for (const id of ["#s", "#p"]) {
+      const [bg, color, bs, bc] = await css(page, id, [
+        "background-color",
+        "color",
+        "border-top-style",
+        "border-top-color",
+      ]);
+      expect([bg, color, bs, bc], id).toEqual([
+        TRANSPARENT,
+        rgb(rest.ink!),
+        "solid",
+        rgb(rest.ink!),
+      ]);
+    }
+    expect(contrast(rest.bg!, rest.ink!)).toBeGreaterThan(4.5);
+  });
+
+  test("review 3: a disabled and pressed chip stays legible", async ({ page }) => {
+    await inject(
+      page,
+      `<div data-wl-state="plan">
+        <button id="a" class="wl-chip" aria-pressed="true" aria-disabled="true"><span class="wl-type-label" id="acap">Quads</span>${TICK}</button>
+        <button id="b" class="wl-chip" aria-pressed="false" aria-disabled="true">Glutes</button></div>`,
+    );
+    expect(await css(page, "#a", ["color", "background-color"])).toEqual([
+      rgb(plan["on-selected"]!),
+      rgb(plan.selected!),
+    ]);
+    expect((await css(page, "#acap", ["color"]))[0]).toBe(rgb(plan["on-selected"]!));
+    expect((await css(page, "#b", ["color"]))[0]).toBe(rgb(plan["ink-muted"]!));
+  });
+
   for (const reduced of [false, true]) {
     test(`AC9 no transition on the controls (reduced motion: ${reduced})`, async ({ page }) => {
       await page.emulateMedia({ reducedMotion: reduced ? "reduce" : "no-preference" });
