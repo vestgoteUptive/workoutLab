@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=DM+Sans:wght@400;500;700&family=Familjen+Grotesk:wght@400;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Archivo:wght@400;600;900&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#E4E2DC;font-family:'Archivo',sans-serif;color:#1A1A18}a{color:inherit}a:hover{opacity:.85}</style>
+</helmet>
+<section id="turn-1" style="padding:64px;display:flex;flex-direction:column;gap:48px">
+  <div style="display:flex;flex-direction:column;gap:8px;max-width:1100px">
+    <div style="font-size:13px;font-weight:600;letter-spacing:.1em;text-transform:uppercase">Landing page · round 1</div>
+    <div style="font-size:34px;font-weight:900;line-height:1.1">workout LAB landing, in the Cobalt + state colour system</div>
+    <div style="font-size:17px;line-height:1.5">Copy is verbatim from <span style="font-family:monospace">apps/landing/src/content/landing.ts</span>. Same sections, same order: header, hero, How it works, privacy, footer. The phones are the real app screens from the design canvas, so the page shows the product instead of describing it.</div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:64px;align-items:flex-start">
+
+    <div id="current" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:12px;align-items:center"><span style="background:#1A1A18;color:#fff;font-weight:600;font-size:13px;padding:4px 9px;border-radius:4px">Now</span><span style="font-size:20px;font-weight:900">Current landing (recreated from source)</span></div>
+      <div style="width:1280px;background:#121210;color:#F2EFE8;font-family:'DM Sans',sans-serif;line-height:1.5">
+        <div style="max-width:1120px;margin:0 auto;padding:24px 20px 0"><span style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:32px">workout LAB</span></div>
+        <div style="max-width:1120px;margin:0 auto;padding:48px 20px 56px">
+          <h1 style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;line-height:1.1;margin:0 0 .5em;font-size:52px;max-width:18ch">Train every muscle group, in the time you have</h1>
+          <p style="color:#A8A398;max-width:48ch;font-size:18px;margin:0 0 1em">Say how many minutes you have. workout LAB plans the session that best evens out your last two weeks, and shows one step at a time.</p>
+          <a href="#" style="display:inline-flex;align-items:center;min-height:52px;padding:0 28px;margin-top:8px;border-radius:8px;background:#D4F25A;color:#121210;font-weight:700;font-size:17px;text-decoration:none">Open the app</a>
+          <p style="margin:10px 0 0;color:#A8A398;font-size:14px">Free. Works in your browser, and installs to your home screen.</p>
+        </div>
+        <div style="max-width:1120px;margin:0 auto;padding:40px 20px 56px;border-top:1px solid #2E2C28">
+          <h2 style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;line-height:1.1;margin:0 0 .5em;font-size:32px">How it works</h2>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:24px">
+            <div style="background:#1D1C19;border:1px solid #2E2C28;border-radius:12px;padding:20px"><h3 style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:18px;margin:0 0 .4em">Balance you can see</h3><p style="color:#A8A398;margin:0">Every muscle area gets a score from your weighted hard sets over the last 14 days, so you see what is ahead and what is lagging.</p></div>
+            <div style="background:#1D1C19;border:1px solid #2E2C28;border-radius:12px;padding:20px"><h3 style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:18px;margin:0 0 .4em">Fits your time</h3><p style="color:#A8A398;margin:0">Start by saying how many minutes you have. The plan is built to fit that time.</p></div>
+            <div style="background:#1D1C19;border:1px solid #2E2C28;border-radius:12px;padding:20px"><h3 style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:18px;margin:0 0 .4em">One step at a time</h3><p style="color:#A8A398;margin:0">During a workout you see one thing: the current set or rest. Everything else waits behind Pause.</p></div>
+            <div style="background:#1D1C19;border:1px solid #2E2C28;border-radius:12px;padding:20px"><h3 style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;font-size:18px;margin:0 0 .4em">Targets that adapt</h3><p style="color:#A8A398;margin:0">Suggestions come from clear, fixed rules, and your targets shift with what you actually train when you accept a check-in.</p></div>
+          </div>
+        </div>
+        <div style="max-width:1120px;margin:0 auto;padding:40px 20px 56px;border-top:1px solid #2E2C28">
+          <h2 style="font-family:'Big Shoulders Display',sans-serif;font-weight:800;line-height:1.1;margin:0 0 .5em;font-size:28px">Your data stays yours</h2>
+          <p style="color:#A8A398;max-width:60ch;margin:0 0 1em">We store only your email, your training and your plan settings, hosted in the EU. No third-party analytics, no trackers, no ads. Export or delete everything in the app.</p>
+          <a href="#" style="color:#D4F25A;text-decoration:underline">Privacy</a>
+        </div>
+        <div style="max-width:1120px;margin:0 auto;padding:24px 20px 40px;border-top:1px solid #2E2C28;color:#A8A398;font-size:14px">
+          <p style="margin:0">© 2026 workout LAB. Free in this first version.</p>
+          <div style="display:flex;gap:16px;margin-top:12px"><a href="#" style="text-decoration:underline;min-height:44px;display:inline-flex;align-items:center">Privacy</a><a href="#" style="text-decoration:underline;min-height:44px;display:inline-flex;align-items:center">Open the app</a></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1a" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:12px;align-items:center"><span style="background:#1A1A18;color:#fff;font-weight:600;font-size:13px;padding:4px 9px;border-radius:4px">1a</span><span style="font-size:20px;font-weight:900">State bands: the page walks through a workout</span></div>
+      <div style="font-size:15px;line-height:1.5;max-width:1000px">Hero is planning blue. Each "How it works" item gets the background of the state it describes: blue for balance and time, red for one-step focus, teal-into-red for rest, paper for adaptive targets. Scrolling the page is a short workout.</div>
+      <div style="width:1280px;font-family:'Familjen Grotesk',sans-serif;color:#fff">
+        <div style="background:#2337C6;padding:32px 80px 0;display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:22px;font-weight:700;letter-spacing:-.02em">workout LAB</span><a href="#" style="font-size:16px;font-weight:600;text-decoration:underline;text-underline-offset:4px">Open the app</a></div>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 600px;gap:48px;margin-top:72px;align-items:end">
+            <div style="padding-bottom:88px">
+              <h1 style="margin:0;font-size:104px;font-weight:700;line-height:.9;letter-spacing:-.05em;text-wrap:balance">Train every muscle group, in the time you have.</h1>
+              <p style="margin:28px 0 0;font-size:22px;line-height:1.4;color:#C9D3FF;max-width:30em;text-wrap:pretty">Say how many minutes you have. workout LAB plans the session that best evens out your last two weeks, and shows one step at a time.</p>
+              <div style="display:flex;gap:20px;align-items:center;margin-top:40px">
+                <a href="#" style="background:#fff;color:#2337C6;border-radius:999px;padding:22px 34px;font-size:22px;font-weight:700;text-decoration:none;display:flex;gap:40px;white-space:nowrap;flex:none"><span>Open the app</span><span>→</span></a>
+                <span style="font-size:15px;color:#C9D3FF;max-width:16em">Free. Works in your browser, and installs to your home screen.</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:20px;align-items:flex-end">
+              <div style="width:281px;height:608px;border-radius:32px 32px 0 0;overflow:hidden;flex:none">
+                <div style="width:390px;height:844px;transform:scale(.72);transform-origin:0 0;background:#2337C6;border:1px solid #6676DA;border-radius:44px;box-sizing:border-box;display:flex;flex-direction:column;padding:72px 28px 0">
+                  <div style="font-size:15px;color:#C9D3FF">Sunday — 3 of 4 done this week</div>
+                  <div style="display:flex;gap:14px;font-size:22px;font-weight:600;margin-top:10px"><span>M</span><span>T</span><span style="color:#C9D3FF">W</span><span>T</span><span style="color:#C9D3FF">F</span><span style="color:#C9D3FF">S</span><span style="text-decoration:underline;text-underline-offset:6px">S</span></div>
+                  <div style="font-size:96px;font-weight:700;line-height:.88;letter-spacing:-.05em;margin-top:120px">Lower A.</div>
+                  <div style="font-size:15px;color:#C9D3FF;margin-top:12px">5 exercises · about 50 min</div>
+                  <div style="display:flex;flex-direction:column;margin-top:16px;font-size:17px">
+                    <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #6676DA"><span>Back Squat</span><span style="color:#C9D3FF">4 × 6–8</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #6676DA"><span>Romanian Deadlift</span><span style="color:#C9D3FF">3 × 8–10</span></div>
+                    <div style="display:flex;justify-content:space-between;padding:10px 0;border-top:1px solid #6676DA;border-bottom:1px solid #6676DA"><span>Dumbbell Sumo Squat</span><span style="color:#C9D3FF">3 × 10–12</span></div>
+                  </div>
+                  <div style="margin-top:24px;background:#fff;color:#2337C6;border-radius:999px;padding:20px 28px;font-size:22px;font-weight:700;display:flex;justify-content:space-between"><span>Start</span><span>→</span></div>
+                </div>
+              </div>
+              <div style="width:281px;height:660px;border-radius:32px 32px 0 0;overflow:hidden;flex:none">
+                <div style="width:390px;height:916px;transform:scale(.72);transform-origin:0 0;background:#CC4225;border-radius:44px;box-sizing:border-box;display:flex;flex-direction:column;padding:72px 26px 0;font-family:'Bricolage Grotesque',sans-serif">
+                  <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:600"><span>Lifting</span><span>1 / 5</span></div>
+                  <div style="font-size:44px;font-weight:800;letter-spacing:-.03em;margin-top:40px">Back squat</div>
+                  <div style="font-size:17px">Set 2 of 4</div>
+                  <div style="font-size:150px;font-weight:800;line-height:.85;letter-spacing:-.06em;margin-top:150px">100<span style="font-size:36px;letter-spacing:0"> kg</span></div>
+                  <div style="font-size:150px;font-weight:800;line-height:.85;letter-spacing:-.06em">×8</div>
+                  <div style="font-size:17px;margin-top:18px;line-height:1.45">Brace. Sit between your hips. Drive up.</div>
+                  <div style="margin-top:32px;background:#fff;color:#B33520;border-radius:22px;padding:24px 26px;font-size:24px;font-weight:800;display:flex;justify-content:space-between"><span>Done</span><span>✓</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#2337C6;border-top:1px solid #6676DA;padding:80px 80px 96px">
+          <h2 style="margin:0;font-size:20px;font-weight:600;color:#C9D3FF">How it works</h2>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:64px;margin-top:40px">
+            <div style="display:flex;flex-direction:column;gap:16px"><span style="font-size:20px;font-weight:600;color:#C9D3FF">01</span><h3 style="margin:0;font-size:56px;font-weight:700;line-height:.95;letter-spacing:-.04em">Balance you can see</h3><p style="margin:0;font-size:20px;line-height:1.45;color:#C9D3FF;max-width:28em">Every muscle area gets a score from your weighted hard sets over the last 14 days, so you see what is ahead and what is lagging.</p>
+              <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px;max-width:440px;font-size:16px">
+                <div style="display:grid;grid-template-columns:100px 1fr 56px;gap:12px;align-items:center"><span>Quads</span><span style="height:8px;background:#3B50DD;border-radius:4px"><span style="display:block;height:100%;width:90%;background:#fff;border-radius:4px"></span></span><span style="text-align:right">18 / 20</span></div>
+                <div style="display:grid;grid-template-columns:100px 1fr 56px;gap:12px;align-items:center"><span>Back</span><span style="height:8px;background:#3B50DD;border-radius:4px"><span style="display:block;height:100%;width:50%;background:#fff;border-radius:4px"></span></span><span style="text-align:right">10 / 20</span></div>
+                <div style="display:grid;grid-template-columns:100px 1fr 56px;gap:12px;align-items:center"><span style="font-weight:700">Calves</span><span style="height:8px;background:#3B50DD;border-radius:4px"><span style="display:block;height:100%;width:17%;background:#FFB3A3;border-radius:4px"></span></span><span style="text-align:right;font-weight:700">2 / 12</span></div>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:16px"><span style="font-size:20px;font-weight:600;color:#C9D3FF">02</span><h3 style="margin:0;font-size:56px;font-weight:700;line-height:.95;letter-spacing:-.04em">Fits your time</h3><p style="margin:0;font-size:20px;line-height:1.45;color:#C9D3FF;max-width:28em">Start by saying how many minutes you have. The plan is built to fit that time.</p>
+              <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px;max-width:440px;font-size:18px;font-weight:600;text-align:center"><span style="padding:14px 0;border:1px solid #6676DA;border-radius:999px">20</span><span style="padding:14px 0;border:1px solid #6676DA;border-radius:999px">30</span><span style="padding:14px 0;background:#fff;color:#2337C6;border-radius:999px">45</span><span style="padding:14px 0;border:1px solid #6676DA;border-radius:999px">60</span><span style="padding:14px 0;border:1px solid #6676DA;border-radius:999px">90</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#CC4225;padding:96px 80px;font-family:'Bricolage Grotesque',sans-serif;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:center">
+          <div style="display:flex;flex-direction:column;gap:16px"><span style="font-size:20px;font-weight:600">03 · Lifting</span><h3 style="margin:0;font-size:96px;font-weight:800;line-height:.88;letter-spacing:-.05em">One step at a time</h3><p style="margin:0;font-size:22px;line-height:1.45;max-width:24em">During a workout you see one thing: the current set or rest. Everything else waits behind Pause.</p></div>
+          <div style="font-size:220px;font-weight:800;line-height:.8;letter-spacing:-.07em;text-align:right">100×8</div>
+        </div>
+
+        <div style="background:linear-gradient(to right,#CC4225 30%,#3F7A76 30%);padding:72px 80px;font-family:'Bricolage Grotesque',sans-serif;display:grid;grid-template-columns:30% 1fr;gap:0;align-items:center">
+          <div style="font-size:20px;font-weight:600">Then rest</div>
+          <div style="display:flex;justify-content:space-between;align-items:baseline;padding-left:48px"><span style="font-size:160px;font-weight:800;line-height:.85;letter-spacing:-.06em">1:42</span><span style="font-size:22px;max-width:14em;line-height:1.4">The screen turns red again as rest runs out.</span></div>
+        </div>
+
+        <div style="background:#F4F3EE;color:#1A2266;padding:96px 80px;display:grid;grid-template-columns:minmax(0,1fr) 480px;gap:64px;align-items:center">
+          <div style="display:flex;flex-direction:column;gap:16px"><span style="font-size:20px;font-weight:600;color:#4A5290">04</span><h3 style="margin:0;font-size:56px;font-weight:700;line-height:.95;letter-spacing:-.04em">Targets that adapt</h3><p style="margin:0;font-size:20px;line-height:1.45;color:#4A5290;max-width:28em">Suggestions come from clear, fixed rules, and your targets shift with what you actually train when you accept a check-in.</p></div>
+          <div style="border-top:1.5px solid #1A2266;padding-top:18px;display:flex;flex-direction:column">
+            <div style="font-size:15px;color:#4A5290">Check-in</div>
+            <div style="font-size:24px;font-weight:600;line-height:1.3;margin-top:6px">You trained 4 and 3 times in the last two 14-day periods. Your plan is 6–8. Switch to 2–3 per week?</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px"><span style="background:#2337C6;color:#fff;border-radius:999px;padding:16px 0;text-align:center;font-size:18px;font-weight:700">Accept</span><span style="border:1.5px solid #2337C6;color:#2337C6;border-radius:999px;padding:15px 0;text-align:center;font-size:18px;font-weight:600">Keep current</span></div>
+          </div>
+        </div>
+
+        <div style="background:#2337C6;padding:96px 80px 0">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;padding-bottom:96px;border-bottom:1px solid #6676DA">
+            <h2 style="margin:0;font-size:72px;font-weight:700;line-height:.92;letter-spacing:-.05em">Your data stays yours.</h2>
+            <div style="display:flex;flex-direction:column;gap:20px"><p style="margin:0;font-size:22px;line-height:1.45;color:#C9D3FF">We store only your email, your training and your plan settings, hosted in the EU. No third-party analytics, no trackers, no ads. Export or delete everything in the app.</p><a href="#" style="font-size:18px;font-weight:600;text-decoration:underline;text-underline-offset:4px">Privacy</a></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:28px 0 40px;font-size:15px;color:#C9D3FF">
+            <span>© 2026 workout LAB. Free in this first version.</span>
+            <div style="display:flex;gap:24px"><a href="#" style="text-decoration:underline;text-underline-offset:4px;min-height:44px;display:inline-flex;align-items:center">Privacy</a><a href="#" style="color:#fff;font-weight:600;text-decoration:underline;text-underline-offset:4px;min-height:44px;display:inline-flex;align-items:center">Open the app</a></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1b" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:12px;align-items:center"><span style="background:#1A1A18;color:#fff;font-weight:600;font-size:13px;padding:4px 9px;border-radius:4px">1b</span><span style="font-size:20px;font-weight:900">All blue, one red phone</span></div>
+      <div style="font-size:15px;line-height:1.5;max-width:1000px">Calmer. The whole page stays planning blue and type-led. The only other colour is a single red Set screen in the hero, so the product's core moment is the one loud thing. The four features sit in a numbered 2 × 2 hairline grid.</div>
+      <div style="width:1280px;background:#2337C6;color:#fff;font-family:'Familjen Grotesk',sans-serif">
+        <div style="padding:32px 80px 0;display:flex;justify-content:space-between;align-items:center"><span style="font-size:22px;font-weight:700;letter-spacing:-.02em">workout LAB</span><a href="#" style="background:#fff;color:#2337C6;border-radius:999px;padding:12px 22px;font-size:16px;font-weight:700;text-decoration:none">Open the app</a></div>
+        <div style="padding:64px 80px 0;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:64px">
+          <div style="display:flex;flex-direction:column;padding-bottom:80px">
+            <h1 style="margin:0;font-size:128px;font-weight:700;line-height:.86;letter-spacing:-.055em;text-wrap:balance">Train every muscle group, in the time you have.</h1>
+            <div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:48px;align-items:end;margin-top:auto;padding-top:48px">
+              <p style="margin:0;font-size:22px;line-height:1.4;color:#C9D3FF;max-width:26em;text-wrap:pretty">Say how many minutes you have. workout LAB plans the session that best evens out your last two weeks, and shows one step at a time.</p>
+              <div style="display:flex;flex-direction:column;gap:10px;align-items:flex-start"><a href="#" style="background:#fff;color:#2337C6;border-radius:999px;padding:22px 34px;font-size:22px;font-weight:700;text-decoration:none;display:flex;gap:40px;white-space:nowrap;flex:none"><span>Open the app</span><span>→</span></a><span style="font-size:14px;color:#C9D3FF;max-width:18em">Free. Works in your browser, and installs to your home screen.</span></div>
+            </div>
+          </div>
+          <div style="width:340px;height:640px;border-radius:40px 40px 0 0;overflow:hidden;align-self:end">
+            <div style="width:390px;height:734px;transform:scale(.872);transform-origin:0 0;background:#CC4225;border-radius:44px;box-sizing:border-box;display:flex;flex-direction:column;padding:72px 26px 0;font-family:'Bricolage Grotesque',sans-serif">
+              <div style="display:flex;align-items:center;gap:12px"><span style="width:44px;height:44px;border-radius:50%;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;box-sizing:border-box">II</span><div style="flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:4px"><span style="height:4px;background:#fff;border-radius:2px"></span><span style="height:4px;background:#EE8E7B;border-radius:2px"></span><span style="height:4px;background:#EE8E7B;border-radius:2px"></span><span style="height:4px;background:#EE8E7B;border-radius:2px"></span><span style="height:4px;background:#EE8E7B;border-radius:2px"></span></div><span style="font-size:15px;font-weight:600;white-space:nowrap">1 / 5</span></div>
+              <div style="font-size:44px;font-weight:800;letter-spacing:-.03em;margin-top:36px">Back squat</div>
+              <div style="font-size:17px">Set 2 of 4</div>
+              <div style="font-size:150px;font-weight:800;line-height:.85;letter-spacing:-.06em;margin-top:80px">100<span style="font-size:36px;letter-spacing:0"> kg</span></div>
+              <div style="font-size:150px;font-weight:800;line-height:.85;letter-spacing:-.06em">×8</div>
+              <div style="font-size:17px;margin-top:18px;line-height:1.45">Brace. Sit between your hips. Drive up.</div>
+              <div style="margin-top:28px;background:#fff;color:#B33520;border-radius:22px;padding:24px 26px;font-size:24px;font-weight:800;display:flex;justify-content:space-between"><span>Done</span><span>✓</span></div>
+            </div>
+          </div>
+        </div>
+        <div style="padding:80px;border-top:1px solid #6676DA">
+          <h2 style="margin:0;font-size:20px;font-weight:600;color:#C9D3FF">How it works</h2>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:32px;border-top:1px solid #6676DA">
+            <div style="display:grid;grid-template-columns:72px 1fr;gap:16px;padding:40px 48px 40px 0;border-bottom:1px solid #6676DA;border-right:1px solid #6676DA"><span style="font-size:40px;font-weight:700;letter-spacing:-.03em;color:#C9D3FF">01</span><div><h3 style="margin:0;font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1">Balance you can see</h3><p style="margin:14px 0 0;font-size:19px;line-height:1.45;color:#C9D3FF">Every muscle area gets a score from your weighted hard sets over the last 14 days, so you see what is ahead and what is lagging.</p></div></div>
+            <div style="display:grid;grid-template-columns:72px 1fr;gap:16px;padding:40px 0 40px 48px;border-bottom:1px solid #6676DA"><span style="font-size:40px;font-weight:700;letter-spacing:-.03em;color:#C9D3FF">02</span><div><h3 style="margin:0;font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1">Fits your time</h3><p style="margin:14px 0 0;font-size:19px;line-height:1.45;color:#C9D3FF">Start by saying how many minutes you have. The plan is built to fit that time.</p></div></div>
+            <div style="display:grid;grid-template-columns:72px 1fr;gap:16px;padding:40px 48px 40px 0;border-right:1px solid #6676DA"><span style="font-size:40px;font-weight:700;letter-spacing:-.03em;color:#C9D3FF">03</span><div><h3 style="margin:0;font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1">One step at a time</h3><p style="margin:14px 0 0;font-size:19px;line-height:1.45;color:#C9D3FF">During a workout you see one thing: the current set or rest. Everything else waits behind Pause.</p></div></div>
+            <div style="display:grid;grid-template-columns:72px 1fr;gap:16px;padding:40px 0 40px 48px"><span style="font-size:40px;font-weight:700;letter-spacing:-.03em;color:#C9D3FF">04</span><div><h3 style="margin:0;font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1">Targets that adapt</h3><p style="margin:14px 0 0;font-size:19px;line-height:1.45;color:#C9D3FF">Suggestions come from clear, fixed rules, and your targets shift with what you actually train when you accept a check-in.</p></div></div>
+          </div>
+        </div>
+        <div style="background:#F4F3EE;color:#1A2266;padding:72px 80px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:64px;align-items:start">
+          <h2 style="margin:0;font-size:56px;font-weight:700;line-height:.95;letter-spacing:-.04em">Your data stays yours</h2>
+          <div style="display:flex;flex-direction:column;gap:16px"><p style="margin:0;font-size:20px;line-height:1.45;color:#4A5290">We store only your email, your training and your plan settings, hosted in the EU. No third-party analytics, no trackers, no ads. Export or delete everything in the app.</p><a href="#" style="font-size:18px;font-weight:600;color:#2337C6;text-decoration:underline;text-underline-offset:4px">Privacy</a></div>
+        </div>
+        <div style="padding:28px 80px 40px;display:flex;justify-content:space-between;align-items:center;font-size:15px;color:#C9D3FF">
+          <span>© 2026 workout LAB. Free in this first version.</span>
+          <div style="display:flex;gap:24px"><a href="#" style="text-decoration:underline;text-underline-offset:4px;min-height:44px;display:inline-flex;align-items:center">Privacy</a><a href="#" style="color:#fff;font-weight:600;text-decoration:underline;text-underline-offset:4px;min-height:44px;display:inline-flex;align-items:center">Open the app</a></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="1a-mobile" style="display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;gap:12px;align-items:center"><span style="background:#1A1A18;color:#fff;font-weight:600;font-size:13px;padding:4px 9px;border-radius:4px">1a</span><span style="font-size:20px;font-weight:900">Mobile, 390 px</span></div>
+      <div style="width:390px;font-family:'Familjen Grotesk',sans-serif;color:#fff;border-radius:44px;overflow:hidden">
+        <div style="background:#2337C6;padding:56px 24px 0">
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:19px;font-weight:700">workout LAB</span><a href="#" style="font-size:15px;font-weight:600;text-decoration:underline;text-underline-offset:4px">Open the app</a></div>
+          <h1 style="margin:48px 0 0;font-size:56px;font-weight:700;line-height:.9;letter-spacing:-.05em">Train every muscle group, in the time you have.</h1>
+          <p style="margin:20px 0 0;font-size:18px;line-height:1.4;color:#C9D3FF">Say how many minutes you have. workout LAB plans the session that best evens out your last two weeks, and shows one step at a time.</p>
+          <a href="#" style="margin-top:28px;background:#fff;color:#2337C6;border-radius:999px;padding:20px 26px;font-size:20px;font-weight:700;text-decoration:none;display:flex;justify-content:space-between"><span>Open the app</span><span>→</span></a>
+          <p style="margin:12px 0 0;font-size:14px;color:#C9D3FF;text-align:center">Free. Works in your browser, and installs to your home screen.</p>
+          <div style="display:flex;gap:12px;margin-top:40px;justify-content:center">
+            <div style="width:164px;height:300px;border-radius:24px 24px 0 0;overflow:hidden;flex:none"><div style="width:390px;height:714px;transform:scale(.42);transform-origin:0 0;background:#2337C6;border:2px solid #6676DA;border-radius:44px;box-sizing:border-box;padding:72px 28px 0;display:flex;flex-direction:column"><div style="font-size:15px;color:#C9D3FF">Sunday — 3 of 4 done this week</div><div style="font-size:96px;font-weight:700;line-height:.88;letter-spacing:-.05em;margin-top:200px">Lower A.</div><div style="margin-top:40px;background:#fff;color:#2337C6;border-radius:999px;padding:20px 28px;font-size:22px;font-weight:700;display:flex;justify-content:space-between"><span>Start</span><span>→</span></div></div></div>
+            <div style="width:164px;height:300px;border-radius:24px 24px 0 0;overflow:hidden;flex:none"><div style="width:390px;height:714px;transform:scale(.42);transform-origin:0 0;background:#CC4225;border-radius:44px;box-sizing:border-box;padding:72px 26px 0;display:flex;flex-direction:column;font-family:'Bricolage Grotesque',sans-serif"><div style="font-size:44px;font-weight:800;letter-spacing:-.03em">Back squat</div><div style="font-size:150px;font-weight:800;line-height:.85;letter-spacing:-.06em;margin-top:120px">100</div><div style="font-size:150px;font-weight:800;line-height:.85;letter-spacing:-.06em">×8</div></div></div>
+          </div>
+        </div>
+        <div style="background:#2337C6;border-top:1px solid #6676DA;padding:48px 24px">
+          <h2 style="margin:0;font-size:16px;font-weight:600;color:#C9D3FF">How it works</h2>
+          <div style="margin-top:20px;display:flex;flex-direction:column;gap:32px">
+            <div><span style="font-size:15px;color:#C9D3FF">01</span><h3 style="margin:6px 0 0;font-size:36px;font-weight:700;letter-spacing:-.04em;line-height:.95">Balance you can see</h3><p style="margin:10px 0 0;font-size:17px;line-height:1.45;color:#C9D3FF">Every muscle area gets a score from your weighted hard sets over the last 14 days, so you see what is ahead and what is lagging.</p></div>
+            <div><span style="font-size:15px;color:#C9D3FF">02</span><h3 style="margin:6px 0 0;font-size:36px;font-weight:700;letter-spacing:-.04em;line-height:.95">Fits your time</h3><p style="margin:10px 0 0;font-size:17px;line-height:1.45;color:#C9D3FF">Start by saying how many minutes you have. The plan is built to fit that time.</p></div>
+          </div>
+        </div>
+        <div style="background:#CC4225;padding:48px 24px;font-family:'Bricolage Grotesque',sans-serif"><span style="font-size:15px;font-weight:600">03 · Lifting</span><h3 style="margin:6px 0 0;font-size:52px;font-weight:800;letter-spacing:-.05em;line-height:.9">One step at a time</h3><p style="margin:12px 0 0;font-size:17px;line-height:1.45">During a workout you see one thing: the current set or rest. Everything else waits behind Pause.</p></div>
+        <div style="background:linear-gradient(to right,#CC4225 30%,#3F7A76 30%);padding:28px 24px;font-family:'Bricolage Grotesque',sans-serif;display:flex;justify-content:flex-end"><span style="font-size:72px;font-weight:800;letter-spacing:-.06em;line-height:.9">1:42</span></div>
+        <div style="background:#F4F3EE;color:#1A2266;padding:48px 24px"><span style="font-size:15px;color:#4A5290">04</span><h3 style="margin:6px 0 0;font-size:36px;font-weight:700;letter-spacing:-.04em;line-height:.95">Targets that adapt</h3><p style="margin:10px 0 0;font-size:17px;line-height:1.45;color:#4A5290">Suggestions come from clear, fixed rules, and your targets shift with what you actually train when you accept a check-in.</p></div>
+        <div style="background:#2337C6;padding:48px 24px 0">
+          <h2 style="margin:0;font-size:44px;font-weight:700;line-height:.92;letter-spacing:-.05em">Your data stays yours.</h2>
+          <p style="margin:16px 0 0;font-size:17px;line-height:1.45;color:#C9D3FF">We store only your email, your training and your plan settings, hosted in the EU. No third-party analytics, no trackers, no ads. Export or delete everything in the app.</p>
+          <a href="#" style="display:inline-flex;min-height:44px;align-items:center;margin-top:8px;font-size:17px;font-weight:600;text-decoration:underline;text-underline-offset:4px">Privacy</a>
+          <div style="border-top:1px solid #6676DA;margin-top:32px;padding:20px 0 44px;font-size:14px;color:#C9D3FF;display:flex;flex-direction:column;gap:8px"><span>© 2026 workout LAB. Free in this first version.</span><div style="display:flex;gap:20px"><a href="#" style="text-decoration:underline;min-height:44px;display:inline-flex;align-items:center">Privacy</a><a href="#" style="color:#fff;font-weight:600;text-decoration:underline;min-height:44px;display:inline-flex;align-items:center">Open the app</a></div></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+</body>
+</html>

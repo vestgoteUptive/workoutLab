@@ -166,6 +166,7 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
   - UF-11: T-0582 → T-0612 → T-0613
   - UF-02: T-0601 → T-0623
 - **The figure first:** T-0614 → T-0615 come before the screens that show the figure (T-0601, T-0608, T-0611).
+- **Promoted mock items (H-34, D-0217, spec §3):** plate loading T-0631 (data, D-0218) → T-0632 (web-shell) → T-0633 (UF-11, after T-0613) and T-0634 (UF-09, after T-0621, the end of the UF-09 chain); Latest PR T-0635 (engine, D-0219) → T-0636 (UF-02, after T-0623); quick link T-0637 (UF-08, after T-0600) → T-0638 (UF-02, after T-0636); library T-0639 → T-0640 (UF-04, after T-0608). T-0631 and T-0635 are contract changes (forced gate) with no deps, so they can run now. T-0631 touches `tests/e2e/fixtures/**` (full e2e suite).
 - **Gates:**
   - Forced full gate: T-0587 and T-0625.
   - Full web e2e suite: T-0589, T-0592, T-0593, T-0594, T-0615, T-0616 and T-0624.
@@ -173,18 +174,17 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | doing | wl-build-web |
-| T-0595 | UF-09.3/.4 + chrome in lift | web-feature:UF-09 | T-0593, T-0594, T-0591, T-0619 | todo | wl-build-web |
+| T-0595 | UF-09.3/.4 + chrome in lift | web-feature:UF-09 | T-0593, T-0594, T-0591, T-0619 | doing | wl-build-web |
 | T-0596 | UF-09.2/.7 deep fill | web-feature:UF-09 | T-0595 | todo | wl-build-web |
 | T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | todo | wl-build-web |
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
-| T-0599 | UF-08.1/.4 in plan | web-feature:UF-08 | T-0593, T-0591 | todo | wl-build-web |
+| T-0599 | UF-08.1/.4 in plan | web-feature:UF-08 | T-0593, T-0591 | doing | wl-build-web |
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
 | T-0601 | UF-02.1/.2 in plan | web-feature:UF-02 | T-0593, T-0594, T-0615, T-0591 | todo | wl-build-web |
 | T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | todo | wl-build-web |
 | T-0603 | UF-03.1/.2 lift + drain | web-feature:UF-03 | T-0593, T-0594, T-0591 | todo | wl-build-web |
 | T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | todo | wl-build-web |
-| T-0605 | UF-01.1–.4 onboarding in plan | web-feature:UF-01 | T-0593, T-0591 | todo | wl-build-web |
+| T-0605 | UF-01.1–.4 onboarding in plan | web-feature:UF-01 | T-0593, T-0591 | doing | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
 | T-0607 | UF-04.1/.3 in plan | web-feature:UF-04 | T-0593, T-0591 | todo | wl-build-web |
 | T-0608 | UF-04.2 + how-to sheet, cobalt figure | web-feature:UF-04 | T-0607, T-0615 | todo | wl-build-web |
@@ -201,7 +201,18 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0624 | Web: retire the legacy fallback | web-shell | T-0595…T-0613, T-0615, T-0616 | todo | wl-build-web |
 | T-0625 | Tokens: retire Chalk & Iron keys and fonts (contract) | design | T-0624, T-0617, T-0585, T-0614 | todo | wl-design |
 | T-0626 | Screen restyles: use aria-disabled, not :disabled, on migrated controls (the legacy :disabled rule loses to scoped rules); feature CSS (.wl-plan__rows .wl-row, .wl-card.wl-excluded__row, excluded.css:140) can override the unboxed row and card by load order, so each screen ticket must check it (T-0592 review) | web-shell | T-0592 | todo (a checklist for each screen ticket) | wl-build-web |
-| T-0627 | C-01 legend attention swatch: 2 px --wl-attention with a 1 px --wl-bg gap per c-01-body-map.md:78 (BodyMap.tsx:117,192 use outlineOffset 0) (T-0615 review) | web-shell | T-0615 | doing | wl-build-web |
-| T-0628 | Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
-| T-0629 | never-in-workout.test.tsx:48 AC-A12 still flaky under load (waitFor on lazy session route), after T-0910 | web-feature:UF-10 | — | doing | wl-build-web |
+| T-0628 | (superseded by T-0660 / D-0225) Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
+| T-0629 | never-in-workout.test.tsx:48 AC-A12 still flaky under load (waitFor on lazy session route), after T-0910 | web-feature:UF-10 | — | done | wl-build-web |
+| T-0631 | profiles.bar_kg + plates_kg (D-0218, contract) | data | — | ready | wl-build-data |
+| T-0632 | lib/offline: cache bar and plates, loadBarbell() | web-shell | T-0631 | todo | wl-build-web |
+| T-0633 | UF-11.4 "Bar and plates" settings section | web-feature:UF-11 | T-0613, T-0632 | todo | wl-build-web |
+| T-0634 | UF-09.3 plate loading "Each side 25 + 15 kg" | web-feature:UF-09 | T-0621, T-0632 | todo | wl-build-web |
+| T-0635 | Engine rule 15 records() (D-0219, contract) | engine | — | ready | wl-build-engine |
+| T-0636 | UF-02.1 Latest PR | web-feature:UF-02 | T-0623, T-0635 | todo | wl-build-web |
+| T-0637 | UF-08.1 ?budget= initial time budget | web-feature:UF-08 | T-0600 | todo | wl-build-web |
+| T-0638 | UF-02.1 "Not feeling it? Quick 20-min" link | web-feature:UF-02 | T-0636, T-0637 | todo | wl-build-web |
+| T-0639 | UF-04.1 Upper/Legs group chips + result count | web-feature:UF-04 | T-0608 | todo | wl-build-web |
+| T-0640 | UF-04.1 In plan / Variant / Beginner tags | web-feature:UF-04 | T-0639 | todo | wl-build-web |
 | T-0630 | Sheet stacking and portal scope before UF-08.3/UF-05.1 adopt .wl-sheet: z-index under the tab bar, an unstyled scrim when portalled to body; AccountDeletedNotice outside any state root (T-0593 review, D-0216 addendum) | web-shell | T-0593 | todo | wl-build-web |
+| T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
+| T-0660 | Ship body figure v2 (owner pick 1b, D-0225): new SVG, v2 CSS, highlight dims rest; target canvas Body Figure Export | web-shell | T-0615 | doing | wl-build-web |
