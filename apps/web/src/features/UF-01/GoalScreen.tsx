@@ -6,6 +6,7 @@ import { useNavigate } from "react-router";
 import type { Goal } from "@workoutlab/shared";
 import { en } from "../../lib/i18n/en.js";
 import type { PendingPlanStore } from "./WelcomeRoutes.js";
+import { ArrowRight, Tick } from "./Glyphs.js";
 import { StepHeader } from "./StepHeader.js";
 
 const t = en.uf01;
@@ -27,39 +28,46 @@ export function GoalScreen({ store }: { store: PendingPlanStore }) {
   }
 
   return (
-    <div data-screen-id="UF-01.2" className="wl-uf01">
+    <div data-screen-id="UF-01.2" data-wl-state="plan" className="wl-page wl-uf01-plan">
       <StepHeader step={1} backTo="/welcome" />
-      <div className="wl-uf01__intro">
-        <h1 id="wl-uf01-goal-title" className="wl-uf01__title wl-uf01__title--step">
+      <div className="wl-uf01-plan__intro">
+        <h1 id="wl-uf01-goal-title" className="wl-uf01-plan__title">
           {t.goal.heading}
         </h1>
-        <p className="wl-uf01__muted">{t.goal.subtitle}</p>
+        <p className="wl-type-label">{t.goal.subtitle}</p>
       </div>
-      <form className="wl-uf01__form" onSubmit={onSubmit}>
-        <div role="radiogroup" aria-labelledby="wl-uf01-goal-title" className="wl-uf01__options">
+      <form className="wl-uf01-plan__form" onSubmit={onSubmit}>
+        <div
+          role="radiogroup"
+          aria-labelledby="wl-uf01-goal-title"
+          className="wl-uf01-plan__options"
+        >
           {GOALS.map((id) => (
-            <label key={id} className="wl-uf01__option">
+            <label key={id} className="wl-option">
               <input
                 type="radio"
                 name="goal"
                 value={id}
                 checked={goal === id}
                 onChange={() => choose(id)}
-                className="wl-uf01__radio"
                 aria-labelledby={`wl-uf01-goal-${id}`}
                 aria-describedby={`wl-uf01-goal-${id}-hint`}
               />
-              <span id={`wl-uf01-goal-${id}`} className="wl-uf01__option-label">
-                {t.goal.options[id].label}
+              <span className="wl-uf01-plan__option-text">
+                <span id={`wl-uf01-goal-${id}`} className="wl-type-row-title">
+                  {t.goal.options[id].label}
+                </span>
+                <span id={`wl-uf01-goal-${id}-hint`} className="wl-type-label">
+                  {t.goal.options[id].hint}
+                </span>
               </span>
-              <span id={`wl-uf01-goal-${id}-hint`} className="wl-uf01__muted">
-                {t.goal.options[id].hint}
-              </span>
+              <Tick className="wl-option__tick" />
             </label>
           ))}
         </div>
-        <button type="submit" className="wl-uf01__primary">
-          {t.continue}
+        <button type="submit" className="wl-button--primary">
+          <span>{t.continue}</span>
+          <ArrowRight />
         </button>
       </form>
     </div>

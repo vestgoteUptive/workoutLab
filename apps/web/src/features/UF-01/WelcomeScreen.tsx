@@ -16,10 +16,10 @@ export function WelcomeScreen() {
   }, []);
 
   return (
-    <div data-screen-id="UF-01.1" className="wl-uf01 wl-uf01--welcome">
-      <p className="wl-uf01__brand">{t.appName}</p>
+    <div data-screen-id="UF-01.1" data-wl-state="plan" className="wl-page wl-uf01-plan">
+      <p className="wl-type-body wl-uf01-plan__brand">{t.appName}</p>
       <svg
-        className="wl-uf01__art"
+        className="wl-uf01-plan__art"
         viewBox="0 0 320 320"
         fill="none"
         strokeLinecap="round"
@@ -27,29 +27,61 @@ export function WelcomeScreen() {
         aria-hidden="true"
         focusable="false"
       >
-        <circle cx="160" cy="160" r="150" className="wl-uf01__art-disc" />
-        <line x1="40" y1="258" x2="280" y2="258" className="wl-uf01__art-floor" strokeWidth="4" />
-        <circle cx="150" cy="84" r="20" className="wl-uf01__art-ink" strokeWidth="10" />
-        <path d="M150 112 L128 176" className="wl-uf01__art-ink" strokeWidth="14" />
-        <path d="M128 176 L200 182 L182 252" className="wl-uf01__art-accent" strokeWidth="14" />
-        <path d="M170 254 L214 254" className="wl-uf01__art-ink" strokeWidth="10" />
-        <path d="M146 122 L186 138 L196 118" className="wl-uf01__art-ink" strokeWidth="8" />
-        <line x1="98" y1="118" x2="232" y2="118" className="wl-uf01__art-bar" strokeWidth="6" />
-        <rect x="84" y="92" width="18" height="52" rx="4" className="wl-uf01__art-plate" />
-        <rect x="228" y="92" width="18" height="52" rx="4" className="wl-uf01__art-plate" />
+        <circle cx="160" cy="160" r="150" className="wl-uf01-plan__art-disc" />
+        <line
+          x1="40"
+          y1="258"
+          x2="280"
+          y2="258"
+          className="wl-uf01-plan__art-floor"
+          strokeWidth="4"
+        />
+        <circle cx="150" cy="84" r="20" className="wl-uf01-plan__art-ink" strokeWidth="10" />
+        <path d="M150 112 L128 176" className="wl-uf01-plan__art-ink" strokeWidth="14" />
+        <path
+          d="M128 176 L200 182 L182 252"
+          className="wl-uf01-plan__art-accent"
+          strokeWidth="14"
+        />
+        <path d="M170 254 L214 254" className="wl-uf01-plan__art-ink" strokeWidth="10" />
+        <path d="M146 122 L186 138 L196 118" className="wl-uf01-plan__art-ink" strokeWidth="8" />
+        <line
+          x1="98"
+          y1="118"
+          x2="232"
+          y2="118"
+          className="wl-uf01-plan__art-bar"
+          strokeWidth="6"
+        />
+        <rect x="84" y="92" width="18" height="52" rx="4" className="wl-uf01-plan__art-plate" />
+        <rect x="228" y="92" width="18" height="52" rx="4" className="wl-uf01-plan__art-plate" />
       </svg>
-      <div className="wl-uf01__intro">
-        <h1 className="wl-uf01__title">
-          <span className="wl-uf01__line">{t.welcome.headingLine1}</span>{" "}
-          <span className="wl-uf01__line">{t.welcome.headingLine2}</span>
+      <div className="wl-uf01-plan__intro wl-uf01-plan__intro--welcome">
+        <h1 className="wl-uf01-plan__hero">
+          <span className="wl-uf01-plan__line">{t.welcome.headingLine1}</span>{" "}
+          <span className="wl-uf01-plan__line">{t.welcome.headingLine2}</span>
         </h1>
-        <p className="wl-uf01__muted">{t.welcome.subtitle}</p>
+        <p className="wl-type-body wl-uf01-plan__lede">{t.welcome.subtitle}</p>
       </div>
-      <div className="wl-uf01__actions">
-        <Link to="/welcome/goal" className="wl-uf01__primary">
-          {t.welcome.getStarted}
+      <div className="wl-uf01-plan__actions">
+        <Link to="/welcome/goal" className="wl-button--primary">
+          <span>{t.welcome.getStarted}</span>
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M5 12h14M13 6l6 6-6 6" />
+          </svg>
         </Link>
-        <Link to="/account" className="wl-uf01__ghost">
+        <Link to="/account" className="wl-button--text">
           {t.welcome.haveAccount}
         </Link>
       </div>

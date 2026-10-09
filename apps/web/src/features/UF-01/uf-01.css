@@ -1,4 +1,317 @@
-/* UF-01 onboarding (UF-01.1–.4). Colours and fonts come only from @workoutlab/design-tokens
+/* UF-01.1–UF-01.4 in the plan state (T-0605, D-0208, D-0211, D-0213; Cobalt "Welcome", "Goal",
+   "Level and equipment", "Schedule"). Colours, fonts and radii come only from the generic --wl-*
+   variables that data-wl-state="plan" sets. The shared controls (.wl-option, .wl-segmented,
+   .wl-chip, .wl-row and the .wl-button-- forms, main.css) own their look, so nothing below sets a
+   property they set; this file loads after main.css and would win a tie by order. Where a rule
+   here must beat a shared element default (h1 size, .wl-page padding) it doubles a class instead.
+   No transitions: the only motion is the root's state cross-fade, and plan to plan has none. */
+.wl-page.wl-uf01-plan {
+  min-block-size: 100dvh;
+  padding-block-start: max(3rem, env(safe-area-inset-top));
+  padding-block-end: max(2.75rem, env(safe-area-inset-bottom));
+  gap: 1.5rem;
+}
+
+.wl-uf01-plan__header {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.wl-uf01-plan__back {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  margin-inline-start: -0.625rem;
+  color: var(--wl-ink);
+  border-radius: var(--wl-radius-tile);
+}
+
+.wl-uf01-plan__bars {
+  display: grid;
+  flex: 1;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.wl-uf01-plan__bar {
+  block-size: 4px;
+  border-radius: var(--wl-radius-progress);
+  background: var(--wl-line);
+}
+
+.wl-uf01-plan__bar[data-done="true"] {
+  background: var(--wl-ink);
+}
+
+.wl-uf01-plan__progress {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.wl-uf01-plan__intro {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.wl-uf01-plan__intro > p {
+  margin: 0;
+}
+
+.wl-uf01-plan .wl-uf01-plan__title {
+  margin: 0.75rem 0 0;
+  font-size: 3rem;
+  line-height: 0.95;
+}
+
+.wl-uf01-plan__form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.wl-uf01-plan__form > .wl-button--primary {
+  margin-block-start: auto;
+}
+
+/* Pinned to the bottom of the viewport when the step is taller than the screen (UF-01.4 at 390
+   x 844 is): the primary stays in reach while the plan rows scroll under it. */
+.wl-uf01-plan > .wl-button--primary,
+.wl-uf01-plan__form > .wl-button--primary {
+  position: sticky;
+  inset-block-end: max(1rem, env(safe-area-inset-bottom));
+  z-index: 1;
+}
+
+.wl-uf01-plan__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.wl-uf01-plan__group > p {
+  margin: 0;
+}
+
+.wl-uf01-plan__group .wl-segmented {
+  inline-size: 100%;
+}
+
+.wl-uf01-plan__group .wl-segmented > label {
+  flex: 1;
+}
+
+.wl-uf01-plan__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Goal options: the rows are .wl-option; the stack holds the label and its caption. The group
+   has no overflow clip, so the selected block can bleed past the gutter. */
+.wl-uf01-plan__options {
+  display: flex;
+  flex-direction: column;
+}
+
+.wl-uf01-plan__option-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+/* Welcome. */
+.wl-uf01-plan__brand {
+  margin: 0;
+  font-weight: 700;
+}
+
+.wl-uf01-plan__art {
+  inline-size: 100%;
+  max-inline-size: 9rem;
+  block-size: auto;
+  align-self: center;
+}
+
+/* The illustration is decoration: on a short screen it gives way, so the primary stays in view. */
+@media (max-height: 740px) {
+  .wl-uf01-plan__art {
+    display: none;
+  }
+}
+
+.wl-uf01-plan__art-disc {
+  fill: var(--wl-raise);
+}
+
+.wl-uf01-plan__art-floor {
+  stroke: var(--wl-line);
+}
+
+.wl-uf01-plan__art-ink {
+  stroke: var(--wl-ink);
+}
+
+.wl-uf01-plan__art-accent {
+  stroke: var(--wl-ink-muted);
+}
+
+.wl-uf01-plan__art-bar {
+  stroke: var(--wl-ink-muted);
+}
+
+.wl-uf01-plan__art-plate {
+  fill: var(--wl-ink-muted);
+}
+
+.wl-uf01-plan__intro--welcome {
+  margin-block-start: auto;
+}
+
+.wl-uf01-plan .wl-uf01-plan__hero {
+  margin: 0;
+  font-size: clamp(2.75rem, 16vw, 4rem);
+  line-height: 0.88;
+  letter-spacing: -0.05em;
+}
+
+.wl-uf01-plan__line {
+  display: block;
+}
+
+.wl-uf01-plan .wl-uf01-plan__lede {
+  color: var(--wl-ink-muted);
+}
+
+.wl-uf01-plan__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1rem;
+  margin-block-start: 1rem;
+}
+
+.wl-uf01-plan__actions > .wl-button--text {
+  align-self: center;
+}
+
+/* Focus: the shared 2 px --wl-focus at a 2 px offset. */
+.wl-uf01-plan__back:focus-visible,
+.wl-uf01-plan__step:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+/* UF-01.4 steppers and the plan as rows. */
+.wl-uf01-plan__steppers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.wl-uf01-plan__stepper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wl-uf01-plan__stepper > p {
+  margin: 0;
+}
+
+.wl-uf01-plan__stepper-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
+.wl-uf01-plan__stepper-row > p {
+  margin: 0;
+}
+
+.wl-uf01-plan__step {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 3rem;
+  block-size: 3rem;
+  padding: 0;
+  color: var(--wl-ink);
+  background: transparent;
+  border: 1.5px solid var(--wl-ink);
+  border-radius: var(--wl-radius-pill);
+  cursor: pointer;
+}
+
+/* aria-disabled, never the attribute: still focusable, and --wl-ink-muted stays legible. */
+.wl-uf01-plan__step[aria-disabled="true"] {
+  color: var(--wl-ink-muted);
+  border-color: var(--wl-ink-muted);
+  cursor: not-allowed;
+}
+
+.wl-uf01-plan__stepper-unit {
+  text-align: center;
+}
+
+.wl-uf01-plan__plan {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.wl-uf01-plan__plan > p,
+.wl-uf01-plan__plan > h2,
+.wl-uf01-plan__plan > h3 {
+  margin: 0;
+}
+
+.wl-uf01-plan__plan .wl-uf01-plan__rhythm {
+  font-weight: 700;
+}
+
+.wl-uf01-plan__plan > h3 {
+  margin-block-start: 0.75rem;
+}
+
+.wl-uf01-plan__targets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf01-plan__sets {
+  font-weight: 700;
+}
+
+/* Visually hidden, still read (the progress name, the stepper value name). */
+.wl-uf01__sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* UF-01.5 Account and /welcome/save (T-0301c) keep the Chalk & Iron look until T-0606. Only
+   font sizes moved from px to rem. */
+
+/* UF-01.5 Account and /welcome/save. Colours and fonts come only from @workoutlab/design-tokens
    (D-0019). Selection state is styled from `:checked`, never inline, and every control keeps a
    visible `:focus-visible` ring (WCAG 2.4.7). */
 .wl-uf01 {
@@ -13,50 +326,6 @@
   font-family: var(--wl-font-body);
 }
 
-.wl-uf01--welcome {
-  gap: 24px;
-  padding-block-start: 64px;
-}
-
-.wl-uf01__brand {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-}
-
-.wl-uf01__art {
-  inline-size: 100%;
-  max-inline-size: 342px;
-  block-size: auto;
-  align-self: center;
-}
-
-.wl-uf01__art-disc {
-  fill: var(--wl-color-surface);
-}
-
-.wl-uf01__art-floor {
-  stroke: var(--wl-color-line-strong);
-}
-
-.wl-uf01__art-ink {
-  stroke: var(--wl-color-text);
-}
-
-.wl-uf01__art-accent {
-  stroke: var(--wl-color-accent);
-}
-
-.wl-uf01__art-bar {
-  stroke: var(--wl-color-text-muted);
-}
-
-.wl-uf01__art-plate {
-  fill: var(--wl-color-text-muted);
-}
-
 .wl-uf01__intro {
   display: flex;
   flex-direction: column;
@@ -66,30 +335,25 @@
 .wl-uf01__title {
   margin: 0;
   font-family: var(--wl-font-display);
-  font-size: 48px;
+  font-size: 3rem;
   font-weight: 800;
   line-height: 0.95;
   text-transform: uppercase;
 }
 
 .wl-uf01__title--step {
-  font-size: 40px;
+  font-size: 2.5rem;
   line-height: 1;
-}
-
-.wl-uf01__line {
-  display: block;
 }
 
 .wl-uf01__muted {
   margin: 0;
   color: var(--wl-color-text-muted);
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.45;
 }
 
-.wl-uf01__actions,
-.wl-uf01__form {
+.wl-uf01__actions {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -98,14 +362,6 @@
 
 .wl-uf01__actions {
   justify-content: flex-end;
-}
-
-.wl-uf01__form {
-  gap: 22px;
-}
-
-.wl-uf01__form > .wl-uf01__primary {
-  margin-block-start: auto;
 }
 
 .wl-uf01__primary,
@@ -118,7 +374,7 @@
   padding: 0 16px;
   border-radius: 14px;
   font: inherit;
-  font-size: 16px;
+  font-size: 1rem;
   text-decoration: none;
   cursor: pointer;
 }
@@ -156,262 +412,9 @@
   color: var(--wl-color-text);
 }
 
-.wl-uf01__bars {
-  display: flex;
-  flex: 1;
-  gap: 6px;
-}
-
-.wl-uf01__bar {
-  flex: 1;
-  block-size: 4px;
-  border-radius: 2px;
-  background: var(--wl-color-line);
-}
-
-.wl-uf01__bar[data-done="true"] {
-  background: var(--wl-color-accent);
-}
-
-.wl-uf01__progress {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 13px;
-}
-
-/* Visually hidden, still read (the progress name, the native radios). */
-.wl-uf01__sr,
-.wl-uf01__radio {
-  position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-  border: 0;
-}
-
-.wl-uf01__options {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.wl-uf01__option {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px 18px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 16px;
-  background: var(--wl-color-surface);
-  cursor: pointer;
-}
-
-.wl-uf01__option:has(:checked) {
-  padding: 15px 17px;
-  border: 2px solid var(--wl-color-accent);
-}
-
-.wl-uf01__option-label {
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.wl-uf01__group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.wl-uf01__tag {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.wl-uf01__segments {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 14px;
-  background: var(--wl-color-surface);
-}
-
-.wl-uf01__segment {
-  position: relative;
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  min-block-size: 48px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.wl-uf01__segment:has(:checked) {
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-  font-weight: 700;
-}
-
-.wl-uf01__chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.wl-uf01__chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  min-block-size: 44px;
-  padding: 0 16px;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 999px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.wl-uf01__chip:has(:checked) {
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-  border-color: var(--wl-color-accent);
-  font-weight: 700;
-}
-
 .wl-uf01__primary:focus-visible,
 .wl-uf01__ghost:focus-visible,
-.wl-uf01__back:focus-visible,
-.wl-uf01__option:has(:focus-visible),
-.wl-uf01__segment:has(:focus-visible),
-.wl-uf01__chip:has(:focus-visible) {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-/* UF-01.4 Schedule & plan (T-0301d). */
-.wl-uf01__steppers {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.wl-uf01__stepper {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 16px;
-  background: var(--wl-color-surface);
-}
-
-.wl-uf01__stepper-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 4px;
-}
-
-.wl-uf01__step {
-  display: flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  inline-size: 48px;
-  block-size: 48px;
-  padding: 0;
-  color: var(--wl-color-text);
-  background: transparent;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 12px;
-  cursor: pointer;
-}
-
-.wl-uf01__step[aria-disabled="true"] {
-  color: var(--wl-color-text-muted);
-  border-color: var(--wl-color-line);
-  cursor: not-allowed;
-}
-
-.wl-uf01__stepper-value {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 34px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.wl-uf01__stepper-unit {
-  font-size: 13px;
-  text-align: center;
-}
-
-.wl-uf01__plan {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 18px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 16px;
-  background: var(--wl-color-surface);
-}
-
-.wl-uf01__tag--accent {
-  color: var(--wl-color-accent);
-}
-
-.wl-uf01__plan-title {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.wl-uf01__rhythm {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.wl-uf01__targets {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.wl-uf01__target {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 4px;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: var(--wl-color-surface-2);
-  font-size: 13px;
-}
-
-.wl-uf01__target-sets {
-  font-weight: 700;
-}
-
-.wl-uf01__step:focus-visible {
+.wl-uf01__back:focus-visible {
   outline: 2px solid var(--wl-color-accent);
   outline-offset: 2px;
 }
@@ -438,7 +441,7 @@
   border: 0;
   border-radius: 10px;
   font: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 500;
   cursor: pointer;
 }
@@ -463,7 +466,7 @@
 
 .wl-uf01__field-label {
   color: var(--wl-color-text-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 700;
 }
 
@@ -477,17 +480,19 @@
   border: 1px solid var(--wl-color-line-strong);
   border-radius: 14px;
   font: inherit;
-  font-size: 16px;
+  font-size: 1rem;
 }
 
 .wl-uf01__status {
   margin: 0;
   color: var(--wl-color-text);
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 1.45;
 }
 
-/* Empty: still in the accessibility tree (T-0382), but out of the flex flow, so no gap. */
+/* Empty: still in the accessibility tree (T-0382),
+but out of the flex flow,
+so no gap. */
 .wl-uf01__status:empty {
   position: absolute;
 }
@@ -495,7 +500,7 @@
 .wl-uf01__or {
   margin: 0;
   color: var(--wl-color-text-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
   text-align: center;
 }
 
@@ -519,7 +524,7 @@
   min-inline-size: 44px;
   padding: 0 12px;
   color: var(--wl-color-text-muted);
-  font-size: 14px;
+  font-size: 0.875rem;
   text-decoration: underline;
 }
 
