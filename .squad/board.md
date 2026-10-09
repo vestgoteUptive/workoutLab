@@ -204,3 +204,4 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0627 | C-01 legend attention swatch: 2 px --wl-attention with a 1 px --wl-bg gap per c-01-body-map.md:78 (BodyMap.tsx:117,192 use outlineOffset 0) (T-0615 review) | web-shell | T-0615 | doing | wl-build-web |
 | T-0628 | Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
 | T-0629 | never-in-workout.test.tsx:48 AC-A12 still flaky under load (waitFor on lazy session route), after T-0910 | web-feature:UF-10 | — | doing | wl-build-web |
+| T-0630 | Sheet stacking and portal scope before UF-08.3/UF-05.1 adopt .wl-sheet: z-index under the tab bar, an unstyled scrim when portalled to body; AccountDeletedNotice outside any state root (T-0593 review, D-0216 addendum) | web-shell | T-0593 | todo | wl-build-web |
