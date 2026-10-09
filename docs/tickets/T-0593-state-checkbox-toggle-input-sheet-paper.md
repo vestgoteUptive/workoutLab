@@ -90,4 +90,4 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e s
 - Red on unfixed code: first e2e run 7 failed (component CSS not in the /welcome bundle: injected from disk; fixture id clash `#root`). Fixed in the spec, then 18/18.
 - Planted faults (backup copy, restored by `cp`): invalid border colour (AC3 x2), sheet radius, scrim 30%, paper margin removed, toggle knob position, icon shown in plan, checkbox tick colour (3), notice bg, offline ink colour: each fails the e2e; unscoped `.wl-toggle` fails main-css AC8; `#FFFFFF` in checkbox.css fails check-colours (in-test).
 - Gate 1 red: `lib/account` boundaries.test forbids a stylesheet import in AccountDeletedNotice; rules moved to `main.css`, test untouched.
-- Gate (exit codes): `-w typecheck lint test --concurrency=1` 0; `test:repo-checks` 0; `format:check` 0; `check-all.mjs` 0; full e2e 0.
+- Gate (exit codes): `-w typecheck lint test --concurrency=1` 0; `test:repo-checks` 0; `format:check` 0; `check-all.mjs 1 at build time (the D-0216 and INDEX files were outside the lane; fixed by the orchestrator, who moved D-0216 to main); full e2e 0.
