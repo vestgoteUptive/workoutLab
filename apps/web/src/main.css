@@ -53,7 +53,7 @@ body {
   --wl-selected: var(--wl-color-plan-selected);
   --wl-on-selected: var(--wl-color-plan-on-selected);
   --wl-attention: var(--wl-color-plan-attention);
-  --wl-progress-off: var(--wl-color-plan-line);
+  --wl-progress-off: var(--wl-color-plan-raise);
   --wl-focus: var(--wl-color-plan-ink);
   --wl-scrim: var(--wl-color-plan-scrim);
   --wl-coverage-0: var(--wl-color-plan-coverage-0);
@@ -81,7 +81,7 @@ body {
   --wl-attention: var(--wl-color-lift-ink);
   --wl-progress-off: var(--wl-color-lift-progress-off);
   --wl-focus: var(--wl-color-lift-ink);
-  --wl-scrim: var(--wl-color-lift-bg);
+  --wl-scrim: var(--wl-color-plan-scrim);
   --wl-font: var(--wl-font-session);
   --wl-gutter: var(--wl-space-gutter-session);
 }
@@ -100,7 +100,7 @@ body {
   --wl-attention: var(--wl-color-rest-ink);
   --wl-progress-off: var(--wl-color-rest-progress-off);
   --wl-focus: var(--wl-color-rest-ink);
-  --wl-scrim: var(--wl-color-rest-bg);
+  --wl-scrim: var(--wl-color-plan-scrim);
   --wl-font: var(--wl-font-session);
   --wl-gutter: var(--wl-space-gutter-session);
 }
