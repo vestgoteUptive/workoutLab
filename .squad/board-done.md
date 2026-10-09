@@ -303,6 +303,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0492 | UF-11 `__tests__/offline.test.tsx:112`: tighten `/^0?8:10$/` to `08:10` and drop the stale "renders 8:10" comment — after T-0471 merges (shared UF-11 lane) (T-0449 follow-up) | web-feature:UF-11 | T-0449, T-0471 | done | wl-build-web |
 | T-0914 | UF-02 card.test.tsx mocks ../slots.js (real check-in card raced the no-button assertion; main red since 28719f5), Today forwards now/tz/locale to CheckinSlot | web-feature:UF-02 | — | done | wl-build-web |
 | T-0915 | lib/pwa/update.ts adopts installing worker in watch(), re-adopts on check() (pwa-update.spec.ts:109 flake) | web-shell | — | done | wl-build-web |
+| T-0916 | pwa-update.spec.ts:118 lazy-chunk console-guard flake: root-cause it | qa | T-0915 | done | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
