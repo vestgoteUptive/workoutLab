@@ -72,7 +72,7 @@ describe("AC-D1/D3 data is matched by area id, not position (QA)", () => {
       const { container } = renderInRouter(<BodyMap variant={variant} areas={shuffled} />);
       for (const a of mixedFixture) {
         expect(fillOf(container, a.area).style.backgroundColor).toBe(
-          `var(--wl-color-coverage-${a.coverageStep})`,
+          `var(--wl-coverage-${a.coverageStep})`,
         );
         expect(
           within(areaEl(container, a.area)).getByText(`${MIXED_LOAD_TEXT[a.area]} / ${a.target}`),
@@ -177,16 +177,14 @@ describe("D-0060 §2 the UI never guesses a step (principle 3, QA)", () => {
         needsAttention: false,
       });
       const { container } = renderInRouter(<BodyMap variant="full" areas={areas} />);
-      expect(fillOf(container, "quads").style.backgroundColor).toBe("var(--wl-color-surface-2)");
+      expect(fillOf(container, "quads").style.backgroundColor).toBe("var(--wl-raise)");
     });
   }
 
   it("D-0060 §2: an area missing from the engine output renders neutral, the rest unaffected", () => {
     const areas = mixedFixture.filter((a) => a.area !== "calves");
     const { container } = renderInRouter(<BodyMap variant="full" areas={areas} />);
-    expect(fillOf(container, "calves").style.backgroundColor).toBe("var(--wl-color-surface-2)");
-    expect(fillOf(container, "hamstrings").style.backgroundColor).toBe(
-      "var(--wl-color-coverage-1)",
-    );
+    expect(fillOf(container, "calves").style.backgroundColor).toBe("var(--wl-raise)");
+    expect(fillOf(container, "hamstrings").style.backgroundColor).toBe("var(--wl-coverage-1)");
   });
 });

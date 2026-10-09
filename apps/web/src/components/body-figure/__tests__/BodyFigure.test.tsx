@@ -135,6 +135,25 @@ describe("AC-4 styles", () => {
     expect(mount({}).querySelectorAll(".wl-fig__ring")).toHaveLength(0);
   });
 
+  it("AC-ring: the ring is painted above every body part and below the regions", () => {
+    const svg = mount({ highlighted: "core", regions: { core: { fill: { coverageStep: 2 } } } });
+    for (const view of svg.querySelectorAll("[data-view]")) {
+      const order = [...view.children];
+      const idx = (el: Element) => order.indexOf(el);
+      const ring = [...view.querySelectorAll(".wl-fig__ring, .wl-fig__ring-gap")];
+      if (ring.length === 0) continue; // core is front-only
+      const parts = [...view.querySelectorAll(".wl-fig__body:not(.wl-fig__region)")];
+      const regions = [...view.querySelectorAll("[data-area]")];
+      expect(parts.length).toBeGreaterThan(0);
+      for (const r of ring) {
+        for (const p of parts) expect(idx(r)).toBeGreaterThan(idx(p));
+        for (const a of regions) expect(idx(r)).toBeLessThan(idx(a));
+      }
+      expect(idx(ring[0]!)).toBeLessThan(idx(ring[1]!));
+    }
+    expect(svg.querySelectorAll(".wl-fig__ring").length).toBeGreaterThan(0);
+  });
+
   it("each instance gets its own hatch id", () => {
     const { container } = render(
       <>

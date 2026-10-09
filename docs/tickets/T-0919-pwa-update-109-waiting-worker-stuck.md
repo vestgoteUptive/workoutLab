@@ -28,3 +28,4 @@ None.
 check-all green · commits start with `T-0919`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0919.md` (D-0157).

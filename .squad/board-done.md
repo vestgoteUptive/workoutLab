@@ -304,6 +304,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0914 | UF-02 card.test.tsx mocks ../slots.js (real check-in card raced the no-button assertion; main red since 28719f5), Today forwards now/tz/locale to CheckinSlot | web-feature:UF-02 | — | done | wl-build-web |
 | T-0915 | lib/pwa/update.ts adopts installing worker in watch(), re-adopts on check() (pwa-update.spec.ts:109 flake) | web-shell | — | done | wl-build-web |
 | T-0916 | pwa-update.spec.ts:118 lazy-chunk console-guard flake: root-cause it | qa | T-0915 | done | wl-build-web |
+| T-0919 | pwa-update.spec.ts:109: adopted worker stuck waiting after SKIP_WAITING (~1%) | qa | T-0918 | folded into T-0918 | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -430,3 +431,6 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0617 | Auth emails on paper (PATCH = H-35) | infra | — | done | wl-build-infra |
 | T-0619 | UF-09 state captions incl. "Lifting · set n of N" (mock behaviour, before the restyle) | web-feature:UF-09 | — | done | wl-build-web |
 | T-0614 | Body figure + C-01 cobalt design check, preview, legend fields | design | T-0590 | done | wl-design |
+| T-0592 | Shared controls: buttons, row, option row, segmented, chip, icons, focus, unboxed cards | web-shell | T-0589, T-0590 | done | wl-build-web |
+| T-0615 | BodyFigure + BodyMap read generic variables | web-shell | T-0614, T-0589 | done | wl-build-web |
+| T-0594 | C-02 tab bar look, SessionProgress, drain helper | web-shell | T-0592 | done | wl-build-web |

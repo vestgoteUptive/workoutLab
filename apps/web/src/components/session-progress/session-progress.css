@@ -1,0 +1,53 @@
+/* SessionProgress (T-0594, D-0211). Colours come from the --wl-* state variables. */
+.wl-session-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wl-session-progress__pause {
+  flex: none;
+  box-sizing: border-box;
+  inline-size: 44px;
+  block-size: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--wl-ink);
+  border-radius: var(--wl-radius-pill);
+  background: transparent;
+  color: var(--wl-ink);
+  cursor: pointer;
+}
+
+.wl-session-progress__pause:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+.wl-session-progress__segments {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  display: flex;
+  gap: 4px;
+}
+
+.wl-session-progress__segment {
+  flex: 1 1 0;
+  block-size: 4px;
+  border-radius: var(--wl-radius-progress);
+  background: var(--wl-progress-off);
+}
+
+.wl-session-progress__segment--done {
+  background: var(--wl-ink);
+}
+
+.wl-session-progress__counter {
+  flex: none;
+  color: var(--wl-ink);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+}

@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-02.1, UF-04.1, UF-06.1, UF-11.2, UF-09.1, UF-09.5, UF-09.6, UF-03.2]
 decisions: [D-0208, D-0210, D-0211, D-0196, D-0045, D-0017]
 deps: [T-0592]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Stays out of main.css (component CSS only), so it may run in parallel with T-0593. The tab bar shows on every tab screen: full web e2e suite. The tab bar turns cobalt ahead of the tab screens; the owner accepts this (D-0210 §4). -->
 ## Why
@@ -70,3 +70,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0594`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0594.md` (D-0157).

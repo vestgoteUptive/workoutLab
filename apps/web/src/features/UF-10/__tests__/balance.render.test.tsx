@@ -94,7 +94,7 @@ describe("AC-A5 engine order — the UI does not sort", () => {
     expect(row("calves")!.getAttribute("data-attention")).toBe("true");
     // `warn` never becomes a background: attention is an outline (D-0003).
     expect(row("calves")!.style.backgroundColor).not.toContain("warn");
-    expect(rowFill("calves")).toBe("var(--wl-color-coverage-1)");
+    expect(rowFill("calves")).toBe("var(--wl-coverage-1)");
   });
 
   it("keyboard focus stays visible on an attention row: the warn rule precedes :focus-visible (WCAG 2.4.7)", () => {
@@ -146,8 +146,8 @@ describe("AC-A13 the UI computes nothing — principle 3", () => {
 
     expect(rowValue("quads")).toBe("3 / 20");
     // A UI that derived the step from 3/20 would show coverage-1.
-    expect(rowFill("quads")).toBe("var(--wl-color-coverage-4)");
-    expect(rowFill("quads")).not.toBe("var(--wl-color-coverage-1)");
+    expect(rowFill("quads")).toBe("var(--wl-coverage-4)");
+    expect(rowFill("quads")).not.toBe("var(--wl-coverage-1)");
     // A UI that derived attention from deficit .85 (≥ .5) would outline this row.
     expect(row("quads")!.style.outline).toBe("");
     expect(outlinedRowAreas()).toEqual([]);
@@ -204,10 +204,10 @@ describe("AC-A13 the UI computes nothing — principle 3", () => {
     );
     renderStub(areas);
     expect(rowValue("quads")).toBe("19 / 20");
-    expect(rowFill("quads")).toBe("var(--wl-color-coverage-0)");
+    expect(rowFill("quads")).toBe("var(--wl-coverage-0)");
     // A derived step for 19/20 would be coverage-3 or -4, never -0.
-    expect(rowFill("quads")).not.toBe("var(--wl-color-coverage-4)");
-    expect(rowFill("quads")).not.toBe("var(--wl-color-coverage-3)");
+    expect(rowFill("quads")).not.toBe("var(--wl-coverage-4)");
+    expect(rowFill("quads")).not.toBe("var(--wl-coverage-3)");
 
     renderBalance({
       ...at,
@@ -431,8 +431,8 @@ describe("AC-A15 the full C-01 is mounted, and fed the same data as the rows", (
 
     expect(mapButtonValue("hamstrings")).toBe("6 / 16");
     expect(rowValue("hamstrings")).toBe("6 / 16");
-    expect(mapButtonFill("hamstrings")).toBe("var(--wl-color-coverage-2)");
-    expect(rowFill("hamstrings")).toBe("var(--wl-color-coverage-2)");
+    expect(mapButtonFill("hamstrings")).toBe("var(--wl-coverage-2)");
+    expect(rowFill("hamstrings")).toBe("var(--wl-coverage-2)");
 
     // Mutate that one area in the stub and re-render. A map fed a second, independent source
     // would keep the old numbers here while the rows moved (or the other way round).
@@ -440,8 +440,8 @@ describe("AC-A15 the full C-01 is mounted, and fed the same data as the rows", (
 
     expect(mapButtonValue("hamstrings")).toBe("18 / 16");
     expect(rowValue("hamstrings")).toBe("18 / 16");
-    expect(mapButtonFill("hamstrings")).toBe("var(--wl-color-coverage-4)");
-    expect(rowFill("hamstrings")).toBe("var(--wl-color-coverage-4)");
+    expect(mapButtonFill("hamstrings")).toBe("var(--wl-coverage-4)");
+    expect(rowFill("hamstrings")).toBe("var(--wl-coverage-4)");
     // And the attention outline dropped on both.
     expect(row("hamstrings")!.style.outline).toBe("");
     expect(outlinedRowAreas()).toEqual([]);
@@ -491,8 +491,8 @@ describe("AC-A20 a bad engine value does not crash", () => {
     expect(() => renderStub(areas)).not.toThrow();
     expect(rowValue("quads")).toBe("7 / 20");
     // C-01's existing `fillToken` behaviour, shared by the row.
-    expect(rowFill("quads")).toBe("var(--wl-color-surface-2)");
-    expect(mapButtonFill("quads")).toBe("var(--wl-color-surface-2)");
+    expect(rowFill("quads")).toBe("var(--wl-raise)");
+    expect(mapButtonFill("quads")).toBe("var(--wl-raise)");
     // The other eight rows are unaffected.
     expect(rowAreas()).toHaveLength(9);
   });

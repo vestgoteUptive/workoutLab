@@ -20,7 +20,7 @@ import {
 } from "./test-helpers.js";
 
 const VARIANTS = ["compact", "full"] as const;
-const WARN_OUTLINE = "2px solid var(--wl-color-warn)";
+const WARN_OUTLINE = "2px solid var(--wl-attention)";
 
 beforeEach(() => {
   mockMatchMedia(false);
@@ -43,7 +43,7 @@ describe("AC-D1 fill from coverageStep only (principle 3)", () => {
 
   for (const variant of VARIANTS) {
     for (const { step, load } of cases) {
-      it(`AC-D1 ${variant}: coverageStep ${step} fills var(--wl-color-coverage-${step})`, () => {
+      it(`AC-D1 ${variant}: coverageStep ${step} fills var(--wl-coverage-${step})`, () => {
         const areas = withArea(zeroFixture, {
           area: "hamstrings",
           load,
@@ -53,7 +53,7 @@ describe("AC-D1 fill from coverageStep only (principle 3)", () => {
         });
         const { container } = renderInRouter(<BodyMap variant={variant} areas={areas} />);
         expect(fillOf(container, "hamstrings").style.backgroundColor).toBe(
-          `var(--wl-color-coverage-${step})`,
+          `var(--wl-coverage-${step})`,
         );
       });
     }
@@ -61,16 +61,14 @@ describe("AC-D1 fill from coverageStep only (principle 3)", () => {
 
   it("AC-D1: hamstrings {load: 19.9, target: 20, coverageStep: 1} is coverage-1, not derived", () => {
     const { container } = renderInRouter(<BodyMap variant="full" areas={mixedFixture} />);
-    expect(fillOf(container, "hamstrings").style.backgroundColor).toBe(
-      "var(--wl-color-coverage-1)",
-    );
+    expect(fillOf(container, "hamstrings").style.backgroundColor).toBe("var(--wl-coverage-1)");
   });
 
   it("AC-D1: every area's fill follows its own coverageStep (mixed fixture)", () => {
     const { container } = renderInRouter(<BodyMap variant="full" areas={mixedFixture} />);
     for (const a of mixedFixture) {
       expect(fillOf(container, a.area).style.backgroundColor).toBe(
-        `var(--wl-color-coverage-${a.coverageStep})`,
+        `var(--wl-coverage-${a.coverageStep})`,
       );
     }
   });
@@ -90,7 +88,7 @@ describe("AC-D2 attention outline", () => {
         const { container } = renderInRouter(<BodyMap variant={variant} areas={areas} />);
         const fill = fillOf(container, "core");
         expect(fill.style.outline).toBe(WARN_OUTLINE);
-        expect(fill.style.backgroundColor).toBe(`var(--wl-color-coverage-${step})`);
+        expect(fill.style.backgroundColor).toBe(`var(--wl-coverage-${step})`);
       });
     }
 
@@ -99,7 +97,7 @@ describe("AC-D2 attention outline", () => {
       for (const area of AREAS) {
         const el = areaEl(container, area);
         for (const node of [el, ...Array.from(el.querySelectorAll<HTMLElement>("*"))]) {
-          expect(node.getAttribute("style") ?? "").not.toContain("--wl-color-warn");
+          expect(node.getAttribute("style") ?? "").not.toContain("--wl-attention");
         }
       }
     });
@@ -256,13 +254,32 @@ describe("AC-D6 hit area and focus style (NFR-A11Y-2)", () => {
       );
       expect(rules).toHaveLength(1);
       const decl = rules[0]!.style;
-      expect(decl.getPropertyValue("outline")).toBe("2px solid var(--wl-color-accent)");
+      expect(decl.getPropertyValue("outline")).toBe("2px solid var(--wl-focus)");
       expect(decl.getPropertyValue("outline-offset")).toBe("2px");
       expect(rules[0]!.cssText).not.toContain("warn");
     } finally {
       style.remove();
     }
   });
+});
+
+describe("AC-T0614-2 legend tokens are plan tokens, drawn through the generic variables", () => {
+  it("the legend token fields name plan tokens", () => {
+    expect(coverageLegend.map((e) => e.token)).toEqual(
+      [0, 1, 2, 3, 4].map((n) => `plan-coverage-${n}`),
+    );
+    expect(attentionLegend.token).toBe("plan-attention");
+  });
+  for (const variant of VARIANTS) {
+    it(`${variant}: no inline style reads --wl-color-plan-* (would be cobalt outside a state)`, () => {
+      const { container } = renderInRouter(
+        <BodyMap variant={variant} areas={attentionFixture} locale="en-US" />,
+      );
+      const styles = [...container.querySelectorAll("[style]")].map((e) => e.getAttribute("style"));
+      expect(styles.length).toBeGreaterThan(5);
+      for (const st of styles) expect(st).not.toContain("--wl-color-plan");
+    });
+  }
 });
 
 describe("AC-D7 legend from tokens", () => {
@@ -287,7 +304,7 @@ describe("AC-D7 legend from tokens", () => {
       coverageLegend.forEach((e, i) => {
         expect(
           items[i]!.querySelector<HTMLElement>('[data-part="swatch"]')!.style.backgroundColor,
-        ).toBe(`var(--wl-color-${e.token})`);
+        ).toBe(`var(--wl-coverage-${e.step})`);
       });
       const last = items[5]!.querySelector<HTMLElement>('[data-part="swatch"]')!;
       expect(last.style.backgroundColor).toBe("transparent");
@@ -301,7 +318,7 @@ describe("AC-D8 zero history + offline", () => {
     it(`AC-D8 ${variant}: 9 zero areas are coverage-0, read "0 / <target>", legend shown`, () => {
       const { container } = renderInRouter(<BodyMap variant={variant} areas={zeroFixture} />);
       for (const area of AREAS) {
-        expect(fillOf(container, area).style.backgroundColor).toBe("var(--wl-color-coverage-0)");
+        expect(fillOf(container, area).style.backgroundColor).toBe("var(--wl-coverage-0)");
         expect(within(areaEl(container, area)).getByText(`0 / ${TARGETS[area]}`)).toBeVisible();
       }
       expect(screen.getByRole("list", { name: "Coverage legend" })).toBeVisible();
@@ -339,7 +356,7 @@ describe("AC-D9 loading", () => {
         <BodyMap variant={variant} areas={mixedFixture} loading />,
       );
       for (const area of AREAS) {
-        expect(fillOf(container, area).style.backgroundColor).toBe("var(--wl-color-surface-2)");
+        expect(fillOf(container, area).style.backgroundColor).toBe("var(--wl-raise)");
       }
       expect(mapRoot(container).querySelectorAll('[data-part="value"]')).toHaveLength(0);
       expect(mapRoot(container).textContent).not.toMatch(/\d+ \/ \d+/);

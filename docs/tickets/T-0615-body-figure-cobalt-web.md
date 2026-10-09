@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-02.1, UF-10.1, UF-04.2]
 decisions: [D-0208, D-0210, D-0211, D-0207, D-0060]
 deps: [T-0614, T-0589]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Restyle only: components/body-figure and components/body-map were built in T-0556/T-0557. A dependency of T-0601, T-0608 and T-0611. Shared components: full web e2e suite. -->
 ## Why
@@ -54,3 +54,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0615` and cite UF-02.1/UF-10.1/UF-04.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0615.md` (D-0157).
