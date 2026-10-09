@@ -5,7 +5,7 @@ lane: design
 screens: [UF-02.1, UF-10.1, UF-04.2]
 decisions: [D-0208, D-0210, D-0211, D-0207, D-0013, D-0019]
 deps: [T-0590]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-design (agent designer). About ½ day. The owner chose (H-31, 2026-10-08) to ship the tokens first and the figure in its own ticket with a design check: the designer makes the recolour and a preview, and the reviewer checks it against the README "Assets" rules. There are no exercise illustrations to recolour (D-0192). -->
 ## Why
@@ -67,3 +67,5 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · check-all gree
   - AC5 → preview `Design-docs/docs/design/assets/body-figure/preview.html` (open with `node Design-docs/docs/design/assets/body-figure/serve-preview.mjs`); 390 px screenshot of the Cobalt section: scratchpad `t0614-figure.png` (orchestrator session). Reviewer verdict pending.
   - Red runs: AC1 tests on the HEAD `design-system.md`: 4 failed. `check-figure --preview` on the HEAD preview: 5 problems, exit 1. docs.test AC16 on the HEAD `c-01-body-map.md` with the moved pin: 2 failed. Pin moved: AC16 `` `warn` `` → `` `--wl-attention` `` + `1 px `--wl-bg` gap` (old value D-0003, new D-0211 §5).
   - Seen in the preview: the highlight ring around an inner area (core) is hidden under the silhouette, because the ring draws first in its view (the same order as `BodyFigure`). Follow-up for T-0615.
+
+- 2026-10-09 orchestrator: AC2 moved to T-0615 (TR-0048 resolved, option 1). D-0215 filed. The preview screenshot was checked by eye: coverage steps, halo, hatch and greyscale all read correctly. The owner check (H-31) is still open and non-blocking. Accepted without AC2.
