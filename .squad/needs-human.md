@@ -79,3 +79,6 @@ Phase 2 grooming (2026-10-09, D-0210–D-0213). The parked draft plan had five o
   - Blocks only the prod email look. T-0625 doesn't wait for it, because the templates in the repo no longer read the old tokens.
 
   Added 2026-10-09.
+
+H-34 answered by the owner, 2026-10-09: **promote** plate loading ("Each side 25 + 15 kg"), Latest PR on Today, the "Not feeling it? Quick 20-min" link, and library filters and tags into the redesign, as specced features. The other deferred items stay in phase 5.
+H-31 answered by the owner, 2026-10-09: **needs changes**. Details are being collected.
