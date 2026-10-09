@@ -1,5 +1,7 @@
 # Prototype source
 
+Chalk & Iron prototypes, superseded for the look by D-0208; still valid for layout order and copy.
+
 Exported from the design canvas: https://claude.ai/artifact/VRmZLyeChxb6WR4zLbkz8w
 
 One `.dc.html` file per screen, named by ID (`UF09-5-Rest.dc.html` = UF-09.5). `canvas.json` holds the layout and flow notes.
