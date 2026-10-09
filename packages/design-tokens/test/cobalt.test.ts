@@ -84,7 +84,12 @@ const FLAT_BEFORE = {
 
 describe("AC1 state groups carry the exact proposed hex (D-0208)", () => {
   it("plan, lift, rest and paper equal tokens.proposed.json (lift.bg #CC4225)", () => {
-    for (const state of colorStates) expect(raw.color[state], state).toEqual(PROPOSED[state]);
+    // T-0587 (D-0211 §1) adds plan.ink-on-raise and plan.scrim on top of the proposal.
+    const ADDED: Partial<Record<(typeof colorStates)[number], Record<string, string>>> = {
+      plan: { "ink-on-raise": "#DDE3FF", scrim: "#0E1652" },
+    };
+    for (const state of colorStates)
+      expect(raw.color[state], state).toEqual({ ...PROPOSED[state], ...ADDED[state] });
     expect(colorStates).toEqual(["plan", "lift", "rest", "paper"]);
   });
   it("lift.bg is #CC4225, not the mock's #D9472B", () => {
@@ -119,12 +124,14 @@ describe("AC1 state groups carry the exact proposed hex (D-0208)", () => {
       tile: 12,
       input: 12,
       segment: 4,
+      progress: 2, // T-0587 (D-0211 §1)
     });
     expect(raw.space).toEqual({
       "gutter-plan": 28,
       "gutter-session": 26,
       "top-safe": 72,
       "bottom-safe": 44,
+      "option-bleed": 18, // T-0587 (D-0211 §1)
     });
     expect(raw.meta.states).toEqual(["plan", "lift", "rest"]);
   });
@@ -173,7 +180,7 @@ describe("AC2 tokens.css emits the D-0208 variables", () => {
         n++;
       }
     }
-    expect(n).toBe(29);
+    expect(n).toBe(31); // 29 (T-0583) + plan.ink-on-raise + plan.scrim (T-0587)
     expect(css).not.toMatch(/object Object/);
     expect(css).not.toMatch(/--wl-color-(plan|lift|rest|paper|coverage):/);
   });
