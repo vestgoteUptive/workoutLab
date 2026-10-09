@@ -84,3 +84,5 @@ H-34 answered by the owner, 2026-10-09: **promote** plate loading ("Each side 25
 H-31 answered by the owner, 2026-10-09: **needs changes**. Details are being collected.
 
 H-35 done by the owner, 2026-10-09 15:58: the paper templates are applied to prod auth. Live hashes match main (magic-link d9ace53…, 2254 B; confirmation d88f6a6…, 2292 B). others_sha256 is unchanged (5fcf831…). The drift check exits 0 (17 keys).
+
+H-31 update, 2026-10-09: the owner will provide their own body-figure design suggestions instead of picking from the T-0650 variants. The figure screens (T-0601 UF-02, T-0608 UF-04.2, T-0611 UF-10) wait for that input. Other screens continue.
