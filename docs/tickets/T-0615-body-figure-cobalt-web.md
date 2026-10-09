@@ -38,9 +38,13 @@ Checklist (D-0197 §7):
 - State and no state, and attention on and off, are both tested.
 - No migration fixture: not applicable.
 
+- **AC-T0614-2 (moved from T-0614 per TR-0048).** The `coverageLegend` / `attentionLegend` `token` fields in `packages/design-tokens/src/index.ts` point to `plan-coverage-N` / `plan-attention`, tokens.test.ts AC6 is updated, and the consumers (`BodyMap.tsx`, `features/UF-10/format.ts`) compile and still render the legacy look outside `[data-wl-state]` (D-0210 §2). Planted fault: a consumer reading the plan token outside a state scope fails a test.
+- **AC-ring.** The highlight ring draws above the body parts, so the silhouette no longer hides it around inner areas (core, chest). Covered by a test on paint order.
+
 ## Paths you may change
 - `apps/web/src/components/body-figure/**`, `apps/web/src/components/body-map/**` (lane)
 - `tests/e2e/body-map-figure.spec.ts`, `tests/e2e/uf-04-figure.spec.ts` (listed extras)
+- `packages/design-tokens/src/index.ts`, `packages/design-tokens/test/tokens.test.ts`, `apps/web/src/features/UF-10/format.ts` and its tests (TR-0048 grant)
 - `docs/tickets/T-0615-body-figure-cobalt-web.md` (log only)
 
 ## Contract impact
