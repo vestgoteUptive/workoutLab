@@ -95,7 +95,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
-| T-0916 | pwa-update.spec.ts:118 lazy-chunk console-guard flake: root-cause it | qa | T-0915 | todo | wl-build-web |
+| T-0916 | pwa-update.spec.ts:118 lazy-chunk console-guard flake: root-cause it | qa | T-0915 | doing | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
 
 ## Phase 5 — Iterate
@@ -173,7 +173,7 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0592 | Shared controls: buttons, row, option row, segmented, chip, icons, focus, unboxed cards | web-shell | T-0589, T-0590 | todo | wl-build-web |
+| T-0592 | Shared controls: buttons, row, option row, segmented, chip, icons, focus, unboxed cards | web-shell | T-0589, T-0590 | doing | wl-build-web |
 | T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | todo | wl-build-web |
 | T-0594 | C-02 tab bar look, SessionProgress, drain helper | web-shell | T-0592 | todo | wl-build-web |
 | T-0595 | UF-09.3/.4 + chrome in lift | web-feature:UF-09 | T-0593, T-0594, T-0591, T-0619 | todo | wl-build-web |
@@ -195,7 +195,7 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0611 | UF-10.1/.2 in plan, attention #FFB3A3 | web-feature:UF-10 | T-0593, T-0615, T-0591 | todo | wl-build-web |
 | T-0612 | UF-11.1/.2/.3: tiles, check-in paper, G-2 → 28 px | web-feature:UF-11 | T-0593, T-0582, T-0591 | todo | wl-build-web |
 | T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | todo | wl-build-web |
-| T-0614 | Body figure + C-01 cobalt design check, preview, legend fields | design | T-0590 | todo | wl-design |
+| T-0614 | Body figure + C-01 cobalt design check, preview, legend fields | design | T-0590 | doing | wl-design |
 | T-0615 | BodyFigure + BodyMap read generic variables | web-shell | T-0614, T-0589 | todo | wl-build-web |
 | T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | todo | wl-build-web |
 | T-0620 | UF-09 wording: Done, Save · start rest, paused caption + stats (mock copy) | web-feature:UF-09 | T-0598 | todo | wl-build-web |
