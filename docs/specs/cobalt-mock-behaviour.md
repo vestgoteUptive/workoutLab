@@ -209,7 +209,7 @@ Markup: `<p data-part="plates"><span>Each side</span> <span>25 + 15 kg</span></p
 
 **Definition (engine rule 15, D-0219, an engine-rules change).** D-0068 §5 already says record logic belongs in `packages/engine` with worked examples. The engine gains a pure `records(history, library)`:
 - **Input sets:** `normalizeHistory(history)` (dedupe, tombstones dropped), then only hard sets (`isHardSet`) of exercises in the library with `kind = "exercise"`.
-- **Key:** for a timed exercise, `durationS`. Otherwise the pair (`weightKg ?? 0`, `reps ?? 0`), compared weight first, then reps. This is D-0068 §5's "Best set" order: the heaviest weight, then the most reps at it. A bodyweight lift (weight 0) is compared on reps.
+- **Key:** for a timed exercise, `durationS`. Otherwise the pair (`weightKg ?? 0`, `reps ?? 0`), compared weight first, then reps. Owner amendment (H-36, D-0219): ranked by estimated 1RM (Epley `w × (1 + reps/30)`) instead of D-0068 §5's heaviest-then-reps order. A bodyweight lift (weight 0) is compared on reps.
 - **Per session:** for each (exercise, session), its best set is the highest key. Ties go to the earlier `completedAt`, then the smaller `clientId`.
 - **A record** is a session's best set when the same exercise has at least one hard set in **another** session with an earlier `completedAt`, and the best set's key is **strictly greater** than every such earlier set's key. So the first session of an exercise is never a record, and matching a best is not a record.
 - **Output:** `{ exerciseId, sessionId, clientId, completedAt, weightKg, reps, durationS, previous: { weightKg, reps, durationS } }`, oldest first (`completedAt`, then `clientId`). No clock, no time zone, no randomness.

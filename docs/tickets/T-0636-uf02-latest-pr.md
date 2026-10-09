@@ -20,6 +20,8 @@ The mock's Today shows the latest personal record ("Latest PR Back Squat 100 kg 
   - Style: the plan state's muted label and ink value, no box (README: no cards).
 - **Out:** a link to UF-06.2; a PR on UF-03.3 or UF-06 (follow-ups); a PR older than 14 days.
 
+> **Owner amendment (H-36, D-0219):** records rank by estimated 1RM (Epley `w × (1 + reps/30)`), not by heaviest-then-reps. Timed exercises keep `durationS`; bodyweight sets rank by reps. Any AC below that says "heaviest weight then reps" means e1RM. Today shows the actual set, never the e1RM number. Add a test where 80 kg × 10 (e1RM 106.7) beats an earlier 90 kg × 3 (e1RM 99).
+
 ## Acceptance criteria
 - **AC1 (shown).** Given `now` = 2026-10-11 12:00 Europe/Stockholm, back-squat 100 × 8 in a session on 10-01 and 102.5 × 6 in one on 10-08, When Today renders, Then `data-part="latest-pr"` reads "Latest PR Back Squat 102.5 kg × 6" and is the element directly before Start.
 - **AC2 (newest wins).** With a bench-press record on 10-09 as well, it reads the bench-press record.

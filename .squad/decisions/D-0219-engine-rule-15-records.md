@@ -1,7 +1,7 @@
 ---
 id: D-0219
 title: "Engine rule 15 records(history, library): a session's best set (heaviest weight then most reps; longest hold for timed) is a record when it strictly beats every hard set of the same exercise in an earlier other session; the first session is never a record; pure, display-only, never read by suggest"
-status: revisit
+status: accepted
 date: 2026-10-09
 by: product-owner (spec, proposed for the engine lane; T-0635 makes the change)
 area: engine
@@ -45,3 +45,8 @@ The owner question is whether a PR is that order or an estimated 1RM (H-36). The
 ## Revisit when
 - The owner picks an estimated 1RM or a rep-range record instead (H-36).
 - A record baseline older than the device cache is wanted (H-37): the input grows, the rule doesn't change.
+
+Approved by the owner as a contract change, 2026-10-09.
+
+## Owner amendment (H-36, 2026-10-09). This overrides the ranking key above.
+The record key for weighted and bodyweight sets is the **estimated 1RM, Epley**: `e1rm = weightKg × (1 + reps / 30)`. A bodyweight set (weight 0) ranks by reps. Timed exercises keep `durationS`. A set is a record when its key strictly beats every earlier session's best key for that exercise. Ties are not records. Reps above 12 still count, but the e1RM is only an estimate, so the Today line shows the actual set (for example "80 kg × 10"), never the e1RM number. Everything else in this decision stands. The window is the H-37 default (56-day history, shown for 14 days).

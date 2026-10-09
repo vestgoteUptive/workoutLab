@@ -19,6 +19,8 @@ status: todo
   - Tests: `test/rule-15-records.test.ts` (one case per example) and `test/rule-15-records-histories.test.ts` (the simulated 14-day history fixture, R15-E12).
 - **Out:** any caller (T-0636); UF-06's `bestSet` (unchanged); estimated 1RM (H-36).
 
+> **Owner amendment (H-36, D-0219):** records rank by estimated 1RM (Epley `w × (1 + reps/30)`), not by heaviest-then-reps. Timed exercises keep `durationS`; bodyweight sets rank by reps. Any AC below that says "heaviest weight then reps" means e1RM. Today shows the actual set, never the e1RM number. Add a test where 80 kg × 10 (e1RM 106.7) beats an earlier 90 kg × 3 (e1RM 99).
+
 ## Acceptance criteria
 - **AC1 (E1–E3: beat, more reps, equal).** R15-E1 returns exactly one record (S2's 102.5 × 6, `previous` 100 × 8); R15-E2 returns S2's 100 × 9; R15-E3 returns `[]`.
 - **AC2 (E4: first session).** Rising sets in a single session return `[]`.

@@ -1,7 +1,7 @@
 ---
 id: D-0218
 title: "Data model: profiles.bar_kg (numeric(5,2), default 20, 0–50) and profiles.plates_kg (numeric(5,2)[], default {25,20,15,10,5,2.5,1.25}, ≤ 12 distinct sizes > 0 and ≤ 50, pairs unlimited) for UF-09.3 plate loading; synced and exported with the profile, edited on UF-11.4"
-status: revisit
+status: accepted
 date: 2026-10-09
 by: product-owner (spec, proposed for the data lane; T-0631 makes the change)
 area: data
@@ -37,3 +37,5 @@ Options considered:
 ## Revisit when
 - Users want a count per plate size (a home gym with one pair of 25s), or more than one bar (EZ bar, trap bar).
 - lb support is added (H-38): the columns stay kg and the display converts.
+
+Approved by the owner as a contract change, 2026-10-09.
