@@ -33,6 +33,12 @@ export const colorStates = [
   "paper",
 ] as const satisfies readonly ColorState[];
 
+/**
+ * `meta.planCoverage[n]` (D-0211 §1): `requiresLabel` is true when plan coverage step n is below
+ * 3:1 on `plan.bg`, so the step must carry a text label. Precomputed data, checked by the tests.
+ */
+export type PlanCoverageMeta = Tokens["meta"]["planCoverage"][number];
+
 /** Plan coverage step token (`--wl-color-plan-coverage-<n>`, D-0208); same steps as D-0013. */
 export type PlanCoverageToken = `plan-coverage-${CoverageStep}`;
 

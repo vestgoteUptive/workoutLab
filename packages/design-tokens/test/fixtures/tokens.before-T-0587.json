@@ -27,9 +27,7 @@
       "on-action": "#2337C6",
       "attention": "#FFB3A3",
       "selected": "#FFFFFF",
-      "on-selected": "#2337C6",
-      "ink-on-raise": "#DDE3FF",
-      "scrim": "#0E1652"
+      "on-selected": "#2337C6"
     },
     "lift": {
       "bg": "#CC4225",
@@ -88,25 +86,16 @@
     "option": 16,
     "tile": 12,
     "input": 12,
-    "segment": 4,
-    "progress": 2
+    "segment": 4
   },
   "space": {
     "gutter-plan": 28,
     "gutter-session": 26,
     "top-safe": 72,
-    "bottom-safe": 44,
-    "option-bleed": 18
+    "bottom-safe": 44
   },
   "meta": {
     "coverage": [
-      { "requiresLabel": true },
-      { "requiresLabel": true },
-      { "requiresLabel": false },
-      { "requiresLabel": false },
-      { "requiresLabel": false }
-    ],
-    "planCoverage": [
       { "requiresLabel": true },
       { "requiresLabel": true },
       { "requiresLabel": false },

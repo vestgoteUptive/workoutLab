@@ -6,7 +6,8 @@
 //   --wl-color-<state>-<name>     D-0208 state groups (plan, lift, rest, paper)
 //   --wl-color-plan-coverage-0..N D-0208 coverage ramp, interpolated in OKLCH from coverage.from to .to
 //   --wl-font-<role>              font stacks
-//   --wl-radius-<name>, --wl-space-<name>  px values
+//   --wl-radius-<name>, --wl-space-<name>  px values (incl. radius.progress, space.option-bleed, D-0211)
+//   meta.* (coverage, planCoverage label flags) is data for the TS export only, never CSS.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
