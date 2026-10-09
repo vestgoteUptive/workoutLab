@@ -424,3 +424,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0588 | Web app loads the state fonts; preload only Familjen + Bricolage | web-shell | — | done | wl-build-web |
 | T-0591 | e2e helper compareWithCanvas (390 × 844 app vs canvas frame, opt-in) | qa | — | done | wl-build-qa |
 | T-0618 | User flows v2 / PRD / gaps / visual-foundation wording | product | — | done | wl-spec |
+| T-0589 | data-wl-state scopes + legacy fallback, gutter, state type scale, cross-fade, runtime theme-color | web-shell | T-0587, T-0588 | done | wl-build-web |
+| T-0590 | Pattern specs: state-patterns.md, C-03, neutral notice, UF-11.2/11.4 wording | design | T-0587 | done | wl-design |
+| T-0617 | Auth emails on paper (PATCH = H-35) | infra | — | done | wl-build-infra |
+| T-0619 | UF-09 state captions incl. "Lifting · set n of N" (mock behaviour, before the restyle) | web-feature:UF-09 | — | done | wl-build-web |

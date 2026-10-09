@@ -73,7 +73,7 @@ Phase 2 grooming (2026-10-09, D-0210–D-0213). The parked draft plan had five o
   - **Default:** none of them is built in this phase. Name any you want and the squad specs it as a feature (some need a data or engine decision).
 
   Added 2026-10-09.
-- [ ] **H-35 After T-0617 merges: apply the paper-style sign-in emails to prod.** **Not actionable yet:** the orchestrator says when T-0617 is on `main`.
+- [ ] **H-35 (ACTIONABLE NOW: T-0617 is on main) After T-0617 merges: apply the paper-style sign-in emails to prod.** **Not actionable yet:** the orchestrator says when T-0617 is on `main`.
   - Run the keys-only auth PATCH from `infra/auth/README.md` in your own terminal (D-0185 §4). That's the plan first, then the `CONFIRM_PROD_AUTH=…` apply.
   - **Default until then:** prod keeps sending the old Chalk & Iron mail, which is harmless, and the auth drift check reports the templates as changed.
   - Blocks only the prod email look. T-0625 doesn't wait for it, because the templates in the repo no longer read the old tokens.

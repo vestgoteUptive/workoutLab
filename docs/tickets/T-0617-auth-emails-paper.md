@@ -5,7 +5,7 @@ lane: infra
 screens: [UF-01.5]
 decisions: [D-0208, D-0210, D-0211, D-0185, D-0012]
 deps: []
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-infra (agent devops). About ¼ day. No deps; second wave. The repo change merges normally. Prod mail changes only when the owner runs the keys-only PATCH (H-35, D-0185 §4); until then the drift check reports the templates as changed, which is expected and noted in infra/auth/README.md. -->
 ## Why
@@ -41,9 +41,4 @@ none
 Tests for every AC pass · `pnpm -w test:repo-checks` green · commit messages start with `T-0617` and cite UF-01.5.
 
 ## Build / accept log
-
-- 2026-10-09 devops: both templates moved to paper tokens (bg/ink/ink-muted/action/on-action); color-scheme meta now light; fonts and copy untouched; expected-auth.json unchanged (no hash in it). Test: BRAND from paper tokens, new AC2 (legacy flat hexes read from tokens.json) and AC3 (contrast ink/bg, on-action/action, code in ink); planted non-token is #111111.
-- AC1-AC4: auth-templates.test.mjs tests 1, 2 (new), 3 (new); `node --test` on the three auth tests: 39 pass.
-- Planted faults (backup copy, restored by cp): #D4F25A in the button -> AC2 red; button bg set to ink-muted -> AC3 red; code colour set to ink-muted -> AC3 red.
-- Light/dark mail clients not testable here; paper chosen for that reason.
-- Gate: -w typecheck lint test 0, test:repo-checks 0, format:check 0, check-all 0.
+Archived in `docs/tickets/log/T-0617.md` (D-0157).

@@ -5,7 +5,7 @@ lane: design
 screens: [UF-01.2, UF-08.1, UF-08.3, UF-05.1, UF-09.8, UF-11.2, UF-11.4, UF-11.5]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0199, D-0191, D-0196, D-0203]
 deps: [T-0587]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-design (agent designer). About ½ day, docs and docs tests only. T-0592–T-0594 build from these specs. The source is README "Shared patterns" on origin/design/redesign-cobalt; this ticket writes it in the repo's spec form with the D-0211 contrast rules. -->
 ## Why
@@ -87,7 +87,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · check-all green · commit messages start with `T-0590`.
 
 ## Build / accept log
-- 2026-10-09 (designer): wrote components/state-patterns.md (16 patterns); rewrote c-03-checkbox.md and neutral-notice.md for Cobalt; UF-11.2/11.4 sections-and-hairlines wording, UF-11.2 sign-off sentence replaced by H-32 + D-0203 §3, UF-11.4 unsynced confirm = paper panel; Look line and retired token names replaced in UF-11.5, 11.6, 08.2, 08.5, 08.3-05.1, 09.9; prototype/README.md superseded note.
-- AC→test (packages/design-tokens/test/docs.test.ts): AC1 "C-03 spec ... 22 px box"; AC2 "neutral notice names its Cobalt variables"; AC3 five tests in "T-0590 state-patterns.md"; AC4 "uses the D-0211 §4 values"; AC5 "UF-11.2 drops the sign-off sentence"; AC6 `wl-check-colours` over components and screens exit 0.
-- Red run: new C-03 test against the old spec (24 × 24 px) failed ("expected ... to contain '22 × 22 px'"), then green with the new spec. Old "24 px box" assertion replaced in the same commit.
-- Gate: `-w typecheck lint test --concurrency=1`, `test:repo-checks`, `format:check`, `check-all.mjs` all exit 0.
+Archived in `docs/tickets/log/T-0590.md` (D-0157).
