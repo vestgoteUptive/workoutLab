@@ -309,6 +309,9 @@ describe("AC-D7 legend from tokens", () => {
       const last = items[5]!.querySelector<HTMLElement>('[data-part="swatch"]')!;
       expect(last.style.backgroundColor).toBe("transparent");
       expect(last.style.outline).toBe(WARN_OUTLINE);
+      // T-0627 AC1: 1 px --wl-bg gap between the swatch and the 2 px ring.
+      expect(last.style.outlineOffset).toBe("1px");
+      expect(last.style.boxShadow).toBe("0 0 0 1px var(--wl-bg)");
     });
   }
 });

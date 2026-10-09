@@ -189,7 +189,13 @@ function Legend() {
           className="wl-body-map__swatch"
           data-part="swatch"
           aria-hidden="true"
-          style={{ backgroundColor: "transparent", outline: ATTENTION_OUTLINE }}
+          style={{
+            backgroundColor: "transparent",
+            outline: ATTENTION_OUTLINE,
+            // 1 px --wl-bg gap inside the 2 px ring (c-01 spec): the offset opens it, the spread paints it.
+            outlineOffset: "1px",
+            boxShadow: "0 0 0 1px var(--wl-bg)",
+          }}
         />
         <span data-part="legend-label" aria-hidden="true">
           {attentionLegend.label}
