@@ -173,18 +173,17 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | doing | wl-build-web |
-| T-0595 | UF-09.3/.4 + chrome in lift | web-feature:UF-09 | T-0593, T-0594, T-0591, T-0619 | todo | wl-build-web |
+| T-0595 | UF-09.3/.4 + chrome in lift | web-feature:UF-09 | T-0593, T-0594, T-0591, T-0619 | doing | wl-build-web |
 | T-0596 | UF-09.2/.7 deep fill | web-feature:UF-09 | T-0595 | todo | wl-build-web |
 | T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | todo | wl-build-web |
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
-| T-0599 | UF-08.1/.4 in plan | web-feature:UF-08 | T-0593, T-0591 | todo | wl-build-web |
+| T-0599 | UF-08.1/.4 in plan | web-feature:UF-08 | T-0593, T-0591 | doing | wl-build-web |
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
 | T-0601 | UF-02.1/.2 in plan | web-feature:UF-02 | T-0593, T-0594, T-0615, T-0591 | todo | wl-build-web |
 | T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | todo | wl-build-web |
 | T-0603 | UF-03.1/.2 lift + drain | web-feature:UF-03 | T-0593, T-0594, T-0591 | todo | wl-build-web |
 | T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | todo | wl-build-web |
-| T-0605 | UF-01.1–.4 onboarding in plan | web-feature:UF-01 | T-0593, T-0591 | todo | wl-build-web |
+| T-0605 | UF-01.1–.4 onboarding in plan | web-feature:UF-01 | T-0593, T-0591 | doing | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
 | T-0607 | UF-04.1/.3 in plan | web-feature:UF-04 | T-0593, T-0591 | todo | wl-build-web |
 | T-0608 | UF-04.2 + how-to sheet, cobalt figure | web-feature:UF-04 | T-0607, T-0615 | todo | wl-build-web |
@@ -201,7 +200,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0624 | Web: retire the legacy fallback | web-shell | T-0595…T-0613, T-0615, T-0616 | todo | wl-build-web |
 | T-0625 | Tokens: retire Chalk & Iron keys and fonts (contract) | design | T-0624, T-0617, T-0585, T-0614 | todo | wl-design |
 | T-0626 | Screen restyles: use aria-disabled, not :disabled, on migrated controls (the legacy :disabled rule loses to scoped rules); feature CSS (.wl-plan__rows .wl-row, .wl-card.wl-excluded__row, excluded.css:140) can override the unboxed row and card by load order, so each screen ticket must check it (T-0592 review) | web-shell | T-0592 | todo (a checklist for each screen ticket) | wl-build-web |
-| T-0627 | C-01 legend attention swatch: 2 px --wl-attention with a 1 px --wl-bg gap per c-01-body-map.md:78 (BodyMap.tsx:117,192 use outlineOffset 0) (T-0615 review) | web-shell | T-0615 | doing | wl-build-web |
 | T-0628 | Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
 | T-0629 | never-in-workout.test.tsx:48 AC-A12 still flaky under load (waitFor on lazy session route), after T-0910 | web-feature:UF-10 | — | doing | wl-build-web |
 | T-0630 | Sheet stacking and portal scope before UF-08.3/UF-05.1 adopt .wl-sheet: z-index under the tab bar, an unstyled scrim when portalled to body; AccountDeletedNotice outside any state root (T-0593 review, D-0216 addendum) | web-shell | T-0593 | todo | wl-build-web |

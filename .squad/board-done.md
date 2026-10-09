@@ -434,3 +434,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0592 | Shared controls: buttons, row, option row, segmented, chip, icons, focus, unboxed cards | web-shell | T-0589, T-0590 | done | wl-build-web |
 | T-0615 | BodyFigure + BodyMap read generic variables | web-shell | T-0614, T-0589 | done | wl-build-web |
 | T-0594 | C-02 tab bar look, SessionProgress, drain helper | web-shell | T-0592 | done | wl-build-web |
+| T-0593 | Shared surfaces: C-03 checkbox, toggle, input + error, sheet + scrim, paper panel, notices | web-shell | T-0592 | done | wl-build-web |
+| T-0627 | C-01 legend attention swatch: 2 px --wl-attention with a 1 px --wl-bg gap per c-01-body-map.md:78 (BodyMap.tsx:117,192 use outlineOffset 0) (T-0615 review) | web-shell | T-0615 | done | wl-build-web |
