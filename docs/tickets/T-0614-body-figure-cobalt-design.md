@@ -58,3 +58,12 @@ none to `tokens.json`. The typed legend fields in `src/index.ts` change, as name
 Tests for every AC pass · `pnpm -w typecheck lint test` green · check-all green · commit messages start with `T-0614`.
 
 ## Build / accept log
+- 2026-10-09 designer (build). Start: clean, HEAD 2df82a8.
+  - Changed: `design-system.md` § Body figure on the generic `--wl-*` variables, with the plan contrast table; `c-01-body-map.md` legend, outline, labels and states on the plan tokens and `meta.planCoverage`; `preview.html` has a Cobalt section (`data-preview="cobalt"`, `data-wl-state="plan"`, `#wl-fig-css-cobalt`) ahead of the legacy one; `check-figure.mjs --preview` checks both; `serve-preview.mjs` opens it. Defaults: D-0215 (draft for the orchestrator to file; `.squad/` is outside this lane).
+  - AC1 → `body-figure-cobalt.test.ts` "AC1" (table cells are `--wl-` only; planted `accent` row throws).
+  - AC2 → **not done: TR-0048 (draft for the orchestrator to file).** Repointing `coverageLegend`/`attentionLegend.token` breaks `apps/web` typecheck (4 TS errors in BodyMap.tsx, UF-10/format.ts; tried on a backup, restored) and the web tests that pin `var(--wl-color-coverage-N)`/`warn`. `index.ts` and `tokens.test.ts` are unchanged.
+  - AC3 → `body-figure-cobalt.test.ts` "AC3" (ink-muted/raise 4.2, ink/raise 6.2, attention/bg 5.0, attention/raise 3.6, ink/bg 8.6; attention/white 1.7 < 3).
+  - AC4 → `body-figure.svg` untouched; `body-figure.test.ts` (asset + wl-check-colours) and `body-figure-cobalt.test.ts` "AC4" (both sections pass; 10 planted preview faults fail).
+  - AC5 → preview `Design-docs/docs/design/assets/body-figure/preview.html` (open with `node Design-docs/docs/design/assets/body-figure/serve-preview.mjs`); 390 px screenshot of the Cobalt section: scratchpad `t0614-figure.png` (orchestrator session). Reviewer verdict pending.
+  - Red runs: AC1 tests on the HEAD `design-system.md`: 4 failed. `check-figure --preview` on the HEAD preview: 5 problems, exit 1. docs.test AC16 on the HEAD `c-01-body-map.md` with the moved pin: 2 failed. Pin moved: AC16 `` `warn` `` → `` `--wl-attention` `` + `1 px `--wl-bg` gap` (old value D-0003, new D-0211 §5).
+  - Seen in the preview: the highlight ring around an inner area (core) is hidden under the silhouette, because the ring draws first in its view (the same order as `BodyFigure`). Follow-up for T-0615.

@@ -10,15 +10,21 @@ const designDir = resolve(repoRoot, "Design-docs/docs/design");
 describe("AC16 C-01 legend spec", () => {
   const spec = readFileSync(resolve(designDir, "components/c-01-body-map.md"), "utf8");
   it("names every coverage token and legend label", () => {
-    for (const t of ["coverage-0", "coverage-1", "coverage-2", "coverage-3", "coverage-4"]) {
-      expect(spec).toContain(t);
+    // T-0614 (D-0211 §2): the plan tokens and their generic variables, not the lime ramp.
+    for (let n = 0; n <= 4; n++) {
+      expect(spec).toContain(`\`plan-coverage-${n}\``);
+      expect(spec).toContain(`\`--wl-coverage-${n}\``);
     }
     for (const { label } of coverageLegend) expect(spec).toContain(label);
+    expect(spec).toContain("meta.planCoverage");
   });
   it("describes the attention outline", () => {
     expect(spec).toContain("Needs attention");
     expect(spec).toContain("2 px");
-    expect(spec).toContain("`warn`");
+    // T-0614 moved this pin from `warn` (D-0003) to the plan variable (D-0211 §5).
+    expect(spec).toContain("`--wl-attention`");
+    expect(spec).toContain("1 px `--wl-bg` gap");
+    expect(spec).not.toMatch(/`(?:warn|accent|surface-2|text-muted)`/);
     expect(spec).toContain("outline, never fill");
   });
   it("gives the D-0013 step mapping", () => {
