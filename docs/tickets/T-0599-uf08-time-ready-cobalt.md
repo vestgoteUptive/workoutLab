@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.1, UF-08.4]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0191, D-0107, D-0115]
 deps: [T-0593, T-0591]
-status: todo
+status: review
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "Set up · time and energy" (#turn-3), "Set up · ready" (#turn-5). Behaviour: the UF-08.x tickets (T-0303a, T-0303d), D-0191. UF-08 folder chain T-0599 → T-0600. -->
 ## Why
@@ -75,3 +75,4 @@ Start: worktree clean at 04a47f1. Restyle only: `SessionSetup.tsx`, `Ready.tsx`,
 - **Planted faults** (copies in scratchpad, restored with cp). Vitest: root state removed (AC1 x2), `wl-chip` class removed (AC2/3), tick removed (AC3), `role="switch"` (AC4), second primary (AC5), `role="alert"` on the fit line (AC7), px font + hex + transition + boxed `.wl-uf08__card` (AC6 x3): 10 of 18 red. E2E, broad: all 13 red. E2E, targeted (tick removed, label colour `--wl-line`, transition on the stepper): AC3, AC5 x2 and the AC6 motion test red, the other 10 green.
 - **Deviations from the canvas.** The app has the Skip today group and "Set a finish time", which the canvas frames omit, so UF-08.1 is taller than 844 and "Suggest my workout" sits below the fold at 390 x 844. The h1 reads "How long do you have?" (canvas: "How much time do you have?"), and no "Step n of 3" or "Lower A." (copy, D-0212 §5). Close is the X icon (canvas: the word). No On/Off word beside the switches. Voice countdown shows on in the shot because the default prefs are all on. Canvas screenshots are in the scratchpad `shots-T-0599/`.
 - **Gate.** `-w typecheck lint test --concurrency=1` exit 0 (second run; the first two had one unrelated web unit test each time out under machine load average 22: `ensure-tokens-css` then `UF-01 screens`, both green alone). `-w test:repo-checks` 0, `-w format:check` 0, `node .github/scripts/check-all.mjs` 0. Full e2e: 458 passed, 9 unrelated load timeouts (cobalt-chrome x4, uf-01-onboarding x4, uf-09-focus x1); those three specs rerun together exit 0. All UF-08 and T-0599 e2e cases green in the full run.
+- **Rework (review).** Restored the UF-08.2 legacy chip rules, `.wl-uf08__skipping` colour and the 8 px `.wl-uf08__chips` gap under `.wl-uf08:not([data-wl-state])`; plan scope keeps 6 px. New e2e "UF-08.2 is unchanged" (computed border, fill, pressed fill, radius, weight, gap vs tokens) went red with the legacy chip rule deleted (planted fault, restored by cp). New contrast e2e: disabled Suggest (ink on raise 6.2), disabled steppers (5.9), start-failed alert (5.0). Status set to review. Dropped the `.wl-page > .wl-button--primary` follow-up (selector does match).

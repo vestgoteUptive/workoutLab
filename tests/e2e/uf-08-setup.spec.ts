@@ -1503,6 +1503,83 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     }
   });
 
+  test("AC5 contrast: disabled Suggest (Checking), disabled steppers at the limits", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    const less = page.getByRole("button", { name: "5 minutes less" });
+    for (let i = 0; i < 12; i += 1) await less.click({ force: true });
+    await expect(less).toHaveAttribute("aria-disabled", "true");
+    // The Checking state is brief, so the same attribute-driven rule is forced on the real button.
+    await page.evaluate(() => {
+      document.querySelector('[data-part="fit-line"]')!.textContent = "Checking what fits…";
+      document.querySelector(".wl-button--primary")!.setAttribute("aria-disabled", "true");
+    });
+    const sugg = await page
+      .getByRole("button", { name: "Suggest my workout" })
+      .evaluate((el) => [getComputedStyle(el).color, getComputedStyle(el).backgroundColor]);
+    expect(sugg).toEqual([rgb(plan.ink!), rgb(plan.raise!)]);
+    expect(oneDecimal(ratio(sugg[0]!, sugg[1]!))).toBeGreaterThanOrEqual(6.2);
+    const step = await less.evaluate((el) => [getComputedStyle(el).color]);
+    expect(oneDecimal(ratio(step[0]!, rgb(plan.bg!)))).toBeGreaterThanOrEqual(5.9);
+    const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(axe.violations).toEqual([]);
+  });
+
+  test("AC5 contrast: the UF-08.4 start-failed alert is plan.attention on plan.bg", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    await page.evaluate(() => {
+      const p = document.createElement("p");
+      p.setAttribute("role", "alert");
+      p.className = "wl-input__error wl-uf08__error";
+      p.textContent = "Couldn't start the workout. Try again.";
+      document.querySelector(".wl-button--primary")!.before(p);
+    });
+    const pairs = await textPairs(page);
+    const err = pairs.find((p) => p.text.startsWith("Couldn't start"))!;
+    expect([err.fg, err.bg]).toEqual([rgb(plan.attention!), rgb(plan.bg!)]);
+    expect(oneDecimal(ratio(err.fg, err.bg))).toBeGreaterThanOrEqual(5.0);
+  });
+
+  test("UF-08.2 is unchanged: the legacy budget chips keep their Chalk & Iron look", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const legacy = JSON.parse(
+      readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
+    ).color as Record<string, string>;
+    const read = (name: string) =>
+      page.getByRole("button", { name }).evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return {
+          border: `${cs.borderTopWidth} ${cs.borderTopStyle} ${cs.borderTopColor}`,
+          bg: cs.backgroundColor,
+          color: cs.color,
+          radius: cs.borderTopLeftRadius,
+          weight: cs.fontWeight,
+          gap: getComputedStyle(el.parentElement!).columnGap,
+        };
+      });
+    expect(await read("20 minutes")).toEqual({
+      border: `1px solid ${rgb(legacy["line-strong"]!)}`,
+      bg: TRANSPARENT,
+      color: rgb(legacy.text!),
+      radius: "14px",
+      weight: "500",
+      gap: "8px",
+    });
+    expect(await read("30 minutes")).toMatchObject({
+      bg: rgb(legacy.accent!),
+      color: rgb(legacy["on-accent"]!),
+      weight: "700",
+    });
+  });
+
   test("AC6 motion: the only transition is the state cross-fade, instant under reduced motion", async ({
     page,
   }) => {
