@@ -442,3 +442,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0599 | UF-08.1/.4 in plan | web-feature:UF-08 | T-0593, T-0591 | done | wl-build-web |
 | T-0605 | UF-01.1–.4 onboarding in plan | web-feature:UF-01 | T-0593, T-0591 | done | wl-build-web |
 | T-0635 | Engine rule 15 records() (D-0219, contract) | engine | — | done | wl-build-engine |
+| T-0631 | profiles.bar_kg + plates_kg (D-0218, contract) | data | — | done | wl-build-data |
+| T-0660 | Ship body figure v2 (owner pick 1b, D-0225): new SVG, v2 CSS, highlight dims rest; target canvas Body Figure Export | web-shell | T-0615 | done | wl-build-web |
