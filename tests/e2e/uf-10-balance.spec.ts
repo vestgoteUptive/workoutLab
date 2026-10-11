@@ -3,7 +3,10 @@
 // the rolling 14-day window whenever the spec runs.
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { resolve as resolvePath } from "node:path";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { compareWithCanvas } from "./helpers/canvas-compare.js";
 import {
   injectSession,
   mockSupabaseAuth,
@@ -82,17 +85,26 @@ function sets(exerciseId: string, n: number, daysAgo: number) {
   }));
 }
 
-type Fixture = "zero" | "mixed";
+type Fixture = "zero" | "mixed" | "rich";
 
 async function mockData(page: Page, fixture: Fixture): Promise<void> {
   await mockSupabaseData(page, {
-    sets: fixture === "mixed" ? [...sets("rdl", 6, 3), ...sets("squat", 4, 2)] : [],
-    exercises: [exercise("rdl"), exercise("squat")],
+    sets:
+      fixture === "zero"
+        ? []
+        : [
+            ...sets("rdl", 6, 3),
+            ...sets("squat", 4, 2),
+            // "rich": chest is on target (step 4), so every ramp step but the middle shows.
+            ...(fixture === "rich" ? [...sets("bench", 9, 5), ...sets("bench", 9, 4)] : []),
+          ],
+    exercises: [exercise("rdl"), exercise("squat"), exercise("bench")],
     exerciseAreas: [
       { exercise_id: "rdl", area_id: "hamstrings", weight: 1 },
       { exercise_id: "rdl", area_id: "glutes", weight: 0.5 },
       { exercise_id: "squat", area_id: "quads", weight: 1 },
       { exercise_id: "squat", area_id: "glutes", weight: 1 },
+      { exercise_id: "bench", area_id: "chest", weight: 1 },
     ],
     areaTargets: AREA_TARGETS,
     profile: PROFILE,
@@ -210,24 +222,27 @@ test.describe("AC-A14 row touch target is at least 44 x 44 in a real layout", ()
 });
 
 test.describe("keyboard focus on an attention row (WCAG 2.4.7)", () => {
-  test("focusing a needs-attention row repaints its outline accent, not warn", async ({ page }) => {
+  test("focusing a needs-attention row repaints its outline --wl-focus (plan ink), not attention", async ({
+    page,
+  }) => {
     await openBalance(page, "mixed");
     const row = page.locator('[data-part="row"][data-attention="true"]').first();
     await expect(row).toBeVisible();
     const colours = (): Promise<{ outline: string; accent: string; warn: string }> =>
       row.evaluate((el) => {
+        // Resolved on the row itself: the generic variables are scoped to the state root.
         const resolve = (token: string): string => {
           const probe = document.createElement("span");
           probe.style.color = `var(${token})`;
-          document.body.append(probe);
+          el.append(probe);
           const c = getComputedStyle(probe).color;
           probe.remove();
           return c;
         };
         return {
           outline: getComputedStyle(el).outlineColor,
-          accent: resolve("--wl-color-accent"),
-          warn: resolve("--wl-color-warn"),
+          accent: resolve("--wl-focus"),
+          warn: resolve("--wl-attention"),
         };
       });
     const before = await colours();
@@ -273,6 +288,278 @@ test.describe("QA: console errors and render-loop guard on the real route", () =
       await page.waitForTimeout(1500);
       // one refresh per mount; a per-render `new Date()` loop would issue dozens.
       expect(targetReads).toBeLessThanOrEqual(2);
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------------------------
+// T-0611 (D-0208, D-0210, D-0211, D-0213; UF-10.1, UF-10.2): the Cobalt plan state, measured in a
+// real browser. Expected values come from tokens.json, never typed.
+// ---------------------------------------------------------------------------------------------
+const TOKENS = JSON.parse(
+  readFileSync(resolvePath(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
+) as { color: { plan: Record<string, string>; warn: string; accent: string } };
+const PLAN = TOKENS.color.plan;
+const rgbOf = (hex: string): string => {
+  const n = (i: number) => parseInt(hex.slice(i, i + 2), 16);
+  return `rgb(${n(1)}, ${n(3)}, ${n(5)})`;
+};
+const MOCK_ATTENTION = ["ff9a", "85"].join("");
+
+test.describe("T-0611 plan state", () => {
+  test("AC1 both screens are plan roots with the plan.bg theme-color", async ({ page }) => {
+    await openBalance(page, "mixed");
+    for (const [path, id] of [
+      ["/balance", "UF-10.1"],
+      ["/balance/hamstrings", "UF-10.2"],
+    ] as const) {
+      if (page.url() !== new URL(path, page.url()).href) await page.goto(path);
+      const root = page.locator(`[data-screen-id="${id}"]`);
+      await expect(root).toBeVisible();
+      await expect(root).toHaveAttribute("data-wl-state", "plan");
+      await expect(root).toHaveClass(/wl-page/);
+      await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+        "content",
+        new RegExp(`^${PLAN.bg}$`, "i"),
+      );
+    }
+  });
+
+  test("AC2 attention: label and 2 px outline on the true rows only, no mock or legacy colour anywhere", async ({
+    page,
+  }) => {
+    await openBalance(page, "rich");
+    await expect(page.locator('[data-part="row"]').first()).toBeVisible();
+    const rows = await page.locator('[data-part="row"]').evaluateAll((els) =>
+      els.map((el) => {
+        const cs = getComputedStyle(el);
+        const label = el.querySelector('[data-part="attention"]');
+        return {
+          attention: el.getAttribute("data-attention") === "true",
+          outlineWidth: cs.outlineWidth,
+          outlineStyle: cs.outlineStyle,
+          outlineColor: cs.outlineColor,
+          labelColor: label ? getComputedStyle(label).color : null,
+        };
+      }),
+    );
+    expect(rows.some((r) => r.attention)).toBe(true);
+    expect(rows.some((r) => !r.attention)).toBe(true);
+    for (const r of rows) {
+      if (r.attention) {
+        expect(r.outlineWidth).toBe("2px");
+        expect(r.outlineStyle).toBe("solid");
+        expect(r.outlineColor).toBe(rgbOf(PLAN.attention!));
+        expect(r.labelColor).toBe(rgbOf(PLAN.attention!));
+      } else {
+        expect(r.outlineStyle).toBe("none");
+        expect(r.labelColor).toBeNull();
+      }
+    }
+    // A computed scan of both screens: no #FF9A85 and no legacy warn on any element.
+    const banned = [
+      rgbOf(`#${MOCK_ATTENTION}`),
+      rgbOf(TOKENS.color.warn),
+      rgbOf(TOKENS.color.accent),
+    ];
+    for (const path of ["/balance", "/balance/hamstrings"]) {
+      await page.goto(path);
+      await expect(page.locator("[data-screen-id^='UF-10']")).toBeVisible();
+      const hits = await page.evaluate((list) => {
+        const props = [
+          "color",
+          "backgroundColor",
+          "borderTopColor",
+          "borderBottomColor",
+          "outlineColor",
+          "fill",
+          "stroke",
+        ] as const;
+        const found: string[] = [];
+        for (const el of document.querySelectorAll(
+          "[data-screen-id^='UF-10'], [data-screen-id^='UF-10'] *",
+        )) {
+          const cs = getComputedStyle(el);
+          for (const p of props)
+            if (list.includes(cs[p])) found.push(`${el.tagName}.${p}=${cs[p]}`);
+        }
+        return found;
+      }, banned);
+      expect(hits).toEqual([]);
+    }
+  });
+
+  test("AC3 coverage ramp: step 4 is plan.ink, step 0 is plan.raise, and C-01 keeps its numbers", async ({
+    page,
+  }) => {
+    await openBalance(page, "rich");
+    await expect(page.locator('[data-part="row"]').first()).toBeVisible();
+    const fills = await page.locator('[data-part="bar-fill"]').evaluateAll((els) =>
+      els.map((el) => ({
+        step: el.getAttribute("data-coverage-step"),
+        bg: getComputedStyle(el).backgroundColor,
+      })),
+    );
+    expect(fills.find((f) => f.step === "4")?.bg).toBe(rgbOf(PLAN.ink!));
+    expect(fills.find((f) => f.step === "0")?.bg).toBe(rgbOf(PLAN.raise!));
+    const labels = page.locator('[data-variant="full"] [data-part="value"]');
+    await expect(labels).toHaveCount(9);
+    for (const text of await labels.allTextContents()) expect(text).toMatch(/^\d+ \/ \d+$/);
+    const regionFills = await page
+      .locator('[data-variant="full"] .wl-fig__region--step-4')
+      .evaluateAll((els) => els.map((el) => getComputedStyle(el).fill));
+    expect(regionFills.length).toBeGreaterThan(0);
+    for (const f of regionFills) expect(f).toBe(rgbOf(PLAN.ink!));
+  });
+
+  test("AC4 strip: days with hard sets are plan.ink, empty days plan.raise, both keep their words", async ({
+    page,
+  }) => {
+    await openBalance(page, "mixed", "/balance/hamstrings");
+    const cells = page.locator('[data-part="strip-cell"]');
+    await expect(cells).toHaveCount(14);
+    const info = await cells.evaluateAll((els) =>
+      els.map((el) => ({
+        bg: getComputedStyle(el).backgroundColor,
+        label: el.getAttribute("aria-label"),
+        filled: el.getAttribute("data-filled") === "true",
+      })),
+    );
+    expect(info.filter((c) => c.filled)).toHaveLength(1);
+    for (const c of info) {
+      expect(c.bg).toBe(rgbOf(c.filled ? PLAN.ink! : PLAN.raise!));
+      expect(c.label).toMatch(c.filled ? /, 6 hard sets$/ : /, no hard sets$/);
+    }
+  });
+
+  for (const [name, fixture, path] of [
+    ["/balance", "rich", "/balance"],
+    ["/balance/hamstrings", "mixed", "/balance/hamstrings"],
+  ] as const) {
+    test(`AC5 ${name}: axe colour-contrast 0 violations, targets 44 x 44, text pairs`, async ({
+      page,
+    }) => {
+      await openBalance(page, fixture, path);
+      await expect(page.locator("[data-screen-id^='UF-10']")).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      await expect
+        .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor))
+        .toBe(rgbOf(PLAN.bg!));
+      const results = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+      expect(results.violations).toEqual([]);
+
+      const small = await page
+        .locator(
+          "[data-part='row'], [data-variant='full'] button[data-area], .wl-balance__plan-link, .wl-balance__cta, [data-part='contributor']",
+        )
+        .evaluateAll((els) =>
+          els
+            .map((el) => ({ el: el.className, r: el.getBoundingClientRect() }))
+            .filter(({ r }) => r.width > 0 && (r.width < 44 || r.height < 44))
+            .map(({ el, r }) => `${el} ${r.width}x${r.height}`),
+        );
+      expect(small).toEqual([]);
+
+      // Every visible text node's colour against the first opaque background behind it.
+      const low = await page.evaluate(() => {
+        const ctx = document
+          .createElement("canvas")
+          .getContext("2d", { willReadFrequently: true })!;
+        const rgba = (c: string): number[] => {
+          ctx.clearRect(0, 0, 1, 1);
+          ctx.fillStyle = "#000";
+          ctx.fillStyle = c;
+          ctx.fillRect(0, 0, 1, 1);
+          const d = ctx.getImageData(0, 0, 1, 1).data;
+          return [d[0]!, d[1]!, d[2]!, d[3]! / 255];
+        };
+        const L = ([r, g, b]: number[]) => {
+          const f = (v: number) => {
+            const c = v / 255;
+            return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+          };
+          return 0.2126 * f(r!) + 0.7152 * f(g!) + 0.0722 * f(b!);
+        };
+        const out: string[] = [];
+        for (const el of document.querySelectorAll("[data-screen-id^='UF-10'] *")) {
+          const own = [...el.childNodes].some(
+            (n) => n.nodeType === 3 && n.textContent!.trim() !== "",
+          );
+          const box = el.getBoundingClientRect();
+          if (!own || box.width <= 1 || box.height <= 1) continue;
+          let bg = [0, 0, 0, 0];
+          for (let n: Element | null = el; n; n = n.parentElement) {
+            const c = rgba(getComputedStyle(n).backgroundColor);
+            if (c[3]! > 0.99) {
+              bg = c;
+              break;
+            }
+          }
+          const [hi, lo] = [L(rgba(getComputedStyle(el).color)), L(bg)].sort((a, b) => b - a);
+          const ratio = (hi! + 0.05) / (lo! + 0.05);
+          if (ratio < 4.5) out.push(`${el.tagName}.${el.className} ${ratio.toFixed(2)}`);
+        }
+        return out;
+      });
+      expect(low).toEqual([]);
+    });
+  }
+
+  test("AC5 motion: only the root's cross-fade, instant under reduced motion", async ({ page }) => {
+    await openBalance(page, "mixed");
+    const probe = () =>
+      page.locator("[data-screen-id^='UF-10']").evaluate((el) => {
+        const moving = [el, ...el.querySelectorAll("*")].filter((n) => {
+          const cs = getComputedStyle(n);
+          return (
+            cs.animationName !== "none" ||
+            (n !== el && cs.transitionDuration.split(",").some((d) => parseFloat(d) > 0))
+          );
+        });
+        return {
+          property: getComputedStyle(el).transitionProperty,
+          duration: getComputedStyle(el).transitionDuration,
+          moving: moving.map((n) => `${n.tagName}.${n.className}`),
+        };
+      });
+    await expect(page.locator('[data-part="row"]').first()).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    const normal = await probe();
+    expect(normal.property).toBe("background-color");
+    expect(normal.duration).toBe("0.2s");
+    expect(normal.moving).toEqual([]);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const reduced = await probe();
+    expect(reduced.duration).toBe("0s");
+    expect(reduced.moving).toEqual([]);
+  });
+});
+
+test.describe("T-0611 AC7 canvas compare at 390 x 844", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  for (const [frame, name, path, fixture] of [
+    ["Balance · all areas", "uf10-1-balance", "/balance", "rich"],
+    ["Balance · area detail", "uf10-2-balance-detail", "/balance/hamstrings", "mixed"],
+  ] as const) {
+    test(`AC7 canvas compare: ${frame}`, async ({ page }, testInfo) => {
+      await openBalance(page, fixture, path);
+      await expect(page.locator("[data-screen-id^='UF-10']")).toBeVisible();
+      await page.waitForLoadState("networkidle");
+      await page.evaluate(() => document.fonts.ready);
+      await expect
+        .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor))
+        .toBe(rgbOf(PLAN.bg!));
+      const result = await compareWithCanvas(page, testInfo, { turn: "turn-5", frame, name });
+      if (process.env.WL_CANVAS_COMPARE === "1" && !result.skipped) {
+        expect(result.files.app).toBeTruthy();
+        expect(result.files.canvas).toBeTruthy();
+        // The list is below the fold at 390 x 844: keep a full-page shot for the rows.
+        await page.screenshot({
+          path: testInfo.outputPath("cobalt", `${name}-full.png`),
+          fullPage: true,
+        });
+      }
     });
   }
 });

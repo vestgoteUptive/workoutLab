@@ -87,7 +87,7 @@ describe("AC-A5 engine order — the UI does not sort", () => {
     }
   });
 
-  it("the outline is the D-0003 2 px warn outline, and never a fill", () => {
+  it("the outline is the D-0003 2 px attention outline, and never a fill", () => {
     renderStub(ORDERED);
     // The outline is drawn by CSS (see the focus-visible test below), never inline.
     expect(row("calves")!.style.outline).toBe("");
@@ -97,15 +97,15 @@ describe("AC-A5 engine order — the UI does not sort", () => {
     expect(rowFill("calves")).toBe("var(--wl-coverage-1)");
   });
 
-  it("keyboard focus stays visible on an attention row: the warn rule precedes :focus-visible (WCAG 2.4.7)", () => {
+  it("keyboard focus stays visible on an attention row: the attention rule precedes :focus-visible (WCAG 2.4.7)", () => {
     const css = readFileSync(resolve(__dirname, "../balance.css"), "utf8");
     const warn = css.indexOf('.wl-balance__row[data-attention="true"] {');
     const focus = css.indexOf(".wl-balance__row:focus-visible");
     expect(warn).toBeGreaterThanOrEqual(0);
     expect(focus).toBeGreaterThan(warn);
     // Equal specificity, so source order decides; and no inline style may outrank either.
-    expect(css.slice(warn, css.indexOf("}", warn))).toContain("var(--wl-color-warn)");
-    expect(css.slice(focus, css.indexOf("}", focus))).toContain("var(--wl-color-accent)");
+    expect(css.slice(warn, css.indexOf("}", warn))).toContain("var(--wl-attention)");
+    expect(css.slice(focus, css.indexOf("}", focus))).toContain("var(--wl-focus)");
     renderStub(ORDERED);
     for (const el of document.querySelectorAll<HTMLElement>('[data-part="row"]')) {
       expect(el.getAttribute("style") ?? "", el.dataset.area).not.toContain("outline");
