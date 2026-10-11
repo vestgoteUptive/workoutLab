@@ -34,14 +34,10 @@ describe("AC-3 the rest view has no rest-length literal", () => {
   });
 });
 
-describe("AC-3 the warn rule uses the token", () => {
-  it('the [data-warn="true"] rule in uf-09.css uses var(--wl-color-warn)', () => {
-    const css = read("uf-09.css");
-    const rules = [...css.matchAll(/([^{}]+)\{([^}]*)\}/g)].filter((m) =>
-      m[1]!.includes('[data-warn="true"]'),
-    );
-    expect(rules.length).toBeGreaterThanOrEqual(1);
-    for (const rule of rules) expect(rule[2]).toMatch(/var\(--wl-color-warn\)/);
+describe("AC-3 no warn state (T-0597 AC2, D-0211: red rises on the screen instead)", () => {
+  it("uf-09.css has no data-warn rule and rest.tsx sets no data-warn", () => {
+    expect(read("uf-09.css")).not.toContain("data-warn");
+    expect(read("rest.tsx")).not.toContain("data-warn");
   });
 });
 

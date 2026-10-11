@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.5, UF-09.6]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0066, D-0118]
 deps: [T-0596]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "In session · rest" (#turn-3), "Get ready" and "Next exercise" (#turn-4). Behaviour: T-0304f. UF-09 folder chain; never in parallel with T-0580. -->
 ## Why
@@ -52,6 +52,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/visual-foundation.spec.ts` (orchestrator grant: the AC5 focus-mode size pins and `openFocusMode` still wait for UF-09.1's old `.wl-uf09__timer`; repoint them to the new roles, as T-0595 did for UF-09.3)
 - `apps/web/src/features/UF-09/**` (lane)
 - `tests/e2e/uf-09-focus.spec.ts`, `tests/e2e/uf-09-ready.spec.ts` (listed extras)
 - `docs/tickets/T-0597-uf09-drain-screens-cobalt.md` (log only)
@@ -63,3 +64,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-09 e2e specs green · commit messages start with `T-0597` and cite UF-09.1/UF-09.5/UF-09.6.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0597.md` (D-0157).

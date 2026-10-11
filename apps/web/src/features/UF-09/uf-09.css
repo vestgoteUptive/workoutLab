@@ -149,112 +149,6 @@
   font-size: 20px;
 }
 
-.wl-uf09__first-item,
-.wl-uf09__detail,
-.wl-uf09__next-title,
-.wl-uf09__next-load,
-.wl-uf09__ring-time,
-.wl-uf09__ring-go {
-  margin: 0;
-}
-
-.wl-uf09__first-item {
-  font-family: var(--wl-font-display);
-  font-size: 28px;
-}
-
-.wl-uf09__detail {
-  display: flex;
-  gap: 8px;
-  color: var(--wl-color-text-muted);
-  font-size: 18px;
-}
-
-.wl-uf09__next {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.wl-uf09__next-title {
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf09__next-load {
-  font-family: var(--wl-font-display);
-  font-size: 28px;
-}
-
-.wl-uf09__next-load p {
-  margin: 0;
-}
-
-.wl-uf09__adjust {
-  display: flex;
-  gap: 12px;
-}
-
-.wl-uf09__adjust .wl-uf09__secondary {
-  min-width: 96px;
-  min-height: 56px;
-}
-
-.wl-uf09__ring {
-  position: relative;
-  width: min(70vw, 280px);
-  aspect-ratio: 1;
-  color: var(--wl-color-accent);
-}
-
-.wl-uf09__ring-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  transform: rotate(-90deg);
-}
-
-.wl-uf09__ring-track,
-.wl-uf09__ring-fill {
-  fill: none;
-  stroke-width: 6;
-}
-
-.wl-uf09__ring-track {
-  stroke: var(--wl-color-line);
-}
-
-.wl-uf09__ring-fill {
-  stroke: currentColor;
-  stroke-linecap: round;
-}
-
-.wl-uf09__ring-label {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.wl-uf09__ring-time {
-  color: var(--wl-color-text);
-  font-family: var(--wl-font-display);
-  font-size: 56px;
-  font-variant-numeric: tabular-nums;
-}
-
-.wl-uf09__ring-go {
-  font-family: var(--wl-font-display);
-  font-size: 32px;
-}
-
-/* At 10 s or less, the ring and its label turn to the warn colour (parent AC-B7). */
-.wl-uf09__ring[data-warn="true"],
-.wl-uf09__ring[data-warn="true"] .wl-uf09__ring-time {
-  color: var(--wl-color-warn);
-}
-
 /* UF-09.8 Time check (T-0304d, D-0120 §1 §2): three options, each with its own finish time. */
 .wl-uf09__options {
   display: flex;
@@ -299,14 +193,6 @@
 
 .wl-uf09__question {
   font-size: 18px;
-}
-
-/* T-0304g (NFR-A11Y-5, D-0119 §10): the backstop for the ring fill's inline transition. */
-@media (prefers-reduced-motion: reduce) {
-  .wl-uf09__ring-fill {
-    transition: none !important;
-    animation: none !important;
-  }
 }
 
 /* T-0395 (D-0139 §3): the Today "Resume workout" card, mounted through UF-02's slot. */
@@ -630,3 +516,194 @@
   }
 }
 /* ---- end T-0596 ---- */
+
+/* ---- T-0597 UF-09.1 Get ready, UF-09.5 Rest, UF-09.6 Next exercise: the rest state with the fill (D-0208, D-0211 §5) ----
+ * The root is data-wl-state="rest" and .wl-drain: the lift colour rises over the rest colour as
+ * --wl-drain goes from 0% to 100% (components/drain; at 100% the screen is lift.bg, the moment
+ * the set starts). Every rule starts at .wl-uf09[data-wl-state="rest"]. Colours are --wl-*
+ * variables and token variables only; sizes are rem. */
+.wl-uf09[data-wl-state="rest"] {
+  gap: 0;
+  padding: max(env(safe-area-inset-top), 1.5rem) max(var(--wl-gutter), env(safe-area-inset-right))
+    max(env(safe-area-inset-bottom), 1.5rem) max(var(--wl-gutter), env(safe-area-inset-left));
+  color: var(--wl-ink);
+  font-family: var(--wl-font);
+  /* Colour only: the drain's gradient is the background image above it. */
+  background-color: var(--wl-bg);
+}
+
+/* The rest fill: lift.bg rising over rest.bg. components/drain/drain.css has the same gradient at
+ * one class of specificity, which the legacy .wl-uf09 background shorthand can beat by load
+ * order; repeating it under the root's attribute makes it win either way. */
+.wl-uf09[data-wl-state="rest"].wl-drain {
+  background-image: linear-gradient(
+    to top,
+    var(--wl-color-lift-bg) var(--wl-drain, 0%),
+    var(--wl-color-rest-bg) var(--wl-drain, 0%)
+  );
+  /* One 1 s linear step per second; the colour under the gradient never changes. */
+  transition: --wl-drain 1s linear;
+}
+
+/* The fill went back down (Rest after Get ready, +15 s, the next screen): jump, don't sweep back. */
+.wl-uf09[data-wl-state="rest"].wl-drain[data-drain-reset="true"] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-uf09[data-wl-state="rest"].wl-drain {
+    transition: none;
+  }
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__chrome {
+  margin-block-end: 1.5rem;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__chrome > .wl-session-progress {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view {
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  text-align: start;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__state,
+.wl-uf09[data-wl-state="rest"] .wl-uf09__status,
+.wl-uf09[data-wl-state="rest"] .wl-uf09__cue,
+.wl-uf09[data-wl-state="rest"] .wl-uf09__next-title {
+  margin: 0;
+  color: var(--wl-ink);
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view > .wl-uf09__state {
+  margin-block-start: 1.5rem;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__count {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Get ready: the digit sits low, the first item under it. */
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--ready .wl-uf09__count {
+  margin-block-start: auto;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__first-item,
+.wl-uf09[data-wl-state="rest"] .wl-uf09__name {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--ready .wl-uf09__first-item {
+  margin-block-start: 1.5rem;
+}
+
+/* Rest: the clock under the caption, then −15 s / +15 s, the next set, Skip rest at the bottom. */
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--rest .wl-uf09__count {
+  margin-block-start: 2.5rem;
+}
+
+/* The clock "1:32" keeps a little air: the role's -0.06em tracking makes the colon touch the 1. */
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--rest .wl-type-hero-number,
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--next .wl-type-hero-number {
+  letter-spacing: -0.02em;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__go {
+  margin: 0.5rem 0 0;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__adjust {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-block-start: 1.5rem;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__adjust > button {
+  justify-content: center;
+  padding-inline: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__next {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-block-start: 1.75rem;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__next-load {
+  margin: 0;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__next-load p {
+  margin: 0;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__ask {
+  color: var(--wl-ink);
+}
+
+/* Next exercise: its name, how much of it, the cue, the set-up clock low on the screen. */
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--next .wl-uf09__name {
+  margin-block-start: 0.5rem;
+  line-height: 0.95;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.125rem;
+  margin: 1.25rem 0 0;
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--wl-ink);
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--next .wl-uf09__cue {
+  margin-block-start: 0.75rem;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--next .wl-uf09__status {
+  min-block-size: 1.5em;
+  margin-block-start: 0.5rem;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--next .wl-uf09__count {
+  margin-block-start: auto;
+}
+
+/* The controls: full-width session buttons. "Skip rest" sits on the fill, which ends in the lift
+ * colour, so its text is lift.on-action on white (the README override); the same for the other
+ * primaries on these screens, so one pair of colours holds across the whole fill. */
+.wl-uf09[data-wl-state="rest"] .wl-button--session {
+  --wl-on-action: var(--wl-color-lift-on-action);
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__action {
+  margin-block-start: 1.5rem;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--rest .wl-uf09__action {
+  margin-block-start: auto;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__action--second {
+  margin-block-start: 0.75rem;
+}
+
+@media (max-width: 23.75rem) {
+  .wl-uf09[data-wl-state="rest"] .wl-type-hero-number {
+    font-size: clamp(5rem, 36vw, 9.375rem);
+  }
+}
+/* ---- end T-0597 ---- */

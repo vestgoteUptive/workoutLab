@@ -1,5 +1,6 @@
-// T-0596 (D-0211 §5, UF-09.2, UF-09.7): the deep fill of a warm-up move and a timed hold. The
-// fill is `drainPercent(elapsed, total)` of the same wall-clock timers the views show (the host
+// T-0596 (D-0211 §5, UF-09.2, UF-09.7): the deep fill of a warm-up move and a timed hold. T-0597
+// (UF-09.1, UF-09.5, UF-09.6): the rest fill, lift rising over rest, of Get ready, Rest and Next
+// exercise. The fill is `drainPercent(elapsed, total)` of the same wall-clock timers the views show (the host
 // re-renders once a second, so it steps once a second); nothing here reads a clock.
 import { useEffect, useRef, type CSSProperties } from "react";
 import { drainPercent, drainStyle } from "../../components/drain/index.js";
@@ -21,7 +22,20 @@ export function fillPercent(state: FocusState, ctx: FocusCtx, nowMs: number): nu
     // The 3 s "Get in position" has no fill; the hold's own seconds fill the screen.
     return remaining > holdS ? 0 : drainPercent(holdS - remaining, holdS);
   }
+  if (state.phase === "getReady" || state.phase === "rest" || state.phase === "next") {
+    if (!state.timer) return 0;
+    return drainPercent(
+      state.timer.durationS - remainingS(state.timer, nowMs),
+      state.timer.durationS,
+    );
+  }
   return null;
+}
+
+/** The state a screen with a fill is in: the set-up and rest time is `rest` (lift rises over
+ *  teal), a warm-up move or a hold is `lift` (the deep lift rises under the lift colour). */
+export function drainTone(phase: FocusState["phase"]): "rest" | "lift" {
+  return phase === "getReady" || phase === "rest" || phase === "next" ? "rest" : "lift";
 }
 
 export interface DrainFill {

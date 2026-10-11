@@ -1,9 +1,7 @@
-// T-0304g AC-5 (reduced motion, NFR-A11Y-5, D-0119 §10, D-0155 §1–§2). The ring fill on UF-09.5
-// (rest's own ring) has an inline
-// `style.transition` of "none" under reduce or with no `matchMedia`, else
-// "stroke-dashoffset 1s linear". The `role="timer"` text still changes each second on it and on
-// UF-09.6, which has no ring (D-0155 §1). T-0596: UF-09.2 and UF-09.7 lost their ring for the deep
-// fill (the CSS `prefers-reduced-motion` block, asserted in t0596.*); here they only keep counting.
+// T-0304g AC-5 (reduced motion, NFR-A11Y-5, D-0119 §10, D-0155 §1–§2). No view draws a ring any
+// more: T-0596 (UF-09.2, UF-09.7) and T-0597 (UF-09.1, UF-09.5, UF-09.6) replaced it with the fill,
+// whose reduced-motion rule is CSS (asserted in t0596.* and t0597.*). Here the `role="timer"` text
+// still changes each second under reduce, without it and with no `matchMedia` (D-0155 §1–§2).
 import { act, cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
@@ -14,12 +12,7 @@ import { renderSession } from "./session-helpers.js";
 import { L2, defaultDetail } from "./set-loop-fixtures.js";
 import { seedFocus } from "./set-loop-helpers.js";
 import { loggedSets } from "./countdown-helpers.js";
-import {
-  hideMatchMedia,
-  restoreDeviceStubs,
-  ringTransition,
-  stubMatchMedia,
-} from "./t0304g-stubs.js";
+import { hideMatchMedia, restoreDeviceStubs, stubMatchMedia } from "./t0304g-stubs.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
   import("./set-loop-mock.js").then((m) => m.setLoopMock(orig)),
@@ -50,10 +43,6 @@ const tick = () =>
     vi.advanceTimersByTime(1000);
   });
 
-const RINGS: Array<[string, Partial<FocusState>]> = [
-  ["UF-09.5", { phase: "rest", timer: running(120), loggedSets: loggedSets(0, 1) }],
-];
-
 const FILLS: Array<[string, Partial<FocusState>]> = [
   ["UF-09.2", { phase: "warmup", warmupStartedAtMs: NOW, timer: running(40) }],
   // Past the 3 s Get in position, into the hold.
@@ -65,40 +54,23 @@ const FILLS: Array<[string, Partial<FocusState>]> = [
       timer: { startedAtMs: NOW - 5000, durationS: 53, pausedMs: 0 },
     },
   ],
+  ["UF-09.5", { phase: "rest", timer: running(120), loggedSets: loggedSets(0, 1) }],
+  ["UF-09.6", { phase: "next", itemIndex: 1, timer: running(60) }],
+  ["UF-09.1", { phase: "getReady", timer: running(60) }],
 ];
 
-/** Mounts `seed`, checks the screen and the transition, and that the timer text moves on each
- *  of three seconds while the transition stays the same. */
-async function check(screen: string, seed: Partial<FocusState>, transition: string) {
-  seedFocus(NOW, seed);
-  await renderSession({ locale: "en-GB" });
-  expect(screenId()).toBe(screen);
-  const seen = [timerText()];
-  expect(ringTransition()).toBe(transition);
-  for (let i = 0; i < 3; i += 1) {
-    tick();
-    seen.push(timerText());
-    expect(ringTransition()).toBe(transition);
-  }
-  expect(new Set(seen).size).toBe(4);
-}
-
-describe("AC-5 reduce: matchMedia(reduce).matches true", () => {
-  it.each(RINGS)(
-    "%s: the ring fill's transition is 'none'; the timer text still counts",
-    async (id, seed) => {
-      const mm = stubMatchMedia(true);
-      await check(id, seed, "none");
-      expect(mm).toHaveBeenCalledWith("(prefers-reduced-motion: reduce)");
-    },
-  );
-
-  it("UF-09.6 (no ring): the timer text still changes each second", async () => {
-    stubMatchMedia(true);
-    seedFocus(NOW, { phase: "next", itemIndex: 1, timer: running(60) });
+describe("AC-5 no view has a ring; the timer text still counts", () => {
+  it.each(
+    FILLS.flatMap((f) =>
+      ["reduce", "no-preference", "no matchMedia"].map((m) => [...f, m] as const),
+    ),
+  )("%s, %s", async (id, seed, mode) => {
+    if (mode === "no matchMedia") hideMatchMedia();
+    else stubMatchMedia(mode === "reduce");
+    seedFocus(NOW, seed);
     await renderSession({ locale: "en-GB" });
-    expect(screenId()).toBe("UF-09.6");
-    expect(ringTransition()).toBeNull();
+    expect(screenId()).toBe(id);
+    expect(document.querySelector(".wl-uf09__ring-fill, svg.wl-uf09__ring-svg")).toBeNull();
     const seen = [timerText()];
     for (let i = 0; i < 3; i += 1) {
       tick();
@@ -106,40 +78,4 @@ describe("AC-5 reduce: matchMedia(reduce).matches true", () => {
     }
     expect(new Set(seen).size).toBe(4);
   });
-});
-
-describe("AC-5 the pair: the preference false", () => {
-  it.each(RINGS)("%s: 'stroke-dashoffset 1s linear'", async (id, seed) => {
-    stubMatchMedia(false);
-    await check(id, seed, "stroke-dashoffset 1s linear");
-  });
-});
-
-describe("AC-5 no matchMedia counts as reduce (D-0155 §2)", () => {
-  it.each(RINGS)("%s: 'none', with no throw", async (id, seed) => {
-    hideMatchMedia();
-    expect(window.matchMedia).toBeUndefined();
-    const errors = vi.spyOn(console, "error");
-    await check(id, seed, "none");
-    expect(errors).not.toHaveBeenCalled();
-  });
-});
-
-describe("T-0596 UF-09.2 and UF-09.7 have no ring; the timer text still counts", () => {
-  it.each(FILLS.flatMap((f) => [true, false].map((r) => [...f, r] as const)))(
-    "%s, reduce %s",
-    async (id, seed, reduce) => {
-      stubMatchMedia(reduce);
-      seedFocus(NOW, seed);
-      await renderSession({ locale: "en-GB" });
-      expect(screenId()).toBe(id);
-      expect(ringTransition()).toBeNull();
-      const seen = [timerText()];
-      for (let i = 0; i < 3; i += 1) {
-        tick();
-        seen.push(timerText());
-      }
-      expect(new Set(seen).size).toBe(4);
-    },
-  );
 });

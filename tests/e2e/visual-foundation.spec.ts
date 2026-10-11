@@ -199,18 +199,17 @@ test.describe("AC4 gutter and no overflow on screens that already pad (360 x 740
   }
 });
 
-// AC5: UF-09.1 keeps the values read on `main` at 7b57f2b (before T-0546), written here as
-// constants, until T-0596 to T-0598 restyle it. T-0595 (D-0208, D-0211) restyles UF-09.3 and
-// UF-09.4 into the lift state, so their sizes are pinned to the Cobalt values instead:
-// the root gutter 26 px (--wl-space-gutter-session) and the session type roles (the 150 px load
-// is pinned in uf-09-focus.spec.ts, where the plan has a known weight).
-const MAIN_UF09 = {
-  rootPadding: "16px",
-  titleFontSize: "32px",
-  titleFontWeight: "700",
-  titleTextTransform: "none",
-  titleLetterSpacing: "normal",
-  timerFontSize: "64px",
+// AC5: T-0595 (D-0208, D-0211) restyled UF-09.3 and UF-09.4 into the lift state and T-0597
+// UF-09.1 into the rest state, so their sizes are pinned to the Cobalt values: the root gutter
+// 26 px (--wl-space-gutter-session) and the session type roles (the 150 px load is pinned in
+// uf-09-focus.spec.ts, where the plan has a known weight).
+const REST_UF09 = {
+  rootPaddingInline: "26px",
+  captionFontSize: "15px",
+  captionFontWeight: "600",
+  captionTextTransform: "none",
+  countdownFontSize: "300px",
+  countdownFontWeight: "800",
 };
 
 const LIFT_UF09 = {
@@ -256,28 +255,28 @@ async function openFocusMode(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Looks good" }).click();
   await page.getByRole("button", { name: "Start", exact: true }).click();
   await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
-  await expect(page.locator(".wl-uf09__timer")).toBeVisible();
+  await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
 }
 
 test.describe("AC5 focus mode sizes (390 x 844)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("/session/<id> UF-09.1 keeps main's UF-09 sizes", async ({ page }) => {
+  test("/session/<id> UF-09.1 pins the Cobalt rest sizes (T-0597)", async ({ page }) => {
     await openFocusMode(page);
     const got = await page.evaluate(() => {
-      const root = getComputedStyle(document.querySelector(".wl-uf09")!);
-      const title = getComputedStyle(document.querySelector("h1.wl-uf09__title")!);
-      const timer = getComputedStyle(document.querySelector(".wl-uf09__timer")!);
+      const root = getComputedStyle(document.querySelector("[data-screen-id]")!);
+      const caption = getComputedStyle(document.querySelector("h1")!);
+      const count = getComputedStyle(document.querySelector(".wl-type-countdown")!);
       return {
-        rootPadding: root.padding,
-        titleFontSize: title.fontSize,
-        titleFontWeight: title.fontWeight,
-        titleTextTransform: title.textTransform,
-        titleLetterSpacing: title.letterSpacing,
-        timerFontSize: timer.fontSize,
+        rootPaddingInline: root.paddingLeft,
+        captionFontSize: caption.fontSize,
+        captionFontWeight: caption.fontWeight,
+        captionTextTransform: caption.textTransform,
+        countdownFontSize: count.fontSize,
+        countdownFontWeight: count.fontWeight,
       };
     });
-    expect(got).toEqual(MAIN_UF09);
+    expect(got).toEqual(REST_UF09);
   });
 
   test("/session/<id> UF-09.3 pins the Cobalt lift sizes (T-0595)", async ({ page }) => {

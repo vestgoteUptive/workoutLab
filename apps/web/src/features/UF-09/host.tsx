@@ -38,7 +38,7 @@ import {
   runTimeCheck,
   type CheckHolder,
 } from "./time-check.js";
-import { fillPercent, useDrainFill } from "./drain-fill.js";
+import { drainTone, fillPercent, useDrainFill } from "./drain-fill.js";
 import { useRerenderEverySecond } from "./use-rerender.js";
 import { SCREEN_IDS, VIEWS, type SeamButton, type ViewPhase } from "./views.js";
 import "./uf-09.css";
@@ -499,11 +499,24 @@ function Machine(props: MachineProps) {
       <div
         data-screen-id={SCREEN_IDS[phase]}
         // T-0595 (D-0208, D-0210): the set and its confirm are the lift state. T-0596: the warm-up and the timed set
-        // too, with the deep fill. The other views join as T-0597–T-0598 restyle them, until then they keep the legacy look.
-        data-wl-state={phase === "set" || phase === "confirm" || fill !== null ? "lift" : undefined}
+        // too, with the deep fill. T-0597: Get ready, Rest and Next exercise are the rest state with the
+        // lift-over-rest fill. The other views join as T-0598 restyles them, until then they keep the legacy look.
+        data-wl-state={
+          fill !== null
+            ? drainTone(phase)
+            : phase === "set" || phase === "confirm"
+              ? "lift"
+              : undefined
+        }
         data-drain-reset={fill?.reset ? "true" : undefined}
         style={fill?.style}
-        className={fill === null ? "wl-uf09" : "wl-uf09 wl-drain wl-drain--deep"}
+        className={
+          fill === null
+            ? "wl-uf09"
+            : drainTone(phase) === "rest"
+              ? "wl-uf09 wl-drain"
+              : "wl-uf09 wl-drain wl-drain--deep"
+        }
       >
         {phase === "paused" ? null : (
           <Chrome

@@ -147,16 +147,20 @@ describe("AC-3 skip", () => {
   });
 });
 
-describe("AC-3 warn at 10 s", () => {
-  it("at remainingS 11 the ring has data-warn=false; at 10 it is true", async () => {
+describe("AC-3 no ring and no warn state at 10 s (T-0597 AC2)", () => {
+  it("at 120, 11 and 10 s left there is no ring and no data-warn anywhere", async () => {
     await showRest();
-    expect(ring()).toHaveAttribute("data-warn", "false");
+    const bare = () => {
+      expect(ring()).toBeNull();
+      expect(document.querySelector(".wl-uf09__ring, [data-warn]")).toBeNull();
+    };
+    bare();
     await advance(109_000);
     expect(timerText()).toBe("0:11");
-    expect(ring()).toHaveAttribute("data-warn", "false");
+    bare();
     await advance(1000);
     expect(timerText()).toBe("0:10");
-    expect(ring()).toHaveAttribute("data-warn", "true");
+    bare();
   });
 });
 
@@ -194,7 +198,7 @@ describe("AC-3 GO at 0", () => {
     renderRest(NOW + 120_000);
     expect(timerText()).toBe("0:00");
     expect(document.querySelector('[data-field="go"]')).toHaveTextContent(/^GO$/);
-    expect(ring()).toHaveAttribute("data-warn", "true");
+    expect(document.querySelector("[data-warn]")).toBeNull();
   });
 
   it("the pair: with remainingS 1 there is no GO", () => {
