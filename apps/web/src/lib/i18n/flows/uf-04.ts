@@ -3,6 +3,8 @@
 // Area names are reused from `en.bodyMap.areas` (not duplicated here).
 export const uf04 = {
   searchLabel: "Search exercises",
+  clear: "Clear",
+  clearSearch: "Clear search",
   filtersLabel: "Filter exercises",
   chipAll: "All",
   chipMine: "My equipment",
