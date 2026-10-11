@@ -174,7 +174,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0596 | UF-09.2/.7 deep fill | web-feature:UF-09 | T-0595 | doing | wl-build-web |
 | T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | todo | wl-build-web |
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |

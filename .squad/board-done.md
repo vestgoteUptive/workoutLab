@@ -445,3 +445,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0631 | profiles.bar_kg + plates_kg (D-0218, contract) | data | — | done | wl-build-data |
 | T-0660 | Ship body figure v2 (owner pick 1b, D-0225): new SVG, v2 CSS, highlight dims rest; target canvas Body Figure Export | web-shell | T-0615 | done | wl-build-web |
 | T-0662 | UF-11 favorites-screen.test.tsx 'excluding a favorite says it was removed from favorites' fails on CI (2 of 3 runs on PR #59) but passes locally; likely a race between the exclusion and the favorites list load (same pattern as T-0914) | web-feature:UF-11 | — | done | wl-build-web |
+| T-0596 | UF-09.2/.7 deep fill | web-feature:UF-09 | T-0595 | done | wl-build-web |
