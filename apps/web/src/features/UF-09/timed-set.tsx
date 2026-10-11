@@ -5,7 +5,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { POSITION_S, holdSeconds, timedRemainingS } from "./machine.js";
-import { Ring } from "./ring.js";
 import { formatClock } from "./timer.js";
 import type { ViewProps } from "./views.js";
 
@@ -32,7 +31,6 @@ export function TimedSet({
   const remaining = state.timer ? timedRemainingS(state, nowMs) : POSITION_S + holdS;
   const inPosition = remaining > holdS;
   const shown = inPosition ? remaining - holdS : remaining;
-  const fraction = inPosition ? shown / POSITION_S : holdS > 0 ? shown / holdS : 0;
   const ringPaused = state.timerPausedAtMs !== null;
   const easing = EASING_KINDS.has(item.prefill.kind);
   const [retrying, setRetrying] = useState(false);
@@ -78,32 +76,35 @@ export function TimedSet({
   };
 
   return (
-    <div ref={viewRef} className="wl-uf09__view">
-      <p className="wl-uf09__state">{en.uf09.timedCaption(state.setIndex + 1, item.sets)}</p>
-      <h1 ref={headingRef} className="wl-uf09__title" tabIndex={-1}>
+    <div ref={viewRef} className="wl-uf09__view wl-uf09__view--timer">
+      <p className="wl-uf09__state wl-type-label">
+        {en.uf09.timedCaption(state.setIndex + 1, item.sets)}
+      </p>
+      <h1 ref={headingRef} className="wl-type-page-title wl-uf09__name" tabIndex={-1}>
         {name}
       </h1>
-      <p className="wl-uf09__load" data-field="target">
+      <p className="wl-uf09__target wl-type-body" data-field="target">
         {en.uf09.holdTarget(formatClock(holdS))}
       </p>
       {easing ? (
-        <p className="wl-uf09__cue" data-field="kind">
+        <p className="wl-uf09__cue wl-type-body" data-field="kind">
           {en.uf09.easingBackIn}
         </p>
       ) : null}
-      <Ring fraction={fraction} warn={inPosition}>
-        <p className="wl-uf09__ring-go" data-field="phase">
-          {inPosition ? en.uf09.getInPosition : en.uf09.holdPhase}
-        </p>
-        <p className="wl-uf09__ring-time" role="timer">
-          {inPosition ? String(shown) : formatClock(shown)}
-        </p>
-      </Ring>
+      <p className="wl-uf09__phase wl-type-label" data-field="phase">
+        {inPosition ? en.uf09.getInPosition : en.uf09.holdPhase}
+      </p>
+      <p
+        className={`${inPosition ? "wl-type-countdown" : "wl-type-hero-number"} wl-uf09__count`}
+        role="timer"
+      >
+        {inPosition ? String(shown) : formatClock(shown)}
+      </p>
       {running ? (
         <button
           ref={toggleRef}
           type="button"
-          className="wl-uf09__secondary wl-uf09__wide"
+          className="wl-button--session-outline wl-uf09__action"
           data-action="ring"
           onClick={() => send({ type: ringPaused ? "TIMER_RESUME" : "TIMER_PAUSE" })}
         >
@@ -114,7 +115,7 @@ export function TimedSet({
         <button
           ref={logHoldRef}
           type="button"
-          className="wl-uf09__primary wl-uf09__wide"
+          className="wl-button--session wl-uf09__action"
           data-action="primary"
           data-state={retrying ? "saving" : undefined}
           aria-busy={retrying ? true : undefined}
@@ -124,7 +125,7 @@ export function TimedSet({
           {en.uf09.logHold}
         </button>
       ) : null}
-      <p className="wl-uf09__status" aria-live="polite">
+      <p className="wl-uf09__status wl-type-label" aria-live="polite">
         {holdFailed ? en.uf09.holdError : null}
       </p>
     </div>

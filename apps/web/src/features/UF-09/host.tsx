@@ -38,6 +38,7 @@ import {
   runTimeCheck,
   type CheckHolder,
 } from "./time-check.js";
+import { fillPercent, useDrainFill } from "./drain-fill.js";
 import { useRerenderEverySecond } from "./use-rerender.js";
 import { SCREEN_IDS, VIEWS, type SeamButton, type ViewPhase } from "./views.js";
 import "./uf-09.css";
@@ -167,6 +168,8 @@ function Machine(props: MachineProps) {
   useRerenderEverySecond();
   // One clock read per render: every time on screen this render is derived from it.
   const nowMs = Date.now();
+  // T-0596: the deep fill of a warm-up move or a timed hold, stepped by the one-second re-render.
+  const fill = useDrainFill(fillPercent(state, ctx, nowMs));
   // T-0304g (D-0119 §6–§9): the prefs read once, the wake lock, and the cues on observed crossings.
   const device = useFocusDevice(timerKey(state), state, nowMs);
   const [row, setRow] = useState(initialRow);
@@ -495,10 +498,12 @@ function Machine(props: MachineProps) {
     body = (
       <div
         data-screen-id={SCREEN_IDS[phase]}
-        // T-0595 (D-0208, D-0210): the set and its confirm are the lift state. The other views
-        // join as T-0596–T-0598 restyle them, until then they keep the legacy look.
-        data-wl-state={phase === "set" || phase === "confirm" ? "lift" : undefined}
-        className="wl-uf09"
+        // T-0595 (D-0208, D-0210): the set and its confirm are the lift state. T-0596: the warm-up and the timed set
+        // too, with the deep fill. The other views join as T-0597–T-0598 restyle them, until then they keep the legacy look.
+        data-wl-state={phase === "set" || phase === "confirm" || fill !== null ? "lift" : undefined}
+        data-drain-reset={fill?.reset ? "true" : undefined}
+        style={fill?.style}
+        className={fill === null ? "wl-uf09" : "wl-uf09 wl-drain wl-drain--deep"}
       >
         {phase === "paused" ? null : (
           <Chrome

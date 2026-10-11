@@ -335,8 +335,8 @@ describe("T-0304c AC-4 the ring-only pause in the host", () => {
   it("Pause timer (≥ 44 px class) at 30 s, 20 s, Resume timer → 30 s; elapsedS +20; the hold ends 20 s later", async () => {
     await to30();
     const pauseTimer = screen.getByRole("button", { name: "Pause timer" });
-    expect(pauseTimer).toHaveClass("wl-uf09__secondary");
-    expect(pauseTimer).toHaveClass("wl-uf09__wide");
+    // T-0596: the session outline button (64 px by main.css), not the legacy secondary.
+    expect(pauseTimer).toHaveClass("wl-button--session-outline");
     const elapsedBefore = session().elapsedS;
     fireEvent.click(pauseTimer);
     await flushReal();

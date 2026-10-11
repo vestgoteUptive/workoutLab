@@ -374,7 +374,8 @@
     max(env(safe-area-inset-bottom), 1.5rem) max(var(--wl-gutter), env(safe-area-inset-left));
   color: var(--wl-ink);
   font-family: var(--wl-font);
-  background: var(--wl-bg);
+  /* Colour only: the drain's gradient (T-0596) is the background image above it. */
+  background-color: var(--wl-bg);
 }
 
 .wl-uf09[data-wl-state="lift"] .wl-uf09__chrome {
@@ -536,3 +537,96 @@
   }
 }
 /* ---- end T-0595 ---- */
+
+/* ---- T-0596 UF-09.2 Warm-up, UF-09.7 Timed set: the lift state with the deep fill (D-0211 §5) ----
+ * The root also has .wl-drain .wl-drain--deep (components/drain): lift.bg-deep above lift.bg, the
+ * lift colour rising as --wl-drain goes from 0% to 100%. Every rule starts at
+ * .wl-uf09[data-wl-state="lift"], as in the T-0595 section; colours are --wl-* variables only. */
+
+/* The deep fill itself. components/drain/drain.css has the same gradient at one class of
+ * specificity, which the legacy .wl-uf09 background shorthand beats or loses to by load order;
+ * repeating it here, scoped under the lift root, makes it win either way. */
+.wl-uf09[data-wl-state="lift"].wl-drain--deep {
+  background-image: linear-gradient(
+    to top,
+    var(--wl-color-lift-bg) var(--wl-drain, 0%),
+    var(--wl-color-lift-bg-deep) var(--wl-drain, 0%)
+  );
+}
+
+/* One 1 s linear step per second. main.css's 200 ms background-color cross-fade is left out here:
+ * the colour under the gradient never changes, and a second duration would blur the step. */
+.wl-uf09[data-wl-state="lift"].wl-drain {
+  transition: --wl-drain 1s linear;
+}
+
+/* The fill went back down (Restart, the next move): jump, don't sweep back over a second. */
+.wl-uf09[data-wl-state="lift"].wl-drain[data-drain-reset="true"] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-uf09[data-wl-state="lift"].wl-drain {
+    transition: none;
+  }
+}
+
+/* The countdown sits low on the screen, the cue and the controls under it. */
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view--timer .wl-uf09__count {
+  margin: auto 0 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The clock "0:40" keeps a little air: the role's -0.06em tracking makes the colon touch the 4. */
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view--timer .wl-type-hero-number {
+  letter-spacing: -0.02em;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view--timer .wl-uf09__phase {
+  margin: auto 0 0;
+  color: var(--wl-ink);
+}
+
+/* The "Get in position" / "Hold" label is directly above its number, which then needs no auto. */
+.wl-uf09[data-wl-state="lift"] .wl-uf09__phase + .wl-uf09__count {
+  margin-block-start: 0;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__target {
+  margin: 0.25rem 0 0;
+  color: var(--wl-ink);
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view--timer .wl-uf09__cue {
+  margin-block-start: 1rem;
+}
+
+/* The controls: full-width session buttons, Restart and Next move side by side on UF-09.2. */
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view--timer .wl-uf09__action {
+  margin-block-start: 2.5rem;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-block-start: 2.5rem;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__actions > button {
+  justify-content: center;
+  padding-inline: 0.75rem;
+  font-size: 1.125rem;
+  text-align: center;
+}
+
+.wl-uf09[data-wl-state="lift"] .wl-uf09__view--timer .wl-uf09__status {
+  margin-block-start: 0.5rem;
+}
+
+@media (max-width: 23.75rem) {
+  .wl-uf09[data-wl-state="lift"] .wl-uf09__view--timer .wl-type-hero-number {
+    font-size: clamp(5rem, 40vw, 9.375rem);
+  }
+}
+/* ---- end T-0596 ---- */
