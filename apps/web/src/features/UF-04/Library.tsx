@@ -126,13 +126,8 @@ export function Library(props: LibraryProps = {}) {
               onChange={(event) => onSearch(event.target.value)}
             />
             {text === "" ? null : (
-              <button
-                type="button"
-                className="wl-button--text"
-                aria-label={en.uf04.clearSearch}
-                onClick={() => onSearch("")}
-              >
-                {en.uf04.clear}
+              <button type="button" className="wl-button--text" onClick={() => onSearch("")}>
+                {en.uf08.clearSearch}
               </button>
             )}
           </div>

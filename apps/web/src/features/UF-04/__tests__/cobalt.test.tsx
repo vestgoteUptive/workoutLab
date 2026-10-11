@@ -102,16 +102,16 @@ describe("AC2 search and filters", () => {
     await waitFor(() => expect(rowNames()).toHaveLength(24));
     const box = screen.getByRole("searchbox", { name: en.uf04.searchLabel });
     expect(box).toHaveClass("wl-input");
-    expect(screen.queryByRole("button", { name: en.uf04.clearSearch })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: en.uf08.clearSearch })).not.toBeInTheDocument();
     fireEvent.change(box, { target: { value: "squat" } });
-    const clear = screen.getByRole("button", { name: en.uf04.clearSearch });
+    const clear = screen.getByRole("button", { name: en.uf08.clearSearch });
     expect(clear).toHaveClass("wl-button--text");
-    expect(clear).toHaveTextContent(/^Clear$/);
+    expect(clear).toHaveTextContent(/^Clear search$/);
     await waitFor(() => expect(rowNames().length).toBeLessThan(24));
     fireEvent.click(clear);
     expect(box).toHaveValue("");
     await waitFor(() => expect(rowNames()).toHaveLength(24));
-    expect(screen.queryByRole("button", { name: en.uf04.clearSearch })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: en.uf08.clearSearch })).not.toBeInTheDocument();
   });
 
   it("chips keep their names; the tick is aria-hidden; pressed and unpressed differ", async () => {
