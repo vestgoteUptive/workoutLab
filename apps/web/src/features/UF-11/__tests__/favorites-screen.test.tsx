@@ -27,7 +27,30 @@ const h = vi.hoisted(() => ({
   add: undefined as undefined | ((u: string, id: string) => Promise<void>),
   remove: undefined as undefined | ((u: string, id: string) => Promise<void>),
   exclude: undefined as undefined | ((u: string, id: string) => Promise<void>),
+  // T-0662: while true the live hooks report nothing yet (the fast-tap window before first emission).
+  blindFavorites: false,
+  blindExcluded: false,
 }));
+vi.mock("../../../lib/offline/favorites-hooks.js", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../../../lib/offline/favorites-hooks.js")>();
+  return {
+    ...real,
+    useFavoriteIds: (u: string | null | undefined) => {
+      const ids = real.useFavoriteIds(u);
+      return h.blindFavorites ? [] : ids;
+    },
+  };
+});
+vi.mock("../../../lib/offline/excluded-hooks.js", async (importOriginal) => {
+  const real = await importOriginal<typeof import("../../../lib/offline/excluded-hooks.js")>();
+  return {
+    ...real,
+    useExcludedIds: (u: string | null | undefined) => {
+      const ids = real.useExcludedIds(u);
+      return h.blindExcluded ? [] : ids;
+    },
+  };
+});
 vi.mock("../../../lib/offline/favorites.js", async (importOriginal) => {
   const real = await importOriginal<typeof import("../../../lib/offline/favorites.js")>();
   return {
@@ -134,6 +157,8 @@ beforeEach(async () => {
     await offlineDb().excludedCache.put(row(id));
     await offlineDb().favoriteCache.delete(userScopedKey(A, id));
   };
+  h.blindFavorites = false;
+  h.blindExcluded = false;
   vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
   vi.mocked(fav.favoriteExercise).mockClear();
   vi.mocked(fav.unfavoriteExercise).mockClear();
@@ -388,6 +413,32 @@ describe("AC8 UF-11.5 move line", () => {
     expect(await offlineDb().favoriteCache.count()).toBe(0);
     fireEvent.click(screen.getByRole("link", { name: "Back to Plan" }));
     expect(await screen.findByRole("link", { name: "Favorite exercises, none" })).toBeVisible();
+  });
+
+  it("T-0662 AC1: a tap before the favorites hook has emitted still says it was removed", async () => {
+    await seedFavorites("bench-press");
+    h.blindFavorites = true;
+    render(tree("/plan/excluded"));
+    fireEvent.change(await searchbox(), { target: { value: "bench press" } });
+    fireEvent.click(screen.getByRole("button", { name: "Exclude Bench press" }));
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Bench press won't be suggested. Removed from favorites.",
+      ),
+    );
+  });
+
+  it("T-0662 AC2: favoriting an excluded exercise before the excluded hook has emitted says it moved", async () => {
+    await seedExcluded("bench-press");
+    h.blindExcluded = true;
+    render(tree("/plan/favorites"));
+    fireEvent.change(await searchbox(), { target: { value: "bench press" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add Bench press to favorites" }));
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent(
+        "Bench press is a favorite and will be suggested again.",
+      ),
+    );
   });
 
   it("excluding a non-favorite keeps the plain line", async () => {

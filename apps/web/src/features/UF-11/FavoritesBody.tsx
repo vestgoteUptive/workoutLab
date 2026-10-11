@@ -6,6 +6,7 @@ import { isEligible, primaryAreas } from "@workoutlab/engine";
 import { AREAS, type Area, type EngineProfile, type LibraryExercise } from "@workoutlab/shared";
 import { en } from "../../lib/i18n/en.js";
 import { currentUserId, loadLibrary, loadProfile } from "../../lib/offline/index.js";
+import { loadExcludedIds } from "../../lib/offline/excluded.js";
 import { useExcludedIds, useOnline } from "../../lib/offline/excluded-hooks.js";
 import {
   favoriteExercise,
@@ -133,7 +134,6 @@ export function FavoritesBody() {
   async function toggle(item: Item) {
     if (!userId || !online || pending.has(item.id)) return;
     const isFavorite = favorites.has(item.id);
-    const wasExcluded = !isFavorite && excluded.has(item.id);
     setFailed(false);
     setPending((p) => new Set(p).add(item.id));
     // The rows that leave with this one in a group list (an exercise under two areas leaves both).
@@ -141,6 +141,8 @@ export function FavoritesBody() {
     const next = visible.slice(idx + 1).find((i) => i.id !== item.id) ?? null;
     const prev = [...visible.slice(0, idx)].reverse().find((i) => i.id !== item.id) ?? null;
     try {
+      // T-0662: read the cache at tap time; the live hook can still be empty on a fast tap.
+      const wasExcluded = !isFavorite && (await loadExcludedIds(userId)).includes(item.id);
       if (isFavorite) await unfavoriteExercise(userId, item.id);
       else await favoriteExercise(userId, item.id);
       setStatus(

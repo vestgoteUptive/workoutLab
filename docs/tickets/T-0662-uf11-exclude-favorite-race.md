@@ -29,3 +29,6 @@ None.
 Gate green · commits start with `T-0662`.
 
 ## Build / accept log
+- Built: toggle() in ExcludedBody/FavoritesBody now awaits loadFavoriteIds/loadExcludedIds (cache) at tap time; unused hook dropped from ExcludedBody. Mirror race was present.
+- AC1/AC2: two tests in favorites-screen.test.tsx (hooks blinded via mock). Planted fault (hook-value read, restored from backup copy): 3 tests failed, incl. both new ones. Fixed: pass.
+- AC3: 20 runs under 3 busy loops, 0 failures. Gate (typecheck lint test), format:check, check-all: exit 0.

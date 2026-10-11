@@ -14,7 +14,7 @@ import {
   refreshExcluded,
 } from "../../lib/offline/excluded.js";
 import { useExcludedRows, useOnline } from "../../lib/offline/excluded-hooks.js";
-import { useFavoriteIds } from "../../lib/offline/favorites-hooks.js";
+import { loadFavoriteIds } from "../../lib/offline/favorites.js";
 import { formatInstantDay, resolveTimeZone } from "./format.js";
 import "./excluded.css";
 
@@ -34,7 +34,6 @@ export function ExcludedBody() {
   const userId = currentUserId();
   const online = useOnline();
   const rows = useExcludedRows(userId);
-  const favoriteIds = useFavoriteIds(userId);
   const [library, setLibrary] = useState<LibraryExercise[]>([]);
   const [profile, setProfile] = useState<EngineProfile | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -115,10 +114,11 @@ export function ExcludedBody() {
     const isExcluded = item.excludedAt !== null;
     setFailed(false);
     setPending((p) => new Set(p).add(item.id));
-    const wasFavorite = !isExcluded && favoriteIds.includes(item.id);
     const idx = items.findIndex((i) => i.id === item.id);
     const next = items[idx + 1] ?? items[idx - 1] ?? null;
     try {
+      // T-0662: read the cache at tap time; the live hook can still be empty on a fast tap.
+      const wasFavorite = !isExcluded && (await loadFavoriteIds(userId)).includes(item.id);
       if (isExcluded) await includeExercise(userId, item.id);
       else await excludeExercise(userId, item.id);
       const after = isExcluded ? storedIds.filter((x) => x !== item.id) : [...storedIds, item.id];
