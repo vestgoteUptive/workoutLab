@@ -9,10 +9,13 @@
 // `QueuedSession` shape `upsertSession` writes (`lib/offline/db.ts`), after the app has opened
 // the database. It uses `pending: false`, so AutoSync has nothing to flush.
 import { randomUUID } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
 import { goOffline } from "./fixtures/offline.js";
+import { compareWithCanvas } from "./helpers/canvas-compare.js";
 import {
   FAKE_USER_ID,
   injectSession,
@@ -273,7 +276,7 @@ async function expectAxeClean(page: Page): Promise<void> {
 }
 
 test.describe("T-0304b AC-12 one set offline", () => {
-  test("UF-09.3 Done set (≥ 200 px) → UF-09.4 auto-save after 5 s → UF-09.5; one row in wl-offline.sets", async ({
+  test("UF-09.3 Done set (≥ 64 px) → UF-09.4 auto-save after 5 s → UF-09.5; one row in wl-offline.sets", async ({
     page,
     context,
   }) => {
@@ -294,7 +297,8 @@ test.describe("T-0304b AC-12 one set offline", () => {
     const done = page.getByRole("button", { name: "Done set" });
     const box = await done.boundingBox();
     expect(box).not.toBeNull();
-    expect(box!.height).toBeGreaterThanOrEqual(200);
+    // T-0595 (D-0208 §2): the 200 px round button became the full-width session button.
+    expect(box!.height).toBeGreaterThanOrEqual(64);
     expect(box!.width).toBeGreaterThanOrEqual(44);
     await expectAxeClean(page);
 
@@ -790,5 +794,350 @@ test.describe("T-0394 AC-6 Back means Pause", () => {
     await page.goBack();
     await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
     await expect(page).toHaveURL(SETUP_URL);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// T-0595 (D-0208, D-0210, D-0211, D-0213; UF-09.3, UF-09.4): the lift state on the set and its
+// confirm. Colours are read from tokens.json, never typed. Online: the offline path is the
+// T-0304b AC-12 test above (its Done set height pin moved to 64 px) and the offline line below.
+// ---------------------------------------------------------------------------------------------
+const tokenColours = JSON.parse(
+  readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
+) as { color: { lift: Record<string, string> } };
+const LIFT = tokenColours.color.lift;
+const LEGACY_LIFT_RED = ["#D9", "472B"].join("");
+
+function toRgb(hex: string): string {
+  const n = (i: number) => parseInt(hex.slice(i, i + 2), 16);
+  return `rgb(${n(1)}, ${n(3)}, ${n(5)})`;
+}
+
+const NO_BACKOFF_PLAN = { ...PLAN, warmup: [] };
+
+/** Seeds `plan`, opens the session online and taps Start now: lands on UF-09.3. */
+async function openSet(page: Page, plan: object = NO_BACKOFF_PLAN): Promise<string> {
+  await page.goto("/");
+  await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+  const id = randomUUID();
+  await seedSessionRow(page, id, plan);
+  await page.goto(`/session/${id}`);
+  await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+  await page.getByRole("button", { name: "Start now" }).click();
+  await expect(page.locator('[data-screen-id="UF-09.3"]')).toBeVisible();
+  return id;
+}
+
+interface TextPair {
+  text: string;
+  color: string;
+  background: string;
+  ratio: number;
+  largeText: boolean;
+}
+
+/** Every visible text node's rendered colour against its effective background (the first opaque
+ *  ancestor background), with its WCAG ratio. Inputs read their value. */
+async function textPairs(page: Page): Promise<TextPair[]> {
+  return page.evaluate(() => {
+    const parse = (c: string): [number, number, number, number] => {
+      const m = /rgba?\(([^)]+)\)/.exec(c)!;
+      const [r = 0, g = 0, b = 0, a = 1] = m[1]!
+        .split(/[ ,/]+/)
+        .filter(Boolean)
+        .map(Number);
+      return [r, g, b, a];
+    };
+    const lum = ([r, g, b]: number[]) => {
+      const ch = (v: number) => {
+        const c = v / 255;
+        return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+      };
+      return 0.2126 * ch(r!) + 0.7152 * ch(g!) + 0.0722 * ch(b!);
+    };
+    const backgroundOf = (el: Element): string => {
+      for (let n: Element | null = el; n; n = n.parentElement) {
+        const bg = getComputedStyle(n).backgroundColor;
+        if (parse(bg)[3] > 0.99) return bg;
+      }
+      return getComputedStyle(document.documentElement).backgroundColor;
+    };
+    const out: TextPair[] = [];
+    const seen = new Set<Element>();
+    const consider = (el: Element, text: string) => {
+      if (seen.has(el) || !text) return;
+      const rect = el.getBoundingClientRect();
+      const style = getComputedStyle(el);
+      if (rect.width === 0 || rect.height === 0 || style.visibility === "hidden") return;
+      if (el.closest(".wl-uf09__announcer")) return;
+      seen.add(el);
+      const fg = style.color;
+      const bg = backgroundOf(el);
+      const [hi, lo] = [lum(parse(fg)), lum(parse(bg))].sort((a, b) => b - a);
+      const size = parseFloat(style.fontSize);
+      const bold = parseInt(style.fontWeight, 10) >= 700;
+      out.push({
+        text: text.trim(),
+        color: fg,
+        background: bg,
+        ratio: (hi! + 0.05) / (lo! + 0.05),
+        largeText: size >= 24 || (bold && size >= 18.66),
+      });
+    };
+    for (const el of document.querySelectorAll("[data-screen-id] *")) {
+      const own = Array.from(el.childNodes)
+        .filter((n) => n.nodeType === Node.TEXT_NODE)
+        .map((n) => n.textContent ?? "")
+        .join("");
+      consider(el, own);
+      if (el instanceof HTMLInputElement && el.type === "text") consider(el, el.value);
+    }
+    return out;
+  });
+}
+
+/** Every colour the screen paints (text, background, border, outline), as rgb strings. */
+async function paintedColours(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const found = new Set<string>();
+    for (const el of document.querySelectorAll("[data-screen-id], [data-screen-id] *")) {
+      const s = getComputedStyle(el);
+      for (const c of [s.color, s.backgroundColor, s.borderTopColor, s.outlineColor, s.fill]) {
+        if (c) found.add(c);
+      }
+    }
+    return [...found];
+  });
+}
+
+async function noHorizontalScroll(page: Page): Promise<void> {
+  const m = await page.evaluate(() => ({
+    scroll: document.documentElement.scrollWidth,
+    client: document.documentElement.clientWidth,
+  }));
+  expect(m.scroll).toBeLessThanOrEqual(m.client);
+}
+
+async function expectContrast(page: Page): Promise<void> {
+  const pairs = await textPairs(page);
+  expect(pairs.length).toBeGreaterThan(3);
+  for (const p of pairs) {
+    const need = p.largeText ? 3 : 4.5;
+    expect(p.ratio, `${p.text}: ${p.color} on ${p.background}`).toBeGreaterThanOrEqual(need);
+  }
+  // White on lift.bg is 4.8 at one decimal (D-0211 §4), as rendered.
+  const onBg = pairs.filter(
+    (p) => p.background === toRgb(LIFT.bg!) && p.color === toRgb(LIFT.ink!),
+  );
+  expect(onBg.length).toBeGreaterThan(0);
+  for (const p of onBg)
+    expect(Number(p.ratio.toFixed(1)), `${p.text} ${p.ratio}`).toBeGreaterThanOrEqual(4.8);
+  // The Done / Save text: lift.on-action on white, 6.1.
+  const onAction = pairs.filter(
+    (p) => p.color === toRgb(LIFT["on-action"]!) && p.background === toRgb(LIFT.action!),
+  );
+  expect(onAction.length).toBeGreaterThan(0);
+  for (const p of onAction)
+    expect(Number(p.ratio.toFixed(1)), `${p.text} ${p.ratio}`).toBeGreaterThanOrEqual(6.1);
+  expect(await paintedColours(page)).not.toContain(toRgb(LEGACY_LIFT_RED));
+  const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+  expect(axe.violations).toEqual([]);
+}
+
+/** T-0595 AC1/AC2/AC4/AC5: the state, the one primary, the caption and the progress chrome. */
+async function expectLiftChrome(page: Page, screenId: string, caption: string): Promise<void> {
+  const root = page.locator(`[data-screen-id="${screenId}"]`);
+  await expect(root).toHaveAttribute("data-wl-state", "lift");
+  await expect(root).toHaveCSS("background-color", toRgb(LIFT.bg!));
+  await expect(page.locator("meta[name=theme-color]")).toHaveAttribute(
+    "content",
+    new RegExp(`^${LIFT.bg}$`, "i"),
+  );
+  await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+  await expect(page.getByRole("navigation")).toHaveCount(0);
+  await expect(root.locator(".wl-button--session")).toHaveCount(1);
+  await expect(root.getByText(caption, { exact: true })).toBeVisible();
+  const pause = await page.getByRole("button", { name: "Pause workout" }).boundingBox();
+  expect(pause!.width).toBe(44);
+  expect(pause!.height).toBe(44);
+}
+
+test.describe("T-0595 UF-09.3 and UF-09.4 in the lift state (390 x 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("UF-09.3: state, one primary, Done, caption, progress, contrast; canvas frame", async ({
+    page,
+  }, testInfo) => {
+    await openSet(page);
+    await expectLiftChrome(page, "UF-09.3", "Lifting · set 1 of 4");
+
+    // AC3: Done keeps its name; the full content width, 64 px or more, lift.action / on-action.
+    const done = page.getByRole("button", { name: "Done set" });
+    const box = (await done.boundingBox())!;
+    const rootPad = await page.locator("[data-screen-id]").evaluate((el) => {
+      const s = getComputedStyle(el);
+      return {
+        width: el.getBoundingClientRect().width,
+        gutter: parseFloat(s.paddingLeft) + parseFloat(s.paddingRight),
+      };
+    });
+    expect(box.width).toBeGreaterThanOrEqual(rootPad.width - rootPad.gutter - 1);
+    expect(box.height).toBeGreaterThanOrEqual(64);
+    await expect(done).toHaveCSS("background-color", toRgb(LIFT.action!));
+    await expect(done).toHaveCSS("color", toRgb(LIFT["on-action"]!));
+
+    // AC5: the counter and the filled segments (none: the warm-up is skipped, item 1 is current).
+    await expect(page.locator(".wl-session-progress__counter")).toHaveText("1 / 1");
+    await expect(page.locator(".wl-session-progress__segment")).toHaveCount(2);
+    await expect(page.locator(".wl-session-progress__segment--done")).toHaveCount(1);
+
+    // Type roles: the name 2.75 rem / 800, the load and the reps 9.375 rem / 800.
+    const sizes = await page.evaluate(() => {
+      const px = (el: Element) => getComputedStyle(el).fontSize;
+      const wt = (el: Element) => getComputedStyle(el).fontWeight;
+      const h1 = document.querySelector("h1")!;
+      const hero = document.querySelectorAll(".wl-uf09__load .wl-type-hero-number");
+      return { h1: [px(h1), wt(h1)], hero: Array.from(hero).map((e) => [px(e), wt(e)]) };
+    });
+    expect(sizes.h1).toEqual(["44px", "800"]);
+    expect(sizes.hero).toEqual([
+      ["150px", "800"],
+      ["150px", "800"],
+    ]);
+    await noHorizontalScroll(page);
+    await expectContrast(page);
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-3",
+      frame: "In session · set",
+      name: "uf-09-3",
+    });
+  });
+
+  test("UF-09.4: state, one primary, steppers, RIR, error form, contrast; canvas frame", async ({
+    page,
+  }, testInfo) => {
+    await openSet(page);
+    await page.getByRole("button", { name: "Done set" }).click();
+    await expectLiftChrome(page, "UF-09.4", "Lifting · set 1 of 4");
+    const root = page.locator('[data-screen-id="UF-09.4"]');
+
+    // AC8: every control is at least 44 x 44. The radios are hidden; their label is the target.
+    const small = await page.evaluate(() => {
+      const bad: string[] = [];
+      for (const el of document.querySelectorAll(
+        "[data-screen-id] :is(button, a, input:not([type=radio]), label)",
+      )) {
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && (r.width < 44 || r.height < 44)) {
+          bad.push(
+            `${el.tagName} ${el.getAttribute("aria-label") ?? el.textContent} ${r.width}x${r.height}`,
+          );
+        }
+      }
+      return bad;
+    });
+    expect(small).toEqual([]);
+
+    // RIR is a segmented control on its native radios; the selected one is the on-selected pair.
+    await page.getByText("1–2", { exact: true }).click();
+    const selected = page.locator(".wl-segmented > label:has(input:checked)");
+    await expect(selected).toHaveCount(1);
+    await expect(selected).toHaveCSS("background-color", toRgb(LIFT.ink!));
+    await expect(selected).toHaveCSS("color", toRgb(LIFT["on-action"]!));
+    await expect(page.getByRole("radio", { name: "1–2" })).toBeChecked();
+
+    // AC7: a valid weight has the 1 px boundary; an invalid one the 2 px lift.ink border, the
+    // aria-hidden icon and the existing words.
+    const weight = page.getByRole("textbox", { name: "Weight (kg)" });
+    await expect(weight).not.toHaveAttribute("aria-invalid", "true");
+    await expect(weight).toHaveCSS("border-top-width", "1px");
+    await weight.fill("abc");
+    await expect(weight).toHaveAttribute("aria-invalid", "true");
+    await expect(weight).toHaveCSS("border-top-width", "2px");
+    await expect(weight).toHaveCSS("border-top-color", toRgb(LIFT.ink!));
+    const hint = root.locator(".wl-input__error");
+    await expect(hint).toHaveText("Enter a weight like 82.5");
+    await expect(hint.locator("svg")).toHaveAttribute("aria-hidden", "true");
+    await expect(hint.locator("svg")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    // The disabled form stays legible: the outline form, ink on the lift background.
+    await expect(page.getByRole("button", { name: "Save" })).toHaveCSS("color", toRgb(LIFT.ink!));
+    await expectContrast(page);
+
+    await weight.fill("82.5");
+    await expect(weight).not.toHaveAttribute("aria-invalid", "true");
+    await expect(weight).toHaveCSS("border-top-width", "1px");
+    await noHorizontalScroll(page);
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-5",
+      frame: "In session · log set",
+      name: "uf-09-4",
+    });
+  });
+
+  test("a back-off set shows its caption on UF-09.3", async ({ page }) => {
+    const plan = {
+      ...NO_BACKOFF_PLAN,
+      items: [{ ...PLAN.items[0]!, sets: 1, backoff: { weightKg: 70, reps: 6 } }],
+    };
+    await openSet(page, plan);
+    await page.getByRole("button", { name: "Done set" }).click();
+    await page.getByRole("button", { name: "Save" }).click();
+    await page.getByRole("button", { name: "Skip rest" }).click();
+    await expectLiftChrome(page, "UF-09.3", "Lifting · back-off set");
+  });
+
+  test("the offline line renders on the lift screen and reads", async ({ page, context }) => {
+    await openSet(page);
+    await context.setOffline(true);
+    const icon = page.getByRole("img", { name: "Offline" });
+    await expect(icon).toBeVisible();
+    await expect(icon).toHaveCSS("background-color", toRgb(LIFT.ink!));
+    await context.setOffline(false);
+  });
+
+  test("AC9: the lift root cross-fades its background over 200 ms, instantly under reduced motion", async ({
+    page,
+  }) => {
+    await openSet(page);
+    const root = page.locator('[data-screen-id="UF-09.3"]');
+    await expect(root).toHaveCSS("transition-duration", "0.2s");
+    await expect(root).toHaveCSS("transition-property", "background-color");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(root).toHaveCSS("transition-duration", "0s");
+    // Nothing else on the screen animates.
+    const animated = await page.evaluate(() =>
+      Array.from(document.querySelectorAll("[data-screen-id] *"))
+        .filter((el) => {
+          const s = getComputedStyle(el);
+          return s.transitionDuration !== "0s" || s.animationName !== "none";
+        })
+        .map((el) => el.tagName + "." + el.className),
+    );
+    expect(animated).toEqual([]);
+  });
+});
+
+test.describe("T-0595 AC5 the progress chrome at 320 x 640", () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+
+  test("the counter does not wrap and nothing scrolls sideways on UF-09.3 and UF-09.4", async ({
+    page,
+  }) => {
+    await openSet(page);
+    for (const id of ["UF-09.3", "UF-09.4"]) {
+      if (id === "UF-09.4") await page.getByRole("button", { name: "Done set" }).click();
+      await expect(page.locator(`[data-screen-id="${id}"]`)).toBeVisible();
+      const counter = page.locator(".wl-session-progress__counter");
+      const one = await counter.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return r.height <= parseFloat(getComputedStyle(el).lineHeight || "0") + 1 || r.height < 24;
+      });
+      expect(one).toBe(true);
+      await noHorizontalScroll(page);
+    }
   });
 });

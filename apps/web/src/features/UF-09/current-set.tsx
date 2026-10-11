@@ -3,12 +3,34 @@
 // writes IndexedDB through the hook first and only then moves on (NFR-OFF-2); the busy state is
 // set before the write starts, in the same event (NFR-PERF-4).
 import { useEffect, useRef, useState } from "react";
+import { TickIcon } from "../../components/icons/index.js";
 import { formatKg } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { nextSetPrefill } from "./prefill.js";
 import { useFocusSession } from "./session.js";
 import { useCue } from "./use-cue.js";
 import type { ViewProps } from "./views.js";
+
+/** One hero line of the load. The kilo line splits into the number and its small unit (the two
+ *  spans read back as the unchanged text); the words line ("8 reps", "Set weight") is one text
+ *  node at the stat size, since it has no short number to enlarge. */
+interface HeroLineProps {
+  text: string;
+  hero?: boolean;
+  unit?: boolean;
+}
+
+function HeroLine({ text, hero = false, unit = false }: HeroLineProps) {
+  const at = unit ? text.search(/[\s\u00A0]/) : -1;
+  const role = hero ? "wl-type-hero-number" : "wl-type-stat";
+  if (at < 0) return <span className={`${role} wl-uf09__hero`}>{text}</span>;
+  return (
+    <span className={`${role} wl-uf09__hero`}>
+      {text.slice(0, at)}
+      <span className="wl-uf09__unit">{text.slice(at)}</span>
+    </span>
+  );
+}
 
 export function CurrentSet({ state, ctx, locale }: ViewProps) {
   const session = useFocusSession();
@@ -57,31 +79,43 @@ export function CurrentSet({ state, ctx, locale }: ViewProps) {
       );
   };
 
+  // "100 kg × 8" on two hero lines, "100 kg" then "× 8", the text itself unchanged.
+  const load = bodyweight || prefill.weightKg === null ? null : formatKg(prefill.weightKg, locale);
+  const loadText = load === null ? "" : en.uf09.load(load, reps);
+  const split = loadText.indexOf("×");
+
   return (
-    <div className="wl-uf09__view">
-      <p className="wl-uf09__state">
+    <div className="wl-uf09__view wl-uf09__view--lift">
+      <p className="wl-uf09__state wl-type-label">
         {backoff ? en.uf09.liftingBackoff : en.uf09.liftingCaption(state.setIndex + 1, item.sets)}
       </p>
-      <h1 className="wl-uf09__title">{exercise?.name ?? item.exerciseId}</h1>
+      <h1 className="wl-type-page-title wl-uf09__name">{exercise?.name ?? item.exerciseId}</h1>
       {bodyweight ? (
-        <p className="wl-uf09__load">{en.uf09.reps(reps)}</p>
-      ) : prefill.weightKg === null ? (
+        <p className="wl-uf09__load">
+          <HeroLine text={en.uf09.reps(reps)} />
+        </p>
+      ) : load === null ? (
         <div className="wl-uf09__load">
-          <p className="wl-uf09__ask">{en.uf09.setWeight}</p>
-          <p>{en.uf09.reps(reps)}</p>
+          <p className="wl-uf09__ask wl-type-stat">{en.uf09.setWeight}</p>
+          <p>
+            <HeroLine text={en.uf09.reps(reps)} />
+          </p>
         </div>
       ) : (
-        <p className="wl-uf09__load">{en.uf09.load(formatKg(prefill.weightKg, locale), reps)}</p>
+        <p className="wl-uf09__load">
+          <HeroLine text={loadText.slice(0, split)} hero unit />
+          <HeroLine text={loadText.slice(split)} hero />
+        </p>
       )}
       {cue ? (
-        <p className="wl-uf09__cue" data-field="cue">
+        <p className="wl-uf09__cue wl-type-body" data-field="cue">
           {cue}
         </p>
       ) : null}
       <button
         ref={doneRef}
         type="button"
-        className="wl-uf09__primary wl-uf09__done"
+        className="wl-button--session wl-uf09__done"
         data-action="primary"
         data-state={saving ? "saving" : undefined}
         aria-busy={saving ? true : undefined}
@@ -89,8 +123,9 @@ export function CurrentSet({ state, ctx, locale }: ViewProps) {
         onClick={onDone}
       >
         {en.uf09.doneSet}
+        <TickIcon />
       </button>
-      <p className="wl-uf09__status" aria-live="polite">
+      <p className="wl-uf09__status wl-type-label" aria-live="polite">
         {failed ? en.uf09.doneSetError : null}
       </p>
     </div>
