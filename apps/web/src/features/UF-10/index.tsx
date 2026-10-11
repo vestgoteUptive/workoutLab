@@ -15,8 +15,10 @@
 // guarantee is AC-A12's: no `a[href^="/balance"]` exists on a session route.
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router";
+import { attentionLegend } from "@workoutlab/design-tokens";
 import type { Area, AreaBalance, BalanceResult, Contributor } from "@workoutlab/shared";
 import { BodyMap } from "../../components/body-map/index.js";
+import { ArrowIcon } from "../../components/icons/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
 import { formatSetCount } from "../../lib/format/number.js";
@@ -128,21 +130,33 @@ function AreaRow({ area, locale }: { area: AreaBalance; locale: string | undefin
     <li>
       <Link
         to={`/balance/${area.area}`}
-        className="wl-balance__row"
+        className="wl-row wl-balance__row"
         data-part="row"
         data-area={area.area}
         data-attention={area.needsAttention ? "true" : undefined}
         aria-label={en.uf10.rowName(en.bodyMap.areas[area.area], load, target, area.needsAttention)}
       >
         <span className="wl-balance__row-name" aria-hidden="true">
-          {en.bodyMap.areas[area.area]}
+          <span className="wl-type-row-title">{en.bodyMap.areas[area.area]}</span>
+          {area.needsAttention ? (
+            <span
+              className="wl-type-label wl-balance__label wl-balance__label--attention"
+              data-part="attention"
+            >
+              {attentionLegend.label}
+            </span>
+          ) : null}
           {area.recovering ? (
-            <span className="wl-balance__tag" data-part="recovering">
+            <span className="wl-type-label wl-balance__label" data-part="recovering">
               {en.uf10.recovering}
             </span>
           ) : null}
         </span>
-        <span className="wl-balance__row-value" data-part="value" aria-hidden="true">
+        <span
+          className="wl-type-row-title wl-balance__row-value"
+          data-part="value"
+          aria-hidden="true"
+        >
           {en.bodyMap.loadOfTarget(load, target)}
         </span>
         <CoverageBar area={area} />
@@ -162,13 +176,11 @@ export function Balance(props: BalanceScreenProps = {}) {
   const nothingLogged = areas.length > 0 && areas.every((a) => a.load === 0);
 
   return (
-    <div data-screen-id="UF-10.1" className="wl-balance">
+    <div data-screen-id="UF-10.1" data-wl-state="plan" className="wl-page wl-balance">
       <div className="wl-balance__header">
-        <h1 className="wl-balance__window">
-          {result
-            ? en.uf10.window(formatDateRange(result.windowStart, result.windowEnd, locale))
-            : en.screens.balance}
-        </h1>
+        <Link to="/plan" className="wl-button--text wl-balance__plan-link">
+          {en.uf10.planLink}
+        </Link>
         <span className="wl-balance__meta">
           {/* The screen's own time zone, not the device default, so "last synced HH:MM" is
               read in the same zone the 14-day window was computed in. */}
@@ -178,16 +190,22 @@ export function Balance(props: BalanceScreenProps = {}) {
             locale={locale ?? "en-GB"}
             timeZone={timeZone}
           />
-          <Link to="/plan" className="wl-balance__plan-link">
-            {en.uf10.planLink}
-          </Link>
         </span>
       </div>
+
+      <h1 className="wl-balance__title">
+        <span className="wl-type-page-title wl-title--stop">{en.screens.balance}</span>{" "}
+        {result ? (
+          <span className="wl-type-label wl-balance__window">
+            {en.uf10.window(formatDateRange(result.windowStart, result.windowEnd, locale))}
+          </span>
+        ) : null}
+      </h1>
 
       {/* The one C-01 region on this screen, fed `result.areas` — the same array the rows
           below render, so the map and the rows can never disagree (AC-A15). */}
       {noData ? (
-        <p role="status" className="wl-balance__empty">
+        <p role="status" className="wl-type-body wl-balance__empty">
           {en.uf10.noData}
         </p>
       ) : (
@@ -199,7 +217,9 @@ export function Balance(props: BalanceScreenProps = {}) {
         />
       )}
 
-      {nothingLogged ? <p className="wl-balance__empty">{en.uf10.emptyState}</p> : null}
+      {nothingLogged ? (
+        <p className="wl-type-body wl-balance__empty">{en.uf10.emptyState}</p>
+      ) : null}
 
       <ul className="wl-balance__rows" aria-label={en.uf10.areaListName}>
         {areas.map((area) => (
@@ -208,8 +228,9 @@ export function Balance(props: BalanceScreenProps = {}) {
       </ul>
 
       {nothingLogged ? (
-        <Link to="/session/setup" className="wl-balance__cta">
-          {en.uf10.startWorkout}
+        <Link to="/session/setup" className="wl-button--primary wl-balance__cta">
+          <span>{en.uf10.startWorkout}</span>
+          <ArrowIcon />
         </Link>
       ) : null}
     </div>
@@ -257,6 +278,7 @@ function DayStrip({
             key={date}
             className="wl-balance-detail__cell"
             data-part="strip-cell"
+            data-filled={value === 0 ? undefined : "true"}
             data-date={date}
             aria-label={
               value === 0
@@ -283,7 +305,11 @@ function ContributorRow({
   locale: string | undefined;
 }) {
   return (
-    <li data-part="contributor" data-exercise-id={contributor.exerciseId}>
+    <li
+      className="wl-row wl-type-row-title wl-balance-detail__contributor"
+      data-part="contributor"
+      data-exercise-id={contributor.exerciseId}
+    >
       {en.uf10.contributor(
         name,
         formatSetCount(contributor.weightedSets, locale),
@@ -350,10 +376,10 @@ export function BalanceDetail(props: BalanceScreenProps = {}) {
 
   if (!result || !area) {
     return (
-      <div data-screen-id="UF-10.2" className="wl-balance">
-        <h1 className="wl-balance-detail__headline">{en.screens.balanceDetail}</h1>
+      <div data-screen-id="UF-10.2" data-wl-state="plan" className="wl-page wl-balance">
+        <h1 className="wl-type-page-title wl-title--stop">{en.screens.balanceDetail}</h1>
         {!result && balanceSettled ? (
-          <p role="status" className="wl-balance__empty">
+          <p role="status" className="wl-type-body wl-balance__empty">
             {en.uf10.noData}
           </p>
         ) : null}
@@ -365,9 +391,13 @@ export function BalanceDetail(props: BalanceScreenProps = {}) {
   const target = formatSetCount(area.target, locale);
 
   return (
-    <div data-screen-id="UF-10.2" className="wl-balance" data-area={area.area}>
+    <div
+      data-screen-id="UF-10.2"
+      data-wl-state="plan"
+      className="wl-page wl-balance"
+      data-area={area.area}
+    >
       <div className="wl-balance__header">
-        <h1 className="wl-balance-detail__headline">{en.bodyMap.areas[area.area]}</h1>
         <span className="wl-balance__meta">
           <OfflineStatus
             variant="text"
@@ -378,38 +408,46 @@ export function BalanceDetail(props: BalanceScreenProps = {}) {
         </span>
       </div>
 
+      <h1 className="wl-type-page-title wl-title--stop">{en.bodyMap.areas[area.area]}</h1>
+
       <div className="wl-balance-detail__figures">
-        <span className="wl-balance-detail__load" data-part="value">
+        <span className="wl-type-stat" data-part="value">
           {en.bodyMap.loadOfTarget(load, target)}
         </span>
         <span className="wl-balance-detail__deficit" data-part="deficit">
-          <span className="wl-balance__sr-only">{en.uf10.deficitLabel}</span>
           {/* The engine's `deficit`, rounded for display. Never `1 - load / target`. */}
-          {en.uf10.deficit(formatSetCount(deficitPercent(area.deficit), locale))}
+          <span className="wl-type-stat">
+            {en.uf10.deficit(formatSetCount(deficitPercent(area.deficit), locale))}
+          </span>
+          <span className="wl-type-label">{en.uf10.deficitLabel}</span>
         </span>
       </div>
 
       <CoverageBar area={area} />
 
       <div className="wl-balance-detail__facts">
-        <p data-part="target-source">{targetSourceText(area, timeZone, locale)}</p>
-        <p data-part="last-trained">{lastTrainedText(area, result.windowEnd, locale)}</p>
+        <p className="wl-type-row-title" data-part="last-trained">
+          {lastTrainedText(area, result.windowEnd, locale)}
+        </p>
+        <p className="wl-type-label" data-part="target-source">
+          {targetSourceText(area, timeZone, locale)}
+        </p>
       </div>
 
       {area.recovering ? (
         <div className="wl-balance-detail__recovering">
-          <span className="wl-balance__tag" data-part="recovering">
+          <span className="wl-type-label wl-balance__label" data-part="recovering">
             {en.uf10.recovering}
           </span>
-          <p className="wl-balance-detail__recovering-why">{en.uf10.recoveringWhy}</p>
+          <p className="wl-type-label wl-balance-detail__recovering-why">{en.uf10.recoveringWhy}</p>
         </div>
       ) : null}
 
       <DayStrip area={area} windowStart={result.windowStart} locale={locale} />
 
-      <h2 className="wl-balance-detail__heading">{en.uf10.contributorsHeading}</h2>
+      <h2 className="wl-type-label wl-balance-detail__heading">{en.uf10.contributorsHeading}</h2>
       {area.contributors.length === 0 ? (
-        <p className="wl-balance__empty">{en.uf10.contributorsEmpty}</p>
+        <p className="wl-type-body wl-balance__empty">{en.uf10.contributorsEmpty}</p>
       ) : settled ? (
         <ul className="wl-balance-detail__contributors">
           {area.contributors.map((c) => (
@@ -423,8 +461,9 @@ export function BalanceDetail(props: BalanceScreenProps = {}) {
         </ul>
       ) : null}
 
-      <Link to="/session/setup" className="wl-balance__cta">
-        {en.uf10.startWorkout}
+      <Link to="/session/setup" className="wl-button--primary wl-balance__cta">
+        <span>{en.uf10.startWorkout}</span>
+        <ArrowIcon />
       </Link>
     </div>
   );

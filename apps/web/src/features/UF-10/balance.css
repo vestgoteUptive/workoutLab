@@ -1,72 +1,43 @@
-/* UF-10 Balance (T-0307a). Colours and fonts come only from @workoutlab/design-tokens
- * (D-0019): there is no raw hex in this file. The coverage fill and the attention outline
- * come from the engine's `coverageStep`/`needsAttention` — never from `load / target`. The fill
- * is set inline; the attention outline is set in CSS (data-attention). */
-
-.wl-balance {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  font-family: var(--wl-font-body);
-  color: var(--wl-color-text);
-}
+/* UF-10 Balance (T-0307a, restyled T-0611 for the Cobalt plan state, D-0208/D-0210/D-0211).
+ * Both screens carry data-wl-state="plan", so every colour here is a generic --wl-* variable
+ * (no raw hex, no legacy colour token, no px font size). The coverage fill and the
+ * attention outline come from the engine's `coverageStep`/`needsAttention`, never from
+ * `load / target`. The fill is set inline; the attention outline is set in CSS (data-attention).
+ * Page gutter, titles, labels, rows and the primary button come from main.css. Nothing here
+ * animates: the only motion on these screens is the root's state cross-fade. */
 
 .wl-balance__header {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-}
-
-.wl-balance__window {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 20px;
-  line-height: 1.2;
-  color: var(--wl-color-text);
 }
 
 .wl-balance__meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--wl-color-text-muted);
-  font-size: 13px;
+  margin-inline-start: auto;
+  font-size: 0.875rem;
 }
 
-/* NFR-A11Y-2: 44 × 44 CSS px. */
-.wl-balance__plan-link,
-.wl-balance__cta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 10px;
-  text-decoration: none;
+/* The page title carries the window line under it as a label. */
+.wl-balance__title {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.wl-balance__plan-link {
-  color: var(--wl-color-accent);
-}
-
-.wl-balance__cta {
-  background: var(--wl-color-accent);
-  color: var(--wl-color-on-accent);
-  font-weight: 600;
-  align-self: flex-start;
-}
-
-.wl-balance__cta:hover {
-  background: var(--wl-color-accent-hover);
+/* The h1's tight tracking is for the big title only; the label under it reads at normal spacing
+   (inheriting it ran the words together). */
+.wl-balance__window {
+  display: block;
+  letter-spacing: normal;
 }
 
 .wl-balance__empty {
   margin: 0;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
 }
 
 /* --- UF-10.1 the nine rows --- */
@@ -80,116 +51,117 @@
   list-style: none;
 }
 
-/* NFR-A11Y-2 (AC-A14): each row link is at least 44 × 44 CSS px. */
-.wl-balance__row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  grid-template-areas:
-    "name value"
-    "bar  bar";
+/* NFR-A11Y-2 (AC-A14): each row link is at least 44 x 44 CSS px. Name and label on the left, the
+   bar in the middle, "load / target" on the right (`order`, so the DOM keeps name, value, bar).
+   The row wraps instead of switching on a media query: at 200 % text the name alone fills the
+   first line and the bar and value drop under it, so nothing overflows. The row bleeds 10 px
+   past the gutter so the attention outline sits outside the text column, as in the canvas. */
+.wl-balance .wl-row.wl-balance__row {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: flex-start;
   gap: 4px 12px;
   box-sizing: border-box;
   min-width: 44px;
   min-height: 44px;
-  padding: 8px 12px;
+  margin-inline: -10px;
+  padding: 8px 10px;
+  border-block-end: 0;
   border-radius: 10px;
-  background: var(--wl-color-surface);
-  color: var(--wl-color-text);
-  text-decoration: none;
-}
-
-/* D-0003 attention outline: warn, 2 px, never a fill. In CSS (not inline) and BEFORE the
-   :focus-visible rule below, so keyboard focus (WCAG 2.4.7) still repaints it accent. */
-.wl-balance__row[data-attention="true"] {
-  outline: 2px solid var(--wl-color-warn);
-  outline-offset: 0;
-}
-
-.wl-balance__row:hover {
-  background: var(--wl-color-surface-2);
-}
-
-/* Focus ring: accent, never warn — warn means "needs attention". */
-.wl-balance__row:focus-visible,
-.wl-balance__plan-link:focus-visible,
-.wl-balance__cta:focus-visible,
-.wl-balance__contributor:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
 }
 
 .wl-balance__row-name {
-  grid-area: name;
+  flex: 0 0 7rem;
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.wl-balance__label {
+  display: block;
+}
+
+/* D-0003 attention: --wl-attention, 2 px, never a fill. In CSS (not inline) and BEFORE the
+   :focus-visible rule below, so keyboard focus (WCAG 2.4.7) still repaints it --wl-focus. The
+   label text carries the state as words too, so colour is never the only cue. */
+.wl-balance .wl-row.wl-balance__row[data-attention="true"] {
+  outline: 2px solid var(--wl-attention);
+  outline-offset: 0;
+}
+
+/* Three classes deep: `[data-wl-state] .wl-type-label` (muted) would otherwise win. */
+.wl-balance .wl-balance__label.wl-balance__label--attention {
+  color: var(--wl-attention);
   font-weight: 600;
 }
 
+/* Focus ring: --wl-focus, never --wl-attention, which means "needs attention". */
+.wl-balance .wl-row.wl-balance__row:focus-visible,
+.wl-balance__plan-link:focus-visible,
+.wl-balance__cta:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+/* On the hover fill (--wl-raise) the attention label would be 4.1:1, so it reads --wl-ink there;
+   the outline still marks the row. */
+@media (hover: hover) {
+  .wl-balance .wl-row.wl-balance__row:hover .wl-balance__label--attention {
+    color: var(--wl-ink);
+  }
+}
+
 .wl-balance__row-value {
-  grid-area: value;
-  color: var(--wl-color-text-muted);
+  order: 2;
+  flex: 0 0 auto;
+  min-width: 4.5rem;
+  text-align: end;
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .wl-balance__bar {
-  grid-area: bar;
-  height: 6px;
-  border-radius: 3px;
-  background: var(--wl-color-surface-2);
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--wl-raise);
   overflow: hidden;
+}
+
+/* Only inside a row: on UF-10.2 the bar is a direct child of the page column, where a flex-basis
+   would be a height. */
+.wl-balance__row .wl-balance__bar {
+  order: 1;
+  flex: 1 1 5rem;
 }
 
 .wl-balance__bar-fill {
   display: block;
   height: 100%;
-  border-radius: 3px;
-}
-
-.wl-balance__tag {
-  display: inline-block;
-  padding: 1px 8px;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 999px;
-  color: var(--wl-color-text-muted);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  border-radius: 4px;
 }
 
 /* --- UF-10.2 area detail --- */
 
-.wl-balance-detail__headline {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 28px;
-  line-height: 1.1;
-}
-
 .wl-balance-detail__figures {
   display: flex;
-  align-items: baseline;
-  gap: 16px;
+  align-items: flex-start;
+  gap: 28px;
   font-variant-numeric: tabular-nums;
 }
 
-.wl-balance-detail__load {
-  font-size: 24px;
-  font-weight: 700;
-}
-
 .wl-balance-detail__deficit {
-  color: var(--wl-color-text-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .wl-balance-detail__facts {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  margin: 0;
-  color: var(--wl-color-text-muted);
 }
 
 .wl-balance-detail__facts p {
@@ -205,6 +177,8 @@
   list-style: none;
 }
 
+/* Empty days are --wl-raise, days with hard sets are --wl-ink with the on-colour for the number
+   (white on white would vanish). The number is aria-hidden; the cell's own name says it in words. */
 .wl-balance-detail__cell {
   display: flex;
   align-items: center;
@@ -212,33 +186,32 @@
   box-sizing: border-box;
   min-height: 32px;
   border-radius: 4px;
-  background: var(--wl-color-surface-2);
-  color: var(--wl-color-text);
-  font-size: 11px;
+  background: var(--wl-raise);
+  color: var(--wl-ink-on-raise);
+  font-size: 0.75rem;
+  font-weight: 600;
   font-variant-numeric: tabular-nums;
+}
+
+.wl-balance-detail__cell[data-filled="true"] {
+  background: var(--wl-ink);
+  color: var(--wl-on-selected);
 }
 
 .wl-balance-detail__heading {
   margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 16px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--wl-color-text-muted);
 }
 
 .wl-balance-detail__contributors {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wl-balance-detail__contributors li {
-  padding: 6px 0;
-  border-bottom: 1px solid var(--wl-color-line);
+.wl-balance-detail__contributor {
+  min-block-size: 44px;
 }
 
 .wl-balance-detail__recovering {
@@ -249,18 +222,4 @@
 
 .wl-balance-detail__recovering-why {
   margin: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 13px;
-}
-
-.wl-balance__sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }

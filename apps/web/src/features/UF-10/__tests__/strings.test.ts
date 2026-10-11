@@ -140,8 +140,10 @@ describe("AC-A21 no user-facing literal is declared in the feature", () => {
   it("the CSS carries no raw hex: colours and fonts come only from design tokens", async () => {
     const css = readFileSync(resolve(FEATURE_DIR, "balance.css"), "utf8");
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
-    expect(css).toMatch(/var\(--wl-color-/);
-    expect(css).toMatch(/var\(--wl-font-/);
+    // T-0611: the plan state reads the generic variables (D-0211 §2), never a legacy colour.
+    expect(css).toMatch(/var\(--wl-(ink|raise|attention|focus)/);
+    expect(css).not.toMatch(/--wl-color-/);
+    expect(css).not.toMatch(/font-size:\s*[\d.]+px/);
   });
 
   it("no TS/TSX file in the feature carries a raw hex colour either", () => {

@@ -55,11 +55,8 @@ async function open(page: Page, path: string): Promise<void> {
 test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  // `/balance` (`.wl-balance__window`, 20 px) and `/welcome` (`.wl-uf01__title`, 48 px) set their own
-  // h1 size in feature CSS, which a global element rule can't override. Migrating them is a later
-  // per-feature ticket (spec §2 Migration), so the 32-40 px range is not asserted there; family,
-  // weight and case still are. Recorded in the T-0546 log.
-  //
+  // Every screen listed here is still unmigrated (no data-wl-state), so the whole scale applies:
+  // family, weight, case and the 32-40 px range. A migrated screen leaves the list (T-0546 log).
   // T-0601: `/` is a plan-state screen. Its h1 is the state hero (Familjen Grotesk, 700, no
   // uppercase, 96-112 px at 390 px), so the uppercase Big Shoulders pins move to the state scale
   // for it, deliberately.
@@ -82,7 +79,7 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
     expect(got.body.startsWith('"DM Sans"')).toBe(true);
   }
 
-  async function expectScale(page: Page, ownSize = false): Promise<void> {
+  async function expectScale(page: Page): Promise<void> {
     const got = await page.evaluate(() => {
       const h1 = getComputedStyle(document.querySelector("h1")!);
       return {
@@ -96,18 +93,16 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
     expect(got.family.startsWith('"Big Shoulders Display"')).toBe(true);
     expect(got.weight).toBe("800");
     expect(got.transform).toBe("uppercase");
-    if (!ownSize) {
-      expect(got.size).toBeGreaterThanOrEqual(32);
-      expect(got.size).toBeLessThanOrEqual(40);
-    }
+    expect(got.size).toBeGreaterThanOrEqual(32);
+    expect(got.size).toBeLessThanOrEqual(40);
     expect(got.body.startsWith('"DM Sans"')).toBe(true);
   }
 
-  for (const path of ["/", "/progress", "/balance", "/plan"]) {
+  for (const path of ["/", "/progress", "/plan"]) {
     test(`${path} h1 and body follow the scale`, async ({ page }) => {
       await open(page, path);
       if (path === "/") await expectStateHero(page);
-      else await expectScale(page, path === "/balance");
+      else await expectScale(page);
     });
   }
 
