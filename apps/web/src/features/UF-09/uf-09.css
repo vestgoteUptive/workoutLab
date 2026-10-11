@@ -435,10 +435,6 @@
   max-inline-size: 100%;
 }
 
-.wl-uf09[data-wl-state="lift"] .wl-uf09__hero.wl-type-hero-number {
-  word-spacing: -0.25em;
-}
-
 .wl-uf09[data-wl-state="lift"] .wl-uf09__unit {
   font-size: 2.25rem;
   letter-spacing: 0;
