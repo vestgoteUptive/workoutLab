@@ -43,7 +43,7 @@ H-31 and D-0225: the owner supplied body figure v2. The handoff is in `Design-do
 ## Paths you may change
 - `apps/web/src/components/body-figure/**`, `apps/web/src/components/body-map/**` (lane)
 - `Design-docs/docs/design/assets/body-figure/**`, `Design-docs/docs/design/components/c-01-body-map.md` (orchestrator grant: the owner-supplied asset)
-- `packages/design-tokens/test/body-figure-cobalt.test.ts`, `packages/design-tokens/test/docs.test.ts` (only the figure assertions that pin the old art)
+- `packages/design-tokens/test/body-figure.test.ts`, `packages/design-tokens/test/body-figure-cobalt.test.ts`, `packages/design-tokens/test/docs.test.ts` (only the figure assertions that pin the old art)
 - `tests/e2e/body-map-figure.spec.ts`, `tests/e2e/uf-04-figure.spec.ts`, `tests/e2e/body-figure-v2.spec.ts` (new)
 - `docs/tickets/T-0660-body-figure-v2-ship.md` (log)
 
