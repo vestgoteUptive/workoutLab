@@ -1300,3 +1300,257 @@ test.describe("T-0596 UF-09.2 and UF-09.7 with the deep fill (390 x 844)", () =>
     await expectDeepFill(page, "UF-09.7", /^Timed set · 1 of 1$/);
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// T-0597 (D-0208, D-0211 §5; UF-09.1, UF-09.5, UF-09.6): the rest state with the lift-over-rest
+// fill. Colours are read from tokens.json. The fill is pinned (no transition) to read the pixels
+// at 0, 50 and 100 %.
+// ---------------------------------------------------------------------------------------------
+const restTokens = JSON.parse(
+  readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
+) as { color: { rest: Record<string, string> } };
+const REST = restTokens.color.rest;
+
+const SECOND_ITEM = {
+  exerciseId: "barbell-row",
+  isMain: false,
+  sets: 3,
+  repsMin: 8,
+  repsMax: 12,
+  durationS: null,
+  costS: 555,
+  backoff: null,
+  prefill: { weightKg: 60, reps: 8, durationS: null, kind: "add_rep" },
+  reasons: [],
+};
+const TWO_ITEMS_WARMUP_PLAN = {
+  ...PLAN,
+  items: [{ ...PLAN.items[0]!, sets: 1 }, SECOND_ITEM],
+};
+
+/** Seeds `plan` and opens its session on UF-09.1 (no tap). */
+async function openReady(page: Page, plan: object): Promise<string> {
+  await page.goto("/");
+  await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+  const id = randomUUID();
+  await seedSessionRow(page, id, plan);
+  await page.goto(`/session/${id}`);
+  await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+  return id;
+}
+
+/** UF-09.1 → Skip warm-up → UF-09.3 → Done set → Save → UF-09.5. */
+async function openRest(page: Page, plan: object = TWO_ITEMS_WARMUP_PLAN): Promise<string> {
+  const id = await openReady(page, plan);
+  await page.getByRole("button", { name: "Skip warm-up" }).click();
+  await page.getByRole("button", { name: "Done set" }).click();
+  await page.getByRole("button", { name: "Save" }).click();
+  await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible();
+  return id;
+}
+
+/** UF-09.5 → Skip rest → UF-09.6 (the plan's second item). */
+async function openNext(page: Page): Promise<void> {
+  await openRest(page);
+  await page.getByRole("button", { name: "Skip rest" }).click();
+  await expect(page.locator('[data-screen-id="UF-09.6"]')).toBeVisible();
+}
+
+/** Pins the fill with a stylesheet `!important`, which the host's once-a-second inline style
+ *  cannot overwrite (an inline `--wl-drain` would be reset by the next render). */
+async function pinRestFill(page: Page, percent: number): Promise<void> {
+  await page.evaluate((p) => {
+    let el = document.getElementById("wl-pin-fill");
+    if (!el) {
+      el = document.createElement("style");
+      el.id = "wl-pin-fill";
+      document.head.appendChild(el);
+    }
+    el.textContent = `[data-screen-id] { --wl-drain: ${p}% !important; transition: none !important; }`;
+  }, percent);
+}
+
+/** UF-09.1's 5 s countdown is long enough to leave the screen mid-check: stretch it to an hour. */
+async function slowGetReady(page: Page, id: string): Promise<void> {
+  await page.evaluate((key) => {
+    const state = JSON.parse(window.localStorage.getItem(key)!) as {
+      timer: { durationS: number };
+    };
+    state.timer.durationS = 3600;
+    window.localStorage.setItem(key, JSON.stringify(state));
+  }, `wl-focus:${id}`);
+  await page.reload();
+  await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+}
+
+/** AC1, AC2, AC3, AC5, AC6 for one of the three rest-state screens. */
+async function expectRestFill(
+  page: Page,
+  id: string,
+  caption: string,
+  checkScroll = true,
+): Promise<void> {
+  const root = page.locator(`[data-screen-id="${id}"]`);
+  await expect(root).toHaveAttribute("data-wl-state", "rest");
+  await expect(root).toHaveClass(/wl-drain/);
+  await expect(root).not.toHaveClass(/wl-drain--deep/);
+  await expect(root.locator(".wl-uf09__ring, [data-warn]")).toHaveCount(0);
+  await expect(root.getByText(caption, { exact: true })).toBeVisible();
+  await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+  await expect(page.locator("meta[name=theme-color]")).toHaveAttribute(
+    "content",
+    new RegExp(`^${REST.bg}$`, "i"),
+  );
+  // AC6: the step is 1 s linear, instant under reduced motion; both are read as computed.
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await expect(root).toHaveCSS("transition-duration", "1s");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(root).toHaveCSS("transition-duration", "0s");
+  // AC1: the top pixel is rest.bg at 0 % and lift.bg at 100 %; the bottom is lift.bg at 100 %.
+  await pinRestFill(page, 0);
+  expect(await edgePixels(page)).toEqual([toRgb(REST.bg!), toRgb(REST.bg!)]);
+  await pinRestFill(page, 100);
+  expect(await edgePixels(page)).toEqual([toRgb(LIFT.bg!), toRgb(LIFT.bg!)]);
+  // AC5: white on both ends of the fill, lift.on-action on the white buttons, axe clean at 0,
+  // 50 and 100 %.
+  const white = (bg: string) => (luminance(REST.ink!) + 0.05) / (luminance(bg) + 0.05);
+  expect(Number(white(REST.bg!).toFixed(1))).toBeGreaterThanOrEqual(4.9);
+  expect(Number(white(LIFT.bg!).toFixed(1))).toBeGreaterThanOrEqual(4.8);
+  for (const p of [0, 50, 100]) {
+    await pinRestFill(page, p);
+    const colours = await root.evaluate((el) =>
+      Array.from(el.querySelectorAll("*"))
+        .filter((e) =>
+          Array.from(e.childNodes).some((n) => n.nodeType === 3 && (n.textContent ?? "").trim()),
+        )
+        .filter((e) => e.getBoundingClientRect().width > 0 && !e.closest(".wl-uf09__announcer"))
+        .map((e) => ({
+          onButton: e.closest(".wl-button--session") !== null,
+          color: getComputedStyle(e).color,
+        })),
+    );
+    expect(colours.length).toBeGreaterThan(3);
+    for (const c of colours) {
+      expect(c.color).toBe(toRgb(c.onButton ? LIFT["on-action"]! : REST.ink!));
+    }
+    const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(axe.violations, `axe at ${p}%`).toEqual([]);
+  }
+  expect(await paintedColours(page)).not.toContain(toRgb(LEGACY_LIFT_RED));
+  // AC7: every control is at least 44 x 44.
+  const small = await root.evaluate((el) =>
+    Array.from(el.querySelectorAll("button, a"))
+      .map((b) => ({ n: b.textContent, r: b.getBoundingClientRect() }))
+      .filter((b) => b.r.width > 0 && (b.r.width < 44 || b.r.height < 44))
+      .map((b) => b.n),
+  );
+  expect(small).toEqual([]);
+  if (checkScroll) await noHorizontalScroll(page);
+}
+
+test.describe("T-0597 UF-09.1, UF-09.5 and UF-09.6 with the rest fill (390 x 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("UF-09.1: countdown role, buttons, caption; canvas frame", async ({ page }, testInfo) => {
+    // The real 5 s countdown: everything here runs in its first second, the canvas shot first.
+    await openReady(page, TWO_ITEMS_WARMUP_PLAN);
+    const root = page.locator('[data-screen-id="UF-09.1"]');
+    await expect(page.getByRole("timer")).toHaveClass(/wl-type-countdown/);
+    await expect(page.getByRole("button", { name: "Start now" })).toHaveClass(/wl-button--session/);
+    await expect(page.getByRole("button", { name: "Skip warm-up" })).toHaveClass(
+      /wl-button--session-outline/,
+    );
+    await expect(page.getByRole("button", { name: "Start now" })).toBeFocused();
+    await expect(root.getByRole("heading", { level: 1, name: "Get ready" })).toBeVisible();
+    await noHorizontalScroll(page);
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-4",
+      frame: "Get ready",
+      name: "uf-09-1",
+    });
+  });
+
+  test("UF-09.1: state and fill, contrast, motion (the countdown stretched to an hour)", async ({
+    page,
+  }) => {
+    const id = await openReady(page, TWO_ITEMS_WARMUP_PLAN);
+    await slowGetReady(page, id);
+    await expectRestFill(page, "UF-09.1", "Get ready", false);
+  });
+
+  test("UF-09.5: state, hero clock, Skip rest on the fill, -15 s / +15 s outline; canvas frame", async ({
+    page,
+  }, testInfo) => {
+    await openRest(page);
+    await expect(page.getByRole("timer")).toHaveClass(/wl-type-hero-number/);
+    const skip = page.getByRole("button", { name: "Skip rest" });
+    await expect(skip).toHaveClass(/wl-button--session/);
+    await expect(skip).toHaveCSS("color", toRgb(LIFT["on-action"]!));
+    await expect(skip).toHaveCSS("background-color", toRgb(LIFT.action!));
+    for (const name of ["−15 s", "+15 s"]) {
+      await expect(page.getByRole("button", { name })).toHaveClass(/wl-button--session-outline/);
+    }
+    await expect(skip).toBeFocused();
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-3",
+      frame: "In session · rest",
+      name: "uf-09-5",
+    });
+    await expectRestFill(page, "UF-09.5", "Rest");
+  });
+
+  test("UF-09.6: state, section-role name, I'm ready primary; canvas frame", async ({
+    page,
+  }, testInfo) => {
+    await openNext(page);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveClass(/wl-type-section/);
+    await expect(page.getByRole("timer")).toHaveClass(/wl-type-hero-number/);
+    await expect(page.getByRole("button", { name: "I'm ready" })).toHaveClass(/wl-button--session/);
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-4",
+      frame: "Next exercise",
+      name: "uf-09-6",
+    });
+    await expectRestFill(page, "UF-09.6", "Next exercise");
+  });
+
+  test("AC3: after Skip rest UF-09.3 is lift with theme-color lift.bg; the cross-fade is 200 ms, 0 s under reduced motion", async ({
+    page,
+  }) => {
+    await openRest(page, TWO_SETS_PLAN);
+    await page.getByRole("button", { name: "Skip rest" }).click();
+    const root = page.locator('[data-screen-id="UF-09.3"]');
+    await expect(root).toHaveAttribute("data-wl-state", "lift");
+    await expect(page.locator("meta[name=theme-color]")).toHaveAttribute(
+      "content",
+      new RegExp(`^${LIFT.bg}$`, "i"),
+    );
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await expect(root).toHaveCSS("transition-duration", "0.2s");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(root).toHaveCSS("transition-duration", "0s");
+  });
+
+  test("AC8: a reload mid-rest resumes the fill at the persisted elapsed time (about 50 %)", async ({
+    page,
+  }) => {
+    const id = await openRest(page);
+    // The rest started now, 120 s long; move its start back by 60 s and reload.
+    await page.evaluate((key) => {
+      const state = JSON.parse(window.localStorage.getItem(key)!) as {
+        timer: { startedAtMs: number };
+      };
+      state.timer.startedAtMs -= 60_000;
+      window.localStorage.setItem(key, JSON.stringify(state));
+    }, `wl-focus:${id}`);
+    await page.reload();
+    const root = page.locator('[data-screen-id="UF-09.5"]');
+    await expect(root).toBeVisible({ timeout: 10_000 });
+    const percent = await root.evaluate((el) =>
+      parseFloat((el as HTMLElement).style.getPropertyValue("--wl-drain")),
+    );
+    expect(percent).toBeGreaterThanOrEqual(50);
+    expect(percent).toBeLessThan(60);
+    await expect(page.getByRole("timer")).toHaveText(/^(1:00|0:5\d)$/);
+  });
+});

@@ -95,7 +95,7 @@ describe("T-0596 AC1 the state and the fill", () => {
     const hold = { ...initialFocusState(S1, P1, NOW), ...HOLD };
     expect(fillPercent(hold, ctx, NOW + 3000)).toBe(0);
     expect(fillPercent(hold, ctx, NOW + 53_000)).toBe(100);
-    expect(fillPercent({ ...hold, phase: "rest" }, ctx, NOW)).toBeNull();
+    expect(fillPercent({ ...hold, phase: "timeCheck" }, ctx, NOW)).toBeNull();
   });
 
   it("a view without the fill (UF-09.3) has no drain class and no --wl-drain", async () => {

@@ -1,8 +1,7 @@
 // @vitest-environment node
 // T-0596 AC5, AC6 (D-0019, D-0211 §5): the CSS guard for the deep fill on UF-09.2 and UF-09.7.
 // The fill's step is 1 s linear and instant under reduced motion; the section has no px font size
-// and no raw colour; every rule is scoped under the lift state; the legacy ring rules stay for
-// UF-09.5, which still draws one.
+// and no raw colour; every rule is scoped under the lift state; the ring rules are gone (T-0597).
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -63,7 +62,8 @@ describe("T-0596 AC6 the changed CSS", () => {
     expect(r?.body).toMatch(/background-color:\s*var\(--wl-bg\)/);
   });
 
-  it("the ring rules UF-09.5 still draws are kept", () => {
-    expect(css).toContain(".wl-uf09__ring-fill");
+  it("the ring rules are gone: UF-09.5 (T-0597) was the last view that drew a ring", () => {
+    expect(css).not.toContain(".wl-uf09__ring");
+    expect(css).not.toContain("data-warn");
   });
 });
