@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-02.1]
 decisions: [D-0219, D-0217, D-0068, D-0015, D-0034]
 deps: []
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1, D-0219). Flow: wl-build-engine (agent engine-dev). About ½ day. Spec: docs/specs/cobalt-mock-behaviour.md §3.2. Display-only: no existing engine output changes. -->
 
@@ -50,7 +50,4 @@ Checklist (D-0197 §7):
 Tests for every AC pass · `pnpm -w typecheck lint test` green (forced: contract change) · simulated 14-day history test green · commit messages start with `T-0635` and cite UF-02.1.
 
 ## Build / accept log
-- 2026-10-11 engine-dev: start clean at 46d3fe1. Added `src/records.ts` (`records`, `recordKey`, `RecordSet`), exported from `index.ts`; engine-rules §15 with R15-E1…E17, a Required-tests line and a Traceability row. Per the H-36 amendment the key is Epley e1RM (compared as `w × (30 + reps)`, so equal e1RMs tie exactly); bodyweight ranks by reps below any loaded set; timed by `durationS`. Because 102.5 × 6 (e1RM 123) no longer beats 100 × 8 (126.7), the E1/E5/E6/E10/AC6 numbers were re-derived (102.5 × 8 etc.); E13–E15 add the H-36 cases (incl. 80 × 10 beats 90 × 3).
-  - AC1–AC8, AC10 → `test/rule-15-records.test.ts` (one case per example); AC9 → `rule-15-records-histories.test.ts` (four simulated histories give `[]`, a progressive balanced history gives a fixed 7-record list); AC11 → same file (suggest identical with/without a records() call; import-graph reachability for session/balance/timecheck/swaps/prefill/apply-swap/remove-item) and `rule-15-suggest-without-records.test.ts` (records mocked to throw, suggest still runs).
-  - Planted faults (backup + cp restore): heaviest-then-reps key → 3 red (E13, E14, E16); ties count as records → 7 red; `completedAt ≤` baseline → survived, added same-instant other-session test → 1 red; session.ts importing records.ts → 4 red.
-  - Gate: forced `-w typecheck lint test` exit 0 (19/19), `test:repo-checks` 0, `format:check` 0, check-all 0.
+Archived in `docs/tickets/log/T-0635.md` (D-0157).
