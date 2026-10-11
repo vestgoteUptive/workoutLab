@@ -11,7 +11,8 @@
 // T-0224 adds rule 12.1 applySwap (D-0093); T-0214 makes the rule 7.2 rep slots follow the
 // profile goal (D-0061 §1, D-0095); T-0226 makes rule 12 fitsBudget count the back-off set
 // applySwap re-adds (D-0105); T-0516 adds rule 6.1 avoidAreas and T-0519 rule 12.2 removeItem
-// (D-0191). T-0534 adds the rule 0.1 excludedOutAreas (D-0199 §3).
+// (D-0191). T-0534 adds the rule 0.1 excludedOutAreas (D-0199 §3). T-0635 adds rule 15 records
+// (D-0219, display-only).
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
 export { localDate, windowOf, addDays, dayDiff, WINDOW_DAYS } from "./time.js";
@@ -28,3 +29,4 @@ export { floorInc, DEFAULT_INCREMENT_KG, BACKOFF_FACTOR, LOW_TRIM_FROM_SETS, LOW
 export { prefill, plannedDurationS, floor5, REENTRY_GAP_DAYS, HOLD_GAP_DAYS, TIMED_STEP_S, TIMED_MAX_S, TIMED_MIN_S, } from "./prefill.js";
 export { timeCheck, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.js";
 export { evaluateCheckin, checkinSessions, periodStatus, PERIOD_DAYS, UNDER_FACTOR_X10, OVER_FACTOR_X10, RHYTHM_FLOOR, RHYTHM_CEILING, COMPARED_PERIODS, } from "./checkin.js";
+export { records, recordKey } from "./records.js";
