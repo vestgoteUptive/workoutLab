@@ -170,6 +170,9 @@ const PROFILE_ROW = {
   priority_areas: [] as string[],
   onboarded_at: "2026-09-01T00:00:00.000Z",
   plan_changed_at: "2026-09-01T00:00:00.000Z",
+  // T-0631 (D-0218): the column defaults, as the real row has them.
+  bar_kg: 20,
+  plates_kg: [25, 20, 15, 10, 5, 2.5, 1.25],
 };
 
 /** The default row `mockProfilePresent` answers with, exported so a spec can assert on it. */

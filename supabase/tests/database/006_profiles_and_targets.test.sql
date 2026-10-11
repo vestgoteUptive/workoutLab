@@ -2,7 +2,7 @@
 -- UF-01.4, UF-01.5, UF-11.3): AC17 onboarded_at write-once, AC18 onboarding timing,
 -- AC19 plan fields, AC20 plan_changed_at, AC21 server-stamped targets.
 begin;
-select plan(38);
+select plan(43);
 
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
@@ -107,6 +107,17 @@ select throws_ok($$update public.area_targets set sets_per_14d = 0 where area_id
 select throws_ok($$insert into public.area_targets (area_id, sets_per_14d) values ('back', 12)$$, '23505', null, 'a second (A, back) row gives 23505');
 select lives_ok($$insert into public.area_targets (area_id, sets_per_14d, source) values ('chest', 12, 'manual')$$, 'source manual succeeds');
 reset role;
+
+-- T-0631 (D-0218): bar_kg and plates_kg defaults and checks ----------------------------------------
+select col_has_default('public', 'profiles', 'bar_kg', 'profiles.bar_kg has a default');
+select col_has_default('public', 'profiles', 'plates_kg', 'profiles.plates_kg has a default');
+select results_eq($$select bar_kg, plates_kg from public.profiles order by user_id$$,
+  $$values (20::numeric, '{25,20,15,10,5,2.5,1.25}'::numeric[]), (20::numeric, '{25,20,15,10,5,2.5,1.25}'::numeric[])$$,
+  'profiles inserted without bar_kg/plates_kg read the defaults');
+select ok(exists (select 1 from pg_catalog.pg_constraint where conrelid = 'public.profiles'::regclass
+  and conname = 'profiles_bar_kg_range' and contype = 'c'), 'check profiles_bar_kg_range exists');
+select ok(exists (select 1 from pg_catalog.pg_constraint where conrelid = 'public.profiles'::regclass
+  and conname = 'profiles_plates_kg_valid' and contype = 'c'), 'check profiles_plates_kg_valid exists');
 
 -- Final state, as postgres.
 select is((select count(*)::int from public.profiles), 2, 'both profiles exist');

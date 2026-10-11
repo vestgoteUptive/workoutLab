@@ -26,6 +26,19 @@ export declare function toAreaTarget(row: AreaTargetRow): AreaTarget;
 export declare function toAreaTargets(rows: readonly AreaTargetRow[]): AreaTarget[];
 /** `profiles` → EngineProfile. `plan_changed_at` is the engine's `planUpdatedAt` (D-0035, D-0041 §1). */
 export declare function toEngineProfile(row: ProfileRow): EngineProfile;
+/** UF-09.3 plate loading inputs (D-0218 §4). Not part of EngineProfile: the engine never reads them. */
+export type Barbell = {
+    barKg: number;
+    platesKg: number[];
+};
+/**
+ * `profiles.bar_kg` + `profiles.plates_kg` → Barbell (D-0218 §4): numbers, not strings, and plate
+ * sizes largest first. The DB stores the sizes in any order; an empty list means bar only.
+ */
+export declare function toBarbell(row: {
+    bar_kg: ProfileRow["bar_kg"] | string;
+    plates_kg: readonly (ProfileRow["plates_kg"][number] | string)[];
+}): Barbell;
 /**
  * `plan_checkins` → PlanCheckin. The engine reads only `answeredAt` (D-0041 §2). A null
  * `completed_prev` (one-period evaluation, D-0070 §6) stays null.

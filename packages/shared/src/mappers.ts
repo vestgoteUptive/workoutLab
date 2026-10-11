@@ -139,6 +139,31 @@ export function toEngineProfile(row: ProfileRow): EngineProfile {
   };
 }
 
+/** UF-09.3 plate loading inputs (D-0218 §4). Not part of EngineProfile: the engine never reads them. */
+export type Barbell = { barKg: number; platesKg: number[] };
+
+/** A numeric column read as a number. PostgREST may send `numeric` as a string ("15.00"). */
+function toKg(value: number | string, column: string): number {
+  const n = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(n))
+    throw new RangeError(`${column}: unexpected value ${JSON.stringify(value)}`);
+  return n;
+}
+
+/**
+ * `profiles.bar_kg` + `profiles.plates_kg` → Barbell (D-0218 §4): numbers, not strings, and plate
+ * sizes largest first. The DB stores the sizes in any order; an empty list means bar only.
+ */
+export function toBarbell(row: {
+  bar_kg: ProfileRow["bar_kg"] | string;
+  plates_kg: readonly (ProfileRow["plates_kg"][number] | string)[];
+}): Barbell {
+  return {
+    barKg: toKg(row.bar_kg, "profiles.bar_kg"),
+    platesKg: row.plates_kg.map((p) => toKg(p, "profiles.plates_kg")).sort((a, b) => b - a),
+  };
+}
+
 /**
  * `plan_checkins` → PlanCheckin. The engine reads only `answeredAt` (D-0041 §2). A null
  * `completed_prev` (one-period evaluation, D-0070 §6) stays null.

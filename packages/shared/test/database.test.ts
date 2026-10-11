@@ -72,6 +72,7 @@ function rowOf(kind: "Tables" | "Views", name: string): Map<string, string> {
 
 const TS_TYPE: Array<[RegExp, string]> = [
   [/^text\[\]$/, "string[]"],
+  [/^numeric(\(\d+,\d+\))?\[\]$/, "number[]"],
   [/^(text|uuid|timestamptz)$/, "string"],
   [/^(smallint|integer|numeric(\(\d+,\d+\))?)$/, "number"],
   [/^boolean$/, "boolean"],

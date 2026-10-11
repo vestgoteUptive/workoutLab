@@ -16,4 +16,4 @@ export const AREAS = [
     "calves",
 ];
 export { parseSessionPlan, } from "./session-plan.js";
-export { toAreaTarget, toAreaTargets, toEngineProfile, toHistorySet, toLibraryExercise, toPlanCheckin, } from "./mappers.js";
+export { toAreaTarget, toAreaTargets, toBarbell, toEngineProfile, toHistorySet, toLibraryExercise, toPlanCheckin, } from "./mappers.js";
