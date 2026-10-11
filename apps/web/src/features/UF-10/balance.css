@@ -123,13 +123,18 @@
 }
 
 .wl-balance__bar {
-  order: 1;
-  flex: 1 1 5rem;
   display: block;
   height: 8px;
   border-radius: 4px;
   background: var(--wl-raise);
   overflow: hidden;
+}
+
+/* Only inside a row: on UF-10.2 the bar is a direct child of the page column, where a flex-basis
+   would be a height. */
+.wl-balance__row .wl-balance__bar {
+  order: 1;
+  flex: 1 1 5rem;
 }
 
 .wl-balance__bar-fill {

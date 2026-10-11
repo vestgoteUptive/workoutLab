@@ -412,6 +412,18 @@ test.describe("T-0611 plan state", () => {
     for (const f of regionFills) expect(f).toBe(rgbOf(PLAN.ink!));
   });
 
+  test("UF-10.2 the coverage bar keeps its 8 px height and sits above Start workout", async ({
+    page,
+  }) => {
+    await openBalance(page, "mixed", "/balance/hamstrings");
+    const bar = page.locator('[data-screen-id="UF-10.2"] [data-part="bar"]');
+    await expect(bar).toBeVisible();
+    const b = (await bar.boundingBox())!;
+    const cta = (await page.locator(".wl-balance__cta").boundingBox())!;
+    expect(b.height).toBeLessThanOrEqual(8);
+    expect(b.y + b.height).toBeLessThanOrEqual(cta.y);
+  });
+
   test("AC4 strip: days with hard sets are plan.ink, empty days plan.raise, both keep their words", async ({
     page,
   }) => {

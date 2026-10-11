@@ -55,11 +55,9 @@ async function open(page: Page, path: string): Promise<void> {
 test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  // `/welcome` (`.wl-uf01__title`, 48 px) sets its own
-  // h1 size in feature CSS, which a global element rule can't override. Migrating them is a later
-  // per-feature ticket (spec §2 Migration), so the 32-40 px range is not asserted there; family,
-  // weight and case still are. Recorded in the T-0546 log.
-  async function expectScale(page: Page, ownSize = false): Promise<void> {
+  // Every screen listed here is still unmigrated (no data-wl-state), so the whole scale applies:
+  // family, weight, case and the 32-40 px range. A migrated screen leaves the list (T-0546 log).
+  async function expectScale(page: Page): Promise<void> {
     const got = await page.evaluate(() => {
       const h1 = getComputedStyle(document.querySelector("h1")!);
       return {
@@ -73,10 +71,8 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
     expect(got.family.startsWith('"Big Shoulders Display"')).toBe(true);
     expect(got.weight).toBe("800");
     expect(got.transform).toBe("uppercase");
-    if (!ownSize) {
-      expect(got.size).toBeGreaterThanOrEqual(32);
-      expect(got.size).toBeLessThanOrEqual(40);
-    }
+    expect(got.size).toBeGreaterThanOrEqual(32);
+    expect(got.size).toBeLessThanOrEqual(40);
     expect(got.body.startsWith('"DM Sans"')).toBe(true);
   }
 
