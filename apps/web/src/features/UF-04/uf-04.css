@@ -1,156 +1,8 @@
 /* UF-04 styling. Colours and fonts come only from @workoutlab/design-tokens (D-0019).
-   UF-04.1 Browse and UF-04.3 Compare are Cobalt plan screens (T-0607): their rules live under
-   `.wl-uf04-browse` and `.wl-uf04-compare`, below. The rules above them (`.wl-uf04`, `__row`,
-   `__list`, `__link`, `__pills`, `__tag`, `__sr`, the figure card, the actions) are the Chalk &
-   Iron look that UF-04.2 detail still uses until T-0608; do not remove them before then. */
-.wl-uf04 {
-  padding: 16px;
-  color: var(--wl-color-text);
-}
-
-.wl-uf04 h1 {
-  font-family: var(--wl-font-display);
-}
-
-.wl-uf04__row:focus-visible,
-.wl-uf04__link:focus-visible,
-.wl-uf04-howto__close:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-.wl-uf04__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.wl-uf04__row {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  box-sizing: border-box;
-  min-block-size: 44px;
-  padding: 12px 8px;
-  color: var(--wl-color-text);
-  text-decoration: none;
-  border-block-end: 1px solid var(--wl-color-line);
-}
-
-.wl-uf04__pills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 8px 0;
-  padding: 0;
-  list-style: none;
-}
-
-.wl-uf04__pill {
-  padding: 4px 12px;
-  border-radius: 14px;
-  color: var(--wl-color-text-muted);
-  background: var(--wl-color-surface-2);
-}
-
-.wl-uf04__pill[data-weight="primary"] {
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-}
-
-.wl-uf04__link {
-  display: inline-flex;
-  align-items: center;
-  min-block-size: 44px;
-  color: var(--wl-color-accent);
-}
-
-.wl-uf04__attribution,
-.wl-uf04__attribution a {
-  color: var(--wl-color-text-muted);
-}
-
-/* UF-04.2 figure card (T-0558, D-0207 §3): the figure is a picture; the lists are its legend. */
-.wl-uf04__figure-card {
-  box-sizing: border-box;
-  margin-block: 12px;
-  padding: 16px;
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 16px;
-}
-
-.wl-uf04__figure-card .wl-fig {
-  margin-inline: auto;
-  max-inline-size: 100%;
-}
-
-.wl-uf04__legend {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-block-start: 12px;
-}
-
-.wl-uf04__legend-label {
-  color: var(--wl-color-text-muted);
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.wl-uf04__swatch {
-  box-sizing: border-box;
-  flex: none;
-  inline-size: 12px;
-  block-size: 12px;
-  border-radius: 3px;
-}
-
-.wl-uf04__swatch--primary {
-  background: var(--wl-color-accent);
-}
-
-.wl-uf04__swatch--secondary {
-  background: repeating-linear-gradient(
-    45deg,
-    var(--wl-color-accent) 0 1.5px,
-    var(--wl-color-surface-2) 1.5px 5px
-  );
-  border: 1px solid var(--wl-color-text-muted);
-}
-
-@media (forced-colors: active) {
-  .wl-uf04__swatch--primary {
-    background: CanvasText;
-  }
-  .wl-uf04__swatch--secondary {
-    background: repeating-linear-gradient(45deg, CanvasText 0 1.5px, Canvas 1.5px 5px);
-    border-color: CanvasText;
-  }
-}
-
-/* T-0541 (D-0199 §10): "Not suggested" tag (text, never colour only) and the exclude control. */
-.wl-uf04__tag {
-  display: inline-block;
-  margin: 0;
-  padding: 2px 8px;
-  color: var(--wl-color-text-muted);
-  background: var(--wl-color-surface-2);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 999px;
-  font-family: var(--wl-font-body);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.wl-uf04__tag--large {
-  font-size: 13px;
-}
-
+   UF-04.1 Browse, UF-04.2 Detail and UF-04.3 Compare are Cobalt plan screens (T-0607, T-0608):
+   every rule lives under its own screen root (`.wl-uf04-browse`, `.wl-uf04-detail`,
+   `.wl-uf04-compare`). The how-to sheet and the numbered steps are in how-to.css.
+   `.wl-uf04__sr` is the visually hidden text shared by Browse and Detail. */
 .wl-uf04__sr {
   position: absolute;
   inline-size: 1px;
@@ -158,98 +10,6 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-.wl-uf04__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-block: 16px;
-}
-
-.wl-uf04__action-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: flex-start;
-}
-
-.wl-uf04__favorite {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-block-size: 48px;
-  min-inline-size: 112px;
-  padding: 0 16px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 999px;
-  font-family: var(--wl-font-body);
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.wl-uf04__favorite[aria-pressed="true"] {
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-  border-color: var(--wl-color-accent);
-}
-
-.wl-uf04__favorite[aria-disabled="true"] {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.wl-uf04__favorite:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-.wl-uf04__exclude {
-  flex: 1 1 200px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  min-inline-size: 0;
-}
-
-.wl-uf04__exclude-button {
-  min-block-size: 48px;
-}
-
-.wl-uf04__exclude-button[aria-disabled="true"] {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.wl-uf04__exclude-button:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-.wl-uf04__hint,
-.wl-uf04__fail {
-  margin: 0;
-  font-size: 13px;
-}
-
-.wl-uf04__hint {
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf04__fail {
-  color: var(--wl-color-text);
-}
-
-/* D-0202 §8: at 320 px the two controls wrap to full-width rows, Favorite first. */
-@media (max-width: 359px) {
-  .wl-uf04__favorite {
-    flex: 1 1 100%;
-  }
 }
 
 /* ---- UF-04.1 Browse and UF-04.3 Compare in the plan state (T-0607, D-0208, D-0210, D-0211) ----
@@ -394,4 +154,201 @@
     margin-inline-start: 0;
     background: none;
   }
+}
+
+/* ---- UF-04.2 Detail in the plan state (T-0608, D-0208, D-0225) ----
+ * Colours are the generic --wl-* variables; the page gutter, titles, rows and buttons come from
+ * main.css. The figure sits beside the Primary and Secondary lists and wraps under them when the
+ * line is too narrow. The only motion is the root's own state cross-fade. */
+.wl-uf04-detail__tagline {
+  margin: 0;
+}
+
+.wl-uf04-detail__figure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.wl-uf04-detail__figure .wl-fig {
+  flex: none;
+  max-inline-size: 100%;
+}
+
+.wl-uf04-detail__areas {
+  flex: 1 1 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-inline-size: 0;
+}
+
+.wl-uf04-detail__group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-uf04-detail__legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wl-uf04-detail__swatch {
+  box-sizing: border-box;
+  flex: none;
+  inline-size: 12px;
+  block-size: 12px;
+  border-radius: 3px;
+}
+
+.wl-uf04-detail__swatch--primary {
+  background: var(--wl-ink);
+}
+
+.wl-uf04-detail__swatch--secondary {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--wl-ink) 0 1.5px,
+    color-mix(in srgb, var(--wl-ink) 16%, transparent) 1.5px 5px
+  );
+}
+
+.wl-uf04-detail__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A filled pill is primary, an outline pill is secondary; the words and the label say which. */
+.wl-uf04-detail__pill {
+  box-sizing: border-box;
+  padding: 4px 12px;
+  border: 1px solid var(--wl-line);
+  border-radius: var(--wl-radius-pill);
+  font-size: 0.9375rem;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--wl-ink);
+}
+
+.wl-uf04-detail__pill[data-weight="primary"] {
+  color: var(--wl-on-selected);
+  background: var(--wl-selected);
+  border-color: var(--wl-selected);
+}
+
+.wl-uf04-detail__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf04-detail__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-uf04-detail__section > h2 {
+  margin: 0;
+}
+
+.wl-uf04-detail__list .wl-row {
+  justify-content: flex-start;
+}
+
+.wl-uf04-detail__attribution,
+.wl-uf04-detail__attribution a {
+  color: var(--wl-ink-muted);
+}
+
+.wl-uf04-detail__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wl-uf04-detail__action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Side by side while 10 rem each fit, one full-width row each below (D-0202 §8). */
+.wl-uf04-detail__action-row > * {
+  flex: 1 1 10rem;
+  min-inline-size: 0;
+}
+
+.wl-uf04-detail__exclude {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.wl-uf04-detail__star {
+  flex: none;
+  margin-inline-end: 8px;
+}
+
+/* A pressed Favorite is filled (selected) and its star is filled too, so it is never colour alone. */
+.wl-uf04-detail__actions .wl-button--secondary[aria-pressed="true"] {
+  color: var(--wl-on-selected);
+  background: var(--wl-selected);
+  border-color: var(--wl-selected);
+}
+
+.wl-uf04-detail__actions .wl-button--secondary[aria-disabled="true"][aria-pressed="true"] {
+  color: var(--wl-on-selected);
+  background: var(--wl-selected);
+  opacity: 0.7;
+}
+
+.wl-uf04-detail__hint,
+.wl-uf04-detail__fail {
+  margin: 0;
+}
+
+/* An outline chip, never a fill: --wl-ink on --wl-bg (8.6). */
+.wl-uf04-detail__tag {
+  box-sizing: border-box;
+  align-self: flex-start;
+  margin: 0;
+  padding: 2px 10px;
+  color: var(--wl-ink);
+  border: 1px solid var(--wl-line);
+  border-radius: var(--wl-radius-pill);
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  font-weight: 600;
+}
+
+.wl-uf04-detail__history {
+  align-self: flex-start;
+  padding-inline: 0;
+}
+
+@media (forced-colors: active) {
+  .wl-uf04-detail__swatch--primary {
+    background: CanvasText;
+  }
+  .wl-uf04-detail__swatch--secondary {
+    background: repeating-linear-gradient(45deg, CanvasText 0 1.5px, Canvas 1.5px 5px);
+    border: 1px solid CanvasText;
+  }
+  .wl-uf04-detail__pill[data-weight="primary"] {
+    border-color: CanvasText;
+  }
+}
+
+.wl-uf04-detail__actions .wl-button--secondary {
+  justify-content: center;
 }

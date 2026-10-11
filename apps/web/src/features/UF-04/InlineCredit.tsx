@@ -21,7 +21,7 @@ export function InlineCredit({ detail }: { detail: ExerciseDetail }) {
       : detail.license,
   );
   return (
-    <p data-field="inline-credit" className="wl-uf04-howto__credit">
+    <p data-field="inline-credit" className="wl-uf04-howto__credit wl-type-label">
       {en.uf04.attributionPrefix}
       {parts.join(en.uf04.dot)}
     </p>

@@ -52,15 +52,15 @@ export function ExcludeControl({
   }
 
   return (
-    <div className="wl-uf04__exclude">
+    <div className="wl-uf04-detail__exclude">
       {excluded ? (
-        <p data-field="state-tag" className="wl-uf04__tag wl-uf04__tag--large">
+        <p data-field="state-tag" className="wl-uf04-detail__tag">
           {en.uf04.notSuggested}
         </p>
       ) : null}
       <button
         type="button"
-        className="wl-button--secondary wl-uf04__exclude-button"
+        className="wl-button--secondary"
         aria-label={excluded ? en.uf04.suggestAgainName(name) : en.uf04.dontSuggestName(name)}
         aria-disabled={disabled ? "true" : undefined}
         aria-describedby={online ? undefined : offlineId}
@@ -69,12 +69,12 @@ export function ExcludeControl({
         {pending ? en.uf04.saving : excluded ? en.uf04.suggestAgain : en.uf04.dontSuggest}
       </button>
       {online ? null : (
-        <p id={offlineId} className="wl-uf04__hint">
+        <p id={offlineId} className="wl-uf04-detail__hint wl-type-label">
           {en.excluded.connectToChange}
         </p>
       )}
       {failed ? (
-        <p role="alert" className="wl-uf04__fail">
+        <p role="alert" className="wl-uf04-detail__fail wl-type-label">
           {en.excluded.saveFailed}
         </p>
       ) : null}

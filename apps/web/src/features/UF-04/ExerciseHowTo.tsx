@@ -68,23 +68,28 @@ export function ExerciseHowTo({ exerciseId, onClose }: ExerciseHowToProps) {
     data?.exercise === undefined ? en.uf04.howToTitle : en.uf04.howToNamed(data.exercise.name);
 
   return (
-    <div className="wl-uf04-howto">
+    <div className="wl-uf04-howto" data-wl-state="plan">
+      <div className="wl-sheet-scrim" aria-hidden="true" />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="wl-uf04-howto__panel"
+        data-wl-state="plan"
+        className="wl-sheet wl-uf04-howto__sheet"
       >
-        <h2 id={titleId}>{title}</h2>
+        <div className="wl-sheet__grabber" aria-hidden="true" />
+        <h2 id={titleId} className="wl-type-section">
+          {title}
+        </h2>
         {data === undefined ? null : data.detail === null ? (
-          <p>{en.uf04.detailMissing}</p>
+          <p className="wl-type-body">{en.uf04.detailMissing}</p>
         ) : (
           <>
             <HowToBody detail={data.detail} />
             <InlineCredit detail={data.detail} />
           </>
         )}
-        <button type="button" className="wl-uf04-howto__close" ref={closeRef} onClick={onClose}>
+        <button type="button" className="wl-button--secondary" ref={closeRef} onClick={onClose}>
           {en.uf04.close}
         </button>
       </div>

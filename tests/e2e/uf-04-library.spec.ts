@@ -13,7 +13,9 @@ import { resolve as resolvePath } from "node:path";
 import { expect, test } from "./fixtures/guarded-test.js";
 import { compareWithCanvas } from "./helpers/canvas-compare.js";
 import {
+  FAKE_USER_ID,
   injectSession,
+  mockProfilePresent,
   mockSupabaseAuth,
   mockSupabaseData,
   mockSupabaseRest,
@@ -164,9 +166,12 @@ test.describe("T-0607 plan state", () => {
         rgbOf(PLAN.bg),
       );
     }
-    // The detail screen is still the unmigrated look until T-0608.
+    // The detail screen is a plan root too (T-0608).
     await page.goto("/library/back-squat");
-    await expect(page.locator('[data-screen-id="UF-04.2"]')).not.toHaveAttribute("data-wl-state");
+    await expect(page.locator('[data-screen-id="UF-04.2"]')).toHaveAttribute(
+      "data-wl-state",
+      "plan",
+    );
   });
 
   test("AC2 the search has a 1 px plan.ink-muted boundary; Clear is 44 x 44 and empties it", async ({
@@ -367,15 +372,15 @@ test.describe("T-0607 plan state", () => {
     expect(reduced.moving).toEqual([]);
   });
 
-  test("AC4 a row layout rule does not leak: the detail variant rows keep the legacy look", async ({
+  test("AC4 a row layout rule does not leak: the detail variant rows are plain .wl-row flex rows", async ({
     page,
   }) => {
     await page.goto("/library/back-squat");
     await expect(page.locator('[data-screen-id="UF-04.2"] h1')).toBeVisible();
-    const row = page.locator(".wl-uf04__row").first();
+    const row = page.locator('[data-screen-id="UF-04.2"] a.wl-row').first();
     await expect(row).toBeVisible();
     expect(await row.evaluate((el) => getComputedStyle(el).display)).toBe("flex");
-    expect(await row.evaluate((el) => el.classList.contains("wl-row"))).toBe(false);
+    expect(await row.evaluate((el) => el.classList.contains("wl-uf04-browse__row"))).toBe(false);
   });
 });
 
@@ -400,4 +405,236 @@ test.describe("T-0607 AC6 canvas compare at 390 x 844", () => {
       }
     });
   }
+});
+
+// T-0608 (D-0208, D-0225): UF-04.2 in the plan state and the how-to sheet.
+const DETAIL = "/library/back-squat";
+const luminance = (rgb: string): number => {
+  const [r, g, b] = (rgb.match(/[\d.]+/g) ?? []).slice(0, 3).map((v) => {
+    const c = Number(v) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  }) as [number, number, number];
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const contrast = (a: string, b: string): number => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi! + 0.05) / (lo! + 0.05);
+};
+
+async function readyDetail(page: Page): Promise<void> {
+  await page.goto(DETAIL);
+  await expect(page.getByText("Sit down between your heels")).toBeVisible();
+  await expect(page.locator("svg.wl-fig").first()).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor))
+    .toBe(rgbOf(PLAN.bg));
+}
+
+/** The UF-08 host: re-claims the routes with the targets and profile the setup flow needs. */
+async function openHowToFromSetup(page: Page): Promise<string> {
+  const row = { ...profile, user_id: FAKE_USER_ID };
+  const AREAS = [
+    "chest",
+    "back",
+    "shoulders",
+    "arms",
+    "core",
+    "glutes",
+    "quads",
+    "hamstrings",
+    "calves",
+  ];
+  await mockSupabaseData(page, {
+    sets: [],
+    exercises,
+    exerciseAreas,
+    exerciseVariants,
+    areaTargets: AREAS.map((area_id) => ({
+      area_id,
+      sets_per_14d: 12,
+      source: "default",
+      updated_at: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+    })),
+    profile: row,
+  });
+  await mockProfilePresent(page, row);
+  await page.goto("/session/setup");
+  await page.getByRole("button", { name: "30 minutes" }).click();
+  await page.getByRole("button", { name: "Suggest my workout" }).click();
+  const opener = page.getByRole("button", { name: /^How to do / }).first();
+  const name = (await opener.getAttribute("aria-label"))!.replace(/^How to do /, "");
+  await opener.click();
+  await expect(page.getByRole("dialog", { name: `How to: ${name}` })).toBeVisible();
+  await expect(page.getByRole("dialog").locator("ol.wl-uf04-steps > li").first()).toBeVisible();
+  return name;
+}
+
+test.describe("T-0608 UF-04.2 plan state", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("AC1 and AC4: plan root, the figure beside the lists, controls 44 px, axe online and offline", async ({
+    page,
+    context,
+  }) => {
+    await readyDetail(page);
+    const root = page.locator('[data-screen-id="UF-04.2"]');
+    await expect(root).toHaveAttribute("data-wl-state", "plan");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute("content", PLAN.bg);
+    const fig = (await page.locator("svg.wl-fig").first().boundingBox())!;
+    const primary = (await page.getByRole("list", { name: "Primary areas" }).boundingBox())!;
+    expect(primary.x).toBeGreaterThanOrEqual(fig.x + fig.width);
+    expect(primary.y).toBeLessThan(fig.y + fig.height);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+      390,
+    );
+    for (const loc of [
+      page.getByRole("button", { name: "Favorite Back squat" }),
+      page.getByRole("button", { name: /Don.t suggest this, Back squat/ }),
+      page.getByRole("link", { name: "My history" }),
+      page.getByRole("link", { name: "Front squat" }).first(),
+    ]) {
+      if ((await loc.count()) === 0) continue;
+      await loc.scrollIntoViewIfNeeded();
+      const b = (await loc.boundingBox())!;
+      expect(b.width).toBeGreaterThanOrEqual(44);
+      expect(b.height).toBeGreaterThanOrEqual(44);
+    }
+    const run = async () =>
+      (await new AxeBuilder({ page }).analyze()).violations.filter(
+        (v) => v.impact === "serious" || v.impact === "critical" || v.id === "color-contrast",
+      );
+    expect(await run()).toEqual([]);
+    await context.setOffline(true);
+    expect(await run()).toEqual([]);
+  });
+
+  test("AC3 controls are secondary buttons; offline they are aria-disabled with the line", async ({
+    page,
+    context,
+  }) => {
+    await readyDetail(page);
+    const fav = page.getByRole("button", { name: "Favorite Back squat" });
+    const ex = page.getByRole("button", { name: /Don.t suggest this, Back squat/ });
+    for (const b of [fav, ex]) {
+      await expect(b).toHaveClass(/wl-button--secondary/);
+      await expect(b).not.toHaveClass(/wl-button--primary/);
+      await expect(b).not.toHaveAttribute("aria-disabled", "true");
+    }
+    await context.setOffline(true);
+    for (const b of [fav, ex]) await expect(b).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByText(/connect/i).first()).toBeVisible();
+    const color = await fav.evaluate((el) => getComputedStyle(el).color);
+    expect(contrast(color, rgbOf(PLAN.bg))).toBeGreaterThanOrEqual(4.5);
+    await fav.focus();
+    expect(await fav.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe("solid");
+  });
+
+  test("the steps are numbered rows and every text pair keeps 4.5:1", async ({ page }) => {
+    await readyDetail(page);
+    const step = page.locator("ol.wl-uf04-steps > li").first();
+    expect(await step.evaluate((el) => getComputedStyle(el, "::before").content)).toBe(
+      "counter(wl-step)",
+    );
+    expect(await step.evaluate((el) => getComputedStyle(el).counterIncrement)).toBe("wl-step 1");
+    const pairs = await page.evaluate(() => {
+      const out: Array<[string, string, string]> = [];
+      for (const el of document.querySelectorAll(
+        '[data-screen-id="UF-04.2"] :is(h1, h2, p, li, a, button, span)',
+      )) {
+        if (
+          !el.childNodes.length ||
+          ![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent?.trim())
+        )
+          continue;
+        let bg = "";
+        for (let n: Element | null = el; n !== null && bg === ""; n = n.parentElement) {
+          const c = getComputedStyle(n).backgroundColor;
+          if (c !== "rgba(0, 0, 0, 0)") bg = c;
+        }
+        out.push([
+          el.tagName,
+          getComputedStyle(el).color,
+          bg || getComputedStyle(document.documentElement).backgroundColor,
+        ]);
+      }
+      return out;
+    });
+    expect(pairs.length).toBeGreaterThan(8);
+    for (const [tag, fg, bg] of pairs) {
+      expect(contrast(fg, bg), `${tag} ${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  test("AC1 and AC4: the how-to sheet from UF-08 is a plan sheet, 28 px radii, no transition, no leak", async ({
+    page,
+  }, testInfo) => {
+    await openHowToFromSetup(page);
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toHaveAttribute("data-wl-state", "plan");
+    const css = await dialog.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        bg: cs.backgroundColor,
+        r: [cs.borderTopLeftRadius, cs.borderTopRightRadius, cs.borderBottomLeftRadius],
+        t: cs.transitionDuration,
+        top: el.getBoundingClientRect().top,
+        scrollW: el.scrollWidth <= el.clientWidth,
+      };
+    });
+    expect(css.bg).toBe(rgbOf(PLAN.bg));
+    expect(css.r).toEqual(["28px", "28px", "0px"]);
+    expect(css.t).toBe("0s");
+    expect(css.top).toBe(150);
+    expect(css.scrollW).toBe(true);
+    const scrim = await page.locator(".wl-sheet-scrim").evaluate((el) => ({
+      bg: getComputedStyle(el).backgroundColor,
+      t: getComputedStyle(el).transitionDuration,
+    }));
+    expect(scrim.t).toBe("0s");
+    expect(scrim.bg).not.toBe("rgba(0, 0, 0, 0)");
+    const serious = (await new AxeBuilder({ page }).analyze()).violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical" || v.id === "color-contrast",
+    );
+    expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.html).join(" | ")}`)).toEqual([]);
+    const close = dialog.getByRole("button", { name: /close/i });
+    await expect(close).toBeFocused();
+    const b = (await close.boundingBox())!;
+    expect(b.height).toBeGreaterThanOrEqual(44);
+    await page.keyboard.press("Tab");
+    await expect(close).toBeFocused();
+    expect(await close.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe("solid");
+    // The steps keep no chevron and stay in the sheet column.
+    expect(
+      await dialog
+        .locator("ol.wl-uf04-steps > li")
+        .first()
+        .evaluate((el) => getComputedStyle(el, "::after").content),
+    ).toBe("none");
+    await page.screenshot({ path: testInfo.outputPath("uf04-2-howto-from-uf08.png") });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await dialog.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe("0s");
+  });
+
+  test("AC6 canvas compare: Exercise detail, and an app-only shot of the open how-to", async ({
+    page,
+  }, testInfo) => {
+    await readyDetail(page);
+    await page.waitForLoadState("networkidle");
+    const result = await compareWithCanvas(page, testInfo, {
+      turn: "turn-5",
+      frame: "Exercise detail",
+      name: "uf04-2-detail",
+    });
+    if (process.env.WL_CANVAS_COMPARE === "1" && !result.skipped) {
+      expect(result.files.app).toBeTruthy();
+      expect(result.files.canvas).toBeTruthy();
+      await page.screenshot({
+        path: testInfo.outputPath("cobalt", "uf04-2-detail-full.png"),
+        fullPage: true,
+      });
+      await openHowToFromSetup(page);
+      await page.screenshot({ path: testInfo.outputPath("cobalt", "uf04-2-howto-app-only.png") });
+    }
+  });
 });
