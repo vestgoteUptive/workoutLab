@@ -72,3 +72,5 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-01-onboard
 - **Gate (exit codes):** `-w typecheck lint test --concurrency=1` 0 (4305 web tests); `-w test:repo-checks` 0; `-w format:check` 0; `node .github/scripts/check-all.mjs` 0. Full e2e: 456 passed, 8 failed. Five (uf-08-setup ×2, uf-09-ready, uf-11-account ×2) were load timeouts on the shared machine and pass on a rerun of those three files (55 passed). Three are real and outside this lane: `cobalt-state.spec.ts` AC3 (two tests) and `visual-foundation.spec.ts` AC3 `/welcome` use `/welcome` as their "screen with no state" page, and it now has `data-wl-state="plan"`. Follow-up for web-shell: move those three to a page that is still legacy (UF-01.5 `/account` until T-0606, or an injected fixture).
 
 - 2026-10-09 orchestrator: code review asked for step titles to follow the README (56 px, the shared `[data-wl-state] :where(h1)` rule), so the 3rem/0.95 override in uf-01.css was removed. Review otherwise approved: legacy screens unchanged, aria-disabled, captions on-selected, no added steps.
+
+- 2026-10-11 orchestrator: accepted after the title fix.
