@@ -453,3 +453,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0608 | UF-04.2 + how-to sheet, cobalt figure | web-feature:UF-04 | T-0607, T-0615 | done | wl-build-web |
 | T-0603 | UF-03.1/.2 lift + drain | web-feature:UF-03 | T-0593, T-0594, T-0591 | done | wl-build-web |
 | T-0609 | UF-06.1/.2 in plan | web-feature:UF-06 | T-0593, T-0591 | done | wl-build-web |
+| T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | done | wl-build-web |
