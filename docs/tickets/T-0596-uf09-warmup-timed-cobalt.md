@@ -48,3 +48,12 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-09 e2e specs green · commit messages start with `T-0596` and cite UF-09.2/UF-09.7.
 
 ## Build / accept log
+
+- Build (frontend-dev): host.tsx puts data-wl-state=lift and `wl-drain wl-drain--deep` plus `--wl-drain` (from new `drain-fill.ts`, `drainPercent` of elapsed/total, one step per host re-render) on the UF-09.2/.7 root; warmup.tsx and timed-set.tsx lose Ring (ring.tsx deleted; rest.tsx keeps its own ring CSS); hero number / countdown roles; session-outline controls, Log hold session primary. CSS section `T-0596` in uf-09.css; T-0595's root rule now sets `background-color` so the gradient shows.
+- AC map: AC1 t0596.fill (0/25/50 %, 20 %, pure 100 %) + e2e pixels (top = bg-deep at 0 %, lift.bg at 100 %); AC2 t0596.fill no ring + existing cue tests; AC3 t0596.fill + e2e captions; AC4 t0596.fill tokens (>= 6.1 / 4.8) + e2e white text and axe at 0/50/100 %; AC5 t0596.css + e2e 1s/0s both; AC6 t0596.css + e2e >= 64 px; AC7 t0596.fill pause freezes and resumes + existing suites; AC8 canvas pairs below.
+- Existing tests changed (ring gone by design): t0304g.motion (UF-09.2/.7 moved out of the ring list), timed-set.test (Pause timer class), t0595.css.test (background-color).
+- Planted faults (all red, restored from backup): elapsed vs remaining, pause ignored, reduce block removed, ring class back.
+- Red on unfixed: first e2e run top pixel was lift.bg (legacy .wl-uf09 background beat .wl-drain--deep) -> scoped gradient rule added.
+- Gate: typecheck/lint/test, test:repo-checks, format:check, check-all, full e2e (511) all exit 0.
+- Canvas verdicts: Warm-up and Timed set match layout, fill and hero scale. Deviations: warm-up has Restart and Next move only (no Pause in the machine; Next is outline per ticket); clock tracking -0.02em (the -0.06em role made the colon touch the 4); the sample data (name, cue, caption total) differs.
+- Rework: drain reset also when the fill returns from null (Pause -> Resume); tests assert data-drain-reset true on Restart and Resume; motion test stubs reduce true and false. Planted: old line (Resume test red), reset=false (Restart and Resume red). Gate, repo-checks, format, check-all, UF-09 e2e exit 0.

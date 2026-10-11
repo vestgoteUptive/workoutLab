@@ -1141,3 +1141,162 @@ test.describe("T-0595 AC5 the progress chrome at 320 x 640", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// T-0596 (D-0208, D-0211 §5; UF-09.2 Warm-up, UF-09.7 Timed set): the lift state with the deep
+// fill (lift.bg-deep over lift.bg) instead of the ring. Colours come from tokens.json.
+// ---------------------------------------------------------------------------------------------
+const FILL_PLAN = {
+  ...TIMED_PLAN,
+  items: [{ ...TIMED_PLAN.items[0]!, prefill: { ...TIMED_PLAN.items[0]!.prefill, durationS: 60 } }],
+};
+
+/** Opens the seeded session online and taps Start now: lands on UF-09.2. */
+async function openWarmup(page: Page): Promise<void> {
+  await page.goto("/");
+  await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+  const sid = randomUUID();
+  await seedSessionRow(page, sid, FILL_PLAN);
+  await page.goto(`/session/${sid}`);
+  await page.getByRole("button", { name: "Start now" }).click();
+  await expect(page.locator('[data-screen-id="UF-09.2"]')).toBeVisible();
+}
+
+async function openTimed(page: Page): Promise<void> {
+  await openWarmup(page);
+  await page.getByRole("button", { name: "Next move" }).click();
+  await page.getByRole("button", { name: "I'm ready" }).click();
+  await expect(page.locator('[data-screen-id="UF-09.7"]')).toBeVisible();
+}
+
+/** The top and bottom pixel (middle column) of a screenshot. */
+async function edgePixels(page: Page): Promise<[string, string]> {
+  const png = await page.screenshot();
+  return page.evaluate(async (b64) => {
+    const img = new Image();
+    img.src = `data:image/png;base64,${b64}`;
+    await img.decode();
+    const cv = document.createElement("canvas");
+    cv.width = img.width;
+    cv.height = img.height;
+    const g = cv.getContext("2d")!;
+    g.drawImage(img, 0, 0);
+    const px = (y: number) => {
+      const d = g.getImageData(Math.floor(img.width / 2), y, 1, 1).data;
+      return `rgb(${d[0]}, ${d[1]}, ${d[2]})`;
+    };
+    return [px(0), px(img.height - 1)] as [string, string];
+  }, png.toString("base64"));
+}
+
+/** Pins the fill at `percent` (no transition, so the pixel is final at once). */
+async function pinFill(page: Page, screenId: string, percent: number): Promise<void> {
+  await page.locator(`[data-screen-id="${screenId}"]`).evaluate((el, p) => {
+    (el as HTMLElement).style.transition = "none";
+    (el as HTMLElement).style.setProperty("--wl-drain", `${p}%`);
+  }, percent);
+}
+
+function luminance(hex: string): number {
+  const ch = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * ch(1) + 0.7152 * ch(3) + 0.0722 * ch(5);
+}
+
+/** AC1, AC2, AC4, AC5, AC6 for one of the two deep-fill screens. */
+async function expectDeepFill(page: Page, id: string, caption: RegExp): Promise<void> {
+  const root = page.locator(`[data-screen-id="${id}"]`);
+  await expect(root).toHaveAttribute("data-wl-state", "lift");
+  await expect(root).toHaveClass(/wl-drain wl-drain--deep/);
+  await expect(root.locator(".wl-uf09__ring")).toHaveCount(0);
+  await expect(root.getByText(caption)).toBeVisible();
+  await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+  // AC1: the top pixel is lift.bg-deep at 0 % and lift.bg at 100 %; the bottom is lift.bg.
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await pinFill(page, id, 0);
+  expect((await edgePixels(page))[0]).toBe(toRgb(LIFT["bg-deep"]!));
+  await pinFill(page, id, 100);
+  expect(await edgePixels(page)).toEqual([toRgb(LIFT.bg!), toRgb(LIFT.bg!)]);
+  // AC4: white text on both fills, at 0 %, 50 % and 100 %; axe finds nothing.
+  const need = (bg: string) => (luminance(LIFT.ink!) + 0.05) / (luminance(bg) + 0.05);
+  expect(Number(need(LIFT["bg-deep"]!).toFixed(1))).toBeGreaterThanOrEqual(6.1);
+  expect(Number(need(LIFT.bg!).toFixed(1))).toBeGreaterThanOrEqual(4.8);
+  for (const p of [0, 50, 100]) {
+    await pinFill(page, id, p);
+    const colours = await root.evaluate((el) =>
+      Array.from(el.querySelectorAll("*"))
+        .filter((e) =>
+          Array.from(e.childNodes).some((n) => n.nodeType === 3 && (n.textContent ?? "").trim()),
+        )
+        .filter((e) => e.getBoundingClientRect().width > 0 && !e.closest(".wl-uf09__announcer"))
+        .map((e) => getComputedStyle(e).color),
+    );
+    expect(colours.length).toBeGreaterThan(3);
+    for (const c of colours) expect(c).toBe(toRgb(LIFT.ink!));
+    const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(axe.violations, `axe at ${p}%`).toEqual([]);
+  }
+  expect(await paintedColours(page)).not.toContain(toRgb(LEGACY_LIFT_RED));
+  await noHorizontalScroll(page);
+}
+
+test.describe("T-0596 UF-09.2 and UF-09.7 with the deep fill (390 x 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("UF-09.2: state, fill, hero time, session outline controls; canvas frame", async ({
+    page,
+  }, testInfo) => {
+    await openWarmup(page);
+    // AC5: the step is 1 s linear on the root, 0 s under reduced motion (both values).
+    const root = page.locator('[data-screen-id="UF-09.2"]');
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await expect(root).toHaveCSS("transition-duration", "1s");
+    await expect(root).toHaveCSS("transition-property", "--wl-drain");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(root).toHaveCSS("transition-duration", "0s");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    // AC6: the time is the hero number; the controls are the 64 px session outline.
+    const size = await page
+      .getByRole("timer")
+      .evaluate((el) => [getComputedStyle(el).fontSize, getComputedStyle(el).fontWeight]);
+    expect(size).toEqual(["150px", "800"]);
+    for (const name of ["Restart", "Next move"]) {
+      const b = page.getByRole("button", { name });
+      await expect(b).toHaveClass(/wl-button--session-outline/);
+      const box = (await b.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(64);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+    }
+    await expect(page.getByRole("button", { name: "Next move" })).toBeFocused();
+    await compareWithCanvas(page, testInfo, { turn: "turn-4", frame: "Warm-up", name: "uf-09-2" });
+    await expectDeepFill(page, "UF-09.2", /^Warm-up · move 1 of 1$/);
+  });
+
+  test("UF-09.7: the position countdown is the countdown role, the hold the hero number", async ({
+    page,
+  }, testInfo) => {
+    await openTimed(page);
+    await expect(page.getByText("Get in position")).toBeVisible();
+    const timer = page.getByRole("timer");
+    await expect(timer).toHaveClass(/wl-type-countdown/);
+    expect(await timer.evaluate((el) => getComputedStyle(el).fontSize)).toBe("300px");
+    const pause = page.getByRole("button", { name: "Pause timer" });
+    await expect(pause).toHaveClass(/wl-button--session-outline/);
+    expect((await pause.boundingBox())!.height).toBeGreaterThanOrEqual(64);
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-4",
+      frame: "Timed set",
+      name: "uf-09-7",
+    });
+    await expect(page.getByText("Hold", { exact: true })).toBeVisible({ timeout: 8000 });
+    await expect(timer).toHaveClass(/wl-type-hero-number/);
+    const root = page.locator('[data-screen-id="UF-09.7"]');
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await expect(root).toHaveCSS("transition-duration", "1s");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(root).toHaveCSS("transition-duration", "0s");
+    await expectDeepFill(page, "UF-09.7", /^Timed set · 1 of 1$/);
+  });
+});
