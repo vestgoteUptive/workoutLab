@@ -3,7 +3,6 @@
 // at 0 the host dispatches `WARMUP_NEXT`. Warm-up moves are never logged as sets (D-0004).
 import { useEffect, useRef } from "react";
 import { en } from "../../lib/i18n/en.js";
-import { Ring } from "./ring.js";
 import { formatClock, remainingS } from "./timer.js";
 import { useCue } from "./use-cue.js";
 import type { ViewProps } from "./views.js";
@@ -16,44 +15,43 @@ export function Warmup({ state, ctx, nowMs, send }: ViewProps) {
   const cue = useCue(move.exerciseId);
   const nextRef = useRef<HTMLButtonElement>(null);
   const remaining = state.timer ? remainingS(state.timer, nowMs) : 0;
-  const total = state.timer?.durationS ?? move.durationS;
 
   useEffect(() => {
     nextRef.current?.focus();
   }, []);
 
   return (
-    <div className="wl-uf09__view">
-      <p className="wl-uf09__state" data-field="move-index">
+    <div className="wl-uf09__view wl-uf09__view--timer">
+      <p className="wl-uf09__state wl-type-label" data-field="move-index">
         {en.uf09.warmupCaption(state.warmupIndex + 1, moves.length)}
       </p>
-      <h1 className="wl-uf09__title">{name}</h1>
-      <Ring fraction={total > 0 ? remaining / total : 0} warn={false}>
-        <p className="wl-uf09__ring-time" role="timer">
-          {formatClock(remaining)}
-        </p>
-      </Ring>
+      <h1 className="wl-type-page-title wl-uf09__name">{name}</h1>
+      <p className="wl-type-hero-number wl-uf09__count" role="timer">
+        {formatClock(remaining)}
+      </p>
       {cue ? (
-        <p className="wl-uf09__cue" data-field="cue">
+        <p className="wl-uf09__cue wl-type-body" data-field="cue">
           {cue}
         </p>
       ) : null}
-      <button
-        type="button"
-        className="wl-uf09__secondary wl-uf09__wide"
-        onClick={() => send({ type: "WARMUP_RESTART" })}
-      >
-        {en.uf09.restartMove}
-      </button>
-      <button
-        ref={nextRef}
-        type="button"
-        className="wl-uf09__primary wl-uf09__wide"
-        data-action="primary"
-        onClick={() => send({ type: "WARMUP_NEXT" })}
-      >
-        {en.uf09.nextMove}
-      </button>
+      <div className="wl-uf09__actions wl-uf09__actions--pair">
+        <button
+          type="button"
+          className="wl-button--session-outline"
+          onClick={() => send({ type: "WARMUP_RESTART" })}
+        >
+          {en.uf09.restartMove}
+        </button>
+        <button
+          ref={nextRef}
+          type="button"
+          className="wl-button--session-outline"
+          data-action="primary"
+          onClick={() => send({ type: "WARMUP_NEXT" })}
+        >
+          {en.uf09.nextMove}
+        </button>
+      </div>
     </div>
   );
 }

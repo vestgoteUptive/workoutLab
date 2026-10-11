@@ -1,8 +1,9 @@
-// T-0304g AC-5 (reduced motion, NFR-A11Y-5, D-0119 §10, D-0155 §1–§2). The ring fill on UF-09.2
-// (warm-up) and UF-09.7 (timed, both `ring.tsx`) and UF-09.5 (rest's own ring) has an inline
+// T-0304g AC-5 (reduced motion, NFR-A11Y-5, D-0119 §10, D-0155 §1–§2). The ring fill on UF-09.5
+// (rest's own ring) has an inline
 // `style.transition` of "none" under reduce or with no `matchMedia`, else
-// "stroke-dashoffset 1s linear". The `role="timer"` text still changes each second on all three,
-// and on UF-09.6, which has no ring (D-0155 §1).
+// "stroke-dashoffset 1s linear". The `role="timer"` text still changes each second on it and on
+// UF-09.6, which has no ring (D-0155 §1). T-0596: UF-09.2 and UF-09.7 lost their ring for the deep
+// fill (the CSS `prefers-reduced-motion` block, asserted in t0596.*); here they only keep counting.
 import { act, cleanup } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
@@ -50,8 +51,11 @@ const tick = () =>
   });
 
 const RINGS: Array<[string, Partial<FocusState>]> = [
-  ["UF-09.2", { phase: "warmup", warmupStartedAtMs: NOW, timer: running(40) }],
   ["UF-09.5", { phase: "rest", timer: running(120), loggedSets: loggedSets(0, 1) }],
+];
+
+const FILLS: Array<[string, Partial<FocusState>]> = [
+  ["UF-09.2", { phase: "warmup", warmupStartedAtMs: NOW, timer: running(40) }],
   // Past the 3 s Get in position, into the hold.
   [
     "UF-09.7",
@@ -118,5 +122,21 @@ describe("AC-5 no matchMedia counts as reduce (D-0155 §2)", () => {
     const errors = vi.spyOn(console, "error");
     await check(id, seed, "none");
     expect(errors).not.toHaveBeenCalled();
+  });
+});
+
+describe("T-0596 UF-09.2 and UF-09.7 have no ring; the timer text still counts", () => {
+  it.each(FILLS)("%s, reduce true and false", async (id, seed) => {
+    stubMatchMedia(true);
+    seedFocus(NOW, seed);
+    await renderSession({ locale: "en-GB" });
+    expect(screenId()).toBe(id);
+    expect(ringTransition()).toBeNull();
+    const seen = [timerText()];
+    for (let i = 0; i < 3; i += 1) {
+      tick();
+      seen.push(timerText());
+    }
+    expect(new Set(seen).size).toBe(4);
   });
 });
