@@ -52,6 +52,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/visual-foundation.spec.ts` (orchestrator grant: the AC5 focus-mode size pins and `openFocusMode` still wait for UF-09.1's old `.wl-uf09__timer`; repoint them to the new roles, as T-0595 did for UF-09.3)
 - `apps/web/src/features/UF-09/**` (lane)
 - `tests/e2e/uf-09-focus.spec.ts`, `tests/e2e/uf-09-ready.spec.ts` (listed extras)
 - `docs/tickets/T-0597-uf09-drain-screens-cobalt.md` (log only)
