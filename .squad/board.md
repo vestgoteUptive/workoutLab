@@ -177,10 +177,9 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
 | T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | todo | wl-build-web |
-| T-0603 | UF-03.1/.2 lift + drain | web-feature:UF-03 | T-0593, T-0594, T-0591 | todo | wl-build-web |
+| T-0603 | UF-03.1/.2 lift + drain | web-feature:UF-03 | T-0593, T-0594, T-0591 | doing | wl-build-web |
 | T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | todo | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
-| T-0608 | UF-04.2 + how-to sheet, cobalt figure | web-feature:UF-04 | T-0607, T-0615 | todo | wl-build-web |
 | T-0609 | UF-06.1/.2 in plan | web-feature:UF-06 | T-0593, T-0591 | todo | wl-build-web |
 | T-0610 | UF-07.1 in plan | web-feature:UF-07 | T-0593, T-0591 | todo | wl-build-web |
 | T-0612 | UF-11.1/.2/.3: tiles, check-in paper, G-2 → 28 px | web-feature:UF-11 | T-0593, T-0582, T-0591 | todo | wl-build-web |
@@ -212,3 +211,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0667 | UF-09 rest e2e: pixel check at 50 % fill (top = rest.bg, bottom = lift.bg) so the e2e proves the drain direction (T-0597 review) | web-feature:UF-09 | T-0597 | todo | wl-build-web |
 | T-0668 | UF-04: own `uf04.clearSearch` in flows/uf-04.ts instead of borrowing en.uf08.clearSearch; Compare back link sits ~8px inside the gutter (T-0607 review) | web-feature:UF-04 | T-0607 | todo | wl-build-web |
 | T-0669 | Shell: relax routes.phase3.render.test so the UF-04 Compare h1 can take className, then use .wl-type-section .wl-title--stop (T-0607 review) | web-shell | T-0607 | todo | wl-build-web |
+| T-0670 | UF-03 List view: a long hint that wraps at 320 px can overlap the next row (messages are absolutely positioned slots); measure and fix (T-0603 rework note) | web-feature:UF-03 | T-0603 | todo | wl-build-web |
+| T-0671 | UF-09: FocusSession.rest carries totalS so the UF-03 List view drain is right for a rest that began before it opened; drop .wl-uf09--overlay legacy chrome for state children, then UF-03 removes its :has() override (T-0603 review) | web-feature:UF-09 | T-0603 | todo | wl-build-web |
+| T-0672 | How-to sheet: `ol` with list-style none needs role=list for Safari; an e2e check of the sheet from a UF-09 host (only UF-08 is browser-tested) (T-0608 review) | web-feature:UF-04 | T-0608 | todo | wl-build-web |

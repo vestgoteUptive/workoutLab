@@ -7,7 +7,7 @@ const LICENSE_LINKS: Record<string, string> = en.uf04.licenseLinks;
 export function Attribution({ detail }: { detail: ExerciseDetail }) {
   if (detail.source === "workoutlab") {
     return (
-      <p data-field="attribution" className="wl-uf04__attribution">
+      <p data-field="attribution" className="wl-uf04-detail__attribution wl-type-label">
         {en.uf04.attributionPrefix}
         {en.uf04.attributionWorkoutlab}
       </p>
@@ -39,7 +39,7 @@ export function Attribution({ detail }: { detail: ExerciseDetail }) {
     );
   }
   return (
-    <p data-field="attribution" className="wl-uf04__attribution">
+    <p data-field="attribution" className="wl-uf04-detail__attribution wl-type-label">
       {en.uf04.attributionPrefix}
       {parts.map((part, index) => (
         <span key={index}>

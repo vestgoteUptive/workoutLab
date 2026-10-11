@@ -12,7 +12,7 @@ import { ExcludeControl } from "./ExcludeControl.js";
 function Star({ filled }: { filled: boolean }) {
   return (
     <svg
-      className="wl-uf04__star"
+      className="wl-uf04-detail__star"
       viewBox="0 0 24 24"
       width="18"
       height="18"
@@ -61,11 +61,11 @@ export function DetailActions({ exerciseId, name }: { exerciseId: string; name: 
   }
 
   return (
-    <div className="wl-uf04__actions">
-      <div className="wl-uf04__action-row">
+    <div className="wl-uf04-detail__actions">
+      <div className="wl-uf04-detail__action-row">
         <button
           type="button"
-          className="wl-uf04__favorite"
+          className="wl-button--secondary"
           aria-label={en.uf04.favoriteName(name)}
           aria-pressed={pressed}
           aria-disabled={disabled ? "true" : undefined}
@@ -78,12 +78,12 @@ export function DetailActions({ exerciseId, name }: { exerciseId: string; name: 
         <ExcludeControl exerciseId={exerciseId} name={name} onStatus={setStatus} />
       </div>
       {online ? null : (
-        <p id={offlineId} className="wl-uf04__hint">
+        <p id={offlineId} className="wl-uf04-detail__hint wl-type-label">
           {en.uf04.connectToChangeFavorites}
         </p>
       )}
       {failed ? (
-        <p role="alert" className="wl-uf04__fail">
+        <p role="alert" className="wl-uf04-detail__fail wl-type-label">
           {en.excluded.saveFailed}
         </p>
       ) : null}

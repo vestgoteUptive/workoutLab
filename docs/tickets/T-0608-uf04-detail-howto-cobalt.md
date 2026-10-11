@@ -5,7 +5,7 @@ lane: web-feature:UF-04
 screens: [UF-04.2]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0207, D-0199, D-0202]
 deps: [T-0607, T-0615]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "Exercise detail" (#turn-5). Behaviour: screens/UF-04.1-UF-04.2.md, T-0558 (figure placement), T-0568 (favorites), T-0541 (exclude). Depends on T-0615, so the figure is cobalt when this screen flips. -->
 ## Why
@@ -47,6 +47,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/body-figure-v2.spec.ts` (orchestrator grant: the line ~354 'UF-04.2 with no state' case moves to a detached fixture host like `detachMap`; fix the AC7 describe title/comments that name UF-04.2)
 - `apps/web/src/features/UF-04/**` (lane)
 - `tests/e2e/uf-04-library.spec.ts`, `tests/e2e/uf-04-figure.spec.ts`, `tests/e2e/uf-04-favorites.spec.ts` (listed extras)
 - `docs/tickets/T-0608-uf04-detail-howto-cobalt.md` (log only)
@@ -58,3 +59,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-04 e2e specs green · commit messages start with `T-0608` and cite UF-04.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0608.md` (D-0157).
