@@ -114,8 +114,28 @@ describe("T-0596 AC1 the state and the fill", () => {
     expect(root().getAttribute("data-drain-reset")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Restart" }));
     await flushReal();
+    expect(root().getAttribute("data-drain-reset")).toBe("true");
     await advance(1000);
     expect(drain()).toBe("2.5%");
+    await advance(1000);
+    expect(root().getAttribute("data-drain-reset")).toBeNull();
+  });
+});
+
+describe("T-0596 Pause then Resume", () => {
+  it("the fill reappears at once (data-drain-reset) instead of sweeping up from 0", async () => {
+    seedFocus(NOW, WARMUP);
+    await renderLoaded();
+    await advance(10_000);
+    fireEvent.click(screen.getByRole("button", { name: "Pause workout" }));
+    await flushReal();
+    expect(screenId()).toBe("UF-09.9");
+    expect(root().classList.contains("wl-drain")).toBe(false);
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    await flushReal();
+    expect(screenId()).toBe("UF-09.2");
+    expect(drain()).toBe("25%");
+    expect(root().getAttribute("data-drain-reset")).toBe("true");
     await advance(1000);
     expect(root().getAttribute("data-drain-reset")).toBeNull();
   });

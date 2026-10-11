@@ -35,7 +35,8 @@ export interface DrainFill {
  *  Hook: called on every render of the host, before any early return. */
 export function useDrainFill(percent: number | null): DrainFill | null {
   const previous = useRef<number | null>(null);
-  const reset = percent !== null && previous.current !== null && percent < previous.current;
+  const reset =
+    percent !== null && (previous.current === null ? percent > 0 : percent < previous.current);
   useEffect(() => {
     previous.current = percent;
   });

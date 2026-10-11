@@ -126,17 +126,20 @@ describe("AC-5 no matchMedia counts as reduce (D-0155 §2)", () => {
 });
 
 describe("T-0596 UF-09.2 and UF-09.7 have no ring; the timer text still counts", () => {
-  it.each(FILLS)("%s, reduce true and false", async (id, seed) => {
-    stubMatchMedia(true);
-    seedFocus(NOW, seed);
-    await renderSession({ locale: "en-GB" });
-    expect(screenId()).toBe(id);
-    expect(ringTransition()).toBeNull();
-    const seen = [timerText()];
-    for (let i = 0; i < 3; i += 1) {
-      tick();
-      seen.push(timerText());
-    }
-    expect(new Set(seen).size).toBe(4);
-  });
+  it.each(FILLS.flatMap((f) => [true, false].map((r) => [...f, r] as const)))(
+    "%s, reduce %s",
+    async (id, seed, reduce) => {
+      stubMatchMedia(reduce);
+      seedFocus(NOW, seed);
+      await renderSession({ locale: "en-GB" });
+      expect(screenId()).toBe(id);
+      expect(ringTransition()).toBeNull();
+      const seen = [timerText()];
+      for (let i = 0; i < 3; i += 1) {
+        tick();
+        seen.push(timerText());
+      }
+      expect(new Set(seen).size).toBe(4);
+    },
+  );
 });

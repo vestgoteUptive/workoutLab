@@ -56,3 +56,4 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-09 e2e 
 - Red on unfixed: first e2e run top pixel was lift.bg (legacy .wl-uf09 background beat .wl-drain--deep) -> scoped gradient rule added.
 - Gate: typecheck/lint/test, test:repo-checks, format:check, check-all, full e2e (511) all exit 0.
 - Canvas verdicts: Warm-up and Timed set match layout, fill and hero scale. Deviations: warm-up has Restart and Next move only (no Pause in the machine; Next is outline per ticket); clock tracking -0.02em (the -0.06em role made the colon touch the 4); the sample data (name, cue, caption total) differs.
+- Rework: drain reset also when the fill returns from null (Pause -> Resume); tests assert data-drain-reset true on Restart and Resume; motion test stubs reduce true and false. Planted: old line (Resume test red), reset=false (Restart and Resume red). Gate, repo-checks, format, check-all, UF-09 e2e exit 0.
