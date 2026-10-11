@@ -8,7 +8,7 @@
 // T-0302c and T-0302b append to this file and reuse `seed` (both exercises match the default
 // `mockProfilePresent` row's `equipment: []`, so the plan is non-empty).
 import AxeBuilder from "@axe-core/playwright";
-import type { BrowserContext, Page } from "@playwright/test";
+import type { BrowserContext, Locator, Page } from "@playwright/test";
 import { BASE_URL } from "./playwright.config.js";
 import {
   FAKE_PROFILE_ROW,
@@ -743,13 +743,18 @@ test.describe("T-0601 AC3 one primary", () => {
     });
   }
 
-  test("a pending check-in adds no second primary to the page's own Start", async ({ page }) => {
+  test("outside the check-in slot, Today's own Start is the only primary", async ({ page }) => {
     await mockSupabaseData(page, UF11_FIXTURES);
     await page.goto("/");
     await injectSession(page);
     await page.goto("/");
     await expect(page.locator('[data-part="checkin-card"]')).toBeVisible();
-    // The card is UF-11's slot (its Accept is the card's own action); Today's Start stays pinned.
+    // T-0612 owns the check-in card: its Accept is a second `.wl-button--primary` on the page
+    // while it is pending (pre-existing, not Today's). Only Today's own Start is asserted here.
+    await expect(page.locator(`${TODAY} .wl-button--primary`)).toHaveCount(2);
+    await expect(
+      page.locator(`${TODAY} .wl-button--primary:not([data-part="checkin-card"] *)`),
+    ).toHaveCount(1);
     await expect(page.locator(`${TODAY} > .wl-button--primary`)).toHaveCount(1);
   });
 });
@@ -795,6 +800,42 @@ async function legacySurfaces(page: Page, root: string): Promise<string[]> {
     [root, legacy],
   );
 }
+
+test.describe("T-0601 focus is never hidden under Start (320 × 640)", () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+
+  /** Parks `locator` just inside the viewport's bottom zone (where Start and the tab bar sit),
+   *  then moves keyboard focus to it: only `scroll-margin-block-end` makes that scroll. */
+  async function expectAboveStart(page: Page, locator: Locator): Promise<void> {
+    await locator.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      window.scrollBy(0, r.bottom - (window.innerHeight - 100));
+    });
+    await locator.focus();
+    expect(await locator.evaluate((el) => el === document.activeElement)).toBe(true);
+    await page.waitForTimeout(300);
+    const gap = await page.evaluate(() => {
+      const el = document.activeElement!.getBoundingClientRect();
+      const start = document.querySelector('[data-part="start"]')!.getBoundingClientRect();
+      return start.top - el.bottom;
+    });
+    expect(gap).toBeGreaterThanOrEqual(0);
+  }
+
+  test("Tab to See all and to the check-in Accept lands above Start", async ({ page }) => {
+    await mockSupabaseData(page, UF11_FIXTURES);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+    await expect(page.locator('[data-part="checkin-card"]')).toBeVisible();
+    await expectAboveStart(page, page.getByRole("link", { name: "See all" }));
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expectAboveStart(
+      page,
+      page.locator('[data-part="checkin-card"]').getByRole("button", { name: "Accept" }),
+    );
+  });
+});
 
 test.describe("T-0601 AC5 no cards (390 × 844)", () => {
   test.use({ viewport: { width: 390, height: 844 } });

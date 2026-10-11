@@ -121,3 +121,12 @@
   /* A solid halo in the page colour, so rows that scroll under Start never show through it. */
   box-shadow: 0 0 0 1rem var(--wl-bg);
 }
+
+/* WCAG 2.4.11: a keyboard-focused control scrolls to above the sticky Start and its halo, never
+ * under them. Reserve: tab bar, Start's 1 rem offset, its height (about 4.2 rem), its 1 rem halo
+ * and 1 rem of air. */
+.wl-preview :focus-visible {
+  scroll-margin-block-end: calc(
+    var(--wl-tab-bar-block-size) + env(safe-area-inset-bottom, 0px) + 8rem
+  );
+}
