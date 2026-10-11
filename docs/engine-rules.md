@@ -281,11 +281,44 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 - **R14-E8** plank, last 45, 45, 40 s on 09-24: 45 s.
 - **R14-E9** High-energy back-off on a bench-press pre-fill of 80 × 6: 70 × 6.
 
+## 15. Records (UF-02.1, D-0219)
+`records(history, library) → RecordSet[]` is pure and **display-only**: `suggest`, `balance`, `timeCheck`, `rankSwaps` and rule 14 never call it, so it changes no other output. The key is the owner amendment to D-0219 (H-36): estimated 1RM, Epley.
+- **Sets.** `normalizeHistory(history)` (rule 0), then only hard sets (rule 2) of exercises in `library` with `kind = "exercise"`. Warm-up sets, tombstones, warm-up moves and unknown exercises are ignored on both sides of a comparison.
+- **Key** (compared lexicographically, highest wins):
+  - timed exercise (`timed = true`): `[0, durationS ?? 0]`;
+  - loaded set (`weightKg > 0`): `[1, e1RM]` with Epley `e1RM = weightKg × (1 + reps / 30)` (`reps ?? 0`). The engine compares `weightKg × (30 + reps)`, which orders the same and keeps equal e1RMs exactly equal;
+  - bodyweight set (`weightKg` 0 or null): `[0, reps ?? 0]`. Any loaded set beats any bodyweight set of the same exercise.
+  Reps above 12 still count. The e1RM is only an estimate, so a caller shows the actual set ("80 kg × 10"), never the e1RM number.
+- **Session best.** Per (`exerciseId`, `sessionId`), the set with the highest key; ties go to the earlier `completedAt`, then the smaller `clientId`. At most one record per session and exercise.
+- **Record.** A session best `b` is a record when `E` = the hard sets of the same exercise with `sessionId ≠ b.sessionId` and `completedAt < b.completedAt` is non-empty and `key(b) > key(e)` for every `e` in `E`. Equal keys are not records; the first session of an exercise is never a record.
+- **Output.** `RecordSet { exerciseId, sessionId, clientId, completedAt, weightKg, reps, durationS, previous: { weightKg, reps, durationS } }`; `previous` is the highest-keyed set of `E` (same tie rule). Sorted by `completedAt`, then `clientId`.
+- **Baseline is the input.** The engine doesn't know the device cache; the web passes its engine history (56 days, H-37). Today's 14-day display filter (D-0217) is a UI date filter on the output.
+
+Examples. back-squat unless stated; S1 = 2026-09-01, S2 = 09-04, S3 = 09-14, each at 10:00 local, one session per date.
+- **R15-E1** S1 100 × 8, 100 × 8; S2 102.5 × 8 → one record: S2's 102.5 × 8, `previous` 100 × 8.
+- **R15-E2** As E1, but S2 100 × 9 → record (same weight, more reps: 3900 > 3800).
+- **R15-E3** As E1, but S2 100 × 8 → `[]` (equal is not a record).
+- **R15-E4** Only S1 with 80 × 8, 90 × 8, 100 × 8 → `[]` (first session).
+- **R15-E5** As E1, but S2 has a tombstoned 105 × 8 and a live 100 × 9 → the record is 100 × 9.
+- **R15-E6** As E1, plus a warm-up set 130 × 1 in S1 (e1RM 134.3) → S2's 102.5 × 8 (e1RM 129.8) is still a record, `previous` 100 × 8.
+- **R15-E7** plank (timed) 60 s in S1, 75 s in S2 → record, `previous` 60 s.
+- **R15-E8** push-up (bodyweight, weight 0) 20 reps in S1, 25 in S2 → record.
+- **R15-E9** push-up 0 × 12 in S1, 10 × 5 in S2 → record (a loaded set beats a bodyweight set).
+- **R15-E10** S1 100 × 8, S2 95 × 8, then a 10-day gap and S3 102.5 × 8 → one record, S3, `previous` 100 × 8.
+- **R15-E11** Shuffled input order and a duplicate replayed row (same `clientId`, older `editedAt`) give the same output (D-0015 dedupe).
+- **R15-E12** The simulated 14-day histories (§Required tests) give `[]` (every set is 50 × 8). The balanced history with progressive loads (bench-press 60, 62.5, 62.5, 60, 65, 65, 67.5 × 8; back-squat 100 × 5, 5, 6, 6, 8, 7, 8; dead-bug 0 × 10, 12, 12, 15, 15, 15, 15 on 09-15 … 09-27) gives 7 records: bench-press 09-17, 09-23, 09-27; back-squat 09-19, 09-23; dead-bug 09-17, 09-21.
+- **R15-E13 (H-36)** S1 100 × 8 (e1RM 126.7), S2 105 × 5 (122.5) → `[]` (heavier, but a lower e1RM).
+- **R15-E14 (H-36)** S1 90 × 3 (e1RM 99), S2 80 × 10 (106.7) → record 80 × 10, `previous` 90 × 3.
+- **R15-E15 (H-36)** S1 100 × 6, S2 90 × 10 (both e1RM 120) → `[]` (equal e1RM is a tie).
+- **R15-E16** S1 100 × 8; S2 110 × 5 at 10:00 and 102.5 × 8 at 10:05 → one record, 102.5 × 8. Two S2 sets of 102.5 × 8 at 10:00 and 10:05 → the 10:00 one.
+- **R15-E17** Sets of an exercise missing from `library`, or of a warm-up move, never appear in the output or the baseline.
+
 ## Required tests
 - Every `Rn-Em` above is a unit test. R7-E8 is a property test.
 - Simulated 14-day histories (T-0202), each run through `suggest`, `balance` and `evaluateCheckin`: balanced; all-chest-no-legs (legs and back get attention, and the main lift is a compound for the first zero-load area (inverted-row), D-0040); returning after 10 days off (R5-E1, R14-E3); 15-minute budget (R7-E2); 90-minute budget (R7-E8 caps). Plus offline-merged history (R0-E2, R11-E4).
 - With exclusions (rule 0.1, D-0199 §3), at F-input: balanced excluding db-bench-press → push-up × 4, db-row × 3, leg-extension × 2; all-chest-no-legs excluding inverted-row → barbell-row × 4, back-squat × 3, calf-raise × 2; returning after 10 days off excluding bench-press → db-bench-press × 4, inverted-row × 3, calf-raise × 2. All-chest-no-legs with `excludeIds` [db-bench-press] reports the same `startDeficits` as without it (exclusion is not a history filter). Properties: no excluded id in any `suggest` output over budgets 15..120, every energy, warm-up on/off and shuffle 0..6; `suggest` and `excludedOutAreas` are invariant under permutation, duplication and unknown ids in `excludeIds`; `rankSwaps(…, [])` deep-equals the 8-argument call; `excludedOutAreas` is in the fixed order and monotone; no `suggest` item has an excluded-out area at weight 1.0.
 - With favorites (rule 0.2, D-0202 §3), at F-input with `favoriteIds` [back-squat]: balanced (R7-E28), all-chest-no-legs (R7-E29, back-squat is an item) and returning after 10 days off (R7-E30). Seeded properties (D-0036 §5, ≥ 200 cases each, fixed seed) over budgets 15..120, every energy, warm-up on/off and shuffle 0..6: P1 `favoriteIds` [] deep-equals absent; P2 `suggest` is invariant under permutation, duplication and unknown ids in `favoriteIds`; P3 R7-E8's caps hold for any subset of L1 ids as `favoriteIds` (also at budget 15); P4 an id in both `favoriteIds` and `excludeIds` is never an item, and the result equals the call with it removed from `favoriteIds`; P5 `rankCandidates` with favorites is the stable partition of the ranking without them. Shuffle may rotate an accessory favorite away (rule 13 takes no favorites input), and the main lift is never shuffled.
+- Rule 15 (D-0219): every R15 example; `records` is deterministic (permutation, replayed rows); `suggest` output is identical whether or not `records` runs, and no `suggest`/`balance`/`timeCheck`/`rankSwaps`/`prefill` module imports `records.ts`.
 
 ## Traceability
 | Rules / examples | Build ticket |
@@ -308,3 +341,4 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 | 0.1 excludedOutAreas, suggest with exclusions (R0-E3…E5, R7-E17…E20, D-0199 §3) | T-0534 |
 | 0.2 favoriteIds, 7.2 ranking key (0) (R7-E21…E27, D-0202 §3) | T-0562 |
 | 0.2 favorites: simulated histories (R7-E28…E30) and properties P1–P5 (D-0202 §3) | T-0563 |
+| 15 records (R15-E1…E17, D-0219 + H-36 amendment) | T-0635 |
