@@ -203,7 +203,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0632 | lib/offline: cache bar and plates, loadBarbell() | web-shell | T-0631 | todo | wl-build-web |
 | T-0633 | UF-11.4 "Bar and plates" settings section | web-feature:UF-11 | T-0613, T-0632 | todo | wl-build-web |
 | T-0634 | UF-09.3 plate loading "Each side 25 + 15 kg" | web-feature:UF-09 | T-0621, T-0632 | todo | wl-build-web |
-| T-0635 | Engine rule 15 records() (D-0219, contract) | engine | — | doing | wl-build-engine |
 | T-0636 | UF-02.1 Latest PR | web-feature:UF-02 | T-0623, T-0635 | todo | wl-build-web |
 | T-0637 | UF-08.1 ?budget= initial time budget | web-feature:UF-08 | T-0600 | todo | wl-build-web |
 | T-0638 | UF-02.1 "Not feeling it? Quick 20-min" link | web-feature:UF-02 | T-0636, T-0637 | todo | wl-build-web |

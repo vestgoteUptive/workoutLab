@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-02.1]
 decisions: [D-0219, D-0217, D-0068, D-0015, D-0034]
 deps: []
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1, D-0219). Flow: wl-build-engine (agent engine-dev). About ½ day. Spec: docs/specs/cobalt-mock-behaviour.md §3.2. Display-only: no existing engine output changes. -->
 
@@ -50,3 +50,4 @@ Checklist (D-0197 §7):
 Tests for every AC pass · `pnpm -w typecheck lint test` green (forced: contract change) · simulated 14-day history test green · commit messages start with `T-0635` and cite UF-02.1.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0635.md` (D-0157).
