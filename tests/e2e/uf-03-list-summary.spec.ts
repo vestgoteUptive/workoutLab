@@ -832,11 +832,20 @@ test.describe("T-0603 UF-03.1 List view, the lift state (390 x 844)", () => {
     await openListView(page);
     await expect(page.getByRole("checkbox", { name: "Mark set 1 done" })).toBeVisible();
     const statuses = page.locator('[data-part="row-status"]');
-    // Success (no failure): every status is not rendered.
-    for (const d of await statuses.evaluateAll((els) =>
-      els.map((el) => getComputedStyle(el).display),
+    // Success (no failure): every live region stays rendered (not display:none, so it can
+    // announce a later failure) with zero size and no border.
+    const live = page.locator('[data-set-index] [aria-live="polite"]');
+    expect(await live.count()).toBeGreaterThanOrEqual(12);
+    for (const m of await live.evaluateAll((els) =>
+      els.map((el) => {
+        const s = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return { d: s.display, v: s.visibility, w: r.width, h: r.height, b: s.borderTopWidth };
+      }),
     )) {
-      expect(d).toBe("none");
+      expect(m.d).not.toBe("none");
+      expect(m.v).toBe("visible");
+      expect([m.w, m.h, m.b]).toEqual([0, 0, "0px"]);
     }
     // The form of a failure: the same element with the app's own markup (an icon and the words).
     const status = statuses.first();
@@ -850,7 +859,7 @@ test.describe("T-0603 UF-03.1 List view, the lift state (390 x 844)", () => {
     await expect(status).toHaveCSS("border-top-color", toRgb(LIFT.ink!));
     await expect(status).toHaveCSS("color", toRgb(LIFT.ink!));
     await status.evaluate((el) => el.replaceChildren());
-    await expect(status).toBeHidden();
+    expect((await status.boundingBox())!.height).toBe(0);
   });
 
   test("AC1/AC5: checking a set shows the rest bar, a full-width session outline in the flow", async ({

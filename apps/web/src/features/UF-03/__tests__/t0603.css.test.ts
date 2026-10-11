@@ -39,9 +39,15 @@ describe("T-0603 AC3 the error form", () => {
     expect(r?.body).toMatch(/border:\s*2px solid var\(--wl-ink\)/);
   });
 
-  it("an empty status is not shown", () => {
+  it("an empty live region keeps zero size and is never display:none", () => {
     const r = find(".wl-uf03-list .wl-uf03-list__status:empty");
-    expect(r?.body).toMatch(/display:\s*none/);
+    expect(r?.selectors).toContain(".wl-uf03-list .wl-uf03-list__hint:empty");
+    expect(r?.body).not.toMatch(/display:\s*none/);
+    expect(r?.body).toMatch(/block-size:\s*0/);
+    expect(r?.body).toMatch(/border:\s*0/);
+    for (const x of all.filter((y) => y.selectors.some((z) => z.includes(":empty")))) {
+      expect(x.body, x.selectors.join()).not.toMatch(/display:\s*none/);
+    }
   });
 });
 

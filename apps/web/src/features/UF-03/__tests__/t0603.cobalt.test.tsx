@@ -175,3 +175,48 @@ describe("T-0603 AC5/AC6 markup", () => {
     expect(bar.textContent).toBe("Rest · 1:32 left");
   });
 });
+
+describe("T-0603 rework: live regions and table shape", () => {
+  it("every live region is in the accessibility tree while empty (no hidden ancestor)", async () => {
+    await mount();
+    const live = document.querySelectorAll('[data-set-index] [aria-live="polite"]');
+    // Per row: the weight hint, the count hint and the save status.
+    expect(live.length).toBe(4 * 3);
+    for (const el of live) {
+      expect(el.textContent).toBe("");
+      expect(el.closest("[hidden], [aria-hidden='true']")).toBeNull();
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Finish" }));
+    const status = document.querySelector('[data-part="finish-confirm"] [aria-live="polite"]')!;
+    expect(status.textContent).toBe("");
+    expect(status.closest("[hidden], [aria-hidden='true']")).toBeNull();
+  });
+
+  it("every set row has as many cells as the table has column headers", async () => {
+    const plan = makeCtx().plan;
+    await mount(makeCtx({ plan, loggedSets: [logged(0, 0, "back-squat", 6, 100)] }));
+    const heads = screen.getAllByRole("columnheader").length;
+    const rows = document.querySelectorAll('[data-part="set-row"]');
+    expect(rows.length).toBeGreaterThan(3);
+    for (const row of rows)
+      expect(row.querySelectorAll(":scope > th, :scope > td").length).toBe(heads);
+    // An invalid entry and a swap tag add messages, not cells.
+    const field = screen.getByRole<HTMLInputElement>("textbox", { name: "Set 2 weight in kg" });
+    fireEvent.change(field, { target: { value: "abc" } });
+    for (const row of document.querySelectorAll('[data-part="set-row"]')) {
+      expect(row.querySelectorAll(":scope > th, :scope > td").length).toBe(heads);
+    }
+  });
+
+  it("the row header's name is 'Set n' plus the swap tag text when swapped", async () => {
+    await mount();
+    expect(screen.getAllByRole("rowheader")[0]!.textContent).toBe("1");
+    cleanup();
+    const swapped = { ...logged(0, 0, "bench-press", 6, 60), clientId: "c-old" };
+    await mount(makeCtx({ loggedSets: [swapped] }));
+    const th = document.querySelector('[data-set-index="0"] th')!;
+    expect(th.querySelector('[data-part="tag"]')).not.toBeNull();
+    expect(th.textContent).toMatch(/^1.+/);
+    expect(screen.getAllByRole("rowheader")[0]).toBe(th);
+  });
+});

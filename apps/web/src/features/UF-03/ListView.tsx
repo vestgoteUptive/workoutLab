@@ -456,6 +456,16 @@ function SetRow({
     },
   });
 
+  // The row's messages (swap tag, the two hints, the save status) stay inside their own cells,
+  // so the table keeps one cell per column header. CSS lays them under the row, one slot each.
+  const shown = [
+    tagName !== null,
+    showKg && !logged && weightInvalid,
+    !logged && countInvalid,
+    failed,
+  ];
+  const slotOf = (k: number): CSSProperties =>
+    ({ "--wl-slot": shown.slice(0, k).filter(Boolean).length }) as CSSProperties;
   return (
     <tr
       className="wl-row"
@@ -463,8 +473,16 @@ function SetRow({
       data-set-index={i}
       data-kg={showKg ? undefined : "false"}
       data-logged={logged ? "" : undefined}
+      style={{ "--wl-msgs": shown.filter(Boolean).length } as CSSProperties}
     >
-      <th scope="row">{backoff ? uf03.backoffRow : n}</th>
+      <th scope="row">
+        {backoff ? uf03.backoffRow : n}
+        {tagName === null ? null : (
+          <span className="wl-uf03-list__tag" data-part="tag" style={slotOf(0)}>
+            {uf03.swapTag(tagName)}
+          </span>
+        )}
+      </th>
       <td data-part="previous">{prevText}</td>
       {showKg ? (
         <td>
@@ -479,6 +497,19 @@ function SetRow({
             value={weightText}
             {...fieldProps("weight")}
           />
+          <span
+            id={hintId}
+            className="wl-uf03-list__hint wl-input__error"
+            aria-live="polite"
+            style={slotOf(1)}
+          >
+            {!logged && weightInvalid ? (
+              <>
+                <CrossIcon size={16} className="wl-input__error-icon" />
+                {uf03.weightHint(formatDecimal(82.5, locale))}
+              </>
+            ) : null}
+          </span>
         </td>
       ) : null}
       <td>
@@ -512,6 +543,19 @@ function SetRow({
             />
           </>
         )}
+        <span
+          id={countHintId}
+          className="wl-uf03-list__hint wl-input__error"
+          aria-live="polite"
+          style={slotOf(2)}
+        >
+          {!logged && countInvalid ? (
+            <>
+              <CrossIcon size={16} className="wl-input__error-icon" />
+              {timed ? uf03.secondsHint : uf03.repsHint}
+            </>
+          ) : null}
+        </span>
       </td>
       <td>
         <label className="wl-uf03-list__done">
@@ -525,41 +569,19 @@ function SetRow({
           />
           <TickIcon size={22} />
         </label>
-      </td>
-      {tagName === null ? null : (
-        <td className="wl-uf03-list__tag" data-part="tag">
-          {uf03.swapTag(tagName)}
-        </td>
-      )}
-      {showKg ? (
-        <td id={hintId} className="wl-uf03-list__hint wl-input__error" aria-live="polite">
-          {!logged && weightInvalid ? (
+        <span
+          className="wl-uf03-list__status wl-input__error"
+          aria-live="polite"
+          data-part="row-status"
+          style={slotOf(3)}
+        >
+          {failed ? (
             <>
               <CrossIcon size={16} className="wl-input__error-icon" />
-              {uf03.weightHint(formatDecimal(82.5, locale))}
+              {uf03.rowSaveFailed}
             </>
           ) : null}
-        </td>
-      ) : null}
-      <td id={countHintId} className="wl-uf03-list__hint wl-input__error" aria-live="polite">
-        {!logged && countInvalid ? (
-          <>
-            <CrossIcon size={16} className="wl-input__error-icon" />
-            {timed ? uf03.secondsHint : uf03.repsHint}
-          </>
-        ) : null}
-      </td>
-      <td
-        className="wl-uf03-list__status wl-input__error"
-        aria-live="polite"
-        data-part="row-status"
-      >
-        {failed ? (
-          <>
-            <CrossIcon size={16} className="wl-input__error-icon" />
-            {uf03.rowSaveFailed}
-          </>
-        ) : null}
+        </span>
       </td>
     </tr>
   );

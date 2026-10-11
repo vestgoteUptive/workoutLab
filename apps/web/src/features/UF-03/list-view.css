@@ -81,7 +81,10 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 0.75rem;
+}
+
+.wl-uf03-list .wl-uf03-list__confirm > * + *:not(.wl-uf03-list__status:empty) {
+  margin-block-start: 0.75rem;
 }
 
 .wl-uf03-list .wl-uf03-list__confirm > p {
@@ -99,8 +102,17 @@
   color: var(--wl-ink);
 }
 
-.wl-uf03-list .wl-uf03-list__status:empty {
-  display: none;
+/* An empty live region stays in the tree (a region that appears already holding text is often
+ * not announced) and takes no space: zero size, no border, padding or margin; never display:none. */
+.wl-uf03-list .wl-uf03-list__status:empty,
+.wl-uf03-list .wl-uf03-list__hint:empty {
+  box-sizing: border-box;
+  inline-size: 0;
+  block-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
 }
 
 .wl-uf03-list .wl-uf03-list__status:not(:empty) {
@@ -268,7 +280,10 @@
 .wl-uf03-list .wl-uf03-list__table td:has(> .wl-input) {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+}
+
+.wl-uf03-list .wl-uf03-list__table td:has(> .wl-input) > .wl-uf03-list__unit {
+  margin-inline-start: 0.25rem;
 }
 
 .wl-uf03-list .wl-uf03-list__table .wl-input {
@@ -285,29 +300,30 @@
   padding-inline: calc(0.25rem - 1px);
 }
 
-/* The swap tag, the hints and the save status fill the row under the cells. */
-.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__tag,
-.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__hint,
-.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__status {
-  grid-column: 1 / -1;
+/* The swap tag, the hints and the save status live in their own cells and sit under the row,
+ * one slot each (--wl-slot), so the row reserves --wl-msgs slots of space. */
+.wl-uf03-list .wl-uf03-list__table tbody > tr {
+  position: relative;
+  padding-block-end: calc(0.5rem + var(--wl-msgs, 0) * 3rem);
 }
 
-.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__tag {
+.wl-uf03-list
+  .wl-uf03-list__table
+  :is(.wl-uf03-list__tag, .wl-uf03-list__hint, .wl-uf03-list__status):not(:empty) {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: calc(0.375rem + var(--wl-slot, 0) * 3rem);
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  box-sizing: border-box;
+  min-block-size: 2.5rem;
   font-size: 0.8125rem;
-}
-
-.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__hint:empty,
-.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__tag:empty {
-  display: none;
-}
-
-.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__hint {
-  margin-block-start: 0.25rem;
-  font-size: 0.8125rem;
+  font-weight: 400;
 }
 
 .wl-uf03-list .wl-uf03-list__table .wl-uf03-list__status:not(:empty) {
-  margin-block-start: 0.375rem;
+  padding: 0.25rem 0.75rem;
 }
 
 /* Done: a 44 px checkbox-style button. The native checkbox stays the control (role, name and
