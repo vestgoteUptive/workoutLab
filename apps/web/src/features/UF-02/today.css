@@ -1,161 +1,192 @@
-/* UF-02.1 Today (T-0302a). Colours and fonts come only from @workoutlab/design-tokens
- * (D-0019): there is no raw hex in this file. C-01 styles itself (components/body-map). */
+/* UF-02.1 Today in the plan state (T-0601, D-0208, D-0211, D-0213; Cobalt "Today" and
+ * "Today · check-in pending"). Colours, fonts and radii come only from the generic --wl-*
+ * variables that data-wl-state="plan" sets: no raw colour and no px font size in this file.
+ * The shared patterns (.wl-page, .wl-row, .wl-chip, .wl-button--*, .wl-type-*, main.css) own their
+ * look, so this file only lays them out. C-01 styles itself (components/body-map). The check-in
+ * card is UF-11's slot (T-0612) and is not restyled here. No transitions: the only motion is the
+ * root's state cross-fade, and plan to plan has none. */
 
-.wl-today {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  font-family: var(--wl-font-body);
-  color: var(--wl-color-text);
+/* The page fills the space above the tab bar, so the last child (Start) pins to the bottom. When
+ * the content is taller than that, Start stays in reach just above the tab bar (sticky). */
+.wl-page.wl-today {
+  min-block-size: calc(100dvh - var(--wl-tab-bar-block-size) - env(safe-area-inset-bottom, 0px));
+  gap: 1.25rem;
 }
 
 .wl-today__header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  column-gap: 12px;
-  row-gap: 4px;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.wl-today__title {
+/* Beats the shared h1 default size; the hero role (.wl-type-hero) sets the size. */
+.wl-page.wl-today .wl-today__title {
   margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 32px;
-  line-height: 1.1;
-  color: var(--wl-color-text);
 }
 
-.wl-today__date {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 14px;
-}
-
+.wl-today__date,
 .wl-today__status {
-  flex-basis: 100%;
-  color: var(--wl-color-text-muted);
-  font-size: 13px;
+  margin: 0;
 }
 
 .wl-today__attention,
 .wl-today__empty,
 .wl-today__no-plan {
   margin: 0;
-  line-height: 1.4;
+}
+
+.wl-today__attention {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 0.5rem;
+}
+
+/* The text button pads 8 px each side; the link starts at the text edge when it wraps. */
+.wl-today__more {
+  margin-inline-start: -0.5rem;
 }
 
 .wl-today__empty,
 .wl-today__no-plan {
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
 }
 
-.wl-today__more {
-  color: var(--wl-color-accent);
+/* Start: the one primary, pinned above the tab bar. */
+.wl-page.wl-today > .wl-today__start {
+  position: sticky;
+  inset-block-end: calc(var(--wl-tab-bar-block-size) + env(safe-area-inset-bottom, 0px) + 1rem);
+  z-index: 1;
+  /* A solid halo in the page colour, so rows that scroll under Start never show through it. */
+  box-shadow: 0 0 0 1rem var(--wl-bg);
 }
 
-/* NFR-A11Y-2: 44 × 44 CSS px. */
-.wl-today__start {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  min-width: 44px;
-  min-height: 54px;
-  padding: 0 16px;
-  border-radius: 14px;
-  background: var(--wl-color-accent);
-  color: var(--wl-color-on-accent);
-  font-weight: 700;
-  font-size: 16px;
-  text-decoration: none;
-}
-
-.wl-today__start:hover {
-  background: var(--wl-color-accent-hover);
-}
-
-/* UF-02.1 suggestion card (T-0302c). The skeleton and the loaded card share this class, so the
- * box holds its height while the first read is pending (NFR-PERF-1 layout part). */
+/* UF-02.1 suggestion card (T-0302c). Unboxed: a section title, hairline rows, outline chips. The
+ * skeleton and the loaded card share this class, so the box holds its height while the first read
+ * is pending (NFR-PERF-1 layout part). */
 .wl-today-card {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.75rem;
   box-sizing: border-box;
   min-height: 176px;
   margin: 0;
-  padding: 16px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 14px;
-  background: var(--wl-color-surface);
 }
 
-.wl-today-card__title {
+.wl-today-card .wl-today-card__title {
   margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 20px;
-  line-height: 1.2;
-  color: var(--wl-color-text);
+  text-wrap: balance;
 }
 
 .wl-today-card__summary,
 .wl-today-card__more,
 .wl-today-card__empty {
   margin: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 14px;
+}
+
+.wl-today-card__empty {
+  color: var(--wl-ink-muted);
 }
 
 .wl-today-card__chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wl-today-card__chip {
-  padding: 2px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--wl-color-line-strong);
-  color: var(--wl-color-text);
-  font-size: 13px;
+/* The reason chips are labels, not controls: outline only, no 44 px box, no pointer. */
+.wl-today-card__chips .wl-today-card__chip {
+  min-block-size: 0;
+  min-inline-size: 0;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  cursor: default;
 }
 
 .wl-today-card__rows {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wl-today-card__row {
-  font-size: 15px;
-}
-
-/* NFR-A11Y-2: 44 × 44 CSS px. */
+/* "See all": a text button that starts at the gutter. */
 .wl-today-card__see-all {
-  display: inline-flex;
-  align-items: center;
   align-self: flex-start;
-  box-sizing: border-box;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 4px;
-  color: var(--wl-color-accent);
-  font-weight: 600;
+  margin-inline-start: -0.5rem;
 }
 
 .wl-today-card__bar {
   display: block;
-  height: 16px;
-  border-radius: 6px;
-  background: var(--wl-color-surface-2);
+  height: 1rem;
+  border-radius: var(--wl-radius-progress);
+  background: var(--wl-raise);
 }
 
 .wl-today-card__bar--short {
   width: 60%;
+}
+
+/* The Resume workout card (D-0139) is UF-09's component, mounted through slots.tsx. Under Today it
+ * is a row block: a hairline under it, its title and line as text, and Resume as the secondary
+ * button. Selectors are doubled with .wl-today so they beat uf-09.css whatever the load order. */
+.wl-today .wl-resume-card {
+  gap: 0.25rem;
+  padding: 0 0 1rem;
+  background: none;
+  border: 0;
+  border-block-end: 1px solid var(--wl-line);
+  border-radius: 0;
+}
+
+.wl-today .wl-resume-card__title {
+  font-family: var(--wl-font);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--wl-ink);
+}
+
+.wl-today .wl-resume-card__line {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--wl-ink-muted);
+}
+
+.wl-today .wl-resume-card__action {
+  align-self: flex-start;
+  margin-block-start: 0.5rem;
+  min-block-size: 48px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--wl-ink);
+  background: transparent;
+  border: 1.5px solid var(--wl-ink);
+  border-radius: var(--wl-radius-pill);
+}
+
+.wl-today .wl-resume-card__action:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+/* The check-in card is UF-11's slot (its look is T-0612). Its legacy label and note colours are
+ * the Chalk & Iron muted grey, which is unreadable on plan.bg; until T-0612 they read the state's
+ * own muted ink here. Colour only: nothing else of the card changes. */
+.wl-today [data-part="checkin-card"] :is(.wl-label, .wl-muted) {
+  color: var(--wl-ink-muted);
+}
+
+/* WCAG 2.4.11: a keyboard-focused control scrolls to above the sticky Start and its halo, never
+ * under them. Reserve: tab bar, Start's 1 rem offset, its height (about 4.2 rem), its 1 rem halo
+ * and 1 rem of air. */
+.wl-today :focus-visible {
+  scroll-margin-block-end: calc(
+    var(--wl-tab-bar-block-size) + env(safe-area-inset-bottom, 0px) + 8rem
+  );
 }

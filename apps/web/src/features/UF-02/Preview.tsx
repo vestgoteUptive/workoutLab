@@ -22,6 +22,7 @@ import { formatKg, formatSetCount } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { itemReasonLine, itemSummary, restLabel } from "../../lib/i18n/workout.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
+import { ArrowRight, Chevron } from "./glyphs.js";
 import { defaultLocale, defaultTimeZone } from "./format.js";
 import { useToday, type TodayState } from "./use-today.js";
 import type { TodayProps } from "./Today.js";
@@ -104,14 +105,14 @@ function Chips({
   const equipment = equipmentUnion(workout.plan.items, library);
   return (
     <ul className="wl-preview__chips" data-part="preview-chips">
-      <li className="wl-preview__chip" data-part="preview-chip">
+      <li className="wl-chip wl-preview__chip" data-part="preview-chip">
         {en.uf02.preview.minutes(formatSetCount(minutes, locale))}
       </li>
-      <li className="wl-preview__chip" data-part="preview-chip">
+      <li className="wl-chip wl-preview__chip" data-part="preview-chip">
         {en.uf02.preview.sets(formatSetCount(sets, locale))}
       </li>
       {equipment.length > 0 ? (
-        <li className="wl-preview__chip" data-part="preview-chip">
+        <li className="wl-chip wl-preview__chip" data-part="preview-chip">
           {equipment.join(en.uf04.dot)}
         </li>
       ) : null}
@@ -124,16 +125,18 @@ function WarmupRow({ workout, library }: { workout: Workout; library: LibraryLoo
   const names = workout.plan.warmup.map((w) => exerciseName(w.exerciseId, library));
   const minutes = en.uf02.preview.warmupMinutes(formatSetCount(WARMUP_COST_S / 60));
   return (
-    <div className="wl-preview__row wl-preview__row--warmup" data-part="preview-warmup">
-      <span className="wl-preview__row-name" data-part="warmup-name">
-        {en.uf02.preview.warmup}
-      </span>
-      <span className="wl-preview__row-detail" data-part="warmup-moves">
-        {names.join(en.uf04.listSeparator)}
-      </span>
-      <span className="wl-preview__row-detail" data-part="warmup-minutes">
-        {workout.warmupInBudget ? minutes : en.uf02.preview.warmupNotCounted}
-      </span>
+    <div className="wl-row wl-preview__row" data-part="preview-warmup">
+      <div className="wl-preview__row-text">
+        <span className="wl-type-row-title" data-part="warmup-name">
+          {en.uf02.preview.warmup}
+        </span>
+        <span className="wl-type-label" data-part="warmup-moves">
+          {names.join(en.uf04.listSeparator)}
+        </span>
+        <span className="wl-type-label" data-part="warmup-minutes">
+          {workout.warmupInBudget ? minutes : en.uf02.preview.warmupNotCounted}
+        </span>
+      </div>
     </div>
   );
 }
@@ -154,27 +157,30 @@ function ItemRow({
   const backoff = backoffLine(item, locale);
   const reason = itemReasonLine(item.reasons);
   return (
-    <li className="wl-preview__row" data-part="preview-row">
-      <Link
-        to={`/library/${item.exerciseId}`}
-        className="wl-preview__row-name"
-        data-part="row-name"
-      >
-        {name}
-      </Link>
-      <span className="wl-preview__row-detail" data-part="row-detail">
-        {parts.join(en.uf04.dot)}
-      </span>
-      {backoff !== null ? (
-        <span className="wl-preview__row-backoff" data-part="row-backoff">
-          {backoff}
+    <li className="wl-row wl-preview__row" data-part="preview-row">
+      <div className="wl-preview__row-text">
+        <Link
+          to={`/library/${item.exerciseId}`}
+          className="wl-type-row-title wl-preview__row-name"
+          data-part="row-name"
+        >
+          {name}
+        </Link>
+        <span className="wl-type-label" data-part="row-detail">
+          {parts.join(en.uf04.dot)}
         </span>
-      ) : null}
-      {reason !== "" ? (
-        <span className="wl-preview__row-reason" data-part="row-reason">
-          {reason}
-        </span>
-      ) : null}
+        {backoff !== null ? (
+          <span className="wl-type-label" data-part="row-backoff">
+            {backoff}
+          </span>
+        ) : null}
+        {reason !== "" ? (
+          <span className="wl-type-label" data-part="row-reason">
+            {reason}
+          </span>
+        ) : null}
+      </div>
+      <Chevron />
     </li>
   );
 }
@@ -192,7 +198,7 @@ function Body({ state, locale }: { state: TodayState; locale: string }) {
   if (state.status === "loading") return <Skeleton />;
   if (state.status === "no-plan") {
     return (
-      <p className="wl-preview__no-plan" data-part="no-plan">
+      <p className="wl-preview__no-plan wl-type-body" data-part="no-plan">
         {en.uf02.noPlan}
       </p>
     );
@@ -203,7 +209,7 @@ function Body({ state, locale }: { state: TodayState; locale: string }) {
     return (
       <>
         {workout !== null ? <WarmupRow workout={workout} library={library} /> : null}
-        <p className="wl-preview__empty" data-part="nothing-suggested">
+        <p className="wl-preview__empty wl-type-body" data-part="nothing-suggested">
           {en.uf02.nothingSuggested}
         </p>
       </>
@@ -237,16 +243,17 @@ export function WorkoutPreview(props: TodayProps = {}) {
   const state = useToday(now, timeZone, status === "signed-in");
 
   return (
-    <div data-screen-id="UF-02.2" className="wl-preview">
+    <div data-screen-id="UF-02.2" data-wl-state="plan" className="wl-page wl-preview">
       <div className="wl-preview__top">
-        <Link to={BACK_HREF} className="wl-preview__back" data-part="back">
+        <Link to={BACK_HREF} className="wl-button--text wl-preview__back" data-part="back">
           {en.uf02.preview.back}
         </Link>
       </div>
       <h1 className="wl-preview__title">{en.uf02.preview.title}</h1>
       <Body state={state} locale={locale} />
-      <Link to={START_HREF} className="wl-preview__start" data-part="start">
-        {en.uf02.start}
+      <Link to={START_HREF} className="wl-button--primary wl-preview__start" data-part="start">
+        <span>{en.uf02.start}</span>
+        <ArrowRight />
       </Link>
     </div>
   );

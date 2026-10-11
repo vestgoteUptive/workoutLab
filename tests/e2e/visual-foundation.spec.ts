@@ -59,6 +59,29 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
   // h1 size in feature CSS, which a global element rule can't override. Migrating them is a later
   // per-feature ticket (spec §2 Migration), so the 32-40 px range is not asserted there; family,
   // weight and case still are. Recorded in the T-0546 log.
+  //
+  // T-0601: `/` is a plan-state screen. Its h1 is the state hero (Familjen Grotesk, 700, no
+  // uppercase, 96-112 px at 390 px), so the uppercase Big Shoulders pins move to the state scale
+  // for it, deliberately.
+  async function expectStateHero(page: Page): Promise<void> {
+    const got = await page.evaluate(() => {
+      const h1 = getComputedStyle(document.querySelector("h1")!);
+      return {
+        family: h1.fontFamily,
+        weight: h1.fontWeight,
+        transform: h1.textTransform,
+        size: parseFloat(h1.fontSize),
+        body: getComputedStyle(document.body).fontFamily,
+      };
+    });
+    expect(got.family.startsWith('"Familjen Grotesk"')).toBe(true);
+    expect(got.weight).toBe("700");
+    expect(got.transform).toBe("none");
+    expect(got.size).toBeGreaterThanOrEqual(96);
+    expect(got.size).toBeLessThanOrEqual(112);
+    expect(got.body.startsWith('"DM Sans"')).toBe(true);
+  }
+
   async function expectScale(page: Page, ownSize = false): Promise<void> {
     const got = await page.evaluate(() => {
       const h1 = getComputedStyle(document.querySelector("h1")!);
@@ -83,7 +106,8 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
   for (const path of ["/", "/progress", "/balance", "/plan"]) {
     test(`${path} h1 and body follow the scale`, async ({ page }) => {
       await open(page, path);
-      await expectScale(page, path === "/balance");
+      if (path === "/") await expectStateHero(page);
+      else await expectScale(page, path === "/balance");
     });
   }
 

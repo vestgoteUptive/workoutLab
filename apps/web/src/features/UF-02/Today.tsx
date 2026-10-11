@@ -18,6 +18,7 @@ import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js"
 import { formatSetCount } from "../../lib/format/number.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
+import { ArrowRight } from "./glyphs.js";
 import { defaultLocale, defaultTimeZone, formatTodayDate } from "./format.js";
 import { todayCheckinSlot, todayResumeSlot } from "./slots.js";
 import { SuggestionCard, SuggestionCardSkeleton } from "./SuggestionCard.js";
@@ -44,12 +45,12 @@ function AttentionLine({ result, locale }: { result: BalanceResult; locale: stri
   const rest = flagged.length - NAMED_AREAS;
   const restText = formatSetCount(rest, locale);
   return (
-    <p className="wl-today__attention" data-part="attention">
+    <p className="wl-today__attention wl-type-body" data-part="attention">
       {en.uf02.attention(names)}
       {rest > 0 ? (
         <>
           {en.uf02.moreGap}
-          <Link to="/balance" className="wl-today__more" data-part="attention-more">
+          <Link to="/balance" className="wl-button--text wl-today__more" data-part="attention-more">
             {en.uf02.more(restText)}
           </Link>
         </>
@@ -63,14 +64,14 @@ function EmptyLine({ result, hasHardSet }: { result: BalanceResult; hasHardSet: 
   if (result.areas.some((a) => a.needsAttention)) return null;
   if (!hasHardSet) {
     return (
-      <p className="wl-today__empty" data-part="no-workouts">
+      <p className="wl-today__empty wl-type-body" data-part="no-workouts">
         {en.uf02.noWorkouts}
       </p>
     );
   }
   if (result.areas.every((a) => a.load === 0)) {
     return (
-      <p className="wl-today__empty" data-part="nothing-recent">
+      <p className="wl-today__empty wl-type-body" data-part="nothing-recent">
         {en.uf02.nothingRecent}
       </p>
     );
@@ -134,14 +135,14 @@ export function Today(props: TodayProps = {}) {
   const state = useToday(now, timeZone, status === "signed-in", revision);
 
   return (
-    <div data-screen-id="UF-02.1" className="wl-today">
+    <div data-screen-id="UF-02.1" data-wl-state="plan" className="wl-page wl-today">
       <div className="wl-today__header">
-        <h1 className="wl-today__title">{en.screens.today}</h1>
-        <p className="wl-today__date" data-part="date">
+        <h1 className="wl-today__title wl-type-hero wl-title--stop">{en.screens.today}</h1>
+        <p className="wl-today__date wl-type-label" data-part="date">
           {formatTodayDate(now, locale, timeZone)}
         </p>
         {state.status === "loading" ? null : (
-          <span className="wl-today__status">
+          <span className="wl-today__status wl-type-label">
             <OfflineStatus
               variant="text"
               lastSyncedAt={state.lastSyncedAt}
@@ -155,7 +156,7 @@ export function Today(props: TodayProps = {}) {
       <ResumeSlot now={now} locale={locale} timeZone={timeZone} />
 
       {state.status === "no-plan" ? (
-        <p className="wl-today__no-plan" data-part="no-plan">
+        <p className="wl-today__no-plan wl-type-body" data-part="no-plan">
           {en.uf02.noPlan}
         </p>
       ) : (
@@ -185,8 +186,13 @@ export function Today(props: TodayProps = {}) {
           {state.status === "ready" ? (
             <EmptyLine result={state.result} hasHardSet={state.hasHardSet} />
           ) : null}
-          <Link to="/session/setup" className="wl-today__start" data-part="start">
-            {en.uf02.start}
+          <Link
+            to="/session/setup"
+            className="wl-button--primary wl-today__start"
+            data-part="start"
+          >
+            <span>{en.uf02.start}</span>
+            <ArrowRight />
           </Link>
         </>
       )}
