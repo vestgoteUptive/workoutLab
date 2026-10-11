@@ -48,6 +48,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/body-figure-v2.spec.ts`, `tests/e2e/body-map-figure.spec.ts`, `tests/e2e/visual-foundation.spec.ts` (orchestrator grant: these used `/balance` as the no-state host; re-point them to an injected no-state fixture, as T-0605 did for `/welcome`)
 - `apps/web/src/features/UF-10/**` (lane)
 - `tests/e2e/uf-10-balance.spec.ts` (listed extra)
 - `docs/tickets/T-0611-uf10-balance-cobalt.md` (log only)

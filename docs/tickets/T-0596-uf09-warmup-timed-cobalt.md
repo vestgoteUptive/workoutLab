@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.2, UF-09.7]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0119, D-0062]
 deps: [T-0595]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Warm-up", "Timed set" (#turn-4). Behaviour: T-0304c. UF-09 folder chain; never in parallel with T-0580. -->
 ## Why
@@ -48,3 +48,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-09 e2e specs green · commit messages start with `T-0596` and cite UF-09.2/UF-09.7.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0596.md` (D-0157).

@@ -95,7 +95,7 @@ describe("T-0595 load order: every lift rule is scoped under the state attribute
     const root = rulesOf(section).find((r) =>
       r.selectors.includes('.wl-uf09[data-wl-state="lift"]'),
     );
-    expect(root?.body).toMatch(/background:\s*var\(--wl-bg\)/);
+    expect(root?.body).toMatch(/background-color:\s*var\(--wl-bg\)/);
     expect(root?.body).toMatch(/color:\s*var\(--wl-ink\)/);
   });
 });
