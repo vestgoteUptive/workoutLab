@@ -177,7 +177,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | todo | wl-build-web |
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
-| T-0601 | UF-02.1/.2 in plan | web-feature:UF-02 | T-0593, T-0594, T-0615, T-0591 | doing | wl-build-web |
 | T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | todo | wl-build-web |
 | T-0603 | UF-03.1/.2 lift + drain | web-feature:UF-03 | T-0593, T-0594, T-0591 | todo | wl-build-web |
 | T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | todo | wl-build-web |
@@ -211,3 +210,5 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0661 | engine records(): a NaN weightKg or reps compares as NaN and is reported as a record; treat non-finite inputs as no set (T-0635 review) | engine | T-0635 | todo | wl-build-engine |
 | T-0663 | UF-03 list-view.swap.host.test.tsx 'rows 1-2 keep their values' times out under load (findByRole 'Set 1 weight in kg'); passes alone | web-feature:UF-03 | — | todo | wl-build-web |
 | T-0664 | Engine builder gate must run `node supabase/scripts/vendor.mjs --check` (T-0635 broke main by not regenerating the vendor copy); add it to the engine and shared lanes' DoD or to the -w test gate | infra | — | todo | wl-build-infra |
+| T-0665 | UF-09 resume card: use the shared .wl-button--secondary so today.css drops its hand-made outline button (no hover state) (T-0601 review) | web-feature:UF-09 | T-0601 | todo | wl-build-web |
+| T-0666 | Shell: hide the tab bar on /?view=preview so Start sits at the viewport bottom per the canvas (T-0601 deviation) | web-shell | T-0601 | todo | wl-build-web |
