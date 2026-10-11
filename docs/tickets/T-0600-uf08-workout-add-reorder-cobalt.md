@@ -52,6 +52,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/visual-foundation.spec.ts` (orchestrator grant, for every screen restyle: move this screen's checks from the legacy no-state scale to the plan or state scale, as T-0601/T-0597 did, or to an injected no-state fixture; never use another real screen as the no-state host)
 - `apps/web/src/features/UF-08/**` (lane)
 - `tests/e2e/uf-08-setup.spec.ts`, `tests/e2e/uf-08-add.spec.ts`, `tests/e2e/uf-08-reorder.spec.ts` (listed extras)
 - `docs/tickets/T-0600-uf08-workout-add-reorder-cobalt.md` (log only)
