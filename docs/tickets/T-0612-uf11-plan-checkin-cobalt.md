@@ -52,7 +52,10 @@ Checklist (D-0197 §7):
 - Check-in pending and not, priority and non-priority tiles, and online and offline save are all covered.
 - No migration fixture: not applicable.
 
+- **AC-T0601 (from the T-0601 review).** Given a pending check-in on Today, then the page shows exactly one white primary (Start). The card's Accept uses the paper or secondary action, not a second primary. Delete the interim `.wl-today [data-part=checkin-card] :is(.wl-label,.wl-muted)` colour override in `features/UF-02/today.css`. Update the T-0601 e2e "outside the check-in slot, Today's own Start is the only primary" so it asserts 1 primary on the page.
+
 ## Paths you may change
+- `apps/web/src/features/UF-02/today.css`, `tests/e2e/uf-02-today.spec.ts` (orchestrator grant: remove the T-0601 interim override and tighten the primary-count test)
 - `apps/web/src/features/UF-11/**` (lane)
 - `tests/e2e/uf-11-plan.spec.ts`, `tests/e2e/uf-11-plan-layout.spec.ts`, `tests/e2e/uf-02-today.spec.ts` (check-in colour cases only) (listed extras)
 - `docs/tickets/T-0612-uf11-plan-checkin-cobalt.md` (log only)
