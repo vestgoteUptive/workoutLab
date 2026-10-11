@@ -89,7 +89,7 @@ describe("AC-2 visible labels and swatches", () => {
       expect(label).toBeVisible();
       const swatch = label.nextElementSibling!;
       expect(swatch.getAttribute("aria-hidden")).toBe("true");
-      expect(swatch.className).toContain(`wl-uf04__swatch--${kind}`);
+      expect(swatch.className).toContain(`wl-uf04-detail__swatch--${kind}`);
     }
     expect(screen.getByRole("list", { name: "Primary areas" })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Secondary areas" })).toBeInTheDocument();

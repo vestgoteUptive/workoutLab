@@ -137,6 +137,20 @@ const detachMap = (page: Page) =>
     document.body.append(host);
   });
 
+/**
+ * T-0608: UF-04.2 is a plan screen now. The real detail figure is copied into a fixture host
+ * outside any screen root and the screen is removed, so no state applies. Never another real screen.
+ */
+const detachFigure = (page: Page) =>
+  page.evaluate(() => {
+    const svg = document.querySelector("svg.wl-fig")!;
+    const host = document.createElement("div");
+    host.id = "no-state-host";
+    host.innerHTML = svg.outerHTML;
+    document.querySelectorAll("[data-screen-id]").forEach((e) => e.remove());
+    document.body.append(host);
+  });
+
 const setState = (page: Page, state: string | null) =>
   page.evaluate((st) => {
     if (st === null) document.documentElement.removeAttribute("data-wl-state");
@@ -334,7 +348,7 @@ test.describe("T-0660 AC6 accessibility", () => {
 test.describe("T-0660 AC7 unmigrated screens stay legible", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("UF-10.1 and UF-04.2 with no state: ink and seams come from the Chalk and Iron :root", async ({
+  test("UF-10.1 with no state: ink and seams come from the Chalk and Iron :root", async ({
     page,
   }, testInfo) => {
     await openBalance(page);
@@ -351,11 +365,12 @@ test.describe("T-0660 AC7 unmigrated screens stay legible", () => {
     await page.screenshot({ path: testInfo.outputPath("uf-10-1-unmigrated-page.png") });
   });
 
-  test("UF-04.2 with no state: the detail figure reads the Chalk and Iron :root", async ({
+  test("a detached detail figure with no state reads the Chalk and Iron :root", async ({
     page,
   }, testInfo) => {
     await openLibrary(page);
-    const svg = page.locator("svg.wl-fig").first();
+    await detachFigure(page);
+    const svg = page.locator("#no-state-host svg.wl-fig");
     expect(await css(svg.locator(".wl-fig__region--primary"), "fill")).toBe(
       await resolved(page, "var(--wl-color-text)"),
     );

@@ -58,7 +58,7 @@ for (const [width, name] of [
     await page.setViewportSize({ width, height: 844 });
     await open(page);
     const boxes = await page
-      .locator(".wl-uf04__figure-card svg.wl-fig, .wl-uf04__legend, .wl-uf04__pill")
+      .locator(".wl-uf04-detail__figure svg.wl-fig, .wl-uf04-detail__legend, .wl-uf04-detail__pill")
       .evaluateAll((els) =>
         els.map((e) => {
           const r = e.getBoundingClientRect();
@@ -96,8 +96,8 @@ test("AC-7 layout holds at 200 % root font size", async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
-  const card = await page.locator(".wl-uf04__figure-card").boundingBox();
-  for (const pill of await page.locator(".wl-uf04__pill").all()) {
+  const card = await page.locator(".wl-uf04-detail__figure").boundingBox();
+  for (const pill of await page.locator(".wl-uf04-detail__pill").all()) {
     const b = (await pill.boundingBox())!;
     expect(b.x + b.width).toBeLessThanOrEqual(card!.x + card!.width + 0.5);
   }
@@ -125,7 +125,7 @@ test.describe("AC-8 forced colours", () => {
 test.describe("T-0615 AC3 plan primary and secondary (UF-04.2)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("primary is plan.ink, hatch is ink lines on ink at 16 %; no state keeps Chalk text", async ({
+  test("primary is plan.ink, hatch is ink lines on ink at 16 %; a fixture host with no state keeps Chalk text", async ({
     page,
   }, testInfo) => {
     await open(page);
@@ -144,7 +144,22 @@ test.describe("T-0615 AC3 plan primary and secondary (UF-04.2)", () => {
         .first()
         .evaluate((el) => getComputedStyle(el).fill);
 
+    // UF-04.2 is a plan screen now, so the no-state half reads a copy of the figure in a fixture
+    // host outside any screen root (as body-figure-v2.spec.ts does); never another real screen.
     const primary = 'svg.wl-fig [data-area="quads"].wl-fig__region--primary';
+    const inRoot = await fillOf(primary);
+    expect(inRoot).toBe(await resolved("var(--wl-color-plan-ink)"));
+    await page.evaluate(() => {
+      const svg = document.querySelector("svg.wl-fig")!;
+      const host = document.createElement("div");
+      host.id = "no-state-host";
+      host.innerHTML = svg.outerHTML;
+      document.querySelectorAll("[data-screen-id]").forEach((e) => e.remove());
+      document.body.append(host);
+    });
+    expect(await page.evaluate(() => document.documentElement.hasAttribute("data-wl-state"))).toBe(
+      false,
+    );
     expect(await fillOf(primary)).toBe(await resolved("var(--wl-color-text)"));
 
     await page.evaluate(() => {

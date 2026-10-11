@@ -38,13 +38,16 @@ export function LibraryDetail() {
     { refresh: true, status },
   );
 
-  if (data === undefined) return <div data-screen-id="UF-04.2" className="wl-uf04" />;
+  if (data === undefined)
+    return <div data-screen-id="UF-04.2" data-wl-state="plan" className="wl-page wl-uf04-detail" />;
 
   const exercise = data.library.find((e) => e.id === exerciseId);
   if (exercise === undefined || exercise.kind !== "exercise") {
     // A first-ever visit on a bad or early URL waits for the first download before deciding.
     if (data.library.length === 0 && pending) {
-      return <div data-screen-id="UF-04.2" className="wl-uf04" />;
+      return (
+        <div data-screen-id="UF-04.2" data-wl-state="plan" className="wl-page wl-uf04-detail" />
+      );
     }
     return <Navigate to="/library" replace />;
   }
@@ -65,66 +68,81 @@ export function LibraryDetail() {
   const hasAreas = primary.length + secondary.length > 0;
 
   return (
-    <div data-screen-id="UF-04.2" className="wl-uf04">
-      <h1>{exercise.name}</h1>
-      <p data-field="tagline">{tagLine(exercise)}</p>
+    <div data-screen-id="UF-04.2" data-wl-state="plan" className="wl-page wl-uf04-detail">
+      <h1 className="wl-type-page-title wl-title--stop">{exercise.name}</h1>
+      <p data-field="tagline" className="wl-type-label wl-uf04-detail__tagline">
+        {tagLine(exercise)}
+      </p>
       {hasAreas ? (
-        <section className="wl-uf04__figure-card" data-field="figure-card">
+        <section className="wl-uf04-detail__figure" data-field="figure-card">
           <BodyFigure regions={regions} size="detail" />
-          {primary.length === 0 ? null : (
-            <>
-              <div className="wl-uf04__legend">
-                <span className="wl-uf04__legend-label">{en.uf04.primaryLabel}</span>
-                <span className="wl-uf04__swatch wl-uf04__swatch--primary" aria-hidden="true" />
+          <div className="wl-uf04-detail__areas">
+            {primary.length === 0 ? null : (
+              <div className="wl-uf04-detail__group">
+                <div className="wl-uf04-detail__legend">
+                  <span className="wl-type-label">{en.uf04.primaryLabel}</span>
+                  <span
+                    className="wl-uf04-detail__swatch wl-uf04-detail__swatch--primary"
+                    aria-hidden="true"
+                  />
+                </div>
+                <ul className="wl-uf04-detail__pills" aria-label={en.uf04.primaryAreas}>
+                  {primary.map((name) => (
+                    <li key={name} data-weight="primary" className="wl-uf04-detail__pill">
+                      {name}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="wl-uf04__pills" aria-label={en.uf04.primaryAreas}>
-                {primary.map((name) => (
-                  <li key={name} data-weight="primary" className="wl-uf04__pill">
-                    {name}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
-          {secondary.length === 0 ? null : (
-            <>
-              <div className="wl-uf04__legend">
-                <span className="wl-uf04__legend-label">{en.uf04.secondaryLabel}</span>
-                <span className="wl-uf04__swatch wl-uf04__swatch--secondary" aria-hidden="true" />
+            )}
+            {secondary.length === 0 ? null : (
+              <div className="wl-uf04-detail__group">
+                <div className="wl-uf04-detail__legend">
+                  <span className="wl-type-label">{en.uf04.secondaryLabel}</span>
+                  <span
+                    className="wl-uf04-detail__swatch wl-uf04-detail__swatch--secondary"
+                    aria-hidden="true"
+                  />
+                </div>
+                <ul className="wl-uf04-detail__pills" aria-label={en.uf04.secondaryAreas}>
+                  {secondary.map((name) => (
+                    <li key={name} data-weight="secondary" className="wl-uf04-detail__pill">
+                      {name}
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="wl-uf04__pills" aria-label={en.uf04.secondaryAreas}>
-                {secondary.map((name) => (
-                  <li key={name} data-weight="secondary" className="wl-uf04__pill">
-                    {name}
-                  </li>
-                ))}
-              </ul>
-            </>
-          )}
+            )}
+          </div>
         </section>
       ) : null}
       {detail === null ? (
-        <p>{en.uf04.detailMissing}</p>
+        <p className="wl-type-body">{en.uf04.detailMissing}</p>
       ) : (
         <>
           <HowToBody detail={detail} />
           {detail.mistakes.length === 0 ? null : (
-            <section>
-              <h2>{en.uf04.mistakes}</h2>
-              <ul>
+            <section className="wl-uf04-detail__section">
+              <h2 className="wl-type-label">{en.uf04.mistakes}</h2>
+              <ul className="wl-uf04-detail__list">
                 {detail.mistakes.map((m, index) => (
-                  <li key={index}>{m}</li>
+                  <li key={index} className="wl-row wl-type-body">
+                    {m}
+                  </li>
                 ))}
               </ul>
             </section>
           )}
           {variants.length === 0 ? null : (
-            <section>
-              <h2>{en.uf04.variations}</h2>
-              <ul className="wl-uf04__list">
+            <section className="wl-uf04-detail__section">
+              <h2 className="wl-type-label">{en.uf04.variations}</h2>
+              <ul className="wl-uf04-detail__list">
                 {variants.map((v) => (
                   <li key={v.id}>
-                    <Link to={`/library/${exercise.id}/compare/${v.id}`} className="wl-uf04__row">
+                    <Link
+                      to={`/library/${exercise.id}/compare/${v.id}`}
+                      className="wl-row wl-type-row-title"
+                    >
                       {v.name}
                     </Link>
                   </li>
@@ -136,7 +154,7 @@ export function LibraryDetail() {
         </>
       )}
       <DetailActions exerciseId={exercise.id} name={exercise.name} />
-      <Link to={`/progress/${exercise.id}`} className="wl-uf04__link">
+      <Link to={`/progress/${exercise.id}`} className="wl-button--text wl-uf04-detail__history">
         {en.uf04.myHistory}
       </Link>
     </div>

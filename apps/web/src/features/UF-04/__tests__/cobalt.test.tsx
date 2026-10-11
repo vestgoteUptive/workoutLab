@@ -23,7 +23,7 @@ const { freshOfflineDb, signIn, signOut } =
 const { mountAt, setOnline, rowNames } = await import("./harness.js");
 
 const CSS = readFileSync(resolve(__dirname, "../uf-04.css"), "utf8");
-// Only the T-0607 section: the legacy rules above it still serve UF-04.2 (T-0608).
+// The Cobalt sections (T-0607 Browse and Compare, T-0608 Detail): everything below the header.
 const COBALT_CSS = CSS.slice(CSS.indexOf("/* ---- UF-04.1 Browse and UF-04.3 Compare"));
 const MAIN_CSS = readFileSync(resolve(__dirname, "../../../main.css"), "utf8");
 const PLAN = tokens.color.plan;
@@ -85,14 +85,6 @@ describe("AC1 state", () => {
     );
     expect(COBALT_CSS).toMatch(/\.wl-uf04-compare > h1::after \{[^}]*content:\s*"\." \/ ""/);
     expect(document.querySelectorAll("[data-wl-state]")).toHaveLength(1);
-  });
-
-  it("the detail screen is not migrated: no state, still the legacy root", async () => {
-    await mountAt("/library/back-squat");
-    await screen.findByRole("heading", { level: 1, name: "Back squat" });
-    const root = document.querySelector('[data-screen-id="UF-04.2"]')!;
-    expect(root).not.toHaveAttribute("data-wl-state");
-    expect(root).toHaveClass("wl-uf04");
   });
 });
 
@@ -240,19 +232,29 @@ describe("AC4 contrast, type, motion, scope", () => {
     const bare = COBALT_CSS.replace(/\/\*[\s\S]*?\*\//g, "");
     const selectors = [...bare.matchAll(/^([^{}\s][^{}]*)\{/gm)].map((m) => m[1]!.trim());
     expect(selectors.length).toBeGreaterThan(8);
-    for (const sel of selectors.filter((x) => !x.startsWith("@supports"))) {
+    for (const sel of selectors.filter(
+      (x) => !x.startsWith("@supports") && !x.startsWith("@media"),
+    )) {
       for (const part of sel.replace(/:is\([^)]*\)/g, "").split(",")) {
-        expect(part.trim(), sel).toMatch(/^\.wl-uf04-(browse|compare)/);
+        expect(part.trim(), sel).toMatch(/^\.wl-uf04-(browse|detail|compare)/);
       }
     }
   });
 
-  it("the legacy rules UF-04.2 still uses are kept until T-0608", () => {
-    for (const cls of [".wl-uf04", ".wl-uf04__list", ".wl-uf04__row", ".wl-uf04__link"]) {
-      expect(CSS, cls).toContain(`${cls} {`);
+  it("the detail-only legacy rules are gone; only the shared hidden-text rule stays", () => {
+    for (const cls of [
+      ".wl-uf04 ",
+      ".wl-uf04__list",
+      ".wl-uf04__row",
+      ".wl-uf04__link",
+      ".wl-uf04__pill",
+      ".wl-uf04__tag",
+      ".wl-uf04__figure-card",
+      ".wl-uf04__favorite",
+      ".wl-uf04__exclude",
+    ]) {
+      expect(CSS, cls).not.toContain(cls);
     }
-    expect(CSS).toContain(".wl-uf04__pill");
-    expect(CSS).toContain(".wl-uf04__tag");
     expect(CSS).toContain(".wl-uf04__sr {");
   });
 });
