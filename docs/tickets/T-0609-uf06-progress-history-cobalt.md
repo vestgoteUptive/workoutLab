@@ -5,7 +5,7 @@ lane: web-feature:UF-06
 screens: [UF-06.1, UF-06.2]
 decisions: [D-0208, D-0210, D-0211, D-0213]
 deps: [T-0593, T-0591]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Progress" (#turn-3), "Exercise history" (#turn-5). Behaviour: T-0307b. The canvas's weekly sets, streak, records and 1RM stay out (D-0212 §4). -->
 ## Why
@@ -53,8 +53,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-06-progress.spec.ts` green · commit messages start with `T-0609` and cite UF-06.1/UF-06.2.
 
 ## Build / accept log
-- Built on b44aa0a. AC1 t0609 vitest + e2e (state, theme-color); AC2 vitest (marks, words, no-workout month, CSS) + e2e computed colour/weight/underline; AC3 vitest (stat role, — placeholder, empty) + e2e 34px/700; AC4 vitest CSS guard + contrast pairs, e2e axe color-contrast and motion; AC5 existing UF-06 suites + uf-06-progress.spec unchanged names (lane.test today-focus case and the e2e focus probe moved to --wl-focus); AC6 compareWithCanvas turn-3 Progress, turn-5 Exercise history.
-- visual-foundation.spec: /progress moved to a plan-state title check (Familjen Grotesk 700, 56 px); /plan stays legacy.
-- Planted faults (all red, then restored from backup): marked colour muted, state attr removed, stat class removed, underline removed, transition added, Balance .wl-row removed, e2e marked weight 400.
-- Canvas verdicts: expected deviations (no weekly sets, streak, records, 1RM chart, filled-pill workout days per ticket: bold white text). Layout, title, hairline rows, stats match.
-- Gate, repo-checks, format, check-all exit 0. Full e2e 587/588; pwa-update UF-04 AC9 failed once under load and passed alone (unrelated).
+Archived in `docs/tickets/log/T-0609.md` (D-0157).

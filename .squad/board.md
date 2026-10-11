@@ -179,7 +179,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | todo | wl-build-web |
 | T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | doing | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
-| T-0609 | UF-06.1/.2 in plan | web-feature:UF-06 | T-0593, T-0591 | doing | wl-build-web |
 | T-0610 | UF-07.1 in plan | web-feature:UF-07 | T-0593, T-0591 | todo | wl-build-web |
 | T-0612 | UF-11.1/.2/.3: tiles, check-in paper, G-2 → 28 px | web-feature:UF-11 | T-0593, T-0582, T-0591 | todo | wl-build-web |
 | T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | todo | wl-build-web |
@@ -213,3 +212,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0670 | UF-03 List view: a long hint that wraps at 320 px can overlap the next row (messages are absolutely positioned slots); measure and fix (T-0603 rework note) | web-feature:UF-03 | T-0603 | todo | wl-build-web |
 | T-0671 | UF-09: FocusSession.rest carries totalS so the UF-03 List view drain is right for a rest that began before it opened; drop .wl-uf09--overlay legacy chrome for state children, then UF-03 removes its :has() override (T-0603 review) | web-feature:UF-09 | T-0603 | todo | wl-build-web |
 | T-0672 | How-to sheet: `ol` with list-style none needs role=list for Safari; an e2e check of the sheet from a UF-09 host (only UF-08 is browser-tested) (T-0608 review) | web-feature:UF-04 | T-0608 | todo | wl-build-web |
+| T-0673 | UF-06 calendar day reads '14Workout' (no separator between date and the sr-only word); also drop the progress.css ::after/chev rules that main.css already disables (T-0609 review) | web-feature:UF-06 | T-0609 | todo | wl-build-web |
+| T-0674 | UF-03.3 PR band from records(): replace EndedSummary.pr {text} with a structured record (as T-0636 latestPr), formatted with en.* copy; pick which record the band shows; fix the trivially-passing 'successful save shows none' test (T-0604 review) | web-feature:UF-03 | T-0604, T-0636 | todo | wl-build-web |
+| T-0675 | Shell: routes.phase3.render.test.tsx pins bare <h1> source for UF-03.3, UF-04.3 and UF-06.2; accept a className so those screens use .wl-title--stop and drop their duplicated ::after rules (T-0604/T-0607/T-0609 reviews; supersedes T-0669) | web-shell | — | todo | wl-build-web |
