@@ -361,7 +361,7 @@ test.describe("T-0615 AC2 / T-0660 AC7 unmigrated screens (no state)", () => {
       await resolved(page, "var(--wl-color-bg)"),
     );
     expect(await paint(svg.locator(".wl-fig__halo-warn"), "stroke")).toBe(
-      await resolved(page, "var(--wl-color-plan-attention)"),
+      await resolved(page, "var(--wl-color-warn)"),
     );
     expect(await paint(svg.locator(".wl-fig__halo-gap"), "stroke")).toBe(
       await resolved(page, "var(--wl-color-bg)"),

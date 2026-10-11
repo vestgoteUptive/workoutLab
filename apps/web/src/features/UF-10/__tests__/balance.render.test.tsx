@@ -431,7 +431,8 @@ describe("AC-A15 the full C-01 is mounted, and fed the same data as the rows", (
 
     expect(mapButtonValue("hamstrings")).toBe("6 / 16");
     expect(rowValue("hamstrings")).toBe("6 / 16");
-    expect(mapButtonFill("hamstrings")).toBe("var(--wl-coverage-2)");
+    // T-0660: a flagged map dot wears the figure attention fill, not the step colour.
+    expect(mapButtonFill("hamstrings")).toBe("var(--wl-attention)");
     expect(rowFill("hamstrings")).toBe("var(--wl-coverage-2)");
 
     // Mutate that one area in the stub and re-render. A map fed a second, independent source
@@ -440,7 +441,7 @@ describe("AC-A15 the full C-01 is mounted, and fed the same data as the rows", (
 
     expect(mapButtonValue("hamstrings")).toBe("18 / 16");
     expect(rowValue("hamstrings")).toBe("18 / 16");
-    expect(mapButtonFill("hamstrings")).toBe("var(--wl-coverage-4)");
+    expect(mapButtonFill("hamstrings")).toBe("var(--wl-ink)");
     expect(rowFill("hamstrings")).toBe("var(--wl-coverage-4)");
     // And the attention outline dropped on both.
     expect(row("hamstrings")!.style.outline).toBe("");
