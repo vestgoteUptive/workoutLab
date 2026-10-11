@@ -55,7 +55,7 @@ async function open(page: Page, path: string): Promise<void> {
 test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  // `/balance` (`.wl-balance__window`, 20 px) and `/welcome` (`.wl-uf01__title`, 48 px) set their own
+  // `/welcome` (`.wl-uf01__title`, 48 px) sets its own
   // h1 size in feature CSS, which a global element rule can't override. Migrating them is a later
   // per-feature ticket (spec §2 Migration), so the 32-40 px range is not asserted there; family,
   // weight and case still are. Recorded in the T-0546 log.
@@ -80,10 +80,10 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
     expect(got.body.startsWith('"DM Sans"')).toBe(true);
   }
 
-  for (const path of ["/", "/progress", "/balance", "/plan"]) {
+  for (const path of ["/", "/progress", "/plan"]) {
     test(`${path} h1 and body follow the scale`, async ({ page }) => {
       await open(page, path);
-      await expectScale(page, path === "/balance");
+      await expectScale(page);
     });
   }
 

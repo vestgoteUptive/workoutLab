@@ -120,6 +120,23 @@ async function openLibrary(page: Page): Promise<void> {
 
 const fullMap = (page: Page) => page.locator('[data-component="C-01"][data-variant="full"]');
 
+/**
+ * T-0611: /balance is a plan screen now, so its root's own data-wl-state would override the
+ * page-level state these tests set. The real figure markup is copied into a fixture host outside
+ * any screen root (like cobalt-state.spec.ts injects its roots) and the screen is removed, so the
+ * state the test sets on <html> (or none) is the one that applies. Never another real screen: it
+ * would break the same way once that screen migrates.
+ */
+const detachMap = (page: Page) =>
+  page.evaluate(() => {
+    const map = document.querySelector('[data-component="C-01"][data-variant="full"]')!;
+    const host = document.createElement("div");
+    host.id = "no-state-host";
+    host.innerHTML = map.outerHTML;
+    document.querySelectorAll("[data-screen-id]").forEach((e) => e.remove());
+    document.body.append(host);
+  });
+
 const setState = (page: Page, state: string | null) =>
   page.evaluate((st) => {
     if (st === null) document.documentElement.removeAttribute("data-wl-state");
@@ -209,6 +226,7 @@ test.describe("T-0660 AC3 session states", () => {
   for (const state of ["lift", "rest"] as const) {
     test(`${state}: seams follow --wl-bg and attention is not drawn`, async ({ page }) => {
       await openBalance(page);
+      await detachMap(page);
       await setState(page, state);
       const svg = fullMap(page).locator("svg");
       const bg = await resolved(page, `var(--wl-color-${state}-bg)`);
@@ -320,6 +338,7 @@ test.describe("T-0660 AC7 unmigrated screens stay legible", () => {
     page,
   }, testInfo) => {
     await openBalance(page);
+    await detachMap(page);
     expect(await page.evaluate(() => document.documentElement.hasAttribute("data-wl-state"))).toBe(
       false,
     );

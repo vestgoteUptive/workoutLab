@@ -103,6 +103,23 @@ async function open(page: Page, fixture: Fixture, path: string): Promise<void> {
 
 const fullMap = (page: Page) => page.locator('[data-component="C-01"][data-variant="full"]');
 
+/**
+ * T-0611: /balance is a plan screen now, so its root's own data-wl-state would override the
+ * page-level state these tests set. The real figure markup is copied into a fixture host outside
+ * any screen root (like cobalt-state.spec.ts injects its roots) and the screen is removed, so the
+ * state the test sets on <html> (or none) is the one that applies. Never another real screen: it
+ * would break the same way once that screen migrates.
+ */
+const detachMap = (page: Page) =>
+  page.evaluate(() => {
+    const map = document.querySelector('[data-component="C-01"][data-variant="full"]')!;
+    const host = document.createElement("div");
+    host.id = "no-state-host";
+    host.innerHTML = map.outerHTML;
+    document.querySelectorAll("[data-screen-id]").forEach((e) => e.remove());
+    document.body.append(host);
+  });
+
 async function ready(page: Page): Promise<void> {
   await expect(page.locator('[data-screen-id="UF-10.1"]')).toBeVisible();
   // The label buttons are disabled while the cache read is in flight.
@@ -346,6 +363,7 @@ test.describe("T-0615 AC2 / T-0660 AC7 unmigrated screens (no state)", () => {
   test("the v2 art reads the Chalk & Iron --wl-bg and --wl-ink from :root", async ({ page }) => {
     await open(page, "ramp", "/balance");
     await ready(page);
+    await detachMap(page);
     expect(await page.evaluate(() => document.documentElement.hasAttribute("data-wl-state"))).toBe(
       false,
     );
