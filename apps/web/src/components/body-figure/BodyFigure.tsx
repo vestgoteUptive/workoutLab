@@ -1,4 +1,4 @@
-// Shared body figure (T-0556, D-0207, UF-04.2 / UF-02.1 / UF-10.1). Purely presentational: it
+// Shared body figure (T-0556, D-0207; v2 art T-0660 / D-0225). UF-04.2 / UF-02.1 / UF-10.1. Purely presentational: it
 // computes nothing (principle 3). The markup is the designer's single asset, inlined at build
 // time (no fetch, so it works offline); this file only adds classes, the per-instance hatch id
 // and the attention / highlight halos. Colours live in body-figure.css, by class and token.
@@ -53,7 +53,6 @@ function modifier(style: RegionStyle | undefined): string {
 }
 
 const isArea = (v: string | undefined): v is Area => (AREAS as readonly string[]).includes(v ?? "");
-const onAccent = (m: string) => m === "primary" || m === "step-3" || m === "step-4";
 
 export function BodyFigure({ regions, highlighted, onRegionPointer, size }: BodyFigureProps) {
   const hatchId = `${HATCH_ID}-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -79,17 +78,10 @@ export function BodyFigure({ regions, highlighted, onRegionPointer, size }: Body
     const out: ReactNode[] = [];
     const parts: ReactNode[] = [];
     const late: ReactNode[] = [];
-    const seams: ReactNode[] = [];
     const rings: ReactNode[] = [];
     v.children.forEach((c, i) => {
       const cls = c.attrs.class ?? "";
       const area = c.attrs["data-area"];
-      const seamArea = c.attrs["data-seam"];
-      if (seamArea !== undefined) {
-        const m = mods.get(seamArea) ?? "none";
-        seams.push(path(c, cls + (onAccent(m) ? " wl-fig__seam--on-accent" : ""), `s${i}`));
-        return;
-      }
       if (!area || !isArea(area)) {
         parts.push(path(c, cls, `b${i}`));
         return;
@@ -98,7 +90,7 @@ export function BodyFigure({ regions, highlighted, onRegionPointer, size }: Body
       const attention = regions[area]?.attention === true;
       const region = path(
         c,
-        `${cls} wl-fig__region--${m}${attention ? " wl-fig__region--attention" : ""}`,
+        `${cls} wl-fig__region--${m}${attention ? " wl-fig__region--attention" : ""}${highlighted === area ? " wl-fig__region--highlighted" : ""}`,
         `r${i}`,
         area,
       );
@@ -116,13 +108,13 @@ export function BodyFigure({ regions, highlighted, onRegionPointer, size }: Body
     return createElement(
       "g",
       { key: vi, className: v.attrs.class, "data-view": v.attrs["data-view"] },
-      // Paint order (AC-ring): body parts, then the highlight ring, then the regions, so the
-      // silhouette never hides the ring and the ring's gap never eats into its own region.
+      // Paint order (matches the Body Figure Export canvas): body parts, the highlight ring, the
+      // regions, then each attention region with its halo drawn just under it. The seams are the
+      // regions' own background-coloured strokes (no seam paths in the v2 art).
       ...parts,
       ...rings,
       ...out,
       ...late,
-      ...seams,
     );
   }
 
@@ -138,7 +130,7 @@ export function BodyFigure({ regions, highlighted, onRegionPointer, size }: Body
     {
       xmlns: root.attrs.xmlns,
       viewBox: root.attrs.viewBox,
-      className: `wl-fig wl-fig--${size}`,
+      className: `wl-fig wl-fig--${size}${highlighted && isArea(highlighted) ? " wl-fig--has-highlight" : ""}`,
       "aria-hidden": "true",
       focusable: "false",
       style: { "--wl-fig-hatch": `url(#${hatchId})` },

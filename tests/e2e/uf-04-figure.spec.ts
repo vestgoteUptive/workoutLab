@@ -119,12 +119,13 @@ test.describe("AC-8 forced colours", () => {
   });
 });
 
-// T-0615 AC3: inside a plan state a primary region is plan.ink and a secondary region is filled
-// with the instance hatch (plan.ink stripes on plan.raise). The state is set on <html> after load.
+// T-0615 AC3, reworked for v2 (T-0660): inside a plan state a primary region is plan.ink and a
+// secondary region is filled with the instance hatch (plan.ink lines on ink at 16 %). With no
+// state, :root maps --wl-ink to the Chalk & Iron text colour. The state is set on <html> after load.
 test.describe("T-0615 AC3 plan primary and secondary (UF-04.2)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("primary is plan.ink, hatch is ink on raise; no state keeps lime", async ({
+  test("primary is plan.ink, hatch is ink lines on ink at 16 %; no state keeps Chalk text", async ({
     page,
   }, testInfo) => {
     await open(page);
@@ -144,7 +145,7 @@ test.describe("T-0615 AC3 plan primary and secondary (UF-04.2)", () => {
         .evaluate((el) => getComputedStyle(el).fill);
 
     const primary = 'svg.wl-fig [data-area="quads"].wl-fig__region--primary';
-    expect(await fillOf(primary)).toBe(await resolved("var(--wl-color-accent)"));
+    expect(await fillOf(primary)).toBe(await resolved("var(--wl-color-text)"));
 
     await page.evaluate(() => {
       document.documentElement.setAttribute("data-wl-state", "plan");
@@ -153,11 +154,11 @@ test.describe("T-0615 AC3 plan primary and secondary (UF-04.2)", () => {
     expect(await fillOf(primary)).toBe(await resolved("var(--wl-color-plan-ink)"));
     const secondary = page.locator("svg.wl-fig .wl-fig__region--secondary").first();
     expect(await secondary.evaluate((el) => getComputedStyle(el).fill)).toMatch(/^url\(/);
-    expect(await fillOf("svg.wl-fig .wl-fig__hatch-stripe")).toBe(
+    expect(await fillOf("svg.wl-fig .wl-fig__hatch-line")).toBe(
       await resolved("var(--wl-color-plan-ink)"),
     );
-    expect(await fillOf("svg.wl-fig .wl-fig__hatch-ground")).toBe(
-      await resolved("var(--wl-color-plan-raise)"),
+    expect(await fillOf("svg.wl-fig .wl-fig__hatch-bg")).toBe(
+      await resolved("color-mix(in srgb, var(--wl-color-plan-ink) 16%, transparent)"),
     );
     await page
       .locator("svg.wl-fig")

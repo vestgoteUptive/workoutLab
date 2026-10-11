@@ -1,11 +1,25 @@
-// T-0556 AC-1, AC-3, AC-4, AC-6 and the edge cases (D-0207, spec body-map-silhouette AC-1/3).
+// T-0556 AC-1, AC-3, AC-4, AC-6 and the edge cases (D-0207, spec body-map-silhouette AC-1/3);
+// v2 art T-0660 (D-0225): AC1 keys, AC4 highlight classes, no seam paths.
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { cleanup, fireEvent, render } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { coverageStepOf } from "@workoutlab/engine";
 import { AREAS, type Area } from "@workoutlab/shared";
 import { BodyFigure, type BodyFigureProps } from "../index.js";
 
 afterEach(cleanup);
 
+const SVG_FILE = resolve(
+  process.cwd(),
+  "../../Design-docs/docs/design/assets/body-figure/body-figure.svg",
+);
+/** The `data-area` keys of the shipped SVG, per view (front first). */
+function keysOf(text: string): { front: Set<string>; back: Set<string> } {
+  const [front = "", back = ""] = text.split(/data-view="back"/);
+  const keys = (t: string) => new Set([...t.matchAll(/data-area="([^"]*)"/g)].map((m) => m[1]!));
+  return { front: keys(front), back: keys(back) };
+}
 const FRONT_ONLY: Area[] = ["chest", "core", "quads"];
 const BACK_ONLY: Area[] = ["back", "glutes", "hamstrings", "calves"];
 const BOTH: Area[] = ["shoulders", "arms"];
@@ -17,6 +31,43 @@ function mount(props: Partial<BodyFigureProps> = {}) {
 const areasIn = (root: Element) =>
   new Set([...root.querySelectorAll("[data-area]")].map((e) => e.getAttribute("data-area")));
 const region = (svg: Element, area: string) => [...svg.querySelectorAll(`[data-area="${area}"]`)];
+
+describe("T-0660 AC1 the shipped SVG keys equal AREAS", () => {
+  const raw = readFileSync(SVG_FILE, "utf8");
+  const matches = (text: string) => {
+    const { front, back } = keysOf(text);
+    return (
+      [...front, ...back].every((k) => (AREAS as readonly string[]).includes(k)) &&
+      new Set([...front, ...back]).size === AREAS.length &&
+      JSON.stringify([...front].sort()) ===
+        JSON.stringify(["arms", "chest", "core", "quads", "shoulders"]) &&
+      JSON.stringify([...back].sort()) ===
+        JSON.stringify(["arms", "back", "calves", "glutes", "hamstrings", "shoulders"])
+    );
+  };
+  it("front and back keys are exactly the nine areas", () => {
+    expect(matches(raw)).toBe(true);
+  });
+  it("planted fault: renaming one key fails", () => {
+    expect(matches(raw.replace(/data-area="glutes"/g, 'data-area="glute"'))).toBe(false);
+    expect(matches(raw.replace(/data-area="back"/, 'data-area="upper-back"'))).toBe(false);
+  });
+  it("has no metadata block and no seam paths", () => {
+    expect(raw).not.toContain("<metadata");
+    expect(raw).not.toContain("data-seam");
+  });
+  it("on target (coverage step 4, engine) is the white step", () => {
+    expect(coverageStepOf(20, 20)).toBe(4);
+    const css = readFileSync(
+      resolve(process.cwd(), "src/components/body-figure/body-figure.css"),
+      "utf8",
+    );
+    expect(css).toMatch(
+      /\.wl-fig__region--step-4,\s*\.wl-fig__region--primary\s*{\s*fill:\s*var\(--wl-fig-ink\)/,
+    );
+    expect(css).toMatch(/\.wl-fig__region--step-3\s*{\s*fill:\s*var\(--wl-fig-zone\)/);
+  });
+});
 
 describe("AC-1 data-area values per view", () => {
   it("front, back and the neutral parts match the T-0315 table", () => {
@@ -30,7 +81,8 @@ describe("AC-1 data-area values per view", () => {
     for (const el of svg.querySelectorAll(".wl-fig__body:not(.wl-fig__region)")) {
       expect(el.hasAttribute("data-area")).toBe(false);
     }
-    expect(svg.querySelectorAll(".wl-fig__silhouette").length).toBe(2);
+    expect(svg.querySelectorAll(".wl-fig__body:not(.wl-fig__region)").length).toBe(8);
+    expect(svg.querySelectorAll("[data-seam], .wl-fig__seam").length).toBe(0);
   });
 });
 
@@ -61,7 +113,7 @@ describe("AC-4 styles", () => {
     for (const p of region(svg, "calves"))
       expect(p.getAttribute("class")).toContain("wl-fig__region--secondary");
     const back = region(svg, "back");
-    expect(back.length).toBe(6);
+    expect(back.length).toBe(1);
     for (const p of back) {
       expect(p.getAttribute("class")).toContain("wl-fig__region--step-3");
       expect(p.getAttribute("class")).toContain("wl-fig__region--attention");
@@ -73,8 +125,8 @@ describe("AC-4 styles", () => {
       }
     }
     // one warn + one gap halo per attention region, none for the others
-    expect(svg.querySelectorAll(".wl-fig__halo-warn")).toHaveLength(6);
-    expect(svg.querySelectorAll(".wl-fig__halo-gap")).toHaveLength(6);
+    expect(svg.querySelectorAll(".wl-fig__halo-warn")).toHaveLength(1);
+    expect(svg.querySelectorAll(".wl-fig__halo-gap")).toHaveLength(1);
     // secondary fill references this instance's own pattern
     const ref = svg.style.getPropertyValue("--wl-fig-hatch");
     const id = /^url\(#(.+)\)$/.exec(ref)![1]!;
@@ -117,16 +169,33 @@ describe("AC-4 styles", () => {
     }
   });
 
-  it("seams of accent-filled areas switch to on-accent", () => {
+  it("T-0660 AC4: highlighted adds wl-fig--has-highlight and marks only that area's regions", () => {
+    const svg = mount({ highlighted: "quads" });
+    expect(svg.getAttribute("class")).toContain("wl-fig--has-highlight");
+    for (const a of AREAS)
+      for (const p of region(svg, a)) {
+        const on = p.getAttribute("class")!.includes("wl-fig__region--highlighted");
+        expect(on, a).toBe(a === "quads");
+      }
+    const plain = mount({});
+    expect(plain.getAttribute("class")).not.toContain("has-highlight");
+    expect(plain.querySelector(".wl-fig__region--highlighted")).toBeNull();
+  });
+
+  it("T-0660: an attention region is drawn after the plain regions, its halo just under it", () => {
     const svg = mount({
-      regions: { chest: { fill: "primary" }, core: { fill: { coverageStep: 1 } } },
+      regions: { back: { fill: { coverageStep: 1 }, attention: true } },
     });
-    for (const s of svg.querySelectorAll('[data-seam="chest"]')) {
-      expect(s.getAttribute("class")).toContain("wl-fig__seam--on-accent");
-    }
-    for (const s of svg.querySelectorAll('[data-seam="core"]')) {
-      expect(s.getAttribute("class")).not.toContain("on-accent");
-    }
+    const view = svg.querySelector('[data-view="back"]')!;
+    const kids = [...view.children];
+    const warn = kids.findIndex((e) => e.classList.contains("wl-fig__halo-warn"));
+    const att = kids.findIndex((e) => e.getAttribute("class")!.includes("--attention"));
+    expect(kids[warn + 1]!.classList.contains("wl-fig__halo-gap")).toBe(true);
+    expect(att).toBe(warn + 2);
+    const plainRegions = kids.filter(
+      (e) => e.hasAttribute("data-area") && !e.getAttribute("class")!.includes("--attention"),
+    );
+    for (const r of plainRegions) expect(kids.indexOf(r)).toBeLessThan(warn);
   });
 
   it("highlighted draws a ring behind that area's regions only", () => {
@@ -170,7 +239,7 @@ describe("AC-4 styles", () => {
     expect(vars).toEqual(ids.map((i) => `url(#${i})`));
   });
 
-  it("size picks the height class", () => {
+  it("size picks the width class", () => {
     expect(mount({ size: "compact" }).getAttribute("class")).toContain("wl-fig--compact");
     expect(mount({ size: "full" }).getAttribute("class")).toContain("wl-fig--full");
   });
@@ -190,8 +259,7 @@ describe("AC-6 pointer", () => {
     fireEvent.click(region(svg, "calves")[0]!);
     expect(onRegionPointer).toHaveBeenCalledTimes(1);
     expect(onRegionPointer).toHaveBeenCalledWith("calves");
-    fireEvent.click(svg.querySelector(".wl-fig__silhouette")!);
-    fireEvent.click(svg.querySelector(".wl-fig__seam")!);
+    fireEvent.click(svg.querySelector(".wl-fig__body")!);
     expect(onRegionPointer).toHaveBeenCalledTimes(1);
   });
 

@@ -54,13 +54,15 @@ The step mapping is `0 / <0.33 / <0.66 / <1 / ≥1` for `r = load / target` (D-0
 
 ## Silhouette layout
 
+> **Figure art v2 (T-0660, D-0225, owner pick 1b).** This overrides the colours and sizes below. The art is one smooth silhouette per view with soft zones (no seam paths): silhouette = ink at 16 %, zones = ink at 32 % with a `--wl-bg` stroke (2.4 units, 4 at compact) as the seams, white = on target (step 4) or primary, a 45° ink hatch = secondary, `plan.attention` + a ring = needs attention, and a highlighted area is white with a ring while the rest dims to 12 % / 20 %. Steps 0 to 3 keep the zone tint; the label grid tells them apart. Sizes: full 18.5 rem wide (about 300 px tall), detail 13.5 rem (about 220 px), compact 3.75 rem (about 60 px). The same art is used on plan, lift and rest (the seams follow `--wl-bg`); attention is not shown on session screens. Screens without `data-wl-state` get the Chalk & Iron `--wl-bg` and `--wl-ink` from `:root`, so the figure stays legible there.
+
 - **Component:** `BodyMap` (`components/body-map`) renders `BodyFigure` (`components/body-figure`) above a label grid. `BodyFigure` is built from `../assets/body-figure/body-figure.svg` (front and back views, 9 `data-area` regions, no colour attributes). Fill, stroke, seam, hatch, halo and ring rules, on the generic variables: `design-system.md` § Body figure.
 - **Unchanged:** everything above (where it appears, data in, coverage steps, labels, legend, states), D-0013 / D-0019 copy, and D-0060 §2–§8 (props, number format, accessible names, keyboard, loading, axe, import ban). The D-0060 §8 import ban also covers `BodyFigure` (D-0207 §5).
 
 ```
 ┌──────────────────────────────────┐
-│     FRONT            BACK        │  BodyFigure: full 240 px tall, compact 140 px
-│    (figure)        (figure)      │  fills = --wl-coverage-<step>, attention outline
+│     FRONT            BACK        │  BodyFigure: full 300 px tall, compact 60 px
+│    (figure)        (figure)      │  white = on target, attention ring
 ├──────────────────────────────────┤  16 px gap (full), 12 px (compact)
 │ ● Shoulders  ● Chest    ● Back   │  label grid: 3 columns, D-0060 order
 │   8 / 16       7.5 / 20   12 / 20│
@@ -72,7 +74,7 @@ The step mapping is `0 / <0.33 / <0.66 / <1 / ≥1` for `r = load / target` (D-0
 └──────────────────────────────────┘
 ```
 
-- **Figure:** both views, centred. Each region's fill is `var(--wl-coverage-<coverageStep>)`. Shoulders and arms appear in both views and are filled the same in both. Seams inside `--wl-coverage-3` / `--wl-coverage-4` regions switch to `--wl-on-selected`.
+- **Figure:** both views, centred. Each region is white at step 4 and the zone tint at steps 0 to 3 (D-0225 §3). Shoulders and arms appear in both views and are filled the same in both. The seams are the regions' `--wl-bg` strokes.
 - **Label grid** (the D-0060 tile grid, slimmed down; it replaces the big fill shapes):
   - Order: shoulders, chest, back / arms, core, glutes / quads, hamstrings, calves (the D-0060 body order, 3 columns).
   - Each label: a 12 × 12 px swatch dot (the area's coverage fill, with a 1 px `--wl-ink-muted` border, and a 2 px `--wl-attention` ring with a 1 px `--wl-bg` gap when `needsAttention`), the area name, and `load / target` under it.
@@ -82,7 +84,7 @@ The step mapping is `0 / <0.33 / <0.66 / <1 / ≥1` for `r = load / target` (D-0
 
 ### Attention outline on the figure
 
-- `needsAttention` draws a 2 px `--wl-attention` stroke **outside** the region's 1 px `--wl-ink-muted` border, with a 1 px `--wl-bg` gap between them (a halo). So `plan.attention` never touches a white fill directly (`plan.attention` against `plan-coverage-4` is only 1.7:1). It's drawn on every path of that area in both views, above the neighbouring regions.
+- `needsAttention` draws a halo: a 7-unit `--wl-attention` stroke with a 3.6-unit `--wl-bg` gap stroke on top, so the visible band sits just outside the region (v2, D-0225). So `plan.attention` never touches a white fill directly (`plan.attention` against `plan-coverage-4` is only 1.7:1). It's drawn on every path of that area in both views, above the neighbouring regions.
 - The same area's label swatch gets the 2 px `--wl-attention` ring, and the accessible name keeps the D-0060 §4 ", needs attention" suffix.
 
 ### Interaction (`full` only)
@@ -104,7 +106,7 @@ The step mapping is `0 / <0.33 / <0.66 / <1 / ≥1` for `r = load / target` (D-0
 ### Silhouette accessibility
 
 - The `<svg>` is `aria-hidden`. The labels carry every value as text (NFR-A11Y-3), and the accessible names are unchanged from D-0060 §4.
-- Region shapes are visible at every step through the 1 px `--wl-ink-muted` border against the `--wl-raise` body (4.2:1 on plan), even where the step fill is under 3:1.
+- Region shapes are visible at every step through the `--wl-bg` seam strokes against the 16 % silhouette. Coverage never relies on fill alone: the labels carry the numbers.
 - Targets: 9 × ≥ 44 px label buttons in `full`.
-- Forced colours: regions `Canvas` with `CanvasText` borders, and attention a 3 px `Highlight` stroke.
+- Forced colours: regions `Canvas` with `CanvasText` borders, primary and step 4 `CanvasText`, and attention a `Highlight` halo. Forced colours win over every rule above.
 - Build: web-shell (T-0556 `BodyFigure`, then the C-01 layout). UF-02.1 and UF-10.1 call sites don't change.

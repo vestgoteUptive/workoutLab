@@ -1,204 +1,180 @@
-/* Body figure (T-0556, D-0207). Colours by class and token only; system colours only inside
-   the forced-colors block. Rules follow the designer's preview (#wl-fig-css). No animation. */
+/* Body figure v2 (T-0660, D-0225, redesign-cobalt 1b). The rules follow the handoff
+   redesign-cobalt/body-figure/body-figure.css. Every colour comes from the generic --wl-*
+   variables, so the same figure works on plan (blue), lift (red) and rest (teal) through the
+   [data-wl-state] scope. No raw colours.
+
+   Screens that set no data-wl-state (not yet migrated, D-0210 / D-0225 §6): :root in main.css
+   maps --wl-bg and --wl-ink to the Chalk & Iron values, so the same rules draw the figure as
+   Chalk-coloured ink at 16 % / 32 % on the dark page. No legacy colour block is kept. */
 .wl-fig {
+  --wl-fig-bg: var(--wl-bg); /* seam colour = the screen background */
+  --wl-fig-ink: var(--wl-ink); /* white in every state */
+  --wl-fig-base: color-mix(in srgb, var(--wl-fig-ink) 16%, transparent);
+  --wl-fig-zone: color-mix(in srgb, var(--wl-fig-ink) 32%, transparent);
   display: block;
-  width: auto;
-}
-.wl-fig--compact {
-  height: 140px;
-}
-.wl-fig--detail {
-  height: 200px;
+  height: auto;
+  overflow: visible;
 }
 .wl-fig--full {
-  height: 240px;
+  width: 18.5rem; /* about 300 px tall */
 }
-.wl-fig path {
-  vector-effect: non-scaling-stroke;
-  stroke-linejoin: round;
-  stroke-linecap: round;
+.wl-fig--detail {
+  width: 13.5rem; /* about 220 px tall */
 }
-.wl-fig__silhouette {
-  fill: var(--wl-color-surface-2);
-  stroke: var(--wl-color-text-muted);
-  stroke-width: 1.5px;
+.wl-fig--compact {
+  width: 3.75rem; /* about 60 px tall, list thumbnails */
 }
-.wl-fig__body:not(.wl-fig__silhouette) {
-  fill: var(--wl-color-surface-2);
-  stroke: var(--wl-color-line-strong);
-  stroke-width: 0.75px;
+
+/* Silhouette: head, torso + legs, both arms. */
+.wl-fig__body {
+  fill: var(--wl-fig-base);
 }
+
+/* Regions. The bg-coloured stroke is the seam between zones and against the silhouette. */
 .wl-fig__region {
-  fill: var(--wl-color-surface-2);
-  stroke: var(--wl-color-text-muted);
-  stroke-width: 1px;
+  fill: var(--wl-fig-zone);
+  stroke: var(--wl-fig-bg);
+  stroke-width: 2.4;
+  stroke-linejoin: round;
 }
-.wl-fig__seam {
-  fill: none;
-  stroke: var(--wl-color-line-strong);
-  stroke-width: 0.75px;
-  pointer-events: none;
+.wl-fig--compact .wl-fig__region {
+  stroke-width: 4;
 }
-.wl-fig__seam--on-accent {
-  stroke: var(--wl-color-on-accent);
+
+/* Coverage: two colours. White = on target (step 4). Steps 0 to 3 stay the zone tint.
+   Needs attention = salmon + a ring (non-colour cue), from the attention flag. */
+.wl-fig__region--none,
+.wl-fig__region--step-0,
+.wl-fig__region--step-1,
+.wl-fig__region--step-2,
+.wl-fig__region--step-3 {
+  fill: var(--wl-fig-zone);
 }
-.wl-fig__hatch-ground {
-  fill: var(--wl-color-surface-2);
-}
-.wl-fig__hatch-stripe {
-  fill: var(--wl-color-accent);
-}
-.wl-fig__region--none {
-  fill: var(--wl-color-surface-2);
-}
+.wl-fig__region--step-4,
 .wl-fig__region--primary {
-  fill: var(--wl-color-accent);
+  fill: var(--wl-fig-ink);
 }
 /* --wl-fig-hatch is set per instance on the <svg> and points at that instance's own pattern. */
 .wl-fig__region--secondary {
   fill: var(--wl-fig-hatch);
 }
-.wl-fig__region--step-0 {
-  fill: var(--wl-color-coverage-0);
+.wl-fig__region--attention {
+  fill: var(--wl-color-plan-attention);
 }
-.wl-fig__region--step-1 {
-  fill: var(--wl-color-coverage-1);
+
+/* Hatch pattern (secondary). */
+.wl-fig__hatch-bg {
+  fill: var(--wl-fig-base);
 }
-.wl-fig__region--step-2 {
-  fill: var(--wl-color-coverage-2);
+.wl-fig__hatch-line {
+  fill: var(--wl-fig-ink);
 }
-.wl-fig__region--step-3 {
-  fill: var(--wl-color-coverage-3);
-}
-.wl-fig__region--step-4 {
-  fill: var(--wl-color-coverage-4);
-}
-/* Attention halo: 1 px region border, then a 1 px surface gap, then 2 px warn. */
+
+/* Attention halo (drawn under the region by BodyFigure.tsx). */
 .wl-fig__halo-warn {
   fill: none;
-  stroke: var(--wl-color-warn);
-  stroke-width: 7px;
-  pointer-events: none;
+  stroke: var(--wl-color-plan-attention);
+  stroke-width: 7;
 }
 .wl-fig__halo-gap {
   fill: none;
-  stroke: var(--wl-color-surface);
-  stroke-width: 3px;
-  pointer-events: none;
+  stroke: var(--wl-fig-bg);
+  stroke-width: 3.6;
 }
-/* Highlight ring: 2 px accent, offset 2 px from the region border, with a surface gap. */
+
+/* Highlight ring (area detail). The visible band is between the gap and ring strokes. */
 .wl-fig__ring {
   fill: none;
-  stroke: var(--wl-color-accent);
-  stroke-width: 9px;
-  pointer-events: none;
+  stroke: var(--wl-fig-ink);
+  stroke-width: 7;
 }
 .wl-fig__ring-gap {
   fill: none;
-  stroke: var(--wl-color-surface);
-  stroke-width: 5px;
+  stroke: var(--wl-fig-bg);
+  stroke-width: 3.6;
+}
+
+/* Halo and ring are decoration: a tap on them must reach the region underneath. */
+.wl-fig__halo-warn,
+.wl-fig__halo-gap,
+.wl-fig__ring,
+.wl-fig__ring-gap {
   pointer-events: none;
 }
-/* State scopes (T-0615, D-0208 §2, D-0210 §2, D-0211 §2): on a screen that sets data-wl-state the
-   figure reads the generic --wl-* variables (cobalt on plan). The rules above are the legacy
-   look for screens without a state. :where() keeps specificity equal to the legacy rules, so
-   source order decides and the forced-colors block below still wins. */
-:where([data-wl-state]) .wl-fig__silhouette {
-  fill: var(--wl-raise);
-  stroke: var(--wl-ink-muted);
+
+/* Session screens (lift and rest, D-0225 §2): attention is not drawn. A caller that passes it
+   anyway gets no halo and the region keeps its coverage fill. */
+:is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-fig__halo-warn,
+:is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-fig__halo-gap {
+  display: none;
 }
-:where([data-wl-state]) .wl-fig__body:not(.wl-fig__silhouette) {
-  fill: var(--wl-raise);
-  stroke: var(--wl-line);
+:is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-fig__region--attention {
+  fill: var(--wl-fig-zone);
 }
-:where([data-wl-state]) .wl-fig__region {
-  fill: var(--wl-raise);
-  stroke: var(--wl-ink-muted);
+:is([data-wl-state="lift"], [data-wl-state="rest"])
+  .wl-fig__region--attention.wl-fig__region--step-4,
+:is([data-wl-state="lift"], [data-wl-state="rest"])
+  .wl-fig__region--attention.wl-fig__region--primary {
+  fill: var(--wl-fig-ink);
 }
-:where([data-wl-state]) .wl-fig__seam {
-  stroke: var(--wl-line);
-}
-:where([data-wl-state]) .wl-fig__seam--on-accent {
-  stroke: var(--wl-on-selected);
-}
-:where([data-wl-state]) .wl-fig__hatch-ground {
-  fill: var(--wl-raise);
-}
-:where([data-wl-state]) .wl-fig__hatch-stripe {
-  fill: var(--wl-ink);
-}
-:where([data-wl-state]) .wl-fig__region--none {
-  fill: var(--wl-raise);
-}
-:where([data-wl-state]) .wl-fig__region--primary {
-  fill: var(--wl-ink);
-}
-:where([data-wl-state]) .wl-fig__region--secondary {
+:is([data-wl-state="lift"], [data-wl-state="rest"])
+  .wl-fig__region--attention.wl-fig__region--secondary {
   fill: var(--wl-fig-hatch);
 }
-:where([data-wl-state]) .wl-fig__region--step-0 {
-  fill: var(--wl-coverage-0);
+
+/* Highlight dims everything else (wl-fig--has-highlight on the svg, --highlighted on the region). */
+.wl-fig--has-highlight .wl-fig__body {
+  fill: color-mix(in srgb, var(--wl-fig-ink) 12%, transparent);
 }
-:where([data-wl-state]) .wl-fig__region--step-1 {
-  fill: var(--wl-coverage-1);
+.wl-fig--has-highlight .wl-fig__region {
+  fill: color-mix(in srgb, var(--wl-fig-ink) 20%, transparent);
 }
-:where([data-wl-state]) .wl-fig__region--step-2 {
-  fill: var(--wl-coverage-2);
+.wl-fig--has-highlight .wl-fig__region--highlighted {
+  fill: var(--wl-fig-ink);
 }
-:where([data-wl-state]) .wl-fig__region--step-3 {
-  fill: var(--wl-coverage-3);
-}
-:where([data-wl-state]) .wl-fig__region--step-4 {
-  fill: var(--wl-coverage-4);
-}
-:where([data-wl-state]) .wl-fig__halo-warn {
-  stroke: var(--wl-attention);
-}
-:where([data-wl-state]) .wl-fig__halo-gap {
-  stroke: var(--wl-bg);
-}
-:where([data-wl-state]) .wl-fig__ring {
-  stroke: var(--wl-focus);
-}
-:where([data-wl-state]) .wl-fig__ring-gap {
-  stroke: var(--wl-bg);
-}
+
+/* Forced colours still win: system colours only, and the translucent fills become Canvas with a
+   CanvasText border so every region keeps a visible edge. The doubled selectors outrank the rules
+   above regardless of source order. */
 @media (forced-colors: active) {
   .wl-fig {
     forced-color-adjust: none;
   }
-  .wl-fig__silhouette,
-  .wl-fig__body:not(.wl-fig__silhouette),
-  .wl-fig__region,
-  .wl-fig__region[class*="--step-"] {
+  .wl-fig .wl-fig__body {
+    fill: Canvas;
+    stroke: CanvasText;
+    stroke-width: 1;
+  }
+  .wl-fig .wl-fig__region,
+  .wl-fig.wl-fig--has-highlight .wl-fig__region,
+  .wl-fig .wl-fig__region[class*="--step-"],
+  .wl-fig .wl-fig__region--attention {
     fill: Canvas;
     stroke: CanvasText;
   }
-  .wl-fig__region--primary {
+  .wl-fig:not(.wl-fig--has-highlight) .wl-fig__region.wl-fig__region--primary,
+  .wl-fig:not(.wl-fig--has-highlight) .wl-fig__region.wl-fig__region--step-4,
+  .wl-fig.wl-fig--has-highlight .wl-fig__region.wl-fig__region--highlighted {
     fill: CanvasText;
   }
-  .wl-fig__region--secondary {
+  .wl-fig:not(.wl-fig--has-highlight) .wl-fig__region.wl-fig__region--secondary {
     fill: var(--wl-fig-hatch);
   }
-  .wl-fig__hatch-ground {
+  .wl-fig .wl-fig__hatch-bg {
     fill: Canvas;
   }
-  .wl-fig__hatch-stripe {
+  .wl-fig .wl-fig__hatch-line {
     fill: CanvasText;
   }
-  .wl-fig__seam,
-  .wl-fig__seam--on-accent {
-    stroke: GrayText;
-  }
-  .wl-fig__halo-warn {
+  .wl-fig .wl-fig__halo-warn {
     stroke: Highlight;
-    stroke-width: 9px;
+    stroke-width: 9;
   }
-  .wl-fig__halo-gap,
-  .wl-fig__ring-gap {
+  .wl-fig .wl-fig__halo-gap,
+  .wl-fig .wl-fig__ring-gap {
     stroke: Canvas;
   }
-  .wl-fig__ring {
+  .wl-fig .wl-fig__ring {
     stroke: Highlight;
   }
 }
