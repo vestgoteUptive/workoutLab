@@ -1,210 +1,439 @@
-/* UF-03.1 List view (T-0416). Colours and fonts come only from @workoutlab/design-tokens
- * (D-0019): there is no raw hex in this file. */
+/* UF-03.1 List view and UF-03.2 List view rest (T-0603, D-0208, D-0210, D-0211, D-0216): the
+ * lift and rest states. Colour and font come from the generic --wl-* variables that main.css maps
+ * from the state attribute; no hex, no px font size. Every rule is scoped to .wl-uf03-list or
+ * .wl-uf03-rest, so no layout rule leaks to another screen. The legacy .wl-uf03-list__* rules of
+ * the Chalk & Iron look are gone: UF-03.3 Summary (summary.css) never used them (T-0604). */
 
-.wl-uf03-list {
+/* The UF-09 overlay wrapper (.wl-uf09--overlay) still paints its own padding and legacy
+ * background; while a state screen is inside it, the screen owns both. */
+.wl-uf09--overlay:has(> .wl-uf03-list[data-wl-state], > .wl-uf03-rest[data-wl-state]) {
   display: flex;
+  padding: 0;
+  gap: 0;
+  background: transparent;
+}
+
+.wl-uf03-list[data-wl-state],
+.wl-uf03-rest[data-wl-state] {
+  display: flex;
+  flex: 1;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  font-family: var(--wl-font-body);
-  color: var(--wl-color-text);
-  background: var(--wl-color-bg);
+  box-sizing: border-box;
+  min-block-size: 100dvh;
+  /* Colour only: the drain's gradient is the background image above it (.wl-drain). */
+  background-color: var(--wl-bg);
+  padding: max(env(safe-area-inset-top), 1.5rem) max(var(--wl-gutter), env(safe-area-inset-right))
+    max(env(safe-area-inset-bottom), 1.5rem) max(var(--wl-gutter), env(safe-area-inset-left));
 }
 
-.wl-uf03-list__title {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 28px;
-  line-height: 1.1;
-  text-transform: uppercase;
+.wl-uf03-list[data-wl-state] {
+  gap: 0.75rem;
 }
 
-.wl-uf03-list__header {
+/* The h1 names the region for assistive tech; the header is the one task bar (canvas has no title). */
+.wl-uf03-list .wl-uf03-list__title {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Header: collapse, elapsed, Finish. */
+.wl-uf03-list .wl-uf03-list__header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
-.wl-uf03-list__header p {
+.wl-uf03-list .wl-uf03-list__header .wl-button--text,
+.wl-uf03-list .wl-uf03-list__header .wl-button--session-outline {
+  inline-size: auto;
+  min-block-size: 44px;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 800;
+}
+
+.wl-uf03-list .wl-uf03-list__header .wl-button--text {
+  padding-inline: 0.5rem 0.75rem;
+  font-weight: 600;
+}
+
+.wl-uf03-list .wl-uf03-list__elapsed {
+  flex: 0 1 auto;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* Finish confirm: the question, Finish as a session outline, Keep going as a text button. */
+.wl-uf03-list .wl-uf03-list__confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+}
+
+.wl-uf03-list .wl-uf03-list__confirm > p {
+  margin: 0;
+}
+
+.wl-uf03-list .wl-uf03-list__confirm .wl-button--text {
+  align-self: center;
+}
+
+/* The error form (D-0211 §5): the words, an aria-hidden icon and, for a row save, a 2 px ink
+ * border. Empty means nothing shows. */
+.wl-uf03-list .wl-uf03-list__status {
+  margin: 0;
+  color: var(--wl-ink);
+}
+
+.wl-uf03-list .wl-uf03-list__status:empty {
+  display: none;
+}
+
+.wl-uf03-list .wl-uf03-list__status:not(:empty) {
+  box-sizing: border-box;
+  border: 2px solid var(--wl-ink);
+  border-radius: var(--wl-radius-tile);
+  padding: 0.5rem 0.75rem;
+}
+
+/* Swap's failed-import strip holds a line and two text buttons. */
+.wl-uf03-list .wl-uf03-list__status[role="status"] {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.wl-uf03-list .wl-uf03-list__status[role="status"] > p {
   margin: 0;
   flex: 1 1 100%;
 }
 
-.wl-uf03-list__button,
-.wl-uf03-list__primary,
-.wl-uf03-list__toggle {
+/* An exercise block. */
+.wl-uf03-list .wl-uf03-list__card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 0.75rem;
+}
+
+.wl-uf03-list .wl-uf03-list__card > * {
+  grid-column: 1 / -1;
+}
+
+.wl-uf03-list .wl-uf03-list__card[data-current] > .wl-uf03-list__name {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.wl-uf03-list .wl-uf03-list__card > .wl-uf03-list__tools {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.wl-uf03-list .wl-uf03-list__name {
+  overflow-wrap: anywhere;
+}
+
+.wl-uf03-list .wl-uf03-list__tools {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.wl-uf03-list .wl-uf03-list__tools .wl-button--text {
+  font-size: 0.9375rem;
+}
+
+.wl-uf03-list .wl-uf03-list__target {
+  margin: 0.25rem 0 0;
+  color: var(--wl-ink);
+}
+
+.wl-uf03-list .wl-uf03-list__cue {
+  margin: 0.5rem 0 0;
+  padding-block: 0.625rem;
+  border-block: 1px solid var(--wl-line);
+  color: var(--wl-ink);
+}
+
+/* A collapsed exercise: a row with its caption and a chevron. */
+.wl-uf03-list .wl-uf03-list__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  inline-size: 100%;
+  min-block-size: 44px;
+  padding-inline: 0;
+  border: 0;
+  border-block-end: 1px solid var(--wl-line);
+  background: none;
+  color: var(--wl-ink);
+  font: inherit;
+  text-align: start;
+}
+
+.wl-uf03-list .wl-uf03-list__toggle:focus-visible,
+.wl-uf03-list .wl-uf03-list__done input:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+.wl-uf03-list .wl-uf03-list__toggle-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-inline-size: 0;
+}
+
+.wl-uf03-list .wl-uf03-list__toggle-title {
+  font-size: 1.0625rem;
+  line-height: 1.3;
+  font-weight: 800;
+}
+
+.wl-uf03-list .wl-uf03-list__toggle-caption {
+  color: var(--wl-ink);
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+.wl-uf03-list .wl-uf03-list__toggle > svg {
+  flex: none;
+}
+
+/* The set table: hairline rows on a grid. The table elements keep their semantics; only the
+ * layout is a grid. */
+.wl-uf03-list .wl-uf03-list__table,
+.wl-uf03-list .wl-uf03-list__table thead,
+.wl-uf03-list .wl-uf03-list__table tbody {
+  display: block;
+  inline-size: 100%;
+}
+
+.wl-uf03-list .wl-uf03-list__table :is(thead, tbody) > tr {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr) 4rem 3.5rem 2.75rem;
+  align-items: center;
+  gap: 0 0.375rem;
+  box-sizing: border-box;
+  min-block-size: 0;
+  padding-block: 0.5rem;
+  border-block-end: 1px solid var(--wl-line);
+  font-size: 0.9375rem;
+}
+
+/* No kg column (bodyweight or timed). */
+.wl-uf03-list .wl-uf03-list__table :is(thead, tbody) > tr[data-kg="false"] {
+  grid-template-columns: 2.25rem minmax(0, 1fr) 3.5rem 2.75rem;
+}
+
+.wl-uf03-list .wl-uf03-list__table thead > tr {
+  padding-block: 0.625rem 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.wl-uf03-list .wl-uf03-list__table th,
+.wl-uf03-list .wl-uf03-list__table td {
+  padding: 0;
+  text-align: start;
+  font-weight: inherit;
+  color: var(--wl-ink);
+}
+
+.wl-uf03-list .wl-uf03-list__table [data-part="previous"] {
+  overflow-wrap: anywhere;
+}
+
+.wl-uf03-list .wl-uf03-list__table tbody th {
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.wl-uf03-list .wl-uf03-list__table td:has(> .wl-input) {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.wl-uf03-list .wl-uf03-list__table .wl-input {
+  inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 44px;
+  padding-inline: 0.25rem;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  text-align: center;
+}
+
+.wl-uf03-list .wl-uf03-list__table .wl-input[aria-invalid="true"] {
+  padding-inline: calc(0.25rem - 1px);
+}
+
+/* The swap tag, the hints and the save status fill the row under the cells. */
+.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__tag,
+.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__hint,
+.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__status {
+  grid-column: 1 / -1;
+}
+
+.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__tag {
+  font-size: 0.8125rem;
+}
+
+.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__hint:empty,
+.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__tag:empty {
+  display: none;
+}
+
+.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__hint {
+  margin-block-start: 0.25rem;
+  font-size: 0.8125rem;
+}
+
+.wl-uf03-list .wl-uf03-list__table .wl-uf03-list__status:not(:empty) {
+  margin-block-start: 0.375rem;
+}
+
+/* Done: a 44 px checkbox-style button. The native checkbox stays the control (role, name and
+ * state unchanged); the tick is an aria-hidden icon that shows when it is checked. */
+.wl-uf03-list .wl-uf03-list__done {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+}
+
+.wl-uf03-list .wl-uf03-list__done input {
+  position: absolute;
+  inset: 0;
   box-sizing: border-box;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 10px;
-  font: inherit;
-  cursor: pointer;
-  border: 1px solid var(--wl-color-line-strong);
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  appearance: none;
+  color: var(--wl-ink);
   background: transparent;
-  color: var(--wl-color-text);
-}
-
-.wl-uf03-list__primary {
-  border: 0;
-  background: var(--wl-color-accent);
-  color: var(--wl-color-on-accent);
-}
-
-.wl-uf03-list__button:focus-visible,
-.wl-uf03-list__primary:focus-visible,
-.wl-uf03-list__toggle:focus-visible,
-.wl-uf03-list input:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-.wl-uf03-list__card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 12px;
-  background: var(--wl-color-surface);
-}
-
-.wl-uf03-list__name {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 22px;
-}
-
-.wl-uf03-list__toggle {
-  width: 100%;
-  justify-content: space-between;
-  border: 0;
-  padding: 0;
-  font: inherit;
-}
-
-.wl-uf03-list__target,
-.wl-uf03-list__cue {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf03-list__status {
-  color: var(--wl-color-warn);
-}
-
-.wl-uf03-list__table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.wl-uf03-list__table th,
-.wl-uf03-list__table td {
-  padding: 4px;
-  text-align: left;
-  color: var(--wl-color-text);
-}
-
-.wl-uf03-list__table thead th {
-  color: var(--wl-color-text-muted);
-  font-weight: 500;
-}
-
-/* T-0478 AC-2: the old exercise's name on a row logged before a swap. */
-.wl-uf03-list__tag {
-  display: block;
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf03-list__table input[type="text"] {
-  box-sizing: border-box;
-  width: 64px;
-  min-height: 44px;
-  padding: 0 8px;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 8px;
-  background: var(--wl-color-surface-2);
-  color: var(--wl-color-text);
-  font: inherit;
-}
-
-/* T-0458 (NFR-A11Y-2): 44 x 44, not 28 x 28 — the row toggle is a real tap target. */
-.wl-uf03-list__table input[type="checkbox"] {
-  box-sizing: border-box;
-  width: 44px;
-  height: 44px;
-  accent-color: var(--wl-color-accent);
-}
-
-.wl-uf03-list__unit {
-  margin-left: 4px;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf03-list__hint {
-  display: block;
-  font-size: 12px;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf03-list__table input[aria-disabled="true"] {
-  opacity: 0.5;
-}
-
-/* UF-03.2 rest bar and rest view (T-0418). */
-.wl-uf03-rest__bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 10px;
-  border: 1px solid var(--wl-color-line-strong);
-  background: var(--wl-color-surface);
-  color: var(--wl-color-text);
-  font: inherit;
+  border: 1.5px solid var(--wl-ink);
+  border-radius: 0.625rem;
   cursor: pointer;
 }
 
-.wl-uf03-rest__bar:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
+.wl-uf03-list .wl-uf03-list__done input:checked {
+  background: var(--wl-action);
+  border-color: var(--wl-action);
 }
 
-.wl-uf03-rest {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 16px;
-  font-family: var(--wl-font-body);
-  color: var(--wl-color-text);
-  background: var(--wl-color-bg);
+.wl-uf03-list .wl-uf03-list__done input[aria-disabled="true"] {
+  border-style: dashed;
+  cursor: not-allowed;
 }
 
-.wl-uf03-rest__title {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 28px;
-  line-height: 1.1;
-  text-transform: uppercase;
+.wl-uf03-list .wl-uf03-list__done svg {
+  position: relative;
+  display: none;
+  pointer-events: none;
+  color: var(--wl-on-action);
 }
 
-.wl-uf03-rest__clock {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 40px;
+.wl-uf03-list .wl-uf03-list__done input:checked + svg {
+  display: block;
 }
 
-.wl-uf03-rest__adjust {
-  display: flex;
-  gap: 8px;
+.wl-uf03-list .wl-uf03-list__add {
+  align-self: center;
+}
+
+/* UF-03.2 rest view: the rest state with the lift-over-rest drain (D-0211 §5). */
+.wl-uf03-rest[data-wl-state="rest"] {
+  gap: 0;
+}
+
+/* One 1 s linear step per second; the colour under the gradient never changes. */
+.wl-uf03-rest[data-wl-state="rest"].wl-drain {
+  transition: --wl-drain 1s linear;
+}
+
+/* The fill went back down (+15 s): jump, don't sweep back over a second. */
+.wl-uf03-rest[data-wl-state="rest"].wl-drain[data-drain-reset="true"] {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wl-uf03-rest[data-wl-state="rest"].wl-drain {
+    transition: none;
+  }
+}
+
+.wl-uf03-rest[data-wl-state="rest"] .wl-uf03-rest__clock {
+  margin: 2.5rem 0 0;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-uf03-rest[data-wl-state="rest"] .wl-uf03-rest__digits {
+  display: block;
+  font-size: clamp(5rem, 38vw, 9.375rem);
+  line-height: 0.85;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.wl-uf03-rest[data-wl-state="rest"] .wl-uf03-rest__left {
+  display: block;
+  margin-block-start: 0.5rem;
+  font-size: 1.0625rem;
+}
+
+.wl-uf03-rest[data-wl-state="rest"] .wl-uf03-rest__sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.wl-uf03-rest[data-wl-state="rest"] .wl-uf03-rest__adjust {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-block-start: 1.5rem;
+}
+
+.wl-uf03-rest[data-wl-state="rest"] .wl-uf03-rest__adjust > button {
+  justify-content: center;
+  padding-inline: 0.75rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* Skip sits on a fill that ends in the lift colour: lift.on-action on white, as UF-09.5. */
+.wl-uf03-rest[data-wl-state="rest"] .wl-button--session {
+  --wl-on-action: var(--wl-color-lift-on-action);
+  margin-block-start: auto;
+}
+
+.wl-uf03-rest[data-wl-state="rest"] .wl-button--text {
+  align-self: center;
+  margin-block-start: 0.75rem;
 }
