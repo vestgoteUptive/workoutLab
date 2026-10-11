@@ -178,7 +178,7 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
 | T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | todo | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
-| T-0610 | UF-07.1 in plan | web-feature:UF-07 | T-0593, T-0591 | todo | wl-build-web |
+| T-0610 | UF-07.1 in plan | web-feature:UF-07 | T-0593, T-0591 | doing | wl-build-web |
 | T-0612 | UF-11.1/.2/.3: tiles, check-in paper, G-2 → 28 px | web-feature:UF-11 | T-0593, T-0582, T-0591 | todo | wl-build-web |
 | T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | todo | wl-build-web |
 | T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | todo | wl-build-web |
@@ -198,7 +198,7 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0638 | UF-02.1 "Not feeling it? Quick 20-min" link | web-feature:UF-02 | T-0636, T-0637 | todo | wl-build-web |
 | T-0639 | UF-04.1 Upper/Legs group chips + result count | web-feature:UF-04 | T-0608 | todo | wl-build-web |
 | T-0640 | UF-04.1 In plan / Variant / Beginner tags | web-feature:UF-04 | T-0639 | todo | wl-build-web |
-| T-0630 | Sheet stacking and portal scope before UF-08.3/UF-05.1 adopt .wl-sheet: z-index under the tab bar, an unstyled scrim when portalled to body; AccountDeletedNotice outside any state root (T-0593 review, D-0216 addendum) | web-shell | T-0593 | todo | wl-build-web |
+| T-0630 | Sheet stacking and portal scope before UF-08.3/UF-05.1 adopt .wl-sheet: z-index under the tab bar, an unstyled scrim when portalled to body; AccountDeletedNotice outside any state root (T-0593 review, D-0216 addendum) | web-shell | T-0593 | doing | wl-build-web |
 | T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
 | T-0661 | engine records(): a NaN weightKg or reps compares as NaN and is reported as a record; treat non-finite inputs as no set (T-0635 review) | engine | T-0635 | todo | wl-build-engine |
 | T-0663 | UF-03 list-view.swap.host.test.tsx 'rows 1-2 keep their values' times out under load (findByRole 'Set 1 weight in kg'); passes alone | web-feature:UF-03 | — | todo | wl-build-web |
