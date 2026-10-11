@@ -447,3 +447,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0662 | UF-11 favorites-screen.test.tsx 'excluding a favorite says it was removed from favorites' fails on CI (2 of 3 runs on PR #59) but passes locally; likely a race between the exclusion and the favorites list load (same pattern as T-0914) | web-feature:UF-11 | — | done | wl-build-web |
 | T-0596 | UF-09.2/.7 deep fill | web-feature:UF-09 | T-0595 | done | wl-build-web |
 | T-0601 | UF-02.1/.2 in plan | web-feature:UF-02 | T-0593, T-0594, T-0615, T-0591 | done | wl-build-web |
+| T-0611 | UF-10.1/.2 in plan, attention #FFB3A3 | web-feature:UF-10 | T-0593, T-0615, T-0591 | done | wl-build-web |

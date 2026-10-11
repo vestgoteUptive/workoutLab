@@ -185,7 +185,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0608 | UF-04.2 + how-to sheet, cobalt figure | web-feature:UF-04 | T-0607, T-0615 | todo | wl-build-web |
 | T-0609 | UF-06.1/.2 in plan | web-feature:UF-06 | T-0593, T-0591 | todo | wl-build-web |
 | T-0610 | UF-07.1 in plan | web-feature:UF-07 | T-0593, T-0591 | todo | wl-build-web |
-| T-0611 | UF-10.1/.2 in plan, attention #FFB3A3 | web-feature:UF-10 | T-0593, T-0615, T-0591 | doing | wl-build-web |
 | T-0612 | UF-11.1/.2/.3: tiles, check-in paper, G-2 → 28 px | web-feature:UF-11 | T-0593, T-0582, T-0591 | todo | wl-build-web |
 | T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | todo | wl-build-web |
 | T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | todo | wl-build-web |
