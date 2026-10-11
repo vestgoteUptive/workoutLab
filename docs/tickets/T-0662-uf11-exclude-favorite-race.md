@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.5]
 decisions: [D-0202]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 `favorites-screen.test.tsx` "excluding a favorite says it was removed from favorites" fails on CI (main run 38157503649 and 2 of 3 runs on PR #59) and passes locally. Cause: `ExcludedBody.tsx:118` computes `wasFavorite` from `useFavoriteIds(userId)`, a live query that can still be empty when the user (or the test) taps Exclude right after the screen renders. The announcement then reads "Bench press excluded" instead of "…Removed from favorites" (D-0202 §8, T-0569). A real user who taps fast hits the same thing.
@@ -29,6 +29,4 @@ None.
 Gate green · commits start with `T-0662`.
 
 ## Build / accept log
-- Built: toggle() in ExcludedBody/FavoritesBody now awaits loadFavoriteIds/loadExcludedIds (cache) at tap time; unused hook dropped from ExcludedBody. Mirror race was present.
-- AC1/AC2: two tests in favorites-screen.test.tsx (hooks blinded via mock). Planted fault (hook-value read, restored from backup copy): 3 tests failed, incl. both new ones. Fixed: pass.
-- AC3: 20 runs under 3 busy loops, 0 failures. Gate (typecheck lint test), format:check, check-all: exit 0.
+Archived in `docs/tickets/log/T-0662.md` (D-0157).
