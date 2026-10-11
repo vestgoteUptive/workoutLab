@@ -22,6 +22,10 @@ import {
 const VARIANTS = ["compact", "full"] as const;
 const WARN_OUTLINE = "2px solid var(--wl-attention)";
 
+/** T-0660 (D-0225 §3): a label dot is filled like its figure region: ink at step 4, else the zone tint. */
+const dotFill = (step: number): string =>
+  step === 4 ? "var(--wl-ink)" : "color-mix(in srgb, var(--wl-ink) 32%, transparent)";
+
 beforeEach(() => {
   mockMatchMedia(false);
 });
@@ -43,7 +47,7 @@ describe("AC-D1 fill from coverageStep only (principle 3)", () => {
 
   for (const variant of VARIANTS) {
     for (const { step, load } of cases) {
-      it(`AC-D1 ${variant}: coverageStep ${step} fills var(--wl-coverage-${step})`, () => {
+      it(`AC-D1 ${variant}: coverageStep ${step} fills dotFill(${step}) (the figure's fill)`, () => {
         const areas = withArea(zeroFixture, {
           area: "hamstrings",
           load,
@@ -52,24 +56,20 @@ describe("AC-D1 fill from coverageStep only (principle 3)", () => {
           needsAttention: false,
         });
         const { container } = renderInRouter(<BodyMap variant={variant} areas={areas} />);
-        expect(fillOf(container, "hamstrings").style.backgroundColor).toBe(
-          `var(--wl-coverage-${step})`,
-        );
+        expect(fillOf(container, "hamstrings").style.backgroundColor).toBe(dotFill(step));
       });
     }
   }
 
   it("AC-D1: hamstrings {load: 19.9, target: 20, coverageStep: 1} is coverage-1, not derived", () => {
     const { container } = renderInRouter(<BodyMap variant="full" areas={mixedFixture} />);
-    expect(fillOf(container, "hamstrings").style.backgroundColor).toBe("var(--wl-coverage-1)");
+    expect(fillOf(container, "hamstrings").style.backgroundColor).toBe(dotFill(1));
   });
 
   it("AC-D1: every area's fill follows its own coverageStep (mixed fixture)", () => {
     const { container } = renderInRouter(<BodyMap variant="full" areas={mixedFixture} />);
     for (const a of mixedFixture) {
-      expect(fillOf(container, a.area).style.backgroundColor).toBe(
-        `var(--wl-coverage-${a.coverageStep})`,
-      );
+      expect(fillOf(container, a.area).style.backgroundColor).toBe(dotFill(a.coverageStep));
     }
   });
 });
@@ -77,7 +77,7 @@ describe("AC-D1 fill from coverageStep only (principle 3)", () => {
 describe("AC-D2 attention outline", () => {
   for (const variant of VARIANTS) {
     for (const step of [0, 4] as const) {
-      it(`AC-D2 ${variant}: needsAttention on coverage-${step} draws a 2px warn outline, fill unchanged`, () => {
+      it(`AC-D2 ${variant}: needsAttention on coverage-${step} draws a 2px warn outline and the attention fill`, () => {
         const areas = withArea(zeroFixture, {
           area: "core",
           load: step === 0 ? 0 : 14,
@@ -88,7 +88,7 @@ describe("AC-D2 attention outline", () => {
         const { container } = renderInRouter(<BodyMap variant={variant} areas={areas} />);
         const fill = fillOf(container, "core");
         expect(fill.style.outline).toBe(WARN_OUTLINE);
-        expect(fill.style.backgroundColor).toBe(`var(--wl-coverage-${step})`);
+        expect(fill.style.backgroundColor).toBe("var(--wl-attention)");
       });
     }
 
@@ -324,7 +324,7 @@ describe("AC-D8 zero history + offline", () => {
     it(`AC-D8 ${variant}: 9 zero areas are coverage-0, read "0 / <target>", legend shown`, () => {
       const { container } = renderInRouter(<BodyMap variant={variant} areas={zeroFixture} />);
       for (const area of AREAS) {
-        expect(fillOf(container, area).style.backgroundColor).toBe("var(--wl-coverage-0)");
+        expect(fillOf(container, area).style.backgroundColor).toBe(dotFill(0));
         expect(within(areaEl(container, area)).getByText(`0 / ${TARGETS[area]}`)).toBeVisible();
       }
       expect(screen.getByRole("list", { name: "Coverage legend" })).toBeVisible();

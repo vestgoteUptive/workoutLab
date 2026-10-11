@@ -59,7 +59,7 @@
   fill: var(--wl-fig-hatch);
 }
 .wl-fig__region--attention {
-  fill: var(--wl-color-plan-attention);
+  fill: var(--wl-attention);
 }
 
 /* Hatch pattern (secondary). */
@@ -73,7 +73,7 @@
 /* Attention halo (drawn under the region by BodyFigure.tsx). */
 .wl-fig__halo-warn {
   fill: none;
-  stroke: var(--wl-color-plan-attention);
+  stroke: var(--wl-attention);
   stroke-width: 7;
 }
 .wl-fig__halo-gap {

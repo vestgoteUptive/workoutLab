@@ -128,7 +128,12 @@ function fillStyle(view: AreaView, loading: boolean, animate: boolean): CSSPrope
     };
   }
   return {
-    backgroundColor: tokenVar(fillToken(view.data.coverageStep)),
+    // Same fill as the figure region (D-0225): attention, else ink at step 4, else the zone tint.
+    backgroundColor: view.data.needsAttention
+      ? tokenVar(attentionLegend.token)
+      : figureFill(
+          fillToken(view.data.coverageStep) === "neutral" ? "neutral" : view.data.coverageStep,
+        ),
     ...(view.data.needsAttention ? { outline: ATTENTION_OUTLINE, outlineOffset: "0px" } : {}),
   };
 }

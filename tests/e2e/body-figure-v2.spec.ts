@@ -415,6 +415,17 @@ test.describe("T-0660 legend swatches match the figure", () => {
       expect(under).toBe(step2);
       expect(on).toBe(step4);
       expect(under).not.toBe(on);
+      // The per-area dots wear the same fill as that area's region (quads step 2, calves step 4).
+      const dot = (area: string) =>
+        css(map.locator(`button[data-area="${area}"] .wl-body-map__fill`), "background-color");
+      expect(await dot("quads")).toBe(step2);
+      expect(await dot("calves")).toBe(step4);
+      if (state === "lift" || state === "rest") return; // attention is not drawn on session screens
+      // One attention variable: the ring swatch, the flagged dot and the figure fill agree.
+      const att = await css(map.locator("svg .wl-fig__region--attention"), "fill");
+      expect(await dot("core")).toBe(att);
+      expect(await css(swatches.nth(2), "outline-color")).toBe(att);
+      expect(await css(map.locator("svg .wl-fig__halo-warn"), "stroke")).toBe(att);
     });
   }
 });

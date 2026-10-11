@@ -47,7 +47,7 @@ describe("AC-2 tokens only", () => {
       // T-0660 (D-0225): the figure variables --wl-fig-* are built from --wl-bg / --wl-ink; the
       // attention colour is the plan token in every state.
       expect(v).toMatch(
-        /^(none|var\(--wl-color-plan-attention\)|var\(--wl-fig-(hatch|bg|ink|base|zone)\)|color-mix\(in srgb, var\(--wl-fig-ink\) (12|20)%, transparent\))$/,
+        /^(none|var\(--wl-attention\)|var\(--wl-fig-(hatch|bg|ink|base|zone)\)|color-mix\(in srgb, var\(--wl-fig-ink\) (12|20)%, transparent\))$/,
       );
     }
     for (const v of colourValues(forced!)) {
