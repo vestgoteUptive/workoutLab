@@ -112,98 +112,110 @@ function plant(from: string | RegExp, to: string): string {
   return out;
 }
 
-describe("T-0614 AC4 check-figure accepts both preview sections", () => {
+describe("T-0660 check-figure accepts the v2 preview and its CSS (replaces T-0614 AC4)", () => {
   it("the shipped preview passes", () => {
     const r = checkPreview(preview);
     expect(r.out).toContain("check-figure: ok");
     expect(r.status).toBe(0);
   });
-  it("the Cobalt section has steps 0 and 4, attention on and off, primary, secondary and a ring", () => {
-    const cobalt = /<section[^>]*data-preview="cobalt"[^>]*>([\s\S]*?)<\/section>/.exec(
-      preview,
-    )?.[1];
-    expect(cobalt).toBeDefined();
-    for (const s of [
-      'data-cov="all:0"',
-      'data-cov="all:4"',
+  it("the v2 section has coverage with attention, primary, secondary, ring, compact, lift and rest", () => {
+    const v2 = /<section[^>]*data-preview="v2"[^>]*>([\s\S]*?)<\/section>/.exec(preview)?.[1];
+    expect(v2).toBeDefined();
+    for (const x of [
       "data-attention=",
       "data-primary=",
       "data-secondary=",
       "data-ring=",
+      'data-size="compact"',
+      'data-wl-state="lift"',
+      'data-wl-state="rest"',
     ])
-      expect(cobalt, s).toContain(s);
-    expect(cobalt).toContain("The same steps, attention off.");
+      expect(v2, x).toContain(x);
   });
 
   const cases: [string, string, RegExp][] = [
     [
-      "a Cobalt rule reading a flat token",
-      plant(
-        /(\[data-wl-state="plan"\] \.wl-fig__region--primary \{\n\s*fill: )var\(--wl-ink\)/,
-        "$1var(--wl-color-accent)",
-      ),
-      /Cobalt rule reads --wl-color-accent/,
-    ],
-    [
-      "a Cobalt rule reading a plan token directly",
-      plant(
-        /(\.wl-fig__halo-warn \{\n\s*fill: none;\n\s*stroke: )var\(--wl-attention\)(;\n\s*stroke-width: 7px;\n\s*\}\n\s*\[data-wl-state)/,
-        "$1var(--wl-color-plan-attention)$2",
-      ),
-      /Cobalt rule reads --wl-color-plan-attention/,
-    ],
-    [
-      "an unscoped Cobalt rule",
-      plant(/\[data-wl-state="plan"\] (\.wl-fig__hatch-stripe \{)/, "$1"),
-      /Cobalt rule "\.wl-fig__hatch-stripe" is not under/,
-    ],
-    [
-      "a plan mapping to a legacy token",
-      plant("--wl-raise: var(--wl-color-plan-raise);", "--wl-raise: var(--wl-color-surface-2);"),
-      /plan mapping --wl-raise reads --wl-color-surface-2/,
-    ],
-    [
-      "a raw colour",
+      "a raw colour in the state mapping",
       plant("--wl-ink: var(--wl-color-plan-ink);", "--wl-ink: #FFFFFF;"),
       /colour literal "#FFFFFF"/,
     ],
     [
-      "no step 4 demo in the Cobalt section",
-      plant('data-cov="all:4"><p>Step 4', 'data-cov="all:3"><p>Step 4'),
-      /cobalt section has no C-01 step 4 demo/,
+      "a state mapping reading a flat Chalk token",
+      plant("--wl-ink: var(--wl-color-plan-ink);", "--wl-ink: var(--wl-color-accent);"),
+      /state mapping reads --wl-color-accent/,
     ],
     [
-      "no attention-off demo",
+      "the component CSS link removed",
+      plant("components/body-figure/body-figure.css", "components/body-figure/other.css"),
+      /doesn't link components\/body-figure\/body-figure\.css/,
+    ],
+    [
+      "a private copy of the figure rules",
       plant(
-        /(data-cov="[^"]*glutes:4[^"]*")(\s*>\s*<p>The same steps)/,
-        '$1 data-attention="core"$2',
+        '<style id="wl-state-vars">',
+        '<style id="wl-fig-css">.x{}</style><style id="wl-state-vars">',
       ),
-      /cobalt section has no attention off demo/,
+      /carries its own copy of the figure rules/,
     ],
     [
-      "no secondary in the Cobalt section",
+      "no highlight demo",
+      plant(/data-ring="[^"]*"/, 'data-x="1"'),
+      /v2 section has no highlight ring demo/,
+    ],
+    [
+      "no compact demo",
+      plant('data-size="compact"', 'data-size="detail"'),
+      /v2 section has no compact size demo/,
+    ],
+    [
+      "the rest state demo removed",
+      plant(/(<div class="demo" )data-wl-state="rest"/, '$1data-wl-state="plan"'),
+      /v2 section has no rest state demo/,
+    ],
+    [
+      "a superseded variants section left in",
       plant(
-        /<section class="cobalt"[\s\S]*?<\/section>/,
-        preview
-          .match(/<section class="cobalt"[\s\S]*?<\/section>/)![0]
-          .replaceAll("data-secondary=", "data-x="),
+        '<section data-preview="v2">',
+        '<section data-preview="variants"></section><section data-preview="v2">',
       ),
-      /cobalt section has no UF-04\.2 secondary demo/,
-    ],
-    [
-      "the legacy section removed",
-      plant('<section data-preview="legacy">', "<section>"),
-      /no <section data-preview="legacy">/,
-    ],
-    [
-      "the legacy rules removed",
-      plant('<style id="wl-fig-css">', "<style>"),
-      /<style id="wl-fig-css"> is missing/,
+      /superseded v1 or variants section/,
     ],
   ];
   it.each(cases)("planted fault: %s", (_name, text, message) => {
     const r = checkPreview(text);
     expect(r.out).toMatch(message);
     expect(r.status).toBe(1);
+  });
+
+  it("planted fault: a raw colour in the figure CSS is caught", () => {
+    const css = readFileSync(
+      resolve(repoRoot, "apps/web/src/components/body-figure/body-figure.css"),
+      "utf8",
+    );
+    const bad = css.replace("fill: var(--wl-fig-base);", "fill: #ffffff;");
+    expect(bad).not.toBe(css);
+    // checkCss is exported; run it through a tiny inline script.
+    const r = spawnSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        `import { checkCss } from ${JSON.stringify(checker)}; console.log(JSON.stringify(checkCss(process.argv[1])));`,
+        bad,
+      ],
+      { encoding: "utf8" },
+    );
+    expect(r.stdout).toContain("colour literal");
+    const ok = spawnSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "-e",
+        `import { checkCss } from ${JSON.stringify(checker)}; console.log(JSON.stringify(checkCss(process.argv[1])));`,
+        css,
+      ],
+      { encoding: "utf8" },
+    );
+    expect(ok.stdout.trim()).toBe("[]");
   });
 });

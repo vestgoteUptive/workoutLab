@@ -44,8 +44,10 @@ describe("AC-2 tokens only", () => {
     for (const v of colourValues(normal!)) {
       // T-0615: the generic state variables (D-0211 §2) are allowed next to --wl-color-*; they
       // are the same tokens resolved per state. A raw #fff still fails LITERAL above.
+      // T-0660 (D-0225): the figure variables --wl-fig-* are built from --wl-bg / --wl-ink; the
+      // attention colour is the plan token in every state.
       expect(v).toMatch(
-        /^(none|var\(--wl-color-[\w-]+\)|var\(--wl-fig-hatch\)|var\(--wl-(raise|ink|ink-muted|line|bg|attention|focus|on-selected|coverage-[0-4])\))$/,
+        /^(none|var\(--wl-attention\)|var\(--wl-fig-(hatch|bg|ink|base|zone)\)|color-mix\(in srgb, var\(--wl-fig-ink\) (12|20)%, transparent\))$/,
       );
     }
     for (const v of colourValues(forced!)) {
@@ -53,16 +55,28 @@ describe("AC-2 tokens only", () => {
         /^(none|Canvas|CanvasText|GrayText|Highlight|var\(--wl-fig-hatch\)|var\(--wl-color-[\w-]+\))$/,
       );
     }
-    expect(css.replace(/\/\*[\s\S]*?\*\//g, "")).not.toMatch(NAMED);
+    expect(css.replace(/\/\*[\s\S]*?\*\//g, "").replace(/, transparent\)/g, ")")).not.toMatch(
+      NAMED,
+    );
   });
 
-  it("forced colours: primary CanvasText, none Canvas, borders CanvasText, attention 3 px Highlight", () => {
+  it("forced colours: primary CanvasText, none Canvas, borders CanvasText, attention 9 Highlight", () => {
     const forced = css.split("@media (forced-colors: active)")[1]!;
-    expect(forced).toMatch(/\.wl-fig__region--primary\s*{\s*fill:\s*CanvasText/);
     expect(forced).toMatch(
-      /\.wl-fig__region\[class\*="--step-"\]\s*{\s*fill:\s*Canvas;\s*stroke:\s*CanvasText/,
+      /\.wl-fig__region\.wl-fig__region--primary,[\s\S]*?\.wl-fig__region--step-4,[\s\S]*?{\s*fill:\s*CanvasText/,
     );
-    expect(forced).toMatch(/\.wl-fig__halo-warn\s*{\s*stroke:\s*Highlight;\s*stroke-width:\s*9px/);
-    expect(forced).toMatch(/\.wl-fig__hatch-stripe\s*{\s*fill:\s*CanvasText/);
+    expect(forced).toMatch(
+      /\.wl-fig__region\[class\*="--step-"\],[\s\S]*?{\s*fill:\s*Canvas;\s*stroke:\s*CanvasText/,
+    );
+    expect(forced).toMatch(/\.wl-fig__halo-warn\s*{\s*stroke:\s*Highlight;\s*stroke-width:\s*9/);
+    expect(forced).toMatch(/\.wl-fig__hatch-line\s*{\s*fill:\s*CanvasText/);
+  });
+
+  it("T-0660 AC8: sizes are rem and no px length is used", () => {
+    const bare = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    expect(bare).not.toMatch(/\d\s*px\b/);
+    expect(bare).toMatch(/\.wl-fig--full\s*{\s*width:\s*18\.5rem/);
+    expect(bare).toMatch(/\.wl-fig--detail\s*{\s*width:\s*13\.5rem/);
+    expect(bare).toMatch(/\.wl-fig--compact\s*{\s*width:\s*3\.75rem/);
   });
 });

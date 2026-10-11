@@ -1,4 +1,4 @@
-// T-0315 (D-0207, UF-04.2 / UF-10.1): the body figure asset and its docs pass check-figure.mjs,
+// T-0315 (D-0207, UF-04.2 / UF-10.1; v2 art T-0660, D-0225): the body figure asset and its docs pass check-figure.mjs,
 // and each check catches a planted fault in the SVG.
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -41,7 +41,7 @@ describe("T-0315 body figure: planted faults are caught", () => {
     // AC-1
     [
       "a calves path removed",
-      plant(/<path class="wl-fig__region" data-area="calves"[^>]*\/>/g, ""),
+      plant(/<path class="wl-fig__region" data-area="calves"[^>]*><\/path>/g, ""),
       /AC-1: data-area values/,
     ],
     ["an unknown area", plant('data-area="chest"', 'data-area="neck"'), /AC-1: data-area values/],
@@ -58,15 +58,12 @@ describe("T-0315 body figure: planted faults are caught", () => {
     // AC-2
     [
       "a fill attribute",
-      plant('class="wl-fig__seam"', 'fill="none" class="wl-fig__seam"'),
+      plant('class="wl-fig__body"', 'fill="none" class="wl-fig__body"'),
       /AC-2: <path> has a fill attribute/,
     ],
     [
       "a stroke attribute",
-      plant(
-        'class="wl-fig__body wl-fig__silhouette"',
-        'stroke="var(--x)" class="wl-fig__body wl-fig__silhouette"',
-      ),
+      plant('class="wl-fig__body"', 'stroke="var(--x)" class="wl-fig__body"'),
       /AC-2: <path> has a stroke attribute/,
     ],
     [
@@ -76,25 +73,25 @@ describe("T-0315 body figure: planted faults are caught", () => {
     ],
     [
       "a hex in a comment",
-      plant("Original art", "Original art #a1b2c3"),
+      plant("<defs>", "<!-- #a1b2c3 --><defs>"),
       /AC-2: colour literal "#a1b2c3"/,
     ],
     [
       "an rgb( literal",
-      plant("Original art", "Original art rgb(1,2,3)"),
+      plant("<defs>", "<!-- rgb(1,2,3) --><defs>"),
       /AC-2: colour literal "rgb\("/,
     ],
     [
       "an hsla( literal",
-      plant("Original art", "Original art hsla(1,2%,3%,1)"),
+      plant("<defs>", "<!-- hsla(1,2%,3%,1) --><defs>"),
       /AC-2: colour literal "hsla\("/,
     ],
-    ["a colour name", plant("Original art", "Original art in white"), /AC-2: colour name "white"/],
+    ["a colour name", plant("<defs>", "<!-- in white --><defs>"), /AC-2: colour name "white"/],
     // AC-3
     [
       "a region that is a rect",
       plant(
-        /<path (class="wl-fig__region" data-area="core")[^>]*\/>/,
+        /<path (class="wl-fig__region" data-area="core")[^>]*><\/path>/,
         '<rect $1 width="1" height="1"/>',
       ),
       /AC-3: data-area="core" is a <rect>/,
@@ -107,9 +104,24 @@ describe("T-0315 body figure: planted faults are caught", () => {
     [
       "a neutral part without wl-fig__body",
       plant(/class="wl-fig__body"(?= d=)/, 'class="wl-fig__part"'),
-      /AC-3: an untagged <path> is neither/,
+      /AC-3: an untagged <path> is not wl-fig__body/,
     ],
-    ["the wrong viewBox", plant('viewBox="0 0 256 290"', 'viewBox="0 0 240 290"'), /AC-3: viewBox/],
+    ["the wrong viewBox", plant('viewBox="0 0 212 215"', 'viewBox="0 0 240 290"'), /AC-3: viewBox/],
+    [
+      "the c2pa metadata block put back",
+      plant("<defs>", "<metadata>x</metadata><defs>"),
+      /AC-3: the file has a <metadata> block/,
+    ],
+    [
+      "a seam path left in",
+      plant('class="wl-fig__body"', 'data-seam="chest" class="wl-fig__body"'),
+      /AC-3: a data-seam path is left/,
+    ],
+    [
+      "a hatch without wl-fig__hatch-line",
+      plant('class="wl-fig__hatch-line"', 'class="wl-fig__hatch-stripe"'),
+      /AC-3: the hatch pattern has no element with class wl-fig__hatch-line/,
+    ],
     [
       "no hatch pattern",
       plant('id="wl-fig-hatch"', 'id="hatch"'),
@@ -119,7 +131,7 @@ describe("T-0315 body figure: planted faults are caught", () => {
     ["a role", plant("<svg ", '<svg role="img" '), /AC-3: <svg> has a role/],
     ["a title", plant("<defs>", "<title>Body</title><defs>"), /AC-3: the file has a <title>/],
     // validity
-    ["an unclosed group", plant("  </g>\n</svg>", "</svg>"), /invalid XML/],
+    ["an unclosed group", plant("</g>\n</svg>", "</svg>"), /invalid XML/],
     ["a stray <", plant("<defs>", "<defs> < "), /invalid markup/],
   ];
   it.each(cases)("%s", (_name, text, message) => {

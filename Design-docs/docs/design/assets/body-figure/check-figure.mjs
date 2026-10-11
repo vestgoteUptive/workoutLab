@@ -1,9 +1,9 @@
 #!/usr/bin/env node
-// check-figure (T-0315, D-0207): checks body-figure.svg and the docs that describe it.
+// check-figure (T-0315, D-0207; v2 T-0660, D-0225): checks body-figure.svg and the docs that describe it.
 // Node only, no dependencies.
 //
 // Usage: node check-figure.mjs                  check body-figure.svg (AC-1..3), the docs (AC-5)
-//                                              and both preview.html sections (T-0614)
+//                                              the figure CSS and preview.html (T-0660)
 //        node check-figure.mjs --svg <file>      check one SVG file only ("-" reads stdin)
 //        node check-figure.mjs --preview <file>  check one preview file only ("-" reads stdin)
 // Exit 0 = clean, 1 = problems found (one per line on stdout).
@@ -117,8 +117,12 @@ export function checkSvg(text) {
   if (named) problems.push(`AC-2: colour name "${named[0]}" in the file`);
 
   // AC-3: structure and classes.
-  if (svg?.attrs.viewBox !== "0 0 256 290")
-    problems.push(`AC-3: viewBox is "${svg?.attrs.viewBox}", expected "0 0 256 290"`);
+  if (svg?.attrs.viewBox !== "0 0 212 215")
+    problems.push(`AC-3: viewBox is "${svg?.attrs.viewBox}", expected "0 0 212 215"`);
+  if (elements.some((e) => e.name === "metadata"))
+    problems.push("AC-3: the file has a <metadata> block (strip it, T-0660)");
+  if (elements.some((e) => "data-seam" in e.attrs))
+    problems.push("AC-3: a data-seam path is left; v2 seams are the region strokes");
   for (const a of ["tabindex", "role"])
     if (svg && a in svg.attrs) problems.push(`AC-3: <svg> has a ${a} attribute`);
   if (elements.some((e) => e.name === "title")) problems.push("AC-3: the file has a <title>");
@@ -127,8 +131,8 @@ export function checkSvg(text) {
       problems.push(`AC-3: <${e.name}> is focusable or named`);
   const pattern = elements.find((e) => e.name === "pattern" && e.attrs.id === "wl-fig-hatch");
   if (!pattern) problems.push('AC-3: <pattern id="wl-fig-hatch"> is missing');
-  else if (!elements.some((e) => e.parent === pattern && classes(e).includes("wl-fig__hatch-stripe")))
-    problems.push("AC-3: the hatch pattern has no element with class wl-fig__hatch-stripe");
+  else if (!elements.some((e) => e.parent === pattern && classes(e).includes("wl-fig__hatch-line")))
+    problems.push("AC-3: the hatch pattern has no element with class wl-fig__hatch-line");
   for (const e of tagged) {
     if (e.name !== "path") problems.push(`AC-3: data-area="${e.attrs["data-area"]}" is a <${e.name}>, not a <path>`);
     if (!classes(e).includes("wl-fig__region"))
@@ -137,8 +141,8 @@ export function checkSvg(text) {
   for (const e of elements) {
     if (!SHAPES.has(e.name) || e.inDefs || "data-area" in e.attrs) continue;
     const c = classes(e);
-    if (!c.includes("wl-fig__seam") && !c.includes("wl-fig__body"))
-      problems.push(`AC-3: an untagged <${e.name}> is neither wl-fig__body nor wl-fig__seam`);
+    if (!c.includes("wl-fig__body"))
+      problems.push(`AC-3: an untagged <${e.name}> is not wl-fig__body`);
     if (c.includes("wl-fig__region")) problems.push("AC-3: a wl-fig__region has no data-area");
   }
   return problems;
@@ -159,7 +163,7 @@ export function checkDocs(root = REPO) {
   const design = join(root, "Design-docs/docs/design");
   const read = (f) => readFileSync(join(design, f), "utf8");
   const c01 = read("components/c-01-body-map.md");
-  for (const s of ["## Silhouette layout", "label grid", "BodyFigure", "D-0207"])
+  for (const s of ["## Silhouette layout", "label grid", "BodyFigure", "D-0207", "D-0225"])
     if (!c01.includes(s)) problems.push(`AC-5: c-01-body-map.md lacks "${s}"`);
   if (/proposed/i.test(c01)) problems.push('AC-5: c-01-body-map.md still says "proposed"');
   if (!/D-0060 §1 is superseded by D-0207/.test(c01))
@@ -183,75 +187,53 @@ export function checkDocs(root = REPO) {
   return problems;
 }
 
-/** The generic state variables (D-0211 §2) the Cobalt figure rules may read, plus the hatch id. */
-const COBALT_VARS =
-  /^--wl-(?:bg|raise|ink|ink-muted|line|on-selected|attention|focus|coverage-[0-4]|fig-hatch)$/;
-/** Chalk & Iron names that must not appear in the Cobalt rules. */
-const LEGACY_NAMES = /\b(?:surface-2|surface|accent|warn|text-muted|line-strong|on-accent)\b/;
-const SECTION_DEMOS = {
-  cobalt: [
-    ["C-01 step 0", /data-cov="all:0"/],
-    ["C-01 step 4", /data-cov="all:4"/],
-    ["attention on", /data-cov="[^"]+"\s+data-attention="[^"]+"/],
-    ["attention off", /data-cov="[^"]*\bglutes:4[^"]*"\s*>/],
-    ["UF-04.2 primary", /data-primary="[^"]+"/],
-    ["UF-04.2 secondary", /data-secondary="[^"]+"/],
-    ["highlight ring", /data-ring="[^"]+"/],
-  ],
-  legacy: [
-    ["C-01 step 0", /data-cov="all:0"/],
-    ["C-01 step 4", /data-cov="all:4"/],
-    ["attention", /data-attention="[^"]+"/],
-    ["UF-04.2 primary", /data-primary="[^"]+"/],
-    ["UF-04.2 secondary", /data-secondary="[^"]+"/],
-  ],
-};
+/** CSS variables the v2 figure rules and its preview page may read (D-0225). */
+const FIGURE_VARS =
+  /^--(?:wl-(?:bg|ink|fig-[a-z]+|color-plan-attention|color-(?:bg|text|surface|plan-[a-z-]+|lift-[a-z-]+|rest-[a-z-]+))|wl-font)$/;
+const PREVIEW_DEMOS = [
+  ["coverage with attention", /data-cov="[^"]+"\s+data-attention="[^"]+"/],
+  ["primary", /data-primary="[^"]+"/],
+  ["secondary", /data-secondary="[^"]+"/],
+  ["highlight ring", /data-ring="[^"]+"/],
+  ["compact size", /data-size="compact"/],
+  ["lift state", /data-wl-state="lift"/],
+  ["rest state", /data-wl-state="rest"/],
+];
 
-/** T-0614 on preview.html: the Cobalt section (generic variables only) and the legacy section. */
+/** T-0660 on preview.html: it must link the component's own CSS (no copy) and show every state. */
 export function checkPreview(html) {
   const problems = [];
-  const block = (id) => html.match(new RegExp(`<style id="${id}">([\\s\\S]*?)</style>`))?.[1];
-  const sectionOf = (name) =>
-    html.match(new RegExp(`<section[^>]*data-preview="${name}"[^>]*>([\\s\\S]*?)</section>`))?.[1];
-
   const lit = html.match(COLOUR_RE);
   if (lit) problems.push(`preview: colour literal "${lit[0]}" in preview.html`);
-
-  const cobaltCss = block("wl-fig-css-cobalt");
-  if (cobaltCss === undefined) problems.push('preview: <style id="wl-fig-css-cobalt"> is missing');
-  else {
-    const rules = cobaltCss.replace(/\/\*[\s\S]*?\*\//g, "");
-    for (const m of rules.matchAll(/var\((--[\w-]+)/g))
-      if (!COBALT_VARS.test(m[1]))
-        problems.push(`preview: Cobalt rule reads ${m[1]}, not a generic state variable`);
-    // Values only: the class names (wl-fig__seam--on-accent, halo-warn) are geometry, not colour.
-    const values = [...rules.matchAll(/\{([^}]*)\}/g)].map((m) => m[1]).join("\n");
-    const legacy = values.match(LEGACY_NAMES);
-    if (legacy) problems.push(`preview: Cobalt rules name the Chalk & Iron "${legacy[0]}"`);
-    for (const sel of rules.matchAll(/([^{}]+)\{/g))
-      for (const part of sel[1].split(","))
-        if (!part.trim().startsWith('[data-wl-state="plan"]'))
-          problems.push(`preview: Cobalt rule "${part.trim()}" is not under [data-wl-state="plan"]`);
-  }
-  const plan = block("wl-state-plan");
-  if (plan === undefined) problems.push('preview: <style id="wl-state-plan"> is missing');
+  if (!/<link[^>]+href="[^"]*components\/body-figure\/body-figure\.css"/.test(html))
+    problems.push("preview: it doesn't link components/body-figure/body-figure.css");
+  if (/<style id="wl-fig-css/.test(html))
+    problems.push("preview: it carries its own copy of the figure rules");
+  if (/data-preview="(?:legacy|cobalt|variants)"/.test(html))
+    problems.push("preview: a superseded v1 or variants section is still there");
+  const section = html.match(/<section[^>]*data-preview="v2"[^>]*>([\s\S]*?)<\/section>/)?.[1];
+  if (section === undefined) problems.push('preview: no <section data-preview="v2">');
   else
-    for (const m of plan.matchAll(/(--wl-[\w-]+):\s*var\((--[\w-]+)\)/g))
-      if (!m[2].startsWith("--wl-color-plan-") && m[2] !== "--wl-font-plan")
-        problems.push(`preview: plan mapping ${m[1]} reads ${m[2]}, not a plan token`);
-  if (block("wl-fig-css") === undefined) problems.push('preview: <style id="wl-fig-css"> is missing');
+    for (const [label, re] of PREVIEW_DEMOS)
+      if (!re.test(section)) problems.push(`preview: the v2 section has no ${label} demo`);
+  const style = html.match(/<style id="wl-state-vars">([\s\S]*?)<\/style>/)?.[1];
+  if (style === undefined) problems.push('preview: <style id="wl-state-vars"> is missing');
+  else
+    for (const m of style.matchAll(/var\((--[\w-]+)/g))
+      if (!FIGURE_VARS.test(m[1]))
+        problems.push(`preview: the state mapping reads ${m[1]}, not a token`);
+  return problems;
+}
 
-  for (const [name, demos] of Object.entries(SECTION_DEMOS)) {
-    const section = sectionOf(name);
-    if (section === undefined) {
-      problems.push(`preview: no <section data-preview="${name}">`);
-      continue;
-    }
-    for (const [label, re] of demos)
-      if (!re.test(section)) problems.push(`preview: ${name} section has no ${label} demo`);
-  }
-  if (!/<section[^>]*data-preview="cobalt"[^>]*data-wl-state="plan"/.test(html))
-    problems.push('preview: the cobalt section is not data-wl-state="plan"');
+/** T-0660: the figure CSS has no colour literal, and every colour is a variable or system colour. */
+export function checkCss(css) {
+  const problems = [];
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const lit = bare.match(COLOUR_RE);
+  if (lit) problems.push(`css: colour literal "${lit[0]}" in body-figure.css`);
+  // `transparent` is the second colour of color-mix(); everything else must be a variable.
+  const named = bare.replace(/\btransparent\b/g, "").match(COLOUR_NAMES);
+  if (named) problems.push(`css: colour name "${named[0]}" in body-figure.css`);
   return problems;
 }
 
@@ -268,6 +250,9 @@ function main(argv) {
     problems = [
       ...checkSvg(readFileSync(join(HERE, "body-figure.svg"), "utf8")),
       ...checkDocs(),
+      ...checkCss(
+        readFileSync(join(REPO, "apps/web/src/components/body-figure/body-figure.css"), "utf8"),
+      ),
       ...checkPreview(readFileSync(join(HERE, "preview.html"), "utf8")),
     ];
   }

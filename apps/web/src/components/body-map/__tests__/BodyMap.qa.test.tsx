@@ -41,6 +41,10 @@ const MIXED_LOAD_TEXT: Record<Area, string> = {
   calves: "10",
 };
 
+/** T-0660 (D-0225 §3): a label dot is filled like its figure region: ink at step 4, else the zone tint. */
+const dotFill = (step: number): string =>
+  step === 4 ? "var(--wl-ink)" : "color-mix(in srgb, var(--wl-ink) 32%, transparent)";
+
 beforeEach(() => mockMatchMedia(false));
 afterEach(() => removeMatchMedia());
 
@@ -71,9 +75,7 @@ describe("AC-D1/D3 data is matched by area id, not position (QA)", () => {
       const shuffled = [...mixedFixture].reverse();
       const { container } = renderInRouter(<BodyMap variant={variant} areas={shuffled} />);
       for (const a of mixedFixture) {
-        expect(fillOf(container, a.area).style.backgroundColor).toBe(
-          `var(--wl-coverage-${a.coverageStep})`,
-        );
+        expect(fillOf(container, a.area).style.backgroundColor).toBe(dotFill(a.coverageStep));
         expect(
           within(areaEl(container, a.area)).getByText(`${MIXED_LOAD_TEXT[a.area]} / ${a.target}`),
         ).toBeVisible();
@@ -185,6 +187,6 @@ describe("D-0060 §2 the UI never guesses a step (principle 3, QA)", () => {
     const areas = mixedFixture.filter((a) => a.area !== "calves");
     const { container } = renderInRouter(<BodyMap variant="full" areas={areas} />);
     expect(fillOf(container, "calves").style.backgroundColor).toBe("var(--wl-raise)");
-    expect(fillOf(container, "hamstrings").style.backgroundColor).toBe("var(--wl-coverage-1)");
+    expect(fillOf(container, "hamstrings").style.backgroundColor).toBe(dotFill(1));
   });
 });
