@@ -15,9 +15,12 @@ import {
   type ReactNode,
   type ChangeEvent,
   type KeyboardEvent,
+  type CSSProperties,
   type RefObject,
 } from "react";
 import type { LibraryExercise, SessionPlan, Workout, WorkoutItem } from "@workoutlab/shared";
+import { ArrowIcon, ChevronIcon, CrossIcon, TickIcon } from "../../components/icons/index.js";
+import { drainPercent, drainStyle } from "../../components/drain/index.js";
 import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { itemSummary, restLabel } from "../../lib/i18n/workout.js";
@@ -63,10 +66,10 @@ class SwapLoadBoundary extends Component<
       return (
         <div role="status" className="wl-uf03-list__status">
           <p>{uf03.swapLoadFailed}</p>
-          <button type="button" className="wl-uf03-list__button" onClick={this.props.onRetry}>
+          <button type="button" className="wl-button--text" onClick={this.props.onRetry}>
             {uf03.swapRetry}
           </button>
-          <button type="button" className="wl-uf03-list__button" onClick={this.props.onClose}>
+          <button type="button" className="wl-button--text" onClick={this.props.onClose}>
             {uf03.seamClose}
           </button>
         </div>
@@ -117,7 +120,7 @@ export interface ListViewCtx {
   currentItemIndex: number;
   elapsedS: number;
   /** The running rest (the host's wall clock), or `null` outside a rest (UF-03.2, T-0418). */
-  rest: { remainingS: number } | null;
+  rest: { remainingS: number; totalS?: number } | null;
   /** Every List-view write goes through these three (D-0071 §5), never `lib/offline`. */
   recordSet(input: ListSetInput): Promise<unknown>;
   editSet(clientId: string, patch: ListSetEdit): Promise<void>;
@@ -220,7 +223,7 @@ function SwapButton({
     <button
       ref={swapRef}
       type="button"
-      className="wl-uf03-list__button"
+      className="wl-button--text"
       aria-label={uf03.swapName(name)}
       onClick={onOpen}
     >
@@ -453,12 +456,29 @@ function SetRow({
     },
   });
 
+  // The row's messages (swap tag, the two hints, the save status) stay inside their own cells,
+  // so the table keeps one cell per column header. CSS lays them under the row, one slot each.
+  const shown = [
+    tagName !== null,
+    showKg && !logged && weightInvalid,
+    !logged && countInvalid,
+    failed,
+  ];
+  const slotOf = (k: number): CSSProperties =>
+    ({ "--wl-slot": shown.slice(0, k).filter(Boolean).length }) as CSSProperties;
   return (
-    <tr data-part="set-row" data-set-index={i} data-logged={logged ? "" : undefined}>
+    <tr
+      className="wl-row"
+      data-part="set-row"
+      data-set-index={i}
+      data-kg={showKg ? undefined : "false"}
+      data-logged={logged ? "" : undefined}
+      style={{ "--wl-msgs": shown.filter(Boolean).length } as CSSProperties}
+    >
       <th scope="row">
         {backoff ? uf03.backoffRow : n}
         {tagName === null ? null : (
-          <span className="wl-uf03-list__tag" data-part="tag">
+          <span className="wl-uf03-list__tag" data-part="tag" style={slotOf(0)}>
             {uf03.swapTag(tagName)}
           </span>
         )}
@@ -469,14 +489,26 @@ function SetRow({
           <input
             type="text"
             inputMode="decimal"
+            className="wl-input"
             ref={firstField}
             aria-label={uf03.weightLabel(n)}
+            aria-invalid={!logged && weightInvalid ? true : undefined}
             aria-describedby={!logged && weightInvalid ? hintId : undefined}
             value={weightText}
             {...fieldProps("weight")}
           />
-          <span id={hintId} className="wl-uf03-list__hint" aria-live="polite">
-            {!logged && weightInvalid ? uf03.weightHint(formatDecimal(82.5, locale)) : null}
+          <span
+            id={hintId}
+            className="wl-uf03-list__hint wl-input__error"
+            aria-live="polite"
+            style={slotOf(1)}
+          >
+            {!logged && weightInvalid ? (
+              <>
+                <CrossIcon size={16} className="wl-input__error-icon" />
+                {uf03.weightHint(formatDecimal(82.5, locale))}
+              </>
+            ) : null}
           </span>
         </td>
       ) : null}
@@ -486,45 +518,69 @@ function SetRow({
             <input
               type="text"
               inputMode="numeric"
+              className="wl-input"
               ref={showKg ? undefined : firstField}
               aria-label={uf03.secondsLabel(n)}
+              aria-invalid={!logged && countInvalid ? true : undefined}
               aria-describedby={!logged && countInvalid ? countHintId : undefined}
               value={secondsText}
               {...fieldProps("seconds")}
             />
             <span className="wl-uf03-list__unit">{uf03.secondsUnit}</span>
-            <span id={countHintId} className="wl-uf03-list__hint" aria-live="polite">
-              {!logged && countInvalid ? uf03.secondsHint : null}
-            </span>
           </>
         ) : (
           <>
             <input
               type="text"
               inputMode="numeric"
+              className="wl-input"
               ref={showKg ? undefined : firstField}
               aria-label={uf03.repsLabel(n)}
+              aria-invalid={!logged && countInvalid ? true : undefined}
               aria-describedby={!logged && countInvalid ? countHintId : undefined}
               value={repsText}
               {...fieldProps("reps")}
             />
-            <span id={countHintId} className="wl-uf03-list__hint" aria-live="polite">
-              {!logged && countInvalid ? uf03.repsHint : null}
-            </span>
           </>
         )}
+        <span
+          id={countHintId}
+          className="wl-uf03-list__hint wl-input__error"
+          aria-live="polite"
+          style={slotOf(2)}
+        >
+          {!logged && countInvalid ? (
+            <>
+              <CrossIcon size={16} className="wl-input__error-icon" />
+              {timed ? uf03.secondsHint : uf03.repsHint}
+            </>
+          ) : null}
+        </span>
       </td>
       <td>
-        <input
-          type="checkbox"
-          checked={logged !== undefined}
-          aria-label={logged ? uf03.markNotDone(n) : uf03.markDone(n)}
-          aria-disabled={blocked ? true : undefined}
-          aria-busy={pending ? true : undefined}
-          onChange={onToggle}
-        />
-        <span className="wl-uf03-list__hint" aria-live="polite" data-part="row-status">
-          {failed ? uf03.rowSaveFailed : null}
+        <label className="wl-uf03-list__done">
+          <input
+            type="checkbox"
+            checked={logged !== undefined}
+            aria-label={logged ? uf03.markNotDone(n) : uf03.markDone(n)}
+            aria-disabled={blocked ? true : undefined}
+            aria-busy={pending ? true : undefined}
+            onChange={onToggle}
+          />
+          <TickIcon size={22} />
+        </label>
+        <span
+          className="wl-uf03-list__status wl-input__error"
+          aria-live="polite"
+          data-part="row-status"
+          style={slotOf(3)}
+        >
+          {failed ? (
+            <>
+              <CrossIcon size={16} className="wl-input__error-icon" />
+              {uf03.rowSaveFailed}
+            </>
+          ) : null}
         </span>
       </td>
     </tr>
@@ -581,7 +637,7 @@ function Rows({
     <>
       <table className="wl-uf03-list__table">
         <thead>
-          <tr>
+          <tr className="wl-row" data-kg={showKg ? undefined : "false"}>
             <th scope="col">{uf03.colSet}</th>
             <th scope="col">{uf03.colPrevious}</th>
             {showKg ? <th scope="col">{uf03.colWeight}</th> : null}
@@ -631,7 +687,7 @@ function Rows({
           })}
         </tbody>
       </table>
-      <button type="button" className="wl-uf03-list__button" onClick={addSet}>
+      <button type="button" className="wl-button--text wl-uf03-list__add" onClick={addSet}>
         {uf03.addSet}
       </button>
     </>
@@ -666,13 +722,15 @@ function Card({ ctx, data, index, locale, current, onHowTo, name, swapRef }: Car
         <span>{uf03.targetLabel}</span> <span data-part="target">{itemSummary(item)}</span>
       </p>
       {current && !swapping ? <Cue exerciseId={item.exerciseId} /> : null}
-      {current && !swapping ? (
-        <button type="button" className="wl-uf03-list__button" onClick={onHowTo}>
-          {uf03.howToAction}
-        </button>
-      ) : null}
       {current ? (
-        <SwapButton name={name} swapRef={swapRef} onOpen={() => setSwapping(true)} />
+        <div className="wl-uf03-list__tools">
+          {swapping ? null : (
+            <button type="button" className="wl-button--text" onClick={onHowTo}>
+              {uf03.howToAction}
+            </button>
+          )}
+          <SwapButton name={name} swapRef={swapRef} onOpen={() => setSwapping(true)} />
+        </div>
       ) : null}
       {current && swapping ? (
         <SwapLoadBoundary key={retryKey} onClose={closeSwap} onRetry={onRetry}>
@@ -722,12 +780,13 @@ function RestBar({
     <button
       ref={openRef}
       type="button"
-      className="wl-uf03-rest__bar"
+      className="wl-button--session-outline"
       data-part="rest-bar"
       aria-label={uf03.restBarName(clock)}
       onClick={onOpen}
     >
       {uf03.restBar(clock)}
+      <ChevronIcon direction="up" />
     </button>
   );
 }
@@ -739,44 +798,91 @@ function RestBar({
 function RestView({
   ctx,
   rest,
+  totalS,
   onSkip,
   onBack,
   skipRef,
 }: {
   ctx: ListViewCtx;
   rest: { remainingS: number };
+  /** The rest's whole length so far, for the drain. */
+  totalS: number;
   onSkip: () => void;
   onBack: () => void;
   skipRef: RefObject<HTMLButtonElement | null>;
 }) {
   const clock = restLabel(rest.remainingS);
+  // The visible clock is the big digits; the words around them are the same sentence the bar
+  // reads, so the text of this line stays "Rest · 1:32 left".
+  const line = uf03.restBar(clock);
+  const at = line.indexOf(clock);
+  const fill = useDrainReset(drainPercent(totalS - rest.remainingS, totalS));
   return (
     <div
-      className="wl-uf03-rest"
+      className="wl-uf03-rest wl-drain"
       data-screen-id="UF-03.2"
+      data-wl-state="rest"
+      data-drain-reset={fill.reset ? "true" : undefined}
+      style={fill.style}
       role="region"
       aria-label={uf03.restViewName}
     >
-      <h1 className="wl-uf03-rest__title">{uf03.restViewName}</h1>
+      <h1 className="wl-type-label">{uf03.restViewName}</h1>
       <p className="wl-uf03-rest__clock" data-part="rest-clock">
-        {uf03.restBar(clock)}
+        <span className="wl-uf03-rest__sr">{line.slice(0, at)}</span>
+        <span className="wl-uf03-rest__digits">{clock}</span>
+        <span className="wl-uf03-rest__left">{line.slice(at + clock.length)}</span>
       </p>
       <div className="wl-uf03-rest__adjust">
-        <button type="button" className="wl-uf03-list__button" onClick={() => ctx.adjustRest(-15)}>
+        <button
+          type="button"
+          className="wl-button--session-outline"
+          onClick={() => ctx.adjustRest(-15)}
+        >
           {uf03.restLess}
         </button>
-        <button type="button" className="wl-uf03-list__button" onClick={() => ctx.adjustRest(15)}>
+        <button
+          type="button"
+          className="wl-button--session-outline"
+          onClick={() => ctx.adjustRest(15)}
+        >
           {uf03.restMore}
         </button>
       </div>
-      <button ref={skipRef} type="button" className="wl-uf03-list__primary" onClick={onSkip}>
+      <button ref={skipRef} type="button" className="wl-button--session" onClick={onSkip}>
         {uf03.skipRest}
+        <ArrowIcon />
       </button>
-      <button type="button" className="wl-uf03-list__button" onClick={onBack}>
+      <button type="button" className="wl-button--text" onClick={onBack}>
         {uf03.backToList}
       </button>
     </div>
   );
+}
+
+/** The fill of the rest view, and whether it went back down this render (+15 s): the CSS makes
+ *  that one jump instant instead of sweeping the screen back over a second. Mirrors UF-09's
+ *  hook; UF-03 doesn't import UF-09 (D-0142 §5). */
+function useDrainReset(percent: number): { style: CSSProperties; reset: boolean } {
+  const previous = useRef<number | null>(null);
+  const reset = previous.current === null ? percent > 0 : percent < previous.current;
+  useEffect(() => {
+    previous.current = percent;
+  });
+  return { style: drainStyle(percent) as CSSProperties, reset };
+}
+
+/** The running rest's whole length (seconds), for the drain. The session may say it (`totalS`);
+ *  otherwise it is what this view first saw, moved by every +15 / −15 it sent itself. */
+function useRestTotal(rest: ListViewCtx["rest"]) {
+  const seen = useRef<number | null>(null);
+  if (rest === null) seen.current = null;
+  else if (seen.current === null) seen.current = rest.totalS ?? rest.remainingS;
+  const total = rest === null ? 0 : (rest.totalS ?? Math.max(seen.current ?? 0, rest.remainingS));
+  const move = (deltaS: number) => {
+    if (seen.current !== null) seen.current = Math.max(0, seen.current + deltaS);
+  };
+  return { total, move };
 }
 
 export function ListView({ ctx, locale }: ListViewProps) {
@@ -798,6 +904,7 @@ export function ListView({ ctx, locale }: ListViewProps) {
   const swapRef = useRef<HTMLButtonElement>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const headingId = useId();
+  const restTotal = useRestTotal(ctx.rest);
 
   useEffect(() => {
     let live = true;
@@ -876,8 +983,15 @@ export function ListView({ ctx, locale }: ListViewProps) {
   if (restOpen && ctx.rest) {
     return (
       <RestView
-        ctx={ctx}
+        ctx={{
+          ...ctx,
+          adjustRest: (deltaS) => {
+            restTotal.move(deltaS);
+            ctx.adjustRest(deltaS);
+          },
+        }}
         rest={ctx.rest}
+        totalS={restTotal.total}
         onSkip={onSkipRest}
         onBack={onBackToList}
         skipRef={restSkipRef}
@@ -890,6 +1004,7 @@ export function ListView({ ctx, locale }: ListViewProps) {
       ref={rootRef}
       className="wl-uf03-list"
       data-screen-id="UF-03.1"
+      data-wl-state="lift"
       role="region"
       aria-labelledby={headingId}
     >
@@ -900,11 +1015,11 @@ export function ListView({ ctx, locale }: ListViewProps) {
         <RestBar rest={ctx.rest} onOpen={() => setRestOpen(true)} openRef={restBarRef} />
       ) : null}
       {confirming ? (
-        <div className="wl-uf03-list__header" data-part="finish-confirm">
+        <div className="wl-uf03-list__confirm" data-part="finish-confirm">
           <p>{uf03.finishQuestion}</p>
           <button
             type="button"
-            className="wl-uf03-list__primary"
+            className="wl-button--session-outline"
             aria-disabled={finishing ? true : undefined}
             aria-busy={finishing ? true : undefined}
             onClick={onFinish}
@@ -914,7 +1029,7 @@ export function ListView({ ctx, locale }: ListViewProps) {
           <button
             ref={keepRef}
             type="button"
-            className="wl-uf03-list__button"
+            className="wl-button--text"
             onClick={() => {
               if (busy.current) return;
               setFailed(false);
@@ -923,19 +1038,27 @@ export function ListView({ ctx, locale }: ListViewProps) {
           >
             {uf03.keepGoing}
           </button>
-          <p className="wl-uf03-list__status" aria-live="polite">
-            {failed ? uf03.finishError : null}
+          <p className="wl-uf03-list__status wl-input__error" aria-live="polite">
+            {failed ? (
+              <>
+                <CrossIcon size={16} className="wl-input__error-icon" />
+                {uf03.finishError}
+              </>
+            ) : null}
           </p>
         </div>
       ) : (
         <div className="wl-uf03-list__header">
-          <p data-part="elapsed">{uf03.elapsed(restLabel(ctx.elapsedS))}</p>
-          <button type="button" className="wl-uf03-list__button" onClick={ctx.close}>
+          <button type="button" className="wl-button--text" onClick={ctx.close}>
+            <ChevronIcon direction="down" size={20} />
             {uf03.focusMode}
           </button>
+          <p className="wl-uf03-list__elapsed" data-part="elapsed">
+            {uf03.elapsed(restLabel(ctx.elapsedS))}
+          </p>
           <button
             type="button"
-            className="wl-uf03-list__primary"
+            className="wl-button--session-outline"
             data-part="finish-open"
             onClick={() => setConfirming(true)}
           >
@@ -961,17 +1084,22 @@ export function ListView({ ctx, locale }: ListViewProps) {
                 data-current={current ? "" : undefined}
               >
                 {current ? (
-                  <h2 className="wl-uf03-list__name">{name}</h2>
+                  <h2 className="wl-uf03-list__name wl-type-page-title">{name}</h2>
                 ) : (
                   <h2 className="wl-uf03-list__name">
                     <button
                       type="button"
-                      className="wl-uf03-list__toggle"
+                      className="wl-row wl-uf03-list__toggle"
                       aria-expanded={open}
                       onClick={() => setExpanded(expanded === index ? null : index)}
                     >
-                      <span>{name}</span>
-                      <span data-part="card-sets">{uf03.cardSets(done, setCount(item))}</span>
+                      <span className="wl-uf03-list__toggle-text">
+                        <span className="wl-uf03-list__toggle-title">{name}</span>
+                        <span className="wl-uf03-list__toggle-caption" data-part="card-sets">
+                          {uf03.cardSets(done, setCount(item))}
+                        </span>
+                      </span>
+                      <ChevronIcon direction={open ? "up" : "down"} />
                     </button>
                   </h2>
                 )}
