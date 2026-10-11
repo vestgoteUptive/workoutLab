@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-08.3, UF-05.1, UF-08.5, UF-08.2, UF-11.4, UF-11.5, UF-02.1]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0199, D-0195]
 deps: [T-0592]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Touches components/checkbox, excluded-areas-notice, offline-status, account-deleted-notice and main.css: full web e2e suite. The last main.css ticket before the screens. -->
 ## Why
@@ -82,12 +82,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0593`.
 
 ## Build / accept log
-
-- 2026-10-09 build (frontend-dev). Start: clean, HEAD b9683cb. D-0216 records the defaults (no `--wl-radius-checkbox` token: literal 6 px; account-deleted notice classes live in `main.css`, since `lib/account` boundaries.test forbids a stylesheet import).
-- Changed: `main.css` (toggle, input + error, sheet, grabber, scrim, paper), `checkbox.css`, notice CSS (excluded, offline) and the account-deleted classes in `main.css` (+ its tsx className), `main-css.test.ts`, new `tests/e2e/cobalt-surfaces.spec.ts`, three `*-cobalt.test.ts`.
-- AC→test: AC1 e2e "AC1 checkbox ..." (plan, paper+lift, disabled+hover, legacy) + `checkbox-cobalt.test.ts`; existing Checkbox.test unchanged and green. AC2 e2e toggle (role, Space, knob/fill, 44 px, 0s with and without reduced motion, paper). AC3 e2e input plan/lift/rest/paper valid+invalid, disabled, nested plan sheet. AC4 e2e sheet over lift (bg, radii, y=150, scrim 0.45, grabber, root stays lift, nested caption). AC5 e2e paper 0..390. AC6 e2e three notices in state and outside (offline: text and icon variants in plan, lift, none; online renders nothing, covered by existing OfflineStatus tests). AC7 three `*-cobalt.test.ts` (no px font size, check-colours, planted `#FFFFFF` fails) plus AC8 scope tests in `main-css.test.ts`.
-- Review lessons: (a) nested captions asserted in the sheet (plan) and the paper/checked cases; no toggle/checkbox nested text exists. (b) disabled checkbox/toggle/input keep ink-muted (>= 3:1 plan, ink in lift/rest). (c) disabled rules do not touch the checked fill or tick (tested incl. hover).
-- Red on unfixed code: first e2e run 7 failed (component CSS not in the /welcome bundle: injected from disk; fixture id clash `#root`). Fixed in the spec, then 18/18.
-- Planted faults (backup copy, restored by `cp`): invalid border colour (AC3 x2), sheet radius, scrim 30%, paper margin removed, toggle knob position, icon shown in plan, checkbox tick colour (3), notice bg, offline ink colour: each fails the e2e; unscoped `.wl-toggle` fails main-css AC8; `#FFFFFF` in checkbox.css fails check-colours (in-test).
-- Gate 1 red: `lib/account` boundaries.test forbids a stylesheet import in AccountDeletedNotice; rules moved to `main.css`, test untouched.
-- Gate (exit codes): `-w typecheck lint test --concurrency=1` 0; `test:repo-checks` 0; `format:check` 0; `check-all.mjs 1 at build time (the D-0216 and INDEX files were outside the lane; fixed by the orchestrator, who moved D-0216 to main); full e2e 0.
+Archived in `docs/tickets/log/T-0593.md` (D-0157).

@@ -62,6 +62,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/uf-09-ready.spec.ts` (orchestrator grant: the Done set height pin moves 200 → 64 px per D-0226)
 - `apps/web/src/features/UF-09/**` (lane)
 - `tests/e2e/uf-09-focus.spec.ts`, `tests/e2e/visual-foundation.spec.ts` (listed extras)
 - `docs/tickets/T-0595-uf09-chrome-set-confirm-cobalt.md` (log only)
