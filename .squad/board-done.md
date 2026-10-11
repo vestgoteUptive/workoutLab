@@ -438,3 +438,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0627 | C-01 legend attention swatch: 2 px --wl-attention with a 1 px --wl-bg gap per c-01-body-map.md:78 (BodyMap.tsx:117,192 use outlineOffset 0) (T-0615 review) | web-shell | T-0615 | done | wl-build-web |
 | T-0650 | Body figure Cobalt variants page for the owner pick (H-31: needs changes in low steps, ring, hatch, silhouette); blocks the figure screens T-0601/T-0608/T-0611 | design | T-0614 | done | wl-design |
 | T-0629 | never-in-workout.test.tsx:48 AC-A12 still flaky under load (waitFor on lazy session route), after T-0910 | web-feature:UF-10 | — | done | wl-build-web |
+| T-0595 | UF-09.3/.4 + chrome in lift | web-feature:UF-09 | T-0593, T-0594, T-0591, T-0619 | done | wl-build-web |
+| T-0599 | UF-08.1/.4 in plan | web-feature:UF-08 | T-0593, T-0591 | done | wl-build-web |
+| T-0605 | UF-01.1–.4 onboarding in plan | web-feature:UF-01 | T-0593, T-0591 | done | wl-build-web |
+| T-0635 | Engine rule 15 records() (D-0219, contract) | engine | — | done | wl-build-engine |

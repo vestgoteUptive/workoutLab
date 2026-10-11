@@ -132,15 +132,14 @@ describe("AC-1 UF-09.3 renders the pre-fill", () => {
     },
   );
 
-  it("Done set is the view's primary button, its class sets min-height: 200px", async () => {
+  it("Done set is the view's one session button (T-0595: full width, 64 px, no 200 px rule)", async () => {
     await showSet();
     const done = doneButton();
     expect(done.tagName).toBe("BUTTON");
     expect(done).toHaveAttribute("data-action", "primary");
-    expect(done).toHaveClass("wl-uf09__done");
+    expect(done).toHaveClass("wl-button--session");
     const css = readFileSync(resolve(__dirname, "../uf-09.css"), "utf8");
-    const rule = /\.wl-uf09__done\s*\{([^}]*)\}/.exec(css);
-    expect(rule?.[1]).toMatch(/min-height:\s*200px;/);
+    expect(css).not.toMatch(/min-height:\s*200px/);
   });
 
   it("focus: from a rest end, Done set is document.activeElement", async () => {

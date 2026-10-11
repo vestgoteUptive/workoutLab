@@ -18,3 +18,4 @@ export { floorInc, DEFAULT_INCREMENT_KG, BACKOFF_FACTOR, LOW_TRIM_FROM_SETS, LOW
 export { prefill, plannedDurationS, floor5, REENTRY_GAP_DAYS, HOLD_GAP_DAYS, TIMED_STEP_S, TIMED_MAX_S, TIMED_MIN_S, type PrefillSlot, type PrefillPrevious, } from "./prefill.js";
 export { timeCheck, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.js";
 export { evaluateCheckin, checkinSessions, periodStatus, PERIOD_DAYS, UNDER_FACTOR_X10, OVER_FACTOR_X10, RHYTHM_FLOOR, RHYTHM_CEILING, COMPARED_PERIODS, } from "./checkin.js";
+export { records, recordKey, type RecordSet, type RecordPrevious } from "./records.js";

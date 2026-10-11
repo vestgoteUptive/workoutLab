@@ -6,6 +6,8 @@
 // `profile` with FULL equipment plus `user_id` (the default `mockProfilePresent` row has
 // `equipment: []`, which would give the R7-E6 push-up plan instead), the nine F-targets, and no
 // sets. No seed row carries a date, so nothing here can drift out of the 14-day window.
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
@@ -24,6 +26,7 @@ import {
   exercisesLoaded,
   profile,
 } from "./fixtures/uf-04-library-data.js";
+import { compareWithCanvas } from "./helpers/canvas-compare.js";
 import { VITE_SUPABASE_URL } from "./playwright.config.js";
 
 const F_TARGETS: Record<string, number> = {
@@ -612,9 +615,11 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
     const targets = [
       page.getByRole("button", { name: "Start" }),
       page.getByRole("link", { name: "Back" }),
-      page.getByRole("checkbox", { name: "Sound cues" }),
-      page.getByRole("checkbox", { name: "Voice countdown 3-2-1" }),
-      page.getByRole("checkbox", { name: "Keep screen awake" }),
+      // T-0599: the switch is 48 × 28 inside its label, and the label row is the 44 px target
+      // (state-patterns "Toggle"); the checkbox itself is asserted to sit inside that row.
+      page.locator("label.wl-toggle", { hasText: "Sound cues" }),
+      page.locator("label.wl-toggle", { hasText: "Voice countdown 3-2-1" }),
+      page.locator("label.wl-toggle", { hasText: "Keep screen awake" }),
     ];
     for (const target of targets) {
       const box = await target.boundingBox();
@@ -1125,5 +1130,525 @@ test.describe("T-0520 UF-08.1 Skip today (D-0191, GitHub #33)", () => {
     const names = await rowNames(page).allTextContents();
     expect(names.length).toBeGreaterThan(0);
     for (const n of names) expect(skippedNames.has(n)).toBe(false);
+  });
+});
+
+// ---- T-0599 UF-08.1, UF-08.4 Cobalt plan restyle (D-0208, D-0211, D-0213) ----
+// Expected values come from tokens.json, never typed.
+type Colours = Record<string, string>;
+const tokens = JSON.parse(
+  readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
+) as { color: { plan: Colours } };
+const plan = tokens.color.plan;
+const rgb = (hex: string): string => {
+  const n = (i: number) => parseInt(hex.slice(i, i + 2), 16);
+  return `rgb(${n(1)}, ${n(3)}, ${n(5)})`;
+};
+const TRANSPARENT = "rgba(0, 0, 0, 0)";
+
+function channel(c: number): number {
+  const v = c / 255;
+  return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+}
+/** WCAG ratio of two computed `rgb(r, g, b)` strings. */
+function ratio(a: string, b: string): number {
+  const lum = (css: string) => {
+    const [r, g, bl] = css
+      .match(/\d+(\.\d+)?/g)!
+      .slice(0, 3)
+      .map(Number) as [number, number, number];
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(bl);
+  };
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return (hi! + 0.05) / (lo! + 0.05);
+}
+const oneDecimal = (n: number): number => Math.round(n * 10) / 10;
+
+interface Pair {
+  text: string;
+  fg: string;
+  bg: string;
+}
+/** Every visible text node's colour on its effective background, from the real computed styles. */
+async function textPairs(page: Page): Promise<Pair[]> {
+  return page.evaluate(() => {
+    const root = document.querySelector("[data-screen-id]")!;
+    const bgOf = (el: Element): string => {
+      for (let e: Element | null = el; e; e = e.parentElement) {
+        const c = getComputedStyle(e).backgroundColor;
+        if (c !== "rgba(0, 0, 0, 0)" && c !== "transparent") return c;
+      }
+      return getComputedStyle(document.documentElement).backgroundColor;
+    };
+    const out: { text: string; fg: string; bg: string }[] = [];
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      const text = n.textContent!.trim();
+      const el = n.parentElement!;
+      if (!text || el.closest("[aria-hidden='true']") || el.closest("svg")) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === "hidden" || cs.display === "none" || el.getClientRects().length === 0) {
+        continue;
+      }
+      out.push({ text, fg: cs.color, bg: bgOf(el) });
+    }
+    return out;
+  });
+}
+
+const cssOf = (page: Page, selector: string, props: string[]): Promise<string[]> =>
+  page.evaluate(
+    ([sel, ps]) => {
+      const cs = getComputedStyle(document.querySelector(sel as string)!);
+      return (ps as string[]).map((p) => cs.getPropertyValue(p));
+    },
+    [selector, props] as const,
+  );
+
+const themeColor = (page: Page) =>
+  page.evaluate(
+    () => document.head.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content,
+  );
+
+test.describe("T-0599 plan restyle at 390 x 844", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("AC1 UF-08.1 (zero history): plan state, plan.bg, theme-color, 28 px gutter, unboxed card", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    const root = screenUF081(page);
+    await expect(root).toHaveAttribute("data-wl-state", "plan");
+    expect((await cssOf(page, '[data-screen-id="UF-08.1"]', ["background-color"]))[0]).toBe(
+      rgb(plan.bg!),
+    );
+    expect((await cssOf(page, '[data-screen-id="UF-08.1"]', ["padding-left"]))[0]).toBe("28px");
+    await expect.poll(() => themeColor(page)).toBe(plan.bg);
+    // Load order must not box the card or the rows (D-0208 §3).
+    expect(
+      await cssOf(page, ".wl-card", ["padding-top", "border-top-width", "background-color"]),
+    ).toEqual(["0px", "0px", TRANSPARENT]);
+  });
+
+  test("AC1 UF-08.4: plan state, plan.bg, theme-color, 28 px gutter", async ({ page }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    await expect(page.locator('[data-screen-id="UF-08.4"]')).toHaveAttribute(
+      "data-wl-state",
+      "plan",
+    );
+    const sel = '[data-screen-id="UF-08.4"]';
+    expect(await cssOf(page, sel, ["background-color", "padding-left"])).toEqual([
+      rgb(plan.bg!),
+      "28px",
+    ]);
+    await expect.poll(() => themeColor(page)).toBe(plan.bg);
+    expect(
+      await cssOf(page, ".wl-card", ["padding-top", "border-top-width", "background-color"]),
+    ).toEqual(["0px", "0px", TRANSPARENT]);
+  });
+
+  test("AC7 a returning user (history) renders in plan with a fit line", async ({ page }) => {
+    const completedAt = new Date(Date.now() - 2 * 86_400_000).toISOString();
+    await mockSupabaseData(page, {
+      sets: Array.from({ length: 5 }, (_, i) => ({
+        client_id: `t0599-squat-${i}`,
+        session_id: "S1",
+        exercise_id: "back-squat",
+        is_warmup: false,
+        completed_at: completedAt,
+        edited_at: completedAt,
+        deleted_at: null,
+        reps: 8,
+        weight_kg: 60,
+        duration_s: null,
+      })),
+      exercises,
+      exerciseAreas,
+      areaTargets: AREA_TARGETS,
+      profile: profileRow,
+    });
+    await openSetup(page);
+    await expect(screenUF081(page)).toHaveAttribute("data-wl-state", "plan");
+    expect((await cssOf(page, '[data-screen-id="UF-08.1"]', ["background-color"]))[0]).toBe(
+      rgb(plan.bg!),
+    );
+  });
+
+  test("AC7 offline from the cached plan: UF-08.1 renders in plan", async ({ page, context }) => {
+    await openSetup(page);
+    await expect.poll(() => cachedCounts(page)).toEqual({ library: exercises.length, targets: 9 });
+    await precacheSettled(page);
+    await context.setOffline(true);
+    await page.reload();
+    await expect(screenUF081(page)).toBeVisible({ timeout: 3000 });
+    await expect(page.getByLabel("Offline")).toBeVisible();
+    await expect(fitLine(page)).toHaveText(FIT_PATTERN);
+    await expect(screenUF081(page)).toHaveAttribute("data-wl-state", "plan");
+    expect((await cssOf(page, '[data-screen-id="UF-08.1"]', ["background-color"]))[0]).toBe(
+      rgb(plan.bg!),
+    );
+    await expect.poll(() => themeColor(page)).toBe(plan.bg);
+  });
+
+  test("AC2 the stepper and keys change the minutes; the selected quick pick is plan.selected", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    const pick = (m: number) => page.getByRole("button", { name: `${m} minutes` });
+    const fill = (m: number) =>
+      pick(m).evaluate((el) => [getComputedStyle(el).backgroundColor, getComputedStyle(el).color]);
+    expect(await fill(45)).toEqual([rgb(plan.selected!), rgb(plan["on-selected"]!)]);
+    expect((await fill(30))[0]).toBe(TRANSPARENT);
+    await pick(30).click();
+    expect(await fill(30)).toEqual([rgb(plan.selected!), rgb(plan["on-selected"]!)]);
+    expect((await fill(45))[0]).toBe(TRANSPARENT);
+    const more = page.getByRole("button", { name: "5 minutes more" });
+    await more.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator('[data-part="minutes"]')).toHaveText("35");
+    await page.keyboard.press("Space");
+    await expect(page.locator('[data-part="minutes"]')).toHaveText("40");
+    // The minutes are the hero: far larger than the 1.0625 rem body.
+    const size = await page
+      .locator('[data-part="minutes"]')
+      .evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    expect(size).toBeGreaterThanOrEqual(96);
+  });
+
+  test("AC2 the time control is first in tab order, after Close (principle 2)", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    const tabbed: string[] = [];
+    for (let i = 0; i < 3; i += 1) {
+      await page.keyboard.press("Tab");
+      tabbed.push(
+        await page.evaluate(
+          () =>
+            document.activeElement?.getAttribute("aria-label") ??
+            document.activeElement?.textContent ??
+            "",
+        ),
+      );
+    }
+    expect(tabbed).toEqual(["Close", "5 minutes less", "5 minutes more"]);
+  });
+
+  test("AC3 Skip today chip: pressed is a plan.selected fill with a visible tick, unpressed is transparent with none", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    const quads = page.getByRole("button", { name: "Quads", exact: true });
+    const read = () =>
+      quads.evaluate((el) => {
+        const tick = el.querySelector(".wl-chip__tick")!;
+        const box = tick.getBoundingClientRect();
+        return {
+          bg: getComputedStyle(el).backgroundColor,
+          color: getComputedStyle(el).color,
+          tickDisplay: getComputedStyle(tick).display,
+          tickWidth: box.width,
+          pressed: el.getAttribute("aria-pressed"),
+        };
+      });
+    const off = await read();
+    expect(off.pressed).toBe("false");
+    expect(off.bg).toBe(TRANSPARENT);
+    expect(off.tickDisplay).toBe("none");
+    await quads.click();
+    const on = await read();
+    expect(on.pressed).toBe("true");
+    expect(on.bg).toBe(rgb(plan.selected!));
+    expect(on.color).toBe(rgb(plan["on-selected"]!));
+    expect(on.tickDisplay).not.toBe("none");
+    expect(on.tickWidth).toBeGreaterThan(0);
+    await expect(
+      page.getByRole("button", { name: "Quads", exact: true, pressed: true }),
+    ).toHaveCount(1);
+  });
+
+  test("AC4 toggles: the warm-up switch is a checkbox whose track follows the state; Ready's three too", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    const box = page.getByRole("checkbox", { name: "Warm-up counts in this time (3 min)" });
+    const track = () =>
+      box.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return { bg: cs.backgroundColor, border: cs.borderTopColor, w: cs.width, h: cs.height };
+      });
+    expect(await track()).toEqual({
+      bg: rgb(plan.selected!),
+      border: rgb(plan.selected!),
+      w: "48px",
+      h: "28px",
+    });
+    await box.click();
+    await page.mouse.move(0, 0);
+    await expect(box).not.toBeChecked();
+    expect(await track()).toEqual({
+      bg: TRANSPARENT,
+      border: rgb(plan["ink-muted"]!),
+      w: "48px",
+      h: "28px",
+    });
+    await box.click();
+    await suggestAt30(page);
+    await toReady(page);
+    for (const name of ["Sound cues", "Voice countdown 3-2-1", "Keep screen awake"]) {
+      const sw = page.getByRole("checkbox", { name });
+      expect((await sw.evaluate((el) => getComputedStyle(el).width)) as string).toBe("48px");
+    }
+  });
+
+  test("AC5 contrast on UF-08.1: every text pair, the named pairs, and axe colour-contrast", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    // The error line, shown: a time earlier than now.
+    await page.getByRole("button", { name: "Set a finish time" }).click();
+    await page.getByLabel("Finish by").fill("00:01");
+    const error = page.getByText("Pick a time later today");
+    await expect(error).toBeVisible();
+    await page.getByRole("button", { name: "Quads", exact: true }).click();
+    const pairs = await textPairs(page);
+    expect(pairs.length).toBeGreaterThan(15);
+    for (const p of pairs) {
+      expect(ratio(p.fg, p.bg), `${p.text}: ${p.fg} on ${p.bg}`).toBeGreaterThanOrEqual(4.5);
+    }
+    const pair = (text: string | RegExp) =>
+      pairs.find((p) => (typeof text === "string" ? p.text === text : text.test(p.text)))!;
+    const primary = pair("Suggest my workout");
+    expect([primary.fg, primary.bg]).toEqual([rgb(plan["on-action"]!), rgb(plan.action!)]);
+    expect(oneDecimal(ratio(primary.fg, primary.bg))).toBeGreaterThanOrEqual(8.6);
+    for (const label of ["Finish by", "How's your energy?", "Skip today", /^done by /, "minutes"]) {
+      const p = pair(label);
+      if (!p) continue;
+      expect([p.fg, p.bg], String(label)).toEqual([rgb(plan["ink-muted"]!), rgb(plan.bg!)]);
+      expect(oneDecimal(ratio(p.fg, p.bg)), String(label)).toBeGreaterThanOrEqual(5.9);
+    }
+    const err = pair("Pick a time later today");
+    expect([err.fg, err.bg]).toEqual([rgb(plan.attention!), rgb(plan.bg!)]);
+    expect(oneDecimal(ratio(err.fg, err.bg))).toBeGreaterThanOrEqual(5.0);
+    const selected = pair("Quads");
+    expect([selected.fg, selected.bg]).toEqual([rgb(plan["on-selected"]!), rgb(plan.selected!)]);
+    const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(axe.violations).toEqual([]);
+    // Hidden: the error line is gone once a valid time is picked.
+    await page.getByLabel("Finish by").fill("23:59");
+    await expect(error).toHaveCount(0);
+  });
+
+  test("AC5 contrast on UF-08.4: every text pair and axe colour-contrast", async ({ page }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    const pairs = await textPairs(page);
+    expect(pairs.length).toBeGreaterThan(10);
+    for (const p of pairs) {
+      expect(ratio(p.fg, p.bg), `${p.text}: ${p.fg} on ${p.bg}`).toBeGreaterThanOrEqual(4.5);
+    }
+    const start = pairs.find((p) => p.text === "Start")!;
+    expect([start.fg, start.bg]).toEqual([rgb(plan["on-action"]!), rgb(plan.action!)]);
+    expect(oneDecimal(ratio(start.fg, start.bg))).toBeGreaterThanOrEqual(8.6);
+    const body = pairs.find(
+      (p) => p.text === "The current set, its weight and reps. Nothing else.",
+    )!;
+    expect([body.fg, body.bg]).toEqual([rgb(plan["ink-muted"]!), rgb(plan.bg!)]);
+    expect(oneDecimal(ratio(body.fg, body.bg))).toBeGreaterThanOrEqual(5.9);
+    const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(axe.violations).toEqual([]);
+    await expect(page.locator(".wl-uf08__error")).toHaveCount(0);
+    expect(await page.locator(".wl-button--primary").count()).toBe(1);
+  });
+
+  test("AC5 exactly one .wl-button--primary on UF-08.1", async ({ page }) => {
+    await openSetup(page);
+    await expect(page.locator(".wl-button--primary")).toHaveCount(1);
+  });
+
+  test("AC6 every control on UF-08.1 is at least 44 x 44, each chip included", async ({ page }) => {
+    await openSetup(page);
+    await page.getByRole("button", { name: "Set a finish time" }).click();
+    const controls = [
+      page.getByRole("link", { name: "Close" }),
+      page.getByRole("button", { name: "5 minutes less" }),
+      page.getByRole("button", { name: "5 minutes more" }),
+      ...[20, 30, 45, 60, 90].map((m) => page.getByRole("button", { name: `${m} minutes` })),
+      page.getByLabel("Finish by"),
+      page.locator("label.wl-toggle"),
+      ...["Low", "Normal", "High"].map((n) =>
+        page.locator("label", { has: page.getByRole("radio", { name: n }) }),
+      ),
+      ...[
+        "Chest",
+        "Back",
+        "Shoulders",
+        "Arms",
+        "Core",
+        "Glutes",
+        "Quads",
+        "Hamstrings",
+        "Calves",
+      ].map((n) => page.getByRole("button", { name: n, exact: true })),
+      page.getByRole("button", { name: "Suggest my workout" }),
+    ];
+    for (const control of controls) {
+      const box = await control.boundingBox();
+      expect(box, String(control)).not.toBeNull();
+      expect(box!.width, String(control)).toBeGreaterThanOrEqual(44);
+      expect(box!.height, String(control)).toBeGreaterThanOrEqual(44);
+    }
+  });
+
+  test("AC5 contrast: disabled Suggest (Checking), disabled steppers at the limits", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    const less = page.getByRole("button", { name: "5 minutes less" });
+    for (let i = 0; i < 12; i += 1) await less.click({ force: true });
+    await expect(less).toHaveAttribute("aria-disabled", "true");
+    // The Checking state is brief, so the same attribute-driven rule is forced on the real button.
+    await page.evaluate(() => {
+      document.querySelector('[data-part="fit-line"]')!.textContent = "Checking what fits…";
+      document.querySelector(".wl-button--primary")!.setAttribute("aria-disabled", "true");
+    });
+    const sugg = await page
+      .getByRole("button", { name: "Suggest my workout" })
+      .evaluate((el) => [getComputedStyle(el).color, getComputedStyle(el).backgroundColor]);
+    expect(sugg).toEqual([rgb(plan.ink!), rgb(plan.raise!)]);
+    expect(oneDecimal(ratio(sugg[0]!, sugg[1]!))).toBeGreaterThanOrEqual(6.2);
+    const step = await less.evaluate((el) => [getComputedStyle(el).color]);
+    expect(oneDecimal(ratio(step[0]!, rgb(plan.bg!)))).toBeGreaterThanOrEqual(5.9);
+    const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(axe.violations).toEqual([]);
+  });
+
+  test("AC5 contrast: the UF-08.4 start-failed alert is plan.attention on plan.bg", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    await page.evaluate(() => {
+      const p = document.createElement("p");
+      p.setAttribute("role", "alert");
+      p.className = "wl-input__error wl-uf08__error";
+      p.textContent = "Couldn't start the workout. Try again.";
+      document.querySelector(".wl-button--primary")!.before(p);
+    });
+    const pairs = await textPairs(page);
+    const err = pairs.find((p) => p.text.startsWith("Couldn't start"))!;
+    expect([err.fg, err.bg]).toEqual([rgb(plan.attention!), rgb(plan.bg!)]);
+    expect(oneDecimal(ratio(err.fg, err.bg))).toBeGreaterThanOrEqual(5.0);
+  });
+
+  test("UF-08.2 is unchanged: the legacy budget chips keep their Chalk & Iron look", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const legacy = JSON.parse(
+      readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
+    ).color as Record<string, string>;
+    const read = (name: string) =>
+      page.getByRole("button", { name }).evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return {
+          border: `${cs.borderTopWidth} ${cs.borderTopStyle} ${cs.borderTopColor}`,
+          bg: cs.backgroundColor,
+          color: cs.color,
+          radius: cs.borderTopLeftRadius,
+          weight: cs.fontWeight,
+          gap: getComputedStyle(el.parentElement!).columnGap,
+        };
+      });
+    expect(await read("20 minutes")).toEqual({
+      border: `1px solid ${rgb(legacy["line-strong"]!)}`,
+      bg: TRANSPARENT,
+      color: rgb(legacy.text!),
+      radius: "14px",
+      weight: "500",
+      gap: "8px",
+    });
+    expect(await read("30 minutes")).toMatchObject({
+      bg: rgb(legacy.accent!),
+      color: rgb(legacy["on-accent"]!),
+      weight: "700",
+    });
+  });
+
+  test("AC6 motion: the only transition is the state cross-fade, instant under reduced motion", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    const read = () =>
+      page.evaluate(() => {
+        const dur = (el: Element) => getComputedStyle(el).transitionDuration;
+        const root = document.querySelector('[data-screen-id="UF-08.1"]')!;
+        const controls = [
+          ...root.querySelectorAll(
+            ".wl-chip, .wl-uf08__step, .wl-button--primary, .wl-toggle > input, .wl-segmented > label",
+          ),
+        ];
+        return { root: dur(root), controls: [...new Set(controls.map(dur))] };
+      });
+    expect(await read()).toEqual({ root: "0.2s", controls: ["0s"] });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await read()).toEqual({ root: "0s", controls: ["0s"] });
+  });
+
+  test("AC7 'Nothing fits' is a plain line in plan ink, not an error", async ({ page }) => {
+    await openSetup(page);
+    for (const n of [
+      "Chest",
+      "Back",
+      "Shoulders",
+      "Arms",
+      "Core",
+      "Glutes",
+      "Quads",
+      "Hamstrings",
+      "Calves",
+    ]) {
+      await page.getByRole("button", { name: n, exact: true }).click();
+    }
+    await expect(fitLine(page)).toHaveText(/^Nothing fits in \d+ min$/);
+    const [color] = await cssOf(page, '[data-part="fit-line"]', ["color"]);
+    expect(color).toBe(rgb(plan.ink!));
+    expect(color).not.toBe(rgb(plan.attention!));
+    await expect(page.locator('[role="alert"]')).toHaveCount(0);
+  });
+});
+
+// ---- T-0599 AC8: canvas compare at 390 x 844 (WL_CANVAS_COMPARE=1; skipped otherwise) ----
+test.describe("T-0599 AC8 canvas compare at 390 x 844", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("Set up · time and energy, with two areas skipped", async ({ page }, testInfo) => {
+    await openSetup(page);
+    await page.getByRole("button", { name: "Quads", exact: true }).click();
+    await page.getByRole("button", { name: "Hamstrings", exact: true }).click();
+    await expect(fitLine(page)).toHaveText(FIT_PATTERN);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({
+      path: testInfo.outputPath("cobalt", "set-up-time-and-energy-app-full.png"),
+      fullPage: true,
+    });
+    await compareWithCanvas(page, testInfo, { turn: "turn-3", frame: "Set up · time and energy" });
+  });
+
+  test("Set up · ready", async ({ page }, testInfo) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await toReady(page);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({
+      path: testInfo.outputPath("cobalt", "set-up-ready-app-full.png"),
+      fullPage: true,
+    });
+    await compareWithCanvas(page, testInfo, { turn: "turn-5", frame: "Set up · ready" });
   });
 });

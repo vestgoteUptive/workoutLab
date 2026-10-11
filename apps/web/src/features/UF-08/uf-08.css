@@ -1,13 +1,23 @@
 /* UF-08 Session setup styling. Colours and fonts come only from @workoutlab/design-tokens
    (D-0019). State (pressed chips, the checked energy, aria-disabled) is styled from attributes
    here, never inline, so the :focus-visible ring is never overridden (WCAG 2.4.7). Every
-   control is at least 44 × 44 px (NFR-A11Y-2). */
+   control is at least 44 x 44 px (NFR-A11Y-2).
+
+   UF-08.1 and UF-08.4 are Cobalt "plan" screens (T-0599, D-0208, D-0211): their roots carry
+   data-wl-state="plan" and .wl-page, and their controls are the shared .wl-chip, .wl-segmented,
+   .wl-toggle, .wl-input and .wl-button--primary from main.css, so nothing here recolours them.
+   Rules for the plan screens sit under `.wl-uf08[data-wl-state]`, which out-ranks the base rules
+   whatever the load order. UF-08.2, UF-08.5 and Reorder keep the Chalk & Iron look until T-0600. */
 .wl-uf08 {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-block-size: 100dvh;
+}
+
+/* No state: the old padding, colours and font. Under a state root the state paints them. */
+.wl-uf08:not([data-wl-state]) {
   padding: 16px 20px 24px;
   color: var(--wl-color-text);
   background: var(--wl-color-bg);
@@ -27,210 +37,26 @@
   justify-content: center;
   min-width: 44px;
   min-height: 44px;
-  color: var(--wl-color-text);
+  color: var(--wl-ink);
   text-decoration: none;
 }
 
-.wl-uf08__title {
+.wl-uf08:not([data-wl-state]) .wl-uf08__title {
   margin: 0;
   font-family: var(--wl-font-display);
-  font-size: 40px;
+  font-size: 2.5rem;
   font-weight: 800;
   line-height: 1;
   text-transform: uppercase;
-}
-
-.wl-uf08__card {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px;
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 16px;
-}
-
-.wl-uf08__stepper {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.wl-uf08__step {
-  min-width: 56px;
-  min-height: 56px;
-  color: var(--wl-color-text);
-  background: transparent;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 16px;
-  font: inherit;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.wl-uf08__step[aria-disabled="true"] {
-  color: var(--wl-color-text-muted);
-  cursor: not-allowed;
-}
-
-.wl-uf08__value {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.wl-uf08__minutes {
-  font-family: var(--wl-font-display);
-  font-size: 104px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.wl-uf08__unit,
-.wl-uf08__done-by,
-.wl-uf08__hint {
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf08__chips {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-}
-
-.wl-uf08__chip,
-.wl-uf08__skip-chip {
-  min-width: 44px;
-  min-height: 44px;
-  color: var(--wl-color-text);
-  background: transparent;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 14px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.wl-uf08__chip[aria-pressed="true"],
-.wl-uf08__skip-chip[aria-pressed="true"] {
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-  border-color: var(--wl-color-accent);
-  font-weight: 700;
-}
-
-.wl-uf08__skip {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.wl-uf08__skip .wl-uf08__hint {
-  margin: 0;
-}
-
-.wl-uf08__skip-chips {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.wl-uf08__skipping {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf08__finish {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-
-.wl-uf08__time {
-  min-height: 44px;
-  padding: 4px 12px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface-2);
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 8px;
-  font: inherit;
-  color-scheme: dark;
-}
-
-.wl-uf08__error {
-  flex-basis: 100%;
-  margin: 0;
-  color: var(--wl-color-warn);
-}
-
-.wl-uf08__link {
-  min-height: 44px;
-  padding: 0;
-  color: var(--wl-color-accent);
-  background: transparent;
-  border: 0;
-  font: inherit;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.wl-uf08__toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-height: 44px;
-}
-
-.wl-uf08__checkbox {
-  inline-size: 28px;
-  block-size: 28px;
-  accent-color: var(--wl-color-accent);
 }
 
 .wl-uf08__label {
   margin: 0 0 8px;
   color: var(--wl-color-text-muted);
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-}
-
-.wl-uf08__energy-options {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-
-.wl-uf08__energy-option {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 56px;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 16px;
-  cursor: pointer;
-}
-
-.wl-uf08__energy-option input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.wl-uf08__energy-option:has(input:checked) {
-  border: 2px solid var(--wl-color-accent);
-  font-weight: 700;
-}
-
-.wl-uf08__hint {
-  margin: 8px 0 0;
 }
 
 .wl-uf08__fit {
@@ -250,13 +76,13 @@
   border: 0;
   border-radius: 16px;
   font: inherit;
-  font-size: 18px;
+  font-size: 1.125rem;
   font-weight: 700;
   cursor: pointer;
 }
 
 .wl-uf08__back[aria-disabled="true"] {
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
   cursor: not-allowed;
 }
 
@@ -265,6 +91,217 @@
   background: var(--wl-color-surface-2);
   cursor: not-allowed;
 }
+
+/* UF-08.2 is not migrated yet (T-0600): its budget chips and Skipping line keep the Chalk & Iron look. */
+.wl-uf08:not([data-wl-state]) .wl-uf08__chips {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.wl-uf08:not([data-wl-state]) .wl-uf08__chip {
+  color: var(--wl-color-text);
+  background: transparent;
+  border: 1px solid var(--wl-color-line-strong);
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.wl-uf08:not([data-wl-state]) .wl-uf08__chip[aria-pressed="true"] {
+  color: var(--wl-color-on-accent);
+  background: var(--wl-color-accent);
+  border-color: var(--wl-color-accent);
+  font-weight: 700;
+}
+
+.wl-uf08:not([data-wl-state]) .wl-uf08__chip:focus-visible {
+  outline: 2px solid var(--wl-color-accent);
+  outline-offset: 2px;
+}
+
+.wl-uf08:not([data-wl-state]) .wl-uf08__skipping {
+  margin: 0;
+  color: var(--wl-color-text-muted);
+}
+
+/* ---- UF-08.1 and UF-08.4 in the plan state (T-0599) ---- */
+/* t-0599-plan-start */
+.wl-uf08__chip,
+.wl-uf08__skip-chip {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__title {
+  margin-block-start: 8px;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__label {
+  margin: 0;
+  color: var(--wl-ink-muted);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__hint {
+  margin: 8px 0 0;
+  color: var(--wl-ink-muted);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.wl-uf08__card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.wl-uf08__stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* The outline pill steppers: 56 px, a 1.5 px ink outline, no fill. */
+.wl-uf08__step {
+  min-width: 56px;
+  min-height: 56px;
+  padding: 0;
+  color: var(--wl-ink);
+  background: transparent;
+  border: 1.5px solid var(--wl-ink);
+  border-radius: var(--wl-radius-pill);
+  font: inherit;
+  font-size: 1.75rem;
+  cursor: pointer;
+}
+
+.wl-uf08__step[aria-disabled="true"] {
+  color: var(--wl-ink-muted);
+  border-color: var(--wl-ink-muted);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .wl-uf08__step:hover:not([aria-disabled="true"]) {
+    box-shadow: inset 0 0 0 0.5px var(--wl-ink);
+  }
+}
+
+.wl-uf08__value {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.wl-uf08__minutes {
+  font-variant-numeric: tabular-nums;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__chips {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.wl-uf08__skip {
+  display: flex;
+  flex-direction: column;
+}
+
+.wl-uf08__skip-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block-start: 12px;
+}
+
+.wl-uf08__finish {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.wl-uf08__time {
+  align-self: stretch;
+  color-scheme: dark;
+}
+
+.wl-uf08__error {
+  margin: 0;
+}
+
+.wl-uf08__missing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.wl-uf08__missing p {
+  margin: 0;
+}
+
+/* Rows between hairlines: the warm-up toggle, the three Ready settings. */
+.wl-uf08__toggle {
+  padding-block: 12px;
+  border-block: 1px solid var(--wl-line);
+}
+
+.wl-uf08__pref {
+  padding-block: 12px;
+  border-block-end: 1px solid var(--wl-line);
+}
+
+.wl-uf08__energy .wl-segmented {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin-block-start: 10px;
+}
+
+.wl-uf08__energy .wl-segmented > label {
+  inline-size: 100%;
+}
+
+/* The fit line is a plain line above the one primary, never an error (D-0208). */
+.wl-uf08[data-wl-state] .wl-uf08__fit {
+  margin: 0;
+  padding: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.3;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__fit[data-part="fit-line"] {
+  margin-block-start: auto;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__fit[data-part="summary"] {
+  color: var(--wl-ink-muted);
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.45;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__fit + .wl-uf08__primary {
+  margin-block-start: 4px;
+}
+
+.wl-uf08__primary > svg {
+  flex: none;
+}
+/* t-0599-plan-end */
 
 /* ---- UF-08.2 Suggested workout (T-0303b, D-0109) ---- */
 .wl-uf08__why {
@@ -281,7 +318,7 @@
   color: var(--wl-color-accent-hover);
   background: var(--wl-color-surface-2);
   border-radius: 8px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
 }
 
@@ -321,7 +358,7 @@
 
 .wl-uf08__budget-text {
   margin: 0;
-  font-size: 14px;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -352,7 +389,7 @@
 }
 
 .wl-uf08__row-name {
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 700;
 }
 
@@ -360,7 +397,7 @@
   min-block-size: 44px;
   padding: 0;
   font: inherit;
-  font-size: 15px;
+  font-size: 0.9375rem;
   font-weight: 700;
   color: var(--wl-color-text);
   text-align: start;
@@ -376,13 +413,13 @@
 
 .wl-uf08__row-detail {
   color: var(--wl-color-text-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .wl-uf08__row-reason {
   margin-top: 2px;
   color: var(--wl-color-accent-hover);
-  font-size: 12px;
+  font-size: 0.75rem;
 }
 
 .wl-uf08__icon {
@@ -436,69 +473,53 @@
   cursor: pointer;
 }
 
-/* ---- UF-08.4 Ready (T-0303d, D-0110) ---- */
+/* ---- UF-08.4 Ready (T-0303d, D-0110; plan state T-0599) ---- */
 .wl-uf08__how {
   display: flex;
   flex-direction: column;
-  gap: 14px;
   margin: 0;
   padding: 0;
   list-style: none;
-  counter-reset: wl-uf08-how;
 }
 
 .wl-uf08__how-step {
-  display: grid;
-  grid-template-columns: 44px 1fr;
-  column-gap: 12px;
-  align-items: center;
-  counter-increment: wl-uf08-how;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: 12px;
+  border-block-end: 1px solid var(--wl-line);
 }
 
-.wl-uf08__how-step::before {
-  content: counter(wl-uf08-how);
-  display: flex;
-  grid-row: span 2;
-  align-items: center;
-  justify-content: center;
-  inline-size: 44px;
-  block-size: 44px;
-  color: var(--wl-color-accent);
-  background: var(--wl-color-surface-2);
-  border-radius: 14px;
-  font-family: var(--wl-font-display);
-  font-size: 22px;
-  font-weight: 800;
+.wl-uf08__how-step:last-child {
+  border-block-end: 0;
 }
 
 .wl-uf08__how-title {
-  font-weight: 700;
+  font-size: 1.0625rem;
+  font-weight: 600;
 }
 
 .wl-uf08__how-body {
-  color: var(--wl-color-text-muted);
-  font-size: 14px;
+  color: var(--wl-ink-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
 }
 
 .wl-uf08__prefs {
   display: flex;
   flex-direction: column;
-  gap: 4px;
   margin: 0;
   padding: 0;
   border: 0;
 }
 
-.wl-uf08__pref {
-  cursor: pointer;
+.wl-uf08__prefs > legend {
+  padding: 0;
+  margin-block-end: 4px;
 }
 
-/* NFR-A11Y-2: each switch is itself a 44 × 44 target. */
-.wl-uf08__pref .wl-uf08__checkbox {
-  flex-shrink: 0;
-  inline-size: 44px;
-  block-size: 44px;
-  margin: 0;
+.wl-uf08__pref {
+  cursor: pointer;
 }
 
 .wl-uf08__icon:focus-visible,
@@ -506,14 +527,8 @@
 .wl-uf08__close:focus-visible,
 .wl-uf08__back:focus-visible,
 .wl-uf08__step:focus-visible,
-.wl-uf08__chip:focus-visible,
-.wl-uf08__skip-chip:focus-visible,
-.wl-uf08__link:focus-visible,
-.wl-uf08__time:focus-visible,
-.wl-uf08__checkbox:focus-visible,
-.wl-uf08__primary:focus-visible,
-.wl-uf08__energy-option:has(input:focus-visible) {
-  outline: 2px solid var(--wl-color-accent);
+.wl-uf08__primary:focus-visible {
+  outline: 2px solid var(--wl-focus);
   outline-offset: 2px;
 }
 
@@ -566,7 +581,7 @@
 
 .wl-uf08__removed-note {
   margin: 8px 0 0;
-  font-size: 13px;
+  font-size: 0.8125rem;
   color: var(--wl-color-text-muted);
 }
 
@@ -583,7 +598,7 @@
 .wl-uf08__status {
   margin: 0;
   color: var(--wl-color-text-muted);
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .wl-uf08__status:empty,
@@ -714,7 +729,7 @@
 }
 
 .wl-uf08__pick-name {
-  font-size: 16px;
+  font-size: 1rem;
   font-weight: 700;
 }
 
@@ -723,7 +738,7 @@
   padding: 2px 8px;
   border: 1px solid var(--wl-color-line-strong);
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 400;
   color: var(--wl-color-text-muted);
 }

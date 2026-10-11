@@ -75,8 +75,13 @@ test.describe("AC2 state mapping (390 x 844)", () => {
 
 test.describe("AC3 no state keeps Chalk & Iron (390 x 844)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
+  // /welcome is a plan screen now (T-0605): drop its state root so only the fixture is on the page.
+  const dropScreen = (page: Page) =>
+    page.evaluate(() => document.querySelectorAll("[data-screen-id]").forEach((e) => e.remove()));
   test("--wl-bg resolves to the legacy bg and the page is unchanged", async ({ page }) => {
-    await inject(page, `<div id="x">hi</div>`);
+    await dropScreen(page);
+    await inject(page, `<div id="x"><h1>hi</h1></div>`);
+    await page.waitForTimeout(300); // the 200 ms release cross-fade
     const [bg, ink] = await page.evaluate(() => {
       const cs = getComputedStyle(document.getElementById("x")!);
       return [cs.getPropertyValue("--wl-bg").trim(), cs.getPropertyValue("--wl-ink").trim()];
@@ -91,6 +96,7 @@ test.describe("AC3 no state keeps Chalk & Iron (390 x 844)", () => {
   });
 
   test("html follows a mounted screen root's state, and is released again", async ({ page }) => {
+    await dropScreen(page);
     await inject(page, `<div data-screen-id="X" data-wl-state="lift">hi</div>`);
     await page.waitForTimeout(300);
     const bg = () =>

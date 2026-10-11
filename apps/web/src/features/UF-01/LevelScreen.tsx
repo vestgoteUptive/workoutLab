@@ -8,6 +8,7 @@ import type { Level } from "@workoutlab/shared";
 import { en } from "../../lib/i18n/en.js";
 import type { EquipmentProfileId } from "./equipment-profiles.js";
 import type { PendingPlanStore } from "./WelcomeRoutes.js";
+import { ArrowRight, Tick } from "./Glyphs.js";
 import { StepHeader } from "./StepHeader.js";
 
 const t = en.uf01;
@@ -36,68 +37,68 @@ export function LevelScreen({ store }: { store: PendingPlanStore }) {
   }
 
   return (
-    <div data-screen-id="UF-01.3" className="wl-uf01">
+    <div data-screen-id="UF-01.3" data-wl-state="plan" className="wl-page wl-uf01-plan">
       <StepHeader step={2} backTo="/welcome/goal" />
-      <h1 className="wl-uf01__title wl-uf01__title--step">{t.level.heading}</h1>
-      <form className="wl-uf01__form" onSubmit={onSubmit}>
-        <div className="wl-uf01__group">
-          <p id="wl-uf01-level-legend" className="wl-uf01__tag">
+      <h1 className="wl-uf01-plan__title">{t.level.heading}</h1>
+      <form className="wl-uf01-plan__form" onSubmit={onSubmit}>
+        <div className="wl-uf01-plan__group">
+          <p id="wl-uf01-level-legend" className="wl-type-label">
             {t.level.levelLegend}
           </p>
           <div
             role="radiogroup"
             aria-labelledby="wl-uf01-level-legend"
             aria-describedby="wl-uf01-level-hint"
-            className="wl-uf01__segments"
+            className="wl-segmented"
           >
             {LEVELS.map((id) => (
-              <label key={id} className="wl-uf01__segment">
+              <label key={id}>
                 <input
                   type="radio"
                   name="level"
                   value={id}
                   checked={level === id}
                   onChange={() => chooseLevel(id)}
-                  className="wl-uf01__radio"
                 />
-                <span className="wl-uf01__segment-label">{t.level.levels[id].label}</span>
+                <span>{t.level.levels[id].label}</span>
               </label>
             ))}
           </div>
-          <p id="wl-uf01-level-hint" className="wl-uf01__muted">
+          <p id="wl-uf01-level-hint" className="wl-type-label">
             {t.level.levels[level].hint}
           </p>
         </div>
-        <div className="wl-uf01__group">
-          <p id="wl-uf01-equipment-legend" className="wl-uf01__tag">
+        <div className="wl-uf01-plan__group">
+          <p id="wl-uf01-equipment-legend" className="wl-type-label">
             {t.level.equipmentLegend}
           </p>
           <div
             role="radiogroup"
             aria-labelledby="wl-uf01-equipment-legend"
             aria-describedby="wl-uf01-equipment-hint"
-            className="wl-uf01__chips"
+            className="wl-uf01-plan__chips"
           >
             {EQUIPMENT_PROFILE_IDS.map((id) => (
-              <label key={id} className="wl-uf01__chip">
+              <label key={id} className="wl-chip">
                 <input
                   type="radio"
                   name="equipment"
                   value={id}
                   checked={equipment === id}
                   onChange={() => chooseEquipment(id)}
-                  className="wl-uf01__radio"
                 />
-                <span className="wl-uf01__chip-label">{t.level.equipment[id]}</span>
+                <Tick className="wl-chip__tick" />
+                <span>{t.level.equipment[id]}</span>
               </label>
             ))}
           </div>
-          <p id="wl-uf01-equipment-hint" className="wl-uf01__muted">
+          <p id="wl-uf01-equipment-hint" className="wl-type-label">
             {t.level.equipmentHint}
           </p>
         </div>
-        <button type="submit" className="wl-uf01__primary">
-          {t.continue}
+        <button type="submit" className="wl-button--primary">
+          <span>{t.continue}</span>
+          <ArrowRight />
         </button>
       </form>
     </div>
