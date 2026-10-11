@@ -68,8 +68,8 @@ export function CompareContent() {
 
   return (
     <>
-      <table className="wl-uf04__compare">
-        <caption className="wl-uf04__sr-only">{en.uf04.compareCaption}</caption>
+      <table className="wl-uf04-compare__table">
+        <caption className="wl-uf04__sr">{en.uf04.compareCaption}</caption>
         <thead>
           <tr>
             <td />
@@ -83,7 +83,9 @@ export function CompareContent() {
         <tbody>
           {rows.map(([label, cell]) => (
             <tr key={label}>
-              <th scope="row">{label}</th>
+              <th scope="row" className="wl-type-label">
+                {label}
+              </th>
               {columns.map((e) => (
                 <td key={e.id}>{cell(e)}</td>
               ))}
@@ -91,7 +93,7 @@ export function CompareContent() {
           ))}
         </tbody>
       </table>
-      <Link to={`/library/${other.id}`} className="wl-uf04__link">
+      <Link to={`/library/${other.id}`} className="wl-button--text wl-uf04-compare__back">
         {en.uf04.openExercise(other.name)}
       </Link>
     </>

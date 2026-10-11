@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { isEligible, type EngineProfile, type LibraryExercise } from "@workoutlab/engine";
 import { AREAS, type Area } from "@workoutlab/shared";
+import { TickIcon } from "../../components/icons/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
@@ -109,85 +110,97 @@ export function Library(props: LibraryProps = {}) {
   }
 
   return (
-    <div data-screen-id="UF-04.1" className="wl-uf04">
-      <h1>{en.screens.library}</h1>
+    <div data-screen-id="UF-04.1" data-wl-state="plan" className="wl-page wl-uf04-browse">
+      <h1 className="wl-type-page-title wl-title--stop">{en.screens.library}</h1>
       <OfflineStatus variant="text" timeZone={timeZone} />
       {data === undefined || waitingForFirstDownload ? null : exercises.length === 0 ? (
-        <p>{en.uf04.neverDownloaded}</p>
+        <p className="wl-type-body">{en.uf04.neverDownloaded}</p>
       ) : (
         <>
-          <input
-            type="search"
-            className="wl-uf04__search"
-            aria-label={en.uf04.searchLabel}
-            value={text}
-            onChange={(event) => onSearch(event.target.value)}
-          />
-          <div role="group" aria-label={en.uf04.filtersLabel} className="wl-uf04__chips">
+          <div className="wl-uf04-browse__search">
+            <input
+              type="search"
+              className="wl-input"
+              aria-label={en.uf04.searchLabel}
+              value={text}
+              onChange={(event) => onSearch(event.target.value)}
+            />
+            {text === "" ? null : (
+              <button type="button" className="wl-button--text" onClick={() => onSearch("")}>
+                {en.uf08.clearSearch}
+              </button>
+            )}
+          </div>
+          <div role="group" aria-label={en.uf04.filtersLabel} className="wl-uf04-browse__chips">
             <button
               type="button"
-              className="wl-uf04__chip"
+              className="wl-chip"
               aria-pressed={area === null}
               onClick={() => onArea(null)}
             >
+              <TickIcon size={16} className="wl-chip__tick" />
               {en.uf04.chipAll}
             </button>
             {AREAS.map((a) => (
               <button
                 key={a}
                 type="button"
-                className="wl-uf04__chip"
+                className="wl-chip"
                 aria-pressed={area === a}
                 onClick={() => onArea(a)}
               >
+                <TickIcon size={16} className="wl-chip__tick" />
                 {areaName(a)}
               </button>
             ))}
             {profile === null ? null : (
-              <button type="button" className="wl-uf04__chip" aria-pressed={mine} onClick={onMine}>
+              <button type="button" className="wl-chip" aria-pressed={mine} onClick={onMine}>
+                <TickIcon size={16} className="wl-chip__tick" />
                 {en.uf04.chipMine}
               </button>
             )}
           </div>
           {rows.length === 0 ? (
-            <p>{query === "" ? en.uf04.noMatchFilters : en.uf04.noMatchQuery(rawQuery.trim())}</p>
+            <p className="wl-type-body">
+              {query === "" ? en.uf04.noMatchFilters : en.uf04.noMatchQuery(rawQuery.trim())}
+            </p>
           ) : (
-            <ul className="wl-uf04__list">
+            <ul className="wl-uf04-browse__list">
               {rows.map((e) => {
                 const secondary = secondaryAreaNames(e);
                 return (
                   <li key={e.id}>
-                    <Link to={`/library/${e.id}`} className="wl-uf04__row">
-                      <span className="wl-uf04__row-head">
-                        <span data-field="name" className="wl-uf04__row-name">
-                          {e.name}
-                        </span>
-                        {excluded.has(e.id) ? (
-                          <>
-                            <span className="wl-uf04__sr">{en.uf04.notSuggestedSr}</span>
-                            <span data-field="not-suggested" className="wl-uf04__tag">
-                              {en.uf04.notSuggested}
-                            </span>
-                          </>
-                        ) : favorites.has(e.id) ? (
-                          <>
-                            <span className="wl-uf04__sr">{en.uf04.favoriteSr}</span>
-                            <span data-field="favorite" className="wl-uf04__tag">
-                              {en.uf04.favorite}
-                            </span>
-                          </>
-                        ) : null}
+                    <Link to={`/library/${e.id}`} className="wl-row wl-uf04-browse__row">
+                      <span data-field="name" className="wl-type-row-title">
+                        {e.name}
                       </span>
-                      <span data-field="primary" className="wl-uf04__row-areas">
-                        {primaryAreaNames(e).join(en.uf04.listSeparator)}
-                      </span>
-                      {secondary.length === 0 ? null : (
-                        <span data-field="secondary" className="wl-uf04__row-muted">
-                          {secondary.join(en.uf04.listSeparator)}
+                      {excluded.has(e.id) ? (
+                        <>
+                          <span className="wl-uf04__sr">{en.uf04.notSuggestedSr}</span>
+                          <span data-field="not-suggested" className="wl-uf04-browse__tag">
+                            {en.uf04.notSuggested}
+                          </span>
+                        </>
+                      ) : favorites.has(e.id) ? (
+                        <>
+                          <span className="wl-uf04__sr">{en.uf04.favoriteSr}</span>
+                          <span data-field="favorite" className="wl-uf04-browse__tag">
+                            {en.uf04.favorite}
+                          </span>
+                        </>
+                      ) : null}
+                      <span className="wl-uf04-browse__caption">
+                        <span data-field="primary" className="wl-type-label">
+                          {primaryAreaNames(e).join(en.uf04.listSeparator)}
                         </span>
-                      )}
-                      <span data-field="equipment" className="wl-uf04__row-muted">
-                        {equipmentText(e)}
+                        {secondary.length === 0 ? null : (
+                          <span data-field="secondary" className="wl-type-label">
+                            {secondary.join(en.uf04.listSeparator)}
+                          </span>
+                        )}
+                        <span data-field="equipment" className="wl-type-label">
+                          {equipmentText(e)}
+                        </span>
                       </span>
                     </Link>
                   </li>

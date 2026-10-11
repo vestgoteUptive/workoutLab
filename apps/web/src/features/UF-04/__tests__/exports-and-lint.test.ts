@@ -108,13 +108,14 @@ describe("AC-16 strings", () => {
     expect(source).toMatch(/^export const uf04 = \{[\s\S]*?\n\} as const;$/m);
   });
 
-  it("state styling is CSS, never inline: no style prop, and the chip keeps a :focus-visible ring", () => {
+  it("state styling is CSS, never inline: no style prop, and the shared chip keeps a :focus-visible ring", () => {
     for (const file of sourceFiles().filter((f) => f.endsWith(".tsx"))) {
       expect(readFileSync(file, "utf8"), file).not.toMatch(/\bstyle=/);
     }
-    const css = readFileSync(resolve(FEATURE_DIR, "uf-04.css"), "utf8");
-    expect(css).toMatch(/\.wl-uf04__chip:focus-visible[^{]*\{[^}]*outline:/);
-    expect(css).toMatch(/\.wl-uf04__chip\[aria-pressed="true"\]/);
+    // T-0607: the chip is the shared `.wl-chip`, whose ring and pressed fill live in main.css.
+    const main = readFileSync(resolve(WEB_ROOT, "src/main.css"), "utf8");
+    expect(main).toMatch(/button\.wl-chip\s*\):focus-visible[^{]*\{[^}]*outline:/);
+    expect(main).toMatch(/\.wl-chip\[aria-pressed="true"\]/);
   });
 
   it("no hex colours in the feature's CSS or code", () => {
