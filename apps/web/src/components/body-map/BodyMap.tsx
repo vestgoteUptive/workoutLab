@@ -64,6 +64,21 @@ const tokenVar = (name: LegendToken | "neutral"): string =>
       ? "var(--wl-attention)"
       : `var(--wl-coverage-${name.slice("plan-coverage-".length)})`;
 
+/**
+ * The fill of a legend swatch or label dot, drawn with the figure's own rule (D-0225 §3): step 4
+ * is the ink, every other step is the zone tint (ink at 32 %). Same variables as body-figure.css,
+ * so it matches the figure in plan, lift, rest and on an unmigrated screen.
+ */
+const figureFill = (step: number | "neutral"): string =>
+  step === 4
+    ? "var(--wl-ink)"
+    : step === "neutral"
+      ? "var(--wl-raise)"
+      : "color-mix(in srgb, var(--wl-ink) 32%, transparent)";
+
+/** The legend shows two coverage items: steps 0-3 share the zone tint, step 4 is on target. */
+const LEGEND_STEPS = coverageLegend.filter((e) => e.step === 3 || e.step === 4);
+
 const ATTENTION_OUTLINE = `${attentionLegend.widthPx}px solid ${tokenVar(attentionLegend.token)}`;
 
 /** Label-grid order = visual order = tab order (D-0207 §2, c-01 § Silhouette layout). */
@@ -170,13 +185,14 @@ function accessibleName(view: AreaView, loading: boolean, locale: string | undef
 function Legend() {
   return (
     <ul className="wl-body-map__legend" role="list" aria-label={en.bodyMap.legendName}>
-      {coverageLegend.map((entry) => (
+      {LEGEND_STEPS.map((entry) => (
         <li key={entry.token} className="wl-body-map__legend-item">
           <span
             className="wl-body-map__swatch"
             data-part="swatch"
             aria-hidden="true"
-            style={{ backgroundColor: tokenVar(entry.token) }}
+            style={{ backgroundColor: figureFill(entry.step) }}
+            data-step={entry.step}
           />
           <span data-part="legend-label" aria-hidden="true">
             {entry.label}

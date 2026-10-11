@@ -366,12 +366,6 @@ test.describe("T-0615 AC2 / T-0660 AC7 unmigrated screens (no state)", () => {
     expect(await paint(svg.locator(".wl-fig__halo-gap"), "stroke")).toBe(
       await resolved(page, "var(--wl-color-bg)"),
     );
-    // The legend swatch for step 4 is still the legacy lime (T-0614 AC-2).
-    const sw = await fullMap(page)
-      .locator('[data-part="swatch"]')
-      .nth(4)
-      .evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(sw).toBe(await resolved(page, "var(--wl-color-coverage-4)"));
   });
 });
 

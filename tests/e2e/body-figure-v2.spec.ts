@@ -386,3 +386,35 @@ test.describe("T-0660 AC9 screenshots", () => {
     await shot(page.locator("svg.wl-fig").first(), testInfo, "plan-detail-primary-secondary");
   });
 });
+
+// The C-01 legend must match the figure (D-0225 §3): "Under target" is the zone tint every step 0-3
+// region wears, "On target" is the step-4 fill. Compared as computed fills, in every state.
+test.describe("T-0660 legend swatches match the figure", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  for (const state of [null, "plan", "lift", "rest"] as const) {
+    test(`state ${state ?? "none (unmigrated)"}: 2 coverage swatches plus attention, fills equal the regions`, async ({
+      page,
+    }) => {
+      await openBalance(page);
+      await setState(page, state);
+      const map = fullMap(page);
+      const swatches = map.locator('[data-part="swatch"]');
+      await expect(map.locator('[data-part="legend-label"]')).toHaveText([
+        "Under target",
+        "On target",
+        "Needs attention",
+      ]);
+      const under = await css(swatches.nth(0), "background-color");
+      const on = await css(swatches.nth(1), "background-color");
+      const step2 = await css(
+        map.locator("svg .wl-fig__region--step-2:not(.wl-fig__region--attention)"),
+        "fill",
+      );
+      const step4 = await css(map.locator("svg .wl-fig__region--step-4"), "fill");
+      expect(under).toBe(step2);
+      expect(on).toBe(step4);
+      expect(under).not.toBe(on);
+    });
+  }
+});
