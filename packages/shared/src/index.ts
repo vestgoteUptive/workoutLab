@@ -138,8 +138,10 @@ export {
 export {
   toAreaTarget,
   toAreaTargets,
+  toBarbell,
   toEngineProfile,
   toHistorySet,
   toLibraryExercise,
   toPlanCheckin,
+  type Barbell,
 } from "./mappers.js";

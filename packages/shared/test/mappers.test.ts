@@ -83,6 +83,8 @@ const profileRow: Tables<"profiles"> = {
   plan_changed_at: "2026-09-20T08:00:00+00:00",
   created_at: "2026-08-02T09:00:00+00:00",
   updated_at: "2026-09-20T08:00:00+00:00",
+  bar_kg: 20,
+  plates_kg: [25, 20, 15, 10, 5, 2.5, 1.25],
 };
 
 describe("AC18 toHistorySet", () => {

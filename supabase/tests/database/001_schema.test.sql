@@ -2,7 +2,7 @@
 -- AC24 [a][b] (indexes), AC23 (data minimisation), D-0029 (exercises columns, TR-0003).
 -- The AC1 block is generated from the column tables in docs/data-model.md (parts [a] and [b], T-0100b).
 begin;
-select plan(277);
+select plan(281);
 
 -- AC1 -------------------------------------------------------------------------------------------
 -- areas
@@ -67,7 +67,7 @@ select col_type_is('public', 'exercise_variants', 'variant_id', 'text', 'exercis
 select col_not_null('public', 'exercise_variants', 'variant_id', 'exercise_variants.variant_id is not null');
 -- profiles
 select has_table('public', 'profiles', 'table profiles exists');
-select columns_are('public', 'profiles', array['user_id', 'goal', 'level', 'rhythm_min', 'rhythm_max', 'equipment', 'priority_areas', 'onboarded_at', 'onboarding_timing_ms', 'plan_changed_at', 'created_at', 'updated_at'], 'profiles has exactly the documented columns');
+select columns_are('public', 'profiles', array['user_id', 'goal', 'level', 'rhythm_min', 'rhythm_max', 'equipment', 'priority_areas', 'onboarded_at', 'onboarding_timing_ms', 'plan_changed_at', 'created_at', 'updated_at', 'bar_kg', 'plates_kg'], 'profiles has exactly the documented columns');
 select col_type_is('public', 'profiles', 'user_id', 'uuid', 'profiles.user_id is uuid');
 select col_not_null('public', 'profiles', 'user_id', 'profiles.user_id is not null');
 select col_type_is('public', 'profiles', 'goal', 'text', 'profiles.goal is text');
@@ -92,6 +92,10 @@ select col_type_is('public', 'profiles', 'created_at', 'timestamp with time zone
 select col_not_null('public', 'profiles', 'created_at', 'profiles.created_at is not null');
 select col_type_is('public', 'profiles', 'updated_at', 'timestamp with time zone', 'profiles.updated_at is timestamp with time zone');
 select col_not_null('public', 'profiles', 'updated_at', 'profiles.updated_at is not null');
+select col_type_is('public', 'profiles', 'bar_kg', 'numeric(5,2)', 'profiles.bar_kg is numeric(5,2)');
+select col_not_null('public', 'profiles', 'bar_kg', 'profiles.bar_kg is not null');
+select col_type_is('public', 'profiles', 'plates_kg', 'numeric(5,2)[]', 'profiles.plates_kg is numeric(5,2)[]');
+select col_not_null('public', 'profiles', 'plates_kg', 'profiles.plates_kg is not null');
 -- area_targets
 select has_table('public', 'area_targets', 'table area_targets exists');
 select columns_are('public', 'area_targets', array['user_id', 'area_id', 'sets_per_14d', 'source', 'updated_at'], 'area_targets has exactly the documented columns');
@@ -361,7 +365,10 @@ select has_index('public', 'routine_items', 'routine_items_user_id_idx', array['
 select is(
   (select count(*)::int from information_schema.columns
     where table_schema in ('public', 'analytics')
-      and column_name ~* '(dob|birth|sex|gender|body_?weight|heart|latitude|longitude|lat|lng|coord|email)'),
+      and column_name ~* '(dob|birth|sex|gender|body_?weight|heart|latitude|longitude|lat|lng|coord|email)'
+      -- T-0631 (D-0218): profiles.plates_kg (plate sizes) matches 'lat' by substring only; it is
+      -- the one exact (table, column) pair let through. Any other match still fails.
+      and (table_schema, table_name, column_name) <> ('public', 'profiles', 'plates_kg')),
   0, 'no personal-data columns in public or analytics');
 select col_type_is('public', 'sessions', 'location', 'text', 'sessions.location is text');
 

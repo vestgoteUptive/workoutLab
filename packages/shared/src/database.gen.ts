@@ -302,6 +302,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          bar_kg: number;
           created_at: string;
           equipment: string[];
           goal: string;
@@ -309,6 +310,7 @@ export type Database = {
           onboarded_at: string;
           onboarding_timing_ms: number | null;
           plan_changed_at: string;
+          plates_kg: number[];
           priority_areas: string[];
           rhythm_max: number;
           rhythm_min: number;
@@ -316,6 +318,7 @@ export type Database = {
           user_id: string;
         };
         Insert: {
+          bar_kg?: number;
           created_at?: string;
           equipment?: string[];
           goal: string;
@@ -323,6 +326,7 @@ export type Database = {
           onboarded_at?: string;
           onboarding_timing_ms?: number | null;
           plan_changed_at?: string;
+          plates_kg?: number[];
           priority_areas?: string[];
           rhythm_max: number;
           rhythm_min: number;
@@ -330,6 +334,7 @@ export type Database = {
           user_id?: string;
         };
         Update: {
+          bar_kg?: number;
           created_at?: string;
           equipment?: string[];
           goal?: string;
@@ -337,6 +342,7 @@ export type Database = {
           onboarded_at?: string;
           onboarding_timing_ms?: number | null;
           plan_changed_at?: string;
+          plates_kg?: number[];
           priority_areas?: string[];
           rhythm_max?: number;
           rhythm_min?: number;
