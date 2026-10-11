@@ -90,9 +90,11 @@ async function show(state: FocusState, plan = P1) {
   return renderLoaded();
 }
 
+// T-0595 (D-0211): the bar is SessionProgress, which draws a segment filled (done) or not. The
+// machine's "current" and "upcoming" are both "off" there; the counter text names the position.
 function segments(): string[] {
-  return Array.from(document.querySelectorAll(".wl-uf09__segment")).map((s) =>
-    s.getAttribute("data-state")!,
+  return Array.from(document.querySelectorAll(".wl-session-progress__segment")).map((s) =>
+    s.classList.contains("wl-session-progress__segment--done") ? "done" : "off",
   );
 }
 
@@ -117,11 +119,11 @@ describe("AC-7 chrome on every machine state except paused", () => {
       expect(buttons).toHaveLength(names.length);
       expect(buttons.map((b) => b.getAttribute("aria-label") ?? b.textContent)).toEqual(names);
       expect(buttons[0]).toHaveAccessibleName("Pause workout");
-      const bar = document.querySelector(".wl-uf09__progress")!;
+      const bar = document.querySelector(".wl-session-progress__segments")!;
       expect(bar).toHaveAttribute("aria-hidden", "true");
       expect(segments()).toHaveLength(1 + P1.items.length);
       expect(segments()).toHaveLength(5);
-      expect(document.querySelector(".wl-uf09__index")!.textContent).not.toBe("");
+      expect(document.querySelector(".wl-session-progress__counter")!.textContent).not.toBe("");
       expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
       // A timer only for the phases that have one.
       if (TIMED_PHASES.includes(phase)) expect(screen.getByRole("timer")).toBeInTheDocument();
@@ -159,7 +161,7 @@ describe("AC-7 chrome on every machine state except paused", () => {
     ]);
     expect(buttons[0]).toHaveAccessibleName("Resume");
     expect(document.querySelector(".wl-uf09__chrome")).toBeNull();
-    expect(document.querySelector(".wl-uf09__progress")).toBeNull();
+    expect(document.querySelector(".wl-session-progress__segments")).toBeNull();
     expect(screen.queryByRole("button", { name: "Pause workout" })).not.toBeInTheDocument();
     expectNoWayOut();
   });
@@ -183,30 +185,32 @@ describe("T-0304d AC-6 the paused button pin with Skip hidden", () => {
 
 describe("AC-7 the index and the segments", () => {
   it.each(["getReady", "warmup"] as Phase[])(
-    "reads 'Warm-up' in %s; the warm-up segment is current",
+    "reads 'Warm-up' in %s; no segment is filled yet",
     async (phase) => {
       await show(seeded(phase));
-      expect(document.querySelector(".wl-uf09__index")).toHaveTextContent(/^Warm-up$/);
-      expect(segments()).toEqual(["current", "upcoming", "upcoming", "upcoming", "upcoming"]);
+      expect(document.querySelector(".wl-session-progress__counter")).toHaveTextContent(
+        /^Warm-up$/,
+      );
+      expect(segments()).toEqual(["off", "off", "off", "off", "off"]);
     },
   );
 
   it("reads '1 / 4' on bench-press", async () => {
     await show(seeded("set", { itemIndex: 0 }));
-    expect(document.querySelector(".wl-uf09__index")).toHaveTextContent(/^1 \/ 4$/);
-    expect(segments()).toEqual(["done", "current", "upcoming", "upcoming", "upcoming"]);
+    expect(document.querySelector(".wl-session-progress__counter")).toHaveTextContent(/^1 \/ 4$/);
+    expect(segments()).toEqual(["done", "off", "off", "off", "off"]);
   });
 
-  it("on barbell-row: segment 0 done, 1 done, 2 current, the rest upcoming", async () => {
+  it("on barbell-row: segments 0 and 1 filled, the rest not", async () => {
     await show(seeded("set", { itemIndex: 1 }));
-    expect(document.querySelector(".wl-uf09__index")).toHaveTextContent(/^2 \/ 4$/);
-    expect(segments()).toEqual(["done", "done", "current", "upcoming", "upcoming"]);
+    expect(document.querySelector(".wl-session-progress__counter")).toHaveTextContent(/^2 \/ 4$/);
+    expect(segments()).toEqual(["done", "done", "off", "off", "off"]);
   });
 
   it("with an empty plan.warmup the warm-up segment is still drawn, and done", async () => {
     const plan = planWith({ warmup: [] });
     await show(seeded("getReady"), plan);
-    expect(segments()).toEqual(["done", "upcoming", "upcoming", "upcoming", "upcoming"]);
+    expect(segments()).toEqual(["done", "off", "off", "off", "off"]);
   });
 });
 

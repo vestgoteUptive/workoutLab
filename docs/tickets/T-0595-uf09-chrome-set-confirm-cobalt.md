@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.3, UF-09.4]
 decisions: [D-0208, D-0210, D-0211, D-0212, D-0213, D-0111, D-0118]
 deps: [T-0593, T-0594, T-0591, T-0619]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "In session · set" (#turn-3), "In session · log set" (#turn-5). Behaviour: T-0304b. UF-09 folder chain T-0619 → T-0595 → T-0596 → T-0597 → T-0598 → T-0620 → T-0621; never in parallel with T-0580. Principle 1 (one task on screen) is the test that matters most. -->
 ## Why
@@ -74,3 +74,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-09 e2e specs and `visual-foundation.spec.ts` green · commit messages start with `T-0595` and cite UF-09.3/UF-09.4.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0595.md` (D-0157).

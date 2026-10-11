@@ -493,7 +493,13 @@ function Machine(props: MachineProps) {
       onSelect: () => controls.open(action),
     }));
     body = (
-      <div data-screen-id={SCREEN_IDS[phase]} className="wl-uf09">
+      <div
+        data-screen-id={SCREEN_IDS[phase]}
+        // T-0595 (D-0208, D-0210): the set and its confirm are the lift state. The other views
+        // join as T-0596–T-0598 restyle them, until then they keep the legacy look.
+        data-wl-state={phase === "set" || phase === "confirm" ? "lift" : undefined}
+        className="wl-uf09"
+      >
         {phase === "paused" ? null : (
           <Chrome
             state={state}

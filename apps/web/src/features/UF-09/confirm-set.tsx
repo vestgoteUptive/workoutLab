@@ -4,6 +4,7 @@
 // (not the chrome) cancels it; programmatic focus doesn't. Edits live here, so a reload or a
 // Pause → Resume shows the recorded values again, with no auto-save.
 import { useEffect, useId, useRef, useState } from "react";
+import { ArrowIcon, CrossIcon } from "../../components/icons/index.js";
 import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import type { LoggedSet } from "./machine.js";
@@ -108,32 +109,32 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
 
   return (
     <div
-      className="wl-uf09__view"
+      className="wl-uf09__view wl-uf09__view--lift wl-uf09__view--confirm"
       data-field="confirm"
       onPointerDown={onCancelAutosave}
       onKeyDown={onCancelAutosave}
     >
-      <p className="wl-uf09__state">
+      <p className="wl-uf09__state wl-type-label">
         {state.setIndex >= item.sets
           ? en.uf09.liftingBackoff
           : en.uf09.liftingCaption(state.setIndex + 1, item.sets)}
       </p>
-      <h1 className="wl-uf09__title">{exercise?.name ?? item.exerciseId}</h1>
+      <h1 className="wl-type-page-title wl-uf09__name">{exercise?.name ?? item.exerciseId}</h1>
       <div className="wl-uf09__field" role="group" aria-label={en.uf09.repsLabel}>
         <button
           type="button"
-          className="wl-uf09__stepper"
+          className="wl-button--session-outline wl-uf09__stepper"
           aria-label={en.uf09.fewerReps}
           onClick={() => changeReps(Math.max(0, (reps ?? 0) - 1))}
         >
           −
         </button>
-        <span className="wl-uf09__value" data-field="reps">
+        <span className="wl-uf09__value wl-type-hero-number" data-field="reps">
           {reps ?? 0}
         </span>
         <button
           type="button"
-          className="wl-uf09__stepper"
+          className="wl-button--session-outline wl-uf09__stepper"
           aria-label={en.uf09.moreReps}
           onClick={() => changeReps((reps ?? 0) + 1)}
         >
@@ -144,7 +145,7 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
         <div className="wl-uf09__field">
           <button
             type="button"
-            className="wl-uf09__stepper"
+            className="wl-button--session-outline wl-uf09__stepper"
             aria-label={en.uf09.lessWeight}
             onClick={() => changeWeight(formatDecimal(stepWeight(weightText, -increment), locale))}
           >
@@ -153,7 +154,7 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
           <input
             type="text"
             inputMode="decimal"
-            className="wl-uf09__input"
+            className="wl-input wl-uf09__input"
             aria-label={en.uf09.weightLabel}
             aria-invalid={invalid ? true : undefined}
             aria-describedby={hintId}
@@ -162,7 +163,7 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
           />
           <button
             type="button"
-            className="wl-uf09__stepper"
+            className="wl-button--session-outline wl-uf09__stepper"
             aria-label={en.uf09.moreWeight}
             onClick={() => changeWeight(formatDecimal(stepWeight(weightText, increment), locale))}
           >
@@ -171,33 +172,40 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
         </div>
       )}
       {bodyweight ? null : (
-        <p id={hintId} className="wl-uf09__status" aria-live="polite">
-          {invalid ? en.uf09.weightHint(formatDecimal(82.5, locale)) : null}
+        <p id={hintId} className="wl-uf09__status wl-input__error" aria-live="polite">
+          {invalid ? (
+            <>
+              <CrossIcon size={16} className="wl-input__error-icon" />
+              {en.uf09.weightHint(formatDecimal(82.5, locale))}
+            </>
+          ) : null}
         </p>
       )}
-      <div className="wl-uf09__rir" role="radiogroup" aria-labelledby={rirLabelId}>
-        <span id={rirLabelId} className="wl-uf09__label">
+      <div className="wl-uf09__rir">
+        <span id={rirLabelId} className="wl-uf09__label wl-type-label">
           {en.uf09.rirLabel}
         </span>
-        {RIR_CHOICES.map((choice) => (
-          <label key={choice.value} className="wl-uf09__radio">
-            <input
-              type="radio"
-              name={rirName}
-              checked={rir === choice.value}
-              onChange={() => changeRir(choice.value)}
-            />
-            {choice.label}
-          </label>
-        ))}
+        <div className="wl-segmented" role="radiogroup" aria-labelledby={rirLabelId}>
+          {RIR_CHOICES.map((choice) => (
+            <label key={choice.value}>
+              <input
+                type="radio"
+                name={rirName}
+                checked={rir === choice.value}
+                onChange={() => changeRir(choice.value)}
+              />
+              {choice.label}
+            </label>
+          ))}
+        </div>
       </div>
-      <p className="wl-uf09__autosave" data-field="autosave">
+      <p className="wl-uf09__autosave wl-type-label" data-field="autosave">
         {state.timer ? en.uf09.autosaveIn(remainingS(state.timer, nowMs)) : en.uf09.autosaveOff}
       </p>
       <button
         ref={saveRef}
         type="button"
-        className="wl-uf09__primary wl-uf09__save"
+        className="wl-button--session wl-uf09__save"
         data-action="primary"
         data-state={saving ? "saving" : undefined}
         aria-busy={saving ? true : undefined}
@@ -205,8 +213,9 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
         onClick={onSave}
       >
         {en.uf09.save}
+        <ArrowIcon />
       </button>
-      <p className="wl-uf09__status" aria-live="polite">
+      <p className="wl-uf09__status wl-type-label" aria-live="polite">
         {failed ? en.uf09.saveError : null}
       </p>
     </div>

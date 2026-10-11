@@ -5,7 +5,7 @@ lane: web-feature:UF-01
 screens: [UF-01.1, UF-01.2, UF-01.3, UF-01.4]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0045]
 deps: [T-0593, T-0591]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "Welcome", "Goal · 1 of 3", "Level and equipment · 2 of 3", "Schedule · 3 of 3" (#turn-4). Behaviour: T-0301b. Principle 5: the onboarding timing e2e must stay green. UF-01 folder chain T-0605 → T-0606. -->
 ## Why
@@ -62,3 +62,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-01-onboarding.spec.ts` green · commit messages start with `T-0605` and cite UF-01.1–UF-01.4.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0605.md` (D-0157).
