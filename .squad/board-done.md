@@ -449,3 +449,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0601 | UF-02.1/.2 in plan | web-feature:UF-02 | T-0593, T-0594, T-0615, T-0591 | done | wl-build-web |
 | T-0611 | UF-10.1/.2 in plan, attention #FFB3A3 | web-feature:UF-10 | T-0593, T-0615, T-0591 | done | wl-build-web |
 | T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | done | wl-build-web |
+| T-0607 | UF-04.1/.3 in plan | web-feature:UF-04 | T-0593, T-0591 | done | wl-build-web |

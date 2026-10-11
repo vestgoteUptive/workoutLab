@@ -180,7 +180,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0603 | UF-03.1/.2 lift + drain | web-feature:UF-03 | T-0593, T-0594, T-0591 | todo | wl-build-web |
 | T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | todo | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
-| T-0607 | UF-04.1/.3 in plan | web-feature:UF-04 | T-0593, T-0591 | doing | wl-build-web |
 | T-0608 | UF-04.2 + how-to sheet, cobalt figure | web-feature:UF-04 | T-0607, T-0615 | todo | wl-build-web |
 | T-0609 | UF-06.1/.2 in plan | web-feature:UF-06 | T-0593, T-0591 | todo | wl-build-web |
 | T-0610 | UF-07.1 in plan | web-feature:UF-07 | T-0593, T-0591 | todo | wl-build-web |
