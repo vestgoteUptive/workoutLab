@@ -174,14 +174,14 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | todo | wl-build-web |
+| T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | doing | wl-build-web |
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
 | T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | todo | wl-build-web |
 | T-0603 | UF-03.1/.2 lift + drain | web-feature:UF-03 | T-0593, T-0594, T-0591 | todo | wl-build-web |
 | T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | todo | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
-| T-0607 | UF-04.1/.3 in plan | web-feature:UF-04 | T-0593, T-0591 | todo | wl-build-web |
+| T-0607 | UF-04.1/.3 in plan | web-feature:UF-04 | T-0593, T-0591 | doing | wl-build-web |
 | T-0608 | UF-04.2 + how-to sheet, cobalt figure | web-feature:UF-04 | T-0607, T-0615 | todo | wl-build-web |
 | T-0609 | UF-06.1/.2 in plan | web-feature:UF-06 | T-0593, T-0591 | todo | wl-build-web |
 | T-0610 | UF-07.1 in plan | web-feature:UF-07 | T-0593, T-0591 | todo | wl-build-web |
