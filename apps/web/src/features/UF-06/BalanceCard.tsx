@@ -23,16 +23,18 @@ export function BalanceCard({ areas, locale }: BalanceCardProps) {
   return (
     <Link
       to="/balance"
-      className="wl-progress__balance"
+      className="wl-row wl-progress__balance"
       aria-label={en.uf06.balanceLink}
       data-testid="balance-card"
     >
-      <span className="wl-progress__balance-caption">{en.uf06.balanceCaption}</span>
+      <span className="wl-type-label wl-progress__balance-caption">{en.uf06.balanceCaption}</span>
       <span className="wl-progress__balance-rows">
         {areas.slice(0, 4).map((entry) => (
           <span key={entry.area} className="wl-progress__balance-row" data-area={entry.area}>
-            <span className="wl-progress__balance-name">{en.bodyMap.areas[entry.area]}</span>
-            <span className="wl-progress__balance-load">
+            <span className="wl-type-row-title wl-progress__balance-name">
+              {en.bodyMap.areas[entry.area]}
+            </span>
+            <span className="wl-type-label wl-progress__balance-load">
               {en.bodyMap.loadOfTarget(
                 formatSetCount(entry.load, locale),
                 formatSetCount(entry.target, locale),
