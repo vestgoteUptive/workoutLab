@@ -51,7 +51,7 @@ export function SummaryContent({ timeZone, locale }: SummaryProps) {
       return (
         <div className="wl-uf03-summary__state" data-part="not-on-device">
           <p>{en.uf03.notOnDevice}</p>
-          <Link to="/" className="wl-uf03-summary__link">
+          <Link to="/" className="wl-button--text">
             {en.uf03.goHome}
           </Link>
         </div>
@@ -60,7 +60,7 @@ export function SummaryContent({ timeZone, locale }: SummaryProps) {
       return (
         <div className="wl-uf03-summary__state" data-part="still-running">
           <p>{en.uf03.stillRunning}</p>
-          <Link to={`/session/${encodeURIComponent(sessionId)}`} className="wl-uf03-summary__link">
+          <Link to={`/session/${encodeURIComponent(sessionId)}`} className="wl-button--text">
             {en.uf03.backToWorkout}
           </Link>
         </div>
@@ -82,7 +82,7 @@ function Ended({
   locale: string | undefined;
 }) {
   const n = (value: number) => formatSetCount(value, locale);
-  const { changes, nextUp } = summary;
+  const { changes, nextUp, pr } = summary;
 
   return (
     <div className="wl-uf03-summary__ended" data-part="ended">
@@ -90,28 +90,43 @@ function Ended({
 
       <dl className="wl-uf03-summary__stats">
         <div className="wl-uf03-summary__stat">
-          <dt>{en.uf03.timeLabel}</dt>
-          <dd data-part="time">{en.uf03.minutes(n(summary.minutes))}</dd>
-          <dd data-part="budget" className="wl-uf03-summary__budget">
+          <dt className="wl-type-label">{en.uf03.timeLabel}</dt>
+          <dd data-part="time" className="wl-type-stat">
+            {en.uf03.minutes(n(summary.minutes))}
+          </dd>
+          <dd data-part="budget" className="wl-type-label">
             {en.uf03.budget(n(summary.budgetMin))}
           </dd>
         </div>
         <div className="wl-uf03-summary__stat">
-          <dt>{en.uf03.exercisesLabel}</dt>
-          <dd data-part="exercises">{n(summary.exercises)}</dd>
+          <dt className="wl-type-label">{en.uf03.exercisesLabel}</dt>
+          <dd data-part="exercises" className="wl-type-stat">
+            {n(summary.exercises)}
+          </dd>
         </div>
         <div className="wl-uf03-summary__stat">
-          <dt>{en.uf03.setsLabel}</dt>
-          <dd data-part="sets">{n(summary.hardSets)}</dd>
+          <dt className="wl-type-label">{en.uf03.setsLabel}</dt>
+          <dd data-part="sets" className="wl-type-stat">
+            {n(summary.hardSets)}
+          </dd>
         </div>
       </dl>
+
+      {pr ? (
+        // The band is its own lift state, nested: white on lift.bg (4.8), bled past the gutters.
+        <section className="wl-uf03-summary__pr" data-wl-state="lift" data-part="pr-band">
+          <p className="wl-type-row-title" data-part="pr">
+            {pr.text}
+          </p>
+        </section>
+      ) : null}
 
       {changes !== null && changes.length > 0 ? (
         <>
           <h2 className="wl-uf03-summary__heading">{en.uf03.balanceHeading}</h2>
           <ul className="wl-uf03-summary__rows" data-part="rows">
             {changes.map((c) => (
-              <li key={c.area} data-part="row" data-area={c.area}>
+              <li key={c.area} className="wl-row wl-type-body" data-part="row" data-area={c.area}>
                 {en.uf03.areaRow(areaName(c.area), n(c.before), n(c.after), n(c.target))}
               </li>
             ))}
@@ -120,7 +135,7 @@ function Ended({
       ) : null}
 
       {nextUp !== null ? (
-        <p className="wl-uf03-summary__next" data-part="next-up">
+        <p className="wl-uf03-summary__next wl-type-body" data-part="next-up">
           {nextUp.length === 0
             ? en.uf03.allOnTarget
             : en.uf03.nextUp(nextUp.map(areaName).join(en.uf03.nextUpSeparator))}
@@ -129,7 +144,7 @@ function Ended({
 
       <EffortSave sessionId={sessionId} initialRating={summary.effortRating} />
 
-      <Link to="/balance" className="wl-uf03-summary__link">
+      <Link to="/balance" className="wl-button--text">
         {en.uf03.seeBalance}
       </Link>
     </div>

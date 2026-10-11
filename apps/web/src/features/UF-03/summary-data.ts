@@ -47,6 +47,9 @@ export interface EndedSummary {
   /** The rating (1–5) preselecting its chip; `null` for none. It is the merged `loadSessions()`
    *  view's (D-0153 §4, D-0148, D-0151), or the stored row's when the view has no entry. */
   effortRating: EffortRating | null;
+  /** A personal record this workout set, as the line the band shows (T-0604). Nothing computes
+   *  it yet, so `loadSummary` leaves it out: the band renders only when it is present. */
+  pr?: { text: string } | null;
 }
 
 /** D-0030: the effort rating is 1–5. */

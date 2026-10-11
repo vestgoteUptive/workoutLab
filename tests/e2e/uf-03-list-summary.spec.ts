@@ -967,3 +967,141 @@ test.describe("T-0603 UF-03.1 at 320 x 640", () => {
     expect(overflow).toEqual([]);
   });
 });
+
+// T-0604 UF-03.3 Summary in the plan state (390 x 844). Nothing computes a PR yet, so the band
+// cases insert the band's own markup (the classes and parts SummaryContent renders) into the real
+// page: the CSS under test is the app's, the markup is the component's (vitest covers that).
+const PLAN_C = tokenColours.color.plan;
+
+/** What `SummaryContent` renders for a PR, put after the stats. */
+async function addPrBand(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const band = document.createElement("section");
+    band.className = "wl-uf03-summary__pr";
+    band.setAttribute("data-wl-state", "lift");
+    band.setAttribute("data-part", "pr-band");
+    band.innerHTML = '<p class="wl-type-row-title" data-part="pr">Back squat 100 kg × 5</p>';
+    document.querySelector('[data-part="ended"] dl')!.after(band);
+  });
+}
+
+/** Buttons, links and radios of the summary are at least 44 x 44. */
+async function expectSummaryTargets(page: Page): Promise<void> {
+  const sizes = await page.evaluate(() =>
+    Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '[data-screen-id] button, [data-screen-id] a, [data-screen-id] input[type="radio"]',
+      ),
+    ).map((el) => {
+      const r = el.getBoundingClientRect();
+      return {
+        name: el.getAttribute("aria-label") ?? el.textContent ?? el.className,
+        w: r.width,
+        h: r.height,
+      };
+    }),
+  );
+  expect(sizes.length).toBeGreaterThanOrEqual(7);
+  for (const s of sizes) {
+    expect(s.w, `${s.name} width`).toBeGreaterThanOrEqual(44);
+    expect(s.h, `${s.name} height`).toBeGreaterThanOrEqual(44);
+  }
+}
+
+test.describe("T-0604 UF-03.3 Summary, the plan state (390 x 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("AC1/AC3/AC5/AC6: plan root, effort pill and arrows, contrast, targets, motion, no PR band", async ({
+    page,
+    context,
+  }, testInfo) => {
+    await openSummaryOffline(page, context);
+    const root = page.locator('[data-screen-id="UF-03.3"]');
+    await expect(root).toHaveAttribute("data-wl-state", "plan");
+    await expect(root).toHaveCSS("background-color", toRgb(PLAN_C.bg!));
+    await expect(themeColor(page)).toHaveAttribute("content", new RegExp(`^${PLAN_C.bg}$`, "i"));
+    await expect(page.locator('[data-part="pr-band"]')).toHaveCount(0);
+
+    // Behaviour unchanged: the target line, and the stats in the stat role.
+    await expect(page.locator('[data-part="next-up"]')).toBeVisible();
+    await expect(page.locator('[data-part="time"]')).toHaveClass(/wl-type-stat/);
+    await expect(page.locator('[data-part="row"]').first()).toHaveClass(/wl-row/);
+
+    // Effort: the five names, the selected one a plan.selected pill, arrow keys move it.
+    const group = page.getByRole("radiogroup", { name: "How hard was it?" });
+    for (const name of ["Very easy", "Easy", "About right", "Hard", "Very hard"]) {
+      await expect(group.getByRole("radio", { name, exact: true })).toBeAttached();
+    }
+    await group.getByRole("radio", { name: "Easy", exact: true }).focus();
+    await page.keyboard.press("ArrowRight");
+    const picked = group.getByRole("radio", { name: "About right" });
+    await expect(picked).toBeChecked();
+    const label = picked.locator("xpath=..");
+    await expect(label).toHaveCSS("background-color", toRgb(PLAN_C.selected!));
+    await expect(label).toHaveCSS("color", toRgb(PLAN_C["on-selected"]!));
+    await expect(group.getByRole("radio", { name: "Easy", exact: true })).not.toBeChecked();
+    const box = (await group.boundingBox())!;
+    expect(box.x + box.width).toBeLessThanOrEqual(390);
+    const save = page.getByRole("button", { name: "Save workout" });
+    await expect(save).toHaveCSS("background-color", toRgb(PLAN_C.action!));
+    await expect(save).toHaveCSS("color", toRgb(PLAN_C["on-action"]!));
+    await expect(page.locator(".wl-button--primary")).toHaveCount(1);
+
+    await expectContrast(page, PLAN_C.bg!, PLAN_C.ink!);
+    await expectSummaryTargets(page);
+    await noHorizontalScroll(page);
+
+    // Motion: the 200 ms cross-fade, instant under reduced motion; nothing else transitions.
+    const dur = () =>
+      root.evaluate((el) => {
+        const s = getComputedStyle(el);
+        return [s.transitionProperty, s.transitionDuration];
+      });
+    expect(await dur()).toEqual(["background-color", "0.2s"]);
+    expect(
+      await page.evaluate(
+        () =>
+          Array.from(document.querySelectorAll("[data-screen-id] *")).filter((el) =>
+            getComputedStyle(el)
+              .transitionDuration.split(",")
+              .some((d) => parseFloat(d) > 0),
+          ).length,
+      ),
+    ).toBe(0);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect((await dur())[1]).toBe("0s");
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+
+    await page.screenshot({ path: testInfo.outputPath("cobalt", "uf-03-3-no-pr.png") });
+  });
+
+  test("AC2/AC5/AC7: with a PR the band is lift.bg, white, full-bleed; contrast; canvas frame", async ({
+    page,
+    context,
+  }, testInfo) => {
+    await openSummaryOffline(page, context);
+    await addPrBand(page);
+    const band = page.locator('[data-part="pr-band"]');
+    await expect(band).toHaveCSS("background-color", toRgb(LIFT.bg!));
+    await expect(band.locator('[data-part="pr"]')).toHaveCSS("color", toRgb(LIFT.ink!));
+    await expect(band).toContainText("Back squat 100 kg × 5");
+    const box = (await band.boundingBox())!;
+    expect(box.x).toBe(0);
+    expect(box.width).toBe(390);
+    // The page itself stays plan: the root and theme-color.
+    await expect(page.locator('[data-screen-id="UF-03.3"]')).toHaveAttribute(
+      "data-wl-state",
+      "plan",
+    );
+    await expect(themeColor(page)).toHaveAttribute("content", new RegExp(`^${PLAN_C.bg}$`, "i"));
+    const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(axe.violations).toEqual([]);
+    await expectSummaryTargets(page);
+    await noHorizontalScroll(page);
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-3",
+      frame: "Summary",
+      name: "uf-03-3",
+    });
+  });
+});
