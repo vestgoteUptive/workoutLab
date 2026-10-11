@@ -78,12 +78,13 @@ describe("calendar focus (WCAG 2.4.7)", () => {
     expect(component).not.toMatch(/outline/);
   });
 
-  it("styles today by data attribute and lets :focus-visible show the accent afterwards", () => {
-    const today = css.indexOf('.wl-progress__day[data-today="true"] {');
-    const focus = css.indexOf('.wl-progress__day[data-today="true"]:focus-visible');
+  it("styles today by data attribute (an underline) and shows --wl-focus on :focus-visible", () => {
+    const today = css.indexOf('.wl-progress .wl-progress__day[data-today="true"]');
+    const focus = css.indexOf(".wl-progress .wl-progress__day:focus-visible");
     expect(today).toBeGreaterThanOrEqual(0);
     expect(focus).toBeGreaterThan(today);
+    expect(css.slice(today, css.indexOf("}", today))).toMatch(/border-block-end:\s*2px solid/);
     const focusRule = css.slice(focus, css.indexOf("}", focus));
-    expect(focusRule).toMatch(/outline:\s*2px solid var\(--wl-color-accent\)/);
+    expect(focusRule).toMatch(/outline:\s*2px solid var\(--wl-focus\)/);
   });
 });

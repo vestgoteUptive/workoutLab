@@ -32,13 +32,15 @@ export function Progress(props: ProgressOptions) {
   }, [data, now, timeZone, locale]);
 
   return (
-    <div className="wl-progress" data-screen-id="UF-06.1">
-      <h1 className="wl-progress__title">{en.screens.progress}</h1>
+    <div className="wl-page wl-progress" data-screen-id="UF-06.1" data-wl-state="plan">
+      <h1 className="wl-type-page-title wl-title--stop wl-progress__title">
+        {en.screens.progress}
+      </h1>
       <OfflineStatus variant="text" {...statusProps(props)} />
       {view === null ? null : (
         <>
           <section className="wl-progress__section" aria-label={en.uf06.calendarName}>
-            <h2 className="wl-progress__heading">
+            <h2 className="wl-type-row-title wl-progress__heading">
               {formatMonthTitle(view.calendar.year, view.calendar.month, locale)}
             </h2>
             <table className="wl-progress__calendar">
@@ -79,7 +81,9 @@ export function Progress(props: ProgressOptions) {
                 ))}
               </tbody>
             </table>
-            <p className="wl-progress__count">{en.uf06.workoutsThisMonth(view.calendar.count)}</p>
+            <p className="wl-type-label wl-progress__count">
+              {en.uf06.workoutsThisMonth(view.calendar.count)}
+            </p>
           </section>
 
           {view.areas === null ? null : (
@@ -87,19 +91,26 @@ export function Progress(props: ProgressOptions) {
           )}
 
           <section className="wl-progress__section">
-            <h2 className="wl-progress__heading">{en.uf06.recentTitle}</h2>
+            <h2 className="wl-type-row-title wl-progress__heading">{en.uf06.recentTitle}</h2>
             {view.recent.length === 0 ? (
-              <p className="wl-progress__empty">{en.uf06.noExercises}</p>
+              <p className="wl-type-body wl-progress__empty">{en.uf06.noExercises}</p>
             ) : (
               <ul className="wl-progress__recent">
                 {view.recent.map((entry) => (
                   <li key={entry.exerciseId}>
-                    <Link to={`/progress/${entry.exerciseId}`} className="wl-progress__recent-row">
-                      <span className="wl-progress__recent-name">{entry.name}</span>
-                      <span className="wl-progress__recent-date">
+                    <Link
+                      to={`/progress/${entry.exerciseId}`}
+                      className="wl-row wl-progress__recent-row"
+                    >
+                      <span className="wl-type-row-title wl-progress__recent-name">
+                        {entry.name}
+                      </span>
+                      <span className="wl-type-label wl-progress__recent-date">
                         {formatDayMonth(entry.lastDate, locale)}
                       </span>
-                      <span className="wl-progress__recent-best">{entry.best.label}</span>
+                      <span className="wl-type-label wl-progress__recent-best">
+                        {entry.best.label}
+                      </span>
                     </Link>
                   </li>
                 ))}
