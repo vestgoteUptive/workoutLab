@@ -5,7 +5,7 @@ lane: web-feature:UF-02
 screens: [UF-02.1, UF-02.2]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0065, D-0139, D-0207]
 deps: [T-0593, T-0594, T-0615, T-0591]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "Today" (#turn-3), "Workout preview" and "Today · check-in pending" (#turn-5). Behaviour: T-0302a/b/c, D-0139 (resume card). The check-in card is a UF-11 component (paper, T-0612). Depends on the figure web ticket (T-0615), so Today's C-01 is never lime on cobalt. The week row is T-0623. -->
 ## Why
@@ -66,3 +66,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-02-today.spec.ts` and `visual-foundation.spec.ts` green · commit messages start with `T-0601` and cite UF-02.1/UF-02.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0601.md` (D-0157).

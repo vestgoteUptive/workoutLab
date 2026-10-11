@@ -23,7 +23,7 @@ const CARD_CLASS = "wl-today-card";
 
 function Title({ locale }: { locale: string }) {
   return (
-    <h2 className="wl-today-card__title" data-part="card-title">
+    <h2 className="wl-today-card__title wl-type-section" data-part="card-title">
       {en.uf02.suggestedFor(formatSetCount(PREVIEW_BUDGET_MIN, locale))}
     </h2>
   );
@@ -56,7 +56,7 @@ export function SuggestionCard({ workout, library, locale }: SuggestionCardProps
     return (
       <section className={CARD_CLASS} data-part="card" aria-label={en.uf02.cardLabel}>
         <Title locale={locale} />
-        <p className="wl-today-card__empty" data-part="card-empty">
+        <p className="wl-today-card__empty wl-type-body" data-part="card-empty">
           {en.uf02.nothingSuggested}
         </p>
       </section>
@@ -71,7 +71,7 @@ export function SuggestionCard({ workout, library, locale }: SuggestionCardProps
   return (
     <section className={CARD_CLASS} data-part="card" aria-label={en.uf02.cardLabel}>
       <Title locale={locale} />
-      <p className="wl-today-card__summary" data-part="card-summary">
+      <p className="wl-today-card__summary wl-type-label" data-part="card-summary">
         {en.uf02.cardSummary(
           items.length,
           formatSetCount(items.length, locale),
@@ -81,7 +81,7 @@ export function SuggestionCard({ workout, library, locale }: SuggestionCardProps
       {chips.length > 0 ? (
         <ul className="wl-today-card__chips" data-part="card-chips" aria-label={en.uf02.chipsLabel}>
           {chips.map((chip, i) => (
-            <li key={i} className="wl-today-card__chip" data-part="card-chip">
+            <li key={i} className="wl-chip wl-today-card__chip" data-part="card-chip">
               {chip}
             </li>
           ))}
@@ -89,17 +89,21 @@ export function SuggestionCard({ workout, library, locale }: SuggestionCardProps
       ) : null}
       <ol className="wl-today-card__rows" data-part="card-rows">
         {items.slice(0, CARD_ROWS).map((item, i) => (
-          <li key={i} className="wl-today-card__row" data-part="card-row">
+          <li key={i} className="wl-row wl-type-row-title" data-part="card-row">
             {en.uf02.itemRow(nameOf(item.exerciseId), itemSummary(item))}
           </li>
         ))}
       </ol>
       {hidden > 0 ? (
-        <p className="wl-today-card__more" data-part="card-more">
+        <p className="wl-today-card__more wl-type-label" data-part="card-more">
           {en.uf02.more(formatSetCount(hidden, locale))}
         </p>
       ) : null}
-      <Link to={PREVIEW_HREF} className="wl-today-card__see-all" data-part="see-all">
+      <Link
+        to={PREVIEW_HREF}
+        className="wl-button--text wl-today-card__see-all"
+        data-part="see-all"
+      >
         {en.uf02.seeAll}
       </Link>
     </section>
