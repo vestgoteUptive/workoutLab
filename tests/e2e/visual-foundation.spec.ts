@@ -87,10 +87,15 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
     });
   }
 
-  test("/welcome (no session) follows the scale", async ({ page }) => {
+  test("an unmigrated h1 (injected, no state) follows the scale", async ({ page }) => {
+    // /welcome is a plan screen now (T-0605), so the no-state case is a fixture.
     await page.goto("/welcome");
     await expect(page.locator("h1").first()).toBeVisible();
-    await expectScale(page, true);
+    await page.evaluate(() => {
+      document.querySelectorAll("[data-screen-id]").forEach((e) => e.remove());
+      document.body.insertAdjacentHTML("beforeend", "<div><h1>x</h1></div>");
+    });
+    await expectScale(page);
   });
 });
 

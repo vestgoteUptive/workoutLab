@@ -476,3 +476,494 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
     await expect(page.getByLabel("6-digit code")).toBeVisible();
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// T-0605 (D-0208, D-0210, D-0211, D-0213; UF-01.1–UF-01.4): the Cobalt plan state, measured in a
+// real browser: computed colours, the selected-option bleed, targets, contrast per text pair,
+// motion and the canvas compare. Expected values are read from tokens.json, never typed.
+// Appended: the file above is append-only (D-0071 §10).
+// ---------------------------------------------------------------------------------------------
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { compareWithCanvas } from "./helpers/canvas-compare.js";
+
+const TOKENS = JSON.parse(
+  readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
+) as { color: { plan: Record<string, string> }; space: Record<string, number> };
+const PLAN = TOKENS.color.plan;
+
+function rgbOf(hex: string): string {
+  const n = (i: number) => parseInt(hex.slice(i, i + 2), 16);
+  return `rgb(${n(1)}, ${n(3)}, ${n(5)})`;
+}
+function lum(hex: string): number {
+  const ch = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * ch(1) + 0.7152 * ch(3) + 0.0722 * ch(5);
+}
+/** WCAG ratio of two token colours, at one decimal. */
+function tokenRatio(a: string, b: string): number {
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return Math.round(((hi! + 0.05) / (lo! + 0.05)) * 10) / 10;
+}
+
+const PATHS = [
+  ["/welcome", "UF-01.1"],
+  ["/welcome/goal", "UF-01.2"],
+  ["/welcome/level", "UF-01.3"],
+  ["/welcome/schedule", "UF-01.4"],
+] as const;
+
+interface Pair {
+  text: string;
+  ratio: number;
+  color: string;
+  bg: string;
+  size: number;
+}
+
+/**
+ * Contrast of every visible text node's colour against the first opaque background behind it, as
+ * the browser paints them (a checked option's own fill counts). Rounded to one decimal.
+ */
+async function measure(page: Page, rootSel: string, within?: string): Promise<Pair[]> {
+  await page.locator(rootSel).waitFor();
+  return page.evaluate(
+    ([root, scope]) => {
+      const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true })!;
+      const rgba = (c: string): [number, number, number, number] => {
+        ctx.clearRect(0, 0, 1, 1);
+        ctx.fillStyle = "#000";
+        ctx.fillStyle = c;
+        ctx.fillRect(0, 0, 1, 1);
+        const d = ctx.getImageData(0, 0, 1, 1).data;
+        return [d[0]!, d[1]!, d[2]!, d[3]! / 255];
+      };
+      const lumOf = ([r, g, b]: number[]) => {
+        const f = (v: number) => {
+          const c = v / 255;
+          return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+        };
+        return 0.2126 * f(r!) + 0.7152 * f(g!) + 0.0722 * f(b!);
+      };
+      const out: Array<{
+        text: string;
+        ratio: number;
+        color: string;
+        bg: string;
+        size: number;
+      }> = [];
+      const host = document.querySelector(root as string)!;
+      const scoped = scope ? [...host.querySelectorAll(scope as string)] : [host];
+      for (const base of scoped) {
+        for (const el of [base, ...base.querySelectorAll("*")]) {
+          const own = [...el.childNodes]
+            .filter((n) => n.nodeType === 3 && n.textContent!.trim() !== "")
+            .map((n) => n.textContent!)
+            .join("")
+            .trim();
+          if (!own) continue;
+          const box = el.getBoundingClientRect();
+          if (box.width <= 1 || box.height <= 1) continue;
+          const cs = getComputedStyle(el);
+          if (cs.visibility === "hidden" || cs.display === "none") continue;
+          let bgC: [number, number, number, number] = [0, 0, 0, 0];
+          for (let n: Element | null = el; n; n = n.parentElement) {
+            const c = rgba(getComputedStyle(n).backgroundColor);
+            if (c[3] > 0.99) {
+              bgC = c;
+              break;
+            }
+          }
+          const fg = rgba(cs.color);
+          const [hi, lo] = [lumOf(fg), lumOf(bgC)].sort((x, y) => y - x);
+          out.push({
+            text: own,
+            ratio: Math.round(((hi! + 0.05) / (lo! + 0.05)) * 10) / 10,
+            color: cs.color,
+            bg: `rgb(${bgC[0]}, ${bgC[1]}, ${bgC[2]})`,
+            size: parseFloat(cs.fontSize),
+          });
+        }
+      }
+      return out;
+    },
+    [rootSel, within ?? ""] as const,
+  );
+}
+
+const byText = (pairs: Pair[], text: string): Pair => {
+  const hit = pairs.find((p) => p.text === text);
+  if (!hit) throw new Error(`no text "${text}" among ${pairs.map((p) => p.text).join(" | ")}`);
+  return hit;
+};
+
+async function gotoStep(page: Page, path: string): Promise<void> {
+  // The first launch walks the real links, so the lazy chunks and the pending plan are real.
+  await page.goto("/welcome");
+  if (path === "/welcome") return;
+  await page.getByRole("link", { name: "Get started" }).click();
+  if (path === "/welcome/goal") return;
+  await page.getByRole("button", { name: "Continue" }).click();
+  if (path === "/welcome/level") return;
+  await page.getByRole("button", { name: "Continue" }).click();
+}
+
+test.describe("T-0605 Cobalt onboarding (390 × 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("AC1 every step is a plan-state root: plan.bg paints, theme-color is plan.bg", async ({
+    page,
+  }) => {
+    for (const [path, id] of PATHS) {
+      await gotoStep(page, path);
+      const root = page.locator(SCREEN(id));
+      await expect(root).toBeVisible();
+      await expect(root).toHaveAttribute("data-wl-state", "plan");
+      expect(await root.evaluate((el) => getComputedStyle(el).backgroundColor), id).toBe(
+        rgbOf(PLAN.bg!),
+      );
+      const theme = await page.evaluate(
+        () => document.querySelector('meta[name="theme-color"]')?.getAttribute("content") ?? "",
+      );
+      expect(theme.toLowerCase(), id).toBe(PLAN.bg!.toLowerCase());
+    }
+  });
+
+  test("AC2 goal options: the checked row bleeds 18 px past the 28 px gutter in plan.selected; arrows move it", async ({
+    page,
+  }) => {
+    await gotoStep(page, "/welcome/goal");
+    const gutter = TOKENS.space["gutter-plan"]!;
+    const bleed = TOKENS.space["option-bleed"]!;
+    const label = (name: string) =>
+      page.getByRole("radio", { name }).locator("xpath=ancestor::label");
+
+    const checked = label("Build muscle");
+    const box = (await checked.boundingBox())!;
+    expect(box.x).toBeCloseTo(gutter - bleed, 0);
+    expect(box.x + box.width).toBeCloseTo(390 - (gutter - bleed), 0);
+    expect(await checked.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe(
+      rgbOf(PLAN.selected!),
+    );
+    // Unchecked rows sit on the gutter, with no fill: unboxed rows, not cards.
+    const plain = label("Get stronger");
+    const plainBox = (await plain.boundingBox())!;
+    expect(plainBox.x).toBeCloseTo(gutter, 0);
+    const plainStyle = await plain.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        bg: cs.backgroundColor,
+        bottom: cs.borderBottomWidth,
+        side: cs.borderLeftWidth,
+        radius: cs.borderRadius,
+      };
+    });
+    expect(plainStyle).toEqual({
+      bg: "rgba(0, 0, 0, 0)",
+      bottom: "1px",
+      side: "0px",
+      radius: "0px",
+    });
+
+    // Arrow keys move the selection and the block follows.
+    const build = page.getByRole("radio", { name: "Build muscle" });
+    await build.focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(page.getByRole("radio", { name: "Get stronger" })).toBeChecked();
+    expect((await label("Get stronger").boundingBox())!.x).toBeCloseTo(gutter - bleed, 0);
+    expect((await label("Build muscle").boundingBox())!.x).toBeCloseTo(gutter, 0);
+  });
+
+  test("AC3 chips: pressed shows the tick and plan.selected, unpressed shows neither; names are exact", async ({
+    page,
+  }) => {
+    await gotoStep(page, "/welcome/level");
+    const chip = (name: string) =>
+      page.getByRole("radio", { name, exact: true }).locator("xpath=ancestor::label");
+    const state = (name: string) =>
+      chip(name).evaluate((el) => ({
+        bg: getComputedStyle(el).backgroundColor,
+        tick:
+          getComputedStyle(el.querySelector(".wl-chip__tick")!).display === "none"
+            ? "none"
+            : "shown",
+        tickHidden: el.querySelector(".wl-chip__tick")!.getAttribute("aria-hidden"),
+      }));
+    for (const name of ["Bodyweight", "Dumbbells", "Full gym"]) {
+      await expect(page.getByRole("radio", { name, exact: true })).toHaveCount(1);
+    }
+    expect(await state("Full gym")).toEqual({
+      bg: rgbOf(PLAN.selected!),
+      tick: "shown",
+      tickHidden: "true",
+    });
+    expect(await state("Dumbbells")).toEqual({
+      bg: "rgba(0, 0, 0, 0)",
+      tick: "none",
+      tickHidden: "true",
+    });
+    await chip("Dumbbells").click();
+    expect((await state("Dumbbells")).tick).toBe("shown");
+    expect((await state("Dumbbells")).bg).toBe(rgbOf(PLAN.selected!));
+    expect(await state("Full gym")).toMatchObject({ tick: "none", bg: "rgba(0, 0, 0, 0)" });
+  });
+
+  test("AC5 contrast per text pair, on every step, checked options with captions included", async ({
+    page,
+  }) => {
+    const bgOk = rgbOf(PLAN.bg!);
+    const want = (a: string, b: string) => tokenRatio(a, b);
+    // Welcome.
+    await gotoStep(page, "/welcome");
+    let pairs = await measure(page, SCREEN("UF-01.1"));
+    expect(byText(pairs, "workout LAB")).toMatchObject({
+      bg: bgOk,
+      ratio: want(PLAN.ink!, PLAN.bg!),
+    });
+    expect(
+      byText(
+        pairs,
+        "A plan built for your goal, and every exercise explained: muscles, cues and variations.",
+      ).ratio,
+    ).toBeGreaterThanOrEqual(5.9);
+    expect(byText(pairs, "Get started").ratio).toBeGreaterThanOrEqual(
+      want(PLAN["on-action"]!, PLAN.action!),
+    );
+    expect(byText(pairs, "I already have an account").ratio).toBeGreaterThanOrEqual(8.6);
+    for (const p of pairs) expect(p.ratio, `Welcome ${p.text}`).toBeGreaterThanOrEqual(4.5);
+
+    // Goal: unchecked caption ink-muted on plan.bg, checked label and caption on-selected on white.
+    await gotoStep(page, "/welcome/goal");
+    pairs = await measure(page, SCREEN("UF-01.2"));
+    expect(byText(pairs, "1/3")).toMatchObject({
+      bg: bgOk,
+      color: rgbOf(PLAN["ink-muted"]!),
+    });
+    expect(byText(pairs, "1/3").ratio).toBeGreaterThanOrEqual(5.9);
+    expect(byText(pairs, "Sets your rep ranges. Change it any time.").ratio).toBeGreaterThanOrEqual(
+      5.9,
+    );
+    const hint = byText(pairs, "Strength · 3–8 reps · longer rest");
+    expect(hint).toMatchObject({ bg: bgOk, color: rgbOf(PLAN["ink-muted"]!) });
+    expect(hint.ratio).toBeGreaterThanOrEqual(5.9);
+    for (const t of ["Build muscle", "Hypertrophy · 6–12 reps"]) {
+      const p = byText(pairs, t);
+      expect(p, t).toMatchObject({
+        bg: rgbOf(PLAN.selected!),
+        color: rgbOf(PLAN["on-selected"]!),
+      });
+      expect(p.ratio, t).toBeGreaterThanOrEqual(8.6);
+    }
+    for (const p of pairs) expect(p.ratio, `Goal ${p.text}`).toBeGreaterThanOrEqual(4.5);
+    // The same after a new selection: the caption of the newly checked row flips to on-selected.
+    await page
+      .getByRole("radio", { name: "Get stronger" })
+      .locator("xpath=ancestor::label")
+      .click();
+    pairs = await measure(page, SCREEN("UF-01.2"));
+    expect(byText(pairs, "Strength · 3–8 reps · longer rest")).toMatchObject({
+      color: rgbOf(PLAN["on-selected"]!),
+      bg: rgbOf(PLAN.selected!),
+    });
+    expect(byText(pairs, "Strength · 3–8 reps · longer rest").ratio).toBeGreaterThanOrEqual(8.6);
+    expect(byText(pairs, "Hypertrophy · 6–12 reps")).toMatchObject({ bg: bgOk });
+
+    // Level and equipment.
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.locator(SCREEN("UF-01.3"))).toBeVisible();
+    pairs = await measure(page, SCREEN("UF-01.3"));
+    expect(byText(pairs, "Beginner")).toMatchObject({
+      bg: rgbOf(PLAN.selected!),
+      color: rgbOf(PLAN["on-selected"]!),
+    });
+    expect(byText(pairs, "Beginner").ratio).toBeGreaterThanOrEqual(8.6);
+    expect(byText(pairs, "Advanced")).toMatchObject({ bg: bgOk, color: rgbOf(PLAN.ink!) });
+    expect(byText(pairs, "Full gym").ratio).toBeGreaterThanOrEqual(8.6);
+    expect(byText(pairs, "Dumbbells").ratio).toBeGreaterThanOrEqual(8.6);
+    expect(byText(pairs, "Training experience").ratio).toBeGreaterThanOrEqual(5.9);
+    expect(
+      byText(pairs, "We only suggest exercises you can do with this equipment.").ratio,
+    ).toBeGreaterThanOrEqual(5.9);
+    for (const p of pairs) expect(p.ratio, `Level ${p.text}`).toBeGreaterThanOrEqual(4.5);
+
+    // Schedule, including a disabled stepper (aria-disabled stays legible at ink-muted).
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expectPlan(page);
+    const minDown = page.getByRole("button", { name: "One fewer session per week, minimum" });
+    await minDown.click();
+    await minDown.click();
+    await expect(minDown).toHaveAttribute("aria-disabled", "true");
+    expect(
+      await minDown.evaluate((el) => ({
+        color: getComputedStyle(el).color,
+        attr: el.hasAttribute("disabled"),
+      })),
+    ).toEqual({ color: rgbOf(PLAN["ink-muted"]!), attr: false });
+    expect(tokenRatio(PLAN["ink-muted"]!, PLAN.bg!)).toBeGreaterThanOrEqual(5.9);
+    pairs = await measure(page, SCREEN("UF-01.4"));
+    for (const p of pairs) expect(p.ratio, `Schedule ${p.text}`).toBeGreaterThanOrEqual(4.5);
+    expect(byText(pairs, "Save my plan").ratio).toBeGreaterThanOrEqual(8.6);
+    expect(byText(pairs, "3/3").ratio).toBeGreaterThanOrEqual(5.9);
+    expect(pairs.find((p) => p.text === "Chest")?.ratio).toBeGreaterThanOrEqual(8.6);
+  });
+
+  test("AC5 axe colour-contrast has 0 violations on each step", async ({ page }) => {
+    for (const [path, id] of PATHS) {
+      await gotoStep(page, path);
+      await expect(page.locator(SCREEN(id))).toBeVisible();
+      const results = await new AxeBuilder({ page })
+        .include(SCREEN(id))
+        .withRules(["color-contrast"])
+        .analyze();
+      expect(
+        results.violations.map(
+          (v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`,
+        ),
+        id,
+      ).toEqual([]);
+    }
+  });
+
+  test("AC6 every option row, chip, segment, button and link is ≥ 44 × 44", async ({ page }) => {
+    for (const [path, id] of PATHS) {
+      await gotoStep(page, path);
+      await expect(page.locator(SCREEN(id))).toBeVisible();
+      const boxes = await page.evaluate((sel) => {
+        const root = document.querySelector(sel)!;
+        return [
+          ...root.querySelectorAll(
+            "a, button, label.wl-option, label.wl-chip, .wl-segmented > label",
+          ),
+        ].map((el) => {
+          const r = el.getBoundingClientRect();
+          return {
+            name: (el.getAttribute("aria-label") ?? el.textContent ?? "").trim(),
+            w: r.width,
+            h: r.height,
+          };
+        });
+      }, SCREEN(id));
+      expect(boxes.length, id).toBeGreaterThan(0);
+      for (const b of boxes) {
+        expect(b.w, `${id} ${b.name} width`).toBeGreaterThanOrEqual(44);
+        expect(b.h, `${id} ${b.name} height`).toBeGreaterThanOrEqual(44);
+      }
+    }
+  });
+
+  test("AC6 motion: a plan to plan step has no transition beyond the root's cross-fade, and none under reduced motion", async ({
+    page,
+  }) => {
+    const probe = (id: string) =>
+      page.locator(SCREEN(id)).evaluate((el) => {
+        const own = getComputedStyle(el);
+        const moving = [el, ...el.querySelectorAll("*")].filter((n) => {
+          const cs = getComputedStyle(n);
+          return (
+            cs.animationName !== "none" ||
+            (n !== el && cs.transitionDuration.split(",").some((d) => parseFloat(d) > 0))
+          );
+        });
+        return {
+          rootProperty: own.transitionProperty,
+          rootDuration: own.transitionDuration,
+          moving: moving.map((n) => n.tagName + "." + n.className),
+          rootBg: getComputedStyle(document.documentElement).backgroundColor,
+        };
+      });
+    await gotoStep(page, "/welcome/goal");
+    const goal = await probe("UF-01.2");
+    expect(goal.rootProperty).toBe("background-color");
+    expect(goal.rootDuration).toBe("0.2s");
+    expect(goal.moving).toEqual([]);
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.locator(SCREEN("UF-01.3"))).toBeVisible();
+    // plan to plan: the page colour does not change at all, so nothing cross-fades.
+    await expect.poll(async () => (await probe("UF-01.3")).rootBg).toBe(rgbOf(PLAN.bg!));
+    expect(goal.rootBg).toMatch(/^rgba?\(35, 55, 198/);
+
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    for (const id of ["UF-01.3"]) {
+      const r = await probe(id);
+      expect(r.rootDuration).toBe("0s");
+      expect(r.moving).toEqual([]);
+    }
+    await page.getByRole("button", { name: "Continue" }).click();
+    await expect(page.locator(SCREEN("UF-01.4"))).toBeVisible();
+    expect((await probe("UF-01.4")).rootDuration).toBe("0s");
+  });
+
+  test("unboxed rows and cards survive the feature stylesheet's load order", async ({ page }) => {
+    await gotoStep(page, "/welcome/schedule");
+    await expectPlan(page);
+    const row = await page.locator(`${SCREEN("UF-01.4")} [data-area="chest"]`).evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        bg: cs.backgroundColor,
+        bottom: cs.borderBottomWidth,
+        bottomColour: cs.borderBottomColor,
+        side: cs.borderLeftWidth,
+        radius: cs.borderRadius,
+        content: getComputedStyle(el, "::after").content,
+      };
+    });
+    expect(row).toEqual({
+      bg: "rgba(0, 0, 0, 0)",
+      bottom: "1px",
+      bottomColour: rgbOf(PLAN.line!),
+      side: "0px",
+      radius: "0px",
+      content: "none",
+    });
+    const card = await page.locator(`${SCREEN("UF-01.4")} [data-field="plan"]`).evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return {
+        bg: cs.backgroundColor,
+        border: cs.borderTopWidth,
+        radius: cs.borderRadius,
+        pad: cs.paddingLeft,
+      };
+    });
+    expect(card).toEqual({ bg: "rgba(0, 0, 0, 0)", border: "0px", radius: "0px", pad: "0px" });
+  });
+
+  for (const [frame, name, path, id] of [
+    ["Welcome", "uf01-1-welcome", "/welcome", "UF-01.1"],
+    ["Goal · 1 of 3", "uf01-2-goal", "/welcome/goal", "UF-01.2"],
+    ["Level and equipment · 2 of 3", "uf01-3-level", "/welcome/level", "UF-01.3"],
+    ["Schedule · 3 of 3", "uf01-4-schedule", "/welcome/schedule", "UF-01.4"],
+  ] as const) {
+    test(`AC8 canvas compare: ${frame}`, async ({ page }, testInfo) => {
+      await gotoStep(page, path);
+      await expect(page.locator(SCREEN(id))).toBeVisible();
+      await page.evaluate(() => document.fonts.ready);
+      // The state cross-fade (200 ms) from the loading page to plan.bg must have settled.
+      await expect
+        .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor))
+        .toBe(rgbOf(PLAN.bg!));
+      const result = await compareWithCanvas(page, testInfo, { turn: "turn-4", frame, name });
+      if (process.env.WL_CANVAS_COMPARE === "1" && !result.skipped) {
+        expect(result.files.app).toBeTruthy();
+        expect(result.files.canvas).toBeTruthy();
+      }
+    });
+  }
+});
+
+test.describe("T-0605 AC6 at 320 × 640", () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+  test("no step scrolls horizontally", async ({ page }) => {
+    for (const [path, id] of PATHS) {
+      await gotoStep(page, path);
+      await expect(page.locator(SCREEN(id))).toBeVisible();
+      const overflow = await page.evaluate(() => ({
+        doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        body: document.body.scrollWidth - document.documentElement.clientWidth,
+      }));
+      expect(overflow, id).toEqual({ doc: 0, body: 0 });
+    }
+  });
+});

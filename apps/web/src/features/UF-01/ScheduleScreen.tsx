@@ -12,6 +12,7 @@ import { deriveTargets } from "@workoutlab/engine";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import type { PendingPlanStore } from "./WelcomeRoutes.js";
+import { ArrowRight } from "./Glyphs.js";
 import { PlanCard } from "./PlanCard.js";
 import { StepHeader } from "./StepHeader.js";
 
@@ -49,7 +50,7 @@ function StepButton({
   return (
     <button
       type="button"
-      className="wl-uf01__step"
+      className="wl-uf01-plan__step"
       aria-label={label}
       aria-disabled={disabled ? "true" : "false"}
       onClick={() => {
@@ -96,15 +97,15 @@ function Stepper({
   onDown: () => void;
 }) {
   return (
-    <div className="wl-uf01__stepper" role="group" aria-labelledby={`${id}-label`}>
-      <p id={`${id}-label`} className="wl-uf01__tag">
+    <div className="wl-uf01-plan__stepper" role="group" aria-labelledby={`${id}-label`}>
+      <p id={`${id}-label`} className="wl-type-label">
         {label}
       </p>
-      <div className="wl-uf01__stepper-row">
+      <div className="wl-uf01-plan__stepper-row">
         <StepButton label={down} disabled={!canDown} onActivate={onDown}>
           {MINUS}
         </StepButton>
-        <p className="wl-uf01__stepper-value" aria-live="polite" data-field={id}>
+        <p className="wl-type-stat" aria-live="polite" data-field={id}>
           <span aria-hidden="true">{String(value)}</span>
           <span className="wl-uf01__sr">{valueName}</span>
         </p>
@@ -112,7 +113,7 @@ function Stepper({
           {PLUS}
         </StepButton>
       </div>
-      <p className="wl-uf01__muted wl-uf01__stepper-unit">{t.perWeek}</p>
+      <p className="wl-type-label wl-uf01-plan__stepper-unit">{t.perWeek}</p>
     </div>
   );
 }
@@ -156,13 +157,13 @@ export function ScheduleScreen({ store }: { store: PendingPlanStore }) {
   const saveTo = status === "signed-out" ? "/account" : "/welcome/save";
 
   return (
-    <div data-screen-id="UF-01.4" className="wl-uf01">
+    <div data-screen-id="UF-01.4" data-wl-state="plan" className="wl-page wl-uf01-plan">
       <StepHeader step={3} backTo="/welcome/level" />
-      <div className="wl-uf01__intro">
-        <h1 className="wl-uf01__title wl-uf01__title--step">{t.heading}</h1>
-        <p className="wl-uf01__muted">{t.subtitle}</p>
+      <div className="wl-uf01-plan__intro">
+        <h1 className="wl-uf01-plan__title">{t.heading}</h1>
+        <p className="wl-type-label">{t.subtitle}</p>
       </div>
-      <div className="wl-uf01__steppers">
+      <div className="wl-uf01-plan__steppers">
         <Stepper
           id="rhythm-min"
           label={t.minLabel}
@@ -196,11 +197,10 @@ export function ScheduleScreen({ store }: { store: PendingPlanStore }) {
         rhythmMax={rhythm.max}
         targets={targets}
       />
-      <div className="wl-uf01__actions">
-        <Link to={saveTo} className="wl-uf01__primary">
-          {en.uf01.schedule.save}
-        </Link>
-      </div>
+      <Link to={saveTo} className="wl-button--primary">
+        <span>{en.uf01.schedule.save}</span>
+        <ArrowRight />
+      </Link>
     </div>
   );
 }
