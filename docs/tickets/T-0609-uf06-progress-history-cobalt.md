@@ -5,7 +5,7 @@ lane: web-feature:UF-06
 screens: [UF-06.1, UF-06.2]
 decisions: [D-0208, D-0210, D-0211, D-0213]
 deps: [T-0593, T-0591]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Progress" (#turn-3), "Exercise history" (#turn-5). Behaviour: T-0307b. The canvas's weekly sets, streak, records and 1RM stay out (D-0212 §4). -->
 ## Why
@@ -41,6 +41,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/visual-foundation.spec.ts` (orchestrator grant, for every screen restyle: move this screen's checks from the legacy no-state scale to the plan or state scale, as T-0601/T-0597 did, or to an injected no-state fixture; never use another real screen as the no-state host)
 - `apps/web/src/features/UF-06/**` (lane)
 - `tests/e2e/uf-06-progress.spec.ts` (listed extra)
 - `docs/tickets/T-0609-uf06-progress-history-cobalt.md` (log only)
@@ -52,3 +53,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-06-progress.spec.ts` green · commit messages start with `T-0609` and cite UF-06.1/UF-06.2.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0609.md` (D-0157).

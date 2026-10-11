@@ -1,37 +1,30 @@
-/* UF-06 Progress (T-0307b). Colours and fonts come only from @workoutlab/design-tokens (D-0019).
-   Focus and "today" are CSS keyed on data attributes, never inline styles: an inline `outline`
-   would beat `:focus-visible` (WCAG 2.4.7). */
-.wl-progress {
+/* UF-06 Progress (T-0307b, restyled T-0609 for the Cobalt plan state, D-0208/D-0210/D-0211).
+   Both screens carry data-wl-state="plan" and .wl-page, so every colour is a generic --wl-*
+   variable (no raw colour, no px font size). Page gutter, title, rows, labels, stat role and the
+   text button come from main.css. Every rule is scoped under .wl-progress. Nothing here
+   animates: the only motion is the root's state cross-fade. Focus and "today" are CSS keyed on
+   data attributes, never inline styles: an inline `outline` would beat :focus-visible. */
+.wl-progress .wl-progress__heading {
+  margin: 0;
+}
+
+.wl-progress .wl-progress__caption,
+.wl-progress .wl-progress__count,
+.wl-progress .wl-progress__empty {
+  margin: 0;
+}
+
+.wl-progress .wl-progress__empty {
+  color: var(--wl-ink-muted);
+}
+
+.wl-progress .wl-progress__section {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  font-family: var(--wl-font-body);
-  color: var(--wl-color-text);
+  gap: 8px;
 }
 
-.wl-progress__title {
-  margin: 0;
-  font-family: var(--wl-font-display);
-}
-
-.wl-progress__heading {
-  margin: 0 0 8px;
-  font-size: 18px;
-}
-
-.wl-progress__caption,
-.wl-progress__count {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-progress__empty {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-progress__sr-only {
+.wl-progress .wl-progress__sr-only {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -40,166 +33,181 @@
   white-space: nowrap;
 }
 
-.wl-progress__calendar {
+/* --- calendar: workout days are white and bold, the others muted; no fill --- */
+.wl-progress .wl-progress__calendar {
   inline-size: 100%;
   border-collapse: collapse;
   table-layout: fixed;
   text-align: center;
 }
 
-.wl-progress__weekday {
+.wl-progress .wl-progress__weekday {
   padding: 4px 0;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 500;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
 }
 
-.wl-progress__day {
+.wl-progress .wl-progress__day {
   position: relative;
-  block-size: 40px;
-  font-size: 14px;
+  block-size: 44px;
+  font-size: 0.875rem;
+  color: var(--wl-ink-muted);
 }
 
-.wl-progress__day[data-marked="true"] {
-  background: var(--wl-color-accent);
-  color: var(--wl-color-on-accent);
+.wl-progress .wl-progress__day[data-marked="true"] {
+  color: var(--wl-ink);
   font-weight: 700;
 }
 
-/* Today: a visible outline, muted so it never reads as the accent focus ring below. */
-.wl-progress__day[data-today="true"] {
-  outline: 2px solid var(--wl-color-text);
+/* Today: a 2 px underline under the number, so it never reads as the focus ring. */
+.wl-progress .wl-progress__day[data-today="true"] > span:first-child {
+  padding-block-end: 2px;
+  border-block-end: 2px solid var(--wl-ink);
+}
+
+.wl-progress .wl-progress__day:focus-visible {
+  outline: 2px solid var(--wl-focus);
   outline-offset: -2px;
 }
 
-/* Declared after the today rule, and with equal-or-higher specificity, so focus wins. */
-.wl-progress__day[data-today="true"]:focus-visible,
-.wl-progress__day:focus-visible,
-.wl-progress__balance:focus-visible,
-.wl-progress__recent-row:focus-visible,
-.wl-progress__howto:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-.wl-progress__day[data-today="true"][data-marked="true"]:focus-visible {
-  outline-color: var(--wl-color-accent);
-}
-
-.wl-progress__balance {
+/* --- Balance card: an unboxed row link --- */
+.wl-progress .wl-progress__balance {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
   gap: 8px;
-  box-sizing: border-box;
   min-block-size: 44px;
-  padding: 12px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 12px;
-  background: var(--wl-color-surface);
-  color: inherit;
-  text-decoration: none;
+  border-block-end: 1px solid var(--wl-line);
 }
 
-.wl-progress__balance-caption {
-  font-size: 12px;
-  color: var(--wl-color-text-muted);
+.wl-progress .wl-progress__balance::after,
+.wl-progress .wl-progress__row::after {
+  display: none;
 }
 
-.wl-progress__balance-rows {
+.wl-progress .wl-progress__balance-rows {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.wl-progress__balance-row {
+.wl-progress .wl-progress__balance-row {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 4px 8px;
-  font-size: 14px;
 }
 
-.wl-progress__balance-load {
-  color: var(--wl-color-text-muted);
-}
-
-.wl-progress__bar {
+.wl-progress .wl-progress__bar {
   grid-column: 1 / -1;
   display: block;
-  block-size: 8px;
-  border-radius: 4px;
-  background: var(--wl-color-surface-2);
+  block-size: 4px;
+  border-radius: 2px;
+  background: var(--wl-raise);
   overflow: hidden;
 }
 
-.wl-progress__bar-fill {
+.wl-progress .wl-progress__bar-fill {
   display: block;
   block-size: 100%;
 }
 
-.wl-progress__recent,
-.wl-progress__rows {
+/* --- lists: hairline rows --- */
+.wl-progress .wl-progress__recent,
+.wl-progress .wl-progress__rows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wl-progress__recent-row {
+.wl-progress .wl-progress__recent-row {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 2px 8px;
+  grid-template-columns: 1fr auto auto;
+  grid-template-areas:
+    "name best chev"
+    "date best chev";
+  gap: 2px 12px;
   align-items: center;
-  box-sizing: border-box;
-  min-block-size: 48px;
-  padding: 8px 12px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 12px;
-  background: var(--wl-color-surface);
-  color: inherit;
-  text-decoration: none;
+  min-block-size: 56px;
+  border-block-end: 1px solid var(--wl-line);
 }
 
-.wl-progress__recent-date,
-.wl-progress__recent-best {
-  font-size: 12px;
-  color: var(--wl-color-text-muted);
+.wl-progress .wl-progress__recent-row::after {
+  grid-area: chev;
 }
 
-.wl-progress__cards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+.wl-progress .wl-progress__recent-name {
+  grid-area: name;
+}
+
+.wl-progress .wl-progress__recent-date {
+  grid-area: date;
+}
+
+.wl-progress .wl-progress__recent-best {
+  grid-area: best;
+  text-align: end;
+}
+
+.wl-progress .wl-progress__row {
+  justify-content: flex-start;
+  border-block-start: 0;
+  border-block-end: 1px solid var(--wl-line);
+}
+
+/* --- UF-06.2 stats: the stat role with a label caption --- */
+.wl-progress .wl-progress__cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 28px;
   margin: 0;
 }
 
-.wl-progress__card {
-  padding: 12px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 12px;
-  background: var(--wl-color-surface);
+.wl-progress .wl-progress__card {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 8px;
+  min-inline-size: 0;
 }
 
-.wl-progress__card dt {
-  font-size: 12px;
-  color: var(--wl-color-text-muted);
+.wl-progress .wl-progress__card dd {
+  margin: 0;
+  white-space: nowrap;
 }
 
-.wl-progress__card dd {
-  margin: 4px 0 0;
-  font-weight: 700;
+.wl-progress .wl-progress__card dt {
+  margin: 0;
 }
 
-.wl-progress__row {
-  padding: 8px 0;
-  border-block-end: 1px solid var(--wl-color-line);
+.wl-progress .wl-progress__howto {
+  align-self: flex-start;
+  margin-inline-start: -8px;
 }
 
-.wl-progress__howto {
-  display: inline-flex;
-  align-items: center;
-  min-block-size: 44px;
-  min-inline-size: 44px;
-  color: var(--wl-color-accent);
+/* Focus: --wl-focus at a 2 px offset (inset on rows so it is not clipped). */
+.wl-progress .wl-progress__balance:focus-visible,
+.wl-progress .wl-progress__recent-row:focus-visible,
+.wl-progress .wl-progress__howto:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: -2px;
+}
+
+.wl-progress .wl-progress__howto:focus-visible {
+  outline-offset: 2px;
+}
+
+@media (hover: hover) {
+  .wl-progress .wl-progress__balance:hover,
+  .wl-progress .wl-progress__recent-row:hover {
+    background: var(--wl-raise);
+  }
+
+  .wl-progress .wl-progress__balance:hover .wl-type-label,
+  .wl-progress .wl-progress__recent-row:hover .wl-type-label {
+    color: var(--wl-ink);
+  }
 }

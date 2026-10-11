@@ -79,6 +79,26 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
     expect(got.body.startsWith('"DM Sans"')).toBe(true);
   }
 
+  // T-0609: `/progress` is a plan-state screen. Its h1 is the state page title (Familjen Grotesk,
+  // 700, no uppercase, 3.5rem = 56 px).
+  async function expectStatePageTitle(page: Page): Promise<void> {
+    const got = await page.evaluate(() => {
+      const h1 = getComputedStyle(document.querySelector("h1")!);
+      return {
+        family: h1.fontFamily,
+        weight: h1.fontWeight,
+        transform: h1.textTransform,
+        size: parseFloat(h1.fontSize),
+        body: getComputedStyle(document.body).fontFamily,
+      };
+    });
+    expect(got.family.startsWith('"Familjen Grotesk"')).toBe(true);
+    expect(got.weight).toBe("700");
+    expect(got.transform).toBe("none");
+    expect(got.size).toBe(56);
+    expect(got.body.startsWith('"DM Sans"')).toBe(true);
+  }
+
   async function expectScale(page: Page): Promise<void> {
     const got = await page.evaluate(() => {
       const h1 = getComputedStyle(document.querySelector("h1")!);
@@ -102,6 +122,7 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
     test(`${path} h1 and body follow the scale`, async ({ page }) => {
       await open(page, path);
       if (path === "/") await expectStateHero(page);
+      else if (path === "/progress") await expectStatePageTitle(page);
       else await expectScale(page);
     });
   }

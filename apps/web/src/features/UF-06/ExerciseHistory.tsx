@@ -29,42 +29,44 @@ export function ExerciseHistory(props: ProgressOptions) {
   }
 
   return (
-    <div className="wl-progress" data-screen-id="UF-06.2">
+    <div className="wl-page wl-progress" data-screen-id="UF-06.2" data-wl-state="plan">
       <h1 className="wl-progress__title">{history.exercise.name}</h1>
-      <p className="wl-progress__caption">{en.uf06.last8Weeks}</p>
+      <p className="wl-type-label wl-progress__caption">{en.uf06.last8Weeks}</p>
       <OfflineStatus variant="text" {...statusProps(props)} />
       {history.rows.length === 0 ? (
-        <p className="wl-progress__empty">{en.uf06.noSets}</p>
+        <p className="wl-type-body wl-progress__empty">{en.uf06.noSets}</p>
       ) : (
         <>
           <dl className="wl-progress__cards">
             <div className="wl-progress__card">
-              <dt>{en.uf06.bestSet}</dt>
-              <dd>{history.best === null ? en.uf06.noValue : history.best.label}</dd>
+              <dt className="wl-type-label">{en.uf06.bestSet}</dt>
+              <dd className="wl-type-stat">
+                {history.best === null ? en.uf06.noValue : history.best.label}
+              </dd>
             </div>
             <div className="wl-progress__card">
-              <dt>{en.uf06.heaviest}</dt>
-              <dd>
+              <dt className="wl-type-label">{en.uf06.heaviest}</dt>
+              <dd className="wl-type-stat">
                 {history.heaviestKg === null
                   ? en.uf06.noValue
                   : en.uf06.weightKg(formatWeight(history.heaviestKg, locale))}
               </dd>
             </div>
             <div className="wl-progress__card">
-              <dt>{en.uf06.sessions}</dt>
-              <dd>{history.sessions}</dd>
+              <dt className="wl-type-label">{en.uf06.sessions}</dt>
+              <dd className="wl-type-stat">{history.sessions}</dd>
             </div>
           </dl>
           <ul className="wl-progress__rows" aria-label={en.uf06.historyName}>
             {history.rows.map((row) => (
-              <li key={row.sessionId} className="wl-progress__row">
+              <li key={row.sessionId} className="wl-row wl-type-body wl-progress__row">
                 {en.uf06.historyRow(formatWeekdayDayMonth(row.date, locale), row.sets.join(", "))}
               </li>
             ))}
           </ul>
         </>
       )}
-      <Link to={`/library/${history.exercise.id}`} className="wl-progress__howto">
+      <Link to={`/library/${history.exercise.id}`} className="wl-button--text wl-progress__howto">
         {en.uf06.howTo}
       </Link>
     </div>
