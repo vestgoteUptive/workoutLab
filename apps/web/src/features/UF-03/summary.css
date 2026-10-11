@@ -1,82 +1,100 @@
-/* UF-03.3 Summary (T-0419). Colours and fonts come only from @workoutlab/design-tokens
- * (D-0019): there is no raw hex in this file. */
+/* UF-03.3 Summary (T-0604, D-0208, D-0210, D-0211 §5): the plan state, with a lift band for a PR.
+ * Colour and font come from the generic --wl-* variables main.css maps from the state attribute;
+ * no hex, no px font size. Every rule is scoped to .wl-uf03-summary. The button, row, segmented
+ * and error forms are the shared ones in main.css. The only motion is the state cross-fade the
+ * root already has. */
 
-.wl-uf03-summary {
+.wl-uf03-summary[data-wl-state] {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
-  font-family: var(--wl-font-body);
-  color: var(--wl-color-text);
+  gap: 1.5rem;
+  box-sizing: border-box;
+  min-block-size: 100dvh;
+  /* Read here, in the plan state: the nested lift band has its own --wl-gutter (26 px). */
+  --wl-uf03-gutter: var(--wl-gutter);
+  padding: max(env(safe-area-inset-top), 1.5rem) var(--wl-uf03-gutter)
+    max(env(safe-area-inset-bottom), 2rem);
 }
 
-.wl-uf03-summary h1 {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 32px;
-  line-height: 1.1;
-  text-transform: uppercase;
+/* The title's full stop is decoration, not name: the "." / "" form gives it empty alt text. The
+ * routes test pins the bare `<h1>{en.screens.sessionSummary}</h1>`, so this is the shared
+ * .wl-title--stop rule scoped here instead of a class on the element. */
+.wl-uf03-summary > h1::after {
+  content: "";
+  display: inline-block;
+  inline-size: 0.12em;
+  block-size: 0.12em;
+  margin-inline-start: 0.04em;
+  background: currentColor;
 }
 
-.wl-uf03-summary__state,
-.wl-uf03-summary__ended {
+@supports (content: "." / "") {
+  .wl-uf03-summary > h1::after {
+    content: "." / "";
+    display: inline;
+    inline-size: auto;
+    block-size: auto;
+    margin-inline-start: 0;
+    background: none;
+  }
+}
+
+.wl-uf03-summary .wl-uf03-summary__state,
+.wl-uf03-summary .wl-uf03-summary__ended {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1.5rem;
 }
 
-.wl-uf03-summary__state p {
+.wl-uf03-summary .wl-uf03-summary__state p {
   margin: 0;
 }
 
-.wl-uf03-summary__stats {
+.wl-uf03-summary .wl-uf03-summary__state .wl-button--text {
+  align-self: flex-start;
+}
+
+.wl-uf03-summary .wl-uf03-summary__ended > .wl-button--text {
+  align-self: flex-start;
+}
+
+/* Stats: the number in the stat role, its caption above it, no boxes. */
+.wl-uf03-summary .wl-uf03-summary__stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
+  gap: 0.75rem;
   margin: 0;
 }
 
-.wl-uf03-summary__stat {
+.wl-uf03-summary .wl-uf03-summary__stat {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 12px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 14px;
-  background: var(--wl-color-surface);
+  gap: 0.25rem;
+  min-inline-size: 0;
 }
 
-.wl-uf03-summary__stat dt {
-  color: var(--wl-color-text-muted);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.wl-uf03-summary__stat dd {
+.wl-uf03-summary .wl-uf03-summary__stat dd {
   margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 28px;
-  line-height: 1.1;
 }
 
-.wl-uf03-summary__stat dd.wl-uf03-summary__budget {
-  font-family: var(--wl-font-body);
-  font-size: 13px;
-  color: var(--wl-color-text-muted);
+/* The PR: a full-bleed lift.bg block (its own lift state, nested) with the gutter as inline padding. */
+.wl-uf03-summary .wl-uf03-summary__pr {
+  box-sizing: border-box;
+  margin-inline: calc(-1 * var(--wl-uf03-gutter));
+  padding: 1.25rem var(--wl-uf03-gutter);
+  color: var(--wl-ink);
 }
 
-.wl-uf03-summary__heading {
+.wl-uf03-summary .wl-uf03-summary__pr p {
   margin: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
-.wl-uf03-summary__rows {
+.wl-uf03-summary .wl-uf03-summary__heading {
+  margin: 0;
+}
+
+/* The 14-day lines: .wl-row on each item; the list keeps its semantics. */
+.wl-uf03-summary .wl-uf03-summary__rows {
   display: flex;
   flex-direction: column;
   margin: 0;
@@ -84,110 +102,49 @@
   list-style: none;
 }
 
-.wl-uf03-summary__rows li {
-  padding: 12px 0;
-  border-bottom: 1px solid var(--wl-color-line);
-}
-
-.wl-uf03-summary__next {
+.wl-uf03-summary .wl-uf03-summary__next {
   margin: 0;
 }
 
-/* NFR-A11Y-2: 44 × 44 CSS px. */
-.wl-uf03-summary__link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  align-self: flex-start;
-  box-sizing: border-box;
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 10px;
-  color: var(--wl-color-accent);
-  text-decoration: none;
-}
-
-.wl-uf03-summary__link:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-/* ---- UF-03.3 effort and Save (T-0420) ---- */
-.wl-uf03-summary__effort {
+.wl-uf03-summary .wl-uf03-summary__effort {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1rem;
 }
 
-.wl-uf03-summary__chips-group {
+.wl-uf03-summary .wl-uf03-summary__chips-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
 }
 
-.wl-uf03-summary__chips {
+/* Five options across the width: they share it and wrap their words. The radio fills its label, so
+ * it stays 44 × 44 or more (NFR-A11Y-2), invisible but focusable. */
+.wl-uf03-summary[data-wl-state] .wl-segmented {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  inline-size: 100%;
 }
 
-/* NFR-A11Y-2: the radio fills the chip's padding box, which is the chip less its border (2 px
- * when checked), so 48 px keeps the radio itself at 44 × 44 or more. */
-.wl-uf03-summary__chip {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  min-width: 48px;
-  min-height: 48px;
-  padding: 0 14px;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 14px;
-  cursor: pointer;
+.wl-uf03-summary[data-wl-state] .wl-segmented > label {
+  flex: 1 1 0;
+  min-inline-size: 0;
+  padding: 0 0.125rem;
+  font-size: 0.9375rem;
+  line-height: 1.15;
+  text-align: center;
 }
 
-.wl-uf03-summary__chip input {
-  position: absolute;
+.wl-uf03-summary[data-wl-state] .wl-segmented input[type="radio"] {
   inset: 0;
-  width: 100%;
-  height: 100%;
+  inline-size: 100%;
+  block-size: 100%;
   margin: 0;
-  opacity: 0;
+  pointer-events: auto;
   cursor: pointer;
 }
 
-.wl-uf03-summary__chip:has(input:checked) {
-  border: 2px solid var(--wl-color-accent);
-  font-weight: 700;
-}
-
-.wl-uf03-summary__chip:has(input:focus-visible),
-.wl-uf03-summary__save:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-.wl-uf03-summary__save {
-  min-height: 56px;
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-  border: 0;
-  border-radius: 16px;
-  font: inherit;
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.wl-uf03-summary__save[aria-disabled="true"] {
-  color: var(--wl-color-text-muted);
-  background: var(--wl-color-surface-2);
-  cursor: not-allowed;
-}
-
-.wl-uf03-summary__save-status {
-  margin: 0;
-  min-height: 1lh;
+/* The save error: the plan form (attention text, the words carry it). An empty live region stays
+ * rendered at one line, so the primary doesn't jump. */
+.wl-uf03-summary .wl-uf03-summary__save-status {
+  min-block-size: 1lh;
 }

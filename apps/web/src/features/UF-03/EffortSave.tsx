@@ -9,7 +9,7 @@
 // sends the merged `loadSessions()` view's rating read at the tap, so a newer rating another
 // device saved isn't overwritten by the raw queued value (D-0148 §3, D-0151 §4).
 //
-// The chips are native radios sharing one `name`, so the arrow keys move the selection the
+// The options are a .wl-segmented of native radios sharing one `name`, so the arrow keys move the selection the
 // browser's way. None is checked unless the stored row has a rating (D-0142 §4).
 import { useEffect, useId, useRef, useState } from "react";
 import { useNavigate } from "react-router";
@@ -71,13 +71,13 @@ export function EffortSave({ sessionId, initialRating }: EffortSaveProps) {
 
   return (
     <div className="wl-uf03-summary__effort" data-part="effort-save">
-      <div role="radiogroup" aria-labelledby={nameId} className="wl-uf03-summary__chips-group">
-        <p id={nameId} className="wl-uf03-summary__heading">
+      <div className="wl-uf03-summary__chips-group">
+        <p id={nameId} className="wl-type-label wl-uf03-summary__heading">
           {en.uf03.effortName}
         </p>
-        <div className="wl-uf03-summary__chips">
+        <div role="radiogroup" aria-labelledby={nameId} className="wl-segmented">
           {EFFORT_RATINGS.map((value) => (
-            <label key={value} className="wl-uf03-summary__chip" data-effort={value}>
+            <label key={value} data-effort={value}>
               <input
                 type="radio"
                 name={`${nameId}-effort`}
@@ -93,14 +93,18 @@ export function EffortSave({ sessionId, initialRating }: EffortSaveProps) {
 
       <button
         type="button"
-        className="wl-uf03-summary__save"
+        className="wl-button--primary"
         aria-disabled={state === "pending" ? "true" : "false"}
         onClick={() => void save()}
       >
         {en.uf03.save}
       </button>
 
-      <p className="wl-uf03-summary__save-status" data-part="save-status" aria-live="polite">
+      <p
+        className="wl-uf03-summary__save-status wl-input__error"
+        data-part="save-status"
+        aria-live="polite"
+      >
         {state === "failed" ? en.uf03.saveFailed : null}
       </p>
     </div>
