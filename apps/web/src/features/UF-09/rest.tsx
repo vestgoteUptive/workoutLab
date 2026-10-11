@@ -1,24 +1,18 @@
-// UF-09.5 Rest (T-0304f, parent AC-B7, D-0066 §7, D-0118 §7 §10). Principle 1: the ring, the
+// UF-09.5 Rest (T-0304f, parent AC-B7, D-0066 §7, D-0118 §7 §10). Principle 1: the time, the
 // next set only, and three ways to change the rest. The length is the machine's — the engine's
 // constants by library `type` — so this view holds no rest length of its own (principle 3). The
-// ring is the persisted wall-clock timer (NFR-TIME-1); "10 seconds" and "Go" are spoken by the
-// chrome announcer in the host, which outlives this view (D-0118 §10).
+// time is the persisted wall-clock timer (NFR-TIME-1); the screen's fill is the host's (T-0597,
+// drain-fill.ts). "10 seconds" and "Go" are spoken by the chrome announcer in the host, which
+// outlives this view (D-0118 §10).
 import { useEffect, useRef } from "react";
+import { ArrowIcon } from "../../components/icons/index.js";
 import { formatKg } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { isBodyweight, setAfterRest } from "./machine.js";
 import { nextSetPrefill } from "./prefill.js";
-import { useRingTransition } from "./reduced-motion.js";
 import { useFocusSession } from "./session.js";
 import { formatClock, remainingS } from "./timer.js";
 import type { ViewProps } from "./views.js";
-
-/** At or below this many seconds left, the ring turns to the warn colour (parent AC-B7). */
-export const REST_WARN_S = 10;
-/** The ring's radius in its 100 × 100 view box. */
-const RING_R = 45;
-const RING_C = 2 * Math.PI * RING_R;
-const RING_CENTRE = 50;
 
 interface NextLine {
   title: string;
@@ -65,76 +59,65 @@ export function Rest({ state, ctx, locale, nowMs }: ViewProps) {
   const skipRef = useRef<HTMLButtonElement>(null);
   const timer = state.timer;
   const remaining = timer ? remainingS(timer, nowMs) : 0;
-  const fraction = timer && timer.durationS > 0 ? Math.min(1, remaining / timer.durationS) : 0;
-  const warn = remaining <= REST_WARN_S;
   const next = nextLine({ state, ctx, locale });
-  // T-0304g (NFR-A11Y-5, D-0119 §10): no sweep under reduced motion; the label still counts.
-  const transition = useRingTransition();
 
   useEffect(() => {
     skipRef.current?.focus();
   }, []);
 
   return (
-    <div className="wl-uf09__view">
-      <h1 className="wl-uf09__title">{en.uf09.titles.rest}</h1>
-      <div className="wl-uf09__ring" data-field="ring" data-warn={warn ? "true" : "false"}>
-        <svg className="wl-uf09__ring-svg" viewBox="0 0 100 100" aria-hidden="true">
-          <circle className="wl-uf09__ring-track" cx={RING_CENTRE} cy={RING_CENTRE} r={RING_R} />
-          <circle
-            className="wl-uf09__ring-fill"
-            cx={RING_CENTRE}
-            cy={RING_CENTRE}
-            r={RING_R}
-            strokeDasharray={RING_C}
-            strokeDashoffset={RING_C * (1 - fraction)}
-            style={{ transition }}
-          />
-        </svg>
-        <div className="wl-uf09__ring-label">
-          <p className="wl-uf09__ring-time" role="timer">
-            {formatClock(remaining)}
-          </p>
-          {remaining === 0 ? (
-            <p className="wl-uf09__ring-go" data-field="go">
-              {en.uf09.go}
-            </p>
-          ) : null}
-        </div>
+    <div className="wl-uf09__view wl-uf09__view--rest">
+      <h1 className="wl-uf09__state wl-type-label">{en.uf09.titles.rest}</h1>
+      <p className="wl-type-hero-number wl-uf09__count" role="timer">
+        {formatClock(remaining)}
+      </p>
+      {remaining === 0 ? (
+        <p className="wl-uf09__go wl-type-stat" data-field="go">
+          {en.uf09.go}
+        </p>
+      ) : null}
+      <div className="wl-uf09__adjust">
+        <button
+          type="button"
+          className="wl-button--session-outline"
+          onClick={() => session.adjustRest(-15)}
+        >
+          {en.uf09.restLess}
+        </button>
+        <button
+          type="button"
+          className="wl-button--session-outline"
+          onClick={() => session.adjustRest(15)}
+        >
+          {en.uf09.restMore}
+        </button>
       </div>
       {next ? (
         <div className="wl-uf09__next" data-field="next">
-          <p className="wl-uf09__next-title">{next.title}</p>
-          {next.load?.kind === "kg" ? <p className="wl-uf09__next-load">{next.load.text}</p> : null}
-          {next.load?.kind === "bw" ? <p className="wl-uf09__next-load">{next.load.reps}</p> : null}
+          <p className="wl-uf09__next-title wl-type-label">{next.title}</p>
+          {next.load?.kind === "kg" ? (
+            <p className="wl-uf09__next-load wl-type-stat">{next.load.text}</p>
+          ) : null}
+          {next.load?.kind === "bw" ? (
+            <p className="wl-uf09__next-load wl-type-stat">{next.load.reps}</p>
+          ) : null}
           {next.load?.kind === "ask" ? (
-            <div className="wl-uf09__next-load">
+            <div className="wl-uf09__next-load wl-type-stat">
               <p className="wl-uf09__ask">{en.uf09.setWeight}</p>
               <p>{next.load.reps}</p>
             </div>
           ) : null}
         </div>
       ) : null}
-      <div className="wl-uf09__adjust">
-        <button
-          type="button"
-          className="wl-uf09__secondary"
-          onClick={() => session.adjustRest(-15)}
-        >
-          {en.uf09.restLess}
-        </button>
-        <button type="button" className="wl-uf09__secondary" onClick={() => session.adjustRest(15)}>
-          {en.uf09.restMore}
-        </button>
-      </div>
       <button
         ref={skipRef}
         type="button"
-        className="wl-uf09__primary wl-uf09__wide"
+        className="wl-button--session wl-uf09__action"
         data-action="primary"
         onClick={() => session.skipRest()}
       >
         {en.uf09.skipRest}
+        <ArrowIcon />
       </button>
     </div>
   );

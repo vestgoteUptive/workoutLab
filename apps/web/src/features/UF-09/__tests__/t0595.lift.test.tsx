@@ -64,11 +64,8 @@ describe("T-0595 AC1 the lift state", () => {
     expect(document.querySelector("[data-wl-state]:not([data-screen-id])")).toBeNull();
   });
 
-  it("the views still to be restyled keep no state attribute (rest, UF-09.5)", async () => {
-    const root = await show("UF-09.5", {
-      phase: "rest",
-      timer: { startedAtMs: NOW, durationS: 120, pausedMs: 0 },
-    });
+  it("the view still to be restyled keeps no state attribute (paused, UF-09.9)", async () => {
+    const root = await show("UF-09.9", { phase: "paused", resumePhase: "set", pausedAtMs: NOW });
     expect(root).not.toHaveAttribute("data-wl-state");
   });
 });

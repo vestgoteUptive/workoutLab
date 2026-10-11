@@ -3,6 +3,7 @@
 // wall-clock timer (NFR-TIME-1); at 0 the host dispatches `READY`. Seam entries (T-0306b's Swap)
 // sit at their `orderActions` positions (D-0071 §4).
 import { useEffect, useRef } from "react";
+import { ArrowIcon } from "../../components/icons/index.js";
 import { formatKg } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { itemSummary } from "../../lib/i18n/workout.js";
@@ -36,9 +37,9 @@ export function NextExercise({
   }, []);
 
   return (
-    <div className="wl-uf09__view">
-      <p className="wl-uf09__state">{en.uf09.titles.next}</p>
-      <h1 className="wl-uf09__title">{name}</h1>
+    <div className="wl-uf09__view wl-uf09__view--next">
+      <p className="wl-uf09__state wl-type-label">{en.uf09.titles.next}</p>
+      <h1 className="wl-uf09__name wl-type-section">{name}</h1>
       {/* Two whole formatter outputs as siblings, never joined (D-0118 §11, D-0114 §5). */}
       <p className="wl-uf09__detail" data-field="detail">
         <span data-field="summary">{itemSummary(item)}</span>
@@ -50,16 +51,16 @@ export function NextExercise({
         )}
       </p>
       {cue ? (
-        <p className="wl-uf09__cue" data-field="cue">
+        <p className="wl-uf09__cue wl-type-body" data-field="cue">
           {cue}
         </p>
       ) : null}
       {/* Present on mount, so the line is announced when it fills (T-0579, D-0205 §11). */}
-      <p className="wl-uf09__status" role="status" data-field="moved">
+      <p className="wl-uf09__status wl-type-label" role="status" data-field="moved">
         {movedName === null ? null : en.uf09.movedLater(movedName)}
       </p>
       {state.timer ? (
-        <p className="wl-uf09__timer" role="timer">
+        <p className="wl-uf09__count wl-type-hero-number" role="timer">
           {formatClock(remainingS(state.timer, nowMs))}
         </p>
       ) : null}
@@ -70,11 +71,12 @@ export function NextExercise({
               key={id}
               ref={readyRef}
               type="button"
-              className="wl-uf09__primary wl-uf09__wide"
+              className="wl-button--session wl-uf09__action"
               data-action="primary"
               onClick={() => send({ type: "READY" })}
             >
               {en.uf09.imReady}
+              <ArrowIcon />
             </button>
           );
         }
@@ -83,7 +85,7 @@ export function NextExercise({
           <button
             key={id}
             type="button"
-            className="wl-uf09__secondary wl-uf09__wide"
+            className="wl-button--session-outline wl-uf09__action wl-uf09__action--second"
             data-seam-id={seam.id}
             onClick={seam.onSelect}
           >

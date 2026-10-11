@@ -191,9 +191,3 @@ export function gesture(): void {
   if (!target) throw new Error("no heading in the host to touch");
   fireEvent.pointerDown(target);
 }
-
-/** The ring fill's inline transition, or `null` with no ring on screen. */
-export function ringTransition(): string | null {
-  const fill = document.querySelector<SVGElement>(".wl-uf09__ring-fill");
-  return fill ? fill.style.transition : null;
-}
