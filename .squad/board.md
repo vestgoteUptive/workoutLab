@@ -174,7 +174,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0597 | UF-09.1/.5/.6 rest drain | web-feature:UF-09 | T-0596 | doing | wl-build-web |
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
 | T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | todo | wl-build-web |
@@ -211,3 +210,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0664 | Engine builder gate must run `node supabase/scripts/vendor.mjs --check` (T-0635 broke main by not regenerating the vendor copy); add it to the engine and shared lanes' DoD or to the -w test gate | infra | — | todo | wl-build-infra |
 | T-0665 | UF-09 resume card: use the shared .wl-button--secondary so today.css drops its hand-made outline button (no hover state) (T-0601 review) | web-feature:UF-09 | T-0601 | todo | wl-build-web |
 | T-0666 | Shell: hide the tab bar on /?view=preview so Start sits at the viewport bottom per the canvas (T-0601 deviation) | web-shell | T-0601 | todo | wl-build-web |
+| T-0667 | UF-09 rest e2e: pixel check at 50 % fill (top = rest.bg, bottom = lift.bg) so the e2e proves the drain direction (T-0597 review) | web-feature:UF-09 | T-0597 | todo | wl-build-web |
+| T-0668 | UF-04: own `uf04.clearSearch` in flows/uf-04.ts instead of borrowing en.uf08.clearSearch; Compare back link sits ~8px inside the gutter (T-0607 review) | web-feature:UF-04 | T-0607 | todo | wl-build-web |
+| T-0669 | Shell: relax routes.phase3.render.test so the UF-04 Compare h1 can take className, then use .wl-type-section .wl-title--stop (T-0607 review) | web-shell | T-0607 | todo | wl-build-web |
