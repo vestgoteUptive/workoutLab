@@ -47,6 +47,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/body-figure-v2.spec.ts` (orchestrator grant: the line ~354 'UF-04.2 with no state' case moves to a detached fixture host like `detachMap`; fix the AC7 describe title/comments that name UF-04.2)
 - `apps/web/src/features/UF-04/**` (lane)
 - `tests/e2e/uf-04-library.spec.ts`, `tests/e2e/uf-04-figure.spec.ts`, `tests/e2e/uf-04-favorites.spec.ts` (listed extras)
 - `docs/tickets/T-0608-uf04-detail-howto-cobalt.md` (log only)
