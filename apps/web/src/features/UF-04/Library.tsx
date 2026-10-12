@@ -1,6 +1,6 @@
 // UF-04.1 Library browse (T-0306a, D-0069 §1, D-0079 §1). Search and filters live in the URL
 // (`q`, `area`, `mine=1`) and are updated with `replace`, so Back leaves the list.
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router";
 import { isEligible, type EngineProfile, type LibraryExercise } from "@workoutlab/engine";
 import { AREAS, type Area } from "@workoutlab/shared";
@@ -11,6 +11,7 @@ import { en } from "../../lib/i18n/en.js";
 import { useFavoriteIds } from "../../lib/offline/favorites-hooks.js";
 import { useExcludedList } from "../../lib/offline/excluded-hooks.js";
 import { loadLibrary, loadProfile } from "../../lib/offline/history.js";
+import { loadRoutines, loadVariants } from "../../lib/offline/feature-loaders.js";
 import { currentUserId } from "../../lib/offline/current-user.js";
 import { useScreenData } from "./data.js";
 import { areaName, equipmentText, primaryAreaNames, secondaryAreaNames } from "./labels.js";
@@ -41,9 +42,44 @@ function isGroupParam(value: string | null): value is Group {
   return value === "upper" || value === "legs";
 }
 
+interface PlanSets {
+  /** Exercise ids that are an item of any cached routine. */
+  inPlan: ReadonlySet<string>;
+  /** Ids that are a variant of an exercise in a routine. */
+  variants: ReadonlySet<string>;
+}
+
+// T-0640 (D-0217 §1): device cache only; one parallel read of the routines, then one of each
+// routine exercise's variants. Tags render when it lands, never ahead of the list.
+async function readPlanSets(): Promise<PlanSets> {
+  const routines = await loadRoutines();
+  const inPlan = new Set(routines.flatMap((r) => r.items.map((i) => i.exerciseId)));
+  const lists = await Promise.all([...inPlan].map((id) => loadVariants(id)));
+  return { inPlan, variants: new Set(lists.flat()) };
+}
+
+type Tag = "inPlan" | "variant" | "beginner";
+const TAGS = {
+  inPlan: { text: en.uf04.inPlan, sr: en.uf04.inPlanSr },
+  variant: { text: en.uf04.variant, sr: en.uf04.variantSr },
+  beginner: { text: en.uf04.beginner, sr: en.uf04.beginnerSr },
+} as const;
+
 export interface LibraryProps {
   /** IANA zone for the offline "last synced" time (D-0045 §9). Defaults to the device zone. */
   timeZone?: string;
+}
+
+function PlanTag({ tag }: { tag: Tag | null }) {
+  if (tag === null) return null;
+  return (
+    <>
+      <span className="wl-uf04__sr">{TAGS[tag].sr}</span>
+      <span data-field={`tag-${tag}`} className="wl-uf04-browse__tag">
+        {TAGS[tag].text}
+      </span>
+    </>
+  );
 }
 
 export function Library(props: LibraryProps = {}) {
@@ -60,6 +96,28 @@ export function Library(props: LibraryProps = {}) {
   // T-0568: the "Favorite" tag; an id in both caches shows only "Not suggested".
   const favoriteIds = useFavoriteIds(currentUserId());
   const favorites = useMemo(() => new Set(favoriteIds), [favoriteIds]);
+
+  // Re-read whenever the library is (first read and the post-refresh read).
+  const [plan, setPlan] = useState<PlanSets | null>(null);
+  useEffect(() => {
+    if (data === undefined) return;
+    let live = true;
+    readPlanSets().then(
+      (sets) => {
+        if (live) setPlan(sets);
+      },
+      () => undefined,
+    );
+    return () => {
+      live = false;
+    };
+  }, [data]);
+
+  function planTag(e: LibraryExercise): Tag | null {
+    if (plan?.inPlan.has(e.id)) return "inPlan";
+    if (plan?.variants.has(e.id)) return "variant";
+    return e.level === "beginner" ? "beginner" : null;
+  }
 
   const rawQuery = params.get("q") ?? "";
   const areaParam = params.get("area");
@@ -228,7 +286,9 @@ export function Library(props: LibraryProps = {}) {
                             {en.uf04.favorite}
                           </span>
                         </>
-                      ) : null}
+                      ) : (
+                        <PlanTag tag={planTag(e)} />
+                      )}
                       <span className="wl-uf04-browse__caption">
                         <span data-field="primary" className="wl-type-label">
                           {primaryAreaNames(e).join(en.uf04.listSeparator)}

@@ -70,6 +70,13 @@ export const uf04 = {
   saving: "Saving…",
   announceExcluded: (name: string) => `${name} won't be suggested`,
   announceIncluded: (name: string) => `${name} will be suggested again`,
+  // T-0640 (D-0217 §1): the plan-relation tags.
+  inPlan: "In plan",
+  inPlanSr: ", in your routines",
+  variant: "Variant",
+  variantSr: ", variant of an exercise in your routines",
+  beginner: "Beginner",
+  beginnerSr: ", beginner level",
   // T-0568 (D-0202 §8, §9): Favorite toggle, tag and move lines.
   favorite: "Favorite",
   favoriteName: (name: string) => `Favorite ${name}`,

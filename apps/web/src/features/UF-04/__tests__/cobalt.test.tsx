@@ -174,9 +174,10 @@ describe("AC3 tags", () => {
     const fav = document.querySelector('[data-field="favorite"]')!;
     expect(fav).toHaveClass("wl-uf04-browse__tag");
     expect(fav.textContent).toBe(en.uf04.favorite);
-    const tagged = [...document.querySelectorAll(".wl-uf04-browse__tag")].map((t) =>
-      t.closest("a")!.getAttribute("href"),
-    );
+    // T-0640: beginner rows now carry a "Beginner" tag, so count only these two kinds here.
+    const tagged = [
+      ...document.querySelectorAll('[data-field="not-suggested"], [data-field="favorite"]'),
+    ].map((t) => t.closest("a")!.getAttribute("href"));
     expect(tagged).toEqual(["/library/back-squat", "/library/leg-extension"]);
     // The CSS draws it as an outline in plan ink: a border, no fill.
     expect(COBALT_CSS).toMatch(
@@ -188,8 +189,9 @@ describe("AC3 tags", () => {
   it("a row without a tag shows none", async () => {
     await mountAt("/library");
     await waitFor(() => expect(rowNames()).toHaveLength(24));
-    expect(document.querySelector(".wl-uf04-browse__tag")).toBeNull();
-    const link = screen.getByRole("link", { name: /^Back squat/ });
+    // Pull-up is intermediate, in no routine and no variant: nothing applies (T-0640).
+    const link = screen.getByRole("link", { name: /^Pull-up/ });
+    expect(link.querySelector(".wl-uf04-browse__tag")).toBeNull();
     expect(link).toHaveClass("wl-row");
     expect(link.querySelector('[data-field="name"]')).toHaveClass("wl-type-row-title");
   });
