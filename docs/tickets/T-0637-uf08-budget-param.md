@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.1]
 decisions: [D-0217, D-0109, D-0115]
 deps: [T-0600]
-status: todo
+status: doing
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ¼ day. Spec: docs/specs/cobalt-mock-behaviour.md §3.3. UF-08 folder chain: T-0599 → T-0600 → T-0637. Lands before T-0638 adds the link. -->
 
