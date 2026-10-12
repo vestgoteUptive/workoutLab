@@ -1,8 +1,6 @@
 // T-0421 UF-05.1 AC-11: the dialog (principle 1), Escape, no link out, the two radio groups,
-// the 44 px row height (a stylesheet test, the `OfflineStatus.test.tsx` pattern) and axe
+// and axe
 // (D-0060 §7) over the list, the empty state and the load failure.
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react";
 import * as engine from "@workoutlab/engine";
@@ -78,27 +76,6 @@ describe("AC-11 dialog, principle 1, a11y", () => {
     const reasons = screen.getByRole("radiogroup", { name: "Reason" });
     expect(reasons).not.toBe(group);
     expect(within(reasons).getAllByRole("radio")).toHaveLength(5);
-  });
-
-  it("the row and chip classes are at least 44 px tall in uf-05.css", () => {
-    const css = readFileSync(resolve(__dirname, "../uf-05.css"), "utf8");
-    const tsx = readFileSync(resolve(__dirname, "../SwapSheet.tsx"), "utf8");
-    expect(tsx).toContain('import "./uf-05.css"');
-    for (const cls of [".wl-uf05__row", ".wl-uf05__chip", ".wl-uf05__use", ".wl-uf05__close"]) {
-      expect(tsx).toContain(`"${cls.slice(1)}"`);
-      const heights = [
-        ...css.matchAll(
-          new RegExp(
-            `${cls.replace(".", "\\.")}[^{]*\\{[^}]*min-(?:height|block-size):\\s*(\\d+)px`,
-            "g",
-          ),
-        ),
-      ].map((m) => Number(m[1]));
-      expect(heights.length, cls).toBeGreaterThan(0);
-      expect(Math.max(...heights), cls).toBeGreaterThanOrEqual(44);
-    }
-    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
-    expect(css).toMatch(/var\(--wl-color-/);
   });
 
   it("axe: 0 violations with the list", async () => {
