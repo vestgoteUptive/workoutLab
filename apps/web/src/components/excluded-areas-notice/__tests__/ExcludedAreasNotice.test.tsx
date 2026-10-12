@@ -30,7 +30,7 @@ describe("AC3 notice copy", () => {
 describe("AC4 neutral styling", () => {
   const css = readFileSync(resolve(__dirname, "../excluded-areas-notice.css"), "utf8");
   it("uses the neutral tokens and no warn token", () => {
-    for (const t of ["surface-2", "line", "text-muted"]) expect(css).toContain(`--wl-color-${t})`);
+    for (const t of ["raise", "line", "ink-muted"]) expect(css).toContain(`--wl-${t})`);
     expect(css).not.toMatch(/warn/i);
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
   });

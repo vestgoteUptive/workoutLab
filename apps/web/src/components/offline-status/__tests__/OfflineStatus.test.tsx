@@ -126,7 +126,7 @@ describe("offline-status.css backs the classes the component renders", () => {
 
   it("uses only design-token colours, no hex literals (D-0019)", () => {
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
-    expect(css).toMatch(/var\(--wl-color-/);
+    expect(css).toMatch(/var\(--wl-(ink-muted|line)\)/);
   });
 });
 

@@ -90,7 +90,7 @@ describe("AC-A2 tokens.css in the built CSS", () => {
     expect(css).toMatch(/--wl-color-bg\s*:/);
     expect(css).toMatch(/--wl-color-coverage-4\s*:/);
     expect(css).toMatch(
-      /body\s*\{[^}]*background:\s*var\(--wl-color-bg\)\s*;\s*color:\s*var\(--wl-color-text\)/,
+      /body\s*\{[^}]*background:\s*var\(--wl-bg\)\s*;\s*color:\s*var\(--wl-ink\)/,
     );
   });
 });

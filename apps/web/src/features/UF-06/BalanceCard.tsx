@@ -46,7 +46,7 @@ export function BalanceCard({ areas, locale }: BalanceCardProps) {
                 data-coverage-step={entry.coverageStep}
                 style={{
                   width: `${barPercent(entry.load, entry.target)}%`,
-                  backgroundColor: `var(--wl-color-coverage-${entry.coverageStep})`,
+                  backgroundColor: `var(--wl-coverage-${entry.coverageStep})`,
                 }}
               />
             </span>

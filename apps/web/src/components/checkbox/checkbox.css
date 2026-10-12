@@ -8,8 +8,8 @@
   box-sizing: border-box;
   padding-block: 10px;
   cursor: pointer;
-  color: var(--wl-color-text);
-  font-family: var(--wl-font-body);
+  color: var(--wl-ink);
+  font-family: var(--wl-font);
   font-weight: 500;
   font-size: 0.9375rem;
 }
@@ -21,7 +21,7 @@
   block-size: 24px;
   margin: 0;
   box-sizing: border-box;
-  border: 2px solid var(--wl-color-text-muted);
+  border: 2px solid var(--wl-ink-muted);
   border-radius: 6px;
   background: transparent;
   display: grid;
@@ -30,12 +30,12 @@
 }
 
 .wl-checkbox__input:hover {
-  border-color: var(--wl-color-text);
+  border-color: var(--wl-ink);
 }
 
 .wl-checkbox__input:checked {
-  background: var(--wl-color-accent);
-  border-color: var(--wl-color-accent);
+  background: var(--wl-action);
+  border-color: var(--wl-action);
 }
 
 .wl-checkbox__input:checked::after {
@@ -43,28 +43,28 @@
   inline-size: 6px;
   block-size: 11px;
   margin-block-start: -2px;
-  border: solid var(--wl-color-on-accent);
+  border: solid var(--wl-on-action);
   border-width: 0 2px 2px 0;
   transform: rotate(45deg);
 }
 
 .wl-checkbox:has(.wl-checkbox__input:focus-visible) {
-  outline: 2px solid var(--wl-color-accent);
+  outline: 2px solid var(--wl-action);
   outline-offset: 2px;
 }
 
 .wl-checkbox[data-disabled] {
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
   cursor: default;
 }
 
 /* No hover change when disabled; a checked box keeps its accent border (C-03). */
 .wl-checkbox[data-disabled] .wl-checkbox__input:not(:checked):hover {
-  border-color: var(--wl-color-text-muted);
+  border-color: var(--wl-ink-muted);
 }
 
 .wl-checkbox[data-disabled] .wl-checkbox__input:checked:hover {
-  border-color: var(--wl-color-accent);
+  border-color: var(--wl-action);
 }
 
 .wl-checkbox__label {

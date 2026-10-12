@@ -42,8 +42,8 @@ describe("AC1 checkbox a11y", () => {
     expect(parseInt(row.style.minHeight, 10)).toBeGreaterThanOrEqual(44);
     const css = readFileSync(resolve(__dirname, "../checkbox.css"), "utf8");
     expect(css).toMatch(/min-block-size:\s*44px/);
-    expect(css).toMatch(/border:\s*2px solid var\(--wl-color-text-muted\)/);
-    expect(css).toMatch(/outline:\s*2px solid var\(--wl-color-accent\)/);
+    expect(css).toMatch(/border:\s*2px solid var\(--wl-ink-muted\)/);
+    expect(css).toMatch(/outline:\s*2px solid var\(--wl-action\)/);
     expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
   });
 

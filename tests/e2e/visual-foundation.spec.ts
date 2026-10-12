@@ -76,7 +76,7 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
     expect(got.transform).toBe("none");
     expect(got.size).toBeGreaterThanOrEqual(96);
     expect(got.size).toBeLessThanOrEqual(112);
-    expect(got.body.startsWith('"DM Sans"')).toBe(true);
+    expect(got.body.startsWith('"Familjen Grotesk"')).toBe(true);
   }
 
   // T-0609/T-0612: `/progress` and `/plan` are plan-state screens. Its h1 is the state page title (Familjen Grotesk,
@@ -96,7 +96,7 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
     expect(got.weight).toBe("700");
     expect(got.transform).toBe("none");
     expect(got.size).toBe(56);
-    expect(got.body.startsWith('"DM Sans"')).toBe(true);
+    expect(got.body.startsWith('"Familjen Grotesk"')).toBe(true);
   }
 
   async function expectScale(page: Page): Promise<void> {
@@ -110,12 +110,12 @@ test.describe("AC3 type scale on the tab screens (390 x 844)", () => {
         body: getComputedStyle(document.body).fontFamily,
       };
     });
-    expect(got.family.startsWith('"Big Shoulders Display"')).toBe(true);
+    expect(got.family.startsWith('"Familjen Grotesk"')).toBe(true);
     expect(got.weight).toBe("800");
     expect(got.transform).toBe("uppercase");
     expect(got.size).toBeGreaterThanOrEqual(32);
     expect(got.size).toBeLessThanOrEqual(40);
-    expect(got.body.startsWith('"DM Sans"')).toBe(true);
+    expect(got.body.startsWith('"Familjen Grotesk"')).toBe(true);
   }
 
   for (const path of ["/", "/progress", "/plan"]) {

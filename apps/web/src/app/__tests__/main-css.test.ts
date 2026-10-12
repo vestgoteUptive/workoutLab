@@ -30,9 +30,9 @@ function declarations(selector: string): string {
 
 describe("T-0546 AC1 main.css (visual foundation T-4)", () => {
   it("h1 and h2 use the display font, body uses the body font", () => {
-    expect(declarations("h1")).toContain("font-family: var(--wl-font-display)");
-    expect(declarations("h2")).toContain("font-family: var(--wl-font-display)");
-    expect(declarations("body")).toContain("font-family: var(--wl-font-body)");
+    expect(declarations("h1")).toContain("font-family: var(--wl-font)");
+    expect(declarations("h2")).toContain("font-family: var(--wl-font)");
+    expect(declarations("body")).toContain("font-family: var(--wl-font)");
   });
 
   // T-0589 (logged): the uppercase pin below is scoped to the global element rules. Under a
@@ -80,13 +80,13 @@ describe("T-0546 AC1 main.css (visual foundation T-4)", () => {
   });
 
   it(".wl-input has a 1px text-muted border", () => {
-    expect(declarations(".wl-input")).toMatch(/border:\s*1px solid var\(--wl-color-text-muted\)/);
+    expect(declarations(".wl-input")).toMatch(/border:\s*1px solid var\(--wl-ink-muted\)/);
   });
 
   it(".wl-button--primary is accent on on-accent", () => {
     const d = declarations(".wl-button--primary");
-    expect(d).toContain("background: var(--wl-color-accent)");
-    expect(d).toContain("color: var(--wl-color-on-accent)");
+    expect(d).toContain("background: var(--wl-action)");
+    expect(d).toContain("color: var(--wl-on-action)");
   });
 
   it("the shared classes exist with their spec sizes", () => {
@@ -99,42 +99,44 @@ describe("T-0546 AC1 main.css (visual foundation T-4)", () => {
     expect(declarations(".wl-muted")).toMatch(/font-size:\s*0\.875rem/);
     expect(declarations(".wl-caption")).toMatch(/font-size:\s*0\.8125rem/);
     expect(declarations(".wl-button--primary:focus-visible")).toMatch(
-      /outline:\s*2px solid var\(--wl-color-accent\)/,
+      /outline:\s*2px solid var\(--wl-action\)/,
     );
   });
 });
 
-// T-0589 AC1: :root keeps the Chalk & Iron value of every D-0211 §2 generic variable.
-describe("T-0589 AC1 :root fallback (D-0211 §2)", () => {
-  const LEGACY: Record<string, string> = {
-    "--wl-bg": "var(--wl-color-bg)",
-    "--wl-raise": "var(--wl-color-surface-2)",
-    "--wl-ink": "var(--wl-color-text)",
-    "--wl-ink-muted": "var(--wl-color-text-muted)",
-    "--wl-ink-on-raise": "var(--wl-color-text-muted)",
-    "--wl-line": "var(--wl-color-line)",
-    "--wl-action": "var(--wl-color-accent)",
-    "--wl-on-action": "var(--wl-color-on-accent)",
-    "--wl-selected": "var(--wl-color-accent)",
-    "--wl-on-selected": "var(--wl-color-on-accent)",
-    "--wl-attention": "var(--wl-color-warn)",
-    "--wl-progress-off": "var(--wl-color-line-strong)",
-    "--wl-focus": "var(--wl-color-accent)",
-    "--wl-scrim": "var(--wl-color-bg)",
-    "--wl-coverage-0": "var(--wl-color-coverage-0)",
-    "--wl-coverage-1": "var(--wl-color-coverage-1)",
-    "--wl-coverage-2": "var(--wl-color-coverage-2)",
-    "--wl-coverage-3": "var(--wl-color-coverage-3)",
-    "--wl-coverage-4": "var(--wl-color-coverage-4)",
-    "--wl-font": "var(--wl-font-body)",
-    "--wl-gutter": "20px",
+// T-0589 AC1, replaced by T-0624 (logged): :root resolves every D-0211 §2 generic variable to the
+// plan group, the default state (D-0210 §6). The Chalk & Iron fallback is gone.
+describe("T-0624 AC3 :root is the plan group (D-0211 §2)", () => {
+  const rootBlock = () => {
+    const m = stripComments(css).match(
+      /(?:^|\n)\s*:root,\s*\[data-wl-state="plan"\]\s*\{([^}]*)\}/,
+    );
+    expect(m, ":root shares the plan block").not.toBeNull();
+    return m![1]!;
   };
+  const stripComments = (t: string) => t.replace(/\/\*[\s\S]*?\*\//g, "");
 
-  it("maps each generic variable on :root to its legacy value", () => {
-    const root = [...css.matchAll(/(?:^|\n):root\s*\{([^}]*)\}/g)].map((m) => m[1]!).join("\n");
-    for (const [name, value] of Object.entries(LEGACY)) {
+  it("maps each generic variable on :root to its plan value", () => {
+    const root = rootBlock();
+    const PLAN: Record<string, string> = {
+      "--wl-bg": "var(--wl-color-plan-bg)",
+      "--wl-raise": "var(--wl-color-plan-raise)",
+      "--wl-ink": "var(--wl-color-plan-ink)",
+      "--wl-ink-muted": "var(--wl-color-plan-ink-muted)",
+      "--wl-line": "var(--wl-color-plan-line)",
+      "--wl-action": "var(--wl-color-plan-action)",
+      "--wl-on-action": "var(--wl-color-plan-on-action)",
+      "--wl-attention": "var(--wl-color-plan-attention)",
+      "--wl-focus": "var(--wl-color-plan-ink)",
+      "--wl-font": "var(--wl-font-plan)",
+      "--wl-gutter": "var(--wl-space-gutter-plan)",
+    };
+    for (const [name, value] of Object.entries(PLAN)) {
       expect(root, name).toContain(`${name}: ${value};`);
     }
+    expect(root).not.toMatch(
+      /--wl-color-(bg|text|accent|surface|line|warn)\b|--wl-font-(body|display)/,
+    );
   });
 
   it("every state block sets the variables its mapping names, with no raw colour", () => {
@@ -217,7 +219,7 @@ describe("T-0592 AC8 scoping of the shared controls (D-0210 §3)", () => {
       const radius = [...r.body.matchAll(/border-radius:\s*([^;]+)/g)].map((m) => m[1]!.trim());
       for (const v of radius) expect(["14px", "16px"], r.selectors.join()).toContain(v);
       expect(r.body, r.selectors.join()).not.toMatch(
-        /--wl-(radius|space|action|on-action|ink|raise|line|selected|on-selected|focus)\b/,
+        /--wl-(radius|space|selected|on-selected|focus)\b/,
       );
     }
   });
@@ -272,8 +274,8 @@ describe("T-0593 scoping and values of the shared surfaces (D-0210 §3, D-0211 �
     expect(hits.length).toBeGreaterThan(5);
     const legacy = hits.filter((r) => r.selectors.some((s) => !SCOPED.test(s)));
     expect(legacy).toHaveLength(1);
-    expect(legacy[0]!.body).toMatch(/border:\s*1px solid var\(--wl-color-text-muted\)/);
-    expect(legacy[0]!.body).not.toMatch(/--wl-(radius|ink|attention|focus)\b/);
+    expect(legacy[0]!.body).toMatch(/border:\s*1px solid var\(--wl-ink-muted\)/);
+    expect(legacy[0]!.body).not.toMatch(/--wl-(radius|attention|focus)\b/);
   });
 
   it("the toggle is 48 x 28 with a 1.5px muted outline and a selected on-state", () => {
@@ -312,11 +314,11 @@ describe("T-0593 scoping and values of the shared surfaces (D-0210 §3, D-0211 �
     expect(paper[0]!.body).toMatch(/border-radius:\s*0/);
   });
 
-  it("the account-deleted notice keeps the legacy surface and reads raise, ink and tile radius in a state", () => {
+  it("the account-deleted notice keeps the base surface and reads raise, ink and tile radius in a state", () => {
     const rule = (sel: string) => rules.filter((r) => r.selectors.includes(sel)).map((r) => r.body);
     const base = rule(".wl-account-deleted").join("\n");
-    expect(base).toMatch(/background:\s*var\(--wl-color-surface\)/);
-    expect(base).not.toMatch(/--wl-(raise|ink|radius)/);
+    expect(base).toMatch(/background:\s*var\(--wl-raise\)/);
+    expect(base).not.toMatch(/--wl-radius/);
     const scoped = bodyOf(".wl-account-deleted").split("\n").join(" ");
     expect(scoped).toMatch(/background:\s*var\(--wl-raise\)/);
     expect(scoped).toMatch(/color:\s*var\(--wl-ink\)/);
