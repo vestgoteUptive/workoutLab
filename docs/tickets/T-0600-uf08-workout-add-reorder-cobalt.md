@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.5]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0205, D-0199, D-0191, D-0202]
 deps: [T-0599]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "Set up · your workout" (#turn-3); UF-08.5 isn't drawn, so apply the sheet pattern. Behaviour: screens/UF-08.2.md, screens/UF-08.5.md, docs/specs/uf-08-add-and-reorder.md. Restyle only. -->
 ## Why
@@ -66,10 +66,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-08 e2e specs green · commit messages start with `T-0600` and cite UF-08.2/UF-08.5.
 
 ## Build / accept log
-
-### Build log (frontend-dev, base 563c379, tree clean at start)
-- Built: UF-08.2 root `data-wl-state="plan"` + `.wl-page`; hairline `.wl-row` items (index, title, caption, Swap `.wl-button--text`, Remove `CrossIcon` in a 44px button, names unchanged); time bar track `--wl-raise`, items `--wl-ink`, warm-up `--wl-ink-muted`, `__seg--warn` removed (over budget = `data-over` on `.wl-uf08__budget` plus the words); why chips, Favorite and Main tags are non-interactive outline `.wl-chip`; Skipping line in the notice form; Reorder moved row = raise block (`data-moved`), `DragHandleIcon`; Add sheet = `.wl-sheet` (plan, grabber, `.wl-sheet-scrim`), search `.wl-input`, picks `.wl-row`; Looks good is the one `.wl-button--primary`, Shuffle, Add exercise and Reorder are `.wl-button--secondary`; Removed line rows/buttons in `.wl-row`/`.wl-button--text`. Empty live regions are visually hidden, not `display:none`. The legacy `.wl-uf08:not([data-wl-state])` base and all legacy 08.2/08.5 rules are deleted (grep: no other consumer in src or tests/e2e).
-- AC map: AC1 cobalt-workout.test (roots, sheet attrs) + e2e AC1 (bg, theme-color, 28px radii, 0.45 scrim); AC2 e2e AC2 (+ vitest css, suggested-view data-over); AC3 e2e AC3 + cobalt-workout (data-moved) + uf-08-reorder.spec unchanged; AC4 e2e AC4 + existing add tests; AC5 e2e AC5 (pairs, raise never ink-muted, axe on screen/Reorder/sheet/results) + vitest one primary; AC6 e2e targets + motion; AC7 existing UF-08 vitest suite and the five specs unchanged, e2e AC7 none-left; AC8 canvas compare run (turn-3 plus app-only Reorder and sheet; no canvas frame for them).
-- Test expectations changed (not weakened): cobalt-plan.test "old 16 px padding is gated" is now "no :not([data-wl-state]) rule" (the block was deleted); suggested-view and swap-before-start "items warn" now assert `data-over` and no `seg--warn` (D-0211 §5); e2e "UF-08.2 is unchanged: legacy chips" replaced by the T-0600 block. Granted visual-foundation/cobalt-controls/fonts specs did not use a UF-08 screen: untouched.
-- Planted faults (backup copy, restored by cp), all red: no state on root, no `.wl-sheet`, no `.wl-input`, Shuffle as primary, warm-up segment ink, moved row transparent, caption ink-muted on raise, icon block-size 36px, sheet transition, `display:none` on empty status, budget text legacy warn colour. 9/13 new vitest and 8/8 new e2e went red together; the rest map one fault each by assertion.
-- Page status line: now visually hidden when empty; uf-08-excluded.spec scopes its status locator to the removed line; e2e AC6 asserts the empty page status is in the a11y tree (planted display:none: red).
+Archived in `docs/tickets/log/T-0600.md` (D-0157).
