@@ -67,7 +67,7 @@ describe("AC-7 the pre-existing catalogue is unchanged", () => {
     expect(en.tabBar).toEqual({
       nav: "Main",
       today: "Today",
-      library: "Library",
+      library: "Exercises",
       progress: "Progress",
       plan: "Plan",
     });
@@ -79,7 +79,7 @@ describe("AC-7 the pre-existing catalogue is unchanged", () => {
       account: "Account",
       authCallback: "Signing you in",
       today: "Today",
-      library: "Library",
+      library: "Exercises",
       libraryDetail: "Exercise",
       progress: "Progress",
       balance: "Balance",
@@ -140,5 +140,20 @@ describe("AC-7 the pre-existing catalogue is unchanged", () => {
       hamstrings: "Hamstrings",
       calves: "Calves",
     });
+  });
+});
+
+describe("T-0622 the library is named Exercises (D-0212)", () => {
+  it('no string value in en is exactly "Library"; libraryDetail stays "Exercise"', () => {
+    const values: string[] = [];
+    const walk = (node: unknown): void => {
+      if (typeof node === "string") values.push(node);
+      else if (node && typeof node === "object") Object.values(node).forEach(walk);
+    };
+    walk(en);
+    expect(values).not.toContain("Library");
+    expect(en.tabBar.library).toBe("Exercises");
+    expect(en.screens.library).toBe("Exercises");
+    expect(en.screens.libraryDetail).toBe("Exercise");
   });
 });
