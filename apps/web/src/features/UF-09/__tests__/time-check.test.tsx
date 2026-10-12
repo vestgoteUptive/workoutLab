@@ -102,7 +102,10 @@ const lastResult = (): TimeCheckResult => {
 };
 
 async function click(name: string) {
-  fireEvent.click(screen.getByRole("button", { name }));
+  // T-0598: the time-check options are radios and Continue applies the picked one.
+  const radio = screen.queryByRole("radio", { name });
+  if (radio) fireEvent.click(radio);
+  fireEvent.click(screen.getByRole("button", { name: radio ? "Continue" : name }));
   await flushReal();
 }
 
@@ -132,7 +135,7 @@ describe("AC-1 R8-E1 through the engine", () => {
     expect(option("skip")!.textContent).toContain("Skip Barbell row");
     expect(doneBy("skip")).toBe("Done by 10:37");
     // Each option's details describe its button.
-    const trim = screen.getByRole("button", { name: "Trim" });
+    const trim = screen.getByRole("radio", { name: "Trim" });
     expect(trim).toHaveAccessibleDescription("Lateral raise 3 → 2 sets Done by 10:45");
   });
 
@@ -345,8 +348,12 @@ describe("AC-3 apply an option (D-0120 §1, D-0071 §6)", () => {
     upsert.mockImplementationOnce(() => held.promise.then(() => ({}) as never));
     await click("Trim");
     for (const name of ["Continue", "Trim", "Skip next"]) {
-      expect(screen.getByRole("button", { name })).toHaveAttribute("aria-disabled", "true");
+      expect(screen.getByRole("radio", { name })).toHaveAttribute("aria-disabled", "true");
     }
+    expect(screen.getByRole("button", { name: "Continue" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     await click("Trim");
     await click("Skip next");
     await click("Continue");
@@ -361,8 +368,9 @@ describe("AC-3 apply an option (D-0120 §1, D-0071 §6)", () => {
   it("the pair: before a pick, no option is aria-disabled", async () => {
     await atCheck(1500);
     for (const name of ["Continue", "Trim", "Skip next"]) {
-      expect(screen.getByRole("button", { name })).not.toHaveAttribute("aria-disabled");
+      expect(screen.getByRole("radio", { name })).not.toHaveAttribute("aria-disabled");
     }
+    expect(screen.getByRole("button", { name: "Continue" })).not.toHaveAttribute("aria-disabled");
   });
 
   it("rejection: the polite error, still UF-09.8, and Continue still works", async () => {
@@ -416,7 +424,11 @@ describe("AC-3 apply an option (D-0120 §1, D-0071 §6)", () => {
     expect(screen.queryByRole("button", { name: "Trim" })).toBeNull();
     expect(
       screen.getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent),
-    ).toEqual(["Pause workout", "Continue", "Skip next"]);
+    ).toEqual(["Pause workout", "Continue"]);
+    expect(screen.getAllByRole("radio").map((r) => r.getAttribute("value"))).toEqual([
+      "continue",
+      "skip",
+    ]);
   });
 });
 

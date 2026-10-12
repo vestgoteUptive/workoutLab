@@ -3,6 +3,7 @@
 // exercise · End workout in user flows v2 order. End confirms in place: still UF-09.9, still one
 // task on screen. Every timer is stopped while this shows (the machine's pause).
 import { useEffect, useRef, useState } from "react";
+import { ArrowIcon, ChevronIcon } from "../../components/icons/index.js";
 import { en } from "../../lib/i18n/en.js";
 import { canDoLater, canSkipItem, setsInItem } from "./machine.js";
 import { orderActions } from "./seams.js";
@@ -64,33 +65,40 @@ export function Paused({
 
   const numbers = (
     <div className="wl-uf09__numbers">
-      <p data-field="elapsed">{en.uf09.elapsed(formatClock(elapsedS))}</p>
-      <p data-field="left">{en.uf09.left(leftMinutes(session.row.time_budget_min, elapsedS))}</p>
-      <p data-field="sets">{en.uf09.sets(state.loggedSets.length, planned)}</p>
+      <p className="wl-type-stat" data-field="elapsed">
+        {en.uf09.elapsed(formatClock(elapsedS))}
+      </p>
+      <p className="wl-type-stat" data-field="left">
+        {en.uf09.left(leftMinutes(session.row.time_budget_min, elapsedS))}
+      </p>
+      <p className="wl-type-stat" data-field="sets">
+        {en.uf09.sets(state.loggedSets.length, planned)}
+      </p>
     </div>
   );
 
   if (confirming) {
     return (
-      <div className="wl-uf09__view">
-        <h1 className="wl-uf09__title">{en.uf09.titles.paused}</h1>
+      <div className="wl-uf09__view wl-uf09__view--paused">
+        <h1 className="wl-uf09__title wl-type-page-title">{en.uf09.titles.paused}</h1>
         {numbers}
-        <p className="wl-uf09__question" data-field="end-question">
+        <p className="wl-uf09__question wl-type-body" data-field="end-question">
           {en.uf09.endQuestion}
         </p>
         <button
           type="button"
-          className="wl-uf09__primary wl-uf09__wide"
+          className="wl-button--primary wl-uf09__action"
           aria-disabled={ending || planWritePending ? true : undefined}
           aria-busy={ending ? true : undefined}
           onClick={onEnd}
         >
           {en.uf09.endWorkout}
+          <ArrowIcon />
         </button>
         <button
           ref={cancelRef}
           type="button"
-          className="wl-uf09__secondary wl-uf09__wide"
+          className="wl-button--secondary wl-uf09__action wl-uf09__action--second"
           onClick={() => {
             if (busy.current) return;
             setFailed(false);
@@ -99,7 +107,7 @@ export function Paused({
         >
           {en.uf09.cancel}
         </button>
-        <p className="wl-uf09__status" aria-live="polite">
+        <p className="wl-uf09__status wl-type-label" aria-live="polite">
           {failed ? en.uf09.endError : null}
         </p>
       </div>
@@ -139,11 +147,11 @@ export function Paused({
   ];
   const ids = orderActions(builtIns, seams, "pause");
   return (
-    <div className="wl-uf09__view">
-      <h1 className="wl-uf09__title">{en.uf09.titles.paused}</h1>
+    <div className="wl-uf09__view wl-uf09__view--paused">
+      <h1 className="wl-uf09__title wl-type-page-title">{en.uf09.titles.paused}</h1>
       {numbers}
       {moveFailed === null ? null : (
-        <p className="wl-uf09__move-error" role="alert" data-field="move-error">
+        <p className="wl-uf09__move-error wl-type-body" role="alert" data-field="move-error">
           {en.uf09.doLaterError(moveFailed)}
         </p>
       )}
@@ -154,7 +162,7 @@ export function Paused({
               key={id}
               ref={resumeRef}
               type="button"
-              className="wl-uf09__primary wl-uf09__wide"
+              className="wl-button--session wl-uf09__resume"
               data-action="primary"
               aria-disabled={moving ? true : undefined}
               onClick={() => {
@@ -162,6 +170,7 @@ export function Paused({
               }}
             >
               {en.uf09.resume}
+              <ArrowIcon />
             </button>
           );
         }
@@ -170,12 +179,13 @@ export function Paused({
             <button
               key={id}
               type="button"
-              className="wl-uf09__secondary wl-uf09__wide"
+              className="wl-row wl-uf09__row"
               data-action="later"
               aria-busy={moving ? true : undefined}
               onClick={onLater}
             >
-              {en.uf09.doLater(laterName)}
+              <span>{en.uf09.doLater(laterName)}</span>
+              <ChevronIcon direction="down" />
             </button>
           );
         }
@@ -184,11 +194,12 @@ export function Paused({
             <button
               key={id}
               type="button"
-              className="wl-uf09__secondary wl-uf09__wide"
+              className="wl-row wl-uf09__row"
               data-action="skip"
               onClick={onSkipItem}
             >
-              {en.uf09.skipToNext}
+              <span>{en.uf09.skipToNext}</span>
+              <ArrowIcon />
             </button>
           );
         }
@@ -197,7 +208,7 @@ export function Paused({
             <button
               key={id}
               type="button"
-              className="wl-uf09__secondary wl-uf09__wide"
+              className="wl-button--secondary wl-uf09__end"
               data-action="end"
               aria-disabled={planWritePending ? true : undefined}
               onClick={() => {
@@ -213,11 +224,12 @@ export function Paused({
           <button
             key={id}
             type="button"
-            className="wl-uf09__secondary wl-uf09__wide"
+            className="wl-row wl-uf09__row"
             data-seam-id={seam.id}
             onClick={seam.onSelect}
           >
-            {seam.label}
+            <span>{seam.label}</span>
+            <ArrowIcon />
           </button>
         ) : null;
       })}

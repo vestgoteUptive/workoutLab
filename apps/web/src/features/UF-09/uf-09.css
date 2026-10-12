@@ -707,3 +707,150 @@
   }
 }
 /* ---- end T-0597 ---- */
+
+/* ---- T-0598 UF-09.8 Time check, UF-09.9 Paused: the plan state (D-0208 §2, D-0210, D-0212 §5) ----
+ * A decision made mid-session is a plan moment: cobalt, the plan font. The root is
+ * data-wl-state="plan", so main.css maps the --wl-* variables; every rule below starts at
+ * .wl-uf09[data-wl-state="plan"], so it out-ranks the legacy .wl-uf09 rules and touches no other
+ * screen. Colours are --wl-* variables and token variables only; sizes are rem. */
+.wl-uf09[data-wl-state="plan"] {
+  gap: 0;
+  padding: max(env(safe-area-inset-top), 1.5rem) max(var(--wl-gutter), env(safe-area-inset-right))
+    max(env(safe-area-inset-bottom), 1.5rem) max(var(--wl-gutter), env(safe-area-inset-left));
+  color: var(--wl-ink);
+  font-family: var(--wl-font);
+  background-color: var(--wl-bg);
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__chrome {
+  margin-block-end: 1.5rem;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__chrome > .wl-session-progress {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__view {
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 0;
+  text-align: start;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__title {
+  margin: 0;
+  font-family: var(--wl-font);
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__set-line {
+  margin: 0.75rem 0 0;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__status {
+  min-block-size: 1.5em;
+  margin: 1rem 0 0;
+  color: var(--wl-ink);
+}
+
+/* Time check: the three answers as option rows, Continue pinned low. */
+.wl-uf09[data-wl-state="plan"] .wl-uf09__options {
+  display: flex;
+  flex-direction: column;
+  align-self: stretch;
+  gap: 0;
+  margin-block-start: 1.75rem;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__option-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-inline-size: 0;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__option-detail {
+  display: flex;
+  flex-direction: column;
+  font-size: inherit;
+  color: inherit;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__view--check .wl-uf09__action {
+  margin-block-start: auto;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__view--check .wl-uf09__status {
+  margin-block-end: 1.5rem;
+}
+
+/* Paused: the numbers in the stat role, one under the other (their text is "Elapsed 23:10"). */
+.wl-uf09[data-wl-state="plan"] .wl-uf09__numbers {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  margin-block-start: 1.5rem;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__question {
+  margin: 1.75rem 0 0;
+  color: var(--wl-ink);
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__move-error {
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  color: var(--wl-ink-on-raise);
+  background: var(--wl-raise);
+  border-radius: var(--wl-radius-tile);
+}
+
+/* Resume takes you back into the set, so it is the lift colour on the cobalt screen. */
+.wl-uf09[data-wl-state="plan"] .wl-uf09__resume {
+  --wl-action: var(--wl-color-lift-bg);
+  --wl-on-action: var(--wl-color-lift-ink);
+  margin-block-start: 1.75rem;
+  margin-block-end: 1.25rem;
+}
+
+/* Swap, Do later, Skip to next, How-to and List view: rows with a trailing arrow. */
+.wl-uf09[data-wl-state="plan"] .wl-uf09__row {
+  min-block-size: 3.5rem;
+  padding-inline: 0;
+  font: inherit;
+  font-size: 1.125rem;
+  background: transparent;
+  border-inline: 0;
+  border-block-start: 0;
+  color: var(--wl-ink);
+  text-align: start;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__row svg {
+  flex: none;
+  color: var(--wl-ink-muted);
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__row:has(+ .wl-uf09__end) {
+  margin-block-end: 1.5rem;
+}
+
+/* End workout: the secondary outline, last, centred. Never the primary. */
+.wl-uf09[data-wl-state="plan"] .wl-uf09__end {
+  justify-content: center;
+  margin-block-start: auto;
+  text-align: center;
+}
+
+/* The end confirm: the question, End workout, Cancel. */
+.wl-uf09[data-wl-state="plan"] .wl-uf09__view--paused .wl-uf09__action {
+  margin-block-start: 1.5rem;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__view--paused .wl-uf09__action--second {
+  margin-block-start: 0.75rem;
+}
+/* ---- end T-0598 ---- */

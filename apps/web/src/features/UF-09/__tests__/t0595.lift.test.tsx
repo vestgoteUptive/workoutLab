@@ -64,9 +64,10 @@ describe("T-0595 AC1 the lift state", () => {
     expect(document.querySelector("[data-wl-state]:not([data-screen-id])")).toBeNull();
   });
 
-  it("the view still to be restyled keeps no state attribute (paused, UF-09.9)", async () => {
+  // T-0598 changed this expectation (it said no state attribute): Paused is the plan state now.
+  it("UF-09.9 Paused is the plan state, not lift", async () => {
     const root = await show("UF-09.9", { phase: "paused", resumePhase: "set", pausedAtMs: NOW });
-    expect(root).not.toHaveAttribute("data-wl-state");
+    expect(root).toHaveAttribute("data-wl-state", "plan");
   });
 });
 
