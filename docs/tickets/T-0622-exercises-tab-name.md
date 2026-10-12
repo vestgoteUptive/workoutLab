@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-04.1]
 decisions: [D-0212, D-0196, D-0071]
 deps: [T-0594, T-0607]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0212 §1.5, D-0213). Flow: wl-build-web (agent frontend-dev). About ¼ day. en.ts is web-shell's. Runs after the tab-bar restyle (T-0594) and the UF-04.1 restyle (T-0607), so no other ticket edits shell.spec or uf-04-library.spec in parallel. User flows v2 gets the name in T-0618. -->
 ## Why
@@ -44,7 +44,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `shell.spec.ts` and `uf-04-library.spec.ts` green · commit messages start with `T-0622` and cite UF-04.1.
 
 ## Build / accept log
-
-- 2026-10-12 build: en.ts `tabBar.library` and `screens.library` now "Exercises". Changed assertions: `App.test.tsx:78` (tab text list), `lib/i18n/__tests__/flows.test.ts` (AC-7 tabBar + screens literals, 2), `tests/e2e/shell.spec.ts:87` (labels). Added AC3 scan test in flows.test.ts. No test outside the grants queried "Library" by name; `uf-04-library.spec.ts` and the UF-04 vitests needed no change (export-name literals only). AC1/AC2/AC4/AC5 are covered by the existing shell, UF-04 and tab-bar tests, which read `en.*` (green).
-- Planted fault: reverted `tabBar.library` to "Library" -> App.test.tsx and flows.test.ts red (3 failed); restored from backup.
-- Gate: typecheck lint test exit 0; test:repo-checks 0; format:check 0 (after prettier on flows.test.ts); check-all 0; full e2e 643 passed, exit 0.
+Archived in `docs/tickets/log/T-0622.md` (D-0157).
