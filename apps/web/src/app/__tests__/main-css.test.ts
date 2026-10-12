@@ -206,7 +206,8 @@ describe("T-0592 AC8 scoping of the shared controls (D-0210 §3)", () => {
   it("every selector of a new control class starts at a state root or .wl-paper", () => {
     const hits = rules.flatMap((r) => r.selectors).filter((s) => NEW.test(s));
     expect(hits.length).toBeGreaterThan(20);
-    expect(hits.filter(unscoped)).toEqual([]);
+    // T-0630: the scrim is the one exception; it is portalled to body and has no state ancestor.
+    expect(hits.filter(unscoped).filter((s) => s !== ".wl-sheet-scrim")).toEqual([]);
   });
 
   it("the legacy button, row and card rules outside a state keep their old values", () => {
@@ -320,5 +321,53 @@ describe("T-0593 scoping and values of the shared surfaces (D-0210 §3, D-0211 �
     expect(scoped).toMatch(/background:\s*var\(--wl-raise\)/);
     expect(scoped).toMatch(/color:\s*var\(--wl-ink\)/);
     expect(scoped).toMatch(/border-radius:\s*var\(--wl-radius-tile\)/);
+  });
+});
+
+// T-0630: the sheet stacks above the tab bar, the scrim needs no state ancestor, and a plan sheet in
+// a lift or rest root keeps the plan type sizes.
+describe("T-0630 sheet stacking, portalled scrim and nested plan type (D-0216)", () => {
+  const stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
+  const rules = [...stripped.matchAll(/([^{};]+)\{([^{}]*)\}/g)].map((m) => ({
+    selectors: m[1]!
+      .replace(/\s+/g, " ")
+      .trim()
+      .split(/,(?![^(]*\))/)
+      .map((x) => x.trim()),
+    body: m[2]!,
+  }));
+  const exact = (sel: string) =>
+    rules
+      .filter((r) => r.selectors.includes(sel))
+      .map((r) => r.body)
+      .join("\n");
+  const z = (b: string) => Number(/z-index:\s*(\d+)/.exec(b)?.[1]);
+  const tabBar = readFileSync(resolve(__dirname, "../../components/tab-bar/tab-bar.css"), "utf8");
+
+  it("AC1 sheet and scrim have z-index above the tab bar, the sheet above the scrim", () => {
+    const bar = z(/\.wl-tab-bar\s*\{[^}]*\}/.exec(tabBar)![0]);
+    const scrim = z(exact(".wl-sheet-scrim"));
+    const sheet = z(exact("[data-wl-state].wl-sheet"));
+    expect(scrim).toBeGreaterThan(bar);
+    expect(sheet).toBeGreaterThan(scrim);
+  });
+
+  it("AC2 the scrim rule has no state ancestor and carries the plan scrim at 0.45", () => {
+    const body = exact(".wl-sheet-scrim");
+    expect(body).toMatch(/color-mix\(in oklch, var\(--wl-color-plan-scrim\) 45%, transparent\)/);
+    expect(body).not.toMatch(/--wl-scrim\b/);
+    expect(body).toMatch(/transition:\s*none/);
+  });
+
+  it("AC3 a nested plan sheet restores the plan sizes after the lift and rest overrides", () => {
+    const P = ':is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-sheet[data-wl-state="plan"]';
+    expect(exact(`${P} .wl-type-label`)).toMatch(/font-size:\s*0\.875rem/);
+    expect(exact(`${P} :where(h2, h3)`)).toMatch(/font-weight:\s*600/);
+    expect(exact(`${P} .wl-type-button`)).toMatch(/font-size:\s*1\.375rem/);
+    expect(exact(`${P} .wl-type-section`)).toMatch(/font-size:\s*2\.75rem/);
+    const idx = (sel: string) => rules.findIndex((r) => r.selectors.includes(sel));
+    expect(idx(`${P} .wl-type-label`)).toBeGreaterThan(
+      idx('[data-wl-state="lift"] .wl-type-label'),
+    );
   });
 });
