@@ -134,7 +134,7 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0580 | Show the failed-exclusion message on the host screen after the swap sheet closes (T-0539 follow-up) | web-feature:UF-09 | T-0539 | todo | wl-build-web |
-| T-0582 | UF-11.5/11.6 re-read when the library cache arrives (cold direct load shows no groups) | web-feature:UF-11 | — | todo | wl-build-web |
+| T-0582 | UF-11.5/11.6 re-read when the library cache arrives (cold direct load shows no groups) | web-feature:UF-11 | — | doing | wl-build-web |
 
 ### Groomed from parked (2026-10-08)
 Owner request: groom 10 parked tickets and put the ones worth doing at the back of the backlog. Run after the favorites (D-0202) and add/reorder (D-0205) work. The three touch disjoint files (turbo.json + check-decision-ids; one new web-shell test; package.json/lockfile), so any order works; T-0525 changes the lockfile, so it runs the forced gate.
