@@ -487,6 +487,48 @@ legend.wl-label,
   font-weight: 800;
 }
 
+/* A plan sheet nested in a lift or rest root keeps the plan type roles and sizes (T-0630, D-0216).
+ * These come after the session overrides and win on specificity. */
+:is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-sheet[data-wl-state="plan"] :where(h1),
+:is([data-wl-state="lift"], [data-wl-state="rest"])
+  .wl-sheet[data-wl-state="plan"]
+  .wl-type-page-title {
+  font-size: 3.5rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+:is([data-wl-state="lift"], [data-wl-state="rest"])
+  .wl-sheet[data-wl-state="plan"]
+  .wl-type-section {
+  font-size: 2.75rem;
+  font-weight: 700;
+}
+
+:is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-sheet[data-wl-state="plan"] .wl-type-stat {
+  font-size: 2.125rem;
+  font-weight: 700;
+}
+
+:is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-sheet[data-wl-state="plan"] :where(h2, h3),
+:is([data-wl-state="lift"], [data-wl-state="rest"])
+  .wl-sheet[data-wl-state="plan"]
+  .wl-type-row-title {
+  font-weight: 600;
+}
+
+:is([data-wl-state="lift"], [data-wl-state="rest"]) .wl-sheet[data-wl-state="plan"] .wl-type-label {
+  font-size: 0.875rem;
+  font-weight: 400;
+}
+
+:is([data-wl-state="lift"], [data-wl-state="rest"])
+  .wl-sheet[data-wl-state="plan"]
+  .wl-type-button {
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
 /* The big titles end with a full stop that is decoration, not name: the "." / "" form gives the
  * pseudo-element empty alt text. Without support a drawn dot stands in, which has no text. */
 .wl-title--stop::after {
@@ -1028,7 +1070,7 @@ legend.wl-label,
   background: var(--wl-bg);
   border-radius: var(--wl-radius-sheet) var(--wl-radius-sheet) 0 0;
   transition: none;
-  z-index: 2;
+  z-index: 7;
 }
 
 [data-wl-state] .wl-sheet__grabber {
@@ -1039,12 +1081,14 @@ legend.wl-label,
   border-radius: var(--wl-radius-pill);
 }
 
-[data-wl-state] .wl-sheet-scrim {
+/* The scrim needs no state ancestor, so it is styled when portalled to body. Sheet and scrim stack
+ * above the tab bar (z 5). */
+.wl-sheet-scrim {
   position: fixed;
   inset: 0;
   background: color-mix(in oklch, var(--wl-color-plan-scrim) 45%, transparent);
   transition: none;
-  z-index: 1;
+  z-index: 6;
 }
 
 /* Paper panel: full-bleed past the gutters, 20 px block padding, no radius and no shadow. The

@@ -134,7 +134,7 @@ Owner request 2026-10-07. Spec `docs/specs/uf-08-add-and-reorder.md`, decision D
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0580 | Show the failed-exclusion message on the host screen after the swap sheet closes (T-0539 follow-up) | web-feature:UF-09 | T-0539 | todo | wl-build-web |
-| T-0582 | UF-11.5/11.6 re-read when the library cache arrives (cold direct load shows no groups) | web-feature:UF-11 | — | todo | wl-build-web |
+| T-0582 | UF-11.5/11.6 re-read when the library cache arrives (cold direct load shows no groups) | web-feature:UF-11 | — | doing | wl-build-web |
 
 ### Groomed from parked (2026-10-08)
 Owner request: groom 10 parked tickets and put the ones worth doing at the back of the backlog. Run after the favorites (D-0202) and add/reorder (D-0205) work. The three touch disjoint files (turbo.json + check-decision-ids; one new web-shell test; package.json/lockfile), so any order works; T-0525 changes the lockfile, so it runs the forced gate.
@@ -198,7 +198,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0638 | UF-02.1 "Not feeling it? Quick 20-min" link | web-feature:UF-02 | T-0636, T-0637 | todo | wl-build-web |
 | T-0639 | UF-04.1 Upper/Legs group chips + result count | web-feature:UF-04 | T-0608 | todo | wl-build-web |
 | T-0640 | UF-04.1 In plan / Variant / Beginner tags | web-feature:UF-04 | T-0639 | todo | wl-build-web |
-| T-0630 | Sheet stacking and portal scope before UF-08.3/UF-05.1 adopt .wl-sheet: z-index under the tab bar, an unstyled scrim when portalled to body; AccountDeletedNotice outside any state root (T-0593 review, D-0216 addendum) | web-shell | T-0593 | doing | wl-build-web |
 | T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
 | T-0661 | engine records(): a NaN weightKg or reps compares as NaN and is reported as a record; treat non-finite inputs as no set (T-0635 review) | engine | T-0635 | todo | wl-build-engine |
 | T-0663 | UF-03 list-view.swap.host.test.tsx 'rows 1-2 keep their values' times out under load (findByRole 'Set 1 weight in kg'); passes alone | web-feature:UF-03 | — | todo | wl-build-web |
