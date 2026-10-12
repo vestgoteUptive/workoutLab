@@ -96,6 +96,8 @@ export interface CachedAreaTarget {
 export interface CachedProfile {
   userId: string;
   profile: EngineProfile;
+  /** Bar and plate sizes (D-0218, T-0632). Optional: a row written by an older build has none. */
+  barbell?: { barKg: number; platesKg: number[] };
 }
 
 /** The UF-04 how-to text of one exercise, plus its variant ids (D-0067 §3, NFR-OFF-1).
