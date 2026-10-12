@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.4, UF-09.6]
 decisions: [D-0212, D-0066, D-0118]
 deps: [T-0620]
-status: doing
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0212 §1.4, D-0213). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Spec: docs/specs/cobalt-mock-behaviour.md §1.4. Display of data the machine already holds; no engine or data change. Never in parallel with T-0580. -->
 ## Why
@@ -59,8 +59,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-09 e2e specs green · commit messages start with `T-0621` and cite UF-09.1/UF-09.4/UF-09.6.
 
 ## Build / accept log
-- Built: Target hit (confirm-set), done line + "Set-up time" label (next-exercise), First up (get-ready); strings in uf-09.ts; `.wl-uf09__note` CSS.
-- AC→test: all in `__tests__/t0621.status-lines.test.tsx` (14 tests): AC1 5 cases, AC2/AC5/AC6 six cases (incl. resumed), AC3 timer by name, AC4 warm-up and none. No existing test renamed; unnamed `getByRole("timer")` still matches.
-- Planted faults (each caught): `>` for `>=`; drop back-off guard; drop aria-labelledby; prev item = current; warm-up seconds hard-coded.
-- Deviation: no `wl-type-caption` role exists, so all lines use `wl-type-label`.
-- Gate: -w typecheck/lint/test green (4716 tests), format:check 0, check-all 0, UF-09 e2e 38 passed.
+Archived in `docs/tickets/log/T-0621.md` (D-0157).

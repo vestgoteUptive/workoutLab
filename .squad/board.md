@@ -174,7 +174,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | todo | wl-build-web |
-| T-0621 | UF-09 status lines: Target hit, done line, Set-up time, First up (mock behaviour) | web-feature:UF-09 | T-0620 | doing | wl-build-web |
 | T-0623 | UF-02.1 week row + week line (mock behaviour) | web-feature:UF-02 | T-0601 | todo | wl-build-web |
 | T-0624 | Web: retire the legacy fallback | web-shell | T-0595…T-0613, T-0615, T-0616 | todo | wl-build-web |
 | T-0625 | Tokens: retire Chalk & Iron keys and fonts (contract) | design | T-0624, T-0617, T-0585, T-0614 | todo | wl-design |
