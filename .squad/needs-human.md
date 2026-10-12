@@ -49,7 +49,7 @@ Phase 2 grooming (2026-10-09, D-0210–D-0213). The parked draft plan had five o
 - "Should the landing page, emails and icon follow?": the landing page is done (T-0584). The emails and icon are tickets T-0617 and T-0616. Its PATCH step is now H-35.
 - "Include the mock's behaviour and copy?": answered on 2026-10-09 (include). D-0212 says what is in and what is out, and H-34 asks only about what's out.
 
-- [ ] **H-34 Cobalt mock: items that are not being built (non-blocking).**
+- [x] **H-34 Cobalt mock: items that are not being built (non-blocking).**
   - **Being built:** the Today week row, the "Lifting" captions, "Done", "Save · start rest", the paused wording, the status lines and the "Exercises" tab name (D-0212, `docs/specs/cobalt-mock-behaviour.md` §1).
   - **Rejected,** because each conflicts with a principle, a contract or a decision (§2):
     - weekly set counts;

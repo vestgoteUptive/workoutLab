@@ -48,6 +48,7 @@ Checklist (D-0197 §7):
 - `apps/web/src/features/UF-09/**` (lane)
 - `apps/web/src/lib/i18n/flows/uf-09.ts` (own flow file)
 - `tests/e2e/uf-09-focus.spec.ts`, `tests/e2e/uf-09-ready.spec.ts`, `tests/e2e/uf-09-offline.spec.ts`, `tests/e2e/uf-09-do-later.spec.ts` (listed extras, name queries only)
+- `apps/web/src/features/UF-03/__tests__/list-view.logging.host.test.tsx`, `tests/e2e/uf-02-today.spec.ts` (orchestrator grant: "Done set" → "Done" name query only)
 - `docs/tickets/T-0620-uf09-wording-done-paused.md` (log only)
 
 ## Contract impact
