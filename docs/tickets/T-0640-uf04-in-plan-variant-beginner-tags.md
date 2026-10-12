@@ -5,7 +5,7 @@ lane: web-feature:UF-04
 screens: [UF-04.1]
 decisions: [D-0217, D-0199, D-0202, D-0212]
 deps: [T-0639]
-status: todo
+status: doing
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Exercises" (#turn-3). Spec: docs/specs/cobalt-mock-behaviour.md §3.4. Meanings are defaults (H-39). -->
 
