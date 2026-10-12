@@ -477,3 +477,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0639 | UF-04.1 Upper/Legs group chips + result count | web-feature:UF-04 | T-0608 | done | wl-build-web |
 | T-0640 | UF-04.1 In plan / Variant / Beginner tags | web-feature:UF-04 | T-0639 | done | wl-build-web |
 | T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | done | wl-build-web |
+| T-0624 | Web: retire the legacy fallback | web-shell | T-0595…T-0613, T-0615, T-0616 | done | wl-build-web |
