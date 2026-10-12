@@ -15,9 +15,9 @@ cleanupVitestTmp(redirectVitestTmp(import.meta.url));
 // `import` of the @workoutlab/design-tokens package: Vite loads this config file
 // through Node's native ESM loader, which can't load that package's TS entry point.
 const tokensJson = createRequire(import.meta.url)("@workoutlab/design-tokens/tokens.json") as {
-  color: Record<string, string>;
+  color: { plan: { bg: string } };
 };
-const bg: string = tokensJson.color.bg!;
+const bg: string = tokensJson.color.plan.bg;
 
 /** Injects the theme-color meta tag and the CSP meta tag at build time only (AC-A2 §body css
  * comes from tokens.css; AC-A3 theme-color; AC-A10 CSP). Neither literal ever lives in the

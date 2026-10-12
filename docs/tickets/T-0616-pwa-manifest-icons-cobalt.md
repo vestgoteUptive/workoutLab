@@ -47,3 +47,6 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0616`.
 
 ## Build / accept log
+- Built: vite.config.ts and gen-icons.mjs read plan.bg/plan.ink. AC1/AC2 = build.test.ts (manifest, theme-color meta, CSP test unchanged); AC3/AC4 = scripts/gen-icons.test.ts (colours, centre/corner pixels via PNG decode, 80% safe zone, grep); AC5 = existing e2e uf-02-today.spec.ts:693 (plan.bg on /) and uf-09-focus.spec.ts:1575 (lift.bg), 3 passed, no edit needed.
+- Planted faults (all caught): roundel fill=bg, maskable margin 0.05, ink->accent, vite bg flat read, vite bg literal.
+- Gate: typecheck/lint/test exit 0, test:repo-checks 0, format:check 0, check-all 0. Full e2e not run (per tier).

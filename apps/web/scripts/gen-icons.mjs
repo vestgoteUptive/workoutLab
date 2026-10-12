@@ -9,17 +9,18 @@ import { Resvg } from "@resvg/resvg-js";
 // `require()` the raw JSON, not an `import` of the package: Vite loads its config (and this
 // file with it) through Node's native ESM loader, which can't load the package's TS entry.
 const tokensJson = createRequire(import.meta.url)("@workoutlab/design-tokens/tokens.json");
-const bg = tokensJson.color.bg;
-const accent = tokensJson.color.accent;
+// T-0616 (D-0208, D-0211): the plan palette (cobalt square, white roundel).
+const bg = tokensJson.color.plan.bg;
+const ink = tokensJson.color.plan.ink;
 
-/** A simple square badge: `bg` fill, an `accent` roundel with margin `marginRatio * size`. */
+/** A simple square badge: `bg` fill, an `ink` roundel with margin `marginRatio * size`. */
 export function iconSvg(size, marginRatio) {
   const m = size * marginRatio;
   const r = (size - 2 * m) / 2;
   const c = size / 2;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <rect width="${size}" height="${size}" fill="${bg}" />
-  <circle cx="${c}" cy="${c}" r="${r}" fill="${accent}" />
+  <circle cx="${c}" cy="${c}" r="${r}" fill="${ink}" />
 </svg>`;
 }
 
