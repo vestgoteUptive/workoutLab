@@ -12,9 +12,9 @@ const boxStyle: CSSProperties = {
   gap: "12px",
   margin: "24px 16px",
   padding: "16px",
-  background: "var(--wl-color-surface)",
-  color: "var(--wl-color-text)",
-  border: "1px solid var(--wl-color-line-strong)",
+  background: "var(--wl-raise)",
+  color: "var(--wl-ink)",
+  border: "1px solid var(--wl-line)",
   borderRadius: "8px",
 };
 
@@ -23,8 +23,8 @@ const buttonStyle: CSSProperties = {
   minHeight: "44px",
   padding: "0 16px",
   background: "transparent",
-  color: "var(--wl-color-accent)",
-  border: "1px solid var(--wl-color-line-strong)",
+  color: "var(--wl-action)",
+  border: "1px solid var(--wl-line)",
   borderRadius: "6px",
   font: "inherit",
   cursor: "pointer",

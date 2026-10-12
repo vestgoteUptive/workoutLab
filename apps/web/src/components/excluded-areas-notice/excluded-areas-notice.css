@@ -5,11 +5,11 @@
   gap: 10px;
   margin: 0;
   padding: 12px 14px;
-  background: var(--wl-color-surface-2);
-  border: 1px solid var(--wl-color-line);
+  background: var(--wl-raise);
+  border: 1px solid var(--wl-line);
   border-radius: 12px;
-  color: var(--wl-color-text-muted);
-  font-family: var(--wl-font-body);
+  color: var(--wl-ink-muted);
+  font-family: var(--wl-font);
   font-weight: 400;
   font-size: 0.875rem;
   line-height: 1.4;

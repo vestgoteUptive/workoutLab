@@ -38,6 +38,6 @@ describe("T-0593 AC7 excluded-areas notice CSS", () => {
     expect(scoped).toMatch(/color: var\(--wl-ink\)/);
     expect(scoped).toMatch(/border-radius: var\(--wl-radius-tile\)/);
     expect(scoped).not.toMatch(/--wl-color-|warn/);
-    expect(css.slice(0, css.indexOf("Cobalt (T-0593"))).toMatch(/--wl-color-surface-2/);
+    expect(css.slice(0, css.indexOf("Cobalt (T-0593"))).toMatch(/var\(--wl-raise\)/);
   });
 });

@@ -53,3 +53,13 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · full web e2e suite green · commit messages start with `T-0624`.
 
 ## Build / accept log
+
+### T-0624 build (frontend-dev, base a646ef4, tree clean)
+- Mapped every flat read to the generic variables (bg/surface/surface-2/text/text-muted/line/line-strong/accent/on-accent/warn/fonts -> --wl-bg/raise/ink/ink-muted/line/action/on-action/attention/font) in main.css, checkbox.css, excluded-areas-notice.css, offline-status.css, RouteBoundary.tsx, UF-09/uf-09.css. `:root` now shares the plan block (`:root, [data-wl-state="plan"]`); the 20 px default gutter is the plan value (the <360 px override stays).
+- Unscoped legacy rules (.wl-card, buttons, .wl-row, .wl-input, h1/h2, .wl-label ...) are NOT deleted: grep shows each class is used by 8-32 non-test files, and the state-scoped rules do not restate every property. They now read the generic variables. Deviation from "legacy rules go", deliberate.
+- UF-09.css `accent-hover` (saving primary) has no generic equivalent; it now reads --wl-action (no visible hover tint).
+- AC1: `src/app/__tests__/no-flat-reads.test.ts` (also catches a dynamic `--wl-color-coverage-${`). Planted `var(--wl-color-text-muted)` in offline-status.css: red, restored from backup. Allow-list: features/UF-06/BalanceCard.tsx:49 (feature lane, follow-up).
+- AC2: cobalt-state.spec.ts "AC6 every route root carries data-wl-state" (welcome steps, /account, all tab/plan/library/balance/progress routes, routine editor, setup, UF-09.3, rest, List view, summary). Planted: removed data-wl-state from UF-03 summary root: red; restored.
+- AC3: inverted T-0589 AC3 (no state now resolves to plan.bg/ink, body bg, plan font). Planted `:root-x`: red, restored. AC4 gutter pin "no state 20" -> 28 at 390 px (340 px still 20).
+- Legacy pins changed deliberately (main-css.test.ts): h1/h2/body font names; .wl-input border; .wl-button--primary colours + focus outline; T-0589 AC1 ":root keeps Chalk & Iron" replaced by ":root is plan"; T-0592 AC8 "legacy rules read no generic variable" narrowed to radius/space/selected/focus; T-0593 .wl-input legacy border name; account-deleted base surface. Also Checkbox.test, checkbox-cobalt.test, ExcludedAreasNotice tests, OfflineStatus.test, build.test.ts (body reads --wl-bg/--wl-ink): colour names only.
+- Found: UF-09/seams.tsx:131 seam loading placeholder carries data-screen-id UF-03.1/UF-05.1 with no data-wl-state (transient). Follow-up for UF-09 lane.

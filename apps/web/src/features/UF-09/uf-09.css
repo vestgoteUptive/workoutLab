@@ -8,9 +8,9 @@
   min-height: 100dvh;
   box-sizing: border-box;
   padding: 16px;
-  font-family: var(--wl-font-body);
-  color: var(--wl-color-text);
-  background: var(--wl-color-bg);
+  font-family: var(--wl-font);
+  color: var(--wl-ink);
+  background: var(--wl-bg);
 }
 
 .wl-uf09__chrome {
@@ -37,7 +37,7 @@
 .wl-uf09__primary:focus-visible,
 .wl-uf09__secondary:focus-visible,
 .wl-uf09__home:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
+  outline: 2px solid var(--wl-action);
   outline-offset: 2px;
 }
 
@@ -53,14 +53,14 @@
 
 .wl-uf09__title {
   margin: 0;
-  font-family: var(--wl-font-display);
+  font-family: var(--wl-font);
   font-size: 32px;
   line-height: 1.1;
 }
 
 .wl-uf09__timer {
   margin: 0;
-  font-family: var(--wl-font-display);
+  font-family: var(--wl-font);
   font-size: 64px;
   font-variant-numeric: tabular-nums;
 }
@@ -68,23 +68,23 @@
 .wl-uf09__primary {
   padding: 0 24px;
   border: 0;
-  background: var(--wl-color-accent);
-  color: var(--wl-color-on-accent);
+  background: var(--wl-action);
+  color: var(--wl-on-action);
 }
 
 .wl-uf09__home {
   align-self: flex-start;
   padding: 0 16px;
-  color: var(--wl-color-accent);
+  color: var(--wl-action);
   text-decoration: none;
 }
 
 /* A seam entry on UF-09.6 / UF-09.9 (T-0304e): a quiet button under the primary one. */
 .wl-uf09__secondary {
   padding: 0 16px;
-  border: 1px solid var(--wl-color-line-strong);
+  border: 1px solid var(--wl-line);
   background: transparent;
-  color: var(--wl-color-text);
+  color: var(--wl-ink);
 }
 
 /* UF-09.3 Current set (T-0304b, D-0118 §9). */
@@ -98,12 +98,12 @@
 
 .wl-uf09__set-line,
 .wl-uf09__state {
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
   font-size: 18px;
 }
 
 .wl-uf09__load {
-  font-family: var(--wl-font-display);
+  font-family: var(--wl-font);
   font-size: 48px;
   line-height: 1.1;
 }
@@ -113,20 +113,20 @@
 }
 
 .wl-uf09__ask {
-  color: var(--wl-color-warn);
+  color: var(--wl-attention);
 }
 
 .wl-uf09__cue {
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
 }
 
 .wl-uf09__status {
   min-height: 1.5em;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
 }
 
 .wl-uf09__primary[data-state="saving"] {
-  background: var(--wl-color-accent-hover);
+  background: var(--wl-action);
 }
 
 /* The chrome announcer (T-0304f, D-0118 §10): read by screen readers, never seen. */
@@ -167,7 +167,7 @@
   display: flex;
   flex-direction: column;
   margin: 0;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
   font-size: 14px;
 }
 
@@ -203,22 +203,22 @@
   box-sizing: border-box;
   margin: 0;
   padding: 16px;
-  border: 1px solid var(--wl-color-line);
+  border: 1px solid var(--wl-line);
   border-radius: 14px;
-  background: var(--wl-color-surface);
+  background: var(--wl-raise);
 }
 
 .wl-resume-card__title {
   margin: 0;
-  font-family: var(--wl-font-display);
+  font-family: var(--wl-font);
   font-size: 20px;
   line-height: 1.2;
-  color: var(--wl-color-text);
+  color: var(--wl-ink);
 }
 
 .wl-resume-card__line {
   margin: 0;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
   font-size: 14px;
 }
 
@@ -230,14 +230,14 @@
   min-height: 44px;
   padding: 0 16px;
   border-radius: 10px;
-  background: var(--wl-color-accent);
-  color: var(--wl-color-on-accent);
+  background: var(--wl-action);
+  color: var(--wl-on-action);
   font-weight: 600;
   text-decoration: none;
 }
 
 .wl-resume-card__action:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
+  outline: 2px solid var(--wl-action);
   outline-offset: 2px;
 }
 
@@ -245,8 +245,8 @@
 .wl-uf09__move-error {
   margin: 0;
   padding: 12px 16px;
-  background: var(--wl-color-surface-2);
-  color: var(--wl-color-text);
+  background: var(--wl-raise);
+  color: var(--wl-ink);
 }
 
 /* ---- T-0595 UF-09.3 Current set, UF-09.4 Confirm set: the lift state (D-0208, D-0211, D-0216) ----
@@ -873,7 +873,7 @@
   justify-content: center;
   gap: 0.5rem;
   margin: 0;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
   text-align: center;
 }
 
@@ -881,6 +881,6 @@
 .wl-uf09__plates {
   margin: 0.5rem 0 0;
   padding-block: 0.5rem;
-  border-block: 1px solid var(--wl-color-line);
-  color: var(--wl-color-text-muted);
+  border-block: 1px solid var(--wl-line);
+  color: var(--wl-ink-muted);
 }

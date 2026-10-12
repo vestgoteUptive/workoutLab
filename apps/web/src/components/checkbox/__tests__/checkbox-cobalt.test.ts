@@ -45,8 +45,8 @@ describe("T-0593 AC7 checkbox CSS", () => {
     expect(scoped).not.toMatch(/--wl-color-/);
     // The legacy look (before the scoped block) keeps the text-muted border and the accent fill.
     const legacy = css.slice(0, css.indexOf("Cobalt (T-0593"));
-    expect(legacy).toMatch(/border: 2px solid var\(--wl-color-text-muted\)/);
-    expect(legacy).toMatch(/background: var\(--wl-color-accent\)/);
+    expect(legacy).toMatch(/border: 2px solid var\(--wl-ink-muted\)/);
+    expect(legacy).toMatch(/background: var\(--wl-action\)/);
     // Every new rule starts at a state root or paper.
     for (const m of scoped.matchAll(/([^{}]+)\{[^{}]*\}/g)) {
       expect(m[1]!.trim()).toMatch(/^:is\(\[data-wl-state\], \.wl-paper\)/);
