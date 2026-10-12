@@ -83,6 +83,25 @@ function quadsSets() {
   }));
 }
 
+/** T-0623: one hard set completed a moment ago, in its own session (today's local date). */
+function setsToday() {
+  const completedAt = new Date().toISOString();
+  return [
+    {
+      client_id: "uf02-week-today-0",
+      session_id: "S-today",
+      exercise_id: SQUAT,
+      is_warmup: false,
+      completed_at: completedAt,
+      edited_at: completedAt,
+      deleted_at: null,
+      reps: 8,
+      weight_kg: 60,
+      duration_s: null,
+    },
+  ];
+}
+
 /** The AC-11 seed, signed in. Leaves the page on `/`. */
 async function seed(page: Page): Promise<void> {
   await mockSupabaseData(page, {
@@ -603,7 +622,7 @@ const SCREENS = [
 /** The seed of the cases above with the sets moved `daysAgo` days back (0 sets for `none`). */
 async function seedCase(
   page: Page,
-  kind: "recent" | "ten-days-off" | "none",
+  kind: "recent" | "ten-days-off" | "none" | "returned",
   checkin = false,
 ): Promise<void> {
   const completedAt = new Date(Date.now() - 20 * DAY_MS).toISOString();
@@ -622,7 +641,16 @@ async function seedCase(
         ? quadsSets()
         : kind === "none"
           ? []
-          : quadsSets().map((s) => ({ ...s, completed_at: completedAt, edited_at: completedAt })),
+          : kind === "returned"
+            ? [
+                ...quadsSets().map((s) => ({
+                  ...s,
+                  completed_at: completedAt,
+                  edited_at: completedAt,
+                })),
+                ...setsToday(),
+              ]
+            : quadsSets().map((s) => ({ ...s, completed_at: completedAt, edited_at: completedAt })),
     exercises: [exercise(SQUAT, "compound"), exercise(FLY, "isolation")],
     exerciseAreas: [
       { exercise_id: SQUAT, area_id: "quads", weight: 1 },
@@ -928,6 +956,27 @@ test.describe("T-0601 AC6 contrast (390 × 844)", () => {
     expect(tokenRatio(PLAN["ink-muted"]!, PLAN.bg!)).toBe(5.9);
   });
 
+  test("T-0623 AC5: a done letter is plan.ink (8.6), rest and upcoming letters plan.ink-muted (5.9)", async ({
+    page,
+  }) => {
+    await seedCase(page, "returned");
+    await goScreen(page, "/", TODAY);
+    const week = page.locator('[data-part="week"]');
+    await expect(week.locator("li")).toHaveCount(7);
+    const done = week.locator('li[data-status="done"] > span').first();
+    const muted = week
+      .locator('li[data-status="rest"] > span, li[data-status="upcoming"] > span')
+      .first();
+    const color = (l: typeof done) => l.evaluate((el) => getComputedStyle(el.parentElement!).color);
+    expect(await color(done)).toBe(rgbOf(PLAN.ink!));
+    expect(await color(muted)).toBe(rgbOf(PLAN["ink-muted"]!));
+    expect(tokenRatio(PLAN.ink!, PLAN.bg!)).toBe(8.6);
+    await expect(week.locator('li[aria-current="date"]')).toHaveCSS(
+      "text-decoration-line",
+      "underline",
+    );
+  });
+
   for (const withCheckin of [false, true]) {
     test(`axe colour-contrast has 0 violations ${withCheckin ? "with" : "without"} a pending check-in`, async ({
       page,
@@ -1067,6 +1116,56 @@ test.describe("T-0601 AC8 the cases render in plan (390 × 844)", () => {
     await expectPlanToday(page);
   });
 
+  test("T-0623 AC7 zero history: every past day is rest and the count is 0", async ({ page }) => {
+    await seedCase(page, "none");
+    const week = page.locator('[data-part="week"]');
+    await expect(week.locator("li")).toHaveCount(7);
+    await expect(week.locator('li[data-status="done"]')).toHaveCount(0);
+    await expect(week.locator('li[aria-current="date"]')).toHaveAttribute("data-status", "none");
+    await expect(page.locator('[data-part="date"]')).toHaveText(/ — 0 of \d(–\d)? done this week$/);
+    const past = new Date().getDay() === 0 ? 6 : new Date().getDay() - 1;
+    await expect(week.locator('li[data-status="rest"]')).toHaveCount(past);
+  });
+
+  test("T-0623 AC7 returning after 10 days off with one set today: only today is done", async ({
+    page,
+  }) => {
+    await seedCase(page, "returned");
+    const week = page.locator('[data-part="week"]');
+    await expect(week.locator('li[data-status="done"]')).toHaveCount(1);
+    await expect(week.locator('li[aria-current="date"]')).toHaveAttribute("data-status", "done");
+    await expect(page.locator('[data-part="date"]')).toHaveText(/ — 1 of \d(–\d)? done this week$/);
+    await expect(page.locator('[data-part="no-workouts"]')).toHaveCount(0);
+  });
+
+  test("T-0623 AC7 offline: the row renders from the first cache read, no spinner", async ({
+    page,
+    context,
+  }) => {
+    await seedCase(page, "returned");
+    await expect(page.locator('[data-part="week"] li[data-status="done"]')).toHaveCount(1);
+    await expect
+      .poll(() => cacheCounts(page))
+      .toMatchObject({ library: 2, targets: 9, profile: 1 });
+    await waitForPrecache(page);
+    await context.setOffline(true);
+    await page.reload();
+    await expect(page.locator('[data-part="week"] li[data-status="done"]')).toHaveCount(1, {
+      timeout: 3000,
+    });
+    await expect(page.locator('[data-part="date"]')).toHaveText(/ — 1 of \d(–\d)? done this week$/);
+  });
+
+  test("T-0623 AC7 online: a set synced from another device updates the row after the refresh", async ({
+    page,
+  }) => {
+    await seedCase(page, "none");
+    await expect(page.locator('[data-part="week"] li[data-status="done"]')).toHaveCount(0);
+    await seedCase(page, "returned");
+    await expect(page.locator('[data-part="week"] li[data-status="done"]')).toHaveCount(1);
+    await expect(page.locator('[data-part="date"]')).toHaveText(/ — 1 of \d(–\d)? done this week$/);
+  });
+
   test("a pending check-in", async ({ page }) => {
     await mockSupabaseData(page, UF11_FIXTURES);
     await page.goto("/");
@@ -1126,7 +1225,7 @@ test.describe("T-0601 AC9 canvas compare (390 × 844)", () => {
   };
 
   test("Today (turn-3)", async ({ page }, testInfo) => {
-    await seedCase(page, "recent");
+    await seedCase(page, "returned");
     await goScreen(page, "/", TODAY);
     await run(page, testInfo, "turn-3", "Today", "uf02-1-today");
   });
