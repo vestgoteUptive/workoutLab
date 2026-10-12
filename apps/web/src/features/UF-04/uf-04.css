@@ -37,6 +37,10 @@
   gap: 8px;
 }
 
+.wl-uf04-browse__count {
+  margin: 0;
+}
+
 .wl-uf04-browse__list {
   margin: 0;
   padding: 0;

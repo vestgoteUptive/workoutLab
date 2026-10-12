@@ -75,7 +75,7 @@ test.describe("AC-17 accessibility", () => {
     await expect(page.locator('[data-field="name"]')).toHaveCount(24);
     const targets = page.locator(".wl-chip, .wl-uf04-browse__list li");
     const count = await targets.count();
-    expect(count).toBe(11 + 24);
+    expect(count).toBe(13 + 24);
     for (let i = 0; i < count; i += 1) {
       const box = await targets.nth(i).boundingBox();
       expect(box, `target ${i}`).not.toBeNull();
@@ -109,6 +109,31 @@ test.describe("AC-17 keyboard happy path", () => {
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/library\/leg-curl$/);
     await expect(page.getByRole("heading", { level: 1, name: "Leg curl" })).toBeVisible();
+  });
+});
+
+// T-0639 AC8 (UF-04.1): Back from a detail returns to the Legs list with the same count.
+test.describe("T-0639 group chips", () => {
+  test("AC8 Legs, open an exercise, Back returns to the Legs list with the same count", async ({
+    page,
+  }) => {
+    await openLibrary(page, "/library");
+    await expect(page.locator('[data-field="name"]')).toHaveCount(24);
+    await page.getByRole("button", { name: "Legs", exact: true }).click();
+    await expect(page).toHaveURL(/[?&]group=legs/);
+    const count = page.locator('[data-part="count"]');
+    await expect(count).toHaveText(/^\d+ results$/);
+    const before = await count.textContent();
+    const first = page.locator('[data-field="name"]').first();
+    await first.click();
+    await expect(page).toHaveURL(/\/library\/[a-z-]+$/);
+    await page.goBack();
+    await expect(page).toHaveURL(/[?&]group=legs/);
+    await expect(page.getByRole("button", { name: "Legs", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.locator('[data-part="count"]')).toHaveText(before ?? "");
   });
 });
 

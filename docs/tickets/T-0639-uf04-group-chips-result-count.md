@@ -49,3 +49,8 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-04-library.spec.ts` green · commit messages start with `T-0639` and cite UF-04.1.
 
 ## Build / accept log
+
+- 2026-10-12 build: Library.tsx group chips (GROUPS, `group=` param, area wins, replace), `<p role="status" data-part="count">` rendered only when rows > 0; copy in flows/uf-04.ts. Updated chip-order/count assertions in browse.test.tsx, cobalt.test.tsx and the 11→13 chip count in the e2e spec.
+- AC→test: AC1-AC7, AC9 `__tests__/groups.test.tsx` (AC7 runs offline throughout); AC8 `uf-04-library.spec.ts` "T-0639 group chips"; AC10 whole UF-04 suite + 34 UF-04 e2e green.
+- Planted faults (all caught): group match `>0` (AC2, after adding a 0.5 secondary to plank), drop `delete("area")` (AC1), drop `delete("group")` (AC3, AC6), drop area-wins (AC4), always-render count (AC6), remove role=status (AC6). The e2e AC8 had no planted fault.
+- Gate: `-w typecheck lint test` exit 0; format:check 0; check-all 0; UF-04 e2e 34 passed.
