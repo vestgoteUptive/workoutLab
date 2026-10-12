@@ -11,7 +11,7 @@ export function RoutineEditor() {
   const { routineId } = useParams();
   const editor = useRoutineEditor(routineId);
   return (
-    <div data-screen-id="UF-07.1" className="wl-routine-editor">
+    <div data-screen-id="UF-07.1" data-wl-state="plan" className="wl-routine-editor wl-page">
       <h1>{en.screens.routineEditor}</h1>
       {editor.loadFailed ? (
         <>
