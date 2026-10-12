@@ -438,6 +438,7 @@
   line-height: 1.4;
 }
 
+.wl-uf08__status:empty,
 .wl-uf08__removed:empty,
 .wl-uf08__sheet-status:empty {
   position: absolute;
@@ -449,13 +450,6 @@
   border: 0;
   clip-path: inset(50%);
   white-space: nowrap;
-}
-
-/* Kept from before T-0600: tests/e2e/uf-08-excluded.spec.ts reads `getByRole("status")` and needs
-   this one empty region out of the accessibility tree. Follow-up: scope that locator, then give
-   this region the same visually-hidden form as the two above. */
-.wl-uf08__status:empty {
-  display: none;
 }
 
 .wl-uf08__actions {

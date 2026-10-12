@@ -1838,6 +1838,17 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
     expect(await read()).toEqual({ root: "0s", sheet: "0s", scrim: "0s" });
   });
 
+  test("AC6 the empty page status stays in the accessibility tree (a live region is never display:none)", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const status = page.locator('[data-part="status"]');
+    await expect(status).toHaveText("");
+    await expect(page.getByRole("status")).toHaveCount(2);
+    expect(await status.evaluate((el) => getComputedStyle(el).display)).not.toBe("none");
+  });
+
   test("AC7 'No exercises left' is a plain ink line in plan, and Remove still removes", async ({
     page,
   }) => {
