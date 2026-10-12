@@ -186,7 +186,7 @@ describe("AC-7 back to focus mode", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Romanian deadlift");
     expect(setLine()).toBe("Lifting · set 2 of 3");
 
-    fireEvent.click(screen.getByRole("button", { name: "Done set" }));
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
     await waitFor(async () => expect((await fresh().sets.toArray()).length).toBe(6));
     const live = (await fresh().sets.toArray()).filter((s) => s.deletedAt === null);
     const positions = live.map((s) => `${s.exerciseId}:${s.setIndex}`);
