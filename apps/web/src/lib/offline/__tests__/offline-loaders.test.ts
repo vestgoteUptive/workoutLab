@@ -244,9 +244,18 @@ describe("AC-9 the export surface", () => {
     "useFavoriteRows",
   ];
 
+  // T-0632 (D-0218): the bar and plates read, with its default.
+  const T0632_EXPORTS = ["loadBarbell", "DEFAULT_BARBELL"];
+
   it("exports exactly the v1 surface plus the 3 refreshes and 5 loaders added here, plus T-0536's and T-0567's", () => {
     expect(Object.keys(offlineIndex).sort()).toEqual(
-      [...V1_EXPORTS, ...T0319_EXPORTS, ...T0536_EXPORTS, ...T0567_EXPORTS].sort(),
+      [
+        ...V1_EXPORTS,
+        ...T0319_EXPORTS,
+        ...T0536_EXPORTS,
+        ...T0567_EXPORTS,
+        ...T0632_EXPORTS,
+      ].sort(),
     );
   });
 

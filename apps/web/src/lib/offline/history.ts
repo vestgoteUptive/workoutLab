@@ -9,11 +9,13 @@ import { windowStartInstant } from "../format/intl.js";
 import { supabase } from "../auth/client.js";
 import {
   toAreaTarget,
+  toBarbell,
   toEngineProfile,
   toHistorySet,
   toLibraryExercise,
   toPlanCheckin,
   type AreaTarget,
+  type Barbell,
   type EngineProfile,
   type LibraryExercise,
   type Tables,
@@ -348,8 +350,13 @@ export async function refreshProfile(): Promise<void> {
   if (!data) return;
 
   const mapped = toEngineProfile(data as Tables<"profiles">);
+  // A row without the D-0218 columns (an older server or fixture) caches no barbell, so
+  // `loadBarbell` falls back to the default instead of the whole refresh failing.
+  const profileRow = data as Tables<"profiles">;
+  const barbell =
+    profileRow.bar_kg == null || profileRow.plates_kg == null ? undefined : toBarbell(profileRow);
   if (!cacheWriteAllowed(gen)) return;
-  await db.profileCache.put({ userId, profile: mapped });
+  await db.profileCache.put({ userId, profile: mapped, ...(barbell ? { barbell } : {}) });
 }
 
 /** Runs every read-side refresh together (an online start, AC-C16 + T-0319 AC-8). */
@@ -386,6 +393,29 @@ export async function loadProfile(): Promise<EngineProfile | null> {
   if (!userId) return null;
   const row = await offlineDb().profileCache.get(userId);
   return row?.profile ?? null;
+}
+
+/** The plain 20 kg bar with the usual kg plates, used when nothing is cached (D-0218). */
+export const DEFAULT_BARBELL: Barbell = {
+  barKg: 20,
+  platesKg: [25, 20, 15, 10, 5, 2.5, 1.25],
+};
+
+/** The cached bar and plates for the current user, else the default. Never rejects. */
+export async function loadBarbell(): Promise<Barbell> {
+  const fallback = (): Barbell => ({
+    barKg: DEFAULT_BARBELL.barKg,
+    platesKg: [...DEFAULT_BARBELL.platesKg],
+  });
+  try {
+    const userId = currentUserId();
+    if (!userId) return fallback();
+    const row = await offlineDb().profileCache.get(userId);
+    if (!row?.barbell) return fallback();
+    return { barKg: row.barbell.barKg, platesKg: [...row.barbell.platesKg] };
+  } catch {
+    return fallback();
+  }
 }
 
 export async function lastSyncedAt(): Promise<string | null> {

@@ -18,6 +18,8 @@ export {
   loadLibrary,
   loadTargets,
   loadProfile,
+  loadBarbell,
+  DEFAULT_BARBELL,
   lastSyncedAt,
   HISTORY_WINDOW_DAYS,
 } from "./history.js";
