@@ -1246,3 +1246,105 @@ test.describe("T-0601 AC9 canvas compare (390 × 844)", () => {
     await run(page, testInfo, "turn-5", "Workout preview", "uf02-2-preview");
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// T-0636 (UF-02.1, D-0219): the Latest PR line. Appended: the file above is append-only. The seed
+// has two sessions of one exercise, so the later one is a record (80 kg x 10, e1RM 106.7, beats an
+// earlier 90 kg x 3, 99), all relative to Date.now().
+// ---------------------------------------------------------------------------------------------
+function prSets(recordDaysAgo: number) {
+  const row = (id: string, daysAgo: number, session: string, reps: number, weight: number) => {
+    const at = new Date(Date.now() - daysAgo * DAY_MS).toISOString();
+    return {
+      client_id: id,
+      session_id: session,
+      exercise_id: SQUAT,
+      is_warmup: false,
+      completed_at: at,
+      edited_at: at,
+      deleted_at: null,
+      reps,
+      weight_kg: weight,
+      duration_s: null,
+    };
+  };
+  return [
+    row("uf02-pr-0", recordDaysAgo + 10, "S-pr-a", 3, 90),
+    row("uf02-pr-1", recordDaysAgo, "S-pr-b", 10, 80),
+  ];
+}
+
+async function seedPr(page: Page, recordDaysAgo: number): Promise<void> {
+  const profileRow = {
+    ...FAKE_PROFILE_ROW,
+    onboarded_at: new Date().toISOString(),
+    plan_changed_at: new Date().toISOString(),
+  };
+  await mockSupabaseData(page, {
+    sets: prSets(recordDaysAgo),
+    exercises: [exercise(SQUAT, "compound"), exercise(FLY, "isolation")],
+    exerciseAreas: [
+      { exercise_id: SQUAT, area_id: "quads", weight: 1 },
+      { exercise_id: FLY, area_id: "chest", weight: 1 },
+    ],
+    areaTargets: AREAS.map((area) => ({
+      area_id: area,
+      sets_per_14d: 10,
+      source: "default",
+      updated_at: "2026-09-01T00:00:00.000Z",
+    })),
+    profile: [profileRow],
+  });
+  await mockProfilePresent(page, profileRow);
+  await page.goto("/");
+  await injectSession(page);
+  await page.goto("/");
+}
+
+test.describe("T-0636 Latest PR", () => {
+  test("AC9 returning after 10 days off: the record from 10 days ago shows, above Start", async ({
+    page,
+  }) => {
+    await seedPr(page, 10);
+    const line = page.locator('[data-part="latest-pr"]');
+    await expect(line).toHaveText(/^Latest PR\s+e2e-goblet-squat 80\skg × 10$/);
+    await expect(page.locator('[data-part="start"]')).toBeVisible();
+    expect(
+      await line.evaluate((el) => el.nextElementSibling?.getAttribute("data-part") ?? null),
+    ).toBe("start");
+  });
+
+  test("AC9 the same history 15 days later: no line", async ({ page }) => {
+    await seedPr(page, 25);
+    await expect(page.locator(TODAY)).toBeVisible();
+    await expect(page.locator('[data-part="start"]')).toBeVisible();
+    await expect(page.locator('[data-part="latest-pr"]')).toHaveCount(0);
+  });
+
+  test("AC6 offline: the line renders from the first cache read", async ({ page, context }) => {
+    await seedPr(page, 3);
+    await expect(page.locator('[data-part="latest-pr"]')).toBeVisible();
+    await expect
+      .poll(() => cacheCounts(page))
+      .toMatchObject({ history: 2, library: 2, targets: 9, profile: 1 });
+    await waitForPrecache(page);
+    await context.setOffline(true);
+    await page.reload();
+    await expect(page.locator('[data-part="latest-pr"]')).toBeVisible({ timeout: 3000 });
+  });
+
+  test("AC10 label is plan.ink-muted, value is plan.ink, axe colour-contrast 0 violations", async ({
+    page,
+  }) => {
+    await seedPr(page, 3);
+    await expect(page.locator('[data-part="latest-pr"]')).toBeVisible();
+    await settle(page, TODAY);
+    const spans = page.locator('[data-part="latest-pr"] > span');
+    expect(await spans.nth(0).evaluate((el) => getComputedStyle(el).color)).toBe(
+      rgbOf(PLAN["ink-muted"]!),
+    );
+    expect(await spans.nth(1).evaluate((el) => getComputedStyle(el).color)).toBe(rgbOf(PLAN.ink!));
+    const results = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+    expect(results.violations.map((v) => v.nodes.map((n) => n.target.join(" ")))).toEqual([]);
+  });
+});

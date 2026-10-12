@@ -47,6 +47,7 @@ import {
   loadTargets,
   refreshAll,
 } from "../../lib/offline/history.js";
+import { latestPr, type LatestPr } from "./pr.js";
 import { weekRow, type WeekRow } from "./week.js";
 
 /** D-0071 §8: the online refresh gets 3 s, then the screen stops waiting for it. */
@@ -85,6 +86,8 @@ export type TodayState =
       week: WeekRow;
       /** The cached profile's weekly rhythm, for the week line. */
       rhythm: { min: number; max: number };
+      /** T-0636: the newest engine record (rule 15) of the last 14 local days, or null. */
+      latestPr: LatestPr | null;
     };
 
 /** All nine areas have a cached target. `balance()` throws on fewer (engine `indexTargets`). */
@@ -147,6 +150,7 @@ async function readCache(
       lastSyncedAt: await syncedRead,
       week,
       rhythm: { min: profile.rhythmMin, max: profile.rhythmMax },
+      latestPr: latestPr(history, library, now, timeZone),
     };
   } catch {
     return { status: "no-plan", lastSyncedAt: await syncedRead, week };
