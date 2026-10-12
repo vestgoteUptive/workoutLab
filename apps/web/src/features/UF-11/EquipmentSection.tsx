@@ -125,8 +125,8 @@ export function EquipmentSection({ clock }: { clock: Clock }) {
   if (!loaded) return null;
   if (cold) {
     return (
-      <section className="wl-card" aria-label={a.legend}>
-        <p className="wl-muted">{a.coldCache}</p>
+      <section className="wl-card wl-account__section" aria-label={a.legend}>
+        <p className="wl-type-body">{a.coldCache}</p>
       </section>
     );
   }
@@ -169,10 +169,10 @@ export function EquipmentSection({ clock }: { clock: Clock }) {
   }
 
   return (
-    <section className="wl-card">
+    <section className="wl-card wl-account__section">
       <fieldset className="wl-account__fieldset">
-        <legend className="wl-label">{a.legend}</legend>
-        <p className="wl-muted">{a.hint}</p>
+        <legend className="wl-type-label">{a.legend}</legend>
+        <p className="wl-type-body">{a.hint}</p>
         <div className="wl-account__equipment">
           {ITEMS.map((item) => (
             <Checkbox
@@ -186,25 +186,25 @@ export function EquipmentSection({ clock }: { clock: Clock }) {
       </fieldset>
       <button
         type="button"
-        className="wl-button--primary"
-        disabled={!canSave}
+        className="wl-button--secondary"
+        aria-disabled={canSave ? undefined : "true"}
         aria-describedby={!online ? "wl-equipment-offline" : undefined}
         onClick={() => void onSave()}
       >
         {saveState === "saving" ? a.saving : a.save}
       </button>
       {!online ? (
-        <p id="wl-equipment-offline" className="wl-caption">
+        <p id="wl-equipment-offline" className="wl-type-label">
           {a.connectToSave}
         </p>
       ) : null}
       {saveState === "saved" ? (
-        <p role="status" className="wl-muted">
+        <p role="status" className="wl-type-label">
           {a.saved}
         </p>
       ) : null}
       {saveState === "failed" ? (
-        <p role="alert" className="wl-muted">
+        <p role="alert" className="wl-type-label">
           {a.saveFailed}
         </p>
       ) : null}

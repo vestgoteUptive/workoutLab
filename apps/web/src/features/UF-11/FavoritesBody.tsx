@@ -4,6 +4,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { isEligible, primaryAreas } from "@workoutlab/engine";
 import { AREAS, type Area, type LibraryExercise } from "@workoutlab/shared";
+import { CrossIcon, Icon } from "../../components/icons/index.js";
 import { en } from "../../lib/i18n/en.js";
 import { currentUserId } from "../../lib/offline/index.js";
 import { loadExcludedIds } from "../../lib/offline/excluded.js";
@@ -191,17 +192,17 @@ export function FavoritesBody() {
     const isExcluded = excluded.has(item.id);
     const lineId = lineIdOf(item);
     return (
-      <li key={item.key} className="wl-card wl-excluded__row" data-exercise-id={item.id}>
+      <li key={item.key} className="wl-row wl-excluded__row" data-exercise-id={item.id}>
         <span className="wl-excluded__text">
-          <span className="wl-plan__name">{item.name}</span>
-          {item.areas ? <span className="wl-caption">{item.areas}</span> : null}
+          <span className="wl-plan__name wl-type-row-title">{item.name}</span>
+          {item.areas ? <span className="wl-type-label">{item.areas}</span> : null}
           {item.line ? (
-            <span id={lineId} className="wl-caption">
+            <span id={lineId} className="wl-type-label">
               {item.line}
             </span>
           ) : null}
           {needle !== "" && (isFavorite || isExcluded) ? (
-            <span className="wl-caption wl-favorites__tag">
+            <span className="wl-type-label wl-favorites__tag">
               {isFavorite ? s.favoriteTag : s.excludedTag}
             </span>
           ) : null}
@@ -215,19 +216,20 @@ export function FavoritesBody() {
 
   return (
     <div className="wl-excluded wl-favorites">
-      <p className="wl-muted">{s.lead}</p>
+      <p className="wl-type-body">{s.lead}</p>
       {online ? null : (
-        <p id={offlineId} className="wl-caption">
+        <p id={offlineId} className="wl-type-label">
           {s.connectToChange}
         </p>
       )}
       <div className="wl-excluded__search">
-        <label className="wl-label" htmlFor={`${offlineId}-q`}>
+        <label className="wl-type-label" htmlFor={`${offlineId}-q`}>
           {s.searchLabel}
         </label>
         <div className="wl-excluded__field">
           <input
             id={`${offlineId}-q`}
+            className="wl-input"
             ref={searchRef}
             type="search"
             value={query}
@@ -244,19 +246,17 @@ export function FavoritesBody() {
                 searchRef.current?.focus();
               }}
             >
-              <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
-                <path d="M6 6l12 12M18 6L6 18" />
-              </svg>
+              <CrossIcon size={18} />
             </button>
           )}
         </div>
       </div>
       {failed ? (
         <p role="alert" className="wl-excluded__fail">
-          <svg aria-hidden focusable={false} width={20} height={20} viewBox="0 0 24 24">
+          <Icon size={20}>
             <circle cx={12} cy={12} r={9} />
             <path d="M12 11v5M12 8h.01" />
-          </svg>
+          </Icon>
           <span>{en.excluded.saveFailed}</span>
         </p>
       ) : null}
@@ -270,9 +270,9 @@ export function FavoritesBody() {
           ))}
         </ul>
       ) : loaded && library.length === 0 && !online ? (
-        <p className="wl-muted wl-excluded__empty">{s.libraryOffline}</p>
+        <p className="wl-type-body wl-excluded__empty">{s.libraryOffline}</p>
       ) : visible.length === 0 ? (
-        <p className="wl-muted wl-excluded__empty">
+        <p className="wl-type-body wl-excluded__empty">
           {needle === "" ? s.emptyNone : s.emptyQuery(query.trim())}
         </p>
       ) : needle === "" ? (
@@ -281,7 +281,7 @@ export function FavoritesBody() {
             const hid = `${offlineId}-g-${g.area}`;
             return (
               <section key={g.area} className="wl-card" aria-labelledby={hid}>
-                <h2 id={hid} className="wl-label">
+                <h2 id={hid} className="wl-type-label">
                   {en.bodyMap.areas[g.area]}
                 </h2>
                 <ul className="wl-excluded__list" aria-label={en.bodyMap.areas[g.area]}>

@@ -169,12 +169,15 @@ describe("UF-11.3 Edit plan", () => {
 describe("AC5 stylesheet guard", () => {
   const css = readFileSync(resolve(__dirname, "../plan.css"), "utf8");
   const code = css.replace(/\/\*[\s\S]*?\*\//g, "");
-  // The legacy block at the end of the file (Account settings, T-0613) is exempt.
-  const own = code.slice(0, code.indexOf(".wl-plan__linkbtn"));
+  // T-0613: the legacy block is gone, so the guard covers the whole file.
+  const own = code;
   it("no raw colour and no px font size in the Cobalt part", () => {
     expect(own).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
     expect(own).not.toMatch(/rgba?\(/);
     expect(own).not.toMatch(/font-size:\s*[\d.]+px/);
+  });
+  it("reads no legacy colour variable", () => {
+    expect(own).not.toMatch(/--wl-color-/);
   });
   it("has no transition or animation", () => {
     expect(own).not.toMatch(/transition|animation/);

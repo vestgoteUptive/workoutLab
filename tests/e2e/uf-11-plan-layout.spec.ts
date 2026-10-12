@@ -473,7 +473,8 @@ test.describe("T-0612 AC5 contrast, targets, type, motion", () => {
       resolve(__dirname, "../../apps/web/src/features/UF-11/plan.css"),
       "utf8",
     ).replace(/\/\*[\s\S]*?\*\//g, "");
-    expect(css.slice(0, css.indexOf(".wl-plan__linkbtn"))).not.toMatch(/font-size:\s*[\d.]+px/);
+    // T-0613: the legacy block is gone, so the whole file is checked.
+    expect(css).not.toMatch(/font-size:\s*[\d.]+px/);
     const moving = await page.evaluate(() => {
       const out: string[] = [];
       for (const el of document.querySelectorAll("body *")) {

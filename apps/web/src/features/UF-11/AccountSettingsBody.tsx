@@ -10,6 +10,7 @@ import {
   hasUnsyncedWork,
   signOutAndClearDevice,
 } from "../../lib/account/index.js";
+import { Icon } from "../../components/icons/index.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import { EquipmentSection } from "./EquipmentSection.js";
@@ -95,6 +96,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   const [deleting, setDeleting] = useState(false);
   const deletingRef = useRef(false);
   const [deleteError, setDeleteError] = useState<DeleteError>(null);
+  const confirmed = typed.trim().toLowerCase() === a.confirmWord;
   const inputRef = useRef<HTMLInputElement>(null);
   const openRef = useRef<HTMLButtonElement>(null);
 
@@ -172,6 +174,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   }
 
   function onSignOutCancel() {
+    if (signingOut) return;
     setUnsyncedPrompt(false);
     refocusSignOut.current = true;
   }
@@ -194,6 +197,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   }
 
   function onCancel() {
+    if (deleting) return;
     setConfirming(false);
     setTyped("");
     setDeleteError(null);
@@ -201,7 +205,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
   }
 
   async function onDelete() {
-    if (deletingRef.current || !online || userId === null) return;
+    if (deletingRef.current || !online || userId === null || !confirmed) return;
     deletingRef.current = true;
     setDeleting(true);
     setDeleteError(null);
@@ -211,16 +215,16 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
     } catch {
       outcome = "failed";
     }
-    deletingRef.current = false;
     if (outcome === "deleted") {
+      // Stays true through the bounded wait in leaveToWelcome: a tap meanwhile must not re-send.
       await leaveToWelcome();
       return;
     }
+    deletingRef.current = false;
     setDeleting(false);
     setDeleteError(outcome);
   }
 
-  const confirmed = typed.trim().toLowerCase() === a.confirmWord;
   const exportDisabled = !online || exporting || userId === null;
   const deleteDisabled = !online || deleting || userId === null;
 
@@ -230,94 +234,98 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
 
   return (
     <>
-      <section className="wl-card" aria-labelledby="wl-account-title">
-        <h2 id="wl-account-title" className="wl-label">
+      <section className="wl-card wl-account__section" aria-labelledby="wl-account-title">
+        <h2 id="wl-account-title" className="wl-type-label">
           {email ? a.signedInAsLabel : a.accountLabel}
         </h2>
-        {email ? <p className="wl-account__email">{email}</p> : null}
+        {email ? <p className="wl-account__email wl-type-row-title">{email}</p> : null}
         {unsyncedPrompt ? (
-          <>
-            <p className="wl-plan__notice">
-              <svg aria-hidden focusable={false} width={20} height={20} viewBox="0 0 24 24">
+          <div className="wl-paper wl-account__unsynced">
+            <p className="wl-account__unsynced-text">
+              <Icon size={20}>
                 <circle cx={12} cy={12} r={9} />
                 <path d="M12 11v5M12 8h.01" />
-              </svg>
+              </Icon>
               <span>{a.unsyncedWarning}</span>
             </p>
             <button
               ref={anywayRef}
               type="button"
-              className="wl-button--secondary"
-              disabled={signingOut}
-              onClick={() => void doSignOut()}
+              className="wl-account__anyway"
+              aria-disabled={signingOut ? "true" : undefined}
+              onClick={() => {
+                if (!signingOut) void doSignOut();
+              }}
             >
               {signingOut ? a.signingOut : a.signOutAnyway}
             </button>
             <button
               type="button"
               className="wl-button--text"
-              disabled={signingOut}
+              aria-disabled={signingOut ? "true" : undefined}
               onClick={onSignOutCancel}
             >
               {a.cancel}
             </button>
-          </>
+          </div>
         ) : (
           <button
             ref={signOutRef}
             type="button"
-            className="wl-button--secondary wl-plan__linkbtn"
-            disabled={signingOut || userId === null}
-            onClick={() => void onSignOut()}
+            className="wl-button--secondary"
+            aria-disabled={signingOut || userId === null ? "true" : undefined}
+            onClick={() => {
+              if (!signingOut && userId !== null) void onSignOut();
+            }}
           >
-            <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
-              <path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9" />
-            </svg>
             {signingOut ? a.signingOut : a.signOut}
+            <Icon size={18}>
+              <path d="M9 4H5v16h4M16 8l4 4-4 4M20 12H9" />
+            </Icon>
           </button>
         )}
       </section>
       <EquipmentSection clock={clock} />
-      <section className="wl-card" aria-labelledby="wl-account-data">
-        <h2 id="wl-account-data" className="wl-label">
+      <section className="wl-card wl-account__section" aria-labelledby="wl-account-data">
+        <h2 id="wl-account-data" className="wl-type-label">
           {a.dataHeading}
         </h2>
-        <p className="wl-muted">{a.dataBody}</p>
+        <p className="wl-type-body">{a.dataBody}</p>
         <button
           type="button"
-          className="wl-button--secondary wl-plan__linkbtn"
-          disabled={exportDisabled}
+          className="wl-button--secondary"
+          aria-disabled={exportDisabled ? "true" : undefined}
           aria-describedby={!online ? exportCaptionId : undefined}
           onClick={() => void onExport()}
         >
-          <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
-            <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />
-          </svg>
           {exporting ? a.exporting : a.exportButton}
+          <Icon size={18}>
+            <path d="M12 4v11M7 11l5 5 5-5M5 20h14" />
+          </Icon>
         </button>
         {!online ? (
-          <p id={exportCaptionId} className="wl-caption">
+          <p id={exportCaptionId} className="wl-type-label">
             {a.connectToExport}
           </p>
         ) : null}
         {exportFailed ? (
-          <p role="alert" className="wl-muted">
+          <p role="alert" className="wl-type-label">
             {a.exportFailed}
           </p>
         ) : null}
       </section>
       <section
-        className="wl-card wl-card--strong wl-account__delete"
+        className="wl-card wl-account__section wl-account__delete"
         aria-labelledby="wl-account-delete"
       >
-        <h2 id="wl-account-delete" className="wl-label">
+        <h2 id="wl-account-delete" className="wl-type-label">
           {a.deleteHeading}
         </h2>
         {confirming ? (
           <>
-            <p>{a.deleteWarning}</p>
+            <p className="wl-type-body">{a.deleteWarning}</p>
             <label className="wl-account__field">
-              <span className="wl-caption">{a.confirmLabel}</span>
+              <span className="wl-type-label">{a.confirmLabel}</span>
               <input
                 ref={inputRef}
                 className="wl-input"
@@ -332,21 +340,33 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
             <button
               type="button"
               className="wl-button--secondary"
-              disabled={!confirmed || deleteDisabled}
+              aria-disabled={!confirmed || deleteDisabled ? "true" : undefined}
               aria-describedby={deleteCaptionShown ? deleteCaptionId : undefined}
-              onClick={() => void onDelete()}
+              onClick={() => {
+                if (confirmed && !deleteDisabled) void onDelete();
+              }}
             >
               {deleting ? a.deleting : a.deleteConfirm}
             </button>
             {deleteCaptionShown ? (
-              <p id={deleteCaptionId} className="wl-caption">
+              <p id={deleteCaptionId} className="wl-type-label">
                 {a.connectToDelete}
+              </p>
+            ) : null}
+            {deleteError === "unauthorized" ? (
+              <p role="alert" className="wl-type-label">
+                {a.unauthorized}
+              </p>
+            ) : null}
+            {deleteError === "failed" ? (
+              <p role="alert" className="wl-type-label">
+                {a.deleteFailed}
               </p>
             ) : null}
             <button
               type="button"
               className="wl-button--text"
-              disabled={deleting}
+              aria-disabled={deleting ? "true" : undefined}
               onClick={onCancel}
             >
               {a.cancel}
@@ -354,34 +374,26 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
           </>
         ) : (
           <>
-            <p className="wl-muted">{a.deleteCaption}</p>
+            <p className="wl-type-body">{a.deleteCaption}</p>
             <button
               ref={openRef}
               type="button"
               className="wl-button--secondary"
-              disabled={deleteDisabled}
+              aria-disabled={deleteDisabled ? "true" : undefined}
               aria-describedby={deleteCaptionShown ? deleteCaptionId : undefined}
-              onClick={() => setConfirming(true)}
+              onClick={() => {
+                if (!deleteDisabled) setConfirming(true);
+              }}
             >
               {a.deleteOpen}
             </button>
             {deleteCaptionShown ? (
-              <p id={deleteCaptionId} className="wl-caption">
+              <p id={deleteCaptionId} className="wl-type-label">
                 {a.connectToDelete}
               </p>
             ) : null}
           </>
         )}
-        {deleteError === "unauthorized" ? (
-          <p role="alert" className="wl-muted">
-            {a.unauthorized}
-          </p>
-        ) : null}
-        {deleteError === "failed" ? (
-          <p role="alert" className="wl-muted">
-            {a.deleteFailed}
-          </p>
-        ) : null}
       </section>
     </>
   );

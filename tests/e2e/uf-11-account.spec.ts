@@ -14,6 +14,8 @@
 // `supabase-mock.ts`'s own comment) and silently zero out the history read. Being registered
 // after `mockSupabaseData`, these exact-path routes win for the bare paths while
 // `session_sets_live*` still falls through to `mockSupabaseData`'s route.
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import type { Page, Route } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
@@ -32,6 +34,8 @@ import {
   EXPORT_SESSIONS,
   EXPORT_SETS,
 } from "./fixtures/uf-11-account.js";
+
+import { compareWithCanvas } from "./helpers/canvas-compare.js";
 
 const MIN_TARGET_PX = 44;
 const V = "22222222-2222-4222-8222-222222222222";
@@ -401,12 +405,12 @@ test.describe("T-0469 AC-4 offline", () => {
 
     const exportButton = page.getByRole("button", { name: "Export my data" });
     const deleteButton = page.getByRole("button", { name: "Delete account…" });
-    await expect(exportButton).toBeDisabled();
-    await expect(deleteButton).toBeDisabled();
+    await expect(exportButton).toHaveAttribute("aria-disabled", "true");
+    await expect(deleteButton).toHaveAttribute("aria-disabled", "true");
 
     await context.setOffline(false);
-    await expect(exportButton).toBeEnabled();
-    await expect(deleteButton).toBeEnabled();
+    await expect(exportButton).not.toHaveAttribute("aria-disabled", "true");
+    await expect(deleteButton).not.toHaveAttribute("aria-disabled", "true");
 
     expect(accountCalls).toBe(0);
   });
@@ -691,15 +695,16 @@ test.describe("T-0550 UF-11.4 layout, back link and targets", () => {
       const c = getComputedStyle(el);
       return { f: c.fontFamily, w: c.fontWeight, t: c.textTransform, s: parseFloat(c.fontSize) };
     });
-    expect(h1.f.startsWith('"Big Shoulders Display"')).toBe(true);
-    expect(h1.w).toBe("800");
-    expect(h1.t).toBe("uppercase");
-    expect(h1.s).toBeGreaterThanOrEqual(32);
-    expect(h1.s).toBeLessThanOrEqual(40);
+    // T-0613 (D-0208, D-0211 §3): the plan-state page title (Familjen Grotesk 700, 56 px, no
+    // uppercase) and the 28 px gutter, which moves from 20 px deliberately.
+    expect(h1.f.startsWith('"Familjen Grotesk"')).toBe(true);
+    expect(h1.w).toBe("700");
+    expect(h1.t).toBe("none");
+    expect(h1.s).toBe(56);
     const pad = await page
       .locator(ROOT)
       .evaluate((el) => [getComputedStyle(el).paddingLeft, getComputedStyle(el).paddingRight]);
-    expect(pad).toEqual(["20px", "20px"]);
+    expect(pad).toEqual(["28px", "28px"]);
     await page.screenshot({ path: testInfo.outputPath("account-390.png"), fullPage: true });
   });
 
@@ -718,7 +723,7 @@ test.describe("T-0550 UF-11.4 layout, back link and targets", () => {
     expect(await email.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
   });
 
-  test("T-0550 AC7 every target is 44 px and the confirm input border is text-muted", async ({
+  test("T-0550 AC7 every target is 44 px and the confirm input border is ink-muted", async ({
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
@@ -737,16 +742,366 @@ test.describe("T-0550 UF-11.4 layout, back link and targets", () => {
       );
     expect(heights.length).toBeGreaterThan(10);
     for (const t of heights) expect(t.h, t.name).toBeGreaterThanOrEqual(MIN_TARGET_PX);
+    await page.mouse.move(0, 0); // the input may have opened under the pointer: no hover border
     const { border, expected } = await input.evaluate((el) => {
+      // T-0613: under the plan state the boundary is the state's --wl-ink-muted (5.9 on plan.bg).
       const probe = document.createElement("i");
-      probe.style.color = getComputedStyle(document.documentElement).getPropertyValue(
-        "--wl-color-text-muted",
-      );
-      document.body.append(probe);
+      probe.style.color = "var(--wl-ink-muted)";
+      el.closest("[data-screen-id]")!.append(probe);
       const expectedColor = getComputedStyle(probe).color;
       probe.remove();
       return { border: getComputedStyle(el).borderTopColor, expected: expectedColor };
     });
     expect(border).toBe(expected);
+  });
+});
+
+// ---------------------------------------------------------------------------------------------
+// T-0613 (D-0208, D-0210, D-0211; UF-11.4): the Cobalt plan state on Account settings, measured in
+// a real browser. Expected values come from tokens.json, never typed.
+// ---------------------------------------------------------------------------------------------
+const TOKENS = JSON.parse(
+  readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
+) as { color: { plan: Record<string, string>; paper: Record<string, string> } };
+const PLAN = TOKENS.color.plan;
+const PAPER = TOKENS.color.paper;
+const SCREEN = '[data-screen-id="UF-11.4"]';
+
+const rgbOf = (hex: string): string => {
+  const n = (i: number) => parseInt(hex.slice(i, i + 2), 16);
+  return `rgb(${n(1)}, ${n(3)}, ${n(5)})`;
+};
+const lum = (hex: string): number => {
+  const ch = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * ch(1) + 0.7152 * ch(3) + 0.0722 * ch(5);
+};
+const tokenRatio = (a: string, b: string): number => {
+  const [hi, lo] = [lum(a), lum(b)].sort((x, y) => y - x);
+  return Math.round(((hi! + 0.05) / (lo! + 0.05)) * 10) / 10;
+};
+
+async function openCobalt(page: Page, width = 390): Promise<void> {
+  await page.setViewportSize({ width, height: 844 });
+  await open(page);
+  await expect(page.getByRole("group", { name: "Your equipment" })).toBeVisible();
+  await page.evaluate(() => document.fonts.ready);
+  await expect
+    .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor))
+    .toBe(rgbOf(PLAN.bg!));
+}
+
+async function openPaper(page: Page): Promise<void> {
+  await openCobalt(page);
+  await seedDevice(page);
+  await expect.poll(() => countSets(page, FAKE_USER_ID)).toBe(1);
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sign out anyway" })).toBeFocused();
+}
+
+async function openDelete(page: Page): Promise<void> {
+  await openCobalt(page);
+  await page.getByRole("button", { name: "Delete account…" }).click();
+  await expect(page.getByLabel("Type delete to confirm")).toBeFocused();
+}
+
+/** Every text node's colour against the first opaque background above it, at least 4.5:1. */
+async function expectTextContrast(page: Page): Promise<void> {
+  const pairs = await page.evaluate(() => {
+    const parse = (c: string): number[] => (c.match(/[\d.]+/g) ?? []).map(Number);
+    const bgOf = (el: Element): number[] => {
+      for (let n: Element | null = el; n; n = n.parentElement) {
+        const c = parse(getComputedStyle(n).backgroundColor);
+        if (c.length === 3 || (c.length === 4 && c[3]! > 0)) return c.slice(0, 3);
+      }
+      return parse(getComputedStyle(document.documentElement).backgroundColor).slice(0, 3);
+    };
+    const out: { text: string; fg: number[]; bg: number[] }[] = [];
+    for (const el of document.querySelector("[data-screen-id]")!.querySelectorAll("*")) {
+      if (![...el.childNodes].some((n) => n.nodeType === 3 && n.textContent?.trim())) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === "hidden" || cs.display === "none") continue;
+      out.push({
+        text: el.textContent!.trim().slice(0, 30),
+        fg: parse(cs.color).slice(0, 3),
+        bg: bgOf(el),
+      });
+    }
+    return out;
+  });
+  const L = (c: number[]) => {
+    const f = (v: number) => {
+      const x = v / 255;
+      return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+    };
+    return 0.2126 * f(c[0]!) + 0.7152 * f(c[1]!) + 0.0722 * f(c[2]!);
+  };
+  expect(pairs.length).toBeGreaterThan(8);
+  for (const p of pairs) {
+    const [hi, lo] = [L(p.fg), L(p.bg)].sort((x, y) => y - x);
+    expect((hi! + 0.05) / (lo! + 0.05), `${p.text} ${p.fg} on ${p.bg}`).toBeGreaterThanOrEqual(4.5);
+  }
+}
+
+async function expectAxeContrast(page: Page): Promise<void> {
+  await page.waitForTimeout(300);
+  const results = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+  expect(results.violations.map((v) => v.nodes.map((n) => n.target.join(" ")))).toEqual([]);
+}
+
+test.describe("T-0613 AC1 state and gutter", () => {
+  for (const [width, gutter] of [
+    [390, "28px"],
+    [340, "20px"],
+  ] as const) {
+    test(`/plan/account at ${width} px: data-wl-state=plan and padding-left ${gutter}`, async ({
+      page,
+    }) => {
+      await openCobalt(page, width);
+      const root = page.locator(SCREEN);
+      await expect(root).toHaveAttribute("data-wl-state", "plan");
+      expect(await root.evaluate((el) => getComputedStyle(el).paddingLeft)).toBe(gutter);
+    });
+  }
+
+  test("320 x 640: no horizontal scroll and the email line is not clipped", async ({ page }) => {
+    await openCobalt(page, 320);
+    await page.setViewportSize({ width: 320, height: 640 });
+    await page.evaluate(
+      (e) => {
+        for (let i = 0; i < window.localStorage.length; i++) {
+          const k = window.localStorage.key(i);
+          if (!k || !k.endsWith("-auth-token")) continue;
+          const t = JSON.parse(window.localStorage.getItem(k)!);
+          (t.currentSession ?? t).user.email = e;
+          window.localStorage.setItem(k, JSON.stringify(t));
+        }
+      },
+      `${"a".repeat(52)}@example.com`,
+    );
+    await page.goto("/plan/account");
+    const email = page.locator(".wl-account__email");
+    await expect(email).toBeVisible();
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+    ).toBeLessThanOrEqual(0);
+    expect(await email.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+  });
+});
+
+test.describe("T-0613 AC2 the unsynced paper panel (390 x 844)", () => {
+  test("queued sets: the paper panel is full-bleed in paper ink; the pill is the paper action; focus ring is the paper ink", async ({
+    page,
+  }) => {
+    await openPaper(page);
+    const got = await page.locator(`${SCREEN} .wl-paper`).evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const r = el.getBoundingClientRect();
+      const pill = [...el.querySelectorAll("button")].find(
+        (b) => b.textContent === "Sign out anyway",
+      )!;
+      const cancel = [...el.querySelectorAll("button")].find((b) => b.textContent === "Cancel")!;
+      const p = getComputedStyle(pill);
+      return {
+        bg: cs.backgroundColor,
+        ink: cs.color,
+        left: r.left,
+        right: r.right,
+        pillBg: p.backgroundColor,
+        pillInk: p.color,
+        cancelClass: cancel.className,
+        text: el.textContent,
+      };
+    });
+    expect(got.bg).toBe(rgbOf(PAPER.bg!));
+    expect(got.ink).toBe(rgbOf(PAPER.ink!));
+    expect(got.left).toBe(0);
+    expect(got.right).toBe(390);
+    expect(got.pillBg).toBe(rgbOf(PAPER.action!));
+    expect(got.pillInk).toBe(rgbOf(PAPER["on-action"]!));
+    expect(got.cancelClass).toContain("wl-button--text");
+    expect(got.text).toContain("Some workouts haven't synced yet.");
+    // Keyboard focus on the pill shows a 2 px ring in the paper ink.
+    const pill = page.getByRole("button", { name: "Sign out anyway" });
+    await pill.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Tab");
+    expect(
+      await pill.evaluate((el) => {
+        const cs = getComputedStyle(el);
+        return [cs.outlineWidth, cs.outlineColor, cs.outlineStyle];
+      }),
+    ).toEqual(["2px", rgbOf(PAPER.ink!), "solid"]);
+    expect(tokenRatio(PAPER.ink!, PAPER.bg!)).toBe(12.9);
+    expect(tokenRatio(PAPER["on-action"]!, PAPER.action!)).toBe(8.6);
+  });
+
+  test("empty queue: no paper panel appears and sign-out proceeds", async ({ page }) => {
+    await page.route(`${VITE_SUPABASE_URL}/auth/v1/logout*`, (route) =>
+      route.fulfill({ status: 204 }),
+    );
+    await openCobalt(page);
+    await expect(page.locator(`${SCREEN} .wl-paper`)).toHaveCount(0);
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await expect(page).toHaveURL(/\/welcome$/);
+  });
+});
+
+test.describe("T-0613 AC3 the delete panel (390 x 844)", () => {
+  test("Delete my account is the secondary outline in plan ink, aria-disabled until 'delete' is typed, and Cancel is the last control", async ({
+    page,
+  }) => {
+    await openDelete(page);
+    const confirm = page.getByRole("button", { name: "Delete my account" });
+    await expect(confirm).not.toHaveClass(/wl-button--primary/);
+    await expect(confirm).toHaveClass(/wl-button--secondary/);
+    await expect(confirm).toHaveAttribute("aria-disabled", "true");
+    const o = await confirm.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { w: cs.borderTopWidth, c: cs.borderTopColor, bg: cs.backgroundColor };
+    });
+    // Chrome snaps the authored 1.5px border to whole CSS px in computed style (main-css.test.ts
+    // pins the authored value); here: a solid border at least 1px wide.
+    expect(parseFloat(o.w)).toBeGreaterThanOrEqual(1);
+    expect(o.c).toBe(rgbOf(PLAN["ink-muted"]!)); // aria-disabled: the muted outline
+    await page.getByLabel("Type delete to confirm").fill("delete");
+    await expect(confirm).not.toHaveAttribute("aria-disabled", "true");
+    const live = await confirm.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      return { w: cs.borderTopWidth, c: cs.borderTopColor, bg: cs.backgroundColor };
+    });
+    expect(parseFloat(live.w)).toBeGreaterThanOrEqual(1);
+    expect(live.c).toBe(rgbOf(PLAN.ink!));
+    expect(live.bg).toBe("rgba(0, 0, 0, 0)");
+    const last = await page.locator(SCREEN).evaluate((root) => {
+      const all = [
+        ...root.querySelectorAll<HTMLElement>("a[href], button, input, select, textarea"),
+      ];
+      return all[all.length - 1]!.textContent;
+    });
+    expect(last).toBe("Cancel");
+    const input = page.getByLabel("Type delete to confirm");
+    await expect(input).toHaveClass(/wl-input/);
+  });
+
+  test("Delete account is unavailable offline with the existing line, available online", async ({
+    page,
+    context,
+  }) => {
+    await openCobalt(page);
+    const open_ = page.getByRole("button", { name: "Delete account…" });
+    await expect(open_).not.toHaveAttribute("aria-disabled", "true");
+    await goOffline(page, context);
+    await expect(open_).toHaveAttribute("aria-disabled", "true");
+    await expect(page.getByText("Connect to delete your account.")).toBeVisible();
+  });
+});
+
+test.describe("T-0613 AC5 contrast, targets, type, motion", () => {
+  test("axe colour-contrast and every text pair are clean: closed, delete open, paper warning", async ({
+    page,
+  }) => {
+    await openCobalt(page);
+    await expectAxeContrast(page);
+    await expectTextContrast(page);
+    await page.getByRole("button", { name: "Delete account…" }).click();
+    await expect(page.getByLabel("Type delete to confirm")).toBeVisible();
+    await expectAxeContrast(page);
+    await expectTextContrast(page);
+  });
+
+  test("axe colour-contrast and every text pair are clean on the paper warning", async ({
+    page,
+  }) => {
+    await openPaper(page);
+    await expectAxeContrast(page);
+    await expectTextContrast(page);
+  });
+
+  test("every link, button, input and checkbox row is at least 44 x 44; no px font sizes", async ({
+    page,
+  }) => {
+    await openCobalt(page);
+    await page.getByRole("button", { name: "Delete account…" }).click();
+    const boxes = await page
+      .locator(`${SCREEN} :is(a, button, input:not([type="checkbox"]), label.wl-checkbox)`)
+      .evaluateAll((els) =>
+        els
+          .map((el) => ({ n: el.textContent?.trim() || el.tagName, r: el.getBoundingClientRect() }))
+          .filter((x) => x.r.width > 0 && x.r.height > 0)
+          .map((x) => ({ n: x.n, w: x.r.width, h: x.r.height })),
+      );
+    expect(boxes.length).toBeGreaterThan(10);
+    for (const b of boxes) {
+      expect(b.w, `${b.n} w`).toBeGreaterThanOrEqual(44);
+      expect(b.h, `${b.n} h`).toBeGreaterThanOrEqual(44);
+    }
+    for (const f of ["plan.css", "excluded.css"]) {
+      const css = readFileSync(
+        resolve(__dirname, "../../apps/web/src/features/UF-11", f),
+        "utf8",
+      ).replace(/\/\*[\s\S]*?\*\//g, "");
+      expect(css, f).not.toMatch(/font-size:\s*[\d.]+px/);
+      expect(css, f).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    }
+  });
+
+  test("only the root cross-fade animates, and it is instant under reduced motion", async ({
+    page,
+  }) => {
+    await openPaper(page);
+    const moving = await page.evaluate(() => {
+      const out: string[] = [];
+      for (const el of document.querySelectorAll("body *")) {
+        if (el.matches("[data-screen-id], nav.wl-tab-bar")) continue;
+        const cs = getComputedStyle(el);
+        const d = cs.transitionDuration.split(",").map((x) => parseFloat(x));
+        if (
+          d.some((x) => x > 0) ||
+          (cs.animationName !== "none" && parseFloat(cs.animationDuration) > 0)
+        )
+          out.push(`${el.tagName.toLowerCase()}.${el.className}`);
+      }
+      return out;
+    });
+    expect(moving).toEqual([]);
+    const dur = () =>
+      page.evaluate(
+        () => getComputedStyle(document.querySelector("[data-screen-id]")!).transitionDuration,
+      );
+    expect(await dur()).toBe("0.2s");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await dur()).toBe("0s");
+  });
+});
+
+test.describe("T-0613 AC7 canvas compare (390 x 844)", () => {
+  test("Account settings (turn-4)", async ({ page }, testInfo) => {
+    await openCobalt(page);
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-4",
+      frame: "Account settings",
+      name: "uf11-4-account",
+    });
+  });
+
+  test("Account · delete panel open (turn-5)", async ({ page }, testInfo) => {
+    await openDelete(page);
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-5",
+      frame: "Account · delete panel open",
+      name: "uf11-4-delete-open",
+    });
+  });
+
+  test("Account · unsynced sign-out (turn-5)", async ({ page }, testInfo) => {
+    await openPaper(page);
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-5",
+      frame: "Account · unsynced sign-out",
+      name: "uf11-4-unsynced",
+    });
   });
 });

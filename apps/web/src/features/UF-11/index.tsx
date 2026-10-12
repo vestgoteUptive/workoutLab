@@ -16,6 +16,7 @@
 // data fresh"), now actually true before the card reads, not just after.
 import { useState } from "react";
 import { Link } from "react-router";
+import { ChevronIcon } from "../../components/icons/index.js";
 import { en } from "../../lib/i18n/en.js";
 import { AccountSettingsBody } from "./AccountSettingsBody.js";
 import { CheckinCard } from "./CheckinCard.js";
@@ -62,20 +63,21 @@ export function EditPlan({ now = systemClock }: PlanScreenProps = {}) {
   );
 }
 
+/** The text-button back link of UF-11.4 to UF-11.6; the chevron is decoration, the name is `label`. */
+function BackToPlan({ label }: { label: string }) {
+  return (
+    <Link className="wl-button--text wl-account__back" to="/plan" aria-label={label}>
+      <ChevronIcon direction="left" size={18} />
+      {en.screens.plan}
+    </Link>
+  );
+}
+
 export function AccountSettings({ now = systemClock }: PlanScreenProps = {}) {
   return (
-    <div data-screen-id="UF-11.4" className="wl-page">
-      <Link
-        className="wl-button--text wl-account__back"
-        to="/plan"
-        aria-label={en.uf11.account.backToPlan}
-      >
-        <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
-          <path d="M15 5l-7 7 7 7" />
-        </svg>
-        {en.screens.plan}
-      </Link>
-      <h1>{en.screens.accountSettings}</h1>
+    <div data-screen-id="UF-11.4" data-wl-state="plan" className="wl-page wl-account">
+      <BackToPlan label={en.uf11.account.backToPlan} />
+      <h1 className="wl-type-page-title wl-title--stop">{en.screens.accountSettings}</h1>
       <AccountSettingsBody clock={now} />
     </div>
   );
@@ -83,18 +85,9 @@ export function AccountSettings({ now = systemClock }: PlanScreenProps = {}) {
 
 export function ExcludedExercises() {
   return (
-    <div data-screen-id="UF-11.5" className="wl-page">
-      <Link
-        className="wl-button--text wl-account__back"
-        to="/plan"
-        aria-label={en.uf11.excludedScreen.back}
-      >
-        <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
-          <path d="M15 5l-7 7 7 7" />
-        </svg>
-        {en.screens.plan}
-      </Link>
-      <h1>{en.screens.excludedExercises}</h1>
+    <div data-screen-id="UF-11.5" data-wl-state="plan" className="wl-page wl-account">
+      <BackToPlan label={en.uf11.excludedScreen.back} />
+      <h1 className="wl-type-page-title wl-title--stop">{en.screens.excludedExercises}</h1>
       <ExcludedBody />
     </div>
   );
@@ -102,18 +95,9 @@ export function ExcludedExercises() {
 
 export function FavoriteExercises() {
   return (
-    <div data-screen-id="UF-11.6" className="wl-page">
-      <Link
-        className="wl-button--text wl-account__back"
-        to="/plan"
-        aria-label={en.uf11.favoritesScreen.back}
-      >
-        <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
-          <path d="M15 5l-7 7 7 7" />
-        </svg>
-        {en.screens.plan}
-      </Link>
-      <h1>{en.uf11.favoritesScreen.title}</h1>
+    <div data-screen-id="UF-11.6" data-wl-state="plan" className="wl-page wl-account">
+      <BackToPlan label={en.uf11.favoritesScreen.back} />
+      <h1 className="wl-type-page-title wl-title--stop">{en.uf11.favoritesScreen.title}</h1>
       <FavoritesBody />
     </div>
   );

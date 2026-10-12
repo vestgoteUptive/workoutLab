@@ -471,3 +471,44 @@ describe("AC9 reachability", () => {
     expect(hits).toEqual([]);
   });
 });
+
+// T-0613 UF-11.6 in the Cobalt plan state.
+describe("T-0613 plan state", () => {
+  it("the root is a plan state root; group rows are .wl-row items, titles are labels", async () => {
+    await seedFavorites("lateral-raise");
+    render(tree("/plan/favorites"));
+    await waitFor(() => expect(groupsOf()).toEqual([["Shoulders", ["Lateral raise"]]]));
+    const root = document.querySelector('[data-screen-id="UF-11.6"]')!;
+    expect(root).toHaveAttribute("data-wl-state", "plan");
+    const li = within(screen.getByRole("list", { name: "Shoulders" })).getAllByRole("listitem")[0]!;
+    expect(li).toHaveClass("wl-row");
+    const btn = within(li).getByRole("button", {
+      name: "Remove Lateral raise from favorites, Shoulders",
+    });
+    expect(btn).toHaveClass("wl-button--secondary");
+    expect(screen.getByRole("heading", { level: 2, name: "Shoulders" })).toHaveClass(
+      "wl-type-label",
+    );
+    expect(screen.getByRole("searchbox")).toHaveClass("wl-input");
+  });
+
+  it("an aria-disabled Remove does nothing when clicked (offline)", async () => {
+    await seedFavorites("lateral-raise");
+    setOnline(false);
+    render(tree("/plan/favorites"));
+    await waitFor(() => expect(groupsOf()).toHaveLength(1));
+    const btn = screen.getByRole("button", {
+      name: "Remove Lateral raise from favorites, Shoulders",
+    });
+    expect(btn).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(btn);
+    await act(async () => undefined);
+    expect(fav.unfavoriteExercise).not.toHaveBeenCalled();
+  });
+
+  it("the empty state renders inside the plan root", async () => {
+    render(tree("/plan/favorites"));
+    const empty = await screen.findByText(/^No favorites yet/);
+    expect(empty.closest('[data-wl-state="plan"]')).not.toBeNull();
+  });
+});
