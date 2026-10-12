@@ -185,6 +185,7 @@ export const uf11 = {
       "No excluded exercises. Search to exclude one, or tap Remove on a suggested workout.",
     emptyQuery: (q: string) => `No exercises match \u201C${q}\u201D.`,
     loading: "Loading excluded exercises",
+    libraryOffline: "Exercises aren't available offline yet",
     list: "Exercises",
   },
   // T-0569 UF-11.2 row and UF-11.6 (D-0202 §8-§10).
@@ -219,6 +220,7 @@ export const uf11 = {
     emptyNone: "No favorites yet. Search to add one, or tap Favorite on an exercise.",
     emptyQuery: (q: string) => `No exercises match \u201C${q}\u201D.`,
     loading: "Loading favorite exercises",
+    libraryOffline: "Exercises aren't available offline yet",
     list: "Exercises",
   },
 } as const;

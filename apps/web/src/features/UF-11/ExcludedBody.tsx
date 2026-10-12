@@ -3,19 +3,15 @@
 // list changes only after the server confirms (the cache is written by the write helpers).
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { excludedOutAreas, primaryAreas } from "@workoutlab/engine";
-import type { EngineProfile, LibraryExercise } from "@workoutlab/shared";
+import type { LibraryExercise } from "@workoutlab/shared";
 import { ExcludedAreasNotice } from "../../components/excluded-areas-notice/index.js";
 import { en } from "../../lib/i18n/en.js";
-import { currentUserId, loadLibrary, loadProfile } from "../../lib/offline/index.js";
-import {
-  excludeExercise,
-  includeExercise,
-  loadExcludedIds,
-  refreshExcluded,
-} from "../../lib/offline/excluded.js";
+import { currentUserId } from "../../lib/offline/index.js";
+import { excludeExercise, includeExercise, refreshExcluded } from "../../lib/offline/excluded.js";
 import { useExcludedRows, useOnline } from "../../lib/offline/excluded-hooks.js";
 import { loadFavoriteIds } from "../../lib/offline/favorites.js";
 import { formatInstantDay, resolveTimeZone } from "./format.js";
+import { useLibraryProfile } from "./use-library-profile.js";
 import "./excluded.css";
 
 const s = en.uf11.excludedScreen;
@@ -34,9 +30,7 @@ export function ExcludedBody() {
   const userId = currentUserId();
   const online = useOnline();
   const rows = useExcludedRows(userId);
-  const [library, setLibrary] = useState<LibraryExercise[]>([]);
-  const [profile, setProfile] = useState<EngineProfile | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const { library, profile, loaded } = useLibraryProfile(userId);
   const [query, setQuery] = useState("");
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [failed, setFailed] = useState(false);
@@ -48,21 +42,7 @@ export function ExcludedBody() {
   const tz = useMemo(() => resolveTimeZone(), []);
 
   useEffect(() => {
-    let cancelled = false;
-    void Promise.all([
-      loadLibrary().catch(() => [] as LibraryExercise[]),
-      loadProfile().catch(() => null),
-      userId ? loadExcludedIds(userId).catch(() => []) : Promise.resolve([]),
-    ]).then(([lib, prof]) => {
-      if (cancelled) return;
-      setLibrary(lib);
-      setProfile(prof);
-      setLoaded(true);
-    });
     if (navigator.onLine) void refreshExcluded();
-    return () => {
-      cancelled = true;
-    };
   }, [userId]);
 
   const byId = useMemo(() => new Map(library.map((e) => [e.id, e])), [library]);
@@ -206,6 +186,8 @@ export function ExcludedBody() {
             <li key={i} className="wl-excluded__skeleton" />
           ))}
         </ul>
+      ) : loaded && library.length === 0 && !online ? (
+        <p className="wl-muted wl-excluded__empty">{s.libraryOffline}</p>
       ) : items.length === 0 ? (
         <p className="wl-muted wl-excluded__empty">
           {needle === "" ? s.emptyNone : s.emptyQuery(query.trim())}

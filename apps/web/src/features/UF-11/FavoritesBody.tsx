@@ -3,9 +3,9 @@
 // only after the server confirms (the write helpers update the cache).
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { isEligible, primaryAreas } from "@workoutlab/engine";
-import { AREAS, type Area, type EngineProfile, type LibraryExercise } from "@workoutlab/shared";
+import { AREAS, type Area, type LibraryExercise } from "@workoutlab/shared";
 import { en } from "../../lib/i18n/en.js";
-import { currentUserId, loadLibrary, loadProfile } from "../../lib/offline/index.js";
+import { currentUserId } from "../../lib/offline/index.js";
 import { loadExcludedIds } from "../../lib/offline/excluded.js";
 import { useExcludedIds, useOnline } from "../../lib/offline/excluded-hooks.js";
 import {
@@ -14,6 +14,7 @@ import {
   unfavoriteExercise,
 } from "../../lib/offline/favorites.js";
 import { useFavoriteList } from "../../lib/offline/favorites-hooks.js";
+import { useLibraryProfile } from "./use-library-profile.js";
 import "./excluded.css";
 
 const s = en.uf11.favoritesScreen;
@@ -36,9 +37,7 @@ export function FavoritesBody() {
   const online = useOnline();
   const { ids: favoriteIds, loaded: favLoaded } = useFavoriteList(userId);
   const excludedIds = useExcludedIds(userId);
-  const [library, setLibrary] = useState<LibraryExercise[]>([]);
-  const [profile, setProfile] = useState<EngineProfile | null>(null);
-  const [loaded, setLoaded] = useState(false);
+  const { library, profile, loaded } = useLibraryProfile(userId);
   const [query, setQuery] = useState("");
   const [pending, setPending] = useState<ReadonlySet<string>>(new Set());
   const [failed, setFailed] = useState(false);
@@ -49,20 +48,7 @@ export function FavoritesBody() {
   const focusAfter = useRef<{ key: string | null } | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    void Promise.all([
-      loadLibrary().catch(() => [] as LibraryExercise[]),
-      loadProfile().catch(() => null),
-    ]).then(([lib, prof]) => {
-      if (cancelled) return;
-      setLibrary(lib);
-      setProfile(prof);
-      setLoaded(true);
-    });
     if (navigator.onLine) void refreshFavorites();
-    return () => {
-      cancelled = true;
-    };
   }, [userId]);
 
   const byId = useMemo(() => new Map(library.map((e) => [e.id, e])), [library]);
@@ -283,6 +269,8 @@ export function FavoritesBody() {
             <li key={i} className="wl-excluded__skeleton" />
           ))}
         </ul>
+      ) : loaded && library.length === 0 && !online ? (
+        <p className="wl-muted wl-excluded__empty">{s.libraryOffline}</p>
       ) : visible.length === 0 ? (
         <p className="wl-muted wl-excluded__empty">
           {needle === "" ? s.emptyNone : s.emptyQuery(query.trim())}
