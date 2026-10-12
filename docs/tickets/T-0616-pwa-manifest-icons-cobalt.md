@@ -5,7 +5,7 @@ lane: web-shell
 screens: []
 decisions: [D-0208, D-0210, D-0211, D-0045, D-0019]
 deps: [T-0601]
-status: todo
+status: doing
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ¼ day. Runs after Today is cobalt (T-0601), so the install splash matches the first screen. The landing favicon is T-0585 (landing lane). Full web e2e suite (shell/manifest). -->
 ## Why
