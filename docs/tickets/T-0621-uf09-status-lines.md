@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.1, UF-09.4, UF-09.6]
 decisions: [D-0212, D-0066, D-0118]
 deps: [T-0620]
-status: todo
+status: doing
 ---
 <!-- Groomed 2026-10-09 (D-0212 §1.4, D-0213). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Spec: docs/specs/cobalt-mock-behaviour.md §1.4. Display of data the machine already holds; no engine or data change. Never in parallel with T-0580. -->
 ## Why
