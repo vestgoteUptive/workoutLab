@@ -154,6 +154,24 @@ export const uf11 = {
       saveFailed: "Couldn't save your equipment. Try again.",
       coldCache: "Your equipment isn't on this device yet.",
     },
+    // T-0633 UF-11.4 Bar and plates section (D-0217 §1, D-0218).
+    barPlates: {
+      legend: "Bar and plates",
+      hint: "Shown during a set as the plates to load on each side. You have pairs of every plate you tick.",
+      barLabel: "Bar weight (kg)",
+      barInvalid: "Enter a bar weight from 0 to 50 kg.",
+      plate: (n: number) => `${n} kg`,
+      save: "Save",
+      saving: "Saving",
+      // Two Save buttons share the screen: the accessible names tell them apart and still start
+      // with the visible word (WCAG 2.5.3).
+      saveLabel: "Save bar and plates",
+      savingLabel: "Saving bar and plates",
+      saved: "Saved",
+      connectToSave: "Connect to save",
+      saveFailed: "Couldn't save your bar and plates. Try again.",
+      coldCache: "Your bar and plates aren't on this device yet.",
+    },
   },
   // T-0540 UF-11.2 row and UF-11.5 (D-0199 §7-§10).
   excludedRow: {

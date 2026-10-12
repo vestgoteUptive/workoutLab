@@ -13,6 +13,7 @@ import {
 import { Icon } from "../../components/icons/index.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
+import { BarPlatesSection } from "./BarPlatesSection.js";
 import { EquipmentSection } from "./EquipmentSection.js";
 import { resolveTimeZone } from "./format.js";
 import type { Clock } from "./use-plan-data.js";
@@ -286,6 +287,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
         )}
       </section>
       <EquipmentSection clock={clock} />
+      <BarPlatesSection clock={clock} />
       <section className="wl-card wl-account__section" aria-labelledby="wl-account-data">
         <h2 id="wl-account-data" className="wl-type-label">
           {a.dataHeading}

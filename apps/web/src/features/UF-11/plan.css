@@ -468,3 +468,8 @@
   outline: 2px solid var(--wl-focus);
   outline-offset: 2px;
 }
+
+/* T-0633 Bar and plates section: the bar input is a short field. */
+.wl-barplates .wl-barplates__bar {
+  inline-size: 8rem;
+}
