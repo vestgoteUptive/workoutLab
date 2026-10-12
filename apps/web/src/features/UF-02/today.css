@@ -3,7 +3,7 @@
  * variables that data-wl-state="plan" sets: no raw colour and no px font size in this file.
  * The shared patterns (.wl-page, .wl-row, .wl-chip, .wl-button--*, .wl-type-*, main.css) own their
  * look, so this file only lays them out. C-01 styles itself (components/body-map). The check-in
- * card is UF-11's slot (T-0612) and is not restyled here. No transitions: the only motion is the
+ * card is UF-11's paper panel (T-0612), styled in UF-11/plan.css. No transitions: the only motion is the
  * root's state cross-fade, and plan to plan has none. */
 
 /* The page fills the space above the tab bar, so the last child (Start) pins to the bottom. When
@@ -173,13 +173,6 @@
 .wl-today .wl-resume-card__action:focus-visible {
   outline: 2px solid var(--wl-focus);
   outline-offset: 2px;
-}
-
-/* The check-in card is UF-11's slot (its look is T-0612). Its legacy label and note colours are
- * the Chalk & Iron muted grey, which is unreadable on plan.bg; until T-0612 they read the state's
- * own muted ink here. Colour only: nothing else of the card changes. */
-.wl-today [data-part="checkin-card"] :is(.wl-label, .wl-muted) {
-  color: var(--wl-ink-muted);
 }
 
 /* WCAG 2.4.11: a keyboard-focused control scrolls to above the sticky Start and its halo, never

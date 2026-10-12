@@ -73,14 +73,14 @@ describe("AC-B16 exports (D-0071 §3)", () => {
     const source = readFileSync(resolve(FEATURE_DIR, "index.tsx"), "utf8");
     const fn = source.slice(source.indexOf("export function EditPlan("));
     const body = fn.slice(0, fn.indexOf("\n}"));
-    expect(body).toContain("<h1>{en.screens.editPlan}</h1>");
+    expect(body).toContain("{en.screens.editPlan}</h1>");
   });
 
   it("Plan renders its own <h1> from en.screens.plan", () => {
     const source = readFileSync(resolve(FEATURE_DIR, "index.tsx"), "utf8");
     const fn = source.slice(source.indexOf("export function Plan("));
     const body = fn.slice(0, fn.indexOf("\n}"));
-    expect(body).toContain("<h1>{en.screens.plan}</h1>");
+    expect(body).toContain("{en.screens.plan}</h1>");
   });
 });
 
@@ -90,6 +90,8 @@ describe("AC-B16 no second string catalogue", () => {
     // constant, which is how a feature grows its own shadow catalogue and drifts from `en`.
     const allowed = new Set([
       // Structural / non-user-facing literals, each justified.
+      // The state attribute value on the Plan and Edit plan roots (data-wl-state="plan").
+      "plan",
       "build_muscle",
       "get_stronger",
       "general_fitness",

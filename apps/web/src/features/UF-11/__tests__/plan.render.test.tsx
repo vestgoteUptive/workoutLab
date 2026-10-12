@@ -62,7 +62,7 @@ afterEach(() => {
 function expectNextCheckin(caption: string, date: string) {
   const card = screen.getByRole("heading", { level: 2, name: u.headings.checkins }).parentElement!;
   expect(within(card).getByText(caption)).toBeInTheDocument();
-  expect(within(card).getByText(date)).toHaveClass("wl-stat");
+  expect(within(card).getByText(date)).toHaveClass("wl-type-stat");
 }
 
 async function targetRows(): Promise<string[]> {

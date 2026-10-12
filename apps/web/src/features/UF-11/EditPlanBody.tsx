@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { previewTargets } from "@workoutlab/engine";
 import { AREAS, type Area, type EngineProfile, type Goal } from "@workoutlab/shared";
+import { ArrowIcon, TickIcon } from "../../components/icons/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
 import { refreshAll } from "../../lib/offline/index.js";
@@ -113,12 +114,45 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
     navigate("/plan");
   }
 
+  const stepper = (
+    label: string,
+    value: number,
+    names: { dec: string; inc: string },
+    set: (n: number) => void,
+  ) => (
+    <div className="wl-edit__stepper">
+      <span className="wl-type-body">{label}</span>
+      <div className="wl-segmented">
+        <button
+          type="button"
+          aria-label={names.dec}
+          aria-disabled={value <= RHYTHM_MIN}
+          onClick={() => {
+            if (value > RHYTHM_MIN) set(value - 1);
+          }}
+        >
+          −
+        </button>
+        <button
+          type="button"
+          aria-label={names.inc}
+          aria-disabled={value >= RHYTHM_MAX}
+          onClick={() => {
+            if (value < RHYTHM_MAX) set(value + 1);
+          }}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <>
       <OfflineStatus variant="text" />
-      <div role="radiogroup" aria-label={u.goalGroup} className="wl-plan__section">
+      <div role="radiogroup" aria-label={u.goalGroup} className="wl-edit__group">
         {GOALS.map((g) => (
-          <label key={g} className="wl-plan__radio" data-checked={draft.goal === g}>
+          <label key={g} className="wl-option">
             <input
               type="radio"
               name="goal"
@@ -126,94 +160,57 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
               checked={draft.goal === g}
               onChange={() => setDraft({ ...draft, goal: g })}
             />
-            <span>{u.goals[g]}</span>
+            <span className="wl-type-body">{u.goals[g]}</span>
+            <TickIcon size={20} className="wl-option__tick" />
           </label>
         ))}
       </div>
-      <div role="group" aria-label={u.rhythmGroup} className="wl-plan__section">
-        <div className="wl-plan__stepper">
-          <span>{u.minimum}</span>
-          <button
-            type="button"
-            className="wl-plan__button"
-            aria-label={u.decreaseMin}
-            disabled={draft.min <= RHYTHM_MIN}
-            onClick={() => setMin(draft.min - 1)}
-          >
-            −
-          </button>
-          <button
-            type="button"
-            className="wl-plan__button"
-            aria-label={u.increaseMin}
-            disabled={draft.min >= RHYTHM_MAX}
-            onClick={() => setMin(draft.min + 1)}
-          >
-            +
-          </button>
-        </div>
-        <div className="wl-plan__stepper">
-          <span>{u.maximum}</span>
-          <button
-            type="button"
-            className="wl-plan__button"
-            aria-label={u.decreaseMax}
-            disabled={draft.max <= RHYTHM_MIN}
-            onClick={() => setMax(draft.max - 1)}
-          >
-            −
-          </button>
-          <button
-            type="button"
-            className="wl-plan__button"
-            aria-label={u.increaseMax}
-            disabled={draft.max >= RHYTHM_MAX}
-            onClick={() => setMax(draft.max + 1)}
-          >
-            +
-          </button>
-        </div>
-        <p>{u.rhythm(draft.min, draft.max)}</p>
+      <div role="group" aria-label={u.rhythmGroup} className="wl-edit__group">
+        {stepper(u.minimum, draft.min, { dec: u.decreaseMin, inc: u.increaseMin }, setMin)}
+        {stepper(u.maximum, draft.max, { dec: u.decreaseMax, inc: u.increaseMax }, setMax)}
+        <p className="wl-type-body">{u.rhythm(draft.min, draft.max)}</p>
       </div>
-      <div role="group" aria-label={u.priorityGroup} className="wl-plan__section">
-        <div className="wl-plan__chips">
+      <div role="group" aria-label={u.priorityGroup} className="wl-edit__group">
+        <div className="wl-edit__chips">
           {AREAS.map((area) => (
             <button
               key={area}
               type="button"
-              className="wl-plan__button wl-plan__chip"
+              className="wl-chip"
               aria-pressed={draft.priorities.includes(area)}
               onClick={() => togglePriority(area)}
             >
+              <TickIcon size={16} className="wl-chip__tick" />
               {en.bodyMap.areas[area]}
             </button>
           ))}
         </div>
-        <p role="status">{limitHit ? u.pickUpToThree : null}</p>
+        <p role="status" className="wl-type-label">
+          {limitHit ? u.pickUpToThree : null}
+        </p>
       </div>
       <section className="wl-plan__section">
-        <h2>{u.previewHeading}</h2>
-        <ul className="wl-plan__list" aria-label={u.previewHeading}>
+        <h2 className="wl-type-label">{u.previewHeading}</h2>
+        <ul className="wl-edit__preview" aria-label={u.previewHeading}>
           {preview.map((p) => (
             <li key={p.area}>{u.previewRow(en.bodyMap.areas[p.area], p.setsPer14d)}</li>
           ))}
         </ul>
       </section>
       {failed ? <p role="alert">{u.saveFailed}</p> : null}
-      {!online ? <p>{u.connectToSave}</p> : null}
-      <div className="wl-plan__actions">
-        <button
-          type="button"
-          className="wl-plan__button wl-plan__button--primary"
-          disabled={!canSave}
-          onClick={() => void onSave()}
-        >
-          {u.save}
-        </button>
-        <Link className="wl-plan__link" to="/plan">
-          {u.cancel}
-        </Link>
-      </div>
+      {!online ? <p className="wl-type-label">{u.connectToSave}</p> : null}
+      <Link className="wl-button--text wl-edit__cancel" to="/plan">
+        {u.cancel}
+      </Link>
+      <button
+        type="button"
+        className="wl-button--primary"
+        aria-disabled={!canSave}
+        onClick={() => void onSave()}
+      >
+        {u.save}
+        <ArrowIcon size={20} />
+      </button>
     </>
   );
 }
@@ -227,8 +224,8 @@ export function EditPlanBody({ clock }: { clock: Clock }) {
     return (
       <>
         <OfflineStatus variant="text" />
-        <p>{u.coldCache}</p>
-        <Link className="wl-plan__link" to="/plan">
+        <p className="wl-type-label">{u.coldCache}</p>
+        <Link className="wl-button--text" to="/plan">
           {u.cancel}
         </Link>
       </>
