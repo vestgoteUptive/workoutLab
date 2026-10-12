@@ -84,11 +84,14 @@ afterAll(() => {
 });
 
 describe("AC-A2 tokens.css in the built CSS", () => {
-  it("defines --wl-color-bg and --wl-color-coverage-4 and styles body from tokens", () => {
+  it("defines --wl-color-plan-bg and --wl-color-plan-coverage-4 and styles body from tokens", () => {
     expect(entry.css?.length).toBeGreaterThan(0);
     const css = entry.css!.map(read).join("\n");
-    expect(css).toMatch(/--wl-color-bg\s*:/);
-    expect(css).toMatch(/--wl-color-coverage-4\s*:/);
+    expect(css).toMatch(/--wl-color-plan-bg\s*:/);
+    expect(css).toMatch(/--wl-color-plan-coverage-4\s*:/);
+    // T-0625 AC2: the retired Chalk & Iron variables are not in the build.
+    expect(css).not.toMatch(/--wl-color-bg\s*:|--wl-color-accent\s*:|--wl-color-warn\s*:/);
+    expect(css).not.toMatch(/--wl-font-display|--wl-font-body/);
     expect(css).toMatch(
       /body\s*\{[^}]*background:\s*var\(--wl-bg\)\s*;\s*color:\s*var\(--wl-ink\)/,
     );
@@ -159,15 +162,22 @@ describe("AC-A5 service worker precache", () => {
 describe("T-0545 AC1 self-hosted fonts in the build", () => {
   const woff2 = () => readdirSync(join(outDir, "assets")).filter((f) => f.endsWith(".woff2"));
 
-  it("T-0588 AC1 ships exactly 4 woff2 files in dist/assets", () => {
-    expect(woff2()).toHaveLength(4);
+  it("T-0625 AC4 ships exactly the 2 state woff2 files in dist/assets", () => {
+    const files = woff2();
+    expect(files).toHaveLength(2);
+    expect(files.some((n) => n.startsWith("familjen-grotesk"))).toBe(true);
+    expect(files.some((n) => n.startsWith("bricolage-grotesque"))).toBe(true);
+    // One @font-face per family in the built CSS, even though fonts.css and its alias exist.
+    const css = entry.css!.map(read).join("\n");
+    expect(css.match(/@font-face/g)).toHaveLength(2);
+    expect(css).not.toMatch(/Big Shoulders|DM Sans/);
   });
 
   it("index.html preloads each with as=font, type, crossorigin, and the file exists", () => {
     const links = [...indexHtml.matchAll(/<link rel="preload"[^>]*>/g)]
       .map((m) => m[0])
       .filter((t) => t.includes('as="font"'));
-    // T-0588 (D-0210): only the state pair is preloaded; the legacy pair loads on demand.
+    // T-0588 (D-0210): the state pair is preloaded; T-0625 retired the legacy pair.
     expect(links).toHaveLength(2);
     const names = links.map((t) => /href="([^"]+)"/.exec(t)![1]!.split("/").pop()!);
     expect(names.some((n) => n.startsWith("familjen-grotesk"))).toBe(true);
@@ -180,7 +190,7 @@ describe("T-0545 AC1 self-hosted fonts in the build", () => {
     }
   });
 
-  it("the service worker precache manifest lists all four woff2 URLs", () => {
+  it("the service worker precache manifest lists both woff2 URLs", () => {
     const sw = read("sw.js");
     const urls = new Set([...sw.matchAll(/url:"([^"]+)"/g)].map((m) => m[1]));
     for (const f of woff2()) expect(urls, f).toContain(`assets/${f}`);

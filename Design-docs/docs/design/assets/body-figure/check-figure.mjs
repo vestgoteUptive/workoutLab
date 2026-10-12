@@ -189,7 +189,7 @@ export function checkDocs(root = REPO) {
 
 /** CSS variables the v2 figure rules and its preview page may read (D-0225). */
 const FIGURE_VARS =
-  /^--(?:wl-(?:bg|ink|fig-[a-z]+|color-plan-attention|color-(?:bg|text|surface|plan-[a-z-]+|lift-[a-z-]+|rest-[a-z-]+))|wl-font)$/;
+  /^--(?:wl-(?:bg|ink|fig-[a-z]+|color-plan-attention|color-(?:plan-[a-z-]+|lift-[a-z-]+|rest-[a-z-]+))|wl-font)$/;
 const PREVIEW_DEMOS = [
   ["coverage with attention", /data-cov="[^"]+"\s+data-attention="[^"]+"/],
   ["primary", /data-primary="[^"]+"/],

@@ -4,8 +4,11 @@
 // string or a CSS length. None of them re-derives an engine value from another one — there is no
 // `coverageStep` from `load / target`, and no `deficit` from `load` and `target`. AC-A5 and
 // AC-A13 exist to catch exactly that, so keep this file free of engine rules.
-import { coverageLegend, type ColorName, type PlanCoverageToken } from "@workoutlab/design-tokens";
+import { coverageLegend, type PlanCoverageToken } from "@workoutlab/design-tokens";
 import type { LocalDate } from "@workoutlab/shared";
+
+/** The neutral fill: a sentinel drawn as the state's `--wl-raise` (T-0625 retired the flat key). */
+export type NeutralFill = "surface-2";
 
 /**
  * The colour token for the engine's `coverageStep`, matching C-01's own `fillToken` (AC-A20):
@@ -14,19 +17,18 @@ import type { LocalDate } from "@workoutlab/shared";
  * Shares the single source of truth, `coverageLegend`, with C-01 — so a stub with
  * `coverageStep: 2` gives the row and the map button the same fill (AC-A15).
  */
-export function fillToken(step: number): ColorName | PlanCoverageToken {
+export function fillToken(step: number): NeutralFill | PlanCoverageToken {
   return coverageLegend.find((e) => e.step === step)?.token ?? "surface-2";
 }
 
 /**
  * The CSS colour for a token; the only way a colour enters UF-10 (no raw hex anywhere).
- * A `plan-coverage-N` legend token is drawn as the generic `var(--wl-coverage-N)` (D-0211 §2), so a
- * screen without `data-wl-state` keeps the legacy look (D-0210 §2). Never `--wl-color-plan-*`.
+ * A `plan-coverage-N` legend token is drawn as the generic `var(--wl-coverage-N)` (D-0211 §2), so it
+ * follows the screen's state (a screen without `data-wl-state` is plan, D-0210). Never `--wl-color-plan-*`.
  */
-export function tokenVar(name: ColorName | PlanCoverageToken): string {
+export function tokenVar(name: NeutralFill | PlanCoverageToken): string {
   if (name === "surface-2") return "var(--wl-raise)";
-  if (name.startsWith("plan-coverage-")) return `var(--wl-coverage-${name.slice(-1)})`;
-  return `var(--wl-color-${name})`;
+  return `var(--wl-coverage-${name.slice(-1)})`;
 }
 
 /**

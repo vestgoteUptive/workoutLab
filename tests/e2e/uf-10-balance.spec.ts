@@ -298,7 +298,14 @@ test.describe("QA: console errors and render-loop guard on the real route", () =
 // ---------------------------------------------------------------------------------------------
 const TOKENS = JSON.parse(
   readFileSync(resolvePath(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
-) as { color: { plan: Record<string, string>; warn: string; accent: string } };
+) as { color: { plan: Record<string, string> } };
+// T-0625 retired the Chalk & Iron keys; the "no legacy warn/accent" scan reads the frozen snapshot.
+const LEGACY = JSON.parse(
+  readFileSync(
+    resolvePath(__dirname, "../../packages/design-tokens/test/fixtures/tokens.before-T-0587.json"),
+    "utf8",
+  ),
+) as { color: { warn: string; accent: string } };
 const PLAN = TOKENS.color.plan;
 const rgbOf = (hex: string): string => {
   const n = (i: number) => parseInt(hex.slice(i, i + 2), 16);
@@ -359,8 +366,8 @@ test.describe("T-0611 plan state", () => {
     // A computed scan of both screens: no #FF9A85 and no legacy warn on any element.
     const banned = [
       rgbOf(`#${MOCK_ATTENTION}`),
-      rgbOf(TOKENS.color.warn),
-      rgbOf(TOKENS.color.accent),
+      rgbOf(LEGACY.color.warn),
+      rgbOf(LEGACY.color.accent),
     ];
     for (const path of ["/balance", "/balance/hamstrings"]) {
       await page.goto(path);

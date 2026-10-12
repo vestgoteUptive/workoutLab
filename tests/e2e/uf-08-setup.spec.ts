@@ -1651,9 +1651,14 @@ test.describe("T-0599 AC8 canvas compare at 390 x 844", () => {
 });
 
 // ---- T-0600 UF-08.2 Your workout and UF-08.5 Add exercise (D-0208, D-0210, D-0211 §5, D-0216) ----
+// T-0625 retired the Chalk & Iron keys from tokens.json; the "never a legacy colour" checks read
+// them from the frozen pre-Cobalt snapshot.
 const legacyTokens = JSON.parse(
-  readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
-) as { color: Record<string, string>; radius: Record<string, number> };
+  readFileSync(
+    resolve(__dirname, "../../packages/design-tokens/test/fixtures/tokens.before-T-0587.json"),
+    "utf8",
+  ),
+) as { color: Record<string, string> };
 
 const SEL_082 = '[data-screen-id="UF-08.2"]';
 const sheetOf = (page: Page) => page.locator('[data-screen-id="UF-08.5"]');

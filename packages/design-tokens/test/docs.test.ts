@@ -41,14 +41,12 @@ describe("AC16 C-01 legend spec", () => {
 
 describe("AC17 design-system.md doesn't drift", () => {
   const md = readFileSync(resolve(designDir, "design-system.md"), "utf8");
-  const rows = new Map<string, string>();
-  for (const m of md.matchAll(/^\|\s*`([a-z0-9-]+)`\s*\|\s*`(#[0-9A-Fa-f]{6})`\s*\|/gm)) {
-    rows.set(m[1] as string, m[2] as string);
-  }
-  it("has a row for all 17 flat tokens with the tokens.json hex", () => {
-    const flat = Object.entries(raw.color).filter(([, v]) => typeof v === "string");
-    expect([...rows.keys()].sort()).toEqual(flat.map(([k]) => k).sort());
-    for (const [name, hex] of flat) expect(rows.get(name)).toBe(hex);
+  // T-0625 (D-0210 §6): the 17 flat Chalk & Iron rows are gone with their tokens.
+  it("has no flat token row and no Chalk & Iron section, type scale or font", () => {
+    expect(md).not.toMatch(/^\|\s*`[a-z0-9-]+`\s*\|\s*`#[0-9A-Fa-f]{6}`\s*\|/m);
+    expect(md).not.toMatch(/^## Chalk & Iron/m);
+    expect(md).not.toMatch(/^## Type$/m);
+    expect(md).not.toMatch(/--wl-font-(?:display|body)|--wl-color-coverage-/);
   });
 });
 
@@ -127,9 +125,7 @@ describe("T-0583 AC6 design-system.md documents Cobalt + state colour (D-0208)",
   /** Throws when the D-0208 section drifts from tokens.json. */
   function checkCobaltDoc(text: string): void {
     expect(text, "section heading").toContain("## Cobalt + state colour (D-0208)");
-    expect(text, "Chalk & Iron kept").toContain(
-      "## Chalk & Iron (D-0019) — in use until the app screens migrate",
-    );
+    expect(text, "Chalk & Iron retired (T-0625)").not.toContain("## Chalk & Iron");
     const rows = new Map<string, string>();
     for (const m of text.matchAll(/^\|\s*`([a-z]+\.[a-z0-9-]+)`\s*\|\s*`(#[0-9A-F]{6})`\s*\|/gm)) {
       rows.set(m[1] as string, m[2] as string);

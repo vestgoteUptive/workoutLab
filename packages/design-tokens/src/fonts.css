@@ -1,13 +1,14 @@
 /*
- * Self-hosted design fonts (D-0203 §1, T-0544; spec docs/specs/visual-foundation.md §1).
+ * Self-hosted D-0208 state fonts (T-0583; rules: docs/specs/visual-foundation.md §1).
  * One variable latin woff2 per family; family names equal the first family of each tokens.json
- * stack (font.display / font.body). Licences and sources: ../fonts/SOURCES.md.
+ * stack (font.plan / font.session). Licences and sources: ../fonts/SOURCES.md.
  * No local(), data: or remote sources, so the files can be precached for offline use.
+ * T-0625 folded fonts-state.css into this file; the `./fonts-state.css` export is an alias of it.
  */
 @font-face {
-  font-family: "Big Shoulders Display";
-  src: url("../fonts/big-shoulders-display-latin-wght.woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "Familjen Grotesk";
+  src: url("../fonts/familjen-grotesk-latin-wght.woff2") format("woff2");
+  font-weight: 400 700;
   font-style: normal;
   font-display: swap;
   unicode-range:
@@ -16,9 +17,9 @@
 }
 
 @font-face {
-  font-family: "DM Sans";
-  src: url("../fonts/dm-sans-latin-wght.woff2") format("woff2");
-  font-weight: 100 1000;
+  font-family: "Bricolage Grotesque";
+  src: url("../fonts/bricolage-grotesque-latin-wght.woff2") format("woff2");
+  font-weight: 200 800;
   font-style: normal;
   font-display: swap;
   unicode-range:

@@ -1,28 +1,8 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { tokens, type ColorName, type CoverageStep } from "../src/index";
+import { tokens, type CoverageStep, type FontRole } from "../src/index";
 import { pkgRoot } from "./helpers";
-
-const ALL_NAMES = [
-  "bg",
-  "bg-focus",
-  "surface",
-  "surface-2",
-  "line",
-  "line-strong",
-  "text",
-  "text-muted",
-  "accent",
-  "accent-hover",
-  "warn",
-  "on-accent",
-  "coverage-0",
-  "coverage-1",
-  "coverage-2",
-  "coverage-3",
-  "coverage-4",
-] as const satisfies readonly ColorName[];
 
 describe("AC8 types", () => {
   it("rejects unknown colour names at compile time", () => {
@@ -30,10 +10,11 @@ describe("AC8 types", () => {
     const missing = tokens.color["coverage-5"];
     expect(missing).toBeUndefined();
   });
-  it("ColorName equals the flat (string-valued) keys of tokens.color", () => {
-    expectTypeOf<ColorName>().toEqualTypeOf<(typeof ALL_NAMES)[number]>();
-    const flat = Object.entries(tokens.color).filter(([, v]) => typeof v === "string");
-    expect(flat.map(([k]) => k)).toEqual([...ALL_NAMES]);
+  it("T-0625: no flat colour key, and FontRole is plan | session", () => {
+    // @ts-expect-error the flat Chalk & Iron bg is retired (checked by `pnpm typecheck`).
+    const bg = tokens.color.bg;
+    expect(bg).toBeUndefined();
+    expectTypeOf<FontRole>().toEqualTypeOf<"plan" | "session">();
   });
   it("CoverageStep is 0..4", () => {
     expectTypeOf<CoverageStep>().toEqualTypeOf<0 | 1 | 2 | 3 | 4>();
