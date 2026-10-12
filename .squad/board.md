@@ -174,9 +174,9 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
-| T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
+| T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | doing | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
-| T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | todo | wl-build-web |
+| T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | doing | wl-build-web |
 | T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | todo | wl-build-web |
 | T-0620 | UF-09 wording: Done, Save · start rest, paused caption + stats (mock copy) | web-feature:UF-09 | T-0598 | todo | wl-build-web |
 | T-0621 | UF-09 status lines: Target hit, done line, Set-up time, First up (mock behaviour) | web-feature:UF-09 | T-0620 | todo | wl-build-web |
