@@ -475,3 +475,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0638 | UF-02.1 "Not feeling it? Quick 20-min" link | web-feature:UF-02 | T-0636, T-0637 | done | wl-build-web |
 | T-0639 | UF-04.1 Upper/Legs group chips + result count | web-feature:UF-04 | T-0608 | done | wl-build-web |
 | T-0640 | UF-04.1 In plan / Variant / Beginner tags | web-feature:UF-04 | T-0639 | done | wl-build-web |
+| T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | done | wl-build-web |
