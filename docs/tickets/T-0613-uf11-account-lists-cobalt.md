@@ -50,6 +50,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/cobalt-controls.spec.ts`, `tests/e2e/fonts.spec.ts` (orchestrator grant: their 'unchanged outside a state' checks used a now-migrating screen; move each to an injected no-state fixture, never another real screen)
 - `apps/web/src/features/UF-11/**` (lane)
 - `tests/e2e/uf-11-account.spec.ts`, `tests/e2e/uf-11-excluded.spec.ts`, `tests/e2e/uf-11-favorites.spec.ts`, `tests/e2e/uf-11-plan-layout.spec.ts`, `tests/e2e/visual-foundation.spec.ts` (listed extras)
 - `docs/tickets/T-0613-uf11-account-lists-cobalt.md` (log only)
