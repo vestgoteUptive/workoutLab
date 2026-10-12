@@ -19,10 +19,11 @@ import { formatSetCount } from "../../lib/format/number.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import { ArrowRight } from "./glyphs.js";
-import { defaultLocale, defaultTimeZone, formatTodayDate } from "./format.js";
+import { defaultLocale, defaultTimeZone, formatWeekday } from "./format.js";
 import { todayCheckinSlot, todayResumeSlot } from "./slots.js";
 import { SuggestionCard, SuggestionCardSkeleton } from "./SuggestionCard.js";
-import { useToday } from "./use-today.js";
+import { useToday, type TodayState } from "./use-today.js";
+import { weekdayNames } from "./week.js";
 import "./today.css";
 
 /** Test seams (AC-1): the clock, the locale and the time zone are injected. */
@@ -56,6 +57,50 @@ function AttentionLine({ result, locale }: { result: BalanceResult; locale: stri
         </>
       ) : null}
     </p>
+  );
+}
+
+/** T-0623: "Sunday — 3 of 3–5 done this week"; just the weekday until the first read lands. */
+function weekLineText(state: TodayState, now: Date, locale: string, timeZone: string): string {
+  const weekday = formatWeekday(now, locale, timeZone);
+  if (state.status === "loading" || state.week === null) return weekday;
+  const count = formatSetCount(state.week.count, locale);
+  if (state.status === "no-plan") return en.uf02.weekLineNoPlan(weekday, count);
+  const { min, max } = state.rhythm;
+  const range =
+    min === max
+      ? formatSetCount(min, locale)
+      : `${formatSetCount(min, locale)}–${formatSetCount(max, locale)}`;
+  return en.uf02.weekLine(weekday, count, range);
+}
+
+/** T-0623: the Monday-first week row. Not interactive, not a live region. */
+function WeekRowList({
+  state,
+  locale,
+}: {
+  state: Exclude<TodayState, { status: "loading" }>;
+  locale: string;
+}) {
+  if (state.week === null) return null;
+  const names = weekdayNames(state.week.days, locale);
+  return (
+    // `role="list"`: Safari drops list semantics once list-style is none.
+    <ol className="wl-today__week" role="list" aria-label={en.uf02.weekName} data-part="week">
+      {state.week.days.map((day, i) => (
+        <li
+          key={day.date}
+          className="wl-today__day"
+          data-status={day.status ?? "none"}
+          aria-current={day.isToday ? "date" : undefined}
+        >
+          <span aria-hidden="true">{en.uf02.weekLetters[i]}</span>
+          <span className="wl-today__sr-only">
+            {en.uf02.weekDayName(names[i]!, day.status, day.isToday)}
+          </span>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -138,8 +183,9 @@ export function Today(props: TodayProps = {}) {
     <div data-screen-id="UF-02.1" data-wl-state="plan" className="wl-page wl-today">
       <div className="wl-today__header">
         <h1 className="wl-today__title wl-type-hero wl-title--stop">{en.screens.today}</h1>
+        {state.status === "loading" ? null : <WeekRowList state={state} locale={locale} />}
         <p className="wl-today__date wl-type-label" data-part="date">
-          {formatTodayDate(now, locale, timeZone)}
+          {weekLineText(state, now, locale, timeZone)}
         </p>
         {state.status === "loading" ? null : (
           <span className="wl-today__status wl-type-label">

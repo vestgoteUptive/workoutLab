@@ -111,13 +111,8 @@ function hangEveryLoader(): void {
   }
 }
 
-const dateLine = (now: Date, locale = LOCALE, timeZone = TZ): string =>
-  new Intl.DateTimeFormat(locale, {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    timeZone,
-  }).format(now);
+const weekday = (now: Date, locale = LOCALE, timeZone = TZ): string =>
+  new Intl.DateTimeFormat(locale, { weekday: "long", timeZone }).format(now);
 
 /** Waits until the engine's tiles are on screen. */
 async function waitForTiles(): Promise<void> {
@@ -131,48 +126,46 @@ function firstResult(): BalanceResult {
   return balanceSpy.mock.results[0]!.value as BalanceResult;
 }
 
-describe("AC-1 frame and date on the first commit", () => {
-  it("with every loader pending: one data-screen-id, the h1 and the F-tz date line, synchronously", () => {
+describe("AC-1 frame and week line on the first commit", () => {
+  it("with every loader pending: one data-screen-id, the h1 and the F-tz weekday, synchronously", () => {
     hangEveryLoader();
     renderToday(F_TZ);
     const ids = document.querySelectorAll("[data-screen-id]");
     expect(ids).toHaveLength(1);
     expect(ids[0]).toHaveAttribute("data-screen-id", "UF-02.1");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(en.screens.today);
-    const line = part("date")!.textContent!;
-    expect(line).toBe(dateLine(F_TZ.now));
-    expect(line).toContain("Sunday");
-    expect(line).toContain("27 September");
+    // T-0623: until the first read lands there is nothing to count, so the line is the weekday.
+    expect(part("date")!.textContent).toBe("Sunday");
   });
 
-  it("the other side of the tz boundary: 22:30Z is Monday 28 September in Stockholm", () => {
+  it("the other side of the tz boundary: 22:30Z is Monday in Stockholm", () => {
     hangEveryLoader();
     const now = new Date("2026-09-27T22:30:00Z");
     renderToday({ ...F_TZ, now });
-    const line = part("date")!.textContent!;
-    expect(line).toBe(dateLine(now));
-    expect(line).toContain("Monday");
-    expect(line).toContain("28 September");
-    expect(line).not.toContain("Sunday");
+    expect(part("date")!.textContent).toBe("Monday");
   });
 
-  it("defaults: navigator stubbed as {onLine} only gives no throw and the en-GB date line", () => {
+  it("the week line after the read: the weekday, the count and the profile's rhythm", async () => {
+    renderToday(F_TZ);
+    await waitFor(() => expect(part("date")!.textContent).toBe("Sunday — 0 of 3–4 done this week"));
+  });
+
+  it("defaults: navigator stubbed as {onLine} only gives no throw and the en-GB weekday", () => {
     hangEveryLoader();
     vi.stubGlobal("navigator", { onLine: true });
     const now = new Date();
     expect(() => renderToday({ now })).not.toThrow();
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    expect(part("date")!.textContent).toBe(dateLine(now, "en-GB", tz));
+    expect(part("date")!.textContent).toBe(weekday(now, "en-GB", tz));
   });
 
   it("defaults, other value: a string navigator.language is the device locale", () => {
     hangEveryLoader();
     vi.stubGlobal("navigator", { onLine: true, language: "de-DE" });
-    const now = new Date();
-    renderToday({ now });
-    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    expect(part("date")!.textContent).toBe(dateLine(now, "de-DE", tz));
-    expect(part("date")!.textContent).not.toBe(dateLine(now, "en-GB", tz));
+    const now = new Date("2026-09-27T12:00:00Z");
+    renderToday({ now, timeZone: TZ });
+    expect(part("date")!.textContent).toBe("Sonntag");
+    expect(part("date")!.textContent).not.toBe(weekday(now, "en-GB", TZ));
   });
 
   it("the injected tz reaches balance(…, tz) and refreshAll(now, tz)", async () => {

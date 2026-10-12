@@ -47,6 +47,7 @@ import {
   loadTargets,
   refreshAll,
 } from "../../lib/offline/history.js";
+import { weekRow, type WeekRow } from "./week.js";
 
 /** D-0071 §8: the online refresh gets 3 s, then the screen stops waiting for it. */
 export const REFRESH_CAP_MS = 3000;
@@ -69,7 +70,7 @@ export type TodayState =
   /** Before the first cache read resolves. `lastSyncedAt` isn't known yet either. */
   | { status: "loading" }
   /** No cached profile, not all nine targets, or a loader that rejected (AC-10). */
-  | { status: "no-plan"; lastSyncedAt: string | null }
+  | { status: "no-plan"; lastSyncedAt: string | null; week: WeekRow | null }
   | {
       status: "ready";
       result: BalanceResult;
@@ -80,6 +81,10 @@ export type TodayState =
       /** The cached library the preview was built from, for the exercise names. */
       library: readonly LibraryExercise[];
       lastSyncedAt: string | null;
+      /** T-0623: the week row, from the same history read. */
+      week: WeekRow;
+      /** The cached profile's weekly rhythm, for the week line. */
+      rhythm: { min: number; max: number };
     };
 
 /** All nine areas have a cached target. `balance()` throws on fewer (engine `indexTargets`). */
@@ -110,6 +115,7 @@ async function readCache(
   favoriteIds: readonly string[],
 ): Promise<Exclude<TodayState, { status: "loading" }>> {
   const syncedRead = readSynced();
+  let week: WeekRow | null = null;
   try {
     const [history, targets, library, profile] = await Promise.all([
       loadEngineHistory(),
@@ -117,8 +123,9 @@ async function readCache(
       loadLibrary(),
       loadProfile(),
     ]);
+    week = weekRow(history, now, timeZone);
     if (profile === null || !hasEveryTarget(targets)) {
-      return { status: "no-plan", lastSyncedAt: await syncedRead };
+      return { status: "no-plan", lastSyncedAt: await syncedRead, week };
     }
     const nowIso = now.toISOString();
     const result = balance(history, targets, library, nowIso, timeZone);
@@ -138,9 +145,11 @@ async function readCache(
       ),
       library,
       lastSyncedAt: await syncedRead,
+      week,
+      rhythm: { min: profile.rhythmMin, max: profile.rhythmMax },
     };
   } catch {
-    return { status: "no-plan", lastSyncedAt: await syncedRead };
+    return { status: "no-plan", lastSyncedAt: await syncedRead, week };
   }
 }
 

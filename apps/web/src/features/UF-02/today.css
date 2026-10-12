@@ -29,6 +29,45 @@
   margin: 0;
 }
 
+/* T-0623: the week row (D-0212 §1.1). Done is ink 600, the rest ink-muted 400, today underlined. */
+.wl-today__week {
+  display: flex;
+  gap: 0.875rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-today__day {
+  font-size: 1.375rem;
+  line-height: 1.2;
+  font-weight: 400;
+  color: var(--wl-ink-muted);
+}
+
+.wl-today__day[data-status="done"] {
+  font-weight: 600;
+  color: var(--wl-ink);
+}
+
+.wl-today__day[aria-current="date"] {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+.wl-today__sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .wl-today__attention,
 .wl-today__empty,
 .wl-today__no-plan {

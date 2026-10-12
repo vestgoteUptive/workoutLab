@@ -16,6 +16,21 @@ export const uf02 = {
   /** No cached profile or not all nine targets (AC-10). */
   noPlan: "Connect to finish setting up your plan",
   start: "Start workout",
+  // T-0623 (D-0212 §1.1): the week row and the week line that replaced the date line.
+  /** The row's accessible name. */
+  weekName: "This week",
+  /** Monday first. */
+  weekLetters: ["M", "T", "W", "T", "F", "S", "S"],
+  /** "Monday, done", "Tuesday, rest", "Sunday, today, done"; upcoming is the bare name. */
+  weekDayName: (dayName: string, status: "done" | "rest" | "upcoming" | null, isToday: boolean) =>
+    [dayName, isToday ? "today" : null, status === "upcoming" || status === null ? null : status]
+      .filter((part) => part !== null)
+      .join(", "),
+  /** "Sunday — 3 of 3–5 done this week". `range` arrives as "3–5" or "4". */
+  weekLine: (weekday: string, count: string, range: string) =>
+    `${weekday} — ${count} of ${range} done this week`,
+  /** No cached profile. */
+  weekLineNoPlan: (weekday: string, count: string) => `${weekday} — ${count} done this week`,
   // T-0302c: the 45-min suggestion card (D-0065 §1). The reason words live in `lib/i18n/workout.ts`.
   /** The card's accessible name. */
   cardLabel: "Suggested workout",
