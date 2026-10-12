@@ -215,11 +215,12 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
     } catch {
       outcome = "failed";
     }
-    deletingRef.current = false;
     if (outcome === "deleted") {
+      // Stays true through the bounded wait in leaveToWelcome: a tap meanwhile must not re-send.
       await leaveToWelcome();
       return;
     }
+    deletingRef.current = false;
     setDeleting(false);
     setDeleteError(outcome);
   }
@@ -341,7 +342,9 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
               className="wl-button--secondary"
               aria-disabled={!confirmed || deleteDisabled ? "true" : undefined}
               aria-describedby={deleteCaptionShown ? deleteCaptionId : undefined}
-              onClick={() => void onDelete()}
+              onClick={() => {
+                if (confirmed && !deleteDisabled) void onDelete();
+              }}
             >
               {deleting ? a.deleting : a.deleteConfirm}
             </button>

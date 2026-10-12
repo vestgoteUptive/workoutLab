@@ -335,6 +335,20 @@ describe("T-0310d AC-D7 delete outcomes", () => {
     expect(replaceSpy).not.toHaveBeenCalled();
   });
 
+  it("T-0613 a tap on Deleting… during the wait for sign-out sends no second delete", async () => {
+    account.deleteAccountAndSignOut.mockResolvedValue("deleted");
+    auth.value = { ...auth.value, status: "signed-in" };
+    mount();
+    confirmDelete();
+    await act(async () => undefined);
+    const busy = screen.getByRole("button", { name: a.deleting });
+    expect(busy).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(busy);
+    await act(async () => undefined);
+    fireEvent.click(busy);
+    expect(account.deleteAccountAndSignOut).toHaveBeenCalledTimes(1);
+  });
+
   it("T-0310d AC-D7 deleted: history replace, so Back does not return to the screen", async () => {
     account.deleteAccountAndSignOut.mockResolvedValue("deleted");
     auth.value = { ...auth.value, status: "signed-out" };
