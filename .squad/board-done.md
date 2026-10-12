@@ -457,3 +457,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0604 | UF-03.3 Summary, PR lift band | web-feature:UF-03 | T-0603 | done | wl-build-web |
 | T-0630 | Sheet stacking and portal scope before UF-08.3/UF-05.1 adopt .wl-sheet: z-index under the tab bar, an unstyled scrim when portalled to body; AccountDeletedNotice outside any state root (T-0593 review, D-0216 addendum) | web-shell | T-0593 | done | wl-build-web |
 | T-0610 | UF-07.1 in plan | web-feature:UF-07 | T-0593, T-0591 | done | wl-build-web |
+| T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | done | wl-build-web |

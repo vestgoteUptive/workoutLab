@@ -18,6 +18,7 @@ import {
   type Workout,
 } from "@workoutlab/engine";
 import { Checkbox } from "../../components/checkbox/index.js";
+import { TickIcon } from "../../components/icons/index.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import { excludeExercise } from "../../lib/offline/excluded.js";
@@ -73,6 +74,17 @@ function deviceZone(): string {
 
 function reasonLabel(reason: SwapReason | null): string {
   return reason === null ? en.uf05.chips.best : en.uf05.chips[reason];
+}
+
+/** The area names of the exercise's heaviest weight ("Chest, Arms"): a caption, no rule. */
+function areaText(exercise: LibraryExercise | undefined): string | null {
+  if (exercise === undefined) return null;
+  const entries = Object.entries(exercise.areas).filter(([, w]) => typeof w === "number" && w > 0);
+  const top = entries.reduce((m, [, w]) => Math.max(m, w as number), 0);
+  const names = entries
+    .filter(([, w]) => w === top)
+    .map(([a]) => (en.bodyMap.areas as Record<string, string>)[a] ?? a);
+  return names.length === 0 ? null : names.join(en.uf05.listSeparator);
 }
 
 function isPromise(value: unknown): value is PromiseLike<unknown> {
@@ -325,41 +337,58 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
       ? en.uf05.title(nameOf(current.exerciseId))
       : en.uf05.titleFallback;
 
+  const areaCaption = areaText(
+    load.status === "ready" && current !== undefined
+      ? library.find((e) => e.id === current.exerciseId)
+      : undefined,
+  );
+
   return (
-    <div className="wl-uf05">
+    <div className="wl-uf05" data-wl-state="plan">
+      <div className="wl-sheet-scrim" aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="wl-uf05__panel"
+        data-wl-state="plan"
+        className="wl-sheet wl-uf05__panel"
         data-screen-id="UF-05.1"
       >
-        <h2 id={titleId} className="wl-uf05__title">
-          {title}
-        </h2>
+        <div className="wl-sheet__grabber" aria-hidden="true" />
+        <header className="wl-uf05__head">
+          {areaCaption === null ? null : (
+            <p className="wl-type-label" data-field="areas">
+              {areaCaption}
+            </p>
+          )}
+          <h2 id={titleId} className="wl-type-section">
+            {title}
+          </h2>
+        </header>
         {failed ? (
-          <p className="wl-uf05__message">{en.uf05.loadFailed}</p>
+          <p className="wl-type-body">{en.uf05.loadFailed}</p>
         ) : ranking === null ? (
-          <p className="wl-uf05__message">{en.uf05.loading}</p>
+          <p className="wl-type-body">{en.uf05.loading}</p>
         ) : (
           <>
             <div role="radiogroup" aria-label={en.uf05.chipsLabel} className="wl-uf05__chips">
               {REASONS.map((r) => (
-                <label key={r ?? "best"} className="wl-uf05__chip">
+                <label key={r ?? "best"} className="wl-chip">
                   <input
                     type="radio"
                     name={`${groupName}-reason`}
                     checked={reason === r}
                     onChange={() => chooseReason(r)}
                   />
+                  <TickIcon size={16} className="wl-chip__tick" />
                   <span>{reasonLabel(r)}</span>
                 </label>
               ))}
             </div>
             {candidates.length === 0 ? (
-              <p className="wl-uf05__message">
+              <p className="wl-type-body">
                 {ranking.ok && ranking.othersExcluded ? en.uf05.emptyExcluded : en.uf05.empty}
               </p>
             ) : (
@@ -370,7 +399,11 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
                   className="wl-uf05__rows"
                 >
                   {candidates.map((c) => (
-                    <label key={c.exerciseId} className="wl-uf05__row" data-id={c.exerciseId}>
+                    <label
+                      key={c.exerciseId}
+                      className="wl-option wl-uf05__row"
+                      data-id={c.exerciseId}
+                    >
                       <input
                         type="radio"
                         name={`${groupName}-candidate`}
@@ -383,10 +416,10 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
                         }}
                       />
                       <span className="wl-uf05__row-body">
-                        <span className="wl-uf05__name" data-field="name">
+                        <span className="wl-type-row-title" data-field="name">
                           {nameOf(c.exerciseId)}
                         </span>
-                        <span className="wl-uf05__facts">
+                        <span className="wl-type-label wl-uf05__facts">
                           <span data-field="match">{matchText(c)}</span>
                           <span data-field="minutes">{minutesText(c)}</span>
                           <span data-field="equipment">{equipmentText(c.equipment)}</span>
@@ -406,6 +439,7 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
                           </span>
                         ) : null}
                       </span>
+                      <TickIcon size={20} className="wl-option__tick" />
                     </label>
                   ))}
                 </div>
@@ -419,7 +453,7 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
                       {...(online ? {} : { describedBy: offlineNoteId })}
                     />
                     {online ? null : (
-                      <p id={offlineNoteId} className="wl-uf05__exclude-note">
+                      <p id={offlineNoteId} className="wl-type-label">
                         {en.excluded.connectToChange}
                       </p>
                     )}
@@ -428,7 +462,7 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
                 {selected === undefined ? null : (
                   <button
                     type="button"
-                    className="wl-uf05__use"
+                    className="wl-button--primary"
                     aria-disabled={pending ? "true" : undefined}
                     onClick={use}
                   >
@@ -440,14 +474,14 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
           </>
         )}
         {excludeFailed ? (
-          <p role="alert" className="wl-uf05__notice">
+          <p role="alert" className="wl-type-body">
             {en.excluded.saveFailed}
           </p>
         ) : null}
-        <p role="status" aria-live="polite" className="wl-uf05__notice">
+        <p role="status" aria-live="polite" className="wl-type-body wl-uf05__notice">
           {notice === null ? null : en.uf05[notice]}
         </p>
-        <button type="button" className="wl-uf05__close" onClick={onClose}>
+        <button type="button" className="wl-button--text" onClick={onClose}>
           {en.uf05.close}
         </button>
       </div>

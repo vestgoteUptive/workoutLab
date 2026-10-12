@@ -175,7 +175,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 |---|---|---|---|---|---|
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
-| T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | doing | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
 | T-0612 | UF-11.1/.2/.3: tiles, check-in paper, G-2 → 28 px | web-feature:UF-11 | T-0593, T-0582, T-0591 | doing | wl-build-web |
 | T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | todo | wl-build-web |
@@ -212,3 +211,7 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0674 | UF-03.3 PR band from records(): replace EndedSummary.pr {text} with a structured record (as T-0636 latestPr), formatted with en.* copy; pick which record the band shows; fix the trivially-passing 'successful save shows none' test (T-0604 review) | web-feature:UF-03 | T-0604, T-0636 | todo | wl-build-web |
 | T-0675 | Shell: routes.phase3.render.test.tsx pins bare <h1> source for UF-03.3, UF-04.3 and UF-06.2; accept a className so those screens use .wl-title--stop and drop their duplicated ::after rules (T-0604/T-0607/T-0609 reviews; supersedes T-0669) | web-shell | — | todo | wl-build-web |
 | T-0676 | UF-07.1: switch Save and move up/down from native disabled to aria-disabled (state-patterns.md), no-op handlers, Save aria-describedby the reason line, update toBeDisabled assertions, drop scoped :disabled rules (T-0610 review) | web-feature:UF-07 | T-0610 | todo | wl-build-web |
+| T-0677 | docs/specs/uf-11-plan-checkin.md:23 still says Accept is the primary while a check-in is pending; update: Edit plan is always the one primary, Accept is the paper action (T-0612 review) | product | T-0612 | todo | wl-spec |
+| T-0678 | main.css shared hidden-radio rule (.wl-option/.wl-chip/.wl-segmented > input: 1px, pointer-events none) breaks Playwright .check(); make the input a full-size invisible target there and drop the local copies in UF-03 summary.css:137 and UF-05 uf-05.css:109 (T-0602 review) | web-shell | T-0602 | todo | wl-build-web |
+| T-0679 | UF-05 SwapSheet candidate radios: native disabled={pending} → aria-disabled (a focused radio that becomes disabled drops focus out of the dialog trap) (T-0602 review) | web-feature:UF-05 | T-0602 | todo | wl-build-web |
+| T-0680 | UF-03 ListView.tsx:738 is a third SwapSheet host with no e2e; cover the in-tree scrim z6 / sheet z7 stacking there (T-0602 review) | web-feature:UF-03 | T-0602 | todo | wl-build-web |

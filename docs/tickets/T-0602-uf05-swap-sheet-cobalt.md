@@ -5,7 +5,7 @@ lane: web-feature:UF-05
 screens: [UF-08.3, UF-05.1]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0199, D-0056]
 deps: [T-0593, T-0595, T-0591]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Set up · swap before starting" and "Swap · mid-workout" (#turn-5). Behaviour: screens/UF-08.3-UF-05.1.md. SwapSheet lives in features/UF-05 and is mounted by UF-08 and UF-09; only UF-05 files change. Depends on T-0595, so the mid-workout case opens over a real lift screen. -->
 ## Why
@@ -57,3 +57,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-05-swap.spec.ts` and `uf-08-setup.spec.ts` green · commit messages start with `T-0602` and cite UF-08.3/UF-05.1.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0602.md` (D-0157).
