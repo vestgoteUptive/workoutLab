@@ -44,3 +44,7 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `shell.spec.ts` and `uf-04-library.spec.ts` green · commit messages start with `T-0622` and cite UF-04.1.
 
 ## Build / accept log
+
+- 2026-10-12 build: en.ts `tabBar.library` and `screens.library` now "Exercises". Changed assertions: `App.test.tsx:78` (tab text list), `lib/i18n/__tests__/flows.test.ts` (AC-7 tabBar + screens literals, 2), `tests/e2e/shell.spec.ts:87` (labels). Added AC3 scan test in flows.test.ts. No test outside the grants queried "Library" by name; `uf-04-library.spec.ts` and the UF-04 vitests needed no change (export-name literals only). AC1/AC2/AC4/AC5 are covered by the existing shell, UF-04 and tab-bar tests, which read `en.*` (green).
+- Planted fault: reverted `tabBar.library` to "Library" -> App.test.tsx and flows.test.ts red (3 failed); restored from backup.
+- Gate: typecheck lint test exit 0; test:repo-checks 0; format:check 0 (after prettier on flows.test.ts); check-all 0; full e2e 643 passed, exit 0.

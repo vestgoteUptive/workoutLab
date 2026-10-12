@@ -84,7 +84,7 @@ test.describe("AC-A7 tab bar (e2e, 360x640)", () => {
     await page.goto("/");
     await injectSession(page);
     await page.goto("/");
-    const labels = ["Today", "Library", "Progress", "Plan"];
+    const labels = ["Today", "Exercises", "Progress", "Plan"];
     for (const label of labels) {
       await page.keyboard.press("Tab");
       await expect(page.locator(":focus")).toHaveText(label);

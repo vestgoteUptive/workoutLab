@@ -75,7 +75,7 @@ describe("C-02 tab bar (AC-A7)", () => {
     );
     const nav = await screen.findByRole("navigation", { name: "Main" });
     const links = within(nav).getAllByRole("link");
-    expect(links.map((l) => l.textContent)).toEqual(["Today", "Library", "Progress", "Plan"]);
+    expect(links.map((l) => l.textContent)).toEqual(["Today", "Exercises", "Progress", "Plan"]);
     expect(links.map((l) => l.getAttribute("href"))).toEqual([
       "/",
       "/library",
