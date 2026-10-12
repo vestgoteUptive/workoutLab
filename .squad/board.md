@@ -181,7 +181,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0625 | Tokens: retire Chalk & Iron keys and fonts (contract) | design | T-0624, T-0617, T-0585, T-0614 | todo | wl-design |
 | T-0626 | Screen restyles: use aria-disabled, not :disabled, on migrated controls (the legacy :disabled rule loses to scoped rules); feature CSS (.wl-plan__rows .wl-row, .wl-card.wl-excluded__row, excluded.css:140) can override the unboxed row and card by load order, so each screen ticket must check it (T-0592 review) | web-shell | T-0592 | todo (a checklist for each screen ticket) | wl-build-web |
 | T-0628 | (superseded by T-0660 / D-0225) Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
-| T-0633 | UF-11.4 "Bar and plates" settings section | web-feature:UF-11 | T-0613, T-0632 | doing | wl-build-web |
 | T-0634 | UF-09.3 plate loading "Each side 25 + 15 kg" | web-feature:UF-09 | T-0621, T-0632 | todo | wl-build-web |
 | T-0636 | UF-02.1 Latest PR | web-feature:UF-02 | T-0623, T-0635 | todo | wl-build-web |
 | T-0637 | UF-08.1 ?budget= initial time budget | web-feature:UF-08 | T-0600 | todo | wl-build-web |
