@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.4]
 decisions: [D-0217, D-0218, D-0136, D-0195, D-0210]
 deps: [T-0613, T-0632]
-status: todo
+status: doing
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ½ day (mirrors EquipmentSection.tsx). Spec: docs/specs/cobalt-mock-behaviour.md §3.1 "Settings". Runs after the UF-11.4 restyle (T-0613), in the Cobalt paper/plan look. -->
 
