@@ -5,7 +5,7 @@ lane: web-feature:UF-02
 screens: [UF-02.1]
 decisions: [D-0212, D-0034, D-0208, D-0211]
 deps: [T-0601]
-status: todo
+status: doing
 ---
 <!-- Groomed 2026-10-09 (D-0212 §1.1, D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "Today" (#turn-3), "Today · check-in pending" (#turn-5). Spec: docs/specs/cobalt-mock-behaviour.md §1.1. No engine or data change: it reads the engine history Today already loads. -->
 ## Why
