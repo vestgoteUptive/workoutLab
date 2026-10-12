@@ -33,8 +33,10 @@ const tokens = JSON.parse(read(path.join(root, "packages/design-tokens/src/token
 const C = tokens.color;
 const P = C.paper;
 const BRAND = [P.bg, P.ink, P["ink-muted"], P.action, P["on-action"]];
-// The legacy flat Chalk & Iron colours (string values directly under color), which no template may carry.
-const LEGACY = Object.values(C).filter((v) => typeof v === "string" && /^#[0-9A-Fa-f]{6}$/.test(v));
+// The retired flat Chalk & Iron colours (T-0625), from the frozen pre-Cobalt tokens, which no template may carry.
+const LEGACY = Object.values(
+  JSON.parse(read(path.join(root, "packages/design-tokens/test/fixtures/tokens.before-T-0587.json"))).color,
+).filter((v) => typeof v === "string" && /^#[0-9A-Fa-f]{6}$/.test(v));
 
 /** WCAG contrast ratio of two #RRGGBB colours. */
 function contrast(a, b) {
