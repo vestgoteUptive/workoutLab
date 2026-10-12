@@ -5,14 +5,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
-import {
-  injectSession,
-  mockSupabaseAuth,
-  mockSupabaseData,
-  mockSupabaseRest,
-} from "./fixtures/supabase-mock.js";
-import { UF11_FIXTURES } from "./fixtures/uf-11-plan.js";
-import { ACCOUNT_FIXTURES } from "./fixtures/uf-11-account.js";
+import { mockSupabaseAuth, mockSupabaseRest } from "./fixtures/supabase-mock.js";
 
 type Colours = Record<string, string>;
 const tokens = JSON.parse(
@@ -71,13 +64,6 @@ test.beforeEach(async ({ page }) => {
 test.describe("AC1 unchanged outside a state", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  async function open(page: Page, path: string, fixtures: object): Promise<void> {
-    await mockSupabaseData(page, fixtures);
-    await page.goto("/");
-    await injectSession(page);
-    await page.goto(path);
-  }
-
   // T-0612: /plan is a plan-state screen now, so the legacy primary is proven on an injected
   // no-state fixture (the same assertions as before).
   test("a no-state primary button is accent, 14px, DM Sans", async ({ page }) => {
@@ -94,10 +80,13 @@ test.describe("AC1 unchanged outside a state", () => {
     expect(family.startsWith('"DM Sans"')).toBe(true);
   });
 
-  test("/plan/account: the secondary button keeps 14px and DM Sans", async ({ page }) => {
-    await open(page, "/plan/account", ACCOUNT_FIXTURES);
-    await expect(page.locator(".wl-button--secondary").first()).toBeVisible();
-    const [bg, radius, family] = await css(page, ".wl-button--secondary", [
+  // T-0613: /plan/account is a plan-state screen now, so the legacy secondary is proven on an
+  // injected no-state fixture (the same assertions as before).
+  test("a no-state secondary button keeps 14px and DM Sans", async ({ page }) => {
+    await page.goto("/welcome");
+    await expect(page.locator("h1").first()).toBeVisible();
+    await inject(page, `<button id="s" class="wl-button--secondary">Sign out</button>`);
+    const [bg, radius, family] = await css(page, "#s", [
       "background-color",
       "border-radius",
       "font-family",

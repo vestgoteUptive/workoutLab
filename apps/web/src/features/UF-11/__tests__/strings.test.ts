@@ -196,6 +196,8 @@ describe("AC-B16 no second string catalogue", () => {
       "search",
       "off",
       "true",
+      // T-0613 BackToPlan: the `ChevronIcon` direction value; not copy.
+      "left",
     ]);
     const uiWords = Object.values(uf11).filter((v) => typeof v === "string") as string[];
     for (const file of sourceFiles()) {
@@ -260,6 +262,7 @@ describe("AC-B16 the lane boundary (D-0071 §1, enforced by check:repo since T-0
     expect(css).not.toMatch(/\bhsla?\(/);
     expect(css).not.toMatch(/font-family/);
     // And it does use tokens.
-    expect(css).toMatch(/var\(--wl-color-/);
+    // T-0613: the generic state variables (D-0211 §2) are the token-backed form since T-0612.
+    expect(css).toMatch(/var\(--wl-/);
   });
 });

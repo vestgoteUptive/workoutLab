@@ -200,12 +200,15 @@ describe("T-0310d AC-D4 export", () => {
       now: NOW,
     });
     const busy = screen.getByRole("button", { name: a.exporting });
-    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute("aria-disabled", "true");
     expect(account.downloadAccountExport).not.toHaveBeenCalled();
     await act(async () => d.resolve({ r: 1 }));
     expect(account.downloadAccountExport).toHaveBeenCalledTimes(1);
     expect(account.downloadAccountExport).toHaveBeenCalledWith({ r: 1 }, NOW, "Europe/Stockholm");
-    expect(screen.getByRole("button", { name: a.exportButton })).toBeEnabled();
+    expect(screen.getByRole("button", { name: a.exportButton })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it("T-0310d AC-D4 a rejected export shows an alert, offers no file, re-enables", async () => {
@@ -214,7 +217,10 @@ describe("T-0310d AC-D4 export", () => {
     fireEvent.click(screen.getByRole("button", { name: a.exportButton }));
     expect(await screen.findByRole("alert", {}, WAIT)).toHaveTextContent(a.exportFailed);
     expect(account.downloadAccountExport).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: a.exportButton })).toBeEnabled();
+    expect(screen.getByRole("button", { name: a.exportButton })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 });
 
@@ -224,8 +230,8 @@ describe("T-0310d AC-D5 offline", () => {
     mount();
     const exp = screen.getByRole("button", { name: a.exportButton });
     const del = screen.getByRole("button", { name: a.deleteOpen });
-    expect(exp).toBeDisabled();
-    expect(del).toBeDisabled();
+    expect(exp).toHaveAttribute("aria-disabled", "true");
+    expect(del).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText(a.connectToExport)).toBeInTheDocument();
     expect(screen.getByText(a.connectToDelete)).toBeInTheDocument();
     fireEvent.click(exp);
@@ -242,16 +248,25 @@ describe("T-0310d AC-D5 offline", () => {
       window.dispatchEvent(new Event("online"));
     });
     expect(screen.getByRole("button", { name: a.exportButton })).toBe(exp);
-    expect(exp).toBeEnabled();
-    expect(screen.getByRole("button", { name: a.deleteOpen })).toBeEnabled();
+    expect(exp).not.toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: a.deleteOpen })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     const input = openConfirm();
     fireEvent.change(input, { target: { value: "delete" } });
-    expect(screen.getByRole("button", { name: a.deleteConfirm })).toBeEnabled();
+    expect(screen.getByRole("button", { name: a.deleteConfirm })).not.toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     act(() => {
       setOnline(false);
       window.dispatchEvent(new Event("offline"));
     });
-    expect(screen.getByRole("button", { name: a.deleteConfirm })).toBeDisabled();
+    expect(screen.getByRole("button", { name: a.deleteConfirm })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 });
 
@@ -263,7 +278,10 @@ describe("T-0310d AC-D6 typed confirm", () => {
     const input = openConfirm();
     expect(screen.getByText(a.deleteWarning)).toBeInTheDocument();
     expect(input).toHaveFocus();
-    expect(screen.getByRole("button", { name: a.deleteConfirm })).toBeDisabled();
+    expect(screen.getByRole("button", { name: a.deleteConfirm })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
   });
 
   it.each([
@@ -276,8 +294,8 @@ describe("T-0310d AC-D6 typed confirm", () => {
     mount();
     fireEvent.change(openConfirm(), { target: { value } });
     const button = screen.getByRole("button", { name: a.deleteConfirm });
-    if (enabled) expect(button).toBeEnabled();
-    else expect(button).toBeDisabled();
+    if (enabled) expect(button).not.toHaveAttribute("aria-disabled", "true");
+    else expect(button).toHaveAttribute("aria-disabled", "true");
   });
 
   it("T-0310d AC-D6 Cancel hides the panel, clears the input, refocuses the opener", () => {
@@ -308,7 +326,10 @@ describe("T-0310d AC-D7 delete outcomes", () => {
     fireEvent.click(button);
     expect(account.deleteAccountAndSignOut).toHaveBeenCalledTimes(1);
     expect(account.deleteAccountAndSignOut).toHaveBeenCalledWith({ userId: TEST_USER });
-    expect(screen.getByRole("button", { name: a.deleting })).toBeDisabled();
+    expect(screen.getByRole("button", { name: a.deleting })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     await act(async () => d.resolve("deleted"));
     expect(where()).toBe("/welcome");
     expect(replaceSpy).not.toHaveBeenCalled();
@@ -349,7 +370,7 @@ describe("T-0310d AC-D7 delete outcomes", () => {
     confirmDelete();
     expect(await screen.findByText(a.deleteFailed, undefined, WAIT)).toBeInTheDocument();
     const button = screen.getByRole("button", { name: a.deleteConfirm });
-    expect(button).toBeEnabled();
+    expect(button).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(button);
     await waitFor(() => expect(account.deleteAccountAndSignOut).toHaveBeenCalledTimes(2), WAIT);
     expect(where()).toBe("/plan/account");
@@ -406,7 +427,7 @@ describe("T-0529 AC-3 / AC-4 sign out, nothing unsynced", () => {
     mount();
     fireEvent.click(signOutButton());
     const busy = await screen.findByRole("button", { name: a.signingOut }, WAIT);
-    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(busy);
     expect(account.signOutAndClearDevice).toHaveBeenCalledTimes(1);
     expect(account.signOutAndClearDevice).toHaveBeenCalledWith({ userId: TEST_USER });
@@ -521,7 +542,7 @@ describe("T-0529 AC-5 unsynced confirm", () => {
     account.hasUnsyncedWork.mockResolvedValue(true);
     auth.value.status = "signed-out";
     mount();
-    expect(signOutButton()).toBeEnabled();
+    expect(signOutButton()).not.toHaveAttribute("aria-disabled", "true");
     fireEvent.click(signOutButton());
     fireEvent.click(await screen.findByRole("button", { name: a.signOutAnyway }, WAIT));
     await waitFor(() => expect(where()).toBe("/welcome"), WAIT);

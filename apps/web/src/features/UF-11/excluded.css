@@ -1,27 +1,34 @@
-/* T-0540 UF-11.5. Colours only from design tokens. */
+/* UF-11.5 Excluded and UF-11.6 Favorites in the Cobalt plan state (T-0613, D-0208, D-0210, D-0211).
+   The roots are plan state roots; colours, radii and fonts come only from the generic --wl-*
+   variables and the radius tokens. Every rule starts at .wl-excluded so nothing leaks. Nothing
+   animates: the only motion is the root's state cross-fade. */
 .wl-excluded {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1rem;
 }
 
-.wl-excluded__search input {
-  box-sizing: border-box;
-  inline-size: 100%;
-  min-block-size: 48px;
-  padding: 8px 48px 8px 12px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 8px;
-  font: inherit;
+.wl-excluded p {
+  margin: 0;
+}
+
+.wl-excluded__search {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
 }
 
 .wl-excluded__field {
   position: relative;
 }
 
-.wl-excluded__clear {
+.wl-excluded .wl-excluded__field input.wl-input {
+  inline-size: 100%;
+  padding-inline-end: 3rem;
+  font-size: 1.0625rem;
+}
+
+.wl-excluded .wl-excluded__clear {
   position: absolute;
   inset-block-start: 2px;
   inset-inline-end: 2px;
@@ -30,38 +37,36 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: var(--wl-color-text);
+  color: var(--wl-ink);
   background: transparent;
   border: 0;
+  border-radius: var(--wl-radius-pill);
   cursor: pointer;
 }
 
-.wl-excluded__clear svg,
-.wl-excluded__fail svg {
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
+.wl-excluded .wl-excluded__clear:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 0;
 }
 
-.wl-excluded input:focus-visible,
-.wl-excluded button:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-.wl-excluded__fail {
+/* A write failure: a quiet line on the raise fill (white on raise 6.2). */
+.wl-excluded .wl-excluded__fail {
   display: flex;
-  gap: 8px;
+  gap: 0.5rem;
   align-items: flex-start;
-  margin: 0;
-  padding: 10px 12px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface-2);
-  border-radius: 8px;
+  padding: 0.75rem 0.875rem;
+  color: var(--wl-ink);
+  background: var(--wl-raise);
+  border-radius: var(--wl-radius-tile);
+  font-size: 0.875rem;
+  line-height: 1.4;
 }
 
-.wl-excluded__status {
+.wl-excluded .wl-excluded__fail svg {
+  flex: none;
+}
+
+.wl-excluded .wl-excluded__status {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
@@ -71,77 +76,83 @@
   white-space: nowrap;
 }
 
-.wl-excluded__list {
+.wl-excluded .wl-excluded__list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wl-card.wl-excluded__row {
-  flex-direction: row;
-  display: flex;
+/* A row: the name and its captions on the left, one outline button on the right. */
+.wl-excluded .wl-excluded__row {
+  min-block-size: 56px;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-block-size: 64px;
-  box-sizing: border-box;
+  gap: 0.75rem;
 }
 
 .wl-excluded .wl-excluded__text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0.125rem;
   flex: 1 1 auto;
   min-inline-size: 0;
   overflow-wrap: break-word;
 }
 
-.wl-excluded .wl-excluded__button {
+.wl-excluded .wl-excluded__row .wl-excluded__button {
   flex: none;
   inline-size: auto;
   max-inline-size: 45%;
   min-block-size: 44px;
   min-inline-size: 96px;
-}
-
-.wl-excluded__button[aria-disabled="true"] {
-  color: var(--wl-color-text-muted);
-  cursor: not-allowed;
-}
-
-.wl-excluded__empty {
+  padding: 0.5rem 1rem;
+  justify-content: center;
+  font-size: 1rem;
   text-align: center;
-  padding-block: 24px;
 }
 
-.wl-excluded__skeleton {
-  min-block-size: 64px;
-  background: var(--wl-color-surface-2);
-  border-radius: 12px;
+.wl-excluded .wl-excluded__empty {
+  text-align: center;
+  padding-block: 1.5rem;
 }
 
-/* T-0569 UF-11.6: the "Favorite" / "Excluded" word tag (the words are the signal, not the pill). */
-.wl-favorites__tag {
+.wl-excluded .wl-excluded__skeleton {
+  min-block-size: 56px;
+  background: var(--wl-raise);
+  border-radius: var(--wl-radius-tile);
+}
+
+.wl-excluded .wl-excluded__skeleton + .wl-excluded__skeleton {
+  margin-block-start: 0.5rem;
+}
+
+/* UF-11.6: the "Favorite" / "Excluded" word tag. The words are the signal, so it is a quiet pill
+   outline with no fill. */
+.wl-favorites .wl-favorites__tag {
   align-self: flex-start;
-  padding: 2px 8px;
-  background: var(--wl-color-surface-2);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 999px;
-  font-size: 11px;
+  padding: 0.125rem 0.5rem;
+  color: var(--wl-ink);
+  border: 1px solid var(--wl-ink-muted);
+  border-radius: var(--wl-radius-pill);
+  font-size: 0.8125rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
-/* A group card holds its rows as plain rows, not nested cards. */
-.wl-favorites section.wl-card .wl-card.wl-excluded__row {
-  padding-inline: 0;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
+/* A group is its title and its rows: the shared card hairline between groups is not wanted on
+   top of each row's own hairline. */
+.wl-favorites section.wl-card {
+  gap: 0.25rem;
+  padding-block-start: 0;
+  border-block-start: 0;
+}
+
+.wl-favorites section.wl-card > h2 {
+  margin: 0;
+}
+
+.wl-favorites .wl-excluded__list > section.wl-card + section.wl-card {
+  margin-block-start: 1rem;
 }
 
 @media (max-width: 359px) {
@@ -151,7 +162,7 @@
   .wl-favorites .wl-excluded__text {
     flex-basis: 100%;
   }
-  .wl-favorites .wl-excluded__button {
+  .wl-favorites .wl-excluded__row .wl-excluded__button {
     max-inline-size: none;
   }
 }

@@ -2,9 +2,8 @@
    D-0208, D-0210, D-0211, D-0213). The Plan and Edit plan roots carry data-wl-state="plan"; the
    check-in card is the paper panel (also on Today, where the root is a plan root too). Colours,
    radii and fonts come only from the generic --wl-* variables and the radius tokens: no raw
-   colour, no px font size. Layout rules are scoped to .wl-plan / .wl-checkin so nothing leaks to
-   the unmigrated UF-11.4 Account settings, which still reads the legacy block at the end.
-   Nothing animates: the only motion is the root's state cross-fade. */
+   colour, no px font size. Layout rules are scoped to .wl-plan / .wl-checkin / .wl-account so
+   nothing leaks between screens. UF-11.4 Account settings (T-0613) is the last block. Nothing animates: the only motion is the root's state cross-fade. */
 
 .wl-page.wl-plan {
   gap: 2rem;
@@ -353,70 +352,38 @@
   margin-inline-start: -0.5rem;
 }
 
-/* Legacy rules still read by the unmigrated Account settings, Excluded and Favorites screens
-   (UF-11.4 to UF-11.6, T-0613). Do not remove before those are migrated. */
-.wl-plan__linkbtn {
-  gap: 8px;
-  text-decoration: none;
-}
+/* --- UF-11.4 Account settings (T-0613) ---
+   The root is a plan state root with .wl-account. Sections are the shared hairline cards, their
+   titles label-sized (.wl-type-label). Every rule is scoped to .wl-account so nothing leaks to
+   the other screens. */
 
-.wl-plan__linkbtn svg {
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-/* Neutral notice (components/neutral-notice.md), local copy: no cross-feature import. */
-.wl-plan__notice {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 0;
-  padding: 12px 14px;
-  background: var(--wl-color-surface-2);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 12px;
-  color: var(--wl-color-text-muted);
-  font-size: 14px;
-  line-height: 1.4;
-}
-
-.wl-plan__notice svg {
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-}
-
-/* T-0550 UF-11.4 Account settings. */
 .wl-account__back {
   align-self: flex-start;
-  gap: 4px;
-  text-decoration: none;
+  gap: 0.25rem;
+  margin-inline-start: -0.5rem;
 }
 
-.wl-account__back svg {
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.wl-account__section {
+  gap: 0.75rem;
 }
 
-.wl-account__email {
+.wl-account__section > p,
+.wl-account__section h2 {
   margin: 0;
+}
+
+.wl-account .wl-account__email {
   overflow-wrap: anywhere;
+}
+
+.wl-account .wl-button--secondary svg {
+  flex: none;
 }
 
 .wl-account__fieldset {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0.75rem;
   min-inline-size: 0;
   margin: 0;
   padding: 0;
@@ -425,29 +392,79 @@
 
 .wl-account__fieldset legend {
   padding: 0;
-  margin-block-end: 12px;
+  margin-block-end: 0.75rem;
+}
+
+.wl-account__fieldset p {
+  margin: 0;
 }
 
 .wl-account__equipment {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  column-gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr));
+  column-gap: 0.75rem;
 }
 
 .wl-account__field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 0.375rem;
 }
 
-.wl-card--strong {
-  border-color: var(--wl-color-line-strong);
+/* Delete account is the secondary outline and sits last; a little more air above it. */
+.wl-account .wl-account__delete {
+  margin-block-start: 1rem;
 }
 
-.wl-account__delete {
-  margin-block-start: 16px; /* with the page's 16 px gap: 32 px above the Delete card */
+/* The unsynced sign-out warning: the paper panel, full-bleed past the gutter. */
+.wl-account__unsynced.wl-paper {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-block: 1.5rem;
 }
 
-[data-screen-id="UF-11.4"] .wl-card > p {
+.wl-account__unsynced-text {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
   margin: 0;
+  font-size: 1.0625rem;
+  line-height: 1.45;
+  color: var(--wl-ink);
+}
+
+.wl-account__unsynced-text svg {
+  flex: none;
+}
+
+/* Sign out anyway: the paper action pill (not a primary: the screen has none). */
+.wl-account .wl-account__anyway {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  inline-size: 100%;
+  min-block-size: 56px;
+  padding: 1rem 1.75rem;
+  font: inherit;
+  font-size: 1.375rem;
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--wl-on-action);
+  background: var(--wl-action);
+  border: 0;
+  border-radius: var(--wl-radius-pill);
+  cursor: pointer;
+}
+
+.wl-account .wl-account__anyway[aria-disabled="true"] {
+  color: var(--wl-ink-on-raise);
+  background: var(--wl-raise);
+  cursor: not-allowed;
+}
+
+.wl-account .wl-account__anyway:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
 }

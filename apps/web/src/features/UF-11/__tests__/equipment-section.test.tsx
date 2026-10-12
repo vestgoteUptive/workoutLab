@@ -186,7 +186,7 @@ describe("T-0216 AC-2 save writes the list", () => {
     await act(async () => fireEvent.click(checkbox("Barbell")));
     await act(async () => fireEvent.click(checkbox("Rack")));
     await act(async () => fireEvent.click(checkbox("Bench")));
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
     await act(async () => fireEvent.click(saveButton()));
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(a.saved));
     const updates = spy.calls.filter((c) => c.table === "profiles" && c.method === "update");
@@ -194,7 +194,7 @@ describe("T-0216 AC-2 save writes the list", () => {
     expect(updates[0]!.payload).toEqual({ equipment: ["none", "dumbbell", "barbell", "rack"] });
     expect(updates[0]!.filters).toEqual([{ op: "eq", column: "user_id", value: TEST_USER }]);
     expect(refreshAllMock).toHaveBeenCalledTimes(1);
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
   });
 });
 
@@ -248,11 +248,11 @@ describe("T-0216 AC-4 unknown items survive", () => {
 describe("T-0216 AC-5 Save enabled only when it can do something", () => {
   it("T-0216 AC-5 disabled initially, enabled after a change, disabled again after undoing it", async () => {
     await mountWithCache(["none", "dumbbell"]);
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
     await act(async () => fireEvent.click(checkbox("Barbell")));
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
     await act(async () => fireEvent.click(checkbox("Barbell")));
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
   });
 
   it("T-0216 AC-5 offline: disabled with Connect to save even after a change; no supabase call", async () => {
@@ -260,7 +260,7 @@ describe("T-0216 AC-5 Save enabled only when it can do something", () => {
     await mountWithCache(["none", "dumbbell"]);
     expect(screen.getByText(a.connectToSave)).toBeInTheDocument();
     await act(async () => fireEvent.click(checkbox("Barbell")));
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(saveButton());
     expect(spy.calls).toHaveLength(0);
   });
@@ -275,7 +275,7 @@ describe("T-0216 AC-5 Save enabled only when it can do something", () => {
       window.dispatchEvent(new Event("online"));
     });
     expect(saveButton()).toBe(button);
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
   });
 
   it("T-0216 AC-5 while a save is pending, a second click makes no second call", async () => {
@@ -315,7 +315,7 @@ describe("T-0216 AC-6 failure", () => {
     await act(async () => fireEvent.click(saveButton()));
     expect(await screen.findByRole("alert")).toHaveTextContent(a.saveFailed);
     expect(checkbox("Barbell").checked).toBe(true);
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
     expect(refreshAllMock).not.toHaveBeenCalled();
     await act(async () => fireEvent.click(saveButton()));
     const updates = spy.calls.filter((c) => c.table === "profiles" && c.method === "update");

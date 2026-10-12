@@ -361,3 +361,54 @@ describe("status region is visually hidden but present", () => {
     expect(rule).toContain("position: absolute");
   });
 });
+
+// T-0613 UF-11.5 in the Cobalt plan state.
+describe("T-0613 plan state", () => {
+  it("the root is a plan state root; rows are .wl-row items with the outline button; the empty state renders inside it", async () => {
+    await seedExcluded(["bench-press", "2026-10-03T10:00:00.000Z"]);
+    render(tree("/plan/excluded"));
+    await waitFor(() => expect(names()).toEqual(["Bench press"]));
+    const root = document.querySelector('[data-screen-id="UF-11.5"]')!;
+    expect(root).toHaveAttribute("data-wl-state", "plan");
+    const li = within(screen.getByRole("list", { name: "Exercises" })).getAllByRole("listitem")[0]!;
+    expect(li).toHaveClass("wl-row");
+    expect(li).not.toHaveClass("wl-card");
+    const btn = within(li).getByRole("button", { name: "Include Bench press again" });
+    expect(btn).toHaveClass("wl-button--secondary");
+    expect(btn).not.toBeDisabled();
+    expect(screen.getByRole("searchbox")).toHaveClass("wl-input");
+    cleanup();
+    await offlineDb().excludedCache.clear();
+    render(tree("/plan/excluded"));
+    const empty = await screen.findByText(/^No excluded exercises/);
+    expect(root.isConnected).toBe(false);
+    expect(empty.closest('[data-wl-state="plan"]')).not.toBeNull();
+  });
+
+  it("an aria-disabled Include does nothing when clicked (offline)", async () => {
+    await seedExcluded(["bench-press", "2026-10-03T10:00:00.000Z"]);
+    setOnline(false);
+    render(tree("/plan/excluded"));
+    await waitFor(() => expect(names()).toEqual(["Bench press"]));
+    const btn = screen.getByRole("button", { name: "Include Bench press again" });
+    expect(btn).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(btn);
+    await act(async () => undefined);
+    expect(ex.includeExercise).not.toHaveBeenCalled();
+  });
+});
+
+describe("T-0613 stylesheet guard", () => {
+  const css = readFileSync(resolve(__dirname, "../excluded.css"), "utf8").replace(
+    /\/\*[\s\S]*?\*\//g,
+    "",
+  );
+  it("no raw colour, no px font size, no legacy colour variable, no motion", () => {
+    expect(css).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(css).not.toMatch(/rgba?\(/);
+    expect(css).not.toMatch(/font-size:\s*[\d.]+px/);
+    expect(css).not.toMatch(/--wl-color-/);
+    expect(css).not.toMatch(/transition|animation/);
+    expect(css).toMatch(/var\(--wl-ink\)/);
+  });
+});
