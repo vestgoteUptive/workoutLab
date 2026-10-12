@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-09.3, UF-11.4]
 decisions: [D-0218, D-0217, D-0034, D-0045]
 deps: [T-0631]
-status: todo
+status: doing
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1, D-0218). Flow: wl-build-web (agent frontend-dev). About ¼ day. Spec: docs/specs/cobalt-mock-behaviour.md §3.1. No Dexie version bump: the new field isn't indexed. -->
 
