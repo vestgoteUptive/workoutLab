@@ -232,7 +232,7 @@ describe("AC-2 other countdowns say nothing", () => {
     await render();
     await advance(120_000);
     expect(announced()).toBe("Go");
-    fireEvent.click(screen.getByRole("button", { name: "Done set" }));
+    fireEvent.click(screen.getByRole("button", { name: "Done" }));
     await findScreen("UF-09.4");
     expect(announced()).toBe("");
   });

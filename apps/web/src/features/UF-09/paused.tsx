@@ -16,6 +16,18 @@ export function leftMinutes(budgetMin: number, elapsedS: number): number {
   return Math.ceil(Math.max(0, budgetMin * 60 - elapsedS) / 60);
 }
 
+/** One stat, value first ("23:10 elapsed"): the value in the stat role, the last word as its label.
+ *  Both sit in one element, so the text reads in order. */
+function Stat({ field, text }: { field: string; text: string }) {
+  const cut = text.lastIndexOf(" ");
+  return (
+    <p className="wl-uf09__stat" data-field={field}>
+      <span className="wl-type-stat">{text.slice(0, cut)}</span>{" "}
+      <span className="wl-type-label">{text.slice(cut + 1)}</span>
+    </p>
+  );
+}
+
 export function Paused({
   state,
   ctx,
@@ -65,21 +77,18 @@ export function Paused({
 
   const numbers = (
     <div className="wl-uf09__numbers">
-      <p className="wl-type-stat" data-field="elapsed">
-        {en.uf09.elapsed(formatClock(elapsedS))}
-      </p>
-      <p className="wl-type-stat" data-field="left">
-        {en.uf09.left(leftMinutes(session.row.time_budget_min, elapsedS))}
-      </p>
-      <p className="wl-type-stat" data-field="sets">
-        {en.uf09.sets(state.loggedSets.length, planned)}
-      </p>
+      <Stat field="elapsed" text={en.uf09.elapsed(formatClock(elapsedS))} />
+      <Stat field="left" text={en.uf09.left(leftMinutes(session.row.time_budget_min, elapsedS))} />
+      <Stat field="sets" text={en.uf09.sets(state.loggedSets.length, planned)} />
     </div>
   );
 
   if (confirming) {
     return (
       <div className="wl-uf09__view wl-uf09__view--paused">
+        <p className="wl-uf09__caption wl-type-label" data-field="paused-caption">
+          {en.uf09.pausedCaption}
+        </p>
         <h1 className="wl-uf09__title wl-type-page-title">{en.uf09.titles.paused}</h1>
         {numbers}
         <p className="wl-uf09__question wl-type-body" data-field="end-question">
@@ -148,6 +157,9 @@ export function Paused({
   const ids = orderActions(builtIns, seams, "pause");
   return (
     <div className="wl-uf09__view wl-uf09__view--paused">
+      <p className="wl-uf09__caption wl-type-label" data-field="paused-caption">
+        {en.uf09.pausedCaption}
+      </p>
       <h1 className="wl-uf09__title wl-type-page-title">{en.uf09.titles.paused}</h1>
       {numbers}
       {moveFailed === null ? null : (

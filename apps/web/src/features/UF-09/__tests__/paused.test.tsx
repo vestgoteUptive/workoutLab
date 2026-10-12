@@ -116,15 +116,31 @@ async function pausedAt(
 }
 
 describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
-  it("PAUSE from UF-09.5 at 23:10 with 6 sets: Paused, Elapsed 23:10, Left 22 min, Sets 6 / 12", async () => {
+  it("PAUSE from UF-09.5 at 23:10 with 6 sets: Paused, 23:10 elapsed, 22 min left, 6 / 12 sets", async () => {
     await restAt(1390);
     expect(screenId()).toBe("UF-09.5");
     await click("Pause workout");
     expect(screenId()).toBe("UF-09.9");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Paused");
-    expect(field("elapsed")).toBe("Elapsed 23:10");
-    expect(field("left")).toBe("Left 22 min");
-    expect(field("sets")).toBe("Sets 6 / 12");
+    expect(field("elapsed")).toBe("23:10 elapsed");
+    expect(field("left")).toBe("22 min left");
+    expect(field("sets")).toBe("6 / 12 sets");
+  });
+
+  it("T-0620 AC3/AC4: the caption is the first line, then Paused, then the stats value-first in order", async () => {
+    await restAt(1390);
+    await click("Pause workout");
+    const view = document.querySelector(".wl-uf09__view--paused")!;
+    expect([...view.children].slice(0, 3).map((c) => c.textContent)).toEqual([
+      "Workout paused · timers stopped",
+      "Paused",
+      "23:10 elapsed22 min left6 / 12 sets",
+    ]);
+    expect([...view.querySelectorAll(".wl-uf09__stat")].map((e) => e.textContent)).toEqual([
+      "23:10 elapsed",
+      "22 min left",
+      "6 / 12 sets",
+    ]);
   });
 
   it("a bench-press back-off counts in the planned sets: 13", async () => {
@@ -133,7 +149,7 @@ describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
       planWith({ items: [{ ...BENCH, backoff: { weightKg: 70, reps: 6 } }, ...P1.items.slice(1)] }),
     );
     await click("Pause workout");
-    expect(field("sets")).toBe("Sets 6 / 13");
+    expect(field("sets")).toBe("6 / 13 sets");
   });
 
   it("timers stop: 60 s later Elapsed is unchanged, and Resume shows the same rest remaining", async () => {
@@ -141,24 +157,24 @@ describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
     await advance(20_000);
     expect(timerText()).toBe("1:40");
     await click("Pause workout");
-    expect(field("elapsed")).toBe("Elapsed 23:30");
+    expect(field("elapsed")).toBe("23:30 elapsed");
     await advance(60_000);
-    expect(field("elapsed")).toBe("Elapsed 23:30");
+    expect(field("elapsed")).toBe("23:30 elapsed");
     await click("Resume");
     expect(screenId()).toBe("UF-09.5");
     expect(timerText()).toBe("1:40");
   });
 
-  it("over budget: elapsed above 45 min shows Left 0 min", async () => {
+  it("over budget: elapsed above 45 min shows 0 min left", async () => {
     await restAt(2800);
     await click("Pause workout");
-    expect(field("left")).toBe("Left 0 min");
+    expect(field("left")).toBe("0 min left");
   });
 
-  it("the pair: 1 s under the budget shows Left 1 min", async () => {
+  it("the pair: 1 s under the budget shows 1 min left", async () => {
     await restAt(2699);
     await click("Pause workout");
-    expect(field("left")).toBe("Left 1 min");
+    expect(field("left")).toBe("1 min left");
   });
 
   // D-0142 §6 (a named change, T-0422, T-0416): the module's swap seam sits after Resume.

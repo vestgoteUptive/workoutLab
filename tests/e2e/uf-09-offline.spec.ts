@@ -291,7 +291,7 @@ async function recordWrites(
   };
 }
 
-/** Skips the warm-up (UF-09.1), then logs sets through Done set and either Save or — for the
+/** Skips the warm-up (UF-09.1), then logs sets through Done and either Save or — for the
  *  `autosaveAt` index (0-based among the sets logged by this call) — the real 5 s auto-save
  *  (D-0120 §9), skipping the rest after every set but the last. Handles the UF-09.6 "I'm ready"
  *  screen whenever the machine shows it (every item after the first, D-0111 "next"). Returns once
@@ -306,7 +306,7 @@ async function logSets(page: Page, count: number, autosaveAt: number): Promise<v
       await next.click();
     }
     await expect(page.locator('[data-screen-id="UF-09.3"]')).toBeVisible();
-    await page.getByRole("button", { name: "Done set" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
     await expect(page.locator('[data-screen-id="UF-09.4"]')).toBeVisible();
     if (i === autosaveAt) {
       // The real auto-save (D-0120 §9): no click, just wait past the 5 s timer.

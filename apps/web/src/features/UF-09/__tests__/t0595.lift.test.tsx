@@ -72,7 +72,7 @@ describe("T-0595 AC1 the lift state", () => {
 });
 
 describe("T-0595 AC2 AC3 one session button, Done keeps its name and its text", () => {
-  it("UF-09.3: exactly one .wl-button--session, named Done set, with an aria-hidden icon", async () => {
+  it("UF-09.3: exactly one .wl-button--session, named Done, with an aria-hidden icon", async () => {
     const root = await show("UF-09.3", { phase: "set" });
     expect(root.querySelectorAll(".wl-button--session")).toHaveLength(1);
     const done = doneButton();
@@ -96,7 +96,7 @@ describe("T-0595 AC2 AC3 one session button, Done keeps its name and its text", 
     expect(root.querySelector("h1")).toHaveClass("wl-type-page-title");
   });
 
-  it("while Done set is saving it is aria-disabled, never the disabled attribute", async () => {
+  it("while Done is saving it is aria-disabled, never the disabled attribute", async () => {
     const root = await show("UF-09.3", { phase: "set" });
     vi.mocked(offline.recordSet).mockImplementation(() => new Promise(() => undefined));
     fireEvent.click(doneButton());

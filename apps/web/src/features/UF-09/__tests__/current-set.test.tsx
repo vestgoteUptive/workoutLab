@@ -1,4 +1,4 @@
-// T-0304b AC-1 (UF-09.3 renders the pre-fill, principle 3, D-0118 §8 §9), AC-2 (Done set feedback
+// T-0304b AC-1 (UF-09.3 renders the pre-fill, principle 3, D-0118 §8 §9), AC-2 (Done feedback
 // < 100 ms, NFR-PERF-4) and AC-3 (the write before moving on, NFR-OFF-2, NFR-SYNC-1, D-0118 §5).
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -132,7 +132,7 @@ describe("AC-1 UF-09.3 renders the pre-fill", () => {
     },
   );
 
-  it("Done set is the view's one session button (T-0595: full width, 64 px, no 200 px rule)", async () => {
+  it("Done is the view's one session button (T-0595: full width, 64 px, no 200 px rule)", async () => {
     await showSet();
     const done = doneButton();
     expect(done.tagName).toBe("BUTTON");
@@ -142,7 +142,7 @@ describe("AC-1 UF-09.3 renders the pre-fill", () => {
     expect(css).not.toMatch(/min-height:\s*200px/);
   });
 
-  it("focus: from a rest end, Done set is document.activeElement", async () => {
+  it("focus: from a rest end, Done is document.activeElement", async () => {
     await seedSession();
     seedFocus(NOW, { phase: "rest", timer: { startedAtMs: NOW, durationS: 120, pausedMs: 0 } });
     await renderSession({ locale: "en-GB" });
@@ -152,7 +152,7 @@ describe("AC-1 UF-09.3 renders the pre-fill", () => {
     expect(document.activeElement).toBe(doneButton());
   });
 
-  it("focus: from READY (UF-09.6 expiry), Done set is document.activeElement", async () => {
+  it("focus: from READY (UF-09.6 expiry), Done is document.activeElement", async () => {
     await seedSession();
     seedFocus(NOW, {
       phase: "next",
@@ -166,7 +166,7 @@ describe("AC-1 UF-09.3 renders the pre-fill", () => {
     expect(document.activeElement).toBe(doneButton());
   });
 
-  it("focus: from SKIP_WARMUP, Done set is document.activeElement", async () => {
+  it("focus: from SKIP_WARMUP, Done is document.activeElement", async () => {
     await seedSession();
     seedFocus(NOW, { phase: "getReady", timer: { startedAtMs: NOW, durationS: 5, pausedMs: 0 } });
     await renderSession({ locale: "en-GB" });
@@ -179,7 +179,7 @@ describe("AC-1 UF-09.3 renders the pre-fill", () => {
 });
 
 describe("AC-1 rejected reads are caught (D-0104)", () => {
-  it("a rejected loadExerciseDetail: no cue, Done set still works", async () => {
+  it("a rejected loadExerciseDetail: no cue, Done still works", async () => {
     detailSpy.mockImplementation(async () => {
       throw new Error("idb gone");
     });
@@ -193,7 +193,7 @@ describe("AC-1 rejected reads are caught (D-0104)", () => {
     expect(consoleError).not.toHaveBeenCalled();
   });
 
-  it("a rejected loadLibrary: the heading is the id, Done set still works", async () => {
+  it("a rejected loadLibrary: the heading is the id, Done still works", async () => {
     libSpy.mockImplementation(async () => {
       throw new Error("no cache");
     });
@@ -214,7 +214,7 @@ describe("AC-1 rejected reads are caught (D-0104)", () => {
   });
 });
 
-describe("AC-2 Done set feedback < 100 ms", () => {
+describe("AC-2 Done feedback < 100 ms", () => {
   it("the pair: before the click, no data-state='saving' and no aria-busy", async () => {
     await showSet();
     expect(document.querySelector('[data-state="saving"]')).toBeNull();
@@ -256,7 +256,7 @@ describe("AC-2 Done set feedback < 100 ms", () => {
 });
 
 describe("AC-3 the write comes before moving on", () => {
-  it("Done set calls recordSet once with the set, through the hook", async () => {
+  it("Done calls recordSet once with the set, through the hook", async () => {
     await showSet();
     fireEvent.click(doneButton());
     await findScreen("UF-09.4");
@@ -296,7 +296,7 @@ describe("AC-3 the write comes before moving on", () => {
     fireEvent.click(doneButton());
     await flushReal();
     expect(screenId()).toBe("UF-09.3");
-    const status = screen.getByText("Couldn't save. Tap Done set again.");
+    const status = screen.getByText("Couldn't save. Tap Done again.");
     expect(status).toHaveAttribute("aria-live", "polite");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(doneButton()).toBeEnabled();
@@ -317,6 +317,6 @@ describe("AC-3 the write comes before moving on", () => {
     await showSet();
     fireEvent.click(doneButton());
     await findScreen("UF-09.4");
-    expect(screen.queryByText("Couldn't save. Tap Done set again.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Couldn't save. Tap Done again.")).not.toBeInTheDocument();
   });
 });

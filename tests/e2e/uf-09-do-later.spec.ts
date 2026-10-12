@@ -159,7 +159,7 @@ test.describe("T-0579 UF-09.9 Do later, offline and reload (AC5)", () => {
     // Bench press (4 sets), then UF-09.6 for the second item.
     await page.getByRole("button", { name: "Skip warm-up" }).click();
     for (let i = 0; i < 4; i++) {
-      await page.getByRole("button", { name: "Done set" }).click();
+      await page.getByRole("button", { name: "Done" }).click();
       await page.getByRole("button", { name: "Save" }).click();
       await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible({ timeout: 10_000 });
       await page.getByRole("button", { name: "Skip rest" }).click();

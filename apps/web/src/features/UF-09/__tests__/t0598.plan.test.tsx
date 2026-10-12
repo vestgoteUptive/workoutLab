@@ -213,11 +213,13 @@ describe("T-0598 AC5 AC6 the rows and the stats", () => {
     }
   });
 
-  it("the three numbers are in the stat role, their text unchanged", async () => {
+  it("each number's value is in the stat role, its word a label, the text value-first", async () => {
     const root = await paused();
     for (const field of ["elapsed", "left", "sets"]) {
-      expect(root.querySelector(`[data-field="${field}"]`)).toHaveClass("wl-type-stat");
+      const stat = root.querySelector(`[data-field="${field}"]`)!;
+      expect(stat.children[0]).toHaveClass("wl-type-stat");
+      expect(stat.children[1]).toHaveClass("wl-type-label");
     }
-    expect(root.querySelector('[data-field="elapsed"]')).toHaveTextContent("Elapsed 10:00");
+    expect(root.querySelector('[data-field="elapsed"]')).toHaveTextContent("10:00 elapsed");
   });
 });

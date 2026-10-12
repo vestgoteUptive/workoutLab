@@ -785,14 +785,25 @@
   margin-block-end: 1.5rem;
 }
 
-/* Paused: the numbers in the stat role, one under the other (their text is "Elapsed 23:10"). */
+/* Paused: three value-first stats in three columns (canvas Paused). The caption is the first line. */
+.wl-uf09[data-wl-state="plan"] .wl-uf09__view--paused .wl-uf09__caption {
+  margin: 0;
+  color: var(--wl-ink-muted);
+}
+
 .wl-uf09[data-wl-state="plan"] .wl-uf09__numbers {
-  flex-direction: column;
-  flex-wrap: nowrap;
-  align-items: flex-start;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
   margin-block-start: 1.5rem;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__stat > span {
+  display: block;
+}
+
+.wl-uf09[data-wl-state="plan"] .wl-uf09__stat > .wl-type-label {
+  color: var(--wl-ink-muted);
 }
 
 .wl-uf09[data-wl-state="plan"] .wl-uf09__question {

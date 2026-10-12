@@ -36,8 +36,8 @@ export const uf09 = {
   load: (weight: string, reps: number) => `${weight} × ${reps}`,
   reps: (n: number) => (n === 1 ? "1 rep" : `${n} reps`),
   setWeight: "Set weight",
-  doneSet: "Done set",
-  doneSetError: "Couldn't save. Tap Done set again.",
+  doneSet: "Done",
+  doneSetError: "Couldn't save. Tap Done again.",
   // UF-09.4 Confirm set (T-0304b, D-0118 §3–§6).
   repsLabel: "Reps",
   fewerReps: "Fewer reps",
@@ -53,6 +53,7 @@ export const uf09 = {
   autosaveIn: (s: number) => `Saving as planned in ${s} s… tap anything to edit`,
   autosaveOff: "Tap save when ready.",
   save: "Save",
+  saveStartRest: "Save · start rest",
   saveError: "Couldn't save. Tap Save again.",
   // UF-09.1 Get ready (T-0304f, parent AC-B1).
   startNow: "Start now",
@@ -104,9 +105,10 @@ export const uf09 = {
   skipItem: (name: string) => `Skip ${name}`,
   applyError: "Couldn't save the new plan. Try again.",
   // UF-09.9 Paused (T-0304d, D-0120 §6–§8).
-  elapsed: (clock: string) => `Elapsed ${clock}`,
-  left: (n: number) => (n === 1 ? "Left 1 min" : `Left ${n} min`),
-  sets: (logged: number, planned: number) => `Sets ${logged} / ${planned}`,
+  pausedCaption: "Workout paused · timers stopped",
+  elapsed: (clock: string) => `${clock} elapsed`,
+  left: (n: number) => (n === 1 ? "1 min left" : `${n} min left`),
+  sets: (logged: number, planned: number) => `${logged} / ${planned} sets`,
   skipToNext: "Skip to next exercise",
   // T-0579 UF-09.9 "Do {name} later" (D-0205 §9, §11) and the UF-09.6 status line.
   doLater: (name: string) => `Do ${name} later`,

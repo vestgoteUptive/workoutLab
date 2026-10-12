@@ -379,7 +379,7 @@ describe("AC-4 replaceItem", () => {
 
 // T-0410 (UF-09.3, UF-09.9, NFR-SYNC-1): the in-flight recordSet key is
 // `${source}:${itemIndex}:${setIndex}:${exerciseId}`, so only a true repeat of a pending write
-// (a remounted Done set) is merged; another exercise at that position, or a List-view log, is not.
+// (a remounted Done) is merged; another exercise at that position, or a List-view log, is not.
 describe("T-0410 recordSet in-flight dedupe key", () => {
   /** Holds the next `lib/offline` `recordSet` until `release()`, then runs the real write. */
   function holdNextRecord() {

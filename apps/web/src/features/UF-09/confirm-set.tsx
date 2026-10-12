@@ -7,7 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ArrowIcon, CrossIcon } from "../../components/icons/index.js";
 import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
-import type { LoggedSet } from "./machine.js";
+import { restFollowsSet, type LoggedSet } from "./machine.js";
 import { useFocusSession } from "./session.js";
 import { remainingS } from "./timer.js";
 import type { ViewProps } from "./views.js";
@@ -212,7 +212,7 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
         aria-disabled={invalid || saving ? true : undefined}
         onClick={onSave}
       >
-        {en.uf09.save}
+        {restFollowsSet(state, ctx) ? en.uf09.saveStartRest : en.uf09.save}
         <ArrowIcon />
       </button>
       <p className="wl-uf09__status wl-type-label" aria-live="polite">

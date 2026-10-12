@@ -120,11 +120,11 @@ function clockS(text: string | null): number {
   return Number(m![1]) * 60 + Number(m![2]);
 }
 
-/** Skip warm-up (when shown) and Done set; the real 5 s auto-save then gives UF-09.5. */
+/** Skip warm-up (when shown) and Done; the real 5 s auto-save then gives UF-09.5. */
 async function toRest(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Skip warm-up" }).click();
   await expect(page.locator('[data-screen-id="UF-09.3"]')).toBeVisible();
-  await page.getByRole("button", { name: "Done set" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
   await expect(page.locator('[data-screen-id="UF-09.4"]')).toBeVisible();
   await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible({ timeout: 10_000 });
 }
@@ -189,7 +189,7 @@ for (const mode of ["online", "offline"] as const) {
       const paused = page.locator('[data-screen-id="UF-09.9"]');
       await expect(paused.getByRole("button", { name: "Resume" })).toBeVisible();
       const elapsed = paused.locator('[data-field="elapsed"]');
-      await expect(elapsed).toHaveText(/^Elapsed \d+:\d{2}$/);
+      await expect(elapsed).toHaveText(/^\d+:\d{2} elapsed$/);
       const before = clockS(await elapsed.textContent());
       await page.waitForTimeout(3000);
       await reload(page, context);
@@ -261,11 +261,11 @@ test.describe("T-0304h AC-2 keyboard only, focus, targets, axe; AC-3 one screen"
     await expectAxeClean(page);
     await page.keyboard.press("Enter");
 
-    // 5. UF-09.3 Done set.
+    // 5. UF-09.3 Done.
     await expectOneScreen(page, "UF-09.3");
-    await expect(page.getByRole("button", { name: "Done set" })).toBeFocused();
+    await expect(page.getByRole("button", { name: "Done" })).toBeFocused();
     await expectTargets(page);
-    const done = await page.getByRole("button", { name: "Done set" }).boundingBox();
+    const done = await page.getByRole("button", { name: "Done" }).boundingBox();
     // T-0595 (D-0208 §2, AC3): the 200 px round button is the 64 px full-width session button.
     expect(done!.height).toBeGreaterThanOrEqual(64);
     await expectAxeClean(page);
@@ -292,7 +292,7 @@ test.describe("T-0304h AC-2 keyboard only, focus, targets, axe; AC-3 one screen"
     await expectOneScreen(page, "UF-09.9");
     await press("Resume");
     await expectOneScreen(page, "UF-09.3");
-    await expect(page.getByRole("button", { name: "Done set" })).toBeFocused();
+    await expect(page.getByRole("button", { name: "Done" })).toBeFocused();
 
     // 9. Pause again → End workout → confirm → UF-03.3.
     await tabTo(page.getByRole("button", { name: "Pause workout" }));

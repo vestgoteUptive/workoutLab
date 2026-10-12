@@ -26,7 +26,7 @@ const KEY = `wl-focus:${S1}`;
 // T-0304c (D-0119 §1): `timed` has its position + hold timer, shown as a `role="timer"`.
 const TIMED_PHASES: Phase[] = ["getReady", "warmup", "rest", "next", "timed"];
 /** T-0304a AC-7's "exactly 1 button" per placeholder state, updated (not dropped) as each
- *  child builds a view (D-0118 §12). T-0304b: `set` is Pause + Done set; `confirm` (barbell-row,
+ *  child builds a view (D-0118 §12). T-0304b: `set` is Pause + Done; `confirm` (barbell-row,
  *  a loaded lift) is Pause, 2 reps steppers, 2 weight steppers and Save. T-0304f: `getReady`
  *  (P1, with a warm-up) is Pause, Start now and Skip warm-up; `rest` is Pause, −15 s, +15 s and
  *  Skip rest; `next` (the module's empty seams) is Pause and I'm ready. T-0304c: `warmup` is
@@ -39,8 +39,15 @@ const BUTTONS: Partial<Record<Phase, string[]>> = {
   next: ["Pause workout", "I'm ready", "Swap"],
   warmup: ["Pause workout", "Restart", "Next move"],
   timed: ["Pause workout", "Pause timer"],
-  set: ["Pause workout", "Done set"],
-  confirm: ["Pause workout", "Fewer reps", "More reps", "Less weight", "More weight", "Save"],
+  set: ["Pause workout", "Done"],
+  confirm: [
+    "Pause workout",
+    "Fewer reps",
+    "More reps",
+    "Less weight",
+    "More weight",
+    "Save · start rest",
+  ],
   // T-0598: Trim and Skip next are radios now, picked and then applied by Continue.
   timeCheck: ["Pause workout", "Continue"],
 };
