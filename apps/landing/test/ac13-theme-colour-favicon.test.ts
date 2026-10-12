@@ -31,8 +31,8 @@ describe("AC13 theme colour and favicon from tokens", () => {
     expect(svg).toContain('xmlns="http://www.w3.org/2000/svg"');
     const colours = [...svg.matchAll(/(?:fill|stroke)="([^"]+)"/g)].map((m) => m[1]!);
     expect(colours.length).toBeGreaterThan(0);
-    const allowed = new Set(Object.values(tokens.color));
-    for (const c of colours) expect(allowed.has(c), c).toBe(true);
+    // T-0585: Cobalt, a plan.bg square with plan.ink bars.
+    expect(new Set(colours)).toEqual(new Set([tokens.color.plan.bg, tokens.color.plan.ink]));
   });
 
   it("apps/landing/public doesn't exist, or has no colour literal", () => {
