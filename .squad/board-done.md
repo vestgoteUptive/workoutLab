@@ -470,3 +470,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0621 | UF-09 status lines: Target hit, done line, Set-up time, First up (mock behaviour) | web-feature:UF-09 | T-0620 | done | wl-build-web |
 | T-0634 | UF-09.3 plate loading "Each side 25 + 15 kg" | web-feature:UF-09 | T-0621, T-0632 | done | wl-build-web |
 | T-0623 | UF-02.1 week row + week line (mock behaviour) | web-feature:UF-02 | T-0601 | done | wl-build-web |
+| T-0636 | UF-02.1 Latest PR | web-feature:UF-02 | T-0623, T-0635 | done | wl-build-web |

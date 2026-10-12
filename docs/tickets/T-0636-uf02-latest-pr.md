@@ -5,7 +5,7 @@ lane: web-feature:UF-02
 screens: [UF-02.1]
 decisions: [D-0217, D-0219, D-0034, D-0068, D-0212]
 deps: [T-0623, T-0635]
-status: doing
+status: done
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Today" (#turn-3). Spec: docs/specs/cobalt-mock-behaviour.md §3.2. UF-02 folder chain: T-0601 → T-0623 → T-0636 → T-0638. -->
 
@@ -52,8 +52,4 @@ none (calls engine rule 15 from T-0635)
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-02-today.spec.ts` green · commit messages start with `T-0636` and cite UF-02.1.
 
 ## Build / accept log
-- Built (UF-02.1): `pr.ts` (`latestPr`: newest `records()` entry with local date >= today-13, via `week.ts` `localDay`), `use-today.ts` ready.latestPr, `Today.tsx` LatestPrLine before Start, copy in `flows/uf-02.ts`, style in `today.css`.
-- AC map: AC1/2/3/4/5/7/8 and the D-0219 80x10-beats-90x3 case in `__tests__/latest-pr.test.tsx` (3 DST/local-edge unit cases too); AC6 `latest-pr-offline.test.tsx` (queued pending set, no fetch) plus e2e offline; AC9, AC10 (colours, axe) and offline in `uf-02-today.spec.ts` "T-0636 Latest PR"; AC11 full UF-02 suite and spec green.
-- Deviation: AC1's 100x8 then 102.5x6 is not a record under Epley (123.0 < 126.7), so the fixtures use 107.5x6 (129.2); the shown text is "Back Squat 107.5 kg × 6".
-- Planted faults (all caught): window 14 days; oldest instead of newest; UTC instead of tz; plural for 1 rep. A gate-condition fault in Today.tsx was equivalent (type narrowing), not counted.
-- Gate: -w typecheck lint test exit 0; test:repo-checks 0; format:check 0; check-all 0; uf-02-today.spec.ts 54 passed.
+Archived in `docs/tickets/log/T-0636.md` (D-0157).
