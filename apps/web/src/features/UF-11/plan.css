@@ -284,8 +284,8 @@
 }
 
 .wl-checkin .wl-checkin__accept[aria-disabled="true"] {
-  color: var(--wl-ink-muted);
-  background: var(--wl-line);
+  color: var(--wl-ink-on-raise);
+  background: var(--wl-raise);
   cursor: not-allowed;
 }
 

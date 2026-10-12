@@ -29,9 +29,6 @@ export interface CheckinCardProps {
   /** T-0481: called once after a successful Accept/Keep, once that write's `refreshAll` has
    *  settled. Never on a failed write, a card hidden by another device, or offline. */
   onAnswered?: () => void;
-  /** T-0549: true while the card is on screen with a pending proposal, false otherwise (the
-   *  Plan screen switches "Edit plan" to the secondary style meanwhile; one accent per screen). */
-  onVisibleChange?: (visible: boolean) => void;
 }
 
 type WriteState = { pending: boolean; failed: boolean };
@@ -43,7 +40,6 @@ function CardBody({
   timeZone,
   now,
   onAnswered,
-  onVisibleChange,
 }: {
   data: CheckinCardData;
   online: boolean;
@@ -51,7 +47,6 @@ function CardBody({
   timeZone: string;
   now: Date;
   onAnswered: (() => void) | undefined;
-  onVisibleChange: ((visible: boolean) => void) | undefined;
 }) {
   const { profile, evaluation } = data;
   const proposal = evaluation.proposal;
@@ -75,7 +70,6 @@ function CardBody({
       timeZone={timeZone}
       now={now}
       onAnswered={onAnswered}
-      onVisibleChange={onVisibleChange}
     />
   );
 }
@@ -93,7 +87,6 @@ function CardReady({
   timeZone,
   now,
   onAnswered,
-  onVisibleChange,
 }: {
   profile: EngineProfile;
   evaluation: CheckinEvaluation;
@@ -107,7 +100,6 @@ function CardReady({
   timeZone: string;
   now: Date;
   onAnswered: (() => void) | undefined;
-  onVisibleChange: ((visible: boolean) => void) | undefined;
 }) {
   // Hidden only by a second device's already-answered row (D-0172 §2): Accept/Keep hide this
   // same render via their own navigation away (T-0471 unmounts on hide), so this flag only ever
@@ -133,13 +125,6 @@ function CardReady({
     // above reads the cache once), so this effect only re-runs on the online/offline toggle; they
     // are deliberately left out of the dependency list below.
   }, [online, hiddenElsewhere]);
-
-  useEffect(() => {
-    if (hiddenElsewhere) return;
-    onVisibleChange?.(true);
-    return () => onVisibleChange?.(false);
-    // The callback is a state setter in practice; only the visibility drives this.
-  }, [hiddenElsewhere]);
 
   if (hiddenElsewhere) return null;
 
@@ -272,7 +257,6 @@ export function CheckinCard({
   timeZone,
   locale = "en-GB",
   onAnswered,
-  onVisibleChange,
 }: CheckinCardProps = {}) {
   const tz = timeZone ?? resolveTimeZone();
   const state = useCheckinData(now, tz);
@@ -291,7 +275,6 @@ export function CheckinCard({
       timeZone={tz}
       now={pinnedNow.current}
       onAnswered={onAnswered}
-      onVisibleChange={onVisibleChange}
     />
   );
 }

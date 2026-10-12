@@ -324,6 +324,27 @@ describe("AC-B9 rhythm steppers, through the engine", () => {
     expect(previewOf("chest")).toBe("Chest 30");
   });
 
+  // T-0612: aria-disabled buttons stay focusable and clickable, so the handlers must guard.
+  it("clicking decrease at the lower bound and increase at the upper bound changes nothing", async () => {
+    await openEdit({ rhythmMin: 1, rhythmMax: 1 });
+    await tap(screen.getByRole("button", { name: u.decreaseMin }));
+    await tap(screen.getByRole("button", { name: u.decreaseMax }));
+    expect(readout()).toBe("1–1 per week · 2–2 per 14 days");
+    cleanup();
+    await openEdit({ rhythmMin: 7, rhythmMax: 7 });
+    await tap(screen.getByRole("button", { name: u.increaseMin }));
+    await tap(screen.getByRole("button", { name: u.increaseMax }));
+    expect(readout()).toBe("7–7 per week · 14–14 per 14 days");
+  });
+
+  it("clicking an aria-disabled Save writes nothing", async () => {
+    await openEdit();
+    const save = saveButton();
+    expect(save).toHaveAttribute("aria-disabled", "true");
+    await tap(save);
+    expect(spy.calls).toHaveLength(0);
+  });
+
   it("20 alternating pseudo-random presses never show a value outside 1–7 or min > max", async () => {
     await openEdit();
     // A fixed seed (a small LCG), so a failure is reproducible.

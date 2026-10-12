@@ -198,6 +198,7 @@ describe("T-0549 AC4 Routines card", () => {
     const add = screen.getByRole("link", { name: u.newRoutine });
     expect(add).toHaveAttribute("href", "/plan/routines/new");
     expect(add).toHaveClass("wl-button--text");
+    expect(add.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     expect(primaries()).toHaveLength(1);
   });
 
