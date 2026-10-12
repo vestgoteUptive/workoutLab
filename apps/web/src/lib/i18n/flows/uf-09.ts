@@ -55,10 +55,16 @@ export const uf09 = {
   save: "Save",
   saveStartRest: "Save · start rest",
   saveError: "Couldn't save. Tap Save again.",
+  // T-0621 (D-0212 §1.4): plain text when the reps in the field reach the item's top of range.
+  targetHit: "Target hit.",
   // UF-09.1 Get ready (T-0304f, parent AC-B1).
   startNow: "Start now",
   skipWarmup: "Skip warm-up",
   go: "GO",
+  // T-0621 (D-0212 §1.4): the first step under the countdown. D-0066 per-move time.
+  firstUp: "First up",
+  warmupSummary: (moves: number, seconds: number) =>
+    `${moves === 1 ? "1 move" : `${moves} moves`} · ${seconds} s each`,
   // UF-09.5 Rest (T-0304f, D-0066 §7, D-0118 §10).
   restLess: "−15 s",
   restMore: "+15 s",
@@ -69,6 +75,10 @@ export const uf09 = {
   // UF-09.6 Next exercise (T-0304f, D-0066 §10, D-0118 §11).
   imReady: "I'm ready",
   separator: "·",
+  // T-0621 (D-0212 §1.4): how the item just finished went, and the label of the set-up countdown.
+  exerciseDone: (name: string, sets: number) =>
+    sets === 1 ? `${name} done · 1 set` : `${name} done · ${sets} sets`,
+  setupTime: "Set-up time",
   // The chrome announcer (T-0304f, D-0118 §10, NFR-A11Y-4).
   announceTen: "10 seconds",
   announceGo: "Go",
