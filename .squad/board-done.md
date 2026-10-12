@@ -464,3 +464,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0622 | "Exercises" for the tab and UF-04.1 title (mock copy) | web-shell | T-0594, T-0607 | done | wl-build-web |
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | done | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | done | wl-build-web |
+| T-0632 | lib/offline: cache bar and plates, loadBarbell() | web-shell | T-0631 | done | wl-build-web |

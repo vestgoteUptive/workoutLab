@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-09.3, UF-11.4]
 decisions: [D-0218, D-0217, D-0034, D-0045]
 deps: [T-0631]
-status: doing
+status: done
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1, D-0218). Flow: wl-build-web (agent frontend-dev). About ¼ day. Spec: docs/specs/cobalt-mock-behaviour.md §3.1. No Dexie version bump: the new field isn't indexed. -->
 
@@ -42,4 +42,4 @@ none (reads the D-0218 columns T-0631 adds)
 Tests for every AC pass · `pnpm -w typecheck lint test` green · commit messages start with `T-0632` and cite UF-09.3.
 
 ## Build / accept log
-- Build (main 677a605, clean): `CachedProfile.barbell?`, `refreshProfile` writes `toBarbell(row)` under the same guard, `loadBarbell()` + `DEFAULT_BARBELL` in `history.ts`, exported from the index. Tests: `lib/offline/__tests__/barbell-cache.test.ts`, one per AC (AC3 a-d = four tests). Planted faults (each failed the named test, then restored from backup): no barbell in put (AC1/2/4/5), no-barbell fallback removed (AC3c), catch removed (AC3d), empty plates defaulted (AC4), put under wrong user (AC5), stale guard removed (AC7), wipe skipped (AC6). Gate result below.
+Archived in `docs/tickets/log/T-0632.md` (D-0157).
