@@ -60,6 +60,7 @@ Checklist (D-0197 §7):
 - `apps/web/src/features/UF-02/today.css`, `tests/e2e/uf-02-today.spec.ts` (orchestrator grant: remove the T-0601 interim override and tighten the primary-count test)
 - `apps/web/src/features/UF-11/**` (lane)
 - `tests/e2e/uf-11-plan.spec.ts`, `tests/e2e/uf-11-plan-layout.spec.ts`, `tests/e2e/uf-02-today.spec.ts` (check-in colour cases only) (listed extras)
+- `tests/e2e/uf-11-favorites.spec.ts` (orchestrator grant: the row-order case asserted one section.wl-card per row; the rows are now unboxed links)
 - `docs/tickets/T-0612-uf11-plan-checkin-cobalt.md` (log only)
 
 ## Contract impact
