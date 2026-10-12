@@ -44,6 +44,7 @@ Checklist (D-0197 §7):
 - `apps/web/src/main.css` (listed extra), `apps/web/src/app/**`, `apps/web/src/components/**`, `apps/web/*.*` (lane)
 - `tests/e2e/cobalt-state.spec.ts` (listed extra)
 - `apps/web/src/features/UF-09/uf-09.css` (orchestrator grant 2026-10-12: its 31 remaining flat reads, mapped to the generic `--wl-*` variables, no layout change) and any test pinning those exact flat names
+- Orchestrator grant 2026-10-12 (no-state assertions now expect plan, D-0210 end state; colour/font/gutter assertions only, never role/name/order/focus/offline): `tests/e2e/body-figure-v2.spec.ts`, `tests/e2e/body-map-figure.spec.ts`, `tests/e2e/cobalt-controls.spec.ts`, `tests/e2e/cobalt-surfaces.spec.ts`, `tests/e2e/fonts.spec.ts`, `tests/e2e/uf-04-figure.spec.ts`, `tests/e2e/visual-foundation.spec.ts`, `apps/web/src/features/UF-06/BalanceCard.tsx`, `apps/web/src/features/UF-06/__tests__/screens.test.tsx`
 - `docs/tickets/T-0624-web-retire-legacy-fallback.md` (log only)
 
 ## Contract impact
