@@ -304,12 +304,19 @@ function autosaveTimer(set: LoggedSet, ctx: FocusCtx, atMs: number): FocusTimer 
   return timerAt(atMs, AUTOSAVE_S);
 }
 
-/** After a set is logged and saved: rest, or `done` after the last set of the last item. */
-function afterSet(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
+/** T-0620: whether saving the set on screen leads to a rest. `afterSet` reads this same rule, and
+ *  UF-09.4 reads it for "Save · start rest". False only after the last set of the last item. */
+export function restFollowsSet(state: FocusState, ctx: FocusCtx): boolean {
   const item = ctx.plan.items[state.itemIndex]!;
   const lastSetOfItem = state.setIndex + 1 >= setsInItem(item);
   const lastItem = state.itemIndex + 1 >= ctx.plan.items.length;
-  if (lastSetOfItem && lastItem) return { ...state, phase: "done", timer: null };
+  return !(lastSetOfItem && lastItem);
+}
+
+/** After a set is logged and saved: rest, or `done` after the last set of the last item. */
+function afterSet(state: FocusState, ctx: FocusCtx, atMs: number): FocusState {
+  const item = ctx.plan.items[state.itemIndex]!;
+  if (!restFollowsSet(state, ctx)) return { ...state, phase: "done", timer: null };
   return { ...state, phase: "rest", timer: timerAt(atMs, restFor(item.exerciseId, ctx.library)) };
 }
 

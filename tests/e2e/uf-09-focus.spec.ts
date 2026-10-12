@@ -277,7 +277,7 @@ async function expectAxeClean(page: Page): Promise<void> {
 }
 
 test.describe("T-0304b AC-12 one set offline", () => {
-  test("UF-09.3 Done set (≥ 64 px) → UF-09.4 auto-save after 5 s → UF-09.5; one row in wl-offline.sets", async ({
+  test("UF-09.3 Done (≥ 64 px) → UF-09.4 auto-save after 5 s → UF-09.5; one row in wl-offline.sets", async ({
     page,
     context,
   }) => {
@@ -295,7 +295,7 @@ test.describe("T-0304b AC-12 one set offline", () => {
     const current = page.locator('[data-screen-id="UF-09.3"]');
     await expect(current.getByText("Lifting · set 1 of 4")).toBeVisible({ timeout: 10_000 });
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
-    const done = page.getByRole("button", { name: "Done set" });
+    const done = page.getByRole("button", { name: "Done" });
     const box = await done.boundingBox();
     expect(box).not.toBeNull();
     // T-0595 (D-0208 §2): the 200 px round button became the full-width session button.
@@ -325,7 +325,7 @@ test.describe("T-0304b AC-12 one set offline", () => {
   });
 });
 
-// T-0304f AC-5 (D-0086, D-0091 §1, NFR-OFF-2): UF-09.1 → Skip warm-up → UF-09.3 → Done set →
+// T-0304f AC-5 (D-0086, D-0091 §1, NFR-OFF-2): UF-09.1 → Skip warm-up → UF-09.3 → Done →
 // the auto-save → UF-09.5 → +15 s → Skip rest → UF-09.3 set 2, all offline after a reload; axe on
 // UF-09.1, .5 and .6 (the two-item variant reaches UF-09.6).
 const TWO_SETS_PLAN = {
@@ -376,7 +376,7 @@ async function openOffline(
 }
 
 test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
-  test("UF-09.1 Skip warm-up → UF-09.3 → Done set → UF-09.5 'Next · set 2 of 2' → +15 s → Skip rest → set 2", async ({
+  test("UF-09.1 Skip warm-up → UF-09.3 → Done → UF-09.5 'Next · set 2 of 2' → +15 s → Skip rest → set 2", async ({
     page,
     context,
   }) => {
@@ -389,7 +389,7 @@ test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
 
     const current = page.locator('[data-screen-id="UF-09.3"]');
     await expect(current.getByText("Lifting · set 1 of 2")).toBeVisible();
-    await page.getByRole("button", { name: "Done set" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
     await expect(page.locator('[data-screen-id="UF-09.4"]')).toBeVisible();
 
     const rest = page.locator('[data-screen-id="UF-09.5"]');
@@ -422,7 +422,7 @@ test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
   }) => {
     await openOffline(page, context, TWO_ITEMS_PLAN);
     await page.getByRole("button", { name: "Start now" }).click();
-    await page.getByRole("button", { name: "Done set" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
     const rest = page.locator('[data-screen-id="UF-09.5"]');
     // The mocked library is empty, so names fall back to the exercise id (D-0118 §8).
     await expect(rest.getByText("Next · barbell-row")).toBeVisible({ timeout: 10_000 });
@@ -634,7 +634,7 @@ test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
     for (let set = 1; set <= 4; set += 1) {
       const current = page.locator('[data-screen-id="UF-09.3"]');
       await expect(current.getByText(`Set ${set} of 4`)).toBeVisible();
-      await expect(current.getByRole("button", { name: "Done set" })).toBeFocused();
+      await expect(current.getByRole("button", { name: "Done" })).toBeFocused();
       await page.keyboard.press("Enter");
       const confirm = page.locator('[data-screen-id="UF-09.4"]');
       await expect(confirm.getByRole("button", { name: "Save" })).toBeFocused();
@@ -858,7 +858,7 @@ test.describe("T-0394 AC-6 Back means Pause", () => {
 // ---------------------------------------------------------------------------------------------
 // T-0595 (D-0208, D-0210, D-0211, D-0213; UF-09.3, UF-09.4): the lift state on the set and its
 // confirm. Colours are read from tokens.json, never typed. Online: the offline path is the
-// T-0304b AC-12 test above (its Done set height pin moved to 64 px) and the offline line below.
+// T-0304b AC-12 test above (its Done height pin moved to 64 px) and the offline line below.
 // ---------------------------------------------------------------------------------------------
 const tokenColours = JSON.parse(
   readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
@@ -1030,7 +1030,7 @@ test.describe("T-0595 UF-09.3 and UF-09.4 in the lift state (390 x 844)", () => 
     await expectLiftChrome(page, "UF-09.3", "Lifting · set 1 of 4");
 
     // AC3: Done keeps its name; the full content width, 64 px or more, lift.action / on-action.
-    const done = page.getByRole("button", { name: "Done set" });
+    const done = page.getByRole("button", { name: "Done" });
     const box = (await done.boundingBox())!;
     const rootPad = await page.locator("[data-screen-id]").evaluate((el) => {
       const s = getComputedStyle(el);
@@ -1075,7 +1075,7 @@ test.describe("T-0595 UF-09.3 and UF-09.4 in the lift state (390 x 844)", () => 
     page,
   }, testInfo) => {
     await openSet(page);
-    await page.getByRole("button", { name: "Done set" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
     await expectLiftChrome(page, "UF-09.4", "Lifting · set 1 of 4");
     const root = page.locator('[data-screen-id="UF-09.4"]');
 
@@ -1142,7 +1142,7 @@ test.describe("T-0595 UF-09.3 and UF-09.4 in the lift state (390 x 844)", () => 
       items: [{ ...PLAN.items[0]!, sets: 1, backoff: { weightKg: 70, reps: 6 } }],
     };
     await openSet(page, plan);
-    await page.getByRole("button", { name: "Done set" }).click();
+    await page.getByRole("button", { name: "Done" }).click();
     await page.getByRole("button", { name: "Save" }).click();
     await page.getByRole("button", { name: "Skip rest" }).click();
     await expectLiftChrome(page, "UF-09.3", "Lifting · back-off set");
@@ -1187,7 +1187,7 @@ test.describe("T-0595 AC5 the progress chrome at 320 x 640", () => {
   }) => {
     await openSet(page);
     for (const id of ["UF-09.3", "UF-09.4"]) {
-      if (id === "UF-09.4") await page.getByRole("button", { name: "Done set" }).click();
+      if (id === "UF-09.4") await page.getByRole("button", { name: "Done" }).click();
       await expect(page.locator(`[data-screen-id="${id}"]`)).toBeVisible();
       const counter = page.locator(".wl-session-progress__counter");
       const one = await counter.evaluate((el) => {
@@ -1397,11 +1397,11 @@ async function openReady(page: Page, plan: object): Promise<string> {
   return id;
 }
 
-/** UF-09.1 → Skip warm-up → UF-09.3 → Done set → Save → UF-09.5. */
+/** UF-09.1 → Skip warm-up → UF-09.3 → Done → Save → UF-09.5. */
 async function openRest(page: Page, plan: object = TWO_ITEMS_WARMUP_PLAN): Promise<string> {
   const id = await openReady(page, plan);
   await page.getByRole("button", { name: "Skip warm-up" }).click();
-  await page.getByRole("button", { name: "Done set" }).click();
+  await page.getByRole("button", { name: "Done" }).click();
   await page.getByRole("button", { name: "Save" }).click();
   await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible();
   return id;

@@ -66,7 +66,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Mounts set `itemIndex` of `plan` on UF-09.3, taps Done set, and returns `t0'` (the
+/** Mounts set `itemIndex` of `plan` on UF-09.3, taps Done, and returns `t0'` (the
  *  `SET_RECORDED` dispatch time). */
 async function toConfirm(plan: SessionPlan = P1, itemIndex = 0): Promise<number> {
   await seedSession({ plan });
@@ -241,7 +241,7 @@ describe("AC-5 a touch cancels", () => {
     expect(autosaveText()).toBe("Tap save when ready.");
     await advance(10_000);
     expect(screenId()).toBe("UF-09.4");
-    press("Save");
+    press("Save · start rest");
     await flushReal();
     expect(editSpy).not.toHaveBeenCalled();
     expect(screenId()).toBe("UF-09.5");
@@ -298,7 +298,7 @@ describe("AC-6 the typed weight", () => {
   it.each(["77,5", "77.5"])("typing %j saves 77.5", async (text) => {
     await toConfirm();
     typeWeight(text);
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(1);
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 77.5, rir: null });
@@ -310,7 +310,7 @@ describe("AC-6 the typed weight", () => {
     expect(saveButton()).toHaveAttribute("aria-disabled", "true");
     const hint = screen.getByText("Enter a weight like 82.5");
     expect(hint).toHaveAttribute("aria-live", "polite");
-    press("Save");
+    press("Save · start rest");
     await flushReal();
     expect(editSpy).not.toHaveBeenCalled();
     expect(screenId()).toBe("UF-09.4");
@@ -326,7 +326,7 @@ describe("AC-6 the typed weight", () => {
   it("an empty field saves weightKg null", async () => {
     await toConfirm();
     typeWeight("");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: null, rir: null });
   });
@@ -375,7 +375,7 @@ describe("AC-6 RIR", () => {
     fireEvent.pointerDown(radio);
     fireEvent.click(radio);
     expect(radio).toBeChecked();
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 80, rir });
   });
@@ -390,7 +390,7 @@ describe("AC-6 Save", () => {
     const radio = screen.getByRole("radio", { name: "1–2" });
     fireEvent.pointerDown(radio);
     fireEvent.click(radio);
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(1);
     expect(editSpy).toHaveBeenCalledWith(clientId, { reps: 5, weightKg: 77.5, rir: 2 });
@@ -406,7 +406,7 @@ describe("AC-6 Save", () => {
   it("the pair, no change: a touch then Save → 0 editSet calls, UF-09.5", async () => {
     await toConfirm();
     fireEvent.pointerDown(screen.getByRole("group", { name: "Reps" }));
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).not.toHaveBeenCalled();
   });
@@ -415,7 +415,7 @@ describe("AC-6 Save", () => {
     await toConfirm();
     press("More reps");
     press("Fewer reps");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).not.toHaveBeenCalled();
   });
@@ -423,7 +423,7 @@ describe("AC-6 Save", () => {
   it("a double tap on Save with a change: one editSet", async () => {
     await toConfirm();
     press("More reps");
-    press("Save", 2);
+    press("Save · start rest", 2);
     await findScreen("UF-09.5");
     await flushReal();
     expect(editSpy).toHaveBeenCalledTimes(1);
@@ -436,7 +436,7 @@ describe("AC-6 Save", () => {
       throw new Error("tombstoned");
     });
     press("More reps");
-    press("Save");
+    press("Save · start rest");
     await flushReal();
     const status = screen.getByText("Couldn't save. Tap Save again.");
     expect(status).toHaveAttribute("aria-live", "polite");
@@ -445,14 +445,14 @@ describe("AC-6 Save", () => {
     expect(screenId()).toBe("UF-09.4");
     expect(countOf("SAVED")).toBe(0);
     expect(saveButton()).not.toHaveAttribute("aria-disabled");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(2);
   });
 });
 
 /** Mounts a bench-press-only plan whose set 1 is pre-filled at `weightKg`, in `locale`, taps
- *  Done set and lands on UF-09.4 (T-0409). `storedKg` is the weight the queue stores and UF-09
+ *  Done and lands on UF-09.4 (T-0409). `storedKg` is the weight the queue stores and UF-09
  *  logs: the pre-fill rounded to 2 decimals (T-0233, D-0129 §4). */
 async function toConfirmAt(
   weightKg: number,
@@ -487,7 +487,7 @@ describe("T-0409 ar-EG pre-fill (D-0128 §1–§3)", () => {
   it("T-0409 AC4 touch then Save: 0 editSet calls, UF-09.5", async () => {
     await toConfirmAt(77.5, "ar-EG");
     touch();
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).not.toHaveBeenCalled();
   });
@@ -496,7 +496,7 @@ describe("T-0409 ar-EG pre-fill (D-0128 §1–§3)", () => {
     await toConfirmAt(77.5, "ar-EG");
     press("More weight");
     expect(weightInput().value).toBe("\u0668\u0660");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(1);
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 80, rir: null });
@@ -505,7 +505,7 @@ describe("T-0409 ar-EG pre-fill (D-0128 §1–§3)", () => {
   it("T-0409 AC4 a typed Arabic-Indic weight saves its value", async () => {
     await toConfirmAt(77.5, "ar-EG");
     typeWeight("\u0668\u0662\u066B\u0665");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 82.5, rir: null });
   });
@@ -516,7 +516,7 @@ describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
     await toConfirmAt(82.125, "en-GB", 82.13);
     expect(weightInput().value).toBe("82.13");
     touch();
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).not.toHaveBeenCalled();
     expect(storedState().loggedSets[0]!.weightKg).toBe(82.13);
@@ -526,7 +526,7 @@ describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
     await toConfirmAt(82.125, "en-GB", 82.13);
     const { clientId } = storedState().loggedSets[0]!;
     press("More reps");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(1);
     expect(editSpy).toHaveBeenCalledWith(clientId, { reps: 7, weightKg: 82.13, rir: null });
@@ -535,7 +535,7 @@ describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
   it("T-0409 AC6 typing 82.5 counts: editSet with weightKg 82.5", async () => {
     await toConfirmAt(82.125, "en-GB", 82.13);
     typeWeight("82.5");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(1);
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 82.5, rir: null });
@@ -547,7 +547,7 @@ describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
     expect(weightInput().value).toBe("84.63");
     press("Less weight");
     expect(weightInput().value).toBe("82.13");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).not.toHaveBeenCalled();
     expect(storedState().loggedSets[0]!.weightKg).toBe(82.13);
@@ -556,7 +556,7 @@ describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
   it("T-0409 AC6 the pair: More weight alone counts: editSet with weightKg 84.63", async () => {
     await toConfirmAt(82.125, "en-GB", 82.13);
     press("More weight");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: 84.63, rir: null });
   });
@@ -564,7 +564,7 @@ describe("T-0409 a 3-decimal recorded weight (D-0128 §4)", () => {
   it("T-0409 AC6 clearing the field saves weightKg null", async () => {
     await toConfirmAt(82.125, "en-GB", 82.13);
     typeWeight("");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(1);
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 6, weightKg: null, rir: null });

@@ -538,8 +538,8 @@ describe("T-0422 AC-5 apply persisted offline (D-0071 §5 §6, D-0093 §7)", () 
     expect(heading()).toBe("Db row");
     expect(screen.getByText(en.uf09.liftingCaption(2, 3))).toBeInTheDocument();
 
-    // Logging: the old set keeps its exercise; the next Done set is db-row at setIndex 1.
-    await click("Done set");
+    // Logging: the old set keeps its exercise; the next Done is db-row at setIndex 1.
+    await click("Done");
     await findScreen("UF-09.4");
     const logged = (storedFocus() as unknown as FocusState).loggedSets;
     expect(logged[0]).toEqual(first);
@@ -642,7 +642,7 @@ describe("T-0422 AC-7 host: a swap while UF-09.4 is in play (D-0153 §2)", () =>
     await findScreen("UF-09.3");
     expect(heading()).toBe("Db row");
     expect(screen.getByText(en.uf09.liftingCaption(3, 3))).toBeInTheDocument();
-    await click("Done set");
+    await click("Done");
     await findScreen("UF-09.4");
     expect(recordSet).toHaveBeenCalledTimes(1);
     expect(recordSet.mock.calls[0]![0]).toMatchObject({ exerciseId: "db-row", setIndex: 2 });
@@ -679,7 +679,7 @@ describe("T-0422 AC-7 host: a swap while UF-09.4 is in play (D-0153 §2)", () =>
     expect(heading()).toBe("Bench press");
     expect(document.querySelector('[data-field="reps"]')?.textContent).toBe("6");
     expect(screen.getByRole<HTMLInputElement>("textbox", { name: "Weight (kg)" }).value).toBe("80");
-    await click("Save");
+    await click("Save · start rest");
     await findScreen("UF-09.5");
     await advance(120_000);
     await findScreen("UF-09.6");

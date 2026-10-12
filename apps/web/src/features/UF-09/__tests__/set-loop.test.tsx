@@ -114,7 +114,7 @@ describe("AC-7 a null weight means ask", () => {
   it("leg-curl Save with the field empty: no editSet, moves on", async () => {
     await showSet(P1, { itemIndex: 2 });
     await doneSet();
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).not.toHaveBeenCalled();
   });
@@ -123,7 +123,7 @@ describe("AC-7 a null weight means ask", () => {
     await showSet(P1, { itemIndex: 2 });
     await doneSet();
     typeWeight("40");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy).toHaveBeenCalledTimes(1);
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 10, weightKg: 40, rir: null });
@@ -164,7 +164,7 @@ describe("AC-7 bodyweight PU", () => {
     const names = Array.from(host.querySelectorAll("button")).map(
       (b) => b.getAttribute("aria-label") ?? b.textContent,
     );
-    expect(names).toEqual(["Pause workout", "Fewer reps", "More reps", "Save"]);
+    expect(names).toEqual(["Pause workout", "Fewer reps", "More reps", "Save · start rest"]);
     expect(screen.getAllByRole("radio")).toHaveLength(3);
     expect(storedState().timer).not.toBeNull();
     await advance(5_000);
@@ -175,7 +175,7 @@ describe("AC-7 bodyweight PU", () => {
     await showSet(PLAN);
     await doneSet();
     press("More reps");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(editSpy.mock.calls[0]![1]).toEqual({ reps: 13, weightKg: 0, rir: null });
   });
@@ -195,7 +195,7 @@ describe("AC-8 in-session pre-fill", () => {
     await doneSet();
     press("Fewer reps");
     typeWeight("77.5");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     await advance(120_000);
     expect(screenId()).toBe("UF-09.3");
@@ -211,7 +211,7 @@ describe("AC-8 in-session pre-fill", () => {
     await doneSet();
     press("Fewer reps");
     typeWeight("");
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(storedState().loggedSets[0]).toMatchObject({ reps: 5, weightKg: null });
     await advance(120_000);
@@ -294,18 +294,47 @@ describe("AC-9 no rest after the last set", () => {
     expect(dispatched.filter((e) => e.type === "SAVED")).toHaveLength(1);
   });
 
+  it("T-0620 AC2: set 4 of 4 with a back-off reads 'Save · start rest'; the last set of the last item reads 'Save'", async () => {
+    await showSet(P1, { setIndex: 3, loggedSets: [0, 1, 2].map((i) => logged(0, i)) });
+    await doneSet();
+    expect(screen.getByRole("button", { name: "Save · start rest" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Save" })).not.toBeInTheDocument();
+  });
+
+  it("T-0620 AC2: the last set of the last item reads exactly 'Save'", async () => {
+    const plan = planWith({ items: [BENCH, ROW, CURL] });
+    await showSet(plan, {
+      itemIndex: 2,
+      setIndex: 2,
+      loggedSets: [
+        ...[0, 1, 2, 3].map((i) => logged(0, i, plan)),
+        ...[0, 1, 2].map((i) => logged(1, i, plan)),
+        ...[0, 1].map((i) => logged(2, i, plan)),
+      ],
+    });
+    await doneSet();
+    expect(screen.getByRole("button", { name: "Save" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /start rest/ })).not.toBeInTheDocument();
+  });
+
+  it("T-0620 AC1: UF-09.3 has a button named exactly 'Done' and none named 'Done set'", async () => {
+    await showSet(P1, { setIndex: 3, loggedSets: [0, 1, 2].map((i) => logged(0, i)) });
+    expect(screen.getByRole("button", { name: "Done" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Done set/ })).not.toBeInTheDocument();
+  });
+
   it("the pair: saving bench-press set 4 → UF-09.5", async () => {
     await showSet(P1, { setIndex: 3, loggedSets: [0, 1, 2].map((i) => logged(0, i)) });
     await doneSet();
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(storedState()).toMatchObject({ phase: "rest", setIndex: 3 });
   });
 });
 
-// T-0304b rework (QA): Done set → Pause while recordSet is pending must not let the same set be
+// T-0304b rework (QA): Done → Pause while recordSet is pending must not let the same set be
 // written twice (NFR-SYNC-1, D-0118 §5).
-describe("a Done set write that lands while paused", () => {
+describe("a Done write that lands while paused", () => {
   type Queued = Awaited<ReturnType<typeof offline.recordSet>>;
   const benchInput = {
     sessionId: S1,
@@ -324,7 +353,7 @@ describe("a Done set write that lands while paused", () => {
     return rows.filter((r) => r.sessionId === S1 && r.setIndex === 0).length;
   }
 
-  it("Done set → Pause → the write resolves → Resume: one entry, one row, the screen moved on", async () => {
+  it("Done → Pause → the write resolves → Resume: one entry, one row, the screen moved on", async () => {
     await showSet(P1);
     const held = deferred<Queued>();
     recordSpy.mockImplementationOnce(() => held.promise);
@@ -349,7 +378,7 @@ describe("a Done set write that lands while paused", () => {
     expect(recordSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("Done set → Pause → Resume with the write still pending → Done set again: one write", async () => {
+  it("Done → Pause → Resume with the write still pending → Done again: one write", async () => {
     await showSet(P1);
     const held = deferred<Queued>();
     recordSpy.mockImplementationOnce(() => held.promise);

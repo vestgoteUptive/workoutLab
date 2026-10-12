@@ -51,8 +51,8 @@ export async function findPath(pathname: string, tries = 60): Promise<void> {
   expect(currentLocation.pathname).toBe(pathname);
 }
 
-export const doneButton = () => screen.getByRole("button", { name: "Done set" });
-export const saveButton = () => screen.getByRole("button", { name: "Save" });
+export const doneButton = () => screen.getByRole("button", { name: "Done" });
+export const saveButton = () => screen.getByRole("button", { name: /^Save( · start rest)?$/ });
 export const weightInput = () =>
   screen.getByRole<HTMLInputElement>("textbox", { name: "Weight (kg)" });
 export const repsValue = () => document.querySelector('[data-field="reps"]')?.textContent ?? null;
@@ -68,7 +68,7 @@ export async function tap(el: HTMLElement): Promise<void> {
   await flushReal();
 }
 
-/** Done set, then UF-09.4. */
+/** Done, then UF-09.4. */
 export async function doneSet(): Promise<void> {
   fireEvent.click(doneButton());
   await findScreen("UF-09.4");

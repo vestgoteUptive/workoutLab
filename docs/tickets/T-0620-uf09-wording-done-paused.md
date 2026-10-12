@@ -58,3 +58,7 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-09 e2e specs green · commit messages start with `T-0620` and cite UF-09.3/UF-09.4/UF-09.9.
 
 ## Build / accept log
+- Build: copy in `uf-09.ts` (Done, Save · start rest, caption, value-first stats). `machine.ts` exports `restFollowsSet`, the rule `afterSet` now uses; `confirm-set.tsx` reads it. Paused stats are a 3-column grid (CSS scoped to `[data-wl-state="plan"]`), value span `wl-type-stat`, word span `wl-type-label`, no `display:none` anywhere.
+- AC1: set-loop.test (exact "Done", no "Done set"), current-set.test (error text). AC2: set-loop.test (set 4 with back-off "Save · start rest"; last set "Save"; saving → UF-09.5). AC3/AC4: paused.test (caption first, DOM order, 1 min, 0 min). AC5: changed assertions: "Done set"→"Done" (20 files, name queries), `Save`→`Save · start rest` where a rest follows (confirm-set, set-loop, rest, t0422.host, host.chrome, set-loop-helpers regex), paused.test and t0598.plan stat text, e2e uf-09-ready Elapsed regex. AC6: offline e2e green.
+- Planted faults (restored from copy): always "Save · start rest" -> 2 set-loop tests red; caption removed -> paused test red; "Left n min" copy -> 3 paused tests red.
+- Gate: UF-09 e2e 38 passed (exit 0); format:check 0; check-all 0; `-w test` exit 1 on one out-of-lane test, UF-03 list-view.logging.host.test.tsx:189 queries "Done set" (follow-up for UF-03 lane).

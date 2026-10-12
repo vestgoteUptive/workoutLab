@@ -451,7 +451,7 @@ test.describe("T-0395 AC9 resume on a cold start", () => {
       if (await waitAndClick(imReady)) continue;
     }
     await expect(current).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: "Done set" }).click();
+    await page.getByRole("button", { name: "Done", exact: true }).click();
     await expect(page.locator('[data-screen-id="UF-09.4"]')).toBeVisible();
     // The real 5 s auto-save to UF-09.5 (D-0118 §2): one set now logged.
     await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible({ timeout: 10_000 });

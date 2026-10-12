@@ -89,7 +89,7 @@ describe("AC-3 lengths come from the engine (D-0066 §7)", () => {
     seedFocus(NOW, { phase: "set", itemIndex: 2 });
     await renderSession({ locale: "en-GB" });
     await doneSet();
-    press("Save");
+    press("Save · start rest");
     await findScreen("UF-09.5");
     expect(storedState().timer).toMatchObject({ durationS: REST_ISOLATION_S });
     expect(timerText()).toBe("1:00");

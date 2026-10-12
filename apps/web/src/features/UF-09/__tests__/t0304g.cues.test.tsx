@@ -368,7 +368,7 @@ describe("AC-4 sound needs a gesture (D-0119 §8)", () => {
     expect(errors).not.toHaveBeenCalled();
   });
 
-  it("after Done set (a click), the constructor is called once and the 10 s tone plays; a second gesture constructs nothing more", async () => {
+  it("after Done (a click), the constructor is called once and the 10 s tone plays; a second gesture constructs nothing more", async () => {
     const audio = stubAudio();
     seedFocus(NOW, { phase: "set" });
     await render();
