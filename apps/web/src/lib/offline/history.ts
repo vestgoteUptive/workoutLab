@@ -350,9 +350,13 @@ export async function refreshProfile(): Promise<void> {
   if (!data) return;
 
   const mapped = toEngineProfile(data as Tables<"profiles">);
-  const barbell = toBarbell(data as Tables<"profiles">);
+  // A row without the D-0218 columns (an older server or fixture) caches no barbell, so
+  // `loadBarbell` falls back to the default instead of the whole refresh failing.
+  const profileRow = data as Tables<"profiles">;
+  const barbell =
+    profileRow.bar_kg == null || profileRow.plates_kg == null ? undefined : toBarbell(profileRow);
   if (!cacheWriteAllowed(gen)) return;
-  await db.profileCache.put({ userId, profile: mapped, barbell });
+  await db.profileCache.put({ userId, profile: mapped, ...(barbell ? { barbell } : {}) });
 }
 
 /** Runs every read-side refresh together (an online start, AC-C16 + T-0319 AC-8). */

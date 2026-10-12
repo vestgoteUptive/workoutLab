@@ -73,6 +73,13 @@ describe("T-0632 bar and plates cache", () => {
     vi.spyOn(offlineDb().profileCache, "get").mockRejectedValue(new Error("idb"));
     expect(await loadBarbell()).toEqual(DEFAULT_BARBELL);
   });
+  it("AC3e a server row without the bar columns still refreshes and reads the default", async () => {
+    const { bar_kg: _b, plates_kg: _p, ...old } = profileRow(15, [20]);
+    h.rows = [old];
+    await refreshProfile();
+    expect((await loadProfile())?.goal).toBe("build_muscle");
+    expect(await loadBarbell()).toEqual(DEFAULT_BARBELL);
+  });
   it("AC4 empty plates stay empty", async () => {
     h.rows = [profileRow(20, [])];
     await refreshProfile();
