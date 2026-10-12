@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-04.1]
 decisions: [D-0212, D-0196, D-0071]
 deps: [T-0594, T-0607]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0212 §1.5, D-0213). Flow: wl-build-web (agent frontend-dev). About ¼ day. en.ts is web-shell's. Runs after the tab-bar restyle (T-0594) and the UF-04.1 restyle (T-0607), so no other ticket edits shell.spec or uf-04-library.spec in parallel. User flows v2 gets the name in T-0618. -->
 ## Why
@@ -44,3 +44,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `shell.spec.ts` and `uf-04-library.spec.ts` green · commit messages start with `T-0622` and cite UF-04.1.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0622.md` (D-0157).
