@@ -37,8 +37,8 @@ Checklist (D-0197 §7):
 ## Paths you may change
 - `packages/design-tokens/**`, `Design-docs/docs/design/**` (lane)
 - `apps/web/build.test.ts` (listed extra, AC4 only)
-- `apps/web/src/app/theme-color.ts` and its test (orchestrator grant 2026-10-12: the no-state fallback `tokens.color.bg` becomes `tokens.color.plan.bg`, the last flat read)
-- Orchestrator grant 2026-10-12 (last reads of removed keys; token-read and font-count changes only, no behaviour assertions): `apps/web/ensure-tokens-css.test.ts`, `apps/web/src/features/UF-10/format.ts` (+ its tests), `apps/web/src/main.tsx` (one fonts import), `tests/e2e/uf-02-today.spec.ts`, `tests/e2e/uf-08-setup.spec.ts`, `tests/e2e/uf-10-balance.spec.ts`, `tests/e2e/fonts.spec.ts`
+- `apps/web/src/app/theme-color.ts`, `apps/web/src/app/theme-color.test.tsx` (orchestrator grant 2026-10-12: the no-state fallback `tokens.color.bg` becomes `tokens.color.plan.bg`, the last flat read)
+- Orchestrator grant 2026-10-12, token-read and font-count edits only: `apps/web/ensure-tokens-css.test.ts`, `apps/web/src/features/UF-10/format.ts` (+ its tests), `apps/web/src/main.tsx` (one fonts import), `tests/e2e/uf-02-today.spec.ts`, `tests/e2e/uf-08-setup.spec.ts`, `tests/e2e/uf-10-balance.spec.ts`, `tests/e2e/fonts.spec.ts`, `.github/scripts/auth-templates.test.mjs` (LEGACY from the frozen fixture)
 - `docs/tickets/T-0625-tokens-retire-chalk-and-iron.md` (log only)
 
 ## Contract impact
