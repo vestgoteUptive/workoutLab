@@ -102,14 +102,16 @@ describe("AC2 type: the hero title keeps its name", () => {
 });
 
 describe("AC3 one primary", () => {
-  it("Today: Start is the only primary, an aria-hidden arrow ends it, and it is the last child", async () => {
+  it("Today: Start is the only primary, an aria-hidden arrow ends it, and it is followed only by the quick link", async () => {
     const root = await todayRoot();
     const primaries = root.querySelectorAll(".wl-button--primary");
     expect(primaries).toHaveLength(1);
     const start = within(root).getByRole("link", { name: "Start workout" });
     expect(start).toBe(primaries[0]);
     expect(start.querySelector('svg[aria-hidden="true"]')).not.toBeNull();
-    expect(root.lastElementChild).toBe(start);
+    // T-0638 (D-0217): the quick link follows Start; Start is the last primary control.
+    expect(root.lastElementChild).toBe(start.nextElementSibling);
+    expect(start.nextElementSibling).toHaveAttribute("data-part", "quick");
     expect(start).toHaveAttribute("href", "/session/setup");
   });
 
