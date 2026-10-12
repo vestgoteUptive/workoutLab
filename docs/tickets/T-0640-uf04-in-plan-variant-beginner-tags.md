@@ -5,7 +5,7 @@ lane: web-feature:UF-04
 screens: [UF-04.1]
 decisions: [D-0217, D-0199, D-0202, D-0212]
 deps: [T-0639]
-status: doing
+status: done
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Exercises" (#turn-3). Spec: docs/specs/cobalt-mock-behaviour.md §3.4. Meanings are defaults (H-39). -->
 
@@ -48,9 +48,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-04-library.spec.ts` and `uf-04-favorites.spec.ts` green · commit messages start with `T-0640` and cite UF-04.1.
 
 ## Build / accept log
-
-- 2026-10-12 build (on top of T-0639): Library.tsx reads routines then each routine exercise's variants (parallel `Promise.all`, device cache only) in a separate effect keyed on the library read, so the list paints first and tags appear when ready; one tag per row (Not suggested → Favorite → In plan → Variant → Beginner), `.wl-uf04__sr` prefix, existing `.wl-uf04-browse__tag` class (the ticket's `.wl-uf04__tag` name does not exist in the code). Copy in flows/uf-04.ts.
-- Existing assertions updated because Beginner rows now carry a tag: cobalt.test.tsx AC3 (count only not-suggested/favorite; the untagged row is Pull-up, intermediate) and the same two spots in uf-04-library.spec.ts.
-- AC→test: AC1-AC7, AC9 `__tests__/plan-tags.test.tsx`; AC8 `uf-04-library.spec.ts` "T-0640 plan tags"; AC10 UF-04 vitest suite and 35 UF-04 e2e green (favorites spec untouched).
-- Planted faults (all caught): In plan/Variant order swapped, Beginner on every row, Beginner removed, variants set emptied, sr prefix removed, tag shown beside Not suggested/Favorite. No planted fault for the e2e.
-- Gate: `-w typecheck lint test` exit 0; format:check 0; check-all 1 (only the inherited T-0639 ticket path); UF-04 e2e 35 passed.
+Archived in `docs/tickets/log/T-0640.md` (D-0157).
