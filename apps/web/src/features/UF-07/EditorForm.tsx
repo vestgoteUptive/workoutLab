@@ -97,6 +97,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
         <label htmlFor="wl-routine-name">{t.nameLabel}</label>
         <input
           id="wl-routine-name"
+          className="wl-input"
           type="text"
           autoComplete="off"
           value={editor.name}
@@ -105,7 +106,11 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
           onChange={(event) => editor.setName(event.target.value)}
         />
         {editor.nameValid ? null : (
-          <p id="wl-routine-name-hint" className="wl-routine-editor__hint" data-tone="warn">
+          <p
+            id="wl-routine-name-hint"
+            className="wl-routine-editor__hint wl-input__error"
+            data-tone="warn"
+          >
             {t.nameInvalid}
           </p>
         )}
@@ -120,33 +125,40 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
           {editor.items.map((exerciseId, index) => {
             const label = editor.nameOf(exerciseId);
             return (
-              <li key={exerciseId} className="wl-routine-editor__row" data-exercise={exerciseId}>
+              <li
+                key={exerciseId}
+                className="wl-row wl-routine-editor__row"
+                data-exercise={exerciseId}
+              >
                 <span className="wl-routine-editor__row-name">{t.rowLabel(index + 1, label)}</span>
                 <button
                   type="button"
+                  className="wl-routine-editor__icon"
                   data-move="up"
                   aria-label={t.moveUp(label)}
                   disabled={index === 0}
                   onClick={() => editor.move(index, "up")}
                 >
-                  {t.glyphUp}
+                  <span aria-hidden="true">{t.glyphUp}</span>
                 </button>
                 <button
                   type="button"
+                  className="wl-routine-editor__icon"
                   data-move="down"
                   aria-label={t.moveDown(label)}
                   disabled={index === last}
                   onClick={() => editor.move(index, "down")}
                 >
-                  {t.glyphDown}
+                  <span aria-hidden="true">{t.glyphDown}</span>
                 </button>
                 <button
                   type="button"
+                  className="wl-routine-editor__icon"
                   data-action="remove"
                   aria-label={t.remove(label)}
                   onClick={() => editor.remove(index)}
                 >
-                  {t.glyphRemove}
+                  <span aria-hidden="true">{t.glyphRemove}</span>
                 </button>
               </li>
             );
@@ -161,6 +173,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
             <label htmlFor="wl-routine-search">{t.searchLabel}</label>
             <input
               id="wl-routine-search"
+              className="wl-input"
               ref={searchRef}
               type="text"
               autoComplete="off"
@@ -178,32 +191,42 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
             ) : (
               <ul className="wl-routine-editor__matches">
                 {editor.pickerRows.map((exercise) => (
-                  <li key={exercise.id} className="wl-routine-editor__row">
+                  <li key={exercise.id} className="wl-row wl-routine-editor__row">
                     <span className="wl-routine-editor__row-name">{exercise.name}</span>
                     {inList.has(exercise.id) ? (
-                      <button type="button" disabled>
+                      <button type="button" className="wl-button--text" disabled>
                         {t.alreadyAdded}
                       </button>
                     ) : (
                       <button
                         type="button"
+                        className="wl-routine-editor__icon"
                         aria-label={t.add(exercise.name)}
                         disabled={editor.full}
                         onClick={() => editor.add(exercise.id)}
                       >
-                        {t.glyphAdd}
+                        <span aria-hidden="true">{t.glyphAdd}</span>
                       </button>
                     )}
                   </li>
                 ))}
               </ul>
             )}
-            <button type="button" onClick={() => editor.setPickerOpen(false)}>
+            <button
+              type="button"
+              className="wl-button--text"
+              onClick={() => editor.setPickerOpen(false)}
+            >
               {t.done}
             </button>
           </div>
         ) : (
-          <button ref={addRef} type="button" onClick={() => editor.setPickerOpen(true)}>
+          <button
+            ref={addRef}
+            type="button"
+            className="wl-button--text"
+            onClick={() => editor.setPickerOpen(true)}
+          >
             {t.addExercise}
           </button>
         )}
@@ -223,16 +246,17 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
       {editor.online ? null : <p className="wl-routine-editor__hint">{t.connectToSave}</p>}
 
       <div className="wl-routine-editor__actions" inert={confirmOpen}>
-        <button type="submit" data-variant="primary" disabled={!editor.canSave}>
+        <button type="submit" className="wl-button--primary" disabled={!editor.canSave}>
           {t.save}
         </button>
-        <button type="button" onClick={editor.cancel}>
+        <button type="button" className="wl-button--text" onClick={editor.cancel}>
           {t.cancel}
         </button>
         {editor.isNew ? null : (
           <button
             ref={deleteRef}
             type="button"
+            className="wl-button--secondary"
             data-variant="danger"
             disabled={!editor.online}
             onClick={() => editor.setConfirmOpen(true)}
@@ -258,13 +282,19 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
           <button
             ref={confirmBtnRef}
             type="button"
+            className="wl-button--secondary"
             data-variant="danger"
             disabled={!editor.online}
             onClick={() => void editor.confirmDelete()}
           >
             {t.confirmDelete}
           </button>
-          <button ref={keepRef} type="button" onClick={() => editor.setConfirmOpen(false)}>
+          <button
+            ref={keepRef}
+            type="button"
+            className="wl-button--text"
+            onClick={() => editor.setConfirmOpen(false)}
+          >
             {t.keepRoutine}
           </button>
         </div>

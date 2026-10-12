@@ -7,6 +7,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { compareWithCanvas } from "./helpers/canvas-compare.js";
 import {
   FAKE_USER_ID,
   VITE_SUPABASE_URL,
@@ -214,5 +215,113 @@ test.describe("AC-A14 a11y", () => {
     await openSignedIn(page, `/plan/routines/${ROUTINE_ID}`);
     await expect(page.getByText("1. Barbell back squat")).toBeVisible();
     await audit(page);
+  });
+});
+
+// T-0610 UF-07.1 in the plan state (AC1 to AC5, AC7).
+test.describe("T-0610 the plan state (390 x 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  const CONTRAST = ["color-contrast"];
+  const rootInk = (page: Page) =>
+    page.evaluate(() => {
+      const d = document.createElement("div");
+      d.style.color = getComputedStyle(
+        document.querySelector('[data-screen-id="UF-07.1"]')!,
+      ).getPropertyValue("--wl-ink");
+      document.body.append(d);
+      const c = getComputedStyle(d).color;
+      d.remove();
+      return c;
+    });
+
+  test("AC1/AC3/AC4/AC5/AC7: plan root, contrast, targets, danger last, selected row, canvas", async ({
+    page,
+  }, testInfo) => {
+    await openSignedIn(page, `/plan/routines/${ROUTINE_ID}`);
+    await expect(page.getByText("1. Barbell back squat")).toBeVisible();
+    const root = page.locator('[data-screen-id="UF-07.1"]');
+    await expect(root).toHaveAttribute("data-wl-state", "plan");
+    const axe = await new AxeBuilder({ page }).withRules(CONTRAST).analyze();
+    expect(axe.violations).toEqual([]);
+
+    // AC3: Delete routine is the 1.5 px outline, last focusable control of the form.
+    const del = page.getByRole("button", { name: "Delete routine" });
+    // Chromium snaps a 1.5 px border to 1 px at a device ratio of 1, so the colour is the check.
+    await expect(del).toHaveCSS("border-top-style", "solid");
+    await expect(del).toHaveCSS("border-top-color", await rootInk(page));
+    await expect(del).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
+    const last = await page
+      .locator("form button, form input")
+      .last()
+      .evaluate((el) => el.textContent);
+    expect(last).toBe("Delete routine");
+
+    // AC4: the row holding focus is the raised one.
+    const remove = page.getByRole("button", { name: "Remove Leg curl (machine)" });
+    await remove.focus();
+    const raise = await page.evaluate(() =>
+      getComputedStyle(document.querySelector('[data-screen-id="UF-07.1"]')!).getPropertyValue(
+        "--wl-raise",
+      ),
+    );
+    expect(raise.trim().length).toBeGreaterThan(0);
+    const row = page.locator("li", { has: remove });
+    const bg = await row.evaluate((el) => getComputedStyle(el).backgroundColor);
+    const probe = await page.evaluate((v) => {
+      const d = document.createElement("div");
+      d.style.background = v;
+      document.body.append(d);
+      const c = getComputedStyle(d).backgroundColor;
+      d.remove();
+      return c;
+    }, raise.trim());
+    expect(bg).toBe(probe);
+
+    // AC5: 44 x 44 for every handle, remove and input.
+    for (const el of await page.locator("button, input").all()) {
+      const box = await el.boundingBox();
+      expect(box!.width).toBeGreaterThanOrEqual(44);
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+    expect(
+      await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    ).toBe(true);
+    await page.mouse.move(0, 0);
+    await page.locator("body").click({ position: { x: 1, y: 1 } });
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-3",
+      frame: "Plan · edit routine",
+      name: "uf-07-1",
+    });
+  });
+
+  test("AC2: an invalid name has the 2 px border and the error in the contrast check; valid is 1 px", async ({
+    page,
+  }, testInfo) => {
+    await openSignedIn(page, `/plan/routines/${ROUTINE_ID}`);
+    const name = page.getByLabel("Name");
+    await expect(name).toHaveCSS("border-top-width", "1px");
+    await name.fill("");
+    await expect(name).toHaveAttribute("aria-invalid", "true");
+    await expect(name).toHaveCSS("border-top-width", "2px");
+    const hint = page.getByText("Name your routine (up to 40 characters)");
+    await expect(hint).toBeVisible();
+    const axe = await new AxeBuilder({ page }).withRules(CONTRAST).analyze();
+    expect(axe.violations).toEqual([]);
+    await name.fill("Leg day");
+    await expect(name).toHaveCSS("border-top-width", "1px");
+    await name.fill("");
+    await page.screenshot({ path: testInfo.outputPath("uf-07-1-error-app.png") });
+  });
+
+  test("AC5: the state cross-fade is 200 ms, and instant under reduced motion", async ({
+    page,
+  }) => {
+    await openSignedIn(page, `/plan/routines/${ROUTINE_ID}`);
+    const root = page.locator('[data-screen-id="UF-07.1"]');
+    await expect(root).toHaveCSS("transition-duration", "0.2s");
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await expect(root).toHaveCSS("transition-duration", "0s");
   });
 });

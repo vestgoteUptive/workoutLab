@@ -1,145 +1,163 @@
-/* UF-07.1 Routine editor. Colours and fonts come only from @workoutlab/design-tokens.
-   State styling is keyed on data attributes and pseudo-classes, never inline, so the
-   :focus-visible ring below always wins. */
-.wl-routine-editor {
-  padding: 16px;
-  color: var(--wl-color-text);
-  font-family: var(--wl-font-body);
+/* UF-07.1 Routine editor in the plan state (T-0610, D-0208, D-0210, D-0211 §5). Colour and font
+ * come from the generic --wl-* variables main.css maps from the state attribute; no hex, no px
+ * font size. Every rule is scoped to .wl-routine-editor. The button, row and input forms are the
+ * shared ones in main.css. The only motion is the state cross-fade the root already has. */
+
+.wl-routine-editor[data-wl-state] {
+  box-sizing: border-box;
+  min-block-size: 100dvh;
+  color: var(--wl-ink);
+  font-family: var(--wl-font);
 }
 
-.wl-routine-editor__form {
+.wl-routine-editor .wl-routine-editor__form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 1.5rem;
 }
 
-.wl-routine-editor__field {
+.wl-routine-editor .wl-routine-editor__field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0.25rem;
 }
 
-.wl-routine-editor input[type="text"] {
-  min-height: 44px;
-  padding: 8px 12px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface-2);
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 8px;
-  font: inherit;
-}
-
-.wl-routine-editor input[aria-invalid="true"] {
-  border-color: var(--wl-color-warn);
-}
-
-.wl-routine-editor__list,
-.wl-routine-editor__matches {
+.wl-routine-editor .wl-routine-editor__list,
+.wl-routine-editor .wl-routine-editor__matches {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wl-routine-editor__row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* A row: the name, then 44 x 44 icon buttons. The row holding focus is the selected one. */
+.wl-routine-editor .wl-routine-editor__row {
+  justify-content: flex-start;
+  gap: 0.25rem;
 }
 
-.wl-routine-editor__row-name {
+.wl-routine-editor .wl-routine-editor__row:focus-within {
+  background: var(--wl-raise);
+  color: var(--wl-ink);
+}
+
+.wl-routine-editor .wl-routine-editor__row-name {
   flex: 1;
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
 }
 
-.wl-routine-editor button {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 8px 12px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 8px;
-  font: inherit;
+.wl-routine-editor .wl-routine-editor__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  padding: 0;
+  color: var(--wl-ink);
+  background: none;
+  border: 0;
+  border-radius: var(--wl-radius-tile);
+  font-family: var(--wl-font);
+  font-size: 1.25rem;
+  line-height: 1;
   cursor: pointer;
 }
 
-.wl-routine-editor button[data-variant="primary"] {
-  color: var(--wl-color-bg);
-  background: var(--wl-color-accent);
-  border-color: var(--wl-color-accent);
-}
-
-.wl-routine-editor button[data-variant="danger"] {
-  border-color: var(--wl-color-warn);
-  color: var(--wl-color-warn);
-}
-
-.wl-routine-editor button:disabled {
-  opacity: 0.5;
+.wl-routine-editor .wl-routine-editor__icon:disabled {
+  color: var(--wl-ink-muted);
   cursor: not-allowed;
 }
 
-.wl-routine-editor button:focus-visible,
-.wl-routine-editor input:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
+.wl-routine-editor .wl-routine-editor__icon:focus-visible {
+  outline: 2px solid var(--wl-focus);
   outline-offset: 2px;
 }
 
-.wl-routine-editor__picker {
+.wl-routine-editor .wl-button--text:disabled {
+  color: var(--wl-ink-muted);
+  cursor: not-allowed;
+}
+
+.wl-routine-editor .wl-button--primary:disabled {
+  color: var(--wl-ink);
+  background: var(--wl-raise);
+  cursor: not-allowed;
+}
+
+.wl-routine-editor .wl-button--secondary:disabled {
+  color: var(--wl-ink-muted);
+  border-color: var(--wl-ink-muted);
+  cursor: not-allowed;
+}
+
+.wl-routine-editor .wl-button--primary:focus-visible,
+.wl-routine-editor .wl-button--secondary:focus-visible,
+.wl-routine-editor .wl-button--text:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+.wl-routine-editor .wl-routine-editor__picker {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px;
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 8px;
+  gap: 0.5rem;
 }
 
-.wl-routine-editor__card {
-  padding: 12px;
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 8px;
+.wl-routine-editor .wl-routine-editor__picker > .wl-button--text,
+.wl-routine-editor .wl-routine-editor__form section > .wl-button--text {
+  align-self: flex-start;
 }
 
-.wl-routine-editor__card p {
+.wl-routine-editor .wl-routine-editor__card {
+  padding: 0;
+}
+
+.wl-routine-editor .wl-routine-editor__card p,
+.wl-routine-editor .wl-routine-editor__hint {
   margin: 0;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
 }
 
-.wl-routine-editor__hint {
-  margin: 0;
-  color: var(--wl-color-text-muted);
+.wl-routine-editor .wl-routine-editor__hint.wl-input__error,
+.wl-routine-editor .wl-routine-editor__error[data-tone="error"] {
+  color: var(--wl-attention);
 }
 
-.wl-routine-editor__hint[data-tone="warn"],
-.wl-routine-editor__error[data-tone="error"] {
-  color: var(--wl-color-warn);
-}
-
-.wl-routine-editor__error {
+.wl-routine-editor .wl-routine-editor__error {
   margin: 0;
 }
 
-.wl-routine-editor__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.wl-routine-editor__dialog {
+/* Save first, Cancel as text, the delete outline last. */
+.wl-routine-editor .wl-routine-editor__actions {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  background: var(--wl-color-surface-2);
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 8px;
+  align-items: stretch;
+  gap: 0.75rem;
 }
 
-.wl-routine-editor__live {
+.wl-routine-editor .wl-routine-editor__actions > .wl-button--text {
+  align-self: center;
+}
+
+.wl-routine-editor .wl-routine-editor__dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--wl-raise);
+  color: var(--wl-ink);
+  border-radius: var(--wl-radius-tile);
+}
+
+.wl-routine-editor .wl-routine-editor__dialog > .wl-button--text {
+  align-self: center;
+}
+
+/* Visually hidden, never display:none, so the announcements are still read. */
+.wl-routine-editor .wl-routine-editor__live {
   position: absolute;
   inline-size: 1px;
   block-size: 1px;
