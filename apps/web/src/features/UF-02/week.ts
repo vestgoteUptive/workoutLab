@@ -22,14 +22,14 @@ export interface WeekRow {
   count: number;
 }
 
-const DAY_MS = 86_400_000;
+export const DAY_MS = 86_400_000;
 
 function dateKey(utcMs: number): string {
   return new Date(utcMs).toISOString().slice(0, 10);
 }
 
 /** The local calendar date of `instant` in `timeZone`, as UTC midnight milliseconds. */
-function localDay(instant: Date, timeZone: string): number {
+export function localDay(instant: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
     year: "numeric",

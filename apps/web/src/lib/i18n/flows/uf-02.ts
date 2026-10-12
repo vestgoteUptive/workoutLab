@@ -31,6 +31,15 @@ export const uf02 = {
     `${weekday} — ${count} of ${range} done this week`,
   /** No cached profile. */
   weekLineNoPlan: (weekday: string, count: string) => `${weekday} — ${count} done this week`,
+  // T-0636 (D-0219): the latest personal record above Start. The numbers arrive formatted.
+  latestPr: "Latest PR",
+  /** "Back Squat 100 kg × 8". */
+  prWeighted: (name: string, weight: string, reps: string) => `${name} ${weight} × ${reps}`,
+  /** "Push-up 25 reps" / "Push-up 1 rep"; `count` picks the noun. */
+  prReps: (name: string, count: number, reps: string) =>
+    `${name} ${reps} ${count === 1 ? "rep" : "reps"}`,
+  /** "Plank 90 s". */
+  prTimed: (name: string, seconds: string) => `${name} ${seconds} s`,
   // T-0302c: the 45-min suggestion card (D-0065 §1). The reason words live in `lib/i18n/workout.ts`.
   /** The card's accessible name. */
   cardLabel: "Suggested workout",

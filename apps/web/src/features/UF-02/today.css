@@ -91,6 +91,16 @@
   color: var(--wl-ink-muted);
 }
 
+/* T-0636: the latest PR. Plan state: muted label, ink value, no box. */
+.wl-today__pr {
+  margin: 0;
+  color: var(--wl-ink);
+}
+
+.wl-today__pr-label {
+  color: var(--wl-ink-muted);
+}
+
 /* Start: the one primary, pinned above the tab bar. */
 .wl-page.wl-today > .wl-today__start {
   position: sticky;

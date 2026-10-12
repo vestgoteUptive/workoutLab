@@ -15,13 +15,14 @@ import { Link } from "react-router";
 import type { BalanceResult } from "@workoutlab/shared";
 import { BodyMap } from "../../components/body-map/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
-import { formatSetCount } from "../../lib/format/number.js";
+import { formatDecimal, formatKg, formatSetCount } from "../../lib/format/number.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import { ArrowRight } from "./glyphs.js";
 import { defaultLocale, defaultTimeZone, formatWeekday } from "./format.js";
 import { todayCheckinSlot, todayResumeSlot } from "./slots.js";
 import { SuggestionCard, SuggestionCardSkeleton } from "./SuggestionCard.js";
+import type { LatestPr } from "./pr.js";
 import { useToday, type TodayState } from "./use-today.js";
 import { weekdayNames } from "./week.js";
 import "./today.css";
@@ -101,6 +102,21 @@ function WeekRowList({
         </li>
       ))}
     </ol>
+  );
+}
+
+/** T-0636: "Latest PR  Back Squat 100 kg × 8". Plain text: no live region, not focusable. */
+function LatestPrLine({ pr, locale }: { pr: LatestPr; locale: string }) {
+  const reps = formatDecimal(pr.reps ?? 0, locale);
+  const text = pr.timed
+    ? en.uf02.prTimed(pr.name, formatDecimal(pr.durationS ?? 0, locale))
+    : pr.weightKg !== null && pr.weightKg > 0
+      ? en.uf02.prWeighted(pr.name, formatKg(pr.weightKg, locale), reps)
+      : en.uf02.prReps(pr.name, pr.reps ?? 0, reps);
+  return (
+    <p className="wl-today__pr wl-type-body" data-part="latest-pr">
+      <span className="wl-today__pr-label">{en.uf02.latestPr}</span> <span>{text}</span>
+    </p>
   );
 }
 
@@ -231,6 +247,9 @@ export function Today(props: TodayProps = {}) {
           )}
           {state.status === "ready" ? (
             <EmptyLine result={state.result} hasHardSet={state.hasHardSet} />
+          ) : null}
+          {state.status === "ready" && state.latestPr !== null ? (
+            <LatestPrLine pr={state.latestPr} locale={locale} />
           ) : null}
           <Link
             to="/session/setup"
