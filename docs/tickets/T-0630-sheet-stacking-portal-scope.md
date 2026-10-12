@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-05.1, UF-08.3, UF-08.5]
 decisions: [D-0210, D-0216]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 D-0216 addendum, plus the T-0593 and T-0608 reviews:
@@ -39,7 +39,4 @@ None.
 Gate green · full e2e green · commits start with `T-0630`.
 
 ## Build / accept log
-- Built: sheet z 7, scrim z 6 (tab bar 5); `.wl-sheet-scrim` unscoped (scoping test exempts exactly it); plan type restore rules for a plan sheet in lift/rest.
-- AC1: unit z-order + e2e elementFromPoint at tab. AC2: unit + e2e scrim alpha .45 with no state ancestor. AC3: unit + e2e computed sizes (lift and rest). AC4: no transitions added; other rules untouched.
-- Planted faults (copies of main.css): scrim re-scoped -> AC1/AC2 unit red; z 2 -> AC1 red; guard selector removed -> AC3 red; all three together -> 3 e2e red. Restored from copy.
-- Gate, repo-checks, format, check-all exit 0; full e2e 593 passed.
+Archived in `docs/tickets/log/T-0630.md` (D-0157).
