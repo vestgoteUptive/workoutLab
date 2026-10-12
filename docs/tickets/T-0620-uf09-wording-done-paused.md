@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.3, UF-09.4, UF-09.9]
 decisions: [D-0212, D-0208, D-0118, D-0120]
 deps: [T-0598]
-status: todo
+status: doing
 ---
 <!-- Groomed 2026-10-09 (D-0212 §1.3, D-0213). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Copy changes after the UF-09 restyle. Spec: docs/specs/cobalt-mock-behaviour.md §1.3. Never in parallel with T-0580. -->
 ## Why
