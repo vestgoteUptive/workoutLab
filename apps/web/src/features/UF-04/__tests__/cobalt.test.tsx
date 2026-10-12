@@ -114,6 +114,8 @@ describe("AC2 search and filters", () => {
       .map((b) => b.textContent);
     expect(names).toEqual([
       "All",
+      "Upper",
+      "Legs",
       "Chest",
       "Back",
       "Shoulders",

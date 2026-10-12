@@ -30,6 +30,17 @@ function isAreaParam(value: string | null): value is Area {
   return value !== null && (AREAS as readonly string[]).includes(value);
 }
 
+// T-0639 (D-0217 §1): the two group chips. A group matches a weight-1 area inside it.
+const GROUPS = {
+  upper: ["chest", "back", "shoulders", "arms"],
+  legs: ["glutes", "quads", "hamstrings", "calves"],
+} as const satisfies Record<string, readonly Area[]>;
+type Group = keyof typeof GROUPS;
+
+function isGroupParam(value: string | null): value is Group {
+  return value === "upper" || value === "legs";
+}
+
 export interface LibraryProps {
   /** IANA zone for the offline "last synced" time (D-0045 §9). Defaults to the device zone. */
   timeZone?: string;
@@ -53,6 +64,9 @@ export function Library(props: LibraryProps = {}) {
   const rawQuery = params.get("q") ?? "";
   const areaParam = params.get("area");
   const area = isAreaParam(areaParam) ? areaParam : null;
+  // Both present: the area wins; an unknown group is ignored.
+  const groupParam = params.get("group");
+  const group = area === null && isGroupParam(groupParam) ? groupParam : null;
   const mineParam = params.get("mine") === "1";
   const [text, setText] = useState(rawQuery);
 
@@ -76,9 +90,10 @@ export function Library(props: LibraryProps = {}) {
         (e) =>
           (query === "" || e.name.toLowerCase().includes(query)) &&
           (area === null || e.areas[area] === 1) &&
+          (group === null || GROUPS[group].some((a) => e.areas[a] === 1)) &&
           (!mine || (profile !== null && isEligible(e, profile))),
       ),
-    [exercises, query, area, mine, profile],
+    [exercises, query, area, group, mine, profile],
   );
 
   function update(change: (next: URLSearchParams) => void): void {
@@ -99,6 +114,14 @@ export function Library(props: LibraryProps = {}) {
     update((next) => {
       if (target === null) next.delete("area");
       else next.set("area", target);
+      next.delete("group");
+    });
+  }
+
+  function onGroup(target: Group): void {
+    update((next) => {
+      next.set("group", target);
+      next.delete("area");
     });
   }
 
@@ -135,12 +158,24 @@ export function Library(props: LibraryProps = {}) {
             <button
               type="button"
               className="wl-chip"
-              aria-pressed={area === null}
+              aria-pressed={area === null && group === null}
               onClick={() => onArea(null)}
             >
               <TickIcon size={16} className="wl-chip__tick" />
               {en.uf04.chipAll}
             </button>
+            {(["upper", "legs"] as const).map((g) => (
+              <button
+                key={g}
+                type="button"
+                className="wl-chip"
+                aria-pressed={group === g}
+                onClick={() => onGroup(g)}
+              >
+                <TickIcon size={16} className="wl-chip__tick" />
+                {g === "upper" ? en.uf04.chipUpper : en.uf04.chipLegs}
+              </button>
+            ))}
             {AREAS.map((a) => (
               <button
                 key={a}
@@ -160,6 +195,11 @@ export function Library(props: LibraryProps = {}) {
               </button>
             )}
           </div>
+          {rows.length === 0 ? null : (
+            <p role="status" data-part="count" className="wl-type-label wl-uf04-browse__count">
+              {en.uf04.resultCount(rows.length)}
+            </p>
+          )}
           {rows.length === 0 ? (
             <p className="wl-type-body">
               {query === "" ? en.uf04.noMatchFilters : en.uf04.noMatchQuery(rawQuery.trim())}

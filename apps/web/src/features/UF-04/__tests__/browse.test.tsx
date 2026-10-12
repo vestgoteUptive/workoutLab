@@ -111,6 +111,8 @@ describe("AC-3 area chips", () => {
     await waitFor(() => expect(rowNames()).toHaveLength(24));
     expect(chipLabels()).toEqual([
       "All",
+      "Upper",
+      "Legs",
       "Chest",
       "Back",
       "Shoulders",
@@ -183,11 +185,11 @@ describe("AC-4 My equipment is the engine's isEligible", () => {
     expect(chip("My equipment")).toHaveAttribute("aria-pressed", "true");
   });
 
-  it("without a profile there is no My equipment chip and the other 10 still work", async () => {
+  it("without a profile there is no My equipment chip and the other 12 still work", async () => {
     await seed({ profile: null });
     await mountAt("/library");
     await waitFor(() => expect(rowNames()).toHaveLength(24));
-    expect(chipLabels()).toHaveLength(10);
+    expect(chipLabels()).toHaveLength(12);
     expect(screen.queryByRole("button", { name: "My equipment" })).not.toBeInTheDocument();
     fireEvent.click(chip("Hamstrings"));
     expect(rowNames()).toHaveLength(2);
