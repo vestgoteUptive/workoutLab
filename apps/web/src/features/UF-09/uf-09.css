@@ -876,3 +876,11 @@
   color: var(--wl-color-text-muted);
   text-align: center;
 }
+
+/* UF-09.3 plate loading (T-0634): the caption role under the load line, hairlines above and below. */
+.wl-uf09__plates {
+  margin: 0.5rem 0 0;
+  padding-block: 0.5rem;
+  border-block: 1px solid var(--wl-color-line);
+  color: var(--wl-color-text-muted);
+}

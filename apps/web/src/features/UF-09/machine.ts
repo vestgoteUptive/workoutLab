@@ -7,7 +7,7 @@
 //   state object, so the store can skip the write and the notify.
 // - `betweenItems` is transient: the store resolves it in the same `dispatch` (D-0111 §5).
 import { REST_COMPOUND_S, REST_ISOLATION_S } from "@workoutlab/engine";
-import type { LibraryExercise, SessionPlan } from "@workoutlab/shared";
+import type { Barbell, LibraryExercise, SessionPlan } from "@workoutlab/shared";
 import { remainingS, type FocusTimer } from "./timer.js";
 
 /** The machine states (D-0066 §1). `betweenItems` is never rendered or persisted. */
@@ -92,6 +92,8 @@ export interface FocusState {
 export interface FocusCtx {
   plan: SessionPlan;
   library: readonly LibraryExercise[];
+  /** The cached bar and plates (T-0634); absent reads as `DEFAULT_BARBELL`. */
+  barbell?: Barbell;
 }
 
 type At = { atMs: number };

@@ -4,8 +4,10 @@
 // set before the write starts, in the same event (NFR-PERF-4).
 import { useEffect, useRef, useState } from "react";
 import { TickIcon } from "../../components/icons/index.js";
-import { formatKg } from "../../lib/format/number.js";
+import { DEFAULT_BARBELL } from "../../lib/offline/index.js";
+import { formatDecimal, formatKg } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
+import { plateLoading } from "./plates.js";
 import { nextSetPrefill } from "./prefill.js";
 import { useFocusSession } from "./session.js";
 import { useCue } from "./use-cue.js";
@@ -81,6 +83,13 @@ export function CurrentSet({ state, ctx, locale }: ViewProps) {
 
   // "100 kg × 8" on two hero lines, "100 kg" then "× 8", the text itself unchanged.
   const load = bodyweight || prefill.weightKg === null ? null : formatKg(prefill.weightKg, locale);
+  const plates =
+    exercise?.equipment.includes("barbell") &&
+    exercise.externalLoad &&
+    !exercise.timed &&
+    prefill.weightKg !== null
+      ? plateLoading(prefill.weightKg, ctx.barbell ?? DEFAULT_BARBELL)
+      : null;
   const loadText = load === null ? "" : en.uf09.load(load, reps);
   const split = loadText.indexOf("×");
 
@@ -105,6 +114,20 @@ export function CurrentSet({ state, ctx, locale }: ViewProps) {
         <p className="wl-uf09__load">
           <HeroLine text={loadText.slice(0, split)} hero unit />
           <HeroLine text={loadText.slice(split)} hero />
+        </p>
+      )}
+      {plates === null ? null : (
+        <p className="wl-uf09__plates wl-type-label" data-part="plates">
+          {plates.kind === "bar" ? (
+            en.uf09.barOnly
+          ) : (
+            <>
+              <span>{en.uf09.platesLabel}</span>{" "}
+              <span>
+                {en.uf09.platesValue(plates.perSide.map((p) => formatDecimal(p, locale)))}
+              </span>
+            </>
+          )}
         </p>
       )}
       {cue ? (

@@ -36,6 +36,10 @@ export const uf09 = {
   load: (weight: string, reps: number) => `${weight} × ${reps}`,
   reps: (n: number) => (n === 1 ? "1 rep" : `${n} reps`),
   setWeight: "Set weight",
+  // UF-09.3 plate loading (T-0634, D-0217): each size is already formatted by `formatKg`.
+  platesLabel: "Each side",
+  platesValue: (sizes: string[]) => `${sizes.join(" + ")} kg`,
+  barOnly: "Bar only",
   doneSet: "Done",
   doneSetError: "Couldn't save. Tap Done again.",
   // UF-09.4 Confirm set (T-0304b, D-0118 §3–§6).
