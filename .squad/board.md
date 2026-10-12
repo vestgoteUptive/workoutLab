@@ -95,6 +95,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
+| T-0919 | uf-11-plan-layout.spec.ts:450 flake: /plan/edit 44x44 check counted ≤5 boxes once under full-suite load (T-0634 merge), 87/87 on rerun; wait for the rows before measuring | e2e | — | todo | wl-build-web |
 | T-0918 | UF-04: defer SKIP_WAITING until the route chunk settles (T-0916 root cause: aborted chunk, failed route for ~1 s) | web-shell | — | doing | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
 
@@ -179,7 +180,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0625 | Tokens: retire Chalk & Iron keys and fonts (contract) | design | T-0624, T-0617, T-0585, T-0614 | todo | wl-design |
 | T-0626 | Screen restyles: use aria-disabled, not :disabled, on migrated controls (the legacy :disabled rule loses to scoped rules); feature CSS (.wl-plan__rows .wl-row, .wl-card.wl-excluded__row, excluded.css:140) can override the unboxed row and card by load order, so each screen ticket must check it (T-0592 review) | web-shell | T-0592 | todo (a checklist for each screen ticket) | wl-build-web |
 | T-0628 | (superseded by T-0660 / D-0225) Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
-| T-0634 | UF-09.3 plate loading "Each side 25 + 15 kg" | web-feature:UF-09 | T-0621, T-0632 | doing | wl-build-web |
 | T-0636 | UF-02.1 Latest PR | web-feature:UF-02 | T-0623, T-0635 | todo | wl-build-web |
 | T-0637 | UF-08.1 ?budget= initial time budget | web-feature:UF-08 | T-0600 | todo | wl-build-web |
 | T-0638 | UF-02.1 "Not feeling it? Quick 20-min" link | web-feature:UF-02 | T-0636, T-0637 | todo | wl-build-web |

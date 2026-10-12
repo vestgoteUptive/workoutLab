@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.3]
 decisions: [D-0217, D-0218, D-0066, D-0212, D-0208]
 deps: [T-0621, T-0632]
-status: doing
+status: done
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "In session · set" (#turn-3). Spec: docs/specs/cobalt-mock-behaviour.md §3.1. Last ticket of the UF-09 folder chain (after T-0621); never in parallel with T-0580. -->
 
@@ -51,9 +51,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-09-focus.spec.ts` and `uf-09-offline.spec.ts` green · commit messages start with `T-0634` and cite UF-09.3.
 
 ## Build / accept log
-
-- 2026-10-12 build (frontend-dev). plates.ts (DP over hundredths, fewest then greatest-largest-first), `FocusCtx.barbell?` (optional so ~12 test ctx literals stay valid; the view falls back to DEFAULT_BARBELL), load.ts reads `loadBarbell()`, plate line in current-set.tsx, copy in flows/uf-09.ts, CSS scoped to UF-09 (`--wl-color-line` hairlines). Formatting uses `formatDecimal` (a locale decimal, no unit), then " kg".
-- AC map: AC1-3 `__tests__/plates.test.ts`; AC4-9, AC11 (not focusable/live) `__tests__/t0634.plates.test.tsx`; AC10 and axe contrast on UF-09.3 `tests/e2e/uf-09-offline.spec.ts` (zero history gives a null weight, so set 1 is saved at 100 kg and set 2 shows the line; the spec re-mocks the library with `exercisesLoaded` since its default fixture has no `external_load`). AC12: no existing assertion changed; UF-09 vitest 1136 passed + new, uf-09-* e2e 40 passed.
-- Red runs on unfixed code: e2e first run failed (bench read as bodyweight: fixture lacked external_load; null weight on zero history) before the spec was reworked.
-- Planted faults (all caught): ascending plate sort (AC1/AC2/AC4/AC7), drop odd-hundredth check (100.01), drop externalLoad/timed guards (bodyweight, timed), drop equipment guard (dumbbell), view ignores ctx.barbell (AC8), load.ts omits barbell (AC8), `Date.now()` in plates.ts (source scan), line moved after the cue (AC4). Equivalent mutant: null weight passed as 0 (plateLoading(0) is already null since 0 < bar).
-- Gate: `-w typecheck lint test` exit 0, test:repo-checks 0, format:check 0 (after prettier), check-all 0.
+Archived in `docs/tickets/log/T-0634.md` (D-0157).

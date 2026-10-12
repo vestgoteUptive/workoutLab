@@ -468,3 +468,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0633 | UF-11.4 "Bar and plates" settings section | web-feature:UF-11 | T-0613, T-0632 | done | wl-build-web |
 | T-0620 | UF-09 wording: Done, Save · start rest, paused caption + stats (mock copy) | web-feature:UF-09 | T-0598 | done | wl-build-web |
 | T-0621 | UF-09 status lines: Target hit, done line, Set-up time, First up (mock behaviour) | web-feature:UF-09 | T-0620 | done | wl-build-web |
+| T-0634 | UF-09.3 plate loading "Each side 25 + 15 kg" | web-feature:UF-09 | T-0621, T-0632 | done | wl-build-web |
