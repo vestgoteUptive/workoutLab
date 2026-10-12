@@ -5,7 +5,7 @@ lane: web-feature:UF-02
 screens: [UF-02.1]
 decisions: [D-0212, D-0034, D-0208, D-0211]
 deps: [T-0601]
-status: doing
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0212 §1.1, D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "Today" (#turn-3), "Today · check-in pending" (#turn-5). Spec: docs/specs/cobalt-mock-behaviour.md §1.1. No engine or data change: it reads the engine history Today already loads. -->
 ## Why
@@ -80,7 +80,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-02-today.spec.ts` green · commit messages start with `T-0623` and cite UF-02.1.
 
 ## Build / accept log
-
-- 2026-10-12 build (frontend-dev). `features/UF-02/week.ts` (`weekRow`, `weekdayNames`, Intl local dates, no clock), `use-today.ts` exposes `week` (+ `rhythm`) in ready and no-plan, `Today.tsx` renders the `<ol role="list" aria-label="This week">` under the h1 and the week line; `formatTodayDate` removed (replaced by `formatWeekday`). Strings in `flows/uf-02.ts`. While loading (no read yet) the line is just the weekday and the row is not shown (default; no count to show yet).
-- AC map: AC1-AC4 `__tests__/week.test.ts` (incl. one DST case, Stockholm 2026-10-25); AC5 markup + AC6 `__tests__/week-render.test.tsx`; AC5 colours/underline, AC7 four cases in `tests/e2e/uf-02-today.spec.ts` (axe contrast and the pair-contrast tests already cover the row); AC8 the only changed assertions are the four date-line tests in `today.test.tsx` (now weekday / week line); AC9 `Today (turn-3)` now seeds the "returned" week (one set today); compare run with WL_CANVAS_COMPARE=1 saved app and canvas PNGs: row sits under the title, done letter ink and underlined today, rest/upcoming ink-muted, line below; matches the mock apart from the intended layout (verdict: matches).
-- Planted faults (vitest, all caught): deletedAt filter off, warm-up filter off, UTC instead of tz, today as rest, count by clientId, Date.now added, aria-current dropped, same-range branch off, no-plan line off, role="list" dropped. E2E: done colour set to ink-muted plus empty week history, 4 of 5 new e2e tests failed.
+Archived in `docs/tickets/log/T-0623.md` (D-0157).
