@@ -466,3 +466,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | done | wl-build-web |
 | T-0632 | lib/offline: cache bar and plates, loadBarbell() | web-shell | T-0631 | done | wl-build-web |
 | T-0633 | UF-11.4 "Bar and plates" settings section | web-feature:UF-11 | T-0613, T-0632 | done | wl-build-web |
+| T-0620 | UF-09 wording: Done, Save · start rest, paused caption + stats (mock copy) | web-feature:UF-09 | T-0598 | done | wl-build-web |
