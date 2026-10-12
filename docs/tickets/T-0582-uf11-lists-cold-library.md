@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.5, UF-11.6]
 decisions: [D-0199, D-0202]
 deps: []
-status: todo
+status: done
 ---
 
 ## Why
@@ -23,4 +23,4 @@ T-0569 build finding. UF-11.5 (Excluded) and UF-11.6 (Favorites) read the librar
 None.
 
 ## Build / accept log
-- Build: root cause = both bodies read library/profile once at mount (Promise.all in useEffect). Now `use-library-profile.ts` wraps `useLive` (liveQuery), so a late-filled cache re-renders. AC-2 line `libraryOffline` (one new string per screen). Tests: `cold-library.test.tsx` (library lands via Dexie write in act). Planted faults: one-shot read -> 4 red; offline line removed -> 2 red (AC-2). T-0662 tap-time reads untouched.
+Archived in `docs/tickets/log/T-0582.md` (D-0157).

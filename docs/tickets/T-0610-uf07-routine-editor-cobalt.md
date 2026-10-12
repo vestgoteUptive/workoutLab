@@ -5,7 +5,7 @@ lane: web-feature:UF-07
 screens: [UF-07.1]
 decisions: [D-0208, D-0210, D-0211, D-0213]
 deps: [T-0593, T-0591]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Plan · edit routine" (#turn-3). Behaviour: T-0308a. The canvas progression-rule section is rejected (D-0212 §4). -->
 ## Why
@@ -55,6 +55,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-07-routines.spec.ts` green · commit messages start with `T-0610` and cite UF-07.1.
 
 ## Build / accept log
-- Built: EditorForm/index/routine-editor.css to the plan state (`.wl-page`, `.wl-input`, `.wl-row`, text/secondary/primary buttons). AC→test: AC1 t0610.cobalt + e2e; AC2 t0610.cobalt, t0610.css, e2e (1px/2px border, axe contrast on the error state); AC3 cobalt + e2e (outline colour, last control); AC4 t0610.css (`:focus-within` = raise + ink) + e2e computed bg; AC5 t0610.css (44px, no px font/raw colour/display:none, cross-fade + reduced motion) + e2e axe, 44x44, reduced-motion; AC6 existing 126 UF-07 vitest + uf-07-routines e2e unchanged; AC7 canvas turn-3 + error shot saved.
-- Planted faults (backup restored with cp): Delete as primary, root without data-wl-state, `:focus-within` renamed: 4 new tests went red. Gate, repo-checks, format, check-all exit 0; full e2e 593 passed.
-- Verdicts: matches canvas except the progression-rule section (D-0212 §4), the canvas header (Cancel/Save are in the form's actions: Save stays "Save", copy out of scope), drag-handle dots (up/down buttons kept as arrows), name as a boxed input.
+Archived in `docs/tickets/log/T-0610.md` (D-0157).
