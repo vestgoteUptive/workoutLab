@@ -5,7 +5,7 @@ lane: web-feature:UF-02
 screens: [UF-02.1, UF-08.1]
 decisions: [D-0217, D-0139, D-0212]
 deps: [T-0636, T-0637]
-status: doing
+status: done
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ¼ day. Canvas: "Today" (#turn-3). Spec: docs/specs/cobalt-mock-behaviour.md §3.3. Last ticket of the UF-02 chain. "or empty" is not built. -->
 
@@ -45,8 +45,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-02-today.spec.ts` green · commit messages start with `T-0638` and cite UF-02.1 and UF-08.1.
 
 ## Build / accept log
-
-- 2026-10-12 build (branch from T-0637): Today.tsx adds `<p data-part="quick">` after Start (all Start states); copy in flows/uf-02.ts; today.css text-link style (ink, underlined, 44 px, `--wl-focus` outline).
-- AC map: AC1-AC3 quick-link.test.tsx; AC4/AC7 e2e "AC4 and AC7" (Tab order, axe, journey); AC5 e2e offline journey; AC6 e2e zero-history journey; AC8 UF-02 vitest (240) + uf-02-today.spec.ts (57) green.
-- Deviations: (1) cobalt.test.tsx AC3 asserted Start is the root's last child; now "followed only by the quick link" (spec puts the link directly after Start). (2) AC7 "0 violations": axe's page-wide `region` and `landmark-one-main` (moderate, best-practice; the shell has no `<main>`, they flag every Today element) are excluded; all other rules clean.
-- Planted faults: href `budget=25` -> quick-link AC1 red and 3 e2e red; `wl-button--primary` on the link -> AC3 red. Restored from backup.
+Archived in `docs/tickets/log/T-0638.md` (D-0157).

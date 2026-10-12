@@ -471,3 +471,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0634 | UF-09.3 plate loading "Each side 25 + 15 kg" | web-feature:UF-09 | T-0621, T-0632 | done | wl-build-web |
 | T-0623 | UF-02.1 week row + week line (mock behaviour) | web-feature:UF-02 | T-0601 | done | wl-build-web |
 | T-0636 | UF-02.1 Latest PR | web-feature:UF-02 | T-0623, T-0635 | done | wl-build-web |
+| T-0637 | UF-08.1 ?budget= initial time budget | web-feature:UF-08 | T-0600 | done | wl-build-web |
+| T-0638 | UF-02.1 "Not feeling it? Quick 20-min" link | web-feature:UF-02 | T-0636, T-0637 | done | wl-build-web |

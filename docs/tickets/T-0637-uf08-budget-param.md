@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.1]
 decisions: [D-0217, D-0109, D-0115]
 deps: [T-0600]
-status: doing
+status: done
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ¼ day. Spec: docs/specs/cobalt-mock-behaviour.md §3.3. UF-08 folder chain: T-0599 → T-0600 → T-0637. Lands before T-0638 adds the link. -->
 
@@ -44,7 +44,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-08-setup.spec.ts` green · commit messages start with `T-0637` and cite UF-08.1.
 
 ## Build / accept log
-
-- 2026-10-12 build: `parseBudget` in time.ts; SessionSetup initial `budgetMin` = `parseBudget(params.get("budget"))` (read once). Tests: AC1 time.test.ts; AC2-AC7 budget-param.test.tsx (AC5 compares the one fit-line `suggest` input with the 20-chip path, online and offline; the Suggest tap makes no second call); AC8 uf-08-setup.spec.ts "T-0637 AC8"; AC9 whole UF-08 suite + spec (65) unchanged and green.
-- Planted faults: `n <= 999` in parseBudget -> "121" case red; `useState(45)` -> 5 vitest red and the e2e red. Restored from backup.
-- Gate: -w typecheck lint test exit 0; format:check 0; check-all 0; uf-08-setup.spec.ts 65 passed.
+Archived in `docs/tickets/log/T-0637.md` (D-0157).
