@@ -74,8 +74,8 @@ describe("AC1 the roots are plan", () => {
     expect(screenRoot().classList.contains("wl-page")).toBe(true);
   });
 
-  it("the old 16 px padding is gated to a screen with no state", () => {
-    expect(css).toMatch(/\.wl-uf08:not\(\[data-wl-state\]\)\s*\{[^}]*padding:\s*16px 20px 24px/);
+  it("T-0600: the legacy no-state base is gone, so no UF-08 rule is gated to a screen without a state", () => {
+    expect(css).not.toMatch(/:not\(\[data-wl-state\]\)/);
     expect(css).not.toMatch(/\.wl-uf08\s*\{[^}]*padding/);
   });
 });

@@ -12,6 +12,7 @@ import {
   type LibraryExercise,
   type WorkoutItem,
 } from "@workoutlab/engine";
+import { CrossIcon } from "../../components/icons/index.js";
 import { en } from "../../lib/i18n/en.js";
 
 export interface AddExerciseSheetProps {
@@ -152,7 +153,7 @@ export function AddExerciseSheet({
     const startButton = canStart ? (
       <button
         type="button"
-        className="wl-uf08__ghost wl-uf08__pick-add"
+        className="wl-button--secondary wl-uf08__pick-add"
         data-part="pick-start"
         aria-label={en.uf08.startWithName(e.name)}
         aria-disabled={!here && reason !== undefined ? "true" : undefined}
@@ -165,20 +166,20 @@ export function AddExerciseSheet({
       </button>
     ) : null;
     return (
-      <li key={e.id} className="wl-uf08__pick" data-part="pick-row" data-id={e.id}>
-        <span className="wl-uf08__pick-name">
+      <li key={e.id} className="wl-row wl-uf08__pick" data-part="pick-row" data-id={e.id}>
+        <span className="wl-uf08__pick-name wl-type-row-title">
           {e.name}
           {favSet.has(e.id) ? (
-            <span className="wl-uf08__fav-tag" data-part="favorite-tag">
+            <span className="wl-chip wl-uf08__tag" data-part="favorite-tag">
               {en.uf08.favoriteTag}
             </span>
           ) : null}
         </span>
-        <span className="wl-uf08__row-detail" data-part="pick-areas">
+        <span className="wl-uf08__row-detail wl-type-label" data-part="pick-areas">
           {primaryAreas(e).map(areaLabel).join(", ")}
         </span>
         {here ? (
-          <span className="wl-uf08__row-detail" data-part="pick-reason">
+          <span className="wl-uf08__row-detail wl-type-label" data-part="pick-reason">
             {en.uf08.inWorkout}
           </span>
         ) : null}
@@ -187,13 +188,17 @@ export function AddExerciseSheet({
         ) : (
           <>
             {reason !== undefined ? (
-              <span id={reasonId} className="wl-uf08__row-detail" data-part="pick-reason">
+              <span
+                id={reasonId}
+                className="wl-uf08__row-detail wl-type-label"
+                data-part="pick-reason"
+              >
                 {reason}
               </span>
             ) : null}
             <button
               type="button"
-              className="wl-uf08__ghost wl-uf08__pick-add"
+              className="wl-button--secondary wl-uf08__pick-add"
               data-part="pick-add"
               aria-label={en.uf08.addName(e.name, areaSuffix)}
               aria-disabled={reason !== undefined ? "true" : undefined}
@@ -212,18 +217,21 @@ export function AddExerciseSheet({
   }
 
   return (
-    <div className="wl-uf08__scrim">
+    <div className="wl-uf08__add-sheet" data-wl-state="plan">
+      <div className="wl-sheet-scrim" aria-hidden="true" />
       <div
         ref={panelRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="wl-uf08__sheet"
+        data-wl-state="plan"
+        className="wl-sheet wl-uf08__sheet"
         data-screen-id="UF-08.5"
       >
+        <div className="wl-sheet__grabber" aria-hidden="true" />
         <div className="wl-uf08__sheet-head">
-          <h2 id={titleId} className="wl-uf08__sheet-title">
+          <h2 id={titleId} className="wl-uf08__sheet-title wl-type-section">
             {en.uf08.addExercise}
           </h2>
           <button
@@ -232,13 +240,11 @@ export function AddExerciseSheet({
             aria-label={en.uf08.close}
             onClick={() => onClose()}
           >
-            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-              <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" fill="none" />
-            </svg>
+            <CrossIcon size={20} />
           </button>
         </div>
-        <p className="wl-uf08__sheet-lead">{en.uf08.addLead(budgetMin)}</p>
-        <label htmlFor={searchId} className="wl-uf08__label">
+        <p className="wl-uf08__sheet-lead wl-type-label">{en.uf08.addLead(budgetMin)}</p>
+        <label htmlFor={searchId} className="wl-uf08__label wl-type-label">
           {en.uf08.searchLabel}
         </label>
         <div className="wl-uf08__search">
@@ -246,7 +252,7 @@ export function AddExerciseSheet({
             ref={searchRef}
             id={searchId}
             type="search"
-            className="wl-uf08__search-input"
+            className="wl-input wl-uf08__search-input"
             value={query}
             autoComplete="off"
             onChange={(ev) => {
@@ -264,9 +270,7 @@ export function AddExerciseSheet({
                 searchRef.current?.focus();
               }}
             >
-              <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" fill="none" />
-              </svg>
+              <CrossIcon size={20} />
             </button>
           ) : null}
         </div>
@@ -277,17 +281,20 @@ export function AddExerciseSheet({
         <div className="wl-uf08__sheet-body">
           {q !== "" ? (
             results.length === 0 ? (
-              <p className="wl-uf08__sheet-empty">{en.uf08.noMatch(q)}</p>
+              <p className="wl-uf08__sheet-empty wl-type-label">{en.uf08.noMatch(q)}</p>
             ) : (
               <ul className="wl-uf08__picks">{results.map((e) => row(e))}</ul>
             )
           ) : !favoritesLoaded ? null : favorites.length === 0 && groups.length === 0 ? (
-            <p className="wl-uf08__sheet-empty">{en.uf08.searchToFind}</p>
+            <p className="wl-uf08__sheet-empty wl-type-label">{en.uf08.searchToFind}</p>
           ) : (
             <>
               {favorites.length > 0 ? (
                 <section aria-labelledby={`${titleId}-favorites`}>
-                  <h2 id={`${titleId}-favorites`} className="wl-uf08__label wl-uf08__sheet-sub">
+                  <h2
+                    id={`${titleId}-favorites`}
+                    className="wl-uf08__label wl-type-label wl-uf08__sheet-sub"
+                  >
                     {en.uf08.favoritesHeading}
                   </h2>
                   <ul className="wl-uf08__picks">
@@ -297,7 +304,9 @@ export function AddExerciseSheet({
               ) : null}
               {groups.length > 0 ? (
                 <>
-                  <h2 className="wl-uf08__label wl-uf08__sheet-sub">{en.uf08.todaysAreas}</h2>
+                  <h2 className="wl-uf08__label wl-type-label wl-uf08__sheet-sub">
+                    {en.uf08.todaysAreas}
+                  </h2>
                   {groups.map((g) => (
                     <section key={g.area} aria-labelledby={`${titleId}-${g.area}`}>
                       <h2 id={`${titleId}-${g.area}`} className="wl-uf08__label">
@@ -312,7 +321,7 @@ export function AddExerciseSheet({
                   ))}
                 </>
               ) : (
-                <p className="wl-uf08__sheet-empty">{en.uf08.searchToFind}</p>
+                <p className="wl-uf08__sheet-empty wl-type-label">{en.uf08.searchToFind}</p>
               )}
             </>
           )}

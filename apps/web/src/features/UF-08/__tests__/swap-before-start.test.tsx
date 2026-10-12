@@ -340,7 +340,7 @@ describe("AC-3 keep", () => {
 });
 
 describe("AC-4 over budget after a swap (mocked sheet)", () => {
-  it("T-0303c AC-4 shows the over-budget text and the warn colour", async () => {
+  it("T-0303c AC-4 shows the over-budget text and marks the bar over (no warn colour)", async () => {
     await toSuggested();
     const over: Workout = {
       ...w5(),
@@ -359,8 +359,9 @@ describe("AC-4 over budget after a swap (mocked sheet)", () => {
     expect(document.querySelector('[data-part="budget-text"]')!.textContent).toMatch(
       /^\d+ min, \d+ over$/,
     );
-    const seg = document.querySelector<HTMLElement>(".wl-uf08__seg--warn");
-    expect(seg).not.toBeNull();
+    // T-0600: the over-budget cue is the words and data-over, never a warn colour on the bar.
+    expect(document.querySelector(".wl-uf08__budget")).toHaveAttribute("data-over", "true");
+    expect(document.querySelector(".wl-uf08__seg--warn")).toBeNull();
   });
 });
 
