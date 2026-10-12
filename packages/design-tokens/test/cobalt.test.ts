@@ -7,13 +7,7 @@ import { join, resolve } from "node:path";
 import { differenceEuclidean, formatHex, interpolate, oklch } from "culori";
 import { afterAll, describe, expect, expectTypeOf, it } from "vitest";
 import raw from "../src/tokens.json";
-import {
-  colorStates,
-  planCoverageTokens,
-  tokens,
-  type ColorName,
-  type StateColorName,
-} from "../src/index";
+import { colorStates, planCoverageTokens, tokens, type StateColorName } from "../src/index";
 import { contrast, pkgRoot, runCli } from "./helpers";
 
 type Raw = typeof raw;
@@ -62,25 +56,26 @@ const PROPOSED = {
   },
 } as const;
 
-const FLAT_BEFORE = {
-  bg: "#121210",
-  "bg-focus": "#0B0B0A",
-  surface: "#1D1C19",
-  "surface-2": "#2A2925",
-  line: "#2E2C28",
-  "line-strong": "#3A3833",
-  text: "#F2EFE8",
-  "text-muted": "#A8A398",
-  accent: "#D4F25A",
-  "accent-hover": "#E6FA95",
-  warn: "#FF8A3D",
-  "on-accent": "#121210",
-  "coverage-0": "#2A2925",
-  "coverage-1": "#585332",
-  "coverage-2": "#85833D",
-  "coverage-3": "#AFB849",
-  "coverage-4": "#D4F25A",
-};
+// T-0625 (D-0210 §6): the Chalk & Iron keys retired; none of them may come back.
+const RETIRED_FLAT = [
+  "bg",
+  "bg-focus",
+  "surface",
+  "surface-2",
+  "line",
+  "line-strong",
+  "text",
+  "text-muted",
+  "accent",
+  "accent-hover",
+  "warn",
+  "on-accent",
+  "coverage-0",
+  "coverage-1",
+  "coverage-2",
+  "coverage-3",
+  "coverage-4",
+] as const;
 
 describe("AC1 state groups carry the exact proposed hex (D-0208)", () => {
   it("plan, lift, rest and paper equal tokens.proposed.json (lift.bg #CC4225)", () => {
@@ -123,7 +118,6 @@ describe("AC1 state groups carry the exact proposed hex (D-0208)", () => {
       option: 16,
       tile: 12,
       input: 12,
-      segment: 4,
       progress: 2, // T-0587 (D-0211 §1)
     });
     expect(raw.space).toEqual({
@@ -135,20 +129,15 @@ describe("AC1 state groups carry the exact proposed hex (D-0208)", () => {
     });
     expect(raw.meta.states).toEqual(["plan", "lift", "rest"]);
   });
-  it("the flat Chalk & Iron keys and fonts are unchanged (additive change)", () => {
-    const flat = Object.fromEntries(
-      Object.entries(raw.color).filter(([, v]) => typeof v === "string"),
-    );
-    expect(flat).toEqual(FLAT_BEFORE);
-    expect(raw.font.display.family.startsWith('"Big Shoulders Display"')).toBe(true);
-    expect(raw.font.body.family.startsWith('"DM Sans"')).toBe(true);
+  it("T-0625: the flat Chalk & Iron keys, fonts and radius.segment are gone", () => {
+    expect(Object.values(raw.color).filter((v) => typeof v === "string")).toEqual([]);
+    for (const k of RETIRED_FLAT) expect(Object.keys(raw.color), k).not.toContain(k);
+    expect(Object.keys(raw.font)).toEqual(["plan", "session"]);
+    expect(Object.keys(raw.radius)).not.toContain("segment");
   });
-  it("types: StateColorName and ColorName stay apart", () => {
+  it("types: StateColorName covers the nested groups", () => {
     expectTypeOf<"plan-ink-muted">().toMatchTypeOf<StateColorName<"plan">>();
     expectTypeOf<"lift-bg-deep">().toMatchTypeOf<StateColorName<"lift">>();
-    // @ts-expect-error a nested group is not a flat colour name (checked by `pnpm typecheck`).
-    const notFlat: ColorName = "plan";
-    expect(notFlat).toBe("plan");
     expect(tokens.color.plan.bg).toBe(raw.color.plan.bg);
   });
 });
@@ -187,7 +176,7 @@ describe("AC2 tokens.css emits the D-0208 variables", () => {
   it("--wl-font-plan, --wl-font-session, radius and space", () => {
     expect(cssVar("--wl-font-plan")).toBe(raw.font.plan.family);
     expect(cssVar("--wl-font-session")).toBe(raw.font.session.family);
-    for (const r of ["pill", "session-button", "sheet", "option", "tile", "input", "segment"]) {
+    for (const r of ["pill", "session-button", "sheet", "option", "tile", "input", "progress"]) {
       const v = raw.radius[r as keyof Raw["radius"]];
       expect(cssVar(`--wl-radius-${r}`), r).toBe(`${v}px`);
     }
@@ -198,11 +187,11 @@ describe("AC2 tokens.css emits the D-0208 variables", () => {
     expect(cssVar("--wl-space-gutter-plan")).toBe("28px");
     expect(cssVar("--wl-space-gutter-session")).toBe("26px");
   });
-  it("existing variables are unchanged", () => {
-    for (const [name, hex] of Object.entries(FLAT_BEFORE))
-      expect(cssVar(`--wl-color-${name}`), name).toBe(hex);
-    expect(cssVar("--wl-font-display")).toBe(raw.font.display.family);
-    expect(cssVar("--wl-font-body")).toBe(raw.font.body.family);
+  it("T-0625: no retired Chalk & Iron variable is emitted", () => {
+    for (const name of RETIRED_FLAT) expect(cssVar(`--wl-color-${name}`), name).toBeUndefined();
+    expect(cssVar("--wl-font-display")).toBeUndefined();
+    expect(cssVar("--wl-font-body")).toBeUndefined();
+    expect(cssVar("--wl-radius-segment")).toBeUndefined();
   });
   it("no CSS variable is declared twice", () => {
     const names = [...css.matchAll(/^\s*(--wl-[a-z0-9-]+):/gm)].map((m) => m[1]);
@@ -315,7 +304,7 @@ describe("AC4 WCAG 2.2 contrast from the tokens (README Contrast)", () => {
 });
 
 describe("AC7 colour guard stays green", () => {
-  it("wl-check-colours exits 0 on the design-tokens src (fonts-state.css) and the apps", () => {
+  it("wl-check-colours exits 0 on the design-tokens src (fonts.css) and the apps", () => {
     const res = runCli([
       resolve(pkgRoot, "src"),
       resolve(pkgRoot, "../../apps/web"),

@@ -592,7 +592,15 @@ import { compareWithCanvas } from "./helpers/canvas-compare.js";
 
 const TOKENS = JSON.parse(
   readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
-) as { color: { plan: Record<string, string>; surface: string; "surface-2": string } };
+) as { color: { plan: Record<string, string> } };
+// T-0625 retired the Chalk & Iron keys from tokens.json; the "no legacy card surface" checks read
+// their values from the frozen pre-Cobalt snapshot instead.
+const LEGACY = JSON.parse(
+  readFileSync(
+    resolve(__dirname, "../../packages/design-tokens/test/fixtures/tokens.before-T-0587.json"),
+    "utf8",
+  ),
+) as { color: { surface: string; "surface-2": string } };
 const PLAN = TOKENS.color.plan;
 
 function rgbOf(hex: string): string {
@@ -819,7 +827,7 @@ test.describe("T-0601 AC4 gutter", () => {
 
 /** Every element inside `root` whose own background is a legacy card surface. */
 async function legacySurfaces(page: Page, root: string): Promise<string[]> {
-  const legacy = [rgbOf(TOKENS.color.surface), rgbOf(TOKENS.color["surface-2"])];
+  const legacy = [rgbOf(LEGACY.color.surface), rgbOf(LEGACY.color["surface-2"])];
   return page.evaluate(
     ([sel, bad]) =>
       [...document.querySelector(sel as string)!.querySelectorAll("*")]

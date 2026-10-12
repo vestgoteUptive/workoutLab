@@ -33,9 +33,18 @@ const ADDED = new Map<string, unknown>([
   ["meta.planCoverage.4.requiresLabel", false],
 ]);
 
-/** Throws unless `next` = the pre-change tokens plus exactly ADDED (additive change). */
+// T-0625 (D-0210 §6) later removed the Chalk & Iron keys; they drop out of the T-0587 baseline.
+const FLAT_LEGACY = Object.entries(before.color)
+  .filter(([, v]) => typeof v === "string")
+  .map(([k]) => `color.${k}`);
+const RETIRED = (k: string): boolean =>
+  FLAT_LEGACY.includes(k) ||
+  /^(font\.display|font\.body|meta\.coverage)\./.test(k) ||
+  k === "radius.segment";
+
+/** Throws unless `next` = the pre-change tokens (less the T-0625 retirements) plus exactly ADDED. */
 function checkAdditive(next: unknown): void {
-  const old = leaves(before);
+  const old = new Map([...leaves(before)].filter(([k]) => !RETIRED(k)));
   const now = leaves(next);
   for (const [k, v] of old) expect(now.get(k), `existing ${k} unchanged`).toEqual(v);
   const added = [...now.keys()].filter((k) => !old.has(k));
@@ -57,8 +66,8 @@ describe("AC1 the four additive values (D-0211 §1)", () => {
   });
   it("planted fault: a changed existing value fails", () => {
     const faulty = structuredClone(raw);
-    faulty.radius.segment = 2;
-    expect(() => checkAdditive(faulty)).toThrow(/existing radius\.segment unchanged/);
+    faulty.radius.tile = 2;
+    expect(() => checkAdditive(faulty)).toThrow(/existing radius\.tile unchanged/);
   });
   it("planted fault: a lowercase new hex fails", () => {
     const faulty = structuredClone(raw);

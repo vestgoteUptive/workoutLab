@@ -1,5 +1,6 @@
-// T-0583 AC5 (D-0208 §4, rules: docs/specs/visual-foundation.md §1): fonts-state.css self-hosts
+// T-0583 AC5 (D-0208 §4, rules: docs/specs/visual-foundation.md §1): the state stylesheet self-hosts
 // Familjen Grotesk (font.plan) and Bricolage Grotesque (font.session) as variable latin woff2.
+// T-0625 folded fonts-state.css into src/fonts.css; the fonts-state.css export is an alias of it.
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -9,7 +10,7 @@ import raw from "../src/tokens.json";
 import { pkgRoot } from "./helpers";
 
 const fontsDir = resolve(pkgRoot, "fonts");
-const cssPath = resolve(pkgRoot, "src/fonts-state.css");
+const cssPath = resolve(pkgRoot, "src/fonts.css");
 const sourcesPath = resolve(fontsDir, "SOURCES.md");
 
 const ROLES = [
@@ -31,7 +32,7 @@ const ROLES = [
     covers: [400, 800],
   },
 ] as const;
-// visual-foundation §1 budget, applied to the fonts-state.css pair (D-0209).
+// visual-foundation §1 budget, applied to the state pair (D-0209).
 const MAX_EACH = 61_440;
 const MAX_TOTAL = 112_640;
 
@@ -47,7 +48,7 @@ function prop(block: string, name: string): string[] {
 }
 const unquote = (s: string | undefined) => s?.replace(/^["']|["']$/g, "");
 
-/** Throws (vitest assertion) when fonts-state.css doesn't match the spec / tokens.json. */
+/** Throws (vitest assertion) when fonts.css doesn't match the spec / tokens.json. */
 function checkStateCss(css: string): void {
   const stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
   expect(stripped, "no http").not.toMatch(/http/i);
@@ -113,7 +114,7 @@ function checkStateFiles(sources: string): void {
   expect(total, `fonts-state pair ≤ ${MAX_TOTAL} bytes`).toBeLessThanOrEqual(MAX_TOTAL);
 }
 
-describe("AC5 fonts-state.css (T-0583)", () => {
+describe("AC5 fonts.css state faces (T-0583, T-0625)", () => {
   const css = readFileSync(cssPath, "utf8");
 
   it("declares both families from tokens.json, swap, latin, same-origin woff2 only", () => {
@@ -165,7 +166,7 @@ describe("AC5 font files, licences, sha256, budget (T-0583)", () => {
 
 describe("AC5 export resolves (T-0583)", () => {
   const req = createRequire(resolve(pkgRoot, "package.json"));
-  it("@workoutlab/design-tokens/fonts-state.css → src/fonts-state.css; url() targets exist", () => {
+  it("@workoutlab/design-tokens/fonts-state.css → src/fonts.css (alias, T-0625); url() targets exist", () => {
     const resolved = req.resolve("@workoutlab/design-tokens/fonts-state.css");
     expect(resolved).toBe(cssPath);
     const urls = [...readFileSync(resolved, "utf8").matchAll(/url\("([^"]+)"\)/g)].map(
@@ -174,9 +175,7 @@ describe("AC5 export resolves (T-0583)", () => {
     expect(urls).toHaveLength(2);
     for (const u of urls) expect(existsSync(resolve(dirname(resolved), u)), u).toBe(true);
   });
-  it("the T-0544 fonts.css is untouched by the new export", () => {
-    expect(req.resolve("@workoutlab/design-tokens/fonts.css")).toBe(
-      resolve(pkgRoot, "src/fonts.css"),
-    );
+  it("@workoutlab/design-tokens/fonts.css resolves to the same file", () => {
+    expect(req.resolve("@workoutlab/design-tokens/fonts.css")).toBe(cssPath);
   });
 });

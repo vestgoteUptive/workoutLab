@@ -17,12 +17,12 @@ describe("T-0589 AC6 theme-color from the screen root's state", () => {
     document.head.querySelector('meta[name="theme-color"]')?.remove();
     const m = document.createElement("meta");
     m.name = "theme-color";
-    m.content = tokens.color.bg;
+    m.content = tokens.color.lift.bg;
     document.head.appendChild(m);
   });
   afterEach(() => cleanup());
 
-  it("plan, then lift after the attribute switches, bg without a state", async () => {
+  it("plan, then lift after the attribute switches, plan.bg without a state (T-0625)", async () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
     const screen = document.createElement("main");
@@ -39,7 +39,7 @@ describe("T-0589 AC6 theme-color from the screen root's state", () => {
     expect(meta()!.content).toBe(tokens.color.rest.bg);
     screen.removeAttribute("data-wl-state");
     await flush();
-    expect(meta()!.content).toBe(tokens.color.bg);
+    expect(meta()!.content).toBe(tokens.color.plan.bg);
     host.remove();
   });
 
@@ -56,6 +56,6 @@ describe("T-0589 AC6 theme-color from the screen root's state", () => {
   it("creates the meta when none exists", () => {
     meta()!.remove();
     render(<Probe route="/" />);
-    expect(meta()!.content).toBe(tokens.color.bg);
+    expect(meta()!.content).toBe(tokens.color.plan.bg);
   });
 });

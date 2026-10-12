@@ -10,11 +10,11 @@ const STATE_BG: Record<string, string> = {
   rest: tokens.color.rest.bg,
 };
 
-/** The theme-color for the current DOM: the outermost screen root's state, else the legacy bg. */
+/** The theme-color for the current DOM: the outermost screen root's state, else plan (D-0210). */
 export function themeColorForDocument(doc: Document = document): string {
   const root = doc.querySelector("[data-screen-id]");
   const state = root?.getAttribute("data-wl-state");
-  return (state ? STATE_BG[state] : undefined) ?? tokens.color.bg;
+  return (state ? STATE_BG[state] : undefined) ?? tokens.color.plan.bg;
 }
 
 /** Writes the meta tag, creating it when the build didn't inject one (dev). */

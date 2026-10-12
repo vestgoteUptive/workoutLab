@@ -58,8 +58,8 @@ describe("ensureTokensCss on a copy of the tokens package (T-0312)", () => {
     const res = ensureTokensCss(pkgRoot);
     expect(res).toEqual({ built: true, cssPath });
     const css = readFileSync(cssPath, "utf8");
-    expect(css).toMatch(/--wl-color-bg\s*:/);
-    expect(css).toMatch(/--wl-color-coverage-4\s*:/);
+    expect(css).toMatch(/--wl-color-plan-bg\s*:/);
+    expect(css).toMatch(/--wl-color-plan-coverage-4\s*:/);
   });
 
   it("works in a fresh node process (as `pnpm run pretest` runs it), from a clean dist", () => {

@@ -14,7 +14,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Body figure v2 preview</title>
     <link rel="stylesheet" href="../../../../../packages/design-tokens/dist/tokens.css" />
-    <link rel="stylesheet" href="../../../../../packages/design-tokens/src/fonts-state.css" />
+    <link rel="stylesheet" href="../../../../../packages/design-tokens/src/fonts.css" />
     <link
       rel="stylesheet"
       href="../../../../../apps/web/src/components/body-figure/body-figure.css"
@@ -34,14 +34,15 @@
         --wl-ink: var(--wl-color-rest-ink);
       }
       :root {
-        --wl-bg: var(--wl-color-bg);
-        --wl-ink: var(--wl-color-text);
+        /* D-0210: a page without a state is plan (T-0624). */
+        --wl-bg: var(--wl-color-plan-bg);
+        --wl-ink: var(--wl-color-plan-ink);
       }
       body {
         margin: 0;
         padding: 1.5rem;
-        background: var(--wl-color-surface);
-        color: var(--wl-color-text);
+        background: var(--wl-color-plan-scrim);
+        color: var(--wl-color-plan-ink);
         font-family: var(--wl-font, sans-serif);
       }
       .row {
@@ -108,9 +109,6 @@
         <div class="demo" data-wl-state="plan" data-size="compact" data-primary="quads">
           <p>Compact · 60 px</p>
         </div>
-        <div class="demo" data-legacy data-size="detail" data-primary="chest" data-attention="core">
-          <p>No state (Chalk and Iron screens)</p>
-        </div>
       </div>
     </section>
 
@@ -161,7 +159,6 @@
             view.append(halo(r, "wl-fig__halo-warn"), halo(r, "wl-fig__halo-gap"), r);
           }
         }
-        if (demo.hasAttribute("data-legacy")) demo.removeAttribute("data-wl-state");
       }
       document.documentElement.dataset.ready = "true";
     </script>

@@ -5,10 +5,6 @@ import raw from "./tokens.json";
 
 export type Tokens = typeof raw;
 type ColorGroup = Tokens["color"];
-/** Flat Chalk & Iron colour names (`--wl-color-<name>`), in use until the app screens migrate. */
-export type ColorName = {
-  [K in keyof ColorGroup]: ColorGroup[K] extends string ? K : never;
-}[keyof ColorGroup];
 export type FontRole = keyof Tokens["font"];
 
 /** D-0208 state groups: each screen root carries `data-wl-state` = one of the session states. */
@@ -21,7 +17,6 @@ export type SpaceName = keyof Tokens["space"];
 
 /** Coverage step as returned by the engine's balance output (`coverageStep`, D-0013). */
 export type CoverageStep = 0 | 1 | 2 | 3 | 4;
-export type CoverageToken = `coverage-${CoverageStep}`;
 
 export const tokens: Tokens = raw;
 
@@ -53,14 +48,6 @@ export const planCoverageTokens = [
   "plan-coverage-3",
   "plan-coverage-4",
 ] as const satisfies readonly PlanCoverageToken[];
-
-export const coverageTokens = [
-  "coverage-0",
-  "coverage-1",
-  "coverage-2",
-  "coverage-3",
-  "coverage-4",
-] as const satisfies readonly CoverageToken[];
 
 export interface CoverageLegendEntry {
   readonly step: CoverageStep;

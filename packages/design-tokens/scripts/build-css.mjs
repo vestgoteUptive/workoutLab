@@ -2,12 +2,13 @@
 // Usage: node scripts/build-css.mjs [--out <file>]
 //
 // Emits, in one :root block:
-//   --wl-color-<name>             flat Chalk & Iron colours (in use until the app screens migrate)
 //   --wl-color-<state>-<name>     D-0208 state groups (plan, lift, rest, paper)
 //   --wl-color-plan-coverage-0..N D-0208 coverage ramp, interpolated in OKLCH from coverage.from to .to
 //   --wl-font-<role>              font stacks
 //   --wl-radius-<name>, --wl-space-<name>  px values (incl. radius.progress, space.option-bleed, D-0211)
-//   meta.* (coverage, planCoverage label flags) is data for the TS export only, never CSS.
+//   meta.* (planCoverage label flags, states) is data for the TS export only, never CSS.
+// tokens.color holds only the state groups and the ramp spec (T-0625, D-0210 §6): a flat string
+// colour is an error, so the retired Chalk & Iron keys cannot come back unnoticed.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -97,9 +98,8 @@ const push = (name, value) => {
   lines.push(`  ${name}: ${value};`);
 };
 
-// Flat keys only: the nested state groups and the ramp spec are emitted below.
 for (const [name, value] of Object.entries(tokens.color)) {
-  if (typeof value === "string") push(`--wl-color-${name}`, value);
+  if (typeof value === "string") throw new Error(`flat colour color.${name} is retired (T-0625)`);
 }
 for (const state of STATES) {
   for (const [name, value] of Object.entries(tokens.color[state] ?? {})) {

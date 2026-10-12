@@ -8,7 +8,7 @@ v2 (T-0660, D-0225, owner pick 1b) replaced the T-0315 art. The geometry is the 
 |---|---|
 | `body-figure.svg` | The asset. `viewBox="0 0 212 215"`; `<g data-view="front">` (x 0..100) and `<g data-view="back">` (x 112..212). No colour attributes, no seam paths. |
 | `check-figure.mjs` | The checks: the SVG (AC-1..AC-3), the docs (AC-5), the figure CSS (no colour literal) and `preview.html`. `node check-figure.mjs`, or `--svg <file|->` / `--preview <file|->` for one file. Also run by `packages/design-tokens/test/body-figure.test.ts` and `body-figure-cobalt.test.ts`. |
-| `preview.html` | Plan, lift, rest, compact, highlight, attention and an unmigrated (no-state) demo. It links the component's own `body-figure.css`, so what you see is what ships. Visual target: `redesign-cobalt/canvas/Body Figure Export.dc.html`. |
+| `preview.html` | Plan, lift, rest, compact, highlight and attention demos; a page without a state is plan (D-0210). It links the component's own `body-figure.css`, so what you see is what ships. Visual target: `redesign-cobalt/canvas/Body Figure Export.dc.html`. |
 | `serve-preview.mjs` | `node Design-docs/docs/design/assets/body-figure/serve-preview.mjs` builds the token CSS if it's missing, serves the repo root on 127.0.0.1:5180 and prints the preview URL. |
 
 `draw-figure.mjs` (the T-0315 generator) is gone: the v2 art is the owner's file, edit the SVG.

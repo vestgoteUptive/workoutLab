@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -31,17 +31,32 @@ describe("AC9 CSS output (offline)", () => {
 
   const css = build(join(tmp, "a", "tokens.css"));
 
-  it("has one :root block with every colour and both fonts", () => {
+  it("has one :root block with the state colours and both state fonts", () => {
     expect(css.match(/:root\s*\{/g)).toHaveLength(1);
-    const flat = Object.entries(raw.color).filter(([, v]) => typeof v === "string");
-    expect(flat).toHaveLength(17);
-    for (const [name, hex] of flat) {
-      expect(css).toContain(`--wl-color-${name}: ${hex};`);
-    }
-    // 17 flat + 31 D-0208 state colours (29 from T-0583, 2 from T-0587) + 5 plan coverage stops.
-    expect(css.match(/--wl-color-/g)).toHaveLength(17 + 31 + 5);
-    expect(css).toContain(`--wl-font-display: ${raw.font.display.family};`);
-    expect(css).toContain(`--wl-font-body: ${raw.font.body.family};`);
+    // 31 D-0208 state colours (29 from T-0583, 2 from T-0587) + 5 plan coverage stops (T-0625: no flat).
+    expect(css.match(/--wl-color-/g)).toHaveLength(31 + 5);
+    expect(css).toContain(`--wl-font-plan: ${raw.font.plan.family};`);
+    expect(css).toContain(`--wl-font-session: ${raw.font.session.family};`);
+    expect(css.match(/--wl-font-/g)).toHaveLength(2);
+  });
+  it("T-0625 AC2: no retired Chalk & Iron variable", () => {
+    for (const v of ["--wl-color-bg:", "--wl-color-accent:", "--wl-color-warn:"])
+      expect(css).not.toContain(v);
+    expect(css).not.toMatch(/--wl-font-display|--wl-font-body|--wl-radius-segment/);
+    expect(css).not.toMatch(/--wl-color-coverage-\d/);
+  });
+  it("T-0625: a flat string colour in tokens.json fails the build", () => {
+    const dir = mkdtempSync(join(tmp, "flat-"));
+    const bad = { ...raw, color: { bg: "#121210", ...raw.color } };
+    mkdirSync(join(dir, "src"));
+    mkdirSync(join(dir, "scripts"));
+    writeFileSync(join(dir, "src/tokens.json"), JSON.stringify(bad));
+    copyFileSync(resolve(pkgRoot, "scripts/build-css.mjs"), join(dir, "scripts/build-css.mjs"));
+    const res = spawnSync(process.execPath, [join(dir, "scripts/build-css.mjs")], {
+      encoding: "utf8",
+    });
+    expect(res.status).not.toBe(0);
+    expect(res.stderr).toMatch(/flat colour color\.bg is retired/);
   });
   it("is byte-identical on a second run", () => {
     expect(build(join(tmp, "b", "tokens.css"))).toBe(css);
