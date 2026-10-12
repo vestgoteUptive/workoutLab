@@ -5,7 +5,7 @@ lane: web-shell
 screens: []
 decisions: [D-0208, D-0210, D-0211, D-0213]
 deps: [T-0595, T-0596, T-0597, T-0598, T-0599, T-0600, T-0601, T-0602, T-0603, T-0604, T-0605, T-0606, T-0607, T-0608, T-0609, T-0610, T-0611, T-0612, T-0613, T-0615, T-0616]
-status: todo
+status: doing
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Full web e2e suite. If a feature folder still reads a legacy token, list it as a follow-up for that feature lane instead of editing it here. -->
 ## Why
@@ -43,6 +43,7 @@ Checklist (D-0197 §7):
 ## Paths you may change
 - `apps/web/src/main.css` (listed extra), `apps/web/src/app/**`, `apps/web/src/components/**`, `apps/web/*.*` (lane)
 - `tests/e2e/cobalt-state.spec.ts` (listed extra)
+- `apps/web/src/features/UF-09/uf-09.css` (orchestrator grant 2026-10-12: its 31 remaining flat reads, mapped to the generic `--wl-*` variables, no layout change) and any test pinning those exact flat names
 - `docs/tickets/T-0624-web-retire-legacy-fallback.md` (log only)
 
 ## Contract impact
