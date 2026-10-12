@@ -5,7 +5,7 @@ lane: web-feature:UF-02
 screens: [UF-02.1]
 decisions: [D-0217, D-0219, D-0034, D-0068, D-0212]
 deps: [T-0623, T-0635]
-status: todo
+status: doing
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Today" (#turn-3). Spec: docs/specs/cobalt-mock-behaviour.md §3.2. UF-02 folder chain: T-0601 → T-0623 → T-0636 → T-0638. -->
 
