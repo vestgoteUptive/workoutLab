@@ -5,7 +5,7 @@ lane: design
 screens: []
 decisions: [D-0208, D-0209, D-0210, D-0211, D-0213]
 deps: [T-0624, T-0617, T-0585, T-0614]
-status: todo
+status: doing
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-design (agent designer). About ½ day. Contract change (tokens.json keys removed, named by D-0210 §6): forced full gate, plus the full web e2e suite and the landing browser tests. -->
 ## Why
@@ -37,6 +37,7 @@ Checklist (D-0197 §7):
 ## Paths you may change
 - `packages/design-tokens/**`, `Design-docs/docs/design/**` (lane)
 - `apps/web/build.test.ts` (listed extra, AC4 only)
+- `apps/web/src/app/theme-color.ts` and its test (orchestrator grant 2026-10-12: the no-state fallback `tokens.color.bg` becomes `tokens.color.plan.bg`, the last flat read)
 - `docs/tickets/T-0625-tokens-retire-chalk-and-iron.md` (log only)
 
 ## Contract impact
