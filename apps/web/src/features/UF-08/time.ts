@@ -11,6 +11,13 @@ export function clampBudget(minutes: number): number {
   return Math.min(MAX_BUDGET, Math.max(MIN_BUDGET, minutes));
 }
 
+/** UF-08.1 `?budget=N` (T-0637): a base-10 integer 15–120, else the default 45. */
+export function parseBudget(raw: string | null): number {
+  if (raw === null || !/^\d+$/.test(raw)) return DEFAULT_BUDGET;
+  const n = Number(raw);
+  return n >= MIN_BUDGET && n <= MAX_BUDGET ? n : DEFAULT_BUDGET;
+}
+
 /** The ISO instant `budgetMin` minutes after `nowIso` ("done by", D-0065 §2). */
 export function finishInstant(nowIso: string, budgetMin: number): string {
   return new Date(new Date(nowIso).getTime() + budgetMin * 60_000).toISOString();

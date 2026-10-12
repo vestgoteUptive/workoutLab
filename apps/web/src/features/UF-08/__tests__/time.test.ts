@@ -1,7 +1,7 @@
 // @vitest-environment node
 // T-0303a AC-4: the finish-time conversion as a pure function (D-0065 §2, D-0107 §6).
 import { describe, expect, it } from "vitest";
-import { clampBudget, finishInstant, finishToBudget } from "../time.js";
+import { clampBudget, finishInstant, finishToBudget, parseBudget } from "../time.js";
 import { NOW, TZ } from "./fixtures.js";
 
 describe("finishToBudget at F-tz (12:00 Europe/Stockholm)", () => {
@@ -64,5 +64,24 @@ describe("clamp and finish instant", () => {
 
   it("finishInstant adds whole minutes", () => {
     expect(finishInstant("2026-09-27T10:00:00.000Z", 45)).toBe("2026-09-27T10:45:00.000Z");
+  });
+});
+
+// T-0637 AC1: `?budget=N` parsing.
+describe("parseBudget", () => {
+  it.each([
+    ["20", 20],
+    ["15", 15],
+    ["120", 120],
+    [null, 45],
+    ["", 45],
+    ["abc", 45],
+    ["12", 45],
+    ["121", 45],
+    ["20.5", 45],
+    ["020x", 45],
+    [" 20", 45],
+  ])("%j → %i", (raw, expected) => {
+    expect(parseBudget(raw)).toBe(expected);
   });
 });

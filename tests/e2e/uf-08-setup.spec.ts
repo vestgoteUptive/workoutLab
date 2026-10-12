@@ -148,6 +148,38 @@ test.describe("AC-12 offline cold start (NFR-OFF-3, D-0108 §5)", () => {
   });
 });
 
+test.describe("T-0637 AC8 ?budget=20 (UF-08.1, D-0217)", () => {
+  test("opens with the 20 chip pressed and a suggestion that fits in 20 minutes", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/session/setup?budget=20");
+    await expect(screenUF081(page)).toBeVisible();
+    await expect(fitLine(page)).toHaveText(FIT_PATTERN);
+    await expect(page.getByRole("button", { name: "20 minutes" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.locator('[data-part="minutes"]')).toHaveText("20");
+    const line = (await fitLine(page).textContent())!;
+
+    // The same line as tapping the 20 chip from the default.
+    await page.goto("/session/setup");
+    await expect(page.locator('[data-part="minutes"]')).toHaveText("45");
+    await page.getByRole("button", { name: "20 minutes" }).click();
+    await expect(fitLine(page)).toHaveText(line);
+
+    await page.goto("/session/setup?budget=20");
+    await page.getByRole("button", { name: "Suggest my workout" }).click();
+    await expect(screenUF082(page)).toBeVisible();
+    await expect(page.getByRole("button", { name: "20 minutes" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+});
+
 test.describe("AC-12 a11y (NFR-A11Y-1/2/6)", () => {
   test("axe reports 0 serious or critical violations on UF-08.1", async ({ page }) => {
     await openSetup(page);
