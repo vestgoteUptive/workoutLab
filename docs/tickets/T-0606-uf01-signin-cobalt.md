@@ -56,3 +56,11 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `auth.spec.ts` and `uf-01-onboarding.spec.ts` green · commit messages start with `T-0606` and cite UF-01.5.
 
 ## Build / accept log
+
+### Build log (frontend-dev)
+- Changed: `AccountScreen.tsx`, `SaveScreen.tsx` (plan-state root, `.wl-type-page-title.wl-title--stop`, `.wl-segmented` tabs, `.wl-input` with `aria-invalid` + `aria-describedby` to the status, `.wl-button--primary/--secondary/--text`, status as a label, error in `--wl-attention`), `uf-01.css` (legacy `wl-uf01__*` rules removed except `.wl-uf01__sr`, still used by StepHeader and ScheduleScreen; new scoped `wl-uf01-plan__*` rules). Auth flow, names, autocomplete, messages and focus moves unchanged.
+- Test edit (stated): `account.test.tsx` T-0382 AC3 CSS check now reads `.wl-uf01-plan__status` (renamed class, same assertions).
+- AC map: AC1 vitest + e2e AC1; AC2 vitest (aria-invalid) + e2e AC2 (1px/2px, colours, code input); AC3 vitest + e2e AC3; AC4 e2e AC4 + existing offline tests; AC5 e2e contrast/axe in send/sent/error/offline/save, targets, motion both values, vitest CSS guard; AC6 auth.spec and UF-01 suite unchanged and green; AC7 canvas compare "Sign in · save your plan" (turn-5) saved, verdict: close match; canvas differs by an underlined-only input, an arrow in Send link and rule lines around "or" (ticket specifies the boxed `.wl-input`; arrow/rules not in scope).
+- Planted faults (red, restored from backup): aria-invalid removed (vitest AC2), selected-tab background removed (vitest AC3), error colour swapped to ink (e2e AC2: Expected rgb(255,179,163), Received rgb(255,255,255)).
+- Gate: typecheck/lint/test exit 0, repo-checks 0, format:check 0, check-all 0.
+- Full e2e (one run): 650 passed, 1 failed (my AC5 contrast test: axe ran before the screen rendered); fixed with a visibility wait, then uf-01-onboarding + auth specs 70/70 with --repeat-each=2. Full gate not re-run after that test-only edit; prettier clean.

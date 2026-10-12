@@ -35,7 +35,7 @@ function isOnline(): boolean {
 
 function frame(children: React.ReactNode) {
   return (
-    <div data-screen-id="UF-01.5-save" className="wl-uf01">
+    <div data-screen-id="UF-01.5-save" data-wl-state="plan" className="wl-page wl-uf01-plan">
       {children}
     </div>
   );
@@ -49,12 +49,14 @@ export function SaveScreen({ store }: { store: PendingPlanStore }) {
     // D-0100 §2: the answers aren't on this device (or were never shown as a plan).
     return frame(
       <>
-        <div className="wl-uf01__intro">
-          <h1 className="wl-uf01__title wl-uf01__title--step">{t.noPlanHeading}</h1>
-          <p className="wl-uf01__muted">{t.noPlanBody}</p>
+        <div className="wl-uf01-plan__intro">
+          <h1 className="wl-type-page-title wl-title--stop wl-uf01-plan__title">
+            {t.noPlanHeading}
+          </h1>
+          <p className="wl-type-label">{t.noPlanBody}</p>
         </div>
-        <div className="wl-uf01__actions">
-          <Link to="/welcome/goal" className="wl-uf01__primary">
+        <div className="wl-uf01-plan__actions">
+          <Link to="/welcome/goal" className="wl-button--primary">
             {t.noPlanLink}
           </Link>
         </div>
@@ -168,29 +170,29 @@ function Saving({ plan, store }: { plan: PendingPlan; store: PendingPlanStore })
 
   return frame(
     <>
-      <div className="wl-uf01__intro">
-        <h1 className="wl-uf01__title wl-uf01__title--step">{t.heading}</h1>
+      <div className="wl-uf01-plan__intro">
+        <h1 className="wl-type-page-title wl-title--stop wl-uf01-plan__title">{t.heading}</h1>
         {phase === "saving" ? (
-          <p role="status" className="wl-uf01__muted">
+          <p role="status" className="wl-type-label">
             {t.saving}
           </p>
         ) : null}
         {phase === "offline" ? (
-          <p role="status" className="wl-uf01__muted">
+          <p role="status" className="wl-type-label">
             {t.offline}
           </p>
         ) : null}
         {phase === "error" ? (
-          <p role="alert" className="wl-uf01__status">
+          <p role="alert" className="wl-type-label wl-uf01-plan__status" data-error="true">
             {t.error}
           </p>
         ) : null}
       </div>
       {phase === "error" || (phase === "saving" && failedOnce) ? (
-        <div className="wl-uf01__actions">
+        <div className="wl-uf01-plan__actions">
           <button
             type="button"
-            className="wl-uf01__primary"
+            className="wl-button--primary"
             aria-disabled={phase === "error" ? "false" : "true"}
             onClick={() => {
               if (phase === "error") void attempt();

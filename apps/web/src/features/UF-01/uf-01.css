@@ -306,229 +306,69 @@
   border: 0;
 }
 
-/* UF-01.5 Account and /welcome/save (T-0301c) keep the Chalk & Iron look until T-0606. Only
-   font sizes moved from px to rem. */
-
-/* UF-01.5 Account and /welcome/save. Colours and fonts come only from @workoutlab/design-tokens
-   (D-0019). Selection state is styled from `:checked`, never inline, and every control keeps a
-   visible `:focus-visible` ring (WCAG 2.4.7). */
-.wl-uf01 {
-  box-sizing: border-box;
+/* UF-01.5 Account and /welcome/save (T-0606, D-0208, D-0211, D-0213; Cobalt "Sign in · save your
+   plan"). The root is the same plan page as UF-01.1-4. Inputs, the segmented control and the
+   buttons are the shared .wl-input, .wl-segmented and .wl-button-- forms; below is only layout
+   and the two states the shared rules have no hook for (role="tab" selection, the status line). */
+.wl-uf01-plan__auth {
   display: flex;
   flex-direction: column;
-  gap: 22px;
-  min-block-size: 100dvh;
-  padding: 56px 24px 40px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-bg);
-  font-family: var(--wl-font-body);
+  gap: 1.25rem;
 }
 
-.wl-uf01__intro {
+.wl-uf01-plan__field {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0.5rem;
 }
 
-.wl-uf01__title {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 3rem;
-  font-weight: 800;
-  line-height: 0.95;
-  text-transform: uppercase;
+.wl-uf01-plan__field > .wl-input {
+  inline-size: 100%;
 }
 
-.wl-uf01__title--step {
-  font-size: 2.5rem;
-  line-height: 1;
-}
-
-.wl-uf01__muted {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 0.9375rem;
-  line-height: 1.45;
-}
-
-.wl-uf01__actions {
+/* The tabs are buttons with aria-selected, so the shared checked / aria-pressed rule does not
+   reach them: the same plan.selected pill, from the same variables. */
+.wl-uf01-plan .wl-uf01-plan__tabs {
   display: flex;
+  inline-size: 100%;
+}
+
+.wl-uf01-plan .wl-uf01-plan__tabs > button {
   flex: 1;
-  flex-direction: column;
-  gap: 10px;
 }
 
-.wl-uf01__actions {
-  justify-content: flex-end;
+.wl-uf01-plan .wl-uf01-plan__tabs > button[aria-selected="true"],
+.wl-uf01-plan .wl-uf01-plan__tabs > button[aria-selected="true"]:hover {
+  color: var(--wl-on-selected);
+  background: var(--wl-selected);
 }
 
-.wl-uf01__primary,
-.wl-uf01__ghost {
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-block-size: 54px;
-  padding: 0 16px;
-  border-radius: 14px;
-  font: inherit;
-  font-size: 1rem;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.wl-uf01__primary {
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-  border: 0;
-  font-weight: 700;
-}
-
-.wl-uf01__primary:hover {
-  background: var(--wl-color-accent-hover);
-}
-
-.wl-uf01__ghost {
-  color: var(--wl-color-text);
-  background: transparent;
-  border: 1px solid var(--wl-color-line-strong);
-  font-weight: 500;
-}
-
-.wl-uf01__header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.wl-uf01__back {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 44px;
-  block-size: 44px;
-  color: var(--wl-color-text);
-}
-
-.wl-uf01__primary:focus-visible,
-.wl-uf01__ghost:focus-visible,
-.wl-uf01__back:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
+.wl-uf01-plan .wl-uf01-plan__tabs > button:focus-visible {
+  outline: 2px solid var(--wl-focus);
   outline-offset: 2px;
 }
 
-/* UF-01.5 Account and /welcome/save (T-0301c). */
-.wl-uf01__tabs {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--wl-color-line);
-  border-radius: 14px;
-  background: var(--wl-color-surface);
-}
-
-.wl-uf01__tab {
-  display: flex;
-  flex: 1;
-  align-items: center;
-  justify-content: center;
-  min-block-size: 48px;
-  padding: 0 12px;
-  color: var(--wl-color-text);
-  background: transparent;
-  border: 0;
-  border-radius: 10px;
-  font: inherit;
-  font-size: 0.9375rem;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.wl-uf01__tab[aria-selected="true"] {
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-  font-weight: 700;
-}
-
-.wl-uf01__auth-form {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.wl-uf01__field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.wl-uf01__field-label {
-  color: var(--wl-color-text-muted);
-  font-size: 0.8125rem;
-  font-weight: 700;
-}
-
-.wl-uf01__input {
-  box-sizing: border-box;
-  inline-size: 100%;
-  min-block-size: 54px;
-  padding: 0 16px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 14px;
-  font: inherit;
-  font-size: 1rem;
-}
-
-.wl-uf01__status {
+/* The always-mounted status line (T-0382): empty, it is out of the flex flow (no gap) but never
+   hidden from assistive tech. An error is --wl-attention; the words carry it, not the colour. */
+.wl-uf01-plan__status {
   margin: 0;
-  color: var(--wl-color-text);
-  font-size: 0.9375rem;
-  line-height: 1.45;
 }
 
-/* Empty: still in the accessibility tree (T-0382),
-but out of the flex flow,
-so no gap. */
-.wl-uf01__status:empty {
+.wl-uf01-plan__status:empty {
   position: absolute;
 }
 
-.wl-uf01__or {
+.wl-uf01-plan__status[data-error="true"] {
+  color: var(--wl-attention);
+}
+
+.wl-uf01-plan__or {
   margin: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 0.8125rem;
   text-align: center;
 }
 
-.wl-uf01__ghost[aria-disabled="true"] {
-  color: var(--wl-color-text-muted);
-  border-color: var(--wl-color-line);
-  cursor: not-allowed;
-}
-
-.wl-uf01__footer {
+.wl-uf01-plan__footer {
   display: flex;
   justify-content: center;
   margin: auto 0 0;
-}
-
-.wl-uf01__link {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-block-size: 44px;
-  min-inline-size: 44px;
-  padding: 0 12px;
-  color: var(--wl-color-text-muted);
-  font-size: 0.875rem;
-  text-decoration: underline;
-}
-
-.wl-uf01__tab:focus-visible,
-.wl-uf01__input:focus-visible,
-.wl-uf01__link:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
 }
