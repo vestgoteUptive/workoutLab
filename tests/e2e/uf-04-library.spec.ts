@@ -137,6 +137,46 @@ test.describe("T-0639 group chips", () => {
   });
 });
 
+// T-0640 AC8 (UF-04.1): the "In plan" tag follows the cached routines across a remount.
+test.describe("T-0640 plan tags", () => {
+  async function serveRoutine(page: Page, exerciseId: string): Promise<void> {
+    await mockSupabaseData(page, {
+      sets: [],
+      exercises,
+      exerciseAreas,
+      exerciseVariants: [],
+      areaTargets: [],
+      profile,
+      routines: [{ id: "R1", name: "Lower A", updated_at: "2026-10-01T10:00:00.000Z" }],
+      routineItems: [{ routine_id: "R1", position: 0, exercise_id: exerciseId }],
+    });
+  }
+  const rowOf = (page: Page, name: string) =>
+    page.locator("li").filter({ has: page.locator('[data-field="name"]', { hasText: name }) });
+
+  test("AC8 a seeded routine shows In plan; a changed routine moves the tag after a remount", async ({
+    page,
+  }) => {
+    await serveRoutine(page, "back-squat");
+    await openLibrary(page, "/library");
+    await expect(page.locator('[data-field="name"]')).toHaveCount(24);
+    await expect(rowOf(page, "Back squat").locator(".wl-uf04-browse__tag")).toHaveText("In plan");
+    await expect(rowOf(page, "Leg extension").locator(".wl-uf04-browse__tag")).toHaveText(
+      "Beginner",
+    );
+
+    await serveRoutine(page, "leg-extension");
+    await openLibrary(page, "/library");
+    await expect(page.locator('[data-field="name"]')).toHaveCount(24);
+    await expect(rowOf(page, "Leg extension").locator(".wl-uf04-browse__tag")).toHaveText(
+      "In plan",
+    );
+    await expect(rowOf(page, "Back squat").locator(".wl-uf04-browse__tag")).not.toHaveText(
+      "In plan",
+    );
+  });
+});
+
 // T-0607 (D-0208, D-0210, D-0211; UF-04.1, UF-04.3): the plan state, computed in a real browser.
 // Expected values come from tokens.json, never typed.
 const TOKENS = JSON.parse(
@@ -273,9 +313,16 @@ test.describe("T-0607 plan state", () => {
       border: `1px solid ${rgbOf(PLAN.line)}`,
     });
     await expect(page.locator('[data-field="favorite"]')).toHaveText("Favorite");
-    await expect(page.locator(".wl-uf04-browse__tag")).toHaveCount(2);
+    // T-0640: "Beginner" rows carry a tag now, so this counts the two kinds only; Pull-up is
+    // intermediate, in no routine and no variant, so it has none.
+    await expect(page.locator('[data-field="not-suggested"], [data-field="favorite"]')).toHaveCount(
+      2,
+    );
     await expect(
-      page.locator("li", { hasText: "Goblet squat" }).locator(".wl-uf04-browse__tag"),
+      page
+        .locator("li")
+        .filter({ has: page.locator('[data-field="name"]', { hasText: /^Pull-up$/ }) })
+        .locator(".wl-uf04-browse__tag"),
     ).toHaveCount(0);
   });
 
@@ -286,7 +333,9 @@ test.describe("T-0607 plan state", () => {
       if (path === "/library") {
         await page.goto("/library");
         await openTagged(page, "/library");
-        await expect(page.locator(".wl-uf04-browse__tag")).toHaveCount(2);
+        await expect(
+          page.locator('[data-field="not-suggested"], [data-field="favorite"]'),
+        ).toHaveCount(2);
       }
       await ready(page, path);
       const results = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
