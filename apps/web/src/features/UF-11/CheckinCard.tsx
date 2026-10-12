@@ -11,6 +11,7 @@ import {
   type CheckinProposal,
   type EngineProfile,
 } from "@workoutlab/shared";
+import { TickIcon } from "../../components/icons/index.js";
 import { en } from "../../lib/i18n/en.js";
 import { acceptProposal, insertIfFirstShown, keepCurrent } from "./checkin-writes.js";
 import { formatCalendarDay, resolveTimeZone } from "./format.js";
@@ -212,13 +213,28 @@ function CardReady({
 
   const buttonsDisabled = !online || write.pending;
 
+  // The paper panel (D-0210, UF-11.1): off-white, so it reads as a question put to the user.
+  // Accept is the paper action pill (not a `.wl-button--primary`: the screen's one white primary
+  // is Start or Edit plan); Keep current is the secondary in the paper ink. Disabled is
+  // aria-disabled, never the native attribute, so focus stays on the button.
+  const onAcceptClick = () => {
+    if (!buttonsDisabled) onAccept();
+  };
+  const onKeepClick = () => {
+    if (!buttonsDisabled) onKeep();
+  };
+
   return (
-    <section data-part="checkin-card" className="wl-card" aria-labelledby="wl-checkin-title">
-      <h2 id="wl-checkin-title" className="wl-label">
+    <section
+      data-part="checkin-card"
+      className="wl-paper wl-checkin"
+      aria-labelledby="wl-checkin-title"
+    >
+      <h2 id="wl-checkin-title" className="wl-checkin__title wl-type-label">
         {u.cardName}
       </h2>
-      <p>{line}</p>
-      <ul className="wl-plan__preview" aria-label={u.cardName}>
+      <p className="wl-checkin__line">{line}</p>
+      <ul className="wl-checkin__preview" aria-label={u.cardName}>
         {AREAS.map((area) => (
           <li key={area}>
             <span>{en.bodyMap.areas[area]}</span>{" "}
@@ -230,22 +246,23 @@ function CardReady({
       </ul>
       <button
         type="button"
-        className="wl-button--primary"
-        disabled={buttonsDisabled}
-        onClick={onAccept}
+        className="wl-checkin__accept"
+        aria-disabled={buttonsDisabled}
+        onClick={onAcceptClick}
       >
         {u.accept}
+        <TickIcon size={24} />
       </button>
       <button
         type="button"
         className="wl-button--secondary"
-        disabled={buttonsDisabled}
-        onClick={onKeep}
+        aria-disabled={buttonsDisabled}
+        onClick={onKeepClick}
       >
         {u.keep}
       </button>
       {write.failed ? <p role="alert">{en.uf11.saveFailed}</p> : null}
-      {!online ? <p className="wl-muted">{u.connectToUpdate}</p> : null}
+      {!online ? <p className="wl-type-label">{u.connectToUpdate}</p> : null}
     </section>
   );
 }

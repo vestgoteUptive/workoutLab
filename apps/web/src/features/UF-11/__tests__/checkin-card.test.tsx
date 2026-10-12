@@ -282,22 +282,32 @@ describe("T-0308c AC-6 offline, both values", () => {
     await waitFor(() => expect(screen.getByRole("button", { name: u.accept })).toBeInTheDocument());
     const node = document.querySelector('[data-part="checkin-card"]');
     expect(node).not.toBeNull();
-    expect(screen.getByRole("button", { name: u.accept })).toBeDisabled();
-    expect(screen.getByRole("button", { name: u.keep })).toBeDisabled();
+    expect(screen.getByRole("button", { name: u.accept })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: u.keep })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText(u.connectToUpdate)).toBeInTheDocument();
 
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     fireEvent(window, new Event("online"));
 
-    await waitFor(() => expect(screen.getByRole("button", { name: u.accept })).toBeEnabled());
-    expect(screen.getByRole("button", { name: u.keep })).toBeEnabled();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: u.accept })).toHaveAttribute(
+        "aria-disabled",
+        "false",
+      ),
+    );
+    expect(screen.getByRole("button", { name: u.keep })).toHaveAttribute("aria-disabled", "false");
     expect(screen.queryByText(u.connectToUpdate)).not.toBeInTheDocument();
     expect(document.querySelector('[data-part="checkin-card"]')).toBe(node);
 
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     fireEvent(window, new Event("offline"));
-    await waitFor(() => expect(screen.getByRole("button", { name: u.accept })).toBeDisabled());
-    expect(screen.getByRole("button", { name: u.keep })).toBeDisabled();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: u.accept })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      ),
+    );
+    expect(screen.getByRole("button", { name: u.keep })).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText(u.connectToUpdate)).toBeInTheDocument();
     expect(document.querySelector('[data-part="checkin-card"]')).toBe(node);
   });

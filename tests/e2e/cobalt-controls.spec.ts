@@ -78,11 +78,13 @@ test.describe("AC1 unchanged outside a state", () => {
     await page.goto(path);
   }
 
-  test("/plan: the primary button is accent, 14px, DM Sans", async ({ page }) => {
-    await open(page, "/plan", UF11_FIXTURES);
-    const button = page.locator(".wl-button--primary").first();
-    await expect(button).toBeVisible();
-    const [bg, radius, family] = await css(page, ".wl-button--primary", [
+  // T-0612: /plan is a plan-state screen now, so the legacy primary is proven on an injected
+  // no-state fixture (the same assertions as before).
+  test("a no-state primary button is accent, 14px, DM Sans", async ({ page }) => {
+    await page.goto("/welcome");
+    await expect(page.locator("h1").first()).toBeVisible();
+    await inject(page, `<button id="p" class="wl-button--primary">Go</button>`);
+    const [bg, radius, family] = await css(page, "#p", [
       "background-color",
       "border-radius",
       "font-family",

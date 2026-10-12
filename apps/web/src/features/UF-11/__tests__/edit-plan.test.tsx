@@ -135,23 +135,23 @@ describe("AC-B7 initial state; Save disabled while unchanged (D-0081 §2)", () =
     expect(listRows(u.previewHeading)).toEqual(
       AREAS.map((a, i) => `${en.bodyMap.areas[a]} ${F_SETS[i]}`),
     );
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
   });
 
   it("changing the goal enables Save; changing it back disables it again", async () => {
     await openEdit();
     await tap(screen.getByRole("radio", { name: u.goals.get_stronger }));
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "false");
     await tap(screen.getByRole("radio", { name: u.goals.build_muscle }));
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
   });
 
   it("selecting then deselecting a chip leaves Save disabled", async () => {
     await openEdit();
     await tap(chip("back"));
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "false");
     await tap(chip("back"));
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
   });
 
   it("contrast: re-selecting the SAME priority set in a different order keeps Save disabled", async () => {
@@ -159,14 +159,14 @@ describe("AC-B7 initial state; Save disabled while unchanged (D-0081 §2)", () =
     // now ["arms", "back"], a different order but the same SET, so D-0081 §2 says unchanged.
     await openEdit({ priorityAreas: ["back", "arms"] });
     expect(pressedAreas()).toEqual(["back", "arms"]);
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
     await tap(chip("arms"));
     await tap(chip("back"));
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "false");
     await tap(chip("arms"));
     await tap(chip("back"));
     expect(pressedAreas()).toEqual(["back", "arms"]);
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
   });
 
   it("contrast: a DIFFERENT set of the same size enables Save", async () => {
@@ -175,7 +175,7 @@ describe("AC-B7 initial state; Save disabled while unchanged (D-0081 §2)", () =
     await tap(chip("arms"));
     await tap(chip("core"));
     expect(pressedAreas()).toEqual(["back", "core"]);
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "false");
   });
 });
 
@@ -292,17 +292,35 @@ describe("AC-B9 rhythm steppers, through the engine", () => {
   it("at 1–1 both decrease buttons are disabled", async () => {
     await openEdit({ rhythmMin: 1, rhythmMax: 1 });
     expect(readout()).toBe("1–1 per week · 2–2 per 14 days");
-    expect(screen.getByRole("button", { name: u.decreaseMin })).toBeDisabled();
-    expect(screen.getByRole("button", { name: u.decreaseMax })).toBeDisabled();
-    expect(screen.getByRole("button", { name: u.increaseMin })).toBeEnabled();
-    expect(screen.getByRole("button", { name: u.increaseMax })).toBeEnabled();
+    expect(screen.getByRole("button", { name: u.decreaseMin })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: u.decreaseMax })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: u.increaseMin })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
+    expect(screen.getByRole("button", { name: u.increaseMax })).toHaveAttribute(
+      "aria-disabled",
+      "false",
+    );
   });
 
   it("at 7–7 both increase buttons are disabled and the preview reads `Chest 30`", async () => {
     await openEdit({ rhythmMin: 7, rhythmMax: 7 });
     expect(readout()).toBe("7–7 per week · 14–14 per 14 days");
-    expect(screen.getByRole("button", { name: u.increaseMin })).toBeDisabled();
-    expect(screen.getByRole("button", { name: u.increaseMax })).toBeDisabled();
+    expect(screen.getByRole("button", { name: u.increaseMin })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: u.increaseMax })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     expect(previewOf("chest")).toBe("Chest 30");
   });
 
@@ -318,7 +336,7 @@ describe("AC-B9 rhythm steppers, through the engine", () => {
     for (let i = 0; i < 20; i += 1) {
       const name = names[Math.floor(next() * names.length)]!;
       const button = screen.getByRole("button", { name }) as HTMLButtonElement;
-      if (!button.disabled) await tap(button);
+      if (button.getAttribute("aria-disabled") !== "true") await tap(button);
       const [, min, max] = /^(\d)–(\d) per week/.exec(readout())!;
       expect(Number(min)).toBeGreaterThanOrEqual(1);
       expect(Number(max)).toBeLessThanOrEqual(7);
@@ -475,7 +493,7 @@ describe("a refresh that changes the cached profile does not disturb the draft (
 
     // The user edits: pick Back. That is a change against F, so Save is live.
     await tap(chip("back"));
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "false");
 
     // Let the refresh and the second cache read complete.
     await act(async () => {
@@ -487,7 +505,7 @@ describe("a refresh that changes the cached profile does not disturb the draft (
     expect(readout()).toBe("3–4 per week · 6–8 per 14 days");
     expect(screen.getByRole("radio", { name: u.goals.build_muscle })).toBeChecked();
     // And the baseline is still F, so the edit still counts as a change.
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "false");
   });
 
   it("going back to the F values after such a refresh disables Save again — the baseline is still F", async () => {
@@ -511,7 +529,7 @@ describe("a refresh that changes the cached profile does not disturb the draft (
     // Undo the only edit: the draft equals F again.
     await tap(chip("back"));
     expect(pressedAreas()).toEqual([]);
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
   });
 
   it("the form is not remounted by the refresh: the `Pick up to 3` hint survives it", async () => {

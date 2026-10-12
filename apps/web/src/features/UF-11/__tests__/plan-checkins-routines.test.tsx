@@ -2,7 +2,7 @@
 // "States"): headings, one primary action, the Check-ins card, the Routines card, loading and
 // cold cache, offline. AC7 (touch targets) and AC9 (UF-02.1) are Playwright.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { en } from "../../../lib/i18n/en.js";
 import { checkin, profileF, targetsF, TZ } from "./fixtures.js";
 import { BENCH, sessionsFrom } from "./checkin-writes-helpers.js";
@@ -106,34 +106,28 @@ describe("T-0549 AC2 one primary action", () => {
     expect(primaries()).toHaveLength(1);
   });
 
-  it("pending proposal: Accept is the one primary, Edit plan is secondary and still a link", async () => {
+  // T-0612 (AC-T0601): Accept is the paper action, not a second white primary; Edit plan stays
+  // the one `.wl-button--primary` while the card is pending.
+  it("pending proposal: Edit plan stays the one primary, Accept is the paper action", async () => {
     await readyPending();
     const edit = screen.getByRole("link", { name: u.editPlan });
-    // Edit plan flips one render tick after the card shows (passive effect): wait on the class.
-    await waitFor(() => expect(edit).toHaveClass("wl-button--secondary"));
-    expect(edit).not.toHaveClass("wl-button--primary");
-    await waitFor(() => expect(primaries()).toHaveLength(1));
+    expect(edit).toHaveClass("wl-button--primary");
     expect(edit).toHaveAttribute("href", "/plan/edit");
-    expect(screen.getByRole("button", { name: u.checkin.accept })).toHaveClass(
-      "wl-button--primary",
-    );
+    const accept = screen.getByRole("button", { name: u.checkin.accept });
+    expect(accept).toHaveClass("wl-checkin__accept");
+    expect(accept).not.toHaveClass("wl-button--primary");
     expect(screen.getByRole("button", { name: u.checkin.keep })).toHaveClass(
       "wl-button--secondary",
     );
     expect(primaries()).toHaveLength(1);
   });
 
-  it("Edit plan goes back to primary once the card is answered away", async () => {
+  it("the check-in card is the paper panel, only while a check-in is pending", async () => {
     await readyPending();
-    fireEvent.click(screen.getByRole("button", { name: u.checkin.keep }));
-    await waitFor(() =>
-      expect(screen.queryByRole("button", { name: u.checkin.accept })).not.toBeInTheDocument(),
-    );
-    // The visibility signal is a passive effect cleanup, so it lands a tick after the DOM.
-    await waitFor(() =>
-      expect(screen.getByRole("link", { name: u.editPlan })).toHaveClass("wl-button--primary"),
-    );
-    expect(primaries()).toHaveLength(1);
+    expect(root().querySelector('[data-part="checkin-card"]')).toHaveClass("wl-paper");
+    cleanup();
+    await readyPlain();
+    expect(root().querySelector(".wl-paper")).toBeNull();
   });
 });
 
@@ -149,10 +143,10 @@ describe("T-0549 AC3 Check-ins card", () => {
     });
     const c = within(card());
     expect(c.getByText("First check-in")).toBeInTheDocument();
-    expect(c.getByText(/^\d{1,2} [A-Z][a-z]{2}$/)).toHaveClass("wl-stat");
+    expect(c.getByText(/^\d{1,2} [A-Z][a-z]{2}$/)).toHaveClass("wl-type-stat");
     expect(c.getByText("No check-ins yet")).toBeInTheDocument();
     expect(c.queryByRole("list")).not.toBeInTheDocument();
-    expect(c.getByText(u.checkinsExplain)).toHaveClass("wl-muted");
+    expect(c.getByText(u.checkinsExplain)).toHaveClass("wl-type-label");
     expect(u.checkinsExplain).toBe(
       "Every 14 days we compare your sessions with your rhythm. If you're under or over two periods in a row, we suggest a new rhythm. Nothing changes until you accept.",
     );
@@ -203,8 +197,7 @@ describe("T-0549 AC4 Routines card", () => {
     );
     const add = screen.getByRole("link", { name: u.newRoutine });
     expect(add).toHaveAttribute("href", "/plan/routines/new");
-    expect(add).toHaveClass("wl-button--secondary");
-    expect(add.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
+    expect(add).toHaveClass("wl-button--text");
     expect(primaries()).toHaveLength(1);
   });
 
@@ -225,7 +218,7 @@ describe("T-0549 AC5 loading and cold cache", () => {
     expect(root().querySelector("header")).not.toBeNull();
     const status = within(root() as HTMLElement).getByRole("status");
     expect(status).toHaveTextContent("Loading your plan");
-    expect(status).toHaveClass("wl-caption");
+    expect(status).toHaveClass("wl-type-label");
     expect(h2s()).toEqual([]);
   });
 
@@ -234,7 +227,7 @@ describe("T-0549 AC5 loading and cold cache", () => {
     freshDb();
     renderPlan({ now: NOW_LOCAL });
     const line = await screen.findByText(u.coldCache);
-    expect(line.closest("p")).toHaveClass("wl-plan__notice");
+    expect(line.closest("p")).toHaveClass("wl-plan__cold");
     expect(root().querySelector("header")).not.toBeNull();
     expect(h2s()).toEqual([]);
     expect(within(root() as HTMLElement).queryByRole("status")).not.toBeInTheDocument();
@@ -250,11 +243,12 @@ describe("T-0549 AC6 offline", () => {
     renderPlan({ now: NOW_LOCAL });
     const accept = await screen.findByRole("button", { name: u.checkin.accept });
     await waitFor(() => expect(tiles()).not.toBeNull());
-    expect(accept).toBeDisabled();
-    expect(screen.getByRole("button", { name: u.checkin.keep })).toBeDisabled();
+    expect(accept).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: u.checkin.keep })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
     const edit = screen.getByRole("link", { name: u.editPlan });
-    // Edit plan flips to secondary one render tick after the card state settles (passive effect).
-    await waitFor(() => expect(edit).toHaveClass("wl-button--secondary"));
     expect(edit).toHaveAttribute("href", "/plan/edit");
     expect(screen.getByRole("link", { name: "Push, 1 exercise" })).toHaveAttribute(
       "href",
@@ -274,6 +268,8 @@ describe("T-0549 check-in card preview rows", () => {
     expect(row.children[0]).toHaveTextContent("Chest");
     expect(row.children[1]).toHaveClass("wl-plan__nums");
     expect(row.children[1]).toHaveTextContent("→");
-    expect(screen.getByRole("heading", { level: 2, name: "Check-in" })).toHaveClass("wl-label");
+    expect(screen.getByRole("heading", { level: 2, name: "Check-in" })).toHaveClass(
+      "wl-checkin__title",
+    );
   });
 });

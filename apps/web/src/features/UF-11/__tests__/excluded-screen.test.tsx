@@ -149,10 +149,10 @@ describe("AC1 row on UF-11.2 and the list", () => {
     const { container } = render(tree("/plan"));
     const link = await screen.findByRole("link", { name: "Excluded exercises, 2" });
     expect(link).toHaveTextContent("Excluded exercises · 2");
-    const cards = [...container.querySelectorAll("section.wl-card")];
-    const at = cards.findIndex((c) => c.contains(link));
-    expect(cards[at - 1]).toHaveTextContent("Favorite exercises");
-    expect(cards[at + 1]).toHaveAccessibleName("Targets");
+    const group = container.querySelector(".wl-plan__links")!;
+    const links = [...group.children];
+    expect(links[links.indexOf(link) - 1]).toHaveTextContent("Favorite exercises");
+    expect(group.nextElementSibling).toHaveAccessibleName("Targets");
 
     fireEvent.click(link);
     await screen.findByRole("heading", { level: 1, name: "Excluded exercises" });
