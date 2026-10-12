@@ -125,7 +125,7 @@ test.describe("AC-8 forced colours", () => {
 test.describe("T-0615 AC3 plan primary and secondary (UF-04.2)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("primary is plan.ink, hatch is ink lines on ink at 16 %; a fixture host with no state keeps Chalk text", async ({
+  test("primary is plan.ink, hatch is ink lines on ink at 16 %; a fixture host with no state reads plan ink", async ({
     page,
   }, testInfo) => {
     await open(page);
@@ -160,7 +160,7 @@ test.describe("T-0615 AC3 plan primary and secondary (UF-04.2)", () => {
     expect(await page.evaluate(() => document.documentElement.hasAttribute("data-wl-state"))).toBe(
       false,
     );
-    expect(await fillOf(primary)).toBe(await resolved("var(--wl-color-text)"));
+    expect(await fillOf(primary)).toBe(await resolved("var(--wl-color-plan-ink)"));
 
     await page.evaluate(() => {
       document.documentElement.setAttribute("data-wl-state", "plan");

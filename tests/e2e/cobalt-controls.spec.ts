@@ -66,7 +66,7 @@ test.describe("AC1 unchanged outside a state", () => {
 
   // T-0612: /plan is a plan-state screen now, so the legacy primary is proven on an injected
   // no-state fixture (the same assertions as before).
-  test("a no-state primary button is accent, 14px, DM Sans", async ({ page }) => {
+  test("a no-state primary button is plan.action, 14px, plan font", async ({ page }) => {
     await page.goto("/welcome");
     await expect(page.locator("h1").first()).toBeVisible();
     await inject(page, `<button id="p" class="wl-button--primary">Go</button>`);
@@ -75,14 +75,14 @@ test.describe("AC1 unchanged outside a state", () => {
       "border-radius",
       "font-family",
     ]);
-    expect(bg).toBe(rgb(flat.accent!));
+    expect(bg).toBe(rgb(plan.action!));
     expect(radius).toBe("14px");
-    expect(family.startsWith('"DM Sans"')).toBe(true);
+    expect(family.startsWith('"Familjen Grotesk"')).toBe(true);
   });
 
   // T-0613: /plan/account is a plan-state screen now, so the legacy secondary is proven on an
   // injected no-state fixture (the same assertions as before).
-  test("a no-state secondary button keeps 14px and DM Sans", async ({ page }) => {
+  test("a no-state secondary button is plan.raise, 14px, plan font", async ({ page }) => {
     await page.goto("/welcome");
     await expect(page.locator("h1").first()).toBeVisible();
     await inject(page, `<button id="s" class="wl-button--secondary">Sign out</button>`);
@@ -91,9 +91,9 @@ test.describe("AC1 unchanged outside a state", () => {
       "border-radius",
       "font-family",
     ]);
-    expect(bg).toBe(rgb(flat["surface-2"]!));
+    expect(bg).toBe(rgb(plan.raise!));
     expect(radius).toBe("14px");
-    expect(family.startsWith('"DM Sans"')).toBe(true);
+    expect(family.startsWith('"Familjen Grotesk"')).toBe(true);
   });
 
   test("outside a state the new look is absent on a bare fixture", async ({ page }) => {
@@ -334,7 +334,7 @@ test.describe("controls inside a state (390 x 844)", () => {
     }
   });
 
-  test("AC7 no cards under a state, the surface fill outside it", async ({ page }) => {
+  test("AC7 no cards under a state, the raise fill outside it (plan)", async ({ page }) => {
     await inject(
       page,
       `<div data-wl-state="plan"><div id="in" class="wl-card">Inside</div></div>
@@ -349,7 +349,7 @@ test.describe("controls inside a state (390 x 844)", () => {
       ]),
     ).toEqual([TRANSPARENT, "0px", "0px", "0px"]);
     expect(await css(page, "#out", ["background-color", "border-radius"])).toEqual([
-      rgb(flat.surface!),
+      rgb(plan.raise!),
       "16px",
     ]);
   });

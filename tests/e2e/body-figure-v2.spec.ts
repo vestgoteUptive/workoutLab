@@ -348,7 +348,7 @@ test.describe("T-0660 AC6 accessibility", () => {
 test.describe("T-0660 AC7 unmigrated screens stay legible", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("UF-10.1 with no state: ink and seams come from the Chalk and Iron :root", async ({
+  test("UF-10.1 with no state: ink and seams come from the plan :root", async ({
     page,
   }, testInfo) => {
     await openBalance(page);
@@ -359,23 +359,23 @@ test.describe("T-0660 AC7 unmigrated screens stay legible", () => {
     const svg = fullMap(page).locator("svg");
     const pageBg = await css(page.locator("body"), "background-color");
     const seam = await css(svg.locator(".wl-fig__region--step-0"), "stroke");
-    expect(seam).toBe(await resolved(page, "var(--wl-color-bg)"));
-    expect(pageBg).toBe(await resolved(page, "var(--wl-color-bg)"));
+    expect(seam).toBe(await resolved(page, "var(--wl-color-plan-bg)"));
+    expect(pageBg).toBe(await resolved(page, "var(--wl-color-plan-bg)"));
     await fullMap(page).screenshot({ path: testInfo.outputPath("uf-10-1-unmigrated.png") });
     await page.screenshot({ path: testInfo.outputPath("uf-10-1-unmigrated-page.png") });
   });
 
-  test("a detached detail figure with no state reads the Chalk and Iron :root", async ({
+  test("a detached detail figure with no state reads the plan :root", async ({
     page,
   }, testInfo) => {
     await openLibrary(page);
     await detachFigure(page);
     const svg = page.locator("#no-state-host svg.wl-fig");
     expect(await css(svg.locator(".wl-fig__region--primary"), "fill")).toBe(
-      await resolved(page, "var(--wl-color-text)"),
+      await resolved(page, "var(--wl-color-plan-ink)"),
     );
     expect(await css(svg.locator(".wl-fig__region--primary"), "stroke")).toBe(
-      await resolved(page, "var(--wl-color-bg)"),
+      await resolved(page, "var(--wl-color-plan-bg)"),
     );
     await page.screenshot({ path: testInfo.outputPath("uf-04-2-unmigrated.png") });
   });

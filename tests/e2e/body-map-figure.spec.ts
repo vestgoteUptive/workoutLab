@@ -360,7 +360,7 @@ test.describe("T-0615 / T-0660 AC1 plan colours (UF-10.1)", () => {
 test.describe("T-0615 AC2 / T-0660 AC7 unmigrated screens (no state)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
-  test("the v2 art reads the Chalk & Iron --wl-bg and --wl-ink from :root", async ({ page }) => {
+  test("the v2 art reads the plan --wl-bg and --wl-ink from :root", async ({ page }) => {
     await open(page, "ramp", "/balance");
     await ready(page);
     await detachMap(page);
@@ -369,20 +369,20 @@ test.describe("T-0615 AC2 / T-0660 AC7 unmigrated screens (no state)", () => {
     );
     const svg = fullMap(page).locator("svg");
     const chalk = (pct: number) =>
-      resolved(page, `color-mix(in srgb, var(--wl-color-text) ${pct}%, transparent)`);
+      resolved(page, `color-mix(in srgb, var(--wl-color-plan-ink) ${pct}%, transparent)`);
     expect(await paint(svg.locator(".wl-fig__region--step-4"), "fill")).toBe(
-      await resolved(page, "var(--wl-color-text)"),
+      await resolved(page, "var(--wl-color-plan-ink)"),
     );
     expect(await paint(svg.locator(".wl-fig__region--step-3"), "fill")).toBe(await chalk(32));
     expect(await paint(svg.locator(".wl-fig__body"), "fill")).toBe(await chalk(16));
     expect(await paint(svg.locator(".wl-fig__region--step-3"), "stroke")).toBe(
-      await resolved(page, "var(--wl-color-bg)"),
+      await resolved(page, "var(--wl-color-plan-bg)"),
     );
     expect(await paint(svg.locator(".wl-fig__halo-warn"), "stroke")).toBe(
-      await resolved(page, "var(--wl-color-warn)"),
+      await resolved(page, "var(--wl-color-plan-attention)"),
     );
     expect(await paint(svg.locator(".wl-fig__halo-gap"), "stroke")).toBe(
-      await resolved(page, "var(--wl-color-bg)"),
+      await resolved(page, "var(--wl-color-plan-bg)"),
     );
   });
 });

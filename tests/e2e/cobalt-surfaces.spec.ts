@@ -159,14 +159,12 @@ test.describe("390 x 844", () => {
     expect((await css(page, "#u", ["color"]))[0]).toBe(rgb(plan["ink-muted"]!));
   });
 
-  test("AC1 outside a state the box keeps the legacy muted border and accent fill", async ({
-    page,
-  }) => {
+  test("AC1 outside a state the box reads plan.ink-muted and plan.action", async ({ page }) => {
     await inject(page, `${checkbox("lo")}${checkbox("lc", true)}`);
     const box = (await page.locator("#lo input").boundingBox())!;
     expect([box.width, box.height]).toEqual([24, 24]);
-    expect((await css(page, "#lo input", ["border-top-color"]))[0]).toBe(rgb(flat["text-muted"]!));
-    expect(await css(page, "#lc input", ["background-color"])).toEqual([rgb(flat.accent!)]);
+    expect((await css(page, "#lo input", ["border-top-color"]))[0]).toBe(rgb(plan["ink-muted"]!));
+    expect(await css(page, "#lc input", ["background-color"])).toEqual([rgb(plan.action!)]);
   });
 
   const toggle = (id: string, checked: boolean) =>
@@ -439,7 +437,7 @@ test.describe("390 x 844", () => {
 
   const ICON = `<svg class="wl-excluded-notice__icon" id="ic" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg>`;
 
-  test("AC6 excluded-areas notice: plan.raise with plan.ink, surface-2 outside a state", async ({
+  test("AC6 excluded-areas notice: plan.raise with plan.ink, plan.raise outside a state", async ({
     page,
   }) => {
     await inject(
@@ -459,8 +457,8 @@ test.describe("390 x 844", () => {
       `<p id="n" class="wl-excluded-notice">${ICON}<span>Not suggested: Quads.</span></p>`,
     );
     expect(await css(page, "#n", ["background-color", "color"])).toEqual([
-      rgb(flat["surface-2"]!),
-      rgb(flat["text-muted"]!),
+      rgb(plan.raise!),
+      rgb(plan["ink-muted"]!),
     ]);
   });
 
@@ -475,10 +473,10 @@ test.describe("390 x 844", () => {
     await inject(page, `<div data-wl-state="lift">${markup}</div>`);
     expect((await css(page, "#t", ["color"]))[0]).toBe(rgb(lift.ink!));
     await inject(page, markup);
-    expect((await css(page, "#t", ["color"]))[0]).toBe(rgb(flat["text-muted"]!));
+    expect((await css(page, "#t", ["color"]))[0]).toBe(rgb(plan["ink-muted"]!));
   });
 
-  test("AC6 account-deleted notice: raise and ink in a state, legacy surface outside", async ({
+  test("AC6 account-deleted notice: raise and ink in a state, plan raise outside", async ({
     page,
   }) => {
     const markup = `<div id="n" role="status" class="wl-account-deleted"><p class="wl-account-deleted__text">Deleted</p>
@@ -492,9 +490,9 @@ test.describe("390 x 844", () => {
     expect((await css(page, "#b", ["color"]))[0]).toBe(rgb(plan.ink!));
     await inject(page, markup);
     expect(await css(page, "#n", ["background-color", "border-top-left-radius"])).toEqual([
-      rgb(flat.surface!),
+      rgb(plan.raise!),
       "8px",
     ]);
-    expect((await css(page, "#b", ["color"]))[0]).toBe(rgb(flat.accent!));
+    expect((await css(page, "#b", ["color"]))[0]).toBe(rgb(plan.action!));
   });
 });

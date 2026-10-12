@@ -204,7 +204,7 @@ describe("AC-4 Balance card through the engine", () => {
       expect(row.textContent).toContain(`${area.load} / ${area.target}`);
       const fill = row.querySelector("[data-coverage-step]") as HTMLElement;
       expect(fill.getAttribute("data-coverage-step")).toBe(String(area.coverageStep));
-      expect(fill.style.backgroundColor).toBe(`var(--wl-color-coverage-${area.coverageStep})`);
+      expect(fill.style.backgroundColor).toBe(`var(--wl-coverage-${area.coverageStep})`);
     });
   });
 });
@@ -254,11 +254,11 @@ describe("AC-5 Balance card, stubbed", () => {
     const [a, b] = [...container.querySelectorAll("[data-area]")] as HTMLElement[];
     expect(a!.textContent).toContain("3 / 20");
     expect((a!.querySelector("[data-coverage-step]") as HTMLElement).style.backgroundColor).toBe(
-      "var(--wl-color-coverage-4)",
+      "var(--wl-coverage-4)",
     );
     expect(b!.textContent).toContain("19 / 20");
     expect((b!.querySelector("[data-coverage-step]") as HTMLElement).style.backgroundColor).toBe(
-      "var(--wl-color-coverage-0)",
+      "var(--wl-coverage-0)",
     );
   });
 
@@ -332,7 +332,7 @@ describe("AC-7 zero history", () => {
       expect(row.getAttribute("data-area")).toBe(expected[i]!.area);
       expect(row.textContent).toContain(`0 / ${expected[i]!.target}`);
       expect((row.querySelector("[data-coverage-step]") as HTMLElement).style.backgroundColor).toBe(
-        "var(--wl-color-coverage-0)",
+        "var(--wl-coverage-0)",
       );
     });
     unmount();

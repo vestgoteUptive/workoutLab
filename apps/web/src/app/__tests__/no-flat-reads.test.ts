@@ -13,7 +13,7 @@ const FLAT =
  * Known remaining reads in feature folders, which this ticket may not edit. Each entry is a
  * follow-up for that feature lane; delete the entry when the lane migrates it.
  */
-const PENDING_FEATURE_FOLLOW_UPS = new Set(["src/features/UF-06/BalanceCard.tsx"]);
+const PENDING_FEATURE_FOLLOW_UPS = new Set<string>([]);
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -48,12 +48,6 @@ describe("T-0624 AC1 no flat legacy reads in apps/web", () => {
       (h) => ![...PENDING_FEATURE_FOLLOW_UPS].some((f) => h.startsWith(`${f}:`)),
     );
     expect(hits).toEqual([]);
-  });
-
-  it("the allow-list holds only files that still read one", () => {
-    for (const f of PENDING_FEATURE_FOLLOW_UPS) {
-      expect(flatReads([join(WEB, f)]).length, f).toBeGreaterThan(0);
-    }
   });
 
   it("catches a planted use", () => {
