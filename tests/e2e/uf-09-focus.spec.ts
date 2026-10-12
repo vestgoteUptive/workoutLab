@@ -12,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import AxeBuilder from "@axe-core/playwright";
+import { tokens } from "@workoutlab/design-tokens";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
 import { goOffline } from "./fixtures/offline.js";
@@ -590,6 +591,12 @@ async function sessionRowFor(page: Page, sessionId: string): Promise<StoredSessi
   }, sessionId);
 }
 
+/** "#RRGGBB" as the "rgb(r, g, b)" a computed style reports. */
+function rgbOfHex(hex: string): string {
+  const n = (i: number) => parseInt(hex.slice(i, i + 2), 16);
+  return `rgb(${n(1)}, ${n(3)}, ${n(5)})`;
+}
+
 /** Moves focus with `key` until `target` has it (keyboard only, no clicks). */
 async function keyTo(
   page: Page,
@@ -606,7 +613,8 @@ async function keyTo(
 test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
   test("UF-09.1 → bench-press × 4 → UF-09.8 Trim → UF-09.6; Pause → UF-09.9 → End workout → UF-03.3", async ({
     page,
-  }) => {
+  }, testInfo) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.clock.install();
     await page.goto("/");
     await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
@@ -642,12 +650,40 @@ test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
     // The check has been made at the frozen moment; from here the clock may flow (axe needs it).
     await page.clock.resume();
     await expect(check.getByText("lateral-raise 3 → 2 sets")).toBeVisible();
-    const trim = check.getByRole("button", { name: "Trim" });
-    await expect(trim).toBeVisible();
-    await expect(check.getByRole("button", { name: "Continue" })).toBeFocused();
+    // T-0598: the options are radios (Continue picked), Continue is the one primary and applies the pick.
+    const keep = check.getByRole("radio", { name: "Continue" });
+    const trim = check.getByRole("radio", { name: "Trim" });
+    const skip = check.getByRole("radio", { name: "Skip next" });
+    const apply = check.getByRole("button", { name: "Continue" });
+    await expect(trim).toBeAttached();
+    await expect(apply).toBeFocused();
+    await expect(keep).toBeChecked();
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+    await expect(page.locator("[data-screen-id]")).toHaveAttribute("data-wl-state", "plan");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+      "content",
+      tokens.color.plan.bg,
+    );
     await expectAxeClean(page);
-    await keyTo(page, trim);
+    // Every option row and the primary are at least 44 px tall.
+    for (const radio of [keep, trim, skip]) {
+      const box = await radio.locator("xpath=ancestor::label").boundingBox();
+      expect(box!.height).toBeGreaterThanOrEqual(44);
+    }
+    expect((await apply.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await page.screenshot({ path: testInfo.outputPath("uf09-8-time-check.png") });
+    await compareWithCanvas(page, testInfo, { turn: "turn-4", frame: "Time check" });
+    // Arrow keys move the selection (native radios): Shift+Tab to the group, then down and up.
+    await keyTo(page, keep, "Shift+Tab");
+    await page.keyboard.press("ArrowDown");
+    await expect(trim).toBeChecked();
+    await expect(trim).toBeFocused();
+    await page.keyboard.press("ArrowDown");
+    await expect(skip).toBeChecked();
+    await page.keyboard.press("ArrowUp");
+    await expect(trim).toBeChecked();
+    await expect(keep).not.toBeChecked();
+    await keyTo(page, apply);
     await page.keyboard.press("Enter");
 
     // UF-09.6 barbell-row, on the trimmed plan, saved to IndexedDB.
@@ -670,7 +706,28 @@ test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
     const end = paused.getByRole("button", { name: "End workout" });
     await expect(end).toBeVisible();
     await expect(page.locator("a[href]")).toHaveCount(0);
+    // T-0598: the plan state, theme-color plan.bg, rows and Resume at least 44 px, End last.
+    await expect(paused).toHaveAttribute("data-wl-state", "plan");
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+      "content",
+      tokens.color.plan.bg,
+    );
+    for (const control of await paused
+      .locator("button.wl-row, .wl-uf09__resume, .wl-uf09__end")
+      .all()) {
+      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+    await expect(paused.locator("button, a[href], input").last()).toHaveText("End workout");
+    // The 1.5px width is in main.css (t0598.css.test.ts); Chromium rounds it to 1px at 1x.
+    await expect(end).toHaveCSS("border-top-color", rgbOfHex(tokens.color.plan.ink));
+    await expect(end).not.toHaveClass(/wl-button--primary/);
+    await expect(paused.getByRole("button", { name: "Resume" })).toHaveCSS(
+      "background-color",
+      rgbOfHex(tokens.color.lift.bg),
+    );
     await expectAxeClean(page);
+    await page.screenshot({ path: testInfo.outputPath("uf09-9-paused.png") });
+    await compareWithCanvas(page, testInfo, { turn: "turn-4", frame: "Paused" });
 
     // End workout → the confirm in place (Cancel focused) → End workout → UF-03.3.
     await keyTo(page, end);
@@ -678,6 +735,7 @@ test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
     await expect(paused.getByText("End workout? Your sets are saved.")).toBeVisible();
     await expect(paused.getByRole("button", { name: "Cancel" })).toBeFocused();
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+    await expectAxeClean(page);
     await keyTo(page, paused.getByRole("button", { name: "End workout" }), "Shift+Tab");
     await page.keyboard.press("Enter");
     await expect(page.locator('[data-screen-id="UF-03.3"]')).toBeVisible();

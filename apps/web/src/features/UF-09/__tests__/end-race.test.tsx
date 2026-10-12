@@ -65,7 +65,10 @@ async function storedRow(): Promise<SessionRow> {
 }
 
 async function click(name: string) {
-  fireEvent.click(screen.getByRole("button", { name }));
+  // T-0598: the time-check options are radios and Continue applies the picked one.
+  const radio = screen.queryByRole("radio", { name });
+  if (radio) fireEvent.click(radio);
+  fireEvent.click(screen.getByRole("button", { name: radio ? "Continue" : name }));
   await flushReal();
 }
 

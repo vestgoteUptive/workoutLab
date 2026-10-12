@@ -41,7 +41,8 @@ const BUTTONS: Partial<Record<Phase, string[]>> = {
   timed: ["Pause workout", "Pause timer"],
   set: ["Pause workout", "Done set"],
   confirm: ["Pause workout", "Fewer reps", "More reps", "Less weight", "More weight", "Save"],
-  timeCheck: ["Pause workout", "Continue", "Trim", "Skip next"],
+  // T-0598: Trim and Skip next are radios now, picked and then applied by Continue.
+  timeCheck: ["Pause workout", "Continue"],
 };
 const NON_PAUSED: Phase[] = [
   "getReady",

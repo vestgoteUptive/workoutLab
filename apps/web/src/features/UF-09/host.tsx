@@ -500,13 +500,16 @@ function Machine(props: MachineProps) {
         data-screen-id={SCREEN_IDS[phase]}
         // T-0595 (D-0208, D-0210): the set and its confirm are the lift state. T-0596: the warm-up and the timed set
         // too, with the deep fill. T-0597: Get ready, Rest and Next exercise are the rest state with the
-        // lift-over-rest fill. The other views join as T-0598 restyles them, until then they keep the legacy look.
+        // lift-over-rest fill. T-0598: the time check and Paused are decisions made mid-session, so
+        // they are the plan state (D-0208 §2).
         data-wl-state={
           fill !== null
             ? drainTone(phase)
             : phase === "set" || phase === "confirm"
               ? "lift"
-              : undefined
+              : phase === "timeCheck" || phase === "paused"
+                ? "plan"
+                : undefined
         }
         data-drain-reset={fill?.reset ? "true" : undefined}
         style={fill?.style}
