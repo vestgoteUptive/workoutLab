@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.3]
 decisions: [D-0217, D-0218, D-0066, D-0212, D-0208]
 deps: [T-0621, T-0632]
-status: todo
+status: doing
 ---
 <!-- Written by product-owner 2026-10-09 (spec, D-0217 §1). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "In session · set" (#turn-3). Spec: docs/specs/cobalt-mock-behaviour.md §3.1. Last ticket of the UF-09 folder chain (after T-0621); never in parallel with T-0580. -->
 
