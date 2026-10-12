@@ -10,7 +10,9 @@
 import { randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
+import { tokens } from "@workoutlab/design-tokens";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { compareWithCanvas } from "./helpers/canvas-compare.js";
 import {
   FAKE_USER_ID,
   injectSession,
@@ -425,5 +427,182 @@ test.describe("T-0422 AC-10 Swap from UF-09.9, offline", () => {
     expect(plan.items.map((i) => i.exerciseId)).toEqual([firstId, "barbell-row", "leg-curl"]);
     expect(plan.items[0]!.isMain).toBe(true);
     expect(plan.mainLiftId).toBe(firstId);
+  });
+});
+
+// ---- T-0602 (D-0208 §2, D-0210, D-0211; UF-05.1 over lift, UF-08.3 over plan) ----
+
+const PLAN_TOKENS = tokens.color.plan;
+const LIFT_TOKENS = tokens.color.lift;
+const rgbOf = (hex: string): string =>
+  `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
+
+/** The sheet's look, its controls and its motion, checked the same way over either host. */
+async function assertCobaltSheet(page: Page): Promise<void> {
+  const sheet = page.getByRole("dialog");
+  await expect(sheet).toHaveAttribute("data-wl-state", "plan");
+  const look = await sheet.evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return {
+      bg: cs.backgroundColor,
+      ink: cs.color,
+      top: el.getBoundingClientRect().top,
+      radius: cs.borderTopLeftRadius,
+      t: cs.transitionDuration,
+    };
+  });
+  expect(look.bg).toBe(rgbOf(PLAN_TOKENS.bg));
+  expect(look.ink).toBe(rgbOf(PLAN_TOKENS.ink));
+  expect(look.top).toBe(150);
+  expect(look.radius).toBe("28px");
+  expect(look.t).toBe("0s");
+  const scrim = await page.locator(".wl-sheet-scrim").evaluate((el) => {
+    const cs = getComputedStyle(el);
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = 1;
+    const ctx = cv.getContext("2d")!;
+    ctx.fillStyle = cs.backgroundColor;
+    ctx.fillRect(0, 0, 1, 1);
+    return { px: Array.from(ctx.getImageData(0, 0, 1, 1).data), t: cs.transitionDuration };
+  });
+  const want = [1, 3, 5].map((i) => parseInt(PLAN_TOKENS.scrim.slice(i, i + 2), 16));
+  for (const [i, v] of want.entries()) expect(Math.abs(scrim.px[i]! - v)).toBeLessThanOrEqual(4);
+  expect(scrim.px[3]! / 255).toBeCloseTo(0.45, 1);
+  expect(scrim.t).toBe("0s");
+
+  // The options: the selected one is a white block that bleeds 18 px past the plain rows.
+  const rows = sheet.getByRole("radiogroup", { name: "Replacement" }).locator("[data-id]");
+  expect(await rows.count()).toBeGreaterThanOrEqual(2);
+  const first = await rows.nth(0).evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { bg: cs.backgroundColor, x: el.getBoundingClientRect().left, ink: cs.color };
+  });
+  const second = await rows.nth(1).evaluate((el) => {
+    const cs = getComputedStyle(el);
+    return { bg: cs.backgroundColor, x: el.getBoundingClientRect().left };
+  });
+  expect(first.bg).toBe(rgbOf(PLAN_TOKENS.selected));
+  expect(first.ink).toBe(rgbOf(PLAN_TOKENS["on-selected"]));
+  expect(second.bg).toBe("rgba(0, 0, 0, 0)");
+  expect(second.x - first.x).toBe(18);
+
+  // Every control is at least 44 x 44 and nothing overflows sideways.
+  const small = await sheet.evaluate((el) => {
+    const sel = '.wl-chip, .wl-option, .wl-checkbox, button, input[type="checkbox"]';
+    return Array.from(el.querySelectorAll<HTMLElement>(sel))
+      .map((c) => ({ c: c.className || c.tagName, r: c.getBoundingClientRect() }))
+      .filter(({ c, r }) => !/input/i.test(c) && (r.height < 44 || r.width < 44))
+      .map(({ c, r }) => `${c} ${r.width}x${r.height}`);
+  });
+  expect(small).toEqual([]);
+  expect(await sheet.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+
+  const violations = (await new AxeBuilder({ page }).analyze()).violations.filter(
+    (v) => v.impact === "serious" || v.impact === "critical" || v.id === "color-contrast",
+  );
+  expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.html).join(" | ")}`)).toEqual([]);
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(await sheet.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe("0s");
+  expect(
+    await page.locator(".wl-sheet-scrim").evaluate((el) => getComputedStyle(el).transitionDuration),
+  ).toBe("0s");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  expect(await sheet.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe("0s");
+}
+
+test.describe("T-0602 the swap sheet is a plan sheet", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("over UF-09 (Pause, offline): plan sheet, plan theme-color, arrows move the selection, the checkbox is aria-disabled", async ({
+    page,
+    context,
+  }, testInfo) => {
+    await page.goto("/");
+    await expect(page.locator('[data-screen-id="UF-02.1"]')).toBeVisible();
+    await cachesFilled(page);
+    const id = randomUUID();
+    await seedSessionRow(page, id);
+    await page.goto(`/session/${id}`);
+    await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+    await precacheSettled(page);
+    await context.setOffline(true);
+    await page.reload();
+    await page.getByRole("button", { name: "Start now" }).click();
+    const current = page.locator('[data-screen-id="UF-09.3"]');
+    await expect(current.getByRole("heading", { level: 1, name: "Bench press" })).toBeVisible();
+    const theme = page.locator('meta[name="theme-color"]');
+    await expect(theme).toHaveAttribute("content", LIFT_TOKENS.bg);
+
+    await page.getByRole("button", { name: "Pause workout" }).click();
+    const paused = page.locator('[data-screen-id="UF-09.9"]');
+    await expect(paused).toBeVisible();
+    // UF-09 swaps its screen root for the overlay (UF-05.1 is the only [data-screen-id]), so the
+    // browser chrome follows the sheet: plan.bg. Pause itself has no state until T-0598.
+    await paused.getByRole("button", { name: "Swap" }).click();
+    const sheet = page.getByRole("dialog", { name: "Replace Bench press" });
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByRole("radiogroup", { name: "Replacement" })).toBeVisible();
+    await expect(theme).toHaveAttribute("content", PLAN_TOKENS.bg);
+    await assertCobaltSheet(page);
+
+    // Arrow keys move the selection (native radios).
+    const rows = sheet.getByRole("radiogroup", { name: "Replacement" }).locator("[data-id]");
+    const r0 = rows.nth(0).getByRole("radio");
+    const r1 = rows.nth(1).getByRole("radio");
+    await r0.focus();
+    await page.keyboard.press("ArrowDown");
+    await expect(r1).toBeChecked();
+    await expect(r0).not.toBeChecked();
+
+    // Offline: the box is aria-disabled with the one explanation line.
+    const box = sheet.getByRole("checkbox", { name: "Don't suggest Bench press again" });
+    await expect(box).toHaveAttribute("aria-disabled", "true");
+    await expect(sheet.getByText("Connect to change excluded exercises")).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath("uf05-1-swap-mid-workout.png") });
+    await compareWithCanvas(page, testInfo, { turn: "turn-5", frame: "Swap · mid-workout" });
+  });
+
+  test("over UF-08 (plan, online): the same sheet, the checkbox toggles, an over-time tag is attention text", async ({
+    page,
+  }, testInfo) => {
+    await page.goto("/session/setup");
+    await page.getByRole("button", { name: "30 minutes" }).click();
+    await page.getByRole("button", { name: "Suggest my workout" }).click();
+    await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
+    await page.locator('[data-part="swap"]').nth(1).click();
+    await expect(page.locator('[data-screen-id="UF-05.1"]')).toBeVisible();
+    const sheet = page.getByRole("dialog");
+    await expect(sheet.getByRole("radiogroup", { name: "Replacement" })).toBeVisible();
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute(
+      "content",
+      PLAN_TOKENS.bg,
+    );
+    await assertCobaltSheet(page);
+
+    const box = sheet.getByRole("checkbox", { name: /^Don't suggest .* again$/ });
+    await expect(box).not.toHaveAttribute("aria-disabled", "true");
+    await box.check();
+    await expect(box).toBeChecked();
+
+    // An over-time tag on an unselected row is --wl-attention (the data may have none: stand one in).
+    const colour = await sheet.evaluate((el) => {
+      const rows = el.querySelectorAll<HTMLElement>("[data-id]");
+      const tags = rows[1]!.querySelector(".wl-uf05__tags") ?? document.createElement("span");
+      tags.className = "wl-uf05__tags";
+      const tag = document.createElement("span");
+      tag.className = "wl-uf05__tag";
+      tag.dataset["tag"] = "over-time";
+      tag.textContent = "Over your time";
+      tags.append(tag);
+      rows[1]!.querySelector(".wl-uf05__row-body")!.append(tags);
+      return getComputedStyle(tag).color;
+    });
+    expect(colour).toBe(rgbOf(PLAN_TOKENS.attention));
+    await page.screenshot({ path: testInfo.outputPath("uf08-3-swap-before-starting.png") });
+    await compareWithCanvas(page, testInfo, {
+      turn: "turn-5",
+      frame: "Set up · swap before starting",
+    });
   });
 });
