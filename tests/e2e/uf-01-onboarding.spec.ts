@@ -967,3 +967,213 @@ test.describe("T-0605 AC6 at 320 × 640", () => {
     }
   });
 });
+
+// ---------------------------------------------------------------------------------------------
+// T-0606 (D-0208, D-0210, D-0211, D-0213; UF-01.5): the Cobalt sign-in and save screens, measured
+// in a real browser. Expected colours are read from tokens.json, never typed.
+// ---------------------------------------------------------------------------------------------
+test.describe("T-0606 Cobalt sign-in (390 × 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  const ACCOUNT = SCREEN("UF-01.5");
+  const style = (loc: Locator, props: string[]) =>
+    loc.evaluate((el, ps) => {
+      const cs = getComputedStyle(el);
+      return Object.fromEntries(ps.map((p) => [p, cs.getPropertyValue(p)]));
+    }, props);
+
+  test("AC1 /account is a plan-state root: plan.bg paints and theme-color is plan.bg", async ({
+    page,
+  }) => {
+    await page.goto("/account");
+    const root = page.locator(ACCOUNT);
+    await expect(root).toHaveAttribute("data-wl-state", "plan");
+    await expect
+      .poll(() => root.evaluate((el) => getComputedStyle(el).backgroundColor))
+      .toBe(rgbOf(PLAN.bg!));
+    const theme = await page.evaluate(
+      () => document.querySelector('meta[name="theme-color"]')?.getAttribute("content") ?? "",
+    );
+    expect(theme.toLowerCase()).toBe(PLAN.bg!.toLowerCase());
+  });
+
+  test("AC2 email and code: 1 px ink-muted, then 2 px attention with the message in attention", async ({
+    page,
+  }) => {
+    await mockSupabaseEmailAuth(page);
+    await page.goto("/account");
+    const email = page.getByLabel("Email");
+    expect(await style(email, ["border-top-width", "border-top-color"])).toEqual({
+      "border-top-width": "1px",
+      "border-top-color": rgbOf(PLAN["ink-muted"]!),
+    });
+    expect(tokenRatio(PLAN["ink-muted"]!, PLAN.bg!)).toBeGreaterThanOrEqual(3);
+    await email.fill("nope");
+    await page.getByRole("button", { name: "Send link" }).click();
+    const status = page.locator(ACCOUNT).getByRole("status");
+    await expect(status).toHaveText("Enter a valid email.");
+    expect(await style(email, ["border-top-width", "border-top-color"])).toEqual({
+      "border-top-width": "2px",
+      "border-top-color": rgbOf(PLAN.attention!),
+    });
+    expect((await style(status, ["color"])).color).toBe(rgbOf(PLAN.attention!));
+    expect(tokenRatio(PLAN.attention!, PLAN.bg!)).toBeGreaterThanOrEqual(5);
+
+    await page.getByRole("tab", { name: "Enter code" }).click();
+    const code = page.getByLabel("6-digit code");
+    expect(await style(code, ["border-top-width", "border-top-color"])).toEqual({
+      "border-top-width": "1px",
+      "border-top-color": rgbOf(PLAN["ink-muted"]!),
+    });
+    await page.getByLabel("Email").fill("ada@example.com");
+    await code.fill("12345");
+    await page.getByRole("button", { name: "Verify code" }).click();
+    await expect(status).toHaveText("Enter the 6-digit code from your email.");
+    expect(await style(code, ["border-top-width", "border-top-color"])).toEqual({
+      "border-top-width": "2px",
+      "border-top-color": rgbOf(PLAN.attention!),
+    });
+    expect((await style(status, ["color"])).color).toBe(rgbOf(PLAN.attention!));
+  });
+
+  test("AC3 the active tab is a plan.selected pill with plan.on-selected text; the other is not", async ({
+    page,
+  }) => {
+    await page.goto("/account");
+    const props = ["background-color", "color", "border-top-left-radius"];
+    const send = page.getByRole("tab", { name: "Send link" });
+    const enter = page.getByRole("tab", { name: "Enter code" });
+    expect(await style(send, props)).toEqual({
+      "background-color": rgbOf(PLAN.selected!),
+      color: rgbOf(PLAN["on-selected"]!),
+      "border-top-left-radius": (await style(send, props))["border-top-left-radius"],
+    });
+    expect((await style(send, props))["border-top-left-radius"]).not.toBe("0px");
+    expect((await style(enter, ["background-color"]))["background-color"]).toBe("rgba(0, 0, 0, 0)");
+    await enter.click();
+    expect((await style(enter, ["background-color"]))["background-color"]).toBe(
+      rgbOf(PLAN.selected!),
+    );
+    expect((await style(send, ["background-color"]))["background-color"]).toBe("rgba(0, 0, 0, 0)");
+  });
+
+  test("AC4 offline: the offline line shows as a label, Google is aria-disabled, Send link still runs", async ({
+    page,
+    context,
+  }) => {
+    await page.goto("/account");
+    await expect(page.locator(ACCOUNT)).toBeVisible();
+    await context.setOffline(true);
+    const line = page.locator(ACCOUNT).getByText("You're offline. Connect to send a link.").first();
+    await expect(line).toBeVisible();
+    await page.getByLabel("Email").fill("ada@example.com");
+    await page.getByRole("button", { name: "Send link" }).click();
+    await expect(page.locator(ACCOUNT).getByRole("status")).toHaveText(
+      "You're offline. Connect to send a link.",
+    );
+    expect(
+      await page
+        .getByRole("button", { name: "Continue with Google" })
+        .getAttribute("aria-disabled"),
+    ).toBe("true");
+    await context.setOffline(false);
+  });
+
+  test("AC5 contrast: axe is clean and every text pair clears its ratio in send, sent, error, offline and save", async ({
+    page,
+    context,
+  }) => {
+    await mockSupabaseEmailAuth(page);
+    await page.goto("/account");
+    await expect(page.locator(ACCOUNT)).toBeVisible();
+    await expectAxeClean(page, "UF-01.5");
+    await page.getByLabel("Email").fill("ada@example.com");
+    await page.getByRole("button", { name: "Send link" }).click();
+    await expect(page.locator(ACCOUNT).getByRole("status")).toHaveText(/Check your email/);
+    await expectAxeClean(page, "UF-01.5");
+    const sent = await measure(page, ACCOUNT);
+    for (const p of sent) expect(p.ratio, p.text).toBeGreaterThanOrEqual(4.5);
+    await page.getByLabel("Email").fill("nope");
+    await page.getByRole("button", { name: "Send link" }).click();
+    await expect(page.locator(ACCOUNT).getByRole("status")).toHaveText("Enter a valid email.");
+    await expectAxeClean(page, "UF-01.5");
+    const err = await measure(page, ACCOUNT);
+    expect(byText(err, "Enter a valid email.").ratio).toBeGreaterThanOrEqual(5);
+    await context.setOffline(true);
+    await expect(
+      page.locator(ACCOUNT).getByText("You're offline. Connect to send a link."),
+    ).toBeVisible();
+    await expectAxeClean(page, "UF-01.5");
+    await context.setOffline(false);
+    // Targets: Send link, Enter code, Send link, Google, Privacy, all at least 44 × 44.
+    expect(await expectTargetSizes(page, "UF-01.5")).toBe(5);
+
+    // The save screen's no-plan state.
+    await page.evaluate(() => window.localStorage.clear());
+    await injectSession(page);
+    await mockProfileMissing(page);
+    await page.goto("/welcome/save");
+    await expect(
+      page.locator(SCREEN("UF-01.5-save")).getByRole("heading", { level: 1 }),
+    ).toHaveText("Set up your plan");
+    await expect(page.locator(SCREEN("UF-01.5-save"))).toHaveAttribute("data-wl-state", "plan");
+    await expectAxeClean(page, "UF-01.5-save");
+    expect(await expectTargetSizes(page, "UF-01.5-save")).toBe(1);
+  });
+
+  test("AC5 type and motion: no px font size beyond the scale, nothing moves but the root cross-fade, instant under reduced motion", async ({
+    page,
+  }) => {
+    await page.goto("/account");
+    const probe = () =>
+      page.locator(ACCOUNT).evaluate((el) => {
+        const moving = [el, ...el.querySelectorAll("*")].filter((n) => {
+          const cs = getComputedStyle(n);
+          return (
+            cs.animationName !== "none" ||
+            (n !== el && cs.transitionDuration.split(",").some((d) => parseFloat(d) > 0))
+          );
+        });
+        return {
+          rootDuration: getComputedStyle(el).transitionDuration,
+          moving: moving.map((n) => n.tagName + "." + n.className),
+        };
+      });
+    const first = await probe();
+    expect(first.rootDuration).toBe("0.2s");
+    expect(first.moving).toEqual([]);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const reduced = await probe();
+    expect(reduced.rootDuration).toBe("0s");
+    expect(reduced.moving).toEqual([]);
+    // The page title is the plan page title (3.5rem = 56 px at the root size).
+    const h1 = await page.locator(`${ACCOUNT} h1`).evaluate((el) => getComputedStyle(el).fontSize);
+    expect(h1).toBe("56px");
+  });
+
+  test("AC6 keyboard: the focused Send link is not covered and shows a ring", async ({ page }) => {
+    await page.goto("/account");
+    const send = page.getByRole("button", { name: "Send link" });
+    await tabTo(page, send);
+    await expectVisibleFocus(send);
+    await expect(send).toBeInViewport({ ratio: 1 });
+  });
+
+  test("AC7 canvas compare: Sign in · save your plan", async ({ page }, testInfo) => {
+    await onboardToAccount(page);
+    await expect(page.locator(ACCOUNT)).toBeVisible();
+    await page.evaluate(() => document.fonts.ready);
+    await expect
+      .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor))
+      .toBe(rgbOf(PLAN.bg!));
+    const result = await compareWithCanvas(page, testInfo, {
+      turn: "turn-5",
+      frame: "Sign in · save your plan",
+      name: "uf01-5-signin",
+    });
+    if (process.env.WL_CANVAS_COMPARE === "1" && !result.skipped) {
+      expect(result.files.app).toBeTruthy();
+      expect(result.files.canvas).toBeTruthy();
+    }
+  });
+});

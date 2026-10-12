@@ -504,10 +504,10 @@ describe("T-0382 UF-01.5 tabs and live region", () => {
 
   it("T-0382 AC3 the empty status takes no flex slot and is never hidden from AT (uf-01.css)", () => {
     const css = readFileSync(resolve(__dirname, "..", "uf-01.css"), "utf8");
-    const empty = /\.wl-uf01__status:empty\s*\{([^}]*)\}/.exec(css);
+    const empty = /\.wl-uf01-plan__status:empty\s*\{([^}]*)\}/.exec(css);
     expect(empty).not.toBeNull();
     expect(empty![1]).toMatch(/position:\s*absolute/);
-    const rules = [...css.matchAll(/([^{}]*\.wl-uf01__status[^{}]*)\{([^}]*)\}/g)];
+    const rules = [...css.matchAll(/([^{}]*\.wl-uf01-plan__status[^{}]*)\{([^}]*)\}/g)];
     expect(rules.length).toBeGreaterThan(0);
     for (const [, , body] of rules) {
       expect(body).not.toMatch(/display:\s*none|visibility:\s*hidden/);

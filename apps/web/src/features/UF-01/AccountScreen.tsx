@@ -71,6 +71,8 @@ export function Account() {
   const [email, setEmail] = useState(lastEmail());
   const [code, setCode] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  // Which error the message is, so the field it is about carries aria-invalid (T-0606, AC2).
+  const [errorKey, setErrorKey] = useState<keyof typeof ERROR_TEXT | null>(null);
   const online = useOnline();
   const [googleBusy, setGoogleBusy] = useState(false);
   // A ref, not only state: two activations in the same tick must still make one call (AC-3).
@@ -80,12 +82,14 @@ export function Account() {
     e.preventDefault();
     const result = await requestMagicLink(email);
     setMessage(result.ok ? en.auth.linkSent : ERROR_TEXT[result.error]);
+    setErrorKey(result.ok ? null : result.error);
   }
 
   async function onVerifyCode(e: React.FormEvent) {
     e.preventDefault();
     const result = await verifyCode(email, code);
     setMessage(result.ok ? null : ERROR_TEXT[result.error]);
+    setErrorKey(result.ok ? null : result.error);
   }
 
   async function onGoogle() {
@@ -107,11 +111,13 @@ export function Account() {
       googleInFlight.current = false;
       setGoogleBusy(false);
       setMessage(en.auth.unknown);
+      setErrorKey("unknown");
     }
   }
 
   const googleDisabled = !online || googleBusy;
   const offlineNoteId = `${id}-google-offline`;
+  const statusId = `${id}-status`;
   const tabId = (m: Mode) => `${id}-tab-${m}`;
   const panelId = `${id}-panel`;
   const tabRefs = useRef<Partial<Record<Mode, HTMLButtonElement | null>>>({});
@@ -132,11 +138,13 @@ export function Account() {
   }
 
   const emailField = (
-    <label className="wl-uf01__field">
-      <span className="wl-uf01__field-label">{en.auth.emailLabel}</span>
+    <label className="wl-uf01-plan__field">
+      <span className="wl-type-label">{en.auth.emailLabel}</span>
       <input
-        className="wl-uf01__input"
+        className="wl-input"
         type="email"
+        aria-invalid={errorKey === "invalid_email" ? "true" : undefined}
+        aria-describedby={errorKey === "invalid_email" ? statusId : undefined}
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         autoComplete="email"
@@ -145,21 +153,21 @@ export function Account() {
   );
 
   return (
-    <div data-screen-id="UF-01.5" className="wl-uf01">
+    <div data-screen-id="UF-01.5" data-wl-state="plan" className="wl-page wl-uf01-plan">
       {saveable ? (
-        <div className="wl-uf01__header">
-          <Link to="/welcome/schedule" className="wl-uf01__back" aria-label={en.uf01.back}>
+        <div className="wl-uf01-plan__header">
+          <Link to="/welcome/schedule" className="wl-uf01-plan__back" aria-label={en.uf01.back}>
             {BACK_ICON}
           </Link>
         </div>
       ) : null}
-      <div className="wl-uf01__intro">
-        <h1 className="wl-uf01__title wl-uf01__title--step">
+      <div className="wl-uf01-plan__intro">
+        <h1 className="wl-type-page-title wl-title--stop wl-uf01-plan__title">
           {saveable ? t.headingSave : t.headingSignIn}
         </h1>
-        <p className="wl-uf01__muted">{saveable ? t.subtitleSave : t.subtitleSignIn}</p>
+        <p className="wl-type-label">{saveable ? t.subtitleSave : t.subtitleSignIn}</p>
       </div>
-      <div className="wl-uf01__tabs" role="tablist" aria-label={t.modesName}>
+      <div className="wl-segmented wl-uf01-plan__tabs" role="tablist" aria-label={t.modesName}>
         {MODES.map((m) => (
           <button
             key={m}
@@ -169,7 +177,6 @@ export function Account() {
             id={tabId(m)}
             type="button"
             role="tab"
-            className="wl-uf01__tab"
             aria-selected={mode === m}
             aria-controls={panelId}
             tabIndex={mode === m ? 0 : -1}
@@ -182,20 +189,22 @@ export function Account() {
       </div>
       <div id={panelId} role="tabpanel" aria-labelledby={tabId(mode)}>
         {mode === "link" ? (
-          <form className="wl-uf01__auth-form" noValidate onSubmit={onSendLink}>
+          <form className="wl-uf01-plan__auth" noValidate onSubmit={onSendLink}>
             {emailField}
-            <button type="submit" className="wl-uf01__primary">
+            <button type="submit" className="wl-button--primary">
               {en.auth.sendLinkButton}
             </button>
           </form>
         ) : (
-          <form className="wl-uf01__auth-form" noValidate onSubmit={onVerifyCode}>
+          <form className="wl-uf01-plan__auth" noValidate onSubmit={onVerifyCode}>
             {emailField}
-            <label className="wl-uf01__field">
-              <span className="wl-uf01__field-label">{en.auth.codeLabel}</span>
+            <label className="wl-uf01-plan__field">
+              <span className="wl-type-label">{en.auth.codeLabel}</span>
               <input
-                className="wl-uf01__input"
+                className="wl-input"
                 type="text"
+                aria-invalid={errorKey === "invalid_code" ? "true" : undefined}
+                aria-describedby={errorKey === "invalid_code" ? statusId : undefined}
                 inputMode="numeric"
                 maxLength={6}
                 value={code}
@@ -203,23 +212,28 @@ export function Account() {
                 autoComplete="one-time-code"
               />
             </label>
-            <button type="submit" className="wl-uf01__primary">
+            <button type="submit" className="wl-button--primary">
               {en.auth.verifyCodeButton}
             </button>
           </form>
         )}
       </div>
       {/* Mounted from the first paint and filled in place, so the text is announced (NFR-A11Y-1). */}
-      <p role="status" className="wl-uf01__status">
+      <p
+        role="status"
+        id={statusId}
+        className="wl-type-label wl-uf01-plan__status"
+        data-error={errorKey === null ? undefined : "true"}
+      >
         {message}
       </p>
-      <p className="wl-uf01__or" aria-hidden="true">
+      <p className="wl-type-label wl-uf01-plan__or" aria-hidden="true">
         {t.or}
       </p>
-      <div className="wl-uf01__auth-form">
+      <div className="wl-uf01-plan__auth">
         <button
           type="button"
-          className="wl-uf01__ghost"
+          className="wl-button--secondary"
           aria-disabled={googleDisabled ? "true" : "false"}
           aria-describedby={online ? undefined : offlineNoteId}
           onClick={() => void onGoogle()}
@@ -227,13 +241,13 @@ export function Account() {
           {t.google}
         </button>
         {online ? null : (
-          <p id={offlineNoteId} className="wl-uf01__muted">
+          <p id={offlineNoteId} className="wl-type-label">
             {en.auth.offline}
           </p>
         )}
       </div>
-      <p className="wl-uf01__footer">
-        <a href={PRIVACY_URL} className="wl-uf01__link">
+      <p className="wl-uf01-plan__footer">
+        <a href={PRIVACY_URL} className="wl-button--text">
           {t.privacy}
         </a>
       </p>
