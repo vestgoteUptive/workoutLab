@@ -49,13 +49,13 @@ import { mergeOrder, permute } from "./order.js";
 import { Suggested } from "./Suggested.js";
 import {
   CHIPS,
-  DEFAULT_BUDGET,
   MAX_BUDGET,
   MIN_BUDGET,
   STEP_MIN,
   clampBudget,
   finishInstant,
   finishToBudget,
+  parseBudget,
 } from "./time.js";
 import { useSetupData, type SetupData } from "./use-setup-data.js";
 import "./uf-08.css";
@@ -176,7 +176,9 @@ export function SessionSetup({
   const [loc] = useState(() => locale ?? defaultLocale());
   const [tz] = useState(() => timeZone ?? defaultTimeZone());
 
-  const [budgetMin, setBudgetMin] = useState(DEFAULT_BUDGET);
+  const [params] = useSearchParams();
+  // T-0637: `?budget=N` is read once at mount (the UF-02.1 Quick 20-min link); later edits win.
+  const [budgetMin, setBudgetMin] = useState(() => parseBudget(params.get("budget")));
   const [warmupInBudget, setWarmupInBudget] = useState(true);
   const [energy, setEnergy] = useState<Energy>("normal");
   // "Skip today" (T-0520, D-0191 §1): held in this host, so Back keeps it and a remount clears it.
@@ -208,7 +210,6 @@ export function SessionSetup({
   const state = useSetupData(nowIso, tz, status === "signed-in");
   const data = state.kind === "ready" ? state.data : null;
 
-  const [params] = useSearchParams();
   const navigate = useNavigate();
   const step = params.get("step");
   const pastSetup = step === "suggested" || step === "ready" || step === "swap";
