@@ -31,7 +31,7 @@ export const en = {
   tabBar: {
     nav: "Main",
     today: "Today",
-    library: "Library",
+    library: "Exercises",
     progress: "Progress",
     plan: "Plan",
   },
@@ -40,7 +40,7 @@ export const en = {
     account: "Account",
     authCallback: "Signing you in",
     today: "Today",
-    library: "Library",
+    library: "Exercises",
     libraryDetail: "Exercise",
     progress: "Progress",
     balance: "Balance",
