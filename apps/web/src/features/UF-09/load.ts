@@ -4,6 +4,7 @@
 import { parseSessionPlan } from "@workoutlab/shared";
 import {
   currentUserId,
+  loadBarbell,
   loadLibrary,
   offlineDb,
   type SessionInsert,
@@ -75,7 +76,8 @@ export async function loadSession(
     } catch {
       // No cached library: rests fall back to the compound length (D-0111 §4).
     }
-    const ctx: FocusCtx = { plan, library };
+    const barbell = await loadBarbell();
+    const ctx: FocusCtx = { plan, library, barbell };
     const stored = readFocusState(sessionId, ctx, storage);
     const initial = stored ?? initialFocusState(sessionId, plan, Date.now());
     if (!stored) writeFocusState(storage, sessionId, initial);

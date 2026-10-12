@@ -18,6 +18,7 @@
 // (found by QA: a deliberate `console.error` on `pageB` still let AC-2 pass). AC-2 installs its own
 // `installConsoleGuard(contextB)` and asserts it clean at teardown, the same pattern its own
 // `installSupabaseGuard(contextB)` line already uses one line below.
+import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 import {
   expect,
@@ -35,7 +36,12 @@ import {
   mockSupabaseRest,
   VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
-import { exerciseAreas, exercises, profile } from "./fixtures/uf-04-library-data.js";
+import {
+  exerciseAreas,
+  exercises,
+  exercisesLoaded,
+  profile,
+} from "./fixtures/uf-04-library-data.js";
 
 const F_TARGETS: Record<string, number> = {
   chest: 20,
@@ -551,5 +557,84 @@ test.describe("T-0619 AC9 the state caption after an offline reload", () => {
     await expect(current.locator(".wl-uf09__state")).toHaveText(/^Lifting · set 3 of 4$/);
     await expect(current.locator("h1")).toBeVisible();
     await expectOneScreen(page);
+  });
+});
+
+// T-0634 AC10: the plate line on UF-09.3 comes from the cached bar and plates, so it is the same
+// offline, and a profile cached before T-0632 (no barbell field) reads as the default bar and plates.
+// A zero-history first lift has no weight, so set 1 is saved at 100 kg and set 2 shows the line.
+// This spec's `mockAll` serves `exercises` without `external_load` (every lift reads as bodyweight),
+// so these two rows re-register the data with `exercisesLoaded` (later routes win) to get real loads.
+async function mockLoadedLibrary(page: Page): Promise<void> {
+  await mockSupabaseData(page, {
+    sets: [],
+    exercises: exercisesLoaded,
+    exerciseAreas,
+    areaTargets: AREA_TARGETS,
+    profile,
+  });
+}
+
+async function expectHundredKgLoading(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "Skip warm-up" }).click();
+  const current = page.locator('[data-screen-id="UF-09.3"]');
+  await expect(current).toBeVisible();
+  await expect(current.locator('[data-part="plates"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Done" }).click();
+  await expect(page.locator('[data-screen-id="UF-09.4"]')).toBeVisible();
+  await page.getByRole("textbox", { name: "Weight (kg)" }).fill("100");
+  await page.getByRole("button", { name: /^Save/ }).click();
+  await expect(page.locator('[data-screen-id="UF-09.5"]')).toBeVisible({ timeout: 10_000 });
+  await page.getByRole("button", { name: "Skip rest" }).click();
+  await expect(current).toBeVisible();
+  await expect(current.locator('[data-part="plates"]')).toHaveText(/^Each side\s*25 \+ 15 kg$/);
+  // AC11: the line is not a control and not a live region, and the lift state keeps its contrast.
+  await expect(current.locator('[data-part="plates"]')).not.toHaveAttribute("tabindex", /.*/);
+  await expect(current.locator('[data-part="plates"][aria-live]')).toHaveCount(0);
+  const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+  expect(axe.violations).toEqual([]);
+}
+
+test.describe("T-0634 AC10 plate loading offline", () => {
+  test("a 100 kg barbell set shows its plates with the network cut", async ({ page, context }) => {
+    await mockLoadedLibrary(page);
+    await openHome(page);
+    await precacheSettled(page);
+    await context.setOffline(true);
+    await startFromReady(page, "45 minutes");
+    await expectHundredKgLoading(page);
+  });
+
+  test("a profile cached before T-0632 (no barbell field) shows the default loading", async ({
+    page,
+    context,
+  }) => {
+    await mockLoadedLibrary(page);
+    await openHome(page);
+    await precacheSettled(page);
+    await page.evaluate(async () => {
+      const req = indexedDB.open("wl-offline");
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+      await new Promise<void>((resolve, reject) => {
+        const tx = db.transaction("profileCache", "readwrite");
+        const store = tx.objectStore("profileCache");
+        const all = store.getAll();
+        all.onsuccess = () => {
+          for (const row of all.result as { barbell?: unknown }[]) {
+            delete row.barbell;
+            store.put(row);
+          }
+        };
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    });
+    await context.setOffline(true);
+    await startFromReady(page, "45 minutes");
+    await expectHundredKgLoading(page);
   });
 });
