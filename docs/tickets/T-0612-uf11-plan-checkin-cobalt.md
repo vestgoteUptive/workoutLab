@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.1, UF-11.2, UF-11.3, UF-02.1]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0203, D-0204, D-0195]
 deps: [T-0593, T-0582, T-0591]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "Plan · full scroll" and "Today · check-in pending" (#turn-5). UF-11.3 isn't drawn, so reuse the Goal and Schedule patterns. Behaviour: screens/UF-11.2.md (updated by T-0590), docs/specs/uf-11-plan-checkin.md. Must follow T-0582 (same folder). UF-11 chain T-0612 → T-0613. The nav links stay as built (H-32, D-0203 §3). -->
 ## Why
@@ -70,3 +70,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-11 specs and `uf-02-today.spec.ts` green · commit messages start with `T-0612` and cite UF-11.1/UF-11.2/UF-11.3.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0612.md` (D-0157).

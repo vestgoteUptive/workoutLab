@@ -233,8 +233,8 @@ describe("T-0481 AC-3 no call when nothing was answered", () => {
     await waitFor(() => expect(card()).not.toBeNull());
     const accept = screen.getByRole("button", { name: uc.accept });
     const keep = screen.getByRole("button", { name: uc.keep });
-    expect(accept).toBeDisabled();
-    expect(keep).toBeDisabled();
+    expect(accept).toHaveAttribute("aria-disabled", "true");
+    expect(keep).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(accept);
     fireEvent.click(keep);
     await nap();

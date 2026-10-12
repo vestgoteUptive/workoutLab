@@ -36,35 +36,26 @@ export function Plan({ now = systemClock }: PlanScreenProps = {}) {
   // T-0481: bumped by the card's `onAnswered`; `usePlanData` re-reads the cache once per bump.
   const [revision, setRevision] = useState(0);
   const state = usePlanData(now, revision);
-  const [checkinPending, setCheckinPending] = useState(false);
   return (
-    <div data-screen-id="UF-11.2" className="wl-page">
+    <div data-screen-id="UF-11.2" data-wl-state="plan" className="wl-page wl-plan">
       <header className="wl-plan__header">
-        <h1>{en.screens.plan}</h1>
+        <h1 className="wl-type-page-title wl-title--stop">{en.screens.plan}</h1>
         <Link className="wl-button--secondary wl-plan__account" to="/plan/account">
-          <svg aria-hidden focusable={false} width={18} height={18} viewBox="0 0 24 24">
-            <circle cx={12} cy={8} r={4} />
-            <path d="M4 21c0-4 4-7 8-7s8 3 8 7" />
-          </svg>
           {en.uf11.accountLink}
         </Link>
-        <p className="wl-plan__purpose">{en.uf11.purpose}</p>
+        <p className="wl-plan__purpose wl-type-label">{en.uf11.purpose}</p>
       </header>
       {state.phase !== "loading" ? (
-        <CheckinCard
-          now={now}
-          onAnswered={() => setRevision((r) => r + 1)}
-          onVisibleChange={setCheckinPending}
-        />
+        <CheckinCard now={now} onAnswered={() => setRevision((r) => r + 1)} />
       ) : null}
-      <PlanBody state={state} checkinPending={checkinPending} />
+      <PlanBody state={state} />
     </div>
   );
 }
 
 export function EditPlan({ now = systemClock }: PlanScreenProps = {}) {
   return (
-    <div data-screen-id="UF-11.3" className="wl-page">
+    <div data-screen-id="UF-11.3" data-wl-state="plan" className="wl-page wl-plan wl-edit">
       <h1>{en.screens.editPlan}</h1>
       <EditPlanBody clock={now} />
     </div>

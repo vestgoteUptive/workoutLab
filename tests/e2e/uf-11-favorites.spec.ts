@@ -64,14 +64,11 @@ test("row -> grouped list -> search -> Add on an excluded exercise", async ({ pa
 
   const row = page.getByRole("link", { name: "Favorite exercises, 1" });
   await expect(row).toBeVisible();
-  const cards = page.locator("section.wl-card");
-  const rowIdx = await cards.evaluateAll(
-    (els, name) => els.findIndex((e) => e.querySelector(`a[aria-label="${name}"]`)),
-    "Favorite exercises, 1",
-  );
-  await expect(cards.nth(rowIdx + 1).getByRole("link")).toHaveAccessibleName(
-    "Excluded exercises, 1",
-  );
+  // T-0612: the two rows are adjacent links in one group (no longer one card each).
+  const links = page.locator(".wl-plan__links > a");
+  await expect(links).toHaveCount(2);
+  await expect(links.nth(0)).toHaveAccessibleName("Favorite exercises, 1");
+  await expect(links.nth(1)).toHaveAccessibleName("Excluded exercises, 1");
 
   await row.click();
   await expect(page).toHaveURL(/\/plan\/favorites$/);

@@ -190,9 +190,8 @@ describe("AC1 row on UF-11.2", () => {
     const { container } = render(tree("/plan"));
     const link = await screen.findByRole("link", { name: "Favorite exercises, 2" });
     expect(link).toHaveTextContent("Favorite exercises · 2");
-    const cards = [...container.querySelectorAll("section.wl-card")];
-    const at = cards.findIndex((c) => c.contains(link));
-    expect(cards[at + 1]).toContainElement(
+    const links = [...container.querySelectorAll(".wl-plan__links > a")];
+    expect(links[links.indexOf(link) + 1]).toBe(
       await screen.findByRole("link", { name: "Excluded exercises, 1" }),
     );
   });

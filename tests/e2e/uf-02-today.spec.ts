@@ -743,19 +743,19 @@ test.describe("T-0601 AC3 one primary", () => {
     });
   }
 
-  test("outside the check-in slot, Today's own Start is the only primary", async ({ page }) => {
+  // T-0612 AC-T0601: with a pending check-in the page still has exactly one white primary
+  // (Start). Accept is the paper action (not `.wl-button--primary`), Keep current is a secondary.
+  test("with a pending check-in, Start is the only primary on the page", async ({ page }) => {
     await mockSupabaseData(page, UF11_FIXTURES);
     await page.goto("/");
     await injectSession(page);
     await page.goto("/");
     await expect(page.locator('[data-part="checkin-card"]')).toBeVisible();
-    // T-0612 owns the check-in card: its Accept is a second `.wl-button--primary` on the page
-    // while it is pending (pre-existing, not Today's). Only Today's own Start is asserted here.
-    await expect(page.locator(`${TODAY} .wl-button--primary`)).toHaveCount(2);
-    await expect(
-      page.locator(`${TODAY} .wl-button--primary:not([data-part="checkin-card"] *)`),
-    ).toHaveCount(1);
+    await expect(page.locator(`${TODAY} .wl-button--primary`)).toHaveCount(1);
     await expect(page.locator(`${TODAY} > .wl-button--primary`)).toHaveCount(1);
+    await expect(
+      page.locator('[data-part="checkin-card"]').getByRole("button", { name: "Accept" }),
+    ).not.toHaveClass(/wl-button--primary/);
   });
 });
 

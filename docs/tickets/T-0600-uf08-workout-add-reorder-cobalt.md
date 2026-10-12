@@ -52,6 +52,7 @@ Checklist (D-0197 §7):
 - No migration fixture: not applicable.
 
 ## Paths you may change
+- `tests/e2e/uf-08-excluded.spec.ts` (orchestrator grant: scope its `getByRole("status")` to the removed line so the page status can stay rendered when empty, not display:none)
 - `tests/e2e/cobalt-controls.spec.ts`, `tests/e2e/fonts.spec.ts` (orchestrator grant: their 'unchanged outside a state' checks used a now-migrating screen; move each to an injected no-state fixture, never another real screen)
 - `tests/e2e/visual-foundation.spec.ts` (orchestrator grant, for every screen restyle: move this screen's checks from the legacy no-state scale to the plan or state scale, as T-0601/T-0597 did, or to an injected no-state fixture; never use another real screen as the no-state host)
 - `apps/web/src/features/UF-08/**` (lane)

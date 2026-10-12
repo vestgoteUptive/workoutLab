@@ -369,8 +369,8 @@ describe("T-0470 AC-5 double tap", () => {
     fireEvent.click(accept);
     fireEvent.click(keep);
 
-    await waitFor(() => expect(accept).toBeDisabled());
-    expect(keep).toBeDisabled();
+    await waitFor(() => expect(accept).toHaveAttribute("aria-disabled", "true"));
+    expect(keep).toHaveAttribute("aria-disabled", "true");
     expect(spy.calls.filter((c) => c.table === "area_targets")).toHaveLength(1);
 
     release();
@@ -391,7 +391,7 @@ describe("T-0470 AC-5 double tap", () => {
     fireEvent.click(keep);
     fireEvent.click(keep);
 
-    await waitFor(() => expect(keep).toBeDisabled());
+    await waitFor(() => expect(keep).toHaveAttribute("aria-disabled", "true"));
     expect(spy.calls.filter((c) => c.table === "plan_checkins")).toHaveLength(1);
 
     release();

@@ -293,7 +293,7 @@ describe.each(FAILURE_FORMS)("AC-B12 partial failure — the `%s` form", (form) 
     await waitFor(() => expect(screen.getByText(u.saveFailed)).toBeInTheDocument());
 
     // Save must still be enabled: the baseline is the loaded snapshot, not what got written.
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "false");
     spy.reset();
     await tap(saveButton());
     await waitFor(() => expect(location()).toBe("/plan"));
@@ -358,7 +358,7 @@ describe("AC-B12 double submit and a failed refresh", () => {
     });
 
     fireEvent.click(saveButton());
-    await waitFor(() => expect(saveButton()).toBeDisabled());
+    await waitFor(() => expect(saveButton()).toHaveAttribute("aria-disabled", "true"));
     await act(async () => {
       release();
     });
@@ -387,7 +387,7 @@ describe("AC-B13 offline (D-0070 §7)", () => {
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     await openEdit();
     await tap(chip("back"));
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText(u.connectToSave)).toBeInTheDocument();
     expect(spy.from).not.toHaveBeenCalled();
   });
@@ -396,20 +396,20 @@ describe("AC-B13 offline (D-0070 §7)", () => {
     const onLine = vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     await openEdit();
     await tap(chip("back"));
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
 
     onLine.mockReturnValue(true);
     await act(async () => {
       window.dispatchEvent(new Event("online"));
     });
-    expect(saveButton()).toBeEnabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "false");
     expect(screen.queryByText(u.connectToSave)).not.toBeInTheDocument();
 
     onLine.mockReturnValue(false);
     await act(async () => {
       window.dispatchEvent(new Event("offline"));
     });
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText(u.connectToSave)).toBeInTheDocument();
   });
 
@@ -492,7 +492,7 @@ describe("AC-B14 cancel", () => {
     expect(listRows(u.previewHeading)).toEqual(
       AREAS.map((a, i) => `${en.bodyMap.areas[a]} ${F_SETS[i]}`),
     );
-    expect(saveButton()).toBeDisabled();
+    expect(saveButton()).toHaveAttribute("aria-disabled", "true");
   });
 
   it("Cancel has no confirm step: one tap navigates", async () => {

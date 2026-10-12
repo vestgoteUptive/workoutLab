@@ -2,6 +2,7 @@
 // it stays enabled offline. No count until the first cache read resolves (D-0197 §2).
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { ArrowIcon } from "../../components/icons/index.js";
 import { currentUserId } from "../../lib/offline/current-user.js";
 import { loadExcludedIds } from "../../lib/offline/excluded.js";
 import { useExcludedIds } from "../../lib/offline/excluded-hooks.js";
@@ -27,18 +28,17 @@ export function ExcludedRow() {
   }, [userId]);
   const count = read ? ids.length : null;
   return (
-    <section className="wl-card">
-      <Link className="wl-row" to="/plan/excluded" aria-label={u.name(count)}>
-        <span className="wl-plan__name">
-          {u.label}
-          {count === null ? null : (
-            <span className="wl-muted">
-              {u.separator}
-              {count === 0 ? u.none : u.count(count)}
-            </span>
-          )}
-        </span>
-      </Link>
-    </section>
+    <Link className="wl-row" to="/plan/excluded" aria-label={u.name(count)}>
+      <span className="wl-plan__name wl-type-row-title">
+        {u.label}
+        {count === null ? null : (
+          <span className="wl-type-label">
+            {u.separator}
+            {count === 0 ? u.none : u.count(count)}
+          </span>
+        )}
+      </span>
+      <ArrowIcon size={20} />
+    </Link>
   );
 }

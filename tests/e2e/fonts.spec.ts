@@ -100,13 +100,15 @@ test.describe("T-0545 fonts load online (AC3)", () => {
 });
 
 test.describe("T-0588 AC4 no visible change", () => {
-  test("UF-11.2 /plan h1 still uses Big Shoulders Display", async ({ page }) => {
+  // T-0612: /plan is a plan-state screen (Familjen Grotesk); the legacy h1 is an injected fixture.
+  test("a no-state h1 still uses Big Shoulders Display", async ({ page }) => {
     await page.goto("/welcome");
-    await injectSession(page);
-    await page.goto("/plan");
+    await expect(page.locator("h1").first()).toBeVisible();
+    await page.evaluate(() => {
+      document.body.insertAdjacentHTML("beforeend", '<div id="wl-fixture"><h1>x</h1></div>');
+    });
     const family = await page
-      .locator("h1")
-      .first()
+      .locator("#wl-fixture h1")
       .evaluate((e) => getComputedStyle(e).fontFamily);
     expect(family).toMatch(/^"?Big Shoulders Display/);
   });
