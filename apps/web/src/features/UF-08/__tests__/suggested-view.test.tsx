@@ -291,8 +291,12 @@ describe("AC-7 the bar (D-0109 §5)", () => {
   afterAll(() => sheet.remove());
 
   const grows = () => segments().map((s) => [s.dataset.segment, s.style.flexGrow]);
-  const warned = () =>
-    segments().filter((s) => getComputedStyle(s).backgroundColor === "var(--wl-color-warn)");
+  // T-0600 (D-0211 §5): over budget no longer recolours the segments (no warn class); it is
+  // `data-over` on the budget block and the words. `warned` is the item segments of an over bar.
+  const over = () =>
+    document.querySelector(".wl-uf08__budget")!.getAttribute("data-over") === "true";
+  const warned = () => (over() ? segments().filter((s) => s.dataset.segment === "item") : []);
+  const warnClass = () => document.querySelectorAll('[class*="seg--warn"]').length;
 
   it("warm-up in budget: aria-hidden, warm-up 180, items 720/555/270, unused 75; 'About 29 of 30 min'", () => {
     show(wR7E4());
@@ -343,6 +347,7 @@ describe("AC-7 the bar (D-0109 §5)", () => {
     show(overBudget(1830, true));
     expect(budgetText()).toHaveTextContent(/^34 min, 4 over$/);
     expect(warned().map((s) => s.dataset.segment)).toEqual(["item", "item", "item"]);
+    expect(warnClass()).toBe(0);
   });
 
   it("over budget, warm-up off (availableS 1800, items 1830): '31 min, 1 over + warm-up'", () => {

@@ -20,6 +20,7 @@ import { en } from "../../lib/i18n/en.js";
 import { itemReasonLine, itemSummary, sessionReasonChips } from "../../lib/i18n/workout.js";
 import { CHIPS } from "./time.js";
 import { formatKg } from "../../lib/format/number.js";
+import { ArrowIcon, CrossIcon, DragHandleIcon } from "../../components/icons/index.js";
 import { ExcludedAreasNotice } from "../../components/excluded-areas-notice/index.js";
 import { ExerciseHowTo } from "../UF-04/index.js";
 import { AddExerciseSheet } from "./AddExerciseSheet.js";
@@ -100,22 +101,15 @@ function backoffLine(item: WorkoutItem, locale: string): string | null {
   return en.uf08.backoff(formatKg(item.backoff.weightKg, locale), item.backoff.reps);
 }
 
-/** One bar segment. Its `flex-grow` is data (seconds), so it is set on the node; the over-budget
- *  colour is the `--warn` class (uf-08.css). */
-function Segment({ kind, seconds, warn }: { kind: string; seconds: number; warn: boolean }) {
+/** One bar segment. Its `flex-grow` is data (seconds), so it is set on the node. */
+function Segment({ kind, seconds }: { kind: string; seconds: number }) {
   const ref = useCallback(
     (el: HTMLSpanElement | null) => {
       if (el) el.style.flexGrow = String(seconds);
     },
     [seconds],
   );
-  return (
-    <span
-      ref={ref}
-      className={warn ? "wl-uf08__seg wl-uf08__seg--warn" : "wl-uf08__seg"}
-      data-segment={kind}
-    />
-  );
+  return <span ref={ref} className="wl-uf08__seg" data-segment={kind} />;
 }
 
 /** The bar and its text (D-0109 §5). */
@@ -128,13 +122,13 @@ function BudgetBar({ workout }: { workout: Workout }) {
     ? en.uf08.budgetOver(shown, minutesOf(itemsTotalS - available), !warmupInBudget)
     : en.uf08.budgetWithin(shown, budgetMin, !warmupInBudget);
   return (
-    <div className="wl-uf08__budget">
+    <div className="wl-uf08__budget" data-over={over ? "true" : undefined}>
       <div className="wl-uf08__bar" data-part="bar" aria-hidden="true">
-        {warmupInBudget ? <Segment kind="warmup" seconds={WARMUP_COST_S} warn={false} /> : null}
+        {warmupInBudget ? <Segment kind="warmup" seconds={WARMUP_COST_S} /> : null}
         {workout.plan.items.map((item) => (
-          <Segment key={item.exerciseId} kind="item" seconds={item.costS} warn={over} />
+          <Segment key={item.exerciseId} kind="item" seconds={item.costS} />
         ))}
-        {unusedS > 0 ? <Segment kind="unused" seconds={unusedS} warn={false} /> : null}
+        {unusedS > 0 ? <Segment kind="unused" seconds={unusedS} /> : null}
       </div>
       <p className="wl-uf08__budget-text" data-part="budget-text" aria-live="polite">
         {text}
@@ -186,6 +180,8 @@ export function Suggested({
   const [status, setStatus] = useState("");
   // T-0576: Reorder mode is UI state of this screen; it never outlives it.
   const [reorder, setReorder] = useState(false);
+  // The row that was just moved, shown raised until Done.
+  const [movedId, setMovedId] = useState<string | null>(null);
   const reorderButtonRef = useRef<HTMLButtonElement>(null);
   const pendingMoveFocus = useRef<{ id: string; part: "move-up" | "move-down" } | null>(null);
   const reorderChanged = useRef(false);
@@ -284,7 +280,12 @@ export function Suggested({
   }, [workout]);
 
   return (
-    <section data-screen-id="UF-08.2" className="wl-uf08" data-items={items.length}>
+    <section
+      data-screen-id="UF-08.2"
+      data-wl-state="plan"
+      className="wl-uf08 wl-page"
+      data-items={items.length}
+    >
       <div className="wl-uf08__top">
         <Link className="wl-uf08__back" to="/session/setup?step=time">
           {en.uf08.back}
@@ -299,7 +300,7 @@ export function Suggested({
           aria-label={en.uf08.sessionChipsName}
         >
           {chips.map((chip, i) => (
-            <li key={`${i}:${chip}`} className="wl-uf08__why-chip">
+            <li key={`${i}:${chip}`} className="wl-chip wl-uf08__why-chip">
               {chip}
             </li>
           ))}
@@ -308,7 +309,23 @@ export function Suggested({
 
       {avoidAreas.length > 0 ? (
         <p className="wl-uf08__skipping" data-part="skipping">
-          {en.uf08.skipping(avoidAreas.map((a) => en.bodyMap.areas[a]))}
+          <svg
+            className="wl-uf08__skipping-icon"
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 11v5" />
+            <path d="M12 8h.01" />
+          </svg>
+          <span>{en.uf08.skipping(avoidAreas.map((a) => en.bodyMap.areas[a]))}</span>
         </p>
       ) : null}
 
@@ -324,7 +341,7 @@ export function Suggested({
             <button
               key={m}
               type="button"
-              className="wl-uf08__chip"
+              className="wl-chip wl-uf08__chip"
               aria-label={en.uf08.chipName(String(m))}
               aria-pressed={workout.budgetMin === m ? "true" : "false"}
               onClick={() => {
@@ -347,10 +364,11 @@ export function Suggested({
               <h2 className="wl-uf08__list-title">{en.uf08.reorder}</h2>
               <button
                 type="button"
-                className="wl-uf08__ghost wl-uf08__list-button"
+                className="wl-button--secondary wl-uf08__list-button"
                 data-part="reorder-done"
                 onClick={() => {
                   reorderChanged.current = true;
+                  setMovedId(null);
                   setReorder(false);
                 }}
               >
@@ -361,7 +379,7 @@ export function Suggested({
             <button
               ref={reorderButtonRef}
               type="button"
-              className="wl-uf08__ghost wl-uf08__list-button"
+              className="wl-button--secondary wl-uf08__list-button"
               data-part="reorder"
               onClick={() => {
                 pendingFocus.current = null;
@@ -376,15 +394,16 @@ export function Suggested({
       ) : null}
 
       {workout.plan.warmup.length > 0 ? (
-        <div className="wl-uf08__row wl-uf08__row--warmup" data-part="warmup-row">
+        <div className="wl-row wl-uf08__row wl-uf08__row--warmup" data-part="warmup-row">
+          <span className="wl-uf08__index" aria-hidden="true" />
           <div className="wl-uf08__row-body">
-            <span className="wl-uf08__row-name" data-part="row-name">
+            <span className="wl-uf08__row-name wl-type-row-title" data-part="row-name">
               {en.uf08.warmupRow}
             </span>
-            <span className="wl-uf08__row-detail" data-part="row-detail">
+            <span className="wl-uf08__row-detail wl-type-label" data-part="row-detail">
               {en.uf08.warmupMoves(warmupNames)}
             </span>
-            <span className="wl-uf08__row-detail" data-part="row-minutes">
+            <span className="wl-uf08__row-detail wl-type-label" data-part="row-minutes">
               {en.uf08.rowMinutes(minutesOf(WARMUP_COST_S))}
             </span>
           </div>
@@ -412,25 +431,28 @@ export function Suggested({
               const move = (delta: -1 | 1, part: "move-up" | "move-down") => {
                 pendingMoveFocus.current = { id: item.exerciseId, part };
                 setStatus(en.uf08.moved(name, index + delta + 1, items.length));
+                setMovedId(item.exerciseId);
                 onMove?.(item.exerciseId, delta);
               };
               return (
                 <li
                   key={item.exerciseId}
-                  className="wl-uf08__row wl-uf08__row--reorder"
+                  className="wl-row wl-uf08__row wl-uf08__row--reorder"
                   data-part="item-row"
                   data-id={item.exerciseId}
                   data-main={item.isMain ? "true" : undefined}
+                  data-moved={movedId === item.exerciseId ? "true" : undefined}
                 >
+                  <DragHandleIcon className="wl-uf08__handle" />
                   <div className="wl-uf08__row-body">
-                    <span className="wl-uf08__row-name" data-part="row-name">
+                    <span className="wl-uf08__row-name wl-type-row-title" data-part="row-name">
                       {name}
                     </span>
-                    <span className="wl-uf08__row-detail" data-part="row-detail">
+                    <span className="wl-uf08__row-detail wl-type-label" data-part="row-detail">
                       {itemSummary(item)}
                     </span>
                     {favSet.has(item.exerciseId) ? (
-                      <span className="wl-uf08__row-reason" data-part="row-favorite">
+                      <span className="wl-chip wl-uf08__tag" data-part="row-favorite">
                         {en.uf08.favoriteTag}
                       </span>
                     ) : null}
@@ -438,7 +460,7 @@ export function Suggested({
                   {index > 0 ? (
                     <button
                       type="button"
-                      className="wl-uf08__icon wl-uf08__icon--text"
+                      className="wl-button--text wl-uf08__icon wl-uf08__icon--text"
                       data-part="move-up"
                       aria-label={en.uf08.moveUpName(name)}
                       onClick={() => move(-1, "move-up")}
@@ -449,7 +471,7 @@ export function Suggested({
                   {index < items.length - 1 ? (
                     <button
                       type="button"
-                      className="wl-uf08__icon wl-uf08__icon--text"
+                      className="wl-button--text wl-uf08__icon wl-uf08__icon--text"
                       data-part="move-down"
                       aria-label={en.uf08.moveDownName(name)}
                       onClick={() => move(1, "move-down")}
@@ -463,104 +485,101 @@ export function Suggested({
             return (
               <li
                 key={item.exerciseId}
-                className="wl-uf08__row"
+                className="wl-row wl-uf08__row"
                 data-part="item-row"
                 data-id={item.exerciseId}
                 data-main={item.isMain ? "true" : undefined}
               >
+                <span className="wl-uf08__index wl-type-label" aria-hidden="true">
+                  {index + 1}
+                </span>
                 <div className="wl-uf08__row-body">
                   <button
                     type="button"
-                    className="wl-uf08__row-name wl-uf08__row-name--button"
+                    className="wl-uf08__row-name wl-uf08__row-name--button wl-type-row-title"
                     data-part="row-name"
                     aria-label={en.uf08.howTo(name)}
                     onClick={() => setHowToId(item.exerciseId)}
                   >
                     {name}
                   </button>
-                  <span className="wl-uf08__row-detail" data-part="row-detail">
+                  <span className="wl-uf08__row-detail wl-type-label" data-part="row-detail">
                     {itemDetail(item, library, locale)}
                   </span>
                   {backoff !== null ? (
-                    <span className="wl-uf08__row-detail" data-part="row-backoff">
+                    <span className="wl-uf08__row-detail wl-type-label" data-part="row-backoff">
                       {backoff}
                     </span>
                   ) : null}
-                  {item.isMain && addedIds.includes(item.exerciseId) ? (
-                    <span className="wl-uf08__row-reason" data-part="row-main">
-                      {en.uf08.mainTag}
-                    </span>
-                  ) : null}
-                  {favSet.has(item.exerciseId) ? (
-                    <span className="wl-uf08__row-reason" data-part="row-favorite">
-                      {en.uf08.favoriteTag}
+                  {(item.isMain && addedIds.includes(item.exerciseId)) ||
+                  favSet.has(item.exerciseId) ? (
+                    <span className="wl-uf08__tags">
+                      {item.isMain && addedIds.includes(item.exerciseId) ? (
+                        <span className="wl-chip wl-uf08__tag" data-part="row-main">
+                          {en.uf08.mainTag}
+                        </span>
+                      ) : null}
+                      {favSet.has(item.exerciseId) ? (
+                        <span className="wl-chip wl-uf08__tag" data-part="row-favorite">
+                          {en.uf08.favoriteTag}
+                        </span>
+                      ) : null}
                     </span>
                   ) : null}
                   {reason !== "" ? (
-                    <span className="wl-uf08__row-reason" data-part="row-reason">
+                    <span className="wl-uf08__row-detail wl-type-label" data-part="row-reason">
                       {reason}
                     </span>
                   ) : null}
                 </div>
-                {onStartWith !== undefined &&
-                !item.isMain &&
-                catalog?.find((l) => l.id === item.exerciseId)?.type === "compound" ? (
+                <div className="wl-uf08__row-actions">
+                  {onStartWith !== undefined &&
+                  !item.isMain &&
+                  catalog?.find((l) => l.id === item.exerciseId)?.type === "compound" ? (
+                    <button
+                      type="button"
+                      className="wl-button--text wl-uf08__icon wl-uf08__icon--text"
+                      data-part="start-with"
+                      aria-label={en.uf08.startWithName(name)}
+                      onClick={() => {
+                        pendingFocus.current = null;
+                        const refusal = onStartWith(item.exerciseId);
+                        if (refusal === null) {
+                          pendingStartFocus.current = item.exerciseId;
+                          setStatus(en.uf08.mainNow(name));
+                        } else setStatus(refusal);
+                      }}
+                    >
+                      {en.uf08.startWith}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
-                    className="wl-uf08__icon wl-uf08__icon--text"
-                    data-part="start-with"
-                    aria-label={en.uf08.startWithName(name)}
+                    className="wl-button--text wl-uf08__icon wl-uf08__icon--text"
+                    data-part="swap"
+                    aria-label={en.uf08.swapItem(name)}
                     onClick={() => {
                       pendingFocus.current = null;
-                      const refusal = onStartWith(item.exerciseId);
-                      if (refusal === null) {
-                        pendingStartFocus.current = item.exerciseId;
-                        setStatus(en.uf08.mainNow(name));
-                      } else setStatus(refusal);
+                      void navigate(`/session/setup?step=swap&item=${index}`);
                     }}
                   >
-                    {en.uf08.startWith}
+                    {en.uf08.swap}
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="wl-uf08__icon wl-uf08__icon--text"
-                  data-part="swap"
-                  aria-label={en.uf08.swapItem(name)}
-                  onClick={() => {
-                    pendingFocus.current = null;
-                    void navigate(`/session/setup?step=swap&item=${index}`);
-                  }}
-                >
-                  {en.uf08.swap}
-                </button>
-                <button
-                  type="button"
-                  className="wl-uf08__icon"
-                  data-part="remove"
-                  aria-label={en.uf08.remove(name)}
-                  onClick={() => {
-                    pendingFocus.current = index;
-                    setStatus("");
-                    // No new plan → no re-render to move focus for; never leave it pending.
-                    if (!onRemove(item.exerciseId)) pendingFocus.current = null;
-                  }}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="20"
-                    height="20"
-                    aria-hidden="true"
-                    focusable="false"
+                  <button
+                    type="button"
+                    className="wl-uf08__icon"
+                    data-part="remove"
+                    aria-label={en.uf08.remove(name)}
+                    onClick={() => {
+                      pendingFocus.current = index;
+                      setStatus("");
+                      // No new plan → no re-render to move focus for; never leave it pending.
+                      if (!onRemove(item.exerciseId)) pendingFocus.current = null;
+                    }}
                   >
-                    <path
-                      d="M6 6l12 12M18 6L6 18"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                    />
-                  </svg>
-                </button>
+                    <CrossIcon size={20} />
+                  </button>
+                </div>
               </li>
             );
           })}
@@ -589,7 +608,7 @@ export function Suggested({
         <button
           ref={addButtonRef}
           type="button"
-          className="wl-uf08__ghost wl-uf08__add"
+          className="wl-button--secondary wl-uf08__add"
           aria-haspopup="dialog"
           onClick={() => {
             pendingFocus.current = null;
@@ -598,10 +617,16 @@ export function Suggested({
             });
           }}
         >
+          <span>{en.uf08.addExercise}</span>
           <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
-            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" fill="none" />
+            <path
+              d="M12 5v14M5 12h14"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              fill="none"
+            />
           </svg>
-          {en.uf08.addExercise}
         </button>
       ) : null}
 
@@ -609,7 +634,7 @@ export function Suggested({
         <div className="wl-uf08__actions">
           <button
             type="button"
-            className="wl-uf08__ghost"
+            className="wl-button--secondary"
             onClick={() => {
               pendingFocus.current = null;
               setStatus("");
@@ -621,10 +646,11 @@ export function Suggested({
           <button
             ref={looksGoodRef}
             type="button"
-            className="wl-uf08__primary"
+            className="wl-button--primary wl-uf08__primary"
             onClick={() => void navigate(READY_HREF)}
           >
-            {en.uf08.looksGood}
+            <span>{en.uf08.looksGood}</span>
+            <ArrowIcon />
           </button>
         </div>
       )}

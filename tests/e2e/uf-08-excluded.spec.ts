@@ -93,9 +93,13 @@ test("Remove, Never suggest, leave, Start again: the exercise is gone; one ignor
   const removed = (await names.nth(count - 1).textContent())!;
 
   await page.getByRole("button", { name: `Remove ${removed}` }).click();
-  await expect(page.getByRole("status")).toContainText(`${removed} · Never suggest`);
+  await expect(page.locator('[data-part="removed-line"][role="status"]')).toContainText(
+    `${removed} · Never suggest`,
+  );
   await page.getByRole("button", { name: `Never suggest ${removed}` }).click();
-  await expect(page.getByRole("status")).toContainText(`${removed} won't be suggested · Undo`);
+  await expect(page.locator('[data-part="removed-line"][role="status"]')).toContainText(
+    `${removed} won't be suggested · Undo`,
+  );
   await expect(
     page.getByRole("button", { name: `Undo, ${removed} won't be suggested` }),
   ).toBeFocused();

@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.5]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0205, D-0199, D-0191, D-0202]
 deps: [T-0599]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ½ day. Canvas: "Set up · your workout" (#turn-3); UF-08.5 isn't drawn, so apply the sheet pattern. Behaviour: screens/UF-08.2.md, screens/UF-08.5.md, docs/specs/uf-08-add-and-reorder.md. Restyle only. -->
 ## Why
@@ -66,3 +66,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · the UF-08 e2e specs green · commit messages start with `T-0600` and cite UF-08.2/UF-08.5.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0600.md` (D-0157).

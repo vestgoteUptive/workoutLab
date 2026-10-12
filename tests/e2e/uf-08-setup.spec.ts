@@ -1545,41 +1545,6 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     expect(oneDecimal(ratio(err.fg, err.bg))).toBeGreaterThanOrEqual(5.0);
   });
 
-  test("UF-08.2 is unchanged: the legacy budget chips keep their Chalk & Iron look", async ({
-    page,
-  }) => {
-    await openSetup(page);
-    await suggestAt30(page);
-    const legacy = JSON.parse(
-      readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
-    ).color as Record<string, string>;
-    const read = (name: string) =>
-      page.getByRole("button", { name }).evaluate((el) => {
-        const cs = getComputedStyle(el);
-        return {
-          border: `${cs.borderTopWidth} ${cs.borderTopStyle} ${cs.borderTopColor}`,
-          bg: cs.backgroundColor,
-          color: cs.color,
-          radius: cs.borderTopLeftRadius,
-          weight: cs.fontWeight,
-          gap: getComputedStyle(el.parentElement!).columnGap,
-        };
-      });
-    expect(await read("20 minutes")).toEqual({
-      border: `1px solid ${rgb(legacy["line-strong"]!)}`,
-      bg: TRANSPARENT,
-      color: rgb(legacy.text!),
-      radius: "14px",
-      weight: "500",
-      gap: "8px",
-    });
-    expect(await read("30 minutes")).toMatchObject({
-      bg: rgb(legacy.accent!),
-      color: rgb(legacy["on-accent"]!),
-      weight: "700",
-    });
-  });
-
   test("AC6 motion: the only transition is the state cross-fade, instant under reduced motion", async ({
     page,
   }) => {
@@ -1650,5 +1615,295 @@ test.describe("T-0599 AC8 canvas compare at 390 x 844", () => {
       fullPage: true,
     });
     await compareWithCanvas(page, testInfo, { turn: "turn-5", frame: "Set up · ready" });
+  });
+});
+
+// ---- T-0600 UF-08.2 Your workout and UF-08.5 Add exercise (D-0208, D-0210, D-0211 §5, D-0216) ----
+const legacyTokens = JSON.parse(
+  readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
+) as { color: Record<string, string>; radius: Record<string, number> };
+
+const SEL_082 = '[data-screen-id="UF-08.2"]';
+const sheetOf = (page: Page) => page.locator('[data-screen-id="UF-08.5"]');
+const openSheet = async (page: Page): Promise<void> => {
+  await page.getByRole("button", { name: "Add exercise" }).click();
+  await expect(sheetOf(page)).toBeVisible();
+};
+
+/** Every colour a node under `sel` computes (text, fill, borders, outline), as a flat list. */
+async function computedColours(page: Page, sel: string): Promise<string[]> {
+  return page.evaluate((root) => {
+    const out = new Set<string>();
+    for (const el of document.querySelectorAll(`${root}, ${root} *, .wl-sheet-scrim`)) {
+      const cs = getComputedStyle(el);
+      for (const p of [
+        "color",
+        "backgroundColor",
+        "borderTopColor",
+        "borderBottomColor",
+      ] as const) {
+        out.add(cs[p]);
+      }
+      if (cs.outlineStyle !== "none") out.add(cs.outlineColor);
+    }
+    return [...out];
+  }, sel);
+}
+
+test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("AC1 UF-08.2 is plan: plan.bg, theme-color; the open sheet keeps theme-color, 28px radii, 45% scrim", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await expect(screenUF082(page)).toHaveAttribute("data-wl-state", "plan");
+    expect((await cssOf(page, SEL_082, ["background-color"]))[0]).toBe(rgb(plan.bg!));
+    await expect.poll(() => themeColor(page)).toBe(plan.bg);
+    await openSheet(page);
+    const sheet = '[data-screen-id="UF-08.5"]';
+    await expect(sheetOf(page)).toHaveAttribute("data-wl-state", "plan");
+    const [tl, tr, bl, br] = await cssOf(page, sheet, [
+      "border-top-left-radius",
+      "border-top-right-radius",
+      "border-bottom-left-radius",
+      "border-bottom-right-radius",
+    ]);
+    expect([tl, tr, bl, br]).toEqual(["28px", "28px", "0px", "0px"]);
+    const scrim = await cssOf(page, ".wl-sheet-scrim", ["background-color"]);
+    expect(scrim[0]).toMatch(/\/ 0\.45\)$/);
+    await expect.poll(() => themeColor(page)).toBe(plan.bg);
+    // The sheet paints plan.bg itself, so it needs no cross-fade.
+    expect((await cssOf(page, sheet, ["background-color"]))[0]).toBe(rgb(plan.bg!));
+  });
+
+  test("AC2 time bar: warm-up is ink-muted with its label, items ink, track raise; no legacy warn or accent", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const seg = (kind: string) => `[data-part="bar"] [data-segment="${kind}"]`;
+    expect((await cssOf(page, seg("warmup"), ["background-color"]))[0]).toBe(
+      rgb(plan["ink-muted"]!),
+    );
+    expect((await cssOf(page, seg("item"), ["background-color"]))[0]).toBe(rgb(plan.ink!));
+    expect((await cssOf(page, '[data-part="bar"]', ["background-color"]))[0]).toBe(
+      rgb(plan.raise!),
+    );
+    await expect(page.locator('[data-part="budget-text"]')).toBeVisible();
+    await expect(page.locator('[data-part="budget-text"]')).toHaveText(/\d+ min/);
+    // Over budget: shrink to the smallest time chip; the bar never takes a warn colour.
+    await page.getByRole("button", { name: "20 minutes" }).click();
+    const found = await computedColours(page, SEL_082);
+    expect(found).not.toContain(rgb(legacyTokens.color.warn!));
+    expect(found).not.toContain(rgb(legacyTokens.color.accent!));
+    await openSheet(page);
+    const inSheet = await computedColours(page, '[data-screen-id="UF-08.5"]');
+    expect(inSheet).not.toContain(rgb(legacyTokens.color.warn!));
+    expect(inSheet).not.toContain(rgb(legacyTokens.color.accent!));
+  });
+
+  test("AC3 Reorder: the moved row is raise with ink text (6.2), captions ink-on-raise", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await page.getByRole("button", { name: "Reorder" }).click();
+    const names = page.locator('[data-part="item-row"] [data-part="row-name"]');
+    const first = (await names.first().textContent())!;
+    await page.getByRole("button", { name: `Move ${first} down` }).click();
+    const moved = page.locator('[data-part="item-row"][data-moved="true"]');
+    await expect(moved).toHaveCount(1);
+    await expect(moved).toContainText(first);
+    const read = await moved.evaluate((el) => {
+      const cs = getComputedStyle(el);
+      const cap = getComputedStyle(el.querySelector('[data-part="row-detail"]')!);
+      const name = getComputedStyle(el.querySelector('[data-part="row-name"]')!);
+      return { bg: cs.backgroundColor, name: name.color, caption: cap.color };
+    });
+    expect(read.bg).toBe(rgb(plan.raise!));
+    expect(read.name).toBe(rgb(plan.ink!));
+    expect(read.caption).toBe(rgb(plan["ink-on-raise"]!));
+    expect(oneDecimal(ratio(read.name, read.bg))).toBeGreaterThanOrEqual(6.2);
+    expect(ratio(read.caption, read.bg)).toBeGreaterThanOrEqual(4.5);
+    // The handle is an icon, not text, and hidden from assistive tech.
+    await expect(moved.locator(".wl-uf08__handle")).toHaveAttribute("aria-hidden", "true");
+  });
+
+  test("AC4 Add sheet: the search has a 1px ink-muted boundary", async ({ page }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await openSheet(page);
+    const search = '[data-screen-id="UF-08.5"] input[type="search"]';
+    expect(
+      await cssOf(page, search, ["border-top-width", "border-top-style", "border-top-color"]),
+    ).toEqual(["1px", "solid", rgb(plan["ink-muted"]!)]);
+    await expect(page.getByRole("dialog", { name: "Add exercise" })).toBeVisible();
+  });
+
+  test("AC5 one primary; every text pair >= 4.5; text on raise is never ink-muted; axe on screen, Reorder and sheet", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await expect(page.locator(".wl-button--primary")).toHaveCount(1);
+    const checkPairs = async (what: string) => {
+      const pairs = await textPairs(page);
+      expect(pairs.length, what).toBeGreaterThan(10);
+      for (const p of pairs) {
+        expect(ratio(p.fg, p.bg), `${what}: ${p.text}: ${p.fg} on ${p.bg}`).toBeGreaterThanOrEqual(
+          4.5,
+        );
+        if (p.bg === rgb(plan.raise!)) {
+          expect(p.fg, `${what}: ${p.text} on raise`).not.toBe(rgb(plan["ink-muted"]!));
+        }
+      }
+      const axe = await new AxeBuilder({ page }).withRules(["color-contrast"]).analyze();
+      expect(axe.violations, what).toEqual([]);
+    };
+    await checkPairs("UF-08.2");
+    const looks = (await textPairs(page)).find((p) => p.text === "Looks good")!;
+    expect([looks.fg, looks.bg]).toEqual([rgb(plan["on-action"]!), rgb(plan.action!)]);
+    // A raise block with text on it: the standing notice and a refusal line are the same pair.
+    await page.getByRole("button", { name: "Reorder" }).click();
+    await page
+      .getByRole("button", { name: /^Move .* down$/ })
+      .first()
+      .click();
+    await checkPairs("Reorder");
+    await page.getByRole("button", { name: "Done" }).click();
+    await openSheet(page);
+    await checkPairs("Add sheet");
+    await page.evaluate(() => {
+      const status = document.querySelector('[data-part="sheet-status"]')!;
+      status.textContent = "Test refusal on raise";
+    });
+    await checkPairs("Add sheet with a refusal");
+    await sheetOf(page).getByLabel("Search exercises").fill("squat");
+    await checkPairs("Add sheet, results");
+  });
+
+  test("AC6 targets: Swap, Remove, Move, the rows and the sheet controls are at least 44 x 44", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const big = async (locators: ReturnType<Page["locator"]>) => {
+      const all = await locators.all();
+      expect(all.length).toBeGreaterThan(0);
+      for (const l of all) {
+        const box = await l.boundingBox();
+        expect(box).not.toBeNull();
+        expect(box!.width).toBeGreaterThanOrEqual(44);
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+      }
+    };
+    await big(page.locator('[data-part="swap"], [data-part="remove"], [data-part="item-row"]'));
+    await big(page.locator('[data-part="row-name"]:is(button)'));
+    await big(page.getByRole("button", { name: /^(Shuffle|Add exercise|Reorder|Looks good)$/ }));
+    await big(page.locator(".wl-uf08__chip"));
+    await page.getByRole("button", { name: "Reorder" }).click();
+    await big(
+      page.locator('[data-part^="move-"], [data-part="item-row"], [data-part="reorder-done"]'),
+    );
+    await page.getByRole("button", { name: "Done" }).click();
+    await openSheet(page);
+    await sheetOf(page).getByLabel("Search exercises").fill("squat");
+    await big(
+      sheetOf(page).locator(
+        '[data-part="pick-row"], [data-part="pick-add"], [data-part="pick-start"], button[aria-label="Close"], button[aria-label="Clear search"], input[type="search"]',
+      ),
+    );
+  });
+
+  test("AC6 motion: the sheet has no transition, the screen cross-fade is instant under reduced motion", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await openSheet(page);
+    const read = () =>
+      page.evaluate(() => {
+        const dur = (sel: string) =>
+          getComputedStyle(document.querySelector(sel)!).transitionDuration;
+        return {
+          root: dur('[data-screen-id="UF-08.2"]'),
+          sheet: dur('[data-screen-id="UF-08.5"]'),
+          scrim: dur(".wl-sheet-scrim"),
+        };
+      });
+    expect(await read()).toEqual({ root: "0.2s", sheet: "0s", scrim: "0s" });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    expect(await read()).toEqual({ root: "0s", sheet: "0s", scrim: "0s" });
+  });
+
+  test("AC6 the empty page status stays in the accessibility tree (a live region is never display:none)", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    const status = page.locator('[data-part="status"]');
+    await expect(status).toHaveText("");
+    await expect(page.getByRole("status")).toHaveCount(2);
+    expect(await status.evaluate((el) => getComputedStyle(el).display)).not.toBe("none");
+  });
+
+  test("AC7 'No exercises left' is a plain ink line in plan, and Remove still removes", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    while ((await itemRows(page).count()) > 0) {
+      await itemRows(page).first().locator('[data-part="remove"]').click();
+    }
+    const line = page.locator('[data-part="nothing-fits"]');
+    await expect(line).toHaveText(/No exercises left/);
+    expect((await cssOf(page, '[data-part="nothing-fits"]', ["color"]))[0]).toBe(rgb(plan.ink!));
+    await expect(page.locator('[role="alert"]')).toHaveCount(0);
+    // The Removed line is in plan too: its Never suggest control is a text button.
+    const never = page.locator('[data-part="never-suggest"]').first();
+    await expect(never).toHaveClass(/wl-button--text/);
+    expect((await cssOf(page, '[data-part="never-suggest"]', ["color"]))[0]).toBe(rgb(plan.ink!));
+  });
+});
+
+// ---- T-0600 AC8: canvas compare at 390 x 844 (WL_CANVAS_COMPARE=1; skipped otherwise) ----
+test.describe("T-0600 AC8 canvas compare at 390 x 844", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("Set up · your workout", async ({ page }, testInfo) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({
+      path: testInfo.outputPath("cobalt", "set-up-your-workout-app-full.png"),
+      fullPage: true,
+    });
+    await compareWithCanvas(page, testInfo, { turn: "turn-3", frame: "Set up · your workout" });
+  });
+
+  // No canvas frame draws Reorder mode or the Add sheet (T-0600 notes): app-only shots.
+  test("Reorder mode and the open Add sheet (app only)", async ({ page }, testInfo) => {
+    await openSetup(page);
+    await suggestAt30(page);
+    await page.getByRole("button", { name: "Reorder" }).click();
+    await page
+      .getByRole("button", { name: /^Move .* down$/ })
+      .first()
+      .click();
+    await page.screenshot({
+      path: testInfo.outputPath("cobalt", "set-up-your-workout-reorder-app.png"),
+      fullPage: true,
+    });
+    await page.getByRole("button", { name: "Done" }).click();
+    await openSheet(page);
+    await page.screenshot({
+      path: testInfo.outputPath("cobalt", "add-exercise-sheet-app.png"),
+    });
+    await sheetOf(page).getByLabel("Search exercises").fill("squat");
+    await page.screenshot({
+      path: testInfo.outputPath("cobalt", "add-exercise-sheet-results-app.png"),
+    });
   });
 });
