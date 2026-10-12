@@ -62,6 +62,13 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
     saveRef.current?.focus();
   }, []);
 
+  // T-0621 (D-0212 §1.4): reps at or above the top of the range, on a plain rep-range set.
+  const targetHit =
+    item.repsMax !== null &&
+    item.durationS === null &&
+    state.setIndex < item.sets &&
+    (reps ?? 0) >= item.repsMax;
+
   const unedited = weightText === openingText;
   const parsed = parseWeight(weightText);
   const invalid = !bodyweight && !unedited && !parsed.ok;
@@ -120,6 +127,11 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
           : en.uf09.liftingCaption(state.setIndex + 1, item.sets)}
       </p>
       <h1 className="wl-type-page-title wl-uf09__name">{exercise?.name ?? item.exerciseId}</h1>
+      {targetHit ? (
+        <p className="wl-uf09__note wl-type-label" data-field="target-hit">
+          {en.uf09.targetHit}
+        </p>
+      ) : null}
       <div className="wl-uf09__field" role="group" aria-label={en.uf09.repsLabel}>
         <button
           type="button"

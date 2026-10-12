@@ -2,8 +2,8 @@
 // much of it, its cue, and "I'm ready". The 60 s set-up countdown is the machine's persisted
 // wall-clock timer (NFR-TIME-1); at 0 the host dispatches `READY`. Seam entries (T-0306b's Swap)
 // sit at their `orderActions` positions (D-0071 §4).
-import { useEffect, useRef } from "react";
-import { ArrowIcon } from "../../components/icons/index.js";
+import { useEffect, useId, useRef } from "react";
+import { ArrowIcon, TickIcon } from "../../components/icons/index.js";
 import { formatKg } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { itemSummary } from "../../lib/i18n/workout.js";
@@ -30,6 +30,15 @@ export function NextExercise({
       : item.prefill.weightKg;
   const cue = useCue(item.exerciseId);
   const readyRef = useRef<HTMLButtonElement>(null);
+  const setupId = useId();
+  // T-0621 (D-0212 §1.4): how the item just finished went. Only after a lifted item: UF-09.6
+  // after UF-09.1 or the warm-up is item 0, and a skipped item has no logged sets.
+  const prev = state.itemIndex - 1;
+  const prevItem = ctx.plan.items[prev];
+  const prevSets = prevItem ? state.loggedSets.filter((s) => s.itemIndex === prev).length : 0;
+  const prevName = prevItem
+    ? (ctx.library.find((e) => e.id === prevItem.exerciseId)?.name ?? prevItem.exerciseId)
+    : "";
   const ids = orderActions(["ready"], seams, "next");
 
   useEffect(() => {
@@ -39,6 +48,12 @@ export function NextExercise({
   return (
     <div className="wl-uf09__view wl-uf09__view--next">
       <p className="wl-uf09__state wl-type-label">{en.uf09.titles.next}</p>
+      {prevSets > 0 ? (
+        <p className="wl-uf09__note wl-type-label" data-field="exercise-done">
+          <TickIcon size={16} aria-hidden="true" />
+          {en.uf09.exerciseDone(prevName, prevSets)}
+        </p>
+      ) : null}
       <h1 className="wl-uf09__name wl-type-section">{name}</h1>
       {/* Two whole formatter outputs as siblings, never joined (D-0118 §11, D-0114 §5). */}
       <p className="wl-uf09__detail" data-field="detail">
@@ -60,9 +75,14 @@ export function NextExercise({
         {movedName === null ? null : en.uf09.movedLater(movedName)}
       </p>
       {state.timer ? (
-        <p className="wl-uf09__count wl-type-hero-number" role="timer">
-          {formatClock(remainingS(state.timer, nowMs))}
-        </p>
+        <>
+          <p id={setupId} className="wl-uf09__note wl-type-label" data-field="setup-label">
+            {en.uf09.setupTime}
+          </p>
+          <p className="wl-uf09__count wl-type-hero-number" role="timer" aria-labelledby={setupId}>
+            {formatClock(remainingS(state.timer, nowMs))}
+          </p>
+        </>
       ) : null}
       {ids.map((id) => {
         if (id === "ready") {

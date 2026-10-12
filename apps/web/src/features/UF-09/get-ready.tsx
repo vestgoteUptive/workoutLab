@@ -4,20 +4,31 @@
 import { useEffect, useRef } from "react";
 import { ArrowIcon } from "../../components/icons/index.js";
 import { en } from "../../lib/i18n/en.js";
+import { itemSummary } from "../../lib/i18n/workout.js";
 import { remainingS } from "./timer.js";
 import type { ViewProps } from "./views.js";
 
-/** The first thing the user does: "Warm-up", or the first exercise's library name (its id when
- *  the entry is missing, D-0118 §8). */
-function firstItemName({ ctx }: Pick<ViewProps, "ctx">): string {
-  if (ctx.plan.warmup.length > 0) return en.uf09.indexWarmup;
-  const item = ctx.plan.items[0];
-  if (!item) return "";
-  return ctx.library.find((e) => e.id === item.exerciseId)?.name ?? item.exerciseId;
+/** The first thing the user does: "Warm-up" with its summary (D-0066 per-move time), or the first
+ *  exercise's library name (its id when the entry is missing, D-0118 §8) with its summary. */
+function firstStep({ ctx }: Pick<ViewProps, "ctx">): { name: string; summary: string } {
+  const { warmup, items } = ctx.plan;
+  if (warmup.length > 0) {
+    return {
+      name: en.uf09.indexWarmup,
+      summary: en.uf09.warmupSummary(warmup.length, warmup[0]!.durationS),
+    };
+  }
+  const item = items[0];
+  if (!item) return { name: "", summary: "" };
+  return {
+    name: ctx.library.find((e) => e.id === item.exerciseId)?.name ?? item.exerciseId,
+    summary: itemSummary(item),
+  };
 }
 
 export function GetReady({ state, ctx, nowMs, send }: ViewProps) {
   const startRef = useRef<HTMLButtonElement>(null);
+  const first = firstStep({ ctx });
   const hasWarmup = ctx.plan.warmup.length > 0;
   const remaining = state.timer ? remainingS(state.timer, nowMs) : null;
 
@@ -39,8 +50,14 @@ export function GetReady({ state, ctx, nowMs, send }: ViewProps) {
           {digit ? String(remaining) : en.uf09.go}
         </p>
       )}
+      <p className="wl-uf09__note wl-type-label" data-field="first-up">
+        {en.uf09.firstUp}
+      </p>
       <p className="wl-uf09__first-item wl-type-page-title" data-field="first-item">
-        {firstItemName({ ctx })}
+        {first.name}
+      </p>
+      <p className="wl-uf09__note wl-type-label" data-field="first-summary">
+        {first.summary}
       </p>
       <button
         ref={startRef}
