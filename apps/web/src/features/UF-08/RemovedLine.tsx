@@ -65,7 +65,7 @@ export function RemovedLine({
               const name = exerciseName(id, library);
               const stored = storedIds.includes(id);
               return (
-                <li key={id} className="wl-uf08__removed-row" data-part="removed-row">
+                <li key={id} className="wl-row wl-uf08__removed-row" data-part="removed-row">
                   <span>
                     {stored ? en.uf08.wontBeSuggested(name) : name}
                     {" · "}
@@ -74,8 +74,8 @@ export function RemovedLine({
                     type="button"
                     className={
                       stored
-                        ? "wl-uf08__removed-btn wl-uf08__removed-btn--undo"
-                        : "wl-uf08__removed-btn"
+                        ? "wl-button--text wl-uf08__removed-btn wl-uf08__removed-btn--undo"
+                        : "wl-button--text wl-uf08__removed-btn"
                     }
                     data-part={stored ? "undo" : "never-suggest"}
                     aria-label={stored ? en.uf08.undoName(name) : en.uf08.neverSuggestName(name)}

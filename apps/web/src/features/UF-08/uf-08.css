@@ -3,25 +3,17 @@
    here, never inline, so the :focus-visible ring is never overridden (WCAG 2.4.7). Every
    control is at least 44 x 44 px (NFR-A11Y-2).
 
-   UF-08.1 and UF-08.4 are Cobalt "plan" screens (T-0599, D-0208, D-0211): their roots carry
-   data-wl-state="plan" and .wl-page, and their controls are the shared .wl-chip, .wl-segmented,
-   .wl-toggle, .wl-input and .wl-button--primary from main.css, so nothing here recolours them.
-   Rules for the plan screens sit under `.wl-uf08[data-wl-state]`, which out-ranks the base rules
-   whatever the load order. UF-08.2, UF-08.5 and Reorder keep the Chalk & Iron look until T-0600. */
+   Every UF-08 screen is a Cobalt "plan" screen (T-0599 UF-08.1/.4, T-0600 UF-08.2/.5, D-0208,
+   D-0211): the roots carry data-wl-state="plan" and .wl-page, and the controls are the shared
+   .wl-chip, .wl-segmented, .wl-toggle, .wl-input, .wl-row, .wl-button--* and .wl-sheet from
+   main.css, so nothing here recolours them. Rules that touch a shared class sit under
+   `.wl-uf08[data-wl-state]`, which out-ranks the shared ones whatever the load order. */
 .wl-uf08 {
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   gap: 16px;
   min-block-size: 100dvh;
-}
-
-/* No state: the old padding, colours and font. Under a state root the state paints them. */
-.wl-uf08:not([data-wl-state]) {
-  padding: 16px 20px 24px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-bg);
-  font-family: var(--wl-font-body);
 }
 
 .wl-uf08__top {
@@ -41,92 +33,23 @@
   text-decoration: none;
 }
 
-.wl-uf08:not([data-wl-state]) .wl-uf08__title {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  font-size: 2.5rem;
-  font-weight: 800;
-  line-height: 1;
-  text-transform: uppercase;
-}
-
-.wl-uf08__label {
-  margin: 0 0 8px;
-  color: var(--wl-color-text-muted);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.wl-uf08__fit {
-  margin: 0;
-  padding: 16px 20px;
-  font-weight: 700;
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 16px;
-}
-
-.wl-uf08__primary {
-  min-height: 56px;
-  margin-top: auto;
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-  border: 0;
-  border-radius: 16px;
-  font: inherit;
-  font-size: 1.125rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
 .wl-uf08__back[aria-disabled="true"] {
   color: var(--wl-ink-muted);
   cursor: not-allowed;
 }
 
-.wl-uf08__primary[aria-disabled="true"] {
-  color: var(--wl-color-text-muted);
-  background: var(--wl-color-surface-2);
-  cursor: not-allowed;
+.wl-uf08__primary {
+  margin-top: auto;
 }
 
-/* UF-08.2 is not migrated yet (T-0600): its budget chips and Skipping line keep the Chalk & Iron look. */
-.wl-uf08:not([data-wl-state]) .wl-uf08__chips {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 8px;
-}
-
-.wl-uf08:not([data-wl-state]) .wl-uf08__chip {
-  color: var(--wl-color-text);
-  background: transparent;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 14px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.wl-uf08:not([data-wl-state]) .wl-uf08__chip[aria-pressed="true"] {
-  color: var(--wl-color-on-accent);
-  background: var(--wl-color-accent);
-  border-color: var(--wl-color-accent);
-  font-weight: 700;
-}
-
-.wl-uf08:not([data-wl-state]) .wl-uf08__chip:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
+.wl-uf08__close:focus-visible,
+.wl-uf08__back:focus-visible,
+.wl-uf08__step:focus-visible,
+.wl-uf08__primary:focus-visible {
+  outline: 2px solid var(--wl-focus);
   outline-offset: 2px;
 }
 
-.wl-uf08:not([data-wl-state]) .wl-uf08__skipping {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-}
-
-/* ---- UF-08.1 and UF-08.4 in the plan state (T-0599) ---- */
 /* t-0599-plan-start */
 .wl-uf08__chip,
 .wl-uf08__skip-chip {
@@ -303,29 +226,59 @@
 }
 /* t-0599-plan-end */
 
-/* ---- UF-08.2 Suggested workout (T-0303b, D-0109) ---- */
+/* ---- UF-08.2 Your workout and UF-08.5 Add exercise in the plan state (T-0600) ---- */
+/* The why chips and the Favorite and Main tags are labels, not controls: outline .wl-chip form
+   with the pointer and the 44 px target taken off. */
 .wl-uf08__why {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wl-uf08__why-chip {
-  padding: 6px 10px;
-  color: var(--wl-color-accent-hover);
-  background: var(--wl-color-surface-2);
-  border-radius: 8px;
-  font-size: 0.75rem;
-  font-weight: 500;
+.wl-uf08[data-wl-state] :is(.wl-uf08__why-chip, .wl-uf08__tag) {
+  min-block-size: 0;
+  min-inline-size: 0;
+  padding: 4px 12px;
+  font-size: 0.875rem;
+  line-height: 1.3;
+  pointer-events: none;
+  cursor: default;
 }
 
+.wl-uf08__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-block-start: 4px;
+}
+
+/* The skipping line and the excluded-areas notice are the shared notice (T-0593). */
+.wl-uf08__skipping {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--wl-ink);
+  background: var(--wl-raise);
+  border-radius: var(--wl-radius-tile);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.wl-uf08__skipping-icon {
+  flex: none;
+}
+
+/* The time bar: an empty track in --wl-raise, the items in --wl-ink, the warm-up in
+   --wl-ink-muted. Over budget changes the words, never a colour (D-0211 §5). */
 .wl-uf08__budget {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
 .wl-uf08__bar {
@@ -333,144 +286,185 @@
   gap: 2px;
   block-size: 12px;
   overflow: hidden;
-  border-radius: 6px;
+  background: var(--wl-raise);
+  border-radius: var(--wl-radius-pill);
 }
 
 /* flex-grow is each segment's seconds, set on the node (D-0109 §5). */
 .wl-uf08__seg {
   flex-basis: 0;
   min-inline-size: 2px;
-  background: var(--wl-color-accent);
+  background: var(--wl-ink);
 }
 
 .wl-uf08__seg[data-segment="warmup"] {
-  background: var(--wl-color-text-muted);
+  background: var(--wl-ink-muted);
 }
 
 .wl-uf08__seg[data-segment="unused"] {
-  background: var(--wl-color-surface-2);
-}
-
-/* Over the budget (D-0109 §5): the item segments only. */
-.wl-uf08__seg--warn {
-  background-color: var(--wl-color-warn);
+  background: transparent;
 }
 
 .wl-uf08__budget-text {
   margin: 0;
-  font-size: 0.875rem;
-  font-weight: 700;
+  color: var(--wl-ink);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.4;
 }
 
+/* The rows: hairline items, the index, the title, the caption, then Swap and Remove. */
 .wl-uf08__rows {
   display: flex;
   flex-direction: column;
-  gap: 6px;
   margin: 0;
   padding: 0;
   list-style: none;
+  border-block-start: 1px solid var(--wl-line);
 }
 
-.wl-uf08__row {
+.wl-uf08__row--warmup {
+  border-block-start: 1px solid var(--wl-line);
+}
+
+.wl-uf08__row--warmup + .wl-uf08__rows {
+  border-block-start: 0;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__row {
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 12px;
+  padding-block: 0 12px;
+}
+
+.wl-uf08__index {
   display: flex;
+  flex: none;
   align-items: center;
-  gap: 10px;
-  padding: 10px 4px 10px 12px;
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 14px;
+  inline-size: 20px;
+  min-block-size: 44px;
 }
 
+/* The body keeps a readable width: with Start with this the actions drop to their own line
+   instead of squeezing the title into a column. */
 .wl-uf08__row-body {
   display: flex;
   flex-direction: column;
-  flex-grow: 1;
+  flex: 1 1 9rem;
   min-inline-size: 0;
 }
 
-.wl-uf08__row-name {
-  font-size: 0.9375rem;
-  font-weight: 700;
+.wl-uf08__row--warmup .wl-uf08__row-body {
+  padding-block-start: 12px;
 }
 
-.wl-uf08__row-name--button {
+.wl-uf08__row--warmup .wl-uf08__index {
+  min-block-size: 0;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__row-name--button {
+  align-self: flex-start;
   min-block-size: 44px;
   padding: 0;
-  font: inherit;
-  font-size: 0.9375rem;
-  font-weight: 700;
-  color: var(--wl-color-text);
+  color: var(--wl-ink);
   text-align: start;
   background: transparent;
   border: 0;
   cursor: pointer;
 }
 
-.wl-uf08__row-name--button:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
 .wl-uf08__row-detail {
-  color: var(--wl-color-text-muted);
-  font-size: 0.8125rem;
+  overflow-wrap: break-word;
 }
 
-.wl-uf08__row-reason {
-  margin-top: 2px;
-  color: var(--wl-color-accent-hover);
-  font-size: 0.75rem;
+.wl-uf08__row-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
 }
 
-.wl-uf08__icon {
+.wl-uf08[data-wl-state] .wl-uf08__icon {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
   inline-size: 44px;
   block-size: 44px;
-  color: var(--wl-color-text-muted);
+  padding: 0;
+  color: var(--wl-ink);
   background: transparent;
   border: 0;
-  border-radius: 10px;
+  border-radius: var(--wl-radius-tile);
   cursor: pointer;
 }
 
-.wl-uf08__icon--text {
-  inline-size: auto;
-  min-inline-size: 44px;
-  padding: 0 10px;
+/* Native buttons take the page font; at one class of weight so a type role (.wl-type-row-title)
+   still sets the size. */
+:where(.wl-uf08[data-wl-state]) :is(.wl-uf08__icon, .wl-uf08__row-name--button) {
   font: inherit;
-  font-size: 0.875rem;
 }
 
-.wl-uf08__icon:hover {
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface-2);
+.wl-uf08[data-wl-state] .wl-uf08__icon--text {
+  inline-size: auto;
+  min-inline-size: 44px;
+  padding: 0 8px;
+}
+
+@media (hover: hover) {
+  .wl-uf08[data-wl-state] .wl-uf08__icon:hover {
+    background: var(--wl-raise);
+  }
+}
+
+.wl-uf08__icon:focus-visible,
+.wl-uf08__row-name--button:focus-visible,
+.wl-uf08__add:focus-visible,
+.wl-uf08__pick-add:focus-visible,
+.wl-uf08__removed-btn:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+/* A standing status line. Empty, it leaves the layout but stays in the accessibility tree
+   (never display:none on a live region). */
+.wl-uf08__status {
+  margin: 0;
+  color: var(--wl-ink-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.wl-uf08__status:empty,
+.wl-uf08__removed:empty,
+.wl-uf08__sheet-status:empty {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .wl-uf08__actions {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  gap: 12px;
   margin-top: auto;
 }
 
 .wl-uf08__actions .wl-uf08__primary {
-  flex-grow: 1;
   margin-top: 0;
 }
 
-.wl-uf08__ghost {
-  min-width: 44px;
-  min-height: 56px;
-  padding: 0 16px;
-  color: var(--wl-color-text);
-  background: transparent;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 16px;
-  font: inherit;
-  font-weight: 500;
-  cursor: pointer;
+.wl-uf08__add {
+  min-block-size: 48px;
 }
 
 /* ---- UF-08.4 Ready (T-0303d, D-0110; plan state T-0599) ---- */
@@ -522,245 +516,31 @@
   cursor: pointer;
 }
 
-.wl-uf08__icon:focus-visible,
-.wl-uf08__ghost:focus-visible,
-.wl-uf08__close:focus-visible,
-.wl-uf08__back:focus-visible,
-.wl-uf08__step:focus-visible,
-.wl-uf08__primary:focus-visible {
-  outline: 2px solid var(--wl-focus);
-  outline-offset: 2px;
-}
-
-/* T-0538 (D-0199): the Removed line. */
+/* T-0538 (D-0199): the Removed line, in the shared row and text-button form. */
 .wl-uf08__removed-rows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.wl-uf08__removed-row {
-  display: flex;
+.wl-uf08[data-wl-state] .wl-uf08__removed-row {
   flex-wrap: wrap;
-  align-items: center;
-  gap: 4px 8px;
-  min-height: 48px;
-  padding: 4px 12px;
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 12px;
-}
-
-.wl-uf08__removed-btn {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 0 14px;
-  color: var(--wl-color-text);
-  background: transparent;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 12px;
-  font: inherit;
-}
-
-.wl-uf08__removed-btn--undo {
-  border-color: transparent;
-  text-decoration: underline;
-}
-
-.wl-uf08__removed-btn[aria-disabled="true"] {
-  opacity: 0.5;
-}
-
-.wl-uf08__removed-btn:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
+  justify-content: flex-start;
+  gap: 0 8px;
+  padding-block: 4px;
 }
 
 .wl-uf08__removed-note {
   margin: 8px 0 0;
-  font-size: 0.8125rem;
-  color: var(--wl-color-text-muted);
+  color: var(--wl-ink-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
 }
 
-/* ---- UF-08.5 Add exercise (T-0573, D-0205) ---- */
-.wl-uf08__add {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  inline-size: 100%;
-  min-block-size: 48px;
-}
-
-.wl-uf08__status {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-  font-size: 0.8125rem;
-}
-
-.wl-uf08__status:empty,
-.wl-uf08__sheet-status:empty {
-  display: none;
-}
-
-.wl-uf08__scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 10;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: var(--wl-color-bg-focus);
-}
-
-.wl-uf08__sheet {
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  inline-size: 100%;
-  max-inline-size: 640px;
-  block-size: 100%;
-  padding: 16px;
-  overflow: hidden;
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface);
-  border-top: 1px solid var(--wl-color-line-strong);
-  font-family: var(--wl-font-body);
-}
-
-.wl-uf08__sheet:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: -2px;
-}
-
-.wl-uf08__sheet-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.wl-uf08__sheet-title {
-  margin: 0;
-  font-family: var(--wl-font-display);
-  text-transform: uppercase;
-}
-
-.wl-uf08__sheet-lead {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf08__search {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.wl-uf08__search-input {
-  box-sizing: border-box;
-  flex-grow: 1;
-  min-inline-size: 0;
-  block-size: 48px;
-  padding: 0 12px;
-  color: var(--wl-color-text);
-  background: var(--wl-color-surface);
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 12px;
-  font: inherit;
-}
-
-.wl-uf08__search-input:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-.wl-uf08__sheet-status {
-  margin: 0;
-  padding: 10px 12px;
-  background: var(--wl-color-surface-2);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 12px;
-}
-
-.wl-uf08__sheet-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex-grow: 1;
-  min-block-size: 0;
-  overflow-y: auto;
-}
-
-.wl-uf08__sheet-sub,
-.wl-uf08__sheet-body section h2 {
-  margin: 0;
-}
-
-.wl-uf08__sheet-empty {
-  margin: 0;
-  color: var(--wl-color-text-muted);
-  text-align: center;
-}
-
-.wl-uf08__picks {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin: 6px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.wl-uf08__pick {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-block-size: 64px;
-  padding: 10px 12px;
-  background: var(--wl-color-surface-2);
-  border: 1px solid var(--wl-color-line);
-  border-radius: 14px;
-  overflow-wrap: anywhere;
-}
-
-.wl-uf08__pick-name {
-  font-size: 1rem;
-  font-weight: 700;
-}
-
-.wl-uf08__fav-tag {
-  margin-inline-start: 8px;
-  padding: 2px 8px;
-  border: 1px solid var(--wl-color-line-strong);
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 400;
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf08__pick-add {
-  min-block-size: 44px;
-  min-inline-size: 96px;
-  margin-top: 6px;
-}
-
-.wl-uf08__pick-add[aria-disabled="true"] {
-  color: var(--wl-color-text-muted);
-}
-
-.wl-uf08__add:focus-visible,
-.wl-uf08__pick-add:focus-visible,
-.wl-uf08__sheet .wl-uf08__icon:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
-}
-
-/* T-0576 (D-0205 §7): Reorder mode. */
+/* T-0576 (D-0205 §7): Reorder mode. The moved row is a --wl-raise block that bleeds past the
+   gutter like the selected option, with --wl-ink-on-raise captions (6.2:1). */
 .wl-uf08__list-head {
   display: flex;
   align-items: center;
@@ -771,17 +551,17 @@
 .wl-uf08__list-title {
   margin: 0;
   margin-inline-end: auto;
-  font: inherit;
-  font-weight: 600;
-  color: var(--wl-color-text);
 }
 
-.wl-uf08__list-button {
+.wl-uf08[data-wl-state] .wl-uf08__list-button {
+  inline-size: auto;
   min-block-size: 44px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  justify-content: center;
 }
 
 .wl-uf08__row--reorder {
-  min-block-size: 64px;
   transition: background-color 150ms;
 }
 
@@ -791,7 +571,144 @@
   }
 }
 
-.wl-uf08__icon--text:focus-visible {
-  outline: 2px solid var(--wl-color-accent);
-  outline-offset: 2px;
+.wl-uf08[data-wl-state] .wl-uf08__row--reorder {
+  align-items: center;
+  min-block-size: 64px;
+  padding-block: 8px;
+}
+
+.wl-uf08__handle {
+  flex: none;
+  color: var(--wl-ink-muted);
+}
+
+.wl-uf08__row--reorder .wl-uf08__row-body {
+  flex-basis: 5.5rem;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__row--reorder[data-moved="true"] {
+  margin-inline: calc(-1 * var(--wl-space-option-bleed));
+  padding-inline: var(--wl-space-option-bleed);
+  color: var(--wl-ink);
+  background: var(--wl-raise);
+  border-block-end-color: transparent;
+  border-radius: var(--wl-radius-option);
+}
+
+.wl-uf08__row--reorder[data-moved="true"] :is(.wl-uf08__row-detail, .wl-uf08__handle) {
+  color: var(--wl-ink-on-raise);
+}
+
+/* ---- UF-08.5 Add exercise: the plan sheet (T-0600, D-0208 §2, D-0216) ---- */
+.wl-uf08__add-sheet {
+  display: contents;
+}
+
+.wl-sheet.wl-uf08__sheet[data-wl-state] {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: hidden;
+}
+
+.wl-uf08__sheet:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: -2px;
+}
+
+.wl-uf08__sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wl-uf08__sheet-title,
+.wl-uf08__sheet-lead,
+.wl-uf08__sheet-sub,
+.wl-uf08__sheet-body section h2 {
+  margin: 0;
+}
+
+.wl-uf08__sheet-lead {
+  color: var(--wl-ink-muted);
+}
+
+.wl-uf08__search {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.wl-uf08__search-input {
+  flex-grow: 1;
+  min-inline-size: 0;
+}
+
+/* The sheet has its own Clear button; the browser's second one is low contrast. */
+.wl-uf08__search-input::-webkit-search-cancel-button {
+  appearance: none;
+  display: none;
+}
+
+.wl-uf08__sheet-status {
+  margin: 0;
+  padding: 12px 14px;
+  color: var(--wl-ink);
+  background: var(--wl-raise);
+  border-radius: var(--wl-radius-tile);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.wl-uf08__sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex-grow: 1;
+  min-block-size: 0;
+  overflow-y: auto;
+}
+
+.wl-uf08__sheet-empty {
+  margin: 0;
+  color: var(--wl-ink-muted);
+  text-align: center;
+}
+
+.wl-uf08__picks {
+  display: flex;
+  flex-direction: column;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__pick {
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px 12px;
+  min-block-size: 64px;
+  overflow-wrap: anywhere;
+}
+
+.wl-uf08__pick > .wl-uf08__pick-name,
+.wl-uf08__pick > .wl-uf08__row-detail {
+  flex-basis: 100%;
+}
+
+.wl-uf08__pick-name {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__pick-add {
+  inline-size: auto;
+  min-block-size: 44px;
+  min-inline-size: 96px;
+  padding: 8px 20px;
+  font-size: 1rem;
+  justify-content: center;
 }
