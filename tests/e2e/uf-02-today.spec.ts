@@ -1348,3 +1348,84 @@ test.describe("T-0636 Latest PR", () => {
     expect(results.violations.map((v) => v.nodes.map((n) => n.target.join(" ")))).toEqual([]);
   });
 });
+
+// ---- T-0638 UF-02.1 "Not feeling it? Quick 20-min" (D-0217) ----
+test.describe("T-0638 Quick 20-min link", () => {
+  const screen = (page: Page, id: string) => page.locator(`[data-screen-id="${id}"]`);
+  const quick = (page: Page) => page.getByRole("link", { name: "Quick 20-min" });
+
+  /** UF-02.1 → the link → UF-08.1 with 20 chosen → Suggest → UF-08.2 still at 20. */
+  async function journey(page: Page): Promise<void> {
+    await quick(page).click();
+    await expect(screen(page, "UF-08.1")).toBeVisible();
+    await expect(page.getByRole("button", { name: "20 minutes" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(page.locator('[data-part="minutes"]')).toHaveText("20");
+    await expect(page.locator('[data-part="fit-line"]')).toHaveText(/^Fits: /);
+    await page.getByRole("button", { name: "Suggest my workout" }).click();
+    await expect(screen(page, "UF-08.2")).toBeVisible();
+    await expect(page.getByRole("button", { name: "20 minutes" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  }
+
+  test("AC4 and AC7: the link follows Start in Tab order, axe is clean, the journey reaches UF-08.2", async ({
+    page,
+  }) => {
+    await seed(page);
+    await expect(tile(page, "quads")).toHaveText("5 / 10");
+    await expect(quick(page)).toHaveAttribute("href", "/session/setup?budget=20");
+    await page.getByRole("link", { name: "Start workout" }).focus();
+    await page.keyboard.press("Tab");
+    await expect(quick(page)).toBeFocused();
+    const results = await new AxeBuilder({ page }).analyze();
+    // The shell has no <main> landmark, so axe's two page-wide best-practice rules (moderate)
+    // flag every Today element, old and new. Every other rule must be clean.
+    const other = results.violations.filter(
+      (v) => v.id !== "region" && v.id !== "landmark-one-main",
+    );
+    expect(other.map((v) => v.id)).toEqual([]);
+    await journey(page);
+  });
+
+  test("AC6: with no history the link shows and the journey gives a first-workout plan", async ({
+    page,
+  }) => {
+    const profileRow = { ...setupProfile, user_id: FAKE_USER_ID };
+    await mockSupabaseData(page, {
+      sets: [],
+      exercises: setupExercises,
+      exerciseAreas: setupExerciseAreas,
+      areaTargets: AREAS.map((area_id) => ({
+        area_id,
+        sets_per_14d: 16,
+        source: "default",
+        updated_at: new Date(Date.now() - 30 * 86_400_000).toISOString(),
+      })),
+      profile: profileRow,
+    });
+    await mockProfilePresent(page, profileRow);
+    await page.goto("/");
+    await injectSession(page);
+    await page.goto("/");
+    await expect(page.locator('[data-part="no-workouts"]')).toBeVisible();
+    await journey(page);
+    await expect(page.locator('[data-part="row-name"]').first()).toBeVisible();
+  });
+
+  test("AC5: the same journey offline, with the cache warm", async ({ page, context }) => {
+    await seed(page);
+    await expect(tile(page, "quads")).toHaveText("5 / 10");
+    await expect
+      .poll(() => cacheCounts(page))
+      .toEqual({ history: 5, library: 2, targets: 9, profile: 1 });
+    await waitForPrecache(page);
+    await context.setOffline(true);
+    await page.reload();
+    await expect(screen(page, "UF-02.1")).toBeVisible({ timeout: 3000 });
+    await journey(page);
+  });
+});

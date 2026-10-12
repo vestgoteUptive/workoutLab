@@ -16,6 +16,9 @@ export const uf02 = {
   /** No cached profile or not all nine targets (AC-10). */
   noPlan: "Connect to finish setting up your plan",
   start: "Start workout",
+  // T-0638 (D-0217): the short-workout link under Start; it opens UF-08.1 with 20 min chosen.
+  quickLead: "Not feeling it?",
+  quickLink: "Quick 20-min",
   // T-0623 (D-0212 §1.1): the week row and the week line that replaced the date line.
   /** The row's accessible name. */
   weekName: "This week",

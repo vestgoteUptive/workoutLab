@@ -259,6 +259,10 @@ export function Today(props: TodayProps = {}) {
             <span>{en.uf02.start}</span>
             <ArrowRight />
           </Link>
+          {/* T-0638 (D-0217): a text link, not a button; Start stays the one primary. */}
+          <p className="wl-today__quick wl-type-body" data-part="quick">
+            {en.uf02.quickLead} <Link to="/session/setup?budget=20">{en.uf02.quickLink}</Link>
+          </p>
         </>
       )}
     </div>

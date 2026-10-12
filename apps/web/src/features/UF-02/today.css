@@ -110,6 +110,28 @@
   box-shadow: 0 0 0 1rem var(--wl-bg);
 }
 
+/* T-0638: "Not feeling it? Quick 20-min". A muted lead and an underlined ink link: a text link in
+ * the plan state, never a button. The link keeps a 44 px target. */
+.wl-today__quick {
+  margin: 0;
+  color: var(--wl-ink-muted);
+  text-align: center;
+}
+
+.wl-today__quick a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  padding-inline: 4px;
+  color: var(--wl-ink);
+  text-decoration: underline;
+}
+
+.wl-today__quick a:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
 /* UF-02.1 suggestion card (T-0302c). Unboxed: a section title, hairline rows, outline chips. The
  * skeleton and the loaded card share this class, so the box holds its height while the first read
  * is pending (NFR-PERF-1 layout part). */
