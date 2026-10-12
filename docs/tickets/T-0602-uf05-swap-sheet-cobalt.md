@@ -5,7 +5,7 @@ lane: web-feature:UF-05
 screens: [UF-08.3, UF-05.1]
 decisions: [D-0208, D-0210, D-0211, D-0213, D-0199, D-0056]
 deps: [T-0593, T-0595, T-0591]
-status: todo
+status: done
 ---
 <!-- Groomed 2026-10-09 (D-0213). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Canvas: "Set up · swap before starting" and "Swap · mid-workout" (#turn-5). Behaviour: screens/UF-08.3-UF-05.1.md. SwapSheet lives in features/UF-05 and is mounted by UF-08 and UF-09; only UF-05 files change. Depends on T-0595, so the mid-workout case opens over a real lift screen. -->
 ## Why
@@ -57,11 +57,4 @@ none
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `uf-05-swap.spec.ts` and `uf-08-setup.spec.ts` green · commit messages start with `T-0602` and cite UF-08.3/UF-05.1.
 
 ## Build / accept log
-
-### Build log (frontend-dev, 2026-10-12)
-- Start: git clean, HEAD dc78220. `SwapSheet.tsx` is now `.wl-sheet[data-wl-state=plan]` + body-level `.wl-sheet-scrim` + grabber, in a `display:contents` plan wrapper (no `data-screen-id` on it). Title = `wl-type-section`, area caption (`wl-type-label`, `en.bodyMap.areas`, names of the heaviest-weight areas; no i18n file touched). Reason chips `.wl-chip` (native radios + tick), candidates `.wl-option` rows (native radios + tick), Use = `.wl-button--primary`, Close = `.wl-button--text`. Tags are outline chips; over-time is `--wl-attention` (5.03 on plan.bg), on the selected block and the hover fill it takes on-selected / ink (attention on raise is 3.62). `uf-05.css` rewritten: wrapper, stack, tags, and a scoped rule that keeps the hidden radio a full-size click target (without it Playwright `.check()` in `uf-08-setup.spec.ts` "Swap the second item" hung: the label span intercepted the click; red on first full run, green after).
-- AC map (vitest `__tests__/cobalt.test.tsx`, e2e `uf-05-swap.spec.ts`): AC1 vitest roots + lift-wrapper host, e2e Pause host and UF-08 host (bg, scrim 0.45, radius, top 150); AC2 vitest classes/radios, e2e selected block bleeds 18 px + ArrowDown; AC3 vitest tag present/absent + CSS, e2e computed attention colour; AC4 existing excluded tests unchanged + e2e offline aria-disabled/note, online check; AC5 vitest contrast pairs + guards, e2e 44 px, axe incl. color-contrast; AC6 e2e transition 0s for both reduced-motion values; AC7 vitest states in plan, existing suites + uf-05-swap, uf-08-setup swap cases green; AC8 e2e `compareWithCanvas` both frames.
-- Removed the obsolete dialog.test "row and chip classes are at least 44 px in uf-05.css" (it grepped the deleted `.wl-uf05__chip/use/close` rules); replaced by the cobalt classes + e2e 44 px check.
-- Planted faults (backup copies, restored by cp), each red: over-time colour to ink (vitest CSS test, e2e computed colour); dialog loses data-wl-state (3 vitest); wl-option class dropped (vitest, e2e bleed); hover rule changed (vitest); scrim removed (vitest, e2e); bare `h2` rule (vitest); raw hex (vitest); Use on legacy class (vitest); `[data-wl-state].wl-uf05__panel{transition}` (e2e 0.2s vs 0s). The first transition fault with a lower-specificity selector stayed green (the shared rule wins), so the fault was re-planted at equal specificity.
-- Canvas verdicts (390x844, /tmp/.../shots-T-0602/): "Set up · swap before starting" and "Swap · mid-workout": sheet from y 150, 28 px radius, grabber, plan.bg, white selected block bleeding 18 px, text-button / white primary all match. Expected deviations: the app's 5 reason chips (D-0212 §4) above the list instead of the 3 variation tabs, no "routine" checkbox, no sub-line/Cancel+Swap pair; the app's host is replaced by the overlay (UF-09 mounts the sheet as the only screen root), so the canvas's dimmed screen behind shows the bare scrim.
-- Gate: typecheck/lint/test, test:repo-checks, format:check, check-all all exit 0. Full e2e: 597/598 on the final run; the one failure was a `pwa-update.spec.ts` test (a different one each full run, 4/4 green solo with --repeat-each=2): load flake, not in this diff.
+Archived in `docs/tickets/log/T-0602.md` (D-0157).

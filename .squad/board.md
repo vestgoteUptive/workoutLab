@@ -175,7 +175,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 |---|---|---|---|---|---|
 | T-0598 | UF-09.8/.9 in plan | web-feature:UF-09 | T-0597 | todo | wl-build-web |
 | T-0600 | UF-08.2/.5 in plan | web-feature:UF-08 | T-0599 | todo | wl-build-web |
-| T-0602 | Swap sheet UF-08.3/UF-05.1 as plan sheet | web-feature:UF-05 | T-0593, T-0595, T-0591 | doing | wl-build-web |
 | T-0606 | UF-01.5 Sign in in plan | web-feature:UF-01 | T-0605 | todo | wl-build-web |
 | T-0612 | UF-11.1/.2/.3: tiles, check-in paper, G-2 → 28 px | web-feature:UF-11 | T-0593, T-0582, T-0591 | doing | wl-build-web |
 | T-0613 | UF-11.4/.5/.6: account, unsynced paper, lists | web-feature:UF-11 | T-0612 | todo | wl-build-web |
