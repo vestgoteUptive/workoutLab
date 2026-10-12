@@ -108,8 +108,8 @@ describe("AC-A3 manifest and icons from tokens", () => {
     expect(wm.short_name).toBe("workout LAB");
     expect(wm.display).toBe("standalone");
     expect(wm.start_url).toBe("/");
-    expect(wm.theme_color).toBe(tokens.color.bg);
-    expect(wm.background_color).toBe(tokens.color.bg);
+    expect(wm.theme_color).toBe(tokens.color.plan.bg);
+    expect(wm.background_color).toBe(tokens.color.plan.bg);
   });
 
   it("lists the three PNG icons, and each file is in dist at its pixel size", () => {
@@ -127,14 +127,14 @@ describe("AC-A3 manifest and icons from tokens", () => {
   });
 
   it("index.html carries the theme-color meta from tokens", () => {
-    expect(indexHtml).toContain(`<meta name="theme-color" content="${tokens.color.bg}"`);
+    expect(indexHtml).toContain(`<meta name="theme-color" content="${tokens.color.plan.bg}"`);
   });
 
-  it("favicon.svg only uses bg/accent", () => {
+  it("favicon.svg only uses plan.bg/plan.ink", () => {
     const svg = read("favicon.svg");
     const colours = [...svg.matchAll(/(?:fill|stroke)="([^"]+)"/g)].map((m) => m[1]);
     expect(colours.length).toBeGreaterThan(0);
-    for (const c of colours) expect([tokens.color.bg, tokens.color.accent]).toContain(c);
+    for (const c of colours) expect([tokens.color.plan.bg, tokens.color.plan.ink]).toContain(c);
   });
 });
 
