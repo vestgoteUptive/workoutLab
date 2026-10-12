@@ -61,6 +61,7 @@ const COMPONENT_CSS = [
   "checkbox/checkbox.css",
   "excluded-areas-notice/excluded-areas-notice.css",
   "offline-status/offline-status.css",
+  "tab-bar/tab-bar.css",
 ].map((f) => readFileSync(resolve(__dirname, "../../apps/web/src/components", f), "utf8"));
 
 test.beforeEach(async ({ page }) => {
@@ -359,6 +360,52 @@ test.describe("390 x 844", () => {
     for (const [i, v] of want.entries()) expect(Math.abs(px[i]! - v)).toBeLessThanOrEqual(4);
     expect(px[3]! / 255).toBeCloseTo(0.45, 1);
     expect(scrim).toMatch(/0\.45\)$/);
+  });
+
+  test("T-0630 AC1 an open sheet and scrim cover the tab bar", async ({ page }) => {
+    await inject(
+      page,
+      `<nav class="wl-tab-bar" data-wl-state="plan" aria-label="Tabs"><a class="wl-tab-bar__link" id="tab" href="#x">Home</a></nav>${sheetHtml()}`,
+    );
+    const tab = (await page.locator("#tab").boundingBox())!;
+    const hit = await page.evaluate(
+      ([x, y]) => {
+        const el = document.elementFromPoint(x as number, y as number)!;
+        return { sheet: !!el.closest("#sheet"), tab: !!el.closest(".wl-tab-bar") };
+      },
+      [tab.x + tab.width / 2, tab.y + tab.height / 2],
+    );
+    expect(hit).toEqual({ sheet: true, tab: false });
+    // Scrim alone (no sheet) also wins over the bar.
+    await inject(
+      page,
+      `<nav class="wl-tab-bar" data-wl-state="plan" aria-label="Tabs"><a class="wl-tab-bar__link" id="tab" href="#x">Home</a></nav><div class="wl-sheet-scrim" id="scrim"></div>`,
+    );
+    const hit2 = await page.evaluate(
+      ([x, y]) => document.elementFromPoint(x as number, y as number)!.id,
+      [tab.x + tab.width / 2, tab.y + tab.height / 2],
+    );
+    expect(hit2).toBe("scrim");
+  });
+
+  test("T-0630 AC2 a scrim with no state ancestor has the plan scrim at 0.45", async ({ page }) => {
+    await inject(page, `<div class="wl-sheet-scrim" id="scrim"></div>`);
+    const [bg, pos] = await css(page, "#scrim", ["background-color", "position"]);
+    expect(pos).toBe("fixed");
+    expect(bg).toMatch(/0\.45\)$/);
+  });
+
+  test("T-0630 AC3 a plan sheet in a lift or rest root keeps the plan type sizes", async ({
+    page,
+  }) => {
+    for (const root of ["lift", "rest"]) {
+      await inject(
+        page,
+        `<div data-wl-state="${root}"><div class="wl-sheet" data-wl-state="plan"><h2 id="h">T</h2><p class="wl-type-label" id="l">L</p></div></div>`,
+      );
+      expect(await css(page, "#h", ["font-weight"])).toEqual(["600"]);
+      expect(await css(page, "#l", ["font-size", "font-weight"])).toEqual(["14px", "400"]);
+    }
   });
 
   test("AC4 text inside the sheet over lift is plan ink and the Close control is >= 44 px", async ({

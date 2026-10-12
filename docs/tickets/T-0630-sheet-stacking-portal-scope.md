@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-05.1, UF-08.3, UF-08.5]
 decisions: [D-0210, D-0216]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 D-0216 addendum, plus the T-0593 and T-0608 reviews:
@@ -39,3 +39,4 @@ None.
 Gate green · full e2e green · commits start with `T-0630`.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0630.md` (D-0157).

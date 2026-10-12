@@ -198,7 +198,6 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0638 | UF-02.1 "Not feeling it? Quick 20-min" link | web-feature:UF-02 | T-0636, T-0637 | todo | wl-build-web |
 | T-0639 | UF-04.1 Upper/Legs group chips + result count | web-feature:UF-04 | T-0608 | todo | wl-build-web |
 | T-0640 | UF-04.1 In plan / Variant / Beginner tags | web-feature:UF-04 | T-0639 | todo | wl-build-web |
-| T-0630 | Sheet stacking and portal scope before UF-08.3/UF-05.1 adopt .wl-sheet: z-index under the tab bar, an unstyled scrim when portalled to body; AccountDeletedNotice outside any state root (T-0593 review, D-0216 addendum) | web-shell | T-0593 | doing | wl-build-web |
 | T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
 | T-0661 | engine records(): a NaN weightKg or reps compares as NaN and is reported as a record; treat non-finite inputs as no set (T-0635 review) | engine | T-0635 | todo | wl-build-engine |
 | T-0663 | UF-03 list-view.swap.host.test.tsx 'rows 1-2 keep their values' times out under load (findByRole 'Set 1 weight in kg'); passes alone | web-feature:UF-03 | — | todo | wl-build-web |
