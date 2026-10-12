@@ -198,6 +198,9 @@ describe("AC-B16 no second string catalogue", () => {
       "true",
       // T-0613 BackToPlan: the `ChevronIcon` direction value; not copy.
       "left",
+      // T-0633 BarPlatesSection: HTML attribute values (`inputMode`, `aria-live`); not copy.
+      "decimal",
+      "polite",
     ]);
     const uiWords = Object.values(uf11).filter((v) => typeof v === "string") as string[];
     for (const file of sourceFiles()) {

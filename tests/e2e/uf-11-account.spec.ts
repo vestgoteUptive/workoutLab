@@ -1105,3 +1105,50 @@ test.describe("T-0613 AC7 canvas compare (390 x 844)", () => {
     });
   });
 });
+
+// T-0633 (UF-11.4, D-0217 §1, D-0218): the "Bar and plates" section, end to end. A seeded profile
+// with a 20 kg bar; the mocked PATCH records its body and the next profile read serves the saved
+// row, so the reload proves the value came back through the real write and re-read path.
+test.describe("T-0633 UF-11.4 bar and plates", () => {
+  test("T-0633 AC11 change the bar to 15, Save sends bar_kg 15, a reload shows 15", async ({
+    page,
+  }) => {
+    const row: Record<string, unknown> = {
+      ...ACCOUNT_PROFILE,
+      bar_kg: 20,
+      plates_kg: [25, 20, 15, 10, 5, 2.5, 1.25],
+    };
+    const patches: Record<string, unknown>[] = [];
+    await open(page);
+    await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, (route) => {
+      const request = route.request();
+      if (request.method() === "PATCH") {
+        const body = request.postDataJSON() as Record<string, unknown>;
+        patches.push(body);
+        Object.assign(row, body);
+        return route.fulfill({ status: 204 });
+      }
+      if (request.method() !== "GET") return route.fallback();
+      const single = (request.headers().accept ?? "").includes("vnd.pgrst.object");
+      return route.fulfill({ status: 200, json: single ? row : [row] });
+    });
+    await page.reload();
+
+    const group = page.getByRole("group", { name: "Bar and plates" });
+    const input = group.getByRole("textbox", { name: "Bar weight (kg)" });
+    await expect(input).toHaveValue("20");
+    await input.fill("15");
+    const save = page.getByRole("button", { name: "Save bar and plates" });
+    await save.click();
+    await expect(page.getByText("Saved", { exact: true })).toBeVisible();
+    expect(patches).toHaveLength(1);
+    expect(patches[0]).toMatchObject({ bar_kg: 15, plates_kg: [25, 20, 15, 10, 5, 2.5, 1.25] });
+
+    await page.reload();
+    await expect(
+      page
+        .getByRole("group", { name: "Bar and plates" })
+        .getByRole("textbox", { name: "Bar weight (kg)" }),
+    ).toHaveValue("15");
+  });
+});
