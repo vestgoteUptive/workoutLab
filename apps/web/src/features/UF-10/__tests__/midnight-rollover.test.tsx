@@ -124,6 +124,34 @@ describe("T-0343 midnight rollover", () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
+  it("T-0924 AC-1 a refresh re-read that outlives the rollover cannot repaint the old window", async () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
+    vi.spyOn(history, "refreshAll").mockResolvedValue(undefined);
+    const real = history.loadTargets;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    let calls = 0;
+    // Call 1 is the first paint; call 2 is the refresh's re-read, held until after the rollover.
+    vi.spyOn(history, "loadTargets").mockImplementation(async () => {
+      calls += 1;
+      const out = await real();
+      if (calls === 2) await gate;
+      return out;
+    });
+    await mountSeeded();
+    await waitFor(() => expect(calls).toBe(2));
+    await tick();
+    await waitFor(() => expect(h1()).toHaveTextContent(en.uf10.window("15–28 Sep")));
+    await act(async () => {
+      release();
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(h1()).toHaveTextContent(en.uf10.window("15–28 Sep"));
+    expect(rowValue("quads")).toBe("0 / 20");
+  });
+
   it("T-0343 AC-6 unmount clears the timer and the listener", async () => {
     await mountSeeded();
     const err = vi.spyOn(console, "error");
