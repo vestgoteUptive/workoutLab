@@ -39,10 +39,11 @@ describe("T-0604 AC2 the PR band", () => {
 });
 
 describe("T-0604 AC1 the title's full stop", () => {
-  it("is decoration with empty alt text, as the shared .wl-title--stop", () => {
-    const r = all.filter((x) => x.selectors.includes(".wl-uf03-summary > h1::after"));
-    expect(r.length).toBe(2);
-    expect(r.some((x) => /content:\s*"\." \/ ""/.test(x.body))).toBe(true);
+  it("comes from the shared .wl-title--stop, with no local copy (T-0675 UF-03.3)", () => {
+    expect(all.filter((x) => x.selectors.some((s) => s.includes("h1::after")))).toEqual([]);
+    expect(strip(main)).toMatch(/\.wl-title--stop::after \{[^}]*content:\s*"\." \/ ""/);
+    const src = readFileSync(resolve(__dirname, "../index.tsx"), "utf8");
+    expect(src).toContain('<h1 className="wl-type-page-title wl-title--stop">');
   });
 });
 

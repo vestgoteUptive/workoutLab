@@ -11,7 +11,7 @@ export { ExerciseHowTo } from "./ExerciseHowTo.js";
 export function Compare() {
   return (
     <div data-screen-id="UF-04.3" data-wl-state="plan" className="wl-page wl-uf04-compare">
-      <h1>{en.screens.libraryCompare}</h1>
+      <h1 className="wl-type-section wl-title--stop">{en.screens.libraryCompare}</h1>
       <CompareContent />
     </div>
   );

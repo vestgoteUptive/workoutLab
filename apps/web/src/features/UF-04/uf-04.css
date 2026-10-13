@@ -132,36 +132,6 @@
   padding-inline: 0;
 }
 
-/* The compare title is a section title with the stop. Its <h1> stays bare in index.tsx (the shell's
- * routes test reads that source for `<h1>{en.screens.libraryCompare}</h1>`), so the section role
- * and the stop of main.css (.wl-type-section, .wl-title--stop) are repeated here, scoped. */
-.wl-uf04-compare > h1 {
-  font-size: 2.75rem;
-  line-height: 1;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-}
-
-.wl-uf04-compare > h1::after {
-  content: "";
-  display: inline-block;
-  inline-size: 0.12em;
-  block-size: 0.12em;
-  margin-inline-start: 0.04em;
-  background: currentColor;
-}
-
-@supports (content: "." / "") {
-  .wl-uf04-compare > h1::after {
-    content: "." / "";
-    display: inline;
-    inline-size: auto;
-    block-size: auto;
-    margin-inline-start: 0;
-    background: none;
-  }
-}
-
 /* ---- UF-04.2 Detail in the plan state (T-0608, D-0208, D-0225) ----
  * Colours are the generic --wl-* variables; the page gutter, titles, rows and buttons come from
  * main.css. The figure sits beside the Primary and Secondary lists and wraps under them when the

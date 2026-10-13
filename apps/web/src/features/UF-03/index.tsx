@@ -10,7 +10,7 @@ import { SummaryContent, type SummaryProps } from "./SummaryContent.js";
 export function Summary(props: SummaryProps = {}) {
   return (
     <div data-screen-id="UF-03.3" data-wl-state="plan" className="wl-uf03-summary">
-      <h1>{en.screens.sessionSummary}</h1>
+      <h1 className="wl-type-page-title wl-title--stop">{en.screens.sessionSummary}</h1>
       <SummaryContent {...props} />
     </div>
   );

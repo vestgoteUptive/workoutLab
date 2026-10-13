@@ -87,7 +87,10 @@ describe("T-0609 AC1 state", () => {
   it("UF-06.2 root, How to as a text button, sessions as rows", async () => {
     await seed({ history: historyH(), sessions: [] });
     renderAt("/progress/back-squat");
-    await screen.findByRole("heading", { level: 1, name: "Back squat" });
+    expect(await screen.findByRole("heading", { level: 1, name: "Back squat" })).toHaveClass(
+      "wl-type-page-title",
+      "wl-title--stop",
+    );
     const root = document.querySelector('[data-screen-id="UF-06.2"]')!;
     expect(root).toHaveAttribute("data-wl-state", "plan");
     expect(root).toHaveClass("wl-page");

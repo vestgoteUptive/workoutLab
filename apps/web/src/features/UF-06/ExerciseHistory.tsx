@@ -30,7 +30,9 @@ export function ExerciseHistory(props: ProgressOptions) {
 
   return (
     <div className="wl-page wl-progress" data-screen-id="UF-06.2" data-wl-state="plan">
-      <h1 className="wl-progress__title">{history.exercise.name}</h1>
+      <h1 className="wl-type-page-title wl-title--stop wl-progress__title">
+        {history.exercise.name}
+      </h1>
       <p className="wl-type-label wl-progress__caption">{en.uf06.last8Weeks}</p>
       <OfflineStatus variant="text" {...statusProps(props)} />
       {history.rows.length === 0 ? (
