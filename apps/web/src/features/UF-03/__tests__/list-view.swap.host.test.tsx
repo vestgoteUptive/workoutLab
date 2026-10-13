@@ -162,8 +162,10 @@ describe("T-0478 AC-2 after a swap, through the real engine and host", () => {
     await openSwapFromList();
     await applyFirstCandidate();
     await waitFor(() => screen.getByRole("heading", { level: 2, name: "Hip thrust" }));
+    // The card heading flips before the rows' inputs are in the accessible tree on a loaded
+    // machine, so wait for the row itself (the ready signal), as the pre-fill test does.
     expect(
-      screen.getByRole<HTMLInputElement>("textbox", { name: "Set 1 weight in kg" }),
+      await screen.findByRole<HTMLInputElement>("textbox", { name: "Set 1 weight in kg" }),
     ).toHaveValue("100");
     expect(screen.getByRole<HTMLInputElement>("textbox", { name: "Set 1 reps" })).toHaveValue("6");
     expect(rowTag(0)).toBe("Back squat");
