@@ -490,15 +490,34 @@ test.describe("T-0395 AC9 resume on a cold start", () => {
     );
     const resumeLook = await resume.evaluate((el) => {
       const cs = getComputedStyle(el);
-      const action = getComputedStyle(el.querySelector(".wl-resume-card__action")!);
+      const actionEl = el.querySelector("a")!;
+      const action = getComputedStyle(actionEl);
+      // T-0665: the shared secondary, measured against a probe carrying the same class in the same state.
+      const probe = document.createElement("a");
+      probe.className = "wl-button--secondary";
+      actionEl.parentElement!.append(probe);
+      const ref = getComputedStyle(probe);
+      const keys = [
+        "backgroundColor",
+        "color",
+        "borderTopWidth",
+        "borderTopColor",
+        "borderTopLeftRadius",
+        "minHeight",
+        "fontWeight",
+      ] as const;
+      const sharedSecondary =
+        actionEl.classList.contains("wl-button--secondary") &&
+        !actionEl.classList.contains("wl-button--primary") &&
+        keys.every((k) => action[k] === ref[k]);
+      probe.remove();
       return {
         bg: cs.backgroundColor,
         top: cs.borderTopWidth,
         bottom: cs.borderBottomWidth,
         radius: cs.borderTopLeftRadius,
         actionBg: action.backgroundColor,
-        // Chromium snaps a 1.5 px border to 1 px at a 1x pixel ratio, so the width is a floor.
-        actionBorder: parseFloat(action.borderTopWidth) >= 1 && action.borderTopStyle === "solid",
+        sharedSecondary,
       };
     });
     expect(resumeLook).toEqual({
@@ -507,7 +526,7 @@ test.describe("T-0395 AC9 resume on a cold start", () => {
       bottom: "1px",
       radius: "0px",
       actionBg: "rgba(0, 0, 0, 0)",
-      actionBorder: true,
+      sharedSecondary: true,
     });
     const results = await new AxeBuilder({ page }).analyze();
     const serious = results.violations.filter(
