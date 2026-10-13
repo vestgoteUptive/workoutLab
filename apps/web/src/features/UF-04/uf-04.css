@@ -125,7 +125,9 @@
   overflow-wrap: anywhere;
 }
 
-.wl-uf04-compare__back {
+/* Scoped and doubled with .wl-button--text so padding-inline: 0 beats the state-scoped text
+ * button's 8px (specificity 0,2,0): the link's left edge sits on the page gutter, like the h1's. */
+.wl-uf04-compare .wl-uf04-compare__back.wl-button--text {
   align-self: flex-start;
   padding-inline: 0;
 }

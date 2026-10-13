@@ -192,3 +192,11 @@ describe("T-0361 source-scan hardening", () => {
     expect(scan(clean)).toEqual([]);
   });
 });
+
+describe("T-0668 UF-04 owns its clear-search string", () => {
+  it("no UF-04 source reads en.uf08, and uf04.clearSearch has the same text", () => {
+    const offenders = sourceFiles().filter((f) => /\ben\.uf08\b/.test(readFileSync(f, "utf8")));
+    expect(offenders.map((f) => relative(FEATURE_DIR, f))).toEqual([]);
+    expect(en.uf04.clearSearch).toBe(en.uf08.clearSearch);
+  });
+});
