@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.6, UF-08.3, UF-03.1]
 decisions: [D-0199]
 deps: [T-0539]
-status: todo
+status: done
 ---
 
 ## Why
@@ -23,3 +23,4 @@ T-0539 (spec: screens/UF-08.3-UF-05.1.md line 21). When the "Don't suggest again
 None.
 
 ## Build / accept log
+Archived in `docs/tickets/log/T-0580.md` (D-0157).

@@ -416,6 +416,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0577 | UF-08.5 Favorites section first on the empty query + Favorite tag on rows | web-feature:UF-08 | T-0576, T-0567, T-0561 | done | wl-build-web |
 | T-0571 | UF-08: favoriteIds on every suggest call (incl. fit line, Add, Start with this) + UF-08.2 Favorite tag | web-feature:UF-08 | T-0561, T-0562, T-0567, T-0577 | done | wl-build-web |
 | T-0582 | UF-11.5/11.6 re-read when the library cache arrives (cold direct load shows no groups) | web-feature:UF-11 | — | done | wl-build-web |
+| T-0580 | Show the failed-exclusion message on the host screen after the swap sheet closes (T-0539 follow-up) | web-feature:UF-09 | T-0539 | done | wl-build-web |
 
 ## Cobalt + state colour redesign (D-0208): phase 1, tokens and landing
 | ID | Title | Lane | Deps | Status | Flow |
@@ -498,3 +499,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0665 | UF-09 resume card: use the shared .wl-button--secondary so today.css drops its hand-made outline button (no hover state) (T-0601 review) | web-feature:UF-09 | T-0601 | done | wl-build-web |
 | T-0668 | UF-04: own `uf04.clearSearch` in flows/uf-04.ts instead of borrowing en.uf08.clearSearch; Compare back link sits ~8px inside the gutter (T-0607 review) | web-feature:UF-04 | T-0607 | done | wl-build-web |
 | T-0674 | UF-03.3 PR band from records(): replace EndedSummary.pr {text} with a structured record (as T-0636 latestPr), formatted with en.* copy; pick which record the band shows; fix the trivially-passing 'successful save shows none' test (T-0604 review) | web-feature:UF-03 | T-0604, T-0636 | done | wl-build-web |
+| T-0666 | Shell: hide the tab bar on /?view=preview so Start sits at the viewport bottom per the canvas (T-0601 deviation) | web-shell | T-0601 | done | wl-build-web |
