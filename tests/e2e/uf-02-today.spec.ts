@@ -786,9 +786,11 @@ test.describe("T-0601 AC3 one primary", () => {
       await expect(primaries).toHaveCount(1);
       const got = await primaries.evaluate((el) => {
         const cs = getComputedStyle(el);
-        const bar = document.querySelector(".wl-tab-bar")!.getBoundingClientRect();
+        // T-0666: the preview has no tab bar; Start's gap is to the viewport bottom instead.
+        const barEl = document.querySelector(".wl-tab-bar");
+        const edge = barEl ? barEl.getBoundingClientRect().top : window.innerHeight;
         const box = el.getBoundingClientRect();
-        return { bg: cs.backgroundColor, fg: cs.color, gap: bar.top - box.bottom };
+        return { bg: cs.backgroundColor, fg: cs.color, gap: edge - box.bottom };
       });
       expect(got.bg).toBe(rgbOf(PLAN.action!));
       expect(got.fg).toBe(rgbOf(PLAN["on-action"]!));
@@ -811,6 +813,25 @@ test.describe("T-0601 AC3 one primary", () => {
     await expect(
       page.locator('[data-part="checkin-card"]').getByRole("button", { name: "Accept" }),
     ).not.toHaveClass(/wl-button--primary/);
+  });
+});
+
+test.describe("T-0666 the preview has no tab bar", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("Start sits at the viewport bottom, and Back restores the tab bar on /", async ({
+    page,
+  }) => {
+    await seedCase(page, "recent");
+    await goScreen(page, "/?view=preview", PREVIEW);
+    await expect(page.locator(".wl-tab-bar")).toHaveCount(0);
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+    const box = await page.locator('[data-part="start"]').boundingBox();
+    expect(box!.y + box!.height).toBeLessThanOrEqual(844);
+    expect(844 - (box!.y + box!.height)).toBeLessThanOrEqual(64);
+    await page.locator('[data-part="back"]').click();
+    await expect(page).toHaveURL(/\/$/);
+    await expect(page.locator(".wl-tab-bar")).toBeVisible();
   });
 });
 
@@ -1081,10 +1102,8 @@ test.describe("T-0601 AC7 targets and motion (390 × 844)", () => {
     expect(got.rootProperty).toBe("background-color");
     expect(got.rootDuration).toBe("0.2s");
     // The page root and the tab bar (the shell's own plan-state root) cross-fade; nothing else moves.
-    expect(got.moving).toEqual([
-      "div.wl-page wl-preview:background-color",
-      "nav.wl-tab-bar:background-color",
-    ]);
+    // T-0666: the preview has no tab bar, so the page root is the only thing that moves.
+    expect(got.moving).toEqual(["div.wl-page wl-preview:background-color"]);
   });
 
   test("under reduced motion nothing animates", async ({ page }) => {

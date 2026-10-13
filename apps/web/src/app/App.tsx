@@ -72,9 +72,13 @@ export function Shell() {
   }, [location.pathname]);
   useThemeColor(location.pathname);
   const showTabBar = useMemo(() => {
+    // T-0666 UF-02.2: the Workout preview is a view of `/` (`?view=preview`) with its own Start
+    // pinned to the bottom, so it takes the tab bar away like focus mode. Back returns to `/`.
+    if (location.pathname === "/" && new URLSearchParams(location.search).get("view") === "preview")
+      return false;
     const route = routes.find((r) => matchesShellRoute(r.path, location.pathname));
     return route?.showTabBar ?? false;
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   return (
     <>

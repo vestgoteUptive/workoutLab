@@ -3,10 +3,11 @@
  * data-wl-state="plan" sets: no raw colour and no px font size in this file. The shared patterns
  * (.wl-page, .wl-row, .wl-chip, .wl-button--*, .wl-type-*) own their look; this file lays them out. */
 
-/* The page fills the space above the tab bar, so Start (the last child) pins to the bottom; a
- * longer list keeps Start in reach just above the tab bar (sticky). */
+/* T-0666: the shell hides the tab bar on this view. The page fills the viewport less the bottom
+ * safe area, so Start (the last child) pins to the bottom; a longer list keeps Start in reach at
+ * the bottom edge (sticky). */
 .wl-page.wl-preview {
-  min-block-size: calc(100dvh - var(--wl-tab-bar-block-size) - env(safe-area-inset-bottom, 0px));
+  min-block-size: calc(100dvh - env(safe-area-inset-bottom, 0px));
   gap: 1.25rem;
 }
 
@@ -113,20 +114,18 @@
   width: 60%;
 }
 
-/* Start: the one primary, pinned above the tab bar. */
+/* Start: the one primary, pinned to the bottom of the viewport. */
 .wl-page.wl-preview > .wl-preview__start {
   position: sticky;
-  inset-block-end: calc(var(--wl-tab-bar-block-size) + env(safe-area-inset-bottom, 0px) + 1rem);
+  inset-block-end: calc(env(safe-area-inset-bottom, 0px) + 1rem);
   z-index: 1;
   /* A solid halo in the page colour, so rows that scroll under Start never show through it. */
   box-shadow: 0 0 0 1rem var(--wl-bg);
 }
 
 /* WCAG 2.4.11: a keyboard-focused control scrolls to above the sticky Start and its halo, never
- * under them. Reserve: tab bar, Start's 1 rem offset, its height (about 4.2 rem), its 1 rem halo
- * and 1 rem of air. */
+ * under them. Reserve: Start's 1 rem offset, its height (about 4.2 rem), its 1 rem halo and 1 rem
+ * of air. */
 .wl-preview :focus-visible {
-  scroll-margin-block-end: calc(
-    var(--wl-tab-bar-block-size) + env(safe-area-inset-bottom, 0px) + 8rem
-  );
+  scroll-margin-block-end: calc(env(safe-area-inset-bottom, 0px) + 8rem);
 }
