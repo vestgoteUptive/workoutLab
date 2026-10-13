@@ -337,7 +337,9 @@
   font-weight: 600;
 }
 
-.wl-uf04-detail__history {
+/* Scoped and doubled with .wl-button--text (T-0668 pattern) so padding-inline: 0 beats the
+ * state-scoped text button's 8px: the label's left edge sits on the page gutter, like the h1's. */
+.wl-uf04-detail .wl-uf04-detail__history.wl-button--text {
   align-self: flex-start;
   padding-inline: 0;
 }

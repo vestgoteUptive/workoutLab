@@ -222,25 +222,6 @@
   font-size: 14px;
 }
 
-.wl-resume-card__action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-  min-height: 44px;
-  padding: 0 16px;
-  border-radius: 10px;
-  background: var(--wl-action);
-  color: var(--wl-on-action);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.wl-resume-card__action:focus-visible {
-  outline: 2px solid var(--wl-action);
-  outline-offset: 2px;
-}
-
 /* UF-09.9 "Do {name} later" failure strip (T-0579): empty until it fails, no gap. */
 .wl-uf09__move-error {
   margin: 0;
