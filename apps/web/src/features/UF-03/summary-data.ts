@@ -8,13 +8,15 @@
 //
 // `now` is the row's `ended_at` (D-0142 §4), never the device clock, so a reload any time later
 // shows the same numbers.
-import { balance, isHardSet, normalizeHistory } from "@workoutlab/engine";
+import { balance, isHardSet, normalizeHistory, recordKey, records } from "@workoutlab/engine";
 import {
   AREAS,
   parseSessionPlan,
   type AreaBalance,
   type AreaTarget,
   type BalanceResult,
+  type HistorySet,
+  type LibraryExercise,
 } from "@workoutlab/shared";
 import {
   currentUserId,
@@ -47,9 +49,60 @@ export interface EndedSummary {
   /** The rating (1–5) preselecting its chip; `null` for none. It is the merged `loadSessions()`
    *  view's (D-0153 §4, D-0148, D-0151), or the stored row's when the view has no entry. */
   effortRating: EffortRating | null;
-  /** A personal record this workout set, as the line the band shows (T-0604). Nothing computes
-   *  it yet, so `loadSummary` leaves it out: the band renders only when it is present. */
-  pr?: { text: string } | null;
+  /** The personal record the band shows (T-0674): this session's biggest improvement. `null` or
+   *  absent: no band. */
+  pr?: SummaryPr | null;
+}
+
+/** The actual set of a record, formatted in the view; never the e1RM number. */
+export interface SummaryPr {
+  name: string;
+  weightKg: number | null;
+  reps: number | null;
+  durationS: number | null;
+  timed: boolean;
+}
+
+type RecordSet = ReturnType<typeof records>[number];
+
+/** Improvement of a record over its `previous`, in percent, on the engine's own ordering key
+ *  (`recordKey`, rule 15). A jump to a higher kind (loaded over bodyweight) or from zero is
+ *  unbounded. */
+function improvementPct(r: RecordSet, timed: boolean): number {
+  const now = recordKey(r as unknown as HistorySet, timed);
+  const was = recordKey(r.previous as unknown as HistorySet, timed);
+  if (now[0] !== was[0] || was[1] <= 0) return Number.POSITIVE_INFINITY;
+  return ((now[1] - was[1]) / was[1]) * 100;
+}
+
+/** The record this session set with the biggest % improvement; a tie goes to the later
+ *  `completedAt`. `null` when the session set none (a first-ever set is no record). */
+export function sessionPr(
+  history: readonly HistorySet[],
+  library: readonly LibraryExercise[],
+  sessionId: string,
+): SummaryPr | null {
+  const byId = new Map(library.map((e) => [e.id, e]));
+  let best: { pct: number; at: number; pr: SummaryPr } | null = null;
+  for (const r of records(history, library)) {
+    const ex = byId.get(r.exerciseId);
+    if (r.sessionId !== sessionId || ex === undefined) continue;
+    const pct = improvementPct(r, ex.timed);
+    const at = Date.parse(r.completedAt);
+    if (best !== null && (pct < best.pct || (pct === best.pct && at <= best.at))) continue;
+    best = {
+      pct,
+      at,
+      pr: {
+        name: ex.name,
+        weightKg: r.weightKg,
+        reps: r.reps,
+        durationS: r.durationS,
+        timed: ex.timed,
+      },
+    };
+  }
+  return best === null ? null : best.pr;
 }
 
 /** D-0030: the effort rating is 1–5. */
@@ -164,6 +217,7 @@ export async function loadSummary(sessionId: string, tz: string): Promise<Summar
         changes,
         nextUp,
         effortRating: viewEffort(sessions, sessionId, row.effort_rating),
+        pr: sessionPr(history, library, sessionId),
       },
     };
   } catch {

@@ -30,6 +30,14 @@ export const uf03 = {
   nextUp: (areas: string) => `Next up: ${areas}`,
   nextUpSeparator: ", ",
   allOnTarget: "Every area is on target",
+  // T-0674 (D-0219): the PR band's line, the UF-02 formatter pattern (T-0636). Numbers arrive formatted.
+  /** "Back Squat 100 kg × 8". */
+  prWeighted: (name: string, weight: string, reps: string) => `${name} ${weight} × ${reps}`,
+  /** "Push-up 25 reps" / "Push-up 1 rep"; `count` picks the noun. */
+  prReps: (name: string, count: number, reps: string) =>
+    `${name} ${reps} ${count === 1 ? "rep" : "reps"}`,
+  /** "Plank 90 s". */
+  prTimed: (name: string, seconds: string) => `${name} ${seconds} s`,
   /** The one link to UF-10.1, only on an ended session (D-0142 §4). */
   seeBalance: "See balance",
 

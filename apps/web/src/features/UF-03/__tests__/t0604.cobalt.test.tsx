@@ -10,7 +10,7 @@ import type { OfflineDb } from "../../../lib/offline/db.js";
 import * as queue from "../../../lib/offline/queue.js";
 import { NOW, S1 } from "./fixtures.js";
 import { freshDb, renderSummary, seedAll, signIn, signOut, waitReal } from "./helpers.js";
-import type { SummaryLoad } from "../summary-data.js";
+import type { SummaryLoad, SummaryPr } from "../summary-data.js";
 import * as data from "../summary-data.js";
 
 vi.mock("@workoutlab/engine", (orig) => import("./mocks.js").then((m) => m.engineSpies(orig)));
@@ -48,7 +48,7 @@ afterEach(async () => {
 
 const root = () => document.querySelector<HTMLElement>('[data-screen-id="UF-03.3"]')!;
 
-async function open(pr?: { text: string } | null) {
+async function open(pr?: SummaryPr | null) {
   await seedAll(db);
   if (pr !== undefined) {
     vi.mocked(data.loadSummary).mockImplementation(async (id, tz) => {
@@ -87,11 +87,11 @@ describe("T-0604 AC1 state", () => {
 
 describe("T-0604 AC2 the PR band", () => {
   it("with a PR the band is a lift-state section that holds the PR's own text", async () => {
-    await open({ text: "Back squat 100 kg × 5" });
+    await open({ name: "Back squat", weightKg: 100, reps: 5, durationS: null, timed: false });
     const band = root().querySelector('[data-part="pr-band"]')!;
     expect(band.getAttribute("data-wl-state")).toBe("lift");
     expect(band.classList.contains("wl-uf03-summary__pr")).toBe(true);
-    expect(band.textContent).toBe("Back squat 100 kg × 5");
+    expect(band.textContent).toBe("Back squat 100\u00A0kg × 5");
     // The root stays the one screen root and the plan state.
     expect(document.querySelectorAll("[data-screen-id]").length).toBe(1);
     expect(root().getAttribute("data-wl-state")).toBe("plan");
@@ -149,6 +149,8 @@ describe("T-0604 AC4 the save error form", () => {
 
   it("a successful save shows none and leaves", async () => {
     await open();
+    // The default fixture sets no record: no PR band while the summary is up (T-0674).
+    expect(root().querySelector('[data-part="pr-band"]')).toBeNull();
     const status = root().querySelector('[data-part="save-status"]')!;
     fireEvent.click(screen.getByRole("button", { name: en.uf03.save }));
     await waitFor(() => expect(screen.getByTestId("home")).toBeTruthy());
