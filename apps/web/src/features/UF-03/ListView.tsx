@@ -709,6 +709,8 @@ function useSwapRetry() {
 function Card({ ctx, data, index, locale, current, onHowTo, name, swapRef }: CardProps) {
   const item = ctx.plan.items[index]!;
   const [swapping, setSwapping] = useState(false);
+  // T-0580: the swap landed but "Don't suggest again" did not save; shown once the sheet is gone.
+  const [exclusionFailed, setExclusionFailed] = useState(false);
   if (!current && swapping) setSwapping(false);
   // T-0478 AC-3: focus returns to the Swap button after Cancel or a resolved Apply closes the
   // sheet (D-0172 §3). A mount that never opened the sheet (swapping always false) never fires.
@@ -733,9 +735,23 @@ function Card({ ctx, data, index, locale, current, onHowTo, name, swapRef }: Car
               {uf03.howToAction}
             </button>
           )}
-          <SwapButton name={name} swapRef={swapRef} onOpen={() => setSwapping(true)} />
+          <SwapButton
+            name={name}
+            swapRef={swapRef}
+            onOpen={() => {
+              setExclusionFailed(false);
+              setSwapping(true);
+            }}
+          />
         </div>
       ) : null}
+      <div aria-live="assertive" data-part="exclusion-failed">
+        {exclusionFailed ? (
+          <p role="alert" className="wl-uf03-list__status wl-input__error">
+            {en.excluded.saveFailed}
+          </p>
+        ) : null}
+      </div>
       {current && swapping ? (
         <SwapLoadBoundary key={retryKey} onClose={closeSwap} onRetry={onRetry}>
           <Suspense fallback={null}>
@@ -743,8 +759,9 @@ function Card({ ctx, data, index, locale, current, onHowTo, name, swapRef }: Car
               workout={ctx.workout}
               itemIndex={index}
               timeZone={ctx.timeZone}
-              onApply={async (result) => {
+              onApply={async (result, { exclusionFailed: failed }) => {
                 await ctx.replaceItem(index, result.plan.items[index]!, result.plan.mainLiftId);
+                setExclusionFailed(failed);
                 setSwapping(false);
               }}
               onClose={closeSwap}

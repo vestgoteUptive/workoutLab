@@ -70,6 +70,7 @@ describe("AC1 ticked", () => {
     expect(writes.exclude).toHaveBeenCalledTimes(1);
     expect(writes.exclude).toHaveBeenCalledWith(USER, "barbell-row");
     const applied = onApply.mock.calls[0]![0];
+    expect(onApply.mock.calls[0]![1]).toEqual({ exclusionFailed: false });
     expect(applied.plan.items.map((i) => i.exerciseId)).toContain("lat-pulldown");
   });
 });
@@ -177,6 +178,8 @@ describe("AC6 write failure (spec over AC6: the swap still applies)", () => {
     const alert = await screen.findByRole("alert");
     expect(alert.textContent).toBe("Couldn't save. Try again.");
     expect(writes.exclude).toHaveBeenCalledTimes(1);
+    // T-0580 AC-1: the host is told, so it can show the message after the sheet closes.
+    expect(onApply.mock.calls[0]![1]).toEqual({ exclusionFailed: true });
     expect(box.checked).toBe(true);
     expect(box.getAttribute("aria-disabled")).toBeNull();
   });

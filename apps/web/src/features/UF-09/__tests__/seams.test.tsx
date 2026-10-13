@@ -236,6 +236,7 @@ describe("AC-9 overlay in place of the screen", () => {
         "skipRest",
         "resume",
         "close",
+        "notifyExclusionFailed",
       ].sort(),
     );
     expect(typeof ctx!.close).toBe("function");

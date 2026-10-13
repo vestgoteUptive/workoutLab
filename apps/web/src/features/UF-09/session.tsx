@@ -105,6 +105,9 @@ export interface FocusSession {
   skipRest(): void;
   /** Resumes a paused workout. */
   resume(): void;
+  /** T-0580: a swap was applied but its "Don't suggest again" write failed. The host shows
+   *  "Couldn't save. Try again." once the sheet has closed. */
+  notifyExclusionFailed(): void;
   /** Closes the open seam overlay (D-0071 §4); a no-op when none is open. */
   close(): void;
 }
@@ -152,6 +155,7 @@ export type FocusActions = Omit<
   | "rest"
   | "elapsedS"
   | "close"
+  | "notifyExclusionFailed"
 >;
 
 export interface FocusActionDeps {

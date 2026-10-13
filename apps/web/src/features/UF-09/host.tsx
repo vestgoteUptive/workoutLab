@@ -211,6 +211,9 @@ function Machine(props: MachineProps) {
   // UF-09.9 keeps End workout inert while a UF-09.8 plan write is pending.
   const [planPending, setPlanPending] = useState(false);
   // T-0579: the item the last "Do later" moved, for UF-09.6's status line; gone once UF-09.6 is.
+  // T-0580: a swap applied but its "Don't suggest again" write failed; shown once the sheet is
+  // gone, until the next overlay opens or the workout moves to another set.
+  const [exclusionFailed, setExclusionFailed] = useState<string | null>(null);
   const [movedLater, setMovedLater] = useState<{ name: string; itemIndex: number } | null>(null);
   useEffect(() => {
     if (store.getState().phase !== "next") setMovedLater(null);
@@ -233,6 +236,7 @@ function Machine(props: MachineProps) {
     };
     return {
       open(action: SeamAction) {
+        setExclusionFailed(null);
         const atMs = Date.now();
         const paused = store.getState().phase === "paused";
         if (action.keepsClockRunning) {
@@ -465,6 +469,8 @@ function Machine(props: MachineProps) {
     ...focusReadFields({ sessionId, row, plan: ctx.plan, workout, state, nowMs }),
     timeZone,
     ...actions,
+    notifyExclusionFailed: () =>
+      setExclusionFailed(`${store.getState().itemIndex}:${store.getState().setIndex}`),
     close: controls.close,
   };
 
@@ -574,6 +580,17 @@ function Machine(props: MachineProps) {
         onPointerUpCapture={device.onActivation}
       >
         {body}
+        {/* T-0580: the live region is always mounted, so the alert is announced when it arrives. It
+            sits in the status area under the screen the swap returns to, not in the task. */}
+        <div aria-live="assertive" data-field="exclusion-failed">
+          {exclusionFailed !== null &&
+          overlay === null &&
+          exclusionFailed === `${state.itemIndex}:${state.setIndex}` ? (
+            <p className="wl-uf09__status wl-type-label" role="alert">
+              {en.excluded.saveFailed}
+            </p>
+          ) : null}
+        </div>
         <p className="wl-uf09__announcer" data-field="announcer" aria-live="polite">
           {announcement}
         </p>

@@ -242,8 +242,10 @@ function SwapOverlay({ ctx }: { ctx: FocusSession }) {
           workout={ctx.workout}
           itemIndex={target}
           timeZone={ctx.timeZone}
-          onApply={async (result) => {
+          onApply={async (result, { exclusionFailed }) => {
             await ctx.replaceItem(target, result.plan.items[target]!, result.plan.mainLiftId);
+            // T-0580: the sheet closes next; the host shows the message on the screen below.
+            if (exclusionFailed) ctx.notifyExclusionFailed();
             ctx.close();
           }}
           onClose={ctx.close}

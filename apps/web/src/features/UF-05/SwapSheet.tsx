@@ -28,10 +28,16 @@ import { loadLibrary, loadProfile } from "../../lib/offline/history.js";
 import { equipmentText, matchText, minutesText } from "./labels.js";
 import "./uf-05.css";
 
+export interface SwapOutcome {
+  exclusionFailed: boolean;
+}
+
 export interface SwapSheetProps {
   workout: Workout;
   itemIndex: number;
-  onApply(result: Workout): void | Promise<void>;
+  /** `outcome.exclusionFailed` is true when the "Don't suggest again" write failed but the swap was
+   *  applied (T-0580): the sheet is about to close, so the host shows the message. */
+  onApply(result: Workout, outcome: SwapOutcome): void | Promise<void>;
   onClose(): void;
   /** The IANA zone the engine counts local days in. Defaults to the device zone. */
   timeZone?: string;
@@ -276,7 +282,7 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
           // Spec over AC6 (UF-08.3/UF-05.1 "Write fails"): the swap is applied, the exclusion is
           // not stored, the box stays ticked so a retry works.
           setExcludeFailed(true);
-          apply();
+          apply(true);
         },
       );
       return;
@@ -284,7 +290,7 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
     apply();
   }
 
-  function apply(): void {
+  function apply(exclusionFailed = false): void {
     if (selected === undefined || current === undefined || load.status !== "ready") return;
     const { history, profile, library: lib } = load.data;
     let result: Workout;
@@ -307,7 +313,7 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
     setNotice(null);
     let returned: unknown;
     try {
-      returned = onApply(result);
+      returned = onApply(result, { exclusionFailed });
     } catch {
       setNotice("saveFailed");
       return;

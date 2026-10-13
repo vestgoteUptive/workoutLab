@@ -295,7 +295,8 @@ describe("T-0418 AC-3 rest view (UF-03.2)", () => {
     // UF-03 renders no aria-live region of its own: the only one is the host's.
     expect(document.querySelectorAll("[aria-live]").length).toBeGreaterThanOrEqual(1);
     for (const el of document.querySelectorAll("[aria-live]")) {
-      if (el !== document.querySelector('[data-field="announcer"]')) {
+      // T-0580: the host's "Couldn't save" region (`exclusion-failed`) is the host's too.
+      if (!el.matches('[data-field="announcer"], [data-field="exclusion-failed"]')) {
         expect(el.closest('[data-screen-id="UF-03.1"], [data-screen-id="UF-03.2"]')).toBeTruthy();
       }
     }

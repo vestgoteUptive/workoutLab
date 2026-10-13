@@ -179,6 +179,8 @@ export function SessionSetup({
   const [params] = useSearchParams();
   // T-0637: `?budget=N` is read once at mount (the UF-02.1 Quick 20-min link); later edits win.
   const [budgetMin, setBudgetMin] = useState(() => parseBudget(params.get("budget")));
+  // T-0580: the swap on UF-08.3 landed but "Don't suggest again" did not save; UF-08.2 shows it.
+  const [exclusionFailed, setExclusionFailed] = useState(false);
   const [warmupInBudget, setWarmupInBudget] = useState(true);
   const [energy, setEnergy] = useState<Energy>("normal");
   // "Skip today" (T-0520, D-0191 §1): held in this host, so Back keeps it and a remount clears it.
@@ -314,7 +316,10 @@ export function SessionSetup({
         workout={adjusted.workout}
         itemIndex={swapItem}
         timeZone={tz}
-        onApply={(result) => leave(result)}
+        onApply={(result, outcome) => {
+          setExclusionFailed(outcome.exclusionFailed);
+          leave(result);
+        }}
         onClose={() => leave(null)}
       />
     );
@@ -485,6 +490,7 @@ export function SessionSetup({
         removedIds={adjusted.excludeIds}
         storedIds={stored}
         online={online}
+        exclusionFailed={exclusionFailed}
         onExclude={userId ? (id) => excludeExercise(userId, id) : undefined}
         onInclude={userId ? (id) => includeExercise(userId, id) : undefined}
         onRemove={(exerciseId) => {
