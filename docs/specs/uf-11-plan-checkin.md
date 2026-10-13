@@ -20,7 +20,7 @@
 - "Targets": a tile grid of the per-area targets. A source caption shows only when it isn't the default: "Adapted {d MMM}" / "Set by you". "From your plan" is no longer shown on Plan (it stays on UF-10.2). A footnote explains the default source once. A "See this period in Balance" link goes to UF-10.1.
 - "Check-ins": a "First check-in" / "Next check-in" caption above the date, and the last 3 check-ins.
 - "Routines": the routine list and New routine.
-- Edit plan is the one primary action, except while a check-in is pending (then Accept is).
+- Edit plan is always the one primary action. While a check-in is pending, Accept is the paper action on the check-in card (T-0612, D-0216).
 - "Next check-in: {date}" (the day after the current period ends).
 - The last 3 check-ins: period dates, sessions completed, proposal, answer.
 - "Edit plan" → UF-11.3. Entry points: UF-10.1 "Plan" link, and the Today card.
