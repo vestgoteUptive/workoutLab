@@ -1,6 +1,11 @@
 // T-0552: unit checks for the update module with a fake ServiceWorkerContainer, document and location.
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { isSafeToReload, notifyRouteChange, startUpdateChecks } from "../update.js";
+import {
+  isSafeToReload,
+  notifyRouteChange,
+  startUpdateChecks,
+  trackRouteImport,
+} from "../update.js";
 
 function fakeStorage(map = new Map<string, string>()) {
   return {
@@ -192,6 +197,41 @@ describe("T-0552 update checks", () => {
     w.state = "activated";
     w.dispatchEvent(new Event("statechange"));
     expect(t.reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("T-0918 AC1 SKIP_WAITING is not posted while a route import is pending; it is once it loads", async () => {
+    const t = setup({ path: "/session/S1" });
+    const w = newWorker();
+    t.start();
+    await flush();
+    install(t, w);
+    let done!: (v: unknown) => void;
+    void trackRouteImport(new Promise((r) => (done = r)));
+    t.go("/library");
+    await t.show();
+    expect(w.postMessage).not.toHaveBeenCalled();
+    done(1);
+    await flush();
+    expect(w.postMessage).toHaveBeenCalledWith(SKIP);
+    expect(w.postMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("T-0918 AC2 a failed route import still activates, once", async () => {
+    const t = setup({ path: "/plan" });
+    const w = newWorker();
+    t.start();
+    await flush();
+    let fail!: (e: unknown) => void;
+    trackRouteImport(new Promise((_, rej) => (fail = rej))).catch(() => undefined);
+    install(t, w);
+    t.go("/library");
+    expect(w.postMessage).not.toHaveBeenCalled();
+    fail(new Error("chunk"));
+    await flush();
+    expect(w.postMessage).toHaveBeenCalledTimes(1);
+    t.go("/plan");
+    await t.show();
+    expect(w.postMessage).toHaveBeenCalledTimes(1);
   });
 
   it("AC12 a worker already waiting at load is not activated on /session/*", async () => {

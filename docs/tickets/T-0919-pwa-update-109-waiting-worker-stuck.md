@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-04]
 decisions: []
 deps: [T-0918]
-status: todo
+status: blocked
 ---
 ## Why
 T-0916 found a second flake: T-0915's adopt path works and SKIP_WAITING is posted, yet Chromium leaves the worker waiting, and a resend 3 s later doesn't help. About 1% of runs.
@@ -29,3 +29,4 @@ check-all green · commits start with `T-0919`.
 
 ## Build / accept log
 Archived in `docs/tickets/log/T-0919.md` (D-0157).
+- 2026-10-13 (orchestrator): T-0918's investigation (about 3000 instrumented runs) found a Chromium activation wedge: skipWaiting stays pending while the active worker is not treated as idle; only CDP `ServiceWorker.skipWaiting`/`stopAllWorkers` unstick it. Not caused by app code. Options: a test-only CDP skipWaiting after the app has posted and 3 s have passed (asserting the post and the single reload), or accept CI retries. Both change what the test proves, so it is a human decision (needs-human H-40). Status: blocked:H-40.
