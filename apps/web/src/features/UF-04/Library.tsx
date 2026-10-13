@@ -208,7 +208,7 @@ export function Library(props: LibraryProps = {}) {
             />
             {text === "" ? null : (
               <button type="button" className="wl-button--text" onClick={() => onSearch("")}>
-                {en.uf08.clearSearch}
+                {en.uf04.clearSearch}
               </button>
             )}
           </div>

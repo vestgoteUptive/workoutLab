@@ -399,6 +399,21 @@ test.describe("T-0607 plan state", () => {
     expect(h1).toEqual({ size: "44px", weight: "700", transform: "none" });
   });
 
+  test("T-0668 compare: the back link's left edge is the page gutter, the h1's left edge", async ({
+    page,
+  }) => {
+    await ready(page, COMPARE);
+    // The link box and its label both start on the gutter: the label's left edge is measured
+    // with a Range, since padding moves the text and not the box.
+    const edges = await page.getByRole("link", { name: /Leg extension/ }).evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return { box: el.getBoundingClientRect().left, text: range.getBoundingClientRect().left };
+    });
+    const h1 = (await page.locator("h1").boundingBox())!;
+    expect(edges).toEqual({ box: h1.x, text: h1.x });
+  });
+
   test("AC4 the table rows are 1px plan.line hairlines, laid out inside the page gutter", async ({
     page,
   }) => {
