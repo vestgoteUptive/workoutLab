@@ -409,8 +409,10 @@ export function SwapSheet({ workout, itemIndex, onApply, onClose, timeZone }: Sw
                         name={`${groupName}-candidate`}
                         value={c.exerciseId}
                         checked={selected?.exerciseId === c.exerciseId}
-                        disabled={pending}
+                        aria-disabled={pending ? "true" : undefined}
                         onChange={() => {
+                          // aria-disabled keeps focus in the dialog; input is ignored while pending.
+                          if (pendingRef.current) return;
                           setSelectedId(c.exerciseId);
                           setNotice(null);
                         }}

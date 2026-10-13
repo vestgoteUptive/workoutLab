@@ -191,7 +191,7 @@ describe("AC6 write failure (spec over AC6: the swap still applies)", () => {
     fireEvent.click(rowRadio("lat-pulldown"));
     fireEvent.click(useButton("Lat pulldown"));
     await waitFor(() => expect(box.getAttribute("aria-disabled")).toBe("true"));
-    expect(rowRadio("lat-pulldown").disabled).toBe(true);
+    expect(rowRadio("lat-pulldown").getAttribute("aria-disabled")).toBe("true");
     expect(onApply).not.toHaveBeenCalled();
     await act(async () => resolveWrite());
     await waitFor(() => expect(onApply).toHaveBeenCalledTimes(1));
