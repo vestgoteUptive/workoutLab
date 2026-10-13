@@ -198,9 +198,8 @@ describe("AC7 the states render inside the plan sheet", () => {
 });
 
 describe("AC7 a click on the radio itself lands on it", () => {
-  it("the sheet's radios cover their label and take pointer events (scoped, after the shared rule)", () => {
-    expect(CSS).toMatch(
-      /\.wl-uf05__panel\[data-wl-state\] :is\(\.wl-chip, \.wl-uf05__row\) > input\[type="radio"\]\s*\{[^}]*inset:\s*0;[^}]*pointer-events:\s*auto/,
-    );
+  it("the sheet keeps no local radio rule: the shared main.css rule is the full-size target (T-0678)", () => {
+    expect(CSS).not.toMatch(/input\[type="radio"\]/);
+    expect(CSS).not.toMatch(/pointer-events/);
   });
 });

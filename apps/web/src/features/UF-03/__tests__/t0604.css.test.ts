@@ -47,8 +47,13 @@ describe("T-0604 AC1 the title's full stop", () => {
 });
 
 describe("T-0604 AC3/AC5 effort options and targets", () => {
-  it("the radio fills its label, so it is as large as the 44 px label", () => {
-    const r = find('.wl-uf03-summary[data-wl-state] .wl-segmented input[type="radio"]');
+  it("the radio fills its label through the shared main.css rule, with no local copy (T-0678)", () => {
+    expect(
+      find('.wl-uf03-summary[data-wl-state] .wl-segmented input[type="radio"]'),
+    ).toBeUndefined();
+    const r = {
+      body: strip(main).match(/\.wl-segmented input\[type="radio"\]\s*\{([^}]*)\}/)?.[1] ?? "",
+    };
     expect(r?.body).toMatch(/inset:\s*0/);
     expect(r?.body).toMatch(/inline-size:\s*100%/);
     expect(r?.body).toMatch(/block-size:\s*100%/);

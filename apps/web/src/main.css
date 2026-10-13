@@ -723,13 +723,15 @@ legend.wl-label,
 :is([data-wl-state], .wl-paper) .wl-option > input[type="radio"],
 :is([data-wl-state], .wl-paper) .wl-chip > input,
 :is([data-wl-state], .wl-paper) .wl-segmented input[type="radio"] {
+  /* A full-size invisible target over its label: a pointer, or a driver that clicks the input
+   * itself, lands on it, and it stays focusable. */
   position: absolute;
-  inline-size: 1px;
-  block-size: 1px;
-  margin: -1px;
-  overflow: hidden;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
   opacity: 0;
-  pointer-events: none;
+  cursor: pointer;
 }
 
 :is([data-wl-state], .wl-paper) .wl-option:has(input:checked) {

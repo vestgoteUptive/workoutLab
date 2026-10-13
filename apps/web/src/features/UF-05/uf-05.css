@@ -103,15 +103,3 @@
 .wl-uf05__exclude > p {
   margin: 0;
 }
-
-/* The native radio stays the click target: it covers its label, invisible, so a pointer or a
- * driver that clicks the input itself (rather than the label) lands on the input. The shared rule
- * hides it as a 1 px, pointer-less box; this is scoped to the sheet and wins on specificity. */
-.wl-uf05__panel[data-wl-state] :is(.wl-chip, .wl-uf05__row) > input[type="radio"] {
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  margin: 0;
-  pointer-events: auto;
-  cursor: pointer;
-}

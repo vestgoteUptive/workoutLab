@@ -118,8 +118,8 @@
   gap: 0.5rem;
 }
 
-/* Five options across the width: they share it and wrap their words. The radio fills its label, so
- * it stays 44 × 44 or more (NFR-A11Y-2), invisible but focusable. */
+/* Five options across the width: they share it and wrap their words. The shared radio rule fills each
+ * label, so it stays 44 × 44 or more (NFR-A11Y-2). */
 .wl-uf03-summary[data-wl-state] .wl-segmented {
   display: flex;
   inline-size: 100%;
@@ -132,15 +132,6 @@
   font-size: 0.9375rem;
   line-height: 1.15;
   text-align: center;
-}
-
-.wl-uf03-summary[data-wl-state] .wl-segmented input[type="radio"] {
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  margin: 0;
-  pointer-events: auto;
-  cursor: pointer;
 }
 
 /* The save error: the plan form (attention text, the words carry it). An empty live region stays
