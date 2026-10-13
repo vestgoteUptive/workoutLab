@@ -8,11 +8,16 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
-import { formatSetCount } from "../../lib/format/number.js";
+import { formatDecimal, formatKg, formatSetCount } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { areaName } from "../../lib/i18n/workout.js";
 import { EffortSave } from "./EffortSave.js";
-import { loadSummary, type EndedSummary, type SummaryLoad } from "./summary-data.js";
+import {
+  loadSummary,
+  type EndedSummary,
+  type SummaryLoad,
+  type SummaryPr,
+} from "./summary-data.js";
 import "./summary.css";
 
 export interface SummaryProps {
@@ -24,6 +29,15 @@ export interface SummaryProps {
 interface Loaded {
   key: string;
   value: SummaryLoad;
+}
+
+/** T-0674: "Back squat 100 kg × 8" / "Push-up 25 reps" / "Plank 90 s". */
+function prText(pr: SummaryPr, locale: string | undefined): string {
+  const reps = formatDecimal(pr.reps ?? 0, locale);
+  if (pr.timed) return en.uf03.prTimed(pr.name, formatDecimal(pr.durationS ?? 0, locale));
+  return pr.weightKg !== null && pr.weightKg > 0
+    ? en.uf03.prWeighted(pr.name, formatKg(pr.weightKg, locale), reps)
+    : en.uf03.prReps(pr.name, pr.reps ?? 0, reps);
 }
 
 export function SummaryContent({ timeZone, locale }: SummaryProps) {
@@ -116,7 +130,7 @@ function Ended({
         // The band is its own lift state, nested: white on lift.bg (4.8), bled past the gutters.
         <section className="wl-uf03-summary__pr" data-wl-state="lift" data-part="pr-band">
           <p className="wl-type-row-title" data-part="pr">
-            {pr.text}
+            {prText(pr, locale)}
           </p>
         </section>
       ) : null}
