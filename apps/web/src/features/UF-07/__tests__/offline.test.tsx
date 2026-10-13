@@ -34,7 +34,7 @@ describe("AC-A9 offline", () => {
     renderEditor(`/plan/routines/${R}`);
     await screen.findByText("1. Barbell back squat");
     expect(screen.getByText("3. Leg curl (machine)")).toBeInTheDocument();
-    expect(SAVE()).toBeDisabled();
+    expect(SAVE()).toHaveAttribute("aria-disabled", "true");
     expect(DELETE()).toBeDisabled();
     expect(screen.getByText(CONNECT)).toBeInTheDocument();
 
@@ -53,7 +53,7 @@ describe("AC-A9 offline", () => {
     act(() => {
       window.dispatchEvent(new Event("online"));
     });
-    expect(SAVE()).toBeEnabled();
+    expect(SAVE()).not.toHaveAttribute("aria-disabled");
     expect(DELETE()).toBeEnabled();
     expect(screen.queryByText(CONNECT)).not.toBeInTheDocument();
     expect(screen.getByText("1. Barbell back squat")).toBeInTheDocument();
@@ -62,7 +62,7 @@ describe("AC-A9 offline", () => {
     act(() => {
       window.dispatchEvent(new Event("offline"));
     });
-    expect(SAVE()).toBeDisabled();
+    expect(SAVE()).toHaveAttribute("aria-disabled", "true");
     expect(DELETE()).toBeDisabled();
     expect(screen.getByText(CONNECT)).toBeInTheDocument();
   });

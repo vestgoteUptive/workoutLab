@@ -42,8 +42,8 @@ describe("AC-A4 move buttons", () => {
   it("first Up and last Down are disabled; every other move button is enabled", async () => {
     await ready(`/plan/routines/${R}`);
     const btn = (n: string) => screen.getByRole("button", { name: n });
-    expect(btn("Move Barbell back squat up")).toBeDisabled();
-    expect(btn("Move Leg curl (machine) down")).toBeDisabled();
+    expect(btn("Move Barbell back squat up")).toHaveAttribute("aria-disabled", "true");
+    expect(btn("Move Leg curl (machine) down")).toHaveAttribute("aria-disabled", "true");
     expect(btn("Move Barbell back squat down")).toBeEnabled();
     expect(btn("Move Romanian deadlift (barbell) up")).toBeEnabled();
     expect(btn("Move Romanian deadlift (barbell) down")).toBeEnabled();
@@ -59,7 +59,7 @@ describe("AC-A4 move buttons", () => {
     expect(up()).toHaveFocus();
     fireEvent.click(up());
     expect(screen.getByText("1. Leg curl (machine)")).toBeInTheDocument();
-    expect(up()).toBeDisabled();
+    expect(up()).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByRole("button", { name: "Move Leg curl (machine) down" })).toHaveFocus();
     const live = screen.getByRole("status");
     expect(live).toHaveAttribute("aria-live", "polite");
@@ -76,24 +76,24 @@ describe("AC-A5 limits", () => {
   ])("%s name disables Save and shows the hint", async (_label, value) => {
     await ready(`/plan/routines/${R}`);
     fireEvent.change(screen.getByLabelText(NAME), { target: { value } });
-    expect(SAVE()).toBeDisabled();
+    expect(SAVE()).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText(HINT)).toBeInTheDocument();
   });
 
   it("contrast: exactly 40 characters enables Save and the hint is absent", async () => {
     await ready(`/plan/routines/${R}`);
     fireEvent.change(screen.getByLabelText(NAME), { target: { value: `  ${"x".repeat(40)} ` } });
-    expect(SAVE()).toBeEnabled();
+    expect(SAVE()).not.toHaveAttribute("aria-disabled");
     expect(screen.queryByText(HINT)).not.toBeInTheDocument();
   });
 
   it("0 exercises disables Save; adding 1 enables it", async () => {
     await ready("/plan/routines/new");
     fireEvent.change(screen.getByLabelText(NAME), { target: { value: "Legs" } });
-    expect(SAVE()).toBeDisabled();
+    expect(SAVE()).toHaveAttribute("aria-disabled", "true");
     await openPicker();
     fireEvent.click(screen.getByRole("button", { name: "Add Plank" }));
-    expect(SAVE()).toBeEnabled();
+    expect(SAVE()).not.toHaveAttribute("aria-disabled");
   });
 
   it("an exercise already in the list shows a disabled Added and adds nothing", async () => {

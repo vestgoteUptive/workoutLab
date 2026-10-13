@@ -1,6 +1,6 @@
 // The form of UF-07.1: name, ordered list, in-screen picker (D-0081 §6), the read-only
 // progression card, and Save / Cancel / Delete. State styling lives in routine-editor.css,
-// keyed on data attributes and `:disabled`, so nothing here overrides the focus ring.
+// keyed on data attributes and `[aria-disabled]`, so nothing here overrides the focus ring.
 import { useEffect, useLayoutEffect, useRef, type FormEvent, type KeyboardEvent } from "react";
 import { en } from "../../lib/i18n/en.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
@@ -79,6 +79,7 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault();
+    if (!editor.canSave) return;
     void editor.save();
   };
 
@@ -136,8 +137,11 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
                   className="wl-routine-editor__icon"
                   data-move="up"
                   aria-label={t.moveUp(label)}
-                  disabled={index === 0}
-                  onClick={() => editor.move(index, "up")}
+                  aria-disabled={index === 0 ? "true" : undefined}
+                  onClick={() => {
+                    if (index === 0) return;
+                    editor.move(index, "up");
+                  }}
                 >
                   <span aria-hidden="true">{t.glyphUp}</span>
                 </button>
@@ -146,8 +150,11 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
                   className="wl-routine-editor__icon"
                   data-move="down"
                   aria-label={t.moveDown(label)}
-                  disabled={index === last}
-                  onClick={() => editor.move(index, "down")}
+                  aria-disabled={index === last ? "true" : undefined}
+                  onClick={() => {
+                    if (index === last) return;
+                    editor.move(index, "down");
+                  }}
                 >
                   <span aria-hidden="true">{t.glyphDown}</span>
                 </button>
@@ -243,10 +250,27 @@ export function EditorForm({ editor }: { editor: RoutineEditorState }) {
       ) : null}
 
       <OfflineStatus variant="text" />
-      {editor.online ? null : <p className="wl-routine-editor__hint">{t.connectToSave}</p>}
+      {editor.online ? null : (
+        <p id="wl-routine-save-reason" className="wl-routine-editor__hint">
+          {t.connectToSave}
+        </p>
+      )}
 
       <div className="wl-routine-editor__actions" inert={confirmOpen}>
-        <button type="submit" className="wl-button--primary" disabled={!editor.canSave}>
+        <button
+          type="submit"
+          className="wl-button--primary"
+          aria-disabled={editor.canSave ? undefined : "true"}
+          aria-describedby={
+            editor.canSave
+              ? undefined
+              : !editor.online
+                ? "wl-routine-save-reason"
+                : !editor.nameValid
+                  ? "wl-routine-name-hint"
+                  : undefined
+          }
+        >
           {t.save}
         </button>
         <button type="button" className="wl-button--text" onClick={editor.cancel}>

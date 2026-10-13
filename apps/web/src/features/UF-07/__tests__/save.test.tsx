@@ -308,7 +308,12 @@ describe("AC-A13 cancel and double submit", () => {
     try {
       await ready(`/plan/routines/${R}`, 3);
       save();
-      await waitFor(() => expect(screen.getByRole("button", { name: "Save" })).toBeDisabled());
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: "Save" })).toHaveAttribute(
+          "aria-disabled",
+          "true",
+        ),
+      );
       release();
       await waitFor(() => expect(location().textContent).toBe("/plan"));
     } finally {

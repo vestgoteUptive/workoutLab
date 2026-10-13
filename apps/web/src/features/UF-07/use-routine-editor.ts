@@ -263,7 +263,7 @@ export function useRoutineEditor(routineId: string | undefined) {
     const other = row?.querySelector<HTMLButtonElement>(
       `[data-move="${target.dir === "up" ? "down" : "up"}"]`,
     );
-    (primary && !primary.disabled ? primary : other)?.focus();
+    (primary && primary.getAttribute("aria-disabled") !== "true" ? primary : other)?.focus();
   }, [items]);
 
   const move = (index: number, dir: FocusDir) => {

@@ -104,7 +104,7 @@ describe("AC-A4 the keyboard reaches and activates the move buttons", () => {
       expect(up()).toHaveFocus();
       press();
       expect(screen.getByText("1. Leg curl (machine)")).toBeInTheDocument();
-      expect(up()).toBeDisabled();
+      expect(up()).toHaveAttribute("aria-disabled", "true");
       expect(down()).toHaveFocus();
       expect(screen.getByRole("status")).toHaveTextContent(
         "Leg curl (machine) moved to position 1",
