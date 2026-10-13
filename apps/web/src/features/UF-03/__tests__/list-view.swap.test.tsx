@@ -1,7 +1,7 @@
 // T-0478 UF-03.1 Swap button on the List view's current card (D-0071 §7). AC-1 wiring (a
 // test-built `ctx`, `SwapSheet` mocked so its props and `onApply`/`onClose` are under direct
 // control), AC-3 focus and a11y. Each test title starts with "T-0478 AC-n" (ticket Test rules).
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Workout } from "@workoutlab/shared";
 import { ListView } from "../index.js";
@@ -26,13 +26,15 @@ const swapProps = vi.hoisted(() => ({
   calls: [] as SwapPropsCall[],
   // The `Workout` an "Apply" click hands to `onApply`; set per test.
   result: undefined as Workout | undefined,
+  // T-0580: what the stub reports as the "Don't suggest again" outcome.
+  exclusionFailed: false,
 }));
 vi.mock("../../UF-05/index.js", () => ({
   SwapSheet: (props: {
     workout: Workout;
     itemIndex: number;
     timeZone?: string;
-    onApply: (result: Workout) => void | Promise<void>;
+    onApply: (result: Workout, outcome: { exclusionFailed: boolean }) => void | Promise<void>;
     onClose: () => void;
   }) => {
     swapProps.calls.push({
@@ -47,7 +49,9 @@ vi.mock("../../UF-05/index.js", () => ({
           onClick={() => {
             // A rejected `onApply` (T-0421's own contract) is the sheet's to catch and show a
             // notice for; this stub only needs to not leave an unhandled rejection in the test.
-            Promise.resolve(props.onApply(swapProps.result!)).catch(() => undefined);
+            Promise.resolve(
+              props.onApply(swapProps.result!, { exclusionFailed: swapProps.exclusionFailed }),
+            ).catch(() => undefined);
           }}
         >
           Use replacement
@@ -65,6 +69,7 @@ beforeEach(() => {
   signIn();
   swapProps.calls.length = 0;
   swapProps.result = undefined;
+  swapProps.exclusionFailed = false;
 });
 
 afterEach(async () => {
@@ -134,6 +139,34 @@ describe("T-0478 AC-1 Swap from the list", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(ctx.replaceItem).toHaveBeenCalledTimes(1);
     expect(ctx.replaceItem).toHaveBeenCalledWith(0, swapResult(ctx).plan.items[0], "hip-thrust");
+  });
+
+  it("T-0580: a failed exclusion write shows the alert on the card once the sheet has closed", async () => {
+    const ctx = makeCtx();
+    swapProps.result = swapResult(ctx);
+    swapProps.exclusionFailed = true;
+    await mount(ctx);
+    const region = () => document.querySelector<HTMLElement>('[data-part="exclusion-failed"]');
+    expect(region()).toHaveAttribute("aria-live", "assertive");
+    expect(region()).toBeEmptyDOMElement();
+    fireEvent.click(screen.getByRole("button", { name: "Swap Back squat" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Use replacement" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(within(region()!).getByRole("alert")).toHaveTextContent("Couldn't save. Try again.");
+    // Opening the sheet again clears it.
+    fireEvent.click(screen.getByRole("button", { name: /^Swap / }));
+    await screen.findByRole("dialog", { name: "Replace exercise" });
+    expect(region()).toBeEmptyDOMElement();
+  });
+
+  it("the pair: no failed exclusion leaves the alert empty", async () => {
+    const ctx = makeCtx();
+    swapProps.result = swapResult(ctx);
+    await mount(ctx);
+    fireEvent.click(screen.getByRole("button", { name: "Swap Back squat" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Use replacement" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.querySelector('[data-part="exclusion-failed"]')).toBeEmptyDOMElement();
   });
 
   it("CONTRAST: the T-0417 AC-4 scan finds no upsertSession import in ListView.tsx", async () => {

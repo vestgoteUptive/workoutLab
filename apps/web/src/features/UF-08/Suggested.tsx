@@ -53,6 +53,8 @@ export interface SuggestedProps {
   /** The stored exclusions (cache) and the online flag, for the Removed line's controls. */
   storedIds?: readonly string[];
   online?: boolean;
+  /** T-0580: the swap on UF-08.3 was applied but its "Don't suggest again" write failed. */
+  exclusionFailed?: boolean;
   onExclude?: ((exerciseId: string) => Promise<void>) | undefined;
   onInclude?: ((exerciseId: string) => Promise<void>) | undefined;
   /** The item row whose Swap button takes focus on mount (after leaving UF-08.3, T-0303c). */
@@ -147,6 +149,7 @@ export function Suggested({
   removedIds = [],
   storedIds = [],
   online = true,
+  exclusionFailed = false,
   onExclude,
   onInclude,
   onRemove,
@@ -600,6 +603,13 @@ export function Suggested({
           {notFittingText}
         </p>
       ) : null}
+      <div aria-live="assertive" data-part="exclusion-failed">
+        {exclusionFailed ? (
+          <p role="alert" className="wl-uf08__status">
+            {en.excluded.saveFailed}
+          </p>
+        ) : null}
+      </div>
       <div role="status" className="wl-uf08__status" data-part="status">
         {status}
       </div>

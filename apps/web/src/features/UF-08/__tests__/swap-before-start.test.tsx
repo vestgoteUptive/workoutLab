@@ -216,9 +216,9 @@ beforeEach(async () => {
   sheet.mockImplementation((p) =>
     actualSheet({
       ...p,
-      onApply: (r) => {
+      onApply: (r, o) => {
         applied = r;
-        return p.onApply(r);
+        return p.onApply(r, o);
       },
     }),
   );
@@ -349,7 +349,7 @@ describe("AC-4 over budget after a swap (mocked sheet)", () => {
       unusedS: 0,
     };
     sheet.mockImplementationOnce((p) => (
-      <button type="button" onClick={() => void p.onApply(over)}>
+      <button type="button" onClick={() => void p.onApply(over, { exclusionFailed: false })}>
         apply over
       </button>
     ));
@@ -362,6 +362,38 @@ describe("AC-4 over budget after a swap (mocked sheet)", () => {
     // T-0600: the over-budget cue is the words and data-over, never a warn colour on the bar.
     expect(document.querySelector(".wl-uf08__budget")).toHaveAttribute("data-over", "true");
     expect(document.querySelector(".wl-uf08__seg--warn")).toBeNull();
+  });
+});
+
+describe("T-0580 a failed exclusion write shows on UF-08.2 (mocked sheet)", () => {
+  const region = () => document.querySelector<HTMLElement>('[data-part="exclusion-failed"]');
+
+  it("the alert is mounted and empty, then reads the message once the swap has left the sheet", async () => {
+    await toSuggested();
+    expect(region()).toHaveAttribute("aria-live", "assertive");
+    expect(region()).toBeEmptyDOMElement();
+    sheet.mockImplementationOnce((p) => (
+      <button type="button" onClick={() => void p.onApply(w5(), { exclusionFailed: true })}>
+        apply failed
+      </button>
+    ));
+    fireEvent.click(button("Swap Barbell row"));
+    fireEvent.click(button("apply failed"));
+    await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]));
+    expect(within(region()!).getByRole("alert")).toHaveTextContent("Couldn't save. Try again.");
+  });
+
+  it("the pair: a swap with no failed exclusion leaves it empty", async () => {
+    await toSuggested();
+    sheet.mockImplementationOnce((p) => (
+      <button type="button" onClick={() => void p.onApply(w5(), { exclusionFailed: false })}>
+        apply ok
+      </button>
+    ));
+    fireEvent.click(button("Swap Barbell row"));
+    fireEvent.click(button("apply ok"));
+    await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]));
+    expect(region()).toBeEmptyDOMElement();
   });
 });
 
