@@ -307,6 +307,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0919 | pwa-update.spec.ts:109: adopted worker stuck waiting after SKIP_WAITING (~1%) | qa | T-0918 | folded into T-0918 | wl-build-web |
 | T-0920 | Shell: add a `<main>` landmark around routed screens (axe region/landmark-one-main flag every Today element; T-0638 excluded those two rules) | web-shell | — | done | wl-build-web |
 | T-0921 | uf-11-plan-layout.spec.ts:450 flake: /plan/edit 44x44 check counted ≤5 boxes once under full-suite load (T-0634 merge), 87/87 on rerun; wait for the rows before measuring | e2e | — | done | wl-build-web |
+| T-0923 | Cleanups from T-0665/T-0668: delete unused `.wl-resume-card__action` rules in UF-09 uf-09.css:225-243; `.wl-uf04-detail__history` link label sits 8 px inside the gutter (uf-04.css:338, same fix as T-0668) | web-feature:UF-04 | — | done | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -496,3 +497,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0663 | UF-03 list-view.swap.host.test.tsx 'rows 1-2 keep their values' times out under load (findByRole 'Set 1 weight in kg'); passes alone | web-feature:UF-03 | — | done | wl-build-web |
 | T-0665 | UF-09 resume card: use the shared .wl-button--secondary so today.css drops its hand-made outline button (no hover state) (T-0601 review) | web-feature:UF-09 | T-0601 | done | wl-build-web |
 | T-0668 | UF-04: own `uf04.clearSearch` in flows/uf-04.ts instead of borrowing en.uf08.clearSearch; Compare back link sits ~8px inside the gutter (T-0607 review) | web-feature:UF-04 | T-0607 | done | wl-build-web |
+| T-0674 | UF-03.3 PR band from records(): replace EndedSummary.pr {text} with a structured record (as T-0636 latestPr), formatted with en.* copy; pick which record the band shows; fix the trivially-passing 'successful save shows none' test (T-0604 review) | web-feature:UF-03 | T-0604, T-0636 | done | wl-build-web |

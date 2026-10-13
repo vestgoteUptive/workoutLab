@@ -96,7 +96,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 |---|---|---|---|---|---|
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
 | T-0922 | UF-03 tests: audit synchronous getByRole reads right after a heading waitFor (same race as T-0663; reproduced only under heavy CPU load) | web-feature:UF-03 | — | todo | wl-build-web |
-| T-0923 | Cleanups from T-0665/T-0668: delete unused `.wl-resume-card__action` rules in UF-09 uf-09.css:225-243; `.wl-uf04-detail__history` link label sits 8 px inside the gutter (uf-04.css:338, same fix as T-0668) | web-feature:UF-04 | — | doing | wl-build-web |
+| T-0924 | UF-10 midnight-rollover.test.tsx "no second refresh at the rollover" flakes under full-gate load (seen in T-0625 and T-0923 gates; passes alone); root-cause | web-feature:UF-10 | — | todo | wl-build-web |
 | T-0918 | UF-04: defer SKIP_WAITING until the route chunk settles (T-0916 root cause: aborted chunk, failed route for ~1 s) | web-shell | — | doing | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
 
@@ -178,6 +178,5 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0628 | (superseded by T-0660 / D-0225) Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
 | T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
 | T-0666 | Shell: hide the tab bar on /?view=preview so Start sits at the viewport bottom per the canvas (T-0601 deviation) | web-shell | T-0601 | todo | wl-build-web |
-| T-0674 | UF-03.3 PR band from records(): replace EndedSummary.pr {text} with a structured record (as T-0636 latestPr), formatted with en.* copy; pick which record the band shows; fix the trivially-passing 'successful save shows none' test (T-0604 review) | web-feature:UF-03 | T-0604, T-0636 | doing | wl-build-web |
 | T-0675 | Shell: routes.phase3.render.test.tsx pins bare <h1> source for UF-03.3, UF-04.3 and UF-06.2; accept a className so those screens use .wl-title--stop and drop their duplicated ::after rules (T-0604/T-0607/T-0609 reviews; supersedes T-0669) | web-shell | — | todo | wl-build-web |
 | T-0680 | UF-03 ListView.tsx:738 is a third SwapSheet host with no e2e; cover the in-tree scrim z6 / sheet z7 stacking there (T-0602 review) | web-feature:UF-03 | T-0602 | todo | wl-build-web |
