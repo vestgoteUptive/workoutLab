@@ -11,6 +11,8 @@ import { monthCalendar, recentExercises } from "./stats.js";
 import { statusProps, useProgressData, type ProgressOptions } from "./use-progress-data.js";
 import "./progress.css";
 
+// Separates the date from the sr-only word so a reader says "14, Workout", not "14Workout" (T-0673).
+const SR_SEP = ", ";
 const AREA_COUNT = 9;
 
 export function Progress(props: ProgressOptions) {
@@ -72,7 +74,9 @@ export function Progress(props: ProgressOptions) {
                         >
                           <span>{day}</span>
                           {marked ? (
-                            <span className="wl-progress__sr-only">{en.uf06.workoutDay}</span>
+                            <span className="wl-progress__sr-only">
+                              {SR_SEP + en.uf06.workoutDay}
+                            </span>
                           ) : null}
                         </td>
                       );
