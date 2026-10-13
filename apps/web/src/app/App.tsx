@@ -79,37 +79,41 @@ export function Shell() {
   return (
     <>
       <AccountDeletedNotice />
-      <Routes>
-        {routes.map((route) => {
-          const Component = lazyComponents.get(route.path)!;
-          const lazyElement =
-            route.path === "/balance/:area" ? (
-              <BalanceDetailGuard>
+      {/* T-0920: the one <main> landmark around the routed screen. The tab bar and the account
+          notice stay outside it. No box styles: it is a plain block, like the screens' old parent. */}
+      <main>
+        <Routes>
+          {routes.map((route) => {
+            const Component = lazyComponents.get(route.path)!;
+            const lazyElement =
+              route.path === "/balance/:area" ? (
+                <BalanceDetailGuard>
+                  <Component />
+                </BalanceDetailGuard>
+              ) : (
                 <Component />
-              </BalanceDetailGuard>
-            ) : (
-              <Component />
+              );
+            // The route's own error boundary (D-0164 §7) sits inside the guard and gate and outside
+            // Suspense: a failed chunk load shows "Couldn't load this screen." for this route only. The
+            // key matters: React Router reuses the element slot across routes, so without it the
+            // failed state would follow the user to the next route.
+            // The guard sits *outside* Suspense: a guard decided once at mount (`session`,
+            // AC-B7) must not be re-run when Suspense unwinds and retries this subtree once
+            // the lazy chunk resolves, which would reset its captured decision.
+            const element = applyGuard(
+              route.guard,
+              applyProfileGate(
+                route,
+                <RouteBoundary key={route.path} resetKey={location.pathname}>
+                  <Suspense fallback={null}>{lazyElement}</Suspense>
+                </RouteBoundary>,
+              ),
             );
-          // The route's own error boundary (D-0164 §7) sits inside the guard and gate and outside
-          // Suspense: a failed chunk load shows "Couldn't load this screen." for this route only. The
-          // key matters: React Router reuses the element slot across routes, so without it the
-          // failed state would follow the user to the next route.
-          // The guard sits *outside* Suspense: a guard decided once at mount (`session`,
-          // AC-B7) must not be re-run when Suspense unwinds and retries this subtree once
-          // the lazy chunk resolves, which would reset its captured decision.
-          const element = applyGuard(
-            route.guard,
-            applyProfileGate(
-              route,
-              <RouteBoundary key={route.path} resetKey={location.pathname}>
-                <Suspense fallback={null}>{lazyElement}</Suspense>
-              </RouteBoundary>,
-            ),
-          );
-          return <Route key={route.path} path={route.path} element={element} />;
-        })}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            return <Route key={route.path} path={route.path} element={element} />;
+          })}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
       {showTabBar ? <TabBar /> : null}
     </>
   );

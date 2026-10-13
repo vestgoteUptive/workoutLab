@@ -156,6 +156,34 @@ describe("AC-2 the new stubs render", () => {
   });
 });
 
+// T-0920 AC1/AC3: exactly one <main> per routed screen, holding the data-screen-id root; the
+// tab bar sits outside it.
+describe("T-0920 AC1 one main landmark around the routed screen", () => {
+  const MAIN_ROWS: ReadonlyArray<readonly [string, string, boolean]> = [
+    ...NEW_SCREENS.map(([path, id, tabs]) => [path, id, tabs] as const),
+    ["/session/S1", "UF-09", false],
+    ["/session/setup", "UF-08.1", false],
+    ["/progress", "UF-06.1", true],
+    ["/plan", "UF-11.2", true],
+  ];
+  it.each(MAIN_ROWS)(
+    "%s (%s) has one main containing the screen root, tab bar outside",
+    async (path, screenId, showTabBar) => {
+      await renderAt(path);
+      const mains = screen.getAllByRole("main");
+      expect(mains).toHaveLength(1);
+      expect(mains[0]!.querySelectorAll("main")).toHaveLength(0);
+      expect(mains[0]!.querySelector(`[data-screen-id="${screenId}"]`)).not.toBeNull();
+      const nav = screen.queryByRole("navigation", { name: en.tabBar.nav });
+      if (showTabBar) {
+        expect(nav).toBeInTheDocument();
+        expect(mains[0]!.contains(nav)).toBe(false);
+      }
+    },
+    LAZY_TEST_MS,
+  );
+});
+
 describe("AC-3 route ranking", () => {
   it.each([
     ["/session/setup", "UF-08.1"],
