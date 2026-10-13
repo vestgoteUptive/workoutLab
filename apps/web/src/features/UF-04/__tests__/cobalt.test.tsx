@@ -79,11 +79,9 @@ describe("AC1 state", () => {
     const cmp = document.querySelector('[data-screen-id="UF-04.3"]')!;
     expect(cmp).toHaveAttribute("data-wl-state", "plan");
     expect(cmp).toHaveClass("wl-page");
-    // The h1 is bare in index.tsx (the shell's routes test reads it); the CSS gives it the role.
-    expect(COBALT_CSS).toMatch(
-      /\.wl-uf04-compare > h1 \{[^}]*font-size:\s*2\.75rem[^}]*font-weight:\s*700/,
-    );
-    expect(COBALT_CSS).toMatch(/\.wl-uf04-compare > h1::after \{[^}]*content:\s*"\." \/ ""/);
+    // T-0675: the h1 takes the shared section role and stop; no scoped copy remains.
+    expect(cmp.querySelector("h1")).toHaveClass("wl-type-section", "wl-title--stop");
+    expect(COBALT_CSS).not.toMatch(/\.wl-uf04-compare > h1/);
     expect(document.querySelectorAll("[data-wl-state]")).toHaveLength(1);
   });
 });

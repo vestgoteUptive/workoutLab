@@ -16,29 +16,6 @@
     max(env(safe-area-inset-bottom), 2rem);
 }
 
-/* The title's full stop is decoration, not name: the "." / "" form gives it empty alt text. The
- * routes test pins the bare `<h1>{en.screens.sessionSummary}</h1>`, so this is the shared
- * .wl-title--stop rule scoped here instead of a class on the element. */
-.wl-uf03-summary > h1::after {
-  content: "";
-  display: inline-block;
-  inline-size: 0.12em;
-  block-size: 0.12em;
-  margin-inline-start: 0.04em;
-  background: currentColor;
-}
-
-@supports (content: "." / "") {
-  .wl-uf03-summary > h1::after {
-    content: "." / "";
-    display: inline;
-    inline-size: auto;
-    block-size: auto;
-    margin-inline-start: 0;
-    background: none;
-  }
-}
-
 .wl-uf03-summary .wl-uf03-summary__state,
 .wl-uf03-summary .wl-uf03-summary__ended {
   display: flex;

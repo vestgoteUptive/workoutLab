@@ -134,7 +134,9 @@ describe("AC-2 the new stubs render", () => {
     const source = readFileSync(resolve(__dirname, `../../features/${flow}/index.tsx`), "utf8");
     const fn = source.slice(source.indexOf(`export function ${exportName}(`));
     const body = fn.slice(0, fn.indexOf("\n}"));
-    expect(body).toContain(`<h1>{en.screens.${key}}</h1>`);
+    expect(body).toMatch(
+      new RegExp(`<h1(?: className="[\\w -]+")?>\\{en\\.screens\\.${key}\\}</h1>`),
+    );
   });
 
   // UF-06.2 is built, so its heading is the exercise's own name rather than a catalogue
@@ -146,9 +148,11 @@ describe("AC-2 the new stubs render", () => {
       resolve(__dirname, "../../features/UF-06/ExerciseHistory.tsx"),
       "utf8",
     );
-    expect(source).toContain('<h1 className="wl-progress__title">{history.exercise.name}</h1>');
+    expect(source).toMatch(
+      /<h1 className="wl-type-page-title wl-title--stop wl-progress__title">\s*\{history\.exercise\.name\}\s*<\/h1>/,
+    );
     // No literal or second catalogue standing in for the heading.
-    expect(source).not.toMatch(/<h1[^>]*>[^{<]/);
+    expect(source).not.toMatch(/<h1[^>]*>[^{<\s]/);
     expect(source).not.toContain("en.screens.exerciseHistory");
     // `index.tsx` only re-exports, so nothing there can shadow the heading above.
     const index = readFileSync(resolve(__dirname, "../../features/UF-06/index.tsx"), "utf8");
