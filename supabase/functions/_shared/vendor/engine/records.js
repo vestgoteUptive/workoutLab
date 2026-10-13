@@ -40,8 +40,12 @@ export function records(history, library) {
         const ex = lib.get(set.exerciseId);
         if (ex === undefined || !isHardSet(set, ex))
             continue;
+        const key = recordKey(set, ex.timed);
+        // T-0661: a NaN or infinite weight, reps or duration is no set (it would compare as a record).
+        if (!Number.isFinite(key[1]))
+            continue;
         const list = byExercise.get(set.exerciseId) ?? [];
-        list.push({ set, key: recordKey(set, ex.timed), ms: instantMs(set.completedAt) });
+        list.push({ set, key, ms: instantMs(set.completedAt) });
         byExercise.set(set.exerciseId, list);
     }
     const out = [];

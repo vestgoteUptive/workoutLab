@@ -11,7 +11,7 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "lint:fix": "turbo run lint -- --fix",
-    "test": "turbo run test && pnpm test:repo-checks",
+    "test": "turbo run test && pnpm test:repo-checks && node supabase/scripts/vendor.mjs --check",
     "test:repo-checks": "node --test \".github/scripts/*.test.mjs\"",
     "check:size": "pnpm --filter @workoutlab/web check:size",
     "check:repo": "node .github/scripts/check-all.mjs",
