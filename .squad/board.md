@@ -96,8 +96,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 |---|---|---|---|---|---|
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
 | T-0922 | UF-03 tests: audit synchronous getByRole reads right after a heading waitFor (same race as T-0663; reproduced only under heavy CPU load) | web-feature:UF-03 | — | todo | wl-build-web |
-| T-0924 | UF-10 midnight-rollover.test.tsx "no second refresh at the rollover" flakes under full-gate load (seen in T-0625 and T-0923 gates; passes alone); root-cause | web-feature:UF-10 | — | doing | wl-build-web |
-| T-0918 | UF-04: defer SKIP_WAITING until the route chunk settles (T-0916 root cause: aborted chunk, failed route for ~1 s) | web-shell | — | doing | wl-build-web |
+| T-0918 | UF-04: defer SKIP_WAITING until the route chunk settles (T-0916 root cause: aborted chunk, failed route for ~1 s) | web-shell | — | doing (draft PR #58 open; AC4 stuck-waiting mode, T-0919, unresolved) | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
 
 ## Phase 5 — Iterate
@@ -176,5 +175,5 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0626 | Screen restyles: use aria-disabled, not :disabled, on migrated controls (the legacy :disabled rule loses to scoped rules); feature CSS (.wl-plan__rows .wl-row, .wl-card.wl-excluded__row, excluded.css:140) can override the unboxed row and card by load order, so each screen ticket must check it (T-0592 review) | web-shell | T-0592 | todo (a checklist for each screen ticket) | wl-build-web |
 | T-0628 | (superseded by T-0660 / D-0225) Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
 | T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
-| T-0675 | Shell: routes.phase3.render.test.tsx pins bare <h1> source for UF-03.3, UF-04.3 and UF-06.2; accept a className so those screens use .wl-title--stop and drop their duplicated ::after rules (T-0604/T-0607/T-0609 reviews; supersedes T-0669) | web-shell | — | doing | wl-build-web |
+| T-0925 | UF-10 use-balance: a rollover read that started before the refresh finished can publish after the refresh re-read and show pre-refresh data; add a cache-read sequence number (T-0924 follow-up, low priority) | web-feature:UF-10 | T-0924 | todo | wl-build-web |
 | T-0680 | UF-03 ListView.tsx:738 is a third SwapSheet host with no e2e; cover the in-tree scrim z6 / sheet z7 stacking there (T-0602 review) | web-feature:UF-03 | T-0602 | todo | wl-build-web |
