@@ -258,6 +258,8 @@ async function openCobalt(
     .poll(() => page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor))
     .toBe(rgbOf(PLAN.bg!));
   if (path === "/plan") await expect(page.locator(TILES).first()).toBeVisible();
+  // The edit screen's rows (the real ready signal) render after the plan data loads.
+  else await expect(page.locator("label.wl-option").first()).toBeVisible();
   if (pending && path === "/plan") await expect(page.locator(CARD)).toBeVisible();
 }
 
