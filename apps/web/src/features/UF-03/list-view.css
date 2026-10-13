@@ -301,10 +301,11 @@
 }
 
 /* The swap tag, the hints and the save status live in their own cells and sit under the row,
- * one slot each (--wl-slot), so the row reserves --wl-msgs slots of space. */
+ * one slot each (--wl-slot), so the row reserves --wl-msgs slots of space. use-message-slots.ts
+ * grows a slot past 3 rem for a message that wraps (--wl-off, --wl-pad), T-0670. */
 .wl-uf03-list .wl-uf03-list__table tbody > tr {
   position: relative;
-  padding-block-end: calc(0.5rem + var(--wl-msgs, 0) * 3rem);
+  padding-block-end: calc(0.5rem + var(--wl-pad, var(--wl-msgs, 0) * 3rem));
 }
 
 .wl-uf03-list
@@ -312,7 +313,7 @@
   :is(.wl-uf03-list__tag, .wl-uf03-list__hint, .wl-uf03-list__status):not(:empty) {
   position: absolute;
   inset-inline: 0;
-  inset-block-end: calc(0.375rem + var(--wl-slot, 0) * 3rem);
+  inset-block-end: calc(0.375rem + var(--wl-off, var(--wl-slot, 0) * 3rem));
   display: flex;
   align-items: center;
   gap: 0.375rem;

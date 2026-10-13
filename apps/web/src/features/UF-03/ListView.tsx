@@ -27,6 +27,7 @@ import { itemSummary, restLabel } from "../../lib/i18n/workout.js";
 import { loadExerciseDetail } from "../../lib/offline/index.js";
 import { ExerciseHowTo } from "../UF-04/index.js";
 import { retryableLazy } from "./lazy-retry.js";
+import { useMessageSlots } from "./use-message-slots.js";
 import { loadListData, previousSets, type ListData } from "./list-data.js";
 import { parseCount, parseWeight } from "./weight-parse.js";
 import "./list-view.css";
@@ -466,8 +467,11 @@ function SetRow({
   ];
   const slotOf = (k: number): CSSProperties =>
     ({ "--wl-slot": shown.slice(0, k).filter(Boolean).length }) as CSSProperties;
+  const rowRef = useRef<HTMLTableRowElement>(null);
+  useMessageSlots(rowRef, shown.join());
   return (
     <tr
+      ref={rowRef}
       className="wl-row"
       data-part="set-row"
       data-set-index={i}

@@ -968,6 +968,56 @@ test.describe("T-0603 UF-03.1 at 320 x 640", () => {
   });
 });
 
+// T-0670 UF-03.1: a hint that wraps at 320 x 640 takes its own room: it overlaps neither the next
+// row nor the row's own fields nor the other message of the row.
+test.describe("T-0670 UF-03.1 wrapped hints at 320 x 640", () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+
+  test("the longest hint (seconds) and the kg hint stay clear of the next row and each other", async ({
+    page,
+    context,
+  }) => {
+    await openSessionOffline(page, context);
+    await openListView(page);
+    // Text enlarged to 300 % (WCAG 1.4.4): the longest hint now needs several lines at 320 px.
+    await page.evaluate(() => {
+      document.documentElement.style.fontSize = "300%";
+    });
+    const row = page.locator('[data-part="set-row"]').first();
+    await row.getByRole("textbox", { name: "Set 1 weight in kg" }).fill("x");
+    await row.getByRole("textbox", { name: /^Set 1 reps/ }).fill("x");
+    await page.keyboard.press("Tab");
+    const hints = row.locator(".wl-uf03-list__hint:not(:empty)");
+    await expect(hints).toHaveCount(2);
+    // The longest hint the view can show is the seconds one; no seeded exercise is timed, so
+    // its words go into the real reps-hint element (slot and row reservation are React's).
+    await hints.nth(1).evaluate((el) => {
+      el.lastChild!.textContent = "Enter seconds as a whole number like 45";
+    });
+    const boxes = await page.evaluate(() => {
+      const rect = (el: Element) => {
+        const r = el.getBoundingClientRect();
+        return { l: r.left, r: r.right, t: r.top, b: r.bottom };
+      };
+      const rows = Array.from(document.querySelectorAll('[data-part="set-row"]'));
+      const first = rows[0]!;
+      return {
+        next: rect(rows[1]!),
+        hints: Array.from(first.querySelectorAll(".wl-uf03-list__hint:not(:empty)")).map(rect),
+        fields: Array.from(first.querySelectorAll("input, th, [data-part='previous']")).map(rect),
+      };
+    });
+    type Box = { l: number; r: number; t: number; b: number };
+    const overlap = (a: Box, b: Box) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+    expect(boxes.hints.some((h) => h.b - h.t > 48)).toBe(true); // it really wrapped past one slot
+    for (const h of boxes.hints) {
+      expect(overlap(h, boxes.next), "next row").toBe(false);
+      for (const f of boxes.fields) expect(overlap(h, f), "row field").toBe(false);
+    }
+    expect(overlap(boxes.hints[0]!, boxes.hints[1]!), "the two hints").toBe(false);
+  });
+});
+
 // T-0604 UF-03.3 Summary in the plan state (390 x 844). Nothing computes a PR yet, so the band
 // cases insert the band's own markup (the classes and parts SummaryContent renders) into the real
 // page: the CSS under test is the app's, the markup is the component's (vitest covers that).
