@@ -52,6 +52,12 @@ describe("T-0603 AC1 states", () => {
     expect(ctx.rest).not.toBeNull();
   });
 
+  it("T-0671: a rest begun 30 s before the view opened starts at 1/3 risen, not 0", async () => {
+    await mount(makeCtx({ rest: { remainingS: 60, totalS: 90 } }));
+    fireEvent.click(screen.getByRole("button", { name: /show rest/ }));
+    expect(drain()).toBe("33.3%");
+  });
+
   it("without a total from the session, the total is the rest as first seen, moved by ±15 s", async () => {
     const ctx = makeCtx({ rest: { remainingS: 90 } });
     const { view } = await mount(ctx);

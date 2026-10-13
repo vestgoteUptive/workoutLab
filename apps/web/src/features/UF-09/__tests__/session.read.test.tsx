@@ -90,7 +90,7 @@ describe("AC-1 read fields", () => {
     ]);
     expect(typeof logged.clientId).toBe("string");
     expect(s.state.phase).toBe("rest");
-    expect(s.rest).toEqual({ remainingS: 120 });
+    expect(s.rest).toEqual({ remainingS: 120, totalS: 120 });
 
     const at = Date.now();
     expect(s.elapsedS).toBe(

@@ -90,16 +90,28 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+describe("T-0671 rest total", () => {
+  it("a rest begun 30 s before List view opens reports its whole 90 s, not what is left", async () => {
+    await seedSession();
+    seedFocus({
+      phase: "rest",
+      timer: { startedAtMs: NOW - 30_000, durationS: 90, pausedMs: 0 },
+    });
+    await renderSession();
+    expect(session().rest).toEqual({ remainingS: 60, totalS: 90 });
+  });
+});
+
 describe("AC-7 rest helpers", () => {
   it("startRest('bench-press') starts a 120 s wall-clock rest: 30 left after 90 s", async () => {
     await seedSession();
     seedFocus({ phase: "set" });
     await renderSession();
     act(() => session().startRest("bench-press"));
-    expect(session().rest).toEqual({ remainingS: 120 });
+    expect(session().rest).toEqual({ remainingS: 120, totalS: 120 });
     expect(storedFocus()!.timer).toEqual({ startedAtMs: NOW, durationS: 120, pausedMs: 0 });
     await advance(90_000);
-    expect(session().rest).toEqual({ remainingS: 30 });
+    expect(session().rest).toEqual({ remainingS: 30, totalS: 120 });
     expect(session().rest!.remainingS).toBe(
       remainingS(storedFocus()!.timer as FocusTimer, Date.now()),
     );
@@ -110,9 +122,9 @@ describe("AC-7 rest helpers", () => {
     seedFocus({ phase: "set", itemIndex: 2 });
     await renderSession();
     act(() => session().startRest("leg-curl"));
-    expect(session().rest).toEqual({ remainingS: 60 });
+    expect(session().rest).toEqual({ remainingS: 60, totalS: 60 });
     await advance(45_000);
-    expect(session().rest).toEqual({ remainingS: 15 });
+    expect(session().rest).toEqual({ remainingS: 15, totalS: 60 });
   });
 
   it("adjustRest(-15) ×9 floors at 0", async () => {
@@ -137,11 +149,11 @@ describe("AC-7 rest helpers", () => {
     await renderSession();
     act(() => session().startRest("bench-press"));
     act(() => session().adjustRest(15));
-    expect(session().rest).toEqual({ remainingS: 135 });
+    expect(session().rest).toEqual({ remainingS: 135, totalS: 135 });
     act(() => {
       for (let i = 0; i < 9; i += 1) session().adjustRest(15);
     });
-    expect(session().rest).toEqual({ remainingS: 270 });
+    expect(session().rest).toEqual({ remainingS: 270, totalS: 270 });
   });
 
   it("(c) startRest from an unlogged set: currentSetIndex during that rest is the same set, 0", async () => {
@@ -242,7 +254,7 @@ describe("AC-8 close() re-sync", () => {
     await flushReal();
     expect(storedFocus()).toMatchObject({ phase: "rest", itemIndex: 0, setIndex: 0 });
     expect(storedRemaining()).toBe(before);
-    expect(session().rest).toEqual({ remainingS: 80 });
+    expect(session().rest).toEqual({ remainingS: 80, totalS: 120 });
   });
 
   const WITH_BACKOFF: SessionPlan = {
