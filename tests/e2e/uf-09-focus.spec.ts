@@ -792,6 +792,26 @@ async function startFromHome(page: Page): Promise<void> {
   await expect(page.locator(`[data-screen-id="${before}"]`)).toBeVisible();
 }
 
+// T-0672 (UF-04.3 in the focus Pause seam): the steps list keeps its list semantics (the `ol` has
+// list-style none, which drops them in Safari) and the sheet has no axe violations.
+test.describe("T-0672 How-to sheet list semantics", () => {
+  test("Pause → How to: the steps are a list with items, axe reports 0 violations", async ({
+    page,
+  }) => {
+    await startFromHome(page);
+    await page.getByRole("button", { name: "Pause workout" }).click();
+    await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
+    await page.getByRole("button", { name: "How to" }).click();
+    const dialog = page.getByRole("dialog", { name: /^How to: / });
+    await expect(dialog).toBeVisible();
+    const steps = dialog.getByRole("list");
+    await expect(steps).toBeVisible();
+    expect(await steps.getByRole("listitem").count()).toBeGreaterThanOrEqual(1);
+    const results = await new AxeBuilder({ page }).analyze();
+    expect(results.violations).toEqual([]);
+  });
+});
+
 test.describe("T-0394 AC-6 Back means Pause", () => {
   test("Start → Back shows UF-09.9 on the same URL; one more Back leaves", async ({ page }) => {
     await startFromHome(page);

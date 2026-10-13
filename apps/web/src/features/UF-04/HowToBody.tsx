@@ -17,7 +17,8 @@ export function HowToBody({ detail }: { detail: ExerciseDetail }) {
       )}
       <section className="wl-uf04-steps-section">
         <h2 className="wl-type-label">{en.uf04.instructions}</h2>
-        <ol className="wl-uf04-steps">
+        {/* role="list": Safari drops list semantics once list-style is none. */}
+        <ol className="wl-uf04-steps" role="list">
           {detail.instructions.map((step, index) => (
             <li key={index} className="wl-row wl-type-body">
               {step}
