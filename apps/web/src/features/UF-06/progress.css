@@ -82,11 +82,6 @@
   border-block-end: 1px solid var(--wl-line);
 }
 
-.wl-progress .wl-progress__balance::after,
-.wl-progress .wl-progress__row::after {
-  display: none;
-}
-
 .wl-progress .wl-progress__balance-rows {
   display: flex;
   flex-direction: column;
@@ -133,10 +128,6 @@
   align-items: center;
   min-block-size: 56px;
   border-block-end: 1px solid var(--wl-line);
-}
-
-.wl-progress .wl-progress__recent-row::after {
-  grid-area: chev;
 }
 
 .wl-progress .wl-progress__recent-name {

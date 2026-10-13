@@ -115,6 +115,10 @@ describe("T-0609 AC2 calendar", () => {
     const marked = [...document.querySelectorAll("td[data-marked='true']")];
     expect(marked.map((td) => td.getAttribute("data-day"))).toEqual(["1", "14"]);
     for (const td of marked) expect(td).toHaveTextContent(en.uf06.workoutDay);
+    // T-0673: the date and the sr-only word are separated, so a reader does not say "14Workout".
+    for (const td of marked) {
+      expect(td.textContent).toBe(`${td.getAttribute("data-day")}, ${en.uf06.workoutDay}`);
+    }
     const plain = document.querySelector("td[data-day='2']")!;
     expect(plain).not.toHaveTextContent(en.uf06.workoutDay);
     expect(find(".wl-progress .wl-progress__day")?.body).toMatch(/color:\s*var\(--wl-ink-muted\)/);
