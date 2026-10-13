@@ -112,3 +112,5 @@ Owner answers, 2026-10-09 (promoted mock items):
 - H-38: **default** 20 kg bar; plates 25/20/15/10/5/2.5/1.25 kg; kg only; no line when no exact loading exists.
 - H-39: tags **as proposed**. In plan = in one of your routines; Variant = a variation of one; Beginner = the exercise's level.
 - D-0218 (profiles bar and plates) and D-0219 (engine rule 15 records) are **approved** as contract changes.
+
+- [ ] **H-40 How may `pwa-update.spec.ts` handle the Chromium service-worker wedge (T-0919)?** About 4% of runs (8 of 200 on 2026-10-13) end with SKIP_WAITING posted but the worker staying `waiting`; only CDP `ServiceWorker.skipWaiting`/`stopAllWorkers` unsticks it, and app code is not the cause (T-0918 log, ~3000 runs). **Default if you don't answer:** leave the spec as is and accept CI retries. **Alternative:** in the spec, call CDP `ServiceWorker.skipWaiting` 3 s after the app has posted, still asserting the post and the single reload (changes what the test proves). Non-blocking. Added 2026-10-13.
