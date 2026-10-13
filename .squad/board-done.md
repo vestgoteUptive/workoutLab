@@ -482,3 +482,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0625 | Tokens: retire Chalk & Iron keys and fonts (contract) | design | T-0624, T-0617, T-0585, T-0614 | done | wl-design |
 | T-0661 | engine records(): a NaN weightKg or reps compares as NaN and is reported as a record; treat non-finite inputs as no set (T-0635 review) | engine | T-0635 | done | wl-build-engine |
 | T-0664 | Engine builder gate must run `node supabase/scripts/vendor.mjs --check` (T-0635 broke main by not regenerating the vendor copy); add it to the engine and shared lanes' DoD or to the -w test gate | infra | — | done | wl-build-infra |
+| T-0676 | UF-07.1: switch Save and move up/down from native disabled to aria-disabled (state-patterns.md), no-op handlers, Save aria-describedby the reason line, update toBeDisabled assertions, drop scoped :disabled rules (T-0610 review) | web-feature:UF-07 | T-0610 | done | wl-build-web |
+| T-0679 | UF-05 SwapSheet candidate radios: native disabled={pending} → aria-disabled (a focused radio that becomes disabled drops focus out of the dialog trap) (T-0602 review) | web-feature:UF-05 | T-0602 | done | wl-build-web |
