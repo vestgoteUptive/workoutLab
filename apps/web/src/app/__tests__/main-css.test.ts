@@ -372,4 +372,23 @@ describe("T-0630 sheet stacking, portalled scrim and nested plan type (D-0216)",
       idx('[data-wl-state="lift"] .wl-type-label'),
     );
   });
+
+  it("T-0678 the hidden radio is a full-size invisible target over its label", () => {
+    const stripped = css.replace(/\/\*[\s\S]*?\*\//g, "");
+    const m = stripped.match(/\.wl-segmented input\[type="radio"\]\s*\{([^}]*)\}/);
+    const body = m?.[1] ?? "";
+    // The same block hides all three inputs: its selector list names each one.
+    const head = stripped.slice(0, stripped.indexOf(m?.[0] ?? "\0"));
+    expect(head.slice(head.lastIndexOf("}"))).toMatch(
+      /\.wl-option > input\[type="radio"\],[\s\S]*\.wl-chip > input,/,
+    );
+    expect(body).toMatch(/position:\s*absolute/);
+    expect(body).toMatch(/inset:\s*0/);
+    expect(body).toMatch(/inline-size:\s*100%/);
+    expect(body).toMatch(/block-size:\s*100%/);
+    expect(body).toMatch(/margin:\s*0/);
+    expect(body).toMatch(/opacity:\s*0/);
+    expect(body).toMatch(/cursor:\s*pointer/);
+    expect(body).not.toMatch(/pointer-events:\s*none/);
+  });
 });
