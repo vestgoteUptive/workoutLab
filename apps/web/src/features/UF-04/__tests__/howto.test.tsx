@@ -104,6 +104,9 @@ describe("AC-14 the dialog", () => {
       "Sit down between your heels",
       "Drive up",
     ]);
+    // T-0672: the steps `ol` has list-style none, so it carries role="list" for Safari.
+    expect(within(dialog).getByRole("list")).toHaveAttribute("role", "list");
+    expect(within(dialog).getAllByRole("listitem")).toHaveLength(3);
     expect(dialog.querySelectorAll("a[href]")).toHaveLength(0);
     expect(
       within(dialog)
