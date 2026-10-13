@@ -480,3 +480,5 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0616 | PWA manifest, build-time theme-color, icons in plan | web-shell | T-0601 | done | wl-build-web |
 | T-0624 | Web: retire the legacy fallback | web-shell | T-0595…T-0613, T-0615, T-0616 | done | wl-build-web |
 | T-0625 | Tokens: retire Chalk & Iron keys and fonts (contract) | design | T-0624, T-0617, T-0585, T-0614 | done | wl-design |
+| T-0661 | engine records(): a NaN weightKg or reps compares as NaN and is reported as a record; treat non-finite inputs as no set (T-0635 review) | engine | T-0635 | done | wl-build-engine |
+| T-0664 | Engine builder gate must run `node supabase/scripts/vendor.mjs --check` (T-0635 broke main by not regenerating the vendor copy); add it to the engine and shared lanes' DoD or to the -w test gate | infra | — | done | wl-build-infra |
