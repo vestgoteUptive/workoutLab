@@ -69,6 +69,9 @@ describe("T-0395 AC1 the card", () => {
     expect(await screen.findByText("Started 09:30 · 3 of 12 sets")).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "Resume workout" });
     expect(link).toHaveAttribute("href", `/session/${S1}`);
+    // T-0665: the shared secondary button, never the primary (Start stays the only primary).
+    expect(link).toHaveClass("wl-button--secondary");
+    expect(link).not.toHaveClass("wl-button--primary");
   });
 
   it("on main (no seeded session) there is no [data-part=resume]", async () => {

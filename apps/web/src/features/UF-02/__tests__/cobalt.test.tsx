@@ -211,8 +211,7 @@ describe("AC7 the stylesheets: rem type, variables only, no legacy colour", () =
   it("the Resume card of UF-09 is restyled from here, doubled with .wl-today to beat uf-09.css", () => {
     const code = rules(TODAY_CSS);
     expect(code).toMatch(/\.wl-today \.wl-resume-card\s*\{[^}]*background:\s*none/);
-    expect(code).toMatch(
-      /\.wl-today \.wl-resume-card__action\s*\{[^}]*1\.5px solid var\(--wl-ink\)/,
-    );
+    // T-0665: the Resume button is the shared secondary; no hand-made outline button remains.
+    expect(code).not.toMatch(/wl-resume-card__action/);
   });
 });

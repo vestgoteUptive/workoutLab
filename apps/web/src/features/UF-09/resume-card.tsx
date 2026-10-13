@@ -63,7 +63,7 @@ export function ResumeCard({ now, locale, timeZone }: ResumeCardProps) {
       <p className="wl-resume-card__line">
         {en.uf09.resumeLine(time, resumable.done, resumable.total)}
       </p>
-      <Link to={`/session/${resumable.sessionId}`} className="wl-resume-card__action">
+      <Link to={`/session/${resumable.sessionId}`} className="wl-button--secondary">
         {en.uf09.resumeAction}
       </Link>
     </section>

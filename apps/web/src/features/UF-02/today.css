@@ -203,8 +203,8 @@
 }
 
 /* The Resume workout card (D-0139) is UF-09's component, mounted through slots.tsx. Under Today it
- * is a row block: a hairline under it, its title and line as text, and Resume as the secondary
- * button. Selectors are doubled with .wl-today so they beat uf-09.css whatever the load order. */
+ * is a row block: a hairline under it, its title and line as text, and Resume as the shared
+ * .wl-button--secondary. Selectors are doubled with .wl-today so they beat uf-09.css whatever the load order. */
 .wl-today .wl-resume-card {
   gap: 0.25rem;
   padding: 0 0 1rem;
@@ -226,24 +226,6 @@
   font-size: 0.875rem;
   line-height: 1.4;
   color: var(--wl-ink-muted);
-}
-
-.wl-today .wl-resume-card__action {
-  align-self: flex-start;
-  margin-block-start: 0.5rem;
-  min-block-size: 48px;
-  padding: 0.75rem 1.5rem;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--wl-ink);
-  background: transparent;
-  border: 1.5px solid var(--wl-ink);
-  border-radius: var(--wl-radius-pill);
-}
-
-.wl-today .wl-resume-card__action:focus-visible {
-  outline: 2px solid var(--wl-focus);
-  outline-offset: 2px;
 }
 
 /* WCAG 2.4.11: a keyboard-focused control scrolls to above the sticky Start and its halo, never
