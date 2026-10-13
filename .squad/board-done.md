@@ -305,6 +305,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0915 | lib/pwa/update.ts adopts installing worker in watch(), re-adopts on check() (pwa-update.spec.ts:109 flake) | web-shell | — | done | wl-build-web |
 | T-0916 | pwa-update.spec.ts:118 lazy-chunk console-guard flake: root-cause it | qa | T-0915 | done | wl-build-web |
 | T-0919 | pwa-update.spec.ts:109: adopted worker stuck waiting after SKIP_WAITING (~1%) | qa | T-0918 | folded into T-0918 | wl-build-web |
+| T-0920 | Shell: add a `<main>` landmark around routed screens (axe region/landmark-one-main flag every Today element; T-0638 excluded those two rules) | web-shell | — | done | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |

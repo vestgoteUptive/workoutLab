@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-02.1]
 decisions: [D-0208]
 deps: [T-0638]
-status: doing
+status: done
 ---
 <!-- Written by the orchestrator 2026-10-13 (T-0638 follow-up). Small. -->
 
@@ -31,8 +31,4 @@ The shell renders no `<main>`, so axe's `region` and `landmark-one-main` rules f
 none
 
 ## Build / accept log
-- Build (Sonnet): `Shell` in App.tsx wraps `<Routes>` in one plain `<main>` (no styles; tab bar and AccountDeletedNotice outside). No skip link exists in the shell. Removed the region/landmark-one-main exclusion in uf-02-today.spec.ts.
-- AC1: routes.phase3.render.test.tsx "T-0920 AC1" (10 routes incl. UF-09, UF-08.1; one main, contains root, tab bar outside). AC2: uf-02-today.spec.ts AC5 axe, no exclusion. AC3/AC4: full e2e 672 passed.
-- Faults: main->div in App.tsx: AC1 test red (10 fails), AC2 axe red (landmark-one-main, region). Restored from backup.
-- Nested main: none in non-test source (only test wrappers).
-- Gate: -w typecheck lint test 0, test:repo-checks 0, format:check 0, check-all 0, full e2e 0.
+Archived in `docs/tickets/log/T-0920.md` (D-0157).

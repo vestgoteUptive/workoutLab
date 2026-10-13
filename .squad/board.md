@@ -96,7 +96,6 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 |---|---|---|---|---|---|
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
 | T-0919 | uf-11-plan-layout.spec.ts:450 flake: /plan/edit 44x44 check counted ≤5 boxes once under full-suite load (T-0634 merge), 87/87 on rerun; wait for the rows before measuring | e2e | — | todo | wl-build-web |
-| T-0920 | Shell: add a `<main>` landmark around routed screens (axe region/landmark-one-main flag every Today element; T-0638 excluded those two rules) | web-shell | — | doing | wl-build-web |
 | T-0918 | UF-04: defer SKIP_WAITING until the route chunk settles (T-0916 root cause: aborted chunk, failed route for ~1 s) | web-shell | — | doing | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
 
