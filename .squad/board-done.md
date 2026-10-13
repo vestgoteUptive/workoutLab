@@ -306,6 +306,7 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0916 | pwa-update.spec.ts:118 lazy-chunk console-guard flake: root-cause it | qa | T-0915 | done | wl-build-web |
 | T-0919 | pwa-update.spec.ts:109: adopted worker stuck waiting after SKIP_WAITING (~1%) | qa | T-0918 | folded into T-0918 | wl-build-web |
 | T-0920 | Shell: add a `<main>` landmark around routed screens (axe region/landmark-one-main flag every Today element; T-0638 excluded those two rules) | web-shell | — | done | wl-build-web |
+| T-0921 | uf-11-plan-layout.spec.ts:450 flake: /plan/edit 44x44 check counted ≤5 boxes once under full-suite load (T-0634 merge), 87/87 on rerun; wait for the rows before measuring | e2e | — | done | wl-build-web |
 
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
@@ -492,3 +493,4 @@ Rows moved here from `board.md` once done, split or folded (D-0157). Newest last
 | T-0673 | UF-06 calendar day reads '14Workout' (no separator between date and the sr-only word); also drop the progress.css ::after/chev rules that main.css already disables (T-0609 review) | web-feature:UF-06 | T-0609 | done | wl-build-web |
 | T-0667 | UF-09 rest e2e: pixel check at 50 % fill (top = rest.bg, bottom = lift.bg) so the e2e proves the drain direction (T-0597 review) | web-feature:UF-09 | T-0597 | done | wl-build-web |
 | T-0671 | UF-09: FocusSession.rest carries totalS so the UF-03 List view drain is right for a rest that began before it opened; drop .wl-uf09--overlay legacy chrome for state children, then UF-03 removes its :has() override (T-0603 review) | web-feature:UF-09 | T-0603 | done | wl-build-web |
+| T-0663 | UF-03 list-view.swap.host.test.tsx 'rows 1-2 keep their values' times out under load (findByRole 'Set 1 weight in kg'); passes alone | web-feature:UF-03 | — | done | wl-build-web |
