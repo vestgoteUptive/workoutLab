@@ -414,6 +414,19 @@ test.describe("T-0607 plan state", () => {
     expect(edges).toEqual({ box: h1.x, text: h1.x });
   });
 
+  test("T-0923 detail: the My history link's label left edge is the page gutter, the h1's", async ({
+    page,
+  }) => {
+    await readyDetail(page);
+    const edges = await page.getByRole("link", { name: "My history" }).evaluate((el) => {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      return { box: el.getBoundingClientRect().left, text: range.getBoundingClientRect().left };
+    });
+    const h1 = (await page.locator("h1").boundingBox())!;
+    expect(edges).toEqual({ box: h1.x, text: h1.x });
+  });
+
   test("AC4 the table rows are 1px plan.line hairlines, laid out inside the page gutter", async ({
     page,
   }) => {
