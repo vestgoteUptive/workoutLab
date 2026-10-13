@@ -16,3 +16,6 @@ T-0602 AC1 said that opening Swap mid-workout keeps the root in lift and leaves 
 
 ## Revisit when
 T-0598 gives UF-09.9 Pause a state, or UF-09 keeps its root under the overlay. AC1's original lift.bg expectation can then be restored.
+
+## Revisited 2026-10-13
+Closed. T-0598 gave Pause `data-wl-state="plan"` and T-0671 removed the `.wl-uf09--overlay` wrapper, so theme-color follows the child root's own state: Swap is plan, Pause is plan, so plan.bg is consistent. Nothing to change.
