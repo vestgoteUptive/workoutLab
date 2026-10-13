@@ -153,12 +153,26 @@ export function useBalance({
     void withCap(refresh, REFRESH_TIMEOUT_MS)
       .then(async () => {
         if (!mounted.current) return;
-        const l = latest.current;
-        const [fresh, freshSynced] = await readCache(
+        // T-0924: the re-read is async, so the window can roll over (or the zone change) while it
+        // is in flight. A result for an older window must never be published over the newer one
+        // (the rollover's own read paints that); read again until the inputs held still.
+        let l = latest.current;
+        let [fresh, freshSynced] = await readCache(
           new Date(l.nowIso),
           l.timeZone,
           l.stubLastSyncedAt,
         );
+        while (
+          mounted.current &&
+          (latest.current.nowIso !== l.nowIso || latest.current.timeZone !== l.timeZone)
+        ) {
+          l = latest.current;
+          [fresh, freshSynced] = await readCache(
+            new Date(l.nowIso),
+            l.timeZone,
+            l.stubLastSyncedAt,
+          );
+        }
         if (!mounted.current) return;
         if (fresh !== null) setState({ result: fresh, lastSyncedAt: freshSynced });
       })
