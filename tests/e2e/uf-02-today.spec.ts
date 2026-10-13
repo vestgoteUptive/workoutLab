@@ -1390,12 +1390,7 @@ test.describe("T-0638 Quick 20-min link", () => {
     await page.keyboard.press("Tab");
     await expect(quick(page)).toBeFocused();
     const results = await new AxeBuilder({ page }).analyze();
-    // The shell has no <main> landmark, so axe's two page-wide best-practice rules (moderate)
-    // flag every Today element, old and new. Every other rule must be clean.
-    const other = results.violations.filter(
-      (v) => v.id !== "region" && v.id !== "landmark-one-main",
-    );
-    expect(other.map((v) => v.id)).toEqual([]);
+    expect(results.violations.map((v) => v.id)).toEqual([]);
     await journey(page);
   });
 
