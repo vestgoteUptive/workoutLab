@@ -4,15 +4,6 @@
  * .wl-uf03-rest, so no layout rule leaks to another screen. The legacy .wl-uf03-list__* rules of
  * the Chalk & Iron look are gone: UF-03.3 Summary (summary.css) never used them (T-0604). */
 
-/* The UF-09 overlay wrapper (.wl-uf09--overlay) still paints its own padding and legacy
- * background; while a state screen is inside it, the screen owns both. */
-.wl-uf09--overlay:has(> .wl-uf03-list[data-wl-state], > .wl-uf03-rest[data-wl-state]) {
-  display: flex;
-  padding: 0;
-  gap: 0;
-  background: transparent;
-}
-
 .wl-uf03-list[data-wl-state],
 .wl-uf03-rest[data-wl-state] {
   display: flex;

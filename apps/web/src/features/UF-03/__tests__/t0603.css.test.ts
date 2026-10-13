@@ -82,7 +82,7 @@ describe("T-0603 AC5 type, targets and scope", () => {
       for (const sel of r.selectors.filter(
         (x) => !/^>|^tbody\)|^\.wl-uf03-rest\[data-wl-state\]\)/.test(x),
       )) {
-        expect(sel, sel).toMatch(/^(\.wl-uf03-list|\.wl-uf03-rest|\.wl-uf09--overlay:has\()/);
+        expect(sel, sel).toMatch(/^(\.wl-uf03-list|\.wl-uf03-rest)/);
       }
     }
   });

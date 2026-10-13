@@ -484,7 +484,7 @@ function Machine(props: MachineProps) {
             store.dispatch({ type: "RESUME", atMs: Date.now() });
           },
         };
-    body = <div className="wl-uf09 wl-uf09--overlay">{overlay.action.render(overlaySession)}</div>;
+    body = <>{overlay.action.render(overlaySession)}</>;
   } else {
     // `done` only reaches here under a List-view overlay, which the branch above renders.
     const phase = state.phase as ViewPhase;

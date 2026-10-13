@@ -1632,3 +1632,72 @@ test.describe("T-0597 UF-09.1, UF-09.5 and UF-09.6 with the rest fill (390 x 844
     await expect(page.getByRole("timer")).toHaveText(/^(1:00|0:5\d)$/);
   });
 });
+
+// T-0667 UF-09.5 (Cobalt drain): at about half the rest the lift colour has risen over the bottom
+// half, so the top of the screen is still the rest colour and the bottom is the lift colour. Time is
+// the page clock's; the 1 s CSS transition of `--wl-drain` is polled out. Colours come from tokens.
+test.describe("T-0667 UF-09.5 the rest drain direction (390 x 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  /** The colour of the page's pixel at (x, y), read back from a screenshot drawn on a canvas. */
+  async function pixelAt(page: Page, y: number): Promise<[number, number, number]> {
+    const png = (await page.screenshot()).toString("base64");
+    const probe = await page.context().newPage();
+    try {
+      return await probe.evaluate(
+        async ([data, py]) => {
+          const blob = await (await fetch(`data:image/png;base64,${data}`)).blob();
+          const bmp = await createImageBitmap(blob);
+          const canvas = document.createElement("canvas");
+          canvas.width = bmp.width;
+          canvas.height = bmp.height;
+          const g = canvas.getContext("2d")!;
+          g.drawImage(bmp, 0, 0);
+          const scale = bmp.height / 844;
+          const px = g.getImageData(2, Math.round((py as number) * scale), 1, 1).data;
+          return [px[0]!, px[1]!, px[2]!] as [number, number, number];
+        },
+        [png, y] as const,
+      );
+    } finally {
+      await probe.close();
+    }
+  }
+
+  const rgbOf = (hex: string): [number, number, number] => [
+    parseInt(hex.slice(1, 3), 16),
+    parseInt(hex.slice(3, 5), 16),
+    parseInt(hex.slice(5, 7), 16),
+  ];
+
+  test("at 50 % the top is rest.bg and the bottom is lift.bg", async ({ page }) => {
+    await page.clock.install();
+    const id = await openRest(page);
+    const timer = await page.evaluate(
+      (key) =>
+        (
+          JSON.parse(window.localStorage.getItem(key)!) as {
+            timer: { startedAtMs: number; durationS: number };
+          }
+        ).timer,
+      `wl-focus:${id}`,
+    );
+    const elapsedMs = await page.evaluate((s) => Date.now() - s, timer.startedAtMs);
+    await page.clock.runFor(Math.max(0, timer.durationS * 500 - elapsedMs));
+    const root = page.locator('[data-screen-id="UF-09.5"]');
+    await expect
+      .poll(
+        async () =>
+          root.evaluate((el) =>
+            parseFloat((el as HTMLElement).style.getPropertyValue("--wl-drain")),
+          ),
+        { message: "the fill reaches about half" },
+      )
+      .toBeGreaterThanOrEqual(49);
+    // Let the 1 s CSS transition settle (it runs on real time, not the page clock).
+    await expect
+      .poll(() => pixelAt(page, 844 - 40), { message: "the bottom is lift.bg" })
+      .toEqual(rgbOf(tokens.color.lift.bg));
+    expect(await pixelAt(page, 40)).toEqual(rgbOf(tokens.color.rest.bg));
+  });
+});

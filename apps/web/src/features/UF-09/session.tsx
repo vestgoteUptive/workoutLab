@@ -67,7 +67,7 @@ export interface FocusSession {
   /** The live logged sets of this session, in log order. */
   loggedSets: readonly LoggedSet[];
   /** The running rest (`remainingS` from the wall clock), or `null` outside `rest`. */
-  rest: { remainingS: number } | null;
+  rest: { remainingS: number; totalS: number } | null;
   /** Rule 8's elapsed seconds (D-0066 §11): pauses and an off-budget warm-up excluded. */
   elapsedS: number;
   /** Logs a set through `lib/offline` `recordSet`, then adds it to `loggedSets`. The current
@@ -471,7 +471,9 @@ export function focusReadFields(input: FocusReadInput) {
     currentSetIndex: currentSetIndex(state, plan),
     loggedSets: state.loggedSets,
     rest:
-      state.phase === "rest" && state.timer ? { remainingS: remainingS(state.timer, nowMs) } : null,
+      state.phase === "rest" && state.timer
+        ? { remainingS: remainingS(state.timer, nowMs), totalS: state.timer.durationS }
+        : null,
     elapsedS: elapsedSOf(
       {
         startedAtMs: Number.isFinite(startedAtMs) ? startedAtMs : nowMs,
