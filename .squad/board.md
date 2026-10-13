@@ -95,7 +95,7 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
-| T-0921 | uf-11-plan-layout.spec.ts:450 flake: /plan/edit 44x44 check counted ≤5 boxes once under full-suite load (T-0634 merge), 87/87 on rerun; wait for the rows before measuring | e2e | — | todo | wl-build-web |
+| T-0921 | uf-11-plan-layout.spec.ts:450 flake: /plan/edit 44x44 check counted ≤5 boxes once under full-suite load (T-0634 merge), 87/87 on rerun; wait for the rows before measuring | e2e | — | doing | wl-build-web |
 | T-0918 | UF-04: defer SKIP_WAITING until the route chunk settles (T-0916 root cause: aborted chunk, failed route for ~1 s) | web-shell | — | doing | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
 
@@ -176,7 +176,7 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0626 | Screen restyles: use aria-disabled, not :disabled, on migrated controls (the legacy :disabled rule loses to scoped rules); feature CSS (.wl-plan__rows .wl-row, .wl-card.wl-excluded__row, excluded.css:140) can override the unboxed row and card by load order, so each screen ticket must check it (T-0592 review) | web-shell | T-0592 | todo (a checklist for each screen ticket) | wl-build-web |
 | T-0628 | (superseded by T-0660 / D-0225) Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
 | T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
-| T-0663 | UF-03 list-view.swap.host.test.tsx 'rows 1-2 keep their values' times out under load (findByRole 'Set 1 weight in kg'); passes alone | web-feature:UF-03 | — | todo | wl-build-web |
+| T-0663 | UF-03 list-view.swap.host.test.tsx 'rows 1-2 keep their values' times out under load (findByRole 'Set 1 weight in kg'); passes alone | web-feature:UF-03 | — | doing | wl-build-web |
 | T-0665 | UF-09 resume card: use the shared .wl-button--secondary so today.css drops its hand-made outline button (no hover state) (T-0601 review) | web-feature:UF-09 | T-0601 | todo | wl-build-web |
 | T-0666 | Shell: hide the tab bar on /?view=preview so Start sits at the viewport bottom per the canvas (T-0601 deviation) | web-shell | T-0601 | todo | wl-build-web |
 | T-0668 | UF-04: own `uf04.clearSearch` in flows/uf-04.ts instead of borrowing en.uf08.clearSearch; Compare back link sits ~8px inside the gutter (T-0607 review) | web-feature:UF-04 | T-0607 | todo | wl-build-web |
