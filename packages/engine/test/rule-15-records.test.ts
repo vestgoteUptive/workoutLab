@@ -58,6 +58,19 @@ describe("rule-15 records", () => {
     ]);
   });
 
+  it("rule-15 T-0661 a non-finite weight, reps or duration is no set, never a record", () => {
+    for (const bad of [
+      set("back-squat", S2, Number.NaN, 8),
+      set("back-squat", S2, 102.5, Number.NaN),
+      set("back-squat", S2, Number.POSITIVE_INFINITY, 8),
+      set("plank", S2, null, null, { durationS: Number.NaN }),
+    ]) {
+      expect(run([...baseline(), set("plank", S1, null, null, { durationS: 60 }), bad])).toEqual(
+        [],
+      );
+    }
+  });
+
   it("rule-15 R15-E2 (AC1) same weight, more reps is a record", () => {
     expect(short(run([...baseline(), set("back-squat", S2, 100, 9)]))).toEqual([
       { ex: "back-squat", session: `s@${S2}`, set: [100, 9, null], prev: [100, 8, null] },
