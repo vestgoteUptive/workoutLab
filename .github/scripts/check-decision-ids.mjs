@@ -9,6 +9,7 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..");
 export const DECISIONS_DIR = ".squad/decisions";
 
 const FILENAME_RE = /^(D-\d{4,})-/;
+const SLUGLESS_RE = /^D-\d{4,}\.md$/;
 
 function frontmatterId(content) {
   const lines = toLines(content);
@@ -31,6 +32,15 @@ export function checkDecisionIds(files) {
 
   for (const file of files) {
     const base = path.basename(file.path);
+    if (SLUGLESS_RE.test(base)) {
+      findings.push({
+        path: file.path,
+        line: 1,
+        rule: "decision-missing-slug",
+        message: `${base} has no slug; name it D-NNNN-<slug>.md`,
+      });
+      continue;
+    }
     const m = base.match(FILENAME_RE);
     if (!m) continue;
     const number = m[1];

@@ -38,3 +38,18 @@ test("AC13: same subject, different numbers -> 0 findings; README.md ignored", (
   const findings = checkDecisionIds(files);
   assert.deepEqual(findings, []);
 });
+
+test("T-0006 AC-6: slugless D-NNNN.md is one decision-missing-slug finding; slugged is clean; README/INDEX ignored", () => {
+  const content = "---\nid: D-0999\n---\n";
+  const bad = checkDecisionIds([
+    { path: "fixtures/D-0999.md", content },
+    { path: "README.md", content: "x" },
+    { path: "INDEX.md", content: "x" },
+  ]);
+  assert.equal(bad.length, 1);
+  assert.equal(bad[0].rule, "decision-missing-slug");
+  assert.match(bad[0].message, /D-0999\.md/);
+  assert.equal(bad[0].path, "fixtures/D-0999.md");
+
+  assert.deepEqual(checkDecisionIds([{ path: "fixtures/D-0999-some-slug.md", content }]), []);
+});

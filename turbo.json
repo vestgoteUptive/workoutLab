@@ -24,6 +24,45 @@
     "test": {
       "dependsOn": ["^build"]
     },
+    "@workoutlab/engine#test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/docs/engine-rules.md",
+        "$TURBO_ROOT$/api/openapi.yaml",
+        "$TURBO_ROOT$/data/exercises/library/**"
+      ]
+    },
+    "@workoutlab/shared#test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/api/openapi.yaml",
+        "$TURBO_ROOT$/docs/data-model.md",
+        "$TURBO_ROOT$/Design-docs/docs/product/user-flows.md",
+        "$TURBO_ROOT$/.github/scripts/check-screen-ids.mjs",
+        "$TURBO_ROOT$/.github/scripts/check-placeholder-tests.mjs",
+        "$TURBO_ROOT$/packages/engine/src/**",
+        "$TURBO_ROOT$/apps/web/src/**"
+      ]
+    },
+    "@workoutlab/web#test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/packages/design-tokens/src/tokens.json",
+        "$TURBO_ROOT$/Design-docs/docs/design/assets/body-figure/**",
+        "$TURBO_ROOT$/supabase/tests/database/018_user_owned_tables.test.sql"
+      ]
+    },
+    "@workoutlab/design-tokens#test": {
+      "dependsOn": ["^build"],
+      "inputs": [
+        "$TURBO_DEFAULT$",
+        "$TURBO_ROOT$/Design-docs/docs/design/**",
+        "$TURBO_ROOT$/.github/scripts/auth-templates.test.mjs"
+      ]
+    },
     "dev": {
       "cache": false,
       "persistent": true
