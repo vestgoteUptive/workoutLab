@@ -94,7 +94,6 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0917 | uf-03-list-summary.spec.ts:419 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250 and PR #60 run 38513809352, passes on rerun); root-cause it | qa | — | doing | wl-build-web |
 | T-0922 | UF-03 tests: audit synchronous getByRole reads right after a heading waitFor (same race as T-0663; reproduced only under heavy CPU load) | web-feature:UF-03 | — | todo | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
 
@@ -174,4 +173,5 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
 | T-0925 | UF-10 use-balance: a rollover read that started before the refresh finished can publish after the refresh re-read and show pre-refresh data; add a cache-read sequence number (T-0924 follow-up, low priority) | web-feature:UF-10 | T-0924 | todo | wl-build-web |
 | T-0926 | UF-10 midnight-rollover.test.tsx "T-0343 AC-5 no second refresh at the rollover" still flakes under full forced-gate load after T-0924 (seen in T-0006 first gate run, passes alone 8/8); root-cause the remaining timing mode (T-0006 follow-up) | web-feature:UF-10 | T-0924 | todo | wl-build-web |
+| T-0928 | tests/e2e is not linted by any gate; fixture-guard.spec.ts:955 has a pre-existing no-regex-spaces eslint error (commit 2e42a0a5). Decide whether to lint tests/e2e in CI and fix the existing errors (T-0917 follow-up, low priority) | qa | T-0917 | todo | wl-build-qa |
 | T-0680 | UF-03 ListView.tsx:738 is a third SwapSheet host with no e2e; cover the in-tree scrim z6 / sheet z7 stacking there (T-0602 review) | web-feature:UF-03 | T-0602 | todo | wl-build-web |
