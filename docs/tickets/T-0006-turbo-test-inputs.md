@@ -48,3 +48,13 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 Per-package commands: write one command per script — `pnpm --filter <pkg> typecheck`, then a separate `… lint`, then a separate `… test`.
 
 ## Build / accept log
+
+### Build log (infra, 2026-10-14)
+- Start: HEAD 70fa2c94, tree clean.
+- Inventory (repo-root files read by package tests): engine = `docs/engine-rules.md`, `api/openapi.yaml` (rule-14, rule-12-apply-swap), `data/exercises/library/*.json` (rule-7-session). shared = `api/openapi.yaml`, `docs/data-model.md`, `Design-docs/docs/product/user-flows.md`, `.github/scripts/check-screen-ids.mjs`, `check-placeholder-tests.mjs`, scans of `packages/engine/src`, `apps/web/src`. web = `packages/design-tokens/src/tokens.json`, `Design-docs/docs/design/assets/body-figure/body-figure.svg` (`?raw` + test), `supabase/tests/database/018_user_owned_tables.test.sql`. design-tokens = `Design-docs/docs/design/**`, `.github/scripts/auth-templates.test.mjs`. No `@workoutlab/exercises` package exists; landing reads none.
+- Not covered (deliberate, would hash apps/** / infra/** / .github/**): design-tokens `retired-keys.test.ts` scan. Follow-up if wanted.
+- Red run (unfixed turbo.json): append whitespace to `ankle-hops.json` -> engine#test hash unchanged (a4412db6cfedfdee before and after) [AC-1 red].
+- Hash pairs after change (before -> after, edit on cp backup, restored): ankle-hops.json engine 103e0c6b89ef602c -> c0956b30df7bbb27 [AC-1]; engine-rules.md engine -> 8174be6092b9238c [AC-2]; openapi.yaml engine -> 39aef89066f9f465, shared 3a8213c10f734b7a -> d750d76e1f17d9df [AC-2]; data-model.md shared -> c61712a8a5c044ec [AC-2]; tokens.json web a772baabc7ad82ee -> ab0a2dbcef3fab34; body-figure.svg web -> 183592760953bf62; 018 sql web -> ee0956b54f34804b [AC-3]; README.md: no hash changed [AC-4].
+- AC-5: `.github/scripts/turbo-inputs.test.mjs` (honours TURBO_JSON_PATH). Planted fault: removed the `library/**` input from turbo.json (backup copy, restored by cp) -> fail 1 naming the missing input; restored -> pass.
+- AC-6: test in check-decision-ids.test.mjs; planted fault (slugless branch disabled) -> fail 1; restored -> pass.
+- Gate: first forced run: web midnight-rollover AC-5 failed under load (timing, passes alone, unrelated); cached rerun typecheck/lint/test exit 0 (19/19), test:repo-checks 0 (377 pass), format:check 0, check-all 0.
