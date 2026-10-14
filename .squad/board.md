@@ -140,8 +140,6 @@ Owner request: groom 10 parked tickets and put the ones worth doing at the back 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0006 | Turbo test hashes cover the repo files package tests read (engine library + engine-rules, shared contracts, web inventory); check-decision-ids flags a slugless D-NNNN.md. Narrowed: pgTAP column drift and D-0032/D-0023 text dropped | infra | T-0004 | doing | wl-build-infra |
-| T-0332 | UF-01.1/UF-01.5: fast mocked-status test of the /welcome/* stand-down in RedirectIfSignedIn, so breaking it fails in ms instead of hanging the routing suite | web-shell | T-0301a | doing | wl-build-web |
 | T-0525 | One vitest variant across the workspace (engine/shared/design-tokens/exercises on vite 8, web/landing on vite 6 today) + a lockfile repo-check | infra | T-0512 | todo | wl-build-infra |
 
 ## Cobalt + state colour redesign (D-0208): phase 1, tokens and landing
@@ -176,4 +174,5 @@ Owner answers 2026-10-09: start now, **progressive** rollout (each ticket ships 
 | T-0628 | (superseded by T-0660 / D-0225) Design: highlighted + attention area, the 7 px halo covers the 9 px ring (only 1 px shows, gap hidden); revisit the ring and halo geometry (design-system.md:184) (T-0615 review) | design | T-0615 | todo | wl-design |
 | T-0651 | infra/auth/README.md: use `. ./.env.local` (zsh's `.` searches $PATH, so `. .env.local` fails with 'no such file'), and mark the paper-template PATCH as applied 2026-10-09 (H-35 done) | infra | — | todo | wl-build-infra |
 | T-0925 | UF-10 use-balance: a rollover read that started before the refresh finished can publish after the refresh re-read and show pre-refresh data; add a cache-read sequence number (T-0924 follow-up, low priority) | web-feature:UF-10 | T-0924 | todo | wl-build-web |
+| T-0926 | UF-10 midnight-rollover.test.tsx "T-0343 AC-5 no second refresh at the rollover" still flakes under full forced-gate load after T-0924 (seen in T-0006 first gate run, passes alone 8/8); root-cause the remaining timing mode (T-0006 follow-up) | web-feature:UF-10 | T-0924 | todo | wl-build-web |
 | T-0680 | UF-03 ListView.tsx:738 is a third SwapSheet host with no e2e; cover the in-tree scrim z6 / sheet z7 stacking there (T-0602 review) | web-feature:UF-03 | T-0602 | todo | wl-build-web |
