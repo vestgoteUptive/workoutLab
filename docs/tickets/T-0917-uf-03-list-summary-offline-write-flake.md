@@ -41,3 +41,8 @@ Start: clean, HEAD b8b2d7ef. Verdict: **the fixture was wrong, not the app.**
 - Own fault: the tracker never records a write → fixture-guard AC-2 fails (Expected 1, Received 0); restored.
 - AC3: `uf-03-list-summary.spec.ts --repeat-each=100 --workers=2` with 4 busy loops on 4 cores: 1200 passed, 0 failed (39.7 min).
 - AC4 and the gate: see the next entry.
+
+### 2026-10-14 qa (gate)
+- AC4: full e2e suite (`-c tests/e2e/playwright.config.ts`, 2 workers): 679 passed, 0 failed (678 on main + the new fixture-guard test); covers uf-08-setup, uf-09-focus, fixture-guard, uf-08-favorites, uf-11-account (all `goOffline` users).
+- Gate: `-w typecheck lint test --concurrency=1` exit 0 (19/19, cached; no app/package change); `-w test:repo-checks` 377/377; `-w format:check` exit 0; `node .github/scripts/check-all.mjs` exit 0.
+- Not in any gate: eslint on `fixture-guard.spec.ts:955` reports a pre-existing `no-regex-spaces` (from 2e42a0a5, not this diff).
