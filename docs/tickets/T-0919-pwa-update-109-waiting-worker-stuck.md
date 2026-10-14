@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-04]
 decisions: []
 deps: [T-0918]
-status: blocked
+status: done
 ---
 ## Why
 T-0916 found a second flake: T-0915's adopt path works and SKIP_WAITING is posted, yet Chromium leaves the worker waiting, and a resend 3 s later doesn't help. About 1% of runs.

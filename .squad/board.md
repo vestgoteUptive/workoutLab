@@ -94,7 +94,6 @@ Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `doc
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0919 | pwa-update.spec.ts:109/:118 stuck-waiting mode: Chromium activation wedge (skipWaiting pending), ~4% of runs, found by T-0918 (needs a human decision on how the spec may handle it) | qa | T-0918 | blocked:H-40 | wl-build-qa |
 | T-0917 | uf-03-list-summary.spec.ts:416 flake: an offline write was fulfilled (writesFulfilledOffline 1, PR #56 run 37847552250, passed on rerun and 8/8 locally); root-cause it | qa | — | todo | wl-build-web |
 | T-0922 | UF-03 tests: audit synchronous getByRole reads right after a heading waitFor (same race as T-0663; reproduced only under heavy CPU load) | web-feature:UF-03 | — | todo | wl-build-web |
 | T-0495 | Share retryableLazy between features/UF-03/lazy-retry.ts and features/UF-09/lazy-retry.ts (byte-identical copies, D-0142 §5) instead of duplicating — low priority, drift risk only (T-0478 review finding) | web-shell | T-0478 | todo (parked: drift risk only, and the copies' code is still identical) | wl-build-web |
