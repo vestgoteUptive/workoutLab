@@ -25,14 +25,15 @@
 //
 // Scope: one page. A second page in the same context (a second browser tab/window) needs its own
 // `goOffline`-style gate; this one only ever sees requests from the `page` it was given.
-import type { BrowserContext, Page } from "@playwright/test";
+import type { BrowserContext, Page, Request } from "@playwright/test";
 import { VITE_SUPABASE_URL } from "../playwright.config.js";
 
 /** What `goOffline` hands back. */
 export interface OfflineGate {
-  /** Non-GET/HEAD `rest/v1` requests that finished (fulfilled by some other route, e.g. a spec's
-   *  own mock, or a later-registered route shadowing this gate) while armed. Counts nothing from
-   *  before `goOffline` or after `goOnline`. */
+  /** Non-GET/HEAD `rest/v1` requests sent while armed that finished (fulfilled by some other
+   *  route, e.g. a later-registered route shadowing this gate) while armed. Counts nothing sent
+   *  before `goOffline` — a write already in flight then went out online, wherever it finishes
+   *  (T-0917) — and nothing after `goOnline`. */
   writesFulfilledOffline(): number;
   /** Non-GET/HEAD `rest/v1` requests this gate itself aborted while armed. Counts nothing from
    *  before `goOffline` or after `goOnline`. */
@@ -50,12 +51,26 @@ export async function goOffline(page: Page, context: BrowserContext): Promise<Of
   let armed = true;
   let fulfilled = 0;
   let aborted = 0;
+  // T-0917: only writes *sent* while armed may count as fulfilled offline. A write the app sent
+  // while still online (measured: UF-02.1's `plan_checkins` insert, `insertIfFirstShown`, which
+  // lands anywhere from ~0.3 s before to after the arm point) can still be in flight here; its
+  // `requestfinished` arrives after this listener exists and used to be counted as a write
+  // "fulfilled offline" — the uf-03-list-summary.spec.ts:419 flake.
+  const sentWhileArmed = new WeakSet<Request>();
+  const isRestWrite = (request: Request) =>
+    request.url().startsWith(`${VITE_SUPABASE_URL}/rest/v1/`) &&
+    request.method() !== "GET" &&
+    request.method() !== "HEAD";
 
+  // Registered in the same synchronous tick as the `page.route` below (no `await` between), so
+  // every write whose `request` event lands here also meets the gate's handler (or a later route
+  // shadowing it, which still counts, AC-2).
+  page.on("request", (request) => {
+    if (armed && isRestWrite(request)) sentWhileArmed.add(request);
+  });
   page.on("requestfinished", (request) => {
     if (!armed) return;
-    if (!request.url().startsWith(`${VITE_SUPABASE_URL}/rest/v1/`)) return;
-    const method = request.method();
-    if (method === "GET" || method === "HEAD") return;
+    if (!sentWhileArmed.has(request)) return;
     fulfilled += 1;
   });
 
