@@ -40,3 +40,8 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 Per-package commands: write one command per script — `pnpm --filter <pkg> typecheck`, then a separate `… lint`, then a separate `… test`.
 
 ## Build / accept log
+
+- 2026-10-14 build (frontend-dev, base 70fa2c94 clean): added `apps/web/src/lib/auth/__tests__/redirect-if-signed-in.test.tsx` (10 tests, 1.9 s run). AC-1..5 each one `it`/`it.each`; real guard in MemoryRouter, hooks mocked, return-to `/plan` seeded so redirects show as location change.
+- AC-6 fault 1 (`welcomeStandsDown` always false): 5 failed (AC-1 x3, AC-2 x2), test time 84 ms. Fault 2 (welcome check dropped): 2 failed (AC-4 `/account`, `/welcomed`). Restored with `cp`; guards.tsx diff empty.
+- AC-7 / gate: see commit handback.
+- Gate: -w typecheck lint test exit 0 (19/19 tasks); test:repo-checks 0; format:check clean; check-all.mjs 0.
