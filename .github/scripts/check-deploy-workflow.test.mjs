@@ -104,7 +104,7 @@ test("T-0543 AC-5 secrets on a non-release step of the release job, or job-level
 });
 
 test("T-0543 AC-1 planted fault: production without needs: release is red", () => {
-  const errs = mutated((s) => s.replace("    needs: release\n", ""));
+  const errs = mutated((s) => s.replace("    needs: [gate, release]\n", "    needs: gate\n"));
   assert.ok(t0543(errs, "production must need release"), errs.join("\n"));
 });
 
@@ -171,4 +171,12 @@ test("T-0543 L5 upload path widened, or checkout ref changed, is red", () => {
 test("T-0543 N2 planted fault: fetching plain `main` (a tag can shadow it) is red", () => {
   const errs = mutated((s) => s.replace("git fetch --depth=1 origin refs/heads/main", "git fetch --depth=1 origin main"));
   assert.ok(t0543(errs, "N2"), errs.join("\n"));
+});
+
+test("T-0927 AC4 planted faults: gate wiring is checked", () => {
+  const t = (errs, p) => errs.some((e) => e.startsWith("T-0927") && e.includes(p));
+  assert.ok(t(mutated((s) => s.replace("      actions: read\n", "")), "permissions"));
+  assert.ok(t(mutated((s) => s.replace(/(production:[\s\S]*?if: [^\n]*?) && needs\.gate\.outputs\.deploy == 'true'/, "$1")), "production if must require"));
+  assert.ok(t(mutated((s) => s.replace("      - name: Deployed ${{ github.event.workflow_run.head_sha }}", "      - name: Done")), "last step"));
+  assert.ok(t(mutated((s) => s.replace("deploy-needed.mjs --head", "deploy-needed.mjs --nope")), "deploy-needed.mjs --head"));
 });

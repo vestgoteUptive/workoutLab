@@ -92,10 +92,10 @@ jobs:
   production:
     name: production (main, off until H-06)
     # T-0543 (D-0201): the database and the functions are released before the app that uses them.
-    needs: release
+    needs: [gate, release]
     # `branches: [main]` above matches the triggering run's head branch NAME, which a fork PR can
     # also call `main`. Only deploy a push to this repository's own main.
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true'
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true' && needs.gate.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -127,13 +127,62 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_PAGES_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
 
+      # T-0927: the gate finds the last deployed SHA by this step's name; it runs only after both
+      # deploys above succeeded.
+      - name: Deployed ${{ github.event.workflow_run.head_sha }}
+        run: echo "deployed $HEAD_SHA"
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+
+  # T-0927: skip the prod release and deploy when everything since the last actually-deployed SHA
+  # is on the squad/docs allowlist (each deploy ships a new service worker, so users get a reload).
+  # Fails open: any lookup problem sets deploy=true. See .github/scripts/deploy-needed.mjs.
+  gate:
+    name: gate (is a prod deploy needed?)
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      deploy: ${{ steps.decide.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - name: Decide
+        id: decide
+        run: |
+          set -uo pipefail
+          out="$(node .github/scripts/deploy-needed.mjs --head "$HEAD_SHA")" || out=""
+          deploy="$(printf '%s\n' "$out" | sed -n 's/^deploy=\(true\|false\)$/\1/p' | head -n 1)"
+          reason="$(printf '%s\n' "$out" | sed -n 's/^reason=//p' | head -n 1)"
+          if [ -z "$deploy" ]; then deploy=true; reason="gate script gave no answer; deploying"; fi
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+          if [ "$deploy" = "false" ]; then
+            echo "### Production release and deploy skipped" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Production release and deploy go ahead" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "- $reason" >> "$GITHUB_STEP_SUMMARY"
+          echo "gate: deploy=$deploy ($reason)"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+
   # T-0543 (D-0201). Listed after `production` on purpose; `production` needs it. Same guard
   # conditions as `production`. Order: guard -> backup -> upload -> plan -> apply. Any failing step
   # stops the job and so the deploy. The ref comes from vars; the only secrets are the two below,
   # and only on the guard, backup and release steps (check-deploy-workflow.mjs enforces it).
   release:
     name: release (prod Supabase, before the deploy)
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true'
+    needs: gate
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository && vars.PROD_DEPLOY_ENABLED == 'true' && needs.gate.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     # M5: both secrets live in this GitHub Environment (main only, no reviewers), not in repo secrets.
     environment: production
