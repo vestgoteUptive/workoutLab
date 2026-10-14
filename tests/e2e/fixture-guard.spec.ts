@@ -674,6 +674,50 @@ test.describe("T-0484 goOffline fixture", () => {
     await expect.poll(() => gate.writesFulfilledOffline()).toBe(1);
   });
 
+  // T-0917 (UF-03): the uf-03-list-summary.spec.ts:419 flake. A write the app sent while still
+  // online (there, UF-02.1's plan_checkins insert) can be in flight when goOffline arms; it went
+  // out online, so it must not count as "fulfilled offline". The route holds the response until
+  // the gate is armed, which makes the old counting (any write finishing while armed) fail 1 of 1.
+  test("T-0917 a write already in flight when goOffline arms is not counted as fulfilled offline", async ({
+    page,
+    context,
+  }) => {
+    await mockSupabaseAuth(page);
+    await mockSupabaseRest(page);
+    await mockSupabaseData(page, EMPTY_FIXTURES);
+    await mockProfilePresent(page);
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    let reached!: () => void;
+    const inFlight = new Promise<void>((resolve) => (reached = resolve));
+    await page.route(`${VITE_SUPABASE_URL}/rest/v1/plan_checkins*`, async (route) => {
+      if (route.request().method() !== "POST") return route.fallback();
+      reached();
+      await held;
+      return route.fulfill({ status: 201, json: {} });
+    });
+    await page.goto("/");
+    await page.evaluate(() => navigator.serviceWorker.ready);
+
+    const url = `${VITE_SUPABASE_URL}/rest/v1/plan_checkins`;
+    const online = postJson(page, url);
+    await inFlight;
+    const gate = await goOffline(page, context);
+    const finished = page.waitForEvent("requestfinished", (r) => r.url() === url);
+    release();
+    // The online write completes, and its requestfinished has reached the gate's listener
+    // (registered earlier, so it runs first) before the counter is read.
+    expect((await online).status).toBe(201);
+    await finished;
+    expect(gate.writesFulfilledOffline()).toBe(0);
+    expect(gate.writesAbortedOffline()).toBe(0);
+
+    // A write sent after the arm still meets the gate.
+    expect((await postJson(page, url)).threwTypeError).toBe(true);
+    expect(gate.writesAbortedOffline()).toBe(1);
+    expect(gate.writesFulfilledOffline()).toBe(0);
+  });
+
   test("AC-3 goOnline disarms then goes online; counters frozen, the same POST now resolves", async ({
     page,
     context,
