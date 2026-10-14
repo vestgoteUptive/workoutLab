@@ -1,0 +1,16 @@
+[
+  { "id": 6, "status": "in_progress", "created_at": "2026-10-14T12:00:00Z",
+    "jobs": [{ "name": "production (main, off until H-06)", "conclusion": null, "steps": [{ "name": "Deployed 6666666666666666666666666666666666666666", "conclusion": null }] }] },
+  { "id": 5, "status": "completed", "created_at": "2026-10-14T11:00:00Z",
+    "jobs": [{ "name": "production (main, off until H-06)", "conclusion": "skipped", "steps": [] }] },
+  { "id": 4, "status": "completed", "created_at": "2026-10-14T10:00:00Z",
+    "jobs": [{ "name": "production (main, off until H-06)", "conclusion": "cancelled", "steps": [{ "name": "Deployed 4444444444444444444444444444444444444444", "conclusion": "cancelled" }] }] },
+  { "id": 3, "status": "completed", "created_at": "2026-10-14T09:00:00Z",
+    "jobs": [{ "name": "production (main, off until H-06)", "conclusion": "failure", "steps": [{ "name": "Deployed 3333333333333333333333333333333333333333", "conclusion": "skipped" }] }] },
+  { "id": 2, "status": "completed", "created_at": "2026-10-14T08:00:00Z",
+    "jobs": [
+      { "name": "gate (is a prod deploy needed?)", "conclusion": "success", "steps": [] },
+      { "name": "production (main, off until H-06)", "conclusion": "success", "steps": [{ "name": "Build web", "conclusion": "success" }, { "name": "Deployed 2222222222222222222222222222222222222222", "conclusion": "success" }] }] },
+  { "id": 1, "status": "completed", "created_at": "2026-10-13T08:00:00Z",
+    "jobs": [{ "name": "production (main, off until H-06)", "conclusion": "success", "steps": [{ "name": "Deployed 1111111111111111111111111111111111111111", "conclusion": "success" }] }] }
+]

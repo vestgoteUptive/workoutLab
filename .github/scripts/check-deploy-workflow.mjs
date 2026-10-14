@@ -221,7 +221,9 @@ export function check(dir = defaultDir) {
     const tipIdx = (rl.steps ?? []).findIndex((st) => /origin refs\/heads\/main\b/.test(String(st.run ?? "")) && /HEAD_SHA/.test(String(st.run ?? "")));
     const gIdx = (rl.steps ?? []).findIndex((st) => /migration-guard\.mjs/.test(String(st.run ?? "")));
     if (tipIdx < 0 || (gIdx >= 0 && tipIdx > gIdx)) errs.push("T-0543 N2: release must check head_sha is the tip of main (git fetch origin refs/heads/main, HEAD_SHA) before the guard");
-    if (rl.needs) errs.push("T-0543 AC-1: release must not wait on other jobs");
+    // T-0927: release waits on the gate (and only the gate).
+    if (JSON.stringify([].concat(rl.needs ?? [])) !== JSON.stringify(["gate"]))
+      errs.push("T-0543 AC-1: release must wait only on the gate job");
     const steps = rl.steps ?? [];
     const runs = steps.map((s) => String(s.run ?? ""));
     const idx = (re) => runs.findIndex((r) => re.test(r));
@@ -263,6 +265,29 @@ export function check(dir = defaultDir) {
     for (const s of job.steps ?? [])
       if (/\bsupabase\b/.test(String(s.run ?? "")) && !/infra\/scripts\/supabase-prod-release\.sh/.test(String(s.run)))
         errs.push(`T-0543 AC-5: inline supabase CLI use in ${name}`);
+
+  // T-0927: the gate that skips docs-only prod deploys.
+  const gt = jobs.gate;
+  if (!gt) errs.push("T-0927: no gate job");
+  else {
+    if (JSON.stringify(gt.permissions) !== JSON.stringify({ contents: "read", actions: "read" }))
+      errs.push("T-0927: gate permissions must be exactly contents: read, actions: read");
+    for (const part of ["workflow_run.conclusion == 'success'", "workflow_run.event == 'push'", "head_branch == 'main'", "PROD_DEPLOY_ENABLED == 'true'"])
+      if (!norm(gt.if).includes(part)) errs.push(`T-0927: gate if lacks ${part}`);
+    const gs = JSON.stringify(gt.steps ?? []);
+    if (!/deploy-needed\.mjs --head/.test(gs)) errs.push("T-0927: gate must run deploy-needed.mjs --head");
+    if (/secrets\./.test(gs)) errs.push("T-0927: gate must not use secrets");
+    if (norm(gt.outputs?.deploy) !== "${{ steps.decide.outputs.deploy }}") errs.push("T-0927: gate must output deploy from steps.decide");
+  }
+  for (const [name, job] of [["release", rl], ["production", pr]])
+    if (job && !norm(job.if).includes("needs.gate.outputs.deploy == 'true'"))
+      errs.push(`T-0927: ${name} if must require needs.gate.outputs.deploy == 'true'`);
+  if (pr && ![].concat(pr.needs ?? []).includes("gate")) errs.push("T-0927: production must need gate");
+  if (pr) {
+    const last = (pr.steps ?? []).at(-1);
+    if (!/^Deployed \$\{\{ github\.event\.workflow_run\.head_sha \}\}$/.test(String(last?.name ?? "")))
+      errs.push("T-0927: production's last step must be named `Deployed <head_sha>` (the gate's base marker)");
+  }
 
   // AC-4
   const ci = parse(readFileSync(path.join(dir, "ci.yml"), "utf8"));

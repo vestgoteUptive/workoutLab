@@ -40,3 +40,8 @@ None.
 Gate green · draft PR with green CI · commits start with `T-0927`.
 
 ## Build / accept log
+
+- Build (infra): `deploy-needed.mjs` (decide / selectBase / CLI `--head`, fails open), new `gate` job in deploy.yml (permissions contents+actions read, job-scoped), `release` and `production` now `needs` the gate and require `needs.gate.outputs.deploy == 'true'`; production ends with a step named `Deployed <head_sha>`. Base SHA = newest completed deploy run (not the current one) whose `production` job AND `Deployed <sha>` step succeeded (marker step name, because a workflow_run run's own head_sha is the default-branch tip, not necessarily the deployed SHA). Diff uses `git diff --name-only --no-renames -z base head` after `merge-base --is-ancestor`; fetch-depth 0.
+- Deviation: also edited `check-deploy-workflow.mjs` + its test (outside the ticket's path list, but its T-0543 rule "release must not need other jobs" would otherwise fail check-all); it now requires release `needs: gate` only, plus gate wiring checks.
+- AC map: AC1/AC2/AC3 -> deploy-needed.test.mjs decide/parsePaths/CLI tests; AC4 -> wiring tests (both files) + CLI/summary text; AC5 -> selectBase fixture `fixtures/deploy-needed/runs.json` (in-progress, skipped, cancelled, failed runs newer than the real deploy); AC6 -> check-all, draft PR CI.
+- Planted faults (backup copy, restored by cp): `apps/` added to allowlist -> 4 tests red; empty-list fail-open removed -> 2 red; head-commit-only judging -> 2 red; naive previous-run base -> AC5 red; status/conclusion checks all removed -> 2 red; `--no-renames` dropped -> 1 red; gate wiring mutations (actions: read, production if, marker step, --head) -> red.
