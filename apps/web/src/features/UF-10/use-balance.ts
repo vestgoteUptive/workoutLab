@@ -165,8 +165,9 @@ export function useBalance({
       .then(async () => {
         if (!mounted.current) return;
         // T-0924: the re-read is async, so the window can roll over (or the zone change) while it
-        // is in flight. A result for an older window must never be published over the newer one
-        // (the rollover's own read paints that); read again until the inputs held still.
+        // is in flight. Read again until the inputs held still, so this re-read is for the newest
+        // window and carries the refreshed rows. T-0925: the sequence guard below is the second
+        // line of defence; a read that started earlier (the rollover's own) can't overwrite it.
         let l = latest.current;
         readSeq.current += 1;
         let seq = readSeq.current;
@@ -189,6 +190,8 @@ export function useBalance({
           );
         }
         if (!mounted.current) return;
+        // An empty cache (`fresh === null`) publishes nothing and so does not raise
+        // `publishedSeq`: a null re-read never blocks an older, non-null read from publishing.
         if (fresh !== null && seq > publishedSeq.current) {
           publishedSeq.current = seq;
           setState({ result: fresh, lastSyncedAt: freshSynced });

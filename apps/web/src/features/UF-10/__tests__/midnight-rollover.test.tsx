@@ -10,6 +10,7 @@ import { useBalance } from "../use-balance.js";
 import { BACK_SQUAT, LIBRARY, LOCALE, RDL, TZ, defaultTargets, sets } from "./fixtures.js";
 import {
   freshDb,
+  pollUntil,
   renderBalance,
   rowAreas,
   rowValue,
@@ -23,6 +24,8 @@ vi.mock("../../../lib/auth/auth-context.js", () => import("./auth-mock.js"));
 const seed = sets(BACK_SQUAT.id, "2026-09-14T23:59:00+02:00", 1, { prefix: "d13" });
 const mountProps = { timeZone: TZ, locale: LOCALE };
 const BEFORE = "2026-09-27T23:59:30+02:00";
+// One extra set, logged on the old day after the first read; only the T-0925 tests seed it.
+const makeExtra = () => sets(BACK_SQUAT.id, "2026-09-27T20:00:00+02:00", 1, { prefix: "x" });
 
 let db: OfflineDb;
 
@@ -120,7 +123,9 @@ describe("T-0343 midnight rollover", () => {
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     const refresh = vi.spyOn(history, "refreshAll").mockResolvedValue(undefined);
     await mountSeeded();
-    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    // T-0926: a spy count is not a DOM change, so `waitFor` (no polling under the fake
+    // setInterval) can miss it; poll on the real clock instead.
+    await pollUntil(() => expect(refresh).toHaveBeenCalledTimes(1));
     await tick();
     await waitFor(() => expect(h1()).toHaveTextContent(en.uf10.window("15–28 Sep")));
     expect(refresh).toHaveBeenCalledTimes(1);
@@ -143,7 +148,7 @@ describe("T-0343 midnight rollover", () => {
       return out;
     });
     await mountSeeded();
-    await waitFor(() => expect(calls).toBe(2));
+    await pollUntil(() => expect(calls).toBe(2)); // T-0926: a counter, not a DOM change
     await tick();
     await waitFor(() => expect(h1()).toHaveTextContent(en.uf10.window("15–28 Sep")));
     await act(async () => {
@@ -154,9 +159,8 @@ describe("T-0343 midnight rollover", () => {
     expect(rowValue("quads")).toBe("0 / 20");
   });
 
-  const extra = sets(BACK_SQUAT.id, "2026-09-27T20:00:00+02:00", 1, { prefix: "x" });
-
   it("T-0925 AC1 + AC4 a rollover read that started earlier never publishes over the refresh re-read", async () => {
+    const extra = makeExtra();
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     let finishRefresh: () => void = () => undefined;
     vi.spyOn(history, "refreshAll").mockReturnValue(
@@ -184,7 +188,7 @@ describe("T-0343 midnight rollover", () => {
     });
     await mountSeeded();
     await tick();
-    await waitFor(() => expect(rolloverHasRows).toBe(true));
+    await pollUntil(() => expect(rolloverHasRows).toBe(true)); // T-0926: a flag, not DOM
     await seedCache(db, { sets: extra });
     await act(async () => {
       finishRefresh();
@@ -205,6 +209,7 @@ describe("T-0343 midnight rollover", () => {
   });
 
   it("T-0925 AC4 a dropped read still settles the hook", async () => {
+    const extra = makeExtra();
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     let finishRefresh: () => void = () => undefined;
     vi.spyOn(history, "refreshAll").mockReturnValue(
@@ -251,10 +256,11 @@ describe("T-0343 midnight rollover", () => {
   });
 
   it("T-0925 AC3 a rollover read that starts after the refresh finished still publishes", async () => {
+    const extra = makeExtra();
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
     const refresh = vi.spyOn(history, "refreshAll").mockResolvedValue(undefined);
     await mountSeeded();
-    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    await pollUntil(() => expect(refresh).toHaveBeenCalledTimes(1)); // T-0926: a spy count
     await seedCache(db, { sets: extra });
     await act(async () => {
       await new Promise((r) => setTimeout(r, 50));
@@ -262,6 +268,52 @@ describe("T-0343 midnight rollover", () => {
     await tick();
     await waitFor(() => expect(h1()).toHaveTextContent(en.uf10.window("15–28 Sep")));
     await waitFor(() => expect(rowValue("quads")).toBe("1 / 20"));
+  });
+
+  // T-0926 AC2: the non-DOM wait that flaked. The refresh answers 100 ms (real time) after the
+  // first paint, so the re-read's first loadTargets call lands with no DOM change after it (the
+  // re-read is held, so nothing publishes). No CPU load is needed to force that ordering.
+  async function mountWithLateRefresh() {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
+    vi.spyOn(history, "refreshAll").mockImplementation(
+      () => new Promise<undefined>((r) => setTimeout(() => r(undefined), 100)),
+    );
+    const real = history.loadTargets;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const seen = { calls: 0 };
+    vi.spyOn(history, "loadTargets").mockImplementation(async () => {
+      seen.calls += 1;
+      const out = await real();
+      if (seen.calls === 2) await gate;
+      return out;
+    });
+    await mountSeeded();
+    return { seen, release };
+  }
+
+  it("T-0926 AC2 waitFor never sees a counter that changes after the last DOM change (fake setInterval)", async () => {
+    const { seen, release } = await mountWithLateRefresh();
+    await expect(waitFor(() => expect(seen.calls).toBe(2), { timeout: 400 })).rejects.toThrow(
+      /expected 1 to be 2/,
+    );
+    // The counter did reach 2 meanwhile: the miss is the wait mechanism, not the hook.
+    expect(seen.calls).toBe(2);
+    await act(async () => {
+      release();
+      await new Promise((r) => setTimeout(r, 20));
+    });
+  });
+
+  it("T-0926 AC2 pollUntil sees the late counter without any DOM change", async () => {
+    const { seen, release } = await mountWithLateRefresh();
+    await pollUntil(() => expect(seen.calls).toBe(2), 1000);
+    await act(async () => {
+      release();
+      await new Promise((r) => setTimeout(r, 20));
+    });
   });
 
   it("T-0343 AC-6 unmount clears the timer and the listener", async () => {
