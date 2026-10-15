@@ -56,3 +56,10 @@ none
 - AC1 test green. AC1's planted fault, AC2 and AC3 are in the log.
 - `npx -y pnpm@10.28.2 -w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` are green. `-w typecheck lint test --concurrency=1` is also green (nothing in a package changes, so turbo replays from cache). No e2e.
 - Commits start `T-0651 UF-01.5:`.
+
+## Build / accept log
+- Start: clean, HEAD 49cd97ce. Edited README :38/:56 to `. ./.env.local`, Paper-palette section marked applied 2026-10-09 (H-35), test.mjs :270-271 prefixes.
+- AC1: `node --test .github/scripts/auth-patch.test.mjs` 23 pass / 0 fail. Planted fault (README :38 back to `. .env.local`, backup restored with cp): 22 pass / 1 fail (AC-2 test red); restored: 23 pass.
+- AC2: grep `\. \.env\.local` on README and test prints nothing.
+- AC3: grep `pending\|Chalk` prints nothing; grep `2026-10-09` prints only line 75 (heading) and line 79 (body).
+- Gate: -w typecheck lint test --concurrency=1 exit 0 (19/19 cached); test:repo-checks exit 0; format:check exit 0; check-all.mjs exit 0. No e2e.

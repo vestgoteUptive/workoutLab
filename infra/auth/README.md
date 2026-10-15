@@ -35,7 +35,7 @@ first (GET only, nothing sent):
 <!-- T-0404b args: the auth-patch.test.mjs AC-2 test runs exactly this argument list. -->
 
 ```sh
-set -a; . .env.local; set +a; node infra/scripts/auth-patch.mjs \
+set -a; . ./.env.local; set +a; node infra/scripts/auth-patch.mjs \
   --set smtp_host=smtp.resend.com \
   --set smtp_port=465 \
   --set smtp_user=resend \
@@ -53,7 +53,7 @@ Then apply: the same line with `CONFIRM_PROD_AUTH=csgjsdwuxqtuqpuazzpz` before `
 `--apply` at the end:
 
 ```sh
-set -a; . .env.local; set +a; CONFIRM_PROD_AUTH=csgjsdwuxqtuqpuazzpz node infra/scripts/auth-patch.mjs \
+set -a; . ./.env.local; set +a; CONFIRM_PROD_AUTH=csgjsdwuxqtuqpuazzpz node infra/scripts/auth-patch.mjs \
   --set smtp_host=smtp.resend.com \
   --set smtp_port=465 \
   --set smtp_user=resend \
@@ -72,9 +72,9 @@ Afterwards run the drift check (exit 0 expected). If a key was rejected, the too
 the drift check name it: fix the value and rerun the apply; `others_sha256` must stay unchanged.
 To change the wording, edit the template, rerun the preview and the apply.
 
-## Paper-palette templates (T-0617, D-0208): PATCH pending (H-35)
+## Paper-palette templates (T-0617, D-0208): applied 2026-10-09 (H-35)
 
-The templates in `templates/` now use the paper tokens (`paper.bg`, `paper.ink`, `paper.ink-muted`,
-`paper.action`, `paper.on-action`), read by `.github/scripts/auth-templates.test.mjs`. Prod still
-sends the old Chalk & Iron mail until the owner runs the keys-only PATCH above (H-35). Until then
-the drift check reports `mailer_templates_*_matches` as changed; that is expected.
+The templates in `templates/` use the paper tokens (`paper.bg`, `paper.ink`, `paper.ink-muted`,
+`paper.action`, `paper.on-action`), read by `.github/scripts/auth-templates.test.mjs`. The owner
+applied the keys-only PATCH above on 2026-10-09 (H-35). The drift check has exited 0 since then
+(17 keys).
