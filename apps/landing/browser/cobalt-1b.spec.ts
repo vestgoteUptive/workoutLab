@@ -324,7 +324,6 @@ test.describe("desktop >= 1024 (AC3)", () => {
 });
 
 test.describe("mobile < 1024 (AC4)", () => {
-  // The project config spreads devices["Desktop Chrome"], which overrides the 390x844 default.
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("390: one column, padding 24, CTA full width, phone below and centred", async ({ page }) => {

@@ -24,7 +24,9 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      // The device preset carries its own 1280x720 viewport, so 390x844 is set here
+      // (a top-level use.viewport would be overridden by it; T-0586).
+      use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 } },
     },
   ],
   webServer: {
