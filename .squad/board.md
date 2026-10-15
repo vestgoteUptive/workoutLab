@@ -138,7 +138,7 @@ Owner request: groom 10 parked tickets and put the ones worth doing at the back 
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0525 | One vitest variant across the workspace (engine/shared/design-tokens/exercises on vite 8, web/landing on vite 6 today) + a lockfile repo-check | infra | T-0512 | todo | wl-build-infra |
+| T-0525 | One vitest variant across the workspace (engine/shared/design-tokens/exercises on vite 8, web/landing on vite 6 today) + a lockfile repo-check | infra | T-0512 | doing | wl-build-infra |
 
 ## Cobalt + state colour redesign (D-0208): phase 1, tokens and landing
 
