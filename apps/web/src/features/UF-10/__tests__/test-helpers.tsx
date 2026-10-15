@@ -2,7 +2,7 @@
 // cache seeder so the "through the engine" ACs run the real `balance()` over real IndexedDB
 // (`fake-indexeddb`, polyfilled globally in vitest.setup.ts) with no stub anywhere.
 import type { ReactElement } from "react";
-import { render, type RenderResult } from "@testing-library/react";
+import { act, render, type RenderResult } from "@testing-library/react";
 import { MemoryRouter, Navigate, Route, Routes, useLocation, useParams } from "react-router";
 import type { Area, AreaTarget, LibraryExercise } from "@workoutlab/shared";
 import {
@@ -220,4 +220,24 @@ export function mapButtonFill(area: Area | string): string | undefined {
 
 export function location(): string {
   return document.querySelector('[data-testid="location"]')!.getAttribute("title")!;
+}
+
+/** T-0926: waits for a condition that can turn true with no later DOM change (a spy count, a
+ *  flag). Testing Library's `waitFor` polls on `setInterval` and only detects *Jest* fake timers,
+ *  so a test that fakes `setInterval` (midnight-rollover) leaves it re-checking on DOM mutations
+ *  alone and it times out when the condition flips after the last mutation. This polls on the real
+ *  `setTimeout`, inside `act`, and keeps the real-time cap. */
+export async function pollUntil(check: () => void, timeoutMs = 5000): Promise<void> {
+  const end = performance.now() + timeoutMs;
+  for (;;) {
+    try {
+      check();
+      return;
+    } catch (error) {
+      if (performance.now() > end) throw error;
+    }
+    await act(async () => {
+      await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    });
+  }
 }
