@@ -78,3 +78,11 @@ none. `tokens.json` is untouched, and the guard's rule set (D-0019) is unchanged
 - Web e2e is not needed (no `apps/web` change).
 
 ## Build / accept log
+
+### Build log (landing dev, 2026-10-15)
+- Changes: chromium project `viewport` 390x844 set inside `use` (after the device spread); redundant comment dropped in cobalt-1b; new `browser/viewport-default.spec.ts`; `SKIP_DIRS` + 4 report dirs; scanner "skipped dirs" case extended; `.gitignore` + `lighthouse-report/`, `.lighthouseci/`; keyboard-focus header cites the T-0309 AC18 amendment.
+- AC1: red on old config: `viewportSize()` got 1280x720 (expected 390x844). Planted fault (project viewport removed, backup restored by cp): red with width 1280; restored: green.
+- AC2: cobalt-1b `desktop >= 1024 (AC3)` block still passes at 1280 (its own test.use) in the full run.
+- AC3: `test:browser` Playwright 50 passed, 0 failed, with assertions unchanged. accessibility 3, fonts 1, keyboard-focus 2, network 2, reduced-motion-no-js 2, touch-targets 3, viewport-default 1, cobalt-1b 31+, responsive 4. No triage needed. lhci autorun exit 0 (2 URLs x 3 runs, assertions pass). Sandbox note: lhci needed `CHROME_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` and `--collect.settings.chromeFlags="--no-sandbox --headless=new"` (running as root, no installed Chrome); not a repo change.
+- AC4: scanner case covers the 4 dirs (both .css and .html); planted fault (`playwright-report` removed from SKIP_DIRS, backup restored by cp): 4 scanner/repo tests red (incl. "wl-check-colours exits 0 on apps/landing", because the real report dir exists); restored: 9/9 green. End to end: with `apps/landing/playwright-report/`, `lighthouse-report/`, `.lighthouseci/` and `test-results/` present after test:browser, `pnpm --filter @workoutlab/landing lint` exits 0.
+- AC5: `git check-ignore -v`: `.gitignore:16:lighthouse-report/`, `.gitignore:17:.lighthouseci/`, `.gitignore:14:playwright-report/`, `.gitignore:15:test-results/` (all four paths printed). keyboard-focus passes at 390.

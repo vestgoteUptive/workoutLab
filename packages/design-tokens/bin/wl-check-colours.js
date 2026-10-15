@@ -10,7 +10,19 @@ const EXTENSIONS = new Set([".css", ".scss", ".html", ".astro", ".svg", ".webman
 // `public/` is deliberately not skipped: manifest and favicon colours must come from tokens.
 // Tag-based files: attribute exemptions apply and `>` closes a tag (D-0031).
 const MARKUP_EXTENSIONS = new Set([".html", ".astro", ".svg"]);
-const SKIP_DIRS = new Set(["node_modules", "dist", ".astro", "coverage", ".git"]);
+// playwright-report, test-results, lighthouse-report and .lighthouseci are
+// generated test/Lighthouse reports, never source (T-0586).
+const SKIP_DIRS = new Set([
+  "node_modules",
+  "dist",
+  ".astro",
+  "coverage",
+  ".git",
+  "playwright-report",
+  "test-results",
+  "lighthouse-report",
+  ".lighthouseci",
+]);
 
 function* walk(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true }).sort((a, b) =>

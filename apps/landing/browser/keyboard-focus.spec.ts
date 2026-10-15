@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// AC18 (updated by T-0584: the 1b header now carries an "Open the app" pill before the hero):
+// AC18 (amended in T-0309 to "within 3 Tabs (skip link, header pill, CTA), or skip link + Tab"; runs at the 390x844 default, T-0586; updated by T-0584: the 1b header now carries an "Open the app" pill before the hero):
 // Tab reaches the CTA in at most 3 presses (skip link, header pill, CTA), the skip link
 // followed by one Tab lands on the CTA, and the focused CTA has a visible >= 2px outline.
 test("skip link then Tab lands on the CTA", async ({ page }) => {

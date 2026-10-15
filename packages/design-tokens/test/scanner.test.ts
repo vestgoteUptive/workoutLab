@@ -61,6 +61,10 @@ describe("AC13 non-JS scanner (D-0019)", () => {
       "dist/a.css": "a { color: #fff; }\n",
       ".astro/a.css": "a { color: #fff; }\n",
       "coverage/a.html": '<span style="color:#fff">x</span>\n',
+      "playwright-report/index.html": '<span style="color:#fff">x</span>\n',
+      "test-results/a.css": "a { color: #fff; }\n",
+      "lighthouse-report/a.html": '<span style="color:#fff">x</span>\n',
+      ".lighthouseci/a.css": "a { color: #fff; }\n",
     });
     const res = runCli([dir]);
     expect(res.stdout).toBe("");

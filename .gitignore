@@ -13,6 +13,8 @@ dist/
 coverage/
 playwright-report/
 test-results/
+lighthouse-report/
+.lighthouseci/
 supabase/.temp/
 supabase/.branches/
 infra/terraform/.terraform/
