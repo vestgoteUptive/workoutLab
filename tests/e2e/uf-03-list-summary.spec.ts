@@ -1155,3 +1155,132 @@ test.describe("T-0604 UF-03.3 Summary, the plan state (390 x 844)", () => {
     });
   });
 });
+
+test.describe("T-0680 UF-03.1 swap sheet in-tree stacking (390 x 844)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  /** Hit-test points as viewport CSS px: what `elementFromPoint` returns, summarised. */
+  const hits = (page: Page, points: Array<[number, number]>) =>
+    page.evaluate((pts) => {
+      return pts.map(([x, y]) => {
+        const el = document.elementFromPoint(x, y);
+        return {
+          tag: el?.tagName.toLowerCase() ?? null,
+          cls: el?.getAttribute("class") ?? null,
+          inScrim: el?.closest(".wl-sheet-scrim") != null,
+          inSheet: el?.closest('[role="dialog"]')?.getAttribute("data-screen-id") ?? null,
+          inUf05: el?.closest(".wl-uf05") != null,
+          inUf03: el?.closest('[data-screen-id="UF-03.1"]') != null,
+        };
+      });
+    }, points);
+
+  test("AC1-AC4: in-tree scrim z 6 and sheet z 7 over UF-03.1; closed is the sibling state", async ({
+    page,
+    context,
+  }, testInfo) => {
+    await openSessionOffline(page, context);
+    await openListView(page);
+    const swap = page.getByRole("button", { name: /^Swap / });
+    await expect(swap).toHaveCount(1);
+    await swap.click();
+    const dialog = page.getByRole("dialog", { name: /^Replace / });
+    await expect(dialog).toBeVisible();
+
+    // AC1: the sheet is in the tree of the current card, under the lift root.
+    const tree = await page.evaluate(() => {
+      const d = document.querySelector('[role="dialog"]')!;
+      const s = document.querySelector(".wl-sheet-scrim")!;
+      const root = document.querySelector('[data-screen-id="UF-03.1"]')!;
+      const inTree = (el: Element) => ({
+        root: el.closest('[data-screen-id="UF-03.1"]') != null,
+        card: el.closest('[data-part="card"][data-current]') != null,
+      });
+      return {
+        dialog: inTree(d),
+        scrim: inTree(s),
+        rootState: root.getAttribute("data-wl-state"),
+        dialogState: d.getAttribute("data-wl-state"),
+      };
+    });
+    expect(tree).toEqual({
+      dialog: { root: true, card: true },
+      scrim: { root: true, card: true },
+      rootState: "lift",
+      dialogState: "plan",
+    });
+
+    // AC2: stacking values and fixed geometry.
+    const geo = await page.evaluate(() => {
+      const read = (el: Element) => {
+        const cs = getComputedStyle(el);
+        const r = el.getBoundingClientRect();
+        return {
+          position: cs.position,
+          zIndex: cs.zIndex,
+          x: r.x,
+          y: r.y,
+          width: r.width,
+          height: r.height,
+          top: r.top,
+          bottom: r.bottom,
+          left: r.left,
+        };
+      };
+      return {
+        scrim: read(document.querySelector(".wl-sheet-scrim")!),
+        dialog: read(document.querySelector('[role="dialog"]')!),
+      };
+    });
+    expect(geo.scrim).toMatchObject({
+      position: "fixed",
+      zIndex: "6",
+      x: 0,
+      y: 0,
+      width: 390,
+      height: 844,
+    });
+    expect(geo.dialog).toMatchObject({
+      position: "fixed",
+      zIndex: "7",
+      top: 150,
+      bottom: 844,
+      left: 0,
+      width: 390,
+    });
+
+    // AC3: no UF-03 element is the top hit anywhere.
+    const above = await hits(page, [
+      [20, 75],
+      [195, 75],
+      [370, 75],
+    ]);
+    for (const h of above) {
+      expect(h.inScrim).toBe(true);
+      expect(h.inUf05).toBe(true);
+    }
+    const inside = await hits(page, [
+      [20, 400],
+      [195, 400],
+      [195, 830],
+    ]);
+    for (const h of inside) {
+      expect(h.inSheet).toBe("UF-05.1");
+      expect(h.inUf05).toBe(true);
+    }
+
+    // AC4: closed is the sibling state.
+    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await expect(page.locator(".wl-sheet-scrim")).toHaveCount(0);
+    await expect(dialog).toBeHidden();
+    const [closed] = await hits(page, [[195, 75]]);
+    expect(closed!.inUf03).toBe(true);
+    expect(closed!.inUf05).toBe(false);
+    console.log(`T-0680 closed hit at (195, 75): <${closed!.tag} class="${closed!.cls}">`);
+    testInfo.annotations.push({
+      type: "closed-hit-195-75",
+      description: `${closed!.tag}.${closed!.cls}`,
+    });
+    await expect(swap).toBeFocused();
+  });
+});

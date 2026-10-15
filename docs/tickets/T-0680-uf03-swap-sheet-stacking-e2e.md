@@ -96,3 +96,12 @@ none
 - If T-0928 has merged first, `pnpm -w lint` also lints this spec. Use no raw colour except as
   D-0228 §2 allows.
 - Commits start `T-0680 UF-03.1:`.
+
+## Build / accept log
+- Built on 49cd97ce (clean). New describe `T-0680 UF-03.1 swap sheet in-tree stacking (390 x 844)` in `tests/e2e/uf-03-list-summary.spec.ts`: one test covering AC1-AC4 (geometry/hit reads after the dialog visible-wait). No product code or unit tests changed.
+- AC1-AC4 map: all in test "AC1-AC4: in-tree scrim z 6 and sheet z 7 ..."; green 1/1, and 20/20 with `--repeat-each=20`.
+- AC4 closed hit at (195, 75): `<div class="wl-uf03-list">` (the list container's blank gap).
+- F1 (delete `z-index: 6;` from `.wl-sheet-scrim` in main.css): red (AC2 zIndex). Restored with cp.
+- F2 (`.wl-uf03-list__card { transform: translateZ(0); }`): red (AC2 rect). Restored with cp.
+- F3 as written in the spec (`position: relative; z-index: 8` on `.wl-uf03-list`): stayed GREEN. Reason: that element is an ancestor of the in-tree sheet, so it only makes a stacking context that contains scrim and sheet; the sheet still wins inside it. The spec's F3 premise is wrong for an ancestor hit element. Replaced F3 with `.wl-uf03-list::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 100px; z-index: 8; }` (a UF-03 box painting over the scrim, host = the same element): red at AC3 `inScrim` (Expected true, Received false). Restored with cp. An earlier full-viewport version blocked the Swap click (red at click, not AC3), hence the 100px band.
+- Runs: new test 1/1, x20 repeat 20/20 stable, whole uf-03-list-summary file 13/13. Gate `-w typecheck lint test --concurrency=1` exit 0 (turbo cache), test:repo-checks 0, format:check 0, check-all.mjs 0.
