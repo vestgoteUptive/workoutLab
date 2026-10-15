@@ -9,18 +9,25 @@ import { Resvg } from "@resvg/resvg-js";
 // `require()` the raw JSON, not an `import` of the package: Vite loads its config (and this
 // file with it) through Node's native ESM loader, which can't load the package's TS entry.
 const tokensJson = createRequire(import.meta.url)("@workoutlab/design-tokens/tokens.json");
-// T-0616 (D-0208, D-0211): the plan palette (cobalt square, white roundel).
+// T-0616 (D-0208, D-0211): the plan palette (cobalt square, white barbell, D-0229).
 const bg = tokensJson.color.plan.bg;
 const ink = tokensJson.color.plan.ink;
 
-/** A simple square badge: `bg` fill, an `ink` roundel with margin `marginRatio * size`. */
-export function iconSvg(size, marginRatio) {
-  const m = size * marginRatio;
-  const r = (size - 2 * m) / 2;
-  const c = size / 2;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-  <rect width="${size}" height="${size}" fill="${bg}" />
-  <circle cx="${c}" cy="${c}" r="${r}" fill="${ink}" />
+/** The D-0229 barbell on a 100 x 100 grid: outer plates, collars and bar. */
+const BARBELL_PATHS = [
+  "M32 24V76H27A7 7 0 0 1 20 69V31A7 7 0 0 1 27 24Z",
+  "M68 24H73A7 7 0 0 1 80 31V69A7 7 0 0 1 73 76H68Z",
+  "M34 35H41V65H34Z",
+  "M59 35H66V65H59Z",
+  "M41 46H59V54H41Z",
+];
+
+/** Square badge: `bg` ground, the `ink` barbell. One drawing, scaled to `size` (D-0229). */
+export function iconSvg(size) {
+  const shapes = BARBELL_PATHS.map((d) => `<path d="${d}" fill="${ink}" />`).join("\n  ");
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100">
+  <rect width="100" height="100" fill="${bg}" />
+  ${shapes}
 </svg>`;
 }
 
@@ -34,14 +41,14 @@ export function iconAssets() {
   const png = (fileName, size) => ({
     fileName,
     contentType: "image/png",
-    source: renderPng(iconSvg(size, 0.15), size),
+    source: renderPng(iconSvg(size), size),
   });
   return [
     png("icons/icon-192.png", 192),
     png("icons/icon-512.png", 512),
     // Maskable: full-bleed background, content kept inside the ~80% safe zone.
     png("icons/icon-512-maskable.png", 512),
-    { fileName: "favicon.svg", contentType: "image/svg+xml", source: iconSvg(64, 0.15) },
+    { fileName: "favicon.svg", contentType: "image/svg+xml", source: iconSvg(64) },
   ];
 }
 

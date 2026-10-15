@@ -7,7 +7,7 @@ export interface IconAsset {
   source: Uint8Array | string;
 }
 
-export function iconSvg(size: number, marginRatio: number): string;
+export function iconSvg(size: number): string;
 export function renderPng(svg: string, size: number): Uint8Array;
 export function iconAssets(): IconAsset[];
 export function wlIconsPlugin(): Plugin;
