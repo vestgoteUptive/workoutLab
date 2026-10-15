@@ -42,3 +42,11 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 Per-package commands: write one command per script — `pnpm --filter <pkg> typecheck`, then a separate `… lint`, then a separate `… test`.
 
 ## Build / accept log
+
+- Build (infra, 2026-10-15). HEAD b89305f5, clean. Added `"vite": "^6.4.3"` devDependency to engine, shared, design-tokens, data/exercises; lockfile regenerated with pnpm 10.28.2 (4 importers moved from vite 8.3.3 to 6.4.3 variant). New check `.github/scripts/check-vitest-variant.mjs` + test.
+- AC-1: fresh `install --frozen-lockfile` -> `ls node_modules/.pnpm | grep -c '^vitest@'` = 1. Red on unfixed main: 2 vitest@ entries (vite@6.4.3 lightningcss, vite@8.3.3 esbuild); the third (no-lightningcss) variant named in the ticket was not present in a fresh install.
+- AC-2: all six `readlink -f <pkg>/node_modules/vitest` identical; repo-check test red on unfixed code (landing/web named), green after.
+- AC-3: landing `astro check && astro build` green (needs design-tokens built first, as in turbo); astro resolves vite@8.3.3.
+- AC-4: planted fault on lockfile (shared importer suffix `0.0.0-split`) -> `node check-vitest-variant.mjs` exit 1 naming `packages/shared`; restored with `cp` from backup, exit 0.
+- AC-5: `-w typecheck lint test --force --concurrency=1` exit 0 (19 tasks). Tests: exercises 244, design-tokens 184, engine 797, shared 270, landing 164, web 4885. repo-checks 391/391; format:check 0; check-all.mjs 0. Web build green.
+- e2e full: 676 passed, 3 failed (canvas-compare:50, uf-01-onboarding:352, :939) under full load; all 3 rerun green in isolation (6 passed incl. retries/projects). Treated as load flakes.
