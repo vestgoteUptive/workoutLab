@@ -111,6 +111,11 @@ export function useBalance({
   // D-0113 §2: at most one refresh per mount. `mounted` (not a per-effect flag) survives a status
   // change, which must not cancel the refresh already in flight.
   const started = useRef(false);
+  // T-0925: every cache read takes the next number when it *starts*; a read publishes only if its
+  // number is above the last published one. The newest start wins, not the newest finish, so a
+  // slow rollover read that began before the refresh landed can't overwrite the re-read's rows.
+  const readSeq = useRef(0);
+  const publishedSeq = useRef(0);
   const mounted = useRef(false);
   useEffect(() => {
     mounted.current = true;
@@ -125,10 +130,16 @@ export function useBalance({
   useEffect(() => {
     if (stub) return;
     let live = true;
+    readSeq.current += 1;
+    const seq = readSeq.current;
     readCache(new Date(nowIso), timeZone, stubLastSyncedAt).then(
       ([cached, synced]) => {
         if (!live) return;
-        setState({ result: cached, lastSyncedAt: synced });
+        if (seq > publishedSeq.current) {
+          publishedSeq.current = seq;
+          setState({ result: cached, lastSyncedAt: synced });
+        }
+        // A dropped read still counts as "the first read finished", so `settled` can't stick.
         setFirstReadDone(true);
       },
       () => {
@@ -157,6 +168,8 @@ export function useBalance({
         // is in flight. A result for an older window must never be published over the newer one
         // (the rollover's own read paints that); read again until the inputs held still.
         let l = latest.current;
+        readSeq.current += 1;
+        let seq = readSeq.current;
         let [fresh, freshSynced] = await readCache(
           new Date(l.nowIso),
           l.timeZone,
@@ -167,6 +180,8 @@ export function useBalance({
           (latest.current.nowIso !== l.nowIso || latest.current.timeZone !== l.timeZone)
         ) {
           l = latest.current;
+          readSeq.current += 1;
+          seq = readSeq.current;
           [fresh, freshSynced] = await readCache(
             new Date(l.nowIso),
             l.timeZone,
@@ -174,7 +189,10 @@ export function useBalance({
           );
         }
         if (!mounted.current) return;
-        if (fresh !== null) setState({ result: fresh, lastSyncedAt: freshSynced });
+        if (fresh !== null && seq > publishedSeq.current) {
+          publishedSeq.current = seq;
+          setState({ result: fresh, lastSyncedAt: freshSynced });
+        }
       })
       // D-0104 / D-0115 §2: a rejected re-read keeps the state already published.
       .catch(() => undefined)

@@ -63,3 +63,8 @@ none. `docs/engine-rules.md` is untouched: this is UI read ordering, not engine 
 - **Serial:** T-0926 edits the same two files and must start after this merges.
 
 ## Build / accept log
+- Build: `readSeq`/`publishedSeq` refs in `use-balance.ts`; effect 1 and each refresh re-read take the next number at start and publish only if `seq > publishedSeq`. Kept T-0924's re-read-until-still loop (each pass takes a new number). A dropped effect-1 read still runs `setFirstReadDone(true)`.
+- Tests (midnight-rollover.test.tsx): AC1 "T-0925 AC1 + AC4 ..." (screen: gated history call 2; also asserts nine rows, no noData); AC4 hook test (`renderHook`, `settled` true after release, quads load 1); AC3 "starts after the refresh finished"; AC2 = T-0343 AC-1 unchanged; AC5 = whole UF-10 folder 170/170, 3 runs in a row.
+- Red on unfixed code (before the use-balance change): AC1 `expected '0 / 20' to be '1 / 20'` at the final rowValue("quads"); AC4 hook test also red.
+- Planted faults (backup copy, restored with cp): unconditional publish -> AC1 and AC4 red (Received "0 / 20"); `seq < publishedSeq` -> AC3 red (plus the rest of the file).
+- Note: hook test uses `vi.waitFor` because RTL `waitFor` polls on the faked setInterval and stalls without a DOM mutation.

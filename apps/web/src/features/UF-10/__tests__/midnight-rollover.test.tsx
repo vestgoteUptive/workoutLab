@@ -1,10 +1,12 @@
 // T-0343 UF-10.1 / UF-10.2: a mounted Balance screen rolls the 14-day window over at local
 // midnight (60 s check + visibilitychange), from the cache, with no remount and no extra refresh.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, renderHook, screen, waitFor } from "@testing-library/react";
 import type { OfflineDb } from "../../../lib/offline/db.js";
 import { en } from "../../../lib/i18n/en.js";
+import * as engineFeed from "../../../lib/offline/engine-feed.js";
 import * as history from "../../../lib/offline/history.js";
+import { useBalance } from "../use-balance.js";
 import { BACK_SQUAT, LIBRARY, LOCALE, RDL, TZ, defaultTargets, sets } from "./fixtures.js";
 import {
   freshDb,
@@ -150,6 +152,116 @@ describe("T-0343 midnight rollover", () => {
     });
     expect(h1()).toHaveTextContent(en.uf10.window("15–28 Sep"));
     expect(rowValue("quads")).toBe("0 / 20");
+  });
+
+  const extra = sets(BACK_SQUAT.id, "2026-09-27T20:00:00+02:00", 1, { prefix: "x" });
+
+  it("T-0925 AC1 + AC4 a rollover read that started earlier never publishes over the refresh re-read", async () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
+    let finishRefresh: () => void = () => undefined;
+    vi.spyOn(history, "refreshAll").mockReturnValue(
+      new Promise<void>((r) => {
+        finishRefresh = r;
+      }),
+    );
+    const real = engineFeed.loadEngineHistory;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    let calls = 0;
+    let rolloverHasRows = false;
+    // Call 1 is the first paint, call 2 the rollover read (pre-refresh rows, then held), call 3
+    // the refresh's re-read.
+    vi.spyOn(engineFeed, "loadEngineHistory").mockImplementation(async () => {
+      calls += 1;
+      const out = await real();
+      if (calls === 2) {
+        rolloverHasRows = true;
+        await gate;
+      }
+      return out;
+    });
+    await mountSeeded();
+    await tick();
+    await waitFor(() => expect(rolloverHasRows).toBe(true));
+    await seedCache(db, { sets: extra });
+    await act(async () => {
+      finishRefresh();
+    });
+    await waitFor(() => {
+      expect(h1()).toHaveTextContent(en.uf10.window("15–28 Sep"));
+      expect(rowValue("quads")).toBe("1 / 20");
+    });
+    await act(async () => {
+      release();
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(rowValue("quads")).toBe("1 / 20");
+    expect(h1()).toHaveTextContent(en.uf10.window("15–28 Sep"));
+    // AC4: the dropped read left the screen settled, all nine rows present.
+    expect(rowAreas()).toHaveLength(9);
+    expect(screen.queryByText(en.uf10.noData)).toBeNull();
+  });
+
+  it("T-0925 AC4 a dropped read still settles the hook", async () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
+    let finishRefresh: () => void = () => undefined;
+    vi.spyOn(history, "refreshAll").mockReturnValue(
+      new Promise<void>((r) => {
+        finishRefresh = r;
+      }),
+    );
+    const real = engineFeed.loadEngineHistory;
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    let calls = 0;
+    let held = false;
+    vi.spyOn(engineFeed, "loadEngineHistory").mockImplementation(async () => {
+      calls += 1;
+      const out = await real();
+      if (calls === 2) {
+        held = true;
+        await gate;
+      }
+      return out;
+    });
+    await seedCache(db, { library: LIBRARY, targets: defaultTargets(), sets: seed });
+    const { result, rerender } = renderHook(
+      (p: { now: Date }) => useBalance({ now: p.now, timeZone: TZ, status: "signed-in" }),
+      { initialProps: { now: new Date(BEFORE) } },
+    );
+    await vi.waitFor(() => expect(result.current.result).not.toBeNull());
+    rerender({ now: new Date("2026-09-28T00:00:30+02:00") });
+    await vi.waitFor(() => expect(held).toBe(true));
+    await seedCache(db, { sets: extra });
+    await act(async () => {
+      finishRefresh();
+    });
+    await vi.waitFor(() => expect(result.current.settled).toBe(true));
+    await act(async () => {
+      release();
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    expect(result.current.settled).toBe(true);
+    const quads = result.current.result?.areas.find((a) => a.area === "quads");
+    expect(quads?.load).toBe(1);
+  });
+
+  it("T-0925 AC3 a rollover read that starts after the refresh finished still publishes", async () => {
+    vi.spyOn(navigator, "onLine", "get").mockReturnValue(true);
+    const refresh = vi.spyOn(history, "refreshAll").mockResolvedValue(undefined);
+    await mountSeeded();
+    await waitFor(() => expect(refresh).toHaveBeenCalledTimes(1));
+    await seedCache(db, { sets: extra });
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 50));
+    });
+    await tick();
+    await waitFor(() => expect(h1()).toHaveTextContent(en.uf10.window("15–28 Sep")));
+    await waitFor(() => expect(rowValue("quads")).toBe("1 / 20"));
   });
 
   it("T-0343 AC-6 unmount clears the timer and the listener", async () => {
