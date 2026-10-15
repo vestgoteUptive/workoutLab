@@ -267,8 +267,8 @@ async function execT(argv, { env, server, io = fakeIo() }) {
 
 test("T-0404b AC-2 the README's preview and apply lines are the same argument list", () => {
   const [preview, apply] = readmeCommands();
-  assert.equal(preview.prefix, "set -a; . .env.local; set +a;");
-  assert.equal(apply.prefix, `set -a; . .env.local; set +a; CONFIRM_PROD_AUTH=${REF}`);
+  assert.equal(preview.prefix, "set -a; . ./.env.local; set +a;");
+  assert.equal(apply.prefix, `set -a; . ./.env.local; set +a; CONFIRM_PROD_AUTH=${REF}`);
   assert.deepEqual(apply.argv, [...preview.argv, "--apply"]);
   assert.ok(!preview.argv.includes("--apply"));
 });
