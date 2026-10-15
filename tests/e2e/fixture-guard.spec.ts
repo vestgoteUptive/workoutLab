@@ -952,7 +952,7 @@ test.describe("source assertions", () => {
       line.includes('test("setOffline does not suspend interception'),
     );
     expect(title).toBeGreaterThan(-1);
-    const end = lines.findIndex((line, i) => i > title && /^  \}\);$/.test(line));
+    const end = lines.findIndex((line, i) => i > title && /^ {2}\}\);$/.test(line));
     expect(end).toBeGreaterThan(title);
     const body = lines.slice(title, end + 1).join("\n");
     expect(body).not.toContain("consoleGuard");

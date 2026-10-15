@@ -932,7 +932,7 @@ function mainSeed(): Record<string, unknown>[] {
 }
 
 const MAIN_NAME = "Bench press";
-const MAIN_DETAIL = /^4 × 6–8 · 42\.5 kg · \d+ min$/;
+const MAIN_DETAIL = /^4 × 6–8 · 42\.5\u00a0kg · \d+ min$/;
 
 test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109)", () => {
   test("T-0412 AC1 mainSeed names a loaded compound M with 3 × 42.5 kg × 6, 3–9 days ago", () => {

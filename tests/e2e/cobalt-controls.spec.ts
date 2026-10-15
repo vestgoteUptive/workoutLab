@@ -15,7 +15,6 @@ const group = (name: string) => tokens.color[name] as unknown as Colours;
 const plan = group("plan");
 const lift = group("lift");
 const paper = group("paper");
-const flat = tokens.color as unknown as Record<string, string>;
 
 function rgb(hex: string): string {
   const n = (i: number) => parseInt(hex.slice(i, i + 2), 16);

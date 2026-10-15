@@ -97,3 +97,13 @@ none. D-0228 records the lint-scope decision (status `revisit`).
   cross-cutting (D-0178 §3): say so in the handback. Otherwise, run only the specs whose bodies
   changed in more than a lint-only way.
 - Commits start `T-0928:`.
+
+## Build / accept log
+- Start: git status clean, HEAD e710a39a. `pnpm install --frozen-lockfile` ok.
+- Measured before (eslint tests/e2e, 54 files, `-f json`, no change yet): `workoutlab/no-raw-colour` 54 errors (the estimate of ~230 was lines, not messages; rule is per literal node-group); `@typescript-eslint/no-unused-vars` 2 (`flat` in cobalt-controls.spec.ts:18, cobalt-surfaces.spec.ts:19); `no-regex-spaces` 1 (fixture-guard.spec.ts:955); `no-irregular-whitespace` 1 (uf-08-setup.spec.ts:935, a literal NBSP in a regex). 0 warnings.
+- Fixes (no assertion changed): removed the two unused `flat` consts; `/^ {2}\}\);$/`; NBSP literal -> ` ` escape (same matched string). Config: colour rule off for `tests/e2e/**` only, ignores for report dirs (D-0228 §2, §3). Scripts: `lint:e2e`, `lint` chained, `lint:fix` also runs `eslint --fix tests/e2e`.
+- Measured after (colour rule off): 0 errors, 0 warnings, 54 files.
+- AC1-AC4 -> `.github/scripts/e2e-lint.test.mjs` (4 tests, green). AC1 planted fault (line 955 double-space): red naming `tests/e2e/fixture-guard.spec.ts:955 no-regex-spaces`; restored with cp. AC4 planted fault (`lint` = `turbo run lint`): AC4 red; restored with cp.
+- AC5: appended `const _re = /a  b/;` to a backup copy: `scripts/locked.sh heavy pnpm -w lint --concurrency=1` exit 1, output names fixture-guard.spec.ts 955:59 and 981:13 `no-regex-spaces`. Restored with cp: exit 0.
+- Gate: `scripts/locked.sh heavy pnpm -w typecheck lint test --force --concurrency=1` exit 0 (19/19 turbo tasks); `test:repo-checks` 395 pass 0 fail; `format:check` clean; `check-all.mjs` exit 0. Note: that form runs turbo's typecheck/lint/test only, not the root `lint` script, so the e2e lint is exercised there by AC1 in repo-checks; the root `pnpm -w lint` chain was run separately (AC5, exit 0).
+- E2E (whole suite, since tests/e2e files changed): 680 passed, exit 0 (7.9m), browsers from ~/.cache/pwb.
