@@ -87,7 +87,9 @@ Flow = the AgentLab flow (or sub-agent chain) that runs it.
 ## Phase 4 — Ship
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | merged (AC-4 live verify_jwt read pending: blocked for agents) | wl-build-infra |
+| T-0513 | Per-user rate limit on Edge Functions, or a decision accepting the risk on Free (F-3) → D-0190 §3 accepts the risk on Free; ticket adds function invocations to the cost guard + pins verify_jwt in the prod release (folds T-0238) | infra | T-0403, T-0405, T-0402b | merged (AC-4 live verify_jwt read dropped by the owner 2026-10-15, not relevant now) | wl-build-infra |
+
+| T-0929 | Lighthouse CI on UF-02.1 (mobile preset; LCP <= 2.5 s, CLS <= 0.1, TBT <= 200 ms). `apps/web/lighthouserc.json` exists but no CI job runs it, and Chrome would not start locally; needs a CI job (build, preview server on :4173, `lhci autorun`) and a ticket spec. Only open Phase 4 item (owner, 2026-10-15) | infra | T-0402 | waiting (owner: keep as pending, not scheduled) | wl-build-infra |
 
 ## CI fixes (any phase)
 Found by the `/tick` CI watch or the `wl-ci-investigate` flow. Diagnosis in `docs/ci/CI-T-09NN-*.md`. Built with the owning lane's flow; merged only after a green draft-PR run.
