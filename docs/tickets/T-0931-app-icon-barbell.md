@@ -34,3 +34,7 @@ None (tokens unchanged; D-0229 records the design change).
 Gate green · commits start with `T-0931`.
 
 ## Build / accept log
+- Built: `iconSvg(size)` draws the D-0229 five-path barbell on a 100x100 viewBox, same drawing at every size; d.mts signature updated; roundel removed.
+- AC1/AC2 existing tests green; AC3 new shape test (512 PNG at 25/37/50/33 % points); AC4 safe-zone test renamed "icon", green; AC5 `iconSvg` has no margin arg.
+- Planted fault (roundel `<circle r=35>` instead of shapes, on a backup copy): AC3 test red, other 5 green; restored from copy, 6/6 green.
+- Gate: first -w run red on flaky UF-03 list-view.swap focus test (passes 2x alone, unrelated); rerun green (exit 0). repo-checks, format:check, check-all.mjs all exit 0. vite build emits dist/icons/*.png and dist/favicon.svg.

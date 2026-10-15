@@ -66,7 +66,7 @@ describe("gen-icons (AC-A3)", () => {
   });
 
   it("every icon SVG uses exactly the two colours plan.bg and plan.ink (T-0616 AC3)", () => {
-    const svgs = [iconSvg(192, 0.15), iconSvg(512, 0.15), iconSvg(64, 0.15)];
+    const svgs = [iconSvg(192), iconSvg(512), iconSvg(64)];
     const favicon = iconAssets().find((a) => a.fileName === "favicon.svg");
     svgs.push(String(favicon?.source));
     for (const svg of svgs) {
@@ -87,7 +87,7 @@ describe("gen-icons (AC-A3)", () => {
     }
   });
 
-  it("the maskable roundel sits inside the 80% safe zone (T-0616 AC3)", () => {
+  it("the maskable icon sits inside the 80% safe zone (T-0616 AC3)", () => {
     const asset = iconAssets().find((a) => a.fileName === "icons/icon-512-maskable.png")!;
     const { width, height } = pngSize(asset.source as Uint8Array);
     const { data } = decodePng(asset.source as Uint8Array);
@@ -103,6 +103,18 @@ describe("gen-icons (AC-A3)", () => {
       }
     }
     expect(inkPixels).toBeGreaterThan(0);
+  });
+
+  it("512 PNG draws the barbell: plates and collars ink, gaps and the space above the bar bg (D-0229 AC3)", () => {
+    const asset = iconAssets().find((a) => a.fileName === "icons/icon-512.png")!;
+    const { width } = pngSize(asset.source as Uint8Array);
+    const { data } = decodePng(asset.source as Uint8Array);
+    const at = (fx: number, fy: number) =>
+      hex(data, (Math.floor(fy * width) * width + Math.floor(fx * width)) * 4);
+    expect(at(0.25, 0.5)).toBe(tokens.color.plan.ink);
+    expect(at(0.37, 0.5)).toBe(tokens.color.plan.ink);
+    expect(at(0.5, 0.4)).toBe(tokens.color.plan.bg);
+    expect(at(0.33, 0.3)).toBe(tokens.color.plan.bg);
   });
 
   it("no flat-token reads in vite.config.ts or scripts/** (T-0616 AC4)", () => {
