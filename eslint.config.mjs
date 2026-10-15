@@ -15,6 +15,8 @@ export default tseslint.config(
       "**/coverage/**",
       "**/node_modules/**",
       "**/.turbo/**",
+      "**/playwright-report/**",
+      "**/test-results/**",
     ],
   },
   js.configs.recommended,
@@ -33,6 +35,12 @@ export default tseslint.config(
     // off in its own eslint.config.mjs, because patterns resolve per loaded config.
     plugins: { workoutlab },
     rules: { "workoutlab/no-raw-colour": "error" },
+  },
+  {
+    // Specs compare browser-computed colours, which a browser reports only as rgb()/rgba()
+    // strings, so they must spell that form (D-0228 §2). Every other rule still applies.
+    files: ["tests/e2e/**"],
+    rules: { "workoutlab/no-raw-colour": "off" },
   },
   {
     // The repo-hygiene checks (T-0004, D-0023) are plain Node scripts, run outside any

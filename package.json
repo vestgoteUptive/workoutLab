@@ -9,8 +9,9 @@
   "scripts": {
     "build": "turbo run build",
     "typecheck": "turbo run typecheck",
-    "lint": "turbo run lint",
-    "lint:fix": "turbo run lint -- --fix",
+    "lint": "turbo run lint && pnpm lint:e2e",
+    "lint:e2e": "eslint tests/e2e",
+    "lint:fix": "turbo run lint -- --fix && eslint --fix tests/e2e",
     "test": "turbo run test && pnpm test:repo-checks && node supabase/scripts/vendor.mjs --check",
     "test:repo-checks": "node --test \".github/scripts/*.test.mjs\"",
     "check:size": "pnpm --filter @workoutlab/web check:size",
