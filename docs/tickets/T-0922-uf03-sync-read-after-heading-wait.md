@@ -83,3 +83,11 @@ none
 - E2E is not needed (no `apps/web/src` runtime change).
 
 ## Build / accept log
+
+### Build (frontend-dev)
+- Start: worktree clean, HEAD 46095991. Audit: scanner on unfixed `list-view.swap.host.test.tsx` flagged exactly L119, L261, L290 (no other file hits; the wider audit grep shows only those). No extra hits.
+- Fixes (test-only, `list-view.swap.host.test.tsx`): L119/L290 `getByRole` -> `await screen.findByRole` (Swap Back squat); L261 `settle()` + sync read -> `await waitFor(() => expect(document.activeElement).toBe(screen.getByRole(...)))`. Guard: `wait-then-read.guard.test.ts` (scanner pure fn, 7 tests).
+- AC->test: AC1/AC2/AC3/AC4 = "T-0922 scanner" tests (AC2 covers waitFor and findByRole variants; AC3 covers findBy ready signal, end-of-test and next-test; AC4 covers reason, empty reason, same-line marker); AC5 = "T-0922 AC-5" block (>=10 files, >=3 heading waits, 0 findings).
+- Planted faults (backup copy, restored with cp): unfixed file -> guard red naming :119, :261, :290. Only L261 restored to `settle()`+sync -> guard red naming `list-view.swap.host.test.tsx:261`. Restored -> green.
+- AC6 per site (wrong name planted, then restored): L261 "Swap Back squat" -> 1 red (AC-3 focus test); L119 (openSwap) "Swap Nothing" -> 8 red; L291 (was L290) "Swap Nothing" -> 1 red (AC-1 rest/cancel test). Baseline 9/9 green.
+- AC7 load (8x `yes`, 4 cores, 10 runs of the swap.host file): before further fix 4/10 then 9/10 (the failures were NOT a sync-read: the first test of the file timed out on the cold dynamic `import("../UF-05/index.js")` the host loads for the Swap sheet, `Unable to find dialog "Replace Back squat"`, later the 5 s test budget). Fix: `beforeAll` warm-up importing UF-05 and UF-04 index (no timeout raised). After: 10/10, then 10/10 again (that batch ran swap.host + guard together).

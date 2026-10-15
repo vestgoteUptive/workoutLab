@@ -4,7 +4,7 @@
 // cache, so the ranked candidate ("hip-thrust", see the ticket's AC-1 fixture comment) and the
 // swapped item's pre-fill come from the engine itself, not a stub.
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { parseSessionPlan } from "@workoutlab/shared";
 import { offlineDb, setKey } from "../../../lib/offline/db.js";
 import { L1, NOW, S1, USER_A } from "./fixtures.js";
@@ -28,6 +28,14 @@ import {
 } from "./list-helpers.js";
 
 const nowMs = Date.parse("2026-09-27T10:00:00.000Z");
+
+// T-0922: the host loads the Swap sheet and How-to through dynamic imports. The first test to open
+// them paid the cold module transform inside its 1 s `findByRole("dialog")` / 5 s test budget and
+// failed under CPU load. Load the modules once, before any test, so every test sees them warm
+// (a warm-up, not a longer timeout).
+beforeAll(async () => {
+  await Promise.all([import("../../UF-05/index.js"), import("../../UF-04/index.js")]);
+}, 60_000);
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ["Date"], now: new Date(NOW) });
@@ -116,7 +124,7 @@ async function openSwap(): Promise<void> {
   fireEvent.click(screen.getByRole("button", { name: "List view" }));
   await findEl(() => document.querySelector('[data-screen-id="UF-03.1"]'));
   await screen.findByRole("heading", { level: 2, name: "Back squat" });
-  fireEvent.click(screen.getByRole("button", { name: "Swap Back squat" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Swap Back squat" }));
   await screen.findByRole("dialog", { name: "Replace Back squat" });
 }
 
@@ -257,8 +265,9 @@ describe("T-0478 AC-3 focus after a resolved Apply, real host", () => {
     await openSwapFromList();
     await applyFirstCandidate();
     await waitFor(() => screen.getByRole("heading", { level: 2, name: "Hip thrust" }));
-    await settle();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Swap Hip thrust" }));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Swap Hip thrust" })),
+    );
   });
 });
 
@@ -287,7 +296,7 @@ describe("T-0478 AC-1 during a rest, real host", () => {
     const restBarBefore = await screen.findByRole("button", { name: /^Rest,/ });
     expect(restBarBefore).toBeTruthy();
     await screen.findByRole("heading", { level: 2, name: "Back squat" });
-    fireEvent.click(screen.getByRole("button", { name: "Swap Back squat" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Swap Back squat" }));
     await screen.findByRole("dialog", { name: "Replace Back squat" });
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     await settle();
