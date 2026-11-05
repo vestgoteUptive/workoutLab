@@ -75,3 +75,7 @@ none.
   - Mutations (each restored with `cp`): isEligible ignores level → 11 red (AC1–AC6); `>` flipped to `>=` → 10 red; rankSwaps looks `current` up in the pool → 1 red (AC5 downgrade, "RangeError: pull-up is not in the library").
   - Findings: none; the engine skips every above-level id silently.
   - Gate: `turbo run typecheck lint test --filter=@workoutlab/engine --force --concurrency=1` green (3/3 tasks, 50 files, 813 tests); `-w format:check` green.
+- 2026-11-05 code-review + QA. Start: clean tree at e9a4b509. Spec fidelity, fixture (`barbell-deadlift-t` same shape as `ex()`, valid areas/equipment, no library id clash), determinism (no clock/random) and lane all OK.
+  - Reviewer mutations (each restored with `cp`, `git diff --stat packages/engine/src` empty): favorites bypass rule 0 → 2 red (AC1, AC6); mainLiftId looked up outside the eligible pool → 2 red (AC3, AC6); rankSwaps appends an above-level current → 1 red (AC5); applySwap throws on an above-level current → 1 red (AC5); level compared as strings → 6 red (AC4–AC6).
+  - Gap closed: AC2 over simulated histories, AC3 and AC6 favorite/main had no per-case level pair, so "mainLiftId ignored at every level" left AC3 green. Added 3 "T-0243 QA non-vacuity" tests (pin at intermediate per history; main at intermediate per history; advanced row as main/favorite at advanced). Proof: mainLiftId ignored → 2 red; favorites ignored → 2 red.
+  - Gate: engine `turbo typecheck lint test --force` green (50 files, 816 tests).

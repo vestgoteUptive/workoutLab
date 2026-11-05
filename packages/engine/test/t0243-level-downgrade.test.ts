@@ -321,3 +321,55 @@ describe("T-0243 advanced row (test-local, rule 0)", () => {
     expect(isEligible(pull, at("advanced"))).toBe(true);
   });
 });
+
+describe("T-0243 QA non-vacuity: each skipped id is picked when only profile.level is raised", () => {
+  it("T-0243 AC2 pinned pull-up at budgetMin 30 is an item at intermediate in zero and every simulated history", () => {
+    for (const [name, history] of HISTORIES) {
+      const low = call({ history, input: { budgetMin: 30, pinnedIds: [PULL_UP] } });
+      const up = { ...low, profile: at("intermediate") };
+      expect(diffPaths(low, up), name).toEqual(["profile.level"]);
+      expect(ids(run(up)), name).toContain(PULL_UP);
+      expect(ids(run(low)), name).not.toContain(PULL_UP);
+    }
+  });
+
+  it("T-0243 AC3 mainLiftId pull-up is the main lift at intermediate in zero and every simulated history", () => {
+    for (const [name, history] of HISTORIES) {
+      const low = call({ history, input: { mainLiftId: PULL_UP } });
+      const up = { ...low, profile: at("intermediate") };
+      expect(diffPaths(low, up), name).toEqual(["profile.level"]);
+      expect(run(up).plan.mainLiftId, name).toBe(PULL_UP);
+      expect(run(low).plan.mainLiftId, name).not.toBe(PULL_UP);
+    }
+  });
+
+  it("T-0243 AC6 the advanced row as mainLiftId is main at advanced and as a favorite is an item at advanced in at least one AC1 input", () => {
+    let favPicked = 0;
+    for (const [name, history] of HISTORIES) {
+      for (const budgetMin of BUDGETS) {
+        const label = `${name} ${budgetMin} min`;
+        const base = { history, library: LIBRARY_ADV };
+        const main = call({
+          ...base,
+          profile: at("intermediate"),
+          input: { budgetMin, mainLiftId: ADV },
+        });
+        const mainUp = { ...main, profile: at("advanced") };
+        expect(diffPaths(main, mainUp), label).toEqual(["profile.level"]);
+        expect(run(mainUp).plan.mainLiftId, label).toBe(ADV);
+        const fav = call({
+          ...base,
+          profile: at("intermediate"),
+          input: { budgetMin, favoriteIds: [ADV] },
+        });
+        const favUp = { ...fav, profile: at("advanced") };
+        expect(diffPaths(fav, favUp), label).toEqual(["profile.level"]);
+        // Favorite-specific: the favorite pick differs from the advanced call without it.
+        const favW = run(favUp);
+        const plain = run({ ...favUp, input: { ...favUp.input, favoriteIds: [] } });
+        if (ids(favW).includes(ADV) && !ids(plain).includes(ADV)) favPicked++;
+      }
+    }
+    expect(favPicked).toBeGreaterThan(0);
+  });
+});
