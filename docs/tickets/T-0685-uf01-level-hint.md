@@ -66,3 +66,12 @@ none.
 - Commits start `T-0685 UF-01.3:`.
 
 ## Build / accept log
+
+**Build 2026-11-05 (frontend-dev).** Start: clean tree, HEAD d2cb3ddc. `LevelScreen.tsx`: `<p id="wl-uf01-level-later" class="wl-type-label">` after `#wl-uf01-level-hint`, static, no live region; radiogroup `aria-describedby="wl-uf01-level-hint wl-uf01-level-later"`. `flows/uf-01.ts`: Advanced hint → D-0233 §3 copy, new `level.changeLater`. No existing test asserted the old Advanced copy, so no test was edited.
+- AC1 → `level-later.test.tsx` "T-0685 AC1 …" (Beginner checked, DOM order, accessible description, not in aria-live/status/alert)
+- AC2 → "T-0685 AC2 …" (Advanced exact copy, old copy absent, line unchanged, Intermediate unchanged)
+- AC3 → "T-0685 AC3 …" (restored advanced record)
+- AC4 → "T-0685 AC4 …" (Get started, Continue, Continue → UF-01.4 with 9 target rows); `screens`/`keyboard`/`timing-frozen`/`a11y` pass unchanged
+- AC5 → "T-0685 AC5 navigator.onLine=false|true …" (AC1 + 0 fetch / supabase calls)
+- Red on unfixed source (HEAD copies of both files): 5 failed / 1 passed (AC4 green, as it should be).
+- Planted faults (backup copies restored with `cp`): drop `wl-uf01-level-later` from describedby → AC1/2/3/5 red; merge the line into the hint `<p>` → AC1/2/3/5 red; preselect intermediate in `pending-plan.ts` → AC1/4/5 red; old Advanced copy → AC2/3 red. Restored: 6/6 green.
