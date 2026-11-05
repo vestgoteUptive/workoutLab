@@ -95,14 +95,14 @@ A directed pair. The seed writes both directions (UF-04.3, UF-05, UF-08.3).
 
 ## User-owned tables
 
-### profiles (D-0014, D-0018, D-0020, D-0021, D-0218, NFR-AN-2)
+### profiles (D-0014, D-0018, D-0020, D-0021, D-0218, D-0230, NFR-AN-2)
 One row per user, written after UF-01.5 Account with the plan computed on the device (D-0014).
 
 | column | type | null | default | notes |
 |---|---|---|---|---|
 | user_id | uuid | no | `auth.uid()` | PK. FK `auth.users(id)` on delete cascade. |
 | goal | text | no | | Check `in ('build_muscle','get_stronger','general_fitness')`. |
-| level | text | no | | Check `in ('beginner','intermediate','advanced')`. |
+| level | text | no | | Check `in ('beginner','intermediate','advanced')`. Client-writable: UF-01.3 at onboarding, UF-11.3 Edit plan after it (D-0230). Does not change `plan_changed_at`. |
 | rhythm_min | smallint | no | | Sessions per week. |
 | rhythm_max | smallint | no | | Sessions per week. |
 | equipment | text[] | no | `'{}'` | No DB check (D-0021). |
