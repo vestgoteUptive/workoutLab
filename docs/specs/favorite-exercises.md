@@ -41,6 +41,7 @@ Move lines (`role="status"`, present on mount, empty until used):
   - "Not available with your equipment" when `isEligible(e, {...profile, level: "advanced"}, [])` is false;
   - otherwise "Above your level" when `isEligible(e, profile, [])` is false.
   (`isEligible` is the engine's exported rule 0 test, so the screen states the engine's view.)
+  When any row reads "Above your level", one notice under the header: "Your level is {Level}. Some favorites are above it." with a "Change level" link to `/plan/edit?from=favorites` (D-0231, spec `docs/specs/editable-level.md` AC8).
 - **Zero favorites, empty query:** "No favorites yet. Search to add one, or tap Favorite on an exercise."
 - **Query with no match:** "No exercises match “{query}”."
 
