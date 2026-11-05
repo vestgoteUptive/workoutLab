@@ -57,3 +57,13 @@ none.
 - Commits start `T-0241 UF-11.3:`.
 
 ## Build / accept log
+- 2026-11-05 backend-dev build. Start: clean tree at d2cb3ddc. Added `supabase/tests/database/022_profiles_level.test.sql` (plan 28). No migration or schema change.
+  - AC1 → tests 2–3, 8–11 (intermediate / advanced / back to beginner: 1 row each, plan_changed_at still T0).
+  - AC2 → tests 12–17 (expert 23514, Beginner 23514, null 23502; level and plan_changed_at unchanged after each).
+  - AC3 → tests 18–22 (B on A's row: 0 rows; B on its own row: 1; anon: refused with 42501, since anon has no privilege on profiles, so 0 rows change; A's row is unchanged, checked as postgres).
+  - AC4 → tests 23–28 (level + goal: 1 row, plan_changed_at ≠ T0 and = now(); goal-only sibling also = now()).
+  - AC5 → tests 4–7 (updated_at T0 → now(); goal/rhythm/priority untouched; client-sent onboarded_at/created_at/plan_changed_at ignored).
+  - Local stack (`supabase start -x vector,logflare`, `supabase test db`): Files=22, Tests=787, PASS.
+  - Fault 1 (test expectation set to plan_changed_at = now() after a level-only update): red, test 3 failed; restored from a backup with `cp`.
+  - Fault 2 (DB: `create or replace function private.profiles_before_write` with `level` in the plan tuple, applied only inside the test transaction): red, 6/28 failed (3, 7, 9, 11, 17, 21). Restored with `cp`, then `supabase db reset`; the trigger has no `new.level`; rerun PASS 787.
+  - `-w format:check` green. `check:repo` reports only `ticket-not-on-base`: this worktree has no local `main` (the base is `main-hzlbfc`) and `origin/main` is stale, so that's environmental. `test:repo-checks` 391 pass / 4 fail, all four being check-all-on-real-repo tests that fail for the same reason.
