@@ -36,6 +36,7 @@ a{color:#D4F25A}a:hover{color:#E6FA95}
 <sc-for list="{{levels}}" as="l" hint-placeholder-count="3"><button class="{{l.cls}}" onClick="{{l.pick}}">{{l.t}}</button></sc-for>
 </div>
 <p class="m" style="margin: 0; font-size: 14px">{{levelHint}}</p>
+<p class="m" style="margin: 0; font-size: 14px">You can change this later in Plan.</p>
 </div>
 <div style="display: flex; flex-direction: column; gap: 10px">
 <div class="tag">Where do you train? Pick all that apply</div>
@@ -51,7 +52,7 @@ a{color:#D4F25A}a:hover{color:#E6FA95}
 class Component extends DCLogic {
 constructor(p) { super(p); this.state = { level: 'mid', gear: { gym: true, db: true } }; }
 renderVals() {
-const hints = { new: 'Under 6 months. We start with form-first variations like the goblet squat.', mid: '6 months to 2 years. Barbell basics plus targeted accessories.', pro: '2+ years. Higher volume and advanced progression schemes.' };
+const hints = { new: 'Under 6 months. We start with form-first variations like the goblet squat.', mid: '6 months to 2 years. Barbell basics plus targeted accessories.', pro: '2+ years. Adds the most demanding lifts, like the barbell deadlift.' };
 const levels = [{ id: 'new', t: 'Beginner' }, { id: 'mid', t: 'Intermediate' }, { id: 'pro', t: 'Advanced' }];
 const gear = [{ id: 'gym', t: 'Full gym' }, { id: 'bb', t: 'Barbell' }, { id: 'db', t: 'Dumbbells' }, { id: 'kb', t: 'Kettlebell' }, { id: 'band', t: 'Bands' }, { id: 'bw', t: 'Bodyweight only' }];
 return {

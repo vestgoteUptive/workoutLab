@@ -89,3 +89,8 @@ none (`tokens.json` unchanged).
 - Commits start `T-0681 UF-11.3:`.
 
 ## Build / accept log
+- 2026-11-05 designer (build). Base d2cb3ddc, tree clean at start. New `screens/UF-11.3.md` (whole screen, order Header, Goal, Level, Rhythm, Priority areas, Target preview, alert/offline, Cancel and Save; Level radiogroup of `.wl-option` rows with hint captions and the level note, all `aria-describedby`, no live region; offline, save-failed, `?from=favorites` return with focus on the UF-11.6 title). Amended `UF-11.2.md` (Level fact), `UF-11.6.md` (level notice, shown/absent, stays with a query, `h1 tabindex="-1"`), `UF-08.5.md` (row 4 text only), `components/neutral-notice.md` ("Variant: with one link"), UF-01.3 prototype copy. Caption on hover uses `--wl-ink-on-raise` (ink-muted on raise is 4.2:1). No token change.
+  - AC1 → `T-0681 AC1 UF-11.3 spec…` + `T-0681 AC1 planted fault…`; AC2 → `T-0681 AC2 …`; AC3 → `T-0681 AC3 …`; AC4 → `T-0681 AC4 …` (T-0590 neutral-notice tests still green); AC5 → `T-0681 AC5 …`; AC6 → `T-0681 AC6 …`; AC7 → existing "no spec adds a UF-09 control" green + `T-0681 AC7 …`; no `screens/UF-09.*` file in the diff. All in `packages/design-tokens/test/docs.test.ts`.
+  - Red on unfixed docs (HEAD copies of the five files, UF-11.3.md removed, restored with `cp`): 8/8 T-0681 cases red.
+  - Planted fault: line "3. **Level**" deleted from UF-11.3.md (backup copy, restored with `cp`): AC1 red ("Level in the order list: expected -1 to be greater than 1").
+  - Gate: design-tokens vitest 192/192, lint, typecheck green; `-w format:check` green. `-w check:repo` reports `ticket-not-on-base` because this worktree has no local `main` and `origin/main` (3d91948c) predates the ticket commit d2cb3ddc; see handback.
