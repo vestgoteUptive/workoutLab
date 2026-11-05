@@ -63,3 +63,20 @@ none.
 - Commits start `T-0243 UF-08.2:`.
 
 ## Build / accept log
+- 2026-11-05 engine-dev build. Start: clean tree at d2cb3ddc. Added `packages/engine/test/t0243-level-downgrade.test.ts` (16 tests); `src/**`, rules and fixtures unchanged. The advanced row `barbell-deadlift-t` is built inline in the same shape as `ex()` (that helper isn't exported, and fixtures are out of scope).
+  - AC1 → "T-0243 AC1 (spec AC13) …" (5 histories × 4 budgets, plus non-vacuity: the intermediate pair picks pull-up at least once)
+  - AC2 → two "T-0243 AC2 …" tests (zero history; every simulated history at 30 min)
+  - AC3 → "T-0243 AC3 …" (zero + every simulated history)
+  - AC4 → three "T-0243 AC4 …" tests (inputs, intermediate includes pull-up and ≠ beginner, advanced = intermediate)
+  - AC5 → four "T-0243 AC5 …" tests (back item; beginner no pull-up / intermediate has it; downgrade rankSwaps + applySwap with current pull-up don't throw; advanced row dropped at intermediate)
+  - AC6 → four "T-0243 AC6 …" tests (60 cases favorite/pin/main; isEligible; pinned at advanced is an item)
+  - AC7 → `run()` calls suggest twice, deep-equal, and `diffPaths` asserts the only differing input in each pair (plus "T-0243 AC7 diffPaths …")
+  - Planted fault (backup in scratch, restored with `cp`): pinned ids bypass the level check in `selectPinned` → 5 red (both AC2, AC4, two AC6). `git diff --stat packages/engine/src` empty after.
+  - Mutations (each restored with `cp`): isEligible ignores level → 11 red (AC1–AC6); `>` flipped to `>=` → 10 red; rankSwaps looks `current` up in the pool → 1 red (AC5 downgrade, "RangeError: pull-up is not in the library").
+  - Findings: none; the engine skips every above-level id silently.
+  - Gate: `turbo run typecheck lint test --filter=@workoutlab/engine --force --concurrency=1` green (3/3 tasks, 50 files, 813 tests); `-w format:check` green.
+- 2026-11-05 code-review + QA. Start: clean tree at e9a4b509. Spec fidelity, fixture (`barbell-deadlift-t` same shape as `ex()`, valid areas/equipment, no library id clash), determinism (no clock/random) and lane all OK.
+  - Reviewer mutations (each restored with `cp`, `git diff --stat packages/engine/src` empty): favorites bypass rule 0 → 2 red (AC1, AC6); mainLiftId looked up outside the eligible pool → 2 red (AC3, AC6); rankSwaps appends an above-level current → 1 red (AC5); applySwap throws on an above-level current → 1 red (AC5); level compared as strings → 6 red (AC4–AC6).
+  - Gap closed: AC2 over simulated histories, AC3 and AC6 favorite/main had no per-case level pair, so "mainLiftId ignored at every level" left AC3 green. Added 3 "T-0243 QA non-vacuity" tests (pin at intermediate per history; main at intermediate per history; advanced row as main/favorite at advanced). Proof: mainLiftId ignored → 2 red; favorites ignored → 2 red.
+  - Gate: engine `turbo typecheck lint test --force` green (50 files, 816 tests).
+- 2026-11-05 product-owner accept: **done**. Clean tree at 69764d94; diff d2cb3ddc..HEAD touches only the new test file and this ticket (src unchanged). AC1–AC6 each map to `T-0243 ACn` tests; AC7 is covered by `run()` (twice, deep-equal) plus `diffPaths` and its own test. The required planted fault (pins bypass rule 0 → AC2 red) is logged, along with 8 more mutations. QA's non-vacuity pairs close the AC2/AC3/AC6 gap. Commits use `T-0243 UF-08.2:`. Principle 3 (deterministic engine) holds.
