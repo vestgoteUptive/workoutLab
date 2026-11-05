@@ -71,3 +71,12 @@ none.
   - Fault 3 (open `profiles_update` using(true) with check(true), inside the test transaction): red, 9 failed, including the new test 21; filtered test 18 stayed green, as review predicted.
   - Fault 4 (anon UPDATE grant + open anon update policy + execute on `private.numeric_array_distinct`, inside the test transaction): red, tests 23–25 failed; filtered anon test 22 stayed green, as review predicted.
   - Restored with `cp` after each; `supabase db reset`; no open or anon policy on profiles and anon has no UPDATE; `supabase test db` Files=22, Tests=791, PASS.
+- 2026-11-05 product-owner accept: **done**. Read 022_profiles_level.test.sql (plan 32) against the ACs; every AC has a passing assert (suite 791/791).
+  - AC1: intermediate / advanced / back to beginner, 1 row each, plan_changed_at = T0.
+  - AC2: expert and Beginner give 23514, null gives 23502, level unchanged after each.
+  - AC3: B's filtered update changes 0 rows, B's unfiltered update leaves A unchanged, B's own row changes 1 row; anon (filtered and unfiltered) gets 42501; A's level and plan_changed_at are unchanged, checked as postgres.
+  - AC4: level + goal ≠ T0 and = now(); the goal-only sibling = now().
+  - AC5: updated_at = now(); goal, rhythm and priority are untouched; server-set columns are ignored.
+  - The AC1 planted fault (level in the trigger's plan tuple) is logged red.
+  - No migration, contract or web change. The principles hold: this pins principle 4, so a level save doesn't reset the rule 9 streak.
+  - Open: the `-w typecheck lint test` run isn't logged, and `check:repo`/`test:repo-checks` failures are environmental (no local `main`). The orchestrator's merge gate covers both. The diff touches only SQL, so TS is unaffected.
