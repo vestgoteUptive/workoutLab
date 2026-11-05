@@ -81,6 +81,7 @@ Binary-condition check (D-0197 §7):
 - Upgrade and downgrade: AC2 against AC7.
 
 ## Paths you may change
+- `tests/e2e/uf-11-plan-layout.spec.ts`: only the "goal options are native radios" test. Scope its radio count to the Goal radiogroup, and add the Level radiogroup count (TR-0049, granted by the orchestrator).
 - `apps/web/src/features/UF-11/**` (lane)
 - Listed extras:
   - `apps/web/src/lib/i18n/flows/uf-11.ts` (web-shell flow file): the `levelGroup`, `levels` and `levelNote` strings
