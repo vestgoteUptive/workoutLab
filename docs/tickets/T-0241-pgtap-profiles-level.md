@@ -33,7 +33,7 @@ D-0230 §2 relies on a server fact: the `profiles_before_write` trigger sets `pl
 - **AC3 (owner only)**
   - When B (as B's JWT) updates A's `level` to 'advanced', Then 0 rows change and A's `level` and `plan_changed_at` are unchanged.
   - Sibling: the same update by A changes 1 row (AC1).
-  - An `anon` update changes 0 rows.
+  - An anon update is refused with 42501 (anon holds no privilege on profiles, D-0020) and changes 0 rows.
 - **AC4 (plan column with level moves the streak)** When A updates `level` and `goal` together (goal 'build_muscle' → 'get_stronger'), Then `plan_changed_at` ≠ T0 (it is `now()`).
   - Sibling: a `goal`-only update also moves it, so a level change never masks a plan change.
 - **AC5 (updated_at)** A level-only update sets `updated_at` to `now()`. The trigger's other columns behave as today.
@@ -67,3 +67,7 @@ none.
   - Fault 1 (test expectation set to plan_changed_at = now() after a level-only update): red, test 3 failed; restored from a backup with `cp`.
   - Fault 2 (DB: `create or replace function private.profiles_before_write` with `level` in the plan tuple, applied only inside the test transaction): red, 6/28 failed (3, 7, 9, 11, 17, 21). Restored with `cp`, then `supabase db reset`; the trigger has no `new.level`; rerun PASS 787.
   - `-w format:check` green. `check:repo` reports only `ticket-not-on-base`: this worktree has no local `main` (the base is `main-hzlbfc`) and `origin/main` is stale, so that's environmental. `test:repo-checks` 391 pass / 4 fail, all four being check-all-on-real-repo tests that fail for the same reason.
+- 2026-11-05 backend-dev rework (from review). Added 4 asserts, now plan 32: an unfiltered update by B with no RETURNING, then A's level checked as postgres (test 20–21); an unfiltered anon update raising 42501 'permission denied for table profiles', then A's level checked as postgres (tests 23–24). Reworded the AC3 anon bullet.
+  - Fault 3 (open `profiles_update` using(true) with check(true), inside the test transaction): red, 9 failed, including the new test 21; filtered test 18 stayed green, as review predicted.
+  - Fault 4 (anon UPDATE grant + open anon update policy + execute on `private.numeric_array_distinct`, inside the test transaction): red, tests 23–25 failed; filtered anon test 22 stayed green, as review predicted.
+  - Restored with `cp` after each; `supabase db reset`; no open or anon policy on profiles and anon has no UPDATE; `supabase test db` Files=22, Tests=791, PASS.

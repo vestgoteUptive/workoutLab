@@ -3,7 +3,7 @@
 -- streak); level with a plan column moves it; the vocabulary holds; only the owner can write.
 -- now() is fixed inside this transaction, so "moved" is checked as "<> T0" and "= now()".
 begin;
-select plan(28);
+select plan(32);
 
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
@@ -84,16 +84,25 @@ select results_eq($$with u as (update public.profiles set level = 'advanced'
   $$values (0)$$, 'T-0241 AC3 B''s update of A''s level changes 0 rows');
 select results_eq($$with u as (update public.profiles set level = 'advanced' returning 1) select count(*)::int from u$$,
   $$values (1)$$, 'T-0241 AC3 B''s update of its own level changes 1 row');
+-- Unfiltered and without RETURNING, so only profiles_update (not profiles_select) decides which rows
+-- B's update reaches. A's row must not be one of them.
+select lives_ok($$update public.profiles set level = 'advanced'$$, 'T-0241 AC3 B''s unfiltered level update runs');
 reset role;
+select is((select level from public.profiles where user_id = '00000000-0000-0000-0000-00000000000a'), 'beginner',
+  'T-0241 AC3 after B''s unfiltered update A''s level is still beginner (checked as postgres)');
 
--- anon holds no privilege on profiles (revoked in data_model_v1a), so its update is refused outright
--- and changes no row.
+-- anon holds no privilege on profiles (revoked in data_model_v1a, D-0020), so its update is refused
+-- outright and changes no row, filtered or not.
 set local request.jwt.claims to '{"role":"anon"}';
 set local role anon;
 select throws_ok($$update public.profiles set level = 'advanced'
   where user_id = '00000000-0000-0000-0000-00000000000a'$$, '42501', null,
   'T-0241 AC3 an anon update of A''s level is refused (42501) and changes 0 rows');
+select throws_ok($$update public.profiles set level = 'advanced'$$, '42501', 'permission denied for table profiles',
+  'T-0241 AC3 an unfiltered anon update is refused (42501, permission denied for table profiles)');
 reset role;
+select is((select level from public.profiles where user_id = '00000000-0000-0000-0000-00000000000a'), 'beginner',
+  'T-0241 AC3 after the unfiltered anon update A''s level is still beginner (checked as postgres)');
 
 -- As postgres (RLS bypassed): A's row is untouched by B and anon.
 select results_eq($$select level, plan_changed_at from public.profiles
