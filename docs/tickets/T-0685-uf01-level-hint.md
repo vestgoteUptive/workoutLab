@@ -66,3 +66,20 @@ none.
 - Commits start `T-0685 UF-01.3:`.
 
 ## Build / accept log
+
+**Build 2026-11-05 (frontend-dev).** Start: clean tree, HEAD d2cb3ddc. `LevelScreen.tsx`: `<p id="wl-uf01-level-later" class="wl-type-label">` after `#wl-uf01-level-hint`, static, no live region; radiogroup `aria-describedby="wl-uf01-level-hint wl-uf01-level-later"`. `flows/uf-01.ts`: Advanced hint → D-0233 §3 copy, new `level.changeLater`. No existing test asserted the old Advanced copy, so no test was edited.
+- AC1 → `level-later.test.tsx` "T-0685 AC1 …" (Beginner checked, DOM order, accessible description, not in aria-live/status/alert)
+- AC2 → "T-0685 AC2 …" (Advanced exact copy, old copy absent, line unchanged, Intermediate unchanged)
+- AC3 → "T-0685 AC3 …" (restored advanced record)
+- AC4 → "T-0685 AC4 …" (Get started, Continue, Continue → UF-01.4 with 9 target rows); `screens`/`keyboard`/`timing-frozen`/`a11y` pass unchanged
+- AC5 → "T-0685 AC5 navigator.onLine=false|true …" (AC1 + 0 fetch / supabase calls)
+- Red on unfixed source (HEAD copies of both files): 5 failed / 1 passed (AC4 green, as it should be).
+- Planted faults (backup copies restored with `cp`): drop `wl-uf01-level-later` from describedby → AC1/2/3/5 red; merge the line into the hint `<p>` → AC1/2/3/5 red; preselect intermediate in `pending-plan.ts` → AC1/4/5 red; old Advanced copy → AC2/3 red. Restored: 6/6 green.
+- Gate: `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1` green (4/4 tasks, 373 files / 4904 tests); `-w format:check` green; e2e `uf-01-onboarding` 28/28 incl. "3 activations …". `-w check:repo` in this worktree reports `ticket-not-on-base`: there is no local `main`, and `origin/main` (3d91948c) predates the ticket. An isolated clone with `main` at the base d2cb3ddc gives `check-all.mjs` exit 0; the diff is exactly the 4 granted paths.
+
+**Review + QA 2026-11-05 (code-reviewer).** Start: clean tree, HEAD 2868753d. Copy matches D-0232 §2/§4 and D-0233 §3; `barbell-deadlift` is `level: "advanced"` in `data/exercises/library`. Lane: 4 granted paths, no tokens or contracts touched.
+- Planted (backup restored with `cp`): line `aria-live="polite"` → AC1/AC5 red; line inside the radiogroup as a radio → AC1/AC5 + `screens` red; describedby order reversed → AC1/2/3/5 red; line only after a level change → AC1/3/5 red; line moved below the equipment group → **all green (gap)**.
+- Added "T-0685 AC1 (review) …" (hint's next sibling, in the level group, before the equipment group); red under the last fault, green on the change.
+- Fold (scratch Playwright, Desktop Chrome, `vite preview`): Continue bottom 800/844 at 390×844, 724/740 at 360×740, 624/640 at 360×640, so it stays fully in view. The line is 19.6 px. At 360×740 the page now scrolls 28 px where it didn't before. No committed e2e guards this.
+
+**Accept 2026-11-05 (product-owner): done.** Commits 4b1f8c6d, 2868753d, c6d219a7. Each AC has a passing test in `level-later.test.tsx`: AC1 (+ "AC1 (review)" for placement), AC2, AC3, AC4 (+ `screens`/`keyboard`/`timing-frozen` unchanged, e2e "3 activations …" green), AC5 (onLine false/true, 0 requests). Spec AC14 is covered by AC1 + AC2 + AC4. The copy matches D-0232 §2 and D-0233 §3 word for word, and the Advanced example is true (barbell-deadlift is `advanced`). Principles hold: Beginner preselect and the 3-activation path are unchanged (principle 5), there is no live region, and the engine and contracts are untouched. Planted faults: 9 of 10 red; the 10th was closed by the review test. Fold was checked only in Desktop Chrome emulation, and Continue stays in view down to 360×640. Follow-ups: (1) a guard test that the Advanced hint's example exercise stays `level: advanced` in the library; (2) optional: an e2e fold check for Continue at 360×640.

@@ -166,7 +166,7 @@ describe("AC1 disabled reasons", () => {
       expect(within(bench).getByText("In this workout")).toBeInTheDocument();
       expect(within(bench).queryByRole("button")).toBeNull();
       expectDisabled("Dead bug", "Excluded. Include it again in Plan › Excluded exercises.");
-      expectDisabled("Pull up", "Above your level");
+      expectDisabled("Pull up", "Above your level. Change it in Plan › Edit plan.");
       expectDisabled("Calf raise", "Skipping Calves today");
       expectDisabled("Leg curl", "Hamstrings is recovering");
       expect(fetchSpy).not.toHaveBeenCalled();
