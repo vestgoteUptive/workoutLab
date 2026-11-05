@@ -94,3 +94,4 @@ none (`tokens.json` unchanged).
   - Red on unfixed docs (HEAD copies of the five files, UF-11.3.md removed, restored with `cp`): 8/8 T-0681 cases red.
   - Planted fault: line "3. **Level**" deleted from UF-11.3.md (backup copy, restored with `cp`): AC1 red ("Level in the order list: expected -1 to be greater than 1").
   - Gate: design-tokens vitest 192/192, lint, typecheck green; `-w format:check` green. `-w check:repo` reports `ticket-not-on-base` because this worktree has no local `main` and `origin/main` (3d91948c) predates the ticket commit d2cb3ddc; see handback.
+  - Rework (review): UF-11.3 hover caption `--wl-ink` (6.2:1, matches `.wl-option` rule and Row pattern), caption `.wl-type-label` 14 px; UF-01.3 prototype preselects Beginner (D-0232 §1), no new hex.
