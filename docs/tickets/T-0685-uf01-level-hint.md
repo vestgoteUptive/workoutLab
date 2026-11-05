@@ -75,3 +75,4 @@ none.
 - AC5 → "T-0685 AC5 navigator.onLine=false|true …" (AC1 + 0 fetch / supabase calls)
 - Red on unfixed source (HEAD copies of both files): 5 failed / 1 passed (AC4 green, as it should be).
 - Planted faults (backup copies restored with `cp`): drop `wl-uf01-level-later` from describedby → AC1/2/3/5 red; merge the line into the hint `<p>` → AC1/2/3/5 red; preselect intermediate in `pending-plan.ts` → AC1/4/5 red; old Advanced copy → AC2/3 red. Restored: 6/6 green.
+- Gate: `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1` green (4/4 tasks, 373 files / 4904 tests); `-w format:check` green; e2e `uf-01-onboarding` 28/28 incl. "3 activations …". `-w check:repo` in this worktree reports `ticket-not-on-base`: there is no local `main`, and `origin/main` (3d91948c) predates the ticket. An isolated clone with `main` at the base d2cb3ddc gives `check-all.mjs` exit 0; the diff is exactly the 4 granted paths.
