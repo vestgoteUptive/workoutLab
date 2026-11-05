@@ -32,7 +32,13 @@ interface Draft {
 }
 
 function fromProfile(p: EngineProfile): Draft {
-  return { goal: p.goal, level: p.level, min: p.rhythmMin, max: p.rhythmMax, priorities: [...p.priorityAreas] };
+  return {
+    goal: p.goal,
+    level: p.level,
+    min: p.rhythmMin,
+    max: p.rhythmMax,
+    priorities: [...p.priorityAreas],
+  };
 }
 
 /** Whether anything other than the level differs: goal, rhythm or priority areas. */
