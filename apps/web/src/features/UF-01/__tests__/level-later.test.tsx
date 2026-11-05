@@ -64,6 +64,17 @@ describe("T-0685 UF-01.3 'You can change this later in Plan.' (D-0232, D-0233)",
     expectLineOnFreshScreen();
   });
 
+  it("T-0685 AC1 (review) the line sits directly under the level hint, in the level group, before the equipment group", async () => {
+    mountAt("/welcome/level");
+    await findScreen("UF-01.3");
+    const line = later();
+    // "Under the level hint" (D-0232 §2, spec AC14): the hint's next sibling, not merely later.
+    expect(hint().nextElementSibling).toBe(line);
+    expect(line.parentElement).toBe(group().parentElement);
+    const equipment = screen.getByRole("radiogroup", { name: "Where do you train?" });
+    expect(line.compareDocumentPosition(equipment) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it("T-0685 AC2 picking Advanced shows the D-0233 §3 copy; the line stays; Intermediate unchanged", async () => {
     mountAt("/welcome/level");
     await findScreen("UF-01.3");
