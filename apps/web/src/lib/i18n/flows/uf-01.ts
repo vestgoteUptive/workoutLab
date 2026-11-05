@@ -47,9 +47,11 @@ export const uf01 = {
       },
       advanced: {
         label: "Advanced",
-        hint: "2+ years. Higher volume and advanced progression schemes.",
+        hint: "2+ years. Adds the most demanding lifts, like the barbell deadlift.",
       },
     },
+    /** Static line under the level hint, in the group's description (D-0232 §2, D-0233 §2). */
+    changeLater: "You can change this later in Plan.",
     equipmentLegend: "Where do you train?",
     equipment: {
       bodyweight: "Bodyweight",

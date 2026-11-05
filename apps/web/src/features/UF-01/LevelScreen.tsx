@@ -48,7 +48,7 @@ export function LevelScreen({ store }: { store: PendingPlanStore }) {
           <div
             role="radiogroup"
             aria-labelledby="wl-uf01-level-legend"
-            aria-describedby="wl-uf01-level-hint"
+            aria-describedby="wl-uf01-level-hint wl-uf01-level-later"
             className="wl-segmented"
           >
             {LEVELS.map((id) => (
@@ -66,6 +66,10 @@ export function LevelScreen({ store }: { store: PendingPlanStore }) {
           </div>
           <p id="wl-uf01-level-hint" className="wl-type-label">
             {t.level.levels[level].hint}
+          </p>
+          {/* Static, not a live region (D-0232 §2, D-0233 §2). */}
+          <p id="wl-uf01-level-later" className="wl-type-label">
+            {t.level.changeLater}
           </p>
         </div>
         <div className="wl-uf01-plan__group">
