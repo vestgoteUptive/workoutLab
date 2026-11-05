@@ -293,3 +293,141 @@ describe("T-0590 state-patterns.md (D-0208, D-0211)", () => {
     );
   });
 });
+
+// T-0681 (D-0230, D-0231, D-0233): editable level. UF-11.3 gets a spec with the Level radiogroup,
+// UF-11.2 a Level fact, UF-11.6 a level notice with one link, UF-08.5 a text-only pointer.
+describe("T-0681 editable level screen specs", () => {
+  const read = (f: string) => readFileSync(resolve(designDir, f), "utf8");
+  const HINTS = [
+    "Under 6 months. We start with form-first variations like the goblet squat.",
+    "6 months to 2 years. Barbell basics plus targeted accessories.",
+    "2+ years. Adds the most demanding lifts, like the barbell deadlift.",
+  ];
+  // The retired Chalk & Iron colour names (T-0625): as bare compound names, or backticked short ones.
+  const CHALK =
+    /\b(?:surface-2|text-muted|line-strong|on-accent|accent-hover|bg-focus|accent|warn)\b/i;
+  const CHALK_TICKED = /`(?:bg|surface|line|text)`/;
+  const HEX = /#[0-9A-Fa-f]{3,8}\b/;
+
+  /** The bold names of the numbered layout list, in order. */
+  function sectionOrder(md: string): string[] {
+    const start = md.indexOf("## Layout");
+    const end = md.indexOf("\n## ", start + 1);
+    const layout = md.slice(start, end);
+    return [...layout.matchAll(/^\d+\. \*\*([^*]+)\*\*/gm)].map((m) => m[1] as string);
+  }
+  function checkOrder(md: string): void {
+    const order = sectionOrder(md);
+    const goal = order.indexOf("Goal");
+    const level = order.indexOf("Level");
+    const rhythm = order.indexOf("Rhythm");
+    expect(goal, "Goal in the order list").toBeGreaterThanOrEqual(0);
+    expect(level, "Level in the order list").toBeGreaterThan(goal);
+    expect(rhythm, "Rhythm after Level").toBeGreaterThan(level);
+  }
+
+  it("T-0681 AC1 UF-11.3 spec: Level radiogroup, hints, note, order, no raw colour", () => {
+    const t = read("screens/UF-11.3.md");
+    expect(t).toContain("# UF-11.3 Edit plan");
+    expect(t).toContain('named "Level"');
+    for (const label of ["Beginner", "Intermediate", "Advanced"])
+      expect(t).toContain(`| ${label} |`);
+    for (const h of HINTS) expect(t).toContain(h);
+    expect(t).toContain("Level changes which exercises we suggest, not your targets.");
+    for (const s of ["aria-describedby", "radiogroup", ".wl-option"]) expect(t).toContain(s);
+    expect(t).toMatch(/None of these is a live region/);
+    for (const d of ["D-0230", "D-0233"]) expect(t).toContain(d);
+    // Binary conditions: offline and the failed save are both specified.
+    expect(t).toContain("Connect to save");
+    expect(t).toContain("Couldn't update your plan. Try again.");
+    expect(t).toContain('role="alert"');
+    expect(t).toContain("/plan/edit?from=favorites");
+    expect(t).toMatch(/focus moves to the UF-11\.6 title/);
+    checkOrder(t);
+    expect(sectionOrder(t)).toEqual([
+      "Header",
+      "Goal",
+      "Level",
+      "Rhythm",
+      "Priority areas",
+      "Target preview",
+      "Save-failed alert and offline line",
+      "Cancel and Save",
+    ]);
+    expect(t).not.toMatch(HEX);
+    expect(t).not.toMatch(CHALK);
+    expect(t).not.toMatch(CHALK_TICKED);
+    expect(t).toMatch(/`--wl-[a-z-]+`/);
+    expect(t).toContain("No UF-09 control is added");
+  });
+  it("T-0681 AC1 planted fault: Level dropped from the order list fails", () => {
+    const t = read("screens/UF-11.3.md");
+    const faulty = t.replace(/^3\. \*\*Level\*\*/m, "3. **Lvl**");
+    expect(faulty).not.toBe(t);
+    expect(() => checkOrder(faulty)).toThrow(/Level in the order list/);
+  });
+  it("T-0681 AC2 UF-11.2 'Your plan' facts read Goal, Level, Rhythm, Priority areas", () => {
+    const t = read("screens/UF-11.2.md");
+    const start = t.indexOf('### 4. "Your plan" card');
+    const card = t.slice(start, t.indexOf("\n### ", start + 1));
+    const dts = [...card.matchAll(/^\| (Goal|Level|Rhythm|Priority areas) \|/gm)].map((m) => m[1]);
+    expect(dts).toEqual(["Goal", "Level", "Rhythm", "Priority areas"]);
+    expect(card).toContain('| Level | "Beginner", "Intermediate" or "Advanced"');
+    expect(card).toContain("four rows");
+    expect(t).toContain("D-0230");
+  });
+  it("T-0681 AC3 UF-11.6 level notice with one link", () => {
+    const t = read("screens/UF-11.6.md");
+    for (const s of [
+      "Your level is {Level}. Some favorites are above it.",
+      "Change level",
+      "/plan/edit?from=favorites",
+      "D-0231",
+      "D-0233",
+      "with one link",
+    ])
+      expect(t).toContain(s);
+    expect(t).not.toContain("no standing notice");
+    // Shown and absent cases, and it stays while a query is typed.
+    expect(t).toMatch(/\*\*Shown when\*\* at least one stored favorite reads "Above your level"/);
+    expect(t).toMatch(/\*\*Absent when\*\* no row is above level/);
+    expect(t).toMatch(/stays while the search query is non-empty/);
+    expect(t).toMatch(/not a live region/);
+    expect(t).toContain('tabindex="-1"');
+    expect(t).not.toMatch(HEX);
+  });
+  it("T-0681 AC4 neutral notice gains the 'with one link' variant", () => {
+    const t = read("components/neutral-notice.md");
+    const start = t.indexOf("## Variant: with one link");
+    expect(start).toBeGreaterThan(-1);
+    const variant = t.slice(start, t.indexOf("\n## ", start + 1));
+    for (const s of ["`--wl-ink`", "`--wl-focus`", "44 px", "one link", "not a live region"])
+      expect(variant, s).toContain(s);
+    expect(variant).toMatch(/never the attention colour/);
+    expect(variant).toContain("at most one such notice per screen");
+    expect(variant).toContain("D-0233 §7");
+    expect(t).not.toMatch(HEX);
+  });
+  it("T-0681 AC5 UF-08.5 row 4 points to Edit plan in text only", () => {
+    const t = read("screens/UF-08.5.md");
+    expect(t).toMatch(/^\| 4 \| "Above your level\. Change it in Plan › Edit plan\." \|/m);
+    expect(t).not.toContain("/plan/edit");
+    expect(t).not.toMatch(/^\| 4 \| "Above your level" \|/m);
+    expect(t).toContain("D-0231");
+  });
+  it("T-0681 AC6 UF-01.3 prototype: new Advanced hint and the change-later line", () => {
+    const t = read("prototype/UF01-3-Experience.dc.html");
+    expect(t).toContain("2+ years. Adds the most demanding lifts, like the barbell deadlift.");
+    expect(t).toContain("You can change this later in Plan.");
+    expect(t).not.toContain("Higher volume and advanced progression schemes");
+    // The line sits under the level hint.
+    expect(t.indexOf("You can change this later in Plan.")).toBeGreaterThan(
+      t.indexOf("{{levelHint}}"),
+    );
+  });
+  it("T-0681 AC7 the new and amended specs add no UF-09 control", () => {
+    for (const f of ["screens/UF-11.3.md", "screens/UF-11.6.md", "screens/UF-08.5.md"]) {
+      expect(read(f), f).toMatch(/No UF-09 control is added|Never reachable from[^.]*UF-09/);
+    }
+  });
+});
