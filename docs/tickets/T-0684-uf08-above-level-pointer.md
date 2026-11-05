@@ -60,3 +60,17 @@ none.
 - Commits start `T-0684 UF-08.5:`.
 
 ## Build / accept log
+
+**2026-11-05 build (frontend-dev).** Start: clean tree, HEAD d2cb3ddc. `uf-08.ts` `reasonLevel` → "Above your level. Change it in Plan › Edit plan." (U+203A, text only, D-0231 §1). `add-states.test.tsx` AC1 Pull up string updated (D-0231 Consequences; same assertions). New `level-pointer.test.tsx`. No product change in `features/UF-08/**` needed: the line was already each action's `aria-describedby`.
+- AC1 → `T-0684 AC1 offline, beginner…` (exact text, Add + Start with this `aria-disabled`, `aria-describedby` resolves to the line, tap: no `suggest`, no `fetch`)
+- AC2 → `T-0684 AC2 offline: no link or anchor in the row…` (no link/`a` in row, no `/plan` href in dialog, no Plan/level button but the disabled actions, clicking the line keeps the location)
+- AC3 → `T-0684 AC3 online…` (AC1 + AC2 with `useOnline` and `navigator.onLine` true)
+- AC4 → `T-0684 AC4 cached profile at intermediate…` (no line, Add enabled, re-suggested items include `pull-up`, offline)
+- AC5 → `T-0684 AC5 advanced…`
+- Red on unfixed code: new file 3 failed (AC1–AC3) / 2 passed (AC4, AC5: no code needed, as the ticket expects).
+- Planted faults (backup + `cp` restore): old copy in `uf-08.ts` → AC1, AC2, AC3 red; `<a href="/plan/edit">` around the line → AC2, AC3 red; Add `aria-describedby` dropped → AC1, AC3 red.
+- Gate: `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1` green (373 files, 4903 tests); `-w format:check` green; e2e `uf-08-add` 4/4. `-w check:repo` has one finding, `ticket-not-on-base`, from the environment: the ticket is on local `main-hzlbfc` (4 commits ahead of `origin/main`, not pushed), and the worktree has no `main` ref. The diff only touches ticket-listed paths.
+
+**2026-11-05 review + QA.** Approved, nothing blocking. 4 more planted faults, all caught: level check moved ahead of equipment; "Start with this" not described by the line; the line rendered as a button; "›" changed to ">". Scope clean: UF-11 keeps its own string; no UF-09, UF-05.1 or engine change. The add-states assertions are as strong as before (only the text changed). Full web gate green. Optional nit, not blocking: the AC2 Plan/level button matcher depends on the words in the copy.
+
+**2026-11-05 accept (product-owner): done.** Commit 55167fc7. `reasonLevel` = "Above your level. Change it in Plan › Edit plan." (U+203A, text only), used by `SessionSetup` through `isEligible(e, data.profile, [])`. AC1–AC5 each map to a `T-0684 ACn` test in `level-pointer.test.tsx`, and every one passes. AC1 red on unfixed code and under the planted fault. Binary pairs covered: offline/online (AC1/AC3), below vs at-or-above level (AC1/AC4, AC5). Principles hold: one task on screen (nothing leaves the UF-08.5 sheet, D-0109), deterministic engine (AC4 runs the real `suggest`), adaptive targets/level reach UF-08 through the cached profile. The `ticket-not-on-base` repo-check finding comes from the environment (local base not pushed), not from this diff.
