@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.3]
 decisions: [D-0230, D-0233, D-0070, D-0081, D-0020]
 deps: [T-0681]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-web (agent frontend-dev). About ½ day. It waits for T-0681's UF-11.3.md. Folds in T-0363's first point (reset `savingRef` in a `finally`), because this ticket rewrites `onSave`; T-0363's test-polish points stay parked. Spec: docs/specs/editable-level.md AC1, AC2, AC4, AC5, AC6 and AC13 (the save side). -->
 
@@ -121,3 +121,4 @@ none (`profiles.level` is already client-writable through `profiles_update`; D-0
   - Faults that stayed green (all 343 UF-11 tests): `tabIndex={-1}` on the Level radios; keydown `preventDefault`; `void refreshAll(...)` (navigate before the cache refresh lands); goal+level routed to `saveLevel`.
   - Added edit-plan-level-qa.test.tsx: QA-1 real `refreshAll` after a level-only Save puts level intermediate into `loadProfile()` (the cache UF-08.5 reads) and has finished before `/plan`; QA-2 goal+level = three writes; QA-3 Level radios tabbable, arrow keydown not cancelled. Each of the four survivors now red; also red on saveLevel without `.eq`.
   - e2e `uf-11-plan` 44/44. Web gate `turbo … --filter=@workoutlab/web --force` green (376 files, 4929 tests).
+- 2026-11-05 product-owner (accept): **done**. AC1–AC8 each map to named `T-0682 ACn` tests in edit-plan-level.test.tsx (spec AC1, AC2, AC4, AC5, AC6, AC13 save side). QA-1 to QA-3 in edit-plan-level-qa.test.tsx close the four surviving faults; QA-1 covers the user-visible bug (the cache UF-08.5 reads has the new level before `/plan`). F1–F3 were planted and went red. Review: approve. Principles hold: no level UI near UF-09, no eligibility logic in the UI, rule 4 targets untouched on a level-only save, tokens only. The `save-plan.test.tsx` and `strings.test.ts` updates are deliberate (D-0230 §2). The e2e change stays within the TR-0049 grant. Follow-ups: a Playwright arrow-key test for the Level radiogroup (qa); a stale cache when refresh fails after a successful write (web-feature:UF-11, pre-existing, same as a full save).
