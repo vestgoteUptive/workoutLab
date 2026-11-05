@@ -510,7 +510,12 @@ test.describe("T-0612 UF-11.3 Edit plan (390 x 844)", () => {
   }) => {
     await openCobalt(page, 390, "/plan/edit");
     const root = page.locator('[data-screen-id="UF-11.3"]');
-    await expect(root.locator("label.wl-option input[type=radio]")).toHaveCount(3);
+    await expect(
+      root.getByRole("radiogroup", { name: "Goal" }).locator("label.wl-option input[type=radio]"),
+    ).toHaveCount(3);
+    await expect(
+      root.getByRole("radiogroup", { name: "Level" }).locator("label.wl-option input[type=radio]"),
+    ).toHaveCount(3);
     await expect(root.locator(".wl-segmented button")).toHaveCount(4);
     // The title's full stop is drawn in CSS (the h1 stays bare for the shell's route test).
     expect(
