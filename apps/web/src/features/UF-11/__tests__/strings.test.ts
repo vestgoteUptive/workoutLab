@@ -111,6 +111,11 @@ describe("AC-B16 no second string catalogue", () => {
       "profiles",
       "plan_checkins",
       "goal",
+      // T-0682 UF-11.3 Level group: the `Level` union values and the radio `name`; not copy
+      // ("advanced" is listed below for T-0569). The copy is `en.uf11.levels`.
+      "level",
+      "beginner",
+      "intermediate",
       "radiogroup",
       "group",
       "status",
