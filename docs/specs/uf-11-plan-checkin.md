@@ -28,7 +28,7 @@
 ## UF-11.3 Edit plan
 - The same controls as UF-01.2 Goal and UF-01.4 Schedule: goal, rhythm range (per week, 1–7, min ≤ max), priority areas (0–3).
 - Save re-derives the targets (rule 4, `source = default`) and resets the check-in streak, so the next proposal needs two consecutive periods on the new rhythm. Any pending proposal is withdrawn.
-- Changing level and equipment happens in settings, not here (out of scope for this spec).
+- Level is edited here too (D-0230, spec `docs/specs/editable-level.md`). A save that changes only the level writes `profiles.level` alone: no target re-derive, no withdrawn proposal, no streak reset. Equipment is on UF-11.4 Account settings (D-0136).
 
 ## Evaluation rules (D-0018, summary)
 - Period k covers local days [onboarding + 14k, onboarding + 14k + 13]. A completed session is a session with ≥ 1 hard set, dated by its local `started_at`.

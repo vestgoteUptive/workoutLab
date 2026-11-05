@@ -279,8 +279,9 @@ test.describe("T-0607 plan state", () => {
     expect(off.color).toBe(rgbOf(PLAN.ink));
     expect(off.tick).toBe("none");
     await page.getByRole("button", { name: "Quads", exact: true }).click();
-    expect((await probe("Quads")).tick).toBe("block");
-    expect((await probe("All")).tick).toBe("none");
+    // T-0933: the pressed state commits after the click resolves; poll instead of reading once.
+    await expect.poll(async () => (await probe("Quads")).tick).toBe("block");
+    await expect.poll(async () => (await probe("All")).tick).toBe("none");
     await expect(page.getByRole("button", { name: "Quads", exact: true })).toHaveCount(1);
   });
 
