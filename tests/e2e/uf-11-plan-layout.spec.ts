@@ -528,10 +528,13 @@ test.describe("T-0612 UF-11.3 Edit plan (390 x 844)", () => {
     await root.getByRole("radio", { name: "Get stronger" }).check({ force: true });
     await expect(save).toHaveAttribute("aria-disabled", "false");
     // The checked option is a selected block (plan.selected) with the on-colour.
-    const sel = await root.locator("label.wl-option:has(input:checked)").evaluate((el) => ({
-      bg: getComputedStyle(el).backgroundColor,
-      c: getComputedStyle(el).color,
-    }));
+    const sel = await root
+      .getByRole("radiogroup", { name: "Goal" })
+      .locator("label.wl-option:has(input:checked)")
+      .evaluate((el) => ({
+        bg: getComputedStyle(el).backgroundColor,
+        c: getComputedStyle(el).color,
+      }));
     expect(sel).toEqual({ bg: rgbOf(PLAN.selected!), c: rgbOf(PLAN["on-selected"]!) });
   });
 });
