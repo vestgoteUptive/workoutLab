@@ -96,3 +96,18 @@ none (`profiles.level` is already client-writable through `profiles_update`; D-0
 - Commits start `T-0682 UF-11.3:`.
 
 ## Build / accept log
+- 2026-11-05 frontend-dev (build). Base 3e215ab8, tree clean at start.
+  - Changed: `EditPlanBody.tsx` (Level radiogroup after Goal: `.wl-option` rows, radio named by its label span, `aria-describedby` → own hint; static level note in the group's `aria-describedby`, no live region; `Draft.level`; `onSave` → `saveLevel` when only level differs, else `savePlan`; `savingRef`/`saving` reset in `finally`, T-0363 pt 1). `save-plan.ts` (`PlanWrite.level: Level`; new `saveLevel({ level })` = one `profiles.update({ level }).eq(user_id)`; `savePlan` adds `level`). `plan.css` (caption stack, tokens only). `uf-11.ts` (`levelGroup`, `levels.*`, `levelNote`, D-0233 §3 copy).
+  - Deliberate test updates (D-0230 §2): `save-plan.test.tsx` (2) payload now has five keys with `level`; `strings.test.ts` allowlist gains `level`/`beginner`/`intermediate` (union keys, like the goal keys).
+  - AC1 → edit-plan-level.test.tsx "T-0682 AC1" ×5 (order, radios in .wl-option + not a select, descriptions, no live region, preview unchanged + Save enabled).
+  - AC2 → "T-0682 AC2" one-call profiles.update + "Level union" (expectTypeOf, checked by tsc).
+  - AC3 → "T-0682 AC3" × reject/error forms (alert, stays, retry navigates).
+  - AC4 → "T-0682 AC4" mixed order + payloads; goal-only keeps `level: "beginner"`.
+  - AC5 → "T-0682 AC5" back-to-baseline disabled; Cancel writes nothing.
+  - AC6 → "T-0682 AC6" offline then `online` event, then the AC2 save.
+  - AC7 → "T-0682 AC7" intermediate → beginner, only profiles.update, no favorite_exercises.
+  - AC8 → "T-0682 AC8" refresh with level advanced keeps Intermediate and the beginner baseline.
+  - Red on unfixed code: first full web run, strings.test.ts AC-B16 flagged the `"beginner"` literal (fixed with the allowlist entry).
+  - Planted faults (backup + `cp` restore), all red: F1 always savePlan (AC2/3/6/7); F2 `differs` without level (AC1/2/3/6/7/8); F3 note `role=status` (AC1); level-only + withdraw (AC2/3/6/7); level-only + upsert (AC2/3/6/7); level dropped from savePlan (AC4); `level: string` in PlanWrite / saveLevel (tsc TS2344); `<select>` instead of the radiogroup (14/16 red); hint `aria-live` (AC1); no `finally` reset (AC3).
+  - Gate: `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1` green (373 files, 4914 tests); `-w format:check` green.
+  - e2e `uf-11-plan`: 43 passed, 1 failed. `uf-11-plan-layout.spec.ts:508` counts all `label.wl-option` radios on UF-11.3 (expects 3, now 6 with Level). That file is in the qa lane, so it's raised as TR-0049 (scope the locator to the Goal radiogroup).
