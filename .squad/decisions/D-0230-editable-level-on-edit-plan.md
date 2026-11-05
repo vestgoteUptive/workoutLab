@@ -17,14 +17,16 @@ Facts from main (2026-11-05):
 - Rule 4: goal and level don't change targets in v1. Rule 0: `isEligible` reads `profile.level` on every call.
 
 ## Decision
-1. **Where:** UF-11.3 Edit plan gains a "Training experience" radiogroup (Beginner / Intermediate / Advanced), after Goal and before Rhythm, with the UF-01.3 labels and hints and one line "Level changes which exercises we suggest, not your targets." UF-11.2 "Your plan" shows a Level fact between Goal and Rhythm.
+1. **Where:** UF-11.3 Edit plan gains a "Level" radiogroup (Beginner / Intermediate / Advanced; control, name and hint copy per D-0233 §1–§3), after Goal and before Rhythm, with the UF-01.3 labels and hints and one line "Level changes which exercises we suggest, not your targets." UF-11.2 "Your plan" shows a Level fact between Goal and Rhythm.
 2. **Save:**
    - Only `level` differs from the baseline → one write, `profiles.update({ level })`. No `area_targets` upsert (an "Adapted" source survives), no `plan_checkins` withdraw (a pending card stays). `plan_changed_at` is untouched by the server trigger, so the rule 9 streak is unchanged.
    - Any of goal, rhythm or priorities differs → the D-0070 §3 three writes as today, with `level` in the `profiles` update.
    - Then `refreshAll` (as today), so the cached profile the offline engine reads has the new level.
 3. **No reset** because nothing a level change affects feeds targets (rule 4) or the check-in evaluation (rule 9). Resetting would throw away adapted targets for no reason (principle 4: targets change only for a reason and never silently).
 4. **No engine change, no contract change.** `docs/data-model.md` may gain a clarifying note on the `level` row ("client-writable, UF-11.3, D-0230; does not change `plan_changed_at`"), which this decision names; it changes no schema. A pgTAP test pins the trigger behaviour (spec AC3).
-5. **Return target:** `/plan/edit?from=favorites` returns to `/plan/favorites` on Save and Cancel; any other `from` value is ignored (no open redirect).
+5. **Return target:** `/plan/edit?from=favorites` returns to `/plan/favorites` on Save and Cancel (focus on its title, D-0233 §8); any other `from` value is ignored (no open redirect).
+
+> Amended by D-0233 (2026-11-05): §1 group name "Level", `.wl-option` rows, hint captions, Advanced hint copy; §5 focus on return.
 
 ## Consequences
 - Spec: `docs/specs/editable-level.md` (AC1–AC7, AC9, AC11–AC13). `docs/specs/uf-11-plan-checkin.md` UF-11.3 section and `Design-docs/docs/product/user-flows.md` UF-11.2/UF-11.3 updated by product in the same change.

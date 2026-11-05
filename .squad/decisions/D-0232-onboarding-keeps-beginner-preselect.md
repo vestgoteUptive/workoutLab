@@ -13,11 +13,12 @@ D-0064 §2 preselects goal, level (beginner), equipment and rhythm so the fastes
 
 ## Decision
 1. Keep the preselect: UF-01.3 level stays `beginner` by default (a restored answer still replaces it, D-0064 §6). Beginner is the safe default: it never suggests a harder exercise than the user can do, and it is now one Edit plan away from changing.
-2. Add one static line under the selected level's hint on UF-01.3: "You can change this later in Plan." No new control, no new step, no change to the D-0014 timing metric.
+2. Add one static line under the selected level's hint on UF-01.3: "You can change this later in Plan." It describes the level radiogroup (`aria-describedby`), not a live region. No new control, no new step, no change to the D-0014 timing metric.
 3. D-0064 §8 (the existing profile wins on `/welcome/save`) is unchanged.
+4. The Advanced hint becomes "2+ years. Adds the most demanding lifts, like the barbell deadlift." (D-0233 §3: the old "Higher volume and advanced progression schemes" was false in v1, rule 4 and rule 14).
 
 ## Consequences
-- One UF-01 web ticket (copy + test that the 3-activation path still holds). Spec AC14 in `docs/specs/editable-level.md`.
+- One UF-01 web ticket (the line, the Advanced hint copy, and a test that the 3-activation path still holds). Spec AC14 in `docs/specs/editable-level.md`.
 
 ## Revisit when
 - Analytics or a user test show most users change level within their first week (then ask on UF-01.3 without a preselect, or preselect from goal).

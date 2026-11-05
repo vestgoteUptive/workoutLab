@@ -15,7 +15,7 @@ UF-08.5 is session setup, not focus mode, so a link wouldn't break principle 1 i
 
 ## Decision
 1. **UF-08.5:** the line is "Above your level. Change it in Plan › Edit plan." Text only, no link and no button; the row stays disabled. Same reasons as the excluded line: no silent loss of the setup visit, UF-08.5 stays write-free and offline-complete.
-2. **UF-11.6:** each above-level row keeps "Above your level". When at least one row has it, one notice under the header: "Your level is {Level}. Some favorites are above it." and a link "Change level" → `/plan/edit?from=favorites` (returns there, D-0230 §5). One link per screen, not one per row.
+2. **UF-11.6:** each above-level row keeps "Above your level". When at least one row has it, one notice under the header: "Your level is {Level}. Some favorites are above it." and a link "Change level" → `/plan/edit?from=favorites` (returns there, D-0230 §5). One link per screen, not one per row. The notice is the neutral notice's "with one link" variant (D-0233 §7), which `UF-11.6.md` and `components/neutral-notice.md` gain.
 3. **UF-09.* and anything reachable from it (UF-09.9 Pause, UF-05.1 swap, UF-03.1 list view):** no level copy and no link to Plan. They don't show the line today, and this stays so.
 4. **Anywhere new** the line appears later: inside UF-08/UF-09/UF-03 flows it is text only ("Change it in Plan › Edit plan."); on UF-11/UF-04/UF-02 it may link to `/plan/edit`.
 
