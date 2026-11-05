@@ -177,10 +177,10 @@ From a user report (2026-11-05): Beginner is preselected in onboarding and nothi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0681 | Design: UF-11.3 screen spec with the Level radiogroup (.wl-option rows); UF-11.2 Level fact; UF-11.6 notice with one link (neutral notice "with one link" variant); UF-08.5 and UF-01.3 copy (D-0230–D-0233) | design | — | doing | wl-design |
+| T-0681 | Design: UF-11.3 screen spec with the Level radiogroup (.wl-option rows); UF-11.2 Level fact; UF-11.6 notice with one link (neutral notice "with one link" variant); UF-08.5 and UF-01.3 copy (D-0230–D-0233) | design | — | done | wl-design |
 | T-0241 | pgTAP 022_profiles_level: level-only update keeps plan_changed_at, level+goal moves it, "expert" → 23514, another user changes 0 rows (editable-level AC3) | backend | — | done | wl-build-backend |
 | T-0242 | data-model.md: profiles.level note (client-writable from UF-11.3, D-0230 §4; does not change plan_changed_at). No schema change | data | — | done | wl-build-data |
-| T-0682 | UF-11.3: Level radiogroup after Goal; level-only Save writes profiles.update({level}) alone (targets, pending check-in and streak survive); mixed Save adds level to the D-0070 §3 writes (folds T-0363 savingRef finally) | web-feature:UF-11 | T-0681 | todo | wl-build-web |
+| T-0682 | UF-11.3: Level radiogroup after Goal; level-only Save writes profiles.update({level}) alone (targets, pending check-in and streak survive); mixed Save adds level to the D-0070 §3 writes (folds T-0363 savingRef finally) | web-feature:UF-11 | T-0681 | doing | wl-build-web |
 | T-0683a | UF-11.2 Level fact; UF-11.6 level notice with "Change level" → /plan/edit?from=favorites | web-feature:UF-11 | T-0681, T-0682 | todo | wl-build-web |
 | T-0683b | UF-11.3 ?from=favorites returns to /plan/favorites on Save/Cancel with focus on the UF-11.6 title; other from values go to /plan (no open redirect) | web-feature:UF-11 | T-0683a | todo | wl-build-web |
 | T-0684 | UF-08.5: "Above your level. Change it in Plan › Edit plan." (text only, no link, D-0231); saved level reaches UF-08.5 | web-feature:UF-08 | — | doing | wl-build-web |
