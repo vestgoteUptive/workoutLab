@@ -177,14 +177,14 @@ From a user report (2026-11-05): Beginner is preselected in onboarding and nothi
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0681 | Design: UF-11.3 screen spec with the Level radiogroup (.wl-option rows); UF-11.2 Level fact; UF-11.6 notice with one link (neutral notice "with one link" variant); UF-08.5 and UF-01.3 copy (D-0230–D-0233) | design | — | ready | wl-design |
-| T-0241 | pgTAP 022_profiles_level: level-only update keeps plan_changed_at, level+goal moves it, "expert" → 23514, another user changes 0 rows (editable-level AC3) | backend | — | ready | wl-build-backend |
+| T-0681 | Design: UF-11.3 screen spec with the Level radiogroup (.wl-option rows); UF-11.2 Level fact; UF-11.6 notice with one link (neutral notice "with one link" variant); UF-08.5 and UF-01.3 copy (D-0230–D-0233) | design | — | doing | wl-design |
+| T-0241 | pgTAP 022_profiles_level: level-only update keeps plan_changed_at, level+goal moves it, "expert" → 23514, another user changes 0 rows (editable-level AC3) | backend | — | doing | wl-build-backend |
 | T-0242 | data-model.md: profiles.level note (client-writable from UF-11.3, D-0230 §4; does not change plan_changed_at). No schema change | data | — | ready | wl-build-data |
 | T-0682 | UF-11.3: Level radiogroup after Goal; level-only Save writes profiles.update({level}) alone (targets, pending check-in and streak survive); mixed Save adds level to the D-0070 §3 writes (folds T-0363 savingRef finally) | web-feature:UF-11 | T-0681 | todo | wl-build-web |
 | T-0683a | UF-11.2 Level fact; UF-11.6 level notice with "Change level" → /plan/edit?from=favorites | web-feature:UF-11 | T-0681, T-0682 | todo | wl-build-web |
 | T-0683b | UF-11.3 ?from=favorites returns to /plan/favorites on Save/Cancel with focus on the UF-11.6 title; other from values go to /plan (no open redirect) | web-feature:UF-11 | T-0683a | todo | wl-build-web |
-| T-0684 | UF-08.5: "Above your level. Change it in Plan › Edit plan." (text only, no link, D-0231); saved level reaches UF-08.5 | web-feature:UF-08 | — | ready | wl-build-web |
-| T-0685 | UF-01.3: "You can change this later in Plan." in the level radiogroup's aria-describedby; new Advanced hint (D-0233); 3-activation path unchanged | web-feature:UF-01 | — | ready | wl-build-web |
+| T-0684 | UF-08.5: "Above your level. Change it in Plan › Edit plan." (text only, no link, D-0231); saved level reaches UF-08.5 | web-feature:UF-08 | — | doing | wl-build-web |
+| T-0685 | UF-01.3: "You can change this later in Plan." in the level radiogroup's aria-describedby; new Advanced hint (D-0233); 3-activation path unchanged | web-feature:UF-01 | — | doing | wl-build-web |
 | T-0686a | e2e UF-11 editable level: one PATCH on level-only save, check-in kept, favorites round trip with focus, downgrade keeps favorite, axe/44 px | qa | T-0682, T-0683b | todo | wl-build-qa |
 | T-0686b | e2e cross-flow editable level: UF-08.5 pointer with no link, new level reaches UF-08 offline, running workout untouched, nothing in UF-09/UF-05.1, UF-01.3 line on the fastest path | qa | T-0682, T-0684, T-0685 | todo | wl-build-qa |
-| T-0243 | Engine tests only: a level downgrade skips an above-level favorite/pin/main lift with no error; rankSwaps drops it; upgrade keeps pull-up at 30 min; over simulated histories. No rule change | engine | — | ready | wl-build-engine |
+| T-0243 | Engine tests only: a level downgrade skips an above-level favorite/pin/main lift with no error; rankSwaps drops it; upgrade keeps pull-up at 30 min; over simulated histories. No rule change | engine | — | doing | wl-build-engine |
