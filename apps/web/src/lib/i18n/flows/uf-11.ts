@@ -64,6 +64,23 @@ export const uf11 = {
   coldCache: "Your plan isn't on this device yet. Connect to load it.",
   // UF-11.3
   goalGroup: "Goal",
+  // T-0682 UF-11.3 Level group (D-0230, D-0233 §1–§3). Written here, not imported from uf01.
+  levelGroup: "Level",
+  levels: {
+    beginner: {
+      label: "Beginner",
+      hint: "Under 6 months. We start with form-first variations like the goblet squat.",
+    },
+    intermediate: {
+      label: "Intermediate",
+      hint: "6 months to 2 years. Barbell basics plus targeted accessories.",
+    },
+    advanced: {
+      label: "Advanced",
+      hint: "2+ years. Adds the most demanding lifts, like the barbell deadlift.",
+    },
+  },
+  levelNote: "Level changes which exercises we suggest, not your targets.",
   rhythmGroup: "Sessions per week",
   minimum: "Minimum",
   maximum: "Maximum",

@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.3]
 decisions: [D-0230, D-0233, D-0070, D-0081, D-0020]
 deps: [T-0681]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-web (agent frontend-dev). About ½ day. It waits for T-0681's UF-11.3.md. Folds in T-0363's first point (reset `savingRef` in a `finally`), because this ticket rewrites `onSave`; T-0363's test-polish points stay parked. Spec: docs/specs/editable-level.md AC1, AC2, AC4, AC5, AC6 and AC13 (the save side). -->
 
@@ -98,3 +98,27 @@ none (`profiles.level` is already client-writable through `profiles_update`; D-0
 - Commits start `T-0682 UF-11.3:`.
 
 ## Build / accept log
+- 2026-11-05 frontend-dev (build). Base 3e215ab8, tree clean at start.
+  - Changed: `EditPlanBody.tsx` (Level radiogroup after Goal: `.wl-option` rows, radio named by its label span, `aria-describedby` → own hint; static level note in the group's `aria-describedby`, no live region; `Draft.level`; `onSave` → `saveLevel` when only level differs, else `savePlan`; `savingRef`/`saving` reset in `finally`, T-0363 pt 1). `save-plan.ts` (`PlanWrite.level: Level`; new `saveLevel({ level })` = one `profiles.update({ level }).eq(user_id)`; `savePlan` adds `level`). `plan.css` (caption stack, tokens only). `uf-11.ts` (`levelGroup`, `levels.*`, `levelNote`, D-0233 §3 copy).
+  - Deliberate test updates (D-0230 §2): `save-plan.test.tsx` (2) payload now has five keys with `level`; `strings.test.ts` allowlist gains `level`/`beginner`/`intermediate` (union keys, like the goal keys).
+  - AC1 → edit-plan-level.test.tsx "T-0682 AC1" ×5 (order, radios in .wl-option + not a select, descriptions, no live region, preview unchanged + Save enabled).
+  - AC2 → "T-0682 AC2" one-call profiles.update + "Level union" (expectTypeOf, checked by tsc).
+  - AC3 → "T-0682 AC3" × reject/error forms (alert, stays, retry navigates).
+  - AC4 → "T-0682 AC4" mixed order + payloads; goal-only keeps `level: "beginner"`.
+  - AC5 → "T-0682 AC5" back-to-baseline disabled; Cancel writes nothing.
+  - AC6 → "T-0682 AC6" offline then `online` event, then the AC2 save.
+  - AC7 → "T-0682 AC7" intermediate → beginner, only profiles.update, no favorite_exercises.
+  - AC8 → "T-0682 AC8" refresh with level advanced keeps Intermediate and the beginner baseline.
+  - Red on unfixed code: first full web run, strings.test.ts AC-B16 flagged the `"beginner"` literal (fixed with the allowlist entry).
+  - Planted faults (backup + `cp` restore), all red: F1 always savePlan (AC2/3/6/7); F2 `differs` without level (AC1/2/3/6/7/8); F3 note `role=status` (AC1); level-only + withdraw (AC2/3/6/7); level-only + upsert (AC2/3/6/7); level dropped from savePlan (AC4); `level: string` in PlanWrite / saveLevel (tsc TS2344); `<select>` instead of the radiogroup (14/16 red); hint `aria-live` (AC1); no `finally` reset (AC3).
+  - Gate: `turbo run typecheck lint test --filter=@workoutlab/web --force --concurrency=1` green (373 files, 4914 tests); `-w format:check` green.
+  - e2e `uf-11-plan`: 43 passed, 1 failed. `uf-11-plan-layout.spec.ts:508` counts all `label.wl-option` radios on UF-11.3 (expects 3, now 6 with Level). That file is in the qa lane, so it's raised as TR-0049 (scope the locator to the Goal radiogroup).
+- 2026-11-05 frontend-dev (TR-0049 grant). Changed: `uf-11-plan-layout.spec.ts:513` radio count scoped to the Goal radiogroup (3), plus a Level radiogroup count (3). Fault: Level group removed from EditPlanBody → Level count red (expected 3, received 0), restored with `cp`. Web gate (`--force`) green (375 files, 4926 tests); format:check green. e2e `uf-11-plan`: 43/44. The same test now fails further down, at line 531: `label.wl-option:has(input:checked)` resolves to 2 rows (Goal + Level), a strict-mode violation. That line was left alone, as instructed; it needs the same Goal-radiogroup scope. check:repo: one finding, lane-path-not-owned on TR-0049 (the file exists only on this branch).
+- 2026-11-05 frontend-dev (line-531 fix, approved). `uf-11-plan-layout.spec.ts:531` checked-row locator scoped to the Goal radiogroup (it was a strict-mode violation with Goal + Level both checked). Red before the fix: e2e 43/44 at line 531. After: e2e `uf-11-plan` 44/44, `-w check:repo` clean, `-w format:check` green.
+- 2026-11-05 qa-tester (verify). HEAD 5bc3bddb, tree clean, 0 behind `main`. Builder tests encode the spec (exact one-call payload + `eq(user_id)`, no `area_targets`/`plan_checkins`, D-0070 §3 order on the mixed save).
+  - AC1–AC8 → edit-plan-level.test.tsx as logged by the builder; all green.
+  - Faults caught by builder tests (backup + `cp`): saveLevel `{level, goal}` (AC2/6/7); no `.eq` and `.eq("id")` (AC2); draft-reference `differs` (AC5/8); always-dirty (AC1/5/8); radio name includes the hint (12 red); per-level radio `name` (AC1); level-only path skips `refreshAll` (AC2/3); Cancel writes (AC5); offline Save enabled (AC6).
+  - Faults that stayed green (all 343 UF-11 tests): `tabIndex={-1}` on the Level radios; keydown `preventDefault`; `void refreshAll(...)` (navigate before the cache refresh lands); goal+level routed to `saveLevel`.
+  - Added edit-plan-level-qa.test.tsx: QA-1 real `refreshAll` after a level-only Save puts level intermediate into `loadProfile()` (the cache UF-08.5 reads) and has finished before `/plan`; QA-2 goal+level = three writes; QA-3 Level radios tabbable, arrow keydown not cancelled. Each of the four survivors now red; also red on saveLevel without `.eq`.
+  - e2e `uf-11-plan` 44/44. Web gate `turbo … --filter=@workoutlab/web --force` green (376 files, 4929 tests).
+- 2026-11-05 product-owner (accept): **done**. AC1–AC8 each map to named `T-0682 ACn` tests in edit-plan-level.test.tsx (spec AC1, AC2, AC4, AC5, AC6, AC13 save side). QA-1 to QA-3 in edit-plan-level-qa.test.tsx close the four surviving faults; QA-1 covers the user-visible bug (the cache UF-08.5 reads has the new level before `/plan`). F1–F3 were planted and went red. Review: approve. Principles hold: no level UI near UF-09, no eligibility logic in the UI, rule 4 targets untouched on a level-only save, tokens only. The `save-plan.test.tsx` and `strings.test.ts` updates are deliberate (D-0230 §2). The e2e change stays within the TR-0049 grant. Follow-ups: a Playwright arrow-key test for the Level radiogroup (qa); a stale cache when refresh fails after a successful write (web-feature:UF-11, pre-existing, same as a full save).

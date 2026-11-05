@@ -1,40 +1,55 @@
 // UF-11.3 Edit plan body. The screen host and its <h1> live in `index.tsx` (first render, every
 // state). The draft is initialised once from the first read that finds a profile; a later
 // refresh never overwrites it, and that same snapshot is the Save baseline (D-0081 §2).
-import { useMemo, useRef, useState } from "react";
+// T-0682 (D-0230, D-0233 §1–§2): a Level radiogroup after Goal; a level-only Save is one
+// `profiles.update({ level })` (`saveLevel`), anything else is the D-0070 §3 three writes.
+import { useId, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { previewTargets } from "@workoutlab/engine";
-import { AREAS, type Area, type EngineProfile, type Goal } from "@workoutlab/shared";
+import { AREAS, type Area, type EngineProfile, type Goal, type Level } from "@workoutlab/shared";
 import { ArrowIcon, TickIcon } from "../../components/icons/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
 import { refreshAll } from "../../lib/offline/index.js";
 import { resolveTimeZone } from "./format.js";
-import { savePlan } from "./save-plan.js";
+import { saveLevel, savePlan } from "./save-plan.js";
 import { useOnline, usePlanData, type Clock } from "./use-plan-data.js";
 import "./plan.css";
 
 const u = en.uf11;
 const GOALS: Goal[] = ["build_muscle", "get_stronger", "general_fitness"];
+const LEVELS: Level[] = ["beginner", "intermediate", "advanced"];
 const MAX_PRIORITIES = 3;
 const RHYTHM_MIN = 1;
 const RHYTHM_MAX = 7;
 
 interface Draft {
   goal: Goal;
+  level: Level;
   min: number;
   max: number;
   priorities: readonly Area[];
 }
 
 function fromProfile(p: EngineProfile): Draft {
-  return { goal: p.goal, min: p.rhythmMin, max: p.rhythmMax, priorities: [...p.priorityAreas] };
+  return {
+    goal: p.goal,
+    level: p.level,
+    min: p.rhythmMin,
+    max: p.rhythmMax,
+    priorities: [...p.priorityAreas],
+  };
 }
 
-function differs(a: Draft, b: Draft): boolean {
+/** Whether anything other than the level differs: goal, rhythm or priority areas. */
+function planDiffers(a: Draft, b: Draft): boolean {
   if (a.goal !== b.goal || a.min !== b.min || a.max !== b.max) return true;
   if (a.priorities.length !== b.priorities.length) return true;
   return a.priorities.some((area) => !b.priorities.includes(area));
+}
+
+function differs(a: Draft, b: Draft): boolean {
+  return a.level !== b.level || planDiffers(a, b);
 }
 
 function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) {
@@ -46,6 +61,10 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
   const [saving, setSaving] = useState(false);
   const [failed, setFailed] = useState(false);
   const savingRef = useRef(false);
+  const idBase = useId();
+  const levelNoteId = `${idBase}-level-note`;
+  const levelNameId = (level: Level) => `${idBase}-level-${level}`;
+  const levelHintId = (level: Level) => `${idBase}-level-${level}-hint`;
 
   const inFixedOrder = useMemo(
     () => AREAS.filter((a) => draft.priorities.includes(a)),
@@ -91,27 +110,38 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
     setSaving(true);
     setFailed(false);
     const now = clock();
+    // T-0363 point 1: the guard is released in `finally`, whatever path the save takes.
     try {
-      await savePlan({
-        goal: draft.goal,
-        rhythmMin: draft.min,
-        rhythmMax: draft.max,
-        priorityAreas: inFixedOrder,
-        preview,
-        now,
-      });
-    } catch {
+      try {
+        if (planDiffers(draft, baseline)) {
+          await savePlan({
+            goal: draft.goal,
+            level: draft.level,
+            rhythmMin: draft.min,
+            rhythmMax: draft.max,
+            priorityAreas: inFixedOrder,
+            preview,
+            now,
+          });
+        } else {
+          // Only the level differs (D-0230 §2): targets, a pending check-in and the rule 9
+          // streak stay as they are.
+          await saveLevel({ level: draft.level });
+        }
+      } catch {
+        setFailed(true);
+        return;
+      }
+      try {
+        await refreshAll(now, resolveTimeZone());
+      } catch {
+        // The writes are done: a failed re-read must not keep the user on this screen.
+      }
+      navigate("/plan");
+    } finally {
       savingRef.current = false;
       setSaving(false);
-      setFailed(true);
-      return;
     }
-    try {
-      await refreshAll(now, resolveTimeZone());
-    } catch {
-      // The writes are done: a failed re-read must not keep the user on this screen.
-    }
-    navigate("/plan");
   }
 
   const stepper = (
@@ -165,6 +195,38 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
           </label>
         ))}
       </div>
+      <div
+        role="radiogroup"
+        aria-label={u.levelGroup}
+        aria-describedby={levelNoteId}
+        className="wl-edit__group"
+      >
+        {LEVELS.map((level) => (
+          <label key={level} className="wl-option">
+            <input
+              type="radio"
+              name="level"
+              value={level}
+              checked={draft.level === level}
+              aria-labelledby={levelNameId(level)}
+              aria-describedby={levelHintId(level)}
+              onChange={() => setDraft({ ...draft, level })}
+            />
+            <span className="wl-edit__option-text">
+              <span id={levelNameId(level)} className="wl-type-body">
+                {u.levels[level].label}
+              </span>
+              <span id={levelHintId(level)} className="wl-type-label">
+                {u.levels[level].hint}
+              </span>
+            </span>
+            <TickIcon size={20} className="wl-option__tick" />
+          </label>
+        ))}
+      </div>
+      <p id={levelNoteId} className="wl-type-label wl-edit__note">
+        {u.levelNote}
+      </p>
       <div role="group" aria-label={u.rhythmGroup} className="wl-edit__group">
         {stepper(u.minimum, draft.min, { dec: u.decreaseMin, inc: u.increaseMin }, setMin)}
         {stepper(u.maximum, draft.max, { dec: u.decreaseMax, inc: u.increaseMax }, setMax)}

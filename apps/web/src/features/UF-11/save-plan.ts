@@ -1,12 +1,16 @@
 // UF-11.3 Save (D-0070 §3): three online-only supabase-js writes, each only after the previous
 // one succeeded. supabase-js resolves `{ data, error }` on a 4xx/5xx instead of throwing, so a
 // step fails when it rejects OR when it resolves with a non-null `error`.
-import type { Area, Goal, PreviewTarget } from "@workoutlab/shared";
+// T-0682 (D-0230 §2): a level-only change is ONE write, `saveLevel`. Rule 4 says level never
+// changes targets, so it must not re-upsert them or withdraw a pending check-in.
+import type { Area, Goal, Level, PreviewTarget } from "@workoutlab/shared";
 import { supabase } from "../../lib/auth/client.js";
 import { currentUserId } from "../../lib/offline/index.js";
 
 export interface PlanWrite {
   goal: Goal;
+  /** The shared union, not the generated row's `string` (D-0230 §2). */
+  level: Level;
   rhythmMin: number;
   rhythmMax: number;
   /** In the fixed area order (D-0081 §3). */
@@ -21,9 +25,20 @@ async function ok(step: PromiseLike<{ error: unknown } | null | undefined>): Pro
   if (result?.error) throw result.error;
 }
 
-export async function savePlan(write: PlanWrite): Promise<void> {
+function signedInUser(): string {
   const userId = currentUserId();
   if (!userId) throw new Error("plan save: no signed-in user");
+  return userId;
+}
+
+/** UF-11.3 level-only Save (D-0230 §2): exactly one write, nothing else. */
+export async function saveLevel(write: { level: Level }): Promise<void> {
+  const userId = signedInUser();
+  await ok(supabase.from("profiles").update({ level: write.level }).eq("user_id", userId));
+}
+
+export async function savePlan(write: PlanWrite): Promise<void> {
+  const userId = signedInUser();
 
   await ok(
     supabase.from("area_targets").upsert(
@@ -40,6 +55,7 @@ export async function savePlan(write: PlanWrite): Promise<void> {
       .from("profiles")
       .update({
         goal: write.goal,
+        level: write.level,
         rhythm_min: write.rhythmMin,
         rhythm_max: write.rhythmMax,
         priority_areas: write.priorityAreas,
