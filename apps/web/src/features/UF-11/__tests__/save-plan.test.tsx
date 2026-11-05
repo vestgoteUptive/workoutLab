@@ -162,7 +162,9 @@ describe("AC-B11 Save: order and exact payloads (D-0070 §3)", () => {
     }
   });
 
-  it("(2) updates profiles with EXACTLY four keys and eq(user_id, <signed-in id>)", async () => {
+  // T-0682 (D-0230 §2, a spec change, not a weakened test): the update now also carries `level`,
+  // the draft's value (fixture F's "intermediate", untouched here).
+  it("(2) updates profiles with EXACTLY five keys and eq(user_id, <signed-in id>)", async () => {
     await openEdit();
     await selectThree();
     await tap(saveButton());
@@ -171,14 +173,16 @@ describe("AC-B11 Save: order and exact payloads (D-0070 §3)", () => {
     const call = callAt(1);
     expect(call.payload).toEqual({
       goal: "build_muscle",
+      level: "intermediate",
       rhythm_min: 3,
       rhythm_max: 4,
       // The fixed area order: in AREAS, `arms` precedes `hamstrings` (D-0081 §3).
       priority_areas: ["back", "arms", "hamstrings"],
     });
-    // No level, equipment, onboarded_at or plan_changed_at: those come from the triggers.
+    // No equipment, onboarded_at or plan_changed_at: those come from the triggers.
     expect(Object.keys(call.payload as object).sort()).toEqual([
       "goal",
+      "level",
       "priority_areas",
       "rhythm_max",
       "rhythm_min",
