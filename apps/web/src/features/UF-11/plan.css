@@ -318,6 +318,23 @@
   margin: 0;
 }
 
+/* T-0682 Level rows: the label and its hint caption stack inside the .wl-option row; the caption
+   colours (muted, ink on hover, on-selected when checked) come from the shared .wl-option rules. */
+.wl-edit__option-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.wl-edit__option-text > .wl-type-body {
+  font-weight: 500;
+}
+
+.wl-edit__note {
+  margin: 0;
+}
+
 .wl-edit__stepper {
   display: flex;
   align-items: center;
