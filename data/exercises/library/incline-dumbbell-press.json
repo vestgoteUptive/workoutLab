@@ -16,7 +16,7 @@
   ],
   "cue": "Upper chest to overhead, under control",
   "mistakes": ["Setting the incline too steep, turning it into a shoulder press.", "Rushing the lowering phase."],
-  "variants": ["machine-chest-press"],
+  "variants": ["machine-chest-press", "incline-machine-press"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

@@ -16,7 +16,7 @@
   ],
   "cue": "Wide arc down, hug them back up",
   "mistakes": ["Straightening the elbows fully, which strains the joint.", "Lowering too far past shoulder level."],
-  "variants": ["cable-fly"],
+  "variants": ["cable-fly", "machine-chest-fly"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

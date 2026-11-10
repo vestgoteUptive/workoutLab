@@ -1,0 +1,23 @@
+{
+  "id": "machine-lateral-raise",
+  "name": "Machine lateral raise",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "shoulders": 1 },
+  "instructions": [
+    "Set the seat so your shoulders line up with the pivot of the arms.",
+    "Sit tall with the pads against the outside of your upper arms.",
+    "Raise your arms out to the sides to shoulder height.",
+    "Lower back down with control."
+  ],
+  "cue": "Lead with the elbows, stop at shoulder height",
+  "mistakes": ["Shrugging the shoulders up toward the ears.", "Letting the weight stack slam between reps."],
+  "variants": ["lateral-raise-dumbbell", "cable-lateral-raise"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

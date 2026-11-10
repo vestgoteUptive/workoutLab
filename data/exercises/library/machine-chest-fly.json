@@ -1,0 +1,23 @@
+{
+  "id": "machine-chest-fly",
+  "name": "Machine chest fly",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "chest": 1 },
+  "instructions": [
+    "Set the seat so the handles are at chest height.",
+    "Sit with your back on the pad and take a handle in each hand.",
+    "Keep a slight bend in your elbows and bring the handles together in front of you.",
+    "Open your arms slowly until you feel a stretch across your chest."
+  ],
+  "cue": "Hug the handles in, open slowly",
+  "mistakes": ["Letting the handles pull your arms too far back.", "Pushing with bent arms, turning it into a press."],
+  "variants": ["cable-fly", "dumbbell-fly"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

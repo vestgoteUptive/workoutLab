@@ -16,7 +16,7 @@
   ],
   "cue": "Curl the heels up, lower slowly",
   "mistakes": ["Lifting the hips off the pad.", "Letting the weight drop quickly on the way down."],
-  "variants": ["romanian-deadlift-barbell", "romanian-deadlift-dumbbell", "cable-pull-through", "kettlebell-swing"],
+  "variants": ["romanian-deadlift-barbell", "romanian-deadlift-dumbbell", "cable-pull-through", "kettlebell-swing", "seated-leg-curl-machine"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

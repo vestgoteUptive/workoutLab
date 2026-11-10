@@ -16,7 +16,7 @@
   ],
   "cue": "Pull to the stomach, chest up",
   "mistakes": ["Rounding the back to reach further.", "Yanking the weight with the arms only."],
-  "variants": ["lat-pulldown"],
+  "variants": ["lat-pulldown", "machine-row"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

@@ -15,7 +15,7 @@
   ],
   "cue": "Hips high, drag the heels in",
   "mistakes": ["Letting the hips drop as the legs straighten.", "Sliding out too fast."],
-  "variants": ["hamstring-walkout", "single-leg-deadlift"],
+  "variants": ["hamstring-walkout", "single-leg-deadlift", "seated-leg-curl-machine"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

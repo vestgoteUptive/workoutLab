@@ -16,7 +16,7 @@
   ],
   "cue": "Bar to the upper chest, squeeze",
   "mistakes": ["Leaning back too far and turning it into a row.", "Letting the bar bounce back up."],
-  "variants": ["seated-cable-row"],
+  "variants": ["seated-cable-row", "machine-lat-pulldown"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

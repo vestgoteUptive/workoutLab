@@ -16,7 +16,7 @@
   ],
   "cue": "Hands together, then open slowly",
   "mistakes": ["Bending the elbows more as the set goes on.", "Letting the cables snap back on the return."],
-  "variants": ["dumbbell-fly"],
+  "variants": ["dumbbell-fly", "machine-chest-fly"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

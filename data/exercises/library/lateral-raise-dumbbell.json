@@ -16,7 +16,7 @@
   ],
   "cue": "Raise to shoulder height, no higher",
   "mistakes": ["Swinging the body to lift the weight.", "Raising the arms above shoulder height."],
-  "variants": ["cable-lateral-raise", "rear-delt-fly-dumbbell"],
+  "variants": ["cable-lateral-raise", "rear-delt-fly-dumbbell", "machine-lateral-raise"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
