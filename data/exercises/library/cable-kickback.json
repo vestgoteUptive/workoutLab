@@ -16,7 +16,7 @@
   ],
   "cue": "Kick back, squeeze the glute",
   "mistakes": ["Arching the lower back to lift the leg higher.", "Swinging the leg instead of a controlled kick."],
-  "variants": ["banded-glute-kickback"],
+  "variants": ["banded-glute-kickback", "glute-kickback-machine"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

@@ -5,9 +5,10 @@ import { loadLibrary } from "../src/index.js";
 // included: "Given the library, when the files are counted, then 72 <= N <= 96." D-0033 §7
 // (amended) confines the exercise-only scoping to AC11-14; AC10 is whole-library.
 describe("AC10 size of the library", () => {
-  it("the whole library (72 <= N <= 96)", () => {
+  // D-0234 §4 (T-0691): upper bound raised 96 -> 120; the AC15 gzip budget is the real limit.
+  it("the whole library (72 <= N <= 120)", () => {
     const n = loadLibrary().length;
     expect(n).toBeGreaterThanOrEqual(72);
-    expect(n).toBeLessThanOrEqual(96);
+    expect(n).toBeLessThanOrEqual(120);
   });
 });

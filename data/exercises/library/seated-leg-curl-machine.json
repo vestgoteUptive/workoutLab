@@ -1,0 +1,23 @@
+{
+  "id": "seated-leg-curl-machine",
+  "name": "Seated leg curl (machine)",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "hamstrings": 1 },
+  "instructions": [
+    "Set the back pad so your knees line up with the pivot.",
+    "Sit with the lower pad behind your ankles and lower the thigh pad onto your legs.",
+    "Bend your knees to pull the pad down and under the seat.",
+    "Let your legs straighten again with control."
+  ],
+  "cue": "Pull the heels under, return slowly",
+  "mistakes": ["Leaving the thigh pad loose so the hips lift.", "Letting the weight snap your legs straight."],
+  "variants": ["leg-curl-machine", "sliding-leg-curl"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

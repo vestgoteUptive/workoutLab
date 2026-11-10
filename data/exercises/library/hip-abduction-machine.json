@@ -1,0 +1,23 @@
+{
+  "id": "hip-abduction-machine",
+  "name": "Hip abduction (machine)",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "glutes": 1 },
+  "instructions": [
+    "Sit with your back on the pad and the leg pads on the outside of your knees.",
+    "Hold the side handles to keep your hips in the seat.",
+    "Push your knees apart as far as is comfortable.",
+    "Bring your knees back together slowly."
+  ],
+  "cue": "Knees out, back in slowly",
+  "mistakes": ["Rocking the body forward to push the pads.", "Letting the pads slam back together."],
+  "variants": ["fire-hydrant", "glute-kickback-machine"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

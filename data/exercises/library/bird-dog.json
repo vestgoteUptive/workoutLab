@@ -14,7 +14,7 @@
   ],
   "cue": "Opposite arm and leg, hips stay level",
   "mistakes": ["Letting the hips twist.", "Rushing between sides."],
-  "variants": ["superman", "prone-swimmers", "reverse-plank-hold"],
+  "variants": ["superman", "prone-swimmers", "reverse-plank-hold", "machine-back-extension"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

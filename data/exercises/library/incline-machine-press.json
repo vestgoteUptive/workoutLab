@@ -1,0 +1,23 @@
+{
+  "id": "incline-machine-press",
+  "name": "Incline machine press",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "chest": 1, "shoulders": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Set the seat so the handles line up with your upper chest.",
+    "Sit back against the pad and grip the handles.",
+    "Press the handles up and forward until your arms are almost straight.",
+    "Bring the handles back slowly until you feel a stretch in your chest."
+  ],
+  "cue": "Press up and out, back down slowly",
+  "mistakes": ["Setting the seat too low, so the shoulders do the work.", "Lifting your back off the pad to push harder."],
+  "variants": ["machine-chest-press", "incline-dumbbell-press"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

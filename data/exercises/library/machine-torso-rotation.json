@@ -1,0 +1,23 @@
+{
+  "id": "machine-torso-rotation",
+  "name": "Machine torso rotation",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "core": 1 },
+  "instructions": [
+    "Set the start position so you face one side.",
+    "Sit tall with your knees locked between the leg pads.",
+    "Turn your upper body to the other side using your core.",
+    "Rotate back slowly, then switch the start side for the next set."
+  ],
+  "cue": "Turn from the middle, slow and steady",
+  "mistakes": ["Swinging fast so momentum does the work.", "Rounding the back while you turn."],
+  "variants": ["cable-woodchop", "weighted-russian-twist", "machine-ab-crunch"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

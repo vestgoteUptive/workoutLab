@@ -1,0 +1,23 @@
+{
+  "id": "machine-back-extension",
+  "name": "Machine back extension",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "back": 1, "glutes": 0.5 },
+  "instructions": [
+    "Sit with the back pad across your upper back.",
+    "Brace your feet on the footrest and cross your arms over your chest.",
+    "Push back against the pad until your body is upright or slightly behind.",
+    "Return forward slowly with a flat back."
+  ],
+  "cue": "Push back slowly, keep the back flat",
+  "mistakes": ["Throwing your weight back to move the pad.", "Arching hard past upright at the end."],
+  "variants": ["superman", "bird-dog"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

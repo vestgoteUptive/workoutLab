@@ -1,0 +1,23 @@
+{
+  "id": "glute-kickback-machine",
+  "name": "Glute kickback (machine)",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "glutes": 1, "hamstrings": 0.5 },
+  "instructions": [
+    "Set the foot pad so it meets your foot with the knee bent.",
+    "Hold the handles and rest your chest or forearms on the support pad.",
+    "Push the pad back with one leg until your hip is straight.",
+    "Return with control, then switch legs."
+  ],
+  "cue": "Drive back through the heel, squeeze",
+  "mistakes": ["Arching the lower back to push further.", "Swinging the leg instead of a steady push."],
+  "variants": ["cable-kickback", "banded-glute-kickback", "hip-abduction-machine"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

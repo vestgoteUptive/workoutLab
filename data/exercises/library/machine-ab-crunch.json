@@ -1,0 +1,23 @@
+{
+  "id": "machine-ab-crunch",
+  "name": "Machine ab crunch",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "core": 1 },
+  "instructions": [
+    "Set the seat so the pads or handles sit at your upper chest.",
+    "Sit with your feet hooked under the foot pads.",
+    "Curl your chest down toward your hips by tightening your abs.",
+    "Rise back up slowly without letting the weight rest."
+  ],
+  "cue": "Curl down with the abs, not the arms",
+  "mistakes": ["Pulling with the arms instead of the abs.", "Bouncing the weight at the bottom."],
+  "variants": ["hanging-leg-raise", "machine-torso-rotation"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

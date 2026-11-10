@@ -1,0 +1,23 @@
+{
+  "id": "machine-lat-pulldown",
+  "name": "Machine lat pulldown",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "back": 1, "arms": 0.5 },
+  "instructions": [
+    "Set the thigh pad so your legs are held firmly in place.",
+    "Sit down and reach up to grip the handles.",
+    "Pull the handles down until your hands are near your shoulders.",
+    "Let the handles rise back up with control."
+  ],
+  "cue": "Elbows down to your sides",
+  "mistakes": ["Leaning far back to drag the weight down.", "Letting the handles yank your arms up at the top."],
+  "variants": ["lat-pulldown", "machine-row"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -16,7 +16,7 @@
   ],
   "cue": "Pull down and across the body",
   "mistakes": ["Using the arms only instead of rotating the torso.", "Letting the hips swing instead of the core doing the work."],
-  "variants": ["weighted-russian-twist", "hanging-leg-raise"],
+  "variants": ["weighted-russian-twist", "hanging-leg-raise", "machine-torso-rotation"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
