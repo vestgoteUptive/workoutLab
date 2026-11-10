@@ -1305,7 +1305,7 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
-values ('machine-back-extension', 'Machine back extension', 'exercise', 'isolation', 'beginner', array['machine']::text[], array['Sit with the back pad across your upper back.', 'Brace your feet on the footrest and cross your arms over your chest.', 'Push back against the pad until your body is upright or slightly behind.', 'Return forward slowly with a flat back.']::text[], array['Throwing your weight back to move the pad.', 'Arching hard past upright at the end.']::text[], 'Push back slowly, keep the back flat', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 5, true)
+values ('machine-back-extension', 'Machine back extension', 'exercise', 'isolation', 'beginner', array['machine']::text[], array['Sit with the back pad across your upper back.', 'Brace your feet on the footrest and cross your arms over your chest.', 'Push back against the pad until your body is upright.', 'Return forward slowly with a flat back.']::text[], array['Throwing your weight back to move the pad.', 'Arching hard past upright at the end.']::text[], 'Push back slowly, keep the back flat', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 5, true)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -1485,7 +1485,7 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
-values ('machine-torso-rotation', 'Machine torso rotation', 'exercise', 'isolation', 'beginner', array['machine']::text[], array['Set the start position so you face one side.', 'Sit tall with your knees locked between the leg pads.', 'Turn your upper body to the other side using your core.', 'Rotate back slowly, then switch the start side for the next set.']::text[], array['Swinging fast so momentum does the work.', 'Rounding the back while you turn.']::text[], 'Turn from the middle, slow and steady', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 5, true)
+values ('machine-torso-rotation', 'Machine torso rotation', 'exercise', 'isolation', 'beginner', array['machine']::text[], array['Set the start position so you face one side.', 'Sit tall with your knees held between the leg pads.', 'Turn your upper body to the other side using your core.', 'Rotate back slowly, then switch the start side for the next set.']::text[], array['Swinging fast so momentum does the work.', 'Rounding the back while you turn.']::text[], 'Turn from the middle, slow and steady', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 5, true)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
