@@ -137,7 +137,7 @@ describe("T-0939 AC4 layout order (D-0239 §8) and the six focus rules (D-0239 �
     const steps = [
       "1. **The time-budget bar**",
       "2. **The why chips**",
-      "3. **Your workout:**",
+      "3. **Exercises:**",
       '4. **Suggestions:** its rows, then "Other suggestions", then "Fill the rest for me".',
       '5. **"Add exercise"**',
       '6. **"Looks good"**',
@@ -219,7 +219,7 @@ describe("T-0939 AC8 no new token: every --wl- variable the specs name already e
 });
 
 // Review fixes (T-0939 round 2): announcements, the Removed line's own status, `used` with the
-// warm-up outside the budget, and where Reorder and the "Your workout" heading sit.
+// warm-up outside the budget, and where Reorder and the "Exercises" heading sit.
 describe("T-0939 review: live messages, budget forms, list header", () => {
   const live = section(empty, "### Live region (D-0239 §9)");
   it("a Main lift suggestion Add announces 'added', 'main lift now' is Start with this only", () => {
@@ -239,12 +239,12 @@ describe("T-0939 review: live messages, budget forms, list header", () => {
     expect(budget).toContain('"{used} of {n} min + warm-up · {left} min left"');
     expect(budget).toContain('"{used} of {n} min + warm-up · {over} min over"');
   });
-  it("Reorder stays in the list header under a visible h2 'Your workout'", () => {
+  it("Reorder stays in the list header under a visible h2 'Exercises'", () => {
     const layout = section(empty, "### Layout (top to bottom, D-0239 §8)");
-    expect(layout).toContain('**visible `h2` "Your workout"**');
+    expect(layout).toContain('**visible `h2` "Exercises"**');
     expect(layout).toContain("with the **Reorder** button at its right");
     expect(layout).toContain("it is not moved");
-    expect(layout).toContain("Reorder is not here: it stays in the Your workout list header");
+    expect(layout).toContain("Reorder is not here: it stays in the Exercises list header");
   });
   it("cites D-0242 for the ratified defaults and states Fill the rest per state", () => {
     expect(empty).toContain("### Spec defaults (D-0242, decided)");
