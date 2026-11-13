@@ -257,6 +257,39 @@ export interface TimeCheckResult {
     trim: TimeCheckOption;
     skipNext: TimeCheckOption;
 }
+/**
+ * Rule 8 `timeLeftS` input (UF-09.10, D-0244 §2, D-0246 §11): a workout in progress.
+ * `elapsedS` is rule 8's (no paused time, no warm-up when it is off-budget).
+ */
+export interface TimeLeftProgress {
+    /** Integer seconds ≥ 0. */
+    elapsedS: number;
+    /** Sets logged per plan item, back-off included; one integer ≥ 0 per item. */
+    setsDone: readonly number[];
+    /** Indices of the skipped items, each an integer in `[0, items.length)`. */
+    skippedItems: readonly number[];
+    /** The unspent part of the 180-s warm-up when it is in the budget; otherwise 0. */
+    warmupLeftS: number;
+}
+/** Where the new item goes and how much time is left for it (`timeLeftS`). */
+export interface InsertOptions {
+    /** An integer in `[0, items.length]`. */
+    atIndex: number;
+    /** Integer seconds; may be negative (then every insert is refused for time). */
+    leftS: number;
+}
+/** Why `insertItem` added nothing: the 8-item cap, or not even 2 sets fit `leftS`. */
+export type InsertRefusal = "time" | "items_cap";
+/** `insertItem`'s result: the new workout and the chosen set count, or a refusal. */
+export type InsertResult = {
+    workout: Workout;
+    sets: number;
+    refused?: never;
+} | {
+    refused: InsertRefusal;
+    workout?: never;
+    sets?: never;
+};
 /** D-0037 §6. A session as rule 9 counts it: completed when `hardSetCount ≥ 1`. */
 export interface CheckinSession {
     id: string;
