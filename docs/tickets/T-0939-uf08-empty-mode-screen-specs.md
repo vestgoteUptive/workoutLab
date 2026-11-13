@@ -45,3 +45,10 @@ none (no token change, D-0239 §8). User flows v2 (`Design-docs/docs/product/use
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0939` and cite UF-08.1, UF-08.2, UF-08.5.
+
+## Build / accept log
+- 2026-11-13 designer. Start: `git status` clean, HEAD 7f0d71fa (`t/T-0939-uf08-empty-specs`). New `screens/UF-08.1.md`; `UF-08.2.md` gains `## Empty mode` and the empty-mode Empty-states branch; `UF-08.5.md` gains the empty-mode lead line and the two extra refusal copies; DM Sans / Big Shoulders → Familjen Grotesk via `--wl-font`. Test: `packages/design-tokens/test/uf08-empty-mode-specs.test.ts` (design lane path, outside the ticket's listed path, because the docs tests live there).
+- AC1 → "T-0939 AC1" (title, every user-flows control, Start empty under the primary, secondary, full width, ≥ 44 px). AC2 → "AC2" (13 exact strings in `## Empty mode`, row markup, refusal order). AC3 → "AC3" (no colour change, `data-over`, not `aria-live` in empty mode, suggested mode unchanged). AC4 → "AC4" (layout order; the six focus bullets equal and also found verbatim in D-0239). AC5 → "AC5". AC6 → "AC6". AC7 → "AC7". AC8 → "AC8" (every `--wl-` variable the three specs name exists in the tokens build or `main.css`) plus `git diff main-hzlbfc -- packages/design-tokens/src/tokens.json` empty.
+- Red: the test on the base UF-08.2/UF-08.5 fails at collection (no `## Empty mode`). Planted faults (backup + `cp` restore): "Start empty" moved above the primary → AC1 red; "DM Sans" back in UF-08.5 → AC7 red.
+- Spec defaults not set by a decision (in the spec's "Spec defaults" list; T-0941 builds from them): "Fill the rest for me" refused with the over-budget copy while over budget; Suggestions sub-line only while rows show; empty-plan line replaces both suggested-mode empty lines; Reorder mode hides Suggestions; "Start empty" disabled state follows the primary.
+- Gate: design-tokens typecheck + lint + vitest 222/222; `-w format:check`, `-w check:repo`, `check-all.mjs` green; `-w test:repo-checks` see handback.
