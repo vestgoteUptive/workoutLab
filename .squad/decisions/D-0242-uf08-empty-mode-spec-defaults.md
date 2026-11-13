@@ -16,6 +16,8 @@ The four defaults are adopted as written:
 2. The Suggestions sub-line shows only while the section has rows.
 3. In empty mode the empty-plan line replaces both of suggested mode's empty lines.
 4. Reorder mode hides the Suggestions section, along with the other controls.
+5. On UF-08.1, "Start empty" is disabled exactly when the primary "Suggest a workout" is (same reason line), from the T-0939 review.
+6. In the "Nothing to suggest" state, "Fill the rest for me" is hidden, because there is nothing to fill.
 
 ## Revisit when
 The first user test of empty mode.
