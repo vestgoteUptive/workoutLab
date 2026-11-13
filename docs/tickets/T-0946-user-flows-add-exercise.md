@@ -36,5 +36,5 @@ Every AC checked · `node .github/scripts/check-all.mjs` and `pnpm -w format:che
 - AC2: the UF-09.9 actions are in D-0243 §1 order.
 - AC3: an "Add exercise" paragraph follows "Do {name} later".
 - AC4: a new PRD row cites D-0243–D-0246.
-- AC5: `check-all.mjs` exits 0 and `test:repo-checks` passes 395/395 on the base. The intro example moved to UF-09.11, and the screen-ID test now checks UF-09.11.
+- AC5: `check-all.mjs` exits 0 and `test:repo-checks` passes 395/395 on the base. The intro example of a new screen ID moved to the next free step, and the screen-ID test now checks that step.
 - Accepted by the orchestrator. The change is docs only, every check is green, and the diff was read in full.
