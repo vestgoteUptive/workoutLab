@@ -1,7 +1,7 @@
 ---
 id: D-0244
 title: "Engine for a mid-workout add: new pure functions insertItem (rule 12.3, builds the item the way applySwap does, 3 then 2 sets inside the time left, never main, no new reason code) and timeLeftS (rule 8 extended to a workout in progress); suggest with pins is not used mid-workout"
-status: revisit
+status: decided
 date: 2026-11-13
 by: product-owner (idea, owner request)
 area: engine

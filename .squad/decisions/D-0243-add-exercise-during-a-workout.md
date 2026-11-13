@@ -1,7 +1,7 @@
 ---
 id: D-0243
 title: "Add exercise during a workout: a new sheet UF-09.10 opened from UF-09.9 Paused (never from UF-09.1–.8), reusing the UF-08.5 search, favorites and \"Today's areas\" lists; the new item goes right after the current exercise; only the 8-item cap applies; refused when it doesn't fit the time left; no Suggested section in v1"
-status: revisit
+status: decided
 date: 2026-11-13
 by: product-owner (idea, owner request)
 area: product

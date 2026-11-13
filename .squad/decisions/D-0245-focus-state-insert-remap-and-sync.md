@@ -1,7 +1,7 @@
 ---
 id: D-0245
 title: "Mid-workout add in the focus machine: write the plan first (device first, queued, last write wins), then an ITEM_INSERTED event that shifts LoggedSet.itemIndex and skippedItems at or after the insert point by one; restore realigns by exercise id; the sheet lives in UF-08 behind a UF-09 seam"
-status: revisit
+status: decided
 date: 2026-11-13
 by: product-owner (idea, owner request)
 area: web
