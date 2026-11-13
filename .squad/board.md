@@ -209,3 +209,16 @@ Owner bug report 2026-11-13: a swap followed by Add reverted the plan to the fir
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
 | T-0935 | UF-08.2/UF-08.3: a swap survives Add, Shuffle, time chips and Start with this — swap-in pinned, swapped-out excluded for the visit (D-0235) | web-feature:UF-08 | — | ready | wl-build-web |
+
+## Empty-start planning (spec docs/specs/empty-start-plan.md)
+Owner request 2026-11-13: "another way of planning a session. Like a start with empty but with easy to select suggestions." Decisions D-0236 (entry and mode), D-0237 (engine `autoMainLift`/`fill`), D-0238 (suggestions). Open questions in the spec wait for the human; rows stay `idea` until then.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0936 | Engine: optional SessionInput `autoMainLift` / `fill` (D-0237); rule 7.2 + §0 text and examples; deep-equal when absent; simulated histories; fits-by-construction property | engine | — | idea | wl-build-engine |
+| T-0937 | openapi SessionInput: optional `autoMainLift`, `fill`; regenerate api.gen.ts (D-0237 §3) | data | T-0936 | idea | wl-build-data |
+| T-0938 | /workouts/suggest validator passes `autoMainLift`, `fill` through (D-0237 §3) | backend | T-0937 | idea | wl-build-backend |
+| T-0939 | Screen spec: UF-08.1 "Start empty" and UF-08.2 empty mode with the Suggestions section; no new token (D-0236, D-0238) | design | — | idea | wl-design |
+| T-0940 | UF-08.1/UF-08.2: "Start empty" entry, empty mode (plan with `fill: false`), empty copy, "Looks good" disabled at 0, controls in empty mode, safety net (D-0236) | web-feature:UF-08 | T-0935, T-0936, T-0939 | idea | wl-build-web |
+| T-0941 | UF-08.2 Suggestions: engine fill around picks, fallback call, tap to Add, "Other suggestions", "Fill the rest for me" (D-0238) | web-feature:UF-08 | T-0940 | idea | wl-build-web |
+| T-0942 | e2e empty-start: zero history, 10 days off, offline, time chip drop, axe/44 px | qa | T-0941 | idea | wl-build-qa |
