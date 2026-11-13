@@ -38,3 +38,10 @@ none. No new token (D-0246 §18).
 
 ## Definition of done
 Every AC checked · `node .github/scripts/check-all.mjs` green · `pnpm -w format:check` green · commit messages start with `T-0944` and cite UF-09.10 / UF-09.9 / UF-08.5.
+
+## Build / accept log
+- 2026-11-13 designer. Start: clean tree, HEAD 09edae14 (`main-hzlbfc`). Commit 0081b61d: new `UF-09.10.md`, `UF-09.9.md` (numbered layout, item 7 status line, combined action table), `UF-08.5.md` (line 3 → UF-09.10, hairline rows, no `.wl-card`); text-check test `packages/design-tokens/test/uf09-add-exercise-specs.test.ts` (30 tests).
+- AC1–AC10 → `describe("T-0944 ACn …")` blocks of the same number in that test; AC11 → its "no new token" block (every `--wl-*` named exists) + `git diff --stat 09edae14 HEAD` (no `tokens.json`) + `check-all.mjs` exit 0.
+- Red: the test on the base docs (backed up with `cp`, base versions written from `git show`, restored with `cp`): 28 failed / 2 passed (the two passes are the existing-variable checks for UF-09.9/UF-08.5). Planted fault: row 5 → "Skipping {Area} today" in UF-09.10 → 2 failed; restored, `cmp` clean.
+- Kept T-0681 AC7 (`docs.test.ts`) true without editing it: UF-08.5 now says "No UF-09 control is added (D-0231)" for its Plan pointers, since "Never reachable from … UF-09" is gone (AC10).
+- Gate (package-scoped): design-tokens typecheck, lint, test 257/257; `-w format:check` clean; `-w check:repo` / `check-all.mjs` exit 0. `-w test:repo-checks` 394/395: the 1 failure (`check-screen-ids.test.mjs` AC4, UF-09.10 example) is on the base commit already and is fixed on `main` by 5f9ee1e5 (T-0946); none of this ticket's files are read by it.
