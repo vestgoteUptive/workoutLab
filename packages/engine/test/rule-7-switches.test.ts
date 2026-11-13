@@ -5,7 +5,13 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { suggest, type HistorySet, type SessionInput, type Workout } from "@workoutlab/engine";
+import {
+  suggest,
+  type HistorySet,
+  type LibraryExercise,
+  type SessionInput,
+  type Workout,
+} from "@workoutlab/engine";
 import {
   F_PROFILE,
   F_TARGETS,
@@ -46,6 +52,48 @@ describe("rule 7.2 switches: B18 deep-equal (D-0237 §1, D-0239 §15)", () => {
       expect(run(input({ mainLiftId, autoMainLift: false }), h), name).toEqual(
         run(input({ mainLiftId }), h),
       );
+    }
+  });
+
+  it("rule-7 (AC2) D-0237 §1 an explicit mainLiftId with autoMainLift false still falls back to 3, then 2 sets", () => {
+    // L1's compounds all cost 720 s at 4 sets, so a timed compound at 120 s (240 s a set):
+    // 4 sets 1020 s, 3 sets 780 s, 2 sets 540 s.
+    const sled: LibraryExercise = {
+      id: "sled-push",
+      name: "Sled push",
+      kind: "exercise",
+      type: "compound",
+      level: "beginner",
+      equipment: [],
+      areas: { quads: 1 },
+      timed: true,
+      defaultDurationS: 120,
+      incrementKg: null,
+      externalLoad: false,
+    };
+    const lib = [...LIBRARY, sled];
+    const at = (budgetMin: number, extra: Partial<SessionInput>): Workout =>
+      suggest(
+        [],
+        F_TARGETS,
+        F_PROFILE,
+        lib,
+        input({ budgetMin, warmupInBudget: false, mainLiftId: "sled-push", ...extra }),
+        NOW,
+        TZ,
+      );
+    // 15 min (900 s): 4 sets don't fit, 3 do. 12 min (720 s): 3 don't fit, 2 do.
+    for (const [budgetMin, sets, costS] of [
+      [15, 3, 780],
+      [12, 2, 540],
+    ] as const) {
+      const w = at(budgetMin, OFF);
+      expect(w.plan.items.map((i) => [i.exerciseId, i.sets, i.isMain, i.costS])).toEqual([
+        ["sled-push", sets, true, costS],
+      ]);
+      expect(w.plan.mainLiftId).toBe("sled-push");
+      // B18 widened: autoMainLift false (fill absent) equals the call without it.
+      expect(at(budgetMin, { autoMainLift: false })).toEqual(at(budgetMin, {}));
     }
   });
 

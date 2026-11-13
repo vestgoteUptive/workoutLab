@@ -5,6 +5,9 @@
 // `true`, the two results must be deep-equal, and the wrapper returns the `true`/`true` result, so
 // every committed expectation in the re-run example files below is asserted against it. The
 // example files are imported, which registers their tests again in this file.
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { isDeepStrictEqual } from "node:util";
 import { describe, expect, it, vi } from "vitest";
 
@@ -65,5 +68,27 @@ describe("B18 over every existing example (T-0936 AC1)", () => {
     expect(b18.mismatches).toEqual([]);
     // Not vacuous: the wrapper saw the examples' calls.
     expect(b18.calls).toBeGreaterThan(1000);
+  });
+
+  it("rule-7 (AC1) B18: the imported files are every engine test file that calls suggest(, minus the documented exclusions", () => {
+    const testDir = path.dirname(fileURLToPath(import.meta.url));
+    const self = path.basename(fileURLToPath(import.meta.url));
+    // rule-15-suggest-without-records mocks modules of its own; the rule-7-switches* files are
+    // T-0936's own tests, which set the switches explicitly (this file is one of them).
+    const excluded = (f: string): boolean =>
+      f === "rule-15-suggest-without-records.test.ts" || f.startsWith("rule-7-switches");
+    const callers = readdirSync(testDir)
+      .filter((f) => f.endsWith(".test.ts") && !excluded(f))
+      .filter((f) => readFileSync(path.join(testDir, f), "utf8").includes("suggest("))
+      .sort();
+    const imported = [
+      ...readFileSync(path.join(testDir, self), "utf8").matchAll(
+        /^import "\.\/([\w.-]+)\.test\.js";$/gm,
+      ),
+    ]
+      .map((m) => `${m[1] ?? ""}.test.ts`)
+      .sort();
+    expect(callers.length).toBeGreaterThan(20);
+    expect(imported).toEqual(callers);
   });
 });
