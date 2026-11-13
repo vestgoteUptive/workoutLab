@@ -48,7 +48,10 @@ describe("T-0944 AC1 UF-09.10 is a D-0211 plan sheet on the .wl-uf08 plan root",
     expect(add).toContain('opened only from the "Add exercise" action on UF-09.9 Paused');
   });
   it('roots on .wl-uf08[data-wl-state="plan"] (D-0246 §16)', () => {
-    expect(add).toContain('`class="wl-uf08"` and `data-wl-state="plan"`');
+    // Review fix 3: `.wl-uf08` alone is a 100dvh flex page; `wl-uf08__add-sheet` is display:contents.
+    expect(add).toContain('`class="wl-uf08 wl-uf08__add-sheet"` and `data-wl-state="plan"`');
+    expect(add).not.toContain('`class="wl-uf08"`');
+    expect(add).toContain("`wl-uf08__add-sheet` is `display: contents`");
     expect(add).toContain('`.wl-uf08[data-wl-state="plan"]`');
     expect(add).toContain("imports the UF-08 stylesheet itself");
   });
@@ -163,7 +166,7 @@ describe("T-0944 AC6 refusal and failure copy", () => {
   const r = section(add, "## Add and refusals (D-0243 §5 §6, D-0246 §4)");
   it.each([
     '| `time`, m ≥ 1 | "{name} doesn\'t fit in the {m} min left." |',
-    '| `time`, m = 0 | "{name} doesn\'t fit. No time left." |',
+    '| `time`, m ≤ 0 (`timeLeftS < 60`, negative included) | "{name} doesn\'t fit. No time left." |',
     '| `items_cap` (8 items, done and skipped included) | "This workout has 8 exercises, the most it can hold." |',
   ])("%s", (line) => {
     expect(r).toContain(line);
@@ -178,10 +181,35 @@ describe("T-0944 AC6 refusal and failure copy", () => {
 
 describe("T-0944 AC7 close paths and the UF-08.5 difference table", () => {
   it("Close, Escape and Back close only the sheet, focus to Add exercise, still paused", () => {
-    const c = section(add, "## Close, Escape and Back (D-0246 §6)");
+    const c = section(add, "## Close, Escape and Back (D-0246 §6, D-0247 §1)");
     expect(c).toContain("close **only the sheet**");
     expect(c).toContain('Focus returns to "Add exercise" on UF-09.9.');
-    expect(c).toContain("The workout **stays paused**");
+    expect(c).toContain("The workout **stays paused** and **Paused never remounts**");
+  });
+  it("is a host overlay over a mounted Paused; Back goes through closeForBack (D-0247 §1)", () => {
+    const c = section(add, "## Close, Escape and Back (D-0246 §6, D-0247 §1)");
+    expect(c).toContain(
+      "**The sheet is a host overlay drawn over a still-mounted UF-09.9 Paused** (D-0247 §1)",
+    );
+    expect(c).toContain(
+      "**Back goes through the host's `closeForBack()`**: it closes only the sheet and pushes the Back guard again",
+    );
+    // The wrong claim from the first draft is gone from both specs.
+    for (const t of [add, paused]) expect(t).not.toContain("guard has nothing to do");
+    const a = section(paused, '## "Add exercise" (D-0243 §1, D-0246 §6 §7)');
+    expect(a).toContain("as a **host overlay over this screen** (D-0247 §1)");
+    expect(a).toContain("Back goes through the host's `closeForBack()`");
+    expect(a).toContain("Back on Paused with no overlay open still leaves the session (D-0163 §1)");
+  });
+  it("refuses for time at m ≤ 0, negative time left included (D-0247 §3)", () => {
+    const r = section(add, "## Add and refusals (D-0243 §5 §6, D-0246 §4)");
+    expect(r).not.toContain("m = 0 |");
+    expect(r).toContain("or −200 s (behind)");
+    expect(r).toContain("(D-0247 §3)");
+  });
+  it("cites D-0247 §2 for the inert Add", () => {
+    const st = section(add, "## Row states (D-0243 §3, D-0246 §2)");
+    expect(st).toContain("(Inert Add: D-0247 §2.)");
   });
   it("lists the six D-0246 §18 differences", () => {
     const d = section(add, "## How this sheet differs from UF-08.5 (D-0246 §18)");
