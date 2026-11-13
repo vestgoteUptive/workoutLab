@@ -5,7 +5,7 @@ lane: product
 screens: [UF-09.10, UF-09.9]
 decisions: [D-0243, D-0246, D-0002, D-0205]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 D-0243 registered UF-09.10 in user flows v2 as "proposed, not built" so the screen-ID check accepts it. The owner accepted the spec (D-0246 §1), so the flow and PRD now describe it as part of v1.
@@ -29,3 +29,12 @@ none.
 
 ## Definition of done
 Every AC checked · `node .github/scripts/check-all.mjs` and `pnpm -w format:check` green · commit messages start with `T-0946` and cite UF-09.10.
+
+## Build / accept log
+- 2026-11-13: The product owner wrote the change as a patch, because its shell is read-only (D-0157 §6). The orchestrator applied and committed it.
+- AC1: the UF-09.10 row no longer says "proposed", and the UF-09 index row reads ".1–.10".
+- AC2: the UF-09.9 actions are in D-0243 §1 order.
+- AC3: an "Add exercise" paragraph follows "Do {name} later".
+- AC4: a new PRD row cites D-0243–D-0246.
+- AC5: `check-all.mjs` exits 0 and `test:repo-checks` passes 395/395 on the base. The intro example moved to UF-09.11, and the screen-ID test now checks UF-09.11.
+- Accepted by the orchestrator. The change is docs only, every check is green, and the diff was read in full.
