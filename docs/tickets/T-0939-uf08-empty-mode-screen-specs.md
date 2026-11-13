@@ -41,7 +41,7 @@ Design docs are checked by automated text checks (a test that greps the files is
 `Design-docs/docs/design/**`
 
 ## Contract impact
-none (no token change, D-0239 §8). User flows v2 (`Design-docs/docs/product/user-flows.md`) is product-lane and was updated for UF-08.1/UF-08.2 empty mode when this ticket was groomed; this ticket does not touch it.
+none (no token change, D-0239 §8). User flows v2 (`Design-docs/docs/product/user-flows.md`) is product-lane and was updated for UF-08.1, UF-08.2 and UF-08.5 empty mode when this ticket was groomed (2026-11-13); this ticket does not touch it.
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0939` and cite UF-08.1, UF-08.2, UF-08.5.
