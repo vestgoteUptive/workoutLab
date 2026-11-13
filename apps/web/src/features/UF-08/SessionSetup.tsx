@@ -129,6 +129,16 @@ interface Adjusted {
   addedIds: string[];
   /** T-0576 (D-0205 §7): the user's display order of `workout.plan.items`; null = engine order. */
   order: string[] | null;
+  /**
+   * T-0935 (D-0235 §1): the ids in `excludeIds` that a UF-08.3 swap took out, not a Remove. They
+   * stay out of every re-suggest like a remove, but the Removed line lists removes only.
+   */
+  swappedOut: string[];
+  /**
+   * T-0935 (D-0235 §1): the pins in `addedIds` that a swap put there. They are pins for the engine
+   * but not "Added by you" on screen, and one a time chip drops is dropped silently (§3).
+   */
+  swappedIn: string[];
   /** True while the plan is empty because Remove took the last row (T-0521, D-0191 §5). */
   emptiedByRemove: boolean;
 }
@@ -296,17 +306,38 @@ export function SessionSetup({
   if (showSwap) {
     const leave = (applied: Workout | null) => {
       if (applied !== null) {
-        // A swap that replaced an added exercise takes it off the pins; it is no longer in the plan.
-        const had = (id: string) => adjusted.workout.plan.items.some((i) => i.exerciseId === id);
-        const has = (id: string) => applied.plan.items.some((i) => i.exerciseId === id);
         // The swap-in takes the old item's place (SwapSheet replaces in place), so the order
         // is the new plan's own sequence.
-        setAdjusted({
-          ...adjusted,
-          workout: applied,
-          order: adjusted.order === null ? null : applied.plan.items.map((i) => i.exerciseId),
-          addedIds: adjusted.addedIds.filter((id) => !(had(id) && !has(id))),
-        });
+        const order = adjusted.order === null ? null : applied.plan.items.map((i) => i.exerciseId);
+        const old = adjusted.workout.plan.items[swapItem];
+        const swapIn = applied.plan.items[swapItem]?.exerciseId;
+        if (old === undefined || swapIn === undefined || swapIn === old.exerciseId) {
+          setAdjusted({ ...adjusted, workout: applied, order });
+        } else {
+          // T-0935 (D-0235): the swap is part of the visit record, so Add, Shuffle, a time chip
+          // and "Start with this" keep it. The swap-in becomes a pin where the old id was pinned,
+          // else the last pin (a non-main item); a main-lift swap-in is already `mainLiftId`. The
+          // swapped-out id is excluded for the visit only, like a Remove (never stored here).
+          const out = old.exerciseId;
+          const pins = adjusted.addedIds.filter((id) => id !== swapIn);
+          const addedIds = pins.includes(out)
+            ? pins.map((id) => (id === out ? swapIn : id))
+            : old.isMain
+              ? pins
+              : [...pins, swapIn];
+          const drop = (ids: readonly string[]) => ids.filter((e) => e !== swapIn && e !== out);
+          setAdjusted({
+            ...adjusted,
+            workout: applied,
+            order,
+            addedIds,
+            excludeIds: [...drop(adjusted.excludeIds), out],
+            swappedOut: [...drop(adjusted.swappedOut), out],
+            swappedIn: addedIds.includes(swapIn)
+              ? [...drop(adjusted.swappedIn), swapIn]
+              : drop(adjusted.swappedIn),
+          });
+        }
       }
       setFocusSwapItem(swapItem);
       void navigate(-1);
@@ -365,6 +396,8 @@ export function SessionSetup({
         excludeIds: next.excludeIds,
         addedIds: adjusted.addedIds,
         order: merged.order,
+        swappedOut: adjusted.swappedOut,
+        swappedIn: adjusted.swappedIn,
         emptiedByRemove: false,
       });
       return true;
@@ -401,6 +434,10 @@ export function SessionSetup({
           excludeIds: visit,
           addedIds: pinned,
           order: merged.order,
+          // D-0235 §4: adding a swapped-out exercise back takes it out of the visit's exclusions.
+          swappedOut: adjusted.swappedOut.filter((e) => e !== id),
+          // An exercise the user adds is theirs, even if a swap had pinned it.
+          swappedIn: adjusted.swappedIn.filter((e) => e !== id),
           emptiedByRemove: false,
         });
         return null;
@@ -459,6 +496,8 @@ export function SessionSetup({
           excludeIds: visit,
           addedIds: pinned,
           order: merged.order,
+          swappedOut: inPlan ? adjusted.swappedOut : adjusted.swappedOut.filter((e) => e !== id),
+          swappedIn: adjusted.swappedIn,
           emptiedByRemove: false,
         });
         return null;
@@ -487,7 +526,7 @@ export function SessionSetup({
         avoidAreas={avoidAreas}
         emptiedByRemove={adjusted.emptiedByRemove}
         noticeAreas={noticeAreas}
-        removedIds={adjusted.excludeIds}
+        removedIds={adjusted.excludeIds.filter((e) => !adjusted.swappedOut.includes(e))}
         storedIds={stored}
         online={online}
         exclusionFailed={exclusionFailed}
@@ -507,6 +546,8 @@ export function SessionSetup({
             workout: next,
             order: adjusted.order?.filter((id) => id !== exerciseId) ?? null,
             excludeIds: [...adjusted.excludeIds, exerciseId],
+            swappedOut: adjusted.swappedOut.filter((e) => e !== exerciseId),
+            swappedIn: adjusted.swappedIn.filter((e) => e !== exerciseId),
             // A removed exercise is no longer a pin (D-0205 §6), or a re-suggest would list it.
             addedIds: adjusted.addedIds.filter((a) => a !== exerciseId),
             emptiedByRemove: next.plan.items.length === 0,
@@ -517,7 +558,7 @@ export function SessionSetup({
         onBudget={(m) => resuggest({ budgetMin: m })}
         focusSwapItem={focusSwapItem}
         onSwapFocused={() => setFocusSwapItem(null)}
-        addedIds={adjusted.addedIds}
+        addedIds={adjusted.addedIds.filter((a) => !adjusted.swappedIn.includes(a))}
         catalog={data.library}
         blocked={blocked}
         favoriteIds={favoriteIds}
@@ -573,6 +614,8 @@ export function SessionSetup({
       excludeIds: [],
       addedIds: [],
       order: null,
+      swappedOut: [],
+      swappedIn: [],
       emptiedByRemove: false,
     });
     void navigate(`${SETUP_PATH}?step=suggested`);
