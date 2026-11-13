@@ -12,5 +12,7 @@ export declare const WARMUP_MOVE_S = 40;
  * taking the unused `kind: warmup` move with the highest weight for each area (ties by
  * id) and skipping areas with none left. Stop at 4. Fill with general moves (`areas: {}`)
  * by id, then any unused move by id. With fewer than 4 warm-up rows, all of them are used.
+ * With no items (`fill: false` and nothing placed, D-0237 §2) the area list is empty, so the
+ * warm-up is the general moves by id, then any unused move by id.
  */
 export declare function generateWarmup(itemExerciseIds: readonly string[], library: readonly LibraryExercise[]): WarmupEntry[];

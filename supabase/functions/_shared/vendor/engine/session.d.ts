@@ -87,6 +87,8 @@ export declare function rankCandidates(area: Area, history: readonly HistorySet[
  * `build_muscle`, and an unknown goal throws `RangeError`. `sessionInput.avoidAreas` (rule 6.1,
  * D-0191 §2) skips areas like recovering ones for selection only; absent means `[]`.
  * `sessionInput.favoriteIds` (rule 0.2, D-0202 §3) ranks favorites first among an area's
- * candidates; absent means `[]`.
+ * candidates; absent means `[]`. `sessionInput.autoMainLift` and `sessionInput.fill` (rule 7.2
+ * steps 1 and 3, D-0237, D-0239 §4) turn off the fallback main lift and the greedy fill when
+ * `false`; absent means on, and neither is copied into the result.
  */
 export declare function suggest(history: readonly HistorySet[], targets: readonly AreaTarget[], profile: SuggestProfile, library: readonly LibraryExercise[], sessionInput: SessionInput, now: Instant, tz: TimeZone): Workout;
