@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-09.10, UF-09.9]
 decisions: [D-0244, D-0246, D-0243, D-0092, D-0105, D-0191, D-0096, D-0239]
 deps: [T-0936]
-status: todo
+status: in-progress
 ---
 ## Why
 A mid-workout add (`docs/specs/add-exercise-in-session.md`) needs the engine, not the UI, to pick the set count, reps, pre-fill and cost and to decide whether the item fits (principle 3). `suggest` with pins is the wrong tool (D-0244 Context). This ticket adds two pure functions: `insertItem` (new rule 12.3) and `timeLeftS` (rule 8 extended), as amended by D-0246 §8–§14. Branch from `main` after T-0936 merges: it changes the same files, `engine-rules.md` §0 and the vendored copy (D-0246 §14, serial engine lane D-0096).
