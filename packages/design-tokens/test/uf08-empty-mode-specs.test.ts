@@ -140,7 +140,7 @@ describe("T-0939 AC4 layout order (D-0239 §8) and the six focus rules (D-0239 �
       "3. **Your workout:**",
       '4. **Suggestions:** its rows, then "Other suggestions", then "Fill the rest for me".',
       '5. **"Add exercise"**',
-      '6. **Reorder** and **"Looks good"**',
+      '6. **"Looks good"**',
     ].map((s) => layout.indexOf(s));
     expect(steps.every((i) => i >= 0)).toBe(true);
     expect([...steps].sort((a, b) => a - b)).toEqual(steps);
@@ -215,5 +215,46 @@ describe("T-0939 AC8 no new token: every --wl- variable the specs name already e
     const named = new Set(read(f).match(/--wl-[a-z0-9-]+/g) ?? []);
     expect(named.size).toBeGreaterThan(0);
     for (const v of named) expect(css, `${f} names ${v}`).toMatch(new RegExp(`${v}\\s*:`));
+  });
+});
+
+// Review fixes (T-0939 round 2): announcements, the Removed line's own status, `used` with the
+// warm-up outside the budget, and where Reorder and the "Your workout" heading sit.
+describe("T-0939 review: live messages, budget forms, list header", () => {
+  const live = section(empty, "### Live region (D-0239 §9)");
+  it("a Main lift suggestion Add announces 'added', 'main lift now' is Start with this only", () => {
+    expect(live).toMatch(
+      /"\{name\} added\. \{left\} min left\.": every successful Add, a suggestion row \(a "Main lift" suggestion included, B3\)/,
+    );
+    expect(live).toContain('"{name} is the main lift now.": only "Start with this"');
+    expect(live).not.toMatch(/main lift now\."[^\n]*"Main lift" suggestion/);
+    expect(live).toMatch(/UF-08\.3 swap \(of the main lift or a pick\) announces nothing here/);
+  });
+  it("the Removed line keeps its own persistent status", () => {
+    expect(live).toContain('**Removed line keeps its own persistent `role="status"`** (D-0199 §10');
+  });
+  it("used is itemsTotalS with the warm-up outside, and the over form has the suffix", () => {
+    const budget = section(empty, "### Budget line (D-0239 §6–§7)");
+    expect(budget).toContain("`itemsTotalS` when the warm-up is outside it");
+    expect(budget).toContain('"{used} of {n} min + warm-up · {left} min left"');
+    expect(budget).toContain('"{used} of {n} min + warm-up · {over} min over"');
+  });
+  it("Reorder stays in the list header under a visible h2 'Your workout'", () => {
+    const layout = section(empty, "### Layout (top to bottom, D-0239 §8)");
+    expect(layout).toContain('**visible `h2` "Your workout"**');
+    expect(layout).toContain("with the **Reorder** button at its right");
+    expect(layout).toContain("it is not moved");
+    expect(layout).toContain("Reorder is not here: it stays in the Your workout list header");
+  });
+  it("cites D-0242 for the ratified defaults and states Fill the rest per state", () => {
+    expect(empty).toContain("### Spec defaults (D-0242, decided)");
+    const states = section(empty, "### States (empty mode)");
+    expect(states).toContain(
+      '"Other suggestions" and "Fill the rest for me" hidden (nothing to fill)',
+    );
+    expect(states).toMatch(
+      /"Fill the rest for me" refused with "Your workout is \{over\} min over\. Remove or swap an exercise first\." \(D-0239 §13, D-0242 §1\)/,
+    );
+    expect(uf081).toContain("pending ratification");
   });
 });
