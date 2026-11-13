@@ -69,6 +69,20 @@ describe("rule 8 timeLeftS examples (R8-E4…R8-E7)", () => {
   });
 });
 
+describe("rule 8 timeLeftS rounding (rule 8 text, D-0244 §2 integer result)", () => {
+  it("rule-8 a cost that doesn't divide evenly rounds the remaining sets up to the whole second", () => {
+    const last = P.plan.items[2]!;
+    const odd: Workout = {
+      ...P,
+      plan: { ...P.plan, items: [...P.plan.items.slice(0, 2), { ...last, costS: 271 }] },
+    };
+    // leg-extension 1 of 2 done: ceil(1 × (271 − 60) / 2) = ceil(105.5) = 106.
+    const left = timeLeftS(odd, progress(odd, { elapsedS: 1500, setsDone: [4, 3, 1] }));
+    expect(Number.isInteger(left)).toBe(true);
+    expect(left).toBe(2700 - 1500 - 106);
+  });
+});
+
 describe("rule 8 timeLeftS skipped items and the warm-up (AC5)", () => {
   it("rule-8 (AC5) a skipped item's cost is not subtracted", () => {
     // AC1 with inverted-row skipped: 945 + 555.
