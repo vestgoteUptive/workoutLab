@@ -35,7 +35,7 @@ biggest gaps within the user's time budget.
 | UF-06 Progress | .1 Overview · .2 Exercise history | Consistency, volume, strength trend | Hevy, Strong |
 | UF-07 Routine builder | .1 Edit routine | Exercises, sets, progression rule | Liftosaur, Hevy |
 | UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready · .5 Add exercise | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
-| UF-09 Focus mode | .1–.9 (below) | One step at a time | Apple Fitness, NTC |
+| UF-09 Focus mode | .1–.9 (below) · .10 (proposed, D-0243) | One step at a time | Apple Fitness, NTC |
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
 | UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises · .6 Favorite exercises | Adaptive targets; edit goal, rhythm, priorities; exercises never suggested; favorite exercises tried first; export or delete your data | Apple Fitness, Freeletics |
 
@@ -106,6 +106,7 @@ Every screen: pause button, thin progress bar (warm-up + one segment per exercis
 | UF-09.7 | Timed set | "Timed set · n of N" caption, hold name, deep fill (D-0208, D-0212) | Pause/resume | 3-s get-in-position, then hold time; auto-logs |
 | UF-09.8 | Time check | Minutes behind, projected finish, 3 options | Continue | only between exercises, only when behind |
 | UF-09.9 | Paused | "Workout paused · timers stopped" caption (D-0212), elapsed, left, sets done | Resume · swap · do later · skip · how-to · list view · end | all timers stopped |
+| UF-09.10 | Add exercise (**proposed, not built**: D-0243, spec `docs/specs/add-exercise-in-session.md`) | Sheet over UF-09.9: "{m} min left", search, Favorites, Today's areas, row reasons | Add (goes after the current exercise; refused when it doesn't fit the time left) | workout stays paused |
 
 **Do {name} later** (UF-09.9, D-0205): for a busy machine. Moves the current exercise, if none of its sets is logged, to just after the next unfinished one, then resumes at UF-09.6 for that one (or the warm-up/UF-09.1 where it was). Hidden for a partly done exercise, for the last unfinished one and on a pause from UF-09.8. The time check's remaining time is unchanged. Works offline and survives a reload (the order is written to the session's plan).
 

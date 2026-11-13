@@ -223,3 +223,16 @@ Owner request 2026-11-13: "another way of planning a session. Like a start with 
 | T-0941 | UF-08.2 Suggestions: engine fill around picks, tightened fallback trigger (D-0239 §3), none when over budget, tap to Add, focus/status (B23), "Other suggestions", "Fill the rest for me" (D-0238). Paths add `apps/web/src/lib/i18n/flows/uf-08.ts` | web-feature:UF-08 | T-0939, T-0940 | todo | wl-build-web |
 | T-0942 | e2e empty-start: zero history, 10 days off, offline, time chip drop and restore (B21), axe/44 px | qa | T-0939, T-0941 | todo | wl-build-qa |
 | T-0943 | UF-08.2 suggested mode: an Add/Shuffle after a `fitsBudget: false` swap silently drops the swap-in pin; refuse with "Your workout is {over} min over. Remove or swap an exercise first."; a dropped swap-in is named in "Doesn't fit" (D-0240) | web-feature:UF-08 | T-0935, T-0940 | todo | wl-build-web |
+
+## Add exercise during a workout (spec docs/specs/add-exercise-in-session.md)
+Owner request 2026-11-13: "New feature. I want to be able to add exercise during a session." Decisions D-0243 (entry on UF-09.9, new sheet UF-09.10, position after the current exercise, 8-item cap, refused when it doesn't fit the time left), D-0244 (engine `insertItem` and `timeLeftS`), D-0245 (plan write, then index remap; offline; code split). Rows stay `idea` until the owner accepts the spec's open-question defaults.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0944 | Screen specs: UF-09.10 Add exercise sheet (lead line, row states, refusals, status, focus) and the UF-09.9 "Add exercise" action; no new token | design | — | idea | wl-design |
+| T-0945 | Engine: `insertItem` (rule 12.3: applySwap-style item, 3 then 2 sets inside the time left, never main) and `timeLeftS` (rule 8); examples R12-E20+, R8-E4+; simulated histories and property test (D-0244) | engine | T-0936 | idea | wl-build-engine |
+| T-0946 | User flows v2: drop "proposed" from the UF-09.10 row (registered 2026-11-13), add the UF-09.9 action and the Add line; a PRD row | product | — | idea | wl-idea |
+| T-0947 | UF-09 focus machine: `ITEM_INSERTED` index remap, restore realign, `ctx.insertItem` (engine call, plan write, then event; failure path) (D-0245 §1–§3) | web-feature:UF-09 | T-0945 | idea | wl-build-web |
+| T-0948 | UF-08: add-list `lead` prop and in-workout leaf entry `index.add-in-workout.ts` for UF-09.10 (row reasons, recovery at session start, refusal copy) (D-0243 §2–§3, D-0245 §4) | web-feature:UF-08 | T-0944, T-0940, T-0941, T-0943 | idea | wl-build-web |
+| T-0949 | UF-09.9 "Add exercise" seam action (lazy, retried), hidden on a pause from UF-09.8, stays paused with the status line (D-0243 §1, §7) | web-feature:UF-09 | T-0947, T-0948 | idea | wl-build-web |
+| T-0950 | e2e add during a workout: zero history, 10 days off, time running out, offline and reload, axe/44 px | qa | T-0949 | idea | wl-build-qa |
