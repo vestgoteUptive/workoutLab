@@ -292,13 +292,18 @@ function areasByRatio(s: State, exhausted: ReadonlySet<Area>): Area[] {
 const MAIN_TRIES = [4, 3, 2] as const;
 const ACCESSORY_TRIES = [3, 2] as const;
 
-function selectMain(s: State, mainLiftId: string | null): void {
+/**
+ * Rule 7.2 step 1. With `autoMainLift` false (D-0237 §1) only an eligible `mainLiftId` that
+ * fits is placed; there is no fallback choice.
+ */
+function selectMain(s: State, mainLiftId: string | null, autoMainLift: boolean): void {
   if (mainLiftId !== null) {
     const ex = s.start.pool.find((e) => e.id === mainLiftId);
     if (ex !== undefined && ex.type === "compound" && admissible(s, ex)) {
       if (tryAdd(s, ex, MAIN_TRIES, true)) return;
     }
   }
+  if (!autoMainLift) return;
   for (const area of areasByRatio(s, new Set())) {
     for (const ex of candidates(s, area)) {
       if (ex.type === "compound" && tryAdd(s, ex, MAIN_TRIES, true)) return;
@@ -556,6 +561,22 @@ function applyShuffle(s: State, n: number, pinnedIds: readonly string[], ctx: Sw
   }
 }
 
+/**
+ * A rule 7.2 switch of `sessionInput` (D-0237 §1, D-0239 §4): absent or `undefined` is on,
+ * a boolean is itself, and any other value is a `RangeError` naming the key.
+ */
+function switchOf(
+  sessionInput: Pick<SessionInput, "autoMainLift" | "fill">,
+  key: "autoMainLift" | "fill",
+): boolean {
+  const raw: unknown = sessionInput[key];
+  if (raw === undefined) return true;
+  if (typeof raw !== "boolean") {
+    throw new RangeError(`${key} must be a boolean when present, got ${String(raw)}`);
+  }
+  return raw;
+}
+
 function assertShuffle(n: number): void {
   if (typeof n !== "number" || !Number.isInteger(n) || n < 0) {
     throw new RangeError(`shuffle must be an integer ≥ 0, got ${String(n)}`);
@@ -641,7 +662,9 @@ export function rankCandidates(
  * `build_muscle`, and an unknown goal throws `RangeError`. `sessionInput.avoidAreas` (rule 6.1,
  * D-0191 §2) skips areas like recovering ones for selection only; absent means `[]`.
  * `sessionInput.favoriteIds` (rule 0.2, D-0202 §3) ranks favorites first among an area's
- * candidates; absent means `[]`.
+ * candidates; absent means `[]`. `sessionInput.autoMainLift` and `sessionInput.fill` (rule 7.2
+ * steps 1 and 3, D-0237, D-0239 §4) turn off the fallback main lift and the greedy fill when
+ * `false`; absent means on, and neither is copied into the result.
  */
 export function suggest(
   history: readonly HistorySet[],
@@ -654,6 +677,8 @@ export function suggest(
 ): Workout {
   assertBudget(sessionInput.budgetMin);
   assertShuffle(sessionInput.shuffle);
+  const autoMainLift = switchOf(sessionInput, "autoMainLift");
+  const fill = switchOf(sessionInput, "fill");
   const avoided = avoidedAreas(sessionInput);
   const goal = goalOf(profile);
   const available = availableS(sessionInput.budgetMin, sessionInput.warmupInBudget);
@@ -679,9 +704,9 @@ export function suggest(
   const durationOf = durationsOf(ctx);
   const s = newState(start, Math.max(0, available), durationOf);
 
-  selectMain(s, sessionInput.mainLiftId);
+  selectMain(s, sessionInput.mainLiftId, autoMainLift);
   selectPinned(s, sessionInput.pinnedIds);
-  selectGreedy(s);
+  if (fill) selectGreedy(s);
   applyShuffle(s, sessionInput.shuffle, sessionInput.pinnedIds, {
     lib,
     pool: start.pool,

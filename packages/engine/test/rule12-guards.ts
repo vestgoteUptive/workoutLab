@@ -5,6 +5,7 @@ import { execFileSync } from "node:child_process";
 import { R12_E1_LINE } from "./fixtures/r12-e1-d0056.js";
 import { RULE12_SIGNATURE_LINE } from "./fixtures/rule12-signature-d0130.js";
 import { RULE12_SIGNATURE_LINE_D0199 } from "./fixtures/rule12-signature-d0199.js";
+import { RULE13_NOTE_D0237 } from "./fixtures/rule13-note-d0237.js";
 
 /** The rules doc on the first of `main` / `origin/main` that exists, or null (shallow CI). */
 export function rulesOnMain(repoDir: string): string | null {
@@ -54,25 +55,31 @@ function signatureReverts(slice: string): string[] {
 }
 
 /**
+ * `signatureReverts` of `slice` and of `slice` with the rule 13 `fill: false` note reverted
+ * (T-0936, D-0237 §2), so a main before or after that note is accepted.
+ */
+function acceptedReverts(slice: string): string[] {
+  return [slice, revert(slice, RULE13_NOTE_D0237)].flatMap(signatureReverts);
+}
+
+/**
  * The T-0204 guard: against main, rule 12 (to R12-E5) and rule 13 differ by at most the
- * D-0056 §1 R12-E1 line and the signature line (D-0130 §1, D-0199 §3).
+ * D-0056 §1 R12-E1 line, the signature line (D-0130 §1, D-0199 §3) and the rule 13 note
+ * (D-0237 §2).
  */
 export function t0204GuardOk(currentDoc: string, mainDoc: string): boolean {
   const current = rule12Slice(currentDoc);
   const main = rule12Slice(mainDoc);
-  const accepted = [
-    ...signatureReverts(current),
-    ...signatureReverts(revert(current, R12_E1_LINE)),
-  ];
+  const accepted = [...acceptedReverts(current), ...acceptedReverts(revert(current, R12_E1_LINE))];
   return accepted.includes(main);
 }
 
 /**
  * The T-0224 guard: against main, R12-E1…R12-E5 and rule 13 are unchanged, except for the
- * signature line (D-0130 §1, D-0199 §3).
+ * signature line (D-0130 §1, D-0199 §3) and the rule 13 note (D-0237 §2).
  */
 export function t0224GuardOk(currentDoc: string, mainDoc: string): boolean {
   const current = rule12Slice(currentDoc);
   const main = rule12Slice(mainDoc);
-  return signatureReverts(current).includes(main);
+  return acceptedReverts(current).includes(main);
 }
