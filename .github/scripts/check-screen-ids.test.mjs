@@ -72,12 +72,14 @@ test("AC3: unknown flow number 12 is a finding; UF-10.* and UF-01.5 are not", ()
   assert.deepEqual(step, []);
 });
 
-test("AC4: the real intro sentence's UF-09.10 example is not in the valid set", () => {
+test("AC4: the real intro sentence's UF-09.11 example is not in the valid set", () => {
   const real = readFileSync(path.join(REPO_ROOT, USER_FLOWS_PATH), "utf8");
   const valid = buildValidScreenIds(real);
   const stepSet = valid.steps.get("09");
   assert.ok(stepSet, "UF-09 should be in the index");
-  assert.equal(stepSet.has(10), false);
+  // T-0946 made UF-09.10 a real screen (D-0243), so the intro's example moved to the next free step.
+  assert.ok(real.includes("next step number (UF-09.11)"));
+  assert.equal(stepSet.has(11), false);
 });
 
 test("AC5: v1 labels are findings across the nine labels x five separators", () => {

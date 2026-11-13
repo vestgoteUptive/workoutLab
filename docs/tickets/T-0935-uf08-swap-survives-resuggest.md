@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.3, UF-08.5]
 decisions: [D-0235, D-0205, D-0109, D-0191]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Bug report from the human (2026-11-13): after a swap on UF-08.3, adding an exercise on UF-08.5 puts the list back to the first suggestion. The swap only changes the shown `Workout`, and every re-suggest is rebuilt from `addedIds`, `excludeIds` and `mainLiftId`. D-0235 makes the swap part of the visit record.
@@ -34,3 +34,52 @@ none (D-0235)
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0935` and cite screen IDs.
+
+## Build / accept log
+**2026-11-13 frontend-dev (build).** Base `main-hzlbfc` 37cd4441, worktree clean. `SessionSetup.tsx` swap handler: a non-main swap-in replaces the old pin, or is added as the last pin; the swapped-out id joins the visit `excludeIds` (never stored); the swap-in leaves `excludeIds`. A main-lift swap adds no pin. Display per D-0240 §1-§2: `swappedOut` keeps swap-outs off the Removed line, and `unlabelledPins` keeps swap-ins off "Added by you". Commit a95e3457.
+
+AC→test (`apps/web/src/features/UF-08/__tests__/swap-pins.test.tsx` unless named):
+- AC1: "AC1 a non-main swap, then Add" (2 tests: Add of Lateral raise; a refused Add keeps the pin).
+- AC2: "AC2 Shuffle after a swap".
+- AC3: "AC3 a time chip after a swap" (45 and 60).
+- AC4: "AC4 a main-lift swap, then Add" (Add, then Shuffle).
+- AC5: "AC5 a swap of an added (pinned) exercise" + `add-exercise.test.tsx` "…puts the swap-in in its place on the pins" (replaces "takes it off the pins").
+- AC6: "AC6 adding the swapped-out exercise back" (fits at 45; refusal at 30).
+- AC7: "AC7 the stored excluded list" (unticked: no write; ticked: one write).
+- AC8: "AC8 Back to UF-08.1 discards the swap".
+- AC9: "AC9 Reorder, then a swap and Add".
+- AC10: `tests/e2e/uf-08-swap-pins.spec.ts`.
+- Also `swap-before-start.test.tsx` T-0303c AC-2: after a chip, expects the D-0235 inputs (`excludeIds ["barbell-row"]`, `pinnedIds ["db-row"]`) instead of `excludeIds: []`.
+
+Red on unfixed code (37cd4441 `SessionSetup.tsx` copied in, fix restored with `cp` and checked with `cmp`):
+- Unit: 14 failed (AC1-AC6, AC7 unticked, AC9, the AC5 test in add-exercise, T-0303c AC-2).
+- AC10 e2e: failed at line 79, `row("db-row")` expected 1, got 0 (the swap-in is lost after Add).
+
+Planted faults, each red, restored by `cp`:
+- Removed line lists swap-outs → the Removed-line test fails.
+- Suggest keeps the visit record → AC8 fails.
+- The swap also writes the stored list → both AC7 tests fail.
+- Swap-ins labelled "Added by you" → AC1 and AC5 fail.
+- Swap-in always added as the last pin → AC5 fails.
+
+Gate:
+- web turbo typecheck lint test `--force --concurrency=1`: 4/4, 4944 tests.
+- format:check and lint:e2e: green.
+- Playwright uf-08-*: 73 passed.
+- check:repo: only `ticket-not-on-base`, because the base is `main-hzlbfc`, not `main`.
+
+**2026-11-13 frontend-dev (review round 2).** Merged `main-hzlbfc` (D-0240). The record gains `mainPickId`, set by a main-lift swap or "Start with this" and cleared by Remove. "Start with this" now moves a main lift the user chose on this visit to the front of the pins (D-0239 §2 applied in suggested mode, QA finding). A main lift that isn't already a pin also joins `unlabelledPins`. An engine-picked main lift still returns to the pool (D-0205 §5, start-with-this AC5). `swappedIn` is renamed `unlabelledPins`.
+
+New tests (`swap-pins.test.tsx`):
+- Swapping back (A→B→A).
+- Swapping to an exercise removed earlier.
+- The chain A→B→C.
+- Remove of a swap-in.
+- "Start with this" on a swap-in.
+- Two demote tests: a main-lift swap-in, and a main lift from an earlier "Start with this".
+
+Red runs:
+- On 37cd4441: all 7 new tests fail (19 of 22 in the file).
+- Fault A (the swap-in isn't removed from the exclusion lists) → swap-back and swap-to-removed fail.
+- Fault B (no demote) → both demote tests fail.
+- Fault C (a demoted swap-in labelled "Added by you") → both demote tests fail.

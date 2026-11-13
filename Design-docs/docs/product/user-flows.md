@@ -4,7 +4,7 @@ Source of truth for screens and IDs. Prototype canvas (clickable in Play):
 https://claude.ai/artifact/VRmZLyeChxb6WR4zLbkz8w
 
 Reference screens by ID in issues, PRs and commits, e.g. `UF-09.5: add haptic at 10 s`.
-New screens take the next step number (UF-09.10). New flows take the next flow number (UF-10).
+New screens take the next step number (UF-09.11). New flows take the next flow number (UF-10).
 Supersedes `user-flows-v1.md`; the v1 core model below still applies.
 
 ## Core model (from v1)
@@ -35,7 +35,7 @@ biggest gaps within the user's time budget.
 | UF-06 Progress | .1 Overview · .2 Exercise history | Consistency, volume, strength trend | Hevy, Strong |
 | UF-07 Routine builder | .1 Edit routine | Exercises, sets, progression rule | Liftosaur, Hevy |
 | UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready · .5 Add exercise | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
-| UF-09 Focus mode | .1–.9 (below) | One step at a time | Apple Fitness, NTC |
+| UF-09 Focus mode | .1–.10 (below) | One step at a time | Apple Fitness, NTC |
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
 | UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises · .6 Favorite exercises | Adaptive targets; edit goal, rhythm, priorities; exercises never suggested; favorite exercises tried first; export or delete your data | Apple Fitness, Freeletics |
 
@@ -105,9 +105,12 @@ Every screen: pause button, thin progress bar (warm-up + one segment per exercis
 | UF-09.6 | Next exercise | "Next exercise" caption, done line, name, illustration, sets/reps/weight, cue, "Set-up time" label (D-0212) | I'm ready · Swap | set-up countdown 60 s |
 | UF-09.7 | Timed set | "Timed set · n of N" caption, hold name, deep fill (D-0208, D-0212) | Pause/resume | 3-s get-in-position, then hold time; auto-logs |
 | UF-09.8 | Time check | Minutes behind, projected finish, 3 options | Continue | only between exercises, only when behind |
-| UF-09.9 | Paused | "Workout paused · timers stopped" caption (D-0212), elapsed, left, sets done | Resume · swap · do later · skip · how-to · list view · end | all timers stopped |
+| UF-09.9 | Paused | "Workout paused · timers stopped" caption (D-0212), elapsed, left, sets done, one status line | Resume · swap · do later · add exercise · skip · how-to · list view · end | all timers stopped |
+| UF-09.10 | Add exercise (D-0243, D-0246, spec `docs/specs/add-exercise-in-session.md`) | Sheet over UF-09.9: "{m} min left", search, Favorites, Today's areas, row reasons | Add (goes after the current exercise; refused when it doesn't fit the time left) | workout stays paused |
 
 **Do {name} later** (UF-09.9, D-0205): for a busy machine. Moves the current exercise, if none of its sets is logged, to just after the next unfinished one, then resumes at UF-09.6 for that one (or the warm-up/UF-09.1 where it was). Hidden for a partly done exercise, for the last unfinished one and on a pause from UF-09.8. The time check's remaining time is unchanged. Works offline and survives a reload (the order is written to the session's plan).
+
+**Add exercise** (UF-09.9 → UF-09.10, D-0243, D-0246, spec `docs/specs/add-exercise-in-session.md`): from UF-09.9 Paused only, never from UF-09.1–.8, and hidden on a pause from UF-09.8. It opens the UF-09.10 sheet: the UF-08.5 search, Favorites and "Today's areas" lists, with no "Start with this" and no Suggested section. The new exercise goes right after the current one (appended when the current one is last), for this workout only. It is refused when even 2 sets don't fit the time left ("{name} doesn't fit in the {m} min left.") or when the plan has 8 exercises, done and skipped included ("This workout has 8 exercises, the most it can hold."). An exercise already in the plan, or with a set logged in this workout, reads "In this workout" ("Skipped in this workout" for a skipped one). After an add the sheet closes and the workout stays paused on UF-09.9, with focus on "Add exercise" and the status line "{name} added after {current name}." Back and Escape close only the sheet. Works offline and survives a reload (the plan is written to the session first, then queued).
 
 **Loop per set:** 09.3 → 09.4 → 09.5 → 09.3. **Between exercises:** 09.8 (if behind) → 09.6 → 09.3. **Finish:** UF-03.3 summary.
 
