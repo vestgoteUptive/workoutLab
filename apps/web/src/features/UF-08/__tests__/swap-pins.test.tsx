@@ -315,3 +315,121 @@ describe("AC9 Reorder, then a swap and Add (D-0205 merge)", () => {
     expect(mainRows()).toEqual(["bench-press"]);
   });
 });
+
+// ---- Code review (T-0935 round 2) ----
+
+describe("the swap-in leaves the visit exclusions", () => {
+  it("swap back: Inverted row → Db row → Inverted row; Shuffle keeps Inverted row, Db row out", async () => {
+    await toPlan();
+    await swap("Inverted row", "db-row");
+    await swap("Db row", "inverted-row");
+    expect(rowIds()).toEqual(["bench-press", "inverted-row", "leg-extension"]);
+    fireEvent.click(button("Shuffle"));
+    expect(lastInput().pinnedIds).toEqual(["inverted-row"]);
+    expect(lastInput().excludeIds).not.toContain("inverted-row");
+    expect(lastInput().excludeIds).toContain("db-row");
+    expect(rowIds()).toContain("inverted-row");
+    expect(rowIds()).not.toContain("db-row");
+    expect(removedLine()).not.toHaveTextContent("Inverted row");
+    expect(removedLine()).not.toHaveTextContent("Db row");
+  });
+
+  it("a swap to an exercise removed earlier takes it off the Removed line and the exclusions", async () => {
+    await toPlan();
+    fireEvent.click(button("Remove Inverted row"));
+    expect(removedLine()).toHaveTextContent("Inverted row");
+    await add("Db row");
+    await swap("Db row", "inverted-row");
+    expect(rowIds()).toContain("inverted-row");
+    expect(removedLine()).not.toHaveTextContent("Inverted row");
+    fireEvent.click(button("Shuffle"));
+    expect(lastInput().pinnedIds).toEqual(["inverted-row"]);
+    expect(lastInput().excludeIds).not.toContain("inverted-row");
+    expect(lastInput().excludeIds).toContain("db-row");
+    expect(rowIds()).toContain("inverted-row");
+  });
+});
+
+describe("swap chains, Remove and Start with this after a swap", () => {
+  it("A → B → C: pins [C]; A and B are both excluded for the visit", async () => {
+    await toPlan();
+    await swap("Inverted row", "db-row");
+    await swap("Db row", "lat-pulldown");
+    fireEvent.click(button("Shuffle"));
+    expect(lastInput().pinnedIds).toEqual(["lat-pulldown"]);
+    expect(lastInput().excludeIds).toEqual(expect.arrayContaining(["inverted-row", "db-row"]));
+    expect(rowIds()).toContain("lat-pulldown");
+    expect(rowIds()).not.toContain("inverted-row");
+    expect(rowIds()).not.toContain("db-row");
+  });
+
+  it("Remove of a swap-in unpins it and lists it on the Removed line (not the swapped-out one)", async () => {
+    await toPlan();
+    await swap("Inverted row", "db-row");
+    fireEvent.click(button("Remove Db row"));
+    expect(rowIds()).not.toContain("db-row");
+    expect(removedLine()).toHaveTextContent("Db row");
+    expect(removedLine()).not.toHaveTextContent("Inverted row");
+    fireEvent.click(button("Shuffle"));
+    expect(lastInput().pinnedIds).toEqual([]);
+    expect(lastInput().excludeIds).toEqual(expect.arrayContaining(["inverted-row", "db-row"]));
+    expect(rowIds()).not.toContain("db-row");
+    expect(rowIds()).not.toContain("inverted-row");
+  });
+
+  it("Start with this on a swap-in makes it the main lift; the swap stands on the next Shuffle", async () => {
+    await toPlan();
+    await swap("Inverted row", "db-row");
+    fireEvent.click(button("Start with Db row"));
+    expect(lastInput().mainLiftId).toBe("db-row");
+    expect(mainRows()).toEqual(["db-row"]);
+    // The engine's main lift (Bench press) returns to the pool (D-0205 §5): not demoted.
+    expect(lastInput().pinnedIds).toEqual(["db-row"]);
+    fireEvent.click(button("Shuffle"));
+    expect(lastInput().mainLiftId).toBe("db-row");
+    expect(lastInput().excludeIds).toContain("inverted-row");
+    expect(mainRows()).toEqual(["db-row"]);
+    expect(rowIds()).not.toContain("inverted-row");
+  });
+});
+
+describe("Start with this demotes a main lift the user chose (D-0239 §2, QA finding)", () => {
+  it("main swap Bench press → Db bench press, then Start with Inverted row: Db bench press is the first pin", async () => {
+    await toPlan();
+    await swap("Bench press", "db-bench-press");
+    fireEvent.click(button("Start with Inverted row"));
+    expect(lastInput().mainLiftId).toBe("inverted-row");
+    expect(lastInput().pinnedIds).toEqual(["db-bench-press"]);
+    expect(mainRows()).toEqual(["inverted-row"]);
+    expect(rowIds()).toContain("db-bench-press");
+    fireEvent.click(button("Shuffle"));
+    expect(lastInput().pinnedIds).toEqual(["db-bench-press"]);
+    expect(lastInput().excludeIds).toContain("bench-press");
+    expect(rowIds()).toContain("db-bench-press");
+    expect(rowIds()).not.toContain("bench-press");
+    expect(mainRows()).toEqual(["inverted-row"]);
+    // A demoted swap-in is still not "Added by you" (D-0240 §2).
+    expect(reasonOf("db-bench-press")).not.toBe("Added by you");
+  });
+
+  it("a main lift set by an earlier Start with this is demoted to the front of the pins", async () => {
+    await toPlan();
+    fireEvent.click(button("45 minutes"));
+    fireEvent.click(button("Start with Inverted row"));
+    expect(lastInput().pinnedIds).toEqual([]);
+    expect(mainRows()).toEqual(["inverted-row"]);
+    fireEvent.click(button("Add exercise"));
+    const sheet = within(screen.getByRole("dialog"));
+    fireEvent.change(sheet.getByLabelText("Search exercises"), { target: { value: "Back squat" } });
+    fireEvent.click(sheet.getByRole("button", { name: "Start with Back squat" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(lastInput().mainLiftId).toBe("back-squat");
+    // Back squat is pinned only if it was not already in the plan (Q9); the demoted lift is first.
+    expect(lastInput().pinnedIds[0]).toBe("inverted-row");
+    expect(mainRows()).toEqual(["back-squat"]);
+    expect(rowIds()).toContain("inverted-row");
+    expect(reasonOf("inverted-row")).not.toBe("Added by you");
+    fireEvent.click(button("Shuffle"));
+    expect(rowIds()).toContain("inverted-row");
+  });
+});

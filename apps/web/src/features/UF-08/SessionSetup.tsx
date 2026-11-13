@@ -135,10 +135,16 @@ interface Adjusted {
    */
   swappedOut: string[];
   /**
-   * T-0935 (D-0235 §1): the pins in `addedIds` that a swap put there. They are pins for the engine
-   * but not "Added by you" on screen, and one a time chip drops is dropped silently (§3).
+   * T-0935 (D-0240 §2): the pins in `addedIds` the user did not add through UF-08.5: a swap-in, or
+   * a main lift demoted by "Start with this". Pins for the engine, but not "Added by you".
    */
-  swappedIn: string[];
+  unlabelledPins: string[];
+  /**
+   * T-0935 (D-0239 §1-§2): the main lift the user chose on this visit (a main-lift swap or "Start
+   * with this"); null when the engine picked it. Read here only by "Start with this", which
+   * demotes such a main lift to the front of the pins instead of returning it to the pool.
+   */
+  mainPickId: string | null;
   /** True while the plan is empty because Remove took the last row (T-0521, D-0191 §5). */
   emptiedByRemove: boolean;
 }
@@ -333,9 +339,10 @@ export function SessionSetup({
             addedIds,
             excludeIds: [...drop(adjusted.excludeIds), out],
             swappedOut: [...drop(adjusted.swappedOut), out],
-            swappedIn: addedIds.includes(swapIn)
-              ? [...drop(adjusted.swappedIn), swapIn]
-              : drop(adjusted.swappedIn),
+            unlabelledPins: addedIds.includes(swapIn)
+              ? [...drop(adjusted.unlabelledPins), swapIn]
+              : drop(adjusted.unlabelledPins),
+            mainPickId: old.isMain ? swapIn : adjusted.mainPickId,
           });
         }
       }
@@ -397,7 +404,8 @@ export function SessionSetup({
         addedIds: adjusted.addedIds,
         order: merged.order,
         swappedOut: adjusted.swappedOut,
-        swappedIn: adjusted.swappedIn,
+        unlabelledPins: adjusted.unlabelledPins,
+        mainPickId: adjusted.mainPickId,
         emptiedByRemove: false,
       });
       return true;
@@ -437,7 +445,8 @@ export function SessionSetup({
           // D-0235 §4: adding a swapped-out exercise back takes it out of the visit's exclusions.
           swappedOut: adjusted.swappedOut.filter((e) => e !== id),
           // An exercise the user adds is theirs, even if a swap had pinned it.
-          swappedIn: adjusted.swappedIn.filter((e) => e !== id),
+          unlabelledPins: adjusted.unlabelledPins.filter((e) => e !== id),
+          mainPickId: adjusted.mainPickId,
           emptiedByRemove: false,
         });
         return null;
@@ -469,8 +478,19 @@ export function SessionSetup({
      */
     const startWith = (id: string): string | null => {
       const inPlan = adjusted.workout.plan.items.some((i) => i.exerciseId === id);
-      const pinned =
+      const base =
         inPlan || adjusted.addedIds.includes(id) ? adjusted.addedIds : [...adjusted.addedIds, id];
+      // T-0935 (D-0239 §2): a main lift the user chose on this visit (a swap-in, an earlier Start
+      // with this, or an added one) is demoted to the front of the pins; an engine pick still
+      // returns to the pool (D-0205 §5).
+      const prev = adjusted.workout.plan.mainLiftId;
+      const demoted =
+        prev !== null &&
+        prev !== id &&
+        (prev === adjusted.mainPickId || adjusted.addedIds.includes(prev))
+          ? prev
+          : null;
+      const pinned = demoted === null ? base : [demoted, ...base.filter((p) => p !== demoted)];
       const visit = inPlan ? adjusted.excludeIds : adjusted.excludeIds.filter((e) => e !== id);
       const result = runSuggest(
         data,
@@ -497,7 +517,11 @@ export function SessionSetup({
           addedIds: pinned,
           order: merged.order,
           swappedOut: inPlan ? adjusted.swappedOut : adjusted.swappedOut.filter((e) => e !== id),
-          swappedIn: adjusted.swappedIn,
+          unlabelledPins:
+            demoted !== null && !adjusted.addedIds.includes(demoted)
+              ? [...adjusted.unlabelledPins, demoted]
+              : adjusted.unlabelledPins,
+          mainPickId: id,
           emptiedByRemove: false,
         });
         return null;
@@ -547,7 +571,8 @@ export function SessionSetup({
             order: adjusted.order?.filter((id) => id !== exerciseId) ?? null,
             excludeIds: [...adjusted.excludeIds, exerciseId],
             swappedOut: adjusted.swappedOut.filter((e) => e !== exerciseId),
-            swappedIn: adjusted.swappedIn.filter((e) => e !== exerciseId),
+            unlabelledPins: adjusted.unlabelledPins.filter((e) => e !== exerciseId),
+            mainPickId: adjusted.mainPickId === exerciseId ? null : adjusted.mainPickId,
             // A removed exercise is no longer a pin (D-0205 §6), or a re-suggest would list it.
             addedIds: adjusted.addedIds.filter((a) => a !== exerciseId),
             emptiedByRemove: next.plan.items.length === 0,
@@ -558,7 +583,7 @@ export function SessionSetup({
         onBudget={(m) => resuggest({ budgetMin: m })}
         focusSwapItem={focusSwapItem}
         onSwapFocused={() => setFocusSwapItem(null)}
-        addedIds={adjusted.addedIds.filter((a) => !adjusted.swappedIn.includes(a))}
+        addedIds={adjusted.addedIds.filter((a) => !adjusted.unlabelledPins.includes(a))}
         catalog={data.library}
         blocked={blocked}
         favoriteIds={favoriteIds}
@@ -615,7 +640,8 @@ export function SessionSetup({
       addedIds: [],
       order: null,
       swappedOut: [],
-      swappedIn: [],
+      unlabelledPins: [],
+      mainPickId: null,
       emptiedByRemove: false,
     });
     void navigate(`${SETUP_PATH}?step=suggested`);
