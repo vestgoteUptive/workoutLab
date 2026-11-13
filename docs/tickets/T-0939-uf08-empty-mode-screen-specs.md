@@ -5,7 +5,7 @@ lane: design
 screens: [UF-08.1, UF-08.2, UF-08.5]
 decisions: [D-0236, D-0238, D-0239, D-0205, D-0211, D-0208]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Empty-start planning (`docs/specs/empty-start-plan.md`) adds a second UF-08.1 button and a new UF-08.2 mode with a Suggestions section. D-0239 §6–§13 settles the layout, the live region, focus and refusal copy, and §16 makes this ticket a dependency of T-0940, T-0941 and T-0942. UF-08.1 has no screen spec yet, and UF-08.2.md and UF-08.5.md still name the fonts Cobalt retired (D-0208, T-0625).

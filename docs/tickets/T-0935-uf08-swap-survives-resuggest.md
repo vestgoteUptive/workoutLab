@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.3, UF-08.5]
 decisions: [D-0235, D-0205, D-0109, D-0191]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Bug report from the human (2026-11-13): after a swap on UF-08.3, adding an exercise on UF-08.5 puts the list back to the first suggestion. The swap only changes the shown `Workout`, and every re-suggest is rebuilt from `addedIds`, `excludeIds` and `mainLiftId`. D-0235 makes the swap part of the visit record.
