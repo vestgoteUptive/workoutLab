@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.2]
 decisions: [D-0237, D-0239, D-0238, D-0236, D-0063]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Empty-start planning (`docs/specs/empty-start-plan.md`, D-0236) needs the plan to hold only what the user picked. Today `suggest` always picks a main lift when none is given (rule 7.2 step 1) and always fills the rest of the time (step 3), so "only the picks" can't be expressed, and emulating it with `removeItem` gives wrong set counts (D-0237). This ticket adds two optional booleans on the steps that already exist. No new ranking, reason code or function. Every result with the switches absent is deep-equal to today's (B18).
