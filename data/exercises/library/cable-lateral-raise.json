@@ -16,7 +16,7 @@
   ],
   "cue": "Raise to shoulder height, control the return",
   "mistakes": ["Turning the torso to help the lift.", "Letting the cable snap the arm back down."],
-  "variants": ["lateral-raise-dumbbell", "rear-delt-fly-dumbbell"],
+  "variants": ["lateral-raise-dumbbell", "rear-delt-fly-dumbbell", "machine-lateral-raise"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

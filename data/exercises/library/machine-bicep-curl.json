@@ -1,0 +1,23 @@
+{
+  "id": "machine-bicep-curl",
+  "name": "Machine bicep curl",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "arms": 1 },
+  "instructions": [
+    "Set the seat so your upper arms rest flat on the pad.",
+    "Grip the handles with your palms facing up.",
+    "Curl the handles up toward your shoulders.",
+    "Lower back down with control until your arms are almost straight."
+  ],
+  "cue": "Arms on the pad, curl and lower slowly",
+  "mistakes": ["Lifting the elbows off the pad.", "Cutting the lowering short."],
+  "variants": ["dumbbell-bicep-curl", "barbell-bicep-curl"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

@@ -16,7 +16,7 @@
   ],
   "cue": "Curl up, squeeze, lower slowly",
   "mistakes": ["Swinging the body to help the curl.", "Only lowering halfway before curling again."],
-  "variants": ["barbell-bicep-curl", "hammer-curl-dumbbell"],
+  "variants": ["barbell-bicep-curl", "hammer-curl-dumbbell", "machine-bicep-curl"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

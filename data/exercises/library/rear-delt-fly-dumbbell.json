@@ -16,7 +16,7 @@
   ],
   "cue": "Hinge forward, raise arms wide",
   "mistakes": ["Standing too upright, which shifts the work to the shoulders' front.", "Using momentum instead of a slow raise."],
-  "variants": ["lateral-raise-dumbbell", "cable-lateral-raise"],
+  "variants": ["lateral-raise-dumbbell", "cable-lateral-raise", "machine-rear-delt-fly"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

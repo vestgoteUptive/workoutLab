@@ -15,7 +15,7 @@
   ],
   "cue": "Kick back against the band",
   "mistakes": ["Arching the back to lift the leg higher.", "Letting the hips rotate open."],
-  "variants": ["cable-kickback"],
+  "variants": ["cable-kickback", "glute-kickback-machine"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

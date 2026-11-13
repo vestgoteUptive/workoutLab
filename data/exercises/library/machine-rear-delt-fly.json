@@ -1,0 +1,23 @@
+{
+  "id": "machine-rear-delt-fly",
+  "name": "Machine rear delt fly",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "shoulders": 1 },
+  "instructions": [
+    "Sit facing the pad with your chest against it.",
+    "Set the handles so your arms reach them straight out in front at shoulder height.",
+    "Sweep your arms out and back in a wide arc.",
+    "Bring the handles back to the front with control."
+  ],
+  "cue": "Chest on the pad, arms wide and back",
+  "mistakes": ["Bending the elbows to pull with the back instead.", "Leaning away from the pad to swing the weight."],
+  "variants": ["rear-delt-fly-dumbbell"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

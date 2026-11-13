@@ -16,7 +16,7 @@
   ],
   "cue": "Pull the elbow past your hip",
   "mistakes": ["Twisting the torso to pull the weight up.", "Letting the shoulder shrug instead of the elbow driving back."],
-  "variants": ["barbell-row"],
+  "variants": ["barbell-row", "machine-row"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

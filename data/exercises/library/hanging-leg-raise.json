@@ -15,7 +15,7 @@
   ],
   "cue": "Raise the legs, lower slowly",
   "mistakes": ["Swinging the body to throw the legs up.", "Letting the legs drop fast on the way down."],
-  "variants": ["cable-woodchop", "weighted-russian-twist"],
+  "variants": ["cable-woodchop", "weighted-russian-twist", "machine-ab-crunch"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

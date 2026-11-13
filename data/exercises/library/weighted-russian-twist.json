@@ -16,7 +16,7 @@
   ],
   "cue": "Rotate side to side, chest tall",
   "mistakes": ["Rounding the back to reach the floor.", "Moving the arms instead of rotating the torso."],
-  "variants": ["cable-woodchop", "hanging-leg-raise"],
+  "variants": ["cable-woodchop", "hanging-leg-raise", "machine-torso-rotation"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"

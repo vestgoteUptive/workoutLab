@@ -1,0 +1,23 @@
+{
+  "id": "machine-row",
+  "name": "Machine row",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "beginner",
+  "equipment": ["machine"],
+  "bodyweight": false,
+  "increment_kg": 5,
+  "areas": { "back": 1, "arms": 0.5 },
+  "instructions": [
+    "Set the seat so the handles are level with your lower chest.",
+    "Sit with your chest against the pad and grip the handles.",
+    "Pull the handles back, driving your elbows past your sides.",
+    "Let your arms reach forward again with control."
+  ],
+  "cue": "Chest on the pad, elbows back",
+  "mistakes": ["Lifting your chest off the pad to lean back.", "Shrugging instead of squeezing the shoulder blades."],
+  "variants": ["seated-cable-row", "dumbbell-row", "machine-lat-pulldown"],
+  "timed": false,
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

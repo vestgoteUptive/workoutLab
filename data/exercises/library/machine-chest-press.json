@@ -16,7 +16,7 @@
   ],
   "cue": "Press forward, return slowly",
   "mistakes": ["Shrugging the shoulders up during the press.", "Using momentum instead of a steady push."],
-  "variants": ["incline-dumbbell-press"],
+  "variants": ["incline-dumbbell-press", "incline-machine-press"],
   "timed": false,
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
