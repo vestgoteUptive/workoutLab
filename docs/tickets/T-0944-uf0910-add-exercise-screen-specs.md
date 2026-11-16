@@ -5,7 +5,7 @@ lane: design
 screens: [UF-09.10, UF-09.9, UF-08.5]
 decisions: [D-0243, D-0246, D-0205, D-0208, D-0211, D-0231, D-0203]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 The owner wants to add an exercise mid-workout (`docs/specs/add-exercise-in-session.md`). D-0243 §9 makes screen specs a prerequisite for any UI ticket, and D-0246 §18 fixes what they contain. UF-08.5.md is also stale: its line 3 says it is never reachable from UF-09 (D-0243 amends D-0205 §1), and it still names the retired Chalk & Iron fonts and `.wl-card` rows (D-0208).
