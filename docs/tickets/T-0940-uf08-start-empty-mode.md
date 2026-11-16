@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.1, UF-08.2, UF-08.3, UF-08.4, UF-08.5]
 decisions: [D-0236, D-0237, D-0239, D-0235, D-0205, D-0191, D-0199, D-0109, D-0211, D-0063]
 deps: [T-0935, T-0936, T-0939]
-status: todo
+status: in-progress
 ---
 ## Why
 The owner wants to start a workout empty and pick exercises (`docs/specs/empty-start-plan.md`, D-0236). This ticket builds the mode itself: the entry, the setup-record fields, the plan call that holds only the picks (`autoMainLift: false`, `fill: false`, D-0237), and how every existing UF-08.2 control behaves in it (D-0239 §1–§2, §6–§7, §9, §11–§13). The Suggestions section is T-0941. It also lands `mainPickId` in suggested mode, which amends D-0235 §2 so a time chip can't lose a chosen main lift (D-0239 §1).
