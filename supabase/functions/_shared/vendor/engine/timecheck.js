@@ -145,8 +145,8 @@ function assertTimeLeft(workout, progress) {
 /**
  * What is left of item `item` after `done` sets (rule 8, D-0244 §2): its whole `costS` when
  * nothing is logged, otherwise the sets still to do (a back-off counts as a set) at rule 8's
- * per-set cost, with no transition. Rounded up to the whole second, which is exact for every
- * item the engine builds; D-0244 §2 asks for an integer, and up is the conservative side.
+ * per-set cost, with no transition. The whole remainder is rounded up once, in integers
+ * (D-0249), which is exact for every item the engine builds; D-0244 §2 asks for an integer.
  */
 function remainingS(item, done) {
     if (done === 0)

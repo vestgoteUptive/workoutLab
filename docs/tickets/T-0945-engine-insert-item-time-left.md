@@ -3,7 +3,7 @@ id: T-0945
 title: "Engine: add one exercise to a workout in progress (sets, reps, weight and whether it fits) and work out how much time is left"
 lane: engine
 screens: [UF-09.10, UF-09.9]
-decisions: [D-0244, D-0246, D-0243, D-0092, D-0105, D-0191, D-0096, D-0239]
+decisions: [D-0244, D-0249, D-0246, D-0243, D-0092, D-0105, D-0191, D-0096, D-0239]
 deps: [T-0936]
 status: in-progress
 ---
