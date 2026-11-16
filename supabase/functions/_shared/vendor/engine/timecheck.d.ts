@@ -2,7 +2,7 @@
 // Source: packages/{pkg}/src. Rerun `node supabase/scripts/vendor.mjs` after an engine or
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
-import type { TimeCheckProgress, TimeCheckResult, Workout } from "./types.js";
+import type { TimeCheckProgress, TimeCheckResult, TimeLeftProgress, Workout } from "./types.js";
 /** UF-09.8 shows only when `behindS ≥ SHOW_BEHIND_S` (rule 8). */
 export declare const SHOW_BEHIND_S = 60;
 /** Trim step 1 only cuts sets from accessories above this many sets (rule 8). */
@@ -14,3 +14,12 @@ export declare const TRIM_MIN_SETS = 2;
  * Skip next removes the next item even when it is the main lift (D-0040 §10).
  */
 export declare function timeCheck(workout: Workout, progress: TimeCheckProgress): TimeCheckResult;
+/**
+ * Rule 8 time left in a workout in progress (UF-09.10, D-0244 §2, D-0246 §11):
+ * `budgetMin × 60 − elapsedS − warmupLeftS − Σ remaining(i)` over the items that are not
+ * skipped. An integer, negative when the workout is behind. Between exercises it equals
+ * `−timeCheck(…).behindS` only when no item at or after the next one has sets logged ahead
+ * and none of them is skipped. Throws `RangeError` on an input outside its domain. Never
+ * mutates its inputs.
+ */
+export declare function timeLeftS(workout: Workout, progress: TimeLeftProgress): number;

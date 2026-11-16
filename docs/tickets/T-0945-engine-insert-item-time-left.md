@@ -3,7 +3,7 @@ id: T-0945
 title: "Engine: add one exercise to a workout in progress (sets, reps, weight and whether it fits) and work out how much time is left"
 lane: engine
 screens: [UF-09.10, UF-09.9]
-decisions: [D-0244, D-0246, D-0243, D-0092, D-0105, D-0191, D-0096, D-0239]
+decisions: [D-0244, D-0249, D-0246, D-0243, D-0092, D-0105, D-0191, D-0096, D-0239]
 deps: [T-0936]
 status: in-progress
 ---
@@ -69,3 +69,15 @@ Checklist (D-0197 §7): zero vs returning history (AC20–AC21); fits vs refused
 Tests for every AC pass · simulated 14-day history tests pass · `pnpm -w typecheck lint test` green · `vendor.mjs --check` green · commit messages start with `T-0945` and cite UF-09.10.
 
 Per-package commands: write one command per script — `pnpm --filter @workoutlab/engine typecheck`, then a separate `… lint`, then a separate `… test`.
+
+## Build / accept log
+- 2026-11-13 engine-dev: start clean at `78ac42e1` (main-hzlbfc, T-0936 merged), worktree `t/T-0945-insert-item`.
+- Changed: `src/insert-item.ts` (new `insertItem`), `timeLeftS` in `src/timecheck.ts`, types `TimeLeftProgress` / `InsertOptions` / `InsertResult` in `src/types.ts`, exports in `src/index.ts`; `docs/engine-rules.md` §0 purity list, rule 8 `timeLeftS` paragraph + R8-E4…E7, rule 12.3 + R12-E20…E26, Required tests, T-0945 Traceability row; re-vendored. Remaining time of a started item rounds up in integers (exact for engine-built items; D-0244 §2 asks for an integer) — draft D-0249 handed to the orchestrator, not committed (lane check).
+- AC1–AC4 → `rule-8-time-left.test.ts` R8-E4…R8-E7 · AC5, AC6 → same file "skipped items and the warm-up", "validation" · AC7 → "consistency with timeCheck" (equality + documented sibling).
+- AC8–AC14 → `rule-12-3-insert-item.test.ts` R12-E20…R12-E26 (+B17 time check) · AC15–AC17 → "check order, cap and duplicates" · AC18 → "purity and determinism" (+ rule-8 file) · AC19 → "invariants after an insert" · AC28 → "contract text".
+- AC20–AC23 → `rule-12-3-insert-histories.test.ts` (zero/balanced/allChestNoLegs; returningAfter10Days romanian-deadlift `hold_after_break`; 15 min all `time`; 90 min fill to 8 → `items_cap`).
+- AC24–AC27 → `rule-12-3-insert-properties.test.ts` (mulberry32, ≥ 200 passing cases each, seed in every message, 30 s budgets per T-0230).
+- AC29 → `node supabase/scripts/vendor.mjs --check` exit 0.
+- Red on unfixed docs: the 12 AC18/AC28 contract-text tests failed before the rules text was written.
+- Planted faults (backup copy, restored with `cp`, `cmp` clean): sets [2] only → 6 fail; cap before structural → 3; no whole-cost for unstarted → 34; `swap: null` → 5; items not copied → 25; `unusedS` unclamped → 1; no `energy_low_trim` → 1; skipped ignored → 4; `<` instead of `≤` → 1; warm-up-off check removed → 2; floor instead of ceil → 1.
+- First full gate: 2 guard failures (T-0230 seeded budgets, B18 suggest-caller imports) → budgets added, three files imported in `rule-7-switches-b18.test.ts`.
