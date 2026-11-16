@@ -26,7 +26,7 @@ Body areas: chest, back, shoulders, arms, core, glutes, quads, hamstrings, calve
 If you need a contract change your lane doesn't own, stop that task and propose it (a follow-up, or triage).
 
 ## Screen IDs
-Use **user flows v2**: `Design-docs/docs/product/user-flows.md` (D-0002). `docs/user-flows-v1.md` is history. v2 adds UF-10 Balance, UF-11 Plan check-in and UF-01.5 Account. Put IDs in tickets, commits and PR titles, e.g. `T-0304 UF-09.5: auto-start rest`.
+Use **user flows v2**: `Design-docs/docs/product/user-flows.md` (D-0002). `docs/user-flows-v1.md` is history. v2 adds UF-10 Balance, UF-11 Plan check-in and UF-01.5 Account. Put IDs in tickets, commits and PR titles, e.g. `T-0304 UF-09.5: auto-start rest`. When you report to the human, never give a bare ID: always follow it with a short plain-language title of what it does, e.g. "T-0935 (keep a swap when you add an exercise)".
 
 ## Design system ("Cobalt", D-0208)
 Source: `Design-docs/docs/design/design-system.md` → `packages/design-tokens`. Three screen states, `[data-wl-state="plan|lift|rest"]`, plus `.wl-paper`; `:root` is plan (`plan.bg #2337C6`). Screens read the generic `--wl-*` variables, never a state's raw keys. Fonts: Familjen Grotesk (plan) and Bricolage Grotesque (session). Chalk & Iron was retired in T-0625. Coverage ramp and attention outline: D-0003, D-0211.

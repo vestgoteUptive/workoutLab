@@ -286,6 +286,9 @@ describe("AC-1 mount (D-0071 §7)", () => {
 });
 
 describe("AC-2 apply renders the engine result", () => {
+  // T-0935 (D-0235 §1, §3): the chip's re-suggest keeps the swap. Db row is a pin and Barbell row
+  // is excluded for the visit; at 20 min the engine drops the pin silently (no Doesn't fit line)
+  // and Barbell row still does not come back. Before D-0235 the chip sent `excludeIds: []`.
   it("T-0303c AC-2 Short on time + db-row replaces row 2 with the engine's reason; chip 20 drops it", async () => {
     await toSuggested();
     const before = suggestSpy.mock.calls.length;
@@ -312,8 +315,15 @@ describe("AC-2 apply renders the engine result", () => {
     await settle();
     expect(suggestSpy.mock.calls.length).toBe(before + 1);
     const input = suggestSpy.mock.lastCall![4];
-    expect(input).toMatchObject({ budgetMin: 20, shuffle: 0, excludeIds: [] });
+    expect(input).toMatchObject({
+      budgetMin: 20,
+      shuffle: 0,
+      excludeIds: ["barbell-row"],
+      pinnedIds: ["db-row"],
+    });
     expect(shown()).not.toContain("Db row");
+    expect(shown()).not.toContain("Barbell row");
+    expect(document.querySelector('[data-part="doesnt-fit"]')).toBeNull();
   });
 });
 

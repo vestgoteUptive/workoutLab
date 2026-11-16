@@ -135,6 +135,20 @@ export interface SessionInput {
      * or the fit check. Absent means `[]`; duplicates, order and unknown ids have no effect.
      */
     favoriteIds?: readonly string[];
+    /**
+     * Rule 7.2 step 1 (D-0237 §1, D-0239 §4, UF-08.2 empty mode): `false` turns off the fallback
+     * main-lift choice, so only an eligible `mainLiftId` that fits becomes the main lift. Absent
+     * (or `undefined`) and `true` mean on, deep-equal to a call without it. Only `=== false` turns
+     * it off; any other present value is a `RangeError`. Never copied into `Workout`.
+     */
+    autoMainLift?: boolean;
+    /**
+     * Rule 7.2 step 3 (D-0237 §1, D-0239 §4): `false` skips the greedy fill, so the plan holds
+     * only the main lift (if any) and the placed pins. Absent (or `undefined`) and `true` mean on.
+     * Only `=== false` turns it off; any other present value is a `RangeError`. Never copied into
+     * `Workout`.
+     */
+    fill?: boolean;
 }
 export type PrefillKind = "first_time" | "carry" | "reentry" | "hold_after_break" | "increase" | "deload" | "hold" | "add_rep";
 export type SwapReason = "equipment_taken" | "discomfort" | "variety" | "short_on_time";

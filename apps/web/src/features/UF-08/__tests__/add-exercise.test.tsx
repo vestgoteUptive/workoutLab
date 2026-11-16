@@ -374,18 +374,26 @@ describe("an added exercise that leaves the plan leaves the pins", () => {
     expect(document.querySelector('[data-part="doesnt-fit"]')).toBeNull();
   });
 
-  it("a UF-08.3 swap of an added item takes it off the pins", async () => {
+  // T-0935 AC5 (D-0235 §1, replaces "takes it off the pins"): the swap-in takes the added id's
+  // place in the pins, and the swapped-out id is excluded for the visit.
+  it("a UF-08.3 swap of an added item puts the swap-in in its place on the pins", async () => {
     await toPlan();
     await addBackSquat();
     fireEvent.click(button("Swap Back squat"));
     const use = await screen.findAllByRole("button", { name: /^Use / });
+    expect(use[0]).toHaveTextContent("Use Hip thrust");
     fireEvent.click(use[0]!);
     await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]));
     expect(rowNames()).not.toContain("Back squat");
+    expect(rowNames()).toContain("Hip thrust");
     spy.mockClear();
     fireEvent.click(button("20 minutes"));
-    expect(lastInput().pinnedIds).toEqual([]);
-    expect(document.querySelector('[data-part="doesnt-fit"]')).toBeNull();
+    expect(lastInput().pinnedIds).toEqual(["hip-thrust"]);
+    expect(lastInput().excludeIds).toContain("back-squat");
+    expect(rowNames()).not.toContain("Back squat");
+    expect(document.querySelector('[data-part="doesnt-fit"]')?.textContent ?? "").not.toMatch(
+      /Back squat/,
+    );
   });
 });
 

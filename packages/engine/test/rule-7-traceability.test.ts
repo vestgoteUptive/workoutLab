@@ -71,6 +71,46 @@ describe("T-0201b traceability", () => {
   });
 });
 
+const T0936_IDS = ["R7-E31", "R7-E32", "R7-E33", "R7-E34", "R7-E35", "R7-E36"];
+
+describe("T-0936 traceability (D-0237, D-0239 §14)", () => {
+  const doc = readFileSync(path.join(REPO_DIR, "docs", "engine-rules.md"), "utf8");
+
+  it("rule-7 (T-0936) R7-E31…R7-E36 each appear once in rule 7.2 and in a test title", () => {
+    const r72 = section(doc, "### 7.2 ", "### 7.3 ");
+    for (const id of T0936_IDS) {
+      expect(
+        r72.split("\n").filter((l) => l.startsWith(`- **${id} `)),
+        id,
+      ).toHaveLength(1);
+    }
+    expect(missingIds(T0936_IDS)).toEqual([]);
+  });
+
+  it("rule-7 (T-0936) §0, 7.2 steps 1 and 3, 7.3, rule 13, Required tests and one Traceability row name the switches", () => {
+    const r0 = section(doc, "## 0. ", "## 1. ");
+    const sessionLine = r0.split("\n").find((l) => l.startsWith("- **Session input**"));
+    expect(sessionLine).toContain("`autoMainLift` (step 1) and `fill` (step 3) (D-0237, D-0239 §4");
+    const r72 = section(doc, "### 7.2 ", "### 7.3 ");
+    const step1 = r72.split("\n").find((l) => l.startsWith("1. **Main lift:**"));
+    expect(step1).toContain("When `autoMainLift` is `false` there is **no fallback**");
+    const step3 = r72.split("\n").find((l) => l.startsWith("3. **Greedy:**"));
+    expect(step3).toContain("When `fill` is `false` this step is **skipped**.");
+    expect(r72).toContain("- **Switches (UF-08.2 empty mode, D-0237, D-0239 §4, §15):**");
+    expect(r72).toContain("Only `=== false` turns a switch off.");
+    expect(r72).toContain("is a `RangeError` naming the key");
+    expect(r72).toContain("never copied into the `Workout`");
+    const r73 = section(doc, "### 7.3 ", "### 7.4 ");
+    expect(r73).toContain("When `items` is empty");
+    const r13 = section(doc, "## 13. ", "## 14. ");
+    expect(r13).toContain("With `fill: false` (rule 7.2)");
+    const required = section(doc, "## Required tests", "## Traceability");
+    expect(required).toContain("rule-7-switches-histories.test.ts");
+    const table = doc.slice(doc.indexOf("## Traceability"));
+    expect(table.split("\n").filter((l) => /^\|.*\|\s*T-0936\s*\|$/.test(l))).toHaveLength(1);
+  });
+});
+
 function missingIds(ids: readonly string[]): string[] {
   const titleRe = /\b(?:it|test)(?:\.each\([\s\S]*?\))?\(\s*(["'`])((?:\\.|(?!\1).)*)\1/g;
   const titles: string[] = [];
