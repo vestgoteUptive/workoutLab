@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-09.10, UF-09.9]
 decisions: [D-0244, D-0249, D-0246, D-0243, D-0092, D-0105, D-0191, D-0096, D-0239]
 deps: [T-0936]
-status: in-progress
+status: done
 ---
 ## Why
 A mid-workout add (`docs/specs/add-exercise-in-session.md`) needs the engine, not the UI, to pick the set count, reps, pre-fill and cost and to decide whether the item fits (principle 3). `suggest` with pins is the wrong tool (D-0244 Context). This ticket adds two pure functions: `insertItem` (new rule 12.3) and `timeLeftS` (rule 8 extended), as amended by D-0246 §8–§14. Branch from `main` after T-0936 merges: it changes the same files, `engine-rules.md` §0 and the vendored copy (D-0246 §14, serial engine lane D-0096).
@@ -81,3 +81,8 @@ Per-package commands: write one command per script — `pnpm --filter @workoutla
 - Red on unfixed docs: the 12 AC18/AC28 contract-text tests failed before the rules text was written.
 - Planted faults (backup copy, restored with `cp`, `cmp` clean): sets [2] only → 6 fail; cap before structural → 3; no whole-cost for unstarted → 34; `swap: null` → 5; items not copied → 25; `unusedS` unclamped → 1; no `energy_low_trim` → 1; skipped ignored → 4; `<` instead of `≤` → 1; warm-up-off check removed → 2; floor instead of ceil → 1.
 - First full gate: 2 guard failures (T-0230 seeded budgets, B18 suggest-caller imports) → budgets added, three files imported in `rule-7-switches-b18.test.ts`.
+
+### Accept (orchestrator, 2026-11-16)
+- QA: 26 planted faults were all caught. AC28 (rule 8 rounding text plus the D-0249 cite) was fixed in e77bbca3 after the review.
+- Code review: two text points, both fixed. One follow-up, non-blocking: share the daysSince and totals blocks between applySwap, removeItem and insertItem.
+- Forced full gate after merging the base: turbo 19/19, format, check:repo, test:repo-checks 395/395, vendor and seed checks all green.
