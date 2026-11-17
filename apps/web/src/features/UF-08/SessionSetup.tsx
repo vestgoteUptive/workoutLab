@@ -566,7 +566,7 @@ export function SessionSetup({
           order: merged.order,
           swappedOut: inPlan ? adjusted.swappedOut : adjusted.swappedOut.filter((e) => e !== id),
           unlabelledPins:
-            demoted !== null && !adjusted.addedIds.includes(demoted)
+            !empty && demoted !== null && !adjusted.addedIds.includes(demoted)
               ? [...adjusted.unlabelledPins, demoted]
               : adjusted.unlabelledPins,
           mainPickId: id,

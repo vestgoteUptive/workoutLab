@@ -266,9 +266,16 @@ export function Suggested({
           notFitting.map((id) => exerciseName(id, library)),
         );
   // The standing line also goes to the status region, so a screen reader hears it appear.
+  // A successful action sets its own confirmation in the same batch that changes the list; the
+  // standing line must not overwrite it (T-0940 QA). Cleared once the new plan has rendered.
+  const keepActionStatus = useRef(false);
   useEffect(() => {
+    if (keepActionStatus.current) return;
     setStatus(notFittingText);
   }, [notFittingText]);
+  useEffect(() => {
+    keepActionStatus.current = false;
+  }, [workout]);
 
   // Empty mode: "{name} added. {left} min left." with the new plan's `unusedS` (D-0239 §9).
   useEffect(() => {
@@ -597,6 +604,7 @@ export function Suggested({
                         const refusal = onStartWith(item.exerciseId);
                         if (refusal === null) {
                           pendingStartFocus.current = item.exerciseId;
+                          keepActionStatus.current = true;
                           setStatus(en.uf08.mainNow(name));
                         } else setStatus(refusal);
                       }}
@@ -744,7 +752,10 @@ export function Suggested({
               closing.current = true;
               pendingAddFocus.current = id;
               if (empty) pendingAddStatus.current = exerciseName(id, library);
-              else setStatus(en.uf08.added(exerciseName(id, library)));
+              else {
+                keepActionStatus.current = true;
+                setStatus(en.uf08.added(exerciseName(id, library)));
+              }
               void navigate(-1);
             }
             return refusal;
@@ -756,6 +767,7 @@ export function Suggested({
                   const refusal = onStartWith(id);
                   if (refusal === null) {
                     closing.current = true;
+                    keepActionStatus.current = true;
                     pendingAddFocus.current = id;
                     setStatus(en.uf08.mainNow(exerciseName(id, library)));
                     void navigate(-1);

@@ -102,3 +102,8 @@ Gate:
 - Playwright uf-08-* (6 specs): 73 passed.
 - `-w check:repo`: only `ticket-not-on-base` (the base is `main-hzlbfc`, as for T-0935).
 - `-w test:repo-checks`: 391 pass, 4 fail. All 4 are "check:repo exits 0 on the real repo" tests (AC21 ×2, AC-10, T-0496 AC-5) and fail on the same `ticket-not-on-base` finding. They go green once the ticket is on `main`.
+
+### Round 2: review and QA fixes
+- Fixes: (1) `Suggested.tsx` keeps an action's success status through the Doesn't-fit effect (`keepActionStatus`, cleared after the new plan renders); (5) `SessionSetup.tsx` no longer puts a demoted main into `unlabelledPins` in empty mode. Tests 2, 3, 4 pin existing behaviour. AC18 vacuous CSS/`data-over` rule check dropped (no CSS rule uses `data-over`); the test now asserts the unchanged class names.
+- New tests in `empty-mode.test.tsx` (37 tests), each planted-fault red then restored from a backup copy: QA status survives (guard removed: red); dropped main demoted to front, `pinnedIds` exactly `[bench-press, leg-extension]` (prev = plan.mainLiftId: red); Start empty while checking (guard removed: red; an earlier loader-hang version stayed green because `runSuggest` swallows null data, so the test uses a deferred stored-list read); "10 of 30 min · 20 min left" (`Math.floor` in `usedMinutes`: red); demoted main reads "Added by you" (`!empty &&` removed: red).
+- Gate: web turbo typecheck lint test `--force --concurrency=1` 4/4, 4988 tests; `-w format:check` green; Playwright uf-08-* 73 passed.

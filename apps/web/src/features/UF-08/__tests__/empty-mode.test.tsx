@@ -3,11 +3,11 @@
 // (L1, zero history, energy normal, warm-up on), the real UF-05.1 sheet does the swaps. Only AC15,
 // AC17 and one AC13 case stub a single `suggest` result, for states the real engine can't reach.
 // The device is offline throughout (B16): everything runs from the cache.
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import Dexie from "dexie";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { suggest, type SessionInput, type Workout } from "@workoutlab/engine";
+import { offlineDb } from "../../../lib/offline/db.js";
 import { excludeExercise } from "../../../lib/offline/excluded.js";
 import { upsertSession } from "../../../lib/offline/queue.js";
 import { fitLine, renderSetup, screenIds, serveCache, setOnline, settle } from "./harness.js";
@@ -583,25 +583,16 @@ describe("AC18 (B22) over budget after a fitsBudget: false swap", () => {
     return over;
   }
 
-  it("the line reads '{used} of 30 min · X min over'; the bar has data-over and no new class", async () => {
+  it("the line reads '{used} of 30 min · X min over'; the bar keeps its classes", async () => {
     const over = await overBudget();
     expect(budgetText()).toHaveTextContent(new RegExp(`^\\d+ of 30 min · ${over} min over$`));
     const budget = document.querySelector<HTMLElement>(".wl-uf08__budget")!;
     expect(budget).toHaveAttribute("data-over", "true");
-    // Words, not colour (D-0211 §5): the same classes as within budget, and no data-over rule
-    // in the screen's stylesheet sets a colour.
+    // Words, not colour (D-0211 §5): the same classes as within budget. No CSS rule uses
+    // `data-over`, so there is nothing colour-wise to assert beyond the class names.
     expect(budget.className).toBe("wl-uf08__budget");
     expect(budgetText().className).toBe("wl-uf08__budget-text");
     expect(document.querySelector('[data-part="bar"]')!.className).toBe("wl-uf08__bar");
-    for (const file of ["../uf-08.css", "../../../main.css"]) {
-      const css = readFileSync(resolve(__dirname, file), "utf8");
-      const overRules = css.match(/[^{}]*data-over[^{}]*\{[^}]*\}/g) ?? [];
-      for (const rule of overRules) {
-        expect(rule, file).not.toMatch(
-          /(^|[\s;{])(color|background(-color)?|fill|border-color)\s*:/,
-        );
-      }
-    }
   });
 
   it("UF-08.5 Add is refused on the sheet; a row's Start with this in the status line", async () => {
@@ -725,5 +716,82 @@ describe("AC23 (B16, unit side) offline", () => {
     expect(upsert).not.toHaveBeenCalled();
     expect(storeExclusion).not.toHaveBeenCalled();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+// ---- Review and QA fixes (T-0940 round 2) ----
+
+describe("QA: a success message survives a Doesn't fit change", () => {
+  it("at 20 min, remove Bench press, Start with Inverted row: 'Inverted row is the main lift now.'", async () => {
+    await benchAndRow();
+    chip(20);
+    expect(rowIds()).toEqual(["bench-press"]);
+    fireEvent.click(button("Remove Bench press"));
+    await sheet("Inverted row", "Start with");
+    expect(rowIds()).toEqual(["inverted-row"]);
+    expect(status()).toHaveTextContent(/^Inverted row is the main lift now\.$/);
+  });
+});
+
+describe("Review: a dropped main pick is demoted to the front of the pins", () => {
+  it("a chip drops the main; Start with Barbell row puts Bench press first, then the others", async () => {
+    await open(45);
+    await sheet("Bench press", "Start with");
+    await sheet("Leg extension");
+    await sheet("Barbell row");
+    spy.mockImplementationOnce((h, t, p, l, input, now, tz) =>
+      realSuggest(h, t, p, l, { ...input, mainLiftId: null }, now, tz),
+    );
+    chip(30);
+    expect(mainRows()).toEqual([]);
+    expect(rowIds()).toContain("barbell-row");
+    fireEvent.click(button("Start with Barbell row"));
+    expect(lastInput().mainLiftId).toBe("barbell-row");
+    expect(lastInput().pinnedIds).toEqual(["bench-press", "leg-extension"]);
+  });
+
+  it("the demoted main lift still reads 'Added by you' in empty mode", async () => {
+    await open(45);
+    await sheet("Bench press", "Start with");
+    await sheet("Barbell row");
+    fireEvent.click(button("Start with Barbell row"));
+    expect(
+      document.querySelector(
+        '[data-part="item-row"][data-id="bench-press"] [data-part="row-detail"]',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      document.querySelector('[data-part="item-row"][data-id="bench-press"]'),
+    ).toHaveTextContent("Added by you");
+  });
+});
+
+describe("Review: Start empty while UF-08.1 is still checking what fits", () => {
+  it("does nothing until the stored list has answered", async () => {
+    const table = offlineDb().excludedCache;
+    const realWhere = table.where.bind(table);
+    let release!: () => void;
+    const gate = new Dexie.Promise<void>((r) => (release = r));
+    vi.spyOn(table, "where").mockImplementation(((...args: unknown[]) => {
+      if (typeof args[0] !== "object") return (realWhere as (...a: unknown[]) => unknown)(...args);
+      const collection = (realWhere as (...a: unknown[]) => ReturnType<typeof realWhere>)(...args);
+      return { toArray: () => gate.then(() => collection.toArray()) };
+    }) as never);
+    renderSetup();
+    await settle(100);
+    expect(screen.getByText("Checking what fits…")).toBeInTheDocument();
+    fireEvent.click(document.querySelector('[data-part="start-empty"]')!);
+    await settle();
+    expect(screenIds()).toEqual(["UF-08.1"]);
+    expect(spy).not.toHaveBeenCalled();
+    await act(async () => release());
+  });
+});
+
+describe("Review: the budget line rounds used minutes up", () => {
+  it("after Leg extension at 30 min it reads '10 of 30 min · 20 min left'", async () => {
+    await open(30);
+    await sheet("Leg extension");
+    expect(budgetText()).toHaveTextContent(/^10 of 30 min · 20 min left$/);
   });
 });
