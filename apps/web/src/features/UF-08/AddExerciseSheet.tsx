@@ -19,6 +19,8 @@ export interface AddExerciseSheetProps {
   catalog: readonly LibraryExercise[];
   items: readonly WorkoutItem[];
   budgetMin: number;
+  /** T-0940: the lead line; absent is suggested mode's "The rest of your workout adjusts…". */
+  lead?: string;
   /** Exercise id to its disabled-row reason line (T-0574); absent ids can be added. */
   blocked?: Readonly<Record<string, string>>;
   /** T-0577: stored favorite ids and whether that list has loaded (D-0205 §2, D-0202). */
@@ -43,6 +45,7 @@ export function AddExerciseSheet({
   catalog,
   items,
   budgetMin,
+  lead,
   blocked = {},
   favoriteIds = [],
   favoritesLoaded = true,
@@ -243,7 +246,7 @@ export function AddExerciseSheet({
             <CrossIcon size={20} />
           </button>
         </div>
-        <p className="wl-uf08__sheet-lead wl-type-label">{en.uf08.addLead(budgetMin)}</p>
+        <p className="wl-uf08__sheet-lead wl-type-label">{lead ?? en.uf08.addLead(budgetMin)}</p>
         <label htmlFor={searchId} className="wl-uf08__label wl-type-label">
           {en.uf08.searchLabel}
         </label>

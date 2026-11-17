@@ -6,7 +6,12 @@
 // engine's `removeItem` (T-0521, D-0191 §4): no suggest call, no refill.
 //
 // The `workout` prop is the host's current `Workout`; nothing on this screen calls `suggest`.
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+//
+// T-0940 empty mode (D-0236, D-0239 §6-§13, UF-08.2.md › Empty mode): the budget line reads
+// "{used} of {n} min · {left} min left" and is not live (the status line is the one region for
+// the messages), 0 items show the empty-plan line and an `aria-disabled` "Looks good", and Shuffle
+// is not shown (T-0941 adds "Other suggestions").
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import {
   WARMUP_COST_S,
@@ -26,8 +31,11 @@ import { ExerciseHowTo } from "../UF-04/index.js";
 import { AddExerciseSheet } from "./AddExerciseSheet.js";
 import { RemovedLine } from "./RemovedLine.js";
 import { exerciseName, isBodyweight, type LibraryLookup } from "./rows.js";
+import { leftMinutes, overMinutes, usedMinutes } from "./budget.js";
 
 export interface SuggestedProps {
+  /** T-0940 (D-0236 §2): the visit's planning mode; absent is "suggested". */
+  mode?: "suggested" | "empty";
   workout: Workout;
   /** The library the plan was built from: names and `externalLoad` only. */
   library: LibraryLookup;
@@ -63,6 +71,12 @@ export interface SuggestedProps {
   onSwapFocused?: () => void;
   /** T-0573: ids added on this visit, in add order (D-0205). Their reason line is "Added by you". */
   addedIds?: readonly string[];
+  /**
+   * T-0940 (D-0239 §1): the ids the visit keeps (the main pick, then the pins) that a re-suggest
+   * may have left out; each one missing from the plan is named in "Doesn't fit in {n} min: …".
+   * Absent means `addedIds`.
+   */
+  keptIds?: readonly string[];
   /** The full library, for UF-08.5's search. With `onAdd`, shows "Add exercise". */
   catalog?: readonly LibraryExercise[];
   /** T-0574: exercise id to the reason its Add is disabled on UF-08.5. */
@@ -114,15 +128,22 @@ function Segment({ kind, seconds }: { kind: string; seconds: number }) {
   return <span ref={ref} className="wl-uf08__seg" data-segment={kind} />;
 }
 
-/** The bar and its text (D-0109 §5). */
-function BudgetBar({ workout }: { workout: Workout }) {
+/**
+ * The bar and its text (D-0109 §5). Empty mode (D-0239 §6-§7, §9): "{used} of {n} min · {left} min
+ * left" (or "· {over} min over"), and no `aria-live`; the bar itself is the same in both modes.
+ */
+function BudgetBar({ workout, empty }: { workout: Workout; empty: boolean }) {
   const { budgetMin, warmupInBudget, itemsTotalS, totalS, unusedS } = workout;
   const available = availableS(budgetMin, warmupInBudget);
   const over = itemsTotalS > available;
   const shown = minutesOf(warmupInBudget ? totalS : itemsTotalS);
-  const text = over
-    ? en.uf08.budgetOver(shown, minutesOf(itemsTotalS - available), !warmupInBudget)
-    : en.uf08.budgetWithin(shown, budgetMin, !warmupInBudget);
+  const text = empty
+    ? over
+      ? en.uf08.budgetOverBy(usedMinutes(workout), budgetMin, overMinutes(workout), !warmupInBudget)
+      : en.uf08.budgetLeft(usedMinutes(workout), budgetMin, leftMinutes(workout), !warmupInBudget)
+    : over
+      ? en.uf08.budgetOver(shown, minutesOf(itemsTotalS - available), !warmupInBudget)
+      : en.uf08.budgetWithin(shown, budgetMin, !warmupInBudget);
   return (
     <div className="wl-uf08__budget" data-over={over ? "true" : undefined}>
       <div className="wl-uf08__bar" data-part="bar" aria-hidden="true">
@@ -132,7 +153,11 @@ function BudgetBar({ workout }: { workout: Workout }) {
         ))}
         {unusedS > 0 ? <Segment kind="unused" seconds={unusedS} /> : null}
       </div>
-      <p className="wl-uf08__budget-text" data-part="budget-text" aria-live="polite">
+      <p
+        className="wl-uf08__budget-text"
+        data-part="budget-text"
+        aria-live={empty ? undefined : "polite"}
+      >
         {text}
       </p>
     </div>
@@ -140,6 +165,7 @@ function BudgetBar({ workout }: { workout: Workout }) {
 }
 
 export function Suggested({
+  mode = "suggested",
   workout,
   library,
   locale,
@@ -158,6 +184,7 @@ export function Suggested({
   focusSwapItem = null,
   onSwapFocused,
   addedIds = [],
+  keptIds,
   catalog,
   blocked,
   favoriteIds,
@@ -166,7 +193,9 @@ export function Suggested({
   onStartWith,
   onMove,
 }: SuggestedProps) {
+  const empty = mode === "empty";
   const favSet = new Set(favoriteIds ?? []);
+  const needOneId = useId();
   const navigate = useNavigate();
   const location = useLocation();
   const sheetOpen =
@@ -175,6 +204,8 @@ export function Suggested({
   const addButtonRef = useRef<HTMLButtonElement>(null);
   // The id just added: focus goes to its row when the sheet has closed.
   const pendingAddFocus = useRef<string | null>(null);
+  // T-0940 (D-0239 §9): the name just added in empty mode; its status needs the new plan's time.
+  const pendingAddStatus = useRef<string | null>(null);
   // T-0575: the row to focus after a row-level "Start with this" (no sheet to close).
   const pendingStartFocus = useRef<string | null>(null);
   const sheetWasOpen = useRef(false);
@@ -226,7 +257,7 @@ export function Suggested({
     (row ?? addButtonRef.current)?.focus();
   }, [sheetOpen]);
 
-  const notFitting = addedIds.filter((id) => !items.some((i) => i.exerciseId === id));
+  const notFitting = (keptIds ?? addedIds).filter((id) => !items.some((i) => i.exerciseId === id));
   const notFittingText =
     notFitting.length === 0
       ? ""
@@ -235,9 +266,24 @@ export function Suggested({
           notFitting.map((id) => exerciseName(id, library)),
         );
   // The standing line also goes to the status region, so a screen reader hears it appear.
+  // A successful action sets its own confirmation in the same batch that changes the list; the
+  // standing line must not overwrite it (T-0940 QA). Cleared once the new plan has rendered.
+  const keepActionStatus = useRef(false);
   useEffect(() => {
+    if (keepActionStatus.current) return;
     setStatus(notFittingText);
   }, [notFittingText]);
+  useEffect(() => {
+    keepActionStatus.current = false;
+  }, [workout]);
+
+  // Empty mode: "{name} added. {left} min left." with the new plan's `unusedS` (D-0239 §9).
+  useEffect(() => {
+    const name = pendingAddStatus.current;
+    if (name === null) return;
+    pendingAddStatus.current = null;
+    setStatus(en.uf08.addedLeft(name, leftMinutes(workout)));
+  }, [workout]);
 
   useEffect(() => {
     const id = pendingStartFocus.current;
@@ -334,7 +380,7 @@ export function Suggested({
 
       {avoidAreas.length > 0 ? <ExcludedAreasNotice areas={noticeAreas} /> : null}
 
-      <BudgetBar workout={workout} />
+      <BudgetBar workout={workout} empty={empty} />
 
       {avoidAreas.length === 0 ? <ExcludedAreasNotice areas={noticeAreas} /> : null}
 
@@ -360,8 +406,13 @@ export function Suggested({
         </div>
       )}
 
-      {onMove !== undefined && items.length >= 2 ? (
+      {(onMove !== undefined && items.length >= 2) || (empty && !reorder) ? (
         <div className="wl-uf08__list-head" data-part="list-head">
+          {empty && !reorder ? (
+            <h2 className="wl-uf08__list-title" data-part="list-title">
+              {en.uf08.exercisesHeading}
+            </h2>
+          ) : null}
           {reorder ? (
             <>
               <h2 className="wl-uf08__list-title">{en.uf08.reorder}</h2>
@@ -378,7 +429,7 @@ export function Suggested({
                 {en.uf08.reorderDone}
               </button>
             </>
-          ) : (
+          ) : onMove !== undefined && items.length >= 2 ? (
             <button
               ref={reorderButtonRef}
               type="button"
@@ -392,7 +443,7 @@ export function Suggested({
             >
               {en.uf08.reorder}
             </button>
-          )}
+          ) : null}
         </div>
       ) : null}
 
@@ -413,7 +464,11 @@ export function Suggested({
         </div>
       ) : null}
 
-      {items.length === 0 ? (
+      {items.length === 0 && empty ? (
+        <p className="wl-uf08__hint" data-part="empty-plan">
+          {en.uf08.emptyPlan}
+        </p>
+      ) : items.length === 0 ? (
         <p className="wl-uf08__fit" data-part="nothing-fits">
           {emptiedByRemove ? en.uf08.noneLeft : en.uf08.nothingFits(workout.budgetMin)}
         </p>
@@ -549,6 +604,7 @@ export function Suggested({
                         const refusal = onStartWith(item.exerciseId);
                         if (refusal === null) {
                           pendingStartFocus.current = item.exerciseId;
+                          keepActionStatus.current = true;
                           setStatus(en.uf08.mainNow(name));
                         } else setStatus(refusal);
                       }}
@@ -642,26 +698,40 @@ export function Suggested({
 
       {reorder ? null : (
         <div className="wl-uf08__actions">
-          <button
-            type="button"
-            className="wl-button--secondary"
-            onClick={() => {
-              pendingFocus.current = null;
-              setStatus("");
-              onShuffle();
-            }}
-          >
-            {en.uf08.shuffle}
-          </button>
+          {empty ? null : (
+            <button
+              type="button"
+              className="wl-button--secondary"
+              onClick={() => {
+                pendingFocus.current = null;
+                setStatus("");
+                onShuffle();
+              }}
+            >
+              {en.uf08.shuffle}
+            </button>
+          )}
           <button
             ref={looksGoodRef}
             type="button"
             className="wl-button--primary wl-uf08__primary"
-            onClick={() => void navigate(READY_HREF)}
+            data-part="looks-good"
+            // D-0236 §4, D-0239 §11: empty mode needs one item; it stays focusable and says why.
+            aria-disabled={empty && items.length === 0 ? "true" : undefined}
+            aria-describedby={empty && items.length === 0 ? needOneId : undefined}
+            onClick={() => {
+              if (empty && items.length === 0) return;
+              void navigate(READY_HREF);
+            }}
           >
             <span>{en.uf08.looksGood}</span>
             <ArrowIcon />
           </button>
+          {empty && items.length === 0 ? (
+            <p id={needOneId} className="wl-uf08__hint" data-part="need-one">
+              {en.uf08.needOne}
+            </p>
+          ) : null}
         </div>
       )}
       {sheetOpen && onAdd !== undefined ? (
@@ -669,6 +739,9 @@ export function Suggested({
           catalog={catalog ?? []}
           items={items}
           budgetMin={workout.budgetMin}
+          {...(empty
+            ? { lead: en.uf08.addLeadEmpty(leftMinutes(workout), workout.budgetMin) }
+            : {})}
           {...(blocked !== undefined ? { blocked } : {})}
           {...(favoriteIds !== undefined ? { favoriteIds } : {})}
           {...(favoritesLoaded !== undefined ? { favoritesLoaded } : {})}
@@ -678,7 +751,11 @@ export function Suggested({
             if (refusal === null) {
               closing.current = true;
               pendingAddFocus.current = id;
-              setStatus(en.uf08.added(exerciseName(id, library)));
+              if (empty) pendingAddStatus.current = exerciseName(id, library);
+              else {
+                keepActionStatus.current = true;
+                setStatus(en.uf08.added(exerciseName(id, library)));
+              }
               void navigate(-1);
             }
             return refusal;
@@ -690,6 +767,7 @@ export function Suggested({
                   const refusal = onStartWith(id);
                   if (refusal === null) {
                     closing.current = true;
+                    keepActionStatus.current = true;
                     pendingAddFocus.current = id;
                     setStatus(en.uf08.mainNow(exerciseName(id, library)));
                     void navigate(-1);

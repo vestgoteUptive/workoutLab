@@ -17,6 +17,12 @@
 // `{budgetMin, warmupInBudget, energy, shuffle, mainLiftId, excludeIds}`, where `mainLiftId` is the
 // current plan's (null only when the main item itself is removed). Leaving UF-08.2 for UF-08.1
 // drops the record (the adjustments are discarded); `budgetMin` is shared and stays.
+//
+// T-0940 (D-0236, D-0237, D-0239): "Start empty" opens UF-08.2 in empty mode. The record's `mode`
+// picks the plan call: empty mode is `suggest` with `autoMainLift: false, fill: false`,
+// `pinnedIds = addedIds`, `mainLiftId = mainPickId` and `shuffle: 0`, so the plan holds only the
+// picks. `mainPickId` is the main lift the user chose on this visit, in both modes; re-suggests read
+// it from the record, never back from a plan that may have dropped it (D-0239 §1).
 import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import {
@@ -58,6 +64,7 @@ import {
   parseBudget,
 } from "./time.js";
 import { useSetupData, type SetupData } from "./use-setup-data.js";
+import { overMinutes } from "./budget.js";
 import "./uf-08.css";
 
 const SETUP_PATH = "/session/setup";
@@ -121,6 +128,11 @@ function setupInput(
 
 /** UF-08.2's adjustments on top of the shared minutes, warm-up and energy (D-0109 §1). */
 interface Adjusted {
+  /**
+   * T-0940 (D-0236 §2): how this visit plans. "empty" (from "Start empty") holds only the picks;
+   * "suggested" is the engine's full plan. Per visit: Back to UF-08.1 drops it with the record.
+   */
+  mode: "suggested" | "empty";
   /** The `Workout` on UF-08.2: UF-08.1's at hand-off, then each action's `suggest` result. */
   workout: Workout;
   shuffle: number;
@@ -140,9 +152,11 @@ interface Adjusted {
    */
   unlabelledPins: string[];
   /**
-   * T-0935 (D-0239 §1-§2): the main lift the user chose on this visit (a main-lift swap or "Start
-   * with this"); null when the engine picked it. Read here only by "Start with this", which
-   * demotes such a main lift to the front of the pins instead of returning it to the pool.
+   * T-0935/T-0940 (D-0239 §1-§2): the main lift the user chose on this visit (a main-lift swap or
+   * "Start with this"); null when the engine picked it, and cleared by Remove of that item. Every
+   * re-suggest passes it as `mainLiftId` (empty mode), or `mainPickId ?? plan.mainLiftId`
+   * (suggested mode), so a time chip that drops it can't lose it. "Start with this" demotes it to
+   * the front of the pins instead of returning it to the pool.
    */
   mainPickId: string | null;
   /** True while the plan is empty because Remove took the last row (T-0521, D-0191 §5). */
@@ -364,33 +378,57 @@ export function SessionSetup({
   }
 
   if (showSuggested && data !== null) {
+    const empty = adjusted.mode === "empty";
+    const plan = adjusted.workout.plan;
+    // D-0239 §13.1: only a UF-08.3 swap confirmed with `fitsBudget: false` gets here.
+    const overMin = overMinutes(adjusted.workout);
+    /**
+     * Every UF-08.2 `suggest` call's inputs (D-0109 §2). Empty mode (D-0237, D-0239 §1) holds
+     * only the picks: no auto main lift, no fill, no shuffle. Suggested mode is unchanged.
+     */
+    const inputFor = (o: {
+      budgetMin: number;
+      shuffle: number;
+      excludeIds: readonly string[];
+      pinnedIds: readonly string[];
+      mainLiftId: string | null;
+    }): SessionInput => ({
+      budgetMin: o.budgetMin,
+      warmupInBudget,
+      energy,
+      shuffle: empty ? 0 : o.shuffle,
+      mainLiftId: o.mainLiftId,
+      pinnedIds: [...o.pinnedIds],
+      excludeIds: excludeIdsFor(stored, o.excludeIds),
+      favoriteIds: favoriteIdsFor(favoriteIds),
+      ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
+      ...(empty ? { autoMainLift: false, fill: false } : {}),
+    });
+    // D-0239 §1: the record's main pick wins; suggested mode falls back to the plan's main lift.
+    const mainLiftId = empty ? adjusted.mainPickId : (adjusted.mainPickId ?? plan.mainLiftId);
+    const nameOf = (id: string) => data.library.find((e) => e.id === id)?.name ?? id;
+    /**
+     * The empty-mode safety net (D-0239 §2, §13.3): the first item of the current plan, in plan
+     * order, that `result` no longer holds, or null when every item is kept.
+     */
+    const pushedOut = (result: Workout): string | null =>
+      plan.items.find((i) => !result.plan.items.some((r) => r.exerciseId === i.exerciseId))
+        ?.exerciseId ?? null;
     /** One `suggest` call with the inputs record (D-0109 §2); a rejection keeps the plan. */
-    const resuggest = (change: {
-      budgetMin?: number;
-      shuffle?: number;
-      excludeIds?: string[];
-      mainLiftId?: string | null;
-    }): boolean => {
+    const resuggest = (change: { budgetMin?: number; shuffle?: number }): boolean => {
       const next = {
         budgetMin: change.budgetMin ?? budgetMin,
         shuffle: change.shuffle ?? adjusted.shuffle,
-        excludeIds: change.excludeIds ?? adjusted.excludeIds,
       };
-      const mainLiftId =
-        change.mainLiftId === undefined ? adjusted.workout.plan.mainLiftId : change.mainLiftId;
       const result = runSuggest(
         data,
-        {
+        inputFor({
           budgetMin: next.budgetMin,
-          warmupInBudget,
-          energy,
           shuffle: next.shuffle,
-          mainLiftId,
+          excludeIds: adjusted.excludeIds,
           pinnedIds: adjusted.addedIds,
-          excludeIds: excludeIdsFor(stored, next.excludeIds),
-          favoriteIds: favoriteIdsFor(favoriteIds),
-          ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
-        },
+          mainLiftId,
+        }),
         nowIso,
         tz,
       );
@@ -398,9 +436,10 @@ export function SessionSetup({
       if (next.budgetMin !== budgetMin) setBudgetMin(next.budgetMin);
       const merged = mergeOrder(adjusted.order, result);
       setAdjusted({
+        mode: adjusted.mode,
         workout: merged.workout,
         shuffle: next.shuffle,
-        excludeIds: next.excludeIds,
+        excludeIds: adjusted.excludeIds,
         addedIds: adjusted.addedIds,
         order: merged.order,
         swappedOut: adjusted.swappedOut,
@@ -416,27 +455,30 @@ export function SessionSetup({
      * the new plan (it becomes the plan), else the refusal text and nothing changes.
      */
     const addExercise = (id: string): string | null => {
+      // D-0239 §13.1: an over-budget plan refuses before any call (the swap-in is the cause).
+      if (empty && overMin > 0) return en.uf08.overRefusal(overMin);
       const pinned = [...adjusted.addedIds.filter((a) => a !== id), id];
       const visit = adjusted.excludeIds.filter((e) => e !== id);
       const result = runSuggest(
         data,
-        {
+        inputFor({
           budgetMin,
-          warmupInBudget,
-          energy,
           shuffle: adjusted.shuffle,
-          mainLiftId: adjusted.workout.plan.mainLiftId,
+          excludeIds: visit,
           pinnedIds: pinned,
-          excludeIds: excludeIdsFor(stored, visit),
-          favoriteIds: favoriteIdsFor(favoriteIds),
-          ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
-        },
+          // T-0935 kept the plan's main lift here; D-0239 §1 reads the record first.
+          mainLiftId,
+        }),
         nowIso,
         tz,
       );
       if (result !== null && result.plan.items.some((i) => i.exerciseId === id)) {
+        // D-0239 §13.3 (empty mode): the pick fits but pushes out a pick or the main lift.
+        const pushed = empty ? pushedOut(result) : null;
+        if (pushed !== null) return en.uf08.pushesOut(nameOf(id), nameOf(pushed));
         const merged = mergeOrder(adjusted.order, result);
         setAdjusted({
+          mode: adjusted.mode,
           workout: merged.workout,
           shuffle: adjusted.shuffle,
           excludeIds: visit,
@@ -455,7 +497,7 @@ export function SessionSetup({
       const name = ex?.name ?? id;
       // Caps (D-0205 §4): main + added already hold 8, or two with the same primary area.
       const held = new Set(adjusted.addedIds);
-      if (adjusted.workout.plan.mainLiftId !== null) held.add(adjusted.workout.plan.mainLiftId);
+      if (mainLiftId !== null) held.add(mainLiftId);
       held.delete(id);
       if (held.size >= MAX_ITEMS) return en.uf08.capItems(MAX_ITEMS);
       if (ex !== undefined) {
@@ -477,40 +519,46 @@ export function SessionSetup({
      * Success is the engine's own `plan.mainLiftId === id`; otherwise the plan is unchanged.
      */
     const startWith = (id: string): string | null => {
-      const inPlan = adjusted.workout.plan.items.some((i) => i.exerciseId === id);
-      const base =
-        inPlan || adjusted.addedIds.includes(id) ? adjusted.addedIds : [...adjusted.addedIds, id];
+      if (empty && overMin > 0) return en.uf08.overRefusal(overMin);
+      const inPlan = plan.items.some((i) => i.exerciseId === id);
+      // Empty mode (D-0239 §2): X is the main lift, never a pin, so it leaves the pins.
+      const base = empty
+        ? adjusted.addedIds.filter((a) => a !== id)
+        : inPlan || adjusted.addedIds.includes(id)
+          ? adjusted.addedIds
+          : [...adjusted.addedIds, id];
       // T-0935 (D-0239 §2): a main lift the user chose on this visit (a swap-in, an earlier Start
       // with this, or an added one) is demoted to the front of the pins; an engine pick still
-      // returns to the pool (D-0205 §5).
-      const prev = adjusted.workout.plan.mainLiftId;
+      // returns to the pool in suggested mode (D-0205 §5). In empty mode every main lift is the
+      // user's, so the previous one (the record's, even if a time chip dropped it) is kept.
+      const prev = empty ? (adjusted.mainPickId ?? plan.mainLiftId) : plan.mainLiftId;
       const demoted =
         prev !== null &&
         prev !== id &&
-        (prev === adjusted.mainPickId || adjusted.addedIds.includes(prev))
+        (empty || prev === adjusted.mainPickId || adjusted.addedIds.includes(prev))
           ? prev
           : null;
       const pinned = demoted === null ? base : [demoted, ...base.filter((p) => p !== demoted)];
       const visit = inPlan ? adjusted.excludeIds : adjusted.excludeIds.filter((e) => e !== id);
       const result = runSuggest(
         data,
-        {
+        inputFor({
           budgetMin,
-          warmupInBudget,
-          energy,
           shuffle: adjusted.shuffle,
-          mainLiftId: id,
+          excludeIds: visit,
           pinnedIds: pinned,
-          excludeIds: excludeIdsFor(stored, visit),
-          favoriteIds: favoriteIdsFor(favoriteIds),
-          ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
-        },
+          mainLiftId: id,
+        }),
         nowIso,
         tz,
       );
       if (result !== null && result.plan.mainLiftId === id) {
+        // D-0239 §2 safety net (empty mode): every pick, the old main lift included, must stay.
+        const pushed = empty ? pushedOut(result) : null;
+        if (pushed !== null) return en.uf08.pushesOut(nameOf(id), nameOf(pushed));
         const merged = mergeOrder(adjusted.order, result, true);
         setAdjusted({
+          mode: adjusted.mode,
           workout: merged.workout,
           shuffle: adjusted.shuffle,
           excludeIds: visit,
@@ -518,7 +566,7 @@ export function SessionSetup({
           order: merged.order,
           swappedOut: inPlan ? adjusted.swappedOut : adjusted.swappedOut.filter((e) => e !== id),
           unlabelledPins:
-            demoted !== null && !adjusted.addedIds.includes(demoted)
+            !empty && demoted !== null && !adjusted.addedIds.includes(demoted)
               ? [...adjusted.unlabelledPins, demoted]
               : adjusted.unlabelledPins,
           mainPickId: id,
@@ -526,7 +574,7 @@ export function SessionSetup({
         });
         return null;
       }
-      return en.uf08.noFitStart(data.library.find((e) => e.id === id)?.name ?? id, budgetMin);
+      return en.uf08.noFitStart(nameOf(id), budgetMin);
     };
     // UF-08.5 disabled rows, first match wins (D-0205 §3). "In this workout" is the sheet's own.
     const blocked: Record<string, string> = {};
@@ -544,6 +592,7 @@ export function SessionSetup({
     }
     return (
       <Suggested
+        mode={adjusted.mode}
         workout={adjusted.workout}
         library={data.library}
         locale={loc}
@@ -584,6 +633,13 @@ export function SessionSetup({
         focusSwapItem={focusSwapItem}
         onSwapFocused={() => setFocusSwapItem(null)}
         addedIds={adjusted.addedIds.filter((a) => !adjusted.unlabelledPins.includes(a))}
+        keptIds={[
+          // D-0239 §1: a dropped main pick is named like a pin; in empty mode every pick is.
+          ...(adjusted.mainPickId !== null ? [adjusted.mainPickId] : []),
+          ...(empty
+            ? adjusted.addedIds
+            : adjusted.addedIds.filter((a) => !adjusted.unlabelledPins.includes(a))),
+        ].filter((id, i, all) => all.indexOf(id) === i)}
         catalog={data.library}
         blocked={blocked}
         favoriteIds={favoriteIds}
@@ -634,7 +690,38 @@ export function SessionSetup({
     if (workout === null) return;
     // Frozen here: UF-08.2 starts from exactly this `Workout` (reference-equal, no new call).
     setAdjusted({
+      mode: "suggested",
       workout,
+      shuffle: 0,
+      excludeIds: [],
+      addedIds: [],
+      order: null,
+      swappedOut: [],
+      unlabelledPins: [],
+      mainPickId: null,
+      emptiedByRemove: false,
+    });
+    void navigate(`${SETUP_PATH}?step=suggested`);
+  };
+
+  // T-0940 (D-0236 §1-§3, D-0237): the same UF-08.1 inputs, but the plan holds only the picks, so
+  // it starts with 0 items (the warm-up still counts when it is in the budget).
+  const onStartEmpty = () => {
+    if (workout === null || data === null) return;
+    const empty = runSuggest(
+      data,
+      {
+        ...setupInput(budgetMin, warmupInBudget, energy, avoidAreas, stored, favoriteIds),
+        autoMainLift: false,
+        fill: false,
+      },
+      nowIso,
+      tz,
+    );
+    if (empty === null) return;
+    setAdjusted({
+      mode: "empty",
+      workout: empty,
       shuffle: 0,
       excludeIds: [],
       addedIds: [],
@@ -846,6 +933,16 @@ export function SessionSetup({
           >
             <span>{en.uf08.suggest}</span>
             <ArrowIcon />
+          </button>
+          <button
+            type="button"
+            className="wl-button--secondary wl-uf08__secondary"
+            data-part="start-empty"
+            aria-disabled={ready ? "false" : "true"}
+            aria-describedby={ready ? undefined : ids.fit}
+            onClick={onStartEmpty}
+          >
+            {en.uf08.startEmpty}
           </button>
         </>
       )}

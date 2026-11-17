@@ -712,3 +712,14 @@
   font-size: 1rem;
   justify-content: center;
 }
+
+/* ---- T-0940 (D-0236 §1, UF-08.1.md): "Start empty", the secondary under the primary, same width,
+   at least 48 px tall. The 16 px page gap less 4 px gives the spec's 12 px between the two. ---- */
+.wl-uf08[data-wl-state] .wl-uf08__secondary {
+  inline-size: 100%;
+  min-block-size: 48px;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__primary + .wl-uf08__secondary {
+  margin-block-start: -4px;
+}
