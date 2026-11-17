@@ -49,3 +49,10 @@ Per-package commands: write one command per script — `pnpm --filter @workoutla
 - Choices: a call that is not on a plain pause (or whose pause ends during the write) returns `{status:"blocked"}`, the old row is written back as `doLater` does; no profile in the cache returns `failed`.
 - Planted faults (backups in scratchpad, restored by `cp`): guard removed -> AC9 x2 red; clamp removed -> empty-plan red; no logged-set shift -> 3 red; warm-up left forced 0 -> AC6 red; write before refusal -> AC8 x3 red; realign disabled -> AC11 x2 red.
 - Gate: `turbo run typecheck lint test --filter=@workoutlab/web --force` first run red on one test, `seams.test.tsx` (it pins `FocusSession`'s exact key list; added `insertItem`, `timeLeftS`), then green on that file; typecheck and lint green. `-w format:check` green (after prettier on the new tests). UF-09 e2e (do-later, focus, offline, ready: 42) green. `check:repo` (4 repo-check tests) is red only on T-0945's engine, vendor, board and ticket paths, because the diff base `origin/main` lacks T-0945; none of my paths are flagged.
+
+### QA and review (2026-11-17)
+- **Code review:** approved. All 5 planted faults were caught.
+- **QA:**
+  - 10 of 12 planted faults were caught. One of the two survivors behaves the same as the real code.
+  - Gap: no test pinned the shift boundary, so changing `i >= atIndex` to `i > atIndex` stayed green.
+  - Fixed: two new tests put a logged set and a skipped item exactly at `atIndex`. Both fail with `>` and pass with `>=`.

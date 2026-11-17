@@ -36,6 +36,16 @@ describe("AC1 shifted indices (B9)", () => {
     });
   });
 
+  it("a set logged on the item exactly at atIndex moves too (the shift is i >= atIndex)", () => {
+    const atBoundary = pausedP("set", {
+      itemIndex: 0,
+      setIndex: 1,
+      loggedSets: [logged(0, 0, "bench-press"), logged(1, 0, "inverted-row")],
+    });
+    const next = focusReducer(atBoundary, insert(1), CTX_NEW);
+    expect(next.loggedSets.map((s) => s.itemIndex)).toEqual([0, 2]);
+  });
+
   it("a rest pause keeps its timer object exactly", () => {
     const next = focusReducer(PAUSED_REST, insert(1), CTX_NEW);
     expect(next.timer).toBe(PAUSED_REST.timer);
@@ -51,6 +61,13 @@ describe("AC2 skippedItems", () => {
     ]);
     expect(focusReducer({ ...base, skippedItems: [0] }, insert(1), CTX_NEW).skippedItems).toEqual([
       0,
+    ]);
+  });
+
+  it("a skipped item exactly at atIndex moves too: [1] with an insert at 1 becomes [2]", () => {
+    const base = pausedP("next", { itemIndex: 0 });
+    expect(focusReducer({ ...base, skippedItems: [1] }, insert(1), CTX_NEW).skippedItems).toEqual([
+      2,
     ]);
   });
 });
