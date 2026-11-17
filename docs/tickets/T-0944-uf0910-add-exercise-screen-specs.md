@@ -5,7 +5,7 @@ lane: design
 screens: [UF-09.10, UF-09.9, UF-08.5]
 decisions: [D-0243, D-0246, D-0205, D-0208, D-0211, D-0231, D-0203]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 The owner wants to add an exercise mid-workout (`docs/specs/add-exercise-in-session.md`). D-0243 §9 makes screen specs a prerequisite for any UI ticket, and D-0246 §18 fixes what they contain. UF-08.5.md is also stale: its line 3 says it is never reachable from UF-09 (D-0243 amends D-0205 §1), and it still names the retired Chalk & Iron fonts and `.wl-card` rows (D-0208).
@@ -38,3 +38,11 @@ none. No new token (D-0246 §18).
 
 ## Definition of done
 Every AC checked · `node .github/scripts/check-all.mjs` green · `pnpm -w format:check` green · commit messages start with `T-0944` and cite UF-09.10 / UF-09.9 / UF-08.5.
+
+## Build / accept log
+- 2026-11-13 designer. Start: clean tree, HEAD 09edae14 (`main-hzlbfc`). Commit 0081b61d: new `UF-09.10.md`, `UF-09.9.md` (numbered layout, item 7 status line, combined action table), `UF-08.5.md` (line 3 → UF-09.10, hairline rows, no `.wl-card`); text-check test `packages/design-tokens/test/uf09-add-exercise-specs.test.ts` (30 tests).
+- AC1–AC10 → `describe("T-0944 ACn …")` blocks of the same number in that test; AC11 → its "no new token" block (every `--wl-*` named exists) + `git diff --stat 09edae14 HEAD` (no `tokens.json`) + `check-all.mjs` exit 0.
+- Red: the test on the base docs (backed up with `cp`, base versions written from `git show`, restored with `cp`): 28 failed / 2 passed (the two passes are the existing-variable checks for UF-09.9/UF-08.5). Planted fault: row 5 → "Skipping {Area} today" in UF-09.10 → 2 failed; restored, `cmp` clean.
+- Kept T-0681 AC7 (`docs.test.ts`) true without editing it: UF-08.5 now says "No UF-09 control is added (D-0231)" for its Plan pointers, since "Never reachable from … UF-09" is gone (AC10).
+- Gate (package-scoped): design-tokens typecheck, lint, test 257/257; `-w format:check` clean; `-w check:repo` / `check-all.mjs` exit 0. `-w test:repo-checks` 394/395: the 1 failure (`check-screen-ids.test.mjs` AC4, UF-09.10 example) is on the base commit already and is fixed on `main` by 5f9ee1e5 (T-0946); none of this ticket's files are read by it.
+- Review round 1 (after merging `main-hzlbfc`, D-0247): UF-09.10/UF-09.9 now say the sheet is a host overlay over a still-mounted Paused and Back goes through `closeForBack()` (D-0247 §1); time refusal at m ≤ 0, negative included (§3); root `wl-uf08 wl-uf08__add-sheet`; inert Add cites §2; UF-09.9 nits (List view restarts the clocks, End's own `aria-live` line, End after item 7). Test +3 cases, pins updated (33). Red: pre-fix docs → 6 failed / 27 passed; fixed → 33/33. Package typecheck, lint, test 260/260; `-w format:check` and `check-all.mjs` clean.

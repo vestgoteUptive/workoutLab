@@ -4,7 +4,10 @@
 /// <reference types="./timecheck.d.ts" />
 
 // Rule 8: running over time (UF-09.8, D-0024, D-0037 §8, D-0040 §10, D-0047). Pure.
+// T-0945 adds `timeLeftS`, the time left in a workout in progress (UF-09.10, D-0244 §2,
+// D-0246 §11).
 import { TRANSITION_S } from "./session.js";
+import { WARMUP_COST_S } from "./warmup.js";
 /** UF-09.8 shows only when `behindS ≥ SHOW_BEHIND_S` (rule 8). */
 export const SHOW_BEHIND_S = 60;
 /** Trim step 1 only cuts sets from accessories above this many sets (rule 8). */
@@ -110,4 +113,63 @@ export function timeCheck(workout, progress) {
         trim: option(trimmed),
         skipNext: option(skipped),
     };
+}
+const isInt = (n) => typeof n === "number" && Number.isInteger(n);
+/** D-0244 §2, D-0246 §11: `RangeError` on any input outside the documented domain. */
+function assertTimeLeft(workout, progress) {
+    const { elapsedS, setsDone, skippedItems, warmupLeftS } = progress;
+    const n = workout.plan.items.length;
+    if (!isInt(elapsedS) || elapsedS < 0) {
+        throw new RangeError(`elapsedS must be an integer ≥ 0, got ${String(elapsedS)}`);
+    }
+    if (!isInt(warmupLeftS) || warmupLeftS < 0 || warmupLeftS > WARMUP_COST_S) {
+        throw new RangeError(`warmupLeftS must be an integer 0…${WARMUP_COST_S}, got ${String(warmupLeftS)}`);
+    }
+    if (!workout.warmupInBudget && warmupLeftS !== 0) {
+        throw new RangeError(`warmupLeftS must be 0 when the warm-up is not in the budget`);
+    }
+    if (setsDone.length !== n) {
+        throw new RangeError(`setsDone has ${setsDone.length} entries for ${n} items`);
+    }
+    setsDone.forEach((d, i) => {
+        if (!isInt(d) || d < 0) {
+            throw new RangeError(`setsDone[${i}] must be an integer ≥ 0, got ${String(d)}`);
+        }
+    });
+    for (const k of skippedItems) {
+        if (!isInt(k) || k < 0 || k >= n) {
+            throw new RangeError(`skippedItems entry ${String(k)} is not an item index 0…${n - 1}`);
+        }
+    }
+}
+/**
+ * What is left of item `item` after `done` sets (rule 8, D-0244 §2): its whole `costS` when
+ * nothing is logged, otherwise the sets still to do (a back-off counts as a set) at rule 8's
+ * per-set cost, with no transition. The whole remainder is rounded up once, in integers
+ * (D-0249), which is exact for every item the engine builds; D-0244 §2 asks for an integer.
+ */
+function remainingS(item, done) {
+    if (done === 0)
+        return item.costS;
+    const sets = item.sets + (item.backoff === null ? 0 : 1);
+    const left = Math.max(0, sets - done);
+    return left === 0 ? 0 : Math.ceil((left * (item.costS - TRANSITION_S)) / sets);
+}
+/**
+ * Rule 8 time left in a workout in progress (UF-09.10, D-0244 §2, D-0246 §11):
+ * `budgetMin × 60 − elapsedS − warmupLeftS − Σ remaining(i)` over the items that are not
+ * skipped. An integer, negative when the workout is behind. Between exercises it equals
+ * `−timeCheck(…).behindS` only when no item at or after the next one has sets logged ahead
+ * and none of them is skipped. Throws `RangeError` on an input outside its domain. Never
+ * mutates its inputs.
+ */
+export function timeLeftS(workout, progress) {
+    assertTimeLeft(workout, progress);
+    const skipped = new Set(progress.skippedItems);
+    let left = workout.budgetMin * 60 - progress.elapsedS - progress.warmupLeftS;
+    workout.plan.items.forEach((item, i) => {
+        if (!skipped.has(i))
+            left -= remainingS(item, progress.setsDone[i]);
+    });
+    return left;
 }

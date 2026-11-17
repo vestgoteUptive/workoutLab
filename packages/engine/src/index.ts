@@ -7,7 +7,8 @@
 // profile goal (D-0061 §1, D-0095); T-0226 makes rule 12 fitsBudget count the back-off set
 // applySwap re-adds (D-0105); T-0516 adds rule 6.1 avoidAreas and T-0519 rule 12.2 removeItem
 // (D-0191). T-0534 adds the rule 0.1 excludedOutAreas (D-0199 §3). T-0635 adds rule 15 records
-// (D-0219, display-only).
+// (D-0219, display-only). T-0945 adds rule 12.3 insertItem and the rule 8 timeLeftS
+// (UF-09.10, D-0244, D-0246 §8–§14).
 
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
@@ -43,6 +44,7 @@ export { getsBackoff } from "./cost.js";
 export { rankSwaps, muscleMatch } from "./swaps.js";
 export { applySwap } from "./apply-swap.js";
 export { removeItem } from "./remove-item.js";
+export { insertItem } from "./insert-item.js";
 export { generateWarmup, WARMUP_COST_S, WARMUP_MOVES, WARMUP_MOVE_S } from "./warmup.js";
 export {
   floorInc,
@@ -63,7 +65,7 @@ export {
   type PrefillSlot,
   type PrefillPrevious,
 } from "./prefill.js";
-export { timeCheck, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.js";
+export { timeCheck, timeLeftS, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.js";
 export {
   evaluateCheckin,
   checkinSessions,
