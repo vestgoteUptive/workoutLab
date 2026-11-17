@@ -60,6 +60,8 @@ export const uf08 = {
   undo: "Undo",
   undoName: (name: string) => `Undo, ${name} won't be suggested`,
   suggest: "Suggest my workout",
+  /** T-0940 (D-0236 §1): the secondary button under "Suggest my workout"; opens empty mode. */
+  startEmpty: "Start empty",
   /** No profile or fewer than 9 targets in the cache (D-0107 §9). */
   missing: "Connect to finish setting up your plan",
   missingLink: "Back to Today",
@@ -205,4 +207,31 @@ export const uf08 = {
   /** UF-08.2's line for added exercises a re-suggest left out. */
   doesntFit: (minutes: number, names: readonly string[]) =>
     `Doesn't fit in ${minutes} min: ${names.join(", ")}.`,
+
+  // --- UF-08.2 empty mode (T-0940, D-0236, D-0239 §6-§13, UF-08.2.md › Empty mode) ---
+  /** The visible list header in empty mode (not "Your workout", which is the page h1). */
+  exercisesHeading: "Exercises",
+  /** 0 items in empty mode, for any reason (D-0236 §4, D-0242 §3). */
+  emptyPlan: "Nothing here yet. Pick from the suggestions or add an exercise.",
+  /** "Looks good"'s `aria-describedby` reason at 0 items (D-0239 §11). */
+  needOne: "Add at least one exercise.",
+  /**
+   * The running total (D-0239 §6-§7): "3 of 30 min · 27 min left", " + warm-up" after "{n} min"
+   * when the warm-up is outside the budget.
+   */
+  budgetLeft: (used: number, budgetMin: number, left: number, warmupOutside: boolean) =>
+    `${used} of ${budgetMin} min${warmupOutside ? " + warm-up" : ""} · ${left} min left`,
+  /** Over the budget after a `fitsBudget: false` swap: "33 of 30 min · 3 min over". */
+  budgetOverBy: (used: number, budgetMin: number, over: number, warmupOutside: boolean) =>
+    `${used} of ${budgetMin} min${warmupOutside ? " + warm-up" : ""} · ${over} min over`,
+  /** A successful Add in empty mode (D-0239 §9). */
+  addedLeft: (name: string, left: number) => `${name} added. ${left} min left.`,
+  /** UF-08.5's lead line in empty mode (UF-08.5.md): "27 of 30 min left.". */
+  addLeadEmpty: (left: number, budgetMin: number) => `${left} of ${budgetMin} min left.`,
+  /** Refusal 1 (D-0239 §13.1): the plan is already over budget. */
+  overRefusal: (over: number) =>
+    `Your workout is ${over} min over. Remove or swap an exercise first.`,
+  /** Refusal 3 (D-0239 §13.3): the new item fits but pushes out a pick or the main lift. */
+  pushesOut: (name: string, pick: string) =>
+    `${name} would push out ${pick}. Pick more time or remove an exercise.`,
 } as const;
