@@ -66,7 +66,12 @@ afterEach(() => {
 // ---- helpers ----
 
 const button = (name: string) => screen.getByRole("button", { name });
-const lastInput = (): SessionInput => spy.mock.lastCall![4];
+// T-0941: empty mode also makes suggestions calls (`fill: true`) after each plan call; these tests
+// read the plan call, i.e. the last call that is not a suggestions call.
+const planCalls = () =>
+  spy.mock.calls.map((c, i) => ({ input: c[4], i })).filter((c) => c.input.fill !== true);
+const lastInput = (): SessionInput => planCalls().at(-1)!.input;
+const lastPlanResult = (): Workout => spy.mock.results[planCalls().at(-1)!.i]!.value as Workout;
 const rowIds = () =>
   Array.from(document.querySelectorAll('[data-part="item-row"]')).map((r) =>
     r.getAttribute("data-id"),
@@ -271,7 +276,7 @@ describe("AC6 a UF-08.5 Add in empty mode", () => {
     expect(lastInput().pinnedIds).toEqual(["leg-extension"]);
     expect(rowIds()).toEqual(["leg-extension"]);
     expect(mainRows()).toEqual([]);
-    const result = spy.mock.results.at(-1)!.value as Workout;
+    const result = lastPlanResult();
     const left = Math.floor(result.unusedS / 60);
     expect(status()).toHaveTextContent(new RegExp(`^Leg extension added\\. ${left} min left\\.$`));
     expect(budgetText()).toHaveTextContent(new RegExp(`· ${left} min left$`));
@@ -307,7 +312,7 @@ describe("AC7 (B17) start a one-item workout", () => {
   it("UF-08.4 shows 1 exercise and its real duration; Start writes a plan with one item", async () => {
     await open(45);
     await sheet("Leg extension");
-    const workout = spy.mock.results.at(-1)!.value as Workout;
+    const workout = lastPlanResult();
     expect(workout.plan.items).toHaveLength(1);
     fireEvent.click(button("Looks good"));
     await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));

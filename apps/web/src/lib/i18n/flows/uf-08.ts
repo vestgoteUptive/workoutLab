@@ -234,4 +234,17 @@ export const uf08 = {
   /** Refusal 3 (D-0239 §13.3): the new item fits but pushes out a pick or the main lift. */
   pushesOut: (name: string, pick: string) =>
     `${name} would push out ${pick}. Pick more time or remove an exercise.`,
+
+  // --- UF-08.2 empty mode: Suggestions (T-0941, D-0238, D-0239 §8-§13, UF-08.2.md › Suggestions) ---
+  suggestionsHeading: "Suggestions",
+  /** Under the h2 while there are rows: "For the areas that need work most. Fits your 27 min.". */
+  suggestionsSub: (left: number) => `For the areas that need work most. Fits your ${left} min.`,
+  /** Empty mode's Shuffle (rule 13): changes the suggestions only. */
+  otherSuggestions: "Other suggestions",
+  fillRest: "Fill the rest for me",
+  /** List copy in place of the rows, first match wins (UF-08.2.md › Suggestions section). */
+  suggestionsOver: (over: number, budgetMin: number) =>
+    `Your workout is ${over} min over ${budgetMin} min. Remove or swap an exercise.`,
+  suggestionsFull: (budgetMin: number) => `Your ${budgetMin} min are full.`,
+  suggestionsNone: "No suggestions right now. Search to add an exercise.",
 } as const;
