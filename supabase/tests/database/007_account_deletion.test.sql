@@ -2,9 +2,9 @@
 -- 2 sessions and 6 session_sets (1 tombstoned); [b] 1 routine with 2 items and 1 plan_checkins row
 -- (T-0100b); 2 excluded_exercises rows (T-0535, D-0199 §4); 2 favorite_exercises rows on other
 -- exercises (T-0564, D-0202 §5: a favorite of an excluded exercise would remove the exclusion).
--- B owns 1 row in each table.
+-- 2 exercise_settings rows (T-0951, D-0251). B owns 1 row in each table.
 begin;
-select plan(17);
+select plan(20);
 
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
@@ -60,6 +60,12 @@ insert into public.favorite_exercises (user_id, exercise_id) values
   ('00000000-0000-0000-0000-00000000000b', 'fx-lateral-raise');
 select is((select count(*)::int from public.favorite_exercises where user_id = '00000000-0000-0000-0000-00000000000a'), 2,
   'T-0564 AC7 A has 2 favorites before the delete');
+insert into public.exercise_settings (user_id, exercise_id, increment_kg) values
+  ('00000000-0000-0000-0000-00000000000a', 'fx-bench-press', 1.25),
+  ('00000000-0000-0000-0000-00000000000a', 'fx-plank', 5),
+  ('00000000-0000-0000-0000-00000000000b', 'fx-plank', 2.5);
+select is((select count(*)::int from public.exercise_settings where user_id = '00000000-0000-0000-0000-00000000000a'), 2,
+  'T-0951 AC9 A has 2 exercise_settings before the delete');
 
 select results_eq($$select
     (select count(*)::int from public.routines where user_id = '00000000-0000-0000-0000-00000000000a'),
@@ -84,6 +90,10 @@ select is((select count(*)::int from public.favorite_exercises where user_id = '
 select is((select count(*)::int from public.favorite_exercises where user_id = '00000000-0000-0000-0000-00000000000b'), 1,
   'T-0564 AC7 B''s favorite is unchanged');
 
+select is((select count(*)::int from public.exercise_settings where user_id = '00000000-0000-0000-0000-00000000000a'), 0,
+  'T-0951 AC9 A has 0 exercise_settings after the auth delete');
+select is((select count(*)::int from public.exercise_settings where user_id = '00000000-0000-0000-0000-00000000000b'), 1,
+  'T-0951 AC9 B''s exercise_setting is unchanged');
 select is((select count(*)::int from public.profiles where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 profiles');
 select is((select count(*)::int from public.area_targets where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 area_targets');
 select is((select count(*)::int from public.sessions where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 sessions');

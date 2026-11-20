@@ -50,3 +50,15 @@ Checklist (D-0197 §7): the AC8 sibling covers an empty table; AC10 covers both 
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0951` and cite UF-04.2.
 
 Per-package commands: write one command per script, for example `pnpm --filter @workoutlab/shared typecheck`, then a separate `… lint`, then a separate `… test`.
+
+## Build / accept log
+- Base: worktree `t/T-0951-exercise-settings` from `main-hzlbfc` (HEAD ed7e8053), clean at start.
+- Built: migration `20261112120000_exercise_settings.sql` (table, two checks, index, `private.exercise_settings_before_write`, owner RLS, anon revoked); `docs/data-model.md` section and status line; `database.gen.ts` (table block added by hand in the repo's older generator format: the `supabase@latest` CLI also rewrites 9 unrelated places, so only the generated `exercise_settings` block was taken); export (`EXPORT_TABLES`, `ORDER_KEYS`, last key); D-0017 delete list = the `OWNED_TABLES` drift list in pgTAP 018 (the delete itself is the auth cascade) plus the account-delete Deno integration test list.
+- `session_sets_live`: no fix needed. It is `select *` over `session_sets`, which has had `rir` since the first migration. AC10 proves it.
+- AC map: AC1 `001_schema` (21 asserts from the doc table) + vitest `database.test.ts`; AC2 `023` (B and A sides); AC3 `023` (anon select/insert/update/delete 42501); AC4 `023` (0, 0.1, 10.25, 11, 1.1 rejected; 0.25, 1.25, 10 accepted); AC5 `023`; AC6 `024` (exercise and user delete) and `001` (FK cascade); AC7 `024`; AC8 `export.test.ts` (a-ex before z-ex, empty gives `[]`, read error fails all); AC9 `007_account_deletion` + `account-delete.test.ts` (Deno, needs the functions stack; not run here); AC10 `024`.
+- Test-data note: 1.5 is a valid step (6 quarters), so the "not a multiple" case uses 1.1.
+- Red on unfixed code: without the migration, `supabase test db` failed 001 (19), 007, 018 (1), 023 (4) and `024`; with `export.ts` reverted, vitest `src/lib/account` failed 7 tests (drift, shape, three new AC8 tests, count). Both restored from backup copies; now green.
+- Existing tests updated for the new 10th table (counts 9 to 10, "last key"), not weakened.
+- Also touched, outside the ticket's path list: `.github/scripts/rls-coverage.test.mjs` (EXPECTED table list, a drift guard) and `supabase/functions/_shared/vendor/shared/database.gen.d.ts` (output of `vendor.mjs`; `--check` demands it). Grants for both need adding on main.
+- `check:repo` reports `ticket-not-on-base` here only because the stale `origin/main` is picked as the diff base; the ticket is on local `main`.
+- Also touched: `supabase/tests/database/002_rls_owner.test.sql` (+7 asserts; `rls-coverage` requires every table the web reaches to appear in 002's two-user checks). Gate: turbo typecheck lint test --force green (19/19), format:check, gen-seed, vendor checks, test:repo-checks and pgTAP (24 files, 867 tests) pass. `check:repo` only fails with the stale-base `ticket-not-on-base` above.
