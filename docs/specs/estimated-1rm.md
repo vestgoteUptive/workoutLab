@@ -2,7 +2,7 @@
 
 - **Idea:** the owner, 2026-11-20, inspired by the open-source app wger: an estimated one-rep max (e1RM) per exercise, and a chart of it over time.
 - **Screens:** UF-06.2 Exercise history (the home of the feature). UF-04.2 Exercise detail already links to it ("My history"); nothing changes there. User flows v2 (D-0002).
-- **Decisions:** D-0254 (which sets and which formula), D-0255 (a pure engine function, rule 16), D-0256 (the UF-06.2 card, chart and table), D-0257 (scope cuts, and how this amends D-0068 and D-0219). Builds on D-0219 (rule 15 records, Epley), D-0068 (UF-06 scope), D-0079 (UF-06 build defaults), D-0208 (Cobalt), D-0015/D-0024 (history rows, warm-ups).
+- **Decisions:** D-0258 (impact-review rulings, amends D-0254..D-0256; wins on conflict), D-0254 (which sets and which formula), D-0255 (a pure engine function, rule 16), D-0256 (the UF-06.2 card, chart and table), D-0257 (scope cuts, and how this amends D-0068 and D-0219). Builds on D-0219 (rule 15 records, Epley), D-0068 (UF-06 scope), D-0079 (UF-06 build defaults), D-0208 (Cobalt), D-0015/D-0024 (history rows, warm-ups).
 - **Principles:** 3, deterministic engine: the number comes from a pure function, never from an LLM, and `suggest` never reads it. 1: nothing on UF-08 or UF-09 (no number, no chart, no link while a workout runs). 2, 4 and 5: untouched. The e1RM never changes a target, a suggestion or a pre-fill (rule 14 keeps its own progression).
 
 ## Problem
@@ -54,7 +54,7 @@ On UF-06.2, for a loaded exercise, one stat card "Est. 1RM about 124 kg" and a l
 |---|---|
 | Zero history / no sessions of this exercise | The existing "no sets" line; no card, no chart |
 | Sets, none valid (all above 10 reps, or all weight 0) | Existing cards and rows; the Est. 1RM card is hidden (no placeholder); in place of the chart one line: "No estimate yet. Estimates need a weighted set of 1–10 reps." |
-| Bodyweight or timed exercise | One line: "Estimated 1RM is for weighted lifts." Existing cards unchanged |
+| Bodyweight or timed exercise | One line: "Estimated 1RM is for weighted lifts." Existing cards unchanged; no Est. 1RM card |
 | One valid point | The card with its value; the chart shows one dot with its label and no line; line under it: "One session so far. Log it again to see a trend." No delta |
 | Two or more points | Card, delta line, chart, table toggle |
 | Returning after 10 days off | Nothing special: the gap is visible on the x axis, and a lower point after a break is shown as is |
@@ -72,7 +72,7 @@ A line under the chart, `text-muted`: "Estimated from your best weighted set of 
 Brzycki or a formula switch; RIR-adjusted estimates; a range switch (4/8/12 weeks, all time) and a history longer than the 56-day cache (needs a server read, H-37); the e1RM on UF-03.3, UF-06.1 or Today; targets and weights suggested from the e1RM ("train at 75 %"); a percentage table; per-area strength; bodyweight-plus-load exercises; lb; tapping a point; sharing or export of the chart; any change to rules 7, 14 or 15.
 
 ## Acceptance criteria (for the tickets; each needs an automated test)
-1. **AC1 (formula).** Given back-squat 100 × 8 in a hard set, When the estimate is computed, Then e1rm = 126.667 (100 × (1 + 8/30)). 100 × 1 gives 100 exactly. 90 × 10 gives 120.
+1. **AC1 (formula).** Given back-squat 100 × 8 in a hard set, When the estimate is computed, Then e1rm = 126.667 (100 × (1 + 8/30)). 100 × 1 gives 103.333 (plain Epley, as rule 15; D-0258 §1). 90 × 10 gives 120.
 2. **AC2 (range).** Given a session with 60 × 15 only, Then no point for that session. Given 100 × 10 and 60 × 15, Then the point is 100 × 10 (133.333). 100 × 0 and null reps are ignored.
 3. **AC3 (sets).** Given a warm-up set 130 × 1, a tombstoned 120 × 5 and a live 100 × 8 in one session, Then the point is 100 × 8. A set of an unknown exercise, a timed exercise or a bodyweight exercise (`externalLoad: false`) gives no points.
 4. **AC4 (best per session).** Given S1 100 × 8 and 105 × 5 (126.667 and 122.5), Then one point for S1: 100 × 8. Given S2 with two equal sets at 10:00 and 10:05, Then the 10:00 one.
@@ -85,7 +85,12 @@ Brzycki or a formula switch; RIR-adjusted estimates; a range switch (4/8/12 week
 11. **AC11 (offline and window).** Offline with a warm cache, the card and chart show and match the online values. A session 57 days old is not plotted.
 12. **AC12 (scope).** The card, chart and link text appear on UF-06.2 only: not on UF-08, UF-09, UF-02.1 or UF-04.2. Today's "Latest PR" line still shows the actual set.
 
-## Open questions, each with a recommended default (D-0254..D-0257 record the defaults)
+## Engineering notes (D-0258)
+- New `e1rm.ts` beside `records.ts`, reusing `normalizeHistory`, `isHardSet` and `indexLibrary`; no `Date.now()` or `new Date()`. T-0961 extends the isolation test ("no core module imports `records.ts`") to `e1rm.ts`, narrows rule 15's "never the e1RM number" to "never on Today", and re-vendors `supabase/functions/_shared/vendor/**`.
+- Tests also cover: determinism, 5 simulated histories plus an offline-merged one, R15-E12 (bench 7 points, back-squat 7, dead-bug `[]`), session-best agreement with rule 15, and at least 200 seeded property cases with an inline mulberry32 (no fast-check).
+- T-0962 creates `screens/UF-06.2.md` and notes that the prototype `UF06-2-History.dc.html` (Brzycki) is superseded.
+
+## Open questions: all resolved at their defaults by the owner (D-0258 §16; D-0254..D-0257 are `decided`)
 1. **RIR-adjusted estimate?** Default: no, reps only in v1 (D-0254). Revisit when most logged sets have an `rir`.
 2. **Valid rep range?** Default: 1–10 (D-0254). Alternative: 1–12 (matches rule 15's "counts above 12" spirit, but less accurate) or 1–8.
 3. **Bodyweight exercises with added load (weighted pull-up logged on a bodyweight exercise)?** Default: excluded in v1 (D-0254). A later version could add bodyweight to the load; the app has no body weight setting.

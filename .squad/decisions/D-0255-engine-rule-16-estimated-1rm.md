@@ -1,7 +1,7 @@
 ---
 id: D-0255
 title: "Engine rule 16 estimatedOneRepMax(history, library, exerciseId): a pure, display-only per-session e1RM series computed on the device; nothing stored"
-status: revisit
+status: decided
 date: 2026-11-20
 by: product-owner (spec, proposed for the engine lane)
 area: engine
