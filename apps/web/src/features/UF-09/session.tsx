@@ -3,11 +3,19 @@
 // IndexedDB queue, NFR-OFF-2), and the machine moves only after that write has resolved.
 // Every `upsertSession` sends the whole stored row (D-0071 §6), never a partial one.
 import { createContext, useContext } from "react";
-import { WARMUP_COST_S, availableS } from "@workoutlab/engine";
+import {
+  WARMUP_COST_S,
+  availableS,
+  insertItem as engineInsertItem,
+  timeLeftS as engineTimeLeftS,
+  type LibraryExercise,
+} from "@workoutlab/engine";
 import type { Energy, SessionPlan, Workout, WorkoutItem } from "@workoutlab/shared";
 import {
   deleteSet as queueDeleteSet,
   editSet as queueEditSet,
+  loadEngineHistory,
+  loadProfile,
   offlineDb,
   recordSet as queueRecordSet,
   upsertSession,
@@ -39,6 +47,16 @@ export type DoLaterResult =
   | { ok: true; name: string }
   | { ok: false; reason: "unavailable" }
   | { ok: false; reason: "failed"; error: unknown };
+
+/** The result of `insertItem(exerciseId)` (T-0947, D-0245, D-0246 §2): never a rejection, so
+ *  UF-09.10 can show copy. `blocked`: the id is a plan item or has a set logged in this
+ *  workout, or the workout isn't on a plain pause (no write, no event). `failed`: the write (or
+ *  the engine) failed, nothing changed. `refused`: the engine said no; `leftS` is `timeLeftS`. */
+export type InsertItemResult =
+  | { status: "added"; name: string; afterName: string }
+  | { status: "refused"; reason: "time" | "items_cap"; leftS: number }
+  | { status: "blocked" }
+  | { status: "failed" };
 
 /**
  * The value of `useFocusSession()` (D-0066 §12, D-0071 §5). A seam overlay gets the same value
@@ -92,6 +110,15 @@ export interface FocusSession {
    *  resumes). `{ok:false}` with nothing changed when it isn't available (`canDoLater`) or the
    *  write fails. One write while pending. */
   doLater(): Promise<DoLaterResult>;
+  /** UF-09.10 "Add {name}" (T-0947, D-0245 §1, D-0246 §2 §12): inserts `exerciseId` after the
+   *  current item (`atIndex = min(itemIndex + 1, items.length)`), with rule 12.3 `insertItem`
+   *  and `leftS = timeLeftS()`. Writes `{...row, plan}` through the device-first queue (works
+   *  offline), and only then moves the machine (`ITEM_INSERTED`). Never rejects; see
+   *  `InsertItemResult`. One add at a time. */
+  insertItem(exerciseId: string): Promise<InsertItemResult>;
+  /** Rule 8 `timeLeftS` from the live state: the budget, minus elapsed time, minus the unspent
+   *  warm-up, minus what is left of every item that isn't skipped (D-0244 §2). May be negative. */
+  timeLeftS(): number;
   /** Writes `{...row, ended_at: now}`, removes `wl-focus:<id>`, then navigates to
    *  `/session/<id>/summary`. No UI and no confirm; one write while pending. A failed one can
    *  be called again; before it rejects it applies a UF-09.8 plan write it waited for that had
@@ -154,6 +181,7 @@ export type FocusActions = Omit<
   | "loggedSets"
   | "rest"
   | "elapsedS"
+  | "timeLeftS"
   | "close"
   | "notifyExclusionFailed"
 >;
@@ -164,6 +192,8 @@ export interface FocusActionDeps {
   storage: FocusStorage | null;
   onRow(row: SessionRow): void;
   navigate(to: string): void;
+  /** The zone `insertItem` reads "days since" in; absent, the runtime zone (T-0947). */
+  timeZone?: string;
   /** Orders a UF-09.8 plan write against `finish()` (T-0304d rework). Shared with
    *  `createPlanApply`; absent, each factory keeps its own and nothing is ordered. */
   writes?: SessionWrites;
@@ -189,6 +219,52 @@ export function createSessionWrites(): SessionWrites {
   return { plan: null, finishing: false, landed: null };
 }
 
+/** Rule 8's `timeLeftS` for `state` at `nowMs` (T-0947, D-0244 §2): the sets done per item are the
+ *  distinct live sets of that item's exercise; the warm-up counts as unspent only while it is
+ *  yet to start or running, and only when it is in the budget. */
+export function timeLeftOf(
+  row: SessionRow,
+  plan: SessionPlan,
+  state: FocusState,
+  nowMs: number,
+): number {
+  const warmupInBudget = row.warmup_in_budget ?? true;
+  const startedAtMs = Date.parse(row.started_at);
+  const elapsed = elapsedSOf(
+    {
+      startedAtMs: Number.isFinite(startedAtMs) ? startedAtMs : nowMs,
+      workoutPausedMs: state.workoutPausedMs,
+      pausedAtMs: state.pausedAtMs,
+      warmupSpentMs: state.warmupSpentMs,
+      warmupInBudget,
+    },
+    nowMs,
+  );
+  const running = state.phase === "paused" ? state.resumePhase : state.phase;
+  let warmupLeftS = 0;
+  if (warmupInBudget && (running === "getReady" || running === "warmup")) {
+    const at = state.pausedAtMs ?? nowMs;
+    const spentMs =
+      running === "warmup" && state.warmupStartedAtMs !== null
+        ? Math.max(0, at - state.warmupStartedAtMs)
+        : 0;
+    warmupLeftS = Math.max(0, WARMUP_COST_S - Math.floor(spentMs / 1000));
+  }
+  const setsDone = plan.items.map((item, i) => {
+    const done = new Set<number>();
+    for (const s of state.loggedSets) {
+      if (s.itemIndex === i && s.exerciseId === item.exerciseId) done.add(s.setIndex);
+    }
+    return done.size;
+  });
+  return engineTimeLeftS(buildWorkout(row, plan), {
+    elapsedS: elapsed,
+    setsDone,
+    skippedItems: state.skippedItems ?? [],
+    warmupLeftS,
+  });
+}
+
 async function storedRow(sessionId: string): Promise<SessionRow> {
   const entry = await offlineDb().sessions.get(sessionId);
   if (!entry) throw new Error(`session ${sessionId} isn't on this device`);
@@ -207,6 +283,7 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
    *  different set and writes its own row. */
   const recording = new Map<string, Promise<LoggedSet>>();
   let deferring: Promise<DoLaterResult> | null = null;
+  let inserting: Promise<InsertItemResult> | null = null;
 
   const writeSet = async (
     input: Omit<FocusSetInput, "source">,
@@ -343,6 +420,91 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
       writes.plan = pendingWrite;
       const clear = () => {
         if (deferring === run) deferring = null;
+        if (writes.plan === pendingWrite) writes.plan = null;
+      };
+      run.then(clear, clear);
+      return run;
+    },
+
+    insertItem(exerciseId) {
+      if (inserting) return inserting;
+      const ended = () => writes.finishing || store.getState().phase === "done";
+      const { state, ctx } = store.getSnapshot();
+      const plain = state.phase === "paused" && state.resumePhase !== "timeCheck";
+      const taken =
+        ctx.plan.items.some((it) => it.exerciseId === exerciseId) ||
+        state.loggedSets.some((s) => s.exerciseId === exerciseId);
+      // D-0246 §2: an item, or an exercise with a set logged here (swapped out since), is never
+      // added: a restore realigns by exercise id and would misplace those sets. No write, no event.
+      if (ended() || !plain || taken) return Promise.resolve({ status: "blocked" });
+      const run = (async (): Promise<InsertItemResult> => {
+        let row: SessionRow;
+        let result: ReturnType<typeof engineInsertItem>;
+        let atIndex: number;
+        let leftS: number;
+        const now = Date.now();
+        try {
+          row = await storedRow(sessionId);
+          const [history, profile] = await Promise.all([loadEngineHistory(), loadProfile()]);
+          if (profile === null) return { status: "failed" };
+          leftS = timeLeftOf(row, ctx.plan, state, now);
+          // D-0246 §12: appended on the last item, and 0 on an (impossible) empty plan.
+          atIndex = Math.max(0, Math.min(state.itemIndex + 1, ctx.plan.items.length));
+          result = engineInsertItem(
+            buildWorkout(row, ctx.plan),
+            exerciseId,
+            { atIndex, leftS },
+            history,
+            profile,
+            ctx.library as readonly LibraryExercise[],
+            new Date(now).toISOString(),
+            deps.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
+          );
+        } catch {
+          return { status: "failed" };
+        }
+        if (result.refused !== undefined) {
+          return { status: "refused", reason: result.refused, leftS };
+        }
+        const plan: SessionPlan = { ...ctx.plan, items: result.workout.plan.items };
+        const written: SessionRow = { ...row, plan };
+        try {
+          await upsertSession(written);
+        } catch {
+          return { status: "failed" };
+        }
+        const nameOf = (id: string | undefined) =>
+          id === undefined ? "" : (ctx.library.find((e) => e.id === id)?.name ?? id);
+        const moved = store.getState();
+        const same =
+          moved.phase === "paused" &&
+          moved.pausedAtMs === state.pausedAtMs &&
+          moved.resumePhase === state.resumePhase &&
+          moved.itemIndex === state.itemIndex &&
+          store.getSnapshot().ctx.plan === ctx.plan &&
+          !ended();
+        if (!same || !store.insertItem(plan, atIndex, Date.now())) {
+          // The pause ended while the write was in flight: the machine can't follow, so the old
+          // plan goes back and nothing has changed.
+          try {
+            await upsertSession(row);
+          } catch {
+            return { status: "failed" };
+          }
+          return { status: "blocked" };
+        }
+        deps.onRow(written);
+        return {
+          status: "added",
+          name: nameOf(exerciseId),
+          afterName: nameOf(ctx.plan.items[state.itemIndex]?.exerciseId),
+        };
+      })();
+      inserting = run;
+      const pendingWrite = run.then(() => undefined);
+      writes.plan = pendingWrite;
+      const clear = () => {
+        if (inserting === run) inserting = null;
         if (writes.plan === pendingWrite) writes.plan = null;
       };
       run.then(clear, clear);
