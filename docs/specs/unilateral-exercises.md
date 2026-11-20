@@ -2,7 +2,7 @@
 
 - **Idea:** the owner, 2026-11-20: "For exercises done one arm at a time, should you log reps per arm or the total for the whole set?" The orchestrator answered: reps per arm (10 per arm, not 20), weight is one dumbbell, one set covering both sides is one hard set. The owner asked to file it as an idea.
 - **Screens:** UF-09.3 Current set and UF-09.4 Confirm set (a label only), UF-03.3 Summary and UF-03.1 Active (set table) and UF-06.2 Exercise history (set rows), UF-04.2 Exercise detail (one line). User flows v2 (D-0002).
-- **Decisions:** D-0260 (field, counting rules, data), D-0261 (labels, copy and the audit rule), D-0262 (no engine change in v1, time under-estimate accepted). Builds on D-0033 (library engine fields), D-0026 and D-0250 (progression, RIR), D-0254 (e1RM), D-0024 (time model, rule 7.1).
+- **Decisions:** D-0260 (field, counting rules, data), D-0261 (labels, copy and the audit rule), D-0262 (no engine change in v1, time under-estimate accepted), D-0263 (review rulings; amends the three, wins where they differ: 16 flagged rows, flag on web `ExerciseDetail`, no IndexedDB bump, hero-line formats). Builds on D-0033 (library engine fields), D-0026 and D-0250 (progression, RIR), D-0254 (e1RM), D-0024 (time model, rule 7.1).
 - **Principles:** 1 (one task on screen): the label is part of the existing reps line, not a new element, step or screen; nothing is added to UF-09.9. 2 (time budget): known under-estimate, see "Time". 3 (deterministic engine): no rule changes in v1. 5: nothing in onboarding.
 
 ## What it is
@@ -16,35 +16,41 @@ Some exercises are done on one side at a time: a dumbbell row, a split squat, a 
 ## Library field (D-0260)
 `data/exercises/schema.json` gains an optional field `unilateral`, one of `"arm"`, `"leg"`, `"side"`. Absent means both sides work together (every row today). It is a display and content flag in v1; the engine does not read it (D-0262). The same value is the word shown: "per arm", "per leg", "per side".
 
-It travels the same road as `increment_kg` (D-0033): the library JSON, `data/exercises/src` types and loader, `supabase/scripts/gen-seed.mjs` (column in the seed; `--check` stays byte-identical), a migration adding `exercises.unilateral text null check (unilateral in ('arm','leg','side'))`, `docs/data-model.md`, `packages/shared` (`database.gen.ts`, mapper, `Exercise` type: `unilateral: 'arm' | 'leg' | 'side' | null`), and the web library cache. `session_sets`, `workouts` and every API shape are unchanged (no openapi change).
+It travels the same road as `increment_kg` (D-0033): the library JSON, `data/exercises/src` types and loader, `supabase/scripts/gen-seed.mjs` (column in the seed; `--check` stays byte-identical), a migration adding `exercises.unilateral text null check (unilateral in ('arm','leg','side'))`, `docs/data-model.md`, `packages/shared` (`database.gen.ts` and its vendored `.d.ts`, `Exercise` type `unilateral: 'arm' | 'leg' | 'side' | null`, and a small mapper `toUnilateral(row)`, null to null, unknown to null), and the web library cache. `session_sets`, `workouts` and every API shape are unchanged (no openapi change).
+
+**Where the flag is carried (D-0263).** On the web-only `ExerciseDetail` (`apps/web/src/lib/offline/db.ts`, written from `select("*")`), never on the engine's `LibraryExercise` (the engine package stays unaware, AC13). No IndexedDB version bump: `refreshLibrary` replaces the cached rows, so the field backfills on the next refresh; a row without it reads as both sides. Valid and invalid `unilateral` fixtures join the schema tests; the 108-row pin is unchanged.
 
 ## Content audit (D-0261)
-Rule for a row to carry `unilateral`: **one set means all reps on one side, then the other side.** Rows that alternate side every rep are not flagged: their reps are the steps the user counts, and the step text says "count every step".
+Rule for a row to carry `unilateral`: **one set means all reps on one side, then the other side.** Rows that alternate side every rep are not flagged: their reps are the steps the user counts (their steps already say "alternate"; no text change). A row that is one side per set (machine-torso-rotation: "switch the start side for the next set") is not flagged either, since one set is one side.
 
-Grep of the 108 rows (step texts, cues, variants) gives this proposed split. The content curator confirms each row when editing and may change a value with a note in the ticket log.
+Grep of the 108 rows (step texts, cues, variants) and the impact review give this split (D-0263 §9). The content curator confirms each row when editing and may change a value with a note in the ticket log. Steps stay within 5 and 120 characters; the curator may merge steps.
 
 | Group | Rows | Value |
 |---|---|---|
-| Flag, text already says finish and switch | single-leg-deadlift, single-leg-calf-raise, split-squat, bulgarian-split-squat (`leg`); dumbbell-row (`arm`); donkey-kick, fire-hydrant (`leg`) | as shown |
-| Flag, add "then switch" to the steps (text is silent or per rep) | barbell-lunge, dumbbell-lunge, forward-lunge, lateral-lunge, banded-glute-kickback, glute-kickback-machine, cable-kickback (`leg`); cable-woodchop, machine-torso-rotation (`side`) | as shown |
-| Flag, timed (seconds are per side) | side-plank (`side`) | `side` |
-| Alternates every rep, not flagged | reverse-lunge, walking-lunge, bird-dog, dead-bug, plank-shoulder-tap, plank-up-down, prone-swimmers, archer-push-up, weighted-russian-twist | none; steps say "count every step" or "count every pair" |
+| Flag, text already says switch (no text change) | single-leg-deadlift, single-leg-calf-raise ("switch feet"), split-squat, bulgarian-split-squat, barbell-lunge, dumbbell-lunge, forward-lunge, lateral-lunge, glute-kickback-machine, donkey-kick, fire-hydrant | `leg` |
+| Flag, add a switch step | dumbbell-row | `arm` |
+| Flag, replace "repeat" with switch text | banded-glute-kickback, cable-kickback | `leg` |
+| Flag, replace "repeat" with switch text | cable-woodchop | `side` |
+| Flag, timed (seconds are per side) | side-plank | `side` |
+| One side per set, not flagged | machine-torso-rotation | none |
+| Alternates every rep, not flagged | reverse-lunge, walking-lunge, bird-dog, dead-bug, plank-shoulder-tap, plank-up-down, prone-swimmers, archer-push-up, weighted-russian-twist | none; no text change |
 | Two hands on one weight, not unilateral | overhead-tricep-extension-dumbbell, goblet-squat-dumbbell, kettlebell-swing | none |
 
-That is 17 flagged rows. Everything with "a dumbbell in each hand" (bench press, curl, lunge weights, raises) is not unilateral: both sides work in the same rep.
+That is 16 flagged rows (13 `leg`, 1 `arm`, 2 `side`). Everything with "a dumbbell in each hand" (bench press, curl, lunge weights, raises) is not unilateral: both sides work in the same rep.
 
 ## Behaviour
 ### Focus mode (UF-09.3, UF-09.4)
-- UF-09.3: the reps text reads "10 reps per arm" with the weight as today ("12 kg"). A timed unilateral row reads "40 s per side". Same line, same size, no extra row (principle 1).
-- UF-09.4: the reps field label reads "Reps per arm" (or leg, side); a timed row "Seconds per side". Pre-filled values, steppers, RIR and the 5 s auto-save are unchanged. The value saved is the per-side count.
+- UF-09.3 (D-0263 §4): a weighted set keeps its hero line: "12 kg" over "× 10 per arm" (suffix in the same `<p>`, same type, `--wl-ink-muted`, contrast rechecked on lift and rest). Bodyweight or no weight: "10 reps per arm". Timed: "40 s per side". The `<p>` aria-label reads "12 kg, 10 reps per arm" (timed "40 seconds per side"). At 320 px the suffix wraps, never truncates. No extra row (principle 1).
+- UF-09.4 (D-0263 §5): the stepper group's aria-label is "Reps per arm" (or leg, side); timed "Seconds per side". Buttons stay "More reps" and "Less reps". A visible caption under the number ("per arm") in the label type size; the number alone stays in the target. Pre-filled values, RIR and the 5 s auto-save are unchanged. The value saved is the per-side count.
 - Not flagged exercises show exactly what they show today.
 
 ### History and summary
-- UF-03.1 and UF-03.3 and UF-06.2 session rows: "3 × 10 per arm · 12 kg". The existing text for other rows is unchanged. UF-06.2 stat cards ("Best set") use the same suffix.
+- UF-03.1, UF-03.3 and UF-06.2 (D-0263 §6): the suffix is appended to each screen's existing format. Weighted set rows "12 × 10 per arm" (like "97.5 × 8" today); bodyweight "10 per arm"; UF-03 ListView `repsLabel` "Set 2 reps per arm"; UF-06.2 Best set "12 kg × 10 per arm". The grouped form "3 × 10 per arm · 12 kg" is used only where a grouped summary row already exists. Other rows are unchanged.
+- One helper (D-0263 §8): `formatReps(reps, unilateral, timed)` and the `perSide(word)` strings live in one shared web i18n module; UF-03 (`SummaryContent.prText`, ListView), UF-09 (`current-set.tsx`, `confirm-set.tsx`) and UF-06 (`stats.ts`) all call it.
 - Est. 1RM (D-0254) uses reps and weight as logged: per-dumbbell weight and per-side reps are consistent from session to session, so the trend is right. The card's number stays "about N kg" for one hand's load.
 
 ### Exercise how-to (UF-04.2)
-One extra line under the steps, only for flagged rows: "Do all reps on one arm, then switch. Log reps for one arm. One set covers both arms." (arm, leg or side as the row says.) For a timed row: "Hold one side, then switch. Log seconds for one side."
+One extra static body-text `<p>` under the steps, only for flagged rows (the RIR sentence is left out for timed rows): "Do all reps on one arm, then switch. Log reps for one arm. One set covers both arms." (arm, leg or side as the row says.) For a timed row: "Hold one side, then switch. Log seconds for one side."
 
 ### Progression and RIR
 Double progression (D-0026) works on per-side reps and per-dumbbell weight unchanged. RIR (D-0250) is one number per set: the user enters the RIR of the **weaker side** (the one that struggled more). The engine reads the lowest RIR as today. The how-to line carries "Log RIR for your weaker side." The RIR chips keep their existing words.
@@ -65,30 +71,33 @@ Rule 7.1 prices a non-timed set at 45 s work plus rest. A unilateral set really 
 
 ## Acceptance criteria (each one is at least one automated test)
 1. Given `schema.json`, a library row with `unilateral: "arm"`, `"leg"` or `"side"` validates; `"both"`, an empty string or a number fails; an absent field validates.
-2. Given the library, exactly the rows in the audit table with a value carry it (17 rows, values as listed, or the curator's logged changes); every other row has none; every flagged row has a step that tells the user to switch sides, and every flagged timed row (side-plank) says seconds are per side.
+2. Given the library, exactly the rows in the audit table with a value carry it (16 rows, values as listed, or the curator's logged changes); every other row has none (machine-torso-rotation included); every flagged row has a step that tells the user to switch sides (the word "switch" in any form, e.g. "switch feet", "then switch"), and every flagged timed row (side-plank) says seconds are per side.
 3. Given `gen-seed.mjs`, the seed carries the column for every row, `--check` passes, and the migration check constraint rejects `'both'`.
 4. Given a mapper round trip (database row, `Exercise`, database row), `unilateral` is kept; null maps to null.
-5. Given dumbbell-row in UF-09.3, the reps line reads "10 reps per arm" and the weight reads "12 kg"; given barbell-row, the line is unchanged ("10 reps").
+5. Given dumbbell-row in UF-09.3, the hero reads "12 kg" over "× 10 per arm" with aria-label "12 kg, 10 reps per arm"; a bodyweight flagged row reads "10 reps per arm"; given barbell-row, the line is unchanged.
 6. Given side-plank in UF-09.3, the line reads "40 s per side".
-7. Given single-leg-calf-raise in UF-09.4, the reps label reads "Reps per leg"; saving 12 stores `reps: 12` and the weight as entered, with no multiplication anywhere.
-8. Given 3 sets of dumbbell-row logged (10, 10, 9 at 12 kg), the history row reads "3 × 10 per arm · 12 kg" on UF-03.3, UF-03.1 and UF-06.2.
+7. Given single-leg-calf-raise in UF-09.4, the stepper's aria-label and visible caption read "Reps per leg" / "per leg"; saving 12 stores `reps: 12` and the weight as entered, with no multiplication anywhere.
+8. Given 3 sets of dumbbell-row logged (10, 10, 9 at 12 kg), each set row reads "12 × 10 per arm" (last "12 × 9 per arm") on UF-03.1, UF-03.3 and UF-06.2, ListView says "Set 2 reps per arm", and Best set reads "12 kg × 10 per arm"; all through `formatReps`.
 9. Given the same 3 sets, back coverage rises by 3 hard sets (not 6), and balance and targets match a bilateral row with the same sets.
 10. Given the same sets, Est. 1RM on UF-06.2 equals the value computed from reps and weight as logged (Epley, no side factor).
 11. Given dumbbell-row on UF-04.2, the extra line reads "Do all reps on one arm, then switch. Log reps for one arm. One set covers both arms. Log RIR for your weaker side."; a bilateral row has no extra line.
 12. Given RIR logged 0 on a flagged row, rule 14 holds the weight exactly as for a bilateral row (D-0250 unchanged).
-13. Given 3 sets of a flagged row planned in a 30-minute budget, the engine cost equals a bilateral row's (the D-0262 pin), and the engine package has no reference to `unilateral`.
+13. Given 3 sets of a flagged row planned in a 30-minute budget, the engine cost equals a bilateral row's (the D-0262 pin), and the engine package (and the vendored copy) has no reference to `unilateral`; a mapper test shows `ExerciseDetail` carries it.
 14. Offline: with the library cached and no network, the label shows and a set queues and uploads later with plain reps and weight.
 15. Onboarding to a first plan is unchanged under 60 s; UF-09 shows no new element (one reps line, no extra row or step); axe passes on UF-09.3, UF-09.4 and UF-04.2 with a flagged row; targets are at least 44 px as today.
 
-## Open questions (each with the default that ships)
+## Open questions (all resolved by D-0263 with the defaults below; owner approved building 2026-11-20)
 1. **One flag per row or an exact word?** Default: the word (`arm`, `leg`, `side`) in one optional field.
 2. **Does the engine price a unilateral set at double work time?** Default: no in v1 (D-0262); T-0978 stays `idea`.
 3. **Old logs of newly flagged rows (maybe logged as totals)?** Default: leave them; no migration, no rewrite.
 4. **Alternating rows (bird-dog, dead-bug, reverse lunge)?** Default: not flagged, reps are the counted steps.
 5. **Show the label on plan rows (UF-08.2, UF-02.1 plan card) as "3 × 8–12 per arm"?** Default: no in v1; only the screens above.
 6. **Weaker-side RIR note: text only or a per-side RIR?** Default: text only, one RIR per set.
-7. **Calf raise and lunge say `leg`, side-plank and woodchop say `side`.** Default as the audit table; the curator may change one with a log note.
-8. **Do the Cobalt copy strings go through the existing i18n files?** Default: yes, one `perSide` plural-free string per word in each of the UF-03, UF-04, UF-06 and UF-09 files; no new token.
+7. **Calf raise and lunge say `leg`, side-plank and woodchop say `side`.** Default as the audit table (machine-torso-rotation unflagged); the curator may change one with a log note.
+8. **Do the Cobalt copy strings go through the existing i18n files?** Resolved: one shared module with `formatReps` and `perSide`, called by all four flows (D-0263 §8); no new token.
+
+## Build order (D-0263 §10)
+T-0971 (schema, loader, seed, step text) then T-0972 (migration, data-model, `database.gen.ts`, mapper), which lands after T-0951. T-0973 (screen specs, created or amended: UF-09.3, UF-09.4, UF-03, UF-06, UF-04.2). Web tickets T-0974 (creates the helper), T-0975, T-0976 land after T-0953 and T-0954. T-0977 e2e last. T-0978 stays `idea` (needs T-0952 and T-0971).
 
 ## Out of scope (v1)
 Per-side reps or weights (left and right logged separately), a left-right imbalance chart, doubling the work time in the engine, unilateral-aware warm-ups, labels on plan rows, rewriting past logs.
