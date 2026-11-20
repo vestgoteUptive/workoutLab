@@ -145,7 +145,12 @@ export type FocusEvent =
   /** UF-09.9 "Do {name} later", reduced with the NEW plan in `ctx` after its write landed:
    *  `order[old] = new` for every item, `current` the new index of the item to do now. Valid only
    *  in `paused` (not on a pause taken on UF-09.8). */
-  | ({ type: "ITEM_DEFERRED"; order: readonly number[]; current: number; name: string } & At);
+  | ({ type: "ITEM_DEFERRED"; order: readonly number[]; current: number; name: string } & At)
+  // T-0947 (D-0245 §1, UF-09.10). Added, none changed.
+  /** UF-09.10 after the plan write landed, reduced with the NEW plan in `ctx`: an item was
+   *  inserted at `atIndex`. Every logged set and skipped item at or after it moves up by one.
+   *  Valid only in `paused` (not on a pause taken on UF-09.8); nothing else changes. */
+  | ({ type: "ITEM_INSERTED"; atIndex: number } & At);
 
 function timerAt(atMs: number, durationS: number): FocusTimer {
   return { startedAtMs: atMs, durationS, pausedMs: 0 };
@@ -564,6 +569,8 @@ function transition(state: FocusState, event: FocusEvent, ctx: FocusCtx): FocusS
       return skipItem(state, ctx, event.atMs);
     case "ITEM_DEFERRED":
       return itemDeferred(state, ctx, event.order, event.current, event.atMs);
+    case "ITEM_INSERTED":
+      return itemInserted(state, ctx, event.atIndex);
     case "HOLD_ALREADY_LOGGED":
       return state.phase === "timed" ? movedOnIfLogged(state, ctx, event.atMs) : state;
     case "PLAN_REPLACED":
@@ -766,6 +773,23 @@ function itemDeferred(
     itemIndex: current,
     setIndex: 0,
     timer: timerAt(atMs, NEXT_SETUP_S),
+  };
+}
+
+/**
+ * ITEM_INSERTED (T-0947, D-0245 §1): `ctx.plan` already holds the new item at `atIndex`. Shifts
+ * every logged set's `itemIndex` and every skipped item at or after it up by one. The machine's
+ * `itemIndex`, `setIndex`, `resumePhase` and the timers are unchanged, so the pause stays.
+ */
+function itemInserted(state: FocusState, ctx: FocusCtx, atIndex: number): FocusState {
+  const paused = state.phase === "paused" && state.resumePhase !== null;
+  if (!paused || state.resumePhase === "timeCheck") return state;
+  if (!Number.isInteger(atIndex) || atIndex < 0 || atIndex >= ctx.plan.items.length) return state;
+  const shift = (i: number) => (i >= atIndex ? i + 1 : i);
+  return {
+    ...state,
+    loggedSets: state.loggedSets.map((s) => ({ ...s, itemIndex: shift(s.itemIndex) })),
+    skippedItems: (state.skippedItems ?? []).map(shift),
   };
 }
 
