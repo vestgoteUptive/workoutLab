@@ -1,7 +1,7 @@
 ---
 id: D-0251
 title: "A user's own weight step per exercise: new table exercise_settings (user_id, exercise_id, increment_kg 0.25-10 in quarters), edited only on UF-04.2, no row means the library default, offline-first, last write wins"
-status: revisit
+status: decided
 date: 2026-11-20
 by: product-owner (idea mode, owner request 2026-11-20)
 area: data

@@ -1,7 +1,7 @@
 ---
 id: D-0253
 title: "RIR progression and own steps, v1 scope and the defaults for the spec's twelve open questions"
-status: revisit
+status: decided
 date: 2026-11-20
 by: product-owner (idea mode)
 area: product

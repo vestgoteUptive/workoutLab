@@ -1,7 +1,7 @@
 ---
 id: D-0252
 title: "Engine inputs for RIR and own steps: HistorySet.rir optional, the user's step travels as LibraryExercise.incrementKg in an effective library built by the web layer, prefill's signature is unchanged, new prefill reason kind hold_effort"
-status: revisit
+status: decided
 date: 2026-11-20
 by: product-owner (idea mode, owner request 2026-11-20)
 area: engine
