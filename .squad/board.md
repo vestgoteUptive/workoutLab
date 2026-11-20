@@ -262,3 +262,17 @@ Owner request 2026-11-20 (inspired by wger): use RIR in progression and let the 
 | T-0957 | e2e: RIR 0 holds the weight, a second session steps up, own step 1.25 flows to pre-fill and stepper, zero history, 10 days off, offline set and override, onboarding under 60 s unchanged (AC8, AC10, AC13) | qa | T-0953, T-0956 | todo | wl-build-qa |
 | T-0958 | User flows v2 and PRD: UF-04.2 gains the Weight step row; D-0026 "RIR not used" note amended; a PRD row | product | — | ready | wl-idea |
 | T-0959 | Backend: `POST /workouts/suggest` reads the caller's `exercise_settings` via the RLS client and builds the effective library; re-vendor the engine; test the override changes the server back-off; no openapi change (D-0259 §15, AC14) | backend | T-0951, T-0952 | todo | wl-build-backend |
+
+## One side at a time (spec docs/specs/unilateral-exercises.md)
+Owner request 2026-11-20: should reps for one-arm exercises be per arm or the whole set? Answer: per arm, weight is one dumbbell, one set covering both sides is one hard set. Decisions D-0260 (field, counting, data), D-0261 (labels, audit, 17 rows), D-0262 (no engine change in v1; time under-estimate accepted, status `revisit`). All rows are `idea` until the owner approves the spec.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0971 | Content audit: add optional `unilateral` (arm, leg, side) to the 17 listed library rows and edit step text so each says to switch sides (and "count every step" on alternating rows); schema, loader, `gen-seed.mjs` column, tests (D-0260 §2, D-0261 §3 §4, AC1-AC3) | content | — | idea | wl-build-content |
+| T-0972 | Data: migration adding `exercises.unilateral` with its check, `docs/data-model.md`, `database.gen.ts`, shared mapper and `Exercise` type, web library cache carries the field; mapper round trip and constraint tests (D-0260 §3, AC3, AC4) | data | T-0971 | idea | wl-build-data |
+| T-0973 | Screen spec: "per arm / per leg / per side" label on UF-09.3, UF-09.4, UF-03.1, UF-03.3, UF-06.2 and the UF-04.2 how-to line, with copy strings; no new token, one line only (D-0261 §1 §2) | design | — | idea | wl-design |
+| T-0974 | UF-09.3 and UF-09.4: show the per-side label next to reps and on the reps field; timed rows "40 s per side"; no new element, saved value unchanged (AC5-AC7, AC15) | web-feature:UF-09 | T-0972, T-0973 | idea | wl-build-web |
+| T-0975 | History and summary: show "3 × 10 per arm · 12 kg" on UF-03.1, UF-03.3 and UF-06.2 set rows and the Best set card (AC8-AC10) | web-feature:UF-06 | T-0972, T-0973 | idea | wl-build-web |
+| T-0976 | UF-04.2: the one-side how-to line for flagged rows, including "Log RIR for your weaker side" (AC11) | web-feature:UF-04 | T-0972, T-0973 | idea | wl-build-web |
+| T-0977 | e2e one side at a time: dumbbell-row and side-plank label in focus and history, coverage counts 3 not 6, zero history, 10 days off, offline, engine cost pin, axe/44 px, onboarding under 60 s (AC9, AC13-AC15) | qa | T-0974, T-0975, T-0976 | idea | wl-build-qa |
+| T-0978 | Engine, parked: rule 7.1 doubles work time for a flagged row (timed: twice the planned duration); examples, simulated histories, re-vendor (D-0262 §3) | engine | T-0972 | idea | wl-build-engine |
