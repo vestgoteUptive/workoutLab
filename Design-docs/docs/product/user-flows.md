@@ -49,7 +49,7 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
 
 - **UF-02.1 Today: workout in progress** (D-0139). When this user has an unfinished workout started on this device in the last 12 h, Today shows one card under the header: "Workout in progress", "Started HH:MM · n of N sets" and **Resume workout**, which reopens focus mode where it was left (UF-09). With several, the newest one. "Start workout" stays. An older unfinished workout shows no card (it is stale, D-0111 §7). Works offline.
 - **UF-02.1 Today: week row and week line** (D-0212, `docs/specs/cobalt-mock-behaviour.md` §1.1). Under the `h1`, a Monday-to-Sunday row of seven day letters (done, rest, upcoming; today underlined) and a week line such as "Sunday — 3 of 3–5 done this week". Computed from the cache and queue, so it works offline.
-- **UF-02.1 Today: Latest PR** (D-0217, D-0219, spec `docs/specs/cobalt-mock-behaviour.md` §3.2). Directly above Start, "Latest PR Back Squat 100 kg × 8": the newest personal record (engine rule 15: a session's best set that beats every earlier session's sets, heaviest weight then most reps) from the last 14 days. Hidden when there is none. Works offline.
+- **UF-02.1 Today: Latest PR** (D-0217, D-0219, spec `docs/specs/cobalt-mock-behaviour.md` §3.2). Directly above Start, "Latest PR Back Squat 100 kg × 8": the newest personal record (engine rule 15: a session's best set that beats every earlier session's sets, heaviest weight then most reps) from the last 14 days. Hidden when there is none. Works offline. It is always the actual set, never the estimated 1RM (D-0219 as amended by D-0257: the estimate shows on UF-06.2 only).
 - **UF-02.1 Today: Quick 20-min** (D-0217, spec §3.3). Under Start, "Not feeling it? Quick 20-min", a text link that opens UF-08.1 with 20 minutes chosen. The user still sees the time and taps "Suggest my workout". Shown wherever Start is.
 
 ## UF-04 Exercise library
@@ -57,9 +57,23 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
 - **UF-04.1 Exercises** (D-0217, spec `docs/specs/cobalt-mock-behaviour.md` §3.4): search, and one chip row: All, "Upper", "Legs", the nine areas, and the "My equipment" toggle. A polite "6 results" count above the list. Each row shows at most one tag: "Not suggested", "Favorite", "In plan" (in one of your routines), "Variant" (a variant of one) or "Beginner". Works offline.
 - **UF-04.2 Exercise detail** (D-0207): shows a front-and-back body figure with the exercise's primary areas (weight 1.0) solid and secondary areas (weight 0.5) hatched, with visible Primary and Secondary labels and swatches. The figure is not tappable.
 
+## UF-06 Progress
+
+- **UF-06.1 Overview**: consistency, volume and the Balance card. The estimated 1RM never appears here (D-0257).
+- **UF-06.2 Exercise history** (D-0254 to D-0258, spec `docs/specs/estimated-1rm.md`): for one exercise, the stat cards Best set, Heaviest, Sessions and, for a loaded exercise, **Est. 1RM** ("about 124 kg"), then a delta line, a line chart of the best estimate per session, a "Show as table" toggle, an explanation line and the existing session rows. Amends D-0068 (no e1RM or chart in UF-06) and D-0219 (rule 15, "never the e1RM number") for this screen alone (D-0257). The number comes from the deterministic engine (rule 16, pure function, display-only); it never changes a target, suggestion or pre-fill. Estimate: Epley on the best hard set of 1–10 reps per session, shown to the nearest kg and always as "about". Window: the 56 cached local days ("Last 8 weeks"), x axis proportional to days.
+  - **Delta line** (two or more points): "Up 3 kg since 12 Oct", "Down 2 kg since 12 Oct" or "Same as 12 Oct", against the first point in the window. Words carry the direction, not colour or an arrow alone.
+  - **Chart:** `role="img"` with an `aria-label` summary (count, first and last values and dates); the latest point carries a text label. **Show as table** / **Hide table** is a button (`aria-expanded`, at least 44 px) that reveals a real table, "Estimated 1RM per session": Date, Best set, Est. 1RM, oldest first. Focus stays on the toggle.
+  - **States:**
+    1. Zero history: the existing "no sets" line; no card, no chart.
+    2. Sets but none valid (all above 10 reps, or weight 0): no Est. 1RM card; the line "No estimate yet. Estimates need a weighted set of 1–10 reps."
+    3. Bodyweight or timed exercise: the line "Estimated 1RM is for weighted lifts."; no card.
+    4. One point: the card, one dot with its label and no line, "One session so far. Log it again to see a trend."; no delta.
+    5. Two or more points: card, delta line, chart and table toggle.
+  - Offline: identical, from the cache and queue. Never reachable from UF-08 or UF-09. Not shown on UF-02.1 (Latest PR stays the actual set), UF-03.3 or UF-06.1; those placements stay deferred (D-0257).
+
 ## UF-08 Session setup
 
-**Entry:** Start on UF-02.1 or UF-02.2.
+**Entry:** Start on UF-02.1 or UF-02.2. The estimated 1RM never appears anywhere in UF-08 (principle 1; it lives on UF-06.2 only, D-0257).
 
 - **UF-08.1 Time & energy**
   - Minutes stepper (±5, 15–120) and quick chips 20/30/45/60/90. Shows "done by HH:MM".
@@ -93,7 +107,7 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
 
 ## UF-09 Focus mode
 
-Every screen: pause button, thin progress bar (warm-up + one segment per exercise), exercise index. No other chrome.
+Every screen: pause button, thin progress bar (warm-up + one segment per exercise), exercise index. No other chrome. The estimated 1RM never appears anywhere in UF-09, not even on UF-09.9 Paused: no number, no chart, no link (principle 1; it lives on UF-06.2 only, D-0257).
 
 | ID | Screen | Shows | Primary action | Timer |
 |---|---|---|---|---|
