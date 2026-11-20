@@ -41,7 +41,20 @@
       "mcp__agentlab__start_agent_run",
       "mcp__agentlab__get_run",
       "mcp__agentlab__list_runs",
-      "mcp__agentlab__cancel_run"
+      "mcp__agentlab__cancel_run",
+      "mcp__github__pull_request_read",
+      "mcp__github__actions_list",
+      "mcp__github__actions_get",
+      "mcp__github__get_job_logs",
+      "mcp__github__get_check_run",
+      "mcp__github__list_pull_requests",
+      "mcp__github__create_pull_request",
+      "mcp__github__update_pull_request",
+      "mcp__github__merge_pull_request",
+      "mcp__Claude_Code_Remote__subscribe_pr_activity",
+      "mcp__Claude_Code_Remote__unsubscribe_pr_activity",
+      "mcp__Claude_Code_Remote__send_later",
+      "mcp__Claude_Code_Remote__delete_trigger"
     ],
     "deny": [
       "Bash(git push --force*)",
