@@ -6,12 +6,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+  type RenderResult,
+} from "@testing-library/react";
 import { suggest, type HistorySet, type SessionInput, type Workout } from "@workoutlab/engine";
 import { upsertSession } from "../../../lib/offline/queue.js";
 import { fLibrary, fProfile, fTargets } from "./fixtures.js";
 import {
   fCache,
+  F_TZ_PROPS,
+  SetupTree,
   fitLine,
   renderSetup,
   screenIds,
@@ -110,14 +119,15 @@ async function open(
   minutes = 30,
   how: "Start empty" | "Suggest my workout" = "Start empty",
   after?: () => void,
-): Promise<void> {
-  renderSetup();
+): Promise<RenderResult> {
+  const rendered = renderSetup();
   await waitFor(() => expect(fitLine().textContent).toMatch(/^Fits/));
   fireEvent.click(button(`${minutes} minutes`));
   after?.();
   await settle();
   fireEvent.click(button(how));
   expect(screenIds()).toEqual(["UF-08.2"]);
+  return rendered;
 }
 
 const tap = (name: string) => fireEvent.click(button(`Add ${name}`));
@@ -448,6 +458,32 @@ describe("AC7 (B12) Fill the rest for me", () => {
     expect(document.activeElement).toBe(button("Add exercise"));
   });
 
+  it("a main pick survives: the final suggest call keeps mainLiftId bench-press", async () => {
+    await open();
+    tap("Bench press");
+    fireEvent.click(button("Fill the rest for me"));
+    expect(spy.mock.calls.at(-1)![4]).toMatchObject({
+      mainLiftId: "bench-press",
+      pinnedIds: [],
+    });
+    expect(mainRows()).toEqual(["bench-press"]);
+    expect(planIds()[0]).toBe("bench-press");
+  });
+
+  it("Fill uses the shuffle the user was shown (Other suggestions, then Fill)", async () => {
+    await open();
+    tap("Bench press");
+    fireEvent.click(button("Other suggestions"));
+    expect(suggestionIds()).toEqual(["barbell-row", "leg-extension"]);
+    fireEvent.click(button("Fill the rest for me"));
+    const input = spy.mock.calls.at(-1)![4];
+    expect(input).toMatchObject({ shuffle: 1, mainLiftId: "bench-press", pinnedIds: [] });
+    expect(planIds()).toContain("barbell-row");
+    expect(planIds()).not.toContain("inverted-row");
+    const last = spy.mock.results.at(-1)!.value as Workout;
+    expect(planIds()).toEqual(last.plan.items.map((i) => i.exerciseId));
+  });
+
   it("while over budget it is refused in the status line (D-0242 §1)", async () => {
     await overBudget();
     const over = Number(/· (\d+) min over$/.exec(budgetText().textContent!)?.[1]);
@@ -749,5 +785,43 @@ describe("AC17 suggested mode is untouched", () => {
       expect(i).not.toHaveProperty("fill");
       expect(i).not.toHaveProperty("autoMainLift");
     }
+  });
+});
+
+// ---- QA/review round: Reorder mode and call counts ----
+
+describe("Suggestions section in Reorder mode (needs two picks)", () => {
+  it("the section, Other suggestions and Fill are hidden in Reorder and return after Done", async () => {
+    await open();
+    tap("Bench press");
+    tap("Inverted row");
+    expect(planIds().length).toBeGreaterThanOrEqual(2);
+    expect(section()).not.toBeNull();
+    expect(other()).not.toBeNull();
+    expect(fill()).not.toBeNull();
+    fireEvent.click(button("Reorder"));
+    expect(document.querySelector('[data-part="suggestions"]')).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Suggestions" })).toBeNull();
+    expect(other()).toBeNull();
+    expect(fill()).toBeNull();
+    fireEvent.click(document.querySelector<HTMLElement>('[data-part="reorder-done"]')!);
+    expect(section()).not.toBeNull();
+    expect(other()).not.toBeNull();
+    expect(fill()).not.toBeNull();
+  });
+});
+
+describe("no extra suggest call on an unrelated re-render", () => {
+  it("a Reorder round trip and a same-props re-render make no suggest call", async () => {
+    const rendered = await open();
+    tap("Bench press");
+    tap("Inverted row");
+    const calls = spy.mock.calls.length;
+    fireEvent.click(button("Reorder"));
+    fireEvent.click(document.querySelector<HTMLElement>('[data-part="reorder-done"]')!);
+    chip(30);
+    rendered.rerender(<SetupTree {...F_TZ_PROPS} />);
+    expect(section()).not.toBeNull();
+    expect(spy.mock.calls.length).toBe(calls);
   });
 });
