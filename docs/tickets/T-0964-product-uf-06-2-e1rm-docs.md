@@ -5,7 +5,7 @@ lane: product
 screens: [UF-06.2]
 decisions: [D-0257, D-0258, D-0068, D-0219]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 D-0257 amends D-0068 (UF-06 scope) and D-0219 (rule 15, "never the e1RM number"). The user flows and PRD must say that UF-06.2 shows an estimate and Today still never does.
@@ -34,3 +34,8 @@ none.
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged · commit messages start with `T-0964` and cite UF-06.2.
+
+## Build / accept log
+- Changed: `Design-docs/docs/product/user-flows.md` (new UF-06 section with UF-06.2 card, delta, chart, table toggle, five states; notes at UF-02.1 Latest PR, UF-08, UF-09), `docs/PRD.md` (one "Estimated 1RM" row, mock rows 10 and 16).
+- AC1: user-flows.md, UF-06.2 bullet and its five numbered states. AC2: UF-02.1 Latest PR line, UF-08 entry line, UF-09 intro line. AC3: PRD "Estimated 1RM" row (display-only, deterministic engine, UF-06.2 only). AC4: PRD row marks row 10 deferred, row 16 in; the row table itself is `docs/specs/cobalt-mock-behaviour.md` (outside this ticket's paths, follow-up). AC5: `node .github/scripts/check-all.mjs` reports only `ticket-not-on-base` (ticket file not yet on main); no screen-ID, v1-label or duplicate-decision findings.
+- No separate text-assertion test added (docs-only ticket; the repo check is the test).

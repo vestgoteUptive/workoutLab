@@ -119,13 +119,13 @@ Each item keeps the app's current behaviour and copy, except the four rows marke
 | 7 | UF-08.3, UF-05.1 | "Always use this in Lower A" / "Also replace it in my Lower A routine" | deferred | a routine write from the swap sheet |
 | 8 | UF-05.1 | reason chips "Variations · Same muscles · Gym is busy" | rejected | the swap reason enum is an API contract (D-0056); the app's chips stay |
 | 9 | UF-09.8 | per-option "−4 min", "New finish time", "Moves to next Lower day" | deferred / rejected | per-option minutes need engine output; carrying an item to another day is new engine behaviour |
-| 10 | UF-03.3 | "kg volume" stat, "Est. 1RM about 124 kg, up 3 kg", per-exercise best rows | deferred | new calculations |
+| 10 | UF-03.3 | "kg volume" stat, "Est. 1RM about 124 kg, up 3 kg", per-exercise best rows | deferred | new calculations; the estimate shows on UF-06.2 only (D-0257) |
 | 11 | UF-03.3 | a 3-point effort ("Too easy · About right · Too hard") | rejected | the effort scale is 1–5 in the data model (D-0030) |
 | 12 | UF-04.1 | group filters ("Legs"), "In plan · Variant · Beginner" tags, a result count | **promoted (§3.4, D-0217)**; the "· squat pattern" suffix is rejected | the library has no movement-pattern field |
 | 13 | UF-04.2 | a cue table (Depth · Bar · Knees), "Illustration, looped" | deferred / rejected | cue data isn't in the library; no illustrations ship (D-0192) |
 | 14 | UF-06.1 | "3-week streak", "Recent records" | deferred | new content |
 | 15 | UF-06.1 | "Weekly sets per muscle" | rejected | conflicts with the 14-day window; the app's 14-day Balance card stays |
-| 16 | UF-06.2 | an "Est. 1RM" chart, "+19 kg in 12 weeks" | deferred | a new calculation; the app shows Best set, Heaviest and Sessions (T-0307b) |
+| 16 | UF-06.2 | an "Est. 1RM" chart, "+19 kg in 12 weeks" | **promoted (D-0257, D-0258)**: Epley, an "Est. 1RM about N kg" card, a chart and a table over the 56 cached days; the delta is in words | the mock's Brzycki and 12-week range are superseded |
 | 17 | UF-07.1 | "Progression rule · Double progression · 10 % deload" | rejected | progression is engine rule 14 and isn't a user setting |
 | 18 | UF-01.1 | "[App name]" | rejected | a placeholder; the app shows "workout LAB" (D-0194) |
 | 19 | UF-01.2 | a "Lose fat" goal | rejected | the goal enum is in the data model |
