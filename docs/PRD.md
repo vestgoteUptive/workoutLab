@@ -25,6 +25,7 @@ Hard sets per body area (chest, back, shoulders, arms, core, glutes, quads, hams
 | UF-04 Exercise library | .1 Browse · .2 Exercise detail · .3 Compare variants | Explains every exercise and variant, with licence attribution on .2 (D-0005). | T-0306 |
 | UF-05 Swap (in workout) | .1 Swap sheet | Replace an exercise mid-session with ranked alternatives. | T-0306 |
 | UF-06 Progress | .1 Overview · .2 Exercise history | Consistency, volume and strength trend. Volume is shown per rolling 14 days. | T-0307 |
+| Estimated 1RM | UF-06.2 only | An "Est. 1RM about N kg" card, a delta line and a chart over time with a table alternative, for loaded exercises. Display-only: computed on the device by the deterministic engine (rule 16, a pure function, principle 3; no LLM), never changes a target, suggestion or pre-fill, and never shown on Today's "Latest PR" (the actual set), UF-08 or UF-09. Amends D-0068 and D-0219. Mock rows: row 10 (UF-03.3 estimate) stays deferred, row 16 (UF-06.2 estimate) is in. Spec: `docs/specs/estimated-1rm.md`. | D-0254…D-0258 (T-0961…T-0965) |
 | UF-07 Routine builder | .1 Edit routine | Exercises, sets and progression rule. | T-0308 |
 | UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready · .5 Add exercise | A time-boxed, gap-driven workout with a "why" per exercise. | T-0303 |
 | UF-09 Focus mode | .1 Get ready … .10 Add exercise | One step at a time: timers, auto-save, time check, pause, and adding an exercise from pause. | T-0304 |
