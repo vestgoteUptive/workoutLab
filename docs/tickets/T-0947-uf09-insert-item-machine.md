@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.9, UF-09.10]
 decisions: [D-0245, D-0246, D-0244, D-0243, D-0111, D-0120, D-0205, D-0138]
 deps: [T-0945]
-status: in-review
+status: done
 ---
 ## Why
 UF-09 refers to plan items by index (`LoggedSet.itemIndex`, `skippedItems`, the machine's `itemIndex`). An insert at `itemIndex + 1` shifts later indices, so the machine needs an `ITEM_INSERTED` event, a restore that realigns by exercise id, and a `ctx.insertItem` that calls the engine, writes the plan and then dispatches (D-0245 §1–§3, D-0246 §2 §12). The UI (T-0948, T-0949) calls this; it holds no rule of its own.
