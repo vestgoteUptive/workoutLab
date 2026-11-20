@@ -26,6 +26,7 @@ import {
   createPlanApply,
   createSessionWrites,
   focusReadFields,
+  timeLeftOf,
   type FocusSession,
   type SessionRow,
 } from "./session.js";
@@ -203,9 +204,10 @@ function Machine(props: MachineProps) {
         onRow: setRow,
         // The guard entry is replaced, not stacked on (T-0394 AC-5).
         navigate: (to) => void navigateRef.current(to, { replace: guardOnTop() }),
+        timeZone,
         writes,
       }),
-    [sessionId, store, storage, writes],
+    [sessionId, store, storage, writes, timeZone],
   );
 
   // UF-09.9 keeps End workout inert while a UF-09.8 plan write is pending.
@@ -469,6 +471,7 @@ function Machine(props: MachineProps) {
     ...focusReadFields({ sessionId, row, plan: ctx.plan, workout, state, nowMs }),
     timeZone,
     ...actions,
+    timeLeftS: () => timeLeftOf(row, ctx.plan, store.getState(), Date.now()),
     notifyExclusionFailed: () =>
       setExclusionFailed(`${store.getState().itemIndex}:${store.getState().setIndex}`),
     close: controls.close,

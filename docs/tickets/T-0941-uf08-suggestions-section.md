@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.5]
 decisions: [D-0238, D-0239, D-0236, D-0237, D-0205, D-0211, D-0063]
 deps: [T-0939, T-0940]
-status: todo
+status: in-progress
 ---
 ## Why
 The point of empty mode is "easy to select suggestions" (`docs/specs/empty-start-plan.md`). The engine already ranks what the user needs. This ticket shows its fill around the user's picks as a tap-to-add list (D-0238), with the fallback call tightened by D-0239 §3, and the focus and live-region rules of D-0239 §9–§10. The UI only picks which engine call to make and filters out what's already in the plan (principle 3).

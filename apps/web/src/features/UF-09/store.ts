@@ -39,6 +39,10 @@ export interface FocusStore {
     deferred: { order: readonly number[]; current: number; name: string },
     atMs: number,
   ): void;
+  /** UF-09.10 after its plan write (T-0947, D-0245 §1): the store walks `plan` (with the new
+   *  item at `atIndex`) from now on, and `ITEM_INSERTED` shifts the indices. When the machine
+   *  can't take it (not paused), nothing changes and `false` comes back. */
+  insertItem(plan: SessionPlan, atIndex: number, atMs: number): boolean;
   subscribe(listener: () => void): () => void;
 }
 
@@ -93,6 +97,19 @@ export function createFocusStore(options: FocusStoreOptions): FocusStore {
         writeFocusState(storage, sessionId, state, ctx.plan);
       }
       notify();
+    },
+    insertItem(plan, atIndex, atMs) {
+      const prev = ctx;
+      ctx = { ...ctx, plan };
+      const next = focusReducer(state, { type: "ITEM_INSERTED", atIndex, atMs }, ctx);
+      if (next === state) {
+        ctx = prev;
+        return false;
+      }
+      state = next;
+      writeFocusState(storage, sessionId, state, ctx.plan);
+      notify();
+      return true;
     },
     dispatch(event) {
       let next = focusReducer(state, event, ctx);

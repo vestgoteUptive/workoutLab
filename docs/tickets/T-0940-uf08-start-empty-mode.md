@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.1, UF-08.2, UF-08.3, UF-08.4, UF-08.5]
 decisions: [D-0236, D-0237, D-0239, D-0235, D-0205, D-0191, D-0199, D-0109, D-0211, D-0063]
 deps: [T-0935, T-0936, T-0939]
-status: in-progress
+status: done
 ---
 ## Why
 The owner wants to start a workout empty and pick exercises (`docs/specs/empty-start-plan.md`, D-0236). This ticket builds the mode itself: the entry, the setup-record fields, the plan call that holds only the picks (`autoMainLift: false`, `fill: false`, D-0237), and how every existing UF-08.2 control behaves in it (D-0239 §1–§2, §6–§7, §9, §11–§13). The Suggestions section is T-0941. It also lands `mainPickId` in suggested mode, which amends D-0235 §2 so a time chip can't lose a chosen main lift (D-0239 §1).
@@ -65,3 +65,45 @@ none (consumes the engine switches from T-0936 under D-0237; no openapi call, D-
 Tests for every AC pass · `pnpm -w typecheck lint test` green · run the UF-08 e2e specs (`npx playwright test tests/e2e/uf-08-*.spec.ts` through `scripts/locked.sh heavy`) · contracts unchanged or decision linked · commit messages start with `T-0940` and cite UF-08.1/UF-08.2.
 
 Per-package commands: write one command per script — `pnpm --filter @workoutlab/web typecheck`, then a separate `… lint`, then a separate `… test`.
+
+## Build / accept log
+**2026-11-13 frontend-dev (build).** Base `main-hzlbfc` 78ac42e1, worktree clean. UF-08.1 gets "Start empty" (`.wl-button--secondary`, under the primary, same disabled state). The setup record gains `mode`. Empty mode calls `suggest` with `autoMainLift: false, fill: false, shuffle: 0`, `pinnedIds = addedIds`, `mainLiftId = mainPickId`. Suggested mode re-suggests (chips, Shuffle, Add) with `mainPickId ?? plan.mainLiftId` (D-0239 §1). In empty mode, "Start with this" moves the old main to the front of the pins and takes X off them. A safety net refuses copy 1 (over budget) → 2 (D-0205 §4) → 3 (push out). Refusals show on the sheet for UF-08.5 and in the status line for a row. Budget line: "{used} of {n} min · {left} min left" / "· {over} min over", not `aria-live` in empty mode. Also added: the empty-plan line, an `aria-disabled` "Looks good" with its reason, the h2 "Exercises", the UF-08.5 lead "{left} of {n} min left." and "{name} added. {left} min left.". "Doesn't fit" names a dropped main pick, and in empty mode every dropped pick. Shuffle is hidden in empty mode (T-0941 adds "Other suggestions"). New `budget.ts` holds used/left/over minutes.
+
+AC→test (`apps/web/src/features/UF-08/__tests__/empty-mode.test.tsx`, describe names start with the AC):
+- AC1-AC5: "AC1 (B1)" (2 tests), "AC2", "AC3", "AC4" (2), "AC5 (B19)".
+- AC6-AC12: "AC6" (3: empty-mode Add, warm-up-off lead, suggested sibling), "AC7 (B17)" (UF-08.4 summary, `upsertSession` row with one item), "AC8" (2), "AC9", "AC10", "AC11", "AC12".
+- AC13: real engine (3 compound picks at 30) + a stubbed case where the old main lift is pushed out.
+- AC14: isolation and compound copy; cap copy.
+- AC15: stubbed (unreachable with real output). AC16: real.
+- AC17: one stubbed chip result, as the AC allows.
+- AC18: real UF-05.1 swap to an "over time" candidate; static check that no `data-over` CSS rule sets a colour.
+- AC19-AC23: "AC19" (empty + suggested sibling), "AC20", "AC21" (one stubbed chip), "AC22", "AC23" (offline, no `upsertSession`/exclusion write/fetch).
+- AC19 reading: UF-08.2 keeps the Removed line's own persistent `role="status"` (D-0199 §10; UF-08.2.md › Empty mode › Live region says it stays). The test asserts the status line is the only `role="status"` besides the Removed line's, and the page has 2 in all. The literal "exactly one" would contradict D-0199 §10. Proposed D-0248 as a follow-up (`.squad/decisions` is outside this ticket's paths).
+
+Red on unfixed code: the HEAD copies of `SessionSetup.tsx`, `Suggested.tsx`, `AddExerciseSheet.tsx` and `uf-08.ts`, restored by `cp` → 28 of 32 failed. The 4 that passed are the suggested-mode siblings.
+
+Planted faults, each red, restored by `cp` and checked with `diff`:
+- F1 no switches at entry → 25 failed.
+- F2 `mainLiftId` from the plan → AC17, AC21.
+- F3 no demote → AC12, AC13b, AC23.
+- F4 no safety net → AC13 ×2, AC15, AC20.
+- F5a/F5b no over guard on Add/Start → AC18.
+- F6 budget line live → AC19.
+- F7 "Looks good" enabled → AC1, AC8b, AC23.
+- F8 main pick not named → AC17, AC21.
+- F9 Remove keeps the main pick → AC9.
+- F10 suggested lead in empty mode → AC6 ×2.
+- F11 plain "added" status → AC6, AC23.
+- F12 X stays pinned → 5 failed.
+
+Gate:
+- web turbo typecheck lint test `--force --concurrency=1`: 4/4 tasks, 378 files, 4983 tests.
+- `-w format:check`: green.
+- Playwright uf-08-* (6 specs): 73 passed.
+- `-w check:repo`: only `ticket-not-on-base` (the base is `main-hzlbfc`, as for T-0935).
+- `-w test:repo-checks`: 391 pass, 4 fail. All 4 are "check:repo exits 0 on the real repo" tests (AC21 ×2, AC-10, T-0496 AC-5) and fail on the same `ticket-not-on-base` finding. They go green once the ticket is on `main`.
+
+### Round 2: review and QA fixes
+- Fixes: (1) `Suggested.tsx` keeps an action's success status through the Doesn't-fit effect (`keepActionStatus`, cleared after the new plan renders); (5) `SessionSetup.tsx` no longer puts a demoted main into `unlabelledPins` in empty mode. Tests 2, 3, 4 pin existing behaviour. AC18 vacuous CSS/`data-over` rule check dropped (no CSS rule uses `data-over`); the test now asserts the unchanged class names.
+- New tests in `empty-mode.test.tsx` (37 tests), each planted-fault red then restored from a backup copy: QA status survives (guard removed: red); dropped main demoted to front, `pinnedIds` exactly `[bench-press, leg-extension]` (prev = plan.mainLiftId: red); Start empty while checking (guard removed: red; an earlier loader-hang version stayed green because `runSuggest` swallows null data, so the test uses a deferred stored-list read); "10 of 30 min · 20 min left" (`Math.floor` in `usedMinutes`: red); demoted main reads "Added by you" (`!empty &&` removed: red).
+- Gate: web turbo typecheck lint test `--force --concurrency=1` 4/4, 4988 tests; `-w format:check` green; Playwright uf-08-* 73 passed.
