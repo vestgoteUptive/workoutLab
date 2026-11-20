@@ -38,3 +38,9 @@ none (`tokens.json` unchanged; D-0251 §3).
 Tests for every AC pass · `pnpm --filter @workoutlab/design-tokens test` green · contracts unchanged · commit messages start with `T-0955` and cite UF-04.2.
 
 Per-package commands: `pnpm --filter @workoutlab/design-tokens typecheck`, then a separate `… lint`, then a separate `… test`.
+
+## Build / accept log
+- Base `77cdb857` (main-hzlbfc), clean. Added the "UF-04.2 Weight step (D-0251, D-0259)" section to `UF-04.1-UF-04.2.md` and the new `UF-09.3-UF-09.4.md` (no file covered the reason line). New test `packages/design-tokens/test/t0955-weight-step-spec.test.ts`. `tokens.json` untouched.
+- Red run before the docs existed: the new test failed with "missing UF-09.3-UF-09.4.md" / "no heading ## UF-04.2 Weight step" (no tests ran). After the docs: 18 pass (one wording fix after a first red: "roving tabindex", "hidden (not disabled) for timed and bodyweight").
+- AC1 `AC1` describe (radiogroup, four chips, roving tabindex, 44 px, `--wl-selected` + check mark). AC2 `AC2` it.each over every exact string. AC3 `AC3` (hidden not disabled, editable offline, queued write, D-0199/D-0202 carve-out, 8.6:1 contrast). AC4 `AC4` (exact hold_effort copy, no placeholders, no banner/modal/link). AC5 build tokens.css + main.css, every `--wl-*` the spec names already exists, no hex. AC6 every UF ID cited exists in user flows v2; `check:repo` passes.
+- Gate: design-tokens typecheck, lint, test (17 files, 278 tests) green; `-w format:check` green after prettier; `-w check:repo` green; `-w test:repo-checks` green.
