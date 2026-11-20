@@ -10,7 +10,9 @@
 // T-0940 empty mode (D-0236, D-0239 §6-§13, UF-08.2.md › Empty mode): the budget line reads
 // "{used} of {n} min · {left} min left" and is not live (the status line is the one region for
 // the messages), 0 items show the empty-plan line and an `aria-disabled` "Looks good", and Shuffle
-// is not shown (T-0941 adds "Other suggestions").
+// is replaced by "Other suggestions" inside the Suggestions section (T-0941, D-0238, D-0239 §8-§10):
+// rows with Add, the list copies, "Other suggestions" and "Fill the rest for me"; a refusal shows in
+// the status line and focus follows D-0239 §10. The host computes the list; this file renders it.
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 import {
@@ -32,6 +34,7 @@ import { AddExerciseSheet } from "./AddExerciseSheet.js";
 import { RemovedLine } from "./RemovedLine.js";
 import { exerciseName, isBodyweight, type LibraryLookup } from "./rows.js";
 import { leftMinutes, overMinutes, usedMinutes } from "./budget.js";
+import type { SuggestionList } from "./suggestions.js";
 
 export interface SuggestedProps {
   /** T-0940 (D-0236 §2): the visit's planning mode; absent is "suggested". */
@@ -90,7 +93,18 @@ export interface SuggestedProps {
   onStartWith?: (exerciseId: string) => string | null;
   /** T-0576 (D-0205 §7): move an item one place in the display order; no `suggest` call. */
   onMove?: (exerciseId: string, delta: -1 | 1) => void;
+  /** T-0941: empty mode's Suggestions list; absent shows no section. */
+  suggestions?: SuggestionList;
+  /** A suggestion's Add: null when it is in the plan now, else the refusal for the status line. */
+  onAddSuggestion?: (exerciseId: string, asMain: boolean) => string | null;
+  /** "Other suggestions": the host bumps the visit's shuffle, changing only the suggestions. */
+  onOtherSuggestions?: () => void;
+  /** "Fill the rest for me": null when the visit is in suggested mode now, else the refusal. */
+  onFillRest?: () => string | null;
 }
+
+/** T-0941 (D-0239 §10): where focus goes once the host's new state has rendered. */
+type SuggestFocus = { kind: "add"; index: number } | { kind: "other" } | { kind: "fill" };
 
 /** UF-08.5 is open while the current history entry carries this state; the URL never changes. */
 const SHEET_STATE = "wlAddSheet";
@@ -192,6 +206,10 @@ export function Suggested({
   onAdd,
   onStartWith,
   onMove,
+  suggestions,
+  onAddSuggestion,
+  onOtherSuggestions,
+  onFillRest,
 }: SuggestedProps) {
   const empty = mode === "empty";
   const favSet = new Set(favoriteIds ?? []);
@@ -212,6 +230,10 @@ export function Suggested({
   // Set once a close (Escape, Close, Add) has navigated back, so a second one can't pop again.
   const closing = useRef(false);
   const [status, setStatus] = useState("");
+  const suggestionsId = useId();
+  const suggestionsRef = useRef<HTMLElement>(null);
+  const otherRef = useRef<HTMLButtonElement>(null);
+  const pendingSuggestFocus = useRef<SuggestFocus | null>(null);
   // T-0576: Reorder mode is UI state of this screen; it never outlives it.
   const [reorder, setReorder] = useState(false);
   // The row that was just moved, shown raised until Done.
@@ -284,6 +306,25 @@ export function Suggested({
     pendingAddStatus.current = null;
     setStatus(en.uf08.addedLeft(name, leftMinutes(workout)));
   }, [workout]);
+
+  // D-0239 §10: after a suggestion Add, focus goes to the Add of the row now in the tapped row's
+  // place (the new last row when it was last), else "Add exercise"; "Other suggestions" keeps it
+  // unless it has gone; "Fill the rest for me" ends on "Add exercise". Never `body`.
+  useEffect(() => {
+    const pending = pendingSuggestFocus.current;
+    if (pending === null) return;
+    pendingSuggestFocus.current = null;
+    const adds = suggestionsRef.current?.querySelectorAll<HTMLElement>('[data-part="suggest-add"]');
+    const target =
+      pending.kind === "add"
+        ? adds && adds.length > 0
+          ? adds[Math.min(pending.index, adds.length - 1)]
+          : null
+        : pending.kind === "other"
+          ? otherRef.current
+          : null;
+    (target ?? addButtonRef.current)?.focus();
+  }, [workout, suggestions, mode]);
 
   useEffect(() => {
     const id = pendingStartFocus.current;
@@ -669,6 +710,135 @@ export function Suggested({
       <div role="status" className="wl-uf08__status" data-part="status">
         {status}
       </div>
+
+      {empty && !reorder && suggestions !== undefined && onAddSuggestion !== undefined ? (
+        <section
+          ref={suggestionsRef}
+          className="wl-uf08__suggest"
+          data-part="suggestions"
+          aria-labelledby={suggestionsId}
+        >
+          <h2 id={suggestionsId} className="wl-uf08__list-title" data-part="suggestions-title">
+            {en.uf08.suggestionsHeading}
+          </h2>
+          {suggestions.kind === "rows" ? (
+            <>
+              <p className="wl-uf08__hint" data-part="suggestions-sub">
+                {en.uf08.suggestionsSub(leftMinutes(workout))}
+              </p>
+              <ul className="wl-uf08__suggest-list">
+                {suggestions.rows.map((item, index) => {
+                  const name = exerciseName(item.exerciseId, library);
+                  const reason = itemReasonLine(item.reasons);
+                  return (
+                    <li
+                      key={item.exerciseId}
+                      className="wl-row wl-uf08__row wl-uf08__suggest-row"
+                      data-part="suggestion"
+                      data-id={item.exerciseId}
+                    >
+                      <div className="wl-uf08__row-body">
+                        <span className="wl-uf08__row-name wl-type-row-title" data-part="row-name">
+                          {name}
+                        </span>
+                        {item.isMain || favSet.has(item.exerciseId) ? (
+                          <span className="wl-uf08__tags">
+                            {item.isMain ? (
+                              <span className="wl-chip wl-uf08__tag" data-part="row-main">
+                                {en.uf08.mainTag}
+                              </span>
+                            ) : null}
+                            {favSet.has(item.exerciseId) ? (
+                              <span className="wl-chip wl-uf08__tag" data-part="row-favorite">
+                                {en.uf08.favoriteTag}
+                              </span>
+                            ) : null}
+                          </span>
+                        ) : null}
+                        <span className="wl-uf08__row-detail wl-type-label" data-part="row-detail">
+                          {itemDetail(item, library, locale)}
+                        </span>
+                        {reason !== "" ? (
+                          <span
+                            className="wl-uf08__row-detail wl-type-label"
+                            data-part="row-reason"
+                          >
+                            {reason}
+                          </span>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="wl-button--secondary wl-uf08__suggest-add"
+                          data-part="suggest-add"
+                          aria-label={en.uf08.addName(name)}
+                          onClick={() => {
+                            pendingFocus.current = null;
+                            // D-0239 §9: the confirmation needs the new plan's minutes left.
+                            pendingAddStatus.current = name;
+                            keepActionStatus.current = true;
+                            const refusal = onAddSuggestion(item.exerciseId, item.isMain);
+                            if (refusal === null) {
+                              pendingSuggestFocus.current = { kind: "add", index };
+                            } else {
+                              // D-0239 §12: shown here, focus stays on the tapped button.
+                              pendingAddStatus.current = null;
+                              keepActionStatus.current = false;
+                              setStatus(refusal);
+                            }
+                          }}
+                        >
+                          {en.uf08.add}
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : (
+            <p className="wl-uf08__hint" data-part="suggestions-copy">
+              {suggestions.kind === "over"
+                ? en.uf08.suggestionsOver(suggestions.over, workout.budgetMin)
+                : suggestions.kind === "full"
+                  ? en.uf08.suggestionsFull(workout.budgetMin)
+                  : en.uf08.suggestionsNone}
+            </p>
+          )}
+          {suggestions.kind === "rows" && onOtherSuggestions !== undefined ? (
+            <button
+              ref={otherRef}
+              type="button"
+              className="wl-button--secondary wl-uf08__suggest-other"
+              data-part="other-suggestions"
+              onClick={() => {
+                pendingFocus.current = null;
+                setStatus("");
+                pendingSuggestFocus.current = { kind: "other" };
+                onOtherSuggestions();
+              }}
+            >
+              {en.uf08.otherSuggestions}
+            </button>
+          ) : null}
+          {suggestions.kind !== "none" && onFillRest !== undefined ? (
+            <button
+              type="button"
+              className="wl-button--text wl-uf08__suggest-fill"
+              data-part="fill-rest"
+              onClick={() => {
+                pendingFocus.current = null;
+                const refusal = onFillRest();
+                if (refusal === null) {
+                  setStatus("");
+                  pendingSuggestFocus.current = { kind: "fill" };
+                } else setStatus(refusal);
+              }}
+            >
+              {en.uf08.fillRest}
+            </button>
+          ) : null}
+        </section>
+      ) : null}
 
       {onAdd !== undefined && !reorder ? (
         <button
