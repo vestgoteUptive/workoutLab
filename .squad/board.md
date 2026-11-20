@@ -247,3 +247,17 @@ Owner request 2026-11-20 (inspired by wger): "estimated 1RM per exercise, with a
 | T-0963 | UF-06.2: show the Est. 1RM card, chart, table toggle and states from the engine series over the 56 cached days; hand-written SVG; copy in the UF-06 i18n file; unit and component tests incl. axe (AC1–AC10, AC12) | web-feature:UF-06 | T-0961, T-0962 | idea | wl-build-web |
 | T-0964 | User flows v2 and PRD: UF-06.2 gains the Est. 1RM line; D-0068/D-0219 amendment notes; mark mock rows 10 and 16 (row 16 now in) | product | — | idea | wl-idea |
 | T-0965 | e2e Est. 1RM on UF-06.2: zero history, one session, 10 days off, offline, 57-day-old session not plotted, table toggle focus, axe/44 px (AC7–AC11) | qa | T-0963 | idea | wl-build-qa |
+
+## RIR progression and own weight steps (spec docs/specs/rir-progression-and-increments.md)
+Owner request 2026-11-20 (inspired by wger): use RIR in progression and let the user set their own weight step per exercise. Decisions D-0250 (RIR gates the weight increase, amends D-0026), D-0251 (table `exercise_settings`, UF-04.2), D-0252 (engine inputs, `hold_effort`), D-0253 (v1 scope and open-question defaults). All rows `idea` until the owner accepts the defaults.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0951 | Data: table `exercise_settings` (user_id, exercise_id, increment_kg 0.25-10 in quarters), owner-only RLS, before-write trigger, cascade, export, `docs/data-model.md`; migration and RLS tests (D-0251, AC7) | data | — | idea | wl-build-data |
+| T-0952 | Engine: `HistorySet.rir`, rule 14 step 4 gate and step 4b `hold_effort` (hold once, then up), rule 10 kind, text and examples R14-E10-E23, simulated histories, seeded properties; re-vendor `supabase/functions/_shared/vendor/**` (D-0250, D-0252, AC1-AC6) | engine | — | idea | wl-build-engine |
+| T-0955 | Screen spec: UF-04.2 "Weight step" row (chips, Other field, error, status line, words not colour) and the `hold_effort` copy; no new token (D-0251 §3, AC9, AC11, AC12) | design | — | idea | wl-design |
+| T-0954 | Web: per-exercise step store (device first, queued upsert/delete, last write wins) and the effective library passed to every engine call; the UF-09.4 stepper uses it (D-0251 §4, D-0252 §2, AC10) | web-feature:UF-04 | T-0951 | idea | wl-build-web |
+| T-0953 | Web: history mapper passes `rir` for server and queued sets; `hold_effort` copy in the pre-fill reason text; offline set at RIR 0 holds next pre-fill (D-0252 §1, AC8, AC11) | web-feature:UF-09 | T-0952, T-0955 | idea | wl-build-web |
+| T-0956 | UF-04.2 "Weight step" control: shown for loaded non-timed exercises, save, reset, validation, status line, axe/44 px (AC9, AC12) | web-feature:UF-04 | T-0954, T-0955 | idea | wl-build-web |
+| T-0957 | e2e: RIR 0 holds the weight, a second session steps up, own step 1.25 flows to pre-fill and stepper, zero history, 10 days off, offline set and override, onboarding under 60 s unchanged (AC8, AC10, AC13) | qa | T-0953, T-0956 | idea | wl-build-qa |
+| T-0958 | User flows v2 and PRD: UF-04.2 gains the Weight step row; D-0026 "RIR not used" note amended; a PRD row | product | — | idea | wl-idea |
