@@ -53,8 +53,8 @@ export interface SuggestedProps {
    * the id to `excludeIds`. Returns whether a new plan was set (false when it was rejected).
    */
   onRemove: (exerciseId: string) => boolean;
-  /** The host re-suggests with `shuffle + 1`. */
-  onShuffle: () => void;
+  /** The host re-suggests with `shuffle + 1`; a refusal text (over budget, D-0240 §4) shows in the status. */
+  onShuffle: () => string | null | void;
   /** The host re-suggests at `budgetMin`. Only called for a chip that isn't the active one. */
   onBudget: (budgetMin: number) => void;
   /** Areas the stored list leaves empty (engine `excludedOutAreas`); the neutral notice. */
@@ -875,7 +875,8 @@ export function Suggested({
               onClick={() => {
                 pendingFocus.current = null;
                 setStatus("");
-                onShuffle();
+                const refusal = onShuffle();
+                if (typeof refusal === "string") setStatus(refusal);
               }}
             >
               {en.uf08.shuffle}
