@@ -1,7 +1,7 @@
 ---
 id: D-0257
 title: "Estimated 1RM v1 scope: UF-06.2 only; the number stays off Today's Latest PR, UF-03.3 and UF-06.1; amends D-0068 (no e1RM or chart) and the 'never show the e1RM number' line of D-0219 for UF-06.2 alone"
-status: revisit
+status: decided
 date: 2026-11-20
 by: product-owner
 area: product

@@ -1,7 +1,7 @@
 ---
 id: D-0256
 title: "UF-06.2 shows an Est. 1RM card, a hand-written SVG line chart (one point per session, 56 cached days) and a Show-as-table toggle; five empty states; words carry direction"
-status: revisit
+status: decided
 date: 2026-11-20
 by: product-owner (spec, proposed for design and web lanes)
 area: product

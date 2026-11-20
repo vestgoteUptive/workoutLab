@@ -1,7 +1,7 @@
 ---
 id: D-0254
 title: "Estimated 1RM: Epley, from a session's best hard set of a weighted, non-timed exercise with 1–10 reps; reps only (no RIR); one point per session"
-status: revisit
+status: decided
 date: 2026-11-20
 by: product-owner (spec, proposed for the engine lane)
 area: product

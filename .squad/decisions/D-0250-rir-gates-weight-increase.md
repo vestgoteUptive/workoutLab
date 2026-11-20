@@ -1,7 +1,7 @@
 ---
 id: D-0250
 title: "Rule 14 uses RIR for the weight increase only: top of the range with the lowest RIR at the top weight below 2 holds the weight (hold_effort), at most once in a row; no RIR means today's behaviour; breaks, deload and rep steps are unchanged"
-status: revisit
+status: decided
 date: 2026-11-20
 by: product-owner (idea mode, owner request 2026-11-20)
 area: engine
