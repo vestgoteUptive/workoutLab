@@ -236,3 +236,14 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-0948 | UF-08: `AddExerciseInWorkout` exported from `index.tsx` and its pin test (no leaf entry, D-0170 §1), add-list `lead` prop, UF-09.10 row reasons, recovery at session start, refusal copy, "Add {name}, {area}" naming; the module imports `./uf-08.css` and its root is `.wl-uf08[data-wl-state="plan"]`, tested outside SessionSetup (D-0243 §2–§3, D-0246 §3 §16) | web-feature:UF-08 | T-0944, T-0940, T-0941, T-0943 | todo | wl-build-web |
 | T-0949 | UF-09.9 "Add exercise" seam action (lazy `import("../UF-08/index.js")`, retried), hidden on a pause from UF-09.8, stays paused; `role=status` line on mount, focus on "Add exercise" after close/add, no Paused remount, Back/Escape closes only the sheet; drop the "{name} added." variant (D-0243 §1 §7, D-0246 §4–§7) | web-feature:UF-09 | T-0947, T-0948 | todo | wl-build-web |
 | T-0950 | e2e add during a workout: zero history, 10 days off, time running out, offline and reload, finish while the plan write is queued (summary lists the added item), swap then add back, focus/no remount, axe/44 px (D-0246 §17) | qa | T-0949 | todo | wl-build-qa |
+
+## Estimated 1RM per exercise (spec docs/specs/estimated-1rm.md)
+Owner request 2026-11-20 (inspired by wger): "estimated 1RM per exercise, with a chart over time". Decisions D-0254 (Epley, reps 1–10, best hard set per session, no RIR), D-0255 (engine rule 16, pure, nothing stored), D-0256 (UF-06.2 card, SVG chart, table toggle, states), D-0257 (scope; amends D-0068 and D-0219). Open-question defaults await the human. UF-06.2 only; never UF-08 or UF-09.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0961 | Engine rule 16: `estimatedOneRepMax(history, library, exerciseId)` — Epley, 1–10 reps, hard weighted non-timed sets, best per session, unrounded, display-only; examples R16-E1+; narrow rule 15's "never the e1RM number" to Today; simulated progressive history; re-vendor `supabase/functions/_shared/vendor/**` (D-0254, D-0255) | engine | — | idea | wl-build-engine |
+| T-0962 | Screen spec UF-06.2: Est. 1RM card, SVG line chart, delta line, Show-as-table toggle, five empty states, explanation line; tokens only (D-0256) | design | — | idea | wl-design |
+| T-0963 | UF-06.2: show the Est. 1RM card, chart, table toggle and states from the engine series over the 56 cached days; hand-written SVG; copy in the UF-06 i18n file; unit and component tests incl. axe (AC1–AC10, AC12) | web-feature:UF-06 | T-0961, T-0962 | idea | wl-build-web |
+| T-0964 | User flows v2 and PRD: UF-06.2 gains the Est. 1RM line; D-0068/D-0219 amendment notes; mark mock rows 10 and 16 (row 16 now in) | product | — | idea | wl-idea |
+| T-0965 | e2e Est. 1RM on UF-06.2: zero history, one session, 10 days off, offline, 57-day-old session not plotted, table toggle focus, axe/44 px (AC7–AC11) | qa | T-0963 | idea | wl-build-qa |
