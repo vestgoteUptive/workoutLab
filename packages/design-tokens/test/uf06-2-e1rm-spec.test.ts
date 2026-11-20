@@ -120,14 +120,7 @@ describe("T-0962 AC4 states, copy and chart rules", () => {
       "Heaviest",
       "Sessions",
       "Est. 1RM",
-      "160 px",
-      "2 px",
-      "6 px",
-      "1 px",
-      "2 px `--wl-bg` ring",
       "`text-anchor: end`",
-      "36 px",
-      "16 px",
       "`vector-effect: non-scaling-stroke`",
       "d MMM",
       '`role="img"`',
@@ -136,7 +129,6 @@ describe("T-0962 AC4 states, copy and chart rules", () => {
       "plain paragraph",
       "`aria-expanded`",
       "`aria-controls`",
-      "44 px",
       '`scope="row"`',
       "Date",
       "oldest first",
@@ -145,6 +137,54 @@ describe("T-0962 AC4 states, copy and chart rules", () => {
       "vertical step",
     ])
       expect(spec, s).toContain(s);
+  });
+});
+
+// Geometry rows are anchored to their table row and a word boundary, so "6 px" cannot match
+// inside "36 px" and a number cannot sit in the wrong row.
+describe("T-0962 chart geometry, anchored to its row", () => {
+  const row = (name: string): string =>
+    spec.split("\n").find((l) => l.startsWith("|") && l.split("|")[1]?.trim() === name) ?? "";
+  const has = (name: string, re: RegExp) => expect(row(name), name).toMatch(re);
+  it("size, line, dots, gridlines, reserves", () => {
+    has("Size", /Height \*\*160 px\*\*/);
+    has("Size", /`ResizeObserver`/);
+    has("Size", /fallback width of \*\*320\*\* px/);
+    has("Plot area", /Top padding \*\*28 px\*\*.*y = \*\*120 px\*\*.*y = \*\*152 px\*\*/);
+    has("Label text", /\*\*0\.75rem\*\* \(12 px/);
+    has("Line", /(^|[^\d])\*\*2 px\*\*,/);
+    has("Dots", /\*\*6 px\*\* diameter.*\*\*2 px `--wl-bg` ring\*\*/);
+    has("Gridlines", /\*\*1 px\*\*, `--wl-line`/);
+    has("Gridlines", /\*\*2 or 3\*\* lines/);
+    has("Reserves", /\*\*Left 56 px\*\*.*\*\*right 16 px\*\*/);
+    has("Latest label", /`text-anchor: end`.*\*\*10 px above\*\*.*\*\*16 px below\*\*/);
+    has("Line", /`vector-effect: non-scaling-stroke`/);
+  });
+  it("y axis algorithm, one point, table and card rules", () => {
+    for (const s of [
+      "strictly below",
+      "`hi − lo < 10`",
+      "100 kg gives 95 to 105",
+      "**2 gridlines**",
+      "**3**",
+      "**centre**",
+      "shown **once**",
+      "directly under the chart, above the table toggle",
+      "Delta = round(last) − round(first)",
+      "always rendered and is empty while collapsed",
+      "reuse `weightedBest`",
+      "100 kg × 8",
+      "`.wl-progress__cards` flex-wrap row",
+      "**4th card**",
+      "1 session, about {value} kg on {d}.",
+      "{n} sessions",
+      "## Chart tokens",
+    ].map((x) => x.replace("## Chart tokens", "Chart tokens")))
+      expect(spec, s).toContain(s);
+    expect(spec).not.toContain("Tokens (only these");
+    expect(spec).not.toContain("100 kg x 8");
+    expect(spec).toMatch(/touch targets? at least \*?\*?44 px/i);
+    expect(spec).toMatch(/at least \*\*44 px\*\* tall/);
   });
 });
 
