@@ -5,7 +5,7 @@ lane: product
 screens: [UF-06.2]
 decisions: [D-0257, D-0258, D-0068, D-0219]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 D-0257 amends D-0068 (UF-06 scope) and D-0219 (rule 15, "never the e1RM number"). The user flows and PRD must say that UF-06.2 shows an estimate and Today still never does.
