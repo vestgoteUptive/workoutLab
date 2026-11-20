@@ -723,3 +723,55 @@
 .wl-uf08[data-wl-state] .wl-uf08__primary + .wl-uf08__secondary {
   margin-block-start: -4px;
 }
+
+/* T-0941 (D-0238, D-0239 §8): the empty-mode Suggestions section. Existing tokens only. */
+.wl-uf08__suggest {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.wl-uf08__suggest-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.wl-uf08__suggest-row {
+  min-block-size: 64px;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__suggest-add,
+.wl-uf08[data-wl-state] .wl-uf08__suggest-other {
+  inline-size: auto;
+  align-self: flex-start;
+  min-block-size: 44px;
+  min-inline-size: 96px;
+  padding: 8px 20px;
+  font-size: 1rem;
+  justify-content: center;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__suggest-fill {
+  inline-size: auto;
+  align-self: flex-start;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding: 10px 20px;
+}
+
+.wl-uf08__suggest-add:focus-visible,
+.wl-uf08__suggest-other:focus-visible,
+.wl-uf08__suggest-fill:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+.wl-uf08__suggest-row .wl-uf08__row-body {
+  gap: 4px;
+  padding-block-start: 12px;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__suggest-row .wl-uf08__suggest-add {
+  margin-block-start: 8px;
+}
