@@ -14,6 +14,7 @@ import {
   toHistorySet,
   toLibraryExercise,
   toPlanCheckin,
+  toUnilateral,
   type AreaTarget,
   type Barbell,
   type EngineProfile,
@@ -162,6 +163,7 @@ export async function refreshLibrary(): Promise<void> {
       license: row.license,
       attribution: row.attribution,
       sourceUrl: row.source_url,
+      unilateral: toUnilateral(row),
       variants: [...(variantsByExercise.get(row.id) ?? [])].sort((a, b) => (a < b ? -1 : 1)),
     };
     return { key: userScopedKey(userId, row.id), userId, detail };

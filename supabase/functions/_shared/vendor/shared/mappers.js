@@ -129,3 +129,9 @@ export function toPlanCheckin(row) {
         answeredAt: row.answered_at,
     };
 }
+/** `exercises.unilateral` → Unilateral | null (D-0263 §1). Null, an unknown value (`'both'`) and a
+ * missing field (a row cached before T-0972) all read as null: both sides, no label. */
+export function toUnilateral(row) {
+    const v = row?.unilateral;
+    return v === "arm" || v === "leg" || v === "side" ? v : null;
+}

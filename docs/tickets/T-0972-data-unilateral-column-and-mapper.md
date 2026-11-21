@@ -5,7 +5,7 @@ lane: data
 screens: [UF-04.2, UF-09.3]
 decisions: [D-0260, D-0262, D-0263]
 deps: [T-0971, T-0951]
-status: todo
+status: done
 ---
 ## Why
 The flag from T-0971 must reach the app. D-0263 §1 §2 puts it on the web-only `ExerciseDetail` (never the engine's `LibraryExercise`), with a shared mapper and no IndexedDB bump: `refreshLibrary` replaces the cached rows, so the field backfills on the next refresh and a row without it reads as both sides. Lands after T-0951 because both add a migration and touch `docs/data-model.md` and `database.gen.ts`.
@@ -44,6 +44,12 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 Per-package commands: one command per script.
 
 ## Build / accept log
+- Built on 9544c7cf (worktree clean at start). Migration `20261121120000_exercises_unilateral.sql`; data-model row + migration list; `database.gen.ts` hand-edited (`gen:db` redirect truncated the file; restored from git, then edited) and `vendor.mjs` regenerated; `toUnilateral` + `Unilateral` in `packages/shared`; `ExerciseDetail.unilateral?` written via the mapper in `history.ts`; gen-seed emits `unilateral` always (no migration scan), `seed.sql` regenerated.
+- AC1: `025_exercises_unilateral.test.sql` (both rejected on insert and update; arm/leg/side/null accepted). AC2: same file against the seed + gen-seed.test.mjs. AC3: `packages/shared/test/mappers.test.ts`. AC4: `apps/web/src/lib/offline/__tests__/unilateral-cache.test.ts` (online, old cache no version bump, backfill, failed refresh keeps rows). AC5: `packages/shared/test/unilateral-boundary.test.ts` (packages/engine and vendor/engine). AC6: `001_schema.test.sql` columns_are + `database.test.ts` doc parity.
+- Also changed: `001_schema.test.sql` (columns_are, and the AC23 personal-data regex exempts `exercises.unilateral`, which matches `lat`); `feature-cache.test.ts` expectation gained `unilateral: null`.
+- Note on AC5: `supabase/functions/_shared/vendor/shared/**` necessarily carries `unilateral` (the vendored database types and mapper mirror packages/shared); only the vendored engine is clean.
+- Planted faults (backup copies, restored): check widened to include 'both' -> pgTAP 025 failed 3; mapper returns raw value -> mappers test 1 failed; `history.ts` drops the mapper line -> cache test 2 failed.
+- pgTAP: `supabase test db` PASS 25 files / 877 tests after `db reset`.
 
 ## Note (orchestrator, T-0971 review)
 - This ticket also adds `unilateral` to `supabase/scripts/gen-seed.mjs` `EXERCISE_COLUMNS` (`sqlOrNull(json.unilateral)`), regenerates `supabase/seed.sql`, and extends `supabase/tests/scripts/gen-seed.test.mjs`. This is T-0971's AC5, moved here so the seed and the migration land together. Paths: `supabase/scripts/gen-seed.mjs`, `supabase/seed.sql`, `supabase/tests/scripts/**`.
