@@ -5,7 +5,7 @@ lane: web-feature:UF-06
 screens: [UF-03.1, UF-03.3, UF-06.2]
 decisions: [D-0260, D-0263]
 deps: [T-0972, T-0973, T-0974]
-status: todo
+status: done
 ---
 ## Why
 A logged "10" must read as per arm afterwards too. Summary, the active set table and exercise history append the suffix to their existing formats through the shared `formatReps` from T-0974 (D-0263 §6 §8). Coverage, balance, targets and Est. 1RM do not change (D-0260).
