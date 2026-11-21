@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-09.3, UF-09.4, UF-03.3, UF-06.2, UF-04.2, UF-01]
 decisions: [D-0260, D-0262, D-0263]
 deps: [T-0974, T-0975, T-0976]
-status: todo
+status: done
 ---
 ## Why
 Proves the whole feature in a browser: the labels, the count of one hard set per both-sides set, the engine cost pin and the principles (one task on screen, onboarding under 60 s). Runs last (D-0263 §10).
