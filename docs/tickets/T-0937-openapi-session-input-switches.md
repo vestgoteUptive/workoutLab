@@ -5,7 +5,7 @@ lane: data
 screens: [UF-08.2]
 decisions: [D-0237, D-0239, D-0063]
 deps: [T-0936]
-status: todo
+status: done
 ---
 ## Why
 T-0936 adds two optional switches to the engine's `SessionInput` (D-0237). The `/workouts/suggest` Edge Function shares that type through `api/openapi.yaml` (D-0001). D-0237 §3 names this contract change. D-0239 makes it **deferrable**: the app runs `suggest` on the device (D-0063 §3) and never calls `/workouts/suggest` with the new keys, and no web, engine or QA ticket depends on this one. Until it lands, the endpoint returns 400 for the two keys.
