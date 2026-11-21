@@ -1,7 +1,7 @@
 ---
 id: D-0267
 title: "T-0974: UF-09 per-side labels follow the round-2 design spec where the ticket text differs (hidden reading span, no timed stepper, helper options object)"
-status: revisit
+status: decided
 date: 2026-11-21
 by: frontend-dev (T-0974 build)
 area: web
