@@ -12,6 +12,7 @@ import type {
   EngineProfile,
   LibraryExercise,
   PlanCheckin,
+  Unilateral,
 } from "@workoutlab/shared";
 
 /** A queued `sessions` row (D-0045 §6: one entry per `id`). */
@@ -114,6 +115,8 @@ export interface ExerciseDetail {
   license: string;
   attribution: string | null;
   sourceUrl: string | null;
+  /** One-side unit (T-0972, D-0263 §1); null or absent (a row cached before it) = both sides. */
+  unilateral?: Unilateral | null;
   /** The `variant_id`s paired with this exercise, sorted by id (UF-04.3, UF-05). */
   variants: string[];
 }
