@@ -5,7 +5,7 @@ lane: design
 screens: [UF-09.3, UF-09.4, UF-03.1, UF-03.3, UF-06.2, UF-04.2]
 decisions: [D-0261, D-0263]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 No screen spec exists for UF-09.3, UF-09.4, UF-03 or UF-06; UF-04.2 has one. The label must sit inside the existing reps line so focus mode still shows one task (principle 1). The specs fix the exact formats before the web tickets build them (D-0263 §4-§8).
