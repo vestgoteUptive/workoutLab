@@ -33,3 +33,6 @@ none.
 
 ## Definition of done
 Every AC has a passing e2e test · `npx playwright test tests/e2e/uf-09-add-exercise.spec.ts` green via `scripts/locked.sh heavy` · `pnpm -w typecheck lint test` green · commit messages start with `T-0950` and cite UF-09.10.
+
+## Build / accept log
+- Build (qa): `tests/e2e/uf-09-add-exercise.spec.ts`, 13 tests, seeded paused sessions (IndexedDB row + `wl-focus:<id>`), run via `scripts/locked.sh heavy`: 13/13 green, 39/39 with `--repeat-each 3` bar one unreproduced flake (AC3 "No time left" status empty once in ~110 runs). AC1 zero history · AC2 10 days off + Favorites contrast · AC3 three time rows (B2/B3/B4) · AC4 offline add, reload, server plan · AC5 finish while queued (stored row ended, plan has the item, server write) · AC6 swap then add back · AC7 Escape, Back, UF-09.8 pause, no Add on UF-09.3/.5 · AC8 44 px + axe after reload into UF-09 · AC9 UF-10.1 shoulders 0 to 3. Faults (cp backup, cmp restored, none committed): drop `logged.has` (AC6 red), show Add on timeCheck pause (AC7 red), append instead of `itemIndex + 1` (AC1 red), drop focus return (AC1 and AC7 red), `floor` to `ceil` in the lead (AC1 and AC3 red). format:check and lint:e2e green. `check-all` reports only lane-path errors for files that main changed after this branch's base (branch 11 behind main, 0 ahead).
