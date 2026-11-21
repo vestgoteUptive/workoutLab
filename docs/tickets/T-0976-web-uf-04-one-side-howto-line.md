@@ -5,7 +5,7 @@ lane: web-feature:UF-04
 screens: [UF-04.2]
 decisions: [D-0260, D-0261, D-0263]
 deps: [T-0972, T-0973, T-0954]
-status: todo
+status: done
 ---
 ## Why
 The how-to is where the user learns the rule: reps for one side, one set covers both, log RIR for the weaker side (D-0263 §7). One static line under the steps, only for flagged rows. Lands after T-0954 which edits the same screen.
