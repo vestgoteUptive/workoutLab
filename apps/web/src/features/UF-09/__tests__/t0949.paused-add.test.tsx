@@ -211,6 +211,31 @@ describe("AC6 add during a rest (B1)", () => {
   });
 });
 
+describe("QA T-0949 gaps", () => {
+  it("a later pause starts with an empty status line (the add line is not carried over)", async () => {
+    await seed(PAUSED_REST);
+    await renderSession();
+    await openSheet();
+    await addNamed("lateral", "Lateral raise");
+    await settle();
+    expect(statusLine().textContent).toContain("added after");
+    fireEvent.click(screen.getByRole("button", { name: "Resume" }));
+    await findScreen("UF-09.5");
+    fireEvent.click(screen.getByRole("button", { name: "Pause workout" }));
+    await findScreen("UF-09.9");
+    expect(statusLine().textContent).toBe("");
+  });
+
+  it("the sheet is given the live time left (its lead names the minutes)", async () => {
+    await seed(PAUSED_REST, { elapsedS: 600 });
+    await renderSession();
+    const mins = Math.floor(session().timeLeftS() / 60);
+    expect(mins).toBeGreaterThan(0);
+    await openSheet();
+    expect(screen.getByRole("dialog").textContent).toContain(`${mins} min left`);
+  });
+});
+
 describe("AC8 Close with no add", () => {
   it("leaves the line empty and focus on Add exercise", async () => {
     await seed(PAUSED_REST);
