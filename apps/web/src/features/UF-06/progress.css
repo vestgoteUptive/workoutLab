@@ -251,6 +251,10 @@
   vertical-align: top;
 }
 
+.wl-progress .wl-e1rm__table th {
+  text-align: start;
+}
+
 .wl-progress .wl-e1rm__table thead th {
   color: var(--wl-ink-muted);
 }

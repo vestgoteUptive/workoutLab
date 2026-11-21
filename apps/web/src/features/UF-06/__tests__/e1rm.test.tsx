@@ -473,6 +473,13 @@ describe("y axis algorithm", () => {
   });
 });
 
+describe("y axis gridline boundary", () => {
+  it("a range of exactly 20 kg has 2 gridlines, 25 kg rounds up to 30 and has 3", () => {
+    expect(yAxis([101, 119])).toEqual({ lo: 100, hi: 120, ticks: [100, 120] });
+    expect(yAxis([101, 124])).toEqual({ lo: 100, hi: 130, ticks: [100, 115, 130] });
+  });
+});
+
 describe("AC14 no engine drift", () => {
   it("series values are exactly the engine's, and the web has no second formula", () => {
     const h = trio();
