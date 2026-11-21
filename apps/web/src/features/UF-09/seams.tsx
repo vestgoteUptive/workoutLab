@@ -27,6 +27,9 @@ export interface SeamAction {
   /** `false` (swap, how-to): the workout stays or becomes paused while the overlay is open.
    *  `true` (list-view): the clocks keep running, and the check point is always `"next"`. */
   keepsClockRunning: boolean;
+  /** `true` (add, T-0949, D-0247 §1): the overlay is drawn over the still-mounted screen instead of
+   *  replacing it, so UF-09.9 never remounts. Absent: it replaces the screen. */
+  drawnOver?: boolean;
 }
 
 // A seam's label is its own flow's string (D-0071 §4); this file is that flow's grant in UF-09.
@@ -45,6 +48,11 @@ const listViewLazy = retryableLazy(() =>
 );
 const howToLazy = retryableLazy(() =>
   import("../UF-04/index.js").then((m) => ({ default: m.ExerciseHowTo })),
+);
+
+// UF-09.10 (T-0949): the add sheet, loaded on first open like the swap sheet (D-0246 §16).
+const addSheet = retryableLazy(() =>
+  import("../UF-08/index.js").then((m) => ({ default: m.AddExerciseInWorkout })),
 );
 
 type SwapTargetInput = Pick<FocusSession, "plan" | "loggedSets" | "currentItemIndex" | "state">;
@@ -306,8 +314,49 @@ const listView: SeamAction = {
   keepsClockRunning: true,
 };
 
+const addChrome: SeamChrome = {
+  label: uf09.addSheetName,
+  screenId: "UF-09.10",
+  closeLabel: uf03.seamClose,
+  loading: uf03.seamLoading,
+  loadFailed: uf03.seamLoadFailed,
+  retryLabel: uf09.seamRetry,
+};
+
+/** UF-09.10 over UF-09.9 (T-0949). `ctx.insertItem` does the engine call, the write and the event;
+ *  the sheet's `onClose(added)` hands the result to Paused's status line. */
+function AddOverlay({ ctx }: { ctx: FocusSession }) {
+  const { key, onRetry, onFailed } = useSeamRetry(addSheet);
+  const AddSheet = addSheet.Component;
+  return (
+    <LazySeam key={key} ctx={ctx} chrome={addChrome} onFailed={onFailed} onRetry={onRetry}>
+      <AddSheet
+        plan={ctx.plan}
+        loggedSets={ctx.loggedSets}
+        skippedItems={ctx.state.skippedItems ?? []}
+        startedAt={ctx.row.started_at}
+        leftS={ctx.timeLeftS()}
+        onAdd={ctx.insertItem}
+        onClose={(added) => {
+          ctx.close();
+          if (added) ctx.announceAdded(added);
+        }}
+      />
+    </LazySeam>
+  );
+}
+
+/** UF-09.10 Add exercise (T-0949): drawn over Paused, which stays mounted (D-0247 §1). */
+const add: SeamAction = {
+  id: "add",
+  label: uf09.addExercise,
+  render: (ctx) => <AddOverlay ctx={ctx} />,
+  keepsClockRunning: false,
+  drawnOver: true,
+};
+
 /** Rendered on UF-09.9 Paused. */
-export const pauseSeamActions: SeamAction[] = [swap, howTo, listView];
+export const pauseSeamActions: SeamAction[] = [swap, add, howTo, listView];
 
 /** Rendered on UF-09.6 Next exercise. */
 export const nextSeamActions: SeamAction[] = [swap];
@@ -316,7 +365,7 @@ export type SeamPlace = "pause" | "next";
 
 /** User flows v2 order, built-ins and seams together (D-0071 §4). */
 const ORDER: Record<SeamPlace, readonly string[]> = {
-  pause: ["resume", "swap", "later", "skip", "how-to", "list-view", "end"],
+  pause: ["resume", "swap", "later", "add", "skip", "how-to", "list-view", "end"],
   next: ["ready", "swap"],
 };
 

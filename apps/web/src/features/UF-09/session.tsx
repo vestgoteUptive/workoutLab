@@ -119,6 +119,8 @@ export interface FocusSession {
   /** Rule 8 `timeLeftS` from the live state: the budget, minus elapsed time, minus the unspent
    *  warm-up, minus what is left of every item that isn't skipped (D-0244 §2). May be negative. */
   timeLeftS(): number;
+  /** UF-09.9 (T-0949): the sheet closed after an add; Paused shows "{name} added after {current}." */
+  announceAdded(added: { name: string; afterName: string }): void;
   /** Writes `{...row, ended_at: now}`, removes `wl-focus:<id>`, then navigates to
    *  `/session/<id>/summary`. No UI and no confirm; one write while pending. A failed one can
    *  be called again; before it rejects it applies a UF-09.8 plan write it waited for that had
@@ -184,6 +186,7 @@ export type FocusActions = Omit<
   | "timeLeftS"
   | "close"
   | "notifyExclusionFailed"
+  | "announceAdded"
 >;
 
 export interface FocusActionDeps {

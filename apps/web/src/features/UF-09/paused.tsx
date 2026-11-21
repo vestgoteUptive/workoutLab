@@ -2,7 +2,7 @@
 // current step lives here. Elapsed, Left and Sets, then Resume · the seams · Skip to next
 // exercise · End workout in user flows v2 order. End confirms in place: still UF-09.9, still one
 // task on screen. Every timer is stopped while this shows (the machine's pause).
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { ArrowIcon, ChevronIcon } from "../../components/icons/index.js";
 import { en } from "../../lib/i18n/en.js";
 import { canDoLater, canSkipItem, setsInItem } from "./machine.js";
@@ -36,6 +36,8 @@ export function Paused({
   onMoved,
   seams,
   planWritePending = false,
+  addedLine = null,
+  addOpen = false,
 }: ViewProps) {
   const session = useFocusSession();
   const [confirming, setConfirming] = useState(false);
@@ -48,6 +50,15 @@ export function Paused({
   const busy = useRef(false);
   const resumeRef = useRef<HTMLButtonElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const addRef = useRef<HTMLButtonElement>(null);
+  const addWasOpen = useRef(false);
+
+  // T-0949 (D-0246 §7): after the sheet closes (an add, Close, Escape or Back), focus is on "Add
+  // exercise". Not on mount: Resume has focus on first entry.
+  useEffect(() => {
+    if (addWasOpen.current && !addOpen) addRef.current?.focus();
+    addWasOpen.current = addOpen;
+  }, [addOpen]);
 
   // Focus: Resume on entry and after Cancel; Cancel while the question shows (D-0120 §8).
   useEffect(() => {
@@ -154,7 +165,9 @@ export function Paused({
     ...(canSkipItem(state, ctx) ? ["skip"] : []),
     "end",
   ];
-  const ids = orderActions(builtIns, seams, "pause");
+  // T-0949 (D-0243 §1): no "Add exercise" on a pause from UF-09.8.
+  const shown = state.resumePhase === "timeCheck" ? seams.filter((s) => s.id !== "add") : seams;
+  const ids = orderActions(builtIns, shown, "pause");
   return (
     <div className="wl-uf09__view wl-uf09__view--paused">
       <p className="wl-uf09__caption wl-type-label" data-field="paused-caption">
@@ -217,21 +230,54 @@ export function Paused({
         }
         if (id === "end") {
           return (
+            <Fragment key={id}>
+              <p className="wl-uf09__status wl-type-label" role="status" data-field="added-line">
+                {addedLine}
+              </p>
+              <button
+                type="button"
+                className="wl-button--secondary wl-uf09__end"
+                data-action="end"
+                aria-disabled={planWritePending ? true : undefined}
+                onClick={() => {
+                  if (!planWritePending) setConfirming(true);
+                }}
+              >
+                {en.uf09.endWorkout}
+              </button>
+            </Fragment>
+          );
+        }
+        const seam = shown.find((s) => s.id === id);
+        if (seam && id === "add") {
+          return (
             <button
               key={id}
+              ref={addRef}
               type="button"
-              className="wl-button--secondary wl-uf09__end"
-              data-action="end"
-              aria-disabled={planWritePending ? true : undefined}
-              onClick={() => {
-                if (!planWritePending) setConfirming(true);
-              }}
+              className="wl-row wl-uf09__row"
+              data-seam-id={seam.id}
+              data-action="add"
+              aria-haspopup="dialog"
+              onClick={seam.onSelect}
             >
-              {en.uf09.endWorkout}
+              <span>{seam.label}</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="22"
+                height="22"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M12 5v14M5 12h14" />
+              </svg>
             </button>
           );
         }
-        const seam = seams.find((s) => s.id === id);
         return seam ? (
           <button
             key={id}

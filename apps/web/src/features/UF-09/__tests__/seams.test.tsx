@@ -93,7 +93,7 @@ afterEach(() => {
 // D-0142 §6 (a named change, T-0422, then T-0416): the arrays hold exactly the ids landed so far.
 describe("AC-9 the module registries", () => {
   it("pauseSeamActions holds swap, how-to, list-view; nextSeamActions holds swap (T-0416)", () => {
-    expect(pauseSeamActions.map((s) => s.id)).toEqual(["swap", "how-to", "list-view"]);
+    expect(pauseSeamActions.map((s) => s.id)).toEqual(["swap", "add", "how-to", "list-view"]);
     expect(nextSeamActions.map((s) => s.id)).toEqual(["swap"]);
     // T-0416 AC-1: how-to holds the workout paused, list-view keeps the clocks running.
     const flag = (id: string) => pauseSeamActions.find((s) => s.id === id)?.keepsClockRunning;
@@ -123,6 +123,7 @@ describe("AC-9 the module registries", () => {
       "Resume",
       "Swap",
       "Do Bench press later",
+      "Add exercise",
       "Skip to next exercise",
       "How to",
       "List view",
@@ -132,7 +133,7 @@ describe("AC-9 the module registries", () => {
       Array.from(document.querySelectorAll("[data-seam-id]")).map((b) =>
         b.getAttribute("data-seam-id"),
       ),
-    ).toEqual(["swap", "how-to", "list-view"]);
+    ).toEqual(["swap", "add", "how-to", "list-view"]);
   });
 });
 
@@ -239,6 +240,7 @@ describe("AC-9 overlay in place of the screen", () => {
         "resume",
         "close",
         "notifyExclusionFailed",
+        "announceAdded",
       ].sort(),
     );
     expect(typeof ctx!.close).toBe("function");
