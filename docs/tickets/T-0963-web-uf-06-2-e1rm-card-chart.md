@@ -34,6 +34,7 @@ Each criterion becomes at least one automated test (unit and component, includin
 Checklist (D-0197 §7): offline/online pair is AC10; empty/non-empty pair is AC3-AC6 (zero, one, two or more); first launch vs returning is AC6 and AC11. No migration.
 
 ## Paths you may change
+- `tests/e2e/uf-06-progress.spec.ts` (extra: the stat-count assertion goes 3 → 4; orchestrator grant)
 - `apps/web/src/features/UF-06/**`
 - `apps/web/src/lib/i18n/flows/uf-06.ts` (extra, copy only)
 
