@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-04.2, UF-09.4, UF-08.2, UF-01]
 decisions: [D-0250, D-0251, D-0259]
 deps: [T-0953, T-0956]
-status: todo
+status: done
 ---
 ## Why
 Proves the whole path in the browser: RIR logged in a workout changes the next pre-fill, and a step set on UF-04.2 flows to the pre-fill and the UF-09.4 stepper, including offline, with onboarding still under 60 s (principle 5).
