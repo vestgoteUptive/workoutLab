@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-09.4, UF-04.2]
 decisions: [D-0250, D-0252, D-0253, D-0259, D-0026]
 deps: []
-status: in-progress
+status: done
 ---
 ## Why
 Rule 14 raises the weight when every set at the top weight reached the top of the rep range, and ignores how hard it was (`docs/specs/rir-progression-and-increments.md`). With RIR (reps in reserve) as one more number in the history, the engine holds the weight after a grinding session, once, then steps up. Principle 3: still a pure function of history, `now` and the library. T-0952 must land before T-0961 (rule 16 e1RM) because both edit `HistorySet`, `types.ts`, the vendored copy and rule 15's paragraph.
