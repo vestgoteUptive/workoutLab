@@ -30,3 +30,4 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · commit messages start with `T-0980` and cite UF-09.9.
 
 ## Build / accept log
+- Build (T-0980, UF-09.9): `insertItem` now reads `loadLibrary()` at call time, falls back to `ctx.library` when the read rejects or is empty, and names the added item from the same library. AC1-AC3 -> `UF-09/__tests__/t0980.add-fresh-library.test.tsx`; AC4 -> `tests/e2e/uf-09-add-exercise.spec.ts` "T-0980 AC4 cold library" (library fetch held until the session has loaded; `seedPaused` got `waitForLibrary: false`), 10/10 with `--repeat-each 10`. Red on old code: AC4 3/3 failed, AC1 failed. Faults (cp-restored, cmp-checked): ignore fresh read -> AC1 red; drop snapshot fallback -> AC2 red; reject -> failed -> AC2 red. Gate: web tsc, lint, test (5290) green, format:check green, uf-09* e2e 90/90. check-all: only `ticket-not-on-base` (ticket file not on main yet; orchestrator).
