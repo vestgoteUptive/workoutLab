@@ -26,6 +26,7 @@ const EXPECTED = [
   "area_targets",
   "excluded_exercises",
   "exercise_areas",
+  "exercise_settings",
   "exercise_variants",
   "exercises",
   "favorite_exercises",

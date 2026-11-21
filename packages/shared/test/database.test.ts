@@ -107,6 +107,7 @@ describe("AC15 database.gen.ts matches docs/data-model.md v1", () => {
         "plan_checkins",
         "excluded_exercises",
         "favorite_exercises",
+        "exercise_settings",
       ].sort(),
     );
   });
@@ -224,6 +225,44 @@ describe("T-0564 AC11 favorite_exercises types (D-0202 §5, UF-11.6)", () => {
   it("references exercises through favorite_exercises_exercise_id_fkey", () => {
     expect(readFileSync(GEN_PATH, "utf8")).toContain(
       'foreignKeyName: "favorite_exercises_exercise_id_fkey"',
+    );
+  });
+});
+
+describe("T-0951 exercise_settings types (D-0251, D-0259 §16, UF-04.2)", () => {
+  it("Row has the five columns, all required and non-null", () => {
+    expectTypeOf<Tables<"exercise_settings">>().toEqualTypeOf<{
+      created_at: string;
+      exercise_id: string;
+      increment_kg: number;
+      updated_at: string;
+      user_id: string;
+    }>();
+  });
+
+  it("Insert needs exercise_id and increment_kg (user_id defaults, timestamps are server-set)", () => {
+    expectTypeOf<TablesInsert<"exercise_settings">>().toEqualTypeOf<{
+      created_at?: string;
+      exercise_id: string;
+      increment_kg: number;
+      updated_at?: string;
+      user_id?: string;
+    }>();
+  });
+
+  it("Update makes every column optional", () => {
+    expectTypeOf<TablesUpdate<"exercise_settings">>().toEqualTypeOf<{
+      created_at?: string;
+      exercise_id?: string;
+      increment_kg?: number;
+      updated_at?: string;
+      user_id?: string;
+    }>();
+  });
+
+  it("references exercises through exercise_settings_exercise_id_fkey", () => {
+    expect(readFileSync(GEN_PATH, "utf8")).toContain(
+      'foreignKeyName: "exercise_settings_exercise_id_fkey"',
     );
   });
 });
