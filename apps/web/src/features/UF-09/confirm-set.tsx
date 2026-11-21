@@ -7,9 +7,11 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ArrowIcon, CrossIcon } from "../../components/icons/index.js";
 import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
+import { perSideCaption, repsGroupLabel } from "../../lib/i18n/per-side.js";
 import { restFollowsSet, type LoggedSet } from "./machine.js";
 import { useFocusSession } from "./session.js";
 import { remainingS } from "./timer.js";
+import { useCachedFields } from "./use-cue.js";
 import type { ViewProps } from "./views.js";
 import { parseWeight, stepWeight } from "./weight-input.js";
 
@@ -40,6 +42,7 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
   const increment =
     exercise && exercise.incrementKg > 0 ? exercise.incrementKg : DEFAULT_INCREMENT_KG;
   const recorded = recordedSet(state);
+  const { unilateral } = useCachedFields(item.exerciseId);
 
   const [reps, setReps] = useState<number | null>(recorded?.reps ?? null);
   // The text the field opened with (D-0128 §4). While the field still reads it, it stands for
@@ -132,7 +135,11 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
           {en.uf09.targetHit}
         </p>
       ) : null}
-      <div className="wl-uf09__field" role="group" aria-label={en.uf09.repsLabel}>
+      <div
+        className="wl-uf09__field"
+        role="group"
+        aria-label={unilateral === null ? en.uf09.repsLabel : repsGroupLabel(unilateral)}
+      >
         <button
           type="button"
           className="wl-button--session-outline wl-uf09__stepper"
@@ -152,6 +159,11 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
         >
           +
         </button>
+        {unilateral === null ? null : (
+          <span className="wl-uf09__side wl-type-label" data-field="reps-side">
+            {perSideCaption(unilateral)}
+          </span>
+        )}
       </div>
       {bodyweight ? null : (
         <div className="wl-uf09__field">
