@@ -226,3 +226,38 @@ Deno.test(
     );
   },
 );
+
+Deno.test(
+  "T-0954: buildEffectiveLibrary ignores an override for a timed or bodyweight exercise, and keeps others at their library step",
+  () => {
+    const base = libraryFixture();
+    const loaded = base.find((e) => e.id === BENCH)!;
+    const other = base.find(
+      (e) => e.id !== BENCH && e.externalLoad && !e.timed && e.kind === "exercise",
+    )!;
+    const timed: LibraryExercise = {
+      ...loaded,
+      id: "t-timed",
+      timed: true,
+      incrementKg: null as unknown as number,
+    };
+    const bodyweight: LibraryExercise = {
+      ...loaded,
+      id: "t-bw",
+      externalLoad: false,
+      incrementKg: null as unknown as number,
+    };
+    const out = buildEffectiveLibrary(
+      [loaded, other, timed, bodyweight],
+      [
+        { exercise_id: BENCH, increment_kg: 1.25 },
+        { exercise_id: "t-timed", increment_kg: 1.25 },
+        { exercise_id: "t-bw", increment_kg: 1.25 },
+      ],
+    );
+    assertEquals(out[0]!.incrementKg, 1.25);
+    assertEquals(out[1]!.incrementKg, other.incrementKg); // another exercise keeps its own step
+    assertEquals(out[2], timed);
+    assertEquals(out[3], bodyweight);
+  },
+);

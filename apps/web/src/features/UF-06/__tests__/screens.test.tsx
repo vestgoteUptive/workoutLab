@@ -467,7 +467,8 @@ describe("AC-11 no PR, e1RM, volume or streak text", () => {
     first.unmount();
     renderAt("/progress/back-squat");
     await screen.findByText("Fri 25 Sep · 102.5 × 5, 100 × 8");
-    expect(document.body.textContent).not.toMatch(banned);
+    // D-0257 amends D-0068: UF-06.2 alone now carries the labelled Est. 1RM (T-0963).
+    expect(document.body.textContent).not.toMatch(/record|\bPR\b|volume|streak|per week/i);
   });
 });
 

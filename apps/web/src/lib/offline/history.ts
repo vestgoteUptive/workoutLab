@@ -14,6 +14,7 @@ import {
   toHistorySet,
   toLibraryExercise,
   toPlanCheckin,
+  toUnilateral,
   type AreaTarget,
   type Barbell,
   type EngineProfile,
@@ -33,6 +34,8 @@ import { cacheGeneration, cacheWriteAllowed } from "./cache-generation.js";
 import { sameValue } from "./flush.js";
 import { refreshExcluded } from "./excluded.js";
 import { refreshFavorites } from "./favorites.js";
+import { refreshExerciseSettings, readExerciseSteps } from "./exercise-settings.js";
+import { effectiveLibrary } from "./effective-library.js";
 
 export const HISTORY_WINDOW_DAYS = 56;
 
@@ -162,6 +165,7 @@ export async function refreshLibrary(): Promise<void> {
       license: row.license,
       attribution: row.attribution,
       sourceUrl: row.source_url,
+      unilateral: toUnilateral(row),
       variants: [...(variantsByExercise.get(row.id) ?? [])].sort((a, b) => (a < b ? -1 : 1)),
     };
     return { key: userScopedKey(userId, row.id), userId, detail };
@@ -371,14 +375,31 @@ export async function refreshAll(now: Date, tz: string): Promise<void> {
     refreshRoutines(),
     refreshExcluded(),
     refreshFavorites(),
+    refreshExerciseSettings(),
   ]);
 }
 
-export async function loadLibrary(): Promise<LibraryExercise[]> {
+/** The cached library exactly as the server sent it (the library `incrementKg`, no override).
+ *  UF-04.2 reads this for "Use default (2.5)". */
+export async function loadBaseLibrary(): Promise<LibraryExercise[]> {
   const userId = currentUserId();
   if (!userId) return [];
   const rows = await offlineDb().libraryCache.where({ userId }).toArray();
   return rows.map((r) => r.exercise);
+}
+
+/** The effective library (T-0954, D-0251): the cached library with the user's own weight step in
+ *  place of `incrementKg`. This is what every engine call and UF-09 read, so they share one step.
+ *  A failed read of the overrides falls back to the library step. */
+export async function loadLibrary(): Promise<LibraryExercise[]> {
+  const library = await loadBaseLibrary();
+  const userId = currentUserId();
+  if (!userId || library.length === 0) return library;
+  try {
+    return effectiveLibrary(library, await readExerciseSteps(userId));
+  } catch {
+    return library;
+  }
 }
 
 export async function loadTargets(): Promise<AreaTarget[]> {

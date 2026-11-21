@@ -306,6 +306,19 @@ export interface components {
      *         "back-squat"
      *       ]
      *     }
+     * @example {
+     *       "budgetMin": 30,
+     *       "warmupInBudget": true,
+     *       "energy": "normal",
+     *       "shuffle": 0,
+     *       "mainLiftId": null,
+     *       "pinnedIds": [
+     *         "leg-extension"
+     *       ],
+     *       "excludeIds": [],
+     *       "autoMainLift": false,
+     *       "fill": false
+     *     }
      */
     SessionInput: {
       budgetMin: number;
@@ -319,6 +332,10 @@ export interface components {
       avoidAreas?: components["schemas"]["Area"][];
       /** @description Favorite exercises (D-0202): ranked first inside an area the gaps chose; absent means []. */
       favoriteIds?: components["schemas"]["ExerciseId"][];
+      /** @description Rule 7.2 step 1. Absent or true: pick a main lift when `mainLiftId` is null. false: no fallback main lift (D-0237). */
+      autoMainLift?: boolean;
+      /** @description Rule 7.2 step 3. Absent or true: fill the remaining time. false: only the main lift and pins (D-0237). */
+      fill?: boolean;
     };
     /**
      * @description Body of POST /workouts/suggest. The server supplies `now` (D-0037 §9).

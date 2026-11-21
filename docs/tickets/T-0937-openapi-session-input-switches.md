@@ -5,7 +5,7 @@ lane: data
 screens: [UF-08.2]
 decisions: [D-0237, D-0239, D-0063]
 deps: [T-0936]
-status: todo
+status: done
 ---
 ## Why
 T-0936 adds two optional switches to the engine's `SessionInput` (D-0237). The `/workouts/suggest` Edge Function shares that type through `api/openapi.yaml` (D-0001). D-0237 §3 names this contract change. D-0239 makes it **deferrable**: the app runs `suggest` on the device (D-0063 §3) and never calls `/workouts/suggest` with the new keys, and no web, engine or QA ticket depends on this one. Until it lands, the endpoint returns 400 for the two keys.
@@ -31,3 +31,10 @@ T-0936 adds two optional switches to the engine's `SessionInput` (D-0237). The `
 Tests for every AC pass · `pnpm -w typecheck lint test` green (includes `vendor.mjs --check`) · contracts unchanged or decision linked · commit messages start with `T-0937` and cite UF-08.2.
 
 Per-package commands: write one command per script — `pnpm --filter @workoutlab/shared typecheck`, then a separate `… lint`, then a separate `… test`.
+
+## Build / accept log
+- Built: `SessionInput` gains optional boolean `autoMainLift` and `fill`; `required` and `additionalProperties:false` unchanged; fourth example (empty mode). `api.gen.ts` regenerated, vendored `api.gen.d.ts` re-vendored. `hold_effort` (D-0264) untouched.
+- AC1..AC4 -> `packages/shared/test/t0937-session-switches.test.ts` (type test, openapi shape + example, absent keys, non-booleans). AC5 -> `node supabase/scripts/vendor.mjs --check` exit 0.
+- Also changed `t0517-avoid-areas.test.ts` example count 3 -> 4 (a new example is the contract change, not a weakened assertion).
+- Planted faults (restored from backup copies): `fill` typed string in yaml -> 3 tests red; `autoMainLift` removed from api.gen.ts -> `tsc` TS2339 in the new test.
+- Red run on unfixed code: first full gate failed only on t0517's example count (fixed above).
