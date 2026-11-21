@@ -38,3 +38,10 @@ none (D-0251 table from T-0951).
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged · commit messages start with `T-0956` and cite UF-04.2.
 
 Per-package commands: `pnpm --filter @workoutlab/web typecheck`, then a separate `… lint`, then a separate `… test`.
+
+## Build / accept log
+- Built `WeightStep.tsx` + `weight-step.css` (UF-04 folder), mounted in `LibraryDetail` after the action row; copy in `lib/i18n/flows/uf-04.ts`. The default comes from `loadBaseLibrary()`, the hidden rule from `hasExternalLoad` (shared). Writes via `setExerciseStep`/`resetExerciseStep`; rejections via `useExerciseSettingErrors`.
+- AC to test (`__tests__/weight-step.test.tsx`, 27 tests): AC1 default state (3), AC2/AC3 set and reset (2), AC4 Other (5 invalid + 1,5 + 1.5 + 10 + blur/Cancel skip), AC5 Cancel/Escape (2), AC6 plank and push-up (2), AC7 offline queued and online direct (2), AC8 failed save (1), AC9 arrows, debounce, Home/End, Other (2), AC10 axe, check mark, 44 px CSS (3), AC11 status on mount (1). E2E happy path + hidden row: `__e2e__/uf-04-weight-step.spec.ts` (run once as a temp copy in tests/e2e, 2 passed, then removed; QA wires it in).
+- Planted faults (backup copies, restored by `cp`, each failed exactly the named test): effective instead of base default (AC1 base test); predicate dropped (plank); debounce 0 (AC9); blur-to-Cancel skip removed (AC4); status not on mount (AC11); check mark removed (AC10); default chip not a reset (AC2/AC3, 2 tests); alert dropped (AC8); comma not accepted (AC4 "1,5").
+- Red runs on first version: tests failed on duplicate `role=status` (DetailActions has one, so tests scope to the row) and on NBSP in names (`formatKg`); fixed in the tests, not the code.
+- Gate: `turbo typecheck lint test --filter=@workoutlab/web --force` 388 files / 5146 tests green; `format:check` green. `check:repo` lists only supabase paths that `main` changed after my base (96dce8d3); none are in my diff.

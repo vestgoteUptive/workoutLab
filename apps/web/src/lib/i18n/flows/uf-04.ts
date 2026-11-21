@@ -85,4 +85,18 @@ export const uf04 = {
   connectToChangeFavorites: "Connect to change favorites",
   announceFavoriteMoved: (name: string) => `${name} is a favorite and will be suggested again.`,
   announceExcludedMoved: (name: string) => `${name} won't be suggested. Removed from favorites.`,
+  // T-0956 (D-0251, D-0259, UF-04.2): the "Weight step" row. Numbers arrive already formatted.
+  weightStep: "Weight step",
+  weightStepValue: (kg: string, yours: boolean) =>
+    `Weight step: ${kg} (${yours ? "yours" : "default"})`,
+  weightStepHelp: "How much the weight goes up each time.",
+  weightStepOther: "Other",
+  weightStepOtherValue: (kg: string) => `Other: ${kg}`,
+  weightStepField: "Step in kg",
+  weightStepSave: "Save",
+  weightStepCancel: "Cancel",
+  weightStepInvalid: "Enter a step from 0.25 to 10 kg, in multiples of 0.25.",
+  weightStepUseDefault: (kg: string) => `Use default (${kg})`,
+  weightStepSet: (kg: string) => `Weight step set to ${kg}.`,
+  weightStepReset: (kg: string) => `Weight step back to the default, ${kg}.`,
 } as const;
