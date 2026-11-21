@@ -76,6 +76,28 @@ describe("T-0954 AC1 effective library", () => {
     expect((await loadBaseLibrary()).find((e) => e.id === "db-curl")?.incrementKg).toBe(2.5);
   });
 
+  it("an override on one exercise leaves every other exercise at its own library step in the same call", () => {
+    const rows = [
+      lib("bench-press", { incrementKg: 2.5 }),
+      lib("db-curl", { incrementKg: 2 }),
+      lib("leg-curl", { incrementKg: 5 }),
+    ];
+    const eff = effectiveLibrary(rows, new Map([["bench-press", 1.25]]));
+    expect(eff.map((e) => [e.id, e.incrementKg])).toEqual([
+      ["bench-press", 1.25],
+      ["db-curl", 2],
+      ["leg-curl", 5],
+    ]);
+    const two = effectiveLibrary(
+      rows,
+      new Map([
+        ["leg-curl", 0.5],
+        ["bench-press", 1.25],
+      ]),
+    );
+    expect(two.map((e) => e.incrementKg)).toEqual([1.25, 2, 0.5]);
+  });
+
   it("ignores an override for a timed or bodyweight exercise (same predicate as the UI)", () => {
     const rows = [
       lib("plank", { timed: true, incrementKg: null as unknown as number }),
