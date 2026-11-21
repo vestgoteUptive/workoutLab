@@ -183,3 +183,15 @@ export function toPlanCheckin(row: PlanCheckinRow): PlanCheckin {
     answeredAt: row.answered_at,
   };
 }
+
+/** Which unit an exercise is trained in one side at a time (D-0260 §3). null = both sides. */
+export type Unilateral = "arm" | "leg" | "side";
+
+/** `exercises.unilateral` → Unilateral | null (D-0263 §1). Null, an unknown value (`'both'`) and a
+ * missing field (a row cached before T-0972) all read as null: both sides, no label. */
+export function toUnilateral(
+  row: { unilateral?: string | null } | null | undefined,
+): Unilateral | null {
+  const v = row?.unilateral;
+  return v === "arm" || v === "leg" || v === "side" ? v : null;
+}
