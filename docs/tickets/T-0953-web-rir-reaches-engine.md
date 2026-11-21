@@ -29,6 +29,7 @@ RIR is already saved with each set (`session_sets.rir`, `queued.rir`) but the we
 - AC7 Given a `hold_effort` pre-fill, When UF-09.4 shows its reason, Then the exact copy above is shown and contains no number the engine did not output.
 
 ## Paths you may change
+- `apps/web/src/lib/offline/engine-feed.ts`, `apps/web/src/lib/offline/history.ts`, `apps/web/src/lib/offline/__tests__/**`, `packages/shared/src/index.ts`, `packages/shared/test/**`, `supabase/functions/_shared/vendor/**` (extra: the queued-set mapper, cache copy, upgrade tests, shared export and regenerated vendor; orchestrator grant)
 - `apps/web/src/features/UF-09/**` (or the UF-09 feature folder that holds the pre-fill reason text)
 - Extras, named explicitly: `packages/shared/src/mappers.ts` and its tests (data-lane path); `apps/web/src/lib/offline/db.ts`, `history.ts`, `queue.ts` and `apps/web/src/lib/offline/__tests__/**` (web-shell paths); `apps/web/src/lib/i18n/**` only for the reason copy if it lives there.
 
