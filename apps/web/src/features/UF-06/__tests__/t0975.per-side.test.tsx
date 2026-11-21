@@ -170,6 +170,18 @@ describe("T-0975 maths is unchanged by the flag", () => {
     expect(point!.reps).toBe(10);
   });
 
+  it("AC6 (screen): the Est. 1RM card and series are identical flagged and unflagged, Epley as logged", async () => {
+    const { e1rmSeries } = await import("../stats.js");
+    const run = (id: string) => e1rmSeries(id, sets(id), lib, NOW, TZ).map((p) => p.e1rm);
+    expect(run("dumbbell-row")).toEqual(run("barbell-row"));
+    expect(run("dumbbell-row")[0]).toBeCloseTo(16, 10);
+    await seed({ library: lib, history: sets("dumbbell-row") });
+    await cacheDetail("dumbbell-row", "arm");
+    renderAt("dumbbell-row");
+    await screen.findByText(/12 × 10 per arm/);
+    expect(card("Est. 1RM")!.textContent).toBe("about 16 kg");
+  });
+
   it("exerciseHistory without a word is unchanged (AC3 pure)", () => {
     const h = exerciseHistory("dumbbell-row", sets("dumbbell-row"), lib, NOW, TZ, LOCALE)!;
     expect(h.rows[0]!.sets).toEqual(["12 × 10", "12 × 10", "12 × 9"]);

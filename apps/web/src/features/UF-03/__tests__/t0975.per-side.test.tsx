@@ -110,6 +110,102 @@ describe("T-0975 UF-03.1 List view", () => {
   });
 });
 
+describe("T-0975 QA: timed and bodyweight Previous cells", () => {
+  const PLANK = {
+    id: "plank",
+    name: "Plank",
+    kind: "exercise",
+    type: "isolation",
+    level: "beginner",
+    equipment: [],
+    areas: { core: 1 },
+    timed: true,
+    defaultDurationS: 45,
+    incrementKg: 0,
+    externalLoad: false,
+  } as never;
+  async function mountTimed() {
+    await seedLibraryAndTargets(db, [...L1, PLANK]);
+    await db.historyCache.put({
+      key: userScopedKey(USER_A, "S0-plank"),
+      userId: USER_A,
+      clientId: "S0-plank",
+      sessionId: "S0",
+      exerciseId: "plank",
+      isWarmup: false,
+      completedAt: "2026-09-24T10:00:00.000Z",
+      editedAt: "2026-09-24T10:00:00.000Z",
+      deletedAt: null,
+      reps: null,
+      weightKg: null,
+      durationS: 40,
+    });
+    const item = {
+      ...LIST_PLAN.items[0]!,
+      exerciseId: "plank",
+      repsMin: null,
+      repsMax: null,
+      durationS: 45,
+      prefill: { weightKg: null, reps: null, durationS: 45, kind: "first_time" as const },
+    };
+    const plan = { ...LIST_PLAN, items: [item, ...LIST_PLAN.items.slice(1)] };
+    render(<ListView ctx={makeCtx({ plan })} />);
+    await screen.findByRole("button", { name: /Romanian deadlift/ });
+  }
+  it("a flagged timed row reads '40 s per side' in Previous", async () => {
+    await cacheDetail("plank", "side");
+    await mountTimed();
+    await vi.waitFor(() => expect(previousCells()[0]).toBe("40 s per side"));
+  });
+  it("an unflagged timed row reads '40 s' exactly as before", async () => {
+    await cacheDetail("plank", null);
+    await mountTimed();
+    await vi.waitFor(() => expect(previousCells()[0]).toBe("40 s"));
+    expect(previousCells()[0]).not.toMatch(/per/);
+  });
+});
+
+describe("T-0975 QA: bodyweight Previous cell", () => {
+  async function mountPush() {
+    await seedLibraryAndTargets(db, L1);
+    await seedCached(db, [{ ...prev(0, 20, 0), clientId: "S0-pu", exerciseId: "push-up" }]);
+    const item = { ...LIST_PLAN.items[0]!, exerciseId: "push-up" };
+    render(
+      <ListView
+        ctx={makeCtx({ plan: { ...LIST_PLAN, items: [item, ...LIST_PLAN.items.slice(1)] } })}
+      />,
+    );
+    await screen.findByRole("button", { name: /Romanian deadlift/ });
+  }
+  it("a flagged bodyweight row reads '20 per arm'; null reads '20'", async () => {
+    await cacheDetail("push-up", "arm");
+    await mountPush();
+    await vi.waitFor(() => expect(previousCells()[0]).toBe("20 per arm"));
+  });
+  it("an unflagged bodyweight row reads '20'", async () => {
+    await cacheDetail("push-up", null);
+    await mountPush();
+    await screen.findByLabelText("Set 1 reps");
+    expect(previousCells()[0]).toBe("20");
+  });
+});
+
+describe("T-0975 QA: PR line formatters (UF-02 and UF-03 share the format)", () => {
+  it.each([
+    ["uf03", en.uf03],
+    ["uf02", en.uf02],
+  ])("%s prTimed/prReps/prWeighted append the word; null or absent adds nothing", (_n, f) => {
+    expect(f.prTimed("Plank", "90", "side")).toBe("Plank 90 s per side");
+    expect(f.prTimed("Plank", "90", null)).toBe("Plank 90 s");
+    expect(f.prTimed("Plank", "90")).toBe("Plank 90 s");
+    expect(f.prReps("Curl", 25, "25", "arm")).toBe("Curl 25 reps per arm");
+    expect(f.prReps("Curl", 1, "1", "leg")).toBe("Curl 1 rep per leg");
+    expect(f.prReps("Curl", 25, "25", null)).toBe("Curl 25 reps");
+    expect(f.prWeighted("Row", "12 kg", "10", "arm")).toBe("Row 12 kg × 10 per arm");
+    expect(f.prWeighted("Row", "12 kg", "10")).toBe("Row 12 kg × 10");
+  });
+});
+
 describe("T-0975 UF-03.3 Summary PR band", () => {
   const spec = (sessionId: string, w: number, reps: number, at: string): SetSpec => ({
     clientId: `${sessionId}-bench`,
