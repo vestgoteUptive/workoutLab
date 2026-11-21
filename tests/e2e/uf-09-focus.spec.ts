@@ -226,10 +226,11 @@ test.describe("AC-7 the chrome on a seeded session", () => {
     expect(serious).toEqual([]);
     // Pause → UF-09.9. T-0304d (D-0118 §12): the built view on this one-item plan has Resume and
     // End workout (no item follows, so no Skip to next exercise). T-0422 (D-0142 §6, a named
-    // change): plus the module's Swap seam. T-0416 (D-0142 §6): plus How to and List view.
+    // change): plus the module's Swap seam. T-0416 (D-0142 §6): plus How to and List view. T-0949: plus Add exercise.
     await pause.click();
     await expect(page.locator('[data-screen-id="UF-09.9"]')).toBeVisible();
-    await expect(page.getByRole("button")).toHaveCount(5);
+    await expect(page.getByRole("button")).toHaveCount(6);
+    await expect(page.getByRole("button", { name: "Add exercise" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Swap" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Resume" })).toBeVisible();
     await expect(page.getByRole("button", { name: "End workout" })).toBeVisible();
