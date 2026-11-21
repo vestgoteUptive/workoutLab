@@ -32,17 +32,19 @@ const uf09 = read("UF-09.3-UF-09.4.md");
 
 describe("T-0955 AC1 the Weight step row is a radiogroup of four 44 px chips", () => {
   it("names the radiogroup, label, chips, roving tabindex and 44 px", () => {
-    expect(row).toContain('role="radiogroup"');
-    expect(row).toContain('"Weight step"');
-    for (const c of ["1.25", "2.5", "5", "Other"]) expect(row).toContain(`**${c}**`);
-    expect(row).toContain("roving tabindex");
-    expect(row).toContain("44 px");
+    const layout = section(row, "### Layout");
+    expect(layout).toMatch(
+      /`role="radiogroup"` labelled "Weight step": four chips \*\*1\.25\*\*, \*\*2\.5\*\*, \*\*5\*\*, \*\*Other\*\*/,
+    );
+    expect(layout).toMatch(/at least 44 px tall and 44 px wide/);
+    expect(section(row, "### Chips")).toMatch(/roving tabindex/);
   });
   it("says selection is --wl-selected plus a check mark, and not aria-pressed", () => {
-    expect(row).toContain("`--wl-selected`");
-    expect(row).toContain("check mark");
-    expect(row).toContain("never colour alone");
-    expect(row).toMatch(/not `aria-pressed`/);
+    const chips = section(row, "### Chips");
+    expect(chips).toMatch(
+      /\*\*Selected:\*\* `--wl-selected` fill[^\n]*check mark[^\n]*never colour alone/,
+    );
+    expect(chips).toMatch(/not `aria-pressed` buttons/);
   });
 });
 
@@ -58,8 +60,8 @@ describe("T-0955 AC2 the exact copy strings", () => {
     "Weight step: 2.5 kg (default)",
     "Step in kg",
     "Other: 1.5 kg",
-  ])("contains %s", (s) => {
-    expect(row).toContain(s);
+  ])("contains %s as a quoted string", (s) => {
+    expect(row).toContain(`"${s}"`);
   });
   it("uses the status and alert roles, inputmode, aria-invalid and no undo", () => {
     for (const s of [
@@ -85,20 +87,97 @@ describe("T-0955 AC3 hidden for timed and bodyweight, editable offline", () => {
     expect(row).toContain('No "Connect to change');
   });
   it("states the contrast of the selected chip", () => {
-    expect(row).toContain("8.6:1");
+    expect(section(row, "### Accessibility")).toMatch(
+      /`--wl-on-selected` on `--wl-selected` is 8\.6:1/,
+    );
   });
 });
 
 describe("T-0955 AC4 the UF-09.3/09.4 note and the hold_effort copy", () => {
+  const reason = section(uf09, "## Reason line (UF-09.3 only, `hold_effort` only)");
+  const copy =
+    "Same weight again. Last time was close to failure. Leave a couple of reps in reserve and it goes up.";
   it("has the exact reason copy, no placeholders and no other focus-mode change", () => {
-    expect(uf09).toContain(
-      "Same weight again. Last time was close to failure. Leave a couple of reps in reserve and it goes up.",
+    expect(reason).toMatch(
+      new RegExp(`^\\| \`hold_effort\` \\| ${copy.replace(/\./g, "\\.")} \\|$`, "m"),
     );
-    expect(uf09).toContain("`hold_effort`");
-    expect(uf09).toContain("no placeholders");
-    expect(uf09).toMatch(/no banner, modal or link/);
-    expect(uf09).toMatch(/only change in focus mode/);
-    expect(uf09).toContain("steps by the exercise's step");
+    expect(reason).toMatch(/`hold_effort` has no placeholders/);
+    expect(reason).toMatch(/no banner, modal or link, and no other change in focus mode/);
+    expect(uf09).toMatch(/only change in focus mode is one new static line/);
+    expect(uf09).toMatch(/steps by the exercise's step/);
+  });
+  it("ruling 1: one line, UF-09.3, under the hero, lift state, ink-muted, no live region, 4.8:1", () => {
+    expect(reason).toMatch(/adds \*\*one\*\* line, for the `hold_effort` kind only/);
+    expect(reason).toMatch(
+      /\*\*Where:\*\* on UF-09\.3[^\n]*directly under the load\/reps hero[^\n]*lift state/,
+    );
+    expect(reason).toMatch(/\*\*Style:\*\* `--wl-ink-muted`, body-small/);
+    expect(reason).toMatch(/at most 2 lines at 320 px/);
+    expect(reason).toMatch(/not a live region/);
+    expect(reason).toMatch(/4\.8:1/);
+  });
+  it("ruling 1: all nine PrefillKinds are listed, only hold_effort has a line", () => {
+    const rows = reason.split("\n").filter((l) => /^\| `[a-z_]+` \|/.test(l));
+    const kinds = rows.map((l) => /^\| `([a-z_]+)`/.exec(l)![1]);
+    expect(kinds.sort()).toEqual(
+      [
+        "add_rep",
+        "carry",
+        "deload",
+        "first_time",
+        "hold",
+        "hold_after_break",
+        "hold_effort",
+        "increase",
+        "reentry",
+      ].sort(),
+    );
+    for (const l of rows) {
+      if (l.startsWith("| `hold_effort`")) continue;
+      expect(l, l).toMatch(/\| No line \|$/);
+    }
+    expect(reason).toMatch(/the other eight show \*\*no line\*\*/);
+  });
+});
+
+describe("T-0955 round 2 rulings 2-5 on the Weight step row", () => {
+  const chips = section(row, "### Chips");
+  const other = section(row, "### Other");
+  const feedback = section(row, "### Feedback");
+  const offline = row.split("\n").find((l) => l.startsWith("| Offline |")) ?? "";
+  it("ruling 2: the offline store and queue are new work from T-0954, not a favorites pattern", () => {
+    expect(offline).toMatch(/new work from T-0954/);
+    expect(offline).toMatch(/online-only/);
+    expect(offline).not.toMatch(/favorites pattern/);
+  });
+  it("ruling 3: WAI radio keys, arrows select, 600 ms debounce, Other opens without focus move", () => {
+    expect(chips).toMatch(/WAI radio-group pattern[^\n]*move focus \*\*and select\*\*/);
+    expect(chips).toMatch(/debounced 600 ms after the last selection change/);
+    expect(chips).toMatch(/one status announcement for it/);
+    expect(chips).toMatch(/Space or Enter on a chip commits at once/);
+    expect(chips).toMatch(
+      /Arrowing onto \*\*Other\*\* selects it \(`aria-checked="true"`\) and opens the field \*\*without moving focus\*\*/,
+    );
+    expect(chips).toMatch(/Tab then moves into the field/);
+  });
+  it("ruling 4: validate on Save and blur except blur to Cancel; Escape and Cancel restore; empty errors", () => {
+    expect(other).toMatch(
+      /Validate on \*\*Save\*\* and on blur, \*\*except when blur goes to Cancel\*\*/,
+    );
+    expect(other).toMatch(/An empty value on Save is an error/);
+    expect(other).toMatch(
+      /\*\*Cancel and Escape\*\* close the field and restore the previous selection and value/,
+    );
+    expect(other).toContain("Enter a step from 0.25 to 10 kg, in multiples of 0.25.");
+  });
+  it("ruling 5: status templates, alert clears status, default 1 kg has no checked chip", () => {
+    expect(feedback).toContain('"Weight step set to {n} kg."');
+    expect(feedback).toContain('"Weight step back to the default, {n} kg."');
+    expect(feedback).toMatch(/When the `role="alert"` line shows, the status line is cleared/);
+    expect(chips).toMatch(/\*\*no chip is checked\*\* and the first chip has `tabindex="0"`/);
+    expect(chips).toMatch(
+      /visible chip text is the bare number \("1\.25", "2\.5", "5"\)[^\n]*accessible name adds the unit \("1\.25 kg"/,
+    );
   });
 });
 
@@ -110,7 +189,7 @@ describe("T-0955 AC5/AC6 no new token; cited screen IDs exist", () => {
         (m) => m[0],
       ),
     ))
-      expect(flows, id).toContain(id);
+      expect(flows, id).toMatch(new RegExp(`\\b${id.replace(".", "\\.")}(?!\\d)`));
   });
   const tmp = mkdtempSync(join(tmpdir(), "wl-t0955-css-"));
   afterAll(() => rmSync(tmp, { recursive: true, force: true }));
