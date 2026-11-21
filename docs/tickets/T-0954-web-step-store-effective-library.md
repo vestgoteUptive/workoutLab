@@ -5,7 +5,7 @@ lane: web-feature:UF-04
 screens: [UF-04.2, UF-09.4, UF-08.2]
 decisions: [D-0251, D-0252, D-0259, D-0199, D-0202]
 deps: [T-0951]
-status: todo
+status: done
 ---
 ## Why
 The engine takes the weight step from `LibraryExercise.incrementKg`. The web layer must hold the user's overrides on the device first (favorites pattern), queue the writes, and pass an "effective library" (library rows with `incrementKg` replaced where an override exists) to every engine call, so the pre-fill, the High-energy back-off and the UF-09.4 +/- stepper agree on one step.
