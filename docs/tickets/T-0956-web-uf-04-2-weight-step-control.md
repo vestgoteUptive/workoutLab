@@ -28,6 +28,7 @@ Users set their own step (1.25, 2.5, 5 kg or their own value) per exercise on UF
 - AC11 Given the `role="status"` element, When the page mounts, Then it already exists in the DOM (empty) so the later message is announced.
 
 ## Paths you may change
+- `tests/e2e/uf-04-weight-step.spec.ts` (extra: the e2e moves from apps/web/src/features/UF-04/__e2e__ into tests/e2e; orchestrator grant)
 - `apps/web/src/features/UF-04/**`
 - Extras, named explicitly: UF-04 i18n copy file if it sits under `apps/web/src/lib/i18n/**`.
 
