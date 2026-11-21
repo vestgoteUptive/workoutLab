@@ -173,7 +173,8 @@ export interface components {
       | "increase"
       | "deload"
       | "hold"
-      | "add_rep";
+      | "add_rep"
+      | "hold_effort";
     /**
      * @description Rule 5 deficit per area at session start, each in [0, 1].
      * @example {

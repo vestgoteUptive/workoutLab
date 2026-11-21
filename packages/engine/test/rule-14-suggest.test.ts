@@ -61,8 +61,9 @@ const KINDS: PrefillKind[] = [
   "deload",
   "hold",
   "add_rep",
+  "hold_effort",
 ];
-// api/openapi.yaml still lists the 8 codes; `hold_effort` joins it in a follow-up (T-0952 notes).
+// D-0264: api/openapi.yaml lists all 9 codes, hold_effort last.
 
 const HISTORIES: Array<[string, HistorySet[]]> = [
   ["zero", []],
