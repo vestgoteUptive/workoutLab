@@ -247,7 +247,24 @@ describe("AC-9 the export surface", () => {
   // T-0632 (D-0218): the bar and plates read, with its default.
   const T0632_EXPORTS = ["loadBarbell", "DEFAULT_BARBELL"];
 
-  it("exports exactly the v1 surface plus the 3 refreshes and 5 loaders added here, plus T-0536's and T-0567's", () => {
+  // T-0954 (D-0251): the weight-step store, its hooks and the effective library.
+  const T0954_EXPORTS = [
+    "setExerciseStep",
+    "resetExerciseStep",
+    "refreshExerciseSettings",
+    "loadExerciseSteps",
+    "loadExerciseSettingErrors",
+    "dismissExerciseSettingError",
+    "flushExerciseSettings",
+    "isValidStep",
+    "ExerciseSettingError",
+    "useExerciseSteps",
+    "useExerciseSettingErrors",
+    "effectiveLibrary",
+    "loadBaseLibrary",
+  ];
+
+  it("exports exactly the v1 surface plus the 3 refreshes and 5 loaders added here, plus T-0536's, T-0567's and T-0954's", () => {
     expect(Object.keys(offlineIndex).sort()).toEqual(
       [
         ...V1_EXPORTS,
@@ -255,6 +272,7 @@ describe("AC-9 the export surface", () => {
         ...T0536_EXPORTS,
         ...T0567_EXPORTS,
         ...T0632_EXPORTS,
+        ...T0954_EXPORTS,
       ].sort(),
     );
   });

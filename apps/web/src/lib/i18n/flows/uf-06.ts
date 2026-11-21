@@ -26,4 +26,25 @@ export const uf06 = {
   weightedBest: (weight: string, reps: string) => `${weight} kg × ${reps}`,
   repsBest: (reps: string) => `${reps} reps`,
   seconds: (s: string) => `${s} s`,
+  /** UF-06.2 estimated 1RM (D-0256, D-0258). Whole kg, always "about". */
+  e1rmLabel: "Est. 1RM",
+  aboutKg: (kg: string) => `about ${kg} kg`,
+  deltaUp: (kg: string, date: string) => `Up ${kg} kg since ${date}`,
+  deltaDown: (kg: string, date: string) => `Down ${kg} kg since ${date}`,
+  deltaSame: (date: string) => `Same as ${date}`,
+  e1rmChartMany: (n: number, first: string, d1: string, last: string, d2: string) =>
+    `Estimated one-rep max, ${n} sessions, from ${first} on ${d1} to ${last} on ${d2}.`,
+  e1rmChartOne: (value: string, date: string) =>
+    `Estimated one-rep max, 1 session, ${value} on ${date}.`,
+  e1rmOnePoint: "One session so far. Log it again to see a trend.",
+  e1rmNone: "No estimate yet. Estimates need a weighted set of 1\u201310 reps.",
+  e1rmWeightedOnly: "Estimated 1RM is for weighted lifts.",
+  e1rmExplain:
+    "Estimated from your best weighted set of 1\u201310 reps each session. It's a guide, not a tested max.",
+  showTable: "Show as table",
+  hideTable: "Hide table",
+  e1rmTableCaption: "Estimated 1RM per session",
+  colDate: "Date",
+  colBestSet: "Best set",
+  colE1rm: "Est. 1RM",
 } as const;

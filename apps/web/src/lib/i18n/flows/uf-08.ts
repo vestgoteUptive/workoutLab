@@ -186,6 +186,16 @@ export const uf08 = {
   reasonLevel: "Above your level. Change it in Plan \u203A Edit plan.",
   reasonSkipping: (area: string) => `Skipping ${area} today`,
   reasonRecovering: (area: string) => `${area} is recovering`,
+  /** UF-09.10 (T-0948, D-0243, D-0247 §3): the in-workout sheet. `m` is `floor(leftS / 60)`. */
+  leftLead: (minutes: number) => (minutes >= 1 ? `${minutes} min left` : "No time left"),
+  skippedInWorkout: "Skipped in this workout",
+  reasonExcludedShort: "Excluded",
+  reasonLevelShort: "Above your level",
+  refuseTime: (name: string, minutes: number) =>
+    minutes >= 1
+      ? `${name} doesn't fit in the ${minutes} min left.`
+      : `${name} doesn't fit. No time left.`,
+  addFailed: (name: string) => `Couldn't add ${name}. Try again.`,
   /** UF-08.5 cap refusals (D-0205 §4). */
   capItems: (max: number) => `This workout has ${max} exercises, the most it can hold.`,
   capArea: (area: string) => `This workout already has two ${area} exercises.`,

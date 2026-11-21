@@ -343,7 +343,7 @@ RIR examples (D-0250, D-0259; goal `build_muscle`, bench-press as the main lift 
   - timed exercise (`timed = true`): `[0, durationS ?? 0]`;
   - loaded set (`weightKg > 0`): `[1, e1RM]` with Epley `e1RM = weightKg × (1 + reps / 30)` (`reps ?? 0`). The engine compares `weightKg × (30 + reps)`, which orders the same and keeps equal e1RMs exactly equal;
   - bodyweight set (`weightKg` 0 or null): `[0, reps ?? 0]`. Any loaded set beats any bodyweight set of the same exercise.
-  Reps above 12 still count. The e1RM is only an estimate, so a caller shows the actual set ("80 kg × 10"), never the e1RM number.
+  Reps above 12 still count. The e1RM is only an estimate, so a caller shows the actual set ("80 kg × 10"), the e1RM number is for the exercise history (UF-06.2, rule 16) only, never on Today (D-0258 §12).
 - **Session best.** Per (`exerciseId`, `sessionId`), the set with the highest key; ties go to the earlier `completedAt`, then the smaller `clientId`. At most one record per session and exercise.
 - **Record.** A session best `b` is a record when `E` = the hard sets of the same exercise with `sessionId ≠ b.sessionId` and `completedAt < b.completedAt` is non-empty and `key(b) > key(e)` for every `e` in `E`. Equal keys are not records; the first session of an exercise is never a record.
 - **Output.** `RecordSet { exerciseId, sessionId, clientId, completedAt, weightKg, reps, durationS, previous: { weightKg, reps, durationS } }`; `previous` is the highest-keyed set of `E` (same tie rule). Sorted by `completedAt`, then `clientId`.
@@ -361,12 +361,34 @@ Examples. back-squat unless stated; S1 = 2026-09-01, S2 = 09-04, S3 = 09-14, eac
 - **R15-E9** push-up 0 × 12 in S1, 10 × 5 in S2 → record (a loaded set beats a bodyweight set).
 - **R15-E10** S1 100 × 8, S2 95 × 8, then a 10-day gap and S3 102.5 × 8 → one record, S3, `previous` 100 × 8.
 - **R15-E11** Shuffled input order and a duplicate replayed row (same `clientId`, older `editedAt`) give the same output (D-0015 dedupe).
-- **R15-E12** The simulated 14-day histories (§Required tests) give `[]` (every set is 50 × 8). The balanced history with progressive loads (bench-press 60, 62.5, 62.5, 60, 65, 65, 67.5 × 8; back-squat 100 × 5, 5, 6, 6, 8, 7, 8; dead-bug 0 × 10, 12, 12, 15, 15, 15, 15 on 09-15 … 09-27) gives 7 records: bench-press 09-17, 09-23, 09-27; back-squat 09-19, 09-23; dead-bug 09-17, 09-21.
+- **R15-E12** The simulated 14-day histories (§Required tests) give `[]` (every set is 50 × 8). The balanced history with progressive loads (bench-press 60, 62.5, 62.5, 60, 65, 65, 67.5 × 8; back-squat 100 × 5, 5, 6, 6, 8, 7, 8; dead-bug 0 × 10, 12, 12, 15, 15, 15, 15 on 09-15 … 09-27) gives 7 records: bench-press 09-17, 09-23, 09-27; back-squat 09-19, 09-23; dead-bug 09-17, 09-21. Rule 16 gives the matching e1RM series (R16-E11).
 - **R15-E13 (H-36)** S1 100 × 8 (e1RM 126.7), S2 105 × 5 (122.5) → `[]` (heavier, but a lower e1RM).
 - **R15-E14 (H-36)** S1 90 × 3 (e1RM 99), S2 80 × 10 (106.7) → record 80 × 10, `previous` 90 × 3.
 - **R15-E15 (H-36)** S1 100 × 6, S2 90 × 10 (both e1RM 120) → `[]` (equal e1RM is a tie).
 - **R15-E16** S1 100 × 8; S2 110 × 5 at 10:00 and 102.5 × 8 at 10:05 → one record, 102.5 × 8. Two S2 sets of 102.5 × 8 at 10:00 and 10:05 → the 10:00 one.
 - **R15-E17** Sets of an exercise missing from `library`, or of a warm-up move, never appear in the output or the baseline.
+
+## 16. Estimated one-rep max (UF-06.2, D-0254, D-0255, D-0257, D-0258)
+`estimatedOneRepMax(history, library, exerciseId) → E1rmPoint[]` is pure and **display-only**, like rule 15: `suggest`, `balance`, `timeCheck`, `rankSwaps`, `prefill` and `records` never import it, it never imports `records.ts`, and it never reads `rir`. No `Date.now()` and no `new Date()`. The web places a point on a date with `localDate(completedAt, tz)` and applies the 56-day window (T-0963); the engine returns every point.
+- **Formula.** Plain Epley at every rep count, 1 rep included (D-0258 §1): `e1rm = weightKg × (30 + reps) / 30`. Ties compare `weightKg × (30 + reps)` (no float division); the division happens only when the point is built. The output is unrounded.
+- **Valid set.** `normalizeHistory` (rule 0), then a hard set (rule 2) of an exercise in `library` with `kind = "exercise"`, `timed = false` and `externalLoad = true`, with `weightKg` finite and > 0 and `reps` an integer 1..10. Anything else (warm-up set, tombstone, reps 0, 11 or more, null, non-integer, weight null, 0, negative, NaN) is ignored. An unknown, timed, bodyweight or warm-up-move exercise gives `[]`.
+- **One point per session.** Per (`exerciseId`, `sessionId`), the valid set with the highest `weightKg × (30 + reps)`; ties go to the earlier `completedAt`, then the smaller `clientId`. The best set is chosen among valid sets only. It is the same set as rule 15's session best at every rep count 1..10.
+- **Output.** `E1rmPoint { sessionId, clientId, completedAt, weightKg, reps, e1rm }`, `completedAt` and `clientId` of the best set, sorted by `completedAt`, then `clientId` (oldest first). Two sessions on one local date give two points (D-0258 §5).
+
+Examples. back-squat unless stated.
+- **R16-E1** 100 × 8 → one point, `e1rm` 126.667 (100 × 38 / 30).
+- **R16-E2** 100 × 1 → 103.333 (plain Epley, no 1-rep case). 90 × 10 → 120.
+- **R16-E3** A session with only 60 × 15 → `[]`. 100 × 10 and 60 × 15 in one session → the point is 100 × 10 (133.333).
+- **R16-E4** Reps 0, reps null, weight null, weight 0, a negative or NaN weight, or non-integer reps → ignored.
+- **R16-E5** A warm-up set 130 × 1, a tombstoned 120 × 5 and a live 100 × 8 in one session → the point is 100 × 8.
+- **R16-E6** An unknown exercise, plank (timed), push-up (`externalLoad = false`), a warm-up move or an exercise with no history → `[]`.
+- **R16-E7** One session with 100 × 8 (126.667) and 105 × 5 (122.5) → one point, 100 × 8. A lighter hard back-off set never beats the top set.
+- **R16-E8** Two equal sets at 10:00 and 10:05 → the 10:00 one. Two equal sets at the same `completedAt` → the smaller `clientId`.
+- **R16-E9** Shuffled input order, a duplicate replayed row (same `clientId`, older `editedAt`) and the same input twice give identical output.
+- **R16-E10** For any history, the best set per session equals rule 15's session best at every rep count 1..10.
+- **R16-E11** The balanced history with progressive loads of R15-E12 gives bench-press 7 points (60, 62.5, 62.5, 60, 65, 65, 67.5 × 8: 76, 79.167, 79.167, 76, 82.333, 82.333, 85.5), back-squat 7 (100 × 5, 5, 6, 6, 8, 7, 8: 116.667, 116.667, 120, 120, 126.667, 123.333, 126.667) and dead-bug `[]` (bodyweight).
+- **R16-E12** Queued rows with the same `clientId` as a server row, a tombstoned row and a `rejected` row give the points of the clean history of the surviving sets (rule 0).
+- **R16-E13** Two sessions on the same local date give two points; a session across midnight is placed by its best set's `completedAt`.
 
 ## Required tests
 - Every `Rn-Em` above is a unit test. R7-E8 is a property test.
@@ -377,6 +399,7 @@ Examples. back-squat unless stated; S1 = 2026-09-01, S2 = 09-04, S3 = 09-14, eac
 - Rule 12.3 and `timeLeftS` (D-0246 §13; `rule-12-3-insert-histories.test.ts`): over zero history, balanced and all-chest-no-legs at `budgetMin` 45, every L1 exercise not in the plan inserted at index 1 with `leftS` from `timeLeftS` is a valid insert or `{refused: "time"}`; returning after 10 days off gives `hold_after_break` for an exercise last trained 10 days ago; a 15-minute plan at its start refuses every insert for time; a 90-minute plan filled to 8 items refuses the next insert with `items_cap`. Seeded properties (≥ 200 cases each, `mulberry32`): `timeLeftS` drops by exactly the new item's `costS` and stays ≥ 0; every other item and the warm-up are unchanged; insert then `removeItem` round-trips; between exercises with nothing logged ahead and nothing skipped, `timeLeftS = −timeCheck(…).behindS`.
 - Rule 14 RIR (D-0250, D-0252, D-0259; `rule-14-rir.test.ts`, `rule-14-rir-histories.test.ts`): every R14-E10 to R14-E25; invalid `rir` is null; rule 15, balance and `timeCheck` unchanged with `rir` present; three simulated 14-day histories (RIR 2 progressing; RIR 0 hold once then step up; own step 1.25 plus a 10-day break). Seeded properties (inline `mulberry32`, ≥ 200 cases, no fast-check): all-`rir`-null output equals the pre-change rule; rule 14 is deterministic; never below `W` except steps 2 and 5; RIR ≤ 1 at top reps gives `hold_effort` at most once in a row.
 - Rule 15 (D-0219): every R15 example; `records` is deterministic (permutation, replayed rows); `suggest` output is identical whether or not `records` runs, and no `suggest`/`balance`/`timeCheck`/`rankSwaps`/`prefill` module imports `records.ts`.
+- Rule 16 (D-0258 §13; `rule-16-e1rm*.test.ts`): every R16 example; the six simulated histories (steady gain, plateau then deload, returning after 10 days, mixed rep ranges, same-day and midnight sessions, offline-merged); seeded properties (inline `mulberry32`, ≥ 200 cases each, no fast-check): sorted output, one point per session, `e1rm` equals `weightKg × (30 + reps) / 30` with reps 1..10, permutation and warm-up/tombstone invariance, no point below another valid set of its session, other exercises change nothing; agreement with rule 15's session best; `suggest` unchanged by `estimatedOneRepMax`; no core module imports `e1rm.ts`, and `e1rm.ts` imports no `records.ts`.
 
 ## Traceability
 | Rules / examples | Build ticket |
@@ -403,3 +426,4 @@ Examples. back-squat unless stated; S1 = 2026-09-01, S2 = 09-04, S3 = 09-14, eac
 | 7.2 switches `autoMainLift` / `fill`, 7.3 empty-items warm-up, rule 13 note (R7-E31…E36, D-0237, D-0239 §4, §14, §15) | T-0936 |
 | 12.3 insertItem (R12-E20…E26) and 8 timeLeftS (R8-E4…E7), D-0244, D-0246 §8–§13 | T-0945 |
 | 14 steps 4/4b RIR hold (`hold_effort`), rule 10 kind, R14-E10…E25, D-0250, D-0252, D-0259 | T-0952 |
+| 15 narrowed to "never on Today"; 16 estimated 1RM (R15-E12 series, R16-E1…E13, D-0254, D-0255, D-0257, D-0258) | T-0961 |

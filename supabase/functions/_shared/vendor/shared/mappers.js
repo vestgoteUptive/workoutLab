@@ -20,6 +20,10 @@ const GOALS = [
 ];
 const SOURCES = ["default", "adapted", "manual"];
 const ANSWERS = ["accepted", "kept", "withdrawn"];
+/** An integer 0-5 passes; anything else (absent, fractional, out of range, not a number) is null. */
+function validRir(rir) {
+    return typeof rir === "number" && Number.isInteger(rir) && rir >= 0 && rir <= 5 ? rir : null;
+}
 /**
  * `session_sets` (or a `session_sets_live` row read as one) → HistorySet. `pending` is set only
  * when the caller passes it (a set still queued on the device, D-0017); a synced row has no key.
@@ -37,6 +41,7 @@ export function toHistorySet(row, options = {}) {
         reps: row.reps,
         weightKg: row.weight_kg,
         durationS: row.duration_s,
+        rir: validRir(row.rir),
     };
     if (options.pending !== undefined)
         set.pending = options.pending;
@@ -128,4 +133,10 @@ export function toPlanCheckin(row) {
         answer: row.answer === null ? null : oneOf(row.answer, ANSWERS, "plan_checkins.answer"),
         answeredAt: row.answered_at,
     };
+}
+/** `exercises.unilateral` → Unilateral | null (D-0263 §1). Null, an unknown value (`'both'`) and a
+ * missing field (a row cached before T-0972) all read as null: both sides, no label. */
+export function toUnilateral(row) {
+    const v = row?.unilateral;
+    return v === "arm" || v === "leg" || v === "side" ? v : null;
 }

@@ -1,0 +1,117 @@
+/* UF-04.2 "Weight step" row (T-0956, D-0251, D-0259 §4–§8). Generic --wl-* variables only. The
+ * selected chip is the fill plus a check mark and words, never colour alone. */
+.wl-uf04-step {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.wl-uf04-step > p,
+.wl-uf04-step__other p {
+  margin: 0;
+}
+
+.wl-uf04-step__help {
+  color: var(--wl-ink-muted);
+  font-size: 0.8125rem;
+}
+
+.wl-uf04-step__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wl-uf04-step__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  padding-inline: 16px;
+  color: var(--wl-ink);
+  background: transparent;
+  border: 1px solid var(--wl-line);
+  border-radius: var(--wl-radius-pill);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.wl-uf04-step__chip:focus-visible,
+.wl-uf04-step__input:focus-visible {
+  outline: 2px solid var(--wl-ink);
+  outline-offset: 2px;
+}
+
+.wl-uf04-step__chip[aria-checked="true"] {
+  color: var(--wl-on-selected);
+  background: var(--wl-selected);
+  border-color: var(--wl-selected);
+}
+
+.wl-uf04-step__check {
+  flex: none;
+}
+
+.wl-uf04-step .wl-uf04-step__default.wl-button--text {
+  min-block-size: 44px;
+  padding-inline: 0;
+}
+
+.wl-uf04-step__other {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.wl-uf04-step__input {
+  box-sizing: border-box;
+  min-block-size: 44px;
+  min-inline-size: 44px;
+  inline-size: 8rem;
+  padding-inline: 12px;
+  color: var(--wl-ink);
+  background: transparent;
+  border: 1px solid var(--wl-line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.wl-uf04-step__input[aria-invalid="true"] {
+  border-width: 2px;
+}
+
+.wl-uf04-step__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  color: var(--wl-ink);
+}
+
+.wl-uf04-step__error svg {
+  flex: none;
+}
+
+.wl-uf04-step__buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wl-uf04-step__buttons .wl-button--secondary {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+}
+
+@media (forced-colors: active) {
+  .wl-uf04-step__chip[aria-checked="true"] {
+    color: HighlightText;
+    background: Highlight;
+    border-color: Highlight;
+  }
+}

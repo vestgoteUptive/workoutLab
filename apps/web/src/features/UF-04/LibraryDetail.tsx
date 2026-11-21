@@ -2,22 +2,26 @@
 // library row alone is enough for the header, so a missing detail never redirects.
 import { Link, Navigate, useParams } from "react-router";
 import type { LibraryExercise } from "@workoutlab/engine";
-import { AREAS, type Area } from "@workoutlab/shared";
+import { AREAS, hasExternalLoad, type Area } from "@workoutlab/shared";
 import { BodyFigure, type RegionStyle } from "../../components/body-figure/index.js";
 import { useAuth } from "../../lib/auth/auth-context.js";
 import { en } from "../../lib/i18n/en.js";
 import type { ExerciseDetail } from "../../lib/offline/db.js";
 import { loadExerciseDetail, loadVariants } from "../../lib/offline/feature-loaders.js";
-import { loadLibrary } from "../../lib/offline/history.js";
+import { loadBaseLibrary, loadLibrary } from "../../lib/offline/history.js";
 import { DetailActions } from "./DetailActions.js";
+import { WeightStep } from "./WeightStep.js";
 import { Attribution } from "./Attribution.js";
 import { useScreenData } from "./data.js";
 import { HowToBody } from "./HowToBody.js";
+import { oneSideHowTo } from "./one-side.js";
 import { primaryAreaNames, secondaryAreaNames, tagLine } from "./labels.js";
 import "./uf-04.css";
 
 interface DetailData {
   library: LibraryExercise[];
+  /** The library as the server sent it: the weight step's default (T-0956). */
+  base: LibraryExercise[];
   detail: ExerciseDetail | null;
   variants: string[];
 }
@@ -27,12 +31,13 @@ export function LibraryDetail() {
   const { status } = useAuth();
   const { data, pending } = useScreenData<DetailData>(
     async () => {
-      const [library, detail, variants] = await Promise.all([
+      const [library, base, detail, variants] = await Promise.all([
         loadLibrary(),
+        loadBaseLibrary(),
         loadExerciseDetail(exerciseId),
         loadVariants(exerciseId),
       ]);
-      return { library, detail, variants };
+      return { library, base, detail, variants };
     },
     exerciseId,
     { refresh: true, status },
@@ -65,6 +70,9 @@ export function LibraryDetail() {
     if (w === 1) regions[a] = { fill: "primary" };
     else if (w === 0.5) regions[a] = { fill: "secondary" };
   }
+  // D-0251: the step row exists only for a loaded, rep-counted exercise (one shared predicate).
+  const baseExercise = data.base.find((e) => e.id === exerciseId) ?? exercise;
+  const weightStepDefault = hasExternalLoad(baseExercise) ? baseExercise.incrementKg : null;
   const hasAreas = primary.length + secondary.length > 0;
 
   return (
@@ -121,6 +129,11 @@ export function LibraryDetail() {
       ) : (
         <>
           <HowToBody detail={detail} />
+          {detail.unilateral == null ? null : (
+            <p data-field="one-side" className="wl-type-body">
+              {oneSideHowTo(detail.unilateral, exercise.timed)}
+            </p>
+          )}
           {detail.mistakes.length === 0 ? null : (
             <section className="wl-uf04-detail__section">
               <h2 className="wl-type-label">{en.uf04.mistakes}</h2>
@@ -154,6 +167,9 @@ export function LibraryDetail() {
         </>
       )}
       <DetailActions exerciseId={exercise.id} name={exercise.name} />
+      {weightStepDefault === null ? null : (
+        <WeightStep exerciseId={exercise.id} defaultKg={weightStepDefault} />
+      )}
       <Link to={`/progress/${exercise.id}`} className="wl-button--text wl-uf04-detail__history">
         {en.uf04.myHistory}
       </Link>

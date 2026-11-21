@@ -8,6 +8,7 @@ import {
   toHistorySet,
   toLibraryExercise,
   toPlanCheckin,
+  toUnilateral,
   type HistorySet,
   type Tables,
 } from "../src/index.js";
@@ -37,7 +38,7 @@ const setRow: Tables<"session_sets"> = {
   created_at: "2026-09-20T10:05:01+00:00",
 };
 
-const expectedSet: HistorySet = {
+const expectedSet: HistorySet & { rir: number | null } = {
   clientId: C1,
   sessionId: S1,
   exerciseId: "back-squat",
@@ -48,6 +49,7 @@ const expectedSet: HistorySet = {
   reps: 8,
   weightKg: 60,
   durationS: null,
+  rir: 2,
 };
 
 const backSquatRow: Tables<"exercises"> = {
@@ -68,6 +70,7 @@ const backSquatRow: Tables<"exercises"> = {
   increment_kg: 2.5,
   default_duration_s: null,
   external_load: true,
+  unilateral: null,
 };
 
 const profileRow: Tables<"profiles"> = {
@@ -92,7 +95,9 @@ describe("AC18 toHistorySet", () => {
     const set = toHistorySet(setRow);
     expect(set).toStrictEqual(expectedSet);
     expect("pending" in set).toBe(false);
-    expect(isValid("HistorySet", set)).toBe(true);
+    // The openapi HistorySet has no `rir` (contract unchanged); the rest still validates.
+    const { rir: _rir, ...contract } = set;
+    expect(isValid("HistorySet", contract)).toBe(true);
   });
 
   it("sets pending only when passed", () => {
@@ -105,6 +110,29 @@ describe("AC18 toHistorySet", () => {
   it("keeps deletedAt on a tombstoned row (the engine filters it, rule 0)", () => {
     const tomb = { ...setRow, deleted_at: "2026-09-20T11:00:00+00:00" };
     expect(toHistorySet(tomb).deletedAt).toBe("2026-09-20T11:00:00+00:00");
+  });
+});
+
+describe("T-0953 AC1 toHistorySet carries rir", () => {
+  it("carries 0 and null; an absent rir is null", () => {
+    expect(toHistorySet({ ...setRow, rir: 0 }).rir).toBe(0);
+    expect(toHistorySet({ ...setRow, rir: null }).rir).toBeNull();
+    const { rir: _omit, ...noRir } = setRow;
+    expect(toHistorySet(noRir).rir).toBeNull();
+  });
+
+  it("an invalid rir (fractional, out of range, not a number) is null; 0 and 5 pass", () => {
+    for (const bad of [1.5, -1, 6, Number.NaN, "2" as unknown as number]) {
+      expect(toHistorySet({ ...setRow, rir: bad }).rir).toBeNull();
+    }
+    expect(toHistorySet({ ...setRow, rir: 5 }).rir).toBe(5);
+  });
+
+  it("the pending (queued) path carries it too: one shared mapper", () => {
+    expect(toHistorySet({ ...setRow, rir: 0 }, { pending: true })).toMatchObject({
+      pending: true,
+      rir: 0,
+    });
   });
 });
 
@@ -228,5 +256,31 @@ describe("AC18 toPlanCheckin (engine reads only answeredAt, D-0041 §2)", () => 
       answeredAt: null,
     });
     expect(isValid("PlanCheckin", c)).toBe(true);
+  });
+});
+
+describe("T-0972 AC3: toUnilateral (D-0263 §1)", () => {
+  it.each(["arm", "leg", "side"] as const)("keeps %s through a row round trip", (value) => {
+    const row = { ...backSquatRow, unilateral: value };
+    const mapped = { id: row.id, unilateral: toUnilateral(row) };
+    expect({ ...row, unilateral: mapped.unilateral }.unilateral).toBe(value);
+    expect(mapped.unilateral).toBe(value);
+  });
+
+  it("keeps null as null", () => {
+    expect(toUnilateral({ ...backSquatRow, unilateral: null })).toBeNull();
+  });
+
+  it("reads an unknown value or a missing field as null", () => {
+    expect(toUnilateral({ unilateral: "both" })).toBeNull();
+    expect(toUnilateral({ unilateral: "" })).toBeNull();
+    expect(toUnilateral({})).toBeNull();
+    expect(toUnilateral(undefined)).toBeNull();
+  });
+
+  it("does not change the engine LibraryExercise (D-0262)", () => {
+    expect(
+      Object.keys(toLibraryExercise({ ...backSquatRow, unilateral: "arm" }, [])),
+    ).not.toContain("unilateral");
   });
 });

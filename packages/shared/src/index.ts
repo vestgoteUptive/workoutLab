@@ -141,7 +141,12 @@ export {
   toBarbell,
   toEngineProfile,
   toHistorySet,
+  type HistorySetWithRir,
   toLibraryExercise,
   toPlanCheckin,
+  toUnilateral,
   type Barbell,
+  type Unilateral,
 } from "./mappers.js";
+// T-0954 (D-0251): one external-load predicate for the UI and the effective library.
+export { hasExternalLoad, type ExternalLoadFields } from "./external-load.js";

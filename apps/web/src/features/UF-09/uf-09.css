@@ -858,6 +858,13 @@
   text-align: center;
 }
 
+/* UF-09.3 `hold_effort` reason line (T-0953): plain muted text under the hero. */
+.wl-uf09__hold-effort {
+  margin: 0.5rem 0 0;
+  color: var(--wl-ink-muted);
+  font-size: 0.875rem;
+}
+
 /* UF-09.3 plate loading (T-0634): the caption role under the load line, hairlines above and below. */
 .wl-uf09__plates {
   margin: 0.5rem 0 0;

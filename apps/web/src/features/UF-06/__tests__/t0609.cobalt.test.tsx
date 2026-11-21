@@ -147,15 +147,20 @@ describe("T-0609 AC2 calendar", () => {
 });
 
 describe("T-0609 AC3 stats", () => {
-  it("with sets, the three values are the stat role under label captions", async () => {
+  it("with sets, the four values (Est. 1RM added by T-0963, D-0258) are the stat role under label captions", async () => {
     await seed({ history: historyH(), sessions: [] });
     renderAt("/progress/back-squat");
     await screen.findByRole("heading", { level: 1, name: "Back squat" });
     const dds = [...document.querySelectorAll("dl dd")];
-    expect(dds).toHaveLength(3);
+    expect(dds).toHaveLength(4);
     for (const dd of dds) expect(dd).toHaveClass("wl-type-stat");
     for (const dt of document.querySelectorAll("dl dt")) expect(dt).toHaveClass("wl-type-label");
-    expect(dds.map((d) => d.textContent)).toEqual(["102.5 kg × 5", "102.5 kg", "2"]);
+    expect(dds.map((d) => d.textContent)).toEqual([
+      "102.5 kg × 5",
+      "102.5 kg",
+      "2",
+      "about 127 kg",
+    ]);
   });
 
   it("the heaviest stat of a set without load shows the — placeholder in the stat role", async () => {

@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.9, UF-09.10]
 decisions: [D-0243, D-0246, D-0245, D-0142, D-0162, D-0123]
 deps: [T-0947, T-0948]
-status: todo
+status: in-progress
 ---
 ## Why
 Principle 1 allows the add only behind Pause. This ticket wires the UF-09.9 action to the UF-08 sheet (T-0948) and to `ctx.insertItem` (T-0947), with the focus, status line and Back/Escape rules of D-0246 §4–§7.
@@ -30,7 +30,7 @@ Principle 1 allows the add only behind Pause. This ticket wires the UF-09.9 acti
 - AC13 (offline) Given offline, When AC6 runs, Then the same result; the plan write is queued.
 
 ## Paths you may change
-`apps/web/src/features/UF-09/**`, `apps/web/src/lib/i18n/flows/uf-09.ts`
+`apps/web/src/features/UF-09/**`, `apps/web/src/lib/i18n/flows/uf-09.ts`, `apps/web/src/features/UF-03/__tests__/list-view.host.test.tsx`, `tests/e2e/uf-09-focus.spec.ts` (orchestrator grant: Paused action-list pins)
 
 ## Contract impact
 none.

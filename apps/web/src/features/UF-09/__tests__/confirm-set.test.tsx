@@ -5,6 +5,7 @@ import { fireEvent, screen, within } from "@testing-library/react";
 import type { SessionPlan } from "@workoutlab/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
+import { effectiveLibrary } from "../../../lib/offline/effective-library.js";
 import { BENCH, P1, STARTED_AT_MS, USER_A } from "./fixtures.js";
 import {
   advance,
@@ -285,6 +286,17 @@ describe("AC-6 steppers", () => {
     await toConfirm(P1, 2);
     press("More weight");
     expect(weightInput().value).toBe("2.5");
+  });
+});
+
+describe("T-0954 AC3 the stepper steps by the user's own weight step", () => {
+  it("override 1.25 on bench-press: More weight moves 80 to 81.25, Less weight back; leg-curl keeps 5", async () => {
+    libSpy.mockImplementation(async () => effectiveLibrary(L2, new Map([["bench-press", 1.25]])));
+    await toConfirm();
+    press("More weight");
+    expect(weightInput().value).toBe("81.25");
+    press("Less weight", 2);
+    expect(weightInput().value).toBe("78.75");
   });
 });
 

@@ -10,14 +10,21 @@ type ExerciseAreaRow = Pick<Tables<"exercise_areas">, "area_id" | "weight">;
 type AreaTargetRow = Tables<"area_targets">;
 type ProfileRow = Tables<"profiles">;
 type PlanCheckinRow = Tables<"plan_checkins">;
+/** A history set as the engine reads it: `HistorySet` plus the optional RIR (D-0259 §14). The
+ *  openapi `HistorySet` has no `rir`; the contract is unchanged, so the field is added here. */
+export type HistorySetWithRir = HistorySet & {
+    rir?: number | null;
+};
 /**
  * `session_sets` (or a `session_sets_live` row read as one) → HistorySet. `pending` is set only
  * when the caller passes it (a set still queued on the device, D-0017); a synced row has no key.
  * `deletedAt` is kept: the engine drops tombstones itself (rule 0).
  */
-export declare function toHistorySet(row: Pick<SessionSetRow, "client_id" | "session_id" | "exercise_id" | "is_warmup" | "completed_at" | "edited_at" | "deleted_at" | "reps" | "weight_kg" | "duration_s">, options?: {
+export declare function toHistorySet(row: Pick<SessionSetRow, "client_id" | "session_id" | "exercise_id" | "is_warmup" | "completed_at" | "edited_at" | "deleted_at" | "reps" | "weight_kg" | "duration_s"> & {
+    rir?: number | null;
+}, options?: {
     pending?: boolean;
-}): HistorySet;
+}): HistorySetWithRir;
 /** `exercises` + its `exercise_areas` rows → LibraryExercise (D-0034 §1, D-0037 §6). */
 export declare function toLibraryExercise(row: ExerciseRow, areas: readonly ExerciseAreaRow[]): LibraryExercise;
 /** One `area_targets` row → AreaTarget. */
@@ -44,4 +51,11 @@ export declare function toBarbell(row: {
  * `completed_prev` (one-period evaluation, D-0070 §6) stays null.
  */
 export declare function toPlanCheckin(row: PlanCheckinRow): PlanCheckin;
+/** Which unit an exercise is trained in one side at a time (D-0260 §3). null = both sides. */
+export type Unilateral = "arm" | "leg" | "side";
+/** `exercises.unilateral` → Unilateral | null (D-0263 §1). Null, an unknown value (`'both'`) and a
+ * missing field (a row cached before T-0972) all read as null: both sides, no label. */
+export declare function toUnilateral(row: {
+    unilateral?: string | null;
+} | null | undefined): Unilateral | null;
 export {};

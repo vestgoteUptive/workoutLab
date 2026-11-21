@@ -70,6 +70,20 @@ describe("refreshHistory (AC-C13)", () => {
         reps: 8,
         weight_kg: 60,
         duration_s: null,
+        rir: 0,
+      },
+      {
+        client_id: "c-2",
+        session_id: "S1",
+        exercise_id: "back-squat",
+        is_warmup: false,
+        completed_at: "2026-10-20T10:05:00.000Z",
+        edited_at: "2026-10-20T10:05:00.000Z",
+        deleted_at: null,
+        reps: 8,
+        weight_kg: 60,
+        duration_s: null,
+        rir: null,
       },
     ]);
 
@@ -80,8 +94,10 @@ describe("refreshHistory (AC-C13)", () => {
 
     const db = offlineDb();
     const cached = await db.historyCache.where({ userId: USER }).toArray();
-    expect(cached).toHaveLength(1);
-    expect(cached[0]!.clientId).toBe("c-1");
+    expect(cached).toHaveLength(2);
+    expect(cached.find((r) => r.clientId === "c-1")!.rir).toBe(0);
+    expect(cached.find((r) => r.clientId === "c-2")!.rir).toBeNull();
+    expect(call.columns).toMatch(/\brir\b/);
 
     const meta = await db.syncMeta.get(USER);
     expect(meta?.lastSyncedAt).toBe("2026-10-26T08:00:00.000Z");
