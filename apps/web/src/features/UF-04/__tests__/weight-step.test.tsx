@@ -95,8 +95,9 @@ const valueLine = () => document.querySelector('[data-field="weight-step-value"]
 const upserts = () => h.server.log.filter((l) => l.op === "upsert");
 
 async function open(id = "back-squat") {
-  await mountAt(`/library/${id}`);
+  const view = await mountAt(`/library/${id}`);
   await group();
+  return view;
 }
 
 describe("AC1 default state", () => {
@@ -348,6 +349,25 @@ describe("AC9 keyboard", () => {
     expect(screen.queryByLabelText("Step in kg")).toBeNull();
     fireEvent.click(first); // Space or Enter on a button is a click
     await waitFor(() => expect(upserts()).toHaveLength(1));
+  });
+});
+
+describe("AC9 immediate and unmount", () => {
+  it("a click (Space/Enter/tap) writes at once, well inside the 600 ms debounce", async () => {
+    await open();
+    fireEvent.click(await chip("5 kg"));
+    await waitFor(() => expect(upserts()).toHaveLength(1), { timeout: 300 });
+  });
+
+  it("leaving the screen inside the debounce window still saves the last arrow selection", async () => {
+    const view = await open();
+    const c25 = await chip("2.5 kg");
+    c25.focus();
+    fireEvent.keyDown(c25, { key: "ArrowRight" });
+    expect(h.server.log).toEqual([]);
+    view.unmount();
+    await waitFor(() => expect(upserts()).toHaveLength(1), { timeout: 300 });
+    expect(upserts()[0]!.incrementKg).toBe(5);
   });
 });
 
