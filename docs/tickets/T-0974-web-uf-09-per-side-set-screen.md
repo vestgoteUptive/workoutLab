@@ -30,7 +30,7 @@ During a set the user must see whether "10" means per arm, without a new element
 Checklist (D-0197 §7): AC5 covers online/offline and flagged/unflagged; AC1 covers zero-history first set (label from the first set) as the pre-fill is unchanged. No migration.
 
 ## Paths you may change
-Lane `web-feature:UF-09`: `apps/web/src/features/uf-09/**` (current-set, confirm-set and tests). Extra: the new shared i18n module and its test under `apps/web/src/lib/i18n/**` (or the path the builder chooses under `apps/web/src/lib/**`, noted in the log).
+Lane `web-feature:UF-09`: `apps/web/src/features/uf-09/**` (current-set, confirm-set and tests). Extra: the new shared i18n module and its test under `apps/web/src/lib/i18n/**` (or the path the builder chooses under `apps/web/src/lib/**`, noted in the log). Orchestrator grant: `.squad/decisions/D-0267-per-side-focus-follows-design-spec.md`.
 
 ## Contract impact
 none.
