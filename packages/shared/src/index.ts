@@ -141,6 +141,7 @@ export {
   toBarbell,
   toEngineProfile,
   toHistorySet,
+  type HistorySetWithRir,
   toLibraryExercise,
   toPlanCheckin,
   toUnilateral,

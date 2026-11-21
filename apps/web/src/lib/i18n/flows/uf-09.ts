@@ -40,6 +40,9 @@ export const uf09 = {
   platesLabel: "Each side",
   platesValue: (sizes: string[]) => `${sizes.join(" + ")} kg`,
   barOnly: "Bar only",
+  // UF-09.3 reason line, `hold_effort` only (T-0953, D-0259 §12): no placeholders, no number.
+  holdEffort:
+    "Same weight again. Last time was close to failure. Leave a couple of reps in reserve and it goes up.",
   doneSet: "Done",
   doneSetError: "Couldn't save. Tap Done again.",
   // UF-09.4 Confirm set (T-0304b, D-0118 §3–§6).

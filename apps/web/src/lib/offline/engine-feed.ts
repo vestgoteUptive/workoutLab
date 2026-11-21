@@ -2,11 +2,11 @@
 // first (no `pending` key), then every queued row for the same user with `pending: true`,
 // including tombstones and rejected rows (D-0045 §6: "never dropped"). The feed doesn't dedupe;
 // `@workoutlab/engine` rule 0 does, with the D-0034 §3 equal-`editedAt` tie-break (server wins).
-import { toHistorySet, type HistorySet } from "@workoutlab/shared";
+import { toHistorySet, type HistorySetWithRir } from "@workoutlab/shared";
 import { offlineDb } from "./db.js";
 import { currentUserId } from "./current-user.js";
 
-export async function loadEngineHistory(): Promise<HistorySet[]> {
+export async function loadEngineHistory(): Promise<HistorySetWithRir[]> {
   const userId = currentUserId();
   if (!userId) return [];
   const db = offlineDb();
@@ -16,7 +16,7 @@ export async function loadEngineHistory(): Promise<HistorySet[]> {
     db.sets.where({ userId }).toArray(),
   ]);
 
-  const server: HistorySet[] = cached.map((row) =>
+  const server: HistorySetWithRir[] = cached.map((row) =>
     toHistorySet({
       client_id: row.clientId,
       session_id: row.sessionId,
@@ -28,10 +28,11 @@ export async function loadEngineHistory(): Promise<HistorySet[]> {
       reps: row.reps,
       weight_kg: row.weightKg,
       duration_s: row.durationS,
+      rir: row.rir ?? null,
     }),
   );
 
-  const pending: HistorySet[] = queued.map((row) =>
+  const pending: HistorySetWithRir[] = queued.map((row) =>
     toHistorySet(
       {
         client_id: row.clientId,
@@ -44,6 +45,7 @@ export async function loadEngineHistory(): Promise<HistorySet[]> {
         reps: row.reps,
         weight_kg: row.weightKg,
         duration_s: row.durationS,
+        rir: row.rir,
       },
       { pending: true },
     ),
