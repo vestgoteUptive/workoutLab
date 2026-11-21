@@ -21,12 +21,14 @@ import {
 import {
   currentUserId,
   loadEngineHistory,
+  loadExerciseDetail,
   loadLibrary,
   loadSessions,
   loadTargets,
   offlineDb,
   type OfflineSession,
 } from "../../lib/offline/index.js";
+import { asWord, type PerSideWord } from "../../lib/i18n/per-side.js";
 
 /** One before → after row: an area whose load changed in this session. */
 export interface AreaChange {
@@ -56,11 +58,15 @@ export interface EndedSummary {
 
 /** The actual set of a record, formatted in the view; never the e1RM number. */
 export interface SummaryPr {
+  /** The library id, so `loadSummary` can read the one-side flag (T-0975). */
+  exerciseId: string;
   name: string;
   weightKg: number | null;
   reps: number | null;
   durationS: number | null;
   timed: boolean;
+  /** One-side word from the cached `ExerciseDetail` (T-0975); absent or null = both sides. */
+  unilateral?: PerSideWord | null;
 }
 
 type RecordSet = ReturnType<typeof records>[number];
@@ -94,6 +100,7 @@ export function sessionPr(
       pct,
       at,
       pr: {
+        exerciseId: ex.id,
         name: ex.name,
         weightKg: r.weightKg,
         reps: r.reps,
@@ -103,6 +110,18 @@ export function sessionPr(
     };
   }
   return best === null ? null : best.pr;
+}
+
+/** T-0975: adds the cached one-side word to the PR. A missing detail or a failed read leaves it
+ *  null (both sides), never an error: the summary renders offline (NFR-OFF-2). */
+async function withUnilateral(pr: SummaryPr | null): Promise<SummaryPr | null> {
+  if (pr === null) return null;
+  try {
+    const detail = await loadExerciseDetail(pr.exerciseId);
+    return { ...pr, unilateral: asWord(detail?.unilateral) };
+  } catch {
+    return pr;
+  }
 }
 
 /** D-0030: the effort rating is 1–5. */
@@ -217,7 +236,7 @@ export async function loadSummary(sessionId: string, tz: string): Promise<Summar
         changes,
         nextUp,
         effortRating: viewEffort(sessions, sessionId, row.effort_rating),
-        pr: sessionPr(history, library, sessionId),
+        pr: await withUnilateral(sessionPr(history, library, sessionId)),
       },
     };
   } catch {

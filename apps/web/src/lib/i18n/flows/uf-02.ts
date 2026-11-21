@@ -1,6 +1,8 @@
 // UF-02 strings (D-0071 §1). Owned by the UF-02 feature ticket: it is the only ticket that
 // edits this file, so the Phase 3 feature lanes never collide in `en.ts`.
 // Area names are reused from `en.bodyMap.areas`, the offline text from `OfflineStatus`.
+import { perSide, type PerSideWord } from "../per-side.js";
+
 export const uf02 = {
   /** UF-02.1 attention line (rule 5). `names` arrive already joined with `listSeparator`. */
   attention: (names: string) => `Needs attention: ${names}`,
@@ -37,12 +39,14 @@ export const uf02 = {
   // T-0636 (D-0219): the latest personal record above Start. The numbers arrive formatted.
   latestPr: "Latest PR",
   /** "Back Squat 100 kg × 8". */
-  prWeighted: (name: string, weight: string, reps: string) => `${name} ${weight} × ${reps}`,
+  prWeighted: (name: string, weight: string, reps: string, word?: PerSideWord | null) =>
+    `${name} ${weight} × ${reps}${perSide(word)}`,
   /** "Push-up 25 reps" / "Push-up 1 rep"; `count` picks the noun. */
-  prReps: (name: string, count: number, reps: string) =>
-    `${name} ${reps} ${count === 1 ? "rep" : "reps"}`,
+  prReps: (name: string, count: number, reps: string, word?: PerSideWord | null) =>
+    `${name} ${reps} ${count === 1 ? "rep" : "reps"}${perSide(word)}`,
   /** "Plank 90 s". */
-  prTimed: (name: string, seconds: string) => `${name} ${seconds} s`,
+  prTimed: (name: string, seconds: string, word?: PerSideWord | null) =>
+    `${name} ${seconds} s${perSide(word)}`,
   // T-0302c: the 45-min suggestion card (D-0065 §1). The reason words live in `lib/i18n/workout.ts`.
   /** The card's accessible name. */
   cardLabel: "Suggested workout",

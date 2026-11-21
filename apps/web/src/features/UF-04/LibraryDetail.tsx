@@ -14,7 +14,7 @@ import { WeightStep } from "./WeightStep.js";
 import { Attribution } from "./Attribution.js";
 import { useScreenData } from "./data.js";
 import { HowToBody } from "./HowToBody.js";
-import { oneSideHowTo } from "./one-side.js";
+import { oneSideHowTo } from "../../lib/i18n/per-side.js";
 import { primaryAreaNames, secondaryAreaNames, tagLine } from "./labels.js";
 import "./uf-04.css";
 

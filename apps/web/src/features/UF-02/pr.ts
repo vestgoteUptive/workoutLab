@@ -4,14 +4,19 @@
 // DST change inside the window is right.
 import { records } from "@workoutlab/engine";
 import type { HistorySet, LibraryExercise } from "@workoutlab/shared";
+import type { PerSideWord } from "../../lib/i18n/per-side.js";
 import { DAY_MS, localDay } from "./week.js";
 
 export interface LatestPr {
+  /** The library id, so `use-today` can read the one-side flag (T-0975). */
+  exerciseId: string;
   name: string;
   weightKg: number | null;
   reps: number | null;
   durationS: number | null;
   timed: boolean;
+  /** One-side word from the cached `ExerciseDetail` (T-0975); absent or null = both sides. */
+  unilateral?: PerSideWord | null;
 }
 
 /** Local days back (today included) the line looks: today − 13 … today. */
@@ -32,6 +37,7 @@ export function latestPr(
     const exercise = library.find((e) => e.id === record.exerciseId);
     if (exercise === undefined) continue;
     return {
+      exerciseId: exercise.id,
       name: exercise.name,
       weightKg: record.weightKg,
       reps: record.reps,
