@@ -200,7 +200,7 @@ test.describe("T-0609 plan state", () => {
       .evaluateAll((els) =>
         els.map((e) => [getComputedStyle(e).fontSize, getComputedStyle(e).fontWeight]),
       );
-    expect(got).toHaveLength(3);
+    expect(got).toHaveLength(4); // T-0963 (D-0257): Best set, Heaviest, Sessions, Est. 1RM
     for (const g of got) expect(g).toEqual(["34px", "700"]);
   });
 
