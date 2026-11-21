@@ -20,3 +20,4 @@ export { prefill, plannedDurationS, floor5, REENTRY_GAP_DAYS, HOLD_GAP_DAYS, TIM
 export { timeCheck, timeLeftS, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.js";
 export { evaluateCheckin, checkinSessions, periodStatus, PERIOD_DAYS, UNDER_FACTOR_X10, OVER_FACTOR_X10, RHYTHM_FLOOR, RHYTHM_CEILING, COMPARED_PERIODS, } from "./checkin.js";
 export { records, recordKey, type RecordSet, type RecordPrevious } from "./records.js";
+export { estimatedOneRepMax, E1RM_MAX_REPS, type E1rmPoint } from "./e1rm.js";

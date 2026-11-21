@@ -121,10 +121,10 @@ test("AC2: external_load and increment_kg columns and literal values (fixture li
   const bwLine = sql.split("\n").find((l) => l.includes("'fx-bw'"));
   const loadedLine = sql.split("\n").find((l) => l.includes("'fx-loaded'"));
   const wuLine = sql.split("\n").find((l) => l.includes("'fx-wu'"));
-  // column order: ... increment_kg, external_load at the tail of the values list.
-  assert.match(bwLine, /2\.5, false\)$/);
-  assert.match(loadedLine, /1\.25, true\)$/);
-  assert.match(wuLine, /2\.5, false\)$/);
+  // column order: ... increment_kg, external_load, unilateral (T-0972) at the tail of the values list.
+  assert.match(bwLine, /2\.5, false, null\)$/);
+  assert.match(loadedLine, /1\.25, true, null\)$/);
+  assert.match(wuLine, /2\.5, false, null\)$/);
   rmSync(dir, { recursive: true, force: true });
 });
 
@@ -202,4 +202,48 @@ test("committed supabase/seed.sql matches the generator output", () => {
   const generated = generateSql(LIBRARY_DIR);
   const committed = readFileSync(SEED_PATH, "utf8");
   assert.equal(committed, generated);
+});
+
+test("T-0972: unilateral is emitted on every exercise row (value or null), in the update list too", () => {
+  const dir = mkdtempSync(path.join(tmpdir(), "gen-seed-unilateral-"));
+  const base = {
+    kind: "exercise",
+    type: "isolation",
+    level: "beginner",
+    equipment: ["none"],
+    bodyweight: true,
+    areas: { core: 1 },
+    instructions: ["Do it."],
+    mistakes: [],
+    variants: [],
+    timed: false,
+    source: "workoutlab",
+    license: "LicenseRef-workoutLab",
+  };
+  writeFileSync(
+    path.join(dir, "fx-one.json"),
+    JSON.stringify({ ...base, id: "fx-one", name: "One", unilateral: "side" }),
+  );
+  writeFileSync(path.join(dir, "fx-two.json"), JSON.stringify({ ...base, id: "fx-two", name: "Two" }));
+  const sql = generateSql(dir);
+  const oneLine = sql.split("\n").find((l) => l.includes("'fx-one'"));
+  const twoLine = sql.split("\n").find((l) => l.includes("'fx-two'"));
+  assert.match(oneLine, /, false, 'side'\)$/);
+  assert.match(twoLine, /, false, null\)$/);
+  assert.match(sql, /external_load, unilateral\)/);
+  assert.match(sql, /unilateral = excluded\.unilateral/);
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test("T-0972 AC2: the committed seed sets arm / side / leg / null on the four named rows", () => {
+  const sql = readFileSync(SEED_PATH, "utf8");
+  const tail = (id) =>
+    sql
+      .split("\n")
+      .find((l) => l.startsWith(`values ('${id}',`))
+      ?.match(/, (null|'(?:arm|leg|side)')\)$/)?.[1];
+  assert.equal(tail("dumbbell-row"), "'arm'");
+  assert.equal(tail("side-plank"), "'side'");
+  assert.equal(tail("single-leg-calf-raise"), "'leg'");
+  assert.equal(tail("barbell-row"), "null");
 });

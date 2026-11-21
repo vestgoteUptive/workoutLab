@@ -52,6 +52,7 @@ import "./rule-14-rir-histories.test.js";
 import "./rule-14-rir.test.js";
 import "./rule-14-suggest.test.js";
 import "./rule-15-records-histories.test.js";
+import "./rule-16-e1rm-histories.test.js";
 import "./rule-6-1-avoid-areas.test.js";
 import "./rule-7-energy.test.js";
 import "./rule-7-goal-reps.test.js";
