@@ -80,6 +80,9 @@ export interface CachedHistorySet {
   reps: number | null;
   weightKg: number | null;
   durationS: number | null;
+  /** T-0953 (D-0259 §14): reps in reserve. Absent on a row cached before Dexie v6; reads as null
+   *  until the next `refreshHistory()`. */
+  rir?: number | null;
 }
 
 export interface CachedLibraryExercise {
@@ -278,6 +281,13 @@ export class OfflineDb extends Dexie {
     this.version(5).stores({
       exerciseSettings: "key, userId",
       exerciseSettingsQueue: "key, userId, queuedAt",
+    });
+    // Version 6 (T-0953): `historyCache` rows gain an optional, non-indexed `rir`. The store
+    // definition is unchanged and there is no `.upgrade()` (NFR-OFF-2): every row, tombstones
+    // included, is carried over byte for byte. A row without `rir` reads as null (`toHistorySet`)
+    // until the next `refreshHistory()` rewrites it.
+    this.version(6).stores({
+      historyCache: "key, userId, completedAt",
     });
   }
 }

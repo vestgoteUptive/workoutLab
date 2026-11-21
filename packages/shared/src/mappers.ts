@@ -44,6 +44,15 @@ const ANSWERS = ["accepted", "kept", "withdrawn"] as const satisfies readonly No
   PlanCheckin["answer"]
 >[];
 
+/** A history set as the engine reads it: `HistorySet` plus the optional RIR (D-0259 §14). The
+ *  openapi `HistorySet` has no `rir`; the contract is unchanged, so the field is added here. */
+export type HistorySetWithRir = HistorySet & { rir?: number | null };
+
+/** An integer 0-5 passes; anything else (absent, fractional, out of range, not a number) is null. */
+function validRir(rir: unknown): number | null {
+  return typeof rir === "number" && Number.isInteger(rir) && rir >= 0 && rir <= 5 ? rir : null;
+}
+
 /**
  * `session_sets` (or a `session_sets_live` row read as one) → HistorySet. `pending` is set only
  * when the caller passes it (a set still queued on the device, D-0017); a synced row has no key.
@@ -62,10 +71,10 @@ export function toHistorySet(
     | "reps"
     | "weight_kg"
     | "duration_s"
-  >,
+  > & { rir?: number | null },
   options: { pending?: boolean } = {},
-): HistorySet {
-  const set: HistorySet = {
+): HistorySetWithRir {
+  const set: HistorySetWithRir = {
     clientId: row.client_id,
     sessionId: row.session_id,
     exerciseId: row.exercise_id,
@@ -76,6 +85,7 @@ export function toHistorySet(
     reps: row.reps,
     weightKg: row.weight_kg,
     durationS: row.duration_s,
+    rir: validRir(row.rir),
   };
   if (options.pending !== undefined) set.pending = options.pending;
   return set;

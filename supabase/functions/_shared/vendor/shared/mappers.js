@@ -20,6 +20,10 @@ const GOALS = [
 ];
 const SOURCES = ["default", "adapted", "manual"];
 const ANSWERS = ["accepted", "kept", "withdrawn"];
+/** An integer 0-5 passes; anything else (absent, fractional, out of range, not a number) is null. */
+function validRir(rir) {
+    return typeof rir === "number" && Number.isInteger(rir) && rir >= 0 && rir <= 5 ? rir : null;
+}
 /**
  * `session_sets` (or a `session_sets_live` row read as one) → HistorySet. `pending` is set only
  * when the caller passes it (a set still queued on the device, D-0017); a synced row has no key.
@@ -37,6 +41,7 @@ export function toHistorySet(row, options = {}) {
         reps: row.reps,
         weightKg: row.weight_kg,
         durationS: row.duration_s,
+        rir: validRir(row.rir),
     };
     if (options.pending !== undefined)
         set.pending = options.pending;

@@ -38,7 +38,7 @@ const setRow: Tables<"session_sets"> = {
   created_at: "2026-09-20T10:05:01+00:00",
 };
 
-const expectedSet: HistorySet = {
+const expectedSet: HistorySet & { rir: number | null } = {
   clientId: C1,
   sessionId: S1,
   exerciseId: "back-squat",
@@ -49,6 +49,7 @@ const expectedSet: HistorySet = {
   reps: 8,
   weightKg: 60,
   durationS: null,
+  rir: 2,
 };
 
 const backSquatRow: Tables<"exercises"> = {
@@ -94,7 +95,9 @@ describe("AC18 toHistorySet", () => {
     const set = toHistorySet(setRow);
     expect(set).toStrictEqual(expectedSet);
     expect("pending" in set).toBe(false);
-    expect(isValid("HistorySet", set)).toBe(true);
+    // The openapi HistorySet has no `rir` (contract unchanged); the rest still validates.
+    const { rir: _rir, ...contract } = set;
+    expect(isValid("HistorySet", contract)).toBe(true);
   });
 
   it("sets pending only when passed", () => {
@@ -107,6 +110,29 @@ describe("AC18 toHistorySet", () => {
   it("keeps deletedAt on a tombstoned row (the engine filters it, rule 0)", () => {
     const tomb = { ...setRow, deleted_at: "2026-09-20T11:00:00+00:00" };
     expect(toHistorySet(tomb).deletedAt).toBe("2026-09-20T11:00:00+00:00");
+  });
+});
+
+describe("T-0953 AC1 toHistorySet carries rir", () => {
+  it("carries 0 and null; an absent rir is null", () => {
+    expect(toHistorySet({ ...setRow, rir: 0 }).rir).toBe(0);
+    expect(toHistorySet({ ...setRow, rir: null }).rir).toBeNull();
+    const { rir: _omit, ...noRir } = setRow;
+    expect(toHistorySet(noRir).rir).toBeNull();
+  });
+
+  it("an invalid rir (fractional, out of range, not a number) is null; 0 and 5 pass", () => {
+    for (const bad of [1.5, -1, 6, Number.NaN, "2" as unknown as number]) {
+      expect(toHistorySet({ ...setRow, rir: bad }).rir).toBeNull();
+    }
+    expect(toHistorySet({ ...setRow, rir: 5 }).rir).toBe(5);
+  });
+
+  it("the pending (queued) path carries it too: one shared mapper", () => {
+    expect(toHistorySet({ ...setRow, rir: 0 }, { pending: true })).toMatchObject({
+      pending: true,
+      rir: 0,
+    });
   });
 });
 
