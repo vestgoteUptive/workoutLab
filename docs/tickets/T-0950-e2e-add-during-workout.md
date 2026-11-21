@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-09.9, UF-09.10, UF-09.6, UF-03.3, UF-10.1]
 decisions: [D-0243, D-0244, D-0245, D-0246]
 deps: [T-0949]
-status: todo
+status: done
 ---
 ## Why
 The add spans the engine, UF-08, UF-09, the device store and sync. These browser tests check the whole path a user takes, including the edge cases the spec lists.
