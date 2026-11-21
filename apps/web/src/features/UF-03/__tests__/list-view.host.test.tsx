@@ -61,11 +61,12 @@ async function pausedHost(over: Parameters<typeof pausedState>[1] = {}, plan = L
 const names = () => screen.getAllByRole("button").map((b) => b.textContent);
 
 describe("AC-1 the seam entries and their order", () => {
-  it("UF-09.9 reads Resume · Swap · Skip · How to · List view · End workout", async () => {
+  it("UF-09.9 reads Resume · Swap · Add exercise · Skip · How to · List view · End workout", async () => {
     await pausedHost();
     expect(names()).toEqual([
       "Resume",
       "Swap",
+      "Add exercise",
       "Skip to next exercise",
       "How to",
       "List view",
@@ -75,7 +76,14 @@ describe("AC-1 the seam entries and their order", () => {
 
   it("paused on the last item: the same order without Skip", async () => {
     await pausedHost({ itemIndex: 2, setIndex: 0, loggedSets: [] });
-    expect(names()).toEqual(["Resume", "Swap", "How to", "List view", "End workout"]);
+    expect(names()).toEqual([
+      "Resume",
+      "Swap",
+      "Add exercise",
+      "How to",
+      "List view",
+      "End workout",
+    ]);
   });
 });
 

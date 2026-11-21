@@ -184,6 +184,7 @@ describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
     expect(names()).toEqual([
       "Resume",
       "Swap",
+      "Add exercise",
       "Skip to next exercise",
       "How to",
       "List view",
@@ -226,6 +227,7 @@ describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
       "Resume",
       "Swap",
       "Do Barbell row later",
+      "Add exercise",
       "Skip to next exercise",
       "How to",
       "List view",
@@ -235,7 +237,7 @@ describe("AC-6 UF-09.9 content (D-0120 §6)", () => {
       Array.from(document.querySelectorAll("[data-seam-id]")).map((b) =>
         b.getAttribute("data-seam-id"),
       ),
-    ).toEqual(["swap", "how-to", "list-view"]);
+    ).toEqual(["swap", "add", "how-to", "list-view"]);
   });
 });
 
@@ -325,7 +327,14 @@ describe("AC-7 Skip to next exercise (D-0120 §7)", () => {
   // D-0142 §6 (a named change, T-0422, T-0416): the module's swap seam stays; only Skip is hidden.
   it("hidden on the last item (End is the way out)", async () => {
     await pausedAt(600, { resumePhase: "set", itemIndex: 3 });
-    expect(names()).toEqual(["Resume", "Swap", "How to", "List view", "End workout"]);
+    expect(names()).toEqual([
+      "Resume",
+      "Swap",
+      "Add exercise",
+      "How to",
+      "List view",
+      "End workout",
+    ]);
   });
 
   it("hidden in a pause taken on UF-09.8", async () => {
@@ -423,6 +432,7 @@ describe("AC-8 End workout (D-0120 §8)", () => {
       "Resume",
       "Swap",
       "Do Barbell row later",
+      "Add exercise",
       "Skip to next exercise",
       "How to",
       "List view",

@@ -131,6 +131,10 @@ export const uf09 = {
   doLater: (name: string) => `Do ${name} later`,
   doLaterError: (name: string) => `Couldn't move ${name}. Try again.`,
   movedLater: (name: string) => `${name} moved to later.`,
+  // T-0949 UF-09.9 "Add exercise" (D-0243 §1, D-0246 §4) and the sheet's seam placeholder.
+  addExercise: "Add exercise",
+  addedAfter: (name: string, after: string) => `${name} added after ${after}.`,
+  addSheetName: "Add exercise",
   endWorkout: "End workout",
   endQuestion: "End workout? Your sets are saved.",
   cancel: "Cancel",

@@ -4,8 +4,10 @@
 // logs the hold once through the hook (D-0119 §3); this view only shows a failed write's retry.
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { en } from "../../lib/i18n/en.js";
+import { perSide } from "../../lib/i18n/per-side.js";
 import { POSITION_S, holdSeconds, timedRemainingS } from "./machine.js";
 import { formatClock } from "./timer.js";
+import { useCachedFields } from "./use-cue.js";
 import type { ViewProps } from "./views.js";
 
 /** The pre-fill kinds that read "Easing back in" (D-0062 §5, D-0119 §4). No kind claims "same as
@@ -27,6 +29,7 @@ export function TimedSet({
 }: ViewProps) {
   const item = ctx.plan.items[state.itemIndex]!;
   const name = ctx.library.find((e) => e.id === item.exerciseId)?.name ?? item.exerciseId;
+  const { unilateral } = useCachedFields(item.exerciseId);
   const holdS = holdSeconds(item);
   const remaining = state.timer ? timedRemainingS(state, nowMs) : POSITION_S + holdS;
   const inPosition = remaining > holdS;
@@ -84,7 +87,7 @@ export function TimedSet({
         {name}
       </h1>
       <p className="wl-uf09__target wl-type-body" data-field="target">
-        {en.uf09.holdTarget(formatClock(holdS))}
+        {en.uf09.holdTarget(formatClock(holdS)) + perSide(unilateral)}
       </p>
       {easing ? (
         <p className="wl-uf09__cue wl-type-body" data-field="kind">
