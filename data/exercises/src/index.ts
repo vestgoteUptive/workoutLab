@@ -8,6 +8,8 @@ export type Kind = "exercise" | "warmup";
 export type ExerciseType = "compound" | "isolation";
 export type Level = "beginner" | "intermediate" | "advanced";
 export type Source = "wger" | "workoutlab";
+/** One set = all reps on one side, then the other (D-0260 §2, D-0263 §9). Display flag only. */
+export type Unilateral = "arm" | "leg" | "side";
 
 export interface Exercise {
   readonly id: string;
@@ -25,6 +27,7 @@ export interface Exercise {
   readonly timed: boolean;
   readonly increment_kg?: number;
   readonly default_duration_s?: number;
+  readonly unilateral?: Unilateral;
   readonly source: Source;
   readonly license: string;
   readonly source_url?: string;
