@@ -27,9 +27,19 @@ async function lintAs(code: string, file = "src/features/UF-08/x.tsx") {
 }
 
 describe("AC-13 exports (updated by T-0303d AC-9, D-0110 §6)", () => {
-  it('index exports exactly ["SessionSetup", "readFocusPrefs", "writeFocusPrefs"]', async () => {
+  it('index exports exactly ["AddExerciseInWorkout", "SessionSetup", "readFocusPrefs", "writeFocusPrefs"] (T-0948)', async () => {
     const mod = await import("../index.js");
-    expect(Object.keys(mod).sort()).toEqual(["SessionSetup", "readFocusPrefs", "writeFocusPrefs"]);
+    expect(Object.keys(mod).sort()).toEqual([
+      "AddExerciseInWorkout",
+      "SessionSetup",
+      "readFocusPrefs",
+      "writeFocusPrefs",
+    ]);
+  });
+
+  it("T-0948 AC13: no new index.*.ts leaf entry beside index.prefs.ts (D-0170 §1)", () => {
+    const leaves = readdirSync(FEATURE_DIR).filter((f) => /^index\..+\.tsx?$/.test(f));
+    expect(leaves).toEqual(["index.prefs.ts"]);
   });
 });
 

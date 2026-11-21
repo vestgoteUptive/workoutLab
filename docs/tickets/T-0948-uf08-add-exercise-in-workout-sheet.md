@@ -42,3 +42,9 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · commit messages start with `T-0948` and cite UF-09.10.
 
 Per-package commands: write one command per script — `pnpm --filter @workoutlab/web typecheck`, then a separate `… lint`, then a separate `… test`.
+
+## Build / accept log
+- T-0948 build (frontend-dev). Base d59483f2, tree clean. `AddExerciseInWorkout.tsx` (new, imports `./uf-08.css`, reads the device cache, computes row reasons, maps `InsertItemResult` to copy); `AddExerciseSheet` gained `inWorkout` (root `wl-uf08 wl-uf08__add-sheet`, UF-09.10, inert Add on every disabled row, async `onAdd`, `role="alert"` answer, one add at a time); copy in `flows/uf-08.ts`; `index.tsx` exports it; export pin updated.
+- AC→test (`__tests__/add-in-workout.test.tsx`): AC1 lead line table; AC2 two tests; AC3 two; AC4/AC5 plan rows; AC6 reasons; AC7 recovery; AC8 names/aria; AC9 added; AC10 three refusals; AC11 alert; AC12 root/CSS/44 px/axe; AC14 offline vs online markup. AC13 in `exports-and-lint.test.ts` (pin + no new `index.*.ts` leaf).
+- Planted faults (backups restored with `cp`): recovery over all history alone survived (the engine's `now` already excludes later sets), so the fault was no filter + later `now` -> AC7 red; drop logged-set rule -> AC5 red; drop CSS import -> AC12 red; drop `wl-uf08` from root -> AC12 red; `m>=0` refusal copy -> AC10 (45 s) red; alert shown as status + no pending guard -> AC11 red.
+- Gate: web `turbo typecheck lint test --force` green (383 files, 5088 tests); `format:check` green.
