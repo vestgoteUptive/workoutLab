@@ -8,6 +8,7 @@ import {
   toHistorySet,
   toLibraryExercise,
   toPlanCheckin,
+  toUnilateral,
   type HistorySet,
   type Tables,
 } from "../src/index.js";
@@ -68,6 +69,7 @@ const backSquatRow: Tables<"exercises"> = {
   increment_kg: 2.5,
   default_duration_s: null,
   external_load: true,
+  unilateral: null,
 };
 
 const profileRow: Tables<"profiles"> = {
@@ -228,5 +230,31 @@ describe("AC18 toPlanCheckin (engine reads only answeredAt, D-0041 §2)", () => 
       answeredAt: null,
     });
     expect(isValid("PlanCheckin", c)).toBe(true);
+  });
+});
+
+describe("T-0972 AC3: toUnilateral (D-0263 §1)", () => {
+  it.each(["arm", "leg", "side"] as const)("keeps %s through a row round trip", (value) => {
+    const row = { ...backSquatRow, unilateral: value };
+    const mapped = { id: row.id, unilateral: toUnilateral(row) };
+    expect({ ...row, unilateral: mapped.unilateral }.unilateral).toBe(value);
+    expect(mapped.unilateral).toBe(value);
+  });
+
+  it("keeps null as null", () => {
+    expect(toUnilateral({ ...backSquatRow, unilateral: null })).toBeNull();
+  });
+
+  it("reads an unknown value or a missing field as null", () => {
+    expect(toUnilateral({ unilateral: "both" })).toBeNull();
+    expect(toUnilateral({ unilateral: "" })).toBeNull();
+    expect(toUnilateral({})).toBeNull();
+    expect(toUnilateral(undefined)).toBeNull();
+  });
+
+  it("does not change the engine LibraryExercise (D-0262)", () => {
+    expect(
+      Object.keys(toLibraryExercise({ ...backSquatRow, unilateral: "arm" }, [])),
+    ).not.toContain("unilateral");
   });
 });

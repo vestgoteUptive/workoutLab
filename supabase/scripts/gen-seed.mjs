@@ -100,6 +100,7 @@ const EXERCISE_COLUMNS = [
   "source_url",
   "increment_kg",
   "external_load",
+  "unilateral",
 ];
 
 function renderExerciseInsert(json) {
@@ -125,6 +126,7 @@ function renderExerciseInsert(json) {
     source_url: sqlOrNull(json.source_url),
     increment_kg: sqlNumberOrNull(incrementKg),
     external_load: sqlBool(externalLoad),
+    unilateral: sqlOrNull(json.unilateral),
   };
   const updates = EXERCISE_COLUMNS.filter((c) => c !== "id")
     .map((c) => `  ${c} = excluded.${c}`)

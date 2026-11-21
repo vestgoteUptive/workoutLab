@@ -92,6 +92,7 @@ describe("AC-2 exercise details + variants", () => {
       license: "LicenseRef-workoutLab",
       attribution: null,
       sourceUrl: null,
+      unilateral: null,
       variants: ["goblet-squat", "leg-press"],
     });
     await expect(loadVariants("back-squat")).resolves.toEqual(["goblet-squat", "leg-press"]);
