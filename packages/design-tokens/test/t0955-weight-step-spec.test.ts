@@ -103,7 +103,7 @@ describe("T-0955 AC4 the UF-09.3/09.4 note and the hold_effort copy", () => {
     );
     expect(reason).toMatch(/`hold_effort` has no placeholders/);
     expect(reason).toMatch(/no banner, modal or link, and no other change in focus mode/);
-    expect(uf09).toMatch(/only change in focus mode is one new static line/);
+    expect(uf09).toMatch(/focus mode gets two additions, both text on the same task/);
     expect(uf09).toMatch(/steps by the exercise's step/);
   });
   it("ruling 1: one line, UF-09.3, under the hero, lift state, ink-muted, no live region, 4.8:1", () => {
