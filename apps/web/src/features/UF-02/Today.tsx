@@ -109,10 +109,10 @@ function WeekRowList({
 function LatestPrLine({ pr, locale }: { pr: LatestPr; locale: string }) {
   const reps = formatDecimal(pr.reps ?? 0, locale);
   const text = pr.timed
-    ? en.uf02.prTimed(pr.name, formatDecimal(pr.durationS ?? 0, locale))
+    ? en.uf02.prTimed(pr.name, formatDecimal(pr.durationS ?? 0, locale), pr.unilateral)
     : pr.weightKg !== null && pr.weightKg > 0
-      ? en.uf02.prWeighted(pr.name, formatKg(pr.weightKg, locale), reps)
-      : en.uf02.prReps(pr.name, pr.reps ?? 0, reps);
+      ? en.uf02.prWeighted(pr.name, formatKg(pr.weightKg, locale), reps, pr.unilateral)
+      : en.uf02.prReps(pr.name, pr.reps ?? 0, reps, pr.unilateral);
   return (
     <p className="wl-today__pr wl-type-body" data-part="latest-pr">
       <span className="wl-today__pr-label">{en.uf02.latestPr}</span> <span>{text}</span>

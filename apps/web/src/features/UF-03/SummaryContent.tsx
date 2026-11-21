@@ -34,10 +34,11 @@ interface Loaded {
 /** T-0674: "Back squat 100 kg × 8" / "Push-up 25 reps" / "Plank 90 s". */
 function prText(pr: SummaryPr, locale: string | undefined): string {
   const reps = formatDecimal(pr.reps ?? 0, locale);
-  if (pr.timed) return en.uf03.prTimed(pr.name, formatDecimal(pr.durationS ?? 0, locale));
+  if (pr.timed)
+    return en.uf03.prTimed(pr.name, formatDecimal(pr.durationS ?? 0, locale), pr.unilateral);
   return pr.weightKg !== null && pr.weightKg > 0
-    ? en.uf03.prWeighted(pr.name, formatKg(pr.weightKg, locale), reps)
-    : en.uf03.prReps(pr.name, pr.reps ?? 0, reps);
+    ? en.uf03.prWeighted(pr.name, formatKg(pr.weightKg, locale), reps, pr.unilateral)
+    : en.uf03.prReps(pr.name, pr.reps ?? 0, reps, pr.unilateral);
 }
 
 export function SummaryContent({ timeZone, locale }: SummaryProps) {

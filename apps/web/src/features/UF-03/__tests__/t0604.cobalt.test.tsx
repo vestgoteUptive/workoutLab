@@ -87,7 +87,14 @@ describe("T-0604 AC1 state", () => {
 
 describe("T-0604 AC2 the PR band", () => {
   it("with a PR the band is a lift-state section that holds the PR's own text", async () => {
-    await open({ name: "Back squat", weightKg: 100, reps: 5, durationS: null, timed: false });
+    await open({
+      exerciseId: "back-squat",
+      name: "Back squat",
+      weightKg: 100,
+      reps: 5,
+      durationS: null,
+      timed: false,
+    });
     const band = root().querySelector('[data-part="pr-band"]')!;
     expect(band.getAttribute("data-wl-state")).toBe("lift");
     expect(band.classList.contains("wl-uf03-summary__pr")).toBe(true);

@@ -121,6 +121,7 @@ describe("sessionPr (pure)", () => {
       }),
     ];
     expect(sessionPr(timed, library, S1)).toEqual({
+      exerciseId: "plank",
       name: "Plank",
       weightKg: null,
       reps: null,

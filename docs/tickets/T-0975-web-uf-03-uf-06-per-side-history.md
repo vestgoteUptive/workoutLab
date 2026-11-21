@@ -5,7 +5,7 @@ lane: web-feature:UF-06
 screens: [UF-03.1, UF-03.3, UF-06.2]
 decisions: [D-0260, D-0263]
 deps: [T-0972, T-0973, T-0974]
-status: todo
+status: done
 ---
 ## Why
 A logged "10" must read as per arm afterwards too. Summary, the active set table and exercise history append the suffix to their existing formats through the shared `formatReps` from T-0974 (D-0263 §6 §8). Coverage, balance, targets and Est. 1RM do not change (D-0260).
@@ -32,7 +32,9 @@ Checklist (D-0197 §7): AC7 covers offline and old-cache; AC8 covers empty histo
 
 ## Paths you may change
 - `apps/web/src/features/UF-02/**` and `apps/web/src/lib/i18n/flows/uf-02.ts` (extra: Today duplicates the PR line formats; use the shared per-side helper; orchestrator grant after T-0973 review)
-Lane `web-feature:UF-06`: `apps/web/src/features/uf-06/**`. Extras: `apps/web/src/features/uf-03/**` (SummaryContent, ListView, set table, i18n `en.uf03`) with their tests.
+Lane `web-feature:UF-06`: `apps/web/src/features/uf-06/**`. Extras: `apps/web/src/features/uf-03/**` (SummaryContent, ListView, set table, i18n `en.uf03`) with their tests. Orchestrator grant: `apps/web/src/lib/i18n/flows/uf-03.ts`, `apps/web/src/lib/i18n/flows/uf-06.ts`, `apps/web/src/lib/i18n/en.ts`, `apps/web/src/lib/i18n/per-side.ts` and its test (additive only), `apps/web/src/features/UF-04/one-side.ts` and its tests (move the one-side strings into per-side.ts, D-0263 §6).
+
+- Orchestrator grant (real folder case): `apps/web/src/features/UF-03/**`, `apps/web/src/features/UF-06/**`, `apps/web/src/features/UF-04/LibraryDetail.tsx`.
 
 ## Contract impact
 none.
@@ -43,3 +45,5 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 Per-package commands: one command per script.
 
 ## Build / accept log
+- Build (frontend-dev): per-side word through `perSide` appended to the existing formats (UF-03 PR band, Previous column and reps field name; UF-06.2 rows and Best set; UF-02 PR line); flag read from cached `ExerciseDetail` via `asWord`, null/missing/unknown = no suffix. UF-04 `oneSideHowTo` moved into `lib/i18n/per-side.ts`, `one-side.ts` deleted. AC map: AC1/2/3/7/8 `UF-06/__tests__/t0975.per-side.test.tsx` (rows, Best set, bodyweight, timed, old cache, 20-as-logged, empty), `UF-03/__tests__/t0975.per-side.test.tsx` (Previous, "Set 2 reps per arm", PR band, null flag), `UF-02/__tests__/t0975.per-side-pr.test.tsx` (Today PR); AC4 no grouped row exists (scan test); AC5/AC6 balance equals bilateral, back +3, Epley as logged (UF-06 file); AC9 source scan (UF-03 file). Faults planted and caught, files restored with cp + cmp: stats.ts weightedSet word, best label word, row word; ExerciseHistory word null; ListView previous word, repsLabel word; SummaryContent word; summary-data word; Today word; use-today word; uf-03 flows suffix. Gate: web tsc, eslint, vitest (398 files, 5247 tests) green; format:check green; e2e uf-02/03/04/06 135 passed; check-all reports lane-path-not-owned only for paths from T-0974 commits already on the branch (main lags).
+- QA (qa-tester): verdict pass. Faults planted on app code, each restored with cp + cmp: caught by builder tests: reps-row word (stats.ts), asWord accepts all, perSide always "side", uf06 seconds word, use-today word, one-side string change (UF-04). Escaped, now caught by added tests (UF-03 and UF-06 t0975 files): e1rm x2 in e1rmSeries (new UF-06 screen test, "about 16 kg" flagged and unflagged), uf02 prReps word, uf03 prTimed word (formatter test), ListView previousSeconds word (timed Previous), uf03 previousReps word (bodyweight Previous). Web test 401 files, 5287 tests green; format:check green; e2e uf-02/03/04/06 135 passed. Branch includes main.
