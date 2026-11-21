@@ -9,6 +9,7 @@
 // (D-0191). T-0534 adds the rule 0.1 excludedOutAreas (D-0199 §3). T-0635 adds rule 15 records
 // (D-0219, display-only). T-0945 adds rule 12.3 insertItem and the rule 8 timeLeftS
 // (UF-09.10, D-0244, D-0246 §8–§14).
+// T-0961 adds rule 16 estimatedOneRepMax (UF-06.2, D-0254, D-0255, D-0258, display-only).
 
 export * from "./types.js";
 export { normalizeHistory, primaryAreas, isHardSet } from "./history.js";
@@ -78,3 +79,4 @@ export {
   COMPARED_PERIODS,
 } from "./checkin.js";
 export { records, recordKey, type RecordSet, type RecordPrevious } from "./records.js";
+export { estimatedOneRepMax, E1RM_MAX_REPS, type E1rmPoint } from "./e1rm.js";
