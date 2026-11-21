@@ -83,6 +83,8 @@ const SESSION_INPUT_KEYS = [
   "excludeIds",
   "avoidAreas",
   "favoriteIds",
+  "autoMainLift",
+  "fill",
 ] as const;
 
 /** `sessionInput.avoidAreas` (D-0191): optional array of the nine areas; `uniqueItems: true` in
@@ -108,6 +110,17 @@ function validateFavoriteIds(v: unknown): string[] {
   const ids = isExerciseIdArray(v, field);
   if (new Set(ids).size !== ids.length) throw badRequest(`${field} must not contain duplicates`);
   return ids;
+}
+
+/** An optional `sessionInput` boolean: absent is `undefined`, anything but true/false is 400. */
+function optionalBoolean(
+  obj: Record<string, unknown>,
+  key: "autoMainLift" | "fill",
+): boolean | undefined {
+  if (!(key in obj)) return undefined;
+  const v = obj[key];
+  if (typeof v !== "boolean") throw badRequest(`sessionInput.${key} must be a boolean`);
+  return v;
 }
 
 export function validateSessionInput(value: unknown): SessionInput {
@@ -143,6 +156,10 @@ export function validateSessionInput(value: unknown): SessionInput {
 
   const favoriteIds = "favoriteIds" in value ? validateFavoriteIds(value.favoriteIds) : undefined;
 
+  // D-0237 / D-0239: optional switches, absent stays absent (absent means true in the engine).
+  const autoMainLift = optionalBoolean(value, "autoMainLift");
+  const fill = optionalBoolean(value, "fill");
+
   return {
     budgetMin,
     warmupInBudget,
@@ -153,6 +170,8 @@ export function validateSessionInput(value: unknown): SessionInput {
     excludeIds: excluded,
     ...(avoidAreas === undefined ? {} : { avoidAreas }),
     ...(favoriteIds === undefined ? {} : { favoriteIds }),
+    ...(autoMainLift === undefined ? {} : { autoMainLift }),
+    ...(fill === undefined ? {} : { fill }),
   };
 }
 

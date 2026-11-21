@@ -17,3 +17,5 @@ export const AREAS = [
 ];
 export { parseSessionPlan, } from "./session-plan.js";
 export { toAreaTarget, toAreaTargets, toBarbell, toEngineProfile, toHistorySet, toLibraryExercise, toPlanCheckin, toUnilateral, } from "./mappers.js";
+// T-0954 (D-0251): one external-load predicate for the UI and the effective library.
+export { hasExternalLoad } from "./external-load.js";
