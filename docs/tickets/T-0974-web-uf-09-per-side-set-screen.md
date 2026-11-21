@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.3, UF-09.4]
 decisions: [D-0260, D-0261, D-0263, D-0267]
 deps: [T-0972, T-0973, T-0953, T-0954]
-status: todo
+status: done
 ---
 ## Why
 During a set the user must see whether "10" means per arm, without a new element (principle 1). This ticket adds the suffix to the existing reps line and stepper, and creates the one shared `formatReps(reps, unilateral, timed)` and `perSide(word)` module that UF-03 and UF-06 reuse (D-0263 §4 §5 §8). It lands after T-0953 and T-0954 which touch the same files.
