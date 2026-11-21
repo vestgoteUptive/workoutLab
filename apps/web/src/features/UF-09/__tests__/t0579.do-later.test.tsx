@@ -105,12 +105,13 @@ describe("AC3 hidden", () => {
     expect(laterBtn()).toBeNull();
   });
 
-  it("AC1 state: between Swap and Skip to next exercise", async () => {
+  it("AC1 state: between Swap and Add exercise", async () => {
     await open(PAUSED_NEXT);
     const order = names();
     const at = (t: string) => order.findIndex((n) => n?.includes(t));
     expect(at(LATER)).toBe(at("Swap") + 1);
-    expect(at("Skip to next exercise")).toBe(at(LATER) + 1);
+    expect(at("Add exercise")).toBe(at(LATER) + 1);
+    expect(at("Skip to next exercise")).toBe(at(LATER) + 2);
   });
 });
 

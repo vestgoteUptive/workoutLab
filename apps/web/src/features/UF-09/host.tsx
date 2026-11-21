@@ -216,9 +216,12 @@ function Machine(props: MachineProps) {
   // T-0580: a swap applied but its "Don't suggest again" write failed; shown once the sheet is
   // gone, until the next overlay opens or the workout moves to another set.
   const [exclusionFailed, setExclusionFailed] = useState<string | null>(null);
+  // T-0949: UF-09.9's status line after an add (D-0246 §7); gone once the pause ends.
+  const [addedLine, setAddedLine] = useState<string | null>(null);
   const [movedLater, setMovedLater] = useState<{ name: string; itemIndex: number } | null>(null);
   useEffect(() => {
     if (store.getState().phase !== "next") setMovedLater(null);
+    if (store.getState().phase !== "paused") setAddedLine(null);
   });
   const applyItems = useMemo(() => {
     const apply = createPlanApply({ sessionId, store, onRow: setRow, writes });
@@ -472,6 +475,7 @@ function Machine(props: MachineProps) {
     timeZone,
     ...actions,
     timeLeftS: () => timeLeftOf(row, ctx.plan, store.getState(), Date.now()),
+    announceAdded: ({ name, afterName }) => setAddedLine(en.uf09.addedAfter(name, afterName)),
     notifyExclusionFailed: () =>
       setExclusionFailed(`${store.getState().itemIndex}:${store.getState().setIndex}`),
     close: controls.close,
@@ -480,7 +484,7 @@ function Machine(props: MachineProps) {
   let body;
   if (state.phase === "done" && !listOpen) body = <HostLevel title={en.uf09.doneTitle} />;
   else if (state.phase === "betweenItems") body = <HostLevel title={en.uf09.loadingTitle} />;
-  else if (overlay) {
+  else if (overlay && overlay.action.drawnOver !== true) {
     // In place of the screen and its actions: the overlay is the one task (principle 1).
     // A `keepsClockRunning: false` overlay holds the workout paused: its `resume()` closes it
     // first, so the clocks never run under an open overlay (T-0304e review, D-0120 §8).
@@ -552,6 +556,8 @@ function Machine(props: MachineProps) {
           formatAt={(ms) =>
             formatTime(new Date(ms).toISOString(), { locale: timeLocale, timeZone })
           }
+          addedLine={addedLine}
+          addOpen={overlay?.action.drawnOver === true}
           onApplyItems={applyItems}
           planWritePending={planPending}
           onMoved={(name) => setMovedLater({ name, itemIndex: store.getState().itemIndex })}
@@ -583,6 +589,8 @@ function Machine(props: MachineProps) {
         onPointerUpCapture={device.onActivation}
       >
         {body}
+        {/* T-0949 (D-0247 §1): a drawn-over overlay sits beside the screen, which stays mounted. */}
+        {overlay && overlay.action.drawnOver === true ? overlay.action.render(session) : null}
         {/* T-0580: the live region is always mounted, so the alert is announced when it arrives. It
             sits in the status area under the screen the swap returns to, not in the task. */}
         <div aria-live="assertive" data-field="exclusion-failed">
