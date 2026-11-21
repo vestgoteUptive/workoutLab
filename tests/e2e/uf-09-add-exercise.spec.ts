@@ -119,6 +119,10 @@ async function seedPaused(page: Page, s: Seed): Promise<void> {
       ),
     )
     .toBe(true);
+  // The focus session reads the cached library once, when it loads, and hands that copy to the
+  // engine (`load.ts`). The shell fills the cache after sign-in, so wait for it: a session loaded
+  // before it landed gets an empty library and an add fails with "Couldn't add" (T-0950 finding).
+  await libraryCached(page);
   await page.evaluate(
     async ({ s, userId }) => {
       const nowMs = Date.now();
@@ -232,6 +236,31 @@ async function mockAll(
   await mockProfilePresent(page, { ...profile, user_id: "e2e-fake-user-0001" });
 }
 
+/** Waits until the library cache is filled (the shell's refresh after sign-in). */
+async function libraryCached(page: Page): Promise<void> {
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const req = indexedDB.open("wl-offline");
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+        const n = await new Promise<number>((resolve, reject) => {
+          const req = db
+            .transaction("libraryCache", "readonly")
+            .objectStore("libraryCache")
+            .count();
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = () => reject(req.error);
+        });
+        db.close();
+        return n;
+      }),
+    )
+    .toBeGreaterThan(0);
+}
+
 /** Waits until the history cache holds `count` rows (the refresh the shell fires on load). */
 async function historyCached(page: Page, count: number): Promise<void> {
   await expect
@@ -305,6 +334,16 @@ async function openSheet(page: Page): Promise<Locator> {
 async function addLateral(dialog: Locator): Promise<void> {
   await dialog.getByRole("searchbox").fill("lateral");
   await dialog.getByRole("button", { name: /^Add Lateral raise/ }).click();
+}
+
+/** The sheet's refusal line. It reads the status and the alert region together, so a failed write
+ *  (the alert) shows up in the failure message instead of as a bare empty status. */
+async function expectSheetAnswer(dialog: Locator, text: string): Promise<void> {
+  await expect
+    .poll(() =>
+      dialog.locator('[data-part="sheet-status"], [data-part="sheet-alert"]').allInnerTexts(),
+    )
+    .toContain(text);
 }
 
 /** Sets 1..n of the current item: Done, weight if asked for, Save; the caller handles what follows. */
@@ -441,7 +480,7 @@ test.describe("T-0950 AC3 B3/B4 time running out", () => {
     const dialog = await openSheet(page);
     await expect(dialog.getByText("No time left")).toBeVisible();
     await addLateral(dialog);
-    await expect(dialog.getByRole("status")).toHaveText("Lateral raise doesn't fit. No time left.");
+    await expectSheetAnswer(dialog, "Lateral raise doesn't fit. No time left.");
     await expect(dialog).toBeVisible();
     const stored = await storedRow(page, id);
     expect(ids(stored)).toEqual(["bench-press", "inverted-row", "leg-extension"]);
@@ -458,9 +497,7 @@ test.describe("T-0950 AC3 B3/B4 time running out", () => {
     const dialog = await openSheet(page);
     await expect(dialog.getByText("2 min left")).toBeVisible();
     await addLateral(dialog);
-    await expect(dialog.getByRole("status")).toHaveText(
-      "Lateral raise doesn't fit in the 2 min left.",
-    );
+    await expectSheetAnswer(dialog, "Lateral raise doesn't fit in the 2 min left.");
     const stored = await storedRow(page, id);
     expect(ids(stored)).toEqual(["bench-press", "inverted-row", "leg-extension"]);
     expect(stored.pending).toBe(false);
