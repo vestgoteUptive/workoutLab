@@ -119,7 +119,7 @@ export declare const SESSION_PLAN_SCHEMA: {
         };
         readonly PrefillKind: {
             readonly type: "string";
-            readonly enum: readonly ["first_time", "carry", "reentry", "hold_after_break", "increase", "deload", "hold", "add_rep"];
+            readonly enum: readonly ["first_time", "carry", "reentry", "hold_after_break", "increase", "deload", "hold", "add_rep", "hold_effort"];
         };
         readonly PrefillResult: {
             readonly type: "object";

@@ -17,6 +17,7 @@
   "mistakes": ["Standing too close to the bench.", "Letting the front knee cave inward."],
   "variants": ["split-squat", "dumbbell-lunge", "barbell-lunge"],
   "timed": false,
+  "unilateral": "leg",
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
 }

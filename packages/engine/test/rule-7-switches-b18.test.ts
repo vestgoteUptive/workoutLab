@@ -48,6 +48,8 @@ import "./rule-12-3-insert-properties.test.js";
 import "./rule-12-apply-swap.test.js";
 import "./rule-12-swaps.test.js";
 import "./rule-13-shuffle.test.js";
+import "./rule-14-rir-histories.test.js";
+import "./rule-14-rir.test.js";
 import "./rule-14-suggest.test.js";
 import "./rule-15-records-histories.test.js";
 import "./rule-6-1-avoid-areas.test.js";

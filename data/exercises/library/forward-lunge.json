@@ -17,6 +17,7 @@
   "mistakes": ["Taking too short a step.", "Letting the front knee cave inward."],
   "variants": ["reverse-lunge", "split-squat", "walking-lunge", "dumbbell-lunge", "lateral-lunge", "barbell-lunge"],
   "timed": false,
+  "unilateral": "leg",
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
 }

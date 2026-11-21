@@ -157,7 +157,7 @@ export interface components {
          * @example first_time
          * @enum {string}
          */
-        PrefillKind: "first_time" | "carry" | "reentry" | "hold_after_break" | "increase" | "deload" | "hold" | "add_rep";
+        PrefillKind: "first_time" | "carry" | "reentry" | "hold_after_break" | "increase" | "deload" | "hold" | "add_rep" | "hold_effort";
         /**
          * @description Rule 5 deficit per area at session start, each in [0, 1].
          * @example {

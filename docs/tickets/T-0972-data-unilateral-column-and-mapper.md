@@ -31,6 +31,8 @@ The flag from T-0971 must reach the app. D-0263 §1 §2 puts it on the web-only 
 Checklist (D-0197 §7): AC4 covers online, offline and old-cache. The migration fixture includes every terminal exercise row state in use (rows with null and non-null values); `exercises` has no tombstone or rejected state, so none applies.
 
 ## Paths you may change
+- `apps/web/src/lib/offline/history.ts`, `apps/web/src/lib/offline/__tests__/**`, `apps/web/src/app/__tests__/profile-gate.test.tsx`, `supabase/functions/_shared/vendor/**` (extra: detail write, cache tests, one fixture, regenerated vendor copy; orchestrator grant)
+- `supabase/scripts/gen-seed.mjs`, `supabase/seed.sql`, `supabase/tests/scripts/**` (extra: the seed column moved from T-0971; orchestrator grant)
 Lane `data`: `docs/data-model.md`, `supabase/migrations/**`, `packages/shared/**`. Extras for this ticket only: `supabase/tests/**` (pgTAP file), `apps/web/src/lib/offline/db.ts` and the `ExerciseDetail` write mapping in `apps/web/src/lib/offline/**` with its test.
 
 ## Contract impact
@@ -42,3 +44,6 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 Per-package commands: one command per script.
 
 ## Build / accept log
+
+## Note (orchestrator, T-0971 review)
+- This ticket also adds `unilateral` to `supabase/scripts/gen-seed.mjs` `EXERCISE_COLUMNS` (`sqlOrNull(json.unilateral)`), regenerates `supabase/seed.sql`, and extends `supabase/tests/scripts/gen-seed.test.mjs`. This is T-0971's AC5, moved here so the seed and the migration land together. Paths: `supabase/scripts/gen-seed.mjs`, `supabase/seed.sql`, `supabase/tests/scripts/**`.

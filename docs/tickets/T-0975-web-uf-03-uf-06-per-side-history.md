@@ -31,6 +31,7 @@ A logged "10" must read as per arm afterwards too. Summary, the active set table
 Checklist (D-0197 §7): AC7 covers offline and old-cache; AC8 covers empty history.
 
 ## Paths you may change
+- `apps/web/src/features/UF-02/**` and `apps/web/src/lib/i18n/flows/uf-02.ts` (extra: Today duplicates the PR line formats; use the shared per-side helper; orchestrator grant after T-0973 review)
 Lane `web-feature:UF-06`: `apps/web/src/features/uf-06/**`. Extras: `apps/web/src/features/uf-03/**` (SummaryContent, ListView, set table, i18n `en.uf03`) with their tests.
 
 ## Contract impact

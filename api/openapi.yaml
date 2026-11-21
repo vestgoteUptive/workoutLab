@@ -222,7 +222,7 @@ components:
     PrefillKind:
       description: How the pre-fill was derived (rule 14, D-0026).
       type: string
-      enum: [first_time, carry, reentry, hold_after_break, increase, deload, hold, add_rep]
+      enum: [first_time, carry, reentry, hold_after_break, increase, deload, hold, add_rep, hold_effort]
       examples: [first_time]
     AreaDeficits:
       description: Rule 5 deficit per area at session start, each in [0, 1].
