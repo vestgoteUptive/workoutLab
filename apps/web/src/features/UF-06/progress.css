@@ -202,3 +202,55 @@
     color: var(--wl-ink);
   }
 }
+
+/* --- UF-06.2 estimated 1RM (T-0963, D-0258): chart, delta, table toggle, table --- */
+.wl-progress .wl-e1rm__delta,
+.wl-progress .wl-e1rm__note,
+.wl-progress .wl-e1rm__explain {
+  margin: 0;
+  color: var(--wl-ink-muted);
+}
+
+.wl-progress .wl-e1rm__chart {
+  inline-size: 100%;
+  block-size: 160px;
+}
+
+.wl-progress .wl-e1rm__chart svg {
+  display: block;
+}
+
+.wl-progress .wl-e1rm__toggle {
+  align-self: flex-start;
+  min-block-size: 44px;
+  margin-inline-start: -8px;
+}
+
+.wl-progress .wl-e1rm__toggle:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+.wl-progress .wl-e1rm__table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  text-align: start;
+}
+
+.wl-progress .wl-e1rm__table caption {
+  text-align: start;
+  color: var(--wl-ink-muted);
+  padding-block-end: 8px;
+}
+
+.wl-progress .wl-e1rm__table th,
+.wl-progress .wl-e1rm__table td {
+  padding: 8px 8px 8px 0;
+  border-block-end: 1px solid var(--wl-line);
+  font-weight: 400;
+  vertical-align: top;
+}
+
+.wl-progress .wl-e1rm__table thead th {
+  color: var(--wl-ink-muted);
+}
