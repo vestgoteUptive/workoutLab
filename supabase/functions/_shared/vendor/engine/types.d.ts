@@ -24,6 +24,11 @@ export interface HistorySet {
     reps: number | null;
     weightKg: number | null;
     durationS: number | null;
+    /**
+     * Reps in reserve (0-5), optional. Absent, non-integer or out of range is null. Read only by
+     * rule 14 steps 4/4b (D-0250, D-0259); never by records, balance or timeCheck.
+     */
+    rir?: number | null;
 }
 export type ExerciseKind = "exercise" | "warmup";
 export type ExerciseType = "compound" | "isolation";
@@ -150,7 +155,7 @@ export interface SessionInput {
      */
     fill?: boolean;
 }
-export type PrefillKind = "first_time" | "carry" | "reentry" | "hold_after_break" | "increase" | "deload" | "hold" | "add_rep";
+export type PrefillKind = "first_time" | "carry" | "reentry" | "hold_after_break" | "increase" | "deload" | "hold" | "add_rep" | "hold_effort";
 export type SwapReason = "equipment_taken" | "discomfort" | "variety" | "short_on_time";
 /** Machine-readable reasons (rule 10, D-0037 §7). Never prose. */
 export type Reason = {

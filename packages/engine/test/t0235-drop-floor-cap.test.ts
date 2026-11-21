@@ -324,8 +324,11 @@ describe("T-0235 contract text (D-0137 §4, AC7)", () => {
     }
   });
 
-  it("T-0235 AC7 rule-14 has exactly nine R14-E lines", () => {
-    expect(rule14.filter((l) => l.startsWith("- **R14-E"))).toHaveLength(9);
+  it("T-0235 AC7 rule-14 has R14-E1…E9 and, after them, T-0952's R14-E10…E25 (sixteen RIR lines)", () => {
+    const ids = rule14
+      .filter((l) => l.startsWith("- **R14-E"))
+      .map((l) => /^- \*\*R14-E(\d+)/.exec(l)?.[1]);
+    expect(ids).toEqual(Array.from({ length: 25 }, (_, i) => String(i + 1)));
   });
 
   it("T-0235 AC7 rule-14 the Traceability table has exactly one T-0235 row", () => {
