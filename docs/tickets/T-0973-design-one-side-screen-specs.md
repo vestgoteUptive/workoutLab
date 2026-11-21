@@ -40,3 +40,9 @@ none. `tokens.json` unchanged (D-0261, D-0263 §8).
 Tests or checks for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0973` and cite screen IDs.
 
 ## Build / accept log
+
+- Start: worktree clean, HEAD b89bd35d. Used the existing `UF-09.3-UF-09.4.md` (T-0955) instead of separate UF-09.3.md and UF-09.4.md; `UF-03.1-UF-03.3.md` is new; `UF-04.1-UF-04.2.md` and `UF-06.2.md` amended. No decision file written. Shared `formatReps` and `perSide` table lives in the UF-09 file; the others point to it.
+- Test: `packages/design-tokens/test/t0973-one-side-specs.test.ts` (text check, contrast computed from `tokens.json`).
+- Red run on unfixed docs: fails at once, "missing UF-03.1-UF-03.3.md" (no spec text yet).
+- AC1 hero lines, aria-labels, unchanged: "AC1" describe. AC2 contrast 4.8 / 6.1 / 4.9 and 320 px: "AC2" describe. AC3 stepper: "AC3". AC4 UF-03 and UF-06.2 formats and example: "AC4". AC5 how-to: "AC5". AC6 no hex or font in the new text: "AC6" plus check-all below.
+- Green: t0973 and t0955 tests, 43 passed. One first-run failure ("number alone" wording) fixed in the doc.
