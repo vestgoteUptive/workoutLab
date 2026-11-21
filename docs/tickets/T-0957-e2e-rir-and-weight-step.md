@@ -32,3 +32,6 @@ none
 
 ## Definition of done
 Tests for every AC pass (run only these specs plus the onboarding timing spec) · `pnpm -w typecheck lint test` green · commit messages start with `T-0957` and cite UF-04.2 and UF-09.4.
+
+## Build / accept log
+- Build (qa): `tests/e2e/uf-09-rir-weight-step.spec.ts`, 16 tests, green (`scripts/locked.sh heavy npx playwright test ... --trace off`). AC1 hold 80x8 + reason; AC2 hold once (RIR 1) then 82.5x6; AC3 empty RIR 82.5x6; AC4 1.25 to pre-fill 21.25 and + step, Use default back to 22.5/25, server override; AC5 offline RIR 0 set holds next pre-fill and syncs rir 0, offline step applies and upserts on reconnect; AC6 zero history (curl with override, bench), 12 days off = 80x6 no reason; AC7 onboarding 3 activations under 60 s, no exercise_settings request or RIR/step text; AC8 axe clean, chips/field/buttons >= 44 px, plank and push-up have no row. Biceps curl stands in for db-curl (the fixture library has no db-curl). Faults (restored with cp, cmp clean): F1 rirMin gate >= 0 (4 red: AC1, AC2 hold, AC6 4-day, AC5 offline); F2 heldOnce off (AC2 step-up red); F3 effective library ignores step (3 red: AC4 x2, AC5 step); F4 queued rir dropped (AC5 offline red); F5 stepper ignores exercise step (AC4 + red). Gate: format:check, lint:e2e, check-all green. No product defects found.
