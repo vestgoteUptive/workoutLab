@@ -6,7 +6,7 @@ import { mkdtempSync, writeFileSync, readFileSync, rmSync, readdirSync, existsSy
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { generateSql, loadLibrary, unilateralColumnInMigrations } from "../../scripts/gen-seed.mjs";
+import { generateSql, loadLibrary } from "../../scripts/gen-seed.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
@@ -115,7 +115,7 @@ test("AC2: external_load and increment_kg columns and literal values (fixture li
       license: "LicenseRef-workoutLab",
     }),
   );
-  const sql = generateSql(dir, { unilateralColumn: false });
+  const sql = generateSql(dir);
   assert.match(sql, /external_load/);
   assert.match(sql, /increment_kg/);
   const bwLine = sql.split("\n").find((l) => l.includes("'fx-bw'"));
@@ -202,45 +202,4 @@ test("committed supabase/seed.sql matches the generator output", () => {
   const generated = generateSql(LIBRARY_DIR);
   const committed = readFileSync(SEED_PATH, "utf8");
   assert.equal(committed, generated);
-});
-
-// T-0971 (D-0263 §3, AC5): the unilateral column. The DB column arrives with T-0972, so the
-// seed emits it only once a migration declares it (the seed must apply on every database).
-const withUnilateral = () => generateSql(LIBRARY_DIR, { unilateralColumn: true });
-const insertBlocks = (sql) =>
-  sql.split("\n\n").filter((b) => b.startsWith("insert into public.exercises ("));
-
-test("T-0971 AC5: with the column on, every row has a unilateral value: 16 set, 92 null", () => {
-  const blocks = insertBlocks(withUnilateral());
-  assert.equal(blocks.length, 108);
-  for (const b of blocks) assert.match(b.split("\n")[0], /, external_load, unilateral\)$/);
-  const values = blocks.map((b) => b.split("\n")[1]);
-  const flagged = values.filter((v) => /, '(arm|leg|side)'\)$/.test(v));
-  const nulls = values.filter((v) => /, (true|false), null\)$/.test(v));
-  assert.equal(flagged.length, 16);
-  assert.equal(nulls.length, 92);
-  const count = (w) => flagged.filter((v) => v.endsWith(`'${w}')`)).length;
-  assert.deepEqual([count("leg"), count("arm"), count("side")], [13, 1, 2]);
-  assert.match(values.find((v) => v.includes("'dumbbell-row'")), /, true, 'arm'\)$/);
-  assert.match(values.find((v) => v.includes("'barbell-row'")), /, true, null\)$/);
-  assert.match(withUnilateral(), /unilateral = excluded\.unilateral/);
-});
-
-test("T-0971 AC5: with the column off, the seed names no unilateral column (applies to a DB without it)", () => {
-  const sql = generateSql(LIBRARY_DIR, { unilateralColumn: false });
-  assert.doesNotMatch(sql, /unilateral/);
-});
-
-test("T-0971 AC5: the committed seed matches the migrations (column iff a migration declares it)", () => {
-  const committed = readFileSync(SEED_PATH, "utf8");
-  assert.equal(committed.includes("unilateral"), unilateralColumnInMigrations());
-  assert.equal(committed, generateSql(LIBRARY_DIR));
-});
-
-test("T-0971 AC5: a migration declaring unilateral switches the column on", () => {
-  const dir = mkdtempSync(path.join(tmpdir(), "gen-seed-mig-"));
-  assert.equal(unilateralColumnInMigrations(dir), false);
-  writeFileSync(path.join(dir, "1_x.sql"), "alter table public.exercises add column unilateral text null;");
-  assert.equal(unilateralColumnInMigrations(dir), true);
-  rmSync(dir, { recursive: true, force: true });
 });
