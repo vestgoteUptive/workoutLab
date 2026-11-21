@@ -5,7 +5,7 @@ lane: content
 screens: [UF-04.2, UF-09.3]
 decisions: [D-0260, D-0261, D-0262, D-0263]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Users log "10" for a dumbbell row and it must never be read as 20. The library needs an optional `unilateral` field (`arm`, `leg`, `side`) on the rows where one set means all reps on one side, then the other (spec `docs/specs/unilateral-exercises.md`, D-0260 §2, D-0263 §3 §9). This ticket is the content half: schema, loader type, the 16 rows, step-text fixes and the seed. It is a display and content flag only; the engine does not read it (D-0262).
@@ -43,3 +43,13 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 Per-package commands: one command per script (`pnpm --filter <pkg> typecheck`, then `… lint`, then `… test`).
 
 ## Build / accept log
+
+### Build log (content-lane builder, branch `t/T-0971-unilateral-content`)
+- Schema: `unilateral` enum `["arm","leg","side"]`, optional. `Unilateral` type and optional `Exercise.unilateral` in `data/exercises/src/index.ts` (the loader is a plain JSON parse, so it carries the field). Fixtures: valid `unilateral-{arm,leg,side}.json`, invalid `unilateral-{both,empty,number}.json`.
+- Rows: the 16 of D-0263 §9 flagged (13 leg, 1 arm, 2 side); no value changed by the curator. machine-torso-rotation unflagged. Only those 16 library files differ from the base (`git diff --name-only`); in the other 92 rows nothing changed.
+- Step text (the library field is `instructions`): dumbbell-row got "Finish all reps, then switch arms."; banded-glute-kickback and cable-kickback now end "Return with control, and after all reps switch legs."; cable-woodchop "... switch sides."; side-plank got a 4th step "The seconds are per side: hold the time on one side, then the other." The text test (`text.test.ts`) requires one sentence per step, so the switch text is a single sentence. All steps 5 to 120 characters, at most 5 per row.
+- Seed (deviation, needs a decision): `gen-seed.mjs` has the `unilateral` column with `sqlOrNull`, but it emits it only when a file in `supabase/migrations` mentions `unilateral` (`unilateralColumnInMigrations()`), because `exercises.unilateral` does not exist until the T-0972 migration and a seed naming it would fail on every database. So `supabase/seed.sql` was regenerated for the step-text changes only and has no `unilateral` column yet. `--check` passes. The gen-seed tests prove the column-on output (16 values, 92 nulls, 13/1/2) and the column-off output. Hand-off to T-0972: once its migration lands, `--check` fails until `node supabase/scripts/gen-seed.mjs` is rerun and `seed.sql` committed; that run produces the AC5 seed. There is no `seed.test.ts` in the repo; `supabase/tests/scripts/gen-seed.test.mjs` is the seed test.
+- Tests: `data/exercises/test/unilateral-t0971.test.ts` (AC1, AC2, AC3, AC4 count, AC6) and 4 new cases in `supabase/tests/scripts/gen-seed.test.mjs` (AC5). With the source changes stashed and the tests kept, 16 library tests fail and the gen-seed test file fails to load; with them back, 364 library tests and 12 gen-seed tests pass.
+- Gates: `format:check`, `gen-seed --check` and `vendor --check` pass; typecheck and lint pass in all packages. `check:repo` and the tests that call it (design-tokens, landing, `test:repo-checks` AC21 cases) fail with `lane-path-not-owned` for 29 files this ticket does not touch (T-0951, T-0952, T-0955, T-0962, D-0264 and others). Cause: the lane check takes the merge base nearest HEAD of `origin/main`, which is older than `main-hzlbfc`, so earlier tickets' files count as this diff. No file of this ticket is listed.
+- Unmet: AC5 in `seed.sql` (column absent until T-0972, see above).
+- Review (2026-11-21): approved, and all 6 planted faults were caught. The orchestrator removed the gen-seed migration heuristic: `gen-seed.mjs` and its test are back to the base version, and `seed.sql` carries only the step-text changes. AC5's seed column moves to T-0972, which owns the migration and adds `unilateral` (via `sqlOrNull`) to `EXERCISE_COLUMNS` in the same change.

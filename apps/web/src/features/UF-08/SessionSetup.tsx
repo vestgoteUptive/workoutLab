@@ -508,8 +508,9 @@ export function SessionSetup({
      * the new plan (it becomes the plan), else the refusal text and nothing changes.
      */
     const addExercise = (id: string, asMain = false): string | null => {
-      // D-0239 §13.1: an over-budget plan refuses before any call (the swap-in is the cause).
-      if (empty && overMin > 0) return en.uf08.overRefusal(overMin);
+      // D-0239 §13.1, D-0240 §4 (T-0943): an over-budget plan refuses before any call, in both
+      // modes (a `fitsBudget: false` swap-in is the cause).
+      if (overMin > 0) return en.uf08.overRefusal(overMin);
       // T-0941 (D-0239 §1): a suggestion tagged "Main lift" becomes `mainPickId`, not a pin.
       const pinned = asMain
         ? adjusted.addedIds.filter((a) => a !== id)
@@ -575,7 +576,7 @@ export function SessionSetup({
      * Success is the engine's own `plan.mainLiftId === id`; otherwise the plan is unchanged.
      */
     const startWith = (id: string): string | null => {
-      if (empty && overMin > 0) return en.uf08.overRefusal(overMin);
+      if (overMin > 0) return en.uf08.overRefusal(overMin);
       const inPlan = plan.items.some((i) => i.exerciseId === id);
       // Empty mode (D-0239 §2): X is the main lift, never a pin, so it leaves the pins.
       const base = empty
@@ -710,7 +711,12 @@ export function SessionSetup({
           });
           return true;
         }}
-        onShuffle={() => resuggest({ shuffle: adjusted.shuffle + 1 })}
+        onShuffle={() => {
+          // D-0240 §4 (T-0943): refused in the status line while the plan is over budget.
+          if (overMin > 0) return en.uf08.overRefusal(overMin);
+          resuggest({ shuffle: adjusted.shuffle + 1 });
+          return null;
+        }}
         {...(empty && suggestions !== null
           ? {
               suggestions,
@@ -727,9 +733,8 @@ export function SessionSetup({
         keptIds={[
           // D-0239 §1: a dropped main pick is named like a pin; in empty mode every pick is.
           ...(adjusted.mainPickId !== null ? [adjusted.mainPickId] : []),
-          ...(empty
-            ? adjusted.addedIds
-            : adjusted.addedIds.filter((a) => !adjusted.unlabelledPins.includes(a))),
+          // D-0240 §3 (T-0943): a dropped swap-in is named too, so it is never silently gone.
+          ...adjusted.addedIds,
         ].filter((id, i, all) => all.indexOf(id) === i)}
         catalog={data.library}
         blocked={blocked}

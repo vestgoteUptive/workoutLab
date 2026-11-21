@@ -1,0 +1,30 @@
+{
+  "id": "fx-unilateral-both",
+  "name": "One side fixture",
+  "kind": "exercise",
+  "type": "isolation",
+  "level": "beginner",
+  "equipment": [
+    "dumbbell"
+  ],
+  "bodyweight": false,
+  "increment_kg": 2,
+  "areas": {
+    "back": 1
+  },
+  "instructions": [
+    "Do all reps on one side.",
+    "Finish all reps, then switch sides."
+  ],
+  "cue": "One side at a time",
+  "mistakes": [
+    "Rushing the reps."
+  ],
+  "variants": [
+    "dumbbell-row"
+  ],
+  "timed": false,
+  "unilateral": "both",
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

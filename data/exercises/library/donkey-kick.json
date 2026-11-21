@@ -16,6 +16,7 @@
   "mistakes": ["Arching the lower back to lift higher.", "Swinging the leg with momentum."],
   "variants": ["fire-hydrant", "glute-bridge"],
   "timed": false,
+  "unilateral": "leg",
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
 }

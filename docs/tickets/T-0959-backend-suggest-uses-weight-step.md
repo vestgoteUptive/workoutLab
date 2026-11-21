@@ -27,6 +27,7 @@ status: todo
 - AC7 Given the settings read fails (database error), When suggest runs, Then it returns the existing error shape and not a silently wrong step.
 
 ## Paths you may change
+- `supabase/functions/_shared/repo.ts` (extra: the history loader must carry `rir`; orchestrator grant)
 - `supabase/functions/workouts/**`
 - `supabase/functions/_shared/vendor/**` (re-vendor only via `vendor.mjs`; no hand edits; extra, named explicitly)
 - `supabase/tests/**`

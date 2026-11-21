@@ -18,6 +18,7 @@
   "mistakes": ["Arching the lower back to push further.", "Swinging the leg instead of a steady push."],
   "variants": ["cable-kickback", "banded-glute-kickback", "hip-abduction-machine"],
   "timed": false,
+  "unilateral": "leg",
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
 }
