@@ -5,7 +5,7 @@ lane: design
 screens: [UF-04.2, UF-09.3, UF-09.4]
 decisions: [D-0251, D-0259, D-0211, D-0199, D-0202]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 The web tickets T-0956 (control) and T-0953 (reason copy) need a written screen spec first. The spec fixes the radiogroup, the "Other" field, the messages and the offline behaviour, so the build has no open choices (D-0259 §7-§13).
