@@ -354,6 +354,15 @@ describe("T-0953 AC7 UF-09.3 hold_effort reason line (D-0259 §12)", () => {
     expect(css).toMatch(/\.wl-uf09__hold-effort\s*\{[^}]*color:\s*var\(--wl-ink-muted\)/);
   });
 
+  it.each([1, 2, 3])("hold_effort shows no line on set %i (set 1 only)", async (setIndex) => {
+    const plan = planOf("hold_effort");
+    await seedSession({ plan });
+    seedFocus(NOW, { phase: "set", itemIndex: 0, setIndex }, plan);
+    await renderSession({ locale: "en-GB" });
+    expect(screenId()).toBe("UF-09.3");
+    expect(line()).toBeNull();
+  });
+
   it.each(KINDS.filter((k) => k !== "hold_effort"))("%s shows no line", async (kind) => {
     await showSet(planOf(kind));
     expect(line()).toBeNull();
