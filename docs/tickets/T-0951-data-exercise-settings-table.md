@@ -42,6 +42,9 @@ Checklist (D-0197 §7): the AC8 sibling covers an empty table; AC10 covers both 
 - `packages/shared/src/database.gen.ts` (and its tests under `packages/shared/**`)
 - `apps/web/src/lib/account/export.ts` and `apps/web/src/lib/account/__tests__/**` (extra: the export and delete list; web-shell paths, named explicitly)
 - Account-delete list file wherever D-0017's list lives (find with grep; name it in the log)
+- `.github/scripts/rls-coverage.test.mjs` (extra: its expected-table list; orchestrator grant)
+- `supabase/functions/_shared/vendor/**` (extra: `vendor.mjs` regenerates `database.gen.d.ts`; orchestrator grant)
+- `supabase/functions/**/*.test.ts` (extra: the account-delete test lists owned tables; orchestrator grant)
 
 ## Contract impact
 `docs/data-model.md` changes: needs D-0251 (decided; amended by D-0259 §16). `api/openapi.yaml` unchanged.
