@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-09.10, UF-08.5]
 decisions: [D-0243, D-0246, D-0245, D-0205, D-0202, D-0199, D-0231, D-0170, D-0211]
 deps: [T-0944, T-0940, T-0941, T-0943]
-status: todo
+status: done
 ---
 ## Why
 UF-08 owns the add list (`AddExerciseSheet`). D-0246 §16 replaces D-0245 §4's leaf entry: UF-08 exports one component, `AddExerciseInWorkout`, from `features/UF-08/index.tsx`, which UF-09 loads lazily (T-0949). The sheet must be self-contained, because after a reload into UF-09 SessionSetup (today the only importer of `uf-08.css`) was never loaded. It waits for T-0940, T-0941 and T-0943, which all change `AddExerciseSheet`.
