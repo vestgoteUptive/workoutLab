@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-08.1, UF-08.2, UF-08.4, UF-08.5, UF-09.1]
 decisions: [D-0236, D-0238, D-0239, D-0063]
 deps: [T-0939, T-0941]
-status: todo
+status: done
 ---
 ## Why
 Empty-start planning (`docs/specs/empty-start-plan.md`) spans UF-08.1 → UF-08.2 → UF-08.4 → UF-09 and must work offline (D-0063 §3). This ticket proves the user path end to end in the built PWA, on top of T-0940/T-0941's component tests.
