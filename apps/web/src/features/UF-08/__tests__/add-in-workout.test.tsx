@@ -389,3 +389,50 @@ describe("AC14 offline", () => {
     expect(within(row("Lat pulldown")).getByRole("button")).toBeTruthy();
   });
 });
+
+describe("QA round: inert Add, one add at a time, Escape and Close", () => {
+  it("a tap on a blocked row's inert Add never calls onAdd (D-0247 §2)", async () => {
+    const { onAdd } = renderSheet();
+    await ready();
+    const btn = addIn(row("Inverted row"))!;
+    expect(btn.getAttribute("aria-disabled")).toBe("true");
+    fireEvent.click(btn);
+    await settle(10);
+    expect(onAdd).not.toHaveBeenCalled();
+    expect(statusLine()).toBe("");
+  });
+
+  it("a second Add tap while onAdd is pending is ignored", async () => {
+    let finish: (r: AddInWorkoutResult) => void = () => {};
+    const onAdd = vi.fn(() => new Promise<AddInWorkoutResult>((r) => (finish = r)));
+    renderSheet({ onAdd });
+    await ready();
+    search("lateral");
+    const btn = screen.getByRole("button", { name: "Add Lateral raise" });
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+    expect(onAdd).toHaveBeenCalledTimes(1);
+    finish({ status: "failed" });
+    await screen.findByRole("alert");
+    fireEvent.click(btn);
+    expect(onAdd).toHaveBeenCalledTimes(2);
+  });
+
+  it("Escape and Close call onClose; Escape does not propagate (only the sheet closes)", async () => {
+    const outside = vi.fn();
+    window.addEventListener("keydown", outside);
+    const { onClose } = renderSheet();
+    await ready();
+    fireEvent.keyDown(screen.getByLabelText("Search exercises"), { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(outside).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(onClose).toHaveBeenCalledTimes(2);
+    window.removeEventListener("keydown", outside);
+    // contrast: another key does propagate
+    window.addEventListener("keydown", outside);
+    fireEvent.keyDown(screen.getByLabelText("Search exercises"), { key: "a" });
+    expect(outside).toHaveBeenCalledTimes(1);
+    window.removeEventListener("keydown", outside);
+  });
+});
