@@ -125,6 +125,51 @@ describe("rule 14 heldOnce (D-0259 §1)", () => {
       r(82.5, 6, "increase"),
     );
   });
+
+  // The 10-day gap counts local days in the user's zone, not UTC dates (D-0259 §1).
+  describe("rule-14 (AC4) the gap is in local days, not UTC dates", () => {
+    // Distinct session ids (from the label date); the instants alone decide the local days.
+    const at = (instant: string, rirs: readonly unknown[]): HistorySet[] =>
+      bench(`label-${instant}`, top(80, 8, rirs)).map((s) => ({
+        ...s,
+        completedAt: instant,
+        editedAt: instant,
+      }));
+    const run = (tz: string, prior: string, last: string): PrefillResult =>
+      prefill(
+        ex("bench-press"),
+        MAIN,
+        [...at(prior, [0, 0, 0]), ...at(last, [1, 1, 1])],
+        LIBRARY,
+        "2026-09-25T12:00:00Z",
+        tz,
+        null,
+      );
+
+    it("Pacific/Auckland: local gap 9, UTC-date gap 10 → increase", () => {
+      expect(run("Pacific/Auckland", "2026-09-14T23:00:00Z", "2026-09-24T10:00:00Z")).toEqual(
+        r(82.5, 6, "increase"),
+      );
+    });
+
+    it("Pacific/Auckland: local gap 10, UTC-date gap 9 → hold_effort", () => {
+      expect(run("Pacific/Auckland", "2026-09-15T11:00:00Z", "2026-09-24T13:00:00Z")).toEqual(
+        r(80, 8, "hold_effort"),
+      );
+    });
+
+    it("America/Los_Angeles: local gap 10, UTC-date gap 9 → hold_effort", () => {
+      expect(run("America/Los_Angeles", "2026-09-15T01:00:00Z", "2026-09-24T08:00:00Z")).toEqual(
+        r(80, 8, "hold_effort"),
+      );
+    });
+
+    it("America/Los_Angeles: local gap 9, UTC-date gap 10 → increase", () => {
+      expect(run("America/Los_Angeles", "2026-09-14T23:00:00Z", "2026-09-24T05:00:00Z")).toEqual(
+        r(82.5, 6, "increase"),
+      );
+    });
+  });
 });
 
 describe("rule 14 ladder: RIR is read only by steps 4 and 4b", () => {
