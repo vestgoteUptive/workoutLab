@@ -2,7 +2,7 @@
 -- AC24 [a][b] (indexes), AC23 (data minimisation), D-0029 (exercises columns, TR-0003).
 -- The AC1 block is generated from the column tables in docs/data-model.md (parts [a] and [b], T-0100b).
 begin;
-select plan(281);
+select plan(302);
 
 -- AC1 -------------------------------------------------------------------------------------------
 -- areas
@@ -298,6 +298,41 @@ select is(
       and c.confrelid = 'auth.users'::regclass),
   'c',
   'favorite_exercises.user_id FK is ON DELETE CASCADE');
+-- exercise_settings (T-0951, D-0251)
+select has_table('public', 'exercise_settings', 'table exercise_settings exists');
+select columns_are('public', 'exercise_settings', array['user_id', 'exercise_id', 'increment_kg', 'created_at', 'updated_at'], 'exercise_settings has exactly the documented columns');
+select col_type_is('public', 'exercise_settings', 'user_id', 'uuid', 'exercise_settings.user_id is uuid');
+select col_not_null('public', 'exercise_settings', 'user_id', 'exercise_settings.user_id is not null');
+select col_type_is('public', 'exercise_settings', 'exercise_id', 'text', 'exercise_settings.exercise_id is text');
+select col_not_null('public', 'exercise_settings', 'exercise_id', 'exercise_settings.exercise_id is not null');
+select col_type_is('public', 'exercise_settings', 'increment_kg', 'numeric(4,2)', 'exercise_settings.increment_kg is numeric(4,2)');
+select col_not_null('public', 'exercise_settings', 'increment_kg', 'exercise_settings.increment_kg is not null');
+select col_type_is('public', 'exercise_settings', 'created_at', 'timestamp with time zone', 'exercise_settings.created_at is timestamp with time zone');
+select col_not_null('public', 'exercise_settings', 'created_at', 'exercise_settings.created_at is not null');
+select col_type_is('public', 'exercise_settings', 'updated_at', 'timestamp with time zone', 'exercise_settings.updated_at is timestamp with time zone');
+select col_not_null('public', 'exercise_settings', 'updated_at', 'exercise_settings.updated_at is not null');
+select col_default_is('public', 'exercise_settings', 'user_id', 'auth.uid()', 'exercise_settings.user_id defaults to auth.uid()');
+select col_default_is('public', 'exercise_settings', 'created_at', 'now()', 'exercise_settings.created_at defaults to now()');
+select col_default_is('public', 'exercise_settings', 'updated_at', 'now()', 'exercise_settings.updated_at defaults to now()');
+select col_is_pk('public', 'exercise_settings', array['user_id', 'exercise_id'], 'exercise_settings PK (user_id, exercise_id)');
+select has_index('public', 'exercise_settings', 'exercise_settings_exercise_id_idx', array['exercise_id'],
+  'index on exercise_settings (exercise_id)');
+select fk_ok('public', 'exercise_settings', array['exercise_id'], 'public', 'exercises', array['id'],
+  'exercise_settings.exercise_id FK to exercises (id)');
+select fk_ok('public', 'exercise_settings', array['user_id'], 'auth', 'users', array['id'],
+  'exercise_settings.user_id FK to auth.users (id)');
+select is(
+  (select string_agg(c.confdeltype::text, ',') from pg_catalog.pg_constraint c
+    where c.conrelid = 'public.exercise_settings'::regclass and c.contype = 'f'
+      and c.confrelid = 'public.exercises'::regclass),
+  'c',
+  'exercise_settings.exercise_id FK is ON DELETE CASCADE');
+select is(
+  (select string_agg(c.confdeltype::text, ',') from pg_catalog.pg_constraint c
+    where c.conrelid = 'public.exercise_settings'::regclass and c.contype = 'f'
+      and c.confrelid = 'auth.users'::regclass),
+  'c',
+  'exercise_settings.user_id FK is ON DELETE CASCADE');
 select has_view('public', 'session_sets_live', 'view session_sets_live exists');
 select has_view('analytics', 'time_to_first_plan', 'view analytics.time_to_first_plan exists');
 select has_view('analytics', 'finished_within_budget', 'view analytics.finished_within_budget exists');

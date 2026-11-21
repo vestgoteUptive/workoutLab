@@ -5,7 +5,7 @@ lane: design
 screens: [UF-09.3, UF-09.4, UF-03.1, UF-03.3, UF-06.2, UF-04.2]
 decisions: [D-0261, D-0263]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 No screen spec exists for UF-09.3, UF-09.4, UF-03 or UF-06; UF-04.2 has one. The label must sit inside the existing reps line so focus mode still shows one task (principle 1). The specs fix the exact formats before the web tickets build them (D-0263 §4-§8).
@@ -40,3 +40,11 @@ none. `tokens.json` unchanged (D-0261, D-0263 §8).
 Tests or checks for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0973` and cite screen IDs.
 
 ## Build / accept log
+
+- Start: worktree clean, HEAD b89bd35d. Used the existing `UF-09.3-UF-09.4.md` (T-0955) instead of separate UF-09.3.md and UF-09.4.md; `UF-03.1-UF-03.3.md` is new; `UF-04.1-UF-04.2.md` and `UF-06.2.md` amended. No decision file written. Shared `formatReps` and `perSide` table lives in the UF-09 file; the others point to it.
+- Test: `packages/design-tokens/test/t0973-one-side-specs.test.ts` (text check, contrast computed from `tokens.json`).
+- Red run on unfixed docs: fails at once, "missing UF-03.1-UF-03.3.md" (no spec text yet).
+- AC1 hero lines, aria-labels, unchanged: "AC1" describe. AC2 contrast 4.8 / 6.1 / 4.9 and 320 px: "AC2" describe. AC3 stepper: "AC3". AC4 UF-03 and UF-06.2 formats and example: "AC4". AC5 how-to: "AC5". AC6 no hex or font in the new text: "AC6" plus check-all below.
+- Green: t0973 and t0955 tests, 43 passed. One first-run failure ("number alone" wording) fixed in the doc.
+
+- Round 2 (review rulings 1-10): timed hold suffix and no stepper for timed holds; nested `.wl-uf09__unit` span; hidden span instead of aria-label; helper at `apps/web/src/lib/i18n/per-side.ts` with a row table; ListView aria-label only and previous-session formats; PR lines and UF-02 Today (T-0975); grouped row dropped; UF-06.2 weightedBest, repsBest, timed best; T-0955 header reworded and the T-0955 test's one pinned sentence updated to match; rest-state contrast row dropped. The t0973 test now uses row-anchored table checks. Reworded the UF-03 file reference in the UF-09 file so the T-0955 ID check passes. Gate: design-tokens 335 passed, format:check green, check-all see handback.
