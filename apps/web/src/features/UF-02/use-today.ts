@@ -47,6 +47,8 @@ import {
   loadTargets,
   refreshAll,
 } from "../../lib/offline/history.js";
+import { asWord } from "../../lib/i18n/per-side.js";
+import { loadExerciseDetail } from "../../lib/offline/feature-loaders.js";
 import { latestPr, type LatestPr } from "./pr.js";
 import { weekRow, type WeekRow } from "./week.js";
 
@@ -110,6 +112,18 @@ async function readSynced(): Promise<string | null> {
   }
 }
 
+/** T-0975: adds the cached one-side word to the PR line. A missing detail or failed read leaves
+ *  both sides (no label); it never turns a ready screen into "no plan". */
+async function withUnilateral(pr: LatestPr | null): Promise<LatestPr | null> {
+  if (pr === null) return null;
+  try {
+    const detail = await loadExerciseDetail(pr.exerciseId);
+    return { ...pr, unilateral: asWord(detail?.unilateral) };
+  } catch {
+    return pr;
+  }
+}
+
 /** One cache read and one `balance()` call over it. Never rejects. */
 async function readCache(
   now: Date,
@@ -150,7 +164,7 @@ async function readCache(
       lastSyncedAt: await syncedRead,
       week,
       rhythm: { min: profile.rhythmMin, max: profile.rhythmMax },
-      latestPr: latestPr(history, library, now, timeZone),
+      latestPr: await withUnilateral(latestPr(history, library, now, timeZone)),
     };
   } catch {
     return { status: "no-plan", lastSyncedAt: await syncedRead, week };

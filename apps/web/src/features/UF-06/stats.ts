@@ -13,6 +13,7 @@ import {
   type LibraryExercise,
 } from "@workoutlab/engine";
 import { en } from "../../lib/i18n/en.js";
+import { perSide, type PerSideWord } from "../../lib/i18n/per-side.js";
 
 /** The cached window is 56 local days: today − 55 … today (D-0034 §3). */
 export const WINDOW_DAYS = 56;
@@ -101,18 +102,29 @@ function kindOf(sets: readonly HistorySet[], exercise: LibraryExercise): SetKind
   return sets.some((s) => (s.weightKg ?? 0) > 0) ? "weighted" : "reps";
 }
 
-function formatSet(set: HistorySet, kind: SetKind, locale?: string): string {
-  if (kind === "timed") return en.uf06.seconds(formatNumber(set.durationS ?? 0, locale));
+/** T-0975 (D-0263 §6): the one-side word is appended to each existing format; null adds nothing. */
+function formatSet(
+  set: HistorySet,
+  kind: SetKind,
+  locale?: string,
+  word?: PerSideWord | null,
+): string {
+  if (kind === "timed") return en.uf06.seconds(formatNumber(set.durationS ?? 0, locale), word);
   const reps = formatNumber(set.reps ?? 0, locale);
-  if (kind === "reps") return reps;
-  return en.uf06.weightedSet(formatNumber(set.weightKg ?? 0, locale), reps);
+  if (kind === "reps") return reps + perSide(word);
+  return en.uf06.weightedSet(formatNumber(set.weightKg ?? 0, locale), reps, word);
 }
 
-function labelOf(set: HistorySet, kind: SetKind, locale?: string): string {
+function labelOf(
+  set: HistorySet,
+  kind: SetKind,
+  locale?: string,
+  word?: PerSideWord | null,
+): string {
   const reps = formatNumber(set.reps ?? 0, locale);
-  if (kind === "timed") return en.uf06.seconds(formatNumber(set.durationS ?? 0, locale));
-  if (kind === "reps") return en.uf06.repsBest(reps);
-  return en.uf06.weightedBest(formatNumber(set.weightKg ?? 0, locale), reps);
+  if (kind === "timed") return en.uf06.seconds(formatNumber(set.durationS ?? 0, locale), word);
+  if (kind === "reps") return en.uf06.repsBest(reps, word);
+  return en.uf06.weightedBest(formatNumber(set.weightKg ?? 0, locale), reps, word);
 }
 
 /**
@@ -124,7 +136,11 @@ function labelOf(set: HistorySet, kind: SetKind, locale?: string): string {
 export function bestSet(
   sets: readonly HistorySet[],
   exercise: LibraryExercise,
-  options: { kind?: SetKind; locale?: string | undefined } = {},
+  options: {
+    kind?: SetKind;
+    locale?: string | undefined;
+    unilateral?: PerSideWord | null | undefined;
+  } = {},
 ): BestSet | null {
   const hard = normalizeHistory(sets).filter((s) => isHardSet(s, exercise));
   if (hard.length === 0) return null;
@@ -145,7 +161,7 @@ export function bestSet(
     weightKg: best.weightKg,
     reps: best.reps,
     durationS: best.durationS,
-    label: labelOf(best, kind, options.locale),
+    label: labelOf(best, kind, options.locale, options.unilateral),
   };
 }
 
@@ -246,6 +262,7 @@ export function exerciseHistory(
   now: Date,
   tz: string,
   locale?: string,
+  unilateral?: PerSideWord | null,
 ): ExerciseHistory | null {
   const exercise = library.find((ex) => ex.id === exerciseId);
   if (exercise === undefined || exercise.kind !== "exercise") return null;
@@ -270,14 +287,14 @@ export function exerciseHistory(
   const rows: HistoryRow[] = groups.map(({ sessionId, list }) => ({
     sessionId,
     date: localDate(list[0]!.completedAt, tz),
-    sets: list.map((s) => formatSet(s, kind, locale)),
+    sets: list.map((s) => formatSet(s, kind, locale, unilateral)),
   }));
   const loads = sets.map((s) => s.weightKg ?? 0).filter((w) => w > 0);
   return {
     exercise,
     kind,
     rows,
-    best: bestSet(sets, exercise, { kind, locale }),
+    best: bestSet(sets, exercise, { kind, locale, unilateral }),
     heaviestKg: loads.length > 0 ? Math.max(...loads) : null,
     sessions: rows.length,
   };

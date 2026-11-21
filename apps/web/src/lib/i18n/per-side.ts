@@ -56,3 +56,11 @@ export function readReps(
 export function repsGroupLabel(word: PerSideWord | null | undefined): string {
   return `Reps${perSide(word)}`;
 }
+
+/** The one-side how-to line for UF-04.2 (T-0976, D-0263 §7). Moved here by T-0975 so the
+ *  per-side words live in one module. */
+export function oneSideHowTo(unit: PerSideWord, timed: boolean): string {
+  if (timed) return "Hold one side, then switch. Log seconds for one side.";
+  const both = unit === "side" ? "sides" : `${unit}s`;
+  return `Do all reps on one ${unit}, then switch. Log reps for one ${unit}. One set covers both ${both}. Log RIR for your weaker side.`;
+}

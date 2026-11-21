@@ -23,6 +23,7 @@ import { ArrowIcon, ChevronIcon, CrossIcon, TickIcon } from "../../components/ic
 import { drainPercent, drainStyle } from "../../components/drain/index.js";
 import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
+import { asWord, type PerSideWord } from "../../lib/i18n/per-side.js";
 import { itemSummary, restLabel } from "../../lib/i18n/workout.js";
 import { loadExerciseDetail } from "../../lib/offline/index.js";
 import { ExerciseHowTo } from "../UF-04/index.js";
@@ -145,16 +146,30 @@ export interface ListViewProps {
   locale?: string | undefined;
 }
 
-/** The cached cue, read once per exercise; a missing detail or a rejected read gives `null`. */
-function useCue(exerciseId: string): string | null {
-  const [cue, setCue] = useState<{ id: string; text: string | null } | null>(null);
+/** The cached cue and one-side word, read once per exercise; a missing detail or a rejected
+ *  read gives `null` for both (null word = both sides, T-0975). */
+function useDetailFields(exerciseId: string): {
+  cue: string | null;
+  unilateral: PerSideWord | null;
+} {
+  const [cue, setCue] = useState<{
+    id: string;
+    text: string | null;
+    unilateral: PerSideWord | null;
+  } | null>(null);
   useEffect(() => {
     let live = true;
     Promise.resolve()
       .then(() => loadExerciseDetail(exerciseId))
       .then(
         (detail) => {
-          if (live) setCue({ id: exerciseId, text: detail?.cue ?? null });
+          if (live) {
+            setCue({
+              id: exerciseId,
+              text: detail?.cue ?? null,
+              unilateral: asWord(detail?.unilateral),
+            });
+          }
         },
         () => undefined,
       );
@@ -162,7 +177,9 @@ function useCue(exerciseId: string): string | null {
       live = false;
     };
   }, [exerciseId]);
-  return cue?.id === exerciseId ? cue.text : null;
+  return cue?.id === exerciseId
+    ? { cue: cue.text, unilateral: cue.unilateral }
+    : { cue: null, unilateral: null };
 }
 
 function isTimed(item: WorkoutItem, exercise: LibraryExercise | undefined): boolean {
@@ -246,6 +263,8 @@ interface RowProps {
   showKg: boolean;
   locale: string | undefined;
   prevText: string;
+  /** The exercise's one-side word (T-0975); null reads as both sides. */
+  word: PerSideWord | null;
   /** An added row's opening values (the last row's, D-0142 §3); null for a planned row. */
   seed: Seed | null;
   /** Focus the first field on mount (a row just added by "+ Add set"). */
@@ -277,6 +296,7 @@ function SetRow({
   showKg,
   locale,
   prevText,
+  word,
   seed,
   focusOnMount,
   keepRow,
@@ -539,7 +559,7 @@ function SetRow({
               inputMode="numeric"
               className="wl-input"
               ref={showKg ? undefined : firstField}
-              aria-label={uf03.repsLabel(n)}
+              aria-label={uf03.repsLabel(n, word)}
               aria-invalid={!logged && countInvalid ? true : undefined}
               aria-describedby={!logged && countInvalid ? countHintId : undefined}
               value={repsText}
@@ -602,6 +622,7 @@ function Rows({
   const timed = isTimed(item, exercise);
   const showKg = !timed && exercise?.externalLoad !== false;
   const previous = previousSets(data, item.exerciseId, ctx.sessionId);
+  const { unilateral: word } = useDetailFields(item.exerciseId);
   const planned = setCount(item);
   const [added, setAdded] = useState<Record<number, Seed>>({});
   const [fresh, setFresh] = useState<number | null>(null);
@@ -655,12 +676,12 @@ function Rows({
             let prevText: string = uf03.noPrevious;
             if (prev) {
               if (timed) {
-                if (prev.durationS !== null) prevText = uf03.previousSeconds(prev.durationS);
+                if (prev.durationS !== null) prevText = uf03.previousSeconds(prev.durationS, word);
               } else if (prev.reps !== null) {
                 prevText =
                   showKg && prev.weightKg !== null
-                    ? uf03.previousLoad(formatDecimal(prev.weightKg, locale), prev.reps)
-                    : uf03.previousReps(prev.reps);
+                    ? uf03.previousLoad(formatDecimal(prev.weightKg, locale), prev.reps, word)
+                    : uf03.previousReps(prev.reps, word);
               }
             }
             // T-0478 AC-2: a row logged under a different exerciseId than the card's current one
@@ -682,6 +703,7 @@ function Rows({
                 showKg={showKg}
                 locale={locale}
                 prevText={prevText}
+                word={word}
                 tagName={tagName}
                 seed={added[i] ?? null}
                 focusOnMount={fresh === i}
@@ -776,7 +798,7 @@ function Card({ ctx, data, index, locale, current, onHowTo, name, swapRef }: Car
 }
 
 function Cue({ exerciseId }: { exerciseId: string }) {
-  const cue = useCue(exerciseId);
+  const { cue } = useDetailFields(exerciseId);
   return cue ? (
     <p className="wl-uf03-list__cue" data-part="cue">
       {cue}

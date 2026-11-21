@@ -1,5 +1,7 @@
 // UF-06 strings (D-0071 §1). Owned by the UF-06 feature ticket: it is the only ticket that
 // edits this file, so the Phase 3 feature lanes never collide in `en.ts`.
+import { perSide, type PerSideWord } from "../per-side.js";
+
 export const uf06 = {
   /** Accessible name of the Balance card, which is one link to UF-10.1 (AC-4). */
   balanceLink: "Balance, last 14 days",
@@ -21,11 +23,13 @@ export const uf06 = {
   /** A weight with its unit: "102.5 kg". */
   weightKg: (weight: string) => `${weight} kg`,
   /** A weighted set inside a session row: "102.5 × 5". */
-  weightedSet: (weight: string, reps: string) => `${weight} × ${reps}`,
+  weightedSet: (weight: string, reps: string, word?: PerSideWord | null) =>
+    `${weight} × ${reps}${perSide(word)}`,
   /** A weighted "Best set" label carries the unit: "102.5 kg × 5" (D-0079 §8). */
-  weightedBest: (weight: string, reps: string) => `${weight} kg × ${reps}`,
-  repsBest: (reps: string) => `${reps} reps`,
-  seconds: (s: string) => `${s} s`,
+  weightedBest: (weight: string, reps: string, word?: PerSideWord | null) =>
+    `${weight} kg × ${reps}${perSide(word)}`,
+  repsBest: (reps: string, word?: PerSideWord | null) => `${reps} reps${perSide(word)}`,
+  seconds: (s: string, word?: PerSideWord | null) => `${s} s${perSide(word)}`,
   /** UF-06.2 estimated 1RM (D-0256, D-0258). Whole kg, always "about". */
   e1rmLabel: "Est. 1RM",
   aboutKg: (kg: string) => `about ${kg} kg`,
