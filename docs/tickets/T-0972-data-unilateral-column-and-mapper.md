@@ -31,6 +31,7 @@ The flag from T-0971 must reach the app. D-0263 §1 §2 puts it on the web-only 
 Checklist (D-0197 §7): AC4 covers online, offline and old-cache. The migration fixture includes every terminal exercise row state in use (rows with null and non-null values); `exercises` has no tombstone or rejected state, so none applies.
 
 ## Paths you may change
+- `supabase/scripts/gen-seed.mjs`, `supabase/seed.sql`, `supabase/tests/scripts/**` (extra: the seed column moved from T-0971; orchestrator grant)
 Lane `data`: `docs/data-model.md`, `supabase/migrations/**`, `packages/shared/**`. Extras for this ticket only: `supabase/tests/**` (pgTAP file), `apps/web/src/lib/offline/db.ts` and the `ExerciseDetail` write mapping in `apps/web/src/lib/offline/**` with its test.
 
 ## Contract impact
