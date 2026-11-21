@@ -5,7 +5,7 @@ lane: web-feature:UF-04
 screens: [UF-04.2]
 decisions: [D-0260, D-0261, D-0263]
 deps: [T-0972, T-0973, T-0954]
-status: todo
+status: done
 ---
 ## Why
 The how-to is where the user learns the rule: reps for one side, one set covers both, log RIR for the weaker side (D-0263 §7). One static line under the steps, only for flagged rows. Lands after T-0954 which edits the same screen.
@@ -36,3 +36,11 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 Per-package commands: one command per script.
 
 ## Build / accept log
+
+### Build (frontend-dev)
+- Base 96dce8d3 (clean). Line is a static `<p data-field="one-side" class="wl-type-body">` rendered in `LibraryDetail` right after `<HowToBody>` (UF-04.2 only; the UF-09 how-to sheet shares HowToBody and is untouched). Shown when `detail.unilateral` is non-null; timed variant when `exercise.timed`.
+- Strings: kept in `apps/web/src/features/UF-04/one-side.ts` (not the shared T-0974 `per-side` module, which does not exist yet; and `lib/i18n/flows/uf-04.ts` is outside this lane per check:repo `lane-path-not-owned`). Follow-up: move into the shared module once T-0974 lands.
+- AC map (`__tests__/one-side-howto.test.tsx`, 6 tests): AC1 arm text + `<p>` directly after steps; AC2 leg and side; AC3 timed text, no RIR; AC4 barbell-row no line; AC5 offline (network off) shows line and a cache entry stripped of `unilateral` shows none; AC6 axe clean (color-contrast and region rules off in jsdom), body class, no role/aria-live. Fixture `l1plus.ts` gained a `unilateral` column.
+- Planted faults (backup copy, restored by cp, verified with cmp): never-render, 5 fail; timed branch removed, AC3 fails; always-render, AC4 and AC5 old-cache fail.
+- Gate: web turbo typecheck lint test --force green (4/4); format:check ok; test:repo-checks rc=0; UF-04 e2e 37 passed.
+- check:repo: only `supabase/**` lane-path findings remain, from `main` having moved past this branch base (those files are not in my diff); none for UF-04.
