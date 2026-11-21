@@ -5,7 +5,7 @@ lane: web-feature:UF-06
 screens: [UF-06.2]
 decisions: [D-0254, D-0255, D-0256, D-0258, D-0257, D-0079, D-0211]
 deps: [T-0961, T-0962]
-status: todo
+status: in-progress
 ---
 ## Why
 Users see what they lifted but not whether they are getting stronger. UF-06.2 gets one "Est. 1RM" card, a delta line and a line chart with a table alternative, computed on the device from the history the screen already loads (`docs/specs/estimated-1rm.md`).
