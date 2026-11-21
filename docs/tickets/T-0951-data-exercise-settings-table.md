@@ -5,7 +5,7 @@ lane: data
 screens: [UF-04.2]
 decisions: [D-0251, D-0259, D-0199, D-0202, D-0017, D-0200, D-0020]
 deps: []
-status: in-progress
+status: done
 ---
 ## Why
 Users need their own weight step per exercise (1.25 kg for micro plates, 5 kg on leg press), which the library's `increment_kg` cannot give (`docs/specs/rir-progression-and-increments.md`, D-0251). The override lives in a new user-owned table in the family of `excluded_exercises` and `favorite_exercises`. This ticket also checks that the `session_sets_live` view exposes `rir`, so T-0953 can read it.

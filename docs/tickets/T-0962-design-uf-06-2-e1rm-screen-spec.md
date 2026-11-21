@@ -5,7 +5,7 @@ lane: design
 screens: [UF-06.2]
 decisions: [D-0256, D-0258, D-0211, D-0208, D-0079]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 UF-06.2 (Exercise history) has no screen spec file yet and gains the app's first chart. The web ticket (T-0963) needs one written source for layout, tokens, contrast, states and table, so the chart rules become the pattern for later charts (D-0258 §15).
