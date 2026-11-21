@@ -49,3 +49,15 @@ none (plain CRUD through supabase-js; table from T-0951 under D-0251; no openapi
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0954` and cite UF-04.2 and UF-09.4.
 
 Per-package commands: `pnpm --filter @workoutlab/web typecheck`, then a separate `… lint`, then a separate `… test`; same three for `@workoutlab/shared`.
+
+## Build / accept log
+- Start: worktree clean, HEAD fbec8145 (main). Decision D-0265 records the store/queue design.
+- Built: Dexie v5 (`exerciseSettings`, `exerciseSettingsQueue`), `lib/offline/exercise-settings.ts` + `-hooks.ts`, `effective-library.ts`, `loadLibrary()` now effective (`loadBaseLibrary()` raw), `flush()` sends the queue, `refreshAll` refreshes it, shared `hasExternalLoad`.
+- AC→test: AC1 `exercise-settings.test.tsx` (AC1); AC2/AC9/AC11/AC12 `effective-library-engine.test.ts`; AC3 `UF-09/__tests__/confirm-set.test.tsx` (T-0954 AC3); AC4/AC5/AC6/AC7 `exercise-settings.test.tsx`; AC8 `upgrade-v4-to-v5.test.ts`; AC10 `packages/shared/test/t0954-external-load.test.ts`.
+- Existing `upgrade-v1/v2/v3` tests assert the current version (4); updated to 5 (version bump only).
+- Planted faults (backup copy, restored by `cp`), each red: effective library ignores override (AC1, AC2, AC3, AC9, AC12); stale-write check off (AC6 x2); queue sent newest first (AC4 order); in-memory revert off, persisted revert off (AC7, two runs); upgrade clears favoriteCache (AC8); predicate ignores `timed` (AC10 shared + AC1 timed). First AC7 run did not catch the in-memory-revert fault; test tightened (hook read before load).
+- confirm-set.tsx needed no edit: UF-09 ctx.library comes from `loadLibrary()`, now effective.
+- Gate fixes: the web export-surface test (`offline-loaders.test.ts`) lists the new exports; `lib/account/__tests__/dexie-seed.ts` and `wipe.test.ts` list the two new tables (a "new table must be added here" guard; `wipe.ts` itself clears `db.tables`, so the new rows are wiped on sign-out with no code change). These two account test files are outside the ticket's paths: needs a path grant or acceptance.
+- Gate: turbo typecheck/lint/test --force: engine, shared, exercises, API green. `design-tokens#test` and `landing#test` fail only in tests that run `check-all.mjs`, which diffs against the local `main` (9544c7c, older than the base fbec8145) and lists everything merged since as "not owned"; in a scratch clone with `main` at fbec8145 `check-all.mjs` is clean. Web: see the final run below.
+- Final: web + shared typecheck/lint/test --force green (web 384 files, 5084 tests; shared 278). format:check green. Commit 1ffe1daa.
+- QA round: added a two-exercise assertion (override on bench-press leaves db-curl and leg-curl at their step); planted `steps.get(exercise.id)` -> `[...steps.values()][0]`: red, restored by cp. Server `buildEffectiveLibrary` now uses shared `hasExternalLoad` (vendored shared regenerated, `vendor.mjs --check` clean); Deno test in workouts-weight-step.test.ts; planted guard off: red, restored. Deno unit dir 136 passed; web lib 439, shared 278; format:check green.
