@@ -320,3 +320,43 @@ describe("AC-3 the write comes before moving on", () => {
     expect(screen.queryByText("Couldn't save. Tap Done again.")).not.toBeInTheDocument();
   });
 });
+
+describe("T-0953 AC7 UF-09.3 hold_effort reason line (D-0259 §12)", () => {
+  const COPY =
+    "Same weight again. Last time was close to failure. Leave a couple of reps in reserve and it goes up.";
+  const KINDS = [
+    "first_time",
+    "carry",
+    "reentry",
+    "hold_after_break",
+    "increase",
+    "deload",
+    "hold",
+    "add_rep",
+    "hold_effort",
+  ] as const;
+  const planOf = (kind: (typeof KINDS)[number]) =>
+    planWith({ items: [{ ...BENCH, prefill: { ...BENCH.prefill, kind } }, ...P1.items.slice(1)] });
+  const line = () => document.querySelector('[data-field="hold-effort"]');
+
+  it("hold_effort shows the exact copy under the hero: plain text, muted, not live, no number", async () => {
+    await showSet(planOf("hold_effort"));
+    expect(line()).toHaveTextContent(new RegExp(`^${COPY}$`));
+    expect(en.uf09.holdEffort).toBe(COPY);
+    expect(COPY).not.toMatch(/\d/);
+    expect(line()!.getAttribute("role")).toBeNull();
+    expect(line()!.closest("[aria-live]")).toBeNull();
+    expect(line()!.querySelector("a, button")).toBeNull();
+    expect(loadText()).toBe(`80${NBSP}kg × 6`);
+    const hero = document.querySelector(".wl-uf09__load")!;
+    expect(hero.compareDocumentPosition(line()!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const css = readFileSync(resolve(__dirname, "../uf-09.css"), "utf8");
+    expect(css).toMatch(/\.wl-uf09__hold-effort\s*\{[^}]*color:\s*var\(--wl-ink-muted\)/);
+  });
+
+  it.each(KINDS.filter((k) => k !== "hold_effort"))("%s shows no line", async (kind) => {
+    await showSet(planOf(kind));
+    expect(line()).toBeNull();
+    expect(document.body.textContent).not.toContain("close to failure");
+  });
+});

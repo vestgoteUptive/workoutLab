@@ -51,7 +51,7 @@ export async function refreshHistory(now: Date, tz: string): Promise<void> {
   const { data, error } = await supabase
     .from("session_sets_live")
     .select(
-      "client_id, session_id, exercise_id, is_warmup, completed_at, edited_at, deleted_at, reps, weight_kg, duration_s",
+      "client_id, session_id, exercise_id, is_warmup, completed_at, edited_at, deleted_at, reps, weight_kg, duration_s, rir",
     )
     .gte("completed_at", windowStart);
   if (error) throw error;
@@ -69,6 +69,7 @@ export async function refreshHistory(now: Date, tz: string): Promise<void> {
       | "reps"
       | "weight_kg"
       | "duration_s"
+      | "rir"
     >
   >;
   const cached = rows.map((row) => {
@@ -86,6 +87,7 @@ export async function refreshHistory(now: Date, tz: string): Promise<void> {
       reps: mapped.reps,
       weightKg: mapped.weightKg,
       durationS: mapped.durationS,
+      rir: mapped.rir ?? null,
     };
   });
 
