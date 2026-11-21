@@ -1,6 +1,8 @@
 // T-0304e AC-9 (D-0071 §4): the empty registries, the pure v2 `orderActions`, injection through
 // the `seams` prop, overlays in place of the screen, and PAUSE / RESUME / the forced check point
 // per `keepsClockRunning`.
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { act, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { initialFocusState, type FocusState, type LoggedSet } from "../machine.js";
@@ -31,6 +33,7 @@ vi.mock("../../../lib/offline/index.js", (orig) =>
 vi.mock("../store.js", (orig) => import("./store-spy.js").then((m) => m.storeSpy(orig)));
 vi.mock("../views.js", (orig) => import("./probe.js").then((m) => m.probedViews(orig)));
 
+const FEATURE_DIR = join(process.cwd(), "src/features/UF-09");
 const NOW = STARTED_AT_MS + 10 * 60_000;
 const KEY = `wl-focus:${S1}`;
 
@@ -99,6 +102,19 @@ describe("AC-9 the module registries", () => {
     const flag = (id: string) => pauseSeamActions.find((s) => s.id === id)?.keepsClockRunning;
     expect(flag("how-to")).toBe(false);
     expect(flag("list-view")).toBe(true);
+  });
+
+  // T-0949 (D-0243 §1): UF-09.4, .7 and .8 have no seam list at all, and UF-09.6's has no add.
+  it("add is only a pause seam: not in nextSeamActions, not in the next order", () => {
+    expect(nextSeamActions.map((s) => s.id)).not.toContain("add");
+    const src = readFileSync(join(FEATURE_DIR, "seams.tsx"), "utf8");
+    expect(src).toMatch(/pause: \[[^\]]*"add"[^\]]*\]/);
+    expect(src).not.toMatch(/next: \[[^\]]*"add"[^\]]*\]/);
+    expect(src.match(/id: "add"/g)).toHaveLength(1);
+    const host = readFileSync(join(FEATURE_DIR, "host.tsx"), "utf8");
+    expect(host).toMatch(
+      /phase === "paused" \? seams\.pause : phase === "next" \? seams\.next : \[\]/,
+    );
   });
 
   // T-0304f (D-0118 §12): the built UF-09.6 adds its own "I'm ready" before any seam.

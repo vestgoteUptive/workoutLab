@@ -84,6 +84,9 @@ interface SeamChrome {
   loadFailed: string;
   /** The "Try again" label; set only for a seam whose lazy view can be retried (T-0451). */
   retryLabel?: string;
+  /** Drawn over the screen (add): the placeholder sits in the sheet's scrim and panel, never in
+   *  flow below the still-mounted screen, and Escape closes it. */
+  sheet?: boolean;
 }
 
 const swapChrome: SeamChrome = {
@@ -130,12 +133,23 @@ function SeamPlaceholder({
   useEffect(() => {
     closeRef.current?.focus();
   }, []);
-  return (
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => {
+    if (!chrome.sheet) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onCloseRef.current();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [chrome.sheet]);
+  const body = (
     <div
       role="dialog"
       aria-modal="true"
       aria-label={chrome.label}
-      className="wl-uf09__view"
+      className={chrome.sheet ? "wl-sheet wl-uf09__sheet-placeholder" : "wl-uf09__view"}
+      data-wl-state={chrome.sheet ? "plan" : undefined}
       {...(chrome.screenId ? { "data-screen-id": chrome.screenId } : {})}
     >
       <p className="wl-uf09__status" role="status">
@@ -155,6 +169,14 @@ function SeamPlaceholder({
         {chrome.closeLabel}
       </button>
     </div>
+  );
+  return chrome.sheet ? (
+    <div data-wl-state="plan" data-field="seam-sheet">
+      <div className="wl-sheet-scrim" aria-hidden="true" />
+      {body}
+    </div>
+  ) : (
+    body
   );
 }
 
@@ -321,6 +343,7 @@ const addChrome: SeamChrome = {
   loading: uf03.seamLoading,
   loadFailed: uf03.seamLoadFailed,
   retryLabel: uf09.seamRetry,
+  sheet: true,
 };
 
 /** UF-09.10 over UF-09.9 (T-0949). `ctx.insertItem` does the engine call, the write and the event;

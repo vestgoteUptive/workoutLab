@@ -74,6 +74,29 @@ describe("AC10 the lazy import", () => {
     expect(storedFocus()).toMatchObject({ phase: "paused" });
   });
 
+  it("the failed placeholder sits in the sheet's scrim and dialog, not in flow below Paused; Escape closes it", async () => {
+    await seed(PAUSED_REST);
+    await renderSession();
+    importFails.n = 99;
+    fireEvent.click(screen.getByRole("button", { name: "Add exercise" }));
+    await flushReal();
+    await findEl(() => screen.queryByText("Couldn't load this view."));
+    const dialog = screen.getByRole("dialog", { name: "Add exercise" });
+    expect(dialog.className).toContain("wl-sheet");
+    expect(dialog.getAttribute("data-wl-state")).toBe("plan");
+    expect(dialog.getAttribute("aria-modal")).toBe("true");
+    const box = dialog.parentElement!;
+    expect(box.querySelector(".wl-sheet-scrim")).not.toBeNull();
+    // Not inside the Paused screen's own container, so it is not laid out in its flow.
+    expect(box.closest('[data-screen-id="UF-09.9"]')).toBeNull();
+    expect(box.contains(screen.getByText("Couldn't load this view."))).toBe(true);
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    await settle();
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(addButton());
+    expect(session().state).toMatchObject({ phase: "paused", resumePhase: "rest" });
+  });
+
   it("rejects once: the next tap retries in-page and the sheet opens", async () => {
     await seed(PAUSED_REST);
     await renderSession();
