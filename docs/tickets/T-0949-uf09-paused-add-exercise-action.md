@@ -30,7 +30,7 @@ Principle 1 allows the add only behind Pause. This ticket wires the UF-09.9 acti
 - AC13 (offline) Given offline, When AC6 runs, Then the same result; the plan write is queued.
 
 ## Paths you may change
-`apps/web/src/features/UF-09/**`, `apps/web/src/lib/i18n/flows/uf-09.ts`
+`apps/web/src/features/UF-09/**`, `apps/web/src/lib/i18n/flows/uf-09.ts`, `apps/web/src/features/UF-03/__tests__/list-view.host.test.tsx`, `tests/e2e/uf-09-focus.spec.ts` (orchestrator grant: Paused action-list pins)
 
 ## Contract impact
 none.
