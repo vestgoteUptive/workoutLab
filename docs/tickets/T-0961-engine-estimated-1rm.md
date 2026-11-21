@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-06.2]
 decisions: [D-0254, D-0255, D-0258, D-0257, D-0219]
 deps: [T-0952]
-status: todo
+status: done
 ---
 ## Why
 UF-06.2 (Exercise history) will show an estimated 1RM and a chart over time (`docs/specs/estimated-1rm.md`). The number must come from a pure, deterministic engine function (principle 3), never from the web and never from an LLM. T-0961 adds rule 16 and narrows rule 15's "never the e1RM number" to "never on Today". It depends on T-0952 (RIR engine ticket) because both tickets edit `HistorySet`, `types.ts`, the vendored copy and rule 15's paragraph; running them in parallel would conflict.
