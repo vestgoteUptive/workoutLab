@@ -36,6 +36,7 @@ function deps(history = historyFixture()): SuggestDeps {
       history,
       library: libraryFixture(),
     }),
+    loadExerciseSettings: async () => [],
     suggest,
   };
 }

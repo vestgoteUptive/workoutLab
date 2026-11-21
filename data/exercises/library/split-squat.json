@@ -17,6 +17,7 @@
   "mistakes": ["Letting the front knee cave inward.", "Taking too short a stride."],
   "variants": ["bodyweight-squat", "wall-sit", "reverse-lunge", "forward-lunge", "bulgarian-split-squat"],
   "timed": false,
+  "unilateral": "leg",
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
 }

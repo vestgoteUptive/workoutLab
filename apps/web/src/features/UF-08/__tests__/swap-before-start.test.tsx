@@ -323,7 +323,10 @@ describe("AC-2 apply renders the engine result", () => {
     });
     expect(shown()).not.toContain("Db row");
     expect(shown()).not.toContain("Barbell row");
-    expect(document.querySelector('[data-part="doesnt-fit"]')).toBeNull();
+    // T-0943 (D-0240 §3): a dropped swap-in is named, never silently gone.
+    expect(document.querySelector('[data-part="doesnt-fit"]')).toHaveTextContent(
+      "Doesn't fit in 20 min: Db row.",
+    );
   });
 });
 

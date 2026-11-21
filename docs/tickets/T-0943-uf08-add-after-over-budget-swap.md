@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.3, UF-08.5]
 decisions: [D-0240, D-0235, D-0239, D-0205, D-0211]
 deps: [T-0935, T-0940]
-status: in-progress
+status: done
 ---
 ## Why
 Triage follow-up from the empty-start review (D-0239, "Revisit when"). After T-0935 (D-0235) a swap-in becomes a pin. When the user confirms a UF-08.3 swap with `fitsBudget: false` (rule 12.1), the plan is over budget. In **suggested** mode the next Add on UF-08.5 re-suggests with the swap-in as a pin, the engine can't fit it, and it disappears with no message; the user sees their swap undone. Empty mode already refuses here (D-0239 §13.1). This ticket proposes the same behaviour for suggested mode.
@@ -37,3 +37,10 @@ Per-package commands: write one command per script — `pnpm --filter @workoutla
 
 ## Addendum (D-0240 §3)
 - AC-extra Given a swap-in pin, When a time chip re-suggests and the engine drops the swap-in, Then the "Doesn't fit in {n} min: {names}." line names it. T-0935 hides swap-ins from that line, and this ticket removes that exclusion.
+
+## Build / accept log
+- T-0943 (UF-08.2/08.3/08.5, D-0240 §3-§4). Start: main-hzlbfc 3c5f0d2b, tree clean. `SessionSetup.tsx`: dropped the `empty &&` from the over-budget refusal in `addExercise` and `startWith`; `onShuffle` returns the refusal while `overMinutes > 0`; `keptIds` now holds every pin, so a dropped swap-in is named in "Doesn't fit in {n} min: …". `Suggested.tsx`: `onShuffle` may return a refusal shown in the status line (focus stays on Shuffle). Copy reused: `en.uf08.overRefusal`. No i18n change.
+- AC to test (`__tests__/over-budget-guard.test.tsx`): AC1 Add refused on the sheet, plan unchanged, no suggest call; AC2 Shuffle status copy, focus on Shuffle; AC3 Start with this; AC4 + addendum smaller chip names B, original minutes bring it back; AC5 remove B then Add works; AC6 fitting swap, Add/Shuffle/Start with this all call suggest.
+- Existing test updated: `swap-before-start.test.tsx` (T-0303c AC-2) asserted no Doesn't-fit line after chip 20 drops the swap-in; now asserts "Doesn't fit in 20 min: Db row." per D-0240 §3 / the addendum.
+- Planted faults (backup `cp`, restored): `empty &&` back on add/start/shuffle -> AC1, AC2, AC3 red; unlabelled-pin filter back on `keptIds` -> AC4 red. New tests were green on first run with the code (no separate red-on-unfixed run beyond the faults).
+- Gate: `turbo typecheck lint test --filter=@workoutlab/web --force` green (382 files, 5064 tests); format:check, check:repo, test:repo-checks green; playwright `uf-08-*.spec.ts` 73 passed.

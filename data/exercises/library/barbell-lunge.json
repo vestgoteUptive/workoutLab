@@ -18,6 +18,7 @@
   "mistakes": ["Letting the bar roll as you lean forward.", "Stepping too short and loading the front knee."],
   "variants": ["dumbbell-lunge", "bulgarian-split-squat", "forward-lunge"],
   "timed": false,
+  "unilateral": "leg",
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
 }

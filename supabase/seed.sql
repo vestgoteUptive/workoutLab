@@ -85,7 +85,7 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
-values ('banded-glute-kickback', 'Banded glute kickback', 'exercise', 'isolation', 'beginner', array['band']::text[], array['Loop the band around your ankles and get on all fours.', 'Keep your back flat and core braced.', 'Kick one leg back and up against the band.', 'Return with control and repeat.']::text[], array['Arching the back to lift the leg higher.', 'Letting the hips rotate open.']::text[], 'Kick back against the band', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
+values ('banded-glute-kickback', 'Banded glute kickback', 'exercise', 'isolation', 'beginner', array['band']::text[], array['Loop the band around your ankles and get on all fours.', 'Keep your back flat and core braced.', 'Kick one leg back and up against the band.', 'Return with control, and after all reps switch legs.']::text[], array['Arching the back to lift the leg higher.', 'Letting the hips rotate open.']::text[], 'Kick back against the band', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -325,7 +325,7 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
-values ('cable-kickback', 'Cable kickback', 'exercise', 'isolation', 'beginner', array['cable']::text[], array['Attach the cuff to your ankle and face the machine.', 'Hold the frame for balance, torso leaning slightly forward.', 'Kick your leg back and up, squeezing your glute.', 'Return with control and repeat.']::text[], array['Arching the lower back to lift the leg higher.', 'Swinging the leg instead of a controlled kick.']::text[], 'Kick back, squeeze the glute', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 5, true)
+values ('cable-kickback', 'Cable kickback', 'exercise', 'isolation', 'beginner', array['cable']::text[], array['Attach the cuff to your ankle and face the machine.', 'Hold the frame for balance, torso leaning slightly forward.', 'Kick your leg back and up, squeezing your glute.', 'Return with control, and after all reps switch legs.']::text[], array['Arching the lower back to lift the leg higher.', 'Swinging the leg instead of a controlled kick.']::text[], 'Kick back, squeeze the glute', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 5, true)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -405,7 +405,7 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
-values ('cable-woodchop', 'Cable woodchop', 'exercise', 'isolation', 'intermediate', array['cable']::text[], array['Set the pulley high and stand side-on to the machine.', 'Grip the handle with both hands.', 'Pull it down and across your body to the opposite hip.', 'Return with control and repeat.']::text[], array['Using the arms only instead of rotating the torso.', 'Letting the hips swing instead of the core doing the work.']::text[], 'Pull down and across the body', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 5, true)
+values ('cable-woodchop', 'Cable woodchop', 'exercise', 'isolation', 'intermediate', array['cable']::text[], array['Set the pulley high and stand side-on to the machine.', 'Grip the handle with both hands.', 'Pull it down and across your body to the opposite hip.', 'Return with control, and after all reps switch sides.']::text[], array['Using the arms only instead of rotating the torso.', 'Letting the hips swing instead of the core doing the work.']::text[], 'Pull down and across the body', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 5, true)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -665,7 +665,7 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
-values ('dumbbell-row', 'Dumbbell row', 'exercise', 'compound', 'beginner', array['dumbbell', 'bench']::text[], array['Rest one knee and one hand on the bench, back flat.', 'Hold a dumbbell in the other hand, arm hanging straight down.', 'Pull the dumbbell up to your hip.', 'Lower it back down with control.']::text[], array['Twisting the torso to pull the weight up.', 'Letting the shoulder shrug instead of the elbow driving back.']::text[], 'Pull the elbow past your hip', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2, true)
+values ('dumbbell-row', 'Dumbbell row', 'exercise', 'compound', 'beginner', array['dumbbell', 'bench']::text[], array['Rest one knee and one hand on the bench, back flat.', 'Hold a dumbbell in the other hand, arm hanging straight down.', 'Pull the dumbbell up to your hip.', 'Lower it back down with control.', 'Finish all reps, then switch arms.']::text[], array['Twisting the torso to pull the weight up.', 'Letting the shoulder shrug instead of the elbow driving back.']::text[], 'Pull the elbow past your hip', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2, true)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,
@@ -1885,7 +1885,7 @@ on conflict (id) do update set
   external_load = excluded.external_load;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load)
-values ('side-plank', 'Side plank', 'exercise', 'isolation', 'intermediate', array['none']::text[], array['Lie on your side, propped up on one forearm, elbow under your shoulder.', 'Stack your feet and lift your hips off the floor.', 'Hold a straight line from head to feet, then switch sides.']::text[], array['Letting the hips drop toward the floor.', 'Rolling the top shoulder forward.']::text[], 'Stack hips, lift and hold', true, 20, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
+values ('side-plank', 'Side plank', 'exercise', 'isolation', 'intermediate', array['none']::text[], array['Lie on your side, propped up on one forearm, elbow under your shoulder.', 'Stack your feet and lift your hips off the floor.', 'Hold a straight line from head to feet, then switch sides.', 'The seconds are per side: hold the time on one side, then the other.']::text[], array['Letting the hips drop toward the floor.', 'Rolling the top shoulder forward.']::text[], 'Stack hips, lift and hold', true, 20, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false)
 on conflict (id) do update set
   name = excluded.name,
   kind = excluded.kind,

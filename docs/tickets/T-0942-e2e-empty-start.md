@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-08.1, UF-08.2, UF-08.4, UF-08.5, UF-09.1]
 decisions: [D-0236, D-0238, D-0239, D-0063]
 deps: [T-0939, T-0941]
-status: todo
+status: done
 ---
 ## Why
 Empty-start planning (`docs/specs/empty-start-plan.md`) spans UF-08.1 → UF-08.2 → UF-08.4 → UF-09 and must work offline (D-0063 §3). This ticket proves the user path end to end in the built PWA, on top of T-0940/T-0941's component tests.
@@ -34,3 +34,12 @@ none
 
 ## Definition of done
 Tests for every AC pass · `npx playwright test tests/e2e/uf-08-empty-start.spec.ts` and `tests/e2e/uf-08-*.spec.ts` green through `scripts/locked.sh heavy` (full suite only if `tests/e2e/fixtures/**` changed) · `pnpm -w typecheck lint test` green · commit messages start with `T-0942` and cite UF-08.1/UF-08.2.
+
+## Build / accept log
+- 2026-11-20 QA. Branch t/T-0942-e2e-empty-start from main 3c5f0d2b (clean). New `tests/e2e/uf-08-empty-start.spec.ts`, 11 tests, no fixture changes (histories are built in the spec, relative to now).
+- AC map: AC1 (B1) "AC1" test; AC2 (B2) "AC2" (rows compared by name + detail with a "Suggest my workout" run); AC3 (B3) "AC3"; AC4 (B4) "AC4" (last Add first, then every remaining Add, no refusal); AC5 (B7, B21 accessory) "AC5" (20 chip lists "Inverted row", 30 restores, main first); AC6 (B15) "AC6" (returning fixture = R7-E30 as day offsets); AC7 (B16) offline (goOffline gate, IndexedDB pending row with both ids, 0 writes fulfilled, one write after goOnline) plus the online sibling; AC8 (B17) "AC8" (summary "1 exercise", stored/sent plan = the pick); AC9 UF-08.1 test and UF-08.2 test (0 items, with picks, full list: axe, 44 px, focus never body, focus on Add exercise when the list empties); AC10 below.
+- B21 main-lift drop is not reachable: the smallest chip is 20 min and bench-press x 4 fits at 20 (unit-covered by T-0940/T-0941); the spec proves the accessory path only.
+- Green: new spec 11/11; with all `uf-08-*.spec.ts` 84/84 (`scripts/locked.sh heavy npx playwright test -c tests/e2e/playwright.config.ts ... --trace off`).
+- Planted faults (app code, backed up in scratchpad, restored with cp + cmp, tree clean after): F1 "Start empty" button `display:none` (AC10) -> 11/11 red (AC1 fails); F2 drop `aria-disabled` on Looks good -> AC1 and offline AC7 red; F3 suggestion-Add focus goes to "Add exercise" instead of the next row -> AC3 red; F4 first suggestions call without autoMainLift -> AC2, AC3, AC4, AC5, AC6 red. (A first F1 try with the `hidden` attribute stayed visible through CSS and passed; discarded.)
+- Defects: none found. Note: `aria-disabled` Looks good is "not enabled" to Playwright, so the no-op tap uses `click({ force: true })`.
+- Round 2 (review fixes, spec only): `expectTargets44` now asserts count > 0 per target (a missing control fails); AC9 waits for 1 item row before reading focus; AC7/AC8 skip the warm-up on UF-09.1 and assert the first picked exercise's h1 (UF-09.1 leads with "Warm-up"); AC1 waits for 0 rows + disabled Looks good before `not.toHaveURL`; AC4 status regex tightened to "min over" (no Main-lift-tag check: with no main pick `autoMainLift` is true, so a later suggestion may legitimately be tagged); returning fixture uses local-noon calendar-day offsets. Plant: "Other suggestions" not rendered in Suggested.tsx -> AC9 UF-08.2 red ("other-suggestions should be on screen"), restored with cp + cmp. Green: spec 11/11; all `uf-08-*.spec.ts` 82/84 (two T-0600 tests in uf-08-setup.spec.ts, untouched, failed under load; both pass on rerun 11/11 with `-g T-0600`); `-w format:check` and `-w lint:e2e` clean.
