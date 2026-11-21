@@ -5,7 +5,7 @@ lane: web-feature:UF-04
 screens: [UF-04.2]
 decisions: [D-0251, D-0259, D-0017]
 deps: [T-0954, T-0955]
-status: todo
+status: done
 ---
 ## Why
 Users set their own step (1.25, 2.5, 5 kg or their own value) per exercise on UF-04.2 only, never in a workout (principle 1). The store and effective library come from T-0954; the layout and copy from T-0955.
