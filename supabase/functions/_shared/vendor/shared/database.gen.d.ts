@@ -142,6 +142,38 @@ export type Database = {
                     }
                 ];
             };
+            exercise_settings: {
+                Row: {
+                    created_at: string;
+                    exercise_id: string;
+                    increment_kg: number;
+                    updated_at: string;
+                    user_id: string;
+                };
+                Insert: {
+                    created_at?: string;
+                    exercise_id: string;
+                    increment_kg: number;
+                    updated_at?: string;
+                    user_id?: string;
+                };
+                Update: {
+                    created_at?: string;
+                    exercise_id?: string;
+                    increment_kg?: number;
+                    updated_at?: string;
+                    user_id?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "exercise_settings_exercise_id_fkey";
+                        columns: ["exercise_id"];
+                        isOneToOne: false;
+                        referencedRelation: "exercises";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
             exercise_variants: {
                 Row: {
                     exercise_id: string;

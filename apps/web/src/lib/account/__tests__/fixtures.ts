@@ -172,7 +172,7 @@ export const AREAS = [
 ];
 
 /** AC1's data set for one user: 5,000 sets (40 tombstoned), 400 sessions, 1 profile, 9 targets,
- *  2 routines with 5 items, 3 check-ins, 2 exclusions (T-0535) and 2 favorites (T-0564), each
+ *  2 routines with 5 items, 3 check-ins, 2 exclusions (T-0535) 2 favorites (T-0564) and 2 weight steps (T-0951), each
  *  seeded lateral-raise first.
  *  `setCount` overrides the 5,000. */
 export function twoYears(userId: string, setCount = 5000): Record<string, Row[]> {
@@ -211,12 +211,30 @@ export function twoYears(userId: string, setCount = 5000): Record<string, Row[]>
       { user_id: userId, exercise_id: "lateral-raise", created_at: "2025-06-03T10:00:00.000Z" },
       { user_id: userId, exercise_id: "bench-press", created_at: "2025-06-04T10:00:00.000Z" },
     ],
+    // T-0951: inserted z-ex first, so a sort by exercise_id is visible.
+    exercise_settings: [
+      {
+        user_id: userId,
+        exercise_id: "z-ex",
+        increment_kg: 5,
+        created_at: "2025-06-05T10:00:00.000Z",
+        updated_at: "2025-06-05T10:00:00.000Z",
+      },
+      {
+        user_id: userId,
+        exercise_id: "a-ex",
+        increment_kg: 1.25,
+        created_at: "2025-06-06T10:00:00.000Z",
+        updated_at: "2025-06-06T10:00:00.000Z",
+      },
+    ],
   };
 }
 
 export const EXPORT_TABLE_NAMES = [
   "area_targets",
   "excluded_exercises",
+  "exercise_settings",
   "favorite_exercises",
   "plan_checkins",
   "profiles",

@@ -23,6 +23,7 @@ const OWNED_TABLES = [
   "plan_checkins",
   "excluded_exercises",
   "favorite_exercises",
+  "exercise_settings",
 ] as const;
 type OwnedTable = (typeof OWNED_TABLES)[number];
 
@@ -120,6 +121,14 @@ async function insertFavorites(client: SupabaseClient, ids: string[]): Promise<v
   if (error) throw error;
 }
 
+// T-0951 AC9 (D-0251, D-0259 §16): the weight steps go with the auth user too.
+async function insertSettings(client: SupabaseClient, ids: string[]): Promise<void> {
+  const { error } = await client
+    .from("exercise_settings")
+    .insert(ids.map((exercise_id) => ({ exercise_id, increment_kg: 1.25 })));
+  if (error) throw error;
+}
+
 function deleteAccount(accessToken: string): Promise<Response> {
   return callFunction("/account", { method: "DELETE", accessToken });
 }
@@ -146,6 +155,7 @@ Deno.test(
     await insertCheckin(a.client);
     await insertExclusions(a.client, ["barbell-back-squat", "push-up"]);
     await insertFavorites(a.client, ["barbell-bench-press", "plank"]);
+    await insertSettings(a.client, ["barbell-bench-press", "plank"]);
 
     // B: one row of each kind (and the 9 targets seedFullProfile writes).
     await seedFullProfile(b.client);
@@ -158,6 +168,7 @@ Deno.test(
     await insertCheckin(b.client);
     await insertExclusions(b.client, ["push-up"]);
     await insertFavorites(b.client, ["plank"]);
+    await insertSettings(b.client, ["plank"]);
 
     const expectedA = {
       profiles: 1,
@@ -169,6 +180,7 @@ Deno.test(
       plan_checkins: 1,
       excluded_exercises: 2,
       favorite_exercises: 2,
+      exercise_settings: 2,
     };
     const expectedB = {
       profiles: 1,
@@ -180,6 +192,7 @@ Deno.test(
       plan_checkins: 1,
       excluded_exercises: 1,
       favorite_exercises: 1,
+      exercise_settings: 1,
     };
     assertEquals(await countAll(a.userId), expectedA, "A's fixture is in place");
     assertEquals(await countAll(b.userId), expectedB, "B's fixture is in place");
@@ -199,6 +212,7 @@ Deno.test(
       plan_checkins: 0,
       excluded_exercises: 0,
       favorite_exercises: 0,
+      exercise_settings: 0,
     });
     assertEquals(await countAll(b.userId), expectedB, "B's counts are unchanged");
 

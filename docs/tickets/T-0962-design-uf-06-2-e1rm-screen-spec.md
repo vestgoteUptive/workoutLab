@@ -5,7 +5,7 @@ lane: design
 screens: [UF-06.2]
 decisions: [D-0256, D-0258, D-0211, D-0208, D-0079]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 UF-06.2 (Exercise history) has no screen spec file yet and gains the app's first chart. The web ticket (T-0963) needs one written source for layout, tokens, contrast, states and table, so the chart rules become the pattern for later charts (D-0258 §15).
@@ -35,3 +35,11 @@ none (tokens read, not changed).
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged · commit messages start with `T-0962` and cite UF-06.2.
 
 Per-package commands: `pnpm --filter @workoutlab/design-tokens typecheck`, then a separate `… lint`, then a separate `… test` (confirm the package name).
+
+## Build / accept log
+- Clean tree, HEAD ce3f28ba (main-hzlbfc). Added `Design-docs/docs/design/screens/UF-06.2.md` and `packages/design-tokens/test/uf06-2-e1rm-spec.test.ts`. `tokens.json` untouched.
+- Red run on unfixed code (spec absent): 24 of 27 new tests failed (only the 3 token-contrast checks passed, as they read tokens.json). The AC1 test also fails on a branch with no commit yet (`ticket-not-on-base`, because HEAD equals main), so it goes green only after the first commit; that is a check artefact, not a spec fault.
+- Red run 2 (spec first draft): `aria-hidden` literal missing; fixed in the spec.
+- AC1 -> test "the repo checks accept the spec" (runs check-all) + `check:repo`. AC2 -> "names only existing variables…" and "names none of the legacy…". AC3 -> three contrast tests (action/bg >= 3, ink-muted/bg >= 4.5, line/bg about 2.1); both pass, so no triage. AC4 -> state-row, exact-string and page-order/geometry/a11y tests. AC5 -> "says UF06-2-History.dc.html is superseded".
+- Gate: design-tokens typecheck, lint, test (17 files, 287 tests) green; `-w format:check`, `-w check:repo`, `-w test:repo-checks` (395 pass) green. Full `-w` test and e2e not run: docs plus one text test, no code or token change.
+- Follow-up: `web-feature:UF-06` (T-0963) builds from the spec.

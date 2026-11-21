@@ -23,6 +23,7 @@ export const EXPORT_TABLES = [
   "plan_checkins",
   "excluded_exercises",
   "favorite_exercises",
+  "exercise_settings",
 ] as const;
 
 export type ExportTable = (typeof EXPORT_TABLES)[number];
@@ -40,6 +41,8 @@ export const ORDER_KEYS: Record<ExportTable, string> = {
   excluded_exercises: "exercise_id",
   // T-0564 (D-0202 §5): same shape as excluded_exercises, so the same key.
   favorite_exercises: "exercise_id",
+  // T-0951 (D-0251 §2): no `id` column; the PK is (user_id, exercise_id) and RLS scopes user_id.
+  exercise_settings: "exercise_id",
 };
 
 export const PAGE_SIZE = 1000;
