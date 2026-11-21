@@ -17,6 +17,7 @@
   "mistakes": ["Letting the bent knee cave inward.", "Lifting the heel of the bent leg."],
   "variants": ["reverse-lunge", "forward-lunge", "walking-lunge"],
   "timed": false,
+  "unilateral": "leg",
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
 }

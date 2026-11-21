@@ -18,6 +18,7 @@
   "mistakes": ["Letting the weights pull your shoulders forward.", "Letting the front knee cave inward."],
   "variants": ["forward-lunge", "walking-lunge", "barbell-lunge", "bulgarian-split-squat"],
   "timed": false,
+  "unilateral": "leg",
   "source": "workoutlab",
   "license": "LicenseRef-workoutLab"
 }

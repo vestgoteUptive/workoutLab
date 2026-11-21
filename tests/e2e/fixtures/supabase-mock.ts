@@ -347,6 +347,11 @@ export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): P
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/favorite_exercises*`, (route) =>
     route.fulfill({ status: 200, json: fixtures.favoriteExercises ?? [] }),
   );
+  // T-0951: the account export (and T-0954's step store) read `exercise_settings`; no other
+  // route's glob matches it (`exercises*` needs the "s" after "exercise").
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/exercise_settings*`, (route) =>
+    route.fulfill({ status: 200, json: [] }),
+  );
 }
 
 /**
@@ -369,6 +374,7 @@ export async function mockSupabaseEmptyReads(page: Page): Promise<void> {
     "routine_items",
     "excluded_exercises",
     "favorite_exercises",
+    "exercise_settings",
   ]) {
     await page.route(`${VITE_SUPABASE_URL}/rest/v1/${table}*`, (route) =>
       route.fulfill({ status: 200, json: [] }),
