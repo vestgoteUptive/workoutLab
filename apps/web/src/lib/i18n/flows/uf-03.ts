@@ -3,6 +3,8 @@
 //
 // UF-03.3 Summary (T-0419, D-0068 §1, D-0142 §4). No judgement copy: the time reads next to the
 // budget with no "over", "under" or "within" (principle 3, AC-3).
+import { perSide, type PerSideWord } from "../per-side.js";
+
 export const uf03 = {
   /** No readable session row for this id on this device (D-0142 §4). Never a redirect. */
   notOnDevice: "This workout isn't on this device",
@@ -32,12 +34,14 @@ export const uf03 = {
   allOnTarget: "Every area is on target",
   // T-0674 (D-0219): the PR band's line, the UF-02 formatter pattern (T-0636). Numbers arrive formatted.
   /** "Back Squat 100 kg × 8". */
-  prWeighted: (name: string, weight: string, reps: string) => `${name} ${weight} × ${reps}`,
+  prWeighted: (name: string, weight: string, reps: string, word?: PerSideWord | null) =>
+    `${name} ${weight} × ${reps}${perSide(word)}`,
   /** "Push-up 25 reps" / "Push-up 1 rep"; `count` picks the noun. */
-  prReps: (name: string, count: number, reps: string) =>
-    `${name} ${reps} ${count === 1 ? "rep" : "reps"}`,
+  prReps: (name: string, count: number, reps: string, word?: PerSideWord | null) =>
+    `${name} ${reps} ${count === 1 ? "rep" : "reps"}${perSide(word)}`,
   /** "Plank 90 s". */
-  prTimed: (name: string, seconds: string) => `${name} ${seconds} s`,
+  prTimed: (name: string, seconds: string, word?: PerSideWord | null) =>
+    `${name} ${seconds} s${perSide(word)}`,
   /** The one link to UF-10.1, only on an ended session (D-0142 §4). */
   seeBalance: "See balance",
 
@@ -82,14 +86,15 @@ export const uf03 = {
   /** A "Previous" cell with nothing to show. */
   noPrevious: "\u2014",
   /** "97.5 × 8" (weight text from `formatKg`'s number; reps). */
-  previousLoad: (kg: string, reps: number) => `${kg} \u00D7 ${reps}`,
-  previousReps: (reps: number) => `${reps}`,
-  previousSeconds: (s: number) => `${s} s`,
+  previousLoad: (kg: string, reps: number, word?: PerSideWord | null) =>
+    `${kg} \u00D7 ${reps}${perSide(word)}`,
+  previousReps: (reps: number, word?: PerSideWord | null) => `${reps}${perSide(word)}`,
+  previousSeconds: (s: number, word?: PerSideWord | null) => `${s} s${perSide(word)}`,
   /** "0 / 3 sets" on a collapsed card. */
   cardSets: (done: number, sets: number) => `${done} / ${sets} sets`,
   /** The fields' names; `n` is the 1-based set number. */
   weightLabel: (n: number) => `Set ${n} weight in kg`,
-  repsLabel: (n: number) => `Set ${n} reps`,
+  repsLabel: (n: number, word?: PerSideWord | null) => `Set ${n} reps${perSide(word)}`,
   secondsLabel: (n: number) => `Set ${n} seconds`,
   markDone: (n: number) => `Mark set ${n} done`,
   markNotDone: (n: number) => `Mark set ${n} not done`,
