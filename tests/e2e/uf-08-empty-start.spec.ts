@@ -41,7 +41,11 @@ const profileRow = { ...profile, user_id: FAKE_USER_ID };
 
 let seq = 0;
 function setsDaysAgo(n: number, exerciseId: string, daysAgo: number): unknown[] {
-  const at = new Date(Date.now() - daysAgo * 86_400_000).toISOString();
+  // Local noon of the calendar day, so a DST shift or the time of day never moves it across a day.
+  const day = new Date();
+  day.setHours(12, 0, 0, 0);
+  day.setDate(day.getDate() - daysAgo);
+  const at = day.toISOString();
   return Array.from({ length: n }, () => ({
     client_id: `t0942-${seq++}`,
     session_id: `T0942-S-${daysAgo}`,
@@ -237,6 +241,12 @@ async function startWorkout(page: Page): Promise<string> {
   return SESSION_URL.exec(page.url())![1]!;
 }
 
+/** UF-09.1 leads with the warm-up; skip it and the first picked exercise is the current step. */
+async function expectFirstExercise(page: Page, name: string): Promise<void> {
+  await page.getByRole("button", { name: "Skip warm-up" }).click();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+}
+
 const activeIsBody = (page: Page) => page.evaluate(() => document.activeElement === document.body);
 
 // ---- AC1, AC2, AC3 (B1, B2, B3), AC4 (B4), zero history ----
@@ -262,6 +272,8 @@ test.describe("zero-history user, 30 min", () => {
     // Disabled, not inert: a tap stays on UF-08.2.
     await looksGood(page).click({ force: true });
     await expect(screenUF082(page)).toBeVisible();
+    await expect(itemRows(page)).toHaveCount(0);
+    await expect(looksGood(page)).toHaveAttribute("aria-disabled", "true");
     await expect(page).not.toHaveURL(/step=ready/);
   });
 
@@ -312,7 +324,7 @@ test.describe("zero-history user, 30 min", () => {
       await expect(itemRows(page)).toHaveCount(expected);
       expect(await itemNames(page).allTextContents()).toContain(name);
       await expect(status(page)).toHaveText(new RegExp(`^${name} added\\. \\d+ min left\\.$`));
-      await expect(status(page)).not.toContainText(/push out|doesn't fit|over/i);
+      await expect(status(page)).not.toContainText(/push out|doesn't fit|min over/i);
     }
     expect(expected).toBeGreaterThanOrEqual(3);
     expect(await itemNames(page).allTextContents()).toContain("Leg extension");
@@ -358,6 +370,7 @@ test.describe("zero-history user, 30 min", () => {
       /^\d+ min · warm-up \+ 1 exercise · \d+ sets? · done by \d{1,2}:\d{2}( [AP]M)?$/,
     );
     const id = await startWorkout(page);
+    await expectFirstExercise(page, name);
     await expect.poll(() => writes.flat().filter((r) => r.id === id).length).toBe(1);
     const row = writes.flat().find((r) => r.id === id)!;
     expect(row.plan?.items.map((i) => i.exerciseId)).toEqual([pickedId]);
@@ -413,6 +426,7 @@ test.describe("AC7 (B16) Start empty to UF-09.1", () => {
     await looksGood(page).click();
     await expect(screenUF084(page)).toBeVisible();
     const id = await startWorkout(page);
+    await expectFirstExercise(page, "Bench press");
     expect(await storedSession(page, id)).toEqual({
       pending: true,
       ids: ["bench-press", "inverted-row"],
@@ -454,9 +468,11 @@ async function expectNoSeriousViolations(page: Page): Promise<void> {
   expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.html).join(" | ")}`)).toEqual([]);
 }
 
+/** Every locator must match at least one element (a missing control is a failure, not a pass). */
 async function expectTargets44(locators: Locator[]): Promise<void> {
   for (const l of locators) {
     const n = await l.count();
+    expect(n, `${l} should be on screen`).toBeGreaterThan(0);
     for (let i = 0; i < n; i += 1) {
       const box = (await l.nth(i).boundingBox())!;
       const label = (await l.nth(i).textContent()) ?? "";
@@ -495,8 +511,8 @@ test.describe("AC9 a11y", () => {
 
     // With picks: after each Add focus is on an element, never body.
     await addButton(page, "Bench press").click();
-    expect(await activeIsBody(page)).toBe(false);
     await expect(itemRows(page)).toHaveCount(1);
+    expect(await activeIsBody(page)).toBe(false);
     await expectNoSeriousViolations(page);
     await expectTargets44([
       page.locator('[data-part="suggest-add"]'),
