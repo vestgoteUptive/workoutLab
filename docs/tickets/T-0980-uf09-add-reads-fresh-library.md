@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.9, UF-09.10]
 decisions: [D-0246, D-0247]
 deps: [T-0949, T-0950]
-status: todo
+status: done
 ---
 ## Why
 Found by T-0950 QA (about 1 run in 20). `features/UF-09/load.ts:73-80` reads the cached library once at session load and falls back to `[]`. `session.tsx` `insertItem` passes that snapshot (`ctx.library`) to the engine. A session loaded before the shell's first library refresh (cold start, reload right after sign-in) fails every add with `RangeError: <id> is not in the library` and the sheet shows "Couldn't add …". The sheet itself reads `loadLibrary()` on open, so it lists rows the add then rejects.
