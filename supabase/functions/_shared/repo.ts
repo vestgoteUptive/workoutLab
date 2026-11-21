@@ -95,7 +95,7 @@ async function loadLibrary(supabase: AuthContext["supabase"]): Promise<LibraryEx
  * `client_id` so pagination is stable and exhaustive regardless of insertion order or concurrent
  * writes during the read. Shared by `loadEngineInputs` (suggest, balance) and the finish
  * summary's `balance` component (D-0053 §8), which both need the same window as of `now`. */
-async function loadHistoryWindow(ctx: AuthContext, now: Instant): Promise<HistorySet[]> {
+export async function loadHistoryWindow(ctx: AuthContext, now: Instant): Promise<HistorySet[]> {
   const { supabase, userId } = ctx;
   const windowStart = new Date(
     new Date(now).getTime() - HISTORY_WINDOW_DAYS * 24 * 60 * 60 * 1000,
@@ -105,13 +105,14 @@ async function loadHistoryWindow(ctx: AuthContext, now: Instant): Promise<Histor
     supabase
       .from("session_sets")
       .select(
-        "client_id, session_id, exercise_id, is_warmup, completed_at, edited_at, deleted_at, reps, weight_kg, duration_s",
+        "client_id, session_id, exercise_id, is_warmup, completed_at, edited_at, deleted_at, reps, weight_kg, duration_s, rir",
       )
       .eq("user_id", userId)
       .gte("completed_at", windowStart)
       .order("client_id", { ascending: true }),
   );
-  return historyRows.map((row) => toHistorySet(row));
+  // `toHistorySet` does not carry `rir`; rule 14 steps 4/4b read it (D-0259 §2).
+  return historyRows.map((row) => ({ ...toHistorySet(row), rir: row.rir }));
 }
 
 /** Loads everything the engine needs for the caller: profile, 9 area targets, 56-day history and
