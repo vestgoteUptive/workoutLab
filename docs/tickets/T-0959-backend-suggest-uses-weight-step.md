@@ -5,7 +5,7 @@ lane: backend
 screens: [UF-08.2]
 decisions: [D-0259, D-0252, D-0251, D-0001]
 deps: [T-0951, T-0952]
-status: todo
+status: done
 ---
 ## Why
 `POST /workouts/suggest` runs the engine with the database library. If it ignored the user's `exercise_settings`, the server's back-off and pre-fill step would differ from the client's (D-0259 §15). Server and client must agree.
