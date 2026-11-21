@@ -26,12 +26,19 @@ export interface AddExerciseSheetProps {
   /** T-0577: stored favorite ids and whether that list has loaded (D-0205 §2, D-0202). */
   favoriteIds?: readonly string[];
   favoritesLoaded?: boolean;
-  /** Returns null when the exercise was added (the host closes the sheet), else the refusal. */
-  onAdd: (exerciseId: string) => string | null;
+  /** T-0948 (UF-09.10, D-0246 §16): the sheet opened during a workout. Its root carries
+   *  `.wl-uf08` (it may render with no SessionSetup around it), the screen id is UF-09.10, and
+   *  every disabled row (plan items too) takes its reason from `blocked` and an inert Add. */
+  inWorkout?: boolean;
+  /** Returns null when the exercise was added (the host closes the sheet), else the refusal.
+   *  A promise is awaited; `{ alert }` is shown in the `role="alert"` line (a failed write). */
+  onAdd: (exerciseId: string) => AddAnswer | Promise<AddAnswer>;
   /** T-0575: "Start with this" (compounds only). Same contract as `onAdd`. */
   onStartWith?: (exerciseId: string) => string | null;
   onClose: () => void;
 }
+
+export type AddAnswer = string | null | { alert: string };
 
 function areaLabel(area: Area): string {
   return en.bodyMap.areas[area];
@@ -46,6 +53,7 @@ export function AddExerciseSheet({
   items,
   budgetMin,
   lead,
+  inWorkout = false,
   blocked = {},
   favoriteIds = [],
   favoritesLoaded = true,
@@ -63,6 +71,8 @@ export function AddExerciseSheet({
   });
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("");
+  const [alert, setAlert] = useState("");
+  const pending = useRef(false);
 
   const exercises = useMemo(
     () => catalog.filter((e) => e.kind === "exercise").sort(byNameThenId),
@@ -137,9 +147,19 @@ export function AddExerciseSheet({
   }, []);
 
   function add(e: LibraryExercise): void {
+    if (pending.current) return;
     setStatus("");
-    const refusal = onAdd(e.id);
-    if (refusal !== null) setStatus(refusal);
+    setAlert("");
+    const apply = (answer: AddAnswer): void => {
+      if (answer === null) return;
+      if (typeof answer === "string") setStatus(answer);
+      else setAlert(answer.alert);
+    };
+    const answer = onAdd(e.id);
+    if (answer instanceof Promise) {
+      pending.current = true;
+      void answer.then(apply, () => {}).finally(() => (pending.current = false));
+    } else apply(answer);
   }
 
   function startWith(e: LibraryExercise): void {
@@ -149,7 +169,7 @@ export function AddExerciseSheet({
   }
 
   function row(e: LibraryExercise, areaSuffix?: string, idKey = areaSuffix) {
-    const here = inPlan.has(e.id);
+    const here = inPlan.has(e.id) && !inWorkout;
     const reason = here ? undefined : blocked[e.id];
     const reasonId = `${titleId}-why-${e.id}${idKey ? `-${idKey}` : ""}`;
     const canStart = onStartWith !== undefined && e.type === "compound" && e.id !== mainId;
@@ -220,7 +240,10 @@ export function AddExerciseSheet({
   }
 
   return (
-    <div className="wl-uf08__add-sheet" data-wl-state="plan">
+    <div
+      className={inWorkout ? "wl-uf08 wl-uf08__add-sheet" : "wl-uf08__add-sheet"}
+      data-wl-state="plan"
+    >
       <div className="wl-sheet-scrim" aria-hidden="true" />
       <div
         ref={panelRef}
@@ -230,7 +253,7 @@ export function AddExerciseSheet({
         tabIndex={-1}
         data-wl-state="plan"
         className="wl-sheet wl-uf08__sheet"
-        data-screen-id="UF-08.5"
+        data-screen-id={inWorkout ? "UF-09.10" : "UF-08.5"}
       >
         <div className="wl-sheet__grabber" aria-hidden="true" />
         <div className="wl-uf08__sheet-head">
@@ -261,6 +284,7 @@ export function AddExerciseSheet({
             onChange={(ev) => {
               setQuery(ev.target.value);
               setStatus("");
+              setAlert("");
             }}
           />
           {query !== "" ? (
@@ -280,6 +304,11 @@ export function AddExerciseSheet({
         <div role="status" className="wl-uf08__sheet-status" data-part="sheet-status">
           {status}
         </div>
+        {alert !== "" ? (
+          <div role="alert" className="wl-uf08__sheet-status" data-part="sheet-alert">
+            {alert}
+          </div>
+        ) : null}
 
         <div className="wl-uf08__sheet-body">
           {q !== "" ? (
