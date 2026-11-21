@@ -135,11 +135,7 @@ export function ConfirmSet({ state, ctx, locale, nowMs, onCancelAutosave, onSave
           {en.uf09.targetHit}
         </p>
       ) : null}
-      <div
-        className="wl-uf09__field"
-        role="group"
-        aria-label={unilateral === null ? en.uf09.repsLabel : repsGroupLabel(unilateral)}
-      >
+      <div className="wl-uf09__field" role="group" aria-label={repsGroupLabel(unilateral)}>
         <button
           type="button"
           className="wl-button--session-outline wl-uf09__stepper"

@@ -1,5 +1,6 @@
 // T-0974 (D-0261, D-0263 §4 §5 §8): the one place the "per arm / per leg / per side" copy lives.
 // UF-09 calls it today; UF-03 and UF-06 reuse it. Fixed strings, no LLM text (principle 3).
+// Note: these strings move into `en.ts` (the catalogue) when a second locale arrives.
 import type { Unilateral } from "@workoutlab/shared";
 
 /** The word a flagged exercise carries (`arm`, `leg` or `side`). */
@@ -51,7 +52,7 @@ export function readReps(
   return load === null ? reps : `${load}, ${reps}`;
 }
 
-/** The stepper group name on UF-09.4 for a flagged exercise: "Reps per arm". */
-export function repsGroupLabel(word: PerSideWord): string {
+/** The stepper group name on UF-09.4: "Reps per arm" for a flagged exercise, "Reps" for null. */
+export function repsGroupLabel(word: PerSideWord | null | undefined): string {
   return `Reps${perSide(word)}`;
 }

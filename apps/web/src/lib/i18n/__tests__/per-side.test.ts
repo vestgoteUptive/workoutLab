@@ -1,6 +1,6 @@
 // T-0974 AC6 (D-0263 §8): the shared formatter.
 import { describe, expect, it } from "vitest";
-import { formatReps, perSide, perSideCaption } from "../per-side.js";
+import { formatReps, perSide, perSideCaption, readReps, repsGroupLabel } from "../per-side.js";
 
 describe("AC6 formatReps and perSide", () => {
   it("flagged: arm, leg, timed side, singular", () => {
@@ -23,5 +23,20 @@ describe("AC6 formatReps and perSide", () => {
     expect(perSide("side")).toBe(" per side");
     expect(perSide(null)).toBe("");
     expect(perSideCaption("leg")).toBe("per leg");
+  });
+});
+
+describe("readReps and repsGroupLabel", () => {
+  it("readReps with a load and without one", () => {
+    expect(readReps(10, "arm", "en-GB", "12 kg")).toBe("12 kg, 10 reps per arm");
+    expect(readReps(10, "arm", "en-GB")).toBe("10 reps per arm");
+    expect(readReps(1, null, "en-GB", "12 kg")).toBe("12 kg, 1 rep");
+  });
+  it("repsGroupLabel for each word and null", () => {
+    expect(repsGroupLabel("arm")).toBe("Reps per arm");
+    expect(repsGroupLabel("leg")).toBe("Reps per leg");
+    expect(repsGroupLabel("side")).toBe("Reps per side");
+    expect(repsGroupLabel(null)).toBe("Reps");
+    expect(repsGroupLabel(undefined)).toBe("Reps");
   });
 });

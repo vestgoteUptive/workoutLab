@@ -53,6 +53,7 @@ function HeroLine({
     <span className={`${role} wl-uf09__hero`} aria-hidden={ariaHidden ? true : undefined}>
       {text.slice(0, at)}
       <span className="wl-uf09__unit">{text.slice(at)}</span>
+      {suffix ? <span className="wl-uf09__unit">{suffix}</span> : null}
     </span>
   );
 }

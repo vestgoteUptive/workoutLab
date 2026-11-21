@@ -286,6 +286,7 @@
 
 /* The load: the hero number and its small unit, pinned to the bottom half of the screen. */
 .wl-uf09[data-wl-state="lift"] .wl-uf09__load {
+  position: relative; /* the anchor of the visually hidden reading (.wl-uf09__sr) */
   display: flex;
   flex-direction: column;
   margin: auto 0 0;

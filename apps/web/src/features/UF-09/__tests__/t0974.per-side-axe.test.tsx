@@ -2,28 +2,16 @@
 // (no vitest-axe); color-contrast is off (no layout in jsdom); region is off (the test mounts the view without the app shell).
 import { createRequire } from "node:module";
 import { resolve } from "node:path";
-import { cleanup, fireEvent, screen } from "@testing-library/react";
+import { fireEvent } from "@testing-library/react";
 import type { SessionPlan } from "@workoutlab/shared";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
 import type { ExerciseDetail } from "../../../lib/offline/index.js";
-import type { LoggedSet } from "../machine.js";
-import { nextSetPrefill } from "../prefill.js";
-import { BENCH, P1, STARTED_AT_MS, USER_A } from "./fixtures.js";
+import { BENCH, STARTED_AT_MS, USER_A } from "./fixtures.js";
 import { flushReal, freshDb, screenId, seedSession, signIn, useFakeClock } from "./helpers.js";
 import { renderSession } from "./session-helpers.js";
-import { L2, NBSP, PU, defaultDetail, planOf } from "./set-loop-fixtures.js";
-import {
-  doneButton,
-  findEl,
-  findScreen,
-  loadText,
-  press,
-  repsValue,
-  seedFocus,
-  storedState,
-  typeWeight,
-} from "./set-loop-helpers.js";
+import { L2, PU, defaultDetail, planOf } from "./set-loop-fixtures.js";
+import { doneButton, findEl, findScreen, seedFocus } from "./set-loop-helpers.js";
 import { dispatched, stores } from "./store-spy.js";
 
 vi.mock("../../../lib/offline/index.js", (orig) =>
