@@ -9,6 +9,7 @@
 // `TypeError` schedules a backoff retry (AC-C10); it never touches rejected-vs-queued state.
 import { supabase } from "../auth/client.js";
 import { offlineDb, type QueuedSession, type QueuedSet } from "./db.js";
+import { flushExerciseSettings } from "./exercise-settings.js";
 
 const BATCH_SIZE = 100;
 
@@ -321,7 +322,10 @@ export async function flush(userId: string, hooks: FlushHooks = {}): Promise<Flu
   try {
     const sessionResult = await flushSessions(userId);
     const setResult = await flushSets(userId);
-    const sentAny = sessionResult.sentAny || setResult.sentAny;
+    // T-0954: the weight-step writes (D-0251), oldest first. Independent of sessions and sets.
+    const settingsResult = await flushExerciseSettings(userId);
+    if (settingsResult.authBlocked) markAuthBlocked(userId);
+    const sentAny = sessionResult.sentAny || setResult.sentAny || settingsResult.sentAny;
     if (sentAny && hooks.onSynced) await hooks.onSynced();
     return sentAny ? "flushed" : "empty";
   } catch (err) {

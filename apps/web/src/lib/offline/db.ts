@@ -177,6 +177,43 @@ export type CachedExcluded = CachedExerciseListRow;
 /** One cached `favorite_exercises` row (T-0567, D-0202 §6). Same shape as `CachedExcluded`. */
 export type CachedFavorite = CachedExerciseListRow;
 
+/** One device row of the user's own weight step (T-0954, D-0251): present only while an override
+ *  exists. `key` is `userScopedKey(userId, exerciseId)`. `updatedAt` is the server's `updated_at`
+ *  for this value, or null while the value has not been confirmed by the server yet. */
+export interface CachedExerciseSetting {
+  key: string;
+  userId: string;
+  exerciseId: string;
+  incrementKg: number;
+  updatedAt: string | null;
+}
+
+export type QueuedExerciseSettingStatus = "queued" | "rejected";
+
+/** One queued `exercise_settings` write (T-0954, D-0251, D-0259 §13): one entry per
+ *  `(userId, exerciseId)`, a later write replaces the earlier one (last write wins). Replayed in
+ *  `queuedAt` order. */
+export interface QueuedExerciseSetting {
+  key: string;
+  userId: string;
+  exerciseId: string;
+  op: "upsert" | "delete";
+  /** The step to send for an `upsert`; null for a `delete`. */
+  incrementKg: number | null;
+  /** Device time of the write, strictly increasing per user. Compared with the server row's
+   *  `updated_at` before a send (the later write wins). */
+  queuedAt: string;
+  /** The device value (null = no override) before the first still-queued write: what a rejected
+   *  write reverts to when there is no network to ask the server. */
+  base: number | null;
+  /** The server `updated_at` of the device row when the first still-queued write was made (null
+   *  if the device had no server-confirmed row). A server row carrying exactly this stamp is
+   *  the one this device already knew, never "newer", so a slow device clock can't make the
+   *  server's own earlier answer look like another device's later write. */
+  seen: string | null;
+  status: QueuedExerciseSettingStatus;
+}
+
 export const DB_NAME = "wl-offline";
 
 export class OfflineDb extends Dexie {
@@ -197,6 +234,9 @@ export class OfflineDb extends Dexie {
   excludedCache!: Table<CachedExcluded, string>;
   // Version 4 (T-0567, D-0202 §6): the favorite-exercises cache.
   favoriteCache!: Table<CachedFavorite, string>;
+  // Version 5 (T-0954, D-0251): the user's own weight steps and their write queue.
+  exerciseSettings!: Table<CachedExerciseSetting, string>;
+  exerciseSettingsQueue!: Table<QueuedExerciseSetting, string>;
 
   constructor(name: string = DB_NAME) {
     super(name);
@@ -227,6 +267,14 @@ export class OfflineDb extends Dexie {
     // Version 4 only adds a store: no `.upgrade()`, so no queued row can change (NFR-OFF-2).
     this.version(4).stores({
       favoriteCache: "key, userId",
+    });
+    // Version 5 (T-0954) only adds two stores: no `.upgrade()`, so no queued row can change
+    // (NFR-OFF-2). Self-contained: T-0953 (RIR in `historyCache`) adds its own later version and
+    // must not edit this one. Both stores start empty and are filled by the first write or
+    // `refreshExerciseSettings()`.
+    this.version(5).stores({
+      exerciseSettings: "key, userId",
+      exerciseSettingsQueue: "key, userId, queuedAt",
     });
   }
 }

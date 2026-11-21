@@ -16,6 +16,7 @@ export {
   refreshCheckins,
   refreshRoutines,
   loadLibrary,
+  loadBaseLibrary,
   loadTargets,
   loadProfile,
   loadBarbell,
@@ -60,3 +61,19 @@ export {
 } from "./favorites.js";
 export type { FavoriteWriteReason } from "./favorites.js";
 export { useFavoriteIds, useFavoriteList, useFavoriteRows } from "./favorites-hooks.js";
+// T-0954 (D-0251, D-0259 §13): the user's own weight step per exercise, offline-first (device
+// rows plus a write queue), and the effective library every engine call reads.
+export {
+  setExerciseStep,
+  resetExerciseStep,
+  refreshExerciseSettings,
+  loadExerciseSteps,
+  loadExerciseSettingErrors,
+  dismissExerciseSettingError,
+  flushExerciseSettings,
+  isValidStep,
+  ExerciseSettingError,
+} from "./exercise-settings.js";
+export type { ExerciseSettingRejection } from "./exercise-settings.js";
+export { useExerciseSteps, useExerciseSettingErrors } from "./exercise-settings-hooks.js";
+export { effectiveLibrary } from "./effective-library.js";
