@@ -27,14 +27,17 @@ export const RULE14_PINNED = {
 /**
  * The D-0132 §1 text, byte for byte: steps 2, 4 and 5, the edge-case heading line and its
  * five bullets. A change to any of them (e.g. `W + 2·inc` in step 4) needs a new decision.
- * D-0137 §4 (T-0235) is one: steps 2 and 5 read `min(W, max(inc, floorInc(0.9 W)))`, and the
+ * D-0259 §2 (T-0952) is one too: step 4 is rewritten and step 4b added. D-0137 §4 (T-0235) is one: steps 2 and 5 read `min(W, max(inc, floorInc(0.9 W)))`, and the
  * Drop floor bullet gains the cap sentence and its worked case. Nothing else here changed.
  */
 export const RULE14_D0132 = {
   step2:
     "2. `gap ≥ 21`: `min(W, max(inc, floorInc(0.9 W)))` (0 when `W = 0`), low reps (`reentry`).",
+  // D-0259 §2 (T-0952): step 4 is gated by RIR, and step 4b holds the weight once.
   step4:
-    "4. Every set at W has reps ≥ high: `W + inc`, low reps (`increase`) (bodyweight: 0 at high reps, `increase`).",
+    "4. Loaded, every set at W has reps ≥ high, and (`rirMin` is none or ≥ 2, or `heldOnce`): `W + inc`, low reps (`increase`). Bodyweight stays on this step: 0 at high reps (`increase`), `rir` never read (no weight to hold).",
+  step4b:
+    "4b. Loaded, every set at W has reps ≥ high, otherwise: `W`, high reps (`hold_effort`). The user repeats the top of the range. Timed exercises return earlier and never reach 4b.",
   step5:
     "5. The last two sessions both at W with `minReps < low`: `min(W, max(inc, floorInc(0.9 W)))` (0 when `W = 0`), low reps (`deload`).",
   edgeCases: "**Edge cases (D-0057, D-0062, D-0132):**",

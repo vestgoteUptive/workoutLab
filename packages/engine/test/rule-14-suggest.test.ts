@@ -47,7 +47,7 @@ import {
   offlineQueue,
   returningAfter10DaysHistory,
 } from "./fixtures/histories.js";
-import { rule14GuardDiff, rule14GuardedLines } from "./fixtures/rule14-pinned-d0132.js";
+import { rule14GuardedLines } from "./fixtures/rule14-pinned-d0132.js";
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_DIR = path.resolve(TEST_DIR, "..", "..", "..");
@@ -61,7 +61,9 @@ const KINDS: PrefillKind[] = [
   "deload",
   "hold",
   "add_rep",
+  "hold_effort",
 ];
+// D-0264: api/openapi.yaml lists all 9 codes, hold_effort last.
 
 const HISTORIES: Array<[string, HistorySet[]]> = [
   ["zero", []],
@@ -715,7 +717,7 @@ describe("rule 14 public API", () => {
     expect(() => floor5(Number.NaN)).toThrow(RangeError);
   });
 
-  it("rule-14 (AC24) PrefillKind is exactly the 8 codes and PrefillResult is the openapi shape", () => {
+  it("rule-14 (AC24) PrefillKind is exactly the 9 codes (hold_effort added by T-0952, D-0252) and PrefillResult is the openapi shape", () => {
     expectTypeOf<PrefillKind>().toEqualTypeOf<
       | "first_time"
       | "carry"
@@ -725,6 +727,7 @@ describe("rule 14 public API", () => {
       | "deload"
       | "hold"
       | "add_rep"
+      | "hold_effort"
     >();
     expectTypeOf<PrefillResult>().toEqualTypeOf<{
       weightKg: number | null;
@@ -785,7 +788,11 @@ describe("rule 14 traceability", () => {
     // D-0092 §6, narrowed by D-0132 §2: this guard covers the rule 14 lines T-0205 still
     // owns. The rest of rule 14 is pinned positively by t0221-rule-14-text.test.ts.
     const current = readFileSync(path.join(REPO_DIR, "docs", "engine-rules.md"), "utf8");
-    expect(rule14GuardedLines(current)).toHaveLength(11);
-    expect(rule14GuardDiff(current, main)).toEqual([]);
+    // T-0952 appends R14-E10…E25 after E9 (11 + 16 guarded lines); the first 11 (heading, Last
+    // performance, E1…E9) must still equal main's.
+    expect(rule14GuardedLines(current)).toHaveLength(27);
+    const head = (doc: string): string => rule14GuardedLines(doc).slice(0, 11).join("\n");
+    expect(rule14GuardedLines(main).length).toBeGreaterThanOrEqual(11);
+    expect(head(current)).toBe(head(main));
   });
 });

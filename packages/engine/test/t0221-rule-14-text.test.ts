@@ -64,7 +64,7 @@ describe("T-0221 rule 14 text (D-0132 §1)", () => {
     expect(one(lines, "2. ")).toContain("max(inc, floorInc(0.9 W))");
     expect(one(lines, "5. ")).toContain("max(inc, floorInc(0.9 W))");
     const step4 = one(lines, "4. ");
-    expect(step4).toContain("bodyweight");
+    expect(step4).toContain("Bodyweight");
     expect(step4).toContain("high reps");
   });
 
@@ -72,6 +72,7 @@ describe("T-0221 rule 14 text (D-0132 §1)", () => {
     const lines = rule14();
     expect(one(lines, "2. ")).toBe(RULE14_D0132.step2);
     expect(one(lines, "4. ")).toBe(RULE14_D0132.step4);
+    expect(one(lines, "4b. ")).toBe(RULE14_D0132.step4b);
     expect(one(lines, "5. ")).toBe(RULE14_D0132.step5);
     const block = lines.indexOf(one(lines, BLOCK));
     expect(lines[block]).toBe(RULE14_D0132.edgeCases);
@@ -116,7 +117,10 @@ describe("T-0221 rule 14 text (D-0132 §1)", () => {
     expect(one(lines, "6. ")).toBe(RULE14_PINNED.step6);
     expect(one(lines, "7. ")).toBe(RULE14_PINNED.step7);
     expect(one(lines, "For timed sets")).toBe(RULE14_PINNED.timed);
-    expect(lines.filter((l) => l.startsWith("- **R14-E"))).toEqual([...RULE14_PINNED.examples]);
+    // R14-E1…E9 stay byte-identical; E10…E25 (T-0952, D-0259) follow and are pinned by
+    // rule-14-rir.test.ts.
+    const examples = lines.filter((l) => l.startsWith("- **R14-E"));
+    expect(examples.slice(0, 9)).toEqual([...RULE14_PINNED.examples]);
     expect(RULE14_PINNED.examples).toHaveLength(9);
   });
 
