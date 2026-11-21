@@ -116,6 +116,11 @@ export function CurrentSet({ state, ctx, locale }: ViewProps) {
           <HeroLine text={loadText.slice(split)} hero />
         </p>
       )}
+      {item.prefill.kind === "hold_effort" && state.setIndex === 0 ? (
+        <p className="wl-uf09__hold-effort wl-type-body" data-field="hold-effort">
+          {en.uf09.holdEffort}
+        </p>
+      ) : null}
       {plates === null ? null : (
         <p className="wl-uf09__plates wl-type-label" data-part="plates">
           {plates.kind === "bar" ? (

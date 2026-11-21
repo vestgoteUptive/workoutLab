@@ -91,5 +91,5 @@ export type TablesInsert<Name extends keyof PublicSchema["Tables"]> = Flatten<Pu
 /** Update type of a public table. */
 export type TablesUpdate<Name extends keyof PublicSchema["Tables"]> = Flatten<PublicSchema["Tables"][Name]["Update"]>;
 export { parseSessionPlan, type SessionPlanParseError, type SessionPlanParseResult, } from "./session-plan.js";
-export { toAreaTarget, toAreaTargets, toBarbell, toEngineProfile, toHistorySet, toLibraryExercise, toPlanCheckin, toUnilateral, type Barbell, type Unilateral, } from "./mappers.js";
+export { toAreaTarget, toAreaTargets, toBarbell, toEngineProfile, toHistorySet, type HistorySetWithRir, toLibraryExercise, toPlanCheckin, toUnilateral, type Barbell, type Unilateral, } from "./mappers.js";
 export { hasExternalLoad, type ExternalLoadFields } from "./external-load.js";
