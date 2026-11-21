@@ -6,17 +6,24 @@ import { suggest } from "@workoutlab/engine";
 import type { EngineProfile, Instant, SessionInput, TimeZone, Workout } from "@workoutlab/shared";
 import type { AuthContext } from "../_shared/auth.ts";
 import { loadEngineInputs, type EngineInputs } from "../_shared/repo.ts";
+import {
+  buildEffectiveLibrary,
+  loadExerciseSettings,
+  type ExerciseSettingRow,
+} from "./effective-library.ts";
 import { parseJsonBody, validateSuggestRequest } from "../_shared/validate.ts";
 
 export interface SuggestDeps {
   now(): Instant;
   loadEngineInputs(ctx: AuthContext, now: Instant): Promise<EngineInputs>;
+  loadExerciseSettings(ctx: AuthContext): Promise<ExerciseSettingRow[]>;
   suggest: typeof suggest;
 }
 
 export const defaultSuggestDeps: SuggestDeps = {
   now: () => new Date().toISOString(),
   loadEngineInputs,
+  loadExerciseSettings,
   suggest,
 };
 
@@ -36,11 +43,13 @@ export async function suggestWorkoutCore(
   const request = validateSuggestRequest(body);
   const now = deps.now();
   const inputs = await deps.loadEngineInputs(ctx, now);
+  const settings = await deps.loadExerciseSettings(ctx);
+  const library = buildEffectiveLibrary(inputs.library, settings);
   return deps.suggest(
     inputs.history,
     inputs.targets,
     suggestProfile(inputs.profile),
-    inputs.library,
+    library,
     request.sessionInput as SessionInput,
     now,
     request.tz as TimeZone,

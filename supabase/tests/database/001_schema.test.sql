@@ -14,7 +14,7 @@ select col_type_is('public', 'areas', 'sort_order', 'smallint', 'areas.sort_orde
 select col_not_null('public', 'areas', 'sort_order', 'areas.sort_order is not null');
 -- exercises
 select has_table('public', 'exercises', 'table exercises exists');
-select columns_are('public', 'exercises', array['id', 'name', 'type', 'level', 'equipment', 'instructions', 'mistakes', 'cue', 'timed', 'source', 'license', 'attribution', 'source_url', 'kind', 'increment_kg', 'default_duration_s', 'external_load'], 'exercises has exactly the documented columns');
+select columns_are('public', 'exercises', array['id', 'name', 'type', 'level', 'equipment', 'instructions', 'mistakes', 'cue', 'timed', 'source', 'license', 'attribution', 'source_url', 'kind', 'increment_kg', 'default_duration_s', 'external_load', 'unilateral'], 'exercises has exactly the documented columns');
 select col_type_is('public', 'exercises', 'id', 'text', 'exercises.id is text');
 select col_not_null('public', 'exercises', 'id', 'exercises.id is not null');
 select col_type_is('public', 'exercises', 'name', 'text', 'exercises.name is text');
@@ -403,7 +403,9 @@ select is(
       and column_name ~* '(dob|birth|sex|gender|body_?weight|heart|latitude|longitude|lat|lng|coord|email)'
       -- T-0631 (D-0218): profiles.plates_kg (plate sizes) matches 'lat' by substring only; it is
       -- the one exact (table, column) pair let through. Any other match still fails.
-      and (table_schema, table_name, column_name) <> ('public', 'profiles', 'plates_kg')),
+      -- T-0972: exercises.unilateral (which side-by-side unit) matches 'lat' the same way.
+      and (table_schema, table_name, column_name) not in
+        (('public', 'profiles', 'plates_kg'), ('public', 'exercises', 'unilateral'))),
   0, 'no personal-data columns in public or analytics');
 select col_type_is('public', 'sessions', 'location', 'text', 'sessions.location is text');
 

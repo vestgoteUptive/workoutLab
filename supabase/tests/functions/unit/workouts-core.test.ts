@@ -46,6 +46,7 @@ function depsFixture(overrides: Partial<SuggestDeps> = {}): SuggestDeps {
   return {
     now: () => NOW,
     loadEngineInputs: async () => inputsFixture(),
+    loadExerciseSettings: async () => [],
     suggest,
     ...overrides,
   };

@@ -44,4 +44,11 @@ export declare function toBarbell(row: {
  * `completed_prev` (one-period evaluation, D-0070 §6) stays null.
  */
 export declare function toPlanCheckin(row: PlanCheckinRow): PlanCheckin;
+/** Which unit an exercise is trained in one side at a time (D-0260 §3). null = both sides. */
+export type Unilateral = "arm" | "leg" | "side";
+/** `exercises.unilateral` → Unilateral | null (D-0263 §1). Null, an unknown value (`'both'`) and a
+ * missing field (a row cached before T-0972) all read as null: both sides, no label. */
+export declare function toUnilateral(row: {
+    unilateral?: string | null;
+} | null | undefined): Unilateral | null;
 export {};

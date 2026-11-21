@@ -143,5 +143,7 @@ export {
   toHistorySet,
   toLibraryExercise,
   toPlanCheckin,
+  toUnilateral,
   type Barbell,
+  type Unilateral,
 } from "./mappers.js";

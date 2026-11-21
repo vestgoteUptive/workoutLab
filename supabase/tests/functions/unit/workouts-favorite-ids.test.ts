@@ -34,6 +34,7 @@ function deps(history = historyFixture(), spy: typeof suggest = suggest): Sugges
       history,
       library: libraryFixture(),
     }),
+    loadExerciseSettings: async () => [],
     suggest: spy,
   };
 }

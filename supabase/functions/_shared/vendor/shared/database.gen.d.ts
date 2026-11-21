@@ -223,6 +223,7 @@ export type Database = {
                     source_url: string | null;
                     timed: boolean;
                     type: string;
+                    unilateral: string | null;
                 };
                 Insert: {
                     attribution?: string | null;
@@ -242,6 +243,7 @@ export type Database = {
                     source_url?: string | null;
                     timed?: boolean;
                     type: string;
+                    unilateral?: string | null;
                 };
                 Update: {
                     attribution?: string | null;
@@ -261,6 +263,7 @@ export type Database = {
                     source_url?: string | null;
                     timed?: boolean;
                     type?: string;
+                    unilateral?: string | null;
                 };
                 Relationships: [];
             };
