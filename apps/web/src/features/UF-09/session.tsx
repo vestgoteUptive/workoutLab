@@ -15,6 +15,7 @@ import {
   deleteSet as queueDeleteSet,
   editSet as queueEditSet,
   loadEngineHistory,
+  loadLibrary,
   loadProfile,
   offlineDb,
   recordSet as queueRecordSet,
@@ -445,11 +446,20 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
         let result: ReturnType<typeof engineInsertItem>;
         let atIndex: number;
         let leftS: number;
+        let library: readonly LibraryExercise[] = [];
         const now = Date.now();
         try {
           row = await storedRow(sessionId);
           const [history, profile] = await Promise.all([loadEngineHistory(), loadProfile()]);
           if (profile === null) return { status: "failed" };
+          // T-0980: the library as the sheet reads it, now. `ctx.library` was taken at session
+          // load and is empty when that beat the shell's first library cache fill.
+          try {
+            library = (await loadLibrary()) as readonly LibraryExercise[];
+          } catch {
+            // Fall back to the snapshot below.
+          }
+          if (library.length === 0) library = ctx.library as readonly LibraryExercise[];
           leftS = timeLeftOf(row, ctx.plan, state, now);
           // D-0246 §12: appended on the last item, and 0 on an (impossible) empty plan.
           atIndex = Math.max(0, Math.min(state.itemIndex + 1, ctx.plan.items.length));
@@ -459,7 +469,7 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
             { atIndex, leftS },
             history,
             profile,
-            ctx.library as readonly LibraryExercise[],
+            library,
             new Date(now).toISOString(),
             deps.timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
           );
@@ -477,7 +487,7 @@ export function createFocusActions(deps: FocusActionDeps): FocusActions {
           return { status: "failed" };
         }
         const nameOf = (id: string | undefined) =>
-          id === undefined ? "" : (ctx.library.find((e) => e.id === id)?.name ?? id);
+          id === undefined ? "" : (library.find((e) => e.id === id)?.name ?? id);
         const moved = store.getState();
         const same =
           moved.phase === "paused" &&
