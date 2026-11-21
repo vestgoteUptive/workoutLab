@@ -126,7 +126,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe("T-0469 AC-1 export (NFR-PRIV-4)", () => {
-  test("T-0469 AC-1 downloads one workoutlab-export file with the 9 tables, 2 sessions, 3 sets", async ({
+  test("T-0469 AC-1 downloads one workoutlab-export file with the 10 tables, 2 sessions, 3 sets", async ({
     page,
   }) => {
     let historyHit = false;
@@ -168,9 +168,11 @@ test.describe("T-0469 AC-1 export (NFR-PRIV-4)", () => {
       "plan_checkins",
       "excluded_exercises",
       "favorite_exercises",
+      "exercise_settings",
     ]);
     expect(body.tables.excluded_exercises).toEqual([]);
     expect(body.tables.favorite_exercises).toEqual([]);
+    expect(body.tables.exercise_settings).toEqual([]);
     expect(body.tables.sessions).toHaveLength(2);
     expect(body.tables.session_sets).toHaveLength(3);
     expect(historyHit, "the session_sets_live history read was shadowed").toBe(true);

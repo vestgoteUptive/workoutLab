@@ -34,6 +34,8 @@ The engine takes the weight step from `LibraryExercise.incrementKg`. The web lay
 - AC12 Given last weight 80 and the new step 1.25 after a 2.5 history (off-grid), When pre-fill runs, Then it is 81.25 (`W + new step`, `W` not re-rounded).
 
 ## Paths you may change
+- `apps/web/src/lib/account/__tests__/**` (extra: the Dexie table list in the wipe/seed tests; orchestrator grant)
+- `.squad/decisions/D-0265-*.md` (the builder recorded its store/queue decision; orchestrator grant)
 - `apps/web/src/features/UF-04/**`
 - Extras, named explicitly: `apps/web/src/lib/offline/**` (store, queue, db version, effective library, hooks and tests; web-shell path); `apps/web/src/features/UF-09/**` only for `confirm-set.tsx` reading the effective step; `packages/shared/src/**` for the external-load predicate (data-lane path).
 

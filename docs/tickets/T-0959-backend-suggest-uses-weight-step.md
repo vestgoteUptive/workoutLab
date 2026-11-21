@@ -5,7 +5,7 @@ lane: backend
 screens: [UF-08.2]
 decisions: [D-0259, D-0252, D-0251, D-0001]
 deps: [T-0951, T-0952]
-status: todo
+status: done
 ---
 ## Why
 `POST /workouts/suggest` runs the engine with the database library. If it ignored the user's `exercise_settings`, the server's back-off and pre-fill step would differ from the client's (D-0259 §15). Server and client must agree.
@@ -27,6 +27,7 @@ status: todo
 - AC7 Given the settings read fails (database error), When suggest runs, Then it returns the existing error shape and not a silently wrong step.
 
 ## Paths you may change
+- `supabase/functions/_shared/repo.ts` (extra: the history loader must carry `rir`; orchestrator grant)
 - `supabase/functions/workouts/**`
 - `supabase/functions/_shared/vendor/**` (re-vendor only via `vendor.mjs`; no hand edits; extra, named explicitly)
 - `supabase/tests/**`
@@ -36,3 +37,8 @@ none (`api/openapi.yaml` unchanged; D-0259 §15).
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged · commit messages start with `T-0959` and cite UF-08.2.
+
+## Build / accept log
+- Built: `workouts/effective-library.ts` (pure `buildEffectiveLibrary`, RLS-client `loadExerciseSettings`, error is `internalError` 500); `core.ts` reads settings via new dep `loadExerciseSettings` and passes the effective library to `suggest`. `_shared/repo.ts` (backend lane, outside the ticket's listed paths): the 56-day history select now asks for `rir` and carries it (shared `toHistorySet` drops it); `loadHistoryWindow` exported for the test. Vendor unchanged (T-0952 already re-vendored); `vendor.mjs --check` passes.
+- Tests (Deno via `npx deno@2 test -A --config supabase/tests/functions/deno.json`, 135 pass): `supabase/tests/functions/unit/workouts-weight-step.test.ts`. AC1 back-off 71.25 vs 70; AC2 fake RLS client returns only own rows, B gets 70; AC3 golden equals direct engine call; AC4 builder equals hand-built library, same suggest output (web builder not yet written, T-0954: cross-check pending there); AC5 `hold_effort` + history loader carries rir; AC6 vendor check; AC7 500, engine not called. Existing 3 workouts tests gained the new dep.
+- Planted faults, each red then restored from backup: ignore overrides (AC1), swallow settings error (AC7), override applied to all exercises (AC4), history loader sets `rir: null` (AC5).
