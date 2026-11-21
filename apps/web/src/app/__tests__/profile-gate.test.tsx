@@ -235,6 +235,7 @@ function exerciseRow(id: string, name: string): Tables<"exercises"> {
     increment_kg: 2.5,
     default_duration_s: null,
     external_load: true,
+    unilateral: null,
   };
 }
 
