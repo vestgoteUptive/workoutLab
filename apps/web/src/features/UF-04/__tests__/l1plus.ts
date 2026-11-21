@@ -15,6 +15,7 @@ interface Def {
   equipment: string[];
   areas: Weights;
   timed?: boolean;
+  unilateral?: string | null;
   durationS?: number | null;
   kind?: "exercise" | "warmup";
 }
@@ -259,6 +260,7 @@ export function exerciseRows(options: SeedOptions = {}): Row[] {
         source_url: detail.source_url ?? null,
         kind: d.kind ?? "exercise",
         timed: d.timed ?? false,
+        unilateral: d.unilateral ?? null,
         increment_kg: null,
         default_duration_s: d.durationS ?? null,
         external_load: false,
