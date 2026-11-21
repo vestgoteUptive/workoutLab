@@ -42,3 +42,6 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 Per-package commands: one command per script.
 
 ## Build / accept log
+
+## Note (orchestrator, T-0971 review)
+- This ticket also adds `unilateral` to `supabase/scripts/gen-seed.mjs` `EXERCISE_COLUMNS` (`sqlOrNull(json.unilateral)`), regenerates `supabase/seed.sql`, and extends `supabase/tests/scripts/gen-seed.test.mjs`. This is T-0971's AC5, moved here so the seed and the migration land together. Paths: `supabase/scripts/gen-seed.mjs`, `supabase/seed.sql`, `supabase/tests/scripts/**`.
