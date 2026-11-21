@@ -80,6 +80,10 @@ function sessionsOf(exerciseId, hard, lib) {
     }
     return [...bySession.values()].sort((a, b) => b.lastMs - a.lastMs || (a.sessionId < b.sessionId ? -1 : a.sessionId > b.sessionId ? 1 : 0));
 }
+/** An invalid `rir` (absent, non-integer, outside 0-5, not a number) is null; never throws. */
+function validRir(rir) {
+    return typeof rir === "number" && Number.isInteger(rir) && rir >= 0 && rir <= 5 ? rir : null;
+}
 function atW(exercise, sets) {
     let w;
     if (exercise.externalLoad) {
@@ -91,10 +95,11 @@ function atW(exercise, sets) {
     else {
         w = 0;
     }
-    const reps = sets
-        .filter((s) => s.reps !== null && (!exercise.externalLoad || s.weightKg === w))
-        .map((s) => s.reps);
-    return reps.length === 0 ? null : { w, reps };
+    const used = sets.filter((s) => s.reps !== null && (!exercise.externalLoad || s.weightKg === w));
+    if (used.length === 0)
+        return null;
+    const rirs = used.map((s) => validRir(s.rir)).filter((x) => x !== null);
+    return { w, reps: used.map((s) => s.reps), rirs };
 }
 /** Step 1: `carry` when the previous exercise qualifies, otherwise `first_time`. */
 function stepOne(exercise, slot, lib, previous) {
@@ -153,6 +158,25 @@ function timedPrefill(exercise, last, gap, slot, lib, previous) {
     const next = clamp(min + TIMED_STEP_S);
     return out(next, next > min ? "add_rep" : "hold");
 }
+/**
+ * D-0259 §1: the session before the last has the same `W`, every set at `W` at reps >= high, was
+ * itself a hold (its own `rirMin` non-null and < 2), and is < 10 local days before the last one.
+ */
+function heldOnce(exercise, sessions, high, W, tz) {
+    const last = sessions[0];
+    const prior = sessions[1];
+    if (last === undefined || prior === undefined)
+        return false;
+    const before = atW(exercise, prior.sets);
+    if (before === null || before.w !== W)
+        return false;
+    if (!before.reps.every((r) => r >= high))
+        return false;
+    if (before.rirs.length === 0 || Math.min(...before.rirs) >= 2)
+        return false;
+    const gapDays = dayDiff(localDate(prior.lastInstant, tz), localDate(last.lastInstant, tz));
+    return gapDays < HOLD_GAP_DAYS;
+}
 /** Internal rule 14 over an already-normalised history and today's local date. */
 export function prefillFrom(exercise, slot, hard, lib, today, tz, previous) {
     const sessions = sessionsOf(exercise.id, hard, lib);
@@ -186,7 +210,14 @@ export function prefillFrom(exercise, slot, hard, lib, today, tz, previous) {
     if (gap >= HOLD_GAP_DAYS)
         return res(W, low, "hold_after_break");
     if (cur.reps.every((r) => r >= high)) {
-        return loaded ? res(W + inc, low, "increase") : res(0, high, "increase");
+        if (!loaded)
+            return res(0, high, "increase");
+        // Step 4 / 4b (D-0250, D-0259 §1-§2): a grinding session (rirMin < 2) holds the weight once.
+        if (cur.rirs.length === 0 || Math.min(...cur.rirs) >= 2)
+            return res(W + inc, low, "increase");
+        return heldOnce(exercise, sessions, high, W, tz)
+            ? res(W + inc, low, "increase")
+            : res(W, high, "hold_effort");
     }
     if (minReps < low) {
         const prior = sessions[1];

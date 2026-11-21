@@ -83,6 +83,7 @@ export const SESSION_PLAN_SCHEMA = {
                 "deload",
                 "hold",
                 "add_rep",
+                "hold_effort",
             ],
         },
         PrefillResult: {

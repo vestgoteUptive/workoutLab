@@ -85,6 +85,7 @@ const schema31 = {
                 "deload",
                 "hold",
                 "add_rep",
+                "hold_effort",
             ],
         },
         PrefillResult: {
@@ -465,6 +466,7 @@ const schema40 = {
         "deload",
         "hold",
         "add_rep",
+        "hold_effort",
     ],
 };
 function validate25(data, { instancePath = "", parentData, parentDataProperty, rootData = data, dynamicAnchors = {} } = {}) {
@@ -665,7 +667,8 @@ function validate25(data, { instancePath = "", parentData, parentDataProperty, r
                                         data3 === "increase" ||
                                         data3 === "deload" ||
                                         data3 === "hold" ||
-                                        data3 === "add_rep")) {
+                                        data3 === "add_rep" ||
+                                        data3 === "hold_effort")) {
                                         validate25.errors = [
                                             {
                                                 instancePath: instancePath + "/kind",
@@ -1587,7 +1590,8 @@ function validate36(data, { instancePath = "", parentData, parentDataProperty, r
                                 data1 === "increase" ||
                                 data1 === "deload" ||
                                 data1 === "hold" ||
-                                data1 === "add_rep")) {
+                                data1 === "add_rep" ||
+                                data1 === "hold_effort")) {
                                 validate36.errors = [
                                     {
                                         instancePath: instancePath + "/kind",
