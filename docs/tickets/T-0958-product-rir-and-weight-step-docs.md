@@ -5,7 +5,7 @@ lane: product
 screens: [UF-04.2, UF-09.4]
 decisions: [D-0250, D-0251, D-0253, D-0259, D-0026, D-0002]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 D-0026 said "RIR is logged but not used in v1". D-0250 amends that, and UF-04.2 gains a row. The product docs must say so, or readers see a rule that no longer holds.

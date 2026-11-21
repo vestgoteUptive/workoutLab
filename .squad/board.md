@@ -260,7 +260,7 @@ Owner request 2026-11-20 (inspired by wger): use RIR in progression and let the 
 | T-0953 | Web: RIR reaches the engine: shared `toHistorySet` picks `rir`, `session_sets_live` select includes `rir`, `CachedHistorySet.rir` with IndexedDB upgrade from v4, `history.ts` copy, queued-set mapper; `hold_effort` copy in the pre-fill reason text; offline set at RIR 0 holds next pre-fill (D-0252 §1, D-0259 §12, §14, AC8, AC11, AC15) | web-feature:UF-09 | T-0951, T-0952, T-0955 | todo | wl-build-web |
 | T-0956 | UF-04.2 "Weight step" control: shown for loaded non-timed exercises, save, reset, validation, status line, axe/44 px (AC9, AC12) | web-feature:UF-04 | T-0954, T-0955 | todo | wl-build-web |
 | T-0957 | e2e: RIR 0 holds the weight, a second session steps up, own step 1.25 flows to pre-fill and stepper, zero history, 10 days off, offline set and override, onboarding under 60 s unchanged (AC8, AC10, AC13) | qa | T-0953, T-0956 | todo | wl-build-qa |
-| T-0958 | User flows v2 and PRD: UF-04.2 gains the Weight step row; D-0026 "RIR not used" note amended; a PRD row | product | — | ready | wl-idea |
+| T-0958 | User flows v2 and PRD: UF-04.2 gains the Weight step row; D-0026 "RIR not used" note amended; a PRD row | product | — | done | wl-idea |
 | T-0959 | Backend: `POST /workouts/suggest` reads the caller's `exercise_settings` via the RLS client and builds the effective library; re-vendor the engine; test the override changes the server back-off; no openapi change (D-0259 §15, AC14) | backend | T-0951, T-0952 | done | wl-build-backend |
 
 ## One side at a time (spec docs/specs/unilateral-exercises.md)
