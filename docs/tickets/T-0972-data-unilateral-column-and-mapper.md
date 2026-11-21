@@ -5,7 +5,7 @@ lane: data
 screens: [UF-04.2, UF-09.3]
 decisions: [D-0260, D-0262, D-0263]
 deps: [T-0971, T-0951]
-status: todo
+status: done
 ---
 ## Why
 The flag from T-0971 must reach the app. D-0263 §1 §2 puts it on the web-only `ExerciseDetail` (never the engine's `LibraryExercise`), with a shared mapper and no IndexedDB bump: `refreshLibrary` replaces the cached rows, so the field backfills on the next refresh and a row without it reads as both sides. Lands after T-0951 because both add a migration and touch `docs/data-model.md` and `database.gen.ts`.
