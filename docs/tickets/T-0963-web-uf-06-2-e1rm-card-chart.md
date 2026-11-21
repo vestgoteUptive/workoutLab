@@ -5,7 +5,7 @@ lane: web-feature:UF-06
 screens: [UF-06.2]
 decisions: [D-0254, D-0255, D-0256, D-0258, D-0257, D-0079, D-0211]
 deps: [T-0961, T-0962]
-status: in-progress
+status: done
 ---
 ## Why
 Users see what they lifted but not whether they are getting stronger. UF-06.2 gets one "Est. 1RM" card, a delta line and a line chart with a table alternative, computed on the device from the history the screen already loads (`docs/specs/estimated-1rm.md`).
@@ -34,6 +34,7 @@ Each criterion becomes at least one automated test (unit and component, includin
 Checklist (D-0197 §7): offline/online pair is AC10; empty/non-empty pair is AC3-AC6 (zero, one, two or more); first launch vs returning is AC6 and AC11. No migration.
 
 ## Paths you may change
+- `tests/e2e/uf-06-progress.spec.ts` (extra: the stat-count assertion goes 3 → 4; orchestrator grant)
 - `apps/web/src/features/UF-06/**`
 - `apps/web/src/lib/i18n/flows/uf-06.ts` (extra, copy only)
 
@@ -44,3 +45,14 @@ none. No data-model, openapi, export or token change (D-0255, D-0258).
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged · commit messages start with `T-0963` and cite UF-06.2.
 
 Per-package commands: `pnpm --filter @workoutlab/web typecheck`, then a separate `… lint`, then a separate `… test` (confirm the package name).
+
+## Build / accept log
+- Built from clean `ade458d0` on `t/T-0963-e1rm-card`. New `features/UF-06/E1rmChart.tsx` (SVG, y-axis, table, ResizeObserver width, 320 fallback), `e1rmSeries` in `stats.ts` (engine `estimatedOneRepMax` + 56-day window + `localDate`), card/delta/states in `ExerciseHistory.tsx`, CSS in `progress.css`, copy in `lib/i18n/flows/uf-06.ts`. No formula in the web.
+- AC to test (all in `__tests__/e1rm.test.tsx`): AC1 "AC1 card and delta" (3 tests, incl. round(last)-round(first)); AC2 rounding; AC3 one point; AC4 none valid (60x15, weight 0); AC5 push-up/plank; AC6 zero history; AC7 role/label/aria-hidden/no aria-live/axe; AC8 table + focus + always-rendered target + 44 px css; AC9 proportional x, same day, midnight; AC10 window, offline + status line, partial cache waits; AC11 10-day gap; AC12 source scan (no use outside UF-06); AC13 tokens, vector-effect, 160 px, labels in 320 viewBox, ResizeObserver redraw, label flip; AC14 values equal engine, no `/30` formula in the web. Plus a `yAxis` algorithm test.
+- Two older UF-06 tests updated because D-0257/D-0258 reverse what they asserted: `screens.test.tsx` AC-11 (UF-06.2 may now say "1RM"; record/PR/volume/streak still banned) and `t0609.cobalt.test.tsx` AC3 (four stat values, not three).
+- Window decision: the plotted window is the screen's existing 56 local days (today-55 in, today-56 out), the same as the rows, so chart and rows never disagree. AC10's "56 days old plotted, 57 not" is read as "within the 56-day window". Flagged for the orchestrator.
+- Red runs: first run of the new tests failed 7 (my multiple-match selectors, a fixture CET/CEST offset, bodyweight seed leftovers, and the two superseded old tests above); fixed in tests, no weakening.
+- Planted faults (backups in scratchpad, restored with `cp`, diff clean): raw-rounded delta (2 red), aria-hidden removed (1), table target rendered only when open (1), evenly spaced x (2), window off by one (1), label flip off (1). All caught.
+- Gate: `turbo typecheck lint test --filter=@workoutlab/web --force` green (384 files; one first-run typecheck error, `exactOptionalPropertyTypes` on `locale`, fixed); `-w format:check`, `check:repo` (after rebasing onto the moved main) and `test:repo-checks` (395 pass) green.
+- e2e `tests/e2e/uf-06*.spec.ts`: 11 pass, 1 red: `uf-06-progress.spec.ts:195` (T-0609 AC3) expects 3 stat values and now sees 4 (the Est. 1RM card is the intended 4th). `tests/e2e` is QA's lane, so not edited here. Follow-up for QA: expect 4 values there. The canvas-compare specs for Exercise history still pass.
+- QA round: added y-axis boundary test (exactly 20 kg gives 2 gridlines, 25 rounds to 30 and gives 3); red with the ticks threshold changed `> 20` to `>= 20`, restored from backup (diff clean). `.wl-e1rm__table th { text-align: start }` added. UF-06 vitest 111 pass, format:check clean.
