@@ -5,7 +5,7 @@ lane: backend
 screens: [UF-08.2]
 decisions: [D-0237, D-0239, D-0063]
 deps: [T-0937]
-status: todo
+status: done
 ---
 ## Why
 Once openapi has the two optional switches (T-0937, D-0237 §3), `/workouts/suggest` must accept them instead of returning 400 on `additionalProperties`. D-0239 makes this **deferrable**: the app runs `suggest` on the device (D-0063 §3), so nothing waits for it.
