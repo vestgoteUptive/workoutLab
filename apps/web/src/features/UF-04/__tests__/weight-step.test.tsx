@@ -295,6 +295,21 @@ describe("AC8 failed save", () => {
   });
 });
 
+describe("AC8 synchronous throw", () => {
+  it("a setExerciseStep that throws synchronously still shows the alert and reverts", async () => {
+    const store = await import("../../../lib/offline/exercise-settings.js");
+    await open();
+    vi.spyOn(store, "setExerciseStep").mockImplementation(() => {
+      throw new Error("sync boom");
+    });
+    fireEvent.click(await chip("5 kg"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't save. Try again.");
+    expect(valueLine()).toHaveTextContent("Weight step: 2.5 kg (default)");
+    expect(await chip("2.5 kg")).toHaveAttribute("aria-checked", "true");
+    expect(stepStatus()).toBeEmptyDOMElement();
+  });
+});
+
 describe("AC9 keyboard", () => {
   it("arrows move focus and selection by roving tabindex, and the write is debounced 600 ms", async () => {
     await open();

@@ -1,23 +1,23 @@
 // T-0956 UF-04.2 "Weight step" happy path in a real browser (D-0251, D-0259): pick 1.25 kg, see the
 // status and "Use default", reset, then change it offline (applies at once, queued, no
-// "Connect to change" text). QA wires this file into tests/e2e. Supabase is mocked; the
+// "Connect to change" text). Supabase is mocked; the
 // `exercise_settings` route is stateful so the flush on reconnect is observable.
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
-import { expect, test } from "../../../../../../tests/e2e/fixtures/guarded-test.js";
+import { expect, test } from "./fixtures/guarded-test.js";
 import {
   injectSession,
   mockSupabaseAuth,
   mockSupabaseData,
   mockSupabaseRest,
   VITE_SUPABASE_URL,
-} from "../../../../../../tests/e2e/fixtures/supabase-mock.js";
+} from "./fixtures/supabase-mock.js";
 import {
   exerciseAreas,
   exerciseVariants,
   exercisesLoaded,
   profile,
-} from "../../../../../../tests/e2e/fixtures/uf-04-library-data.js";
+} from "./fixtures/uf-04-library-data.js";
 
 type Write = { method: string; url: string; body: unknown };
 
