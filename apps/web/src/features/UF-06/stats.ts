@@ -4,6 +4,7 @@
 // (`normalizeHistory`, `isHardSet`, `checkinSessions`); this module only groups and formats.
 import {
   addDays,
+  estimatedOneRepMax,
   isHardSet,
   localDate,
   normalizeHistory,
@@ -285,4 +286,35 @@ export function exerciseHistory(
 /** A plain number the way the cards print it (at most 2 fraction digits, no grouping). */
 export function formatWeight(value: number, locale?: string): string {
   return formatNumber(value, locale);
+}
+
+export interface E1rmChartPoint {
+  /** Local date (YYYY-MM-DD) of the session's best set. */
+  date: string;
+  weightKg: number;
+  reps: number;
+  /** The engine's unrounded estimate (rule 16); rounded only for text. */
+  e1rm: number;
+}
+
+/**
+ * UF-06.2: the engine's rule-16 points of one exercise inside the 56-day window, oldest first,
+ * each placed on the local date of its best set (D-0258). No formula here: values are the engine's.
+ */
+export function e1rmSeries(
+  exerciseId: string,
+  history: readonly HistorySet[],
+  library: readonly LibraryExercise[],
+  now: Date,
+  tz: string,
+): E1rmChartPoint[] {
+  const first = addDays(localDate(now.toISOString(), tz), -(WINDOW_DAYS - 1));
+  return estimatedOneRepMax(history, library, exerciseId)
+    .map((p) => ({
+      date: localDate(p.completedAt, tz),
+      weightKg: p.weightKg,
+      reps: p.reps,
+      e1rm: p.e1rm,
+    }))
+    .filter((p) => p.date >= first);
 }
