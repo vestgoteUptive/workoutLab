@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.3, UF-08.5]
 decisions: [D-0240, D-0235, D-0239, D-0205, D-0211]
 deps: [T-0935, T-0940]
-status: in-progress
+status: done
 ---
 ## Why
 Triage follow-up from the empty-start review (D-0239, "Revisit when"). After T-0935 (D-0235) a swap-in becomes a pin. When the user confirms a UF-08.3 swap with `fitsBudget: false` (rule 12.1), the plan is over budget. In **suggested** mode the next Add on UF-08.5 re-suggests with the swap-in as a pin, the engine can't fit it, and it disappears with no message; the user sees their swap undone. Empty mode already refuses here (D-0239 §13.1). This ticket proposes the same behaviour for suggested mode.
