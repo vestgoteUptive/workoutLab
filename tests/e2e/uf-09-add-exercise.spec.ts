@@ -240,29 +240,27 @@ async function mockAll(
   await mockProfilePresent(page, { ...profile, user_id: "e2e-fake-user-0001" });
 }
 
+/** Counts the rows in the library cache. */
+async function libraryCount(page: Page): Promise<number> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open("wl-offline");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const n = await new Promise<number>((resolve, reject) => {
+      const req = db.transaction("libraryCache", "readonly").objectStore("libraryCache").count();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return n;
+  });
+}
+
 /** Waits until the library cache is filled (the shell's refresh after sign-in). */
 async function libraryCached(page: Page): Promise<void> {
-  await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const db = await new Promise<IDBDatabase>((resolve, reject) => {
-          const req = indexedDB.open("wl-offline");
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
-        });
-        const n = await new Promise<number>((resolve, reject) => {
-          const req = db
-            .transaction("libraryCache", "readonly")
-            .objectStore("libraryCache")
-            .count();
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
-        });
-        db.close();
-        return n;
-      }),
-    )
-    .toBeGreaterThan(0);
+  await expect.poll(() => libraryCount(page)).toBeGreaterThan(0);
 }
 
 /** Waits until the history cache holds `count` rows (the refresh the shell fires on load). */
@@ -469,6 +467,7 @@ test.describe("T-0980 AC4 cold library", () => {
     await openSession(page, id);
     await expect(paused(page).getByText("2 / 9")).toBeVisible();
     // The session loaded with an empty library; only now does the cache fill.
+    expect(await libraryCount(page)).toBe(0);
     release();
     await libraryCached(page);
 
