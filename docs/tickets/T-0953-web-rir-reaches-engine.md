@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.3, UF-09.4]
 decisions: [D-0252, D-0259, D-0250]
 deps: [T-0951, T-0952, T-0955]
-status: todo
+status: done
 ---
 ## Why
 RIR is already saved with each set (`session_sets.rir`, `queued.rir`) but the web history path drops it before the engine sees it. Without this, T-0952's `hold_effort` never fires in the app, and a set logged offline at RIR 0 would not hold the weight in the very next offline pre-fill (D-0259 §14).
