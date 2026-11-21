@@ -5,7 +5,7 @@ lane: content
 screens: [UF-04.2, UF-09.3]
 decisions: [D-0260, D-0261, D-0262, D-0263]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Users log "10" for a dumbbell row and it must never be read as 20. The library needs an optional `unilateral` field (`arm`, `leg`, `side`) on the rows where one set means all reps on one side, then the other (spec `docs/specs/unilateral-exercises.md`, D-0260 §2, D-0263 §3 §9). This ticket is the content half: schema, loader type, the 16 rows, step-text fixes and the seed. It is a display and content flag only; the engine does not read it (D-0262).
