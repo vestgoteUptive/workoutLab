@@ -13,6 +13,7 @@ import { DetailActions } from "./DetailActions.js";
 import { Attribution } from "./Attribution.js";
 import { useScreenData } from "./data.js";
 import { HowToBody } from "./HowToBody.js";
+import { oneSideHowTo } from "./one-side.js";
 import { primaryAreaNames, secondaryAreaNames, tagLine } from "./labels.js";
 import "./uf-04.css";
 
@@ -121,6 +122,11 @@ export function LibraryDetail() {
       ) : (
         <>
           <HowToBody detail={detail} />
+          {detail.unilateral == null ? null : (
+            <p data-field="one-side" className="wl-type-body">
+              {oneSideHowTo(detail.unilateral, exercise.timed)}
+            </p>
+          )}
           {detail.mistakes.length === 0 ? null : (
             <section className="wl-uf04-detail__section">
               <h2 className="wl-type-label">{en.uf04.mistakes}</h2>
