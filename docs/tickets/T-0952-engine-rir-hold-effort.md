@@ -44,9 +44,10 @@ Checklist (D-0197 §7): AC1/AC2 give both the gated and not-gated values; AC4 gi
 - `docs/engine-rules.md` (rule 14, rule 10, examples, traceability)
 - `supabase/functions/_shared/vendor/**` (re-vendor only via `vendor.mjs`; no hand edits)
 - Extra: `.squad/ownership.yaml` lists no lane for the vendor folder; this ticket names it explicitly.
+- `api/openapi.yaml` (PrefillKind gains `hold_effort`, D-0264) and `packages/shared/**` (regenerated `api.gen.ts`, session-plan schema, their tests); orchestrator grant.
 
 ## Contract impact
-`docs/engine-rules.md` changes: needs D-0250, D-0252 (amended by D-0259 §1-§6). No data-model or openapi change.
+`docs/engine-rules.md` changes: needs D-0250, D-0252 (amended by D-0259 §1-§6). No data-model change. `api/openapi.yaml` `PrefillKind` gains `hold_effort` (D-0264).
 
 ## Definition of done
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0952` and cite UF-09.4 where relevant. Engine change: the simulated 14-day histories above.

@@ -104,6 +104,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
       plan_checkins: "id",
       excluded_exercises: "exercise_id",
       favorite_exercises: "exercise_id",
+      exercise_settings: "exercise_id",
     };
     for (const [table, key] of Object.entries(keys)) {
       expect(fake.ordersFor(table).length, table).toBeGreaterThan(0);
@@ -118,7 +119,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
     }
   });
 
-  it("T-0310c AC2 zero history: profile + 9 targets, [] for the other seven", async () => {
+  it("T-0310c AC2 zero history: profile + 9 targets, [] for the other eight", async () => {
     const all = twoYears(U);
     const fake = pg({ profiles: all.profiles!, area_targets: all.area_targets! });
     const result = await exportAccountData(input, { supabase: fake.client, db });
@@ -132,6 +133,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
       "plan_checkins",
       "excluded_exercises",
       "favorite_exercises",
+      "exercise_settings",
     ]) {
       expect((result.tables as unknown as Record<string, unknown>)[t], t).toEqual([]);
     }
@@ -192,11 +194,11 @@ describe("T-0564 AC8 favorite_exercises in the export (UF-11.4, D-0202 §5)", ()
     expect(rows.every((r) => r.user_id === U)).toBe(true);
   });
 
-  it("T-0564 AC8 the file has 9 table keys in EXPORT_TABLES order, favorite_exercises last, version 1", async () => {
+  it("T-0564 AC8 the file has 10 table keys in EXPORT_TABLES order, exercise_settings last, version 1", async () => {
     const result = await exportAccountData(input, { supabase: pg(twoYears(U, 10)).client, db });
-    expect(EXPORT_TABLES).toHaveLength(9);
+    expect(EXPORT_TABLES).toHaveLength(10);
     expect(Object.keys(result.tables)).toEqual([...EXPORT_TABLES]);
-    expect(Object.keys(result.tables).at(-1)).toBe("favorite_exercises");
+    expect(Object.keys(result.tables).at(-1)).toBe("exercise_settings");
     expect(result.version).toBe(1);
   });
 
@@ -210,6 +212,40 @@ describe("T-0564 AC8 favorite_exercises in the export (UF-11.4, D-0202 §5)", ()
     const fake = pg(twoYears(U, 10), {
       hook: (call) =>
         call.table === "favorite_exercises"
+          ? { data: null, error: { code: "PGRST205", message: "missing table" } }
+          : undefined,
+    });
+    await expect(exportAccountData(input, { supabase: fake.client, db })).rejects.toThrow(
+      new Error("export_failed"),
+    );
+  });
+});
+
+describe("T-0951 AC8 exercise_settings in the export (UF-04.2, D-0251 §2)", () => {
+  it("T-0951 AC8 lists a-ex before z-ex (inserted z-ex first), ordered by exercise_id and paged", async () => {
+    const fake = pg(twoYears(U, 10));
+    const result = await exportAccountData(input, { supabase: fake.client, db });
+
+    expect(ORDER_KEYS.exercise_settings).toBe("exercise_id");
+    expect(fake.ordersFor("exercise_settings")).toEqual([["exercise_id", { ascending: true }]]);
+    expect(fake.rangesFor("exercise_settings")).toEqual([[0, PAGE_SIZE - 1]]);
+    const rows = result.tables.exercise_settings as unknown as Row[];
+    expect(rows.map((r) => r.exercise_id)).toEqual(["a-ex", "z-ex"]);
+    expect(rows.map((r) => r.increment_kg)).toEqual([1.25, 5]);
+    expect(rows.every((r) => r.user_id === U)).toBe(true);
+  });
+
+  it("T-0951 AC8 no settings gives tables.exercise_settings as []", async () => {
+    const { exercise_settings: _drop, ...rest } = twoYears(U, 10);
+    const result = await exportAccountData(input, { supabase: pg(rest).client, db });
+    expect(result.tables).toHaveProperty("exercise_settings");
+    expect(result.tables.exercise_settings).toEqual([]);
+  });
+
+  it("T-0951 AC8 an exercise_settings read error fails the whole export", async () => {
+    const fake = pg(twoYears(U, 10), {
+      hook: (call) =>
+        call.table === "exercise_settings"
           ? { data: null, error: { code: "PGRST205", message: "missing table" } }
           : undefined,
     });
