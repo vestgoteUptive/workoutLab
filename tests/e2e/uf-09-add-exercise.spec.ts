@@ -107,7 +107,11 @@ interface Seed {
 }
 
 /** Signs in, loads `/` once so the app opens its database, then writes the session row and the paused focus state. */
-async function seedPaused(page: Page, s: Seed): Promise<void> {
+async function seedPaused(
+  page: Page,
+  s: Seed,
+  { waitForLibrary = true }: { waitForLibrary?: boolean } = {},
+): Promise<void> {
   await page.goto("/");
   await injectSession(page);
   await page.goto("/");
@@ -122,7 +126,7 @@ async function seedPaused(page: Page, s: Seed): Promise<void> {
   // The focus session reads the cached library once, when it loads, and hands that copy to the
   // engine (`load.ts`). The shell fills the cache after sign-in, so wait for it: a session loaded
   // before it landed gets an empty library and an add fails with "Couldn't add" (T-0950 finding).
-  await libraryCached(page);
+  if (waitForLibrary) await libraryCached(page);
   await page.evaluate(
     async ({ s, userId }) => {
       const nowMs = Date.now();
@@ -236,29 +240,27 @@ async function mockAll(
   await mockProfilePresent(page, { ...profile, user_id: "e2e-fake-user-0001" });
 }
 
+/** Counts the rows in the library cache. */
+async function libraryCount(page: Page): Promise<number> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const req = indexedDB.open("wl-offline");
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    const n = await new Promise<number>((resolve, reject) => {
+      const req = db.transaction("libraryCache", "readonly").objectStore("libraryCache").count();
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+    db.close();
+    return n;
+  });
+}
+
 /** Waits until the library cache is filled (the shell's refresh after sign-in). */
 async function libraryCached(page: Page): Promise<void> {
-  await expect
-    .poll(() =>
-      page.evaluate(async () => {
-        const db = await new Promise<IDBDatabase>((resolve, reject) => {
-          const req = indexedDB.open("wl-offline");
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
-        });
-        const n = await new Promise<number>((resolve, reject) => {
-          const req = db
-            .transaction("libraryCache", "readonly")
-            .objectStore("libraryCache")
-            .count();
-          req.onsuccess = () => resolve(req.result);
-          req.onerror = () => reject(req.error);
-        });
-        db.close();
-        return n;
-      }),
-    )
-    .toBeGreaterThan(0);
+  await expect.poll(() => libraryCount(page)).toBeGreaterThan(0);
 }
 
 /** Waits until the history cache holds `count` rows (the refresh the shell fires on load). */
@@ -440,6 +442,41 @@ test.describe("T-0950 AC1 B1 zero history, paused in a rest", () => {
     await expect(next.locator('[data-field="kg"]')).toHaveCount(0);
     await expect(next.locator('[data-field="summary"]')).toContainText("3");
     await expect(next.locator('[data-field="summary"]')).toContainText("10");
+  });
+});
+
+test.describe("T-0980 AC4 cold library", () => {
+  test("a session loaded before the library cache fills still adds an exercise", async ({
+    page,
+  }) => {
+    await mockAll(page);
+    // Hold the shell's library fetch so the cache stays empty until the session has loaded.
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route(
+      (url) => url.pathname.endsWith("/rest/v1/exercises"),
+      async (route) => {
+        await gate;
+        await route.fallback().catch(() => undefined);
+      },
+    );
+    const id = randomUUID();
+    await seedPaused(page, { id, plan: P_PLAN(), ...REST_AFTER_SET_2 }, { waitForLibrary: false });
+    await openSession(page, id);
+    await expect(paused(page).getByText("2 / 9")).toBeVisible();
+    // The session loaded with an empty library; only now does the cache fill.
+    expect(await libraryCount(page)).toBe(0);
+    release();
+    await libraryCached(page);
+
+    const dialog = await openSheet(page);
+    await addLateral(dialog);
+    await expect(dialog).toHaveCount(0);
+    await expect(addedLine(page)).toHaveText("Lateral raise added after Bench press.");
+    const stored = await storedRow(page, id);
+    expect(ids(stored)).toEqual(["bench-press", "lateral-raise", "inverted-row", "leg-extension"]);
   });
 });
 
