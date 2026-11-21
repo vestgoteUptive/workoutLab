@@ -178,6 +178,7 @@ describe("AC8 Reason, SwapReason, PrefillKind (rule 10, D-0025, D-0026)", () => 
       "deload",
       "hold",
       "add_rep",
+      "hold_effort",
     ]);
   });
 });

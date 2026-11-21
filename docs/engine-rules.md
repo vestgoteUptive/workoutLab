@@ -199,7 +199,7 @@ Fixture: budget 45 min, warm-up on. The plan is bench-press × 4 (main, chest 0.
 - **R9-E13 (edit plan resets)** Given P2 = 4 and P3 = 3 and `plan_changed_at` 2026-09-20, Then on 2026-09-27 the result lists P3 alone and proposes 2–3 (P3 ends 09-26 ≥ 09-20, so it is eligible; an edit on 09-27 would leave no eligible period and no proposal; D-0094).
 
 ## 10. Explanation
-Every item carries machine-readable reasons, and the UI or an optional LLM only turns them into words. The codes are: `main_lift`, `area_deficit {area, deficit}`, `days_since {area, days | null}`, `recovering_skipped {area}`, `energy_low_trim`, `energy_high_backoff`, `swap {reason}`, `prefill {kind: first_time|carry|reentry|hold_after_break|increase|deload|hold|add_rep}`. `sessionReasons` (≤ 3) starts with at most 2 `recovering_skipped {area}` entries for the recovering areas in the fixed order, then is filled with `area_deficit` entries for the items' distinct first primary areas, in session order, up to 3 in total (D-0040).
+Every item carries machine-readable reasons, and the UI or an optional LLM only turns them into words. The codes are: `main_lift`, `area_deficit {area, deficit}`, `days_since {area, days | null}`, `recovering_skipped {area}`, `energy_low_trim`, `energy_high_backoff`, `swap {reason}`, `prefill {kind: first_time|carry|reentry|hold_after_break|increase|deload|hold|add_rep|hold_effort}` (`hold_effort` carries no extra fields, D-0252, D-0259 §2). `sessionReasons` (≤ 3) starts with at most 2 `recovering_skipped {area}` entries for the recovering areas in the fixed order, then is filled with `area_deficit` entries for the items' distinct first primary areas, in session order, up to 3 in total (D-0040).
 - **R10-E1** For R7-E4, bench-press has `main_lift` and `area_deficit {chest, 1}`, and `sessionReasons` covers chest, back and quads.
 
 ## 11. Balance output (UF-10, D-0013, D-0027)
@@ -290,7 +290,8 @@ Fixture P is rule 8's (R8-E4: `budgetMin` 45, R7-E4's items, `available` 2520, z
 1. No history: if this is a swap or shuffle and the slot's previous exercise shares a weight-1.0 area and an equipment item, carry its pre-fill weight (`carry`). Otherwise the weight is null, or 0 for bodyweight (`first_time`). Low reps.
 2. `gap ≥ 21`: `min(W, max(inc, floorInc(0.9 W)))` (0 when `W = 0`), low reps (`reentry`).
 3. `gap ≥ 10`: `W`, low reps (`hold_after_break`).
-4. Every set at W has reps ≥ high: `W + inc`, low reps (`increase`) (bodyweight: 0 at high reps, `increase`).
+4. Loaded, every set at W has reps ≥ high, and (`rirMin` is none or ≥ 2, or `heldOnce`): `W + inc`, low reps (`increase`). Bodyweight stays on this step: 0 at high reps (`increase`), `rir` never read (no weight to hold).
+4b. Loaded, every set at W has reps ≥ high, otherwise: `W`, high reps (`hold_effort`). The user repeats the top of the range. Timed exercises return earlier and never reach 4b.
 5. The last two sessions both at W with `minReps < low`: `min(W, max(inc, floorInc(0.9 W)))` (0 when `W = 0`), low reps (`deload`).
 6. The last session alone with `minReps < low`: `W`, low reps (`hold`).
 7. Otherwise: `W`, `min(high, minReps + 1)` (`add_rep`).
@@ -304,6 +305,9 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 - **Carry (D-0062 §1):** step 1 carries only when the previous weight is > 0, the exercise is non-timed with `externalLoad: true`, and the previous exercise is a library row of kind `exercise` sharing a weight-1.0 area and an equipment item (`[]` ≡ `["none"]`, D-0040 §1). The carried weight is rounded to 3 decimals. Otherwise step 1 is `first_time`.
 - **Timed (D-0057 §6, D-0062 §5):** `min(last)` is the minimum non-null `durationS` over that session's hard sets. Weight and reps are null. Every non-first-time result is clamped to [15, 120] s: `gap ≥ 21` → `clamp(max(15, floor5(0.9 × min)))` (`reentry`); `gap` 10–20 → `clamp(min)` (`hold_after_break`); otherwise `clamp(min + 5)`, which is `add_rep` when greater than `min` and `hold` when not. `floor5(x) = floor(round3(x) / 5) × 5`. The first time is `defaultDurationS`, unclamped.
 
+- **RIR (D-0250, D-0252, D-0259 §1-§3):** `HistorySet.rir` is optional (absent ≡ null); a non-integer, non-number or out-of-range (not 0-5) value is null and never throws. `rirMin` is the lowest valid non-null `rir` over the sets used for `minReps` (at `W`, non-null reps, hard, back-off excluded), or none when no such set has one. `heldOnce` is true only when the session before the last (a) has the same `W`, (b) has every set at `W` with reps ≥ high, (c) was itself a hold (its own `rirMin`, same definition, is non-null and < 2), and (d) is less than 10 local days before the last session (the day-gap count of steps 2-3); otherwise false. So a hold happens once, then the weight steps up whatever the RIR. Steps 1-3 run first, so a break beats RIR. Only steps 4 and 4b read `rir`: steps 1-3 and 5-7, rule 15 (records), balance and `timeCheck` never do, and their output is unchanged with `rir` present.
+- **Own step (D-0252 §2):** `inc` is `incrementKg ?? 2.5` of the library row the engine is given; a caller passes an effective library with the user's override in `incrementKg`. `suggest`, `applySwap` and `prefill` all read that one value; `floorInc`, the drop floor and the rule 7.4 back-off floor use it too. A changed step never rewrites history: the next pre-fill is `W + new step`, where `W` is the last weight lifted.
+
 - **R14-E1** back-squat as the main lift, last on 09-24 at 100 × 8, 8, 8: 102.5 × 6 (`increase`).
 - **R14-E2** 100 × 8, 7, 6 on 09-24: 100 × 7 (`add_rep`).
 - **R14-E3 (returning after 10 days off)** 100 × 8, 8, 8 on 09-15: 100 × 6 (`hold_after_break`).
@@ -314,8 +318,26 @@ For timed sets, the first time uses `default_duration_s`. After that the duratio
 - **R14-E8** plank, last 45, 45, 40 s on 09-24: 45 s.
 - **R14-E9** High-energy back-off on a bench-press pre-fill of 80 × 6: 70 × 6.
 
+RIR examples (D-0250, D-0259; goal `build_muscle`, bench-press as the main lift 6-8 unless stated, `inc` 2.5, `now` 09-27, sessions are on the date shown):
+- **R14-E10 (hold at RIR 1)** 09-24: 80 × 8, 8, 8 at RIR 2, 2, 1: `rirMin` 1, no earlier session: 80 × 8 (`hold_effort`). Without RIR it is 82.5 × 6.
+- **R14-E11 (increase at RIR ≥ 2)** the same at RIR 3, 2, 2: 82.5 × 6 (`increase`).
+- **R14-E12 (RIR 0 on one set)** RIR null, null, 0: `rirMin` 0 (nulls ignored): 80 × 8 (`hold_effort`).
+- **R14-E13 (no RIR logged)** every `rir` null: 82.5 × 6 (`increase`), identical to R14-E1.
+- **R14-E14 (one hold, then up)** 09-20: 80 × 8, 8, 8 at RIR 1, 1, 0; 09-24: 80 × 8, 8, 8 at RIR 1, 1, 1: `heldOnce` is true: 82.5 × 6 (`increase`). With only the 09-24 session: 80 × 8 (`hold_effort`).
+- **R14-E15 (the earlier session is at another weight)** 09-20: 77.5 × 8, 8, 8; 09-24: 80 × 8, 8, 8 at RIR 1: `heldOnce` is false: 80 × 8 (`hold_effort`).
+- **R14-E16 (a break wins)** 80 × 8, 8, 8 at RIR 0 on 09-15 (gap 12): 80 × 6 (`hold_after_break`); at gap 21 or more it is `reentry`. RIR is not read.
+- **R14-E17 (reps below the top)** 80 × 8, 7, 6 at RIR 0 on 09-24 (high 8, low 6): 80 × 7 (`add_rep`).
+- **R14-E18 (back-off sets don't count)** 09-24: 80 × 8, 8, 8 at RIR 2, 2, 2 plus a back-off 72.5 × 8 at RIR 0: `W` is 80: 82.5 × 6 (`increase`).
+- **R14-E19 (bodyweight)** push-up 0 × 15, 15, 15 at RIR 0 (high 15): 0 × 15 (`increase`).
+- **R14-E20 (timed)** plank 45, 45, 40 s: unchanged, R14-E8.
+- **R14-E21 (own step)** db-curl (isolation 10-15, library step 2.5, user step 1.25), 20 × 15, 15, 15 at RIR 3, 2, 2: 21.25 × 10 (`increase`). Without the override: 22.5 × 10.
+- **R14-E22 (deload on the grid)** back-squat 102 × 5, 5, 4 on 09-20 and 102 × 5, 4, 4 on 09-24, step 1.25: `floorInc(91.8)` = 91.25: 91.25 × 6 (`deload`). With 2.5 it is 90 × 6.
+- **R14-E23 (back-off)** High energy, bench-press pre-fill 80 × 6, step 1.25: `floorInc(72)` = 71.25 × 6. With 2.5 it is 70 × 6 (R14-E9).
+- **R14-E24 (the earlier session was not a hold)** 09-20: 80 × 8, 8, 8 at RIR 3, 3, 3; 09-24: 80 × 8, 8, 8 at RIR 1: the earlier `rirMin` is 3, so `heldOnce` is false: 80 × 8 (`hold_effort`).
+- **R14-E25 (the earlier hold is stale)** 09-12: 80 × 8, 8, 8 at RIR 0; 09-24: 80 × 8, 8, 8 at RIR 1 (12 days between the sessions): `heldOnce` is false: 80 × 8 (`hold_effort`). With the earlier session 9 days before the last it is true: 82.5 × 6 (`increase`).
+
 ## 15. Records (UF-02.1, D-0219)
-`records(history, library) → RecordSet[]` is pure and **display-only**: `suggest`, `balance`, `timeCheck`, `rankSwaps` and rule 14 never call it, so it changes no other output. The key is the owner amendment to D-0219 (H-36): estimated 1RM, Epley.
+`records(history, library) → RecordSet[]` is pure and **display-only**: `suggest`, `balance`, `timeCheck`, `rankSwaps` and rule 14 never call it, so it changes no other output, and it never reads `rir` (D-0259 §3). The key is the owner amendment to D-0219 (H-36): estimated 1RM, Epley.
 - **Sets.** `normalizeHistory(history)` (rule 0), then only hard sets (rule 2) of exercises in `library` with `kind = "exercise"`. Warm-up sets, tombstones, warm-up moves and unknown exercises are ignored on both sides of a comparison.
 - **Key** (compared lexicographically, highest wins):
   - timed exercise (`timed = true`): `[0, durationS ?? 0]`;
@@ -353,6 +375,7 @@ Examples. back-squat unless stated; S1 = 2026-09-01, S2 = 09-04, S3 = 09-14, eac
 - With favorites (rule 0.2, D-0202 §3), at F-input with `favoriteIds` [back-squat]: balanced (R7-E28), all-chest-no-legs (R7-E29, back-squat is an item) and returning after 10 days off (R7-E30). Seeded properties (D-0036 §5, ≥ 200 cases each, fixed seed) over budgets 15..120, every energy, warm-up on/off and shuffle 0..6: P1 `favoriteIds` [] deep-equals absent; P2 `suggest` is invariant under permutation, duplication and unknown ids in `favoriteIds`; P3 R7-E8's caps hold for any subset of L1 ids as `favoriteIds` (also at budget 15); P4 an id in both `favoriteIds` and `excludeIds` is never an item, and the result equals the call with it removed from `favoriteIds`; P5 `rankCandidates` with favorites is the stable partition of the ranking without them. Shuffle may rotate an accessory favorite away (rule 13 takes no favorites input), and the main lift is never shuffled.
 - With the rule 7.2 switches (D-0237, D-0239 §14; `rule-7-switches-histories.test.ts`): over zero history and the balanced, all-chest-no-legs, returning-after-10-days and offline-merged histories, budgets 15..120 step 5, warm-up on/off, every energy and shuffle 0..6, the switches absent deep-equal both `true`; both `false` with no pins and no `mainLiftId` gives `items` `[]`; returning after 10 days with R7-E30's items as picks (both `false`) gives R7-E30's items; R7-E8's caps hold with random switches; R0-E1 holds with switches set; and the seeded B5 property (D-0239 §14): a sequence of up to 8 suggestion taps never refuses a tap.
 - Rule 12.3 and `timeLeftS` (D-0246 §13; `rule-12-3-insert-histories.test.ts`): over zero history, balanced and all-chest-no-legs at `budgetMin` 45, every L1 exercise not in the plan inserted at index 1 with `leftS` from `timeLeftS` is a valid insert or `{refused: "time"}`; returning after 10 days off gives `hold_after_break` for an exercise last trained 10 days ago; a 15-minute plan at its start refuses every insert for time; a 90-minute plan filled to 8 items refuses the next insert with `items_cap`. Seeded properties (≥ 200 cases each, `mulberry32`): `timeLeftS` drops by exactly the new item's `costS` and stays ≥ 0; every other item and the warm-up are unchanged; insert then `removeItem` round-trips; between exercises with nothing logged ahead and nothing skipped, `timeLeftS = −timeCheck(…).behindS`.
+- Rule 14 RIR (D-0250, D-0252, D-0259; `rule-14-rir.test.ts`, `rule-14-rir-histories.test.ts`): every R14-E10 to R14-E25; invalid `rir` is null; rule 15, balance and `timeCheck` unchanged with `rir` present; three simulated 14-day histories (RIR 2 progressing; RIR 0 hold once then step up; own step 1.25 plus a 10-day break). Seeded properties (inline `mulberry32`, ≥ 200 cases, no fast-check): all-`rir`-null output equals the pre-change rule; rule 14 is deterministic; never below `W` except steps 2 and 5; RIR ≤ 1 at top reps gives `hold_effort` at most once in a row.
 - Rule 15 (D-0219): every R15 example; `records` is deterministic (permutation, replayed rows); `suggest` output is identical whether or not `records` runs, and no `suggest`/`balance`/`timeCheck`/`rankSwaps`/`prefill` module imports `records.ts`.
 
 ## Traceability
@@ -379,3 +402,4 @@ Examples. back-squat unless stated; S1 = 2026-09-01, S2 = 09-04, S3 = 09-14, eac
 | 15 records (R15-E1…E17, D-0219 + H-36 amendment) | T-0635 |
 | 7.2 switches `autoMainLift` / `fill`, 7.3 empty-items warm-up, rule 13 note (R7-E31…E36, D-0237, D-0239 §4, §14, §15) | T-0936 |
 | 12.3 insertItem (R12-E20…E26) and 8 timeLeftS (R8-E4…E7), D-0244, D-0246 §8–§13 | T-0945 |
+| 14 steps 4/4b RIR hold (`hold_effort`), rule 10 kind, R14-E10…E25, D-0250, D-0252, D-0259 | T-0952 |
