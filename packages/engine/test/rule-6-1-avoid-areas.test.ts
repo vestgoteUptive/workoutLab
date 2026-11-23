@@ -147,8 +147,8 @@ describe("rule 6.1 avoided areas in suggest()", () => {
     if (main !== undefined) {
       expect(primaryAreas(LIB.get(main.exerciseId) as LibraryExercise)).not.toContain("chest");
     }
-    expect(itemsOf(w)[0]).toEqual(["inverted-row", 4]);
-    expect(w.plan.mainLiftId).toBe("inverted-row");
+    expect(itemsOf(w)[0]).toEqual(["barbell-row", 4]);
+    expect(w.plan.mainLiftId).toBe("barbell-row");
     expectNoneAvoided(w, ["chest"]);
   });
 

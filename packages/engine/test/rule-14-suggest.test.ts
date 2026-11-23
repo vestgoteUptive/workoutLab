@@ -550,10 +550,10 @@ describe("rule 14 over the simulated 14-day histories (F-input)", () => {
     }
   });
 
-  it("rule-14 (AC22) allChestNoLegsHistory: inverted-row, back-squat, calf-raise are all first_time", () => {
+  it("rule-14 (AC22) allChestNoLegsHistory: barbell-row, back-squat, calf-raise are all first_time", () => {
     const w = run(allChestNoLegsHistory);
     expect(pairs(w)).toEqual([
-      ["inverted-row", pr(0, 6, "first_time")],
+      ["barbell-row", pr(null, 6, "first_time")],
       ["back-squat", pr(null, 8, "first_time")],
       ["calf-raise", pr(null, 10, "first_time")],
     ]);
@@ -563,7 +563,7 @@ describe("rule 14 over the simulated 14-day histories (F-input)", () => {
   it("rule-14 (AC22) offlineMergedHistory: literals, and equal to the normalised history with pending removed", () => {
     const w = run(offlineMergedHistory);
     expect(pairs(w)).toEqual([
-      ["inverted-row", pr(0, 6, "first_time")],
+      ["barbell-row", pr(null, 6, "first_time")],
       ["back-squat", pr(null, 8, "first_time")],
       ["calf-raise", pr(null, 10, "first_time")],
     ]);
@@ -577,7 +577,7 @@ describe("rule 14 over the simulated 14-day histories (F-input)", () => {
     const si = input({ budgetMin: 45, pinnedIds: ["romanian-deadlift"] });
     const w = run(offlineMergedHistory, si);
     expect(pairs(w)).toEqual([
-      ["inverted-row", pr(0, 6, "first_time")],
+      ["barbell-row", pr(null, 6, "first_time")],
       ["romanian-deadlift", pr(50, 9, "add_rep")],
       ["back-squat", pr(null, 8, "first_time")],
       ["calf-raise", pr(null, 10, "first_time")],

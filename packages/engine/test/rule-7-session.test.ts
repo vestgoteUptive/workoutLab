@@ -200,11 +200,11 @@ describe("rule 7.2: main lift and greedy selection", () => {
   it("rule-7 (AC12) all-chest history: back main lift, then glutes and calves (D-0040 §11)", () => {
     const w = run({}, allChestNoLegsHistory);
     expect(itemsOf(w)).toEqual([
-      ["inverted-row", 4],
+      ["barbell-row", 4],
       ["back-squat", 3],
       ["calf-raise", 2],
     ]);
-    expect(w.plan.mainLiftId).toBe("inverted-row");
+    expect(w.plan.mainLiftId).toBe("barbell-row");
     expect(w.itemsTotalS).toBe(1545);
     expect(w.totalS).toBe(1725);
     expect(w.unusedS).toBe(75);
