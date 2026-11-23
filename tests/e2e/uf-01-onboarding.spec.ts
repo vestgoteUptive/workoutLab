@@ -308,6 +308,14 @@ function recordWrites(page: Page): Write[] {
   return writes;
 }
 
+/** Resolves when a `POST` to `/rest/v1/<table>` is sent (register it before the action). */
+function waitForWrite(page: Page, table: string) {
+  return page.waitForRequest(
+    (req) => req.method() === "POST" && new RegExp(`/rest/v1/${table}(\\?|$)`).test(req.url()),
+    { timeout: 15_000 },
+  );
+}
+
 /** `profiles` answers `[]` until a `profiles` POST, then `[row]`; `area_targets` takes POSTs. */
 async function mockNewUserRest(page: Page): Promise<void> {
   let row: Record<string, unknown> | null = null;
@@ -361,7 +369,13 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
     await expect(page.locator(SCREEN("UF-01.5")).getByRole("heading", { level: 1 })).toHaveText(
       "Save your plan",
     );
+    // T-0983: UF-02.1 can show *before* /welcome/save mounts (the profile gate renders a gated
+    // route while the profile is still `unknown`, then redirects on `missing`), so UF-02.1 being
+    // visible says nothing about the writes. Wait on the two requests themselves.
+    const targetsSent = waitForWrite(page, "area_targets");
+    const profileSent = waitForWrite(page, "profiles");
     await signInWithCode(page);
+    await Promise.all([targetsSent, profileSent]);
 
     await expect(page.locator(SCREEN("UF-02.1"))).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
@@ -605,11 +619,17 @@ async function gotoStep(page: Page, path: string): Promise<void> {
   // The first launch walks the real links, so the lazy chunks and the pending plan are real.
   await page.goto("/welcome");
   if (path === "/welcome") return;
+  // T-0983: wait for each step to mount before the next click. "Continue" exists on the step being
+  // left until the lazy next step replaces it, so a click made too early lands on the old step and
+  // the walk ends one screen short (UF-01.4 never appears).
   await page.getByRole("link", { name: "Get started" }).click();
+  await expect(page.locator(SCREEN("UF-01.2"))).toBeVisible();
   if (path === "/welcome/goal") return;
   await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.locator(SCREEN("UF-01.3"))).toBeVisible();
   if (path === "/welcome/level") return;
   await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.locator(SCREEN("UF-01.4"))).toBeVisible();
 }
 
 test.describe("T-0605 Cobalt onboarding (390 × 844)", () => {

@@ -239,8 +239,9 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-0980 | Bug: add during a workout fails when the session loaded before the library cache filled; `insertItem` reads `loadLibrary()` at call time, cold-library e2e (found by T-0950) | web-feature:UF-09 | T-0949, T-0950 | done | wl-build-web |
 | T-0981 | e2e UF-01 AC6 44 px target check failed once in the T-0686b gate (then 217/217); one-shot getBoundingClientRect after visible; root-cause and use a settled measure | qa | — | done | wl-build-qa |
 | T-0982 | Per-feature ESLint-in-vitest tests (jsx-no-literals) time out under full-gate load (UF-01 source, UF-09 exports-and-lint); root-cause and make them load-proof | web-shell | — | ready | wl-build-web |
-| T-0983 | e2e UF-01.5 AC-14 save writes recorded as [] once under load (T-0981 run); root-cause test vs app | qa | — | ready | wl-build-qa |
+| T-0983 | e2e UF-01.5 AC-14 save writes recorded as [] once under load (T-0981 run); root-cause test vs app | qa | — | done | wl-build-qa |
 | T-0984 | e2e canvas-compare AC1 and AC5 failed once in the T-0692 full-suite gate (48/48 alone); root-cause | qa | — | ready | wl-build-qa |
+| T-0985 | A brand-new user briefly sees UF-02.1 Today after sign-in on UF-01.5 before ProfileGate redirects to /welcome/save (ProfileGate.tsx:15-18 renders the route while the profile status is unknown); show a neutral loading state instead (found by T-0983) | web-shell | — | idea | wl-build-web |
 
 ## Estimated 1RM per exercise (spec docs/specs/estimated-1rm.md)
 Owner request 2026-11-20 (inspired by wger): "estimated 1RM per exercise, with a chart over time". Decisions D-0254 (Epley, reps 1–10, best hard set per session, no RIR), D-0255 (engine rule 16, pure, nothing stored), D-0256 (UF-06.2 card, SVG chart, table toggle, states), D-0257 (scope; amends D-0068 and D-0219). Owner accepted the open-question defaults; impact-review rulings in D-0258 (plain Epley at 1 rep, --wl-* tokens, table spec, same-day sessions). UF-06.2 only; never UF-08 or UF-09.
