@@ -296,6 +296,7 @@ describe("T-0343 midnight rollover", () => {
 
   it("T-0926 AC2 waitFor never sees a counter that changes after the last DOM change (fake setInterval)", async () => {
     const { seen, release } = await mountWithLateRefresh();
+    // dom-wait: deliberate, this test proves the T-0926 miss that the guard exists for
     await expect(waitFor(() => expect(seen.calls).toBe(2), { timeout: 400 })).rejects.toThrow(
       /expected 1 to be 2/,
     );

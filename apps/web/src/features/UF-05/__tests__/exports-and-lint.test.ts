@@ -3,7 +3,7 @@
 // scans read the feature's own files and exclude `__tests__/**`.
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { describe, expect, it, vi } from "vitest";
 import { en } from "../../../lib/i18n/en.js";
 
@@ -11,7 +11,10 @@ vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: vi.fn() } }));
 
 const WEB_ROOT = process.cwd();
 const FEATURE_DIR = resolve(__dirname, "..");
-const eslint = new ESLint({ cwd: WEB_ROOT });
+const eslint = await warmEslint(WEB_ROOT);
+// Loaded at collection, like the ESLint config: the barrel's import graph is the other cold cost
+// that a loaded machine stretches past the 5 s test budget (T-0982).
+const indexModule = await import("../index.js");
 
 function sourceFiles(ext: RegExp = /\.(tsx?|css)$/): string[] {
   return readdirSync(FEATURE_DIR, { withFileTypes: true })
@@ -27,7 +30,7 @@ function code(): Array<[string, string]> {
 
 describe("AC-12 exports", () => {
   it("index exports exactly SwapSheet", async () => {
-    const mod = await import("../index.js");
+    const mod = indexModule;
     expect(Object.keys(mod)).toEqual(["SwapSheet"]);
   });
 });

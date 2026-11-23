@@ -3,8 +3,11 @@
 // `SessionSetup.tsx`. AC-1 is the red-on-main regression proof; AC-3 is the lint contrast.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { describe, expect, it, vi } from "vitest";
+
+const WEB_ROOT = process.cwd();
+const eslint = await warmEslint(WEB_ROOT);
 
 vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: vi.fn() } }));
 
@@ -23,8 +26,6 @@ describe("T-0474 AC-1 device.ts no longer evaluates UF-08/SessionSetup.js", () =
 });
 
 describe("T-0474 AC-3 device.ts imports the UF-08 leaf entry, not a deep import (D-0071 §3)", () => {
-  const WEB_ROOT = process.cwd();
-  const eslint = new ESLint({ cwd: WEB_ROOT });
   const devicePath = resolve(WEB_ROOT, "src/features/UF-09/device.ts");
 
   it("ESLint.lintText over device.ts's real source reports no no-restricted-imports", async () => {

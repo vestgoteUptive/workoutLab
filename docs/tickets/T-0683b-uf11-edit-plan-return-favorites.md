@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.3, UF-11.6]
 decisions: [D-0230, D-0231, D-0233]
 deps: [T-0683a]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-web (agent frontend-dev). About ¼ day. The second half of the triage row T-0683 (D-0157 §7). It waits for T-0683a, which adds the link and the notice that AC1 checks are gone. Spec: docs/specs/editable-level.md AC9. -->
 
@@ -47,6 +47,7 @@ Binary-condition check (D-0197 §7):
 - With and without the focus flag: AC1 against AC4.
 
 ## Paths you may change
+- `tests/e2e/uf-11-return-favorites.spec.ts` (orchestrator grant: QA e2e round trip)
 - `apps/web/src/features/UF-11/**` (lane)
 - `docs/tickets/T-0683b-uf11-edit-plan-return-favorites.md` (log)
 
@@ -60,3 +61,6 @@ none.
 - Commits start `T-0683b UF-11.3:`.
 
 ## Build / accept log
+
+- Build (frontend-dev): `EditPlanBody` reads `from` (exact match `favorites` -> `/plan/favorites` + `{focusTitle:true}`, else `/plan`) for Save and both Cancels; `FavoriteExercises` h1 has `tabIndex=-1`, focuses on the flag, then clears it with a replace navigate. New `edit-plan-return.test.tsx` (20 tests, AC1–AC6 each titled `T-0683b ACn`; AC3 has 6 from values x Save/Cancel). Planted faults (backup + cp + cmp): (1) `from` starting `/` used as path -> AC3 `//evil.example` Save/Cancel red; (2) flag never cleared -> AC4 back/forward red; (3) always focus -> both AC4 red; (4) any non-null `from` -> favorites -> 11 red. `strings.test.ts` allowlist extended for the new structural literals. Gate: web typecheck, eslint, format:check clean; web vitest all green but `build.test.ts` needed `ensure-tokens-css.mjs` (rerun green); `tests/e2e/uf-11*` 88 passed. `check-all` shows lane-path-not-owned for files from the merged main-hzlbfc commits only, because its diff base is a stale origin/main; none are mine.
+- QA (2026-11-23): merged main-hzlbfc clean. `edit-plan-return.test.tsx` 20/20. QA faults (backup + cp + cmp): case-insensitive `from` -> 2 red; `startsWith("favorites")` -> 2 red; Save drops state -> 1 red; form Cancel drops state -> 3 red; cold-cache Cancel hardcoded `/plan` -> 1 red; h1 without tabIndex -> 5 red; no `.focus()` -> 5 red; failed save navigates -> AC5 red. New `tests/e2e/uf-11-return-favorites.spec.ts` (9: Save and Cancel round trip, offline, `//evil.example`, `https://x`, `/plan/favorites`, `favorites%2F..`, `Favorites`, repeated `from=account&from=favorites`) pass. `uf-11*` e2e 97 passed; web UF-11 vitest and format:check green. Verdict: pass.
