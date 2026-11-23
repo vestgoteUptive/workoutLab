@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-08.5, UF-09.1, UF-09.5, UF-09.9, UF-05.1, UF-01.3]
 decisions: [D-0230, D-0231, D-0232, D-0233, D-0109, D-0178]
 deps: [T-0682, T-0684, T-0685]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-qa (agent qa-tester). About ½ day. The second half of the triage row T-0686 (D-0157 §7). A new spec file only, with fixtures unchanged, so no full e2e suite run is needed (D-0178 §3). Spec: docs/specs/editable-level.md AC10, AC11, AC12, AC14 and AC15. -->
 
