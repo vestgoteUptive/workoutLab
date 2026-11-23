@@ -436,3 +436,31 @@ describe("AC11 device-only components (offline, D-0037 §2)", () => {
     });
   });
 });
+
+describe("T-0978a AC1 LibraryExercise.unilateral (D-0268)", () => {
+  const schema = spec.components.schemas["LibraryExercise"] as {
+    required: string[];
+    additionalProperties: boolean;
+    properties: Obj;
+    examples: Obj[];
+  };
+  const base = () => clone(schema.examples[0] as Obj);
+
+  it("T-0978a AC1 is optional, closed, and both examples validate", () => {
+    expect(schema.required).not.toContain("unilateral");
+    expect(schema.required).toHaveLength(11);
+    expect(schema.additionalProperties).toBe(false);
+    expect(schema.properties["unilateral"]).toBeDefined();
+    expect(schema.examples.length).toBeGreaterThanOrEqual(2);
+    for (const e of schema.examples) expectValid("LibraryExercise", e);
+    expect(schema.examples.some((e) => e["unilateral"] === "arm")).toBe(true);
+  });
+
+  it.each(["arm", "leg", "side", null])("T-0978a AC1 accepts %s", (v) => {
+    expectValid("LibraryExercise", { ...base(), unilateral: v });
+  });
+
+  it.each(["both", "", 1])("T-0978a AC1 rejects %s", (v) => {
+    expectInvalid("LibraryExercise", { ...base(), unilateral: v });
+  });
+});

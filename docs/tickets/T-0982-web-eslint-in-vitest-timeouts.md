@@ -21,7 +21,12 @@ Seen twice on 2026-11-23: `UF-01/__tests__/source.test.ts` (T-0683a build) and `
 - AC4 Given every feature's lint test, Then each uses the shared approach or is listed with why it is safe.
 
 ## Paths you may change
-`apps/web/src/features/*/__tests__/**`, `apps/web/src/app/__tests__/import-bans.test.ts` (orchestrator grant: its "features lints clean" case timed out at 30.9 s in the T-0683a gate and passes alone), `apps/web/src/test/**`, `apps/web/src/components/body-map/__tests__/import-restriction.test.ts` (orchestrator grant: same cold start), `apps/web/vite.config.ts` (test section only), `apps/web/eslint.config.*` (read-only unless needed for a shared instance; note it in the log)
+- `apps/web/src/features/*/__tests__/**`
+- `apps/web/src/app/__tests__/import-bans.test.ts` (orchestrator grant: its "features lints clean" case timed out at 30.9 s in the T-0683a gate and passes alone)
+- `apps/web/src/test/**`
+- `apps/web/src/components/body-map/__tests__/import-restriction.test.ts` (orchestrator grant: same cold start)
+- `apps/web/vite.config.ts` (test section only)
+- `apps/web/eslint.config.*` (only when a shared instance needs it; note it in the log)
 
 ## Contract impact
 none.
