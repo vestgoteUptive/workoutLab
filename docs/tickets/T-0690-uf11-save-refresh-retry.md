@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.3]
 decisions: [D-0270, D-0070, D-0071, D-0230]
 deps: [T-0682]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Default logged in D-0270 (retry once, never surface). Serial with T-0683b and T-0687: all three edit EditPlanBody.tsx and edit-plan*.test.tsx; never in parallel. This ticket changes only the refresh block inside onSave, not the navigate target (T-0683b) and not the JSX (T-0687). -->
 
