@@ -58,3 +58,6 @@ Binary-condition check (D-0197 §7): flagged and unflagged row (AC2, AC5); cache
 
 ## Definition of done
 Tests for every AC pass · `pnpm --filter @workoutlab/shared typecheck`, then a separate `… lint`, then a separate `… test` · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green (contract change, so `--force`; includes `vendor.mjs --check`) · `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green · e2e `uf-09-one-side.spec.ts` and `uf-04-library*.spec.ts` green (the web cache row shape changes) · commits start `T-0978a UF-09.3:`.
+
+## Build / accept log
+- Build (data-modeler): AC1 schemas.test.ts + types.test.ts; AC2 mappers.test.ts; AC3 no migration, no `database.gen.ts` change (git status); AC4 vendor.mjs --check 0, vendored engine untouched; AC5 unilateral-cache.test.ts; AC6 unilateral-boundary.test.ts (allow-list `scan`); AC7 t0978a-doc.test.ts. Faults (backup cp, cmp restored): `// unilateral` in engine balance.ts -> AC6 red; mapper copying the key always -> AC2 red x7. Gate: turbo typecheck/lint/test --force green except design-tokens and landing, each one test running check-all, which reports `ticket-not-on-base` (the ticket is not on local main; environmental). Not run: e2e specs, Deno.

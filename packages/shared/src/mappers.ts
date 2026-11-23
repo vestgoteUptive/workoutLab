@@ -104,6 +104,7 @@ export function toLibraryExercise(
     }
     weights[area] = a.weight;
   }
+  const unilateral = toUnilateral(row);
   return {
     id: row.id,
     name: row.name,
@@ -116,6 +117,8 @@ export function toLibraryExercise(
     incrementKg: row.increment_kg,
     defaultDurationS: row.default_duration_s,
     externalLoad: row.external_load,
+    // Only for a flagged row: an unflagged row's object is identical to before (D-0268 §3).
+    ...(unilateral ? { unilateral } : {}),
   };
 }
 

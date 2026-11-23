@@ -11,6 +11,8 @@ const { loadExerciseDetail } = await import("../feature-loaders.js");
 const { offlineDb } = await import("../db.js");
 const { freshOfflineDb, signIn, signOut } = await import("./test-helpers.js");
 const { toUnilateral } = await import("@workoutlab/shared");
+const { loadLibrary } = await import("../history.js");
+const { effectiveLibrary } = await import("../effective-library.js");
 
 const USER = "aaaaaaaa-1111-4111-8111-111111111111";
 
@@ -84,5 +86,35 @@ describe("T-0972 AC4 unilateral in the library cache", () => {
     spy.fail("exercises", { code: "PGRST301", message: "offline" });
     await expect(refreshLibrary()).rejects.toMatchObject({ code: "PGRST301" });
     await expect(loadExerciseDetail("dumbbell-row")).resolves.toEqual(before);
+  });
+
+  it("T-0978a AC5 refreshLibrary caches the flag on the library row, only for a flagged row", async () => {
+    await refreshLibrary();
+    const rows = await offlineDb().libraryCache.toArray();
+    const byId = (id: string) => rows.find((r) => r.exercise.id === id)?.exercise;
+    expect(byId("dumbbell-row")?.unilateral).toBe("arm");
+    expect(byId("barbell-row")).toBeDefined();
+    expect("unilateral" in (byId("barbell-row") as object)).toBe(false);
+    expect((await loadExerciseDetail("dumbbell-row"))?.unilateral).toBe("arm");
+  });
+
+  it("T-0978a AC5 a libraryCache row written before the flag reads undefined, no throw", async () => {
+    await refreshLibrary();
+    const db = offlineDb();
+    const rows = await db.libraryCache.toArray();
+    for (const r of rows) delete (r.exercise as { unilateral?: unknown }).unilateral;
+    await db.libraryCache.bulkPut(rows);
+    const lib = await loadLibrary();
+    expect(lib.length).toBe(2);
+    expect(lib.find((e) => e.id === "dumbbell-row")?.unilateral).toBeUndefined();
+  });
+
+  it("T-0978a AC5 effectiveLibrary keeps the flag next to an overridden step", async () => {
+    await refreshLibrary();
+    const lib = await loadLibrary();
+    const out = effectiveLibrary(lib, new Map([["dumbbell-row", 4]]));
+    const row = out.find((e) => e.id === "dumbbell-row");
+    expect(row?.unilateral).toBe("arm");
+    expect(row?.incrementKg).toBe(4);
   });
 });

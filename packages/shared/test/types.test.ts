@@ -87,6 +87,12 @@ describe("AC12 engine input types (D-0034 §1)", () => {
     }>();
   });
 
+  it("T-0978a AC1 LibraryExercise.unilateral is optional arm|leg|side|null", () => {
+    expectTypeOf<LibraryExercise["unilateral"]>().toEqualTypeOf<
+      "arm" | "leg" | "side" | null | undefined
+    >();
+  });
+
   it("LibraryExercise is the D-0034 superset (D-0037 §6)", () => {
     expectTypeOf<LibraryExercise>().toMatchTypeOf<{
       id: string;
