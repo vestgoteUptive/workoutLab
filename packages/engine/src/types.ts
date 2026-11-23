@@ -65,6 +65,12 @@ export interface LibraryExercise {
   incrementKg: number | null;
   /** False for bodyweight: the first-time pre-filled weight is 0, not null (D-0040 §4). */
   externalLoad: boolean;
+  /**
+   * One-side exercise (reps per arm, per leg or per side, D-0260). Read by the rule 7.1 time
+   * model only (`setCostS`): a flagged set works two sides (D-0268). Absent, `null` or any other
+   * value means both sides. Never read by counting, balance, records, e1RM or pre-fill.
+   */
+  unilateral?: "arm" | "leg" | "side" | null;
 }
 
 export type TargetSource = "default" | "adapted" | "manual";

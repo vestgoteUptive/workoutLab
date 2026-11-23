@@ -57,6 +57,8 @@ import "./rule-6-1-avoid-areas.test.js";
 import "./rule-7-energy.test.js";
 import "./rule-7-goal-reps.test.js";
 import "./rule-7-histories.test.js";
+import "./rule-7-1-one-side-histories.test.js";
+import "./rule-7-1-one-side.test.js";
 import "./rule-7-main-loaded-histories.test.js";
 import "./rule-7-main-loaded.test.js";
 import "./rule-7-session.test.js";
