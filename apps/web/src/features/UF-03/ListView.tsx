@@ -25,7 +25,13 @@ import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { asWord, type PerSideWord } from "../../lib/i18n/per-side.js";
 import { itemSummary, restLabel } from "../../lib/i18n/workout.js";
-import { loadExerciseDetail } from "../../lib/offline/index.js";
+import { cacheGeneration } from "../../lib/offline/cache-generation.js";
+import {
+  currentUserId,
+  loadExerciseDetail,
+  rememberUnilateral,
+  useStoredUnilateral,
+} from "../../lib/offline/index.js";
 import { ExerciseHowTo } from "../UF-04/index.js";
 import { retryableLazy } from "./lazy-retry.js";
 import { useMessageSlots } from "./use-message-slots.js";
@@ -157,12 +163,17 @@ function useDetailFields(exerciseId: string): {
     text: string | null;
     unilateral: PerSideWord | null;
   } | null>(null);
+  // T-0979: a warm store gives the word on the first render.
+  const stored = useStoredUnilateral(exerciseId);
   useEffect(() => {
     let live = true;
+    const userId = currentUserId();
+    const gen = cacheGeneration();
     Promise.resolve()
       .then(() => loadExerciseDetail(exerciseId))
       .then(
         (detail) => {
+          if (userId !== null) rememberUnilateral(userId, gen, exerciseId, detail?.unilateral);
           if (live) {
             setCue({
               id: exerciseId,
@@ -177,9 +188,11 @@ function useDetailFields(exerciseId: string): {
       live = false;
     };
   }, [exerciseId]);
-  return cue?.id === exerciseId
-    ? { cue: cue.text, unilateral: cue.unilateral }
-    : { cue: null, unilateral: null };
+  const own =
+    cue?.id === exerciseId
+      ? { cue: cue.text, unilateral: cue.unilateral }
+      : { cue: null, unilateral: null };
+  return stored === undefined ? own : { cue: own.cue, unilateral: stored };
 }
 
 function isTimed(item: WorkoutItem, exercise: LibraryExercise | undefined): boolean {

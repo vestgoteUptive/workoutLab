@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.3]
 decisions: [D-0270, D-0070, D-0071, D-0230]
 deps: [T-0682]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Default logged in D-0270 (retry once, never surface). Serial with T-0683b and T-0687: all three edit EditPlanBody.tsx and edit-plan*.test.tsx; never in parallel. This ticket changes only the refresh block inside onSave, not the navigate target (T-0683b) and not the JSX (T-0687). -->
 
@@ -47,3 +47,6 @@ none. D-0270 is a decision, not a contract. No openapi, data-model, engine-rules
 
 ## Definition of done
 Tests for every AC pass · `pnpm --filter @workoutlab/web typecheck`, then a separate `… lint`, then a separate `… test` · `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green · e2e `uf-11-plan.spec.ts` and `uf-11-plan-layout.spec.ts` green (the Save path runs in a real browser) · commits start `T-0690 UF-11.3:`.
+
+## Build / accept log
+- Build (frontend-dev, 2026-11-23, base 245f81bb clean): `refreshAfterSave` in `save-plan.ts` (one `refreshAll`; on reject wait 400 ms, then `allSettled` over profile, or profile+targets+check-ins; returns ok/stale, never throws); `EditPlanBody.onSave` calls it with scope level/full; `useReturn` navigate untouched. Tests in `__tests__/save-refresh-retry.test.tsx` (11): AC1 one test; AC2 one; AC3 one; AC4 two (screen, helper ok/stale); AC5 two (level, full write fail); AC6 two (fails: 399 then 1 ms; succeeds: no 400 ms timer); AC7 two (real fake-indexeddb, retry repairs; both reject keeps beginner). Planted faults, each restored with cp and cmp: F1 drop retry: AC2, AC3, AC4, AC6, AC7 red; F2 retry with refreshAll: AC2, AC3, AC4, AC6 red; F3 retry on success: AC1 red; F4 on stale set the failed alert and stay: AC4 and AC7 (sibling) red. First AC7 draft stayed green under F1 (the /plan mount refresh repaired the cache); fixed by stubbing the mount refresh so only the retry can. Existing tests touched: `save-plan.test.tsx` AC-B12 now counts writes (non-select calls), since the retry adds selects; `strings.test.ts` allow-list gains "full", "ok", "stale", "fulfilled". Gate: web typecheck, lint, test (after the two fixes, UF-11 29 files green), `-w format:check` green, e2e `uf-11*` 97 passed. `check-all` reports only ticket-not-on-base (the ticket is not on main yet; orchestrator step). The `-w` turbo gate and `test:repo-checks` were not run.

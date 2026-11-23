@@ -77,3 +77,5 @@ export {
 export type { ExerciseSettingRejection } from "./exercise-settings.js";
 export { useExerciseSteps, useExerciseSettingErrors } from "./exercise-settings-hooks.js";
 export { effectiveLibrary } from "./effective-library.js";
+// T-0979 (D-0263): the in-memory one-side flag, read on the first frame.
+export { useUnilateral, useStoredUnilateral, rememberUnilateral } from "./unilateral-flags.js";
