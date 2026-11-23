@@ -5,7 +5,7 @@ lane: web-shell
 screens: []
 decisions: [D-0197]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Seen twice on 2026-11-23: `UF-01/__tests__/source.test.ts` (T-0683a build) and `UF-09/__tests__/exports-and-lint.test.ts` (T-0692 build) each failed one run of the full web suite with a timeout, and passed alone (14/14). Every feature has such a test (UF-01..UF-09 `exports-and-lint`, `source`, `lane` tests and harnesses) and each builds its own ESLint instance with type information inside a vitest worker. Under load that cold ESLint start can exceed the test timeout. A flake is not a root cause.
