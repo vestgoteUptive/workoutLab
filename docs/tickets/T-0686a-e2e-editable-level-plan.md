@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-11.2, UF-11.3, UF-11.6]
 decisions: [D-0230, D-0231, D-0233, D-0178]
 deps: [T-0682, T-0683b]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-qa (agent qa-tester). About ⅓–½ day. The triage row T-0686 is split here (D-0157 §7): this part is the UF-11 round trip; T-0686b is the cross-flow part (UF-08, UF-09, UF-01). A new spec file only, with fixtures unchanged, so no full e2e suite run is needed (D-0178 §3). Spec: docs/specs/editable-level.md AC2, AC9, AC13 (end to end) and the D-0233 §7 link geometry. -->
 
