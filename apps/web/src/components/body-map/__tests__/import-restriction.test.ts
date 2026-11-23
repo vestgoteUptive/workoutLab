@@ -2,11 +2,11 @@
 // AC-D11 (principle 1, D-0045 §4): C-01 may not be imported from UF-03, UF-08 or UF-09. This
 // lints virtual files at those paths with the real apps/web/eslint.config.mjs.
 import { resolve } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { describe, expect, it } from "vitest";
 
 const WEB_ROOT = process.cwd();
-const eslint = new ESLint({ cwd: WEB_ROOT });
+const eslint = await warmEslint(WEB_ROOT);
 
 const SOURCES = {
   index:
