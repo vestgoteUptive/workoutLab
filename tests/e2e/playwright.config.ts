@@ -6,13 +6,17 @@
 // server; wait for the other run, then rerun), and a nearly full tmpfs temp dir stops it at load
 // (rerun with `TMPDIR=$HOME/.cache/wl-pw-tmp`).
 import { defineConfig, devices } from "@playwright/test";
-import { checkTmpdir } from "./fixtures/preflight.js";
+import { checkPortFree, checkTmpdir } from "./fixtures/preflight.js";
 
 // D-0155 §6: at load, before any build or browser starts. Never sets TMPDIR itself.
 const tmpdirProblem = checkTmpdir();
 if (tmpdirProblem) throw new Error(tmpdirProblem);
 
 const PORT = 4173;
+
+// T-0984: before Playwright empties test-results/, so a second run can't wipe a first one's files.
+const portProblem = checkPortFree(PORT);
+if (portProblem) throw new Error(portProblem);
 const BASE_URL = `http://localhost:${PORT}`;
 
 // Fixed so AC-A10's CSP `connect-src` assertion has a stable origin to check against.
