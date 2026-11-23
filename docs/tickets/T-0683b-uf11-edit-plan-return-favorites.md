@@ -47,6 +47,7 @@ Binary-condition check (D-0197 §7):
 - With and without the focus flag: AC1 against AC4.
 
 ## Paths you may change
+- `tests/e2e/uf-11-return-favorites.spec.ts` (orchestrator grant: QA e2e round trip)
 - `apps/web/src/features/UF-11/**` (lane)
 - `docs/tickets/T-0683b-uf11-edit-plan-return-favorites.md` (log)
 
