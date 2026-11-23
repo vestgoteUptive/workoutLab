@@ -184,7 +184,7 @@ From a user report (2026-11-05): Beginner is preselected in onboarding and nothi
 | T-0242 | data-model.md: profiles.level note (client-writable from UF-11.3, D-0230 §4; does not change plan_changed_at). No schema change | data | — | done | wl-build-data |
 | T-0682 | UF-11.3: Level radiogroup after Goal; level-only Save writes profiles.update({level}) alone (targets, pending check-in and streak survive); mixed Save adds level to the D-0070 §3 writes (folds T-0363 savingRef finally) | web-feature:UF-11 | T-0681 | done | wl-build-web |
 | T-0683a | UF-11.2 Level fact; UF-11.6 level notice with "Change level" → /plan/edit?from=favorites | web-feature:UF-11 | T-0681, T-0682 | done | wl-build-web |
-| T-0683b | UF-11.3 ?from=favorites returns to /plan/favorites on Save/Cancel with focus on the UF-11.6 title; other from values go to /plan (no open redirect) | web-feature:UF-11 | T-0683a | ready | wl-build-web |
+| T-0683b | UF-11.3 ?from=favorites returns to /plan/favorites on Save/Cancel with focus on the UF-11.6 title; other from values go to /plan (no open redirect) | web-feature:UF-11 | T-0683a | done | wl-build-web |
 | T-0684 | UF-08.5: "Above your level. Change it in Plan › Edit plan." (text only, no link, D-0231); saved level reaches UF-08.5 | web-feature:UF-08 | — | done | wl-build-web |
 | T-0685 | UF-01.3: "You can change this later in Plan." in the level radiogroup's aria-describedby; new Advanced hint (D-0233); 3-activation path unchanged | web-feature:UF-01 | — | done | wl-build-web |
 | T-0686a | e2e UF-11 editable level: one PATCH on level-only save, check-in kept, favorites round trip with focus, downgrade keeps favorite, axe/44 px | qa | T-0682, T-0683b | todo | wl-build-qa |
@@ -238,7 +238,7 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-0950 | e2e add during a workout: zero history, 10 days off, time running out, offline and reload, finish while the plan write is queued (summary lists the added item), swap then add back, focus/no remount, axe/44 px (D-0246 §17) | qa | T-0949 | done | wl-build-qa |
 | T-0980 | Bug: add during a workout fails when the session loaded before the library cache filled; `insertItem` reads `loadLibrary()` at call time, cold-library e2e (found by T-0950) | web-feature:UF-09 | T-0949, T-0950 | done | wl-build-web |
 | T-0981 | e2e UF-01 AC6 44 px target check failed once in the T-0686b gate (then 217/217); one-shot getBoundingClientRect after visible; root-cause and use a settled measure | qa | — | done | wl-build-qa |
-| T-0982 | Per-feature ESLint-in-vitest tests (jsx-no-literals) time out under full-gate load (UF-01 source, UF-09 exports-and-lint); root-cause and make them load-proof | web-shell | — | ready | wl-build-web |
+| T-0982 | Per-feature ESLint-in-vitest tests (jsx-no-literals) time out under full-gate load (UF-01 source, UF-09 exports-and-lint); root-cause and make them load-proof | web-shell | — | done | wl-build-web |
 | T-0983 | e2e UF-01.5 AC-14 save writes recorded as [] once under load (T-0981 run); root-cause test vs app | qa | — | done | wl-build-qa |
 | T-0984 | e2e canvas-compare AC1 and AC5 failed once in the T-0692 full-suite gate (48/48 alone); root-cause | qa | — | ready | wl-build-qa |
 | T-0985 | A brand-new user briefly sees UF-02.1 Today after sign-in on UF-01.5 before ProfileGate redirects to /welcome/save (ProfileGate.tsx:15-18 renders the route while the profile status is unknown); show a neutral loading state instead (found by T-0983) | web-shell | — | idea | wl-build-web |

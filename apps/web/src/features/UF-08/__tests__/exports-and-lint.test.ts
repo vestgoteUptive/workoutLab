@@ -3,7 +3,7 @@
 // D-0071 §9 import bans. Source scans exclude `__tests__/**`.
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { describe, expect, it, vi } from "vitest";
 import { en } from "../../../lib/i18n/en.js";
 import { uf08 } from "../../../lib/i18n/flows/uf-08.js";
@@ -12,7 +12,10 @@ vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: vi.fn() } }));
 
 const WEB_ROOT = process.cwd();
 const FEATURE_DIR = resolve(__dirname, "..");
-const eslint = new ESLint({ cwd: WEB_ROOT });
+const eslint = await warmEslint(WEB_ROOT);
+// Loaded at collection, like the ESLint config: the barrel's import graph is the other cold cost
+// that a loaded machine stretches past the 5 s test budget (T-0982).
+const indexModule = await import("../index.js");
 
 function sourceFiles(): string[] {
   return readdirSync(FEATURE_DIR, { withFileTypes: true })
@@ -28,7 +31,7 @@ async function lintAs(code: string, file = "src/features/UF-08/x.tsx") {
 
 describe("AC-13 exports (updated by T-0303d AC-9, D-0110 §6)", () => {
   it('index exports exactly ["AddExerciseInWorkout", "SessionSetup", "readFocusPrefs", "writeFocusPrefs"] (T-0948)', async () => {
-    const mod = await import("../index.js");
+    const mod = indexModule;
     expect(Object.keys(mod).sort()).toEqual([
       "AddExerciseInWorkout",
       "SessionSetup",
