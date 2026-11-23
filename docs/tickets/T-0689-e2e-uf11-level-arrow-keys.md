@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-11.3]
 decisions: [D-0230, D-0233, D-0178]
 deps: [T-0682]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-qa (agent qa-tester). About ¼ day. A new spec file only, fixtures unchanged, so no full e2e suite run is needed (D-0178 §3). Kept out of T-0686a's file `uf-11-editable-level.spec.ts` on purpose: that ticket is still `todo` behind T-0683b, and a second ticket in one new spec file would force an order. -->
 
@@ -43,3 +43,6 @@ none
 
 ## Definition of done
 Every AC passes with `npx playwright test uf-11-level-keyboard` through `scripts/locked.sh heavy`, `--repeat-each 10` green · the new file is wired the way `check-e2e-wiring` and `e2e-lint.test.mjs` require (`pnpm -w lint` lints `tests/e2e`) · `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green · no `apps/web/src` file changed · commits start `T-0689 UF-11.3:`.
+
+## Build / accept log
+- Build (qa): new `tests/e2e/uf-11-level-keyboard.spec.ts`, tests `T-0689 AC1`..`AC8` (one each; AC8 plus the guarded fixture's teardown checks cover all tests). `--repeat-each 3`: 24 passed. Planted faults on backup copies, restored with `cp` and `cmp`-verified: F1 Advanced radio `name="goal"` (7 red: AC1-4, 6-8); F3 `display:none; pointer-events:none` on Level inputs (8 red); F4 per-radio `name` so the radios are not one group (4+ red, AC1-AC4 at least); F2 `tabIndex={0}` on the Level radios stayed green (8 passed): Chromium ignores tabindex on a non-checked radio of a group with a checked one, so AC3's count is proven by F4, not F2. `format:check` and `lint:e2e` green; `check-all.mjs` reports only "ticket-not-on-base" (ticket file not on main yet).

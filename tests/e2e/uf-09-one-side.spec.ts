@@ -28,6 +28,7 @@ import {
   VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercisesLoaded, profile } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 type Row = Record<string, unknown>;
 
@@ -362,7 +363,7 @@ async function expectTargets44(page: Page, scope: string): Promise<void> {
   for (let i = 0; i < count; i++) {
     const control = controls.nth(i);
     if (!(await control.isVisible())) continue;
-    const box = await control.boundingBox();
+    const box = await settledBox(control);
     const name = (await control.getAttribute("aria-label")) ?? (await control.textContent());
     expect(box, `${scope} ${name}`).not.toBeNull();
     expect(box!.width, `${scope} ${name} width`).toBeGreaterThanOrEqual(44);

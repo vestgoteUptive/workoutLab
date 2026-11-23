@@ -28,6 +28,7 @@ export const uf11 = {
   seeInBalance: "See this period in Balance",
   headings: {
     goal: "Goal",
+    level: "Level",
     rhythm: "Rhythm",
     priorities: "Priority areas",
     targets: "Targets",
@@ -246,6 +247,8 @@ export const uf11 = {
     excludedTag: "Excluded",
     notAvailable: "Not available with your equipment",
     aboveLevel: "Above your level",
+    levelNotice: (level: string) => `Your level is ${level}. Some favorites are above it.`,
+    changeLevel: "Change level",
     addName: (name: string) => `Add ${name} to favorites`,
     removeName: (name: string) => `Remove ${name} from favorites`,
     removeNameIn: (name: string, area: string) => `Remove ${name} from favorites, ${area}`,

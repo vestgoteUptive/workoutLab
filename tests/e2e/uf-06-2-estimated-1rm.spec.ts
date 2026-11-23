@@ -25,6 +25,7 @@ import {
   exercisesLoaded as libExercises,
   profile as libProfile,
 } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const AREAS = [
   "chest",
@@ -434,7 +435,7 @@ test.describe("T-0965 UF-06.2 estimated 1RM", () => {
     await expect(page.getByRole("table")).toBeVisible();
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
 
-    const box = await toggle(page).boundingBox();
+    const box = await settledBox(toggle(page));
     expect(box).not.toBeNull();
     expect(box!.height).toBeGreaterThanOrEqual(44);
   });

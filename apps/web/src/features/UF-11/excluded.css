@@ -166,3 +166,40 @@
     max-inline-size: none;
   }
 }
+
+/* T-0683a: UF-11.6 level notice, the neutral notice "with one link" variant (D-0233 §7). Never the
+   attention colour. */
+.wl-level-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  background: var(--wl-raise);
+  border-radius: var(--wl-radius-tile);
+  color: var(--wl-ink);
+  font-family: var(--wl-font);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.wl-level-notice__icon {
+  flex: none;
+  color: var(--wl-ink);
+}
+
+.wl-level-notice__link {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: 44px;
+  color: var(--wl-ink);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.wl-level-notice__link:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+  border-radius: var(--wl-radius-tile);
+}

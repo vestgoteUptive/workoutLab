@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
 import { mockSupabaseAuth, mockSupabaseRest } from "./fixtures/supabase-mock.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 type Colours = Record<string, string>;
 const tokens = JSON.parse(
@@ -245,7 +246,7 @@ test.describe("controls inside a state (390 x 844)", () => {
     expect((await css(page, "#on svg", ["display"]))[0]).not.toBe("none");
     expect((await css(page, "#off svg", ["display"]))[0]).toBe("none");
     for (const id of ["#on", "#off", "#cb"]) {
-      const box = (await page.locator(id).boundingBox())!;
+      const box = (await settledBox(page.locator(id)))!;
       expect(box.width, id).toBeGreaterThanOrEqual(44);
       expect(box.height, id).toBeGreaterThanOrEqual(44);
     }
