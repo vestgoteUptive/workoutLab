@@ -4,7 +4,8 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "./fixtures/guarded-test.js";
-import { checkTmpdir, tmpdirProblem } from "./fixtures/preflight.js";
+import { createServer } from "node:net";
+import { checkPortFree, checkTmpdir, portInUse, tmpdirProblem } from "./fixtures/preflight.js";
 import config, { BASE_URL } from "./playwright.config.js";
 
 // Playwright transpiles these specs to CJS, so `__dirname` is this directory (see
@@ -105,5 +106,37 @@ test.describe("T-0440 tmpfs preflight", () => {
     expect(seen).toEqual(["/y"]);
     expect(message).toContain("/y");
     expect(message).toContain("90%");
+  });
+});
+
+// T-0984: a second run in the same worktree used to empty test-results/ under the first run.
+test.describe("T-0984 port preflight", () => {
+  test("AC1 a busy port stops a main-process run with the reason; a worker is never stopped", () => {
+    const msg = checkPortFree(4173, () => true, {});
+    expect(msg).toContain("T-0984");
+    expect(msg).toContain("port 4173 is already used");
+    expect(msg).toContain("test-results/");
+    expect(checkPortFree(4173, () => false, {})).toBeNull();
+    // A worker loads the config while this run's own server is up.
+    expect(checkPortFree(4173, () => true, { TEST_WORKER_INDEX: "0" })).toBeNull();
+  });
+
+  test("AC2 portInUse sees a real listener and a free port", async () => {
+    const server = createServer();
+    await new Promise<void>((ok) => server.listen(0, "127.0.0.1", ok));
+    const { port } = server.address() as { port: number };
+    expect(portInUse(port)).toBe(true);
+    await new Promise<void>((ok) => server.close(() => ok()));
+    expect(portInUse(port)).toBe(false);
+  });
+
+  test("AC3 the config runs it at top level, before defineConfig (so before Playwright cleans)", () => {
+    const call = configSource.match(/^const (\w+) = checkPortFree\(PORT\);$/m);
+    expect(call).not.toBeNull();
+    const name = call![1]!;
+    expect(configSource).toMatch(
+      new RegExp(`^if \\(${name}\\) throw new Error\\(${name}\\);$`, "m"),
+    );
+    expect(call!.index!).toBeLessThan(configSource.indexOf("export default defineConfig("));
   });
 });
