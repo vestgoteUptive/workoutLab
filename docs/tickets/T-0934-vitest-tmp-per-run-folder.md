@@ -5,7 +5,7 @@ lane: infra
 screens: []
 decisions: [D-0159, D-0169, D-0271]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-infra (agent devops). About ⅓ day. Root cause found in grooming from the code and the logs; the builder confirms it with AC1 before changing anything. -->
 
