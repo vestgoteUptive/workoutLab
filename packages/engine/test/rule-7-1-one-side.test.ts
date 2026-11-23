@@ -36,14 +36,7 @@ import {
   setsWithReps,
 } from "./fixtures/common.js";
 import { SIMULATED_HISTORIES, balancedHistory } from "./fixtures/histories.js";
-import {
-  FLAG_KEY,
-  L1_ONE,
-  allFlagged,
-  flagged,
-  itemFormula,
-  oneSide,
-} from "./fixtures/one-side.js";
+import { L1_ONE, allFlagged, flagged, itemFormula, oneSide } from "./fixtures/one-side.js";
 
 const REPO_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
@@ -250,7 +243,7 @@ describe("rule 7.1 one side at a time (D-0268)", () => {
           incrementKg: (j.increment_kg as number | undefined) ?? null,
           externalLoad: j.bodyweight !== true,
         } as LibraryExercise;
-        return flagged(ex, j[FLAG_KEY] ?? null);
+        return flagged(ex, j.unilateral ?? null);
       });
     expect(rows).toHaveLength(108);
     const flaggedRows = rows.filter(oneSide);
@@ -267,7 +260,7 @@ describe("rule 7.1 one side at a time (D-0268)", () => {
       path.join(REPO_DIR, "supabase", "functions", "_shared", "vendor", "engine", "cost.js"),
       "utf8",
     );
-    expect(vendored).toContain(FLAG_KEY);
+    expect(vendored).toContain("unilateral");
     expect(vendored).toContain("isOneSide");
   });
 

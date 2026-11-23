@@ -1,15 +1,10 @@
-// T-0978b (D-0268): fixtures for the rule 7.1 one-side time model. The engine's allow-list guard
-// (T-0978a AC6) scans all of packages/engine for the flag's name, so tests build the key here
-// instead of spelling it, and every other test file stays free of the word.
+// T-0978b (D-0268): fixtures for the rule 7.1 one-side time model.
 import type { LibraryExercise } from "../../src/index.js";
 import { L1, LIBRARY } from "./common.js";
 
-/** The flag's property name, assembled so no engine file but types and cost spells it. */
-export const FLAG_KEY = ["uni", "lateral"].join("");
-
-/** `ex` with the flag set to `value` (any value, so a stray string can be tested too). */
+/** `ex` with the flag set to `value` (a stray value is cast: old data could carry one). */
 export function flagged(ex: LibraryExercise, value: unknown): LibraryExercise {
-  return { ...ex, [FLAG_KEY]: value } as LibraryExercise;
+  return { ...ex, unilateral: value as "arm" | "leg" | "side" | null };
 }
 
 /** Library `lib` with the listed rows flagged (`value`), the rest unchanged. */
@@ -34,7 +29,7 @@ export function allFlagged(value: unknown): LibraryExercise[] {
 
 /** The flag as stored on a row (for the independent formula). */
 export function flagOf(ex: LibraryExercise): unknown {
-  return (ex as unknown as Record<string, unknown>)[FLAG_KEY];
+  return ex.unilateral;
 }
 
 /** True only for the three strings the engine accepts. */

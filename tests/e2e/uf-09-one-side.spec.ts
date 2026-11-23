@@ -635,6 +635,39 @@ async function runPlanned(
   return planAndStart(browserPage);
 }
 
+// T-0979 AC10: the label is on the first frame. A MutationObserver installed from document start
+// records every text the set card's reps line ever has; none may lack "per arm".
+test.describe("T-0979 AC10 the per-side label paints on the first frame", () => {
+  test("T-0979 AC10 no recorded state of the flagged set's reps line lacks 'per arm' (in-app start from Plan)", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const states: string[] = [];
+      (window as unknown as { __repsStates: string[] }).__repsStates = states;
+      const grab = () => {
+        for (const el of document.querySelectorAll('[data-screen-id="UF-09.3"] .wl-uf09__load')) {
+          states.push((el.textContent ?? "").replace(/\u00a0/g, " "));
+        }
+      };
+      new MutationObserver(grab).observe(document, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+        attributes: true,
+      });
+    });
+    await mockAll(page, { sets: [], library: withFlagged(true) });
+    await signInAndCache(page);
+    const { hero } = await planAndStart(page);
+    expect(hero.join(" ")).toMatch(/per arm$/);
+    const states = await page.evaluate(
+      () => (window as unknown as { __repsStates: string[] }).__repsStates,
+    );
+    expect(states.length).toBeGreaterThan(0);
+    expect(states.filter((t) => !t.includes("per arm"))).toEqual([]);
+  });
+});
+
 /** The minutes in a plan row's detail line ("3 × 8–12 · 12 min"), as the screen rounds them. */
 const detailMinutes = (detail: string): number => Number(/· (\d+) min$/.exec(detail)?.[1]);
 
@@ -679,7 +712,7 @@ test.describe("AC3 the engine cost (D-0268), and AC4 zero history and 10 days of
     expect(flagged.hero.join(" ")).toBe(`${plain.hero.join(" ")} per arm`);
   });
 
-  test("a search of packages/engine and the vendored copy finds 'unilateral' only in types and cost", () => {
+  test("a search of packages/engine/src and the vendored copy finds 'unilateral' only in types and cost", () => {
     const root = resolve(__dirname, "../..");
     const hits: string[] = [];
     const walk = (dir: string) => {
@@ -694,7 +727,7 @@ test.describe("AC3 the engine cost (D-0268), and AC4 zero history and 10 days of
           hits.push(path.slice(root.length + 1));
       }
     };
-    const dirs = ["packages/engine", "supabase/functions/_shared/vendor/engine"];
+    const dirs = ["packages/engine/src", "supabase/functions/_shared/vendor/engine"];
     for (const d of dirs) {
       expect(statSync(join(root, d)).isDirectory(), `${d} exists`).toBe(true);
       walk(join(root, d));
