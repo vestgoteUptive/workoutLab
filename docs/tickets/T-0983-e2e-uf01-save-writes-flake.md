@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-01.5, UF-02.1]
 decisions: [D-0197]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 During T-0981 (2026-11-23), `tests/e2e/uf-01-onboarding.spec.ts` line ~369 (UF-01.5 AC-14) failed once in 140 runs under CPU pressure: `expect(writes.map((w) => w.table)).toEqual(["area_targets", "profiles"])` received `[]`, although UF-02.1 was already visible. Either the recorder misses requests (route registration order, a request served from another handler, or the write sent after the screen changes), or the app shows UF-02.1 before the writes are sent (a product defect: onboarding data could be lost on a fast close).
