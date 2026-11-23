@@ -5,7 +5,7 @@ lane: web-feature:UF-01
 screens: [UF-01.3, UF-11.3]
 decisions: [D-0233, D-0230]
 deps: [T-0685]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ¼ day, test-only. -->
 
