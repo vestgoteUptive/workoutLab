@@ -1,43 +1,22 @@
 // UF-06.2 Exercise history: one exercise's rows and three stat cards over the 56 cached local
 // days. An unknown or warm-up id redirects to /progress (D-0079 §4).
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Link, Navigate, useParams } from "react-router";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
-import { asWord, type PerSideWord } from "../../lib/i18n/per-side.js";
-import { loadExerciseDetail } from "../../lib/offline/index.js";
+import { asWord } from "../../lib/i18n/per-side.js";
+import { useUnilateral } from "../../lib/offline/index.js";
 import { E1rmChart } from "./E1rmChart.js";
 import { formatDayMonth, formatWeekdayDayMonth } from "./format.js";
 import { e1rmSeries, exerciseHistory, formatWeight } from "./stats.js";
 import { statusProps, useProgressData, type ProgressOptions } from "./use-progress-data.js";
 import "./progress.css";
 
-/** The one-side word from the cached `ExerciseDetail` (T-0975, D-0263 §3). A missing detail,
- *  a null flag or a failed read gives null: both sides, no label. */
-function useUnilateral(exerciseId: string): PerSideWord | null {
-  const [found, setFound] = useState<{ id: string; word: PerSideWord | null } | null>(null);
-  useEffect(() => {
-    let live = true;
-    Promise.resolve()
-      .then(() => loadExerciseDetail(exerciseId))
-      .then(
-        (detail) => {
-          if (live) setFound({ id: exerciseId, word: asWord(detail?.unilateral) });
-        },
-        () => undefined,
-      );
-    return () => {
-      live = false;
-    };
-  }, [exerciseId]);
-  return found?.id === exerciseId ? found.word : null;
-}
-
 export function ExerciseHistory(props: ProgressOptions) {
   const { exerciseId = "" } = useParams();
   const { data, settled, now, timeZone, locale } = useProgressData(props);
 
-  const word = useUnilateral(exerciseId);
+  const word = asWord(useUnilateral(exerciseId));
 
   const history = useMemo(
     () =>

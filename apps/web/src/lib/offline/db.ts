@@ -6,6 +6,7 @@
 // This module is never imported from the first render of `/welcome` (principle 5, D-0045 §13):
 // only `lib/offline/*` modules import it, and those are only reached from signed-in routes.
 import Dexie, { type Table } from "dexie";
+import { invalidateCacheWrites } from "./cache-generation.js";
 import type {
   AreaTarget,
   Database as SupabaseDatabase,
@@ -303,6 +304,8 @@ export function offlineDb(): OfflineDb {
 /** Test-only: swap in a fresh instance (e.g. after `fake-indexeddb`'s store is cleared). */
 export function resetOfflineDbForTest(name: string = DB_NAME): OfflineDb {
   db = new OfflineDb(name);
+  // T-0979: the in-memory one-side flags describe the old database; drop them with it.
+  invalidateCacheWrites();
   return db;
 }
 

@@ -635,6 +635,39 @@ async function runPlanned(
   return planAndStart(browserPage);
 }
 
+// T-0979 AC10: the label is on the first frame. A MutationObserver installed from document start
+// records every text the set card's reps line ever has; none may lack "per arm".
+test.describe("T-0979 AC10 the per-side label paints on the first frame", () => {
+  test("T-0979 AC10 no recorded state of the flagged set's reps line lacks 'per arm' (in-app start from Plan)", async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      const states: string[] = [];
+      (window as unknown as { __repsStates: string[] }).__repsStates = states;
+      const grab = () => {
+        for (const el of document.querySelectorAll('[data-screen-id="UF-09.3"] .wl-uf09__load')) {
+          states.push((el.textContent ?? "").replace(/\u00a0/g, " "));
+        }
+      };
+      new MutationObserver(grab).observe(document, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+        attributes: true,
+      });
+    });
+    await mockAll(page, { sets: [], library: withFlagged(true) });
+    await signInAndCache(page);
+    const { hero } = await planAndStart(page);
+    expect(hero.join(" ")).toMatch(/per arm$/);
+    const states = await page.evaluate(
+      () => (window as unknown as { __repsStates: string[] }).__repsStates,
+    );
+    expect(states.length).toBeGreaterThan(0);
+    expect(states.filter((t) => !t.includes("per arm"))).toEqual([]);
+  });
+});
+
 test.describe("AC3 the engine cost pin (D-0262), and AC4 zero history and 10 days off", () => {
   test("zero history: 3 sets of the flagged row cost what the same row costs unflagged, in a 30-minute budget; the label is on the first set", async ({
     page,
