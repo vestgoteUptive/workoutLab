@@ -2,13 +2,39 @@
 // and its core never removes that dir (index.*.js `Vitest._tmpDir`). Every package's vitest config
 // calls both helpers below, so the dirs land under `<package>/node_modules/.vite/vitest-tmp/`
 // (gitignored, on disk, not on the /tmp tmpfs) and are removed when the run ends.
+// D-0271 / T-0934: each run owns a `<pid>-<startMs>` subfolder, so overlapping runs in one package
+// never delete each other's files; subfolders of dead pids are pruned at the next start.
 // Vitest resolves the config (this file runs) before it builds the core, so setting TMPDIR here is in time.
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, readdirSync, rmSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ENV_KEY = "WL_VITEST_TMP_DIR";
 let owner = false;
+
+function pidAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    // EPERM means the pid exists but is not ours: alive. Only ESRCH proves it dead.
+    return (error as NodeJS.ErrnoException).code !== "ESRCH";
+  }
+}
+
+/** Remove sibling run folders whose pid is gone (a crashed or killed run). Best effort. */
+function pruneDeadRuns(parent: string, own: string): void {
+  try {
+    for (const name of readdirSync(parent)) {
+      const match = /^(\d+)-\d+$/.exec(name);
+      const path = join(parent, name);
+      if (!match || path === own || pidAlive(Number(match[1]))) continue;
+      rmSync(path, { recursive: true, force: true });
+    }
+  } catch {
+    // best effort
+  }
+}
 
 /** Point `os.tmpdir()` (and the forked workers' `TMPDIR`) at `<package>/node_modules/.vite/vitest-tmp`. */
 export function redirectVitestTmp(configUrl: string): string {
@@ -19,7 +45,10 @@ export function redirectVitestTmp(configUrl: string): string {
   // config and inherits this variable. It must neither re-redirect nor clean up the parent's folder.
   const inherited = process.env[ENV_KEY];
   if (inherited) return inherited;
-  const dir = join(dirname(fileURLToPath(configUrl)), "node_modules", ".vite", "vitest-tmp");
+  const parent = join(dirname(fileURLToPath(configUrl)), "node_modules", ".vite", "vitest-tmp");
+  mkdirSync(parent, { recursive: true });
+  const dir = join(parent, `${process.pid}-${Date.now()}`);
+  pruneDeadRuns(parent, dir);
   mkdirSync(dir, { recursive: true });
   process.env.TMPDIR = dir;
   process.env[ENV_KEY] = dir;
@@ -27,7 +56,7 @@ export function redirectVitestTmp(configUrl: string): string {
   return dir;
 }
 
-/** Remove only this package's `vitest-tmp` folder when the run ends (one vitest per worktree). Never touches /tmp. */
+/** Remove only this run's own subfolder when it ends, never the parent or a sibling run's. Never touches /tmp. */
 export function cleanupVitestTmp(dir: string): void {
   if (!owner) return;
   process.once("exit", () => {
