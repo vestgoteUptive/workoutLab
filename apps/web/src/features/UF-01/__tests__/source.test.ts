@@ -5,10 +5,11 @@
 // client or supabase-js (principle 5), and UF-01.2–.4 must load only through `React.lazy`.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { describe, expect, it } from "vitest";
 
 const WEB_ROOT = process.cwd();
+const eslint = await warmEslint(WEB_ROOT);
 const FEATURE_DIR = resolve(__dirname, "..");
 const SRC = resolve(WEB_ROOT, "src");
 
@@ -241,8 +242,6 @@ describe("T-0301d AC-1 the plan card renders the engine's numbers as they are", 
 });
 
 describe("AC-11 strings (NFR-I18N-1)", () => {
-  const eslint = new ESLint({ cwd: WEB_ROOT });
-
   it("react/jsx-no-literals is green over every UF-01 .tsx", async () => {
     const files = readdirSync(FEATURE_DIR).filter((f) => f.endsWith(".tsx"));
     expect(files.length).toBeGreaterThanOrEqual(6);

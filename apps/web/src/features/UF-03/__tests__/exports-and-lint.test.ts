@@ -4,7 +4,7 @@
 // en.uf03 keys the feature reads. Source scans exclude `__tests__/**`.
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { describe, expect, it, vi } from "vitest";
 import { en } from "../../../lib/i18n/en.js";
 
@@ -12,7 +12,10 @@ vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: vi.fn() } }));
 
 const WEB_ROOT = process.cwd();
 const FEATURE_DIR = resolve(__dirname, "..");
-const eslint = new ESLint({ cwd: WEB_ROOT });
+const eslint = await warmEslint(WEB_ROOT);
+// Loaded at collection, like the ESLint config: the barrel's import graph is the other cold cost
+// that a loaded machine stretches past the 5 s test budget (T-0982).
+const indexModule = await import("../index.js");
 
 async function messages(code: string) {
   const [result] = await eslint.lintText(code, {
@@ -30,7 +33,7 @@ function sourceFiles(): string[] {
 
 describe("AC-9 exports", () => {
   it("features/UF-03/index.tsx exports exactly Summary and ListView (T-0416)", async () => {
-    const mod = await import("../index.js");
+    const mod = indexModule;
     expect(Object.keys(mod).sort()).toEqual(["ListView", "Summary"]);
   });
 
