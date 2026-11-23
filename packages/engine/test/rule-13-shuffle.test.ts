@@ -412,7 +412,7 @@ const EXPECTED: Record<string, Array<[Array<[string, number]>, number]>> = {
   allChestNoLegs: [
     [
       [
-        ["inverted-row", 4],
+        ["barbell-row", 4],
         ["back-squat", 3],
         ["calf-raise", 2],
       ],
@@ -420,7 +420,7 @@ const EXPECTED: Record<string, Array<[Array<[string, number]>, number]>> = {
     ],
     [
       [
-        ["inverted-row", 4],
+        ["barbell-row", 4],
         ["hip-thrust", 3],
         ["calf-raise", 2],
       ],
@@ -428,7 +428,7 @@ const EXPECTED: Record<string, Array<[Array<[string, number]>, number]>> = {
     ],
     [
       [
-        ["inverted-row", 4],
+        ["barbell-row", 4],
         ["leg-extension", 3],
         ["calf-raise", 2],
       ],
@@ -464,7 +464,7 @@ const EXPECTED: Record<string, Array<[Array<[string, number]>, number]>> = {
   offlineMerged: [
     [
       [
-        ["inverted-row", 4],
+        ["barbell-row", 4],
         ["back-squat", 3],
         ["calf-raise", 2],
       ],
@@ -472,7 +472,7 @@ const EXPECTED: Record<string, Array<[Array<[string, number]>, number]>> = {
     ],
     [
       [
-        ["inverted-row", 4],
+        ["barbell-row", 4],
         ["hip-thrust", 3],
         ["calf-raise", 2],
       ],
@@ -480,7 +480,7 @@ const EXPECTED: Record<string, Array<[Array<[string, number]>, number]>> = {
     ],
     [
       [
-        ["inverted-row", 4],
+        ["barbell-row", 4],
         ["leg-extension", 3],
         ["calf-raise", 2],
       ],
@@ -514,11 +514,9 @@ describe("rule 13 over the simulated 14-day histories", () => {
     });
   }
 
-  it("rule-13 (AC23) all-chest-no-legs keeps inverted-row as the main lift at every shuffle", () => {
+  it("rule-13 (AC23) all-chest-no-legs keeps barbell-row as the main lift at every shuffle", () => {
     for (let n = 0; n <= 12; n++) {
-      expect(run(allChestNoLegsHistory, input({ shuffle: n })).plan.mainLiftId).toBe(
-        "inverted-row",
-      );
+      expect(run(allChestNoLegsHistory, input({ shuffle: n })).plan.mainLiftId).toBe("barbell-row");
     }
   });
 

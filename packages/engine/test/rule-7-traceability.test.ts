@@ -47,7 +47,7 @@ describe("T-0201a traceability", () => {
     );
     const required = section(doc, "## Required tests", "## Traceability");
     expect(required).toContain(
-      "all-chest-no-legs (legs and back get attention, and the main lift is a compound for the first zero-load area (inverted-row), D-0040)",
+      "all-chest-no-legs (legs and back get attention, and the main lift is a loaded compound for the first zero-load area (barbell-row, D-0269; inverted-row before T-0692, D-0040))",
     );
     expect(required).not.toContain("the main lift is a leg compound");
   });

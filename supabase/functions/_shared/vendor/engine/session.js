@@ -194,6 +194,18 @@ function areasByRatio(s, exhausted) {
 const MAIN_TRIES = [4, 3, 2];
 const ACCESSORY_TRIES = [3, 2];
 /**
+ * Rule 7.2 step 1 order for `area` (D-0269 §1): the compound candidates, favorites first (rule
+ * 0.2 key (0)), then `externalLoad: true` before bodyweight, then the candidate rank. The sort
+ * is stable, so each part keeps `candidates` order. Step 3 (greedy) does not use it.
+ */
+function mainCandidates(s, area) {
+    return candidates(s, area)
+        .filter((e) => e.type === "compound")
+        .map((e) => ({ e, fav: s.start.favorites.has(e.id) ? 0 : 1, bw: e.externalLoad ? 0 : 1 }))
+        .sort((x, y) => x.fav - y.fav || x.bw - y.bw)
+        .map((x) => x.e);
+}
+/**
  * Rule 7.2 step 1. With `autoMainLift` false (D-0237 §1) only an eligible `mainLiftId` that
  * fits is placed; there is no fallback choice.
  */
@@ -208,8 +220,8 @@ function selectMain(s, mainLiftId, autoMainLift) {
     if (!autoMainLift)
         return;
     for (const area of areasByRatio(s, new Set())) {
-        for (const ex of candidates(s, area)) {
-            if (ex.type === "compound" && tryAdd(s, ex, MAIN_TRIES, true))
+        for (const ex of mainCandidates(s, area)) {
+            if (tryAdd(s, ex, MAIN_TRIES, true))
                 return;
         }
     }
