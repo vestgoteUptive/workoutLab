@@ -7,14 +7,17 @@ decisions: [D-0260, D-0261, D-0263, D-0267]
 deps: [T-0974, T-0975]
 status: ready
 ---
+
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ½ day (the store and hook about 3 h, the three call sites and their tests about 2 h). One ticket on purpose: three near-identical call-site edits are cheaper to review together than to sequence behind a hook-only ticket. Cross-lane files are listed extras (orchestrator grant, the T-0972 precedent). -->
 
 ## Why
+
 T-0975 and T-0977 found that a flagged set paints unlabelled for one frame. Three screens read the flag the same way: `features/UF-09/use-cue.ts` (`useCachedFields`, used by `current-set.tsx`, `confirm-set.tsx`, `timed-set.tsx`), `features/UF-03/ListView.tsx` (`useDetailFields`) and `features/UF-06/ExerciseHistory.tsx` (a local `useUnilateral`). Each starts with `useState(null)`, runs `loadExerciseDetail(id)` (an IndexedDB read, `lib/offline/feature-loaders.ts`) in an effect, and sets state when the promise resolves, so the first commit is always "both sides, no label", and the label appears a render later. A wrong-looking first frame on the screen a user is staring at mid-set is the opposite of "one task on screen".
 
 Checked first (as asked): `apps/web/src/lib` has **no** in-memory cache of the flag or of `ExerciseDetail`. What exists is `lib/offline/db.ts` (`exerciseDetails`, written wholesale by `refreshLibrary`), `feature-loaders.ts` `loadExerciseDetail` (an async per-id IndexedDB read, no memory), `cache-generation.ts` (`cacheGeneration`, `invalidateCacheWrites`: the sign-out race guard of D-0195), `current-user.ts` (`currentUserId()`, synchronous), and `exercise-list-hooks.ts` `useLive` (an async `liveQuery` hook: it also starts empty). So IndexedDB cannot be read before first paint, and the fix is a small synchronous memory store that is filled earlier than any screen renders.
 
 ## Scope
+
 - In, lane `web-shell` (`apps/web/src/lib/**`):
   - **`lib/offline/unilateral-flags.ts` (new).**
     - A module-level store `{ userId, generation, flags: Map<exerciseId, Unilateral | null> }`. `peekUnilateral(exerciseId)` returns `undefined` when the store is cold (no entry for that id, a different user than `currentUserId()`, or `cacheGeneration()` changed since it was filled), `null` for a known unflagged row and the word for a flagged one. Values go through `toUnilateral` from `@workoutlab/shared`, so an unknown or missing value is `null` (D-0263 §1).
@@ -38,7 +41,9 @@ Checked first (as asked): `apps/web/src/lib` has **no** in-memory cache of the f
 **Default logged here (no decision needed): the cold path is unchanged.** A device with no warm store (the very first render before the import-time read resolves) still paints "both sides" for one frame, exactly as today, and then labels. The store makes the warm case, which is every in-app navigation and nearly every reload, correct on the first frame; making the cold case hold the screen back would add a loading state to UF-09, which principle 1 argues against.
 
 ## Acceptance criteria
+
 Fixtures: `fake-indexeddb` with `exerciseDetails` rows for `dumbbell-row` (`unilateral: "arm"`), `side-plank` (`"side"`, timed) and `back-squat` (none); a signed-in user. Test titles start `T-0979 ACn`.
+
 - **AC1 (store semantics).** Given a cold store, Then `peekUnilateral("dumbbell-row")` is `undefined`. When `warmUnilateralFlags()` resolves, Then `dumbbell-row` is `"arm"`, `side-plank` is `"side"`, `back-squat` is `null` (known, unflagged), and an id with no row is still `undefined`. A row whose value is `"both"` or `""` is `null`.
 - **AC2 (sign-out and user switch).** Given a warm store, When `invalidateCacheWrites()` runs, Then every `peekUnilateral` is `undefined`. Given a `warmUnilateralFlags()` read still in flight when `invalidateCacheWrites()` runs, When it resolves, Then the store stays cold (the late result is dropped, D-0195). Given a different `currentUserId()` than the one the store was filled for, Then `peekUnilateral` is `undefined`.
 - **AC3 (refreshLibrary keeps the store current).** Given a warm store with `dumbbell-row` flagged, When `refreshLibrary()` runs against rows where `dumbbell-row` is no longer flagged and `back-squat` now is, Then the store reads `null` and the word, with no reload. Given `refreshLibrary()` rejecting, Then the store is unchanged.
@@ -54,6 +59,7 @@ Fixtures: `fake-indexeddb` with `exerciseDetails` rows for `dumbbell-row` (`unil
 Binary-condition check (D-0197 §7): warm and cold (AC4 against AC6); flagged and unflagged (AC4); online and offline (AC4 against AC8); signed in and out (AC7); fresh store and a store from before a sign-out (AC2); row with a flag and a row from before T-0972 with no field (AC1, the `back-squat`-style row). A tombstoned or rejected state does not apply: `exerciseDetails` has none.
 
 ## Paths you may change
+
 - Lane `web-shell`: `apps/web/src/lib/**`. In practice: `apps/web/src/lib/offline/unilateral-flags.ts` (new), `apps/web/src/lib/offline/AutoSync.tsx`, `apps/web/src/lib/offline/history.ts`, `apps/web/src/lib/offline/index.ts` and `apps/web/src/lib/offline/__tests__/**`.
 - Listed extras (orchestrator grant):
   - `apps/web/src/features/UF-09/use-cue.ts` and `apps/web/src/features/UF-09/__tests__/t0979.first-frame.test.tsx`
@@ -62,7 +68,19 @@ Binary-condition check (D-0197 §7): warm and cold (AC4 against AC6); flagged an
   - `tests/e2e/uf-09-one-side.spec.ts` (the one new test)
 
 ## Contract impact
+
 none. No openapi, data-model, engine-rules or token change; no IndexedDB version change.
 
 ## Definition of done
+
 Tests for every AC pass · `pnpm --filter @workoutlab/web typecheck`, then a separate `… lint`, then a separate `… test` · `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green · e2e (a runtime change in `apps/web/src`): `uf-09-one-side`, `uf-03-list-summary`, `uf-06-progress` and `uf-09-*` green through `scripts/locked.sh heavy` · commits start `T-0979 UF-09.3:` and cite UF-03.1 and UF-06.2 where those files change.
+
+## Build / accept log
+
+- Build (frontend-dev): `lib/offline/unilateral-flags.ts` (store, `useUnilateral`, `useStoredUnilateral`, warm at import, AutoSync sign-in and `refreshLibrary`); UF-09 `useCachedFields` and UF-03 `useDetailFields` read the store on first render and keep their one detail read (it also fills the store), UF-06 uses `useUnilateral`. `resetOfflineDbForTest` now calls `invalidateCacheWrites()` so a test's fresh DB starts with a cold store (needed by t0975 UF-06 AC7). `offline-loaders.test.ts` export list gained the six new names (deliberate, listed).
+- AC map: AC1,2,3,7,8(store) `lib/offline/__tests__/t0979.unilateral-flags.test.tsx`; AC4,6,8 `UF-09/__tests__/t0979.first-frame.test.tsx`; AC5 UF-03 and UF-06 `t0979.first-frame.test.tsx` (MutationObserver records every state); AC6 hook half in the lib file; AC9 existing suites green; AC10 `uf-09-one-side.spec.ts` "T-0979 AC10", `--repeat-each 10` 10/10.
+- Faults (restored with cp, cmp clean): F1 store ignored -> 7 red (AC4/5/6/8; UF-06 needed a slow detail read in the test to go red); F2 no generation check -> AC2 in-flight red; F3 no store update in refreshLibrary -> both AC3 red; F4 no user key -> AC2 user switch red; F5 no fallback read -> AC6 hook red.
+- Red runs: first web build failed on a TS error in my own new UF-09 test (fixed); first full web test run had t0975 UF-06 AC7 red from a stale store across tests (fixed in `resetOfflineDbForTest`). Hard-reload unlabelled-state count not measured (informational).
+- Gate: web typecheck, lint, test (after fix: UF-06, lib/offline, UF-03/09 per-side files green), `-w format:check` green, e2e uf-09*/uf-03*/uf-06*/uf-02* 187 passed. `check-all.mjs` reports only `ticket-not-on-base` (ticket not committed on local main; orchestrator process).
+- Review rework: `rememberUnilateral(userId, gen, id, word)` now drops a write when the generation or the current user changed since the read began, and never replaces another user's live store; the three call sites capture user and generation before their read. `takeFlagSeq()` numbers every warm and `refreshLibrary` read and `setUnilateralFlags` ignores an older result. Barrel narrowed to `useUnilateral`, `useStoredUnilateral`, `rememberUnilateral`; export-list test change shrunk to match. New lib tests: late write after invalidation, late write before-invalidation vs a store warmed after it, non-current user into a cold store, never replacing another user's live store, two out-of-order tests. Faults (cp restore, cmp clean): no generation guard, no user guard, no live-store guard, no seq check each turn exactly the matching test red; two first attempts stayed green because the guards mask each other, so the tests were sharpened.
+- Why `db.ts` changed: `resetOfflineDbForTest` calls `invalidateCacheWrites()` so a test that swaps in a fresh IndexedDB also drops the in-memory flags describing the old one (t0975 UF-06 AC7 failed on a stale "arm" otherwise). Test-support code only; production never calls it.
