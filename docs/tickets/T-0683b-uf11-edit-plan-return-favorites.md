@@ -60,3 +60,5 @@ none.
 - Commits start `T-0683b UF-11.3:`.
 
 ## Build / accept log
+
+- Build (frontend-dev): `EditPlanBody` reads `from` (exact match `favorites` -> `/plan/favorites` + `{focusTitle:true}`, else `/plan`) for Save and both Cancels; `FavoriteExercises` h1 has `tabIndex=-1`, focuses on the flag, then clears it with a replace navigate. New `edit-plan-return.test.tsx` (20 tests, AC1–AC6 each titled `T-0683b ACn`; AC3 has 6 from values x Save/Cancel). Planted faults (backup + cp + cmp): (1) `from` starting `/` used as path -> AC3 `//evil.example` Save/Cancel red; (2) flag never cleared -> AC4 back/forward red; (3) always focus -> both AC4 red; (4) any non-null `from` -> favorites -> 11 red. `strings.test.ts` allowlist extended for the new structural literals. Gate: web typecheck, eslint, format:check clean; web vitest all green but `build.test.ts` needed `ensure-tokens-css.mjs` (rerun green); `tests/e2e/uf-11*` 88 passed. `check-all` shows lane-path-not-owned for files from the merged main-hzlbfc commits only, because its diff base is a stale origin/main; none are mine.

@@ -4,7 +4,7 @@
 // T-0682 (D-0230, D-0233 §1–§2): a Level radiogroup after Goal; a level-only Save is one
 // `profiles.update({ level })` (`saveLevel`), anything else is the D-0070 §3 three writes.
 import { useId, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { previewTargets } from "@workoutlab/engine";
 import { AREAS, type Area, type EngineProfile, type Goal, type Level } from "@workoutlab/shared";
 import { ArrowIcon, TickIcon } from "../../components/icons/index.js";
@@ -52,8 +52,18 @@ function differs(a: Draft, b: Draft): boolean {
   return a.level !== b.level || planDiffers(a, b);
 }
 
+/** T-0683b (D-0230 §5): `from` is a fixed token, never a URL. Exact match only, so nothing the
+ *  query carries can send the user off-site. */
+function useReturn(): { to: string; state: { focusTitle: true } | undefined } {
+  const [params] = useSearchParams();
+  return params.get("from") === "favorites"
+    ? { to: "/plan/favorites", state: { focusTitle: true } }
+    : { to: "/plan", state: undefined };
+}
+
 function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) {
   const navigate = useNavigate();
+  const back = useReturn();
   const online = useOnline();
   const [baseline] = useState<Draft>(() => fromProfile(profile));
   const [draft, setDraft] = useState<Draft>(baseline);
@@ -137,7 +147,7 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
       } catch {
         // The writes are done: a failed re-read must not keep the user on this screen.
       }
-      navigate("/plan");
+      navigate(back.to, back.state ? { state: back.state } : undefined);
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -261,7 +271,7 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
       </section>
       {failed ? <p role="alert">{u.saveFailed}</p> : null}
       {!online ? <p className="wl-type-label">{u.connectToSave}</p> : null}
-      <Link className="wl-button--text wl-edit__cancel" to="/plan">
+      <Link className="wl-button--text wl-edit__cancel" to={back.to} state={back.state}>
         {u.cancel}
       </Link>
       <button
@@ -279,6 +289,7 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
 
 export function EditPlanBody({ clock }: { clock: Clock }) {
   const state = usePlanData(clock);
+  const back = useReturn();
   // The first read that finds a profile fixes the draft: `EditForm` keeps its own snapshot, and
   // a later `ready` state (after the refresh) only re-renders it with a new, ignored `profile`.
   if (state.phase === "ready") return <EditForm profile={state.data.profile} clock={clock} />;
@@ -287,7 +298,7 @@ export function EditPlanBody({ clock }: { clock: Clock }) {
       <>
         <OfflineStatus variant="text" />
         <p className="wl-type-label">{u.coldCache}</p>
-        <Link className="wl-button--text" to="/plan">
+        <Link className="wl-button--text" to={back.to} state={back.state}>
           {u.cancel}
         </Link>
       </>
