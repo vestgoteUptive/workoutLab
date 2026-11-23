@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-11.3]
 decisions: [D-0230, D-0233, D-0178]
 deps: [T-0682]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-qa (agent qa-tester). About ¼ day. A new spec file only, fixtures unchanged, so no full e2e suite run is needed (D-0178 §3). Kept out of T-0686a's file `uf-11-editable-level.spec.ts` on purpose: that ticket is still `todo` behind T-0683b, and a second ticket in one new spec file would force an order. -->
 
