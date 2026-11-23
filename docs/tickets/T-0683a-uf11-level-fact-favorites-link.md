@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.2, UF-11.6]
 decisions: [D-0230, D-0231, D-0233, D-0202, D-0211]
 deps: [T-0681, T-0682]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-web (agent frontend-dev). About ⅓ day. The triage row T-0683 is split here (D-0157 §7): this part is the fact and the notice; T-0683b is the return from Edit plan with focus. It waits for T-0681 (the notice's "with one link" variant) and T-0682 (same feature folder and flow file, so they can't run in parallel). Spec: docs/specs/editable-level.md AC7, AC8 and AC13 (the UI side). -->
 
