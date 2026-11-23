@@ -43,3 +43,6 @@ none
 
 ## Definition of done
 Every AC passes with `npx playwright test uf-11-level-keyboard` through `scripts/locked.sh heavy`, `--repeat-each 10` green · the new file is wired the way `check-e2e-wiring` and `e2e-lint.test.mjs` require (`pnpm -w lint` lints `tests/e2e`) · `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green · no `apps/web/src` file changed · commits start `T-0689 UF-11.3:`.
+
+## Build / accept log
+- Build (qa): new `tests/e2e/uf-11-level-keyboard.spec.ts`, tests `T-0689 AC1`..`AC8` (one each; AC8 plus the guarded fixture's teardown checks cover all tests). `--repeat-each 3`: 24 passed. Planted faults on backup copies, restored with `cp` and `cmp`-verified: F1 Advanced radio `name="goal"` (7 red: AC1-4, 6-8); F3 `display:none; pointer-events:none` on Level inputs (8 red); F4 per-radio `name` so the radios are not one group (4+ red, AC1-AC4 at least); F2 `tabIndex={0}` on the Level radios stayed green (8 passed): Chromium ignores tabindex on a non-checked radio of a group with a checked one, so AC3's count is proven by F4, not F2. `format:check` and `lint:e2e` green; `check-all.mjs` reports only "ticket-not-on-base" (ticket file not on main yet).
