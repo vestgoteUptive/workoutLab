@@ -5,7 +5,7 @@ lane: infra
 screens: []
 decisions: [D-0159, D-0169, D-0271]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-infra (agent devops). About ⅓ day. Root cause found in grooming from the code and the logs; the builder confirms it with AC1 before changing anything. -->
 
@@ -53,3 +53,11 @@ none. It changes D-0159 §3's cleanup rule, so it relies on D-0271 (linked above
 
 ## Definition of done
 AC1 to AC8 proven in the log with the red run recorded · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green (the helper is a turbo global input, so force once) · `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green · no `vitest-tmp` folder left in any package after the runs · commits start `T-0934`.
+
+## Build / accept log
+- Build (devops, base 5adf4679): `vitest.tmp.ts` now makes `<pid>-<startMs>` per run, prunes dead-pid siblings at start (ESRCH only), removes only its own folder at exit. Tests in `.github/scripts/check-vitest-tmp.test.mjs`; no package config touched.
+- AC1 T-0934 AC1 (overlap, marker survives) · AC2 AC2 · AC3 AC3 · AC4 AC4 · AC5 two AC5 tests plus the 2 T-0441 rework tests (updated to the run-folder shape) · AC7 the T-0441 AC5 count test now expects an empty vitest-tmp · AC8 `check-all` vitest-tmp rule green (T-0441 AC4 real-repo test).
+- Red on the unfixed helper: AC1 (alive:false), AC2, AC3, AC4 and the updated rework test failed (5 of 15); green after the fix (15/15).
+- Planted faults (backup copy, restored with cp, cmp-checked): cleanup removes the parent -> AC1, AC3, AC4 red; prune ignores liveness -> AC1, AC3, AC4 red; never prune -> AC4 red.
+- AC6: heavy `--filter @workoutlab/engine test` with five single-file engine vitest runs alongside, 3 of 3 passed (63 files, 1670 tests each), 0 ENOENT. Could not reproduce the failure on the unfixed helper (not tried); AC1 is the proof of record. No run folder left in packages/engine.
+- Gate: turbo typecheck+lint+test --force: 16/19 tasks ok; the 3 failures (design-tokens, landing, web tests that run check-all) are all `ticket-not-on-base` (the ticket file is not on main yet, orchestrator step), not this change.

@@ -7,6 +7,7 @@ import { resolve } from "node:path";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
 import { mockSupabaseAuth, mockSupabaseRest } from "./fixtures/supabase-mock.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 type Colours = Record<string, string>;
 const tokens = JSON.parse(
@@ -114,7 +115,7 @@ test.describe("390 x 844", () => {
       rgb(plan["on-selected"]!),
     );
     expect(contrast(plan.selected!, plan["on-selected"]!)).toBeGreaterThan(8.5);
-    expect((await page.locator("#off").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await settledBox(page.locator("#off")))!.height).toBeGreaterThanOrEqual(44);
     // Hover: the unchecked border goes to ink.
     await page.locator("#off").hover();
     expect((await css(page, "#off input", ["border-top-color"]))[0]).toBe(rgb(plan.ink!));
@@ -180,9 +181,9 @@ test.describe("390 x 844", () => {
     );
     const sw = page.getByRole("switch", { name: "Reminders one" });
     await expect(sw).not.toBeChecked();
-    const switchBox = (await sw.boundingBox())!;
+    const switchBox = (await settledBox(sw))!;
     expect([switchBox.width, switchBox.height]).toEqual([48, 28]);
-    expect((await page.locator("#one").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await settledBox(page.locator("#one")))!.height).toBeGreaterThanOrEqual(44);
     const state = async (id: string) => ({
       track: (await css(page, `#${id} input`, ["background-color"]))[0],
       outline: (await css(page, `#${id} input`, ["border-top-color"]))[0],
@@ -242,7 +243,7 @@ test.describe("390 x 844", () => {
       "1px",
       rgb(plan["ink-muted"]!),
     ]);
-    const box = (await page.locator("#in").boundingBox())!;
+    const box = (await settledBox(page.locator("#in")))!;
     expect(box.height).toBeGreaterThanOrEqual(44);
     expect(contrast(plan.bg!, plan["ink-muted"]!)).toBeGreaterThan(5.8);
     await inject(page, `<div data-wl-state="plan">${field(true)}</div>`);
@@ -412,7 +413,7 @@ test.describe("390 x 844", () => {
     expect((await css(page, "#cap", ["color"]))[0]).toBe(rgb(plan["ink-muted"]!));
     expect(contrast(plan.bg!, plan["ink-muted"]!)).toBeGreaterThan(5.8);
     expect((await css(page, "#close", ["color"]))[0]).toBe(rgb(plan.ink!));
-    const close = (await page.locator("#close").boundingBox())!;
+    const close = (await settledBox(page.locator("#close")))!;
     expect(close.height).toBeGreaterThanOrEqual(44);
   });
 

@@ -30,6 +30,7 @@ import {
   exercises as setupExercises,
   profile as setupProfile,
 } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const NOT_ON_DEVICE = "This workout isn't on this device";
 
@@ -212,7 +213,7 @@ test.describe("AC-7 the chrome on a seeded session", () => {
     await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
     const pause = page.getByRole("button", { name: "Pause workout" });
-    const box = await pause.boundingBox();
+    const box = await settledBox(pause);
     expect(box).not.toBeNull();
     expect(box!.width).toBeGreaterThanOrEqual(44);
     expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -297,7 +298,7 @@ test.describe("T-0304b AC-12 one set offline", () => {
     await expect(current.getByText("Lifting · set 1 of 4")).toBeVisible({ timeout: 10_000 });
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
     const done = page.getByRole("button", { name: "Done" });
-    const box = await done.boundingBox();
+    const box = await settledBox(done);
     expect(box).not.toBeNull();
     // T-0595 (D-0208 §2): the 200 px round button became the full-width session button.
     expect(box!.height).toBeGreaterThanOrEqual(64);
@@ -668,10 +669,10 @@ test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
     await expectAxeClean(page);
     // Every option row and the primary are at least 44 px tall.
     for (const radio of [keep, trim, skip]) {
-      const box = await radio.locator("xpath=ancestor::label").boundingBox();
+      const box = await settledBox(radio.locator("xpath=ancestor::label"));
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
-    expect((await apply.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await settledBox(apply))!.height).toBeGreaterThanOrEqual(44);
     await page.screenshot({ path: testInfo.outputPath("uf09-8-time-check.png") });
     await compareWithCanvas(page, testInfo, { turn: "turn-4", frame: "Time check" });
     // Arrow keys move the selection (native radios): Shift+Tab to the group, then down and up.
@@ -716,7 +717,7 @@ test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
     for (const control of await paused
       .locator("button.wl-row, .wl-uf09__resume, .wl-uf09__end")
       .all()) {
-      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      expect((await settledBox(control))!.height).toBeGreaterThanOrEqual(44);
     }
     await expect(paused.locator("button, a[href], input").last()).toHaveText("End workout");
     // The 1.5px width is in main.css (t0598.css.test.ts); Chromium rounds it to 1px at 1x.
@@ -1344,7 +1345,7 @@ test.describe("T-0596 UF-09.2 and UF-09.7 with the deep fill (390 x 844)", () =>
     for (const name of ["Restart", "Next move"]) {
       const b = page.getByRole("button", { name });
       await expect(b).toHaveClass(/wl-button--session-outline/);
-      const box = (await b.boundingBox())!;
+      const box = (await settledBox(b))!;
       expect(box.height).toBeGreaterThanOrEqual(64);
       expect(box.width).toBeGreaterThanOrEqual(44);
     }

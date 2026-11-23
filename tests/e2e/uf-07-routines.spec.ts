@@ -17,6 +17,7 @@ import {
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
 import { ROUTINE_ID, routineFixtures } from "./fixtures/uf-07-routines.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 interface Write {
   method: string;
@@ -197,7 +198,7 @@ test.describe("AC-A14 a11y", () => {
       results.violations.filter((v) => v.impact === "serious" || v.impact === "critical"),
     ).toEqual([]);
     for (const el of await page.locator("button, input, a").all()) {
-      const box = await el.boundingBox();
+      const box = await settledBox(el);
       expect(box, await el.evaluate((n) => n.outerHTML)).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -280,7 +281,7 @@ test.describe("T-0610 the plan state (390 x 844)", () => {
 
     // AC5: 44 x 44 for every handle, remove and input.
     for (const el of await page.locator("button, input").all()) {
-      const box = await el.boundingBox();
+      const box = await settledBox(el);
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }

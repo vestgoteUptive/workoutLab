@@ -29,6 +29,7 @@ import {
   mockSupabaseData,
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const AREAS = [
   "chest",
@@ -383,7 +384,7 @@ test.describe("T-0420 AC-7 UF-03.3 summary, offline (NFR-OFF-2)", () => {
     const radios = group.getByRole("radio");
     await expect(radios).toHaveCount(5);
     for (let i = 0; i < 5; i += 1) {
-      const box = await radios.nth(i).boundingBox();
+      const box = await settledBox(radios.nth(i));
       expect(box, `radio ${i}`).not.toBeNull();
       expect(box!.width, `radio ${i} width`).toBeGreaterThanOrEqual(44);
       expect(box!.height, `radio ${i} height`).toBeGreaterThanOrEqual(44);
@@ -402,7 +403,7 @@ test.describe("T-0420 AC-7 UF-03.3 summary, offline (NFR-OFF-2)", () => {
     await expect(group.getByRole("radio", { name: "About right" })).toBeChecked();
     await expect(group.getByRole("radio", { checked: true })).toHaveCount(1);
     // The checked chip's thicker border still leaves its radio at 44 × 44 or more.
-    const checkedBox = await group.getByRole("radio", { name: "About right" }).boundingBox();
+    const checkedBox = await settledBox(group.getByRole("radio", { name: "About right" }));
     expect(checkedBox!.width).toBeGreaterThanOrEqual(44);
     expect(checkedBox!.height).toBeGreaterThanOrEqual(44);
 
@@ -612,7 +613,7 @@ test.describe("T-0458 UF-03.1 List view, offline (NFR-OFF-2)", () => {
     const toggleCount = await toggles.count();
     expect(toggleCount).toBeGreaterThan(0);
     for (let i = 0; i < toggleCount; i += 1) {
-      const box = await toggles.nth(i).boundingBox();
+      const box = await settledBox(toggles.nth(i));
       expect(box, `toggle ${i}`).not.toBeNull();
       expect(box!.width, `toggle ${i} width`).toBeGreaterThanOrEqual(44);
       expect(box!.height, `toggle ${i} height`).toBeGreaterThanOrEqual(44);
@@ -621,7 +622,7 @@ test.describe("T-0458 UF-03.1 List view, offline (NFR-OFF-2)", () => {
     const fieldCount = await fields.count();
     expect(fieldCount).toBeGreaterThan(0);
     for (let i = 0; i < fieldCount; i += 1) {
-      const box = await fields.nth(i).boundingBox();
+      const box = await settledBox(fields.nth(i));
       expect(box, `field ${i}`).not.toBeNull();
       expect(box!.width, `field ${i} width`).toBeGreaterThanOrEqual(44);
       expect(box!.height, `field ${i} height`).toBeGreaterThanOrEqual(44);

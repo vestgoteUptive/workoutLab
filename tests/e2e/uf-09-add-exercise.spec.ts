@@ -21,6 +21,7 @@ import {
   VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercisesLoaded, profile } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const AREAS = [
   "chest",
@@ -799,7 +800,7 @@ test.describe("T-0950 AC8 B19 targets and axe after a reload into UF-09", () => 
     await seedPaused(page, { id, plan: P_PLAN(), ...REST_AFTER_SET_2 });
     await openSession(page, id);
     expect(await serious(page)).toEqual([]);
-    const addBox = await addButton(page).boundingBox();
+    const addBox = await settledBox(addButton(page));
     expect(addBox!.height).toBeGreaterThanOrEqual(44);
 
     const dialog = await openSheet(page);
