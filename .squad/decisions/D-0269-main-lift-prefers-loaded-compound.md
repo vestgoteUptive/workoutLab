@@ -27,4 +27,4 @@ Two fixes were possible: (a) rule 7.2 prefers loaded compounds for the main lift
 A first workout for a full-gym user starts with a barbell, dumbbell, cable or machine lift where one exists, which is what "main lift" and the rule 14 progression assume. The preference is a heuristic, so status is `revisit`.
 
 ## Revisit when
-A user with a bodyweight goal asks for a bodyweight main lift (then a profile or UF-08 option, not a rule change), or the library gains a loaded compound that is a poor first lift (then retype or level it).
+A user with a bodyweight goal asks for a bodyweight main lift (then a profile or UF-08 option, not a rule change), or the library gains a loaded compound that is a poor first lift (then retype or level it), or users report the same main lift session after session: "loaded" ranks above "not in the last session", so an area with a single loaded compound repeats it (rotation still applies among several loaded compounds, R7-E42).
