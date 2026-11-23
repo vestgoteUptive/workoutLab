@@ -5,7 +5,7 @@ lane: web-feature:UF-03
 screens: [UF-03.1]
 decisions: [D-0071, D-0158, D-0178]
 deps: [T-0922]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ½ day, test-only unless the measurement finds a production race (then stop, see Out). Same family as T-0922 (a read right after a wait for something else; a cold dynamic import) and T-0926 (a wait on a non-DOM condition). Tier: large (timing, D-0178 §2). -->
 
