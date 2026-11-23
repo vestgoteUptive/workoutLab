@@ -48,6 +48,10 @@ function PlanContent({ data }: { data: PlanData }) {
             <dd className="wl-type-body">{u.goals[profile.goal]}</dd>
           </div>
           <div>
+            <dt className="wl-type-label">{u.headings.level}</dt>
+            <dd className="wl-type-body">{u.levels[profile.level].label}</dd>
+          </div>
+          <div>
             <dt className="wl-type-label">{u.headings.rhythm}</dt>
             <dd className="wl-type-body">
               <span>{u.rhythmPerWeek(profile.rhythmMin, profile.rhythmMax)}</span>{" "}
