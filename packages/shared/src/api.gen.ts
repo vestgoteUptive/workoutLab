@@ -1536,6 +1536,26 @@ export interface components {
      *       "defaultDurationS": null,
      *       "externalLoad": true
      *     }
+     * @example {
+     *       "id": "dumbbell-row",
+     *       "name": "Dumbbell row",
+     *       "kind": "exercise",
+     *       "type": "compound",
+     *       "level": "beginner",
+     *       "equipment": [
+     *         "dumbbell",
+     *         "bench"
+     *       ],
+     *       "areas": {
+     *         "back": 1,
+     *         "arms": 0.5
+     *       },
+     *       "timed": false,
+     *       "incrementKg": 2,
+     *       "defaultDurationS": null,
+     *       "externalLoad": true,
+     *       "unilateral": "arm"
+     *     }
      */
     LibraryExercise: {
       id: components["schemas"]["ExerciseId"];
@@ -1549,6 +1569,8 @@ export interface components {
       incrementKg: number;
       defaultDurationS: number | null;
       externalLoad: boolean;
+      /** @description Which unit the exercise is trained in one side at a time (D-0260 §3). Optional and present only for a flagged row; absent or null means both sides at once. The engine's time model prices a one-side set at two sides of work (D-0268). Additive, like D-0264. */
+      unilateral?: ("arm" | "leg" | "side") | null;
     };
     /**
      * @example {

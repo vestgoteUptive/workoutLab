@@ -277,10 +277,42 @@ describe("T-0972 AC3: toUnilateral (D-0263 §1)", () => {
     expect(toUnilateral({})).toBeNull();
     expect(toUnilateral(undefined)).toBeNull();
   });
+});
 
-  it("does not change the engine LibraryExercise (D-0262)", () => {
-    expect(
-      Object.keys(toLibraryExercise({ ...backSquatRow, unilateral: "arm" }, [])),
-    ).not.toContain("unilateral");
+describe("T-0978a AC2: toLibraryExercise carries the flag only for a flagged row (D-0268)", () => {
+  const areas = [{ exercise_id: "back-squat", area_id: "quads", weight: 1 }] as never;
+  const plain = toLibraryExercise({ ...backSquatRow, unilateral: null }, areas);
+
+  it.each(["arm", "leg", "side"] as const)("T-0978a AC2 flagged %s", (value) => {
+    const out = toLibraryExercise({ ...backSquatRow, unilateral: value }, areas);
+    expect(out.unilateral).toBe(value);
+    const { unilateral: _u, ...rest } = out;
+    expect(rest).toStrictEqual(plain);
+  });
+
+  it.each([
+    ["null", null],
+    ["missing", undefined],
+    ["both", "both"],
+    ["empty", ""],
+  ])("T-0978a AC2 unflagged (%s) has no key", (_l, value) => {
+    const row = { ...backSquatRow, unilateral: value } as Tables<"exercises">;
+    if (value === undefined) delete (row as { unilateral?: unknown }).unilateral;
+    const out = toLibraryExercise(row, areas);
+    expect(Object.keys(out)).not.toContain("unilateral");
+    expect(out).toStrictEqual(plain);
+    expect(Object.keys(out)).toEqual([
+      "id",
+      "name",
+      "kind",
+      "type",
+      "level",
+      "equipment",
+      "areas",
+      "timed",
+      "incrementKg",
+      "defaultDurationS",
+      "externalLoad",
+    ]);
   });
 });
