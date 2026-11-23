@@ -17,6 +17,7 @@ import {
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercises, profile } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const F_TARGETS: Record<string, number> = {
   chest: 20,
@@ -106,7 +107,7 @@ async function expectTargets(page: Page): Promise<void> {
   const count = await buttons.count();
   expect(count).toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {
-    const box = await buttons.nth(i).boundingBox();
+    const box = await settledBox(buttons.nth(i));
     expect(box, `button ${i}`).not.toBeNull();
     expect(box!.width, `button ${i} width`).toBeGreaterThanOrEqual(44);
     expect(box!.height, `button ${i} height`).toBeGreaterThanOrEqual(44);

@@ -14,6 +14,7 @@ import {
 } from "./fixtures/supabase-mock.js";
 import { compareWithCanvas } from "./helpers/canvas-compare.js";
 import { historyFixtures, zeroHistoryFixtures } from "./fixtures/uf-06-progress-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 test.beforeEach(async ({ page }) => {
   await mockSupabaseAuth(page);
@@ -63,7 +64,7 @@ test.describe("AC-15 UF-06 a11y and keyboard (e2e)", () => {
     const rows = page.getByRole("link", { name: /Back squat|Bench press/ });
     await expect(rows).toHaveCount(2);
     for (const link of [card, ...(await rows.all())]) {
-      const box = await link.boundingBox();
+      const box = await settledBox(link);
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -73,7 +74,7 @@ test.describe("AC-15 UF-06 a11y and keyboard (e2e)", () => {
     await page.goto("/progress/back-squat");
     const howTo = page.getByRole("link", { name: "How to" });
     await expect(howTo).toBeVisible();
-    const howToBox = await howTo.boundingBox();
+    const howToBox = await settledBox(howTo);
     expect(howToBox).not.toBeNull();
     expect(howToBox!.width).toBeGreaterThanOrEqual(44);
     expect(howToBox!.height).toBeGreaterThanOrEqual(44);

@@ -15,6 +15,7 @@ import {
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { settledBox, settledTargets } from "./helpers/settled-box.js";
 
 const SCREEN = (id: string) => `[data-screen-id="${id}"]`;
 
@@ -89,7 +90,7 @@ async function expectTargetSizes(page: Page, id: string): Promise<number> {
   expect(count, id).toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {
     const control = controls.nth(i);
-    const box = await control.boundingBox();
+    const box = await settledBox(control);
     const name = (await control.getAttribute("aria-label")) ?? (await control.textContent());
     expect(box, `${id} ${name}`).not.toBeNull();
     expect(box!.width, `${id} ${name} width`).toBeGreaterThanOrEqual(44);
@@ -831,21 +832,11 @@ test.describe("T-0605 Cobalt onboarding (390 × 844)", () => {
     for (const [path, id] of PATHS) {
       await gotoStep(page, path);
       await expect(page.locator(SCREEN(id))).toBeVisible();
-      const boxes = await page.evaluate((sel) => {
-        const root = document.querySelector(sel)!;
-        return [
-          ...root.querySelectorAll(
-            "a, button, label.wl-option, label.wl-chip, .wl-segmented > label",
-          ),
-        ].map((el) => {
-          const r = el.getBoundingClientRect();
-          return {
-            name: (el.getAttribute("aria-label") ?? el.textContent ?? "").trim(),
-            w: r.width,
-            h: r.height,
-          };
-        });
-      }, SCREEN(id));
+      const boxes = await settledTargets(
+        page,
+        SCREEN(id),
+        "a, button, label.wl-option, label.wl-chip, .wl-segmented > label",
+      );
       expect(boxes.length, id).toBeGreaterThan(0);
       for (const b of boxes) {
         expect(b.w, `${id} ${b.name} width`).toBeGreaterThanOrEqual(44);

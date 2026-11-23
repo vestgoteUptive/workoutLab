@@ -19,6 +19,7 @@ import {
   exercises,
   profile,
 } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 type Colours = Record<string, string>;
 const tokens = JSON.parse(
@@ -133,7 +134,7 @@ test.describe("AC1 tab bar look", () => {
 
     for (const link of await page.locator(".wl-tab-bar__link").all()) {
       expect(await link.locator("svg").count()).toBe(0);
-      const box = (await link.boundingBox())!;
+      const box = (await settledBox(link))!;
       expect(box.width).toBeGreaterThanOrEqual(44);
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
