@@ -10,9 +10,8 @@ import { AREAS, type Area, type EngineProfile, type Goal, type Level } from "@wo
 import { ArrowIcon, TickIcon } from "../../components/icons/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
 import { en } from "../../lib/i18n/en.js";
-import { refreshAll } from "../../lib/offline/index.js";
 import { resolveTimeZone } from "./format.js";
-import { saveLevel, savePlan } from "./save-plan.js";
+import { refreshAfterSave, saveLevel, savePlan, type SaveScope } from "./save-plan.js";
 import { useOnline, usePlanData, type Clock } from "./use-plan-data.js";
 import "./plan.css";
 
@@ -120,10 +119,12 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
     setSaving(true);
     setFailed(false);
     const now = clock();
+    let scope: SaveScope = "level";
     // T-0363 point 1: the guard is released in `finally`, whatever path the save takes.
     try {
       try {
         if (planDiffers(draft, baseline)) {
+          scope = "full";
           await savePlan({
             goal: draft.goal,
             level: draft.level,
@@ -142,11 +143,9 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
         setFailed(true);
         return;
       }
-      try {
-        await refreshAll(now, resolveTimeZone());
-      } catch {
-        // The writes are done: a failed re-read must not keep the user on this screen.
-      }
+      // The writes are done: a failed re-read is retried once and never keeps the user here
+      // (T-0690, D-0270). The result is not shown.
+      await refreshAfterSave({ scope, now, tz: resolveTimeZone() });
       navigate(back.to, back.state ? { state: back.state } : undefined);
     } finally {
       savingRef.current = false;
