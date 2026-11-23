@@ -329,7 +329,9 @@ describe("AC-6 How to from the List view", () => {
     fireEvent.click(within(dialog).getByRole("button", { name: /Close/ }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(document.querySelector('[data-screen-id="UF-03.1"]')).toBeTruthy();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "How to" }));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "How to" })),
+    );
   });
 });
 
