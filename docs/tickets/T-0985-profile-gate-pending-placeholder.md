@@ -1,0 +1,64 @@
+---
+id: T-0985
+title: "ProfileGate: while the first profile read is pending and the device is online, show a neutral placeholder instead of the gated route (no UF-02.1 flash for a new user before /welcome/save); offline, failed read and timeout render the route as today"
+lane: web-shell
+screens: [UF-01.5, UF-02.1]
+decisions: [D-0272, D-0064, D-0071, D-0073, D-0197]
+deps: []
+status: ready
+---
+<!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ½ day. Default logged in D-0272. Found by T-0983 (its log has the request timeline). Touches one qa-lane file (the UF-01 e2e), listed under Paths. -->
+
+## Why
+T-0983 found that a brand-new user who signs in with a code on UF-01.5 (the account screen) sees UF-02.1 (Today) for a moment before the app redirects to `/welcome/save`. `ProfileGate` (`apps/web/src/lib/profile/ProfileGate.tsx`, lines 15-18) renders the gated route while the profile status is `unknown`, and redirects only on `missing`. `unknown` also means "not read yet", so the route paints first. That rendering is deliberate: a profile that could not be read must never take the app away from the user (D-0064 §9, D-0071 §11, T-0301a AC-6). D-0272 keeps that and removes the flash: while the first read is pending, online, the gate shows a neutral placeholder, for at most 3.5 s. Offline, after a failed read, and after the cap, the route renders as today. Principle 5 (onboarding under 60 s): no new step, tap or call, and the wait is bounded.
+
+## Scope
+- In:
+  - `ProfileGate.tsx`: render the placeholder when `useProfileResolved()` is `false`, the device is online (`navigator.onLine !== false`) and the cap has not expired (D-0272 §1 to §3). The cap is `PROFILE_PLACEHOLDER_MAX_MS = 3500`, exported from `status.ts` beside `PROFILE_READ_TIMEOUT_MS`; one timer per pending window, cleared when the window ends and on unmount.
+  - The placeholder (D-0272 §5, §6): a block with no text, `min-height: 100dvh`, `background: var(--wl-bg)`, `aria-busy="true"`, no role, no `aria-live`, not focusable, no animation, no new string, no hard-coded colour or font. Its CSS lives in `apps/web/src/lib/profile/profile-gate.css`, imported by `ProfileGate.tsx`.
+  - Existing tests that render a gated route with a never-settling source: they advance past the cap by the exported constant, not a literal.
+  - The e2e AC (AC12 below).
+- Out:
+  - `status`, `ProfileStatus`, `resolved`, `recheck()`, `resolveProfileStatus()` and `gated-routes.ts` keep their behaviour. `recheck()` must not bring the placeholder back (D-0272 §8).
+  - A spinner, text, skeleton or any visible progress cue (a design call, D-0272 "Revisit when").
+  - A grace delay before showing the placeholder, and preloading the route chunk (D-0272 "Revisit when").
+  - `/welcome/*`, `/session/:sessionId` and its summary: never gated, unchanged (AC8).
+  - New strings (`lib/i18n/**`), `routes.ts`, tokens.
+
+## Acceptance criteria
+Fixtures: the `profile-gate.test.tsx` harness (`MemoryRouter` + `AuthProvider` + `Shell`, `vi.mock` of `lib/auth/client.js`, `seedValidSession()`), with `loadProfile` and `supabase.from("profiles")` as controllable promises, and `navigator.onLine` stubbed. "Placeholder" means the element with `aria-busy="true"` inside `main` that has no `data-screen-id`; the test finds it by a `data-wl-profile-pending` attribute the placeholder carries. "Route" means the gated screen id on the DOM (`UF-02.1` for `/`). Test titles start `T-0985 ACn`. The unit tests use fake timers on `setTimeout` only.
+- **AC1 (new user, online, read pending: placeholder, not the route).** Given a signed-in user, online, no cached profile, and a `profiles` read that has not settled, When `/` is rendered, Then the placeholder is present, `UF-02.1` is not in the DOM at any point before the read settles, and the location is `/`.
+- **AC2 (new user: the read finds no row, redirect, never the route).** Given AC1, When the read settles with `{ data: null }`, Then the location becomes `/welcome/save`, `UF-01.5` (the save screen) renders, the placeholder is gone, and `UF-02.1` was never in the DOM during the whole test (a `MutationObserver` or a render spy records every committed screen id; the recorded list has no `UF-02.1`). Repeated for `/library`, `/progress`, `/balance`, `/plan`, `/session/setup` (the derived gated set).
+- **AC3 (returning user with a cache: route, no network read, no lasting placeholder).** Given a cached profile (`loadProfile` resolves a row), online, When `/` is rendered, Then once `loadProfile` settles `UF-02.1` renders, the placeholder is gone, and the `profiles` read is never called. Sibling of AC1 and AC2: it is the "returning user" value.
+- **AC4 (returning user without a cache, read ok: route).** Given no cached profile, online, and the read settling with a row, When `/` is rendered, Then the placeholder shows until it settles, then `UF-02.1` renders, the location stays `/`, and `/welcome/save` is never reached.
+- **AC5 (offline: no placeholder, route at once; today's behaviour).** Given a signed-in user with no cache and `navigator.onLine === false`, When `/` is rendered, Then the placeholder is never in the DOM, `UF-02.1` renders on the first commit after mount, the location stays `/`, and no `profiles` read is made. Run for all six gated paths of AC2 (T-0301a AC-6 stays green, unedited apart from AC11).
+- **AC6 (online, read fails: route after the failure, never a redirect).** Given online, no cache, and the read rejecting (and, as a second case, resolving `{ error }`), When `/` is rendered, Then the placeholder shows until the read settles, then `UF-02.1` renders, the location stays `/`, and there is no `role="alert"`. Sibling of AC2 (read ok, no row) and AC4 (read ok, row).
+- **AC7 (cap: the route renders when nothing settles).** Given online, no cache, `loadProfile` never settling (the hanging local read), When `/` is rendered and the clock advances 3499 ms, Then the placeholder is still shown; at 3500 ms the route `UF-02.1` renders and the placeholder is gone. When the read then settles late with `{ data: null }`, Then the location becomes `/welcome/save` (a late `missing` still redirects). Also: a `profiles` read that never settles is aborted at 3000 ms (D-0197 §6) and the route renders at 3000 ms, not 3500 ms (the cap only matters when the read does not report).
+- **AC8 (never gated, never held).** Given online, no cache, a pending read, When `/session/0b9e1f` and `/session/0b9e1f/summary` and `/welcome` are rendered, Then each renders its own screen (`UF-09`, `UF-03.3`, `UF-01.1`) on the first commit with no placeholder (principle 1; T-0301a AC-8 stays green).
+- **AC9 (state transitions: sign-in in place and account switch).** Given a signed-out user on `/account` who completes a code sign-in (`SIGNED_IN` fires) with a pending read, Then the placeholder shows on the gated route, and no `UF-02.1` commit happens before the read settles. Given user A resolved `present` and user B verifying in place (`userId` changes), Then the placeholder shows again until B's read settles. Given a `recheck()` that follows a resolution, Then the placeholder does not show (`resolved` stays `true`).
+- **AC10 (signed out: inert, as today).** Given a signed-out user on `/welcome`, When it renders, Then no placeholder, no `loadProfile` call and no network call (T-0301a AC-10 stays green, unedited).
+- **AC11 (accessibility).** Given the placeholder on screen, Then it has no `role`, no `aria-live`, no `aria-label`, no text content and no focusable descendant, `document.activeElement` is `body` before it shows, while it shows and after the route renders (it neither takes nor holds focus), and a `role="status"` or `role="alert"` query finds nothing. In the e2e, axe has no violation on the page while the placeholder is shown (the profiles read is held by a route handler). Its computed `background-color` equals the computed `--wl-bg` of the same page, and its source contains no `#`-colour literal and no font-family literal (a source test, like `main-css.test.ts`).
+- **AC12 (e2e, under load: UF-02.1 never visible for a new user).** In `tests/e2e/uf-01-onboarding.spec.ts`, UF-01.5 AC-14 (a), before sign-in, `page.addInitScript` installs a `MutationObserver` on `document` that records every element with `data-screen-id="UF-02.1"` ever attached, with its time. The `profiles` GET is held by `page.route` for 800 ms (so the old flash would be certain, not a race). Given a new user, When the code sign-in completes and the app reaches `/welcome/save`, Then the recorded list for `UF-02.1` is empty for the whole interval between the click on "Verify code" and the `/welcome/save` mount, the two writes still go out in the order `area_targets`, `profiles` (the T-0983 `waitForWrite` stays), and after the save UF-02.1 is visible at `/`. The test is green with `--repeat-each 30 --workers 6` while 8 busy loops run on the 4 cores (the T-0983 load), and a planted fault (the gate's placeholder condition removed, backup copy restored with `cp`) turns it red. Sibling (returning user): with a cached profile the same flow never reaches `/welcome/save`, and `UF-02.1` is visible (the placeholder is not what the test measures, the screen is).
+- **AC13 (no regressions in the gate suite).** `profile-gate.test.tsx`, `profile-gate-decision.test.tsx`, `profile-status*.test.*`, `profile-gate.source.test.ts`, `auth-guard.test.tsx` and `auth-guard.phase3.test.tsx` pass; the only edits to existing tests are the ones AC7 and D-0272 "Consequences" require (advance past the cap by the constant), and each edit is listed in the log.
+
+Planted faults (log, one line each; backup copy restored with `cp`): F1 the placeholder condition always `false`: AC1, AC2 and AC12 go red. F2 the condition ignores `navigator.onLine`: AC5 goes red. F3 no cap: AC7 goes red. F4 redirect on `unknown` (a worse fix): AC5, AC6 and AC7 go red. F5 the placeholder shown for `recheck()`: AC9 goes red.
+
+Binary-condition check (D-0197 §7): online and offline (AC1 against AC5); read ok and failed (AC2 and AC4 against AC6); read settles and hangs (AC1 and AC2 against AC7); new and returning user, cache hit and miss (AC1 and AC2 against AC3 and AC4); gated and never-gated route (AC2 against AC8); signed in and signed out (AC1 against AC10); placeholder shown and not shown on `recheck` (AC1 against AC9); returning user in the e2e (AC12 sibling). A fixture with a tombstoned or rejected row: not applicable, there is no migration or stored row state here; the cached profile fixture carries only a present row, and a `deletedAt` profile does not exist in `docs/data-model.md`.
+
+## Paths you may change
+- `apps/web/src/lib/profile/ProfileGate.tsx`
+- `apps/web/src/lib/profile/status.ts` (the one constant only)
+- `apps/web/src/lib/profile/profile-gate.css` (new)
+- `apps/web/src/lib/profile/index.ts` (only if the constant is exported through it)
+- `apps/web/src/lib/profile/__tests__/**`
+- `apps/web/src/app/__tests__/profile-gate.test.tsx`, `apps/web/src/app/__tests__/profile-gate.source.test.ts`
+- Extra, listed because it is a qa-lane file: `tests/e2e/uf-01-onboarding.spec.ts` (AC12 only, and the T-0983 comment at line 372, updated to say the flash is gone).
+- Not touched: `apps/web/src/app/App.tsx`, `routes.ts`, `lib/i18n/**`, `lib/auth/**`, `profile-context.tsx` (read-only; AC9 relies on its current `resolved` behaviour, and a change to it needs a follow-up).
+
+## Contract impact
+none. `docs/data-model.md`, `api/openapi.yaml`, `docs/engine-rules.md` and `packages/design-tokens/src/tokens.json` are untouched. D-0272 amends D-0197 §4, D-0064 §9 and D-0071 §11.
+
+## Definition of done
+Tests for every AC pass · `pnpm -w typecheck lint test` green (run with `--force --concurrency=1`, as T-0301a did, so a replayed turbo cache is not read as green) · `pnpm -w lint:e2e` and the AC12 repeat run green · contracts unchanged · commit messages start with `T-0985` and cite screen IDs (for example `T-0985 UF-01.5: show a neutral placeholder while the first profile read is pending`).
+
+Per-package commands: `pnpm --filter @workoutlab/web typecheck`, then a separate `… lint`, then a separate `… test`.
