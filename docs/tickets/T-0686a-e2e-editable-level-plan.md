@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-11.2, UF-11.3, UF-11.6]
 decisions: [D-0230, D-0231, D-0233, D-0178]
 deps: [T-0682, T-0683b]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-qa (agent qa-tester). About ⅓–½ day. The triage row T-0686 is split here (D-0157 §7): this part is the UF-11 round trip; T-0686b is the cross-flow part (UF-08, UF-09, UF-01). A new spec file only, with fixtures unchanged, so no full e2e suite run is needed (D-0178 §3). Spec: docs/specs/editable-level.md AC2, AC9, AC13 (end to end) and the D-0233 §7 link geometry. -->
 
@@ -73,3 +73,6 @@ none.
 - Commits start `T-0686a UF-11.3:`.
 
 ## Build / accept log
+
+- Build (QA, 2026-11-23): new `tests/e2e/uf-11-editable-level.spec.ts`, 7 tests; no app or fixture edits, so no full suite. Branch is 12 commits behind main with no overlap (one new file). AC1 level-only save: one `PATCH profiles { level }`, card + Accept kept. AC2 mixed save: POST area_targets, PATCH profiles (level advanced, priority back), PATCH plan_checkins, card gone. AC3 favorites → Change level → Save: `/plan/favorites`, h1 focused, row line and notice gone. AC4 Cancel: h1 focused, notice back, zero writes. AC6 downgrade: one `PATCH profiles { level: beginner }`, no favorite_exercises write, favorite row "Above your level" + notice. AC7 axe 0 serious/critical on UF-11.6 and UF-11.3, "Change level" link ≥ 44 px (`settledBox`), 2 px focus ring, Level rows ≥ 44 × 44. AC8 offline Save aria-disabled + "Connect to save", back online enabled with no reload. AC5 (open redirect) and offline Cancel stay in `uf-11-return-favorites.spec.ts` (T-0683b); arrow keys in `uf-11-level-keyboard.spec.ts` (T-0689). The plan_checkins mock is stateful (keeps the POSTed proposal), else the card's first-shown insert re-fires after Save.
+- Runs: `--repeat-each 3`: 21 passed. Faults on backup copies (cp + cmp restored, none committed): F1 `EditPlanBody.tsx` always `savePlan` → AC1, AC6 red. F2 `EditPlanBody.tsx` no `focusTitle` state → AC3, AC4 red. F3 `excluded.css` link `min-block-size` 30px → AC7 red. F4 `FavoritesBody.tsx` notice condition inverted → AC3, AC4, AC6, AC7 red. `lint:e2e`, `format:check` clean; `check-all.mjs` flags only main-side files (branch is behind main), none of mine.

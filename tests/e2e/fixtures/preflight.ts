@@ -3,6 +3,7 @@
 // `Target crashed`) once it is about 80 % full, and the run then shows dozens of false reds that
 // name nothing. This stops the run once, before any build or test, and says how to fix it.
 // It never sets `TMPDIR` itself (D-0155 §6): the fix is the caller's to choose.
+import { execFileSync } from "node:child_process";
 import { statfsSync } from "node:fs";
 import { tmpdir } from "node:os";
 
@@ -57,4 +58,44 @@ export function checkTmpdir(
     return null;
   }
   return tmpdirProblem(stat, dir);
+}
+
+// T-0984: a second Playwright run in the same worktree used to wipe the first run's `test-results/`.
+// Playwright empties the output dir before it starts the web server, and only then finds :4173
+// busy and stops. Every in-flight test that reads back a file it wrote there (canvas-compare AC1
+// reads the PNGs, AC5 checks `today-app.png`) then fails with ENOENT, with no hint of the cause.
+// The config runs this at load, which is before Playwright cleans anything, so the second run
+// stops with the same message and leaves the first run's files alone.
+
+/** True when something accepts connections on `port`, on IPv4 or IPv6 loopback. Synchronous. */
+export function portInUse(port: number): boolean {
+  const probe =
+    `const net=require("net");let left=2,busy=false;` +
+    `for(const h of ["127.0.0.1","::1"]){const s=net.connect({port:${port},host:h});` +
+    `s.on("connect",()=>{busy=true;s.destroy()});s.on("error",()=>{});` +
+    `s.on("close",()=>{if(--left===0)process.exit(busy?1:0)})}`;
+  try {
+    execFileSync(process.execPath, ["-e", probe], { stdio: "ignore", timeout: 10_000 });
+    return false;
+  } catch (e) {
+    return (e as { status?: number | null }).status === 1;
+  }
+}
+
+/**
+ * Why this run must not start, or `null`. A worker loads the config too, while this run's own
+ * server is up, so only the main process (no `TEST_WORKER_INDEX`) checks.
+ */
+export function checkPortFree(
+  port: number,
+  inUse: (port: number) => boolean = portInUse,
+  env: NodeJS.ProcessEnv = process.env,
+): string | null {
+  if (env.TEST_WORKER_INDEX !== undefined) return null;
+  if (!inUse(port)) return null;
+  return (
+    `e2e preflight (T-0984): port ${port} is already used, so another Playwright run is going ` +
+    `(or a preview server is left over). Starting now would empty test-results/ under that run ` +
+    `and fail its tests with ENOENT. Wait for it to finish, then rerun.`
+  );
 }
