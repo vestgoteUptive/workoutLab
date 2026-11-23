@@ -265,14 +265,7 @@ describe("AC-9 the export surface", () => {
   ];
 
   // T-0979 (D-0263): the in-memory one-side flag and its hook (a deliberate, listed addition).
-  const T0979_EXPORTS = [
-    "useUnilateral",
-    "useStoredUnilateral",
-    "peekUnilateral",
-    "rememberUnilateral",
-    "warmUnilateralFlags",
-    "setUnilateralFlags",
-  ];
+  const T0979_EXPORTS = ["useUnilateral", "useStoredUnilateral", "rememberUnilateral"];
 
   it("exports exactly the v1 surface plus the 3 refreshes and 5 loaders added here, plus T-0536's, T-0567's, T-0954's and T-0979's", () => {
     expect(Object.keys(offlineIndex).sort()).toEqual(

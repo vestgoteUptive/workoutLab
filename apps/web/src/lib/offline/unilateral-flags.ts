@@ -42,23 +42,49 @@ export function peekUnilateral(exerciseId: string): Unilateral | null | undefine
   return peekFor(currentUserId(), exerciseId);
 }
 
-/** Replaces the store from rows already in hand (`refreshLibrary`). */
+// Out-of-order guard: every warm or refresh takes a number before its read starts, and a result
+// older than the newest one already applied is dropped.
+let issued = 0;
+let applied = 0;
+
+/** A sequence number for a read that is about to start. */
+export function takeFlagSeq(): number {
+  issued += 1;
+  return issued;
+}
+
+/** Replaces the store from rows already in hand (`refreshLibrary`). `seq` comes from
+ *  `takeFlagSeq()` before the read began; a result older than the last one applied is ignored. */
 export function setUnilateralFlags(
   userId: string,
   rows: ReadonlyArray<{ id: string; unilateral?: string | null }>,
+  seq: number = takeFlagSeq(),
 ): void {
+  if (seq < applied) return;
+  applied = seq;
   const flags = new Map<string, Unilateral | null>();
   for (const r of rows) flags.set(r.id, toUnilateral(r));
   store = { userId, generation: cacheGeneration(), flags };
   notify();
 }
 
-/** Adds one id (the cold path, after its single detail read). */
-export function rememberUnilateral(userId: string, exerciseId: string, word: unknown): void {
-  if (store === null || store.userId !== userId || store.generation !== cacheGeneration()) {
-    store = { userId, generation: cacheGeneration(), flags: new Map() };
-  }
-  store.flags.set(exerciseId, toUnilateral({ unilateral: typeof word === "string" ? word : null }));
+/** Adds one id after its single cold read. `gen` and `userId` were captured before the read; the
+ *  write is dropped when the cache was invalidated or the user changed since (D-0195). It never
+ *  replaces another user's live store. */
+export function rememberUnilateral(
+  userId: string,
+  gen: number,
+  exerciseId: string,
+  word: unknown,
+): void {
+  if (!cacheWriteAllowed(gen) || currentUserId() !== userId) return;
+  const live = store !== null && store.generation === gen;
+  if (live && store!.userId !== userId) return;
+  if (!live) store = { userId, generation: gen, flags: new Map() };
+  store!.flags.set(
+    exerciseId,
+    toUnilateral({ unilateral: typeof word === "string" ? word : null }),
+  );
   notify();
 }
 
@@ -68,11 +94,13 @@ export async function warmUnilateralFlags(): Promise<void> {
     const userId = currentUserId();
     if (!userId) return;
     const gen = cacheGeneration();
+    const seq = takeFlagSeq();
     const rows = await offlineDb().exerciseDetails.where({ userId }).toArray();
     if (!cacheWriteAllowed(gen)) return;
     setUnilateralFlags(
       userId,
       rows.map((r) => r.detail),
+      seq,
     );
   } catch {
     // Best effort: a failed read leaves the store cold.
@@ -100,11 +128,12 @@ export function useUnilateral(exerciseId: string): Unilateral | null {
   useEffect(() => {
     if (!cold) return;
     let live = true;
+    const gen = cacheGeneration();
     Promise.resolve()
       .then(() => loadExerciseDetail(exerciseId))
       .then(
         (detail) => {
-          if (userId !== null) rememberUnilateral(userId, exerciseId, detail?.unilateral);
+          if (userId !== null) rememberUnilateral(userId, gen, exerciseId, detail?.unilateral);
           if (live) setLocal({ id: exerciseId, word: toUnilateral(detail) });
         },
         () => undefined,

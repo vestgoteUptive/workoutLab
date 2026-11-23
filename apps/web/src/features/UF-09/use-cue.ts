@@ -2,6 +2,7 @@
 // cache with no refresh (D-0111 §11). Shared by UF-09.3 and UF-09.6.
 import { useEffect, useState } from "react";
 import { toUnilateral, type Unilateral } from "@workoutlab/shared";
+import { cacheGeneration } from "../../lib/offline/cache-generation.js";
 import {
   currentUserId,
   loadExerciseDetail,
@@ -23,12 +24,13 @@ export function useCachedFields(exerciseId: string): CachedFields {
   const stored = useStoredUnilateral(exerciseId);
   useEffect(() => {
     let live = true;
+    const userId = currentUserId();
+    const gen = cacheGeneration();
     Promise.resolve()
       .then(() => loadExerciseDetail(exerciseId))
       .then(
         (detail) => {
-          const userId = currentUserId();
-          if (userId !== null) rememberUnilateral(userId, exerciseId, detail?.unilateral);
+          if (userId !== null) rememberUnilateral(userId, gen, exerciseId, detail?.unilateral);
           if (live)
             setFields({
               id: exerciseId,

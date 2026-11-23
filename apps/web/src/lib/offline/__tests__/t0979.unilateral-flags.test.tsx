@@ -13,7 +13,7 @@ vi.mock("../sync.js", () => ({
 
 const { offlineDb, userScopedKey } = await import("../db.js");
 const flags = await import("../unilateral-flags.js");
-const { invalidateCacheWrites } = await import("../cache-generation.js");
+const { invalidateCacheWrites, cacheGeneration } = await import("../cache-generation.js");
 const { refreshLibrary } = await import("../history.js");
 const { AutoSync } = await import("../AutoSync.js");
 const { freshOfflineDb, signIn, signOut } = await import("./test-helpers.js");
@@ -201,6 +201,86 @@ describe("T-0979 AC8 offline start", () => {
       await vi.waitFor(() => expect(flags.peekUnilateral("dumbbell-row")).toBe("arm"));
     });
     expect(spy.from).not.toHaveBeenCalled();
+  });
+});
+
+describe("T-0979 AC2 late cold writes (rememberUnilateral)", () => {
+  it("T-0979 AC2 a cold read that resolves after invalidateCacheWrites is dropped", () => {
+    const gen = cacheGeneration();
+    invalidateCacheWrites();
+    flags.rememberUnilateral(USER, gen, "dumbbell-row", "arm");
+    expect(flags.peekUnilateral("dumbbell-row")).toBeUndefined();
+  });
+
+  it("T-0979 AC2 a write for a user who is no longer current is dropped and leaves the live store alone", async () => {
+    await seed(ROWS);
+    const gen = cacheGeneration();
+    signOut();
+    signIn(OTHER);
+    await seed([["back-squat", "leg"]], OTHER);
+    await flags.warmUnilateralFlags();
+    flags.rememberUnilateral(USER, gen, "dumbbell-row", "arm");
+    expect(flags.peekUnilateral("dumbbell-row")).toBeUndefined();
+    expect(flags.peekUnilateral("back-squat")).toBe("leg");
+  });
+
+  it("T-0979 AC2 a late write from before an invalidation does not replace the store warmed after it", async () => {
+    await seed(ROWS);
+    const old = cacheGeneration();
+    invalidateCacheWrites();
+    await flags.warmUnilateralFlags();
+    flags.rememberUnilateral(USER, old, "late-row", "arm");
+    expect(flags.peekUnilateral("dumbbell-row")).toBe("arm");
+    expect(flags.peekUnilateral("late-row")).toBeUndefined();
+  });
+
+  it("T-0979 AC2 a write for a non-current user into a cold store creates nothing for that user", () => {
+    signOut();
+    signIn(OTHER);
+    flags.rememberUnilateral(USER, cacheGeneration(), "dumbbell-row", "arm");
+    signOut();
+    signIn(USER);
+    expect(flags.peekUnilateral("dumbbell-row")).toBeUndefined();
+  });
+
+  it("T-0979 AC2 a write never replaces another user's live store", async () => {
+    signOut();
+    signIn(OTHER);
+    await seed([["back-squat", "leg"]], OTHER);
+    await flags.warmUnilateralFlags();
+    signOut();
+    signIn(USER); // a user switch with no invalidation in between
+    flags.rememberUnilateral(USER, cacheGeneration(), "dumbbell-row", "arm");
+    signOut();
+    signIn(OTHER);
+    expect(flags.peekUnilateral("back-squat")).toBe("leg");
+    expect(flags.peekUnilateral("dumbbell-row")).toBeUndefined(); // not written under OTHER's id
+  });
+
+  it("T-0979 AC2 a current-user write adds one id and keeps the rest of a live store", async () => {
+    await seed(ROWS);
+    await flags.warmUnilateralFlags();
+    flags.rememberUnilateral(USER, cacheGeneration(), "new-row", "leg");
+    expect(flags.peekUnilateral("new-row")).toBe("leg");
+    expect(flags.peekUnilateral("dumbbell-row")).toBe("arm");
+  });
+});
+
+describe("T-0979 out-of-order reads", () => {
+  it("T-0979 a result older than the last one applied is ignored", () => {
+    const older = flags.takeFlagSeq();
+    const newer = flags.takeFlagSeq();
+    flags.setUnilateralFlags(USER, [{ id: "dumbbell-row", unilateral: null }], newer);
+    flags.setUnilateralFlags(USER, [{ id: "dumbbell-row", unilateral: "arm" }], older);
+    expect(flags.peekUnilateral("dumbbell-row")).toBeNull();
+  });
+
+  it("T-0979 a slow warm that started before a refresh does not overwrite it", async () => {
+    await seed([["dumbbell-row", "arm"]]);
+    const slow = flags.warmUnilateralFlags();
+    flags.setUnilateralFlags(USER, [{ id: "dumbbell-row", unilateral: null }]);
+    await slow;
+    expect(flags.peekUnilateral("dumbbell-row")).toBeNull();
   });
 });
 

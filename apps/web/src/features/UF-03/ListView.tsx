@@ -25,6 +25,7 @@ import { formatDecimal } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { asWord, type PerSideWord } from "../../lib/i18n/per-side.js";
 import { itemSummary, restLabel } from "../../lib/i18n/workout.js";
+import { cacheGeneration } from "../../lib/offline/cache-generation.js";
 import {
   currentUserId,
   loadExerciseDetail,
@@ -166,12 +167,13 @@ function useDetailFields(exerciseId: string): {
   const stored = useStoredUnilateral(exerciseId);
   useEffect(() => {
     let live = true;
+    const userId = currentUserId();
+    const gen = cacheGeneration();
     Promise.resolve()
       .then(() => loadExerciseDetail(exerciseId))
       .then(
         (detail) => {
-          const userId = currentUserId();
-          if (userId !== null) rememberUnilateral(userId, exerciseId, detail?.unilateral);
+          if (userId !== null) rememberUnilateral(userId, gen, exerciseId, detail?.unilateral);
           if (live) {
             setCue({
               id: exerciseId,

@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as offline from "../../../lib/offline/index.js";
 import { invalidateCacheWrites } from "../../../lib/offline/cache-generation.js";
 import { offlineDb, userScopedKey } from "../../../lib/offline/db.js";
-import { warmUnilateralFlags } from "../../../lib/offline/unilateral-flags.js";
+import { peekUnilateral, warmUnilateralFlags } from "../../../lib/offline/unilateral-flags.js";
 import { ConfirmSet } from "../confirm-set.js";
 import { CurrentSet } from "../current-set.js";
 import { initialFocusState, type FocusState } from "../machine.js";
@@ -203,7 +203,7 @@ describe("T-0979 AC8 offline start (UF-09)", () => {
     vi.spyOn(navigator, "onLine", "get").mockReturnValue(false);
     const { AutoSync } = await import("../../../lib/offline/AutoSync.js");
     render(<AutoSync />);
-    await vi.waitFor(() => expect(offline.peekUnilateral("dumbbell-row")).toBe("arm"));
+    await vi.waitFor(() => expect(peekUnilateral("dumbbell-row")).toBe("arm"));
     cleanup();
     mount(ROW_SET, "set");
     expect(load().querySelector(".wl-uf09__sr")?.textContent).toMatch(/per arm/);
