@@ -1,0 +1,62 @@
+---
+id: T-0978b
+title: "Engine rule 7.1: a flagged one-side exercise works two sides per set (non-timed 90 s, timed twice its planned duration), read from the optional unilateral on LibraryExercise; examples, simulated 14-day histories, re-vendor, and the e2e pins that flip"
+lane: engine
+screens: [UF-08.1, UF-09.3]
+decisions: [D-0268, D-0260, D-0092, D-0024]
+deps: [T-0978a, T-0952]
+status: todo
+---
+<!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-engine (agent engine-dev). About ½ day. Second half of the split of T-0978 (D-0268). It stays `todo` until T-0978a is merged: the e2e flip below needs the flag in the cached library, which only T-0978a delivers; the orchestrator moves it to `ready` then. NOT parallel with T-0692 (same engine files, rules file and vendor copy): build T-0692 first. -->
+
+## Why
+D-0262 accepted that a flagged set (reps per arm, per leg or per side, D-0260) is priced at one side of work, so a 3-set dumbbell-row plan runs 2 min 15 s over what the user chose. The owner has asked for it to be built (D-0268). Rule 7.1's work is 45 s per non-timed set; a one-side set takes two sides of work and one rest. Every cost in the engine goes through one function, `setCostS` in `packages/engine/src/cost.ts` (rule 7.2 selection, 7.4, rule 12 `timeCostS` and `fitsBudget`, rule 13, `applySwap`, `insertItem`; rule 8 and `timeLeftS` read the item `costS`), so the change is small; the cost is in the examples, the histories and the guards.
+
+## Scope
+- In (`packages/engine/**`, `docs/engine-rules.md`):
+  - **`src/types.ts`:** `LibraryExercise` gains `unilateral?: "arm" | "leg" | "side" | null` with a doc comment citing D-0268.
+  - **`src/cost.ts`:** a small `isOneSide(exercise)` (true only for the strings `arm`, `leg`, `side`; absent, `null` and any other value are false, no `RangeError`), and `setCostS` uses it: work is `2 × 45` for a flagged non-timed set; for a flagged timed set it is `2 ×` the planned duration (`durationS ?? defaultDurationS ?? 45`). Rest and the 60 s transition are unchanged. **No other engine file mentions the flag** (the T-0978a allow-list guard enforces it): `session.ts`, `swaps.ts`, `apply-swap.ts`, `insert-item.ts`, `timecheck.ts`, `balance.ts`, `prefill.ts`, `records.ts`, `e1rm.ts` and `history.ts` keep calling `setCostS` / `itemCostS` and nothing else.
+  - **`docs/engine-rules.md`:** rule 7.1 text (the work sentence, the item `durationS` stays one side's planned duration, rest unchanged, one transition), the worked numbers below as new examples (next free `R7-E` numbers, the builder checks), a line in rule 8 and rule 12.3 that they follow `costS` unchanged, the "Required tests" list, a traceability row citing T-0978b and D-0268, and the `LibraryExercise` field list.
+  - **Re-vendor:** `node supabase/scripts/vendor.mjs` (never hand-edit the vendor folder).
+  - **e2e flips (listed extra, below):** the three tests in `tests/e2e/uf-09-one-side.spec.ts` that pinned D-0262.
+- Out:
+  - Counting (D-0260 §2): balance, records, e1RM, pre-fill and history never read the flag.
+  - A rest between sides, per-side time on a rest timer, any UI change (labels are done; the plan simply shows the new minutes).
+  - The openapi, shared and data-model changes (T-0978a), any content edit, any backend source (the Edge Function builds its library from the database through the vendored mapper, so it prices flagged rows once the vendor copy is regenerated).
+
+## Acceptance criteria
+Fixtures: F-profile, F-tz, F-goal, F-input, library L1 unless stated. "L1-ONE" is L1 with two rows flagged in the test: `db-row` `unilateral: "arm"` and `plank` (timed, 45 s default) `unilateral: "side"`. Test titles name the example, `rule-7.1 (ACn)`.
+- **AC1 (R7-E43, a flagged compound costs two sides of work).** Given L1-ONE, zero history, `budgetMin 30`, warm-up on, `autoMainLift: false`, `fill: false`, `pinnedIds ["db-row"]`, Then the item is `db-row × 3` with `costS` 690 (3 × (90 + 120) + 60), `itemsTotalS` 690 and `unusedS` 930. The same input on plain L1 gives 555 and 1065 (the D-0262 gap, 135 s = 3 × 45).
+- **AC2 (R7-E44, a flagged timed hold costs twice its planned duration).** Given L1-ONE, zero history, the same switches, `pinnedIds ["plank"]`, Then `plank × 3` at `durationS` 45 (one side's duration, what the UF-09 label shows) costs 3 × (90 + 60) + 60 = 510 s (plain L1: 375). Given plank logged 3 × 115 s on 2026-09-24 (R7-E13), `budgetMin 20`, `pinnedIds ["plank"]`, `autoMainLift: true`, `fill: false`: the planned duration is 120 s, bench-press × 4 takes 720 s and leaves 480 s, plank × 2 flagged costs 2 × (240 + 60) + 60 = 660 s, which does not fit, so the pin is skipped and the items are `bench-press × 4` only (plain L1: plank × 2 at 120 s fits, 420 s).
+- **AC3 (R7-E45, the time fit moves).** Given L1-ONE, `budgetMin 30`, `pinnedIds ["db-row"]` with the default switches, Then the plan is the plain-L1 plan re-fitted: the log records the new items and totals, each cost equals the independent formula `sets × (work + rest) + 60` (computed in the test from the library, not from `costS`), and `Σ costS ≤ available`.
+- **AC4 (a back-off set is a set).** Given L1-ONE, zero history, `budgetMin 20`, warm-up off, `energy high`, `mainLiftId "db-row"` (its back-off weight is null at zero history, rule 7.4), Then the main item is `db-row × 4` plus 1 back-off set (4 × 210 + 60 = 900 s leaves 300 s, at least the 210 s of one set) with `costS` 1110 (`itemCostS(db-row, 4) + setCostS(db-row)`). The same input on plain L1 gives 885 (R7-E12's shape). With `budgetMin 15` (available 900) the flagged plan has no back-off (unused 0 < 210), a sibling of R7-E12.
+- **AC5 (every consumer agrees).** Given the AC3 plan, When each of these is called, Then it prices the flagged row the same way: `applySwap` from `db-row` to `lat-pulldown` (cost 690 to 555), `applySwap` the other way (555 to 690), the rule 12 fit check (a flagged candidate that costs 690 s does not fit 689 s left and fits 690 s), `insertItem` of `db-row` (`costS` = sets × 210 + 60), `rankSwaps` `timeCostS` for a `db-row` candidate, `removeItem`'s `unusedS`, `timeCheck` over the plan, and `timeLeftS` (the per-set cost `(costS − 60) / sets` is the integer 210; no rounding case appears).
+- **AC6 (the flag absent, null or unknown changes nothing).** Given every existing engine test, When the suite runs after the change, Then all pass unchanged (L1 has no flag). Given L1 with `unilateral: null` on every row, and L1 with `unilateral: "both"` on every row (a value the type does not allow, as old data or a stray string could carry), Then the full `suggest`, `applySwap` and `insertItem` results over the AC8 matrix are deep-equal to L1's, and nothing throws.
+- **AC7 (counting is untouched).** Given the same history and the same sets, When `balance`, the records function, the e1RM series and `prefill` run with L1 and with L1-ONE, Then every result is deep-equal. A flagged exercise's logged sets count one hard set each (D-0260 §2), asserted on the balanced history with `db-row` sets.
+- **AC8 (simulated 14-day histories, the required engine test).** A new `test/rule-7-1-one-side-histories.test.ts` over the five histories in `fixtures/histories.ts` (zero, balanced, all-chest-no-legs, returning-after-10-days, offline-merged), budgets 15..120 step 5, warm-up on and off, every energy, shuffle 0..6, on L1-ONE:
+  - R7-E8's caps hold (Σ `costS` ≤ `available`, ≤ 8 items, ≤ 2 items per primary area, `unusedS` consistent), and R0-E1 determinism (two runs deep-equal).
+  - Every item's `costS` equals the independent formula over the library (flag included); `itemsTotalS` is their sum.
+  - For the same input, a plan on L1-ONE never holds **more** sets of a flagged row than the plain-L1 plan (`sets` ≤), and never exceeds `available`.
+  - The seeded B5 property (D-0239 §14: a sequence of up to 8 suggestion taps never refuses a tap) passes on L1-ONE, with the `autoMainLift` and `fill` switches.
+- **AC9 (the real library).** A test maps the real `data/exercises/library` (as `realRow` in `rule-7-session.test.ts` does, plus `unilateral`) and asserts that the 16 flagged rows of D-0263 §9 are priced with the doubled work and every other row is not (`setCostS` over all 108 rows against the independent formula). The row count and the flagged count (16) are asserted, so a library change makes the test fail on purpose.
+- **AC10 (guards and vendor).** The T-0978a allow-list guard passes (only `types.ts` and `cost.ts` in `packages/engine/src`); `node supabase/scripts/vendor.mjs --check` exits 0 after regeneration; the vendored `cost.js` contains the flag logic.
+- **AC11 (the e2e pins flip).** In `tests/e2e/uf-09-one-side.spec.ts`:
+  - "zero history: 3 sets of the flagged row cost what the same row costs unflagged…" now asserts the flagged plan's detail line (`3 × 8–12 · N min`) shows a **larger** `N` than the unflagged plan's, with the minutes equal to the engine's 690 s and 555 s under the screen's existing rounding, and the label is still on the first set;
+  - "returning after 10 days off…" keeps its pre-fill and hold assertions (12 kg, the label) and now asserts the minutes differ the same way;
+  - "a search of packages/engine and the vendored copy finds no 'unilateral'" becomes "finds it only in `types` and `cost`" with the allow-list of AC10, non-vacuous.
+  - `--repeat-each 10` green for the file.
+- Planted faults (log, one line each; backup copy restored with `cp`): F1 double the rest instead of the work: AC1 goes red. F2 double the work of a timed set's `defaultDurationS` but not of the planned duration: AC2 goes red. F3 read the flag in `session.ts` too (a duplicate formula): the T-0978a guard goes red. F4 treat `"both"` as flagged: AC6 goes red. F5 apply the doubled work to back-off sets only: AC4 goes red.
+
+Binary-condition check (D-0197 §7): flagged and unflagged (AC1 against its plain-L1 sentence, AC6); timed and non-timed (AC1 against AC2); a pin that fits and one that does not (AC2); a flagged and an unflagged swap target (AC5); zero history and returning after 10 days (AC8, AC11). Terminal row states (tombstoned `deletedAt`, `status: "rejected"`) enter through the histories' existing `normalizeHistory` path and the offline-merged history's `pending` sets; the flagged-row sets in AC7 include one tombstoned set, which must not count.
+
+## Paths you may change
+- `packages/engine/**`
+- `docs/engine-rules.md`
+- `supabase/functions/_shared/vendor/**` (regenerated by `node supabase/scripts/vendor.mjs` only, never hand-edited)
+- Listed extra (orchestrator grant, the TR-0049 precedent): `tests/e2e/uf-09-one-side.spec.ts`, only the three tests named in AC11.
+
+## Contract impact
+`docs/engine-rules.md` — D-0268 §2 (rule 7.1 work for a flagged set), §3 (the field on the engine type), §5 (counting untouched). `api/openapi.yaml` and `docs/data-model.md` are changed by T-0978a, not here.
+
+## Definition of done
+Tests for every AC pass · the simulated 14-day history tests (AC8) pass · `pnpm --filter @workoutlab/engine typecheck`, then a separate `… lint`, then a separate `… test` · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green (includes `vendor.mjs --check`; contract change, so `--force`) · `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green · e2e `uf-09-one-side.spec.ts`, `uf-08*` and `uf-09*` green through `scripts/locked.sh heavy` · commits start `T-0978b UF-08.1:`.
