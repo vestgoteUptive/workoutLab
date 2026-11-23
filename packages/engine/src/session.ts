@@ -296,6 +296,8 @@ const ACCESSORY_TRIES = [3, 2] as const;
  * Rule 7.2 step 1 order for `area` (D-0269 §1): the compound candidates, favorites first (rule
  * 0.2 key (0)), then `externalLoad: true` before bodyweight, then the candidate rank. The sort
  * is stable, so each part keeps `candidates` order. Step 3 (greedy) does not use it.
+ * The `fav` key repeats what `candidates` already orders; it is kept on purpose so the
+ * favorites-before-loaded order stays explicit if `candidates` ever changes.
  */
 function mainCandidates(s: State, area: Area): LibraryExercise[] {
   return candidates(s, area)
