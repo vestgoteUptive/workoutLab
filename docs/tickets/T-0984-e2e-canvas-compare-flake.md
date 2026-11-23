@@ -5,7 +5,7 @@ lane: qa
 screens: []
 decisions: [D-0197]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 In the T-0692 full-suite gate (2026-11-23, 779 tests, 2 workers, while other worktrees ran heavy Playwright jobs) `tests/e2e/canvas-compare.spec.ts` AC1 ("captures app and canvas artboard … links both from today.html") and AC5 ("a missing ref writes only the app PNG and annotates") both failed. The spec alone passed 48/48 right after. The diff under test (engine rule 7.2) does not touch the canvas tooling. A flake is not a root cause.
