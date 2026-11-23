@@ -257,7 +257,7 @@ test.describe("AC-12 a11y and target size", () => {
       page.getByRole("link", { name: "Start workout" }),
       page.getByRole("link", { name: "Body map, last 14 days. Open all areas" }),
     ]) {
-      const box = await locator.boundingBox();
+      const box = await settledBox(locator);
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -321,7 +321,7 @@ test.describe("T-0302c AC-3/AC-5/AC-9 card layout and a11y", () => {
     await cardTexts(page);
     const seeAll = page.getByRole("link", { name: "See all" });
     await expect(seeAll).toHaveAttribute("href", "/?view=preview");
-    const box = await seeAll.boundingBox();
+    const box = await settledBox(seeAll);
     expect(box).not.toBeNull();
     expect(box!.width).toBeGreaterThanOrEqual(44);
     expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -387,7 +387,7 @@ test.describe("T-0302b AC-7 preview e2e and a11y", () => {
       page.getByRole("link", { name: "Back" }),
       page.getByRole("link", { name: "Start workout" }),
     ]) {
-      const box = await locator.boundingBox();
+      const box = await settledBox(locator);
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -608,6 +608,7 @@ test.describe("T-0549 AC9 the restyled check-in card on UF-02.1", () => {
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { compareWithCanvas } from "./helpers/canvas-compare.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const TOKENS = JSON.parse(
   readFileSync(resolve(__dirname, "../../packages/design-tokens/src/tokens.json"), "utf8"),
@@ -1063,7 +1064,7 @@ test.describe("T-0601 AC7 targets and motion (390 × 844)", () => {
       const count = await controls.count();
       expect(count).toBeGreaterThan(2);
       for (let i = 0; i < count; i++) {
-        const box = await controls.nth(i).boundingBox();
+        const box = await settledBox(controls.nth(i));
         const name = await controls.nth(i).textContent();
         expect(box, name ?? "").not.toBeNull();
         expect(box!.width, `${name} w`).toBeGreaterThanOrEqual(44);

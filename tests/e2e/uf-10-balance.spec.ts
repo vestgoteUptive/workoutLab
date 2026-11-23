@@ -13,6 +13,7 @@ import {
   mockSupabaseData,
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const AREAS = [
   "chest",
@@ -204,7 +205,7 @@ test.describe("AC-A14 row touch target is at least 44 x 44 in a real layout", ()
 
       const firstRow = page.locator('[data-part="row"]').first();
       await expect(firstRow).toBeVisible();
-      const box = await firstRow.boundingBox();
+      const box = await settledBox(firstRow);
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
@@ -212,7 +213,7 @@ test.describe("AC-A14 row touch target is at least 44 x 44 in a real layout", ()
       if (fixture === "mixed") {
         const attentionRow = page.locator('[data-part="row"][data-attention="true"]').first();
         await expect(attentionRow).toBeVisible();
-        const attentionBox = await attentionRow.boundingBox();
+        const attentionBox = await settledBox(attentionRow);
         expect(attentionBox).not.toBeNull();
         expect(attentionBox!.width).toBeGreaterThanOrEqual(44);
         expect(attentionBox!.height).toBeGreaterThanOrEqual(44);

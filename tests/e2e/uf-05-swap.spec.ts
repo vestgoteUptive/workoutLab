@@ -21,6 +21,7 @@ import {
   mockSupabaseData,
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const AREAS = [
   "chest",
@@ -390,7 +391,7 @@ test.describe("T-0422 AC-10 Swap from UF-09.9, offline", () => {
     await expect(page.locator("a[href]")).toHaveCount(0);
     const rows = sheet.getByRole("radiogroup", { name: "Replacement" }).locator("[data-id]");
     await expect(rows.first()).toBeVisible();
-    const box = await rows.first().boundingBox();
+    const box = await settledBox(rows.first());
     expect(box).not.toBeNull();
     expect(box!.height).toBeGreaterThanOrEqual(44);
 
