@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-09.3, UF-09.4, UF-03.1, UF-06.2]
 decisions: [D-0260, D-0261, D-0263, D-0267]
 deps: [T-0974, T-0975]
-status: ready
+status: done
 ---
 
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ½ day (the store and hook about 3 h, the three call sites and their tests about 2 h). One ticket on purpose: three near-identical call-site edits are cheaper to review together than to sequence behind a hook-only ticket. Cross-lane files are listed extras (orchestrator grant, the T-0972 precedent). -->
