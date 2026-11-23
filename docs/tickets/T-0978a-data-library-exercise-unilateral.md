@@ -5,7 +5,7 @@ lane: data
 screens: [UF-09.3]
 decisions: [D-0268, D-0260, D-0263, D-0264]
 deps: [T-0971, T-0972]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-data (agent data-modeler). About ⅓ day. First half of the split of T-0978 (D-0268): this one carries the contract; T-0978b prices the flag in the engine and needs this one merged. No migration: `exercises.unilateral` exists since T-0972. -->
 
