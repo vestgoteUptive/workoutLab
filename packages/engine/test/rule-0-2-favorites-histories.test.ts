@@ -80,14 +80,14 @@ describe("rule 0.2 simulated 14-day histories (R7-E28…E30, D-0202 §3)", () =>
     expect(run(balancedHistory, input())).toEqual(w);
   });
 
-  it("R7-E29 rule-0.2 (AC1) all-chest-no-legs + [back-squat]: inverted-row × 4, back-squat × 3, calf-raise × 2", () => {
+  it("R7-E29 rule-0.2 (AC1) all-chest-no-legs + [back-squat]: barbell-row × 4, back-squat × 3, calf-raise × 2", () => {
     const w = run(allChestNoLegsHistory, input({ favoriteIds: FAV }));
     expect(itemsOf(w)).toEqual([
-      ["inverted-row", 4],
+      ["barbell-row", 4],
       ["back-squat", 3],
       ["calf-raise", 2],
     ]);
-    expect(w.plan.mainLiftId).toBe("inverted-row");
+    expect(w.plan.mainLiftId).toBe("barbell-row");
     expect(w.plan.items.map((i) => i.costS)).toEqual([720, 555, 270]);
     expect(w.itemsTotalS).toBe(1545);
     expect(w.totalS).toBe(1725);
