@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.3, UF-11.6]
 decisions: [D-0230, D-0231, D-0233]
 deps: [T-0683a]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-web (agent frontend-dev). About ¼ day. The second half of the triage row T-0683 (D-0157 §7). It waits for T-0683a, which adds the link and the notice that AC1 checks are gone. Spec: docs/specs/editable-level.md AC9. -->
 
