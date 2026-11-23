@@ -65,7 +65,7 @@ Maps 1:1 from `data/exercises` (D-0022). No `image_url` in v1 (D-0029, D-0005). 
 | increment_kg | numeric(4,2) | no | `2.5` | Check `> 0`. Load step for pre-fill (D-0026). |
 | default_duration_s | integer | yes | | Check `> 0`. First timed target (D-0026). |
 | external_load | boolean | no | `true` | `false` = bodyweight, pre-filled weight 0 (D-0026, D-0035). Seeded as NOT bodyweight from data/exercises (D-0044). |
-| unilateral | text | yes | | Check `unilateral in ('arm','leg','side')` (`exercises_unilateral_valid`). Which unit the exercise is trained in one side at a time; null = both sides at once. Seeded from data/exercises (T-0971, D-0260 §3, D-0263 §3). Web-only: the engine never reads it (D-0262). |
+| unilateral | text | yes | | Check `unilateral in ('arm','leg','side')` (`exercises_unilateral_valid`). Which unit the exercise is trained in one side at a time; null = both sides at once. Seeded from data/exercises (T-0971, D-0260 §3, D-0263 §3). Carried on `LibraryExercise` (only for a flagged row); read by the engine's time model only (D-0268). |
 
 - Indexes: PK `(id)`.
 - RLS: `exercises_select` (select, `anon, authenticated`, `true`).
