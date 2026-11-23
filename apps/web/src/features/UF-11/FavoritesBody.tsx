@@ -2,6 +2,7 @@
 // Cache-first; a refresh runs on mount when online. Writes are online-only and the list changes
 // only after the server confirms (the write helpers update the cache).
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Link } from "react-router";
 import { isEligible, primaryAreas } from "@workoutlab/engine";
 import { AREAS, type Area, type LibraryExercise } from "@workoutlab/shared";
 import { CrossIcon, Icon } from "../../components/icons/index.js";
@@ -64,6 +65,12 @@ export function FavoritesBody() {
     if (!isEligible(e, profile, [])) return s.aboveLevel;
     return null;
   };
+
+  // T-0683a: over the whole favorites list, not the rows the query shows (D-0231 §2).
+  const anyAboveLevel = favoriteIds.some((id) => {
+    const e = byId.get(id);
+    return e !== undefined && statusLine(e) === s.aboveLevel;
+  });
 
   const groups = useMemo(() => {
     if (needle !== "") return [];
@@ -217,6 +224,20 @@ export function FavoritesBody() {
   return (
     <div className="wl-excluded wl-favorites">
       <p className="wl-type-body">{s.lead}</p>
+      {profile && anyAboveLevel ? (
+        <p className="wl-level-notice">
+          <Icon size={20} className="wl-level-notice__icon">
+            <circle cx={12} cy={12} r={9} />
+            <path d="M12 11v5M12 8h.01" />
+          </Icon>
+          <span>
+            {s.levelNotice(en.uf11.levels[profile.level].label)}{" "}
+            <Link className="wl-level-notice__link" to="/plan/edit?from=favorites">
+              {s.changeLevel}
+            </Link>
+          </span>
+        </p>
+      ) : null}
       {online ? null : (
         <p id={offlineId} className="wl-type-label">
           {s.connectToChange}

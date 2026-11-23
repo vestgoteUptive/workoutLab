@@ -20,6 +20,7 @@ import {
   VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercisesLoaded, profile } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const F_TARGETS: Record<string, number> = {
   chest: 20,
@@ -539,14 +540,14 @@ test.describe("UF-04.2 Weight step row", () => {
     const chips = await row.getByRole("radio").all();
     expect(chips).toHaveLength(4);
     for (const chip of chips) {
-      expect((await chip.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      expect((await settledBox(chip))!.height).toBeGreaterThanOrEqual(44);
     }
     await row.getByRole("radio", { name: "Other", exact: true }).click();
     const field = row.getByLabel("Step in kg");
     await expect(field).toBeVisible();
-    expect((await field.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await settledBox(field))!.height).toBeGreaterThanOrEqual(44);
     for (const button of await row.getByRole("button").all()) {
-      expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      expect((await settledBox(button))!.height).toBeGreaterThanOrEqual(44);
     }
     const axe = await new AxeBuilder({ page }).include('[data-screen-id="UF-04.2"]').analyze();
     expect(axe.violations).toEqual([]);

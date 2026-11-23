@@ -84,6 +84,8 @@
   display: flex;
   flex-direction: column;
   margin: 0;
+  /* T-0683a: "Intermediate" is one long word; at 200% text zoom it must wrap, not overflow. */
+  overflow-wrap: anywhere;
 }
 
 /* Edit plan: the one white primary on the screen. */
