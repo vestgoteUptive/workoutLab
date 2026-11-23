@@ -193,10 +193,13 @@
   align-items: center;
   min-block-size: 44px;
   color: var(--wl-ink);
+  font-weight: 500;
   text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .wl-level-notice__link:focus-visible {
   outline: 2px solid var(--wl-focus);
   outline-offset: 2px;
+  border-radius: var(--wl-radius-tile);
 }
