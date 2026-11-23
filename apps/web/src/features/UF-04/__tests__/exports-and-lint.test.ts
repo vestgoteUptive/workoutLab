@@ -4,7 +4,7 @@
 import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, relative, resolve } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { en } from "../../../lib/i18n/en.js";
 
@@ -12,7 +12,10 @@ vi.mock("../../../lib/auth/client.js", () => ({ supabase: { from: vi.fn() } }));
 
 const WEB_ROOT = process.cwd();
 const FEATURE_DIR = resolve(__dirname, "..");
-const eslint = new ESLint({ cwd: WEB_ROOT });
+const eslint = await warmEslint(WEB_ROOT);
+// Loaded at collection, like the ESLint config: the barrel's import graph is the other cold cost
+// that a loaded machine stretches past the 5 s test budget (T-0982).
+const indexModule = await import("../index.js");
 
 async function messages(code: string) {
   const [result] = await eslint.lintText(code, {
@@ -44,7 +47,7 @@ function idbViolations(source: string): string[] {
 
 describe("AC-16 exports", () => {
   it("index exports exactly Compare, ExerciseHowTo, Library, LibraryDetail", async () => {
-    const mod = await import("../index.js");
+    const mod = indexModule;
     expect(Object.keys(mod).sort()).toEqual([
       "Compare",
       "ExerciseHowTo",

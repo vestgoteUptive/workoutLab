@@ -3,13 +3,16 @@
 // calendar (WCAG 2.4.7): "today" is CSS keyed on a data attribute, never an inline outline.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve, join } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { describe, expect, it } from "vitest";
 import { en } from "../../../lib/i18n/en.js";
 
 const WEB_ROOT = process.cwd();
 const FEATURE = resolve(__dirname, "..");
-const eslint = new ESLint({ cwd: WEB_ROOT });
+const eslint = await warmEslint(WEB_ROOT);
+// Loaded at collection, like the ESLint config: the barrel's import graph is the other cold cost
+// that a loaded machine stretches past the 5 s test budget (T-0982).
+const indexModule = await import("../index.js");
 
 async function messages(relPath: string, code: string, ruleId: string) {
   const [result] = await eslint.lintText(code, { filePath: resolve(WEB_ROOT, relPath) });
@@ -40,7 +43,7 @@ describe("AC-13 UF-06 is not importable during a workout (lint)", () => {
 
 describe("AC-14 exports, imports and strings", () => {
   it("exports exactly ExerciseHistory and Progress", async () => {
-    const mod = await import("../index.js");
+    const mod = indexModule;
     expect(Object.keys(mod).sort()).toEqual(["ExerciseHistory", "Progress"]);
   });
 
