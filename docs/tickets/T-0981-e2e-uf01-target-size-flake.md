@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-01.1, UF-01.2, UF-01.3, UF-01.4]
 decisions: [D-0197]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 In the T-0686b gate (2026-11-23), `tests/e2e/uf-01-onboarding.spec.ts` "T-0605 … AC6 every option row, chip, segment, button and link is ≥ 44 × 44" failed once (34 tests, 2 workers). It then passed 112/112 (uf-01 ×4) and 105/105 (uf-01 + uf-08-level-change ×3). The test measures `getBoundingClientRect()` once, right after the screen becomes visible, so a box caught mid-transition (scale/opacity enter animation), before the web fonts settle, or before a lazily loaded stylesheet applies would read small. A flake is not a root cause.

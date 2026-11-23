@@ -237,7 +237,7 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-0949 | UF-09.9 "Add exercise" seam action (lazy `import("../UF-08/index.js")`, retried), hidden on a pause from UF-09.8, stays paused; `role=status` line on mount, focus on "Add exercise" after close/add, no Paused remount, Back/Escape closes only the sheet; drop the "{name} added." variant (D-0243 §1 §7, D-0246 §4–§7) | web-feature:UF-09 | T-0947, T-0948 | done | wl-build-web |
 | T-0950 | e2e add during a workout: zero history, 10 days off, time running out, offline and reload, finish while the plan write is queued (summary lists the added item), swap then add back, focus/no remount, axe/44 px (D-0246 §17) | qa | T-0949 | done | wl-build-qa |
 | T-0980 | Bug: add during a workout fails when the session loaded before the library cache filled; `insertItem` reads `loadLibrary()` at call time, cold-library e2e (found by T-0950) | web-feature:UF-09 | T-0949, T-0950 | done | wl-build-web |
-| T-0981 | e2e UF-01 AC6 44 px target check failed once in the T-0686b gate (then 217/217); one-shot getBoundingClientRect after visible; root-cause and use a settled measure | qa | — | ready | wl-build-qa |
+| T-0981 | e2e UF-01 AC6 44 px target check failed once in the T-0686b gate (then 217/217); one-shot getBoundingClientRect after visible; root-cause and use a settled measure | qa | — | done | wl-build-qa |
 | T-0982 | Per-feature ESLint-in-vitest tests (jsx-no-literals) time out under full-gate load (UF-01 source, UF-09 exports-and-lint); root-cause and make them load-proof | web-shell | — | ready | wl-build-web |
 | T-0983 | e2e UF-01.5 AC-14 save writes recorded as [] once under load (T-0981 run); root-cause test vs app | qa | — | ready | wl-build-qa |
 
