@@ -78,7 +78,7 @@ describe("AC-4 reload", () => {
     const back = await screen.findByRole<HTMLInputElement>("checkbox", {
       name: "Mark set 5 done",
     });
-    expect(document.activeElement).toBe(back);
+    await waitFor(() => expect(document.activeElement).toBe(back));
     expect(
       screen.getByRole<HTMLInputElement>("textbox", { name: "Set 5 weight in kg" }).value,
     ).toBe("100");
