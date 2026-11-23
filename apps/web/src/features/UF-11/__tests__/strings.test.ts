@@ -206,6 +206,8 @@ describe("AC-B16 no second string catalogue", () => {
       // T-0633 BarPlatesSection: HTML attribute values (`inputMode`, `aria-live`); not copy.
       "decimal",
       "polite",
+      // T-0683a FavoritesBody: the route the level notice's link opens (D-0233 §7); not copy.
+      "/plan/edit?from=favorites",
     ]);
     const uiWords = Object.values(uf11).filter((v) => typeof v === "string") as string[];
     for (const file of sourceFiles()) {

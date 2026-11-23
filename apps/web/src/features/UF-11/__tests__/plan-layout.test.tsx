@@ -85,11 +85,13 @@ describe("T-0548 AC2 Your plan card", () => {
     const card = screen.getByRole("heading", { name: "Your plan" }).closest("section")!;
     expect(Array.from(card.querySelectorAll("dt")).map(norm)).toEqual([
       "Goal",
+      "Level",
       "Rhythm",
       "Priority areas",
     ]);
     expect(Array.from(card.querySelectorAll("dd")).map(norm)).toEqual([
       "Build muscle",
+      "Intermediate",
       "3–5 per week 6–10 sessions per 14 days",
       "Chest, Shoulders",
     ]);
@@ -102,7 +104,7 @@ describe("T-0548 AC2 Your plan card", () => {
   it("reads None with no priority areas, and no tile is a priority tile", async () => {
     await ready();
     const card = screen.getByRole("heading", { name: "Your plan" }).closest("section")!;
-    expect(card.querySelectorAll("dd")[2]).toHaveTextContent("None");
+    expect(card.querySelectorAll("dd")[3]).toHaveTextContent("None");
     expect(tiles().filter((t) => norm(t).includes("Priority"))).toEqual([]);
   });
 });
