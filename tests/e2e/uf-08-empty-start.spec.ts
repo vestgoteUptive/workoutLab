@@ -17,6 +17,7 @@ import {
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercises, profile } from "./fixtures/uf-04-library-data.js";
 import { VITE_SUPABASE_URL } from "./playwright.config.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const F_TARGETS: Record<string, number> = {
   chest: 20,
@@ -474,7 +475,7 @@ async function expectTargets44(locators: Locator[]): Promise<void> {
     const n = await l.count();
     expect(n, `${l} should be on screen`).toBeGreaterThan(0);
     for (let i = 0; i < n; i += 1) {
-      const box = (await l.nth(i).boundingBox())!;
+      const box = (await settledBox(l.nth(i)))!;
       const label = (await l.nth(i).textContent()) ?? "";
       expect(box.width, `${label} width`).toBeGreaterThanOrEqual(44);
       expect(box.height, `${label} height`).toBeGreaterThanOrEqual(44);

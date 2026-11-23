@@ -25,6 +25,7 @@ import {
   profile,
 } from "./fixtures/uf-04-library-data.js";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const TAB_ROUTES = ["/", "/library", "/progress", "/plan"] as const;
 const AXE_ROUTES = ["/welcome", "/", "/library", "/progress", "/balance", "/plan"] as const;
@@ -73,7 +74,7 @@ test.describe("AC-A7 tab bar (e2e, 360x640)", () => {
     const links = await nav.getByRole("link").all();
     expect(links.length).toBe(4);
     for (const link of links) {
-      const box = await link.boundingBox();
+      const box = await settledBox(link);
       expect(box).not.toBeNull();
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
