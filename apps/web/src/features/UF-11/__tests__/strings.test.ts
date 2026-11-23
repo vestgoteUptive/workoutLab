@@ -116,6 +116,11 @@ describe("AC-B16 no second string catalogue", () => {
       "level",
       "beginner",
       "intermediate",
+      // T-0690: the `SaveScope` and `refreshAfterSave` result values, not copy.
+      "full",
+      "ok",
+      "stale",
+      "fulfilled",
       "radiogroup",
       "group",
       "status",

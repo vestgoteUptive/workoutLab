@@ -376,7 +376,9 @@ describe("AC-B12 double submit and a failed refresh", () => {
     await tap(saveButton());
     await waitFor(() => expect(location()).toBe("/plan"));
 
-    expect(spy.calls).toHaveLength(3);
+    // Three writes. T-0690 (D-0270): the failed refresh is retried once, and those reads are
+    // `select`s, so the writes are counted without them.
+    expect(spy.calls.filter((c) => c.method !== "select")).toHaveLength(3);
     expect(refreshAllSpy).toHaveBeenCalled();
     expect(screen.queryByText(u.saveFailed)).not.toBeInTheDocument();
   });
