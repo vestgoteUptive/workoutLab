@@ -1,0 +1,60 @@
+---
+id: T-0692
+title: "Engine rule 7.2 step 1: the main lift is the first loaded compound in rank order (a bodyweight compound only when the area has no loaded one); favorites and an explicit mainLiftId still win; re-vendor"
+lane: engine
+screens: [UF-08.1]
+decisions: [D-0269, D-0024, D-0202, D-0237, D-0239]
+deps: []
+status: ready
+---
+<!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-engine (agent engine-dev). About ½ day. Decision D-0269 (rule, not content; status revisit). NOT parallel with T-0978b: both edit packages/engine/**, docs/engine-rules.md and the vendor copy; build this one first (it is smaller), and the second one rebases and re-runs the vendor script. -->
+
+## Why
+T-0691's review found that a zero-history full-gym user can get a bodyweight row as the main lift (`archer-push-up`, `band-chest-press`, `bird-dog` typed compound). The main lift is the 4-set slot with the strictest rep range, the rule 14 progression and the rule 7.4 back-off, and none of that means anything at 0 kg. Rule 7.2 step 1 takes the area's top compound candidate; candidates rank by favorite, last session, gap fit, then id, so at zero history ties fall to **id ascending**, and a bodyweight row whose id sorts early (or whose area weights sum higher, like `bird-dog` with 2.0 against 1.5 for the loaded back compounds) wins. D-0269 decides the fix: in step 1, prefer `externalLoad: true`. No content retype.
+
+## Scope
+- In (`packages/engine/**`, `docs/engine-rules.md`):
+  - **`src/session.ts` `selectMain`** (step 1, the auto fallback only): for each area it tries, the compound candidates are tried in the order favorites first (rule 0.2 key (0), as today), then `externalLoad: true` before `externalLoad: false`, then the existing rank. The first that fits at 4, then 3, then 2 sets is the main lift, as today. Nothing else in `selectMain` moves: the explicit `mainLiftId` branch, the `autoMainLift: false` early return, the area order (`areasByRatio`), `tryAdd`.
+  - **`docs/engine-rules.md`** rule 7.2 step 1 text, the 7.2 ranking paragraph's sentence "Because step 1 takes the area's top compound candidate, a favorite compound becomes the main lift when the gaps choose its area" (amended: "…the top compound candidate in step 1's order…"), the examples that move (below) and new examples R7-E37 and following (next free numbers; the builder checks), a traceability row naming T-0692 and D-0269, and the D-0040 §11 mention of "the all-chest history's main lift is inverted-row" if it appears in the rules file.
+  - **Re-vendor:** `node supabase/scripts/vendor.mjs` (never hand-edit `supabase/functions/_shared/vendor/**`); `vendor.mjs --check` is part of `pnpm -w test`.
+  - **Tests:** the new files below, and the deliberate updates to every existing assertion that moves.
+- Out:
+  - Any content retype (D-0269 §3). `data/exercises/**` is not touched.
+  - Step 3 greedy ranking, accessory choices, `rankSwaps`, `applySwap` (including its main slot), rule 13, `insertItem`, rule 14, rule 16, balance. Costs: compound sets cost the same loaded or not, so no item cost moves.
+  - openapi, data-model, web, backend source.
+
+**Examples that move (the builder confirms by running, and lists each one in the log with its old and new values).** `R7-E29` (and its test in `rule-0-2-favorites-histories.test.ts`, "all-chest-no-legs + [back-squat]"): the main lift is no longer `inverted-row` (a bodyweight compound in L1) but the first loaded back compound by rank (expected `barbell-row`); costs per item stay 720, 555, 270 if the later picks hold, but re-derive every number from the code and check it by hand against rules 7.1 and 7.2. Search `packages/engine/test` for `"inverted-row"` as `mainLiftId` or as the first item, and for pins of the D-0040 §11 sentence (`T-0202`'s fixture notes). `R7-E6` (no equipment, `push-up × 4`) must NOT move: no loaded compound is eligible there.
+
+## Acceptance criteria
+Fixtures: F-profile (beginner, equipment `full`), F-tz, F-goal, F-input, library L1, unless stated. "L1+" is L1 plus two test-local rows, added in the new test file only (never in the shared L1 fixture): `archer-push-up` (compound, `externalLoad: false`, equipment none, level beginner, chest 1, shoulders .5, arms .5) and `bird-dog` (compound, `externalLoad: false`, equipment none, level beginner, back 1, core .5, glutes .5). Test titles name the example, `rule-7.2 (ACn)`.
+- **AC1 (R7-E37, the chest tie no longer goes to id order).** Given L1+, zero history, F-input, Then `mainLiftId` is `bench-press` (loaded, id after `archer-push-up`), the first item is `bench-press × 4` main, and `archer-push-up` is not the main lift. Red on the old code (main `archer-push-up`), recorded.
+- **AC2 (R7-E38, a bodyweight row with a higher gap fit does not win).** Given L1+, zero history, `avoidAreas ["chest"]`, Then back is the main area and `mainLiftId` is `barbell-row`: neither `bird-dog` nor `inverted-row` (both bodyweight, both weight sum 2.0 against 1.5). Costs: `barbell-row × 4` = 720 s.
+- **AC3 (R7-E39, no loaded compound in the area: today's behaviour).** Given R7-E6 (equipment `[]`, `budgetMin 15`), Then the items are still [push-up × 4 at 6 reps, 0 kg] (unchanged). Given L1+ with equipment [] and `avoidAreas ["chest"]`, Then the only eligible back compound is the bodyweight `bird-dog` (`inverted-row` needs a rack), and the main lift is `bird-dog` exactly as on the old code: sibling of AC2, the rule only reorders, it never removes a bodyweight main lift when nothing loaded exists.
+- **AC4 (R7-E40, a favorite wins, as rule 0.2 says).**
+  - Given zero history, F-input, `favoriteIds ["push-up"]`, Then the main lift is `push-up` (a bodyweight favorite is the user's preference).
+  - Given `favoriteIds ["push-up", "db-bench-press"]`, Then the main lift is `db-bench-press` (both favorites: loaded first).
+  - Given L1+ with `avoidAreas ["chest"]` and `favoriteIds ["inverted-row"]`, Then the main lift is `inverted-row`.
+  - Given `favoriteIds ["archer-push-up"]` on L1+, Then the main lift is `archer-push-up`.
+- **AC5 (R7-E41, an explicit main lift is untouched).** Given `mainLiftId "push-up"` on L1, zero history, Then the main lift is `push-up × 4`. Given `mainLiftId "archer-push-up"` on L1+ with `autoMainLift: false` and `fill: false`, Then the only item is `archer-push-up × 4` main. Given an `excludeIds ["bench-press"]` on L1+ zero history, Then the main lift is `db-bench-press` (the next loaded chest compound, not `archer-push-up`).
+- **AC6 (R7-E29 moves, and only as listed).** The moved example's new values are recorded in `docs/engine-rules.md` and asserted in `rule-0-2-favorites-histories.test.ts`. A search shows no other assertion changed without a line in the log.
+- **AC7 (simulated 14-day histories, the required engine test).** A new `test/rule-7-main-loaded-histories.test.ts`, over the five histories from `fixtures/histories.ts` (zero, balanced, all-chest-no-legs, returning-after-10-days, offline-merged), budgets 15..120 step 5, warm-up on and off, every energy, shuffle 0..6, on L1+:
+  - **(a) caps hold:** R7-E8's properties (Σ item costs ≤ `available`, ≤ 8 items, ≤ 2 items per primary area, `unusedS` consistent) and R0-E1 determinism (the same input twice is deep-equal).
+  - **(b) golden when nothing changes:** on `L1_LOADED_ONLY` (L1+ minus every bodyweight compound), the full `suggest` result for the whole matrix is deep-equal to a snapshot generated on the **unchanged** engine (committed as `test/fixtures/rule-7-main-loaded-golden.json`, generated before the code change; the log says on which commit). Proves the rule changes nothing when no bodyweight compound is in play.
+  - **(c) the preference holds:** with `avoidAreas` set to every area except one, zero history and `budgetMin` ≥ 30, for each of the nine areas: `mainLiftId` is loaded exactly when that area has an eligible loaded compound candidate, and is the first bodyweight compound by rank when it has only bodyweight ones, and null when it has no compound.
+  - **(d) the seeded B5 property** of D-0239 §14 (a sequence of up to 8 suggestion taps never refuses a tap) still passes on L1+.
+- **AC8 (the real library, the bug as reported).** A new test maps every `kind: "exercise"` row of `data/exercises/library` to a `LibraryExercise` the way `realRow` in `rule-7-session.test.ts` does (`externalLoad: bodyweight !== true`), and for each of: levels beginner, intermediate, advanced; equipment `full` and `full + band`; zero history; F-input (budget 30), plus the same with `avoidAreas ["chest"]`, Then `mainLiftId` is a row with `externalLoad: true`. The log records the ids picked. Red on the old code for at least the advanced case (`archer-push-up`) and the `+ band` case (`band-chest-press`).
+- **AC9 (rule text and vendor).** `docs/engine-rules.md` step 1 names the order (favorites, loaded, rank) and cites D-0269; the traceability row exists; `node supabase/scripts/vendor.mjs --check` exits 0 after the vendor copy is regenerated.
+- Planted faults (log, one line each; backup copy restored with `cp`): F1 drop the loaded sort: AC1 and AC8 go red. F2 apply the loaded sort before favorites: AC4 goes red. F3 apply the loaded sort in step 3 (greedy) too: AC7(b) goes red. F4 drop the bodyweight fallback (an area with only bodyweight compounds yields no main lift): AC3 goes red.
+
+Binary-condition check (D-0197 §7): loaded compound present and absent in the area (AC1 against AC3); favorite and non-favorite (AC4 against AC1); explicit `mainLiftId` and auto (AC5 against AC1); `autoMainLift` true and false (AC5); zero history and returning after 10 days (AC7). Terminal row states (tombstoned `deletedAt`, rejected) are covered by the histories' existing `normalizeHistory` path; the offline-merged history carries `pending` sets.
+
+## Paths you may change
+- `packages/engine/**`
+- `docs/engine-rules.md`
+- `supabase/functions/_shared/vendor/**` (regenerated by `node supabase/scripts/vendor.mjs` only, never hand-edited)
+
+## Contract impact
+`docs/engine-rules.md` — D-0269 (rule 7.2 step 1 order, R7-E29 moved, R7-E37 and following). No openapi, data-model or token change.
+
+## Definition of done
+Tests for every AC pass · the simulated 14-day history tests (AC7) pass · `pnpm --filter @workoutlab/engine typecheck`, then a separate `… lint`, then a separate `… test` · `npx -y pnpm@10.28.2 -w typecheck lint test --force --concurrency=1` green (includes `vendor.mjs --check`; the contract changed, so `--force`) · `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green · e2e: `apps/web` bundles the engine, so run (through `scripts/locked.sh heavy`) the `uf-08*` and `uf-02*` specs and any spec that names an exercise from a moved example (grep `tests/e2e` for `inverted-row` and `Barbell row`), green · commits start `T-0692 UF-08.1:`.

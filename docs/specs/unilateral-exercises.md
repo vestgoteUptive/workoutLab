@@ -2,7 +2,7 @@
 
 - **Idea:** the owner, 2026-11-20: "For exercises done one arm at a time, should you log reps per arm or the total for the whole set?" The orchestrator answered: reps per arm (10 per arm, not 20), weight is one dumbbell, one set covering both sides is one hard set. The owner asked to file it as an idea.
 - **Screens:** UF-09.3 Current set and UF-09.4 Confirm set (a label only), UF-03.3 Summary and UF-03.1 Active (set table) and UF-06.2 Exercise history (set rows), UF-04.2 Exercise detail (one line). User flows v2 (D-0002).
-- **Decisions:** D-0260 (field, counting rules, data), D-0261 (labels, copy and the audit rule), D-0262 (no engine change in v1, time under-estimate accepted), D-0263 (review rulings; amends the three, wins where they differ: 16 flagged rows, flag on web `ExerciseDetail`, no IndexedDB bump, hero-line formats). Builds on D-0033 (library engine fields), D-0026 and D-0250 (progression, RIR), D-0254 (e1RM), D-0024 (time model, rule 7.1).
+- **Decisions:** D-0260 (field, counting rules, data), D-0261 (labels, copy and the audit rule), D-0262 (no engine change in v1, time under-estimate accepted; superseded by D-0268 on 2026-11-23), D-0263 (review rulings; amends the three, wins where they differ: 16 flagged rows, flag on web `ExerciseDetail`, no IndexedDB bump, hero-line formats). Builds on D-0033 (library engine fields), D-0026 and D-0250 (progression, RIR), D-0254 (e1RM), D-0024 (time model, rule 7.1).
 - **Principles:** 1 (one task on screen): the label is part of the existing reps line, not a new element, step or screen; nothing is added to UF-09.9. 2 (time budget): known under-estimate, see "Time". 3 (deterministic engine): no rule changes in v1. 5: nothing in onboarding.
 
 ## What it is
@@ -56,6 +56,8 @@ One extra static body-text `<p>` under the steps, only for flagged rows (the RIR
 Double progression (D-0026) works on per-side reps and per-dumbbell weight unchanged. RIR (D-0250) is one number per set: the user enters the RIR of the **weaker side** (the one that struggled more). The engine reads the lowest RIR as today. The how-to line carries "Log RIR for your weaker side." The RIR chips keep their existing words.
 
 ### Time
+**Update 2026-11-23 (D-0268, T-0978a, T-0978b):** the owner asked for the engine change. Rule 7.1 now prices a flagged set at two sides of work (non-timed 90 s; timed twice its planned duration) plus one rest, the engine reads an optional `unilateral` on its `LibraryExercise`, and the under-estimate below no longer exists once T-0978b is merged. The rest of this section is the v1 record.
+
 Rule 7.1 prices a non-timed set at 45 s work plus rest. A unilateral set really takes about 90 s work (two sides) plus one rest. D-0262: **no engine change in v1.** The plan under-estimates each flagged set by about 45 s: a 3-set flagged row runs about 2 min 15 s over its planned cost. Why this default: it ships without an engine change, without re-vendoring `supabase/functions/_shared/vendor/**`, and without rewriting the worked examples that pin item costs (R7-E4 and others); the label is the part that prevents wrong logs. The cost is accepted and parked as T-0978 (idea): rule 7.1 doubles work for a flagged row (timed: 2 × planned duration), once the library carries the flag; a data check on real overruns can decide when.
 
 ## Edge cases
@@ -82,13 +84,13 @@ Rule 7.1 prices a non-timed set at 45 s work plus rest. A unilateral set really 
 10. Given the same sets, Est. 1RM on UF-06.2 equals the value computed from reps and weight as logged (Epley, no side factor).
 11. Given dumbbell-row on UF-04.2, the extra line reads "Do all reps on one arm, then switch. Log reps for one arm. One set covers both arms. Log RIR for your weaker side."; a bilateral row has no extra line.
 12. Given RIR logged 0 on a flagged row, rule 14 holds the weight exactly as for a bilateral row (D-0250 unchanged).
-13. Given 3 sets of a flagged row planned in a 30-minute budget, the engine cost equals a bilateral row's (the D-0262 pin), and the engine package (and the vendored copy) has no reference to `unilateral`; a mapper test shows `ExerciseDetail` carries it.
+13. Given 3 sets of a flagged row planned in a 30-minute budget, the engine cost equals a bilateral row's (the D-0262 pin), and the engine package (and the vendored copy) has no reference to `unilateral`; a mapper test shows `ExerciseDetail` carries it. **Replaced by D-0268 (T-0978b):** a flagged 3-set compound row costs 690 s against 555 s, and only `types.ts` and `cost.ts` of the engine may mention the flag.
 14. Offline: with the library cached and no network, the label shows and a set queues and uploads later with plain reps and weight.
 15. Onboarding to a first plan is unchanged under 60 s; UF-09 shows no new element (one reps line, no extra row or step); axe passes on UF-09.3, UF-09.4 and UF-04.2 with a flagged row; targets are at least 44 px as today.
 
 ## Open questions (all resolved by D-0263 with the defaults below; owner approved building 2026-11-20)
 1. **One flag per row or an exact word?** Default: the word (`arm`, `leg`, `side`) in one optional field.
-2. **Does the engine price a unilateral set at double work time?** Default: no in v1 (D-0262); T-0978 stays `idea`.
+2. **Does the engine price a unilateral set at double work time?** Default: no in v1 (D-0262). **Closed the other way on 2026-11-23: yes (D-0268), built as T-0978a and T-0978b.**
 3. **Old logs of newly flagged rows (maybe logged as totals)?** Default: leave them; no migration, no rewrite.
 4. **Alternating rows (bird-dog, dead-bug, reverse lunge)?** Default: not flagged, reps are the counted steps.
 5. **Show the label on plan rows (UF-08.2, UF-02.1 plan card) as "3 × 8–12 per arm"?** Default: no in v1; only the screens above.
@@ -97,7 +99,7 @@ Rule 7.1 prices a non-timed set at 45 s work plus rest. A unilateral set really 
 8. **Do the Cobalt copy strings go through the existing i18n files?** Resolved: one shared module with `formatReps` and `perSide`, called by all four flows (D-0263 §8); no new token.
 
 ## Build order (D-0263 §10)
-T-0971 (schema, loader, seed, step text) then T-0972 (migration, data-model, `database.gen.ts`, mapper), which lands after T-0951. T-0973 (screen specs, created or amended: UF-09.3, UF-09.4, UF-03, UF-06, UF-04.2). Web tickets T-0974 (creates the helper), T-0975, T-0976 land after T-0953 and T-0954. T-0977 e2e last. T-0978 stays `idea` (needs T-0952 and T-0971).
+T-0971 (schema, loader, seed, step text) then T-0972 (migration, data-model, `database.gen.ts`, mapper), which lands after T-0951. T-0973 (screen specs, created or amended: UF-09.3, UF-09.4, UF-03, UF-06, UF-04.2). Web tickets T-0974 (creates the helper), T-0975, T-0976 land after T-0953 and T-0954. T-0977 e2e last. T-0978 stayed `idea` until the owner asked for it (D-0268): T-0978a (data: the flag on `LibraryExercise`) then T-0978b (engine, rule 7.1). T-0979 (the label on the first frame) is independent.
 
 ## Out of scope (v1)
-Per-side reps or weights (left and right logged separately), a left-right imbalance chart, doubling the work time in the engine, unilateral-aware warm-ups, labels on plan rows, rewriting past logs.
+Per-side reps or weights (left and right logged separately), a left-right imbalance chart, unilateral-aware warm-ups, labels on plan rows, rewriting past logs.
