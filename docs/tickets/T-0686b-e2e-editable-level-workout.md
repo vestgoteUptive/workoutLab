@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-08.5, UF-09.1, UF-09.5, UF-09.9, UF-05.1, UF-01.3]
 decisions: [D-0230, D-0231, D-0232, D-0233, D-0109, D-0178]
 deps: [T-0682, T-0684, T-0685]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-qa (agent qa-tester). About ½ day. The second half of the triage row T-0686 (D-0157 §7). A new spec file only, with fixtures unchanged, so no full e2e suite run is needed (D-0178 §3). Spec: docs/specs/editable-level.md AC10, AC11, AC12, AC14 and AC15. -->
 
@@ -71,3 +71,4 @@ none.
 - Commits start `T-0686b UF-08.5:`.
 
 ## Build / accept log
+- Build (qa, 2026-11-23): new `tests/e2e/uf-08-level-change.spec.ts`, 7 tests, fixtures unchanged, 7/7 green, `--repeat-each 3` 21/21. AC1 and AC7 UF-08.5 pointer online/offline; AC2 save Intermediate then offline Add Pull-up; AC3 resume after level advanced (same plan ids from IndexedDB and upserts, first exercise after warm-up); AC4 UF-01.3 line, 3 activations < 5 s; AC5 UF-09.1/.5/.9 and UF-05.1 text and `/plan/edit` links; AC6 Node-side source scan. Planted faults (each restored with `cp`, `cmp` clean), red: `flows/uf-08.ts` reasonLevel without the pointer (AC1, AC7); `flows/uf-09.ts` "Change level" comment (AC6); `paused.tsx` link and `SwapSheet.tsx` link (AC5 red at UF-09.9 and UF-05.1); `save-plan.ts` saveLevel no-op (AC2); `LevelScreen.tsx` line removed (AC4); `load.ts` plan items reversed on resume (AC3). `format:check`, `lint:e2e`, `check-all.mjs` green. Spec's UF-08.5 row name is "Pull-up" (fixture), not "Pull up".
