@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.1]
 decisions: [D-0269, D-0024, D-0202, D-0237, D-0239]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-engine (agent engine-dev). About ½ day. Decision D-0269 (rule, not content; status revisit). NOT parallel with T-0978b: both edit packages/engine/**, docs/engine-rules.md and the vendor copy; build this one first (it is smaller), and the second one rebases and re-runs the vendor script. -->
 
