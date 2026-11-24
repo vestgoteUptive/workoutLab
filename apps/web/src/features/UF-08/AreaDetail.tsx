@@ -20,6 +20,7 @@ import { itemReasonLine, itemSummary } from "../../lib/i18n/workout.js";
 import { ExerciseHowTo } from "../UF-04/index.js";
 import type { AreaLoad } from "./AreaPlan.js";
 import { AddExerciseSheet } from "./AddExerciseSheet.js";
+import { leftMinutes } from "./budget.js";
 import { RemovedLine } from "./RemovedLine.js";
 import { exerciseName, isBodyweight } from "./rows.js";
 
@@ -432,7 +433,7 @@ export function AreaDetail({
         <AddExerciseSheet
           catalog={catalog}
           items={workout.plan.items}
-          budgetMin={workout.budgetMin}
+          lead={en.uf08.addLead(leftMinutes(workout), workout.budgetMin)}
           firstArea={area}
           blocked={blocked}
           favoriteIds={favoriteIds}

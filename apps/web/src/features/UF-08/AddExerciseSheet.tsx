@@ -1,8 +1,8 @@
 // UF-08.5 Add exercise (T-0573, D-0205 §1-§4, Design-docs/.../UF-08.5.md). A sheet over UF-08.2:
 // search over the cached library (kind `exercise`), or "Today's areas" with an empty query.
 // Principle 3: the sheet picks nothing. Add hands the id to the host, which asks the engine
-// (`suggest` with `pinnedIds`); the engine silently drops a pin that does not fit, so the host's
-// answer is a refusal text (shown here, the sheet stays open) or null (the host closes it).
+// (`insertItem`, local, D-0274 §5); the host's answer is a refusal text (shown here, the sheet
+// stays open) or null (the host closes it).
 // Search and Add run on the device from the cache: no request, online or off.
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
@@ -18,9 +18,8 @@ import { en } from "../../lib/i18n/en.js";
 export interface AddExerciseSheetProps {
   catalog: readonly LibraryExercise[];
   items: readonly WorkoutItem[];
-  budgetMin: number;
-  /** T-0940: the lead line; absent is suggested mode's "The rest of your workout adjusts…". */
-  lead?: string;
+  /** The lead line under the title: "{left} of {n} min left." (D-0274 §5, an Add is local). */
+  lead: string;
   /** Exercise id to its disabled-row reason line (T-0574); absent ids can be added. */
   blocked?: Readonly<Record<string, string>>;
   /** T-0577: stored favorite ids and whether that list has loaded (D-0205 §2, D-0202). */
@@ -53,7 +52,6 @@ function byNameThenId(a: LibraryExercise, b: LibraryExercise): number {
 export function AddExerciseSheet({
   catalog,
   items,
-  budgetMin,
   lead,
   inWorkout = false,
   blocked = {},
@@ -276,7 +274,7 @@ export function AddExerciseSheet({
             <CrossIcon size={20} />
           </button>
         </div>
-        <p className="wl-uf08__sheet-lead wl-type-label">{lead ?? en.uf08.addLead(budgetMin)}</p>
+        <p className="wl-uf08__sheet-lead wl-type-label">{lead}</p>
         <label htmlFor={searchId} className="wl-uf08__label wl-type-label">
           {en.uf08.searchLabel}
         </label>

@@ -226,17 +226,13 @@ describe("AC6 guards on uf-08.css", () => {
     expect(css).not.toMatch(/\b(rgb|rgba|hsl|hsla|oklch|oklab|lab|lch)\(/);
   });
 
-  it("the plan block has no transition, and the file's only one is Reorder's, off under reduced motion", () => {
+  it("the plan block has no transition, and neither has the file (Reorder's was the only one, T-0998)", () => {
     const start = css.indexOf("t-0599-plan-start");
     const end = css.indexOf("t-0599-plan-end");
     expect(start).toBeGreaterThan(0);
     expect(end).toBeGreaterThan(start);
     expect(css.slice(start, end)).not.toMatch(/transition|animation/);
-    const transitions = css.match(/^\s*transition:[^;]*;/gm) ?? [];
-    expect(transitions.map((t) => t.trim())).toEqual([
-      "transition: background-color 150ms;",
-      "transition: none;",
-    ]);
+    expect(css.match(/^\s*transition:[^;]*;/gm) ?? []).toEqual([]);
   });
 
   it("the plan rules sit under .wl-uf08[data-wl-state], so load order cannot beat the shared ones", () => {

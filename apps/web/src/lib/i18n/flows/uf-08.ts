@@ -49,8 +49,6 @@ export const uf08 = {
     } + warm-up`,
   /** n = 0 (D-0107 §5). */
   nothingFits: (budgetMin: number) => `Nothing fits in ${budgetMin} min`,
-  /** A plan emptied by Remove (T-0521, D-0191 §5). */
-  noneLeft: "No exercises left. Pick a time to rebuild.",
   /** T-0538 (D-0199 §2): the Removed line under UF-08.2's list. */
   removedName: "Removed",
   neverSuggest: "Never suggest",
@@ -66,17 +64,9 @@ export const uf08 = {
   missing: "Connect to finish setting up your plan",
   missingLink: "Back to Today",
 
-  // --- UF-08.2 Suggested workout (T-0303b, D-0065 §4, D-0109) ---
-  suggestedTitle: "Your workout",
   back: "Back",
   /** Accessible name of the session "why" chip list (D-0106 §4). */
   sessionChipsName: "Why this workout",
-  /** Accessible name of the plan list. */
-  rowsName: "Exercises",
-  /** The warm-up row's title (D-0109 §4). */
-  warmupRow: "Warm-up",
-  /** Joins the warm-up move names. */
-  warmupMoves: (names: readonly string[]) => names.join(", "),
   /** A row's detail line: the summary, the weight part and the minutes, " · "-joined. */
   rowDetail: (parts: readonly string[]) => parts.join(" · "),
   /** "12 min". `minutes` is a whole number of minutes (ceil of the engine's seconds). */
@@ -89,7 +79,6 @@ export const uf08 = {
   backoffSet: "+ 1 back-off set",
   /** "Remove Bench press". */
   remove: (name: string) => `Remove ${name}`,
-  shuffle: "Shuffle",
   // --- UF-08.3 Swap before starting (T-0303c, D-0071 §7) ---
   swap: "Swap",
   /** "Swap Barbell row". */
@@ -101,10 +90,6 @@ export const uf08 = {
   /** Within the budget: "About 29 of 30 min", with " + warm-up" when it doesn't count. */
   budgetWithin: (minutes: number, budgetMin: number, warmupOutside: boolean) =>
     `About ${minutes} of ${budgetMin} min${warmupOutside ? " + warm-up" : ""}`,
-  /** Over the budget: "34 min, 4 over", with " + warm-up" when it doesn't count. */
-  budgetOver: (minutes: number, over: number, warmupOutside: boolean) =>
-    `${minutes} min, ${over} over${warmupOutside ? " + warm-up" : ""}`,
-  looksGood: "Looks good",
 
   // --- UF-08.2 Focus mode disclosure (T-1009, D-0280 §3; the UF-08.4 Ready step is retired) ---
   focusModeSummary: "Focus mode",
@@ -137,7 +122,6 @@ export const uf08 = {
   // --- UF-08.5 Add exercise (T-0573, D-0205 §1-§4, UF-08.5.md) ---
   /** The UF-08.2 button and the sheet's title. */
   addExercise: "Add exercise",
-  addLead: (minutes: number) => `The rest of your workout adjusts to fit ${minutes} min.`,
   searchLabel: "Search exercises",
   clearSearch: "Clear search",
   todaysAreas: "Today's areas",
@@ -186,57 +170,19 @@ export const uf08 = {
   mainTag: "Main lift",
   noFitStart: (name: string, minutes: number) =>
     `${name} doesn't fit in ${minutes} min. Pick more time.`,
-  /** Reorder mode (T-0576, D-0205 §7). */
-  reorder: "Reorder",
-  reorderDone: "Done",
-  moveUp: "Move up",
-  moveDown: "Move down",
-  moveUpName: (name: string) => `Move ${name} up`,
-  moveDownName: (name: string) => `Move ${name} down`,
-  moved: (name: string, k: number, n: number) => `${name} moved to ${k} of ${n}.`,
   /** UF-08.2's line for added exercises a re-suggest left out. */
   doesntFit: (minutes: number, names: readonly string[]) =>
     `Doesn't fit in ${minutes} min: ${names.join(", ")}.`,
 
-  // --- UF-08.2 empty mode (T-0940, D-0236, D-0239 §6-§13, UF-08.2.md › Empty mode) ---
-  /** The visible list header in empty mode (not "Your workout", which is the page h1). */
-  exercisesHeading: "Exercises",
-  /** 0 items in empty mode, for any reason (D-0236 §4, D-0242 §3). */
-  emptyPlan: "Nothing here yet. Pick from the suggestions or add an exercise.",
-  /** "Looks good"'s `aria-describedby` reason at 0 items (D-0239 §11). */
-  needOne: "Add at least one exercise.",
-  /**
-   * The running total (D-0239 §6-§7): "3 of 30 min · 27 min left", " + warm-up" after "{n} min"
-   * when the warm-up is outside the budget.
-   */
-  budgetLeft: (used: number, budgetMin: number, left: number, warmupOutside: boolean) =>
-    `${used} of ${budgetMin} min${warmupOutside ? " + warm-up" : ""} · ${left} min left`,
-  /** Over the budget after a `fitsBudget: false` swap: "33 of 30 min · 3 min over". */
-  budgetOverBy: (used: number, budgetMin: number, over: number, warmupOutside: boolean) =>
-    `${used} of ${budgetMin} min${warmupOutside ? " + warm-up" : ""} · ${over} min over`,
   /** A successful Add in empty mode (D-0239 §9). */
   addedLeft: (name: string, left: number) => `${name} added. ${left} min left.`,
-  /** UF-08.5's lead line in empty mode (UF-08.5.md): "27 of 30 min left.". */
-  addLeadEmpty: (left: number, budgetMin: number) => `${left} of ${budgetMin} min left.`,
+  /** UF-08.5's lead line (UF-08.5.md, D-0274 §5: an Add is local): "27 of 30 min left.". */
+  addLead: (left: number, budgetMin: number) => `${left} of ${budgetMin} min left.`,
   /** Refusal 1 (D-0239 §13.1): the plan is already over budget. */
   overRefusal: (over: number) =>
     `Your workout is ${over} min over. Remove or swap an exercise first.`,
-  /** Refusal 3 (D-0239 §13.3): the new item fits but pushes out a pick or the main lift. */
-  pushesOut: (name: string, pick: string) =>
-    `${name} would push out ${pick}. Pick more time or remove an exercise.`,
 
-  // --- UF-08.2 empty mode: Suggestions (T-0941, D-0238, D-0239 §8-§13, UF-08.2.md › Suggestions) ---
-  suggestionsHeading: "Suggestions",
-  /** Under the h2 while there are rows: "For the areas that need work most. Fits your 27 min.". */
-  suggestionsSub: (left: number) => `For the areas that need work most. Fits your ${left} min.`,
-  /** Empty mode's Shuffle (rule 13): changes the suggestions only. */
-  otherSuggestions: "Other suggestions",
   fillRest: "Fill the rest for me",
-  /** List copy in place of the rows, first match wins (UF-08.2.md › Suggestions section). */
-  suggestionsOver: (over: number, budgetMin: number) =>
-    `Your workout is ${over} min over ${budgetMin} min. Remove or swap an exercise.`,
-  suggestionsFull: (budgetMin: number) => `Your ${budgetMin} min are full.`,
-  suggestionsNone: "No suggestions right now. Search to add an exercise.",
 
   // --- UF-08.2 Today's plan, by area (T-0996, D-0274 to D-0276, D-0280, D-0286, UF-08.2.md) ---
   /** The h1: the areas in the engine's priority order, " · "-joined. */

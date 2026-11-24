@@ -120,7 +120,7 @@ describe("AC2 the fit line follows the choice", () => {
 });
 
 describe("AC3 Suggest hands it over", () => {
-  it("no leg row, no new call, and the Skipping today line", async () => {
+  it("no leg area row, no new call, and the Skipping today line", async () => {
     await legsSkipped30();
     const calls = spy.mock.calls.length;
     const handed = lastWorkout();
@@ -129,22 +129,22 @@ describe("AC3 Suggest hands it over", () => {
     await settle();
     expect(spy.mock.calls.length).toBe(calls);
     expect(legRows(handed)).toEqual([]);
-    expect(document.querySelectorAll('[data-part="item-row"]').length).toBe(3);
+    const rows = Array.from(document.querySelectorAll('[data-part="area-row"]')).map((r) =>
+      r.getAttribute("data-area"),
+    );
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.filter((a) => LEG_AREAS.includes(a as Area))).toEqual([]);
     expect(skipping()).toHaveTextContent("Skipping today: Glutes, Quads, Hamstrings, Calves");
   });
 });
 
 describe("AC4 re-suggests keep it", () => {
-  it("Shuffle and the 45 chip both carry avoidAreas; no leg row", async () => {
+  it("the 45 chip carries avoidAreas; no leg row (Shuffle is retired, T-0998)", async () => {
     await legsSkipped30();
     fireEvent.click(button("Suggest my workout"));
     const base = spy.mock.calls.length;
-    fireEvent.click(button("Shuffle"));
-    expect(spy.mock.calls.length).toBe(base + 1);
-    expect(lastInput()).toMatchObject({ avoidAreas: LEG_AREAS, shuffle: 1 });
-    expect(legRows(lastWorkout())).toEqual([]);
     fireEvent.click(button("45 minutes"));
-    expect(spy.mock.calls.length).toBe(base + 2);
+    expect(spy.mock.calls.length).toBe(base + 1);
     expect(lastInput()).toMatchObject({ avoidAreas: LEG_AREAS, budgetMin: 45 });
     expect(legRows(lastWorkout())).toEqual([]);
     expect(skipping()).toHaveTextContent("Skipping today: Glutes, Quads, Hamstrings, Calves");
@@ -182,7 +182,7 @@ describe("AC6 toggle off", () => {
 });
 
 describe("AC7 all nine", () => {
-  it("fit line says nothing fits, Suggest still works, UF-08.2 shows the empty plan", async () => {
+  it("fit line says nothing fits, Suggest still works, UF-08.2 lists no area", async () => {
     renderSetup();
     await loaded();
     fireEvent.click(button("30 minutes"));
@@ -190,9 +190,7 @@ describe("AC7 all nine", () => {
     expect(fitLine()).toHaveTextContent("Nothing fits in 30 min");
     fireEvent.click(button("Suggest my workout"));
     expect(screenIds()).toEqual(["UF-08.2"]);
-    expect(document.querySelector('[data-part="nothing-fits"]')).toHaveTextContent(
-      "Nothing fits in 30 min",
-    );
+    expect(document.querySelectorAll('[data-part="area-row"]')).toHaveLength(0);
   });
 });
 

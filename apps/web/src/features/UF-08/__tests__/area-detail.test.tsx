@@ -679,7 +679,7 @@ describe("T-0997 AC6 Start with this", () => {
     },
   );
 
-  it("T-1009 AC-start-with an engine throw reads as a refusal and leaves the plan alone", async () => {
+  it("T-1009 AC-start-with an engine throw reads as a failed change (not a refusal) and leaves the plan alone", async () => {
     await toPlan({ budget: 60 });
     const plan = suggestSpy.mock.results.at(-1)!.value as Workout;
     const lib = (await vi.importActual<typeof import("./fixtures.js")>("./fixtures.js")).fLibrary();
@@ -691,8 +691,12 @@ describe("T-0997 AC6 Start with this", () => {
     mainSpy.mockImplementationOnce(() => {
       throw new RangeError("boom");
     });
+    const ids = detailIds();
     fireEvent.click(button(`Start with ${name}`));
-    expect(status().textContent).not.toMatch(/is the main lift now/);
+    // T-0998 (T-1009 review): the throw is "Couldn't change that", never "doesn't fit".
+    expect(status()).toHaveTextContent("Couldn't change that. Your plan is unchanged.");
+    expect(status().textContent).not.toMatch(/doesn't fit|is the main lift now/);
+    expect(detailIds()).toEqual(ids);
     expect(queryButton(`Start with ${name}`)).not.toBeNull();
   });
 });

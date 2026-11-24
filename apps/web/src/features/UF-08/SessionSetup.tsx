@@ -12,22 +12,17 @@
 // minutes, the warm-up toggle and the energy. It is only computed while UF-08.1 is on screen.
 //
 // UF-08.2 (T-0303b, D-0109 §1-§2). "Suggest my workout" freezes UF-08.1's `Workout` into the
-// session record `{workout, shuffle: 0, excludeIds: []}`; a later cache re-read never swaps it.
-// Shuffle and a time chip are exactly one `suggest` call each (Remove is the engine's `removeItem`, T-0521) with the inputs record
-// `{budgetMin, warmupInBudget, energy, shuffle, mainLiftId, excludeIds}`, where `mainLiftId` is the
+// session record `{workout, excludeIds: []}`; a later cache re-read never swaps it.
+// A time chip is exactly one `suggest` call each (Remove is the engine's `removeItem`, T-0521) with the inputs record
+// `{budgetMin, warmupInBudget, energy, mainLiftId, excludeIds}`, where `mainLiftId` is the
 // current plan's (null only when the main item itself is removed). Leaving UF-08.2 for UF-08.1
 // drops the record (the adjustments are discarded); `budgetMin` is shared and stays.
 //
-// T-0940 (D-0236, D-0237, D-0239): "Start empty" opens UF-08.2 in empty mode. The record's `mode`
-// picks the plan call: empty mode is `suggest` with `autoMainLift: false, fill: false`,
-// `pinnedIds = addedIds`, `mainLiftId = mainPickId` and `shuffle: 0`, so the plan holds only the
-// picks. `mainPickId` is the main lift the user chose on this visit, in both modes; re-suggests read
-// it from the record, never back from a plan that may have dropped it (D-0239 §1).
-//
-// T-0941 (D-0238, D-0239 §3): empty mode also lists suggestions (`computeSuggestions`): one `suggest`
-// call with `fill: true` around the picks, a second only when a plan item is missing from it, none
-// while the plan is over budget. "Other suggestions" bumps `shuffle` (suggestions only, no plan
-// call); "Fill the rest for me" switches the visit to suggested mode with the picks kept.
+// T-0940 (D-0236, D-0237, D-0239), T-0998 (D-0274 §6): "Start empty" opens UF-08.2 with no areas.
+// The record's `mode: "empty"` makes every plan call `suggest` with `autoMainLift: false,
+// fill: false`, `pinnedIds = addedIds` and `mainLiftId = mainPickId`, so a time chip rebuilds the
+// plan around the picks only. `mainPickId` is the main lift the user chose on this visit; re-suggests
+// read it from the record, never back from a plan that may have dropped it (D-0239 §1).
 import { useEffect, useId, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import {
@@ -75,8 +70,6 @@ import {
   takeOut,
   type PlanOverview,
 } from "./area-plan-engine.js";
-import { mergeOrder, permute } from "./order.js";
-import { Suggested } from "./Suggested.js";
 import {
   CHIPS,
   MAX_BUDGET,
@@ -89,7 +82,6 @@ import {
 } from "./time.js";
 import { useSetupData, type SetupData } from "./use-setup-data.js";
 import { leftMinutes, overMinutes } from "./budget.js";
-import { computeSuggestions, type SuggestionList } from "./suggestions.js";
 import "./uf-08.css";
 
 const SETUP_PATH = "/session/setup";
@@ -107,12 +99,6 @@ export interface SessionSetupProps {
   locale?: string;
   /** The `tz` given to `suggest` and `refreshAll`. Defaults to the device's zone. */
   timeZone?: string;
-  /**
-   * T-0996: renders UF-08.2 as the old exercise list (Reorder, Shuffle, empty-mode Suggestions).
-   * The product never sets it: that list is unreachable. Tests of it keep running through this
-   * flag until T-0998 deletes the code and those tests together.
-   */
-  legacyExerciseList?: boolean;
 }
 
 function defaultLocale(): string {
@@ -166,12 +152,9 @@ interface Adjusted {
   mode: "suggested" | "empty";
   /** The `Workout` on UF-08.2: UF-08.1's at hand-off, then each action's `suggest` result. */
   workout: Workout;
-  shuffle: number;
   excludeIds: string[];
   /** T-0573 (D-0205 §1): exercises added on this visit, in add order; the engine's `pinnedIds`. */
   addedIds: string[];
-  /** T-0576 (D-0205 §7): the user's display order of `workout.plan.items`; null = engine order. */
-  order: string[] | null;
   /**
    * T-0935 (D-0235 §1): the ids in `excludeIds` that a UF-08.3 swap took out, not a Remove. They
    * stay out of every re-suggest like a remove, but the Removed line lists removes only.
@@ -190,8 +173,6 @@ interface Adjusted {
    * the front of the pins instead of returning it to the pool.
    */
   mainPickId: string | null;
-  /** True while the plan is empty because Remove took the last row (T-0521, D-0191 §5). */
-  emptiedByRemove: boolean;
   /**
    * T-0996 (D-0274 §3, D-0286 §2): the areas the user took out of the plan on this visit. They are
    * skipped for rebuilds like the UF-08.1 chips, but their "Add" puts them back. Per visit.
@@ -211,7 +192,7 @@ interface NotTodayEntry extends NotTodayLine {
 }
 
 /**
- * T-0935 (D-0235): the swap is part of the visit record, so Add, Shuffle, a time chip and "Start
+ * T-0935 (D-0235): the swap is part of the visit record, so Add, a time chip and "Start
  * with this" keep it. The swap-in becomes a pin where the old id was pinned, else the last pin (a
  * non-main item); a main-lift swap-in is already `mainLiftId`. The swapped-out id is excluded for
  * the visit only, like a Remove (never stored here). T-0997: shared by UF-08.3 and "Not today".
@@ -282,7 +263,6 @@ export function SessionSetup({
   clock = systemClock,
   locale,
   timeZone,
-  legacyExerciseList = false,
 }: SessionSetupProps = {}) {
   const [nowIso] = useState(() => new Date(now ?? new Date()).toISOString());
   const [loc] = useState(() => locale ?? defaultLocale());
@@ -337,16 +317,13 @@ export function SessionSetup({
   const areaId = AREAS.find((a) => a === areaParam) ?? null;
   const areaHeld =
     step === "area" &&
-    !legacyExerciseList &&
     adjusted !== null &&
     areaId !== null &&
     areaGroups(adjusted.workout).some((g) => g.area === areaId);
   const showArea = areaHeld;
-  const badArea =
-    step === "area" && !legacyExerciseList && adjusted !== null && areaId !== null && !areaHeld;
+  const badArea = step === "area" && adjusted !== null && areaId !== null && !areaHeld;
   const showSuggested = (step === "suggested" || badSwap || badArea) && adjusted !== null;
   const stale = step !== null && step !== "time" && !showSuggested && !showSwap && !showArea;
-  const [focusSwapItem, setFocusSwapItem] = useState<number | null>(null);
   // T-0997: the exercise whose Swap button takes focus when UF-08.6 returns from UF-08.3.
   const [focusSwapId, setFocusSwapId] = useState<string | null>(null);
   // T-0997: the Not today lines of this visit, the area UF-08.2 returns focus to, and the status
@@ -403,63 +380,10 @@ export function SessionSetup({
     () => (data ? recoveringAreas(data.history, data.library, nowIso) : []),
     [data, nowIso],
   );
-  // T-0941: the empty-mode Suggestions list. Keyed on what the calls read (not on `adjusted`'s
-  // identity), so a Reorder or an unrelated state change never costs a `suggest` call.
-  const planSig = adjusted
-    ? `${adjusted.workout.plan.items.map((i) => i.exerciseId).join(",")}|${adjusted.workout.unusedS}|${adjusted.workout.itemsTotalS}`
-    : "";
-  const suggestions = useMemo<SuggestionList | null>(() => {
-    // T-0996: the exercise Suggestions list belongs to the old list; the area plan makes no call.
-    if (
-      !showSuggested ||
-      !legacyExerciseList ||
-      adjusted === null ||
-      adjusted.mode !== "empty" ||
-      data === null
-    ) {
-      return null;
-    }
-    return computeSuggestions((input) => runSuggest(data, input, nowIso, tz), {
-      base: {
-        budgetMin,
-        warmupInBudget,
-        energy,
-        shuffle: 0,
-        mainLiftId: null,
-        pinnedIds: [...adjusted.addedIds],
-        excludeIds: excludeIdsFor(stored, adjusted.excludeIds),
-        favoriteIds: favoriteIdsFor(favoriteIds),
-        ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
-      },
-      shuffle: adjusted.shuffle,
-      mainPickId: adjusted.mainPickId,
-      plan: adjusted.workout,
-    });
-    // `adjusted` is read through the listed fields and `planSig` only.
-  }, [
-    showSuggested,
-    legacyExerciseList,
-    data,
-    adjusted?.mode,
-    adjusted?.addedIds,
-    adjusted?.excludeIds,
-    adjusted?.mainPickId,
-    adjusted?.shuffle,
-    planSig,
-    budgetMin,
-    warmupInBudget,
-    energy,
-    avoidAreas,
-    stored,
-    favoriteIds,
-    nowIso,
-    tz,
-  ]);
   // T-0996: the area plan's engine reads. `loads` is the 14-day history line of every row (rule
   // 11, on the device); `areaView` holds the edit context and the addable areas / refused + of the
   // current plan, recomputed when the plan changes only.
-  const areaPlanOn =
-    (showSuggested || showArea) && !legacyExerciseList && adjusted !== null && data !== null;
+  const areaPlanOn = (showSuggested || showArea) && adjusted !== null && data !== null;
   const loads = useMemo<Readonly<Record<Area, AreaLoad>> | null>(() => {
     if (!areaPlanOn || data === null) return null;
     const result = balance(data.history, data.targets, data.library, nowIso, tz);
@@ -495,6 +419,15 @@ export function SessionSetup({
     nowIso,
     tz,
   ]);
+  // T-0998 (T-1009 review): what Start writes, ordered once per plan, not on every render.
+  const startWorkout = useMemo(
+    () =>
+      areaPlanOn && data !== null && adjusted !== null
+        ? orderItems(adjusted.workout, data.library)
+        : null,
+    // `adjusted` is read through its workout only.
+    [areaPlanOn, data, adjusted?.workout],
+  );
   const missing =
     state.kind === "missing" ||
     (data !== null && !pastSetup && storedLoaded && favoritesLoaded && workout === null);
@@ -524,24 +457,19 @@ export function SessionSetup({
   if (showSwap) {
     const leave = (applied: Workout | null) => {
       if (applied !== null) {
-        // The swap-in takes the old item's place (SwapSheet replaces in place), so the order
-        // is the new plan's own sequence.
-        const order = adjusted.order === null ? null : applied.plan.items.map((i) => i.exerciseId);
         const old = adjusted.workout.plan.items[swapItem];
         const swapIn = applied.plan.items[swapItem]?.exerciseId;
         // T-0997 (D-0275 §7): every UF-08.6 change leaves the plan in `orderItems` order.
-        const next =
-          legacyExerciseList || data === null ? applied : orderItems(applied, data.library);
+        const next = data === null ? applied : orderItems(applied, data.library);
         if (old === undefined || swapIn === undefined || swapIn === old.exerciseId) {
-          setAdjusted({ ...adjusted, workout: next, order });
+          setAdjusted({ ...adjusted, workout: next });
         } else {
-          setAdjusted({ ...recordSwap(adjusted, next, old, swapIn), order });
+          setAdjusted(recordSwap(adjusted, next, old, swapIn));
         }
         setFocusSwapId(swapIn ?? old?.exerciseId ?? null);
       }
       if (applied === null)
         setFocusSwapId(adjusted.workout.plan.items[swapItem]?.exerciseId ?? null);
-      setFocusSwapItem(swapItem);
       void navigate(-1);
     };
     return (
@@ -567,50 +495,34 @@ export function SessionSetup({
     const overMin = overMinutes(adjusted.workout);
     /**
      * Every UF-08.2 `suggest` call's inputs (D-0109 §2). Empty mode (D-0237, D-0239 §1) holds
-     * only the picks: no auto main lift, no fill, no shuffle. Suggested mode is unchanged.
+     * only the picks: no auto main lift, no fill. Suggested mode is unchanged.
      */
-    const inputFor = (
-      o: {
-        budgetMin: number;
-        shuffle: number;
-        excludeIds: readonly string[];
-        pinnedIds: readonly string[];
-        mainLiftId: string | null;
-      },
-      emptyCall = empty,
-    ): SessionInput => ({
+    const inputFor = (o: {
+      budgetMin: number;
+      excludeIds: readonly string[];
+      pinnedIds: readonly string[];
+      mainLiftId: string | null;
+    }): SessionInput => ({
       budgetMin: o.budgetMin,
       warmupInBudget,
       energy,
-      shuffle: emptyCall ? 0 : o.shuffle,
+      shuffle: 0,
       mainLiftId: o.mainLiftId,
       pinnedIds: [...o.pinnedIds],
       excludeIds: excludeIdsFor(stored, o.excludeIds),
       favoriteIds: favoriteIdsFor(favoriteIds),
       ...(skipAreas.length > 0 ? { avoidAreas: skipAreas } : {}),
-      ...(emptyCall ? { autoMainLift: false, fill: false } : {}),
+      ...(empty ? { autoMainLift: false, fill: false } : {}),
     });
     // D-0239 §1: the record's main pick wins; suggested mode falls back to the plan's main lift.
     const mainLiftId = empty ? adjusted.mainPickId : (adjusted.mainPickId ?? plan.mainLiftId);
     const nameOf = (id: string) => data.library.find((e) => e.id === id)?.name ?? id;
-    /**
-     * The empty-mode safety net (D-0239 §2, §13.3): the first item of the current plan, in plan
-     * order, that `result` no longer holds, or null when every item is kept.
-     */
-    const pushedOut = (result: Workout): string | null =>
-      plan.items.find((i) => !result.plan.items.some((r) => r.exerciseId === i.exerciseId))
-        ?.exerciseId ?? null;
-    /** One `suggest` call with the inputs record (D-0109 §2); a rejection keeps the plan. */
-    const resuggest = (change: { budgetMin?: number; shuffle?: number }): Workout | null => {
-      const next = {
-        budgetMin: change.budgetMin ?? budgetMin,
-        shuffle: change.shuffle ?? adjusted.shuffle,
-      };
+    /** The time chip: one `suggest` call with the inputs record (D-0109 §2); a rejection keeps the plan. */
+    const resuggest = (nextBudget: number): Workout | null => {
       const result = runSuggest(
         data,
         inputFor({
-          budgetMin: next.budgetMin,
-          shuffle: next.shuffle,
+          budgetMin: nextBudget,
           excludeIds: adjusted.excludeIds,
           pinnedIds: adjusted.addedIds,
           mainLiftId,
@@ -619,96 +531,13 @@ export function SessionSetup({
         tz,
       );
       if (result === null) return null;
-      if (next.budgetMin !== budgetMin) setBudgetMin(next.budgetMin);
-      const merged = mergeOrder(adjusted.order, result);
-      setAdjusted({
-        mode: adjusted.mode,
-        workout: merged.workout,
-        shuffle: next.shuffle,
-        excludeIds: adjusted.excludeIds,
-        addedIds: adjusted.addedIds,
-        order: merged.order,
-        swappedOut: adjusted.swappedOut,
-        unlabelledPins: adjusted.unlabelledPins,
-        mainPickId: adjusted.mainPickId,
-        emptiedByRemove: false,
-        removedAreas: adjusted.removedAreas,
-      });
-      return merged.workout;
+      if (nextBudget !== budgetMin) setBudgetMin(nextBudget);
+      setAdjusted({ ...adjusted, workout: result });
+      return result;
     };
     /**
-     * T-0573 (D-0205 §1): one `suggest` call pinning `id` after this visit's adds. The engine
-     * silently ignores a pin that does not fit, so the result is checked: null when `id` is in
-     * the new plan (it becomes the plan), else the refusal text and nothing changes.
-     */
-    const addExercise = (id: string, asMain = false): string | null => {
-      // D-0239 §13.1, D-0240 §4 (T-0943): an over-budget plan refuses before any call, in both
-      // modes (a `fitsBudget: false` swap-in is the cause).
-      if (overMin > 0) return en.uf08.overRefusal(overMin);
-      // T-0941 (D-0239 §1): a suggestion tagged "Main lift" becomes `mainPickId`, not a pin.
-      const pinned = asMain
-        ? adjusted.addedIds.filter((a) => a !== id)
-        : [...adjusted.addedIds.filter((a) => a !== id), id];
-      const visit = adjusted.excludeIds.filter((e) => e !== id);
-      const result = runSuggest(
-        data,
-        inputFor({
-          budgetMin,
-          shuffle: adjusted.shuffle,
-          excludeIds: visit,
-          pinnedIds: pinned,
-          // T-0935 kept the plan's main lift here; D-0239 §1 reads the record first.
-          mainLiftId: asMain ? id : mainLiftId,
-        }),
-        nowIso,
-        tz,
-      );
-      if (result !== null && result.plan.items.some((i) => i.exerciseId === id)) {
-        // D-0239 §13.3 (empty mode): the pick fits but pushes out a pick or the main lift.
-        const pushed = empty ? pushedOut(result) : null;
-        if (pushed !== null) return en.uf08.pushesOut(nameOf(id), nameOf(pushed));
-        const merged = mergeOrder(adjusted.order, result);
-        setAdjusted({
-          mode: adjusted.mode,
-          workout: merged.workout,
-          shuffle: adjusted.shuffle,
-          excludeIds: visit,
-          addedIds: pinned,
-          order: merged.order,
-          // D-0235 §4: adding a swapped-out exercise back takes it out of the visit's exclusions.
-          swappedOut: adjusted.swappedOut.filter((e) => e !== id),
-          // An exercise the user adds is theirs, even if a swap had pinned it.
-          unlabelledPins: adjusted.unlabelledPins.filter((e) => e !== id),
-          mainPickId: asMain ? id : adjusted.mainPickId,
-          emptiedByRemove: false,
-          removedAreas: adjusted.removedAreas,
-        });
-        return null;
-      }
-      const ex = data.library.find((e) => e.id === id);
-      const name = ex?.name ?? id;
-      // Caps (D-0205 §4): main + added already hold 8, or two with the same primary area.
-      const held = new Set(adjusted.addedIds);
-      if (mainLiftId !== null) held.add(mainLiftId);
-      held.delete(id);
-      if (held.size >= MAX_ITEMS) return en.uf08.capItems(MAX_ITEMS);
-      if (ex !== undefined) {
-        for (const a of primaryAreas(ex)) {
-          const n = [...held].filter((h) => {
-            const lib = data.library.find((l) => l.id === h);
-            return lib !== undefined && primaryAreas(lib).includes(a);
-          }).length;
-          if (n >= MAX_ITEMS_PER_AREA) return en.uf08.capArea(en.bodyMap.areas[a]);
-        }
-      }
-      return ex?.type === "compound"
-        ? en.uf08.noFitCompound(name, budgetMin)
-        : en.uf08.noFitIsolation(name, budgetMin);
-    };
-    /**
-     * T-0575 (D-0205 §5): one `suggest` call with `mainLiftId = id`. A new pick (not in the plan)
-     * is pinned and leaves this visit's removes; a row already in the plan is not re-pinned (Q9).
-     * Success is the engine's own `plan.mainLiftId === id`; otherwise the plan is unchanged.
+     * "Start with this" (UF-08.6, T-1009, rule 12.8): the engine's `setMainLift`, no rebuild. A new
+     * pick (not in the plan) is pinned and leaves this visit's removes; a refusal is its words.
      */
     const startWith = (id: string): string | null => {
       if (overMin > 0) return en.uf08.overRefusal(overMin);
@@ -721,8 +550,7 @@ export function SessionSetup({
           : [...adjusted.addedIds, id];
       // T-0935 (D-0239 §2): a main lift the user chose on this visit (a swap-in, an earlier Start
       // with this, or an added one) is demoted to the front of the pins; an engine pick still
-      // returns to the pool in suggested mode (D-0205 §5). In empty mode every main lift is the
-      // user's, so the previous one (the record's, even if a time chip dropped it) is kept.
+      // returns to the pool in suggested mode (D-0205 §5).
       const prev = empty ? (adjusted.mainPickId ?? plan.mainLiftId) : plan.mainLiftId;
       const demoted =
         prev !== null &&
@@ -732,121 +560,40 @@ export function SessionSetup({
           : null;
       const pinned = demoted === null ? base : [demoted, ...base.filter((p) => p !== demoted)];
       const visit = inPlan ? adjusted.excludeIds : adjusted.excludeIds.filter((e) => e !== id);
-      if (!legacyExerciseList && areaView !== null) {
-        // T-1009 (T-1021, rule 12.8; supersedes D-0288 §2): the engine's `setMainLift`, no rebuild.
-        const made = makeMain(
-          adjusted.workout,
-          id,
-          editContext(data, {
-            excludeIds: excludeIdsFor(stored, visit),
-            favoriteIds: favoriteIdsFor(favoriteIds),
-            avoidAreas,
-            nowIso,
-            tz,
-          }),
-        );
-        if ("refused" in made) {
-          switch (made.refused) {
-            case "items_cap":
-              return en.uf08.capItems(MAX_ITEMS);
-            case "not_admissible": {
-              const ex = data.library.find((e) => e.id === id);
-              const full =
-                ex === undefined
-                  ? undefined
-                  : primaryAreas(ex).find(
-                      (a) =>
-                        !plan.items.some((i) => i.exerciseId === id) &&
-                        plan.items.filter((i) => {
-                          const l = data.library.find((e) => e.id === i.exerciseId);
-                          return l !== undefined && primaryAreas(l).includes(a);
-                        }).length >= MAX_ITEMS_PER_AREA,
-                    );
-              return full === undefined
-                ? en.uf08.noFitStart(nameOf(id), budgetMin)
-                : en.uf08.capArea(en.bodyMap.areas[full]);
-            }
-            default:
-              return en.uf08.noFitStart(nameOf(id), budgetMin);
-          }
-        }
-        setAdjusted({
-          ...adjusted,
-          workout: made.workout,
-          excludeIds: visit,
-          addedIds: pinned,
-          swappedOut: inPlan ? adjusted.swappedOut : adjusted.swappedOut.filter((e) => e !== id),
-          unlabelledPins:
-            !empty && demoted !== null && !adjusted.addedIds.includes(demoted)
-              ? [...adjusted.unlabelledPins, demoted]
-              : adjusted.unlabelledPins,
-          mainPickId: id,
-          emptiedByRemove: false,
-        });
-        return null;
-      }
-      const result = runSuggest(
-        data,
-        inputFor({
-          budgetMin,
-          shuffle: adjusted.shuffle,
-          excludeIds: visit,
-          pinnedIds: pinned,
-          mainLiftId: id,
+      // T-1009 (T-1021, rule 12.8; supersedes D-0288 §2): the engine's `setMainLift`, no rebuild.
+      const made = makeMain(
+        adjusted.workout,
+        id,
+        editContext(data, {
+          excludeIds: excludeIdsFor(stored, visit),
+          favoriteIds: favoriteIdsFor(favoriteIds),
+          avoidAreas,
+          nowIso,
+          tz,
         }),
-        nowIso,
-        tz,
       );
-      if (result !== null && result.plan.mainLiftId === id) {
-        // D-0239 §2 safety net (empty mode): every pick, the old main lift included, must stay.
-        const pushed = empty ? pushedOut(result) : null;
-        if (pushed !== null) return en.uf08.pushesOut(nameOf(id), nameOf(pushed));
-        const merged = mergeOrder(adjusted.order, result, true);
-        setAdjusted({
-          mode: adjusted.mode,
-          // T-0997 (D-0275 §7): the area plan keeps `orderItems` order, the main lift first.
-          workout: legacyExerciseList ? merged.workout : orderItems(merged.workout, data.library),
-          shuffle: adjusted.shuffle,
-          excludeIds: visit,
-          addedIds: pinned,
-          order: merged.order,
-          swappedOut: inPlan ? adjusted.swappedOut : adjusted.swappedOut.filter((e) => e !== id),
-          unlabelledPins:
-            !empty && demoted !== null && !adjusted.addedIds.includes(demoted)
-              ? [...adjusted.unlabelledPins, demoted]
-              : adjusted.unlabelledPins,
-          mainPickId: id,
-          emptiedByRemove: false,
-          removedAreas: adjusted.removedAreas,
-        });
-        return null;
+      // T-0998 (T-1009 review): an engine throw is a failed change, not a "doesn't fit".
+      if ("failed" in made) return en.uf08.areaChangeFailed;
+      if ("refused" in made) {
+        switch (made.refused) {
+          case "items_cap":
+            return en.uf08.capItems(MAX_ITEMS);
+          default:
+            return en.uf08.noFitStart(nameOf(id), budgetMin);
+        }
       }
-      return en.uf08.noFitStart(nameOf(id), budgetMin);
-    };
-    /**
-     * T-0941 (D-0236 §6, D-0242 §1): the one-way switch to suggested mode, `pinnedIds = addedIds`,
-     * `mainLiftId = mainPickId`. Over budget it is refused like Shuffle (D-0240 §4).
-     */
-    const fillRest = (): string | null => {
-      if (overMin > 0) return en.uf08.overRefusal(overMin);
-      const result = runSuggest(
-        data,
-        inputFor(
-          {
-            budgetMin,
-            shuffle: adjusted.shuffle,
-            excludeIds: adjusted.excludeIds,
-            pinnedIds: adjusted.addedIds,
-            mainLiftId: adjusted.mainPickId,
-          },
-          false,
-        ),
-        nowIso,
-        tz,
-      );
-      if (result === null) return en.uf08.missing;
-      const merged = mergeOrder(adjusted.order, result);
-      setAdjusted({ ...adjusted, mode: "suggested", workout: merged.workout, order: merged.order });
+      setAdjusted({
+        ...adjusted,
+        workout: made.workout,
+        excludeIds: visit,
+        addedIds: pinned,
+        swappedOut: inPlan ? adjusted.swappedOut : adjusted.swappedOut.filter((e) => e !== id),
+        unlabelledPins:
+          !empty && demoted !== null && !adjusted.addedIds.includes(demoted)
+            ? [...adjusted.unlabelledPins, demoted]
+            : adjusted.unlabelledPins,
+        mainPickId: id,
+      });
       return null;
     };
     const blocked = blockedReasons(data, stored, avoidAreas, recovering);
@@ -856,15 +603,10 @@ export function SessionSetup({
       // D-0240 §3 (T-0943): a dropped swap-in is named too, so it is never silently gone.
       ...adjusted.addedIds,
     ].filter((id, i, all) => all.indexOf(id) === i);
-    if (showArea && areaId !== null && !legacyExerciseList && loads !== null) {
+    if (showArea && areaId !== null && loads !== null) {
       const lib = data.library;
       const hold = (workout: Workout, patch: Partial<Adjusted> = {}) =>
-        setAdjusted({
-          ...adjusted,
-          workout: orderItems(workout, lib),
-          emptiedByRemove: false,
-          ...patch,
-        });
+        setAdjusted({ ...adjusted, workout: orderItems(workout, lib), ...patch });
       const itemOf = (id: string) => adjusted.workout.plan.items.find((i) => i.exerciseId === id);
       const without = <T extends string>(ids: readonly T[], id: string): T[] =>
         ids.filter((e) => e !== id);
@@ -926,10 +668,7 @@ export function SessionSetup({
                 tz,
               );
               const next = orderItems(applied, lib);
-              setAdjusted({
-                ...recordSwap(adjusted, next, old, first.exerciseId),
-                emptiedByRemove: false,
-              });
+              setAdjusted(recordSwap(adjusted, next, old, first.exerciseId));
               setNotTodayLines((lines) => [
                 ...lines.filter((l) => l.newId !== id),
                 {
@@ -1002,7 +741,6 @@ export function SessionSetup({
             const ordered = orderItems(next, lib);
             const last = !areaGroups(ordered).some((g) => g.area === areaId);
             hold(ordered, {
-              order: adjusted.order?.filter((e) => e !== id) ?? null,
               excludeIds: [...adjusted.excludeIds, id],
               swappedOut: without(adjusted.swappedOut, id),
               unlabelledPins: without(adjusted.unlabelledPins, id),
@@ -1087,15 +825,15 @@ export function SessionSetup({
         />
       );
     }
-    if (!legacyExerciseList && areaView !== null && loads !== null) {
+    if (areaView !== null && loads !== null) {
       const { ctx, overview } = areaView;
       const commit = (workout: Workout, patch: Partial<Adjusted> = {}) =>
-        setAdjusted({ ...adjusted, workout, emptiedByRemove: false, ...patch });
+        setAdjusted({ ...adjusted, workout, ...patch });
       return (
         <AreaPlan
           mode={adjusted.mode}
           workout={adjusted.workout}
-          startWorkout={orderItems(adjusted.workout, data.library)}
+          startWorkout={startWorkout ?? adjusted.workout}
           library={data.library}
           locale={loc}
           timeZone={tz}
@@ -1138,7 +876,7 @@ export function SessionSetup({
             if (result.added.length > 0) commit(result.workout);
             return result;
           }}
-          onBudget={(m) => resuggest({ budgetMin: m })}
+          onBudget={resuggest}
           initialStatus={areaNotice}
           focusArea={returnFocus}
           onFocused={() => {
@@ -1152,85 +890,7 @@ export function SessionSetup({
         />
       );
     }
-    return (
-      <Suggested
-        mode={adjusted.mode}
-        workout={adjusted.workout}
-        library={data.library}
-        locale={loc}
-        avoidAreas={avoidAreas}
-        emptiedByRemove={adjusted.emptiedByRemove}
-        noticeAreas={noticeAreas}
-        removedIds={adjusted.excludeIds.filter((e) => !adjusted.swappedOut.includes(e))}
-        storedIds={stored}
-        online={online}
-        exclusionFailed={exclusionFailed}
-        onExclude={userId ? (id) => excludeExercise(userId, id) : undefined}
-        onInclude={userId ? (id) => includeExercise(userId, id) : undefined}
-        onRemove={(exerciseId) => {
-          // T-0521 (D-0191 §4): no `suggest` call. The engine drops the row and refills nothing;
-          // the id joins `excludeIds`, so a later Shuffle or time chip can't bring it back.
-          let next: Workout;
-          try {
-            next = removeItem(adjusted.workout, exerciseId);
-          } catch {
-            return false;
-          }
-          setAdjusted({
-            ...adjusted,
-            workout: next,
-            order: adjusted.order?.filter((id) => id !== exerciseId) ?? null,
-            excludeIds: [...adjusted.excludeIds, exerciseId],
-            swappedOut: adjusted.swappedOut.filter((e) => e !== exerciseId),
-            unlabelledPins: adjusted.unlabelledPins.filter((e) => e !== exerciseId),
-            mainPickId: adjusted.mainPickId === exerciseId ? null : adjusted.mainPickId,
-            // A removed exercise is no longer a pin (D-0205 §6), or a re-suggest would list it.
-            addedIds: adjusted.addedIds.filter((a) => a !== exerciseId),
-            emptiedByRemove: next.plan.items.length === 0,
-          });
-          return true;
-        }}
-        onShuffle={() => {
-          // D-0240 §4 (T-0943): refused in the status line while the plan is over budget.
-          if (overMin > 0) return en.uf08.overRefusal(overMin);
-          resuggest({ shuffle: adjusted.shuffle + 1 });
-          return null;
-        }}
-        {...(empty && suggestions !== null
-          ? {
-              suggestions,
-              onAddSuggestion: (id: string, asMain: boolean) => addExercise(id, asMain),
-              // Suggestions only: the picks and the plan are untouched (D-0238 §7).
-              onOtherSuggestions: () => setAdjusted({ ...adjusted, shuffle: adjusted.shuffle + 1 }),
-              onFillRest: fillRest,
-            }
-          : {})}
-        onBudget={(m) => resuggest({ budgetMin: m })}
-        focusSwapItem={focusSwapItem}
-        onSwapFocused={() => setFocusSwapItem(null)}
-        addedIds={adjusted.addedIds.filter((a) => !adjusted.unlabelledPins.includes(a))}
-        keptIds={keptIds}
-        catalog={data.library}
-        blocked={blocked}
-        favoriteIds={favoriteIds}
-        favoritesLoaded={favoritesLoaded}
-        onAdd={addExercise}
-        onStartWith={startWith}
-        onMove={(exerciseId, delta) => {
-          // T-0576: a display permutation only; no `suggest` call, totals unchanged.
-          const ids = adjusted.workout.plan.items.map((i) => i.exerciseId);
-          const from = ids.indexOf(exerciseId);
-          const to = from + delta;
-          if (from < 0 || to < 0 || to >= ids.length) return;
-          ids.splice(to, 0, ...ids.splice(from, 1));
-          setAdjusted({
-            ...adjusted,
-            workout: permute(adjusted.workout, ids),
-            order: ids,
-          });
-        }}
-      />
-    );
+    return null;
   }
 
   const stepBy = (delta: number) => {
@@ -1262,14 +922,11 @@ export function SessionSetup({
     setAdjusted({
       mode: "suggested",
       workout,
-      shuffle: 0,
       excludeIds: [],
       addedIds: [],
-      order: null,
       swappedOut: [],
       unlabelledPins: [],
       mainPickId: null,
-      emptiedByRemove: false,
       removedAreas: [],
     });
     void navigate(`${SETUP_PATH}?step=suggested`);
@@ -1293,14 +950,11 @@ export function SessionSetup({
     setAdjusted({
       mode: "empty",
       workout: empty,
-      shuffle: 0,
       excludeIds: [],
       addedIds: [],
-      order: null,
       swappedOut: [],
       unlabelledPins: [],
       mainPickId: null,
-      emptiedByRemove: false,
       removedAreas: [],
     });
     void navigate(`${SETUP_PATH}?step=suggested`);

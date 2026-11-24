@@ -11,7 +11,7 @@ import type { HistorySet } from "@workoutlab/shared";
 import { loadTargets, refreshAll } from "../../../lib/offline/history.js";
 import { fTargets } from "./fixtures.js";
 import {
-  F_TZ_PROPS,
+  AREA_PLAN_PROPS,
   SetupTree,
   fCache,
   fitLine,
@@ -127,7 +127,7 @@ describe("AC-10 auth condition (D-0113 §1-§3)", () => {
     await loadedLine();
     await settle();
     expect(refresh).toHaveBeenCalledTimes(1);
-    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    view.rerender(<SetupTree {...AREA_PLAN_PROPS} />);
     await settle();
     expect(refresh).toHaveBeenCalledTimes(1);
   });
@@ -155,20 +155,20 @@ describe("AC-10 auth condition (D-0113 §1-§3)", () => {
     expect(refresh).toHaveBeenCalledTimes(0);
 
     auth.status = "signed-in";
-    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    view.rerender(<SetupTree {...AREA_PLAN_PROPS} />);
     await settle();
     expect(refresh).toHaveBeenCalledTimes(1);
     await waitFor(() => expect(loaderReads()).toEqual([2, 2, 2, 2]));
 
-    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    view.rerender(<SetupTree {...AREA_PLAN_PROPS} />);
     await settle();
     expect(refresh).toHaveBeenCalledTimes(1);
 
     // Signed in → stale → signed in again in the same mount: still once.
     auth.status = "stale";
-    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    view.rerender(<SetupTree {...AREA_PLAN_PROPS} />);
     auth.status = "signed-in";
-    view.rerender(<SetupTree {...F_TZ_PROPS} />);
+    view.rerender(<SetupTree {...AREA_PLAN_PROPS} />);
     await settle();
     expect(refresh).toHaveBeenCalledTimes(1);
   });

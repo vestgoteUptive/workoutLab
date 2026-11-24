@@ -132,11 +132,12 @@ export function makeMain(
   workout: Workout,
   exerciseId: string,
   ctx: AreaEditContext,
-): { workout: Workout } | { refused: MainLiftRefusal } {
+): { workout: Workout } | { refused: MainLiftRefusal } | { failed: true } {
   try {
     const result = setMainLift(workout, exerciseId, ctx);
     return "refused" in result ? { refused: result.refused } : { workout: result };
   } catch {
-    return { refused: "not_admissible" };
+    // T-0998 (T-1009 review): an engine throw is not a refusal; the host says the change failed.
+    return { failed: true };
   }
 }
