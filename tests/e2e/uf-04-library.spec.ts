@@ -120,11 +120,16 @@ test.describe("T-0639 group chips", () => {
   }) => {
     await openLibrary(page, "/library");
     await expect(page.locator('[data-field="name"]')).toHaveCount(24);
+    const count = page.locator('[data-part="count"]');
+    const unfiltered = await count.textContent();
     await page.getByRole("button", { name: "Legs", exact: true }).click();
     await expect(page).toHaveURL(/[?&]group=legs/);
-    const count = page.locator('[data-part="count"]');
+    // T-1016: "24 results" already matches the pattern, so wait until the Legs filter has applied.
+    await expect(count).not.toHaveText(unfiltered ?? "");
     await expect(count).toHaveText(/^\d+ results$/);
     const before = await count.textContent();
+    const rows = Number((before ?? "").split(" ")[0]);
+    await expect(page.locator('[data-field="name"]')).toHaveCount(rows);
     const first = page.locator('[data-field="name"]').first();
     await first.click();
     await expect(page).toHaveURL(/\/library\/[a-z-]+$/);

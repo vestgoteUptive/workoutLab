@@ -17,3 +17,5 @@ Every rule in `docs/engine-rules.md` has a numbered section. Name each test afte
 Every `Workout` item carries machine-readable reasons (`{area, deficit}`, `{daysSinceTrained}`), never prose.
 
 `docs/engine-rules.md` is a contract. When a ticket asks you to extend it (T-0101), write the rule text with concrete default numbers plus a decision, then implement it.
+
+Engine changes are a shared surface (D-0285 §2): `pnpm test:affected` prints `full` for any change under `packages/engine/**`, so run the full local suite once before handing back, as `_common` says.

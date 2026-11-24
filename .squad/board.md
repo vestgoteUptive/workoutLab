@@ -241,11 +241,12 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-0982 | Per-feature ESLint-in-vitest tests (jsx-no-literals) time out under full-gate load (UF-01 source, UF-09 exports-and-lint); root-cause and make them load-proof | web-shell | — | done | wl-build-web |
 | T-0983 | e2e UF-01.5 AC-14 save writes recorded as [] once under load (T-0981 run); root-cause test vs app | qa | — | done | wl-build-qa |
 | T-0984 | e2e canvas-compare AC1 and AC5 failed once in the T-0692 full-suite gate (48/48 alone); root-cause | qa | — | done | wl-build-qa |
-| T-0985 | A brand-new user briefly sees UF-02.1 Today after sign-in on UF-01.5 before ProfileGate redirects to /welcome/save (ProfileGate.tsx:15-18 renders the route while the profile status is unknown); show a neutral loading state instead (found by T-0983) (groomed 2026-11-23: D-0272, placeholder only while the first read is pending, online, capped 3.5 s; offline and failed reads unchanged; ticket docs/tickets/T-0985-profile-gate-pending-placeholder.md) | web-shell | — | ready | wl-build-web |
+| T-0985 | A brand-new user briefly sees UF-02.1 Today after sign-in on UF-01.5 before ProfileGate redirects to /welcome/save (ProfileGate.tsx:15-18 renders the route while the profile status is unknown); show a neutral loading state instead (found by T-0983) (groomed 2026-11-23: D-0272, placeholder only while the first read is pending, online, capped 3.5 s; offline and failed reads unchanged; ticket docs/tickets/T-0985-profile-gate-pending-placeholder.md) | web-shell | — | done | wl-build-web |
 | T-0986 | Package tests that spawn check-all.mjs (design-tokens uf06-2 spec, landing ac21) time out at 5 s under full-gate load; call the checker in-process | infra | — | done | wl-build-infra |
 | T-0987 | UF-04.2 weight-step AC8 failed-save revert test failed on PR #75 CI (chip unchecked after the alert); root-cause test vs app | web-feature:UF-04 | — | done | wl-build-web |
 | T-0988 | Content: single-arm cable row with rotation (cable, back + core, per arm), owner request | content | — | done | wl-build-content |
-| T-1015 | Targeted local test runs: test-affected script, agent roles, gate without --force, CI on every squad-branch push (D-0285) | infra | — | ready | wl-build-infra |
+| T-1015 | Targeted local test runs: test-affected script, agent roles, gate without --force, CI on every squad-branch push (D-0285) | infra | — | done | wl-build-infra |
+| T-1016 | e2e UF-04.1 Legs count read before the filter applied (PR #75 CI); wait for the filtered count | qa | — | done | wl-build-qa |
 
 ## Estimated 1RM per exercise (spec docs/specs/estimated-1rm.md)
 Owner request 2026-11-20 (inspired by wger): "estimated 1RM per exercise, with a chart over time". Decisions D-0254 (Epley, reps 1–10, best hard set per session, no RIR), D-0255 (engine rule 16, pure, nothing stored), D-0256 (UF-06.2 card, SVG chart, table toggle, states), D-0257 (scope; amends D-0068 and D-0219). Owner accepted the open-question defaults; impact-review rulings in D-0258 (plain Epley at 1 rep, --wl-* tokens, table spec, same-day sessions). UF-06.2 only; never UF-08 or UF-09.
@@ -303,8 +304,8 @@ Owner request 2026-11-24: "I spent a lot of time in the suggested workout with e
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0992 | User flows v2 and PRD: UF-08.2 rewritten by area, UF-08.6 added, Reorder, Shuffle and empty-mode Suggestions retired, Start empty folded in, Start folded into the plan and UF-08.4 retired (D-0274, D-0276, D-0280) | product | — | ready | wl-idea |
-| T-0993 | Screen specs: UF-08.2 Today's plan by area with Start workout, Done by and the Focus mode disclosure, new UF-08.6 Area detail, amended UF-08.1, UF-08.5, UF-08.3; no new token (D-0274, D-0276, D-0280) | design | — | todo | wl-design |
+| T-0992 | User flows v2 and PRD: UF-08.2 rewritten by area, UF-08.6 added, Reorder, Shuffle and empty-mode Suggestions retired, Start empty folded in, Start folded into the plan and UF-08.4 retired (D-0274, D-0276, D-0280) | product | — | done | wl-idea |
+| T-0993 | Screen specs: UF-08.2 Today's plan by area with Start workout, Done by and the Focus mode disclosure, new UF-08.6 Area detail, amended UF-08.1, UF-08.5, UF-08.3; no new token (D-0274, D-0276, D-0280) | design | — | done | wl-design |
 | T-0994 | Engine rules 7.6 and 12.4: `orderItems` (main lift first, areas alternate, machines grouped) and `areaGroups`; examples, simulated histories, properties, golden `suggest`, re-vendor (D-0275 §2, §7) | engine | — | ready | wl-build-engine |
 | T-0995 | Engine rules 12.5 to 12.7: `adjustAreaSets`, `addArea`, `removeArea`, `areaCandidates`; never over budget, both values per condition, re-vendor (D-0275 §3 to §5) | engine | T-0994 | todo | wl-build-engine |
 | T-0996 | UF-08.2 Today's plan by area: title, area rows with − / + sets, Add an area, Fill the rest, automatic order, Start empty with no areas, time chip rebuild (D-0274, D-0275) | web-feature:UF-08 | T-0993, T-0994, T-0995 | todo | wl-build-web |

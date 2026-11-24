@@ -29,6 +29,8 @@ Test titles start `T-1002 ACn`.
 
 Checklist (D-0197 §7): rows/none (AC1), one page/two pages (AC2), read ok/error (AC3).
 
+- AC-rls (T-1001 security review): add `edit_signals` to `.github/scripts/rls-coverage.test.mjs` EXPECTED, since the export now reads it with `.from("edit_signals")`; land right after T-1001 so the export-drift test is never red on the squad branch.
+
 ## Paths you may change
 - `apps/web/src/lib/account/export.ts` and `apps/web/src/lib/account/__tests__/**` (extra: web-shell paths, named explicitly as T-0951 did)
 - `tests/e2e/uf-11-account.spec.ts`, `tests/e2e/fixtures/supabase-mock.ts` (extra: qa paths, orchestrator grant)
