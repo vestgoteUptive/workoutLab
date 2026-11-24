@@ -34,7 +34,7 @@ biggest gaps within the user's time budget.
 | UF-05 Swap (in workout) | .1 Swap sheet | Replace mid-session | Fitbod |
 | UF-06 Progress | .1 Overview · .2 Exercise history | Consistency, volume, strength trend | Hevy, Strong |
 | UF-07 Routine builder | .1 Edit routine | Exercises, sets, progression rule | Liftosaur, Hevy |
-| UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready · .5 Add exercise | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
+| UF-08 Session setup | .1 Time & energy · .2 Today's plan (by area) · .3 Swap · .4 Ready · .5 Add exercise · .6 Area detail | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
 | UF-09 Focus mode | .1–.10 (below) | One step at a time | Apple Fitness, NTC |
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
 | UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises · .6 Favorite exercises | Adaptive targets; edit goal, rhythm, priorities; exercises never suggested; favorite exercises tried first; export or delete your data | Apple Fitness, Freeletics |
@@ -73,6 +73,8 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
   - Offline: identical, from the cache and queue. Never reachable from UF-08 or UF-09. Not shown on UF-02.1 (Latest PR stays the actual set), UF-03.3 or UF-06.1; those placements stay deferred (D-0257).
 
 ## UF-08 Session setup
+
+**Areas first (D-0274, planned, not built yet; T-0992 rewrites the UF-08.2 text below when the screen specs land):** UF-08.2 becomes "Today: Chest · Back · Core, 45 min", one row per body area with − / + sets and a time cost; exercises are a detail behind each row (new UF-08.6 Area detail, D-0276), ordering is automatic (engine rule 7.6, D-0275), and the exercise-level Reorder, Shuffle and empty-mode Suggestions are retired. Until then the UF-08.2 text below is what is built.
 
 **Entry:** Start on UF-02.1 or UF-02.2. The estimated 1RM never appears anywhere in UF-08 (principle 1; it lives on UF-06.2 only, D-0257).
 
