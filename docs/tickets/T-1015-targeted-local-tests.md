@@ -30,6 +30,7 @@ D-0285: agents and the orchestrator spend most test tokens on full-suite local r
 - AC7 Agent roles and CLAUDE.md say what D-0285 says; `sync-agents.mjs --check` (or equivalent) is clean.
 
 ## Paths you may change
+- `.claude/commands/tick.md` (orchestrator grant: the gate is documented there)
 - `scripts/**`
 - `package.json` (scripts only)
 - `agents/roles/**`, then the generated `.claude/agents/**` and `.agentlab/**` via `node scripts/sync-agents.mjs` only
