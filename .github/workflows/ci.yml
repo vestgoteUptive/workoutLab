@@ -94,8 +94,8 @@ jobs:
           version: 2.118.0
       # `supabase/config.toml` lands with T-0100/T-0203; until then this job is a no-op so
       # CI stays green from T-0002 onward without a fake DB step to delete later.
-      # T-1024: start only what the steps below use (Postgres for the seed re-apply and
-      # `supabase test db`; kong, gotrue, postgrest and edge-runtime for the Deno integration
+      # T-1024: start only what the steps below use (Postgres for the seed re-apply and the
+      # pgTAP run; kong, gotrue, postgrest and edge-runtime for the Deno integration
       # tests, which call /functions/v1, /auth/v1 and PostgREST). Fewer images means fewer
       # public.ecr.aws pulls, so the registry rate limit is hit less. If it still answers
       # "Rate exceeded", the retry first removes the half-started containers (a leftover mail
