@@ -296,3 +296,24 @@ Owner request 2026-11-24: UF-09.5 never shows the exercise name; show it, and fo
 | T-0989 | Screen spec: new `UF-09.5.md` (Next block lines, type, contrast, 320 px and 200 % zoom, copy, state table) and the UF-09.3/09.4 rest line removed; no new token (D-0273 §1-§10, AC1-AC6) | design | — | done | wl-design |
 | T-0990 | Web: UF-09.5 shows the next exercise's name, the cue for a new exercise and "per arm" on the load line; name and flag on the first frame, cue after; offline from the cached detail (D-0273, AC1-AC13) | web-feature:UF-09 | T-0989 | ready | wl-build-web |
 | T-0991 | e2e rest screen: name and cue, "per arm" first frame, 320 px and 200 % zoom without truncation, offline, zero history, 10 days off, axe/44 px (D-0273, AC1-AC7) | qa | T-0990 | todo | wl-build-qa |
+
+## Areas first planning, then learn from edits (specs docs/specs/areas-first-planning.md, docs/specs/learn-from-edits.md)
+Owner request 2026-11-24: "I spent a lot of time in the suggested workout with exercises, rearranging, adding and swapping. Rethink it entirely." The owner chose layer 3 (areas first, exercises second) first, then layer 1 (learn from edits). Decisions D-0274 (the UF-08.2 area model; keep, fold in and retire; supersedes D-0238), D-0275 (engine: `suggest` unchanged, new pure edit functions, rule 7.6 order), D-0276 (new screen UF-08.6 Area detail, no new token), D-0277 (learning rules, reuses favorites and excluded exercises), D-0278 (device-only counts, one column `profiles.learn_from_edits`), D-0279 (phasing and defaults). All `revisit`. **Release:** T-0996 and T-0997 must both be merged before a deploy (D-0279 §3). **Serial:** the UF-08 folder T-0996 → T-0997 → T-0998 → T-1003; engine T-0994 → T-0995; T-1000 after T-0993. Phase 2 rows are `todo` until T-0998 is done.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0992 | User flows v2 and PRD: UF-08.2 rewritten by area, UF-08.6 added, Reorder, Shuffle and empty-mode Suggestions retired, Start empty folded in (D-0274, D-0276) | product | — | ready | wl-idea |
+| T-0993 | Screen specs: UF-08.2 Today's plan by area, new UF-08.6 Area detail, amended UF-08.1, UF-08.5, UF-08.3; no new token (D-0274, D-0276) | design | — | todo | wl-design |
+| T-0994 | Engine rules 7.6 and 12.4: `orderItems` (main lift first, areas alternate, machines grouped) and `areaGroups`; examples, simulated histories, properties, golden `suggest`, re-vendor (D-0275 §2, §7) | engine | — | ready | wl-build-engine |
+| T-0995 | Engine rules 12.5 to 12.7: `adjustAreaSets`, `addArea`, `removeArea`, `areaCandidates`; never over budget, both values per condition, re-vendor (D-0275 §3 to §5) | engine | T-0994 | todo | wl-build-engine |
+| T-0996 | UF-08.2 Today's plan by area: title, area rows with − / + sets, Add an area, Fill the rest, automatic order, Start empty with no areas, time chip rebuild (D-0274, D-0275) | web-feature:UF-08 | T-0993, T-0994, T-0995 | todo | wl-build-web |
+| T-0997 | UF-08.6 Area detail: Swap, Not today, Remove, Start with this and a local Add exercise behind each area (D-0274 §5, D-0275 §8) | web-feature:UF-08 | T-0996 | todo | wl-build-web |
+| T-0998 | UF-08 retire Reorder, Shuffle and the empty-mode Suggestions code and tests; engine switches stay (D-0274 §3) | web-feature:UF-08 | T-0997 | todo | wl-build-web |
+| T-0999 | e2e areas-first: tap budget from plan to Start, +/− and Remove, Add an area, Start empty, area detail, zero history, 10 days off, 15 minutes, offline, axe/44 px | qa | T-0998 | todo | wl-build-qa |
+| T-1000 | Screen specs: the preference prompt card on UF-08.2 and the Learning section on UF-11.4 (D-0277, D-0276) | design | T-0993 | todo | wl-design |
+| T-1001 | Data: `profiles.learn_from_edits` (default true) migration, data model, generated types, export and delete checks, RLS tests (D-0278) | data | — | todo | wl-build-data |
+| T-1002 | Web-shell: the device-only edit ledger (counts, 3 and 2 thresholds, 60 days, asked-marks), the learning flag, cleared on sign-out, delete and Forget (D-0277, D-0278) | web-shell | T-1001 | todo | wl-build-web |
+| T-1003 | UF-08 learn from edits: count swaps and removals, the one-time "Prefer X?" and "Stop suggesting X?" card, yes adds a favorite or an exclusion with Undo (D-0277) | web-feature:UF-08 | T-0998, T-1000, T-1002 | todo | wl-build-web |
+| T-1004 | UF-09: record in-workout swaps for learning, no new UI during a workout (D-0277) | web-feature:UF-09 | T-1002 | todo | wl-build-web |
+| T-1005 | UF-11.4 "Learning from your edits": the toggle, the device-only line, "Forget what was counted" (D-0277, D-0278) | web-feature:UF-11 | T-1000, T-1001, T-1002 | todo | wl-build-web |
+| T-1006 | e2e learn from edits: three swaps then the prompt, yes and undo, removal prompt, Not today never counts, learning off, forget, offline, export and delete | qa | T-1003, T-1004, T-1005 | todo | wl-build-qa |
