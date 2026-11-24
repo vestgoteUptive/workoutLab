@@ -45,3 +45,8 @@ none (process; D-0285).
 Every AC has a test · repo checks green · commit messages start with `T-1015`.
 
 ## Build / accept log
+- Build (infra): added `scripts/test-affected.mjs` (pure `planAffected`, base via `resolveChangedPaths` from check-lane-paths, `--dry-run/--e2e/--base/--files`) and `pnpm test:affected`; `ci.yml` pushes on `main` and `main-*`, each job skips the `pull_request` run when `head_ref` is `main-*` (the push run already covers that SHA); roles, CLAUDE.md and `.claude/commands/tick.md` (gate, `--force` dropped) updated, `sync-agents.mjs --no-install` run, generated files committed.
+  - AC1-AC4 + AC5: `.github/scripts/test-affected.test.mjs` (one test per AC, plus a mixed diff); AC6: `.github/scripts/ci-triggers.test.mjs`; AC7: roles/CLAUDE.md diffs and the regenerated `.claude/agents`, `.agentlab` (no `--check` flag exists; `git status` clean after a second sync).
+  - Planted faults (backup copy, `cp` restore, `cmp` clean, never committed): UF glob mapped to `uf-00*` fails AC1 and the mixed test; deleting the `apps/web/src/lib/` full pattern fails AC2.
+  - Gate: turbo typecheck/lint/test 19/19 green (cache on, no --force); format:check green; test:repo-checks 404/408, the 4 failures are the check-all-on-real-repo tests, all from the expected `ticket-not-on-base`; check-all shows only that finding.
+  - Deviation: `.claude/commands/tick.md` is outside the ticket's Paths (`.claude/skills/**`) but is where the gate is documented; needs a grant on main.
