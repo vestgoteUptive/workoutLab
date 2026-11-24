@@ -331,7 +331,7 @@ export const uf08 = {
   notTodayLine: (old: string) => `${old} · Not today · `,
   notTodayUndoName: (old: string) => `Undo Not today, ${old}`,
   notTodayBack: (old: string) => `${old} is back.`,
-  notTodayNone: "No other exercise fits. Use Swap.",
+  notTodayNone: (area: string) => `No other exercise for ${area} today`,
   replacedBy: (old: string, now: string) => `${old} replaced by ${now}.`,
   removedStatus: (name: string) => `${name} removed.`,
   addedAreaIn: (name: string, area: string) => `${name} added. ${area} is in your plan now.`,

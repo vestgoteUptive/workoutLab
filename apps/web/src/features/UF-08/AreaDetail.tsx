@@ -298,7 +298,7 @@ export function AreaDetail({
                   onClick={() => {
                     const next = onNotToday(item.exerciseId);
                     if (next === null) {
-                      setStatus(en.uf08.notTodayNone);
+                      setStatus(en.uf08.notTodayNone(name));
                       return;
                     }
                     setStatus(en.uf08.replacedBy(exName, exerciseName(next, catalog)));

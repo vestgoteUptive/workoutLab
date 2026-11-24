@@ -872,7 +872,8 @@ export function SessionSetup({
                 nowIso,
                 tz,
                 excludeIdsFor(stored, adjusted.excludeIds),
-              )[0];
+              ).find((c) => homeOf(c.exerciseId, lib) === areaId);
+              // D-0288 §1: only a candidate homed in this area (D-0287 §4), else a refusal.
               if (first === undefined) return null;
               const applied = applySwap(
                 adjusted.workout,
@@ -904,17 +905,6 @@ export function SessionSetup({
                   },
                 },
               ]);
-              // D-0287 §4: the replacement may be homed in another area (back-squat is Glutes). If
-              // this area has nothing left, UF-08.2 opens and says what happened.
-              if (!areaGroups(next).some((g) => g.area === areaId)) {
-                setAreaNotice(
-                  en.uf08.replacedBy(
-                    lib.find((e) => e.id === id)?.name ?? id,
-                    lib.find((e) => e.id === first.exerciseId)?.name ?? first.exerciseId,
-                  ),
-                );
-                void navigate(`${SETUP_PATH}?step=suggested`, { replace: true });
-              }
               return first.exerciseId;
             } catch {
               return null;

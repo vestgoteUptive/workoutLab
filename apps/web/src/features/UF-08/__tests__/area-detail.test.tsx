@@ -13,6 +13,7 @@ import {
   areaGroups,
   insertItem,
   orderItems,
+  primaryAreas,
   rankSwaps,
   removeArea,
   suggest,
@@ -288,47 +289,70 @@ describe("T-0997 AC2 swap", () => {
   });
 });
 
-describe("T-0997 AC3 Not today", () => {
-  it("T-0997 AC3 an alternative: the first equipment_taken candidate replaces it, the line shows, Undo restores it, nothing is stored", async () => {
-    await toPlan();
-    openArea("quads");
-    fireEvent.click(button("Not today, Leg extension"));
-    const call = rankSpy.mock.calls.at(-1)!;
-    expect(call[0]).toBe("leg-extension");
-    expect(call[1]).toBe("equipment_taken");
-    const candidate = (rankSpy.mock.results.at(-1)!.value as { exerciseId: string }[])[0]!
-      .exerciseId;
-    expect(candidate).toBe("back-squat");
-    // back-squat is homed in Glutes (D-0287 §4): Quads is empty, so UF-08.2 opens and says so.
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]));
-    expect(status()).toHaveTextContent("Leg extension replaced by Back squat.");
-    expect(areaRow("quads")).toBeNull();
-    expect(areaRow("glutes")).not.toBeNull();
-    expect(storeExclusion).not.toHaveBeenCalled();
-  });
-
-  it("T-0997 AC3 the replacement stays in the area: the row is replaced in place, the line shows, Undo restores it, nothing is stored", async () => {
-    await toPlan({ budget: 90 });
-    const plan = suggestSpy.mock.results.at(-1)!.value as Workout;
-    const lib = (await vi.importActual<typeof import("./fixtures.js")>("./fixtures.js")).fLibrary();
-    // An area whose first row's first candidate is homed in the same area.
-    let found: { area: string; id: string; candidate: string } | null = null;
-    for (const g of areaGroups(plan)) {
-      for (const id of g.itemIds) {
-        const probe = rankSwaps(id, "equipment_taken", plan, fProfile(), lib, [], NOW, TZ, []);
-        const first = probe[0];
-        if (first === undefined) continue;
-        const sameHome =
-          lib.find((e) => e.id === first.exerciseId)!.areas[g.area as "chest"] === 1 &&
-          Object.entries(lib.find((e) => e.id === first.exerciseId)!.areas).find(
-            ([, w]) => w === 1,
-          )![0] === g.area;
-        if (sameHome) found ??= { area: g.area, id, candidate: first.exerciseId };
+/** An area, its exercise and the first `equipment_taken` candidate homed in the same area. */
+async function sameAreaCase(plan: Workout) {
+  const lib = (await vi.importActual<typeof import("./fixtures.js")>("./fixtures.js")).fLibrary();
+  const home = (id: string) => primaryAreas(lib.find((e) => e.id === id)!)[0];
+  for (const g of areaGroups(plan)) {
+    for (const id of g.itemIds) {
+      const list = rankSwaps(id, "equipment_taken", plan, fProfile(), lib, [], NOW, TZ, []);
+      const first = list.find((c) => home(c.exerciseId) === g.area);
+      if (first !== undefined) {
+        return {
+          area: g.area,
+          id,
+          candidate: first.exerciseId,
+          name: lib.find((e) => e.id === id)!.name,
+          firstOverall: list[0]!.exerciseId,
+        };
       }
     }
-    expect(found).not.toBeNull();
-    const { area, id, candidate } = found!;
-    const name = lib.find((e) => e.id === id)!.name;
+  }
+  throw new Error("no same-area candidate in the fixture");
+}
+
+describe("T-0997 AC3 Not today", () => {
+  it("T-0997 AC3 no candidate in the area: Leg extension's candidates are all homed elsewhere, so it refuses and nothing changes", async () => {
+    await toPlan();
+    openArea("quads");
+    const btn = button("Not today, Leg extension");
+    btn.focus();
+    const before = orderSpy.mock.calls.length;
+    fireEvent.click(btn);
+    // The engine has candidates (back squat is first), but none is homed in Quads (D-0287 §4).
+    const list = rankSpy.mock.results.at(-1)!.value as { exerciseId: string }[];
+    expect(list[0]!.exerciseId).toBe("back-squat");
+    expect(rankSpy.mock.calls.at(-1)![1]).toBe("equipment_taken");
+    expect(status()).toHaveTextContent("No other exercise for Quads today");
+    expect(screenIds()).toEqual(["UF-08.6"]);
+    expect(detailIds()).toEqual(["leg-extension"]);
+    expect(notTodayLine()).toBeNull();
+    expect(orderSpy.mock.calls.length).toBe(before);
+    expect(document.activeElement).toBe(btn);
+    expect(storeExclusion).not.toHaveBeenCalled();
+    // Nothing was pinned or excluded for the visit.
+    back();
+    fireEvent.click(button("45 minutes"));
+    expect(lastInput().excludeIds).not.toContain("leg-extension");
+    expect(lastInput().pinnedIds).not.toContain("back-squat");
+  });
+
+  it("T-0997 AC3 no candidate at all: the same refusal, the plan is unchanged, the button is not disabled", async () => {
+    await toPlan();
+    openArea("quads");
+    rankSpy.mockReturnValueOnce([]);
+    const btn = button("Not today, Leg extension");
+    fireEvent.click(btn);
+    expect(status()).toHaveTextContent("No other exercise for Quads today");
+    expect(detailIds()).toEqual(["leg-extension"]);
+    expect(btn).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("T-0997 AC3 an alternative in the area: the first one homed there replaces it in place, the line shows, Undo restores it, nothing is stored", async () => {
+    await toPlan({ budget: 90 });
+    const { area, id, candidate, name } = await sameAreaCase(
+      suggestSpy.mock.results.at(-1)!.value as Workout,
+    );
     openArea(area);
     fireEvent.click(button(`Not today, ${name}`));
     expect(detailIds()).toContain(candidate);
@@ -340,7 +364,6 @@ describe("T-0997 AC3 Not today", () => {
         detailRow(candidate).querySelector('[data-part="not-today"]'),
       ),
     );
-    // The old one is out for this visit only.
     expect(storeExclusion).not.toHaveBeenCalled();
 
     fireEvent.click(button(`Undo Not today, ${name}`));
@@ -358,29 +381,17 @@ describe("T-0997 AC3 Not today", () => {
   });
 
   it("T-0997 AC3 the replaced one stays out of a rebuild until Undo (the visit exclusion)", async () => {
-    await toPlan();
-    openArea("quads");
-    fireEvent.click(button("Not today, Leg extension"));
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]));
+    await toPlan({ budget: 90 });
+    const { area, id, candidate, name } = await sameAreaCase(
+      suggestSpy.mock.results.at(-1)!.value as Workout,
+    );
+    openArea(area);
+    fireEvent.click(button(`Not today, ${name}`));
+    back();
     fireEvent.click(button("45 minutes"));
-    expect(lastInput().excludeIds).toContain("leg-extension");
-    expect(lastInput().pinnedIds).toContain("back-squat");
-  });
-
-  it("T-0997 AC3 no alternative: the line says so, the plan is unchanged and focus stays on the button", async () => {
-    await toPlan();
-    openArea("quads");
-    rankSpy.mockReturnValueOnce([]);
-    const btn = button("Not today, Leg extension");
-    btn.focus();
-    const before = orderSpy.mock.calls.length;
-    fireEvent.click(btn);
-    expect(status()).toHaveTextContent("No other exercise fits. Use Swap.");
-    expect(detailIds()).toEqual(["leg-extension"]);
-    expect(notTodayLine()).toBeNull();
-    expect(orderSpy.mock.calls.length).toBe(before);
-    expect(document.activeElement).toBe(btn);
-    expect(btn).not.toHaveAttribute("aria-disabled");
+    expect(lastInput().excludeIds).toContain(id);
+    // A main-lift swap-in is kept as `mainLiftId`, any other as a pin (D-0235).
+    expect([...lastInput().pinnedIds, lastInput().mainLiftId]).toContain(candidate);
   });
 });
 
