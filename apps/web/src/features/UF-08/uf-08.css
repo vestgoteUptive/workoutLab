@@ -888,3 +888,96 @@
 .wl-uf08__detail .wl-uf08__add {
   inline-size: 100%;
 }
+
+/* T-1003 UF-08.2.md "Learning prompt card": the neutral notice pattern on --wl-raise. All card
+   text is --wl-ink (6.2:1 on --wl-raise); --wl-ink-muted is only used on --wl-bg. */
+.wl-uf08__learn-region {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wl-uf08__learn-region:empty {
+  display: none;
+}
+
+.wl-uf08__learn {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px;
+  color: var(--wl-ink);
+  background: var(--wl-raise);
+  border: 1px solid var(--wl-line);
+  border-radius: 12px;
+}
+
+.wl-uf08__learn-icon {
+  flex: none;
+  margin-block-start: 2px;
+}
+
+.wl-uf08__learn-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-inline-size: 0;
+}
+
+.wl-uf08__learn-title {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.wl-uf08__learn-line,
+.wl-uf08__learn-after-line,
+.wl-uf08__learn-manage,
+.wl-uf08__learn-error {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--wl-ink);
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+.wl-uf08__learn-manage {
+  color: var(--wl-ink-muted);
+}
+
+.wl-uf08__learn-reason {
+  margin: 0;
+  color: var(--wl-ink);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+
+.wl-uf08__learn-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wl-uf08__learn-actions .wl-button--secondary {
+  min-block-size: 48px;
+}
+
+.wl-uf08__learn-actions .wl-button--text,
+.wl-uf08__learn-undo {
+  min-block-size: 44px;
+  min-inline-size: 44px;
+}
+
+.wl-uf08__learn-after-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.wl-uf08__learn-actions button[aria-disabled="true"] {
+  cursor: default;
+}
