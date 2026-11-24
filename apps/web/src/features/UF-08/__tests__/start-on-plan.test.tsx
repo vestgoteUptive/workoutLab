@@ -288,8 +288,11 @@ describe("T-1009 AC4 pending, failure, retry", () => {
       return okEntry(r);
     });
     await toPlan({ budget: 60 });
+    // One - first, so that a + is open (not refused) while Start is pending.
+    const all = rows().map((r) => r.getAttribute("data-area")!);
+    fireEvent.click(minus(all.find((a) => Number(/\d+/.exec(setsOf(a))![0]) > 2)!));
+    const area = all.find((a) => plus(a).getAttribute("aria-disabled") !== "true")!;
     expect(startBtn()).not.toHaveAttribute("aria-disabled");
-    const area = rows()[0]!.getAttribute("data-area")!;
     const setsBefore = setsOf(area);
     const nRows = rows().length;
     fireEvent.click(startBtn());
