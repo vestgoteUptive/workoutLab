@@ -224,6 +224,14 @@
 .wl-uf08__primary > svg {
   flex: none;
 }
+
+/* T-1009: "Start workout" is longer than "Looks good"; at 200 % zoom (160 px) the arrow wraps under
+   the label instead of leaving the column. */
+.wl-uf08__primary {
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding-block: 8px;
+}
 /* t-0599-plan-end */
 
 /* ---- UF-08.2 Your workout and UF-08.5 Add exercise in the plan state (T-0600) ---- */
