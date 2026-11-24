@@ -32,9 +32,16 @@ export interface ProfileResolution {
 /** D-0197 §6: the gate's `profiles` read is abandoned after this long (an abort is `unknown`). */
 export const PROFILE_READ_TIMEOUT_MS = 3000;
 
+/**
+ * D-0272 §3: the longest `ProfileGate` shows its placeholder while the first read is pending.
+ * Above the 3 s read abort, so a hanging network is reported by the read first; it covers the
+ * one unbounded case, a hanging local cache read.
+ */
+export const PROFILE_PLACEHOLDER_MAX_MS = 3500;
+
 const UNKNOWN: ProfileResolution = { status: "unknown", shouldRefreshCache: false };
 
-function isOnline(): boolean {
+export function isOnline(): boolean {
   // `navigator.onLine` is `undefined` in a few environments; only an explicit `false` means
   // offline, so an unknown value still attempts the read (and an error yields `unknown` anyway).
   return typeof navigator === "undefined" || navigator.onLine !== false;

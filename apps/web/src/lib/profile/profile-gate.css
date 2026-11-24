@@ -1,0 +1,7 @@
+/* D-0272 §5: the neutral block ProfileGate shows while the first profile read is pending.
+   Same background as the screen about to appear, so there is nothing to flash. No text, no
+   animation, tokens only. */
+.wl-profile-pending {
+  min-height: 100dvh;
+  background: var(--wl-bg);
+}

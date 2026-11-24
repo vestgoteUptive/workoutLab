@@ -317,14 +317,20 @@ function waitForWrite(page: Page, table: string) {
 }
 
 /** `profiles` answers `[]` until a `profiles` POST, then `[row]`; `area_targets` takes POSTs. */
-async function mockNewUserRest(page: Page): Promise<void> {
+async function mockNewUserRest(page: Page, firstReadHoldMs = 0): Promise<void> {
   let row: Record<string, unknown> | null = null;
+  let held = false;
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/area_targets*`, (route) =>
     route.request().method() === "POST"
       ? route.fulfill({ status: 201, body: "" })
       : route.fulfill({ status: 200, json: [] }),
   );
-  await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, (route) => {
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, async (route) => {
+    // T-0985 AC12: the gate's first read is held, so the old UF-02.1 flash is certain, not a race.
+    if (route.request().method() === "GET" && !held && firstReadHoldMs > 0) {
+      held = true;
+      await new Promise((r) => setTimeout(r, firstReadHoldMs));
+    }
     if (route.request().method() === "POST") {
       row = {
         user_id: "11111111-1111-4111-8111-111111111111",
@@ -350,6 +356,34 @@ async function onboardToAccount(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/account$/);
 }
 
+/**
+ * T-0985 AC12: records every element with `data-screen-id` in `ids` the moment it is attached,
+ * with `performance.now()`, in `window.__wlScreens`. Install before the first navigation.
+ */
+async function recordScreens(page: Page, ids: string[]): Promise<void> {
+  await page.addInitScript((watch: string[]) => {
+    const log: Array<{ id: string; t: number }> = [];
+    (window as unknown as { __wlScreens: typeof log }).__wlScreens = log;
+    const note = (n: Node) => {
+      if (!(n instanceof Element)) return;
+      const els = [n, ...Array.from(n.querySelectorAll("[data-screen-id]"))];
+      for (const el of els) {
+        const id = el.getAttribute("data-screen-id");
+        if (id && watch.includes(id)) log.push({ id, t: performance.now() });
+      }
+    };
+    new MutationObserver((records) => {
+      for (const r of records) r.addedNodes.forEach(note);
+    }).observe(document, { childList: true, subtree: true });
+  }, ids);
+}
+
+async function screenLog(page: Page): Promise<Array<{ id: string; t: number }>> {
+  return page.evaluate(
+    () => (window as unknown as { __wlScreens: Array<{ id: string; t: number }> }).__wlScreens,
+  );
+}
+
 async function signInWithCode(page: Page): Promise<void> {
   await page.getByRole("tab", { name: "Enter code" }).click();
   await page.getByLabel("Email").fill("ada@example.com");
@@ -362,16 +396,17 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
     page,
   }) => {
     await mockSupabaseEmailAuth(page);
-    await mockNewUserRest(page);
+    await mockNewUserRest(page, 800);
     const writes = recordWrites(page);
+    await recordScreens(page, ["UF-02.1", "UF-01.5-save"]);
 
     await onboardToAccount(page);
     await expect(page.locator(SCREEN("UF-01.5")).getByRole("heading", { level: 1 })).toHaveText(
       "Save your plan",
     );
-    // T-0983: UF-02.1 can show *before* /welcome/save mounts (the profile gate renders a gated
-    // route while the profile is still `unknown`, then redirects on `missing`), so UF-02.1 being
-    // visible says nothing about the writes. Wait on the two requests themselves.
+    // T-0983 found that UF-02.1 flashed before /welcome/save mounted; T-0985 (D-0272) removed the
+    // flash (the gate shows a neutral placeholder while the read is pending). The waits stay on
+    // the two requests themselves, so the order of the writes is still what is asserted.
     const targetsSent = waitForWrite(page, "area_targets");
     const profileSent = waitForWrite(page, "profiles");
     await signInWithCode(page);
@@ -379,6 +414,14 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
 
     await expect(page.locator(SCREEN("UF-02.1"))).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
+
+    // T-0985 AC12: UF-02.1 was never attached before /welcome/save mounted (the profiles read
+    // was held 800 ms, so the old flash would be certain).
+    const log = await screenLog(page);
+    const saveAt = log.find((e) => e.id === "UF-01.5-save")?.t;
+    expect(saveAt, "/welcome/save mounted").toBeDefined();
+    expect(log.filter((e) => e.id === "UF-02.1" && e.t < saveAt!)).toEqual([]);
+    expect(log.some((e) => e.id === "UF-02.1" && e.t > saveAt!)).toBe(true);
 
     // Request order: the targets first, then the profile, both sent from /welcome/save.
     expect(writes.map((w) => w.table)).toEqual(["area_targets", "profiles"]);
@@ -412,6 +455,7 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
     await mockSupabaseEmailAuth(page);
     await mockProfilePresent(page);
     const writes = recordWrites(page);
+    await recordScreens(page, ["UF-01.5-save"]);
 
     await page.goto("/account");
     await expect(page.locator(SCREEN("UF-01.5")).getByRole("heading", { level: 1 })).toHaveText(
@@ -422,6 +466,43 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
     await expect(page.locator(SCREEN("UF-02.1"))).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
     expect(writes.filter((w) => w.table === "profiles" || w.table === "area_targets")).toEqual([]);
+    // T-0985 AC12 sibling: a returning user never reaches /welcome/save.
+    expect(await screenLog(page)).toEqual([]);
+  });
+
+  test("(d) T-0985 AC11: while the profiles read is held the placeholder is blank, bg = --wl-bg, axe clean, no focus", async ({
+    page,
+  }) => {
+    await mockSupabaseEmailAuth(page);
+    let release!: () => void;
+    const held = new Promise<void>((r) => (release = r));
+    await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, async (route) => {
+      await held;
+      await route.fulfill({ status: 200, json: [] });
+    });
+    await page.goto("/account");
+    await signInWithCode(page);
+    const pending = page.locator("[data-wl-profile-pending]");
+    await expect(pending).toBeAttached();
+    expect(await pending.evaluate((el) => el.textContent)).toBe("");
+    const colours = await pending.evaluate((el) => {
+      const probe = document.createElement("div");
+      probe.style.background = "var(--wl-bg)";
+      document.body.appendChild(probe);
+      const expected = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return { actual: getComputedStyle(el).backgroundColor, expected };
+    });
+    expect(colours.actual).toBe(colours.expected);
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+    const results = await new AxeBuilder({ page }).analyze();
+    // Same bar as `expectAxeClean`: serious and critical. A blank block has no h1, which axe
+    // reports only as a best-practice (minor/moderate) finding and the next screen supplies.
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious.map((v) => v.id)).toEqual([]);
+    release();
   });
 
   test("(c) axe and target sizes on UF-01.5 with each heading, and on UF-01.5-save's no-plan state", async ({

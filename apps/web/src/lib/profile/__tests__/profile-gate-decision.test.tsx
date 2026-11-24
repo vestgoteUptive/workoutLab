@@ -18,7 +18,9 @@ import type { ProfileStatus } from "../status.js";
 import { routes } from "../../../app/routes.js";
 
 const { useProfileStatus } = vi.hoisted(() => ({ useProfileStatus: vi.fn() }));
-vi.mock("../profile-context.js", () => ({ useProfileStatus }));
+// T-0985: the gate also reads `useProfileResolved` (D-0272); `true` is "no pending read", so
+// this file keeps testing the three-way decision alone.
+vi.mock("../profile-context.js", () => ({ useProfileStatus, useProfileResolved: () => true }));
 
 function Location() {
   return <span data-testid="loc">{useLocation().pathname}</span>;
