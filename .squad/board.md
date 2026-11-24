@@ -249,6 +249,7 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-1016 | e2e UF-04.1 Legs count read before the filter applied (PR #75 CI); wait for the filtered count | qa | — | done | wl-build-qa |
 | T-1017 | CI: inherited-TMPDIR test wrote to /inherited-tmp (EACCES on non-root runner); use a real temp folder | infra | — | done | wl-build-infra |
 | T-1018 | UF-09.5 rest page scrolls sideways at 320 px / 200 % zoom (timer, ±15 s row); fix reflow, drop T-0991 test.fail markers | web-feature:UF-09 | — | ready | wl-build-web |
+| T-1019 | e2e: move the 47 UF-08 checks pinning the old exercise list onto the areas-first flow; retire removed features | qa | T-0997, T-1009, T-0998 | todo | wl-build-qa |
 
 ## Estimated 1RM per exercise (spec docs/specs/estimated-1rm.md)
 Owner request 2026-11-20 (inspired by wger): "estimated 1RM per exercise, with a chart over time". Decisions D-0254 (Epley, reps 1–10, best hard set per session, no RIR), D-0255 (engine rule 16, pure, nothing stored), D-0256 (UF-06.2 card, SVG chart, table toggle, states), D-0257 (scope; amends D-0068 and D-0219). Owner accepted the open-question defaults; impact-review rulings in D-0258 (plain Epley at 1 rep, --wl-* tokens, table spec, same-day sessions). UF-06.2 only; never UF-08 or UF-09.
