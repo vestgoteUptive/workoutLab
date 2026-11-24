@@ -296,6 +296,31 @@ describe("AC8 failed save", () => {
   });
 });
 
+describe("AC8 failed save, live read coalesces the optimistic value (T-0987)", () => {
+  // The store writes 1.25 and then reverts to 5 in two transactions; a live query may only ever
+  // deliver the final 5. `override` then never changes, so the optimistic 1.25 must be dropped by
+  // the rejection itself, not by an override change.
+  it("never leaves the optimistic chip checked when the 1.25 value is never delivered", async () => {
+    const store = await import("../../../lib/offline/exercise-settings.js");
+    const real = store.readExerciseSteps;
+    vi.spyOn(store, "readExerciseSteps").mockImplementation(async (userId) => {
+      const steps = await real(userId);
+      if (steps.get("back-squat") === 1.25) steps.set("back-squat", 5);
+      return steps;
+    });
+    await open();
+    fireEvent.click(await chip("5 kg"));
+    await waitFor(() => expect(valueLine()).toHaveTextContent("5 kg (yours)"));
+    h.server.failWith = { code: "23514", message: "check violation" };
+    fireEvent.click(await chip("1.25 kg"));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't save. Try again.");
+    await waitFor(() => expect(valueLine()).toHaveTextContent("Weight step: 5 kg (yours)"));
+    await waitFor(async () => expect(await chip("5 kg")).toHaveAttribute("aria-checked", "true"));
+    expect(await chip("1.25 kg")).toHaveAttribute("aria-checked", "false");
+    expect(stepStatus()).toBeEmptyDOMElement();
+  });
+});
+
 describe("AC8 synchronous throw", () => {
   it("a setExerciseStep that throws synchronously still shows the alert and reverts", async () => {
     const store = await import("../../../lib/offline/exercise-settings.js");

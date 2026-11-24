@@ -1,7 +1,7 @@
 ---
 id: D-0238
 title: "Empty-start Suggestions: the list is the engine's own fill-on plan around the user's picks (items not yet picked, in engine order), with one deterministic fallback call when the auto main lift would crowd out a pick; tap = Add, every shown suggestion fits by construction, Shuffle changes suggestions only"
-status: revisit
+status: superseded
 date: 2026-11-13
 by: product-owner (idea, owner request)
 area: product

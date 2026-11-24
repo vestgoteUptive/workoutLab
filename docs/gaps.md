@@ -48,6 +48,6 @@ Close a gap by linking the ticket or decision that closed it.
 | Guest mode before account? | No. Magic link is fast enough for the < 60 s goal; revisit after first user test. |
 | Import history (Apple Health, Strava)? | Out of scope v1. |
 | Hard-stop clock time vs minutes (UF-08.1)? | Both: hard stop converts to minutes at start. |
-| Watch, live activity, voice cues? | Out of scope v1, except the 3-2-1 sound cue already in UF-08.4. |
+| Watch, live activity, voice cues? | Out of scope v1, except the 3-2-1 sound cue already built (its switch is on UF-08.2 since D-0280). |
 | Carry weights between variants on swap? | Yes, when the variant shares a primary area and equipment type; otherwise use history or blank. |
 | Commercial intent, platforms beyond PWA? | Free, PWA only v1. |

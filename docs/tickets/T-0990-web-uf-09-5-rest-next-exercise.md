@@ -39,6 +39,7 @@ Fixtures: plan of `bench-press` (4 sets, 27.5 kg × 20 pre-fill), `dumbbell-row`
 Checklist (D-0197 §7): flagged and not (AC4), warm and cold (AC7), online and offline (AC8), cue present, fallback and absent (AC3), same and new exercise (AC1, AC2), timed and reps (AC5), something next and nothing (AC6); no migration here.
 
 ## Paths you may change
+- `tests/e2e/uf-09-focus.spec.ts` (orchestrator grant: line ~430 pins the old "Next · {name}" caption)
 Lane `web-feature:UF-09`: `apps/web/src/features/UF-09/**`; extra: `apps/web/src/lib/i18n/flows/uf-09.ts`. Not parallel with another UF-09 ticket.
 
 ## Contract impact

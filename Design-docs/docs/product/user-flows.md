@@ -10,7 +10,7 @@ Supersedes `user-flows-v1.md`; the v1 core model below still applies.
 ## Core model (from v1)
 
 Hard sets per body area (chest, back, shoulders, arms, core, glutes, quads, hamstrings, calves)
-over a rolling 14-day window, compared with per-area targets. Suggestions (UF-08.2) fill the
+over a rolling 14-day window, compared with per-area targets. Today's plan (UF-08.2) fills the
 biggest gaps within the user's time budget.
 
 > Rolling 14 days everywhere, including UF-06.1 (D-0002). The window is the current local day plus the 13 before it (D-0013). Prototype numbers are only illustrative; screens show what the engine returns.
@@ -34,7 +34,7 @@ biggest gaps within the user's time budget.
 | UF-05 Swap (in workout) | .1 Swap sheet | Replace mid-session | Fitbod |
 | UF-06 Progress | .1 Overview · .2 Exercise history | Consistency, volume, strength trend | Hevy, Strong |
 | UF-07 Routine builder | .1 Edit routine | Exercises, sets, progression rule | Liftosaur, Hevy |
-| UF-08 Session setup | .1 Time & energy · .2 Suggested · .3 Swap · .4 Ready · .5 Add exercise | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
+| UF-08 Session setup | .1 Time & energy · .2 Today's plan (by area) · .3 Swap · .4 Ready (retired, D-0280) · .5 Add exercise · .6 Area detail | Time-boxed, gap-driven workout | Fitbod, Future, NTC |
 | UF-09 Focus mode | .1–.10 (below) | One step at a time | Apple Fitness, NTC |
 | UF-10 Balance | .1 All areas · .2 Area detail | All areas vs target over 14 days, and why | Fitbod, Hevy, Garmin |
 | UF-11 Plan check-in | .1 Check-in · .2 Plan · .3 Edit plan · .4 Account settings · .5 Excluded exercises · .6 Favorite exercises | Adaptive targets; edit goal, rhythm, priorities; exercises never suggested; favorite exercises tried first; export or delete your data | Apple Fitness, Freeletics |
@@ -77,34 +77,40 @@ Comes after UF-01.4 (D-0014). "Save your plan" with a magic link or Google. Retu
 **Entry:** Start on UF-02.1 or UF-02.2. The estimated 1RM never appears anywhere in UF-08 (principle 1; it lives on UF-06.2 only, D-0257).
 
 - **UF-08.1 Time & energy**
-  - Minutes stepper (±5, 15–120) and quick chips 20/30/45/60/90. Shows "done by HH:MM".
+  - Minutes stepper (±5, 15–120) and quick chips 20/30/45/60/90. Shows "done by HH:MM". The minutes are asked first, before every workout (principle 2); nothing below changes that.
   - Toggle: warm-up counts in the time budget (default on).
   - Energy: Low / Normal / High. Low trims accessory sets, keeps main-lift weights. High may add a back-off set.
   - Skip today (D-0191, GitHub #33): optional toggle chips for the nine areas, none pressed by default, for this workout only. Skipped areas reach the engine as `avoidAreas` (rule 6.1) and stay out of the plan.
   - Live fit line: "Lower A fits: N exercises, M sets".
-  - "Start empty" (D-0236, spec `docs/specs/empty-start-plan.md`): a secondary button under "Suggest my workout". Same minutes, warm-up, Energy and Skip today. Opens UF-08.2 in empty mode for this visit only (not remembered).
-- **UF-08.2 Suggested workout**
-  - Time-budget bar: one segment per item, proportional to estimated minutes; unused time shown as empty; turns orange if over.
-  - "Why" chips for the whole session (e.g. days since last trained, area below target).
-  - Per exercise: sets × reps · weight · minutes · one-line reason; swap and remove actions. Warm-up is not removable. Remove drops the item without refilling its time (engine `removeItem`, D-0191 §4).
-  - "Skipping today: …" line when areas were skipped on UF-08.1.
-  - Excluded exercises (D-0199) are never suggested. After a Remove, a "Removed" line lists each item removed on this visit with "Never suggest" (then "{name} won't be suggested · Undo"); no timeout. A neutral notice (not `warn`), "Not suggested: {areas}. Every exercise for them is excluded.", when the stored exclusions leave an area with no exercise (engine `excludedOutAreas`).
-  - Favorite exercises (D-0202) are tried first inside the areas the gaps choose (never forced, never past recovery or the time fit). An item whose exercise is a favorite shows a "Favorite" text tag; there is no favorite control here.
-  - Shuffle picks alternates for non-main exercises (never an added one).
-  - Changing time rebuilds the list (main lift and added exercises kept when they fit, accessories trimmed or added). An added exercise that no longer fits is listed: "Doesn't fit in {n} min: {names}."
-  - Add and reorder (D-0205, spec `docs/specs/uf-08-add-and-reorder.md`): "Add exercise" opens UF-08.5. An added item's reason line is "Added by you". A non-main compound row has "Start with this", which makes it the main lift (engine `mainLiftId`) and puts it first. "Reorder" switches the list to Move up / Move down buttons (warm-up stays first; the other controls hide until Done). The order is UI only, survives later re-suggests (surviving items keep their order, a new main lift goes first, new items follow) and is the order the workout runs in. Adds and order last for this visit only.
-  - A main lift the user chose on this visit ("Start with this", a swap of the main lift, or a "Main lift" suggestion) is kept across re-suggests: a time chip that drops it names it in "Doesn't fit in {n} min: …" and more time brings it back (D-0239 §1).
-  - Empty mode (from "Start empty", D-0236, D-0238, D-0239): the plan holds only the user's picks (engine `autoMainLift: false`, `fill: false`, D-0237), starting at 0 items: "Nothing here yet. Pick from the suggestions or add an exercise." The budget line reads "{used} of {n} min · {left} min left" (warm-up counts in used when it is in the budget), and "{used} of {n} min · {over} min over" after a swap that doesn't fit, in words, with no colour change. Under "Your workout", a **Suggestions** section lists the engine's fill around the picks (lowest-coverage areas first, favorites first, every row fits the time left), each row with Add and, for the engine's main lift, a "Main lift" tag; "Other suggestions" changes only the list, and "Fill the rest for me" switches to the normal suggested plan with the picks kept. "Add exercise" sits under Suggestions. Swap, Remove, Start with this (the old main lift stays as a pick), Reorder and time chips work as above. An Add that would push out a pick is refused: "{name} would push out {pick}. Pick more time or remove an exercise." "Looks good" is disabled until there is at least one item ("Add at least one exercise."). One status line announces each change. Works offline.
-- **UF-08.5 Add exercise** (D-0205): a sheet over UF-08.2, the UF-08.3 pattern. A search field over the library (kind `exercise`). Empty query: Favorites (D-0202) first, then "Today's areas" (exercises for the areas of the current items, by area). Each result has Add and, for a compound, "Start with this". A result that can't be added says why: "In this workout", "Excluded …", "Not available with your equipment", "Above your level. Change it in Plan › Edit plan." (text only, no link out of setup, D-0231), "Skipping {Area} today", "{Area} is recovering". Add goes into this visit's `pinnedIds` and the rest of the plan is re-suggested around it; an add that doesn't fit the time is refused with "{name} doesn't fit in {n} min." In empty mode the lead line reads "{left} of {n} min left." and an Add places only that exercise (nothing else is re-suggested). Works offline.
-- **UF-08.3 Swap before starting**
+  - "Suggest my workout" opens UF-08.2 with the default plan (the engine's plan grouped by area, D-0274 §2).
+  - "Start empty" (D-0236, D-0274 §6, spec `docs/specs/areas-first-planning.md`): a secondary button under "Suggest my workout". Same minutes, warm-up, Energy and Skip today. Opens UF-08.2 with no areas, for this visit only (not remembered).
+- **UF-08.2 Today's plan** (D-0274, D-0280, spec `docs/specs/areas-first-planning.md`): the plan by body area. Exercise names are not on the area row; exercises are a detail behind each row (UF-08.6).
+  - Title "Today: Chest · Back · Core" (the plan's areas in the engine's priority order); with no areas "Today: pick your areas". Under it one line, "Done by HH:MM" (now plus the plan's minutes, re-derived after every edit); with no areas "{n} min to fill".
+  - Time bar, one segment per area, and its line "About {m} of {n} min"; over budget is said in words, with no colour change. "Why" chips for the whole session (days since last trained, area below target). "Skipping today: …" line when areas were skipped on UF-08.1.
+  - One row per area: the area name, its time cost ("~14 min"), a sets stepper **− 6 sets +**, the muted line "Last 14 days: 8 of 20 sets" (`load / target`) and "{n} exercises" with a chevron that opens UF-08.6.
+  - **+** adds a set (maximum 4 sets for a main lift, 3 for another exercise, 2 exercises per area) and is refused in words when it doesn't fit the minutes left: "No time for another set. Pick more time or remove a set elsewhere." **−** removes a set; at the 2-set minimum it becomes **Remove**, which takes the area out for this visit (it joins the skipped areas and moves to "Add an area"). One polite status line announces each change.
+  - **Add an area:** the areas not in the plan, lowest projected coverage first, each with "Last 14 days: 0 of 20 sets" and **Add**. An area that can't be added says why: "Recovering", "Skipping today", "No exercise available", "No time left". A collapsed disclosure, open when the plan has no areas.
+  - **Fill the rest for me:** adds the engine's next available areas until nothing more fits; shown only while one still fits.
+  - Time chips 20 / 30 / 45 / 60 / 90. A chip rebuilds the plan for the new minutes, keeps this visit's removed areas, swaps, adds and exclusions, and clears the +/− set edits and added areas: "Plan rebuilt for {n} min. Your set changes were cleared." A main lift chosen on this visit stays across a rebuild; one that no longer fits is named in "Doesn't fit in {n} min: …" and more time brings it back.
+  - The order the workout runs in is automatic (engine rule 7.6, D-0275): main lift first, then other compounds, then isolation work, areas alternating, machines grouped. It is not listed before Start.
+  - **Focus mode** (D-0280 §3): a collapsed disclosure above Start, collapsed on every visit. Inside: "How focus mode works" in four steps and the three switches (Sound cues, Voice countdown 3-2-1, Keep screen awake). Opening it is not an edit.
+  - **Start workout** (the primary button; it was UF-08.4's Start): writes the session and opens UF-09.1. From UF-08.2 shown it takes **1 tap with no edit and 3 with two edits** (an edit is one tap on − / + / Remove / Add {Area}); from UF-02.1 it is 3 taps with no edit. At no areas it is disabled (`aria-disabled`) with "Add at least one area.", whatever the entry. A rejected write says "Couldn't start the workout. Try again."
+  - States, one line each:
+    - Zero history: the engine's default plan, rows read "Last 14 days: 0 of 20 sets", no attention styling.
+    - 10 days off: same rows; the why chips name the areas furthest below target and nothing about the break is added here.
+    - Time running out (15 or 20 min): one or two areas, **+** refused with the time reason, "Add an area" rows read "No time left"; "Nothing fits in {n} min" only when nothing fits at all.
+    - Offline: identical, from the device; the offline icon shows and nothing is written before Start. The stored-list buttons in UF-08.6 are disabled.
+    - Start empty: no rows, title "Today: pick your areas", "Add an area" open, "Fill the rest for me" shown, Start workout disabled.
+  - Excluded exercises (D-0199) and favorites (D-0202) apply as before and show in UF-08.6. A neutral notice, "Not suggested: {areas}. Every exercise for them is excluded.", when exclusions leave an area with no exercise.
+  - Retired from UF-08.2 (D-0274 §3, §4, §6, §7): Reorder and Move up / Move down (the order is automatic; "Do {name} later" in UF-09.9 stays), Shuffle on this screen (rule 13 stays in the engine), and the exercise-level Suggestions section, "Other suggestions" and the empty mode with its own budget words (Start empty opens the area plan instead).
+- **UF-08.6 Area detail** (D-0276, D-0274): behind an area row, a full screen of the setup (no tab bar) with a Back link to UF-08.2. Title is the area; it shows the area's sets, time and `load / target` line, then its exercises in run order, each with the name, "Favorite" and "Main lift" tags, sets × reps · weight · minutes, a one-line reason (or "Added by you") and the actions Swap (opens UF-08.3), **Not today** (replace it with the best alternative for "equipment taken", this visit only: "{old} · Not today · Undo"), Remove (no refill; the Removed line and "Never suggest" work here) and, on a non-main compound, "Start with this". "Add exercise" opens UF-08.5. Removing the last exercise takes the area out and returns to UF-08.2: "{Area} removed. Add it back below." Works offline.
+- **UF-08.5 Add exercise** (D-0205, D-0274 §5): a sheet over UF-08.6, the UF-08.3 pattern. A search field over the library (kind `exercise`). Empty query: Favorites (D-0202) first, then the open area's other exercises, then "Today's areas". Each result has Add and, for a compound, "Start with this". A result that can't be added says why: "In this workout", "Excluded …", "Not available with your equipment", "Above your level. Change it in Plan › Edit plan." (text only, no link out of setup, D-0231), "Skipping {Area} today", "{Area} is recovering". **Add is local:** it adds that exercise at 3 sets, else 2, if it fits the minutes left, and changes nothing else in the plan; an exercise whose area isn't in the plan adds that area. It stays through a time rebuild. An add that doesn't fit is refused with "{name} doesn't fit in {n} min." Works offline.
+- **UF-08.3 Swap before starting** (opened from UF-08.6)
   - Asks why: equipment taken / discomfort / variety / short on time. Reason changes ranking.
   - Each alternative shows muscle match, time cost and equipment; top result marked "Best match".
   - Option "Always use this in <routine>".
   - Checkbox "Don't suggest {current} again", unchecked, applied on confirm (D-0199). UF-05.1 has the same checkbox. Excluded exercises are never in the list.
-- **UF-08.4 Ready**
-  - Summary: duration, exercises, sets, finish time.
-  - Explains focus mode in four steps. Settings: sound cues, voice 3-2-1, keep screen awake.
-  - Start → UF-09.1.
+- **UF-08.4 Ready (retired, D-0280).** There is no such screen: Start, the "Done by" line and the Focus mode disclosure are on UF-08.2. The ID stays in the index and is never reused.
 
 ## UF-09 Focus mode
 
@@ -159,6 +165,6 @@ Full spec and ACs: `docs/specs/uf-11-plan-checkin.md` (D-0018). Principle: targe
 Answered by default (revisit in Phase 5):
 - Guest mode: no; the account step comes after the plan preview (D-0014). Importing history (Apple Health, Strava): out of scope v1 (owner product-owner, `docs/gaps.md` §D, Phase 5 `wl-idea`).
 - Hard-stop clock time on UF-08.1: both; a finish time converts to minutes at start (owner product-owner, T-0303).
-- Watch companion, lock-screen live activity, voice cues: out of scope v1 except the 3-2-1 cue in UF-08.4 (owner product-owner, Phase 5 `wl-idea`).
+- Watch companion, lock-screen live activity, voice cues: out of scope v1 except the 3-2-1 cue (Voice countdown switch on UF-08.2) (owner product-owner, Phase 5 `wl-idea`).
 - Carry weights between variants on a swap (UF-05, UF-08.3): yes when the variant shares a primary area and equipment type (owner product-owner, T-0306).
 - Prototype inconsistencies (the plank on UF-09.7, set counts): the engine output is the truth (D-0002).
