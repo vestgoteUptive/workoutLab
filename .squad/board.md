@@ -326,4 +326,4 @@ Owner request 2026-11-24: "I spent a lot of time in the suggested workout with e
 | T-1007 | Web-shell: the on-device edit ledger (counts, 60-day window, 3 and 2 thresholds, asked-marks, device id), the learning flag and reset epoch, cleared on sign-out and delete (D-0281) | web-shell | T-1001 | done | wl-build-web |
 | T-1008 | Web-shell: sync the ledger through the account (serial absolute upserts of this device's rows, pull and sum, asked marks, Forget and learning-off deletes) (D-0281 §2, §4) | web-shell | T-1001, T-1007 | done | wl-build-web |
 | T-1009 | UF-08.2 Start workout: Start folds into the plan (Done by line, collapsed Focus mode disclosure, session write moves from Ready), UF-08.4 Ready removed, e2e walk-throughs updated (D-0280) | web-feature:UF-08 | T-0997 | todo | wl-build-web |
-| T-1010 | Privacy notice: counts of swapped and removed exercises are stored with the account, exported and deleted with it (D-0281 §5) | design | T-1001 | ready | wl-design |
+| T-1010 | Privacy notice: counts of swapped and removed exercises are stored with the account, exported and deleted with it (D-0281 §5) | design | T-1001 | done | wl-design |

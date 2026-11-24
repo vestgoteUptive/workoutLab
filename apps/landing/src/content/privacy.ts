@@ -15,7 +15,7 @@ import type { PrivacyNotice } from "./types";
  */
 export const privacy = {
   title: "Privacy",
-  updated: "2026-10-05",
+  updated: "2026-11-24",
   intro:
     "This notice covers the workout LAB app and this website. It says who is responsible for your data, what we store and why, where it goes, how long we keep it, and how you export or delete it.",
   sections: [
@@ -27,7 +27,7 @@ export const privacy = {
     {
       id: "what-we-store",
       heading: "What we store",
-      body: "We store your email address, your training data (sessions, exercises, sets, reps and weights in kg), your plan settings (such as your time budget and priority areas) and how long your first setup took, in milliseconds.\n\nTo keep sign-in safe, we also store, for each sign-in session, the IP address and browser (user agent) it came from, and a record of sign-ins with your email and IP address.\n\nIf you choose \"Continue with Google\", Google sends us your name and profile picture. We drop them as you sign in and don't keep them.\n\nWe don't collect your date of birth, sex, body weight, heart rate or location coordinates. A session's location is only a label you choose, such as gym or home.",
+      body: 'We store your email address, your training data (sessions, exercises, sets, reps and weights in kg), your plan settings (such as your time budget and priority areas) and how long your first setup took, in milliseconds.\n\nTo keep sign-in safe, we also store, for each sign-in session, the IP address and browser (user agent) it came from, and a record of sign-ins with your email and IP address.\n\nThe app can learn from your edits. When you swap or remove the same exercise again and again, we store a count with your account: which exercises you swapped or removed, and how many times. With each count we store a random device id (not taken from your hardware), the time of the first and latest edit, and a mark that says whether you were already asked about it. Only you can read these counts. We use them for one thing: to offer you a preference, such as "Prefer this exercise?". Nothing is saved as a preference unless you say yes. You can switch learning off under Plan → Account. That stops the counting and deletes the counts.\n\nIf you choose "Continue with Google", Google sends us your name and profile picture. We drop them as you sign in and don\'t keep them.\n\nWe don\'t collect your date of birth, sex, body weight, heart rate or location coordinates. A session\'s location is only a label you choose, such as gym or home.',
     },
     {
       id: "why",
@@ -47,7 +47,7 @@ export const privacy = {
     {
       id: "export-and-delete",
       heading: "Export or delete your data",
-      body: "In the app, open Plan → Account.\n\nThere you can export everything you own as one JSON file.\n\nYou can also delete your account there. After you confirm, your account and all your data are deleted from our live database straight away, and the copy on your device is cleared. Our backups still hold a copy for up to 7 days, and then it is gone.",
+      body: 'In the app, open Plan → Account.\n\nThere you can export everything you own as one JSON file. The export includes your counts of swapped and removed exercises.\n\nThe button "Forget what was counted" in the same place deletes those counts at any time.\n\nYou can also delete your account there. After you confirm, your account and all your data, counts included, are deleted from our live database straight away, and the copy on your device is cleared. Our backups still hold a copy for up to 7 days, and then it is gone.',
     },
     {
       id: "your-rights",
