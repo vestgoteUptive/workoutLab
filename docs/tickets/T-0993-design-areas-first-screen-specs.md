@@ -5,7 +5,7 @@ lane: design
 screens: [UF-08.1, UF-08.2, UF-08.3, UF-08.5, UF-08.6]
 decisions: [D-0274, D-0275, D-0276, D-0280, D-0211, D-0239]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 The web build needs one spec per screen (`docs/specs/areas-first-planning.md`, D-0276). `UF-08.2.md` today documents the exercise list, the Removed line, Add and reorder, and empty mode.

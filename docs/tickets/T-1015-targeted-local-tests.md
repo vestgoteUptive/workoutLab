@@ -5,7 +5,7 @@ lane: infra
 screens: []
 decisions: [D-0285, D-0169]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 D-0285: agents and the orchestrator spend most test tokens on full-suite local runs; CI should carry the full suite.

@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-04.1]
 decisions: [D-0197]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 PR #75 CI run 45331140049: `tests/e2e/uf-04-library.spec.ts` "T-0639 AC8 Legs, open an exercise, Back returns to the Legs list with the same count" expected "24 results" after Back and got "8 results". The test clicks Legs, then waits for the count to match `/^\d+ results$/` — which the unfiltered "24 results" already does — and stores that as `before`. When the filter commits a frame later the real Legs count is 8, and Back correctly returns to 8. The app is right; the test read too early.
