@@ -243,7 +243,7 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-0984 | e2e canvas-compare AC1 and AC5 failed once in the T-0692 full-suite gate (48/48 alone); root-cause | qa | — | done | wl-build-qa |
 | T-0985 | A brand-new user briefly sees UF-02.1 Today after sign-in on UF-01.5 before ProfileGate redirects to /welcome/save (ProfileGate.tsx:15-18 renders the route while the profile status is unknown); show a neutral loading state instead (found by T-0983) (groomed 2026-11-23: D-0272, placeholder only while the first read is pending, online, capped 3.5 s; offline and failed reads unchanged; ticket docs/tickets/T-0985-profile-gate-pending-placeholder.md) | web-shell | — | ready | wl-build-web |
 | T-0986 | Package tests that spawn check-all.mjs (design-tokens uf06-2 spec, landing ac21) time out at 5 s under full-gate load; call the checker in-process | infra | — | done | wl-build-infra |
-| T-0987 | UF-04.2 weight-step AC8 failed-save revert test failed on PR #75 CI (chip unchecked after the alert); root-cause test vs app | web-feature:UF-04 | — | ready | wl-build-web |
+| T-0987 | UF-04.2 weight-step AC8 failed-save revert test failed on PR #75 CI (chip unchecked after the alert); root-cause test vs app | web-feature:UF-04 | — | done | wl-build-web |
 | T-0988 | Content: single-arm cable row with rotation (cable, back + core, per arm), owner request | content | — | done | wl-build-content |
 | T-1015 | Targeted local test runs: test-affected script, agent roles, gate without --force, CI on every squad-branch push (D-0285) | infra | — | ready | wl-build-infra |
 

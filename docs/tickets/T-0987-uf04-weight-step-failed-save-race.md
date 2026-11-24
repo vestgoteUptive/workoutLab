@@ -5,7 +5,7 @@ lane: web-feature:UF-04
 screens: [UF-04.2]
 decisions: [D-0259, D-0265]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 PR #75 CI (run 45306632377, job 138151972935, 2026-11-24): `apps/web/src/features/UF-04/__tests__/weight-step.test.tsx` "AC8 failed save › shows the alert, reverts the row and clears the status" failed at line 294: `expect(await chip("5 kg")).toHaveAttribute("aria-checked", "true")` received `"false"`, right after `waitFor` on the value line passed. 5400/5401 passed. Either the test reads the chip one step too early (the value line and the chip selection settle in different renders), or the revert really can leave no chip checked (a product defect in `WeightStep.tsx`: `pending`, `override` and the store update interleave). A flake is not a root cause.
