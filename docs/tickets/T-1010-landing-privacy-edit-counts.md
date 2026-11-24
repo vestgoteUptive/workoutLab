@@ -29,3 +29,4 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-1010` and cite UF-11.4.
 
 ## Build / accept log
+- Build (designer, 2026-11-24): privacy.ts "What we store" gains a paragraph (counts, random device id, timestamps, asked marks, why, opt-out); "Export or delete" names export, deletion and "Forget what was counted"; `updated` 2026-11-24 (set to the merge date if it differs). AC1/AC2/AC3 -> content.test.ts "T-1010 AC1/AC2/AC3". Planted fault (Forget renamed) failed AC2, restored with cp, cmp clean. Landing typecheck, lint, test (167) green; format:check green. check-all flags lane-path-not-owned for files outside this diff (stale local `main` base), none in my change.
