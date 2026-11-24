@@ -61,7 +61,10 @@ export function isCountedReason(reason: SwapReason | "none" | null): boolean {
   return reason === null || reason === "none" || reason === "discomfort";
 }
 
-/** The ledger key, equal to `edit_signals.key` (D-0281 §1). */
+/** The ledger key. It IS the `edit_signals.key` column (D-0281 §1), the same string on every
+ *  device, so rows of different devices for one swap or removal sum under it. It is NOT a
+ *  user-scoped cache key: the IndexedDB primary key is `userScopedKey(userId, ledgerKey(...))`
+ *  (db.ts), and this string alone must never be used to key a per-user store. */
 export function ledgerKey(kind: SignalKind, exerciseId: string, toExerciseId?: string): string {
   return kind === "swap"
     ? ["swap", exerciseId, toExerciseId ?? ""].join(":")

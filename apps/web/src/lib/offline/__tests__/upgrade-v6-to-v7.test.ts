@@ -95,7 +95,7 @@ describe("T-1007 AC12 v6 to v7 upgrade", () => {
 
     const db = new OfflineDb(name);
     await db.open();
-    expect(db.verno).toBe(7);
+    expect(db.verno).toBe(8);
     const same = (a: unknown, b: unknown) => expect(JSON.stringify(a)).toBe(JSON.stringify(b));
     const byKey = <T extends { key: string }>(r: T[]) =>
       [...r].sort((x, y) => x.key.localeCompare(y.key));
