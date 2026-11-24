@@ -27,6 +27,8 @@ Counting, one question and the reuse of favorites and excluded exercises cross U
 - AC9 (focus mode) Given a workout, Then no prompt appears on any UF-09 screen.
 - AC10 (a11y) Given axe on the card and the UF-11.4 section at 320 and 390 px, Then no violations.
 
+- From T-1008: e2e "opted out on device A, device B saves the profile, learning stays off" (T-1008 covers it with a unit scan only).
+
 ## Paths you may change
 `tests/e2e/**`
 
