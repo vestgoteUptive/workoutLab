@@ -94,8 +94,26 @@ jobs:
           version: 2.118.0
       # `supabase/config.toml` lands with T-0100/T-0203; until then this job is a no-op so
       # CI stays green from T-0002 onward without a fake DB step to delete later.
-      - run: supabase start
+      # T-1024: start only what the steps below use (Postgres for the seed re-apply and
+      # `supabase test db`; kong, gotrue, postgrest and edge-runtime for the Deno integration
+      # tests, which call /functions/v1, /auth/v1 and PostgREST). Fewer images means fewer
+      # public.ecr.aws pulls, so the registry rate limit is hit less. If it still answers
+      # "Rate exceeded", the retry first removes the half-started containers (a leftover mail
+      # container kept port 54324 bound) and waits; a third failure fails the job.
+      - name: Start local Supabase (retry on registry rate limit)
         if: steps.has-supabase.outputs.present == 'true'
+        run: |
+          for attempt in 1 2 3; do
+            if supabase start -x studio,mailpit,imgproxy,logflare,vector,supavisor,realtime,storage-api,postgres-meta; then
+              exit 0
+            fi
+            echo "supabase start failed (attempt $attempt of 3)"
+            supabase stop --no-backup || true
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 30))
+            fi
+          done
+          exit 1
       # AC7: seed.sql is idempotent. Reapply it with psql and check the library row counts are
       # unchanged. Keys come from `supabase status -o env`, appended to $GITHUB_ENV so no later
       # step needs to print them. `-o env` quotes every value (`DB_URL="postgresql://..."`); the
