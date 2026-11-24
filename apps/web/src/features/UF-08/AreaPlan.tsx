@@ -68,6 +68,8 @@ export interface AreaPlanProps {
   avoidAreas: readonly Area[];
   /** Removed on this visit: skipped for rebuilds, but their Add puts them back. */
   removedAreas: readonly Area[];
+  /** T-1023 (D-0290): the removed areas whose items the host remembers (Add puts them back). */
+  restorableAreas?: readonly Area[];
   noticeAreas?: readonly Area[];
   /** The ids a rebuild may have left out (swaps and adds), named in "Doesn't fit in {n} min". */
   keptIds?: readonly string[];
@@ -75,7 +77,7 @@ export interface AreaPlanProps {
   onAdjust: (area: Area, delta: 1 | -1) => EditResult;
   onRemoveArea: (area: Area) => EditResult;
   onAddArea: (area: Area) => EditResult;
-  onFillRest: () => { workout: Workout; added: readonly Area[] };
+  onFillRest: () => { workout: Workout; added: readonly Area[]; restored?: readonly Area[] };
   /** The host rebuilds the plan for `budgetMin`; null when the engine rejected it. */
   onBudget: (budgetMin: number) => Workout | null;
   /** T-0997: the status line on mount (UF-08.6's "{Area} removed. Add it back below."). */
@@ -155,6 +157,7 @@ export function AreaPlan({
   overview,
   avoidAreas,
   removedAreas,
+  restorableAreas = [],
   noticeAreas = [],
   keptIds = [],
   exclusionFailed = false,
@@ -354,13 +357,17 @@ export function AreaPlan({
     const result = onAddArea(area);
     if ("refused" in result) return;
     pending.current = { kind: "added", area };
-    setStatus(en.uf08.areaAdded(areaLabel(area), leftMinutes(result.workout)));
+    setStatus(
+      result.restored === true
+        ? en.uf08.areaAddedBack(areaLabel(area))
+        : en.uf08.areaAdded(areaLabel(area), leftMinutes(result.workout)),
+    );
   };
 
   // Areas an unavailable-for-good reason keeps out (everything else can still be added).
   const addable = overview.candidates.filter(
     (c) =>
-      !removedAreas.includes(c.area) &&
+      (!removedAreas.includes(c.area) || restorableAreas.includes(c.area)) &&
       (c.available === true || (over > 0 && c.available.reason === "time")),
   );
   const showFill = addable.length > 0;
@@ -384,9 +391,11 @@ export function AreaPlan({
     const left = leftMinutes(result.workout);
     const first = result.added[0];
     setStatus(
-      result.added.length === 1 && first !== undefined
-        ? en.uf08.areaAdded(areaLabel(first), left)
-        : en.uf08.areasAdded(result.added.length, left),
+      result.added.length === 1 && first !== undefined && result.restored?.includes(first) === true
+        ? en.uf08.areaAddedBack(areaLabel(first))
+        : result.added.length === 1 && first !== undefined
+          ? en.uf08.areaAdded(areaLabel(first), left)
+          : en.uf08.areasAdded(result.added.length, left),
     );
   };
 
