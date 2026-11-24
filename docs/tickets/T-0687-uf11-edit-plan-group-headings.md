@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.3]
 decisions: [D-0230, D-0233, D-0203]
 deps: [T-0681, T-0682]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Lane choice (logged here, no decision needed): the board row said `design`, but the work is JSX and CSS in apps/web plus one spec amendment of about ten lines, with no new token and no new class. Splitting it would put a one-paragraph spec edit in a design ticket that has to land first and that the web ticket then has to follow word for word. So the lane is web-feature:UF-11, and the design spec path is a listed extra (orchestrator grant). If the orchestrator prefers the split, the spec edit is AC7 alone. -->
 
