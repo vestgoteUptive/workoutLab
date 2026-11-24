@@ -293,3 +293,33 @@ describe("T-0502 privacy notice v2 (GDPR Art. 13)", () => {
     }
   });
 });
+
+// T-1010 (UF-11.4, D-0281 §5): the notice names the learn-from-edits counts.
+describe("T-1010 privacy notice names the edit counts", () => {
+  it("T-1010 AC1 'What we store' says what, with the account, owner-only, one use, opt-in", () => {
+    const text = section("what-we-store");
+    expect(text).toMatch(/swap(ped)? or remov(e|ed)/i);
+    expect(text).toMatch(/how many times/i);
+    expect(text).toMatch(/with your account/i);
+    expect(text).toMatch(/random device id/i);
+    expect(text).toMatch(/already asked/i);
+    expect(text).toMatch(/only you can read/i);
+    expect(text).toMatch(/offer you a preference/i);
+    expect(text).toMatch(/unless you say yes/i);
+    expect(text).toMatch(/switch learning off/i);
+  });
+
+  it("T-1010 AC2 'Export or delete' names the counts in export and deletion, and Forget", () => {
+    const text = section("export-and-delete");
+    expect(text).toMatch(/export includes your counts/i);
+    expect(text).toMatch(/counts included, are deleted/i);
+    expect(text).toMatch(/Forget what was counted/);
+  });
+
+  it("T-1010 AC3 date is the T-1010 date, and 'No tracking' is unchanged", () => {
+    expect(p.updated >= "2026-11-24").toBe(true);
+    expect(section("no-tracking")).toMatch(
+      /No third-party analytics, trackers or ad SDKs, in the app or on this website\./,
+    );
+  });
+});

@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.4]
 decisions: [D-0277, D-0281, D-0195]
 deps: [T-1000, T-1001, T-1008]
-status: todo
+status: ready
 ---
 ## Why
 Learning must be visible and reversible, and the user must be able to switch it off and clear it (`docs/specs/learn-from-edits.md`).
@@ -23,6 +23,8 @@ Learning must be visible and reversible, and the user must be able to switch it 
 - AC6 (a11y) Given axe at 320 and 390 px, Then no violations, targets at least 44 px, the state in words and in the native checkbox.
 
 - Note (T-1001 security review): writes that touch `learn_from_edits` or `learn_reset_at` send only the changed fields, never a full cached profile upsert. e2e: opted out on device A, device B saves the profile, learning stays off.
+
+- From T-1008: the UI to turn learning back on needs a changed-field-only write of `learn_from_edits = true` (T-1008 ships only `turnLearningOff()` and `forgetAll()` in `lib/offline/edit-ledger-sync.ts`).
 
 ## Paths you may change
 `apps/web/src/features/UF-11/**`, `apps/web/src/lib/i18n/flows/uf-11.ts` (extra; orchestrator grant). Not parallel with another UF-11 ticket.

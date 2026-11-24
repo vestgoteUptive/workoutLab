@@ -3,8 +3,9 @@
 // budget unless it was over before. The engine picks every exercise and every set count here;
 // the UI only decides which call a tap makes (principle 3).
 import { copyItem } from "./apply-swap.js";
+import { orderItems } from "./order.js";
 import { homeAreaOf } from "./area-groups.js";
-import { availableS, setCostS } from "./cost.js";
+import { availableS, isEligible, setCostS } from "./cost.js";
 import { indexLibrary, normalizeHistory, primaryAreas, weightsOf } from "./history.js";
 import { aggregateWindow } from "./load.js";
 import { plannedDurationFrom, prefillFrom } from "./prefill.js";
@@ -36,6 +37,7 @@ import {
   type AreaRefused,
   type AreaUnavailableReason,
   type LibraryExercise,
+  type MainLiftRefusal,
   type Reason,
   type Workout,
   type WorkoutItem,
@@ -134,7 +136,13 @@ function withItems(workout: Workout, items: WorkoutItem[], mainLiftId: string | 
 }
 
 /** One new item built as `insertItem` builds it (rule 12.3): rule 14 pre-fill, no `previous`. */
-function buildNew(env: Env, ex: LibraryExercise, isMain: boolean, sets: number): WorkoutItem {
+function buildNew(
+  env: Env,
+  ex: LibraryExercise,
+  isMain: boolean,
+  sets: number,
+  extra: { backoff?: boolean; lowTrimmed?: boolean } = {},
+): WorkoutItem {
   const { ctx, workout } = env;
   const goal = goalOf(ctx.profile);
   const pc = prefillCtxOf(ctx.history, ctx.library, ctx.now, ctx.tz, goal);
@@ -152,9 +160,9 @@ function buildNew(env: Env, ex: LibraryExercise, isMain: boolean, sets: number):
       isMain,
       sets,
       prefill,
-      backoff: false,
+      backoff: extra.backoff ?? false,
       swap: undefined,
-      lowTrimmed: env.low && !isMain,
+      lowTrimmed: extra.lowTrimmed ?? (env.low && !isMain),
       plannedS: plannedDurationFrom(ex, normalizeHistory(ctx.history), pc.lib, pc.today, ctx.tz),
       goal,
     },
@@ -355,4 +363,76 @@ export function areaCandidates(workout: Workout, ctx: AreaEditContext): AreaCand
         available: reason === null ? true : { reason },
       };
     });
+}
+
+const MAIN_TRIES = [4, 3, 2] as const;
+
+/**
+ * Rule 12.8 (UF-08.6, D-0205 §5, T-1021): makes `exerciseId` the main lift of `workout` without
+ * a `suggest` rebuild. The chosen exercise (already an item or not) becomes the one `isMain` item
+ * at 4 sets, else 3, else 2, the first count whose total fits `available`, with the main-lift rep
+ * slot, the rule 14 pre-fill and, at High energy when one more set fits, a back-off (rule 7.4).
+ * An item keeps its place; a new one goes last. The old main lift stays as an accessory at
+ * min(sets, 3), accessory reps, pre-fill re-derived, no back-off. Every other item is copied
+ * unchanged. The result is `orderItems`-ed (rule 7.6). Already the main lift: just the ordering.
+ *
+ * Check order: structural `RangeError` (not an exercise of the library, a warm-up move, `now`
+ * without an offset, an item not in the library); `not_compound`; `not_admissible` (not eligible
+ * for the profile or excluded, a recovering or avoided primary area, or a new item that would put
+ * an area over 2 items); `items_cap` (a new item at 8 items); `time`. A refusal is only
+ * `{refused}`: the caller keeps its plan. Never mutates its inputs.
+ */
+export function setMainLift(
+  workout: Workout,
+  exerciseId: string,
+  ctx: AreaEditContext,
+): Workout | AreaRefused<MainLiftRefusal> {
+  const lib = libOf(workout, ctx);
+  const ex = lib.get(exerciseId);
+  if (ex === undefined) throw new RangeError(`${exerciseId} is not in the library`);
+  if (ex.kind !== "exercise") throw new RangeError(`${exerciseId} is a warm-up move`);
+  const items = workout.plan.items;
+  if (items.some((i) => i.exerciseId === exerciseId && i.isMain)) {
+    return orderItems(withItems(workout, items.map(copyItem), exerciseId), ctx.library);
+  }
+  if (ex.type !== "compound") return { refused: "not_compound" };
+
+  const env = envOf(workout, ctx, lib);
+  const { s } = env;
+  const at = items.findIndex((i) => i.exerciseId === exerciseId);
+  const areas = primaryAreas(ex);
+  if (
+    !isEligible(ex, ctx.profile, ctx.excludeIds ?? []) ||
+    areas.length === 0 ||
+    areas.some((a) => s.start.recovering.has(a) || s.start.avoided.has(a)) ||
+    (at < 0 && areas.some((a) => s.primaryCount[a] >= MAX_ITEMS_PER_AREA))
+  ) {
+    return { refused: "not_admissible" };
+  }
+  if (at < 0 && items.length >= MAX_ITEMS) return { refused: "items_cap" };
+
+  // The old main lift becomes an accessory (never above 3 sets, rule 12.5), the rest is copied.
+  const oldMain = items.findIndex((i) => i.isMain);
+  const next = items.map(copyItem);
+  if (oldMain >= 0) {
+    const old = items[oldMain] as WorkoutItem;
+    const oldEx = lib.get(old.exerciseId) as LibraryExercise;
+    next[oldMain] = buildNew(env, oldEx, false, Math.min(old.sets, CAP_OTHER), {
+      lowTrimmed: false,
+    });
+  }
+  const others = next.reduce((sum, i, k) => (k === at ? sum : sum + i.costS), 0);
+  const left = availableS(workout.budgetMin, workout.warmupInBudget) - others;
+  for (const sets of MAIN_TRIES) {
+    let built = buildNew(env, ex, true, sets);
+    if (built.costS > left) continue;
+    if (workout.energy === "high" && !ex.timed) {
+      const withBack = buildNew(env, ex, true, sets, { backoff: true });
+      if (withBack.costS <= left) built = withBack;
+    }
+    if (at >= 0) next[at] = built;
+    else next.push(built);
+    return orderItems(withItems(workout, next, exerciseId), ctx.library);
+  }
+  return { refused: "time" };
 }
