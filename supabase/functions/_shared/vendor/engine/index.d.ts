@@ -21,3 +21,5 @@ export { timeCheck, timeLeftS, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.
 export { evaluateCheckin, checkinSessions, periodStatus, PERIOD_DAYS, UNDER_FACTOR_X10, OVER_FACTOR_X10, RHYTHM_FLOOR, RHYTHM_CEILING, COMPARED_PERIODS, } from "./checkin.js";
 export { records, recordKey, type RecordSet, type RecordPrevious } from "./records.js";
 export { estimatedOneRepMax, E1RM_MAX_REPS, type E1rmPoint } from "./e1rm.js";
+export { areaGroups, homeAreaOf, type AreaGroup } from "./area-groups.js";
+export { orderItems, equipmentGroupOf, type EquipmentGroup } from "./order.js";

@@ -176,6 +176,26 @@ Energy is applied after selection. **Low:** each accessory with 3 sets goes to 2
 - **R7-E12** For R7-E4 with High energy, there is no back-off (75 s < 165 s). With `budgetMin 15` and warm-up off, the items are bench-press × 4 + 1 back-off, 885 s.
 - **R7-E16 (light-lift back-off, D-0131)** Given bench-press as the main lift, logged 2.5 × 6, 6, 6 on 09-24, with `budgetMin 15`, warm-up off and High energy, Then bench-press × 4 at 2.5 × 7 (`add_rep`) + back-off 2.5 × 6 (`floorInc(2.25)` is 0, raised to one increment), 885 s. Logged at 2 kg: 2 × 7, back-off 2 × 6 (never above the main weight).
 
+### 7.6 orderItems (UF-08.2, UF-08.4, D-0274 §4, D-0275 §7)
+
+(There is no rule 7.5; the number follows D-0275.)
+`orderItems(workout, library)` returns the plan in the order it is run. It is a pure function of the workout and the library, and `suggest` does not call it: the web applies it after every call that changes the plan, and the resulting order is what `sessions.plan` stores and UF-09 runs. It only reorders `plan.items`; a library lookup failure (an item whose exercise is not in `library`) throws `RangeError`.
+
+- **Home area (D-0275 §1):** an item's area is the area of its own `area_deficit` reason (its first primary area, as rule 8 reads it).
+- **Tiers:** tier 0 is the main lift (`isMain`; empty when `plan.mainLiftId` is null), tier 1 the other compounds, tier 2 the isolations (timed holds included). Tiers are placed in that order.
+- **Within tiers 1 and 2**, greedily pick the next item by this key, lowest first: (a) 1 if its home area equals the previously placed item's home area, else 0 (the previous item may be the last of the tier before; the first item of a plan has no previous item); (b) 1 if its equipment group differs from the previous item's, else 0; (c) its original index. When every item is in one area, or no two items share a group, the key falls through and the original order is kept.
+- **Equipment group**, from the exercise's first equipment item: `barbell`, `rack` and `bench` give `barbell`; `dumbbell` gives `dumbbell`; `machine` gives `machine`; `cable` gives `cable`; `pullup-bar`, `none`, no equipment and any unknown item give `bodyweight`.
+- **Unchanged:** the output items are a permutation of the input items (copied), `costS`, `itemsTotalS`, `totalS`, `unusedS`, `plan.mainLiftId`, `plan.warmup` (not regenerated), `plan.startDeficits`, `budgetMin`, `warmupInBudget`, `energy` and `sessionReasons`. Applying it twice equals applying it once. The input is never mutated.
+
+Fixture W is R7-E4's plan: bench-press × 4 (main, chest, 720 s), inverted-row × 3 (back, 555 s), leg-extension × 2 (quads, 270 s).
+
+- **R7-E46 (W is already in order)** `orderItems(W)` deep-equals W.
+- **R7-E47 (tiers)** With no main lift, the items [leg-extension × 2, lat-pulldown × 3, biceps-curl × 2, back-squat × 3] give lat-pulldown, back-squat, leg-extension, biceps-curl: both compounds first, then the isolations in original order (back-squat's home area is glutes, its first primary area in the fixed order, so neither isolation shares it).
+- **R7-E48 (areas alternate)** With no main lift, the compounds [db-bench-press (chest), push-up (chest), barbell-row (back)] give db-bench-press, barbell-row, push-up. With bench-press as the main lift in front of them the order is bench-press, barbell-row, db-bench-press, push-up (after the main lift in chest, back goes first, then the two chest items in original order). With every item in one area (db-bench-press, push-up, bench-press, all chest, no main lift) the original order is kept.
+- **R7-E49 (machines grouped)** The isolations [leg-extension (machine, quads), biceps-curl (dumbbell, arms), leg-curl (machine, hamstrings)] give leg-extension, leg-curl, biceps-curl. With [lateral-raise (dumbbell, shoulders), plank (none, core), leg-extension (machine, quads)] no two share a group and the original order is kept.
+- **R7-E50 (equipment groups)** bench-press (barbell, bench) is `barbell`, back-squat (barbell, rack) `barbell`, db-row (dumbbell, bench) `dumbbell`, leg-extension `machine`, lat-pulldown `cable`, pull-up (pullup-bar) `bodyweight`, push-up (no equipment) `bodyweight`.
+- **R7-E51 (no main lift)** W after `removeItem` of bench-press (R12-E14) gives inverted-row, leg-extension with `mainLiftId` null: tier 0 is empty and the compound leads.
+
 ## 8. Running over time (UF-09.8, D-0024)
 `timeCheck(workout, {elapsedS, nextItemIndex})` runs only between exercises. `elapsedS` excludes paused time, and excludes the warm-up when `warmupInBudget` is off. `remainingS` = Σ the costs of the not-started items (a flagged one-side row's `costS` already holds two sides of work, rule 7.1, D-0268). `behindS = elapsedS + remainingS − budgetMin × 60`. UF-09.8 is shown only when `behindS ≥ 60`, with `minutesBehind = ceil(behindS / 60)`. It offers three options:
 - **Continue:** the plan is unchanged.
@@ -290,6 +310,15 @@ Fixture P is rule 8's (R8-E4: `budgetMin` 45, R7-E4's items, `available` 2520, z
 - **R12-E25 (last exercise, B8)** P after bench-press and inverted-row, `atIndex` 3, `leftS` 1095: biceps-curl × 3 (375 s) is appended at index 3.
 - **R12-E26 (returning after 10 days off, B13)** lateral-raise last logged 2026-09-17 at 10 × 12, 12, 12, `now` 2026-09-27: pre-fill 10 × 10 `hold_after_break`, `days_since {shoulders, 10}`.
 
+### 12.4 areaGroups (UF-08.2, UF-08.4, D-0275 §2)
+
+`areaGroups(workout)` returns the plan grouped by home area (rule 7.6) as `AreaGroup[]`, `{area, itemIds, sets, costS}`, one per area in order of first appearance in `plan.items`. `itemIds` are the exercise ids in item order, `sets` is the sum of the items' `sets` (a back-off set is not counted), and `costS` is the sum of the items' `costS` (a back-off set's time is inside its item's cost). An item with no `area_deficit` reason is in no group. An empty plan gives `[]`. Pure arithmetic: no history, no library, never mutates its input. Σ `sets` over the groups is Σ `sets` over the items, and Σ `costS` is `itemsTotalS`.
+
+- **R12-E27 (W)** `areaGroups(W)` is chest × 4 sets, `costS` 720, `itemIds` [bench-press]; back × 3, 555, [inverted-row]; quads × 2, 270, [leg-extension].
+- **R12-E28 (a back-off is not a set)** R7-E12's plan (High energy, `budgetMin` 15, warm-up off: bench-press × 4 + 1 back-off, 885 s) gives one group, chest, `sets` 4, `costS` 885.
+- **R12-E29 (empty plan)** R12-E15's plan after removing bench-press gives `[]`.
+- **R12-E30 (two items in one area)** bench-press × 4, barbell-row × 3 (555 s), inverted-row × 2 (390 s), leg-extension × 2 give chest × 4, then back × 5 sets, `costS` 945, `itemIds` [barbell-row, inverted-row], then quads × 2. The areas stay in order of first appearance even when the plan is ordered by rule 7.6.
+
 ## 13. Shuffle (UF-08.2, D-0025)
 `sessionInput.shuffle = n`. Every accessory slot not in `pinnedIds`, in session order, takes entry `n mod len` of `[original, …variety ranking]`, skipping exercises already taken by an earlier slot. If the pick doesn't fit `available` at the slot's set count, the slot keeps the original. The main lift is never shuffled. There is no randomness. With `fill: false` (rule 7.2) every slot is the main lift or a pin, so shuffle only changes what the fill would have picked and has no effect on the items (D-0237 §2).
 - **R13-E1** For R7-E4 with n = 1, the items are bench-press, barbell-row × 3, leg-extension × 2 (back-squat × 2 would make 1665 s > 1620 s).
@@ -402,6 +431,7 @@ Examples. back-squat unless stated.
 
 ## Required tests
 - One side at a time (rule 7.1, D-0268; `rule-7-1-one-side.test.ts`, `rule-7-1-one-side-histories.test.ts`): R7-E43…E45; every consumer (`applySwap`, `insertItem`, `rankSwaps` `timeCostS`, `removeItem`, `timeCheck`, `timeLeftS`) prices a flagged row the same way; the flag absent, `null` or unknown deep-equals today's results; counting (balance, records, e1RM, pre-fill) deep-equals with and without the flag; the 17 flagged rows of the real library are priced doubled; over zero history, the balanced, all-chest-no-legs, returning-after-10-days and offline-merged histories, budgets 15..120 step 5, warm-up on/off, every energy and shuffle 0..6, R7-E8's caps, R0-E1 determinism and the independent cost formula hold, a flagged row never holds more sets than in the plain plan, and the seeded B5 property passes.
+- Rules 7.6 and 12.4 (D-0275 §9; `rule-7-6-order-items.test.ts`, `rule-12-4-area-groups.test.ts`, `rule-7-6-histories.test.ts`): R7-E46…E51 and R12-E27…E30; over zero history, the balanced, all-chest-no-legs, returning-after-10-days, 15-minute, 90-minute and offline-merged plans `orderItems` is a permutation with equal costs and totals, `mainLiftId`, warm-up and `sessionReasons` unchanged, idempotent, the main lift first, and the 90-minute plan keeps at most 8 items; `areaGroups` sums equal the item sums. Seeded properties (inline `mulberry32`, 200 cases): same input gives the same output, the main lift is first, and the input is not mutated. `suggest` output is byte-identical (golden); the new files have no clock or entropy.
 - Every `Rn-Em` above is a unit test. R7-E8 is a property test.
 - Simulated 14-day histories (T-0202), each run through `suggest`, `balance` and `evaluateCheckin`: balanced; all-chest-no-legs (legs and back get attention, and the main lift is a loaded compound for the first zero-load area (barbell-row, D-0269; inverted-row before T-0692, D-0040)); returning after 10 days off (R5-E1, R14-E3); 15-minute budget (R7-E2); 90-minute budget (R7-E8 caps). Plus offline-merged history (R0-E2, R11-E4).
 - With exclusions (rule 0.1, D-0199 §3), at F-input: balanced excluding db-bench-press → bench-press × 4, db-row × 3, leg-extension × 2; all-chest-no-legs excluding inverted-row → barbell-row × 4, back-squat × 3, calf-raise × 2; returning after 10 days off excluding bench-press → db-bench-press × 4, inverted-row × 3, calf-raise × 2. All-chest-no-legs with `excludeIds` [db-bench-press] reports the same `startDeficits` as without it (exclusion is not a history filter). Properties: no excluded id in any `suggest` output over budgets 15..120, every energy, warm-up on/off and shuffle 0..6; `suggest` and `excludedOutAreas` are invariant under permutation, duplication and unknown ids in `excludeIds`; `rankSwaps(…, [])` deep-equals the 8-argument call; `excludedOutAreas` is in the fixed order and monotone; no `suggest` item has an excluded-out area at weight 1.0.
@@ -440,3 +470,4 @@ Examples. back-squat unless stated.
 | 12.3 insertItem (R12-E20…E26) and 8 timeLeftS (R8-E4…E7), D-0244, D-0246 §8–§13 | T-0945 |
 | 14 steps 4/4b RIR hold (`hold_effort`), rule 10 kind, R14-E10…E25, D-0250, D-0252, D-0259 | T-0952 |
 | 15 narrowed to "never on Today"; 16 estimated 1RM (R15-E12 series, R16-E1…E13, D-0254, D-0255, D-0257, D-0258) | T-0961 |
+| 7.6 orderItems (R7-E46…E51) and 12.4 areaGroups (R12-E27…E30), D-0275 §2, §7 | T-0994 |
