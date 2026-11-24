@@ -5,7 +5,7 @@ lane: data
 screens: []
 decisions: [D-0281]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 T-1008 security review: Forget deletes the user's `edit_signals` rows and moves `profiles.learn_reset_at`. A device that was offline (or whose requests failed while `navigator.onLine` stayed true) can later upsert entries counted before the reset as fresh rows; the existing stale guard (`last_seen < old.last_seen`) cannot help because the rows were deleted. T-1008 fixes the client; this adds the server-side guard.
