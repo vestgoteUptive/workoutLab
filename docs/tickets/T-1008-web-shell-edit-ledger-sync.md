@@ -28,6 +28,8 @@ Two simulated devices (two `deviceId`s) against an in-memory fake of the table t
 
 Checklist (D-0197 §7): online/offline, replay/first send, own row/other device's row, flag on/off.
 
+- Note (T-1001 security review): writes that touch `learn_from_edits` or `learn_reset_at` send only the changed fields, never a full cached profile upsert. e2e: opted out on device A, device B saves the profile, learning stays off.
+
 ## Paths you may change
 `apps/web/src/lib/**` (offline, account, profile). Not parallel with another web-shell ticket that edits `lib/offline`.
 

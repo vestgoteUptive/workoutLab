@@ -22,6 +22,8 @@ Learning must be visible and reversible, and the user must be able to switch it 
 - AC5 (plan untouched) Given the toggle change, Then targets, the check-in streak and `plan_changed_at` are unchanged.
 - AC6 (a11y) Given axe at 320 and 390 px, Then no violations, targets at least 44 px, the state in words and in the native checkbox.
 
+- Note (T-1001 security review): writes that touch `learn_from_edits` or `learn_reset_at` send only the changed fields, never a full cached profile upsert. e2e: opted out on device A, device B saves the profile, learning stays off.
+
 ## Paths you may change
 `apps/web/src/features/UF-11/**`, `apps/web/src/lib/i18n/flows/uf-11.ts` (extra; orchestrator grant). Not parallel with another UF-11 ticket.
 
