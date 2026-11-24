@@ -1,13 +1,15 @@
 ---
 id: D-0278
 title: "Learning storage: counts and asked-marks stay in a device store, never synced; one new column profiles.learn_from_edits (default true) carries the opt-out; no new table, no openapi change"
-status: revisit
+status: superseded
 date: 2026-11-24
 by: triage (check mode, idea flow); data-modeler impact review
 area: data
 amends: D-0218
 builds-on: D-0017, D-0020, D-0195, D-0199, D-0202, D-0265
 ---
+> **Superseded by D-0281 (2026-11-24, owner answer).** The counts now sync through the account in a new table `edit_signals`; the opt-out column and the no-provenance rule carry over. Read D-0281, not this.
+
 ## Context
 Where do the counts live, and does the opt-out follow the account? Server counts would need a new table, RLS, pgTAP, export and delete entries, an offline queue and a privacy line, for a hint that is wrong at worst once. Device counts need none of it and keep behaviour data off the server.
 

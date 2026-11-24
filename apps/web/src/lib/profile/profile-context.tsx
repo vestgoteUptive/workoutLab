@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "../auth/auth-context.js";
-import { resolveProfileStatus, type ProfileStatus } from "./status.js";
+import { PROFILE_PLACEHOLDER_MAX_MS, resolveProfileStatus, type ProfileStatus } from "./status.js";
 
 interface ProfileContextValue {
   status: ProfileStatus;
@@ -25,6 +25,12 @@ interface ProfileContextValue {
    */
   resolved: boolean;
   recheck: () => Promise<void>;
+  /**
+   * D-0272 §3: the placeholder cap has run out for the current pending window. One flag for the
+   * whole app (every route has its own `ProfileGate`), so a hung read costs one blank, not one
+   * per navigation. Reopened only by a new window (sign-in or account switch), never by `recheck`.
+   */
+  capExpired: boolean;
 }
 
 const ProfileContext = createContext<ProfileContextValue | null>(null);
@@ -44,6 +50,11 @@ export function useProfileStatus(): ProfileStatus {
  */
 export function useProfileResolved(): boolean {
   return useContext(ProfileContext)?.resolved ?? true;
+}
+
+/** T-0985: the shared placeholder cap (see `ProfileContextValue.capExpired`). Fails open. */
+export function useProfileCapExpired(): boolean {
+  return useContext(ProfileContext)?.capExpired ?? true;
 }
 
 /**
@@ -76,6 +87,7 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
   // Signed out there is nothing to resolve, so the gate is "resolved" from the first render:
   // `/welcome` must never wait for it (principle 5, AC-10).
   const [resolved, setResolved] = useState(!signedIn);
+  const [capExpired, setCapExpired] = useState(false);
   // `refreshProfile()` warms the cache once per *distinct* resolution that produced a
   // network-sourced row (AC-3): a re-render, or a `recheck()` that finds the same answer the
   // gate already holds, must not refetch. A recheck that actually changes the answer (the
@@ -102,6 +114,8 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
   if (lastAuthKey.current !== authKey) {
     const switchedUser = signedIn && lastAuthKey.current !== "out";
     lastAuthKey.current = authKey;
+    // A new pending window (sign-in in place, account switch) gets a fresh cap (D-0272 §3).
+    if (signedIn) setCapExpired(false);
     if (signedIn && resolved) setResolved(false);
     if (switchedUser) {
       setStatus("unknown");
@@ -152,12 +166,20 @@ export function ProfileStatusProvider({ children }: { children: ReactNode }) {
     void run();
   }, [run]);
 
+  // The cap: one timer per pending window, started when the window opens, cleared when it ends
+  // and on unmount. `recheck()` never clears `resolved`, so it never starts one (D-0272 §8).
+  useEffect(() => {
+    if (resolved) return;
+    const timer = setTimeout(() => setCapExpired(true), PROFILE_PLACEHOLDER_MAX_MS);
+    return () => clearTimeout(timer);
+  }, [resolved, authKey]);
+
   const recheck = useCallback(async () => {
     await run();
   }, [run]);
 
   return (
-    <ProfileContext.Provider value={{ status, resolved, recheck }}>
+    <ProfileContext.Provider value={{ status, resolved, recheck, capExpired }}>
       {children}
     </ProfileContext.Provider>
   );

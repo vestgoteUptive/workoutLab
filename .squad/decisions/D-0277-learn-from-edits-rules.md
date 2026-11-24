@@ -7,6 +7,8 @@ by: triage (check mode, idea flow, owner request)
 area: product
 builds-on: D-0191, D-0199, D-0202, D-0235, D-0274, D-0017
 ---
+> **Amended in part by D-0281 (2026-11-24, owner answer).** §8: cross-device counts are in scope. The counts are summed across the user's devices through the account; every other rule stands.
+
 ## Context
 Layer 1 of the owner's request (spec `docs/specs/learn-from-edits.md`). Existing mechanisms checked first: favorites (D-0202, rule 0.2) are exactly "prefer X, tried first in every area where it has weight 1.0"; excluded exercises (D-0199, rule 0.1) are "never suggest X"; the visit's `excludeIds` and the swap pins (D-0191, D-0235) are the per-session level; `avoidAreas` is the per-visit area skip. All are already engine inputs, visible and removable in UF-11.5 and UF-11.6, and covered by export and account deletion.
 

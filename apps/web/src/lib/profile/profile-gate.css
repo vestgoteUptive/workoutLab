@@ -1,0 +1,12 @@
+/* D-0272 §5: the neutral block ProfileGate shows while the first profile read is pending.
+   Same background as the screen about to appear, so there is nothing to flash. No text, no
+   animation, tokens only. It must never make the page taller than the viewport: the tab bar's
+   spacer follows <main>, so where the bar is shown the block gives up the bar's height. */
+.wl-profile-pending {
+  min-height: 100dvh;
+  background: var(--wl-bg);
+}
+
+html:has(.wl-tab-bar) .wl-profile-pending {
+  min-height: calc(100dvh - var(--wl-tab-bar-block-size) - env(safe-area-inset-bottom, 0px));
+}

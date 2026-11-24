@@ -3,12 +3,12 @@ id: T-1006
 title: "e2e: learn from edits - three swaps then the prompt, yes and undo, removal prompt, Not today never counts, learning off, forget, offline, export and delete"
 lane: qa
 screens: [UF-08.2, UF-08.6, UF-09.9, UF-11.4, UF-11.5, UF-11.6]
-decisions: [D-0277, D-0278]
-deps: [T-1003, T-1004, T-1005]
+decisions: [D-0277, D-0281, D-0280]
+deps: [T-1002, T-1003, T-1004, T-1005, T-1010]
 status: todo
 ---
 ## Why
-Counting, one question and the reuse of favorites and excluded exercises cross UF-08, UF-09 and UF-11 and the device store; only the built PWA proves it, including privacy (`docs/specs/learn-from-edits.md`).
+Counting, one question and the reuse of favorites and excluded exercises cross UF-08, UF-09 and UF-11, the device store and the account's `edit_signals` table; only the built PWA proves it, including two devices, export and delete (`docs/specs/learn-from-edits.md`).
 
 ## Scope
 - In: `tests/e2e/uf-08-learn-from-edits.spec.ts`.
@@ -20,9 +20,10 @@ Counting, one question and the reuse of favorites and excluded exercises cross U
 - AC3 (never counted) Given 5 "Not today" taps and 5 equipment-taken swaps, Then no card ever shows.
 - AC4 (asked once) Given "No thanks", Then no card for that pair after 3 more swaps.
 - AC5 (learning off) Given the UF-11.4 toggle off, Then 3 swaps raise nothing; given on again, counting restarts from zero.
-- AC6 (forget) Given a pending card, When "Forget what was counted" is used, Then the card is gone.
+- AC6 (forget) Given a pending card, When "Forget what was counted" is used, Then the card is gone and the backend holds no `edit_signals` row for the user.
+- AC6b (two devices) Given two browser contexts with the same account against the mock backend, When context 1 makes 2 swaps of a pair and context 2 makes 1 (each synced), Then UF-08.2 on context 2 shows "Prefer … for …?"; after "No thanks" on context 2, context 1 shows no card for the pair after its next sync. Given one context offline for its swaps, Then its counts arrive after it reconnects and nothing is counted twice (the total stays 3 after a forced second flush).
 - AC7 (offline, both values) Given offline, Then the card shows with disabled buttons and the connect line; given online, the buttons work.
-- AC8 (privacy) Given the app running, Then no network request carries ledger data (the Supabase guard asserts only the profile flag, favorite and excluded writes); the account export contains `learn_from_edits` and the accepted favorite; account deletion removes the device store.
+- AC8 (privacy, export, delete) Given the app running, Then the only requests carrying counts are upserts and deletes on `edit_signals` with the user's own `device_id` (the Supabase guard allows that table plus the profile flag, favorite and excluded writes, and no request body names an exercise outside the row columns); the account export has 11 tables with the user's `edit_signals` rows, `learn_from_edits` and the accepted favorite; account deletion leaves no `edit_signals` row and no device store; sign-out clears the device store.
 - AC9 (focus mode) Given a workout, Then no prompt appears on any UF-09 screen.
 - AC10 (a11y) Given axe on the card and the UF-11.4 section at 320 and 390 px, Then no violations.
 
