@@ -38,3 +38,4 @@ none. `tokens.json` unchanged (D-0273).
 Tests or checks for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0989` and cite screen IDs.
 
 ## Build / accept log
+- Build: UF-09.5.md spec written, UF-09.3-UF-09.4.md rest line replaced with a pointer; t0989 test added. AC1-AC5 -> t0989-rest-next-spec.test.ts (AC5 also t0973/t0955 pass); AC6 -> check-all. Design-tokens tests 349 pass. Worst case 320x568 scrolls 53-145 px (estimates; T-0991 measures). No follow-up beyond T-0990 scope except the rest-state `.wl-uf09__unit` rule (1.5rem), noted in the spec.
