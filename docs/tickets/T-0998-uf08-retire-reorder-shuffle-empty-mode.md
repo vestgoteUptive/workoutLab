@@ -28,6 +28,7 @@ After T-0996 and T-0997 the old controls are unreachable. Dead code and dead tes
 
 ## Paths you may change
 - `Design-docs/docs/design/screens/UF-08.6.md` (orchestrator grant: copy sync from the T-0997 review)
+- `docs/tickets/T-0997-uf08-area-detail.md` (orchestrator grant: AC3 copy sync from the T-0997 review)
 `apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), `docs/specs/empty-start-plan.md` (extra, one status line), `tests/e2e/uf-08-*.spec.ts`. Not parallel with another UF-08 ticket.
 
 ## Contract impact
@@ -45,3 +46,4 @@ Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unch
 - **Planted faults (backup, `cp` restore, `cmp` clean, none committed).** F1 a stray "Shuffle" button in `AreaPlan` -> AC1 x3 red. F2 `AreaDetail` lead back to "The rest of your workout adjusts..." -> AC3 add-exercise AC1 red. F3 a `legacyExerciseList` mention in `SessionSetup.tsx` -> AC4 guard x2 red. F4 `makeMain` catch back to `not_admissible` -> area-detail engine-throw case red. F5 Fill the rest does not commit -> area-plan T-0996 AC6 red. F6 Start empty's `autoMainLift/fill` removed on a time chip -> empty-mode AC4 red. Nit 2 has no fault (no test; dead branch removed).
 - **Red runs on unfixed code.** After deleting the code and before the test triage: 156 failing web tests in UF-08 (all on the old list) plus 5 suites that imported `Suggested.js`; every one is above.
 - **Gates.** `pnpm --filter web typecheck`, `lint` clean; `scripts/locked.sh heavy pnpm --filter web test`: all green after the triage (416 files, 5394 tests passed; `format:check` clean; `check-all` only the stacked-ticket `lane-path-not-owned` noise (plus T-0997 ticket text, edited as the review bullet asks).
+- Orchestrator gate (T-0998, UF-08.2): AC3's wording is stale. `UF-08.5.md` as amended by D-0274 §5 makes "{left} of {n} min left." the only lead line, so the shipped line is right (newest decision wins). The dead `capArea` branch was deleted rather than tested: "Start with this" is only offered on rows already in the plan. The one UF-09.10 AC12 regex change is accepted, since the CSS variant it measured no longer exists.
