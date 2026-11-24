@@ -658,6 +658,48 @@
   color: var(--wl-ink);
 }
 
+/* T-0990 UF-09.5 (D-0273): the exercise name, the cue and the per-side load pieces. */
+.wl-uf09[data-wl-state="rest"] .wl-uf09__next-name {
+  margin: 0;
+  color: var(--wl-ink);
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__next-cue {
+  margin: 0;
+  color: var(--wl-ink);
+  overflow-wrap: anywhere;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__next-load {
+  position: relative; /* the anchor of the visually hidden reading (.wl-uf09__sr) */
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__hero {
+  display: block;
+  max-inline-size: 100%;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__unit {
+  font-size: 1.5rem;
+  letter-spacing: 0;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__sr {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Next exercise: its name, how much of it, the cue, the set-up clock low on the screen. */
 .wl-uf09[data-wl-state="rest"] .wl-uf09__view--next .wl-uf09__name {
   margin-block-start: 0.5rem;
