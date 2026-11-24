@@ -306,8 +306,8 @@ Owner request 2026-11-24: "I spent a lot of time in the suggested workout with e
 |---|---|---|---|---|---|
 | T-0992 | User flows v2 and PRD: UF-08.2 rewritten by area, UF-08.6 added, Reorder, Shuffle and empty-mode Suggestions retired, Start empty folded in, Start folded into the plan and UF-08.4 retired (D-0274, D-0276, D-0280) | product | — | done | wl-idea |
 | T-0993 | Screen specs: UF-08.2 Today's plan by area with Start workout, Done by and the Focus mode disclosure, new UF-08.6 Area detail, amended UF-08.1, UF-08.5, UF-08.3; no new token (D-0274, D-0276, D-0280) | design | — | done | wl-design |
-| T-0994 | Engine rules 7.6 and 12.4: `orderItems` (main lift first, areas alternate, machines grouped) and `areaGroups`; examples, simulated histories, properties, golden `suggest`, re-vendor (D-0275 §2, §7) | engine | — | ready | wl-build-engine |
-| T-0995 | Engine rules 12.5 to 12.7: `adjustAreaSets`, `addArea`, `removeArea`, `areaCandidates`; never over budget, both values per condition, re-vendor (D-0275 §3 to §5) | engine | T-0994 | todo | wl-build-engine |
+| T-0994 | Engine rules 7.6 and 12.4: `orderItems` (main lift first, areas alternate, machines grouped) and `areaGroups`; examples, simulated histories, properties, golden `suggest`, re-vendor (D-0275 §2, §7) | engine | — | done | wl-build-engine |
+| T-0995 | Engine rules 12.5 to 12.7: `adjustAreaSets`, `addArea`, `removeArea`, `areaCandidates`; never over budget, both values per condition, re-vendor (D-0275 §3 to §5) | engine | T-0994 | ready | wl-build-engine |
 | T-0996 | UF-08.2 Today's plan by area: title, area rows with − / + sets, Add an area, Fill the rest, automatic order, Start empty with no areas, time chip rebuild (D-0274, D-0275) | web-feature:UF-08 | T-0993, T-0994, T-0995 | todo | wl-build-web |
 | T-0997 | UF-08.6 Area detail: Swap, Not today, Remove, Start with this and a local Add exercise behind each area (D-0274 §5, D-0275 §8) | web-feature:UF-08 | T-0996 | todo | wl-build-web |
 | T-0998 | UF-08 retire Reorder, Shuffle and the empty-mode Suggestions code and tests; engine switches stay (D-0274 §3) | web-feature:UF-08 | T-1009 | todo | wl-build-web |
