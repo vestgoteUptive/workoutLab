@@ -1,19 +1,16 @@
 // T-1005 UF-11.4 "Learning from your edits" e2e: the toggle and Forget over a mocked account,
-// offline state, and axe plus 44 px targets at 320 and 390 px. QA wires this into tests/e2e.
+// offline state, and axe plus 44 px targets at 320 and 390 px.
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
-import { expect, test } from "../../../../../../tests/e2e/fixtures/guarded-test.js";
+import { expect, test } from "./fixtures/guarded-test.js";
 import {
   injectSession,
   mockSupabaseAuth,
   mockSupabaseData,
   mockSupabaseRest,
   VITE_SUPABASE_URL,
-} from "../../../../../../tests/e2e/fixtures/supabase-mock.js";
-import {
-  ACCOUNT_FIXTURES,
-  ACCOUNT_PROFILE,
-} from "../../../../../../tests/e2e/fixtures/uf-11-account.js";
+} from "./fixtures/supabase-mock.js";
+import { ACCOUNT_FIXTURES, ACCOUNT_PROFILE } from "./fixtures/uf-11-account.js";
 
 const TOGGLE = "Suggest preferences from my swaps and removals";
 const bodies: unknown[] = [];

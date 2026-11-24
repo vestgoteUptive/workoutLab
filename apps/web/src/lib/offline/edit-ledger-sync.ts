@@ -396,6 +396,32 @@ export function turnLearningOff(): Promise<LedgerChangeResult> {
   );
 }
 
+/** Turns learning back on (UF-11.4, T-1005): one changed-field-only write of
+ *  `learn_from_edits = true`. Nothing is deleted: the counts went when it was turned off, so it
+ *  starts from zero. A failed write leaves the flag as it was; offline changes nothing. */
+export async function turnLearningOn(): Promise<LedgerChangeResult> {
+  const userId = currentUserId();
+  if (!userId) return { ok: false, reason: "error" };
+  if (!isOnline()) return { ok: false, reason: "offline" };
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ learn_from_edits: true })
+      .eq("user_id", userId)
+      .select("learn_reset_at")
+      .single();
+    if (error) return { ok: false, reason: "error" };
+    await patchCachedLearning(userId, {
+      learnFromEdits: true,
+      ...(data?.learn_reset_at != null ? { learnResetAt: data.learn_reset_at } : {}),
+    });
+    await refreshProfile().catch(() => undefined);
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: "error" };
+  }
+}
+
 // ---------------------------------------------------------------- triggers
 
 export interface LedgerSyncHandle {

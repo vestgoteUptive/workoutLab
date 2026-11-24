@@ -5,8 +5,7 @@ import { useRef, useState } from "react";
 import { Checkbox } from "../../components/checkbox/index.js";
 import { en } from "../../lib/i18n/en.js";
 import { useLearnFlag } from "../../lib/offline/edit-ledger-hooks.js";
-import { forgetAll, turnLearningOff } from "../../lib/offline/edit-ledger-sync.js";
-import { turnLearningOn } from "./learning-writes.js";
+import { forgetAll, turnLearningOff, turnLearningOn } from "../../lib/offline/edit-ledger-sync.js";
 
 const l = en.uf11.account.learning;
 const LINE_ID = "wl-learning-line";
