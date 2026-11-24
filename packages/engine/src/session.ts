@@ -113,7 +113,7 @@ function assertBudget(budgetMin: number): void {
 
 // ---- Selection state ----
 
-interface Start {
+export interface Start {
   targets: AreaNumbers;
   loads: AreaNumbers;
   deficits: AreaNumbers;
@@ -142,9 +142,9 @@ interface Picked {
 }
 
 /** A timed exercise's planned duration (D-0092 §1); null for a non-timed one. */
-type DurationOf = (ex: LibraryExercise) => number | null;
+export type DurationOf = (ex: LibraryExercise) => number | null;
 
-interface State {
+export interface State {
   start: Start;
   /** Rule 7.1 work of a timed set: the planned duration, used by every time cost (D-0092 §2). */
   durationOf: DurationOf;
@@ -158,7 +158,7 @@ function byId(a: LibraryExercise, b: LibraryExercise): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
-function buildStart(
+export function buildStart(
   history: readonly HistorySet[],
   targets: readonly AreaTarget[],
   profile: Pick<EngineProfile, "level" | "equipment">,
@@ -200,7 +200,7 @@ function buildStart(
   };
 }
 
-function newState(start: Start, available: number, durationOf: DurationOf): State {
+export function newState(start: Start, available: number, durationOf: DurationOf): State {
   const primaryCount = {} as Record<Area, number>;
   for (const a of AREAS) primaryCount[a] = 0;
   return {
@@ -252,7 +252,7 @@ function admissible(s: State, ex: LibraryExercise): boolean {
  * session, (2) gap fit, (3) id. Key (0) makes the list the stable partition of the list without
  * favorites, favorites first (D-0202 §3).
  */
-function candidates(s: State, area: Area): LibraryExercise[] {
+export function candidates(s: State, area: Area): LibraryExercise[] {
   return s.start.pool
     .filter((e) => e.areas[area] === 1 && admissible(s, e))
     .map((e) => ({
@@ -299,7 +299,7 @@ const ACCESSORY_TRIES = [3, 2] as const;
  * The `fav` key repeats what `candidates` already orders; it is kept on purpose so the
  * favorites-before-loaded order stays explicit if `candidates` ever changes.
  */
-function mainCandidates(s: State, area: Area): LibraryExercise[] {
+export function mainCandidates(s: State, area: Area): LibraryExercise[] {
   return candidates(s, area)
     .filter((e) => e.type === "compound")
     .map((e) => ({ e, fav: s.start.favorites.has(e.id) ? 0 : 1, bw: e.externalLoad ? 0 : 1 }))
@@ -389,7 +389,7 @@ export function repRange(
 }
 
 /** What rule 14 needs from `suggest` (D-0057 §7): the normalised history and today. */
-interface PrefillCtx {
+export interface PrefillCtx {
   hard: readonly HistorySet[];
   lib: ReadonlyMap<string, LibraryExercise>;
   today: LocalDate;
@@ -399,7 +399,7 @@ interface PrefillCtx {
 }
 
 /** The planned duration of each exercise over `ctx`, computed once per exercise (D-0092 §1). */
-function durationsOf(ctx: PrefillCtx): DurationOf {
+export function durationsOf(ctx: PrefillCtx): DurationOf {
   const memo = new Map<string, number | null>();
   return (ex) => {
     if (!ex.timed) return null;
@@ -410,7 +410,7 @@ function durationsOf(ctx: PrefillCtx): DurationOf {
   };
 }
 
-function prefillCtxOf(
+export function prefillCtxOf(
   history: readonly HistorySet[],
   library: readonly LibraryExercise[],
   now: Instant,

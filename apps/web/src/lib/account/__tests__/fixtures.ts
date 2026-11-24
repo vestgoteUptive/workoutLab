@@ -171,13 +171,40 @@ export const AREAS = [
   "calves",
 ];
 
+/** T-1002: one `edit_signals` row (a removal), as the table returns it. */
+export function editSignal(userId: string, id: string, key: string, exerciseId: string): Row {
+  return {
+    id,
+    user_id: userId,
+    device_id: "d0000000-0000-4000-8000-000000000001",
+    key,
+    kind: "removal",
+    exercise_id: exerciseId,
+    to_exercise_id: null,
+    count: 2,
+    window_start: "2026-09-01T10:00:00.000Z",
+    last_seen: "2026-09-02T10:00:00.000Z",
+    asked_at: null,
+    created_at: "2026-09-02T10:00:00.000Z",
+    updated_at: "2026-09-02T10:00:00.000Z",
+  };
+}
+
 /** AC1's data set for one user: 5,000 sets (40 tombstoned), 400 sessions, 1 profile, 9 targets,
  *  2 routines with 5 items, 3 check-ins, 2 exclusions (T-0535) 2 favorites (T-0564) and 2 weight steps (T-0951), each
  *  seeded lateral-raise first.
  *  `setCount` overrides the 5,000. */
 export function twoYears(userId: string, setCount = 5000): Record<string, Row[]> {
   return {
-    profiles: [{ user_id: userId, goal: "balanced", experience: "intermediate" }],
+    profiles: [
+      {
+        user_id: userId,
+        goal: "balanced",
+        experience: "intermediate",
+        learn_from_edits: true,
+        learn_reset_at: null,
+      },
+    ],
     area_targets: AREAS.map((area_id) => ({ user_id: userId, area_id, target_sets: 10 })),
     sessions: Array.from({ length: 400 }, (_, i) => ({
       id: `sess${pad(i, 3)}`,
@@ -228,11 +255,17 @@ export function twoYears(userId: string, setCount = 5000): Record<string, Row[]>
         updated_at: "2025-06-06T10:00:00.000Z",
       },
     ],
+    // T-1002: inserted z id first, so a sort by id is visible.
+    edit_signals: [
+      editSignal(userId, "z-sig", "removal:z-ex", "z-ex"),
+      editSignal(userId, "a-sig", "removal:a-ex", "a-ex"),
+    ],
   };
 }
 
 export const EXPORT_TABLE_NAMES = [
   "area_targets",
+  "edit_signals",
   "excluded_exercises",
   "exercise_settings",
   "favorite_exercises",

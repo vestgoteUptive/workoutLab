@@ -30,6 +30,8 @@ describe("T-0631 AC6 toBarbell", () => {
       updated_at: "2026-08-02T09:00:00+00:00",
       bar_kg: 20,
       plates_kg: [1.25, 2.5, 5, 10, 15, 20, 25],
+      learn_from_edits: true,
+      learn_reset_at: null,
     };
     expect(toBarbell(row)).toStrictEqual({ barKg: 20, platesKg: [25, 20, 15, 10, 5, 2.5, 1.25] });
     const engine = toEngineProfile(row) as Record<string, unknown>;
