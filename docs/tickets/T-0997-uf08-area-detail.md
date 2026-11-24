@@ -33,6 +33,7 @@ Test titles start `T-0997 ACn`.
 Checklist (D-0197 §7): alternative/none, fits/doesn't fit, online/offline, area in plan/not.
 
 ## Paths you may change
+- `.squad/decisions/D-0288-uf08-area-detail-defaults.md`, `.squad/decisions/INDEX.md` (orchestrator grant: the area-detail defaults decision)
 `apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), `tests/e2e/uf-08-*.spec.ts` (only to keep existing specs passing). Not parallel with another UF-08 ticket.
 
 ## Contract impact
