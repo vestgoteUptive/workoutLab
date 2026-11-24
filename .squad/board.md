@@ -245,6 +245,7 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-0986 | Package tests that spawn check-all.mjs (design-tokens uf06-2 spec, landing ac21) time out at 5 s under full-gate load; call the checker in-process | infra | — | done | wl-build-infra |
 | T-0987 | UF-04.2 weight-step AC8 failed-save revert test failed on PR #75 CI (chip unchecked after the alert); root-cause test vs app | web-feature:UF-04 | — | ready | wl-build-web |
 | T-0988 | Content: single-arm cable row with rotation (cable, back + core, per arm), owner request | content | — | done | wl-build-content |
+| T-1015 | Targeted local test runs: test-affected script, agent roles, gate without --force, CI on every squad-branch push (D-0285) | infra | — | ready | wl-build-infra |
 
 ## Estimated 1RM per exercise (spec docs/specs/estimated-1rm.md)
 Owner request 2026-11-20 (inspired by wger): "estimated 1RM per exercise, with a chart over time". Decisions D-0254 (Epley, reps 1–10, best hard set per session, no RIR), D-0255 (engine rule 16, pure, nothing stored), D-0256 (UF-06.2 card, SVG chart, table toggle, states), D-0257 (scope; amends D-0068 and D-0219). Owner accepted the open-question defaults; impact-review rulings in D-0258 (plain Epley at 1 rep, --wl-* tokens, table spec, same-day sessions). UF-06.2 only; never UF-08 or UF-09.
