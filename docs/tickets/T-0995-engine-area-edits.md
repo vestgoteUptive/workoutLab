@@ -34,6 +34,7 @@ Checklist (D-0197 §7): room/no room (AC1, AC3), fits/doesn't fit (AC2, AC6), em
 - From the T-0994 review: add a test for an item with no `area_deficit` reason in both `areaGroups` (skipped) and `orderItems` (area `null`, never "same area"); `packages/engine/test/**` is in this lane.
 
 ## Paths you may change
+- `.squad/decisions/D-0287-engine-area-edit-details.md`, `.squad/decisions/INDEX.md` (orchestrator grant: the engine defaults decision)
 - `packages/engine/**`
 - `docs/engine-rules.md` (rules 12.5 to 12.7, traceability)
 - `supabase/functions/_shared/vendor/**` (re-vendor only, via `vendor.mjs`; extra, named explicitly as T-0961 does)
