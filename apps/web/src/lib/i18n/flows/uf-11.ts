@@ -161,6 +161,20 @@ export const uf11 = {
     connectToDelete: "Connect to delete your account.",
     unauthorized: "Your sign-in has expired. Sign in again, then delete your account.",
     deleteFailed: "Couldn't delete your account. Try again.",
+    // T-1005 UF-11.4 Learning from your edits (D-0277, D-0281 §4).
+    learning: {
+      heading: "Learning from your edits",
+      toggle: "Suggest preferences from my swaps and removals",
+      on: "On",
+      off: "Off",
+      line: "Counts are saved with your account, only you can see them, and they are included when you export your data. A preference is saved only when you say yes.",
+      forget: "Forget what was counted",
+      counts: "Counts cleared.",
+      isOff: "Learning is off.",
+      isOn: "Learning is on.",
+      saveFailed: "Couldn't save. Try again.",
+      connect: "Connect to change this",
+    },
     // T-0216 UF-11.4 Equipment section (D-0061 §3, D-0168 §6).
     equipment: {
       legend: "Your equipment",
