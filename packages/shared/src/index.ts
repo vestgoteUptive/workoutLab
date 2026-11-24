@@ -139,6 +139,7 @@ export {
   toAreaTarget,
   toAreaTargets,
   toBarbell,
+  toLearningPrefs,
   toEngineProfile,
   toHistorySet,
   type HistorySetWithRir,
@@ -146,6 +147,7 @@ export {
   toPlanCheckin,
   toUnilateral,
   type Barbell,
+  type LearningPrefs,
   type Unilateral,
 } from "./mappers.js";
 // T-0954 (D-0251): one external-load predicate for the UI and the effective library.

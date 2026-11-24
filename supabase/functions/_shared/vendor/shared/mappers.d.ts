@@ -38,6 +38,19 @@ export type Barbell = {
     barKg: number;
     platesKg: number[];
 };
+/** Learn-from-edits settings of a profile (D-0281 §4). */
+export type LearningPrefs = {
+    learnFromEdits: boolean;
+    learnResetAt: string | null;
+};
+/**
+ * `profiles.learn_from_edits` + `profiles.learn_reset_at` → LearningPrefs. A profile cached before
+ * T-1001 has neither field: a missing flag reads as true (the default), a missing epoch as null.
+ */
+export declare function toLearningPrefs(row: {
+    learn_from_edits?: ProfileRow["learn_from_edits"] | null;
+    learn_reset_at?: ProfileRow["learn_reset_at"] | null;
+}): LearningPrefs;
 /**
  * `profiles.bar_kg` + `profiles.plates_kg` → Barbell (D-0218 §4): numbers, not strings, and plate
  * sizes largest first. The DB stores the sizes in any order; an empty list means bar only.

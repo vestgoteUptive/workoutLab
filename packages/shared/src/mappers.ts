@@ -155,6 +155,23 @@ export function toEngineProfile(row: ProfileRow): EngineProfile {
 /** UF-09.3 plate loading inputs (D-0218 §4). Not part of EngineProfile: the engine never reads them. */
 export type Barbell = { barKg: number; platesKg: number[] };
 
+/** Learn-from-edits settings of a profile (D-0281 §4). */
+export type LearningPrefs = { learnFromEdits: boolean; learnResetAt: string | null };
+
+/**
+ * `profiles.learn_from_edits` + `profiles.learn_reset_at` → LearningPrefs. A profile cached before
+ * T-1001 has neither field: a missing flag reads as true (the default), a missing epoch as null.
+ */
+export function toLearningPrefs(row: {
+  learn_from_edits?: ProfileRow["learn_from_edits"] | null;
+  learn_reset_at?: ProfileRow["learn_reset_at"] | null;
+}): LearningPrefs {
+  return {
+    learnFromEdits: row.learn_from_edits ?? true,
+    learnResetAt: row.learn_reset_at ?? null,
+  };
+}
+
 /** A numeric column read as a number. PostgREST may send `numeric` as a string ("15.00"). */
 function toKg(value: number | string, column: string): number {
   const n = typeof value === "number" ? value : Number(value);
