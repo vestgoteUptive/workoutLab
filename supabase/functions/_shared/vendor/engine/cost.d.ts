@@ -15,8 +15,11 @@ export declare function realEquipment(list: readonly string[]): string[];
  * (no equipment is always eligible), level ≤ profile level, and not in `excludeIds`.
  */
 export declare function isEligible(exercise: LibraryExercise, profile: Pick<EngineProfile, "level" | "equipment">, excludeIds?: readonly string[]): boolean;
+/** True only for a flagged one-side row: `arm`, `leg` or `side` (D-0268). Anything else is false. */
+export declare function isOneSide(exercise: Pick<LibraryExercise, "unilateral">): boolean;
 /**
- * Work + rest for one set (rule 7.1). `durationS` is a timed set's planned duration (D-0092 §1,
+ * Work + rest for one set (rule 7.1). A flagged one-side exercise works two sides per set
+ * (2 × 45 s, or twice the planned duration when timed) and rests once (D-0268). `durationS` is a timed set's planned duration (D-0092 §1,
  * `plannedDurationS`); without it (or when it is null) a timed set works its library
  * `defaultDurationS`, so the 1-argument result is unchanged (D-0092 §4). A non-timed set
  * always works 45 s, and a timed exercise with no duration at all falls back to 45 s.
