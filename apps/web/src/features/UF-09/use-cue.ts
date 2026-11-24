@@ -12,6 +12,8 @@ import {
 
 export interface CachedFields {
   cue: string | null;
+  /** The cached how-to lines; empty when the detail is missing (T-0990, the cue fallback). */
+  instructions: readonly string[];
   /** The one-side word from the cached detail (T-0974, D-0263 §3); null reads as both sides. */
   unilateral: Unilateral | null;
 }
@@ -35,6 +37,7 @@ export function useCachedFields(exerciseId: string): CachedFields {
             setFields({
               id: exerciseId,
               cue: detail?.cue ?? null,
+              instructions: detail?.instructions ?? [],
               unilateral: toUnilateral(detail),
             });
         },
@@ -44,8 +47,9 @@ export function useCachedFields(exerciseId: string): CachedFields {
       live = false;
     };
   }, [exerciseId]);
-  const own = fields?.id === exerciseId ? fields : { cue: null, unilateral: null };
-  return stored === undefined ? own : { cue: own.cue, unilateral: stored };
+  const own =
+    fields?.id === exerciseId ? fields : { cue: null, instructions: [], unilateral: null };
+  return stored === undefined ? own : { ...own, unilateral: stored };
 }
 
 export function useCue(exerciseId: string): string | null {

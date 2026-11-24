@@ -427,7 +427,9 @@ test.describe("T-0304f AC-5 get ready, rest and next, offline", () => {
     await page.getByRole("button", { name: "Done" }).click();
     const rest = page.locator('[data-screen-id="UF-09.5"]');
     // The mocked library is empty, so names fall back to the exercise id (D-0118 §8).
-    await expect(rest.getByText("Next · barbell-row")).toBeVisible({ timeout: 10_000 });
+    // D-0273: the caption "Next exercise", then the name on its own line.
+    await expect(rest.getByText("Next exercise", { exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(rest.getByText("barbell-row", { exact: true })).toBeVisible();
     await rest.getByRole("button", { name: "Skip rest" }).click();
     const next = page.locator('[data-screen-id="UF-09.6"]');
     await expect(next.getByRole("heading", { level: 1, name: "barbell-row" })).toBeVisible();
