@@ -23,6 +23,7 @@ The web build needs one spec per screen (`docs/specs/areas-first-planning.md`, D
 - AC5 Given the retired features, Then each section that is retired says "retired by D-0274" and what replaces it.
 
 ## Paths you may change
+- `.squad/decisions/D-0286-uf08-spec-defaults-areas-first.md`, `.squad/decisions/INDEX.md` (orchestrator grant: the spec defaults decision)
 `Design-docs/docs/design/**`, `packages/design-tokens/test/**` (docs test only)
 
 ## Contract impact
