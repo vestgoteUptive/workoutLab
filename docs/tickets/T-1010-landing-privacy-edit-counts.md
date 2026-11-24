@@ -5,7 +5,7 @@ lane: design
 screens: [UF-11.4]
 decisions: [D-0281, D-0188, D-0017]
 deps: [T-1001]
-status: todo
+status: ready
 ---
 ## Why
 The notice must be true of the system (D-0188 §5). Once counts are saved with the account (D-0281), "What we store" and "Export or delete" should name them. The deploy that includes T-1003 or T-1004, the first code that records a count, is held until this is merged (D-0281 §5).
