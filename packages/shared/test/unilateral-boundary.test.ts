@@ -58,7 +58,7 @@ describe("T-0978a AC6: the scanner", () => {
 });
 
 describe("T-0978a AC6: the real tree", () => {
-  for (const rel of ["packages/engine", "supabase/functions/_shared/vendor/engine"]) {
+  for (const rel of ["packages/engine/src", "supabase/functions/_shared/vendor/engine"]) {
     it(`T-0978a AC6 ${rel} mentions it only in the allow-list`, () => {
       const tree = read(rel);
       expect(Object.keys(tree).length).toBeGreaterThan(5);

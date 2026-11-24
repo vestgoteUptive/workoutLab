@@ -668,8 +668,11 @@ test.describe("T-0979 AC10 the per-side label paints on the first frame", () => 
   });
 });
 
-test.describe("AC3 the engine cost pin (D-0262), and AC4 zero history and 10 days off", () => {
-  test("zero history: 3 sets of the flagged row cost what the same row costs unflagged, in a 30-minute budget; the label is on the first set", async ({
+/** The minutes in a plan row's detail line ("3 × 8–12 · 12 min"), as the screen rounds them. */
+const detailMinutes = (detail: string): number => Number(/· (\d+) min$/.exec(detail)?.[1]);
+
+test.describe("AC3 the engine cost (D-0268), and AC4 zero history and 10 days off", () => {
+  test("zero history: 3 sets of the flagged row cost two sides of work, in a 30-minute budget; the label is on the first set", async ({
     page,
     browser,
   }) => {
@@ -679,15 +682,18 @@ test.describe("AC3 the engine cost pin (D-0262), and AC4 zero history and 10 day
     await other.close();
 
     expect(flagged.detail).toMatch(/^3 × 8–12 · \d+ min$/);
-    expect(flagged.detail).toBe(plain.detail);
-    expect(flagged.budget).toBe(plain.budget);
+    // D-0268: 3 × (90 + 120) + 60 = 690 s is 12 min (ceil); unflagged 555 s is 10 min.
+    expect(detailMinutes(flagged.detail)).toBe(Math.ceil(690 / 60));
+    expect(detailMinutes(plain.detail)).toBe(Math.ceil(555 / 60));
+    expect(detailMinutes(flagged.detail)).toBeGreaterThan(detailMinutes(plain.detail));
+    expect(flagged.detail.replace(/ · \d+ min$/, "")).toBe(plain.detail.replace(/ · \d+ min$/, ""));
     // The first set of a first-ever workout: no weight yet, but the word is there.
     expect(flagged.hero.join(" ")).toMatch(/per arm$/);
     expect(plain.hero.join(" ")).not.toMatch(/per arm/);
     expect(flagged.hero.join(" ").replace(/\s*per arm$/, "")).toBe(plain.hero.join(" "));
   });
 
-  test("returning after 10 days off: the plan, the pre-fill and the hold rules equal the unflagged row's; the label is unchanged", async ({
+  test("returning after 10 days off: the pre-fill and the hold rules equal the unflagged row's, the label is unchanged, and the minutes differ", async ({
     page,
     browser,
   }) => {
@@ -698,15 +704,15 @@ test.describe("AC3 the engine cost pin (D-0262), and AC4 zero history and 10 day
     const plain = await runPlanned(await other.newPage(), false, sets);
     await other.close();
 
-    expect(flagged.detail).toBe(plain.detail);
-    expect(flagged.budget).toBe(plain.budget);
+    expect(detailMinutes(flagged.detail)).toBeGreaterThan(detailMinutes(plain.detail));
+    expect(flagged.detail.replace(/ · \d+ min$/, "")).toBe(plain.detail.replace(/ · \d+ min$/, ""));
     // Held at 12 kg (rule 14 and the 10-day return are unchanged); only the word differs.
     expect(plain.hero[0]).toBe("12 kg");
     expect(flagged.hero[0]).toBe(plain.hero[0]);
     expect(flagged.hero.join(" ")).toBe(`${plain.hero.join(" ")} per arm`);
   });
 
-  test("a search of packages/engine and the vendored copy finds no 'unilateral'", () => {
+  test("a search of packages/engine/src and the vendored copy finds 'unilateral' only in types and cost", () => {
     const root = resolve(__dirname, "../..");
     const hits: string[] = [];
     const walk = (dir: string) => {
@@ -721,12 +727,19 @@ test.describe("AC3 the engine cost pin (D-0262), and AC4 zero history and 10 day
           hits.push(path.slice(root.length + 1));
       }
     };
-    const dirs = ["packages/engine", "supabase/functions/_shared/vendor/engine"];
+    const dirs = ["packages/engine/src", "supabase/functions/_shared/vendor/engine"];
     for (const d of dirs) {
       expect(statSync(join(root, d)).isDirectory(), `${d} exists`).toBe(true);
       walk(join(root, d));
     }
-    expect(hits).toEqual([]);
+    // The T-0978a allow-list (D-0268 §5); non-vacuous: both files do mention it.
+    expect(hits.sort()).toEqual([
+      "packages/engine/src/cost.ts",
+      "packages/engine/src/types.ts",
+      "supabase/functions/_shared/vendor/engine/cost.d.ts",
+      "supabase/functions/_shared/vendor/engine/cost.js",
+      "supabase/functions/_shared/vendor/engine/types.d.ts",
+    ]);
   });
 });
 
