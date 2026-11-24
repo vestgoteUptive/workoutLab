@@ -541,32 +541,69 @@ test.describe("AC3 320 px and 200 % zoom", () => {
       await checkReachable(page, `200% ${which}`, "block");
     });
 
-    // KNOWN DEFECT (reported by T-0991, follow-up for the web lane): at a 160 px viewport the
-    // rest's timer ("1:30", clamp(5rem, 36vw, ...)) is wider than the page's content box, so the
-    // page scrolls sideways (scrollWidth 186 > 160). It is the timer, not the Next block.
-    // `test.fail` flips red once that is fixed, so the marker gets removed then.
+    // T-1018: the rest page reflows at 160 px (page-level, no horizontal scroll).
     test(`browser zoom 200 % (160 x 284, root font 16 px), ${which}: all three checks, page-level`, async ({
       page,
     }) => {
-      test.fail();
       await page.setViewportSize({ width: 160, height: 284 });
       await reachWorstRest(page, which);
       await checkReachable(page, `zoom ${which}`);
     });
 
-    // KNOWN DEFECT (reported by T-0991, follow-up for the web lane): with BOTH a 160 px viewport and
-    // a 200 % root font, the timer, the pre-existing "-15 s / +15 s" row and Skip rest's arrow
-    // overflow the page horizontally (scrollWidth 351 > 160). Not the Next block. `test.fail` flips
-    // red once that is fixed, so the marker gets removed then.
+    // T-1018: the rest page reflows at 160 px (page-level, no horizontal scroll).
     test(`200 % zoom (160 x 284, root font 200 %), ${which}: no horizontal scroll on the page`, async ({
       page,
     }) => {
-      test.fail();
       await zoom200(page);
       await reachWorstRest(page, which);
       await checkReachable(page, `200% ${which} page`);
     });
   }
+
+  // T-1018 AC1: the timer, -15 s / +15 s and Skip rest stay whole (inside the page, >= 44 px tall).
+  for (const root of ["16 px", "200 %"] as const) {
+    test(`160 x 284, root font ${root}: the timer, -15 s, +15 s and Skip rest fit the width and are at least 44 px tall`, async ({
+      page,
+    }) => {
+      if (root === "200 %") await zoom200(page);
+      else await page.setViewportSize({ width: 160, height: 284 });
+      await reachWorstRest(page, "same-flagged");
+      const targets = [
+        rest(page).getByRole("timer"),
+        page.getByRole("button", { name: /^\u221215 s$/ }),
+        page.getByRole("button", { name: /^\+15 s$/ }),
+        page.getByRole("button", { name: "Skip rest" }),
+      ];
+      expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(
+        160,
+      );
+      for (const t of targets) {
+        const box = await settledBox(t);
+        expect(box).not.toBeNull();
+        expect(box!.x).toBeGreaterThanOrEqual(0);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(160.5);
+        expect(box!.height).toBeGreaterThanOrEqual(44);
+        expect(await t.evaluate((el) => el.scrollWidth <= el.clientWidth + 1)).toBe(true);
+      }
+    });
+  }
+
+  // T-1018 AC2: at 390 x 844 the timer keeps its size (9.375rem at a 16 px root = 150 px).
+  test("390 x 844: the timer keeps its 150 px size and is the largest text", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await reachWorstRest(page, "same-flagged");
+    const sizes = await page.evaluate(() => {
+      const px = (el: Element) => parseFloat(getComputedStyle(el).fontSize);
+      const root = document.querySelector('[data-wl-state="rest"]')!;
+      const timer = root.querySelector('[role="timer"]')!;
+      return {
+        timer: px(timer),
+        max: Math.max(...[...root.querySelectorAll("*")].map(px)),
+      };
+    });
+    expect(sizes.timer).toBe(150);
+    expect(sizes.max).toBe(sizes.timer);
+  });
 });
 
 // ---------------------------------------------------------------------------------------------

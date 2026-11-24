@@ -750,7 +750,38 @@
 
 @media (max-width: 23.75rem) {
   .wl-uf09[data-wl-state="rest"] .wl-type-hero-number {
-    font-size: clamp(5rem, 36vw, 9.375rem);
+    /* No rem floor (T-1018): a floor in rem grows with the root font and outgrows a 160 px
+     * viewport (320 px at 200 % zoom). The size follows the width and caps at the role's size. */
+    font-size: min(36vw, 9.375rem);
+  }
+}
+
+/* T-1018 UF-09.5: reflow at 320 px with 200 % zoom (WCAG 1.4.10). Grid tracks may shrink, the
+ * labels wrap, and the buttons grow in height (never below their 44 px minimum). */
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--rest {
+  min-inline-size: 0;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__view--rest .wl-uf09__count {
+  max-inline-size: 100%;
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__adjust {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr));
+}
+
+.wl-uf09[data-wl-state="rest"] .wl-uf09__adjust > button {
+  min-inline-size: 0;
+  padding-inline: 0.5rem;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 23.75rem) {
+  .wl-uf09[data-wl-state="rest"] .wl-uf09__view--rest .wl-uf09__action {
+    min-inline-size: 0;
+    padding-inline: 1rem;
+    font-size: 1.125rem;
+    overflow-wrap: anywhere;
   }
 }
 /* ---- end T-0597 ---- */
@@ -937,4 +968,22 @@
   padding-block: 0.5rem;
   border-block: 1px solid var(--wl-line);
   color: var(--wl-ink-muted);
+}
+
+/* T-1018 UF-09.5: below 320 px (WCAG 1.4.10 at 200 % zoom) the Next block's load line scales with
+ * the width, so "12 kg × 10 per arm" wraps inside the box instead of past it. Wider screens keep
+ * the stat role's size. */
+@media (max-width: 19.9375rem) {
+  .wl-uf09[data-wl-state="rest"] .wl-uf09__next-load,
+  .wl-uf09[data-wl-state="rest"] .wl-uf09__next-load .wl-type-stat {
+    font-size: min(3.5rem, 14vw);
+  }
+
+  .wl-uf09[data-wl-state="rest"] .wl-uf09__unit {
+    font-size: min(1.5rem, 8vw);
+  }
+
+  .wl-uf09[data-wl-state="rest"] .wl-uf09__hero {
+    overflow-wrap: anywhere;
+  }
 }
