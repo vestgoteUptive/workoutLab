@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-01.5, UF-02.1]
 decisions: [D-0272, D-0064, D-0071, D-0073, D-0197]
 deps: []
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ½ day. Default logged in D-0272. Found by T-0983 (its log has the request timeline). Touches one qa-lane file (the UF-01 e2e), listed under Paths. -->
 
