@@ -227,7 +227,10 @@ for (const width of [390, 320, 160]) {
           els.map((el) => el.getAttribute("aria-label") ?? el.textContent!.trim()),
         );
       expect(new Set(names).size).toBe(names.length);
-      await expect(page.locator('[role="status"]')).toHaveCount(1);
+      // One screen status line; the T-1003 learning card keeps its own always-present region.
+      await expect(page.locator('[role="status"]:not([data-part="learning-region"])')).toHaveCount(
+        1,
+      );
     });
 
     test("Remove fits its row, nothing is clipped, and focus never falls to body after each edit", async ({
