@@ -248,6 +248,7 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-1015 | Targeted local test runs: test-affected script, agent roles, gate without --force, CI on every squad-branch push (D-0285) | infra | — | done | wl-build-infra |
 | T-1016 | e2e UF-04.1 Legs count read before the filter applied (PR #75 CI); wait for the filtered count | qa | — | done | wl-build-qa |
 | T-1017 | CI: inherited-TMPDIR test wrote to /inherited-tmp (EACCES on non-root runner); use a real temp folder | infra | — | done | wl-build-infra |
+| T-1018 | UF-09.5 rest page scrolls sideways at 320 px / 200 % zoom (timer, ±15 s row); fix reflow, drop T-0991 test.fail markers | web-feature:UF-09 | — | ready | wl-build-web |
 
 ## Estimated 1RM per exercise (spec docs/specs/estimated-1rm.md)
 Owner request 2026-11-20 (inspired by wger): "estimated 1RM per exercise, with a chart over time". Decisions D-0254 (Epley, reps 1–10, best hard set per session, no RIR), D-0255 (engine rule 16, pure, nothing stored), D-0256 (UF-06.2 card, SVG chart, table toggle, states), D-0257 (scope; amends D-0068 and D-0219). Owner accepted the open-question defaults; impact-review rulings in D-0258 (plain Epley at 1 rep, --wl-* tokens, table spec, same-day sessions). UF-06.2 only; never UF-08 or UF-09.
@@ -308,8 +309,8 @@ Owner request 2026-11-24: "I spent a lot of time in the suggested workout with e
 | T-0992 | User flows v2 and PRD: UF-08.2 rewritten by area, UF-08.6 added, Reorder, Shuffle and empty-mode Suggestions retired, Start empty folded in, Start folded into the plan and UF-08.4 retired (D-0274, D-0276, D-0280) | product | — | done | wl-idea |
 | T-0993 | Screen specs: UF-08.2 Today's plan by area with Start workout, Done by and the Focus mode disclosure, new UF-08.6 Area detail, amended UF-08.1, UF-08.5, UF-08.3; no new token (D-0274, D-0276, D-0280) | design | — | done | wl-design |
 | T-0994 | Engine rules 7.6 and 12.4: `orderItems` (main lift first, areas alternate, machines grouped) and `areaGroups`; examples, simulated histories, properties, golden `suggest`, re-vendor (D-0275 §2, §7) | engine | — | done | wl-build-engine |
-| T-0995 | Engine rules 12.5 to 12.7: `adjustAreaSets`, `addArea`, `removeArea`, `areaCandidates`; never over budget, both values per condition, re-vendor (D-0275 §3 to §5) | engine | T-0994 | ready | wl-build-engine |
-| T-0996 | UF-08.2 Today's plan by area: title, area rows with − / + sets, Add an area, Fill the rest, automatic order, Start empty with no areas, time chip rebuild (D-0274, D-0275) | web-feature:UF-08 | T-0993, T-0994, T-0995 | todo | wl-build-web |
+| T-0995 | Engine rules 12.5 to 12.7: `adjustAreaSets`, `addArea`, `removeArea`, `areaCandidates`; never over budget, both values per condition, re-vendor (D-0275 §3 to §5) | engine | T-0994 | done | wl-build-engine |
+| T-0996 | UF-08.2 Today's plan by area: title, area rows with − / + sets, Add an area, Fill the rest, automatic order, Start empty with no areas, time chip rebuild (D-0274, D-0275) | web-feature:UF-08 | T-0993, T-0994, T-0995 | ready | wl-build-web |
 | T-0997 | UF-08.6 Area detail: Swap, Not today, Remove, Start with this and a local Add exercise behind each area (D-0274 §5, D-0275 §8) | web-feature:UF-08 | T-0996 | todo | wl-build-web |
 | T-0998 | UF-08 retire Reorder, Shuffle and the empty-mode Suggestions code and tests; engine switches stay (D-0274 §3) | web-feature:UF-08 | T-1009 | todo | wl-build-web |
 | T-0999 | e2e areas-first: tap budget from plan to Start (1 tap, 3 with two edits), +/− and Remove, Add an area, Start empty, area detail, zero history, 10 days off, 15 minutes, offline, axe/44 px | qa | T-0998 | todo | wl-build-qa |

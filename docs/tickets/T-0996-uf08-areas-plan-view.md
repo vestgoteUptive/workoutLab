@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.1, UF-08.2, UF-08.4]
 decisions: [D-0274, D-0275, D-0276, D-0280, D-0191, D-0235]
 deps: [T-0993, T-0994, T-0995]
-status: todo
+status: ready
 ---
 ## Why
 The owner spends the pre-workout time rearranging exercises. UF-08.2 becomes the area plan (`docs/specs/areas-first-planning.md`), built from `UF-08.2.md` (T-0993) and the engine functions of T-0994 and T-0995. Time is still asked first on UF-08.1 (principle 2).
@@ -34,6 +34,8 @@ Fixtures: zero history; balanced; returning after 10 days off; 15-minute; `navig
 - Planted faults (log, backup restored with `cp`): F1 the web picks the area itself (AC12 red); F2 + ignores the time refusal (AC3 red); F3 a time chip keeps set edits (AC8 red); F4 Remove forgets the skipped area (AC4 red).
 
 Checklist (D-0197 §7): room/no room, time/no time, empty/non-empty plan, online/offline, available/unavailable area, Start empty/Suggest.
+
+- From the T-0995 review (D-0287): when − removes an area's second exercise rather than a set, the status line says so and the − / Remove control text still fits at 320 px and 200 % zoom. Call the engine with `ctx.targets` (D-0287 §3).
 
 ## Paths you may change
 `apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant, as T-0940), `tests/e2e/uf-08-*.spec.ts` (only to keep existing specs passing if shared markup moves). Not parallel with another UF-08 ticket.

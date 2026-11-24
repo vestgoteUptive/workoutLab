@@ -60,7 +60,7 @@ From top to bottom:
 
 **The stepper.**
 - **+** adds one set to the area. The engine adds it to the area's first exercise that has room, else adds a second exercise for the area, else refuses ("{Area} already has the most sets it can hold"). Maximum 4 sets for a main lift, 3 for any other exercise, 2 exercises per area (so at most 7 sets for the area that holds the main lift and 6 for any other, D-0275 §3).
-- **−** removes one set. At the area's 2-set minimum, **−** becomes **Remove** (visible text "Remove", accessible name "Remove {Area}") and takes the whole area out for this visit; the area joins this visit's skipped areas (the "Skipping today" mechanism, D-0191), so a later rebuild doesn't bring it back, and it moves to "Add an area" where one tap puts it back.
+- **−** removes one set (D-0287: when the area has a second exercise at its 2-set minimum, **−** removes that second exercise instead, so + then − returns to the same plan). At the area's 2-set minimum, **−** becomes **Remove** (visible text "Remove", accessible name "Remove {Area}") and takes the whole area out for this visit; the area joins this visit's skipped areas (the "Skipping today" mechanism, D-0191), so a later rebuild doesn't bring it back, and it moves to "Add an area" where one tap puts it back.
 - Time: **+** is refused when the extra set doesn't fit the minutes left. The button stays focusable with `aria-disabled` and the row says why: "No time for another set. Pick more time or remove a set elsewhere." Never over budget through a **+**.
 - One polite status line announces every change: "Back: 7 sets, 5 min left.", "Chest removed. Add it back below."
 
