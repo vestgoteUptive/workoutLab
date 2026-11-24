@@ -290,6 +290,75 @@ export function adjustAreaSets(
 }
 
 /**
+ * `sessionReasons` after a restore (rule 12.6): the entries `workout` has, plus the restored
+ * area's `area_deficit` when there is room (fewer than 3 entries), with the `area_deficit` entries in item order after the
+ * `recovering_skipped` ones and at most 3 in all, as rule 10 writes them. So a remove then an add
+ * back leaves them as they were.
+ */
+function restoredReasons(before: Workout, after: Workout, area: Area): Reason[] {
+  const known = new Set<Area>();
+  for (const r of before.sessionReasons) if (r.code === "area_deficit") known.add(r.area);
+  if (before.sessionReasons.length < 3) known.add(area);
+  const out: Reason[] = before.sessionReasons
+    .filter((r) => r.code !== "area_deficit")
+    .map((r): Reason => ({ ...r }));
+  const seen = new Set<Area>();
+  for (const item of after.plan.items) {
+    if (out.length >= 3) break;
+    const r = item.reasons.find((x) => x.code === "area_deficit");
+    if (r === undefined || r.code !== "area_deficit" || seen.has(r.area)) continue;
+    seen.add(r.area);
+    if (known.has(r.area)) out.push({ code: "area_deficit", area: r.area, deficit: r.deficit });
+  }
+  return out;
+}
+
+/**
+ * Rule 12.6 / 12.7 (D-0290 §2 to §4): the items `ctx.restore` would put back for `area`, or `null`
+ * when the area has none to restore or they are not all valid now (all or nothing). Valid: every
+ * exercise in the library and eligible; the area neither recovering, avoided nor excluded out; no
+ * exercise already in the plan or repeated; at most 2 items for the area and 8 in the plan;
+ * at most one `isMain`; the whole set fits `available − Σ costS`. A main item stays main only when
+ * the plan has no main lift now; otherwise it is rebuilt as an accessory (rule 12.8's demotion,
+ * `min(sets, 3)`) and the fit uses that cost.
+ */
+function planRestore(env: Env, area: Area): { items: WorkoutItem[]; mainId: string | null } | null {
+  const { s, ctx, workout } = env;
+  const mine = (ctx.restore ?? []).filter((i) => homeAreaOf(i) === area);
+  if (mine.length === 0 || mine.length > MAX_ITEMS_PER_AREA) return null;
+  if (s.start.recovering.has(area) || s.start.avoided.has(area)) return null;
+  if (excludedOutAreas(ctx.profile, ctx.library, ctx.excludeIds ?? []).includes(area)) return null;
+  if (s.picked.length + mine.length > MAX_ITEMS) return null;
+  const inPlan = new Set(workout.plan.items.map((i) => i.exerciseId));
+  const seen = new Set<string>();
+  const hasMain = workout.plan.mainLiftId !== null || workout.plan.items.some((i) => i.isMain);
+  let mains = 0;
+  const items: WorkoutItem[] = [];
+  let mainId: string | null = null;
+  for (const item of mine) {
+    const ex = env.lib.get(item.exerciseId);
+    if (ex === undefined || ex.kind !== "exercise") return null;
+    if (!isEligible(ex, ctx.profile, ctx.excludeIds ?? [])) return null;
+    if (inPlan.has(item.exerciseId) || seen.has(item.exerciseId)) return null;
+    seen.add(item.exerciseId);
+    if (item.isMain) {
+      mains += 1;
+      if (mains > 1) return null;
+    }
+    if (item.isMain && !hasMain) {
+      items.push(copyItem(item));
+      mainId = item.exerciseId;
+    } else if (item.isMain) {
+      items.push(buildNew(env, ex, false, Math.min(item.sets, CAP_OTHER), { lowTrimmed: false }));
+    } else {
+      items.push(copyItem(item));
+    }
+  }
+  if (items.reduce((sum, i) => sum + i.costS, 0) > env.leftS) return null;
+  return { items, mainId };
+}
+
+/**
  * Rule 12.6 (UF-08.2, D-0275 §4): adds `area`, which must not be in the plan, as one item: its
  * top rule 7.2 candidate (first primary area = `area`) at 3 sets, else 2 (only 2 at Low energy
  * for an accessory, as rule 12.3). Into an **empty** plan with `autoMainLift` not `false` the
@@ -298,6 +367,10 @@ export function adjustAreaSets(
  * structural `RangeError`s (unknown area, area already in the plan): `area_unavailable`
  * (recovering, avoided, every exercise excluded, or no eligible exercise), `items_cap` (8
  * items), `time` (not even 2 sets fit). Never mutates its inputs.
+ *
+ * **`ctx.restore`** (D-0290): when it holds items homed in `area` and all are valid now and fit,
+ * exactly those items come back (copies), ordered by `orderItems`, instead of the top candidate;
+ * otherwise this rule runs unchanged. See `planRestore`.
  */
 export function addArea(
   workout: Workout,
@@ -307,6 +380,15 @@ export function addArea(
   assertArea(area);
   if (homed(workout, area).length > 0) throw new RangeError(`${area} is already in the plan`);
   const env = envOf(workout, ctx);
+  const back = planRestore(env, area);
+  if (back !== null) {
+    const items = [...workout.plan.items.map(copyItem), ...back.items];
+    const out = orderItems(
+      withItems(workout, items, back.mainId ?? workout.plan.mainLiftId),
+      ctx.library,
+    );
+    return { ...out, sessionReasons: restoredReasons(workout, out, area) };
+  }
   const wantMain = workout.plan.items.length === 0 && ctx.autoMainLift !== false;
   const plan = planNew(env, area, wantMain, ADD_TRIES);
   if (plan.kind === "unavailable") return { refused: "area_unavailable" };
@@ -338,7 +420,8 @@ export function removeArea(workout: Workout, area: Area): Workout {
  * `{area, load, target, available}`. `load` is the 14-day history load (rule 3), `target` the
  * target. `available` is `true` when `addArea` would add the area, else `{reason}` in this
  * order: `recovering`, `avoided`, `excluded_out`, `no_exercise`, `items_cap`, `time`.
- * `favoriteIds` rank exercises only, never areas.
+ * `favoriteIds` rank exercises only, never areas. An area `addArea` would restore from
+ * `ctx.restore` (D-0290) reads `true`.
  */
 export function areaCandidates(workout: Workout, ctx: AreaEditContext): AreaCandidate[] {
   const env = envOf(workout, ctx);
@@ -353,7 +436,10 @@ export function areaCandidates(workout: Workout, ctx: AreaEditContext): AreaCand
     .filter((x) => !inPlan.has(x.area))
     .sort((x, y) => x.r - y.r || x.i - y.i)
     .map(({ area }): AreaCandidate => {
-      const plan = planNew(env, area, wantMain, ADD_TRIES);
+      const plan: Plan | { kind: "ok" } =
+        planRestore(env, area) !== null
+          ? { kind: "ok" }
+          : planNew(env, area, wantMain, ADD_TRIES);
       const reason: AreaUnavailableReason | null =
         plan.kind === "ok" ? null : plan.kind === "unavailable" ? plan.reason : plan.kind;
       return {
