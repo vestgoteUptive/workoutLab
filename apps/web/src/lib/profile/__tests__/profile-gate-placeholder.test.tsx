@@ -382,6 +382,51 @@ describe("T-0985 AC7 the cap", () => {
   });
 });
 
+describe("T-0985 cap: one per pending window, and no timer outlives the provider", () => {
+  it("T-0985 cap fires once: navigating to a second gated route renders at once, no new blank", async () => {
+    seedValidSession();
+    online(true);
+    loadProfile.mockReturnValue(new Promise(() => {}));
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    render(<Harness start="/" />);
+    await flush();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(PROFILE_PLACEHOLDER_MAX_MS);
+    });
+    await pollUntil(() => expect(screenOf("UF-02.1")).toBeInTheDocument());
+    // Leave through a never-gated route first, so the next gated route mounts a fresh gate.
+    await act(async () => {
+      navigateRef!("/session/0b9e1f");
+    });
+    await pollUntil(() => expect(screenOf("UF-09")).toBeInTheDocument(), 8000);
+    let sawPlaceholder = false;
+    const mo = new MutationObserver(() => {
+      if (placeholder()) sawPlaceholder = true;
+    });
+    mo.observe(document, { childList: true, subtree: true });
+    await act(async () => {
+      navigateRef!("/library");
+    });
+    expect(placeholder()).not.toBeInTheDocument();
+    await pollUntil(() => expect(screenOf(screenIdOf("/library"))).toBeInTheDocument());
+    mo.disconnect();
+    expect(sawPlaceholder).toBe(false);
+  });
+
+  it("T-0985 cap: no timer is left pending after unmount", async () => {
+    seedValidSession();
+    online(true);
+    loadProfile.mockReturnValue(new Promise(() => {}));
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    render(<Harness start="/" />);
+    await flush();
+    expect(placeholder()).toBeInTheDocument();
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
+    cleanup();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
 describe("T-0985 AC8 never gated, never held", () => {
   it.each([
     ["/session/0b9e1f", "UF-09"],
