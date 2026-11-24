@@ -11,4 +11,4 @@ When a gate is hit: write it in `needs-human.md`, skip that ticket, continue wit
 6. **Publishing** under a person's or Uptive's name beyond the landing page copy already approved in a decision.
 7. **Creating or making public the GitHub repository.**
 
-- **Release hold (2026-11-24, T-1001 review):** no deploy to production that contains T-1003 or T-1004 (recording learning signals) until T-1010 (privacy notice update) is merged.
+- **Release hold (2026-11-24, T-1001 review):** no deploy to production that contains T-1003 or T-1004 (recording learning signals) until T-1010 (privacy notice update) is merged. **Lifted 2026-11-24: T-1010 merged.**
