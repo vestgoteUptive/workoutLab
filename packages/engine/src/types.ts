@@ -358,6 +358,12 @@ export interface AreaEditContext {
   avoidAreas?: readonly Area[];
   /** Rule 7.2 step 1: `false` stops an empty plan's first area from getting a main lift. */
   autoMainLift?: boolean;
+  /**
+   * Rules 12.6 and 12.7 (D-0290): the items removed with whole areas earlier in this visit. When
+   * `addArea` adds an area whose removed items are all valid and fit, it puts exactly those back.
+   * Absent or empty changes nothing. Never mutated.
+   */
+  restore?: readonly WorkoutItem[];
   now: Instant;
   tz: TimeZone;
 }

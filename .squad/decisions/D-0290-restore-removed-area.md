@@ -20,6 +20,10 @@ T-0999 (areas-first e2e) found a rule/spec gap. On the default 45-min plan, Remo
 7. **Fill the rest** needs no new rule. It is `addArea` of the first available candidate, and it passes the same `restore`, so a removed area it reaches comes back as it was. The order does not prefer removed areas: "Fill the rest" fills by need (lowest projected `r`), and a removed area is not the user saying "never" (that is Never suggest or Skip today). Revisit if people feel Fill the rest undoes their Removes.
 8. **Leaving the screen drops the memory.** It lives in the UF-08.2 visit state only: gone on Start, on leaving to UF-08.1 or elsewhere, on a time or energy change, and on reload. The area also leaves the memory when it re-enters the plan by any route (Add, Add exercise, Fill the rest).
 
+## Build notes (T-1022)
+- Round trip is exact only when rule 7.6 has no tie to break by position: `orderItems` ties break on item index, and a re-appended item has the last index. Fixture W round-trips deep-equal; a plan from `suggest` returns the same items, totals, `mainLiftId` and `sessionReasons` (as a set) in rule 7.6 order. If exact order matters, the web could pass the removed items' former positions (follow-up, not built).
+- A restore also puts the area's `area_deficit` back into `sessionReasons` when it has fewer than 3 entries, so a round trip leaves them as they were.
+
 ## Consequences
 Contract: `docs/engine-rules.md` rules 12.6 and 12.7 (new text, examples R12-E66 onward). Tickets: T-1022 (engine), T-1023 (UF-08.2 web, depends on T-1022). The spec `docs/specs/areas-first-planning.md` gains a "Remove, then add back" section. `suggest` and the openapi contract are unchanged; the vendored copy for Edge Functions is re-run.
 
