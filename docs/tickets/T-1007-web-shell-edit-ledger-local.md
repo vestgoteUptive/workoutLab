@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-08.2, UF-11.4]
 decisions: [D-0281, D-0277, D-0265, D-0195]
 deps: [T-1001]
-status: ready
+status: done
 ---
 ## Why
 Counting must be one shared, tested store that UF-08, UF-09 and UF-11 call (`docs/specs/learn-from-edits.md`). It counts on the device first, so it works offline and never waits for the network; the sync is T-1008 (D-0281 §2).
