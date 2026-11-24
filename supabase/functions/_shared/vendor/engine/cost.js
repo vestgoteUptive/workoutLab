@@ -28,14 +28,21 @@ export function isEligible(exercise, profile, excludeIds = []) {
     const have = new Set(realEquipment(profile.equipment));
     return realEquipment(exercise.equipment).every((e) => have.has(e));
 }
+/** True only for a flagged one-side row: `arm`, `leg` or `side` (D-0268). Anything else is false. */
+export function isOneSide(exercise) {
+    const u = exercise.unilateral;
+    return u === "arm" || u === "leg" || u === "side";
+}
 /**
- * Work + rest for one set (rule 7.1). `durationS` is a timed set's planned duration (D-0092 §1,
+ * Work + rest for one set (rule 7.1). A flagged one-side exercise works two sides per set
+ * (2 × 45 s, or twice the planned duration when timed) and rests once (D-0268). `durationS` is a timed set's planned duration (D-0092 §1,
  * `plannedDurationS`); without it (or when it is null) a timed set works its library
  * `defaultDurationS`, so the 1-argument result is unchanged (D-0092 §4). A non-timed set
  * always works 45 s, and a timed exercise with no duration at all falls back to 45 s.
  */
 export function setCostS(exercise, durationS) {
-    const work = exercise.timed ? (durationS ?? exercise.defaultDurationS ?? WORK_S) : WORK_S;
+    const side = exercise.timed ? (durationS ?? exercise.defaultDurationS ?? WORK_S) : WORK_S;
+    const work = isOneSide(exercise) ? 2 * side : side;
     const rest = exercise.type === "compound" ? REST_COMPOUND_S : REST_ISOLATION_S;
     return work + rest;
 }
