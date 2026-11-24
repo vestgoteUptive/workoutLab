@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.1, UF-09.3]
 decisions: [D-0268, D-0260, D-0092, D-0024]
 deps: [T-0978a, T-0952]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-engine (agent engine-dev). About ½ day. Second half of the split of T-0978 (D-0268). It stays `todo` until T-0978a is merged: the e2e flip below needs the flag in the cached library, which only T-0978a delivers; the orchestrator moves it to `ready` then. NOT parallel with T-0692 (same engine files, rules file and vendor copy): build T-0692 first. -->
 
