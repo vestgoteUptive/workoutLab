@@ -1,5 +1,5 @@
-// T-0538 UF-08.2 e2e (AC9; D-0199 §2): Remove -> Never suggest -> leave -> Start again -> the
-// exercise is absent, and the Supabase mock records exactly one upsert to `excluded_exercises`
+// T-0538 UF-08.2 e2e (AC9; D-0199 §2), moved to UF-08.6 by T-1019 (D-0274): Remove -> Never suggest
+// -> leave -> Suggest again -> the exercise is absent from its area, and the Supabase mock records exactly one upsert to `excluded_exercises`
 // with `ignoreDuplicates`. Same seed as uf-08-setup.spec.ts; the excluded route here is stateful
 // and registered after `mockSupabaseData`, so it wins over the empty-list default.
 import type { Page } from "@playwright/test";
@@ -80,14 +80,25 @@ test("Remove, Never suggest, leave, Start again: the exercise is gone; one ignor
   await page.goto("/");
   await injectSession(page);
   await page.goto("/session/setup");
-  await page.getByRole("button", { name: "30 minutes" }).click();
+  await page.getByRole("button", { name: "90 minutes" }).click();
   const suggest = page.getByRole("button", { name: "Suggest my workout" });
   await expect(page.locator('[data-part="fit-line"]')).toHaveText(/^Fits:/);
   await suggest.click();
-
-  const names = page.locator('[data-part="item-row"] [data-part="row-name"]');
   await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
-  await expect(names.first()).toBeVisible();
+
+  // An area with two or more exercises, so Remove leaves the area (and UF-08.6) in place.
+  const areaRow = page
+    .locator('[data-part="area-row"]')
+    .filter({ has: page.locator('[data-part="area-count"]', { hasText: /^[2-9] exercises$/ }) })
+    .first();
+  await expect(areaRow).toBeVisible();
+  const area = (await areaRow.getAttribute("data-area"))!;
+  const openArea = async (): Promise<void> => {
+    await page.locator(`[data-area="${area}"] [data-part="area-open"]`).click();
+    await expect(page.locator('[data-screen-id="UF-08.6"]')).toBeVisible();
+  };
+  await openArea();
+  const names = page.locator('[data-part="detail-row"] [data-part="row-name"] > span:first-child');
   const count = await names.count();
   expect(count).toBeGreaterThan(1);
   const removed = (await names.nth(count - 1).textContent())!;
@@ -104,10 +115,14 @@ test("Remove, Never suggest, leave, Start again: the exercise is gone; one ignor
     page.getByRole("button", { name: `Undo, ${removed} won't be suggested` }),
   ).toBeFocused();
 
+  // Leave UF-08.6, UF-08.2 and UF-08.1, then Suggest again: a fresh plan reads the stored exclusion.
+  await page.getByRole("link", { name: "Back" }).click();
+  await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
   await page.getByRole("link", { name: "Back" }).click();
   await expect(page.locator('[data-part="fit-line"]')).toHaveText(/^Fits:/);
   await suggest.click();
   await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
+  await openArea();
   await expect(names.filter({ hasText: new RegExp(`^${removed}$`) })).toHaveCount(0);
 
   expect(writes).toHaveLength(1);

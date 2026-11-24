@@ -2,12 +2,11 @@
 // make (AC13: axe with contrast at 390 and 320 px and at 200 % zoom, no sideways scroll, targets of
 // at least 44 px, unique names, focus never on body). Same seed as uf-08-setup.spec.ts: the L1+
 // library, the profile with FULL equipment, the nine F-targets and no sets. Supabase is mocked
-// through `page.route`. QA wires this file into `tests/e2e` (the imports below are the paths from
-// this folder; from `tests/e2e` they are `./fixtures/...`).
+// through `page.route`. Wired into `tests/e2e` by T-1019.
 import AxeBuilder from "@axe-core/playwright";
 import type { Locator, Page } from "@playwright/test";
-import { expect, test } from "../../../../../../tests/e2e/fixtures/guarded-test.js";
-import { goOffline } from "../../../../../../tests/e2e/fixtures/offline.js";
+import { expect, test } from "./fixtures/guarded-test.js";
+import { goOffline } from "./fixtures/offline.js";
 import {
   FAKE_USER_ID,
   injectSession,
@@ -15,13 +14,9 @@ import {
   mockSupabaseAuth,
   mockSupabaseData,
   mockSupabaseRest,
-} from "../../../../../../tests/e2e/fixtures/supabase-mock.js";
-import {
-  exerciseAreas,
-  exercises,
-  profile,
-} from "../../../../../../tests/e2e/fixtures/uf-04-library-data.js";
-import { settledBox } from "../../../../../../tests/e2e/helpers/settled-box.js";
+} from "./fixtures/supabase-mock.js";
+import { exerciseAreas, exercises, profile } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const F_TARGETS: Record<string, number> = {
   chest: 20,

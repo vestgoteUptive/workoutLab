@@ -21,6 +21,7 @@ import {
   VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercisesLoaded, profile } from "./fixtures/uf-04-library-data.js";
+import { startWithExercise } from "./fixtures/uf-08-start.js";
 import { settledBox } from "./helpers/settled-box.js";
 
 type Row = Record<string, unknown>;
@@ -721,22 +722,8 @@ test.describe("AC5 zero history and a return after 10 days off", () => {
     await signInAndCache(page);
     await page.goto("/session/setup");
     await expect(screen(page, "UF-08.1")).toBeVisible();
-    await page.getByRole("button", { name: "30 minutes" }).click();
-    await expect(page.locator('[data-part="fit-line"]')).toHaveText(/^Fits:/);
-    await page.getByRole("button", { name: "Start empty" }).click();
-    await expect(screen(page, "UF-08.2")).toBeVisible();
-    await page.getByRole("button", { name: "Add exercise" }).click();
-    const sheet = screen(page, "UF-08.5");
-    await expect(sheet).toBeVisible();
-    await sheet.getByLabel("Search exercises").fill("dumbbell row");
-    await sheet
-      .getByRole("button", { name: /^Add Dumbbell row/ })
-      .first()
-      .click();
-    await expect(sheet).toHaveCount(0);
-    await page.getByRole("button", { name: "Start workout", exact: true }).click();
-    await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
-    await page.getByRole("button", { name: "Skip warm-up" }).click();
+    // T-1019: UF-08.1 -> Start empty -> Back -> Dumbbell row alone -> Start workout -> skip warm-up.
+    await startWithExercise(page, { area: "back", query: "dumbbell row", name: "Dumbbell row" });
     await expect(screen(page, "UF-09.3")).toBeVisible();
     await saveSet(page);
     await expect(nameOf(page)).toHaveText("Dumbbell row");

@@ -20,6 +20,7 @@ import {
   VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercisesLoaded, profile } from "./fixtures/uf-04-library-data.js";
+import { startWithExercise } from "./fixtures/uf-08-start.js";
 import { settledBox } from "./helpers/settled-box.js";
 
 const F_TARGETS: Record<string, number> = {
@@ -137,24 +138,16 @@ async function openSetup(page: Page): Promise<void> {
   await expect(screen(page, "UF-08.1")).toBeVisible();
 }
 
-/** UF-08.1 → Start empty → Add exercise → search `query` → "Start with" (the Main lift, 6-8 reps
- *  for bench press) or "Add" → Start workout → skip the warm-up: lands on UF-09.3 of that
- *  exercise. */
+/** UF-08.1 → Start empty → the exercise's area → that exercise alone ("Start with this" for the
+ *  Main lift, 6-8 reps for bench press) → Start workout → skip the warm-up: lands on UF-09.3 of that
+ *  exercise. The path through UF-08.2 and UF-08.6 is `startWithExercise` (T-1019). */
 async function startWith(page: Page, query: string, name: string, main = false): Promise<void> {
-  await page.getByRole("button", { name: "30 minutes" }).click();
-  await page.getByRole("button", { name: "Start empty" }).click();
-  await expect(screen(page, "UF-08.2")).toBeVisible();
-  await page.getByRole("button", { name: "Add exercise" }).click();
-  const sheet = screen(page, "UF-08.5");
-  await sheet.getByLabel("Search exercises").fill(query);
-  if (main) await sheet.getByRole("button", { name: `Start with ${name}` }).click();
-  else await sheet.getByRole("button", { name: new RegExp(`^Add ${name}`) }).click();
-  await expect(sheet).toHaveCount(0);
-  await page.getByRole("button", { name: "Start workout", exact: true }).click();
-  await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
-  await page.getByRole("button", { name: "Skip warm-up" }).click();
-  await expect(screen(page, "UF-09.3")).toBeVisible();
-  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  await startWithExercise(page, {
+    area: name === "Bench press" ? "chest" : "arms",
+    query,
+    name,
+    main,
+  });
 }
 
 const BENCH = (daysAgo: number, rirs: (number | null)[], reps = [8, 8, 8], weight = 80) =>

@@ -1453,7 +1453,9 @@ test.describe("T-0638 Quick 20-min link", () => {
     await page.goto("/");
     await expect(page.locator('[data-part="no-workouts"]')).toBeVisible();
     await journey(page);
-    await expect(page.locator('[data-part="row-name"]').first()).toBeVisible();
+    // T-1019: UF-08.2 is the area plan (D-0274): a first workout is a list of area rows.
+    await expect(page.locator('[data-part="area-row"]').first()).toBeVisible();
+    await expect(page.locator('[data-part="start"]')).not.toHaveAttribute("aria-disabled", "true");
   });
 
   test("AC5: the same journey offline, with the cache warm", async ({ page, context }) => {
