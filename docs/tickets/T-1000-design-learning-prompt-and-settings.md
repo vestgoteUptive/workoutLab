@@ -31,3 +31,4 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-1000` and cite UF-08.2 and UF-11.4.
 
 ## Build / accept log
+- Build (design): UF-08.2.md gained "Learning prompt card" (states, copy, focus, contrast); UF-11.4.md gained section 5b "Learning from your edits" (order line, states, a11y); one line each in UF-11.5.md and UF-11.6.md. Test `packages/design-tokens/test/t1000-learning-specs.test.ts`: AC1 card states, AC2 card rules, AC3 Learning section, AC4 focus (one describe each; AC5 = check-all + design-tokens test). Planted faults (backup + cp + cmp): focus-to-Undo text removed, "on every device" changed, "Absent from UF-08.1 and UF-09" changed: each failed 1 test, restored, green. First run red on my own wrong string (role="status" quoting), fixed. Open: after "No thanks" there is no Undo (AC4 names Undo only for yes); focus goes to the next card or the first row.
