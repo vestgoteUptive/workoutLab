@@ -2,7 +2,7 @@
 // Source: packages/{pkg}/src. Rerun `node supabase/scripts/vendor.mjs` after an engine or
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
-import { type Area, type AreaNumbers, type AreaTarget, type Backoff, type EngineProfile, type Goal, type HistorySet, type Instant, type LibraryExercise, type PrefillResult, type SessionInput, type SuggestProfile, type SwapReason, type TimeZone, type Workout, type WorkoutItem } from "./types.js";
+import { type Area, type AreaNumbers, type AreaTarget, type Backoff, type EngineProfile, type Goal, type HistorySet, type Instant, type LibraryExercise, type LocalDate, type PrefillResult, type SessionInput, type SuggestProfile, type SwapReason, type TimeZone, type Workout, type WorkoutItem } from "./types.js";
 export { availableS, isEligible, itemCostS, setCostS, REST_COMPOUND_S, REST_ISOLATION_S, TRANSITION_S, WORK_S, } from "./cost.js";
 /** Rule 7.2 caps. */
 export declare const MAX_ITEMS = 8;
@@ -22,6 +22,59 @@ export declare function avoidedAreas(sessionInput: Pick<SessionInput, "avoidArea
  * the order of `excludeIds` don't change the result.
  */
 export declare function excludedOutAreas(profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], excludeIds: readonly string[]): Area[];
+export interface Start {
+    targets: AreaNumbers;
+    loads: AreaNumbers;
+    deficits: AreaNumbers;
+    daysSince: Record<Area, number | null>;
+    recovering: Set<Area>;
+    /** Rule 6.1 (D-0191 §2): areas the caller skips today, treated like recovering for selection. */
+    avoided: ReadonlySet<Area>;
+    /** Exercise ids with hard sets in the most recent session (D-0040 §9). */
+    recentIds: Set<string>;
+    /** Eligible exercises with at least one primary area, id-sorted. */
+    pool: LibraryExercise[];
+    /** Rule 0.2 (D-0202 §3): favorite ids, rule 7.2 ranking key (0). */
+    favorites: ReadonlySet<string>;
+}
+interface Picked {
+    exercise: LibraryExercise;
+    sets: number;
+    isMain: boolean;
+    /** Rule 7.4 Low: trimmed from 3 to 2 sets. */
+    lowTrimmed?: boolean;
+    /** Rule 7.4 High: one back-off set on the main lift. */
+    backoff?: boolean;
+    /** Rule 13: the slot's original exercise, when shuffle replaced it (D-0056 §11). */
+    previous?: LibraryExercise;
+}
+/** A timed exercise's planned duration (D-0092 §1); null for a non-timed one. */
+export type DurationOf = (ex: LibraryExercise) => number | null;
+export interface State {
+    start: Start;
+    /** Rule 7.1 work of a timed set: the planned duration, used by every time cost (D-0092 §2). */
+    durationOf: DurationOf;
+    projected: AreaNumbers;
+    picked: Picked[];
+    primaryCount: Record<Area, number>;
+    remainingS: number;
+}
+export declare function buildStart(history: readonly HistorySet[], targets: readonly AreaTarget[], profile: Pick<EngineProfile, "level" | "equipment">, library: readonly LibraryExercise[], excludeIds: readonly string[], avoided: ReadonlySet<Area>, favoriteIds: readonly string[], now: Instant, tz: TimeZone): Start;
+export declare function newState(start: Start, available: number, durationOf: DurationOf): State;
+/**
+ * Rule 7.2 candidates for `area`, in rank order: (0) favorite (rule 0.2), (1) not in the recent
+ * session, (2) gap fit, (3) id. Key (0) makes the list the stable partition of the list without
+ * favorites, favorites first (D-0202 §3).
+ */
+export declare function candidates(s: State, area: Area): LibraryExercise[];
+/**
+ * Rule 7.2 step 1 order for `area` (D-0269 §1): the compound candidates, favorites first (rule
+ * 0.2 key (0)), then `externalLoad: true` before bodyweight, then the candidate rank. The sort
+ * is stable, so each part keeps `candidates` order. Step 3 (greedy) does not use it.
+ * The `fav` key repeats what `candidates` already orders; it is kept on purpose so the
+ * favorites-before-loaded order stays explicit if `candidates` ever changes.
+ */
+export declare function mainCandidates(s: State, area: Area): LibraryExercise[];
 /** The default goal when a profile has none (D-0095 §1): today's rule 7.2 slots. */
 export declare const DEFAULT_GOAL: Goal;
 /** Rule 7.2 rep slots by goal (D-0061 §1, D-0095): main lift, other compounds, isolation. */
@@ -40,6 +93,18 @@ export declare function goalOf(profile: Pick<SuggestProfile, "goal">): Goal;
  * Shared with `applySwap` (D-0093 §2). The default goal gives today's 6–8 / 8–12 / 10–15.
  */
 export declare function repRange(ex: LibraryExercise, isMain: boolean, goal?: Goal): [number, number] | [null, null];
+/** What rule 14 needs from `suggest` (D-0057 §7): the normalised history and today. */
+export interface PrefillCtx {
+    hard: readonly HistorySet[];
+    lib: ReadonlyMap<string, LibraryExercise>;
+    today: LocalDate;
+    tz: TimeZone;
+    /** The profile's goal, which picks the rule 7.2 rep slots (D-0095 §2). */
+    goal: Goal;
+}
+/** The planned duration of each exercise over `ctx`, computed once per exercise (D-0092 §1). */
+export declare function durationsOf(ctx: PrefillCtx): DurationOf;
+export declare function prefillCtxOf(history: readonly HistorySet[], library: readonly LibraryExercise[], now: Instant, tz: TimeZone, goal?: Goal): PrefillCtx;
 /**
  * The one rule 7.4 back-off (D-0040 §4, D-0131 §2), used by `suggest` and by `applySwap`'s rule
  * 12.1 recompute: `backoffWeightKg(prefill weight, inc)` at the main `repsMin`.

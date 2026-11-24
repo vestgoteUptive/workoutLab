@@ -267,16 +267,45 @@ test.describe("T-0391 AC6 DETAIL_PATTERN takes U+00A0 before kg, not a plain spa
 });
 
 const screenUF082 = (page: Page) => page.locator('[data-screen-id="UF-08.2"]');
-const itemRows = (page: Page) => page.locator('[data-part="item-row"]');
-const rowNames = (page: Page) => itemRows(page).locator('[data-part="row-name"]');
+const areaRows = (page: Page) => page.locator('[data-part="area-row"]');
+const areaNames = (page: Page) => areaRows(page).locator('[data-part="area-name"]');
+const screenUF086 = (page: Page) => page.locator('[data-screen-id="UF-08.6"]');
+const detailRows = (page: Page) => page.locator('[data-part="detail-row"]');
+const detailNames = (page: Page) =>
+  detailRows(page).locator('[data-part="row-name"] > span:first-child');
 
+/** T-1019: UF-08.2 area row -> UF-08.6 (the exercises live there, D-0274). Default: first area. */
+async function openArea(page: Page, area?: string): Promise<string> {
+  const row = area === undefined ? areaRows(page).first() : page.locator(`[data-area="${area}"]`);
+  const id = (await row.getAttribute("data-area"))!;
+  await row.locator('[data-part="area-open"]').click();
+  await expect(screenUF086(page)).toBeVisible();
+  return id;
+}
+
+/** Name and detail ("4 × 6–8 · 12 min") of each exercise row on UF-08.6, in order. */
 async function rowTexts(page: Page): Promise<string[][]> {
-  return itemRows(page).evaluateAll((rows) =>
+  return detailRows(page).evaluateAll((rows) =>
     rows.map((r) => [
-      r.querySelector('[data-part="row-name"]')!.textContent!,
+      r.querySelector('[data-part="row-name"] > span')!.textContent!,
       r.querySelector('[data-part="row-detail"]')!.textContent!,
     ]),
   );
+}
+
+/** Every area's UF-08.6 rows, in the order UF-08.2 lists the areas; returns to UF-08.2. */
+async function allRowTexts(page: Page): Promise<string[][]> {
+  const areas = await areaRows(page).evaluateAll((els) =>
+    els.map((e) => e.getAttribute("data-area")!),
+  );
+  const out: string[][] = [];
+  for (const area of areas) {
+    await openArea(page, area);
+    out.push(...(await rowTexts(page)));
+    await page.getByRole("link", { name: "Back" }).click();
+    await expect(screenUF082(page)).toBeVisible();
+  }
+  return out;
 }
 
 /** UF-08.1 at 30 min → Suggest → UF-08.2. Returns the fit line UF-08.1 showed. */
@@ -291,43 +320,54 @@ async function suggestAt30(page: Page): Promise<string> {
 }
 
 test.describe("T-0303b AC-12 UF-08.2 online", () => {
-  test("rows match the fit line, Remove removes, chip 20 keeps the main lift", async ({ page }) => {
+  test("T-1019 area rows match the fit line, minus then Remove removes an area, chip 20 rebuilds", async ({
+    page,
+  }) => {
     await openSetup(page);
     const line = await suggestAt30(page);
     const n = Number(/^Fits: (\d+) exercises?/.exec(line)![1]);
-    await expect(itemRows(page)).toHaveCount(n);
-    const first = (await rowNames(page).first().textContent())!;
-    await expect(itemRows(page).first().locator('[data-part="row-detail"]')).toHaveText(
-      DETAIL_PATTERN,
+    // UF-08.2 lists areas now (D-0274): the exercises behind them add up to the fit line's count.
+    const counts = await page.locator('[data-part="area-count"]').allTextContents();
+    expect(counts.reduce((sum, c) => sum + Number(/^(\d+) exercise/.exec(c)![1]), 0)).toBe(n);
+    await expect(areaRows(page).first().locator('[data-part="area-minutes"]')).toHaveText(
+      /^~\d+ min$/,
     );
 
-    const second = (await rowNames(page).nth(1).textContent())!;
-    await page.getByRole("button", { name: `Remove ${second}` }).click();
-    await expect(rowNames(page)).not.toContainText([second]);
-    expect(await rowNames(page).allTextContents()).not.toContain(second);
+    const first = (await areaNames(page).first().textContent())!;
+    const second = (await areaNames(page).nth(1).textContent())!;
+    const minus = areaRows(page).nth(1).locator('[data-part="minus"]');
+    while ((await minus.getAttribute("aria-label"))!.startsWith("One set less"))
+      await minus.click();
+    await minus.click();
+    await expect(areaNames(page)).not.toContainText([second]);
+    expect(await areaNames(page).allTextContents()).not.toContain(second);
 
     await page.getByRole("button", { name: "20 minutes" }).click();
     await expect(page.getByRole("button", { name: "20 minutes" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    await expect(rowNames(page).first()).toHaveText(first);
+    await expect(areaNames(page).first()).toHaveText(first);
   });
 });
 
 test.describe("T-0521 AC7 UF-08.2 Remove does not refill (GitHub #33)", () => {
-  test("removing the last accessory drops one row and no new exercise appears", async ({
+  test("removing an area's last exercise on UF-08.6 drops one area and no new area appears", async ({
     page,
   }) => {
     await openSetup(page);
     await suggestAt30(page);
-    const before = await rowNames(page).allTextContents();
+    const before = await areaNames(page).allTextContents();
     expect(before.length).toBeGreaterThan(1);
     const last = before.at(-1)!;
-    await page.getByRole("button", { name: `Remove ${last}` }).click();
-    await expect(itemRows(page)).toHaveCount(before.length - 1);
-    const after = await rowNames(page).allTextContents();
-    expect(after).toEqual(before.slice(0, -1));
+    await openArea(page, last.toLowerCase());
+    // Remove every exercise of that area: UF-08.2 comes back without it and without a refill.
+    while ((await screenUF086(page).isVisible()) && (await detailRows(page).count()) > 0) {
+      await detailRows(page).first().locator('[data-part="remove"]').click();
+    }
+    await expect(screenUF082(page)).toBeVisible();
+    await expect(areaRows(page)).toHaveCount(before.length - 1);
+    expect(await areaNames(page).allTextContents()).toEqual(before.slice(0, -1));
   });
 });
 
@@ -340,7 +380,7 @@ test.describe("T-0303b AC-12 UF-08.2 offline (NFR-OFF-3)", () => {
     await expect.poll(() => cachedCounts(page)).toEqual({ library: exercises.length, targets: 9 });
     await precacheSettled(page);
     await suggestAt30(page);
-    const online = await rowTexts(page);
+    const online = await allRowTexts(page);
     expect(online.length).toBeGreaterThan(0);
 
     await context.setOffline(true);
@@ -349,16 +389,20 @@ test.describe("T-0303b AC-12 UF-08.2 offline (NFR-OFF-3)", () => {
     await expect(page.getByLabel("Offline")).toBeVisible();
     await expect(fitLine(page)).toHaveText(FIT_PATTERN);
     await suggestAt30(page);
-    expect(await rowTexts(page)).toEqual(online);
+    expect(await allRowTexts(page)).toEqual(online);
 
     const second = online[1]![0]!;
-    await page.getByRole("button", { name: `Remove ${second}` }).click();
-    await expect.poll(() => rowNames(page).allTextContents()).not.toContain(second);
+    const areas = await areaNames(page).count();
+    await openArea(page, (await areaRows(page).nth(1).getAttribute("data-area"))!);
+    await page.getByRole("button", { name: `Remove ${second}`, exact: true }).click();
+    // Offline, Remove works: the area (one exercise at 30 min) leaves UF-08.2.
     await expect(screenUF082(page)).toBeVisible();
+    await expect(areaRows(page)).toHaveCount(areas - 1);
+    expect((await allRowTexts(page)).map(([name]) => name)).not.toContain(second);
   });
 });
 
-test.describe("T-0581 UF-08.2 how-to sheet from the exercise name", () => {
+test.describe("T-0581 UF-08.6 how-to sheet from the exercise row", () => {
   test("opens, axe is clean, 44px target, focus returns, plan unchanged, works offline", async ({
     page,
     context,
@@ -368,6 +412,7 @@ test.describe("T-0581 UF-08.2 how-to sheet from the exercise name", () => {
     await expect.poll(() => cachedCounts(page)).toEqual({ library: exercises.length, targets: 9 });
     await precacheSettled(page);
     await suggestAt30(page);
+    await openArea(page);
     const before = await rowTexts(page);
     const name = before[0]![0]!;
     const button = page.getByRole("button", { name: `How to do ${name}` });
@@ -408,18 +453,18 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
     expect(serious).toEqual([]);
   });
 
-  test("Remove, Shuffle, the 5 chips, Looks good and Back are each ≥ 44 × 44 px", async ({
+  test("the area rows, their set controls, the 5 chips, Start workout and Back are each ≥ 44 × 44 px", async ({
     page,
   }) => {
     await openSetup(page);
     await suggestAt30(page);
-    const names = await rowNames(page).allTextContents();
-    expect(names.length).toBeGreaterThan(0);
+    expect(await areaRows(page).count()).toBeGreaterThan(0);
     const targets = [
-      ...names.map((n) => page.getByRole("button", { name: `Remove ${n}` })),
-      page.getByRole("button", { name: "Shuffle" }),
+      ...(await areaRows(page).locator('[data-part="area-open"]').all()),
+      ...(await areaRows(page).locator('[data-part="minus"]').all()),
+      ...(await areaRows(page).locator('[data-part="plus"]').all()),
       ...[20, 30, 45, 60, 90].map((m) => page.getByRole("button", { name: `${m} minutes` })),
-      page.getByRole("button", { name: "Looks good" }),
+      page.getByRole("button", { name: "Start workout" }),
       page.getByRole("link", { name: "Back" }),
     ];
     for (const target of targets) {
@@ -430,12 +475,12 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
     }
   });
 
-  test("keyboard only: Suggest → Remove → Shuffle → Looks good", async ({ page }) => {
+  test("keyboard only: Suggest → Remove an area → Start workout", async ({ page }) => {
     await openSetup(page);
     const focused = (locator: ReturnType<Page["getByRole"]>) =>
       locator.evaluate((el) => el === document.activeElement);
     async function tabTo(locator: ReturnType<Page["getByRole"]>, label: string): Promise<void> {
-      for (let i = 0; i < 30; i += 1) {
+      for (let i = 0; i < 40; i += 1) {
         if (await focused(locator)) return;
         await page.keyboard.press("Tab");
       }
@@ -448,31 +493,31 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
     await page.keyboard.press("Enter");
     await expect(screenUF082(page)).toBeVisible();
 
-    const last = (await rowNames(page).last().textContent())!;
-    const remove = page.getByRole("button", { name: `Remove ${last}` });
-    await tabTo(remove, `Remove ${last}`);
+    // The last area: its control reads Remove after the sets come down to 2 (D-0274).
+    const before = await areaNames(page).allTextContents();
+    const last = before.at(-1)!;
+    const minus = page.locator(`[data-area="${last.toLowerCase()}"] [data-part="minus"]`);
+    await tabTo(minus, `the sets control of ${last}`);
+    while (
+      (await minus.count()) > 0 &&
+      (await minus.getAttribute("aria-label")) !== `Remove ${last}`
+    ) {
+      await page.keyboard.press("Enter");
+    }
     await page.keyboard.press("Enter");
-    await expect.poll(() => rowNames(page).allTextContents()).not.toContain(last);
-    // D-0109 §6: focus lands on a Remove button, never on the body.
-    expect(
-      await page.evaluate(() => document.activeElement?.getAttribute("data-part") ?? null),
-    ).toBe("remove");
+    await expect.poll(() => areaNames(page).allTextContents()).not.toContain(last);
+    // D-0109 §6: focus lands on a control, never on the body.
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(false);
 
-    const shuffle = page.getByRole("button", { name: "Shuffle" });
-    await tabTo(shuffle, "Shuffle");
+    const go = page.getByRole("button", { name: "Start workout" });
+    await tabTo(go, "Start workout");
     await page.keyboard.press("Enter");
-    expect(await focused(shuffle)).toBe(true);
-
-    const go = page.getByRole("button", { name: "Looks good" });
-    await tabTo(go, "Looks good");
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/session\/setup\?step=ready$/);
-    await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
-    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+    await expect(page).toHaveURL(SESSION_URL);
+    await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible();
   });
 });
 
-// ---- T-0303d UF-08.4 Ready and Start (AC-10; D-0086, D-0091 §1, D-0108, D-0110, D-0112) ----
+// ---- T-0303d, T-1009 UF-08.2 Start (AC-10; D-0086, D-0091 §1, D-0108, D-0110, D-0112) ----
 // The spec registers its own `sessions` route after `mockSupabaseData` (the later-registered
 // handler wins) to record what AutoSync upserts. Start itself makes no request (D-0110 §5): the
 // row goes to IndexedDB, and the sync handle flushes it 250 ms later when online (D-0116), or on
@@ -480,8 +525,6 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const SESSION_URL = /\/session\/([0-9a-f-]{36})$/;
-
-const screenUF084 = (page: Page) => page.locator('[data-screen-id="UF-08.4"]');
 
 interface SessionUpsert {
   id: string;
@@ -531,17 +574,16 @@ async function storedSession(
   }, id);
 }
 
-/** UF-08.2 → Looks good → UF-08.4. */
+/** T-1009 (D-0280): UF-08.4 is gone, Start is on UF-08.2. Open its Focus mode disclosure. */
 async function toReady(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(page).toHaveURL(/\/session\/setup\?step=ready$/);
-  await expect(screenUF084(page)).toBeVisible();
+  await expect(screenUF082(page)).toBeVisible();
+  await page.locator('[data-part="focus-mode-summary"]').click();
   await expect(page.locator("[data-screen-id]")).toHaveCount(1);
 }
 
 /** Start → `/session/<uuid v4>` with focus mode on screen. Returns the id. */
 async function startWorkout(page: Page): Promise<string> {
-  await page.getByRole("button", { name: "Start" }).click();
+  await page.getByRole("button", { name: "Start workout" }).click();
   await expect(page).toHaveURL(SESSION_URL);
   const id = SESSION_URL.exec(page.url())![1]!;
   expect(id).toMatch(UUID_V4);
@@ -549,16 +591,15 @@ async function startWorkout(page: Page): Promise<string> {
   return id;
 }
 
-test.describe("T-0303d AC-10 UF-08.4 online", () => {
+test.describe("T-0303d AC-10 UF-08.2 Start online", () => {
   test("Start → /session/<uuid>, and within 5 s, with no reload, one request sends the row", async ({
     page,
   }) => {
     const writes = await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
-    await toReady(page);
-    await expect(page.locator('[data-part="summary"]')).toHaveText(
-      /^\d+ min · warm-up \+ \d+ exercises? · \d+ sets? · done by \d{1,2}:\d{2}( [AP]M)?$/,
+    await expect(page.locator('[data-part="done-by"]')).toHaveText(
+      /^Done by \d{1,2}:\d{2}( [AP]M)?$/,
     );
     // D-0116 §6: the enqueue flush (250 ms after the IDB commit) sends the row. No reload, and
     // no IndexedDB `pending: true` read, which would race that flush.
@@ -575,11 +616,12 @@ test.describe("T-0303d AC-10 UF-08.4 online", () => {
     expect(carrying[0]!.find((r) => r.id === id)!.time_budget_min).toBe(30);
   });
 
-  test("browser Back from /session/<id> never lands on UF-08.4 (D-0123 §2)", async ({ page }) => {
+  test("browser Back from /session/<id> never lands on UF-08.2 Start (D-0123 §2)", async ({
+    page,
+  }) => {
     await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
-    await toReady(page);
     await startWorkout(page);
     // A user activation after the guard is armed, so Chromium keeps the entry (D-0123 §3 note).
     await page.waitForFunction(() => history.state?.wlFocusGuard === true);
@@ -589,14 +631,14 @@ test.describe("T-0303d AC-10 UF-08.4 online", () => {
     await expect(page).toHaveURL(SESSION_URL);
     await page.waitForTimeout(50);
     await expect(page).not.toHaveURL(/step=ready/);
-    await expect(screenUF084(page)).toHaveCount(0);
+    await expect(screenUF082(page)).toHaveCount(0);
     const ids = page.locator("[data-screen-id]");
     await expect(ids).toHaveCount(1);
     expect(await ids.getAttribute("data-screen-id")).toBe("UF-09.9");
   });
 });
 
-test.describe("T-0303d AC-10 UF-08.4 offline (NFR-OFF-2)", () => {
+test.describe("T-0303d AC-10 UF-08.2 Start offline (NFR-OFF-2)", () => {
   test("offline Start writes IndexedDB and navigates; going online sends it once", async ({
     page,
     context,
@@ -616,7 +658,6 @@ test.describe("T-0303d AC-10 UF-08.4 offline (NFR-OFF-2)", () => {
     await expect(fitLine(page)).toHaveText(FIT_PATTERN);
     await page.getByRole("button", { name: "Suggest my workout" }).click();
     await expect(screenUF082(page)).toBeVisible();
-    await toReady(page);
     const id = await startWorkout(page);
     expect(await storedSession(page, id)).toEqual({ pending: true, time_budget_min: 45 });
     expect(gate.writesFulfilledOffline()).toBe(0);
@@ -627,8 +668,10 @@ test.describe("T-0303d AC-10 UF-08.4 offline (NFR-OFF-2)", () => {
   });
 });
 
-test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
-  test("axe reports 0 serious or critical violations on UF-08.4", async ({ page }) => {
+test.describe("T-0303d AC-10 UF-08.2 Start a11y (NFR-A11Y-1/2/6)", () => {
+  test("axe reports 0 serious or critical violations on UF-08.2 with Focus mode open", async ({
+    page,
+  }) => {
     await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
@@ -646,7 +689,7 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
     await suggestAt30(page);
     await toReady(page);
     const targets = [
-      page.getByRole("button", { name: "Start" }),
+      page.getByRole("button", { name: "Start workout" }),
       page.getByRole("link", { name: "Back" }),
       // T-0599: the switch is 48 × 28 inside its label, and the label row is the 44 px target
       // (state-patterns "Toggle"); the checkbox itself is asserted to sit inside that row.
@@ -662,7 +705,7 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
     }
   });
 
-  test("keyboard only: Looks good → toggle a switch → Start", async ({ page }) => {
+  test("keyboard only: Focus mode → toggle a switch → Start workout", async ({ page }) => {
     await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
@@ -677,10 +720,10 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
     }
 
     await page.locator("body").focus();
-    const go = page.getByRole("button", { name: "Looks good" });
-    await tabTo(go, "Looks good");
+    const summary = page.locator('[data-part="focus-mode-summary"]');
+    await tabTo(summary, "Focus mode");
     await page.keyboard.press("Enter");
-    await expect(screenUF084(page)).toBeVisible();
+    await expect(page.locator('[data-part="focus-mode"]')).toHaveJSProperty("open", true);
 
     const voice = page.getByRole("checkbox", { name: "Voice countdown 3-2-1" });
     await tabTo(voice, "Voice countdown 3-2-1");
@@ -690,8 +733,8 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
       '{"version":1,"sound":true,"voice":false,"keepAwake":true}',
     );
 
-    const start = page.getByRole("button", { name: "Start" });
-    await tabTo(start, "Start");
+    const start = page.getByRole("button", { name: "Start workout" });
+    await tabTo(start, "Start workout");
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(SESSION_URL);
     await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible();
@@ -810,7 +853,7 @@ test.describe("T-0393 UF-08.2 loaded library (D-0044, D-0109 §4)", () => {
     await seedLoaded(page, []);
     await openSetup(page);
     await suggestAt30(page);
-    const rows = await rowTexts(page);
+    const rows = await allRowTexts(page);
     expect(rows.length).toBeGreaterThan(0);
     // Rule 14.1: no history gives a loaded exercise a null weight, and a bodyweight one 0.
     expect(rows.some(([name]) => loadedByName(name!).external_load === true)).toBe(true);
@@ -828,7 +871,7 @@ test.describe("T-0393 UF-08.2 loaded library (D-0044, D-0109 §4)", () => {
     await seedLoaded(page, loadedSets());
     await openSetup(page);
     await suggestAt30(page);
-    const rows = await rowTexts(page);
+    const rows = await allRowTexts(page);
     expect(rows.length).toBeGreaterThan(0);
     // Rule 14 per slot (build_muscle, rule 7.2): main lift 6–8, other compounds 8–12, isolation
     // 10–15. Gap 3 days < 10, so rules 14.2/14.3 don't apply. 7 < every high (8, 12, 15), so
@@ -858,7 +901,7 @@ test.describe("T-0393 UF-08.2 loaded library (D-0044, D-0109 §4)", () => {
       .toEqual({ library: exercisesLoaded.length, targets: 9 });
     await precacheSettled(page);
     await suggestAt30(page);
-    const online = await rowTexts(page);
+    const online = await allRowTexts(page);
     expect(online.some(([, detail]) => KG_ROW.test(detail!))).toBe(true);
 
     await context.setOffline(true);
@@ -867,7 +910,7 @@ test.describe("T-0393 UF-08.2 loaded library (D-0044, D-0109 §4)", () => {
     await expect(page.getByLabel("Offline")).toBeVisible();
     await expect(fitLine(page)).toHaveText(FIT_PATTERN);
     await suggestAt30(page);
-    expect(await rowTexts(page)).toEqual(online);
+    expect(await allRowTexts(page)).toEqual(online);
   });
 });
 
@@ -951,11 +994,11 @@ test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109
     }
   });
 
-  test("T-0412 AC2 UF-08.2 main row is M at 4 × 6–8 · 42.5 kg", async ({ page }) => {
+  test("T-0412 AC2 UF-08.6 main row is M at 4 × 6–8 · 42.5 kg", async ({ page }) => {
     await seedLoaded(page, mainSeed());
     await openSetup(page);
     await suggestAt30(page);
-    const rows = await rowTexts(page);
+    const rows = await allRowTexts(page);
     expect(rows.length).toBeGreaterThan(0);
     const [name, detail] = rows[0]!;
     expect(name).toBe(MAIN_NAME);
@@ -995,7 +1038,7 @@ test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109
       .toEqual({ library: exercisesLoaded.length, targets: 9 });
     await precacheSettled(page);
     await suggestAt30(page);
-    const online = await rowTexts(page);
+    const online = await allRowTexts(page);
     expect(online[0]![0]).toBe(MAIN_NAME);
     expect(online[0]![1]).toMatch(MAIN_DETAIL);
 
@@ -1005,7 +1048,7 @@ test.describe("T-0412 UF-08.2 loaded main lift with history (D-0071 §10, D-0109
     await expect(page.getByLabel("Offline")).toBeVisible();
     await expect(fitLine(page)).toHaveText(FIT_PATTERN);
     await suggestAt30(page);
-    expect(await rowTexts(page)).toEqual(online);
+    expect(await allRowTexts(page)).toEqual(online);
   });
 });
 
@@ -1034,17 +1077,18 @@ async function storedPlanIds(page: Page, id: string): Promise<string[]> {
 }
 
 test.describe("T-0303c AC-9 UF-08.3 swap before starting", () => {
-  test("Swap the second item, apply the first candidate, then start with the new exercise", async ({
+  test("Swap an exercise on UF-08.6, apply the first candidate, then start with the new exercise", async ({
     page,
   }) => {
     await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
-    const before = await rowNames(page).allTextContents();
-    expect(before.length).toBeGreaterThanOrEqual(2);
+    await openArea(page, "back");
+    const before = await detailNames(page).allTextContents();
+    expect(before.length).toBeGreaterThanOrEqual(1);
 
-    await page.getByRole("button", { name: `Swap ${before[1]!}` }).click();
-    await expect(page).toHaveURL(/\/session\/setup\?step=swap&item=1$/);
+    await page.getByRole("button", { name: `Swap ${before[0]!}` }).click();
+    await expect(page).toHaveURL(/\/session\/setup\?step=swap&item=\d+$/);
     await expect(screenUF051(page)).toBeVisible();
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
 
@@ -1054,24 +1098,25 @@ test.describe("T-0303c AC-9 UF-08.3 swap before starting", () => {
     const picked = (await use.textContent())!.replace(/^Use /, "");
     await use.click();
 
-    await expect(screenUF082(page)).toBeVisible();
-    await expect(page).toHaveURL(/\/session\/setup\?step=suggested$/);
-    const after = await rowNames(page).allTextContents();
-    expect(after[1]).toBe(picked);
-    expect(after[1]).not.toBe(before[1]);
-    expect(after[0]).toBe(before[0]);
+    await expect(screenUF086(page)).toBeVisible();
+    await expect(page).toHaveURL(/\/session\/setup\?step=area&area=back$/);
+    const after = await detailNames(page).allTextContents();
+    expect(after[0]).toBe(picked);
+    expect(after[0]).not.toBe(before[0]);
 
-    await toReady(page);
+    await page.getByRole("link", { name: "Back" }).click();
+    await expect(screenUF082(page)).toBeVisible();
     const id = await startWorkout(page);
     const ids = await storedPlanIds(page, id);
-    expect(ids).toHaveLength(after.length);
-    expect(ids[1]).toBe(picked.toLowerCase().replace(/[ ]/g, "-"));
+    expect(ids).toContain(picked.toLowerCase().replace(/[ ]/g, "-"));
+    expect(ids).not.toContain(before[0]!.toLowerCase().replace(/[ ]/g, "-"));
   });
 
   test("axe reports 0 serious or critical violations on the sheet", async ({ page }) => {
     await openSetup(page);
     await suggestAt30(page);
-    await page.locator('[data-part="swap"]').nth(1).click();
+    await openArea(page);
+    await page.locator('[data-part="swap"]').first().click();
     await expect(screenUF051(page)).toBeVisible();
     await expect(page.getByRole("radiogroup", { name: "Replacement" })).toBeVisible();
     const results = await new AxeBuilder({ page }).analyze();
@@ -1084,6 +1129,7 @@ test.describe("T-0303c AC-9 UF-08.3 swap before starting", () => {
   test("every Swap button is at least 44 x 44 px", async ({ page }) => {
     await openSetup(page);
     await suggestAt30(page);
+    await openArea(page);
     const buttons = page.locator('[data-part="swap"]');
     const count = await buttons.count();
     expect(count).toBeGreaterThan(0);
@@ -1097,7 +1143,8 @@ test.describe("T-0303c AC-9 UF-08.3 swap before starting", () => {
   test("keyboard only: Swap, a reason chip, Use", async ({ page }) => {
     await openSetup(page);
     await suggestAt30(page);
-    const before = await rowNames(page).allTextContents();
+    await openArea(page);
+    const before = await detailNames(page).allTextContents();
     async function tabTo(locator: ReturnType<Page["getByRole"]>, label: string): Promise<void> {
       for (let i = 0; i < 40; i += 1) {
         if (await locator.evaluate((el) => el === document.activeElement)) return;
@@ -1106,7 +1153,7 @@ test.describe("T-0303c AC-9 UF-08.3 swap before starting", () => {
       throw new Error(`Tab never reached ${label}`);
     }
     await page.locator("body").focus();
-    await tabTo(page.locator('[data-part="swap"]').nth(1), "Swap");
+    await tabTo(page.locator('[data-part="swap"]').first(), "Swap");
     await page.keyboard.press("Enter");
     await expect(screenUF051(page)).toBeVisible();
     // A radio group is one tab stop (the checked chip); arrows move within it.
@@ -1119,9 +1166,9 @@ test.describe("T-0303c AC-9 UF-08.3 swap before starting", () => {
     const picked = (await use.textContent())!.replace(/^Use /, "");
     await tabTo(use, "Use");
     await page.keyboard.press("Enter");
-    await expect(screenUF082(page)).toBeVisible();
-    expect((await rowNames(page).allTextContents())[1]).toBe(picked);
-    expect(picked).not.toBe(before[1]);
+    await expect(screenUF086(page)).toBeVisible();
+    expect((await detailNames(page).allTextContents())[0]).toBe(picked);
+    expect(picked).not.toBe(before[0]);
   });
 });
 
@@ -1160,13 +1207,17 @@ test.describe("T-0520 UF-08.1 Skip today (D-0191, GitHub #33)", () => {
     const skippedNames = new Set(
       exercises.filter((e) => skipped.has(e.id)).map((e) => e.name as string),
     );
-    const names = await rowNames(page).allTextContents();
+    const names = (await allRowTexts(page)).map(([name]) => name!);
     expect(names.length).toBeGreaterThan(0);
     for (const n of names) expect(skippedNames.has(n)).toBe(false);
+    // No area row is a skipped area either (UF-08.2 lists areas, D-0274).
+    const listed = await areaNames(page).allTextContents();
+    expect(listed).not.toContain("Quads");
+    expect(listed).not.toContain("Glutes");
   });
 });
 
-// ---- T-0599 UF-08.1, UF-08.4 Cobalt plan restyle (D-0208, D-0211, D-0213) ----
+// ---- T-0599 UF-08.1, UF-08.2 Cobalt plan restyle (D-0208, D-0211, D-0213) ----
 // Expected values come from tokens.json, never typed.
 type Colours = Record<string, string>;
 const tokens = JSON.parse(
@@ -1263,15 +1314,15 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     ).toEqual(["0px", "0px", TRANSPARENT]);
   });
 
-  test("AC1 UF-08.4: plan state, plan.bg, theme-color, 28 px gutter", async ({ page }) => {
+  test("AC1 UF-08.2 Start: plan state, plan.bg, theme-color, 28 px gutter", async ({ page }) => {
     await openSetup(page);
     await suggestAt30(page);
     await toReady(page);
-    await expect(page.locator('[data-screen-id="UF-08.4"]')).toHaveAttribute(
+    await expect(page.locator('[data-screen-id="UF-08.2"]')).toHaveAttribute(
       "data-wl-state",
       "plan",
     );
-    const sel = '[data-screen-id="UF-08.4"]';
+    const sel = '[data-screen-id="UF-08.2"]';
     expect(await cssOf(page, sel, ["background-color", "padding-left"])).toEqual([
       rgb(plan.bg!),
       "28px",
@@ -1474,7 +1525,9 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     await expect(error).toHaveCount(0);
   });
 
-  test("AC5 contrast on UF-08.4: every text pair and axe colour-contrast", async ({ page }) => {
+  test("AC5 contrast on UF-08.2 with Focus mode open: every text pair and axe colour-contrast", async ({
+    page,
+  }) => {
     await openSetup(page);
     await suggestAt30(page);
     await toReady(page);
@@ -1483,7 +1536,7 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     for (const p of pairs) {
       expect(ratio(p.fg, p.bg), `${p.text}: ${p.fg} on ${p.bg}`).toBeGreaterThanOrEqual(4.5);
     }
-    const start = pairs.find((p) => p.text === "Start")!;
+    const start = pairs.find((p) => p.text === "Start workout")!;
     expect([start.fg, start.bg]).toEqual([rgb(plan["on-action"]!), rgb(plan.action!)]);
     expect(oneDecimal(ratio(start.fg, start.bg))).toBeGreaterThanOrEqual(8.6);
     const body = pairs.find(
@@ -1559,7 +1612,7 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     expect(axe.violations).toEqual([]);
   });
 
-  test("AC5 contrast: the UF-08.4 start-failed alert is plan.attention on plan.bg", async ({
+  test("AC5 contrast: the UF-08.2 start-failed alert is plan.attention on plan.bg", async ({
     page,
   }) => {
     await openSetup(page);
@@ -1688,7 +1741,7 @@ async function computedColours(page: Page, sel: string): Promise<string[]> {
   }, sel);
 }
 
-test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
+test.describe("T-0600 UF-08.2, UF-08.6, UF-08.5 plan restyle at 390 x 844 (T-1019: area plan, D-0274)", () => {
   test.use({ viewport: { width: 390, height: 844 } });
 
   test("AC1 UF-08.2 is plan: plan.bg, theme-color; the open sheet keeps theme-color, 28px radii, 45% scrim", async ({
@@ -1699,6 +1752,8 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
     await expect(screenUF082(page)).toHaveAttribute("data-wl-state", "plan");
     expect((await cssOf(page, SEL_082, ["background-color"]))[0]).toBe(rgb(plan.bg!));
     await expect.poll(() => themeColor(page)).toBe(plan.bg);
+    await openArea(page);
+    await expect(screenUF086(page)).toHaveAttribute("data-wl-state", "plan");
     await openSheet(page);
     const sheet = '[data-screen-id="UF-08.5"]';
     await expect(sheetOf(page)).toHaveAttribute("data-wl-state", "plan");
@@ -1725,7 +1780,7 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
     expect((await cssOf(page, seg("warmup"), ["background-color"]))[0]).toBe(
       rgb(plan["ink-muted"]!),
     );
-    expect((await cssOf(page, seg("item"), ["background-color"]))[0]).toBe(rgb(plan.ink!));
+    expect((await cssOf(page, seg("area"), ["background-color"]))[0]).toBe(rgb(plan.ink!));
     expect((await cssOf(page, '[data-part="bar"]', ["background-color"]))[0]).toBe(
       rgb(plan.raise!),
     );
@@ -1736,42 +1791,20 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
     const found = await computedColours(page, SEL_082);
     expect(found).not.toContain(rgb(legacyTokens.color.warn!));
     expect(found).not.toContain(rgb(legacyTokens.color.accent!));
+    await openArea(page);
     await openSheet(page);
     const inSheet = await computedColours(page, '[data-screen-id="UF-08.5"]');
     expect(inSheet).not.toContain(rgb(legacyTokens.color.warn!));
     expect(inSheet).not.toContain(rgb(legacyTokens.color.accent!));
   });
 
-  test("AC3 Reorder: the moved row is raise with ink text (6.2), captions ink-on-raise", async ({
-    page,
-  }) => {
-    await openSetup(page);
-    await suggestAt30(page);
-    await page.getByRole("button", { name: "Reorder" }).click();
-    const names = page.locator('[data-part="item-row"] [data-part="row-name"]');
-    const first = (await names.first().textContent())!;
-    await page.getByRole("button", { name: `Move ${first} down` }).click();
-    const moved = page.locator('[data-part="item-row"][data-moved="true"]');
-    await expect(moved).toHaveCount(1);
-    await expect(moved).toContainText(first);
-    const read = await moved.evaluate((el) => {
-      const cs = getComputedStyle(el);
-      const cap = getComputedStyle(el.querySelector('[data-part="row-detail"]')!);
-      const name = getComputedStyle(el.querySelector('[data-part="row-name"]')!);
-      return { bg: cs.backgroundColor, name: name.color, caption: cap.color };
-    });
-    expect(read.bg).toBe(rgb(plan.raise!));
-    expect(read.name).toBe(rgb(plan.ink!));
-    expect(read.caption).toBe(rgb(plan["ink-on-raise"]!));
-    expect(oneDecimal(ratio(read.name, read.bg))).toBeGreaterThanOrEqual(6.2);
-    expect(ratio(read.caption, read.bg)).toBeGreaterThanOrEqual(4.5);
-    // The handle is an icon, not text, and hidden from assistive tech.
-    await expect(moved.locator(".wl-uf08__handle")).toHaveAttribute("aria-hidden", "true");
-  });
+  // T-1019: "AC3 Reorder: the moved row is raise with ink text" is deleted. Reorder is retired
+  // (D-0274 section 4), so no row is ever "moved" and there is no handle to style.
 
   test("AC4 Add sheet: the search has a 1px ink-muted boundary", async ({ page }) => {
     await openSetup(page);
     await suggestAt30(page);
+    await openArea(page);
     await openSheet(page);
     const search = '[data-screen-id="UF-08.5"] input[type="search"]';
     expect(
@@ -1780,7 +1813,7 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
     await expect(page.getByRole("dialog", { name: "Add exercise" })).toBeVisible();
   });
 
-  test("AC5 one primary; every text pair >= 4.5; text on raise is never ink-muted; axe on screen, Reorder and sheet", async ({
+  test("AC5 one primary; every text pair >= 4.5; text on raise is never ink-muted; axe on UF-08.2, UF-08.6 and the sheet", async ({
     page,
   }) => {
     await openSetup(page);
@@ -1801,16 +1834,11 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
       expect(axe.violations, what).toEqual([]);
     };
     await checkPairs("UF-08.2");
-    const looks = (await textPairs(page)).find((p) => p.text === "Looks good")!;
+    const looks = (await textPairs(page)).find((p) => p.text === "Start workout")!;
     expect([looks.fg, looks.bg]).toEqual([rgb(plan["on-action"]!), rgb(plan.action!)]);
-    // A raise block with text on it: the standing notice and a refusal line are the same pair.
-    await page.getByRole("button", { name: "Reorder" }).click();
-    await page
-      .getByRole("button", { name: /^Move .* down$/ })
-      .first()
-      .click();
-    await checkPairs("Reorder");
-    await page.getByRole("button", { name: "Done" }).click();
+    // T-1019: the Reorder pairs are gone with Reorder (D-0274); UF-08.6 takes their place.
+    await openArea(page);
+    await checkPairs("UF-08.6");
     await openSheet(page);
     await checkPairs("Add sheet");
     await page.evaluate(() => {
@@ -1822,7 +1850,7 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
     await checkPairs("Add sheet, results");
   });
 
-  test("AC6 targets: Swap, Remove, Move, the rows and the sheet controls are at least 44 x 44", async ({
+  test("AC6 targets: the area rows, Swap, Remove, Not today, the rows and the sheet controls are at least 44 x 44", async ({
     page,
   }) => {
     await openSetup(page);
@@ -1837,20 +1865,25 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
         expect(box!.height).toBeGreaterThanOrEqual(44);
       }
     };
-    await big(page.locator('[data-part="swap"], [data-part="remove"], [data-part="item-row"]'));
-    await big(page.locator('[data-part="row-name"]:is(button)'));
-    await big(page.getByRole("button", { name: /^(Shuffle|Add exercise|Reorder|Looks good)$/ }));
-    await big(page.locator(".wl-uf08__chip"));
-    await page.getByRole("button", { name: "Reorder" }).click();
     await big(
-      page.locator('[data-part^="move-"], [data-part="item-row"], [data-part="reorder-done"]'),
+      page.locator(
+        '[data-part="area-open"], [data-part="minus"], [data-part="plus"], [data-part="area-row"]',
+      ),
     );
-    await page.getByRole("button", { name: "Done" }).click();
+    await big(page.getByRole("button", { name: /^Start workout$/ }));
+    await big(page.locator(".wl-uf08__chip"));
+    await openArea(page);
+    await big(
+      page.locator(
+        '[data-part="swap"], [data-part="not-today"], [data-part="remove"], [data-part="how-to"], [data-part="detail-row"]',
+      ),
+    );
+    await big(page.getByRole("button", { name: "Add exercise" }));
     await openSheet(page);
     await sheetOf(page).getByLabel("Search exercises").fill("squat");
     await big(
       sheetOf(page).locator(
-        '[data-part="pick-row"], [data-part="pick-add"], [data-part="pick-start"], button[aria-label="Close"], button[aria-label="Clear search"], input[type="search"]',
+        '[data-part="pick-row"], [data-part="pick-add"], button[aria-label="Close"], button[aria-label="Clear search"], input[type="search"]',
       ),
     );
   });
@@ -1860,13 +1893,14 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
   }) => {
     await openSetup(page);
     await suggestAt30(page);
+    await openArea(page);
     await openSheet(page);
     const read = () =>
       page.evaluate(() => {
         const dur = (sel: string) =>
           getComputedStyle(document.querySelector(sel)!).transitionDuration;
         return {
-          root: dur('[data-screen-id="UF-08.2"]'),
+          root: dur('[data-screen-id="UF-08.6"]'),
           sheet: dur('[data-screen-id="UF-08.5"]'),
           scrim: dur(".wl-sheet-scrim"),
         };
@@ -1883,26 +1917,50 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
     await suggestAt30(page);
     const status = page.locator('[data-part="status"]');
     await expect(status).toHaveText("");
-    await expect(page.getByRole("status")).toHaveCount(2);
+    // T-0996 AC13: UF-08.2 has exactly one status region (the removed-line one went with the list).
+    await expect(page.getByRole("status")).toHaveCount(1);
     expect(await status.evaluate((el) => getComputedStyle(el).display)).not.toBe("none");
   });
 
-  test("AC7 'No exercises left' is a plain ink line in plan, and Remove still removes", async ({
+  test("AC7 an emptied plan is a plain ink hint in plan, not an alert; Remove still removes and Never suggest is a text button", async ({
     page,
   }) => {
     await openSetup(page);
-    await suggestAt30(page);
-    while ((await itemRows(page).count()) > 0) {
-      await itemRows(page).first().locator('[data-part="remove"]').click();
-    }
-    const line = page.locator('[data-part="nothing-fits"]');
-    await expect(line).toHaveText(/No exercises left/);
-    expect((await cssOf(page, '[data-part="nothing-fits"]', ["color"]))[0]).toBe(rgb(plan.ink!));
-    await expect(page.locator('[role="alert"]')).toHaveCount(0);
-    // The Removed line is in plan too: its Never suggest control is a text button.
+    await page.getByRole("button", { name: "90 minutes" }).click();
+    await expect(fitLine(page)).toHaveText(FIT_PATTERN);
+    await page.getByRole("button", { name: "Suggest my workout" }).click();
+    await expect(screenUF082(page)).toBeVisible();
+    // UF-08.6: an area with two or more exercises; Remove one, its Never suggest is a text button.
+    const multi = areaRows(page)
+      .filter({ has: page.locator('[data-part="area-count"]', { hasText: /^[2-9] exercises$/ }) })
+      .first();
+    await openArea(page, (await multi.getAttribute("data-area"))!);
+    const first = detailRows(page).first();
+    const removedName = (await first
+      .locator('[data-part="row-name"] > span')
+      .first()
+      .textContent())!;
+    await first.locator('[data-part="remove"]').click();
+    await expect(detailRows(page).filter({ hasText: removedName })).toHaveCount(0);
     const never = page.locator('[data-part="never-suggest"]').first();
     await expect(never).toHaveClass(/wl-button--text/);
     expect((await cssOf(page, '[data-part="never-suggest"]', ["color"]))[0]).toBe(rgb(plan.ink!));
+    await page.getByRole("link", { name: "Back" }).click();
+    await expect(screenUF082(page)).toBeVisible();
+    // Remove every area: Start workout is disabled and its hint is a plain line, no alert.
+    while ((await areaRows(page).count()) > 0) {
+      const minus = areaRows(page).first().locator('[data-part="minus"]');
+      while ((await minus.getAttribute("aria-label"))!.startsWith("One set less"))
+        await minus.click();
+      await minus.click();
+    }
+    await expect(page.locator('[data-part="start"]')).toHaveAttribute("aria-disabled", "true");
+    const hint = page.locator('[data-part="need-area"]');
+    await expect(hint).toHaveText("Add at least one area.");
+    expect((await cssOf(page, '[data-part="need-area"]', ["color"]))[0]).not.toBe(
+      rgb(plan.attention!),
+    );
+    await expect(page.locator('[role="alert"]')).toHaveCount(0);
   });
 });
 
@@ -1921,20 +1979,16 @@ test.describe("T-0600 AC8 canvas compare at 390 x 844", () => {
     await compareWithCanvas(page, testInfo, { turn: "turn-3", frame: "Set up · your workout" });
   });
 
-  // No canvas frame draws Reorder mode or the Add sheet (T-0600 notes): app-only shots.
-  test("Reorder mode and the open Add sheet (app only)", async ({ page }, testInfo) => {
+  // No canvas frame draws the area detail or the Add sheet (T-0600 notes): app-only shots. The
+  // Reorder shot is gone with Reorder (D-0274 section 4, T-1019).
+  test("The area detail and the open Add sheet (app only)", async ({ page }, testInfo) => {
     await openSetup(page);
     await suggestAt30(page);
-    await page.getByRole("button", { name: "Reorder" }).click();
-    await page
-      .getByRole("button", { name: /^Move .* down$/ })
-      .first()
-      .click();
+    await openArea(page);
     await page.screenshot({
-      path: testInfo.outputPath("cobalt", "set-up-your-workout-reorder-app.png"),
+      path: testInfo.outputPath("cobalt", "set-up-your-workout-area-app.png"),
       fullPage: true,
     });
-    await page.getByRole("button", { name: "Done" }).click();
     await openSheet(page);
     await page.screenshot({
       path: testInfo.outputPath("cobalt", "add-exercise-sheet-app.png"),

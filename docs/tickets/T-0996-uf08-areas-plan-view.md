@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.1, UF-08.2, UF-08.4]
 decisions: [D-0274, D-0275, D-0276, D-0280, D-0191, D-0235]
 deps: [T-0993, T-0994, T-0995]
-status: todo
+status: done
 ---
 ## Why
 The owner spends the pre-workout time rearranging exercises. UF-08.2 becomes the area plan (`docs/specs/areas-first-planning.md`), built from `UF-08.2.md` (T-0993) and the engine functions of T-0994 and T-0995. Time is still asked first on UF-08.1 (principle 2).
@@ -35,6 +35,8 @@ Fixtures: zero history; balanced; returning after 10 days off; 15-minute; `navig
 
 Checklist (D-0197 §7): room/no room, time/no time, empty/non-empty plan, online/offline, available/unavailable area, Start empty/Suggest.
 
+- From the T-0995 review (D-0287): when − removes an area's second exercise rather than a set, the status line says so and the − / Remove control text still fits at 320 px and 200 % zoom. Call the engine with `ctx.targets` (D-0287 §3).
+
 ## Paths you may change
 `apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant, as T-0940), `tests/e2e/uf-08-*.spec.ts` (only to keep existing specs passing if shared markup moves). Not parallel with another UF-08 ticket.
 
@@ -45,3 +47,8 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-0996` and cite UF-08.2.
 
 ## Build / accept log
+- T-0996 build (frontend-dev). UF-08.2 is now the area plan: new `AreaPlan.tsx` (view), `area-plan-engine.ts` (the only calls to `adjustAreaSets`/`addArea`/`removeArea`/`areaCandidates`, ctx carries `targets`, D-0287 §3), host wiring in `SessionSetup.tsx` (record gains `removedAreas`; a time chip is the one `suggest` rebuild with `avoidAreas` = UF-08.1 skips + removed areas; "Looks good" hands UF-08.4 `orderItems(plan)`), copy in `lib/i18n/flows/uf-08.ts`, styles in `uf-08.css` (tokens only).
+- AC to test (`__tests__/area-plan.test.tsx` unless noted; titles start `T-0996 ACn`): AC1 title, Done by (clock read once), About m of n, Start empty copy · AC2 rows from `areaGroups`, no exercise names, open button goes to `?step=area&area=` then UF-08.1 · AC3 + with time / no time / cap, aria-disabled stays focusable, clears on its own · AC4 3 sets, Remove at 2, skipped line, Add list, focus to the next row / summary, D-0287 second-exercise status · AC5 Add + the five reasons (Recovering, Skipping today, No exercise available, No time left, Workout is full) · AC6 Fill (Start empty, 15-min hidden, skipped area kept out), `area-plan-engine.test.ts` for `fillRest`/ctx · AC7 `orderItems` input is accessory-first, Start writes its output, rows stay in priority order · AC8 chip with edits (− chest, swap, removed area, added area) · AC9 Start empty vs Suggest · AC10 zero history, balanced, returning, 15 min, everything skipped, over-budget swap · AC11 offline and online, no `fetch` · AC12 one `suggest` per chip and none per edit, UF-08.1 first, single `--wl-action` fill, no UF-09 control · AC13 axe (jsdom), unique names, one status, focus; layout/contrast/44 px/320/390/160 px in `__e2e__/uf-08-area-plan.spec.ts` · AC14 below.
+- AC14 deliberate test updates (one line each, none weakened): `harness.tsx` `F_TZ_PROPS` and `swap-before-start.test.tsx` `props` opt into `legacyExerciseList` because the old exercise list (Reorder, Shuffle, empty-mode Suggestions, per-row Swap/Remove) is unreachable in the product and T-0998 deletes it with those tests; `exports-and-lint.test.ts` "only Suggested.tsx mentions lib/i18n/workout" now expects AreaPlan.tsx too (the why chips moved there). Every other existing unit test is untouched and passes.
+- Planted faults (backup copy, `cp` restore, `cmp` clean, none committed): F1 `onAddArea` also calls `runSuggest` -> AC12 "no suggest call picks an area for an edit" and AC5 red; F2 `overviewOf` drops the `time` refusal -> five AC3/AC10 tests red; F3 `onBudget` sets the minutes but keeps the edited plan -> AC8 and AC12 red; F4 Remove does not add the area to `removedAreas` -> AC4, AC6 and AC8 red.
+- Gates (T-0996, 2026-11-24): web `tsc --noEmit` exit 0; web `lint` (eslint + wl-check-colours) exit 0; web `vitest run` 416 files, 5523 tests green; `-w format:check` clean; `check-all.mjs` reports only `lane-path-not-owned` for other tickets' files already on the squad branch (diff base `main`), none for this ticket. E2E: the new `__e2e__/uf-08-area-plan.spec.ts` (copied to `tests/e2e` for the run and removed again) 9 of 9 green at 390, 320 and 160 px incl. axe, 44 px targets, no sideways scroll, offline Start. `tests/e2e/uf-08*` run on this branch: 44 pass, 47 fail: every failure pins the retired exercise list (per-row Swap/Remove/Start with this, Reorder, Shuffle, Add exercise on UF-08.2, empty-mode Suggestions, row kg text, T-0600 restyle of exercise rows). They are not "shared markup moved", so none was edited; they move to UF-08.6 (T-0997) or retire (T-0998).

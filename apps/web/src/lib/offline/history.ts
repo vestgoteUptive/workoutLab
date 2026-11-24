@@ -11,6 +11,7 @@ import { supabase } from "../auth/client.js";
 import {
   toAreaTarget,
   toBarbell,
+  toLearningPrefs,
   toEngineProfile,
   toHistorySet,
   toLibraryExercise,
@@ -30,6 +31,7 @@ import {
   type CachedSession,
   type ExerciseDetail,
 } from "./db.js";
+import { applyProfileLearning } from "./edit-ledger.js";
 import { currentUserId } from "./current-user.js";
 import { cacheGeneration, cacheWriteAllowed } from "./cache-generation.js";
 import { sameValue } from "./flush.js";
@@ -372,7 +374,15 @@ export async function refreshProfile(): Promise<void> {
   const barbell =
     profileRow.bar_kg == null || profileRow.plates_kg == null ? undefined : toBarbell(profileRow);
   if (!cacheWriteAllowed(gen)) return;
-  await db.profileCache.put({ userId, profile: mapped, ...(barbell ? { barbell } : {}) });
+  await db.profileCache.put({
+    userId,
+    profile: mapped,
+    ...(barbell ? { barbell } : {}),
+    learning: toLearningPrefs(profileRow),
+  });
+  // T-1008: a fresh read with the flag off or a newer reset epoch clears the ledger and the
+  // pulled rows before anything is flushed.
+  await applyProfileLearning(userId, toLearningPrefs(profileRow));
 }
 
 /** Runs every read-side refresh together (an online start, AC-C16 + T-0319 AC-8). */

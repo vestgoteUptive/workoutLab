@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.4, UF-09.1]
 decisions: [D-0280, D-0274, D-0110, D-0123, D-0170, D-0063]
 deps: [T-0997]
-status: todo
+status: done
 ---
 ## Why
 The owner folded the Ready step into the plan: Start is 1 tap with no edit and 3 with two (`docs/specs/areas-first-planning.md`, D-0280). The time question on UF-08.1 stays (principle 2).
@@ -32,8 +32,10 @@ Test titles start `T-1009 ACn`.
 
 Checklist (D-0197 §7): areas/none, online/offline, write ok/rejected, disclosure closed/open, pending/idle.
 
+- From T-1021 (after it merges): UF-08.6 "Start with this" calls `setMainLift(workout, exerciseId, ctx)` from `@workoutlab/engine` instead of `suggest()`, and shows its four refusals (`not_compound`, `not_admissible`, `items_cap`, `time`) with the existing refusal copy. This supersedes D-0288 §2.
+
 ## Paths you may change
-`apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), the e2e specs named above and `tests/e2e/fixtures/**` (extra; orchestrator grant). Not parallel with another UF-08 ticket.
+`apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), the e2e specs named above and `tests/e2e/fixtures/**` (extra; orchestrator grant), `apps/web/src/app/__tests__/lazy-route-timeouts.test.ts` (extra; orchestrator grant: drop the deleted Ready test's entry; the new Start test mounts `SessionSetup` with its own routes, no lazy chunk). Not parallel with another UF-08 ticket.
 
 ## Contract impact
 none.
@@ -42,3 +44,10 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-1009` and cite UF-08.2.
 
 ## Build / accept log
+
+- Build (T-1009, UF-08.2): "Start workout" replaces "Looks good" in `AreaPlan.tsx` and carries Ready's Start (`upsertSession`, one id per visit reused on retry, `clock()` at the tap, REPLACE to `/session/<id>`, plan in `orderItems` order through the host's `startWorkout` prop). Focus mode `details` (collapsed every visit, four steps and three switches, `focus-prefs.ts` unchanged). Pending makes the plan controls, Back and Close inert. `Ready.tsx` and its summary copy deleted; `?step=ready` falls to the stale rule. "Start with this" now calls `setMainLift` through `makeMain` (`area-plan-engine.ts`), no `suggest` rebuild, four refusals mapped to the existing copy (supersedes D-0288 §2).
+- AC to test (all in `__tests__/start-on-plan.test.tsx`, titles `T-1009 ACn`): AC1 taps 1/3/2; AC2 row, clock at tap vs mount, orderItems order, REPLACE and write-before-navigate; AC3 Start empty and nothing-fits disabled, one area enabled; AC4 pending inert (both idle and pending), rejected alert plus focus, retry same id, leaving drops id, unmount while pending; AC5 `it.each` onLine false/true no fetch; AC6 Done by after `-` and `+`, mount clock, "{n} min to fill"; AC7 collapsed per visit, open content, stored values, storage failure, tap count open; AC8 `?step=ready` lands on UF-08.1, no Ready.tsx / UF-08.4 id in sources; AC9 time question first, one primary; AC10 axe open and after failure, focus not on body (320/390 px sizes and sideways scroll are in `__e2e__/uf-08-area-plan.spec.ts`). Start with this: `area-detail.test.tsx` (setMainLift called once, no suggest, written plan, four refusals, throw).
+- AC11 deliberate test updates: deleted `ready-view`, `ready-start`, `ready-back-pending`, `ready-real-queue` (they pinned the Ready component; moved to `start-on-plan.test.tsx`; the warm-up-only and "Nothing planned" Start cases no longer exist because Start is disabled at no areas, AC3). `cobalt-plan` Ready rows moved to UF-08.2. `area-plan` Looks good rows renamed to Start workout; its "Back from UF-08.4" row deleted (no screen). Legacy-list rows that went through Ready (`empty-mode` AC7 and the AC2 click, `reorder` AC6, `swap-before-start` AC-5, `suggested-actions` AC-8 two rows) deleted: the legacy list's "Looks good" has no destination now and T-0998 deletes that code; the written-plan assertions live in AC2 above and T-0996 AC7.
+- T-0997 review follow-ups: `notTodayNone` now "No other exercise for {Area} today. Use Swap." (two refusal tests updated); `onNotToday` returns `{ failed: true }` on an engine throw and the detail shows `areaChangeFailed` (new test `T-0997 review: an engine throw in Not today ...`).
+- Planted faults (backup copy, cp restore, cmp checked, none committed): F1 Start reads mount clock (AC2 red); F2 retry makes a second id (AC4 red); F3 disclosure open by default (AC7 x3 and AC10 red); F4 `+` not inert while pending (first run survived: the `+` was refused anyway, test fixed to make one `-` first, then AC4 red); F5 no-areas guard removed (AC3 x2 red); F6 push instead of replace (AC2 x2 red); F7 items_cap refusal copy dropped (start-with red); F8 Not today throw returns null (review test red).
+- Gates: web typecheck and lint green; web test 5623 pass, 2 fail (`src/app/__tests__/lazy-route-timeouts.test.ts` names the deleted `ready-start.test.tsx`; shell lane, follow-up for web-shell: drop that entry); `-w format:check` green; `check-all.mjs` reports only lane-path-not-owned for the stacked T-0996/T-0997 files. E2E (`uf-08 uf-09 uf-02`, 262 tests): 197 pass, 65 fail; the same 197/65 on the parent commit bfa1be73 in a clean worktree, every failure on an old exercise-list step (item-row, suggestions, Add exercise, Reorder) before Start is reached; 0 new. `__e2e__/uf-08-area-plan.spec.ts` (10, incl. the new Start-workout and Focus-mode row and the 160/320/390 px layout) run through a temp copy in `tests/e2e`: 10 pass. Fix found by it: the longer "Start workout" pushed its arrow out of the column at 160 px; the primary button now wraps.

@@ -71,7 +71,7 @@ describe("T-0536 AC1 v2 to v3 upgrade", () => {
 
     const db = new OfflineDb(name);
     await db.open();
-    expect(db.verno).toBe(6);
+    expect(db.verno).toBe(8);
     expect(
       JSON.stringify((await db.sets.toArray()).sort((a, b) => a.key.localeCompare(b.key))),
     ).toBe(JSON.stringify([...sets].sort((a, b) => a.key.localeCompare(b.key))));

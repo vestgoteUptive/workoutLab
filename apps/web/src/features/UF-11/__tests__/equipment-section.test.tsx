@@ -10,7 +10,13 @@ import { loadProfile } from "../../../lib/offline/index.js";
 import { AccountSettings } from "../index.js";
 import { NOW, profileF } from "./fixtures.js";
 import { TEST_USER, createFromSpy, freshDb, seedCache, signIn, signOut } from "./test-helpers.js";
-import { CHECKLIST_LABELS, checkbox, equipmentGroup, saveButton } from "./equipment-helpers.js";
+import {
+  CHECKLIST_LABELS,
+  checkbox,
+  equipmentGroup,
+  equipmentStatus,
+  saveButton,
+} from "./equipment-helpers.js";
 
 const a = en.uf11.account.equipment;
 
@@ -188,7 +194,7 @@ describe("T-0216 AC-2 save writes the list", () => {
     await act(async () => fireEvent.click(checkbox("Bench")));
     expect(saveButton()).not.toHaveAttribute("aria-disabled", "true");
     await act(async () => fireEvent.click(saveButton()));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(a.saved));
+    await waitFor(() => expect(equipmentStatus()).toHaveTextContent(a.saved));
     const updates = spy.calls.filter((c) => c.table === "profiles" && c.method === "update");
     expect(updates).toHaveLength(1);
     expect(updates[0]!.payload).toEqual({ equipment: ["none", "dumbbell", "barbell", "rack"] });
@@ -203,7 +209,7 @@ describe("T-0216 AC-3 both edges", () => {
     await mountWithCache(["none", "dumbbell"]);
     await act(async () => fireEvent.click(checkbox("Dumbbell")));
     await act(async () => fireEvent.click(saveButton()));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(a.saved));
+    await waitFor(() => expect(equipmentStatus()).toHaveTextContent(a.saved));
     const update = spy.calls.find((c) => c.table === "profiles" && c.method === "update");
     expect(update!.payload).toEqual({ equipment: ["none"] });
   });
@@ -214,7 +220,7 @@ describe("T-0216 AC-3 both edges", () => {
       await act(async () => fireEvent.click(checkbox(label)));
     }
     await act(async () => fireEvent.click(saveButton()));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(a.saved));
+    await waitFor(() => expect(equipmentStatus()).toHaveTextContent(a.saved));
     const update = spy.calls.find((c) => c.table === "profiles" && c.method === "update");
     expect(update!.payload).toEqual({
       equipment: [
@@ -239,7 +245,7 @@ describe("T-0216 AC-4 unknown items survive", () => {
     expect(equipmentGroup().querySelectorAll('input[type="checkbox"]')).toHaveLength(9);
     await act(async () => fireEvent.click(checkbox("Band")));
     await act(async () => fireEvent.click(saveButton()));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(a.saved));
+    await waitFor(() => expect(equipmentStatus()).toHaveTextContent(a.saved));
     const update = spy.calls.find((c) => c.table === "profiles" && c.method === "update");
     expect(update!.payload).toEqual({ equipment: ["none", "dumbbell", "band", "trx"] });
   });
@@ -320,7 +326,7 @@ describe("T-0216 AC-6 failure", () => {
     await act(async () => fireEvent.click(saveButton()));
     const updates = spy.calls.filter((c) => c.table === "profiles" && c.method === "update");
     expect(updates).toHaveLength(2);
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(a.saved));
+    await waitFor(() => expect(equipmentStatus()).toHaveTextContent(a.saved));
   });
 
   it("T-0216 AC-6 a resolved {error} shows the same failure and refreshAll is not called", async () => {
@@ -390,7 +396,7 @@ describe("T-0216 AC-7 the engine sees it (principle 3)", () => {
       await act(async () => fireEvent.click(checkbox(label)));
     }
     await act(async () => fireEvent.click(saveButton()));
-    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent(a.saved));
+    await waitFor(() => expect(equipmentStatus()).toHaveTextContent(a.saved));
 
     const after = await loadProfile();
     expect(after!.equipment).toEqual(["none"]);
@@ -405,7 +411,9 @@ describe("T-0216 AC-8 cold cache", () => {
     freshDb();
     const view = mount();
     expect(await screen.findByText(a.coldCache)).toBeInTheDocument();
-    expect(view.container.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
+    // Scoped to the equipment card: the learning card (T-1005) has a checkbox of its own.
+    const card = view.container.querySelector(`section[aria-label="${a.legend}"]`)!;
+    expect(card.querySelectorAll('input[type="checkbox"]')).toHaveLength(0);
   });
 
   it("T-0216 AC-8 then online with refreshProfile filling the cache: the 9 checkboxes appear", async () => {

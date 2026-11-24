@@ -4,7 +4,7 @@
 // assume `history.js` and `engine-feed.js` are mocked with `vi.fn()` loaders.
 //
 // No JSX text here: `react/jsx-no-literals` covers this file (only `*.test.tsx` is exempt).
-import { act, render, screen, type RenderResult } from "@testing-library/react";
+import { act, fireEvent, render, screen, type RenderResult } from "@testing-library/react";
 import { MemoryRouter, Route, Routes, useLocation, useNavigationType } from "react-router";
 import { vi } from "vitest";
 import type { AreaTarget, EngineProfile, HistorySet, LibraryExercise } from "@workoutlab/engine";
@@ -13,7 +13,8 @@ import * as history from "../../../lib/offline/history.js";
 import { SessionSetup, type SessionSetupProps } from "../SessionSetup.js";
 import { LOCALE, NOW, TZ, fLibrary, fProfile, fTargets } from "./fixtures.js";
 
-export const F_TZ_PROPS: SessionSetupProps = { now: NOW, locale: LOCALE, timeZone: TZ };
+/** The product's UF-08.2: the area plan (T-0996). */
+export const AREA_PLAN_PROPS: SessionSetupProps = { now: NOW, locale: LOCALE, timeZone: TZ };
 
 function LocationProbe() {
   const location = useLocation();
@@ -45,7 +46,7 @@ export function SetupTree({
 }
 
 export function renderSetup(
-  props: SessionSetupProps = F_TZ_PROPS,
+  props: SessionSetupProps = AREA_PLAN_PROPS,
   at = "/session/setup",
 ): RenderResult {
   return render(<SetupTree at={at} {...props} />);
@@ -151,4 +152,17 @@ export function pressedChips(): string[] {
   return Array.from(document.querySelectorAll('.wl-uf08__chip[aria-pressed="true"]')).map(
     (el) => el.textContent!,
   );
+}
+
+/**
+ * UF-08.2 → the open button of `area`'s row → UF-08.6 → "Add exercise" → UF-08.5 (T-0998: the only
+ * way to the sheet since the exercise list is gone).
+ */
+export function openAddSheetFromArea(area: string): void {
+  const open = document.querySelector<HTMLElement>(
+    `[data-part="area-row"][data-area="${area}"] [data-part="area-open"]`,
+  );
+  if (open === null) throw new Error(`no ${area} row on UF-08.2`);
+  fireEvent.click(open);
+  fireEvent.click(screen.getByRole("button", { name: "Add exercise" }));
 }

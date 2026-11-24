@@ -66,7 +66,7 @@ describe("T-0954 AC8 v4 to v5 upgrade", () => {
 
     const db = new OfflineDb(name);
     await db.open();
-    expect(db.verno).toBe(6);
+    expect(db.verno).toBe(8);
     const same = (a: unknown, b: unknown) => expect(JSON.stringify(a)).toBe(JSON.stringify(b));
     const byKey = <T extends { key: string }>(r: T[]) =>
       [...r].sort((x, y) => x.key.localeCompare(y.key));

@@ -301,6 +301,51 @@ export type InsertResult = {
     workout?: never;
     sets?: never;
 };
+/** What an area edit reads (D-0275): the history and plan inputs `suggest` used, plus `now`, `tz`. */
+export interface AreaEditContext {
+    history: readonly HistorySet[];
+    targets: readonly AreaTarget[];
+    profile: SuggestProfile;
+    library: readonly LibraryExercise[];
+    /** Rule 0.1. Absent means `[]`. */
+    excludeIds?: readonly string[];
+    /** Rule 0.2. Absent means `[]`. */
+    favoriteIds?: readonly string[];
+    /** Rule 6.1. Absent means `[]`. */
+    avoidAreas?: readonly Area[];
+    /** Rule 7.2 step 1: `false` stops an empty plan's first area from getting a main lift. */
+    autoMainLift?: boolean;
+    /**
+     * Rules 12.6 and 12.7 (D-0290): the items removed with whole areas earlier in this visit. When
+     * `addArea` adds an area whose removed items are all valid and fit, it puts exactly those back.
+     * Absent or empty changes nothing. Never mutated.
+     */
+    restore?: readonly WorkoutItem[];
+    now: Instant;
+    tz: TimeZone;
+}
+/** Why `adjustAreaSets(+1)` changed nothing. */
+export type AdjustRefusal = "area_full" | "time";
+/** Why `setMainLift` changed nothing (rule 12.8). */
+export type MainLiftRefusal = "not_compound" | "not_admissible" | "items_cap" | "time";
+/** Why `addArea` changed nothing. */
+export type AddAreaRefusal = "time" | "items_cap" | "area_unavailable";
+/** Why an area can't be added (rule 12.7). */
+export type AreaUnavailableReason = "recovering" | "avoided" | "excluded_out" | "no_exercise" | "time" | "items_cap";
+/** A refused area edit: no workout, only the reason. */
+export interface AreaRefused<R extends string> {
+    refused: R;
+    plan?: never;
+}
+export interface AreaCandidate {
+    area: Area;
+    /** The rule 3 load over the last 14 days (history only, not the plan's own sets). */
+    load: number;
+    target: number;
+    available: true | {
+        reason: AreaUnavailableReason;
+    };
+}
 /** D-0037 §6. A session as rule 9 counts it: completed when `hardSetCount ≥ 1`. */
 export interface CheckinSession {
     id: string;

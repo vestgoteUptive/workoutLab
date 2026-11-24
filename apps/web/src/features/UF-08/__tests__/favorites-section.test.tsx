@@ -3,7 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { fCache, fitLine, renderSetup, screenIds, serveCache, setOnline } from "./harness.js";
-import { settle } from "./harness.js";
+import { openAddSheetFromArea, settle } from "./harness.js";
 import type { HistorySet } from "@workoutlab/engine";
 import { NOW, fLibrary } from "./fixtures.js";
 
@@ -58,7 +58,8 @@ async function toPlan(): Promise<void> {
   expect(screenIds()).toEqual(["UF-08.2"]);
 }
 
-const openSheet = () => fireEvent.click(button("Add exercise"));
+// T-0998: the sheet opens from UF-08.6 (Chest first, so the area order is unchanged).
+const openSheet = () => openAddSheetFromArea("chest");
 const names = (root: HTMLElement) =>
   Array.from(root.querySelectorAll(".wl-uf08__pick-name")).map((n) =>
     (n.firstChild?.textContent ?? "").trim(),
@@ -145,21 +146,6 @@ describe("an area whose exercises are all favorites", () => {
     await toPlan();
     openSheet();
     expect(headings()).toEqual(["Add exercise", "Favorites", "Today's areas", "Back", "Quads"]);
-  });
-});
-
-describe("AC3 no items", () => {
-  it("Favorites, then the search hint, no Today's areas", async () => {
-    lists.fav = ["back-squat"];
-    await toPlan();
-    for (const n of ["Leg extension", "Inverted row", "Bench press"]) {
-      fireEvent.click(button(`Remove ${n}`));
-    }
-    openSheet();
-    expect(headings()).toEqual(["Add exercise", "Favorites"]);
-    expect(names(dialog())).toEqual(["Back squat"]);
-    expect(within(dialog()).getByText("Search to find an exercise.")).toBeInTheDocument();
-    expect(screen.queryByText("Today's areas")).toBeNull();
   });
 });
 

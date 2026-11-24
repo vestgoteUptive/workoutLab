@@ -24,6 +24,7 @@ export const EXPORT_TABLES = [
   "excluded_exercises",
   "favorite_exercises",
   "exercise_settings",
+  "edit_signals",
 ] as const;
 
 export type ExportTable = (typeof EXPORT_TABLES)[number];
@@ -43,6 +44,8 @@ export const ORDER_KEYS: Record<ExportTable, string> = {
   favorite_exercises: "exercise_id",
   // T-0951 (D-0251 §2): no `id` column; the PK is (user_id, exercise_id) and RLS scopes user_id.
   exercise_settings: "exercise_id",
+  // T-1002 (D-0281 §5): `id` is a single unique column, so paging by 1000 is stable.
+  edit_signals: "id",
 };
 
 export const PAGE_SIZE = 1000;
@@ -113,7 +116,7 @@ export async function exportAccountData(
   const client = clientOf(deps);
   // L1: the device section is read for the session's user, checked against `input.userId`
   // before any request, so a tab that switched accounts can't put another user's queue in
-  // this user's file. RLS already scopes the 9 tables to the same session.
+  // this user's file. RLS already scopes the owned tables to the same session.
   let sessionUserId: string | null;
   try {
     sessionUserId = (await readSession(deps)).userId;

@@ -24,6 +24,7 @@ export const FUNCTION_TESTS = {
 const EXPECTED = [
   "account",
   "area_targets",
+  "edit_signals",
   "excluded_exercises",
   "exercise_areas",
   "exercise_settings",

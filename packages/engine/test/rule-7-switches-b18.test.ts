@@ -46,6 +46,12 @@ import "./rule-12-3-insert-histories.test.js";
 import "./rule-12-3-insert-item.test.js";
 import "./rule-12-3-insert-properties.test.js";
 import "./rule-12-4-area-groups.test.js";
+import "./rule-12-5-golden-purity.test.js";
+import "./rule-12-6-add-remove-area.test.js";
+import "./rule-12-6-restore-histories.test.js";
+import "./rule-12-6-restore.test.js";
+import "./rule-12-8-set-main-lift.test.js";
+import "./rule-12-7-area-candidates.test.js";
 import "./rule-12-apply-swap.test.js";
 import "./rule-12-swaps.test.js";
 import "./rule-13-shuffle.test.js";
@@ -87,11 +93,14 @@ describe("B18 over every existing example (T-0936 AC1)", () => {
     // T-0936's own tests, which set the switches explicitly (this file is one of them); the
     // rule-7-1-one-side* files (T-0978b) are not re-run here: the histories sweep alone takes
     // ~25 s, doubled by the wrapper, which pushed this file past the small-lock limit. They
-    // price the flag itself, so the true/true re-run adds nothing.
+    // price the flag itself, so the true/true re-run adds nothing. rule-12-5-histories (T-0995)
+    // is 1400 seeded edit sequences (~35 s), doubled by the wrapper; it edits suggest's output
+    // and never reads a switch, and the other rule 12.5 to 12.7 files that call suggest( are imported above.
     const excluded = (f: string): boolean =>
       f === "rule-15-suggest-without-records.test.ts" ||
       f.startsWith("rule-7-switches") ||
-      f.startsWith("rule-7-1-one-side");
+      f.startsWith("rule-7-1-one-side") ||
+      f === "rule-12-5-histories.test.ts";
     const callers = readdirSync(testDir)
       .filter((f) => f.endsWith(".test.ts") && !excluded(f))
       .filter((f) => readFileSync(path.join(testDir, f), "utf8").includes("suggest("))

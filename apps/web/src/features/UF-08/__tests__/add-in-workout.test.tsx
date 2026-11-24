@@ -355,9 +355,8 @@ describe("AC12 self-contained (no SessionSetup in the tree)", () => {
     expect(css).toMatch(
       /\.wl-uf08\[data-wl-state\] \.wl-uf08__pick-add \{[^}]*min-block-size: 44px;[^}]*min-inline-size: 96px/,
     );
-    expect(css).toMatch(
-      /\.wl-uf08__icon[^{]*\{[^}]*(min-width|min-block-size|min-inline-size): 44px/,
-    );
+    // T-0998: the icon button is 44 px by `inline-size` and `block-size` (the `--text` variant went).
+    expect(css).toMatch(/\.wl-uf08__icon[^{]*\{[^}]*(inline-size|block-size): 44px/);
     const addButtons = document.querySelectorAll('[data-part="pick-add"]');
     expect(addButtons.length).toBeGreaterThan(5);
     for (const b of addButtons) expect(b.closest('.wl-uf08[data-wl-state="plan"]')).not.toBeNull();

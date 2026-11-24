@@ -10,6 +10,7 @@ create temporary table owned_list (name text primary key) on commit drop;
 insert into owned_list (name) values
 -- OWNED_TABLES:BEGIN
   ('area_targets'),
+  ('edit_signals'),
   ('excluded_exercises'),
   ('exercise_settings'),
   ('favorite_exercises'),

@@ -16,6 +16,7 @@ import {
 import { en } from "../../lib/i18n/en.js";
 import { retryableLazy } from "./lazy-retry.js";
 import { setsInItem } from "./machine.js";
+import { recordInWorkoutSwap } from "./record-swap.js";
 import type { FocusSession } from "./session.js";
 
 /** A seam entry. `ctx` is the `useFocusSession()` value, which includes `close()`. */
@@ -273,7 +274,11 @@ function SwapOverlay({ ctx }: { ctx: FocusSession }) {
           itemIndex={target}
           timeZone={ctx.timeZone}
           onApply={async (result, { exclusionFailed }) => {
-            await ctx.replaceItem(target, result.plan.items[target]!, result.plan.mainLiftId);
+            const from = ctx.plan.items[target]?.exerciseId;
+            const next = result.plan.items[target]!;
+            await ctx.replaceItem(target, next, result.plan.mainLiftId);
+            // T-1004: a confirmed swap is counted on the device (not awaited, no UI).
+            recordInWorkoutSwap(from, next, ctx.sessionId);
             // T-0580: the sheet closes next; the host shows the message on the screen below.
             if (exclusionFailed) ctx.notifyExclusionFailed();
             ctx.close();

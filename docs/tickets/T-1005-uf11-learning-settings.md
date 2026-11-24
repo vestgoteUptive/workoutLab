@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.4]
 decisions: [D-0277, D-0281, D-0195]
 deps: [T-1000, T-1001, T-1008]
-status: todo
+status: done
 ---
 ## Why
 Learning must be visible and reversible, and the user must be able to switch it off and clear it (`docs/specs/learn-from-edits.md`).
@@ -24,7 +24,11 @@ Learning must be visible and reversible, and the user must be able to switch it 
 
 - Note (T-1001 security review): writes that touch `learn_from_edits` or `learn_reset_at` send only the changed fields, never a full cached profile upsert. e2e: opted out on device A, device B saves the profile, learning stays off.
 
+- From T-1008: the UI to turn learning back on needs a changed-field-only write of `learn_from_edits = true` (T-1008 ships only `turnLearningOff()` and `forgetAll()` in `lib/offline/edit-ledger-sync.ts`).
+
 ## Paths you may change
+- `apps/web/src/lib/offline/edit-ledger-sync.ts`, `apps/web/src/lib/offline/__tests__/edit-ledger-sync.test.tsx` (orchestrator grant: `turnLearningOn` beside `turnLearningOff`, keeps the T-1008 learn_* write guard)
+- `tests/e2e/uf-11-learning.spec.ts` (orchestrator grant: wire the learning e2e)
 `apps/web/src/features/UF-11/**`, `apps/web/src/lib/i18n/flows/uf-11.ts` (extra; orchestrator grant). Not parallel with another UF-11 ticket.
 
 ## Contract impact
@@ -34,3 +38,6 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-1005` and cite UF-11.4.
 
 ## Build / accept log
+
+- Build (T-1005, frontend-dev): `LearningSection` (UF-11.4 5b) between Your data and Delete; `turnLearningOn()` now lives in `edit-ledger-sync.ts` (granted; one `learn_from_edits = true` update then `refreshProfile`) because `lib/offline/edit-ledger-sync.ts` is outside the ticket paths. AC1-AC6 in `__tests__/learning-section.test.tsx` (11 tests, both values of each condition); e2e in `__e2e__/learning.spec.ts` (4 passed from a temp copy in tests/e2e, removed; axe + 44 px at 320/390). Faults planted and restored by cp/cmp: forget offline guards removed (red only after also dropping the `run` guard: the first fault was equivalent), no revert on failure, full-profile write on turn-on, on path calling turnLearningOff, forget calling turnLearningOff. Existing equipment tests were scoped to the equipment card (a new status and checkbox now exist). Open: T-1008's guard test "no source file writes learn_* except the sync module" fails on `learning-writes.ts`; fix is to move `turnLearningOn` into the sync module (lib grant) and delete `learning-writes.ts`.
+- Build 2 (T-1005): merged main, moved turnLearningOn into lib/offline/edit-ledger-sync.ts, deleted learning-writes.ts (T-1008 guard green), e2e moved to tests/e2e/uf-11-learning.spec.ts. Full web suite 5569 passed; uf-11* e2e 110 passed.

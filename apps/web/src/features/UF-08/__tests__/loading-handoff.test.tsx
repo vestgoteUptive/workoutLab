@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { suggest, type Workout } from "@workoutlab/engine";
-import { Suggested } from "../Suggested.js";
+import { AreaPlan } from "../AreaPlan.js";
 import {
   fitLine,
   hangLoaders,
@@ -37,13 +37,13 @@ vi.mock("@workoutlab/engine", async (importOriginal) => {
   return { ...actual, suggest: vi.fn(actual.suggest) };
 });
 // The placeholder wrapped in a recorder, so AC-8 can check the `workout` prop's identity.
-vi.mock("../Suggested.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../Suggested.js")>();
-  return { Suggested: vi.fn(actual.Suggested) };
+vi.mock("../AreaPlan.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../AreaPlan.js")>();
+  return { AreaPlan: vi.fn(actual.AreaPlan) };
 });
 
 const spy = vi.mocked(suggest);
-const placeholder = vi.mocked(Suggested);
+const placeholder = vi.mocked(AreaPlan);
 
 beforeEach(() => {
   auth.status = "signed-in";
@@ -118,7 +118,7 @@ describe("AC-8 hand-off", () => {
       type: "PUSH",
     });
     expect(screenIds()).toEqual(["UF-08.2"]);
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Your workout");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Today: /);
     expect(placeholder).toHaveBeenCalled();
     expect(placeholder.mock.lastCall![0].workout).toBe(last);
   });

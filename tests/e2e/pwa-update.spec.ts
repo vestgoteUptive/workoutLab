@@ -1,5 +1,5 @@
 // T-0552 AC9: a new build is picked up, kept WAITING while a workout runs, and applied (worker
-// activated, page reloaded once) at the next safe moment. Supabase is mocked as in uf-09-ready.
+// activated, page reloaded once) at the next safe moment. Supabase is mocked as in uf-09-start-workout.
 // Playwright cannot intercept the service worker script request in Chromium (measured: route()
 // never fires for /sw.js), so the new build is published by registering the same worker under
 // another script URL: the browser installs it as a new worker. The "check on load and resume"
@@ -100,8 +100,7 @@ async function startWorkout(page: Page): Promise<void> {
   await page.getByRole("link", { name: "Start workout" }).click();
   await page.getByRole("button", { name: "30 minutes" }).click();
   await page.getByRole("button", { name: "Suggest my workout" }).click();
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout", exact: true }).click();
   await expect(page).toHaveURL(SESSION_URL);
 }
 

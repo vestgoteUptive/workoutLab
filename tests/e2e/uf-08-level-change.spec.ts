@@ -137,7 +137,7 @@ async function cachedLevel(page: Page, level: string): Promise<void> {
     .toBe(level);
 }
 
-/** UF-08.1 -> budget -> Suggest -> UF-08.2 (the visit that holds the Add exercise sheet). */
+/** UF-08.1 -> budget -> Suggest -> UF-08.2. */
 async function toSuggested(page: Page, budget = "30 minutes"): Promise<void> {
   await expect(page.locator('[data-screen-id="UF-08.1"]')).toBeVisible();
   await page.getByRole("button", { name: budget }).click();
@@ -145,10 +145,23 @@ async function toSuggested(page: Page, budget = "30 minutes"): Promise<void> {
   await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
 }
 
+/** T-1019: UF-08.2 -> Chest and Quads out (the plan fills 30 min, so an Add needs room) -> UF-08.6 of
+ *  Back, where "Add exercise" lives now (D-0274). Pull-up is a Back exercise. */
+async function toBackDetail(page: Page, budget = "30 minutes"): Promise<void> {
+  await toSuggested(page, budget);
+  for (const area of ["chest", "quads"]) {
+    const minus = page.locator(`[data-area="${area}"] [data-part="minus"]`);
+    while ((await minus.getAttribute("aria-label"))!.startsWith("One set less"))
+      await minus.click();
+    await minus.click();
+    await expect(page.locator(`[data-part="area-row"][data-area="${area}"]`)).toHaveCount(0);
+  }
+  await page.locator('[data-area="back"] [data-part="area-open"]').click();
+  await expect(page.locator('[data-screen-id="UF-08.6"]')).toBeVisible();
+}
+
 async function startFromSuggested(page: Page): Promise<string> {
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout", exact: true }).click();
   await expect(page).toHaveURL(SESSION_URL);
   return SESSION_URL.exec(page.url())![1]!;
 }
@@ -162,7 +175,7 @@ async function openAddSheet(page: Page, query: string) {
 }
 
 async function expectPointerIsTextOnly(page: Page): Promise<void> {
-  const items = page.locator('[data-part="item-row"]');
+  const items = page.locator('[data-part="detail-row"]');
   const before = await items.count();
   const url = page.url();
   const sheet = await openAddSheet(page, "pull");
@@ -180,7 +193,7 @@ async function expectPointerIsTextOnly(page: Page): Promise<void> {
 
   await sheet.getByRole("button", { name: "Close" }).click();
   await expect(sheet).toHaveCount(0);
-  await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
+  await expect(page.locator('[data-screen-id="UF-08.6"]')).toBeVisible();
   expect(page.url()).toBe(url);
   await expect(items).toHaveCount(before);
 }
@@ -191,7 +204,7 @@ test.describe("T-0686b AC1/AC7 UF-08.5 pointer is text only", () => {
   }) => {
     await mockAll(page);
     await openHome(page);
-    await toSuggested(page);
+    await toBackDetail(page);
     await expectPointerIsTextOnly(page);
   });
 
@@ -204,7 +217,7 @@ test.describe("T-0686b AC1/AC7 UF-08.5 pointer is text only", () => {
     await precacheSettled(page);
     await context.setOffline(true);
     await page.goto("/session/setup");
-    await toSuggested(page);
+    await toBackDetail(page);
     await expectPointerIsTextOnly(page);
   });
 });
@@ -228,7 +241,7 @@ test.describe("T-0686b AC2 a new level reaches UF-08 offline", () => {
     await precacheSettled(page);
     await context.setOffline(true);
     await page.goto("/session/setup");
-    await toSuggested(page);
+    await toBackDetail(page);
 
     const sheet = await openAddSheet(page, "pull");
     const row = sheet.locator('[data-part="pick-row"]').filter({ hasText: "Pull-up" });
@@ -238,9 +251,9 @@ test.describe("T-0686b AC2 a new level reaches UF-08 offline", () => {
     await expect(add).not.toHaveAttribute("aria-disabled", "true");
     await add.click();
     await expect(sheet).toHaveCount(0);
-    await expect(page.locator('[data-part="item-row"]').filter({ hasText: "Pull-up" })).toHaveCount(
-      1,
-    );
+    await expect(
+      page.locator('[data-part="detail-row"]').filter({ hasText: "Pull-up" }),
+    ).toHaveCount(1);
   });
 });
 

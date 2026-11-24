@@ -82,7 +82,7 @@ describe("T-0567 AC1 v3 to v4 upgrade", () => {
 
     const db = new OfflineDb(name);
     await db.open();
-    expect(db.verno).toBe(6);
+    expect(db.verno).toBe(8);
     expect(JSON.stringify(byKey(await db.sets.toArray()))).toBe(JSON.stringify(byKey(sets)));
     expect(JSON.stringify(await db.sessions.toArray())).toBe(JSON.stringify([session]));
     expect(JSON.stringify(await db.excludedCache.toArray())).toBe(JSON.stringify([excluded]));

@@ -83,6 +83,69 @@ export type Database = {
                 };
                 Relationships: [];
             };
+            edit_signals: {
+                Row: {
+                    asked_at: string | null;
+                    count: number;
+                    created_at: string;
+                    device_id: string;
+                    exercise_id: string;
+                    id: string;
+                    key: string;
+                    kind: string;
+                    last_seen: string;
+                    to_exercise_id: string | null;
+                    updated_at: string;
+                    user_id: string;
+                    window_start: string;
+                };
+                Insert: {
+                    asked_at?: string | null;
+                    count?: number;
+                    created_at?: string;
+                    device_id: string;
+                    exercise_id: string;
+                    id?: string;
+                    key: string;
+                    kind: string;
+                    last_seen: string;
+                    to_exercise_id?: string | null;
+                    updated_at?: string;
+                    user_id?: string;
+                    window_start: string;
+                };
+                Update: {
+                    asked_at?: string | null;
+                    count?: number;
+                    created_at?: string;
+                    device_id?: string;
+                    exercise_id?: string;
+                    id?: string;
+                    key?: string;
+                    kind?: string;
+                    last_seen?: string;
+                    to_exercise_id?: string | null;
+                    updated_at?: string;
+                    user_id?: string;
+                    window_start?: string;
+                };
+                Relationships: [
+                    {
+                        foreignKeyName: "edit_signals_exercise_id_fkey";
+                        columns: ["exercise_id"];
+                        isOneToOne: false;
+                        referencedRelation: "exercises";
+                        referencedColumns: ["id"];
+                    },
+                    {
+                        foreignKeyName: "edit_signals_to_exercise_id_fkey";
+                        columns: ["to_exercise_id"];
+                        isOneToOne: false;
+                        referencedRelation: "exercises";
+                        referencedColumns: ["id"];
+                    }
+                ];
+            };
             excluded_exercises: {
                 Row: {
                     created_at: string;
@@ -344,6 +407,8 @@ export type Database = {
                     created_at: string;
                     equipment: string[];
                     goal: string;
+                    learn_from_edits: boolean;
+                    learn_reset_at: string | null;
                     level: string;
                     onboarded_at: string;
                     onboarding_timing_ms: number | null;
@@ -360,6 +425,8 @@ export type Database = {
                     created_at?: string;
                     equipment?: string[];
                     goal: string;
+                    learn_from_edits?: boolean;
+                    learn_reset_at?: string | null;
                     level: string;
                     onboarded_at?: string;
                     onboarding_timing_ms?: number | null;
@@ -376,6 +443,8 @@ export type Database = {
                     created_at?: string;
                     equipment?: string[];
                     goal?: string;
+                    learn_from_edits?: boolean;
+                    learn_reset_at?: string | null;
                     level?: string;
                     onboarded_at?: string;
                     onboarding_timing_ms?: number | null;

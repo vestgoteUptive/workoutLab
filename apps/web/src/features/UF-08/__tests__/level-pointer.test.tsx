@@ -10,6 +10,7 @@ import {
   fCache,
   fitLine,
   location,
+  openAddSheetFromArea,
   renderSetup,
   screenIds,
   serveCache,
@@ -76,7 +77,7 @@ async function openPullUp(online: boolean, level?: "intermediate" | "advanced"):
   expect(screenIds()).toEqual(["UF-08.2"]);
   expect(lastWorkout().plan.items.map((i) => i.exerciseId)).not.toContain("pull-up");
   spy.mockClear();
-  fireEvent.click(button("Add exercise"));
+  openAddSheetFromArea("back");
   fireEvent.change(within(dialog()).getByLabelText("Search exercises"), {
     target: { value: "Pull up" },
   });
@@ -94,10 +95,8 @@ function expectLine(): void {
   const reason = row.querySelector<HTMLElement>('[data-part="pick-reason"]');
   expect(reason?.textContent).toBe(LINE);
   expect(reason!.id).not.toBe("");
-  const actions = [
-    within(row).getByRole("button", { name: "Add Pull up" }),
-    within(row).getByRole("button", { name: "Start with Pull up" }),
-  ];
+  // T-0998: the sheet opened from UF-08.6 has no "Start with this" (it is on the area's rows).
+  const actions = [within(row).getByRole("button", { name: "Add Pull up" })];
   for (const action of actions) {
     expect(action).toHaveAttribute("aria-disabled", "true");
     expect(action).toHaveAttribute("aria-describedby", reason!.id);
@@ -137,7 +136,7 @@ function expectNoWayOut(): void {
 }
 
 describe("T-0684 UF-08.5 above-level pointer", () => {
-  it("T-0684 AC1 offline, beginner: Pull up reads the pointer line; Add and Start with this are aria-disabled and described by it; a tap calls nothing", async () => {
+  it("T-0684 AC1 offline, beginner: Pull up reads the pointer line; Add is aria-disabled and described by it; a tap calls nothing", async () => {
     await openPullUp(false);
     expectLine();
   });
@@ -153,7 +152,8 @@ describe("T-0684 UF-08.5 above-level pointer", () => {
     expectNoWayOut();
   });
 
-  it("T-0684 AC4 cached profile at intermediate, offline: no line, Add enabled, the re-suggested plan includes pull-up", async () => {
+  it("T-0684 AC4 cached profile at intermediate, offline: no line, Add enabled", async () => {
+    // T-0998: "the re-suggested plan includes pull-up" is retired (an Add is local, no `suggest`).
     await openPullUp(false, "intermediate");
     const row = pullUpRow();
     expect(within(row).queryByText(/Above your level/)).toBeNull();
@@ -161,10 +161,7 @@ describe("T-0684 UF-08.5 above-level pointer", () => {
     const add = within(row).getByRole("button", { name: "Add Pull up" });
     expect(add).not.toHaveAttribute("aria-disabled");
     expect(add).not.toHaveAttribute("aria-describedby");
-    fireEvent.click(add);
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(spy).toHaveBeenCalled();
-    expect(lastWorkout().plan.items.map((i) => i.exerciseId)).toContain("pull-up");
+    expect(spy).not.toHaveBeenCalled();
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
