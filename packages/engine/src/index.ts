@@ -84,4 +84,5 @@ export { estimatedOneRepMax, E1RM_MAX_REPS, type E1rmPoint } from "./e1rm.js";
 export { areaGroups, homeAreaOf, type AreaGroup } from "./area-groups.js";
 export { orderItems, equipmentGroupOf, type EquipmentGroup } from "./order.js";
 // T-0995 adds rules 12.5 to 12.7 adjustAreaSets, addArea, removeArea and areaCandidates (D-0275).
-export { adjustAreaSets, addArea, removeArea, areaCandidates } from "./area-edits.js";
+export { adjustAreaSets, addArea, removeArea, areaCandidates, setMainLift } from "./area-edits.js";
+// T-1021 adds rule 12.8 setMainLift (UF-08.6, D-0205 §5).
