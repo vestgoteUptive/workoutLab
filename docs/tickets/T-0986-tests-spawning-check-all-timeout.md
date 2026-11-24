@@ -31,3 +31,10 @@ none.
 Every AC has evidence · `pnpm -w typecheck lint test` green · commit messages start with `T-0986`.
 
 ## Build / accept log
+- Build (infra, 2026-11-24): both tests now call the checkers' exported functions in-process; no child process, no timeout change. Design-tokens: `checkScreenIdExistence` + `checkV1Labels` run on UF-06.2.md alone. Landing: `check-placeholder-tests.runCheck` filtered to `apps/landing/`. No `.github/scripts` change needed (functions were already exported).
+  - AC1 cost, child process (check-all alone, `node`): 0.5-1.0 s; inside vitest: 480 ms (design-tokens) and 535 ms (landing) on an idle machine, over 5 s under gate load (T-0978b: 7.7 s). Now: 27 ms and 114 ms.
+  - Finding: no checker scans `Design-docs/docs/design/screens/`, so the old design-tokens test could never see a label planted in UF-06.2.md (planted `UF-08 Balance`, check-all printed 0 lines naming it). The new test makes AC3 real.
+  - AC2: forced turbo `typecheck lint test --force --concurrency=1 --continue` x3, all exit 0 (19/19 tasks, about 8.5 min each).
+  - AC3 faults (backup, cp, cmp): `UF-08 Balance` appended to UF-06.2.md -> design-tokens AC1 fails ("v1 flow label"); `UF-99.9` -> fails ("unknown screen id"); marker in a new landing test file -> 2 landing tests fail; marker in a landing page -> marker test fails (the new check only reads test files, so the existing scan carries that case). All restored, none committed.
+  - Red on unfixed code: both old check-all tests fail in this worktree (exit 1, `ticket-not-on-base`): `origin/main` is stale (01e1f824, lacks the T-0986 ticket) and the lane-path check takes it as base. Environmental; also fails `check-all.mjs` and 4 `test:repo-checks` cases (AC21 x2, AC-10, T-0496 AC-5) identically on HEAD. Fix is `git fetch`/update origin/main, not in this ticket.
+  - format:check green after prettier on the design-tokens test.
