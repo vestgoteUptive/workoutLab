@@ -50,6 +50,7 @@ beforeEach(async () => {
   // "Now" is day 10, so the fixtures' windows are open (a pull deletes lapsed rows).
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(NOW);
+  sync.invalidateLedgerProfile();
   await asDevice("A");
 });
 afterEach(() => {
@@ -548,5 +549,250 @@ describe("T-1008 learning-column writes send only the changed fields", () => {
     };
     walk(root);
     expect(hits.sort()).toEqual(["/lib/offline/edit-ledger-sync.ts"]);
+  });
+});
+
+describe("T-1008 security review", () => {
+  it("1: after a failed run with onLine true and a Forget elsewhere, the next run sends nothing", async () => {
+    await asDevice("C");
+    await swaps(2, "P", "Q");
+    fake.state.failUpsert = true;
+    expect(await sync.flushLedger()).toBe("error");
+    fake.state.failUpsert = false;
+    // Another device runs Forget meanwhile: the epoch moves past this device's entries.
+    fake.profile.learn_reset_at = day(30).toISOString();
+    const before = upserts().length;
+    expect(await sync.flushLedger()).toBe("empty");
+    expect(upserts()).toHaveLength(before);
+    expect(await offlineDb().editLedger.count()).toBe(0);
+  });
+  it("1: a fresh profile read within 30 s is reused; after the throttle it is read again", async () => {
+    await asDevice("C");
+    await swaps(1, "P", "Q");
+    await sync.flushLedger();
+    const reads = () => fake.log.filter((r) => r.table === "profiles" && r.op === "select").length;
+    const n = reads();
+    await swaps(1, "P", "Q", 3);
+    await sync.flushLedger();
+    expect(reads()).toBe(n); // fresh: no second read
+    vi.setSystemTime(new Date(NOW.getTime() + sync.PROFILE_FRESH_MS + 1));
+    await swaps(1, "P", "Q", 6);
+    await sync.flushLedger();
+    expect(reads()).toBe(n + 1);
+  });
+  it("1/10: a failed profile read sends nothing; syncLedgerNow reads the profile first", async () => {
+    await asDevice("C");
+    await swaps(1, "P", "Q");
+    sync.invalidateLedgerProfile();
+    fake.state.failProfileSelect = true;
+    expect(await sync.flushLedger()).toBe("error");
+    expect(upserts()).toHaveLength(0);
+    fake.state.failProfileSelect = false;
+    fake.profile.learn_reset_at = day(30).toISOString();
+    await sync.syncLedgerNow();
+    expect(upserts()).toHaveLength(0);
+  });
+  it("3: a pull that started before Forget drops its result (cache stays empty)", async () => {
+    await swaps(3);
+    await sync.flushLedger();
+    let release!: () => void;
+    fake.state.holdSelect = new Promise<void>((r) => (release = r));
+    const pull = sync.pullLedger(NOW);
+    await vi.waitFor(() =>
+      expect(fake.log.some((r) => r.op === "select" && r.table === "edit_signals")).toBe(true),
+    );
+    fake.state.holdSelect = null;
+    expect(await sync.forgetAll()).toEqual({ ok: true });
+    release();
+    expect(await pull).toBe("busy");
+    expect(await sync.cachedRemoteRows(USER)).toEqual([]);
+  });
+  it("3: a pull during the change is busy; with learning off a pull clears the cache", async () => {
+    await swaps(2);
+    await sync.flushLedger();
+    await sync.pullLedger(NOW);
+    expect((await sync.cachedRemoteRows(USER)).length).toBe(1);
+    let release!: () => void;
+    fake.state.hold = new Promise<void>((r) => (release = r));
+    // Hold the delete step instead: Forget in progress.
+    const origFrom = fake.from;
+    let inDelete!: () => void;
+    const reached = new Promise<void>((r) => (inDelete = r));
+    h.fake = {
+      ...fake,
+      from: (t: string) => {
+        const b = origFrom(t) as { delete?: () => unknown };
+        if (t !== "edit_signals" || !b.delete) return b;
+        return {
+          ...b,
+          delete: () => {
+            inDelete();
+            return {
+              eq: (...a: unknown[]) =>
+                fake.state.hold!.then(() =>
+                  (b.delete!() as { eq: (...x: unknown[]) => unknown }).eq(...a),
+                ),
+            };
+          },
+        };
+      },
+    };
+    const forget = sync.forgetAll();
+    await reached;
+    expect(await sync.pullLedger(NOW)).toBe("busy");
+    fake.state.hold = null;
+    release();
+    await forget;
+    h.fake = fake;
+    // Learning off: a later pull deletes whatever the cache holds instead of just answering.
+    await offlineDb().editSignalsCache.put({
+      key: "k",
+      userId: USER,
+      row: {
+        id: "z",
+        device_id: "d",
+        key: "swap:X:Y",
+        kind: "swap",
+        exercise_id: "X",
+        to_exercise_id: "Y",
+        count: 1,
+        window_start: day(9).toISOString(),
+        last_seen: day(9).toISOString(),
+        asked_at: null,
+      },
+    });
+    await sync.turnLearningOff();
+    await offlineDb().editSignalsCache.put({
+      key: "k",
+      userId: USER,
+      row: {
+        id: "z",
+        device_id: "d",
+        key: "swap:X:Y",
+        kind: "swap",
+        exercise_id: "X",
+        to_exercise_id: "Y",
+        count: 1,
+        window_start: day(9).toISOString(),
+        last_seen: day(9).toISOString(),
+        asked_at: null,
+      },
+    });
+    expect(await sync.pullLedger(NOW)).toBe("off");
+    expect(await sync.cachedRemoteRows(USER)).toEqual([]);
+  });
+  it("4: the device caches the server's learn_reset_at, not its own clock", async () => {
+    fake.state.failProfileSelect = true; // so the cache cannot be refilled by a profile read
+    await sync.forgetAll();
+    const cached = (await offlineDb().profileCache.get(USER))?.learning?.learnResetAt;
+    expect(cached).toBe(fake.profile.learn_reset_at);
+  });
+  it("10: syncLedgerNow reads the profile first, so a pull never refills the cache after learning went off elsewhere", async () => {
+    await offlineDb().editSignalsCache.put({
+      key: "k",
+      userId: USER,
+      row: {
+        id: "z",
+        device_id: "d",
+        key: "swap:X:Y",
+        kind: "swap",
+        exercise_id: "X",
+        to_exercise_id: "Y",
+        count: 1,
+        window_start: day(9).toISOString(),
+        last_seen: day(9).toISOString(),
+        asked_at: null,
+      },
+    });
+    fake.rows.set("o", {
+      id: "o1",
+      user_id: USER,
+      device_id: "d",
+      key: "swap:X:Y",
+      kind: "swap",
+      exercise_id: "X",
+      to_exercise_id: "Y",
+      count: 1,
+      window_start: day(9).toISOString(),
+      last_seen: day(9).toISOString(),
+      asked_at: null,
+    });
+    fake.profile.learn_from_edits = false;
+    await sync.syncLedgerNow();
+    expect(await sync.cachedRemoteRows(USER)).toEqual([]);
+  });
+  it("5: with no cached profile row, turning learning off still holds until a profile read", async () => {
+    await offlineDb().profileCache.clear();
+    await swaps(1);
+    expect(await sync.turnLearningOff()).toEqual({ ok: true });
+    // refreshProfile (best effort) re-cached the server's answer: off.
+    expect((await ledger.loadLearning(USER)).learnFromEdits).toBe(false);
+    await offlineDb().profileCache.clear();
+    fake.state.failProfileSelect = true;
+    await sync.turnLearningOff().catch(() => undefined);
+    expect((await ledger.loadLearning(USER)).learnFromEdits).toBe(false);
+    expect(await ledger.recordSwap("X", "Y", null, "n", day(1))).toBe(false);
+  });
+  it("6: learning turned off while a flush is running stops the remaining entries", async () => {
+    await swaps(1, "A", "B");
+    await swaps(1, "C", "D", 3);
+    let release!: () => void;
+    fake.state.hold = new Promise<void>((r) => (release = r));
+    const flush = sync.flushLedger();
+    await vi.waitFor(() => expect(upserts()).toHaveLength(1));
+    const row = (await offlineDb().profileCache.get(USER))!;
+    await offlineDb().profileCache.put({
+      ...row,
+      learning: { learnFromEdits: false, learnResetAt: null },
+    });
+    fake.state.hold = null;
+    release();
+    expect(await flush).toBe("off");
+    expect(upserts()).toHaveLength(1);
+  });
+  it("8: a lapsed server row prunes the local entry only when the windows match", async () => {
+    await swaps(1, "X", "Y", 0); // local window starts day 0
+    await sync.flushLedger();
+    const dev = (await ledger.deviceId())!;
+    fake.rows.clear();
+    const lapsed = (ws: string) => ({
+      id: "l1",
+      user_id: USER,
+      device_id: dev,
+      key: "swap:X:Y",
+      kind: "swap",
+      exercise_id: "X",
+      to_exercise_id: "Y",
+      count: 1,
+      window_start: ws,
+      last_seen: ws,
+      asked_at: null,
+    });
+    // Server row has an older window (day -90): the local entry (day 0, open) stays.
+    fake.rows.set("a", lapsed(day(-90).toISOString()));
+    await sync.pullLedger(NOW);
+    expect(await offlineDb().editLedger.count()).toBe(1);
+    // Same window and lapsed (now far later): both go.
+    const later = new Date(day(0).getTime() + 90 * DAY);
+    vi.setSystemTime(later);
+    fake.rows.set("a", lapsed(day(0).toISOString()));
+    await sync.pullLedger(later);
+    expect(await offlineDb().editLedger.count()).toBe(0);
+  });
+  it("9: a 23514 is dropped with a dev warning; a 22P02 or 23502 stays dirty and reports an error", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await swaps(1);
+    fake.state.upsertError = { code: "23514", message: "check" };
+    expect(await sync.flushLedger()).toBe("empty");
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(await ledger.dirtyEntries(USER)).toHaveLength(0);
+    for (const code of ["22P02", "23502"]) {
+      await swaps(1, "P", "Q", 4);
+      fake.state.upsertError = { code, message: "bug" };
+      expect(await sync.flushLedger()).toBe("error");
+      expect(await ledger.dirtyEntries(USER)).toHaveLength(1);
+      await offlineDb().editLedger.clear();
+    }
+    expect(warn).toHaveBeenCalledTimes(1);
   });
 });

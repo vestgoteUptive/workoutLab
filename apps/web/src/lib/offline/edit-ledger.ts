@@ -28,19 +28,29 @@ export interface LearningState {
 
 /** The learning flag and reset epoch of the cached profile. A missing profile, or one cached
  *  before T-1001, means learning on and no epoch (D-0281 §6). Never rejects. */
+/** What this device knows about the learning prefs before its profile cache says so (T-1008): a
+ *  Forget or turn-off that succeeded on the server while no profile row was cached. Merged over
+ *  the cache and dropped by the next successful profile read. */
+const memoryLearning = new Map<string, Partial<LearningState>>();
+
+export function setMemoryLearning(userId: string, patch: Partial<LearningState>): void {
+  memoryLearning.set(userId, { ...memoryLearning.get(userId), ...patch });
+}
+
 export async function loadLearning(
   userId: string | null = currentUserId(),
 ): Promise<LearningState> {
   const on: LearningState = { learnFromEdits: true, learnResetAt: null };
   if (!userId) return on;
+  const mem = memoryLearning.get(userId);
   try {
     const row = await offlineDb().profileCache.get(userId);
     return {
-      learnFromEdits: row?.learning?.learnFromEdits ?? true,
-      learnResetAt: row?.learning?.learnResetAt ?? null,
+      learnFromEdits: mem?.learnFromEdits ?? row?.learning?.learnFromEdits ?? true,
+      learnResetAt: mem?.learnResetAt ?? row?.learning?.learnResetAt ?? null,
     };
   } catch {
-    return on;
+    return { ...on, ...mem };
   }
 }
 
@@ -321,6 +331,7 @@ export async function pruneEntries(userId: string, keys: string[]): Promise<void
 /** A fresh profile read (D-0281 §4): with learning off the ledger and the pulled rows go; with
  *  a reset epoch, the entries at or before it go (never pushed). Runs before any flush. */
 export async function applyProfileLearning(userId: string, prefs: LearningState): Promise<void> {
+  memoryLearning.delete(userId); // the server's answer replaces what this device assumed
   const db = offlineDb();
   if (!prefs.learnFromEdits) {
     await clearLocal(userId);

@@ -23,6 +23,7 @@ import {
   loadLearning,
   onLedgerWrite,
   pending,
+  setMemoryLearning,
   purgeResetNow,
   type PendingItem,
   type RemoteSignal,
@@ -39,17 +40,42 @@ export const LEDGER_FLUSH_DEBOUNCE_MS = 1000;
 
 export type LedgerFlushOutcome =
   "sent" | "empty" | "offline" | "off" | "signed-out" | "busy" | "error";
-export type LedgerPullOutcome = "pulled" | "offline" | "off" | "signed-out" | "error";
+export type LedgerPullOutcome = "pulled" | "offline" | "off" | "signed-out" | "busy" | "error";
 export type LedgerChangeResult = { ok: true } | { ok: false; reason: "offline" | "error" };
 
 const isOnline = (): boolean => typeof navigator === "undefined" || navigator.onLine !== false;
 
 /** A refusal no retry fixes (a check, or an exercise that no longer exists): the entry is
- *  cleaned instead of blocking the ones behind it. A count is a hint, not history (D-0281 §1). */
+ *  cleaned instead of blocking the ones behind it. A count is a hint, not history (D-0281 §1).
+ *  A not-null or type error (23502, 22P02) is a client bug: it is not listed, so it retries and
+ *  shows up as an "error" outcome instead of vanishing. */
 const isRejectable = (error: { code?: string }): boolean =>
-  ["23514", "23503", "23502", "22P02"].includes(error.code ?? "");
+  ["23514", "23503"].includes(error.code ?? "");
 
 // ---------------------------------------------------------------- flush
+
+/** How long a profile read counts as fresh before a flush with dirty entries (T-1008 review). */
+export const PROFILE_FRESH_MS = 30_000;
+let profileReadAt = 0;
+/** Forces the next flush or pull to read the profile first (an `online` event, a failed run). */
+export function invalidateLedgerProfile(): void {
+  profileReadAt = 0;
+}
+/** Reads the profile unless a read is fresh, so a Forget or turn-off done on another device
+ *  reaches this device before it sends anything. False when the read failed (send nothing). */
+async function ensureProfile(): Promise<boolean> {
+  if (!isOnline() || Date.now() - profileReadAt < PROFILE_FRESH_MS) return true;
+  try {
+    await refreshProfile();
+    profileReadAt = Date.now();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Bumped when Forget or turn-off starts and ends: a pull that began before drops its result. */
+let changeGen = 0;
 
 let inFlight: Promise<LedgerFlushOutcome> | null = null;
 let rerun = false;
@@ -65,15 +91,27 @@ async function flushOnce(): Promise<LedgerFlushOutcome> {
     return "off";
   }
   await purgeResetNow(userId);
-  const dirty = await dirtyEntries(userId);
+  let dirty = await dirtyEntries(userId);
   if (dirty.length === 0) return "empty";
   if (!isOnline()) return "offline";
+  if (!(await ensureProfile())) return "error";
+  // The read may have turned learning off or moved the epoch: look again before sending.
+  if (!(await loadLearning(userId)).learnFromEdits) {
+    await clearLocal(userId);
+    return "off";
+  }
+  await purgeResetNow(userId);
+  dirty = await dirtyEntries(userId);
+  if (dirty.length === 0) return "empty";
   const device = await deviceId(userId);
   if (!device) return "empty";
   let sent = 0;
   for (const e of dirty) {
     // A sign-out or a user switch while flushing: nothing more is sent for the old user.
     if (currentUserId() !== userId || changing) return changing ? "busy" : "signed-out";
+    const now = await loadLearning(userId);
+    if (!now.learnFromEdits) return "off";
+    if (now.learnResetAt !== null && e.lastSeen <= now.learnResetAt) continue;
     const { error } = await supabase.from("edit_signals").upsert(
       {
         user_id: userId,
@@ -90,6 +128,9 @@ async function flushOnce(): Promise<LedgerFlushOutcome> {
       { onConflict: CONFLICT },
     );
     if (error && !isRejectable(error)) return "error";
+    if (error && import.meta.env.DEV) {
+      console.warn("edit_signals row rejected, dropped from the outbox", error.code, e.key);
+    }
     await ackSynced(e.key, e.lastSeen, { count: e.count, askedAt: e.askedAt }, userId);
     if (!error) sent += 1;
   }
@@ -116,6 +157,9 @@ export function flushLedger(): Promise<LedgerFlushOutcome> {
     } catch {
       outcome = "error";
     }
+    // A failed run may mean the network is down while `onLine` says up: read the profile again
+    // before the next send, so a Forget done elsewhere is seen first.
+    if (outcome === "error") invalidateLedgerProfile();
     return outcome;
   })();
   inFlight = run;
@@ -159,9 +203,15 @@ export async function pendingFromAccount(now: Date): Promise<PendingItem[]> {
 export async function pullLedger(now: Date = new Date()): Promise<LedgerPullOutcome> {
   const userId = currentUserId();
   if (!userId) return "signed-out";
+  if (changing) return "busy";
+  const startedChange = changeGen;
+  const raced = (): boolean => changing || changeGen !== startedChange;
   try {
     const prefs = await loadLearning(userId);
-    if (!prefs.learnFromEdits) return "off";
+    if (!prefs.learnFromEdits) {
+      await offlineDb().editSignalsCache.where({ userId }).delete();
+      return "off";
+    }
     if (!isOnline()) return "offline";
     const gen = cacheGeneration();
     const { data, error } = await supabase
@@ -170,6 +220,7 @@ export async function pullLedger(now: Date = new Date()): Promise<LedgerPullOutc
       .eq("user_id", userId);
     if (error || !data) return "error";
     if (!cacheWriteAllowed(gen) || currentUserId() !== userId) return "signed-out";
+    if (raced()) return "busy";
 
     const rows = data as unknown as CachedEditSignal["row"][];
     const mine = await deviceId(userId);
@@ -194,15 +245,16 @@ export async function pullLedger(now: Date = new Date()): Promise<LedgerPullOutc
       // counts 0 in the total anyway).
       if (!res.error) deleted = new Set(doomed.map((r) => r.id));
       if (!res.error) {
-        const gone = [...lapsed, ...overCap].filter((r) => r.device_id === mine).map((r) => r.key);
-        // This device's own lapsed or over-cap entry goes locally too (asked ones are kept).
+        const gone = doomed.filter((r) => r.device_id === mine);
+        // This device's own lapsed or over-cap entry goes locally too, but only the very
+        // window that was deleted (a newer one counted since stays) and never an answered one.
         await pruneEntries(userId, await localDroppable(userId, gone));
       }
     }
     const kept = rows.filter((r) => !deleted.has(r.id));
     const db = offlineDb();
     await db.transaction("rw", db.editSignalsCache, async () => {
-      if (!cacheWriteAllowed(gen)) return;
+      if (!cacheWriteAllowed(gen) || raced()) return;
       await db.editSignalsCache.where({ userId }).delete();
       await db.editSignalsCache.bulkPut(
         kept.map((row) => ({
@@ -212,21 +264,31 @@ export async function pullLedger(now: Date = new Date()): Promise<LedgerPullOutc
         })),
       );
     });
-    return "pulled";
+    return raced() ? "busy" : "pulled";
   } catch {
     return "error";
   }
 }
 
-/** Of `keys`, the local entries that may go: never one with an answer (`askedAt`). */
-async function localDroppable(userId: string, keys: string[]): Promise<string[]> {
-  const mine = await entries();
-  const asked = new Set(mine.filter((e) => e.askedAt !== null).map((e) => e.key));
-  return keys.filter((k) => !asked.has(k) && currentUserId() === userId);
+/** Of the deleted rows, the keys of local entries that may go: the same window, no answer. */
+async function localDroppable(
+  userId: string,
+  gone: { key: string; window_start: string }[],
+): Promise<string[]> {
+  const mine = new Map((await entries()).map((e) => [e.key, e]));
+  return gone
+    .filter((g) => {
+      const e = mine.get(g.key);
+      return e !== undefined && e.askedAt === null && e.windowStart === g.window_start;
+    })
+    .map((g) => g.key)
+    .filter(() => currentUserId() === userId);
 }
 
 /** A flush then a pull: what UF-08.2 does on mount. Never rejects. */
 export async function syncLedgerNow(): Promise<void> {
+  // Profile first, like the start trigger: a Forget done elsewhere is seen before any send.
+  if (!(await ensureProfile())) return;
   await flushLedger();
   await pullLedger();
 }
@@ -239,7 +301,11 @@ async function patchCachedLearning(
 ): Promise<void> {
   const db = offlineDb();
   const row = await db.profileCache.get(userId);
-  if (!row) return;
+  if (!row) {
+    // No cached profile to patch: remember it in memory until a profile read succeeds.
+    setMemoryLearning(userId, patch);
+    return;
+  }
   await db.profileCache.put({
     ...row,
     learning: { ...(row.learning ?? { learnFromEdits: true, learnResetAt: null }), ...patch },
@@ -252,24 +318,28 @@ async function deleteAllRows(userId: string): Promise<boolean> {
 }
 
 async function changeLearning(
-  write: (userId: string, at: string) => Promise<boolean>,
-  after: (userId: string, at: string) => Promise<void>,
+  write: (userId: string) => Promise<{ ok: boolean; resetAt: string | null }>,
+  after: (userId: string, resetAt: string | null) => Promise<void>,
 ): Promise<LedgerChangeResult> {
   const userId = currentUserId();
   if (!userId) return { ok: false, reason: "error" };
   if (!isOnline()) return { ok: false, reason: "offline" };
   changing = true;
+  changeGen += 1;
   try {
     await inFlight?.catch(() => undefined);
     if (!(await deleteAllRows(userId))) return { ok: false, reason: "error" };
-    const at = new Date().toISOString();
-    if (!(await write(userId, at))) return { ok: false, reason: "error" };
-    await after(userId, at);
+    // If this write fails the deletes above stay done: the counts are gone and the flag or
+    // epoch is unchanged, so the user sees an error and can try again (a hint, not history).
+    const written = await write(userId);
+    if (!written.ok) return { ok: false, reason: "error" };
+    await after(userId, written.resetAt);
     return { ok: true };
   } catch {
     return { ok: false, reason: "error" };
   } finally {
     changing = false;
+    changeGen += 1;
   }
 }
 
@@ -283,16 +353,19 @@ async function clearDevice(userId: string): Promise<void> {
  *  after it; offline changes nothing. */
 export function forgetAll(): Promise<LedgerChangeResult> {
   return changeLearning(
-    async (userId, at) => {
-      const { error } = await supabase
+    async (userId) => {
+      // The server stamps the epoch itself; the device caches that value, not its own clock.
+      const { data, error } = await supabase
         .from("profiles")
-        .update({ learn_reset_at: at })
-        .eq("user_id", userId);
-      return !error;
+        .update({ learn_reset_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .select("learn_reset_at")
+        .single();
+      return { ok: !error, resetAt: data?.learn_reset_at ?? null };
     },
-    async (userId, at) => {
+    async (userId, resetAt) => {
       await clearDevice(userId);
-      await patchCachedLearning(userId, { learnResetAt: at });
+      if (resetAt !== null) await patchCachedLearning(userId, { learnResetAt: resetAt });
       await refreshProfile().catch(() => undefined);
     },
   );
@@ -303,15 +376,20 @@ export function forgetAll(): Promise<LedgerChangeResult> {
 export function turnLearningOff(): Promise<LedgerChangeResult> {
   return changeLearning(
     async (userId) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .update({ learn_from_edits: false })
-        .eq("user_id", userId);
-      return !error;
+        .eq("user_id", userId)
+        .select("learn_reset_at")
+        .single();
+      return { ok: !error, resetAt: data?.learn_reset_at ?? null };
     },
-    async (userId) => {
+    async (userId, resetAt) => {
       await clearDevice(userId);
-      await patchCachedLearning(userId, { learnFromEdits: false });
+      await patchCachedLearning(userId, {
+        learnFromEdits: false,
+        ...(resetAt !== null ? { learnResetAt: resetAt } : {}),
+      });
       await refreshProfile().catch(() => undefined);
     },
   );
@@ -332,20 +410,13 @@ export interface LedgerSyncHandle {
  *  profile is read first, so a device that was offline during Forget drops its older entries
  *  before anything is sent; if that read fails nothing is sent and the run is retried. */
 export function startLedgerSync(): LedgerSyncHandle {
-  let profileFresh = false;
   let signalOnly = false;
+  invalidateLedgerProfile(); // the start trigger reads the profile first
   const scheduler = new RetryScheduler(async () => {
     if (!currentUserId()) return "empty";
-    if (isOnline() && !profileFresh) {
-      try {
-        await refreshProfile();
-        profileFresh = true;
-      } catch {
-        return "network-error";
-      }
-    }
+    if (!(await ensureProfile())) return "network-error";
     const flushed = await flushLedger();
-    if (flushed === "error") return "network-error";
+    if (flushed === "error") return "network-error"; // flushLedger already invalidated the profile
     if (!signalOnly && (await pullLedger()) === "error") return "network-error";
     return flushed === "sent" ? "flushed" : "empty";
   });
@@ -368,7 +439,7 @@ export function startLedgerSync(): LedgerSyncHandle {
     }, LEDGER_FLUSH_DEBOUNCE_MS);
   });
   const onOnline = () => {
-    profileFresh = false;
+    invalidateLedgerProfile();
     void run(false);
   };
   window.addEventListener("online", onOnline);

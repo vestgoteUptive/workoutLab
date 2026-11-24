@@ -15,7 +15,7 @@ function deviceTimeZone(): string {
 }
 
 export function AutoSync() {
-  const { status } = useAuth();
+  const { status, userId } = useAuth();
   const signedIn = status === "signed-in";
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export function AutoSync() {
       ledger.stop();
       handle.stop();
     };
-  }, [signedIn]);
+  }, [signedIn, userId]);
 
   return null;
 }

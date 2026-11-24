@@ -101,6 +101,7 @@ describe("T-1007 AC3 removal", () => {
         "pruneEntries",
         "onLedgerWrite",
         "purgeResetNow",
+        "setMemoryLearning",
         "clearLocal",
         "deviceId",
         "entries",

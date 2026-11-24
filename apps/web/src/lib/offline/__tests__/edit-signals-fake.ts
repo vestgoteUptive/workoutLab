@@ -45,6 +45,8 @@ export function createAccountFake() {
     failProfileSelect: false,
     /** When set, an upsert waits for this promise before answering. */
     hold: null as Promise<void> | null,
+    /** When set, a select of `edit_signals` waits for this promise before answering. */
+    holdSelect: null as Promise<void> | null,
     upsertError: null as { code: string; message: string } | null,
   };
   let nextId = 1;
@@ -77,7 +79,9 @@ export function createAccountFake() {
         select: (cols?: string) => ({
           eq: async (_c: string, userId: string) => {
             log.push({ table, op: "select", body: cols });
-            return { data: [...rows.values()].filter((r) => r.user_id === userId), error: null };
+            const snapshot = [...rows.values()];
+            if (state.holdSelect) await state.holdSelect;
+            return { data: snapshot.filter((r) => r.user_id === userId), error: null };
           },
         }),
         delete: () => ({
@@ -107,11 +111,19 @@ export function createAccountFake() {
           },
         }),
         update: (body: Record<string, unknown>) => ({
-          eq: async () => {
-            log.push({ table, op: "update", body });
-            if (state.failProfileUpdate) return fail;
-            Object.assign(profile, body);
-            return ok;
+          eq: () => {
+            const run = () => {
+              log.push({ table, op: "update", body });
+              if (state.failProfileUpdate) return { data: null, error: fail.error };
+              Object.assign(profile, body);
+              // The profiles trigger stamps the epoch whenever the flag or the epoch is written.
+              profile.learn_reset_at = new Date().toISOString();
+              return { data: { learn_reset_at: profile.learn_reset_at }, error: null };
+            };
+            return {
+              select: () => ({ single: async () => run() }),
+              then: (res: (v: unknown) => unknown) => res(run()),
+            };
           },
         }),
       };
