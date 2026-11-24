@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.6]
 decisions: [D-0290, D-0274, D-0276, D-0286]
 deps: [T-1022]
-status: ready
+status: done
 ---
 ## Why
 Remove Hamstrings then Add Hamstrings at 45 min says "No time left" (T-0999). The spec says one tap puts a removed area back. The engine can restore the removed items (T-1022, D-0290); the web must remember them for the visit and hand them over.
@@ -42,3 +42,11 @@ none (uses the T-1022 engine input).
 Tests for every AC pass · `pnpm test:affected` with `--e2e` green (UF-08 e2e specs) · commit messages start with `T-1023` and cite UF-08.2.
 
 ## Build / accept log
+
+- Built from `main-hzlbfc` + T-1022 (clean tree, HEAD af6b593c). `Adjusted.restore` (SessionSetup) holds the items removed with a whole area (UF-08.2 Remove; UF-08.6 last-exercise Remove), passed as `ctx.restore` (`editContext`) to `addArea`, `areaCandidates` (`overviewOf`) and `fillRest`. Cleared by the time chip (`resuggest`); gone with the visit state on Start/leaving/reload; per area dropped by `pruneRestore` on Add, Fill, UF-08.5 add, "Start with this". New copy `areaAddedBack` "{Area} added back." Fill shown for a removed area with memory (`restorableAreas`).
+- Decisions in the build: (1) `fillRest` now reaches a removed area only when its memory restores it (a fresh add of a removed area is still never done by Fill; D-0290 §7). (2) A UF-08.6 last-exercise Remove puts that id in the visit's excludes (D-0191), so the engine finds the restore invalid and falls back to a fresh suggestion; the memory is kept as the ticket says. (3) The restore is "as it was at removal": the Remove control only appears at 2 sets, so the old sets are the reduced ones.
+- AC7 second case: at 30 min the rebuild fills the minutes, so Hamstrings reads "No time left" right after the chip; the e2e frees time (Chest out) first, then Add gives the fresh "Hamstrings added. n min left."
+- Deliberate test updates (area-plan.test.tsx): AC5 add of Calves now reads "Calves added back."; AC6 Fill the rest no longer asserts "never brought back" (it comes back as it was when reached).
+- AC to test (`__tests__/restore-area.test.tsx`, e2e in `tests/e2e/uf-08-areas-first.spec.ts`): AC1 "Remove Hamstrings then Add" (+ Add exercise re-entry test) · AC2 two tests (enabled + Fill shown; No time left when nothing fits) · AC3 UF-08.6 removal falls back to fresh · AC4 two tests (main lift returns first; demoted to <=3 sets after "Start with this") · AC5 time chip, Start then new visit · AC6 Skipping line, Fill restores · AC7 e2e x2 (`--repeat-each 2` green) · AC8 leave to UF-08.1 (no fetch, no setItem), fresh mount · AC9 3 states x offline/online · AC10 axe, one status, focus, name "Add Hamstrings".
+- Planted faults (backup, `cp` restore, `cmp` equal, none committed): F1 no clear on time change -> AC5 time-chip test red (1 failed); F2 no drop on re-entry + append on capture -> the Add exercise re-entry test red (1 failed; the first attempt with a wrong sed and a plan-dependent id stayed green and was fixed, not kept); F3 `areaCandidates` without restore -> 7 tests red (AC1, AC2, AC5, AC6, AC8, AC9 x2).
+- Red runs on unfixed code: first e2e run red x4 (my own over-broad "No time left" locator and the 30-min case above), fixed in the spec.

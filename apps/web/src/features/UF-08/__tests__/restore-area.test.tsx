@@ -273,6 +273,33 @@ describe("T-1023 AC1 restore", () => {
   });
 });
 
+describe("T-1023 re-entry by another route drops the memory", () => {
+  it("T-1023 AC1 an area that re-enters through Add exercise forgets its old items: removed again, it returns as it was last", async () => {
+    await toPlan({ budget: 90 });
+    const first = areaGroups(lastWorkout()).find((g) => g.area === "hamstrings")!.itemIds[0]!;
+    const [oldId, newId, newName] =
+      first === "leg-curl"
+        ? [first, "romanian-deadlift", "Romanian deadlift"]
+        : [first, "leg-curl", "Leg curl"];
+    removeArea("hamstrings");
+    openArea("glutes");
+    fireEvent.click(button("Add exercise"));
+    const sheet = within(screen.getByRole("dialog"));
+    fireEvent.change(sheet.getByLabelText("Search exercises"), { target: { value: newName } });
+    fireEvent.click(sheet.getByRole("button", { name: `Add ${newName}` }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    back();
+    expect(rowAreas()).toContain("hamstrings");
+    removeArea("hamstrings");
+    fireEvent.click(addButton("hamstrings"));
+    expect(status()).toHaveTextContent(/^Hamstrings added back\.$/);
+    const written = await started();
+    const ids = written.items.map((i) => i.exerciseId);
+    expect(ids).toContain(newId);
+    expect(ids).not.toContain(oldId);
+  });
+});
+
 describe("T-1023 AC2 Add an area lists it", () => {
   it("T-1023 AC2 the removed area's Add is enabled with Fill the rest shown, not No time left", async () => {
     await toPlan();
@@ -356,16 +383,12 @@ describe("T-1023 AC5 time and other resets", () => {
       /^Plan rebuilt for 30 min\. Your set changes were cleared\./,
     );
     expect(rowAreas()).not.toContain("hamstrings");
-    const li = candidate("hamstrings")!;
-    suggestSpy.mockClear();
-    if (attr(addButton("hamstrings"), "aria-disabled") === null) {
-      fireEvent.click(addButton("hamstrings"));
-      expect(rowAreas()).toContain("hamstrings");
-      expect(status()).toHaveTextContent(/^Hamstrings added\. \d+ min left\.$/);
-      expect(status()).not.toHaveTextContent("added back");
-    } else {
-      expect(within(li).getByText("No time left")).toBeInTheDocument();
-    }
+    // The rebuild fills the 30 minutes: free some by taking the first area out.
+    removeArea(rowAreas()[0]!);
+    expect(attr(addButton("hamstrings"), "aria-disabled")).toBeNull();
+    fireEvent.click(addButton("hamstrings"));
+    expect(rowAreas()).toContain("hamstrings");
+    expect(status()).toHaveTextContent(/^Hamstrings added\. \d+ min left\.$/);
   });
 
   it("T-1023 AC5 Start workout, then back: the memory is gone", async () => {
