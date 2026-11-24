@@ -5,7 +5,7 @@ lane: infra
 screens: []
 decisions: [D-0197]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 In the T-0978b gate (2026-11-24) `packages/design-tokens/test/uf06-2-e1rm-spec.test.ts` "T-0962 AC1 … check-all passes" failed with "Test timed out in 5000ms" after 7.7 s; `check-all.mjs` itself exited 0 in the same gate. `apps/landing/test/ac21-placeholder-removed.test.ts` runs the same child process. Spawning the whole repo check from inside a package unit test costs seconds under load and duplicates the gate's own `check-all` step. A flake is not a root cause.
