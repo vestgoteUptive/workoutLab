@@ -72,7 +72,7 @@ function assertBudget(budgetMin) {
 function byId(a, b) {
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
-function buildStart(history, targets, profile, library, excludeIds, avoided, favoriteIds, now, tz) {
+export function buildStart(history, targets, profile, library, excludeIds, avoided, favoriteIds, now, tz) {
     const bal = balance(history, targets, library, now, tz);
     const t = {};
     const loads = {};
@@ -105,7 +105,7 @@ function buildStart(history, targets, profile, library, excludeIds, avoided, fav
         favorites: new Set(favoriteIds),
     };
 }
-function newState(start, available, durationOf) {
+export function newState(start, available, durationOf) {
     const primaryCount = {};
     for (const a of AREAS)
         primaryCount[a] = 0;
@@ -156,7 +156,7 @@ function admissible(s, ex) {
  * session, (2) gap fit, (3) id. Key (0) makes the list the stable partition of the list without
  * favorites, favorites first (D-0202 §3).
  */
-function candidates(s, area) {
+export function candidates(s, area) {
     return s.start.pool
         .filter((e) => e.areas[area] === 1 && admissible(s, e))
         .map((e) => ({
@@ -200,7 +200,7 @@ const ACCESSORY_TRIES = [3, 2];
  * The `fav` key repeats what `candidates` already orders; it is kept on purpose so the
  * favorites-before-loaded order stays explicit if `candidates` ever changes.
  */
-function mainCandidates(s, area) {
+export function mainCandidates(s, area) {
     return candidates(s, area)
         .filter((e) => e.type === "compound")
         .map((e) => ({ e, fav: s.start.favorites.has(e.id) ? 0 : 1, bw: e.externalLoad ? 0 : 1 }))
@@ -278,7 +278,7 @@ export function repRange(ex, isMain, goal = DEFAULT_GOAL) {
     return [lo, hi];
 }
 /** The planned duration of each exercise over `ctx`, computed once per exercise (D-0092 §1). */
-function durationsOf(ctx) {
+export function durationsOf(ctx) {
     const memo = new Map();
     return (ex) => {
         if (!ex.timed)
@@ -289,7 +289,7 @@ function durationsOf(ctx) {
         return memo.get(ex.id) ?? null;
     };
 }
-function prefillCtxOf(history, library, now, tz, goal = DEFAULT_GOAL) {
+export function prefillCtxOf(history, library, now, tz, goal = DEFAULT_GOAL) {
     return {
         hard: normalizeHistory(history),
         lib: indexLibrary(library),
