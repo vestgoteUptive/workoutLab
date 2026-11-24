@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.6, UF-08.2]
 decisions: [D-0205, D-0275, D-0288]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 T-0997 build note: "Start with this" on the new area detail still calls `suggest()` once (D-0205 §5). In the areas-first flow (D-0274) that rebuild can change other areas and drop the user's − / + edits, which the area plan otherwise never does (one suggest per time chip only).
