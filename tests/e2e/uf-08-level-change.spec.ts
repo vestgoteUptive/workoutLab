@@ -146,9 +146,7 @@ async function toSuggested(page: Page, budget = "30 minutes"): Promise<void> {
 }
 
 async function startFromSuggested(page: Page): Promise<string> {
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout", exact: true }).click();
   await expect(page).toHaveURL(SESSION_URL);
   return SESSION_URL.exec(page.url())![1]!;
 }

@@ -196,8 +196,6 @@ describe("AC2 (B1 sibling) Suggest my workout is unchanged", () => {
     expect(button("Looks good")).not.toHaveAttribute("aria-describedby");
     expect(budgetText()).toHaveTextContent(/^About \d+ of 30 min$/);
     expect(screen.getByRole("button", { name: "Shuffle" })).toBeInTheDocument();
-    fireEvent.click(button("Looks good"));
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));
   });
 });
 
@@ -305,27 +303,6 @@ describe("AC6 a UF-08.5 Add in empty mode", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await sheet("Lateral raise");
     expect(status()).toHaveTextContent(/^Lateral raise added\.$/);
-  });
-});
-
-describe("AC7 (B17) start a one-item workout", () => {
-  it("UF-08.4 shows 1 exercise and its real duration; Start writes a plan with one item", async () => {
-    await open(45);
-    await sheet("Leg extension");
-    const workout = lastPlanResult();
-    expect(workout.plan.items).toHaveLength(1);
-    fireEvent.click(button("Looks good"));
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));
-    const minutes = Math.ceil(workout.totalS / 60);
-    expect(document.querySelector('[data-part="summary"]')).toHaveTextContent(
-      new RegExp(`^${minutes} min · warm-up \\+ 1 exercise · 3 sets · done by `),
-    );
-    expect(upsert).not.toHaveBeenCalled();
-    fireEvent.click(button("Start"));
-    await waitFor(() => expect(upsert).toHaveBeenCalledTimes(1));
-    const row = upsert.mock.calls[0]![0];
-    expect(row.plan?.items.map((i) => i.exerciseId)).toEqual(["leg-extension"]);
-    expect(row.time_budget_min).toBe(45);
   });
 });
 

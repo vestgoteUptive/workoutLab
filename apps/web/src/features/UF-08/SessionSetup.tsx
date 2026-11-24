@@ -65,10 +65,10 @@ import { SwapSheet } from "../UF-05/index.js";
 import { AreaDetail, type AddOutcome, type NotTodayLine } from "./AreaDetail.js";
 import { AreaPlan, type AreaLoad } from "./AreaPlan.js";
 import { blockedReasons } from "./blocked.js";
-import { Ready } from "./Ready.js";
 import {
   adjustSets,
   editContext,
+  makeMain,
   fillRest as fillAreas,
   overviewOf,
   putIn,
@@ -99,7 +99,7 @@ export interface SessionSetupProps {
   /** Read once at mount (D-0107 §4). Defaults to the current time. */
   now?: Date | string;
   /**
-   * UF-08.4's clock (D-0110 §1): read when Ready mounts (done by) and at the Start tap
+   * The Start clock (D-0110 §1, D-0280): read when UF-08.2 mounts (done by) and at the Start tap
    * (`started_at`), so setup time is never charged to the workout. Defaults to `new Date()`.
    */
   clock?: () => Date;
@@ -326,7 +326,7 @@ export function SessionSetup({
 
   const navigate = useNavigate();
   const step = params.get("step");
-  const pastSetup = step === "suggested" || step === "ready" || step === "swap" || step === "area";
+  const pastSetup = step === "suggested" || step === "swap" || step === "area";
   // UF-08.3 (T-0303c): `?step=swap&item=n` with a current `Workout` and an item in range.
   const swapItem = parseItem(params.get("item"), adjusted?.workout.plan.items.length ?? 0);
   const showSwap = step === "swap" && adjusted !== null && swapItem !== null;
@@ -345,9 +345,7 @@ export function SessionSetup({
   const badArea =
     step === "area" && !legacyExerciseList && adjusted !== null && areaId !== null && !areaHeld;
   const showSuggested = (step === "suggested" || badSwap || badArea) && adjusted !== null;
-  const showReady = step === "ready" && adjusted !== null;
-  const stale =
-    step !== null && step !== "time" && !showSuggested && !showReady && !showSwap && !showArea;
+  const stale = step !== null && step !== "time" && !showSuggested && !showSwap && !showArea;
   const [focusSwapItem, setFocusSwapItem] = useState<number | null>(null);
   // T-0997: the exercise whose Swap button takes focus when UF-08.6 returns from UF-08.3.
   const [focusSwapId, setFocusSwapId] = useState<string | null>(null);
@@ -522,18 +520,6 @@ export function SessionSetup({
     finishError: useId(),
     fit: useId(),
   };
-
-  if (showReady) {
-    // T-0996 (D-0275 §7): the plan is run, and written at Start, in the engine's automatic order.
-    // `data === null` can't reach this branch: `adjusted` is only set once `data` was ready, and
-    // `data` never goes back to null while the host stays mounted. It falls back to the plan as
-    // held (already ordered by every UF-08.6 edit) rather than ordering without a library.
-    const run =
-      legacyExerciseList || data === null
-        ? adjusted.workout
-        : orderItems(adjusted.workout, data.library);
-    return <Ready workout={run} clock={clock} locale={loc} timeZone={tz} />;
-  }
 
   if (showSwap) {
     const leave = (applied: Workout | null) => {
@@ -746,6 +732,59 @@ export function SessionSetup({
           : null;
       const pinned = demoted === null ? base : [demoted, ...base.filter((p) => p !== demoted)];
       const visit = inPlan ? adjusted.excludeIds : adjusted.excludeIds.filter((e) => e !== id);
+      if (!legacyExerciseList && areaView !== null) {
+        // T-1009 (T-1021, rule 12.8; supersedes D-0288 §2): the engine's `setMainLift`, no rebuild.
+        const made = makeMain(
+          adjusted.workout,
+          id,
+          editContext(data, {
+            excludeIds: excludeIdsFor(stored, visit),
+            favoriteIds: favoriteIdsFor(favoriteIds),
+            avoidAreas,
+            nowIso,
+            tz,
+          }),
+        );
+        if ("refused" in made) {
+          switch (made.refused) {
+            case "items_cap":
+              return en.uf08.capItems(MAX_ITEMS);
+            case "not_admissible": {
+              const ex = data.library.find((e) => e.id === id);
+              const full =
+                ex === undefined
+                  ? undefined
+                  : primaryAreas(ex).find(
+                      (a) =>
+                        !plan.items.some((i) => i.exerciseId === id) &&
+                        plan.items.filter((i) => {
+                          const l = data.library.find((e) => e.id === i.exerciseId);
+                          return l !== undefined && primaryAreas(l).includes(a);
+                        }).length >= MAX_ITEMS_PER_AREA,
+                    );
+              return full === undefined
+                ? en.uf08.noFitStart(nameOf(id), budgetMin)
+                : en.uf08.capArea(en.bodyMap.areas[full]);
+            }
+            default:
+              return en.uf08.noFitStart(nameOf(id), budgetMin);
+          }
+        }
+        setAdjusted({
+          ...adjusted,
+          workout: made.workout,
+          excludeIds: visit,
+          addedIds: pinned,
+          swappedOut: inPlan ? adjusted.swappedOut : adjusted.swappedOut.filter((e) => e !== id),
+          unlabelledPins:
+            !empty && demoted !== null && !adjusted.addedIds.includes(demoted)
+              ? [...adjusted.unlabelledPins, demoted]
+              : adjusted.unlabelledPins,
+          mainPickId: id,
+          emptiedByRemove: false,
+        });
+        return null;
+      }
       const result = runSuggest(
         data,
         inputFor({
@@ -907,7 +946,8 @@ export function SessionSetup({
               ]);
               return first.exerciseId;
             } catch {
-              return null;
+              // T-0997 review: an engine throw is not "no alternative"; the plan is unchanged.
+              return { failed: true };
             }
           }}
           onUndoNotToday={(line) => {
@@ -1055,6 +1095,7 @@ export function SessionSetup({
         <AreaPlan
           mode={adjusted.mode}
           workout={adjusted.workout}
+          startWorkout={orderItems(adjusted.workout, data.library)}
           library={data.library}
           locale={loc}
           timeZone={tz}

@@ -62,7 +62,8 @@ export interface AreaDetailProps {
   onFocused?: () => void;
   onSwap: (id: string) => void;
   /** The new exercise's id, or null when no other exercise fits (the plan is unchanged). */
-  onNotToday: (id: string) => string | null;
+  /** T-0997 review: `{ failed }` is an engine throw (nothing changed), shown as `areaChangeFailed`. */
+  onNotToday: (id: string) => string | null | { failed: true };
   onUndoNotToday: (line: NotTodayLine) => void;
   /** "last": the area is empty now and the host leaves; "failed": nothing changed. */
   onRemove: (id: string) => "ok" | "last" | "failed";
@@ -297,6 +298,10 @@ export function AreaDetail({
                   aria-label={en.uf08.notTodayName(exName)}
                   onClick={() => {
                     const next = onNotToday(item.exerciseId);
+                    if (next !== null && typeof next === "object") {
+                      setStatus(en.uf08.areaChangeFailed);
+                      return;
+                    }
                     if (next === null) {
                       setStatus(en.uf08.notTodayNone(name));
                       return;

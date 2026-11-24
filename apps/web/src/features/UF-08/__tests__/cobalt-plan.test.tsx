@@ -1,16 +1,20 @@
-// T-0599 UF-08.1, UF-08.4 Cobalt plan restyle (D-0208, D-0210, D-0211). Structure and guard
+// T-0599 UF-08.1, UF-08.2 Cobalt plan restyle (D-0208, D-0210, D-0211). Structure and guard
 // checks; the computed colours, sizes and the canvas compare are in tests/e2e/uf-08-setup.spec.ts.
-// Loaders mocked; the real engine runs. Ready is rendered on its own with `upsertSession` mocked.
+// Loaders mocked; the real engine runs. UF-08.2's Start and Focus mode are driven through the host with `upsertSession` mocked.
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { upsertSession } from "../../../lib/offline/queue.js";
-import { Ready } from "../Ready.js";
-import { LOCALE, NOW, TZ } from "./fixtures.js";
-import { fitLine, renderSetup, screenIds, serveCache, setOnline, settle } from "./harness.js";
-import { wR7E4 } from "./workouts.js";
+import {
+  AREA_PLAN_PROPS,
+  fitLine,
+  renderSetup,
+  screenIds,
+  serveCache,
+  setOnline,
+  settle,
+} from "./harness.js";
 
 const auth = vi.hoisted(() => ({ status: "signed-in" as "signed-in" | "stale" | "signed-out" }));
 vi.mock("../../../lib/auth/auth-context.js", () => ({ useAuth: () => ({ status: auth.status }) }));
@@ -50,12 +54,12 @@ async function loaded(): Promise<void> {
   await waitFor(() => expect(fitLine().textContent).toMatch(/^(Fits|Nothing)/));
 }
 
-function showReady() {
-  return render(
-    <MemoryRouter initialEntries={["/session/setup?step=ready"]}>
-      <Ready workout={wR7E4()} clock={() => new Date(NOW)} locale={LOCALE} timeZone={TZ} />
-    </MemoryRouter>,
-  );
+async function showReady() {
+  renderSetup(AREA_PLAN_PROPS, "/session/setup?budget=30");
+  await loaded();
+  fireEvent.click(button("Suggest my workout"));
+  await settle();
+  fireEvent.click(document.querySelector('[data-part="focus-mode-summary"]')!);
 }
 
 describe("AC1 the roots are plan", () => {
@@ -67,9 +71,9 @@ describe("AC1 the roots are plan", () => {
     expect(screenRoot().classList.contains("wl-page")).toBe(true);
   });
 
-  it("UF-08.4 carries data-wl-state=plan and .wl-page", () => {
-    showReady();
-    expect(screenRoot().getAttribute("data-screen-id")).toBe("UF-08.4");
+  it("UF-08.2 carries data-wl-state=plan and .wl-page", async () => {
+    await showReady();
+    expect(screenRoot().getAttribute("data-screen-id")).toBe("UF-08.2");
     expect(screenRoot().getAttribute("data-wl-state")).toBe("plan");
     expect(screenRoot().classList.contains("wl-page")).toBe(true);
   });
@@ -139,8 +143,8 @@ describe("AC4 toggles keep role and name", () => {
     expect(screen.queryByRole("switch")).toBeNull();
   });
 
-  it("UF-08.4: the three settings are checkboxes in .wl-toggle labels", () => {
-    showReady();
+  it("UF-08.2 Focus mode: the three settings are checkboxes in .wl-toggle labels", async () => {
+    await showReady();
     for (const name of ["Sound cues", "Voice countdown 3-2-1", "Keep screen awake"]) {
       const box = screen.getByRole("checkbox", { name });
       expect(box.closest("label")!.classList.contains("wl-toggle")).toBe(true);
@@ -170,11 +174,11 @@ describe("AC5 one primary, error forms", () => {
     expect(primaries[0]).toBe(button("Suggest my workout"));
   });
 
-  it("UF-08.4 has exactly one .wl-button--primary, Start", () => {
-    showReady();
+  it("UF-08.2 has exactly one .wl-button--primary, Start workout", async () => {
+    await showReady();
     const primaries = document.querySelectorAll(".wl-button--primary");
     expect(primaries).toHaveLength(1);
-    expect(primaries[0]).toBe(button("Start"));
+    expect(primaries[0]).toBe(button("Start workout"));
   });
 
   it("the finish-time field is a .wl-input; the rejection line is the plan error form, shown then gone", async () => {
@@ -193,11 +197,11 @@ describe("AC5 one primary, error forms", () => {
     expect(screen.queryByText("Pick a time later today")).toBeNull();
   });
 
-  it("UF-08.4 start error: hidden at first, then the alert in the same error form", async () => {
+  it("UF-08.2 start error: hidden at first, then the alert in the same error form", async () => {
     upsert.mockRejectedValue(new Error("idb"));
-    showReady();
+    await showReady();
     expect(screen.queryByRole("alert")).toBeNull();
-    fireEvent.click(button("Start"));
+    fireEvent.click(button("Start workout"));
     const alert = await screen.findByRole("alert");
     expect(alert.classList.contains("wl-input__error")).toBe(true);
     expect(alert).toHaveTextContent("Couldn't start the workout. Try again.");

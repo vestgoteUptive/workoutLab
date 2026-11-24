@@ -138,7 +138,7 @@ async function openSetup(page: Page): Promise<void> {
 }
 
 /** UF-08.1 → Start empty → Add exercise → search `query` → "Start with" (the Main lift, 6-8 reps
- *  for bench press) or "Add" → Looks good → Start → skip the warm-up: lands on UF-09.3 of that
+ *  for bench press) or "Add" → Start workout → skip the warm-up: lands on UF-09.3 of that
  *  exercise. */
 async function startWith(page: Page, query: string, name: string, main = false): Promise<void> {
   await page.getByRole("button", { name: "30 minutes" }).click();
@@ -150,9 +150,7 @@ async function startWith(page: Page, query: string, name: string, main = false):
   if (main) await sheet.getByRole("button", { name: `Start with ${name}` }).click();
   else await sheet.getByRole("button", { name: new RegExp(`^Add ${name}`) }).click();
   await expect(sheet).toHaveCount(0);
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(screen(page, "UF-08.4")).toBeVisible();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout", exact: true }).click();
   await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
   await page.getByRole("button", { name: "Skip warm-up" }).click();
   await expect(screen(page, "UF-09.3")).toBeVisible();

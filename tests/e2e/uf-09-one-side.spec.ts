@@ -589,7 +589,7 @@ test.describe("AC2 coverage counts one hard set per both-sides set (UF-10.2)", (
 // days off; the label is there from the first set. The plan is built through UF-08.
 // ---------------------------------------------------------------------------------------------
 
-/** UF-08.1 (30 min) → Start empty → Add exercise "Dumbbell row" → Looks good → Start → the first
+/** UF-08.1 (30 min) → Start empty → Add exercise "Dumbbell row" → Start workout → the first
  *  set. Returns what the engine priced (the row's detail and the budget line) and the first set. */
 async function planAndStart(
   page: Page,
@@ -613,9 +613,7 @@ async function planAndStart(
   await expect(itemRow).toHaveCount(1);
   const detail = text(await itemRow.locator('[data-part="row-detail"]').textContent());
   const budget = text(await page.locator('[data-part="budget-text"]').textContent());
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(screen(page, "UF-08.4")).toBeVisible();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout", exact: true }).click();
   await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
   await page.getByRole("button", { name: "Skip warm-up" }).click();
   await expect(screen(page, "UF-09.3")).toBeVisible();

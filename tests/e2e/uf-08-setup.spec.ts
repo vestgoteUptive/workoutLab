@@ -408,7 +408,7 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
     expect(serious).toEqual([]);
   });
 
-  test("Remove, Shuffle, the 5 chips, Looks good and Back are each ≥ 44 × 44 px", async ({
+  test("Remove, Shuffle, the 5 chips, Start workout and Back are each ≥ 44 × 44 px", async ({
     page,
   }) => {
     await openSetup(page);
@@ -419,7 +419,7 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
       ...names.map((n) => page.getByRole("button", { name: `Remove ${n}` })),
       page.getByRole("button", { name: "Shuffle" }),
       ...[20, 30, 45, 60, 90].map((m) => page.getByRole("button", { name: `${m} minutes` })),
-      page.getByRole("button", { name: "Looks good" }),
+      page.getByRole("button", { name: "Start workout" }),
       page.getByRole("link", { name: "Back" }),
     ];
     for (const target of targets) {
@@ -430,7 +430,7 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
     }
   });
 
-  test("keyboard only: Suggest → Remove → Shuffle → Looks good", async ({ page }) => {
+  test("keyboard only: Suggest → Remove → Shuffle → Start workout", async ({ page }) => {
     await openSetup(page);
     const focused = (locator: ReturnType<Page["getByRole"]>) =>
       locator.evaluate((el) => el === document.activeElement);
@@ -463,16 +463,15 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
     await page.keyboard.press("Enter");
     expect(await focused(shuffle)).toBe(true);
 
-    const go = page.getByRole("button", { name: "Looks good" });
-    await tabTo(go, "Looks good");
+    const go = page.getByRole("button", { name: "Start workout" });
+    await tabTo(go, "Start workout");
     await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(/\/session\/setup\?step=ready$/);
-    await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
-    await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+    await expect(page).toHaveURL(SESSION_URL);
+    await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible();
   });
 });
 
-// ---- T-0303d UF-08.4 Ready and Start (AC-10; D-0086, D-0091 §1, D-0108, D-0110, D-0112) ----
+// ---- T-0303d, T-1009 UF-08.2 Start (AC-10; D-0086, D-0091 §1, D-0108, D-0110, D-0112) ----
 // The spec registers its own `sessions` route after `mockSupabaseData` (the later-registered
 // handler wins) to record what AutoSync upserts. Start itself makes no request (D-0110 §5): the
 // row goes to IndexedDB, and the sync handle flushes it 250 ms later when online (D-0116), or on
@@ -480,8 +479,6 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
 
 const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const SESSION_URL = /\/session\/([0-9a-f-]{36})$/;
-
-const screenUF084 = (page: Page) => page.locator('[data-screen-id="UF-08.4"]');
 
 interface SessionUpsert {
   id: string;
@@ -531,17 +528,16 @@ async function storedSession(
   }, id);
 }
 
-/** UF-08.2 → Looks good → UF-08.4. */
+/** T-1009 (D-0280): UF-08.4 is gone, Start is on UF-08.2. Open its Focus mode disclosure. */
 async function toReady(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(page).toHaveURL(/\/session\/setup\?step=ready$/);
-  await expect(screenUF084(page)).toBeVisible();
+  await expect(screenUF082(page)).toBeVisible();
+  await page.locator('[data-part="focus-mode-summary"]').click();
   await expect(page.locator("[data-screen-id]")).toHaveCount(1);
 }
 
 /** Start → `/session/<uuid v4>` with focus mode on screen. Returns the id. */
 async function startWorkout(page: Page): Promise<string> {
-  await page.getByRole("button", { name: "Start" }).click();
+  await page.getByRole("button", { name: "Start workout" }).click();
   await expect(page).toHaveURL(SESSION_URL);
   const id = SESSION_URL.exec(page.url())![1]!;
   expect(id).toMatch(UUID_V4);
@@ -549,16 +545,15 @@ async function startWorkout(page: Page): Promise<string> {
   return id;
 }
 
-test.describe("T-0303d AC-10 UF-08.4 online", () => {
+test.describe("T-0303d AC-10 UF-08.2 Start online", () => {
   test("Start → /session/<uuid>, and within 5 s, with no reload, one request sends the row", async ({
     page,
   }) => {
     const writes = await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
-    await toReady(page);
-    await expect(page.locator('[data-part="summary"]')).toHaveText(
-      /^\d+ min · warm-up \+ \d+ exercises? · \d+ sets? · done by \d{1,2}:\d{2}( [AP]M)?$/,
+    await expect(page.locator('[data-part="done-by"]')).toHaveText(
+      /^Done by \d{1,2}:\d{2}( [AP]M)?$/,
     );
     // D-0116 §6: the enqueue flush (250 ms after the IDB commit) sends the row. No reload, and
     // no IndexedDB `pending: true` read, which would race that flush.
@@ -575,11 +570,12 @@ test.describe("T-0303d AC-10 UF-08.4 online", () => {
     expect(carrying[0]!.find((r) => r.id === id)!.time_budget_min).toBe(30);
   });
 
-  test("browser Back from /session/<id> never lands on UF-08.4 (D-0123 §2)", async ({ page }) => {
+  test("browser Back from /session/<id> never lands on UF-08.2 Start (D-0123 §2)", async ({
+    page,
+  }) => {
     await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
-    await toReady(page);
     await startWorkout(page);
     // A user activation after the guard is armed, so Chromium keeps the entry (D-0123 §3 note).
     await page.waitForFunction(() => history.state?.wlFocusGuard === true);
@@ -589,14 +585,14 @@ test.describe("T-0303d AC-10 UF-08.4 online", () => {
     await expect(page).toHaveURL(SESSION_URL);
     await page.waitForTimeout(50);
     await expect(page).not.toHaveURL(/step=ready/);
-    await expect(screenUF084(page)).toHaveCount(0);
+    await expect(screenUF082(page)).toHaveCount(0);
     const ids = page.locator("[data-screen-id]");
     await expect(ids).toHaveCount(1);
     expect(await ids.getAttribute("data-screen-id")).toBe("UF-09.9");
   });
 });
 
-test.describe("T-0303d AC-10 UF-08.4 offline (NFR-OFF-2)", () => {
+test.describe("T-0303d AC-10 UF-08.2 Start offline (NFR-OFF-2)", () => {
   test("offline Start writes IndexedDB and navigates; going online sends it once", async ({
     page,
     context,
@@ -616,7 +612,6 @@ test.describe("T-0303d AC-10 UF-08.4 offline (NFR-OFF-2)", () => {
     await expect(fitLine(page)).toHaveText(FIT_PATTERN);
     await page.getByRole("button", { name: "Suggest my workout" }).click();
     await expect(screenUF082(page)).toBeVisible();
-    await toReady(page);
     const id = await startWorkout(page);
     expect(await storedSession(page, id)).toEqual({ pending: true, time_budget_min: 45 });
     expect(gate.writesFulfilledOffline()).toBe(0);
@@ -627,8 +622,10 @@ test.describe("T-0303d AC-10 UF-08.4 offline (NFR-OFF-2)", () => {
   });
 });
 
-test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
-  test("axe reports 0 serious or critical violations on UF-08.4", async ({ page }) => {
+test.describe("T-0303d AC-10 UF-08.2 Start a11y (NFR-A11Y-1/2/6)", () => {
+  test("axe reports 0 serious or critical violations on UF-08.2 with Focus mode open", async ({
+    page,
+  }) => {
     await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
@@ -646,7 +643,7 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
     await suggestAt30(page);
     await toReady(page);
     const targets = [
-      page.getByRole("button", { name: "Start" }),
+      page.getByRole("button", { name: "Start workout" }),
       page.getByRole("link", { name: "Back" }),
       // T-0599: the switch is 48 × 28 inside its label, and the label row is the 44 px target
       // (state-patterns "Toggle"); the checkbox itself is asserted to sit inside that row.
@@ -662,7 +659,7 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
     }
   });
 
-  test("keyboard only: Looks good → toggle a switch → Start", async ({ page }) => {
+  test("keyboard only: Focus mode → toggle a switch → Start workout", async ({ page }) => {
     await recordSessions(page);
     await openSetup(page);
     await suggestAt30(page);
@@ -677,10 +674,10 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
     }
 
     await page.locator("body").focus();
-    const go = page.getByRole("button", { name: "Looks good" });
-    await tabTo(go, "Looks good");
+    const summary = page.locator('[data-part="focus-mode-summary"]');
+    await tabTo(summary, "Focus mode");
     await page.keyboard.press("Enter");
-    await expect(screenUF084(page)).toBeVisible();
+    await expect(page.locator('[data-part="focus-mode"]')).toHaveJSProperty("open", true);
 
     const voice = page.getByRole("checkbox", { name: "Voice countdown 3-2-1" });
     await tabTo(voice, "Voice countdown 3-2-1");
@@ -690,8 +687,8 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
       '{"version":1,"sound":true,"voice":false,"keepAwake":true}',
     );
 
-    const start = page.getByRole("button", { name: "Start" });
-    await tabTo(start, "Start");
+    const start = page.getByRole("button", { name: "Start workout" });
+    await tabTo(start, "Start workout");
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(SESSION_URL);
     await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible();
@@ -1166,7 +1163,7 @@ test.describe("T-0520 UF-08.1 Skip today (D-0191, GitHub #33)", () => {
   });
 });
 
-// ---- T-0599 UF-08.1, UF-08.4 Cobalt plan restyle (D-0208, D-0211, D-0213) ----
+// ---- T-0599 UF-08.1, UF-08.2 Cobalt plan restyle (D-0208, D-0211, D-0213) ----
 // Expected values come from tokens.json, never typed.
 type Colours = Record<string, string>;
 const tokens = JSON.parse(
@@ -1263,15 +1260,15 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     ).toEqual(["0px", "0px", TRANSPARENT]);
   });
 
-  test("AC1 UF-08.4: plan state, plan.bg, theme-color, 28 px gutter", async ({ page }) => {
+  test("AC1 UF-08.2 Start: plan state, plan.bg, theme-color, 28 px gutter", async ({ page }) => {
     await openSetup(page);
     await suggestAt30(page);
     await toReady(page);
-    await expect(page.locator('[data-screen-id="UF-08.4"]')).toHaveAttribute(
+    await expect(page.locator('[data-screen-id="UF-08.2"]')).toHaveAttribute(
       "data-wl-state",
       "plan",
     );
-    const sel = '[data-screen-id="UF-08.4"]';
+    const sel = '[data-screen-id="UF-08.2"]';
     expect(await cssOf(page, sel, ["background-color", "padding-left"])).toEqual([
       rgb(plan.bg!),
       "28px",
@@ -1474,7 +1471,9 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     await expect(error).toHaveCount(0);
   });
 
-  test("AC5 contrast on UF-08.4: every text pair and axe colour-contrast", async ({ page }) => {
+  test("AC5 contrast on UF-08.2 with Focus mode open: every text pair and axe colour-contrast", async ({
+    page,
+  }) => {
     await openSetup(page);
     await suggestAt30(page);
     await toReady(page);
@@ -1483,7 +1482,7 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     for (const p of pairs) {
       expect(ratio(p.fg, p.bg), `${p.text}: ${p.fg} on ${p.bg}`).toBeGreaterThanOrEqual(4.5);
     }
-    const start = pairs.find((p) => p.text === "Start")!;
+    const start = pairs.find((p) => p.text === "Start workout")!;
     expect([start.fg, start.bg]).toEqual([rgb(plan["on-action"]!), rgb(plan.action!)]);
     expect(oneDecimal(ratio(start.fg, start.bg))).toBeGreaterThanOrEqual(8.6);
     const body = pairs.find(
@@ -1559,7 +1558,7 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
     expect(axe.violations).toEqual([]);
   });
 
-  test("AC5 contrast: the UF-08.4 start-failed alert is plan.attention on plan.bg", async ({
+  test("AC5 contrast: the UF-08.2 start-failed alert is plan.attention on plan.bg", async ({
     page,
   }) => {
     await openSetup(page);
@@ -1801,7 +1800,7 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
       expect(axe.violations, what).toEqual([]);
     };
     await checkPairs("UF-08.2");
-    const looks = (await textPairs(page)).find((p) => p.text === "Looks good")!;
+    const looks = (await textPairs(page)).find((p) => p.text === "Start workout")!;
     expect([looks.fg, looks.bg]).toEqual([rgb(plan["on-action"]!), rgb(plan.action!)]);
     // A raise block with text on it: the standing notice and a refusal line are the same pair.
     await page.getByRole("button", { name: "Reorder" }).click();
@@ -1839,7 +1838,7 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
     };
     await big(page.locator('[data-part="swap"], [data-part="remove"], [data-part="item-row"]'));
     await big(page.locator('[data-part="row-name"]:is(button)'));
-    await big(page.getByRole("button", { name: /^(Shuffle|Add exercise|Reorder|Looks good)$/ }));
+    await big(page.getByRole("button", { name: /^(Shuffle|Add exercise|Reorder|Start workout)$/ }));
     await big(page.locator(".wl-uf08__chip"));
     await page.getByRole("button", { name: "Reorder" }).click();
     await big(

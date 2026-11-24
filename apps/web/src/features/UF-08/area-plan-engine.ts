@@ -8,9 +8,11 @@ import {
   areaCandidates,
   areaGroups,
   removeArea,
+  setMainLift,
   type Area,
   type AreaCandidate,
   type AreaEditContext,
+  type MainLiftRefusal,
   type Workout,
 } from "@workoutlab/engine";
 import type { SetupData } from "./use-setup-data.js";
@@ -123,4 +125,18 @@ export function fillRest(
     added.push(next.area);
   }
   return { workout: current, added };
+}
+
+/** "Start with this" (UF-08.6, T-1021, D-0288 §2 superseded): the engine's `setMainLift`, no rebuild. */
+export function makeMain(
+  workout: Workout,
+  exerciseId: string,
+  ctx: AreaEditContext,
+): { workout: Workout } | { refused: MainLiftRefusal } {
+  try {
+    const result = setMainLift(workout, exerciseId, ctx);
+    return "refused" in result ? { refused: result.refused } : { workout: result };
+  } catch {
+    return { refused: "not_admissible" };
+  }
 }

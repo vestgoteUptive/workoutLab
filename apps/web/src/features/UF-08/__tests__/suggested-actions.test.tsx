@@ -8,7 +8,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { suggest, type SessionInput, type Workout } from "@workoutlab/engine";
 import { refreshAll } from "../../../lib/offline/history.js";
-import { Ready } from "../Ready.js";
 import { Suggested } from "../Suggested.js";
 import { fProfile } from "./fixtures.js";
 import {
@@ -49,14 +48,9 @@ vi.mock("../Suggested.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../Suggested.js")>();
   return { Suggested: vi.fn(actual.Suggested) };
 });
-vi.mock("../Ready.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../Ready.js")>();
-  return { Ready: vi.fn(actual.Ready) };
-});
 
 const spy = vi.mocked(suggest);
 const suggestedView = vi.mocked(Suggested);
-const readyView = vi.mocked(Ready);
 const refresh = vi.mocked(refreshAll);
 
 beforeEach(() => {
@@ -311,22 +305,6 @@ describe("AC-6 time chips keep the main lift (R7-E5, D-0109 §3)", () => {
 });
 
 describe("AC-8 hand-off out and Back (D-0107 §1)", () => {
-  it("Looks good PUSHes ?step=ready with the current Workout, also after a Remove", async () => {
-    await toSuggested();
-    fireEvent.click(button("Remove Inverted row"));
-    const current = shownWorkout();
-    fireEvent.click(button("Looks good"));
-    expect(location()).toEqual({ pathname: "/session/setup", search: "?step=ready", type: "PUSH" });
-    expect(screenIds()).toEqual(["UF-08.4"]);
-    expect(readyView.mock.lastCall![0].workout).toBe(current);
-  });
-
-  it("contrast: Looks good with no action hands over the UF-08.1 Workout", async () => {
-    const { handed } = await toSuggested();
-    fireEvent.click(button("Looks good"));
-    expect(readyView.mock.lastCall![0].workout).toBe(handed);
-  });
-
   it("Back goes to ?step=time with 30, Low, warm-up off still selected, no remount", async () => {
     renderSetup();
     await waitFor(() => expect(fitLine().textContent).toMatch(/^Fits: /));

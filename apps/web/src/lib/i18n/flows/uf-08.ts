@@ -106,30 +106,10 @@ export const uf08 = {
     `${minutes} min, ${over} over${warmupOutside ? " + warm-up" : ""}`,
   looksGood: "Looks good",
 
-  // --- UF-08.4 placeholder (D-0107 §2 pattern). T-0303d replaces the body. ---
-  readyTitle: "Ready",
-
-  // --- UF-08.4 Ready (T-0303d, D-0065 §6-§7, D-0110) ---
-  /**
-   * The summary line (D-0110 §2): "29 min · warm-up + 3 exercises · 9 sets · done by 12:29".
-   * Singular at 1. `doneBy` arrives formatted by `lib/format` `formatTime`. The "warm-up + "
-   * part is left out when the plan has no warm-up moves.
-   */
-  readySummary: (
-    minutes: number,
-    warmup: boolean,
-    exercises: number,
-    sets: number,
-    doneBy: string,
-  ) =>
-    `${minutes} min · ${warmup ? "warm-up + " : ""}${exercises} ${
-      exercises === 1 ? "exercise" : "exercises"
-    } · ${sets} ${sets === 1 ? "set" : "sets"} · done by ${doneBy}`,
-  /** No items, warm-up moves only (D-0110 §2). */
-  readyWarmupOnly: (minutes: number, doneBy: string) =>
-    `${minutes} min · warm-up only · done by ${doneBy}`,
-  /** No items and no warm-up (D-0110 §2). Start still works. */
-  readyNothing: (doneBy: string) => `Nothing planned · done by ${doneBy}`,
+  // --- UF-08.2 Focus mode disclosure (T-1009, D-0280 §3; the UF-08.4 Ready step is retired) ---
+  focusModeSummary: "Focus mode",
+  /** The status line while Start's session write is in flight (UF-08.2.md). */
+  startPending: "Starting your workout.",
   /** The 4-step explainer's heading. */
   explainerTitle: "How focus mode works",
   /** The 4 steps, in order (principle 1). */
@@ -150,7 +130,7 @@ export const uf08 = {
   prefSound: "Sound cues",
   prefVoice: "Voice countdown 3-2-1",
   prefKeepAwake: "Keep screen awake",
-  start: "Start",
+  start: "Start workout",
   /** Start's `upsertSession` rejected (D-0110 §3). */
   startFailed: "Couldn't start the workout. Try again.",
 
@@ -309,7 +289,7 @@ export const uf08 = {
   reasonAreaNoExercise: "No exercise available",
   reasonAreaNoTime: "No time left",
   reasonAreaFull: "Workout is full",
-  /** "Looks good"'s reason at no areas (D-0280 §2). */
+  /** "Start workout"'s reason at no areas (D-0280 §2). */
   needArea: "Add at least one area.",
 
   // --- T-0996 review follow-ups: feedback where a tap changed nothing ---
@@ -331,7 +311,7 @@ export const uf08 = {
   notTodayLine: (old: string) => `${old} · Not today · `,
   notTodayUndoName: (old: string) => `Undo Not today, ${old}`,
   notTodayBack: (old: string) => `${old} is back.`,
-  notTodayNone: (area: string) => `No other exercise for ${area} today`,
+  notTodayNone: (area: string) => `No other exercise for ${area} today. Use Swap.`,
   replacedBy: (old: string, now: string) => `${old} replaced by ${now}.`,
   removedStatus: (name: string) => `${name} removed.`,
   addedAreaIn: (name: string, area: string) => `${name} added. ${area} is in your plan now.`,

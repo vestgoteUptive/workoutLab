@@ -66,7 +66,7 @@ test("Reorder: move up twice, axe, Start; UF-09 runs Leg extension first", async
   await page.getByRole("button", { name: "Reorder" }).click();
   await expect(page.getByRole("button", { name: "Move Bench press down" })).toBeFocused();
   await expect(page.getByRole("button", { name: "Shuffle" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Looks good" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Start workout" })).toHaveCount(0);
   await page.getByRole("button", { name: "Move Leg extension up" }).click();
   await page.getByRole("button", { name: "Move Leg extension up" }).click();
   await expect(names).toHaveText(["Leg extension", "Bench press", "Inverted row"]);
@@ -79,9 +79,7 @@ test("Reorder: move up twice, axe, Start; UF-09 runs Leg extension first", async
   await page.getByRole("button", { name: "Done" }).click();
   await expect(page.getByRole("button", { name: "Reorder" })).toBeFocused();
 
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout", exact: true }).click();
   await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
   await page.getByRole("button", { name: "Skip warm-up" }).click();
   await expect(page.locator("[data-screen-id]")).toHaveCount(1);

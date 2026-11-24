@@ -750,7 +750,7 @@ test.describe("T-0304d AC-10 time check, pause and end, by keyboard", () => {
 });
 
 // T-0394 AC-6 (D-0123 §3, D-0086, D-0091 §1): Back means Pause. The real flow from `/`: Start
-// workout → UF-08.1 → Suggest → Looks good → Start → UF-09. The describe's own mocks (registered
+// workout → UF-08.1 → Suggest → Start workout → UF-09. The describe's own mocks (registered
 // after the file's `beforeEach`, so they win) give the planner a library and full equipment.
 const SETUP_URL = /\/session\/[0-9a-f-]{36}$/;
 
@@ -784,8 +784,7 @@ async function startFromHome(page: Page): Promise<void> {
   await expect(page.locator('[data-screen-id="UF-08.1"]')).toBeVisible();
   await page.getByRole("button", { name: "30 minutes" }).click();
   await page.getByRole("button", { name: "Suggest my workout" }).click();
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await page.getByRole("button", { name: "Start" }).click();
+  await page.getByRole("button", { name: "Start workout" }).click();
   await expect(page).toHaveURL(SETUP_URL);
   const screen = page.locator('[data-screen-id^="UF-09"]');
   await expect(screen).toBeVisible();

@@ -4,8 +4,13 @@
 // `area-plan-engine.ts`). No area, exercise or set count is picked here, and no `suggest` call is
 // made for an edit. A time chip is the one rebuild, and the host runs it.
 //
-// Interim (D-0280 §8): "Looks good" still opens UF-08.4 until T-1009 puts Start on this screen. A
-// row's open button goes to `?step=area&area={area}`, the route T-0997 builds (UF-08.6).
+// T-1009 (D-0280): "Start workout" is on this screen and UF-08.4 Ready is gone. Start writes the
+// `sessions` row through the offline queue (IndexedDB first, online the same as offline, D-0110 §5)
+// and navigates into focus mode only once that write has resolved (NFR-OFF-2), by a REPLACE
+// (D-0110 §4, D-0123 §2). One session id per visit to this step (D-0110 §3): made on the first tap,
+// reused by a retry after a rejected write, dropped when the step unmounts. While the write is
+// pending every plan control, Back and Close are inert (T-0397), so the plan written is the plan
+// shown. A row's open button goes to `?step=area&area={area}` (UF-08.6).
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import {
@@ -23,12 +28,19 @@ import { formatTime } from "../../lib/format/intl.js";
 import { formatSetCount } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
 import { sessionReasonChips } from "../../lib/i18n/workout.js";
+import { upsertSession, type SessionInsert } from "../../lib/offline/queue.js";
 import type { EditResult, PlanOverview } from "./area-plan-engine.js";
 import { leftMinutes, overMinutes } from "./budget.js";
+import { readFocusPrefs, writeFocusPrefs, type FocusPrefs } from "./focus-prefs.js";
 import { exerciseName, type LibraryLookup } from "./rows.js";
 import { CHIPS } from "./time.js";
 
-const READY_HREF = "/session/setup?step=ready";
+const FOCUS_PREFS = [
+  { key: "sound", label: en.uf08.prefSound },
+  { key: "voice", label: en.uf08.prefVoice },
+  { key: "keepAwake", label: en.uf08.prefKeepAwake },
+] as const satisfies readonly { key: keyof FocusPrefs; label: string }[];
+
 const SETUP_HREF = "/session/setup?step=time";
 
 export interface AreaLoad {
@@ -39,13 +51,15 @@ export interface AreaLoad {
 export interface AreaPlanProps {
   /** "empty" is "Start empty": the same screen, with no areas to begin with. */
   mode?: "suggested" | "empty";
-  /** The host's current plan, in the engine's order (the rows follow it; Start writes `orderItems`). */
+  /** The host's current plan, in the engine's order (the rows follow it). */
   workout: Workout;
+  /** What Start writes: the plan in `orderItems` order (D-0275 §7). Defaults to `workout`. */
+  startWorkout?: Workout;
   /** Names for the "Doesn't fit" line. */
   library: LibraryLookup;
   locale: string;
   timeZone: string;
-  /** Read once at mount: "Done by" is this plus the plan's minutes (D-0107 §4, D-0280 §3). */
+  /** Read once at mount ("Done by", D-0107 §4) and once per Start tap (`started_at`, D-0110 §1). */
   clock: () => Date;
   /** The 14-day load and target of every area (engine `balance`, on the device). */
   loads: Readonly<Record<Area, AreaLoad>>;
@@ -132,6 +146,7 @@ function candidateReason(candidate: AreaCandidate): string | null {
 export function AreaPlan({
   mode = "suggested",
   workout,
+  startWorkout,
   library,
   locale,
   timeZone,
@@ -155,13 +170,29 @@ export function AreaPlan({
 }: AreaPlanProps) {
   const navigate = useNavigate();
   const [mountedAt] = useState(() => clock());
-  const [status, setStatus] = useState(initialStatus);
+  const [prefs, setPrefs] = useState<FocusPrefs>(() => readFocusPrefs());
+  const [focusOpen, setFocusOpen] = useState(false);
+  const [starting, setStarting] = useState(false);
+  const [startFailed, setStartFailed] = useState(false);
+  const sessionId = useRef<string | null>(null);
+  const busy = useRef(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  const [status, setStatusLine] = useState(initialStatus);
   // The refusal under one row's stepper, until the next tap in that row (UF-08.2.md › Area row).
   const [refusals, setRefusals] = useState<Partial<Record<Area, string>>>({});
+  const startErrorId = useId();
   const needAreaId = useId();
   const overLineId = useId();
   const refusalIds = useId();
   const reasonIds = useId();
+
+  const setStatus = setStatusLine;
 
   const groups = useMemo(() => areaGroups(workout), [workout]);
   const chips = useMemo(() => sessionReasonChips(workout.sessionReasons), [workout.sessionReasons]);
@@ -182,7 +213,7 @@ export function AreaPlan({
   const rowsRef = useRef<HTMLUListElement>(null);
   const addSummaryRef = useRef<HTMLElement>(null);
   const fillRef = useRef<HTMLButtonElement>(null);
-  const looksGoodRef = useRef<HTMLButtonElement>(null);
+  const startRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     const p = pending.current;
     if (p === null) return;
@@ -195,8 +226,8 @@ export function AreaPlan({
       const plus = rowsRef.current?.querySelector<HTMLElement>(
         `[data-area="${p.area}"] [data-part="plus"]`,
       );
-      (plus ?? looksGoodRef.current)?.focus();
-    } else if (fillRef.current === null) looksGoodRef.current?.focus();
+      (plus ?? startRef.current)?.focus();
+    } else if (fillRef.current === null) startRef.current?.focus();
   }, [workout]);
 
   // Mount only: the host clears the request through `onFocused`.
@@ -208,7 +239,7 @@ export function AreaPlan({
     );
     const place =
       opens && opens.length > 0 ? opens[Math.min(focusArea.index, opens.length - 1)] : null;
-    (own ?? place ?? addSummaryRef.current ?? looksGoodRef.current)?.focus();
+    (own ?? place ?? addSummaryRef.current ?? startRef.current)?.focus();
     onFocused?.();
   }, []);
 
@@ -269,6 +300,7 @@ export function AreaPlan({
   };
 
   const onPlus = (area: Area) => {
+    if (starting) return;
     setRefusal(area, null);
     const known = plusRefusalText(area);
     if (known !== null) {
@@ -287,6 +319,7 @@ export function AreaPlan({
   };
 
   const onMinus = (area: Area, index: number) => {
+    if (starting) return;
     setRefusal(area, null);
     const before = groups.find((g) => g.area === area);
     if (before === undefined) return;
@@ -311,6 +344,7 @@ export function AreaPlan({
   };
 
   const onAdd = (candidate: AreaCandidate) => {
+    if (starting) return;
     const area = candidate.area;
     if (over > 0 && (candidate.available === true || candidate.available.reason === "time")) {
       setStatus(en.uf08.overRefusal(over));
@@ -336,6 +370,7 @@ export function AreaPlan({
   ).length;
 
   const onFill = () => {
+    if (starting) return;
     if (over > 0) {
       setStatus(en.uf08.overRefusal(over));
       return;
@@ -355,8 +390,50 @@ export function AreaPlan({
     );
   };
 
+  const togglePref = (key: keyof FocusPrefs, value: boolean) => {
+    if (starting) return;
+    const next = { ...prefs, [key]: value };
+    setPrefs(next);
+    writeFocusPrefs(next);
+  };
+
+  const onStart = async () => {
+    if (noAreas || busy.current) return;
+    busy.current = true;
+    sessionId.current ??= crypto.randomUUID();
+    const id = sessionId.current;
+    const run = startWorkout ?? workout;
+    const row: SessionInsert = {
+      id,
+      started_at: clock().toISOString(),
+      ended_at: null,
+      time_budget_min: run.budgetMin,
+      energy: run.energy,
+      warmup_in_budget: run.warmupInBudget,
+      plan: run.plan,
+    };
+    setStartFailed(false);
+    setStarting(true);
+    try {
+      await upsertSession(row);
+    } catch {
+      busy.current = false;
+      if (mounted.current) {
+        setStarting(false);
+        setStartFailed(true);
+        // The button is enabled again on the next render; focus returns to it (never `body`).
+        setTimeout(() => startRef.current?.focus(), 0);
+      }
+      return;
+    }
+    busy.current = false;
+    if (!mounted.current) return;
+    setStarting(false);
+    void navigate(`/session/${id}`, { replace: true });
+  };
+
   const onChip = (minutes: number) => {
-    if (minutes === budgetMin) return;
+    if (starting || minutes === budgetMin) return;
     setRefusals({});
     const next = onBudget(minutes);
     setStatus(next === null ? "" : rebuiltStatus(next, minutes));
@@ -371,13 +448,29 @@ export function AreaPlan({
       data-mode={mode}
     >
       <div className="wl-uf08__top">
-        <Link to="/" className="wl-uf08__close" aria-label={en.uf08.close}>
+        <Link
+          to="/"
+          className="wl-uf08__close"
+          aria-label={en.uf08.close}
+          aria-disabled={starting ? "true" : undefined}
+          onClick={(e) => {
+            if (starting) e.preventDefault();
+          }}
+        >
           <CrossIcon />
         </Link>
         <OfflineStatus variant="icon" locale={locale} timeZone={timeZone} />
       </div>
       <div className="wl-uf08__top">
-        <Link className="wl-uf08__back" to={SETUP_HREF}>
+        <Link
+          className="wl-uf08__back"
+          to={SETUP_HREF}
+          aria-disabled={starting ? "true" : undefined}
+          onClick={(e) => {
+            // T-0397: inert while Start's write is pending, so it can't orphan the written row.
+            if (starting) e.preventDefault();
+          }}
+        >
           {en.uf08.back}
         </Link>
       </div>
@@ -469,10 +562,13 @@ export function AreaPlan({
                   className="wl-uf08__area-open"
                   data-part="area-open"
                   aria-label={en.uf08.areaOpenName(name, minutes, g.itemIds.length)}
+                  aria-disabled={starting ? "true" : undefined}
                   onClick={() =>
-                    onOpenArea !== undefined
-                      ? onOpenArea(area, index)
-                      : void navigate(`/session/setup?step=area&area=${area}`)
+                    starting
+                      ? undefined
+                      : onOpenArea !== undefined
+                        ? onOpenArea(area, index)
+                        : void navigate(`/session/setup?step=area&area=${area}`)
                   }
                 >
                   <span className="wl-uf08__area-line">
@@ -503,6 +599,7 @@ export function AreaPlan({
                     aria-label={
                       atMinimum ? en.uf08.removeAreaName(name) : en.uf08.setLessName(name)
                     }
+                    aria-disabled={starting ? "true" : undefined}
                     onClick={() => onMinus(area, index)}
                   >
                     {atMinimum ? <span>{en.uf08.removeAreaText}</span> : <MinusIcon />}
@@ -515,7 +612,7 @@ export function AreaPlan({
                     className="wl-uf08__sets-btn"
                     data-part="plus"
                     aria-label={en.uf08.setMoreName(name)}
-                    aria-disabled={plusRefused ? "true" : undefined}
+                    aria-disabled={plusRefused || starting ? "true" : undefined}
                     aria-describedby={refusal === undefined ? undefined : refusalId}
                     onClick={() => onPlus(area)}
                   >
@@ -540,7 +637,7 @@ export function AreaPlan({
       )}
 
       <div role="status" className="wl-uf08__status" data-part="status">
-        {status}
+        {starting ? en.uf08.startPending : status}
       </div>
       <div aria-live="assertive" data-part="exclusion-failed">
         {exclusionFailed ? (
@@ -556,7 +653,15 @@ export function AreaPlan({
         open={addOpen}
         onToggle={(e) => setAddOpen(e.currentTarget.open)}
       >
-        <summary ref={addSummaryRef} className="wl-uf08__summary" data-part="add-area-summary">
+        <summary
+          ref={addSummaryRef}
+          className="wl-uf08__summary"
+          data-part="add-area-summary"
+          aria-disabled={starting ? "true" : undefined}
+          onClick={(e) => {
+            if (starting) e.preventDefault();
+          }}
+        >
           <span>{en.uf08.addAreaSummary}</span>
           <ChevronIcon size={20} direction={addOpen ? "up" : "down"} />
         </summary>
@@ -606,7 +711,7 @@ export function AreaPlan({
                   className="wl-button--secondary wl-uf08__candidate-add"
                   data-part="candidate-add"
                   aria-label={en.uf08.addName(name)}
-                  aria-disabled={disabled ? "true" : undefined}
+                  aria-disabled={disabled || starting ? "true" : undefined}
                   aria-describedby={describedBy}
                   onClick={() => onAdd(c)}
                 >
@@ -629,6 +734,7 @@ export function AreaPlan({
           type="button"
           className="wl-button--text wl-uf08__fill"
           data-part="fill-rest"
+          aria-disabled={starting ? "true" : undefined}
           onClick={onFill}
         >
           {en.uf08.fillRest}
@@ -643,6 +749,7 @@ export function AreaPlan({
             className="wl-chip wl-uf08__chip"
             aria-label={en.uf08.chipName(String(m))}
             aria-pressed={budgetMin === m ? "true" : "false"}
+            aria-disabled={starting ? "true" : undefined}
             onClick={() => onChip(m)}
           >
             {m}
@@ -650,23 +757,76 @@ export function AreaPlan({
         ))}
       </div>
 
-      <div className="wl-uf08__actions">
-        <button
-          ref={looksGoodRef}
-          type="button"
-          className="wl-button--primary wl-uf08__primary"
-          data-part="looks-good"
-          aria-disabled={noAreas ? "true" : undefined}
-          aria-describedby={noAreas ? needAreaId : undefined}
-          onClick={() => {
-            if (noAreas) return;
-            void navigate(READY_HREF);
+      <details
+        className="wl-uf08__add-area"
+        data-part="focus-mode"
+        open={focusOpen}
+        onToggle={(e) => setFocusOpen(e.currentTarget.open)}
+      >
+        <summary
+          className="wl-uf08__summary"
+          data-part="focus-mode-summary"
+          aria-disabled={starting ? "true" : undefined}
+          onClick={(e) => {
+            if (starting) e.preventDefault();
           }}
         >
-          <span>{en.uf08.looksGood}</span>
+          <span>{en.uf08.focusModeSummary}</span>
+          <ChevronIcon size={20} direction={focusOpen ? "up" : "down"} />
+        </summary>
+        <div className="wl-card wl-uf08__card">
+          <h2 className="wl-uf08__label">{en.uf08.explainerTitle}</h2>
+          <ol className="wl-uf08__how" data-part="explainer">
+            {en.uf08.explainer.map((step) => (
+              <li key={step.title} className="wl-uf08__how-step">
+                <span className="wl-uf08__how-title" data-part="explainer-title">
+                  {step.title}
+                </span>
+                <span className="wl-uf08__how-body">{step.body}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+        <fieldset className="wl-uf08__prefs">
+          <legend className="wl-uf08__label">{en.uf08.prefsName}</legend>
+          {FOCUS_PREFS.map(({ key, label }) => (
+            <label key={key} className="wl-toggle wl-uf08__pref" data-pref={key}>
+              <span>{label}</span>
+              <input
+                type="checkbox"
+                checked={prefs[key]}
+                aria-disabled={starting ? "true" : undefined}
+                onChange={(e) => togglePref(key, e.target.checked)}
+              />
+            </label>
+          ))}
+        </fieldset>
+      </details>
+
+      <div className="wl-uf08__actions">
+        <button
+          ref={startRef}
+          type="button"
+          className="wl-button--primary wl-uf08__primary"
+          data-part="start"
+          aria-disabled={noAreas || starting ? "true" : undefined}
+          aria-busy={starting ? "true" : undefined}
+          aria-describedby={noAreas ? needAreaId : startFailed ? startErrorId : undefined}
+          onClick={() => void onStart()}
+        >
+          <span>{en.uf08.start}</span>
           <ArrowIcon />
         </button>
-        {noAreas ? (
+        {startFailed ? (
+          <p
+            id={startErrorId}
+            role="alert"
+            className="wl-input__error wl-uf08__error"
+            data-part="start-error"
+          >
+            {en.uf08.startFailed}
+          </p>
+        ) : noAreas ? (
           <p id={needAreaId} className="wl-uf08__hint" data-part="need-area">
             {en.uf08.needArea}
           </p>

@@ -415,7 +415,7 @@ test.describe("T-0302b AC-7 preview e2e and a11y", () => {
 });
 
 // ---- T-0395 AC9 "Resume workout" on a cold start (D-0139) ----
-// The real flow from `/`: Start workout → UF-08.1 → Suggest → Looks good → Start → UF-09.3 →
+// The real flow from `/`: Start workout → UF-08.1 → Suggest → Start workout → UF-09.3 →
 // Done set → the auto-save (UF-09.4) → UF-09.5, then `page.goto("/")` as a fresh load would see
 // it (the app never navigates there itself). The describe's own mocks give the planner a full
 // library and equipment, as `uf-09-focus.spec.ts`'s `startFromHome` does.
@@ -444,9 +444,7 @@ test.describe("T-0395 AC9 resume on a cold start", () => {
     await expect(page.locator('[data-screen-id="UF-08.1"]')).toBeVisible();
     await page.getByRole("button", { name: "30 minutes" }).click();
     await page.getByRole("button", { name: "Suggest my workout" }).click();
-    await page.getByRole("button", { name: "Looks good" }).click();
-    await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
-    await page.getByRole("button", { name: "Start" }).click();
+    await page.getByRole("button", { name: "Start workout" }).click();
 
     await expect(page.locator('[data-screen-id^="UF-09"]')).toBeVisible({ timeout: 10_000 });
     const sessionUrl = page.url();

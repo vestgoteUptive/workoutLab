@@ -527,10 +527,8 @@ test.describe("T-0965 AC9 scope: no estimate on Today or during a workout", () =
     await page.getByRole("button", { name: "Suggest my workout" }).click();
     await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
     await expectNoEstimateAnywhere(page);
-    await page.getByRole("button", { name: "Looks good" }).click();
-    await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
     await expectNoEstimateAnywhere(page);
-    await page.getByRole("button", { name: "Start", exact: true }).click();
+    await page.getByRole("button", { name: "Start workout", exact: true }).click();
     await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
     await expect(page.locator("[data-screen-id]")).toHaveCount(1);
     await expectNoEstimateAnywhere(page);

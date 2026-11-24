@@ -18,7 +18,6 @@ import {
   type SessionInput,
   type Workout,
 } from "@workoutlab/engine";
-import { parseSessionPlan } from "@workoutlab/shared";
 import { offlineDb, resetOfflineDbForTest, userScopedKey } from "../../../lib/offline/db.js";
 import { upsertSession } from "../../../lib/offline/queue.js";
 import { itemReasonLine } from "../../../lib/i18n/workout.js";
@@ -408,23 +407,6 @@ describe("T-0580 a failed exclusion write shows on UF-08.2 (mocked sheet)", () =
     fireEvent.click(button("apply ok"));
     await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]));
     expect(region()).toBeEmptyDOMElement();
-  });
-});
-
-describe("AC-5 start after a swap", () => {
-  it("T-0303c AC-5 Start writes the swapped plan, which parses", async () => {
-    await toSuggested();
-    await openSwap();
-    await applyDbRow();
-    const swapped = applied!.plan;
-    expect(swapped.items[1]!.exerciseId).toBe("db-row");
-    fireEvent.click(button("Looks good"));
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));
-    fireEvent.click(button("Start"));
-    await waitFor(() => expect(screen.getByTestId("focus")).toBeInTheDocument());
-    const plan = upsert.mock.calls[0]![0].plan;
-    expect(plan).toEqual(swapped);
-    expect(parseSessionPlan(plan)).toMatchObject({ ok: true });
   });
 });
 

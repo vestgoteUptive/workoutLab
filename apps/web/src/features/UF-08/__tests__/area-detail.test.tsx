@@ -16,11 +16,13 @@ import {
   primaryAreas,
   rankSwaps,
   removeArea,
+  setMainLift,
   suggest,
   type HistorySet,
   type Workout,
 } from "@workoutlab/engine";
 import { excludeExercise } from "../../../lib/offline/excluded.js";
+import { upsertSession } from "../../../lib/offline/queue.js";
 import { SessionSetup, type SessionSetupProps } from "../SessionSetup.js";
 import { LOCALE, NOW, TZ, fProfile } from "./fixtures.js";
 import { fCache, fitLine, screenIds, serveCache, setOnline, settle } from "./harness.js";
@@ -57,6 +59,7 @@ vi.mock("@workoutlab/engine", async (importOriginal) => {
     orderItems: vi.fn(actual.orderItems),
     rankSwaps: vi.fn(actual.rankSwaps),
     insertItem: vi.fn(actual.insertItem),
+    setMainLift: vi.fn(actual.setMainLift),
   };
 });
 
@@ -64,6 +67,8 @@ const suggestSpy = vi.mocked(suggest);
 const orderSpy = vi.mocked(orderItems);
 const rankSpy = vi.mocked(rankSwaps);
 const insertSpy = vi.mocked(insertItem);
+const mainSpy = vi.mocked(setMainLift);
+const upsert = vi.mocked(upsertSession);
 const storeExclusion = vi.mocked(excludeExercise);
 
 const CLOCK = () => new Date("2026-09-27T10:00:00Z");
@@ -103,6 +108,16 @@ beforeEach(async () => {
   rankSpy.mockImplementation(actual.rankSwaps);
   insertSpy.mockReset();
   insertSpy.mockImplementation(actual.insertItem);
+  mainSpy.mockReset();
+  mainSpy.mockImplementation(actual.setMainLift);
+  upsert.mockReset();
+  upsert.mockImplementation(async (row) => ({
+    id: row.id as string,
+    userId: "u",
+    row,
+    finished: false,
+    pending: true,
+  }));
   storeExclusion.mockClear();
   auth.userId = "user-1";
   trail = [];
@@ -323,7 +338,7 @@ describe("T-0997 AC3 Not today", () => {
     const list = rankSpy.mock.results.at(-1)!.value as { exerciseId: string }[];
     expect(list[0]!.exerciseId).toBe("back-squat");
     expect(rankSpy.mock.calls.at(-1)![1]).toBe("equipment_taken");
-    expect(status()).toHaveTextContent("No other exercise for Quads today");
+    expect(status()).toHaveTextContent("No other exercise for Quads today. Use Swap.");
     expect(screenIds()).toEqual(["UF-08.6"]);
     expect(detailIds()).toEqual(["leg-extension"]);
     expect(notTodayLine()).toBeNull();
@@ -343,8 +358,23 @@ describe("T-0997 AC3 Not today", () => {
     rankSpy.mockReturnValueOnce([]);
     const btn = button("Not today, Leg extension");
     fireEvent.click(btn);
-    expect(status()).toHaveTextContent("No other exercise for Quads today");
+    expect(status()).toHaveTextContent("No other exercise for Quads today. Use Swap.");
     expect(detailIds()).toEqual(["leg-extension"]);
+    expect(btn).not.toHaveAttribute("aria-disabled");
+  });
+
+  it("T-0997 review: an engine throw in Not today shows the change-failed line, not 'no other exercise'; nothing changes", async () => {
+    await toPlan();
+    openArea("quads");
+    rankSpy.mockImplementationOnce(() => {
+      throw new RangeError("boom");
+    });
+    const btn = button("Not today, Leg extension");
+    fireEvent.click(btn);
+    expect(status()).toHaveTextContent("Couldn't change that. Your plan is unchanged.");
+    expect(status().textContent).not.toMatch(/No other exercise/);
+    expect(detailIds()).toEqual(["leg-extension"]);
+    expect(notTodayLine()).toBeNull();
     expect(btn).not.toHaveAttribute("aria-disabled");
   });
 
@@ -595,21 +625,75 @@ describe("T-0997 AC6 Start with this", () => {
     const area = areaGroups(plan).find((g) => g.itemIds.includes(compound!.exerciseId))!.area;
     openArea(area);
     const name = lib.find((e) => e.id === compound!.exerciseId)!.name;
+    const rebuilds = suggestSpy.mock.calls.length;
     fireEvent.click(button(`Start with ${name}`));
     expect(status()).toHaveTextContent(`${name} is the main lift now.`);
-    expect(lastOrdered().plan.items[0]!.exerciseId).toBe(compound!.exerciseId);
-    expect(lastOrdered().plan.mainLiftId).toBe(compound!.exerciseId);
+    // T-1009 (T-1021): the engine's `setMainLift`, one call, no `suggest` rebuild.
+    expect(mainSpy).toHaveBeenCalledTimes(1);
+    expect(mainSpy.mock.calls[0]![1]).toBe(compound!.exerciseId);
+    expect(suggestSpy.mock.calls.length).toBe(rebuilds);
     expect(
       detailRow(compound!.exerciseId).querySelector('[data-part="row-main"]'),
     ).toHaveTextContent("Main lift");
     expect(queryButton(`Start with ${name}`)).toBeNull();
     // A main lift and an isolation row never show the button.
     back();
-    const isoArea = areaGroups(lastOrdered()).find((g) =>
-      g.itemIds.includes(isolation.exerciseId),
-    )!.area;
+    const isoArea = areaGroups(plan).find((g) => g.itemIds.includes(isolation.exerciseId))!.area;
     openArea(isoArea);
     expect(detailRow(isolation.exerciseId).querySelector('[data-part="start-with"]')).toBeNull();
+    // The plan Start writes has it first, as the main lift.
+    back();
+    fireEvent.click(button("Start workout"));
+    await waitFor(() => expect(upsert).toHaveBeenCalledTimes(1));
+    const written = upsert.mock.calls[0]![0].plan as Workout["plan"];
+    expect(written.items[0]!.exerciseId).toBe(compound!.exerciseId);
+    expect(written.mainLiftId).toBe(compound!.exerciseId);
+  });
+
+  it.each([
+    ["not_compound", /doesn't fit in 60 min\. Pick more time\./],
+    ["not_admissible", /doesn't fit in 60 min\. Pick more time\./],
+    ["items_cap", /^This workout has 8 exercises, the most it can hold\.$/],
+    ["time", /doesn't fit in 60 min\. Pick more time\./],
+  ] as const)(
+    "T-1009 AC-start-with the engine refuses %s: the refusal copy shows, the plan is unchanged",
+    async (reason, copy) => {
+      await toPlan({ budget: 60 });
+      const plan = suggestSpy.mock.results.at(-1)!.value as Workout;
+      const lib = (
+        await vi.importActual<typeof import("./fixtures.js")>("./fixtures.js")
+      ).fLibrary();
+      const compound = plan.plan.items.find(
+        (i) => !i.isMain && lib.find((e) => e.id === i.exerciseId)?.type === "compound",
+      )!;
+      const area = areaGroups(plan).find((g) => g.itemIds.includes(compound.exerciseId))!.area;
+      openArea(area);
+      const ids = detailIds();
+      const name = lib.find((e) => e.id === compound.exerciseId)!.name;
+      mainSpy.mockReturnValueOnce({ refused: reason });
+      fireEvent.click(button(`Start with ${name}`));
+      expect(status().textContent).toMatch(copy);
+      expect(detailIds()).toEqual(ids);
+      expect(queryButton(`Start with ${name}`)).not.toBeNull();
+      expect(detailRow(compound.exerciseId).querySelector('[data-part="row-main"]')).toBeNull();
+    },
+  );
+
+  it("T-1009 AC-start-with an engine throw reads as a refusal and leaves the plan alone", async () => {
+    await toPlan({ budget: 60 });
+    const plan = suggestSpy.mock.results.at(-1)!.value as Workout;
+    const lib = (await vi.importActual<typeof import("./fixtures.js")>("./fixtures.js")).fLibrary();
+    const compound = plan.plan.items.find(
+      (i) => !i.isMain && lib.find((e) => e.id === i.exerciseId)?.type === "compound",
+    )!;
+    openArea(areaGroups(plan).find((g) => g.itemIds.includes(compound.exerciseId))!.area);
+    const name = lib.find((e) => e.id === compound.exerciseId)!.name;
+    mainSpy.mockImplementationOnce(() => {
+      throw new RangeError("boom");
+    });
+    fireEvent.click(button(`Start with ${name}`));
+    expect(status().textContent).not.toMatch(/is the main lift now/);
+    expect(queryButton(`Start with ${name}`)).not.toBeNull();
   });
 });
 

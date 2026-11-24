@@ -45,7 +45,7 @@ const profileRow = { ...profile, user_id: FAKE_USER_ID };
 const screenUF082 = (page: Page) => page.locator('[data-screen-id="UF-08.2"]');
 const rows = (page: Page) => page.locator('[data-part="area-row"]');
 const status = (page: Page) => page.locator('[data-part="status"]');
-const looksGood = (page: Page) => page.getByRole("button", { name: "Looks good" });
+const startWorkout = (page: Page) => page.getByRole("button", { name: "Start workout" });
 const SESSION_URL = /\/session\/([0-9a-f-]{36})$/;
 
 async function seed(page: Page): Promise<void> {
@@ -97,9 +97,7 @@ test.describe("T-0996 happy path (UF-08.2)", () => {
     await seed(page);
   });
 
-  test("Suggest, one set less, Remove, Add it back, a chip, Looks good, Start", async ({
-    page,
-  }) => {
+  test("Suggest, one set less, Remove, Add it back, a chip, Start workout", async ({ page }) => {
     await toPlan(page);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(/^Today: \S+( · \S+)+$/);
     await expect(page.locator('[data-part="done-by"]')).toHaveText(/^Done by \d{1,2}:\d\d/);
@@ -136,25 +134,41 @@ test.describe("T-0996 happy path (UF-08.2)", () => {
       "Plan rebuilt for 30 min. Your set changes were cleared.",
     );
 
-    await looksGood(page).click();
-    await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
-    await page.getByRole("button", { name: "Start" }).click();
+    await startWorkout(page).click();
     await expect(page).toHaveURL(SESSION_URL);
     await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
   });
 
-  test("Start empty: pick areas with Add, Fill the rest for me, then Looks good", async ({
+  test("T-1009 Start workout is one tap from the default plan; Focus mode is collapsed and its switch is kept", async ({
+    page,
+  }) => {
+    await toPlan(page);
+    const details = page.locator('[data-part="focus-mode"]');
+    await expect(details).toHaveJSProperty("open", false);
+    await expectBox(page.locator('[data-part="focus-mode-summary"]'), 44, 48);
+    await page.locator('[data-part="focus-mode-summary"]').click();
+    await expect(details).toHaveJSProperty("open", true);
+    await page.getByRole("checkbox", { name: "Sound cues" }).uncheck();
+    expect(await page.evaluate(() => localStorage.getItem("wl-focus-prefs"))).toBe(
+      '{"version":1,"sound":false,"voice":true,"keepAwake":true}',
+    );
+    await startWorkout(page).click();
+    await expect(page).toHaveURL(SESSION_URL);
+    await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
+  });
+
+  test("Start empty: pick areas with Add, Fill the rest for me, then Start workout", async ({
     page,
   }) => {
     await toPlan(page, { empty: true });
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Today: pick your areas");
     await expect(rows(page)).toHaveCount(0);
-    await expect(looksGood(page)).toHaveAttribute("aria-disabled", "true");
+    await expect(startWorkout(page)).toHaveAttribute("aria-disabled", "true");
     await page.getByRole("button", { name: "Fill the rest for me" }).click();
     expect(await rows(page).count()).toBeGreaterThan(1);
     await expect(page.getByRole("button", { name: "Fill the rest for me" })).toHaveCount(0);
-    await expect(looksGood(page)).toBeFocused();
-    await expect(looksGood(page)).not.toHaveAttribute("aria-disabled", "true");
+    await expect(startWorkout(page)).toBeFocused();
+    await expect(startWorkout(page)).not.toHaveAttribute("aria-disabled", "true");
   });
 });
 
@@ -177,8 +191,7 @@ test.describe("T-0996 offline (AC11)", () => {
     const sets = await first.locator('[data-part="sets-value"]').textContent();
     await first.locator('[data-part="minus"]').click();
     await expect(first.locator('[data-part="sets-value"]')).not.toHaveText(sets!);
-    await looksGood(page).click();
-    await page.getByRole("button", { name: "Start" }).click();
+    await startWorkout(page).click();
     await expect(page).toHaveURL(SESSION_URL);
   });
 });
@@ -203,7 +216,7 @@ for (const width of [390, 320, 160]) {
       await expectBox(first.locator('[data-part="plus"]'), 48, 48);
       for (const chip of await page.locator(".wl-uf08__chip").all()) await expectBox(chip, 44, 44);
       await expectBox(page.locator("summary", { hasText: "Add an area" }), 44, 48);
-      await expectBox(looksGood(page), 44, 54);
+      await expectBox(startWorkout(page), 44, 54);
       await expectBox(page.getByRole("link", { name: "Back" }), 44, 44);
       await expectBox(page.getByRole("link", { name: "Close" }), 44, 44);
 

@@ -183,7 +183,7 @@ const addButton = (area: string) => button(`Add ${AREA_NAME[area]}`);
 const lastWorkout = () => suggestSpy.mock.results.at(-1)!.value as Workout;
 const lastInput = () => suggestSpy.mock.lastCall![4];
 const title = () => document.querySelector("h1")!.textContent;
-const looksGood = () => button("Looks good");
+const startBtn = () => button("Start workout");
 const attr = (el: Element, name: string) => el.getAttribute(name);
 
 async function loaded(): Promise<void> {
@@ -508,7 +508,7 @@ describe("T-0996 AC5 Add an area", () => {
 });
 
 describe("T-0996 AC6 Fill the rest for me", () => {
-  it("T-0996 AC6 time for more: areas are added until nothing fits, the button goes and focus moves to Looks good", async () => {
+  it("T-0996 AC6 time for more: areas are added until nothing fits, the button goes and focus moves to Start workout", async () => {
     await toPlan({ empty: true });
     expect(rowAreas()).toEqual([]);
     const fill = button("Fill the rest for me");
@@ -518,7 +518,7 @@ describe("T-0996 AC6 Fill the rest for me", () => {
     expect(rowAreas().length).toBeGreaterThan(1);
     expect(status()).toHaveTextContent(/^\d+ areas added\. \d+ min left\.$/);
     expect(queryButton("Fill the rest for me")).toBeNull();
-    expect(document.activeElement).toBe(looksGood());
+    expect(document.activeElement).toBe(startBtn());
     expect(suggestSpy).toHaveBeenCalledTimes(calls);
     // Nothing else fits: every Add left is refused for time or the cap.
     for (const add of document.querySelectorAll<HTMLElement>('[data-part="candidate-add"]')) {
@@ -546,36 +546,23 @@ describe("T-0996 AC6 Fill the rest for me", () => {
 });
 
 describe("T-0996 AC7 the order", () => {
-  it("T-0996 AC7 accessory first in the engine plan: rows stay in priority order, UF-08.4 and Start get orderItems", async () => {
+  it("T-0996 AC7 accessory first in the engine plan: rows stay in priority order, Start gets orderItems", async () => {
     await toPlan({ empty: true });
     fireEvent.click(addButton("arms"));
     fireEvent.click(addButton("chest"));
     expect(rowAreas()).toEqual(["arms", "chest"]);
-    fireEvent.click(looksGood());
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));
+    fireEvent.click(startBtn());
     // The plan the host holds has the isolation exercise first; `orderItems` puts the compound first.
     const given = orderSpy.mock.calls.at(-1)![0] as Workout;
     expect(given.plan.items.map((i) => i.exerciseId)).toEqual(["biceps-curl", "bench-press"]);
     const ordered = orderSpy.mock.results.at(-1)!.value as Workout;
     expect(ordered.plan.items.map((i) => i.exerciseId)).toEqual(["bench-press", "biceps-curl"]);
-    fireEvent.click(button("Start"));
     await waitFor(() => expect(upsert).toHaveBeenCalledTimes(1));
     const row0 = upsert.mock.calls[0]![0] as { plan: Workout["plan"] };
     expect(row0.plan.items.map((i) => i.exerciseId)).toEqual(
       ordered.plan.items.map((i) => i.exerciseId),
     );
     await waitFor(() => expect(screen.getByTestId("focus-mode")).toBeInTheDocument());
-  });
-
-  it("T-0996 AC7 Back from UF-08.4 keeps the rows in the area priority order", async () => {
-    await toPlan({ empty: true });
-    fireEvent.click(addButton("arms"));
-    fireEvent.click(addButton("chest"));
-    fireEvent.click(looksGood());
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));
-    fireEvent.click(screen.getByRole("link", { name: "Back" }));
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.2"]));
-    expect(rowAreas()).toEqual(["arms", "chest"]);
   });
 });
 
@@ -636,11 +623,11 @@ describe("T-0996 AC8 a time chip rebuilds", () => {
 });
 
 describe("T-0996 AC9 Start empty and Suggest, both entries", () => {
-  it("T-0996 AC9 Start empty: no rows, Add an area open, Looks good disabled with its reason, a tap does nothing, one area enables it", async () => {
+  it("T-0996 AC9 Start empty: no rows, Add an area open, Start workout disabled with its reason, a tap does nothing, one area enables it", async () => {
     await toPlan({ empty: true });
     expect(rows()).toHaveLength(0);
     expect(document.querySelector<HTMLDetailsElement>('[data-part="add-area"]')!.open).toBe(true);
-    const lg = looksGood();
+    const lg = startBtn();
     expect(attr(lg, "aria-disabled")).toBe("true");
     expect(lg).not.toBeDisabled();
     const reason = screen.getByText("Add at least one area.");
@@ -649,19 +636,19 @@ describe("T-0996 AC9 Start empty and Suggest, both entries", () => {
     expect(screenIds()).toEqual(["UF-08.2"]);
     expect(trail.at(-1)).toBe("/session/setup?step=suggested");
     fireEvent.click(addButton("chest"));
-    expect(looksGood()).not.toHaveAttribute("aria-disabled");
+    expect(startBtn()).not.toHaveAttribute("aria-disabled");
     expect(screen.queryByText("Add at least one area.")).toBeNull();
-    fireEvent.click(looksGood());
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(screen.getByTestId("focus-mode")).toBeInTheDocument());
   });
 
-  it("T-0996 AC9 Suggest my workout: the default plan shows, Looks good is enabled, Add an area is collapsed", async () => {
+  it("T-0996 AC9 Suggest my workout: the default plan shows, Start workout is enabled, Add an area is collapsed", async () => {
     await toPlan();
     expect(rows().length).toBeGreaterThan(0);
-    expect(looksGood()).not.toHaveAttribute("aria-disabled");
+    expect(startBtn()).not.toHaveAttribute("aria-disabled");
     expect(document.querySelector<HTMLDetailsElement>('[data-part="add-area"]')!.open).toBe(false);
-    fireEvent.click(looksGood());
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(screen.getByTestId("focus-mode")).toBeInTheDocument());
   });
 });
 
@@ -714,7 +701,7 @@ describe("T-0996 AC10 states", () => {
     }
   });
 
-  it("T-0996 AC10 everything skipped: no rows, the reasons list, Looks good disabled", async () => {
+  it("T-0996 AC10 everything skipped: no rows, the reasons list, Start workout disabled", async () => {
     await toPlan({
       skip: Object.values(AREA_NAME),
     });
@@ -726,7 +713,7 @@ describe("T-0996 AC10 states", () => {
     for (const c of document.querySelectorAll('[data-part="candidate-reason"]')) {
       expect(c.textContent).toBe("Skipping today");
     }
-    expect(attr(looksGood(), "aria-disabled")).toBe("true");
+    expect(attr(startBtn(), "aria-disabled")).toBe("true");
     expect(queryButton("Fill the rest for me")).toBeNull();
   });
 
@@ -794,13 +781,13 @@ describe.each([
     fireEvent.click(button("Fill the rest for me"));
     fireEvent.click(button("30 minutes"));
     expect(status()).toHaveTextContent(/^Plan rebuilt for 30 min/);
-    expect(looksGood()).not.toHaveAttribute("aria-disabled");
+    expect(startBtn()).not.toHaveAttribute("aria-disabled");
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
 
 describe("T-0996 AC12 principles", () => {
-  it("T-0996 AC12 UF-08.1's minutes control is unchanged and comes first; no UF-09 control; Looks good is the only action fill", async () => {
+  it("T-0996 AC12 UF-08.1's minutes control is unchanged and comes first; no UF-09 control; Start workout is the only action fill", async () => {
     mount("/session/setup");
     await loaded();
     expect(screenIds()).toEqual(["UF-08.1"]);
@@ -814,7 +801,7 @@ describe("T-0996 AC12 principles", () => {
     expect(queryButton(/^(Pause|Done|Skip|End workout)/)).toBeNull();
     const primary = document.querySelectorAll(".wl-button--primary");
     expect(primary).toHaveLength(1);
-    expect(primary[0]).toBe(looksGood());
+    expect(primary[0]).toBe(startBtn());
   });
 
   it("T-0996 AC12 no suggest call picks an area for an edit; a time chip is one rebuild", async () => {
@@ -837,8 +824,8 @@ describe("T-0996 AC12 principles", () => {
   it("T-0996 AC12 the web does not pick areas: the plan an edit shows is the engine's (rows equal areaGroups of the plan Start writes)", async () => {
     await toPlan({ budget: 60 });
     removeArea("shoulders");
-    fireEvent.click(looksGood());
-    await waitFor(() => expect(screenIds()).toEqual(["UF-08.4"]));
+    fireEvent.click(startBtn());
+    await waitFor(() => expect(upsert).toHaveBeenCalledTimes(1));
     const ordered = orderSpy.mock.results.at(-1)!.value as Workout;
     const areasWritten = new Set(areaGroups(ordered).map((g) => g.area));
     expect(areasWritten.has("shoulders")).toBe(false);

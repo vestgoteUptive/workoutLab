@@ -734,9 +734,7 @@ test.describe("AC5 zero history and a return after 10 days off", () => {
       .first()
       .click();
     await expect(sheet).toHaveCount(0);
-    await page.getByRole("button", { name: "Looks good" }).click();
-    await expect(screen(page, "UF-08.4")).toBeVisible();
-    await page.getByRole("button", { name: "Start", exact: true }).click();
+    await page.getByRole("button", { name: "Start workout", exact: true }).click();
     await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
     await page.getByRole("button", { name: "Skip warm-up" }).click();
     await expect(screen(page, "UF-09.3")).toBeVisible();

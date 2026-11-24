@@ -173,7 +173,7 @@
   margin: 0;
 }
 
-/* Rows between hairlines: the warm-up toggle, the three Ready settings. */
+/* Rows between hairlines: the warm-up toggle, the three Focus mode switches. */
 .wl-uf08__toggle {
   padding-block: 12px;
   border-block: 1px solid var(--wl-line);
@@ -467,7 +467,7 @@
   min-block-size: 48px;
 }
 
-/* ---- UF-08.4 Ready (T-0303d, D-0110; plan state T-0599) ---- */
+/* ---- UF-08.2 Focus mode disclosure: the four steps and three switches (T-0303d, T-1009) ---- */
 .wl-uf08__how {
   display: flex;
   flex-direction: column;

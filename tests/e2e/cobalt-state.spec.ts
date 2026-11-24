@@ -266,8 +266,7 @@ test.describe("AC6 every route root carries data-wl-state (390 x 844)", () => {
       await page.getByRole("link", { name: "Start workout" }).click();
       await page.getByRole("button", { name: "30 minutes" }).click();
       await page.getByRole("button", { name: "Suggest my workout" }).click();
-      await page.getByRole("button", { name: "Looks good" }).click();
-      await page.getByRole("button", { name: "Start", exact: true }).click();
+      await page.getByRole("button", { name: "Start workout", exact: true }).click();
       await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
       const id = /\/session\/([0-9a-f-]{36})$/.exec(page.url())![1]!;
       const states = () =>

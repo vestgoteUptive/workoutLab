@@ -84,7 +84,6 @@ const returningAfter10Days = (): unknown[] => [
 
 const screenUF081 = (page: Page) => page.locator('[data-screen-id="UF-08.1"]');
 const screenUF082 = (page: Page) => page.locator('[data-screen-id="UF-08.2"]');
-const screenUF084 = (page: Page) => page.locator('[data-screen-id="UF-08.4"]');
 const fitLine = (page: Page) => page.locator('[data-part="fit-line"]');
 const budgetText = (page: Page) => page.locator('[data-part="budget-text"]');
 const itemRows = (page: Page) => page.locator('[data-part="item-row"]');
@@ -93,7 +92,7 @@ const suggestions = (page: Page) => page.locator('[data-part="suggestions"]');
 const suggestionRows = (page: Page) => suggestions(page).locator('[data-part="suggestion"]');
 const suggestionNames = (page: Page) => suggestionRows(page).locator('[data-part="row-name"]');
 const status = (page: Page) => page.locator('[data-part="status"]');
-const looksGood = (page: Page) => page.getByRole("button", { name: "Looks good" });
+const looksGood = (page: Page) => page.getByRole("button", { name: "Start workout" });
 const addButton = (page: Page, name: string) => page.getByRole("button", { name: `Add ${name}` });
 
 async function seed(page: Page, sets: unknown[] = []): Promise<void> {
@@ -234,9 +233,9 @@ async function precacheSettled(page: Page): Promise<void> {
     .toBe(true);
 }
 
-/** Tap Start on UF-08.4 and wait for focus mode. Returns the session id. */
+/** Tap Start workout on UF-08.2 and wait for focus mode. Returns the session id. */
 async function startWorkout(page: Page): Promise<string> {
-  await page.getByRole("button", { name: "Start" }).click();
+  await page.getByRole("button", { name: "Start workout" }).click();
   await expect(page).toHaveURL(SESSION_URL);
   await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
   return SESSION_URL.exec(page.url())![1]!;
@@ -258,7 +257,7 @@ test.describe("zero-history user, 30 min", () => {
     await seed(page);
   });
 
-  test("AC1 (B1): Start empty opens UF-08.2 with the empty copy, 3 of 30 min, disabled Looks good", async ({
+  test("AC1 (B1): Start empty opens UF-08.2 with the empty copy, 3 of 30 min, disabled Start workout", async ({
     page,
   }) => {
     await openSetup(page);
@@ -353,9 +352,7 @@ test.describe("zero-history user, 30 min", () => {
     await expect(itemRows(page).first()).toHaveAttribute("data-main", "true");
   });
 
-  test("AC8 (B17): one pick at 45 min, Looks good shows 1 exercise, Start opens UF-09.1 with it", async ({
-    page,
-  }) => {
+  test("AC8 (B17): one pick at 45 min, Start workout opens UF-09.1 with it", async ({ page }) => {
     const writes = await recordSessions(page);
     await openSetup(page, 45);
     await startEmpty(page);
@@ -364,12 +361,6 @@ test.describe("zero-history user, 30 min", () => {
     await expect(itemRows(page)).toHaveCount(1);
     const pickedId = (await itemRows(page).first().getAttribute("data-id"))!;
 
-    await looksGood(page).click();
-    await expect(page).toHaveURL(/\/session\/setup\?step=ready$/);
-    await expect(screenUF084(page)).toBeVisible();
-    await expect(page.locator('[data-part="summary"]')).toHaveText(
-      /^\d+ min · warm-up \+ 1 exercise · \d+ sets? · done by \d{1,2}:\d{2}( [AP]M)?$/,
-    );
     const id = await startWorkout(page);
     await expectFirstExercise(page, name);
     await expect.poll(() => writes.flat().filter((r) => r.id === id).length).toBe(1);
@@ -396,7 +387,7 @@ test("AC6 (B15): returning after 10 days off, the suggestions equal Suggest my w
 // ---- AC7 (B16) offline and online ----
 
 test.describe("AC7 (B16) Start empty to UF-09.1", () => {
-  test("offline: Start empty, Add, Looks good, Start; the sessions write waits in the queue", async ({
+  test("offline: Start empty, Add, Start workout; the sessions write waits in the queue", async ({
     page,
     context,
   }) => {
@@ -424,8 +415,6 @@ test.describe("AC7 (B16) Start empty to UF-09.1", () => {
     await addButton(page, "Inverted row").click();
     await expect(itemNames(page)).toHaveText(["Bench press", "Inverted row"]);
 
-    await looksGood(page).click();
-    await expect(screenUF084(page)).toBeVisible();
     const id = await startWorkout(page);
     await expectFirstExercise(page, "Bench press");
     expect(await storedSession(page, id)).toEqual({
@@ -451,8 +440,6 @@ test.describe("AC7 (B16) Start empty to UF-09.1", () => {
     await startEmpty(page);
     await addButton(page, "Bench press").click();
     await addButton(page, "Inverted row").click();
-    await looksGood(page).click();
-    await expect(screenUF084(page)).toBeVisible();
     const id = await startWorkout(page);
     await expect.poll(() => writes.flat().filter((r) => r.id === id).length).toBe(1);
     const row = writes.flat().find((r) => r.id === id)!;

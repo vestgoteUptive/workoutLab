@@ -1,10 +1,10 @@
-// T-0304h UF-09 end to end from UF-08.4 Start (NFR-TIME-2, NFR-A11Y-1/2/6, principle 1). Runs
+// T-0304h UF-09 end to end from UF-08.2 Start workout (NFR-TIME-2, NFR-A11Y-1/2/6, principle 1). Runs
 // against `vite preview`; `test`/`expect` come from the guarded fixture (D-0086), with no own
 // console listeners (T-0436). Every Supabase request is claimed by a real mock. The 10-set
 // offline workout and two devices are T-0468 (D-0168 §1), in their own spec file.
 //
 // Every row starts where a real workout starts: `/` → Start workout → UF-08.1 (30 min chip) →
-// Suggest → UF-08.2 → Looks good → UF-08.4 → Start. The sets use the real 5 s auto-save.
+// Suggest → UF-08.2 → Start workout. The sets use the real 5 s auto-save.
 import AxeBuilder from "@axe-core/playwright";
 import type { Locator, Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
@@ -52,7 +52,7 @@ test.beforeEach(async ({ page }) => {
   await mockProfilePresent(page, profileRow);
 });
 
-/** `/` → Start workout → UF-08.1 → chip → Suggest → UF-08.2 → Looks good → UF-08.4 → Start. */
+/** `/` → Start workout → UF-08.1 → chip → Suggest → UF-08.2 → Start workout. */
 async function startFromReady(page: Page, budgetChip = "30 minutes"): Promise<string> {
   await page.goto("/");
   await injectSession(page);
@@ -62,9 +62,7 @@ async function startFromReady(page: Page, budgetChip = "30 minutes"): Promise<st
   await page.getByRole("button", { name: budgetChip }).click();
   await page.getByRole("button", { name: "Suggest my workout" }).click();
   await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout", exact: true }).click();
   await expect(page).toHaveURL(SESSION_URL);
   return SESSION_URL.exec(page.url())![1]!;
 }
@@ -204,18 +202,16 @@ for (const mode of ["online", "offline"] as const) {
 }
 
 test.describe("T-0304h AC-2 keyboard only, focus, targets, axe; AC-3 one screen", () => {
-  test("T-0304h AC-2 the walk from UF-08.4 Start to UF-03.3, Tab/Enter/Space only", async ({
+  test("T-0304h AC-2 the walk from UF-08.2 Start workout to UF-03.3, Tab/Enter/Space only", async ({
     page,
   }) => {
-    // Reach UF-08.4 with the pointer; the keyboard-only walk starts at Start (AC-2 step 1).
+    // Reach UF-08.2 with the pointer; the keyboard-only walk starts at Start (AC-2 step 1).
     await page.goto("/");
     await injectSession(page);
     await page.goto("/");
     await page.getByRole("link", { name: "Start workout" }).click();
     await page.getByRole("button", { name: "30 minutes" }).click();
     await page.getByRole("button", { name: "Suggest my workout" }).click();
-    await page.getByRole("button", { name: "Looks good" }).click();
-    await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
 
     const tabTo = async (target: Locator, key = "Tab") => {
       for (let i = 0; i < 25; i++) {
@@ -231,7 +227,7 @@ test.describe("T-0304h AC-2 keyboard only, focus, targets, axe; AC-3 one screen"
     };
 
     // 1. Start.
-    await tabTo(page.getByRole("button", { name: "Start", exact: true }));
+    await tabTo(page.getByRole("button", { name: "Start workout", exact: true }));
     await page.keyboard.press("Enter");
     await expect(page).toHaveURL(SESSION_URL);
     const id = SESSION_URL.exec(page.url())![1]!;
