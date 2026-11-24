@@ -4,7 +4,7 @@
 Read this first after a usage reset or a new session. Each ticket worktree is `/home/user/wt/T-NNNN` on branch `t/T-NNNN-*`; the ticket file's "Build / accept log" says how far it got.
 - **Merged on main-hzlbfc since PR #75:** rest-screen next exercise, targeted tests (D-0285), learn-from-edits data and settings (T-1001..T-1008, T-1010, T-1005), and the whole UF-08 areas-first stack (T-0996, T-0997, T-1009, T-0998, T-1019, T-0999). No PR to main is open yet.
 - **Building:** none. T-1022, T-1023 (add back a removed area) and T-1024 (CI supabase start) merged.
-- **Next, in order:** T-1006 (learning e2e); then a PR main-hzlbfc → main, merged when CI is green.
+- **Next:** PR main-hzlbfc → main (all planned tickets merged). Was: T-1006 (learning e2e); then a PR main-hzlbfc → main, merged when CI is green.
 - **Gate (D-0285):** affected checks only; full suite for shared paths; CI runs everything on PRs. Merge pattern: `--no-ff` into main-hzlbfc, board/ticket status, `git branch -f main main-hzlbfc`, push.
 - **Backup (owner, 2026-11-24):** ticket branches `t/T-NNNN-*` are pushed to GitHub after every commit as a backup (no PRs) and deleted after merge, so a container restart loses nothing.
 - **UF-08 stack:** merged 2026-11-24; UF-08 tickets branch from main-hzlbfc again.
