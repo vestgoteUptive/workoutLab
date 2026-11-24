@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-09.5, UF-09.3, UF-09.6]
 decisions: [D-0273, D-0261, D-0263]
 deps: [T-0990]
-status: ready
+status: done
 ---
 ## Why
 The web ticket proves the logic in jsdom. Wrapping, "no truncation" at 320 px and 200 % zoom, the first-frame word and the offline cue need a real browser (spec `docs/specs/rest-next-exercise.md`, D-0273).
@@ -35,3 +35,4 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · `npx playwright test tests/e2e/uf-09-rest-next.spec.ts` green, run through `scripts/locked.sh heavy` · contracts unchanged · commit messages start with `T-0991` and cite screen IDs.
 
 ## Build / accept log
+- Build (QA, T-0991): new `tests/e2e/uf-09-rest-next.spec.ts` (19 tests + 4 `test.fail` known-defect markers). AC1 first test; AC2 first/sibling tests (+ hard reload informational: reads "12 kg × 10 per arm"); AC3 320 and 200 % tests; AC4 three offline tests; AC5 two; AC6 two; AC7 uf-09-focus green. Run: spec + uf-09-focus `--repeat-each 3` 147 passed. Faults (cp-restored, cmp-checked, not committed): F1 `flagged = false` in rest.tsx red in 5 tests (AC2, AC3 same-flagged x2, AC4 flagged, AC5 10-days); F2 cue forced null red in 4 (AC1, AC3 new-exercise x2, AC4); F3 name `nowrap/ellipsis` in uf-09.css red in 4 (AC3). Measured at 320x568 (long name, 45-char cue): Next block 133 px, Skip rest top 532 px, page scrolls 65 px; flagged same-exercise: block 196 px, Skip top 595 px, scrolls 128 px; Skip rest scrolls into view and clicks. At 160x284 with root font 200 %: name 120x331, block 826/1033 px, Skip reachable. DEFECT: at 160 px (with or without 200 % root font) the page scrolls sideways (186 > 160; 351 with 200 % font): the rest timer is wider than its box, and at 200 % font also the -15 s/+15 s row and Skip rest's arrow. Not the Next block. Page-level checks are `test.fail` markers.
