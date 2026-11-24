@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useAuth } from "../auth/auth-context.js";
 import { startSync } from "./sync.js";
 import { refreshAll } from "./history.js";
+import { startLedgerSync } from "./edit-ledger-sync.js";
 import { warmUnilateralFlags } from "./unilateral-flags.js";
 
 function deviceTimeZone(): string {
@@ -34,7 +35,12 @@ export function AutoSync() {
       // so skipping it here loses no coverage (D-0116).
       void handle.flushNow();
     }
-    return () => handle.stop();
+    // T-1008: the edit ledger syncs in the background (start, `online`, after a signal).
+    const ledger = startLedgerSync();
+    return () => {
+      ledger.stop();
+      handle.stop();
+    };
   }, [signedIn]);
 
   return null;

@@ -108,7 +108,27 @@ async function writeEntry(
     if (drop.length > 0) await db.editLedger.bulkDelete(drop);
     wrote = true;
   });
+  if (wrote) notifyWrite();
   return wrote;
+}
+
+// T-1008: the sync loop listens for a counted signal to flush after a short debounce. Nothing
+// here touches the network; a listener that throws never breaks the write.
+const writeListeners = new Set<() => void>();
+function notifyWrite(): void {
+  for (const fn of writeListeners) {
+    try {
+      fn();
+    } catch {
+      // A listener must never fail a count.
+    }
+  }
+}
+
+/** Calls `fn` after every ledger write (a count or an asked mark). Returns the unsubscribe. */
+export function onLedgerWrite(fn: () => void): () => void {
+  writeListeners.add(fn);
+  return () => void writeListeners.delete(fn);
 }
 
 async function record(
@@ -242,4 +262,70 @@ export async function clearLocal(userId: string | null = currentUserId()): Promi
     await db.editLedger.where({ userId }).delete();
     await db.editLedgerMeta.delete(userId);
   });
+}
+
+/** The dirty entries of this user, reset epoch applied, oldest `lastSeen` first (what a flush
+ *  sends). Nothing is read for a user whose learning is off. */
+export async function dirtyEntries(userId: string): Promise<LedgerEntry[]> {
+  const prefs = await loadLearning(userId);
+  if (!prefs.learnFromEdits) return [];
+  const rows = await offlineDb().editLedger.where({ userId }).toArray();
+  return afterReset(rows.filter((r) => r.dirty).map(toEntry), prefs.learnResetAt).sort((a, b) =>
+    a.lastSeen.localeCompare(b.lastSeen),
+  );
+}
+
+/** What a push sent, to compare against the entry as it is now. */
+export interface SentState {
+  count: number;
+  askedAt: string | null;
+}
+
+/** Marks an entry clean after its push succeeded, but only when it is still what was sent: a
+ *  signal counted (or an answer given) while the request was in flight changes `lastSeen`,
+ *  `count` or `askedAt`, and that entry stays dirty for the next flush (T-1007 review). Never
+ *  creates an entry; a wiped ledger stays empty. Resolves true when it cleared `dirty`. */
+export async function ackSynced(
+  key: string,
+  lastSeenSent: string,
+  sent?: SentState,
+  userId: string | null = currentUserId(),
+): Promise<boolean> {
+  if (!userId) return false;
+  const db = offlineDb();
+  let cleared = false;
+  await db.transaction("rw", db.editLedger, async () => {
+    const row = await db.editLedger.get(userScopedKey(userId, key));
+    if (!row || row.lastSeen !== lastSeenSent) return;
+    if (sent && (row.count !== sent.count || row.askedAt !== sent.askedAt)) return;
+    if (!row.dirty) return;
+    await db.editLedger.put({ ...row, dirty: false });
+    cleared = true;
+  });
+  return cleared;
+}
+
+/** Deletes this user's entries at or before the reset epoch. */
+export async function purgeResetNow(userId: string): Promise<void> {
+  const prefs = await loadLearning(userId);
+  const db = offlineDb();
+  await db.transaction("rw", db.editLedger, () => purgeReset(userId, prefs.learnResetAt));
+}
+
+/** Removes this user's ledger entry for `key` (a lapsed window with no answer). */
+export async function pruneEntries(userId: string, keys: string[]): Promise<void> {
+  if (keys.length === 0) return;
+  await offlineDb().editLedger.bulkDelete(keys.map((k) => userScopedKey(userId, k)));
+}
+
+/** A fresh profile read (D-0281 §4): with learning off the ledger and the pulled rows go; with
+ *  a reset epoch, the entries at or before it go (never pushed). Runs before any flush. */
+export async function applyProfileLearning(userId: string, prefs: LearningState): Promise<void> {
+  const db = offlineDb();
+  if (!prefs.learnFromEdits) {
+    await clearLocal(userId);
+    await db.editSignalsCache.where({ userId }).delete();
+    return;
+  }
+  await db.transaction("rw", db.editLedger, () => purgeReset(userId, prefs.learnResetAt));
 }

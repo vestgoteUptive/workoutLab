@@ -94,6 +94,13 @@ describe("T-1007 AC3 removal", () => {
   it("the API has no method for Not today, a stepper remove or a dropped exercise", () => {
     expect(Object.keys(ledger).sort()).toEqual(
       [
+        // T-1008: the sync's helpers (none is a signal source).
+        "ackSynced",
+        "applyProfileLearning",
+        "dirtyEntries",
+        "pruneEntries",
+        "onLedgerWrite",
+        "purgeResetNow",
         "clearLocal",
         "deviceId",
         "entries",

@@ -21,6 +21,7 @@ export const OFFLINE_TABLES = [
   "exerciseSettingsQueue",
   "editLedger",
   "editLedgerMeta",
+  "editSignalsCache",
 ];
 
 /** One row for `userId` in every table of `offlineDb()`. U's `sets` row is `rejected`. */

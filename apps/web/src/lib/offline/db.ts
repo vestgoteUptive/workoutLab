@@ -250,6 +250,26 @@ export interface LedgerMeta {
   deviceId: string;
 }
 
+/** One cached `edit_signals` row of the account (T-1008, D-0281 §2): what the last pull read,
+ *  so an offline `pending()` still sums the other devices' counts. `key` is `userScopedKey(userId,
+ *  [device_id, key].join("|"))`. */
+export interface CachedEditSignal {
+  key: string;
+  userId: string;
+  row: {
+    id: string;
+    device_id: string;
+    key: string;
+    kind: string;
+    exercise_id: string;
+    to_exercise_id: string | null;
+    count: number;
+    window_start: string;
+    last_seen: string;
+    asked_at: string | null;
+  };
+}
+
 export const DB_NAME = "wl-offline";
 
 export class OfflineDb extends Dexie {
@@ -276,6 +296,8 @@ export class OfflineDb extends Dexie {
   // Version 7 (T-1007, D-0281): the on-device edit ledger and this device's id.
   editLedger!: Table<StoredLedgerEntry, string>;
   editLedgerMeta!: Table<LedgerMeta, string>;
+  // Version 8 (T-1008, D-0281 §2): the pulled `edit_signals` rows of the account.
+  editSignalsCache!: Table<CachedEditSignal, string>;
 
   constructor(name: string = DB_NAME) {
     super(name);
@@ -327,6 +349,11 @@ export class OfflineDb extends Dexie {
     this.version(7).stores({
       editLedger: "key, userId, lastSeen",
       editLedgerMeta: "userId",
+    });
+    // Version 8 (T-1008) only adds one store: no `.upgrade()`, so no queued row can change
+    // (NFR-OFF-2). It starts empty and is filled by the first pull.
+    this.version(8).stores({
+      editSignalsCache: "key, userId",
     });
   }
 }
