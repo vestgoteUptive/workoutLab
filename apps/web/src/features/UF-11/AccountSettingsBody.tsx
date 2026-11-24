@@ -16,6 +16,7 @@ import { en } from "../../lib/i18n/en.js";
 import { BarPlatesSection } from "./BarPlatesSection.js";
 import { EquipmentSection } from "./EquipmentSection.js";
 import { resolveTimeZone } from "./format.js";
+import { LearningSection } from "./LearningSection.js";
 import type { Clock } from "./use-plan-data.js";
 import "./plan.css";
 
@@ -316,6 +317,7 @@ export function AccountSettingsBody({ clock }: { clock: Clock }) {
           </p>
         ) : null}
       </section>
+      <LearningSection online={online} userId={userId} />
       <section
         className="wl-card wl-account__section wl-account__delete"
         aria-labelledby="wl-account-delete"
