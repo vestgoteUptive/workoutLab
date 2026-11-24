@@ -64,6 +64,16 @@ export interface AreaPlanProps {
   onFillRest: () => { workout: Workout; added: readonly Area[] };
   /** The host rebuilds the plan for `budgetMin`; null when the engine rejected it. */
   onBudget: (budgetMin: number) => Workout | null;
+  /** T-0997: the status line on mount (UF-08.6's "{Area} removed. Add it back below."). */
+  initialStatus?: string;
+  /**
+   * T-0997 (UF-08.6.md › Focus): back from an area, focus goes to that area's open button, else
+   * the first one in `index`'s place, else the "Add an area" summary. Never `body`.
+   */
+  focusArea?: { area: Area; index: number } | null;
+  onFocused?: () => void;
+  /** Where the host sends a row's open button (UF-08.6). */
+  onOpenArea?: (area: Area, index: number) => void;
 }
 
 function minutesOf(seconds: number): number {
@@ -138,10 +148,14 @@ export function AreaPlan({
   onAddArea,
   onFillRest,
   onBudget,
+  initialStatus = "",
+  focusArea = null,
+  onFocused,
+  onOpenArea,
 }: AreaPlanProps) {
   const navigate = useNavigate();
   const [mountedAt] = useState(() => clock());
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(initialStatus);
   // The refusal under one row's stepper, until the next tap in that row (UF-08.2.md › Area row).
   const [refusals, setRefusals] = useState<Partial<Record<Area, string>>>({});
   const needAreaId = useId();
@@ -184,6 +198,19 @@ export function AreaPlan({
       (plus ?? looksGoodRef.current)?.focus();
     } else if (fillRef.current === null) looksGoodRef.current?.focus();
   }, [workout]);
+
+  // Mount only: the host clears the request through `onFocused`.
+  useEffect(() => {
+    if (focusArea === null) return;
+    const opens = rowsRef.current?.querySelectorAll<HTMLElement>('[data-part="area-open"]');
+    const own = rowsRef.current?.querySelector<HTMLElement>(
+      `[data-area="${focusArea.area}"] [data-part="area-open"]`,
+    );
+    const place =
+      opens && opens.length > 0 ? opens[Math.min(focusArea.index, opens.length - 1)] : null;
+    (own ?? place ?? addSummaryRef.current ?? looksGoodRef.current)?.focus();
+    onFocused?.();
+  }, []);
 
   const skipped = AREAS.filter((a) => avoidAreas.includes(a) || removedAreas.includes(a));
   const doneBy = formatTime(
@@ -266,13 +293,19 @@ export function AreaPlan({
     if (before.sets <= 2) {
       // The 2-set minimum: the control reads Remove and takes the area out (no confirm).
       const result = onRemoveArea(area);
-      if ("refused" in result) return;
+      if ("refused" in result) {
+        setStatus(en.uf08.areaChangeFailed);
+        return;
+      }
       pending.current = { kind: "removed", index };
       setStatus(en.uf08.areaRemoved(areaLabel(area)));
       return;
     }
     const result = onAdjust(area, -1);
-    if ("refused" in result) return;
+    if ("refused" in result) {
+      setStatus(en.uf08.areaChangeFailed);
+      return;
+    }
     const after = areaGroups(result.workout).find((g) => g.area === area);
     announceSets(area, result.workout, before.itemIds.length === 2 && after?.itemIds.length === 1);
   };
@@ -308,7 +341,10 @@ export function AreaPlan({
       return;
     }
     const result = onFillRest();
-    if (result.added.length === 0) return;
+    if (result.added.length === 0) {
+      setStatus(en.uf08.fillNothing);
+      return;
+    }
     pending.current = { kind: "filled" };
     const left = leftMinutes(result.workout);
     const first = result.added[0];
@@ -433,7 +469,11 @@ export function AreaPlan({
                   className="wl-uf08__area-open"
                   data-part="area-open"
                   aria-label={en.uf08.areaOpenName(name, minutes, g.itemIds.length)}
-                  onClick={() => void navigate(`/session/setup?step=area&area=${area}`)}
+                  onClick={() =>
+                    onOpenArea !== undefined
+                      ? onOpenArea(area, index)
+                      : void navigate(`/session/setup?step=area&area=${area}`)
+                  }
                 >
                   <span className="wl-uf08__area-line">
                     <span className="wl-uf08__area-name wl-type-row-title" data-part="area-name">

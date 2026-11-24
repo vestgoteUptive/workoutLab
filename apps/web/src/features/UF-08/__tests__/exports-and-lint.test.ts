@@ -153,9 +153,10 @@ describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (
       .map((f) => ({ name: f.split("/").at(-1)!, source: readFileSync(f, "utf8") }));
 
   // T-0996 AC14: the area plan renders the why chips, so AreaPlan.tsx joins Suggested.tsx (which
-  // T-0998 deletes) as an importer; nothing else may.
-  it("only AreaPlan.tsx and Suggested.tsx mention lib/i18n/workout, in any import form", () => {
-    expect(workoutImporters(files())).toEqual(["AreaPlan.tsx", "Suggested.tsx"]);
+  // T-0998 deletes) as an importer; T-0997 AC11: UF-08.6 shows each row's reason, so AreaDetail.tsx
+  // joins them; nothing else may.
+  it("only AreaDetail.tsx, AreaPlan.tsx and Suggested.tsx mention lib/i18n/workout, in any import form", () => {
+    expect(workoutImporters(files())).toEqual(["AreaDetail.tsx", "AreaPlan.tsx", "Suggested.tsx"]);
   });
 
   it("contrast: a namespace, type-only or extensionless import elsewhere is caught", () => {
@@ -166,6 +167,7 @@ describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (
       'export { areaName } from "../../lib/i18n/workout.js";\n',
     ]) {
       expect(workoutImporters([...base, { name: "Other.tsx", source }]), source).toEqual([
+        "AreaDetail.tsx",
         "AreaPlan.tsx",
         "Suggested.tsx",
         "Other.tsx",
@@ -173,7 +175,7 @@ describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (
     }
   });
 
-  it.each(["AreaPlan.tsx", "Suggested.tsx"])(
+  it.each(["AreaDetail.tsx", "AreaPlan.tsx", "Suggested.tsx"])(
     "%s imports only names workout.ts exports",
     async (file) => {
       const workout = await import("../../../lib/i18n/workout.js");

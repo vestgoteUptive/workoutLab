@@ -26,6 +26,8 @@ export interface AddExerciseSheetProps {
   /** T-0577: stored favorite ids and whether that list has loaded (D-0205 §2, D-0202). */
   favoriteIds?: readonly string[];
   favoritesLoaded?: boolean;
+  /** T-0997 (UF-08.6.md › Add exercise): this area's exercises come first after Favorites. */
+  firstArea?: Area;
   /** T-0948 (UF-09.10, D-0246 §16): the sheet opened during a workout. Its root carries
    *  `.wl-uf08` (it may render with no SessionSetup around it), the screen id is UF-09.10, and
    *  every disabled row (plan items too) takes its reason from `blocked` and an inert Add. */
@@ -57,6 +59,7 @@ export function AddExerciseSheet({
   blocked = {},
   favoriteIds = [],
   favoritesLoaded = true,
+  firstArea,
   onAdd,
   onStartWith,
   onClose,
@@ -98,13 +101,17 @@ export function AddExerciseSheet({
       const lib = catalog.find((e) => e.id === item.exerciseId);
       if (lib !== undefined) for (const a of primaryAreas(lib)) todays.add(a);
     }
-    return AREAS.filter((a) => todays.has(a))
+    if (firstArea !== undefined) todays.add(firstArea);
+    const order =
+      firstArea === undefined ? AREAS : [firstArea, ...AREAS.filter((a) => a !== firstArea)];
+    return order
+      .filter((a) => todays.has(a))
       .map((area) => ({
         area,
         rows: exercises.filter((e) => e.areas[area] === 1 && !favSet.has(e.id)),
       }))
       .filter((g) => g.rows.length > 0);
-  }, [catalog, exercises, items, favSet]);
+  }, [catalog, exercises, items, favSet, firstArea]);
 
   const appearances = useMemo(() => {
     const count = new Map<string, number>();

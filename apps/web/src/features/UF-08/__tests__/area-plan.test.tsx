@@ -292,11 +292,16 @@ describe("T-0996 AC2 one row per area, no exercise name", () => {
     });
   });
 
-  it("T-0996 AC2 the open button goes to ?step=area&area=… and a cold step lands on UF-08.1 (T-0997 builds the page)", async () => {
+  it("T-0996 AC2 the open button goes to ?step=area&area=… (UF-08.6 since T-0997); a cold step lands on UF-08.1", async () => {
     await toPlan();
     const first = rows()[0]!.getAttribute("data-area")!;
     fireEvent.click(within(rows()[0]!).getAllByRole("button")[0]!);
     expect(trail).toContain(`/session/setup?step=area&area=${first}`);
+    // T-0997 AC11: UF-08.6 exists now, so the open button lands on it (it was UF-08.1 before).
+    expect(screenIds()).toEqual(["UF-08.6"]);
+    cleanup();
+    trail = [];
+    mount("/session/setup?step=area&area=chest");
     await waitFor(() => expect(screenIds()).toEqual(["UF-08.1"]));
     expect(trail.at(-1)).toBe("/session/setup");
   });

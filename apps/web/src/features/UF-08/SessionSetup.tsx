@@ -36,16 +36,21 @@ import {
   MAX_ITEMS_PER_AREA,
   balance,
   excludedOutAreas,
-  isEligible,
+  homeAreaOf,
+  insertItem,
   orderItems,
   primaryAreas,
   recoveringAreas,
+  rankSwaps,
+  applySwap,
+  areaGroups,
   removeItem,
   suggest,
   type Area,
   type Energy,
   type SessionInput,
   type Workout,
+  type WorkoutItem,
 } from "@workoutlab/engine";
 import { ArrowIcon, CrossIcon, TickIcon } from "../../components/icons/index.js";
 import { OfflineStatus } from "../../components/offline-status/OfflineStatus.js";
@@ -57,7 +62,9 @@ import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js"
 import { favoriteIdsFor } from "../../lib/offline/favorites.js";
 import { useFavoriteList } from "../../lib/offline/favorites-hooks.js";
 import { SwapSheet } from "../UF-05/index.js";
+import { AreaDetail, type AddOutcome, type NotTodayLine } from "./AreaDetail.js";
 import { AreaPlan, type AreaLoad } from "./AreaPlan.js";
+import { blockedReasons } from "./blocked.js";
 import { Ready } from "./Ready.js";
 import {
   adjustSets,
@@ -81,7 +88,7 @@ import {
   parseBudget,
 } from "./time.js";
 import { useSetupData, type SetupData } from "./use-setup-data.js";
-import { overMinutes } from "./budget.js";
+import { leftMinutes, overMinutes } from "./budget.js";
 import { computeSuggestions, type SuggestionList } from "./suggestions.js";
 import "./uf-08.css";
 
@@ -192,6 +199,51 @@ interface Adjusted {
   removedAreas: Area[];
 }
 
+/** A Not today the user can undo (T-0997, D-0275 §8): the pair, and what the swap overwrote. */
+interface NotTodayEntry extends NotTodayLine {
+  prev: {
+    pinned: boolean;
+    unlabelled: boolean;
+    excluded: boolean;
+    swapped: boolean;
+    mainPickId: string | null;
+  };
+}
+
+/**
+ * T-0935 (D-0235): the swap is part of the visit record, so Add, Shuffle, a time chip and "Start
+ * with this" keep it. The swap-in becomes a pin where the old id was pinned, else the last pin (a
+ * non-main item); a main-lift swap-in is already `mainLiftId`. The swapped-out id is excluded for
+ * the visit only, like a Remove (never stored here). T-0997: shared by UF-08.3 and "Not today".
+ */
+function recordSwap(adj: Adjusted, applied: Workout, old: WorkoutItem, swapIn: string): Adjusted {
+  const out = old.exerciseId;
+  const pins = adj.addedIds.filter((id) => id !== swapIn);
+  const addedIds = pins.includes(out)
+    ? pins.map((id) => (id === out ? swapIn : id))
+    : old.isMain
+      ? pins
+      : [...pins, swapIn];
+  const drop = (ids: readonly string[]) => ids.filter((e) => e !== swapIn && e !== out);
+  return {
+    ...adj,
+    workout: applied,
+    addedIds,
+    excludeIds: [...drop(adj.excludeIds), out],
+    swappedOut: [...drop(adj.swappedOut), out],
+    unlabelledPins: addedIds.includes(swapIn)
+      ? [...drop(adj.unlabelledPins), swapIn]
+      : drop(adj.unlabelledPins),
+    mainPickId: old.isMain ? swapIn : adj.mainPickId,
+  };
+}
+
+/** The area an exercise is homed in once added (its first primary area, D-0287 §4). */
+function homeOf(id: string, library: SetupData["library"]): Area | null {
+  const ex = library.find((e) => e.id === id);
+  return ex === undefined ? null : (primaryAreas(ex)[0] ?? null);
+}
+
 function runSuggest(
   data: SetupData,
   input: SessionInput,
@@ -274,20 +326,46 @@ export function SessionSetup({
 
   const navigate = useNavigate();
   const step = params.get("step");
-  const pastSetup = step === "suggested" || step === "ready" || step === "swap";
+  const pastSetup = step === "suggested" || step === "ready" || step === "swap" || step === "area";
   // UF-08.3 (T-0303c): `?step=swap&item=n` with a current `Workout` and an item in range.
   const swapItem = parseItem(params.get("item"), adjusted?.workout.plan.items.length ?? 0);
   const showSwap = step === "swap" && adjusted !== null && swapItem !== null;
   const badSwap = step === "swap" && adjusted !== null && swapItem === null;
-  const showSuggested = (step === "suggested" || badSwap) && adjusted !== null;
+  // T-0997 (UF-08.6.md): `?step=area&area=` needs a plan (a cold load has none) and a known area.
+  // A valid area the plan no longer holds is replaced by UF-08.2 with no message.
+  const areaParam = params.get("area");
+  const areaId = AREAS.find((a) => a === areaParam) ?? null;
+  const areaHeld =
+    step === "area" &&
+    !legacyExerciseList &&
+    adjusted !== null &&
+    areaId !== null &&
+    areaGroups(adjusted.workout).some((g) => g.area === areaId);
+  const showArea = areaHeld;
+  const badArea =
+    step === "area" && !legacyExerciseList && adjusted !== null && areaId !== null && !areaHeld;
+  const showSuggested = (step === "suggested" || badSwap || badArea) && adjusted !== null;
   const showReady = step === "ready" && adjusted !== null;
-  const stale = step !== null && step !== "time" && !showSuggested && !showReady && !showSwap;
+  const stale =
+    step !== null && step !== "time" && !showSuggested && !showReady && !showSwap && !showArea;
   const [focusSwapItem, setFocusSwapItem] = useState<number | null>(null);
+  // T-0997: the exercise whose Swap button takes focus when UF-08.6 returns from UF-08.3.
+  const [focusSwapId, setFocusSwapId] = useState<string | null>(null);
+  // T-0997: the Not today lines of this visit, the area UF-08.2 returns focus to, and the status
+  // UF-08.2 opens with ("{Area} removed. Add it back below."). All per visit, never stored.
+  const [notTodayLines, setNotTodayLines] = useState<NotTodayEntry[]>([]);
+  const [returnFocus, setReturnFocus] = useState<{ area: Area; index: number } | null>(null);
+  const [areaNotice, setAreaNotice] = useState("");
 
   // D-0109 §1: going back to UF-08.1 discards UF-08.2's adjustments. Keyed on the step changing
   // (not on `adjusted`), so the Suggest click's own render can't drop the record it just set.
   useEffect(() => {
-    if (!pastSetup) setAdjusted(null);
+    if (!pastSetup) {
+      setAdjusted(null);
+      setNotTodayLines([]);
+      setReturnFocus(null);
+      setAreaNotice("");
+    }
   }, [pastSetup]);
 
   // Only UF-08.1 shows the fit line, so only UF-08.1 computes it: a time chip on UF-08.2 changes
@@ -382,7 +460,8 @@ export function SessionSetup({
   // T-0996: the area plan's engine reads. `loads` is the 14-day history line of every row (rule
   // 11, on the device); `areaView` holds the edit context and the addable areas / refused + of the
   // current plan, recomputed when the plan changes only.
-  const areaPlanOn = showSuggested && !legacyExerciseList && adjusted !== null && data !== null;
+  const areaPlanOn =
+    (showSuggested || showArea) && !legacyExerciseList && adjusted !== null && data !== null;
   const loads = useMemo<Readonly<Record<Area, AreaLoad>> | null>(() => {
     if (!areaPlanOn || data === null) return null;
     const result = balance(data.history, data.targets, data.library, nowIso, tz);
@@ -427,6 +506,10 @@ export function SessionSetup({
   }, [badSwap, navigate]);
 
   useEffect(() => {
+    if (badArea) void navigate(`${SETUP_PATH}?step=suggested`, { replace: true });
+  }, [badArea, navigate]);
+
+  useEffect(() => {
     if (stale) void navigate(SETUP_PATH, { replace: true });
   }, [stale, navigate]);
 
@@ -442,6 +525,9 @@ export function SessionSetup({
 
   if (showReady) {
     // T-0996 (D-0275 §7): the plan is run, and written at Start, in the engine's automatic order.
+    // `data === null` can't reach this branch: `adjusted` is only set once `data` was ready, and
+    // `data` never goes back to null while the host stays mounted. It falls back to the plan as
+    // held (already ordered by every UF-08.6 edit) rather than ordering without a library.
     const run =
       legacyExerciseList || data === null
         ? adjusted.workout
@@ -457,35 +543,18 @@ export function SessionSetup({
         const order = adjusted.order === null ? null : applied.plan.items.map((i) => i.exerciseId);
         const old = adjusted.workout.plan.items[swapItem];
         const swapIn = applied.plan.items[swapItem]?.exerciseId;
+        // T-0997 (D-0275 §7): every UF-08.6 change leaves the plan in `orderItems` order.
+        const next =
+          legacyExerciseList || data === null ? applied : orderItems(applied, data.library);
         if (old === undefined || swapIn === undefined || swapIn === old.exerciseId) {
-          setAdjusted({ ...adjusted, workout: applied, order });
+          setAdjusted({ ...adjusted, workout: next, order });
         } else {
-          // T-0935 (D-0235): the swap is part of the visit record, so Add, Shuffle, a time chip
-          // and "Start with this" keep it. The swap-in becomes a pin where the old id was pinned,
-          // else the last pin (a non-main item); a main-lift swap-in is already `mainLiftId`. The
-          // swapped-out id is excluded for the visit only, like a Remove (never stored here).
-          const out = old.exerciseId;
-          const pins = adjusted.addedIds.filter((id) => id !== swapIn);
-          const addedIds = pins.includes(out)
-            ? pins.map((id) => (id === out ? swapIn : id))
-            : old.isMain
-              ? pins
-              : [...pins, swapIn];
-          const drop = (ids: readonly string[]) => ids.filter((e) => e !== swapIn && e !== out);
-          setAdjusted({
-            ...adjusted,
-            workout: applied,
-            order,
-            addedIds,
-            excludeIds: [...drop(adjusted.excludeIds), out],
-            swappedOut: [...drop(adjusted.swappedOut), out],
-            unlabelledPins: addedIds.includes(swapIn)
-              ? [...drop(adjusted.unlabelledPins), swapIn]
-              : drop(adjusted.unlabelledPins),
-            mainPickId: old.isMain ? swapIn : adjusted.mainPickId,
-          });
+          setAdjusted({ ...recordSwap(adjusted, next, old, swapIn), order });
         }
+        setFocusSwapId(swapIn ?? old?.exerciseId ?? null);
       }
+      if (applied === null)
+        setFocusSwapId(adjusted.workout.plan.items[swapItem]?.exerciseId ?? null);
       setFocusSwapItem(swapItem);
       void navigate(-1);
     };
@@ -503,7 +572,7 @@ export function SessionSetup({
     );
   }
 
-  if (showSuggested && data !== null) {
+  if ((showSuggested || showArea) && data !== null) {
     const empty = adjusted.mode === "empty";
     // T-0996 (D-0191, D-0286 §2): a rebuild skips the UF-08.1 areas and the ones removed here.
     const skipAreas = AREAS.filter((a) => avoid.has(a) || adjusted.removedAreas.includes(a));
@@ -696,7 +765,8 @@ export function SessionSetup({
         const merged = mergeOrder(adjusted.order, result, true);
         setAdjusted({
           mode: adjusted.mode,
-          workout: merged.workout,
+          // T-0997 (D-0275 §7): the area plan keeps `orderItems` order, the main lift first.
+          workout: legacyExerciseList ? merged.workout : orderItems(merged.workout, data.library),
           shuffle: adjusted.shuffle,
           excludeIds: visit,
           addedIds: pinned,
@@ -740,26 +810,253 @@ export function SessionSetup({
       setAdjusted({ ...adjusted, mode: "suggested", workout: merged.workout, order: merged.order });
       return null;
     };
-    // UF-08.5 disabled rows, first match wins (D-0205 §3). "In this workout" is the sheet's own.
-    const blocked: Record<string, string> = {};
-    for (const e of data.library) {
-      if (e.kind !== "exercise") continue;
-      const areas = primaryAreas(e);
-      const skip = areas.find((a) => avoidAreas.includes(a));
-      const rec = areas.find((a) => recovering.includes(a));
-      if (stored.includes(e.id)) blocked[e.id] = en.uf08.reasonExcluded;
-      else if (!isEligible(e, { ...data.profile, level: "advanced" }, []))
-        blocked[e.id] = en.uf08.reasonEquipment;
-      else if (!isEligible(e, data.profile, [])) blocked[e.id] = en.uf08.reasonLevel;
-      else if (skip !== undefined) blocked[e.id] = en.uf08.reasonSkipping(en.bodyMap.areas[skip]);
-      else if (rec !== undefined) blocked[e.id] = en.uf08.reasonRecovering(en.bodyMap.areas[rec]);
-    }
+    const blocked = blockedReasons(data, stored, avoidAreas, recovering);
     const keptIds = [
       // D-0239 §1: a dropped main pick is named like a pin; in empty mode every pick is.
       ...(adjusted.mainPickId !== null ? [adjusted.mainPickId] : []),
       // D-0240 §3 (T-0943): a dropped swap-in is named too, so it is never silently gone.
       ...adjusted.addedIds,
     ].filter((id, i, all) => all.indexOf(id) === i);
+    if (showArea && areaId !== null && !legacyExerciseList && loads !== null) {
+      const lib = data.library;
+      const hold = (workout: Workout, patch: Partial<Adjusted> = {}) =>
+        setAdjusted({
+          ...adjusted,
+          workout: orderItems(workout, lib),
+          emptiedByRemove: false,
+          ...patch,
+        });
+      const itemOf = (id: string) => adjusted.workout.plan.items.find((i) => i.exerciseId === id);
+      const without = <T extends string>(ids: readonly T[], id: string): T[] =>
+        ids.filter((e) => e !== id);
+      return (
+        <AreaDetail
+          area={areaId}
+          workout={adjusted.workout}
+          catalog={lib}
+          locale={loc}
+          timeZone={tz}
+          load={loads[areaId]}
+          favoriteIds={favoriteIds}
+          favoritesLoaded={favoritesLoaded}
+          addedIds={adjusted.addedIds.filter((a) => !adjusted.unlabelledPins.includes(a))}
+          notToday={notTodayLines}
+          removedIds={adjusted.excludeIds.filter(
+            (e) => !adjusted.swappedOut.includes(e) && homeOf(e, lib) === areaId,
+          )}
+          storedIds={stored}
+          online={online}
+          exclusionFailed={exclusionFailed}
+          onExclude={userId ? (id) => excludeExercise(userId, id) : undefined}
+          onInclude={userId ? (id) => includeExercise(userId, id) : undefined}
+          blocked={blocked}
+          focusSwap={focusSwapId}
+          onFocused={() => setFocusSwapId(null)}
+          onSwap={(id) => {
+            const index = adjusted.workout.plan.items.findIndex((i) => i.exerciseId === id);
+            if (index >= 0) void navigate(`${SETUP_PATH}?step=swap&item=${index}`);
+          }}
+          onNotToday={(id) => {
+            // D-0275 §8: `rankSwaps` for "equipment taken", the first candidate, `applySwap`. The
+            // old one is excluded for this visit only and nothing is stored (no learned preference).
+            const old = itemOf(id);
+            if (old === undefined) return null;
+            try {
+              const first = rankSwaps(
+                id,
+                "equipment_taken",
+                adjusted.workout,
+                data.profile,
+                lib,
+                data.history,
+                nowIso,
+                tz,
+                excludeIdsFor(stored, adjusted.excludeIds),
+              )[0];
+              if (first === undefined) return null;
+              const applied = applySwap(
+                adjusted.workout,
+                id,
+                first.exerciseId,
+                "equipment_taken",
+                data.history,
+                data.profile,
+                lib,
+                nowIso,
+                tz,
+              );
+              const next = orderItems(applied, lib);
+              setAdjusted({
+                ...recordSwap(adjusted, next, old, first.exerciseId),
+                emptiedByRemove: false,
+              });
+              setNotTodayLines((lines) => [
+                ...lines.filter((l) => l.newId !== id),
+                {
+                  oldId: id,
+                  newId: first.exerciseId,
+                  prev: {
+                    pinned: adjusted.addedIds.includes(id),
+                    unlabelled: adjusted.unlabelledPins.includes(id),
+                    excluded: adjusted.excludeIds.includes(id),
+                    swapped: adjusted.swappedOut.includes(id),
+                    mainPickId: adjusted.mainPickId,
+                  },
+                },
+              ]);
+              // D-0287 §4: the replacement may be homed in another area (back-squat is Glutes). If
+              // this area has nothing left, UF-08.2 opens and says what happened.
+              if (!areaGroups(next).some((g) => g.area === areaId)) {
+                setAreaNotice(
+                  en.uf08.replacedBy(
+                    lib.find((e) => e.id === id)?.name ?? id,
+                    lib.find((e) => e.id === first.exerciseId)?.name ?? first.exerciseId,
+                  ),
+                );
+                void navigate(`${SETUP_PATH}?step=suggested`, { replace: true });
+              }
+              return first.exerciseId;
+            } catch {
+              return null;
+            }
+          }}
+          onUndoNotToday={(line) => {
+            const entry = notTodayLines.find((l) => l.newId === line.newId);
+            if (entry === undefined) return;
+            try {
+              const restored = orderItems(
+                applySwap(
+                  adjusted.workout,
+                  entry.newId,
+                  entry.oldId,
+                  null,
+                  data.history,
+                  data.profile,
+                  lib,
+                  nowIso,
+                  tz,
+                ),
+                lib,
+              );
+              const { prev } = entry;
+              const wasMain = itemOf(entry.newId)?.isMain === true;
+              hold(restored, {
+                addedIds: prev.pinned
+                  ? adjusted.addedIds.map((a) => (a === entry.newId ? entry.oldId : a))
+                  : without(adjusted.addedIds, entry.newId),
+                unlabelledPins: [
+                  ...without(adjusted.unlabelledPins, entry.newId),
+                  ...(prev.unlabelled ? [entry.oldId] : []),
+                ],
+                excludeIds: prev.excluded
+                  ? adjusted.excludeIds
+                  : without(adjusted.excludeIds, entry.oldId),
+                swappedOut: prev.swapped
+                  ? adjusted.swappedOut
+                  : without(adjusted.swappedOut, entry.oldId),
+                mainPickId: wasMain ? prev.mainPickId : adjusted.mainPickId,
+              });
+              setNotTodayLines((lines) => lines.filter((l) => l.newId !== entry.newId));
+            } catch {
+              // The plan stays as it is; the line stays so the user can try again.
+            }
+          }}
+          onRemove={(id) => {
+            // D-0191 §4: `removeItem`, no refill, and nothing stored; the id is out for this visit.
+            let next: Workout;
+            try {
+              next = removeItem(adjusted.workout, id);
+            } catch {
+              return "failed";
+            }
+            const ordered = orderItems(next, lib);
+            const last = !areaGroups(ordered).some((g) => g.area === areaId);
+            hold(ordered, {
+              order: adjusted.order?.filter((e) => e !== id) ?? null,
+              excludeIds: [...adjusted.excludeIds, id],
+              swappedOut: without(adjusted.swappedOut, id),
+              unlabelledPins: without(adjusted.unlabelledPins, id),
+              mainPickId: adjusted.mainPickId === id ? null : adjusted.mainPickId,
+              addedIds: without(adjusted.addedIds, id),
+              ...(last
+                ? { removedAreas: [...adjusted.removedAreas.filter((a) => a !== areaId), areaId] }
+                : {}),
+            });
+            setNotTodayLines((lines) => lines.filter((l) => l.newId !== id));
+            if (!last) return "ok";
+            // The page returns to UF-08.2 (REPLACE, so Back doesn't return to an empty area).
+            setAreaNotice(en.uf08.areaRemoved(en.bodyMap.areas[areaId]));
+            void navigate(`${SETUP_PATH}?step=suggested`, { replace: true });
+            return "last";
+          }}
+          onStartWith={(id) => {
+            const refusal = startWith(id);
+            if (refusal === null) setNotTodayLines((lines) => lines.filter((l) => l.newId !== id));
+            return refusal;
+          }}
+          onAdd={(id): AddOutcome => {
+            // D-0274 §5: local. `insertItem` with `leftS = unusedS` at the end; nothing else in the
+            // plan is rebuilt, so no other area can change. The id is pinned for this visit.
+            if (overMin > 0) return { refused: en.uf08.overRefusal(overMin) };
+            const ex = lib.find((e) => e.id === id);
+            if (ex === undefined)
+              return { refused: en.uf08.noFitIsolation(id, leftMinutes(adjusted.workout)) };
+            for (const a of primaryAreas(ex)) {
+              const n = adjusted.workout.plan.items.filter((i) => {
+                const l = lib.find((e) => e.id === i.exerciseId);
+                return l !== undefined && primaryAreas(l).includes(a);
+              }).length;
+              if (n >= MAX_ITEMS_PER_AREA) return { refused: en.uf08.capArea(en.bodyMap.areas[a]) };
+            }
+            const left = leftMinutes(adjusted.workout);
+            let result: ReturnType<typeof insertItem>;
+            try {
+              result = insertItem(
+                adjusted.workout,
+                id,
+                { atIndex: adjusted.workout.plan.items.length, leftS: adjusted.workout.unusedS },
+                data.history,
+                data.profile,
+                lib,
+                nowIso,
+                tz,
+              );
+            } catch {
+              return { refused: en.uf08.noFitIsolation(ex.name, left) };
+            }
+            if ("refused" in result) {
+              return {
+                refused:
+                  result.refused === "items_cap"
+                    ? en.uf08.capItems(MAX_ITEMS)
+                    : ex.type === "compound"
+                      ? en.uf08.noFitCompound(ex.name, left)
+                      : en.uf08.noFitIsolation(ex.name, left),
+              };
+            }
+            const before = areaGroups(adjusted.workout).map((g) => g.area);
+            const added = result.workout.plan.items.find((i) => i.exerciseId === id);
+            const homeArea = added === undefined ? null : homeAreaOf(added);
+            hold(result.workout, {
+              addedIds: [...without(adjusted.addedIds, id), id],
+              excludeIds: without(adjusted.excludeIds, id),
+              swappedOut: without(adjusted.swappedOut, id),
+              unlabelledPins: without(adjusted.unlabelledPins, id),
+              removedAreas:
+                homeArea === null
+                  ? adjusted.removedAreas
+                  : without(adjusted.removedAreas, homeArea),
+            });
+            return {
+              added: true,
+              homeArea,
+              areaWasNew: homeArea !== null && !before.includes(homeArea),
+              left: leftMinutes(result.workout),
+            };
+          }}
+        />
+      );
+    }
     if (!legacyExerciseList && areaView !== null && loads !== null) {
       const { ctx, overview } = areaView;
       const commit = (workout: Workout, patch: Partial<Adjusted> = {}) =>
@@ -811,6 +1108,16 @@ export function SessionSetup({
             return result;
           }}
           onBudget={(m) => resuggest({ budgetMin: m })}
+          initialStatus={areaNotice}
+          focusArea={returnFocus}
+          onFocused={() => {
+            setReturnFocus(null);
+            setAreaNotice("");
+          }}
+          onOpenArea={(area, index) => {
+            setReturnFocus({ area, index });
+            void navigate(`${SETUP_PATH}?step=area&area=${area}`);
+          }}
         />
       );
     }

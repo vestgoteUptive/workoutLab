@@ -311,4 +311,28 @@ export const uf08 = {
   reasonAreaFull: "Workout is full",
   /** "Looks good"'s reason at no areas (D-0280 §2). */
   needArea: "Add at least one area.",
+
+  // --- T-0996 review follow-ups: feedback where a tap changed nothing ---
+  /** A - (or Remove) the engine refused: the plan is unchanged. */
+  areaChangeFailed: "Couldn't change that. Your plan is unchanged.",
+  /** "Fill the rest for me" had nothing it could add. */
+  fillNothing: "Nothing more fits.",
+
+  // --- UF-08.6 Area detail (T-0997, D-0274 §5, D-0275 §8, D-0276, UF-08.6.md) ---
+  /** "{k} sets · ~{m} min", read-only under the area title. */
+  detailSets: (sets: number, minutes: number) => `${sets} sets · ~${minutes} min`,
+  /** The exercises list of one area. */
+  detailRowsName: (area: string) => `${area} exercises`,
+  notToday: "Not today",
+  howToText: "How to",
+  removeText: "Remove",
+  notTodayName: (name: string) => `Not today, ${name}`,
+  /** "{old} · Not today · Undo": the line's text is `notTodayLine`, its button is `undo`. */
+  notTodayLine: (old: string) => `${old} · Not today · `,
+  notTodayUndoName: (old: string) => `Undo Not today, ${old}`,
+  notTodayBack: (old: string) => `${old} is back.`,
+  notTodayNone: "No other exercise fits. Use Swap.",
+  replacedBy: (old: string, now: string) => `${old} replaced by ${now}.`,
+  removedStatus: (name: string) => `${name} removed.`,
+  addedAreaIn: (name: string, area: string) => `${name} added. ${area} is in your plan now.`,
 } as const;
