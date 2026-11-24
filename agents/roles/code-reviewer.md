@@ -15,7 +15,7 @@ Check, in order:
 2. **Contracts:** any change to a contract path is backed by a decision that names it.
 3. **Correctness:** real bugs with a concrete failing scenario. Skip style nits.
 4. **Principles:** the engine stays deterministic and pure; no LLM picks exercises; focus mode shows one task; the time budget is an input.
-5. **Tests:** each changed behaviour is tested, and no test is skipped or weakened.
+5. **Tests:** each changed behaviour is tested, and no test is skipped or weakened. Don't rerun the suite; at most run `pnpm test:affected --dry-run` to see what the diff should have covered (D-0285).
 6. **Security:** RLS on new tables, no secrets, input validated in Edge Functions.
 
 Return `done` (approve) or `failed`, with `notes` listing findings as `path:line — problem — failing scenario`.

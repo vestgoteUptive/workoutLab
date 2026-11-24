@@ -5,7 +5,7 @@ lane: product
 screens: [UF-08.1, UF-08.2, UF-08.4, UF-08.5, UF-08.6]
 decisions: [D-0274, D-0276, D-0279, D-0280]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 `Design-docs/docs/product/user-flows.md` still describes the exercise-list UF-08.2. The flow index already names UF-08.6 (this idea's commit); the prose and the PRD must follow the decisions so the build and the screen specs have one source (D-0002).
@@ -32,3 +32,4 @@ none.
 Tests for every AC pass · `node .github/scripts/check-all.mjs` green · contracts unchanged or decision linked · commit messages start with `T-0992` and cite UF-08.2.
 
 ## Build / accept log
+- Build (product-owner, 2026-11-24): rewrote UF-08 in `Design-docs/docs/product/user-flows.md` (UF-08.1 Start empty, UF-08.2 Today's plan with Done by, Focus mode disclosure, Start workout and the five states, new UF-08.6, UF-08.5 Add local, UF-08.3 note, UF-08.4 one-line retired note, "planned" paragraph removed) and `docs/PRD.md` (UF-08 row lists .4 retired, new D-0274 and D-0277 row, Reorder and the voice-cue line no longer name a UF-08.4 screen). No test file added: the ticket's Paths allow only docs, so AC2 to AC6 were checked by a scratch script outside the repo (25 checks, fault planted and restored with cp and cmp); a committed docs-pin test needs a lane that may write `packages/design-tokens/test` (follow-up for the orchestrator). Ran `check-all.mjs` (only the expected `ticket-not-on-base`), `format:check`, `test:repo-checks` (4 failures, all that same error), design-tokens test (349 pass). `test:affected` does not exist yet.

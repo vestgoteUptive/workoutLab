@@ -18,4 +18,4 @@ Separation rules, which let several frontend tickets run in parallel:
 
 Build from `Design-docs/docs/design/screens/UF-xx.n.md` when it exists, otherwise from the prototype `.dc.html`. Focus mode (UF-09) shows one task per screen. Everything else goes behind Pause.
 
-Test each AC with Vitest + Testing Library (fake timers for countdowns). Add a Playwright spec in your feature folder's `__e2e__` for the happy path; QA wires it into `tests/e2e`. Check the PWA works offline for logging sets.
+Test each AC with Vitest + Testing Library (fake timers for countdowns). Add a Playwright spec in your feature folder's `__e2e__` for the happy path; QA wires it into `tests/e2e`. Check the PWA works offline for logging sets. Before you hand back, run `pnpm test:affected --e2e` (D-0285): your feature's unit tests, its e2e specs and the package typecheck and lint, not the whole suite. If it prints `full`, you touched a shared path; follow `_common` for that.

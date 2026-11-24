@@ -22,6 +22,8 @@ A swap made on the floor (UF-09.9 → UF-05.1) is the strongest signal, but the 
 - AC5 Given the paused screen and focus mode before and after a swap, Then the DOM has no new element, text or live region (snapshot of the screen is unchanged apart from the swap itself) and the existing UF-09 tests pass unchanged.
 - AC6 Given a cancelled swap sheet, Then no signal.
 
+- Release hold (T-1001 security review): no deploy that contains this ticket until T-1010 (privacy notice) is merged; list it in the PR to `main`.
+
 ## Paths you may change
 `apps/web/src/features/UF-09/**`. Not parallel with another UF-09 ticket.
 
