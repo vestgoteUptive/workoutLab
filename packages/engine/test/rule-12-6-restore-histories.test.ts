@@ -80,6 +80,7 @@ describe("T-1022 rule-12-6 restore over simulated histories (AC9)", () => {
   it.each(HISTORIES)(
     "T-1022 AC9 %s: a main-lift change in between restores an accessory, never over budget",
     (_n, history) => {
+      let demoted = 0;
       for (const budgetMin of BUDGETS) {
         for (const energy of ENERGIES) {
           const w = suggest(
@@ -114,9 +115,12 @@ describe("T-1022 rule-12-6 restore over simulated histories (AC9)", () => {
             expect(restored.isMain).toBe(false);
             expect(restored.sets).toBeLessThanOrEqual(3);
             expect(back.plan.mainLiftId).toBe(other?.id);
+            demoted += 1;
           }
         }
       }
+      // Non-vacuity (T-1022 review): the grid must reach a demoted restore at least once.
+      expect(demoted).toBeGreaterThan(0);
     },
   );
 });
