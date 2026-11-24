@@ -30,6 +30,8 @@ Checklist (D-0197 §7): online/offline, replay/first send, own row/other device'
 
 - Note (T-1001 security review): writes that touch `learn_from_edits` or `learn_reset_at` send only the changed fields, never a full cached profile upsert. e2e: opted out on device A, device B saves the profile, learning stays off.
 
+- From the T-1007 review: add `ackSynced(key, lastSeenSent)` that clears `dirty` only if the entry's `lastSeen` is unchanged, so a signal counted during an in-flight push is not marked clean. Comment on `ledgerKey` that it is the `edit_signals.key`, not a user-scoped cache key.
+
 ## Paths you may change
 `apps/web/src/lib/**` (offline, account, profile). Not parallel with another web-shell ticket that edits `lib/offline`.
 
