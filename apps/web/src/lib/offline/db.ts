@@ -11,6 +11,7 @@ import type {
   AreaTarget,
   Database as SupabaseDatabase,
   EngineProfile,
+  LearningPrefs,
   LibraryExercise,
   PlanCheckin,
   Unilateral,
@@ -103,6 +104,9 @@ export interface CachedProfile {
   profile: EngineProfile;
   /** Bar and plate sizes (D-0218, T-0632). Optional: a row written by an older build has none. */
   barbell?: { barKg: number; platesKg: number[] };
+  /** `learn_from_edits` and `learn_reset_at` (D-0281 §4, T-1007). Optional: a row written by an
+   *  older build has none, which reads as learning on and no reset epoch. */
+  learning?: LearningPrefs;
 }
 
 /** The UF-04 how-to text of one exercise, plus its variant ids (D-0067 §3, NFR-OFF-1).
@@ -221,6 +225,31 @@ export interface QueuedExerciseSetting {
   status: QueuedExerciseSettingStatus;
 }
 
+/** One edit-ledger entry on this device (T-1007, D-0281 §2). `key` is `userScopedKey(userId,
+ *  ledgerKey)`; `ledgerKey` is the `edit_signals.key` (`swap:{from}:{to}` or `removal:{id}`).
+ *  The other fields are `LedgerEntry` (edit-ledger-rules.ts). */
+export interface StoredLedgerEntry {
+  key: string;
+  userId: string;
+  ledgerKey: string;
+  kind: "swap" | "removal";
+  exerciseId: string;
+  toExerciseId: string | null;
+  count: number;
+  windowStart: string;
+  lastSeen: string;
+  askedAt: string | null;
+  dirty: boolean;
+  visits: string[];
+}
+
+/** The random id of this device for one user (T-1007, D-0281 §1): made at the first signal, kept
+ *  in the same database as the ledger so both are lost together. */
+export interface LedgerMeta {
+  userId: string;
+  deviceId: string;
+}
+
 export const DB_NAME = "wl-offline";
 
 export class OfflineDb extends Dexie {
@@ -244,6 +273,9 @@ export class OfflineDb extends Dexie {
   // Version 5 (T-0954, D-0251): the user's own weight steps and their write queue.
   exerciseSettings!: Table<CachedExerciseSetting, string>;
   exerciseSettingsQueue!: Table<QueuedExerciseSetting, string>;
+  // Version 7 (T-1007, D-0281): the on-device edit ledger and this device's id.
+  editLedger!: Table<StoredLedgerEntry, string>;
+  editLedgerMeta!: Table<LedgerMeta, string>;
 
   constructor(name: string = DB_NAME) {
     super(name);
@@ -289,6 +321,12 @@ export class OfflineDb extends Dexie {
     // until the next `refreshHistory()` rewrites it.
     this.version(6).stores({
       historyCache: "key, userId, completedAt",
+    });
+    // Version 7 (T-1007) only adds two stores: no `.upgrade()`, so no queued row can change
+    // (NFR-OFF-2). Both start empty and are filled by the first counted signal.
+    this.version(7).stores({
+      editLedger: "key, userId, lastSeen",
+      editLedgerMeta: "userId",
     });
   }
 }
