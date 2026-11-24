@@ -775,3 +775,213 @@
 .wl-uf08[data-wl-state] .wl-uf08__suggest-row .wl-uf08__suggest-add {
   margin-block-start: 8px;
 }
+
+/* ---- UF-08.2 Today's plan, by area (T-0996, D-0276, UF-08.2.md). Existing --wl-* tokens only. ---- */
+.wl-uf08__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wl-uf08__heading .wl-uf08__title {
+  margin-block: 8px 0;
+}
+
+/* Hairline rows on --wl-bg (no card fill): muted text is 5.9:1 on the page, 4.2:1 on --wl-raise. */
+.wl-uf08__areas,
+.wl-uf08__candidates {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-block-start: 1px solid var(--wl-line);
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__area {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 8px;
+  padding-block: 0 12px;
+}
+
+.wl-uf08__area-open {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  inline-size: 100%;
+  min-block-size: 64px;
+  padding: 12px 0 0;
+  color: var(--wl-ink);
+  text-align: start;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.wl-uf08__area-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  min-inline-size: 0;
+}
+
+.wl-uf08__area-line > svg {
+  flex: none;
+  align-self: center;
+  margin-inline-start: auto;
+}
+
+.wl-uf08__area-name {
+  overflow-wrap: anywhere;
+}
+
+.wl-uf08__area-minutes,
+.wl-uf08__area-count {
+  color: var(--wl-ink-muted);
+  font-size: 0.9375rem;
+}
+
+.wl-uf08__area-open:focus-visible,
+.wl-uf08__sets-btn:focus-visible,
+.wl-uf08__summary:focus-visible,
+.wl-uf08__fill:focus-visible,
+.wl-uf08__candidate-add:focus-visible {
+  outline: 2px solid var(--wl-focus);
+  outline-offset: 2px;
+}
+
+/* The stepper: - value + centred, 8 px apart; it wraps at 200 % zoom and never clips. */
+.wl-uf08__sets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.wl-uf08__sets-btn {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 48px;
+  min-block-size: 48px;
+  padding: 0 12px;
+  color: var(--wl-ink);
+  background: transparent;
+  border: 1.5px solid var(--wl-ink);
+  border-radius: var(--wl-radius-pill);
+  font: inherit;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.wl-uf08__sets-btn[data-remove="true"] {
+  min-inline-size: 96px;
+}
+
+.wl-uf08__sets-btn[aria-disabled="true"] {
+  color: var(--wl-ink-muted);
+  border-color: var(--wl-ink-muted);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) {
+  .wl-uf08__sets-btn:hover:not([aria-disabled="true"]) {
+    box-shadow: inset 0 0 0 0.5px var(--wl-ink);
+  }
+}
+
+.wl-uf08__sets-value {
+  min-inline-size: 72px;
+  color: var(--wl-ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: center;
+}
+
+.wl-uf08__refusal,
+.wl-uf08__area-history {
+  margin: 0;
+  color: var(--wl-ink-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  text-align: center;
+  overflow-wrap: break-word;
+}
+
+.wl-uf08__candidate-body .wl-uf08__area-history {
+  text-align: start;
+}
+
+/* Add an area and the Focus-mode style disclosure: a native details with a 48 px summary. */
+.wl-uf08__add-area {
+  display: flex;
+  flex-direction: column;
+}
+
+.wl-uf08__summary {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-block-size: 48px;
+  color: var(--wl-ink);
+  cursor: pointer;
+  list-style: none;
+  border-block-end: 1px solid var(--wl-line);
+}
+
+.wl-uf08__summary::-webkit-details-marker {
+  display: none;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__candidate {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-block-size: 64px;
+}
+
+.wl-uf08__candidate-body {
+  display: flex;
+  flex: 1 1 9rem;
+  flex-direction: column;
+  gap: 2px;
+  min-inline-size: 0;
+}
+
+.wl-uf08__candidate-add {
+  inline-size: auto;
+  min-inline-size: 96px;
+  min-block-size: 48px;
+}
+
+.wl-uf08[data-wl-state] .wl-uf08__fill {
+  align-self: flex-start;
+}
+
+/* UF-08.2 only: the five time chips share one row at 320 px (5 x 44 + 4 x 8 = 252 px) and wrap at
+   200 % zoom, where the shared grid would push the page sideways. UF-08.1 keeps its grid. */
+.wl-uf08[data-screen-id="UF-08.2"] .wl-uf08__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.wl-uf08[data-screen-id="UF-08.2"] .wl-uf08__chip {
+  flex: 0 0 auto;
+}
+
+.wl-uf08__heading .wl-uf08__title,
+.wl-uf08__skipping,
+.wl-uf08__budget-text {
+  overflow-wrap: anywhere;
+}

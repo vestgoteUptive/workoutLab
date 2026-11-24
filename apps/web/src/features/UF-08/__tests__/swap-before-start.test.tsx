@@ -61,7 +61,8 @@ const sheet = vi.mocked(SwapSheet);
 const upsert = vi.mocked(upsertSession);
 
 const NOW = "2026-09-27T10:00:00Z";
-const props = { now: NOW, locale: "en-GB", timeZone: "UTC" };
+// T-0996 AC14: this file tests the old exercise list, which only `legacyExerciseList` still reaches.
+const props = { now: NOW, locale: "en-GB", timeZone: "UTC", legacyExerciseList: true };
 
 /** W5: bench-press x 4 (main), barbell-row x 3, leg-extension x 2, budget 30, warm-up in. */
 function w5(): Workout {

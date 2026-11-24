@@ -257,4 +257,58 @@ export const uf08 = {
     `Your workout is ${over} min over ${budgetMin} min. Remove or swap an exercise.`,
   suggestionsFull: (budgetMin: number) => `Your ${budgetMin} min are full.`,
   suggestionsNone: "No suggestions right now. Search to add an exercise.",
+
+  // --- UF-08.2 Today's plan, by area (T-0996, D-0274 to D-0276, D-0280, D-0286, UF-08.2.md) ---
+  /** The h1: the areas in the engine's priority order, " · "-joined. */
+  areaTitle: (areas: readonly string[]) => `Today: ${areas.join(" · ")}`,
+  /** The h1 with no areas (Start empty, everything removed). */
+  areaTitleEmpty: "Today: pick your areas",
+  /** Under the h1: now plus the plan's minutes. `time` arrives formatted by `formatTime`. */
+  doneByLine: (time: string) => `Done by ${time}`,
+  /** Under the h1 with no areas: the minutes chosen on UF-08.1. */
+  minToFill: (minutes: number) => `${minutes} min to fill`,
+  /** The time bar's line over the budget (words, no colour change, D-0211 §5). */
+  areaBudgetOver: (minutes: number, budgetMin: number, over: number, warmupOutside: boolean) =>
+    `About ${minutes} of ${budgetMin} min${warmupOutside ? " + warm-up" : ""}, ${over} min over`,
+  /** Accessible name of the list of area rows. */
+  areaRowsName: "Areas in today's plan",
+  areaMinutes: (minutes: number) => `~${minutes} min`,
+  exercisesCount: (n: number) => `${n} ${n === 1 ? "exercise" : "exercises"}`,
+  /** The open button's name: it starts with the visible area name (WCAG 2.5.3). */
+  areaOpenName: (area: string, minutes: number, exercises: number) =>
+    `${area}, ~${minutes} min, ${exercises} ${exercises === 1 ? "exercise" : "exercises"}`,
+  setsGroupName: (area: string) => `Sets for ${area}`,
+  setsValue: (sets: number) => `${sets} ${sets === 1 ? "set" : "sets"}`,
+  setLessName: (area: string) => `One set less for ${area}`,
+  setMoreName: (area: string) => `One set more for ${area}`,
+  /** At the 2-set minimum the minus becomes this (visible text); its name is `removeAreaName`. */
+  removeAreaText: "Remove",
+  removeAreaName: (area: string) => `Remove ${area}`,
+  /** `load` and `target` arrive formatted by `formatSetCount`. */
+  historyLine: (load: string, target: string) => `Last 14 days: ${load} of ${target} sets`,
+  areaRefuseTime: "No time for another set. Pick more time or remove a set elsewhere.",
+  areaRefuseFull: (area: string) => `${area} already has the most sets it can hold.`,
+  /** The status line after a + or a - (the area's sets now and the minutes left). */
+  areaSets: (area: string, sets: number, left: number) =>
+    `${area}: ${sets} sets, ${left} min left.`,
+  /** The - took out the area's second exercise rather than a set (D-0287 §1). */
+  areaSecondGone: (area: string, sets: number, left: number) =>
+    `${area}: ${sets} sets, second exercise removed. ${left} min left.`,
+  areaRemoved: (area: string) => `${area} removed. Add it back below.`,
+  areaAdded: (area: string, left: number) => `${area} added. ${left} min left.`,
+  areasAdded: (count: number, left: number) => `${count} areas added. ${left} min left.`,
+  /** After a time chip: the set edits and the added areas are dropped (D-0274 §8). */
+  planRebuilt: (minutes: number) =>
+    `Plan rebuilt for ${minutes} min. Your set changes were cleared.`,
+  /** In place of the rows when no area can be added at all. */
+  noAreasNow: (count: number) => `No areas right now. ${count} are recovering or skipped today.`,
+  addAreaSummary: "Add an area",
+  /** The four reasons an area can't be added, and the fifth (D-0286 §1). */
+  reasonAreaRecovering: "Recovering",
+  reasonAreaSkipping: "Skipping today",
+  reasonAreaNoExercise: "No exercise available",
+  reasonAreaNoTime: "No time left",
+  reasonAreaFull: "Workout is full",
+  /** "Looks good"'s reason at no areas (D-0280 §2). */
+  needArea: "Add at least one area.",
 } as const;

@@ -152,8 +152,10 @@ describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (
       .filter((f) => /\.tsx?$/.test(f))
       .map((f) => ({ name: f.split("/").at(-1)!, source: readFileSync(f, "utf8") }));
 
-  it("only Suggested.tsx mentions lib/i18n/workout, in any import form", () => {
-    expect(workoutImporters(files())).toEqual(["Suggested.tsx"]);
+  // T-0996 AC14: the area plan renders the why chips, so AreaPlan.tsx joins Suggested.tsx (which
+  // T-0998 deletes) as an importer; nothing else may.
+  it("only AreaPlan.tsx and Suggested.tsx mention lib/i18n/workout, in any import form", () => {
+    expect(workoutImporters(files())).toEqual(["AreaPlan.tsx", "Suggested.tsx"]);
   });
 
   it("contrast: a namespace, type-only or extensionless import elsewhere is caught", () => {
@@ -164,24 +166,28 @@ describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (
       'export { areaName } from "../../lib/i18n/workout.js";\n',
     ]) {
       expect(workoutImporters([...base, { name: "Other.tsx", source }]), source).toEqual([
+        "AreaPlan.tsx",
         "Suggested.tsx",
         "Other.tsx",
       ]);
     }
   });
 
-  it("Suggested.tsx imports only names workout.ts exports", async () => {
-    const workout = await import("../../../lib/i18n/workout.js");
-    const source = files().find((f) => f.name === "Suggested.tsx")!.source;
-    const imports = [
-      ...source.matchAll(/import \{([^}]*)\} from "\.\.\/\.\.\/lib\/i18n\/workout\.js"/g),
-    ];
-    expect(imports).toHaveLength(1);
-    const names = imports[0]![1]!
-      .split(",")
-      .map((n) => n.trim())
-      .filter(Boolean);
-    expect(names.length).toBeGreaterThan(0);
-    for (const name of names) expect(Object.keys(workout), name).toContain(name);
-  });
+  it.each(["AreaPlan.tsx", "Suggested.tsx"])(
+    "%s imports only names workout.ts exports",
+    async (file) => {
+      const workout = await import("../../../lib/i18n/workout.js");
+      const source = files().find((f) => f.name === file)!.source;
+      const imports = [
+        ...source.matchAll(/import \{([^}]*)\} from "\.\.\/\.\.\/lib\/i18n\/workout\.js"/g),
+      ];
+      expect(imports).toHaveLength(1);
+      const names = imports[0]![1]!
+        .split(",")
+        .map((n) => n.trim())
+        .filter(Boolean);
+      expect(names.length).toBeGreaterThan(0);
+      for (const name of names) expect(Object.keys(workout), name).toContain(name);
+    },
+  );
 });

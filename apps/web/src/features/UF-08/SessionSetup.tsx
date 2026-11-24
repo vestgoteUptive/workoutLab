@@ -34,8 +34,10 @@ import {
   AREAS,
   MAX_ITEMS,
   MAX_ITEMS_PER_AREA,
+  balance,
   excludedOutAreas,
   isEligible,
+  orderItems,
   primaryAreas,
   recoveringAreas,
   removeItem,
@@ -55,7 +57,17 @@ import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js"
 import { favoriteIdsFor } from "../../lib/offline/favorites.js";
 import { useFavoriteList } from "../../lib/offline/favorites-hooks.js";
 import { SwapSheet } from "../UF-05/index.js";
+import { AreaPlan, type AreaLoad } from "./AreaPlan.js";
 import { Ready } from "./Ready.js";
+import {
+  adjustSets,
+  editContext,
+  fillRest as fillAreas,
+  overviewOf,
+  putIn,
+  takeOut,
+  type PlanOverview,
+} from "./area-plan-engine.js";
 import { mergeOrder, permute } from "./order.js";
 import { Suggested } from "./Suggested.js";
 import {
@@ -88,6 +100,12 @@ export interface SessionSetupProps {
   locale?: string;
   /** The `tz` given to `suggest` and `refreshAll`. Defaults to the device's zone. */
   timeZone?: string;
+  /**
+   * T-0996: renders UF-08.2 as the old exercise list (Reorder, Shuffle, empty-mode Suggestions).
+   * The product never sets it: that list is unreachable. Tests of it keep running through this
+   * flag until T-0998 deletes the code and those tests together.
+   */
+  legacyExerciseList?: boolean;
 }
 
 function defaultLocale(): string {
@@ -167,6 +185,11 @@ interface Adjusted {
   mainPickId: string | null;
   /** True while the plan is empty because Remove took the last row (T-0521, D-0191 §5). */
   emptiedByRemove: boolean;
+  /**
+   * T-0996 (D-0274 §3, D-0286 §2): the areas the user took out of the plan on this visit. They are
+   * skipped for rebuilds like the UF-08.1 chips, but their "Add" puts them back. Per visit.
+   */
+  removedAreas: Area[];
 }
 
 function runSuggest(
@@ -207,6 +230,7 @@ export function SessionSetup({
   clock = systemClock,
   locale,
   timeZone,
+  legacyExerciseList = false,
 }: SessionSetupProps = {}) {
   const [nowIso] = useState(() => new Date(now ?? new Date()).toISOString());
   const [loc] = useState(() => locale ?? defaultLocale());
@@ -309,7 +333,14 @@ export function SessionSetup({
     ? `${adjusted.workout.plan.items.map((i) => i.exerciseId).join(",")}|${adjusted.workout.unusedS}|${adjusted.workout.itemsTotalS}`
     : "";
   const suggestions = useMemo<SuggestionList | null>(() => {
-    if (!showSuggested || adjusted === null || adjusted.mode !== "empty" || data === null) {
+    // T-0996: the exercise Suggestions list belongs to the old list; the area plan makes no call.
+    if (
+      !showSuggested ||
+      !legacyExerciseList ||
+      adjusted === null ||
+      adjusted.mode !== "empty" ||
+      data === null
+    ) {
       return null;
     }
     return computeSuggestions((input) => runSuggest(data, input, nowIso, tz), {
@@ -331,6 +362,7 @@ export function SessionSetup({
     // `adjusted` is read through the listed fields and `planSig` only.
   }, [
     showSuggested,
+    legacyExerciseList,
     data,
     adjusted?.mode,
     adjusted?.addedIds,
@@ -344,6 +376,45 @@ export function SessionSetup({
     avoidAreas,
     stored,
     favoriteIds,
+    nowIso,
+    tz,
+  ]);
+  // T-0996: the area plan's engine reads. `loads` is the 14-day history line of every row (rule
+  // 11, on the device); `areaView` holds the edit context and the addable areas / refused + of the
+  // current plan, recomputed when the plan changes only.
+  const areaPlanOn = showSuggested && !legacyExerciseList && adjusted !== null && data !== null;
+  const loads = useMemo<Readonly<Record<Area, AreaLoad>> | null>(() => {
+    if (!areaPlanOn || data === null) return null;
+    const result = balance(data.history, data.targets, data.library, nowIso, tz);
+    return Object.fromEntries(
+      result.areas.map((a) => [a.area, { load: a.load, target: a.target }]),
+    ) as Record<Area, AreaLoad>;
+  }, [areaPlanOn, data, nowIso, tz]);
+  const areaView = useMemo(() => {
+    if (!areaPlanOn || data === null || adjusted === null) return null;
+    const ctx = editContext(data, {
+      excludeIds: excludeIdsFor(stored, adjusted.excludeIds),
+      favoriteIds: favoriteIdsFor(favoriteIds),
+      avoidAreas,
+      nowIso,
+      tz,
+    });
+    let overview: PlanOverview;
+    try {
+      overview = overviewOf(adjusted.workout, ctx);
+    } catch {
+      overview = { candidates: [], stepRefusals: {} };
+    }
+    return { ctx, overview };
+    // `adjusted` is read through its workout and exclusions only.
+  }, [
+    areaPlanOn,
+    data,
+    adjusted?.workout,
+    adjusted?.excludeIds,
+    stored,
+    favoriteIds,
+    avoidAreas,
     nowIso,
     tz,
   ]);
@@ -370,7 +441,12 @@ export function SessionSetup({
   };
 
   if (showReady) {
-    return <Ready workout={adjusted.workout} clock={clock} locale={loc} timeZone={tz} />;
+    // T-0996 (D-0275 §7): the plan is run, and written at Start, in the engine's automatic order.
+    const run =
+      legacyExerciseList || data === null
+        ? adjusted.workout
+        : orderItems(adjusted.workout, data.library);
+    return <Ready workout={run} clock={clock} locale={loc} timeZone={tz} />;
   }
 
   if (showSwap) {
@@ -429,6 +505,8 @@ export function SessionSetup({
 
   if (showSuggested && data !== null) {
     const empty = adjusted.mode === "empty";
+    // T-0996 (D-0191, D-0286 §2): a rebuild skips the UF-08.1 areas and the ones removed here.
+    const skipAreas = AREAS.filter((a) => avoid.has(a) || adjusted.removedAreas.includes(a));
     const plan = adjusted.workout.plan;
     // D-0239 §13.1: only a UF-08.3 swap confirmed with `fitsBudget: false` gets here.
     const overMin = overMinutes(adjusted.workout);
@@ -454,7 +532,7 @@ export function SessionSetup({
       pinnedIds: [...o.pinnedIds],
       excludeIds: excludeIdsFor(stored, o.excludeIds),
       favoriteIds: favoriteIdsFor(favoriteIds),
-      ...(avoidAreas.length > 0 ? { avoidAreas } : {}),
+      ...(skipAreas.length > 0 ? { avoidAreas: skipAreas } : {}),
       ...(emptyCall ? { autoMainLift: false, fill: false } : {}),
     });
     // D-0239 §1: the record's main pick wins; suggested mode falls back to the plan's main lift.
@@ -468,7 +546,7 @@ export function SessionSetup({
       plan.items.find((i) => !result.plan.items.some((r) => r.exerciseId === i.exerciseId))
         ?.exerciseId ?? null;
     /** One `suggest` call with the inputs record (D-0109 §2); a rejection keeps the plan. */
-    const resuggest = (change: { budgetMin?: number; shuffle?: number }): boolean => {
+    const resuggest = (change: { budgetMin?: number; shuffle?: number }): Workout | null => {
       const next = {
         budgetMin: change.budgetMin ?? budgetMin,
         shuffle: change.shuffle ?? adjusted.shuffle,
@@ -485,7 +563,7 @@ export function SessionSetup({
         nowIso,
         tz,
       );
-      if (result === null) return false;
+      if (result === null) return null;
       if (next.budgetMin !== budgetMin) setBudgetMin(next.budgetMin);
       const merged = mergeOrder(adjusted.order, result);
       setAdjusted({
@@ -499,8 +577,9 @@ export function SessionSetup({
         unlabelledPins: adjusted.unlabelledPins,
         mainPickId: adjusted.mainPickId,
         emptiedByRemove: false,
+        removedAreas: adjusted.removedAreas,
       });
-      return true;
+      return merged.workout;
     };
     /**
      * T-0573 (D-0205 §1): one `suggest` call pinning `id` after this visit's adds. The engine
@@ -547,6 +626,7 @@ export function SessionSetup({
           unlabelledPins: adjusted.unlabelledPins.filter((e) => e !== id),
           mainPickId: asMain ? id : adjusted.mainPickId,
           emptiedByRemove: false,
+          removedAreas: adjusted.removedAreas,
         });
         return null;
       }
@@ -628,6 +708,7 @@ export function SessionSetup({
               : adjusted.unlabelledPins,
           mainPickId: id,
           emptiedByRemove: false,
+          removedAreas: adjusted.removedAreas,
         });
         return null;
       }
@@ -672,6 +753,66 @@ export function SessionSetup({
       else if (!isEligible(e, data.profile, [])) blocked[e.id] = en.uf08.reasonLevel;
       else if (skip !== undefined) blocked[e.id] = en.uf08.reasonSkipping(en.bodyMap.areas[skip]);
       else if (rec !== undefined) blocked[e.id] = en.uf08.reasonRecovering(en.bodyMap.areas[rec]);
+    }
+    const keptIds = [
+      // D-0239 §1: a dropped main pick is named like a pin; in empty mode every pick is.
+      ...(adjusted.mainPickId !== null ? [adjusted.mainPickId] : []),
+      // D-0240 §3 (T-0943): a dropped swap-in is named too, so it is never silently gone.
+      ...adjusted.addedIds,
+    ].filter((id, i, all) => all.indexOf(id) === i);
+    if (!legacyExerciseList && areaView !== null && loads !== null) {
+      const { ctx, overview } = areaView;
+      const commit = (workout: Workout, patch: Partial<Adjusted> = {}) =>
+        setAdjusted({ ...adjusted, workout, emptiedByRemove: false, ...patch });
+      return (
+        <AreaPlan
+          mode={adjusted.mode}
+          workout={adjusted.workout}
+          library={data.library}
+          locale={loc}
+          timeZone={tz}
+          clock={clock}
+          loads={loads}
+          overview={overview}
+          avoidAreas={avoidAreas}
+          removedAreas={adjusted.removedAreas}
+          noticeAreas={noticeAreas}
+          keptIds={keptIds}
+          exclusionFailed={exclusionFailed}
+          onAdjust={(area, delta) => {
+            // D-0275 §3: one engine call. Over budget refuses a + before it is asked (D-0274 §9).
+            if (delta === 1 && overMin > 0) return { refused: "time" };
+            const result = adjustSets(adjusted.workout, area, delta, ctx);
+            if ("workout" in result) commit(result.workout);
+            return result;
+          }}
+          onRemoveArea={(area) => {
+            const result = takeOut(adjusted.workout, area);
+            if ("workout" in result) {
+              // D-0274 §3: the area joins this visit's skipped areas, so a rebuild keeps it out.
+              commit(result.workout, {
+                removedAreas: [...adjusted.removedAreas.filter((a) => a !== area), area],
+              });
+            }
+            return result;
+          }}
+          onAddArea={(area) => {
+            const result = putIn(adjusted.workout, area, ctx);
+            if ("workout" in result) {
+              commit(result.workout, {
+                removedAreas: adjusted.removedAreas.filter((a) => a !== area),
+              });
+            }
+            return result;
+          }}
+          onFillRest={() => {
+            const result = fillAreas(adjusted.workout, ctx, adjusted.removedAreas);
+            if (result.added.length > 0) commit(result.workout);
+            return result;
+          }}
+          onBudget={(m) => resuggest({ budgetMin: m })}
+        />
+      );
     }
     return (
       <Suggested
@@ -730,12 +871,7 @@ export function SessionSetup({
         focusSwapItem={focusSwapItem}
         onSwapFocused={() => setFocusSwapItem(null)}
         addedIds={adjusted.addedIds.filter((a) => !adjusted.unlabelledPins.includes(a))}
-        keptIds={[
-          // D-0239 §1: a dropped main pick is named like a pin; in empty mode every pick is.
-          ...(adjusted.mainPickId !== null ? [adjusted.mainPickId] : []),
-          // D-0240 §3 (T-0943): a dropped swap-in is named too, so it is never silently gone.
-          ...adjusted.addedIds,
-        ].filter((id, i, all) => all.indexOf(id) === i)}
+        keptIds={keptIds}
         catalog={data.library}
         blocked={blocked}
         favoriteIds={favoriteIds}
@@ -796,6 +932,7 @@ export function SessionSetup({
       unlabelledPins: [],
       mainPickId: null,
       emptiedByRemove: false,
+      removedAreas: [],
     });
     void navigate(`${SETUP_PATH}?step=suggested`);
   };
@@ -826,6 +963,7 @@ export function SessionSetup({
       unlabelledPins: [],
       mainPickId: null,
       emptiedByRemove: false,
+      removedAreas: [],
     });
     void navigate(`${SETUP_PATH}?step=suggested`);
   };

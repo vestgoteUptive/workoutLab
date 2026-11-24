@@ -13,7 +13,18 @@ import * as history from "../../../lib/offline/history.js";
 import { SessionSetup, type SessionSetupProps } from "../SessionSetup.js";
 import { LOCALE, NOW, TZ, fLibrary, fProfile, fTargets } from "./fixtures.js";
 
-export const F_TZ_PROPS: SessionSetupProps = { now: NOW, locale: LOCALE, timeZone: TZ };
+// T-0996 AC14: the tests of the old exercise list (Reorder, Shuffle, empty-mode Suggestions, per-row
+// Swap and Remove) run on it through `legacyExerciseList`, which the product never sets: the list
+// is unreachable since UF-08.2 became the area plan. T-0998 deletes it together with those tests.
+export const F_TZ_PROPS: SessionSetupProps = {
+  now: NOW,
+  locale: LOCALE,
+  timeZone: TZ,
+  legacyExerciseList: true,
+};
+
+/** The product's UF-08.2: the area plan (T-0996). */
+export const AREA_PLAN_PROPS: SessionSetupProps = { now: NOW, locale: LOCALE, timeZone: TZ };
 
 function LocationProbe() {
   const location = useLocation();
