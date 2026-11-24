@@ -303,7 +303,7 @@ Owner request 2026-11-24: "I spent a lot of time in the suggested workout with e
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0992 | User flows v2 and PRD: UF-08.2 rewritten by area, UF-08.6 added, Reorder, Shuffle and empty-mode Suggestions retired, Start empty folded in, Start folded into the plan and UF-08.4 retired (D-0274, D-0276, D-0280) | product | — | ready | wl-idea |
+| T-0992 | User flows v2 and PRD: UF-08.2 rewritten by area, UF-08.6 added, Reorder, Shuffle and empty-mode Suggestions retired, Start empty folded in, Start folded into the plan and UF-08.4 retired (D-0274, D-0276, D-0280) | product | — | done | wl-idea |
 | T-0993 | Screen specs: UF-08.2 Today's plan by area with Start workout, Done by and the Focus mode disclosure, new UF-08.6 Area detail, amended UF-08.1, UF-08.5, UF-08.3; no new token (D-0274, D-0276, D-0280) | design | — | todo | wl-design |
 | T-0994 | Engine rules 7.6 and 12.4: `orderItems` (main lift first, areas alternate, machines grouped) and `areaGroups`; examples, simulated histories, properties, golden `suggest`, re-vendor (D-0275 §2, §7) | engine | — | ready | wl-build-engine |
 | T-0995 | Engine rules 12.5 to 12.7: `adjustAreaSets`, `addArea`, `removeArea`, `areaCandidates`; never over budget, both values per condition, re-vendor (D-0275 §3 to §5) | engine | T-0994 | todo | wl-build-engine |

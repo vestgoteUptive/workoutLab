@@ -5,7 +5,7 @@ lane: product
 screens: [UF-08.1, UF-08.2, UF-08.4, UF-08.5, UF-08.6]
 decisions: [D-0274, D-0276, D-0279, D-0280]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 `Design-docs/docs/product/user-flows.md` still describes the exercise-list UF-08.2. The flow index already names UF-08.6 (this idea's commit); the prose and the PRD must follow the decisions so the build and the screen specs have one source (D-0002).
