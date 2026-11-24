@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.3, UF-08.6]
 decisions: [D-0277, D-0281, D-0280, D-0202, D-0199, D-0235]
 deps: [T-0998, T-1000, T-1008]
-status: todo
+status: done
 ---
 ## Why
 Repeated swaps and removals become preferences with one question, using the existing favorites and excluded lists (`docs/specs/learn-from-edits.md`).
@@ -44,3 +44,11 @@ none.
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-1003` and cite UF-08.2.
 
 ## Build / accept log
+
+- Built by frontend-dev. HEAD at start 56499384, tree clean. New `LearningCard.tsx` (UF-08.2 card, mounted by `AreaPlan` through the `learning` prop, so UF-08.1 and UF-09 never get it); counting in `SessionSetup.tsx`; copy in `uf-08.ts` (`learn`); CSS in `uf-08.css`.
+- Mapping choices (logged defaults, no decision needed): (1) AC9 read as UF-08.1 and UF-09 (UF-08.4 is gone, D-0280). (2) Spec says only the UF-08.6 exercise Remove counts; "Remove {Area}" on UF-08.2 and the stepper never do (no default needed). (3) Swap reason = the `swap` reason on the applied item (as T-1004); equipment taken, variety, short on time are dropped by the ledger. (4) Visit id = a per-host ref, dropped when the record is dropped (back to UF-08.1). (5) Exercises missing from the library are not asked (cannot be named). (6) A later pull adds behind the card on screen, never replaces it.
+- AC to test (`__tests__/learning-prompt.test.tsx`): AC1 "T-1003 AC1 swap card"; AC2 "AC2 removal card"; AC3 "AC3 yes" (both values, Undo, focus); AC4 "AC4 no, and asked once"; AC5b "AC5b counts from another device" (offline too); AC5 "AC5 one at a time"; AC6 "AC6 signals and non-signals" (real store read, plus a positive control); AC7 "AC7 offline" (both values, back online without reload); AC8 "AC8 learning off"; AC9 "AC9 not in focus mode"; AC10 "AC10 write fails"; AC11 "AC11 a11y" (axe with card and after yes, CSS target sizes; region present on mount in "mount and sync"). 320/390 px axe and real px targets need a browser: left to T-1006.
+- Red runs / planted faults (restored with cp, cmp clean): swap line count +1 (AC1 red); removal label (AC2); skip the list write (AC3, AC7 red); no markAsked (AC4); ignore cached account rows (AC5b); queue not advanced (AC5); reason dropped to null and no recordRemoval (AC6, control); no offline guard (AC7, red after adding the no-alert assertion; first plant stayed green, test strengthened); learning flag forced on in the ledger (AC8); swallow write error (AC10); no focus call (AC11). AC9 holds structurally (the card is only reachable from AreaPlan); no fault planted.
+- Gates: see the handback.
+
+- Review nits: (1) `settle` uses `setQueue(prev => prev.filter(...))`, test "an item a pull adds while the answer is writing is not dropped"; fault (old `queue.slice(1)`) red. (2) the `role="alert"` is now a sibling of the status region. (3) "No thanks" whose `markAsked` fails shows the card's "Write failed" copy (card stays, `role="alert"` "Couldn't save. Try again."), the spec's only failure state; fault (guard removed) red. A yes whose mark fails still shows its Undo line (the preference is saved). (4) The React "static flag" stderr came from the test's `mockImplementationOnce` sheet changing implementation between renders; the mock is now stable per mount and the stderr is gone. Our code was fine.

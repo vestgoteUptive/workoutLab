@@ -54,6 +54,7 @@ import { formatTime } from "../../lib/format/intl.js";
 import { en } from "../../lib/i18n/en.js";
 import { excludeExercise, excludeIdsFor, includeExercise } from "../../lib/offline/excluded.js";
 import { useExcludedList, useOnline } from "../../lib/offline/excluded-hooks.js";
+import { recordRemoval, recordSwap as recordSwapSignal } from "../../lib/offline/edit-ledger.js";
 import { favoriteIdsFor } from "../../lib/offline/favorites.js";
 import { useFavoriteList } from "../../lib/offline/favorites-hooks.js";
 import { SwapSheet } from "../UF-05/index.js";
@@ -290,6 +291,13 @@ export function SessionSetup({
   const [finishValue, setFinishValue] = useState("");
   const [finishError, setFinishError] = useState(false);
   const [adjusted, setAdjusted] = useState<Adjusted | null>(null);
+  // T-1003 (D-0277): one id per visit (the edit record), so a signal counts once per visit. Leaving
+  // for UF-08.1 drops the record and with it the id.
+  const visitRef = useRef<string | null>(null);
+  const visitId = (): string => (visitRef.current ??= crypto.randomUUID());
+  useEffect(() => {
+    if (adjusted === null) visitRef.current = null;
+  }, [adjusted]);
   const finishInput = useRef<HTMLInputElement>(null);
   const finishButton = useRef<HTMLButtonElement>(null);
   const finishWasOpen = useRef(finishOpen);
@@ -467,6 +475,23 @@ export function SessionSetup({
     fit: useId(),
   };
 
+  /** Fire and forget: counting never holds up an edit and never throws (T-1004's pattern). */
+  const countSwap = (from: string, item: WorkoutItem | undefined) => {
+    if (item === undefined) return;
+    try {
+      const reason = item.reasons.find((r) => r.code === "swap");
+      void recordSwapSignal(
+        from,
+        item.exerciseId,
+        reason?.code === "swap" ? reason.reason : null,
+        visitId(),
+        new Date(),
+      ).catch(() => undefined);
+    } catch {
+      // Counting must never break a swap.
+    }
+  };
+
   if (showSwap) {
     const leave = (applied: Workout | null) => {
       if (applied !== null) {
@@ -478,6 +503,9 @@ export function SessionSetup({
           setAdjusted({ ...adjusted, workout: next });
         } else {
           setAdjusted(recordSwap(adjusted, next, old, swapIn));
+          // T-1003 (D-0277): a confirmed UF-08.3 swap is a taste signal unless its reason is
+          // about today (the ledger drops equipment taken, variety and short on time).
+          countSwap(old.exerciseId, applied.plan.items[swapItem]);
         }
         setFocusSwapId(swapIn ?? old?.exerciseId ?? null);
       }
@@ -753,6 +781,13 @@ export function SessionSetup({
             } catch {
               return "failed";
             }
+            // T-1003 (D-0277): the exercise Remove on UF-08.6 is the one removal that counts. "Remove
+            // {Area}" on UF-08.2, "Not today" and the set stepper never do.
+            try {
+              void recordRemoval(id, visitId(), new Date()).catch(() => undefined);
+            } catch {
+              // Counting must never break a remove.
+            }
             const ordered = orderItems(next, lib);
             const last = !areaGroups(ordered).some((g) => g.area === areaId);
             hold(ordered, {
@@ -909,6 +944,7 @@ export function SessionSetup({
             setReturnFocus(null);
             setAreaNotice("");
           }}
+          learning={userId ? { userId, library: data.library } : undefined}
           onOpenArea={(area, index) => {
             setReturnFocus({ area, index });
             void navigate(`${SETUP_PATH}?step=area&area=${area}`);

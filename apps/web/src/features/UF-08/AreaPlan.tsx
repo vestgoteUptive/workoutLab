@@ -19,6 +19,7 @@ import {
   areaGroups,
   type Area,
   type AreaCandidate,
+  type LibraryExercise,
   type Workout,
 } from "@workoutlab/engine";
 import { ArrowIcon, ChevronIcon, CrossIcon, Icon } from "../../components/icons/index.js";
@@ -32,6 +33,7 @@ import { upsertSession, type SessionInsert } from "../../lib/offline/queue.js";
 import type { EditResult, PlanOverview } from "./area-plan-engine.js";
 import { leftMinutes, overMinutes } from "./budget.js";
 import { readFocusPrefs, writeFocusPrefs, type FocusPrefs } from "./focus-prefs.js";
+import { LearningCard } from "./LearningCard.js";
 import { exerciseName, type LibraryLookup } from "./rows.js";
 import { CHIPS } from "./time.js";
 
@@ -90,6 +92,8 @@ export interface AreaPlanProps {
   onFocused?: () => void;
   /** Where the host sends a row's open button (UF-08.6). */
   onOpenArea?: (area: Area, index: number) => void;
+  /** T-1003 (D-0277): the learning prompt card. Omitted, no card (UF-08.1 and UF-09 never get it). */
+  learning?: { userId: string; library: readonly LibraryExercise[] } | undefined;
 }
 
 function minutesOf(seconds: number): number {
@@ -170,6 +174,7 @@ export function AreaPlan({
   focusArea = null,
   onFocused,
   onOpenArea,
+  learning,
 }: AreaPlanProps) {
   const navigate = useNavigate();
   const [mountedAt] = useState(() => clock());
@@ -214,6 +219,7 @@ export function AreaPlan({
     { kind: "removed"; index: number } | { kind: "added"; area: Area } | { kind: "filled" };
   const pending = useRef<Pending | null>(null);
   const rowsRef = useRef<HTMLUListElement>(null);
+  const rootRef = useRef<HTMLElement>(null);
   const addSummaryRef = useRef<HTMLElement>(null);
   const fillRef = useRef<HTMLButtonElement>(null);
   const startRef = useRef<HTMLButtonElement>(null);
@@ -450,6 +456,7 @@ export function AreaPlan({
 
   return (
     <section
+      ref={rootRef}
       data-screen-id="UF-08.2"
       data-wl-state="plan"
       className="wl-uf08 wl-page"
@@ -544,6 +551,21 @@ export function AreaPlan({
         </p>
       ) : null}
       <ExcludedAreasNotice areas={noticeAreas} />
+      {learning === undefined ? null : (
+        <LearningCard
+          userId={learning.userId}
+          library={learning.library}
+          now={mountedAt}
+          focusFirstRow={() => {
+            const root = rootRef.current;
+            const target =
+              root?.querySelector<HTMLElement>('[data-part="area-open"]') ??
+              root?.querySelector<HTMLElement>("summary") ??
+              null;
+            target?.focus();
+          }}
+        />
+      )}
 
       {noAreas && mode === "suggested" && removedAreas.length === 0 ? (
         <p className="wl-uf08__fit" data-part="nothing-fits">
