@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.2, UF-08.6]
 decisions: [D-0275, D-0274, D-0191, D-0268]
 deps: [T-0994]
-status: ready
+status: done
 ---
 ## Why
 The area stepper, "Add an area", "Remove" and "Fill the rest for me" must be engine calls (principle 3), local to one area, and never over budget.
