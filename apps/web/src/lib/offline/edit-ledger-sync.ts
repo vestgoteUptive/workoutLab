@@ -28,7 +28,7 @@ import {
   type PendingItem,
   type RemoteSignal,
 } from "./edit-ledger.js";
-import { MAX_ENTRIES, windowOpen } from "./edit-ledger-rules.js";
+import { afterReset, MAX_ENTRIES, windowOpen } from "./edit-ledger-rules.js";
 import { refreshProfile } from "./history.js";
 import { RetryScheduler } from "./retry.js";
 
@@ -111,7 +111,8 @@ async function flushOnce(): Promise<LedgerFlushOutcome> {
     if (currentUserId() !== userId || changing) return changing ? "busy" : "signed-out";
     const now = await loadLearning(userId);
     if (!now.learnFromEdits) return "off";
-    if (now.learnResetAt !== null && e.lastSeen <= now.learnResetAt) continue;
+    // Compare as instants, not strings: the server returns "+00:00" with microseconds (T-1008 re-review).
+    if (afterReset([e], now.learnResetAt).length === 0) continue;
     const { error } = await supabase.from("edit_signals").upsert(
       {
         user_id: userId,

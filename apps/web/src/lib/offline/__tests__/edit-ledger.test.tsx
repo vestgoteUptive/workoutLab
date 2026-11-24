@@ -332,3 +332,14 @@ describe("T-1007 AC12 persistence and device id", () => {
     expect(next).not.toBe(id);
   });
 });
+
+describe("T-1008 re-review: reset comparison is by instant, not by string", () => {
+  it("an entry 200 ms after a server-format reset ('+00:00', microseconds) survives; one at the same instant does not", async () => {
+    const { afterReset } = await import("../edit-ledger-rules.js");
+    const reset = "2026-11-24T10:00:00.123456+00:00";
+    const after = { lastSeen: "2026-11-24T10:00:00.323Z" };
+    const same = { lastSeen: "2026-11-24T10:00:00.123Z" };
+    // As strings "…00.323Z" < "…00.123456+00:00" is false only by luck; check the instants.
+    expect(afterReset([after, same], reset)).toEqual([after]);
+  });
+});
