@@ -559,5 +559,10 @@ describe("T-0985 AC11 accessibility", () => {
       expect(src).not.toMatch(/font-family|rgb\(|hsl\(/);
     }
     expect(css).not.toMatch(/animation|transition/);
+    // Where the tab bar shows, the block gives up the bar's block size and the safe-area inset, so
+    // block + spacer never exceed the viewport (shell.spec T-0527 AC-2).
+    expect(css).toMatch(
+      /html:has\(\.wl-tab-bar\)\s+\.wl-profile-pending\s*\{[^}]*min-height:\s*calc\(100dvh\s*-\s*var\(--wl-tab-bar-block-size\)\s*-\s*env\(safe-area-inset-bottom,\s*0px\)\)/,
+    );
   });
 });

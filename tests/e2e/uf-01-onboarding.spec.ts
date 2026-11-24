@@ -494,6 +494,10 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
       return { actual: getComputedStyle(el).backgroundColor, expected };
     });
     expect(colours.actual).toBe(colours.expected);
+    // The block never makes the page taller than the viewport, and the tab bar stays at the bottom.
+    expect(
+      await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight),
+    ).toBe(true);
     expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
     const results = await new AxeBuilder({ page }).analyze();
     // Same bar as `expectAxeClean`: serious and critical. A blank block has no h1, which axe
