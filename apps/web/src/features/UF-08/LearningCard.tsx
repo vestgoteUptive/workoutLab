@@ -28,7 +28,7 @@ type After =
   | { kind: "undone" }
   | { kind: "no"; name: string };
 
-type FocusTarget = "undo" | "card" | "row";
+type FocusTarget = "undo" | "next" | "row";
 
 const UF = en.uf08;
 const L = UF.learn;
@@ -91,10 +91,15 @@ export function LearningCard({ userId, library, now: mountNow, focusFirstRow }: 
     const target = focusTarget.current;
     if (target === null) return;
     if (target === "row") focusFirstRow();
-    else {
-      const el = target === "undo" ? undoRef.current : yesRef.current;
-      if (el === null) return;
-      el.focus();
+    else if (target === "next") {
+      // The next card's yes button when one took the place, else the first row. A render that
+      // still shows the answered card keeps the request.
+      if (item !== null && answered.current.has(item.key)) return;
+      if (item === null) focusFirstRow();
+      else yesRef.current?.focus();
+    } else {
+      if (undoRef.current === null) return;
+      undoRef.current.focus();
     }
     focusTarget.current = null;
   });
@@ -129,9 +134,10 @@ export function LearningCard({ userId, library, now: mountNow, focusFirstRow }: 
   const settle = (next: After, focus: FocusTarget) => {
     if (item === null) return;
     answered.current.add(item.key);
-    const rest = queue.slice(1);
-    focusTarget.current = focus === "row" && rest.length > 0 ? "card" : focus;
-    setQueue(rest);
+    // A functional update: a pull that finished during the write may have added items behind.
+    const key = item.key;
+    focusTarget.current = focus === "row" ? "next" : focus;
+    setQueue((prev) => prev.filter((i) => i.key !== key));
     setAfter(next);
     setFailed(false);
   };
@@ -150,12 +156,21 @@ export function LearningCard({ userId, library, now: mountNow, focusFirstRow }: 
       busy.current = false;
       return;
     }
+    let marked = false;
     try {
-      await markAsked(item.key, new Date());
+      marked = await markAsked(item.key, new Date());
     } catch {
-      // The preference is saved; a missed mark only means one more ask later.
+      marked = false;
     }
     busy.current = false;
+    if (!yes && !marked) {
+      // UF-08.2.md "Write failed": the card stays with the retry line; never claim "won't ask again".
+      setFailed(true);
+      return;
+    }
+    // A yes whose list write succeeded but whose mark failed still shows its Undo line: the
+    // preference is saved, and the entry drops out of `pending` because it is now a favorite or
+    // excluded.
     if (yes) settle({ kind: "yes", item, name: view.name }, "undo");
     else settle({ kind: "no", name: view.name }, "row");
   };
@@ -182,99 +197,101 @@ export function LearningCard({ userId, library, now: mountNow, focusFirstRow }: 
   const disabled = !online;
 
   return (
-    <div role="status" className="wl-uf08__learn-region" data-part="learning-region">
-      {after?.kind === "yes" ? (
-        <div className="wl-uf08__learn-after" data-part="learning-after">
-          <p className="wl-uf08__learn-after-line">
-            <span>
-              {after.item.kind === "swap" ? L.favoriteNow(after.name) : L.excludedNow(after.name)}
-            </span>
-            <button
-              ref={undoRef}
-              type="button"
-              className="wl-button--text wl-uf08__learn-undo"
-              aria-label={
-                after.item.kind === "swap"
-                  ? L.undoFavoriteName(after.name)
-                  : L.undoExcludedName(after.name)
-              }
-              onClick={() => void undo()}
-            >
-              {UF.undo}
-            </button>
-          </p>
-          <p className="wl-uf08__learn-manage">{L.manage}</p>
-        </div>
-      ) : null}
-      {after?.kind === "undone" ? (
-        <p className="wl-uf08__learn-after-line" data-part="learning-after">
-          {L.undone}
-        </p>
-      ) : null}
-      {after?.kind === "no" ? (
-        <p className="wl-uf08__learn-after-line" data-part="learning-after">
-          {L.wontAsk(after.name)}
-        </p>
-      ) : null}
-      {item !== null && view !== null ? (
-        <div className="wl-uf08__learn" data-part="learning-card" data-kind={item.kind}>
-          <svg
-            className="wl-uf08__learn-icon"
-            viewBox="0 0 24 24"
-            width="20"
-            height="20"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <circle cx="12" cy="12" r="9" />
-            <path d="M12 11v5" />
-            <path d="M12 8h.01" />
-          </svg>
-          <div className="wl-uf08__learn-body">
-            <h2 className="wl-uf08__learn-title">{view.title}</h2>
-            <p className="wl-uf08__learn-line">{view.line}</p>
-            <div className="wl-uf08__learn-actions">
+    <>
+      <div role="status" className="wl-uf08__learn-region" data-part="learning-region">
+        {after?.kind === "yes" ? (
+          <div className="wl-uf08__learn-after" data-part="learning-after">
+            <p className="wl-uf08__learn-after-line">
+              <span>
+                {after.item.kind === "swap" ? L.favoriteNow(after.name) : L.excludedNow(after.name)}
+              </span>
               <button
-                ref={yesRef}
+                ref={undoRef}
                 type="button"
-                className="wl-button--secondary"
-                data-part="learning-yes"
-                aria-label={view.yesName}
-                aria-disabled={disabled ? "true" : undefined}
-                aria-describedby={disabled ? reasonId : undefined}
-                onClick={() => void answer(true)}
+                className="wl-button--text wl-uf08__learn-undo"
+                aria-label={
+                  after.item.kind === "swap"
+                    ? L.undoFavoriteName(after.name)
+                    : L.undoExcludedName(after.name)
+                }
+                onClick={() => void undo()}
               >
-                {view.yes}
+                {UF.undo}
               </button>
-              <button
-                type="button"
-                className="wl-button--text"
-                data-part="learning-no"
-                aria-label={L.noThanksName(view.name)}
-                aria-disabled={disabled ? "true" : undefined}
-                aria-describedby={disabled ? reasonId : undefined}
-                onClick={() => void answer(false)}
-              >
-                {L.noThanks}
-              </button>
-            </div>
-            {disabled ? (
-              <p id={reasonId} className="wl-uf08__learn-reason">
-                {view.reason}
-              </p>
-            ) : null}
+            </p>
+            <p className="wl-uf08__learn-manage">{L.manage}</p>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+        {after?.kind === "undone" ? (
+          <p className="wl-uf08__learn-after-line" data-part="learning-after">
+            {L.undone}
+          </p>
+        ) : null}
+        {after?.kind === "no" ? (
+          <p className="wl-uf08__learn-after-line" data-part="learning-after">
+            {L.wontAsk(after.name)}
+          </p>
+        ) : null}
+        {item !== null && view !== null ? (
+          <div className="wl-uf08__learn" data-part="learning-card" data-kind={item.kind}>
+            <svg
+              className="wl-uf08__learn-icon"
+              viewBox="0 0 24 24"
+              width="20"
+              height="20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <circle cx="12" cy="12" r="9" />
+              <path d="M12 11v5" />
+              <path d="M12 8h.01" />
+            </svg>
+            <div className="wl-uf08__learn-body">
+              <h2 className="wl-uf08__learn-title">{view.title}</h2>
+              <p className="wl-uf08__learn-line">{view.line}</p>
+              <div className="wl-uf08__learn-actions">
+                <button
+                  ref={yesRef}
+                  type="button"
+                  className="wl-button--secondary"
+                  data-part="learning-yes"
+                  aria-label={view.yesName}
+                  aria-disabled={disabled ? "true" : undefined}
+                  aria-describedby={disabled ? reasonId : undefined}
+                  onClick={() => void answer(true)}
+                >
+                  {view.yes}
+                </button>
+                <button
+                  type="button"
+                  className="wl-button--text"
+                  data-part="learning-no"
+                  aria-label={L.noThanksName(view.name)}
+                  aria-disabled={disabled ? "true" : undefined}
+                  aria-describedby={disabled ? reasonId : undefined}
+                  onClick={() => void answer(false)}
+                >
+                  {L.noThanks}
+                </button>
+              </div>
+              {disabled ? (
+                <p id={reasonId} className="wl-uf08__learn-reason">
+                  {view.reason}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
+      </div>
       {failed ? (
         <p role="alert" className="wl-uf08__learn-error" data-part="learning-error">
           {en.excluded.saveFailed}
         </p>
       ) : null}
-    </div>
+    </>
   );
 }

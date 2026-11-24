@@ -21,7 +21,11 @@ import { freshOfflineDb, signIn, signOut } from "../../../lib/offline/__tests__/
 import type { RemoteSignal } from "../../../lib/offline/edit-ledger-rules.js";
 
 const USER = "11111111-1111-4111-8111-111111111111";
-const net = vi.hoisted(() => ({ calls: [] as string[], fail: false }));
+const net = vi.hoisted(() => ({
+  calls: [] as string[],
+  fail: false,
+  gate: null as Promise<void> | null,
+}));
 vi.mock("../../../lib/auth/auth-context.js", () => ({
   useAuth: () => ({ status: "signed-in", userId: "11111111-1111-4111-8111-111111111111" }),
 }));
@@ -31,6 +35,7 @@ vi.mock("../../../lib/auth/client.js", () => ({
     from: (table: string) => ({
       upsert: (row: { exercise_id: string }) => ({
         select: async () => {
+          await net.gate;
           net.calls.push(`${table}:add:${row.exercise_id}`);
           return net.fail
             ? { data: null, error: { message: "boom" } }
@@ -139,7 +144,7 @@ async function seedRemote(row: RemoteSignal) {
 /** Applies a mocked sheet swap of `from` for `to` with `reason`, then leaves UF-08.6. */
 async function swapOnArea(area: string, from: string, to: string, reason: SwapReason | null) {
   openArea(area);
-  sheet.mockImplementationOnce((p) => (
+  sheet.mockImplementation((p) => (
     <button
       type="button"
       onClick={() => {
@@ -163,12 +168,18 @@ async function swapOnArea(area: string, from: string, to: string, reason: SwapRe
   fireEvent.click(button(/^Swap /));
   fireEvent.click(button("apply mock"));
   await waitFor(() => expect(screenIds()).toEqual(["UF-08.6"]));
+  // A stable mock for the whole mount: swapping implementations between renders changes the hooks.
+  sheet.mockImplementation(
+    (await vi.importActual<typeof import("../../UF-05/index.js")>("../../UF-05/index.js"))
+      .SwapSheet,
+  );
 }
 
 beforeEach(async () => {
   vi.clearAllMocks();
   net.calls = [];
   net.fail = false;
+  net.gate = null;
   freshOfflineDb();
   signIn(USER);
   const actualSheet = (
@@ -418,6 +429,50 @@ describe("T-1003 AC9 not in focus mode", () => {
     await settle();
     expect(screenIds()).toEqual(["UF-08.1"]);
     expect(region()).toBeNull();
+  });
+});
+
+describe("T-1003 review: the queue is updated from its latest value", () => {
+  it("an item a pull adds while the answer is writing is not dropped", async () => {
+    let release!: () => void;
+    let pulled!: () => void;
+    const syncGate = new Promise<void>((r) => (pulled = r));
+    vi.mocked(ledgerSync.syncLedgerNow).mockImplementationOnce(() => syncGate);
+    await seedSwaps(3);
+    await toPlan();
+    await waitFor(() => expect(card()).not.toBeNull());
+    net.gate = new Promise<void>((r) => (release = r));
+    fireEvent.click(yes()); // the write is in flight
+    await seedRemote(
+      remoteRow({
+        key: "removal:plank",
+        kind: "removal",
+        exercise_id: "plank",
+        to_exercise_id: null,
+        count: 2,
+      }),
+    );
+    pulled(); // the pull ends and the refresh adds the removal behind the swap card
+    await settle();
+    release();
+    await screen.findByRole("button", { name: /^Undo:/ });
+    await waitFor(() => expect(card()?.getAttribute("data-kind")).toBe("removal"));
+  });
+
+  it('No thanks whose mark fails keeps the card with the retry line, never "won\'t ask again"', async () => {
+    await seedSwaps(3);
+    await toPlan();
+    await waitFor(() => expect(card()).not.toBeNull());
+    const spy = vi.spyOn(offlineDb(), "transaction").mockRejectedValue(new Error("idb"));
+    fireEvent.click(no());
+    expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't save. Try again.");
+    expect(card()).not.toBeNull();
+    expect(region()).not.toHaveTextContent("won't ask");
+    expect(region()?.querySelector('[role="alert"]')).toBeNull();
+    spy.mockRestore();
+    fireEvent.click(no());
+    await waitFor(() => expect(card()).toBeNull());
+    expect(region()).toHaveTextContent("won't ask");
   });
 });
 
