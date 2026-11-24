@@ -116,7 +116,7 @@ Every screen: pause button, thin progress bar (warm-up + one segment per exercis
 | UF-09.2 | Warm-up | "Warm-up · move n of N" (D-0212), move name, figure, one cue | Pause · restart · next move | 40 s per move, auto-advance |
 | UF-09.3 | Current set | "Lifting · set n of N" (D-0212), exercise, weight × reps, plate loading for barbell lifts ("Each side 25 + 15 kg" or "Bar only", from the bar and plates on UF-11.4; none when no exact loading, D-0217), one cue | **Done** (full-width session button, D-0208, D-0212) | none |
 | UF-09.4 | Confirm set | Pre-filled reps and weight, reps in reserve | Save · start rest when a rest follows (D-0212) | auto-save after 5 s unless touched |
-| UF-09.5 | Rest | Countdown on the rest-to-lift drain, next set only (D-0208) | −15 s · +15 s · Skip | auto-start; cue at 10 s; "GO" at 0 |
+| UF-09.5 | Rest | Countdown on the rest-to-lift drain; the next set (its exercise name and load) or, after an exercise's last set, the next exercise's name and cue; nothing further ahead (D-0208, D-0273) | −15 s · +15 s · Skip | auto-start; cue at 10 s; "GO" at 0 |
 | UF-09.6 | Next exercise | "Next exercise" caption, done line, name, illustration, sets/reps/weight, cue, "Set-up time" label (D-0212) | I'm ready · Swap | set-up countdown 60 s |
 | UF-09.7 | Timed set | "Timed set · n of N" caption, hold name, deep fill (D-0208, D-0212) | Pause/resume | 3-s get-in-position, then hold time; auto-logs |
 | UF-09.8 | Time check | Minutes behind, projected finish, 3 options | Continue | only between exercises, only when behind |

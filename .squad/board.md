@@ -287,3 +287,12 @@ Owner request 2026-11-20: should reps for one-arm exercises be per arm or the wh
 | T-0978a | Data: optional `unilateral` on `LibraryExercise` (openapi, generated types, `toLibraryExercise`, vendored shared copy, data-model note); the three "engine never sees it" guards become an allow-list (D-0268 §3 §4 §5) | data | T-0971, T-0972 | done | wl-build-data |
 | T-0978b | Engine rule 7.1: a flagged row works two sides per set (non-timed 90 s, timed twice its planned duration) via `setCostS`; examples, simulated 14-day histories, re-vendor, the e2e pins that flip. `todo` until T-0978a is done; not parallel with T-0692 (D-0268 §2 §7) | engine | T-0978a, T-0952 | done | wl-build-engine |
 | T-0979 | Per-side label paints one frame late: one shared web-shell hook and in-memory flag store, read synchronously before first paint, warmed at sign-in and by `refreshLibrary`; used by UF-09, UF-03 and UF-06 (T-0975/T-0977 follow-ups) | web-shell | T-0974, T-0975 | done | wl-build-web |
+
+## Rest screen names what is next (spec docs/specs/rest-next-exercise.md)
+Owner request 2026-11-24: UF-09.5 never shows the exercise name; show it, and for a new exercise a short cue so the user can get ready while resting. Decision D-0273 (`revisit`): name on every rest that leads somewhere, cue (else first how-to line) when a new exercise follows, and the per-side word on the load line (it was missing on rest). No token, data, engine or API change.
+
+| ID | Title | Lane | Deps | Status | Flow |
+|---|---|---|---|---|---|
+| T-0989 | Screen spec: new `UF-09.5.md` (Next block lines, type, contrast, 320 px and 200 % zoom, copy, state table) and the UF-09.3/09.4 rest line removed; no new token (D-0273 §1-§10, AC1-AC6) | design | — | ready | wl-design |
+| T-0990 | Web: UF-09.5 shows the next exercise's name, the cue for a new exercise and "per arm" on the load line; name and flag on the first frame, cue after; offline from the cached detail (D-0273, AC1-AC13) | web-feature:UF-09 | T-0989 | todo | wl-build-web |
+| T-0991 | e2e rest screen: name and cue, "per arm" first frame, 320 px and 200 % zoom without truncation, offline, zero history, 10 days off, axe/44 px (D-0273, AC1-AC7) | qa | T-0990 | todo | wl-build-qa |
