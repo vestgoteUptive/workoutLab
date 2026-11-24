@@ -1,5 +1,13 @@
 # State
 
+## Resume here (in flight, 2026-11-24 ~05:40 UTC)
+Read this first after a usage reset or a new session. Each ticket worktree is `/home/user/wt/T-NNNN` on branch `t/T-NNNN-*`; the ticket file's "Build / accept log" says how far it got.
+- **PR #75** (main-hzlbfc → main): CI red on two tests. T-0987 (weight-step revert, app fix) is merged. T-1016 (UF-04.1 Legs count read too early, e2e test fix) is in its worktree, verifying with `--repeat-each 20`; merge it, push, wait for green CI, merge #75.
+- **Building:** T-0990 (rest screen shows the next exercise), T-0993 (UF-08 screen specs, areas first), T-0994 (engine orderItems/areaGroups), T-1001 (`edit_signals` table), T-1015 (targeted local tests, D-0285).
+- **Next, in order:** T-0991 (e2e rest screen, after T-0990); T-0995 (after T-0994); T-0996 → T-0997 → T-1009 → T-0998 → T-0999 (UF-08, strictly serial); T-1002, T-1007, T-1008, T-1000, T-1010, then T-1003..T-1006 (learning). See the board for deps.
+- **Gate (D-0285):** affected checks only; full suite for shared paths; CI runs everything on PRs. Merge pattern: `--no-ff` into main-hzlbfc, board/ticket status, `git branch -f main main-hzlbfc`, push.
+- **Known noise:** `check-all` reports `ticket-not-on-base` on a ticket branch before its first commit; it clears after.
+
 - **Phase:** 3 (App). On main: engine rules 1–14 incl. D-0131 back-off floor + D-0137 drop cap; UF-01 onboarding; UF-02.1 Today; UF-03.1 List view incl. + Add set (T-0457); UF-03.3 summary content (T-0419); UF-04 Library; UF-05.1 SwapSheet component (T-0421, not yet mounted); UF-06 Progress (T-0307b); UF-07.1 Routine editor (T-0308a); UF-08.1–.4 setup; UF-09 machine + hook + seams + .1–.9 incl. the e2e-from-Ready spec and seam retry for how-to/list-view (T-0304a/e/b/f/c/d, T-0414, T-0304h, T-0463); UF-09's focus prefs now read through a UF-08 leaf entry, `index.prefs.ts` (T-0474, D-0170); UF-10 Balance; UF-11.2/.3/.4 Plan + Edit plan + Account settings (T-0308b, T-0310d); lib/offline cacheCurrent (T-0431, D-0151); lib/account export + wipe (T-0310c) and DELETE /account Edge Function (T-0310b); e2e consoleGuard (T-0425).
 - **Updated:** 2026-10-08 22:40 by orchestrator. **Cobalt redesign D-0208 (accepted), phase 1 done:** T-0583 (tokens and fonts, additive) and T-0584 (landing page option 1b, plus 404 and Privacy) are merged. H-29..H-32 were answered with the defaults. The app-screen tickets come later, from PROMPT.md on `design/redesign-cobalt`; the parked draft plan is in the session scratchpad `cobalt-app-plan-draft/`.
 - **`main`:** green, and deployed to prod (release + production) after T-0914 fixed the UF-02 card test race. GitHub #46 (favorites) is closed.
