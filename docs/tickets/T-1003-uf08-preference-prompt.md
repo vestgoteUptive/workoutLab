@@ -35,7 +35,7 @@ Checklist (D-0197 §7): at/below threshold, yes/no, online/offline, learning on/
 - From T-1008: UF-08.2 mount calls `syncLedgerNow()`; the prompt reads `pendingFromAccount(now)` (both in `lib/offline/edit-ledger-sync.ts`).
 
 ## Paths you may change
-`apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant). Not parallel with another UF-08 ticket.
+`apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), `tests/e2e/uf-08-area-plan.spec.ts` (orchestrator grant: the T-0996 AC13 one-status-line check counts the screen's status line, not the card's own region). Not parallel with another UF-08 ticket.
 
 ## Contract impact
 none.
