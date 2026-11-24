@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-08.2, UF-11.4]
 decisions: [D-0281, D-0277, D-0265, D-0195]
 deps: [T-1001]
-status: ready
+status: done
 ---
 ## Why
 Counting must be one shared, tested store that UF-08, UF-09 and UF-11 call (`docs/specs/learn-from-edits.md`). It counts on the device first, so it works offline and never waits for the network; the sync is T-1008 (D-0281 §2).
@@ -38,3 +38,4 @@ none (the schema is T-1001).
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-1007`.
 
 ## Build / accept log
+- Build (web-shell, 2026-11-24): `lib/offline/edit-ledger-rules.ts` (pure), `edit-ledger.ts` (store/API), `edit-ledger-hooks.ts` (`useLearnFlag`); Dexie v7 adds `editLedger` + `editLedgerMeta`; `CachedProfile.learning` written by `refreshProfile`. AC1-AC9, AC11, AC12 -> `offline/__tests__/edit-ledger.test.tsx`; AC12 upgrade -> `upgrade-v6-to-v7.test.ts`; AC10 -> `account/__tests__/edit-ledger-clear.test.ts`. Older upgrade tests' "latest verno" 6 -> 7. Faults planted (each caught, restored by cp, cmp clean): swap threshold 2, removal threshold 3, no window restart, window 61d, no visit dedupe, asked ignored, own device row counted, variety counted, reset `>=`, no cap, flag-off writes, favorite ignored, no v7 stores. Red run on unfixed code: 6 older upgrade tests failed on verno 6 until bumped. Gate: turbo typecheck/lint/test green except those 6 (now fixed, upgrade files 9/9); format:check ok; check-all and test:repo-checks report 26 `lane-path-not-owned` for T-1001/T-1002 paths (supabase/, tests/e2e/, shared) vs base main, none in this diff.

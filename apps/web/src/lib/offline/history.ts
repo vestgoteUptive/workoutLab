@@ -11,6 +11,7 @@ import { supabase } from "../auth/client.js";
 import {
   toAreaTarget,
   toBarbell,
+  toLearningPrefs,
   toEngineProfile,
   toHistorySet,
   toLibraryExercise,
@@ -372,7 +373,12 @@ export async function refreshProfile(): Promise<void> {
   const barbell =
     profileRow.bar_kg == null || profileRow.plates_kg == null ? undefined : toBarbell(profileRow);
   if (!cacheWriteAllowed(gen)) return;
-  await db.profileCache.put({ userId, profile: mapped, ...(barbell ? { barbell } : {}) });
+  await db.profileCache.put({
+    userId,
+    profile: mapped,
+    ...(barbell ? { barbell } : {}),
+    learning: toLearningPrefs(profileRow),
+  });
 }
 
 /** Runs every read-side refresh together (an online start, AC-C16 + T-0319 AC-8). */

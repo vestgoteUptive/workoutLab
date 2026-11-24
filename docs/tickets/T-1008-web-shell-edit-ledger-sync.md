@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-08.2, UF-11.4]
 decisions: [D-0281, D-0001, D-0015, D-0195]
 deps: [T-1001, T-1007]
-status: todo
+status: ready
 ---
 ## Why
 The counts must reach the user's other devices without ever counting a signal twice (D-0281 §2). Each device writes only its own rows as absolute states; the total is the sum. Plain CRUD under RLS, no Edge Function (D-0001).
@@ -29,6 +29,8 @@ Two simulated devices (two `deviceId`s) against an in-memory fake of the table t
 Checklist (D-0197 §7): online/offline, replay/first send, own row/other device's row, flag on/off.
 
 - Note (T-1001 security review): writes that touch `learn_from_edits` or `learn_reset_at` send only the changed fields, never a full cached profile upsert. e2e: opted out on device A, device B saves the profile, learning stays off.
+
+- From the T-1007 review: add `ackSynced(key, lastSeenSent)` that clears `dirty` only if the entry's `lastSeen` is unchanged, so a signal counted during an in-flight push is not marked clean. Comment on `ledgerKey` that it is the `edit_signals.key`, not a user-scoped cache key.
 
 ## Paths you may change
 `apps/web/src/lib/**` (offline, account, profile). Not parallel with another web-shell ticket that edits `lib/offline`.
