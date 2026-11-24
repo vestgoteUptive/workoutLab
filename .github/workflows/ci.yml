@@ -1,8 +1,13 @@
 name: CI
 
+# T-1015 / D-0285 §4: CI carries the whole suite, so it runs on every push to `main` and to the squad
+# branch (`main-*`), and on PRs. A PR from `main-*` to `main` would otherwise run the same commit twice
+# (once for the push, once for `pull_request`); each job below skips the `pull_request` run when the PR's
+# head branch is `main-*`, because that commit's push run already carries the checks. PRs from any other
+# branch (ticket branches, forks) still run on `pull_request`. `.github/scripts/ci-triggers.test.mjs` asserts this.
 on:
   push:
-    branches: [main]
+    branches: [main, "main-*"]
   pull_request:
 
 concurrency:
@@ -16,6 +21,7 @@ jobs:
   checks:
     name: typecheck / lint / unit test
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'main-')
     steps:
       # T-0320/D-0074: `fetch-depth: 0` is load-bearing, not a nicety. `check:repo`'s
       # check-lane-paths sub-check needs `git merge-base origin/main HEAD`; the default
@@ -43,6 +49,7 @@ jobs:
   supabase:
     name: supabase db tests
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'main-')
     # D-0011: Google OAuth reads client_id/secret via env(); no real secret is configured in CI,
     # so the whole job gets the non-secret placeholder literal (never printed, never a real key).
     # Job-level so it covers the step that boots the local stack, and any later step that also
@@ -133,6 +140,7 @@ jobs:
   e2e:
     name: playwright e2e
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'main-')
     steps:
       - uses: actions/checkout@v4
       - id: has-e2e

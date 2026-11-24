@@ -28,6 +28,7 @@ import {
 } from "./fixtures/uf-04-library-data.js";
 import { compareWithCanvas } from "./helpers/canvas-compare.js";
 import { VITE_SUPABASE_URL } from "./playwright.config.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 const F_TARGETS: Record<string, number> = {
   chest: 20,
@@ -202,7 +203,7 @@ test.describe("AC-12 a11y (NFR-A11Y-1/2/6)", () => {
       page.getByRole("button", { name: "Suggest my workout" }),
     ];
     for (const target of targets) {
-      const box = await target.boundingBox();
+      const box = await settledBox(target);
       expect(box, String(target)).not.toBeNull();
       expect(box!.width, String(target)).toBeGreaterThanOrEqual(44);
       expect(box!.height, String(target)).toBeGreaterThanOrEqual(44);
@@ -370,7 +371,7 @@ test.describe("T-0581 UF-08.2 how-to sheet from the exercise name", () => {
     const before = await rowTexts(page);
     const name = before[0]![0]!;
     const button = page.getByRole("button", { name: `How to do ${name}` });
-    const box = (await button.boundingBox())!;
+    const box = (await settledBox(button))!;
     expect(box.height).toBeGreaterThanOrEqual(44);
 
     await button.click();
@@ -422,7 +423,7 @@ test.describe("T-0303b AC-12 UF-08.2 a11y (NFR-A11Y-1/2/6)", () => {
       page.getByRole("link", { name: "Back" }),
     ];
     for (const target of targets) {
-      const box = await target.boundingBox();
+      const box = await settledBox(target);
       expect(box, String(target)).not.toBeNull();
       expect(box!.width, String(target)).toBeGreaterThanOrEqual(44);
       expect(box!.height, String(target)).toBeGreaterThanOrEqual(44);
@@ -654,7 +655,7 @@ test.describe("T-0303d AC-10 UF-08.4 a11y (NFR-A11Y-1/2/6)", () => {
       page.locator("label.wl-toggle", { hasText: "Keep screen awake" }),
     ];
     for (const target of targets) {
-      const box = await target.boundingBox();
+      const box = await settledBox(target);
       expect(box, String(target)).not.toBeNull();
       expect(box!.width, String(target)).toBeGreaterThanOrEqual(44);
       expect(box!.height, String(target)).toBeGreaterThanOrEqual(44);
@@ -1087,7 +1088,7 @@ test.describe("T-0303c AC-9 UF-08.3 swap before starting", () => {
     const count = await buttons.count();
     expect(count).toBeGreaterThan(0);
     for (let i = 0; i < count; i += 1) {
-      const box = await buttons.nth(i).boundingBox();
+      const box = await settledBox(buttons.nth(i));
       expect(box!.width).toBeGreaterThanOrEqual(44);
       expect(box!.height).toBeGreaterThanOrEqual(44);
     }
@@ -1138,7 +1139,7 @@ test.describe("T-0520 UF-08.1 Skip today (D-0191, GitHub #33)", () => {
       "true",
     );
     for (const b of await group.getByRole("button").all()) {
-      const box = (await b.boundingBox())!;
+      const box = (await settledBox(b))!;
       expect(box.width).toBeGreaterThanOrEqual(44);
       expect(box.height).toBeGreaterThanOrEqual(44);
     }
@@ -1528,7 +1529,7 @@ test.describe("T-0599 plan restyle at 390 x 844", () => {
       page.getByRole("button", { name: "Suggest my workout" }),
     ];
     for (const control of controls) {
-      const box = await control.boundingBox();
+      const box = await settledBox(control);
       expect(box, String(control)).not.toBeNull();
       expect(box!.width, String(control)).toBeGreaterThanOrEqual(44);
       expect(box!.height, String(control)).toBeGreaterThanOrEqual(44);
@@ -1830,7 +1831,7 @@ test.describe("T-0600 UF-08.2, UF-08.5 plan restyle at 390 x 844", () => {
       const all = await locators.all();
       expect(all.length).toBeGreaterThan(0);
       for (const l of all) {
-        const box = await l.boundingBox();
+        const box = await settledBox(l);
         expect(box).not.toBeNull();
         expect(box!.width).toBeGreaterThanOrEqual(44);
         expect(box!.height).toBeGreaterThanOrEqual(44);

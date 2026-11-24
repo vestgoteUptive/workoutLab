@@ -18,6 +18,7 @@ import {
   exercisesLoaded,
   profile,
 } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 type Write = { method: string; url: string; body: unknown };
 
@@ -74,7 +75,7 @@ test("happy path: set 1.25 kg, reset to the default, and change it offline", asy
   const axe = await new AxeBuilder({ page }).include('[data-screen-id="UF-04.2"]').analyze();
   expect(axe.violations.filter(serious)).toEqual([]);
   for (const chip of await row.getByRole("radio").all()) {
-    expect((await chip.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    expect((await settledBox(chip))!.height).toBeGreaterThanOrEqual(44);
   }
 
   await row.getByRole("button", { name: /Use default/ }).click();

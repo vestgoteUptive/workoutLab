@@ -1,7 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { spawnSync } from "node:child_process";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { describe, expect, it } from "vitest";
 
 // AC21: the T-0309 placeholder is gone (D-0023, D-0046 §2).
@@ -34,11 +33,16 @@ describe("AC21 placeholder replaced", () => {
     expect(hits).toEqual([]);
   });
 
-  it("node .github/scripts/check-all.mjs exits 0", () => {
-    const res = spawnSync(process.execPath, [join(repoRoot, ".github/scripts/check-all.mjs")], {
-      cwd: repoRoot,
-      encoding: "utf8",
-    });
-    expect(res.status, `${res.stdout}\n${res.stderr}`).toBe(0);
-  }, 30_000);
+  // T-0986: the placeholder rule of check-all, run in-process on apps/landing only. The old child
+  // process ran every repo check (about a second alone, several under gate load) and failed for
+  // reasons outside this app; the repo-wide run is the gate's own `check-all` step.
+  it("the placeholder check (check-all rule 4) reports nothing under apps/landing", async () => {
+    const mod = (await import(
+      pathToFileURL(join(repoRoot, ".github/scripts/check-placeholder-tests.mjs")).href
+    )) as {
+      runCheck: (root: string, o: { branch: string }) => Promise<{ path: string }[]>;
+    };
+    const findings = await mod.runCheck(repoRoot, { branch: "main" });
+    expect(findings.filter((f) => f.path.startsWith("apps/landing/"))).toEqual([]);
+  });
 });

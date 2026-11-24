@@ -5,6 +5,7 @@
 // Every refresh here REPLACES this user's rows in its table: a delete of the user's rows plus one
 // `bulkPut`, inside one transaction. The select happens BEFORE the transaction is entered, so a
 // failed select throws with the previous cache untouched (AC-6) instead of leaving it empty.
+import { setUnilateralFlags, takeFlagSeq } from "./unilateral-flags.js";
 import { windowStartInstant } from "../format/intl.js";
 import { supabase } from "../auth/client.js";
 import {
@@ -119,6 +120,7 @@ export async function refreshLibrary(): Promise<void> {
   const userId = currentUserId();
   if (!userId) return;
   const gen = cacheGeneration();
+  const flagSeq = takeFlagSeq();
   const db = offlineDb();
 
   const [
@@ -180,6 +182,14 @@ export async function refreshLibrary(): Promise<void> {
     await db.exerciseDetails.where({ userId }).delete();
     await db.exerciseDetails.bulkPut(details);
   });
+  // T-0979: keep the in-memory one-side flags current (no reload needed).
+  if (cacheWriteAllowed(gen)) {
+    setUnilateralFlags(
+      userId,
+      details.map((d) => d.detail),
+      flagSeq,
+    );
+  }
 }
 
 /** Refetches this user's `sessions` rows for the last 56 local days and replaces the cache

@@ -45,6 +45,7 @@ import "./rule-12-2-remove-item.test.js";
 import "./rule-12-3-insert-histories.test.js";
 import "./rule-12-3-insert-item.test.js";
 import "./rule-12-3-insert-properties.test.js";
+import "./rule-12-4-area-groups.test.js";
 import "./rule-12-apply-swap.test.js";
 import "./rule-12-swaps.test.js";
 import "./rule-13-shuffle.test.js";
@@ -54,9 +55,12 @@ import "./rule-14-suggest.test.js";
 import "./rule-15-records-histories.test.js";
 import "./rule-16-e1rm-histories.test.js";
 import "./rule-6-1-avoid-areas.test.js";
+import "./rule-7-6-histories.test.js";
 import "./rule-7-energy.test.js";
 import "./rule-7-goal-reps.test.js";
 import "./rule-7-histories.test.js";
+import "./rule-7-main-loaded-histories.test.js";
+import "./rule-7-main-loaded.test.js";
 import "./rule-7-session.test.js";
 import "./t0204-qa-mutation-gaps.test.js";
 import "./t0205-qa-mutation-gaps.test.js";
@@ -80,9 +84,14 @@ describe("B18 over every existing example (T-0936 AC1)", () => {
     const testDir = path.dirname(fileURLToPath(import.meta.url));
     const self = path.basename(fileURLToPath(import.meta.url));
     // rule-15-suggest-without-records mocks modules of its own; the rule-7-switches* files are
-    // T-0936's own tests, which set the switches explicitly (this file is one of them).
+    // T-0936's own tests, which set the switches explicitly (this file is one of them); the
+    // rule-7-1-one-side* files (T-0978b) are not re-run here: the histories sweep alone takes
+    // ~25 s, doubled by the wrapper, which pushed this file past the small-lock limit. They
+    // price the flag itself, so the true/true re-run adds nothing.
     const excluded = (f: string): boolean =>
-      f === "rule-15-suggest-without-records.test.ts" || f.startsWith("rule-7-switches");
+      f === "rule-15-suggest-without-records.test.ts" ||
+      f.startsWith("rule-7-switches") ||
+      f.startsWith("rule-7-1-one-side");
     const callers = readdirSync(testDir)
       .filter((f) => f.endsWith(".test.ts") && !excluded(f))
       .filter((f) => readFileSync(path.join(testDir, f), "utf8").includes("suggest("))

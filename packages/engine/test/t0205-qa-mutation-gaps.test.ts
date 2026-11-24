@@ -39,7 +39,9 @@ describe("T-0205 QA: carry across two shuffled slots (D-0056 §11, D-0062 §6)",
       [20, 12],
     ]),
   ];
-  const si = input({ budgetMin: 90 });
+  // D-0269 (T-0692): the explicit main lift keeps the pre-D-0269 plan (the auto main lift is now
+  // barbell-row, a loaded compound, not the bodyweight inverted-row).
+  const si = input({ budgetMin: 90, mainLiftId: "inverted-row" });
 
   it("rule-14 (AC18) each shuffled slot carries from its OWN original: back-squat → hip-thrust 82.5, db-bench-press → bench-press 22", () => {
     const base = run(h, si);

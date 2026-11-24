@@ -5,7 +5,13 @@
 // changes targets, so it must not re-upsert them or withdraw a pending check-in.
 import type { Area, Goal, Level, PreviewTarget } from "@workoutlab/shared";
 import { supabase } from "../../lib/auth/client.js";
-import { currentUserId } from "../../lib/offline/index.js";
+import {
+  currentUserId,
+  refreshAll,
+  refreshCheckins,
+  refreshProfile,
+  refreshTargets,
+} from "../../lib/offline/index.js";
 
 export interface PlanWrite {
   goal: Goal;
@@ -68,4 +74,42 @@ export async function savePlan(write: PlanWrite): Promise<void> {
       .update({ answer: "withdrawn" as const, answered_at: write.now.toISOString() })
       .is("answer", null),
   );
+}
+
+/** Which write the save made: `level` is `saveLevel`, `full` is `savePlan`. */
+export type SaveScope = "level" | "full";
+
+const RETRY_DELAY_MS = 400;
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+/**
+ * T-0690 (D-0270): after a successful write, re-read the caches. If `refreshAll` rejects, wait
+ * `delayMs` and retry once, with only the reads this save changed. Never throws and never asks the
+ * screen to show anything: `"stale"` is for the caller's (and the tests') information only.
+ */
+export async function refreshAfterSave(args: {
+  scope: SaveScope;
+  now: Date;
+  tz: string;
+  delayMs?: number;
+  wait?: (ms: number) => Promise<void>;
+}): Promise<"ok" | "stale"> {
+  const { scope, now, tz, delayMs = RETRY_DELAY_MS, wait = sleep } = args;
+  try {
+    await refreshAll(now, tz);
+    return "ok";
+  } catch {
+    // Fall through to the single retry.
+  }
+  try {
+    await wait(delayMs);
+    const reads =
+      scope === "level"
+        ? [refreshProfile()]
+        : [refreshProfile(), refreshTargets(), refreshCheckins()];
+    const results = await Promise.allSettled(reads);
+    return results.every((r) => r.status === "fulfilled") ? "ok" : "stale";
+  } catch {
+    return "stale";
+  }
 }

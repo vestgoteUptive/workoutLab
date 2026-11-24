@@ -15,6 +15,7 @@ import {
   mockSupabaseRest,
 } from "./fixtures/supabase-mock.js";
 import { expect, test } from "./fixtures/guarded-test.js";
+import { settledBox, settledTargets } from "./helpers/settled-box.js";
 
 const SCREEN = (id: string) => `[data-screen-id="${id}"]`;
 
@@ -89,7 +90,7 @@ async function expectTargetSizes(page: Page, id: string): Promise<number> {
   expect(count, id).toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {
     const control = controls.nth(i);
-    const box = await control.boundingBox();
+    const box = await settledBox(control);
     const name = (await control.getAttribute("aria-label")) ?? (await control.textContent());
     expect(box, `${id} ${name}`).not.toBeNull();
     expect(box!.width, `${id} ${name} width`).toBeGreaterThanOrEqual(44);
@@ -307,15 +308,29 @@ function recordWrites(page: Page): Write[] {
   return writes;
 }
 
+/** Resolves when a `POST` to `/rest/v1/<table>` is sent (register it before the action). */
+function waitForWrite(page: Page, table: string) {
+  return page.waitForRequest(
+    (req) => req.method() === "POST" && new RegExp(`/rest/v1/${table}(\\?|$)`).test(req.url()),
+    { timeout: 15_000 },
+  );
+}
+
 /** `profiles` answers `[]` until a `profiles` POST, then `[row]`; `area_targets` takes POSTs. */
-async function mockNewUserRest(page: Page): Promise<void> {
+async function mockNewUserRest(page: Page, firstReadHoldMs = 0): Promise<void> {
   let row: Record<string, unknown> | null = null;
+  let held = false;
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/area_targets*`, (route) =>
     route.request().method() === "POST"
       ? route.fulfill({ status: 201, body: "" })
       : route.fulfill({ status: 200, json: [] }),
   );
-  await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, (route) => {
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, async (route) => {
+    // T-0985 AC12: the gate's first read is held, so the old UF-02.1 flash is certain, not a race.
+    if (route.request().method() === "GET" && !held && firstReadHoldMs > 0) {
+      held = true;
+      await new Promise((r) => setTimeout(r, firstReadHoldMs));
+    }
     if (route.request().method() === "POST") {
       row = {
         user_id: "11111111-1111-4111-8111-111111111111",
@@ -341,6 +356,34 @@ async function onboardToAccount(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/account$/);
 }
 
+/**
+ * T-0985 AC12: records every element with `data-screen-id` in `ids` the moment it is attached,
+ * with `performance.now()`, in `window.__wlScreens`. Install before the first navigation.
+ */
+async function recordScreens(page: Page, ids: string[]): Promise<void> {
+  await page.addInitScript((watch: string[]) => {
+    const log: Array<{ id: string; t: number }> = [];
+    (window as unknown as { __wlScreens: typeof log }).__wlScreens = log;
+    const note = (n: Node) => {
+      if (!(n instanceof Element)) return;
+      const els = [n, ...Array.from(n.querySelectorAll("[data-screen-id]"))];
+      for (const el of els) {
+        const id = el.getAttribute("data-screen-id");
+        if (id && watch.includes(id)) log.push({ id, t: performance.now() });
+      }
+    };
+    new MutationObserver((records) => {
+      for (const r of records) r.addedNodes.forEach(note);
+    }).observe(document, { childList: true, subtree: true });
+  }, ids);
+}
+
+async function screenLog(page: Page): Promise<Array<{ id: string; t: number }>> {
+  return page.evaluate(
+    () => (window as unknown as { __wlScreens: Array<{ id: string; t: number }> }).__wlScreens,
+  );
+}
+
 async function signInWithCode(page: Page): Promise<void> {
   await page.getByRole("tab", { name: "Enter code" }).click();
   await page.getByLabel("Email").fill("ada@example.com");
@@ -353,17 +396,32 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
     page,
   }) => {
     await mockSupabaseEmailAuth(page);
-    await mockNewUserRest(page);
+    await mockNewUserRest(page, 800);
     const writes = recordWrites(page);
+    await recordScreens(page, ["UF-02.1", "UF-01.5-save"]);
 
     await onboardToAccount(page);
     await expect(page.locator(SCREEN("UF-01.5")).getByRole("heading", { level: 1 })).toHaveText(
       "Save your plan",
     );
+    // T-0983 found that UF-02.1 flashed before /welcome/save mounted; T-0985 (D-0272) removed the
+    // flash (the gate shows a neutral placeholder while the read is pending). The waits stay on
+    // the two requests themselves, so the order of the writes is still what is asserted.
+    const targetsSent = waitForWrite(page, "area_targets");
+    const profileSent = waitForWrite(page, "profiles");
     await signInWithCode(page);
+    await Promise.all([targetsSent, profileSent]);
 
     await expect(page.locator(SCREEN("UF-02.1"))).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
+
+    // T-0985 AC12: UF-02.1 was never attached before /welcome/save mounted (the profiles read
+    // was held 800 ms, so the old flash would be certain).
+    const log = await screenLog(page);
+    const saveAt = log.find((e) => e.id === "UF-01.5-save")?.t;
+    expect(saveAt, "/welcome/save mounted").toBeDefined();
+    expect(log.filter((e) => e.id === "UF-02.1" && e.t < saveAt!)).toEqual([]);
+    expect(log.some((e) => e.id === "UF-02.1" && e.t > saveAt!)).toBe(true);
 
     // Request order: the targets first, then the profile, both sent from /welcome/save.
     expect(writes.map((w) => w.table)).toEqual(["area_targets", "profiles"]);
@@ -397,6 +455,7 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
     await mockSupabaseEmailAuth(page);
     await mockProfilePresent(page);
     const writes = recordWrites(page);
+    await recordScreens(page, ["UF-01.5-save"]);
 
     await page.goto("/account");
     await expect(page.locator(SCREEN("UF-01.5")).getByRole("heading", { level: 1 })).toHaveText(
@@ -407,6 +466,47 @@ test.describe("UF-01.5 account and /welcome/save, T-0301c AC-14", () => {
     await expect(page.locator(SCREEN("UF-02.1"))).toBeVisible();
     await expect(page).toHaveURL(/\/$/);
     expect(writes.filter((w) => w.table === "profiles" || w.table === "area_targets")).toEqual([]);
+    // T-0985 AC12 sibling: a returning user never reaches /welcome/save.
+    expect(await screenLog(page)).toEqual([]);
+  });
+
+  test("(d) T-0985 AC11: while the profiles read is held the placeholder is blank, bg = --wl-bg, axe clean, no focus", async ({
+    page,
+  }) => {
+    await mockSupabaseEmailAuth(page);
+    let release!: () => void;
+    const held = new Promise<void>((r) => (release = r));
+    await page.route(`${VITE_SUPABASE_URL}/rest/v1/profiles*`, async (route) => {
+      await held;
+      await route.fulfill({ status: 200, json: [] });
+    });
+    await page.goto("/account");
+    await signInWithCode(page);
+    const pending = page.locator("[data-wl-profile-pending]");
+    await expect(pending).toBeAttached();
+    expect(await pending.evaluate((el) => el.textContent)).toBe("");
+    const colours = await pending.evaluate((el) => {
+      const probe = document.createElement("div");
+      probe.style.background = "var(--wl-bg)";
+      document.body.appendChild(probe);
+      const expected = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return { actual: getComputedStyle(el).backgroundColor, expected };
+    });
+    expect(colours.actual).toBe(colours.expected);
+    // The block never makes the page taller than the viewport, and the tab bar stays at the bottom.
+    expect(
+      await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight),
+    ).toBe(true);
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+    const results = await new AxeBuilder({ page }).analyze();
+    // Same bar as `expectAxeClean`: serious and critical. A blank block has no h1, which axe
+    // reports only as a best-practice (minor/moderate) finding and the next screen supplies.
+    const serious = results.violations.filter(
+      (v) => v.impact === "serious" || v.impact === "critical",
+    );
+    expect(serious.map((v) => v.id)).toEqual([]);
+    release();
   });
 
   test("(c) axe and target sizes on UF-01.5 with each heading, and on UF-01.5-save's no-plan state", async ({
@@ -604,11 +704,17 @@ async function gotoStep(page: Page, path: string): Promise<void> {
   // The first launch walks the real links, so the lazy chunks and the pending plan are real.
   await page.goto("/welcome");
   if (path === "/welcome") return;
+  // T-0983: wait for each step to mount before the next click. "Continue" exists on the step being
+  // left until the lazy next step replaces it, so a click made too early lands on the old step and
+  // the walk ends one screen short (UF-01.4 never appears).
   await page.getByRole("link", { name: "Get started" }).click();
+  await expect(page.locator(SCREEN("UF-01.2"))).toBeVisible();
   if (path === "/welcome/goal") return;
   await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.locator(SCREEN("UF-01.3"))).toBeVisible();
   if (path === "/welcome/level") return;
   await page.getByRole("button", { name: "Continue" }).click();
+  await expect(page.locator(SCREEN("UF-01.4"))).toBeVisible();
 }
 
 test.describe("T-0605 Cobalt onboarding (390 × 844)", () => {
@@ -831,21 +937,11 @@ test.describe("T-0605 Cobalt onboarding (390 × 844)", () => {
     for (const [path, id] of PATHS) {
       await gotoStep(page, path);
       await expect(page.locator(SCREEN(id))).toBeVisible();
-      const boxes = await page.evaluate((sel) => {
-        const root = document.querySelector(sel)!;
-        return [
-          ...root.querySelectorAll(
-            "a, button, label.wl-option, label.wl-chip, .wl-segmented > label",
-          ),
-        ].map((el) => {
-          const r = el.getBoundingClientRect();
-          return {
-            name: (el.getAttribute("aria-label") ?? el.textContent ?? "").trim(),
-            w: r.width,
-            h: r.height,
-          };
-        });
-      }, SCREEN(id));
+      const boxes = await settledTargets(
+        page,
+        SCREEN(id),
+        "a, button, label.wl-option, label.wl-chip, .wl-segmented > label",
+      );
       expect(boxes.length, id).toBeGreaterThan(0);
       for (const b of boxes) {
         expect(b.w, `${id} ${b.name} width`).toBeGreaterThanOrEqual(44);

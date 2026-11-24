@@ -14,6 +14,7 @@ import {
   ProfileStatusProvider,
   useProfileStatus,
   useRecheckProfile,
+  PROFILE_PLACEHOLDER_MAX_MS,
 } from "../../lib/profile/index.js";
 import { gatedPaths } from "../../lib/profile/gated-routes.js";
 import { routes } from "../routes.js";
@@ -446,7 +447,10 @@ describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", (
       loadProfile.mockReturnValue(new Promise(() => {}));
       const screenId = routes.find((r) => r.path === path)!.screenId;
       render(<Harness start={path} />);
-      await waitFor(() => expect(screenOf(screenId)).toBeInTheDocument());
+      // T-0985 (D-0272 §3): the route now renders once the placeholder cap expires (real clock).
+      await waitFor(() => expect(screenOf(screenId)).toBeInTheDocument(), {
+        timeout: PROFILE_PLACEHOLDER_MAX_MS + 1_500,
+      });
       await act(async () => {});
       await act(async () => {});
       expect(screenOf(screenId)).toBeInTheDocument();
@@ -454,6 +458,7 @@ describe("AC-6 `unknown` and `present` never redirect (the contrast to AC-5)", (
       expect(screenOf("UF-01.1")).not.toBeInTheDocument();
       expect(screenOf("UF-01.5-save")).not.toBeInTheDocument();
     },
+    PROFILE_PLACEHOLDER_MAX_MS + 6_000,
   );
 });
 

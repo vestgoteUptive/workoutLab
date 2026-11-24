@@ -10,13 +10,14 @@
 // Plus a hermetic check that no uf10-owned string is declared in `en.ts`.
 import { readFileSync, readdirSync } from "node:fs";
 import { resolve } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { describe, expect, it } from "vitest";
 import { attentionLegend, coverageLegend } from "@workoutlab/design-tokens";
 import { en } from "../../../lib/i18n/en.js";
 import { uf10 } from "../../../lib/i18n/flows/uf-10.js";
 
 const WEB_ROOT = process.cwd();
+const eslint = await warmEslint(WEB_ROOT);
 const FEATURE_DIR = resolve(WEB_ROOT, "src/features/UF-10");
 /** D-0115 §1: per-test budget for the whole-feature ESLint run; the global testTimeout stays 5 s. */
 const LINT_BUDGET_MS = 30_000;
@@ -111,8 +112,6 @@ describe("AC-A21 lib/i18n/en.ts carries none of this feature's copy", () => {
 });
 
 describe("AC-A21 no user-facing literal is declared in the feature", () => {
-  const eslint = new ESLint({ cwd: WEB_ROOT });
-
   // The one-line call keeps the body and every `expect` byte-identical (T-0379 AC3).
   // prettier-ignore
   it("react/jsx-no-literals is green across features/UF-10 (the rule must stay green)", { timeout: LINT_BUDGET_MS }, async () => {

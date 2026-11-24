@@ -1,0 +1,25 @@
+{
+  "id": "single-arm-cable-row-rotation",
+  "name": "Single-arm cable row with rotation",
+  "kind": "exercise",
+  "type": "compound",
+  "level": "intermediate",
+  "equipment": ["cable"],
+  "bodyweight": false,
+  "increment_kg": 2.5,
+  "areas": { "back": 1, "core": 0.5, "arms": 0.5 },
+  "instructions": [
+    "Sit or half-kneel facing the machine and hold one handle.",
+    "Let your shoulder reach forward, arm long.",
+    "Pull the handle to your ribs and turn your torso toward that arm.",
+    "Return with control, letting the shoulder reach forward.",
+    "Finish all reps, then switch arms."
+  ],
+  "cue": "Pull to the ribs, turn with the elbow",
+  "mistakes": ["Twisting from the lower back only.", "Shrugging the shoulder up as you pull."],
+  "variants": ["seated-cable-row", "dumbbell-row"],
+  "timed": false,
+  "unilateral": "arm",
+  "source": "workoutlab",
+  "license": "LicenseRef-workoutLab"
+}

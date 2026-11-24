@@ -11,11 +11,11 @@
 // The `fatal` filter in `restricted()` guards the negative cases: without it, a parse error
 // would make every "reports nothing" case pass vacuously.
 import { resolve } from "node:path";
-import { ESLint } from "eslint";
+import { warmEslint } from "../../../test/eslint.js";
 import { describe, expect, it } from "vitest";
 
 const WEB_ROOT = process.cwd();
-const eslint = new ESLint({ cwd: WEB_ROOT });
+const eslint = await warmEslint(WEB_ROOT);
 /** D-0115 §1: per-test budget for the ESLint runs; the global testTimeout stays 5 s. */
 const LINT_BUDGET_MS = 30_000;
 

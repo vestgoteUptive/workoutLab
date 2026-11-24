@@ -5,21 +5,40 @@ import { spawnSync } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 import { afterAll, describe, expect, it } from "vitest";
 import { contrast, pkgRoot, repoRoot } from "./helpers";
+
+type SpecFile = { path: string; content: string };
+type Finding = { path: string; line: number; rule: string; message: string };
 
 const specPath = resolve(repoRoot, "Design-docs/docs/design/screens/UF-06.2.md");
 const spec = existsSync(specPath) ? readFileSync(specPath, "utf8") : "";
 
 describe("T-0962 AC1 the repo checks accept the spec", () => {
-  it("exists and check-all passes (screen IDs valid, no legacy v1 labels)", () => {
+  // T-0986: run the checkers' exported functions on this one file, in-process. The old child
+  // process ran every repo check (about a second alone, past 5 s under gate load) and none of
+  // them scanned this file, so a legacy label here could not fail it.
+  it("exists, names only valid screen IDs, and has no legacy v1 labels", async () => {
     expect(existsSync(specPath), "UF-06.2.md exists").toBe(true);
-    const r = spawnSync(process.execPath, [resolve(repoRoot, ".github/scripts/check-all.mjs")], {
-      cwd: repoRoot,
-      encoding: "utf8",
-    });
-    expect(r.stdout + r.stderr).not.toMatch(/UF-06\.2\.md/);
-    expect(r.status, r.stdout).toBe(0);
+    const checks = (await import(
+      pathToFileURL(resolve(repoRoot, ".github/scripts/check-screen-ids.mjs")).href
+    )) as {
+      USER_FLOWS_PATH: string;
+      buildValidScreenIds: (c: string) => { error?: string };
+      checkScreenIdExistence: (f: SpecFile[], v: unknown) => Finding[];
+      checkV1Labels: (f: SpecFile[]) => Finding[];
+    };
+    const valid = checks.buildValidScreenIds(
+      readFileSync(resolve(repoRoot, checks.USER_FLOWS_PATH), "utf8"),
+    );
+    expect(valid.error, "flow index found").toBeUndefined();
+    const files: SpecFile[] = [{ path: "UF-06.2.md", content: spec }];
+    const findings = [
+      ...checks.checkScreenIdExistence(files, valid),
+      ...checks.checkV1Labels(files),
+    ];
+    expect(findings).toEqual([]);
   });
 });
 

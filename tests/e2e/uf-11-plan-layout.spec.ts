@@ -144,6 +144,22 @@ test("/plan/edit at 360 x 740: 28 px gutter and no overflow", async ({ page }) =
   expect(await overflowX(page)).toBeLessThanOrEqual(0);
 });
 
+// T-0687 AC8: the four group headings are visible, unclipped and cause no horizontal scroll.
+for (const width of [390, 320]) {
+  test(`/plan/edit at ${width} px: the group headings are visible and unclipped`, async ({
+    page,
+  }) => {
+    await open(page, width, 844, "/plan/edit");
+    for (const name of ["Goal", "Level", "Sessions per week", "Priority areas"]) {
+      const heading = page.getByRole("heading", { level: 2, name, exact: true });
+      await expect(heading).toBeVisible();
+      const clipped = await heading.evaluate((el) => el.scrollWidth > el.clientWidth);
+      expect(clipped).toBe(false);
+    }
+    expect(await overflowX(page)).toBeLessThanOrEqual(0);
+  });
+}
+
 test("every interactive element on /plan is at least 44 px tall", async ({ page }) => {
   await open(page, 390, 844);
   const heights = await page

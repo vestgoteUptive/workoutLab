@@ -14,8 +14,8 @@
 // already as fresh as Plan's own content is by the time the card's single read runs — the exact
 // guarantee `use-checkin-data.ts`'s comment already assumes ("the screens that mount it keep the
 // data fresh"), now actually true before the card reads, not just after.
-import { useState } from "react";
-import { Link } from "react-router";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 import { ChevronIcon } from "../../components/icons/index.js";
 import { en } from "../../lib/i18n/en.js";
 import { AccountSettingsBody } from "./AccountSettingsBody.js";
@@ -94,10 +94,23 @@ export function ExcludedExercises() {
 }
 
 export function FavoriteExercises() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const focusTitle = (location.state as { focusTitle?: unknown } | null)?.focusTitle === true;
+  // T-0683b (D-0233 §8): arriving from Edit plan's Save or Cancel puts focus on the title, then
+  // clears the flag so a reload or back-and-forward doesn't refocus.
+  useEffect(() => {
+    if (!focusTitle) return;
+    titleRef.current?.focus();
+    navigate(".", { replace: true, state: null });
+  }, [focusTitle, navigate]);
   return (
     <div data-screen-id="UF-11.6" data-wl-state="plan" className="wl-page wl-account">
       <BackToPlan label={en.uf11.favoritesScreen.back} />
-      <h1 className="wl-type-page-title wl-title--stop">{en.uf11.favoritesScreen.title}</h1>
+      <h1 ref={titleRef} tabIndex={-1} className="wl-type-page-title wl-title--stop">
+        {en.uf11.favoritesScreen.title}
+      </h1>
       <FavoritesBody />
     </div>
   );

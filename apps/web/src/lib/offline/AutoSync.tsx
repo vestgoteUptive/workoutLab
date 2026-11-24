@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { useAuth } from "../auth/auth-context.js";
 import { startSync } from "./sync.js";
 import { refreshAll } from "./history.js";
+import { warmUnilateralFlags } from "./unilateral-flags.js";
 
 function deviceTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -19,6 +20,8 @@ export function AutoSync() {
   useEffect(() => {
     if (!signedIn) return;
     const tz = deviceTimeZone();
+    // T-0979: warm the one-side flags from the cache first, so even an offline start is labelled.
+    void warmUnilateralFlags();
     const handle = startSync({ tz });
     if (navigator.onLine) {
       // Best-effort (D-0104 §2): a failed read keeps that table's previous cache rows, the

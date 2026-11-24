@@ -202,7 +202,7 @@ describe("simulated 14-day histories with exclusions (AC5, engine-rules §Requir
       "balanced",
       ["db-bench-press"],
       [
-        ["push-up", 4],
+        ["bench-press", 4],
         ["db-row", 3],
         ["leg-extension", 2],
       ],
@@ -461,7 +461,7 @@ describe("T-0534 traceability (AC8)", () => {
   it("rule-0 (AC8) Required tests name the three histories with exclusions; one T-0534 Traceability row", () => {
     const required = doc.slice(doc.indexOf("## Required tests"), doc.indexOf("## Traceability"));
     expect(required).toContain(
-      "balanced excluding db-bench-press → push-up × 4, db-row × 3, leg-extension × 2",
+      "balanced excluding db-bench-press → bench-press × 4, db-row × 3, leg-extension × 2",
     );
     expect(required).toContain(
       "all-chest-no-legs excluding inverted-row → barbell-row × 4, back-squat × 3, calf-raise × 2",

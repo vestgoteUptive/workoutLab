@@ -26,6 +26,7 @@ import {
   exercises,
   profile,
 } from "./fixtures/uf-04-library-data.js";
+import { settledBox } from "./helpers/settled-box.js";
 
 test.beforeEach(async ({ page }) => {
   await mockSupabaseAuth(page);
@@ -77,7 +78,7 @@ test.describe("AC-17 accessibility", () => {
     const count = await targets.count();
     expect(count).toBe(13 + 24);
     for (let i = 0; i < count; i += 1) {
-      const box = await targets.nth(i).boundingBox();
+      const box = await settledBox(targets.nth(i));
       expect(box, `target ${i}`).not.toBeNull();
       expect(box!.width, `target ${i} width`).toBeGreaterThanOrEqual(44);
       expect(box!.height, `target ${i} height`).toBeGreaterThanOrEqual(44);
@@ -119,11 +120,16 @@ test.describe("T-0639 group chips", () => {
   }) => {
     await openLibrary(page, "/library");
     await expect(page.locator('[data-field="name"]')).toHaveCount(24);
+    const count = page.locator('[data-part="count"]');
+    const unfiltered = await count.textContent();
     await page.getByRole("button", { name: "Legs", exact: true }).click();
     await expect(page).toHaveURL(/[?&]group=legs/);
-    const count = page.locator('[data-part="count"]');
+    // T-1016: "24 results" already matches the pattern, so wait until the Legs filter has applied.
+    await expect(count).not.toHaveText(unfiltered ?? "");
     await expect(count).toHaveText(/^\d+ results$/);
     const before = await count.textContent();
+    const rows = Number((before ?? "").split(" ")[0]);
+    await expect(page.locator('[data-field="name"]')).toHaveCount(rows);
     const first = page.locator('[data-field="name"]').first();
     await first.click();
     await expect(page).toHaveURL(/\/library\/[a-z-]+$/);
@@ -251,7 +257,7 @@ test.describe("T-0607 plan state", () => {
     expect(style).toEqual({ w: "1px", style: "solid", color: rgbOf(PLAN["ink-muted"]) });
     await box.fill("squat");
     const clear = page.getByRole("button", { name: "Clear search" });
-    const b = (await clear.boundingBox())!;
+    const b = (await settledBox(clear))!;
     expect(b.width).toBeGreaterThanOrEqual(44);
     expect(b.height).toBeGreaterThanOrEqual(44);
     await clear.click();
@@ -390,7 +396,7 @@ test.describe("T-0607 plan state", () => {
   }) => {
     await ready(page, COMPARE);
     const back = page.getByRole("link", { name: /Leg extension/ });
-    const b = (await back.boundingBox())!;
+    const b = (await settledBox(back))!;
     expect(b.width).toBeGreaterThanOrEqual(44);
     expect(b.height).toBeGreaterThanOrEqual(44);
     const h1 = await page.locator("h1").evaluate((el) => {
@@ -599,7 +605,7 @@ test.describe("T-0608 UF-04.2 plan state", () => {
     ]) {
       if ((await loc.count()) === 0) continue;
       await loc.scrollIntoViewIfNeeded();
-      const b = (await loc.boundingBox())!;
+      const b = (await settledBox(loc))!;
       expect(b.width).toBeGreaterThanOrEqual(44);
       expect(b.height).toBeGreaterThanOrEqual(44);
     }
@@ -702,7 +708,7 @@ test.describe("T-0608 UF-04.2 plan state", () => {
     expect(serious.map((v) => `${v.id}: ${v.nodes.map((n) => n.html).join(" | ")}`)).toEqual([]);
     const close = dialog.getByRole("button", { name: /close/i });
     await expect(close).toBeFocused();
-    const b = (await close.boundingBox())!;
+    const b = (await settledBox(close))!;
     expect(b.height).toBeGreaterThanOrEqual(44);
     await page.keyboard.press("Tab");
     await expect(close).toBeFocused();

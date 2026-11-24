@@ -7,7 +7,7 @@
 | ID | Requirement | Check | Owner ticket |
 |---|---|---|---|
 | NFR-OFF-1 | After the first load, the app shell, the exercise library and the last 14 days of history are cached, so the app opens with no network. | Playwright: go offline, reload, UF-02.1 renders within 3 s. | T-0300 |
-| NFR-OFF-2 | Once a session has started, UF-08.4 → UF-09.1–.9 → UF-03.3 work with no network, and every set is written to IndexedDB before the UI moves on. | e2e: offline mid-workout, log 10 sets, kill the tab, reopen: all 10 are there. | T-0300, T-0304 |
+| NFR-OFF-2 | Once a session has started, UF-08.2 Start → UF-09.1–.9 → UF-03.3 work with no network, and every set is written to IndexedDB before the UI moves on. | e2e: offline mid-workout, log 10 sets, kill the tab, reopen: all 10 are there. | T-0300, T-0304 |
 | NFR-OFF-3 | UF-08.1/.2 can build a suggestion offline with the on-device engine from cached history plus queued sets. | Offline: suggestion renders; output equals the online result for the same inputs. | T-0303 |
 | NFR-OFF-4 | Queued sets are never dropped, not after an auth token expiry and not after 7 days offline. They flush automatically after sign-in or reconnect. | Unit: an expired token keeps the queue; after sign-in the queue is empty and the server has every row. | T-0300 |
 | NFR-OFF-5 | The app calls `navigator.storage.persist()` after the first finished workout. | Unit (mock): called once. | T-0300 |
@@ -70,5 +70,5 @@ Reference device: a mid-range Android (Moto G Power class), Chrome, "Fast 4G" th
 |---|---|---|---|
 | NFR-TIME-1 | Every timer (UF-09.1, .2, .4, .5, .6, .7) is computed from wall-clock start timestamps, not by counting ticks. After a 90 s background or screen lock, a 120 s rest shows 30 s left, ±1 s. | Unit with fake timers and a mocked `Date.now`. | T-0304 |
 | NFR-TIME-2 | The elapsed time and the projected finish (UF-09.8) come from the session's `started_at` and the engine's remaining estimate, and survive a reload. | Unit + e2e reload. | T-0304 |
-| NFR-TIME-3 | A screen wake lock is held during UF-09 when "keep screen awake" is on (UF-08.4), and re-acquired after `visibilitychange`. | Unit (mock API). | T-0304 |
+| NFR-TIME-3 | A screen wake lock is held during UF-09 when "keep screen awake" is on (its switch is on UF-08.2, D-0280), and re-acquired after `visibilitychange`. | Unit (mock API). | T-0304 |
 | NFR-TIME-4 | When the budget runs out mid-exercise, the current exercise is never interrupted. UF-09.8 appears only between exercises (v2 spec), and the over-time cuts follow engine rule 8. | Engine and component tests. | T-0201, T-0304 |

@@ -2,8 +2,10 @@
 // test-built `ctx`, `SwapSheet` mocked so its props and `onApply`/`onClose` are under direct
 // control), AC-3 focus and a11y. Each test title starts with "T-0478 AC-n" (ticket Test rules).
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Workout } from "@workoutlab/shared";
+import type { Collection } from "dexie";
+import type { OfflineDb } from "../../../lib/offline/db.js";
 import { ListView } from "../index.js";
 import { L1, NOW } from "./fixtures.js";
 import { freshDb, seedLibraryAndTargets, signIn, signOut, waitReal } from "./helpers.js";
@@ -64,6 +66,52 @@ vi.mock("../../UF-05/index.js", () => ({
   },
 }));
 
+let warmedBeforeTests = false;
+
+/** T-0932: the first `ListView` mount in a fresh worker pays for cold module and IndexedDB paths
+ *  (about 4x a warm mount: 190-260 ms against 40-60 ms here, and over the 1000 ms `findBy` cap in
+ *  one loaded gate run). `beforeAll` pays that once, with its own generous hook timeout, so no test
+ *  does. A warm-up, not a longer `findBy`. */
+async function warmListView(stallMs = 0): Promise<void> {
+  signIn();
+  const db = freshDb();
+  if (stallMs > 0) stallFirstLibraryRead(db, stallMs);
+  await seedLibraryAndTargets(db, L1);
+  render(<ListView ctx={makeCtx()} />);
+  await screen.findByRole("button", { name: /Romanian deadlift/ }, { timeout: 30_000 });
+  cleanup();
+  warmedBeforeTests = true;
+}
+
+beforeAll(async () => {
+  // `SwapSheet` is a lazy `import("../UF-05/index.js")`: resolve it here, too (T-0922's warm-up).
+  await Promise.all([import("../../UF-05/index.js"), warmListView()]);
+  signOut();
+}, 60_000);
+
+/** The first library read of this mount takes `ms` of real time (a cold read), once. */
+function stallFirstLibraryRead(db: OfflineDb, ms: number): void {
+  const table = db.libraryCache;
+  const where = table.where.bind(table) as (...a: unknown[]) => Collection;
+  let stalled = false;
+  vi.spyOn(table, "where").mockImplementation(((...a: unknown[]) => {
+    const collection = where(...a);
+    return new Proxy(collection, {
+      get(target, key) {
+        const value = Reflect.get(target, key, target);
+        if (key !== "toArray") return typeof value === "function" ? value.bind(target) : value;
+        return async () => {
+          if (!stalled) {
+            stalled = true;
+            await waitReal(ms);
+          }
+          return target.toArray();
+        };
+      },
+    });
+  }) as never);
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"], now: new Date(NOW) });
   signIn();
@@ -80,8 +128,21 @@ afterEach(async () => {
   signOut();
 });
 
-async function mount(ctx: SpiedCtx = makeCtx()) {
+/** T-0932: makes the `swapping` focus effect run "late" on demand. Every `.focus()` on the Swap
+ *  button is deferred by `ms` of real time, so the dialog is already gone when the test reads
+ *  `document.activeElement`: the ordering a loaded machine produced by chance (the dialog's DOM
+ *  removal and the passive effect that focuses the button are two different steps). */
+function deferSwapFocus(ms: number): void {
+  const focus = HTMLElement.prototype.focus;
+  vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (this: HTMLElement, ...a) {
+    if (this.getAttribute("aria-label") !== "Swap Back squat") return focus.apply(this, a);
+    setTimeout(() => focus.apply(this, a), ms);
+  });
+}
+
+async function mount(ctx: SpiedCtx = makeCtx(), stallMs = 0) {
   const db = freshDb();
+  if (stallMs > 0) stallFirstLibraryRead(db, stallMs);
   await seedLibraryAndTargets(db, L1);
   const view = render(<ListView ctx={ctx} />);
   await screen.findByRole("button", { name: /Romanian deadlift/ });
@@ -106,6 +167,22 @@ function swapResult(ctx: SpiedCtx): Workout {
     plan: { ...ctx.plan, items, mainLiftId: "hip-thrust" },
   };
 }
+
+describe("T-0932 AC2 a cold first mount", () => {
+  it("T-0932 AC2: the ListView mount and the SwapSheet import are warmed before the first test", () => {
+    expect(warmedBeforeTests).toBe(true);
+  });
+
+  it("T-0932 AC2: a first library read stalled 1.2 s outlasts the 1 s find (the cold-mount failure)", async () => {
+    await expect(mount(makeCtx(), 1200)).rejects.toThrow(/Romanian deadlift/);
+  });
+
+  it("T-0932 AC2: the same stall is paid inside the warm-up, so the test's own mount finds the card", async () => {
+    await warmListView(1200);
+    await mount();
+    expect(screen.getByRole("button", { name: "Swap Back squat" })).toBeTruthy();
+  });
+});
 
 describe("T-0478 AC-1 Swap from the list", () => {
   it("opens SwapSheet with workout reference-equal to ctx.workout, itemIndex 0, ctx.timeZone", async () => {
@@ -235,8 +312,9 @@ describe("T-0478 AC-3 focus and a11y", () => {
     fireEvent.click(swapButton);
     await screen.findByRole("dialog", { name: "Replace exercise" });
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    await settle();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Swap Back squat" }));
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Swap Back squat" })),
+    );
   });
 
   it("after a resolved Apply, focus returns to the (still addressable) Swap button", async () => {
@@ -251,7 +329,43 @@ describe("T-0478 AC-3 focus and a11y", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Use replacement" }));
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     expect(view.container.querySelector('[data-screen-id="UF-03.1"]')).not.toBeNull();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Swap Back squat" }));
+    // T-0932: the dialog's removal and the `swapping` effect's `focus()` are two steps; wait on the focus.
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Swap Back squat" })),
+    );
+  });
+
+  // T-0932 AC2: the focus effect forced to run after the dialog is gone (no CPU load needed).
+  // Under load a real run produced this order by chance (3 of 200 Apply runs, 135-230 ms late).
+  it("T-0932 AC2: after Cancel with a late focus effect, the dialog is gone first and focus still arrives", async () => {
+    await mount(makeCtx());
+    deferSwapFocus(150);
+    fireEvent.click(screen.getByRole("button", { name: "Swap Back squat" }));
+    await screen.findByRole("dialog", { name: "Replace exercise" });
+    fireEvent.click(screen.getByRole("button", { name: "Close" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).not.toBe(
+      screen.getByRole("button", { name: "Swap Back squat" }),
+    );
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Swap Back squat" })),
+    );
+  });
+
+  it("T-0932 AC2: after Apply with a late focus effect, the dialog is gone first and focus still arrives", async () => {
+    const ctx = makeCtx();
+    swapProps.result = swapResult(ctx);
+    await mount(ctx);
+    deferSwapFocus(150);
+    fireEvent.click(screen.getByRole("button", { name: "Swap Back squat" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Use replacement" }));
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    expect(document.activeElement).not.toBe(
+      screen.getByRole("button", { name: "Swap Back squat" }),
+    );
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByRole("button", { name: "Swap Back squat" })),
+    );
   });
 
   it("CONTRAST: opening the sheet (no Cancel, no Apply) never moves focus to the Swap button", async () => {

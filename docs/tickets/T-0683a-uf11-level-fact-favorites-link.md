@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.2, UF-11.6]
 decisions: [D-0230, D-0231, D-0233, D-0202, D-0211]
 deps: [T-0681, T-0682]
-status: todo
+status: done
 ---
 <!-- Written by product-owner 2026-11-05 (groom, editable-level idea). Flow: wl-build-web (agent frontend-dev). About ⅓ day. The triage row T-0683 is split here (D-0157 §7): this part is the fact and the notice; T-0683b is the return from Edit plan with focus. It waits for T-0681 (the notice's "with one link" variant) and T-0682 (same feature folder and flow file, so they can't run in parallel). Spec: docs/specs/editable-level.md AC7, AC8 and AC13 (the UI side). -->
 
@@ -81,3 +81,5 @@ none.
 - Commits start `T-0683a UF-11.6:` or `T-0683a UF-11.2:`.
 
 ## Build / accept log
+- Build (frontend-dev): `PlanBody` Level fact, `FavoritesBody` level notice (whole-list `anyAboveLevel`, "Change level" link), strings, feature-local CSS in `excluded.css`. Tests in `level-notice.test.tsx`: AC1 (3 levels), AC2+AC8, AC3 (3 cases), AC4, AC5, AC6, AC7 (offline click lands on /plan/edit?from=favorites, Save aria-disabled, "Connect to save"), AC8 name. `plan-layout.test.tsx` fact list updated deliberately. Planted faults (restored with cp, cmp-checked): F1 notice from visible rows -> AC5 red; F2 notice when any row has a line -> AC3 equipment case red; F3 Plan Level dd shows goal -> AC1 red x3; F4 link without ?from -> AC2/AC7 red.
+- Build gate: web typecheck, lint green; web test 5300/5302 on the first run (2 fails fixed: `strings.test.ts` allowlist gained the route literal, and the UF-01 eslint test timed out under load and passes alone); UF-11 + UF-01 source tests 384 pass after. `format:check` and `check-all` green. e2e `uf-11*` went red once on 200% zoom (`Intermediate` overflowed 22 px; red on my change, green on stash), fixed with `overflow-wrap: anywhere` on `.wl-plan__facts dd` in `plan.css`; then 80/80 pass.
