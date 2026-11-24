@@ -43,9 +43,9 @@ describe("T-0522 AC2 bodyweight-only primary count per area", () => {
     });
   }
 
-  // D-0234 §4 (T-0691): pin 95 -> 108 for the 13 generic machine rows.
-  it("T-0522 AC1 / T-0560 / T-0691 the library has 108 rows", () => {
-    expect(loadLibrary()).toHaveLength(108);
+  // D-0234 §4 (T-0691): pin 95 -> 108 for the 13 generic machine rows. T-0988: 108 -> 109.
+  it("T-0522 AC1 / T-0560 / T-0691 / T-0988 the library has 109 rows", () => {
+    expect(loadLibrary()).toHaveLength(109);
   });
 
   it("T-0522 AC5 at least two of the nine new rows are beginner and one is timed", () => {
