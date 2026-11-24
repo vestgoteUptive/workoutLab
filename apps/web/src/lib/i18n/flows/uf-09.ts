@@ -78,7 +78,6 @@ export const uf09 = {
   skipRest: "Skip rest",
   nextSet: (n: number, total: number) => `Next · set ${n} of ${total}`,
   nextBackoff: "Next · back-off set",
-  nextItem: (name: string) => `Next · ${name}`,
   // UF-09.6 Next exercise (T-0304f, D-0066 §10, D-0118 §11).
   imReady: "I'm ready",
   separator: "·",

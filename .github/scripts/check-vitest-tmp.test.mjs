@@ -195,20 +195,24 @@ test("T-0934 AC4: at start a run prunes folders of dead pids and keeps live ones
 
 test("T-0934 AC5: an inherited WL_VITEST_TMP_DIR is returned as is, with no new folder and no exit handler", () => {
   const scratch = mkdtempSync(path.join(tmpdir(), "wl-vitest-tmp-"));
+  // T-1017: a real, writable folder. A made-up `/inherited-tmp` works as root but CI runs as a
+  // normal user, and tsx writes its cache under TMPDIR (EACCES on GitHub Actions).
+  const inherited = mkdtempSync(path.join(tmpdir(), "wl-inherited-tmp-"));
   try {
     const before = runFolders();
     const r = runSync(
       `console.log(JSON.stringify({ dir, exit: process.listenerCount("exit"), tmp: process.env.TMPDIR }));`,
-      { ...cleanEnv(), WL_VITEST_TMP_DIR: scratch, TMPDIR: "/inherited-tmp" },
+      { ...cleanEnv(), WL_VITEST_TMP_DIR: scratch, TMPDIR: inherited },
     );
     const out = lastJson(r);
     assert.equal(out.dir, scratch);
     assert.equal(out.exit, 0);
-    assert.equal(out.tmp, "/inherited-tmp");
+    assert.equal(out.tmp, inherited);
     assert.deepEqual(runFolders(), before);
     assert.equal(existsSync(scratch), true);
   } finally {
     rmSync(scratch, { recursive: true, force: true });
+    rmSync(inherited, { recursive: true, force: true });
   }
 });
 

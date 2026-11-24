@@ -209,26 +209,28 @@ describe("AC-3 GO at 0", () => {
   });
 });
 
+// T-0990 AC13: the pins below gain the exercise-name line (D-0273); "Next · {name}" became
+// "Next exercise" + the name. Nothing is weakened.
 describe("AC-3 the Next line (D-0118 §7)", () => {
   it("after bench-press set 1 (80 × 6): 'Next · set 2 of 4' and '80 kg × 6'", async () => {
     await showRest();
-    expect(nextText()).toEqual(["Next · set 2 of 4", `80${NBSP}kg × 6`]);
+    expect(nextText()).toEqual(["Next · set 2 of 4", "Bench press", `80${NBSP}kg × 6`]);
   });
 
   it("after a set saved as 77.5 × 5, the next set pre-fills it", async () => {
     await showRest({ logged: loggedSets(0, 1, P1, { weightKg: 77.5, reps: 5 }) });
-    expect(nextText()).toEqual(["Next · set 2 of 4", `77.5${NBSP}kg × 5`]);
+    expect(nextText()).toEqual(["Next · set 2 of 4", "Bench press", `77.5${NBSP}kg × 5`]);
   });
 
-  it("after bench-press set 4: 'Next · Barbell row'", async () => {
+  it("after bench-press set 4: 'Next exercise' and 'Barbell row'", async () => {
     await showRest({ setIndex: 3 });
-    expect(nextText()).toEqual(["Next · Barbell row"]);
+    expect(nextText()).toEqual(["Next exercise", "Barbell row"]);
   });
 
   it("before the back-off set: 'Next · back-off set' and '70 kg × 6'", async () => {
     const plan = planWith({ items: [{ ...BENCH, backoff: { weightKg: 70, reps: 6 } }, ROW] });
     await showRest({ plan, setIndex: 3 });
-    expect(nextText()).toEqual(["Next · back-off set", `70${NBSP}kg × 6`]);
+    expect(nextText()).toEqual(["Next · back-off set", "Bench press", `70${NBSP}kg × 6`]);
   });
 
   it("before leg-curl set 2 with a null weight: 'Set weight'", async () => {
@@ -237,7 +239,7 @@ describe("AC-3 the Next line (D-0118 §7)", () => {
       durationS: 60,
       logged: loggedSets(2, 1, P1, { weightKg: null, reps: 10 }),
     });
-    expect(nextText()).toEqual(["Next · set 2 of 3", "Set weight", "10 reps"]);
+    expect(nextText()).toEqual(["Next · set 2 of 3", "Leg curl", "Set weight", "10 reps"]);
     expect(document.querySelector('[data-field="next"]')!.textContent).not.toMatch(/kg/);
   });
 
@@ -247,7 +249,7 @@ describe("AC-3 the Next line (D-0118 §7)", () => {
       durationS: 60,
       logged: loggedSets(2, 1, P1, { weightKg: 40, reps: 10 }),
     });
-    expect(nextText()).toEqual(["Next · set 2 of 3", `40${NBSP}kg × 10`]);
+    expect(nextText()).toEqual(["Next · set 2 of 3", "Leg curl", `40${NBSP}kg × 10`]);
     expect(CURL.prefill.weightKg).toBeNull();
   });
 });

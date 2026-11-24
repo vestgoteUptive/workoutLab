@@ -5,7 +5,7 @@ lane: qa
 screens: [UF-09.5, UF-09.3, UF-09.6]
 decisions: [D-0273, D-0261, D-0263]
 deps: [T-0990]
-status: todo
+status: ready
 ---
 ## Why
 The web ticket proves the logic in jsdom. Wrapping, "no truncation" at 320 px and 200 % zoom, the first-frame word and the offline cue need a real browser (spec `docs/specs/rest-next-exercise.md`, D-0273).

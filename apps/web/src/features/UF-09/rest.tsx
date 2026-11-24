@@ -4,54 +4,131 @@
 // time is the persisted wall-clock timer (NFR-TIME-1); the screen's fill is the host's (T-0597,
 // drain-fill.ts). "10 seconds" and "Go" are spoken by the chrome announcer in the host, which
 // outlives this view (D-0118 §10).
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { ArrowIcon } from "../../components/icons/index.js";
 import { formatKg } from "../../lib/format/number.js";
 import { en } from "../../lib/i18n/en.js";
+import { perSide, readReps } from "../../lib/i18n/per-side.js";
+import { HeroLine, SrText } from "./hero-line.js";
 import { isBodyweight, setAfterRest } from "./machine.js";
 import { nextSetPrefill } from "./prefill.js";
 import { useFocusSession } from "./session.js";
 import { formatClock, remainingS } from "./timer.js";
+import { useCachedFields } from "./use-cue.js";
 import type { ViewProps } from "./views.js";
 
 interface NextLine {
-  title: string;
-  /** The load line for a reps set; `null` for another item or a timed set. */
-  load:
-    | { kind: "kg"; text: string }
-    | { kind: "ask"; reps: string }
-    | { kind: "bw"; reps: string }
-    | null;
+  /** The exercise the next set belongs to, and whether it is the one just done (`same`) or the next item. */
+  exerciseId: string;
+  kind: "same" | "new";
+  caption: string;
+  /** The reps set of the same exercise; `null` for another item or a timed set. */
+  reps: number | null;
+  /** Today's load line for an unflagged set; the per-side reading is built from the parts. */
+  weightKg: number | null;
+  bodyweight: boolean;
 }
 
-/** What the rest leads to (D-0118 §7): the next set of this item, or the next item's name. */
-function nextLine({
-  state,
-  ctx,
-  locale,
-}: Pick<ViewProps, "state" | "ctx" | "locale">): NextLine | null {
+/** What the rest leads to (D-0118 §7, D-0273): the next set of this item, or the next item. */
+function nextLine({ state, ctx }: Pick<ViewProps, "state" | "ctx" | "locale">): NextLine | null {
   const item = ctx.plan.items[state.itemIndex];
   if (!item) return null;
   const nextSet = setAfterRest(state, ctx);
   if (nextSet === null) {
     const nextItem = ctx.plan.items[state.itemIndex + 1];
     if (!nextItem) return null;
-    const name = ctx.library.find((e) => e.id === nextItem.exerciseId)?.name ?? nextItem.exerciseId;
-    return { title: en.uf09.nextItem(name), load: null };
+    return {
+      exerciseId: nextItem.exerciseId,
+      kind: "new",
+      caption: en.uf09.titles.next,
+      reps: null,
+      weightKg: null,
+      bodyweight: false,
+    };
   }
-  const title =
+  const caption =
     nextSet >= item.sets ? en.uf09.nextBackoff : en.uf09.nextSet(nextSet + 1, item.sets);
-  if (item.repsMin === null) return { title, load: null };
+  const base = { exerciseId: item.exerciseId, kind: "same" as const, caption };
+  if (item.repsMin === null) return { ...base, reps: null, weightKg: null, bodyweight: false };
   const prefill = nextSetPrefill(ctx.plan, state.itemIndex, nextSet, state.loggedSets);
-  const reps = prefill.reps ?? 0;
-  if (isBodyweight(item.exerciseId, ctx.library)) {
-    return { title, load: { kind: "bw", reps: en.uf09.reps(reps) } };
-  }
-  if (prefill.weightKg === null) return { title, load: { kind: "ask", reps: en.uf09.reps(reps) } };
   return {
-    title,
-    load: { kind: "kg", text: en.uf09.load(formatKg(prefill.weightKg, locale), reps) },
+    ...base,
+    reps: prefill.reps ?? 0,
+    weightKg: prefill.weightKg,
+    bodyweight: isBodyweight(item.exerciseId, ctx.library),
   };
+}
+
+/** The cue of a new exercise: the cached cue, else the first how-to line, else nothing. */
+function pickCue(cue: string | null, instructions: readonly string[]): string | null {
+  if (cue) return cue;
+  return instructions[0] ? instructions[0] : null;
+}
+
+/** The "Next" block (D-0273). Its own component so the cache hook is not conditional on `next`. */
+function NextBlock({
+  line,
+  library,
+  locale,
+}: {
+  line: NextLine;
+  library: ViewProps["ctx"]["library"];
+  locale: ViewProps["locale"];
+}) {
+  const { cue, instructions, unilateral } = useCachedFields(line.exerciseId);
+  const name = library.find((e) => e.id === line.exerciseId)?.name ?? line.exerciseId;
+  const side = perSide(unilateral);
+  const flagged = unilateral !== null;
+  const reps = line.reps ?? 0;
+  const cueText = line.kind === "new" ? pickCue(cue, instructions) : null;
+  let load: ReactNode = null;
+  if (line.kind === "same" && line.reps !== null) {
+    if (line.bodyweight) {
+      load = flagged ? (
+        <p className="wl-uf09__next-load wl-type-stat">
+          <SrText text={readReps(reps, unilateral, locale)} />
+          <HeroLine text={en.uf09.reps(reps)} suffix={side} ariaHidden />
+        </p>
+      ) : (
+        <p className="wl-uf09__next-load wl-type-stat">{en.uf09.reps(reps)}</p>
+      );
+    } else if (line.weightKg === null) {
+      load = (
+        <div className="wl-uf09__next-load wl-type-stat">
+          <p className="wl-uf09__ask">{en.uf09.setWeight}</p>
+          {flagged ? (
+            <p>
+              <SrText text={readReps(reps, unilateral, locale)} />
+              <HeroLine text={en.uf09.reps(reps)} suffix={side} ariaHidden />
+            </p>
+          ) : (
+            <p>{en.uf09.reps(reps)}</p>
+          )}
+        </div>
+      );
+    } else {
+      const kg = formatKg(line.weightKg, locale);
+      const text = en.uf09.load(kg, reps);
+      const split = text.indexOf("×");
+      load = flagged ? (
+        <p className="wl-uf09__next-load wl-type-stat">
+          <SrText text={readReps(reps, unilateral, locale, kg)} />
+          <HeroLine text={text.slice(0, split)} ariaHidden />
+          <HeroLine text={text.slice(split)} suffix={side} ariaHidden />
+        </p>
+      ) : (
+        <p className="wl-uf09__next-load wl-type-stat">{text}</p>
+      );
+    }
+  }
+  return (
+    <div className="wl-uf09__next" data-field="next">
+      <p className="wl-uf09__next-title wl-type-label">{line.caption}</p>
+      <p className="wl-uf09__next-name">{name}</p>
+      {load}
+      {cueText === null ? null : <p className="wl-uf09__next-cue wl-type-body">{cueText}</p>}
+    </div>
+  );
 }
 
 export function Rest({ state, ctx, locale, nowMs }: ViewProps) {
@@ -92,23 +169,7 @@ export function Rest({ state, ctx, locale, nowMs }: ViewProps) {
           {en.uf09.restMore}
         </button>
       </div>
-      {next ? (
-        <div className="wl-uf09__next" data-field="next">
-          <p className="wl-uf09__next-title wl-type-label">{next.title}</p>
-          {next.load?.kind === "kg" ? (
-            <p className="wl-uf09__next-load wl-type-stat">{next.load.text}</p>
-          ) : null}
-          {next.load?.kind === "bw" ? (
-            <p className="wl-uf09__next-load wl-type-stat">{next.load.reps}</p>
-          ) : null}
-          {next.load?.kind === "ask" ? (
-            <div className="wl-uf09__next-load wl-type-stat">
-              <p className="wl-uf09__ask">{en.uf09.setWeight}</p>
-              <p>{next.load.reps}</p>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      {next ? <NextBlock line={next} library={ctx.library} locale={locale} /> : null}
       <button
         ref={skipRef}
         type="button"

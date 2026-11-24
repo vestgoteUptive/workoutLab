@@ -34,3 +34,6 @@ export { timeCheck, timeLeftS, SHOW_BEHIND_S, TRIM_MIN_SETS } from "./timecheck.
 export { evaluateCheckin, checkinSessions, periodStatus, PERIOD_DAYS, UNDER_FACTOR_X10, OVER_FACTOR_X10, RHYTHM_FLOOR, RHYTHM_CEILING, COMPARED_PERIODS, } from "./checkin.js";
 export { records, recordKey } from "./records.js";
 export { estimatedOneRepMax, E1RM_MAX_REPS } from "./e1rm.js";
+// T-0994 adds rule 7.6 orderItems and rule 12.4 areaGroups (UF-08.2, UF-08.4, D-0275).
+export { areaGroups, homeAreaOf } from "./area-groups.js";
+export { orderItems, equipmentGroupOf } from "./order.js";

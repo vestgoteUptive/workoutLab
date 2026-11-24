@@ -80,3 +80,6 @@ export {
 } from "./checkin.js";
 export { records, recordKey, type RecordSet, type RecordPrevious } from "./records.js";
 export { estimatedOneRepMax, E1RM_MAX_REPS, type E1rmPoint } from "./e1rm.js";
+// T-0994 adds rule 7.6 orderItems and rule 12.4 areaGroups (UF-08.2, UF-08.4, D-0275).
+export { areaGroups, homeAreaOf, type AreaGroup } from "./area-groups.js";
+export { orderItems, equipmentGroupOf, type EquipmentGroup } from "./order.js";
