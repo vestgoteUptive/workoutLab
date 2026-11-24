@@ -2,7 +2,7 @@
 -- AC24 [a][b] (indexes), AC23 (data minimisation), D-0029 (exercises columns, TR-0003).
 -- The AC1 block is generated from the column tables in docs/data-model.md (parts [a] and [b], T-0100b).
 begin;
-select plan(302);
+select plan(350);
 
 -- AC1 -------------------------------------------------------------------------------------------
 -- areas
@@ -67,7 +67,7 @@ select col_type_is('public', 'exercise_variants', 'variant_id', 'text', 'exercis
 select col_not_null('public', 'exercise_variants', 'variant_id', 'exercise_variants.variant_id is not null');
 -- profiles
 select has_table('public', 'profiles', 'table profiles exists');
-select columns_are('public', 'profiles', array['user_id', 'goal', 'level', 'rhythm_min', 'rhythm_max', 'equipment', 'priority_areas', 'onboarded_at', 'onboarding_timing_ms', 'plan_changed_at', 'created_at', 'updated_at', 'bar_kg', 'plates_kg'], 'profiles has exactly the documented columns');
+select columns_are('public', 'profiles', array['user_id', 'goal', 'level', 'rhythm_min', 'rhythm_max', 'equipment', 'priority_areas', 'onboarded_at', 'onboarding_timing_ms', 'plan_changed_at', 'created_at', 'updated_at', 'bar_kg', 'plates_kg', 'learn_from_edits', 'learn_reset_at'], 'profiles has exactly the documented columns');
 select col_type_is('public', 'profiles', 'user_id', 'uuid', 'profiles.user_id is uuid');
 select col_not_null('public', 'profiles', 'user_id', 'profiles.user_id is not null');
 select col_type_is('public', 'profiles', 'goal', 'text', 'profiles.goal is text');
@@ -333,6 +333,62 @@ select is(
       and c.confrelid = 'auth.users'::regclass),
   'c',
   'exercise_settings.user_id FK is ON DELETE CASCADE');
+-- edit_signals (T-1001, D-0281)
+select has_table('public', 'edit_signals', 'table edit_signals exists');
+select columns_are('public', 'edit_signals', array['id', 'user_id', 'device_id', 'key', 'kind', 'exercise_id', 'to_exercise_id', 'count', 'window_start', 'last_seen', 'asked_at', 'created_at', 'updated_at'], 'edit_signals has exactly the documented columns');
+select col_type_is('public', 'edit_signals', 'id', 'uuid', 'edit_signals.id is uuid');
+select col_type_is('public', 'edit_signals', 'user_id', 'uuid', 'edit_signals.user_id is uuid');
+select col_type_is('public', 'edit_signals', 'device_id', 'uuid', 'edit_signals.device_id is uuid');
+select col_type_is('public', 'edit_signals', 'key', 'text', 'edit_signals.key is text');
+select col_type_is('public', 'edit_signals', 'kind', 'text', 'edit_signals.kind is text');
+select col_type_is('public', 'edit_signals', 'exercise_id', 'text', 'edit_signals.exercise_id is text');
+select col_type_is('public', 'edit_signals', 'to_exercise_id', 'text', 'edit_signals.to_exercise_id is text');
+select col_type_is('public', 'edit_signals', 'count', 'integer', 'edit_signals.count is integer');
+select col_type_is('public', 'edit_signals', 'window_start', 'timestamp with time zone', 'edit_signals.window_start is timestamptz');
+select col_type_is('public', 'edit_signals', 'last_seen', 'timestamp with time zone', 'edit_signals.last_seen is timestamptz');
+select col_type_is('public', 'edit_signals', 'asked_at', 'timestamp with time zone', 'edit_signals.asked_at is timestamptz');
+select col_type_is('public', 'edit_signals', 'created_at', 'timestamp with time zone', 'edit_signals.created_at is timestamptz');
+select col_type_is('public', 'edit_signals', 'updated_at', 'timestamp with time zone', 'edit_signals.updated_at is timestamptz');
+select col_not_null('public', 'edit_signals', 'id', 'edit_signals.id is not null');
+select col_not_null('public', 'edit_signals', 'user_id', 'edit_signals.user_id is not null');
+select col_not_null('public', 'edit_signals', 'device_id', 'edit_signals.device_id is not null');
+select col_not_null('public', 'edit_signals', 'key', 'edit_signals.key is not null');
+select col_not_null('public', 'edit_signals', 'kind', 'edit_signals.kind is not null');
+select col_not_null('public', 'edit_signals', 'exercise_id', 'edit_signals.exercise_id is not null');
+select col_is_null('public', 'edit_signals', 'to_exercise_id', 'edit_signals.to_exercise_id is nullable');
+select col_not_null('public', 'edit_signals', 'count', 'edit_signals.count is not null');
+select col_not_null('public', 'edit_signals', 'window_start', 'edit_signals.window_start is not null');
+select col_not_null('public', 'edit_signals', 'last_seen', 'edit_signals.last_seen is not null');
+select col_is_null('public', 'edit_signals', 'asked_at', 'edit_signals.asked_at is nullable');
+select col_not_null('public', 'edit_signals', 'created_at', 'edit_signals.created_at is not null');
+select col_not_null('public', 'edit_signals', 'updated_at', 'edit_signals.updated_at is not null');
+select col_default_is('public', 'edit_signals', 'id', 'gen_random_uuid()', 'edit_signals.id defaults to gen_random_uuid()');
+select col_default_is('public', 'edit_signals', 'user_id', 'auth.uid()', 'edit_signals.user_id defaults to auth.uid()');
+select col_default_is('public', 'edit_signals', 'count', '0', 'edit_signals.count defaults to 0');
+select col_default_is('public', 'edit_signals', 'created_at', 'now()', 'edit_signals.created_at defaults to now()');
+select col_default_is('public', 'edit_signals', 'updated_at', 'now()', 'edit_signals.updated_at defaults to now()');
+select col_is_pk('public', 'edit_signals', array['id'], 'edit_signals PK (id)');
+select col_is_unique('public', 'edit_signals', array['user_id', 'device_id', 'key'], 'edit_signals unique (user_id, device_id, key)');
+select has_index('public', 'edit_signals', 'edit_signals_exercise_id_idx', array['exercise_id'], 'index on edit_signals (exercise_id)');
+select has_index('public', 'edit_signals', 'edit_signals_to_exercise_id_idx', array['to_exercise_id'], 'index on edit_signals (to_exercise_id)');
+select fk_ok('public', 'edit_signals', array['user_id'], 'auth', 'users', array['id'], 'edit_signals.user_id FK to auth.users (id)');
+select fk_ok('public', 'edit_signals', array['exercise_id'], 'public', 'exercises', array['id'], 'edit_signals.exercise_id FK to exercises (id)');
+select fk_ok('public', 'edit_signals', array['to_exercise_id'], 'public', 'exercises', array['id'], 'edit_signals.to_exercise_id FK to exercises (id)');
+select is(
+  (select string_agg(c.confdeltype::text, ',' order by c.conname) from pg_catalog.pg_constraint c
+    where c.conrelid = 'public.edit_signals'::regclass and c.contype = 'f'),
+  'c,c,c', 'edit_signals: all three FKs are ON DELETE CASCADE');
+select is(
+  (select string_agg(c.conname::text, ',' order by c.conname) from pg_catalog.pg_constraint c
+    where c.conrelid = 'public.edit_signals'::regclass and c.contype = 'c'),
+  'edit_signals_count_or_asked,edit_signals_count_range,edit_signals_key_matches,edit_signals_kind_to_exercise,edit_signals_kind_valid,edit_signals_swap_ids_differ,edit_signals_window_order',
+  'edit_signals has exactly the documented checks');
+select col_type_is('public', 'profiles', 'learn_from_edits', 'boolean', 'profiles.learn_from_edits is boolean');
+select col_not_null('public', 'profiles', 'learn_from_edits', 'profiles.learn_from_edits is not null');
+select col_default_is('public', 'profiles', 'learn_from_edits', 'true', 'profiles.learn_from_edits defaults to true');
+select col_type_is('public', 'profiles', 'learn_reset_at', 'timestamp with time zone', 'profiles.learn_reset_at is timestamptz');
+select col_is_null('public', 'profiles', 'learn_reset_at', 'profiles.learn_reset_at is nullable');
+select col_hasnt_default('public', 'profiles', 'learn_reset_at', 'profiles.learn_reset_at has no default');
 select has_view('public', 'session_sets_live', 'view session_sets_live exists');
 select has_view('analytics', 'time_to_first_plan', 'view analytics.time_to_first_plan exists');
 select has_view('analytics', 'finished_within_budget', 'view analytics.finished_within_budget exists');

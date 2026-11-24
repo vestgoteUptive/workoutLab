@@ -2,9 +2,9 @@
 -- 2 sessions and 6 session_sets (1 tombstoned); [b] 1 routine with 2 items and 1 plan_checkins row
 -- (T-0100b); 2 excluded_exercises rows (T-0535, D-0199 §4); 2 favorite_exercises rows on other
 -- exercises (T-0564, D-0202 §5: a favorite of an excluded exercise would remove the exclusion).
--- 2 exercise_settings rows (T-0951, D-0251). B owns 1 row in each table.
+-- 2 exercise_settings rows (T-0951, D-0251). 2 edit_signals rows (T-1001, D-0281). B owns 1 row in each table.
 begin;
-select plan(20);
+select plan(24);
 
 insert into auth.users (id, aud, role, email) values
   ('00000000-0000-0000-0000-00000000000a', 'authenticated', 'authenticated', 'a@test.local'),
@@ -67,6 +67,18 @@ insert into public.exercise_settings (user_id, exercise_id, increment_kg) values
 select is((select count(*)::int from public.exercise_settings where user_id = '00000000-0000-0000-0000-00000000000a'), 2,
   'T-0951 AC9 A has 2 exercise_settings before the delete');
 
+insert into public.edit_signals (user_id, device_id, key, kind, exercise_id, to_exercise_id, count, window_start, last_seen) values
+  ('00000000-0000-0000-0000-00000000000a', 'd0000000-0000-0000-0000-00000000000a', 'swap:fx-bench-press:fx-plank', 'swap',
+   'fx-bench-press', 'fx-plank', 3, '2026-11-01T09:00Z', '2026-11-03T09:00Z'),
+  ('00000000-0000-0000-0000-00000000000a', 'd0000000-0000-0000-0000-00000000000a', 'removal:fx-plank', 'removal',
+   'fx-plank', null, 2, '2026-11-01T09:00Z', '2026-11-03T09:00Z'),
+  ('00000000-0000-0000-0000-00000000000b', 'd0000000-0000-0000-0000-00000000000b', 'removal:fx-plank', 'removal',
+   'fx-plank', null, 1, '2026-11-01T09:00Z', '2026-11-03T09:00Z');
+select is((select count(*)::int from public.edit_signals where user_id = '00000000-0000-0000-0000-00000000000a'), 2,
+  'T-1001 AC6 A has 2 edit_signals before the delete');
+select is((select count(*)::int from public.edit_signals where user_id = '00000000-0000-0000-0000-00000000000b'), 1,
+  'T-1001 AC6 B has 1 edit_signal before the delete');
+
 select results_eq($$select
     (select count(*)::int from public.routines where user_id = '00000000-0000-0000-0000-00000000000a'),
     (select count(*)::int from public.routine_items where user_id = '00000000-0000-0000-0000-00000000000a'),
@@ -94,6 +106,10 @@ select is((select count(*)::int from public.exercise_settings where user_id = '0
   'T-0951 AC9 A has 0 exercise_settings after the auth delete');
 select is((select count(*)::int from public.exercise_settings where user_id = '00000000-0000-0000-0000-00000000000b'), 1,
   'T-0951 AC9 B''s exercise_setting is unchanged');
+select is((select count(*)::int from public.edit_signals where user_id = '00000000-0000-0000-0000-00000000000a'), 0,
+  'T-1001 AC6 A has 0 edit_signals after the auth delete');
+select is((select count(*)::int from public.edit_signals where user_id = '00000000-0000-0000-0000-00000000000b'), 1,
+  'T-1001 AC6 B''s edit_signal is unchanged');
 select is((select count(*)::int from public.profiles where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 profiles');
 select is((select count(*)::int from public.area_targets where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 area_targets');
 select is((select count(*)::int from public.sessions where user_id = '00000000-0000-0000-0000-00000000000a'), 0, 'A has 0 sessions');

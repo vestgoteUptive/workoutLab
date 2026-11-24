@@ -108,6 +108,7 @@ describe("AC15 database.gen.ts matches docs/data-model.md v1", () => {
         "excluded_exercises",
         "favorite_exercises",
         "exercise_settings",
+        "edit_signals",
       ].sort(),
     );
   });
@@ -264,5 +265,57 @@ describe("T-0951 exercise_settings types (D-0251, D-0259 §16, UF-04.2)", () => 
     expect(readFileSync(GEN_PATH, "utf8")).toContain(
       'foreignKeyName: "exercise_settings_exercise_id_fkey"',
     );
+  });
+});
+
+describe("T-1001 AC8 edit_signals types (D-0281, UF-11.4)", () => {
+  it("Row has the thirteen columns", () => {
+    expectTypeOf<Tables<"edit_signals">>().toEqualTypeOf<{
+      asked_at: string | null;
+      count: number;
+      created_at: string;
+      device_id: string;
+      exercise_id: string;
+      id: string;
+      key: string;
+      kind: string;
+      last_seen: string;
+      to_exercise_id: string | null;
+      updated_at: string;
+      user_id: string;
+      window_start: string;
+    }>();
+  });
+
+  it("Insert needs device_id, key, kind, exercise_id, window_start and last_seen", () => {
+    expectTypeOf<TablesInsert<"edit_signals">>().toEqualTypeOf<{
+      asked_at?: string | null;
+      count?: number;
+      created_at?: string;
+      device_id: string;
+      exercise_id: string;
+      id?: string;
+      key: string;
+      kind: string;
+      last_seen: string;
+      to_exercise_id?: string | null;
+      updated_at?: string;
+      user_id?: string;
+      window_start: string;
+    }>();
+  });
+
+  it("references exercises through both foreign keys", () => {
+    const src = readFileSync(GEN_PATH, "utf8");
+    expect(src).toContain('foreignKeyName: "edit_signals_exercise_id_fkey"');
+    expect(src).toContain('foreignKeyName: "edit_signals_to_exercise_id_fkey"');
+  });
+
+  it("profiles carry learn_from_edits (default true) and learn_reset_at (nullable)", () => {
+    expectTypeOf<Tables<"profiles">["learn_from_edits"]>().toEqualTypeOf<boolean>();
+    expectTypeOf<Tables<"profiles">["learn_reset_at"]>().toEqualTypeOf<string | null>();
+    expectTypeOf<TablesInsert<"profiles">["learn_from_edits"]>().toEqualTypeOf<
+      boolean | undefined
+    >();
   });
 });
