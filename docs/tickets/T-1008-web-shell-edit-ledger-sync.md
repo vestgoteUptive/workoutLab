@@ -5,7 +5,7 @@ lane: web-shell
 screens: [UF-08.2, UF-11.4]
 decisions: [D-0281, D-0001, D-0015, D-0195]
 deps: [T-1001, T-1007]
-status: ready
+status: done
 ---
 ## Why
 The counts must reach the user's other devices without ever counting a signal twice (D-0281 §2). Each device writes only its own rows as absolute states; the total is the sum. Plain CRUD under RLS, no Edge Function (D-0001).
