@@ -19,6 +19,7 @@ T-0996 replaced the UF-08.2 exercise list with the area plan. 47 existing e2e ch
 ## Paths you may change
 - `tests/e2e/**`
 - `apps/web/src/features/UF-08/__e2e__/**`
+- `packages/design-tokens/test/t0993-uf08-areas-first-specs.test.ts` (orchestrator grant: the UF-08.6 "No other exercise for {Area} today. Use Swap." copy pin after T-0998's doc sync)
 
 ## Contract impact
 none.
