@@ -36,6 +36,7 @@ Checklist (D-0197 §7): rows/none (AC1), one page/two pages (AC2), read ok/error
 - `tests/e2e/uf-11-account.spec.ts`, `tests/e2e/fixtures/supabase-mock.ts` (extra: qa paths, orchestrator grant)
 - `supabase/tests/functions/integration/account-delete.test.ts` (extra: the delete list)
 - `packages/shared/**`
+- `.github/scripts/rls-coverage.test.mjs` (orchestrator grant, T-1001 security review)
 
 ## Contract impact
 none (the schema is T-1001; the export file gains one key).
