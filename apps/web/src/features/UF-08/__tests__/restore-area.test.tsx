@@ -257,7 +257,7 @@ describe("T-1023 AC1 restore", () => {
       : lastWorkout().plan;
   }
 
-  it("T-1023 AC3 removing the last exercise on UF-08.6 is remembered too; Leg curl is out for the visit, so the engine falls back to a fresh suggestion", async () => {
+  it("T-1023 AC3 removing the last exercise on UF-08.6 is not remembered (D-0191: its id is out for the visit), so Add is a fresh suggestion", async () => {
     await toPlan({ budget: 90 });
     openArea("hamstrings");
     const gone = areaGroups(lastWorkout()).find((g) => g.area === "hamstrings")!.itemIds;
@@ -267,6 +267,7 @@ describe("T-1023 AC1 restore", () => {
     expect(status()).toHaveTextContent("Hamstrings removed. Add it back below.");
     fireEvent.click(addButton("hamstrings"));
     expect(rowAreas()).toContain("hamstrings");
+    expect(status()).toHaveTextContent(/^Hamstrings added\. \d+ min left\.$/);
     expect(skipping()).toBeNull();
     const written = await started();
     expect(written.items.map((i) => i.exerciseId)).not.toContain(gone[0]);

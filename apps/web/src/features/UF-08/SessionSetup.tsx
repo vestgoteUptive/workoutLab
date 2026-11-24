@@ -69,7 +69,7 @@ import {
   overviewOf,
   pruneRestore,
   putIn,
-  restoreAreas,
+  restorableOf,
   takeOut,
   type PlanOverview,
 } from "./area-plan-engine.js";
@@ -415,7 +415,10 @@ export function SessionSetup({
     } catch {
       overview = { candidates: [], stepRefusals: {} };
     }
-    return { ctx, overview };
+    // T-1023: the removed areas whose Add the engine would restore (not fall back for), so Fill
+    // the rest is shown only for what it will add.
+    const restorable = restorableOf(adjusted.workout, ctx);
+    return { ctx, overview, restorable };
     // `adjusted` is read through its workout and exclusions only.
   }, [
     areaPlanOn,
@@ -752,12 +755,9 @@ export function SessionSetup({
             }
             const ordered = orderItems(next, lib);
             const last = !areaGroups(ordered).some((g) => g.area === areaId);
-            const gone = itemOf(id);
             hold(ordered, {
-              restore:
-                last && gone !== undefined
-                  ? [...pruneRestore(adjusted.restore, ordered, [areaId]), gone]
-                  : pruneRestore(adjusted.restore, ordered),
+              // D-0191 §4: the id is out for the visit, so a restore could never use it; not remembered.
+              restore: pruneRestore(adjusted.restore, ordered, last ? [areaId] : []),
               excludeIds: [...adjusted.excludeIds, id],
               swappedOut: without(adjusted.swappedOut, id),
               unlabelledPins: without(adjusted.unlabelledPins, id),
@@ -860,7 +860,7 @@ export function SessionSetup({
           overview={overview}
           avoidAreas={avoidAreas}
           removedAreas={adjusted.removedAreas}
-          restorableAreas={restoreAreas(adjusted.restore)}
+          restorableAreas={areaView.restorable}
           noticeAreas={noticeAreas}
           keptIds={keptIds}
           exclusionFailed={exclusionFailed}

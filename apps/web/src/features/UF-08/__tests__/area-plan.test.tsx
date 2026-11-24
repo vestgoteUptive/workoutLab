@@ -532,20 +532,8 @@ describe("T-0996 AC6 Fill the rest for me", () => {
     expect(queryButton("Fill the rest for me")).toBeNull();
   });
 
-  it("T-0996 AC6 one area fits: the status names it; an area removed on this visit comes back only as it was (T-1023, D-0290 §7)", async () => {
-    await toPlan({ budget: 60 });
-    removeArea("shoulders");
-    const fill = queryButton("Fill the rest for me");
-    if (fill !== null) {
-      fireEvent.click(fill);
-      expect(status().textContent).toMatch(/added( back)?\. ?(\d+ min left\.)?$/);
-    }
-    if (rowAreas().includes("shoulders")) {
-      expect(candidate("shoulders")).toBeNull();
-    } else {
-      expect(candidate("shoulders")).not.toBeNull();
-    }
-  });
+  // T-1023: Fill the rest and a removed area (comes back only as it was; never a fresh add) is
+  // covered in restore-area.test.tsx (AC6) and area-plan-engine.test.ts.
 });
 
 describe("T-0996 AC7 the order", () => {

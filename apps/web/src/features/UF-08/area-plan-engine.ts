@@ -105,7 +105,7 @@ export function itemsOfArea(workout: Workout, area: Area): WorkoutItem[] {
   return workout.plan.items.filter((i) => homeAreaOf(i) === area);
 }
 
-/** `restore` without `areas`' items, and without the items of any area now in `workout`. */
+/** `restore` without `also`' items, without items that have no home area, and without the items of any area now in `workout`. */
 export function pruneRestore(
   restore: readonly WorkoutItem[],
   workout: Workout,
@@ -114,7 +114,7 @@ export function pruneRestore(
   const inPlan = new Set(areaGroups(workout).map((g) => g.area));
   return restore.filter((i) => {
     const a = homeAreaOf(i);
-    return a === null || (!inPlan.has(a) && !also.includes(a));
+    return a !== null && !inPlan.has(a) && !also.includes(a);
   });
 }
 
@@ -126,6 +126,17 @@ export function restoreAreas(restore: readonly WorkoutItem[]): Area[] {
     if (a !== null && !out.includes(a)) out.push(a);
   }
   return out;
+}
+
+/**
+ * The removed areas whose Add the engine would put back as they were (not fall back for): the ones
+ * "Fill the rest" can add (D-0290 §7). Asks the engine, so it follows its validity rules.
+ */
+export function restorableOf(workout: Workout, ctx: AreaEditContext): Area[] {
+  return restoreAreas(ctx.restore ?? []).filter((a) => {
+    const r = putIn(workout, a, ctx);
+    return "workout" in r && r.restored === true;
+  });
 }
 
 /** True when `after` holds every remembered item of `area` that `before` did not (a restore, not a fresh add). */
