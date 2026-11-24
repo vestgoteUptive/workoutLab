@@ -19,6 +19,7 @@ T-0996 replaced the UF-08.2 exercise list with the area plan. 47 existing e2e ch
 ## Paths you may change
 - `tests/e2e/**`
 - `apps/web/src/features/UF-08/__e2e__/**`
+- `packages/design-tokens/test/t0993-uf08-areas-first-specs.test.ts` (orchestrator grant: the UF-08.6 "No other exercise for {Area} today. Use Swap." copy pin after T-0998's doc sync)
 
 ## Contract impact
 none.
@@ -35,3 +36,4 @@ Every AC has evidence · affected e2e green · commit messages start with `T-101
 - **AC2:** `uf-08-area-plan.spec.ts` and `uf-08-area-detail.spec.ts` git-moved into `tests/e2e/`, imports now `./fixtures/...` and `./helpers/...`; `__e2e__/` is empty.
 - **AC3:** `scripts/locked.sh heavy npx playwright test --config tests/e2e/playwright.config.ts uf-08 uf-09 uf-02 --repeat-each 2 --trace off`: 552 passed (276 x 2), 0 failed, 0 flaky, 0 skipped (15.6 min).
 - **Gates:** `eslint tests/e2e` clean; `-w format:check` clean; `check-all.mjs` only `lane-path-not-owned` / `shared-i18n-other-flow` for the stacked T-0996 to T-1009 files. No app code touched.
+- **Follow-up (stack-top full gate):** `uf-09-rest-next` uses the `consoleGuard` fixture's `errors()` instead of its own console/pageerror listener (fixture-guard T-0430 AC1); `uf-04-library` `openHowToFromSetup` and `uf-05-swap` T-0602 "over UF-08" open the first area (UF-08.6) before How to / Swap; `t0993-uf08-areas-first-specs.test.ts` pins "No other exercise for {Area} today. Use Swap." (D-0288 §1). Other specs that reach UF-08.2 only tap Start workout. Ran fixture-guard, uf-04-library, uf-05-swap, uf-09-rest-next, uf-06-2, uf-09-start-workout/focus/offline/do-later, cobalt-state, visual-foundation, pwa-update: 248 passed; the t0993 vitest file 33 passed.

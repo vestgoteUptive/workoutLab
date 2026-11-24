@@ -119,7 +119,8 @@ describe("T-0993 AC3 UF-08.6 Area detail", () => {
     const n = section(uf086, '## "Not today" (D-0275 §8)');
     expect(n).toContain('**"{old} · Not today · Undo"**');
     expect(n).toContain("No preference is learned");
-    expect(n).toContain('**"No other exercise fits. Use Swap."**');
+    // D-0288 section 1 (T-0998): the refusal names the area.
+    expect(n).toContain('**"No other exercise for {Area} today. Use Swap."**');
     expect(n).toContain("**no timeout**");
   });
   it("specifies local Add, last-exercise-removed and the focus rule on Back", () => {

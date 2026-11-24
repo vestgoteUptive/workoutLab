@@ -250,18 +250,6 @@ async function loadText(page: Page): Promise<string> {
   });
 }
 
-/** Console errors and uncaught page errors; offline resource failures are not app errors. */
-function watchErrors(page: Page): () => string[] {
-  const errors: string[] = [];
-  page.on("console", (m) => {
-    if (m.type() !== "error") return;
-    if (/Failed to load resource|net::ERR/i.test(m.text())) return;
-    errors.push(m.text());
-  });
-  page.on("pageerror", (e) => errors.push(String(e)));
-  return () => errors.slice();
-}
-
 /** Real offline: writes are aborted by `goOffline`, and reads are aborted here (registered last,
  *  so it wins), so nothing can refresh the caches behind the test's back. */
 async function goReallyOffline(page: Page, context: BrowserContext): Promise<void> {
@@ -331,8 +319,9 @@ test.beforeEach(async ({ page }) => {
 test.describe("AC1 the Next block names the exercise (UF-09.5, UF-09.6)", () => {
   test("set 1 of barbell-row: 'Next · set 2 of 3', 'Barbell row', the load, no 'per arm', no cue; the last set: 'Next exercise', 'Dumbbell row', its cue; Skip rest lands on UF-09.6 with the same cue", async ({
     page,
+    consoleGuard,
   }) => {
-    const errors = watchErrors(page);
+    const errors = () => consoleGuard.errors();
     await mockAll(page);
     await signInAndCache(page);
     await openSeeded(page, PLAN_AB);
@@ -615,8 +604,9 @@ test.describe("AC4 offline (NFR-OFF-2)", () => {
   test("offline with the cached details: both rests of AC1 show the name, the cue and the word; online shows the same", async ({
     page,
     context,
+    consoleGuard,
   }) => {
-    const errors = watchErrors(page);
+    const errors = () => consoleGuard.errors();
     await mockAll(page);
     await openOffline(page, context, PLAN_AB);
 
@@ -653,8 +643,9 @@ test.describe("AC4 offline (NFR-OFF-2)", () => {
   test("a detail missing from the cache: the name shows, there is no cue line and no console error", async ({
     page,
     context,
+    consoleGuard,
   }) => {
-    const errors = watchErrors(page);
+    const errors = () => consoleGuard.errors();
     await mockAll(page);
     await openOffline(page, context, PLAN_A1B, "dumbbell-row");
     await saveSet(page);
