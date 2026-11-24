@@ -8,6 +8,8 @@ area: design
 amends: D-0002
 builds-on: D-0107, D-0109, D-0196, D-0203, D-0208, D-0211, D-0239
 ---
+> **Amended in part by D-0280 (2026-11-24).** §1: the flow-index row marks UF-08.4 Ready as retired (the ID is kept and never reused). The rows and stepper of §3 and §4 are unchanged.
+
 ## Context
 D-0002 says new screen IDs need a decision. Layer 3 needs one new screen (the exercises of one area) and layer 1 needs a card and a settings section, which are parts of existing screens.
 
