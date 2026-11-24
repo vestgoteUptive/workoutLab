@@ -74,6 +74,11 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
   const levelNoteId = `${idBase}-level-note`;
   const levelNameId = (level: Level) => `${idBase}-level-${level}`;
   const levelHintId = (level: Level) => `${idBase}-level-${level}-hint`;
+  // T-0687 (WCAG 3.3.2): each group is named by a visible `.wl-label` heading above it.
+  const goalHeadId = `${idBase}-goal-heading`;
+  const levelHeadId = `${idBase}-level-heading`;
+  const rhythmHeadId = `${idBase}-rhythm-heading`;
+  const priorityHeadId = `${idBase}-priority-heading`;
 
   const inFixedOrder = useMemo(
     () => AREAS.filter((a) => draft.priorities.includes(a)),
@@ -189,7 +194,10 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
   return (
     <>
       <OfflineStatus variant="text" />
-      <div role="radiogroup" aria-label={u.goalGroup} className="wl-edit__group">
+      <h2 id={goalHeadId} className="wl-label">
+        {u.goalGroup}
+      </h2>
+      <div role="radiogroup" aria-labelledby={goalHeadId} className="wl-edit__group">
         {GOALS.map((g) => (
           <label key={g} className="wl-option">
             <input
@@ -204,9 +212,12 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
           </label>
         ))}
       </div>
+      <h2 id={levelHeadId} className="wl-label">
+        {u.levelGroup}
+      </h2>
       <div
         role="radiogroup"
-        aria-label={u.levelGroup}
+        aria-labelledby={levelHeadId}
         aria-describedby={levelNoteId}
         className="wl-edit__group"
       >
@@ -236,12 +247,18 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
       <p id={levelNoteId} className="wl-type-label wl-edit__note">
         {u.levelNote}
       </p>
-      <div role="group" aria-label={u.rhythmGroup} className="wl-edit__group">
+      <h2 id={rhythmHeadId} className="wl-label">
+        {u.rhythmGroup}
+      </h2>
+      <div role="group" aria-labelledby={rhythmHeadId} className="wl-edit__group">
         {stepper(u.minimum, draft.min, { dec: u.decreaseMin, inc: u.increaseMin }, setMin)}
         {stepper(u.maximum, draft.max, { dec: u.decreaseMax, inc: u.increaseMax }, setMax)}
         <p className="wl-type-body">{u.rhythm(draft.min, draft.max)}</p>
       </div>
-      <div role="group" aria-label={u.priorityGroup} className="wl-edit__group">
+      <h2 id={priorityHeadId} className="wl-label">
+        {u.priorityGroup}
+      </h2>
+      <div role="group" aria-labelledby={priorityHeadId} className="wl-edit__group">
         <div className="wl-edit__chips">
           {AREAS.map((area) => (
             <button
@@ -261,7 +278,7 @@ function EditForm({ profile, clock }: { profile: EngineProfile; clock: Clock }) 
         </p>
       </div>
       <section className="wl-plan__section">
-        <h2 className="wl-type-label">{u.previewHeading}</h2>
+        <h2 className="wl-label">{u.previewHeading}</h2>
         <ul className="wl-edit__preview" aria-label={u.previewHeading}>
           {preview.map((p) => (
             <li key={p.area}>{u.previewRow(en.bodyMap.areas[p.area], p.setsPer14d)}</li>
