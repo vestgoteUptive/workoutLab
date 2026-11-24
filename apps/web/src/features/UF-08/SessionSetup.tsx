@@ -65,8 +65,11 @@ import {
   editContext,
   makeMain,
   fillRest as fillAreas,
+  itemsOfArea,
   overviewOf,
+  pruneRestore,
   putIn,
+  restorableOf,
   takeOut,
   type PlanOverview,
 } from "./area-plan-engine.js";
@@ -178,6 +181,11 @@ interface Adjusted {
    * skipped for rebuilds like the UF-08.1 chips, but their "Add" puts them back. Per visit.
    */
   removedAreas: Area[];
+  /**
+   * T-1023 (D-0290 §1, §8): the items removed with whole areas on this visit, handed to the engine
+   * as `ctx.restore`. Memory only: never stored, cleared by a time chip, Start and leaving.
+   */
+  restore: WorkoutItem[];
 }
 
 /** A Not today the user can undo (T-0997, D-0275 §8): the pair, and what the swap overwrote. */
@@ -397,6 +405,7 @@ export function SessionSetup({
       excludeIds: excludeIdsFor(stored, adjusted.excludeIds),
       favoriteIds: favoriteIdsFor(favoriteIds),
       avoidAreas,
+      restore: adjusted.restore,
       nowIso,
       tz,
     });
@@ -406,13 +415,17 @@ export function SessionSetup({
     } catch {
       overview = { candidates: [], stepRefusals: {} };
     }
-    return { ctx, overview };
+    // T-1023: the removed areas whose Add the engine would restore (not fall back for), so Fill
+    // the rest is shown only for what it will add.
+    const restorable = restorableOf(adjusted.workout, ctx);
+    return { ctx, overview, restorable };
     // `adjusted` is read through its workout and exclusions only.
   }, [
     areaPlanOn,
     data,
     adjusted?.workout,
     adjusted?.excludeIds,
+    adjusted?.restore,
     stored,
     favoriteIds,
     avoidAreas,
@@ -532,7 +545,8 @@ export function SessionSetup({
       );
       if (result === null) return null;
       if (nextBudget !== budgetMin) setBudgetMin(nextBudget);
-      setAdjusted({ ...adjusted, workout: result });
+      // T-1023 (D-0290 §6): the rebuild is another plan, so what was removed is forgotten.
+      setAdjusted({ ...adjusted, workout: result, restore: [] });
       return result;
     };
     /**
@@ -593,6 +607,7 @@ export function SessionSetup({
             ? [...adjusted.unlabelledPins, demoted]
             : adjusted.unlabelledPins,
         mainPickId: id,
+        restore: pruneRestore(adjusted.restore, made.workout),
       });
       return null;
     };
@@ -741,6 +756,8 @@ export function SessionSetup({
             const ordered = orderItems(next, lib);
             const last = !areaGroups(ordered).some((g) => g.area === areaId);
             hold(ordered, {
+              // D-0191 §4: the id is out for the visit, so a restore could never use it; not remembered.
+              restore: pruneRestore(adjusted.restore, ordered, last ? [areaId] : []),
               excludeIds: [...adjusted.excludeIds, id],
               swappedOut: without(adjusted.swappedOut, id),
               unlabelledPins: without(adjusted.unlabelledPins, id),
@@ -814,6 +831,7 @@ export function SessionSetup({
                 homeArea === null
                   ? adjusted.removedAreas
                   : without(adjusted.removedAreas, homeArea),
+              restore: pruneRestore(adjusted.restore, result.workout),
             });
             return {
               added: true,
@@ -842,6 +860,7 @@ export function SessionSetup({
           overview={overview}
           avoidAreas={avoidAreas}
           removedAreas={adjusted.removedAreas}
+          restorableAreas={areaView.restorable}
           noticeAreas={noticeAreas}
           keptIds={keptIds}
           exclusionFailed={exclusionFailed}
@@ -853,11 +872,13 @@ export function SessionSetup({
             return result;
           }}
           onRemoveArea={(area) => {
+            const gone = itemsOfArea(adjusted.workout, area);
             const result = takeOut(adjusted.workout, area);
             if ("workout" in result) {
               // D-0274 §3: the area joins this visit's skipped areas, so a rebuild keeps it out.
               commit(result.workout, {
                 removedAreas: [...adjusted.removedAreas.filter((a) => a !== area), area],
+                restore: [...pruneRestore(adjusted.restore, result.workout, [area]), ...gone],
               });
             }
             return result;
@@ -867,13 +888,18 @@ export function SessionSetup({
             if ("workout" in result) {
               commit(result.workout, {
                 removedAreas: adjusted.removedAreas.filter((a) => a !== area),
+                restore: pruneRestore(adjusted.restore, result.workout),
               });
             }
             return result;
           }}
           onFillRest={() => {
             const result = fillAreas(adjusted.workout, ctx, adjusted.removedAreas);
-            if (result.added.length > 0) commit(result.workout);
+            if (result.added.length > 0)
+              commit(result.workout, {
+                removedAreas: adjusted.removedAreas.filter((a) => !result.added.includes(a)),
+                restore: pruneRestore(adjusted.restore, result.workout),
+              });
             return result;
           }}
           onBudget={resuggest}
@@ -928,6 +954,7 @@ export function SessionSetup({
       unlabelledPins: [],
       mainPickId: null,
       removedAreas: [],
+      restore: [],
     });
     void navigate(`${SETUP_PATH}?step=suggested`);
   };
@@ -956,6 +983,7 @@ export function SessionSetup({
       unlabelledPins: [],
       mainPickId: null,
       removedAreas: [],
+      restore: [],
     });
     void navigate(`${SETUP_PATH}?step=suggested`);
   };

@@ -112,11 +112,11 @@ test.describe("T-0996 happy path (UF-08.2)", () => {
     expect(await activeIsBody(page)).toBe(false);
     await expect(page.locator('[data-part="skipping"]')).toContainText(name);
 
-    // Add an area: the same area comes back with its engine default.
+    // Add an area: the same area comes back as it was removed (D-0290).
     await page.getByText("Add an area").click();
     await page.getByRole("button", { name: `Add ${name}` }).click();
     await expect(rows(page)).toHaveCount(before);
-    await expect(status(page)).toHaveText(new RegExp(`^${name} added\\. \\d+ min left\\.$`));
+    await expect(status(page)).toHaveText(`${name} added back.`);
     await expect(
       page
         .locator(`[data-area="${area}"]`)

@@ -335,10 +335,12 @@ for (const mode of MODES) {
       await expect(page.locator('[data-part="skipping"]')).toContainText("Glutes");
       await expect(page.getByRole("heading", { level: 1 })).not.toContainText("Glutes");
 
-      // Add an area: it returns with the engine's default (3 sets) and the line goes.
+      // Add an area: it returns as it was removed (2 sets) and the line goes.
       await addArea(page, "glutes");
-      expect(await setsOf(page)).toMatchObject({ ...before, glutes: 3 });
-      await expect(status(page)).toHaveText(/^Glutes added\. \d+ min left\.$/);
+      // T-1023 (D-0290): as it was when removed (2 sets after the −), not the engine default.
+      expect(await setsOf(page)).toMatchObject({ ...before, glutes: 2 });
+      // T-1023 (D-0290): an area removed on this visit comes back as it was.
+      await expect(status(page)).toHaveText("Glutes added back.");
       await expect(page.locator('[data-part="skipping"]')).toHaveCount(0);
       if (mode === "offline") expect(net.supabaseRequests()).toEqual([]);
     });
@@ -634,5 +636,69 @@ test.describe("T-0999 AC9 the minutes are asked before the plan", () => {
     // Start empty: UF-08.1 first as well; UF-08.2 only after the tap.
     await page.getByRole("button", { name: "Start empty" }).click();
     await expect(screen(page, "UF-08.2")).toBeVisible();
+  });
+});
+
+// ---- T-1023 AC7: remove, then add back (D-0290) ----
+test.describe("T-1023 AC7 an area removed on this visit comes back as it was", () => {
+  const candidateAdd = (page: Page, area: string) =>
+    page.locator(`[data-part="candidate"][data-area="${area}"] [data-part="candidate-add"]`);
+  async function openAddList(page: Page, area: string): Promise<void> {
+    const add = candidateAdd(page, area);
+    await expect(async () => {
+      if (!(await add.isVisible())) await page.locator('[data-part="add-area-summary"]').click();
+      await expect(add).toBeVisible({ timeout: 1000 });
+    }).toPass({ timeout: 15_000 });
+  }
+
+  test("the 45-minute plan: Remove Hamstrings, Add Hamstrings gives Leg curl x 2, within budget, Start in 1 tap", async ({
+    page,
+    context,
+  }) => {
+    await enter(page, context, "online");
+    await toPlan(page, 45);
+    const before = await setsOf(page);
+    expect(before).toMatchObject({ hamstrings: 2 });
+    await page.getByRole("button", { name: "Remove Hamstrings" }).click();
+    await expect(row(page, "hamstrings")).toHaveCount(0);
+    await openAddList(page, "hamstrings");
+    await expect(candidateAdd(page, "hamstrings")).not.toHaveAttribute("aria-disabled", "true");
+    await expect(
+      page.locator('[data-part="candidate"][data-area="hamstrings"]').getByText("No time left"),
+    ).toHaveCount(0);
+    await candidateAdd(page, "hamstrings").click();
+    await expect(row(page, "hamstrings")).toBeVisible();
+    await expect(status(page)).toHaveText("Hamstrings added back.");
+    expect(await setsOf(page)).toEqual(before);
+    await expect(page.locator('[data-part="over-line"]')).toHaveCount(0);
+    await expect(startWorkout(page)).not.toHaveAttribute("aria-disabled", "true");
+    await startAndOpen(page);
+    const plan = await storedPlan(page);
+    const curl = plan.items.find((i) => i.exerciseId === "leg-curl");
+    expect(curl?.sets).toBe(2);
+  });
+
+  test("Remove Hamstrings, change the minutes, Add Hamstrings: a fresh suggestion, not No time left", async ({
+    page,
+    context,
+  }) => {
+    await enter(page, context, "online");
+    await toPlan(page, 45);
+    await page.getByRole("button", { name: "Remove Hamstrings" }).click();
+    await page.getByRole("button", { name: "30 minutes" }).click();
+    await expect(status(page)).toHaveText(/^Plan rebuilt for 30 min\./);
+    // The rebuild fills the 30 minutes, so free some: take Chest out (minus until it reads Remove).
+    const chestMinus = row(page, "chest").locator('[data-part="minus"]');
+    for (let i = 0; i < 6; i += 1) {
+      if ((await chestMinus.getAttribute("aria-label")) === "Remove Chest") break;
+      await chestMinus.click();
+    }
+    await chestMinus.click();
+    await openAddList(page, "hamstrings");
+    await expect(candidateAdd(page, "hamstrings")).not.toHaveAttribute("aria-disabled", "true");
+    await candidateAdd(page, "hamstrings").click();
+    await expect(row(page, "hamstrings")).toBeVisible();
+    await expect(status(page)).toHaveText(/^Hamstrings added\. \d+ min left\.$/);
+    await expect(startWorkout(page)).not.toHaveAttribute("aria-disabled", "true");
   });
 });

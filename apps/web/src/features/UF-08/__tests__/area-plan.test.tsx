@@ -436,7 +436,8 @@ describe("T-0996 AC5 Add an area", () => {
     expect(rowAreas()).toContain("calves");
     expect(rowAreas().at(-1)).toBe("calves");
     expect(["2 sets", "3 sets"]).toContain(setsOf("calves"));
-    expect(status()).toHaveTextContent(/^Calves added\. \d+ min left\.$/);
+    // T-1023 (D-0290): an area removed on this visit comes back as it was.
+    expect(status()).toHaveTextContent(/^Calves added back\.$/);
     expect(document.activeElement).toBe(plus("calves"));
     expect(candidate("calves")).toBeNull();
     expect(document.querySelector('[data-part="skipping"]')).toBeNull();
@@ -531,18 +532,8 @@ describe("T-0996 AC6 Fill the rest for me", () => {
     expect(queryButton("Fill the rest for me")).toBeNull();
   });
 
-  it("T-0996 AC6 one area fits: the status names it; an area removed on this visit is not brought back", async () => {
-    await toPlan({ budget: 60 });
-    removeArea("shoulders");
-    const fill = queryButton("Fill the rest for me");
-    if (fill !== null) {
-      fireEvent.click(fill);
-      expect(rowAreas()).not.toContain("shoulders");
-      expect(status().textContent).toMatch(/added\. \d+ min left\.$/);
-    }
-    expect(rowAreas()).not.toContain("shoulders");
-    expect(candidate("shoulders")).not.toBeNull();
-  });
+  // T-1023: Fill the rest and a removed area (comes back only as it was; never a fresh add) is
+  // covered in restore-area.test.tsx (AC6) and area-plan-engine.test.ts.
 });
 
 describe("T-0996 AC7 the order", () => {

@@ -7,8 +7,11 @@ import {
   adjustSets,
   editContext,
   fillRest,
+  itemsOfArea,
   overviewOf,
+  pruneRestore,
   putIn,
+  restorableOf,
   takeOut,
 } from "../area-plan-engine.js";
 import type { SetupData } from "../use-setup-data.js";
@@ -103,5 +106,42 @@ describe("T-0996 AC12 area-plan-engine", () => {
     expect(skipping.added.length).toBeGreaterThan(0);
     // A second fill finds nothing left to add.
     expect(fillRest(all.workout, ctx, []).added).toEqual([]);
+  });
+});
+
+describe("T-1023 restore memory in the seam", () => {
+  const full = plan(90);
+  const gone = itemsOfArea(full, "hamstrings");
+  const without = takeOut(full, "hamstrings") as { workout: Workout };
+  const withMemory = (excludeIds: string[]) => ({
+    ...editContext(data, {
+      excludeIds,
+      favoriteIds: [],
+      avoidAreas: [],
+      restore: gone,
+      nowIso: NOW,
+      tz: TZ,
+    }),
+  });
+
+  it("T-1023 AC2 restorableOf names a removed area the engine would restore, and not one it would fall back for", () => {
+    expect(gone.length).toBeGreaterThan(0);
+    expect(restorableOf(without.workout, withMemory([]))).toEqual(["hamstrings"]);
+    // An item of the area is now out for the visit: the engine falls back, Fill can't add it.
+    expect(restorableOf(without.workout, withMemory([gone[0]!.exerciseId]))).toEqual([]);
+  });
+
+  it("T-1023 AC6 fillRest skips a removed area whose memory cannot be restored", () => {
+    const ctxOut = withMemory([gone[0]!.exerciseId]);
+    const result = fillRest(without.workout, ctxOut, ["hamstrings"]);
+    expect(result.added).not.toContain("hamstrings");
+    expect(result.restored).not.toContain("hamstrings");
+  });
+
+  it("T-1023 pruneRestore drops items of areas now in the plan, of the listed areas, and items with no home area", () => {
+    const noHome = { ...gone[0]!, reasons: [] };
+    expect(pruneRestore([...gone, noHome], without.workout)).toEqual(gone);
+    expect(pruneRestore(gone, full)).toEqual([]);
+    expect(pruneRestore(gone, without.workout, ["hamstrings"])).toEqual([]);
   });
 });

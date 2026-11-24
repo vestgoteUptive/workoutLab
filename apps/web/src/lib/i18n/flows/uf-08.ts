@@ -222,6 +222,8 @@ export const uf08 = {
     `${area}: ${sets} sets, second exercise removed. ${left} min left.`,
   areaRemoved: (area: string) => `${area} removed. Add it back below.`,
   areaAdded: (area: string, left: number) => `${area} added. ${left} min left.`,
+  /** T-1023 (D-0290): an area removed on this visit came back with its removed exercises. */
+  areaAddedBack: (area: string) => `${area} added back.`,
   areasAdded: (count: number, left: number) => `${count} areas added. ${left} min left.`,
   /** After a time chip: the set edits and the added areas are dropped (D-0274 §8). */
   planRebuilt: (minutes: number) =>
