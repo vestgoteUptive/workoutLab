@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.4, UF-09.1]
 decisions: [D-0280, D-0274, D-0110, D-0123, D-0170, D-0063]
 deps: [T-0997]
-status: todo
+status: done
 ---
 ## Why
 The owner folded the Ready step into the plan: Start is 1 tap with no edit and 3 with two (`docs/specs/areas-first-planning.md`, D-0280). The time question on UF-08.1 stays (principle 2).

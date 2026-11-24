@@ -1,13 +1,13 @@
 # State
 
-## Resume here (in flight, 2026-11-24 ~05:40 UTC)
+## Resume here (in flight, 2026-11-24 ~17:30 UTC)
 Read this first after a usage reset or a new session. Each ticket worktree is `/home/user/wt/T-NNNN` on branch `t/T-NNNN-*`; the ticket file's "Build / accept log" says how far it got.
-- **PR #75** (main-hzlbfc → main): CI red on two tests. T-0987 (weight-step revert, app fix) is merged. T-1016 (UF-04.1 Legs count read too early, e2e test fix) is in its worktree, verifying with `--repeat-each 20`; merge it, push, wait for green CI, merge #75.
-- **Building:** T-0990 (rest screen shows the next exercise), T-0993 (UF-08 screen specs, areas first), T-0994 (engine orderItems/areaGroups), T-1001 (`edit_signals` table), T-1015 (targeted local tests, D-0285).
-- **Next, in order:** T-0991 (e2e rest screen, after T-0990); T-0995 (after T-0994); T-0996 → T-0997 → T-1009 → T-0998 → T-0999 (UF-08, strictly serial); T-1002, T-1007, T-1008, T-1000, T-1010, then T-1003..T-1006 (learning). See the board for deps.
+- **Merged on main-hzlbfc since PR #75:** rest-screen next exercise, targeted tests (D-0285), learn-from-edits data and settings (T-1001..T-1008, T-1010, T-1005), and the whole UF-08 areas-first stack (T-0996, T-0997, T-1009, T-0998, T-1019, T-0999). No PR to main is open yet.
+- **Building:** T-1022 (engine `ctx.restore`: adding back a removed area restores its items, D-0290).
+- **Next, in order:** T-1023 (UF-08.2 add back a removed area, after T-1022); T-1003 (UF-08.2 preference prompt); T-1006 (learning e2e); then a PR main-hzlbfc → main, merged when CI is green.
 - **Gate (D-0285):** affected checks only; full suite for shared paths; CI runs everything on PRs. Merge pattern: `--no-ff` into main-hzlbfc, board/ticket status, `git branch -f main main-hzlbfc`, push.
 - **Backup (owner, 2026-11-24):** ticket branches `t/T-NNNN-*` are pushed to GitHub after every commit as a backup (no PRs) and deleted after merge, so a container restart loses nothing.
-- **UF-08 stack (2026-11-24):** T-0996 breaks 47 old UF-08 e2e checks until T-1019, so the areas-first UF-08 tickets stack: T-0997 branches from `t/T-0996-uf08-area-plan`, T-1009 from T-0997's branch, then T-0998 and T-1019. The stack merges into `main-hzlbfc` only when its full e2e is green.
+- **UF-08 stack:** merged 2026-11-24; UF-08 tickets branch from main-hzlbfc again.
 - **Known noise:** `check-all` reports `ticket-not-on-base` on a ticket branch before its first commit; it clears after.
 
 - **Phase:** 3 (App). On main: engine rules 1–14 incl. D-0131 back-off floor + D-0137 drop cap; UF-01 onboarding; UF-02.1 Today; UF-03.1 List view incl. + Add set (T-0457); UF-03.3 summary content (T-0419); UF-04 Library; UF-05.1 SwapSheet component (T-0421, not yet mounted); UF-06 Progress (T-0307b); UF-07.1 Routine editor (T-0308a); UF-08.1–.4 setup; UF-09 machine + hook + seams + .1–.9 incl. the e2e-from-Ready spec and seam retry for how-to/list-view (T-0304a/e/b/f/c/d, T-0414, T-0304h, T-0463); UF-09's focus prefs now read through a UF-08 leaf entry, `index.prefs.ts` (T-0474, D-0170); UF-10 Balance; UF-11.2/.3/.4 Plan + Edit plan + Account settings (T-0308b, T-0310d); lib/offline cacheCurrent (T-0431, D-0151); lib/account export + wipe (T-0310c) and DELETE /account Edge Function (T-0310b); e2e consoleGuard (T-0425).

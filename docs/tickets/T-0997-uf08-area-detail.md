@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.3, UF-08.5, UF-08.6]
 decisions: [D-0274, D-0275, D-0276, D-0235, D-0199, D-0205]
 deps: [T-0996]
-status: todo
+status: done
 ---
 ## Why
 Exercises are a detail the user opens only if they want to (`docs/specs/areas-first-planning.md`). Swap, add and remove stay, behind the area row, and an Add must not reshuffle the other areas (D-0274 §5).

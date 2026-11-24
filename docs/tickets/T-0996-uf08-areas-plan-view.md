@@ -5,7 +5,7 @@ lane: web-feature:UF-08
 screens: [UF-08.1, UF-08.2, UF-08.4]
 decisions: [D-0274, D-0275, D-0276, D-0280, D-0191, D-0235]
 deps: [T-0993, T-0994, T-0995]
-status: ready
+status: done
 ---
 ## Why
 The owner spends the pre-workout time rearranging exercises. UF-08.2 becomes the area plan (`docs/specs/areas-first-planning.md`), built from `UF-08.2.md` (T-0993) and the engine functions of T-0994 and T-0995. Time is still asked first on UF-08.1 (principle 2).

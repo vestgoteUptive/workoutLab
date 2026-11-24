@@ -249,7 +249,7 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-1016 | e2e UF-04.1 Legs count read before the filter applied (PR #75 CI); wait for the filtered count | qa | — | done | wl-build-qa |
 | T-1017 | CI: inherited-TMPDIR test wrote to /inherited-tmp (EACCES on non-root runner); use a real temp folder | infra | — | done | wl-build-infra |
 | T-1018 | UF-09.5 rest page scrolls sideways at 320 px / 200 % zoom (timer, ±15 s row); fix reflow, drop T-0991 test.fail markers | web-feature:UF-09 | — | done | wl-build-web |
-| T-1019 | e2e: move the 47 UF-08 checks pinning the old exercise list onto the areas-first flow; retire removed features | qa | T-0997, T-1009, T-0998 | todo | wl-build-qa |
+| T-1019 | e2e: move the 47 UF-08 checks pinning the old exercise list onto the areas-first flow; retire removed features | qa | T-0997, T-1009, T-0998 | done | wl-build-qa |
 | T-1020 | Data: edit_signals writes older than learn_reset_at are a no-op (server guard against a stale device undoing Forget), T-1008 review | data | — | done | wl-build-data |
 | T-1021 | Engine: 'Start with this' sets the main lift locally (no suggest() rebuild that drops set edits in other areas), T-0997 note | engine | — | done | wl-build-engine |
 | T-1022 | Engine: adding back an area removed in the same visit restores its removed items (ctx.restore on addArea and areaCandidates, D-0290), T-0999 bug | engine | — | ready | wl-build-engine |
@@ -315,10 +315,10 @@ Owner request 2026-11-24: "I spent a lot of time in the suggested workout with e
 | T-0993 | Screen specs: UF-08.2 Today's plan by area with Start workout, Done by and the Focus mode disclosure, new UF-08.6 Area detail, amended UF-08.1, UF-08.5, UF-08.3; no new token (D-0274, D-0276, D-0280) | design | — | done | wl-design |
 | T-0994 | Engine rules 7.6 and 12.4: `orderItems` (main lift first, areas alternate, machines grouped) and `areaGroups`; examples, simulated histories, properties, golden `suggest`, re-vendor (D-0275 §2, §7) | engine | — | done | wl-build-engine |
 | T-0995 | Engine rules 12.5 to 12.7: `adjustAreaSets`, `addArea`, `removeArea`, `areaCandidates`; never over budget, both values per condition, re-vendor (D-0275 §3 to §5) | engine | T-0994 | done | wl-build-engine |
-| T-0996 | UF-08.2 Today's plan by area: title, area rows with − / + sets, Add an area, Fill the rest, automatic order, Start empty with no areas, time chip rebuild (D-0274, D-0275) | web-feature:UF-08 | T-0993, T-0994, T-0995 | ready | wl-build-web |
-| T-0997 | UF-08.6 Area detail: Swap, Not today, Remove, Start with this and a local Add exercise behind each area (D-0274 §5, D-0275 §8) | web-feature:UF-08 | T-0996 | todo | wl-build-web |
-| T-0998 | UF-08 retire Reorder, Shuffle and the empty-mode Suggestions code and tests; engine switches stay (D-0274 §3) | web-feature:UF-08 | T-1009 | todo | wl-build-web |
-| T-0999 | e2e areas-first: tap budget from plan to Start (1 tap, 3 with two edits), +/− and Remove, Add an area, Start empty, area detail, zero history, 10 days off, 15 minutes, offline, axe/44 px | qa | T-0998 | todo | wl-build-qa |
+| T-0996 | UF-08.2 Today's plan by area: title, area rows with − / + sets, Add an area, Fill the rest, automatic order, Start empty with no areas, time chip rebuild (D-0274, D-0275) | web-feature:UF-08 | T-0993, T-0994, T-0995 | done | wl-build-web |
+| T-0997 | UF-08.6 Area detail: Swap, Not today, Remove, Start with this and a local Add exercise behind each area (D-0274 §5, D-0275 §8) | web-feature:UF-08 | T-0996 | done | wl-build-web |
+| T-0998 | UF-08 retire Reorder, Shuffle and the empty-mode Suggestions code and tests; engine switches stay (D-0274 §3) | web-feature:UF-08 | T-1009 | done | wl-build-web |
+| T-0999 | e2e areas-first: tap budget from plan to Start (1 tap, 3 with two edits), +/− and Remove, Add an area, Start empty, area detail, zero history, 10 days off, 15 minutes, offline, axe/44 px | qa | T-0998 | done | wl-build-qa |
 | T-1000 | Screen specs: the preference prompt card on UF-08.2 and the Learning section on UF-11.4 with the synced-counts wording (D-0277, D-0276, D-0281) | design | T-0993 | done | wl-design |
 | T-1001 | Data: table `edit_signals` (one row per device and key, owner RLS, cascades) and `profiles.learn_from_edits`, `learn_reset_at`; migration, pgTAP, data model, generated types, owned-table lists (D-0281) | data | — | done | wl-build-data |
 | T-1002 | Data: `edit_signals` in the account export (11th table), the delete lists and the e2e expected table count 10 to 11 (D-0281 §5) | data | T-1001 | done | wl-build-data |
@@ -328,5 +328,5 @@ Owner request 2026-11-24: "I spent a lot of time in the suggested workout with e
 | T-1006 | e2e learn from edits: three swaps then the prompt, two devices, yes and undo, removal prompt, Not today never counts, learning off, forget, offline, export and delete | qa | T-1002, T-1003, T-1004, T-1005, T-1010 | todo | wl-build-qa |
 | T-1007 | Web-shell: the on-device edit ledger (counts, 60-day window, 3 and 2 thresholds, asked-marks, device id), the learning flag and reset epoch, cleared on sign-out and delete (D-0281) | web-shell | T-1001 | done | wl-build-web |
 | T-1008 | Web-shell: sync the ledger through the account (serial absolute upserts of this device's rows, pull and sum, asked marks, Forget and learning-off deletes) (D-0281 §2, §4) | web-shell | T-1001, T-1007 | done | wl-build-web |
-| T-1009 | UF-08.2 Start workout: Start folds into the plan (Done by line, collapsed Focus mode disclosure, session write moves from Ready), UF-08.4 Ready removed, e2e walk-throughs updated (D-0280) | web-feature:UF-08 | T-0997 | todo | wl-build-web |
+| T-1009 | UF-08.2 Start workout: Start folds into the plan (Done by line, collapsed Focus mode disclosure, session write moves from Ready), UF-08.4 Ready removed, e2e walk-throughs updated (D-0280) | web-feature:UF-08 | T-0997 | done | wl-build-web |
 | T-1010 | Privacy notice: counts of swapped and removed exercises are stored with the account, exported and deleted with it (D-0281 §5) | design | T-1001 | done | wl-design |
