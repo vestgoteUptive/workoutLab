@@ -24,6 +24,8 @@ Learning must be visible and reversible, and the user must be able to switch it 
 
 - Note (T-1001 security review): writes that touch `learn_from_edits` or `learn_reset_at` send only the changed fields, never a full cached profile upsert. e2e: opted out on device A, device B saves the profile, learning stays off.
 
+- From T-1008: the UI to turn learning back on needs a changed-field-only write of `learn_from_edits = true` (T-1008 ships only `turnLearningOff()` and `forgetAll()` in `lib/offline/edit-ledger-sync.ts`).
+
 ## Paths you may change
 `apps/web/src/features/UF-11/**`, `apps/web/src/lib/i18n/flows/uf-11.ts` (extra; orchestrator grant). Not parallel with another UF-11 ticket.
 

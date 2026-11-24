@@ -32,6 +32,8 @@ Checklist (D-0197 §7): at/below threshold, yes/no, online/offline, learning on/
 
 - Release hold (T-1001 security review): no deploy that contains this ticket until T-1010 (privacy notice) is merged; list it in the PR to `main`.
 
+- From T-1008: UF-08.2 mount calls `syncLedgerNow()`; the prompt reads `pendingFromAccount(now)` (both in `lib/offline/edit-ledger-sync.ts`).
+
 ## Paths you may change
 `apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant). Not parallel with another UF-08 ticket.
 
