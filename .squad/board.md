@@ -252,6 +252,8 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-1019 | e2e: move the 47 UF-08 checks pinning the old exercise list onto the areas-first flow; retire removed features | qa | T-0997, T-1009, T-0998 | todo | wl-build-qa |
 | T-1020 | Data: edit_signals writes older than learn_reset_at are a no-op (server guard against a stale device undoing Forget), T-1008 review | data | — | done | wl-build-data |
 | T-1021 | Engine: 'Start with this' sets the main lift locally (no suggest() rebuild that drops set edits in other areas), T-0997 note | engine | — | done | wl-build-engine |
+| T-1022 | Engine: adding back an area removed in the same visit restores its removed items (ctx.restore on addArea and areaCandidates, D-0290), T-0999 bug | engine | — | ready | wl-build-engine |
+| T-1023 | UF-08.2 Add an area puts a removed area back as it was (remember removed items per visit, pass to the engine, "Skipping today" line, e2e) (D-0290) | web-feature:UF-08 | T-1022 | ready | wl-build-web |
 
 ## Estimated 1RM per exercise (spec docs/specs/estimated-1rm.md)
 Owner request 2026-11-20 (inspired by wger): "estimated 1RM per exercise, with a chart over time". Decisions D-0254 (Epley, reps 1–10, best hard set per session, no RIR), D-0255 (engine rule 16, pure, nothing stored), D-0256 (UF-06.2 card, SVG chart, table toggle, states), D-0257 (scope; amends D-0068 and D-0219). Owner accepted the open-question defaults; impact-review rulings in D-0258 (plain Epley at 1 rep, --wl-* tokens, table spec, same-day sessions). UF-06.2 only; never UF-08 or UF-09.

@@ -64,6 +64,12 @@ From top to bottom:
 - Time: **+** is refused when the extra set doesn't fit the minutes left. The button stays focusable with `aria-disabled` and the row says why: "No time for another set. Pick more time or remove a set elsewhere." Never over budget through a **+**.
 - One polite status line announces every change: "Back: 7 sets, 5 min left.", "Chest removed. Add it back below."
 
+**Remove, then add back (D-0290).** One tap on "Add {Area}" for an area removed earlier in this visit puts back exactly what was removed: the same exercises, sets and reps, and the same weights pre-filled. It does not suggest something new. Example: on the 45-minute plan Remove Hamstrings (Leg curl x 2), then Add Hamstrings gives Leg curl x 2 again, even when the area's top suggestion would not fit the minutes left. The status line reads "{Area} added back." The area leaves the "Skipping today" line when it is back.
+- If the old items no longer fit (time, an exercise now excluded or already in the plan, 8 items, the area now recovering), the Add works as for any area (the top suggestion at 3 sets, else 2) and says "No time left" only when that doesn't fit either.
+- If the plan has a main lift now (for example "Start with this" elsewhere), a restored main lift comes back as a normal exercise, at most 3 sets.
+- A time chip clears what was removed, so after a time change the Add is a fresh suggestion. Leaving the screen, Start and a reload also clear it. It is never stored.
+- "Fill the rest for me" restores a removed area the same way when it reaches it; the order is unchanged (by need, not removed areas first).
+
 **Order.** The list of areas is a priority list. The order the workout runs in is automatic and not shown here (UF-09 runs it; nothing lists it before Start since D-0280): main lift first, then other compound lifts, then isolation work; within each group the areas alternate; machines are grouped (D-0275 §4).
 
 **Edits and time.** Area set changes and added areas apply to this visit only (like every UF-08 choice, D-0109 §1). A time chip rebuilds the plan for the new minutes. It keeps this visit's removed areas, swaps, adds and exclusions, and **drops the +/− set edits and added areas**, with the status line "Plan rebuilt for {n} min. Your set changes were cleared." (D-0274 §8, revisit).
