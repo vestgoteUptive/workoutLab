@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.2]
 decisions: [D-0290, D-0275, D-0287, D-0289]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 T-0999 found that on the 45-min plan, Remove Hamstrings (Leg curl x 2, about 5 min) then Add Hamstrings gives "No time left": rule 12.6 only tries the top candidate (Romanian deadlift). The spec promises one tap puts the area back. D-0290 fixes it in the engine with an input the web supplies, keeping `addArea` pure.
@@ -40,3 +40,9 @@ Checklist (D-0197 §7): fits/doesn't fit, main/not main, one item/two items, wit
 Every AC has a test · engine is a shared path, so the full local suite per D-0285 (`turbo run typecheck lint test`, `test:repo-checks`, vendor `--check`) · commit messages start with `T-1022` and cite UF-08.2.
 
 ## Build / accept log
+- Built (HEAD at start f1052ea6, clean). Rule text and R12-E66..E80 in docs/engine-rules.md first, then tests, then code (`planRestore`, `restoredReasons` in `area-edits.ts`; `AreaEditContext.restore` in `types.ts`); vendored copy re-run.
+- AC to test (`rule-12-6-restore.test.ts`, `rule-12-6-restore-histories.test.ts`): AC1 E66, E67 and AC9 round trip; AC2 E68; AC3 E69 to E73; AC4 E74 to E76; AC5 E77; AC6 E78 plus the available-iff-addArea loop; AC7 E79; AC8 E80 and E65; AC9 histories (4 histories x 9 budgets x 3 energies, remove/add back, main-lift change in between). Both files are imported by `rule-7-switches-b18.test.ts` (its guard lists every suggest-calling test file).
+- Red runs on unfixed work: gate 1 failed on engine typecheck (two test typing errors) and the B18 guard (new files not imported); both fixed, gate 2 green.
+- Finding: exact deep-equal round trip holds for fixture W (rule 7.6 order); for `suggest` plans `orderItems` breaks ties by index, so a re-appended item can land elsewhere. AC9 asserts same items, totals, mainLiftId, reasons (as a set) and a rule 7.6 fixed point. Recorded in D-0290 build notes. Restore also re-adds the area's `area_deficit` session reason (when fewer than 3) so reasons round-trip.
+- Planted faults (backup copy, `cmp` restore, not committed): F1 no fit check: AC3 E69 x2, AC4 E76, AC7, AC9 red. F2 isMain kept: AC4 E75 and AC9 red. F3 no orderItems: AC1 E66, AC4 E74, AC9 red. F4 areaCandidates ignores restore: AC6 x2 and AC9 red. F5 partial restore: AC1 E67, AC3 E69/E73, AC9 red.
+- Gate: turbo typecheck lint test 19/19; format:check, check-all, test:repo-checks (408 pass), vendor --check clean.

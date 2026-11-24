@@ -66,7 +66,9 @@ describe("T-1022 rule-12-6 restore over simulated histories (AC9)", () => {
           );
           expect(addArea(gone, g.area, { ...ctx, restore: removed })).toStrictEqual(back);
           expect(overBudget(got) && !overBudget(w)).toBe(false);
-          const c = areaCandidates(gone, { ...ctx, restore: removed }).find((x) => x.area === g.area);
+          const c = areaCandidates(gone, { ...ctx, restore: removed }).find(
+            (x) => x.area === g.area,
+          );
           expect(c?.available).toBe(true);
           rounds += 1;
         }
@@ -80,7 +82,15 @@ describe("T-1022 rule-12-6 restore over simulated histories (AC9)", () => {
     (_n, history) => {
       for (const budgetMin of BUDGETS) {
         for (const energy of ENERGIES) {
-          const w = suggest(history, F_TARGETS, F_PROFILE, LIBRARY, input({ budgetMin, energy }), NOW, TZ);
+          const w = suggest(
+            history,
+            F_TARGETS,
+            F_PROFILE,
+            LIBRARY,
+            input({ budgetMin, energy }),
+            NOW,
+            TZ,
+          );
           const main = w.plan.items.find((i) => i.isMain);
           if (main === undefined) continue;
           const area = homeAreaOf(main);
@@ -95,7 +105,9 @@ describe("T-1022 rule-12-6 restore over simulated histories (AC9)", () => {
           if ("refused" in withOther) continue;
           const back = addArea(withOther, area, { ...ctx, restore: [main] });
           if ("refused" in back) continue;
-          expect(overBudget(back)).toBe(withOther.itemsTotalS > availableS(budgetMin, w.warmupInBudget));
+          expect(overBudget(back)).toBe(
+            withOther.itemsTotalS > availableS(budgetMin, w.warmupInBudget),
+          );
           expect(back.plan.items.filter((i) => i.isMain)).toHaveLength(1);
           const restored = back.plan.items.find((i) => i.exerciseId === main.exerciseId);
           if (restored !== undefined) {

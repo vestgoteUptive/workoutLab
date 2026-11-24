@@ -116,17 +116,15 @@ describe("T-1022 rule-12-6 restore falls back (AC3)", () => {
     // 260 s left: leg-curl x 2 (270 s) does not fit, nor does the top candidate.
     const tight = withLeft(gone, 260);
     const ctx = ctxOf({ restore: removed });
-    expect(addArea(tight, "hamstrings", ctx)).toStrictEqual(
-      addArea(tight, "hamstrings", ctxOf()),
-    );
+    expect(addArea(tight, "hamstrings", ctx)).toStrictEqual(addArea(tight, "hamstrings", ctxOf()));
     expect(addArea(tight, "hamstrings", ctx)).toStrictEqual({ refused: "time" });
     // Plenty of time: the restore still wins over the 3-set top candidate.
     const roomy = withLeft(gone, 2000);
     const r = ok(addArea(roomy, "hamstrings", ctx));
     expect(itemsOf(r, "hamstrings").map((i) => [i.exerciseId, i.sets])).toEqual([["leg-curl", 2]]);
-    expect(itemsOf(ok(addArea(roomy, "hamstrings", ctxOf())), "hamstrings")[0]?.exerciseId).not.toBe(
-      "leg-curl",
-    );
+    expect(
+      itemsOf(ok(addArea(roomy, "hamstrings", ctxOf())), "hamstrings")[0]?.exerciseId,
+    ).not.toBe("leg-curl");
   });
 
   it("T-1022 AC3 R12-E69 a restore that does not fit falls back to the top candidate at 2 sets", () => {
@@ -147,15 +145,15 @@ describe("T-1022 rule-12-6 restore falls back (AC3)", () => {
       addArea(roomy, "hamstrings", ctxOf({ restore: removed, excludeIds: ["leg-curl"] })),
     ).toStrictEqual(addArea(roomy, "hamstrings", ctxOf({ excludeIds: ["leg-curl"] })));
     const noCurl = LIBRARY.filter((e) => e.id !== "leg-curl");
-    expect(addArea(roomy, "hamstrings", ctxOf({ restore: removed, library: noCurl }))).toStrictEqual(
-      addArea(roomy, "hamstrings", ctxOf({ library: noCurl })),
-    );
+    expect(
+      addArea(roomy, "hamstrings", ctxOf({ restore: removed, library: noCurl })),
+    ).toStrictEqual(addArea(roomy, "hamstrings", ctxOf({ library: noCurl })));
     const noMachine = ctxOf({
       restore: removed,
       profile: { ...ctxOf().profile, equipment: ["barbell", "bench", "dumbbell"] },
     });
     expect(addArea(roomy, "hamstrings", noMachine)).toStrictEqual(
-      addArea(roomy, "hamstrings", { ...noMachine, restore: undefined }),
+      addArea(roomy, "hamstrings", ctxOf({ profile: noMachine.profile })),
     );
     expect(plain).not.toStrictEqual(ok(addArea(roomy, "hamstrings", ctxOf({ restore: removed }))));
   });
@@ -186,15 +184,18 @@ describe("T-1022 rule-12-6 restore falls back (AC3)", () => {
     );
     // 7 items and 2 to restore: the cap of 8.
     const seven = withLeft(
-      mkWorkout([
-        mkItem("bench-press", 4, true),
-        mkItem("inverted-row", 3),
-        mkItem("leg-extension", 2),
-        mkItem("biceps-curl", 2),
-        mkItem("calf-raise", 2),
-        mkItem("overhead-press", 2),
-        mkItem("plank", 2),
-      ], "bench-press"),
+      mkWorkout(
+        [
+          mkItem("bench-press", 4, true),
+          mkItem("inverted-row", 3),
+          mkItem("leg-extension", 2),
+          mkItem("biceps-curl", 2),
+          mkItem("calf-raise", 2),
+          mkItem("overhead-press", 2),
+          mkItem("plank", 2),
+        ],
+        "bench-press",
+      ),
       2000,
     );
     expect(seven.plan.items).toHaveLength(7);
@@ -205,7 +206,10 @@ describe("T-1022 rule-12-6 restore falls back (AC3)", () => {
   });
 
   it("T-1022 AC3 R12-E73 no partial restore: one item that fails drops both", () => {
-    const roomy = withLeft(removeArea(mkWorkout([mkItem("bench-press", 4, true)], "bench-press"), "chest"), 2000);
+    const roomy = withLeft(
+      removeArea(mkWorkout([mkItem("bench-press", 4, true)], "bench-press"), "chest"),
+      2000,
+    );
     const pair = [mkItem("barbell-row", 3), mkItem("inverted-row", 2)];
     const full = ok(addArea(roomy, "back", ctxOf({ restore: pair })));
     expect(full.plan.items).toHaveLength(2);
@@ -234,7 +238,9 @@ describe("T-1022 rule-12-6 restore and the main lift (AC4)", () => {
       plan: {
         ...gone.plan,
         mainLiftId: "inverted-row",
-        items: gone.plan.items.map((i) => (i.exerciseId === "inverted-row" ? { ...i, isMain: true } : i)),
+        items: gone.plan.items.map((i) =>
+          i.exerciseId === "inverted-row" ? { ...i, isMain: true } : i,
+        ),
       },
     };
     const r = ok(addArea(other, "chest", ctxOf({ restore: chest })));
@@ -243,7 +249,12 @@ describe("T-1022 rule-12-6 restore and the main lift (AC4)", () => {
     expect(bench.sets).toBe(3);
     expect(bench.backoff).toBeNull();
     expect(bench.reasons.map((x) => x.code)).not.toContain("main_lift");
-    expect(bench.costS).toBe(itemCostS(LIBRARY.find((e) => e.id === "bench-press")!, 3));
+    expect(bench.costS).toBe(
+      itemCostS(
+        LIBRARY.find((e) => e.id === "bench-press")!,
+        3,
+      ),
+    );
     expect(r.plan.mainLiftId).toBe("inverted-row");
     expect(r.plan.items.filter((i) => i.isMain)).toHaveLength(1);
     expect(bench.repsMin).not.toBe((chest[0] as WorkoutItem).repsMin);
@@ -255,10 +266,15 @@ describe("T-1022 rule-12-6 restore and the main lift (AC4)", () => {
       plan: {
         ...gone.plan,
         mainLiftId: "inverted-row",
-        items: gone.plan.items.map((i) => (i.exerciseId === "inverted-row" ? { ...i, isMain: true } : i)),
+        items: gone.plan.items.map((i) =>
+          i.exerciseId === "inverted-row" ? { ...i, isMain: true } : i,
+        ),
       },
     };
-    const three = itemCostS(LIBRARY.find((e) => e.id === "bench-press")!, 3);
+    const three = itemCostS(
+      LIBRARY.find((e) => e.id === "bench-press")!,
+      3,
+    );
     const tight = withLeft(other, three);
     const r = ok(addArea(tight, "chest", ctxOf({ restore: chest })));
     expect(r.plan.items.find((i) => i.exerciseId === "bench-press")?.sets).toBe(3);
@@ -296,7 +312,8 @@ describe("T-1022 rule-12-7 areaCandidates reads restore (AC6)", () => {
     const w = hamPlan();
     const ham = itemsOf(w, "hamstrings");
     const gone = removeArea(w, "hamstrings");
-    const find = (list: ReturnType<typeof areaCandidates>) => list.find((c) => c.area === "hamstrings");
+    const find = (list: ReturnType<typeof areaCandidates>) =>
+      list.find((c) => c.area === "hamstrings");
     expect(find(areaCandidates(gone, ctxOf()))?.available).toStrictEqual({ reason: "time" });
     expect(find(areaCandidates(gone, ctxOf({ restore: ham })))?.available).toBe(true);
     expect(areaCandidates(gone, ctxOf({ restore: ham })).map((c) => c.area)).toStrictEqual(
@@ -307,8 +324,15 @@ describe("T-1022 rule-12-7 areaCandidates reads restore (AC6)", () => {
   it("T-1022 AC6 available is true iff addArea returns a Workout (every area, several budgets)", () => {
     for (const left of [100, 270, 300, 405, 2000]) {
       const w = hamPlan();
-      const removedAll = [...itemsOf(w, "hamstrings"), ...itemsOf(w, "calves"), ...itemsOf(w, "arms")];
-      const gone = withLeft(removeArea(removeArea(removeArea(w, "hamstrings"), "calves"), "arms"), left);
+      const removedAll = [
+        ...itemsOf(w, "hamstrings"),
+        ...itemsOf(w, "calves"),
+        ...itemsOf(w, "arms"),
+      ];
+      const gone = withLeft(
+        removeArea(removeArea(removeArea(w, "hamstrings"), "calves"), "arms"),
+        left,
+      );
       const ctx = ctxOf({ restore: removedAll });
       for (const c of areaCandidates(gone, ctx)) {
         const r = addArea(gone, c.area, ctx);
@@ -323,22 +347,16 @@ describe("T-1022 rule-12-6 restore after a time change (AC7)", () => {
   it("T-1022 AC7 R12-E79 a stale restore that does not fit 20 minutes falls back, never over budget", () => {
     const w = hamPlan();
     const stale = w.plan.items; // everything removed at 45 minutes
-    const rebuilt = suggest(
-      [],
-      F_TARGETS,
-      F_PROFILE,
-      LIBRARY,
-      input({ budgetMin: 20 }),
-      NOW,
-      TZ,
-    );
+    const rebuilt = suggest([], F_TARGETS, F_PROFILE, LIBRARY, input({ budgetMin: 20 }), NOW, TZ);
     const room = removeArea(rebuilt, rebuilt.plan.items.map(homeAreaOf)[0] as Area);
     const present = new Set(room.plan.items.map((i) => homeAreaOf(i)));
     for (const area of AREAS.filter((a) => !present.has(a))) {
       const base = addArea(room, area, ctxOf());
       const r = addArea(room, area, ctxOf({ restore: stale }));
-      if (!("refused" in r)) expect(r.itemsTotalS).toBeLessThanOrEqual(availableS(20, r.warmupInBudget));
-      if ("refused" in base) expect(["time", "items_cap", "area_unavailable"]).toContain(r.refused ?? "ok");
+      if (!("refused" in r))
+        expect(r.itemsTotalS).toBeLessThanOrEqual(availableS(20, r.warmupInBudget));
+      // A restore that cannot fit leaves the answer exactly as without one.
+      if ("refused" in base && "refused" in r) expect(r).toStrictEqual(base);
     }
     // Directly: leg-curl x 2 (270 s) does not fit 100 s.
     const gone = withLeft(removeArea(w, "hamstrings"), 100);

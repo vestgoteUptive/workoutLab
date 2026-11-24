@@ -437,9 +437,7 @@ export function areaCandidates(workout: Workout, ctx: AreaEditContext): AreaCand
     .sort((x, y) => x.r - y.r || x.i - y.i)
     .map(({ area }): AreaCandidate => {
       const plan: Plan | { kind: "ok" } =
-        planRestore(env, area) !== null
-          ? { kind: "ok" }
-          : planNew(env, area, wantMain, ADD_TRIES);
+        planRestore(env, area) !== null ? { kind: "ok" } : planNew(env, area, wantMain, ADD_TRIES);
       const reason: AreaUnavailableReason | null =
         plan.kind === "ok" ? null : plan.kind === "unavailable" ? plan.reason : plan.kind;
       return {

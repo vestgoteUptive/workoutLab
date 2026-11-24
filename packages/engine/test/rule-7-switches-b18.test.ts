@@ -48,6 +48,8 @@ import "./rule-12-3-insert-properties.test.js";
 import "./rule-12-4-area-groups.test.js";
 import "./rule-12-5-golden-purity.test.js";
 import "./rule-12-6-add-remove-area.test.js";
+import "./rule-12-6-restore-histories.test.js";
+import "./rule-12-6-restore.test.js";
 import "./rule-12-8-set-main-lift.test.js";
 import "./rule-12-7-area-candidates.test.js";
 import "./rule-12-apply-swap.test.js";

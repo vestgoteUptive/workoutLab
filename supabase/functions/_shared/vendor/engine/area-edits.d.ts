@@ -32,6 +32,10 @@ export declare function adjustAreaSets(workout: Workout, area: Area, delta: 1 | 
  * structural `RangeError`s (unknown area, area already in the plan): `area_unavailable`
  * (recovering, avoided, every exercise excluded, or no eligible exercise), `items_cap` (8
  * items), `time` (not even 2 sets fit). Never mutates its inputs.
+ *
+ * **`ctx.restore`** (D-0290): when it holds items homed in `area` and all are valid now and fit,
+ * exactly those items come back (copies), ordered by `orderItems`, instead of the top candidate;
+ * otherwise this rule runs unchanged. See `planRestore`.
  */
 export declare function addArea(workout: Workout, area: Area, ctx: AreaEditContext): Workout | AreaRefused<AddAreaRefusal>;
 /**
@@ -46,7 +50,8 @@ export declare function removeArea(workout: Workout, area: Area): Workout;
  * `{area, load, target, available}`. `load` is the 14-day history load (rule 3), `target` the
  * target. `available` is `true` when `addArea` would add the area, else `{reason}` in this
  * order: `recovering`, `avoided`, `excluded_out`, `no_exercise`, `items_cap`, `time`.
- * `favoriteIds` rank exercises only, never areas.
+ * `favoriteIds` rank exercises only, never areas. An area `addArea` would restore from
+ * `ctx.restore` (D-0290) reads `true`.
  */
 export declare function areaCandidates(workout: Workout, ctx: AreaEditContext): AreaCandidate[];
 /**
