@@ -186,7 +186,6 @@ export function checkLazyBudgets(file: string, source: string, spec: LazySpec): 
   return report;
 }
 
-const RETRY = "retry: the second tap reuses the same id and navigates once on resolve";
 const GATE = "%s redirects to /welcome/save";
 
 export const TARGETS: ReadonlyArray<readonly [string, LazySpec]> = [
@@ -202,10 +201,6 @@ export const TARGETS: ReadonlyArray<readonly [string, LazySpec]> = [
       ],
       waitCounts: { renderAt: 1, currentTabs: 1 },
     },
-  ],
-  [
-    "../../features/UF-08/__tests__/ready-start.test.tsx",
-    { functions: ["toReady"], tests: [RETRY], waitCounts: { toReady: 4, [RETRY]: 2 } },
   ],
 ];
 
@@ -223,10 +218,10 @@ export function checkAll(dir = HERE): LazyReport {
 }
 
 describe("T-0408 lazy-route wait budgets", () => {
-  it("T-0408 AC4 non-vacuity: every named title and function is found, ≥ 9 waits and ≥ 4 tests checked", () => {
+  it("T-0408 AC4 non-vacuity: every named title and function is found, ≥ 3 waits and ≥ 4 tests checked (T-1009: the Ready entry went with UF-08.4)", () => {
     const r = checkAll();
     expect(r.missing, r.missing.join("\n")).toEqual([]);
-    expect(r.waitsChecked).toBeGreaterThanOrEqual(9);
+    expect(r.waitsChecked).toBeGreaterThanOrEqual(3);
     expect(r.testsChecked).toBeGreaterThanOrEqual(4);
   });
 

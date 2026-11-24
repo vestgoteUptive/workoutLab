@@ -35,7 +35,7 @@ Checklist (D-0197 §7): areas/none, online/offline, write ok/rejected, disclosur
 - From T-1021 (after it merges): UF-08.6 "Start with this" calls `setMainLift(workout, exerciseId, ctx)` from `@workoutlab/engine` instead of `suggest()`, and shows its four refusals (`not_compound`, `not_admissible`, `items_cap`, `time`) with the existing refusal copy. This supersedes D-0288 §2.
 
 ## Paths you may change
-`apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), the e2e specs named above and `tests/e2e/fixtures/**` (extra; orchestrator grant). Not parallel with another UF-08 ticket.
+`apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), the e2e specs named above and `tests/e2e/fixtures/**` (extra; orchestrator grant), `apps/web/src/app/__tests__/lazy-route-timeouts.test.ts` (extra; orchestrator grant: drop the deleted Ready test's entry; the new Start test mounts `SessionSetup` with its own routes, no lazy chunk). Not parallel with another UF-08 ticket.
 
 ## Contract impact
 none.
