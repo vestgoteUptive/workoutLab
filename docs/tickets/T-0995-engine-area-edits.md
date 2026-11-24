@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.2, UF-08.6]
 decisions: [D-0275, D-0274, D-0191, D-0268]
 deps: [T-0994]
-status: todo
+status: ready
 ---
 ## Why
 The area stepper, "Add an area", "Remove" and "Fill the rest for me" must be engine calls (principle 3), local to one area, and never over budget.
@@ -30,6 +30,8 @@ Fixture W (R7-E4) at `budgetMin 45`, warm-up on unless stated; ctx carries histo
 - AC12 (golden and vendor) Given the existing examples, Then `suggest` is byte-identical; `vendor.mjs --check` passes; the new files have no `Date.now()`, `new Date()` or `Math.random()`.
 
 Checklist (D-0197 §7): room/no room (AC1, AC3), fits/doesn't fit (AC2, AC6), empty/non-empty plan (AC7), main/not main (AC5, AC7), available/unavailable area (AC6, AC9).
+
+- From the T-0994 review: add a test for an item with no `area_deficit` reason in both `areaGroups` (skipped) and `orderItems` (area `null`, never "same area"); `packages/engine/test/**` is in this lane.
 
 ## Paths you may change
 - `packages/engine/**`

@@ -5,7 +5,7 @@ lane: engine
 screens: [UF-08.2, UF-08.4]
 decisions: [D-0275, D-0274, D-0269]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Order must be automatic (D-0274 §4) and the UI needs the plan grouped by area. Both are pure engine functions (principle 3). `suggest` is unchanged.
