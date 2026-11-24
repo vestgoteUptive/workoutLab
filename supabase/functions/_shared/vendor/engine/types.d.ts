@@ -320,6 +320,8 @@ export interface AreaEditContext {
 }
 /** Why `adjustAreaSets(+1)` changed nothing. */
 export type AdjustRefusal = "area_full" | "time";
+/** Why `setMainLift` changed nothing (rule 12.8). */
+export type MainLiftRefusal = "not_compound" | "not_admissible" | "items_cap" | "time";
 /** Why `addArea` changed nothing. */
 export type AddAreaRefusal = "time" | "items_cap" | "area_unavailable";
 /** Why an area can't be added (rule 12.7). */

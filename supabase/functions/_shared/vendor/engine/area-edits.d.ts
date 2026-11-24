@@ -2,7 +2,7 @@
 // Source: packages/{pkg}/src. Rerun `node supabase/scripts/vendor.mjs` after an engine or
 // shared change; CI fails on drift (`vendor.mjs --check`).
 
-import { type AddAreaRefusal, type AdjustRefusal, type Area, type AreaCandidate, type AreaEditContext, type AreaRefused, type Workout } from "./types.js";
+import { type AddAreaRefusal, type AdjustRefusal, type Area, type AreaCandidate, type AreaEditContext, type AreaRefused, type MainLiftRefusal, type Workout } from "./types.js";
 /**
  * Rule 12.5 (UF-08.2, D-0275 §3): one set more or less for `area`. `delta` is +1 or −1; the area
  * must have an item in the plan (its home area, rule 12.4).
@@ -49,3 +49,19 @@ export declare function removeArea(workout: Workout, area: Area): Workout;
  * `favoriteIds` rank exercises only, never areas.
  */
 export declare function areaCandidates(workout: Workout, ctx: AreaEditContext): AreaCandidate[];
+/**
+ * Rule 12.8 (UF-08.6, D-0205 §5, T-1021): makes `exerciseId` the main lift of `workout` without
+ * a `suggest` rebuild. The chosen exercise (already an item or not) becomes the one `isMain` item
+ * at 4 sets, else 3, else 2, the first count whose total fits `available`, with the main-lift rep
+ * slot, the rule 14 pre-fill and, at High energy when one more set fits, a back-off (rule 7.4).
+ * An item keeps its place; a new one goes last. The old main lift stays as an accessory at
+ * min(sets, 3), accessory reps, pre-fill re-derived, no back-off. Every other item is copied
+ * unchanged. The result is `orderItems`-ed (rule 7.6). Already the main lift: just the ordering.
+ *
+ * Check order: structural `RangeError` (not an exercise of the library, a warm-up move, `now`
+ * without an offset, an item not in the library); `not_compound`; `not_admissible` (not eligible
+ * for the profile or excluded, a recovering or avoided primary area, or a new item that would put
+ * an area over 2 items); `items_cap` (a new item at 8 items); `time`. A refusal is only
+ * `{refused}`: the caller keeps its plan. Never mutates its inputs.
+ */
+export declare function setMainLift(workout: Workout, exerciseId: string, ctx: AreaEditContext): Workout | AreaRefused<MainLiftRefusal>;
