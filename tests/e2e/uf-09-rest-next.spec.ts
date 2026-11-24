@@ -21,6 +21,7 @@ import {
   VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercisesLoaded, profile } from "./fixtures/uf-04-library-data.js";
+import { startWithExercise } from "./fixtures/uf-08-start.js";
 import { settledBox } from "./helpers/settled-box.js";
 
 type Row = Record<string, unknown>;
@@ -249,18 +250,6 @@ async function loadText(page: Page): Promise<string> {
   });
 }
 
-/** Console errors and uncaught page errors; offline resource failures are not app errors. */
-function watchErrors(page: Page): () => string[] {
-  const errors: string[] = [];
-  page.on("console", (m) => {
-    if (m.type() !== "error") return;
-    if (/Failed to load resource|net::ERR/i.test(m.text())) return;
-    errors.push(m.text());
-  });
-  page.on("pageerror", (e) => errors.push(String(e)));
-  return () => errors.slice();
-}
-
 /** Real offline: writes are aborted by `goOffline`, and reads are aborted here (registered last,
  *  so it wins), so nothing can refresh the caches behind the test's back. */
 async function goReallyOffline(page: Page, context: BrowserContext): Promise<void> {
@@ -330,8 +319,9 @@ test.beforeEach(async ({ page }) => {
 test.describe("AC1 the Next block names the exercise (UF-09.5, UF-09.6)", () => {
   test("set 1 of barbell-row: 'Next · set 2 of 3', 'Barbell row', the load, no 'per arm', no cue; the last set: 'Next exercise', 'Dumbbell row', its cue; Skip rest lands on UF-09.6 with the same cue", async ({
     page,
+    consoleGuard,
   }) => {
-    const errors = watchErrors(page);
+    const errors = () => consoleGuard.errors();
     await mockAll(page);
     await signInAndCache(page);
     await openSeeded(page, PLAN_AB);
@@ -614,8 +604,9 @@ test.describe("AC4 offline (NFR-OFF-2)", () => {
   test("offline with the cached details: both rests of AC1 show the name, the cue and the word; online shows the same", async ({
     page,
     context,
+    consoleGuard,
   }) => {
-    const errors = watchErrors(page);
+    const errors = () => consoleGuard.errors();
     await mockAll(page);
     await openOffline(page, context, PLAN_AB);
 
@@ -652,8 +643,9 @@ test.describe("AC4 offline (NFR-OFF-2)", () => {
   test("a detail missing from the cache: the name shows, there is no cue line and no console error", async ({
     page,
     context,
+    consoleGuard,
   }) => {
-    const errors = watchErrors(page);
+    const errors = () => consoleGuard.errors();
     await mockAll(page);
     await openOffline(page, context, PLAN_A1B, "dumbbell-row");
     await saveSet(page);
@@ -721,24 +713,8 @@ test.describe("AC5 zero history and a return after 10 days off", () => {
     await signInAndCache(page);
     await page.goto("/session/setup");
     await expect(screen(page, "UF-08.1")).toBeVisible();
-    await page.getByRole("button", { name: "30 minutes" }).click();
-    await expect(page.locator('[data-part="fit-line"]')).toHaveText(/^Fits:/);
-    await page.getByRole("button", { name: "Start empty" }).click();
-    await expect(screen(page, "UF-08.2")).toBeVisible();
-    await page.getByRole("button", { name: "Add exercise" }).click();
-    const sheet = screen(page, "UF-08.5");
-    await expect(sheet).toBeVisible();
-    await sheet.getByLabel("Search exercises").fill("dumbbell row");
-    await sheet
-      .getByRole("button", { name: /^Add Dumbbell row/ })
-      .first()
-      .click();
-    await expect(sheet).toHaveCount(0);
-    await page.getByRole("button", { name: "Looks good" }).click();
-    await expect(screen(page, "UF-08.4")).toBeVisible();
-    await page.getByRole("button", { name: "Start", exact: true }).click();
-    await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
-    await page.getByRole("button", { name: "Skip warm-up" }).click();
+    // T-1019: UF-08.1 -> Start empty -> Back -> Dumbbell row alone -> Start workout -> skip warm-up.
+    await startWithExercise(page, { area: "back", query: "dumbbell row", name: "Dumbbell row" });
     await expect(screen(page, "UF-09.3")).toBeVisible();
     await saveSet(page);
     await expect(nameOf(page)).toHaveText("Dumbbell row");

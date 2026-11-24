@@ -71,7 +71,7 @@ async function openHome(page: Page): Promise<void> {
 }
 
 /** Reloads `/session/setup` (already loaded once online by `openHome`) — offline-safe, see that
- *  function's comment — then: UF-08.1 → `budgetChip` → Suggest → UF-08.2 → Looks good → UF-08.4 →
+ *  function's comment — then: UF-08.1 → `budgetChip` → Suggest → UF-08.2 → →
  *  Start. Returns the `/session/<id>` id. T-0304h has its own copy in its own spec (D-0168 §1):
  *  no shared file, so the two specs can land in either order. */
 async function startFromReady(page: Page, budgetChip = "30 minutes"): Promise<string> {
@@ -80,9 +80,7 @@ async function startFromReady(page: Page, budgetChip = "30 minutes"): Promise<st
   await page.getByRole("button", { name: budgetChip }).click();
   await page.getByRole("button", { name: "Suggest my workout" }).click();
   await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(page.locator('[data-screen-id="UF-08.4"]')).toBeVisible();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout", exact: true }).click();
   await expect(page).toHaveURL(SESSION_URL);
   return SESSION_URL.exec(page.url())![1]!;
 }

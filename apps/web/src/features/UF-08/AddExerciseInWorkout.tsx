@@ -117,7 +117,6 @@ export function AddExerciseInWorkout({
       inWorkout
       catalog={catalog}
       items={plan.items as never}
-      budgetMin={0}
       lead={en.uf08.leftLead(minutesOf(left))}
       blocked={blocked}
       favoriteIds={favoriteIds}

@@ -28,12 +28,10 @@ import {
   VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
 import { exerciseAreas, exercisesLoaded, profile } from "./fixtures/uf-04-library-data.js";
+import { startWithExercise } from "./fixtures/uf-08-start.js";
 import { settledBox } from "./helpers/settled-box.js";
 
 type Row = Record<string, unknown>;
-
-const NBSP = /\u00a0/g;
-const text = (s: string | null | undefined): string => (s ?? "").replace(NBSP, " ").trim();
 
 const AREAS = [
   "chest",
@@ -589,40 +587,22 @@ test.describe("AC2 coverage counts one hard set per both-sides set (UF-10.2)", (
 // days off; the label is there from the first set. The plan is built through UF-08.
 // ---------------------------------------------------------------------------------------------
 
-/** UF-08.1 (30 min) → Start empty → Add exercise "Dumbbell row" → Looks good → Start → the first
- *  set. Returns what the engine priced (the row's detail and the budget line) and the first set. */
+/** UF-08.1 (30 min) → Start empty → Back → Dumbbell row alone → Start workout → the first
+ *  set. Returns what the engine priced (the row's detail on UF-08.6 and the budget line on UF-08.2)
+ *  and the first set. The route through UF-08.2 and UF-08.6 is `startWithExercise` (T-1019). */
 async function planAndStart(
   page: Page,
 ): Promise<{ detail: string; budget: string; hero: string[] }> {
   await page.goto("/session/setup");
   await expect(screen(page, "UF-08.1")).toBeVisible();
-  await page.getByRole("button", { name: "30 minutes" }).click();
-  await expect(page.locator('[data-part="fit-line"]')).toHaveText(/^Fits:/);
-  await page.getByRole("button", { name: "Start empty" }).click();
-  await expect(screen(page, "UF-08.2")).toBeVisible();
-  await page.getByRole("button", { name: "Add exercise" }).click();
-  const sheet = screen(page, "UF-08.5");
-  await expect(sheet).toBeVisible();
-  await sheet.getByLabel("Search exercises").fill("dumbbell row");
-  await sheet
-    .getByRole("button", { name: /^Add Dumbbell row/ })
-    .first()
-    .click();
-  await expect(sheet).toHaveCount(0);
-  const itemRow = page.locator('[data-part="item-row"]').filter({ hasText: "Dumbbell row" });
-  await expect(itemRow).toHaveCount(1);
-  const detail = text(await itemRow.locator('[data-part="row-detail"]').textContent());
-  const budget = text(await page.locator('[data-part="budget-text"]').textContent());
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await expect(screen(page, "UF-08.4")).toBeVisible();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
-  await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
-  await page.getByRole("button", { name: "Skip warm-up" }).click();
-  await expect(screen(page, "UF-09.3")).toBeVisible();
-  await expect(page.getByRole("heading", { level: 1, name: "Dumbbell row" })).toBeVisible();
+  const priced = await startWithExercise(page, {
+    area: "back",
+    query: "dumbbell row",
+    name: "Dumbbell row",
+  });
   // The flag reads from the cache a moment after the screen shows; the unflagged run has no word.
   await page.waitForTimeout(500);
-  return { detail, budget, hero: await heroLines(page) };
+  return { ...priced, hero: await heroLines(page) };
 }
 
 async function runPlanned(

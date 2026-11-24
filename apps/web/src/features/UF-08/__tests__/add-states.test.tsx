@@ -1,14 +1,16 @@
-// T-0574 UF-08.5 Add exercise (part 2), AC1-AC7 (docs/tickets/T-0574): disabled row states with
-// the right reason, the two cap refusals, Remove of an added item and re-adding a removed one.
+// T-0574 UF-08.5 Add exercise (part 2), AC1-AC3 (docs/tickets/T-0574): disabled row states with
+// the right reason and the area cap refusal, through UF-08.6 (T-0998). AC4-AC7 (8-item cap by pins,
+// Remove of an added item, re-add, removed main lift) pinned the exercise list and re-suggest pins.
 // Loaders mocked; the real engine runs behind spies.
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { removeItem, suggest, type HistorySet, type Workout } from "@workoutlab/engine";
+import { suggest, type HistorySet } from "@workoutlab/engine";
 import { NOW } from "./fixtures.js";
 import { fProfile } from "./fixtures.js";
 import {
   fCache,
   fitLine,
+  openAddSheetFromArea,
   renderSetup,
   screenIds,
   serveCache,
@@ -38,18 +40,15 @@ vi.mock("../../../lib/offline/history.js", async (importOriginal) => {
 vi.mock("../../../lib/offline/engine-feed.js", () => ({ loadEngineHistory: vi.fn() }));
 vi.mock("@workoutlab/engine", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@workoutlab/engine")>();
-  return { ...actual, suggest: vi.fn(actual.suggest), removeItem: vi.fn(actual.removeItem) };
+  return { ...actual, suggest: vi.fn(actual.suggest) };
 });
 
 const spy = vi.mocked(suggest);
-const removeSpy = vi.mocked(removeItem);
 
 beforeEach(async () => {
   const actual = await vi.importActual<typeof import("@workoutlab/engine")>("@workoutlab/engine");
   spy.mockReset();
   spy.mockImplementation(actual.suggest);
-  removeSpy.mockReset();
-  removeSpy.mockImplementation(actual.removeItem);
   stored.ids = [];
   setOnline(false);
   serveCache();
@@ -60,16 +59,8 @@ afterEach(() => {
 });
 
 const button = (name: string) => screen.getByRole("button", { name });
-const lastInput = () => spy.mock.lastCall![4];
-const lastWorkout = () => spy.mock.results.at(-1)!.value as Workout;
-const rowNames = () =>
-  Array.from(document.querySelectorAll('[data-part="item-row"] [data-part="row-name"]')).map(
-    (n) => n.textContent,
-  );
 const dialog = () => screen.getByRole("dialog");
 const sheetStatus = () => document.querySelector('[data-part="sheet-status"]')!;
-const removedLine = () =>
-  screen.getAllByRole("status").find((el) => el.matches('[data-part="removed-line"]'))!;
 
 async function loaded(): Promise<void> {
   await waitFor(() => expect(fitLine().textContent).toMatch(/^(Fits|Nothing)/));
@@ -93,8 +84,9 @@ async function toPlan({ minutes = 30, skip = [] }: PlanOptions = {}): Promise<vo
   spy.mockClear();
 }
 
+// T-0998: the sheet opens from UF-08.6 (Chest first), the only way to it since the list is gone.
 function openSheet(): void {
-  fireEvent.click(button("Add exercise"));
+  openAddSheetFromArea("chest");
 }
 
 function search(text: string): void {
@@ -159,7 +151,7 @@ describe("AC1 disabled reasons", () => {
       stored.ids = ["dead-bug"];
       serveCache(() => fCache({ history: hardSets("leg-curl", 6, hoursBefore(24)) }));
       await toPlan({ skip: ["Calves"] });
-      expect(rowNames()).toContain("Bench press");
+      expect(document.querySelector('[data-part="area-row"][data-area="chest"]')).not.toBeNull();
       openSheet();
       search("Bench press");
       const bench = pickRow("Bench press");
@@ -207,13 +199,24 @@ describe("AC2 no history, or 10 days off", () => {
   });
 });
 
+/** On UF-08.2: take the trailing areas out, so the plan has minutes left for an Add. */
+function freeTime(): void {
+  for (const area of ["calves", "shoulders", "hamstrings", "arms", "core", "glutes"]) {
+    const row = document.querySelector<HTMLElement>(`[data-part="area-row"][data-area="${area}"]`);
+    if (row === null) continue;
+    const minus = () => row.querySelector('[data-part="minus"]')!;
+    while (minus().getAttribute("data-remove") !== "true") fireEvent.click(minus());
+    fireEvent.click(minus());
+  }
+}
+
 describe("AC3 area cap", () => {
   it("main bench press + added DB bench press at 90 min: push-up is refused for Chest", async () => {
     await toPlan({ minutes: 90 });
+    freeTime();
     await addVia("Db bench press");
-    const before = rowNames();
     spy.mockClear();
-    openSheet();
+    fireEvent.click(button("Add exercise"));
     search("Push up");
     fireEvent.click(within(pickRow("Push up")).getByRole("button", { name: "Add Push up" }));
     expect(sheetStatus()).toHaveTextContent("This workout already has two Chest exercises.");
@@ -221,143 +224,7 @@ describe("AC3 area cap", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(rowNames()).toEqual(before);
-  });
-});
-
-describe("AC4 8-item cap", () => {
-  it("main + 7 added at 120 min: a ninth is refused with the 8-exercise copy", async () => {
-    await toPlan({ minutes: 120 });
-    // The greedy fill may already hold some of these, so each add takes the first pool entry
-    // that is not in the plan and keeps every primary area at two or fewer pins.
-    const pool: [string, string[]][] = [
-      ["Db bench press", ["chest"]],
-      ["Barbell row", ["back"]],
-      ["Db row", ["back"]],
-      ["Lateral raise", ["shoulders"]],
-      ["Overhead press", ["shoulders"]],
-      ["Biceps curl", ["arms"]],
-      ["Plank", ["core"]],
-      ["Dead bug", ["core"]],
-      ["Hip thrust", ["glutes"]],
-      ["Leg extension", ["quads"]],
-      ["Calf raise", ["calves"]],
-      ["Romanian deadlift", ["hamstrings"]],
-      ["Leg curl", ["hamstrings"]],
-    ];
-    const held = new Map<string, number>([["chest", 1]]);
-    for (let added = 0; added < 7; added += 1) {
-      const inPlan = new Set(rowNames());
-      const pick = pool.find(
-        ([n, areas]) => !inPlan.has(n) && areas.every((a) => (held.get(a) ?? 0) < 2),
-      )!;
-      await addVia(pick[0]);
-      for (const a of pick[1]) held.set(a, (held.get(a) ?? 0) + 1);
-    }
-    expect(rowNames()).toHaveLength(8);
-    const before = rowNames();
-    openSheet();
-    const ninth = pool.find(
-      ([n, areas]) => !rowNames().includes(n) && areas.every((a) => (held.get(a) ?? 0) < 2),
-    )![0];
-    search(ninth);
-    fireEvent.click(within(pickRow(ninth)).getByRole("button", { name: `Add ${ninth}` }));
-    expect(sheetStatus()).toHaveTextContent("This workout has 8 exercises, the most it can hold.");
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    fireEvent.keyDown(document, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    expect(rowNames()).toEqual(before);
-  });
-});
-
-describe("AC5 remove an added item", () => {
-  it("removeItem, no suggest, bench x4 + pulldown x2, Removed line, addedIds empty, chip keeps it out", async () => {
-    await toPlan();
-    await addVia("Back squat");
-    spy.mockClear();
-    removeSpy.mockClear();
-    fireEvent.click(button("Remove Back squat"));
-    expect(removeSpy).toHaveBeenCalledTimes(1);
+    // T-0998: an Add is local (D-0274 §5), so the refusal is by `insertItem`, never a `suggest` call.
     expect(spy).not.toHaveBeenCalled();
-    expect(rowNames()).toEqual(["Bench press", "Straight arm pulldown"]);
-    const details = Array.from(
-      document.querySelectorAll('[data-part="item-row"] [data-part="row-detail"]'),
-    ).map((n) => n.textContent);
-    expect(details[0]).toMatch(/^4 /);
-    expect(details[1]).toMatch(/^2 /);
-    expect(removedLine()).toHaveTextContent("Back squat");
-    expect(
-      within(removedLine()).getByRole("button", { name: "Never suggest Back squat" }),
-    ).toBeInTheDocument();
-    fireEvent.click(button("45 minutes"));
-    expect(lastInput().pinnedIds).toEqual([]);
-    expect(rowNames()).not.toContain("Back squat");
-  });
-});
-
-describe("AC6 re-add", () => {
-  it("adding Back squat again: excludeIds lacks it, it is in the plan, gone from Removed", async () => {
-    await toPlan();
-    await addVia("Back squat");
-    fireEvent.click(button("Remove Back squat"));
-    expect(removedLine()).toHaveTextContent("Back squat");
-    spy.mockClear();
-    openSheet();
-    search("Back squat");
-    expect(
-      within(pickRow("Back squat")).getByRole("button", { name: "Add Back squat" }),
-    ).not.toHaveAttribute("aria-disabled");
-    fireEvent.keyDown(document, { key: "Escape" });
-    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
-    await addVia("Back squat");
-    expect(lastInput().excludeIds).not.toContain("back-squat");
-    expect(rowNames()).toContain("Back squat");
-    expect(removedLine()).not.toHaveTextContent("Back squat");
-  });
-
-  it("an exercise removed on this visit is listed with Add enabled", async () => {
-    await toPlan();
-    fireEvent.click(button("Remove Leg extension"));
-    openSheet();
-    search("Leg extension");
-    const row = pickRow("Leg extension");
-    expect(within(row).getByRole("button", { name: "Add Leg extension" })).not.toHaveAttribute(
-      "aria-disabled",
-    );
-    expect(row.querySelector('[data-part="pick-reason"]')).toBeNull();
-  });
-
-  it("a stored exclusion shows Excluded, never a time refusal", async () => {
-    stored.ids = ["leg-extension"];
-    await toPlan();
-    openSheet();
-    expectDisabled("Leg extension", "Excluded. Include it again in Plan › Excluded exercises.");
-    expect(sheetStatus()).toBeEmptyDOMElement();
-  });
-});
-
-describe("AC7 removed main lift", () => {
-  it("removing an added main lift leaves mainLiftId null; the next chip re-suggests one", async () => {
-    await toPlan();
-    // T-0575 adds the UI; here the engine's answer to the add is edited so Back squat is main.
-    const actual = await vi.importActual<typeof import("@workoutlab/engine")>("@workoutlab/engine");
-    spy.mockImplementationOnce((...args) => {
-      const w = actual.suggest(...args);
-      return {
-        ...w,
-        plan: {
-          ...w.plan,
-          mainLiftId: "back-squat",
-          items: w.plan.items.map((i) => ({ ...i, isMain: i.exerciseId === "back-squat" })),
-        },
-      };
-    });
-    await addVia("Back squat");
-    fireEvent.click(button("Remove Back squat"));
-    expect(removeSpy.mock.results.at(-1)!.value.plan.mainLiftId).toBeNull();
-    spy.mockClear();
-    fireEvent.click(button("45 minutes"));
-    expect(lastInput().mainLiftId).toBeNull();
-    expect(lastWorkout().plan.mainLiftId).not.toBeNull();
   });
 });

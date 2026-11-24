@@ -272,8 +272,7 @@ async function openFocusMode(page: Page): Promise<void> {
   await page.getByRole("link", { name: "Start workout" }).click();
   await page.getByRole("button", { name: "30 minutes" }).click();
   await page.getByRole("button", { name: "Suggest my workout" }).click();
-  await page.getByRole("button", { name: "Looks good" }).click();
-  await page.getByRole("button", { name: "Start", exact: true }).click();
+  await page.getByRole("button", { name: "Start workout", exact: true }).click();
   await expect(page).toHaveURL(/\/session\/[0-9a-f-]{36}$/);
   await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
 }

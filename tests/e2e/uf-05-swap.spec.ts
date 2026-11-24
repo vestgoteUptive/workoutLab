@@ -571,7 +571,10 @@ test.describe("T-0602 the swap sheet is a plan sheet", () => {
     await page.getByRole("button", { name: "30 minutes" }).click();
     await page.getByRole("button", { name: "Suggest my workout" }).click();
     await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
-    await page.locator('[data-part="swap"]').nth(1).click();
+    // T-1019: Swap is on UF-08.6 now (D-0274); open the first area.
+    await page.locator('[data-part="area-open"]').first().click();
+    await expect(page.locator('[data-screen-id="UF-08.6"]')).toBeVisible();
+    await page.locator('[data-part="swap"]').first().click();
     await expect(page.locator('[data-screen-id="UF-05.1"]')).toBeVisible();
     const sheet = page.getByRole("dialog");
     await expect(sheet.getByRole("radiogroup", { name: "Replacement" })).toBeVisible();

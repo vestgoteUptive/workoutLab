@@ -1,5 +1,6 @@
-// T-0571 UF-08.2 e2e (AC8): a favorite ranks first and carries the "Favorite" tag (AC2), and a
-// re-suggest with the network gone still uses the cached favorites (AC4, D-0091 §1: the seeded
+// T-0571 UF-08.2 e2e (AC8), moved to the areas-first flow by T-1019 (D-0274): a favorite ranks first
+// and carries the "Favorite" tag on its UF-08.6 row (AC2), and a re-suggest with the network gone
+// (a time chip; Shuffle is retired) still uses the cached favorites (AC4, D-0091 §1: the seeded
 // cache, the built content asserted). Same seed as uf-08-add.spec.ts.
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/guarded-test.js";
@@ -54,22 +55,34 @@ async function toSetup(page: Page): Promise<void> {
   await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
 }
 
-const rows = (page: Page) => page.locator('[data-part="item-row"]');
+const rows = (page: Page) => page.locator('[data-part="detail-row"]');
 
-test("a favorite is the main lift with the Favorite tag; offline Shuffle keeps it", async ({
+async function openChest(page: Page): Promise<void> {
+  await page.locator('[data-part="area-row"][data-area="chest"] [data-part="area-open"]').click();
+  await expect(page.locator('[data-screen-id="UF-08.6"]')).toBeVisible();
+}
+
+test("a favorite is the main lift with the Favorite tag; an offline time chip keeps it", async ({
   page,
   context,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await toSetup(page);
+  await openChest(page);
   const first = rows(page).first();
   await expect(first).toHaveAttribute("data-id", "db-bench-press");
   await expect(first).toHaveAttribute("data-main", "true");
   await expect(first).toContainText("Favorite");
   await expect(rows(page).filter({ hasText: "Favorite" })).toHaveCount(1);
 
+  // Offline, a time chip is the one re-suggest (D-0274 retired Shuffle): the cached favorite still leads.
+  await page.getByRole("link", { name: "Back" }).click();
+  await expect(page.locator('[data-screen-id="UF-08.2"]')).toBeVisible();
   await goOffline(page, context);
-  await page.getByRole("button", { name: "Shuffle" }).click();
+  await page.getByRole("button", { name: "45 minutes" }).click();
+  await expect(page.locator('[data-part="status"]')).toContainText("Plan rebuilt for 45 min");
+  await openChest(page);
   await expect(rows(page).first()).toHaveAttribute("data-id", "db-bench-press");
+  await expect(rows(page).first()).toHaveAttribute("data-main", "true");
   await expect(rows(page).first()).toContainText("Favorite");
 });

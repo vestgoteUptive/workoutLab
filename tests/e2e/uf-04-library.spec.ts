@@ -571,6 +571,9 @@ async function openHowToFromSetup(page: Page): Promise<string> {
   await page.goto("/session/setup");
   await page.getByRole("button", { name: "30 minutes" }).click();
   await page.getByRole("button", { name: "Suggest my workout" }).click();
+  // T-1019: the exercises live on UF-08.6 (D-0274); open the first area.
+  await page.locator('[data-part="area-open"]').first().click();
+  await expect(page.locator('[data-screen-id="UF-08.6"]')).toBeVisible();
   const opener = page.getByRole("button", { name: /^How to do / }).first();
   const name = (await opener.getAttribute("aria-label"))!.replace(/^How to do /, "");
   await opener.click();

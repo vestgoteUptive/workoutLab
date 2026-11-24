@@ -152,8 +152,11 @@ describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (
       .filter((f) => /\.tsx?$/.test(f))
       .map((f) => ({ name: f.split("/").at(-1)!, source: readFileSync(f, "utf8") }));
 
-  it("only Suggested.tsx mentions lib/i18n/workout, in any import form", () => {
-    expect(workoutImporters(files())).toEqual(["Suggested.tsx"]);
+  // T-0996 AC14: the area plan renders the why chips, so AreaPlan.tsx is an importer; T-0997 AC11:
+  // UF-08.6 shows each row's reason, so AreaDetail.tsx joins it; nothing else may (T-0998: the
+  // old list's Suggested.tsx is deleted).
+  it("only AreaDetail.tsx and AreaPlan.tsx mention lib/i18n/workout, in any import form", () => {
+    expect(workoutImporters(files())).toEqual(["AreaDetail.tsx", "AreaPlan.tsx"]);
   });
 
   it("contrast: a namespace, type-only or extensionless import elsewhere is caught", () => {
@@ -164,24 +167,66 @@ describe("T-0303b AC-11 workout.ts is imported, never edited or re-implemented (
       'export { areaName } from "../../lib/i18n/workout.js";\n',
     ]) {
       expect(workoutImporters([...base, { name: "Other.tsx", source }]), source).toEqual([
-        "Suggested.tsx",
+        "AreaDetail.tsx",
+        "AreaPlan.tsx",
         "Other.tsx",
       ]);
     }
   });
 
-  it("Suggested.tsx imports only names workout.ts exports", async () => {
-    const workout = await import("../../../lib/i18n/workout.js");
-    const source = files().find((f) => f.name === "Suggested.tsx")!.source;
-    const imports = [
-      ...source.matchAll(/import \{([^}]*)\} from "\.\.\/\.\.\/lib\/i18n\/workout\.js"/g),
-    ];
-    expect(imports).toHaveLength(1);
-    const names = imports[0]![1]!
-      .split(",")
-      .map((n) => n.trim())
-      .filter(Boolean);
-    expect(names.length).toBeGreaterThan(0);
-    for (const name of names) expect(Object.keys(workout), name).toContain(name);
+  it.each(["AreaDetail.tsx", "AreaPlan.tsx"])(
+    "%s imports only names workout.ts exports",
+    async (file) => {
+      const workout = await import("../../../lib/i18n/workout.js");
+      const source = files().find((f) => f.name === file)!.source;
+      const imports = [
+        ...source.matchAll(/import \{([^}]*)\} from "\.\.\/\.\.\/lib\/i18n\/workout\.js"/g),
+      ];
+      expect(imports).toHaveLength(1);
+      const names = imports[0]![1]!
+        .split(",")
+        .map((n) => n.trim())
+        .filter(Boolean);
+      expect(names.length).toBeGreaterThan(0);
+      for (const name of names) expect(Object.keys(workout), name).toContain(name);
+    },
+  );
+});
+
+// ---- T-0998 ----
+// The old exercise list is gone: its prop, its component and its helper files must not come back,
+// and nothing may import them (AC4; T-0996 review).
+describe("T-0998 AC4 the retired exercise list stays retired", () => {
+  const sources = () =>
+    sourceFiles()
+      .filter((f) => /\.tsx?$/.test(f))
+      .map((f) => ({ name: f.split("/").at(-1)!, source: readFileSync(f, "utf8") }));
+
+  it("no non-test source passes or declares `legacyExerciseList`", () => {
+    const offenders = sources().filter((f) => /legacyExerciseList/.test(f.source));
+    expect(offenders.map((f) => f.name)).toEqual([]);
+  });
+
+  it("contrast: a source that passes the prop would be caught", () => {
+    const bad = { name: "X.tsx", source: "<SessionSetup legacyExerciseList />" };
+    expect([...sources(), bad].filter((f) => /legacyExerciseList/.test(f.source))).toHaveLength(1);
+  });
+
+  it("Suggested.tsx, suggestions.ts and order.ts are deleted and nothing imports them", () => {
+    const names = sources().map((f) => f.name);
+    for (const gone of ["Suggested.tsx", "suggestions.ts", "order.ts"]) {
+      expect(names, gone).not.toContain(gone);
+    }
+    const importers = sources().filter((f) =>
+      /from "\.\/(Suggested|suggestions|order)\.js"/.test(f.source),
+    );
+    expect(importers.map((f) => f.name)).toEqual([]);
+  });
+
+  it("no Reorder, Shuffle or Suggestions copy is left in en.uf08", () => {
+    const keys = Object.keys(uf08);
+    expect(
+      keys.filter((k) => /reorder|shuffle|moveUp|moveDown|suggestions|otherSuggestions/i.test(k)),
+    ).toEqual([]);
   });
 });

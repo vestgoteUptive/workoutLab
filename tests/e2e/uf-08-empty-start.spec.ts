@@ -1,5 +1,9 @@
-// T-0942 UF-08.1, UF-08.2, UF-08.4, UF-09.1 e2e: "Start empty" end to end (docs/specs/empty-start-plan.md,
-// D-0236, D-0238, D-0239, D-0248; B1-B4, B7, B15-B17, B21, a11y). Same seed as uf-08-setup.spec.ts:
+// T-0942 UF-08.1, UF-08.2, UF-09.1 e2e: "Start empty" end to end (docs/specs/empty-start-plan.md,
+// D-0236, D-0238, D-0239, D-0248; B1-B4, B7, B15-B17, B21, a11y), moved to the area plan by T-1019
+// (D-0274, D-0280, D-0286): Start empty opens UF-08.2 with no area; the user adds areas ("Add an
+// area", "Fill the rest for me") and taps Start workout. The exercise list, the Suggestions section,
+// the "Doesn't fit" line and the Main-lift-first row rules went with D-0274, so B2, B3, B4 and B7
+// are rewritten against area rows. Same seed as uf-08-setup.spec.ts:
 // the L1+ library, the profile with FULL equipment, the nine F-targets and zero history unless a
 // test passes `sets`. Supabase is mocked through `page.route`; the guarded fixture fails an
 // unclaimed request at teardown.
@@ -84,17 +88,40 @@ const returningAfter10Days = (): unknown[] => [
 
 const screenUF081 = (page: Page) => page.locator('[data-screen-id="UF-08.1"]');
 const screenUF082 = (page: Page) => page.locator('[data-screen-id="UF-08.2"]');
-const screenUF084 = (page: Page) => page.locator('[data-screen-id="UF-08.4"]');
 const fitLine = (page: Page) => page.locator('[data-part="fit-line"]');
 const budgetText = (page: Page) => page.locator('[data-part="budget-text"]');
-const itemRows = (page: Page) => page.locator('[data-part="item-row"]');
-const itemNames = (page: Page) => itemRows(page).locator('[data-part="row-name"]');
-const suggestions = (page: Page) => page.locator('[data-part="suggestions"]');
-const suggestionRows = (page: Page) => suggestions(page).locator('[data-part="suggestion"]');
-const suggestionNames = (page: Page) => suggestionRows(page).locator('[data-part="row-name"]');
+const areaRows = (page: Page) => page.locator('[data-part="area-row"]');
+const areaNames = (page: Page) => areaRows(page).locator('[data-part="area-name"]');
+const candidateAdd = (page: Page, area: string) =>
+  page.locator(`[data-part="candidate"][data-area="${area}"] [data-part="candidate-add"]`);
+const candidateAdds = (page: Page) =>
+  page.locator('[data-part="candidate"] [data-part="candidate-add"]:not([aria-disabled="true"])');
+const fillRest = (page: Page) => page.locator('[data-part="fill-rest"]');
 const status = (page: Page) => page.locator('[data-part="status"]');
-const looksGood = (page: Page) => page.getByRole("button", { name: "Looks good" });
-const addButton = (page: Page, name: string) => page.getByRole("button", { name: `Add ${name}` });
+const looksGood = (page: Page) => page.getByRole("button", { name: "Start workout" });
+
+/** UF-08.2: open "Add an area" (it can re-render closed while the screen settles) and Add `area`. */
+async function addArea(page: Page, area: string): Promise<void> {
+  const add = candidateAdd(page, area);
+  await expect(async () => {
+    if (!(await add.isVisible())) await page.locator('[data-part="add-area-summary"]').click();
+    await expect(add).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
+  await add.click();
+  await expect(page.locator(`[data-part="area-row"][data-area="${area}"]`)).toBeVisible();
+}
+
+/** The names of the exercises in `area`'s UF-08.6 page, in order; returns to UF-08.2. */
+async function exercisesOf(page: Page, area: string): Promise<string[]> {
+  await page.locator(`[data-part="area-row"][data-area="${area}"] [data-part="area-open"]`).click();
+  await expect(page.locator('[data-screen-id="UF-08.6"]')).toBeVisible();
+  const names = await page
+    .locator('[data-part="detail-row"] [data-part="row-name"] > span:first-child')
+    .allTextContents();
+  await page.getByRole("link", { name: "Back" }).click();
+  await expect(screenUF082(page)).toBeVisible();
+  return names;
+}
 
 async function seed(page: Page, sets: unknown[] = []): Promise<void> {
   await mockSupabaseAuth(page);
@@ -122,27 +149,21 @@ async function startEmpty(page: Page): Promise<void> {
   await page.getByRole("button", { name: "Start empty" }).click();
   await expect(screenUF082(page)).toBeVisible();
   await expect(page.locator("[data-screen-id]")).toHaveCount(1);
-  await expect(suggestionRows(page).first()).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Today: pick your areas");
 }
 
-/** Name and detail ("4 × 6–8 · 12 min") of each row in a list, in order. */
-async function rowTexts(rows: Locator): Promise<string[][]> {
-  return rows.evaluateAll((els) =>
-    els.map((r) => [
-      r.querySelector('[data-part="row-name"]')!.textContent!,
-      r.querySelector('[data-part="row-detail"]')!.textContent!,
-    ]),
-  );
-}
+/** The areas UF-08.2 lists, in order. */
+const areasOf = (page: Page): Promise<string[]> => areaNames(page).allTextContents();
 
-async function suggestedPlanAt30(page: Page): Promise<string[][]> {
+/** UF-08.1 "Suggest my workout" at the chosen time: the areas it plans. Returns to UF-08.1. */
+async function suggestedAreasAt30(page: Page): Promise<string[]> {
   await page.getByRole("button", { name: "Suggest my workout" }).click();
   await expect(screenUF082(page)).toBeVisible();
-  await expect(itemRows(page).first()).toBeVisible();
-  const rows = await rowTexts(itemRows(page));
+  await expect(areaRows(page).first()).toBeVisible();
+  const areas = await areasOf(page);
   await page.getByRole("link", { name: /back/i }).first().click();
   await expect(screenUF081(page)).toBeVisible();
-  return rows;
+  return areas;
 }
 
 interface SessionUpsert {
@@ -234,9 +255,9 @@ async function precacheSettled(page: Page): Promise<void> {
     .toBe(true);
 }
 
-/** Tap Start on UF-08.4 and wait for focus mode. Returns the session id. */
+/** Tap Start workout on UF-08.2 and wait for focus mode. Returns the session id. */
 async function startWorkout(page: Page): Promise<string> {
-  await page.getByRole("button", { name: "Start" }).click();
+  await page.getByRole("button", { name: "Start workout" }).click();
   await expect(page).toHaveURL(SESSION_URL);
   await expect(page.locator('[data-screen-id="UF-09.1"]')).toBeVisible();
   return SESSION_URL.exec(page.url())![1]!;
@@ -250,6 +271,15 @@ async function expectFirstExercise(page: Page, name: string): Promise<void> {
 
 const activeIsBody = (page: Page) => page.evaluate(() => document.activeElement === document.body);
 
+/** Make sure the "Add an area" disclosure is open (it can re-render closed while UF-08.2 settles). */
+async function openAddArea(page: Page): Promise<void> {
+  await expect(async () => {
+    if (!(await candidateAdds(page).first().isVisible()))
+      await page.locator('[data-part="add-area-summary"]').click();
+    await expect(candidateAdds(page).first()).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15_000 });
+}
+
 // ---- AC1, AC2, AC3 (B1, B2, B3), AC4 (B4), zero history ----
 
 test.describe("zero-history user, 30 min", () => {
@@ -258,145 +288,139 @@ test.describe("zero-history user, 30 min", () => {
     await seed(page);
   });
 
-  test("AC1 (B1): Start empty opens UF-08.2 with the empty copy, 3 of 30 min, disabled Looks good", async ({
+  test("AC1 (B1): Start empty opens UF-08.2 with the empty copy, 30 min to fill, disabled Start workout", async ({
     page,
   }) => {
     await openSetup(page);
     await startEmpty(page);
-    await expect(page.locator('[data-part="empty-plan"]')).toHaveText(
-      "Nothing here yet. Pick from the suggestions or add an exercise.",
-    );
-    await expect(itemRows(page)).toHaveCount(0);
-    await expect(budgetText(page)).toHaveText("3 of 30 min · 27 min left");
+    await expect(page.locator('[data-part="area-title"]')).toHaveText("Today: pick your areas");
+    await expect(page.getByText("30 min to fill")).toBeVisible();
+    await expect(areaRows(page)).toHaveCount(0);
+    await expect(budgetText(page)).toHaveText("About 3 of 30 min");
     await expect(looksGood(page)).toHaveAttribute("aria-disabled", "true");
-    await expect(looksGood(page)).toHaveAccessibleDescription("Add at least one exercise.");
+    await expect(looksGood(page)).toHaveAccessibleDescription("Add at least one area.");
     // Disabled, not inert: a tap stays on UF-08.2.
     await looksGood(page).click({ force: true });
     await expect(screenUF082(page)).toBeVisible();
-    await expect(itemRows(page)).toHaveCount(0);
+    await expect(areaRows(page)).toHaveCount(0);
     await expect(looksGood(page)).toHaveAttribute("aria-disabled", "true");
-    await expect(page).not.toHaveURL(/step=ready/);
+    await expect(page).toHaveURL(/step=suggested/);
   });
 
-  test("AC2 (B2): the first row is the Main lift; the rows are the suggested-mode plan, same order", async ({
+  test("AC2 (B2): Fill the rest for me leads with the areas Suggest my workout leads with, within 30 min", async ({
     page,
   }) => {
     await openSetup(page);
-    const suggested = await suggestedPlanAt30(page);
+    const suggested = await suggestedAreasAt30(page);
+    expect(suggested.length).toBeGreaterThan(1);
     await startEmpty(page);
-    await expect(suggestionRows(page).first().locator('[data-part="row-main"]')).toHaveText(
-      "Main lift",
-    );
-    await expect(page.locator('[data-part="row-main"]')).toHaveCount(1);
-    const empty = await rowTexts(suggestionRows(page));
-    expect(empty.map((r) => r[0])).toEqual(["Bench press", "Inverted row", "Leg extension"]);
-    expect(empty).toEqual(suggested);
+    await fillRest(page).click();
+    // The two areas furthest below target come first in both modes; the rest is chosen by time.
+    expect((await areasOf(page)).slice(0, 2)).toEqual(suggested.slice(0, 2));
+    await expect(fillRest(page)).toHaveCount(0);
+    await expect(looksGood(page)).not.toHaveAttribute("aria-disabled", "true");
+    const [, used] = /^About (\d+) of 30 min$/.exec((await budgetText(page).textContent())!)!;
+    expect(Number(used)).toBeLessThanOrEqual(30);
   });
 
-  test("AC3 (B3): Add on the Main lift row puts it first, announces it, and focuses the next Add", async ({
-    page,
-  }) => {
-    await openSetup(page);
-    await startEmpty(page);
-    await addButton(page, "Bench press").click();
-    await expect(itemNames(page).first()).toHaveText("Bench press");
-    await expect(itemRows(page).first()).toHaveAttribute("data-main", "true");
-    await expect(status(page)).toHaveText("Bench press added. 15 min left.");
-    await expect(budgetText(page)).toHaveText("15 of 30 min · 15 min left");
-    await expect(suggestionNames(page)).toHaveText(["Inverted row", "Leg extension"]);
-    await expect(addButton(page, "Inverted row")).toBeFocused();
-  });
-
-  test("AC4 (B4): the last suggestion first leaves no main lift; every other Add is accepted", async ({
+  test("AC3 (B3): Add an area puts its row first, announces it, and focuses its set control", async ({
     page,
   }) => {
     await openSetup(page);
     await startEmpty(page);
-    await addButton(page, "Leg extension").click();
-    await expect(itemNames(page)).toHaveText(["Leg extension"]);
-    await expect(page.locator('[data-main="true"]')).toHaveCount(0);
-    await expect(status(page)).toHaveText(/^Leg extension added\. \d+ min left\.$/);
+    await addArea(page, "chest");
+    await expect(areaNames(page).first()).toHaveText("Chest");
+    await expect(status(page)).toHaveText(/^Chest added\. \d+ min left\.$/);
+    await expect(budgetText(page)).toHaveText(/^About \d+ of 30 min$/);
+    await expect(
+      page.locator('[data-area="chest"]').getByRole("button", { name: "One set more for Chest" }),
+    ).toBeFocused();
+    await expect(candidateAdd(page, "chest")).toHaveCount(0);
+  });
+
+  test("AC4 (B4): every area can be added in any order while time lasts, none is pushed out", async ({
+    page,
+  }) => {
+    await openSetup(page);
+    await startEmpty(page);
+    await addArea(page, "quads");
+    await expect(areasOf(page)).resolves.toEqual(["Quads"]);
+    await expect(status(page)).toHaveText(/^Quads added\. \d+ min left\.$/);
 
     let expected = 1;
-    while ((await suggestionRows(page).count()) > 0) {
-      const name = (await suggestionNames(page).first().textContent())!;
-      await addButton(page, name).click();
+    for (;;) {
+      await openAddArea(page).catch(() => undefined);
+      if ((await candidateAdds(page).count()) === 0) break;
+      const area = (await candidateAdds(page)
+        .first()
+        .locator("xpath=ancestor::*[@data-area][1]")
+        .getAttribute("data-area"))!;
+      await candidateAdds(page).first().click();
       expected += 1;
-      await expect(itemRows(page)).toHaveCount(expected);
-      expect(await itemNames(page).allTextContents()).toContain(name);
-      await expect(status(page)).toHaveText(new RegExp(`^${name} added\\. \\d+ min left\\.$`));
+      await expect(areaRows(page)).toHaveCount(expected);
+      await expect(page.locator(`[data-part="area-row"][data-area="${area}"]`)).toBeVisible();
+      await expect(status(page)).toHaveText(/ added\. \d+ min left\.$/);
       await expect(status(page)).not.toContainText(/push out|doesn't fit|min over/i);
     }
     expect(expected).toBeGreaterThanOrEqual(3);
-    expect(await itemNames(page).allTextContents()).toContain("Leg extension");
+    expect(await areasOf(page)).toContain("Quads");
     await expect(looksGood(page)).not.toHaveAttribute("aria-disabled", "true");
   });
 
-  test("AC5 (B7, B21): a shorter chip lists the accessory; 30 brings both back, main first", async ({
+  test("AC5 (B7, B21): a shorter chip rebuilds an empty plan; 30 asks for areas again", async ({
     page,
   }) => {
     await openSetup(page);
     await startEmpty(page);
-    await addButton(page, "Bench press").click();
-    await addButton(page, "Inverted row").click();
-    await expect(itemNames(page)).toHaveText(["Bench press", "Inverted row"]);
+    await addArea(page, "chest");
+    await addArea(page, "back");
+    expect(await areasOf(page)).toEqual(["Chest", "Back"]);
 
     await page.getByRole("button", { name: "20 minutes" }).click();
-    await expect(page.locator('[data-part="doesnt-fit"]')).toHaveText(
-      "Doesn't fit in 20 min: Inverted row.",
-    );
-    await expect(itemNames(page)).toHaveText(["Bench press"]);
-
-    await page.getByRole("button", { name: "30 minutes" }).click();
-    await expect(page.locator('[data-part="doesnt-fit"]')).toHaveCount(0);
-    await expect(itemNames(page)).toHaveText(["Bench press", "Inverted row"]);
-    await expect(itemRows(page).first()).toHaveAttribute("data-main", "true");
+    await expect(status(page)).toContainText("Plan rebuilt for 20 min");
+    expect(await areasOf(page)).toEqual([]);
+    await expect(looksGood(page)).toHaveAttribute("aria-disabled", "true");
   });
 
-  test("AC8 (B17): one pick at 45 min, Looks good shows 1 exercise, Start opens UF-09.1 with it", async ({
+  test("AC8 (B17): one area at 45 min, Start workout opens UF-09.1 with its exercise", async ({
     page,
   }) => {
     const writes = await recordSessions(page);
     await openSetup(page, 45);
     await startEmpty(page);
-    const name = (await suggestionNames(page).last().textContent())!;
-    await addButton(page, name).click();
-    await expect(itemRows(page)).toHaveCount(1);
-    const pickedId = (await itemRows(page).first().getAttribute("data-id"))!;
+    await addArea(page, "calves");
+    await expect(areaRows(page)).toHaveCount(1);
+    const names = await exercisesOf(page, "calves");
+    expect(names.length).toBeGreaterThan(0);
 
-    await looksGood(page).click();
-    await expect(page).toHaveURL(/\/session\/setup\?step=ready$/);
-    await expect(screenUF084(page)).toBeVisible();
-    await expect(page.locator('[data-part="summary"]')).toHaveText(
-      /^\d+ min · warm-up \+ 1 exercise · \d+ sets? · done by \d{1,2}:\d{2}( [AP]M)?$/,
-    );
     const id = await startWorkout(page);
-    await expectFirstExercise(page, name);
+    await expectFirstExercise(page, names[0]!);
     await expect.poll(() => writes.flat().filter((r) => r.id === id).length).toBe(1);
     const row = writes.flat().find((r) => r.id === id)!;
-    expect(row.plan?.items.map((i) => i.exerciseId)).toEqual([pickedId]);
-    expect(await storedSession(page, id)).toMatchObject({ ids: [pickedId] });
+    expect(row.plan?.items.length).toBe(names.length);
+    expect((await storedSession(page, id))?.ids).toHaveLength(names.length);
   });
 });
 
 // ---- AC6 (B15) returning after 10 days ----
 
-test("AC6 (B15): returning after 10 days off, the suggestions equal Suggest my workout at 30 min", async ({
+test("AC6 (B15): returning after 10 days off, Fill the rest for me leads with the areas Suggest my workout does at 30 min", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await seed(page, returningAfter10Days());
   await openSetup(page);
-  const suggested = await suggestedPlanAt30(page);
-  expect(suggested.map((r) => r[0])).toEqual(["Bench press", "Inverted row", "Calf raise"]);
+  const suggested = await suggestedAreasAt30(page);
+  expect(suggested.length).toBeGreaterThan(1);
   await startEmpty(page);
-  expect(await rowTexts(suggestionRows(page))).toEqual(suggested);
+  await fillRest(page).click();
+  expect((await areasOf(page)).slice(0, 2)).toEqual(suggested.slice(0, 2));
 });
 
 // ---- AC7 (B16) offline and online ----
 
 test.describe("AC7 (B16) Start empty to UF-09.1", () => {
-  test("offline: Start empty, Add, Looks good, Start; the sessions write waits in the queue", async ({
+  test("offline: Start empty, Add areas, Start workout; the sessions write waits in the queue", async ({
     page,
     context,
   }) => {
@@ -418,27 +442,26 @@ test.describe("AC7 (B16) Start empty to UF-09.1", () => {
     await expect(fitLine(page)).toHaveText(/^Fits:/);
 
     await startEmpty(page);
-    await expect(budgetText(page)).toHaveText("3 of 30 min · 27 min left");
+    await expect(budgetText(page)).toHaveText("About 3 of 30 min");
     await expect(looksGood(page)).toHaveAttribute("aria-disabled", "true");
-    await addButton(page, "Bench press").click();
-    await addButton(page, "Inverted row").click();
-    await expect(itemNames(page)).toHaveText(["Bench press", "Inverted row"]);
+    await addArea(page, "chest");
+    await addArea(page, "back");
+    expect(await areasOf(page)).toEqual(["Chest", "Back"]);
+    const chest = await exercisesOf(page, "chest");
+    const back = await exercisesOf(page, "back");
 
-    await looksGood(page).click();
-    await expect(screenUF084(page)).toBeVisible();
     const id = await startWorkout(page);
-    await expectFirstExercise(page, "Bench press");
-    expect(await storedSession(page, id)).toEqual({
-      pending: true,
-      ids: ["bench-press", "inverted-row"],
-    });
+    await expectFirstExercise(page, chest[0]!);
+    const stored = await storedSession(page, id);
+    expect(stored?.pending).toBe(true);
+    expect(stored?.ids).toHaveLength(chest.length + back.length);
     expect(gate.writesFulfilledOffline()).toBe(0);
     expect(writes.flat().filter((r) => r.id === id)).toHaveLength(0);
 
     await gate.goOnline();
     await expect.poll(() => writes.flat().filter((r) => r.id === id).length).toBe(1);
     const row = writes.flat().find((r) => r.id === id)!;
-    expect(row.plan?.items.map((i) => i.exerciseId)).toEqual(["bench-press", "inverted-row"]);
+    expect(row.plan?.items.map((i) => i.exerciseId)).toEqual(stored!.ids);
   });
 
   test("online sibling: the same flow writes the sessions row without going offline", async ({
@@ -449,14 +472,12 @@ test.describe("AC7 (B16) Start empty to UF-09.1", () => {
     const writes = await recordSessions(page);
     await openSetup(page);
     await startEmpty(page);
-    await addButton(page, "Bench press").click();
-    await addButton(page, "Inverted row").click();
-    await looksGood(page).click();
-    await expect(screenUF084(page)).toBeVisible();
+    await addArea(page, "chest");
+    await addArea(page, "back");
     const id = await startWorkout(page);
     await expect.poll(() => writes.flat().filter((r) => r.id === id).length).toBe(1);
     const row = writes.flat().find((r) => r.id === id)!;
-    expect(row.plan?.items.map((i) => i.exerciseId)).toEqual(["bench-press", "inverted-row"]);
+    expect(row.plan?.items.length).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -496,50 +517,41 @@ test.describe("AC9 a11y", () => {
     await expectTargets44([page.getByRole("button", { name: "Start empty" })]);
   });
 
-  test("UF-08.2 empty mode: 0 items, with picks, and a full list", async ({ page }) => {
+  test("UF-08.2 empty mode: 0 areas, with one area, and every area added", async ({ page }) => {
     await openSetup(page);
     await startEmpty(page);
 
-    // 0 items.
+    // 0 areas.
     await expectNoSeriousViolations(page);
     await expectTargets44([
-      page.locator('[data-part="suggest-add"]'),
-      page.locator('[data-part="other-suggestions"]'),
-      page.locator('[data-part="fill-rest"]'),
-      page.getByRole("button", { name: "Add exercise" }),
+      page.locator('[data-part="add-area-summary"]'),
+      fillRest(page),
       looksGood(page),
     ]);
 
-    // With picks: after each Add focus is on an element, never body.
-    await addButton(page, "Bench press").click();
-    await expect(itemRows(page)).toHaveCount(1);
+    // With one area: after the Add focus is on an element, never body.
+    await addArea(page, "chest");
     expect(await activeIsBody(page)).toBe(false);
     await expectNoSeriousViolations(page);
     await expectTargets44([
-      page.locator('[data-part="suggest-add"]'),
-      page.locator('[data-part="other-suggestions"]'),
-      page.locator('[data-part="fill-rest"]'),
+      page.locator('[data-part="area-open"]'),
+      page.locator('[data-part="minus"]'),
+      page.locator('[data-part="plus"]'),
+      page.locator('[data-part="add-area-summary"]'),
+      fillRest(page),
       looksGood(page),
     ]);
 
-    // Full list: take every remaining suggestion.
-    while ((await suggestionRows(page).count()) > 0) {
-      const before = await itemRows(page).count();
-      await page.locator('[data-part="suggest-add"]').first().click();
-      await expect(itemRows(page)).toHaveCount(before + 1);
+    // Every area that can still be added: focus is never on body after each Add.
+    for (;;) {
+      await openAddArea(page).catch(() => undefined);
+      if ((await candidateAdds(page).count()) === 0) break;
+      const before = await areaRows(page).count();
+      await candidateAdds(page).first().click();
+      await expect(areaRows(page)).toHaveCount(before + 1);
       expect(await activeIsBody(page)).toBe(false);
     }
-    await expect(page.locator('[data-part="suggestions-copy"]')).toBeVisible();
-    await expect(addButtonAddExercise(page)).toBeFocused();
     await expectNoSeriousViolations(page);
-    await expectTargets44([
-      page.locator('[data-part="fill-rest"]'),
-      page.getByRole("button", { name: "Add exercise" }),
-      looksGood(page),
-    ]);
+    await expectTargets44([page.locator('[data-part="add-area-summary"]'), looksGood(page)]);
   });
 });
-
-function addButtonAddExercise(page: Page): Locator {
-  return page.getByRole("button", { name: "Add exercise" });
-}
