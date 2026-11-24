@@ -244,7 +244,7 @@ Owner request 2026-11-13: "New feature. I want to be able to add exercise during
 | T-0985 | A brand-new user briefly sees UF-02.1 Today after sign-in on UF-01.5 before ProfileGate redirects to /welcome/save (ProfileGate.tsx:15-18 renders the route while the profile status is unknown); show a neutral loading state instead (found by T-0983) (groomed 2026-11-23: D-0272, placeholder only while the first read is pending, online, capped 3.5 s; offline and failed reads unchanged; ticket docs/tickets/T-0985-profile-gate-pending-placeholder.md) | web-shell | — | ready | wl-build-web |
 | T-0986 | Package tests that spawn check-all.mjs (design-tokens uf06-2 spec, landing ac21) time out at 5 s under full-gate load; call the checker in-process | infra | — | done | wl-build-infra |
 | T-0987 | UF-04.2 weight-step AC8 failed-save revert test failed on PR #75 CI (chip unchecked after the alert); root-cause test vs app | web-feature:UF-04 | — | ready | wl-build-web |
-| T-0988 | Content: single-arm cable row with rotation (cable, back + core, per arm), owner request | content | — | ready | wl-build-content |
+| T-0988 | Content: single-arm cable row with rotation (cable, back + core, per arm), owner request | content | — | done | wl-build-content |
 
 ## Estimated 1RM per exercise (spec docs/specs/estimated-1rm.md)
 Owner request 2026-11-20 (inspired by wger): "estimated 1RM per exercise, with a chart over time". Decisions D-0254 (Epley, reps 1–10, best hard set per session, no RIR), D-0255 (engine rule 16, pure, nothing stored), D-0256 (UF-06.2 card, SVG chart, table toggle, states), D-0257 (scope; amends D-0068 and D-0219). Owner accepted the open-question defaults; impact-review rulings in D-0258 (plain Epley at 1 rep, --wl-* tokens, table spec, same-day sessions). UF-06.2 only; never UF-08 or UF-09.
@@ -293,6 +293,6 @@ Owner request 2026-11-24: UF-09.5 never shows the exercise name; show it, and fo
 
 | ID | Title | Lane | Deps | Status | Flow |
 |---|---|---|---|---|---|
-| T-0989 | Screen spec: new `UF-09.5.md` (Next block lines, type, contrast, 320 px and 200 % zoom, copy, state table) and the UF-09.3/09.4 rest line removed; no new token (D-0273 §1-§10, AC1-AC6) | design | — | ready | wl-design |
-| T-0990 | Web: UF-09.5 shows the next exercise's name, the cue for a new exercise and "per arm" on the load line; name and flag on the first frame, cue after; offline from the cached detail (D-0273, AC1-AC13) | web-feature:UF-09 | T-0989 | todo | wl-build-web |
+| T-0989 | Screen spec: new `UF-09.5.md` (Next block lines, type, contrast, 320 px and 200 % zoom, copy, state table) and the UF-09.3/09.4 rest line removed; no new token (D-0273 §1-§10, AC1-AC6) | design | — | done | wl-design |
+| T-0990 | Web: UF-09.5 shows the next exercise's name, the cue for a new exercise and "per arm" on the load line; name and flag on the first frame, cue after; offline from the cached detail (D-0273, AC1-AC13) | web-feature:UF-09 | T-0989 | ready | wl-build-web |
 | T-0991 | e2e rest screen: name and cue, "per arm" first frame, 320 px and 200 % zoom without truncation, offline, zero history, 10 days off, axe/44 px (D-0273, AC1-AC7) | qa | T-0990 | todo | wl-build-qa |

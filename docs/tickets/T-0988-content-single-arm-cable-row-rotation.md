@@ -5,7 +5,7 @@ lane: content
 screens: [UF-04.1, UF-04.2]
 decisions: [D-0260, D-0263, D-0268]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Owner request 2026-11-24: on the cable row machine, one hand pulls the handle to the ribs while the torso rotates. Common names: single-arm cable row with rotation, rotational cable row. The library only has the two-handed `seated-cable-row`.

@@ -5,7 +5,7 @@ lane: design
 screens: [UF-09.5, UF-09.3]
 decisions: [D-0273, D-0261, D-0263, D-0208]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 Owner request 2026-11-24 (spec `docs/specs/rest-next-exercise.md`, D-0273): the rest screen should name the next exercise and, when a new exercise follows, show a short cue. UF-09.5 has no screen spec file (only the prototype and the Cobalt README), and the UF-09.3/09.4 spec says the rest state shows no flagged label, which D-0273 reverses. The web ticket builds from this spec, so layout, type, contrast and wrapping are fixed first.
