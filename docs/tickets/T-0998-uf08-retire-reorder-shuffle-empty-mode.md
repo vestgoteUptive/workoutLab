@@ -22,6 +22,8 @@ After T-0996 and T-0997 the old controls are unreachable. Dead code and dead tes
 - AC5 Given UF-09.10 (add during a workout) and UF-09.9 "Do later", Then their tests pass unchanged (they are not retired).
 - AC6 Given `docs/specs/empty-start-plan.md`, Then its status line says it is folded into D-0274 and `check-all` passes.
 
+- From the T-0996 review: remove the `legacyExerciseList` prop, `Suggested.tsx`, the `F_TZ_PROPS` / `swap-before-start` opt-ins and `Adjusted.emptiedByRemove`; add a guard test that no non-test file passes `legacyExerciseList` (until the prop is gone).
+
 ## Paths you may change
 `apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), `docs/specs/empty-start-plan.md` (extra, one status line), `tests/e2e/uf-08-*.spec.ts`. Not parallel with another UF-08 ticket.
 
