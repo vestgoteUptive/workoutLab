@@ -2000,6 +2000,27 @@ on conflict (id) do update set
   unilateral = excluded.unilateral;
 
 insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load, unilateral)
+values ('single-arm-cable-row-rotation', 'Single-arm cable row with rotation', 'exercise', 'compound', 'intermediate', array['cable']::text[], array['Sit or half-kneel facing the machine and hold one handle.', 'Let your shoulder reach forward, arm long.', 'Pull the handle to your ribs and turn your torso toward that arm.', 'Return with control, letting the shoulder reach forward.', 'Finish all reps, then switch arms.']::text[], array['Twisting from the lower back only.', 'Shrugging the shoulder up as you pull.']::text[], 'Pull to the ribs, turn with the elbow', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, true, 'arm')
+on conflict (id) do update set
+  name = excluded.name,
+  kind = excluded.kind,
+  type = excluded.type,
+  level = excluded.level,
+  equipment = excluded.equipment,
+  instructions = excluded.instructions,
+  mistakes = excluded.mistakes,
+  cue = excluded.cue,
+  timed = excluded.timed,
+  default_duration_s = excluded.default_duration_s,
+  source = excluded.source,
+  license = excluded.license,
+  attribution = excluded.attribution,
+  source_url = excluded.source_url,
+  increment_kg = excluded.increment_kg,
+  external_load = excluded.external_load,
+  unilateral = excluded.unilateral;
+
+insert into public.exercises (id, name, kind, type, level, equipment, instructions, mistakes, cue, timed, default_duration_s, source, license, attribution, source_url, increment_kg, external_load, unilateral)
 values ('single-leg-calf-raise', 'Single-leg calf raise', 'exercise', 'isolation', 'intermediate', array['none']::text[], array['Stand on one foot, holding a wall for balance if needed.', 'Push through the ball of your foot and rise up onto your toes.', 'Lower back down with control.', 'Finish all reps, then switch feet.']::text[], array['Using the wall to push instead of balance.', 'Rushing the lowering phase.']::text[], 'One foot, rise and lower slowly', false, null, 'workoutlab', 'LicenseRef-workoutLab', null, null, 2.5, false, 'leg')
 on conflict (id) do update set
   name = excluded.name,
@@ -2885,6 +2906,16 @@ values ('side-plank', 'glutes', 0.5)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
 insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('single-arm-cable-row-rotation', 'arms', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('single-arm-cable-row-rotation', 'back', 1)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+insert into public.exercise_areas (exercise_id, area_id, weight)
+values ('single-arm-cable-row-rotation', 'core', 0.5)
+on conflict (exercise_id, area_id) do update set weight = excluded.weight;
+
+insert into public.exercise_areas (exercise_id, area_id, weight)
 values ('single-leg-calf-raise', 'calves', 1)
 on conflict (exercise_id, area_id) do update set weight = excluded.weight;
 
@@ -3254,6 +3285,9 @@ values ('dumbbell-row', 'barbell-row')
 on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('dumbbell-row', 'machine-row')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('dumbbell-row', 'single-arm-cable-row-rotation')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
@@ -3773,6 +3807,9 @@ on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('seated-cable-row', 'machine-row')
 on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('seated-cable-row', 'single-arm-cable-row-rotation')
+on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('seated-calf-raise-machine', 'standing-calf-raise-machine')
@@ -3793,6 +3830,13 @@ values ('side-plank', 'plank')
 on conflict (exercise_id, variant_id) do nothing;
 insert into public.exercise_variants (exercise_id, variant_id)
 values ('side-plank', 'dead-bug')
+on conflict (exercise_id, variant_id) do nothing;
+
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('single-arm-cable-row-rotation', 'seated-cable-row')
+on conflict (exercise_id, variant_id) do nothing;
+insert into public.exercise_variants (exercise_id, variant_id)
+values ('single-arm-cable-row-rotation', 'dumbbell-row')
 on conflict (exercise_id, variant_id) do nothing;
 
 insert into public.exercise_variants (exercise_id, variant_id)

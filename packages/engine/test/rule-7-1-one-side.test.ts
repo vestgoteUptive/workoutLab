@@ -224,7 +224,7 @@ describe("rule 7.1 one side at a time (D-0268)", () => {
     expect((back(hist)?.load ?? 0) - (back(noRow)?.load ?? 0)).toBe(3);
   });
 
-  it("rule-7.1 (AC9) the real library: the 16 flagged rows are priced doubled, the rest are not", () => {
+  it("rule-7.1 (AC9) the real library: the 17 flagged rows are priced doubled, the rest are not", () => {
     const dir = path.join(REPO_DIR, "data", "exercises", "library");
     const rows = readdirSync(dir)
       .filter((f) => f.endsWith(".json"))
@@ -245,9 +245,9 @@ describe("rule 7.1 one side at a time (D-0268)", () => {
         } as LibraryExercise;
         return flagged(ex, j.unilateral ?? null);
       });
-    expect(rows).toHaveLength(108);
+    expect(rows).toHaveLength(109);
     const flaggedRows = rows.filter(oneSide);
-    expect(flaggedRows).toHaveLength(16);
+    expect(flaggedRows).toHaveLength(17);
     for (const e of rows) {
       const side = e.timed ? (e.defaultDurationS ?? 45) : 45;
       const rest = e.type === "compound" ? 120 : 60;

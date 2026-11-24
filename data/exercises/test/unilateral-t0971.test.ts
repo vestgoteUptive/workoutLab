@@ -1,5 +1,5 @@
 // T-0971 (D-0260 §2, D-0263 §3 §9; UF-04.2, UF-09.3): the optional `unilateral` flag.
-// AC1 schema, AC2 the 16 rows, AC3 switch text, AC4 108 rows and unflagged text unchanged,
+// AC1 schema, AC2 the 16 rows (17 with T-0988), AC3 switch text, AC4 108 rows (109 with T-0988) and unflagged text unchanged,
 // AC6 loader reads.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -22,6 +22,7 @@ const FLAGGED: Readonly<Record<string, "arm" | "leg" | "side">> = {
   "banded-glute-kickback": "leg",
   "cable-kickback": "leg",
   "dumbbell-row": "arm",
+  "single-arm-cable-row-rotation": "arm", // T-0988
   "cable-woodchop": "side",
   "side-plank": "side",
 };
@@ -53,17 +54,17 @@ describe("T-0971 AC1 schema: unilateral is an optional arm|leg|side enum", () =>
   });
 });
 
-describe("T-0971 AC2 exactly the 16 listed rows carry unilateral", () => {
+describe("T-0971 AC2 exactly the 17 listed rows carry unilateral", () => {
   const lib = loadLibrary();
 
-  it("has the listed values: 13 leg, 1 arm, 2 side", () => {
+  it("has the listed values: 13 leg, 2 arm, 2 side", () => {
     const got = Object.fromEntries(
       lib.filter((e) => e.unilateral !== undefined).map((e) => [e.id, e.unilateral]),
     );
     expect(got).toEqual(FLAGGED);
     const vals = Object.values(got);
     expect(vals.filter((v) => v === "leg")).toHaveLength(13);
-    expect(vals.filter((v) => v === "arm")).toHaveLength(1);
+    expect(vals.filter((v) => v === "arm")).toHaveLength(2);
     expect(vals.filter((v) => v === "side")).toHaveLength(2);
   });
 
@@ -110,9 +111,9 @@ describe("T-0971 AC3 step text", () => {
   });
 });
 
-describe("T-0971 AC4 108 rows (the unflagged-row diff is checked in the ticket log)", () => {
-  it("has 108 rows", () => {
-    expect(loadLibrary()).toHaveLength(108);
+describe("T-0971 AC4 109 rows (the unflagged-row diff is checked in the ticket log)", () => {
+  it("has 109 rows", () => {
+    expect(loadLibrary()).toHaveLength(109);
   });
 
 });
