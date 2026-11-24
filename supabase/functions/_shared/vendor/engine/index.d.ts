@@ -23,4 +23,4 @@ export { records, recordKey, type RecordSet, type RecordPrevious } from "./recor
 export { estimatedOneRepMax, E1RM_MAX_REPS, type E1rmPoint } from "./e1rm.js";
 export { areaGroups, homeAreaOf, type AreaGroup } from "./area-groups.js";
 export { orderItems, equipmentGroupOf, type EquipmentGroup } from "./order.js";
-export { adjustAreaSets, addArea, removeArea, areaCandidates } from "./area-edits.js";
+export { adjustAreaSets, addArea, removeArea, areaCandidates, setMainLift } from "./area-edits.js";

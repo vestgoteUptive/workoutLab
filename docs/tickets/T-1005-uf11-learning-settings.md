@@ -27,6 +27,8 @@ Learning must be visible and reversible, and the user must be able to switch it 
 - From T-1008: the UI to turn learning back on needs a changed-field-only write of `learn_from_edits = true` (T-1008 ships only `turnLearningOff()` and `forgetAll()` in `lib/offline/edit-ledger-sync.ts`).
 
 ## Paths you may change
+- `apps/web/src/lib/offline/edit-ledger-sync.ts`, `apps/web/src/lib/offline/__tests__/edit-ledger-sync.test.tsx` (orchestrator grant: `turnLearningOn` beside `turnLearningOff`, keeps the T-1008 learn_* write guard)
+- `tests/e2e/uf-11-learning.spec.ts` (orchestrator grant: wire the learning e2e)
 `apps/web/src/features/UF-11/**`, `apps/web/src/lib/i18n/flows/uf-11.ts` (extra; orchestrator grant). Not parallel with another UF-11 ticket.
 
 ## Contract impact
