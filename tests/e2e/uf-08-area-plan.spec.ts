@@ -116,7 +116,8 @@ test.describe("T-0996 happy path (UF-08.2)", () => {
     await page.getByText("Add an area").click();
     await page.getByRole("button", { name: `Add ${name}` }).click();
     await expect(rows(page)).toHaveCount(before);
-    await expect(status(page)).toHaveText(new RegExp(`^${name} added\\. \\d+ min left\\.$`));
+    // T-1023 (D-0290): an area removed on this visit comes back as it was.
+    await expect(status(page)).toHaveText(`${name} added back.`);
     await expect(
       page
         .locator(`[data-area="${area}"]`)

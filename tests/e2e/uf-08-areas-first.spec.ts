@@ -335,10 +335,12 @@ for (const mode of MODES) {
       await expect(page.locator('[data-part="skipping"]')).toContainText("Glutes");
       await expect(page.getByRole("heading", { level: 1 })).not.toContainText("Glutes");
 
-      // Add an area: it returns with the engine's default (3 sets) and the line goes.
+      // Add an area: it returns as it was removed (2 sets) and the line goes.
       await addArea(page, "glutes");
-      expect(await setsOf(page)).toMatchObject({ ...before, glutes: 3 });
-      await expect(status(page)).toHaveText(/^Glutes added\. \d+ min left\.$/);
+      // T-1023 (D-0290): as it was when removed (2 sets after the −), not the engine default.
+      expect(await setsOf(page)).toMatchObject({ ...before, glutes: 2 });
+      // T-1023 (D-0290): an area removed on this visit comes back as it was.
+      await expect(status(page)).toHaveText("Glutes added back.");
       await expect(page.locator('[data-part="skipping"]')).toHaveCount(0);
       if (mode === "offline") expect(net.supabaseRequests()).toEqual([]);
     });
