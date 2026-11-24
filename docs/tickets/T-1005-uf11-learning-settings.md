@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.4]
 decisions: [D-0277, D-0281, D-0195]
 deps: [T-1000, T-1001, T-1008]
-status: ready
+status: done
 ---
 ## Why
 Learning must be visible and reversible, and the user must be able to switch it off and clear it (`docs/specs/learn-from-edits.md`).
