@@ -7,6 +7,8 @@ by: product-owner (groom mode)
 area: process
 builds-on: D-0157, D-0178, D-0274, D-0275, D-0276, D-0277, D-0278
 ---
+> **Amended in part by D-0280 and D-0281 (2026-11-24).** New tickets: T-1009 (Start folded into UF-08.2, after T-0997, before T-0998), T-1007 and T-1008 (local ledger and sync, replacing the old T-1002), T-1010 (privacy notice). T-1001 is now the table, T-1002 the export. Phase 2 rows with no deps are `ready`.
+
 ## Context
 The owner chose layer 3 first, then layer 1. Tickets are split by lane to at most about half a day of agent work each (D-0157 §7).
 

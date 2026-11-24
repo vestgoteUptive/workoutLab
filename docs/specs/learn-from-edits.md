@@ -2,8 +2,8 @@
 
 - **Idea:** the owner, 2026-11-24, layer 1 of three, chosen second: repeated swaps become preferences ("Prefer dumbbell press for chest?"), removals become "never suggest X", and a per-session "busy / don't have it today" toggle. Built **after** `docs/specs/areas-first-planning.md`.
 - **Screens:** UF-08.2 (a prompt card), UF-08.6 ("Not today" is specified in the layer 3 spec; the count hooks live here), UF-08.3 and UF-05.1 (count only, no new control), UF-11.4 (a "Learning" section), UF-11.5 and UF-11.6 (unchanged lists, where a learned preference is seen and undone).
-- **Decisions:** D-0277 (what is counted, thresholds, prompts, reuse), D-0278 (storage, privacy, the one new column), D-0279 (phasing; tickets T-1000 to T-1006). Builds on D-0199 (excluded exercises), D-0202 (favorites), D-0191 (visit-only removes and skipped areas), D-0235 (swap pins), D-0195 (sign-out clears the device), NFR-PRIV-4 and NFR-PRIV-5 (export, delete).
-- **Status:** `todo`, phase 2. It starts after the layer 3 UF-08 tickets are done.
+- **Decisions:** D-0277 (what is counted, thresholds, prompts, reuse), **D-0281 (counts sync through the account in a new table `edit_signals`; supersedes D-0278, the owner's answer of 2026-11-24)**, D-0279 (phasing; tickets T-1000 to T-1010, amended by D-0280 and D-0281). Builds on D-0199 (excluded exercises), D-0202 (favorites), D-0191 (visit-only removes and skipped areas), D-0235 (swap pins), D-0195 (sign-out clears the device), NFR-PRIV-4 and NFR-PRIV-5 (export, delete).
+- **Status:** `todo`, phase 2. The data tickets (T-1001, T-1010) have no deps and are ready; the UF-08 prompt (T-1003) starts after the layer 3 UF-08 tickets are done.
 
 ## Problem
 Today the same swap is made at every workout: the engine suggests bench press, the user swaps it for dumbbell press, again next week. The app already has the tools to stop that (a favorite is tried first, an excluded exercise is never suggested), but the user must go to UF-04.2 and think of it. The app can notice the pattern and ask once.
@@ -15,7 +15,7 @@ Today the same swap is made at every workout: the engine suggests bench press, t
 | "Never suggest X" | **Excluded exercises** (`excluded_exercises`, `excludeIds`, rule 0.1, D-0199), with the mutual exclusion against favorites | An accepted removal prompt adds the exercise to the list |
 | "Not today" | The visit-only `excludeIds` of a Remove (D-0191 §4) and the swap-in pin (D-0235) | "Not today" uses `rankSwaps(…, equipment_taken)` and `applySwap`, and puts the original in the visit's excludes. Nothing is written |
 | Visible and reversible | UF-11.6 and UF-11.5 lists, UF-04.2 toggles | A learned preference is an ordinary favorite or exclusion, so it is already listed and removable |
-| Export and delete | `export.ts` and the D-0017 delete list already cover both tables | No change |
+| Export and delete | `export.ts` and the D-0017 delete list already cover favorites and excluded exercises | The favorites and exclusions need no change. The new `edit_signals` table is added to both (D-0281, T-1002) |
 | Skip an area | `avoidAreas` (UF-08.1 Skip today) | Not learned from (see Out of scope) |
 
 **Consequence:** the engine needs **no change** for layer 1. The preferences are inputs it already takes (principle 3).
@@ -27,10 +27,10 @@ Today the same swap is made at every workout: the engine suggests bench press, t
 4. As a private person, I want to turn the learning off, forget what was counted, and see and undo everything that was decided.
 
 ## What is counted
-A **ledger** of edit signals, kept on this device (D-0278 §1). One entry per pair or exercise:
+A **ledger** of edit signals, counted on the device first and synced through the account (D-0281). One entry per pair or exercise, per device:
 - **Swap signal** `(from, to)`: a swap of `from` for `to`, from UF-08.3 (before starting) or UF-05.1 (in a workout). Counted only when the swap reason is **none or "discomfort"**. "Equipment taken", "variety" and "short on time" are about today, not about taste, and are never counted. "Not today" is never counted.
 - **Removal signal** `exercise`: a Remove of that exercise on UF-08.6 (before starting). The stepper's "Remove {Area}", "Not today", an exercise dropped by a time change, a skip in UF-09 and an exercise not done are never counted.
-- **A signal is counted once per visit or workout** for the same pair or exercise (swapping back and forth on one screen is one signal), and entries older than **60 days** are dropped. The ledger holds at most 200 entries (oldest dropped).
+- **A signal is counted once per visit or workout** for the same pair or exercise (swapping back and forth on one screen is one signal), and an entry's **60-day window** starts at its first signal: a signal after the window restarts the entry at 1, and an old entry stops counting and is deleted (an "asked" mark is kept). A device holds at most 200 entries (oldest dropped). A pair's total is the **sum across the user's devices** (D-0281 §2, §3).
 - An exercise that is already a favorite (for a swap-in), already excluded, or excluded-and-removed raises no prompt.
 
 ## When to ask, and how
@@ -49,14 +49,17 @@ Specified with UF-08.6 (layer 3 spec). In this phase it gets one extra guarantee
 ## Where preferences are shown and undone
 - **UF-11.6 Favorite exercises** and **UF-11.5 Excluded exercises** list them, with their existing Remove and Include again. A learned preference is not marked differently in v1 (D-0278 §3: no provenance column; revisit).
 - **Immediately after Yes**, the Undo on the status line removes it again (the same write as UF-11.6 Remove).
-- **UF-11.4 Account settings, new section "Learning from your edits"** (D-0278 §2): a checkbox-style toggle **"Suggest preferences from my swaps and removals"** (default on), a line "Counts are kept on this device only and are never sent anywhere. A preference is saved only when you say yes.", and a button **Forget what was counted** (clears this device's ledger, with the status line "Counts cleared."). Turning the toggle off stops counting, drops pending prompts and clears the ledger. Offline: the toggle is disabled with "Connect to change this" (it is a stored setting); counting while off is nothing, so the device never needs to know offline.
+- **UF-11.4 Account settings, new section "Learning from your edits"** (D-0278 §2): a checkbox-style toggle **"Suggest preferences from my swaps and removals"** (default on), a line "Counts are saved with your account, only you can see them, and they are included when you export your data. A preference is saved only when you say yes.", and a button **Forget what was counted** (deletes the account's counts on every device, with the status line "Counts cleared."). Turning the toggle off stops counting, drops pending prompts, clears this device's ledger and deletes the account's counts. Offline: the toggle and Forget are both disabled with "Connect to change this" (they change stored data); counting while off is nothing, so a device never needs to know offline; another device learns of an off or a Forget at its next profile read (D-0281 §4).
 
 ## Storage and privacy
-- **Counts and "asked" marks** live in an IndexedDB store on this device (the `lib/offline` pattern, D-0265). They are not sent to the server and not synced between devices; a second device counts for itself. **They are cleared** on sign-out and on account deletion with every other `wl-` store (D-0195, NFR-PRIV-5), and by "Forget what was counted".
-- **The setting** is one column, `profiles.learn_from_edits boolean not null default true` (D-0278 §2): it follows the account, is included in the export with the whole profile row (NFR-PRIV-4), and goes with the account when it is deleted (the profile cascades).
-- **Accepted preferences** are rows in `favorite_exercises` or `excluded_exercises`, which the export and the delete already cover. No new table, no new RLS policy, no openapi change.
-- No third-party analytics (D-0017). Nothing about the counts leaves the device.
-- Honest limit: because counts are per device, a user who swaps on two devices needs 3 swaps on one of them. Accepted for v1.
+- **Counts and "asked" marks** are counted in an IndexedDB store on the device first (the `lib/offline` pattern, D-0265), so counting works offline, and are synced through the account into the table `edit_signals` (D-0281): one row per device and key, written only by its own device as an absolute upsert, summed on read. A replayed or late write cannot count a signal twice, and nothing a device writes can overwrite another device's row. A prompt answered ("asked") on one device is not asked again on another once they have synced.
+- **Table:** per user, the kind (swap or removal), the exercise ids, a count, `last_seen`, a 60-day window (`window_start`), an `asked_at` mark and a random `device_id`; RLS owner-only; plain CRUD through supabase-js, no Edge Function, no openapi change.
+- **Cleared** on sign-out and account deletion with every other `wl-` store on the device (D-0195, NFR-PRIV-5); counts not yet synced at sign-out are dropped. **Deleted on the server** by "Forget what was counted", by turning learning off, and with the account (the table cascades).
+- **The setting** is `profiles.learn_from_edits boolean not null default true`, plus `profiles.learn_reset_at` (set by the server when the setting changes or a Forget is done, so a device that was offline cannot bring forgotten counts back). Both ride in the export with the profile row.
+- **Export:** `edit_signals` is the 11th table of the account export (NFR-PRIV-4). **Delete:** the rows go with the account.
+- **Accepted preferences** are rows in `favorite_exercises` or `excluded_exercises`, as before.
+- **Privacy:** which exercises you swapped or removed, and how often, are stored with your account (EU region, owner-only). No third-party analytics (D-0017), no server code and no analytics view reads them, and the engine never sees counts. The landing privacy notice says so (T-1010).
+- Honest limits: two devices can show the same prompt before they have synced (answering twice is harmless); the window edge can miss a threshold by one signal; a device that never reconnects never shares its counts.
 
 ## Screen states
 | State | What shows |
@@ -71,17 +74,19 @@ Specified with UF-08.6 (layer 3 spec). In this phase it gets one extra guarantee
 | Returning after 10 days off | Entries from the last 60 days still count |
 
 ## Success metrics
-- Fewer repeats of the same swap after a prompt was accepted (device count of the swap on later visits; checked by the owner's use and by the e2e of the accepted path).
+- Fewer repeats of the same swap after a prompt was accepted (the account's count of the swap on later visits; checked by the owner's use and by the e2e of the accepted path).
 - Prompt acceptance rate is not measured (no analytics); the owner is asked in a later review if the prompts feel right.
 - Guardrails: no prompt in UF-09; never more than one prompt on screen; no write without a tap on Yes.
 
 ## Out of scope
 - Learning from area edits (a skipped or removed area never changes a target or a preference; targets adapt only through UF-11.1, principle 4).
 - Learning "avoid area" or pairwise "prefer A over B" ranking beyond a favorite; `rankSwaps` still takes no favorites input.
-- Provenance ("learned") tags, a history of what was learned, server-side signals, cross-device counts.
+- Provenance ("learned") tags, a history of what was learned.
 - Learning from "skip" or "Do later" in UF-09.
 
 ## Open questions and logged defaults
 1. Thresholds 3 (swap) and 2 (removal), window 60 days. **Default as written**, revisit after a month of use.
-2. Counts stay on the device and prompts are per device. **Default: yes** (stronger privacy, no new table). Owner decision needed only if cross-device learning matters.
+2. Counts stay on the device. **Owner answer 2026-11-24: no, they sync through the account** (D-0281, supersedes D-0278): a new table with RLS, in the export and deleted with the account. Offline increments merge as one row per device, summed on read, so nothing is counted twice.
+4. "Forget what was counted" and the toggle need a connection. **Default: yes** (they change stored data on every device).
+5. The 60-day window starts at a device's first signal and restarts after it. **Default: yes**, revisit if prompts come late.
 3. A learned preference is not tagged differently in UF-11.5 and UF-11.6. **Default: no tag.**

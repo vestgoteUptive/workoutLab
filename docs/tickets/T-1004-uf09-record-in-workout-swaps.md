@@ -3,12 +3,12 @@ id: T-1004
 title: UF-09 record in-workout swaps for learning (no new screen, control or text during a workout)
 lane: web-feature:UF-09
 screens: [UF-09.9]
-decisions: [D-0277, D-0278, D-0243]
-deps: [T-1002]
+decisions: [D-0277, D-0281, D-0243]
+deps: [T-1007]
 status: todo
 ---
 ## Why
-A swap made on the floor (UF-09.9 → UF-05.1) is the strongest signal, but the question must never interrupt a workout (principle 1). It only needs counting; the card appears on the next UF-08.2 (T-1003).
+A swap made on the floor (UF-09.9 → UF-05.1) is the strongest signal, but the question must never interrupt a workout (principle 1). It only needs counting on the device (T-1007); the background sync is T-1008 and the card appears on the next UF-08.2 (T-1003).
 
 ## Scope
 - In (`apps/web/src/features/UF-09/`): after a confirmed swap from UF-09.9, call `recordSwap(from, to, reason, workoutId, now)`; nothing else changes.

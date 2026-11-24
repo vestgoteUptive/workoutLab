@@ -3,7 +3,7 @@ id: T-0996
 title: UF-08.2 Today's plan by area - title, area rows with - / + sets, Add an area, Fill the rest, automatic order, Start empty with no areas
 lane: web-feature:UF-08
 screens: [UF-08.1, UF-08.2, UF-08.4]
-decisions: [D-0274, D-0275, D-0276, D-0191, D-0235]
+decisions: [D-0274, D-0275, D-0276, D-0280, D-0191, D-0235]
 deps: [T-0993, T-0994, T-0995]
 status: todo
 ---
@@ -11,13 +11,13 @@ status: todo
 The owner spends the pre-workout time rearranging exercises. UF-08.2 becomes the area plan (`docs/specs/areas-first-planning.md`), built from `UF-08.2.md` (T-0993) and the engine functions of T-0994 and T-0995. Time is still asked first on UF-08.1 (principle 2).
 
 ## Scope
-- In (`apps/web/src/features/UF-08/`): a new area-plan view replacing the exercise list in `Suggested.tsx` (split into new files if large); the plan is `orderItems(…)` of the engine result, then `areaGroups` for the rows; rows call `adjustAreaSets`, `removeArea`, `addArea`, `areaCandidates` through the host's `run` seam (principle 3: no area or exercise is picked in the web); the title and time lines; the time bar with a segment per area; why chips and the Skip-today line kept; "Add an area" list with reasons; "Fill the rest for me"; time chips (a change rebuilds, drops set edits and added areas, keeps removed areas, swaps, adds, excludes, status line); "Start empty" from UF-08.1 opens it with no areas; "Looks good" opens UF-08.4 with the ordered plan written as it shows. The status line, focus rules and copy of the spec. Copy in `apps/web/src/lib/i18n/flows/uf-08.ts`. A stepper Remove adds the area to this visit's skipped areas (`avoidAreas`).
+- In (`apps/web/src/features/UF-08/`): a new area-plan view replacing the exercise list in `Suggested.tsx` (split into new files if large); the plan is `orderItems(…)` of the engine result, then `areaGroups` for the rows; rows call `adjustAreaSets`, `removeArea`, `addArea`, `areaCandidates` through the host's `run` seam (principle 3: no area or exercise is picked in the web); the title and time lines; the time bar with a segment per area; why chips and the Skip-today line kept; "Add an area" list with reasons; "Fill the rest for me"; time chips (a change rebuilds, drops set edits and added areas, keeps removed areas, swaps, adds, excludes, status line); "Start empty" from UF-08.1 opens it with no areas; "Looks good" opens the built UF-08.4 with the ordered plan written as it shows (an **interim**: T-1009 replaces it with "Start workout" and retires UF-08.4, D-0280 §8). The status line, focus rules and copy of the spec. Copy in `apps/web/src/lib/i18n/flows/uf-08.ts`. A stepper Remove adds the area to this visit's skipped areas (`avoidAreas`).
 - UF-08.6 rows open a route that T-0997 builds: here the row's open button goes to `?step=area&area={area}` and a cold or unknown step lands on UF-08.1.
 - Out: the area detail page (T-0997), retiring Reorder, Shuffle and empty-mode code (T-0998; they are unreachable but present until then), any engine, data or token change.
 
 ## Acceptance criteria
 Fixtures: zero history; balanced; returning after 10 days off; 15-minute; `navigator.onLine` false. Test titles start `T-0996 ACn`.
-- AC1 (title) Given the default plan for 45 min, When UF-08.2 renders, Then the `h1` reads "Today: {areas joined by ' · '}" in the engine's priority order, with "45 min · done by HH:MM" under it. Given no areas (Start empty), Then "Today: pick your areas".
+- AC1 (title) Given the default plan for 45 min, When UF-08.2 renders, Then the `h1` reads "Today: {areas joined by ' · '}" in the engine's priority order, with "Done by HH:MM" under it (now plus the plan's minutes, D-0280 §3), and the time bar line reads "About {m} of 45 min". Given no areas (Start empty), Then "Today: pick your areas" with "45 min to fill".
 - AC2 (rows) Given the default plan, Then there is one row per `areaGroups` entry with the area name, "~{m} min", `− k sets +`, "Last 14 days: {load} of {target} sets" and "{n} exercises", and no exercise name appears on the row.
 - AC3 (+ both values) Given an area with room and time, When "One set more for {Area}" is tapped, Then that area's sets rise by 1 and the status line says so. Given no room (the area is full) or no time, Then the button is `aria-disabled`, focusable, a tap changes nothing and the row shows "No time for another set. Pick more time or remove a set elsewhere." or "{Area} already has the most sets it can hold."
 - AC4 (− and Remove, both values) Given an area at 3 sets, When "One set less for {Area}" is tapped, Then 2 sets. Given an area at 2 sets, Then the control reads "Remove" with the name "Remove {Area}"; tapping it removes the area, adds it to the skipped areas ("Skipping today" shows it), lists it under "Add an area", and focus moves to the row now in its place or to "Add an area" when none is left.

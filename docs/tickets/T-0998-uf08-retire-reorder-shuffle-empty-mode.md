@@ -3,8 +3,8 @@ id: T-0998
 title: UF-08 retire Reorder, Shuffle and the empty-mode Suggestions code now that the area plan replaces them
 lane: web-feature:UF-08
 screens: [UF-08.2, UF-08.5]
-decisions: [D-0274, D-0236, D-0238, D-0205, D-0242]
-deps: [T-0997]
+decisions: [D-0274, D-0280, D-0236, D-0238, D-0205, D-0242]
+deps: [T-1009]
 status: todo
 ---
 ## Why

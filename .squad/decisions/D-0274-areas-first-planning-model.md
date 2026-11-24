@@ -9,6 +9,8 @@ amends: D-0109, D-0191, D-0205, D-0236, D-0239, D-0242
 supersedes: D-0238
 builds-on: D-0002, D-0063, D-0065, D-0199, D-0202, D-0235, D-0237, D-0243, D-0246
 ---
+> **Amended in part by D-0280 (2026-11-24, owner answer).** §10 and the title's "the Ready step stays": UF-08.4 Ready is folded into UF-08.2 and retired; Start is one tap on the plan (1 tap with no edit, 3 with two). §1's line under the title is "Done by {HH:MM}"; §6's disabled button is "Start workout".
+
 ## Context
 The owner (2026-11-24): "I spent a lot of time in the suggested workout with exercises, rearranging, adding and swapping. Rethink it entirely." Of three layers offered the owner chose layer 3 first (areas first, exercises second; spec `docs/specs/areas-first-planning.md`), then layer 1 (D-0277, D-0278).
 
