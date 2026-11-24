@@ -5,7 +5,7 @@ lane: design
 screens: [UF-08.2, UF-11.4, UF-11.5, UF-11.6]
 decisions: [D-0277, D-0281, D-0276, D-0211]
 deps: [T-0993]
-status: ready
+status: done
 ---
 ## Why
 The prompt card and the Learning section need a spec before the web builds them (`docs/specs/learn-from-edits.md`). Runs after T-0993 because both edit `UF-08.2.md`.

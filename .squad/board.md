@@ -316,7 +316,7 @@ Owner request 2026-11-24: "I spent a lot of time in the suggested workout with e
 | T-0997 | UF-08.6 Area detail: Swap, Not today, Remove, Start with this and a local Add exercise behind each area (D-0274 §5, D-0275 §8) | web-feature:UF-08 | T-0996 | todo | wl-build-web |
 | T-0998 | UF-08 retire Reorder, Shuffle and the empty-mode Suggestions code and tests; engine switches stay (D-0274 §3) | web-feature:UF-08 | T-1009 | todo | wl-build-web |
 | T-0999 | e2e areas-first: tap budget from plan to Start (1 tap, 3 with two edits), +/− and Remove, Add an area, Start empty, area detail, zero history, 10 days off, 15 minutes, offline, axe/44 px | qa | T-0998 | todo | wl-build-qa |
-| T-1000 | Screen specs: the preference prompt card on UF-08.2 and the Learning section on UF-11.4 with the synced-counts wording (D-0277, D-0276, D-0281) | design | T-0993 | ready | wl-design |
+| T-1000 | Screen specs: the preference prompt card on UF-08.2 and the Learning section on UF-11.4 with the synced-counts wording (D-0277, D-0276, D-0281) | design | T-0993 | done | wl-design |
 | T-1001 | Data: table `edit_signals` (one row per device and key, owner RLS, cascades) and `profiles.learn_from_edits`, `learn_reset_at`; migration, pgTAP, data model, generated types, owned-table lists (D-0281) | data | — | done | wl-build-data |
 | T-1002 | Data: `edit_signals` in the account export (11th table), the delete lists and the e2e expected table count 10 to 11 (D-0281 §5) | data | T-1001 | done | wl-build-data |
 | T-1003 | UF-08 learn from edits: count swaps and removals, the one-time "Prefer X?" and "Stop suggesting X?" card from the synced totals, yes adds a favorite or an exclusion with Undo (D-0277, D-0281) | web-feature:UF-08 | T-0998, T-1000, T-1008 | todo | wl-build-web |
