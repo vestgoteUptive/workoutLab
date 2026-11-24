@@ -5,7 +5,7 @@ lane: web-feature:UF-09
 screens: [UF-09.5]
 decisions: [D-0273, D-0261, D-0263, D-0267, D-0118]
 deps: [T-0989]
-status: ready
+status: done
 ---
 ## Why
 The rest screen never names the exercise, and a flagged exercise reads "× 10" on rest and "× 10 per arm" on UF-09.3 (spec `docs/specs/rest-next-exercise.md`, D-0273). Rest stays the task; the added text is supporting info inside the existing "Next" block (principle 1). Built from `Design-docs/docs/design/screens/UF-09.5.md` (T-0989).
