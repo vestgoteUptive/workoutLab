@@ -5,7 +5,7 @@ lane: data
 screens: [UF-11.4, UF-08.2]
 decisions: [D-0281, D-0277, D-0020, D-0015, D-0218, D-0251]
 deps: []
-status: ready
+status: done
 ---
 ## Why
 The learning counts now sync through the account (D-0281, the owner's answer of 2026-11-24). They need a table the user alone can read and write, that goes with the account, plus the opt-out column and a reset epoch on the profile. This is the whole server side of layer 1; export and delete are T-1002. Plain CRUD under RLS, no openapi change (D-0001).

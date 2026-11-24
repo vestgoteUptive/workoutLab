@@ -5,7 +5,7 @@ lane: data
 screens: [UF-11.4]
 decisions: [D-0281, D-0136, D-0017, D-0251]
 deps: [T-1001]
-status: todo
+status: done
 ---
 ## Why
 The counts are the user's data (NFR-PRIV-4) and go with the account (NFR-PRIV-5). T-0951 did the same for `exercise_settings`; this ticket repeats that for `edit_signals` (D-0281 §5), after the table exists.
