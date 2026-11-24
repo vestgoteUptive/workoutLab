@@ -492,3 +492,8 @@
 .wl-barplates .wl-barplates__bar {
   inline-size: 8rem;
 }
+
+/* T-0687: a group heading sits closer to its own group (8 px) than to the block above (16 px). */
+.wl-edit > h2.wl-label {
+  margin-block-end: -0.5rem;
+}

@@ -5,7 +5,7 @@ lane: web-feature:UF-11
 screens: [UF-11.3]
 decisions: [D-0230, D-0233, D-0203]
 deps: [T-0681, T-0682]
-status: ready
+status: done
 ---
 <!-- Written by product-owner 2026-11-23 (groom). Flow: wl-build-web (agent frontend-dev). About ⅓ day. Lane choice (logged here, no decision needed): the board row said `design`, but the work is JSX and CSS in apps/web plus one spec amendment of about ten lines, with no new token and no new class. Splitting it would put a one-paragraph spec edit in a design ticket that has to land first and that the web ticket then has to follow word for word. So the lane is web-feature:UF-11, and the design spec path is a listed extra (orchestrator grant). If the orchestrator prefers the split, the spec edit is AC7 alone. -->
 
@@ -60,3 +60,8 @@ none. No token, openapi, data-model or engine-rules change. The spec file is a s
 
 ## Definition of done
 Tests for every AC pass · `pnpm --filter @workoutlab/web typecheck`, then a separate `… lint`, then a separate `… test` · `npx -y pnpm@10.28.2 -w typecheck lint test --concurrency=1`, `-w test:repo-checks`, `-w format:check` and `node .github/scripts/check-all.mjs` green · the two uf-11-plan e2e specs green · commits start `T-0687 UF-11.3:`.
+
+## Build / accept log
+- Build (frontend-dev): four `.wl-label` h2s above Goal, Level, Sessions per week, Priority areas, groups named by `aria-labelledby`; preview h2 moved from `wl-type-label` to `wl-label`; `.wl-edit > h2.wl-label` pulls a heading 8 px toward its group (plan.css); spec UF-11.3.md amended. Tests: `__tests__/edit-plan-headings.test.tsx` AC1–AC7 (AC1 order/names/no aria-label, AC2 order, AC3 hints/note/live regions, AC4 unique ids after remount, AC5 offline, AC6 contrast from tokens.json 4.5:1 + axe, AC7 spec scan); AC8 e2e at 390/320 px in `uf-11-plan-layout.spec.ts`. Faults (backup, `cp`, `cmp`): F1 aria-label on Level red (AC1, AC4, AC5); F2 rhythm labelledby to goal id red (AC1, AC2, AC4, AC5); F3 priority heading after chips red (AC2). Gate: web typecheck, lint, test (412 files, 5401) green; format:check green; uf-11* e2e 97 passed (+2 new). check-all: only `ticket-not-on-base` (the diff base resolves to a ref without the ticket file; ticket is on local main), not a code finding.
+
+- 2026-11-24 orchestrator gate: turbo 18/19 (design-tokens T-0681 docs pin broke on a prettier table reflow in UF-11.3.md, fixed by restoring the tables); uf-11* e2e 105/105 except T-0686a AC2 failed once in one run, then 318/318 with --repeat-each 3; not reproduced.
