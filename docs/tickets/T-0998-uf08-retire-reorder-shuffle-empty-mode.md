@@ -24,7 +24,10 @@ After T-0996 and T-0997 the old controls are unreachable. Dead code and dead tes
 
 - From the T-0996 review: remove the `legacyExerciseList` prop, `Suggested.tsx`, the `F_TZ_PROPS` / `swap-before-start` opt-ins and `Adjusted.emptiedByRemove`; add a guard test that no non-test file passes `legacyExerciseList` (until the prop is gone).
 
+- From the T-0997 review: update `Design-docs/docs/design/screens/UF-08.6.md` (lines ~39, 65, 80) and T-0997 AC3 text to the shipped copy "No other exercise for {Area} today. Use Swap." and the same-area-only rule (D-0288 §1).
+
 ## Paths you may change
+- `Design-docs/docs/design/screens/UF-08.6.md` (orchestrator grant: copy sync from the T-0997 review)
 `apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), `docs/specs/empty-start-plan.md` (extra, one status line), `tests/e2e/uf-08-*.spec.ts`. Not parallel with another UF-08 ticket.
 
 ## Contract impact
