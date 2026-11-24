@@ -32,7 +32,7 @@ Test titles start `T-1023 ACn`. Unit tests in `apps/web/src/features/UF-08/__tes
 Checklist (D-0197 §7): fits/doesn't fit, main/not main, time changed/not, online/offline, one removed area/several.
 
 ## Paths you may change
-- `apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), `tests/e2e/uf-08-areas-first.spec.ts`
+- `apps/web/src/features/UF-08/**`, `apps/web/src/lib/i18n/flows/uf-08.ts` (extra; orchestrator grant), `tests/e2e/uf-08-areas-first.spec.ts`, `tests/e2e/uf-08-area-plan.spec.ts` (orchestrator grant: the "{name} added back." status copy)
 - `docs/specs/areas-first-planning.md` only for a wording fix the build finds. Not parallel with another UF-08 ticket.
 
 ## Contract impact
