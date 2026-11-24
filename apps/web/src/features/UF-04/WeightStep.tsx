@@ -95,6 +95,13 @@ export function WeightStep({
     setPending(null);
   }, [override]);
 
+  // A refused write ends the optimistic selection too. The store writes the new value and then
+  // reverts it, and a live read may deliver only the reverted value, so `override` can stay put
+  // and the effect above never fires (T-0987).
+  useEffect(() => {
+    if (rejected) setPending(null);
+  }, [rejected]);
+
   // "Use default" leaves the DOM: focus goes to the chip that is now the tab stop.
   useLayoutEffect(() => {
     if (refocus.current && override === undefined) {
