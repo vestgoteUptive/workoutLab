@@ -26,7 +26,6 @@ import {
   mockSupabaseAuth,
   mockSupabaseData,
   mockSupabaseRest,
-  VITE_SUPABASE_URL,
 } from "./fixtures/supabase-mock.js";
 import { startWithExercise } from "./fixtures/uf-08-start.js";
 import { exerciseAreas, exercises } from "./fixtures/uf-04-library-data.js";
@@ -134,8 +133,13 @@ async function swapOnDetail(
 ): Promise<void> {
   await page.getByRole("button", { name: `Swap ${fromName}`, exact: true }).click();
   const sheet = page.getByRole("dialog");
-  await sheet.getByRole("radiogroup", { name: "Reason" }).getByRole("radio", { name: reason }).check();
-  const pick = sheet.getByRole("radiogroup", { name: "Replacement" }).locator(`[data-id="${toId}"]`);
+  await sheet
+    .getByRole("radiogroup", { name: "Reason" })
+    .getByRole("radio", { name: reason })
+    .check();
+  const pick = sheet
+    .getByRole("radiogroup", { name: "Replacement" })
+    .locator(`[data-id="${toId}"]`);
   await pick.getByRole("radio").check();
   await sheet.getByRole("button", { name: /^Use / }).click();
   await expect(sheet).toHaveCount(0);
@@ -205,7 +209,9 @@ test("T-1006 AC1 three swaps (the last in a workout via UF-09.9) raise Prefer, P
   // UF-08.2 of the next visit: the card names the swap-in and its first area.
   await setupPage(page, fake);
   await expect(card(page)).toHaveAttribute("data-kind", "swap");
-  await expect(card(page).getByRole("heading", { name: "Prefer Dumbbell row for Back?" })).toBeVisible();
+  await expect(
+    card(page).getByRole("heading", { name: "Prefer Dumbbell row for Back?" }),
+  ).toBeVisible();
   await expect(card(page)).toContainText("You've swapped Inverted row for it 3 times.");
   await part(page, "learning-yes").click();
   await expect(part(page, "learning-after")).toContainText("Dumbbell row is a favorite now.");
@@ -277,7 +283,9 @@ function assertPrivacy(fake: AccountFake, extraTables: string[] = []): void {
       devices.set(w.who, (devices.get(w.who) ?? new Set()).add(String(row.device_id)));
       const { exercise_id, to_exercise_id, key, ...rest } = row;
       expect(key).toBe(
-        to_exercise_id === null ? `removal:${exercise_id}` : `swap:${exercise_id}:${to_exercise_id}`,
+        to_exercise_id === null
+          ? `removal:${exercise_id}`
+          : `swap:${exercise_id}:${to_exercise_id}`,
       );
       const text = JSON.stringify(rest);
       for (const word of exerciseWords) expect(text, `body names ${word}`).not.toContain(word);
@@ -292,7 +300,8 @@ function assertPrivacy(fake: AccountFake, extraTables: string[] = []): void {
     const text = w.body ?? "";
     expect(text, `${w.method} ${w.table} carries a count`).not.toMatch(/"count"|swap:|removal:/);
     if (w.table === "favorite_exercises" || w.table === "excluded_exercises") {
-      if (w.method === "POST") expect(Object.keys(JSON.parse(text) as object)).toEqual(["exercise_id"]);
+      if (w.method === "POST")
+        expect(Object.keys(JSON.parse(text) as object)).toEqual(["exercise_id"]);
     }
   }
   // One random device id per device, never the user's id.
@@ -345,7 +354,9 @@ test("T-1006 AC1 Undo takes the favorite off again: the write, UF-11.6 and the c
   fake.seed({ from: "inverted-row", to: "db-row", count: 3 });
   await openApp(page, fake);
   await setupPage(page, fake);
-  await expect(card(page).getByRole("heading", { name: "Prefer Dumbbell row for Back?" })).toBeVisible();
+  await expect(
+    card(page).getByRole("heading", { name: "Prefer Dumbbell row for Back?" }),
+  ).toBeVisible();
   await part(page, "learning-yes").click();
   await expect(part(page, "learning-after")).toContainText("Dumbbell row is a favorite now.");
   expect(fake.favorites.map((f) => f.exercise_id)).toEqual(["db-row"]);
@@ -386,7 +397,9 @@ test("T-1006 AC2 Remove in two visits raises Stop suggesting; Never suggest list
   await ledgerHas(page, REMOVAL_KEY, 2);
   await setupPage(page, fake);
   await expect(card(page)).toHaveAttribute("data-kind", "removal");
-  await expect(card(page).getByRole("heading", { name: "Stop suggesting Inverted row?" })).toBeVisible();
+  await expect(
+    card(page).getByRole("heading", { name: "Stop suggesting Inverted row?" }),
+  ).toBeVisible();
   await expect(card(page)).toContainText("You've removed it 2 times.");
   await part(page, "learning-yes").click();
   await expect(part(page, "learning-after")).toContainText("Inverted row won't be suggested.");
@@ -394,9 +407,7 @@ test("T-1006 AC2 Remove in two visits raises Stop suggesting; Never suggest list
 
   await page.goto("/plan/excluded");
   await expect(screen(page, "UF-11.5")).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Include Inverted row again" }),
-  ).toBeVisible();
+  await expect(page.getByRole("button", { name: "Include Inverted row again" })).toBeVisible();
   // Excluded exercises are not suggested: the next plan's Back is not Inverted row.
   await newVisit(page);
   await openArea(page, "back");
@@ -494,7 +505,9 @@ test("T-1006 AC5 learning off: three swaps raise nothing; on again, counting res
   await swapVisit(page);
   await ledgerHas(page, SWAP_KEY, 3);
   await setupPage(page, fake);
-  await expect(card(page).getByRole("heading", { name: "Prefer Dumbbell row for Back?" })).toBeVisible();
+  await expect(
+    card(page).getByRole("heading", { name: "Prefer Dumbbell row for Back?" }),
+  ).toBeVisible();
   assertPrivacy(fake);
 });
 
@@ -511,7 +524,9 @@ test("T-1006 AC6 Forget what was counted clears a pending card and the account's
   await swapVisit(page);
   await ledgerHas(page, SWAP_KEY, 2);
   await setupPage(page, fake);
-  await expect(card(page).getByRole("heading", { name: "Prefer Dumbbell row for Back?" })).toBeVisible();
+  await expect(
+    card(page).getByRole("heading", { name: "Prefer Dumbbell row for Back?" }),
+  ).toBeVisible();
   await expect.poll(() => fake.total(SWAP_KEY)).toBe(3);
 
   await openAccount(page);
@@ -551,7 +566,9 @@ test("T-1006 AC6b two devices: 2 swaps here and 1 there raise the card there; No
   await expect.poll(() => fake.total(SWAP_KEY)).toBe(3);
   // B holds one of the three; the other two came through the account.
   expect(await ledger(pageB)).toEqual({ [SWAP_KEY]: 1 });
-  await expect(card(pageB).getByRole("heading", { name: "Prefer Dumbbell row for Back?" })).toBeVisible();
+  await expect(
+    card(pageB).getByRole("heading", { name: "Prefer Dumbbell row for Back?" }),
+  ).toBeVisible();
   await expect(card(pageB)).toContainText("You've swapped Inverted row for it 3 times.");
 
   await part(pageB, "learning-no").click();
@@ -630,12 +647,15 @@ test("T-1006 AC7 offline the card shows with disabled buttons and the connect li
     await expect(yes).toHaveAttribute("aria-disabled", "true");
     await expect(no).toHaveAttribute("aria-disabled", "true");
     await expect(card(page)).toContainText(lines[kind]);
-    const writes = fake.writes("favorite_exercises").length + fake.writes("excluded_exercises").length;
+    const writes =
+      fake.writes("favorite_exercises").length + fake.writes("excluded_exercises").length;
     // aria-disabled is not `disabled`: a tap reaches the handler, which must do nothing.
     await yes.click({ force: true });
     await no.click({ force: true });
     await expect(card(page)).toBeVisible();
-    expect(fake.writes("favorite_exercises").length + fake.writes("excluded_exercises").length).toBe(writes);
+    expect(
+      fake.writes("favorite_exercises").length + fake.writes("excluded_exercises").length,
+    ).toBe(writes);
     expect(fake.favorites.length + fake.excluded.length).toBe(i);
     await expect(part(page, "learning-error")).toHaveCount(0);
 
@@ -650,4 +670,228 @@ test("T-1006 AC7 offline the card shows with disabled buttons and the connect li
   expect(answered.sort()).toEqual(["removal", "swap"]);
   await expect.poll(() => fake.favorites.map((f) => f.exercise_id)).toEqual(["db-row"]);
   await expect.poll(() => fake.excluded.map((f) => f.exercise_id)).toEqual(["lat-pulldown"]);
+});
+
+// ---- AC8 ----
+
+test("T-1006 AC8 the export has the 11 tables with the user's edit_signals rows, learn_from_edits and the accepted favorite", async ({
+  page,
+}) => {
+  const fake = new AccountFake();
+  fake.seed({ from: "inverted-row", to: "db-row", count: 2 });
+  await openApp(page, fake);
+  await swapVisit(page);
+  await ledgerHas(page, SWAP_KEY, 1);
+  await setupPage(page, fake);
+  await expect(
+    card(page).getByRole("heading", { name: "Prefer Dumbbell row for Back?" }),
+  ).toBeVisible();
+  await part(page, "learning-yes").click();
+  await expect(part(page, "learning-after")).toContainText("Dumbbell row is a favorite now.");
+  await expect.poll(() => fake.signals().length).toBe(2);
+
+  await openAccount(page);
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Export my data" }).click(),
+  ]);
+  const body = JSON.parse(await readFile((await download.path())!, "utf-8")) as {
+    tables: Record<string, Record<string, unknown>[]>;
+  };
+  expect(Object.keys(body.tables)).toHaveLength(11);
+  expect(Object.keys(body.tables).at(-1)).toBe("edit_signals");
+  expect(body.tables.edit_signals).toEqual(fake.signals());
+  expect(body.tables.edit_signals!.map((r) => r.device_id).sort()).toContain(OTHER_DEVICE);
+  expect(body.tables.edit_signals!.every((r) => r.user_id === FAKE_USER_ID)).toBe(true);
+  expect(body.tables.profiles![0]).toMatchObject({ learn_from_edits: true });
+  expect(body.tables.favorite_exercises!.map((r) => r.exercise_id)).toEqual(["db-row"]);
+  assertPrivacy(fake);
+});
+
+test("T-1006 AC8 account deletion leaves no edit_signals row and no device store", async ({
+  page,
+}) => {
+  const fake = new AccountFake();
+  fake.seed({ from: "inverted-row", to: "db-row", count: 2 });
+  await openApp(page, fake);
+  await swapVisit(page);
+  await ledgerHas(page, SWAP_KEY, 1);
+  await setupPage(page, fake);
+  await expect.poll(() => fake.signals().length).toBe(2);
+  // The device holds a ledger entry, its random id and the cached account rows.
+  await expect
+    .poll(async () => await deviceStore(page))
+    .toMatchObject({ editLedger: 1, editLedgerMeta: 1, editSignalsCache: 2 });
+
+  await openAccount(page);
+  await page.getByRole("button", { name: "Delete account…" }).click();
+  await page.getByLabel("Type delete to confirm").fill("delete");
+  await page.getByRole("button", { name: "Delete my account" }).click();
+  await expect(page).toHaveURL(/\/welcome$/);
+
+  expect(fake.accountDeleted).toBe(true);
+  expect(fake.signals()).toEqual([]);
+  expect(await deviceStore(page)).toEqual({
+    editLedger: 0,
+    editLedgerMeta: 0,
+    editSignalsCache: 0,
+  });
+});
+
+test("T-1006 AC8 sign-out clears the device store and keeps the account's rows", async ({
+  page,
+}) => {
+  const fake = new AccountFake();
+  fake.seed({ from: "inverted-row", to: "db-row", count: 2 });
+  await openApp(page, fake);
+  await swapVisit(page);
+  await setupPage(page, fake);
+  await expect.poll(() => fake.signals().length).toBe(2);
+  await expect
+    .poll(async () => await deviceStore(page))
+    .toMatchObject({ editLedger: 1, editLedgerMeta: 1, editSignalsCache: 2 });
+
+  await openAccount(page);
+  await page.getByRole("button", { name: "Sign out" }).click();
+  await expect(page).toHaveURL(/\/welcome$/);
+  expect(await deviceStore(page)).toEqual({
+    editLedger: 0,
+    editLedgerMeta: 0,
+    editSignalsCache: 0,
+  });
+  expect(fake.signals()).toHaveLength(2);
+  expect(fake.accountDeleted).toBe(false);
+});
+
+// ---- AC9 ----
+
+test("T-1006 AC9 no prompt on any UF-09 screen, even when a swap there crosses the threshold", async ({
+  page,
+}) => {
+  const fake = new AccountFake();
+  // Two signals from another device: the swap in the workout below is the third.
+  fake.seed({ from: "inverted-row", to: "db-row", count: 2 });
+  fake.seed({ from: "lat-pulldown", count: 2 });
+  await openApp(page, fake);
+  await page.goto("/session/setup");
+  // The pending removal card shows on UF-08.2 before the workout starts.
+  await startWithExercise(page, { area: "back", query: "inverted row", name: "Inverted row" });
+  const noPrompt = async () => {
+    await expect(page.locator('[data-part^="learning"]')).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText(/Stop suggesting|Prefer .* for /);
+  };
+  await expect(screen(page, "UF-09.3")).toBeVisible();
+  await noPrompt();
+
+  await page.getByRole("button", { name: "Pause workout" }).click();
+  await expect(screen(page, "UF-09.9")).toBeVisible();
+  await noPrompt();
+  await screen(page, "UF-09.9").getByRole("button", { name: "Swap" }).click();
+  const sheet = page.getByRole("dialog", { name: "Replace Inverted row" });
+  await expect(sheet).toBeVisible();
+  await noPrompt();
+  await sheet
+    .getByRole("radiogroup", { name: "Replacement" })
+    .locator('[data-id="db-row"]')
+    .getByRole("radio")
+    .check();
+  await sheet.getByRole("button", { name: "Use Dumbbell row" }).click();
+  await expect(sheet).toHaveCount(0);
+  await ledgerHas(page, SWAP_KEY, 1);
+  await noPrompt();
+  await screen(page, "UF-09.9").getByRole("button", { name: "Resume" }).click();
+  await expect(screen(page, "UF-09.3")).toBeVisible();
+  await noPrompt();
+  // Every UF-09 screen shows one task: the sync of the count never put a live region or a link up.
+  await expect(page.locator("[data-screen-id]")).toHaveCount(1);
+
+  // Back at UF-08.2 the threshold that was crossed in the workout raises the card (not before).
+  await newVisit(page);
+  await expect.poll(() => fake.total(SWAP_KEY)).toBe(3);
+  await expect(card(page).first()).toBeVisible();
+});
+
+// ---- AC10 ----
+
+for (const width of [320, 390]) {
+  test(`T-1006 AC10 axe, 44 px targets and no horizontal scroll on the card at ${width} px (both kinds, and after yes)`, async ({
+    page,
+  }) => {
+    const fake = new AccountFake();
+    fake.seed({ from: "inverted-row", to: "db-row", count: 3, daysAgo: 3 });
+    fake.seed({ from: "lat-pulldown", count: 2, daysAgo: 2 });
+    await openApp(page, fake);
+    await page.setViewportSize({ width, height: 844 });
+    await setupPage(page, fake);
+
+    const clean = async () => {
+      const result = await new AxeBuilder({ page }).include('[data-screen-id="UF-08.2"]').analyze();
+      expect(result.violations).toEqual([]);
+      expect(
+        await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+      ).toBe(true);
+    };
+    const target = async (locator: Locator) => {
+      const box = (await locator.boundingBox())!;
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+    };
+
+    const kinds: string[] = [];
+    for (let i = 0; i < 2; i += 1) {
+      await expect(card(page)).toBeVisible();
+      kinds.push((await card(page).getAttribute("data-kind"))!);
+      await clean();
+      await target(part(page, "learning-yes"));
+      await target(part(page, "learning-no"));
+      await part(page, "learning-yes").click();
+      await expect(part(page, "learning-after").first()).toBeVisible();
+      await clean();
+      await target(part(page, "learning-after").getByRole("button", { name: /^Undo:/ }));
+    }
+    expect(kinds.sort()).toEqual(["removal", "swap"]);
+    // A card whose buttons are disabled (offline) is a different state with its own colours.
+  });
+}
+
+// ---- T-1008: an opt-out on one device survives another device's profile save ----
+
+test("T-1006 T-1008 opted out on device A, device B saves its equipment, learning stays off on both", async ({
+  page: pageA,
+  browser,
+  baseURL,
+}) => {
+  const fake = new AccountFake();
+  await openApp(pageA, fake, "A");
+  const { context: contextB, page: pageB } = await secondDevice(browser, baseURL, fake);
+  // B has read the profile with learning on, then A turns it off.
+  await openAccount(pageB);
+  await expect(toggle(pageB)).toBeChecked();
+  await openAccount(pageA);
+  await toggle(pageA).click();
+  await expect(pageA.getByRole("status").filter({ hasText: "Learning is off." })).toBeVisible();
+  expect(fake.profile.learn_from_edits).toBe(false);
+
+  // B (its page still shows the old value) saves its equipment: a write of that field only.
+  const kettlebell = pageB.getByRole("checkbox", { name: "Kettlebell" });
+  await kettlebell.check();
+  await pageB
+    .locator("section", { has: pageB.getByText("Your equipment", { exact: true }) })
+    .getByRole("button", { name: "Save", exact: true })
+    .click();
+  await expect(pageB.getByText("Saved", { exact: true })).toBeVisible();
+  const patches = fake.writes("profiles", "PATCH").filter((r) => r.who === "B");
+  expect(patches.map((r) => Object.keys(JSON.parse(r.body!) as object))).toEqual([["equipment"]]);
+  expect(fake.profile.learn_from_edits).toBe(false);
+
+  // B reads it back as off, and three swaps on B count nothing and send nothing.
+  await openAccount(pageB);
+  await expect(toggle(pageB)).not.toBeChecked();
+  for (let visit = 0; visit < 3; visit += 1) await swapVisit(pageB);
+  await newVisit(pageB);
+  await expect(card(pageB)).toHaveCount(0);
+  expect(await ledger(pageB)).toEqual({});
+  expect(fake.writes("edit_signals", "POST")).toEqual([]);
+  expect(fake.profile.learn_from_edits).toBe(false);
+  await contextB.close();
 });

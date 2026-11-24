@@ -99,7 +99,8 @@ export class AccountFake {
 
   writes(table: string, method?: string): Recorded[] {
     return this.requests.filter(
-      (r) => r.table === table && r.method !== "GET" && (method === undefined || r.method === method),
+      (r) =>
+        r.table === table && r.method !== "GET" && (method === undefined || r.method === method),
     );
   }
 
@@ -158,9 +159,11 @@ export class AccountFake {
     }
     if (method === "DELETE") {
       const ids = /^in\.\((.*)\)$/.exec(url.searchParams.get("id") ?? "")?.[1];
-      const doomed = ids === undefined ? null : new Set(ids.split(",").map((s) => s.replace(/"/g, "")));
+      const doomed =
+        ids === undefined ? null : new Set(ids.split(",").map((s) => s.replace(/"/g, "")));
       for (const [k, r] of [...this.rows]) {
-        if (r.user_id === FAKE_USER_ID && (doomed === null || doomed.has(r.id))) this.rows.delete(k);
+        if (r.user_id === FAKE_USER_ID && (doomed === null || doomed.has(r.id)))
+          this.rows.delete(k);
       }
       return route.fulfill({ status: 204 });
     }
@@ -225,7 +228,9 @@ export class AccountFake {
       return route.fulfill({ status: 201, json: out });
     }
     if (method === "DELETE") {
-      const id = /^eq\.(.*)$/.exec(new URL(request.url()).searchParams.get("exercise_id") ?? "")?.[1];
+      const id = /^eq\.(.*)$/.exec(
+        new URL(request.url()).searchParams.get("exercise_id") ?? "",
+      )?.[1];
       const i = list.findIndex((r) => r.exercise_id === id);
       if (i >= 0) list.splice(i, 1);
       return route.fulfill({ status: 204 });
