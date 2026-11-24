@@ -5,7 +5,7 @@ lane: data
 screens: [UF-11.4]
 decisions: [D-0281, D-0136, D-0017, D-0251]
 deps: [T-1001]
-status: todo
+status: done
 ---
 ## Why
 The counts are the user's data (NFR-PRIV-4) and go with the account (NFR-PRIV-5). T-0951 did the same for `exercise_settings`; this ticket repeats that for `edit_signals` (D-0281 §5), after the table exists.
@@ -45,3 +45,4 @@ none (the schema is T-1001; the export file gains one key).
 Tests for every AC pass · `pnpm -w typecheck lint test` green · contracts unchanged or decision linked · commit messages start with `T-1002` and cite UF-11.4.
 
 ## Build / accept log
+- Build (data): `edit_signals` is the 11th `EXPORT_TABLES` entry (order key `id`); rls-coverage EXPECTED, e2e mock (`mockSupabaseData`, `mockSupabaseEmptyReads`), uf-11 spec (11 tables, `edit_signals` `[]`) and the account-delete Deno list updated. AC1-AC4 `export.test.ts` ("T-1002 AC1..AC4"), AC5 `export-tables-drift.test.ts`, AC6 `account-delete.test.ts` (typechecks with `deno check`; needs the functions stack, NOT run), AC7 `uf-11-account.spec.ts` T-0469 AC-1, AC-rls `rls-coverage.test.mjs`. Faults (restored by cp, cmp clean): table dropped from EXPORT_TABLES (13 unit fails), order key `created_at` (3), edit_signals error swallowed (2), `edit_signals` out of rls EXPECTED (1 fail). A first fault (null-data check) was ineffective and is not counted. Red run on unfixed code: e2e T-0469 AC-1 hit the 501 backstop on `edit_signals` until the mock route was added. Gates: turbo typecheck/lint/test green (5443 web tests), format:check green, uf-11 e2e 106 passed. `test:repo-checks` and `check-all` show only `lane-path-not-owned` for T-1001's `supabase/tests/database/*` files, inherited from the unmerged T-1001 base (they clear when T-1001 merges).

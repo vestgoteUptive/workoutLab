@@ -352,6 +352,10 @@ export async function mockSupabaseData(page: Page, fixtures: OfflineFixtures): P
   await page.route(`${VITE_SUPABASE_URL}/rest/v1/exercise_settings*`, (route) =>
     route.fulfill({ status: 200, json: [] }),
   );
+  // T-1002: the account export reads `edit_signals` (D-0281 §5); no signals by default.
+  await page.route(`${VITE_SUPABASE_URL}/rest/v1/edit_signals*`, (route) =>
+    route.fulfill({ status: 200, json: [] }),
+  );
 }
 
 /**
@@ -375,6 +379,7 @@ export async function mockSupabaseEmptyReads(page: Page): Promise<void> {
     "excluded_exercises",
     "favorite_exercises",
     "exercise_settings",
+    "edit_signals",
   ]) {
     await page.route(`${VITE_SUPABASE_URL}/rest/v1/${table}*`, (route) =>
       route.fulfill({ status: 200, json: [] }),

@@ -38,6 +38,7 @@ const data: AccountExport = {
     excluded_exercises: [],
     favorite_exercises: [],
     exercise_settings: [],
+    edit_signals: [],
   },
   device: { queuedSessions: [], queuedSets: [] },
 };

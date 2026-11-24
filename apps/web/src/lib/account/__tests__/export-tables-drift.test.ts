@@ -34,6 +34,20 @@ describe("T-0505 export tables drift", () => {
     expect([...EXPORT_TABLES].sort()).toEqual(owned);
   });
 
+  it("T-1002 AC5 both lists hold the 11 tables, edit_signals included", () => {
+    const owned = ownedTables(readFileSync(SQL, "utf8"), SQL);
+    expect(owned).toHaveLength(11);
+    expect(owned).toContain("edit_signals");
+    expect([...EXPORT_TABLES].sort()).toEqual(owned);
+  });
+
+  it("T-1002 AC5 contrast: the lists differing by one table are not equal", () => {
+    const sql = readFileSync(SQL, "utf8").replace("('edit_signals'),", "");
+    expect([...EXPORT_TABLES].sort()).not.toEqual(ownedTables(sql, SQL));
+    const owned = ownedTables(readFileSync(SQL, "utf8"), SQL);
+    expect([...EXPORT_TABLES].filter((t) => t !== "edit_signals").sort()).not.toEqual(owned);
+  });
+
   it("T-0505 AC-4 the parser ignores comment lines inside the markers", () => {
     const sql = "-- OWNED_TABLES:BEGIN\n  -- x\n  ('b'),\n  ('a')\n-- OWNED_TABLES:END";
     expect(ownedTables(sql, "f.sql")).toEqual(["a", "b"]);

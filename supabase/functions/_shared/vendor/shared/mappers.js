@@ -101,6 +101,16 @@ export function toEngineProfile(row) {
         planUpdatedAt: row.plan_changed_at,
     };
 }
+/**
+ * `profiles.learn_from_edits` + `profiles.learn_reset_at` → LearningPrefs. A profile cached before
+ * T-1001 has neither field: a missing flag reads as true (the default), a missing epoch as null.
+ */
+export function toLearningPrefs(row) {
+    return {
+        learnFromEdits: row.learn_from_edits ?? true,
+        learnResetAt: row.learn_reset_at ?? null,
+    };
+}
 /** A numeric column read as a number. PostgREST may send `numeric` as a string ("15.00"). */
 function toKg(value, column) {
     const n = typeof value === "number" ? value : Number(value);

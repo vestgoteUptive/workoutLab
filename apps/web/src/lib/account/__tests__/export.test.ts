@@ -4,7 +4,17 @@ import type { OfflineDb, QueuedSession, QueuedSet } from "../../offline/db.js";
 import { freshOfflineDb } from "../../offline/__tests__/test-helpers.js";
 import { EXPORT_TABLES, ORDER_KEYS, PAGE_SIZE } from "../export.js";
 import { downloadAccountExport, exportAccountData } from "../index.js";
-import { EXPORT_TABLE_NAMES, NOW, TZ, U, V, pg, twoYears, type Row } from "./fixtures.js";
+import {
+  EXPORT_TABLE_NAMES,
+  NOW,
+  TZ,
+  U,
+  V,
+  editSignal,
+  pg,
+  twoYears,
+  type Row,
+} from "./fixtures.js";
 
 let db: OfflineDb;
 
@@ -105,6 +115,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
       excluded_exercises: "exercise_id",
       favorite_exercises: "exercise_id",
       exercise_settings: "exercise_id",
+      edit_signals: "id",
     };
     for (const [table, key] of Object.entries(keys)) {
       expect(fake.ordersFor(table).length, table).toBeGreaterThan(0);
@@ -119,7 +130,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
     }
   });
 
-  it("T-0310c AC2 zero history: profile + 9 targets, [] for the other eight", async () => {
+  it("T-0310c AC2 zero history: profile + 9 targets, [] for the other nine", async () => {
     const all = twoYears(U);
     const fake = pg({ profiles: all.profiles!, area_targets: all.area_targets! });
     const result = await exportAccountData(input, { supabase: fake.client, db });
@@ -134,6 +145,7 @@ describe("T-0310c AC2 shape (D-0136 §2)", () => {
       "excluded_exercises",
       "favorite_exercises",
       "exercise_settings",
+      "edit_signals",
     ]) {
       expect((result.tables as unknown as Record<string, unknown>)[t], t).toEqual([]);
     }
@@ -194,11 +206,11 @@ describe("T-0564 AC8 favorite_exercises in the export (UF-11.4, D-0202 §5)", ()
     expect(rows.every((r) => r.user_id === U)).toBe(true);
   });
 
-  it("T-0564 AC8 the file has 10 table keys in EXPORT_TABLES order, exercise_settings last, version 1", async () => {
+  it("T-0564 AC8 the file has 10 table keys in EXPORT_TABLES order, exercise_settings before edit_signals, version 1", async () => {
     const result = await exportAccountData(input, { supabase: pg(twoYears(U, 10)).client, db });
-    expect(EXPORT_TABLES).toHaveLength(10);
+    // T-1002 (D-0281 §5) added an 11th key after it; T-1002 AC1 pins the count.
     expect(Object.keys(result.tables)).toEqual([...EXPORT_TABLES]);
-    expect(Object.keys(result.tables).at(-1)).toBe("exercise_settings");
+    expect(Object.keys(result.tables).at(-2)).toBe("exercise_settings");
     expect(result.version).toBe(1);
   });
 
@@ -252,6 +264,113 @@ describe("T-0951 AC8 exercise_settings in the export (UF-04.2, D-0251 §2)", () 
     await expect(exportAccountData(input, { supabase: fake.client, db })).rejects.toThrow(
       new Error("export_failed"),
     );
+  });
+});
+
+describe("T-1002 edit_signals in the export (UF-11.4, D-0281 §5)", () => {
+  it("T-1002 AC1 the file has the 11 tables with edit_signals last, rows present", async () => {
+    const result = await exportAccountData(input, { supabase: pg(twoYears(U, 10)).client, db });
+    expect(EXPORT_TABLES).toHaveLength(11);
+    expect(Object.keys(result.tables)).toEqual([...EXPORT_TABLES]);
+    expect(Object.keys(result.tables).at(-1)).toBe("edit_signals");
+    expect(result.version).toBe(1);
+    expect((result.tables.edit_signals as unknown as Row[]).every((r) => r.user_id === U)).toBe(
+      true,
+    );
+    expect(result.tables.edit_signals).toHaveLength(2);
+  });
+
+  it("T-1002 AC1 a user with no signals still has the key, as []", async () => {
+    const { edit_signals: _drop, ...rest } = twoYears(U, 10);
+    const result = await exportAccountData(input, { supabase: pg(rest).client, db });
+    expect(result.tables).toHaveProperty("edit_signals");
+    expect(result.tables.edit_signals).toEqual([]);
+    expect(Object.keys(result.tables).at(-1)).toBe("edit_signals");
+  });
+
+  it("T-1002 AC2 z-sig inserted first comes out after a-sig, ordered by id and paged", async () => {
+    const fake = pg(twoYears(U, 10));
+    const result = await exportAccountData(input, { supabase: fake.client, db });
+    expect(ORDER_KEYS.edit_signals).toBe("id");
+    expect(fake.ordersFor("edit_signals")).toEqual([["id", { ascending: true }]]);
+    expect(fake.rangesFor("edit_signals")).toEqual([[0, PAGE_SIZE - 1]]);
+    expect((result.tables.edit_signals as unknown as Row[]).map((r) => r.id)).toEqual([
+      "a-sig",
+      "z-sig",
+    ]);
+  });
+
+  it("T-1002 AC2 1,001 rows (a page boundary): two ranges, every row once, ordered by id", async () => {
+    const many = Array.from({ length: 1001 }, (_, i) =>
+      editSignal(U, `s${String(1000 - i).padStart(4, "0")}`, `removal:x${i}`, `x${i}`),
+    );
+    const fake = pg({ ...twoYears(U, 10), edit_signals: many });
+    const result = await exportAccountData(input, { supabase: fake.client, db });
+    expect(fake.rangesFor("edit_signals")).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
+    const ids = (result.tables.edit_signals as unknown as Row[]).map((r) => r.id as string);
+    expect(ids).toHaveLength(1001);
+    expect(new Set(ids).size).toBe(1001);
+    expect(ids).toEqual([...ids].sort());
+    expect(ids[0]).toBe("s0000");
+    expect(ids.at(-1)).toBe("s1000");
+  });
+
+  it("T-1002 AC2 contrast: 1,000 rows is one page ending on a short check", async () => {
+    const many = Array.from({ length: 999 }, (_, i) =>
+      editSignal(U, `s${String(i).padStart(4, "0")}`, `removal:x${i}`, `x${i}`),
+    );
+    const fake = pg({ ...twoYears(U, 10), edit_signals: many });
+    const result = await exportAccountData(input, { supabase: fake.client, db });
+    expect(fake.rangesFor("edit_signals")).toEqual([[0, 999]]);
+    expect(result.tables.edit_signals).toHaveLength(999);
+  });
+
+  it("T-1002 AC3 an edit_signals read error rejects the whole export with export_failed", async () => {
+    const fake = pg(twoYears(U, 10), {
+      hook: (call) =>
+        call.table === "edit_signals"
+          ? { data: null, error: { code: "PGRST205", message: "missing table" } }
+          : undefined,
+    });
+    await expect(exportAccountData(input, { supabase: fake.client, db })).rejects.toThrow(
+      new Error("export_failed"),
+    );
+  });
+
+  it("T-1002 AC3 contrast: the read error on the second page also fails the whole export", async () => {
+    const many = Array.from({ length: 1001 }, (_, i) =>
+      editSignal(U, `s${String(i).padStart(4, "0")}`, `removal:x${i}`, `x${i}`),
+    );
+    const fake = pg(
+      { ...twoYears(U, 10), edit_signals: many },
+      {
+        hook: (call, nth) =>
+          call.table === "edit_signals" && nth === 2
+            ? { data: null, error: { code: "500", message: "boom" } }
+            : undefined,
+      },
+    );
+    await expect(exportAccountData(input, { supabase: fake.client, db })).rejects.toThrow(
+      new Error("export_failed"),
+    );
+  });
+
+  it("T-1002 AC4 the profile row carries learn_from_edits and learn_reset_at", async () => {
+    const seeded = twoYears(U, 10);
+    seeded.profiles = [
+      {
+        ...seeded.profiles![0]!,
+        learn_from_edits: false,
+        learn_reset_at: "2026-09-03T10:00:00.000Z",
+      },
+    ];
+    const result = await exportAccountData(input, { supabase: pg(seeded).client, db });
+    const profile = (result.tables.profiles as unknown as Row[])[0]!;
+    expect(profile).toHaveProperty("learn_from_edits", false);
+    expect(profile).toHaveProperty("learn_reset_at", "2026-09-03T10:00:00.000Z");
   });
 });
 
